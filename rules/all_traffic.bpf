@@ -1,0 +1,4 @@
+# netsniff-ng rule file
+# rule: forward all traffic to socket
+
+{ 0x6, 0, 0, 0x00000060 },
