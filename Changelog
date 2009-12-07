@@ -1,0 +1,15 @@
+Version 0.5.1 (08.08.2009)
+==========================
+* Initial, unofficial release
+
+Version 0.5.2 (06.09.2009)
+==========================
+* Initial, official release
+* Fixed some race condition in netsniff-ng.c
+
+Version 0.5.3 (06.12.2009)
+==========================
+* Added Makefile
+* Added Manpage
+* Some less code refractorings in netsniff-ng.c 
+  and check_packets.c

@@ -1,0 +1,66 @@
+About
+=====
+
+netsniff-ng is a high performance linux network sniffer for packet 
+inspection. Basically, it is similar to tcpdump, but it doesn't 
+need one syscall per packet. Instead, it uses an memory mapped area 
+within kernelspace for accessing packets without copying them to 
+userspace (zero-copy mechanism).
+
+This tool is useful for debugging your network, measuring performance 
+throughput or creating network statistics of incoming packets on 
+central network nodes like routers or firewalls.
+
+By providing an unix domain socket client, you're able to export 
+collected data during runtime (e.g. for Nagios). 
+
+Some Features
+=============
+
+ * No usage of libpcap
+ * High performance
+  o Zero-Copy mode via memory mapped kernel RX_RING (no syscalls for 
+    packet-fetching as in libpcap)
+  o No extra callback function for each packet (as in libpcap)
+  o Short critical path 
+ * Runs in userspace
+ * Promiscuous Mode support
+ * Berkeley Packet Filter support
+ * Unix Domain Socket server for data fetching during sniff
+ * Predefined filters for some protocols, e.g. possible Skype (UDP probe) 
+   prefiltering (or write your own ones for accessing each byte of the frame)
+ * VLAN based sniffing possible
+ * Run it in foreground (e.g. be verbose and print packets) or as a sys daemon
+ * Support for integration of fetched statistics into Nagios 
+   (check_packets plugin) 
+
+Requirements (for your own kernels)
+===================================
+
+Your kernel should have been built with CONFIG_PACKET_MMAP=y in order 
+to use netsniff-ng. This is default on your preinstalled Debian kernel.
+
+Homepage
+========
+
+http://code.google.com/p/netsniff-ng/
+
+Support
+=======
+
+Join the official support and development mailinglist of netsniff-ng:
+
+Subscribe and send your questions to netsniff-ng@googlegroups.com.
+http://groups.google.com/group/netsniff-ng 
+
+Contact
+=======
+
+For bugs, improvements, cool hacks and all the rest:
+
+ * Daniel Borkmann <dborkman@fbimn.htwk-leipzig.de>
+ * http://www.imn.htwk-leipzig.de/~dborkman
+
+Leipzig University of Applied Science, 
+Faculty of Computer Science, Mathematics and Natural Sciences
+

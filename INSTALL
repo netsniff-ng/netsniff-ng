@@ -1,0 +1,24 @@
+Requirements (for your own kernels)
+===================================
+
+Your kernel should have been built with CONFIG_PACKET_MMAP=y in order 
+to use netsniff-ng. This is default on your preinstalled Debian kernel.
+
+Installation
+============
+
+$ make
+# make install
+
+You will find the following stuff on your box:
+
+/usr/bin/netsniff-ng      - Main program, the 'sniffer'
+/usr/bin/check_packets    - Unix domain socket client for netsniff-ng (e.g. for usage with Nagios)
+/etc/netsniff-ng/rules/   - Some example Berkeley Packet Filter programs
+
+Uninstall
+=========
+
+# make uninstall
+$ make clean
+
