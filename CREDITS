@@ -1,0 +1,38 @@
+This is at least a partial credits-file of people that have
+contributed to the netsniff-ng project (in alphabetical 
+acending order of their last names).
+
+The fields are: 
+  name (N), 
+  email (E), 
+  web-address (W), 
+  PGP key ID and fingerprint (P), 
+  description (D), and
+  snail-mail address | country (S).
+
+Thanks,
+               Daniel Borkmann
+
+----------
+
+N: Dr. Helumt Hayd 
+E: hayd@cbs.mpg.de
+W: http://www.cbs.mpg.de/~hayd/
+S: Germany
+
+N: Prof. Dr. rer. nat. habil. Karl-Udo Jahn
+E: jahn@imn.htwk-leipzig.de
+W: http://www.imn.htwk-leipzig.de/~jahn/
+S: Germany
+
+N: Prof. Dr.-Ing. Dietmar Reimann
+E: reimann@imn.htwk-leipzig.de
+W: http://www.imn.htwk-leipzig.de/~reimann/
+S: Germany
+
+N: Guillaume Rousse
+E: guillomovitch@mandriva.org
+D: Maintaining netsniff-ng on Mandriva Linux
+W: http://www.zarb.org/~guillomovitch/
+S: France
+
