@@ -1,7 +1,7 @@
 /* 
  * High performance network sniffer for packet inspection
  *
- * Copyright (C) 2009  Daniel Borkmann <dborkman@fbimn.htwk-leipzig.de>
+ * Copyright (C) 2009  Daniel Borkmann <danborkmann@googlemail.com>
  *
  * This program is free software; you can redistribute it and/or modify 
  * it under the terms of the GNU General Public License as published by 

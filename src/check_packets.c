@@ -1,7 +1,7 @@
 /* 
  * Unix domain socket client for netsniff-ng
  *
- * Copyright (C) 2009  Daniel Borkmann <dborkman@fbimn.htwk-leipzig.de>
+ * Copyright (C) 2009  Daniel Borkmann <danborkmann@googlemail.com>
  *
  * This program is free software; you can redistribute it and/or modify 
  * it under the terms of the GNU General Public License as published by 
@@ -19,7 +19,7 @@
  */
 
 #define PROGNAME_STRING "check_packets"
-#define VERSION_STRING  "0.5.3"
+#define VERSION_STRING  "0.5.4"
 
 #include <stdio.h>
 #include <stdlib.h>

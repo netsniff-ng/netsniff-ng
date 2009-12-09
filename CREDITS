@@ -36,3 +36,9 @@ D: Maintaining netsniff-ng on Mandriva Linux
 W: http://www.zarb.org/~guillomovitch/
 S: France
 
+N: Andreas Tille
+E: tille@debian.org
+D: Maintaining netsniff-ng on Debian Linux
+W: http://people.debian.org/~tille/
+S: Germany
+
