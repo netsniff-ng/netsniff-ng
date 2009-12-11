@@ -50,7 +50,7 @@ volatile sig_atomic_t nagios_v = 0;
 
 void help()
 {
-    printf("%s %s, <dborkman@fbimn.htwk-leipzig.de>\n\n", PROGNAME_STRING, VERSION_STRING);
+    printf("%s %s, <danborkmann@googlemail.com>\n\n", PROGNAME_STRING, VERSION_STRING);
     printf("%s is a unix domain socket client for netsniff-ng.\n", PROGNAME_STRING);
     printf("\n");
     printf("Options, required:\n");
@@ -61,7 +61,7 @@ void help()
     printf("    -v          prints out version\n");
     printf("    -h          prints out this help\n");
     printf("\n");
-    printf("Please report bugs to <dborkman@fbimn.htwk-leipzig.de>\n");
+    printf("Please report bugs to <danborkmann@googlemail.com>\n");
     printf("Copyright (C) 2009 Daniel Borkmann\n");
     printf("License GPLv2: GNU GPL version 2 <http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt>\n");
     printf("This is free software: you are free to change and redistribute it.\n");

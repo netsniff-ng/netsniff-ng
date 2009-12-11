@@ -98,7 +98,7 @@ pthread_mutex_t gs_loc_mutex;
 
 void help()
 {
-    printf("%s %s, <dborkman@fbimn.htwk-leipzig.de>\n\n", PROGNAME_STRING, VERSION_STRING);
+    printf("%s %s, <danborkmann@googlemail.com>\n\n", PROGNAME_STRING, VERSION_STRING);
     printf("%s is a high performance network sniffer for packet inspection that\n", PROGNAME_STRING);
     printf("acts as a raw socket sniffer with kernelspace bpf and zero copy mode (rx ring).\n");
     printf("\n");
@@ -120,7 +120,7 @@ void help()
     printf("    - Rule creation can be done with \'tcpdump -dd <rule>\', see examples\n");
     printf("    - To access the running sys daemon you can use ipc via AF_UNIX\n");
     printf("\n");
-    printf("Please report bugs to <dborkman@fbimn.htwk-leipzig.de>\n");
+    printf("Please report bugs to <danborkmann@googlemail.com>\n");
     printf("Copyright (C) 2009 Daniel Borkmann\n");
     printf("License GPLv2: GNU GPL version 2 <http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt>\n");
     printf("This is free software: you are free to change and redistribute it.\n");
