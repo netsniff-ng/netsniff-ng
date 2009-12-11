@@ -10,12 +10,6 @@ Installation
 $ make
 # make install
 
-You will find the following stuff on your box:
-
-/usr/bin/netsniff-ng      - Main program, the 'sniffer'
-/usr/bin/check_packets    - Unix domain socket client for netsniff-ng (e.g. for usage with Nagios)
-/etc/netsniff-ng/rules/   - Some example Berkeley Packet Filter programs
-
 Uninstall
 =========
 

@@ -11,5 +11,7 @@ Version 0.5.3 (06.12.2009)
 ==========================
 * Added Makefile
 * Added Manpage
-* Some less code refractorings in netsniff-ng.c 
-  and check_packets.c
+* Documentation
+* (Debian packaging)
+* Some less code refractorings in netsniff-ng.c and check_packets.c
+

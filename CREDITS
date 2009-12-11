@@ -1,10 +1,13 @@
 This is at least a partial credits-file of people that have
 contributed to the netsniff-ng project (in alphabetical 
-acending order of their last names).
+acending order of their last names). If I have forgotten 
+someone, let me know.
 
-The fields are: 
-  name (N), 
-  email (E), 
+Non-optional fields are:
+  name (N),
+  email (E) 
+
+Optional fields are: 
   web-address (W), 
   PGP key ID and fingerprint (P), 
   description (D), and
@@ -35,10 +38,4 @@ E: guillomovitch@mandriva.org
 D: Maintaining netsniff-ng on Mandriva Linux
 W: http://www.zarb.org/~guillomovitch/
 S: France
-
-N: Andreas Tille
-E: tille@debian.org
-D: Maintaining netsniff-ng on Debian Linux
-W: http://people.debian.org/~tille/
-S: Germany
 

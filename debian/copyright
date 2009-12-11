@@ -1,7 +1,7 @@
-This package was debianized by Andreas Tille <tille@debian.org> on
+This package was debianized by Daniel Borkmann <danborkmann@googlemail.com> on
 Mon, 07 Dec 2009 16:46:46 +0200.
 
-Copyright: Copyright © 2009 Daniel Borkmann <dborkman@fbimn.htwk-leipzig.de>
+Copyright: Copyright © 2009 Daniel Borkmann <danborkmann@googlemail.com>
 
 License:
 
@@ -19,7 +19,6 @@ License:
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
     02110-1301  USA
-
 
 On Debian GNU/Linux systems, the complete text of the GNU General
 Public License can be found in `/usr/share/common-licenses/GPL'.
