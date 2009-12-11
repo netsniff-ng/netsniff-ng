@@ -22,7 +22,7 @@
  */
 
 #define PROGNAME_STRING "netsniff-ng"
-#define VERSION_STRING  "0.5.4"
+#define VERSION_STRING  "0.5.3"
 
 #include <stdio.h>
 #include <stdlib.h>
