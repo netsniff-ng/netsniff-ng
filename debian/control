@@ -8,7 +8,7 @@ Homepage: http://code.google.com/p/netsniff-ng/
 Bugs: mailto:danborkmann@googlemail.com
 
 Package: netsniff-ng
-Architecture: all
+Architecture: i386
 Conflicts:
 Depends: ${shlibs:Depends}
 Recommends:
