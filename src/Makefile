@@ -43,7 +43,7 @@ install:
 	install -D $(MANDIR_LOCAL)/$(NAME_NETSNIFF).8.gz $(DESTDIR)/$(MANDIR)/$(NAME_NETSNIFF).8.gz
 
 clean:
-	rm *.o $(NAME_NETSNIFF) $(NAME_CHECKP) $(MANDIR_LOCAL)/$(NAME_NETSNIFF).8.gz || true
+	rm *.o $(NAME_NETSNIFF) $(MANDIR_LOCAL)/$(NAME_NETSNIFF).8.gz || true
 
 uninstall:
 	rm $(DESTDIR)/$(BINDIR)/$(NAME_NETSNIFF) || true
