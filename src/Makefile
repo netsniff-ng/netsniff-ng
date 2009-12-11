@@ -38,7 +38,7 @@ netsniff-ng: $(OBJECTS_NETSNIFF)
 install:
 	install -D $(NAME_NETSNIFF) $(DESTDIR)/$(BINDIR)/$(NAME_NETSNIFF)
 	install -d $(DESTDIR)/$(ETCDIR)/$(NAME_NETSNIFF)
-	rsync -aC -exclude .svn rules/ $(DESTDIR)/$(ETCDIR)/$(NAME_NETSNIFF)
+	rsync -aC -exclude .svn rules/ $(DESTDIR)/$(ETCDIR)/$(NAME_NETSNIFF)/rules/
 	cat $(MANDIR_LOCAL)/$(NAME_NETSNIFF).8 | gzip > $(MANDIR_LOCAL)/$(NAME_NETSNIFF).8.gz
 	install -D $(MANDIR_LOCAL)/$(NAME_NETSNIFF).8.gz $(DESTDIR)/$(MANDIR)/$(NAME_NETSNIFF).8.gz
 
