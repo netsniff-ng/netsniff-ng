@@ -1,2 +1,3 @@
-examples/*
+examples/*.sh
 src/check_packets.c
+src/include/*.h

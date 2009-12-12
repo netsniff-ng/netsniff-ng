@@ -6,3 +6,5 @@ CREDITS
 INSTALL
 TODO
 VERSION
+src/doc/architecture_overview.dia
+src/doc/bpf-usenix93.ps
