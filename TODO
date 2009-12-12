@@ -1,11 +1,12 @@
 Some future ToDos
 =================
 
+ * Better visualization of packets during debug-output
+ * External tool for BPF filter code generation
+ * Support for data export in pcap file format
+ * Deep Packet Inspection
  * Add TX_RING and dynamically choose rings during runtime (RX, TX, both)
  * Support for setting CPU affinity
  * Kernel patch for loading more than one BPF code to a single socket
- * External tool for BPF filter code generation
- * Better visualization of packets during debug-output
  * Regexp on packet content
- * Support for data export in pcap file format
  * ... 
