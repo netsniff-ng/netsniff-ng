@@ -2,4 +2,4 @@ netsniff-ng (0.5.3) unstable; urgency=low
 
   * Initial Release for Debian.
 
- -- Daniel Borkmann <dborkman@fbimn.htwk-leipzig.de>  Mon, 07 Dec 2009 16:45:28 +0200
+ -- Daniel Borkmann <danborkmann@googlemail.com>  Mon, 07 Dec 2009 16:45:28 +0200
