@@ -31,6 +31,7 @@ binary-indep: build install
 	dh_installdocs
 	dh_installexamples
 	dh_installchangelogs
+	dh_strip
 	dh_compress
 	dh_fixperms
 	dh_installdeb
