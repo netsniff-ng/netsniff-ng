@@ -36,6 +36,7 @@ S: Germany
 N: Guillaume Rousse
 E: guillomovitch@mandriva.org
 D: Maintaining netsniff-ng on Mandriva Linux
+D: autoconf-based buildsystem
 W: http://www.zarb.org/~guillomovitch/
 S: France
 
