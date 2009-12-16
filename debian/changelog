@@ -1,3 +1,9 @@
+netsniff-ng (0.5.3.1-2) unstable; urgency=low
+
+  * Changed debhelper version to (>= 7) and compat to 7
+
+ -- Daniel Borkmann <danborkmann@googlemail.com>  Wed, 16 Dec 2009 19:13:30 +0200
+
 netsniff-ng (0.5.3.1-1) unstable; urgency=low
 
   * New upstream release.
