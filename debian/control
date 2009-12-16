@@ -2,16 +2,18 @@ Source: netsniff-ng
 Section: net
 Priority: optional
 Maintainer: Daniel Borkmann <danborkmann@googlemail.com>
-Standards-Version: 3.8.3
-Build-Depends: debhelper
+Standards-Version: 3.8.0
+Build-Depends: debhelper (>= 5)
 Homepage: http://code.google.com/p/netsniff-ng/
 
 Package: netsniff-ng
 Architecture: any
 Depends: ${shlibs:Depends}
 Description: a high performance network sniffer for packet inspection
- netsniff-ng is a high performance linux network sniffer 
+ netsniff-ng is a high performance Linux network sniffer 
  for packet inspection. This tool is useful for debugging 
  your network, measuring performance throughput or creating 
  network statistics of incoming packets on central network 
- nodes like routers or firewalls. 
+ nodes like routers or firewalls. It works similar to 
+ tcpdump, but a zero-copy mechanism for network packets 
+ results in better performance than libpcap-based sniffers.
