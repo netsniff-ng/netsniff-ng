@@ -1,6 +1,7 @@
 netsniff-ng (0.5.3-2) unstable; urgency=low
 
   * Last Debian version was packaged as that was Debian-specific
+  * netsniff-ng now in /sbin/
   * Fixed some more bugs within debian folder, including:
     + debian/control: architecture is now any, removed 'conflicts' 
                       and 'recommends', updated 'standarts version'
