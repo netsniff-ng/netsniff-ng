@@ -1,11 +1,12 @@
 netsniff-ng (0.5.3-2) unstable; urgency=low
 
   * Last Debian version was packaged as that was Debian-specific
-  * Fixed some more bugs within debian folder:
+  * Fixed some more bugs within debian folder, including:
     + debian/control: architecture is now any, removed 'conflicts' 
                       and 'recommends', updated 'standarts version'
-    + debian/rules: Moved dh_* from binary-indep to binary-arch, replaced
+    + debian/rules: moved dh_* from binary-indep to binary-arch, replaced
                     dh_clean -k with dh_prep
+    + debian/watch: added watch file
   * Excluded check_packets from Makefile, moved source into clients/
     because it is just an example application and will not be further 
     supported and developed.

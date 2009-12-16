@@ -3,7 +3,7 @@ Section: net
 Priority: optional
 Maintainer: Daniel Borkmann <danborkmann@googlemail.com>
 Standards-Version: 3.8.3
-Build-Depends: debhelper (>= 5.0)
+Build-Depends: debhelper
 Homepage: http://code.google.com/p/netsniff-ng/
 
 Package: netsniff-ng
