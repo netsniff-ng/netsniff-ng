@@ -1,7 +1,7 @@
 About
 =====
 
-netsniff-ng is a high performance linux network sniffer for packet 
+netsniff-ng is a high performance Linux network sniffer for packet 
 inspection. Basically, it is similar to tcpdump, but it doesn't 
 need one syscall per packet. Instead, it uses an memory mapped area 
 within kernelspace for accessing packets without copying them to 
