@@ -1,5 +1,20 @@
-netsniff-ng (0.5.3) unstable; urgency=low
+netsniff-ng (0.5.3-2) unstable; urgency=low
 
-  * Initial Release for Debian.
+  * Last Debian version was packaged as that was Debian-specific
+  * Fixed some more bugs within debian folder:
+    + debian/control: architecture is now any, removed 'conflicts' 
+                      and 'recommends', updated 'standarts version'
+    + debian/rules: Moved dh_* from binary-indep to binary-arch, replaced
+                    dh_clean -k with dh_prep
+  * Excluded check_packets from Makefile, moved source into clients/
+    because it is just an example application and will not be further 
+    supported and developed.
+
+ -- Daniel Borkmann <danborkmann@googlemail.com>  Wed, 16 Dec 2009 10:03:46 +0200
+
+netsniff-ng (0.5.3-1) unstable; urgency=low
+
+  * Initial release for Debian
+  * Closes: IPT bug
 
  -- Daniel Borkmann <danborkmann@googlemail.com>  Mon, 07 Dec 2009 16:45:28 +0200

@@ -2,16 +2,13 @@ Source: netsniff-ng
 Section: net
 Priority: optional
 Maintainer: Daniel Borkmann <danborkmann@googlemail.com>
-Standards-Version: 3.7.2
+Standards-Version: 3.8.3
 Build-Depends: debhelper (>= 5.0)
 Homepage: http://code.google.com/p/netsniff-ng/
-Bugs: mailto:danborkmann@googlemail.com
 
 Package: netsniff-ng
-Architecture: i386
-Conflicts:
+Architecture: any
 Depends: ${shlibs:Depends}
-Recommends:
 Description: a high performance network sniffer for packet inspection
  netsniff-ng is a high performance linux network sniffer 
  for packet inspection. This tool is useful for debugging 

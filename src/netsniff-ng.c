@@ -99,11 +99,12 @@ pthread_mutex_t gs_loc_mutex;
 void help()
 {
     printf("%s %s, <danborkmann@googlemail.com>\n\n", PROGNAME_STRING, VERSION_STRING);
-    printf("%s is a high performance network sniffer for packet inspection that\n", PROGNAME_STRING);
-    printf("acts as a raw socket sniffer with kernelspace bpf and zero copy mode (rx ring).\n");
+    printf("%s is a high performance network sniffer for packet\n", PROGNAME_STRING);
+    printf("inspection that acts as a raw socket sniffer with kernelspace\n");
+    printf("bpf and zero copy mode (rx ring).\n");
     printf("\n");
     printf("Options, required:\n");
-    printf("    -d <arg>    use device <arg> for capturing packets, e.g. \'eth0\'\n");
+    printf("    -d <arg>    use device <arg> for capturing packets\n");
     printf("    -f <arg>    use file <arg> as bpf filter\n");
     printf("\n");
     printf("Options, optional:\n");
@@ -111,31 +112,35 @@ void help()
     printf("    -L <arg>    use file <arg> as logfile, req if -D\n");
     printf("    -S <arg>    use file <arg> as uds inode, req if -D\n");
     printf("    -D          run as sys daemon\n\n");
-    printf("    -C          print captured packets (might slow processing speed)\n");
+    printf("    -C          print captured packets\n");
     printf("    -v          prints out version\n");
     printf("    -h          prints out this help\n");
     printf("\n");
     printf("Info:\n");
     printf("    - Sending a SIGUSR1 will show current packet statistics\n");
-    printf("    - Rule creation can be done with \'tcpdump -dd <rule>\', see examples\n");
+    printf("    - Rule creation can be done with \'tcpdump -dd <rule>\',\n");
+    printf("      see examples, or, of course manually by hand\n");
     printf("    - To access the running sys daemon you can use ipc via AF_UNIX\n");
+    printf("    - For more help type \'man netsniff-ng\'\n");
     printf("\n");
     printf("Please report bugs to <danborkmann@googlemail.com>\n");
     printf("Copyright (C) 2009 Daniel Borkmann\n");
-    printf("License GPLv2: GNU GPL version 2 <http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt>\n");
+    printf("License: GNU GPL version 2\n");
     printf("This is free software: you are free to change and redistribute it.\n");
     printf("There is NO WARRANTY, to the extent permitted by law.\n");
+
     exit(1);
 }
 
 void version()
 {
-    printf("%s %s\n\n", PROGNAME_STRING, VERSION_STRING);
-    printf("%s is a high performance network sniffer for packet inspection that\n", PROGNAME_STRING);
-    printf("acts as a raw socket sniffer with kernelspace bpf and zero copy mode (rx ring).\n\n");
+    printf("%s %s, <danborkmann@googlemail.com>\n\n", PROGNAME_STRING, VERSION_STRING);
+    printf("%s is a high performance network sniffer for packet\n", PROGNAME_STRING);
+    printf("inspection that acts as a raw socket sniffer with kernelspace\n");
+    printf("bpf and zero copy mode (rx ring).\n");
     printf("Please report bugs to <dborkman@fbimn.htwk-leipzig.de>\n");
     printf("Copyright (C) 2009 Daniel Borkmann\n");
-    printf("License GPLv2: GNU GPL version 2 <http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt>\n");
+    printf("License: GNU GPL version 2\n");
     printf("This is free software: you are free to change and redistribute it.\n");
     printf("There is NO WARRANTY, to the extent permitted by law.\n");
     exit(0);
@@ -455,7 +460,7 @@ int daemonize(const char *pidfile, const char *logfile, const char *sockfile)
         close(fd);
 
     dbg("%s %s\n", PROGNAME_STRING, VERSION_STRING);
-    dbg("daemon up and runnning\n");
+    dbg("daemon up and running\n");
 
     pthread_attr_init(&attr);
     pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
