@@ -13,5 +13,12 @@ Version 0.5.3 (06.12.2009)
 * Added Manpage
 * Documentation
 * (Debian packaging)
-* Some less code refractorings in netsniff-ng.c and check_packets.c
+* Some less code refractorings in netsniff-ng.c and 
+  check_packets.c
 
+Version 0.5.3.1 (16.12.2009)
+============================
+* check_packets.c has been put into src/clients/ due 
+  to not officially supporting it anymore. It is just 
+  a simple unix domain socket client example for netsniff-ng,
+  but nothing more.

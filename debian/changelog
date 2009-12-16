@@ -1,3 +1,9 @@
+netsniff-ng (0.5.3.1-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Daniel Borkmann <danborkmann@googlemail.com>  Wed, 16 Dec 2009 18:56:22 +0200
+
 netsniff-ng (0.5.3-2) unstable; urgency=low
 
   * Last Debian version was packaged as that was Debian-specific
@@ -12,7 +18,7 @@ netsniff-ng (0.5.3-2) unstable; urgency=low
     because it is just an example application and will not be further 
     supported and developed.
 
- -- Daniel Borkmann <danborkmann@googlemail.com>  Wed, 16 Dec 2009 10:03:46 +0200
+ -- Daniel Borkmann <danborkmann@googlemail.com>  Wed, 15 Dec 2009 10:03:46 +0200
 
 netsniff-ng (0.5.3-1) unstable; urgency=low
 
