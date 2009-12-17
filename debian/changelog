@@ -37,6 +37,5 @@ netsniff-ng (0.5.3-2) unstable; urgency=low
 netsniff-ng (0.5.3-1) unstable; urgency=low
 
   * Initial release for Debian
-  * Closes: IPT bug
 
  -- Daniel Borkmann <danborkmann@googlemail.com>  Mon, 07 Dec 2009 16:45:28 +0200
