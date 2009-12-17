@@ -1,3 +1,11 @@
+netsniff-ng (0.5.3.1-3) unstable; urgency=low
+
+  * Switched to Debian standards version 3.8.3
+  * Added ITP number
+  * Usage of cp instead of rsync (installation of example rules)
+
+ -- Daniel Borkmann <danborkmann@googlemail.com>  Wed, 16 Dec 2009 19:13:30 +0200
+
 netsniff-ng (0.5.3.1-2) unstable; urgency=low
 
   * Changed debhelper version to (>= 7) and compat to 7

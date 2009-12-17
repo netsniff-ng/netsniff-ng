@@ -2,7 +2,7 @@ Source: netsniff-ng
 Section: net
 Priority: optional
 Maintainer: Daniel Borkmann <danborkmann@googlemail.com>
-Standards-Version: 3.8.0
+Standards-Version: 3.8.3
 Build-Depends: debhelper (>= 7)
 Homepage: http://code.google.com/p/netsniff-ng/
 
