@@ -1,5 +1,5 @@
 netsniff-ng (0.5.3.1-1) unstable; urgency=low
 
-  * Initial release for Debian, closes ITP bug #561528
+  * Initial release for Debian, closes ITP bug. Closes: #561528
 
- -- Daniel Borkmann <danborkmann@googlemail.com>  Wed, 16 Dec 2009 19:13:30 +0200
+ -- Daniel Borkmann <danborkmann@googlemail.com>  Thu, 17 Dec 2009 22:55:51 +0200

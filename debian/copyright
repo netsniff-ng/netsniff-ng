@@ -1,5 +1,5 @@
 This package was debianized by Daniel Borkmann <danborkmann@googlemail.com> on
-Mon, 07 Dec 2009 16:46:46 +0200.
+Thu, 17 Dec 2009 22:55:51 +0200.
 
 Copyright: Copyright © 2009 Daniel Borkmann <danborkmann@googlemail.com>
 
@@ -21,4 +21,4 @@ License:
     02110-1301  USA
 
 On Debian GNU/Linux systems, the complete text of the GNU General
-Public License can be found in `/usr/share/common-licenses/GPL'.
+Public License can be found in `/usr/share/common-licenses/GPL-2'.
