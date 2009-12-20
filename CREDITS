@@ -16,7 +16,21 @@ Optional fields are:
 Thanks,
                Daniel Borkmann
 
+First, some more, rather offtopic thanks ;)
+    - Robert Love for writing 'Linux System Programming'
+    - Jon Erickson for writing 'Hacking - The Art of Exploitation'
+    - Sreekrishnan Venkateswaran for writing 'Essential Linux Device Drivers'
+    - Paul Graham for his great essays
+    - Linus Torvalds for the best piece of software in the world ;)
+    - And, of course all the stuff I've forgotten to mention
+
 ----------
+
+N: Romain Beauxis
+E: toots@rastageeks.org
+D: Debian Mentoring
+W: http://www.lix.polytechnique.fr/Labo/Romain.Beauxis/
+S: France
 
 N: Dr. Helumt Hayd 
 E: hayd@cbs.mpg.de
@@ -28,9 +42,20 @@ E: jahn@imn.htwk-leipzig.de
 W: http://www.imn.htwk-leipzig.de/~jahn/
 S: Germany
 
+N: Kartik Mistry
+E: kartik.mistry@gmail.com
+D: Debian Mentoring
+W: http://people.debian.org/~kartik/
+S: India
+
 N: Prof. Dr.-Ing. Dietmar Reimann
 E: reimann@imn.htwk-leipzig.de
 W: http://www.imn.htwk-leipzig.de/~reimann/
+S: Germany
+
+N: Emmanuel Roullit
+E: (?)
+D: High-resolution timer and other contributions
 S: Germany
 
 N: Guillaume Rousse
@@ -39,16 +64,4 @@ D: Maintaining netsniff-ng on Mandriva Linux
 D: autoconf-based buildsystem
 W: http://www.zarb.org/~guillomovitch/
 S: France
-
-N: Romain Beauxis
-E: toots@rastageeks.org
-D: Debian Mentoring
-W: http://www.lix.polytechnique.fr/Labo/Romain.Beauxis/
-S: France
-
-N: Kartik Mistry
-E: kartik.mistry@gmail.com
-D: Debian Mentoring
-W: http://people.debian.org/~kartik/
-S: India
 

@@ -21,26 +21,33 @@
 #ifndef _NETSNIFF_NG_H_
 #define _NETSNIFF_NG_H_
 
+#include <stdint.h>
 #include <time.h>
 #include <sys/time.h>
 
-typedef unsigned short uint16;
-typedef unsigned long long uint64;
-typedef unsigned int uint32;
+/**
+ * Some external data structures (wich are used for
+ * data transmission via the unix domain socket inode)
+ */
 
 struct fb_count {
-    uint64  frames;
-    uint64  bytes; 
+    uint64_t  frames;
+    uint64_t  bytes; 
 };
 
 typedef struct ring_buff_private_stat {
+    /* total package count */
     struct fb_count  total;
+    /*  */
     struct fb_count  per_sec;
     struct fb_count  per_min;
+    /*  */
     struct fb_count  s_per_sec;
     struct fb_count  s_per_min;
-    uint16           t_elapsed;
-    struct timeval   m_start;
+    /*  */
+    uint16_t         t_elapsed;
+    /*  */
+    struct timespec  m_start;
 } ring_buff_stat_t;
 
 #endif /* _NETSNIFF_NG_H_ */

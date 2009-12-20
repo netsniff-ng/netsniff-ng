@@ -5,6 +5,7 @@ Some future ToDos
  * External tool for BPF filter code generation
  * Support for data export in pcap file format
  * Deep Packet Inspection
+ * Some more device statistics for wireless net devices
  * Add TX_RING and dynamically choose rings during runtime (RX, TX, both)
  * Support for setting CPU affinity
  * Kernel patch for loading more than one BPF code to a single socket

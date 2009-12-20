@@ -3,13 +3,16 @@
 #
 
 #
-# Note: check_packets is not a main program, it is just an 
-#       example implementation for a unix domain socket client.
-#       Therefore you explicitly need to build it for usage.
+# Note: 
+#   check_packets is not a main program, it is just an 
+#   example implementation for a unix domain socket (uds) client.
+#   Therefore, you explicitly need to build it for usage.
+#   Possibly with newer version the uds API might have changed,
+#   so a few manual adoptions could be possible.
 #
 
 CC               = gcc
-LIBS             = -lpthread
+LIBS             = -lpthread -lrt
 INCLUDE          = -Iinclude
 CFLAGS           = -Wall -O2
 

@@ -22,3 +22,21 @@ Version 0.5.3.1 (16.12.2009)
   to not officially supporting it anymore. It is just 
   a simple unix domain socket client example for netsniff-ng,
   but nothing more.
+
+Version 0.5.4.0 (???)
+============================
+* Added high-resolution timer
+* Fixed some small bugs / mem-leaks
+* Some code refactorings
+* Added SIGHUP ignorance, so for instance netsniff-ng keeps 
+  alive on ssh-sessions
+* Added pid output during start
+* Better packet visualization on -C mode
+* Locking of RX_RING due to make it non-swappable
+* futex locking of critical paths instead of mutex
+* Added setpriority() for notifying the scheduler to make use 
+  of the full timeslice
+* Setting process affinity to specific CPU on demand (via Param)
+  This can be useful for a patched init proc, so that on demand
+  netsniff-ng can be the only process for a single CPU
+* -C option can now be switched on and off during runtime via SIGUSR2
