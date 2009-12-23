@@ -880,6 +880,72 @@ static inline void restore_softirq()
     sigprocmask(SIG_UNBLOCK, &block_mask, NULL);
 }
 
+static inline const char * nexttoken(const char * q, int sep)
+{
+	if (q)
+	q = strchr(q, sep);
+	if (q)
+		q++;
+	return q;
+}
+
+static int set_sniffer_cpu_affinity(const char * str)
+{
+	const char *p, *q;
+	cpu_set_t cpu_bitmask;
+	q = str;
+	
+	CPU_ZERO(&cpu_bitmask);
+ 
+	while (p = q, q = nexttoken(q, ','), p) {
+		unsigned int a;	/* beginning of range */
+		unsigned int b;	/* end of range */
+		unsigned int s;	/* stride */
+		const char *c1, *c2;
+
+		if (sscanf(p, "%u", &a) < 1)
+		{
+			return 1;
+		}
+
+		b = a;
+		s = 1;
+
+		c1 = nexttoken(p, '-');
+		c2 = nexttoken(p, ',');
+		if (c1 != NULL && (c2 == NULL || c1 < c2)) 
+		{
+			if (sscanf(c1, "%u", &b) < 1)
+			{
+				return 1;
+			}
+
+			c1 = nexttoken(c1, ':');
+			if (c1 != NULL && (c2 == NULL || c1 < c2))
+				if (sscanf(c1, "%u", &s) < 1) {
+					return 1;
+			}
+		}
+
+		if (!(a <= b))
+			return 1;
+		while (a <= b) {
+			CPU_SET(a, &cpu_bitmask);
+			a += s;
+		}
+	}
+
+
+	if (sched_setaffinity(getpid(), sizeof(cpu_bitmask), &cpu_bitmask) != 0)
+	{
+		err("Can't set this cpu affinity : %s", str);
+		perror("");
+		exit(1);
+	}
+
+	return (0);
+}
+
 int main(int argc, char **argv)
 {
     int i, c;
@@ -902,7 +968,7 @@ int main(int argc, char **argv)
     print_pckt_v = 0;
     dev = pidfile = logfile = rulefile = sockfile = NULL;
 
-    while((c = getopt(argc, argv, "vhd:P:L:Df:CS:")) != EOF)
+    while((c = getopt(argc, argv, "vhd:P:L:Df:CS:c:")) != EOF)
     {
         switch(c)
         {
@@ -941,6 +1007,10 @@ int main(int argc, char **argv)
             case 'S':
                 sockfile = optarg;
                 break;
+	
+	    case 'c':
+		set_sniffer_cpu_affinity(optarg);
+	    	break;
 
             case '?':
                 switch(optopt)
