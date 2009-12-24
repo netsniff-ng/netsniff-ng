@@ -368,8 +368,8 @@ static char *get_own_cpu_affinity(char *cpu_string, size_t len)
 
         for(i = 0; i < len - 1; ++i)
         {
-            cpu = CPU_ISSET(i, &cpu_bitmask);
-            cpu_string[i] = (cpu ? '1' : '0');
+                cpu = CPU_ISSET(i, &cpu_bitmask);
+                cpu_string[i] = (cpu ? '1' : '0');
         }
 
         return (cpu_string);
@@ -385,6 +385,53 @@ static int set_own_proc_prio(void)
         {
                 perr("Can't set nice val: %d\n", ret);
                 exit(1);
+        }
+
+        return 0;
+}
+
+static int set_own_sched_type(void)
+{
+        int ret;
+        struct sched_param sp;
+
+        ret = sched_setscheduler(getpid(), SCHED_FIFO, &sp);
+        if(ret)
+        {
+                perr("Cannot change scheduler type!\n");
+                return -1;
+        }
+
+        return 0;
+}
+
+static int set_own_sched_prio(void)
+{
+        struct sched_param sp;
+        int policy, max, ret;
+
+        policy = sched_getscheduler(getpid());
+        if(policy == -1)
+        {
+                perr("Cannot determine scheduler type!\n");
+                return -1;
+        }
+
+        max = sched_get_priority_max(policy);
+        if(max == -1)
+        {
+                perr("Cannot determine max scheduler prio!\n");
+                return -1;
+        }
+
+        memset(&sp, 0, sizeof(sp));
+        sp.sched_priority = max;
+
+        ret = sched_setparam(getpid(), &sp);
+        if(ret)
+        {
+                perr("Cannot set scheduler prio!\n");
+                return -1;
         }
 
         return 0;
@@ -455,6 +502,35 @@ static void version(void)
         printf("There is NO WARRANTY, to the extent permitted by law.\n");
     
         exit(0);
+}
+
+static void header(void)
+{
+        int ret;
+        size_t len;
+        char *cpu_string;
+        struct sched_param sp;
+
+        len = sysconf(_SC_NPROCESSORS_CONF) + 1;
+        cpu_string = malloc(len);
+        if(!cpu_string)
+        {
+                perr("no mem left\n");
+                exit(1);
+        }
+
+        ret = sched_getparam(getpid(), &sp);
+        if(ret)
+        {
+                perr("Cannot determine sched prio\n");
+                exit(1);
+        }
+
+        dbg("%s %s -- pid: %d\n", PROGNAME_STRING, VERSION_STRING, (int) getpid());
+        dbg("nice: %d, scheduler: %d prio %d\n", getpriority(PRIO_PROCESS, getpid()), sched_getscheduler(getpid()), sp.sched_priority);
+        dbg("%ld of %ld CPUs online, affinity bitstring: %s\n", sysconf(_SC_NPROCESSORS_ONLN), sysconf(_SC_NPROCESSORS_CONF), get_own_cpu_affinity(cpu_string, len));
+ 
+        free(cpu_string);
 }
 
 void softirq_handler(int number)
@@ -981,7 +1057,6 @@ int main(int argc, char **argv)
         int sock;
         int ret;
         int bpf_len;
-        int cpu_string_len;
         int print_pckt_v;
     
         char *pidfile;
@@ -989,13 +1064,12 @@ int main(int argc, char **argv)
         char *rulefile;
         char *sockfile;
         char *dev;
-        char *cpu_string;
     
         ring_buff_t *rb;
         struct pollfd pfd;
         struct sock_filter **bpf;
         struct itimerval val_r;
-    
+
         print_pckt_v = 0;
         dev = pidfile = logfile = rulefile = sockfile = NULL;
     
@@ -1116,7 +1190,10 @@ int main(int argc, char **argv)
         /* We are only allowed to do these nasty things as root ;) */
         chk_root();
 
+        /* Scheduler timeslice & prio tuning */
         set_own_proc_prio();
+        set_own_sched_type();
+        set_own_sched_prio();
 
         register_softirq(SIGINT,  &softirq_handler);
         register_softirq(SIGALRM, &softirq_handler);
@@ -1134,18 +1211,7 @@ int main(int argc, char **argv)
                 }
         }
 
-        cpu_string_len = sysconf(_SC_NPROCESSORS_CONF) + 1;
-        cpu_string = malloc(cpu_string_len);
-        if(!cpu_string)
-        {
-                perr("No mem left!\n");
-                exit(1);
-        }
- 
-        dbg("%s %s, pid: %d, nice: %d\n", PROGNAME_STRING, VERSION_STRING, (int) getpid(), getpriority(PRIO_PROCESS, getpid()));
-        dbg("%ld of %ld CPUs online, affinity bitstring: %s\n", sysconf(_SC_NPROCESSORS_ONLN), sysconf(_SC_NPROCESSORS_CONF), get_own_cpu_affinity(cpu_string, cpu_string_len));
- 
-        free(cpu_string);
+        header();
 
         bpf_len = 0;
         bpf = (struct sock_filter **) malloc(sizeof(*bpf));
