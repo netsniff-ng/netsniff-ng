@@ -32,6 +32,7 @@
  *     `-+-- "Minor" changes, new features - y elem of {0, 1, ..., 9}
  *       `-- "Tiny"  changes, bug fixes    - z elem of {0, 1, ...}
  */
+
 #define _GNU_SOURCE
 
 #include <stdio.h>
@@ -117,7 +118,7 @@
  * Internal data structures
  */
 
-typedef uint8_t            *ring_buff_bytes_t;
+typedef uint8_t                *ring_buff_bytes_t;
 
 typedef struct ring_buff_private {
         ring_buff_bytes_t       buffer;
@@ -955,7 +956,7 @@ int main(int argc, char **argv)
         print_pckt_v = 0;
         dev = pidfile = logfile = rulefile = sockfile = NULL;
     
-        while((c = getopt(argc, argv, "vhd:P:L:Df:CS:c:")) != EOF)
+        while((c = getopt(argc, argv, "vhd:P:L:Df:CS:b:B:")) != EOF)
         {
                 switch(c)
                 {
@@ -1004,11 +1005,17 @@ int main(int argc, char **argv)
                                 sockfile = optarg;
                                 break;
                         }
-                        case 'c':
+                        case 'b':
                         {
                                 set_own_cpu_affinity(optarg);
                                 break;
                         }
+                        case 'B':
+                        {
+                                set_own_cpu_affinity(optarg); /* TODO: inverted */
+                                break;
+                        }
+
                         case '?':
                         {
                                 switch(optopt)
