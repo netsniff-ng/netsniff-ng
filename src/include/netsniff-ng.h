@@ -31,23 +31,23 @@
  */
 
 struct fb_count {
-    uint64_t  frames;
-    uint64_t  bytes; 
+        uint64_t  frames;
+        uint64_t  bytes; 
 };
 
 typedef struct ring_buff_private_stat {
-    /* total package count */
-    struct fb_count  total;
-    /*  */
-    struct fb_count  per_sec;
-    struct fb_count  per_min;
-    /*  */
-    struct fb_count  s_per_sec;
-    struct fb_count  s_per_min;
-    /*  */
-    uint16_t         t_elapsed;
-    /*  */
-    struct timespec  m_start;
+        /*  */
+        struct fb_count  total;
+        /*  */
+        struct fb_count  per_sec;
+        struct fb_count  per_min;
+        /*  */
+        struct fb_count  s_per_sec;
+        struct fb_count  s_per_min;
+        /*  */
+        uint16_t         t_elapsed;
+        /*  */
+        struct timespec  m_start;
 } ring_buff_stat_t;
 
 #endif /* _NETSNIFF_NG_H_ */
