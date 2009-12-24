@@ -1145,9 +1145,9 @@ int main(int argc, char **argv)
                 goto __j_no_print;
     
     /* __j_print: */
-        while(likely(!sigint))
+        while(unlikely(sigint))
         {
-               while(mem_notify_user(rb->frames[i]) && likely(!sigint))
+               while(mem_notify_user(rb->frames[i]) && unlikely(sigint))
                {
                         struct frame_map *fm = rb->frames[i].iov_base;
                         ring_buff_bytes_t rbb = (unsigned char *) (rb->frames[i].iov_base + sizeof(*fm) + sizeof(short));
@@ -1180,9 +1180,9 @@ int main(int argc, char **argv)
         goto __j_out;
     
 __j_no_print:
-       while(likely(!sigint))
+       while(unlikely(sigint))
        {
-                while(mem_notify_user(rb->frames[i]) && likely(!sigint))
+                while(mem_notify_user(rb->frames[i]) && unlikely(sigint))
                 {
                         struct frame_map *fm = rb->frames[i].iov_base;
             
