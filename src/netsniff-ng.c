@@ -341,12 +341,53 @@ static int set_own_cpu_affinity(const char *str)
         ret = sched_setaffinity(getpid(), sizeof(cpu_bitmask), &cpu_bitmask);
         if(ret)
         {
-                err("Can't set this cpu affinity : %s", str);
-                perror("");
+                perr("Can't set this cpu affinity: %s\n", str);
                 exit(1);
         }
 
         return (0);
+}
+
+static char *get_own_cpu_affinity(char *cpu_string, size_t len)
+{
+        int i, ret;
+        int cpu;
+        cpu_set_t cpu_bitmask;
+
+        assert(len == sysconf(_SC_NPROCESSORS_CONF) + 1);
+
+        memset(cpu_string, 0, len);
+        CPU_ZERO(&cpu_bitmask);
+
+        ret = sched_getaffinity(getpid(), sizeof(cpu_bitmask), &cpu_bitmask);
+        if(ret)
+        {
+                perr("Can't fetch cpu affinity: %d\n", ret);
+                return NULL;
+        }
+
+        for(i = 0; i < len - 1; ++i)
+        {
+            cpu = CPU_ISSET(i, &cpu_bitmask);
+            cpu_string[i] = (cpu ? '1' : '0');
+        }
+
+        return (cpu_string);
+}
+
+static int set_own_proc_prio(void)
+{
+        int ret;
+
+        /* We're not nice to others ;) take the full timeslice ... */
+        ret = setpriority(PRIO_PROCESS, getpid(), -20);
+        if(ret)
+        {
+                perr("Can't set nice val: %d\n", ret);
+                exit(1);
+        }
+
+        return 0;
 }
 
 /*
@@ -940,6 +981,7 @@ int main(int argc, char **argv)
         int sock;
         int ret;
         int bpf_len;
+        int cpu_string_len;
         int print_pckt_v;
     
         char *pidfile;
@@ -947,6 +989,7 @@ int main(int argc, char **argv)
         char *rulefile;
         char *sockfile;
         char *dev;
+        char *cpu_string;
     
         ring_buff_t *rb;
         struct pollfd pfd;
@@ -1072,7 +1115,9 @@ int main(int argc, char **argv)
     
         /* We are only allowed to do these nasty things as root ;) */
         chk_root();
-    
+
+        set_own_proc_prio();
+
         register_softirq(SIGINT,  &softirq_handler);
         register_softirq(SIGALRM, &softirq_handler);
         register_softirq(SIGUSR1, &softirq_handler);
@@ -1088,10 +1133,20 @@ int main(int argc, char **argv)
                         exit(1);
                 }
         }
-    
-        dbg("%s %s, pid: %d\n", PROGNAME_STRING, VERSION_STRING, (int) getpid());
-    //  dbg("scheduled with CPU affinity %d\n", ); // <-- BITMASK
-    
+
+        cpu_string_len = sysconf(_SC_NPROCESSORS_CONF) + 1;
+        cpu_string = malloc(cpu_string_len);
+        if(!cpu_string)
+        {
+                perr("No mem left!\n");
+                exit(1);
+        }
+ 
+        dbg("%s %s, pid: %d, nice: %d\n", PROGNAME_STRING, VERSION_STRING, (int) getpid(), getpriority(PRIO_PROCESS, getpid()));
+        dbg("%ld of %ld CPUs online, affinity bitstring: %s\n", sysconf(_SC_NPROCESSORS_ONLN), sysconf(_SC_NPROCESSORS_CONF), get_own_cpu_affinity(cpu_string, cpu_string_len));
+ 
+        free(cpu_string);
+
         bpf_len = 0;
         bpf = (struct sock_filter **) malloc(sizeof(*bpf));
     

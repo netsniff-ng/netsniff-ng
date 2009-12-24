@@ -14,7 +14,7 @@
 CC               = gcc
 LIBS             = -lpthread -lrt
 INCLUDE          = -Iinclude
-CFLAGS           = -Wall -O2
+CFLAGS           = -Wall -O2 -g
 
 NAME_NETSNIFF    = netsniff-ng
 OBJECTS_NETSNIFF = netsniff-ng.o
