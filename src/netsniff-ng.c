@@ -84,7 +84,7 @@
 #define INTERNAL_UDS_QUEUE_LEN  50    /* max AF_UNIX clients for accept */
 
 #define dbg(fmt, arg...)                                            \
-                                fprintf(stderr, "I: " fmt, ## arg);
+                                fprintf(stderr, fmt, ## arg);
 
 #define err(fmt, arg...)                                            \
                                 fprintf(stderr, "E: " fmt, ## arg); \
