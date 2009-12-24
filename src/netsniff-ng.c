@@ -32,6 +32,7 @@
  *     `-+-- "Minor" changes, new features - y elem of {0, 1, ..., 9}
  *       `-- "Tiny"  changes, bug fixes    - z elem of {0, 1, ...}
  */
+#define _GNU_SOURCE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -237,7 +238,7 @@ static inline void chk_root(void)
         }
 }
 
-static void register_softirq(int sig, void (*handle)(int))
+static void register_softirq(int sig, void (*softirq_handler)(int))
 {
         sigset_t block_mask;
         struct sigaction saction;
