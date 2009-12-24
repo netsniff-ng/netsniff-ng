@@ -280,8 +280,9 @@ static inline const char *nexttoken(const char *q, int sep)
         return q;
 }
 
-static int set_sniffer_cpu_affinity(const char * str)
+static int set_own_cpu_affinity(const char *str)
 {
+        int ret;
         const char *p, *q;
         cpu_set_t cpu_bitmask;
 
@@ -289,14 +290,14 @@ static int set_sniffer_cpu_affinity(const char * str)
         
         CPU_ZERO(&cpu_bitmask);
  
-        while (p = q, q = nexttoken(q, ','), p)
+        while(p = q, q = nexttoken(q, ','), p)
         {
                 unsigned int a; /* Beginning of range */
                 unsigned int b; /* End of range */
                 unsigned int s; /* Stride */
                 const char *c1, *c2;
 
-                if (sscanf(p, "%u", &a) < 1)
+                if(sscanf(p, "%u", &a) < 1)
                 {
                         return 1;
                 }
@@ -306,30 +307,38 @@ static int set_sniffer_cpu_affinity(const char * str)
 
                 c1 = nexttoken(p, '-');
                 c2 = nexttoken(p, ',');
-                if (c1 != NULL && (c2 == NULL || c1 < c2)) 
+
+                if(c1 != NULL && (c2 == NULL || c1 < c2)) 
                 {
-                        if (sscanf(c1, "%u", &b) < 1)
+                        if(sscanf(c1, "%u", &b) < 1)
                         {
                                 return 1;
                         }
 
                         c1 = nexttoken(c1, ':');
-                        if (c1 != NULL && (c2 == NULL || c1 < c2))
-                                if (sscanf(c1, "%u", &s) < 1) {
+                        if(c1 != NULL && (c2 == NULL || c1 < c2))
+                        {
+                                if(sscanf(c1, "%u", &s) < 1)
+                                {
                                         return 1;
+                                }
                         }
                 }
 
-                if (!(a <= b))
+                if(!(a <= b))
+                {
                         return 1;
-                while (a <= b) {
+                }
+
+                while(a <= b)
+                {
                         CPU_SET(a, &cpu_bitmask);
                         a += s;
                 }
         }
 
-
-        if (sched_setaffinity(getpid(), sizeof(cpu_bitmask), &cpu_bitmask) != 0)
+        ret = sched_setaffinity(getpid(), sizeof(cpu_bitmask), &cpu_bitmask);
+        if(ret)
         {
                 err("Can't set this cpu affinity : %s", str);
                 perror("");
@@ -997,7 +1006,7 @@ int main(int argc, char **argv)
                         }
                         case 'c':
                         {
-                                set_sniffer_cpu_affinity(optarg);
+                                set_own_cpu_affinity(optarg);
                                 break;
                         }
                         case '?':
