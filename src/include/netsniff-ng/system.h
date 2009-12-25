@@ -1,4 +1,11 @@
-/* 
+/* XXX: Coding Style - use the tool indent with the following (Linux kernel
+ *                     code indentions)
+ *
+ * indent -nbad -bap -nbc -bbo -hnl -br -brs -c33 -cd33 -ncdb -ce -ci4  \
+ *        -cli0 -d0 -di1 -nfc1 -i8 -ip0 -l80 -lp -npcs -nprs -npsl -sai \
+ *        -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts8 -il1
+ *
+ *
  * netsniff-ng
  *
  * High performance network sniffer for packet inspection
@@ -47,7 +54,7 @@ extern int set_proc_prio(int prio);
 extern int set_sched_status(int policy, int priority);
 extern void check_for_root(void);
 extern int undaemonize(const char *pidfile);
-extern int daemonize(const char *pidfile, const char *logfile, 
-        const char *sockfile, void *(*start_server)(void *sock));
+extern int daemonize(const char *pidfile, const char *logfile,
+		     const char *sockfile, void *(*start_server) (void *sock));
 
-#endif /* _NET_SYSTEM_H_ */
+#endif				/* _NET_SYSTEM_H_ */

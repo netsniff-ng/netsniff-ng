@@ -1,4 +1,11 @@
-/* 
+/* XXX: Coding Style - use the tool indent with the following (Linux kernel
+ *                     code indentions)
+ *
+ * indent -nbad -bap -nbc -bbo -hnl -br -brs -c33 -cd33 -ncdb -ce -ci4  \
+ *        -cli0 -d0 -di1 -nfc1 -i8 -ip0 -l80 -lp -npcs -nprs -npsl -sai \
+ *        -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts8 -il1
+ *
+ *
  * netsniff-ng
  *
  * High performance network sniffer for packet inspection
@@ -33,4 +40,4 @@
 
 /* Function signatures */
 
-#endif /* _NET_PRINT_H_ */
+#endif				/* _NET_PRINT_H_ */

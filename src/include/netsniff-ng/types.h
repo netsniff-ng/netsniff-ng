@@ -1,4 +1,11 @@
-/* 
+/* XXX: Coding Style - use the tool indent with the following (Linux kernel
+ *                     code indentions)
+ *
+ * indent -nbad -bap -nbc -bbo -hnl -br -brs -c33 -cd33 -ncdb -ce -ci4  \
+ *        -cli0 -d0 -di1 -nfc1 -i8 -ip0 -l80 -lp -npcs -nprs -npsl -sai \
+ *        -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts8 -il1
+ *
+ *
  * netsniff-ng
  *
  * High performance network sniffer for packet inspection
@@ -43,19 +50,19 @@
  * Internal data structures
  */
 
-typedef uint8_t               *ring_buff_bytes_t;
+typedef uint8_t *ring_buff_bytes_t;
 
 typedef struct ring_buff_private {
-        ring_buff_bytes_t      buffer;
-        uint32_t               len;
-        struct tpacket_req     layout;
-        struct iovec          *frames;
-        struct sockaddr_ll     params;
+	ring_buff_bytes_t buffer;
+	uint32_t len;
+	struct tpacket_req layout;
+	struct iovec *frames;
+	struct sockaddr_ll params;
 } ring_buff_t;
 
 typedef struct frame_map {
-        struct tpacket_hdr     tp_h __attribute__((aligned(TPACKET_ALIGNMENT)));
-        struct sockaddr_ll     s_ll __attribute__((aligned(TPACKET_ALIGNMENT)));
+	struct tpacket_hdr tp_h __attribute__ ((aligned(TPACKET_ALIGNMENT)));
+	struct sockaddr_ll s_ll __attribute__ ((aligned(TPACKET_ALIGNMENT)));
 } frame_map_t;
 
-#endif /* _NET_TYPES_H_ */
+#endif				/* _NET_TYPES_H_ */

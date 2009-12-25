@@ -1,4 +1,11 @@
-/* 
+/* XXX: Coding Style - use the tool indent with the following (Linux kernel
+ *                     code indentions)
+ *
+ * indent -nbad -bap -nbc -bbo -hnl -br -brs -c33 -cd33 -ncdb -ce -ci4  \
+ *        -cli0 -d0 -di1 -nfc1 -i8 -ip0 -l80 -lp -npcs -nprs -npsl -sai \
+ *        -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts8 -il1
+ *
+ *
  * netsniff-ng
  *
  * High performance network sniffer for packet inspection
@@ -39,18 +46,18 @@
  */
 
 struct fb_count {
-        uint64_t  frames;
-        uint64_t  bytes; 
+	uint64_t frames;
+	uint64_t bytes;
 };
 
 typedef struct ring_buff_private_stat {
-        struct fb_count  total;
-        struct fb_count  per_sec;
-        struct fb_count  per_min;
-        struct fb_count  s_per_sec;
-        struct fb_count  s_per_min;
-        uint16_t         t_elapsed;
-        struct timespec  m_start;
+	struct fb_count total;
+	struct fb_count per_sec;
+	struct fb_count per_min;
+	struct fb_count s_per_sec;
+	struct fb_count s_per_min;
+	uint16_t t_elapsed;
+	struct timespec m_start;
 } ring_buff_stat_t;
 
-#endif /* _NETSNIFF_NG_H_ */
+#endif				/* _NETSNIFF_NG_H_ */

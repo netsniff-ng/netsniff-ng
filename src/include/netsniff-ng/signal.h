@@ -1,4 +1,11 @@
-/* 
+/* XXX: Coding Style - use the tool indent with the following (Linux kernel
+ *                     code indentions)
+ *
+ * indent -nbad -bap -nbc -bbo -hnl -br -brs -c33 -cd33 -ncdb -ce -ci4  \
+ *        -cli0 -d0 -di1 -nfc1 -i8 -ip0 -l80 -lp -npcs -nprs -npsl -sai \
+ *        -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts8 -il1
+ *
+ *
  * netsniff-ng
  *
  * High performance network sniffer for packet inspection
@@ -37,7 +44,7 @@
 
 /* Function signatures */
 
-static inline void register_softirq(int sig, void (*softirq_handler)(int));
+static inline void register_softirq(int sig, void (*softirq_handler) (int));
 static inline void hold_softirq(int num_count, ...);
 static inline void restore_softirq(int num_count, ...);
 static inline void hold_softirq_pthread(int num_count, ...);
@@ -49,18 +56,18 @@ static inline void hold_softirq_pthread(int num_count, ...);
  * @signal:          signal number
  * @softirq_handler: signal handler function
  */
-static inline void register_softirq(int signal, void (*softirq_handler)(int))
+static inline void register_softirq(int signal, void (*softirq_handler) (int))
 {
-        sigset_t block_mask;
-        struct sigaction saction;
+	sigset_t block_mask;
+	struct sigaction saction;
 
-        sigfillset(&block_mask);
+	sigfillset(&block_mask);
 
-        saction.sa_handler = softirq_handler;
-        saction.sa_mask = block_mask;
-        saction.sa_flags = SA_RESTART;
-        
-        sigaction(signal, &saction, NULL);
+	saction.sa_handler = softirq_handler;
+	saction.sa_mask = block_mask;
+	saction.sa_flags = SA_RESTART;
+
+	sigaction(signal, &saction, NULL);
 }
 
 /**
@@ -69,22 +76,21 @@ static inline void register_softirq(int signal, void (*softirq_handler)(int))
  */
 static inline void hold_softirq(int num_count, ...)
 {
-        int i;
-        int signal;
+	int i;
+	int signal;
 
-        va_list al;
-        sigset_t block_mask;
+	va_list al;
+	sigset_t block_mask;
 
-        sigemptyset(&block_mask);
-        va_start(al, num_count);
+	sigemptyset(&block_mask);
+	va_start(al, num_count);
 
-        for(i = 1; i <= num_count; ++i)
-        {
-                signal = va_arg(al, int);
-                sigaddset(&block_mask, signal);
-        }
+	for (i = 1; i <= num_count; ++i) {
+		signal = va_arg(al, int);
+		sigaddset(&block_mask, signal);
+	}
 
-        sigprocmask(SIG_BLOCK, &block_mask, NULL);
+	sigprocmask(SIG_BLOCK, &block_mask, NULL);
 }
 
 /**
@@ -93,22 +99,21 @@ static inline void hold_softirq(int num_count, ...)
  */
 static inline void restore_softirq(int num_count, ...)
 {
-        int i;
-        int signal;
+	int i;
+	int signal;
 
-        va_list al;
-        sigset_t block_mask;
+	va_list al;
+	sigset_t block_mask;
 
-        sigemptyset(&block_mask);
-        va_start(al, num_count);
+	sigemptyset(&block_mask);
+	va_start(al, num_count);
 
-        for(i = 1; i <= num_count; ++i)
-        {
-                signal = va_arg(al, int);
-                sigaddset(&block_mask, signal);
-        }
+	for (i = 1; i <= num_count; ++i) {
+		signal = va_arg(al, int);
+		sigaddset(&block_mask, signal);
+	}
 
-        sigprocmask(SIG_UNBLOCK, &block_mask, NULL);
+	sigprocmask(SIG_UNBLOCK, &block_mask, NULL);
 }
 
 /**
@@ -117,22 +122,21 @@ static inline void restore_softirq(int num_count, ...)
  */
 static inline void hold_softirq_pthread(int num_count, ...)
 {
-        int i;
-        int signal;
+	int i;
+	int signal;
 
-        va_list al;
-        sigset_t block_mask;
+	va_list al;
+	sigset_t block_mask;
 
-        sigemptyset(&block_mask);
-        va_start(al, num_count);
+	sigemptyset(&block_mask);
+	va_start(al, num_count);
 
-        for(i = 1; i <= num_count; ++i)
-        {
-                signal = va_arg(al, int);
-                sigaddset(&block_mask, signal);
-        }
+	for (i = 1; i <= num_count; ++i) {
+		signal = va_arg(al, int);
+		sigaddset(&block_mask, signal);
+	}
 
-        pthread_sigmask(SIG_BLOCK, &block_mask, NULL);
+	pthread_sigmask(SIG_BLOCK, &block_mask, NULL);
 }
 
-#endif /* _NET_SIGNAL_H_ */
+#endif				/* _NET_SIGNAL_H_ */

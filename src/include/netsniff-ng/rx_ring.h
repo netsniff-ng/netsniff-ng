@@ -1,4 +1,11 @@
-/* 
+/* XXX: Coding Style - use the tool indent with the following (Linux kernel
+ *                     code indentions)
+ *
+ * indent -nbad -bap -nbc -bbo -hnl -br -brs -c33 -cd33 -ncdb -ce -ci4  \
+ *        -cli0 -d0 -di1 -nfc1 -i8 -ip0 -l80 -lp -npcs -nprs -npsl -sai \
+ *        -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts8 -il1
+ *
+ *
  * netsniff-ng
  *
  * High performance network sniffer for packet inspection
@@ -37,10 +44,10 @@
 
 /* Function signatures */
 
-extern void destroy_virt_ring(int sock, ring_buff_t *rb);
-extern void create_virt_ring(int sock, ring_buff_t *rb);
-extern void mmap_virt_ring(int sock, ring_buff_t *rb);
-extern void bind_dev_to_ring(int sock, int ifindex, ring_buff_t *rb);
+extern void destroy_virt_ring(int sock, ring_buff_t * rb);
+extern void create_virt_ring(int sock, ring_buff_t * rb);
+extern void mmap_virt_ring(int sock, ring_buff_t * rb);
+extern void bind_dev_to_ring(int sock, int ifindex, ring_buff_t * rb);
 extern void put_dev_into_promisc_mode(int sock, int ifindex);
 extern void inject_kernel_bpf(int sock, struct sock_filter *bpf, int len);
 extern int ethdev_to_ifindex(int sock, char *dev);
@@ -57,14 +64,14 @@ extern void parse_rules(char *rulefile, struct sock_filter **bpf, int *len);
  */
 static inline int mem_notify_user(struct iovec frame)
 {
-        struct tpacket_hdr *header = frame.iov_base;
+	struct tpacket_hdr *header = frame.iov_base;
 
-        /* XXX: Normally it should be TP_STATUS_USER, but frames larger than 
-                our defined framesize will be truncated and set to 
-                TP_STATUS_COPY or see other flags as well, so we grab them 
-                all in order to get most things working with our stats ... */ 
+	/* XXX: Normally it should be TP_STATUS_USER, but frames larger than 
+	   our defined framesize will be truncated and set to 
+	   TP_STATUS_COPY or see other flags as well, so we grab them 
+	   all in order to get most things working with our stats ... */
 
-        return (TP_STATUS_KERNEL != header->tp_status);
+	return (TP_STATUS_KERNEL != header->tp_status);
 }
 
 /**
@@ -74,8 +81,7 @@ static inline int mem_notify_user(struct iovec frame)
  */
 static inline void mem_notify_kernel(struct tpacket_hdr *header)
 {
-        header->tp_status = TP_STATUS_KERNEL;
+	header->tp_status = TP_STATUS_KERNEL;
 }
 
-#endif /* _NET_RX_RING_H_ */
-
+#endif				/* _NET_RX_RING_H_ */

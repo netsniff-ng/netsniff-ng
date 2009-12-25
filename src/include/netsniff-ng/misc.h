@@ -1,4 +1,11 @@
-/* 
+/* XXX: Coding Style - use the tool indent with the following (Linux kernel
+ *                     code indentions)
+ *
+ * indent -nbad -bap -nbc -bbo -hnl -br -brs -c33 -cd33 -ncdb -ce -ci4  \
+ *        -cli0 -d0 -di1 -nfc1 -i8 -ip0 -l80 -lp -npcs -nprs -npsl -sai \
+ *        -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts8 -il1
+ *
+ *
  * netsniff-ng
  *
  * High performance network sniffer for packet inspection
@@ -48,23 +55,21 @@ extern void header(void);
  * @after:            second timespec
  * @before:           first timespec
  */
-static inline int timespec_subtract(struct timespec *result, 
-        struct timespec *after, struct timespec *before)
+static inline int timespec_subtract(struct timespec *result,
+				    struct timespec *after,
+				    struct timespec *before)
 {
-        result->tv_nsec = after->tv_nsec - before->tv_nsec;
-    
-        if(result->tv_nsec < 0)
-        {
-                /* Borrow 1sec from 'tv_sec' if subtraction -ve */
-                result->tv_nsec += 1000000000;
-                result->tv_sec   = after->tv_sec - before->tv_sec - 1;
-                return (1);
-        }
-        else
-        {
-                result->tv_sec = after->tv_sec - before->tv_sec;
-                return (0);
-        }
+	result->tv_nsec = after->tv_nsec - before->tv_nsec;
+
+	if (result->tv_nsec < 0) {
+		/* Borrow 1sec from 'tv_sec' if subtraction -ve */
+		result->tv_nsec += 1000000000;
+		result->tv_sec = after->tv_sec - before->tv_sec - 1;
+		return (1);
+	} else {
+		result->tv_sec = after->tv_sec - before->tv_sec;
+		return (0);
+	}
 }
 
-#endif /* _NET_MISC_H_ */
+#endif				/* _NET_MISC_H_ */

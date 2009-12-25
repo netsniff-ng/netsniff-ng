@@ -1,4 +1,11 @@
-/* 
+/* XXX: Coding Style - use the tool indent with the following (Linux kernel
+ *                     code indentions)
+ *
+ * indent -nbad -bap -nbc -bbo -hnl -br -brs -c33 -cd33 -ncdb -ce -ci4  \
+ *        -cli0 -d0 -di1 -nfc1 -i8 -ip0 -l80 -lp -npcs -nprs -npsl -sai \
+ *        -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts8 -il1
+ *
+ *
  * netsniff-ng
  *
  * High performance network sniffer for packet inspection
@@ -47,8 +54,8 @@
 #define likely(x)               __builtin_expect((x), 1)
 #define unlikely(x)             __builtin_expect((x), 0)
 
-#define INTERVAL_COUNTER_REFR   1000  /* in ms */
-#define INTERNAL_UDS_QUEUE_LEN  50    /* max AF_UNIX clients for accept */
+#define INTERVAL_COUNTER_REFR   1000	/* in ms */
+#define INTERNAL_UDS_QUEUE_LEN  50	/* max AF_UNIX clients for accept */
 
 /* TODO */
 #define dbg(fmt, arg...)                                            \
@@ -65,7 +72,7 @@
 #define DIV_KBYTES(x)           ((x) / (1024LLU))
 #define DIV_MBYTES(x)           ((x) / (1048576LLU))
 #define DIV_GBYTES(x)           ((x) / (1073741824LLU))
-    
+
 #define DIV_US2HOURS(x)         ((x) / (3600000000LLU))
 #define MOD_HOURS2US(x)         ((x) % (3600000000LLU))
 #define DIV_US2MINUT(x)         ((x) / (60000000LLU))
@@ -82,4 +89,4 @@
 #define DIV_S2MINUT(x)          ((x) / (60LLU))
 #define MOD_MINUT2S(x)          ((x) % (60LLU))
 
-#endif /* _NET_MACROS_H_ */
+#endif				/* _NET_MACROS_H_ */

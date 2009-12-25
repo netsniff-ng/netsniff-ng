@@ -1,4 +1,11 @@
-/* 
+/* XXX: Coding Style - use the tool indent with the following (Linux kernel
+ *                     code indentions)
+ *
+ * indent -nbad -bap -nbc -bbo -hnl -br -brs -c33 -cd33 -ncdb -ce -ci4  \
+ *        -cli0 -d0 -di1 -nfc1 -i8 -ip0 -l80 -lp -npcs -nprs -npsl -sai \
+ *        -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts8 -il1
+ *
+ *
  * netsniff-ng
  *
  * High performance network sniffer for packet inspection
@@ -41,49 +48,57 @@
  */
 void help(void)
 {
-        printf("%s %s, <danborkmann@googlemail.com>\n\n", PROGNAME_STRING, VERSION_STRING);
-        printf("%s is a high performance network sniffer for packet\n", PROGNAME_STRING);
-        printf("inspection that acts as a raw socket sniffer with kernelspace\n");
-        printf("bpf and zero copy mode (rx ring).\n");
-        printf("\n");
-        printf("Options, required:\n");
-        printf("    -d <arg>    use device <arg> for capturing packets\n");
-        printf("    -f <arg>    use file <arg> as bpf filter\n");
-        printf("\n");
-        printf("Options for sys deamon:\n");
-        printf("    -D          run as sys daemon\n");
-        printf("    -P <arg>    use file <arg> as pidfile, req if -D\n");
-        printf("    -L <arg>    use file <arg> as logfile, req if -D\n");
-        printf("    -S <arg>    use file <arg> as uds inode, req if -D\n");
-        printf("\n");
-        printf("Options for CPU affinity:\n");
-        printf("    -b <arg>    bind process to specific CPU/CPU-range\n");
-        printf("    -B <arg>    forbid process to use specific CPU/CPU-range\n");
-        printf("\n");
-        printf("Options for packet printing:\n");
-        printf("    -c          print captured packets\n");
-        printf("    -cc         print captured packets, more information\n");
-        printf("    -ccc        print captured packets, most information\n");
-        printf("\n");
-        printf("Options, misc:\n");
-        printf("    -v          prints out version\n");
-        printf("    -h          prints out this help\n");
-        printf("\n");
-        printf("Info:\n");
-        printf("    - Sending a SIGUSR1 will show current packet statistics\n");
-        printf("    - Sending a SIGUSR2 will toggle silent and packet printing mode\n");
-        printf("    - Rule creation can be done with \'tcpdump -dd <rule>\',\n");
-        printf("      see examples, or, of course manually by hand\n");
-        printf("    - To access the running sys daemon you can use ipc via AF_UNIX\n");
-        printf("    - For more help type \'man netsniff-ng\'\n");
-        printf("\n");
-        printf("Please report bugs to <danborkmann@googlemail.com>\n");
-        printf("Copyright (C) 2009, 2010 Daniel Borkmann\n");
-        printf("License: GNU GPL version 2\n");
-        printf("This is free software: you are free to change and redistribute it.\n");
-        printf("There is NO WARRANTY, to the extent permitted by law.\n");
-    
-        exit(EXIT_SUCCESS);
+	printf("%s %s, <danborkmann@googlemail.com>\n\n", PROGNAME_STRING,
+	       VERSION_STRING);
+	printf("%s is a high performance network sniffer for packet\n",
+	       PROGNAME_STRING);
+	printf
+	    ("inspection that acts as a raw socket sniffer with kernelspace\n");
+	printf("bpf and zero copy mode (rx ring).\n");
+	printf("\n");
+	printf("Options, required:\n");
+	printf("    -d <arg>    use device <arg> for capturing packets\n");
+	printf("    -f <arg>    use file <arg> as bpf filter\n");
+	printf("\n");
+	printf("Options for sys deamon:\n");
+	printf("    -D          run as sys daemon\n");
+	printf("    -P <arg>    use file <arg> as pidfile, req if -D\n");
+	printf("    -L <arg>    use file <arg> as logfile, req if -D\n");
+	printf("    -S <arg>    use file <arg> as uds inode, req if -D\n");
+	printf("\n");
+	printf("Options for CPU affinity:\n");
+	printf("    -b <arg>    bind process to specific CPU/CPU-range\n");
+	printf
+	    ("    -B <arg>    forbid process to use specific CPU/CPU-range\n");
+	printf("\n");
+	printf("Options for packet printing:\n");
+	printf("    -c          print captured packets\n");
+	printf("    -cc         print captured packets, more information\n");
+	printf("    -ccc        print captured packets, most information\n");
+	printf("\n");
+	printf("Options, misc:\n");
+	printf("    -v          prints out version\n");
+	printf("    -h          prints out this help\n");
+	printf("\n");
+	printf("Info:\n");
+	printf("    - Sending a SIGUSR1 will show current packet statistics\n");
+	printf
+	    ("    - Sending a SIGUSR2 will toggle silent and packet printing mode\n");
+	printf
+	    ("    - Rule creation can be done with \'tcpdump -dd <rule>\',\n");
+	printf("      see examples, or, of course manually by hand\n");
+	printf
+	    ("    - To access the running sys daemon you can use ipc via AF_UNIX\n");
+	printf("    - For more help type \'man netsniff-ng\'\n");
+	printf("\n");
+	printf("Please report bugs to <danborkmann@googlemail.com>\n");
+	printf("Copyright (C) 2009, 2010 Daniel Borkmann\n");
+	printf("License: GNU GPL version 2\n");
+	printf
+	    ("This is free software: you are free to change and redistribute it.\n");
+	printf("There is NO WARRANTY, to the extent permitted by law.\n");
+
+	exit(EXIT_SUCCESS);
 }
 
 /**
@@ -91,18 +106,22 @@ void help(void)
  */
 void version(void)
 {
-        printf("%s %s, <danborkmann@googlemail.com>\n\n", PROGNAME_STRING, VERSION_STRING);
-        printf("%s is a high performance network sniffer for packet\n", PROGNAME_STRING);
-        printf("inspection that acts as a raw socket sniffer with kernelspace\n");
-        printf("bpf and zero copy mode (rx ring).\n");
-        printf("\n");
-        printf("Please report bugs to <danborkmann@googlemail.com>\n");
-        printf("Copyright (C) 2009, 2010 Daniel Borkmann\n");
-        printf("License: GNU GPL version 2\n");
-        printf("This is free software: you are free to change and redistribute it.\n");
-        printf("There is NO WARRANTY, to the extent permitted by law.\n");
-    
-        exit(EXIT_SUCCESS);
+	printf("%s %s, <danborkmann@googlemail.com>\n\n", PROGNAME_STRING,
+	       VERSION_STRING);
+	printf("%s is a high performance network sniffer for packet\n",
+	       PROGNAME_STRING);
+	printf
+	    ("inspection that acts as a raw socket sniffer with kernelspace\n");
+	printf("bpf and zero copy mode (rx ring).\n");
+	printf("\n");
+	printf("Please report bugs to <danborkmann@googlemail.com>\n");
+	printf("Copyright (C) 2009, 2010 Daniel Borkmann\n");
+	printf("License: GNU GPL version 2\n");
+	printf
+	    ("This is free software: you are free to change and redistribute it.\n");
+	printf("There is NO WARRANTY, to the extent permitted by law.\n");
+
+	exit(EXIT_SUCCESS);
 }
 
 /**
@@ -110,40 +129,36 @@ void version(void)
  */
 void header(void)
 {
-        int ret;
-        size_t len;
-        char *cpu_string;
+	int ret;
+	size_t len;
+	char *cpu_string;
 
-        struct sched_param sp;
+	struct sched_param sp;
 
-        len = sysconf(_SC_NPROCESSORS_CONF) + 1;
+	len = sysconf(_SC_NPROCESSORS_CONF) + 1;
 
-        cpu_string = malloc(len);
-        if(!cpu_string)
-        {
-                perr("no mem left\n");
-                exit(EXIT_FAILURE);
-        }
+	cpu_string = malloc(len);
+	if (!cpu_string) {
+		perr("no mem left\n");
+		exit(EXIT_FAILURE);
+	}
 
-        ret = sched_getparam(getpid(), &sp);
-        if(ret)
-        {
-                perr("Cannot determine sched prio\n");
-                exit(EXIT_FAILURE);
-        }
+	ret = sched_getparam(getpid(), &sp);
+	if (ret) {
+		perr("Cannot determine sched prio\n");
+		exit(EXIT_FAILURE);
+	}
 
-        dbg("%s %s -- pid: %d\n", PROGNAME_STRING, VERSION_STRING, 
-                (int) getpid());
+	dbg("%s %s -- pid: %d\n", PROGNAME_STRING, VERSION_STRING,
+	    (int)getpid());
 
-        dbg("nice: %d, scheduler: %d prio %d\n", 
-                getpriority(PRIO_PROCESS, getpid()), 
-                sched_getscheduler(getpid()), 
-                sp.sched_priority);
+	dbg("nice: %d, scheduler: %d prio %d\n",
+	    getpriority(PRIO_PROCESS, getpid()),
+	    sched_getscheduler(getpid()), sp.sched_priority);
 
-        dbg("%ld of %ld CPUs online, affinity bitstring: %s\n", 
-                sysconf(_SC_NPROCESSORS_ONLN), 
-                sysconf(_SC_NPROCESSORS_CONF), 
-                get_cpu_affinity(cpu_string, len));
- 
-        free(cpu_string);
+	dbg("%ld of %ld CPUs online, affinity bitstring: %s\n",
+	    sysconf(_SC_NPROCESSORS_ONLN),
+	    sysconf(_SC_NPROCESSORS_CONF), get_cpu_affinity(cpu_string, len));
+
+	free(cpu_string);
 }
