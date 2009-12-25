@@ -1221,9 +1221,23 @@ int main(int argc, char **argv)
         header();
 
         bpf_len = 0;
+
         bpf = (struct sock_filter **) malloc(sizeof(*bpf));
+        if(bpf == NULL)
+        {
+                perr("Cannot allocate socket filter\n");
+                exit(EXIT_FAILURE);
+        }
+
+        memset(bpf, 0, sizeof(**bpf));
     
         rb = (ring_buff_t *) malloc(sizeof(*rb));
+        if(rb == NULL)
+        {
+                perr("Cannot allocate ring buffer\n");
+                exit(EXIT_FAILURE);
+        }
+
         memset(rb, 0, sizeof(*rb));
         memset(&netstat, 0, sizeof(netstat));
     
