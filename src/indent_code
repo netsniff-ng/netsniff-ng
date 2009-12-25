@@ -2,6 +2,8 @@
 
 files=`find . -type f | egrep "*.c$|*.h$"`
 
+echo "Indenting `echo $files | wc -w` files ..."
+
 for file in $files
 do
         indent -nbad -bap -nbc -bbo -hnl -br -brs -c33 -cd33 -ncdb -ce   \
