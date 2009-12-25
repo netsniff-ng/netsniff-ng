@@ -25,7 +25,7 @@
 
 /*
  * Contains: 
- *    Macros and defines
+ *    Macros, defines and versioning stuff
  */
 
 #ifndef _NET_MACROS_H_
@@ -50,6 +50,7 @@
 #define INTERVAL_COUNTER_REFR   1000  /* in ms */
 #define INTERNAL_UDS_QUEUE_LEN  50    /* max AF_UNIX clients for accept */
 
+/* TODO */
 #define dbg(fmt, arg...)                                            \
                                 fprintf(stderr, fmt, ## arg);
 
