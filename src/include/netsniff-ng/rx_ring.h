@@ -31,6 +31,8 @@
 #ifndef _NET_RX_RING_H_
 #define _NET_RX_RING_H_
 
+#include <linux/filter.h>
+
 #include <netsniff-ng/types.h>
 
 /* Function signatures */

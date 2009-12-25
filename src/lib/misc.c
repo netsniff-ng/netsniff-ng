@@ -28,6 +28,11 @@
  *    Some miscellaneous stuff
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#include <netsniff-ng/macros.h>
 #include <netsniff-ng/system.h>
 #include <netsniff-ng/misc.h>
 

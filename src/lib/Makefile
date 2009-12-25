@@ -5,7 +5,7 @@
 CC               = gcc
 LIBS             = -lpthread -lrt
 INCLUDE          = -I../include
-CFLAGS           = -Wall -O2 -g
+CFLAGS           = -Wall -O2
 
 OBJECTS_LIB      = bpf_code.o export.o misc.o print.o rx_ring.o system.o
 

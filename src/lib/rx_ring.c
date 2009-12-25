@@ -28,6 +28,24 @@
  *    Mostly RX_RING related stuff and other networking code
  */
 
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <errno.h>
+#include <unistd.h>
+
+#include <net/if.h>
+#include <arpa/inet.h>
+
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+
+#include <linux/if_ether.h>
+#include <linux/if_packet.h>
+#include <linux/filter.h>
+
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/types.h>
 #include <netsniff-ng/rx_ring.h>

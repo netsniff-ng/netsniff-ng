@@ -37,32 +37,18 @@
 #include <assert.h>
 #include <ctype.h>
 #include <pthread.h>
-
-#include <net/if.h>
-#include <arpa/inet.h>
-
-#include <linux/if_ether.h>
-#include <linux/if_packet.h>
-#include <linux/filter.h>
-#include <linux/futex.h>
-
-#include <sys/un.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <sys/types.h>  
-#include <sys/mman.h>
-#include <sys/poll.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-
 #include <netsniff-ng.h>
 
-#include <netsniff-ng/macros.h>
-#include <netsniff-ng/rx_ring.h>
-#include <netsniff-ng/system.h>
-#include <netsniff-ng/signal.h>
-#include <netsniff-ng/types.h>
+#include <sys/un.h>
+#include <sys/types.h>  
+#include <sys/poll.h>
+
 #include <netsniff-ng/misc.h>
+#include <netsniff-ng/system.h>
+#include <netsniff-ng/rx_ring.h>
+#include <netsniff-ng/signal.h>
+#include <netsniff-ng/macros.h>
+#include <netsniff-ng/types.h>
 #include <netsniff-ng/print.h>
 
 /*

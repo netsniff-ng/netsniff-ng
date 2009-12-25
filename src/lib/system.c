@@ -28,9 +28,21 @@
  *    System related stuff like tweaking of scheduling params or CPU affinity
  */
 
+#define _GNU_SOURCE
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sched.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <assert.h>
+#include <pthread.h>
+#include <errno.h>
+
 #include <sys/resource.h>
 
+#include <netsniff-ng/macros.h>
 #include <netsniff-ng/system.h>
 
 /**

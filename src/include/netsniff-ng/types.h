@@ -31,6 +31,14 @@
 #ifndef _NET_TYPES_H_
 #define _NET_TYPES_H_
 
+#include <stdint.h>
+
+#include <sys/socket.h>
+
+#include <linux/if_ether.h>
+#include <linux/if_packet.h>
+#include <linux/filter.h>
+
 /*
  * Internal data structures
  */

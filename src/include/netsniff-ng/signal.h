@@ -31,6 +31,7 @@
 #ifndef _NET_SIGNAL_H_
 #define _NET_SIGNAL_H_
 
+#include <stdio.h>
 #include <stdarg.h>
 #include <signal.h>
 

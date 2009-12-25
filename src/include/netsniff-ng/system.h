@@ -32,6 +32,7 @@
 #define _NET_SYSTEM_H_
 
 #include <sched.h>
+
 #include <sys/resource.h>
 
 #define DEFAULT_SCHED_POLICY	SCHED_FIFO

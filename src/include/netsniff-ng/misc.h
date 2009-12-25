@@ -31,6 +31,9 @@
 #ifndef _NET_MISC_H_
 #define _NET_MISC_H_
 
+#include <time.h>
+#include <sys/time.h>
+
 /* Function signatures */
 
 extern void help(void);

@@ -14,7 +14,9 @@
 CC               = gcc
 LIBS             = -lpthread -lrt
 INCLUDE          = -Iinclude
-CFLAGS           = -Wall -O2 -g
+CFLAGS           = -Wall -O2
+
+BUILD_FOLDERS    = lib
 
 NAME_NETSNIFF    = netsniff-ng
 OBJECTS_NETSNIFF = netsniff-ng.o
@@ -27,9 +29,10 @@ MANDIR_LOCAL     = doc
 all: netsniff-ng
 
 netsniff-ng: $(OBJECTS_NETSNIFF)
-	$(CC) -o $(NAME_NETSNIFF) $(OBJECTS_NETSNIFF) $(LIBS)
+	$(CC) -o $(NAME_NETSNIFF) $(OBJECTS_NETSNIFF) $(shell find $(BUILD_FOLDERS) -name "*.o") $(LIBS)
 
 %.o: %.c
+	-for d in $(BUILD_FOLDERS); do (cd $$d; $(MAKE) $(MFLAGS) all); done
 	$(CC) -c $(CFLAGS) $(INCLUDE) $<
 
 install:
@@ -40,6 +43,7 @@ install:
 	install -D $(MANDIR_LOCAL)/$(NAME_NETSNIFF).8.gz $(DESTDIR)/$(MANDIR)/$(NAME_NETSNIFF).8.gz
 
 clean:
+	-for d in $(BUILD_FOLDERS); do (cd $$d; $(MAKE) $(MFLAGS) clean); done
 	rm *.o $(NAME_NETSNIFF) $(MANDIR_LOCAL)/$(NAME_NETSNIFF).8.gz || true
 
 uninstall:
