@@ -236,7 +236,7 @@ static inline void chk_root(void)
         if(geteuid() != 0)
         {
                 err("dude, you are not root!\n");
-                exit(1);
+                exit(EXIT_FAILURE);
         }
 }
 
@@ -343,7 +343,7 @@ static int set_own_cpu_affinity(const char *str)
         if(ret)
         {
                 perr("Can't set this cpu affinity: %s\n", str);
-                exit(1);
+                exit(EXIT_FAILURE);
         }
 
         return (0);
@@ -388,7 +388,7 @@ static int set_own_proc_prio(int prio)
         if(ret)
         {
                 perr("Can't set nice val %i: %d\n", prio, ret);
-                exit(1);
+                exit(EXIT_FAILURE);
         }
 
         return 0;
@@ -483,7 +483,7 @@ static void help(void)
         printf("This is free software: you are free to change and redistribute it.\n");
         printf("There is NO WARRANTY, to the extent permitted by law.\n");
     
-        exit(0);
+        exit(EXIT_SUCCESS);
 }
 
 static void version(void)
@@ -499,7 +499,7 @@ static void version(void)
         printf("This is free software: you are free to change and redistribute it.\n");
         printf("There is NO WARRANTY, to the extent permitted by law.\n");
     
-        exit(0);
+        exit(EXIT_SUCCESS);
 }
 
 static void header(void)
@@ -514,14 +514,14 @@ static void header(void)
         if(!cpu_string)
         {
                 perr("no mem left\n");
-                exit(1);
+                exit(EXIT_FAILURE);
         }
 
         ret = sched_getparam(getpid(), &sp);
         if(ret)
         {
                 perr("Cannot determine sched prio\n");
-                exit(1);
+                exit(EXIT_FAILURE);
         }
 
         dbg("%s %s -- pid: %d\n", PROGNAME_STRING, VERSION_STRING, (int) getpid());
@@ -593,7 +593,7 @@ static void *uds_thread(void *psock)
         close(sock);
     
         dbg("unix domain socket server: quitting thread\n");
-        pthread_exit(0);
+        pthread_exit(EXIT_SUCCESS);
 }
 
 static void *start_uds_server(void *psockfile)
@@ -612,7 +612,7 @@ static void *start_uds_server(void *psockfile)
         if(sock < 0)
         {
                 perr("cannot create uds socket %d - ", errno);
-                pthread_exit(0);
+                pthread_exit(EXIT_SUCCESS);
         }
     
         local.sun_family = AF_UNIX;
@@ -627,14 +627,14 @@ static void *start_uds_server(void *psockfile)
         if(ret < 0)
         {
                 perr("cannot bind uds socket %d - ", errno);
-                pthread_exit(0);
+                pthread_exit(EXIT_SUCCESS);
         }
     
         ret = listen(sock, INTERNAL_UDS_QUEUE_LEN);
         if(ret < 0)
         {
                 perr("cannot set up uds listening queue %d - ", errno);
-                pthread_exit(0);
+                pthread_exit(EXIT_SUCCESS);
         }
     
         while(1)
@@ -646,7 +646,7 @@ static void *start_uds_server(void *psockfile)
                 if(sock2 < 0)
                 {
                         perr("cannot do accept on uds socket %d - ", errno);
-                        pthread_exit(0);
+                        pthread_exit(EXIT_SUCCESS);
                 }
         
                 dbg("unix domain socket server: connected to client\n");
@@ -656,14 +656,14 @@ static void *start_uds_server(void *psockfile)
                 if(ret < 0)
                 {
                         perr("uds server: error creating thread - ");
-                        pthread_exit(0);
+                        pthread_exit(EXIT_SUCCESS);
                 }
                 
                 pthread_detach(tid);
         }
     
         dbg("unix domain socket server: quit\n");
-        pthread_exit(0);
+        pthread_exit(EXIT_SUCCESS);
 }
 
 static int undaemonize(const char *pidfile)
@@ -700,7 +700,7 @@ static int daemonize(const char *pidfile, const char *logfile, const char *sockf
         {
                 err("daemon already started. kill daemon and delete pid file %s\n", pidfile);
                 close(fd);
-                exit(1);
+                exit(EXIT_FAILURE);
         }
     
         umask(022);
@@ -709,38 +709,38 @@ static int daemonize(const char *pidfile, const char *logfile, const char *sockf
         if(pid < 0)
         {
                 perr("fork: %d - ", pid);
-                exit(1);
+                exit(EXIT_FAILURE);
         }
     
         if(pid > 0)
         {
-                exit(0);
+                exit(EXIT_SUCCESS);
         }
     
         ret = setsid();
         if(ret < 0)
         {
                 perr("setsid: %d - ", ret);
-                exit(1);
+                exit(EXIT_FAILURE);
         }
     
         pid = fork();
         if(pid < 0)
         {
                 perr("fork: %d - ", pid);
-                exit(1);
+                exit(EXIT_FAILURE);
         }
     
         if(pid > 0)
         {
-                exit(0);
+                exit(EXIT_SUCCESS);
         }
     
         ret = chdir("/");
         if(ret < 0)
         {
                 perr("chdir: %d - ", ret);
-                exit(1);
+                exit(EXIT_FAILURE);
         }
     
         cpid_len = snprintf(cpid, sizeof(cpid), "%d", getpid());
@@ -749,7 +749,7 @@ static int daemonize(const char *pidfile, const char *logfile, const char *sockf
         if(fd < 0)
         {
                 perr("open pidfile: %d - ", fd);
-                exit(1);
+                exit(EXIT_FAILURE);
         }
 
         bytes_written = write(fd, cpid, cpid_len);
@@ -758,7 +758,7 @@ static int daemonize(const char *pidfile, const char *logfile, const char *sockf
         {
                 perr("write failed only wrote %i: %d - ", bytes_written, fd);
                 close(fd);
-                exit(1);
+                exit(EXIT_FAILURE);
         }
 
         close(fd);
@@ -767,7 +767,7 @@ static int daemonize(const char *pidfile, const char *logfile, const char *sockf
         if(fd < 0)
         {
                 perr("open logfile: %d - ", fd);
-                exit(1);
+                exit(EXIT_FAILURE);
         }
     
         if(fd != 2)
@@ -780,7 +780,7 @@ static int daemonize(const char *pidfile, const char *logfile, const char *sockf
         if(fd < 0)
         {
                 perr("open /dev/null: %d - ", fd);
-                exit(1);
+                exit(EXIT_FAILURE);
         }
     
         dup2(fd, 0);
@@ -807,7 +807,7 @@ static int daemonize(const char *pidfile, const char *logfile, const char *sockf
         {
                 perr("cannot create thread %d - ", errno);
                 undaemonize(pidfile);            
-                exit(1);
+                exit(EXIT_FAILURE);
         }
     
         pthread_detach(tid);
@@ -862,7 +862,7 @@ __retry_sso:
         {
                 perr("setsockopt: creation of rx ring failed: %d - ", errno);
                 close(sock);
-                exit(1);
+                exit(EXIT_FAILURE);
         }
     
         rb->len = rb->layout.tp_block_size * rb->layout.tp_block_nr;
@@ -882,7 +882,7 @@ static void mmap_virt_ring(int sock, ring_buff_t *rb)
                 perr("mmap: cannot mmap the rx ring: %d - ", errno);
                 destroy_virt_ring(sock, rb);
                 close(sock);
-                exit(1);
+                exit(EXIT_FAILURE);
         }
 }
 
@@ -905,7 +905,7 @@ static void bind_dev_to_ring(int sock, int ifindex, ring_buff_t *rb)
         {
                 perr("bind: cannot bind device: %d - ", errno);
                 close(sock);
-                exit(1);
+                exit(EXIT_FAILURE);
         }
 }
 
@@ -927,7 +927,7 @@ static void put_dev_into_promisc_mode(int sock, int ifindex)
         {
                 perr("setsockopt: cannot set dev %d to promisc mode: %d - ", ifindex, errno);
                 close(sock);
-                exit(1);
+                exit(EXIT_FAILURE);
         }
 }
 
@@ -946,7 +946,7 @@ static void inject_kernel_bpf(int sock, struct sock_filter *bpf_code, int len)
         {
                 perr("setsockopt: filter cannot be injected: %d - ", errno);
                 close(sock);
-                exit(1);
+                exit(EXIT_FAILURE);
         }
 }
 
@@ -963,7 +963,7 @@ static int ethdev_to_ifindex(int sock, char *dev)
         {
                 perr("ioctl: cannot determine dev number for %s: %d - ", ethreq.ifr_name, errno);
                 close(sock);
-                exit(1);
+                exit(EXIT_FAILURE);
         }
     
         return ethreq.ifr_ifindex;
@@ -1007,7 +1007,7 @@ static int alloc_pf_sock()
         if(sock < 0)
         {
                 perr("alloc pf socket");
-                exit(1);
+                exit(EXIT_FAILURE);
         }
         
         return sock;
@@ -1027,7 +1027,7 @@ static void parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
         if(!fp)
         {
                 perr("cannot read rulefile - ");
-                exit(1);
+                exit(EXIT_FAILURE);
         }
         
         dbg("parsing rulefile %s\n", rulefile);
@@ -1176,13 +1176,13 @@ int main(int argc, char **argv)
         if(argc < 2 || !dev || !rulefile)
         {
                 help();
-                exit(1);
+                exit(EXIT_FAILURE);
         }
     
         if(sysdeamon_v && (!pidfile || !logfile || !sockfile))
         {
                 help();
-                exit(1);    
+                exit(EXIT_FAILURE);    
         }
     
         for(i = optind; i < argc; ++i)
@@ -1192,7 +1192,7 @@ int main(int argc, char **argv)
     
         if(optind < argc)
         {
-                exit(1);
+                exit(EXIT_FAILURE);
         }
     
         /* We are only allowed to do these nasty things as root ;) */
@@ -1214,7 +1214,7 @@ int main(int argc, char **argv)
                 if(ret != 0)
                 {
                         err("daemonize failed");
-                        exit(1);
+                        exit(EXIT_FAILURE);
                 }
         }
 
@@ -1257,7 +1257,7 @@ int main(int argc, char **argv)
         if(ret < 0)
         {
                 perr("cannot set itimer - ");
-                exit(1);
+                exit(EXIT_FAILURE);
         }
         
         clock_gettime(CLOCK_REALTIME, &netstat.m_start);
