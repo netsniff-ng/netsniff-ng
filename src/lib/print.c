@@ -25,43 +25,8 @@
 
 /*
  * Contains: 
- *    Some miscellaneous stuff
+ *    Packet printing routines
  */
 
-#ifndef _NET_MISC_H_
-#define _NET_MISC_H_
+#include <netsniff-ng/print.h>
 
-/* Function signatures */
-
-extern void help(void);
-extern void version(void);
-extern void header(void);
-
-/* Inline stuff */
-
-/**
- * timespec_subtract - Subtracts two timespecs
- * @result:           result
- * @after:            second timespec
- * @before:           first timespec
- */
-static inline int timespec_subtract(struct timespec *result, 
-        struct timespec *after, struct timespec *before)
-{
-        result->tv_nsec = after->tv_nsec - before->tv_nsec;
-    
-        if(result->tv_nsec < 0)
-        {
-                /* Borrow 1sec from 'tv_sec' if subtraction -ve */
-                result->tv_nsec += 1000000000;
-                result->tv_sec   = after->tv_sec - before->tv_sec - 1;
-                return (1);
-        }
-        else
-        {
-                result->tv_sec = after->tv_sec - before->tv_sec;
-                return (0);
-        }
-}
-
-#endif /* _NET_MISC_H_ */

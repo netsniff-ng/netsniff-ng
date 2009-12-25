@@ -32,7 +32,5 @@
 #define _NET_PRINT_H_
 
 /* Function signatures */
-/* XXX: All stuff is inlined ... since it is not _always_inline we let gcc 
-        decide whether to inline or not */
 
 #endif /* _NET_PRINT_H_ */

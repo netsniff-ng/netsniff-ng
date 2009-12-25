@@ -35,13 +35,13 @@
 #include <signal.h>
 
 /* Function signatures */
-/* XXX: All stuff is inlined ... since it is not _always_inline we let gcc 
-        decide whether to inline or not */
 
-static void register_softirq(int sig, void (*softirq_handler)(int));
+static inline void register_softirq(int sig, void (*softirq_handler)(int));
 static inline void hold_softirq(int num_count, ...);
 static inline void restore_softirq(int num_count, ...);
 static inline void hold_softirq_pthread(int num_count, ...);
+
+/* Inline stuff */
 
 /**
  * register_softirq - Registers signal + signal handler function
