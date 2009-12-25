@@ -69,13 +69,14 @@
 
 #include <netsniff-ng.h>
 
+/* We're not nice to others ;) take the full timeslice by default... */
+#define DEFAULT_SCHED_POLICY	SCHED_FIFO
+#define DEFAULT_SCHED_PRIO	sched_get_priority_max(DEFAULT_SCHED_POLICY)
+#define DEFAULT_PROCESS_PRIO	(-20)
+
 /*
  * Macros and defines
  */
-
-#ifndef NZERO
-# define NZERO                  20
-#endif /* NZERO */
 
 #define likely(x)               __builtin_expect((x), 1)
 #define unlikely(x)             __builtin_expect((x), 0)
@@ -375,59 +376,56 @@ static char *get_own_cpu_affinity(char *cpu_string, size_t len)
         return (cpu_string);
 }
 
-static int set_own_proc_prio(void)
+static int set_own_proc_prio(int prio)
 {
         int ret;
 
-        /* We're not nice to others ;) take the full timeslice ... */
-        ret = setpriority(PRIO_PROCESS, getpid(), -20);
+        /* 
+         * setpriority() is clever, even if you put a nice value which is out of range
+         * it corrects it to the closest valid nice value
+         */
+        ret = setpriority(PRIO_PROCESS, getpid(), prio);
         if(ret)
         {
-                perr("Can't set nice val: %d\n", ret);
+                perr("Can't set nice val %i: %d\n", prio, ret);
                 exit(1);
         }
 
         return 0;
 }
 
-static int set_own_sched_type(void)
-{
-        int ret;
-        struct sched_param sp;
-
-        ret = sched_setscheduler(getpid(), SCHED_FIFO, &sp);
-        if(ret)
-        {
-                perr("Cannot change scheduler type!\n");
-                return -1;
-        }
-
-        return 0;
-}
-
-static int set_own_sched_prio(void)
+static int set_own_sched_status(int policy, int priority)
 {
         struct sched_param sp;
-        int policy, max, ret;
+        int ret, min_prio, max_prio;
 
-        policy = sched_getscheduler(getpid());
-        if(policy == -1)
+        max_prio = sched_get_priority_max(policy);
+        min_prio = sched_get_priority_min(policy);
+        
+        if (max_prio == -1 || min_prio == -1)
         {
-                perr("Cannot determine scheduler type!\n");
-                return -1;
+                perr("Cannot determine max/min scheduler prio!\n");
         }
-
-        max = sched_get_priority_max(policy);
-        if(max == -1)
+        else if (priority < min_prio)
         {
-                perr("Cannot determine max scheduler prio!\n");
-                return -1;
+                priority = min_prio;
+        }
+        else if(priority > max_prio)
+        {
+                priority = max_prio;
         }
 
         memset(&sp, 0, sizeof(sp));
-        sp.sched_priority = max;
+        sp.sched_priority = priority;
 
-        ret = sched_setparam(getpid(), &sp);
+        ret = sched_setscheduler(0, policy, &sp);
+        if (ret)
+        {
+                perr("Cannot set scheduler policy!\n");
+                return -1;
+        }
+
+        ret = sched_setparam(0, &sp);
         if(ret)
         {
                 perr("Cannot set scheduler prio!\n");
@@ -1201,9 +1199,8 @@ int main(int argc, char **argv)
         chk_root();
 
         /* Scheduler timeslice & prio tuning */
-        set_own_proc_prio();
-        set_own_sched_type();
-        set_own_sched_prio();
+        set_own_proc_prio(DEFAULT_PROCESS_PRIO);
+        set_own_sched_status(DEFAULT_SCHED_POLICY, DEFAULT_SCHED_PRIO);	
 
         register_softirq(SIGINT,  &softirq_handler);
         register_softirq(SIGALRM, &softirq_handler);
@@ -1251,8 +1248,6 @@ int main(int argc, char **argv)
         pfd.fd = sock;
         pfd.revents = i = 0;
         pfd.events = POLLIN | POLLERR;
-    
-        /* change_nice(0); */
     
         val_r.it_value.tv_sec = INTERVAL_COUNTER_REFR / 1000;
         val_r.it_value.tv_usec = (INTERVAL_COUNTER_REFR * 1000) % 1000000;    
