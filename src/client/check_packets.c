@@ -18,6 +18,11 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
+/*
+ * XXX: This is just an example how to extract data from netsniff-ng daemon ...
+ *      ... this might be obsolete due to API changes!
+ */
+
 #define PROGNAME_STRING "check_packets"
 #define VERSION_STRING  "0.5.3.1"
 
