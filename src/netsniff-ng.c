@@ -580,7 +580,7 @@ static void *uds_thread(void *psock)
         hold_softirq_pthread();
         
         dbg("unix domain socket server: entering thread\n");
-        sock = (int) psock;
+        sock = *((int *)psock);
     
         pthread_mutex_lock(&gs_loc_mutex);
     
@@ -654,7 +654,7 @@ static void *start_uds_server(void *psockfile)
                 dbg("unix domain socket server: connected to client\n");
         
                 /* We're not interested in joining... so a single thread id is sufficient */
-                ret = pthread_create(&tid, NULL, uds_thread, (void *) sock2);
+                ret = pthread_create(&tid, NULL, uds_thread, &sock2);
                 if(ret < 0)
                 {
                         perr("uds server: error creating thread - ");
@@ -686,6 +686,8 @@ static int daemonize(const char *pidfile, const char *logfile, const char *sockf
 {
         int fd;
         int ret;
+        int cpid_len;
+        int bytes_written;
         
         char cpid[32] = {0};
         pid_t pid;
@@ -743,7 +745,7 @@ static int daemonize(const char *pidfile, const char *logfile, const char *sockf
                 exit(1);
         }
     
-        snprintf(cpid, sizeof(cpid), "%d", getpid());
+        cpid_len = snprintf(cpid, sizeof(cpid), "%d", getpid());
     
         fd = open(pidfile, O_CREAT | O_TRUNC | O_WRONLY, 0644);
         if(fd < 0)
@@ -751,8 +753,16 @@ static int daemonize(const char *pidfile, const char *logfile, const char *sockf
                 perr("open pidfile: %d - ", fd);
                 exit(1);
         }
-    
-        write(fd, cpid, strlen(cpid));
+
+        bytes_written = write(fd, cpid, cpid_len);
+
+        if (bytes_written != cpid_len)
+        {
+                perr("write failed only wrote %i: %d - ", bytes_written, fd);
+                close(fd);
+                exit(1);
+        }
+
         close(fd);
     
         fd = open(logfile, O_CREAT | O_APPEND | O_WRONLY, 0644);
