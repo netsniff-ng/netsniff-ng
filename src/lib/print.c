@@ -46,6 +46,13 @@
  *    These functions will be registered during startup to a global list 
  *    ids --> will be shown within -h or -ids and can be selected by user, 
  *    so we have kinda plugin system.
+ *
+ * XXX: Some more thoughts:
+ *    We have a plugin system... plugin/ folder. A plugin consists of 
+ *    a static BPF code to load and a special print function, so we can define 
+ *    special things for special purposes.
+ *    These plugins will be called via command param and the ids are shown 
+ *    within help (-h), so users can contribute special plugins ;)
  */
 
 #include <stdio.h>
