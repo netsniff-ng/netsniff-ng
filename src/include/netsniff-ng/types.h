@@ -41,6 +41,7 @@
 #include <stdint.h>
 
 #include <sys/socket.h>
+#include <sys/poll.h>
 
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
@@ -64,5 +65,7 @@ typedef struct frame_map {
 	struct tpacket_hdr tp_h __attribute__ ((aligned(TPACKET_ALIGNMENT)));
 	struct sockaddr_ll s_ll __attribute__ ((aligned(TPACKET_ALIGNMENT)));
 } frame_map_t;
+
+typedef void (*fetch_packets_from_ring_t)(ring_buff_t *, struct pollfd *);
 
 #endif				/* _NET_TYPES_H_ */

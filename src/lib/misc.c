@@ -71,7 +71,8 @@ void help(void)
 	    ("    -B <arg>    forbid process to use specific CPU/CPU-range\n");
 	printf("\n");
 	printf("Options for packet printing:\n");
-	printf("    -c          print captured packets\n");
+	printf("    -s          do not print captured packets\n");
+	printf("    -c          print captured packets (default)\n");
 	printf("    -cc         print captured packets, more information\n");
 	printf("    -ccc        print captured packets, most information\n");
 	printf("\n");

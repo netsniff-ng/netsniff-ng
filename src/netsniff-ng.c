@@ -69,6 +69,8 @@ ring_buff_stat_t netstat;
 
 pthread_mutex_t gs_loc_mutex;
 
+fetch_packets_from_ring_t fetch_packets = NULL;
+
 /*
  * Functions
  */
@@ -283,29 +285,94 @@ void softirq_handler(int number)
 	}
 }
 
+void fetch_packets_and_print(ring_buff_t *rb, struct pollfd *pfd)
+{
+        int i = 0;
+
+	while (likely(!sigint)) {
+		while (mem_notify_user(rb->frames[i]) && likely(!sigint)) {
+			struct frame_map *fm = rb->frames[i].iov_base;
+			ring_buff_bytes_t rbb =
+			    (unsigned char *)(rb->frames[i].iov_base +
+					      sizeof(*fm) + sizeof(short));
+
+                        // TODO
+			dbg("%d bytes from %02x:%02x:%02x:%02x:%02x:%02x to %02x:%02x:%02x:%02x:%02x:%02x\n", fm->tp_h.tp_len, rbb[6], rbb[7], rbb[8], rbb[9], rbb[10], rbb[11], rbb[0], rbb[1], rbb[2], rbb[3], rbb[4], rbb[5]);
+
+			/* Pending singals will be delivered after netstat 
+                           manipulation */
+			hold_softirq(SIGUSR1, SIGALRM);
+			pthread_mutex_lock(&gs_loc_mutex);
+
+			netstat.per_sec.frames++;
+			netstat.per_sec.bytes += fm->tp_h.tp_len;
+
+			netstat.total.frames++;
+			netstat.total.bytes += fm->tp_h.tp_len;
+
+			pthread_mutex_unlock(&gs_loc_mutex);
+			restore_softirq(SIGUSR1, SIGALRM);
+
+			i = (i + 1) % rb->layout.tp_frame_nr;
+
+			/* This is very important, otherwise poll() does active 
+			   wait with 100% cpu */
+			mem_notify_kernel(&(fm->tp_h));
+		}
+
+		poll(pfd, 1, -1);
+	}
+}
+
+void fetch_packets_no_print(ring_buff_t *rb, struct pollfd *pfd)
+{
+        int i = 0;
+
+	while (likely(!sigint)) {
+		while (mem_notify_user(rb->frames[i]) && likely(!sigint)) {
+			struct frame_map *fm = rb->frames[i].iov_base;
+
+			/* Pending singals will be delivered after netstat 
+                           manipulation */
+			hold_softirq(SIGUSR1, SIGALRM);
+			pthread_mutex_lock(&gs_loc_mutex);
+
+			netstat.per_sec.frames++;
+			netstat.per_sec.bytes += fm->tp_h.tp_len;
+
+			netstat.total.frames++;
+			netstat.total.bytes += fm->tp_h.tp_len;
+
+			pthread_mutex_unlock(&gs_loc_mutex);
+			restore_softirq(SIGUSR1, SIGALRM);
+
+			i = (i + 1) % rb->layout.tp_frame_nr;
+
+			/* This is very important, otherwise poll() does active 
+			   wait with 100% cpu */
+			mem_notify_kernel(&(fm->tp_h));
+		}
+
+		poll(pfd, 1, -1);
+	}
+}
+
 int main(int argc, char **argv)
 {
-	int i, c;
-	int sock;
-	int ret;
-	int bpf_len;
-	int print_pckt_v;
-
-	char *pidfile;
-	char *logfile;
-	char *rulefile;
-	char *sockfile;
-	char *dev;
+	int i, c, sock, ret, bpf_len;
+	char *pidfile, *logfile, *rulefile, *sockfile, *dev;
 
 	ring_buff_t *rb;
 	struct pollfd pfd;
 	struct sock_filter **bpf;
 	struct itimerval val_r;
 
-	print_pckt_v = 0;
 	dev = pidfile = logfile = rulefile = sockfile = NULL;
 
-	while ((c = getopt(argc, argv, "vhd:P:L:Df:CS:b:B:")) != EOF) {
+        /* Default is verbose mode */
+        fetch_packets = fetch_packets_and_print;
+
+	while ((c = getopt(argc, argv, "vhd:P:L:Df:sS:b:B:")) != EOF) {
 		switch (c) {
 		case 'h':
 			{
@@ -327,9 +394,10 @@ int main(int argc, char **argv)
 				rulefile = optarg;
 				break;
 			}
-		case 'C':
+		case 's':
 			{
-				print_pckt_v = 1;
+                                /* Switch to silent mode */
+				fetch_packets = fetch_packets_no_print;
 				break;
 			}
 		case 'D':
@@ -477,9 +545,9 @@ int main(int argc, char **argv)
 		rb->frames[i].iov_len = rb->layout.tp_frame_size;
 	}
 
-	pfd.fd = sock;
-	pfd.revents = i = 0;
-	pfd.events = POLLIN | POLLERR;
+	pfd.fd      = sock;
+	pfd.revents = 0;
+	pfd.events  = POLLIN | POLLERR;
 
 	val_r.it_value.tv_sec = INTERVAL_COUNTER_REFR / 1000;
 	val_r.it_value.tv_usec = (INTERVAL_COUNTER_REFR * 1000) % 1000000;
@@ -493,80 +561,10 @@ int main(int argc, char **argv)
 
 	clock_gettime(CLOCK_REALTIME, &netstat.m_start);
 
-	// TODO: function pointer, call functions
+        /* Do the job! */
+        fetch_packets(rb, &pfd);
 
-	/* this goto shit seems to be pretty ugly, but we do not have 
-	   branch-predictions within our critical sections thus we won't
-	   smash the pipeline */
-	if (!print_pckt_v)
-		goto __j_no_print;
-
-	/* __j_print: */
-	while (likely(!sigint)) {
-		while (mem_notify_user(rb->frames[i]) && likely(!sigint)) {
-			struct frame_map *fm = rb->frames[i].iov_base;
-			ring_buff_bytes_t rbb =
-			    (unsigned char *)(rb->frames[i].iov_base +
-					      sizeof(*fm) + sizeof(short));
-
-			dbg("%d bytes from %02x:%02x:%02x:%02x:%02x:%02x to %02x:%02x:%02x:%02x:%02x:%02x\n", fm->tp_h.tp_len, rbb[6], rbb[7], rbb[8], rbb[9], rbb[10], rbb[11], rbb[0], rbb[1], rbb[2], rbb[3], rbb[4], rbb[5]);
-
-			/* pending singals will be delivered after netstat manipulation */
-			hold_softirq(SIGUSR1, SIGALRM);
-			pthread_mutex_lock(&gs_loc_mutex);
-
-			netstat.per_sec.frames++;
-			netstat.per_sec.bytes += fm->tp_h.tp_len;
-
-			netstat.total.frames++;
-			netstat.total.bytes += fm->tp_h.tp_len;
-
-			pthread_mutex_unlock(&gs_loc_mutex);
-			restore_softirq(SIGUSR1, SIGALRM);
-
-			i = (i + 1) % rb->layout.tp_frame_nr;
-
-			/* this is very important, otherwise poll() does active 
-			   wait with 100% cpu */
-			mem_notify_kernel(&(fm->tp_h));
-		}
-
-		poll(&pfd, 1, -1);
-	}
-	goto __j_out;
-
- __j_no_print:
-	while (likely(!sigint)) {
-		while (mem_notify_user(rb->frames[i]) && likely(!sigint)) {
-			struct frame_map *fm = rb->frames[i].iov_base;
-
-			/* pending singals will be delivered after netstat manipulation */
-			hold_softirq(SIGUSR1, SIGALRM);
-			pthread_mutex_lock(&gs_loc_mutex);
-
-			netstat.per_sec.frames++;
-			netstat.per_sec.bytes += fm->tp_h.tp_len;
-
-			netstat.total.frames++;
-			netstat.total.bytes += fm->tp_h.tp_len;
-
-			pthread_mutex_unlock(&gs_loc_mutex);
-			restore_softirq(SIGUSR1, SIGALRM);
-
-			i = (i + 1) % rb->layout.tp_frame_nr;
-
-			/* this is very important, otherwise poll() does active 
-			   wait with 100% cpu */
-			mem_notify_kernel(&(fm->tp_h));
-		}
-
-		poll(&pfd, 1, -1);
-	}
-
- __j_out:
 	net_stat(sock);
-
-	/* restore_nice(); */
 	destroy_virt_ring(sock, rb);
 
 	free(*bpf);
