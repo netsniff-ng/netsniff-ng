@@ -48,8 +48,7 @@
  */
 void help(void)
 {
-	printf("%s %s, <danborkmann@googlemail.com>\n\n", PROGNAME_STRING,
-	       VERSION_STRING);
+	printf("%s %s\n\n", PROGNAME_STRING, VERSION_STRING);
 	printf("%s is a high performance network sniffer for packet\n",
 	       PROGNAME_STRING);
 	printf
@@ -106,8 +105,7 @@ void help(void)
  */
 void version(void)
 {
-	printf("%s %s, <danborkmann@googlemail.com>\n\n", PROGNAME_STRING,
-	       VERSION_STRING);
+	printf("%s %s\n\n", PROGNAME_STRING, VERSION_STRING);
 	printf("%s is a high performance network sniffer for packet\n",
 	       PROGNAME_STRING);
 	printf
