@@ -1,0 +1,7 @@
+#!/bin/sh
+
+files=`find . -type f | egrep "*.nccout$"`
+
+cat $files > Code.map
+nccnav
+
