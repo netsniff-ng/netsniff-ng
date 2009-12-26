@@ -51,10 +51,10 @@
  * Internal data structures
  */
 
-typedef uint8_t *ring_buff_bytes_t;
+typedef uint8_t ring_buff_bytes_t;
 
 typedef struct ring_buff_private {
-	ring_buff_bytes_t buffer;
+	ring_buff_bytes_t *buffer;
 	uint32_t len;
 	struct tpacket_req layout;
 	struct iovec *frames;

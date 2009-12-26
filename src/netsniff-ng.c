@@ -312,12 +312,11 @@ void fetch_packets_and_print(ring_buff_t * rb, struct pollfd *pfd)
 	while (likely(!sigint)) {
 		while (mem_notify_user(rb->frames[i]) && likely(!sigint)) {
 			struct frame_map *fm = rb->frames[i].iov_base;
-			ring_buff_bytes_t rbb =
-			    (unsigned char *)(rb->frames[i].iov_base +
-					      sizeof(*fm) + sizeof(short));
+			ring_buff_bytes_t *rbb =
+			    (ring_buff_bytes_t *) (rb->frames[i].iov_base +
+						   sizeof(*fm) + sizeof(short));
 
-			// TODO
-			dbg("%d bytes from %02x:%02x:%02x:%02x:%02x:%02x to %02x:%02x:%02x:%02x:%02x:%02x\n", fm->tp_h.tp_len, rbb[6], rbb[7], rbb[8], rbb[9], rbb[10], rbb[11], rbb[0], rbb[1], rbb[2], rbb[3], rbb[4], rbb[5]);
+			print_packet_buffer(rbb, fm->tp_h.tp_len);
 
 			/* Pending singals will be delivered after netstat 
 			   manipulation */
@@ -489,7 +488,12 @@ static void cleanup_system(system_data_t * sd, int *sock, ring_buff_t ** rb)
 	free((*rb));
 	close((*sock));
 
-	dbg("captured frames: %llu, captured bytes: %llu [%llu KB, %llu MB, %llu GB]\n", netstat.total.frames, netstat.total.bytes, netstat.total.bytes / 1024, netstat.total.bytes / (1024 * 1024), netstat.total.bytes / (1024 * 1024 * 1024));
+	dbg("captured frames: %llu, "
+	    "captured bytes: %llu [%llu KB, %llu MB, %llu GB]\n",
+	    netstat.total.frames, netstat.total.bytes,
+	    netstat.total.bytes / 1024,
+	    netstat.total.bytes / (1024 * 1024),
+	    netstat.total.bytes / (1024 * 1024 * 1024));
 
 	if (sd->sysdaemon) {
 		undaemonize(sd->pidfile);

@@ -38,6 +38,27 @@
 #ifndef _NET_PRINT_H_
 #define _NET_PRINT_H_
 
+#include <stdio.h>
+
+#include <netsniff-ng/types.h>
+#include <netsniff-ng/macros.h>
+
 /* Function signatures */
+
+static inline void print_packet_buffer(ring_buff_bytes_t * rbb, int len);
+
+/* Inline stuff */
+
+// TODO
+static inline void print_packet_buffer(ring_buff_bytes_t * rbb, int len)
+{
+	dbg("%d bytes from "
+	    "%02x:%02x:%02x:%02x:%02x:%02x"
+	    " to "
+	    "%02x:%02x:%02x:%02x:%02x:%02x\n",
+	    len,
+	    rbb[6], rbb[7], rbb[8], rbb[9], rbb[10], rbb[11],
+	    rbb[0], rbb[1], rbb[2], rbb[3], rbb[4], rbb[5]);
+}
 
 #endif				/* _NET_PRINT_H_ */

@@ -143,8 +143,8 @@ void mmap_virt_ring(int sock, ring_buff_t * rb)
 {
 	assert(rb);
 
-	rb->buffer = mmap(0, rb->len, PROT_READ | PROT_WRITE, MAP_SHARED,
-			  sock, 0);
+	rb->buffer = mmap(0, rb->len, PROT_READ | PROT_WRITE, MAP_SHARED, sock,
+			  0);
 	if (rb->buffer == MAP_FAILED) {
 		perr("mmap: cannot mmap the rx ring: %d - ", errno);
 
