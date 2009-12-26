@@ -38,8 +38,11 @@
 #ifndef _NET_RX_RING_H_
 #define _NET_RX_RING_H_
 
+#include <stdlib.h>
+
 #include <linux/filter.h>
 
+#include <netsniff-ng/macros.h>
 #include <netsniff-ng/types.h>
 
 /* Function signatures */
@@ -56,6 +59,29 @@ extern int alloc_pf_sock(void);
 extern void parse_rules(char *rulefile, struct sock_filter **bpf, int *len);
 
 /* Inline stuff */
+
+/**
+ * alloc_frame_buffer - Allocates frame buffer
+ * @rb:                ring buff struct
+ */
+static inline void alloc_frame_buffer(ring_buff_t * rb)
+{
+	int i = 0;
+
+	rb->frames =
+	    (struct iovec *)malloc(rb->layout.tp_frame_nr *
+				   sizeof(*rb->frames));
+	if (!rb->frames) {
+		err("No mem left!\n");
+		exit(EXIT_FAILURE);
+	}
+
+	for (i = 0; i < rb->layout.tp_frame_nr; ++i) {
+		rb->frames[i].iov_base =
+		    (void *)((long)rb->buffer) + (i * rb->layout.tp_frame_size);
+		rb->frames[i].iov_len = rb->layout.tp_frame_size;
+	}
+}
 
 /**
  * mem_notify_user - Checks whether kernel has written its data into our 

@@ -66,6 +66,18 @@ typedef struct frame_map {
 	struct sockaddr_ll s_ll __attribute__ ((aligned(TPACKET_ALIGNMENT)));
 } frame_map_t;
 
-typedef void (*fetch_packets_from_ring_t)(ring_buff_t *, struct pollfd *);
+typedef void (*fetch_packets_from_ring_t) (ring_buff_t *, struct pollfd *);
+
+typedef struct system_data {
+	int sysdaemon;
+	/* Daemon mode settings */
+	char *pidfile;
+	char *logfile;
+	char *sockfile;
+	/* Berkeley Packet Filter rules */
+	char *rulefile;
+	/* Ethernet device */
+	char *dev;
+} system_data_t;
 
 #endif				/* _NET_TYPES_H_ */

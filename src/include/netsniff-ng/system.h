@@ -40,6 +40,7 @@
 
 #include <sched.h>
 
+#include <sys/poll.h>
 #include <sys/resource.h>
 
 #define DEFAULT_SCHED_POLICY	SCHED_FIFO
@@ -56,5 +57,19 @@ extern void check_for_root(void);
 extern int undaemonize(const char *pidfile);
 extern int daemonize(const char *pidfile, const char *logfile,
 		     const char *sockfile, void *(*start_server) (void *sock));
+
+/* Inline stuff */
+
+/**
+ * prepare_polling - Sets params for ringbuff polling
+ * @sock:           socket
+ * @pfd:            file descriptor for polling
+ */
+static inline void prepare_polling(int sock, struct pollfd *pfd)
+{
+	pfd->fd = sock;
+	pfd->revents = 0;
+	pfd->events = POLLIN | POLLERR;
+}
 
 #endif				/* _NET_SYSTEM_H_ */

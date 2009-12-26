@@ -62,11 +62,8 @@
  * Global vars
  */
 
-volatile sig_atomic_t sysdeamon_v = 0;
 volatile sig_atomic_t sigint = 0;
-
 ring_buff_stat_t netstat;
-
 pthread_mutex_t gs_loc_mutex;
 
 fetch_packets_from_ring_t fetch_packets = NULL;
@@ -285,9 +282,9 @@ void softirq_handler(int number)
 	}
 }
 
-void fetch_packets_and_print(ring_buff_t *rb, struct pollfd *pfd)
+void fetch_packets_and_print(ring_buff_t * rb, struct pollfd *pfd)
 {
-        int i = 0;
+	int i = 0;
 
 	while (likely(!sigint)) {
 		while (mem_notify_user(rb->frames[i]) && likely(!sigint)) {
@@ -296,11 +293,11 @@ void fetch_packets_and_print(ring_buff_t *rb, struct pollfd *pfd)
 			    (unsigned char *)(rb->frames[i].iov_base +
 					      sizeof(*fm) + sizeof(short));
 
-                        // TODO
+			// TODO
 			dbg("%d bytes from %02x:%02x:%02x:%02x:%02x:%02x to %02x:%02x:%02x:%02x:%02x:%02x\n", fm->tp_h.tp_len, rbb[6], rbb[7], rbb[8], rbb[9], rbb[10], rbb[11], rbb[0], rbb[1], rbb[2], rbb[3], rbb[4], rbb[5]);
 
 			/* Pending singals will be delivered after netstat 
-                           manipulation */
+			   manipulation */
 			hold_softirq(SIGUSR1, SIGALRM);
 			pthread_mutex_lock(&gs_loc_mutex);
 
@@ -324,16 +321,16 @@ void fetch_packets_and_print(ring_buff_t *rb, struct pollfd *pfd)
 	}
 }
 
-void fetch_packets_no_print(ring_buff_t *rb, struct pollfd *pfd)
+void fetch_packets_no_print(ring_buff_t * rb, struct pollfd *pfd)
 {
-        int i = 0;
+	int i = 0;
 
 	while (likely(!sigint)) {
 		while (mem_notify_user(rb->frames[i]) && likely(!sigint)) {
 			struct frame_map *fm = rb->frames[i].iov_base;
 
 			/* Pending singals will be delivered after netstat 
-                           manipulation */
+			   manipulation */
 			hold_softirq(SIGUSR1, SIGALRM);
 			pthread_mutex_lock(&gs_loc_mutex);
 
@@ -357,20 +354,126 @@ void fetch_packets_no_print(ring_buff_t *rb, struct pollfd *pfd)
 	}
 }
 
-int main(int argc, char **argv)
+static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
+		       struct pollfd *pfd)
 {
-	int i, c, sock, ret, bpf_len;
-	char *pidfile, *logfile, *rulefile, *sockfile, *dev;
+	int ret, bpf_len = 0;
 
-	ring_buff_t *rb;
-	struct pollfd pfd;
 	struct sock_filter **bpf;
 	struct itimerval val_r;
 
-	dev = pidfile = logfile = rulefile = sockfile = NULL;
+	/* We are only allowed to do these nasty things as root ;) */
+	check_for_root();
 
-        /* Default is verbose mode */
-        fetch_packets = fetch_packets_and_print;
+	/* Scheduler timeslice & prio tuning */
+	set_proc_prio(DEFAULT_PROCESS_PRIO);
+	set_sched_status(DEFAULT_SCHED_POLICY, DEFAULT_SCHED_PRIO);
+
+	register_softirq(SIGINT, &softirq_handler);
+	register_softirq(SIGALRM, &softirq_handler);
+	register_softirq(SIGUSR1, &softirq_handler);
+	register_softirq(SIGUSR2, &softirq_handler);
+	register_softirq(SIGHUP, &softirq_handler);
+
+	if (sd->sysdaemon) {
+		ret =
+		    daemonize(sd->pidfile, sd->logfile, sd->sockfile,
+			      start_uds_server);
+		if (ret != 0) {
+			err("daemonize failed");
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	/* Print program header */
+	header();
+
+	bpf = (struct sock_filter **)malloc(sizeof(*bpf));
+	if (bpf == NULL) {
+		perr("Cannot allocate socket filter\n");
+		exit(EXIT_FAILURE);
+	}
+
+	memset(bpf, 0, sizeof(**bpf));
+
+	(*rb) = (ring_buff_t *) malloc(sizeof(**rb));
+	if ((*rb) == NULL) {
+		perr("Cannot allocate ring buffer\n");
+		exit(EXIT_FAILURE);
+	}
+
+	memset((*rb), 0, sizeof(**rb));
+
+	(*sock) = alloc_pf_sock();
+	put_dev_into_promisc_mode((*sock), ethdev_to_ifindex((*sock), sd->dev));
+
+	/* Berkeley Packet Filter stuff */
+	parse_rules(sd->rulefile, bpf, &bpf_len);
+	inject_kernel_bpf((*sock), *bpf, bpf_len * sizeof(**bpf));
+
+	/* RX_RING stuff */
+	create_virt_ring((*sock), (*rb));
+	bind_dev_to_ring((*sock), ethdev_to_ifindex((*sock), sd->dev), (*rb));
+	mmap_virt_ring((*sock), (*rb));
+
+	alloc_frame_buffer((*rb));
+	prepare_polling((*sock), pfd);
+
+	/* Timer settings for counter update */
+	val_r.it_value.tv_sec = (INTERVAL_COUNTER_REFR / 1000);
+	val_r.it_value.tv_usec = (INTERVAL_COUNTER_REFR * 1000) % 1000000;
+	val_r.it_interval = val_r.it_value;
+
+	ret = setitimer(ITIMER_REAL, &val_r, NULL);
+	if (ret < 0) {
+		perr("cannot set itimer - ");
+		exit(EXIT_FAILURE);
+	}
+
+	clock_gettime(CLOCK_REALTIME, &netstat.m_start);
+
+	free(*bpf);
+	free(bpf);
+
+	return 0;
+}
+
+static void cleanup_system(system_data_t * sd, int *sock, ring_buff_t ** rb)
+{
+	memset(&netstat, 0, sizeof(netstat));
+
+	net_stat((*sock));
+	destroy_virt_ring((*sock), (*rb));
+
+	free((*rb));
+	close((*sock));
+
+	dbg("captured frames: %llu, captured bytes: %llu [%llu KB, %llu MB, %llu GB]\n", netstat.total.frames, netstat.total.bytes, netstat.total.bytes / 1024, netstat.total.bytes / (1024 * 1024), netstat.total.bytes / (1024 * 1024 * 1024));
+
+	if (sd->sysdaemon) {
+		undaemonize(sd->pidfile);
+	}
+}
+
+int main(int argc, char **argv)
+{
+	int i, c;
+	int sock;
+
+	system_data_t *sd;
+	ring_buff_t *rb;
+	struct pollfd pfd;
+
+	sd = malloc(sizeof(*sd));
+	if (!sd) {
+		err("No mem left!\n");
+		exit(EXIT_FAILURE);
+	}
+
+	memset(sd, 0, sizeof(*sd));
+
+	/* Default is verbose mode */
+	fetch_packets = fetch_packets_and_print;
 
 	while ((c = getopt(argc, argv, "vhd:P:L:Df:sS:b:B:")) != EOF) {
 		switch (c) {
@@ -386,38 +489,38 @@ int main(int argc, char **argv)
 			}
 		case 'd':
 			{
-				dev = optarg;
+				sd->dev = optarg;
 				break;
 			}
 		case 'f':
 			{
-				rulefile = optarg;
+				sd->rulefile = optarg;
 				break;
 			}
 		case 's':
 			{
-                                /* Switch to silent mode */
+				/* Switch to silent mode */
 				fetch_packets = fetch_packets_no_print;
 				break;
 			}
 		case 'D':
 			{
-				sysdeamon_v = 1;
+				sd->sysdaemon = 1;
 				break;
 			}
 		case 'P':
 			{
-				pidfile = optarg;
+				sd->pidfile = optarg;
 				break;
 			}
 		case 'L':
 			{
-				logfile = optarg;
+				sd->logfile = optarg;
 				break;
 			}
 		case 'S':
 			{
-				sockfile = optarg;
+				sd->sockfile = optarg;
 				break;
 			}
 		case 'b':
@@ -465,12 +568,12 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (argc < 2 || !dev || !rulefile) {
+	if (argc < 2 || !sd->dev || !sd->rulefile) {
 		help();
 		exit(EXIT_FAILURE);
 	}
 
-	if (sysdeamon_v && (!pidfile || !logfile || !sockfile)) {
+	if (sd->sysdaemon && (!sd->pidfile || !sd->logfile || !sd->sockfile)) {
 		help();
 		exit(EXIT_FAILURE);
 	}
@@ -483,99 +586,14 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	/* We are only allowed to do these nasty things as root ;) */
-	check_for_root();
+	/*
+	 * Main stuff
+	 */
 
-	/* Scheduler timeslice & prio tuning */
-	set_proc_prio(DEFAULT_PROCESS_PRIO);
-	set_sched_status(DEFAULT_SCHED_POLICY, DEFAULT_SCHED_PRIO);
+	init_system(sd, &sock, &rb, &pfd);
+	fetch_packets(rb, &pfd);
+	cleanup_system(sd, &sock, &rb);
 
-	register_softirq(SIGINT, &softirq_handler);
-	register_softirq(SIGALRM, &softirq_handler);
-	register_softirq(SIGUSR1, &softirq_handler);
-	register_softirq(SIGUSR2, &softirq_handler);
-	register_softirq(SIGHUP, &softirq_handler);
-
-	if (sysdeamon_v) {
-		ret = daemonize(pidfile, logfile, sockfile, start_uds_server);
-		if (ret != 0) {
-			err("daemonize failed");
-			exit(EXIT_FAILURE);
-		}
-	}
-
-	header();
-
-	bpf_len = 0;
-
-	bpf = (struct sock_filter **)malloc(sizeof(*bpf));
-	if (bpf == NULL) {
-		perr("Cannot allocate socket filter\n");
-		exit(EXIT_FAILURE);
-	}
-
-	memset(bpf, 0, sizeof(**bpf));
-
-	rb = (ring_buff_t *) malloc(sizeof(*rb));
-	if (rb == NULL) {
-		perr("Cannot allocate ring buffer\n");
-		exit(EXIT_FAILURE);
-	}
-
-	memset(rb, 0, sizeof(*rb));
-	memset(&netstat, 0, sizeof(netstat));
-
-	sock = alloc_pf_sock();
-	put_dev_into_promisc_mode(sock, ethdev_to_ifindex(sock, dev));
-
-	parse_rules(rulefile, bpf, &bpf_len);
-	inject_kernel_bpf(sock, *bpf, bpf_len * sizeof(**bpf));
-
-	create_virt_ring(sock, rb);
-	bind_dev_to_ring(sock, ethdev_to_ifindex(sock, dev), rb);
-	mmap_virt_ring(sock, rb);
-
-	rb->frames =
-	    (struct iovec *)malloc(rb->layout.tp_frame_nr *
-				   sizeof(*rb->frames));
-
-	for (i = 0; i < rb->layout.tp_frame_nr; ++i) {
-		rb->frames[i].iov_base =
-		    (void *)((long)rb->buffer) + (i * rb->layout.tp_frame_size);
-		rb->frames[i].iov_len = rb->layout.tp_frame_size;
-	}
-
-	pfd.fd      = sock;
-	pfd.revents = 0;
-	pfd.events  = POLLIN | POLLERR;
-
-	val_r.it_value.tv_sec = INTERVAL_COUNTER_REFR / 1000;
-	val_r.it_value.tv_usec = (INTERVAL_COUNTER_REFR * 1000) % 1000000;
-	val_r.it_interval = val_r.it_value;
-
-	ret = setitimer(ITIMER_REAL, &val_r, NULL);
-	if (ret < 0) {
-		perr("cannot set itimer - ");
-		exit(EXIT_FAILURE);
-	}
-
-	clock_gettime(CLOCK_REALTIME, &netstat.m_start);
-
-        /* Do the job! */
-        fetch_packets(rb, &pfd);
-
-	net_stat(sock);
-	destroy_virt_ring(sock, rb);
-
-	free(*bpf);
-	free(bpf);
-	free(rb);
-	close(sock);
-
-	dbg("captured frames: %llu, captured bytes: %llu [%llu KB, %llu MB, %llu GB]\n", netstat.total.frames, netstat.total.bytes, netstat.total.bytes / 1024, netstat.total.bytes / (1024 * 1024), netstat.total.bytes / (1024 * 1024 * 1024));
-
-	if (sysdeamon_v) {
-		undaemonize(pidfile);
-	}
+	free(sd);
 	return 0;
 }
