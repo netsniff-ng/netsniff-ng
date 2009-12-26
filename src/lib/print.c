@@ -43,6 +43,9 @@
  *        * A mode that only prints DNS lookups
  *        * A mode that greps for plaintext passwords
  *        * ...
+ *    These functions will be registered during startup to a global list 
+ *    ids --> will be shown within -h or -ids and can be selected by user, 
+ *    so we have kinda plugin system.
  */
 
 #include <stdio.h>
@@ -63,6 +66,8 @@ void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb, int len)
 	/* Print proto stuff */
 	dbg("  T: 0x%02x%02x\n", rbb[12], rbb[13]);
 
+	/* Print VLAN-ID if 8100 */
+
 	/* Source host stuff */
 	dbg("  S: %02x:%02x:%02x:%02x:%02x:%02x\n",
 	    rbb[6], rbb[7], rbb[8], rbb[9], rbb[10], rbb[11]);
@@ -70,6 +75,8 @@ void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb, int len)
 	/* Destination host stuff */
 	dbg("  D: %02x:%02x:%02x:%02x:%02x:%02x\n",
 	    rbb[0], rbb[1], rbb[2], rbb[3], rbb[4], rbb[5]);
+
+	/* Check for IP, then UDP / TCP */
 }
 
 /**
@@ -91,6 +98,12 @@ void print_packet_buffer_mode_2(ring_buff_bytes_t * rbb, int len)
 	/* Destination host stuff */
 	dbg("  D: %02x:%02x:%02x:%02x:%02x:%02x\n",
 	    rbb[0], rbb[1], rbb[2], rbb[3], rbb[4], rbb[5]);
+
+	/* Print MAC Manufacturer */
+
+	/* Print TCP Flags, UDP'n'stuff */
+
+	/* Check checksum --> Print if bogus */
 }
 
 /**
@@ -100,6 +113,8 @@ void print_packet_buffer_mode_2(ring_buff_bytes_t * rbb, int len)
  */
 void print_packet_buffer_mode_3(ring_buff_bytes_t * rbb, int len)
 {
+	int i;
+
 	dbg("%d Byte\n", len);
 
 	/* Print proto stuff */
@@ -112,4 +127,6 @@ void print_packet_buffer_mode_3(ring_buff_bytes_t * rbb, int len)
 	/* Destination host stuff */
 	dbg("  D: %02x:%02x:%02x:%02x:%02x:%02x\n",
 	    rbb[0], rbb[1], rbb[2], rbb[3], rbb[4], rbb[5]);
+
+	/* Print whole payload, readable and bytewise */
 }
