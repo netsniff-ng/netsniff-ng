@@ -454,6 +454,8 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 	alloc_frame_buffer((*rb));
 	prepare_polling((*sock), pfd);
 
+	memset(&netstat, 0, sizeof(netstat));
+
 	/* Timer settings for counter update */
 	val_r.it_value.tv_sec = (INTERVAL_COUNTER_REFR / 1000);
 	val_r.it_value.tv_usec = (INTERVAL_COUNTER_REFR * 1000) % 1000000;
@@ -481,8 +483,6 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
  */
 static void cleanup_system(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
-	memset(&netstat, 0, sizeof(netstat));
-
 	net_stat((*sock));
 	destroy_virt_ring((*sock), (*rb));
 
