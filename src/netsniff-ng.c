@@ -67,6 +67,7 @@ ring_buff_stat_t netstat;
 pthread_mutex_t gs_loc_mutex;
 
 fetch_packets_from_ring_t fetch_packets = NULL;
+print_packet_buff_t print_packet_buffer = print_packet_buffer_mode_1;
 
 /*
  * Functions

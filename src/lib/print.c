@@ -35,4 +35,66 @@
  *    Packet printing routines
  */
 
+/*
+ * XXX: Some thoughts:
+ *    There could be several printing modes for several needs ... e.g.
+ *        * A mode that only prints IPs and their corresponding MACs to 
+ *          debug ARP related stuff
+ *        * A mode that only prints DNS lookups
+ *        * A mode that greps for plaintext passwords
+ *        * ...
+ */
+
+#include <stdio.h>
+
+#include <netsniff-ng/macros.h>
+#include <netsniff-ng/types.h>
 #include <netsniff-ng/print.h>
+
+/**
+ * print_packet_buffer_mode_1 - Prints packets according to verbose mode -c
+ * @rbb:                       payload
+ * @len:                       len of payload
+ */
+void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb, int len)
+{
+	dbg("%d bytes from "
+	    "%02x:%02x:%02x:%02x:%02x:%02x"
+	    " to "
+	    "%02x:%02x:%02x:%02x:%02x:%02x\n",
+	    len,
+	    rbb[6], rbb[7], rbb[8], rbb[9], rbb[10], rbb[11],
+	    rbb[0], rbb[1], rbb[2], rbb[3], rbb[4], rbb[5]);
+}
+
+/**
+ * print_packet_buffer_mode_2 - Prints packets according to verbose mode -cc
+ * @rbb:                       payload
+ * @len:                       len of payload
+ */
+void print_packet_buffer_mode_2(ring_buff_bytes_t * rbb, int len)
+{
+	dbg("%d bytes from "
+	    "%02x:%02x:%02x:%02x:%02x:%02x"
+	    " to "
+	    "%02x:%02x:%02x:%02x:%02x:%02x\n",
+	    len,
+	    rbb[6], rbb[7], rbb[8], rbb[9], rbb[10], rbb[11],
+	    rbb[0], rbb[1], rbb[2], rbb[3], rbb[4], rbb[5]);
+}
+
+/**
+ * print_packet_buffer_mode_3 - Prints packets according to verbose mode -ccc
+ * @rbb:                       payload
+ * @len:                       len of payload
+ */
+void print_packet_buffer_mode_3(ring_buff_bytes_t * rbb, int len)
+{
+	dbg("%d bytes from "
+	    "%02x:%02x:%02x:%02x:%02x:%02x"
+	    " to "
+	    "%02x:%02x:%02x:%02x:%02x:%02x\n",
+	    len,
+	    rbb[6], rbb[7], rbb[8], rbb[9], rbb[10], rbb[11],
+	    rbb[0], rbb[1], rbb[2], rbb[3], rbb[4], rbb[5]);
+}
