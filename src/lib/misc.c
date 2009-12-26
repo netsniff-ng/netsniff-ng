@@ -59,7 +59,7 @@ void help(void)
 	printf("    -d <arg>    use device <arg> for capturing packets\n");
 	printf("    -f <arg>    use file <arg> as bpf filter\n");
 	printf("\n");
-	printf("Options for sys deamon:\n");
+	printf("Options for sys daemon:\n");
 	printf("    -D          run as sys daemon\n");
 	printf("    -P <arg>    use file <arg> as pidfile, req if -D\n");
 	printf("    -L <arg>    use file <arg> as logfile, req if -D\n");

@@ -72,6 +72,9 @@ fetch_packets_from_ring_t fetch_packets = NULL;
  * Functions
  */
 
+/**
+ * refresh_counters - Refreshes global packet counters
+ */
 static inline void refresh_counters(void)
 {
 	float curr_weight = 0.68f;
@@ -106,6 +109,9 @@ static inline void refresh_counters(void)
 	netstat.per_sec.frames = netstat.per_sec.bytes = 0;
 }
 
+/**
+ * print_counters - Prints global counters to terminal
+ */
 static inline void print_counters(void)
 {
 	uint64_t d_day, d_h, d_min, d_sec, d_nsec;
@@ -153,6 +159,10 @@ static inline void print_counters(void)
 	dbg("-----------+--------------------------+--------------------------+--------------------------\n");
 }
 
+/**
+ * uds_thread - Unix Domain Socket thread for sending internal counter states
+ * @psock:     socket pointer
+ */
 static void *uds_thread(void *psock)
 {
 	int ret;
@@ -180,6 +190,10 @@ static void *uds_thread(void *psock)
 	pthread_exit(0);
 }
 
+/**
+ * start_uds_server - Unix Domain Socket server main
+ * @psockfile:       path to UDS inode
+ */
 void *start_uds_server(void *psockfile)
 {
 	int ret, len;
@@ -246,6 +260,10 @@ void *start_uds_server(void *psockfile)
 	pthread_exit(0);
 }
 
+/**
+ * softirq_handler - Signal handling multiplexer
+ * @number:         signal number
+ */
 void softirq_handler(int number)
 {
 	switch (number) {
@@ -282,6 +300,11 @@ void softirq_handler(int number)
 	}
 }
 
+/**
+ * fetch_packets_and_print - Traverses RX_RING and prints content
+ * @rb:                     ring buffer
+ * @pfd:                    file descriptor for polling
+ */
 void fetch_packets_and_print(ring_buff_t * rb, struct pollfd *pfd)
 {
 	int i = 0;
@@ -321,6 +344,11 @@ void fetch_packets_and_print(ring_buff_t * rb, struct pollfd *pfd)
 	}
 }
 
+/**
+ * fetch_packets_no_print - Traverses RX_RING in silent mode, only updates counter
+ * @rb:                    ring buffer
+ * @pfd:                   file descriptor for polling
+ */
 void fetch_packets_no_print(ring_buff_t * rb, struct pollfd *pfd)
 {
 	int i = 0;
@@ -354,6 +382,13 @@ void fetch_packets_no_print(ring_buff_t * rb, struct pollfd *pfd)
 	}
 }
 
+/**
+ * init_system - Initializes netsniff-ng main
+ * @sd:         system configuration data
+ * @sock:       socket
+ * @rb:         ring buffer
+ * @pfd:        file descriptor for polling
+ */
 static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 		       struct pollfd *pfd)
 {
@@ -438,6 +473,12 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 	return 0;
 }
 
+/**
+ * cleanup_system - Cleans up netsniff-ng main
+ * @sd:            system configuration data
+ * @sock:          socket
+ * @rb:            ring buffer
+ */
 static void cleanup_system(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
 	memset(&netstat, 0, sizeof(netstat));
@@ -455,6 +496,11 @@ static void cleanup_system(system_data_t * sd, int *sock, ring_buff_t ** rb)
 	}
 }
 
+/**
+ * main  - Main routine
+ * @argc: number of args
+ * @argv: arguments passed from tty
+ */
 int main(int argc, char **argv)
 {
 	int i, c;
