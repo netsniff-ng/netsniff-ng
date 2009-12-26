@@ -124,12 +124,12 @@ void create_virt_ring(int sock, ring_buff_t * rb)
 
 	rb->len = rb->layout.tp_block_size * rb->layout.tp_block_nr;
 
-	dbg("%.2f MB allocated for rx ring: %d blocks, %d frames, "
-	    "%d frames per block, framesize: %d bytes, blocksize: %d bytes \n",
-	    1. * rb->len / (1024 * 1024),
-	    rb->layout.tp_block_nr,
-	    rb->layout.tp_frame_nr,
-	    rb->layout.tp_block_size / rb->layout.tp_frame_size,
+	dbg("%.2f MB allocated for rx ring: \n", 1.f * rb->len / (1024 * 1024));
+	dbg("  -> %d blocks, %d frames\n", rb->layout.tp_block_nr,
+	    rb->layout.tp_frame_nr);
+	dbg("  -> %d frames per block\n",
+	    rb->layout.tp_block_size / rb->layout.tp_frame_size);
+	dbg("  -> framesize: %d bytes, blocksize: %d bytes\n",
 	    rb->layout.tp_frame_size, rb->layout.tp_block_size);
 }
 

@@ -19,5 +19,4 @@ lib: $(OBJECTS_LIB)
 	$(CC) -c $(CFLAGS) $(INCLUDE) $<
 
 clean:
-	rm *.o || true
-
+	rm *.o *.nccout Code.map || true

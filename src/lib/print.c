@@ -58,12 +58,17 @@
  */
 void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb, int len)
 {
-	dbg("%d bytes from "
-	    "%02x:%02x:%02x:%02x:%02x:%02x"
-	    " to "
-	    "%02x:%02x:%02x:%02x:%02x:%02x\n",
-	    len,
-	    rbb[6], rbb[7], rbb[8], rbb[9], rbb[10], rbb[11],
+	dbg("%d Byte\n", len);
+
+	/* Print proto stuff */
+	dbg("  T: 0x%02x%02x\n", rbb[12], rbb[13]);
+
+	/* Source host stuff */
+	dbg("  S: %02x:%02x:%02x:%02x:%02x:%02x\n",
+	    rbb[6], rbb[7], rbb[8], rbb[9], rbb[10], rbb[11]);
+
+	/* Destination host stuff */
+	dbg("  D: %02x:%02x:%02x:%02x:%02x:%02x\n",
 	    rbb[0], rbb[1], rbb[2], rbb[3], rbb[4], rbb[5]);
 }
 
@@ -74,12 +79,17 @@ void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb, int len)
  */
 void print_packet_buffer_mode_2(ring_buff_bytes_t * rbb, int len)
 {
-	dbg("%d bytes from "
-	    "%02x:%02x:%02x:%02x:%02x:%02x"
-	    " to "
-	    "%02x:%02x:%02x:%02x:%02x:%02x\n",
-	    len,
-	    rbb[6], rbb[7], rbb[8], rbb[9], rbb[10], rbb[11],
+	dbg("%d Byte\n", len);
+
+	/* Print proto stuff */
+	dbg("  T: 0x%02x%02x\n", rbb[12], rbb[13]);
+
+	/* Source host stuff */
+	dbg("  S: %02x:%02x:%02x:%02x:%02x:%02x\n",
+	    rbb[6], rbb[7], rbb[8], rbb[9], rbb[10], rbb[11]);
+
+	/* Destination host stuff */
+	dbg("  D: %02x:%02x:%02x:%02x:%02x:%02x\n",
 	    rbb[0], rbb[1], rbb[2], rbb[3], rbb[4], rbb[5]);
 }
 
@@ -90,11 +100,16 @@ void print_packet_buffer_mode_2(ring_buff_bytes_t * rbb, int len)
  */
 void print_packet_buffer_mode_3(ring_buff_bytes_t * rbb, int len)
 {
-	dbg("%d bytes from "
-	    "%02x:%02x:%02x:%02x:%02x:%02x"
-	    " to "
-	    "%02x:%02x:%02x:%02x:%02x:%02x\n",
-	    len,
-	    rbb[6], rbb[7], rbb[8], rbb[9], rbb[10], rbb[11],
+	dbg("%d Byte\n", len);
+
+	/* Print proto stuff */
+	dbg("  T: 0x%02x%02x\n", rbb[12], rbb[13]);
+
+	/* Source host stuff */
+	dbg("  S: %02x:%02x:%02x:%02x:%02x:%02x\n",
+	    rbb[6], rbb[7], rbb[8], rbb[9], rbb[10], rbb[11]);
+
+	/* Destination host stuff */
+	dbg("  D: %02x:%02x:%02x:%02x:%02x:%02x\n",
 	    rbb[0], rbb[1], rbb[2], rbb[3], rbb[4], rbb[5]);
 }

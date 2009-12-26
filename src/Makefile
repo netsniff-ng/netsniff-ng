@@ -28,7 +28,7 @@ ETCDIR           = etc
 MANDIR           = usr/share/man/man8
 MANDIR_LOCAL     = doc
 
-all: netsniff-ng
+all: clean netsniff-ng
 
 netsniff-ng: $(OBJECTS_NETSNIFF)
 	$(CC) -o $(NAME_NETSNIFF) $(OBJECTS_NETSNIFF) $(shell find $(BUILD_FOLDERS) -name "*.o") $(LIBS)
@@ -46,7 +46,7 @@ install:
 
 clean:
 	-for d in $(BUILD_FOLDERS); do (cd $$d; $(MAKE) $(MFLAGS) clean); done
-	rm *.o $(NAME_NETSNIFF) $(MANDIR_LOCAL)/$(NAME_NETSNIFF).8.gz || true
+	rm *.o *.nccout Code.map $(NAME_NETSNIFF) $(MANDIR_LOCAL)/$(NAME_NETSNIFF).8.gz || true
 
 uninstall:
 	rm $(DESTDIR)/$(BINDIR)/$(NAME_NETSNIFF) || true
