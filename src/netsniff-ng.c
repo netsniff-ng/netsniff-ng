@@ -171,7 +171,7 @@ static void *uds_thread(void *psock)
 
 	/* Signalmask is per thread. we don't want to interrupt the 
 	   send-syscall */
-	hold_softirq_pthread(SIGUSR1, SIGALRM);
+	hold_softirq_pthread(2, SIGUSR1, SIGALRM);
 
 	dbg("unix domain socket server: entering thread\n");
 	sock = *((int *)psock);
@@ -321,7 +321,7 @@ void fetch_packets_and_print(ring_buff_t * rb, struct pollfd *pfd)
 
 			/* Pending singals will be delivered after netstat 
 			   manipulation */
-			hold_softirq(SIGUSR1, SIGALRM);
+			hold_softirq(2, SIGUSR1, SIGALRM);
 			pthread_mutex_lock(&gs_loc_mutex);
 
 			netstat.per_sec.frames++;
@@ -331,7 +331,7 @@ void fetch_packets_and_print(ring_buff_t * rb, struct pollfd *pfd)
 			netstat.total.bytes += fm->tp_h.tp_len;
 
 			pthread_mutex_unlock(&gs_loc_mutex);
-			restore_softirq(SIGUSR1, SIGALRM);
+			restore_softirq(2, SIGUSR1, SIGALRM);
 
 			i = (i + 1) % rb->layout.tp_frame_nr;
 
@@ -522,6 +522,7 @@ int main(int argc, char **argv)
 	}
 
 	memset(sd, 0, sizeof(*sd));
+	memset(&pfd, 0, sizeof(pfd));
 
 	/* Default is verbose mode */
 	fetch_packets = fetch_packets_and_print;

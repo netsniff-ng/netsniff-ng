@@ -84,12 +84,13 @@ static inline void hold_softirq(int num_count, ...)
 
 	sigemptyset(&block_mask);
 	va_start(al, num_count);
-
+        
 	for (i = 1; i <= num_count; ++i) {
 		signal = va_arg(al, int);
 		sigaddset(&block_mask, signal);
 	}
 
+        va_end(al);
 	sigprocmask(SIG_BLOCK, &block_mask, NULL);
 }
 
@@ -113,6 +114,7 @@ static inline void restore_softirq(int num_count, ...)
 		sigaddset(&block_mask, signal);
 	}
 
+        va_end(al);
 	sigprocmask(SIG_UNBLOCK, &block_mask, NULL);
 }
 
@@ -136,7 +138,8 @@ static inline void hold_softirq_pthread(int num_count, ...)
 		sigaddset(&block_mask, signal);
 	}
 
+        va_end(al);
 	pthread_sigmask(SIG_BLOCK, &block_mask, NULL);
 }
-
+/* XXX is there a need for a restore_softirq_pthread ? */
 #endif				/* _NET_SIGNAL_H_ */
