@@ -50,6 +50,7 @@
 /* Function signatures */
 
 extern int set_cpu_affinity(const char *str);
+extern int set_cpu_affinity_inv(const char *str);
 extern char *get_cpu_affinity(char *cpu_string, size_t len);
 extern int set_proc_prio(int prio);
 extern int set_sched_status(int policy, int priority);

@@ -339,8 +339,8 @@ void fetch_packets_and_print(ring_buff_t * rb, struct pollfd *pfd, int timeout)
 
 			i = (i + 1) % rb->layout.tp_frame_nr;
 
-			/* This is very important, otherwise poll() does active 
-			   wait with 100% cpu */
+			/* This is very important, otherwise kernel starts
+			   to drop packages */
 			mem_notify_kernel(&(fm->tp_h));
 		}
 
@@ -377,8 +377,8 @@ void fetch_packets_no_print(ring_buff_t * rb, struct pollfd *pfd, int timeout)
 
 			i = (i + 1) % rb->layout.tp_frame_nr;
 
-			/* This is very important, otherwise poll() does active 
-			   wait with 100% cpu */
+			/* This is very important, otherwise kernel starts
+			   to drop packages */
 			mem_notify_kernel(&(fm->tp_h));
 		}
 
@@ -605,7 +605,7 @@ int main(int argc, char **argv)
 			}
 		case 'B':
 			{
-				set_cpu_affinity(optarg);	/* TODO: inverted */
+				set_cpu_affinity_inv(optarg);
 				break;
 			}
 

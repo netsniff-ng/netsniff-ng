@@ -69,14 +69,11 @@ void help(void)
 	printf("    -b <arg>    bind process to specific CPU/CPU-range\n");
 	printf
 	    ("    -B <arg>    forbid process to use specific CPU/CPU-range\n");
-	printf("    -H          do not high priorize\n");
+	printf("    -H          do not high priorize process\n");
 	printf("    -n          non-blocking packet capturing mode\n");
 	printf("\n");
 	printf("Options for packet printing:\n");
 	printf("    -s          do not print captured packets\n");
-	printf("    -c          print captured packets (default)\n");
-	printf("    -cc         print captured packets, more information\n");
-	printf("    -ccc        print captured packets, most information\n");
 	printf("\n");
 	printf("Options, misc:\n");
 	printf("    -v          prints out version\n");

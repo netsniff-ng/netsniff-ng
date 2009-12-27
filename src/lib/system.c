@@ -133,6 +133,73 @@ int set_cpu_affinity(const char *str)
 }
 
 /**
+ * set_cpu_affinity_inv - Sets inverted CPU affinity according to given param
+ * @str:                 option parameter
+ */
+int set_cpu_affinity_inv(const char *str)
+{
+	int ret, i, npc;
+	const char *p, *q;
+	cpu_set_t cpu_bitmask;
+
+	q = str;
+
+	CPU_ZERO(&cpu_bitmask);
+
+	for (i = 0, npc = sysconf(_SC_NPROCESSORS_CONF); i < npc; ++i) {
+		CPU_SET(i, &cpu_bitmask);
+	}
+
+	while (p = q, q = nexttoken(q, ','), p) {
+		unsigned int a;	/* Beginning of range */
+		unsigned int b;	/* End of range */
+		unsigned int s;	/* Stride */
+
+		const char *c1, *c2;
+
+		if (sscanf(p, "%u", &a) < 1) {
+			return 1;
+		}
+
+		b = a;
+		s = 1;
+
+		c1 = nexttoken(p, '-');
+		c2 = nexttoken(p, ',');
+
+		if (c1 != NULL && (c2 == NULL || c1 < c2)) {
+			if (sscanf(c1, "%u", &b) < 1) {
+				return 1;
+			}
+
+			c1 = nexttoken(c1, ':');
+			if (c1 != NULL && (c2 == NULL || c1 < c2)) {
+				if (sscanf(c1, "%u", &s) < 1) {
+					return (1);
+				}
+			}
+		}
+
+		if (!(a <= b)) {
+			return (1);
+		}
+
+		while (a <= b) {
+			CPU_CLR(a, &cpu_bitmask);
+			a += s;
+		}
+	}
+
+	ret = sched_setaffinity(getpid(), sizeof(cpu_bitmask), &cpu_bitmask);
+	if (ret) {
+		perr("Can't set this cpu affinity: %s\n", str);
+		exit(EXIT_FAILURE);
+	}
+
+	return (0);
+}
+
+/**
  * get_cpu_affinity - Returns CPU affinity bitstring
  * @cpu_string:      allocated string
  * @len:             len of cpu_string
