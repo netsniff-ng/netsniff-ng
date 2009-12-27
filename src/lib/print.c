@@ -63,6 +63,7 @@
 
 #include <linux/if.h>
 #include <linux/ip.h>
+#include <linux/udp.h>
 #include <linux/tcp.h>
 #include <linux/if_ether.h>
 
@@ -133,6 +134,21 @@ static void inline dump_iphdr_all(struct iphdr *ip)
 	dbg("ID (%u), ", ntohs(ip->id));
 	dbg("Frag off (%u), ", ip->frag_off);
 	dbg("Chsum (0x%x)", ntohs(ip->check));
+
+	dbg(" ] ");
+}
+
+/*
+ * dump_udphdr_all - Just plain dumb formatting, for -ccc
+ * @udp:            udp header
+ */
+static void inline dump_udphdr_all(struct udphdr *udp)
+{
+	dbg(" [ ");
+
+	dbg("Port (%u => %u), ", ntohs(udp->source), ntohs(udp->dest));
+	dbg("Len (%u), ", ntohs(udp->len));
+	dbg("Chsum (0x%x)", ntohs(udp->check));
 
 	dbg(" ] ");
 }
@@ -234,11 +250,16 @@ void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb, int len)
 		off_n += sizeof(struct iphdr);
 
 		/* Check for TCP */
-		if (((struct iphdr *)(rbb + off_o))->protocol == 0x6) {
+		if (((struct iphdr *)(rbb + off_o))->protocol == 6) {
 			dump_tcphdr_all((struct tcphdr *)(rbb + off_n));
 			dbg("\n");
 			off_o = off_n;
 			off_n += sizeof(struct tcphdr);
+		} else if (((struct iphdr *)(rbb + off_o))->protocol == 17) {
+			dump_udphdr_all((struct udphdr *)(rbb + off_n));
+			dbg("\n");
+			off_o = off_n;
+			off_n += sizeof(struct udphdr);
 		}
 	}
 
@@ -273,11 +294,16 @@ void print_packet_buffer_mode_2(ring_buff_bytes_t * rbb, int len)
 		off_n += sizeof(struct iphdr);
 
 		/* Check for TCP */
-		if (((struct iphdr *)(rbb + off_o))->protocol == 0x6) {
+		if (((struct iphdr *)(rbb + off_o))->protocol == 6) {
 			dump_tcphdr_all((struct tcphdr *)(rbb + off_n));
 			dbg("\n");
 			off_o = off_n;
 			off_n += sizeof(struct tcphdr);
+		} else if (((struct iphdr *)(rbb + off_o))->protocol == 17) {
+			dump_udphdr_all((struct udphdr *)(rbb + off_n));
+			dbg("\n");
+			off_o = off_n;
+			off_n += sizeof(struct udphdr);
 		}
 	}
 
@@ -312,11 +338,16 @@ void print_packet_buffer_mode_3(ring_buff_bytes_t * rbb, int len)
 		off_n += sizeof(struct iphdr);
 
 		/* Check for TCP */
-		if (((struct iphdr *)(rbb + off_o))->protocol == 0x6) {
+		if (((struct iphdr *)(rbb + off_o))->protocol == 6) {
 			dump_tcphdr_all((struct tcphdr *)(rbb + off_n));
 			dbg("\n");
 			off_o = off_n;
 			off_n += sizeof(struct tcphdr);
+		} else if (((struct iphdr *)(rbb + off_o))->protocol == 17) {
+			dump_udphdr_all((struct udphdr *)(rbb + off_n));
+			dbg("\n");
+			off_o = off_n;
+			off_n += sizeof(struct udphdr);
 		}
 	}
 
