@@ -124,12 +124,12 @@ void create_virt_ring(int sock, ring_buff_t * rb)
 
 	rb->len = rb->layout.tp_block_size * rb->layout.tp_block_nr;
 
-	dbg("%.2f MB allocated for rx ring: \n", 1.f * rb->len / (1024 * 1024));
-	dbg("  -> %d blocks, %d frames\n", rb->layout.tp_block_nr,
+	dbg("%.2f MB allocated for rx ring \n", 1.f * rb->len / (1024 * 1024));
+	dbg(" [ %d blocks, %d frames ] \n", rb->layout.tp_block_nr,
 	    rb->layout.tp_frame_nr);
-	dbg("  -> %d frames per block\n",
+	dbg(" [ %d frames per block ]\n",
 	    rb->layout.tp_block_size / rb->layout.tp_frame_size);
-	dbg("  -> framesize: %d bytes, blocksize: %d bytes\n",
+	dbg(" [ framesize: %d bytes, blocksize: %d bytes ]\n\n",
 	    rb->layout.tp_frame_size, rb->layout.tp_block_size);
 }
 
@@ -358,5 +358,6 @@ void parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 		    (*bpf)[*len - 1].jf, (*bpf)[*len - 1].k);
 	}
 
+	dbg("\n");
 	fclose(fp);
 }

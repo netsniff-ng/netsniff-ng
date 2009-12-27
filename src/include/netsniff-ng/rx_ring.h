@@ -41,6 +41,7 @@
 #include <stdlib.h>
 
 #include <linux/filter.h>
+#include <linux/if_packet.h>
 
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/types.h>
@@ -98,6 +99,7 @@ static inline int mem_notify_user(struct iovec frame)
 	   all in order to get most things working with our stats ... */
 
 	return (TP_STATUS_KERNEL != header->tp_status);
+/*	return (TP_STATUS_USER == header->tp_status); */
 }
 
 /**

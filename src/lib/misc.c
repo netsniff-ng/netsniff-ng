@@ -138,7 +138,7 @@ void header(void)
 
 	cpu_string = malloc(len);
 	if (!cpu_string) {
-		perr("no mem left\n");
+		perr("No mem left\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -148,14 +148,14 @@ void header(void)
 		exit(EXIT_FAILURE);
 	}
 
-	dbg("%s %s -- pid: %d\n", PROGNAME_STRING, VERSION_STRING,
+	dbg("%s %s -- pid (%d)\n\n", PROGNAME_STRING, VERSION_STRING,
 	    (int)getpid());
 
-	dbg("nice: %d, scheduler: %d prio %d\n",
+	dbg("nice (%d), scheduler (%d prio %d)\n",
 	    getpriority(PRIO_PROCESS, getpid()),
 	    sched_getscheduler(getpid()), sp.sched_priority);
 
-	dbg("%ld of %ld CPUs online, affinity bitstring: %s\n",
+	dbg("%ld of %ld CPUs online, affinity bitstring (%s)\n\n",
 	    sysconf(_SC_NPROCESSORS_ONLN),
 	    sysconf(_SC_NPROCESSORS_CONF), get_cpu_affinity(cpu_string, len));
 
