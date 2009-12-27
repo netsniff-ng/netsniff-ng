@@ -67,6 +67,7 @@
 #include <linux/udp.h>
 #include <linux/tcp.h>
 #include <linux/if_ether.h>
+#include <linux/if_packet.h>
 
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/types.h>
@@ -211,7 +212,7 @@ static void inline dump_tcphdr_all(struct tcphdr *tcp)
  */
 static void inline dump_payload_hex_all(ring_buff_bytes_t * rbb, int len)
 {
-	dbg(" [ Payload hex (");
+	dbg(" [ Payload hex  (");
 	dump_hex(rbb, len);
 	dbg(") ] ");
 }
@@ -231,13 +232,14 @@ static void inline dump_payload_char_all(ring_buff_bytes_t * rbb, int len)
 /**
  * print_packet_buffer_mode_1 - Prints packets according to verbose mode -c
  * @rbb:                       payload
- * @len:                       len of payload
+ * @tp:                        kernel packet header
  */
-void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb, int len)
+void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb,
+				const struct tpacket_hdr *tp)
 {
 	size_t off_n, off_o;
 
-	dbg("%d Byte: \n", len);
+	dbg("%d Byte, %u s, %u us \n", tp->tp_len, tp->tp_sec, tp->tp_usec);
 
 	dump_ethhdr_all((struct ethhdr *)rbb);
 	dbg("\n");
@@ -256,7 +258,8 @@ void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb, int len)
 			dbg("\n");
 			off_o = off_n;
 			off_n += sizeof(struct tcphdr);
-		} else if (((struct iphdr *)(rbb + off_o))->protocol == IPPROTO_UDP) {
+		} else if (((struct iphdr *)(rbb + off_o))->protocol ==
+			   IPPROTO_UDP) {
 			dump_udphdr_all((struct udphdr *)(rbb + off_n));
 			dbg("\n");
 			off_o = off_n;
@@ -264,97 +267,9 @@ void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb, int len)
 		}
 	}
 
-	dump_payload_hex_all(rbb + off_n, len - off_n);
+	dump_payload_hex_all(rbb + off_n, (tp->tp_len - off_n));
 	dbg("\n");
-	dump_payload_char_all(rbb + off_n, len - off_n);
-	dbg("\n");
-
-	dbg("\n");
-}
-
-/**
- * print_packet_buffer_mode_2 - Prints packets according to verbose mode -cc
- * @rbb:                       payload
- * @len:                       len of payload
- */
-void print_packet_buffer_mode_2(ring_buff_bytes_t * rbb, int len)
-{
-	size_t off_n, off_o;
-
-	dbg("%d Byte: \n", len);
-
-	dump_ethhdr_all((struct ethhdr *)rbb);
-	dbg("\n");
-	off_n = sizeof(struct ethhdr);
-
-	/* Check for IP */
-	if (ntohs(((struct ethhdr *)rbb)->h_proto) == ETH_P_IP) {
-		dump_iphdr_all((struct iphdr *)(rbb + off_n));
-		dbg("\n");
-		off_o = off_n;
-		off_n += sizeof(struct iphdr);
-
-		/* Check for TCP */
-		if (((struct iphdr *)(rbb + off_o))->protocol == IPPROTO_TCP) {
-			dump_tcphdr_all((struct tcphdr *)(rbb + off_n));
-			dbg("\n");
-			off_o = off_n;
-			off_n += sizeof(struct tcphdr);
-		} else if (((struct iphdr *)(rbb + off_o))->protocol == IPPROTO_UDP) {
-			dump_udphdr_all((struct udphdr *)(rbb + off_n));
-			dbg("\n");
-			off_o = off_n;
-			off_n += sizeof(struct udphdr);
-		}
-	}
-
-	dump_payload_hex_all(rbb + off_n, len - off_n);
-	dbg("\n");
-	dump_payload_char_all(rbb + off_n, len - off_n);
-	dbg("\n");
-
-	dbg("\n");
-}
-
-/**
- * print_packet_buffer_mode_3 - Prints packets according to verbose mode -ccc
- * @rbb:                       payload
- * @len:                       len of payload
- */
-void print_packet_buffer_mode_3(ring_buff_bytes_t * rbb, int len)
-{
-	size_t off_n, off_o;
-
-	dbg("%d Byte: \n", len);
-
-	dump_ethhdr_all((struct ethhdr *)rbb);
-	dbg("\n");
-	off_n = sizeof(struct ethhdr);
-
-	/* Check for IP */
-	if (ntohs(((struct ethhdr *)rbb)->h_proto) == ETH_P_IP) {
-		dump_iphdr_all((struct iphdr *)(rbb + off_n));
-		dbg("\n");
-		off_o = off_n;
-		off_n += sizeof(struct iphdr);
-
-		/* Check for TCP */
-		if (((struct iphdr *)(rbb + off_o))->protocol == IPPROTO_TCP) {
-			dump_tcphdr_all((struct tcphdr *)(rbb + off_n));
-			dbg("\n");
-			off_o = off_n;
-			off_n += sizeof(struct tcphdr);
-		} else if (((struct iphdr *)(rbb + off_o))->protocol == IPPROTO_UDP) {
-			dump_udphdr_all((struct udphdr *)(rbb + off_n));
-			dbg("\n");
-			off_o = off_n;
-			off_n += sizeof(struct udphdr);
-		}
-	}
-
-	dump_payload_hex_all(rbb + off_n, len - off_n);
-	dbg("\n");
-	dump_payload_char_all(rbb + off_n, len - off_n);
+	dump_payload_char_all(rbb + off_n, (tp->tp_len - off_n));
 	dbg("\n");
 
 	dbg("\n");

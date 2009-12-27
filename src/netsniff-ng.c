@@ -317,7 +317,7 @@ void fetch_packets_and_print(ring_buff_t * rb, struct pollfd *pfd)
 			    (ring_buff_bytes_t *) (rb->frames[i].iov_base +
 						   sizeof(*fm) + sizeof(short));
 
-			print_packet_buffer(rbb, fm->tp_h.tp_len);
+			print_packet_buffer(rbb, &fm->tp_h);
 
 			/* Pending singals will be delivered after netstat 
 			   manipulation */

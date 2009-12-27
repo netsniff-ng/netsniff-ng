@@ -67,7 +67,8 @@ typedef struct frame_map {
 } frame_map_t;
 
 typedef void (*fetch_packets_from_ring_t) (ring_buff_t *, struct pollfd *);
-typedef void (*print_packet_buff_t) (ring_buff_bytes_t *, int);
+typedef void (*print_packet_buff_t) (ring_buff_bytes_t *,
+				     const struct tpacket_hdr *);
 
 typedef struct system_data {
 	int sysdaemon;
