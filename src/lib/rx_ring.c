@@ -35,6 +35,40 @@
  *    Mostly RX_RING related stuff and other networking code
  */
 
+/*
+ * FIXME: Some notes about the zeroed-out payloads from pcap lib:
+ *
+ * XXX: According to the kernel source we should get the real 
+ * packet len if calling recvfrom with MSG_TRUNC set. It does 
+ * not seem to work here :(, but it is supported by this code
+ * anyway. 
+ * To be honest the code RELIES on that feature so this is really
+ * broken with 2.2.x kernels.
+ * I spend a day to figure out what's going on and I found out
+ * that the following is happening: 
+ *
+ * The packet comes from a random interface and the packet_rcv 
+ * hook is called with a clone of the packet. That code inserts
+ * the packet into the receive queue of the packet socket.
+ * If a filter is attached to that socket that filter is run
+ * first - and there lies the problem. The default filter always
+ * cuts the packet at the snaplen:
+ *
+ * # tcpdump -d
+ * (000) ret      #68
+ *
+ * So the packet filter cuts down the packet. The recvfrom call 
+ * says "hey, it's only 68 bytes, it fits into the buffer" with
+ * the result that we don't get the real packet length. This 
+ * is valid at least until kernel 2.2.17pre6. 
+ *
+ * We currently handle this by making a copy of the filter
+ * program, fixing all "ret" instructions with non-zero
+ * operands to have an operand of 65535 so that the filter
+ * doesn't truncate the packet, and supplying that modified
+ * filter to the kernel.
+ */
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
