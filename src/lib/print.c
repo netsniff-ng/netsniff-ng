@@ -75,7 +75,7 @@
 
 static void inline dump_hex(ring_buff_bytes_t * buff, int len)
 {
-	while (len--) {
+	while (len-- > 0) {
 		dbg("%.2x ", *buff);
 		buff++;
 	}
@@ -83,7 +83,7 @@ static void inline dump_hex(ring_buff_bytes_t * buff, int len)
 
 static void inline dump_printable(ring_buff_bytes_t * buff, int len)
 {
-	while (len--) {
+	while (len-- > 0) {
 		dbg("%c ", (isprint(*buff) ? *buff : '.'));
 		buff++;
 	}
