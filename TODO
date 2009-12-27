@@ -2,12 +2,13 @@ Some future ToDos
 =================
 
  * Better visualization of packets during debug-output
- * External tool for BPF filter code generation
+ * Colorize debug output, according to Proto and checksum 
+   (e.g. bogus packets with black bg)
+ * BPF filter code generation
+ * Plugin framework
  * Support for data export in pcap file format
  * Deep Packet Inspection
  * Some more device statistics for wireless net devices
- * Add TX_RING and dynamically choose rings during runtime (RX, TX, both)
  * Support for setting CPU affinity
- * Kernel patch for loading more than one BPF code to a single socket
  * Regexp on packet content
  * ... 
