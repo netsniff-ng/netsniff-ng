@@ -132,6 +132,10 @@ static inline void print_counters(void)
 	d_sec = diff.tv_sec;
 	d_nsec = diff.tv_nsec;
 
+	/*
+	 * FIXME Find a way to print a uint64_t
+	 * on 32 and 64 bit arch w/o gcc warnings
+	 */
 	dbg("stats summary:\n");
 	dbg("--------------------------------------------------------------------------------------------\n");
 	dbg("elapsed time: %llu d, %llu h, %llu min, %llu s, %llu ns\n", d_day,
@@ -488,7 +492,12 @@ static void cleanup_system(system_data_t * sd, int *sock, ring_buff_t ** rb)
 
 	free((*rb));
 	close((*sock));
-
+	
+	/*
+	 * FIXME Find a way to print a uint64_t
+	 * on 32 and 64 bit arch w/o gcc warnings
+	 */
+	
 	dbg("captured frames: %llu, "
 	    "captured bytes: %llu [%llu KB, %llu MB, %llu GB]\n",
 	    netstat.total.frames, netstat.total.bytes,
