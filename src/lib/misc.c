@@ -65,10 +65,12 @@ void help(void)
 	printf("    -L <arg>    use file <arg> as logfile, req if -D\n");
 	printf("    -S <arg>    use file <arg> as uds inode, req if -D\n");
 	printf("\n");
-	printf("Options for CPU affinity:\n");
+	printf("Options for sys scheduler:\n");
 	printf("    -b <arg>    bind process to specific CPU/CPU-range\n");
 	printf
 	    ("    -B <arg>    forbid process to use specific CPU/CPU-range\n");
+	printf("    -H          do not high priorize\n");
+	printf("    -n          non-blocking packet capturing mode\n");
 	printf("\n");
 	printf("Options for packet printing:\n");
 	printf("    -s          do not print captured packets\n");

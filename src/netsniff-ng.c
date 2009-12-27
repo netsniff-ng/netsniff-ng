@@ -310,7 +310,7 @@ void softirq_handler(int number)
  * @rb:                     ring buffer
  * @pfd:                    file descriptor for polling
  */
-void fetch_packets_and_print(ring_buff_t * rb, struct pollfd *pfd)
+void fetch_packets_and_print(ring_buff_t * rb, struct pollfd *pfd, int timeout)
 {
 	int i = 0;
 
@@ -344,7 +344,7 @@ void fetch_packets_and_print(ring_buff_t * rb, struct pollfd *pfd)
 			mem_notify_kernel(&(fm->tp_h));
 		}
 
-		poll(pfd, 1, -1);
+		poll(pfd, 1, timeout);
 	}
 }
 
@@ -353,7 +353,7 @@ void fetch_packets_and_print(ring_buff_t * rb, struct pollfd *pfd)
  * @rb:                    ring buffer
  * @pfd:                   file descriptor for polling
  */
-void fetch_packets_no_print(ring_buff_t * rb, struct pollfd *pfd)
+void fetch_packets_no_print(ring_buff_t * rb, struct pollfd *pfd, int timeout)
 {
 	int i = 0;
 
@@ -382,7 +382,7 @@ void fetch_packets_no_print(ring_buff_t * rb, struct pollfd *pfd)
 			mem_notify_kernel(&(fm->tp_h));
 		}
 
-		poll(pfd, 1, -1);
+		poll(pfd, 1, timeout);
 	}
 }
 
@@ -405,8 +405,10 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 	check_for_root();
 
 	/* Scheduler timeslice & prio tuning */
-	set_proc_prio(DEFAULT_PROCESS_PRIO);
-	set_sched_status(DEFAULT_SCHED_POLICY, DEFAULT_SCHED_PRIO);
+	if (!sd->no_prioritization) {
+		set_proc_prio(DEFAULT_PROCESS_PRIO);
+		set_sched_status(DEFAULT_SCHED_POLICY, DEFAULT_SCHED_PRIO);
+	}
 
 	register_softirq(SIGINT, &softirq_handler);
 	register_softirq(SIGALRM, &softirq_handler);
@@ -492,12 +494,12 @@ static void cleanup_system(system_data_t * sd, int *sock, ring_buff_t ** rb)
 
 	free((*rb));
 	close((*sock));
-	
+
 	/*
 	 * FIXME Find a way to print a uint64_t
 	 * on 32 and 64 bit arch w/o gcc warnings
 	 */
-	
+
 	dbg("captured frames: %llu, "
 	    "captured bytes: %llu [%llu KB, %llu MB, %llu GB]\n",
 	    netstat.total.frames, netstat.total.bytes,
@@ -535,8 +537,10 @@ int main(int argc, char **argv)
 
 	/* Default is verbose mode */
 	fetch_packets = fetch_packets_and_print;
+	/* Default sys configuration */
+	sd->blocking_mode = -1;
 
-	while ((c = getopt(argc, argv, "vhd:P:L:Df:sS:b:B:")) != EOF) {
+	while ((c = getopt(argc, argv, "vhd:P:L:Df:sS:b:B:Hn")) != EOF) {
 		switch (c) {
 		case 'h':
 			{
@@ -551,6 +555,16 @@ int main(int argc, char **argv)
 		case 'd':
 			{
 				sd->dev = optarg;
+				break;
+			}
+		case 'n':
+			{
+				sd->blocking_mode = 0;
+				break;
+			}
+		case 'H':
+			{
+				sd->no_prioritization = 1;
 				break;
 			}
 		case 'f':
@@ -654,7 +668,7 @@ int main(int argc, char **argv)
 	 */
 
 	init_system(sd, &sock, &rb, &pfd);
-	fetch_packets(rb, &pfd);
+	fetch_packets(rb, &pfd, sd->blocking_mode);
 	cleanup_system(sd, &sock, &rb);
 
 	free(sd);

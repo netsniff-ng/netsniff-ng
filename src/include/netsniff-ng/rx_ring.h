@@ -77,7 +77,7 @@ static inline void alloc_frame_buffer(ring_buff_t * rb)
 		exit(EXIT_FAILURE);
 	}
 
-        memset(rb->frames, 0, rb->layout.tp_frame_nr * sizeof(*rb->frames));
+	memset(rb->frames, 0, rb->layout.tp_frame_nr * sizeof(*rb->frames));
 
 	for (i = 0; i < rb->layout.tp_frame_nr; ++i) {
 		rb->frames[i].iov_base =
@@ -94,14 +94,7 @@ static inline void alloc_frame_buffer(ring_buff_t * rb)
 static inline int mem_notify_user(struct iovec frame)
 {
 	struct tpacket_hdr *header = frame.iov_base;
-
-	/* XXX: Normally it should be TP_STATUS_USER, but frames larger than 
-	   our defined framesize will be truncated and set to 
-	   TP_STATUS_COPY or see other flags as well, so we grab them 
-	   all in order to get most things working with our stats ... */
-
-	return (TP_STATUS_KERNEL != header->tp_status);
-/*	return (TP_STATUS_USER == header->tp_status); */
+	return (header->tp_status == TP_STATUS_USER);
 }
 
 /**

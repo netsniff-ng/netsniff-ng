@@ -239,7 +239,7 @@ void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb,
 {
 	size_t off_n, off_o;
 
-	dbg("%d Byte, %u s, %u us \n", tp->tp_len, tp->tp_sec, tp->tp_usec);
+	dbg("%d Byte, %u.%u s \n", tp->tp_len, tp->tp_sec, tp->tp_usec);	/*tp->tp_snaplen, */
 
 	dump_ethhdr_all((struct ethhdr *)rbb);
 	dbg("\n");
