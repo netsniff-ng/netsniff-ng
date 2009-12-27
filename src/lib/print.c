@@ -78,6 +78,14 @@ static void inline dump_hex(ring_buff_bytes_t * buff, int len)
 	}
 }
 
+static void inline dump_printable(ring_buff_bytes_t * buff, int len)
+{
+	while (len--) {
+		dbg("%c ", (*buff >= 0x20 && *buff <= 0x7E ? *buff : '.'));
+		buff++;
+	}
+}
+
 /*
  * dump_ethhdr_all - Just plain dumb formatting, for -ccc
  * @eth:            ethernet header
@@ -180,14 +188,26 @@ static void inline dump_tcphdr_all(struct tcphdr *tcp)
 }
 
 /*
- * dump_payload_all - Just plain dumb formatting, for -ccc
- * @rbb:             payload bytes
- * @len:             len
+ * dump_payload_hex_all - Just plain dumb formatting, for -ccc
+ * @rbb:                 payload bytes
+ * @len:                 len
  */
-static void inline dump_payload_all(ring_buff_bytes_t * rbb, int len)
+static void inline dump_payload_hex_all(ring_buff_bytes_t * rbb, int len)
 {
-	dbg(" [ Payload (");
+	dbg(" [ Payload hex (");
 	dump_hex(rbb, len);
+	dbg(") ] ");
+}
+
+/*
+ * dump_payload_char_all - Just plain dumb formatting, for -ccc
+ * @rbb:                  payload bytes
+ * @len:                  len
+ */
+static void inline dump_payload_char_all(ring_buff_bytes_t * rbb, int len)
+{
+	dbg(" [ Payload char (");
+	dump_printable(rbb, len);
 	dbg(") ] ");
 }
 
@@ -222,7 +242,9 @@ void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb, int len)
 		}
 	}
 
-	dump_payload_all(rbb + off_n, len - off_n);
+	dump_payload_hex_all(rbb + off_n, len - off_n);
+	dbg("\n");
+	dump_payload_char_all(rbb + off_n, len - off_n);
 	dbg("\n");
 
 	dbg("\n");
@@ -259,7 +281,9 @@ void print_packet_buffer_mode_2(ring_buff_bytes_t * rbb, int len)
 		}
 	}
 
-	dump_payload_all(rbb + off_n, len - off_n);
+	dump_payload_hex_all(rbb + off_n, len - off_n);
+	dbg("\n");
+	dump_payload_char_all(rbb + off_n, len - off_n);
 	dbg("\n");
 
 	dbg("\n");
@@ -296,7 +320,9 @@ void print_packet_buffer_mode_3(ring_buff_bytes_t * rbb, int len)
 		}
 	}
 
-	dump_payload_all(rbb + off_n, len - off_n);
+	dump_payload_hex_all(rbb + off_n, len - off_n);
+	dbg("\n");
+	dump_payload_char_all(rbb + off_n, len - off_n);
 	dbg("\n");
 
 	dbg("\n");
