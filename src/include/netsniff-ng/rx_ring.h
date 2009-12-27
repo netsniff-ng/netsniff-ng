@@ -77,6 +77,8 @@ static inline void alloc_frame_buffer(ring_buff_t * rb)
 		exit(EXIT_FAILURE);
 	}
 
+        memset(rb->frames, 0, rb->layout.tp_frame_nr * sizeof(*rb->frames));
+
 	for (i = 0; i < rb->layout.tp_frame_nr; ++i) {
 		rb->frames[i].iov_base =
 		    (void *)((long)rb->buffer) + (i * rb->layout.tp_frame_size);
