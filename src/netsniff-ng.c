@@ -593,6 +593,8 @@ int main(int argc, char **argv)
 				case 'P':
 				case 'L':
 				case 'S':
+				case 'b':
+				case 'B':
 					{
 						fprintf(stderr,
 							"option -%c requires an argument\n",
