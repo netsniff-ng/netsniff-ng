@@ -72,20 +72,29 @@
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/types.h>
 #include <netsniff-ng/print.h>
+#include <netsniff-ng/system.h>
 
-static void inline dump_hex(ring_buff_bytes_t * buff, int len)
+static void inline dump_hex(ring_buff_bytes_t * buff, int len, size_t tty_len,
+			    size_t tty_off)
 {
-	while (len-- > 0) {
+	for (; len-- > 0; tty_off += 3, buff++) {
+		if (unlikely(tty_off >= tty_len - 3)) {
+			dbg("\n   ");
+			tty_off = 0;
+		}
 		dbg("%.2x ", *buff);
-		buff++;
 	}
 }
 
-static void inline dump_printable(ring_buff_bytes_t * buff, int len)
+static void inline dump_printable(ring_buff_bytes_t * buff, int len,
+				  size_t tty_len, size_t tty_off)
 {
-	while (len-- > 0) {
+	for (; len-- > 0; tty_off += 2, buff++) {
+		if (unlikely(tty_off >= tty_len - 3)) {
+			dbg("\n   ");
+			tty_off = 0;
+		}
 		dbg("%c ", (isprint(*buff) ? *buff : '.'));
-		buff++;
 	}
 }
 
@@ -210,10 +219,11 @@ static void inline dump_tcphdr_all(struct tcphdr *tcp)
  * @rbb:                 payload bytes
  * @len:                 len
  */
-static void inline dump_payload_hex_all(ring_buff_bytes_t * rbb, int len)
+static void inline dump_payload_hex_all(ring_buff_bytes_t * rbb, int len,
+					int tty_len)
 {
 	dbg(" [ Payload hex  (");
-	dump_hex(rbb, len);
+	dump_hex(rbb, len, tty_len, 14);
 	dbg(") ] ");
 }
 
@@ -222,10 +232,11 @@ static void inline dump_payload_hex_all(ring_buff_bytes_t * rbb, int len)
  * @rbb:                  payload bytes
  * @len:                  len
  */
-static void inline dump_payload_char_all(ring_buff_bytes_t * rbb, int len)
+static void inline dump_payload_char_all(ring_buff_bytes_t * rbb, int len,
+					 int tty_len)
 {
 	dbg(" [ Payload char (");
-	dump_printable(rbb, len);
+	dump_printable(rbb, len, tty_len, 14);
 	dbg(") ] ");
 }
 
@@ -238,8 +249,9 @@ void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb,
 				const struct tpacket_hdr *tp)
 {
 	size_t off_n, off_o;
+	int tty_len = get_tty_length();
 
-	dbg("%d Byte, %u.%u s \n", tp->tp_len, tp->tp_sec, tp->tp_usec);	/*tp->tp_snaplen, */
+	dbg("%d Byte, %u.%u s \n", tp->tp_len, tp->tp_sec, tp->tp_usec);
 
 	dump_ethhdr_all((struct ethhdr *)rbb);
 	dbg("\n");
@@ -267,9 +279,9 @@ void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb,
 		}
 	}
 
-	dump_payload_hex_all(rbb + off_n, (tp->tp_len - off_n));
+	dump_payload_hex_all(rbb + off_n, (tp->tp_len - off_n), tty_len - 20);
 	dbg("\n");
-	dump_payload_char_all(rbb + off_n, (tp->tp_len - off_n));
+	dump_payload_char_all(rbb + off_n, (tp->tp_len - off_n), tty_len - 20);
 	dbg("\n");
 
 	dbg("\n");

@@ -38,10 +38,12 @@
 #ifndef _NET_SYSTEM_H_
 #define _NET_SYSTEM_H_
 
+#include <stdio.h>
 #include <sched.h>
 
 #include <sys/poll.h>
 #include <sys/resource.h>
+#include <sys/ioctl.h>
 
 #define DEFAULT_SCHED_POLICY	SCHED_FIFO
 #define DEFAULT_SCHED_PRIO	sched_get_priority_max(DEFAULT_SCHED_POLICY)
@@ -71,6 +73,22 @@ static inline void prepare_polling(int sock, struct pollfd *pfd)
 	pfd->fd = sock;
 	pfd->revents = 0;
 	pfd->events = POLLIN | POLLERR;
+}
+
+/**
+ * get_tty_length - Returns the current TTY len
+ */
+static inline int get_tty_length(void)
+{
+#ifdef TIOCGSIZE
+	struct ttysize ts;
+	ioctl(0, TIOCGSIZE, &ts);
+	return (ts.ts_cols);
+#elif defined(TIOCGWINSZ)
+	struct winsize ts;
+	ioctl(0, TIOCGWINSZ, &ts);
+	return (ts.ws_col);
+#endif
 }
 
 #endif				/* _NET_SYSTEM_H_ */
