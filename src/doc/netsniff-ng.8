@@ -3,11 +3,11 @@
 .\" 
 .\" netsniff-ng, a high performance network sniffer for packet inspection
 .\" 
-.\" Copyright 2009 by Daniel Borkmann <danborkmann@googlemail.com>
+.\" Copyright 2009, 2010 by Daniel Borkmann <danborkmann@googlemail.com>
 .\" 
 .\" License: GPL, version 2
 .\" 
-.TH "netsniff-ng" "8" "December 2009" "Leipzig University of Applied Sciences" "User Manuals"
+.TH "netsniff-ng" "8" "January 2010" "Leipzig University of Applied Sciences" "User Manuals"
 .SH "NAME"
 netsniff\-ng \- a high performance network sniffer for packet inspection
 .SH "SYNOPSIS"
@@ -16,18 +16,16 @@ netsniff\-ng \- a high performance network sniffer for packet inspection
 .B ] [\-f
 .I filter
 .B ]
-.B [\-C] ...
+.B [\-b 
+.I cpu
+.B ] ...
 .SH "DESCRIPTION"
 .B netsniff\-ng 
-is a high performance Linux network sniffer for packet inspection. Basically, it is similar to tcpdump, but it doesn't need a syscall per packet. Instead, it uses an memory mapped area within kernelspace for accessing packets without copying them to userspace (zero\-copy mechanism), so during high bandwidth less packet drops than on libpcap\-based sniffers will occur.
+is a high performance Linux network sniffer for packet inspection. Basically, it is similar to tcpdump, but it doesn't need a syscall per packet. Instead, it uses an memory mapped area within kernelspace for accessing packets without copying them to userspace (zero\-copy mechanism), so during high bandwidth less packet drops than on standard libpcap\-based sniffers will occur.
 
 .br 
 .br 
 netsniff\-ng is useful for debugging your network, measuring performance throughput or creating network statistics of incoming packets on central network nodes like routers or firewalls.
-
-.br 
-.br 
-By providing a unix domain socket client (\fBcheck_packets\fR), you are able to export the collected data during runtime (e.g. for Nagios). 
 .SH "OPTIONS"
 .IP "\fB\-d\fR \fIdevice\fR"
 For instance, use `eth0' or `wlan0' as the packet capturing network device.
@@ -37,9 +35,6 @@ Use a specific \fIBerkeley Packet Filter\fR program to filter incoming packets.
 .br 
 Have a look at the given examples in: 
 .I /etc/netsniff\-ng/rules
-
-.IP "\fB\-C\fR"
-Print captured packets to stdout.
 
 .IP "\fB\-D\fR"
 Run netsniff\-ng in daemon mode, options \fB\-P\fR, \fB\-L\fR and \fB\-S\fR are required, too. 
@@ -54,15 +49,30 @@ Used to define the logfile. In most cases you can define it as \fI/var/log/netsn
 
 .IP "\fB\-S\fR \fIinode\fR"
 Used to define the unix domain socket inode. In most cases you can define it as \fI/tmp/netsniff\-ng.uds\fR.
+
+.IP "\fB\-b\fR \fICPU\fR"
+Force system scheduler to schedule netsniff\-ng only on specific CPUs. Parameters could  be \fB0\fR for using only CPU0, \fB0,1\fR for using CPU0 and CPU1 or even \fB0\-4\fR for using a whole CPU range. If you have a customized init process that leaves out a special CPU you could bind netsniff\-ng on that free CPU for maximal performance. On the other hand, you can avoid scheduling netsniff\-ng on CPUs which are reserved for other critical tasks.
+
+.IP "\fB\-B\fR \fICPU\fR"
+Force system scheduler to \fBnot\fR schedule netsniff\-ng on specific CPUs. Parameter syntax is equivalent to \fB\-b\fR.
+
+.IP "\fB\-H\fR"
+Do not put netsniff\-ng in high\-priorized mode. Normally, netsniff\-ng will be scheduled with high priority thus it may make use of the full CPUs timeslice. You can avoid this by setting \fB\-H\fR.
+
+.IP "\fB\-n\fR"
+This option sets netsniff\-ng in non\-blocking mode. If the RX_RING is empty for several reasons, netsniff\-ng will be put to sleep and wait for new incoming packages. By setting \fB\-n\fR netsniff\-ng will spin (with 100% CPU usage) in non\-blocking mode. This might be faster, but could slow down other processes.
+
+.IP "\fB\-s\fR"
+Do not print captured packets to stdout (silent mode). That switch can be changes during runtime by sending \fBSIGUSR2\fR to toggle verbose/silent mode.
+
+.IP "\fB\-v\fR"
+Prints versioning information.
 .SH "AUTHOR"
-(C) 2009, by Daniel Borkmann
+(C) 2009, 2010, by Daniel Borkmann
 .br 
 
 For bug reports, questions, code contributions and all the rest:
 .br 
-.br 
 
 .IP ""
-\fI<danborkmann@googlemail.com>\fR, or
-.IP ""
-\fI<dborkmann@acm.org>\fR
+\fI<danborkmann@googlemail.com>\fR

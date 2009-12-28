@@ -6,5 +6,5 @@
 #  for ICMP messages:
 #
 
-netsniff-ng -d eth0 -f /etc/netsniff-ng/rules/icmp.bpf -C
+netsniff-ng -d eth0 -f /etc/netsniff-ng/rules/icmp.bpf
 

@@ -1,14 +1,15 @@
 Some future ToDos
 =================
 
- * Better visualization of packets during debug-output
+ * (Still) better visualization of packets during debug-output
  * Colorize debug output, according to Proto and checksum 
    (e.g. bogus packets with black bg)
  * BPF filter code generation
- * Plugin framework
+ * Fix Linux kernel for BPF handling (payload cut off)
+ * Plugin framework (for specialized packet payload output)
  * Support for data export in pcap file format
+ * OS fingerprinting detection
  * Deep Packet Inspection
  * Some more device statistics for wireless net devices
- * Support for setting CPU affinity
  * Regexp on packet content
  * ... 
