@@ -147,16 +147,16 @@ void header(void)
 		exit(EXIT_FAILURE);
 	}
 
-	dbg("%s %s -- pid (%d)\n\n", PROGNAME_STRING, VERSION_STRING,
-	    (int)getpid());
+	info("%s %s -- pid (%d)\n\n", PROGNAME_STRING, VERSION_STRING,
+	     (int)getpid());
 
-	dbg("nice (%d), scheduler (%d prio %d)\n",
-	    getpriority(PRIO_PROCESS, getpid()),
-	    sched_getscheduler(getpid()), sp.sched_priority);
+	info("nice (%d), scheduler (%d prio %d)\n",
+	     getpriority(PRIO_PROCESS, getpid()),
+	     sched_getscheduler(getpid()), sp.sched_priority);
 
-	dbg("%ld of %ld CPUs online, affinity bitstring (%s)\n\n",
-	    sysconf(_SC_NPROCESSORS_ONLN),
-	    sysconf(_SC_NPROCESSORS_CONF), get_cpu_affinity(cpu_string, len));
+	info("%ld of %ld CPUs online, affinity bitstring (%s)\n\n",
+	     sysconf(_SC_NPROCESSORS_ONLN),
+	     sysconf(_SC_NPROCESSORS_CONF), get_cpu_affinity(cpu_string, len));
 
 	free(cpu_string);
 }

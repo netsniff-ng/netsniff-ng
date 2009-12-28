@@ -434,8 +434,8 @@ int daemonize(const char *pidfile, const char *logfile,
 		close(fd);
 	}
 
-	dbg("%s %s\n", PROGNAME_STRING, VERSION_STRING);
-	dbg("daemon up and running\n");
+	info("%s %s\n", PROGNAME_STRING, VERSION_STRING);
+	info("daemon up and running\n");
 
 	pthread_attr_init(&attr);
 	pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
@@ -450,7 +450,7 @@ int daemonize(const char *pidfile, const char *logfile,
 
 	pthread_detach(tid);
 
-	dbg("unix domain socket server up and running\n");
+	info("unix domain socket server up and running\n");
 
 	return (0);
 }

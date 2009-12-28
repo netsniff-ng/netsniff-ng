@@ -58,7 +58,7 @@
 #define INTERNAL_UDS_QUEUE_LEN  50	/* max AF_UNIX clients for accept */
 
 /* TODO */
-#define dbg(fmt, arg...)                                            \
+#define info(fmt, arg...)                                            \
                                 fprintf(stderr, fmt, ## arg);
 
 #define err(fmt, arg...)                                            \

@@ -158,13 +158,13 @@ void create_virt_ring(int sock, ring_buff_t * rb)
 
 	rb->len = rb->layout.tp_block_size * rb->layout.tp_block_nr;
 
-	dbg("%.2f MB allocated for rx ring \n", 1.f * rb->len / (1024 * 1024));
-	dbg(" [ %d blocks, %d frames ] \n", rb->layout.tp_block_nr,
-	    rb->layout.tp_frame_nr);
-	dbg(" [ %d frames per block ]\n",
-	    rb->layout.tp_block_size / rb->layout.tp_frame_size);
-	dbg(" [ framesize: %d bytes, blocksize: %d bytes ]\n\n",
-	    rb->layout.tp_frame_size, rb->layout.tp_block_size);
+	info("%.2f MB allocated for rx ring \n", 1.f * rb->len / (1024 * 1024));
+	info(" [ %d blocks, %d frames ] \n", rb->layout.tp_block_nr,
+	     rb->layout.tp_frame_nr);
+	info(" [ %d frames per block ]\n",
+	     rb->layout.tp_block_size / rb->layout.tp_frame_size);
+	info(" [ framesize: %d bytes, blocksize: %d bytes ]\n\n",
+	     rb->layout.tp_frame_size, rb->layout.tp_block_size);
 }
 
 /**
@@ -319,11 +319,11 @@ void net_stat(int sock)
 
 	ret = getsockopt(sock, SOL_PACKET, PACKET_STATISTICS, &kstats, &slen);
 	if (ret > -1) {
-		dbg("%d frames incoming\n", kstats.tp_packets);
-		dbg("%d frames passed filter\n",
-		    kstats.tp_packets - kstats.tp_drops);
-		dbg("%d frames failed filter (due to out of space)\n",
-		    kstats.tp_drops);
+		info("%d frames incoming\n", kstats.tp_packets);
+		info("%d frames passed filter\n",
+		     kstats.tp_packets - kstats.tp_drops);
+		info("%d frames failed filter (due to out of space)\n",
+		     kstats.tp_drops);
 	}
 }
 
@@ -363,7 +363,7 @@ void parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 		exit(EXIT_FAILURE);
 	}
 
-	dbg("parsing rulefile %s\n", rulefile);
+	info("parsing rulefile %s\n", rulefile);
 
 	count = 0;
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
@@ -386,12 +386,12 @@ void parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 
 		memcpy(&(*bpf)[*len - 1], &sf_single, sizeof(sf_single));
 
-		dbg("line %d: { 0x%x, %d, %d, 0x%08x }\n", count++,
-		    (*bpf)[*len - 1].code,
-		    (*bpf)[*len - 1].jt,
-		    (*bpf)[*len - 1].jf, (*bpf)[*len - 1].k);
+		info("line %d: { 0x%x, %d, %d, 0x%08x }\n", count++,
+		     (*bpf)[*len - 1].code,
+		     (*bpf)[*len - 1].jt,
+		     (*bpf)[*len - 1].jf, (*bpf)[*len - 1].k);
 	}
 
-	dbg("\n");
+	info("\n");
 	fclose(fp);
 }

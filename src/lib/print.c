@@ -79,10 +79,10 @@ static void inline dump_hex(ring_buff_bytes_t * buff, int len, size_t tty_len,
 {
 	for (; len-- > 0; tty_off += 3, buff++) {
 		if (unlikely(tty_off >= tty_len - 3)) {
-			dbg("\n   ");
+			info("\n   ");
 			tty_off = 0;
 		}
-		dbg("%.2x ", *buff);
+		info("%.2x ", *buff);
 	}
 }
 
@@ -91,10 +91,10 @@ static void inline dump_printable(ring_buff_bytes_t * buff, int len,
 {
 	for (; len-- > 0; tty_off += 2, buff++) {
 		if (unlikely(tty_off >= tty_len - 3)) {
-			dbg("\n   ");
+			info("\n   ");
 			tty_off = 0;
 		}
-		dbg("%c ", (isprint(*buff) ? *buff : '.'));
+		info("%c ", (isprint(*buff) ? *buff : '.'));
 	}
 }
 
@@ -104,22 +104,22 @@ static void inline dump_printable(ring_buff_bytes_t * buff, int len,
  */
 static void inline dump_ethhdr_all(struct ethhdr *eth)
 {
-	dbg(" [ ");
+	info(" [ ");
 
-	dbg("MAC (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x => %.2x:%.2x:%.2x:%.2x:%.2x:%.2x), ",
-	    /* Source MAC */
-	    ((uint8_t *) eth->h_source)[6], ((uint8_t *) eth->h_source)[7],
-	    ((uint8_t *) eth->h_source)[8], ((uint8_t *) eth->h_source)[9],
-	    ((uint8_t *) eth->h_source)[10], ((uint8_t *) eth->h_source)[11],
-	    /* Destination MAC */
-	    ((uint8_t *) eth->h_dest)[0], ((uint8_t *) eth->h_dest)[1],
-	    ((uint8_t *) eth->h_dest)[2], ((uint8_t *) eth->h_dest)[3],
-	    ((uint8_t *) eth->h_dest)[4], ((uint8_t *) eth->h_dest)[5]);
+	info("MAC (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x => %.2x:%.2x:%.2x:%.2x:%.2x:%.2x), ",
+	     /* Source MAC */
+	     ((uint8_t *) eth->h_source)[6], ((uint8_t *) eth->h_source)[7],
+	     ((uint8_t *) eth->h_source)[8], ((uint8_t *) eth->h_source)[9],
+	     ((uint8_t *) eth->h_source)[10], ((uint8_t *) eth->h_source)[11],
+	     /* Destination MAC */
+	     ((uint8_t *) eth->h_dest)[0], ((uint8_t *) eth->h_dest)[1],
+	     ((uint8_t *) eth->h_dest)[2], ((uint8_t *) eth->h_dest)[3],
+	     ((uint8_t *) eth->h_dest)[4], ((uint8_t *) eth->h_dest)[5]);
 
-	dbg("Proto (0x%.2x%.2x)",
-	    ((uint8_t *) & eth->h_proto)[0], ((uint8_t *) & eth->h_proto)[1]);
+	info("Proto (0x%.2x%.2x)",
+	     ((uint8_t *) & eth->h_proto)[0], ((uint8_t *) & eth->h_proto)[1]);
 
-	dbg(" ] ");
+	info(" ] ");
 }
 
 /*
@@ -128,25 +128,25 @@ static void inline dump_ethhdr_all(struct ethhdr *eth)
  */
 static void inline dump_iphdr_all(struct iphdr *ip)
 {
-	dbg(" [ ");
+	info(" [ ");
 
-	dbg("Addr (%u.%u.%u.%u => %u.%u.%u.%u), ",
-	    ((uint8_t *) & ip->saddr)[0], ((uint8_t *) & ip->saddr)[1],
-	    ((uint8_t *) & ip->saddr)[2], ((uint8_t *) & ip->saddr)[3],
-	    ((uint8_t *) & ip->daddr)[0], ((uint8_t *) & ip->daddr)[1],
-	    ((uint8_t *) & ip->daddr)[2], ((uint8_t *) & ip->daddr)[3]);
+	info("Addr (%u.%u.%u.%u => %u.%u.%u.%u), ",
+	     ((uint8_t *) & ip->saddr)[0], ((uint8_t *) & ip->saddr)[1],
+	     ((uint8_t *) & ip->saddr)[2], ((uint8_t *) & ip->saddr)[3],
+	     ((uint8_t *) & ip->daddr)[0], ((uint8_t *) & ip->daddr)[1],
+	     ((uint8_t *) & ip->daddr)[2], ((uint8_t *) & ip->daddr)[3]);
 
-	dbg("Proto (%u), ", ip->protocol);
-	dbg("TTL (%u), ", ip->ttl);
-	dbg("TOS (%u), ", ntohs(ip->tos));
-	dbg("Ver (%u), ", ntohs(ip->version));
-	dbg("IHL (%u), ", ntohs(ip->ihl));
-	dbg("Tlen (%u), ", ntohs(ip->tot_len));
-	dbg("ID (%u), ", ntohs(ip->id));
-	dbg("Frag off (%u), ", ip->frag_off);
-	dbg("Chsum (0x%x)", ntohs(ip->check));
+	info("Proto (%u), ", ip->protocol);
+	info("TTL (%u), ", ip->ttl);
+	info("TOS (%u), ", ntohs(ip->tos));
+	info("Ver (%u), ", ntohs(ip->version));
+	info("IHL (%u), ", ntohs(ip->ihl));
+	info("Tlen (%u), ", ntohs(ip->tot_len));
+	info("ID (%u), ", ntohs(ip->id));
+	info("Frag off (%u), ", ip->frag_off);
+	info("Chsum (0x%x)", ntohs(ip->check));
 
-	dbg(" ] ");
+	info(" ] ");
 }
 
 /*
@@ -155,13 +155,13 @@ static void inline dump_iphdr_all(struct iphdr *ip)
  */
 static void inline dump_udphdr_all(struct udphdr *udp)
 {
-	dbg(" [ ");
+	info(" [ ");
 
-	dbg("Port (%u => %u), ", ntohs(udp->source), ntohs(udp->dest));
-	dbg("Len (%u), ", ntohs(udp->len));
-	dbg("Chsum (0x%x)", ntohs(udp->check));
+	info("Port (%u => %u), ", ntohs(udp->source), ntohs(udp->dest));
+	info("Len (%u), ", ntohs(udp->len));
+	info("Chsum (0x%x)", ntohs(udp->check));
 
-	dbg(" ] ");
+	info(" ] ");
 }
 
 /*
@@ -170,48 +170,48 @@ static void inline dump_udphdr_all(struct udphdr *udp)
  */
 static void inline dump_tcphdr_all(struct tcphdr *tcp)
 {
-	dbg(" [ ");
+	info(" [ ");
 
-	dbg("Port (%u => %u), ", ntohs(tcp->source), ntohs(tcp->dest));
-	dbg("SN (0x%x), ", ntohs(tcp->seq));
-	dbg("AN (0x%x), ", ntohs(tcp->ack_seq));
-	dbg("Data off (%d), ", ntohs(tcp->doff));
-	dbg("Res 1 (%d), ", ntohs(tcp->res1));
+	info("Port (%u => %u), ", ntohs(tcp->source), ntohs(tcp->dest));
+	info("SN (0x%x), ", ntohs(tcp->seq));
+	info("AN (0x%x), ", ntohs(tcp->ack_seq));
+	info("Data off (%d), ", ntohs(tcp->doff));
+	info("Res 1 (%d), ", ntohs(tcp->res1));
 
-	dbg("Flags (");
+	info("Flags (");
 
 	if (tcp->urg == 1) {
-		dbg("URG ");
+		info("URG ");
 	}
 	if (tcp->ack == 1) {
-		dbg("ACK ");
+		info("ACK ");
 	}
 	if (tcp->psh == 1) {
-		dbg("PSH ");
+		info("PSH ");
 	}
 	if (tcp->rst == 1) {
-		dbg("RST ");
+		info("RST ");
 	}
 	if (tcp->syn == 1) {
-		dbg("SYN ");
+		info("SYN ");
 	}
 	if (tcp->fin == 1) {
-		dbg("FIN ");
+		info("FIN ");
 	}
 	if (tcp->ece == 1) {
-		dbg("ECE ");
+		info("ECE ");
 	}
 	if (tcp->cwr == 1) {
-		dbg("CWR ");
+		info("CWR ");
 	}
 
-	dbg("), ");
+	info("), ");
 
-	dbg("Window (%d), ", ntohs(tcp->window));
-	dbg("Hdrsum (0x%x), ", ntohs(tcp->check));
-	dbg("Urg ptr (%u)", ntohs(tcp->urg_ptr));
+	info("Window (%d), ", ntohs(tcp->window));
+	info("Hdrsum (0x%x), ", ntohs(tcp->check));
+	info("Urg ptr (%u)", ntohs(tcp->urg_ptr));
 
-	dbg(" ] ");
+	info(" ] ");
 }
 
 /*
@@ -222,9 +222,9 @@ static void inline dump_tcphdr_all(struct tcphdr *tcp)
 static void inline dump_payload_hex_all(ring_buff_bytes_t * rbb, int len,
 					int tty_len)
 {
-	dbg(" [ Payload hex  (");
+	info(" [ Payload hex  (");
 	dump_hex(rbb, len, tty_len, 14);
-	dbg(") ] ");
+	info(") ] ");
 }
 
 /*
@@ -235,9 +235,9 @@ static void inline dump_payload_hex_all(ring_buff_bytes_t * rbb, int len,
 static void inline dump_payload_char_all(ring_buff_bytes_t * rbb, int len,
 					 int tty_len)
 {
-	dbg(" [ Payload char (");
+	info(" [ Payload char (");
 	dump_printable(rbb, len, tty_len, 14);
-	dbg(") ] ");
+	info(") ] ");
 }
 
 /**
@@ -251,38 +251,38 @@ void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb,
 	size_t off_n, off_o;
 	int tty_len = get_tty_length();
 
-	dbg("%d Byte, %u.%u s \n", tp->tp_len, tp->tp_sec, tp->tp_usec);
+	info("%d Byte, %u.%u s \n", tp->tp_len, tp->tp_sec, tp->tp_usec);
 
 	dump_ethhdr_all((struct ethhdr *)rbb);
-	dbg("\n");
+	info("\n");
 	off_n = sizeof(struct ethhdr);
 
 	/* Check for IP */
 	if (ntohs(((struct ethhdr *)rbb)->h_proto) == ETH_P_IP) {
 		dump_iphdr_all((struct iphdr *)(rbb + off_n));
-		dbg("\n");
+		info("\n");
 		off_o = off_n;
 		off_n += sizeof(struct iphdr);
 
 		/* Check for TCP */
 		if (((struct iphdr *)(rbb + off_o))->protocol == IPPROTO_TCP) {
 			dump_tcphdr_all((struct tcphdr *)(rbb + off_n));
-			dbg("\n");
+			info("\n");
 			off_o = off_n;
 			off_n += sizeof(struct tcphdr);
 		} else if (((struct iphdr *)(rbb + off_o))->protocol ==
 			   IPPROTO_UDP) {
 			dump_udphdr_all((struct udphdr *)(rbb + off_n));
-			dbg("\n");
+			info("\n");
 			off_o = off_n;
 			off_n += sizeof(struct udphdr);
 		}
 	}
 
 	dump_payload_hex_all(rbb + off_n, (tp->tp_len - off_n), tty_len - 20);
-	dbg("\n");
+	info("\n");
 	dump_payload_char_all(rbb + off_n, (tp->tp_len - off_n), tty_len - 20);
-	dbg("\n");
+	info("\n");
 
-	dbg("\n");
+	info("\n");
 }

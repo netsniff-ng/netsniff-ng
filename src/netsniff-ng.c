@@ -137,32 +137,33 @@ static inline void print_counters(void)
 	 * FIXME Find a way to print a uint64_t
 	 * on 32 and 64 bit arch w/o gcc warnings
 	 */
-	dbg("stats summary:\n");
-	dbg("--------------------------------------------------------------------------------------------\n");
-	dbg("elapsed time: %llu d, %llu h, %llu min, %llu s, %llu ns\n", d_day,
-	    d_h, d_min, d_sec, d_nsec);
-	dbg("-----------+--------------------------+--------------------------+--------------------------\n");
-	dbg("           |  per sec                 |  per min                 |  total                   \n");
-	dbg("-----------+--------------------------+--------------------------+--------------------------\n");
-	dbg("  frames   | %24llu | %24llu | %24llu \n",
-	    netstat.s_per_sec.frames, netstat.s_per_min.frames,
-	    netstat.total.frames);
-	dbg("-----------+--------------------------+--------------------------+--------------------------\n");
-	dbg("  in B     | %24llu | %24llu | %24llu \n", netstat.s_per_sec.bytes,
-	    netstat.s_per_min.bytes, netstat.total.bytes);
-	dbg("  in KB    | %24llu | %24llu | %24llu \n",
-	    DIV_KBYTES(netstat.s_per_sec.bytes),
-	    DIV_KBYTES(netstat.s_per_min.bytes),
-	    DIV_KBYTES(netstat.total.bytes));
-	dbg("  in MB    | %24llu | %24llu | %24llu \n",
-	    DIV_MBYTES(netstat.s_per_sec.bytes),
-	    DIV_MBYTES(netstat.s_per_min.bytes),
-	    DIV_MBYTES(netstat.total.bytes));
-	dbg("  in GB    | %24llu | %24llu | %24llu \n",
-	    DIV_GBYTES(netstat.s_per_sec.bytes),
-	    DIV_GBYTES(netstat.s_per_min.bytes),
-	    DIV_GBYTES(netstat.total.bytes));
-	dbg("-----------+--------------------------+--------------------------+--------------------------\n");
+	info("stats summary:\n");
+	info("--------------------------------------------------------------------------------------------\n");
+	info("elapsed time: %llu d, %llu h, %llu min, %llu s, %llu ns\n", d_day,
+	     d_h, d_min, d_sec, d_nsec);
+	info("-----------+--------------------------+--------------------------+--------------------------\n");
+	info("           |  per sec                 |  per min                 |  total                   \n");
+	info("-----------+--------------------------+--------------------------+--------------------------\n");
+	info("  frames   | %24llu | %24llu | %24llu \n",
+	     netstat.s_per_sec.frames, netstat.s_per_min.frames,
+	     netstat.total.frames);
+	info("-----------+--------------------------+--------------------------+--------------------------\n");
+	info("  in B     | %24llu | %24llu | %24llu \n",
+	     netstat.s_per_sec.bytes, netstat.s_per_min.bytes,
+	     netstat.total.bytes);
+	info("  in KB    | %24llu | %24llu | %24llu \n",
+	     DIV_KBYTES(netstat.s_per_sec.bytes),
+	     DIV_KBYTES(netstat.s_per_min.bytes),
+	     DIV_KBYTES(netstat.total.bytes));
+	info("  in MB    | %24llu | %24llu | %24llu \n",
+	     DIV_MBYTES(netstat.s_per_sec.bytes),
+	     DIV_MBYTES(netstat.s_per_min.bytes),
+	     DIV_MBYTES(netstat.total.bytes));
+	info("  in GB    | %24llu | %24llu | %24llu \n",
+	     DIV_GBYTES(netstat.s_per_sec.bytes),
+	     DIV_GBYTES(netstat.s_per_min.bytes),
+	     DIV_GBYTES(netstat.total.bytes));
+	info("-----------+--------------------------+--------------------------+--------------------------\n");
 }
 
 /**
@@ -178,7 +179,7 @@ static void *uds_thread(void *psock)
 	   send-syscall */
 	hold_softirq_pthread(2, SIGUSR1, SIGALRM);
 
-	dbg("unix domain socket server: entering thread\n");
+	info("unix domain socket server: entering thread\n");
 	sock = *((int *)psock);
 
 	pthread_mutex_lock(&gs_loc_mutex);
@@ -192,7 +193,7 @@ static void *uds_thread(void *psock)
 
 	close(sock);
 
-	dbg("unix domain socket server: quitting thread\n");
+	info("unix domain socket server: quitting thread\n");
 	pthread_exit(0);
 }
 
@@ -224,7 +225,7 @@ void *start_uds_server(void *psockfile)
 
 	len = strlen(local.sun_path) + sizeof(local.sun_family);
 
-	dbg("bind socket to %s\n", local.sun_path);
+	info("bind socket to %s\n", local.sun_path);
 
 	ret = bind(sock, (struct sockaddr *)&local, len);
 	if (ret < 0) {
@@ -240,7 +241,7 @@ void *start_uds_server(void *psockfile)
 
 	while (1) {
 		size_t t = sizeof(remote);
-		dbg("unix domain socket server: waiting for a connection\n");
+		info("unix domain socket server: waiting for a connection\n");
 
 		sock2 =
 		    accept(sock, (struct sockaddr *)&remote, (socklen_t *) & t);
@@ -249,7 +250,7 @@ void *start_uds_server(void *psockfile)
 			pthread_exit(0);
 		}
 
-		dbg("unix domain socket server: connected to client\n");
+		info("unix domain socket server: connected to client\n");
 
 		/* We're not interested in joining... 
 		   so a single thread id is sufficient */
@@ -262,7 +263,7 @@ void *start_uds_server(void *psockfile)
 		pthread_detach(tid);
 	}
 
-	dbg("unix domain socket server: quit\n");
+	info("unix domain socket server: quit\n");
 	pthread_exit(0);
 }
 
@@ -309,12 +310,12 @@ void softirq_handler(int number)
 	case SIGINT:
 		{
 			sigint = 1;
-			dbg("caught SIGINT! ... bye bye\n");
+			info("caught SIGINT! ... bye bye\n");
 			break;
 		}
 	case SIGHUP:
 		{
-			dbg("caught SIGHUP! ... ignoring\n");
+			info("caught SIGHUP! ... ignoring\n");
 			break;
 		}
 	default:
@@ -491,12 +492,12 @@ static void cleanup_system(system_data_t * sd, int *sock, ring_buff_t ** rb)
 	 * on 32 and 64 bit arch w/o gcc warnings
 	 */
 
-	dbg("captured frames: %llu, "
-	    "captured bytes: %llu [%llu KB, %llu MB, %llu GB]\n",
-	    netstat.total.frames, netstat.total.bytes,
-	    netstat.total.bytes / 1024,
-	    netstat.total.bytes / (1024 * 1024),
-	    netstat.total.bytes / (1024 * 1024 * 1024));
+	info("captured frames: %llu, "
+	     "captured bytes: %llu [%llu KB, %llu MB, %llu GB]\n",
+	     netstat.total.frames, netstat.total.bytes,
+	     netstat.total.bytes / 1024,
+	     netstat.total.bytes / (1024 * 1024),
+	     netstat.total.bytes / (1024 * 1024 * 1024));
 
 	if (sd->sysdaemon) {
 		undaemonize(sd->pidfile);
@@ -558,7 +559,7 @@ int main(int argc, char **argv)
 			}
 		case 'f':
 			{
-				dbg("XXX: Berkeley Packet Filter currently not supported\ndue to Linux kernel bug.\n\n")
+				info("XXX: Berkeley Packet Filter currently not supported due to Linux kernel bug.\n\n")
 				    sd->rulefile = optarg;
 				break;
 			}
