@@ -558,7 +558,8 @@ int main(int argc, char **argv)
 			}
 		case 'f':
 			{
-				sd->rulefile = optarg;
+				dbg("XXX: Berkeley Packet Filter currently not supported\ndue to Linux kernel bug.\n\n")
+				    sd->rulefile = optarg;
 				break;
 			}
 		case 's':
