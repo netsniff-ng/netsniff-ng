@@ -63,10 +63,11 @@
  */
 
 volatile sig_atomic_t sigint = 0;
+volatile sig_atomic_t sigusr2 = 0;
+
 ring_buff_stat_t netstat;
 pthread_mutex_t gs_loc_mutex;
 
-fetch_packets_from_ring_t fetch_packets = NULL;
 print_packet_buff_t print_packet_buffer = print_packet_buffer_mode_1;
 
 /*
@@ -284,7 +285,25 @@ void softirq_handler(int number)
 		}
 	case SIGUSR2:
 		{
-			// TODO: switch main loop functions
+			switch (++sigusr2 % 2) {
+			case 0:
+				{
+					print_packet_buffer =
+					    print_packet_buffer_mode_1;
+					break;
+				}
+			case 1:
+				{
+					print_packet_buffer = NULL;
+					break;
+				}
+			default:
+				{
+					print_packet_buffer =
+					    print_packet_buffer_mode_1;
+					break;
+				}
+			}
 			break;
 		}
 	case SIGINT:
@@ -310,7 +329,7 @@ void softirq_handler(int number)
  * @rb:                     ring buffer
  * @pfd:                    file descriptor for polling
  */
-void fetch_packets_and_print(ring_buff_t * rb, struct pollfd *pfd, int timeout)
+void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout)
 {
 	int i = 0;
 
@@ -321,7 +340,9 @@ void fetch_packets_and_print(ring_buff_t * rb, struct pollfd *pfd, int timeout)
 			    (ring_buff_bytes_t *) (rb->frames[i].iov_base +
 						   sizeof(*fm) + sizeof(short));
 
-			print_packet_buffer(rbb, &fm->tp_h);
+			if (print_packet_buffer) {
+				print_packet_buffer(rbb, &fm->tp_h);
+			}
 
 			/* Pending singals will be delivered after netstat 
 			   manipulation */
@@ -349,44 +370,6 @@ void fetch_packets_and_print(ring_buff_t * rb, struct pollfd *pfd, int timeout)
 }
 
 /**
- * fetch_packets_no_print - Traverses RX_RING in silent mode, only updates counter
- * @rb:                    ring buffer
- * @pfd:                   file descriptor for polling
- */
-void fetch_packets_no_print(ring_buff_t * rb, struct pollfd *pfd, int timeout)
-{
-	int i = 0;
-
-	while (likely(!sigint)) {
-		while (mem_notify_user(rb->frames[i]) && likely(!sigint)) {
-			struct frame_map *fm = rb->frames[i].iov_base;
-
-			/* Pending singals will be delivered after netstat 
-			   manipulation */
-			hold_softirq(SIGUSR1, SIGALRM);
-			pthread_mutex_lock(&gs_loc_mutex);
-
-			netstat.per_sec.frames++;
-			netstat.per_sec.bytes += fm->tp_h.tp_len;
-
-			netstat.total.frames++;
-			netstat.total.bytes += fm->tp_h.tp_len;
-
-			pthread_mutex_unlock(&gs_loc_mutex);
-			restore_softirq(SIGUSR1, SIGALRM);
-
-			i = (i + 1) % rb->layout.tp_frame_nr;
-
-			/* This is very important, otherwise kernel starts
-			   to drop packages */
-			mem_notify_kernel(&(fm->tp_h));
-		}
-
-		poll(pfd, 1, timeout);
-	}
-}
-
-/**
  * init_system - Initializes netsniff-ng main
  * @sd:         system configuration data
  * @sock:       socket
@@ -396,9 +379,9 @@ void fetch_packets_no_print(ring_buff_t * rb, struct pollfd *pfd, int timeout)
 static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 		       struct pollfd *pfd)
 {
-	int ret, bpf_len = 0;
+	int ret /*, bpf_len = 0 */ ;
 
-	struct sock_filter **bpf;
+	/* struct sock_filter **bpf; */
 	struct itimerval val_r;
 
 	/* We are only allowed to do these nasty things as root ;) */
@@ -429,14 +412,15 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 	/* Print program header */
 	header();
 
-	bpf = (struct sock_filter **)malloc(sizeof(*bpf));
-	if (bpf == NULL) {
-		perr("Cannot allocate socket filter\n");
-		exit(EXIT_FAILURE);
-	}
+	/*
+	   bpf = (struct sock_filter **)malloc(sizeof(*bpf));
+	   if (bpf == NULL) {
+	   perr("Cannot allocate socket filter\n");
+	   exit(EXIT_FAILURE);
+	   } 
 
-	memset(bpf, 0, sizeof(**bpf));
-
+	   memset(bpf, 0, sizeof(**bpf));
+	 */
 	(*rb) = (ring_buff_t *) malloc(sizeof(**rb));
 	if ((*rb) == NULL) {
 		perr("Cannot allocate ring buffer\n");
@@ -448,9 +432,15 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 	(*sock) = alloc_pf_sock();
 	put_dev_into_promisc_mode((*sock), ethdev_to_ifindex((*sock), sd->dev));
 
-	/* Berkeley Packet Filter stuff */
-	parse_rules(sd->rulefile, bpf, &bpf_len);
-	inject_kernel_bpf((*sock), *bpf, bpf_len * sizeof(**bpf));
+	/* FIXME: Somehow there seems to be a bug within the Linux kernel.
+	   If we do attach a packet filter to the socket the receiving 
+	   message will be cut off at some length... if we do not 
+	   attach a packet filter everything will be fine and all of the 
+	   package payload will be shown. */
+
+	/* Berkeley Packet Filter stuff
+	   parse_rules(sd->rulefile, bpf, &bpf_len);
+	   inject_kernel_bpf((*sock), *bpf, bpf_len * sizeof(**bpf)); */
 
 	/* RX_RING stuff */
 	create_virt_ring((*sock), (*rb));
@@ -475,9 +465,10 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 
 	clock_gettime(CLOCK_REALTIME, &netstat.m_start);
 
-	free(*bpf);
-	free(bpf);
-
+	/*
+	   free(*bpf);
+	   free(bpf);
+	 */
 	return 0;
 }
 
@@ -535,8 +526,6 @@ int main(int argc, char **argv)
 	memset(sd, 0, sizeof(*sd));
 	memset(&pfd, 0, sizeof(pfd));
 
-	/* Default is verbose mode */
-	fetch_packets = fetch_packets_and_print;
 	/* Default sys configuration */
 	sd->blocking_mode = -1;
 
@@ -575,7 +564,7 @@ int main(int argc, char **argv)
 		case 's':
 			{
 				/* Switch to silent mode */
-				fetch_packets = fetch_packets_no_print;
+				print_packet_buffer = NULL;
 				break;
 			}
 		case 'D':

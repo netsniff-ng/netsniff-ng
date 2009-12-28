@@ -66,7 +66,6 @@ typedef struct frame_map {
 	struct sockaddr_ll s_ll __attribute__ ((aligned(TPACKET_ALIGNMENT)));
 } frame_map_t;
 
-typedef void (*fetch_packets_from_ring_t) (ring_buff_t *, struct pollfd *, int);
 typedef void (*print_packet_buff_t) (ring_buff_bytes_t *,
 				     const struct tpacket_hdr *);
 
