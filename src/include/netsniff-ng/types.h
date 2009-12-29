@@ -70,7 +70,7 @@ typedef void (*print_packet_buff_t) (ring_buff_bytes_t *,
 				     const struct tpacket_hdr *);
 
 typedef struct system_data {
-	/* Some boolean conf values */
+	/* Some more or less boolean conf values */
 	int sysdaemon;
 	int blocking_mode;
 	int no_prioritization;

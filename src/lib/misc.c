@@ -53,7 +53,7 @@ void help(void)
 	       PROGNAME_STRING);
 	printf
 	    ("inspection that acts as a raw socket sniffer with kernelspace\n");
-	printf("bpf and zero copy mode (rx ring).\n");
+	printf("bpf and a \"zero-copy\" mode receive ring.\n");
 	printf("\n");
 	printf("Options, mandatory:\n");
 	printf
@@ -94,7 +94,8 @@ void help(void)
 	printf("    - For more help type \'man netsniff-ng\'\n");
 	printf("\n");
 	printf("Please report bugs to <danborkmann@googlemail.com>\n");
-	printf("Copyright (C) 2009, 2010 Daniel Borkmann\n");
+	printf
+	    ("Copyright (C) 2009, 2010 Daniel Borkmann and Emmanuel Roullit\n");
 	printf("License: GNU GPL version 2\n");
 	printf
 	    ("This is free software: you are free to change and redistribute it.\n");
@@ -113,11 +114,18 @@ void version(void)
 	       PROGNAME_STRING);
 	printf
 	    ("inspection that acts as a raw socket sniffer with kernelspace\n");
-	printf("bpf and zero copy mode (rx ring).\n");
+	printf("bpf and a \"zero-copy\" mode receive ring.\n");
 	printf("%s", MOOH);	/* ;) */
 	printf("\n");
+	printf("%s can be used for protocol analysis and\n"
+	       "reverse engineering, network debugging, measurement of\n"
+	       "performance throughput or network statistics creation of\n"
+	       "incoming packets on central network nodes like routers\n"
+	       "or firewalls.\n", PROGNAME_STRING);
+	printf("\n");
 	printf("Please report bugs to <danborkmann@googlemail.com>\n");
-	printf("Copyright (C) 2009, 2010 Daniel Borkmann\n");
+	printf
+	    ("Copyright (C) 2009, 2010 Daniel Borkmann and Emmanuel Roullit\n");
 	printf("License: GNU GPL version 2\n");
 	printf
 	    ("This is free software: you are free to change and redistribute it.\n");
