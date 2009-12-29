@@ -359,8 +359,7 @@ void parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 	struct sock_filter sf_single;
 
 	assert(bpf);
-	assert(*bpf);
-	assert(len && *len > 0 && (*len % sizeof(struct sock_filter) == 0));
+	assert(len);
 	assert(rulefile);
 
 	FILE *fp = fopen(rulefile, "r");
@@ -369,7 +368,7 @@ void parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 		exit(EXIT_FAILURE);
 	}
 
-	info("parsing rulefile %s\n", rulefile);
+	info("Parsing rulefile %s\n", rulefile);
 
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		/* We're using evil sscanf, so we have to assure
@@ -394,7 +393,7 @@ void parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 
 		memcpy(&(*bpf)[*len - 1], &sf_single, sizeof(sf_single));
 
-		info("line %d: { 0x%x, %d, %d, 0x%08x }\n", count++,
+		info(" line %d: { 0x%x, %d, %d, 0x%08x }\n", count++,
 		     (*bpf)[*len - 1].code,
 		     (*bpf)[*len - 1].jt,
 		     (*bpf)[*len - 1].jf, (*bpf)[*len - 1].k);

@@ -74,6 +74,7 @@ typedef struct system_data {
 	int sysdaemon;
 	int blocking_mode;
 	int no_prioritization;
+	int bypass_bpf;
 	/* Daemon mode settings */
 	char *pidfile;
 	char *logfile;

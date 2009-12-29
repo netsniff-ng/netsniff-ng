@@ -61,6 +61,16 @@
 #define INTERVAL_COUNTER_REFR   1000	/* in ms */
 #define INTERNAL_UDS_QUEUE_LEN  50	/* max AF_UNIX clients for accept */
 
+#define POLL_WAIT_INF           -1	/* CPU friendly and appropriate for normal usage */
+#define POLL_WAIT_NONE           0	/* This will pull CPU usage to 100 % */
+
+#define BPF_BYPASS               1
+#define BPF_NO_BYPASS            0
+
+#define PROC_NO_HIGHPRIO         1
+
+#define SYSD_ENABLE              1
+
 /* TODO */
 #define info(fmt, arg...)                                            \
                                 fprintf(stderr, fmt, ## arg);
@@ -95,8 +105,8 @@
 
 /* Release alias, some versioning fun ;) */
 #define MOOH     " ________________________     \n"  \
-                 "< happy GNU year edition >    \n"  \
-                 " ------------------------     \n"  \
+                 "| happy GNU year edition |    \n"  \
+                 "+------------------------+    \n"  \
                  "        \\   ^__^              \n"  \
                  "         \\  (oo)\\_______      \n"  \
                  "            (__)\\       )\\/\\  \n"  \

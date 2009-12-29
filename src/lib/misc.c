@@ -55,8 +55,11 @@ void help(void)
 	    ("inspection that acts as a raw socket sniffer with kernelspace\n");
 	printf("bpf and zero copy mode (rx ring).\n");
 	printf("\n");
-	printf("Options, required:\n");
-	printf("    -d <arg>    use device <arg> for capturing packets\n");
+	printf("Options, mandatory:\n");
+	printf
+	    ("    -d <arg>    use device <arg> for capturing packets, e.g. `eth0`\n");
+	printf("\n");
+	printf("Options for packet filtering:\n");
 	printf("    -f <arg>    use file <arg> as bpf filter\n");
 	printf("\n");
 	printf("Options for sys daemon:\n");

@@ -392,9 +392,9 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout)
 static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 		       struct pollfd *pfd)
 {
-	int ret /* FIXME , bpf_len = 0 */ ;
+	int ret, bpf_len = 0;
 
-	/* struct sock_filter **bpf; */
+	struct sock_filter **bpf;
 	struct itimerval val_r;
 
 	assert(sd);
@@ -430,15 +430,14 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 	/* Print program header */
 	header();
 
-	/* FIXME
-	   bpf = (struct sock_filter **)malloc(sizeof(*bpf));
-	   if (bpf == NULL) {
-	   perr("Cannot allocate socket filter\n");
-	   exit(EXIT_FAILURE);
-	   } 
+	bpf = (struct sock_filter **)malloc(sizeof(*bpf));
+	if (bpf == NULL) {
+		perr("Cannot allocate socket filter\n");
+		exit(EXIT_FAILURE);
+	}
 
-	   memset(bpf, 0, sizeof(**bpf));
-	 */
+	memset(bpf, 0, sizeof(**bpf));
+
 	(*rb) = (ring_buff_t *) malloc(sizeof(**rb));
 	if ((*rb) == NULL) {
 		perr("Cannot allocate ring buffer\n");
@@ -450,15 +449,19 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 	(*sock) = alloc_pf_sock();
 	put_dev_into_promisc_mode((*sock), ethdev_to_ifindex((*sock), sd->dev));
 
-	/* FIXME: Somehow there seems to be a bug within the Linux kernel.
-	   If we do attach a packet filter to the socket the receiving 
-	   message will be cut off at some length... if we do not 
-	   attach a packet filter everything will be fine and all of the 
-	   package payload will be shown. */
+	if (sd->bypass_bpf == BPF_NO_BYPASS) {
+		/* FIXME: Somehow there seems to be a bug within the Linux kernel.
+		   If we do attach a packet filter to the socket the receiving 
+		   message will be cut off at some length... if we do not 
+		   attach a packet filter everything will be fine and all of the 
+		   package payload will be shown. */
 
-	/* Berkeley Packet Filter stuff
-	   parse_rules(sd->rulefile, bpf, &bpf_len);
-	   inject_kernel_bpf((*sock), *bpf, bpf_len * sizeof(**bpf)); */
+		/* Berkeley Packet Filter stuff */
+		parse_rules(sd->rulefile, bpf, &bpf_len);
+		inject_kernel_bpf((*sock), *bpf, bpf_len * sizeof(**bpf));
+	} else {
+		info("No filter applied. Sniffing all traffic.\n\n");
+	}
 
 	/* RX_RING stuff */
 	create_virt_ring((*sock), (*rb));
@@ -483,10 +486,9 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 
 	clock_gettime(CLOCK_REALTIME, &netstat.m_start);
 
-	/* FIXME
-	   free(*bpf);
-	   free(bpf);
-	 */
+	free(*bpf);
+	free(bpf);
+
 	return 0;
 }
 
@@ -549,8 +551,9 @@ int main(int argc, char **argv)
 	memset(sd, 0, sizeof(*sd));
 	memset(&pfd, 0, sizeof(pfd));
 
-	/* Default sys configuration */
-	sd->blocking_mode = -1;
+	/* Some default sys configuration */
+	sd->blocking_mode = POLL_WAIT_INF;
+	sd->bypass_bpf = BPF_BYPASS;
 
 	while ((c = getopt(argc, argv, "vhd:P:L:Df:sS:b:B:Hn")) != EOF) {
 		switch (c) {
@@ -571,19 +574,22 @@ int main(int argc, char **argv)
 			}
 		case 'n':
 			{
-				sd->blocking_mode = 0;
+				sd->blocking_mode = POLL_WAIT_NONE;
 				break;
 			}
 		case 'H':
 			{
-				sd->no_prioritization = 1;
+				sd->no_prioritization = PROC_NO_HIGHPRIO;
 				break;
 			}
 		case 'f':
 			{
 				/* FIXME: kernel patch, is in work */
-				info("Note: Berkeley Packet Filter currently not supported due to Linux kernel bug.\n\n")
-				    sd->rulefile = optarg;
+				info("Note: Berkeley Packet Filter currently not supported due to Linux kernel bug.\n");
+				info("      Some packets will have payload cut off!\n\n");
+
+				sd->bypass_bpf = BPF_NO_BYPASS;
+				sd->rulefile = optarg;
 				break;
 			}
 		case 's':
@@ -594,7 +600,7 @@ int main(int argc, char **argv)
 			}
 		case 'D':
 			{
-				sd->sysdaemon = 1;
+				sd->sysdaemon = SYSD_ENABLE;
 				break;
 			}
 		case 'P':
@@ -659,7 +665,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (argc < 2 || !sd->dev || !sd->rulefile) {
+	if (argc < 2 || !sd->dev) {
 		help();
 		exit(EXIT_FAILURE);
 	}
