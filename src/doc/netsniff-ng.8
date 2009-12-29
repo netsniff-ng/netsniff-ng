@@ -14,11 +14,11 @@ netsniff\-ng \- a high performance network sniffer for packet inspection
 \fBnetsniff\-ng\fR [\fB\-d\fR \fIdevice\fR] [\fB\-f\fR \fIfilter\fR] [\fB\-b\fR \fIcpu\fR] [\fB\-B\fR \fIcpu\fR] [\fB\-P\fR \fIpid\fR] [\fB\-L\fR \fIlog\fR] [\fB\-S\fR \fIaf_unix\fR] [\fB\-DHnsv\fR]
 .SH "DESCRIPTION"
 .B netsniff\-ng 
-is a high performance Linux network sniffer for packet inspection. Basically, it is similar to tcpdump, but it doesn't need a syscall per packet. Instead, it uses an memory mapped area within kernelspace for accessing packets without copying them to userspace (zero\-copy mechanism), so during high bandwidth less packet drops than on standard libpcap\-based sniffers will occur.
+is a high performance Linux network sniffer for packet inspection. Basically, it is similar to tcpdump, but it doesn't need a syscall per packet. Instead, it uses an memory mapped area within kernelspace for accessing packets without copying them to userspace ("zero\-copy" mechanism), so during high bandwidth less packet drops than on standard libpcap\-based sniffers will occur.
 
 .br 
 .br 
-netsniff\-ng is useful for debugging your network, measuring performance throughput or creating network statistics of incoming packets on central network nodes like routers or firewalls.
+netsniff\-ng is useful for protocol analysis and reverse engineering, network debugging, measurement of performance throughput or network statistics creation of incoming packets on central network nodes like routers or firewalls.
 .SH "OPTIONS"
 .IP "\fB\-d\fR \fIdevice\fR"
 For instance, use `eth0' or `wlan0' as the packet capturing network device.
@@ -64,7 +64,7 @@ Prints versioning information.
 (C) 2009, 2010, by Daniel Borkmann and Emmanuel Roullit
 .br 
 
-For bug reports, questions, code contributions and all the rest:
+For bug reports, questions, code contributions, cool hacks and all the rest:
 .br 
 
 .IP ""
