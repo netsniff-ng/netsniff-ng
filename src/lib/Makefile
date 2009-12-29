@@ -9,11 +9,11 @@ LIBS             = -lpthread -lrt
 INCLUDE          = -I../include
 CFLAGS           = -Wall -O2
 
-OBJECTS_LIB      = bpf_code.o export.o misc.o print.o rx_ring.o system.o
+OBJECTS          = bpf_code.o export.o misc.o print.o rx_ring.o system.o
 
 all: lib
 
-lib: $(OBJECTS_LIB)
+lib: $(OBJECTS)
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $(INCLUDE) $<
