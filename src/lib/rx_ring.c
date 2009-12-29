@@ -264,11 +264,11 @@ void inject_kernel_bpf(int sock, struct sock_filter *bpf, int len)
 	struct sock_fprog filter;
 
 	assert(bpf);
-	assert(len > 0 && (len % sizeof(struct sock_filter) == 0));
+	assert(len > 0 && (len % sizeof(*bpf) == 0));
 
 	memset(&filter, 0, sizeof(filter));
 
-	filter.len = len / sizeof(struct sock_filter);
+	filter.len = len / sizeof(*bpf);
 	filter.filter = bpf;
 
 	ret = setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER,
