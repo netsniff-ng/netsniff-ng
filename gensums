@@ -1,0 +1,25 @@
+#!/bin/sh
+
+#
+# netsniff-ng Project
+#
+
+#
+# XXX: Use diff for comparison of sums
+#
+
+files=`find . -type f | egrep -v "*~|/\.svn/|*.o$"`
+
+for file in $files
+do
+        sha1sum=`sha1sum $file | sed 's/\(.*\)\s.*/\1/'`
+        sha256sum=`sha256sum $file | sed 's/\(.*\)\s.*/\1/'`
+        md5sum=`md5sum $file | sed 's/\(.*\)\s.*/\1/'`
+        fsize=`stat -c %s $file`
+        ftime=`stat -c %z $file`
+
+        echo "$file, $fsize Byte, Timestamp $ftime"
+        echo "        md5:    $md5sum"
+        echo "        sha1:   $sha1sum"
+        echo "        sha256: $sha256sum"
+done
