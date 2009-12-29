@@ -53,3 +53,5 @@ uninstall:
 	rm -rf $(DESTDIR)/$(ETCDIR)/$(NAME) || true
 	rm $(DESTDIR)/$(MANDIR)/$(NAME).8.gz || true
 
+indent:
+	$(PWD)/indent_code
