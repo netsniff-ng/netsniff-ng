@@ -39,6 +39,7 @@
 #define _NET_SYSTEM_H_
 
 #include <stdio.h>
+#include <string.h>
 #include <sched.h>
 #include <assert.h>
 
@@ -75,8 +76,8 @@ static inline void prepare_polling(int sock, struct pollfd *pfd)
 {
 	assert(pfd);
 
-        memset(pfd, 0, sizeof(*pfd));
-        
+	memset(pfd, 0, sizeof(*pfd));
+
 	pfd->fd = sock;
 	pfd->revents = 0;
 	pfd->events = POLLIN | POLLERR;

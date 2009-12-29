@@ -55,9 +55,9 @@ typedef uint8_t ring_buff_bytes_t;
 
 typedef struct ring_buff_private {
 	struct sockaddr_ll params;
-        struct tpacket_req layout;
-        struct iovec *frames;
-        ring_buff_bytes_t *buffer;
+	struct tpacket_req layout;
+	struct iovec *frames;
+	ring_buff_bytes_t *buffer;
 	uint32_t len;
 } ring_buff_t;
 
