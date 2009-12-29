@@ -111,6 +111,7 @@ void version(void)
 	printf
 	    ("inspection that acts as a raw socket sniffer with kernelspace\n");
 	printf("bpf and zero copy mode (rx ring).\n");
+	printf("%s", MOOH); /* ;) */
 	printf("\n");
 	printf("Please report bugs to <danborkmann@googlemail.com>\n");
 	printf("Copyright (C) 2009, 2010 Daniel Borkmann\n");

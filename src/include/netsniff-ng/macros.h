@@ -51,9 +51,13 @@
  *       `-- "Tiny"  changes, bug fixes    - z elem of {0, 1, ...}
  */
 
+/* Stuff for compiler */
 #define likely(x)               __builtin_expect((x), 1)
 #define unlikely(x)             __builtin_expect((x), 0)
 
+#define __read_mostly __attribute__((__section__(".data.read_mostly")))
+
+/* Internals */
 #define INTERVAL_COUNTER_REFR   1000	/* in ms */
 #define INTERNAL_UDS_QUEUE_LEN  50	/* max AF_UNIX clients for accept */
 
@@ -88,5 +92,14 @@
 #define MOD_HOURS2S(x)          ((x) % (3600LLU))
 #define DIV_S2MINUT(x)          ((x) / (60LLU))
 #define MOD_MINUT2S(x)          ((x) % (60LLU))
+
+#define MOOH     " ________________________     \n"  \
+                 "< happy GNU year edition >    \n"  \
+                 " ------------------------     \n"  \
+                 "        \\   ^__^              \n"  \
+                 "         \\  (oo)\\_______      \n"  \
+                 "            (__)\\       )\\/\\  \n"  \
+                 "                ||----w |     \n"  \
+                 "                ||     ||     \n"
 
 #endif				/* _NET_MACROS_H_ */

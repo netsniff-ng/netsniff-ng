@@ -11,14 +11,7 @@
 .SH "NAME"
 netsniff\-ng \- a high performance network sniffer for packet inspection
 .SH "SYNOPSIS"
-.B netsniff\-ng [\-d 
-.I device
-.B ] [\-f
-.I filter
-.B ]
-.B [\-b 
-.I cpu
-.B ] ...
+\fBnetsniff\-ng\fR [\fB\-d\fR \fIdevice\fR] [\fB\-f\fR \fIfilter\fR] [\fB\-b\fR \fIcpu\fR] [\fB\-B\fR \fIcpu\fR] [\fB\-P\fR \fIpid\fR] [\fB\-L\fR \fIlog\fR] [\fB\-S\fR \fIaf_unix\fR] [\fB\-DHnsv\fR]
 .SH "DESCRIPTION"
 .B netsniff\-ng 
 is a high performance Linux network sniffer for packet inspection. Basically, it is similar to tcpdump, but it doesn't need a syscall per packet. Instead, it uses an memory mapped area within kernelspace for accessing packets without copying them to userspace (zero\-copy mechanism), so during high bandwidth less packet drops than on standard libpcap\-based sniffers will occur.
