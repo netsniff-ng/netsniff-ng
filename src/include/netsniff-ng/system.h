@@ -90,7 +90,9 @@ static inline int get_tty_length(void)
 	struct winsize ts;
 	ret = ioctl(0, TIOCGWINSZ, &ts);
 	return (!ret ? ts.ws_col : 80);
-#endif
+#else
+	return 80;
+#endif				/* TIOCGSIZE */
 }
 
 #endif				/* _NET_SYSTEM_H_ */
