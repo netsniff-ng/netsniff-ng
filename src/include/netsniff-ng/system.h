@@ -80,14 +80,16 @@ static inline void prepare_polling(int sock, struct pollfd *pfd)
  */
 static inline int get_tty_length(void)
 {
+	int ret;
+
 #ifdef TIOCGSIZE
 	struct ttysize ts;
-	ioctl(0, TIOCGSIZE, &ts);
-	return (ts.ts_cols);
+	ret = ioctl(0, TIOCGSIZE, &ts);
+	return (!ret ? ts.ts_cols : 80);
 #elif defined(TIOCGWINSZ)
 	struct winsize ts;
-	ioctl(0, TIOCGWINSZ, &ts);
-	return (ts.ws_col);
+	ret = ioctl(0, TIOCGWINSZ, &ts);
+	return (!ret ? ts.ws_col : 80);
 #endif
 }
 
