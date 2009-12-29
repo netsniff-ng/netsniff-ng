@@ -175,6 +175,8 @@ static void *uds_thread(void *psock)
 	int ret;
 	int sock;
 
+	assert(psock);
+
 	/* Signalmask is per thread. we don't want to interrupt the 
 	   send-syscall */
 	hold_softirq_pthread(2, SIGUSR1, SIGALRM);
@@ -212,6 +214,8 @@ void *start_uds_server(void *psockfile)
 
 	struct sockaddr_un local;
 	struct sockaddr_un remote;
+
+	assert(psockfile);
 
 	sock = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (sock < 0) {
@@ -334,6 +338,10 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout)
 {
 	int i = 0;
 
+	assert(rb);
+	assert(pfd);
+
+	/* This is our critical path ... */
 	while (likely(!sigint)) {
 		while (mem_notify_user(rb->frames[i]) && likely(!sigint)) {
 			struct frame_map *fm = rb->frames[i].iov_base;
@@ -341,7 +349,11 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout)
 			    (ring_buff_bytes_t *) (rb->frames[i].iov_base +
 						   sizeof(*fm) + sizeof(short));
 
+			/* CPUs branch prediction heuristics should apply here,
+			   so 'hopefully' we won't slow down that much. */
 			if (print_packet_buffer) {
+				/* This path here slows us down ... well, but
+				   the user wants to see what's going on. */
 				print_packet_buffer(rbb, &fm->tp_h);
 			}
 
@@ -380,10 +392,15 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout)
 static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 		       struct pollfd *pfd)
 {
-	int ret /*, bpf_len = 0 */ ;
+	int ret /* FIXME , bpf_len = 0 */ ;
 
 	/* struct sock_filter **bpf; */
 	struct itimerval val_r;
+
+	assert(sd);
+	assert(sock);
+	assert(rb);
+	assert(pfd);
 
 	/* We are only allowed to do these nasty things as root ;) */
 	check_for_root();
@@ -413,7 +430,7 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 	/* Print program header */
 	header();
 
-	/*
+	/* FIXME
 	   bpf = (struct sock_filter **)malloc(sizeof(*bpf));
 	   if (bpf == NULL) {
 	   perr("Cannot allocate socket filter\n");
@@ -466,7 +483,7 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 
 	clock_gettime(CLOCK_REALTIME, &netstat.m_start);
 
-	/*
+	/* FIXME
 	   free(*bpf);
 	   free(bpf);
 	 */
@@ -481,6 +498,11 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
  */
 static void cleanup_system(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
+	assert(sd);
+	assert(sock);
+	assert(rb);
+	assert(*rb);
+
 	net_stat((*sock));
 	destroy_virt_ring((*sock), (*rb));
 
@@ -559,7 +581,8 @@ int main(int argc, char **argv)
 			}
 		case 'f':
 			{
-				info("XXX: Berkeley Packet Filter currently not supported due to Linux kernel bug.\n\n")
+				/* FIXME: kernel patch, is in work */
+				info("Note: Berkeley Packet Filter currently not supported due to Linux kernel bug.\n\n")
 				    sd->rulefile = optarg;
 				break;
 			}

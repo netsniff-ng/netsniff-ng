@@ -40,6 +40,7 @@
 
 #include <stdio.h>
 #include <sched.h>
+#include <assert.h>
 
 #include <sys/poll.h>
 #include <sys/resource.h>
@@ -48,6 +49,8 @@
 #define DEFAULT_SCHED_POLICY	SCHED_FIFO
 #define DEFAULT_SCHED_PRIO	sched_get_priority_max(DEFAULT_SCHED_POLICY)
 #define DEFAULT_PROCESS_PRIO	(-20)
+
+#define DEFAULT_TERM_SIZE	(80)
 
 /* Function signatures */
 
@@ -70,6 +73,8 @@ extern int daemonize(const char *pidfile, const char *logfile,
  */
 static inline void prepare_polling(int sock, struct pollfd *pfd)
 {
+	assert(pfd);
+
 	pfd->fd = sock;
 	pfd->revents = 0;
 	pfd->events = POLLIN | POLLERR;
@@ -85,13 +90,13 @@ static inline int get_tty_length(void)
 #ifdef TIOCGSIZE
 	struct ttysize ts;
 	ret = ioctl(0, TIOCGSIZE, &ts);
-	return (!ret ? ts.ts_cols : 80);
+	return (!ret ? ts.ts_cols : DEFAULT_TERM_SIZE);
 #elif defined(TIOCGWINSZ)
 	struct winsize ts;
 	ret = ioctl(0, TIOCGWINSZ, &ts);
-	return (!ret ? ts.ws_col : 80);
+	return (!ret ? ts.ws_col : DEFAULT_TERM_SIZE);
 #else
-	return 80;
+	return DEFAULT_TERM_SIZE;
 #endif				/* TIOCGSIZE */
 }
 

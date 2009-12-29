@@ -59,6 +59,8 @@
  */
 static inline const char *nexttoken(const char *q, int sep)
 {
+	assert(q);
+
 	if (q) {
 		q = strchr(q, sep);
 	}
@@ -78,6 +80,8 @@ int set_cpu_affinity(const char *str)
 	int ret;
 	const char *p, *q;
 	cpu_set_t cpu_bitmask;
+
+	assert(str);
 
 	q = str;
 
@@ -141,6 +145,8 @@ int set_cpu_affinity_inv(const char *str)
 	int ret, i, npc;
 	const char *p, *q;
 	cpu_set_t cpu_bitmask;
+
+	assert(str);
 
 	q = str;
 
@@ -211,6 +217,7 @@ char *get_cpu_affinity(char *cpu_string, size_t len)
 
 	cpu_set_t cpu_bitmask;
 
+	assert(cpu_string);
 	assert(len == sysconf(_SC_NPROCESSORS_CONF) + 1);
 
 	memset(cpu_string, 0, len);
@@ -297,10 +304,7 @@ int set_sched_status(int policy, int priority)
  */
 void check_for_root(void)
 {
-	int ret;
-
-	ret = geteuid();
-	if (ret != 0) {
+	if (geteuid() != 0) {
 		err("dude, you are not root!\n");
 		exit(EXIT_FAILURE);
 	}
@@ -313,6 +317,8 @@ void check_for_root(void)
 int undaemonize(const char *pidfile)
 {
 	int ret;
+
+	assert(pidfile);
 
 	ret = unlink(pidfile);
 	if (ret < 0) {
@@ -343,7 +349,10 @@ int daemonize(const char *pidfile, const char *logfile,
 	pthread_t tid;
 	pthread_attr_t attr;
 
-	assert(pidfile != NULL && logfile != NULL);
+	assert(pidfile);
+	assert(logfile);
+	assert(sockfile);
+	assert(start_server);
 
 	fd = open(pidfile, O_RDONLY);
 	if (fd > 0) {

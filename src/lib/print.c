@@ -74,6 +74,13 @@
 #include <netsniff-ng/print.h>
 #include <netsniff-ng/system.h>
 
+/*
+ * dump_hex - Prints payload as bytes to our tty
+ * @buff:          payload
+ * @len:           len of buff
+ * @tty_len:       width of terminal
+ * @tty_off:       current offset of tty_len
+ */
 static void inline dump_hex(ring_buff_bytes_t * buff, int len, size_t tty_len,
 			    size_t tty_off)
 {
@@ -86,6 +93,13 @@ static void inline dump_hex(ring_buff_bytes_t * buff, int len, size_t tty_len,
 	}
 }
 
+/*
+ * dump_printable - Prints human readable chars to our tty
+ * @buff:          payload
+ * @len:           len of buff
+ * @tty_len:       width of terminal
+ * @tty_off:       current offset of tty_len
+ */
 static void inline dump_printable(ring_buff_bytes_t * buff, int len,
 				  size_t tty_len, size_t tty_off)
 {
@@ -99,7 +113,7 @@ static void inline dump_printable(ring_buff_bytes_t * buff, int len,
 }
 
 /*
- * dump_ethhdr_all - Just plain dumb formatting, for -ccc
+ * dump_ethhdr_all - Just plain dumb formatting
  * @eth:            ethernet header
  */
 static void inline dump_ethhdr_all(struct ethhdr *eth)
@@ -123,7 +137,7 @@ static void inline dump_ethhdr_all(struct ethhdr *eth)
 }
 
 /*
- * dump_iphdr_all - Just plain dumb formatting, for -ccc
+ * dump_iphdr_all - Just plain dumb formatting
  * @ip:            ip header
  */
 static void inline dump_iphdr_all(struct iphdr *ip)
@@ -150,7 +164,7 @@ static void inline dump_iphdr_all(struct iphdr *ip)
 }
 
 /*
- * dump_udphdr_all - Just plain dumb formatting, for -ccc
+ * dump_udphdr_all - Just plain dumb formatting
  * @udp:            udp header
  */
 static void inline dump_udphdr_all(struct udphdr *udp)
@@ -165,7 +179,7 @@ static void inline dump_udphdr_all(struct udphdr *udp)
 }
 
 /*
- * dump_tcphdr_all - Just plain dumb formatting, for -ccc
+ * dump_tcphdr_all - Just plain dumb formatting
  * @tcp:            tcp header
  */
 static void inline dump_tcphdr_all(struct tcphdr *tcp)
@@ -215,9 +229,10 @@ static void inline dump_tcphdr_all(struct tcphdr *tcp)
 }
 
 /*
- * dump_payload_hex_all - Just plain dumb formatting, for -ccc
+ * dump_payload_hex_all - Just plain dumb formatting
  * @rbb:                 payload bytes
  * @len:                 len
+ * @tty_len:             width of terminal
  */
 static void inline dump_payload_hex_all(ring_buff_bytes_t * rbb, int len,
 					int tty_len)
@@ -228,9 +243,10 @@ static void inline dump_payload_hex_all(ring_buff_bytes_t * rbb, int len,
 }
 
 /*
- * dump_payload_char_all - Just plain dumb formatting, for -ccc
+ * dump_payload_char_all - Just plain dumb formatting
  * @rbb:                  payload bytes
  * @len:                  len
+ * @tty_len:              width of terminal
  */
 static void inline dump_payload_char_all(ring_buff_bytes_t * rbb, int len,
 					 int tty_len)
@@ -251,7 +267,8 @@ void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb,
 	size_t off_n, off_o;
 	int tty_len = get_tty_length();
 
-	info("%d Byte, %u.%u s \n", tp->tp_len, tp->tp_sec, tp->tp_usec);
+	info("%d Byte, Timestamp (%u.%u s) \n", tp->tp_len, tp->tp_sec,
+	     tp->tp_usec);
 
 	dump_ethhdr_all((struct ethhdr *)rbb);
 	info("\n");

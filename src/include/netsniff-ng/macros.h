@@ -93,6 +93,7 @@
 #define DIV_S2MINUT(x)          ((x) / (60LLU))
 #define MOD_MINUT2S(x)          ((x) % (60LLU))
 
+/* Release alias, some versioning fun ;) */
 #define MOOH     " ________________________     \n"  \
                  "< happy GNU year edition >    \n"  \
                  " ------------------------     \n"  \

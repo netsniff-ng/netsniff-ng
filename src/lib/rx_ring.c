@@ -264,6 +264,7 @@ void inject_kernel_bpf(int sock, struct sock_filter *bpf, int len)
 	struct sock_fprog filter;
 
 	assert(bpf);
+	assert(len > 0 && (len % sizeof(struct sock_filter) == 0));
 
 	memset(&filter, 0, sizeof(filter));
 
@@ -289,6 +290,8 @@ int ethdev_to_ifindex(int sock, char *dev)
 {
 	int ret;
 	struct ifreq ethreq;
+
+	assert(dev);
 
 	memset(&ethreq, 0, sizeof(ethreq));
 	strncpy(ethreq.ifr_name, dev, IFNAMSIZ);
@@ -350,12 +353,15 @@ int alloc_pf_sock(void)
 void parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 {
 	int ret;
-	uint32_t count;
+	uint32_t count = 0;
 	char buff[128] = { 0 };
 
 	struct sock_filter sf_single;
 
 	assert(bpf);
+	assert(*bpf);
+	assert(len && *len > 0 && (*len % sizeof(struct sock_filter) == 0));
+	assert(rulefile);
 
 	FILE *fp = fopen(rulefile, "r");
 	if (!fp) {
@@ -365,9 +371,11 @@ void parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 
 	info("parsing rulefile %s\n", rulefile);
 
-	count = 0;
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
+		/* We're using evil sscanf, so we have to assure
+		   that we don't get into a buffer overflow ... */
 		buff[sizeof(buff) - 1] = 0;
+
 		memset(&sf_single, 0, sizeof(sf_single));
 
 		ret = sscanf(buff, "{ 0x%x, %d, %d, 0x%08x },",

@@ -39,6 +39,7 @@
 #define _NET_RX_RING_H_
 
 #include <stdlib.h>
+#include <assert.h>
 
 #include <linux/filter.h>
 #include <linux/if_packet.h>
@@ -68,6 +69,8 @@ extern void parse_rules(char *rulefile, struct sock_filter **bpf, int *len);
 static inline void alloc_frame_buffer(ring_buff_t * rb)
 {
 	int i = 0;
+
+	assert(rb);
 
 	rb->frames =
 	    (struct iovec *)malloc(rb->layout.tp_frame_nr *
@@ -104,6 +107,7 @@ static inline int mem_notify_user(struct iovec frame)
  */
 static inline void mem_notify_kernel(struct tpacket_hdr *header)
 {
+	assert(header);
 	header->tp_status = TP_STATUS_KERNEL;
 }
 

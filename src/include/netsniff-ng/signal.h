@@ -61,6 +61,8 @@ static inline void register_softirq(int signal, void (*softirq_handler) (int))
 	sigset_t block_mask;
 	struct sigaction saction;
 
+	assert(softirq_handler);
+
 	sigfillset(&block_mask);
 
 	saction.sa_handler = softirq_handler;
