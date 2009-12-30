@@ -4,6 +4,13 @@ Requirements (for your own kernels)
 Your kernel should have been built with CONFIG_PACKET_MMAP=y in order 
 to use netsniff-ng. This is default on your preinstalled Debian kernel.
 
+Hashsums
+========
+HASHSUMS is signed with: 0x59B7082F (danborkmann@googlemail.com)
+
+With the tiny gensums script you can generate another file and diff 
+it against the provided HASHSUMS to check for corruption.
+
 Installation
 ============
 
