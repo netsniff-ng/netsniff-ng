@@ -2,7 +2,7 @@ netsniff-ng (0.5.4.0-1) unstable; urgency=low
 
   * New upstream release
   * Changed description in debian/control
-  * Changed URL in watchfile, because somehow the googlecode site denied access
+  * Changed URL in watchfile, because somehow the googlecode site denies access
 
  -- Daniel Borkmann <danborkmann@googlemail.com>  Fri, 01 Jan 2010 20:12:23 +0200
 
