@@ -1,7 +1,6 @@
 netsniff-ng (0.5.4.1-1) unstable; urgency=low
 
-  * New upstream release
-  * Fixed buffer overflow in netsniff-ng.c
+  * New (minor) upstream release with security fix in netsniff-ng.c
 
  -- Daniel Borkmann <danborkmann@googlemail.com>  Fri, 01 Jan 2010 19:24:01 +0200
 

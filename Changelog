@@ -42,4 +42,4 @@ Version 0.5.4.0 (30.12.2009) - 'happy GNU year edition'
 
 Version 0.5.4.1 (01.01.2010)
 ============================
-* Fixed buffer overflow vulnerability
+* Security fix in netsniff-ng.c
