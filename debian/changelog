@@ -1,3 +1,10 @@
+netsniff-ng (0.5.4.0-1) unstable; urgency=low
+
+  * New upstream release
+  * Changed description in debian/control
+
+ -- Daniel Borkmann <danborkmann@googlemail.com>  Fri, 01 Jan 2010 20:12:23 +0200
+
 netsniff-ng (0.5.3.1-1) unstable; urgency=low
 
   * Initial release for Debian, closes ITP bug. Closes: #561528

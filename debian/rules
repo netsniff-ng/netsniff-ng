@@ -1,5 +1,7 @@
 #!/usr/bin/make -f
+#
 # debian/rules for netsniff-ng
+# by Daniel Borkmann
 
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
