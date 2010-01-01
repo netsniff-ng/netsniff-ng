@@ -23,7 +23,7 @@ Version 0.5.3.1 (16.12.2009)
   a simple unix domain socket client example for netsniff-ng,
   but nothing more.
 
-Version 0.5.4.0 ()
+Version 0.5.4.0 (30.12.2009)
 ============================
 * Added high-resolution timer
 * Fixed small bugs / mem-leaks
@@ -38,3 +38,7 @@ Version 0.5.4.0 ()
   netsniff-ng can be the only process for a single CPU
 * -s option can now be switched on and off during runtime via SIGUSR2
 * Option for running netsniff-ng in non-blocking mode
+
+Version 0.5.4.1 (01.01.2010)
+============================
+* Fixed buffer overflow vulnerability
