@@ -436,7 +436,7 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 		exit(EXIT_FAILURE);
 	}
 
-	memset(*bpf, 0, sizeof(**bpf));
+	memset(bpf, 0, sizeof(*bpf));
 
 	(*rb) = (ring_buff_t *) malloc(sizeof(**rb));
 	if ((*rb) == NULL) {
