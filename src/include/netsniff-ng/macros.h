@@ -40,7 +40,7 @@
 
 /* Versioning information */
 #define PROGNAME_STRING  "netsniff-ng"
-#define VERSION_STRING   "0.5.4.0"
+#define VERSION_STRING   "0.5.4.1"
 
 /*
  * Some versioning definition:

@@ -23,7 +23,7 @@ Version 0.5.3.1 (16.12.2009)
   a simple unix domain socket client example for netsniff-ng,
   but nothing more.
 
-Version 0.5.4.0 (???)
+Version 0.5.4.0 ()
 ============================
 * Added high-resolution timer
 * Fixed small bugs / mem-leaks
