@@ -391,12 +391,13 @@ void parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 		*bpf = (struct sock_filter *)realloc(*bpf,
 						     *len * sizeof(sf_single));
 
-		memcpy(&(*bpf)[*len - 1], &sf_single, sizeof(sf_single));
+		memcpy(&((*bpf)[*len - 1]), &sf_single, sizeof(sf_single));
 
 		info(" line %d: { 0x%x, %d, %d, 0x%08x }\n", count++,
 		     (*bpf)[*len - 1].code,
 		     (*bpf)[*len - 1].jt,
-		     (*bpf)[*len - 1].jf, (*bpf)[*len - 1].k);
+		     (*bpf)[*len - 1].jf, 
+                     (*bpf)[*len - 1].k);
 	}
 
 	info("\n");

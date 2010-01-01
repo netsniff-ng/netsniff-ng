@@ -394,7 +394,7 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 {
 	int ret, bpf_len = 0;
 
-	struct sock_filter **bpf;
+	struct sock_filter *bpf = NULL;
 	struct itimerval val_r;
 
 	assert(sd);
@@ -430,14 +430,6 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 	/* Print program header */
 	header();
 
-	bpf = (struct sock_filter **)malloc(sizeof(*bpf));
-	if (bpf == NULL) {
-		perr("Cannot allocate socket filter\n");
-		exit(EXIT_FAILURE);
-	}
-
-	memset(bpf, 0, sizeof(*bpf));
-
 	(*rb) = (ring_buff_t *) malloc(sizeof(**rb));
 	if ((*rb) == NULL) {
 		perr("Cannot allocate ring buffer\n");
@@ -457,8 +449,8 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 		   package payload will be shown. */
 
 		/* Berkeley Packet Filter stuff */
-		parse_rules(sd->rulefile, bpf, &bpf_len);
-		inject_kernel_bpf((*sock), *bpf, bpf_len * sizeof(**bpf));
+		parse_rules(sd->rulefile, &bpf, &bpf_len);
+		inject_kernel_bpf((*sock), bpf, bpf_len * sizeof(*bpf));
 	} else {
 		info("No filter applied. Sniffing all traffic.\n\n");
 	}
@@ -486,9 +478,7 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 
 	clock_gettime(CLOCK_REALTIME, &netstat.m_start);
 
-	free(*bpf);
 	free(bpf);
-
 	return 0;
 }
 
