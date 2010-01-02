@@ -1,8 +1,8 @@
 netsniff-ng (0.5.4.1-1) unstable; urgency=medium
 
   * New (minor) upstream release with security fix in netsniff-ng.c:
-    A memset with a 4 Byte length overhead could run into a possible 
-    buffer overflow on 32-Bit systems. Relevant sections have been fixed.
+    A memset with a 4 Byte length overhead on 32-Bit systems could 
+    run into a possible buffer overflow. Relevant sections have been fixed.
   * debian/control:
     + Changed architecture, because netsniff-ng is not written for 
       non-linux archs as kfreebsd-*
