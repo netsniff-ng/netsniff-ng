@@ -442,11 +442,14 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 	put_dev_into_promisc_mode((*sock), ethdev_to_ifindex((*sock), sd->dev));
 
 	if (sd->bypass_bpf == BPF_NO_BYPASS) {
-		/* FIXME: Somehow there seems to be a bug within the Linux kernel.
-		   If we do attach a packet filter to the socket the receiving 
-		   message will be cut off at some length... if we do not 
-		   attach a packet filter everything will be fine and all of the 
-		   package payload will be shown. */
+		/* XXX: If you try to create custom filters with tcpdump, you 
+                        have to edit the ret opcode, otherwise your payload 
+                        will be cut off at 96 Byte:
+
+                        { 0x6, 0, 0, 0xFFFFFFFF },
+
+                        The kernel now takes skb->len instead of 0xFFFFFFFF ;)
+                 */
 
 		/* Berkeley Packet Filter stuff */
 		parse_rules(sd->rulefile, &bpf, &bpf_len);
@@ -574,10 +577,6 @@ int main(int argc, char **argv)
 			}
 		case 'f':
 			{
-				/* FIXME: kernel patch, is in work */
-				info("Note: Berkeley Packet Filter currently not supported due to Linux kernel bug.\n");
-				info("      Some packets will have payload cut off!\n\n");
-
 				sd->bypass_bpf = BPF_NO_BYPASS;
 				sd->rulefile = optarg;
 				break;

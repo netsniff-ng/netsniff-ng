@@ -19,6 +19,14 @@ is a high performance Linux network sniffer for packet inspection. Basically, it
 .br 
 .br 
 netsniff\-ng is useful for protocol analysis and reverse engineering, network debugging, measurement of performance throughput or network statistics creation of incoming packets on central network nodes like routers or firewalls.
+.SH "NOTE"
+If you try to create custom socket filters with \fBtcpdump \-dd\fR, you 
+have to edit the \fBret\fR opcode of the resulting filter, otherwise your payload will be cut off:
+
+\fB0x6, 0, 0, 0xFFFFFFFF\fR  instead of  \fB0x6, 0, 0, 0x00000060\fR
+
+The Linux kernel now takes skb\->len instead of 0xFFFFFFFF. If you do not change it, the kernel will take 
+0x00000060 as buffer length and packets larger than 96 Byte will be cut off (filled with zero Bytes)!
 .SH "OPTIONS"
 .IP "\fB\-d\fR \fIdevice\fR"
 For instance, use `eth0' or `wlan0' as the packet capturing network device.

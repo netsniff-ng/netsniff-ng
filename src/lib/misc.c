@@ -86,11 +86,6 @@ void help(void)
 	printf("    - Sending a SIGUSR1 will show current packet statistics\n");
 	printf
 	    ("    - Sending a SIGUSR2 will toggle silent and packet printing mode\n");
-	printf
-	    ("    - Rule creation can be done with \'tcpdump -dd <rule>\',\n");
-	printf("      see examples, or, of course manually by hand\n");
-	printf
-	    ("    - To access the running sys daemon you can use ipc via AF_UNIX\n");
 	printf("    - For more help type \'man netsniff-ng\'\n");
 	printf("\n");
 	printf("Please report bugs to <danborkmann@googlemail.com>\n");
