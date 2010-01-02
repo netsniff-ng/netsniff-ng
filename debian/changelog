@@ -1,8 +1,12 @@
-netsniff-ng (0.5.4.1-1) unstable; urgency=low
+netsniff-ng (0.5.4.1-1) unstable; urgency=medium
 
-  * New (minor) upstream release with security fix in netsniff-ng.c
+  * New (minor) upstream release with security fix in netsniff-ng.c:
+    A memset with a 4 Byte length overhead could run into a possible 
+    buffer overflow on 32-Bit systems. Relevant sections have been fixed.
+  * Changed architecture in debian/control, because it does not build on 
+    non-linux archs
 
- -- Daniel Borkmann <danborkmann@googlemail.com>  Fri, 01 Jan 2010 19:24:01 +0200
+ -- Daniel Borkmann <danborkmann@googlemail.com>  Fri, 02 Jan 2010 11:18:03 +0200
 
 netsniff-ng (0.5.4.0-1) unstable; urgency=low
 
