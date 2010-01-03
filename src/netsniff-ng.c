@@ -57,6 +57,7 @@
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/types.h>
 #include <netsniff-ng/print.h>
+#include <netsniff-ng/pcap.h>
 
 /*
  * Global vars
@@ -334,7 +335,8 @@ void softirq_handler(int number)
  * @rb:                     ring buffer
  * @pfd:                    file descriptor for polling
  */
-void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout)
+void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout,
+		   FILE * pcap)
 {
 	int i = 0;
 
@@ -353,8 +355,13 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout)
 			   so 'hopefully' we won't slow down that much. */
 			if (print_packet_buffer) {
 				/* This path here slows us down ... well, but
-				   the user wants to see what's going on. */
+				   the user wants to see what's going on */
 				print_packet_buffer(rbb, &fm->tp_h);
+			}
+
+			if (pcap != NULL) {
+				pcap_dump(pcap, &fm->tp_h,
+					  (struct ethhdr *)rbb);
 			}
 
 			/* Pending singals will be delivered after netstat 
@@ -443,13 +450,13 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 
 	if (sd->bypass_bpf == BPF_NO_BYPASS) {
 		/* XXX: If you try to create custom filters with tcpdump, you 
-                        have to edit the ret opcode, otherwise your payload 
-                        will be cut off at 96 Byte:
+		   have to edit the ret opcode, otherwise your payload 
+		   will be cut off at 96 Byte:
 
-                        { 0x6, 0, 0, 0xFFFFFFFF },
+		   { 0x6, 0, 0, 0xFFFFFFFF },
 
-                        The kernel now takes skb->len instead of 0xFFFFFFFF ;)
-                 */
+		   The kernel now takes skb->len instead of 0xFFFFFFFF ;)
+		 */
 
 		/* Berkeley Packet Filter stuff */
 		parse_rules(sd->rulefile, &bpf, &bpf_len);
@@ -528,6 +535,7 @@ static void cleanup_system(system_data_t * sd, int *sock, ring_buff_t ** rb)
  */
 int main(int argc, char **argv)
 {
+	FILE *dump_pcap = NULL;
 	int i, c;
 	int sock;
 
@@ -548,7 +556,7 @@ int main(int argc, char **argv)
 	sd->blocking_mode = POLL_WAIT_INF;
 	sd->bypass_bpf = BPF_BYPASS;
 
-	while ((c = getopt(argc, argv, "vhd:P:L:Df:sS:b:B:Hn")) != EOF) {
+	while ((c = getopt(argc, argv, "vhd:p:P:L:Df:sS:b:B:Hn")) != EOF) {
 		switch (c) {
 		case 'h':
 			{
@@ -617,12 +625,24 @@ int main(int argc, char **argv)
 				set_cpu_affinity_inv(optarg);
 				break;
 			}
+		case 'p':
+			{
+				if ((dump_pcap = fopen(optarg, "w+")) == NULL) {
+					perr("Can't open file: ");
+					exit(EXIT_FAILURE);
+				}
+
+				sf_write_header(dump_pcap, LINKTYPE_EN10MB, 0,
+						PCAP_DEFAULT_SNAPSHOT_LEN);
+				break;
+			}
 
 		case '?':
 			{
 				switch (optopt) {
 				case 'd':
 				case 'f':
+				case 'p':
 				case 'P':
 				case 'L':
 				case 'S':
@@ -677,8 +697,12 @@ int main(int argc, char **argv)
 	 */
 
 	init_system(sd, &sock, &rb, &pfd);
-	fetch_packets(rb, &pfd, sd->blocking_mode);
+	fetch_packets(rb, &pfd, sd->blocking_mode, dump_pcap);
 	cleanup_system(sd, &sock, &rb);
+
+	if (dump_pcap != NULL) {
+		fclose(dump_pcap);
+	}
 
 	free(sd);
 	return 0;

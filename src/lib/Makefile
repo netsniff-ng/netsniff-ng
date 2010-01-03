@@ -9,7 +9,7 @@ LIBS             = -lpthread -lrt
 INCLUDE          = -I../include
 CFLAGS           = -Wall -O2
 
-OBJECTS          = bpf_code.o export.o misc.o print.o rx_ring.o system.o
+OBJECTS          = bpf_code.o export.o misc.o print.o rx_ring.o system.o pcap.o
 
 all: lib
 

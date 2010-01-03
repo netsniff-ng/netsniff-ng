@@ -77,6 +77,7 @@ void help(void)
 	printf("\n");
 	printf("Options for packet printing:\n");
 	printf("    -s          do not print captured packets (silent mode)\n");
+	printf("    -p          dump all packets which match in a pcap file\n");
 	printf("\n");
 	printf("Options, misc:\n");
 	printf("    -v          prints out version\n");
