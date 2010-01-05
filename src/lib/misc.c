@@ -53,22 +53,23 @@ void help(void)
 	       PROGNAME_STRING);
 	printf
 	    ("inspection that acts as a raw socket sniffer with kernelspace\n");
-	printf("bpf and a \"zero-copy\" mode receive ring.\n");
+	printf("bpf and a \"zero-copy\" mode receive/transmit ring.\n");
 	printf("\n");
 	printf("Options, mandatory:\n");
 	printf
 	    ("    -d <arg>    use device <arg> for capturing packets, e.g. `eth0`\n");
 	printf("\n");
+	printf("Options for packet dumping/replaying:\n");
+	printf("    -p <arg>    dump all matching packets in a pcap file\n");
+	printf("    -r <arg>    replay all packets from a pcap dump file\n");
+	printf("    -q <arg>    quit dump/replay after <arg> packets\n");
+	printf("    -Q <arg>    quit dump/replay after <arg> MB\n");
+	printf("\n");
 	printf("Options for packet filtering:\n");
+	printf("    -g <arg>    generate bpf filter code according <arg>\n");
 	printf("    -f <arg>    use file <arg> as bpf filter\n");
 	printf("\n");
-	printf("Options for sys daemon:\n");
-	printf("    -D          run as sys daemon\n");
-	printf("    -P <arg>    use file <arg> as pidfile, req if -D\n");
-	printf("    -L <arg>    use file <arg> as logfile, req if -D\n");
-	printf("    -S <arg>    use file <arg> as uds inode, req if -D\n");
-	printf("\n");
-	printf("Options for sys scheduler/process:\n");
+	printf("Options for system scheduler/process:\n");
 	printf("    -b <arg>    bind process to specific CPU/CPU-range\n");
 	printf
 	    ("    -B <arg>    forbid process to use specific CPU/CPU-range\n");
@@ -77,7 +78,12 @@ void help(void)
 	printf("\n");
 	printf("Options for packet printing:\n");
 	printf("    -s          do not print captured packets (silent mode)\n");
-	printf("    -p          dump all packets which match in a pcap file\n");
+	printf("\n");
+	printf("Options for system daemon:\n");
+	printf("    -D          run as sys daemon\n");
+	printf("    -P <arg>    use file <arg> as pidfile, req if -D\n");
+	printf("    -L <arg>    use file <arg> as logfile, req if -D\n");
+	printf("    -S <arg>    use file <arg> as uds inode, req if -D\n");
 	printf("\n");
 	printf("Options, misc:\n");
 	printf("    -v          prints out version\n");
@@ -110,7 +116,7 @@ void version(void)
 	       PROGNAME_STRING);
 	printf
 	    ("inspection that acts as a raw socket sniffer with kernelspace\n");
-	printf("bpf and a \"zero-copy\" mode receive ring.\n");
+	printf("bpf and a \"zero-copy\" mode receive/transmit ring.\n");
 	printf("%s", MOOH);	/* ;) */
 	printf("\n");
 	printf("%s can be used for protocol analysis and\n"

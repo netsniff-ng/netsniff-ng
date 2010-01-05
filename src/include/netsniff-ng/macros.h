@@ -40,7 +40,7 @@
 
 /* Versioning information */
 #define PROGNAME_STRING  "netsniff-ng"
-#define VERSION_STRING   "0.5.4.1"
+#define VERSION_STRING   "0.5.5.0"
 
 /*
  * Some versioning definition:
@@ -104,13 +104,13 @@
 #define MOD_MINUT2S(x)          ((x) % (60LLU))
 
 /* Release alias, some versioning fun ;) */
-#define MOOH     " ________________________     \n"  \
-                 "| happy GNU year edition |    \n"  \
-                 "+------------------------+    \n"  \
-                 "        \\   ^__^              \n"  \
-                 "         \\  (oo)\\_______      \n"  \
-                 "            (__)\\       )\\/\\  \n"  \
-                 "                ||----w |     \n"  \
-                 "                ||     ||     \n"
+#define MOOH     "+------------------------+      \n" \
+                 "| happy GNU year edition |      \n" \
+                 "+------------------------+      \n" \
+                 "        \\   ^__^               \n" \
+                 "         \\  (oo)\\_______      \n" \
+                 "            (__)\\       )\\/\\ \n" \
+                 "                ||----w |       \n" \
+                 "                ||     ||       \n"
 
 #endif				/* _NET_MACROS_H_ */
