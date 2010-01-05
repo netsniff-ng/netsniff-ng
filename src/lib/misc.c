@@ -66,7 +66,7 @@ void help(void)
 	printf("    -Q <arg>    quit dump/replay after <arg> MB\n");
 	printf("\n");
 	printf("Options for packet filtering:\n");
-	printf("    -g <arg>    generate bpf filter code according <arg>\n");
+	printf("    -g <arg>    generate bpf filter code according to <arg>\n");
 	printf("    -f <arg>    use file <arg> as bpf filter\n");
 	printf("\n");
 	printf("Options for system scheduler/process:\n");

@@ -26,9 +26,15 @@ S: France
 
 N: Pascal Bleser
 E: pascal [dot] bleser [at] skynet [dot] be
-D: Maintaining netsniff-ng on openSUSE and SLE
+D: Maintaining netsniff-ng on openSUSE, SLE and Fedora
 W: http://linux01.gwdg.de/~pbleser/
 S: Belgium
+
+N: Corrado Franco
+E: conraid [at] gmail [dot] com
+D: Maintaining netsniff-ng on Slackware
+W: http://conraid.net/
+S: Italy
 
 N: Dr. Helumt Hayd 
 E: hayd [at] cbs [dot] mpg [dot] de
