@@ -23,7 +23,7 @@ BUILD_FOLDERS    = lib
 NAME             = netsniff-ng
 OBJECTS          = netsniff-ng.o
 
-BINDIR           = sbin
+BINDIR           = usr/sbin
 ETCDIR           = etc
 MANDIR           = usr/share/man/man8
 MANDIR_LOCAL     = doc
