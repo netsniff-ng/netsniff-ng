@@ -20,7 +20,7 @@ Thanks,
 
 N: Romain Beauxis
 E: toots [at] rastageeks [dot] org
-D: Debian Mentoring
+D: Debian mentoring, package sponsor
 W: http://www.lix.polytechnique.fr/Labo/Romain.Beauxis/
 S: France
 
@@ -29,6 +29,11 @@ E: pascal [dot] bleser [at] skynet [dot] be
 D: Maintaining netsniff-ng on openSUSE, SLE and Fedora
 W: http://linux01.gwdg.de/~pbleser/
 S: Belgium
+
+N: Epinephrine
+E: epinephrineaddict [at] gmail [dot] com
+D: Supply of an ebuild for Gentoo Linux available under
+D: [Bug# 299549] until it's committed to portage
 
 N: Corrado Franco
 E: conraid [at] gmail [dot] com
