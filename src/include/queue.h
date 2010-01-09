@@ -34,7 +34,6 @@
 #ifndef	_SYS_QUEUE_H_
 #define	_SYS_QUEUE_H_
 
-
 /*
  * This file defines five types of data structures: singly-linked lists,
  * lists, simple queues, tail queues, and circular queues.
@@ -172,7 +171,6 @@ struct {								\
 #define	BSD_LIST_FIRST(head)		((head)->lh_first)
 #define	BSD_LIST_NEXT(elm, field)		((elm)->field.le_next)
 
-
 /*
  * Singly-linked List definitions.
  */
@@ -237,7 +235,6 @@ struct {								\
 #define	BSD_SLIST_EMPTY(head)	((head)->slh_first == NULL)
 #define	BSD_SLIST_FIRST(head)	((head)->slh_first)
 #define	BSD_SLIST_NEXT(elm, field)	((elm)->field.sle_next)
-
 
 /*
  * Singly-linked Tail queue declarations.
@@ -320,7 +317,6 @@ struct {								\
 #define	BSD_STAILQ_FIRST(head)	((head)->stqh_first)
 #define	BSD_STAILQ_NEXT(elm, field)	((elm)->field.stqe_next)
 
-
 /*
  * Simple queue definitions.
  */
@@ -393,7 +389,6 @@ struct {								\
 #define	BSD_SIMPLEQ_EMPTY(head)		((head)->sqh_first == NULL)
 #define	BSD_SIMPLEQ_FIRST(head)		((head)->sqh_first)
 #define	BSD_SIMPLEQ_NEXT(elm, field)	((elm)->field.sqe_next)
-
 
 /*
  * Tail queue definitions.
@@ -534,7 +529,6 @@ struct {								\
 	(*(((struct headname *)((head)->tqh_last))->tqh_last))
 #define	BSD_TAILQ_PREV(elm, headname, field) \
 	(*(((struct headname *)((elm)->field.tqe_prev))->tqh_last))
-
 
 /*
  * Circular queue definitions.
@@ -690,4 +684,4 @@ struct {								\
 	    ? ((head)->cqh_last)					\
 	    : (elm->field.cqe_prev))
 
-#endif	/* !_SYS_QUEUE_H_ */
+#endif				/* !_SYS_QUEUE_H_ */

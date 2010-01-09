@@ -544,27 +544,26 @@ int main(int argc, char **argv)
 	ring_buff_t *rb;
 	struct pollfd pfd;
 
-	static struct option long_options[] =
-        {
-            { "dev",        required_argument, 0, 'd' },
-            { "dump",       required_argument, 0, 'p' },
-            { "replay",     required_argument, 0, 'r' },
-            { "quit-after", required_argument, 0, 'q' },
-            { "generate",   required_argument, 0, 'g' },
-            { "filter",     required_argument, 0, 'f' },
-            { "bind-cpu",   required_argument, 0, 'b' },
-            { "unbind-cpu", required_argument, 0, 'B' },
-            { "prio-norm",  no_argument,       0, 'H' },
-            { "non-block",  no_argument,       0, 'n' },
-            { "no-color",   no_argument,       0, 'N' },
-            { "silent",     no_argument,       0, 's' },
-            { "daemonize",  no_argument,       0, 'D' },
-            { "pidfile",    required_argument, 0, 'P' },
-            { "logfile",    required_argument, 0, 'L' },
-            { "sockfile",   required_argument, 0, 'S' },
-            { "version",    no_argument,       0, 'v' },
-            { "help",       no_argument,       0, 'h' },
-	    { 0, 0, 0, 0 }
+	static struct option long_options[] = {
+		{"dev", required_argument, 0, 'd'},
+		{"dump", required_argument, 0, 'p'},
+		{"replay", required_argument, 0, 'r'},
+		{"quit-after", required_argument, 0, 'q'},
+		{"generate", required_argument, 0, 'g'},
+		{"filter", required_argument, 0, 'f'},
+		{"bind-cpu", required_argument, 0, 'b'},
+		{"unbind-cpu", required_argument, 0, 'B'},
+		{"prio-norm", no_argument, 0, 'H'},
+		{"non-block", no_argument, 0, 'n'},
+		{"no-color", no_argument, 0, 'N'},
+		{"silent", no_argument, 0, 's'},
+		{"daemonize", no_argument, 0, 'D'},
+		{"pidfile", required_argument, 0, 'P'},
+		{"logfile", required_argument, 0, 'L'},
+		{"sockfile", required_argument, 0, 'S'},
+		{"version", no_argument, 0, 'v'},
+		{"help", no_argument, 0, 'h'},
+		{0, 0, 0, 0}
 	};
 
 	sd = malloc(sizeof(*sd));
@@ -580,7 +579,9 @@ int main(int argc, char **argv)
 	sd->blocking_mode = POLL_WAIT_INF;
 	sd->bypass_bpf = BPF_BYPASS;
 
-	while ((c = getopt_long(argc, argv, "vhd:p:P:L:Df:sS:b:B:Hn", long_options, &opt_idx)) != EOF) {
+	while ((c =
+		getopt_long(argc, argv, "vhd:p:P:L:Df:sS:b:B:Hn", long_options,
+			    &opt_idx)) != EOF) {
 		switch (c) {
 		case 'h':
 			{
@@ -641,7 +642,6 @@ int main(int argc, char **argv)
 			}
 		case 'b':
 			{
-				printf("string: %s\n", optarg);
 				set_cpu_affinity(optarg);
 				break;
 			}
