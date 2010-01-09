@@ -71,6 +71,8 @@
 
 #define SYSD_ENABLE              1
 
+#define PACKET_DONT_CARE        -1
+
 /* TODO */
 #define info(fmt, arg...)                                            \
                                 fprintf(stderr, fmt, ## arg);

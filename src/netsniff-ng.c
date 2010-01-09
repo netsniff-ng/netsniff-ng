@@ -337,7 +337,7 @@ void softirq_handler(int number)
  * @pfd:                    file descriptor for polling
  */
 void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout,
-		   FILE * pcap)
+		   FILE * pcap, int packet_type)
 {
 	int i = 0;
 
@@ -351,6 +351,14 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout,
 			ring_buff_bytes_t *rbb =
 			    (ring_buff_bytes_t *) (rb->frames[i].iov_base +
 						   sizeof(*fm) + sizeof(short));
+
+			/* Check if the user wants to have a specific 
+			   packet type */
+			if(packet_type != PACKET_DONT_CARE) {
+				if(fm->s_ll.sll_pkttype != packet_type) {
+					goto __out_notify;
+				}
+			}
 
 			/* CPUs branch prediction heuristics should apply here,
 			   so 'hopefully' we won't slow down that much. */
@@ -381,6 +389,7 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout,
 
 			i = (i + 1) % rb->layout.tp_frame_nr;
 
+__out_notify:
 			/* This is very important, otherwise kernel starts
 			   to drop packages */
 			mem_notify_kernel(&(fm->tp_h));
@@ -550,6 +559,7 @@ int main(int argc, char **argv)
 		{"replay", required_argument, 0, 'r'},
 		{"quit-after", required_argument, 0, 'q'},
 		{"generate", required_argument, 0, 'g'},
+		{"type", required_argument, 0, 't'},
 		{"filter", required_argument, 0, 'f'},
 		{"bind-cpu", required_argument, 0, 'b'},
 		{"unbind-cpu", required_argument, 0, 'B'},
@@ -578,9 +588,10 @@ int main(int argc, char **argv)
 	/* Some default sys configuration */
 	sd->blocking_mode = POLL_WAIT_INF;
 	sd->bypass_bpf = BPF_BYPASS;
+	sd->packet_type = PACKET_DONT_CARE;
 
 	while ((c =
-		getopt_long(argc, argv, "vhd:p:P:L:Df:sS:b:B:Hn", long_options,
+		getopt_long(argc, argv, "vhd:p:P:L:Df:sS:b:B:Hnt:", long_options,
 			    &opt_idx)) != EOF) {
 		switch (c) {
 		case 'h':
@@ -606,6 +617,23 @@ int main(int argc, char **argv)
 		case 'H':
 			{
 				sd->no_prioritization = PROC_NO_HIGHPRIO;
+				break;
+			}
+		case 't':
+			{
+				if(!strncmp(optarg, "host", strlen("host"))) {
+					sd->packet_type = PACKET_HOST;
+				} else if(!strncmp(optarg, "broadcast", strlen("broadcast"))) {
+					sd->packet_type = PACKET_BROADCAST;
+				} else if(!strncmp(optarg, "multicast", strlen("multicast"))) {
+					sd->packet_type = PACKET_MULTICAST;
+				} else if(!strncmp(optarg, "others", strlen("others"))) {
+					sd->packet_type = PACKET_OTHERHOST;
+				} else if(!strncmp(optarg, "outgoing", strlen("outgoing"))) {
+					sd->packet_type = PACKET_OUTGOING;
+				} else {
+					sd->packet_type = PACKET_DONT_CARE;
+				}
 				break;
 			}
 		case 'f':
@@ -722,7 +750,7 @@ int main(int argc, char **argv)
 	 */
 
 	init_system(sd, &sock, &rb, &pfd);
-	fetch_packets(rb, &pfd, sd->blocking_mode, dump_pcap);
+	fetch_packets(rb, &pfd, sd->blocking_mode, dump_pcap, sd->packet_type);
 	cleanup_system(sd, &sock, &rb);
 
 	if (dump_pcap != NULL) {

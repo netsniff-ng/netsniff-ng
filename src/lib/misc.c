@@ -71,6 +71,12 @@ void help(void)
 	printf("\n");
 	printf("Options for packet filtering:\n");
 	printf("  -f|--filter <arg>      use file <arg> as packet filter\n");
+	printf("  -t|--type <arg>        only show packets of type\n");
+	printf("                           `host`      - to us\n");
+	printf("                           `broadcast` - to all\n");
+	printf("                           `multicast` - to group\n");
+	printf("                           `others`    - to others\n");
+	printf("                           `outgoing`  - from us\n");
 	printf
 	    ("  -g|--generate <arg>    generate packet filter code according to <arg>\n");
 	printf("\n");
