@@ -63,6 +63,8 @@ void help(void)
 	printf
 	    ("  -p|--dump <arg>        dump all matching packets in a pcap file\n");
 	printf
+	    ("                         for a better performance, combine with -s|--silent\n");
+	printf
 	    ("  -r|--replay <arg>      replay all packets from a pcap dump file\n");
 	printf
 	    ("  -q|--quit-after <arg>  quit dump/replay after <arg> pckts / <arg> MB\n");
