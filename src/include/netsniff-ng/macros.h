@@ -104,21 +104,40 @@
 #define MOD_MINUT2S(x)          ((x) % (60LLU))
 
 /* Release alias, some versioning fun ;) */
-#define MOOH     "+------------------------+      \n" \
-                 "| happy GNU year edition |      \n" \
-                 "+------------------------+      \n" \
+#define MOOH     "+-------------------------------------------+      \n" \
+                 "| all your packets are belong to us edition |      \n" \
+                 "+-------------------------------------------+      \n" \
                  "        \\   ^__^               \n" \
                  "         \\  (oo)\\_______      \n" \
                  "            (__)\\       )\\/\\ \n" \
                  "                ||----w |       \n" \
                  "                ||     ||       \n"
 
-/* Terminal color related stuff, first color is foreground */
+/* Some preprocessor terminal color related stuff */
+#define __reset       "0"
+#define __bold        "1"
 
-#define rst_color_term           "\033[0m"
+#define __black      "30"
+#define __red        "31"
+#define __green      "32"
+#define __yellow     "33"
+#define __blue       "34"
+#define __magenta    "35"
+#define __cyan       "36"
+#define __white      "37"
+#define __on_black   "40"
+#define __on_red     "41"
+#define __on_green   "42"
+#define __on_yellow  "43"
+#define __on_blue    "44"
+#define __on_magenta "45"
+#define __on_cyan    "46"
+#define __on_white   "47"
 
-#define beg_color_red_black      "\033[31;40m"
-#define end_color_red_black      rst_color_term
-#define str_color_red_black(x)   beg_color_red_black x end_color_red_black
+/* Some preprocessor hacks */
+#define colorize_start(fore, back)      "\033[" __##fore ";" __on_##back "m"
+#define colorize_end()                  "\033[" __reset "m"
+
+#define colorize_str(fore, back, text)  colorize_start(fore, back) text	colorize_end()
 
 #endif				/* _NET_MACROS_H_ */
