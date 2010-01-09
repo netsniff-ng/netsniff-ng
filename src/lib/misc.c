@@ -68,9 +68,9 @@ void help(void)
 	    ("  -q|--quit-after <arg>  quit dump/replay after <arg> pckts / <arg> MB\n");
 	printf("\n");
 	printf("Options for packet filtering:\n");
+	printf("  -f|--filter <arg>      use file <arg> as packet filter\n");
 	printf
-	    ("  -g|--generate <arg>    generate bpf filter code according to <arg>\n");
-	printf("  -f|--filter <arg>      use file <arg> as bpf filter\n");
+	    ("  -g|--generate <arg>    generate packet filter code according to <arg>\n");
 	printf("\n");
 	printf("Options for system scheduler/process:\n");
 	printf
@@ -89,17 +89,17 @@ void help(void)
 	printf("Options for system daemon:\n");
 	printf("  -D|--daemonize         run as sys daemon\n");
 	printf
-	    ("  -P|--pidfile <arg>     use file <arg> as pidfile, req if -D\n");
+	    ("  -P|--pidfile <arg>     use file <arg> as pidfile (required if -D)\n");
 	printf
-	    ("  -L|--logfile <arg>     use file <arg> as logfile, req if -D\n");
+	    ("  -L|--logfile <arg>     use file <arg> as logfile (required if -D)\n");
 	printf
-	    ("  -S|--sockfile <arg>    use file <arg> as uds inode, req if -D\n");
+	    ("  -S|--sockfile <arg>    use file <arg> as uds inode (required if -D)\n");
 	printf("\n");
 	printf("Options, misc:\n");
 	printf("  -v|--version           prints out version\n");
 	printf("  -h|--help              prints out this help\n");
 	printf("\n");
-	printf("Info:\n");
+	printf("Note:\n");
 	printf("  - Sending a SIGUSR1 will show current packet statistics\n");
 	printf
 	    ("  - Sending a SIGUSR2 will toggle silent and packet printing mode\n");
