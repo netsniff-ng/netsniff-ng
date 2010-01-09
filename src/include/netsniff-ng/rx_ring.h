@@ -55,6 +55,7 @@ extern void mmap_virt_ring(int sock, ring_buff_t * rb);
 extern void bind_dev_to_ring(int sock, int ifindex, ring_buff_t * rb);
 extern void put_dev_into_promisc_mode(int sock, int ifindex);
 extern void inject_kernel_bpf(int sock, struct sock_filter *bpf, int len);
+extern void reset_kernel_bpf(int sock);
 extern int ethdev_to_ifindex(int sock, char *dev);
 extern void net_stat(int sock);
 extern int alloc_pf_sock(void);

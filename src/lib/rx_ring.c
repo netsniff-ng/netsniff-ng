@@ -282,6 +282,25 @@ void inject_kernel_bpf(int sock, struct sock_filter *bpf, int len)
 }
 
 /**
+ * reset_kernel_bpf - Resets filter code from socket
+ * @sock:            socket
+ */
+void reset_kernel_bpf(int sock)
+{
+	int ret;
+	int foo = 0;
+
+	ret = setsockopt(sock, SOL_SOCKET, SO_DETACH_FILTER,
+			 &foo, sizeof(foo));
+	if (ret < 0) {
+		perr("setsockopt: cannot reset filter: %d - ", errno);
+
+		close(sock);
+		exit(EXIT_FAILURE);
+	}
+}
+
+/**
  * ethdev_to_ifindex - Translates device name into device number
  * @sock:             socket
  * @dev:              device name
