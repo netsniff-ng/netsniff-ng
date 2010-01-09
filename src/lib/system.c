@@ -59,8 +59,6 @@
  */
 static inline const char *nexttoken(const char *q, int sep)
 {
-	assert(q);
-
 	if (q) {
 		q = strchr(q, sep);
 	}

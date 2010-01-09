@@ -113,4 +113,12 @@
                  "                ||----w |       \n" \
                  "                ||     ||       \n"
 
+/* Terminal color related stuff, first color is foreground */
+
+#define rst_color_term           "\033[0m"
+
+#define beg_color_red_black      "\033[31;40m"
+#define end_color_red_black      rst_color_term
+#define str_color_red_black(x)   beg_color_red_black x end_color_red_black
+
 #endif				/* _NET_MACROS_H_ */
