@@ -518,7 +518,7 @@ static void cleanup_system(system_data_t * sd, int *sock, ring_buff_t ** rb)
 	 */
 
 	info("captured frames: %llu, "
-	     "captured bytes: %llu [%llu KB, %llu MB, %llu GB]\n",
+	     "captured bytes: %llu [%llu KiB, %llu MiB, %llu GiB]\n",
 	     netstat.total.frames, netstat.total.bytes,
 	     netstat.total.bytes / 1024,
 	     netstat.total.bytes / (1024 * 1024),
