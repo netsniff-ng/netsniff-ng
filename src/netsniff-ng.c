@@ -356,12 +356,10 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout,
 			   packet type */
 			if(packet_type != PACKET_DONT_CARE) {
 				if(fm->s_ll.sll_pkttype != packet_type) {
-					goto __out_notify;
+					goto __out_notify_kernel;
 				}
 			}
 
-			/* CPUs branch prediction heuristics should apply here,
-			   so 'hopefully' we won't slow down that much. */
 			if (print_packet_buffer) {
 				/* This path here slows us down ... well, but
 				   the user wants to see what's going on */
@@ -387,15 +385,24 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout,
 			pthread_mutex_unlock(&gs_loc_mutex);
 			restore_softirq(2, SIGUSR1, SIGALRM);
 
+			/* Next frame */
 			i = (i + 1) % rb->layout.tp_frame_nr;
 
-__out_notify:
+__out_notify_kernel:
 			/* This is very important, otherwise kernel starts
 			   to drop packages */
 			mem_notify_kernel(&(fm->tp_h));
 		}
 
-		poll(pfd, 1, timeout);
+		while(poll(pfd, 1, timeout) != 1 /* number of fds */)
+			/* NOP */;
+
+		/* FIXME */
+		/* Look-ahead if current frame is status kernel, otherwise we have
+		   have incoming frames and poll spins / hangs all the time :( */
+		for(; ((struct tpacket_hdr *) rb->frames[i].iov_base)->tp_status 
+		      != TP_STATUS_USER; i = (i + 1) % rb->layout.tp_frame_nr)
+			/* NOP */ ;
 	}
 }
 
