@@ -394,7 +394,7 @@ __out_notify_kernel:
 			mem_notify_kernel(&(fm->tp_h));
 		}
 
-		while((ret = poll(pfd, 1, timeout)) != 1 /* number of fds */)
+		while((ret = poll(pfd, 1, timeout)) <= 0)
 			/* NOP */;
 
 		if (ret > 0 && (pfd->revents & (POLLHUP | POLLRDHUP | POLLERR | POLLNVAL))) {
