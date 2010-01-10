@@ -80,7 +80,7 @@ static inline void prepare_polling(int sock, struct pollfd *pfd)
 
 	pfd->fd = sock;
 	pfd->revents = 0;
-	pfd->events = POLLIN | POLLERR;
+	pfd->events = POLLIN;
 }
 
 /**

@@ -337,9 +337,9 @@ void softirq_handler(int number)
  * @pfd:                    file descriptor for polling
  */
 void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout,
-		   FILE * pcap, int packet_type)
+		   FILE * pcap, int packet_type, int sock)
 {
-	int i = 0;
+	int ret, foo, i = 0;
 
 	assert(rb);
 	assert(pfd);
@@ -394,15 +394,56 @@ __out_notify_kernel:
 			mem_notify_kernel(&(fm->tp_h));
 		}
 
-		while(poll(pfd, 1, timeout) != 1 /* number of fds */)
+		while((ret = poll(pfd, 1, timeout)) != 1 /* number of fds */)
 			/* NOP */;
 
-		/* FIXME */
+		if (ret > 0 && (pfd->revents & (POLLHUP | POLLRDHUP | POLLERR | POLLNVAL))) {
+			if(pfd->revents & (POLLHUP | POLLRDHUP)) {
+				err("Hangup on socket occured.\n");
+				return;
+			} else if(pfd->revents & POLLERR) {
+				err("Error occured on socket: ");
+				/* recv is more specififc on the error */
+				errno = 0;
+				if (recv(sock, &foo, sizeof(foo), MSG_PEEK) != -1)
+					goto __out_grab_frame; /* Hmm... no error */
+				if (errno == ENETDOWN) {
+					err("Interface went down\n");
+				} else {
+					err("%s\n", strerror(errno));
+				}
+				return;
+			} else if(pfd->revents & POLLNVAL) {
+				err("Invalid polling request on socket.\n");
+				return;
+			}
+		}
+
+__out_grab_frame:
 		/* Look-ahead if current frame is status kernel, otherwise we have
 		   have incoming frames and poll spins / hangs all the time :( */
 		for(; ((struct tpacket_hdr *) rb->frames[i].iov_base)->tp_status 
 		      != TP_STATUS_USER; i = (i + 1) % rb->layout.tp_frame_nr)
 			/* NOP */ ;
+		/* Why this should be okay:
+		     1) Current frame[i] is TP_STATUS_USER:
+			  This is our original case that occurs without 
+			  the for loop.
+		     2) Current frame[i] is not TP_STATUS_USER:
+			  poll returns correctly with return value 1 (number of 
+			  file descriptors), so an event has occured which has 
+			  to be POLLIN since all error conditions have been 
+			  caught previously. Furthermore, during ring traversal 
+			  a frame that has been set to TP_STATUS_USER will be 
+			  given back to kernel on finish with TP_STATUS_KERNEL.
+			  So, if we look ahead all skipped frames are not ready 
+			  for user access. Since the kernel decides to put 
+			  frames, which are 'behind' our pointer, into 
+			  TP_STATUS_USER we do one loop and return at the 
+			  correct position after passing the for loop again. If 
+			  we grab frame which are 'in front of' our pointer 
+			  we'll fetch them within the first for loop. 
+		*/
 	}
 }
 
@@ -757,7 +798,7 @@ int main(int argc, char **argv)
 	 */
 
 	init_system(sd, &sock, &rb, &pfd);
-	fetch_packets(rb, &pfd, sd->blocking_mode, dump_pcap, sd->packet_type);
+	fetch_packets(rb, &pfd, sd->blocking_mode, dump_pcap, sd->packet_type, sock);
 	cleanup_system(sd, &sock, &rb);
 
 	if (dump_pcap != NULL) {
