@@ -1,8 +1,8 @@
 /* XXX: Coding Style - use the tool indent with the following (Linux kernel
  *                     code indents)
  *
- * indent -nbad -bap -nbc -bbo -hnl -br -brs -c33 -cd33 -ncdb -ce -ci4  \
- *        -cli0 -d0 -di1 -nfc1 -i8 -ip0 -l80 -lp -npcs -nprs -npsl -sai \
+ * indent -nbad -bap -nbc -bbo -hnl -br -brs -c33 -cd33 -ncdb -ce -ci4   \
+ *        -cli0 -d0 -di1 -nfc1 -i8 -ip0 -l120 -lp -npcs -nprs -npsl -sai \
  *        -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts8 -il1
  *
  *
@@ -141,8 +141,8 @@ static inline void print_counters(void)
 	 */
 	info("stats summary:\n");
 	info("--------------------------------------------------------------------------------------------\n");
-	info("elapsed time: %llu d, %llu h, %llu min, %llu s, %llu ns\n", d_day,
-	     d_h, d_min, d_sec, d_nsec);
+	info("elapsed time: %llu d, %llu h, %llu min, %llu s, %llu ns\n", 
+	     d_day, d_h, d_min, d_sec, d_nsec);
 	info("-----------+--------------------------+--------------------------+--------------------------\n");
 	info("           |  per sec                 |  per min                 |  total                   \n");
 	info("-----------+--------------------------+--------------------------+--------------------------\n");
@@ -750,16 +750,13 @@ int main(int argc, char **argv)
 				case 'b':
 				case 'B':
 					{
-						fprintf(stderr,
-							"Option -%c requires an argument!\n",
-							optopt);
+						fprintf(stderr, "Option -%c requires an argument!\n", optopt);
 						break;
 					}
 				default:
 					{
 						if (isprint(optopt)) {
-							fprintf(stderr,
-								"Unknown option character `0x%X\'!\n",
+							fprintf(stderr, "Unknown option character `0x%X\'!\n",
 								optopt);
 						}
 						break;
