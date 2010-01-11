@@ -8,7 +8,7 @@ Homepage: http://code.google.com/p/netsniff-ng/
 
 Package: netsniff-ng
 Architecture: i386 ia64 alpha amd64 arm armeb armel hppa mips mipsel powerpc ppc64 s390 s390x sh3 sh3eb sh4 sh4eb sparc
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends} ${misc:Depends}
 Description: a high performance network sniffer for packet inspection
  netsniff-ng is a high performance Linux network sniffer 
  for packet inspection. It can be used for protocol analysis 
