@@ -158,7 +158,7 @@ void header(void)
 		exit(EXIT_FAILURE);
 	}
 
-	info("%s %s -- pid (%d)\n\n", PROGNAME_STRING, VERSION_STRING, (int)getpid());
+	info("%s -- pid (%d)\n\n", colorize_full_str(red, white, PROGNAME_STRING " " VERSION_STRING), (int)getpid());
 
 	info("nice (%d), scheduler (%d prio %d)\n",
 	     getpriority(PRIO_PROCESS, getpid()), sched_getscheduler(getpid()), sp.sched_priority);

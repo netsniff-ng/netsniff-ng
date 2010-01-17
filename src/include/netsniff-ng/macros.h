@@ -137,9 +137,11 @@
 #define __on_white   "47"
 
 /* Some preprocessor hacks */
-#define colorize_start(fore, back)      "\033[" __##fore ";" __on_##back "m"
+#define colorize_start(fore)            "\033[" __##fore "m"
+#define colorize_start_full(fore, back) "\033[" __##fore ";" __on_##back "m"
 #define colorize_end()                  "\033[" __reset "m"
 
-#define colorize_str(fore, back, text)  colorize_start(fore, back) text	colorize_end()
+#define colorize_str(fore, text)  	     colorize_start(fore) text colorize_end()
+#define colorize_full_str(fore, back, text)  colorize_start_full(fore, back) text colorize_end()
 
 #endif				/* _NET_MACROS_H_ */
