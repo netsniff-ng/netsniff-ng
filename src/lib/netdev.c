@@ -193,11 +193,11 @@ void print_device_info(void)
 
 	ifr = ifc.ifc_req;
 
-	info("networking devs\n");
+	info("Networking devs\n");
 	for (i = 0; i < ifc.ifc_len / sizeof(struct ifreq); ++i) {
 		ifr_elem = &ifr[i];
 
-		info("  %s => %s ", ifr_elem->ifr_name,
+		info(" %s => %s ", ifr_elem->ifr_name,
 		     inet_ntoa(((struct sockaddr_in *)&ifr_elem->ifr_addr)->sin_addr));
 
 		ret = ioctl(stmp, SIOCGIFHWADDR, ifr_elem);

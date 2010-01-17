@@ -1,7 +1,6 @@
 Some future ToDos
 =================
 
- * Fix Linux kernel for BPF handling (payload cut off)
  * (Still) better visualization of packets during debug-output
  * Colorize debug output, according to Proto and checksum 
    (e.g. bogus packets) - per option
