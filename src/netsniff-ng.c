@@ -64,6 +64,7 @@
 #include <netsniff-ng/types.h>
 #include <netsniff-ng/print.h>
 #include <netsniff-ng/pcap.h>
+#include <netsniff-ng/netdev.h>
 
 /*
  * Global vars
@@ -576,6 +577,8 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct 
 	}
 
 	clock_gettime(CLOCK_REALTIME, &netstat.m_start);
+
+	info("--- Listening ---\n\n");
 
 	free(bpf);
 	return 0;
