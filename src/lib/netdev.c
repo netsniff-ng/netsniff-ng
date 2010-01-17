@@ -150,12 +150,26 @@ int get_ethtool_bitrate(char *ifname)
 }
 
 /**
+ * get_device_bitrate_generic - Returns bitrate in Mb/s
+ * @ifname:                    device name
+ */
+int get_device_bitrate_generic(char *ifname)
+{
+	int speed_c, speed_w;
+
+	/* Probe for speed rates */
+	speed_c = get_ethtool_bitrate(ifname);
+	speed_w = get_wireless_bitrate(ifname);
+
+	return (speed_c == 0 ? speed_w : speed_c);
+}
+
+/**
  * print_device_info - Prints some device specific info
  */
 void print_device_info(void)
 {
-	int ret, i, stmp;
-	int speed_w, speed_c;
+	int ret, i, stmp, speed;
 	char dev_buff[1024];
 
 	struct ifconf ifc;
@@ -183,10 +197,6 @@ void print_device_info(void)
 	for (i = 0; i < ifc.ifc_len / sizeof(struct ifreq); ++i) {
 		ifr_elem = &ifr[i];
 
-		/* Probe for speed rates */
-		speed_c = get_ethtool_bitrate(ifr_elem->ifr_name);
-		speed_w = get_wireless_bitrate(ifr_elem->ifr_name);
-
 		info("  %s => %s ", ifr_elem->ifr_name,
 		     inet_ntoa(((struct sockaddr_in *)&ifr_elem->ifr_addr)->sin_addr));
 
@@ -206,8 +216,9 @@ void print_device_info(void)
 		     ((ifr_elem->ifr_flags & IFF_UP) ? "up" : "not up"),
 		     ((ifr_elem->ifr_flags & IFF_RUNNING) ? "running" : ""));
 
-		if ((speed_c + speed_w) > 0) {
-			info("(bitrate: %d Mb/s)\n", (speed_c == 0 ? speed_w : speed_c));
+		speed = get_device_bitrate_generic(ifr_elem->ifr_name);
+		if (speed) {
+			info("(bitrate: %d Mb/s)\n", speed);
 		} else {
 			info("\n");
 		}

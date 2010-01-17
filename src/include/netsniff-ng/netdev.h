@@ -43,6 +43,7 @@
 
 /* Function signatures */
 
+extern int get_device_bitrate_generic(char *ifname);
 extern int get_wireless_bitrate(char *ifname);
 extern int get_ethtool_bitrate(char *ifname);
 extern void print_device_info(void);

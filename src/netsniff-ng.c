@@ -556,7 +556,7 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct 
 	}
 
 	/* RX_RING stuff */
-	create_virt_ring((*sock), (*rb));
+	create_virt_ring((*sock), (*rb), sd->dev);
 	bind_dev_to_ring((*sock), ethdev_to_ifindex((*sock), sd->dev), (*rb));
 	mmap_virt_ring((*sock), (*rb));
 

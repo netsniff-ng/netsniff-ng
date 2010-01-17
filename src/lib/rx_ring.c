@@ -90,6 +90,7 @@
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/types.h>
 #include <netsniff-ng/rx_ring.h>
+#include <netsniff-ng/netdev.h>
 
 /**
  * destroy_virt_ring - Destroys virtual RX_RING buffer
@@ -117,20 +118,21 @@ void destroy_virt_ring(int sock, ring_buff_t * rb)
  * @sock:            socket
  * @rb:              ring buffer
  */
-void create_virt_ring(int sock, ring_buff_t * rb)
+void create_virt_ring(int sock, ring_buff_t * rb, char *ifname)
 {
-	int ret;
+	int ret, dev_speed;
 
 	assert(rb);
 
+	dev_speed = get_device_bitrate_generic(ifname) >> 3;
 	memset(&(rb->layout), 0, sizeof(rb->layout));
 
 	/* max: getpagesize() << 11 for i386 */
 	rb->layout.tp_block_size = getpagesize() << 2;
 	rb->layout.tp_frame_size = TPACKET_ALIGNMENT << 7;
 
-	/* max: 15 for i386 */
-	rb->layout.tp_block_nr = 1 << 13;
+	/* max: 15 for i386, old default: 1 << 13, now: approximated bandwidth size */
+	rb->layout.tp_block_nr = (dev_speed * 1100000) / rb->layout.tp_block_size;
 	rb->layout.tp_frame_nr = rb->layout.tp_block_size / rb->layout.tp_frame_size * rb->layout.tp_block_nr;
 
  __retry_sso:

@@ -47,7 +47,7 @@
 /* Function signatures */
 
 extern void destroy_virt_ring(int sock, ring_buff_t * rb);
-extern void create_virt_ring(int sock, ring_buff_t * rb);
+extern void create_virt_ring(int sock, ring_buff_t * rb, char *ifname);
 extern void mmap_virt_ring(int sock, ring_buff_t * rb);
 extern void bind_dev_to_ring(int sock, int ifindex, ring_buff_t * rb);
 
