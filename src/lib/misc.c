@@ -39,6 +39,13 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include <net/if.h>
+#include <netinet/in.h>
+#include <netinet/ether.h>
+#include <arpa/inet.h>
+
+#include <sys/ioctl.h>
+
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/system.h>
 #include <netsniff-ng/misc.h>
@@ -137,10 +144,16 @@ void version(void)
  */
 void header(void)
 {
-	int ret;
-	size_t len;
-	char *cpu_string;
+	int ret, i, stmp;
 
+	size_t len;
+
+	char *cpu_string;
+	char dev_buff[1024];
+
+	struct ifconf ifc;
+	struct ifreq *ifr;
+	struct ifreq *ifr_elem;
 	struct sched_param sp;
 
 	len = sysconf(_SC_NPROCESSORS_CONF) + 1;
@@ -166,4 +179,45 @@ void header(void)
 	     sysconf(_SC_NPROCESSORS_ONLN), sysconf(_SC_NPROCESSORS_CONF), get_cpu_affinity(cpu_string, len));
 
 	free(cpu_string);
+
+	stmp = socket(AF_INET, SOCK_DGRAM, 0);
+	if (stmp < 0) {
+		perror("socket");
+		exit(EXIT_FAILURE);
+	}
+
+	ifc.ifc_len = sizeof(dev_buff);
+	ifc.ifc_buf = dev_buff;
+
+	if (ioctl(stmp, SIOCGIFCONF, &ifc) < 0) {
+		perror("ioctl(SIOCGIFCONF)");
+		exit(EXIT_FAILURE);
+	}
+
+	ifr = ifc.ifc_req;
+
+	info("networking devs\n");
+	for (i = 0; i < ifc.ifc_len / sizeof(struct ifreq); ++i) {
+		ifr_elem = &ifr[i];
+
+		info("  %s => %s ", ifr_elem->ifr_name,
+		     inet_ntoa(((struct sockaddr_in *)&ifr_elem->ifr_addr)->sin_addr));
+
+		if (ioctl(stmp, SIOCGIFHWADDR, ifr_elem) < 0) {
+			perror("ioctl(SIOCGIFHWADDR)");
+			exit(EXIT_FAILURE);
+		}
+
+		if (ioctl(stmp, SIOCGIFFLAGS, ifr_elem) < 0) {
+			perror("ioctl(SIOCGIFFLAGS)");
+			exit(EXIT_FAILURE);
+		}
+
+		info("(%s), %s %s\n", ether_ntoa((struct ether_addr *)ifr_elem->ifr_hwaddr.sa_data),
+		     ((ifr_elem->ifr_flags & IFF_UP) ? "up" : "not up"),
+		     ((ifr_elem->ifr_flags & IFF_RUNNING) ? "running" : ""));
+	}
+
+	close(stmp);
+	info("\n");
 }

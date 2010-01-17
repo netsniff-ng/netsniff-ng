@@ -515,7 +515,7 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct 
 
 			if (ioctl(stmp, SIOCGIFFLAGS, ifr_elem) < 0) {
 				perror("ioctl(SIOCGIFFLAGS)");
-				return 1;
+				exit(EXIT_FAILURE);
 			}
 
 			if ((ifr_elem->ifr_flags & IFF_UP) &&
@@ -528,6 +528,8 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct 
 				break;
 			}
 		}
+
+		close(stmp);
 
 		info("No device specified, using `%s`.\n\n", sd->dev);
 	}
