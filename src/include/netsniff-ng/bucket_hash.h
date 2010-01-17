@@ -35,12 +35,9 @@
  *    Bucket hash related stuff
  */
 
-
 #ifndef _NET_HASH_H_
 #define _NET_HASH_H_
 
 #include <queue.h>
 
-
-
-#endif /* _NET_HASH_H_ */
+#endif				/* _NET_HASH_H_ */

@@ -333,8 +333,7 @@ int undaemonize(const char *pidfile)
  * @logfile:  path to logfile
  * @sockfile: path to unix domain socket inode
  */
-int daemonize(const char *pidfile, const char *logfile,
-	      const char *sockfile, void *(*start_server) (void *sock))
+int daemonize(const char *pidfile, const char *logfile, const char *sockfile, void *(*start_server) (void *sock))
 {
 	int fd;
 	int ret;
@@ -354,8 +353,7 @@ int daemonize(const char *pidfile, const char *logfile,
 
 	fd = open(pidfile, O_RDONLY);
 	if (fd > 0) {
-		err("daemon already started."
-		    "kill daemon and delete pid file %s\n", pidfile);
+		err("daemon already started." "kill daemon and delete pid file %s\n", pidfile);
 
 		close(fd);
 		exit(EXIT_FAILURE);

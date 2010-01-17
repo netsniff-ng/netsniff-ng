@@ -66,8 +66,7 @@ typedef struct frame_map {
 	struct sockaddr_ll s_ll __attribute__ ((aligned(TPACKET_ALIGNMENT)));
 } frame_map_t;
 
-typedef void (*print_packet_buff_t) (ring_buff_bytes_t *,
-				     const struct tpacket_hdr *);
+typedef void (*print_packet_buff_t) (ring_buff_bytes_t *, const struct tpacket_hdr *);
 
 typedef struct system_data {
 	/* Some more or less boolean conf values */

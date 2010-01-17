@@ -101,8 +101,7 @@ void destroy_virt_ring(int sock, ring_buff_t * rb)
 	assert(rb);
 
 	memset(&(rb->layout), 0, sizeof(rb->layout));
-	setsockopt(sock, SOL_PACKET, PACKET_RX_RING, (void *)&(rb->layout),
-		   sizeof(rb->layout));
+	setsockopt(sock, SOL_PACKET, PACKET_RX_RING, (void *)&(rb->layout), sizeof(rb->layout));
 
 	if (rb->buffer) {
 		munmap(rb, rb->len);
@@ -132,19 +131,14 @@ void create_virt_ring(int sock, ring_buff_t * rb)
 
 	/* max: 15 for i386 */
 	rb->layout.tp_block_nr = 1 << 13;
-	rb->layout.tp_frame_nr =
-	    rb->layout.tp_block_size / rb->layout.tp_frame_size *
-	    rb->layout.tp_block_nr;
+	rb->layout.tp_frame_nr = rb->layout.tp_block_size / rb->layout.tp_frame_size * rb->layout.tp_block_nr;
 
  __retry_sso:
-	ret = setsockopt(sock, SOL_PACKET, PACKET_RX_RING,
-			 (void *)&(rb->layout), sizeof(rb->layout));
+	ret = setsockopt(sock, SOL_PACKET, PACKET_RX_RING, (void *)&(rb->layout), sizeof(rb->layout));
 
 	if (errno == ENOMEM && rb->layout.tp_block_nr > 1) {
 		rb->layout.tp_block_nr >>= 1;
-		rb->layout.tp_frame_nr =
-		    rb->layout.tp_block_size / rb->layout.tp_frame_size *
-		    rb->layout.tp_block_nr;
+		rb->layout.tp_frame_nr = rb->layout.tp_block_size / rb->layout.tp_frame_size * rb->layout.tp_block_nr;
 
 		goto __retry_sso;
 	}
@@ -159,12 +153,9 @@ void create_virt_ring(int sock, ring_buff_t * rb)
 	rb->len = rb->layout.tp_block_size * rb->layout.tp_block_nr;
 
 	info("%.2f MB allocated for rx ring \n", 1.f * rb->len / (1024 * 1024));
-	info(" [ %d blocks, %d frames ] \n", rb->layout.tp_block_nr,
-	     rb->layout.tp_frame_nr);
-	info(" [ %d frames per block ]\n",
-	     rb->layout.tp_block_size / rb->layout.tp_frame_size);
-	info(" [ framesize: %d bytes, blocksize: %d bytes ]\n\n",
-	     rb->layout.tp_frame_size, rb->layout.tp_block_size);
+	info(" [ %d blocks, %d frames ] \n", rb->layout.tp_block_nr, rb->layout.tp_frame_nr);
+	info(" [ %d frames per block ]\n", rb->layout.tp_block_size / rb->layout.tp_frame_size);
+	info(" [ framesize: %d bytes, blocksize: %d bytes ]\n\n", rb->layout.tp_frame_size, rb->layout.tp_block_size);
 }
 
 /**
@@ -177,8 +168,7 @@ void mmap_virt_ring(int sock, ring_buff_t * rb)
 {
 	assert(rb);
 
-	rb->buffer = mmap(0, rb->len, PROT_READ | PROT_WRITE, MAP_SHARED, sock,
-			  0);
+	rb->buffer = mmap(0, rb->len, PROT_READ | PROT_WRITE, MAP_SHARED, sock, 0);
 	if (rb->buffer == MAP_FAILED) {
 		perr("mmap: cannot mmap the rx ring: %d - ", errno);
 
@@ -210,8 +200,7 @@ void bind_dev_to_ring(int sock, int ifindex, ring_buff_t * rb)
 	rb->params.sll_halen = 0;
 	rb->params.sll_pkttype = 0;
 
-	ret = bind(sock, (struct sockaddr *)&(rb->params),
-		   sizeof(struct sockaddr_ll));
+	ret = bind(sock, (struct sockaddr *)&(rb->params), sizeof(struct sockaddr_ll));
 	if (ret < 0) {
 		perr("bind: cannot bind device: %d - ", errno);
 
@@ -241,11 +230,9 @@ void put_dev_into_promisc_mode(int sock, int ifindex)
 	   will not work with ioctl(). There, you have to manage things 
 	   manually ... */
 
-	ret = setsockopt(sock, SOL_PACKET, PACKET_ADD_MEMBERSHIP,
-			 &mr, sizeof(mr));
+	ret = setsockopt(sock, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mr, sizeof(mr));
 	if (ret < 0) {
-		perr("setsockopt: cannot set dev %d to promisc mode: %d - ",
-		     ifindex, errno);
+		perr("setsockopt: cannot set dev %d to promisc mode: %d - ", ifindex, errno);
 
 		close(sock);
 		exit(EXIT_FAILURE);
@@ -271,8 +258,7 @@ void inject_kernel_bpf(int sock, struct sock_filter *bpf, int len)
 	filter.len = len / sizeof(*bpf);
 	filter.filter = bpf;
 
-	ret = setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER,
-			 &filter, sizeof(filter));
+	ret = setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER, &filter, sizeof(filter));
 	if (ret < 0) {
 		perr("setsockopt: filter cannot be injected: %d - ", errno);
 
@@ -290,8 +276,7 @@ void reset_kernel_bpf(int sock)
 	int ret;
 	int foo = 0;
 
-	ret = setsockopt(sock, SOL_SOCKET, SO_DETACH_FILTER,
-			 &foo, sizeof(foo));
+	ret = setsockopt(sock, SOL_SOCKET, SO_DETACH_FILTER, &foo, sizeof(foo));
 	if (ret < 0) {
 		perr("setsockopt: cannot reset filter: %d - ", errno);
 
@@ -317,8 +302,7 @@ int ethdev_to_ifindex(int sock, char *dev)
 
 	ret = ioctl(sock, SIOCGIFINDEX, &ethreq);
 	if (ret < 0) {
-		perr("ioctl: cannot determine dev number for %s: %d - ",
-		     ethreq.ifr_name, errno);
+		perr("ioctl: cannot determine dev number for %s: %d - ", ethreq.ifr_name, errno);
 
 		close(sock);
 		exit(EXIT_FAILURE);
@@ -342,10 +326,8 @@ void net_stat(int sock)
 	ret = getsockopt(sock, SOL_PACKET, PACKET_STATISTICS, &kstats, &slen);
 	if (ret > -1) {
 		info("%d frames incoming\n", kstats.tp_packets);
-		info("%d frames passed filter\n",
-		     kstats.tp_packets - kstats.tp_drops);
-		info("%d frames failed filter (due to out of space)\n",
-		     kstats.tp_drops);
+		info("%d frames passed filter\n", kstats.tp_packets - kstats.tp_drops);
+		info("%d frames failed filter (due to out of space)\n", kstats.tp_drops);
 	}
 }
 
@@ -398,8 +380,7 @@ void parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 
 		ret = sscanf(buff, "{ 0x%x, %d, %d, 0x%08x },",
 			     (unsigned int *)((void *)&(sf_single.code)),
-			     (int *)((void *)&(sf_single.jt)),
-			     (int *)((void *)&(sf_single.jf)), &(sf_single.k));
+			     (int *)((void *)&(sf_single.jt)), (int *)((void *)&(sf_single.jf)), &(sf_single.k));
 		if (ret != 4) {
 			/* No valid bpf opcode format, might be a comment or 
 			   a syntax error */
@@ -407,15 +388,12 @@ void parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 		}
 
 		*len += 1;
-		*bpf = (struct sock_filter *)realloc(*bpf,
-						     *len * sizeof(sf_single));
+		*bpf = (struct sock_filter *)realloc(*bpf, *len * sizeof(sf_single));
 
 		memcpy(&((*bpf)[*len - 1]), &sf_single, sizeof(sf_single));
 
 		info(" line %d: { 0x%x, %d, %d, 0x%08x }\n", count++,
-		     (*bpf)[*len - 1].code,
-		     (*bpf)[*len - 1].jt,
-		     (*bpf)[*len - 1].jf, (*bpf)[*len - 1].k);
+		     (*bpf)[*len - 1].code, (*bpf)[*len - 1].jt, (*bpf)[*len - 1].jf, (*bpf)[*len - 1].k);
 	}
 
 	info("\n");

@@ -81,8 +81,7 @@
  * @tty_len:       width of terminal
  * @tty_off:       current offset of tty_len
  */
-static void inline dump_hex(ring_buff_bytes_t * buff, int len, size_t tty_len,
-			    size_t tty_off)
+static void inline dump_hex(ring_buff_bytes_t * buff, int len, size_t tty_len, size_t tty_off)
 {
 	for (; len-- > 0; tty_off += 3, buff++) {
 		if (unlikely(tty_off >= tty_len - 3)) {
@@ -100,8 +99,7 @@ static void inline dump_hex(ring_buff_bytes_t * buff, int len, size_t tty_len,
  * @tty_len:       width of terminal
  * @tty_off:       current offset of tty_len
  */
-static void inline dump_printable(ring_buff_bytes_t * buff, int len,
-				  size_t tty_len, size_t tty_off)
+static void inline dump_printable(ring_buff_bytes_t * buff, int len, size_t tty_len, size_t tty_off)
 {
 	for (; len-- > 0; tty_off += 2, buff++) {
 		if (unlikely(tty_off >= tty_len - 3)) {
@@ -130,8 +128,7 @@ static void inline dump_ethhdr_all(struct ethhdr *eth)
 	     ((uint8_t *) eth->h_dest)[2], ((uint8_t *) eth->h_dest)[3],
 	     ((uint8_t *) eth->h_dest)[4], ((uint8_t *) eth->h_dest)[5]);
 
-	info("Proto (0x%.2x%.2x)",
-	     ((uint8_t *) & eth->h_proto)[0], ((uint8_t *) & eth->h_proto)[1]);
+	info("Proto (0x%.2x%.2x)", ((uint8_t *) & eth->h_proto)[0], ((uint8_t *) & eth->h_proto)[1]);
 
 	info(" ] ");
 }
@@ -234,8 +231,7 @@ static void inline dump_tcphdr_all(struct tcphdr *tcp)
  * @len:                 len
  * @tty_len:             width of terminal
  */
-static void inline dump_payload_hex_all(ring_buff_bytes_t * rbb, int len,
-					int tty_len)
+static void inline dump_payload_hex_all(ring_buff_bytes_t * rbb, int len, int tty_len)
 {
 	info(" [ Payload hex  (");
 	dump_hex(rbb, len, tty_len, 14);
@@ -248,8 +244,7 @@ static void inline dump_payload_hex_all(ring_buff_bytes_t * rbb, int len,
  * @len:                  len
  * @tty_len:              width of terminal
  */
-static void inline dump_payload_char_all(ring_buff_bytes_t * rbb, int len,
-					 int tty_len)
+static void inline dump_payload_char_all(ring_buff_bytes_t * rbb, int len, int tty_len)
 {
 	info(" [ Payload char (");
 	dump_printable(rbb, len, tty_len, 14);
@@ -261,14 +256,12 @@ static void inline dump_payload_char_all(ring_buff_bytes_t * rbb, int len,
  * @rbb:                       payload
  * @tp:                        kernel packet header
  */
-void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb,
-				const struct tpacket_hdr *tp)
+void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 {
 	size_t off_n, off_o;
 	int tty_len = get_tty_length();
 
-	info("%d Byte, Timestamp (%u.%u s) \n", tp->tp_len, tp->tp_sec,
-	     tp->tp_usec);
+	info("%d Byte, Timestamp (%u.%u s) \n", tp->tp_len, tp->tp_sec, tp->tp_usec);
 
 	dump_ethhdr_all((struct ethhdr *)rbb);
 	info("\n");
@@ -287,8 +280,7 @@ void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb,
 			info("\n");
 			off_o = off_n;
 			off_n += sizeof(struct tcphdr);
-		} else if (((struct iphdr *)(rbb + off_o))->protocol ==
-			   IPPROTO_UDP) {
+		} else if (((struct iphdr *)(rbb + off_o))->protocol == IPPROTO_UDP) {
 			dump_udphdr_all((struct udphdr *)(rbb + off_n));
 			info("\n");
 			off_o = off_n;

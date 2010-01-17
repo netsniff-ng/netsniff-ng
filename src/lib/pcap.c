@@ -58,8 +58,7 @@ int sf_write_header(FILE * fp, int linktype, int thiszone, int snaplen)
 	return (0);
 }
 
-void
-pcap_dump(FILE * f, struct tpacket_hdr *tp_h, const struct ethhdr const *sp)
+void pcap_dump(FILE * f, struct tpacket_hdr *tp_h, const struct ethhdr const *sp)
 {
 	struct pcap_sf_pkthdr sf_hdr;
 
@@ -103,8 +102,7 @@ FILE *pcap_validate(FILE * pcap)
 
 	if (hdr.magic != TCPDUMP_MAGIC
 	    || hdr.version_major != PCAP_VERSION_MAJOR
-	    || hdr.version_minor != PCAP_VERSION_MINOR
-	    || hdr.linktype != LINKTYPE_EN10MB) {
+	    || hdr.version_minor != PCAP_VERSION_MINOR || hdr.linktype != LINKTYPE_EN10MB) {
 		errno = EINVAL;
 		perr("This file is certainly not a valid pcap :");
 		return (NULL);

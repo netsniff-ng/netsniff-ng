@@ -44,7 +44,6 @@
 
 /* Function signatures */
 
-extern void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb,
-				       const struct tpacket_hdr *tp);
+extern void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp);
 
 #endif				/* _NET_PRINT_H_ */

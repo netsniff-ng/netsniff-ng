@@ -47,6 +47,11 @@
 #include <getopt.h>
 #include <netsniff-ng.h>
 
+#include <net/if.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#include <sys/ioctl.h>
 #include <sys/un.h>
 #include <sys/types.h>
 #include <sys/poll.h>
@@ -90,25 +95,16 @@ static inline void refresh_counters(void)
 
 	if (unlikely(netstat.t_elapsed % 60 == 0)) {
 		netstat.s_per_min.frames =
-		    curr_weight * netstat.per_min.frames + (1.f -
-							    curr_weight) *
-		    netstat.s_per_min.frames;
+		    curr_weight * netstat.per_min.frames + (1.f - curr_weight) * netstat.s_per_min.frames;
 		netstat.s_per_min.bytes =
-		    curr_weight * netstat.per_min.bytes + (1.f -
-							   curr_weight) *
-		    netstat.s_per_min.bytes;
+		    curr_weight * netstat.per_min.bytes + (1.f - curr_weight) * netstat.s_per_min.bytes;
 
 		netstat.per_min.frames = netstat.per_min.bytes = 0;
 	}
 
 	netstat.s_per_sec.frames =
-	    curr_weight * netstat.per_sec.frames + (1.f -
-						    curr_weight) *
-	    netstat.s_per_sec.frames;
-	netstat.s_per_sec.bytes =
-	    curr_weight * netstat.per_sec.bytes + (1.f -
-						   curr_weight) *
-	    netstat.s_per_sec.bytes;
+	    curr_weight * netstat.per_sec.frames + (1.f - curr_weight) * netstat.s_per_sec.frames;
+	netstat.s_per_sec.bytes = curr_weight * netstat.per_sec.bytes + (1.f - curr_weight) * netstat.s_per_sec.bytes;
 
 	netstat.per_sec.frames = netstat.per_sec.bytes = 0;
 }
@@ -141,30 +137,21 @@ static inline void print_counters(void)
 	 */
 	info("stats summary:\n");
 	info("--------------------------------------------------------------------------------------------\n");
-	info("elapsed time: %llu d, %llu h, %llu min, %llu s, %llu ns\n", 
-	     d_day, d_h, d_min, d_sec, d_nsec);
+	info("elapsed time: %llu d, %llu h, %llu min, %llu s, %llu ns\n", d_day, d_h, d_min, d_sec, d_nsec);
 	info("-----------+--------------------------+--------------------------+--------------------------\n");
 	info("           |  per sec                 |  per min                 |  total                   \n");
 	info("-----------+--------------------------+--------------------------+--------------------------\n");
 	info("  frames   | %24llu | %24llu | %24llu \n",
-	     netstat.s_per_sec.frames, netstat.s_per_min.frames,
-	     netstat.total.frames);
+	     netstat.s_per_sec.frames, netstat.s_per_min.frames, netstat.total.frames);
 	info("-----------+--------------------------+--------------------------+--------------------------\n");
 	info("  in B     | %24llu | %24llu | %24llu \n",
-	     netstat.s_per_sec.bytes, netstat.s_per_min.bytes,
-	     netstat.total.bytes);
+	     netstat.s_per_sec.bytes, netstat.s_per_min.bytes, netstat.total.bytes);
 	info("  in KB    | %24llu | %24llu | %24llu \n",
-	     DIV_KBYTES(netstat.s_per_sec.bytes),
-	     DIV_KBYTES(netstat.s_per_min.bytes),
-	     DIV_KBYTES(netstat.total.bytes));
+	     DIV_KBYTES(netstat.s_per_sec.bytes), DIV_KBYTES(netstat.s_per_min.bytes), DIV_KBYTES(netstat.total.bytes));
 	info("  in MB    | %24llu | %24llu | %24llu \n",
-	     DIV_MBYTES(netstat.s_per_sec.bytes),
-	     DIV_MBYTES(netstat.s_per_min.bytes),
-	     DIV_MBYTES(netstat.total.bytes));
+	     DIV_MBYTES(netstat.s_per_sec.bytes), DIV_MBYTES(netstat.s_per_min.bytes), DIV_MBYTES(netstat.total.bytes));
 	info("  in GB    | %24llu | %24llu | %24llu \n",
-	     DIV_GBYTES(netstat.s_per_sec.bytes),
-	     DIV_GBYTES(netstat.s_per_min.bytes),
-	     DIV_GBYTES(netstat.total.bytes));
+	     DIV_GBYTES(netstat.s_per_sec.bytes), DIV_GBYTES(netstat.s_per_min.bytes), DIV_GBYTES(netstat.total.bytes));
 	info("-----------+--------------------------+--------------------------+--------------------------\n");
 }
 
@@ -249,8 +236,7 @@ void *start_uds_server(void *psockfile)
 		size_t t = sizeof(remote);
 		info("unix domain socket server: waiting for a connection\n");
 
-		sock2 =
-		    accept(sock, (struct sockaddr *)&remote, (socklen_t *) & t);
+		sock2 = accept(sock, (struct sockaddr *)&remote, (socklen_t *) & t);
 		if (sock2 < 0) {
 			perr("cannot do accept on uds socket %d - ", errno);
 			pthread_exit(0);
@@ -295,8 +281,7 @@ void softirq_handler(int number)
 			switch (++sigusr2 % 2) {
 			case 0:
 				{
-					print_packet_buffer =
-					    print_packet_buffer_mode_1;
+					print_packet_buffer = print_packet_buffer_mode_1;
 					break;
 				}
 			case 1:
@@ -306,8 +291,7 @@ void softirq_handler(int number)
 				}
 			default:
 				{
-					print_packet_buffer =
-					    print_packet_buffer_mode_1;
+					print_packet_buffer = print_packet_buffer_mode_1;
 					break;
 				}
 			}
@@ -336,8 +320,7 @@ void softirq_handler(int number)
  * @rb:                     ring buffer
  * @pfd:                    file descriptor for polling
  */
-void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout,
-		   FILE * pcap, int packet_type, int sock)
+void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout, FILE * pcap, int packet_type, int sock)
 {
 	int ret, foo, i = 0;
 
@@ -349,13 +332,12 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout,
 		while (mem_notify_user(rb->frames[i]) && likely(!sigint)) {
 			struct frame_map *fm = rb->frames[i].iov_base;
 			ring_buff_bytes_t *rbb =
-			    (ring_buff_bytes_t *) (rb->frames[i].iov_base +
-						   sizeof(*fm) + sizeof(short));
+			    (ring_buff_bytes_t *) (rb->frames[i].iov_base + sizeof(*fm) + sizeof(short));
 
 			/* Check if the user wants to have a specific 
 			   packet type */
-			if(packet_type != PACKET_DONT_CARE) {
-				if(fm->s_ll.sll_pkttype != packet_type) {
+			if (packet_type != PACKET_DONT_CARE) {
+				if (fm->s_ll.sll_pkttype != packet_type) {
 					goto __out_notify_kernel;
 				}
 			}
@@ -367,8 +349,7 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout,
 			}
 
 			if (pcap != NULL) {
-				pcap_dump(pcap, &fm->tp_h,
-					  (struct ethhdr *)rbb);
+				pcap_dump(pcap, &fm->tp_h, (struct ethhdr *)rbb);
 			}
 
 			/* Pending singals will be delivered after netstat 
@@ -388,62 +369,61 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout,
 			/* Next frame */
 			i = (i + 1) % rb->layout.tp_frame_nr;
 
-__out_notify_kernel:
+ __out_notify_kernel:
 			/* This is very important, otherwise kernel starts
 			   to drop packages */
 			mem_notify_kernel(&(fm->tp_h));
 		}
 
-		while((ret = poll(pfd, 1, timeout)) <= 0)
-			/* NOP */;
+		while ((ret = poll(pfd, 1, timeout)) <= 0)
+			/* NOP */ ;
 
 		if (ret > 0 && (pfd->revents & (POLLHUP | POLLRDHUP | POLLERR | POLLNVAL))) {
-			if(pfd->revents & (POLLHUP | POLLRDHUP)) {
-				err("Hangup on socket occured.\n");
+			if (pfd->revents & (POLLHUP | POLLRDHUP)) {
+				err("Hangup on socket occured.\n\n");
 				return;
-			} else if(pfd->revents & POLLERR) {
-				err("Error occured on socket: ");
+			} else if (pfd->revents & POLLERR) {
 				/* recv is more specififc on the error */
 				errno = 0;
 				if (recv(sock, &foo, sizeof(foo), MSG_PEEK) != -1)
-					goto __out_grab_frame; /* Hmm... no error */
+					goto __out_grab_frame;	/* Hmm... no error */
 				if (errno == ENETDOWN) {
-					err("Interface went down\n");
+					err("Interface went down\n\n");
 				} else {
-					err("%s\n", strerror(errno));
+					err("%s\n\n", strerror(errno));
 				}
 				return;
-			} else if(pfd->revents & POLLNVAL) {
-				err("Invalid polling request on socket.\n");
+			} else if (pfd->revents & POLLNVAL) {
+				err("Invalid polling request on socket.\n\n");
 				return;
 			}
 		}
 
-__out_grab_frame:
+ __out_grab_frame:
 		/* Look-ahead if current frame is status kernel, otherwise we have
 		   have incoming frames and poll spins / hangs all the time :( */
-		for(; ((struct tpacket_hdr *) rb->frames[i].iov_base)->tp_status 
-		      != TP_STATUS_USER; i = (i + 1) % rb->layout.tp_frame_nr)
+		for (; ((struct tpacket_hdr *)rb->frames[i].iov_base)->tp_status
+		     != TP_STATUS_USER; i = (i + 1) % rb->layout.tp_frame_nr)
 			/* NOP */ ;
 		/* Why this should be okay:
-		     1) Current frame[i] is TP_STATUS_USER:
-			  This is our original case that occurs without 
-			  the for loop.
-		     2) Current frame[i] is not TP_STATUS_USER:
-			  poll returns correctly with return value 1 (number of 
-			  file descriptors), so an event has occured which has 
-			  to be POLLIN since all error conditions have been 
-			  caught previously. Furthermore, during ring traversal 
-			  a frame that has been set to TP_STATUS_USER will be 
-			  given back to kernel on finish with TP_STATUS_KERNEL.
-			  So, if we look ahead all skipped frames are not ready 
-			  for user access. Since the kernel decides to put 
-			  frames, which are 'behind' our pointer, into 
-			  TP_STATUS_USER we do one loop and return at the 
-			  correct position after passing the for loop again. If 
-			  we grab frame which are 'in front of' our pointer 
-			  we'll fetch them within the first for loop. 
-		*/
+		   1) Current frame[i] is TP_STATUS_USER:
+		   This is our original case that occurs without 
+		   the for loop.
+		   2) Current frame[i] is not TP_STATUS_USER:
+		   poll returns correctly with return value 1 (number of 
+		   file descriptors), so an event has occured which has 
+		   to be POLLIN since all error conditions have been 
+		   caught previously. Furthermore, during ring traversal 
+		   a frame that has been set to TP_STATUS_USER will be 
+		   given back to kernel on finish with TP_STATUS_KERNEL.
+		   So, if we look ahead all skipped frames are not ready 
+		   for user access. Since the kernel decides to put 
+		   frames, which are 'behind' our pointer, into 
+		   TP_STATUS_USER we do one loop and return at the 
+		   correct position after passing the for loop again. If 
+		   we grab frame which are 'in front of' our pointer 
+		   we'll fetch them within the first for loop. 
+		 */
 	}
 }
 
@@ -454,12 +434,15 @@ __out_grab_frame:
  * @rb:         ring buffer
  * @pfd:        file descriptor for polling
  */
-static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
-		       struct pollfd *pfd)
+static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
 {
-	int ret, bpf_len = 0;
+	int stmp, i, ret, bpf_len = 0;
+	char dev_buff[1024];
 
 	struct sock_filter *bpf = NULL;
+	struct ifconf ifc;
+	struct ifreq *ifr = NULL;
+	struct ifreq *ifr_elem = NULL;
 	struct itimerval val_r;
 
 	assert(sd);
@@ -483,9 +466,7 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 	register_softirq(SIGHUP, &softirq_handler);
 
 	if (sd->sysdaemon) {
-		ret =
-		    daemonize(sd->pidfile, sd->logfile, sd->sockfile,
-			      start_uds_server);
+		ret = daemonize(sd->pidfile, sd->logfile, sd->sockfile, start_uds_server);
 		if (ret != 0) {
 			err("daemonize failed");
 			exit(EXIT_FAILURE);
@@ -502,6 +483,46 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb,
 	}
 
 	memset((*rb), 0, sizeof(**rb));
+
+	/* User didn't specify a device, so we switch to the default running 
+	   dev. This is the first running dev found (except lo). If we find 
+	   nothing, we switch to lo. */
+	if (!sd->dev) {
+		sd->dev = strdup("lo");
+
+		stmp = socket(AF_INET, SOCK_DGRAM, 0);
+		if (stmp < 0) {
+			perror("socket");
+			exit(EXIT_FAILURE);
+		}
+
+		ifc.ifc_len = sizeof(dev_buff);
+		ifc.ifc_buf = dev_buff;
+
+		if (ioctl(stmp, SIOCGIFCONF, &ifc) < 0) {
+			perror("ioctl(SIOCGIFCONF)");
+			exit(EXIT_FAILURE);
+		}
+
+		ifr = ifc.ifc_req;
+
+		for (i = 0; i < ifc.ifc_len / sizeof(struct ifreq); ++i) {
+			ifr_elem = &ifr[i];
+
+			if (ioctl(stmp, SIOCGIFFLAGS, ifr_elem) < 0) {
+				perror("ioctl(SIOCGIFFLAGS)");
+				return 1;
+			}
+
+			if ((ifr_elem->ifr_flags & IFF_UP) &&
+			    (ifr_elem->ifr_flags & IFF_RUNNING) && strncmp(ifr_elem->ifr_name, "lo", IFNAMSIZ)) {
+				sd->dev = strdup(ifr_elem->ifr_name);
+				break;
+			}
+		}
+
+		info("No device specified, using `%s`.\n\n", sd->dev);
+	}
 
 	(*sock) = alloc_pf_sock();
 	put_dev_into_promisc_mode((*sock), ethdev_to_ifindex((*sock), sd->dev));
@@ -578,8 +599,9 @@ static void cleanup_system(system_data_t * sd, int *sock, ring_buff_t ** rb)
 	     "captured bytes: %llu [%llu KiB, %llu MiB, %llu GiB]\n",
 	     netstat.total.frames, netstat.total.bytes,
 	     netstat.total.bytes / 1024,
-	     netstat.total.bytes / (1024 * 1024),
-	     netstat.total.bytes / (1024 * 1024 * 1024));
+	     netstat.total.bytes / (1024 * 1024), netstat.total.bytes / (1024 * 1024 * 1024));
+
+	free(sd->dev);
 
 	if (sd->sysdaemon) {
 		undaemonize(sd->pidfile);
@@ -638,9 +660,7 @@ int main(int argc, char **argv)
 	sd->bypass_bpf = BPF_BYPASS;
 	sd->packet_type = PACKET_DONT_CARE;
 
-	while ((c =
-		getopt_long(argc, argv, "vhd:p:P:L:Df:sS:b:B:Hnt:", long_options,
-			    &opt_idx)) != EOF) {
+	while ((c = getopt_long(argc, argv, "vhd:p:P:L:Df:sS:b:B:Hnt:", long_options, &opt_idx)) != EOF) {
 		switch (c) {
 		case 'h':
 			{
@@ -654,7 +674,7 @@ int main(int argc, char **argv)
 			}
 		case 'd':
 			{
-				sd->dev = optarg;
+				sd->dev = strdup(optarg);
 				break;
 			}
 		case 'n':
@@ -669,15 +689,15 @@ int main(int argc, char **argv)
 			}
 		case 't':
 			{
-				if(!strncmp(optarg, "host", strlen("host"))) {
+				if (!strncmp(optarg, "host", strlen("host"))) {
 					sd->packet_type = PACKET_HOST;
-				} else if(!strncmp(optarg, "broadcast", strlen("broadcast"))) {
+				} else if (!strncmp(optarg, "broadcast", strlen("broadcast"))) {
 					sd->packet_type = PACKET_BROADCAST;
-				} else if(!strncmp(optarg, "multicast", strlen("multicast"))) {
+				} else if (!strncmp(optarg, "multicast", strlen("multicast"))) {
 					sd->packet_type = PACKET_MULTICAST;
-				} else if(!strncmp(optarg, "others", strlen("others"))) {
+				} else if (!strncmp(optarg, "others", strlen("others"))) {
 					sd->packet_type = PACKET_OTHERHOST;
-				} else if(!strncmp(optarg, "outgoing", strlen("outgoing"))) {
+				} else if (!strncmp(optarg, "outgoing", strlen("outgoing"))) {
 					sd->packet_type = PACKET_OUTGOING;
 				} else {
 					sd->packet_type = PACKET_DONT_CARE;
@@ -733,8 +753,7 @@ int main(int argc, char **argv)
 					exit(EXIT_FAILURE);
 				}
 
-				sf_write_header(dump_pcap, LINKTYPE_EN10MB, 0,
-						PCAP_DEFAULT_SNAPSHOT_LEN);
+				sf_write_header(dump_pcap, LINKTYPE_EN10MB, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
 				break;
 			}
 
@@ -756,8 +775,7 @@ int main(int argc, char **argv)
 				default:
 					{
 						if (isprint(optopt)) {
-							fprintf(stderr, "Unknown option character `0x%X\'!\n",
-								optopt);
+							fprintf(stderr, "Unknown option character `0x%X\'!\n", optopt);
 						}
 						break;
 					}
@@ -770,11 +788,6 @@ int main(int argc, char **argv)
 				abort();
 			}
 		}
-	}
-
-	if (argc < 2 || !sd->dev) {
-		help();
-		exit(EXIT_FAILURE);
 	}
 
 	if (sd->sysdaemon && (!sd->pidfile || !sd->logfile || !sd->sockfile)) {

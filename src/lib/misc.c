@@ -49,13 +49,13 @@
 void help(void)
 {
 	printf("%s %s\n\n", PROGNAME_STRING, VERSION_STRING);
-	printf("%s is a high performance network sniffer for packet\n",
-	       PROGNAME_STRING);
+	printf("%s is a high performance network sniffer for packet\n", PROGNAME_STRING);
 	printf("inspection that acts as a raw socket sniffer with kernelspace\n");
 	printf("bpf and a \"zero-copy\" mode receive/transmit ring.\n");
 	printf("\n");
-	printf("Options, mandatory:\n");
+	printf("Options for net dev:\n");
 	printf("  -d|--dev <arg>         use device <arg> for capturing packets, e.g. `eth0`\n");
+	printf("  -m|--mtu <arg>         temporarily adjust MTU of NIC\n");
 	printf("\n");
 	printf("Options for packet dumping/replaying:\n");
 	printf("  -p|--dump <arg>        dump all matching packets in a pcap file\n");
@@ -90,7 +90,6 @@ void help(void)
 	printf("  -S|--sockfile <arg>    use file <arg> as uds inode (required if -D)\n");
 	printf("\n");
 	printf("Options, misc:\n");
-	printf("  -m|--mtu <arg>         temporarily adjust MTU of NIC\n");
 	printf("  -v|--version           prints out version\n");
 	printf("  -h|--help              prints out this help\n");
 	printf("\n");
@@ -114,8 +113,7 @@ void help(void)
 void version(void)
 {
 	printf("%s %s\n\n", PROGNAME_STRING, VERSION_STRING);
-	printf("%s is a high performance network sniffer for packet\n",
-	       PROGNAME_STRING);
+	printf("%s is a high performance network sniffer for packet\n", PROGNAME_STRING);
 	printf("inspection that acts as a raw socket sniffer with kernelspace\n");
 	printf("bpf and a \"zero-copy\" mode receive/transmit ring.\n\n");
 	printf("%s", MOOH);	/* ;) */
@@ -123,8 +121,7 @@ void version(void)
 	printf("%s can be used for protocol analysis and\n"
 	       "reverse engineering, network debugging, measurement of\n"
 	       "performance throughput or network statistics creation of\n"
-	       "incoming packets on central network nodes like routers\n"
-	       "or firewalls.\n", PROGNAME_STRING);
+	       "incoming packets on central network nodes like routers\n" "or firewalls.\n", PROGNAME_STRING);
 	printf("\n");
 	printf("Please report bugs to <danborkmann@googlemail.com>\n");
 	printf("Copyright (C) 2009, 2010 Daniel Borkmann and Emmanuel Roullit\n");
@@ -160,16 +157,13 @@ void header(void)
 		exit(EXIT_FAILURE);
 	}
 
-	info("%s %s -- pid (%d)\n\n", PROGNAME_STRING, VERSION_STRING,
-	     (int)getpid());
+	info("%s %s -- pid (%d)\n\n", PROGNAME_STRING, VERSION_STRING, (int)getpid());
 
 	info("nice (%d), scheduler (%d prio %d)\n",
-	     getpriority(PRIO_PROCESS, getpid()),
-	     sched_getscheduler(getpid()), sp.sched_priority);
+	     getpriority(PRIO_PROCESS, getpid()), sched_getscheduler(getpid()), sp.sched_priority);
 
 	info("%ld of %ld CPUs online, affinity bitstring (%s)\n\n",
-	     sysconf(_SC_NPROCESSORS_ONLN),
-	     sysconf(_SC_NPROCESSORS_CONF), get_cpu_affinity(cpu_string, len));
+	     sysconf(_SC_NPROCESSORS_ONLN), sysconf(_SC_NPROCESSORS_CONF), get_cpu_affinity(cpu_string, len));
 
 	free(cpu_string);
 }
