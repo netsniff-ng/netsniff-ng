@@ -37,4 +37,4 @@
 
 #include <queue.h>
 
-#include <netsniff-ng/bucket_hash.h>
+#include <netsniff-ng/hash.h>
