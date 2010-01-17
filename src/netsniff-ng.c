@@ -65,6 +65,7 @@
 #include <netsniff-ng/print.h>
 #include <netsniff-ng/pcap.h>
 #include <netsniff-ng/netdev.h>
+#include <netsniff-ng/bpf.h>
 
 /*
  * Global vars
@@ -551,6 +552,9 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct 
 		/* Berkeley Packet Filter stuff */
 		parse_rules(sd->rulefile, &bpf, &bpf_len);
 		inject_kernel_bpf((*sock), bpf, bpf_len * sizeof(*bpf));
+
+		/* Print info for the user */
+		bpf_dump_all(bpf, bpf_len);
 	} else {
 		info("No filter applied. Sniffing all traffic.\n\n");
 	}
