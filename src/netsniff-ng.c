@@ -489,6 +489,10 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct 
 	   nothing, we switch to lo. */
 	if (!sd->dev) {
 		sd->dev = strdup("lo");
+		if (!sd->dev) {
+			perror("Cannot allocate mem");
+			exit(EXIT_FAILURE);
+		}
 
 		stmp = socket(AF_INET, SOCK_DGRAM, 0);
 		if (stmp < 0) {
@@ -517,6 +521,10 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct 
 			if ((ifr_elem->ifr_flags & IFF_UP) &&
 			    (ifr_elem->ifr_flags & IFF_RUNNING) && strncmp(ifr_elem->ifr_name, "lo", IFNAMSIZ)) {
 				sd->dev = strdup(ifr_elem->ifr_name);
+				if (!sd->dev) {
+					perror("Cannot allocate mem");
+					exit(EXIT_FAILURE);
+				}
 				break;
 			}
 		}
@@ -675,6 +683,10 @@ int main(int argc, char **argv)
 		case 'd':
 			{
 				sd->dev = strdup(optarg);
+				if (!sd->dev) {
+					perror("Cannot allocate mem");
+					exit(EXIT_FAILURE);
+				}
 				break;
 			}
 		case 'n':
