@@ -10,7 +10,7 @@ INCLUDE          = -I../include
 CFLAGS           = -Wall -O2
 
 OBJECTS         := bpf.o misc.o print.o rx_ring.o system.o
-OBJECTS         += pcap.o hash.o netdev.o
+OBJECTS         += dump.o hash.o netdev.o
 
 all: lib
 

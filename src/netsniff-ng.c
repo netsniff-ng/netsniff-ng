@@ -63,7 +63,7 @@
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/types.h>
 #include <netsniff-ng/print.h>
-#include <netsniff-ng/pcap.h>
+#include <netsniff-ng/dump.h>
 #include <netsniff-ng/netdev.h>
 #include <netsniff-ng/bpf.h>
 

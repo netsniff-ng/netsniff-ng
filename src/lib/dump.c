@@ -32,12 +32,13 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <errno.h>
 
-#include <netsniff-ng/pcap.h>
-#include <netsniff-ng/macros.h>
 #include <linux/if_packet.h>
 #include <linux/if_ether.h>
-#include <errno.h>
+
+#include <netsniff-ng/dump.h>
+#include <netsniff-ng/macros.h>
 
 int sf_write_header(FILE * fp, int linktype, int thiszone, int snaplen)
 {

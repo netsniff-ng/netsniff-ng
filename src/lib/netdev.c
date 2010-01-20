@@ -372,7 +372,6 @@ int alloc_pf_sock(void)
 void parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 {
 	int ret;
-	uint32_t count = 0;
 	char buff[128] = { 0 };
 
 	struct sock_filter sf_single;
@@ -412,11 +411,7 @@ void parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 
 		memcpy(&((*bpf)[*len - 1]), &sf_single, sizeof(sf_single));
 		memset(buff, 0, sizeof(buff));
-
-		//info(" line %d: { 0x%x, %d, %d, 0x%08x }\n", count++,
-		//     (*bpf)[*len - 1].code, (*bpf)[*len - 1].jt, (*bpf)[*len - 1].jf, (*bpf)[*len - 1].k);
 	}
 
-	//info("\n");
 	fclose(fp);
 }
