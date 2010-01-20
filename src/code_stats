@@ -1,0 +1,3 @@
+#!/bin/sh
+
+find . -type f | egrep ".(c|h)$" | xargs wc -l
