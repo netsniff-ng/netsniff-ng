@@ -32,48 +32,42 @@
 
 /*
  * Contains: 
- *    Mostly RX_RING related stuff and other networking code
+ *    Stuff that can be used for RX_RING as well as for TX_RING
  */
 
-#ifndef _NET_RX_RING_H_
-#define _NET_RX_RING_H_
+#ifndef _NET_RXTX_COMMON_H_
+#define _NET_RXTX_COMMON_H_
 
 #include <stdlib.h>
 #include <assert.h>
 
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/types.h>
-#include <netsniff-ng/rxtx_common.h>
-
-/* Function signatures */
-
-extern void destroy_virt_rx_ring(int sock, ring_buff_t * rb);
-extern void create_virt_rx_ring(int sock, ring_buff_t * rb, char *ifname);
-extern void mmap_virt_rx_ring(int sock, ring_buff_t * rb);
-extern void bind_dev_to_rx_ring(int sock, int ifindex, ring_buff_t * rb);
 
 /* Inline stuff */
 
 /**
- * mem_notify_user_for_rx - Checks whether kernel has written its data into our 
- *                          virtual RX_RING
- * @frame:                 ethernet frame data
+ * alloc_frame_buffer - Allocates frame buffer
+ * @rb:                ring buff struct
  */
-static inline int mem_notify_user_for_rx(struct iovec frame)
+static inline void alloc_frame_buffer(ring_buff_t * rb)
 {
-	struct tpacket_hdr *header = frame.iov_base;
-	return (header->tp_status == TP_STATUS_USER);
+	int i = 0;
+
+	assert(rb);
+
+	rb->frames = (struct iovec *)malloc(rb->layout.tp_frame_nr * sizeof(*rb->frames));
+	if (!rb->frames) {
+		err("No mem left!\n");
+		exit(EXIT_FAILURE);
+	}
+
+	memset(rb->frames, 0, rb->layout.tp_frame_nr * sizeof(*rb->frames));
+
+	for (i = 0; i < rb->layout.tp_frame_nr; ++i) {
+		rb->frames[i].iov_base = (void *)((long)rb->buffer) + (i * rb->layout.tp_frame_size);
+		rb->frames[i].iov_len = rb->layout.tp_frame_size;
+	}
 }
 
-/**
- * mem_notify_kernel_for_rx - We tell the kernel that we are done with processing 
- *                            data from our virtual RX_RING
- * @header:                  packet header with status flag
- */
-static inline void mem_notify_kernel_for_rx(struct tpacket_hdr *header)
-{
-	assert(header);
-	header->tp_status = TP_STATUS_KERNEL;
-}
-
-#endif				/* _NET_RX_RING_H_ */
+#endif				/* _NET_RXTX_COMMON_H_ */

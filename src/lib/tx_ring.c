@@ -59,7 +59,6 @@
 #include <netsniff-ng/tx_ring.h>
 #include <netsniff-ng/netdev.h>
 
-/* TX_RING is part of the kernel since 2.6.31 */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
 
 /**

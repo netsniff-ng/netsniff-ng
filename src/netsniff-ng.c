@@ -331,7 +331,7 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout, FILE * pca
 
 	/* This is our critical path ... */
 	while (likely(!sigint)) {
-		while (mem_notify_user(rb->frames[i]) && likely(!sigint)) {
+		while (mem_notify_user_for_rx(rb->frames[i]) && likely(!sigint)) {
 			struct frame_map *fm = rb->frames[i].iov_base;
 			ring_buff_bytes_t *rbb =
 			    (ring_buff_bytes_t *) (rb->frames[i].iov_base + sizeof(*fm) + sizeof(short));
@@ -374,7 +374,7 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout, FILE * pca
  __out_notify_kernel:
 			/* This is very important, otherwise kernel starts
 			   to drop packages */
-			mem_notify_kernel(&(fm->tp_h));
+			mem_notify_kernel_for_rx(&(fm->tp_h));
 		}
 
 		while ((ret = poll(pfd, 1, timeout)) <= 0)
