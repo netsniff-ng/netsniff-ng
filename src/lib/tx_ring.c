@@ -181,11 +181,19 @@ void bind_dev_to_tx_ring(int sock, int ifindex, ring_buff_t * rb)
 	}
 }
 #else
-void bind_dev_to_tx_ring(int sock, int ifindex, ring_buff_t * rb) {}
+void bind_dev_to_tx_ring(int sock, int ifindex, ring_buff_t * rb)
+{
+}
 
-void mmap_virt_tx_ring(int sock, ring_buff_t * rb) {}
+void mmap_virt_tx_ring(int sock, ring_buff_t * rb)
+{
+}
 
-void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname) {}
+void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname)
+{
+}
 
-void destroy_virt_tx_ring(int sock, ring_buff_t * rb) {}
-#endif /* LINUX_VERSION_CODE */
+void destroy_virt_tx_ring(int sock, ring_buff_t * rb)
+{
+}
+#endif				/* LINUX_VERSION_CODE */

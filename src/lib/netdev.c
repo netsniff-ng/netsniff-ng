@@ -165,6 +165,37 @@ int get_device_bitrate_generic(char *ifname)
 }
 
 /**
+ * get_device_bitrate_generic - Returns bitrate in Mb/s
+ * @ifname:                    device name
+ */
+int change_mtu(char *ifname, int mtu)
+{
+	int sock, ret;
+	struct ifreq ifr;
+
+	assert(ifname && mtu > 0);
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+
+	sock = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sock < 0) {
+		perror("socket");
+		exit(EXIT_FAILURE);
+	}
+
+	ifr.ifr_mtu = mtu;
+
+	ret = ioctl(sock, SIOCSIFMTU, &ifr);
+	if (ret < 0) {
+		perror("iotcl(SIOCSIFMTU)");
+		return ret;
+	}
+
+	return 0;
+}
+
+/**
  * print_device_info - Prints some device specific info
  */
 void print_device_info(void)

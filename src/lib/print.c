@@ -77,7 +77,7 @@
 
 uint8_t is_on(const uint64_t value, const uint64_t bitmask)
 {
-	return(((value & bitmask) == bitmask) ? 1 : 0);
+	return (((value & bitmask) == bitmask) ? 1 : 0);
 }
 
 /*
@@ -87,11 +87,11 @@ uint8_t is_on(const uint64_t value, const uint64_t bitmask)
  * @tty_len:       width of terminal
  * @tty_off:       current offset of tty_len
  */
-void dump_hex(const void const * to_print, int len, size_t tty_len, size_t tty_off)
+void dump_hex(const void const *to_print, int len, size_t tty_len, size_t tty_off)
 {
 	assert(to_print);
 
-	uint8_t * buff = (uint8_t *) to_print;
+	uint8_t *buff = (uint8_t *) to_print;
 
 	for (; len-- > 0; tty_off += 3, buff++) {
 		if (unlikely(tty_off >= tty_len - 3)) {
@@ -109,11 +109,11 @@ void dump_hex(const void const * to_print, int len, size_t tty_len, size_t tty_o
  * @tty_len:       width of terminal
  * @tty_off:       current offset of tty_len
  */
-void dump_printable(const void const * to_print, int len, size_t tty_len, size_t tty_off)
+void dump_printable(const void const *to_print, int len, size_t tty_len, size_t tty_off)
 {
 	assert(to_print);
 
-	uint8_t * buff = (uint8_t *) to_print;
+	uint8_t *buff = (uint8_t *) to_print;
 
 	for (; len-- > 0; tty_off += 2, buff++) {
 		if (unlikely(tty_off >= tty_len - 3)) {
@@ -129,9 +129,9 @@ void dump_printable(const void const * to_print, int len, size_t tty_len, size_t
  * @eth:            ethernet header
  */
 void dump_ethhdr_all(struct ethhdr *eth)
-{	
-	uint8_t * src_mac = eth->h_source;
-	uint8_t * dst_mac = eth->h_dest;
+{
+	uint8_t *src_mac = eth->h_source;
+	uint8_t *dst_mac = eth->h_dest;
 	__be16 proto;
 
 	assert(eth);
@@ -139,7 +139,9 @@ void dump_ethhdr_all(struct ethhdr *eth)
 
 	info(" [ ");
 
-	info("MAC (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x => %.2x:%.2x:%.2x:%.2x:%.2x:%.2x), ",src_mac[0], src_mac[1], src_mac[2], src_mac[3], src_mac[4], src_mac[5], dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4], dst_mac[5]);
+	info("MAC (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x => %.2x:%.2x:%.2x:%.2x:%.2x:%.2x), ", src_mac[0], src_mac[1],
+	     src_mac[2], src_mac[3], src_mac[4], src_mac[5], dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4],
+	     dst_mac[5]);
 
 	info("Proto (0x%.4x)", ntohs(proto));
 
@@ -154,12 +156,11 @@ void dump_iphdr_all(struct iphdr *ip)
 {
 	/* XXX Version check */
 	assert(ip);
-	char src_ip[INET_ADDRSTRLEN] = {0};
-	char dst_ip[INET_ADDRSTRLEN] = {0};
+	char src_ip[INET_ADDRSTRLEN] = { 0 };
+	char dst_ip[INET_ADDRSTRLEN] = { 0 };
 	uint16_t printable_frag_off;
 
-	if (ip->version != IPVERSION)
-	{
+	if (ip->version != IPVERSION) {
 		info("Version is %u %u\n", ip->version, ntohs(ip->version));
 		return;
 	}
@@ -178,7 +179,8 @@ void dump_iphdr_all(struct iphdr *ip)
 	info("Tlen (%u), ", ntohs(ip->tot_len));
 	info("ID (%u), ", ntohs(ip->id));
 	/* FIXME fragoff is fragment offset + flags */
-	info("Res: %u NoFrag: %u MoreFrag: %u offset (%u), ", is_on(printable_frag_off, 1<<15), is_on(printable_frag_off, 1<<14), is_on(printable_frag_off, 1<<13), printable_frag_off & (1<<12));
+	info("Res: %u NoFrag: %u MoreFrag: %u offset (%u), ", is_on(printable_frag_off, 1 << 15),
+	     is_on(printable_frag_off, 1 << 14), is_on(printable_frag_off, 1 << 13), printable_frag_off & (1 << 12));
 	info("Chsum (0x%x)", ntohs(ip->check));
 
 	info(" ] ");
@@ -297,31 +299,29 @@ void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb, const struct tpacket_hd
 	info("\n");
 	l2_offset = sizeof(struct ethhdr);
 
-	switch(l2_flags)
-	{
-		case ETH_P_IP:
-			l3_offset = sizeof(struct iphdr);
-			dump_iphdr_all((struct iphdr *)(rbb + l2_offset));
-			l3_flags = ((struct iphdr *)(rbb + l2_offset))->protocol;
+	switch (l2_flags) {
+	case ETH_P_IP:
+		l3_offset = sizeof(struct iphdr);
+		dump_iphdr_all((struct iphdr *)(rbb + l2_offset));
+		l3_flags = ((struct iphdr *)(rbb + l2_offset))->protocol;
 
-			switch(l3_flags)
-			{
-				case IPPROTO_TCP:
-					dump_tcphdr_all((struct tcphdr *)(rbb + l2_offset + l3_offset));
-				break;
+		switch (l3_flags) {
+		case IPPROTO_TCP:
+			dump_tcphdr_all((struct tcphdr *)(rbb + l2_offset + l3_offset));
+			break;
 
-				case IPPROTO_UDP:
-					dump_udphdr_all((struct udphdr *)(rbb + l2_offset + l3_offset));
-				break;
-
-				default:
-					info("protocol %x not supported\n", l3_flags);
-				break;
-			}
-		break;
+		case IPPROTO_UDP:
+			dump_udphdr_all((struct udphdr *)(rbb + l2_offset + l3_offset));
+			break;
 
 		default:
-			info("Ethertype %x not supported\n", l2_flags);
+			info("protocol %x not supported\n", l3_flags);
+			break;
+		}
+		break;
+
+	default:
+		info("Ethertype %x not supported\n", l2_flags);
 		break;
 		info("\n");
 	}
