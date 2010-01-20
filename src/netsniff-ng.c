@@ -196,7 +196,7 @@ static void *uds_thread(void *psock)
  */
 void *start_uds_server(void *psockfile)
 {
-	int ret, len;
+	int ret;
 	int sock, sock2;
 
 	char *sockfile = (char *)psockfile;
@@ -216,13 +216,16 @@ void *start_uds_server(void *psockfile)
 
 	local.sun_family = AF_UNIX;
 	strncpy(local.sun_path, sockfile, sizeof(local.sun_path));
-	unlink(local.sun_path);
-
-	len = strlen(local.sun_path) + sizeof(local.sun_family);
+	
+	if (unlink(local.sun_path) != 0)
+	{
+		perr("cannot unlink %s\n", local.sun_path);
+		pthread_exit(0);
+	}
 
 	info("bind socket to %s\n", local.sun_path);
 
-	ret = bind(sock, (struct sockaddr *)&local, len);
+	ret = bind(sock, (struct sockaddr *)&local, sizeof(local));
 	if (ret < 0) {
 		perr("cannot bind uds socket %d - ", errno);
 		pthread_exit(0);
