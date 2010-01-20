@@ -32,7 +32,7 @@
 
 /*
  * Contains: 
- *    Mostly RX_RING related stuff and other networking code
+ *    Mostly TX_RING related stuff and other networking code
  */
 
 #include <stdio.h>
@@ -52,23 +52,27 @@
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
 #include <linux/filter.h>
+#include <linux/version.h>
 
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/types.h>
-#include <netsniff-ng/rx_ring.h>
+#include <netsniff-ng/tx_ring.h>
 #include <netsniff-ng/netdev.h>
 
+/* TX_RING is part of the kernel since 2.6.31 */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
+
 /**
- * destroy_virt_rx_ring - Destroys virtual RX_RING buffer
+ * destroy_virt_tx_ring - Destroys virtual TX_RING buffer
  * @sock:                socket
  * @rb:                  ring buffer
  */
-void destroy_virt_rx_ring(int sock, ring_buff_t * rb)
+void destroy_virt_tx_ring(int sock, ring_buff_t * rb)
 {
 	assert(rb);
 
 	memset(&(rb->layout), 0, sizeof(rb->layout));
-	setsockopt(sock, SOL_PACKET, PACKET_RX_RING, (void *)&(rb->layout), sizeof(rb->layout));
+	setsockopt(sock, SOL_PACKET, PACKET_TX_RING, (void *)&(rb->layout), sizeof(rb->layout));
 
 	if (rb->buffer) {
 		munmap(rb, rb->len);
@@ -80,11 +84,11 @@ void destroy_virt_rx_ring(int sock, ring_buff_t * rb)
 }
 
 /**
- * create_virt_rx_ring - Creates virtual RX_RING buffer
+ * create_virt_tx_ring - Creates virtual TX_RING buffer
  * @sock:               socket
  * @rb:                 ring buffer
  */
-void create_virt_rx_ring(int sock, ring_buff_t * rb, char *ifname)
+void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname)
 {
 	int ret, dev_speed;
 
@@ -102,7 +106,7 @@ void create_virt_rx_ring(int sock, ring_buff_t * rb, char *ifname)
 	rb->layout.tp_frame_nr = rb->layout.tp_block_size / rb->layout.tp_frame_size * rb->layout.tp_block_nr;
 
  __retry_sso:
-	ret = setsockopt(sock, SOL_PACKET, PACKET_RX_RING, (void *)&(rb->layout), sizeof(rb->layout));
+	ret = setsockopt(sock, SOL_PACKET, PACKET_TX_RING, (void *)&(rb->layout), sizeof(rb->layout));
 
 	if (errno == ENOMEM && rb->layout.tp_block_nr > 1) {
 		rb->layout.tp_block_nr >>= 1;
@@ -112,7 +116,7 @@ void create_virt_rx_ring(int sock, ring_buff_t * rb, char *ifname)
 	}
 
 	if (ret < 0) {
-		perr("setsockopt: creation of rx ring failed: %d - ", errno);
+		perr("setsockopt: creation of tx ring failed: %d - ", errno);
 
 		close(sock);
 		exit(EXIT_FAILURE);
@@ -120,27 +124,27 @@ void create_virt_rx_ring(int sock, ring_buff_t * rb, char *ifname)
 
 	rb->len = rb->layout.tp_block_size * rb->layout.tp_block_nr;
 
-	info("%.2f MB allocated for rx ring \n", 1.f * rb->len / (1024 * 1024));
+	info("%.2f MB allocated for tx ring \n", 1.f * rb->len / (1024 * 1024));
 	info(" [ %d blocks, %d frames ] \n", rb->layout.tp_block_nr, rb->layout.tp_frame_nr);
 	info(" [ %d frames per block ]\n", rb->layout.tp_block_size / rb->layout.tp_frame_size);
 	info(" [ framesize: %d bytes, blocksize: %d bytes ]\n\n", rb->layout.tp_frame_size, rb->layout.tp_block_size);
 }
 
 /**
- * mmap_virt_rx_ring - Memory maps virtual RX_RING kernel buffer into userspace 
- *                     in order to avoid syscalls for fetching packet buffers
+ * mmap_virt_tx_ring - Memory maps virtual TX_RING kernel buffer into userspace 
+ *                     in order to avoid syscalls for transmitting packet buffers
  * @sock:             socket
  * @rb:               ring buffer
  */
-void mmap_virt_rx_ring(int sock, ring_buff_t * rb)
+void mmap_virt_tx_ring(int sock, ring_buff_t * rb)
 {
 	assert(rb);
 
 	rb->buffer = mmap(0, rb->len, PROT_READ | PROT_WRITE, MAP_SHARED, sock, 0);
 	if (rb->buffer == MAP_FAILED) {
-		perr("mmap: cannot mmap the rx ring: %d - ", errno);
+		perr("mmap: cannot mmap the tx ring: %d - ", errno);
 
-		destroy_virt_rx_ring(sock, rb);
+		destroy_virt_tx_ring(sock, rb);
 		close(sock);
 
 		exit(EXIT_FAILURE);
@@ -148,12 +152,12 @@ void mmap_virt_rx_ring(int sock, ring_buff_t * rb)
 }
 
 /**
- * bind_dev_to_rx_ring - Binds virtual RX_RING to network device
+ * bind_dev_to_tx_ring - Binds virtual TX_RING to network device
  * @sock:               socket
  * @ifindex:            device number
  * @rb:                 ring buffer
  */
-void bind_dev_to_rx_ring(int sock, int ifindex, ring_buff_t * rb)
+void bind_dev_to_tx_ring(int sock, int ifindex, ring_buff_t * rb)
 {
 	int ret;
 
@@ -176,3 +180,12 @@ void bind_dev_to_rx_ring(int sock, int ifindex, ring_buff_t * rb)
 		exit(EXIT_FAILURE);
 	}
 }
+#else
+void bind_dev_to_tx_ring(int sock, int ifindex, ring_buff_t * rb) {}
+
+void mmap_virt_tx_ring(int sock, ring_buff_t * rb) {}
+
+void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname) {}
+
+void destroy_virt_tx_ring(int sock, ring_buff_t * rb) {}
+#endif /* LINUX_VERSION_CODE */
