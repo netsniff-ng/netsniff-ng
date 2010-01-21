@@ -179,6 +179,24 @@ void bind_dev_to_tx_ring(int sock, int ifindex, ring_buff_t * rb)
 		exit(EXIT_FAILURE);
 	}
 }
+
+/**
+ * flush_tx_ring - Send payload of tx_ring in non-blocking mode
+ * @sock:         socket
+ * @rb:           ring buffer
+ */
+int flush_tx_ring(int sock, ring_buff_t * rb)
+{
+	int rc;
+
+	/* Flush buffers with TP_STATUS_SEND_REQUEST */
+	rc = sendto(sock, NULL, 0, MSG_DONTWAIT, (struct sockaddr *)&(rb->params), sizeof(struct sockaddr_ll));
+	if (rc < 0) {
+		perr("sendto - ");
+	}
+
+	return rc;
+}
 #else
 void bind_dev_to_tx_ring(int sock, int ifindex, ring_buff_t * rb)
 {
