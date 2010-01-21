@@ -213,4 +213,9 @@ void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname)
 void destroy_virt_tx_ring(int sock, ring_buff_t * rb)
 {
 }
+
+int flush_tx_ring(int sock, ring_buff_t * rb)
+{
+	return -1;
+}
 #endif				/* LINUX_VERSION_CODE */
