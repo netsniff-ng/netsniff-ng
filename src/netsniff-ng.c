@@ -347,14 +347,14 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout, FILE * pca
 				}
 			}
 
+			if (pcap != NULL) {
+				pcap_dump(pcap, &fm->tp_h, (struct ethhdr *)rbb);
+			}
+
 			if (print_packet_buffer) {
 				/* This path here slows us down ... well, but
 				   the user wants to see what's going on */
 				print_packet_buffer(rbb, &fm->tp_h);
-			}
-
-			if (pcap != NULL) {
-				pcap_dump(pcap, &fm->tp_h, (struct ethhdr *)rbb);
 			}
 
 			/* Pending singals will be delivered after netstat 
