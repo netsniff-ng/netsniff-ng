@@ -77,7 +77,7 @@ volatile sig_atomic_t sigusr2 = 0;
 ring_buff_stat_t netstat;
 pthread_mutex_t gs_loc_mutex;
 
-print_packet_buff_t print_packet_buffer = print_packet_buffer_mode_1;
+print_packet_buff_t print_packet_buffer = versatile_print;
 
 /*
  * Functions
@@ -286,7 +286,7 @@ void softirq_handler(int number)
 			switch (++sigusr2 % 2) {
 			case 0:
 				{
-					print_packet_buffer = print_packet_buffer_mode_1;
+					print_packet_buffer = versatile_print;
 					break;
 				}
 			case 1:
@@ -296,7 +296,7 @@ void softirq_handler(int number)
 				}
 			default:
 				{
-					print_packet_buffer = print_packet_buffer_mode_1;
+					print_packet_buffer = versatile_print;
 					break;
 				}
 			}

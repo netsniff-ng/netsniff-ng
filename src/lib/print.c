@@ -73,12 +73,14 @@
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/types.h>
 #include <netsniff-ng/print.h>
+#include <netsniff-ng/print/l2/ethernet.h>
+#include <netsniff-ng/print/l2/vlan.h>
+#include <netsniff-ng/print/l3/ip.h>
+#include <netsniff-ng/print/l3/ipv6.h>
+#include <netsniff-ng/print/l4/tcp.h>
+#include <netsniff-ng/print/l4/udp.h>
+#include <netsniff-ng/packet.h>
 #include <netsniff-ng/system.h>
-
-uint8_t is_on(const uint64_t value, const uint64_t bitmask)
-{
-	return (((value & bitmask) == bitmask) ? 1 : 0);
-}
 
 /*
  * dump_hex - Prints payload as bytes to our tty
@@ -125,133 +127,6 @@ void dump_printable(const void const *to_print, int len, size_t tty_len, size_t 
 }
 
 /*
- * dump_ethhdr_all - Just plain dumb formatting
- * @eth:            ethernet header
- */
-void dump_ethhdr_all(struct ethhdr *eth)
-{
-	uint8_t *src_mac = eth->h_source;
-	uint8_t *dst_mac = eth->h_dest;
-	__be16 proto;
-
-	assert(eth);
-	proto = eth->h_proto;
-
-	info(" [ ");
-
-	info("MAC (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x => %.2x:%.2x:%.2x:%.2x:%.2x:%.2x), ", src_mac[0], src_mac[1],
-	     src_mac[2], src_mac[3], src_mac[4], src_mac[5], dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4],
-	     dst_mac[5]);
-
-	info("Proto (0x%.4x)", ntohs(proto));
-
-	info(" ] ");
-}
-
-/*
- * dump_iphdr_all - Just plain dumb formatting
- * @ip:            ip header
- */
-void dump_iphdr_all(struct iphdr *ip)
-{
-	/* XXX Version check */
-	assert(ip);
-	char src_ip[INET_ADDRSTRLEN] = { 0 };
-	char dst_ip[INET_ADDRSTRLEN] = { 0 };
-	uint16_t printable_frag_off;
-
-	if (ip->version != IPVERSION) {
-		info("Version is %u %u\n", ip->version, ntohs(ip->version));
-		return;
-	}
-
-	inet_ntop(AF_INET, &ip->saddr, src_ip, INET_ADDRSTRLEN);
-	inet_ntop(AF_INET, &ip->daddr, dst_ip, INET_ADDRSTRLEN);
-	printable_frag_off = ntohs(ip->frag_off);
-
-	info(" [ IP ");
-	info("Addr (%s => %s), ", src_ip, dst_ip);
-	info("Proto (%u), ", ip->protocol);
-	info("TTL (%u), ", ip->ttl);
-	info("TOS (%u), ", ip->tos);
-	info("Ver (%u), ", ip->version);
-	info("IHL (%u), ", ntohs(ip->ihl));
-	info("Tlen (%u), ", ntohs(ip->tot_len));
-	info("ID (%u), ", ntohs(ip->id));
-	/* FIXME fragoff is fragment offset + flags */
-	info("Res: %u NoFrag: %u MoreFrag: %u offset (%u), ", is_on(printable_frag_off, 1 << 15),
-	     is_on(printable_frag_off, 1 << 14), is_on(printable_frag_off, 1 << 13), printable_frag_off & (1 << 12));
-	info("Chsum (0x%x)", ntohs(ip->check));
-
-	info(" ] ");
-}
-
-/*
- * dump_udphdr_all - Just plain dumb formatting
- * @udp:            udp header
- */
-void dump_udphdr_all(struct udphdr *udp)
-{
-	info(" [ UDP ");
-
-	info("Port (%u => %u), ", ntohs(udp->source), ntohs(udp->dest));
-	info("Len (%u), ", ntohs(udp->len));
-	info("Chsum (0x%x)", ntohs(udp->check));
-
-	info(" ] ");
-}
-
-/*
- * dump_tcphdr_all - Just plain dumb formatting
- * @tcp:            tcp header
- */
-static void inline dump_tcphdr_all(struct tcphdr *tcp)
-{
-	info(" [ TCP ");
-
-	info("Port (%u => %u), ", ntohs(tcp->source), ntohs(tcp->dest));
-	info("SN (0x%x), ", ntohs(tcp->seq));
-	info("AN (0x%x), ", ntohs(tcp->ack_seq));
-	info("Data off (%d), ", ntohs(tcp->doff));
-	info("Res 1 (%d), ", ntohs(tcp->res1));
-
-	info("Flags (");
-
-	if (tcp->urg == 1) {
-		info("URG ");
-	}
-	if (tcp->ack == 1) {
-		info("ACK ");
-	}
-	if (tcp->psh == 1) {
-		info("PSH ");
-	}
-	if (tcp->rst == 1) {
-		info("RST ");
-	}
-	if (tcp->syn == 1) {
-		info("SYN ");
-	}
-	if (tcp->fin == 1) {
-		info("FIN ");
-	}
-	if (tcp->ece == 1) {
-		info("ECE ");
-	}
-	if (tcp->cwr == 1) {
-		info("CWR ");
-	}
-
-	info("), ");
-
-	info("Window (%d), ", ntohs(tcp->window));
-	info("Hdrsum (0x%x), ", ntohs(tcp->check));
-	info("Urg ptr (%u)", ntohs(tcp->urg_ptr));
-
-	info(" ] ");
-}
-
-/*
  * dump_payload_hex_all - Just plain dumb formatting
  * @rbb:                 payload bytes
  * @len:                 len
@@ -261,7 +136,7 @@ static void inline dump_payload_hex_all(const uint8_t * const rbb, int len, int 
 {
 	info(" [ Payload hex  (");
 	dump_hex(rbb, len, tty_len, 14);
-	info(") ] ");
+	info(") ] \n");
 }
 
 /*
@@ -274,63 +149,63 @@ static void inline dump_payload_char_all(const uint8_t * const rbb, int len, int
 {
 	info(" [ Payload char (");
 	dump_printable(rbb, len, tty_len, 14);
-	info(") ] ");
+	info(") ] \n");
 }
 
-/**
- * print_packet_buffer_mode_1 - Prints packets according to verbose mode -c
- * @rbb:                       payload
- * @tp:                        kernel packet header
- */
-void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+void versatile_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 {
-	size_t l2_offset, l3_offset;
-	uint16_t l2_flags = 0, l3_flags = 0;
+	int len;
+	packet_t pkt;
+	uint16_t l4_type = 0;
+	uint8_t * buffer = (uint8_t *) rbb;
 	int tty_len = get_tty_length();
 
-	assert(rbb);
+	assert(buffer);
 	assert(tp);
 
-	l2_flags = ntohs(((struct ethhdr *)rbb)->h_proto);
+	len = tp->tp_len;
+	memset(&pkt, 0, sizeof(pkt));
+
+	parse_packet(buffer, len, &pkt);
 
 	info("%d Byte, Timestamp (%u.%u s) \n", tp->tp_len, tp->tp_sec, tp->tp_usec);
 
-	dump_ethhdr_all((struct ethhdr *)rbb);
-	info("\n");
-	l2_offset = sizeof(struct ethhdr);
+	print_ethhdr(pkt.ethernet_header);
 
-	switch (l2_flags) {
-	case ETH_P_IP:
-		l3_offset = sizeof(struct iphdr);
-		dump_iphdr_all((struct iphdr *)(rbb + l2_offset));
-		l3_flags = ((struct iphdr *)(rbb + l2_offset))->protocol;
-
-		switch (l3_flags) {
-		case IPPROTO_TCP:
-			dump_tcphdr_all((struct tcphdr *)(rbb + l2_offset + l3_offset));
-			break;
-
-		case IPPROTO_UDP:
-			dump_udphdr_all((struct udphdr *)(rbb + l2_offset + l3_offset));
-			break;
-
-		default:
-			info("protocol %x not supported\n", l3_flags);
-			break;
-		}
+	switch(get_ethertype(pkt.ethernet_header))
+	{
+		case ETH_P_8021Q:
+			print_vlan(pkt.vlan_header);
+		break;
+		
+		case ETH_P_IP:
+			print_iphdr(pkt.ip_header);
+			l4_type = get_l4_type_from_ipv4(pkt.ip_header);
 		break;
 
-	default:
-		info("Ethertype %x not supported\n", l2_flags);
+		case ETH_P_IPV6:
+			print_ipv6hdr(pkt.ipv6_header);
+			l4_type = get_l4_type_from_ipv6(pkt.ipv6_header);
 		break;
-		info("\n");
 	}
 
-	/* FIXME, the last LSB of the payload are not the same as what is taken from wireshark */
-	dump_payload_hex_all(rbb + l2_offset + l3_offset, tp->tp_len - l2_offset - l3_offset, tty_len - 20);
-	info("\n");
-	dump_payload_char_all(rbb + l2_offset + l3_offset, tp->tp_len - l2_offset - l3_offset, tty_len - 20);
-	info("\n");
+	switch(l4_type)
+	{
+		case IPPROTO_TCP:
+			print_tcphdr(pkt.tcp_header);
+		break;
 
-	info("\n");
+		case IPPROTO_UDP:
+			print_udphdr(pkt.udp_header);
+		break;
+
+		default:
+			
+		break;
+	}
+
+	dump_payload_hex_all(pkt.payload, pkt.payload_len, tty_len);
+	dump_payload_char_all(pkt.payload, pkt.payload_len, tty_len);
+
+	return;
 }
