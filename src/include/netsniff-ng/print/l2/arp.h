@@ -31,53 +31,60 @@
  *       order to use this.
  */
 
+#ifndef	__PRINT_ARP_H__
+#define	__PRINT_ARP_H__
+
 #include <stdint.h>
 #include <assert.h>
 
-#include <netsniff-ng/packet.h>
+#include <netsniff-ng/macros.h>
+#include <netsniff-ng/protocols/l2/arp.h>
 
-static inline void set_pkt_step(packet_t * pkt, uint16_t type)
+/*
+ * print_arphdr - Just plain dumb formatting
+ * @arp:         arp header
+ */
+void print_arphdr(struct arphdr *arp)
 {
-	assert(pkt);
-	pkt->pkt[pkt->step++] = type;
-}
+	char *opcode = NULL;
 
-int parse_packet(uint8_t * raw, uint32_t len, packet_t * pkt)
-{
-	uint8_t **buffer = &raw;
-	uint32_t tmp_len = len;
-#error "Compile here"
-	info("WTF\n");
-	pkt->raw = raw;
-	pkt->ethernet_header = get_ethhdr(buffer, &tmp_len);
-	set_pkt_step(pkt, ETHERNET);
+	assert(arp);
 
-	/* Parse l2/l3 */
-	info("Parse\n");
-	switch (get_ethertype(pkt->ethernet_header)) {
-	case ETH_P_8021Q:
-	case ETH_P_8021QinQ:
-		pkt->vlan_header = get_vlan_hdr(buffer, &tmp_len);
-		set_pkt_step(pkt, ETH_P_8021Q);
+	switch (ntohs(arp->ar_op)) {
+	case ARPOP_REQUEST:
+		opcode = "ARP request";
 		break;
-
-	case ETH_P_IP:
-		pkt->ip_header = get_iphdr(buffer, &tmp_len);
-		set_pkt_step(pkt, ETH_P_IP);
+	case ARPOP_REPLY:
+		opcode = "ARP reply";
 		break;
-
-	case ETH_P_IPV6:
-		pkt->ipv6_header = get_ipv6hdr(buffer, &tmp_len);
-		set_pkt_step(pkt, ETH_P_IPV6);
+	case ARPOP_RREQUEST:
+		opcode = "RARP request";
 		break;
-
+	case ARPOP_RREPLY:
+		opcode = "RARP reply";
+		break;
+	case ARPOP_InREQUEST:
+		opcode = "InARP request";
+		break;
+	case ARPOP_InREPLY:
+		opcode = "InARP reply";
+		break;
+	case ARPOP_NAK:
+		opcode = "(ATM)ARP NAK";
+		break;
 	default:
+		opcode = "Unknown";
 		break;
-	}
+	};
 
-	info("%p %p %u\n", buffer, *buffer, tmp_len);
-	pkt->payload = *buffer;
-	pkt->payload_len = tmp_len;
+	info(" [ ARP ");
+	info("Format HA (%u), ", ntohs(arp->ar_hrd));
+	info("Format Proto (%u), ", ntohs(arp->ar_pro));
+	info("HA Len (%u), ", ntohs(arp->ar_hln));
+	info("Proto Len (%u), ", ntohs(arp->ar_pln));
+	info("Opcode (%u => %s)", ntohs(arp->ar_op), opcode);
 
-	return (0);
+	info(" ] \n");
 }
+
+#endif				/* __PRINT_ARP_H__ */

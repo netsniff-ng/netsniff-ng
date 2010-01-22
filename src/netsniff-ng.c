@@ -217,9 +217,8 @@ void *start_uds_server(void *psockfile)
 
 	local.sun_family = AF_UNIX;
 	strncpy(local.sun_path, sockfile, sizeof(local.sun_path));
-	
-	if (unlink(local.sun_path) != 0)
-	{
+
+	if (unlink(local.sun_path) != 0) {
 		perr("cannot unlink %s\n", local.sun_path);
 		pthread_exit(0);
 	}

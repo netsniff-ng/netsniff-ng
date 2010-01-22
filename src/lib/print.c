@@ -76,6 +76,7 @@
 #include <netsniff-ng/print.h>
 #include <netsniff-ng/print/l2/ethernet.h>
 #include <netsniff-ng/print/l2/vlan.h>
+#include <netsniff-ng/print/l2/arp.h>
 #include <netsniff-ng/print/l3/ip.h>
 #include <netsniff-ng/print/l3/ipv6.h>
 #include <netsniff-ng/print/l4/tcp.h>
@@ -137,7 +138,7 @@ static void inline dump_payload_hex_all(const uint8_t * const rbb, int len, int 
 {
 	info(" [ Payload hex  (");
 	dump_hex(rbb, len, tty_len, 14);
-	info(") ]");
+	info(") ]\n");
 }
 
 /*
@@ -150,7 +151,7 @@ static void inline dump_payload_char_all(const uint8_t * const rbb, int len, int
 {
 	info(" [ Payload char (");
 	dump_printable(rbb, len, tty_len, 14);
-	info(") ] \n");
+	info(") ]\n");
 }
 
 void versatile_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
@@ -158,7 +159,7 @@ void versatile_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 	int len;
 	packet_t pkt;
 	uint16_t l4_type = 0;
-	uint8_t * buffer = (uint8_t *) rbb;
+	uint8_t *buffer = (uint8_t *) rbb;
 	int tty_len = get_tty_length();
 
 	assert(buffer);
@@ -173,40 +174,43 @@ void versatile_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 
 	print_ethhdr(pkt.ethernet_header);
 
-	switch(get_ethertype(pkt.ethernet_header))
-	{
-		case ETH_P_8021Q:
-			print_vlan(pkt.vlan_header);
-		break;
-		
-		case ETH_P_IP:
-			print_iphdr(pkt.ip_header);
-			l4_type = get_l4_type_from_ipv4(pkt.ip_header);
+	switch (get_ethertype(pkt.ethernet_header)) {
+	case ETH_P_8021Q:
+		print_vlan(pkt.vlan_header);
 		break;
 
-		case ETH_P_IPV6:
-			print_ipv6hdr(pkt.ipv6_header);
-			l4_type = get_l4_type_from_ipv6(pkt.ipv6_header);
+	case ETH_P_ARP:
+		print_arphdr(pkt.arp_header);
+		break;
+
+	case ETH_P_IP:
+		print_iphdr(pkt.ip_header);
+		l4_type = get_l4_type_from_ipv4(pkt.ip_header);
+		break;
+
+	case ETH_P_IPV6:
+		print_ipv6hdr(pkt.ipv6_header);
+		l4_type = get_l4_type_from_ipv6(pkt.ipv6_header);
 		break;
 	}
 
-	switch(l4_type)
-	{
-		case IPPROTO_TCP:
-			print_tcphdr(pkt.tcp_header);
+	switch (l4_type) {
+	case IPPROTO_TCP:
+		print_tcphdr(pkt.tcp_header);
 		break;
 
-		case IPPROTO_UDP:
-			print_udphdr(pkt.udp_header);
+	case IPPROTO_UDP:
+		print_udphdr(pkt.udp_header);
 		break;
 
-		default:
-			
+	default:
+
 		break;
 	}
 
 	dump_payload_hex_all(pkt.payload, pkt.payload_len, tty_len - 20);
 	dump_payload_char_all(pkt.payload, pkt.payload_len, tty_len - 20);
 
+	info("\n");
 	return;
 }

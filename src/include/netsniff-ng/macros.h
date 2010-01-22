@@ -107,9 +107,9 @@
 #define MOD_MINUT2S(x)          ((x) % (60LLU))
 
 /* Release alias, some versioning fun ;) */
-#define MOOH     "+-------------------------------------------+      \n" \
-                 "| all your packets are belong to us edition |      \n" \
-                 "+-------------------------------------------+      \n" \
+#define MOOH     "+---------------------------------------------+      \n" \
+                 "| 'All your packets are belong to us' edition |      \n" \
+                 "+---------------------------------------------+      \n" \
                  "        \\   ^__^               \n" \
                  "         \\  (oo)\\_______      \n" \
                  "            (__)\\       )\\/\\ \n" \

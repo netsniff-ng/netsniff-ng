@@ -68,4 +68,4 @@ void print_ipv6hdr(struct ipv6hdr *ip)
 	info(" ] \n");
 }
 
-#endif /* __PRINT_IPV6_H__ */
+#endif				/* __PRINT_IPV6_H__ */

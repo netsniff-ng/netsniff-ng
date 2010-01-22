@@ -94,4 +94,4 @@ static void inline print_tcphdr(struct tcphdr *tcp)
 	/* TODO check csum */
 }
 
-#endif	/* __PRINT_TCP_H__ */
+#endif				/* __PRINT_TCP_H__ */

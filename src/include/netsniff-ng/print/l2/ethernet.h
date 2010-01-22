@@ -62,4 +62,4 @@ static inline void print_ethhdr(struct ethhdr *eth)
 	info(" ] \n");
 }
 
-#endif	/* __PRINT_ETHERNET_H__ */
+#endif				/* __PRINT_ETHERNET_H__ */
