@@ -136,7 +136,7 @@ static void inline dump_payload_hex_all(const uint8_t * const rbb, int len, int 
 {
 	info(" [ Payload hex  (");
 	dump_hex(rbb, len, tty_len, 14);
-	info(") ] \n");
+	info(") ]");
 }
 
 /*
@@ -204,8 +204,8 @@ void versatile_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 		break;
 	}
 
-	dump_payload_hex_all(pkt.payload, pkt.payload_len, tty_len);
-	dump_payload_char_all(pkt.payload, pkt.payload_len, tty_len);
+	dump_payload_hex_all(pkt.payload, pkt.payload_len, tty_len - 20);
+	dump_payload_char_all(pkt.payload, pkt.payload_len, tty_len - 20);
 
 	return;
 }
