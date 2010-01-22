@@ -10,7 +10,8 @@
  *
  * High performance network sniffer for packet inspection
  *
- * Copyright (C) 2009, 2010  Daniel Borkmann <danborkmann@googlemail.com>
+ * Copyright (C) 2009, 2010  Daniel Borkmann <danborkmann@googlemail.com> and 
+ *                           Emmanuel Roullit <emmanuel.roullit@googlemail.com>
  *
  * This program is free software; you can redistribute it and/or modify 
  * it under the terms of the GNU General Public License as published by 
@@ -29,7 +30,6 @@
  * Note: Your kernel has to be compiled with CONFIG_PACKET_MMAP=y option in 
  *       order to use this.
  */
-
 /*
  * Contains: 
  *    BPF related routines
@@ -37,6 +37,9 @@
 
 #ifndef _NET_BPF_H_
 #define _NET_BPF_H_
+
+#include <linux/filter.h>
+#include <linux/if_packet.h>
 
 extern char *bpf_dump(const struct sock_filter bpf, int n);
 extern void bpf_dump_all(struct sock_filter *bpf, int len);

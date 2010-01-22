@@ -10,7 +10,8 @@
  *
  * High performance network sniffer for packet inspection
  *
- * Copyright (C) 2009, 2010  Daniel Borkmann <danborkmann@googlemail.com>
+ * Copyright (C) 2009, 2010  Daniel Borkmann <danborkmann@googlemail.com> and 
+ *                           Emmanuel Roullit <emmanuel.roullit@googlemail.com>
  *
  * This program is free software; you can redistribute it and/or modify 
  * it under the terms of the GNU General Public License as published by 
