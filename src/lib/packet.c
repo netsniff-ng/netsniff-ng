@@ -61,6 +61,11 @@ int parse_packet(uint8_t * raw, uint32_t len, packet_t * pkt)
 		set_pkt_step(pkt, ETH_P_8021Q);
 		break;
 
+	case ETH_P_ARP:
+		pkt->arp_header = get_arphdr(buffer, &tmp_len);
+		set_pkt_step(pkt, ETH_P_ARP);
+		break;
+
 	case ETH_P_IP:
 		pkt->ip_header = get_iphdr(buffer, &tmp_len);
 		set_pkt_step(pkt, ETH_P_IP);
