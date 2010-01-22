@@ -11,7 +11,7 @@ static inline struct tcphdr * get_tcphdr(uint8_t ** pkt, uint32_t * pkt_len)
 
 	assert(pkt);
 	assert(*pkt);
-	assert(*pkt_len > sizeof(*tcp_header));
+	assert(*pkt_len >= sizeof(*tcp_header));
 
 	tcp_header = (struct tcphdr *) *pkt;
 

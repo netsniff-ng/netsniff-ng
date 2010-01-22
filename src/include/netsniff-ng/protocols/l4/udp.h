@@ -11,7 +11,7 @@ static inline struct udphdr * get_udphdr(uint8_t ** pkt, uint32_t * pkt_len)
 
 	assert(pkt);
 	assert(*pkt);
-	assert(*pkt_len > sizeof(*udp_header));
+	assert(*pkt_len >= sizeof(*udp_header));
 
 	udp_header = (struct udphdr *) *pkt;
 
