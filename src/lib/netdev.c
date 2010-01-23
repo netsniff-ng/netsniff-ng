@@ -238,14 +238,15 @@ void print_device_info(void)
 			exit(EXIT_FAILURE);
 		}
 
+		info("   HW: %s\n", ether_ntoa((struct ether_addr *)ifr_elem->ifr_hwaddr.sa_data));
+
 		ret = ioctl(stmp, SIOCGIFFLAGS, ifr_elem);
 		if (ret) {
 			perror("ioctl(SIOCGIFFLAGS)");
 			exit(EXIT_FAILURE);
 		}
 
-		info("   HW: %s\n   Stat:%s%s%s%s\n",
-		     ether_ntoa((struct ether_addr *)ifr_elem->ifr_hwaddr.sa_data),
+		info("   Stat:%s%s%s%s\n",
 		     ((ifr_elem->ifr_flags & IFF_UP) ? " up" : " not up"),
 		     ((ifr_elem->ifr_flags & IFF_RUNNING) ? " running" : ""),
 		     ((ifr_elem->ifr_flags & IFF_LOOPBACK) ? ", loops back" : ""),
@@ -259,6 +260,18 @@ void print_device_info(void)
 		}
 
 		info("   MTU: %d Byte\n", ifr_elem->ifr_mtu);
+
+		/* Hmm... seems not to be reliable as discussed on LKML */
+/*
+		ret = ioctl(stmp, SIOCGIFMAP, ifr_elem);
+		if (ret) {
+			perror("ioctl(SIOCGIFMTU)");
+			exit(EXIT_FAILURE);
+		}
+
+		info("   Map: IRQ->%d DMA->%d Port->%d\n", 
+		     ifr_elem->ifr_map.irq, ifr_elem->ifr_map.dma, ifr_elem->ifr_map.port);
+*/
 
 		speed = get_device_bitrate_generic(ifr_elem->ifr_name);
 		if (speed) {
