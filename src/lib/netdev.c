@@ -229,7 +229,7 @@ void print_device_info(void)
 	for (i = 0; i < ifc.ifc_len / sizeof(struct ifreq); ++i) {
 		ifr_elem = &ifr[i];
 
-		info(" %s => %s ", ifr_elem->ifr_name,
+		info(" %s => %s\n", ifr_elem->ifr_name,
 		     inet_ntoa(((struct sockaddr_in *)&ifr_elem->ifr_addr)->sin_addr));
 
 		ret = ioctl(stmp, SIOCGIFHWADDR, ifr_elem);
@@ -244,15 +244,25 @@ void print_device_info(void)
 			exit(EXIT_FAILURE);
 		}
 
-		info("(%s), %s %s ", ether_ntoa((struct ether_addr *)ifr_elem->ifr_hwaddr.sa_data),
-		     ((ifr_elem->ifr_flags & IFF_UP) ? "up" : "not up"),
-		     ((ifr_elem->ifr_flags & IFF_RUNNING) ? "running" : ""));
+		info("   HW: %s\n   Stat:%s%s%s%s\n",
+		     ether_ntoa((struct ether_addr *)ifr_elem->ifr_hwaddr.sa_data),
+		     ((ifr_elem->ifr_flags & IFF_UP) ? " up" : " not up"),
+		     ((ifr_elem->ifr_flags & IFF_RUNNING) ? " running" : ""),
+		     ((ifr_elem->ifr_flags & IFF_LOOPBACK) ? ", loops back" : ""),
+		     ((ifr_elem->ifr_flags & IFF_POINTOPOINT) ? ", point-to-point link" : ""));
+
+		/* If we do this ioctl before printing the flags, the values somehow get screwed up */
+		ret = ioctl(stmp, SIOCGIFMTU, ifr_elem);
+		if (ret) {
+			perror("ioctl(SIOCGIFMTU)");
+			exit(EXIT_FAILURE);
+		}
+
+		info("   MTU: %d Byte\n", ifr_elem->ifr_mtu);
 
 		speed = get_device_bitrate_generic(ifr_elem->ifr_name);
 		if (speed) {
-			info("(bitrate: %d Mb/s)\n", speed);
-		} else {
-			info("\n");
+			info("   Bitrate: %d Mb/s\n", speed);
 		}
 	}
 
