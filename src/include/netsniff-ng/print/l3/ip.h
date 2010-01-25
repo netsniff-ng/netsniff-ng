@@ -70,7 +70,7 @@ void print_iphdr(struct iphdr *ip)
 	info("Res: %u NoFrag: %u MoreFrag: %u offset (%u), ", FRAG_OFF_RESERVED_FLAG(printable_frag_off) ? 1 : 0,
 	     FRAG_OFF_NO_FRAGMENT_FLAG(printable_frag_off) ? 1 : 0,
 	     FRAG_OFF_MORE_FRAGMENT_FLAG(printable_frag_off) ? 1 : 0, FRAG_OFF_FRAGMENT_OFFSET(printable_frag_off));
-	info("Chsum (0x%x) is %s", ntohs(ip->check), csum ? "invalid" : "ok");
+	info("Chsum (0x%x) is %s", ntohs(ip->check), csum ? colorize_full_str(red, black, "bogus (!)") : "ok");
 
 	if (csum) {
 		info(" should be %x", csum_expected(ip->check, csum));
