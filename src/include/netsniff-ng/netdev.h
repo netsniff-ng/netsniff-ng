@@ -42,7 +42,7 @@
 #include <linux/filter.h>
 #include <linux/if_packet.h>
 
-#define FAILSAFE_BITRATE	100000000	/* 100 Mbits (Chosen arbitrary) */
+#define FAILSAFE_BITRATE	1000000	/* 1 Mbits (Chosen arbitrary) */
 
 /* Function signatures */
 
