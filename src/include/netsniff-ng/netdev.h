@@ -42,6 +42,8 @@
 #include <linux/filter.h>
 #include <linux/if_packet.h>
 
+#define FAILSAFE_BITRATE	100000000	/* 100 Mbits (Chosen arbitrary) */
+
 /* Function signatures */
 
 extern int get_device_bitrate_generic(char *ifname);
@@ -56,5 +58,18 @@ extern int ethdev_to_ifindex(int sock, char *dev);
 extern void net_stat(int sock);
 extern int alloc_pf_sock(void);
 extern void parse_rules(char *rulefile, struct sock_filter **bpf, int *len);
+
+/* Inline stuff */
+
+/**
+ * get_device_bitrate_generic_fallback - Returns bitrate of device
+ * @ifname:                             interface name
+ */
+static inline int get_device_bitrate_generic_fallback(char *ifname)
+{
+	int speed = get_device_bitrate_generic(ifname);
+	/* If speed is 0 interface could be down or user has choosen a loopback device?! */
+	return (speed > 0 ? speed : FAILSAFE_BITRATE);
+}
 
 #endif				/* _NET_NETDEV_H_ */

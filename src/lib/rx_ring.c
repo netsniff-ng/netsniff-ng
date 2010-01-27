@@ -91,7 +91,7 @@ void create_virt_rx_ring(int sock, ring_buff_t * rb, char *ifname)
 
 	assert(rb);
 
-	dev_speed = get_device_bitrate_generic(ifname) >> 3;
+	dev_speed = get_device_bitrate_generic_fallback(ifname) >> 3;
 	memset(&(rb->layout), 0, sizeof(rb->layout));
 
 	/* max: getpagesize() << 11 for i386 */
