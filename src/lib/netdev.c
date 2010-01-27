@@ -197,11 +197,37 @@ int change_mtu(char *ifname, int mtu)
 }
 
 /**
+ * ethdev_to_ifindex - Translates device name into device number
+ * @sock:             socket
+ * @dev:              device name
+ */
+short get_nic_flags(int sock, const char *dev)
+{
+	int ret;
+	struct ifreq ethreq;
+
+	assert(dev);
+
+	memset(&ethreq, 0, sizeof(ethreq));
+	strncpy(ethreq.ifr_name, dev, IFNAMSIZ);
+
+	ret = ioctl(sock, SIOCGIFFLAGS, &ethreq);
+	if (ret < 0) {
+		perr("ioctl: cannot determine dev number for %s: %d - ", ethreq.ifr_name, errno);
+		close(sock);
+		exit(EXIT_FAILURE);
+	}
+
+	return (ethreq.ifr_flags);
+}
+
+/**
  * print_device_info - Prints some device specific info
  */
 void print_device_info(void)
 {
 	int ret, i, stmp, speed;
+	short nic_flags;
 	char dev_buff[1024];
 
 	struct ifconf ifc;
@@ -240,11 +266,7 @@ void print_device_info(void)
 
 		info("   HW: %s\n", ether_ntoa((struct ether_addr *)ifr_elem->ifr_hwaddr.sa_data));
 
-		ret = ioctl(stmp, SIOCGIFFLAGS, ifr_elem);
-		if (ret) {
-			perror("ioctl(SIOCGIFFLAGS)");
-			exit(EXIT_FAILURE);
-		}
+		nic_flags = get_nic_flags(stmp, ifr_elem->ifr_name);
 
 		info("   Stat:%s%s%s%s\n",
 		     ((ifr_elem->ifr_flags & IFF_UP) ? " up" : " not up"),
