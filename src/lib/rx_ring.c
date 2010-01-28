@@ -87,22 +87,20 @@ void destroy_virt_rx_ring(int sock, ring_buff_t * rb)
  */
 void create_virt_rx_ring(int sock, ring_buff_t * rb, char *ifname)
 {
-	int ret, dev_speed;
 	short nic_flags;
+	int ret, dev_speed;
 
 	assert(rb);
 
 	nic_flags = get_nic_flags(sock, ifname);
 
-	if ((nic_flags & IFF_UP) != IFF_UP)
-	{
-		info("The interface %s is not up\n", ifname);
+	if (!(nic_flags & IFF_UP)) {
+		info("The interface %s is not up\n\n", ifname);
 		exit(EXIT_FAILURE);
 	}
 
-	if ((nic_flags & IFF_RUNNING) != IFF_RUNNING)
-	{
-		info("The interface %s is not running\n", ifname);
+	if (!(nic_flags & IFF_RUNNING)) {
+		info("The interface %s is not running\n\n", ifname);
 		exit(EXIT_FAILURE);
 	}
 

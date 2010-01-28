@@ -197,7 +197,7 @@ int change_mtu(char *ifname, int mtu)
 }
 
 /**
- * ethdev_to_ifindex - Translates device name into device number
+ * ethdev_to_ifindex - Fetches device flags
  * @sock:             socket
  * @dev:              device name
  */
@@ -269,10 +269,10 @@ void print_device_info(void)
 		nic_flags = get_nic_flags(stmp, ifr_elem->ifr_name);
 
 		info("   Stat:%s%s%s%s\n",
-		     ((ifr_elem->ifr_flags & IFF_UP) ? " up" : " not up"),
-		     ((ifr_elem->ifr_flags & IFF_RUNNING) ? " running" : ""),
-		     ((ifr_elem->ifr_flags & IFF_LOOPBACK) ? ", loops back" : ""),
-		     ((ifr_elem->ifr_flags & IFF_POINTOPOINT) ? ", point-to-point link" : ""));
+		     ((nic_flags & IFF_UP) ? " up" : " not up"),
+		     ((nic_flags & IFF_RUNNING) ? " running" : ""),
+		     ((nic_flags & IFF_LOOPBACK) ? ", loops back" : ""),
+		     ((nic_flags & IFF_POINTOPOINT) ? ", point-to-point link" : ""));
 
 		/* If we do this ioctl before printing the flags, the values somehow get screwed up */
 		ret = ioctl(stmp, SIOCGIFMTU, ifr_elem);

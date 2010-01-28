@@ -42,7 +42,7 @@
 #include <linux/filter.h>
 #include <linux/if_packet.h>
 
-#define FAILSAFE_BITRATE	1000000	/* 1 Mbits (Chosen arbitrary) */
+#define FAILSAFE_BITRATE	1000	/* 1000 Mbits (Chosen arbitrary) */
 
 /* Function signatures */
 
@@ -63,7 +63,7 @@ extern void parse_rules(char *rulefile, struct sock_filter **bpf, int *len);
 /* Inline stuff */
 
 /**
- * get_device_bitrate_generic_fallback - Returns bitrate of device
+ * get_device_bitrate_generic_fallback - Returns bitrate of device in Mb/s
  * @ifname:                             interface name
  */
 static inline int get_device_bitrate_generic_fallback(char *ifname)
