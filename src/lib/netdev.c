@@ -166,35 +166,26 @@ int get_device_bitrate_generic(char *ifname)
 }
 
 /**
- * change_mtu - Change MTU of a device
+ * get_mtu - 	Get MTU of a device
+ * @sock:                      socket descriptor
  * @ifname:                    device name
- * @mtu:                       desired mtu
  */
-int change_mtu(char *ifname, int mtu)
+
+int get_mtu(int sock, const char * dev)
 {
-	int sock, ret;
 	struct ifreq ifr;
 
-	assert(ifname && mtu > 0);
+	assert(dev);
 
 	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
-
-	sock = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sock < 0) {
-		perror("socket");
-		exit(EXIT_FAILURE);
+	strncpy(ifr.ifr_name, dev, IFNAMSIZ);	
+	
+	if (ioctl(sock, SIOCGIFMTU, &ifr) < 0) {
+		perror("iotcl(SIOCGIFMTU)");
+		return 0;
 	}
-
-	ifr.ifr_mtu = mtu;
-
-	ret = ioctl(sock, SIOCSIFMTU, &ifr);
-	if (ret < 0) {
-		perror("iotcl(SIOCSIFMTU)");
-		return ret;
-	}
-
-	return 0;
+	
+	return(ifr.ifr_mtu);
 }
 
 /**
@@ -304,13 +295,7 @@ void print_device_info(void)
 		     (((nic_flags & IFF_POINTOPOINT) == IFF_POINTOPOINT) ? ", point-to-point link" : ""));
 
 		/* If we do this ioctl before printing the flags, the values somehow get screwed up */
-		ret = ioctl(stmp, SIOCGIFMTU, ifr_elem);
-		if (ret) {
-			perror("ioctl(SIOCGIFMTU)");
-			exit(EXIT_FAILURE);
-		}
-
-		info("   MTU: %d Byte\n", ifr_elem->ifr_mtu);
+		info("   MTU: %d Byte\n", get_mtu(stmp, ifr_elem->ifr_name));
 
 		/* Hmm... seems not to be reliable as discussed on LKML */
 /*

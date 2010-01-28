@@ -49,8 +49,8 @@
 extern int get_device_bitrate_generic(char *ifname);
 extern int get_wireless_bitrate(char *ifname);
 extern int get_ethtool_bitrate(const char *ifname);
+extern int get_mtu(int sock, const char * dev);
 extern short get_nic_flags(int sock, const char *dev);
-extern int change_mtu(char *ifname, int mtu);
 extern void print_device_info(void);
 extern void put_dev_into_promisc_mode(int sock, int ifindex);
 extern void inject_kernel_bpf(int sock, struct sock_filter *bpf, int len);
