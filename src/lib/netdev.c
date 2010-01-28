@@ -99,7 +99,7 @@ int get_wireless_bitrate(char *ifname)
  * get_ethtool_bitrate - Returns non-wireless bitrate in Mb/s (via ethtool)
  * @ifname:             device name
  */
-int get_ethtool_bitrate(char *ifname)
+int get_ethtool_bitrate(const char *ifname)
 {
 	int sock, ret;
 	struct ifreq ifr;
@@ -166,8 +166,9 @@ int get_device_bitrate_generic(char *ifname)
 }
 
 /**
- * get_device_bitrate_generic - Returns bitrate in Mb/s
+ * change_mtu - Change MTU of a device
  * @ifname:                    device name
+ * @mtu:                       desired mtu
  */
 int change_mtu(char *ifname, int mtu)
 {
@@ -197,7 +198,7 @@ int change_mtu(char *ifname, int mtu)
 }
 
 /**
- * ethdev_to_ifindex - Fetches device flags
+ * get_nic_flags - Fetches device flags
  * @sock:             socket
  * @dev:              device name
  */
@@ -222,13 +223,47 @@ short get_nic_flags(int sock, const char *dev)
 }
 
 /**
+ * get_nic_mac - Fetches device MAC address
+ * @sock:             socket
+ * @dev:              device name
+ * @mac:              Output buffer
+ */
+int get_nic_mac(int sock, const char *dev, uint8_t * mac)
+{
+	int ret;
+	struct ifreq ifr;
+
+	assert(dev);
+	assert(mac);
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, dev, IFNAMSIZ);
+
+	ret = ioctl(sock, SIOCGIFHWADDR, &ifr);
+	if (ret) {
+		perror("ioctl(SIOCGIFHWADDR)");
+		return (EINVAL);
+	}
+
+	memcpy(mac, ifr.ifr_hwaddr.sa_data, ETH_ALEN);
+	return (0);
+}
+
+char * get_nic_mac_str(int sock, const char * dev)
+{
+	uint8_t mac[ETH_ALEN] = {0};
+	get_nic_mac(sock, dev, mac);
+	return (ether_ntoa((const struct ether_addr *) mac));
+}
+
+/**
  * print_device_info - Prints some device specific info
  */
 void print_device_info(void)
 {
 	int ret, i, stmp, speed;
 	short nic_flags;
-	char dev_buff[1024];
+	char dev_buff[1024] = {0};
 
 	struct ifconf ifc;
 	struct ifreq *ifr;
@@ -258,21 +293,15 @@ void print_device_info(void)
 		info(" %s => %s\n", ifr_elem->ifr_name,
 		     inet_ntoa(((struct sockaddr_in *)&ifr_elem->ifr_addr)->sin_addr));
 
-		ret = ioctl(stmp, SIOCGIFHWADDR, ifr_elem);
-		if (ret) {
-			perror("ioctl(SIOCGIFHWADDR)");
-			exit(EXIT_FAILURE);
-		}
-
-		info("   HW: %s\n", ether_ntoa((struct ether_addr *)ifr_elem->ifr_hwaddr.sa_data));
+		info("   HW: %s\n", get_nic_mac_str(stmp, ifr_elem->ifr_name));
 
 		nic_flags = get_nic_flags(stmp, ifr_elem->ifr_name);
 
 		info("   Stat:%s%s%s%s\n",
-		     ((nic_flags & IFF_UP) ? " up" : " not up"),
-		     ((nic_flags & IFF_RUNNING) ? " running" : ""),
-		     ((nic_flags & IFF_LOOPBACK) ? ", loops back" : ""),
-		     ((nic_flags & IFF_POINTOPOINT) ? ", point-to-point link" : ""));
+		     (((nic_flags & IFF_UP) == IFF_UP) ? " up" : " not up"),
+		     (((nic_flags & IFF_RUNNING) == IFF_RUNNING) ? " running" : ""),
+		     (((nic_flags & IFF_LOOPBACK) == IFF_LOOPBACK) ? ", loops back" : ""),
+		     (((nic_flags & IFF_POINTOPOINT) == IFF_POINTOPOINT) ? ", point-to-point link" : ""));
 
 		/* If we do this ioctl before printing the flags, the values somehow get screwed up */
 		ret = ioctl(stmp, SIOCGIFMTU, ifr_elem);
