@@ -381,6 +381,12 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout, FILE * pca
 		}
 
 		while ((ret = poll(pfd, 1, timeout)) <= 0)
+		{
+			if (sigint)
+			{
+				return;
+			}
+		}
 			/* NOP */ ;
 
 		if (ret > 0 && (pfd->revents & (POLLHUP | POLLRDHUP | POLLERR | POLLNVAL))) {
