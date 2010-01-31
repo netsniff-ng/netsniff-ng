@@ -39,23 +39,32 @@
 #ifndef _NET_NETDEV_H_
 #define _NET_NETDEV_H_
 
+//#include <linux/if_packet.h>
+#include <stdint.h>
+#include <netinet/ip6.h>
 #include <linux/filter.h>
-#include <linux/if_packet.h>
+
+struct in6_ifreq {
+	struct in6_addr ifr6_addr;
+	uint32_t ifr6_prefixlen;
+	int ifr6_ifindex;
+};
 
 #define FAILSAFE_BITRATE	1000	/* 1000 Mbits (Chosen arbitrary) */
+#define MAX_NUMBER_OF_NICS	15
 
 /* Function signatures */
 
-extern int get_device_bitrate_generic(char *ifname);
-extern int get_wireless_bitrate(char *ifname);
+extern int get_device_bitrate_generic(const char *ifname);
+extern int get_wireless_bitrate(const char *ifname);
 extern int get_ethtool_bitrate(const char *ifname);
-extern int get_mtu(int sock, const char * dev);
-extern short get_nic_flags(int sock, const char *dev);
+extern int get_mtu(const char *dev);
+extern short get_nic_flags(const char *dev);
 extern void print_device_info(void);
-extern void put_dev_into_promisc_mode(int sock, int ifindex);
+extern void put_dev_into_promisc_mode(const char *dev);
 extern void inject_kernel_bpf(int sock, struct sock_filter *bpf, int len);
 extern void reset_kernel_bpf(int sock);
-extern int ethdev_to_ifindex(int sock, char *dev);
+extern int ethdev_to_ifindex(const char *dev);
 extern void net_stat(int sock);
 extern int alloc_pf_sock(void);
 extern void parse_rules(char *rulefile, struct sock_filter **bpf, int *len);
@@ -66,7 +75,7 @@ extern void parse_rules(char *rulefile, struct sock_filter **bpf, int *len);
  * get_device_bitrate_generic_fallback - Returns bitrate of device in Mb/s
  * @ifname:                             interface name
  */
-static inline int get_device_bitrate_generic_fallback(char *ifname)
+static inline int get_device_bitrate_generic_fallback(const char *ifname)
 {
 	int speed = get_device_bitrate_generic(ifname);
 	/* If speed is 0 interface could be down or user has choosen a loopback device?! */

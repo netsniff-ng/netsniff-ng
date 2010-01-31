@@ -92,7 +92,7 @@ void create_virt_rx_ring(int sock, ring_buff_t * rb, char *ifname)
 
 	assert(rb);
 
-	nic_flags = get_nic_flags(sock, ifname);
+	nic_flags = get_nic_flags(ifname);
 
 	if (!(nic_flags & IFF_UP)) {
 		info("The interface %s is not up\n\n", ifname);

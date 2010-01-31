@@ -539,9 +539,9 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct 
 		info("No device specified, using `%s`.\n\n", sd->dev);
 	}
 
-	(*sock) = alloc_pf_sock();
-	put_dev_into_promisc_mode((*sock), ethdev_to_ifindex((*sock), sd->dev));
+	put_dev_into_promisc_mode(sd->dev);
 
+	(*sock) = alloc_pf_sock();
 	if (sd->bypass_bpf == BPF_NO_BYPASS) {
 		/* XXX: If you try to create custom filters with tcpdump, you 
 		   have to edit the ret opcode, otherwise your payload 
@@ -564,7 +564,7 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct 
 
 	/* RX_RING stuff */
 	create_virt_rx_ring((*sock), (*rb), sd->dev);
-	bind_dev_to_rx_ring((*sock), ethdev_to_ifindex((*sock), sd->dev), (*rb));
+	bind_dev_to_rx_ring((*sock), ethdev_to_ifindex(sd->dev), (*rb));
 	mmap_virt_rx_ring((*sock), (*rb));
 
 	alloc_frame_buffer((*rb));

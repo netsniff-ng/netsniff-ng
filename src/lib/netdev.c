@@ -36,6 +36,8 @@
  *    Networking stuff that doesn't belong to tx or rx_ring
  */
 
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -64,26 +66,43 @@
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/netdev.h>
 
+static inline void assert_dev_name(const char *dev)
+{
+	assert(dev);
+	assert(strnlen(dev, IFNAMSIZ));
+}
+
+int get_af_socket(int af)
+{
+	int sock;
+
+	assert(af == AF_INET || af == AF_INET6);
+
+	sock = socket(af, SOCK_DGRAM, 0);
+
+	if (sock < 0) {
+		perr("socket");
+		exit(EXIT_FAILURE);
+	}
+
+	return (sock);
+}
+
 /**
  * get_wireless_bitrate - Returns wireless bitrate in Mb/s
  * @ifname:              device name
  */
-int get_wireless_bitrate(char *ifname)
+int get_wireless_bitrate(const char *ifname)
 {
 	int sock, ret;
 	struct iwreq iwr;
 
-	assert(ifname);
+	assert_dev_name(ifname);
 
 	memset(&iwr, 0, sizeof(iwr));
-
 	strncpy(iwr.ifr_name, ifname, IFNAMSIZ);
 
-	sock = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sock < 0) {
-		perror("socket");
-		exit(EXIT_FAILURE);
-	}
+	sock = get_af_socket(AF_INET);
 
 	ret = ioctl(sock, SIOCGIWRATE, &iwr);
 	if (ret) {
@@ -105,18 +124,14 @@ int get_ethtool_bitrate(const char *ifname)
 	struct ifreq ifr;
 	struct ethtool_cmd ecmd;
 
-	assert(ifname);
+	assert_dev_name(ifname);
 
 	memset(&ifr, 0, sizeof(ifr));
 	ecmd.cmd = ETHTOOL_GSET;
 
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
 
-	sock = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sock < 0) {
-		perror("socket");
-		exit(EXIT_FAILURE);
-	}
+	sock = get_af_socket(AF_INET);
 
 	ifr.ifr_data = (char *)&ecmd;
 
@@ -147,6 +162,7 @@ int get_ethtool_bitrate(const char *ifname)
 		break;
 	};
 
+	close(sock);
 	return ret;
 }
 
@@ -154,7 +170,7 @@ int get_ethtool_bitrate(const char *ifname)
  * get_device_bitrate_generic - Returns bitrate in Mb/s
  * @ifname:                    device name
  */
-int get_device_bitrate_generic(char *ifname)
+int get_device_bitrate_generic(const char *ifname)
 {
 	int speed_c, speed_w;
 
@@ -171,21 +187,25 @@ int get_device_bitrate_generic(char *ifname)
  * @ifname:                    device name
  */
 
-int get_mtu(int sock, const char * dev)
+int get_mtu(const char *dev)
 {
+	int sock;
 	struct ifreq ifr;
 
-	assert(dev);
+	assert_dev_name(dev);
+
+	sock = get_af_socket(AF_INET);
 
 	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, dev, IFNAMSIZ);	
-	
+	strncpy(ifr.ifr_name, dev, IFNAMSIZ);
+
 	if (ioctl(sock, SIOCGIFMTU, &ifr) < 0) {
 		perror("iotcl(SIOCGIFMTU)");
 		return 0;
 	}
-	
-	return(ifr.ifr_mtu);
+
+	close(sock);
+	return (ifr.ifr_mtu);
 }
 
 /**
@@ -193,12 +213,15 @@ int get_mtu(int sock, const char * dev)
  * @sock:             socket
  * @dev:              device name
  */
-short get_nic_flags(int sock, const char *dev)
+short get_nic_flags(const char *dev)
 {
 	int ret;
+	int sock;
 	struct ifreq ethreq;
 
-	assert(dev);
+	assert_dev_name(dev);
+
+	sock = get_af_socket(AF_INET);
 
 	memset(&ethreq, 0, sizeof(ethreq));
 	strncpy(ethreq.ifr_name, dev, IFNAMSIZ);
@@ -210,104 +233,210 @@ short get_nic_flags(int sock, const char *dev)
 		exit(EXIT_FAILURE);
 	}
 
+	close(sock);
+
 	return (ethreq.ifr_flags);
 }
 
 /**
  * get_nic_mac - Fetches device MAC address
- * @sock:             socket
  * @dev:              device name
  * @mac:              Output buffer
  */
-int get_nic_mac(int sock, const char *dev, uint8_t * mac)
+int get_nic_mac(const char *dev, uint8_t * mac)
 {
 	int ret;
+	int sock;
 	struct ifreq ifr;
 
-	assert(dev);
+	assert_dev_name(dev);
 	assert(mac);
+
+	sock = get_af_socket(AF_INET);
 
 	memset(&ifr, 0, sizeof(ifr));
 	strncpy(ifr.ifr_name, dev, IFNAMSIZ);
 
 	ret = ioctl(sock, SIOCGIFHWADDR, &ifr);
 	if (ret) {
-		perror("ioctl(SIOCGIFHWADDR)");
+		perror("ioctl(SIOCGIFHWADDR) ");
 		return (EINVAL);
 	}
 
+	close(sock);
 	memcpy(mac, ifr.ifr_hwaddr.sa_data, ETH_ALEN);
+
 	return (0);
 }
 
-char * get_nic_mac_str(int sock, const char * dev)
+char *get_nic_mac_str(const char *dev)
 {
-	uint8_t mac[ETH_ALEN] = {0};
-	get_nic_mac(sock, dev, mac);
-	return (ether_ntoa((const struct ether_addr *) mac));
+	uint8_t mac[ETH_ALEN] = { 0 };
+	get_nic_mac(dev, mac);
+	return (ether_ntoa((const struct ether_addr *)mac));
 }
 
-/**
- * print_device_info - Prints some device specific info
- */
+int get_interface_conf(struct ifconf *ifconf)
+{
+	int sock;
+
+	assert(ifconf);
+	assert(ifconf->ifc_buf);
+	assert(ifconf->ifc_len);
+
+	sock = get_af_socket(AF_INET);
+
+	if (ioctl(sock, SIOCGIFCONF, ifconf) < 0) {
+		perr("ioctl(SIOCGIFCONF) ");
+		exit(EXIT_FAILURE);
+	}
+
+	close(sock);
+
+	return (0);
+}
+
+#if 0
+struct in_addr get_interface_ipv4_address(int sock, const char *dev)
+{
+	struct ifreq ifr;
+	struct sockaddr *sa;
+	assert(dev);
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, dev, IFNAMSIZ);
+
+	if (ioctl(sock, SIOCGIFADDR, &ifr) < 0) {
+		perr("ioctl(SIOCGIFADDR) ");
+		exit(EXIT_FAILURE);
+	}
+
+	sa = (struct sockaddr *)&ifr.ifr_addr;
+
+	if (sa->sa_family != AF_INET) {
+		return ((struct in_addr)0);
+	}
+
+	return (((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr);
+}
+
+struct in6_addr get_interface_ipv6_address(int sock, const char *dev)
+{
+	struct ifreq ifr;
+	struct sockaddr_in6 *sa6;
+	assert(dev);
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, dev, IFNAMSIZ);
+
+	info("dev = %s\n", ifr.ifr_name);
+
+	if (ioctl(sock, SIOCGIFADDR, &ifr) < 0) {
+		perr("ioctl(SIOCGIFADDR) ");
+		exit(EXIT_FAILURE);
+	}
+
+	sa6 = (struct sockaddr_in6 *)&ifr.ifr_addr;
+
+	if (sa6->sa_family != AF_INET6) {
+		return (0);
+	}
+
+	return (sa6->sin6_addr);
+}
+#endif
+int get_interface_address(const char *dev, struct in_addr *in, struct in6_addr *in6)
+{
+	int sock;
+	struct ifreq ifr;
+	struct in_addr *tmp_in;
+	struct sockaddr *sa;
+	struct sockaddr_in6 *sa6;
+
+	assert_dev_name(dev);
+	assert(in);
+	assert(in6);
+
+	memset(in, 0, sizeof(in));
+	memset(in6, 0, sizeof(in6));
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, dev, IFNAMSIZ);
+
+	sock = get_af_socket(AF_INET);
+
+	if (ioctl(sock, SIOCGIFADDR, &ifr) < 0) {
+		perr("ioctl(SIOCGIFADDR) ");
+		close(sock);
+		return (0);
+	}
+
+	sa = (struct sockaddr *)&ifr.ifr_addr;
+
+	switch (sa->sa_family) {
+	case AF_INET:
+		tmp_in = &(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr);
+		memcpy(in, tmp_in, sizeof(in));
+		break;
+
+	case AF_INET6:
+		sa6 = (struct sockaddr_in6 *)&ifr.ifr_addr;
+		memcpy(in6, &sa6->sin6_addr, sizeof(in6));
+		break;
+	}
+
+	return (sa->sa_family);
+}
+
 void print_device_info(void)
 {
-	int ret, i, stmp, speed;
-	short nic_flags;
-	char dev_buff[1024] = {0};
-
+	int i, speed;
+	//int ret, i, speed;
+	short nic_flags = 0;
 	struct ifconf ifc;
-	struct ifreq *ifr;
-	struct ifreq *ifr_elem;
+	struct ifreq *ifr_elem = NULL;
+	struct ifreq *ifr_buffer = NULL;
+	size_t if_buffer_len = sizeof(*ifr_buffer) * MAX_NUMBER_OF_NICS;
+	struct in_addr ipv4 = { 0 };
+	struct in6_addr ipv6;
+	char tmp_ip[INET6_ADDRSTRLEN] = { 0 };
 
-	stmp = socket(AF_INET, SOCK_DGRAM, 0);
-	if (stmp < 0) {
-		perror("socket");
+	if ((ifr_buffer = malloc(if_buffer_len)) == NULL) {
+		perr("Out of memory");
 		exit(EXIT_FAILURE);
 	}
 
-	ifc.ifc_len = sizeof(dev_buff);
-	ifc.ifc_buf = dev_buff;
+	memset(&ipv6, 0, sizeof(ipv6));
+	memset(&ifc, 0, sizeof(ifc));
+	memset(ifr_buffer, 0, if_buffer_len);
 
-	ret = ioctl(stmp, SIOCGIFCONF, &ifc);
-	if (ret < 0) {
-		perror("ioctl(SIOCGIFCONF)");
-		exit(EXIT_FAILURE);
-	}
+	ifc.ifc_len = if_buffer_len;
+	ifc.ifc_req = ifr_buffer;
 
-	ifr = ifc.ifc_req;
+	get_interface_conf(&ifc);
 
 	info("Networking devs\n");
-	for (i = 0; i < ifc.ifc_len / sizeof(struct ifreq); ++i) {
-		ifr_elem = &ifr[i];
+	for (i = 0; i < (ifc.ifc_len / sizeof(*ifr_buffer)); i++) {
+		ifr_elem = &ifc.ifc_req[i];
+		switch (get_interface_address(ifr_elem->ifr_name, &ipv4, &ipv6)) {
+		case AF_INET:
+			inet_ntop(AF_INET, (const void *)&ipv4, tmp_ip, INET_ADDRSTRLEN);
+			break;
+		case AF_INET6:
+			inet_ntop(AF_INET6, (const void *)&ipv6, tmp_ip, INET6_ADDRSTRLEN);
+			break;
+		}
+		info(" %s => %s\n", ifr_elem->ifr_name, tmp_ip);
+		info("   HW: %s\n", get_nic_mac_str(ifr_elem->ifr_name));
 
-		info(" %s => %s\n", ifr_elem->ifr_name,
-		     inet_ntoa(((struct sockaddr_in *)&ifr_elem->ifr_addr)->sin_addr));
-
-		info("   HW: %s\n", get_nic_mac_str(stmp, ifr_elem->ifr_name));
-
-		nic_flags = get_nic_flags(stmp, ifr_elem->ifr_name);
-
+		nic_flags = get_nic_flags(ifr_elem->ifr_name);
 		info("   Stat:%s%s%s%s\n",
 		     (((nic_flags & IFF_UP) == IFF_UP) ? " up" : " not up"),
 		     (((nic_flags & IFF_RUNNING) == IFF_RUNNING) ? " running" : ""),
 		     (((nic_flags & IFF_LOOPBACK) == IFF_LOOPBACK) ? ", loops back" : ""),
 		     (((nic_flags & IFF_POINTOPOINT) == IFF_POINTOPOINT) ? ", point-to-point link" : ""));
 
-		/* If we do this ioctl before printing the flags, the values somehow get screwed up */
-		info("   MTU: %d Byte\n", get_mtu(stmp, ifr_elem->ifr_name));
-
-		/* Hmm... seems not to be reliable as discussed on LKML */
-/*
-		ret = ioctl(stmp, SIOCGIFMAP, ifr_elem);
-		if (ret) {
-			perror("ioctl(SIOCGIFMTU)");
-			exit(EXIT_FAILURE);
-		}
-
-		info("   Map: IRQ->%d DMA->%d Port->%d\n", 
-		     ifr_elem->ifr_map.irq, ifr_elem->ifr_map.dma, ifr_elem->ifr_map.port);
-*/
+		info("   MTU: %d Byte\n", get_mtu(ifr_elem->ifr_name));
 
 		speed = get_device_bitrate_generic(ifr_elem->ifr_name);
 		if (speed) {
@@ -315,7 +444,7 @@ void print_device_info(void)
 		}
 	}
 
-	close(stmp);
+	free(ifr_buffer);
 }
 
 /**
@@ -323,14 +452,18 @@ void print_device_info(void)
  * @sock:                     socket
  * @ifindex:                  device number
  */
-void put_dev_into_promisc_mode(int sock, int ifindex)
+void put_dev_into_promisc_mode(const char *dev)
 {
 	int ret;
+	int sock;
 	struct packet_mreq mr;
 
-	memset(&mr, 0, sizeof(mr));
+	assert(dev);
 
-	mr.mr_ifindex = ifindex;
+	sock = alloc_pf_sock();
+
+	memset(&mr, 0, sizeof(mr));
+	mr.mr_ifindex = ethdev_to_ifindex(dev);
 	mr.mr_type = PACKET_MR_PROMISC;
 
 	/* This is better than ioctl(), because the kernel now manages the 
@@ -341,11 +474,13 @@ void put_dev_into_promisc_mode(int sock, int ifindex)
 
 	ret = setsockopt(sock, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mr, sizeof(mr));
 	if (ret < 0) {
-		perr("setsockopt: cannot set dev %d to promisc mode: %d - ", ifindex, errno);
+		perr("setsockopt: cannot set dev %s to promisc mode: ", dev);
 
 		close(sock);
 		exit(EXIT_FAILURE);
 	}
+
+	close(sock);
 }
 
 /**
@@ -396,15 +531,17 @@ void reset_kernel_bpf(int sock)
 
 /**
  * ethdev_to_ifindex - Translates device name into device number
- * @sock:             socket
  * @dev:              device name
  */
-int ethdev_to_ifindex(int sock, char *dev)
+int ethdev_to_ifindex(const char *dev)
 {
 	int ret;
+	int sock;
 	struct ifreq ethreq;
 
 	assert(dev);
+
+	sock = get_af_socket(AF_INET);
 
 	memset(&ethreq, 0, sizeof(ethreq));
 	strncpy(ethreq.ifr_name, dev, IFNAMSIZ);
@@ -417,6 +554,7 @@ int ethdev_to_ifindex(int sock, char *dev)
 		exit(EXIT_FAILURE);
 	}
 
+	close(sock);
 	return (ethreq.ifr_ifindex);
 }
 
