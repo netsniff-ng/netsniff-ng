@@ -541,7 +541,7 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct 
 
 	put_dev_into_promisc_mode(sd->dev);
 
-	(*sock) = alloc_pf_sock();
+	(*sock) = get_pf_socket();
 	if (sd->bypass_bpf == BPF_NO_BYPASS) {
 		/* XXX: If you try to create custom filters with tcpdump, you 
 		   have to edit the ret opcode, otherwise your payload 

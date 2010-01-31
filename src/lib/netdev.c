@@ -89,6 +89,20 @@ int get_af_socket(int af)
 }
 
 /**
+ * get_pf_socket - Allocates a raw PF_PACKET socket
+ */
+int get_pf_socket(void)
+{
+	int sock = socket(PF_PACKET, SOCK_RAW, 0);
+	if (sock < 0) {
+		perr("alloc pf socket");
+		exit(EXIT_FAILURE);
+	}
+
+	return (sock);
+}
+
+/**
  * get_wireless_bitrate - Returns wireless bitrate in Mb/s
  * @ifname:              device name
  */
@@ -296,55 +310,6 @@ int get_interface_conf(struct ifconf *ifconf)
 	return (0);
 }
 
-#if 0
-struct in_addr get_interface_ipv4_address(int sock, const char *dev)
-{
-	struct ifreq ifr;
-	struct sockaddr *sa;
-	assert(dev);
-
-	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, dev, IFNAMSIZ);
-
-	if (ioctl(sock, SIOCGIFADDR, &ifr) < 0) {
-		perr("ioctl(SIOCGIFADDR) ");
-		exit(EXIT_FAILURE);
-	}
-
-	sa = (struct sockaddr *)&ifr.ifr_addr;
-
-	if (sa->sa_family != AF_INET) {
-		return ((struct in_addr)0);
-	}
-
-	return (((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr);
-}
-
-struct in6_addr get_interface_ipv6_address(int sock, const char *dev)
-{
-	struct ifreq ifr;
-	struct sockaddr_in6 *sa6;
-	assert(dev);
-
-	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, dev, IFNAMSIZ);
-
-	info("dev = %s\n", ifr.ifr_name);
-
-	if (ioctl(sock, SIOCGIFADDR, &ifr) < 0) {
-		perr("ioctl(SIOCGIFADDR) ");
-		exit(EXIT_FAILURE);
-	}
-
-	sa6 = (struct sockaddr_in6 *)&ifr.ifr_addr;
-
-	if (sa6->sa_family != AF_INET6) {
-		return (0);
-	}
-
-	return (sa6->sin6_addr);
-}
-#endif
 int get_interface_address(const char *dev, struct in_addr *in, struct in6_addr *in6)
 {
 	int sock;
@@ -460,7 +425,7 @@ void put_dev_into_promisc_mode(const char *dev)
 
 	assert(dev);
 
-	sock = alloc_pf_sock();
+	sock = get_pf_socket();
 
 	memset(&mr, 0, sizeof(mr));
 	mr.mr_ifindex = ethdev_to_ifindex(dev);
@@ -578,19 +543,6 @@ void net_stat(int sock)
 	}
 }
 
-/**
- * alloc_pf_sock - Allocates a raw PF_PACKET socket
- */
-int alloc_pf_sock(void)
-{
-	int sock = socket(PF_PACKET, SOCK_RAW, 0);
-	if (sock < 0) {
-		perr("alloc pf socket");
-		exit(EXIT_FAILURE);
-	}
-
-	return (sock);
-}
 
 /**
  * parse_rules - Parses a BPF rulefile

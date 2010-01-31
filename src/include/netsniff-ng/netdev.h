@@ -66,7 +66,7 @@ extern void inject_kernel_bpf(int sock, struct sock_filter *bpf, int len);
 extern void reset_kernel_bpf(int sock);
 extern int ethdev_to_ifindex(const char *dev);
 extern void net_stat(int sock);
-extern int alloc_pf_sock(void);
+extern int get_pf_socket(void);
 extern void parse_rules(char *rulefile, struct sock_filter **bpf, int *len);
 
 /* Inline stuff */
