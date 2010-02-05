@@ -20,13 +20,13 @@ Thanks,
 
 N: Romain Beauxis
 E: toots [at] rastageeks [dot] org
-D: Debian mentoring, package sponsor
+D: My Debian mentor and package sponsor
 W: http://www.lix.polytechnique.fr/Labo/Romain.Beauxis/
 S: France
 
 N: Pascal Bleser
 E: pascal [dot] bleser [at] skynet [dot] be
-D: Maintaining netsniff-ng on openSUSE, SLE and Fedora
+D: Maintaining netsniff-ng on openSUSE and SLE
 W: http://linux01.gwdg.de/~pbleser/
 S: Belgium
 
@@ -34,6 +34,11 @@ N: Epinephrine
 E: epinephrineaddict [at] gmail [dot] com
 D: Supply of an ebuild for Gentoo Linux available under
 D: [Bug# 299549] until it's committed to portage
+
+N: James Findley
+E: sixy [at] gmx [dot] com
+D: Maintaining netsniff-ng on Fedora and RHEL
+S: United Kingdom
 
 N: Corrado Franco
 E: conraid [at] gmail [dot] com
@@ -43,11 +48,13 @@ S: Italy
 
 N: Dr. Helumt Hayd 
 E: hayd [at] cbs [dot] mpg [dot] de
+D: Thesis supervisor, netsniff-ng was a part of it
 W: http://www.cbs.mpg.de/~hayd/
 S: Germany
 
 N: Prof. Dr. rer. nat. habil. Karl-Udo Jahn
 E: jahn [at] imn [dot] htwk-leipzig [dot] de
+D: Thanks for his encouragement and the discussions I always enjoy
 W: http://www.imn.htwk-leipzig.de/~jahn/
 S: Germany
 
@@ -59,12 +66,13 @@ S: India
 
 N: Michael Prokop
 E: mika [at] grml [dot] org
-D: Adding netsniff-ng into GRML, one of the best live distros ;)
+D: Adding netsniff-ng into GRML
 W: http://grml.org
 S: Austria
 
 N: Prof. Dr.-Ing. Dietmar Reimann
 E: reimann [at] imn [dot] htwk-leipzig [dot] de
+D: Thesis supervisor, netsniff-ng was a part of it
 W: http://www.imn.htwk-leipzig.de/~reimann/
 S: Germany
 
