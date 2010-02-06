@@ -63,7 +63,7 @@ extern int set_proc_prio(int prio);
 extern int set_sched_status(int policy, int priority);
 extern void check_for_root(void);
 extern int undaemonize(const char *pidfile);
-extern int daemonize(const char *pidfile, const char *sockfile, void *(*start_server) (void *sock));
+extern int daemonize(const char *pidfile);
 
 /* Inline stuff */
 

@@ -310,6 +310,18 @@ void check_for_root(void)
 }
 
 /**
+ * start_server - Detached server thread for Daemon
+ * @arg:         nullbuff
+ */
+void *start_server(void *arg)
+{
+	/* Originally the AF_UNIX socket was here and it was 
+	   a dead end! In future, this will be replaced by the
+	   netlink protocol suite. */
+	pthread_exit(0);
+}
+
+/**
  * undaemonize - Undaemonizes the system daemon
  * @pidfile:    path to pidfile
  */
@@ -334,7 +346,7 @@ int undaemonize(const char *pidfile)
  * @logfile:  path to logfile
  * @sockfile: path to unix domain socket inode
  */
-int daemonize(const char *pidfile, const char *sockfile, void *(*start_server) (void *sock))
+int daemonize(const char *pidfile)
 {
 	int fd;
 	int ret;
@@ -347,21 +359,19 @@ int daemonize(const char *pidfile, const char *sockfile, void *(*start_server) (
 	pthread_attr_t attr;
 
 	assert(pidfile);
-	assert(sockfile);
-	assert(start_server);
 
 	fd = open(pidfile, O_RDONLY);
 	if (fd > 0) {
-		err("daemon already started." "kill daemon and delete pid file %s\n", pidfile);
+		err("Daemon already started." "Kill daemon and delete pid file %s\n", pidfile);
 
 		close(fd);
 		exit(EXIT_FAILURE);
-	}	
+	}
 
 	info("%s %s in running in daemon mode\n", PROGNAME_STRING, VERSION_STRING);
-	
-	if (daemon(0,0) != 0)
-	{
+
+	/* We start from root and redirect all crap to /dev/zero */
+	if (daemon(1, 1) != 0) {
 		perr("Cannot daemonize process\n");
 		close(fd);
 		exit(EXIT_FAILURE);
@@ -385,12 +395,10 @@ int daemonize(const char *pidfile, const char *sockfile, void *(*start_server) (
 
 	close(fd);
 
-
-
 	pthread_attr_init(&attr);
 	pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
 
-	ret = pthread_create(&tid, NULL, start_server, (void *)sockfile);
+	ret = pthread_create(&tid, NULL, start_server, NULL);
 	if (ret < 0) {
 		perr("cannot create thread %d - ", errno);
 
@@ -400,7 +408,7 @@ int daemonize(const char *pidfile, const char *sockfile, void *(*start_server) (
 
 	pthread_detach(tid);
 
-	info("unix domain socket server up and running\n");
+	info("Unix domain socket server up and running\n");
 
 	return (0);
 }

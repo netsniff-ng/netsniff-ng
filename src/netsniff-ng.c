@@ -159,112 +159,6 @@ static inline void print_counters(void)
 }
 
 /**
- * uds_thread - Unix Domain Socket thread for sending internal counter states
- * @psock:     socket pointer
- */
-static void *uds_thread(void *psock)
-{
-	int ret;
-	int sock;
-
-	assert(psock);
-
-	/* Signalmask is per thread. we don't want to interrupt the 
-	   send-syscall */
-	hold_softirq_pthread(2, SIGUSR1, SIGALRM);
-
-	info("unix domain socket server: entering thread\n");
-	sock = *((int *)psock);
-
-	pthread_mutex_lock(&gs_loc_mutex);
-
-	ret = send(sock, &netstat, sizeof(netstat), 0);
-	if (ret < 0) {
-		perr("cannot send ring buffer stats - ");
-	}
-
-	pthread_mutex_unlock(&gs_loc_mutex);
-
-	close(sock);
-
-	info("unix domain socket server: quitting thread\n");
-	pthread_exit(0);
-}
-
-/**
- * start_uds_server - Unix Domain Socket server main
- * @psockfile:       path to UDS inode
- */
-void *start_uds_server(void *psockfile)
-{
-	int ret;
-	int sock, sock2;
-
-	char *sockfile = (char *)psockfile;
-
-	pthread_t tid;
-
-	struct sockaddr_un local;
-	struct sockaddr_un remote;
-
-	assert(psockfile);
-
-	sock = socket(AF_UNIX, SOCK_STREAM, 0);
-	if (sock < 0) {
-		perr("cannot create uds socket %d - ", errno);
-		pthread_exit(0);
-	}
-
-	local.sun_family = AF_UNIX;
-	strncpy(local.sun_path, sockfile, sizeof(local.sun_path));
-
-	if (unlink(local.sun_path) != 0) {
-		perr("cannot unlink %s\n", local.sun_path);
-		pthread_exit(0);
-	}
-
-	info("bind socket to %s\n", local.sun_path);
-
-	ret = bind(sock, (struct sockaddr *)&local, sizeof(local));
-	if (ret < 0) {
-		perr("cannot bind uds socket %d - ", errno);
-		pthread_exit(0);
-	}
-
-	ret = listen(sock, INTERNAL_UDS_QUEUE_LEN);
-	if (ret < 0) {
-		perr("cannot set up uds listening queue %d - ", errno);
-		pthread_exit(0);
-	}
-
-	while (1) {
-		size_t t = sizeof(remote);
-		info("unix domain socket server: waiting for a connection\n");
-
-		sock2 = accept(sock, (struct sockaddr *)&remote, (socklen_t *) & t);
-		if (sock2 < 0) {
-			perr("cannot do accept on uds socket %d - ", errno);
-			pthread_exit(0);
-		}
-
-		info("unix domain socket server: connected to client\n");
-
-		/* We're not interested in joining... 
-		   so a single thread id is sufficient */
-		ret = pthread_create(&tid, NULL, uds_thread, &sock2);
-		if (ret < 0) {
-			perr("uds server: error creating thread - ");
-			pthread_exit(0);
-		}
-
-		pthread_detach(tid);
-	}
-
-	info("unix domain socket server: quit\n");
-	pthread_exit(0);
-}
-
-/**
  * softirq_handler - Signal handling multiplexer
  * @number:         signal number
  */
@@ -380,10 +274,8 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout, FILE * pca
 			mem_notify_kernel_for_rx(&(fm->tp_h));
 		}
 
-		while ((ret = poll(pfd, 1, timeout)) <= 0)
-		{
-			if (sigint)
-			{
+		while ((ret = poll(pfd, 1, timeout)) <= 0) {
+			if (sigint) {
 				return;
 			}
 		}
@@ -476,7 +368,7 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct 
 	register_softirq(SIGHUP, &softirq_handler);
 
 	if (sd->sysdaemon) {
-		ret = daemonize(sd->pidfile, sd->sockfile, start_uds_server);
+		ret = daemonize(sd->pidfile);
 		if (ret != 0) {
 			err("daemonize failed");
 			exit(EXIT_FAILURE);
@@ -664,7 +556,6 @@ int main(int argc, char **argv)
 		{"silent", no_argument, 0, 's'},
 		{"daemonize", no_argument, 0, 'D'},
 		{"pidfile", required_argument, 0, 'P'},
-		{"sockfile", required_argument, 0, 'S'},
 		{"version", no_argument, 0, 'v'},
 		{"help", no_argument, 0, 'h'},
 		{0, 0, 0, 0}
@@ -757,11 +648,6 @@ int main(int argc, char **argv)
 				sd->pidfile = optarg;
 				break;
 			}
-		case 'S':
-			{
-				sd->sockfile = optarg;
-				break;
-			}
 		case 'b':
 			{
 				set_cpu_affinity(optarg);
@@ -816,7 +702,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (sd->sysdaemon && (!sd->pidfile || !dump_pcap || !sd->sockfile)) {
+	if (sd->sysdaemon && (!sd->pidfile || !dump_pcap)) {
 		help();
 		exit(EXIT_FAILURE);
 	}

@@ -543,7 +543,6 @@ void net_stat(int sock)
 	}
 }
 
-
 /**
  * parse_rules - Parses a BPF rulefile
  * @rulefile:   path to rulefile
