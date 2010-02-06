@@ -60,7 +60,6 @@
 
 /* Internals */
 #define INTERVAL_COUNTER_REFR   1000	/* in ms */
-#define INTERNAL_UDS_QUEUE_LEN  50	/* max AF_UNIX clients for accept */
 
 #define POLL_WAIT_INF           -1	/* CPU friendly and appropriate for normal usage */
 #define POLL_WAIT_NONE           0	/* This will pull CPU usage to 100 % */

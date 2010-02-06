@@ -575,7 +575,7 @@ int main(int argc, char **argv)
 	sd->bypass_bpf = BPF_BYPASS;
 	sd->packet_type = PACKET_DONT_CARE;
 
-	while ((c = getopt_long(argc, argv, "vhd:p:P:Df:sS:b:B:Hnt:", long_options, &opt_idx)) != EOF) {
+	while ((c = getopt_long(argc, argv, "vhd:p:P:Df:sb:B:Hnt:", long_options, &opt_idx)) != EOF) {
 		switch (c) {
 		case 'h':
 			{
@@ -668,7 +668,6 @@ int main(int argc, char **argv)
 				sf_write_header(dump_pcap, LINKTYPE_EN10MB, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
 				break;
 			}
-
 		case '?':
 			{
 				switch (optopt) {
@@ -677,7 +676,6 @@ int main(int argc, char **argv)
 				case 'p':
 				case 'P':
 				case 'L':
-				case 'S':
 				case 'b':
 				case 'B':
 					{
