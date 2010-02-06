@@ -78,7 +78,6 @@ typedef struct system_data {
 	int packet_type;
 	/* Daemon mode settings */
 	char *pidfile;
-	char *logfile;
 	char *sockfile;
 	/* Berkeley Packet Filter rules */
 	char *rulefile;

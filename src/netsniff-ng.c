@@ -387,7 +387,6 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout, FILE * pca
 				return;
 			}
 		}
-			/* NOP */ ;
 
 		if (ret > 0 && (pfd->revents & (POLLHUP | POLLRDHUP | POLLERR | POLLNVAL))) {
 			if (pfd->revents & (POLLHUP | POLLRDHUP)) {
@@ -477,7 +476,7 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct 
 	register_softirq(SIGHUP, &softirq_handler);
 
 	if (sd->sysdaemon) {
-		ret = daemonize(sd->pidfile, sd->logfile, sd->sockfile, start_uds_server);
+		ret = daemonize(sd->pidfile, sd->sockfile, start_uds_server);
 		if (ret != 0) {
 			err("daemonize failed");
 			exit(EXIT_FAILURE);
@@ -665,7 +664,6 @@ int main(int argc, char **argv)
 		{"silent", no_argument, 0, 's'},
 		{"daemonize", no_argument, 0, 'D'},
 		{"pidfile", required_argument, 0, 'P'},
-		{"logfile", required_argument, 0, 'L'},
 		{"sockfile", required_argument, 0, 'S'},
 		{"version", no_argument, 0, 'v'},
 		{"help", no_argument, 0, 'h'},
@@ -686,7 +684,7 @@ int main(int argc, char **argv)
 	sd->bypass_bpf = BPF_BYPASS;
 	sd->packet_type = PACKET_DONT_CARE;
 
-	while ((c = getopt_long(argc, argv, "vhd:p:P:L:Df:sS:b:B:Hnt:", long_options, &opt_idx)) != EOF) {
+	while ((c = getopt_long(argc, argv, "vhd:p:P:Df:sS:b:B:Hnt:", long_options, &opt_idx)) != EOF) {
 		switch (c) {
 		case 'h':
 			{
@@ -749,16 +747,14 @@ int main(int argc, char **argv)
 		case 'D':
 			{
 				sd->sysdaemon = SYSD_ENABLE;
+				/* Daemonize implies silent mode
+				 * Users can still dump pcaps */
+				print_packet_buffer = NULL;
 				break;
 			}
 		case 'P':
 			{
 				sd->pidfile = optarg;
-				break;
-			}
-		case 'L':
-			{
-				sd->logfile = optarg;
 				break;
 			}
 		case 'S':
@@ -820,7 +816,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (sd->sysdaemon && (!sd->pidfile || !sd->logfile || !sd->sockfile)) {
+	if (sd->sysdaemon && (!sd->pidfile || !dump_pcap || !sd->sockfile)) {
 		help();
 		exit(EXIT_FAILURE);
 	}

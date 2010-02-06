@@ -91,7 +91,7 @@ void help(void)
 	printf("  -D|--daemonize         run as sys daemon\n");
 	printf("  -P|--pidfile <arg>     use file <arg> as pidfile (required if -D)\n");
 	printf("  -L|--logfile <arg>     use file <arg> as logfile (required if -D)\n");
-	printf("  -S|--sockfile <arg>    use file <arg> as uds inode (required if -D)\n");
+	printf("  -p|--dump <arg>   	 dump all matching packets in a pcap file (required if -D)\n");
 	printf("\n");
 	printf("Options, misc:\n");
 	printf("  -v|--version           prints out version\n");

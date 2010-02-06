@@ -304,7 +304,7 @@ int set_sched_status(int policy, int priority)
 void check_for_root(void)
 {
 	if (geteuid() != 0) {
-		err("dude, you are not root!\n");
+		err("Not root?! You shall not pass!\n");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -334,7 +334,7 @@ int undaemonize(const char *pidfile)
  * @logfile:  path to logfile
  * @sockfile: path to unix domain socket inode
  */
-int daemonize(const char *pidfile, const char *logfile, const char *sockfile, void *(*start_server) (void *sock))
+int daemonize(const char *pidfile, const char *sockfile, void *(*start_server) (void *sock))
 {
 	int fd;
 	int ret;
@@ -343,12 +343,10 @@ int daemonize(const char *pidfile, const char *logfile, const char *sockfile, vo
 
 	char cpid[32] = { 0 };
 
-	pid_t pid;
 	pthread_t tid;
 	pthread_attr_t attr;
 
 	assert(pidfile);
-	assert(logfile);
 	assert(sockfile);
 	assert(start_server);
 
@@ -358,39 +356,14 @@ int daemonize(const char *pidfile, const char *logfile, const char *sockfile, vo
 
 		close(fd);
 		exit(EXIT_FAILURE);
-	}
+	}	
 
-	umask(022);
-
-	pid = fork();
-	if (pid < 0) {
-		perr("fork: %d - ", pid);
-		exit(EXIT_FAILURE);
-	}
-
-	if (pid > 0) {
-		exit(EXIT_SUCCESS);
-	}
-
-	ret = setsid();
-	if (ret < 0) {
-		perr("setsid: %d - ", ret);
-		exit(EXIT_FAILURE);
-	}
-
-	pid = fork();
-	if (pid < 0) {
-		perr("fork: %d - ", pid);
-		exit(EXIT_FAILURE);
-	}
-
-	if (pid > 0) {
-		exit(EXIT_SUCCESS);
-	}
-
-	ret = chdir("/");
-	if (ret < 0) {
-		perr("chdir: %d - ", ret);
+	info("%s %s in running in daemon mode\n", PROGNAME_STRING, VERSION_STRING);
+	
+	if (daemon(0,0) != 0)
+	{
+		perr("Cannot daemonize process\n");
+		close(fd);
 		exit(EXIT_FAILURE);
 	}
 
@@ -412,36 +385,7 @@ int daemonize(const char *pidfile, const char *logfile, const char *sockfile, vo
 
 	close(fd);
 
-	fd = open(logfile, O_CREAT | O_APPEND | O_WRONLY, 0644);
-	if (fd < 0) {
-		perr("open logfile: %d - ", fd);
-		exit(EXIT_FAILURE);
-	}
 
-	if (fd != 2) {
-		dup2(fd, 2);
-		close(fd);
-	}
-
-	fd = open("/dev/null", O_RDWR);
-	if (fd < 0) {
-		perr("open /dev/null: %d - ", fd);
-		exit(EXIT_FAILURE);
-	}
-
-	dup2(fd, 0);
-	dup2(fd, 1);
-
-	if (!logfile) {
-		dup2(fd, 2);
-	}
-
-	if (fd > 2) {
-		close(fd);
-	}
-
-	info("%s %s\n", PROGNAME_STRING, VERSION_STRING);
-	info("daemon up and running\n");
 
 	pthread_attr_init(&attr);
 	pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
