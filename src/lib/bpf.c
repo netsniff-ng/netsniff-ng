@@ -388,18 +388,23 @@ void bpf_dump_all(struct sock_filter *bpf, int len)
 	info("\n");
 }
 
-int bpf_validate(const struct sock_filter *f, int len)
+/**
+ * bpf_validate - Does basic validation of the user-defined BPF input
+ * @bpf:         bpf program
+ * @len:         len of bpf
+ */
+int bpf_validate(const struct sock_filter *bpf, int len)
 {
 	uint32_t i, from;
 	const struct sock_filter *p;
 
-	assert(len);
+	assert(bpf);
 
 	if (len < 1)
 		return 0;
 
 	for (i = 0; i < len; ++i) {
-		p = &f[i];
+		p = &bpf[i];
 		switch (BPF_CLASS(p->code)) {
 			/*
 			 * Check that memory operations use valid addresses.
@@ -507,5 +512,5 @@ int bpf_validate(const struct sock_filter *f, int len)
 			return 0;
 		}
 	}
-	return BPF_CLASS(f[len - 1].code) == BPF_RET;
+	return BPF_CLASS(bpf[len - 1].code) == BPF_RET;
 }
