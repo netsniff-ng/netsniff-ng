@@ -450,7 +450,11 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct 
 		 */
 
 		/* Berkeley Packet Filter stuff */
-		parse_rules(sd->rulefile, &bpf, &bpf_len);
+		if (parse_rules(sd->rulefile, &bpf, &bpf_len) == 0) {
+			info("BPF is not valid\n");
+			exit(EXIT_FAILURE);
+		}
+
 		inject_kernel_bpf((*sock), bpf, bpf_len * sizeof(*bpf));
 
 		/* Print info for the user */

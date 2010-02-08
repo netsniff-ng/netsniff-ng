@@ -65,6 +65,7 @@
 
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/netdev.h>
+#include <netsniff-ng/bpf.h>
 
 static inline void assert_dev_name(const char *dev)
 {
@@ -549,7 +550,7 @@ void net_stat(int sock)
  * @bpf:        sock filter
  * @len:        len of bpf
  */
-void parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
+int parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 {
 	int ret;
 	char buff[128] = { 0 };
@@ -573,7 +574,13 @@ void parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		/* We're using evil sscanf, so we have to assure
 		   that we don't get into a buffer overflow ... */
+
 		buff[sizeof(buff) - 1] = 0;
+
+		/* A comment. Skip this line */
+		if (buff[0] != '{') {
+			continue;
+		}
 
 		memset(&sf_single, 0, sizeof(sf_single));
 
@@ -581,9 +588,8 @@ void parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 			     (unsigned int *)((void *)&(sf_single.code)),
 			     (int *)((void *)&(sf_single.jt)), (int *)((void *)&(sf_single.jf)), &(sf_single.k));
 		if (ret != 4) {
-			/* No valid bpf opcode format, might be a comment or 
-			   a syntax error */
-			continue;
+			/* No valid bpf opcode format or a syntax error */
+			return 0;
 		}
 
 		*len += 1;
@@ -594,4 +600,6 @@ void parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 	}
 
 	fclose(fp);
+	/* bpf_validate() returns 0 on failiure */
+	return (bpf_validate(*bpf, *len));
 }
