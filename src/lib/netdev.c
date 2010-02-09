@@ -56,7 +56,11 @@
 
 #include <sys/ioctl.h>
 
+/* Kernel < 2.6.26 */
 #include <linux/if.h>
+#include <linux/socket.h>
+#include <linux/types.h>
+/* Kernel < 2.6.26 */
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
 #include <linux/filter.h>
