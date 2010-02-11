@@ -379,7 +379,7 @@ int daemonize(const char *pidfile)
 
 	cpid_len = snprintf(cpid, sizeof(cpid), "%d", getpid());
 
-	fd = open(pidfile, O_CREAT | O_TRUNC | O_WRONLY, 0644);
+	fd = open(pidfile, O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (fd < 0) {
 		perr("open pidfile: %d - ", fd);
 		exit(EXIT_FAILURE);
@@ -401,7 +401,6 @@ int daemonize(const char *pidfile)
 	ret = pthread_create(&tid, NULL, start_server, NULL);
 	if (ret < 0) {
 		perr("cannot create thread %d - ", errno);
-
 		undaemonize(pidfile);
 		exit(EXIT_FAILURE);
 	}

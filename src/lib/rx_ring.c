@@ -94,12 +94,12 @@ void create_virt_rx_ring(int sock, ring_buff_t * rb, char *ifname)
 
 	nic_flags = get_nic_flags(ifname);
 
-	if (!(nic_flags & IFF_UP)) {
+	if ((nic_flags & IFF_UP) != IFF_UP) {
 		info("The interface %s is not up\n\n", ifname);
 		exit(EXIT_FAILURE);
 	}
 
-	if (!(nic_flags & IFF_RUNNING)) {
+	if ((nic_flags & IFF_RUNNING) != IFF_RUNNING) {
 		info("The interface %s is not running\n\n", ifname);
 		exit(EXIT_FAILURE);
 	}

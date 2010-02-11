@@ -33,6 +33,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <errno.h>
 
 #include <linux/if_packet.h>
@@ -76,8 +77,12 @@ void pcap_dump(FILE * f, struct tpacket_hdr *tp_h, const struct ethhdr const *sp
 	 * or exit gracefully ?
 	 */
 
-	fwrite(&sf_hdr, sizeof(sf_hdr), 1, f);
-	fwrite(sp, sf_hdr.len, 1, f);
+	if (fwrite(&sf_hdr, sizeof(sf_hdr), 1, f) != 1 || fwrite(sp, sf_hdr.len, 1, f) != 1)
+	{
+		perr("Cannot write pcap header %lu\n");
+		fclose(f);
+		exit(EXIT_FAILURE);
+	}
 }
 
 /* For replaying PCAP not activated for now */
