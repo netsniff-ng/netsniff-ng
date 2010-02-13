@@ -85,9 +85,8 @@ int get_af_socket(int af)
 	assert(af == AF_INET || af == AF_INET6);
 
 	sock = socket(af, SOCK_DGRAM, 0);
-
 	if (sock < 0) {
-		perr("socket");
+		err("Fetch socket");
 		exit(EXIT_FAILURE);
 	}
 
@@ -101,7 +100,7 @@ int get_pf_socket(void)
 {
 	int sock = socket(PF_PACKET, SOCK_RAW, 0);
 	if (sock < 0) {
-		perr("alloc pf socket");
+		err("Allocation of pf socket");
 		exit(EXIT_FAILURE);
 	}
 
@@ -220,7 +219,7 @@ int get_mtu(const char *dev)
 	strncpy(ifr.ifr_name, dev, IFNAMSIZ);
 
 	if (ioctl(sock, SIOCGIFMTU, &ifr) < 0) {
-		perror("iotcl(SIOCGIFMTU)");
+		err("Doing iotcl(SIOCGIFMTU)");
 		return 0;
 	}
 
@@ -248,13 +247,12 @@ short get_nic_flags(const char *dev)
 
 	ret = ioctl(sock, SIOCGIFFLAGS, &ethreq);
 	if (ret < 0) {
-		perr("ioctl: cannot determine dev number for %s: %d - ", ethreq.ifr_name, errno);
+		err("ioctl: cannot determine dev number for %s", ethreq.ifr_name);
 		close(sock);
 		exit(EXIT_FAILURE);
 	}
 
 	close(sock);
-
 	return (ethreq.ifr_flags);
 }
 
@@ -279,7 +277,7 @@ int get_nic_mac(const char *dev, uint8_t * mac)
 
 	ret = ioctl(sock, SIOCGIFHWADDR, &ifr);
 	if (ret) {
-		perror("ioctl(SIOCGIFHWADDR) ");
+		err("Doing ioctl(SIOCGIFHWADDR)");
 		return (EINVAL);
 	}
 
@@ -307,12 +305,11 @@ int get_interface_conf(struct ifconf *ifconf)
 	sock = get_af_socket(AF_INET);
 
 	if (ioctl(sock, SIOCGIFCONF, ifconf) < 0) {
-		perr("ioctl(SIOCGIFCONF) ");
+		err("Doing ioctl(SIOCGIFCONF)");
 		exit(EXIT_FAILURE);
 	}
 
 	close(sock);
-
 	return (0);
 }
 
@@ -337,7 +334,7 @@ int get_interface_address(const char *dev, struct in_addr *in, struct in6_addr *
 	sock = get_af_socket(AF_INET);
 
 	if (ioctl(sock, SIOCGIFADDR, &ifr) < 0) {
-		perr("ioctl(SIOCGIFADDR) ");
+		err("Doing ioctl(SIOCGIFADDR)");
 		close(sock);
 		return (0);
 	}
@@ -373,7 +370,7 @@ void print_device_info(void)
 	char tmp_ip[INET6_ADDRSTRLEN] = { 0 };
 
 	if ((ifr_buffer = malloc(if_buffer_len)) == NULL) {
-		perr("Out of memory");
+		err("Out of memory");
 		exit(EXIT_FAILURE);
 	}
 
@@ -389,6 +386,7 @@ void print_device_info(void)
 	info("Networking devs\n");
 	for (i = 0; i < (ifc.ifc_len / sizeof(*ifr_buffer)); i++) {
 		ifr_elem = &ifc.ifc_req[i];
+
 		switch (get_interface_address(ifr_elem->ifr_name, &ipv4, &ipv6)) {
 		case AF_INET:
 			inet_ntop(AF_INET, (const void *)&ipv4, tmp_ip, INET_ADDRSTRLEN);
@@ -397,6 +395,7 @@ void print_device_info(void)
 			inet_ntop(AF_INET6, (const void *)&ipv6, tmp_ip, INET6_ADDRSTRLEN);
 			break;
 		}
+
 		info(" %s => %s\n", ifr_elem->ifr_name, tmp_ip);
 		info("   HW: %s\n", get_nic_mac_str(ifr_elem->ifr_name));
 
@@ -445,7 +444,7 @@ void put_dev_into_promisc_mode(const char *dev)
 
 	ret = setsockopt(sock, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mr, sizeof(mr));
 	if (ret < 0) {
-		perr("setsockopt: cannot set dev %s to promisc mode: ", dev);
+		err("setsockopt: cannot set dev %s to promisc mode", dev);
 
 		close(sock);
 		exit(EXIT_FAILURE);
@@ -475,8 +474,7 @@ void inject_kernel_bpf(int sock, struct sock_filter *bpf, int len)
 
 	ret = setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER, &filter, sizeof(filter));
 	if (ret < 0) {
-		perr("setsockopt: filter cannot be injected: %d - ", errno);
-
+		err("setsockopt: filter cannot be injected");
 		close(sock);
 		exit(EXIT_FAILURE);
 	}
@@ -493,8 +491,7 @@ void reset_kernel_bpf(int sock)
 
 	ret = setsockopt(sock, SOL_SOCKET, SO_DETACH_FILTER, &foo, sizeof(foo));
 	if (ret < 0) {
-		perr("setsockopt: cannot reset filter: %d - ", errno);
-
+		err("setsockopt: cannot reset filter");
 		close(sock);
 		exit(EXIT_FAILURE);
 	}
@@ -519,8 +516,7 @@ int ethdev_to_ifindex(const char *dev)
 
 	ret = ioctl(sock, SIOCGIFINDEX, &ethreq);
 	if (ret < 0) {
-		perr("ioctl: cannot determine dev number for %s: %d - ", ethreq.ifr_name, errno);
-
+		err("ioctl: cannot determine dev number for %s", ethreq.ifr_name);
 		close(sock);
 		exit(EXIT_FAILURE);
 	}
@@ -568,7 +564,7 @@ int parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 
 	FILE *fp = fopen(rulefile, "r");
 	if (!fp) {
-		perr("cannot read rulefile - ");
+		err("Cannot read rulefile");
 		exit(EXIT_FAILURE);
 	}
 
@@ -579,7 +575,6 @@ int parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		/* We're using evil sscanf, so we have to assure
 		   that we don't get into a buffer overflow ... */
-
 		buff[sizeof(buff) - 1] = 0;
 
 		/* A comment. Skip this line */

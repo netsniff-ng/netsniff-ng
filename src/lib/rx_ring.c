@@ -95,12 +95,12 @@ void create_virt_rx_ring(int sock, ring_buff_t * rb, char *ifname)
 	nic_flags = get_nic_flags(ifname);
 
 	if ((nic_flags & IFF_UP) != IFF_UP) {
-		info("The interface %s is not up\n\n", ifname);
+		warn("The interface %s is not up\n\n", ifname);
 		exit(EXIT_FAILURE);
 	}
 
 	if ((nic_flags & IFF_RUNNING) != IFF_RUNNING) {
-		info("The interface %s is not running\n\n", ifname);
+		warn("The interface %s is not running\n\n", ifname);
 		exit(EXIT_FAILURE);
 	}
 
@@ -126,8 +126,7 @@ void create_virt_rx_ring(int sock, ring_buff_t * rb, char *ifname)
 	}
 
 	if (ret < 0) {
-		perr("setsockopt: creation of rx ring failed: %d - ", errno);
-
+		err("setsockopt: creation of rx_ring failed");
 		close(sock);
 		exit(EXIT_FAILURE);
 	}
@@ -152,11 +151,10 @@ void mmap_virt_rx_ring(int sock, ring_buff_t * rb)
 
 	rb->buffer = mmap(0, rb->len, PROT_READ | PROT_WRITE, MAP_SHARED, sock, 0);
 	if (rb->buffer == MAP_FAILED) {
-		perr("mmap: cannot mmap the rx ring: %d - ", errno);
+		err("mmap: cannot mmap the rx_ring");
 
 		destroy_virt_rx_ring(sock, rb);
 		close(sock);
-
 		exit(EXIT_FAILURE);
 	}
 }
@@ -184,7 +182,7 @@ void bind_dev_to_rx_ring(int sock, int ifindex, ring_buff_t * rb)
 
 	ret = bind(sock, (struct sockaddr *)&(rb->params), sizeof(struct sockaddr_ll));
 	if (ret < 0) {
-		perr("bind: cannot bind device: %d - ", errno);
+		err("bind: cannot bind device");
 
 		close(sock);
 		exit(EXIT_FAILURE);

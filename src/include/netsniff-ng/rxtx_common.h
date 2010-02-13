@@ -59,7 +59,7 @@ static inline void alloc_frame_buffer(ring_buff_t * rb)
 
 	rb->frames = (struct iovec *)malloc(rb->layout.tp_frame_nr * sizeof(*rb->frames));
 	if (!rb->frames) {
-		err("No mem left!\n");
+		err("No mem left");
 		exit(EXIT_FAILURE);
 	}
 

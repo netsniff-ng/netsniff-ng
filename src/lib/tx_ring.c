@@ -116,8 +116,7 @@ void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname)
 	}
 
 	if (ret < 0) {
-		perr("setsockopt: creation of tx ring failed: %d - ", errno);
-
+		err("setsockopt: creation of tx ring failed");
 		close(sock);
 		exit(EXIT_FAILURE);
 	}
@@ -142,7 +141,7 @@ void mmap_virt_tx_ring(int sock, ring_buff_t * rb)
 
 	rb->buffer = mmap(0, rb->len, PROT_READ | PROT_WRITE, MAP_SHARED, sock, 0);
 	if (rb->buffer == MAP_FAILED) {
-		perr("mmap: cannot mmap the tx ring: %d - ", errno);
+		err("mmap: cannot mmap the tx ring");
 
 		destroy_virt_tx_ring(sock, rb);
 		close(sock);
@@ -174,8 +173,7 @@ void bind_dev_to_tx_ring(int sock, int ifindex, ring_buff_t * rb)
 
 	ret = bind(sock, (struct sockaddr *)&(rb->params), sizeof(struct sockaddr_ll));
 	if (ret < 0) {
-		perr("bind: cannot bind device: %d - ", errno);
-
+		err("bind: cannot bind device");
 		close(sock);
 		exit(EXIT_FAILURE);
 	}
@@ -193,7 +191,7 @@ int flush_tx_ring(int sock, ring_buff_t * rb)
 	/* Flush buffers with TP_STATUS_SEND_REQUEST */
 	rc = sendto(sock, NULL, 0, MSG_DONTWAIT, (struct sockaddr *)&(rb->params), sizeof(struct sockaddr_ll));
 	if (rc < 0) {
-		perr("sendto - ");
+		err("Cannot flush tx_ring with sendto");
 	}
 
 	return rc;

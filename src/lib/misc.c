@@ -52,60 +52,60 @@
  */
 void help(void)
 {
-	printf("%s %s\n\n", PROGNAME_STRING, VERSION_STRING);
-	printf("%s is a high performance network sniffer for packet\n", PROGNAME_STRING);
-	printf("inspection that acts as a raw socket sniffer with kernelspace\n");
-	printf("bpf and a \"zero-copy\" mode receive/transmit ring.\n");
-	printf("\n");
-	printf("Options for net dev:\n");
-	printf("  -d|--dev <arg>         use device <arg> for capturing packets, e.g. `eth0`\n");
-	printf("  -m|--mtu <arg>         temporarily adjust MTU of NIC\n");
-	printf("\n");
-	printf("Options for packet dumping/replaying:\n");
-	printf("  -p|--dump <arg>        dump all matching packets in a pcap file\n");
-	printf("                         for a better performance, combine with -s|--silent\n");
-	printf("  -r|--replay <arg>      replay all packets from a pcap dump file\n");
-	printf("  -q|--quit-after <arg>  quit dump/replay after <arg> pckts / <arg> MB\n");
-	printf("\n");
-	printf("Options for packet filtering:\n");
-	printf("  -f|--filter <arg>      use file <arg> as packet filter\n");
-	printf("  -t|--type <arg>        only show packets of type (this is non-BPF -> slower)\n");
-	printf("                           `host`      - to us\n");
-	printf("                           `broadcast` - to all\n");
-	printf("                           `multicast` - to group\n");
-	printf("                           `others`    - to others\n");
-	printf("                           `outgoing`  - from us\n");
-	printf("  -g|--generate <arg>    generate packet filter code according to <arg>\n");
-	printf("\n");
-	printf("Options for system scheduler/process:\n");
-	printf("  -b|--bind-cpu <arg>    bind process to specific CPU/CPU-range\n");
-	printf("  -B|--unbind-cpu <arg>  forbid process to use specific CPU/CPU-range\n");
-	printf("  -H|--prio-norm         do not high priorize process\n");
-	printf("  -n|--non-block         non-blocking packet capturing mode\n");
-	printf("\n");
-	printf("Options for packet printing:\n");
-	printf("  -N|--no-color          do not colorize captured packet output\n");
-	printf("  -s|--silent            do not print captured packets (silent mode)\n");
-	printf("\n");
-	printf("Options for system daemon:\n");
-	printf("  -D|--daemonize         run as sys daemon\n");
-	printf("  -P|--pidfile <arg>     use file <arg> as pidfile (required if -D)\n");
-	printf("  -p|--dump <arg>   	 dump all matching packets in a pcap file (required if -D)\n");
-	printf("\n");
-	printf("Options, misc:\n");
-	printf("  -v|--version           prints out version\n");
-	printf("  -h|--help              prints out this help\n");
-	printf("\n");
-	printf("Note:\n");
-	printf("  - Sending a SIGUSR1 will show current packet statistics\n");
-	printf("  - Sending a SIGUSR2 will toggle silent and packet printing mode\n");
-	printf("  - For more help type \'man netsniff-ng\'\n");
-	printf("\n");
-	printf("Please report bugs to <danborkmann@googlemail.com>\n");
-	printf("Copyright (C) 2009, 2010 Daniel Borkmann and Emmanuel Roullit\n");
-	printf("License: GNU GPL version 2\n");
-	printf("This is free software: you are free to change and redistribute it.\n");
-	printf("There is NO WARRANTY, to the extent permitted by law.\n");
+	info("%s %s\n\n", PROGNAME_STRING, VERSION_STRING);
+	info("%s is a high performance network sniffer for packet\n", PROGNAME_STRING);
+	info("inspection that acts as a raw socket sniffer with kernelspace\n");
+	info("bpf and a \"zero-copy\" mode receive/transmit ring.\n");
+	info("\n");
+	info("Options for net dev:\n");
+	info("  -d|--dev <arg>         use device <arg> for capturing packets, e.g. `eth0`\n");
+	info("  -m|--mtu <arg>         temporarily adjust MTU of NIC\n");
+	info("\n");
+	info("Options for packet dumping/replaying:\n");
+	info("  -p|--dump <arg>        dump all matching packets in a pcap file\n");
+	info("                         for a better performance, combine with -s|--silent\n");
+	info("  -r|--replay <arg>      replay all packets from a pcap dump file\n");
+	info("  -q|--quit-after <arg>  quit dump/replay after <arg> pckts / <arg> MB\n");
+	info("\n");
+	info("Options for packet filtering:\n");
+	info("  -f|--filter <arg>      use file <arg> as packet filter\n");
+	info("  -t|--type <arg>        only show packets of type (this is non-BPF -> slower)\n");
+	info("                           `host`      - to us\n");
+	info("                           `broadcast` - to all\n");
+	info("                           `multicast` - to group\n");
+	info("                           `others`    - to others\n");
+	info("                           `outgoing`  - from us\n");
+	info("  -g|--generate <arg>    generate packet filter code according to <arg>\n");
+	info("\n");
+	info("Options for system scheduler/process:\n");
+	info("  -b|--bind-cpu <arg>    bind process to specific CPU/CPU-range\n");
+	info("  -B|--unbind-cpu <arg>  forbid process to use specific CPU/CPU-range\n");
+	info("  -H|--prio-norm         do not high priorize process\n");
+	info("  -n|--non-block         non-blocking packet capturing mode\n");
+	info("\n");
+	info("Options for packet printing:\n");
+	info("  -N|--no-color          do not colorize captured packet output\n");
+	info("  -s|--silent            do not print captured packets (silent mode)\n");
+	info("\n");
+	info("Options for system daemon:\n");
+	info("  -D|--daemonize         run as sys daemon\n");
+	info("  -P|--pidfile <arg>     use file <arg> as pidfile (required if -D)\n");
+	info("  -p|--dump <arg>   	 dump all matching packets in a pcap file (required if -D)\n");
+	info("\n");
+	info("Options, misc:\n");
+	info("  -v|--version           prints out version\n");
+	info("  -h|--help              prints out this help\n");
+	info("\n");
+	info("Note:\n");
+	info("  - Sending a SIGUSR1 will show current packet statistics\n");
+	info("  - Sending a SIGUSR2 will toggle silent and packet printing mode\n");
+	info("  - For more help type \'man netsniff-ng\'\n");
+	info("\n");
+	info("Please report bugs to <danborkmann@googlemail.com>\n");
+	info("Copyright (C) 2009, 2010 Daniel Borkmann and Emmanuel Roullit\n");
+	info("License: GNU GPL version 2\n");
+	info("This is free software: you are free to change and redistribute it.\n");
+	info("There is NO WARRANTY, to the extent permitted by law.\n");
 
 	exit(EXIT_SUCCESS);
 }
@@ -115,22 +115,21 @@ void help(void)
  */
 void version(void)
 {
-	printf("%s %s\n\n", PROGNAME_STRING, VERSION_STRING);
-	printf("%s is a high performance network sniffer for packet\n", PROGNAME_STRING);
-	printf("inspection that acts as a raw socket sniffer with kernelspace\n");
-	printf("bpf and a \"zero-copy\" mode receive/transmit ring.\n\n");
-	printf("%s", MOOH);	/* ;) */
-	printf("\n");
-	printf("%s can be used for protocol analysis and\n"
-	       "reverse engineering, network debugging, measurement of\n"
-	       "performance throughput or network statistics creation of\n"
-	       "incoming packets on central network nodes like routers\n" "or firewalls.\n", PROGNAME_STRING);
-	printf("\n");
-	printf("Please report bugs to <danborkmann@googlemail.com>\n");
-	printf("Copyright (C) 2009, 2010 Daniel Borkmann and Emmanuel Roullit\n");
-	printf("License: GNU GPL version 2\n");
-	printf("This is free software: you are free to change and redistribute it.\n");
-	printf("There is NO WARRANTY, to the extent permitted by law.\n");
+	info("%s %s\n\n", PROGNAME_STRING, VERSION_STRING);
+	info("%s is a high performance network sniffer for packet\n", PROGNAME_STRING);
+	info("inspection that acts as a raw socket sniffer with kernelspace\n");
+	info("bpf and a \"zero-copy\" mode receive/transmit ring.\n\n");
+	info("%s", MOOH);	/* ;) */
+	info("\n");
+	info("%s can be used for protocol analysis and\n"
+	     "reverse engineering, network debugging, measurement of\n"
+	     "performance throughput or network statistics creation of\n" "incoming packets.", PROGNAME_STRING);
+	info("\n");
+	info("Please report bugs to <danborkmann@googlemail.com>\n");
+	info("Copyright (C) 2009, 2010 Daniel Borkmann and Emmanuel Roullit\n");
+	info("License: GNU GPL version 2\n");
+	info("This is free software: you are free to change and redistribute it.\n");
+	info("There is NO WARRANTY, to the extent permitted by law.\n");
 
 	exit(EXIT_SUCCESS);
 }
@@ -150,13 +149,13 @@ void header(void)
 
 	cpu_string = malloc(len);
 	if (!cpu_string) {
-		perr("No mem left\n");
+		err("No mem left");
 		exit(EXIT_FAILURE);
 	}
 
 	ret = sched_getparam(getpid(), &sp);
 	if (ret) {
-		perr("Cannot determine sched prio\n");
+		err("Cannot determine sched prio");
 		exit(EXIT_FAILURE);
 	}
 

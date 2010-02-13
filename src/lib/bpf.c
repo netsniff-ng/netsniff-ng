@@ -398,7 +398,9 @@ int bpf_validate(const struct sock_filter *bpf, int len)
 	uint32_t i, from;
 	const struct sock_filter *p;
 
-	assert(bpf);
+	/* File parsing got nothing usefull  */
+	if (!bpf)
+		return 0;
 
 	if (len < 1)
 		return 0;

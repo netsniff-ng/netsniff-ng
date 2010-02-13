@@ -77,9 +77,8 @@ void pcap_dump(FILE * f, struct tpacket_hdr *tp_h, const struct ethhdr const *sp
 	 * or exit gracefully ?
 	 */
 
-	if (fwrite(&sf_hdr, sizeof(sf_hdr), 1, f) != 1 || fwrite(sp, sf_hdr.len, 1, f) != 1)
-	{
-		perr("Cannot write pcap header %lu\n");
+	if (fwrite(&sf_hdr, sizeof(sf_hdr), 1, f) != 1 || fwrite(sp, sf_hdr.len, 1, f) != 1) {
+		err("Cannot write pcap header");
 		fclose(f);
 		exit(EXIT_FAILURE);
 	}
@@ -93,15 +92,15 @@ FILE *pcap_validate(FILE * pcap)
 
 	if (pcap == NULL) {
 		errno = EINVAL;
-		perr("Can't open file :");
+		err("Can't open file");
 		return (NULL);
 	}
 
 	if (fread((char *)&hdr, 1, sizeof(hdr), pcap) != sizeof(hdr)) {
 		if (ferror(pcap)) {
-			perr("error reading dump file:");
+			err("Error reading dump file");
 		} else {
-			perr("truncated dump file");
+			err("Truncated dump file");
 		}
 
 		return (NULL);
@@ -111,7 +110,7 @@ FILE *pcap_validate(FILE * pcap)
 	    || hdr.version_major != PCAP_VERSION_MAJOR
 	    || hdr.version_minor != PCAP_VERSION_MINOR || hdr.linktype != LINKTYPE_EN10MB) {
 		errno = EINVAL;
-		perr("This file is certainly not a valid pcap :");
+		err("This file is certainly not a valid pcap");
 		return (NULL);
 	}
 
@@ -124,24 +123,24 @@ struct ethhdr *pcap_fetch_packet(FILE * pcap, struct ethhdr *pkt)
 
 	if (pcap == NULL) {
 		errno = EIO;
-		perr("Can't access pcap file :");
+		err("Can't access pcap file");
 		return (NULL);
 	}
 
 	if (pkt == NULL) {
 		errno = EINVAL;
-		perr("Can't access packet header :");
+		err("Can't access packet header");
 		return (NULL);
 	}
 
 	if (fread((char *)&sf_hdr, 1, sizeof(sf_hdr), pcap) != sizeof(sf_hdr)) {
 		if (ferror(pcap)) {
-			perr("error reading dump file :");
+			err("Error reading dump file");
 		} else if (feof(pcap)) {
-			perr("reached end of file :");
+			err("Reached end of file");
 		} else {
 			errno = EIO;
-			perr("something went wrong while reading pcap :");
+			err("Something went wrong while reading pcap");
 		}
 
 		return (NULL);
@@ -149,12 +148,12 @@ struct ethhdr *pcap_fetch_packet(FILE * pcap, struct ethhdr *pkt)
 
 	if (fread((char *)pkt, 1, sizeof(*pkt), pcap) != sizeof(*pkt)) {
 		if (ferror(pcap)) {
-			perr("error reading dump file :");
+			err("Error reading dump file");
 		} else if (feof(pcap)) {
-			perr("reached end of file :");
+			err("Reached end of file");
 		} else {
 			errno = EIO;
-			perr("something went wrong while reading pcap :");
+			err("Something went wrong while reading pcap");
 		}
 
 		return (NULL);

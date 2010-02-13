@@ -128,7 +128,7 @@ int set_cpu_affinity(const char *str)
 
 	ret = sched_setaffinity(getpid(), sizeof(cpu_bitmask), &cpu_bitmask);
 	if (ret) {
-		perr("Can't set this cpu affinity: %s\n", str);
+		err("Can't set this cpu affinity: %s", str);
 		exit(EXIT_FAILURE);
 	}
 
@@ -197,7 +197,7 @@ int set_cpu_affinity_inv(const char *str)
 
 	ret = sched_setaffinity(getpid(), sizeof(cpu_bitmask), &cpu_bitmask);
 	if (ret) {
-		perr("Can't set this cpu affinity: %s\n", str);
+		err("Can't set this cpu affinity: %s", str);
 		exit(EXIT_FAILURE);
 	}
 
@@ -224,7 +224,7 @@ char *get_cpu_affinity(char *cpu_string, size_t len)
 
 	ret = sched_getaffinity(getpid(), sizeof(cpu_bitmask), &cpu_bitmask);
 	if (ret) {
-		perr("Can't fetch cpu affinity: %d\n", ret);
+		err("Can't fetch cpu affinity");
 		return (NULL);
 	}
 
@@ -250,7 +250,7 @@ int set_proc_prio(int priority)
 	 */
 	ret = setpriority(PRIO_PROCESS, getpid(), priority);
 	if (ret) {
-		perr("Can't set nice val %i: %d\n", priority, ret);
+		err("Can't set nice val %i", priority);
 		exit(EXIT_FAILURE);
 	}
 
@@ -273,7 +273,7 @@ int set_sched_status(int policy, int priority)
 	min_prio = sched_get_priority_min(policy);
 
 	if (max_prio == -1 || min_prio == -1) {
-		perr("Cannot determine max/min scheduler prio!\n");
+		err("Cannot determine max/min scheduler prio");
 	} else if (priority < min_prio) {
 		priority = min_prio;
 	} else if (priority > max_prio) {
@@ -285,13 +285,13 @@ int set_sched_status(int policy, int priority)
 
 	ret = sched_setscheduler(getpid(), policy, &sp);
 	if (ret) {
-		perr("Cannot set scheduler policy!\n");
+		err("Cannot set scheduler policy");
 		return (1);
 	}
 
 	ret = sched_setparam(getpid(), &sp);
 	if (ret) {
-		perr("Cannot set scheduler prio!\n");
+		err("Cannot set scheduler prio");
 		return (1);
 	}
 
@@ -304,7 +304,7 @@ int set_sched_status(int policy, int priority)
 void check_for_root(void)
 {
 	if (geteuid() != 0) {
-		err("Not root?! You shall not pass!\n");
+		warn("Not root?! You shall not pass!\n");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -333,7 +333,7 @@ int undaemonize(const char *pidfile)
 
 	ret = unlink(pidfile);
 	if (ret < 0) {
-		perr("cannot unlink pidfile - ");
+		err("Cannot unlink pidfile");
 		return (ret);
 	}
 
@@ -362,8 +362,7 @@ int daemonize(const char *pidfile)
 
 	fd = open(pidfile, O_RDONLY);
 	if (fd > 0) {
-		err("Daemon already started." "Kill daemon and delete pid file %s\n", pidfile);
-
+		err("Daemon already started." "Kill daemon and delete pid file %s", pidfile);
 		close(fd);
 		exit(EXIT_FAILURE);
 	}
@@ -372,7 +371,7 @@ int daemonize(const char *pidfile)
 
 	/* We start from root and redirect all crap to /dev/zero */
 	if (daemon(1, 1) != 0) {
-		perr("Cannot daemonize process\n");
+		err("Cannot daemonize process");
 		close(fd);
 		exit(EXIT_FAILURE);
 	}
@@ -381,14 +380,13 @@ int daemonize(const char *pidfile)
 
 	fd = open(pidfile, O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (fd < 0) {
-		perr("open pidfile: %d - ", fd);
+		err("Openening pidfile");
 		exit(EXIT_FAILURE);
 	}
 
 	bytes_written = write(fd, cpid, cpid_len);
 	if (bytes_written != cpid_len) {
-		perr("write failed only wrote %i: %d - ", bytes_written, fd);
-
+		err("Write failed! Only wrote %i", bytes_written);
 		close(fd);
 		exit(EXIT_FAILURE);
 	}
@@ -400,7 +398,7 @@ int daemonize(const char *pidfile)
 
 	ret = pthread_create(&tid, NULL, start_server, NULL);
 	if (ret < 0) {
-		perr("cannot create thread %d - ", errno);
+		err("Cannot create thread");
 		undaemonize(pidfile);
 		exit(EXIT_FAILURE);
 	}
@@ -408,6 +406,5 @@ int daemonize(const char *pidfile)
 	pthread_detach(tid);
 
 	info("Unix domain socket server up and running\n");
-
 	return (0);
 }

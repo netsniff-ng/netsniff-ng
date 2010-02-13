@@ -73,18 +73,23 @@
 
 #define PACKET_DONT_CARE        -1
 
-/* TODO */
-#define info(fmt, arg...)                                            \
-                                fprintf(stderr, fmt, ## arg);
+/* Standardized info/warning/error printing routines that should be used source-wide */
+#include <errno.h>
+#include <string.h>
 
-#define err(fmt, arg...)                                            \
-                                fprintf(stderr, "E: " fmt, ## arg); \
+#define info(fmt, arg...)                                     \
+                                fprintf(stdout, fmt, ## arg);
+
+#define warn(fmt, arg...)                                           \
+                                fprintf(stderr, "W: " fmt, ## arg); \
                                 fflush(stderr);
 
-#define perr(fmt, arg...)                                           \
-                                fprintf(stderr, "E: " fmt, ## arg); \
-                                perror("");
+/* Do not a perror() after this and do not end string with '\n'! */
+#define err(fmt, arg...)                                                                      \
+                                fprintf(stderr, "E: " fmt ": %s\n", ## arg, strerror(errno)); \
+                                fflush(stderr);
 
+/* Calc macros for Byte conversion */
 #define DIV_KBYTES(x)           ((x) / (1024LLU))
 #define DIV_MBYTES(x)           ((x) / (1048576LLU))
 #define DIV_GBYTES(x)           ((x) / (1073741824LLU))

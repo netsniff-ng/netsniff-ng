@@ -282,7 +282,7 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout, FILE * pca
 
 		if (ret > 0 && (pfd->revents & (POLLHUP | POLLRDHUP | POLLERR | POLLNVAL))) {
 			if (pfd->revents & (POLLHUP | POLLRDHUP)) {
-				err("Hangup on socket occured.\n\n");
+				err("Hangup on socket occured");
 				return;
 			} else if (pfd->revents & POLLERR) {
 				/* recv is more specififc on the error */
@@ -290,13 +290,13 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout, FILE * pca
 				if (recv(sock, &foo, sizeof(foo), MSG_PEEK) != -1)
 					goto __out_grab_frame;	/* Hmm... no error */
 				if (errno == ENETDOWN) {
-					err("Interface went down\n\n");
+					err("Interface went down");
 				} else {
-					err("%s\n\n", strerror(errno));
+					err("Receive error");
 				}
 				return;
 			} else if (pfd->revents & POLLNVAL) {
-				err("Invalid polling request on socket.\n\n");
+				err("Invalid polling request on socket");
 				return;
 			}
 		}
@@ -370,7 +370,7 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct 
 	if (sd->sysdaemon) {
 		ret = daemonize(sd->pidfile);
 		if (ret != 0) {
-			err("daemonize failed");
+			warn("Daemonize failed!\n");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -380,7 +380,7 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct 
 
 	(*rb) = (ring_buff_t *) malloc(sizeof(**rb));
 	if ((*rb) == NULL) {
-		perr("Cannot allocate ring buffer\n");
+		err("Cannot allocate ring buffer");
 		exit(EXIT_FAILURE);
 	}
 
@@ -392,13 +392,13 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct 
 	if (!sd->dev) {
 		sd->dev = strdup("lo");
 		if (!sd->dev) {
-			perror("Cannot allocate mem");
+			err("Cannot allocate mem");
 			exit(EXIT_FAILURE);
 		}
 
 		stmp = socket(AF_INET, SOCK_DGRAM, 0);
 		if (stmp < 0) {
-			perror("socket");
+			err("Fetching socket");
 			exit(EXIT_FAILURE);
 		}
 
@@ -406,7 +406,7 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct 
 		ifc.ifc_buf = dev_buff;
 
 		if (ioctl(stmp, SIOCGIFCONF, &ifc) < 0) {
-			perror("ioctl(SIOCGIFCONF)");
+			err("Doing ioctl(SIOCGIFCONF)");
 			exit(EXIT_FAILURE);
 		}
 
@@ -416,7 +416,7 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct 
 			ifr_elem = &ifr[i];
 
 			if (ioctl(stmp, SIOCGIFFLAGS, ifr_elem) < 0) {
-				perror("ioctl(SIOCGIFFLAGS)");
+				err("Doing ioctl(SIOCGIFFLAGS)");
 				exit(EXIT_FAILURE);
 			}
 
@@ -424,7 +424,7 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct 
 			    (ifr_elem->ifr_flags & IFF_RUNNING) && strncmp(ifr_elem->ifr_name, "lo", IFNAMSIZ)) {
 				sd->dev = strdup(ifr_elem->ifr_name);
 				if (!sd->dev) {
-					perror("Cannot allocate mem");
+					err("Cannot allocate mem");
 					exit(EXIT_FAILURE);
 				}
 				break;
@@ -480,7 +480,7 @@ static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct 
 
 	ret = setitimer(ITIMER_REAL, &val_r, NULL);
 	if (ret < 0) {
-		perr("cannot set itimer - ");
+		err("Cannot set itimer");
 		exit(EXIT_FAILURE);
 	}
 
@@ -567,7 +567,7 @@ int main(int argc, char **argv)
 
 	sd = malloc(sizeof(*sd));
 	if (!sd) {
-		err("No mem left!\n");
+		err("No mem left!");
 		exit(EXIT_FAILURE);
 	}
 
@@ -595,7 +595,7 @@ int main(int argc, char **argv)
 			{
 				sd->dev = strdup(optarg);
 				if (!sd->dev) {
-					perror("Cannot allocate mem");
+					err("Cannot allocate mem");
 					exit(EXIT_FAILURE);
 				}
 				break;
@@ -665,7 +665,7 @@ int main(int argc, char **argv)
 		case 'p':
 			{
 				if ((dump_pcap = fopen(optarg, "w+")) == NULL) {
-					perr("Can't open file: ");
+					err("Can't open file");
 					exit(EXIT_FAILURE);
 				}
 
@@ -683,13 +683,13 @@ int main(int argc, char **argv)
 				case 'b':
 				case 'B':
 					{
-						fprintf(stderr, "Option -%c requires an argument!\n", optopt);
+						warn("Option -%c requires an argument!\n", optopt);
 						break;
 					}
 				default:
 					{
 						if (isprint(optopt)) {
-							fprintf(stderr, "Unknown option character `0x%X\'!\n", optopt);
+							warn("Unknown option character `0x%X\'!\n", optopt);
 						}
 						break;
 					}
@@ -710,7 +710,7 @@ int main(int argc, char **argv)
 	}
 
 	for (i = optind; i < argc; ++i) {
-		err("Non-option argument %s!\n", argv[i]);
+		warn("Non-option argument %s!\n", argv[i]);
 	}
 
 	if (optind < argc) {
