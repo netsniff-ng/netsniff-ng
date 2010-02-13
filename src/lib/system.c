@@ -369,8 +369,8 @@ int daemonize(const char *pidfile)
 
 	info("%s %s in running in daemon mode\n", PROGNAME_STRING, VERSION_STRING);
 
-	/* We start from root and redirect all crap to /dev/zero */
-	if (daemon(1, 1) != 0) {
+	/* We start from root and redirect all output to /dev/zero */
+	if (daemon(0, 0) != 0) {
 		err("Cannot daemonize process");
 		close(fd);
 		exit(EXIT_FAILURE);
