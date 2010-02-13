@@ -64,20 +64,24 @@ sub check_file_generic
 		push_error("File has too many code lines.", $config{max_file_lines} < $lines);
 	}
 	
-	# Check generic statements
+	# Check generic statements, some recommendations are from checkpatch.pl (see Kernel)
 	{
 		my $got_copyright = 0;
 		my $got_license = 0;
 		
-		foreach(@source) {
-			if(m/copyright/i) {
+		for(my $i = 0; $i < scalar(@source); ++$i) {
+			if($source[$i] =~ m/copyright/i) {
 				$got_copyright++;
 			}
-			if(m/gpl|license|gnu\sgeneral\spublic\slicense/i) {
+			if($source[$i] =~ m/gpl|license|gnu\sgeneral\spublic\slicense/i) {
 				$got_license++;
 			}
-			
-			# TODO: break after all checks done.
+			if($source[$i] =~ /\*\s*\)\s*[xczm]alloc\b/) {
+				push_error("Line ".($i + 1).": Unnecessary cast may hide bugs (see http://c-faq.com/malloc/mallocnocast.html).", 1);
+			}
+#			if($source[$i] =~ /\s*str[^n]\w+\b/) {
+#				push_error("Line ".($i + 1).": String functions without length restriction should never be used.", 1);
+#			}
 		}
 		
 		push_error("File does not start with header comment.", ($source[0] =~ m/\/\*.*/i) == 0);
