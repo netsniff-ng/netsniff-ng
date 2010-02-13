@@ -29,11 +29,7 @@ my %config = (
 	max_global_vars                => 3,
 	max_func_args                  => 4,
 	max_func_lines                 => 100,
-	max_file_lines                 => 1000,
-
-	check_function_header_comment  => 1,
-	check_function_malloc_eq_free  => 1,
-	check_file_gpl_statement       => 1,
+	max_file_lines                 => 700,
 );
 
 sub invoke_make_build_targets
@@ -54,6 +50,42 @@ sub grep_translation_unit_files
 	}, getcwd;
 }
 
+sub check_file_generic
+{
+	my $file = shift;
+	my (@source, $lines);
+	
+	# Check lines
+	{
+		open(SRC, "< $file") || die "E: Cannot open file $file: $!\n";
+		$lines = scalar((@source = <SRC>));
+		close(SRC);
+		
+		push_error("File has too many code lines.", $config{max_file_lines} < $lines);
+	}
+	
+	# Check generic statements
+	{
+		my $got_copyright = 0;
+		my $got_license = 0;
+		
+		foreach(@source) {
+			if(m/copyright/i) {
+				$got_copyright++;
+			}
+			if(m/gpl|license|gnu\sgeneral\spublic\slicense/i) {
+				$got_license++;
+			}
+			
+			# TODO: break after all checks done.
+		}
+		
+		push_error("File does not start with header comment.", ($source[0] =~ m/\/\*.*/i) == 0);
+		push_error("File has no copyright statement.", $got_copyright == 0);
+		push_error("File has no licence statement.", $got_license == 0);
+	}
+}
+
 sub check_function 
 {
 	my $node = shift;
@@ -62,7 +94,7 @@ sub check_function
 	$name = $node->{'name'}->{'string'};
 	@args = grep_function_args($node->{'type'}->{'prms'}, $name);
 
-	push_error("Function $name has too many parameter", $config{max_func_args} < scalar(@args));
+	push_error("Function $name has too many parameters.", $config{max_func_args} < scalar(@args));
 }
 
 sub grep_function_args
@@ -122,7 +154,7 @@ sub parse_translation_unit
 		$node = $node->chain;
 	}
 
-	push_error("Too many global vars", $config{max_global_vars} < $global_vars);
+	push_error("File has too many global variables.", $config{max_global_vars} < $global_vars);
 	return ($file, $file_short);
 }
 
@@ -132,7 +164,9 @@ sub main
 	invoke_make_build_targets();
 	grep_translation_unit_files();
 	foreach(@tu_files) {
+		# Do checks
 		($file, $file_short) = parse_translation_unit($_);
+		check_file_generic($file);
 		
 		# We're done, go print the crap!
 		print_error_list($file_short);
