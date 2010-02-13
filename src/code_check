@@ -22,6 +22,7 @@ use File::Basename;
 use GCC::TranslationUnit;
 
 my @tu_files;
+my @error_list;
 
 # This config defines how the code should look like:
 my %config = (
@@ -61,7 +62,7 @@ sub check_function
 	$name = $node->{'name'}->{'string'};
 	@args = grep_function_args($node->{'type'}->{'prms'}, $name);
 
-	print "  * Function $name has too many parameter\n" if($config{max_func_args} < scalar(@args));
+	push_error("Function $name has too many parameter", $config{max_func_args} < scalar(@args));
 }
 
 sub grep_function_args
@@ -77,6 +78,23 @@ sub grep_function_args
 	return @args;
 }
 
+sub push_error
+{
+	my ($error, $condition) = @_;
+	push(@error_list, $error) if($condition);
+}
+
+sub print_error_list
+{
+	my $file = shift;
+	return if(scalar(@error_list) == 0);
+	
+	print "File $file:\n";
+	foreach(@error_list) {
+		print "  * $_\n";
+	}
+}
+
 sub parse_translation_unit
 {
 	my $unit = shift;
@@ -87,8 +105,8 @@ sub parse_translation_unit
 	$unit =~ m/(.*\.c)\..*\.tu$/;
 	$file = $1;
 	$file_short = basename($file);
+	@error_list = ();
 
-	print "In $file_short:\n";
 	while($node) {
 		if($node->isa('GCC::Node::function_decl')) {
 			if($node->{'source'} =~ m/$file_short/) {
@@ -104,15 +122,20 @@ sub parse_translation_unit
 		$node = $node->chain;
 	}
 
-	print "  * Too many global vars\n" if($config{max_global_vars} < $global_vars);
+	push_error("Too many global vars", $config{max_global_vars} < $global_vars);
+	return ($file, $file_short);
 }
 
 sub main
 {
+	my ($file, $file_short);
 	invoke_make_build_targets();
 	grep_translation_unit_files();
 	foreach(@tu_files) {
-		parse_translation_unit($_);
+		($file, $file_short) = parse_translation_unit($_);
+		
+		# We're done, go print the crap!
+		print_error_list($file_short);
 	}
 	invoke_make_clean_targets();
 }
