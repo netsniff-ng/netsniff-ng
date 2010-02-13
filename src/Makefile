@@ -2,21 +2,11 @@
 # Makefile for netsniff-ng
 #
 
-#
-# Note: 
-#   check_packets is not a main program, it is just an 
-#   example implementation for a unix domain socket (uds) client.
-#   Therefore, you explicitly need to build it for usage.
-#   Possibly with newer version the uds API might have changed,
-#   so a few manual adoptions could be possible.
-#
-
-CC               = gcc
-# Use this for code analysis
-#CC               = nccgen -ncgcc -ncld -ncfabs
+CC               = gcc $(ARGS)
 LIBS             = -lpthread -lrt
 INCLUDE          = -Iinclude
 CFLAGS           = -Wall -O2
+CFLAGSDBG        = -fdump-translation-unit
 
 BUILD_FOLDERS    = lib
 
@@ -46,7 +36,7 @@ install:
 
 clean:
 	-for d in $(BUILD_FOLDERS); do (cd $$d; $(MAKE) $(MFLAGS) clean); done
-	rm *.o *.nccout Code.map $(NAME) $(MANDIR_LOCAL)/$(NAME).8.gz || true
+	rm *.o *.tu *.nccout Code.map $(NAME) $(MANDIR_LOCAL)/$(NAME).8.gz || true
 
 uninstall:
 	rm $(DESTDIR)/$(BINDIR)/$(NAME) || true
@@ -55,3 +45,7 @@ uninstall:
 
 indent:
 	$(PWD)/indent_code
+
+stats: indent
+	$(PWD)/code_stats
+

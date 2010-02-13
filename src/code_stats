@@ -1,3 +1,113 @@
-#!/bin/sh
+#!/usr/bin/perl
 
-find . -type f | egrep ".(c|h)$" | xargs wc -l
+#
+# netsniff-ng Project
+# Code analysis script ... this is just within devel!
+#
+
+use warnings;
+use strict;
+
+use Cwd;
+use File::Find;
+use File::Basename;
+use GCC::TranslationUnit;
+
+my @tu_files;
+
+# This config defines how the code should look like:
+my %config = (
+	max_global_vars                => 3,
+	max_func_args                  => 4,
+	max_func_lines                 => 100,
+	max_file_lines                 => 1000,
+
+	check_function_header_comment  => 1,
+	check_function_malloc_eq_free  => 1,
+	check_file_gpl_statement       => 1,
+);
+
+sub invoke_make_build_targets
+{
+	`make ARGS=\"-fdump-translation-unit\" 2>&1 > /dev/zero`
+}
+
+sub invoke_make_clean_targets
+{
+	`make clean 2>&1 > /dev/zero`
+}
+
+sub grep_translation_unit_files
+{
+	find sub {
+		$_ = $File::Find::name;
+		push(@tu_files, $_) if(/\.tu$/);
+	}, getcwd;
+}
+
+sub check_function 
+{
+	my $node = shift;
+	my ($name, @args);
+
+	$name = $node->{'name'}->{'string'};
+	@args = grep_function_args($node->{'type'}->{'prms'}, $name);
+
+	print "  * Function $name has too many parameter\n" if($config{max_func_args} < scalar(@args));
+}
+
+sub grep_function_args
+{
+	my ($prms, $name) = @_;
+	my @args;
+
+	while($prms && $prms->chain) {
+		push(@args, $prms->{'name'}->{'string'});
+		$prms = $prms->chain;
+	}
+
+	return @args;
+}
+
+sub parse_translation_unit
+{
+	my $unit = shift;
+	my ($file, $file_short);
+	my $node = GCC::TranslationUnit::Parser->parsefile($unit)->root;
+	my $global_vars = 0;
+
+	$unit =~ m/(.*\.c)\..*\.tu$/;
+	$file = $1;
+	$file_short = basename($file);
+
+	print "In $file_short:\n";
+	while($node) {
+		if($node->isa('GCC::Node::function_decl')) {
+			if($node->{'source'} =~ m/$file_short/) {
+				check_function($node);
+			}
+		}
+		if($node->isa('GCC::Node::var_decl')) {
+			if($node->{'source'} =~ m/$file_short/) {
+				$global_vars++;
+			}
+		}
+	} continue {
+		$node = $node->chain;
+	}
+
+	print "  * Too many global vars\n" if($config{max_global_vars} < $global_vars);
+}
+
+sub main
+{
+	invoke_make_build_targets();
+	grep_translation_unit_files();
+	foreach(@tu_files) {
+		parse_translation_unit($_);
+	}
+	invoke_make_clean_targets();
+}
+
+main();
+exit 0;

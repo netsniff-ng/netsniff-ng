@@ -2,6 +2,7 @@
 
 #
 # netsniff-ng Project
+# Code indention script
 #
 
 files=`find . -type f | egrep "*.c$|*.h$"`

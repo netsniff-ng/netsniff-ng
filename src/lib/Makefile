@@ -2,9 +2,7 @@
 # Makefile for netsniff-ng lib
 #
 
-CC               = gcc
-# Use this for code analysis
-#CC               = nccgen -ncgcc -ncld -ncfabs
+CC               = gcc $(ARGS)
 LIBS             = -lpthread -lrt
 INCLUDE          = -I../include
 CFLAGS           = -Wall -O2
@@ -20,4 +18,5 @@ lib: $(OBJECTS)
 	$(CC) -c $(CFLAGS) $(INCLUDE) $<
 
 clean:
-	rm *.o *.nccout Code.map || true
+	rm *.o *.tu *.nccout Code.map || true
+
