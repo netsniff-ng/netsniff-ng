@@ -5,6 +5,14 @@
 # Code analysis script ... this is just within devel!
 #
 
+#
+# How to run?
+#  * Install GCC::TranslationUnit as root with:
+#    perl -MCPAN -e 'shell' and type 'install GCC::TranslationUnit'
+#  * The other modules are mostly standard and should already be 
+#    installed on your Linux box
+#
+
 use warnings;
 use strict;
 
