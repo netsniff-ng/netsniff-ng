@@ -46,6 +46,6 @@ uninstall:
 indent:
 	$(PWD)/indent_code
 
-stats: indent
-	$(PWD)/code_stats
+check: indent
+	$(PWD)/code_check
 
