@@ -62,11 +62,10 @@
 #include <netsniff-ng/rx_ring.h>
 #include <netsniff-ng/signal.h>
 #include <netsniff-ng/macros.h>
-#include <netsniff-ng/types.h>
-#include <netsniff-ng/print.h>
 #include <netsniff-ng/dump.h>
 #include <netsniff-ng/netdev.h>
 #include <netsniff-ng/bpf.h>
+#include <netsniff-ng/config.h>
 
 /*
  * Global vars
@@ -77,8 +76,6 @@ volatile sig_atomic_t sigusr2 = 0;
 
 ring_buff_stat_t netstat;
 pthread_mutex_t gs_loc_mutex;
-
-print_packet_buff_t print_packet_buffer = versatile_print;
 
 /*
  * Functions
@@ -175,27 +172,6 @@ void softirq_handler(int number)
 			print_counters();
 			break;
 		}
-	case SIGUSR2:
-		{
-			switch (++sigusr2 % 2) {
-			case 0:
-				{
-					print_packet_buffer = versatile_print;
-					break;
-				}
-			case 1:
-				{
-					print_packet_buffer = NULL;
-					break;
-				}
-			default:
-				{
-					print_packet_buffer = versatile_print;
-					break;
-				}
-			}
-			break;
-		}
 	case SIGINT:
 		{
 			sigint = 1;
@@ -219,12 +195,13 @@ void softirq_handler(int number)
  * @rb:                     ring buffer
  * @pfd:                    file descriptor for polling
  */
-void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout, FILE * pcap, int packet_type, int sock)
+void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, system_data_t * sd, int sock)
 {
 	int ret, foo, i = 0;
 
 	assert(rb);
 	assert(pfd);
+	assert(sd);
 
 	/* This is our critical path ... */
 	while (likely(!sigint)) {
@@ -235,20 +212,20 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout, FILE * pca
 
 			/* Check if the user wants to have a specific 
 			   packet type */
-			if (packet_type != PACKET_DONT_CARE) {
-				if (fm->s_ll.sll_pkttype != packet_type) {
+			if (sd->packet_type != PACKET_DONT_CARE) {
+				if (fm->s_ll.sll_pkttype != sd->packet_type) {
 					goto __out_notify_kernel;
 				}
 			}
 
-			if (pcap != NULL) {
-				pcap_dump(pcap, &fm->tp_h, (struct ethhdr *)rbb);
+			if (sd->dump_pcap != NULL) {
+				pcap_dump(sd->dump_pcap, &fm->tp_h, (struct ethhdr *)rbb);
 			}
 
-			if (print_packet_buffer) {
+			if (sd->print_pkt) {
 				/* This path here slows us down ... well, but
 				   the user wants to see what's going on */
-				print_packet_buffer(rbb, &fm->tp_h);
+				sd->print_pkt(rbb, &fm->tp_h);
 			}
 
 			/* Pending singals will be delivered after netstat 
@@ -274,7 +251,7 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, int timeout, FILE * pca
 			mem_notify_kernel_for_rx(&(fm->tp_h));
 		}
 
-		while ((ret = poll(pfd, 1, timeout)) <= 0) {
+		while ((ret = poll(pfd, 1, sd->blocking_mode)) <= 0) {
 			if (sigint) {
 				return;
 			}
@@ -537,33 +514,11 @@ static void cleanup_system(system_data_t * sd, int *sock, ring_buff_t ** rb)
 int main(int argc, char **argv)
 {
 	FILE *dump_pcap = NULL;
-	int i, c, opt_idx;
 	int sock;
 
 	system_data_t *sd;
 	ring_buff_t *rb;
-	struct pollfd pfd;
-
-	static struct option long_options[] = {
-		{"dev", required_argument, 0, 'd'},
-		{"dump", required_argument, 0, 'p'},
-		{"replay", required_argument, 0, 'r'},
-		{"quit-after", required_argument, 0, 'q'},
-		{"generate", required_argument, 0, 'g'},
-		{"type", required_argument, 0, 't'},
-		{"filter", required_argument, 0, 'f'},
-		{"bind-cpu", required_argument, 0, 'b'},
-		{"unbind-cpu", required_argument, 0, 'B'},
-		{"prio-norm", no_argument, 0, 'H'},
-		{"non-block", no_argument, 0, 'n'},
-		{"no-color", no_argument, 0, 'N'},
-		{"silent", no_argument, 0, 's'},
-		{"daemonize", no_argument, 0, 'D'},
-		{"pidfile", required_argument, 0, 'P'},
-		{"version", no_argument, 0, 'v'},
-		{"help", no_argument, 0, 'h'},
-		{0, 0, 0, 0}
-	};
+	struct pollfd pfd = { 0 };
 
 	sd = malloc(sizeof(*sd));
 	if (!sd) {
@@ -571,158 +526,18 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	memset(sd, 0, sizeof(*sd));
+	init_configuration(sd);
+	set_configuration(argc, argv, sd);
+	check_config(sd);
+
 	memset(&pfd, 0, sizeof(pfd));
-
-	/* Some default sys configuration */
-	sd->blocking_mode = POLL_WAIT_INF;
-	sd->bypass_bpf = BPF_BYPASS;
-	sd->packet_type = PACKET_DONT_CARE;
-
-	while ((c = getopt_long(argc, argv, "vhd:p:P:Df:sb:B:Hnt:", long_options, &opt_idx)) != EOF) {
-		switch (c) {
-		case 'h':
-			{
-				help();
-				break;
-			}
-		case 'v':
-			{
-				version();
-				break;
-			}
-		case 'd':
-			{
-				sd->dev = strdup(optarg);
-				if (!sd->dev) {
-					err("Cannot allocate mem");
-					exit(EXIT_FAILURE);
-				}
-				break;
-			}
-		case 'n':
-			{
-				sd->blocking_mode = POLL_WAIT_NONE;
-				break;
-			}
-		case 'H':
-			{
-				sd->no_prioritization = PROC_NO_HIGHPRIO;
-				break;
-			}
-		case 't':
-			{
-				if (!strncmp(optarg, "host", strlen("host"))) {
-					sd->packet_type = PACKET_HOST;
-				} else if (!strncmp(optarg, "broadcast", strlen("broadcast"))) {
-					sd->packet_type = PACKET_BROADCAST;
-				} else if (!strncmp(optarg, "multicast", strlen("multicast"))) {
-					sd->packet_type = PACKET_MULTICAST;
-				} else if (!strncmp(optarg, "others", strlen("others"))) {
-					sd->packet_type = PACKET_OTHERHOST;
-				} else if (!strncmp(optarg, "outgoing", strlen("outgoing"))) {
-					sd->packet_type = PACKET_OUTGOING;
-				} else {
-					sd->packet_type = PACKET_DONT_CARE;
-				}
-				break;
-			}
-		case 'f':
-			{
-				sd->bypass_bpf = BPF_NO_BYPASS;
-				sd->rulefile = optarg;
-				break;
-			}
-		case 's':
-			{
-				/* Switch to silent mode */
-				print_packet_buffer = NULL;
-				break;
-			}
-		case 'D':
-			{
-				sd->sysdaemon = SYSD_ENABLE;
-				/* Daemonize implies silent mode
-				 * Users can still dump pcaps */
-				print_packet_buffer = NULL;
-				break;
-			}
-		case 'P':
-			{
-				sd->pidfile = optarg;
-				break;
-			}
-		case 'b':
-			{
-				set_cpu_affinity(optarg);
-				break;
-			}
-		case 'B':
-			{
-				set_cpu_affinity_inv(optarg);
-				break;
-			}
-		case 'p':
-			{
-				if ((dump_pcap = fopen(optarg, "w+")) == NULL) {
-					err("Can't open file");
-					exit(EXIT_FAILURE);
-				}
-
-				sf_write_header(dump_pcap, LINKTYPE_EN10MB, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
-				break;
-			}
-		case '?':
-			{
-				switch (optopt) {
-				case 'd':
-				case 'f':
-				case 'p':
-				case 'P':
-				case 'L':
-				case 'b':
-				case 'B':
-					{
-						warn("Option -%c requires an argument!\n", optopt);
-						break;
-					}
-				default:
-					{
-						if (isprint(optopt)) {
-							warn("Unknown option character `0x%X\'!\n", optopt);
-						}
-						break;
-					}
-				}
-
-				return 1;
-			}
-		default:
-			{
-				abort();
-			}
-		}
-	}
-
-	if (sd->sysdaemon && (!sd->pidfile || !dump_pcap)) {
-		help();
-		exit(EXIT_FAILURE);
-	}
-
-	for (i = optind; i < argc; ++i) {
-		warn("Non-option argument %s!\n", argv[i]);
-	}
-
-	if (optind < argc) {
-		exit(EXIT_FAILURE);
-	}
 
 	/*
 	 * Main stuff
 	 */
 
 	init_system(sd, &sock, &rb, &pfd);
-	fetch_packets(rb, &pfd, sd->blocking_mode, dump_pcap, sd->packet_type, sock);
+	fetch_packets(rb, &pfd, sd, sock);
 	cleanup_system(sd, &sock, &rb);
 
 	if (dump_pcap != NULL) {

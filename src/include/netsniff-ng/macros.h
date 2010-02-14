@@ -58,21 +58,6 @@
 
 #define __read_mostly __attribute__((__section__(".data.read_mostly")))
 
-/* Internals */
-#define INTERVAL_COUNTER_REFR   1000	/* in ms */
-
-#define POLL_WAIT_INF           -1	/* CPU friendly and appropriate for normal usage */
-#define POLL_WAIT_NONE           0	/* This will pull CPU usage to 100 % */
-
-#define BPF_BYPASS               1
-#define BPF_NO_BYPASS            0
-
-#define PROC_NO_HIGHPRIO         1
-
-#define SYSD_ENABLE              1
-
-#define PACKET_DONT_CARE        -1
-
 /* Standardized info/warning/error printing routines that should be used source-wide */
 #include <errno.h>
 #include <string.h>

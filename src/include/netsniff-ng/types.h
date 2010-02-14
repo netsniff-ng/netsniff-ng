@@ -46,7 +46,6 @@
 
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
-#include <linux/filter.h>
 
 /*
  * Internal data structures
@@ -66,22 +65,5 @@ typedef struct frame_map {
 	struct tpacket_hdr tp_h __attribute__ ((aligned(TPACKET_ALIGNMENT)));
 	struct sockaddr_ll s_ll __attribute__ ((aligned(TPACKET_ALIGNMENT)));
 } frame_map_t;
-
-typedef void (*print_packet_buff_t) (ring_buff_bytes_t *, const struct tpacket_hdr *);
-
-typedef struct system_data {
-	/* Some more or less boolean conf values */
-	int sysdaemon;
-	int blocking_mode;
-	int no_prioritization;
-	int bypass_bpf;
-	int packet_type;
-	/* Daemon mode settings */
-	char *pidfile;
-	/* Berkeley Packet Filter rules */
-	char *rulefile;
-	/* Ethernet device */
-	char *dev;
-} system_data_t;
 
 #endif				/* _NET_TYPES_H_ */

@@ -75,7 +75,7 @@ static inline uint16_t calc_csum(void *addr, size_t len, int csum)
  * that the checksum covers (including the checksum itself), compute
  * what the checksum field *should* have been.
  */
-uint16_t csum_expected(uint16_t sum, uint16_t computed_sum)
+static inline uint16_t csum_expected(uint16_t sum, uint16_t computed_sum)
 {
 	uint32_t shouldbe;
 
@@ -121,7 +121,8 @@ uint16_t csum_expected(uint16_t sum, uint16_t computed_sum)
 	return (shouldbe);
 }
 
-uint16_t tcp_sum_calc(uint16_t len_tcp, uint16_t src_addr[], uint16_t dest_addr[], uint8_t padding, uint16_t buff[])
+static inline uint16_t tcp_sum_calc(uint16_t len_tcp, uint16_t src_addr[], uint16_t dest_addr[], uint8_t padding,
+				    uint16_t buff[])
 {
 	uint32_t i;
 	uint16_t prot_tcp = IPPROTO_TCP;
@@ -164,5 +165,4 @@ uint16_t tcp_sum_calc(uint16_t len_tcp, uint16_t src_addr[], uint16_t dest_addr[
 
 	return ((uint16_t) sum);
 }
-
 #endif				/* __PROTO_CSUM_H__ */
