@@ -3,6 +3,7 @@ netsniff-ng (0.5.4.2-1) unstable; urgency=low
   * Another minor upstream release with fixes within the ring traversal
     method (packet look-ahead on the receive ring) and some basic BPF 
     filter check.
+  * Changed installation path from /sbin into /usr/sbin
   * debian/control:
     + Updated to new standards version 3.8.4
     + Added ${misc:Depends} in order to fix the 'debhelper-but-no-misc-depends' 
