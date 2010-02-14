@@ -43,3 +43,9 @@ Version 0.5.4.0 (30.12.2009) - 'happy GNU year edition'
 Version 0.5.4.1 (01.01.2010)
 ============================
 * Security fix in netsniff-ng.c
+
+Version 0.5.4.2 (14.02.2010)
+============================
+* Packet look-ahead within receive ring traversal method
+* Basic BPF checks
+

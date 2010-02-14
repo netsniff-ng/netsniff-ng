@@ -3,6 +3,7 @@ Requirements (for your own kernels)
 
 Your kernel should have been built with CONFIG_PACKET_MMAP=y in order 
 to use netsniff-ng. This is default on your preinstalled Debian kernel.
+We recommend >= 2.6.26.
 
 Hashsums
 ========
