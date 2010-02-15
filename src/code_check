@@ -23,6 +23,7 @@ use GCC::TranslationUnit;
 
 my @tu_files;
 my @error_list;
+my @func_stack;
 
 # This config defines how the code should look like:
 my %config = (
@@ -50,6 +51,13 @@ sub grep_translation_unit_files
 	}, getcwd;
 }
 
+sub check_copyright 
+{
+	return ($_[0] =~ m/copyright/i);
+}
+
+
+
 sub check_file_generic
 {
 	my $file = shift;
@@ -70,12 +78,16 @@ sub check_file_generic
 		my $got_license = 0;
 		
 		for(my $i = 0; $i < scalar(@source); ++$i) {
-			if($source[$i] =~ m/copyright/i) {
+			if($got_copyright == 0 && 
+			   $source[$i] =~ m/copyright/i) {
 				$got_copyright++;
 			}
-			if($source[$i] =~ m/gpl|license|gnu\sgeneral\spublic\slicense/i) {
+			
+			if($got_license == 0 && 
+			   $source[$i] =~ m/gpl|license|gnu\sgeneral\spublic\slicense/i) {
 				$got_license++;
 			}
+			
 			if($source[$i] =~ /\*\s*\)\s*[xczm]alloc\b/) {
 				push_error("Line ".($i + 1).": Unnecessary cast may hide bugs (see http://c-faq.com/malloc/mallocnocast.html).", 1);
 			}
@@ -97,6 +109,7 @@ sub check_function
 
 	$name = $node->{'name'}->{'string'};
 	@args = grep_function_args($node->{'type'}->{'prms'}, $name);
+	push(@func_stack, $name);
 
 	push_error("Function $name has too many parameters.", $config{max_func_args} < scalar(@args));
 }

@@ -36,28 +36,38 @@
  *    Mostly RX_RING related stuff and other networking code
  */
 
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <signal.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include <net/if.h>
 #include <arpa/inet.h>
 
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <sys/poll.h>
+#include <sys/types.h>
 
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
 #include <linux/filter.h>
 
+#include <netsniff-ng/dump.h>
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/types.h>
 #include <netsniff-ng/rx_ring.h>
 #include <netsniff-ng/netdev.h>
+#include <netsniff-ng/config.h>
+#include <netsniff-ng/signal.h>
 
 /**
  * destroy_virt_rx_ring - Destroys virtual RX_RING buffer
@@ -91,6 +101,7 @@ void create_virt_rx_ring(int sock, ring_buff_t * rb, char *ifname)
 	int ret, dev_speed;
 
 	assert(rb);
+	assert(ifname);
 
 	nic_flags = get_nic_flags(ifname);
 
@@ -186,5 +197,130 @@ void bind_dev_to_rx_ring(int sock, int ifindex, ring_buff_t * rb)
 
 		close(sock);
 		exit(EXIT_FAILURE);
+	}
+}
+
+/*
+ * External vars from netsniff-ng.c
+ */
+
+extern volatile sig_atomic_t sigint;
+
+extern ring_buff_stat_t netstat;
+extern pthread_mutex_t gs_loc_mutex;
+
+/**
+ * fetch_packets_and_print - Traverses RX_RING and prints content
+ * @rb:                     ring buffer
+ * @pfd:                    file descriptor for polling
+ */
+void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, system_data_t * sd, int sock)
+{
+	int ret, foo, i = 0;
+
+	assert(rb);
+	assert(pfd);
+	assert(sd);
+
+	/* This is our critical path ... */
+	while (likely(!sigint)) {
+		while (mem_notify_user_for_rx(rb->frames[i]) && likely(!sigint)) {
+			struct frame_map *fm = rb->frames[i].iov_base;
+			ring_buff_bytes_t *rbb =
+			    (ring_buff_bytes_t *) (rb->frames[i].iov_base + sizeof(*fm) + sizeof(short));
+
+			/* Check if the user wants to have a specific 
+			   packet type */
+			if (sd->packet_type != PACKET_DONT_CARE) {
+				if (fm->s_ll.sll_pkttype != sd->packet_type) {
+					goto __out_notify_kernel;
+				}
+			}
+
+			if (sd->dump_pcap_fd != -1) {
+				pcap_dump(sd->dump_pcap_fd, &fm->tp_h, (struct ethhdr *)rbb);
+			}
+
+			if (sd->print_pkt) {
+				/* This path here slows us down ... well, but
+				   the user wants to see what's going on */
+				sd->print_pkt(rbb, &fm->tp_h);
+			}
+
+			/* Pending singals will be delivered after netstat 
+			   manipulation */
+			hold_softirq(2, SIGUSR1, SIGALRM);
+			pthread_mutex_lock(&gs_loc_mutex);
+
+			netstat.per_sec.frames++;
+			netstat.per_sec.bytes += fm->tp_h.tp_len;
+
+			netstat.total.frames++;
+			netstat.total.bytes += fm->tp_h.tp_len;
+
+			pthread_mutex_unlock(&gs_loc_mutex);
+			restore_softirq(2, SIGUSR1, SIGALRM);
+
+			/* Next frame */
+			i = (i + 1) % rb->layout.tp_frame_nr;
+
+ __out_notify_kernel:
+			/* This is very important, otherwise kernel starts
+			   to drop packages */
+			mem_notify_kernel_for_rx(&(fm->tp_h));
+		}
+
+		while ((ret = poll(pfd, 1, sd->blocking_mode)) <= 0) {
+			if (sigint) {
+				return;
+			}
+		}
+
+		if (ret > 0 && (pfd->revents & (POLLHUP | POLLRDHUP | POLLERR | POLLNVAL))) {
+			if (pfd->revents & (POLLHUP | POLLRDHUP)) {
+				err("Hangup on socket occured");
+				return;
+			} else if (pfd->revents & POLLERR) {
+				/* recv is more specififc on the error */
+				errno = 0;
+				if (recv(sock, &foo, sizeof(foo), MSG_PEEK) != -1)
+					goto __out_grab_frame;	/* Hmm... no error */
+				if (errno == ENETDOWN) {
+					err("Interface went down");
+				} else {
+					err("Receive error");
+				}
+				return;
+			} else if (pfd->revents & POLLNVAL) {
+				err("Invalid polling request on socket");
+				return;
+			}
+		}
+
+ __out_grab_frame:
+		/* Look-ahead if current frame is status kernel, otherwise we have
+		   have incoming frames and poll spins / hangs all the time :( */
+		for (; ((struct tpacket_hdr *)rb->frames[i].iov_base)->tp_status
+		     != TP_STATUS_USER; i = (i + 1) % rb->layout.tp_frame_nr)
+			/* NOP */ ;
+		/* Why this should be okay:
+		   1) Current frame[i] is TP_STATUS_USER:
+		   This is our original case that occurs without 
+		   the for loop.
+		   2) Current frame[i] is not TP_STATUS_USER:
+		   poll returns correctly with return value 1 (number of 
+		   file descriptors), so an event has occured which has 
+		   to be POLLIN since all error conditions have been 
+		   caught previously. Furthermore, during ring traversal 
+		   a frame that has been set to TP_STATUS_USER will be 
+		   given back to kernel on finish with TP_STATUS_KERNEL.
+		   So, if we look ahead all skipped frames are not ready 
+		   for user access. Since the kernel decides to put 
+		   frames, which are 'behind' our pointer, into 
+		   TP_STATUS_USER we do one loop and return at the 
+		   correct position after passing the for loop again. If 
+		   we grab frame which are 'in front of' our pointer 
+		   we'll fetch them within the first for loop. 
+		 */
 	}
 }

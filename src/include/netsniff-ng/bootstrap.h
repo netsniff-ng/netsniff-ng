@@ -33,35 +33,18 @@
 
 /*
  * Contains: 
- *    External structures for a unix domain socket client
+ *    Routines for starting / stopping the beast ;)
  */
 
-#ifndef _NETSNIFF_NG_H_
-#define _NETSNIFF_NG_H_
+#ifndef _NET_BOOTSTRAP_H_
+#define _NET_BOOTSTRAP_H_
 
-#include <stdint.h>
-#include <time.h>
+#include <sys/poll.h>
 
-#include <sys/time.h>
+#include <netsniff-ng/types.h>
+#include <netsniff-ng/config.h>
 
-/**
- * Some external data structures (wich are used for
- * data transmission via a unix domain socket inode)
- */
+extern int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd);
+extern void cleanup_system(system_data_t * sd, int *sock, ring_buff_t ** rb);
 
-struct fb_count {
-	uint64_t frames;
-	uint64_t bytes;
-};
-
-typedef struct ring_buff_private_stat {
-	struct fb_count total;
-	struct fb_count per_sec;
-	struct fb_count per_min;
-	struct fb_count s_per_sec;
-	struct fb_count s_per_min;
-	uint16_t t_elapsed;
-	struct timespec m_start;
-} ring_buff_stat_t;
-
-#endif				/* _NETSNIFF_NG_H_ */
+#endif				/* _NET_BOOTSTRAP_H_ */

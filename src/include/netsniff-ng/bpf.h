@@ -30,6 +30,7 @@
  * Note: Your kernel has to be compiled with CONFIG_PACKET_MMAP=y option in 
  *       order to use this.
  */
+
 /*
  * Contains: 
  *    BPF related routines

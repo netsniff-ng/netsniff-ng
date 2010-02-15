@@ -31,41 +31,17 @@
  *       order to use this.
  */
 
-#define _GNU_SOURCE
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
 #include <signal.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <assert.h>
-#include <ctype.h>
-#include <pthread.h>
-#include <getopt.h>
-#include <netsniff-ng.h>
 
-#include <net/if.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
-#include <sys/ioctl.h>
-#include <sys/un.h>
-#include <sys/types.h>
-#include <sys/poll.h>
-
+#include <netsniff-ng/types.h>
 #include <netsniff-ng/misc.h>
-#include <netsniff-ng/system.h>
 #include <netsniff-ng/rx_ring.h>
-#include <netsniff-ng/signal.h>
 #include <netsniff-ng/macros.h>
-#include <netsniff-ng/dump.h>
-#include <netsniff-ng/netdev.h>
-#include <netsniff-ng/bpf.h>
 #include <netsniff-ng/config.h>
+#include <netsniff-ng/bootstrap.h>
 
 /*
  * Global vars
@@ -191,326 +167,6 @@ void softirq_handler(int number)
 }
 
 /**
- * fetch_packets_and_print - Traverses RX_RING and prints content
- * @rb:                     ring buffer
- * @pfd:                    file descriptor for polling
- */
-void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, system_data_t * sd, int sock)
-{
-	int ret, foo, i = 0;
-
-	assert(rb);
-	assert(pfd);
-	assert(sd);
-
-	if (sd->dump_pcap_fd != -1) {
-		sf_write_header(sd->dump_pcap_fd, LINKTYPE_EN10MB, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
-	}
-
-	/* This is our critical path ... */
-	while (likely(!sigint)) {
-		while (mem_notify_user_for_rx(rb->frames[i]) && likely(!sigint)) {
-			struct frame_map *fm = rb->frames[i].iov_base;
-			ring_buff_bytes_t *rbb =
-			    (ring_buff_bytes_t *) (rb->frames[i].iov_base + sizeof(*fm) + sizeof(short));
-
-			/* Check if the user wants to have a specific 
-			   packet type */
-			if (sd->packet_type != PACKET_DONT_CARE) {
-				if (fm->s_ll.sll_pkttype != sd->packet_type) {
-					goto __out_notify_kernel;
-				}
-			}
-
-			if (sd->dump_pcap_fd != -1) {
-				pcap_dump(sd->dump_pcap_fd, &fm->tp_h, (struct ethhdr *)rbb);
-			}
-
-			if (sd->print_pkt) {
-				/* This path here slows us down ... well, but
-				   the user wants to see what's going on */
-				sd->print_pkt(rbb, &fm->tp_h);
-			}
-
-			/* Pending singals will be delivered after netstat 
-			   manipulation */
-			hold_softirq(2, SIGUSR1, SIGALRM);
-			pthread_mutex_lock(&gs_loc_mutex);
-
-			netstat.per_sec.frames++;
-			netstat.per_sec.bytes += fm->tp_h.tp_len;
-
-			netstat.total.frames++;
-			netstat.total.bytes += fm->tp_h.tp_len;
-
-			pthread_mutex_unlock(&gs_loc_mutex);
-			restore_softirq(2, SIGUSR1, SIGALRM);
-
-			/* Next frame */
-			i = (i + 1) % rb->layout.tp_frame_nr;
-
- __out_notify_kernel:
-			/* This is very important, otherwise kernel starts
-			   to drop packages */
-			mem_notify_kernel_for_rx(&(fm->tp_h));
-		}
-
-		while ((ret = poll(pfd, 1, sd->blocking_mode)) <= 0) {
-			if (sigint) {
-				return;
-			}
-		}
-
-		if (ret > 0 && (pfd->revents & (POLLHUP | POLLRDHUP | POLLERR | POLLNVAL))) {
-			if (pfd->revents & (POLLHUP | POLLRDHUP)) {
-				err("Hangup on socket occured");
-				return;
-			} else if (pfd->revents & POLLERR) {
-				/* recv is more specififc on the error */
-				errno = 0;
-				if (recv(sock, &foo, sizeof(foo), MSG_PEEK) != -1)
-					goto __out_grab_frame;	/* Hmm... no error */
-				if (errno == ENETDOWN) {
-					err("Interface went down");
-				} else {
-					err("Receive error");
-				}
-				return;
-			} else if (pfd->revents & POLLNVAL) {
-				err("Invalid polling request on socket");
-				return;
-			}
-		}
-
- __out_grab_frame:
-		/* Look-ahead if current frame is status kernel, otherwise we have
-		   have incoming frames and poll spins / hangs all the time :( */
-		for (; ((struct tpacket_hdr *)rb->frames[i].iov_base)->tp_status
-		     != TP_STATUS_USER; i = (i + 1) % rb->layout.tp_frame_nr)
-			/* NOP */ ;
-		/* Why this should be okay:
-		   1) Current frame[i] is TP_STATUS_USER:
-		   This is our original case that occurs without 
-		   the for loop.
-		   2) Current frame[i] is not TP_STATUS_USER:
-		   poll returns correctly with return value 1 (number of 
-		   file descriptors), so an event has occured which has 
-		   to be POLLIN since all error conditions have been 
-		   caught previously. Furthermore, during ring traversal 
-		   a frame that has been set to TP_STATUS_USER will be 
-		   given back to kernel on finish with TP_STATUS_KERNEL.
-		   So, if we look ahead all skipped frames are not ready 
-		   for user access. Since the kernel decides to put 
-		   frames, which are 'behind' our pointer, into 
-		   TP_STATUS_USER we do one loop and return at the 
-		   correct position after passing the for loop again. If 
-		   we grab frame which are 'in front of' our pointer 
-		   we'll fetch them within the first for loop. 
-		 */
-	}
-}
-
-/**
- * init_system - Initializes netsniff-ng main
- * @sd:         system configuration data
- * @sock:       socket
- * @rb:         ring buffer
- * @pfd:        file descriptor for polling
- */
-static int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
-{
-	int stmp, i, ret, bpf_len = 0;
-	char dev_buff[1024];
-
-	struct sock_filter *bpf = NULL;
-	struct ifconf ifc;
-	struct ifreq *ifr = NULL;
-	struct ifreq *ifr_elem = NULL;
-	struct itimerval val_r;
-
-	assert(sd);
-	assert(sock);
-	assert(rb);
-	assert(pfd);
-
-	/* We are only allowed to do these nasty things as root ;) */
-	check_for_root();
-
-	/* Scheduler timeslice & prio tuning */
-	if (!sd->no_prioritization) {
-		set_proc_prio(DEFAULT_PROCESS_PRIO);
-		set_sched_status(DEFAULT_SCHED_POLICY, DEFAULT_SCHED_PRIO);
-	}
-
-	register_softirq(SIGINT, &softirq_handler);
-	register_softirq(SIGALRM, &softirq_handler);
-	register_softirq(SIGUSR1, &softirq_handler);
-	register_softirq(SIGUSR2, &softirq_handler);
-	register_softirq(SIGHUP, &softirq_handler);
-
-	if (sd->sysdaemon) {
-		ret = daemonize(sd->pidfile);
-		if (ret != 0) {
-			warn("Daemonize failed!\n");
-			exit(EXIT_FAILURE);
-		}
-	}
-
-	/* Print program header */
-	header();
-
-	(*rb) = (ring_buff_t *) malloc(sizeof(**rb));
-	if ((*rb) == NULL) {
-		err("Cannot allocate ring buffer");
-		exit(EXIT_FAILURE);
-	}
-
-	memset((*rb), 0, sizeof(**rb));
-
-	/* User didn't specify a device, so we switch to the default running 
-	   dev. This is the first running dev found (except lo). If we find 
-	   nothing, we switch to lo. */
-	if (!sd->dev) {
-		sd->dev = strdup("lo");
-		if (!sd->dev) {
-			err("Cannot allocate mem");
-			exit(EXIT_FAILURE);
-		}
-
-		stmp = socket(AF_INET, SOCK_DGRAM, 0);
-		if (stmp < 0) {
-			err("Fetching socket");
-			exit(EXIT_FAILURE);
-		}
-
-		ifc.ifc_len = sizeof(dev_buff);
-		ifc.ifc_buf = dev_buff;
-
-		if (ioctl(stmp, SIOCGIFCONF, &ifc) < 0) {
-			err("Doing ioctl(SIOCGIFCONF)");
-			exit(EXIT_FAILURE);
-		}
-
-		ifr = ifc.ifc_req;
-
-		for (i = 0; i < ifc.ifc_len / sizeof(struct ifreq); ++i) {
-			ifr_elem = &ifr[i];
-
-			if (ioctl(stmp, SIOCGIFFLAGS, ifr_elem) < 0) {
-				err("Doing ioctl(SIOCGIFFLAGS)");
-				exit(EXIT_FAILURE);
-			}
-
-			if ((ifr_elem->ifr_flags & IFF_UP) &&
-			    (ifr_elem->ifr_flags & IFF_RUNNING) && strncmp(ifr_elem->ifr_name, "lo", IFNAMSIZ)) {
-				sd->dev = strdup(ifr_elem->ifr_name);
-				if (!sd->dev) {
-					err("Cannot allocate mem");
-					exit(EXIT_FAILURE);
-				}
-				break;
-			}
-		}
-
-		close(stmp);
-
-		info("No device specified, using `%s`.\n\n", sd->dev);
-	}
-
-	put_dev_into_promisc_mode(sd->dev);
-
-	(*sock) = get_pf_socket();
-	if (sd->bypass_bpf == BPF_NO_BYPASS) {
-		/* XXX: If you try to create custom filters with tcpdump, you 
-		   have to edit the ret opcode, otherwise your payload 
-		   will be cut off at 96 Byte:
-
-		   { 0x6, 0, 0, 0xFFFFFFFF },
-
-		   The kernel now takes skb->len instead of 0xFFFFFFFF ;)
-		 */
-
-		/* Berkeley Packet Filter stuff */
-		if (parse_rules(sd->rulefile, &bpf, &bpf_len) == 0) {
-			info("BPF is not valid\n");
-			exit(EXIT_FAILURE);
-		}
-
-		inject_kernel_bpf((*sock), bpf, bpf_len * sizeof(*bpf));
-
-		/* Print info for the user */
-		bpf_dump_all(bpf, bpf_len);
-	} else {
-		info("No filter applied. Sniffing all traffic.\n\n");
-	}
-
-	/* RX_RING stuff */
-	create_virt_rx_ring((*sock), (*rb), sd->dev);
-	bind_dev_to_rx_ring((*sock), ethdev_to_ifindex(sd->dev), (*rb));
-	mmap_virt_rx_ring((*sock), (*rb));
-
-	alloc_frame_buffer((*rb));
-	prepare_polling((*sock), pfd);
-
-	memset(&netstat, 0, sizeof(netstat));
-
-	/* Timer settings for counter update */
-	val_r.it_value.tv_sec = (INTERVAL_COUNTER_REFR / 1000);
-	val_r.it_value.tv_usec = (INTERVAL_COUNTER_REFR * 1000) % 1000000;
-	val_r.it_interval = val_r.it_value;
-
-	ret = setitimer(ITIMER_REAL, &val_r, NULL);
-	if (ret < 0) {
-		err("Cannot set itimer");
-		exit(EXIT_FAILURE);
-	}
-
-	clock_gettime(CLOCK_REALTIME, &netstat.m_start);
-
-	info("--- Listening ---\n\n");
-
-	free(bpf);
-	return 0;
-}
-
-/**
- * cleanup_system - Cleans up netsniff-ng main
- * @sd:            system configuration data
- * @sock:          socket
- * @rb:            ring buffer
- */
-static void cleanup_system(system_data_t * sd, int *sock, ring_buff_t ** rb)
-{
-	assert(sd);
-	assert(sock);
-	assert(rb);
-	assert(*rb);
-
-	net_stat((*sock));
-	destroy_virt_rx_ring((*sock), (*rb));
-
-	free((*rb));
-	close((*sock));
-
-	/*
-	 * FIXME Find a way to print a uint64_t
-	 * on 32 and 64 bit arch w/o gcc warnings
-	 */
-
-	info("captured frames: %llu, "
-	     "captured bytes: %llu [%llu KiB, %llu MiB, %llu GiB]\n",
-	     netstat.total.frames, netstat.total.bytes,
-	     netstat.total.bytes / 1024,
-	     netstat.total.bytes / (1024 * 1024), netstat.total.bytes / (1024 * 1024 * 1024));
-
-	free(sd->dev);
-
-	if (sd->sysdaemon) {
-		undaemonize(sd->pidfile);
-	}
-}
-
-/**
  * main  - Main routine
  * @argc: number of args
  * @argv: arguments passed from tty
@@ -519,30 +175,26 @@ int main(int argc, char **argv)
 {
 	int sock;
 
-	system_data_t *sd;
+	system_data_t sd;
 	ring_buff_t *rb;
+
 	struct pollfd pfd = { 0 };
 
-	sd = malloc(sizeof(*sd));
-	if (!sd) {
-		err("No mem left!");
-		exit(EXIT_FAILURE);
-	}
+	/*
+	 * Config stuff
+	 */
 
-	init_configuration(sd);
-	set_configuration(argc, argv, sd);
-	check_config(sd);
-
-	memset(&pfd, 0, sizeof(pfd));
+	init_configuration(&sd);
+	set_configuration(argc, argv, &sd);
+	check_config(&sd);
 
 	/*
 	 * Main stuff
 	 */
 
-	init_system(sd, &sock, &rb, &pfd);
-	fetch_packets(rb, &pfd, sd, sock);
-	cleanup_system(sd, &sock, &rb);
-	clean_config(sd);
-	free(sd);
+	init_system(&sd, &sock, &rb, &pfd);
+	fetch_packets(rb, &pfd, &sd, sock);
+	cleanup_system(&sd, &sock, &rb);
+
 	return 0;
 }

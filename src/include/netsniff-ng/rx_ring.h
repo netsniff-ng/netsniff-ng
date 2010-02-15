@@ -45,6 +45,7 @@
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/types.h>
 #include <netsniff-ng/rxtx_common.h>
+#include <netsniff-ng/config.h>
 
 /* Function signatures */
 
@@ -52,6 +53,7 @@ extern void destroy_virt_rx_ring(int sock, ring_buff_t * rb);
 extern void create_virt_rx_ring(int sock, ring_buff_t * rb, char *ifname);
 extern void mmap_virt_rx_ring(int sock, ring_buff_t * rb);
 extern void bind_dev_to_rx_ring(int sock, int ifindex, ring_buff_t * rb);
+extern void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, system_data_t * sd, int sock);
 
 /* Inline stuff */
 
