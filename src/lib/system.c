@@ -327,16 +327,8 @@ void *start_server(void *arg)
  */
 int undaemonize(const char *pidfile)
 {
-	int ret;
-
 	assert(pidfile);
-
-	ret = unlink(pidfile);
-	if (ret < 0) {
-		err("Cannot unlink pidfile");
-		return (ret);
-	}
-
+	unlink(pidfile);
 	return (0);
 }
 
