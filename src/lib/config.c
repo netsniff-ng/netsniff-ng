@@ -1,11 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <unistd.h>
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
 #include <getopt.h>
 #include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include <netsniff-ng/system.h>
 #include <netsniff-ng/dump.h>
@@ -46,6 +50,7 @@ void init_configuration(system_data_t * config)
 	config->packet_type = PACKET_DONT_CARE;
 	config->dev = strdup(DEFAULT_INTERFACE);
 	config->print_pkt = versatile_print;
+	config->dump_pcap_fd = -1;
 }
 
 void set_configuration(int argc, char **argv, system_data_t * sd)
@@ -147,12 +152,13 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 			}
 		case 'p':
 			{
-				if ((sd->dump_pcap = fopen(optarg, "w+")) == NULL) {
+				sd->dump_pcap_fd = creat(optarg, DEFFILEMODE);
+
+				if (sd->dump_pcap_fd == -1) {
 					err("Can't open file");
 					exit(EXIT_FAILURE);
 				}
 
-				sf_write_header(sd->dump_pcap, LINKTYPE_EN10MB, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
 				break;
 			}
 		case '?':
@@ -192,7 +198,7 @@ void check_config(system_data_t * sd)
 {
 	assert(sd);
 
-	if (sd->sysdaemon && (!sd->pidfile || !sd->dump_pcap)) {
+	if (sd->sysdaemon && (!sd->pidfile || sd->dump_pcap_fd == -1)) {
 		help();
 		exit(EXIT_FAILURE);
 	}
@@ -211,5 +217,5 @@ void clean_config(system_data_t * sd)
 	if (sd->dev)
 		free(sd->dev);
 
-	fclose(sd->dump_pcap);
+	close(sd->dump_pcap_fd);
 }

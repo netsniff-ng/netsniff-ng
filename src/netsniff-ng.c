@@ -203,6 +203,10 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, system_data_t * sd, int
 	assert(pfd);
 	assert(sd);
 
+	if (sd->dump_pcap_fd != -1) {
+		sf_write_header(sd->dump_pcap_fd, LINKTYPE_EN10MB, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
+	}
+
 	/* This is our critical path ... */
 	while (likely(!sigint)) {
 		while (mem_notify_user_for_rx(rb->frames[i]) && likely(!sigint)) {
@@ -218,8 +222,8 @@ void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, system_data_t * sd, int
 				}
 			}
 
-			if (sd->dump_pcap != NULL) {
-				pcap_dump(sd->dump_pcap, &fm->tp_h, (struct ethhdr *)rbb);
+			if (sd->dump_pcap_fd != -1) {
+				pcap_dump(sd->dump_pcap_fd, &fm->tp_h, (struct ethhdr *)rbb);
 			}
 
 			if (sd->print_pkt) {
@@ -513,7 +517,6 @@ static void cleanup_system(system_data_t * sd, int *sock, ring_buff_t ** rb)
  */
 int main(int argc, char **argv)
 {
-	FILE *dump_pcap = NULL;
 	int sock;
 
 	system_data_t *sd;
@@ -539,11 +542,7 @@ int main(int argc, char **argv)
 	init_system(sd, &sock, &rb, &pfd);
 	fetch_packets(rb, &pfd, sd, sock);
 	cleanup_system(sd, &sock, &rb);
-
-	if (dump_pcap != NULL) {
-		fclose(dump_pcap);
-	}
-
+	clean_config(sd);
 	free(sd);
 	return 0;
 }

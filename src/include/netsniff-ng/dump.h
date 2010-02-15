@@ -104,7 +104,7 @@ struct pcap_sf_pkthdr {
 	uint32_t len;		/* length this packet (off wire) */
 };
 
-extern int sf_write_header(FILE * fp, int linktype, int thiszone, int snaplen);
-extern void pcap_dump(FILE * f, struct tpacket_hdr *tp_h, const struct ethhdr const *sp);
+extern int sf_write_header(int fd, int linktype, int thiszone, int snaplen);
+extern void pcap_dump(int fd, struct tpacket_hdr *tp_h, const struct ethhdr const *sp);
 
 #endif				/* _PCAP_H */

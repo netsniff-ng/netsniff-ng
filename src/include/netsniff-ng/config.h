@@ -33,11 +33,12 @@ typedef struct system_data {
 	char *rulefile;
 	/* Ethernet device */
 	char *dev;
-	FILE *dump_pcap;
+	int dump_pcap_fd;
 	void (*print_pkt) (ring_buff_bytes_t *, const struct tpacket_hdr *);
 } system_data_t;
 
 extern void init_configuration(system_data_t * config);
 extern void set_configuration(int argc, char **argv, system_data_t * sd);
 extern void check_config(system_data_t * sd);
+extern void clean_config(system_data_t * sd);
 #endif				/* __NET_CONFIG_H__ */

@@ -34,6 +34,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <assert.h>
 #include <errno.h>
 
 #include <linux/if_packet.h>
@@ -42,9 +44,11 @@
 #include <netsniff-ng/dump.h>
 #include <netsniff-ng/macros.h>
 
-int sf_write_header(FILE * fp, int linktype, int thiszone, int snaplen)
+int sf_write_header(int fd, int linktype, int thiszone, int snaplen)
 {
-	struct pcap_file_header hdr;
+	struct pcap_file_header hdr = { 0 };
+
+	assert(fd != -1);
 
 	hdr.magic = TCPDUMP_MAGIC;
 	hdr.version_major = PCAP_VERSION_MAJOR;
@@ -55,13 +59,15 @@ int sf_write_header(FILE * fp, int linktype, int thiszone, int snaplen)
 	hdr.sigfigs = 0;
 	hdr.linktype = linktype;
 
-	if (fwrite((char *)&hdr, sizeof(hdr), 1, fp) != 1)
+	if (write(fd, (char *)&hdr, sizeof(hdr)) != sizeof(hdr)) {
+		err("Failed to write pcap header");
 		return (-1);
+	}
 
 	return (0);
 }
 
-void pcap_dump(FILE * f, struct tpacket_hdr *tp_h, const struct ethhdr const *sp)
+void pcap_dump(int fd, struct tpacket_hdr *tp_h, const struct ethhdr const *sp)
 {
 	struct pcap_sf_pkthdr sf_hdr;
 
@@ -77,9 +83,9 @@ void pcap_dump(FILE * f, struct tpacket_hdr *tp_h, const struct ethhdr const *sp
 	 * or exit gracefully ?
 	 */
 
-	if (fwrite(&sf_hdr, sizeof(sf_hdr), 1, f) != 1 || fwrite(sp, sf_hdr.len, 1, f) != 1) {
+	if (write(fd, &sf_hdr, sizeof(sf_hdr)) != sizeof(sf_hdr) || write(fd, sp, sf_hdr.len) != sf_hdr.len) {
 		err("Cannot write pcap header");
-		fclose(f);
+		close(fd);
 		exit(EXIT_FAILURE);
 	}
 }
