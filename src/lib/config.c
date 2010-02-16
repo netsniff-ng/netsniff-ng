@@ -48,7 +48,6 @@ void init_configuration(system_data_t * config)
 	config->blocking_mode = POLL_WAIT_INF;
 	config->bypass_bpf = BPF_BYPASS;
 	config->packet_type = PACKET_DONT_CARE;
-	config->dev = strdup(DEFAULT_INTERFACE);
 	config->print_pkt = versatile_print;
 	config->dump_pcap_fd = -1;
 }
