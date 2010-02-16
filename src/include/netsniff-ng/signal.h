@@ -43,6 +43,10 @@
 #include <stdarg.h>
 #include <signal.h>
 
+#include <netsniff-ng/misc.h>
+
+extern volatile sig_atomic_t sigint;
+
 /* Function signatures */
 
 static inline void register_softirq(int sig, void (*softirq_handler) (int));
@@ -146,4 +150,86 @@ static inline void hold_softirq_pthread(int num_count, ...)
 }
 
 /* XXX is there a need for a restore_softirq_pthread ? */
+
+/*
+ * Signal handling
+ */
+
+ring_buff_stat_t netstat;
+pthread_mutex_t gs_loc_mutex;
+
+/**
+ * refresh_counters - Refreshes global packet counters
+ * TODO: this looks ugly
+ */
+static inline void refresh_counters(void)
+{
+	float curr_weight = 0.68f;
+
+	netstat.per_min.frames += netstat.per_sec.frames;
+	netstat.per_min.bytes += netstat.per_sec.bytes;
+
+	netstat.t_elapsed++;
+
+	if (unlikely(netstat.t_elapsed % 60 == 0)) {
+		netstat.s_per_min.frames =
+		    curr_weight * netstat.per_min.frames + (1.f - curr_weight) * netstat.s_per_min.frames;
+		netstat.s_per_min.bytes =
+		    curr_weight * netstat.per_min.bytes + (1.f - curr_weight) * netstat.s_per_min.bytes;
+
+		netstat.per_min.frames = netstat.per_min.bytes = 0;
+	}
+
+	netstat.s_per_sec.frames =
+	    curr_weight * netstat.per_sec.frames + (1.f - curr_weight) * netstat.s_per_sec.frames;
+	netstat.s_per_sec.bytes = curr_weight * netstat.per_sec.bytes + (1.f - curr_weight) * netstat.s_per_sec.bytes;
+
+	netstat.per_sec.frames = netstat.per_sec.bytes = 0;
+}
+
+/**
+ * print_counters - Prints global counters to terminal
+ * TODO: this looks ugly
+ */
+static inline void print_counters(void)
+{
+	struct timespec t_curr, diff;
+	uint64_t d_day, d_h, d_min, d_sec, d_nsec;
+
+	clock_gettime(CLOCK_REALTIME, &t_curr);
+	timespec_subtract(&diff, &t_curr, &netstat.m_start);
+
+	d_day = DIV_S2DAYS(diff.tv_sec);
+	diff.tv_sec = MOD_DAYS2S(diff.tv_sec);
+	d_h = DIV_S2HOURS(diff.tv_sec);
+	diff.tv_sec = MOD_HOURS2S(diff.tv_sec);
+	d_min = DIV_S2MINUT(diff.tv_sec);
+	diff.tv_sec = MOD_MINUT2S(diff.tv_sec);
+	d_sec = diff.tv_sec;
+	d_nsec = diff.tv_nsec;
+
+	/*
+	 * FIXME Find a way to print a uint64_t
+	 * on 32 and 64 bit arch w/o gcc warnings
+	 */
+	info("stats summary:\n");
+	info("--------------------------------------------------------------------------------------------\n");
+	info("elapsed time: %llu d, %llu h, %llu min, %llu s, %llu ns\n", d_day, d_h, d_min, d_sec, d_nsec);
+	info("-----------+--------------------------+--------------------------+--------------------------\n");
+	info("           |  per sec                 |  per min                 |  total                   \n");
+	info("-----------+--------------------------+--------------------------+--------------------------\n");
+	info("  frames   | %24llu | %24llu | %24llu \n",
+	     netstat.s_per_sec.frames, netstat.s_per_min.frames, netstat.total.frames);
+	info("-----------+--------------------------+--------------------------+--------------------------\n");
+	info("  in B     | %24llu | %24llu | %24llu \n",
+	     netstat.s_per_sec.bytes, netstat.s_per_min.bytes, netstat.total.bytes);
+	info("  in KB    | %24llu | %24llu | %24llu \n",
+	     DIV_KBYTES(netstat.s_per_sec.bytes), DIV_KBYTES(netstat.s_per_min.bytes), DIV_KBYTES(netstat.total.bytes));
+	info("  in MB    | %24llu | %24llu | %24llu \n",
+	     DIV_MBYTES(netstat.s_per_sec.bytes), DIV_MBYTES(netstat.s_per_min.bytes), DIV_MBYTES(netstat.total.bytes));
+	info("  in GB    | %24llu | %24llu | %24llu \n",
+	     DIV_GBYTES(netstat.s_per_sec.bytes), DIV_GBYTES(netstat.s_per_min.bytes), DIV_GBYTES(netstat.total.bytes));
+	info("-----------+--------------------------+--------------------------+--------------------------\n");
+}
+
 #endif				/* _NET_SIGNAL_H_ */

@@ -200,14 +200,7 @@ void bind_dev_to_rx_ring(int sock, int ifindex, ring_buff_t * rb)
 	}
 }
 
-/*
- * External vars from netsniff-ng.c
- */
-
-extern volatile sig_atomic_t sigint;
-
-extern ring_buff_stat_t netstat;
-extern pthread_mutex_t gs_loc_mutex;
+volatile sig_atomic_t sigint = 0;
 
 /**
  * fetch_packets_and_print - Traverses RX_RING and prints content

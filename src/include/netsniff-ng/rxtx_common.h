@@ -39,6 +39,7 @@
 #ifndef _NET_RXTX_COMMON_H_
 #define _NET_RXTX_COMMON_H_
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 

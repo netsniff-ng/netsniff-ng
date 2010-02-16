@@ -74,17 +74,30 @@
 #include <netsniff-ng/bpf.h>
 #include <netsniff-ng/bootstrap.h>
 
-/*
- * External vars from netsniff-ng.c
+/**
+ * softirq_handler - Signal handling multiplexer
+ * @number:         signal number
  */
-
-extern volatile sig_atomic_t sigint;
-extern volatile sig_atomic_t sigusr2;
-
-extern ring_buff_stat_t netstat;
-extern pthread_mutex_t gs_loc_mutex;
-
-extern void softirq_handler(int number);
+void softirq_handler(int number)
+{
+	switch (number) {
+	case SIGALRM:
+		refresh_counters();
+		break;
+	case SIGUSR1:
+		print_counters();
+		break;
+	case SIGINT:
+		sigint = 1;
+		info("caught SIGINT! ... bye bye\n");
+		break;
+	case SIGHUP:
+		info("caught SIGHUP! ... ignoring\n");
+		break;
+	default:
+		break;
+	}
+}
 
 /**
  * init_system - Initializes netsniff-ng main
