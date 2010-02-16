@@ -207,7 +207,7 @@ volatile sig_atomic_t sigint = 0;
  * @rb:                     ring buffer
  * @pfd:                    file descriptor for polling
  */
-void fetch_packets(ring_buff_t * rb, struct pollfd *pfd, system_data_t * sd, int sock)
+void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd *pfd)
 {
 	int ret, foo, i = 0;
 

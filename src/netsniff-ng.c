@@ -61,7 +61,7 @@ int main(int argc, char **argv)
 	 */
 
 	init_system(&sd, &sock, &rb, &pfd);
-	fetch_packets(rb, &pfd, &sd, sock);
+	fetch_packets(&sd, sock, rb, &pfd);
 	cleanup_system(&sd, &sock, &rb);
 
 	return 0;
