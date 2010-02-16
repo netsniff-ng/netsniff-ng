@@ -59,6 +59,7 @@ pthread_mutex_t gs_loc_mutex;
 
 /**
  * refresh_counters - Refreshes global packet counters
+ * TODO: this looks ugly
  */
 static inline void refresh_counters(void)
 {
@@ -87,15 +88,14 @@ static inline void refresh_counters(void)
 
 /**
  * print_counters - Prints global counters to terminal
+ * TODO: this looks ugly
  */
 static inline void print_counters(void)
 {
+	struct timespec t_curr, diff;
 	uint64_t d_day, d_h, d_min, d_sec, d_nsec;
 
-	struct timespec t_curr, diff;
-
 	clock_gettime(CLOCK_REALTIME, &t_curr);
-
 	timespec_subtract(&diff, &t_curr, &netstat.m_start);
 
 	d_day = DIV_S2DAYS(diff.tv_sec);
@@ -139,30 +139,20 @@ void softirq_handler(int number)
 {
 	switch (number) {
 	case SIGALRM:
-		{
-			refresh_counters();
-			break;
-		}
+		refresh_counters();
+		break;
 	case SIGUSR1:
-		{
-			print_counters();
-			break;
-		}
+		print_counters();
+		break;
 	case SIGINT:
-		{
-			sigint = 1;
-			info("caught SIGINT! ... bye bye\n");
-			break;
-		}
+		sigint = 1;
+		info("caught SIGINT! ... bye bye\n");
+		break;
 	case SIGHUP:
-		{
-			info("caught SIGHUP! ... ignoring\n");
-			break;
-		}
+		info("caught SIGHUP! ... ignoring\n");
+		break;
 	default:
-		{
-			break;
-		}
+		break;
 	}
 }
 
@@ -174,10 +164,8 @@ void softirq_handler(int number)
 int main(int argc, char **argv)
 {
 	int sock;
-
-	system_data_t sd;
 	ring_buff_t *rb;
-
+	system_data_t sd = { 0 };
 	struct pollfd pfd = { 0 };
 
 	/*
