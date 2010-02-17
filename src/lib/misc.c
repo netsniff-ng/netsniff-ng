@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+
 #include <sys/types.h>
 #include <sys/socket.h>
 
@@ -59,7 +60,6 @@ void help(void)
 	info("\n");
 	info("Options for net dev:\n");
 	info("  -d|--dev <arg>         use device <arg> for capturing packets, e.g. `eth0`\n");
-	info("  -m|--mtu <arg>         temporarily adjust MTU of NIC\n");
 	info("\n");
 	info("Options for packet dumping/replaying:\n");
 	info("  -p|--dump <arg>        dump all matching packets in a pcap file\n");
@@ -69,12 +69,12 @@ void help(void)
 	info("\n");
 	info("Options for packet filtering:\n");
 	info("  -f|--filter <arg>      use file <arg> as packet filter\n");
-	info("  -t|--type <arg>        only show packets of type (this is non-BPF -> slower)\n");
-	info("                           `host`      - to us\n");
+	info("  -t|--type <arg>        only show packets of type (slower non-BPF)\n");
+/*	info("                           `host`      - to us\n");
 	info("                           `broadcast` - to all\n");
 	info("                           `multicast` - to group\n");
 	info("                           `others`    - to others\n");
-	info("                           `outgoing`  - from us\n");
+	info("                           `outgoing`  - from us\n");  */
 	info("  -g|--generate <arg>    generate packet filter code according to <arg>\n");
 	info("\n");
 	info("Options for system scheduler/process:\n");
@@ -84,13 +84,12 @@ void help(void)
 	info("  -n|--non-block         non-blocking packet capturing mode\n");
 	info("\n");
 	info("Options for packet printing:\n");
-	info("  -N|--no-color          do not colorize captured packet output\n");
 	info("  -s|--silent            do not print captured packets (silent mode)\n");
 	info("\n");
 	info("Options for system daemon:\n");
 	info("  -D|--daemonize         run as sys daemon\n");
 	info("  -P|--pidfile <arg>     use file <arg> as pidfile (required if -D)\n");
-	info("  -p|--dump <arg>   	 dump all matching packets in a pcap file (required if -D)\n");
+	info("  -p|--dump <arg>        dump all matching packets in a pcap file (required if -D)\n");
 	info("\n");
 	info("Options, misc:\n");
 	info("  -v|--version           prints out version\n");
@@ -98,7 +97,6 @@ void help(void)
 	info("\n");
 	info("Note:\n");
 	info("  - Sending a SIGUSR1 will show current packet statistics\n");
-	info("  - Sending a SIGUSR2 will toggle silent and packet printing mode\n");
 	info("  - For more help type \'man netsniff-ng\'\n");
 	info("\n");
 	info("Please report bugs to <danborkmann@googlemail.com>\n");

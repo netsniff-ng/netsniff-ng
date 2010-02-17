@@ -9,6 +9,7 @@ CFLAGS           = -Wall -O2
 
 OBJECTS         := bpf.o misc.o print.o config.o rx_ring.o system.o
 OBJECTS         += dump.o hash.o netdev.o tx_ring.o bootstrap.o
+OBJECTS         += replay.o
 
 all: lib
 
