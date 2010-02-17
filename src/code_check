@@ -2,7 +2,8 @@
 
 #
 # netsniff-ng Project
-# Code analysis script ... this is just within devel!
+# Code analysis script... quite a hack, so you better 
+# grab some coffee! ;)
 #
 
 #
@@ -21,11 +22,14 @@ use File::Find;
 use File::Basename;
 use GCC::TranslationUnit;
 
-my @tu_files;
-my @error_list;
+my @src_files;
+my @err_list;
+my @err_sym_list;
+
+my %tu_files;
 my @func_stack;
 
-# This config defines how the code should look like:
+# v-- This config defines how the code should look like:
 my %config = (
 	max_global_vars                => 3,
 	max_func_args                  => 4,
@@ -33,30 +37,156 @@ my %config = (
 	max_file_lines                 => 700,
 );
 
-sub invoke_make_build_targets
+# v-- Generic functions
+sub push_error
 {
-	`make ARGS=\"-fdump-translation-unit\" 2>&1 > /dev/zero`
+	my ($error, $condition) = @_;
+	push(@err_list, $error) if($condition);
 }
 
-sub invoke_make_clean_targets
+sub print_error_list
 {
-	`make clean 2>&1 > /dev/zero`
+	my ($file, $fs) = ($_[0], substr($_[0], 0, length($_[0]) - 2));
+
+	goto __skipped if($file !~ /\.c$/);
+	foreach (@err_sym_list) {
+		my @l = @{$_};
+		if($l[0] =~ /$fs\.o$/) {
+			push(@err_list, $l[1]);
+		}
+	}
+
+__skipped:
+	return if(scalar(@err_list) == 0);
+
+	print "File $file:\n";
+	foreach(@err_list) {
+		print "  * $_\n";
+	}
+}
+
+sub grep_source_files
+{
+	find sub {
+		$_ = $File::Find::name;
+		push(@src_files, $_) if(/\.(c|h)$/);
+	}, getcwd;
+}
+
+# v-- Make related stuff
+sub invoke_make_build_normal { `make 2>&1 > /dev/zero`; }
+sub invoke_make_build_tu     { `make ARGS=\"-fdump-translation-unit\" 2>&1 > /dev/zero`; }
+sub invoke_make_clean        { `make clean 2>&1 > /dev/zero`; }
+
+# v-- Object file related stuff
+sub check_unused_symbols
+{
+	my ($obj, $type, $name);
+	my @obj_list;
+	my %symbols;
+
+	invoke_make_build_normal();
+	foreach(@src_files) {
+		next if /\.h$/;
+		$obj = $_; $obj =~ s/(.*)\.c$/$1\.o/;
+		push(@obj_list, $obj) if -e $obj;
+	}
+
+	open(SRC, "nm @obj_list |") or die "Cannot read pipe from nm: $!\n";
+	while(<SRC>) {
+		if(/(.*):$/) {
+			$obj = $1; next;
+		}
+		next if(length($_) < 12);
+		$type = substr($_, 9, 1);
+		$name = substr($_, 11);
+		chomp($name);
+		if($type =~ /U/) {
+			$symbols{$name}->{ud} = $obj;
+		} elsif($type !~ /[a-z]/) {
+			$symbols{$name}->{d} = $obj;
+		}
+	}
+	close(SRC);
+
+	foreach(sort keys %symbols) {
+		if(not defined($symbols{$_}->{ud})) {
+			push(@err_sym_list, [$symbols{$_}->{d}, "Symbol \'$_\' either ".
+			     "only locally used or never: Make it static or remove it!"]);
+		}
+	}
+}
+
+# v-- GCC TU related stuff
+sub parse_translation_unit
+{
+	my $unit = shift;
+	my ($file, $file_short);
+	my $global_vars = 0;
+	my $node = GCC::TranslationUnit::Parser->parsefile($unit)->root;
+
+	$unit =~ m/(.*\.c)\..*\.tu$/;
+	$file = $1;
+	$file_short = basename($file);
+	@err_list = ();
+
+	while($node) {
+		if($node->isa('GCC::Node::function_decl')) {
+			if($node->{'source'} =~ m/$file_short/) {
+				check_function($node);
+			}
+		}
+		if($node->isa('GCC::Node::var_decl')) {
+			if($node->{'source'} =~ m/$file_short/) {
+				$global_vars++;
+			}
+		}
+	} continue {
+		$node = $node->chain;
+	}
+
+	push_error("File has too many global variables.", $config{max_global_vars} < $global_vars);
+	return ($file, $file_short);
 }
 
 sub grep_translation_unit_files
 {
 	find sub {
-		$_ = $File::Find::name;
-		push(@tu_files, $_) if(/\.tu$/);
+		my $_ = $File::Find::name;
+		if(m/^(.*)\.c.*\.tu$/) {
+			$tu_files{$_} = $1;
+		}
 	}, getcwd;
 }
 
-sub check_copyright 
+sub check_function 
 {
-	return ($_[0] =~ m/copyright/i);
+	my $node = shift;
+	my ($name, @args);
+
+	$name = $node->{'name'}->{'string'};
+	@args = grep_function_args($node->{'type'}->{'prms'}, $name);
+	push(@func_stack, $name);
+
+	#push_error("Function $name has too many parameters.", $config{max_func_args} < scalar(@args));
+	push_error("Function $name has too many parameters.", 1);
 }
 
+sub grep_function_args
+{
+	my ($prms, $name) = @_;
+	my @args;
 
+	while($prms && $prms->chain) {
+		push(@args, $prms->{'name'}->{'string'});
+		$prms = $prms->chain;
+	}
+
+	return @args;
+}
+
+# v-- Checking related routines
+sub check_copyright { return ($_[0] =~ m/copyright/i); }
 
 sub check_file_generic
 {
@@ -102,93 +232,32 @@ sub check_file_generic
 	}
 }
 
-sub check_function 
-{
-	my $node = shift;
-	my ($name, @args);
-
-	$name = $node->{'name'}->{'string'};
-	@args = grep_function_args($node->{'type'}->{'prms'}, $name);
-	push(@func_stack, $name);
-
-	push_error("Function $name has too many parameters.", $config{max_func_args} < scalar(@args));
-}
-
-sub grep_function_args
-{
-	my ($prms, $name) = @_;
-	my @args;
-
-	while($prms && $prms->chain) {
-		push(@args, $prms->{'name'}->{'string'});
-		$prms = $prms->chain;
-	}
-
-	return @args;
-}
-
-sub push_error
-{
-	my ($error, $condition) = @_;
-	push(@error_list, $error) if($condition);
-}
-
-sub print_error_list
-{
-	my $file = shift;
-	return if(scalar(@error_list) == 0);
-	
-	print "File $file:\n";
-	foreach(@error_list) {
-		print "  * $_\n";
-	}
-}
-
-sub parse_translation_unit
-{
-	my $unit = shift;
-	my ($file, $file_short);
-	my $node = GCC::TranslationUnit::Parser->parsefile($unit)->root;
-	my $global_vars = 0;
-
-	$unit =~ m/(.*\.c)\..*\.tu$/;
-	$file = $1;
-	$file_short = basename($file);
-	@error_list = ();
-
-	while($node) {
-		if($node->isa('GCC::Node::function_decl')) {
-			if($node->{'source'} =~ m/$file_short/) {
-				check_function($node);
-			}
-		}
-		if($node->isa('GCC::Node::var_decl')) {
-			if($node->{'source'} =~ m/$file_short/) {
-				$global_vars++;
-			}
-		}
-	} continue {
-		$node = $node->chain;
-	}
-
-	push_error("File has too many global variables.", $config{max_global_vars} < $global_vars);
-	return ($file, $file_short);
-}
-
+# v-- Main routine
 sub main
 {
-	my ($file, $file_short);
-	invoke_make_build_targets();
+	my $conflicts = 0;
+
+	grep_source_files();
+
+	# Special or global checks ...
+	check_unused_symbols();
+
+	invoke_make_build_tu();
 	grep_translation_unit_files();
-	foreach(@tu_files) {
-		# Do checks
-		($file, $file_short) = parse_translation_unit($_);
-		check_file_generic($file);
-		
-		# We're done, go print the crap!
-		print_error_list($file_short);
+
+	foreach(@src_files) {
+		parse_translation_unit($tu_files{$_}) if defined($tu_files{$_});
+
+		# Special or global checks ...
+		check_file_generic($_);
+
+		print_error_list(basename($_));
+		$conflicts += scalar(@err_list);
+		@err_list = ();
 	}
-	invoke_make_clean_targets();
+
+	invoke_make_clean();
+	print "Done with $conflicts conflicts.\n";
 }
 
 main();

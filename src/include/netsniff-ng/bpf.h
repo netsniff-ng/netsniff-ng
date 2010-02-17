@@ -42,7 +42,6 @@
 #include <linux/filter.h>
 #include <linux/if_packet.h>
 
-extern char *bpf_dump(const struct sock_filter bpf, int n);
 extern void bpf_dump_all(struct sock_filter *bpf, int len);
 extern int bpf_validate(const struct sock_filter *bpf, int len);
 

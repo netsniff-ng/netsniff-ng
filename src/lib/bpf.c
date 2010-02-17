@@ -123,7 +123,7 @@
  *            with the above copyright.
  * @bpf:     bpf program
  */
-char *bpf_dump(const struct sock_filter bpf, int n)
+static char *bpf_dump(const struct sock_filter bpf, int n)
 {
 	int v;
 	const char *fmt, *op;
