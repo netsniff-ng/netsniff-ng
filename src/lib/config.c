@@ -76,7 +76,7 @@ static struct option long_options[] = {
 	{0, 0, 0, 0}
 };
 
-void init_configuration(system_data_t *sd)
+void init_configuration(system_data_t * sd)
 {
 	assert(sd);
 	memset(sd, 0, sizeof(*sd));
@@ -88,7 +88,7 @@ void init_configuration(system_data_t *sd)
 	sd->dump_pcap_fd = -1;
 }
 
-void set_configuration(int argc, char **argv, system_data_t *sd)
+void set_configuration(int argc, char **argv, system_data_t * sd)
 {
 	int c, sl;
 	int opt_idx;
