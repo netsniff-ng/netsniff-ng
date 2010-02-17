@@ -56,9 +56,6 @@ struct in6_ifreq {
 /* Function signatures */
 
 extern int get_device_bitrate_generic(const char *ifname);
-extern int get_wireless_bitrate(const char *ifname);
-extern int get_ethtool_bitrate(const char *ifname);
-extern int get_mtu(const char *dev);
 extern short get_nic_flags(const char *dev);
 extern void print_device_info(void);
 extern void put_dev_into_promisc_mode(const char *dev);

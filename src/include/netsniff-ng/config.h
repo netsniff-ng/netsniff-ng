@@ -78,4 +78,6 @@ typedef struct system_data {
 extern void init_configuration(system_data_t * config);
 extern void set_configuration(int argc, char **argv, system_data_t * sd);
 extern void check_config(system_data_t * sd);
+extern void clean_config(system_data_t * sd);
+
 #endif				/* _NET_CONFIG_H_ */

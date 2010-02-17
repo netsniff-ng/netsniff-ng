@@ -78,7 +78,7 @@ static inline void assert_dev_name(const char *dev)
 	assert(strnlen(dev, IFNAMSIZ));
 }
 
-int get_af_socket(int af)
+static int get_af_socket(int af)
 {
 	int sock;
 
@@ -111,7 +111,7 @@ int get_pf_socket(void)
  * get_wireless_bitrate - Returns wireless bitrate in Mb/s
  * @ifname:              device name
  */
-int get_wireless_bitrate(const char *ifname)
+static int get_wireless_bitrate(const char *ifname)
 {
 	int sock, ret;
 	struct iwreq iwr;
@@ -137,7 +137,7 @@ int get_wireless_bitrate(const char *ifname)
  * get_ethtool_bitrate - Returns non-wireless bitrate in Mb/s (via ethtool)
  * @ifname:             device name
  */
-int get_ethtool_bitrate(const char *ifname)
+static int get_ethtool_bitrate(const char *ifname)
 {
 	int sock, ret;
 	struct ifreq ifr;
@@ -206,7 +206,7 @@ int get_device_bitrate_generic(const char *ifname)
  * @ifname:                    device name
  */
 
-int get_mtu(const char *dev)
+static int get_mtu(const char *dev)
 {
 	int sock;
 	struct ifreq ifr;
@@ -261,7 +261,7 @@ short get_nic_flags(const char *dev)
  * @dev:              device name
  * @mac:              Output buffer
  */
-int get_nic_mac(const char *dev, uint8_t * mac)
+static int get_nic_mac(const char *dev, uint8_t * mac)
 {
 	int ret;
 	int sock;
@@ -287,14 +287,14 @@ int get_nic_mac(const char *dev, uint8_t * mac)
 	return (0);
 }
 
-char *get_nic_mac_str(const char *dev)
+static char *get_nic_mac_str(const char *dev)
 {
 	uint8_t mac[ETH_ALEN] = { 0 };
 	get_nic_mac(dev, mac);
 	return (ether_ntoa((const struct ether_addr *)mac));
 }
 
-int get_interface_conf(struct ifconf *ifconf)
+static int get_interface_conf(struct ifconf *ifconf)
 {
 	int sock;
 
@@ -313,7 +313,7 @@ int get_interface_conf(struct ifconf *ifconf)
 	return (0);
 }
 
-int get_interface_address(const char *dev, struct in_addr *in, struct in6_addr *in6)
+static int get_interface_address(const char *dev, struct in_addr *in, struct in6_addr *in6)
 {
 	int sock;
 	struct ifreq ifr;
@@ -359,7 +359,6 @@ int get_interface_address(const char *dev, struct in_addr *in, struct in6_addr *
 void print_device_info(void)
 {
 	int i, speed;
-	//int ret, i, speed;
 	short nic_flags = 0;
 	struct ifconf ifc;
 	struct ifreq *ifr_elem = NULL;

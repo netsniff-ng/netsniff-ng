@@ -48,18 +48,9 @@ int main(int argc, char **argv)
 	system_data_t sd = { 0 };
 	struct pollfd pfd = { 0 };
 
-	/*
-	 * Config stuff
-	 */
-
 	init_configuration(&sd);
 	set_configuration(argc, argv, &sd);
 	check_config(&sd);
-
-	/*
-	 * Main stuff
-	 */
-
 	init_system(&sd, &sock, &rb, &pfd);
 	fetch_packets(&sd, sock, rb, &pfd);
 	cleanup_system(&sd, &sock, &rb);
