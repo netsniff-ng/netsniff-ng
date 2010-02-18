@@ -62,6 +62,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include <netsniff-ng/hash.h>
 #include <netsniff-ng/misc.h>
 #include <netsniff-ng/dump.h>
 #include <netsniff-ng/macros.h>
@@ -233,6 +234,9 @@ int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd 
 		info("No filter applied. Sniffing all traffic.\n\n");
 	}
 
+	/* Hash stuff */
+	ieee_vendors_init();
+
 	/* RX_RING stuff */
 	create_virt_rx_ring((*sock), (*rb), sd->dev);
 	bind_dev_to_rx_ring((*sock), ethdev_to_ifindex(sd->dev), (*rb));
@@ -280,6 +284,9 @@ void cleanup_system(system_data_t * sd, int *sock, ring_buff_t ** rb)
 
 	free((*rb));
 	close((*sock));
+
+	/* Hash stuff */
+	ieee_vendors_destroy();
 
 	/*
 	 * FIXME Find a way to print a uint64_t

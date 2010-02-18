@@ -38,6 +38,7 @@
 #include <assert.h>
 
 #include <netsniff-ng/macros.h>
+#include <netsniff-ng/hash.h>
 #include <netsniff-ng/protocols/l2/ethernet.h>
 
 /*
@@ -52,13 +53,14 @@ static inline void print_ethhdr(struct ethhdr *eth)
 	assert(eth);
 
 	info(" [ ");
-
 	info("MAC (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x => %.2x:%.2x:%.2x:%.2x:%.2x:%.2x), ", src_mac[0], src_mac[1],
 	     src_mac[2], src_mac[3], src_mac[4], src_mac[5], dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4],
 	     dst_mac[5]);
-
 	info("Proto (0x%.4x)", ntohs(eth->h_proto));
+	info(" ] \n");
 
+	info(" [ ");
+	info("Vendor (%s => %s)", ieee_vendors_find(src_mac), ieee_vendors_find(dst_mac));
 	info(" ] \n");
 }
 

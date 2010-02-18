@@ -53,13 +53,13 @@ typedef struct bucket {
 } hashtable_bucket_t;
 typedef struct callbacks {
 	void *(*key_copy) (void *k);
-	void *(*key_to_hash) (void *k);
-	unsigned int (*key_equal) (void *k1, void *k2);
+	void (*key_free) (void *k);
+	unsigned int (*key_to_hash) (void *k);
+	int (*key_equal) (void *k1, void *k2);
 } hashtable_callbacks_t;
 typedef struct hashtable {
 	size_t size;
-	int num_elems;
-	int num_slots_used;
+	uint32_t elems;
 	hashtable_callbacks_t *f;
 	hashtable_bucket_t **table;
 } hashtable_t;
@@ -68,18 +68,18 @@ typedef struct bucket {
  * Functions, generic
  */
 
-extern void hashtable_init(hashtable_t ** ht, size_t size, hashtable_callbacks_t * f);
+extern int hashtable_init(hashtable_t ** ht, size_t size, hashtable_callbacks_t * f);
 extern void hashtable_destroy(hashtable_t * ht);
 extern void *hashtable_insert(hashtable_t * ht, void *key, void *data);
 extern void *hashtable_find(hashtable_t * ht, void *key);
 extern void *hashtable_delete(hashtable_t * ht, void *key);
-extern void *hashtable_foreach(hashtable_t * ht, void (*callback) (void *data));
+extern int hashtable_foreach(hashtable_t * ht, void (*callback) (void *data));
 
 /*
  * Functions, specific hashtables
  */
 
-extern void ieee_vendors_init(void);
+extern int ieee_vendors_init(void);
 extern void ieee_vendors_destroy(void);
 extern char *ieee_vendors_find(uint8_t mac_addr[6]);
 

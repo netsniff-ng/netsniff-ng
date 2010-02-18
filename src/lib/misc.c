@@ -121,7 +121,7 @@ void version(void)
 	info("\n");
 	info("%s can be used for protocol analysis and\n"
 	     "reverse engineering, network debugging, measurement of\n"
-	     "performance throughput or network statistics creation of\n" "incoming packets.", PROGNAME_STRING);
+	     "performance throughput or network statistics creation of\nincoming packets.\n", PROGNAME_STRING);
 	info("\n");
 	info("Please report bugs to <danborkmann@googlemail.com>\n");
 	info("Copyright (C) 2009, 2010 Daniel Borkmann and Emmanuel Roullit\n");
