@@ -39,6 +39,8 @@
 #ifndef _NET_OUI_H_
 #define _NET_OUI_H_
 
+#include <stdint.h>
+
 typedef struct vendor_id {
 	uint32_t id;
 	char *vendor;
@@ -13390,5 +13392,7 @@ vendor_id_t vendor_db[] = {
 	{0xFCFAF7, "Shanghai Baud Data Communication Co.,Ltd."},
 	{0xFCFBFB, "Cisco Systems"},
 };
+
+char *vendor_unknown = "Unknown";
 
 #endif				/* _NET_OUI_H_ */

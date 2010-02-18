@@ -39,6 +39,48 @@
 #ifndef _NET_HASH_H_
 #define _NET_HASH_H_
 
-#include <queue.h>
+/*
+ * Internal data structures
+ */
+
+#include <stdint.h>
+#include <unistd.h>
+
+typedef struct bucket {
+	void *key;
+	void *data;
+	struct bucket *next;
+} hashtable_bucket_t;
+typedef struct callbacks {
+	void *(*key_copy) (void *k);
+	void *(*key_to_hash) (void *k);
+	unsigned int (*key_equal) (void *k1, void *k2);
+} hashtable_callbacks_t;
+typedef struct hashtable {
+	size_t size;
+	int num_elems;
+	int num_slots_used;
+	hashtable_callbacks_t *f;
+	hashtable_bucket_t **table;
+} hashtable_t;
+
+/*
+ * Functions, generic
+ */
+
+extern void hashtable_init(hashtable_t ** ht, size_t size, hashtable_callbacks_t * f);
+extern void hashtable_destroy(hashtable_t * ht);
+extern void *hashtable_insert(hashtable_t * ht, void *key, void *data);
+extern void *hashtable_find(hashtable_t * ht, void *key);
+extern void *hashtable_delete(hashtable_t * ht, void *key);
+extern void *hashtable_foreach(hashtable_t * ht, void (*callback) (void *data));
+
+/*
+ * Functions, specific hashtables
+ */
+
+extern void ieee_vendors_init(void);
+extern void ieee_vendors_destroy(void);
+extern char *ieee_vendors_find(uint8_t mac_addr[6]);
 
 #endif				/* _NET_HASH_H_ */

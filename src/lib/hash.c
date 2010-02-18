@@ -36,6 +36,5 @@
  *    Bucket hash related stuff
  */
 
-#include <queue.h>
-
+#include <netsniff-ng/oui.h>
 #include <netsniff-ng/hash.h>
