@@ -80,8 +80,8 @@ void print_arphdr(struct arphdr *arp)
 	info(" [ ARP ");
 	info("Format HA (%u), ", ntohs(arp->ar_hrd));
 	info("Format Proto (%u), ", ntohs(arp->ar_pro));
-	info("HA Len (%u), ", ntohs(arp->ar_hln));
-	info("Proto Len (%u), ", ntohs(arp->ar_pln));
+	info("HA Len (%u), \n", ntohs(arp->ar_hln));
+	info("   Proto Len (%u), ", ntohs(arp->ar_pln));
 	info("Opcode (%u => %s)", ntohs(arp->ar_op), opcode);
 
 	info(" ] \n");

@@ -53,8 +53,8 @@ static void inline print_tcphdr(struct tcphdr *tcp)
 	info("Port (%u => %u), ", ntohs(tcp->source), ntohs(tcp->dest));
 	info("SN (0x%x), ", ntohs(tcp->seq));
 	info("AN (0x%x), ", ntohs(tcp->ack_seq));
-	info("Data off (%d), ", ntohs(tcp->doff));
-	info("Res 1 (%d), ", ntohs(tcp->res1));
+	info("Data off (%d), \n", ntohs(tcp->doff));
+	info("   Res 1 (%d), ", ntohs(tcp->res1));
 
 	info("Flags (");
 

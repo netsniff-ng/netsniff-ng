@@ -61,13 +61,13 @@ void print_iphdr(struct iphdr *ip)
 	info(" [ IPv4 ");
 	info("Addr (%s => %s), ", src_ip, dst_ip);
 	info("Proto (%u), ", ip->protocol);
-	info("TTL (%u), ", ip->ttl);
-	info("TOS (%u), ", ip->tos);
+	info("TTL (%u), \n", ip->ttl);
+	info("   TOS (%u), ", ip->tos);
 	info("Ver (%u), ", ip->version);
 	info("IHL (%u), ", ntohs(ip->ihl));
 	info("Tlen (%u), ", ntohs(ip->tot_len));
 	info("ID (%u), \n", ntohs(ip->id));
-	info("Res: %u NoFrag: %u MoreFrag: %u offset (%u), ", FRAG_OFF_RESERVED_FLAG(printable_frag_off) ? 1 : 0,
+	info("   Res: %u NoFrag: %u MoreFrag: %u offset (%u), ", FRAG_OFF_RESERVED_FLAG(printable_frag_off) ? 1 : 0,
 	     FRAG_OFF_NO_FRAGMENT_FLAG(printable_frag_off) ? 1 : 0,
 	     FRAG_OFF_MORE_FRAGMENT_FLAG(printable_frag_off) ? 1 : 0, FRAG_OFF_FRAGMENT_OFFSET(printable_frag_off));
 	info("Chsum (0x%x) is %s", ntohs(ip->check), csum ? colorize_full_str(red, black, "bogus (!)") : "ok");
