@@ -31,8 +31,6 @@
  *       order to use this.
  */
 
-#include <netsniff-ng/hash.h>
-
 #include <netsniff-ng/types.h>
 #include <netsniff-ng/rx_ring.h>
 #include <netsniff-ng/config.h>
