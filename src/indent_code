@@ -7,7 +7,7 @@
 
 files=`find . -type f | egrep "*.c$|*.h$"`
 
-echo "Indenting `echo $files | wc -w` files ..."
+echo "Indenting `echo $files | wc -w` files (`cat $files | wc -l` lines) ..."
 
 for file in $files
 do
