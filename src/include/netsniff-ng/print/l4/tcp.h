@@ -86,8 +86,8 @@ static void inline print_tcphdr(struct tcphdr *tcp)
 	info("), ");
 
 	info("Window (%d), ", ntohs(tcp->window));
-	info("Hdrsum (0x%x), ", ntohs(tcp->check));
-	info("Urg ptr (%u)", ntohs(tcp->urg_ptr));
+	info("Hdrsum (0x%x), \n", ntohs(tcp->check));
+	info("   Urg ptr (%u)", ntohs(tcp->urg_ptr));
 
 	info(" ] \n");
 
