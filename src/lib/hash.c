@@ -104,7 +104,7 @@ void hashtable_destroy(hashtable_t * ht)
 
 void *hashtable_insert(hashtable_t * ht, void *key, void *data)
 {
-	unsigned int val;
+	uintptr_t val;
 	hashtable_bucket_t *hb;
 
 	if (!ht)
@@ -132,7 +132,7 @@ void *hashtable_insert(hashtable_t * ht, void *key, void *data)
 
 void *hashtable_find(hashtable_t * ht, void *key)
 {
-	unsigned int val;
+	uintptr_t val;
 	hashtable_bucket_t *hb;
 
 	if (!ht)
@@ -148,9 +148,9 @@ void *hashtable_find(hashtable_t * ht, void *key)
 
 void *hashtable_delete(hashtable_t * ht, void *key)
 {
-	unsigned int val;
-	void *data = NULL;
+	uintptr_t val;
 	hashtable_bucket_t *hb, *hb_prev;
+	void *data = NULL;
 
 	if (!ht)
 		return NULL;
@@ -204,9 +204,9 @@ void no_free(void *key)
 	return;
 }
 
-unsigned int raw_key_to_hash(void *key)
+uintptr_t raw_key_to_hash(void *key)
 {
-	return (unsigned int)key;
+	return (uintptr_t)key;
 }
 
 int raw_key_equal(void *key1, void *key2)
@@ -253,7 +253,7 @@ void ieee_vendors_destroy(void)
 char *ieee_vendors_find(uint8_t mac_addr[6])
 {
 	char *vendor;
-	uint32_t key = 0;
+	uintptr_t key = 0;
 	uint8_t *keyp = (uint8_t *) & key;
 
 	keyp[1] = mac_addr[0];
