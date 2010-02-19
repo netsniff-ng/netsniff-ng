@@ -325,8 +325,8 @@ static int get_interface_address(const char *dev, struct in_addr *in, struct in6
 	assert(in);
 	assert(in6);
 
-	memset(in, 0, sizeof(in));
-	memset(in6, 0, sizeof(in6));
+	memset(in, 0, sizeof(*in));
+	memset(in6, 0, sizeof(*in6));
 
 	memset(&ifr, 0, sizeof(ifr));
 	strncpy(ifr.ifr_name, dev, IFNAMSIZ);
@@ -344,12 +344,12 @@ static int get_interface_address(const char *dev, struct in_addr *in, struct in6
 	switch (sa->sa_family) {
 	case AF_INET:
 		tmp_in = &(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr);
-		memcpy(in, tmp_in, sizeof(in));
+		memcpy(in, tmp_in, sizeof(*in));
 		break;
 
 	case AF_INET6:
 		sa6 = (struct sockaddr_in6 *)&ifr.ifr_addr;
-		memcpy(in6, &sa6->sin6_addr, sizeof(in6));
+		memcpy(in6, &sa6->sin6_addr, sizeof(*in6));
 		break;
 	}
 
