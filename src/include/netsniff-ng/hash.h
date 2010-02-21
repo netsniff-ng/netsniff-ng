@@ -81,6 +81,6 @@ extern int hashtable_foreach(hashtable_t * ht, void (*callback) (void *data));
 
 extern int ieee_vendors_init(void);
 extern void ieee_vendors_destroy(void);
-extern char *ieee_vendors_find(uint8_t mac_addr[6]);
+extern const char *ieee_vendors_find(const uint8_t * mac_addr);
 
 #endif				/* _NET_HASH_H_ */

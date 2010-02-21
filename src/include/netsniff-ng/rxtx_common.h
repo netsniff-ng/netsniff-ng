@@ -58,7 +58,7 @@ static inline void alloc_frame_buffer(ring_buff_t * rb)
 
 	assert(rb);
 
-	rb->frames = (struct iovec *)malloc(rb->layout.tp_frame_nr * sizeof(*rb->frames));
+	rb->frames = malloc(rb->layout.tp_frame_nr * sizeof(*rb->frames));
 	if (!rb->frames) {
 		err("No mem left");
 		exit(EXIT_FAILURE);
@@ -72,4 +72,4 @@ static inline void alloc_frame_buffer(ring_buff_t * rb)
 	}
 }
 
-#endif				/* _NET_RXTX_COMMON_H_ */
+#endif	/* _NET_RXTX_COMMON_H_ */

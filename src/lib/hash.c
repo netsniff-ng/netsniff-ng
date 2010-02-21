@@ -54,15 +54,17 @@
 
 int hashtable_init(hashtable_t ** ht, size_t size, hashtable_callbacks_t * f)
 {
-	int i;
+	//int i;
 
-	if (!ht || !f || size <= 0)
+	if (ht == NULL || f == NULL || size == 0)
 		return -EINVAL;
-	if (!f->key_copy || !f->key_to_hash || !f->key_equal)
+
+	/* Check hash function pointer validity */
+	if (f->key_copy == NULL || f->key_to_hash == NULL || f->key_equal == NULL)
 		return -EINVAL;
 
 	*ht = malloc(sizeof(**ht));
-	if (!(*ht))
+	if (*ht == NULL)
 		return -ENOMEM;
 
 	(*ht)->size = size;
@@ -70,14 +72,16 @@ int hashtable_init(hashtable_t ** ht, size_t size, hashtable_callbacks_t * f)
 	(*ht)->f = f;
 
 	(*ht)->table = malloc(sizeof(*(*ht)->table) * size);
-	if (!(*ht)->table) {
+	if ((*ht)->table == NULL) {
 		free(*ht);
 		return -ENOMEM;
 	}
 
+	memset((*ht)->table, 0, sizeof(*(*ht)->table) * size);
+#if 0
 	for (i = 0; i < size; ++i)
 		(*ht)->table[i] = NULL;
-
+#endif
 	return 0;
 }
 
@@ -86,8 +90,7 @@ void hashtable_destroy(hashtable_t * ht)
 	int i;
 	hashtable_bucket_t *hb, *hb_prev;
 
-	if (!ht)
-		return;
+	assert(ht);
 
 	for (i = 0; i < ht->size; ++i) {
 		for (hb = ht->table[i]; hb != NULL;) {
@@ -107,17 +110,17 @@ void *hashtable_insert(hashtable_t * ht, void *key, void *data)
 	uintptr_t val;
 	hashtable_bucket_t *hb;
 
-	if (!ht)
-		return NULL;
+	assert(ht);
+	assert(ht->size);
 
 	val = ht->f->key_to_hash(key) % ht->size;
 
-	for (hb = ht->table[val]; hb; hb = hb->next)
+	for (hb = ht->table[val]; hb != NULL; hb = hb->next)
 		if (ht->f->key_equal(key, hb->key))
 			return hb->data;
 
 	hb = malloc(sizeof(*hb));
-	if (!hb)
+	if (hb == NULL)
 		return NULL;
 
 	hb->next = ht->table[val];
@@ -135,12 +138,13 @@ void *hashtable_find(hashtable_t * ht, void *key)
 	uintptr_t val;
 	hashtable_bucket_t *hb;
 
-	if (!ht)
-		return NULL;
+	assert(ht);
+	assert(ht->size);
+	assert(key);
 
 	val = ht->f->key_to_hash(key) % ht->size;
 
-	for (hb = ht->table[val]; hb; hb = hb->next)
+	for (hb = ht->table[val]; hb != NULL; hb = hb->next)
 		if (ht->f->key_equal(key, hb->key))
 			return hb->data;
 	return NULL;
@@ -152,12 +156,13 @@ void *hashtable_delete(hashtable_t * ht, void *key)
 	hashtable_bucket_t *hb, *hb_prev;
 	void *data = NULL;
 
-	if (!ht)
-		return NULL;
+	assert(ht);
+	assert(ht->size);
+	assert(key);
 
 	val = ht->f->key_to_hash(key) % ht->size;
 
-	for (hb_prev = NULL, hb = ht->table[val]; hb; hb_prev = hb, hb = hb->next) {
+	for (hb_prev = NULL, hb = ht->table[val]; hb != NULL; hb_prev = hb, hb = hb->next) {
 		if (ht->f->key_equal(key, hb->key)) {
 			data = hb->data;
 
@@ -180,11 +185,11 @@ int hashtable_foreach(hashtable_t * ht, void (*callback) (void *data))
 	int i;
 	hashtable_bucket_t *hb;
 
-	if (!ht || !callback)
-		return -EINVAL;
+	assert(ht);
+	assert(callback);
 
 	for (i = 0; i < ht->size; ++i)
-		for (hb = ht->table[i]; hb; hb = hb->next)
+		for (hb = ht->table[i]; hb != NULL; hb = hb->next)
 			callback(hb->data);
 
 	return 0;
@@ -238,6 +243,7 @@ int ieee_vendors_init(void)
 	}
 
 	len = sizeof(vendor_db) / sizeof(vendor_id_t);
+
 	for (i = 0; i < len; ++i) {
 		hashtable_insert(ieee_vendor_db, (void *)vendor_db[i].id, vendor_db[i].vendor);
 	}
@@ -250,17 +256,16 @@ void ieee_vendors_destroy(void)
 	hashtable_destroy(ieee_vendor_db);
 }
 
-char *ieee_vendors_find(uint8_t mac_addr[6])
+const char *ieee_vendors_find(const uint8_t * mac_addr)
 {
 	char *vendor;
 	uintptr_t key = 0;
 	uint8_t *keyp = (uint8_t *) & key;
 
-	keyp[1] = mac_addr[0];
-	keyp[2] = mac_addr[1];
-	keyp[3] = mac_addr[2];
-
+	memcpy(&keyp[1], mac_addr, 3);
+	
 	vendor = hashtable_find(ieee_vendor_db, (void *)ntohl(key));
+	
 	if (!vendor)
 		vendor = vendor_unknown;
 
