@@ -54,8 +54,6 @@
 
 int hashtable_init(hashtable_t ** ht, size_t size, hashtable_callbacks_t * f)
 {
-	//int i;
-
 	if (ht == NULL || f == NULL || size == 0)
 		return -EINVAL;
 
@@ -78,10 +76,7 @@ int hashtable_init(hashtable_t ** ht, size_t size, hashtable_callbacks_t * f)
 	}
 
 	memset((*ht)->table, 0, sizeof(*(*ht)->table) * size);
-#if 0
-	for (i = 0; i < size; ++i)
-		(*ht)->table[i] = NULL;
-#endif
+
 	return 0;
 }
 
@@ -140,7 +135,6 @@ void *hashtable_find(hashtable_t * ht, void *key)
 
 	assert(ht);
 	assert(ht->size);
-	assert(key);
 
 	val = ht->f->key_to_hash(key) % ht->size;
 
@@ -158,7 +152,6 @@ void *hashtable_delete(hashtable_t * ht, void *key)
 
 	assert(ht);
 	assert(ht->size);
-	assert(key);
 
 	val = ht->f->key_to_hash(key) % ht->size;
 
