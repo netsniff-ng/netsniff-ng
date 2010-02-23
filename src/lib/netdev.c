@@ -434,26 +434,26 @@ void print_device_info(void)
 			break;
 		}
 
-		info(" %s => %s\n", ifr_elem->ifr_name, tmp_ip);
-		info("   HW: %s\n", get_nic_mac_str(ifr_elem->ifr_name));
+		info(" (%03d) %s%s%s => %s\n", i, colorize_start(bold), ifr_elem->ifr_name, colorize_end(), tmp_ip);
+		info("        hw: %s\n", get_nic_mac_str(ifr_elem->ifr_name));
 
 		ret = get_ethtool_drvinf(ifr_elem->ifr_name, &di);
 		if (!ret) {
-			info("   Driver: %s %s\n", di.driver, di.version);
+			info("        driver: %s %s\n", di.driver, di.version);
 		}
 
 		nic_flags = get_nic_flags(ifr_elem->ifr_name);
-		info("   Stat:%s%s%s%s\n",
+		info("        stat:%s%s%s%s\n",
 		     (((nic_flags & IFF_UP) == IFF_UP) ? " up" : " not up"),
 		     (((nic_flags & IFF_RUNNING) == IFF_RUNNING) ? " running" : ""),
 		     (((nic_flags & IFF_LOOPBACK) == IFF_LOOPBACK) ? ", loops back" : ""),
 		     (((nic_flags & IFF_POINTOPOINT) == IFF_POINTOPOINT) ? ", point-to-point link" : ""));
 
-		info("   MTU: %d Byte\n", get_mtu(ifr_elem->ifr_name));
+		info("        mtu: %d Byte\n", get_mtu(ifr_elem->ifr_name));
 
 		speed = get_device_bitrate_generic(ifr_elem->ifr_name);
 		if (speed) {
-			info("   Bitrate: %d Mb/s\n", speed);
+			info("        bitrate: %d Mb/s\n", speed);
 		}
 	}
 
