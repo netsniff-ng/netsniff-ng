@@ -72,4 +72,4 @@ static inline void alloc_frame_buffer(ring_buff_t * rb)
 	}
 }
 
-#endif	/* _NET_RXTX_COMMON_H_ */
+#endif				/* _NET_RXTX_COMMON_H_ */

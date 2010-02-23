@@ -204,7 +204,7 @@ void no_free(void *key)
 
 uintptr_t raw_key_to_hash(void *key)
 {
-	return (uintptr_t)key;
+	return (uintptr_t) key;
 }
 
 int raw_key_equal(void *key1, void *key2)
@@ -256,9 +256,9 @@ const char *ieee_vendors_find(const uint8_t * mac_addr)
 	uint8_t *keyp = (uint8_t *) & key;
 
 	memcpy(&keyp[1], mac_addr, 3);
-	
+
 	vendor = hashtable_find(ieee_vendor_db, (void *)ntohl(key));
-	
+
 	if (!vendor)
 		vendor = vendor_unknown;
 

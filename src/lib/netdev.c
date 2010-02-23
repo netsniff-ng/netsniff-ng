@@ -186,6 +186,38 @@ static int get_ethtool_bitrate(const char *ifname)
 }
 
 /**
+ * get_ethtool_drvinf - Returns driver info of ethtool supported dev
+ * @ifname:             device name
+ */
+static int get_ethtool_drvinf(const char *ifname, struct ethtool_drvinfo *di)
+{
+	int sock, ret;
+	struct ifreq ifr;
+	struct ethtool_drvinfo __di;
+
+	assert_dev_name(ifname);
+
+	memset(&ifr, 0, sizeof(ifr));
+	__di.cmd = ETHTOOL_GDRVINFO;
+
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+
+	sock = get_af_socket(AF_INET);
+
+	ifr.ifr_data = (char *)&__di;
+
+	ret = ioctl(sock, SIOCETHTOOL, &ifr);
+	if (ret)
+		goto out_err;
+
+	memcpy(di, &__di, sizeof(*di));
+
+ out_err:
+	close(sock);
+	return ret;
+}
+
+/**
  * get_device_bitrate_generic - Returns bitrate in Mb/s
  * @ifname:                    device name
  */
@@ -205,7 +237,6 @@ int get_device_bitrate_generic(const char *ifname)
  * @sock:                      socket descriptor
  * @ifname:                    device name
  */
-
 static int get_mtu(const char *dev)
 {
 	int sock;
@@ -316,14 +347,15 @@ static int get_interface_conf(struct ifconf *ifconf)
 static int get_interface_address(const char *dev, struct in_addr *in, struct in6_addr *in6)
 {
 	int sock;
+
 	struct ifreq ifr;
 	struct in_addr *tmp_in;
 	struct sockaddr *sa;
 	struct sockaddr_in6 *sa6;
 
-	assert_dev_name(dev);
 	assert(in);
 	assert(in6);
+	assert_dev_name(dev);
 
 	memset(in, 0, sizeof(*in));
 	memset(in6, 0, sizeof(*in6));
@@ -356,17 +388,24 @@ static int get_interface_address(const char *dev, struct in_addr *in, struct in6
 	return (sa->sa_family);
 }
 
+/**
+ * print_device_info - Prints infos of netdevs
+ * XXX this looks like bitch
+ */
 void print_device_info(void)
 {
-	int i, speed;
+	int i, ret, speed;
 	short nic_flags = 0;
-	struct ifconf ifc;
+	char tmp_ip[INET6_ADDRSTRLEN] = { 0 };
+
 	struct ifreq *ifr_elem = NULL;
 	struct ifreq *ifr_buffer = NULL;
-	size_t if_buffer_len = sizeof(*ifr_buffer) * MAX_NUMBER_OF_NICS;
+	struct ifconf ifc;
 	struct in_addr ipv4 = { 0 };
 	struct in6_addr ipv6;
-	char tmp_ip[INET6_ADDRSTRLEN] = { 0 };
+	struct ethtool_drvinfo di;
+
+	size_t if_buffer_len = sizeof(*ifr_buffer) * MAX_NUMBER_OF_NICS;
 
 	if ((ifr_buffer = malloc(if_buffer_len)) == NULL) {
 		err("Out of memory");
@@ -397,6 +436,11 @@ void print_device_info(void)
 
 		info(" %s => %s\n", ifr_elem->ifr_name, tmp_ip);
 		info("   HW: %s\n", get_nic_mac_str(ifr_elem->ifr_name));
+
+		ret = get_ethtool_drvinf(ifr_elem->ifr_name, &di);
+		if (!ret) {
+			info("   Driver: %s %s\n", di.driver, di.version);
+		}
 
 		nic_flags = get_nic_flags(ifr_elem->ifr_name);
 		info("   Stat:%s%s%s%s\n",
