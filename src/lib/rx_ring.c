@@ -215,6 +215,10 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 	assert(pfd);
 	assert(sd);
 
+	if (sd->dump_pcap_fd != -1) {
+		sf_write_header(sd->dump_pcap_fd, LINKTYPE_EN10MB, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
+	}
+
 	/* This is our critical path ... */
 	while (likely(!sigint)) {
 		while (mem_notify_user_for_rx(rb->frames[i]) && likely(!sigint)) {
