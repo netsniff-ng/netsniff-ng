@@ -37,8 +37,8 @@ D: [Bug# 299549] until it's committed to portage
 
 N: James Findley
 E: sixy [at] gmx [dot] com
-D: Maintaining netsniff-ng on Fedora and RHEL
-S: United Kingdom
+D: Fedora Packager for netsniff-ng
+S: UK
 
 N: Corrado Franco
 E: conraid [at] gmail [dot] com
