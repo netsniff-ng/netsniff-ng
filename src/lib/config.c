@@ -85,7 +85,7 @@ void init_configuration(system_data_t * sd)
 	sd->bypass_bpf = BPF_BYPASS;
 	sd->packet_type = PACKET_DONT_CARE;
 	sd->print_pkt = versatile_print;
-	sd->dump_pcap_fd = -1;
+	sd->dump_pcap_fd = PCAP_NO_DUMP;
 }
 
 void set_configuration(int argc, char **argv, system_data_t * sd)

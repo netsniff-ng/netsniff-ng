@@ -32,54 +32,41 @@
  */
 
 /*
- * Contains: 
- *    netsniff-ng configuration related routines
+ * This file contains a ringbuffer implementation for data exchange via 
+ * Netlink protocol and can be used for fetching samples of the netdata 
+ * (for instance).
  */
 
-#ifndef	_NET_CONFIG_H_
-#define	_NET_CONFIG_H_
+#ifndef _NET_RINGBUFF_H_
+#define _NET_RINGBUFF_H_
 
-#include <netsniff-ng/types.h>
-#include <netsniff-ng/print.h>
+#define CHUNK_STATUS_FREE 0
+#define CHUNK_STATUS_BUSY 1
 
-/* Internals */
-#define DEFAULT_INTERFACE "lo"
-#define INTERVAL_COUNTER_REFR   1000	/* in ms */
+typedef size_t ringbuffer_offs_t;
 
-#define POLL_WAIT_INF           -1	/* CPU friendly and appropriate for normal usage */
-#define POLL_WAIT_NONE           0	/* This will pull CPU usage to 100 % */
+typedef struct {
+	/* XXX: MTU size and aligned */
+	char payload[1500];
+	size_t len;
+} ringbuffer_user_t;
 
-#define BPF_BYPASS               1
-#define BPF_NO_BYPASS            0
+typedef struct {
+	uint8_t ch_status;
+	ringbuffer_user_t ch_user;
+} ringbuffer_chunk_t;
 
-#define PROC_NO_HIGHPRIO         1
+typedef struct {
+	size_t max_slots;
+	size_t cur_slots;
+	ringbuffer_offs_t next_free;
+	ringbuffer_offs_t next_user;
+	ringbuffer_chunk_t **ring;
+} ringbuffer_t;
 
-#define PCAP_NO_DUMP            -1
+extern int ringbuffer_init(ringbuffer_t **rb, size_t slots);
+extern void ringbuffer_cleanup(ringbuffer_t *rb);
+extern int ringbuffer_put(ringbuffer_t *rb, ringbuffer_user_t *rb_data);
+extern int ringbuffer_get(ringbuffer_t *rb, ringbuffer_user_t *rb_data);
 
-#define SYSD_ENABLE              1
-
-#define PACKET_DONT_CARE        -1
-
-typedef struct system_data {
-	/* Some more or less boolean conf values */
-	int sysdaemon;
-	int blocking_mode;
-	int no_prioritization;
-	int bypass_bpf;
-	int packet_type;
-	/* Daemon mode settings */
-	char *pidfile;
-	/* Berkeley Packet Filter rules */
-	char *rulefile;
-	/* Ethernet device */
-	char *dev;
-	int dump_pcap_fd;
-	void (*print_pkt) (ring_buff_bytes_t *, const struct tpacket_hdr *);
-} system_data_t;
-
-extern void init_configuration(system_data_t * config);
-extern void set_configuration(int argc, char **argv, system_data_t * sd);
-extern void check_config(system_data_t * sd);
-extern void clean_config(system_data_t * sd);
-
-#endif				/* _NET_CONFIG_H_ */
+#endif /* _NET_RINGBUFF_H_ */
