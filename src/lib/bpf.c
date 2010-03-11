@@ -53,6 +53,15 @@
  */
 
 #include <stdint.h>
+#include <stdio.h>
+#include <assert.h>
+
+#include <linux/filter.h>
+
+#include <arpa/inet.h>
+
+#include <netsniff-ng/bpf.h>
+#include <netsniff-ng/macros.h>
 
 /*
  * The instruction encodings.
@@ -110,13 +119,15 @@
 #define		BPF_TAX		0x00
 #define		BPF_TXA		0x80
 
-#include <stdio.h>
-#include <assert.h>
+#define EXTRACT_SHORT(packet)	((unsigned short) ntohs(*(unsigned short *) packet))
+#define EXTRACT_LONG(packet)		(ntohl(*(unsigned short *) packet))
 
-#include <linux/filter.h>
-
-#include <netsniff-ng/bpf.h>
-#include <netsniff-ng/macros.h>
+/*
+ * Number of scratch memory words for: BPF_ST and BPF_STX
+ */
+#ifndef BPF_MEMWORDS
+# define BPF_MEMWORDS 16
+#endif				/* BPF_MEMWORDS */
 
 /**
  * bpf_dump - Prints bpf program in human readable format. Switch-case code taken 
@@ -515,4 +526,237 @@ int bpf_validate(const struct sock_filter *bpf, int len)
 		}
 	}
 	return BPF_CLASS(bpf[len - 1].code) == BPF_RET;
+}
+
+/**
+ * bpf_filter - Berkeley packet filter userspace VM, needed as a 
+ *              packet filter for pcap replay
+ * @bpf:       bpf program
+ * @packet:    network packet
+ * @plen:      len of packet
+ */
+uint32_t bpf_filter(const struct sock_filter * bpf, uint8_t * packet, size_t plen)
+{
+	/* XXX: caplen == len */
+	uint32_t A, X;
+	uint32_t k;
+
+	int32_t mem[BPF_MEMWORDS];
+
+	if (bpf == NULL)
+		return 0xFFFFFFFF;
+
+	A = 0;
+	X = 0;
+
+	--bpf;
+
+	while (1) {
+		++bpf;
+
+		switch (bpf->code) {
+		default:
+			return 0;
+		case BPF_RET | BPF_K:
+			return (uint32_t) bpf->k;
+
+		case BPF_RET | BPF_A:
+			return (uint32_t) A;
+
+		case BPF_LD | BPF_W | BPF_ABS:
+			k = bpf->k;
+			if (k + sizeof(int32_t) > plen)
+				return 0;
+			A = EXTRACT_LONG(&packet[k]);
+			continue;
+
+		case BPF_LD | BPF_H | BPF_ABS:
+			k = bpf->k;
+			if (k + sizeof(short) > plen)
+				return 0;
+			A = EXTRACT_SHORT(&packet[k]);
+			continue;
+
+		case BPF_LD | BPF_B | BPF_ABS:
+			k = bpf->k;
+			if (k >= plen)
+				return 0;
+			A = packet[k];
+			continue;
+
+		case BPF_LD | BPF_W | BPF_LEN:
+			A = plen;
+			continue;
+
+		case BPF_LDX | BPF_W | BPF_LEN:
+			X = plen;
+			continue;
+
+		case BPF_LD | BPF_W | BPF_IND:
+			k = X + bpf->k;
+			if (k + sizeof(int32_t) > plen)
+				return 0;
+			A = EXTRACT_LONG(&packet[k]);
+			continue;
+
+		case BPF_LD | BPF_H | BPF_IND:
+			k = X + bpf->k;
+			if (k + sizeof(short) > plen)
+				return 0;
+			A = EXTRACT_SHORT(&packet[k]);
+			continue;
+
+		case BPF_LD | BPF_B | BPF_IND:
+			k = X + bpf->k;
+			if (k >= plen)
+				return 0;
+			A = packet[k];
+			continue;
+
+		case BPF_LDX | BPF_MSH | BPF_B:
+			k = bpf->k;
+			if (k >= plen)
+				return 0;
+			X = (packet[bpf->k] & 0xf) << 2;
+			continue;
+
+		case BPF_LD | BPF_IMM:
+			A = bpf->k;
+			continue;
+
+		case BPF_LDX | BPF_IMM:
+			X = bpf->k;
+			continue;
+
+		case BPF_LD | BPF_MEM:
+			A = mem[bpf->k];
+			continue;
+
+		case BPF_LDX | BPF_MEM:
+			X = mem[bpf->k];
+			continue;
+
+		case BPF_ST:
+			mem[bpf->k] = A;
+			continue;
+
+		case BPF_STX:
+			mem[bpf->k] = X;
+			continue;
+
+		case BPF_JMP | BPF_JA:
+			bpf += bpf->k;
+			continue;
+
+		case BPF_JMP | BPF_JGT | BPF_K:
+			bpf += (A > bpf->k) ? bpf->jt : bpf->jf;
+			continue;
+
+		case BPF_JMP | BPF_JGE | BPF_K:
+			bpf += (A >= bpf->k) ? bpf->jt : bpf->jf;
+			continue;
+
+		case BPF_JMP | BPF_JEQ | BPF_K:
+			bpf += (A == bpf->k) ? bpf->jt : bpf->jf;
+			continue;
+
+		case BPF_JMP | BPF_JSET | BPF_K:
+			bpf += (A & bpf->k) ? bpf->jt : bpf->jf;
+			continue;
+
+		case BPF_JMP | BPF_JGT | BPF_X:
+			bpf += (A > X) ? bpf->jt : bpf->jf;
+			continue;
+
+		case BPF_JMP | BPF_JGE | BPF_X:
+			bpf += (A >= X) ? bpf->jt : bpf->jf;
+			continue;
+
+		case BPF_JMP | BPF_JEQ | BPF_X:
+			bpf += (A == X) ? bpf->jt : bpf->jf;
+			continue;
+
+		case BPF_JMP | BPF_JSET | BPF_X:
+			bpf += (A & X) ? bpf->jt : bpf->jf;
+			continue;
+
+		case BPF_ALU | BPF_ADD | BPF_X:
+			A += X;
+			continue;
+
+		case BPF_ALU | BPF_SUB | BPF_X:
+			A -= X;
+			continue;
+
+		case BPF_ALU | BPF_MUL | BPF_X:
+			A *= X;
+			continue;
+
+		case BPF_ALU | BPF_DIV | BPF_X:
+			if (X == 0)
+				return 0;
+			A /= X;
+			continue;
+
+		case BPF_ALU | BPF_AND | BPF_X:
+			A &= X;
+			continue;
+
+		case BPF_ALU | BPF_OR | BPF_X:
+			A |= X;
+			continue;
+
+		case BPF_ALU | BPF_LSH | BPF_X:
+			A <<= X;
+			continue;
+
+		case BPF_ALU | BPF_RSH | BPF_X:
+			A >>= X;
+			continue;
+
+		case BPF_ALU | BPF_ADD | BPF_K:
+			A += bpf->k;
+			continue;
+
+		case BPF_ALU | BPF_SUB | BPF_K:
+			A -= bpf->k;
+			continue;
+
+		case BPF_ALU | BPF_MUL | BPF_K:
+			A *= bpf->k;
+			continue;
+
+		case BPF_ALU | BPF_DIV | BPF_K:
+			A /= bpf->k;
+			continue;
+
+		case BPF_ALU | BPF_AND | BPF_K:
+			A &= bpf->k;
+			continue;
+
+		case BPF_ALU | BPF_OR | BPF_K:
+			A |= bpf->k;
+			continue;
+
+		case BPF_ALU | BPF_LSH | BPF_K:
+			A <<= bpf->k;
+			continue;
+
+		case BPF_ALU | BPF_RSH | BPF_K:
+			A >>= bpf->k;
+			continue;
+
+		case BPF_ALU | BPF_NEG:
+			A = -A;
+			continue;
+
+		case BPF_MISC | BPF_TAX:
+			X = A;
+			continue;
+
+		case BPF_MISC | BPF_TXA:
+			A = X;
+			continue;
+		}
+	}
 }
