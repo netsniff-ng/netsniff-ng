@@ -48,24 +48,12 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <assert.h>
-#include <ctype.h>
-#include <pthread.h>
-#include <getopt.h>
 
 #include <sys/ioctl.h>
-#include <sys/mman.h>
-#include <sys/poll.h>
-#include <sys/un.h>
-#include <sys/types.h>
-
 #include <net/if.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 
 #include <netsniff-ng/hash.h>
-#include <netsniff-ng/misc.h>
 #include <netsniff-ng/dump.h>
-#include <netsniff-ng/macros.h>
 #include <netsniff-ng/system.h>
 #include <netsniff-ng/types.h>
 #include <netsniff-ng/rx_ring.h>

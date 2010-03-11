@@ -48,6 +48,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include <net/if.h>
 #include <arpa/inet.h>
@@ -94,11 +95,25 @@ void destroy_virt_tx_ring(int sock, ring_buff_t * rb)
  */
 void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname)
 {
+	short nic_flags;
 	int ret, dev_speed;
 
 	assert(rb);
+	assert(ifname);
 
-	dev_speed = get_device_bitrate_generic(ifname) >> 3;
+	nic_flags = get_nic_flags(ifname);
+
+	if ((nic_flags & IFF_UP) != IFF_UP) {
+		warn("The interface %s is not up\n\n", ifname);
+		exit(EXIT_FAILURE);
+	}
+
+	if ((nic_flags & IFF_RUNNING) != IFF_RUNNING) {
+		warn("The interface %s is not running\n\n", ifname);
+		exit(EXIT_FAILURE);
+	}
+
+	dev_speed = get_device_bitrate_generic_fallback(ifname) >> 3;
 	memset(&(rb->layout), 0, sizeof(rb->layout));
 
 	/* max: getpagesize() << 11 for i386 */
@@ -106,7 +121,7 @@ void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname)
 	rb->layout.tp_frame_size = TPACKET_ALIGNMENT << 7;
 
 	/* max: 15 for i386, old default: 1 << 13, now: approximated bandwidth size */
-	rb->layout.tp_block_nr = (dev_speed * 1100000) / rb->layout.tp_block_size;
+	rb->layout.tp_block_nr = ((dev_speed * 1100000) / rb->layout.tp_block_size) * 2;
 	rb->layout.tp_frame_nr = rb->layout.tp_block_size / rb->layout.tp_frame_size * rb->layout.tp_block_nr;
 
  __retry_sso:
@@ -202,6 +217,24 @@ int flush_virt_tx_ring(int sock, ring_buff_t * rb)
 }
 
 /**
+ * fill_virt_tx_ring_thread - Fills payload of tx_ring
+ * @packed:                  packed system data
+ */
+static void *fill_virt_tx_ring_thread(void *packed)
+{
+	pthread_exit(0);
+}
+
+/**
+ * flush_virt_tx_ring_thread - Sends payload of tx_ring
+ * @packed:                   packed system data
+ */
+static void *flush_virt_tx_ring_thread(void *packed)
+{
+	pthread_exit(0);
+}
+
+/**
  * transmit_packets - TX_RING critical path
  * @sd:              config data
  * @sock:            socket
@@ -227,18 +260,22 @@ void transmit_packets(system_data_t * sd, int sock, ring_buff_t * rb)
 
 void bind_dev_to_tx_ring(int sock, int ifindex, ring_buff_t * rb)
 {
+	/* NOP */
 }
 
 void mmap_virt_tx_ring(int sock, ring_buff_t * rb)
 {
+	/* NOP */
 }
 
 void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname)
 {
+	/* NOP */
 }
 
 void destroy_virt_tx_ring(int sock, ring_buff_t * rb)
 {
+	/* NOP */
 }
 
 int flush_virt_tx_ring(int sock, ring_buff_t * rb)
