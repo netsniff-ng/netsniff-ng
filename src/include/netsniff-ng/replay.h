@@ -33,5 +33,13 @@
 
 #ifndef _REPLAY_H_
 #define	_REPLAY_H_
-/* blub */
+
+#include <stdint.h>
+
+#include <linux/if_packet.h>
+#include <linux/if_ether.h>
+
+extern int pcap_has_packets(int pcap_fd);
+extern void pcap_fetch_dummy_packet(int pcap_fd, uint8_t * pkt, size_t * len);
+
 #endif				/* _REPLAY_H */

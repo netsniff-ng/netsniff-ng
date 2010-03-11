@@ -49,6 +49,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <sched.h>
 
 #include <net/if.h>
 #include <arpa/inet.h>
@@ -63,10 +64,31 @@
 
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/types.h>
+#include <netsniff-ng/replay.h>
 #include <netsniff-ng/tx_ring.h>
 #include <netsniff-ng/netdev.h>
+#include <netsniff-ng/signal.h>
+
+struct packed_tx_data {
+	system_data_t *sd;
+	int sock;
+	ring_buff_t *rb;
+};
 
 #ifdef __HAVE_TX_RING__
+static void set_packet_loss_discard(int sock)
+{
+	int ret;
+	int foo = 1;		/* we discard wrong packets */
+
+	ret = setsockopt(sock, SOL_PACKET, PACKET_LOSS, (void *)&foo, sizeof(foo));
+	if (ret < 0) {
+		err("setsockopt: cannot set packet loss");
+		close(sock);
+		exit(EXIT_FAILURE);
+	}
+}
+
 /**
  * destroy_virt_tx_ring - Destroys virtual TX_RING buffer
  * @sock:                socket
@@ -115,6 +137,8 @@ void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname)
 
 	dev_speed = get_device_bitrate_generic_fallback(ifname) >> 3;
 	memset(&(rb->layout), 0, sizeof(rb->layout));
+
+	set_packet_loss_discard(sock);
 
 	/* max: getpagesize() << 11 for i386 */
 	rb->layout.tp_block_size = getpagesize() << 2;
@@ -222,6 +246,45 @@ int flush_virt_tx_ring(int sock, ring_buff_t * rb)
  */
 static void *fill_virt_tx_ring_thread(void *packed)
 {
+	int loop, i;
+
+	size_t len;
+	ring_buff_bytes_t *buff;
+
+	struct frame_map *fm;
+	struct tpacket_hdr *header;
+	struct packed_tx_data *ptd;
+
+	ptd = (struct packed_tx_data *)packed;
+
+	for (i = 0; pcap_has_packets(0 /* fd */ ) && likely(!sigint); loop = 1, i++) {
+		do {
+			fm = ptd->rb->frames[i].iov_base;
+			header = (struct tpacket_hdr *)&fm->tp_h;
+			buff = (ring_buff_bytes_t *) (ptd->rb->frames[i].iov_base + sizeof(*fm) + sizeof(short));
+
+			switch ((volatile uint32_t)header->tp_status) {
+			default:
+				sched_yield();
+				break;
+
+			case TP_STATUS_AVAILABLE:
+				pcap_fetch_dummy_packet(0 /* fd */ , buff, &len);
+				header->tp_len = len;
+				loop = 0;
+				break;
+
+			case TP_STATUS_WRONG_FORMAT:
+				warn("An error during transfer\n");
+				exit(EXIT_FAILURE);
+				break;
+			}
+		} while (loop == 1 && likely(!sigint));
+
+		/* We're done! */
+		mem_notify_kernel_for_tx(header);
+	}
+
 	pthread_exit(0);
 }
 
@@ -231,6 +294,41 @@ static void *fill_virt_tx_ring_thread(void *packed)
  */
 static void *flush_virt_tx_ring_thread(void *packed)
 {
+	int i, ret, errors = 0;
+
+	struct frame_map *fm;
+	struct tpacket_hdr *header;
+	struct packed_tx_data *ptd;
+
+	ptd = (struct packed_tx_data *)packed;
+
+	ret = flush_virt_tx_ring(ptd->sock, ptd->rb);
+	if (ret < 0) {
+		exit(EXIT_FAILURE);
+	}
+
+	for (i = 0; i < ptd->rb->layout.tp_frame_nr; i++) {
+		fm = ptd->rb->frames[i].iov_base;
+		header = (struct tpacket_hdr *)&fm->tp_h;
+
+		switch ((volatile uint32_t)header->tp_status) {
+		case TP_STATUS_SEND_REQUEST:
+			warn("Frame has not been sent %p\n", header);
+			errors++;
+			break;
+
+		case TP_STATUS_LOSING:
+			warn("Transfer error of frame\n");
+			errors++;
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	if (errors > 0)
+		warn("%d errors occured during tx_ring flush!\n", errors);
 	pthread_exit(0);
 }
 
@@ -244,6 +342,12 @@ void transmit_packets(system_data_t * sd, int sock, ring_buff_t * rb)
 {
 	assert(rb);
 	assert(sd);
+
+	struct packed_tx_data ptd = {
+		.sd = sd,
+		.sock = sock,
+		.rb = rb,
+	};
 
 	info("--- Transmitting ---\n\n");
 
@@ -287,6 +391,12 @@ void transmit_packets(system_data_t * sd, int sock, ring_buff_t * rb)
 {
 	assert(rb);
 	assert(sd);
+
+	struct packed_tx_data ptd = {
+		.sd = sd,
+		.sock = sock,
+		.rb = rb,
+	};
 
 	info("--- Transmitting ---\n\n");
 

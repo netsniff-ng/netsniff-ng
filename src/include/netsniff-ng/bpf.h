@@ -44,6 +44,6 @@
 
 extern void bpf_dump_all(struct sock_filter *bpf, int len);
 extern int bpf_validate(const struct sock_filter *bpf, int len);
-extern uint32_t bpf_filter(const struct sock_filter *bpf, uint8_t *packet, size_t plen);
+extern uint32_t bpf_filter(const struct sock_filter *bpf, uint8_t * packet, size_t plen);
 
 #endif				/* _NET_BPF_H_ */

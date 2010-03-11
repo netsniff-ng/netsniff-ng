@@ -44,6 +44,17 @@
 #include <netsniff-ng/replay.h>
 #include <netsniff-ng/macros.h>
 
+int pcap_has_packets(int pcap_fd)
+{
+	return 1;
+}
+
+void pcap_fetch_dummy_packet(int pcap_fd, uint8_t * pkt, size_t * len)
+{
+	assert(pkt);
+	assert(len);
+}
+
 /* For replaying PCAP not activated for now */
 #if 0
 FILE *pcap_validate(FILE * pcap)

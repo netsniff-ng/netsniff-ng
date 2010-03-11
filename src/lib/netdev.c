@@ -54,8 +54,6 @@
 #include <netinet/ether.h>
 #include <arpa/inet.h>
 
-#include <sys/ioctl.h>
-
 /* Kernel < 2.6.26 */
 #include <linux/if.h>
 #include <linux/socket.h>
@@ -71,6 +69,10 @@
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/netdev.h>
 #include <netsniff-ng/bpf.h>
+
+#ifndef PACKET_LOSS
+#define PACKET_LOSS   14
+#endif
 
 static inline void assert_dev_name(const char *dev)
 {

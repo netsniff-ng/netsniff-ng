@@ -4,7 +4,7 @@
 
 CC               = gcc $(ARGS)
 LIBS             = -lpthread -lrt
-INCLUDE          = -I../include
+INCLUDE          = -I../include -I/usr/src/linux-headers-2.6.32.2/include/ -I/usr/src/linux-headers-2.6.32.2/arch/x86/include/
 CFLAGS           = -Wall -O2
 
 OBJECTS         := bpf.o misc.o print.o config.o rx_ring.o system.o

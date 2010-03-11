@@ -64,6 +64,8 @@
 #include <netsniff-ng/bpf.h>
 #include <netsniff-ng/bootstrap.h>
 
+volatile sig_atomic_t sigint = 0;
+
 /**
  * softirq_handler - Signal handling multiplexer
  * @number:         signal number
@@ -278,7 +280,6 @@ static void __init_phase_rx_ring(system_data_t * sd, int *sock, ring_buff_t ** r
 	create_virt_rx_ring((*sock), (*rb), sd->dev);
 	bind_dev_to_rx_ring((*sock), ethdev_to_ifindex(sd->dev), (*rb));
 	mmap_virt_rx_ring((*sock), (*rb));
-
 	alloc_frame_buffer((*rb));
 	prepare_polling((*sock), pfd);
 }
@@ -296,6 +297,8 @@ static void __init_phase_tx_ring(system_data_t * sd, int *sock, ring_buff_t ** r
 	create_virt_tx_ring((*sock), (*rb), sd->dev);
 	bind_dev_to_tx_ring((*sock), ethdev_to_ifindex(sd->dev), (*rb));
 	mmap_virt_tx_ring((*sock), (*rb));
+	alloc_frame_buffer((*rb));
+	prepare_polling((*sock), pfd);
 }
 
 static void __init_phase_hashtables(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)

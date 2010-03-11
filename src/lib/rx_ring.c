@@ -200,8 +200,6 @@ void bind_dev_to_rx_ring(int sock, int ifindex, ring_buff_t * rb)
 	}
 }
 
-volatile sig_atomic_t sigint = 0;
-
 /**
  * fetch_packets_and_print - Traverses RX_RING and prints content
  * @rb:                     ring buffer
