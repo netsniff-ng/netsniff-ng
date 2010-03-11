@@ -33,6 +33,7 @@
 
 #include <netsniff-ng/types.h>
 #include <netsniff-ng/rx_ring.h>
+#include <netsniff-ng/tx_ring.h>
 #include <netsniff-ng/config.h>
 #include <netsniff-ng/bootstrap.h>
 
@@ -48,11 +49,23 @@ int main(int argc, char **argv)
 	system_data_t sd = { 0 };
 	struct pollfd pfd = { 0 };
 
+	/*
+	 * Parse user config
+	 */
+
 	init_configuration(&sd);
 	set_configuration(argc, argv, &sd);
 	check_config(&sd);
+
+	/*
+	 * Init netsniff-ng and do the job 
+	 */
+
 	init_system(&sd, &sock, &rb, &pfd);
-	fetch_packets(&sd, sock, rb, &pfd);
+	if (sd.mode == MODE_CAPTURE)
+		fetch_packets(&sd, sock, rb, &pfd);
+	else if (sd.mode == MODE_REPLAY)
+		transmit_packets(&sd, sock, rb);
 	cleanup_system(&sd, &sock, &rb);
 
 	return 0;

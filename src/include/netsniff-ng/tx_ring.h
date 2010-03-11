@@ -46,7 +46,14 @@
 
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/types.h>
+#include <netsniff-ng/config.h>
 #include <netsniff-ng/rxtx_common.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
+# define __HAVE_TX_RING__
+#else
+# undef __HAVE_TX_RING__
+#endif				/* LINUX_VERSION_CODE */
 
 /* Function signatures */
 
@@ -54,11 +61,12 @@ extern void destroy_virt_tx_ring(int sock, ring_buff_t * rb);
 extern void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname);
 extern void mmap_virt_tx_ring(int sock, ring_buff_t * rb);
 extern void bind_dev_to_tx_ring(int sock, int ifindex, ring_buff_t * rb);
-extern int flush_tx_ring(int sock, ring_buff_t * rb);
+extern int flush_virt_tx_ring(int sock, ring_buff_t * rb);
+extern void transmit_packets(system_data_t * sd, int sock, ring_buff_t * rb);
 
 /* Inline stuff */
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
+#ifdef __HAVE_TX_RING__
 /**
  * mem_notify_kernel_for_tx - We tell the kernel that we are done with setting up 
  *                            data.
@@ -69,6 +77,6 @@ static inline void mem_notify_kernel_for_tx(struct tpacket_hdr *header)
 	assert(header);
 	header->tp_status = TP_STATUS_SEND_REQUEST;
 }
-#endif				/* LINUX_VERSION_CODE */
+#endif				/* __HAVE_TX_RING__ */
 
 #endif				/* _NET_TX_RING_H_ */

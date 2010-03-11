@@ -123,7 +123,7 @@ void create_virt_rx_ring(int sock, ring_buff_t * rb, char *ifname)
 	rb->layout.tp_frame_size = TPACKET_ALIGNMENT << 7;
 
 	/* max: 15 for i386, old default: 1 << 13, now: approximated bandwidth size */
-	rb->layout.tp_block_nr = (dev_speed * 1100000) / rb->layout.tp_block_size;
+	rb->layout.tp_block_nr = ((dev_speed * 1100000) / rb->layout.tp_block_size) * 2;
 	rb->layout.tp_frame_nr = rb->layout.tp_block_size / rb->layout.tp_frame_size * rb->layout.tp_block_nr;
 
  __retry_sso:
@@ -215,8 +215,10 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 	assert(pfd);
 	assert(sd);
 
-	if (sd->dump_pcap_fd != -1) {
-		sf_write_header(sd->dump_pcap_fd, LINKTYPE_EN10MB, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
+	info("--- Listening ---\n\n");
+
+	if (sd->pcap_fd != -1) {
+		sf_write_header(sd->pcap_fd, LINKTYPE_EN10MB, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
 	}
 
 	/* This is our critical path ... */
@@ -234,8 +236,8 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 				}
 			}
 
-			if (sd->dump_pcap_fd != -1) {
-				pcap_dump(sd->dump_pcap_fd, &fm->tp_h, (struct ethhdr *)rbb);
+			if (sd->pcap_fd != -1) {
+				pcap_dump(sd->pcap_fd, &fm->tp_h, (struct ethhdr *)rbb);
 			}
 
 			if (sd->print_pkt) {
@@ -247,6 +249,7 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 			/* Pending singals will be delivered after netstat 
 			   manipulation */
 			hold_softirq(2, SIGUSR1, SIGALRM);
+			/* XXX: futex */
 			pthread_mutex_lock(&gs_loc_mutex);
 
 			netstat.per_sec.frames++;

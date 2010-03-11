@@ -69,6 +69,7 @@
 #include <netsniff-ng/system.h>
 #include <netsniff-ng/types.h>
 #include <netsniff-ng/rx_ring.h>
+#include <netsniff-ng/tx_ring.h>
 #include <netsniff-ng/netdev.h>
 #include <netsniff-ng/config.h>
 #include <netsniff-ng/signal.h>
@@ -100,24 +101,8 @@ void softirq_handler(int number)
 	}
 }
 
-/**
- * init_system - Initializes netsniff-ng main
- * @sd:         system configuration data
- * @sock:       socket
- * @rb:         ring buffer
- * @pfd:        file descriptor for polling
- */
-int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+static void __init_phase_common(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
 {
-	int stmp, i, ret, bpf_len = 0;
-	char dev_buff[1024];
-
-	struct sock_filter *bpf = NULL;
-	struct ifconf ifc;
-	struct ifreq *ifr = NULL;
-	struct ifreq *ifr_elem = NULL;
-	struct itimerval val_r;
-
 	assert(sd);
 	assert(sock);
 	assert(rb);
@@ -138,16 +123,101 @@ int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd 
 	register_softirq(SIGUSR2, &softirq_handler);
 	register_softirq(SIGHUP, &softirq_handler);
 
-	if (sd->sysdaemon) {
-		ret = daemonize(sd->pidfile);
-		if (ret != 0) {
-			warn("Daemonize failed!\n");
+	memset(&netstat, 0, sizeof(netstat));
+}
+
+static void __init_phase_daemon(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+{
+	int ret;
+
+	assert(sd);
+	assert(sock);
+	assert(rb);
+	assert(pfd);
+
+	if (sd->sysdaemon == 0)
+		return;
+
+	ret = daemonize(sd->pidfile);
+	if (ret != 0) {
+		warn("Daemonize failed!\n");
+		exit(EXIT_FAILURE);
+	}
+}
+
+static void __init_phase_fallback_dev(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+{
+	int i, stmp;
+	char dev_buff[1024];
+
+	struct ifconf ifc;
+	struct ifreq *ifr = NULL;
+	struct ifreq *ifr_elem = NULL;
+
+	assert(sd);
+	assert(sock);
+	assert(rb);
+	assert(pfd);
+
+	/* User specified device, so no work here ... */
+	if (sd->dev)
+		return;
+
+	/* User didn't specify a device, so we switch to the default running 
+	   dev. This is the first running dev found (except lo). If we find 
+	   nothing, we switch to lo. */
+	sd->dev = strdup("lo");
+	if (!sd->dev) {
+		err("Cannot allocate mem");
+		exit(EXIT_FAILURE);
+	}
+
+	stmp = socket(AF_INET, SOCK_DGRAM, 0);
+	if (stmp < 0) {
+		err("Fetching socket");
+		exit(EXIT_FAILURE);
+	}
+
+	ifc.ifc_len = sizeof(dev_buff);
+	ifc.ifc_buf = dev_buff;
+
+	if (ioctl(stmp, SIOCGIFCONF, &ifc) < 0) {
+		err("Doing ioctl(SIOCGIFCONF)");
+		exit(EXIT_FAILURE);
+	}
+
+	ifr = ifc.ifc_req;
+
+	for (i = 0; i < ifc.ifc_len / sizeof(struct ifreq); ++i) {
+		ifr_elem = &ifr[i];
+
+		if (ioctl(stmp, SIOCGIFFLAGS, ifr_elem) < 0) {
+			err("Doing ioctl(SIOCGIFFLAGS)");
 			exit(EXIT_FAILURE);
+		}
+
+		if ((ifr_elem->ifr_flags & IFF_UP) &&
+		    (ifr_elem->ifr_flags & IFF_RUNNING) && strncmp(ifr_elem->ifr_name, "lo", IFNAMSIZ)) {
+			sd->dev = strdup(ifr_elem->ifr_name);
+			if (!sd->dev) {
+				err("Cannot allocate mem");
+				exit(EXIT_FAILURE);
+			}
+			break;
 		}
 	}
 
-	/* Print program header */
-	header();
+	close(stmp);
+
+	info("No device specified, using `%s`.\n\n", sd->dev);
+}
+
+static void __init_phase_mode_common(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+{
+	assert(sd);
+	assert(sock);
+	assert(rb);
+	assert(pfd);
 
 	(*rb) = (ring_buff_t *) malloc(sizeof(**rb));
 	if ((*rb) == NULL) {
@@ -157,95 +227,108 @@ int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd 
 
 	memset((*rb), 0, sizeof(**rb));
 
-	/* User didn't specify a device, so we switch to the default running 
-	   dev. This is the first running dev found (except lo). If we find 
-	   nothing, we switch to lo. */
-	if (!sd->dev) {
-		sd->dev = strdup("lo");
-		if (!sd->dev) {
-			err("Cannot allocate mem");
-			exit(EXIT_FAILURE);
-		}
-
-		stmp = socket(AF_INET, SOCK_DGRAM, 0);
-		if (stmp < 0) {
-			err("Fetching socket");
-			exit(EXIT_FAILURE);
-		}
-
-		ifc.ifc_len = sizeof(dev_buff);
-		ifc.ifc_buf = dev_buff;
-
-		if (ioctl(stmp, SIOCGIFCONF, &ifc) < 0) {
-			err("Doing ioctl(SIOCGIFCONF)");
-			exit(EXIT_FAILURE);
-		}
-
-		ifr = ifc.ifc_req;
-
-		for (i = 0; i < ifc.ifc_len / sizeof(struct ifreq); ++i) {
-			ifr_elem = &ifr[i];
-
-			if (ioctl(stmp, SIOCGIFFLAGS, ifr_elem) < 0) {
-				err("Doing ioctl(SIOCGIFFLAGS)");
-				exit(EXIT_FAILURE);
-			}
-
-			if ((ifr_elem->ifr_flags & IFF_UP) &&
-			    (ifr_elem->ifr_flags & IFF_RUNNING) && strncmp(ifr_elem->ifr_name, "lo", IFNAMSIZ)) {
-				sd->dev = strdup(ifr_elem->ifr_name);
-				if (!sd->dev) {
-					err("Cannot allocate mem");
-					exit(EXIT_FAILURE);
-				}
-				break;
-			}
-		}
-
-		close(stmp);
-
-		info("No device specified, using `%s`.\n\n", sd->dev);
-	}
+	/* 
+	 * Some further common init stuff
+	 */
 
 	put_dev_into_promisc_mode(sd->dev);
 
 	(*sock) = get_pf_socket();
-	if (sd->bypass_bpf == BPF_NO_BYPASS) {
-		/* XXX: If you try to create custom filters with tcpdump, you 
-		   have to edit the ret opcode, otherwise your payload 
-		   will be cut off at 96 Byte:
+}
 
-		   { 0x6, 0, 0, 0xFFFFFFFF },
+static void __init_phase_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+{
+	int bpf_len = 0;
+	struct sock_filter *bpf = NULL;
 
-		   The kernel now takes skb->len instead of 0xFFFFFFFF ;)
-		 */
+	assert(sd);
+	assert(sock);
+	assert(rb);
+	assert(pfd);
 
-		/* Berkeley Packet Filter stuff */
-		if (parse_rules(sd->rulefile, &bpf, &bpf_len) == 0) {
-			info("BPF is not valid\n");
-			exit(EXIT_FAILURE);
-		}
+	if (sd->mode == MODE_REPLAY)
+		return;
 
-		inject_kernel_bpf((*sock), bpf, bpf_len * sizeof(*bpf));
-
-		/* Print info for the user */
-		bpf_dump_all(bpf, bpf_len);
-	} else {
+	if (sd->bypass_bpf == BPF_BYPASS) {
 		info("No filter applied. Sniffing all traffic.\n\n");
+		return;
 	}
 
-	/* Hash stuff */
-	ieee_vendors_init();
+	/* XXX: If you try to create custom filters with tcpdump, you 
+	   have to edit the ret opcode, otherwise your payload 
+	   will be cut off at 96 Byte:
 
-	/* RX_RING stuff */
+	   { 0x6, 0, 0, 0xFFFFFFFF },
+
+	   The kernel now takes skb->len instead of 0xFFFFFFFF ;)
+	 */
+
+	/* Berkeley Packet Filter stuff */
+	if (parse_rules(sd->rulefile, &bpf, &bpf_len) == 0) {
+		info("BPF is not valid\n");
+		exit(EXIT_FAILURE);
+	}
+
+	inject_kernel_bpf((*sock), bpf, bpf_len * sizeof(*bpf));
+
+	/* Print info for the user */
+	bpf_dump_all(bpf, bpf_len);
+
+	free(bpf);
+}
+
+static void __init_phase_rx_ring(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+{
+	assert(sd);
+	assert(sock);
+	assert(rb);
+	assert(pfd);
+
+	if (sd->mode == MODE_REPLAY)
+		return;
+
 	create_virt_rx_ring((*sock), (*rb), sd->dev);
 	bind_dev_to_rx_ring((*sock), ethdev_to_ifindex(sd->dev), (*rb));
 	mmap_virt_rx_ring((*sock), (*rb));
 
 	alloc_frame_buffer((*rb));
 	prepare_polling((*sock), pfd);
+}
 
-	memset(&netstat, 0, sizeof(netstat));
+static void __init_phase_tx_ring(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+{
+	assert(sd);
+	assert(sock);
+	assert(rb);
+	assert(pfd);
+
+	if (sd->mode == MODE_CAPTURE)
+		return;
+
+	create_virt_tx_ring((*sock), (*rb), sd->dev);
+	bind_dev_to_tx_ring((*sock), ethdev_to_ifindex(sd->dev), (*rb));
+	mmap_virt_tx_ring((*sock), (*rb));
+}
+
+static void __init_phase_hashtables(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+{
+	assert(sd);
+	assert(sock);
+	assert(rb);
+	assert(pfd);
+
+	ieee_vendors_init();
+}
+
+static void __init_phase_timer(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+{
+	int ret;
+	struct itimerval val_r;
+
+	assert(sd);
+	assert(sock);
+	assert(rb);
+	assert(pfd);
 
 	/* Timer settings for counter update */
 	val_r.it_value.tv_sec = (INTERVAL_COUNTER_REFR / 1000);
@@ -259,15 +342,197 @@ int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd 
 	}
 
 	clock_gettime(CLOCK_REALTIME, &netstat.m_start);
+}
 
-	info("--- Listening ---\n\n");
+static void header(void)
+{
+	int ret;
+	size_t len;
+	char *cpu_string;
 
-	free(bpf);
-	return 0;
+	struct sched_param sp;
+
+	len = sysconf(_SC_NPROCESSORS_CONF) + 1;
+
+	cpu_string = malloc(len);
+	if (!cpu_string) {
+		err("No mem left");
+		exit(EXIT_FAILURE);
+	}
+
+	ret = sched_getparam(getpid(), &sp);
+	if (ret) {
+		err("Cannot determine sched prio");
+		exit(EXIT_FAILURE);
+	}
+
+	info("%s -- pid (%d)\n\n", colorize_full_str(red, white, PROGNAME_STRING " " VERSION_STRING), (int)getpid());
+
+	info("nice (%d), scheduler (%d prio %d)\n",
+	     getpriority(PRIO_PROCESS, getpid()), sched_getscheduler(getpid()), sp.sched_priority);
+
+	info("%ld of %ld CPUs online, affinity bitstring (%s)\n\n",
+	     sysconf(_SC_NPROCESSORS_ONLN), sysconf(_SC_NPROCESSORS_CONF), get_cpu_affinity(cpu_string, len));
+
+	free(cpu_string);
+
+	print_device_info();
+
+	info("\n");
 }
 
 /**
- * cleanup_system - Cleans up netsniff-ng main
+ * init_system - Initializes netsniff-ng`s main
+ * @sd:         system configuration data
+ * @sock:       socket
+ * @rb:         ring buffer
+ * @pfd:        file descriptor for polling
+ */
+int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+{
+	assert(sd);
+	assert(sock);
+	assert(rb);
+	assert(pfd);
+
+	/* Print program header */
+	header();
+
+	__init_phase_common(sd, sock, rb, pfd);
+	__init_phase_daemon(sd, sock, rb, pfd);
+	__init_phase_fallback_dev(sd, sock, rb, pfd);
+	__init_phase_mode_common(sd, sock, rb, pfd);
+	__init_phase_bpf(sd, sock, rb, pfd);
+	__init_phase_rx_ring(sd, sock, rb, pfd);
+	__init_phase_tx_ring(sd, sock, rb, pfd);
+	__init_phase_hashtables(sd, sock, rb, pfd);
+	__init_phase_timer(sd, sock, rb, pfd);
+
+	return 0;
+}
+
+static void __exit_phase_common(system_data_t * sd, int *sock, ring_buff_t ** rb)
+{
+	assert(sd);
+	assert(sock);
+	assert(rb);
+	/* NOP */
+}
+
+static void __exit_phase_daemon(system_data_t * sd, int *sock, ring_buff_t ** rb)
+{
+	assert(sd);
+	assert(sock);
+	assert(rb);
+
+	if (sd->sysdaemon == 0)
+		return;
+
+	undaemonize(sd->pidfile);
+}
+
+static void __exit_phase_fallback_dev(system_data_t * sd, int *sock, ring_buff_t ** rb)
+{
+	assert(sd);
+	assert(sock);
+	assert(rb);
+	/* NOP */
+}
+
+static void __exit_phase_mode_common(system_data_t * sd, int *sock, ring_buff_t ** rb)
+{
+	assert(sd);
+	assert(sock);
+	assert(rb);
+	/* NOP */
+}
+
+static void __exit_phase_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb)
+{
+	assert(sd);
+	assert(sock);
+	assert(rb);
+
+	if (sd->mode == MODE_REPLAY)
+		return;
+	if (sd->bypass_bpf == BPF_BYPASS)
+		return;
+
+	reset_kernel_bpf((*sock));
+}
+
+static void __exit_phase_rx_ring(system_data_t * sd, int *sock, ring_buff_t ** rb)
+{
+	assert(sd);
+	assert(sock);
+	assert(rb);
+	assert(*rb);
+
+	if (sd->mode == MODE_REPLAY)
+		return;
+
+	destroy_virt_rx_ring((*sock), (*rb));
+}
+
+static void __exit_phase_tx_ring(system_data_t * sd, int *sock, ring_buff_t ** rb)
+{
+	assert(sd);
+	assert(sock);
+	assert(rb);
+	assert(*rb);
+
+	if (sd->mode == MODE_CAPTURE)
+		return;
+
+	destroy_virt_tx_ring((*sock), (*rb));
+}
+
+static void __exit_phase_hashtables(system_data_t * sd, int *sock, ring_buff_t ** rb)
+{
+	assert(sd);
+	assert(sock);
+	assert(rb);
+
+	ieee_vendors_destroy();
+}
+
+static void __exit_phase_timer(system_data_t * sd, int *sock, ring_buff_t ** rb)
+{
+	assert(sd);
+	assert(sock);
+	assert(rb);
+
+	net_stat((*sock));
+}
+
+static void __exit_phase_last(system_data_t * sd, int *sock, ring_buff_t ** rb)
+{
+	assert(sd);
+	assert(sock);
+	assert(rb);
+
+	close((*sock));
+
+	free((*rb));
+	free(sd->dev);
+}
+
+static void footer(void)
+{
+	/*
+	 * FIXME Find a way to print a uint64_t
+	 * on 32 and 64 bit arch w/o gcc warnings
+	 */
+
+	info("captured frames: %llu, "
+	     "captured bytes: %llu [%llu KiB, %llu MiB, %llu GiB]\n",
+	     netstat.total.frames, netstat.total.bytes,
+	     netstat.total.bytes / 1024,
+	     netstat.total.bytes / (1024 * 1024), netstat.total.bytes / (1024 * 1024 * 1024));
+}
+
+/**
+ * cleanup_system - Cleans up netsniff-ng`s main
  * @sd:            system configuration data
  * @sock:          socket
  * @rb:            ring buffer
@@ -279,29 +544,19 @@ void cleanup_system(system_data_t * sd, int *sock, ring_buff_t ** rb)
 	assert(rb);
 	assert(*rb);
 
-	net_stat((*sock));
-	destroy_virt_rx_ring((*sock), (*rb));
+	__exit_phase_common(sd, sock, rb);
+	__exit_phase_daemon(sd, sock, rb);
+	__exit_phase_fallback_dev(sd, sock, rb);
+	__exit_phase_mode_common(sd, sock, rb);
+	__exit_phase_bpf(sd, sock, rb);
+	__exit_phase_rx_ring(sd, sock, rb);
+	__exit_phase_tx_ring(sd, sock, rb);
+	__exit_phase_hashtables(sd, sock, rb);
+	__exit_phase_timer(sd, sock, rb);
+	__exit_phase_last(sd, sock, rb);
 
-	free((*rb));
-	close((*sock));
+	/* Print program footer */
+	footer();
 
-	/* Hash stuff */
-	ieee_vendors_destroy();
-
-	/*
-	 * FIXME Find a way to print a uint64_t
-	 * on 32 and 64 bit arch w/o gcc warnings
-	 */
-
-	info("captured frames: %llu, "
-	     "captured bytes: %llu [%llu KiB, %llu MiB, %llu GiB]\n",
-	     netstat.total.frames, netstat.total.bytes,
-	     netstat.total.bytes / 1024,
-	     netstat.total.bytes / (1024 * 1024), netstat.total.bytes / (1024 * 1024 * 1024));
-
-	free(sd->dev);
-
-	if (sd->sysdaemon) {
-		undaemonize(sd->pidfile);
-	}
+	return;
 }

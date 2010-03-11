@@ -60,6 +60,9 @@
 
 #define PACKET_DONT_CARE        -1
 
+#define MODE_CAPTURE             0
+#define MODE_REPLAY              1
+
 typedef struct system_data {
 	/* Some more or less boolean conf values */
 	int sysdaemon;
@@ -67,13 +70,14 @@ typedef struct system_data {
 	int no_prioritization;
 	int bypass_bpf;
 	int packet_type;
+	int mode;
 	/* Daemon mode settings */
 	char *pidfile;
 	/* Berkeley Packet Filter rules */
 	char *rulefile;
 	/* Ethernet device */
 	char *dev;
-	int dump_pcap_fd;
+	int pcap_fd;
 	void (*print_pkt) (ring_buff_bytes_t *, const struct tpacket_hdr *);
 } system_data_t;
 

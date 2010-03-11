@@ -47,15 +47,15 @@
 #include <netsniff-ng/ringbuff.h>
 #include <netsniff-ng/macros.h>
 
-int ringbuffer_init(ringbuffer_t **rb, size_t slots)
+int ringbuffer_init(ringbuffer_t ** rb, size_t slots)
 {
 	ringbuffer_offs_t i, j, rc = 0;
 
-	if(rb == NULL || slots == 0)
+	if (rb == NULL || slots == 0)
 		return -EINVAL;
 
 	(*rb) = malloc(sizeof(**rb));
-	if((*rb) == NULL) {
+	if ((*rb) == NULL) {
 		rc = -ENOMEM;
 		goto out;
 	}
@@ -63,14 +63,14 @@ int ringbuffer_init(ringbuffer_t **rb, size_t slots)
 	memset((*rb), 0, sizeof(**rb));
 
 	(*rb)->ring = malloc(sizeof(*((*rb)->ring)) * slots);
-	if((*rb)->ring == NULL) {
+	if ((*rb)->ring == NULL) {
 		rc = -ENOMEM;
 		goto clean_out;
 	}
 
-	for(i = 0; i < slots; ++i) {
+	for (i = 0; i < slots; ++i) {
 		(*rb)->ring[i] = malloc(sizeof(**((*rb)->ring)));
-		if((*rb)->ring[i] == NULL) {
+		if ((*rb)->ring[i] == NULL) {
 			rc = -ENOMEM;
 			goto clean_out_ring;
 		}
@@ -86,36 +86,36 @@ int ringbuffer_init(ringbuffer_t **rb, size_t slots)
 
 	return 0;
 
-clean_out_ring:
-	for(j = 0; j < i; ++j) {
+ clean_out_ring:
+	for (j = 0; j < i; ++j) {
 		free((*rb)->ring[j]);
 	}
 	free((*rb)->ring);
-clean_out:
+ clean_out:
 	free((*rb));
-out:
+ out:
 	return rc;
 }
 
-void ringbuffer_cleanup(ringbuffer_t *rb)
+void ringbuffer_cleanup(ringbuffer_t * rb)
 {
 	ringbuffer_offs_t i;
 
-	if(rb == NULL)
+	if (rb == NULL)
 		return;
-	for(i = 0; i < rb->max_slots; ++i)
+	for (i = 0; i < rb->max_slots; ++i)
 		free(rb->ring[i]);
 	free(rb->ring);
 	free(rb);
 }
 
-int ringbuffer_put(ringbuffer_t *rb, ringbuffer_user_t *rb_data)
+int ringbuffer_put(ringbuffer_t * rb, ringbuffer_user_t * rb_data)
 {
-	if(rb == NULL || rb_data == NULL)
+	if (rb == NULL || rb_data == NULL)
 		return -EINVAL;
-	if(rb->max_slots == rb->cur_slots)
+	if (rb->max_slots == rb->cur_slots)
 		return -ENOMEM;
-	if(rb->ring[rb->next_free]->ch_status == CHUNK_STATUS_BUSY)
+	if (rb->ring[rb->next_free]->ch_status == CHUNK_STATUS_BUSY)
 		return -EBUSY;
 
 	assert(sizeof(*rb_data) == sizeof(rb->ring[rb->next_free]->ch_user));
@@ -130,11 +130,11 @@ int ringbuffer_put(ringbuffer_t *rb, ringbuffer_user_t *rb_data)
 	return 0;
 }
 
-int ringbuffer_get(ringbuffer_t *rb, ringbuffer_user_t *rb_data)
+int ringbuffer_get(ringbuffer_t * rb, ringbuffer_user_t * rb_data)
 {
-	if(rb == NULL || rb_data == NULL)
+	if (rb == NULL || rb_data == NULL)
 		return -EINVAL;
-	if(rb->ring[rb->next_user]->ch_status == CHUNK_STATUS_FREE)
+	if (rb->ring[rb->next_user]->ch_status == CHUNK_STATUS_FREE)
 		return -ENODATA;
 
 	assert(sizeof(*rb_data) == sizeof(rb->ring[rb->next_user]->ch_user));
@@ -148,4 +148,3 @@ int ringbuffer_get(ringbuffer_t *rb, ringbuffer_user_t *rb_data)
 
 	return 0;
 }
-

@@ -46,7 +46,6 @@
 
 extern void help(void);
 extern void version(void);
-extern void header(void);
 
 /* Inline stuff */
 

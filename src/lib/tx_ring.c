@@ -36,6 +36,11 @@
  *    Mostly TX_RING related stuff and other networking code
  */
 
+/* 
+ * TODO: Allow to apply a BPF filter for a transmit pcap file and send only 
+ *       relevant parts. 
+ */
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -60,8 +65,7 @@
 #include <netsniff-ng/tx_ring.h>
 #include <netsniff-ng/netdev.h>
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
-
+#ifdef __HAVE_TX_RING__
 /**
  * destroy_virt_tx_ring - Destroys virtual TX_RING buffer
  * @sock:                socket
@@ -180,11 +184,11 @@ void bind_dev_to_tx_ring(int sock, int ifindex, ring_buff_t * rb)
 }
 
 /**
- * flush_tx_ring - Send payload of tx_ring in non-blocking mode
- * @sock:         socket
- * @rb:           ring buffer
+ * flush_virt_tx_ring - Send payload of tx_ring in non-blocking mode
+ * @sock:              socket
+ * @rb:                ring buffer
  */
-int flush_tx_ring(int sock, ring_buff_t * rb)
+int flush_virt_tx_ring(int sock, ring_buff_t * rb)
 {
 	int rc;
 
@@ -196,7 +200,31 @@ int flush_tx_ring(int sock, ring_buff_t * rb)
 
 	return rc;
 }
+
+/**
+ * transmit_packets - TX_RING critical path
+ * @sd:              config data
+ * @sock:            socket
+ * @rb:              ring buffer
+ */
+void transmit_packets(system_data_t * sd, int sock, ring_buff_t * rb)
+{
+	assert(rb);
+	assert(sd);
+
+	info("--- Transmitting ---\n\n");
+
+	/* Dummy function */
+
+	warn("Not yet implemented!\n\n");
+}
+
 #else
+
+/* 
+ * XXX: do the same stuff but only with sendmsg or similar 
+ */
+
 void bind_dev_to_tx_ring(int sock, int ifindex, ring_buff_t * rb)
 {
 }
@@ -213,8 +241,20 @@ void destroy_virt_tx_ring(int sock, ring_buff_t * rb)
 {
 }
 
-int flush_tx_ring(int sock, ring_buff_t * rb)
+int flush_virt_tx_ring(int sock, ring_buff_t * rb)
 {
-	return -1;
+	return 0;
 }
-#endif				/* LINUX_VERSION_CODE */
+
+void transmit_packets(system_data_t * sd, int sock, ring_buff_t * rb)
+{
+	assert(rb);
+	assert(sd);
+
+	info("--- Transmitting ---\n\n");
+
+	/* Dummy function */
+
+	warn("Not yet implemented!\n\n");
+}
+#endif				/* __HAVE_TX_RING__ */

@@ -85,7 +85,8 @@ void init_configuration(system_data_t * sd)
 	sd->bypass_bpf = BPF_BYPASS;
 	sd->packet_type = PACKET_DONT_CARE;
 	sd->print_pkt = versatile_print;
-	sd->dump_pcap_fd = PCAP_NO_DUMP;
+	sd->pcap_fd = PCAP_NO_DUMP;
+	sd->mode = MODE_CAPTURE;
 }
 
 void set_configuration(int argc, char **argv, system_data_t * sd)
@@ -96,7 +97,7 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 	assert(argv);
 	assert(sd);
 
-	while ((c = getopt_long(argc, argv, "vhd:p:P:Df:sb:B:Hnt:", long_options, &opt_idx)) != EOF) {
+	while ((c = getopt_long(argc, argv, "q:g:vhd:p:r:P:Df:sb:B:Hnt:", long_options, &opt_idx)) != EOF) {
 		switch (c) {
 		case 'h':
 			help();
@@ -163,11 +164,20 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 			set_cpu_affinity_inv(optarg);
 			break;
 		case 'p':
-			sd->dump_pcap_fd = creat(optarg, DEFFILEMODE);
-			if (sd->dump_pcap_fd == -1) {
+			sd->pcap_fd = creat(optarg, DEFFILEMODE);
+			if (sd->pcap_fd == -1) {
 				err("Can't open file");
 				exit(EXIT_FAILURE);
 			}
+			break;
+		case 'r':
+			sd->mode = MODE_REPLAY;
+			break;
+		case 'q':
+			info("Option `q` not yet implemented!\n");
+			break;
+		case 'g':
+			info("Option `g` not yet implemented!\n");
 			break;
 		case '?':
 			switch (optopt) {
@@ -198,7 +208,7 @@ void check_config(system_data_t * sd)
 {
 	assert(sd);
 
-	if (sd->sysdaemon && (!sd->pidfile || sd->dump_pcap_fd == -1)) {
+	if (sd->sysdaemon && (!sd->pidfile || sd->pcap_fd == -1)) {
 		help();
 		exit(EXIT_FAILURE);
 	}
@@ -215,5 +225,5 @@ void clean_config(system_data_t * sd)
 	if (sd->dev)
 		free(sd->dev);
 
-	close(sd->dump_pcap_fd);
+	close(sd->pcap_fd);
 }

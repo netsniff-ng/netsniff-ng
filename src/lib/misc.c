@@ -47,6 +47,7 @@
 #include <netsniff-ng/system.h>
 #include <netsniff-ng/misc.h>
 #include <netsniff-ng/netdev.h>
+#include <netsniff-ng/tx_ring.h>
 
 /**
  * help - Prints help
@@ -56,8 +57,12 @@ void help(void)
 	info("%s %s\n\n", PROGNAME_STRING, VERSION_STRING);
 	info("%s is a high performance network sniffer for packet\n", PROGNAME_STRING);
 	info("inspection that acts as a raw socket sniffer with kernelspace\n");
-	info("bpf and a \"zero-copy\" mode receive/transmit ring.\n");
-	info("\n");
+	info("bpf and a \"zero-copy\" mode receive/transmit ring.\n\n");
+#ifdef __HAVE_TX_RING__
+	info("Compiled with transmit ring functionality :)\n\n");
+#else
+	info("Compiled without transmit ring functionality :(\n\n");
+#endif
 	info("Options for net dev:\n");
 	info("  -d|--dev <arg>         use device <arg> for capturing packets, e.g. `eth0`\n");
 	info("\n");
@@ -117,6 +122,11 @@ void version(void)
 	info("%s is a high performance network sniffer for packet\n", PROGNAME_STRING);
 	info("inspection that acts as a raw socket sniffer with kernelspace\n");
 	info("bpf and a \"zero-copy\" mode receive/transmit ring.\n\n");
+#ifdef __HAVE_TX_RING__
+	info("Compiled with transmit ring functionality :)\n\n");
+#else
+	info("Compiled without transmit ring functionality :(\n\n");
+#endif
 	info("%s", MOOH);	/* ;) */
 	info("\n");
 	info("%s can be used for protocol analysis and\n"
@@ -130,44 +140,4 @@ void version(void)
 	info("There is NO WARRANTY, to the extent permitted by law.\n");
 
 	exit(EXIT_SUCCESS);
-}
-
-/**
- * header - Prints program startup header
- */
-void header(void)
-{
-	int ret;
-	size_t len;
-	char *cpu_string;
-
-	struct sched_param sp;
-
-	len = sysconf(_SC_NPROCESSORS_CONF) + 1;
-
-	cpu_string = malloc(len);
-	if (!cpu_string) {
-		err("No mem left");
-		exit(EXIT_FAILURE);
-	}
-
-	ret = sched_getparam(getpid(), &sp);
-	if (ret) {
-		err("Cannot determine sched prio");
-		exit(EXIT_FAILURE);
-	}
-
-	info("%s -- pid (%d)\n\n", colorize_full_str(red, white, PROGNAME_STRING " " VERSION_STRING), (int)getpid());
-
-	info("nice (%d), scheduler (%d prio %d)\n",
-	     getpriority(PRIO_PROCESS, getpid()), sched_getscheduler(getpid()), sp.sched_priority);
-
-	info("%ld of %ld CPUs online, affinity bitstring (%s)\n\n",
-	     sysconf(_SC_NPROCESSORS_ONLN), sysconf(_SC_NPROCESSORS_CONF), get_cpu_affinity(cpu_string, len));
-
-	free(cpu_string);
-
-	print_device_info();
-
-	info("\n");
 }

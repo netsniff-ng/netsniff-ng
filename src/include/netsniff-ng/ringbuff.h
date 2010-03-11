@@ -64,9 +64,9 @@ typedef struct {
 	ringbuffer_chunk_t **ring;
 } ringbuffer_t;
 
-extern int ringbuffer_init(ringbuffer_t **rb, size_t slots);
-extern void ringbuffer_cleanup(ringbuffer_t *rb);
-extern int ringbuffer_put(ringbuffer_t *rb, ringbuffer_user_t *rb_data);
-extern int ringbuffer_get(ringbuffer_t *rb, ringbuffer_user_t *rb_data);
+extern int ringbuffer_init(ringbuffer_t ** rb, size_t slots);
+extern void ringbuffer_cleanup(ringbuffer_t * rb);
+extern int ringbuffer_put(ringbuffer_t * rb, ringbuffer_user_t * rb_data);
+extern int ringbuffer_get(ringbuffer_t * rb, ringbuffer_user_t * rb_data);
 
-#endif /* _NET_RINGBUFF_H_ */
+#endif				/* _NET_RINGBUFF_H_ */
