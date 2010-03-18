@@ -66,6 +66,9 @@
 
 volatile sig_atomic_t sigint = 0;
 
+ring_buff_stat_t netstat;
+pthread_mutex_t gs_loc_mutex;
+
 /**
  * softirq_handler - Signal handling multiplexer
  * @number:         signal number

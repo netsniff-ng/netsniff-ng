@@ -155,8 +155,8 @@ static inline void hold_softirq_pthread(int num_count, ...)
  * Signal handling
  */
 
-ring_buff_stat_t netstat;
-pthread_mutex_t gs_loc_mutex;
+extern ring_buff_stat_t netstat;
+extern pthread_mutex_t gs_loc_mutex;
 
 /**
  * refresh_counters - Refreshes global packet counters
