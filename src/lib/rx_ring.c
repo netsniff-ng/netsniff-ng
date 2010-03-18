@@ -215,7 +215,7 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 
 	info("--- Listening ---\n\n");
 
-	if (sd->pcap_fd != -1) {
+	if (sd->pcap_fd != PCAP_NO_DUMP) {
 		sf_write_header(sd->pcap_fd, LINKTYPE_EN10MB, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
 	}
 
@@ -234,7 +234,7 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 				}
 			}
 
-			if (sd->pcap_fd != -1) {
+			if (sd->pcap_fd != PCAP_NO_DUMP) {
 				pcap_dump(sd->pcap_fd, &fm->tp_h, (struct ethhdr *)rbb);
 			}
 

@@ -22,5 +22,5 @@ lib: $(OBJECTS)
 	@$(CC) -c $(CFLAGS) $(INCLUDE) $<
 
 clean:
-	@rm *.o *.tu *.nccout Code.map 2&>0 0>/dev/null || true
+	@rm *.o *.tu *.nccout *~ Code.map > /dev/null 2>&1 || true
 

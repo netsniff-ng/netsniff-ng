@@ -37,7 +37,7 @@ install:
 
 clean:
 	@-for d in $(BUILD_FOLDERS); do (cd $$d; $(MAKE) $(MFLAGS) clean); done
-	@rm *.o *.tu *.nccout Code.map $(NAME) $(MANDIR_LOCAL)/$(NAME).8.gz 2&>0 0>/dev/null || true
+	@rm *.o *.tu *.nccout *~ Code.map $(NAME) $(MANDIR_LOCAL)/$(NAME).8.gz > /dev/null 2>&1 || true
 
 uninstall:
 	@rm $(DESTDIR)/$(BINDIR)/$(NAME) || true
