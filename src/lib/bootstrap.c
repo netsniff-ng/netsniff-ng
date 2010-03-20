@@ -455,7 +455,7 @@ static void __exit_stage_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb)
 		return;
 
 	reset_kernel_bpf((*sock));
-	if(sd->bpf)
+	if (sd->bpf)
 		free(sd->bpf);
 }
 

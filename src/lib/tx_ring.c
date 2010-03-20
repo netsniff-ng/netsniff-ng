@@ -71,11 +71,17 @@
 #include <netsniff-ng/netdev.h>
 #include <netsniff-ng/signal.h>
 
+#define flushlock_lock(x) do{ (x) = 1; } while(0);
+#define flushlock_unlock(x) do{ (x) = 0; } while(0);
+#define flushlock_trylock(x) ((x) == 1)
+
 struct packed_tx_data {
 	system_data_t *sd;
 	int sock;
 	ring_buff_t *rb;
 };
+
+volatile sig_atomic_t ring_lock;
 
 static char spinning_chars[] = { '|', '/', '-', '\\' };
 
@@ -151,7 +157,7 @@ void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname)
 	rb->layout.tp_frame_size = TPACKET_ALIGNMENT << 7;
 
 	/* max: 15 for i386, old default: 1 << 13, now: approximated bandwidth size */
-	rb->layout.tp_block_nr = ((dev_speed * 1100000) / rb->layout.tp_block_size) * 2;
+	rb->layout.tp_block_nr = ((dev_speed * 1100000) / rb->layout.tp_block_size) * 4;
 	rb->layout.tp_frame_nr = rb->layout.tp_block_size / rb->layout.tp_frame_size * rb->layout.tp_block_nr;
 
  __retry_sso:
@@ -172,7 +178,7 @@ void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname)
 
 	rb->len = rb->layout.tp_block_size * rb->layout.tp_block_nr;
 
-	info("%.2f MB allocated for tx ring \n", 1.f * rb->len / (1024 * 1024));
+	info("%.2f MB allocated for transmit ring \n", 1.f * rb->len / (1024 * 1024));
 	info(" [ %d blocks, %d frames ] \n", rb->layout.tp_block_nr, rb->layout.tp_frame_nr);
 	info(" [ %d frames per block ]\n", rb->layout.tp_block_size / rb->layout.tp_frame_size);
 	info(" [ framesize: %d bytes, blocksize: %d bytes ]\n\n", rb->layout.tp_frame_size, rb->layout.tp_block_size);
@@ -253,7 +259,6 @@ int flush_virt_tx_ring(int sock, ring_buff_t * rb)
 static void *fill_virt_tx_ring_thread(void *packed)
 {
 	int loop, i;
-	size_t num = 0;
 
 	ring_buff_bytes_t *buff;
 
@@ -263,10 +268,10 @@ static void *fill_virt_tx_ring_thread(void *packed)
 
 	ptd = (struct packed_tx_data *)packed;
 
-	for (i = 0; pcap_has_packets(ptd->sd->pcap_fd) && likely(!sigint); loop = 1, i++) {
+	for (i = 0; pcap_has_packets(ptd->sd->pcap_fd) && likely(!sigint); loop = 1) {
 		do {
 			int success;
-			
+
 			fm = ptd->rb->frames[i].iov_base;
 			header = (struct tpacket_hdr *)&fm->tp_h;
 			buff = (ring_buff_bytes_t *) (ptd->rb->frames[i].iov_base + sizeof(*fm) + sizeof(short));
@@ -276,23 +281,29 @@ static void *fill_virt_tx_ring_thread(void *packed)
 				sched_yield();
 				break;
 
+			case TP_STATUS_SEND_REQUEST:
+				/* Notify kernel to pull */
+				flushlock_unlock(ring_lock);
+				usleep(0);
+				break;
+
 			case TP_STATUS_AVAILABLE:
 				success = 0;
 				do {
-					pcap_fetch_next_packet(ptd->sd->pcap_fd, header, (struct ethhdr *) buff);
+					pcap_fetch_next_packet(ptd->sd->pcap_fd, header, (struct ethhdr *)buff);
 					/* No filter applied */
-					if(!ptd->sd->bpf) {
+					if (!ptd->sd->bpf) {
 						success = 1;
 						break;
 					}
 					/* Filter packet if user wants so */
-					if(ptd->sd->bpf && bpf_filter(ptd->sd->bpf, buff, header->tp_len)) {
+					if (ptd->sd->bpf && bpf_filter(ptd->sd->bpf, buff, header->tp_len)) {
 						success = 1;
 						break;
 					}
-				} while(pcap_has_packets(ptd->sd->pcap_fd));
-				
-				if(success == 0)
+				} while (pcap_has_packets(ptd->sd->pcap_fd));
+
+				if (success == 0)
 					goto out;
 				loop = 0;
 				break;
@@ -306,13 +317,14 @@ static void *fill_virt_tx_ring_thread(void *packed)
 
 		/* We're done! */
 		mem_notify_kernel_for_tx(header);
-		num++;
+		/* Next frame */
+		i = (i + 1) % ptd->rb->layout.tp_frame_nr;
 	}
-out:
-	info("Transmit ring has been filled with %u packets.\n", num);
 
-	//pthread_exit(0);
-	return 0;
+	/* Pull the rest */
+	flushlock_unlock(ring_lock);
+ out:
+	pthread_exit(0);
 }
 
 static void *print_progress_spinner(void *arg)
@@ -323,7 +335,7 @@ static void *print_progress_spinner(void *arg)
 		/* Spinning line for progress */
 		info("\b%c", spinning_chars[spinning_count++ % sizeof(spinning_chars)]);
 		fflush(stdout);
-		usleep(30000);
+		usleep(25000);
 	}
 
 	pthread_exit(NULL);
@@ -344,48 +356,55 @@ static void *flush_virt_tx_ring_thread(void *packed)
 
 	ptd = (struct packed_tx_data *)packed;
 
-	ret = pthread_create(&progress, NULL, print_progress_spinner, NULL);
-	if (ret) {
-		err("Cannot create thread");
-		exit(EXIT_FAILURE);
-	}
+	for (; likely(!sigint); errors = 0) {
+		while (flushlock_trylock(ring_lock)) ;
 
-	ret = flush_virt_tx_ring(ptd->sock, ptd->rb);
-	if (ret < 0) {
-		exit(EXIT_FAILURE);
-	}
+		flushlock_lock(ring_lock);
+		ret = pthread_create(&progress, NULL, print_progress_spinner, NULL);
+		if (ret) {
+			err("Cannot create thread");
+			exit(EXIT_FAILURE);
+		}
 
-	pthread_kill(progress, SIGCHLD);
-	info("\n");
+		ret = flush_virt_tx_ring(ptd->sock, ptd->rb);
+		if (ret < 0) {
+			exit(EXIT_FAILURE);
+		}
 
-	for (i = 0; i < ptd->rb->layout.tp_frame_nr; i++) {
-		fm = ptd->rb->frames[i].iov_base;
-		header = (struct tpacket_hdr *)&fm->tp_h;
+		pthread_kill(progress, SIGCHLD);
+		info("\n");
+		fflush(stdout);
 
-		switch ((volatile uint32_t)header->tp_status) {
-		case TP_STATUS_SEND_REQUEST:
-			warn("Frame has not been sent %p!\n", header);
-			errors++;
-			break;
+		for (i = 0; i < ptd->rb->layout.tp_frame_nr; i++) {
+			fm = ptd->rb->frames[i].iov_base;
+			header = (struct tpacket_hdr *)&fm->tp_h;
 
-		case TP_STATUS_LOSING:
-			warn("Transfer error of frame!\n");
-			errors++;
-			break;
+			switch ((volatile uint32_t)header->tp_status) {
+			case TP_STATUS_SEND_REQUEST:
+				warn("Frame has not been sent %p!\n", header);
+				fflush(stdout);
+				errors++;
+				break;
 
-		default:
-			break;
+			case TP_STATUS_LOSING:
+				warn("Transfer error of frame!\n");
+				fflush(stdout);
+				errors++;
+				break;
+
+			default:
+				break;
+			}
+		}
+
+		if (errors > 0) {
+			warn("%d errors occured during tx_ring flush!\n", errors);
+		} else {
+			info("Transmit ring has been flushed.\n\n");
 		}
 	}
 
-	if (errors > 0) {
-		warn("%d errors occured during tx_ring flush!\n", errors);
-	} else {
-		info("Transmit ring has been flushed.\n\n");
-	}
-
-	//pthread_exit(0);
-	return 0;
+	pthread_exit(0);
 }
 
 /**
@@ -399,7 +418,8 @@ void transmit_packets(system_data_t * sd, int sock, ring_buff_t * rb)
 	assert(rb);
 	assert(sd);
 
-	//pthread_t send, fill;
+	int ret;
+	pthread_t send, fill;
 
 	struct packed_tx_data ptd = {
 		.sd = sd,
@@ -410,9 +430,24 @@ void transmit_packets(system_data_t * sd, int sock, ring_buff_t * rb)
 	info("--- Transmitting ---\n\n");
 	info("!!! Experimental !!!\n\n");
 
-	/* Dummy function */
-	fill_virt_tx_ring_thread(&ptd);
-	flush_virt_tx_ring_thread(&ptd);
+	flushlock_lock(ring_lock);
+
+	ret = pthread_create(&fill, NULL, fill_virt_tx_ring_thread, &ptd);
+	if (ret) {
+		err("Cannot create fill thread");
+		exit(EXIT_FAILURE);
+	}
+
+	ret = pthread_create(&send, NULL, flush_virt_tx_ring_thread, &ptd);
+	if (ret) {
+		err("Cannot create send thread");
+		exit(EXIT_FAILURE);
+	}
+
+	pthread_join(fill, NULL);
+	// TODO: bring both threads safely down
+	sleep(2);
+	pthread_kill(send, SIGCHLD);
 }
 
 #else

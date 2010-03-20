@@ -145,7 +145,7 @@ void create_virt_rx_ring(int sock, ring_buff_t * rb, char *ifname)
 
 	rb->len = rb->layout.tp_block_size * rb->layout.tp_block_nr;
 
-	info("%.2f MB allocated for rx ring \n", 1.f * rb->len / (1024 * 1024));
+	info("%.2f MB allocated for receive ring \n", 1.f * rb->len / (1024 * 1024));
 	info(" [ %d blocks, %d frames ] \n", rb->layout.tp_block_nr, rb->layout.tp_frame_nr);
 	info(" [ %d frames per block ]\n", rb->layout.tp_block_size / rb->layout.tp_frame_size);
 	info(" [ framesize: %d bytes, blocksize: %d bytes ]\n\n", rb->layout.tp_frame_size, rb->layout.tp_block_size);
