@@ -240,11 +240,8 @@ static void __init_stage_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb, s
 	assert(rb);
 	assert(pfd);
 
-	if (sd->mode == MODE_REPLAY)
-		return;
-
 	if (sd->bypass_bpf == BPF_BYPASS) {
-		info("No filter applied. Sniffing all traffic.\n\n");
+		info("No filter applied. Switching to all traffic.\n\n");
 		return;
 	}
 
@@ -263,12 +260,13 @@ static void __init_stage_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb, s
 		exit(EXIT_FAILURE);
 	}
 
-	inject_kernel_bpf((*sock), bpf, bpf_len * sizeof(*bpf));
+	sd->bpf = bpf;
+
+	if (sd->mode == MODE_CAPTURE)
+		inject_kernel_bpf((*sock), sd->bpf, bpf_len * sizeof(*sd->bpf));
 
 	/* Print info for the user */
-	bpf_dump_all(bpf, bpf_len);
-
-	free(bpf);
+	bpf_dump_all(sd->bpf, bpf_len);
 }
 
 static void __init_stage_rx_ring(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
@@ -457,6 +455,8 @@ static void __exit_stage_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb)
 		return;
 
 	reset_kernel_bpf((*sock));
+	if(sd->bpf)
+		free(sd->bpf);
 }
 
 static void __exit_stage_rx_ring(system_data_t * sd, int *sock, ring_buff_t ** rb)

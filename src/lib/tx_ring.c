@@ -63,6 +63,7 @@
 #include <linux/filter.h>
 #include <linux/version.h>
 
+#include <netsniff-ng/bpf.h>
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/types.h>
 #include <netsniff-ng/replay.h>
@@ -264,6 +265,8 @@ static void *fill_virt_tx_ring_thread(void *packed)
 
 	for (i = 0; pcap_has_packets(ptd->sd->pcap_fd) && likely(!sigint); loop = 1, i++) {
 		do {
+			int success;
+			
 			fm = ptd->rb->frames[i].iov_base;
 			header = (struct tpacket_hdr *)&fm->tp_h;
 			buff = (ring_buff_bytes_t *) (ptd->rb->frames[i].iov_base + sizeof(*fm) + sizeof(short));
@@ -274,7 +277,23 @@ static void *fill_virt_tx_ring_thread(void *packed)
 				break;
 
 			case TP_STATUS_AVAILABLE:
-				pcap_fetch_next_packet(ptd->sd->pcap_fd, header, (struct ethhdr *)buff);
+				success = 0;
+				do {
+					pcap_fetch_next_packet(ptd->sd->pcap_fd, header, (struct ethhdr *) buff);
+					/* No filter applied */
+					if(!ptd->sd->bpf) {
+						success = 1;
+						break;
+					}
+					/* Filter packet if user wants so */
+					if(ptd->sd->bpf && bpf_filter(ptd->sd->bpf, buff, header->tp_len)) {
+						success = 1;
+						break;
+					}
+				} while(pcap_has_packets(ptd->sd->pcap_fd));
+				
+				if(success == 0)
+					goto out;
 				loop = 0;
 				break;
 
@@ -289,7 +308,7 @@ static void *fill_virt_tx_ring_thread(void *packed)
 		mem_notify_kernel_for_tx(header);
 		num++;
 	}
-
+out:
 	info("Transmit ring has been filled with %u packets.\n", num);
 
 	//pthread_exit(0);

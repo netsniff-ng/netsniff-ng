@@ -87,6 +87,7 @@ void init_configuration(system_data_t * sd)
 	sd->print_pkt = versatile_print;
 	sd->pcap_fd = PCAP_NO_DUMP;
 	sd->mode = MODE_CAPTURE;
+	sd->bpf = NULL;
 }
 
 void set_configuration(int argc, char **argv, system_data_t * sd)

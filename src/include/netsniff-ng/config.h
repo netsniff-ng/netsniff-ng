@@ -78,6 +78,7 @@ typedef struct system_data {
 	/* Ethernet device */
 	char *dev;
 	int pcap_fd;
+	struct sock_filter *bpf;
 	void (*print_pkt) (ring_buff_bytes_t *, const struct tpacket_hdr *);
 } system_data_t;
 
