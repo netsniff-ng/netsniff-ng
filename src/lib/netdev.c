@@ -235,6 +235,15 @@ int get_device_bitrate_generic(const char *ifname)
 }
 
 /**
+ * get_device_bitrate_generic_cable - Returns bitrate in Mb/s
+ * @ifname:                    device name
+ */
+int get_device_bitrate_generic_cable(const char *ifname)
+{
+	return get_ethtool_bitrate(ifname);
+}
+
+/**
  * get_mtu - 	Get MTU of a device
  * @sock:                      socket descriptor
  * @ifname:                    device name
@@ -584,6 +593,7 @@ void net_stat(int sock)
 
 	ret = getsockopt(sock, SOL_PACKET, PACKET_STATISTICS, &kstats, &slen);
 	if (ret > -1) {
+		info("\n\n");
 		info("%d frames incoming\n", kstats.tp_packets);
 		info("%d frames passed filter\n", kstats.tp_packets - kstats.tp_drops);
 		info("%d frames failed filter (due to out of space)\n", kstats.tp_drops);

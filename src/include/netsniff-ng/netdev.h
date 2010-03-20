@@ -56,6 +56,7 @@ struct in6_ifreq {
 /* Function signatures */
 
 extern int get_device_bitrate_generic(const char *ifname);
+extern int get_device_bitrate_generic_cable(const char *ifname);
 extern short get_nic_flags(const char *dev);
 extern void print_device_info(void);
 extern void put_dev_into_promisc_mode(const char *dev);
@@ -79,6 +80,17 @@ static inline int get_device_bitrate_generic_fallback(const char *ifname)
 	   Furthermore the wireless device show speedrates about 1 or 2 MBit/s, so we fallback 
 	   here too, otherwise the map will fail */
 	return (speed > 10 ? speed : FAILSAFE_BITRATE);
+}
+
+/**
+ * get_device_bitrate_generic_fallback2 - Returns bitrate of device in Mb/s
+ * @ifname:                             interface name
+ */
+static inline int get_device_bitrate_generic_fallback2(const char *ifname)
+{
+	int speed = get_device_bitrate_generic_cable(ifname);
+	/* If speed is 0 interface could be down or user has choosen a loopback device?! */
+	return (speed > 0 ? speed : FAILSAFE_BITRATE);
 }
 
 #endif				/* _NET_NETDEV_H_ */

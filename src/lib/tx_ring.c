@@ -147,7 +147,7 @@ void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname)
 		exit(EXIT_FAILURE);
 	}
 
-	dev_speed = get_device_bitrate_generic_fallback(ifname) >> 3;
+	dev_speed = get_device_bitrate_generic_fallback2(ifname) >> 3;
 	memset(&(rb->layout), 0, sizeof(rb->layout));
 
 	set_packet_loss_discard(sock);
@@ -261,6 +261,7 @@ static void *fill_virt_tx_ring_thread(void *packed)
 	int loop, i;
 
 	ring_buff_bytes_t *buff;
+	uint64_t packets = 0;
 
 	struct frame_map *fm;
 	struct tpacket_hdr *header;
@@ -317,6 +318,7 @@ static void *fill_virt_tx_ring_thread(void *packed)
 
 		/* We're done! */
 		mem_notify_kernel_for_tx(header);
+		packets++;
 		/* Next frame */
 		i = (i + 1) % ptd->rb->layout.tp_frame_nr;
 	}
@@ -324,6 +326,7 @@ static void *fill_virt_tx_ring_thread(void *packed)
 	/* Pull the rest */
 	flushlock_unlock(ring_lock);
  out:
+ 	info("Transmit ring has pushed %llu packets!\n", packets);
 	pthread_exit(0);
 }
 
@@ -419,26 +422,41 @@ void transmit_packets(system_data_t * sd, int sock, ring_buff_t * rb)
 	assert(sd);
 
 	int ret;
-	pthread_t send, fill;
 
+	pthread_t send, fill;
+	pthread_attr_t attr_send, attr_fill;
+
+	struct sched_param para_send, para_fill;
 	struct packed_tx_data ptd = {
 		.sd = sd,
 		.sock = sock,
 		.rb = rb,
 	};
 
-	info("--- Transmitting ---\n\n");
+	info("--- Transmitting ---\n");
 	info("!!! Experimental !!!\n\n");
 
 	flushlock_lock(ring_lock);
 
-	ret = pthread_create(&fill, NULL, fill_virt_tx_ring_thread, &ptd);
+	pthread_attr_init(&attr_send);
+	pthread_attr_init(&attr_fill);
+ 
+	pthread_attr_setschedpolicy(&attr_send, SCHED_RR);
+	pthread_attr_setschedpolicy(&attr_fill, SCHED_RR);
+ 
+	para_send.sched_priority = 20;
+	pthread_attr_setschedparam(&attr_send, &para_send);
+	
+	para_fill.sched_priority = 20;
+	pthread_attr_setschedparam(&attr_fill, &para_fill);
+
+	ret = pthread_create(&fill, &attr_fill, fill_virt_tx_ring_thread, &ptd);
 	if (ret) {
 		err("Cannot create fill thread");
 		exit(EXIT_FAILURE);
 	}
 
-	ret = pthread_create(&send, NULL, flush_virt_tx_ring_thread, &ptd);
+	ret = pthread_create(&send, &attr_send, flush_virt_tx_ring_thread, &ptd);
 	if (ret) {
 		err("Cannot create send thread");
 		exit(EXIT_FAILURE);
@@ -448,6 +466,7 @@ void transmit_packets(system_data_t * sd, int sock, ring_buff_t * rb)
 	// TODO: bring both threads safely down
 	sleep(2);
 	pthread_kill(send, SIGCHLD);
+	//pthread_join(send, NULL);
 }
 
 #else
