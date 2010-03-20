@@ -272,7 +272,7 @@ static void *fill_virt_tx_ring_thread(void *packed)
 
 			fm = ptd->rb->frames[i].iov_base;
 			header = (struct tpacket_hdr *)&fm->tp_h;
-			buff = (ring_buff_bytes_t *) (ptd->rb->frames[i].iov_base + sizeof(*fm) + sizeof(short));
+			buff = (ring_buff_bytes_t *) (ptd->rb->frames[i].iov_base + TPACKET_HDRLEN - sizeof(struct sockaddr_ll));
 
 			switch ((volatile uint32_t)header->tp_status) {
 			default:
@@ -341,7 +341,7 @@ static void *print_progress_spinner(void *arg)
 		usleep(25000);
 	}
 
-	pthread_exit(NULL);
+	pthread_exit(0);
 }
 
 /**
