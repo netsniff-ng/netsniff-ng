@@ -36,11 +36,6 @@
  *    Mostly TX_RING related stuff and other networking code
  */
 
-/* 
- * TODO: Allow to apply a BPF filter for a transmit pcap file and send only 
- *       relevant parts. 
- */
-
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -82,9 +77,11 @@ struct packed_tx_data {
 };
 
 volatile sig_atomic_t ring_lock;
+volatile sig_atomic_t prog_intr = 0;
+volatile sig_atomic_t send_intr = 0;
 
+/* TODO: own file, can be used for rx_ring silent mode */
 static char spinning_chars[] = { '|', '/', '-', '\\' };
-
 static int spinning_count = 0;
 
 #ifdef __HAVE_TX_RING__
@@ -157,7 +154,7 @@ void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname)
 	rb->layout.tp_frame_size = TPACKET_ALIGNMENT << 7;
 
 	/* max: 15 for i386, old default: 1 << 13, now: approximated bandwidth size */
-	rb->layout.tp_block_nr = ((dev_speed * 1100000) / rb->layout.tp_block_size) * 4;
+	rb->layout.tp_block_nr = ((dev_speed * 1100000) / rb->layout.tp_block_size) * 2;
 	rb->layout.tp_frame_nr = rb->layout.tp_block_size / rb->layout.tp_frame_size * rb->layout.tp_block_nr;
 
  __retry_sso:
@@ -244,7 +241,7 @@ int flush_virt_tx_ring(int sock, ring_buff_t * rb)
 	int rc;
 
 	/* Flush buffers with TP_STATUS_SEND_REQUEST */
-	rc = sendto(sock, NULL, 0, MSG_DONTWAIT, (struct sockaddr *)&(rb->params), sizeof(struct sockaddr_ll));
+	rc = sendto(sock, NULL, 0, 0 /*MSG_DONTWAIT*/, NULL, 0);
 	if (rc < 0) {
 		err("Cannot flush tx_ring with sendto");
 	}
@@ -325,6 +322,9 @@ static void *fill_virt_tx_ring_thread(void *packed)
 
 	/* Pull the rest */
 	flushlock_unlock(ring_lock);
+	/* XXX: Thread may exit */
+	send_intr = 1;
+	
  out:
  	info("Transmit ring has pushed %llu packets!\n", packets);
 	pthread_exit(0);
@@ -334,7 +334,7 @@ static void *print_progress_spinner(void *arg)
 {
 	info("Transmit ring flushing ... |");
 
-	while (likely(!sigint)) {
+	while (likely(!prog_intr)) {
 		/* Spinning line for progress */
 		info("\b%c", spinning_chars[spinning_count++ % sizeof(spinning_chars)]);
 		fflush(stdout);
@@ -351,6 +351,7 @@ static void *print_progress_spinner(void *arg)
 static void *flush_virt_tx_ring_thread(void *packed)
 {
 	int i, ret, errors = 0;
+
 	pthread_t progress;
 
 	struct frame_map *fm;
@@ -359,10 +360,14 @@ static void *flush_virt_tx_ring_thread(void *packed)
 
 	ptd = (struct packed_tx_data *)packed;
 
-	for (; likely(!sigint); errors = 0) {
-		while (flushlock_trylock(ring_lock)) ;
-
+	for (; likely(!send_intr); errors = 0) {
+		while (flushlock_trylock(ring_lock)) { 
+			;
+		}
 		flushlock_lock(ring_lock);
+		
+		/* XXX: Enable spinning thread */
+		prog_intr = 0;
 		ret = pthread_create(&progress, NULL, print_progress_spinner, NULL);
 		if (ret) {
 			err("Cannot create thread");
@@ -374,7 +379,9 @@ static void *flush_virt_tx_ring_thread(void *packed)
 			exit(EXIT_FAILURE);
 		}
 
-		pthread_kill(progress, SIGCHLD);
+		/* XXX: Disable spinning thread */
+		prog_intr = 1;
+		
 		info("\n");
 		fflush(stdout);
 
@@ -463,10 +470,7 @@ void transmit_packets(system_data_t * sd, int sock, ring_buff_t * rb)
 	}
 
 	pthread_join(fill, NULL);
-	// TODO: bring both threads safely down
-	sleep(2);
-	pthread_kill(send, SIGCHLD);
-	//pthread_join(send, NULL);
+	pthread_join(send, NULL);
 }
 
 #else

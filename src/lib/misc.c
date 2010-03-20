@@ -70,7 +70,6 @@ void help(void)
 	info("  -p|--dump <arg>        dump all matching packets in a pcap file\n");
 	info("                         for a better performance, combine with -s|--silent\n");
 	info("  -r|--replay <arg>      replay all packets from a pcap dump file\n");
-	info("  -q|--quit-after <arg>  quit dump/replay after <arg> pckts / <arg> MB\n");
 	info("\n");
 	info("Options for packet filtering:\n");
 	info("  -f|--filter <arg>      use file <arg> as packet filter\n");

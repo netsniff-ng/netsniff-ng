@@ -85,10 +85,10 @@ void softirq_handler(int number)
 		break;
 	case SIGINT:
 		sigint = 1;
-		info("caught SIGINT!");
+		info("caught SIGINT!\n\n");
 		break;
 	case SIGHUP:
-		info("caught SIGHUP! (ignoring)\n");
+		info("caught SIGHUP! (ignoring)\n\n");
 		break;
 	default:
 		break;
