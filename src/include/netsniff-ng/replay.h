@@ -39,7 +39,8 @@
 #include <linux/if_packet.h>
 #include <linux/if_ether.h>
 
-extern int pcap_has_packets(int pcap_fd);
-extern void pcap_fetch_dummy_packet(int pcap_fd, uint8_t * pkt, size_t * len);
+extern int pcap_validate_header(int fd);
+extern int pcap_has_packets(int fd);
+extern void pcap_fetch_next_packet(int fd, struct tpacket_hdr *tp_h, struct ethhdr *sp);
 
 #endif				/* _REPLAY_H */

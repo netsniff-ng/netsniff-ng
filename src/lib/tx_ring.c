@@ -50,6 +50,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <sched.h>
+#include <signal.h>
 
 #include <net/if.h>
 #include <arpa/inet.h>
@@ -74,6 +75,10 @@ struct packed_tx_data {
 	int sock;
 	ring_buff_t *rb;
 };
+
+static char spinning_chars[] = { '|', '/', '-', '\\' };
+
+static int spinning_count = 0;
 
 #ifdef __HAVE_TX_RING__
 static void set_packet_loss_discard(int sock)
@@ -247,8 +252,8 @@ int flush_virt_tx_ring(int sock, ring_buff_t * rb)
 static void *fill_virt_tx_ring_thread(void *packed)
 {
 	int loop, i;
+	size_t num = 0;
 
-	size_t len;
 	ring_buff_bytes_t *buff;
 
 	struct frame_map *fm;
@@ -257,7 +262,7 @@ static void *fill_virt_tx_ring_thread(void *packed)
 
 	ptd = (struct packed_tx_data *)packed;
 
-	for (i = 0; pcap_has_packets(0 /* fd */ ) && likely(!sigint); loop = 1, i++) {
+	for (i = 0; pcap_has_packets(ptd->sd->pcap_fd) && likely(!sigint); loop = 1, i++) {
 		do {
 			fm = ptd->rb->frames[i].iov_base;
 			header = (struct tpacket_hdr *)&fm->tp_h;
@@ -269,13 +274,12 @@ static void *fill_virt_tx_ring_thread(void *packed)
 				break;
 
 			case TP_STATUS_AVAILABLE:
-				pcap_fetch_dummy_packet(0 /* fd */ , buff, &len);
-				header->tp_len = len;
+				pcap_fetch_next_packet(ptd->sd->pcap_fd, header, (struct ethhdr *)buff);
 				loop = 0;
 				break;
 
 			case TP_STATUS_WRONG_FORMAT:
-				warn("An error during transfer\n");
+				warn("An error during transfer!\n");
 				exit(EXIT_FAILURE);
 				break;
 			}
@@ -283,9 +287,27 @@ static void *fill_virt_tx_ring_thread(void *packed)
 
 		/* We're done! */
 		mem_notify_kernel_for_tx(header);
+		num++;
 	}
 
-	pthread_exit(0);
+	info("Transmit ring has been filled with %u packets.\n", num);
+
+	//pthread_exit(0);
+	return 0;
+}
+
+static void *print_progress_spinner(void *arg)
+{
+	info("Transmit ring flushing ... |");
+
+	while (likely(!sigint)) {
+		/* Spinning line for progress */
+		info("\b%c", spinning_chars[spinning_count++ % sizeof(spinning_chars)]);
+		fflush(stdout);
+		usleep(30000);
+	}
+
+	pthread_exit(NULL);
 }
 
 /**
@@ -295,6 +317,7 @@ static void *fill_virt_tx_ring_thread(void *packed)
 static void *flush_virt_tx_ring_thread(void *packed)
 {
 	int i, ret, errors = 0;
+	pthread_t progress;
 
 	struct frame_map *fm;
 	struct tpacket_hdr *header;
@@ -302,10 +325,19 @@ static void *flush_virt_tx_ring_thread(void *packed)
 
 	ptd = (struct packed_tx_data *)packed;
 
+	ret = pthread_create(&progress, NULL, print_progress_spinner, NULL);
+	if (ret) {
+		err("Cannot create thread");
+		exit(EXIT_FAILURE);
+	}
+
 	ret = flush_virt_tx_ring(ptd->sock, ptd->rb);
 	if (ret < 0) {
 		exit(EXIT_FAILURE);
 	}
+
+	pthread_kill(progress, SIGCHLD);
+	info("\n");
 
 	for (i = 0; i < ptd->rb->layout.tp_frame_nr; i++) {
 		fm = ptd->rb->frames[i].iov_base;
@@ -313,12 +345,12 @@ static void *flush_virt_tx_ring_thread(void *packed)
 
 		switch ((volatile uint32_t)header->tp_status) {
 		case TP_STATUS_SEND_REQUEST:
-			warn("Frame has not been sent %p\n", header);
+			warn("Frame has not been sent %p!\n", header);
 			errors++;
 			break;
 
 		case TP_STATUS_LOSING:
-			warn("Transfer error of frame\n");
+			warn("Transfer error of frame!\n");
 			errors++;
 			break;
 
@@ -327,9 +359,14 @@ static void *flush_virt_tx_ring_thread(void *packed)
 		}
 	}
 
-	if (errors > 0)
+	if (errors > 0) {
 		warn("%d errors occured during tx_ring flush!\n", errors);
-	pthread_exit(0);
+	} else {
+		info("Transmit ring has been flushed.\n\n");
+	}
+
+	//pthread_exit(0);
+	return 0;
 }
 
 /**
@@ -343,6 +380,8 @@ void transmit_packets(system_data_t * sd, int sock, ring_buff_t * rb)
 	assert(rb);
 	assert(sd);
 
+	//pthread_t send, fill;
+
 	struct packed_tx_data ptd = {
 		.sd = sd,
 		.sock = sock,
@@ -350,10 +389,11 @@ void transmit_packets(system_data_t * sd, int sock, ring_buff_t * rb)
 	};
 
 	info("--- Transmitting ---\n\n");
+	info("!!! Experimental !!!\n\n");
 
 	/* Dummy function */
-
-	warn("Not yet implemented!\n\n");
+	fill_virt_tx_ring_thread(&ptd);
+	flush_virt_tx_ring_thread(&ptd);
 }
 
 #else
@@ -391,13 +431,13 @@ void transmit_packets(system_data_t * sd, int sock, ring_buff_t * rb)
 {
 	assert(rb);
 	assert(sd);
-
+#if 0
 	struct packed_tx_data ptd = {
 		.sd = sd,
 		.sock = sock,
 		.rb = rb,
 	};
-
+#endif
 	info("--- Transmitting ---\n\n");
 
 	/* Dummy function */

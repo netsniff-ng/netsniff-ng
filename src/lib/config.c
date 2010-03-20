@@ -172,6 +172,11 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 			break;
 		case 'r':
 			sd->mode = MODE_REPLAY;
+			sd->pcap_fd = open(optarg, O_RDONLY);
+			if (sd->pcap_fd == -1) {
+				err("Can't open file");
+				exit(EXIT_FAILURE);
+			}
 			break;
 		case 'q':
 			info("Option `q` not yet implemented!\n");

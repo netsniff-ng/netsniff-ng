@@ -37,44 +37,65 @@
 #include <unistd.h>
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
+
+#include <sys/types.h>
 
 #include <linux/if_packet.h>
 #include <linux/if_ether.h>
 
+#include <netsniff-ng/pcap.h>
 #include <netsniff-ng/replay.h>
 #include <netsniff-ng/macros.h>
 
-int pcap_has_packets(int pcap_fd)
+int pcap_has_packets(int fd)
 {
+	off_t pos;
+	struct pcap_sf_pkthdr sf_hdr;
+
+	if (fd < 0) {
+		warn("Can't open file.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	if ((pos = lseek(fd, (off_t) 0, SEEK_CUR)) < 0) {
+		err("Cannot seek offset of pcap file");
+		close(fd);
+		exit(EXIT_FAILURE);
+	}
+
+	/* Test pcap header */
+	if (read(fd, (char *)&sf_hdr, sizeof(sf_hdr)) != sizeof(sf_hdr)) {
+		return 0;	/* EOF */
+	}
+
+	/* Test payload */
+	if (lseek(fd, pos + sf_hdr.len, SEEK_SET) < 0) {
+		return 0;	/* EOF */
+	}
+
+	/* Rewind the offset */
+	if (lseek(fd, pos, SEEK_SET) < 0) {
+		err("Cannot rewind pcap file");
+		close(fd);
+		exit(EXIT_FAILURE);
+	}
+
 	return 1;
 }
 
-void pcap_fetch_dummy_packet(int pcap_fd, uint8_t * pkt, size_t * len)
-{
-	assert(pkt);
-	assert(len);
-}
-
-/* For replaying PCAP not activated for now */
-#if 0
-FILE *pcap_validate(FILE * pcap)
+int pcap_validate_header(int fd)
 {
 	struct pcap_file_header hdr;
 
-	if (pcap == NULL) {
-		errno = EINVAL;
-		err("Can't open file");
-		return (NULL);
+	if (fd < 0) {
+		warn("Can't open file.\n");
+		exit(EXIT_FAILURE);
 	}
 
-	if (fread((char *)&hdr, 1, sizeof(hdr), pcap) != sizeof(hdr)) {
-		if (ferror(pcap)) {
-			err("Error reading dump file");
-		} else {
-			err("Truncated dump file");
-		}
-
-		return (NULL);
+	if (read(fd, (char *)&hdr, sizeof(hdr)) != sizeof(hdr)) {
+		err("Error reading dump file");
+		return -EIO;
 	}
 
 	if (hdr.magic != TCPDUMP_MAGIC
@@ -82,54 +103,41 @@ FILE *pcap_validate(FILE * pcap)
 	    || hdr.version_minor != PCAP_VERSION_MINOR || hdr.linktype != LINKTYPE_EN10MB) {
 		errno = EINVAL;
 		err("This file is certainly not a valid pcap");
-		return (NULL);
+		return -EIO;
 	}
 
-	return (pcap);
+	return 0;
 }
 
-struct ethhdr *pcap_fetch_packet(FILE * pcap, struct ethhdr *pkt)
+void pcap_fetch_next_packet(int fd, struct tpacket_hdr *tp_h, struct ethhdr *sp)
 {
 	struct pcap_sf_pkthdr sf_hdr;
 
-	if (pcap == NULL) {
-		errno = EIO;
-		err("Can't access pcap file");
-		return (NULL);
+	if (fd < 0) {
+		warn("Can't open file.\n");
+		exit(EXIT_FAILURE);
 	}
 
-	if (pkt == NULL) {
+	if (tp_h == NULL || sp == NULL) {
 		errno = EINVAL;
 		err("Can't access packet header");
-		return (NULL);
+		return;
 	}
 
-	if (fread((char *)&sf_hdr, 1, sizeof(sf_hdr), pcap) != sizeof(sf_hdr)) {
-		if (ferror(pcap)) {
-			err("Error reading dump file");
-		} else if (feof(pcap)) {
-			err("Reached end of file");
-		} else {
-			errno = EIO;
-			err("Something went wrong while reading pcap");
-		}
-
-		return (NULL);
+	if (read(fd, (char *)&sf_hdr, sizeof(sf_hdr)) != sizeof(sf_hdr)) {
+		err("Cannot read pcap header");
+		close(fd);
+		exit(EXIT_FAILURE);
 	}
+	//calc offset ?
+	//tp_h->tp_sec = sf_hdr.ts.tv_sec;
+	//tp_h->tp_usec = sf_hdr.ts.tv_usec;
+	tp_h->tp_snaplen = sf_hdr.caplen;
+	tp_h->tp_len = sf_hdr.len;
 
-	if (fread((char *)pkt, 1, sizeof(*pkt), pcap) != sizeof(*pkt)) {
-		if (ferror(pcap)) {
-			err("Error reading dump file");
-		} else if (feof(pcap)) {
-			err("Reached end of file");
-		} else {
-			errno = EIO;
-			err("Something went wrong while reading pcap");
-		}
-
-		return (NULL);
+	if (read(fd, (char *)sp, sf_hdr.len) != sf_hdr.len) {
+		err("Cannot read pcap payload");
+		close(fd);
+		exit(EXIT_FAILURE);
 	}
-
-	return (pkt);
 }
-#endif

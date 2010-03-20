@@ -41,10 +41,11 @@
 #include <linux/if_packet.h>
 #include <linux/if_ether.h>
 
+#include <netsniff-ng/pcap.h>
 #include <netsniff-ng/dump.h>
 #include <netsniff-ng/macros.h>
 
-int sf_write_header(int fd, int linktype, int thiszone, int snaplen)
+int pcap_write_header(int fd, int linktype, int thiszone, int snaplen)
 {
 	struct pcap_file_header hdr = { 0 };
 

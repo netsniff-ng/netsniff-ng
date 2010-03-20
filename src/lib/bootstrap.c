@@ -54,6 +54,7 @@
 
 #include <netsniff-ng/hash.h>
 #include <netsniff-ng/dump.h>
+#include <netsniff-ng/replay.h>
 #include <netsniff-ng/system.h>
 #include <netsniff-ng/types.h>
 #include <netsniff-ng/rx_ring.h>
@@ -94,7 +95,7 @@ void softirq_handler(int number)
 	}
 }
 
-static void __init_phase_common(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+static void __init_stage_common(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
 {
 	assert(sd);
 	assert(sock);
@@ -119,7 +120,7 @@ static void __init_phase_common(system_data_t * sd, int *sock, ring_buff_t ** rb
 	memset(&netstat, 0, sizeof(netstat));
 }
 
-static void __init_phase_daemon(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+static void __init_stage_daemon(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
 {
 	int ret;
 
@@ -138,7 +139,7 @@ static void __init_phase_daemon(system_data_t * sd, int *sock, ring_buff_t ** rb
 	}
 }
 
-static void __init_phase_fallback_dev(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+static void __init_stage_fallback_dev(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
 {
 	int i, stmp;
 	char dev_buff[1024];
@@ -205,7 +206,7 @@ static void __init_phase_fallback_dev(system_data_t * sd, int *sock, ring_buff_t
 	info("No device specified, using `%s`.\n\n", sd->dev);
 }
 
-static void __init_phase_mode_common(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+static void __init_stage_mode_common(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
 {
 	assert(sd);
 	assert(sock);
@@ -229,7 +230,7 @@ static void __init_phase_mode_common(system_data_t * sd, int *sock, ring_buff_t 
 	(*sock) = get_pf_socket();
 }
 
-static void __init_phase_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+static void __init_stage_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
 {
 	int bpf_len = 0;
 	struct sock_filter *bpf = NULL;
@@ -270,7 +271,7 @@ static void __init_phase_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb, s
 	free(bpf);
 }
 
-static void __init_phase_rx_ring(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+static void __init_stage_rx_ring(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
 {
 	assert(sd);
 	assert(sock);
@@ -287,7 +288,7 @@ static void __init_phase_rx_ring(system_data_t * sd, int *sock, ring_buff_t ** r
 	prepare_polling((*sock), pfd);
 }
 
-static void __init_phase_tx_ring(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+static void __init_stage_tx_ring(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
 {
 	assert(sd);
 	assert(sock);
@@ -297,6 +298,9 @@ static void __init_phase_tx_ring(system_data_t * sd, int *sock, ring_buff_t ** r
 	if (sd->mode == MODE_CAPTURE)
 		return;
 
+	if (pcap_validate_header(sd->pcap_fd) < 0)
+		exit(EXIT_FAILURE);
+
 	create_virt_tx_ring((*sock), (*rb), sd->dev);
 	bind_dev_to_tx_ring((*sock), ethdev_to_ifindex(sd->dev), (*rb));
 	mmap_virt_tx_ring((*sock), (*rb));
@@ -304,7 +308,7 @@ static void __init_phase_tx_ring(system_data_t * sd, int *sock, ring_buff_t ** r
 	prepare_polling((*sock), pfd);
 }
 
-static void __init_phase_hashtables(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+static void __init_stage_hashtables(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
 {
 	assert(sd);
 	assert(sock);
@@ -314,7 +318,7 @@ static void __init_phase_hashtables(system_data_t * sd, int *sock, ring_buff_t *
 	ieee_vendors_init();
 }
 
-static void __init_phase_timer(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+static void __init_stage_timer(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
 {
 	int ret;
 	struct itimerval val_r;
@@ -392,20 +396,20 @@ int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd 
 	/* Print program header */
 	header();
 
-	__init_phase_common(sd, sock, rb, pfd);
-	__init_phase_daemon(sd, sock, rb, pfd);
-	__init_phase_fallback_dev(sd, sock, rb, pfd);
-	__init_phase_mode_common(sd, sock, rb, pfd);
-	__init_phase_bpf(sd, sock, rb, pfd);
-	__init_phase_rx_ring(sd, sock, rb, pfd);
-	__init_phase_tx_ring(sd, sock, rb, pfd);
-	__init_phase_hashtables(sd, sock, rb, pfd);
-	__init_phase_timer(sd, sock, rb, pfd);
+	__init_stage_common(sd, sock, rb, pfd);
+	__init_stage_daemon(sd, sock, rb, pfd);
+	__init_stage_fallback_dev(sd, sock, rb, pfd);
+	__init_stage_mode_common(sd, sock, rb, pfd);
+	__init_stage_bpf(sd, sock, rb, pfd);
+	__init_stage_rx_ring(sd, sock, rb, pfd);
+	__init_stage_tx_ring(sd, sock, rb, pfd);
+	__init_stage_hashtables(sd, sock, rb, pfd);
+	__init_stage_timer(sd, sock, rb, pfd);
 
 	return 0;
 }
 
-static void __exit_phase_common(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __exit_stage_common(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -413,7 +417,7 @@ static void __exit_phase_common(system_data_t * sd, int *sock, ring_buff_t ** rb
 	/* NOP */
 }
 
-static void __exit_phase_daemon(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __exit_stage_daemon(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -425,7 +429,7 @@ static void __exit_phase_daemon(system_data_t * sd, int *sock, ring_buff_t ** rb
 	undaemonize(sd->pidfile);
 }
 
-static void __exit_phase_fallback_dev(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __exit_stage_fallback_dev(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -433,7 +437,7 @@ static void __exit_phase_fallback_dev(system_data_t * sd, int *sock, ring_buff_t
 	/* NOP */
 }
 
-static void __exit_phase_mode_common(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __exit_stage_mode_common(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -441,7 +445,7 @@ static void __exit_phase_mode_common(system_data_t * sd, int *sock, ring_buff_t 
 	/* NOP */
 }
 
-static void __exit_phase_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __exit_stage_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -455,7 +459,7 @@ static void __exit_phase_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb)
 	reset_kernel_bpf((*sock));
 }
 
-static void __exit_phase_rx_ring(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __exit_stage_rx_ring(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -468,7 +472,7 @@ static void __exit_phase_rx_ring(system_data_t * sd, int *sock, ring_buff_t ** r
 	destroy_virt_rx_ring((*sock), (*rb));
 }
 
-static void __exit_phase_tx_ring(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __exit_stage_tx_ring(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -481,7 +485,7 @@ static void __exit_phase_tx_ring(system_data_t * sd, int *sock, ring_buff_t ** r
 	destroy_virt_tx_ring((*sock), (*rb));
 }
 
-static void __exit_phase_hashtables(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __exit_stage_hashtables(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -490,7 +494,7 @@ static void __exit_phase_hashtables(system_data_t * sd, int *sock, ring_buff_t *
 	ieee_vendors_destroy();
 }
 
-static void __exit_phase_timer(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __exit_stage_timer(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -499,7 +503,7 @@ static void __exit_phase_timer(system_data_t * sd, int *sock, ring_buff_t ** rb)
 	net_stat((*sock));
 }
 
-static void __exit_phase_last(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __exit_stage_last(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -538,16 +542,16 @@ void cleanup_system(system_data_t * sd, int *sock, ring_buff_t ** rb)
 	assert(rb);
 	assert(*rb);
 
-	__exit_phase_common(sd, sock, rb);
-	__exit_phase_daemon(sd, sock, rb);
-	__exit_phase_fallback_dev(sd, sock, rb);
-	__exit_phase_mode_common(sd, sock, rb);
-	__exit_phase_bpf(sd, sock, rb);
-	__exit_phase_rx_ring(sd, sock, rb);
-	__exit_phase_tx_ring(sd, sock, rb);
-	__exit_phase_hashtables(sd, sock, rb);
-	__exit_phase_timer(sd, sock, rb);
-	__exit_phase_last(sd, sock, rb);
+	__exit_stage_common(sd, sock, rb);
+	__exit_stage_daemon(sd, sock, rb);
+	__exit_stage_fallback_dev(sd, sock, rb);
+	__exit_stage_mode_common(sd, sock, rb);
+	__exit_stage_bpf(sd, sock, rb);
+	__exit_stage_rx_ring(sd, sock, rb);
+	__exit_stage_tx_ring(sd, sock, rb);
+	__exit_stage_hashtables(sd, sock, rb);
+	__exit_stage_timer(sd, sock, rb);
+	__exit_stage_last(sd, sock, rb);
 
 	/* Print program footer */
 	footer();

@@ -61,6 +61,7 @@
 #include <linux/if_packet.h>
 #include <linux/filter.h>
 
+#include <netsniff-ng/pcap.h>
 #include <netsniff-ng/dump.h>
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/types.h>
@@ -216,7 +217,7 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 	info("--- Listening ---\n\n");
 
 	if (sd->pcap_fd != PCAP_NO_DUMP) {
-		sf_write_header(sd->pcap_fd, LINKTYPE_EN10MB, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
+		pcap_write_header(sd->pcap_fd, LINKTYPE_EN10MB, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
 	}
 
 	/* This is our critical path ... */
