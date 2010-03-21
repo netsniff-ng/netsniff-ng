@@ -69,6 +69,9 @@ static struct option long_options[] = {
 	{"prio-norm", no_argument, 0, 'H'},
 	{"non-block", no_argument, 0, 'n'},
 	{"silent", no_argument, 0, 's'},
+	{"payload", no_argument, 0, 'l'},
+	{"payload-hex", no_argument, 0, 'x'},
+	{"less", no_argument, 0, 'q'},
 	{"daemonize", no_argument, 0, 'D'},
 	{"pidfile", required_argument, 0, 'P'},
 	{"version", no_argument, 0, 'v'},
@@ -98,7 +101,7 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 	assert(argv);
 	assert(sd);
 
-	while ((c = getopt_long(argc, argv, "q:g:vhd:p:r:P:Df:sb:B:Hnt:", long_options, &opt_idx)) != EOF) {
+	while ((c = getopt_long(argc, argv, "lqxg:vhd:p:r:P:Df:sb:B:Hnt:", long_options, &opt_idx)) != EOF) {
 		switch (c) {
 		case 'h':
 			help();
@@ -149,6 +152,15 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 			/* Switch to silent mode */
 			sd->print_pkt = NULL;
 			break;
+		case 'l':
+			sd->print_pkt = payload_human_only_print;
+			break;
+		case 'x':
+			sd->print_pkt = payload_hex_only_print;
+			break;
+		case 'q':	/* for 'quick' */
+			sd->print_pkt = reduced_print;
+			break;
 		case 'D':
 			sd->sysdaemon = SYSD_ENABLE;
 			/* Daemonize implies silent mode
@@ -178,9 +190,6 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 				err("Can't open file");
 				exit(EXIT_FAILURE);
 			}
-			break;
-		case 'q':
-			info("Option `q` not yet implemented!\n");
 			break;
 		case 'g':
 			info("Option `g` not yet implemented!\n");

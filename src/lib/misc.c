@@ -89,6 +89,9 @@ void help(void)
 	info("\n");
 	info("Options for packet printing:\n");
 	info("  -s|--silent            do not print captured packets (silent mode)\n");
+	info("  -l|--payload           only print human-readable payload\n");
+	info("  -x|--payload-hex       only print payload in hex format\n");
+	info("  -q|--less              print less-verbose packet information\n");
 	info("\n");
 	info("Options for system daemon:\n");
 	info("  -D|--daemonize         run as sys daemon\n");

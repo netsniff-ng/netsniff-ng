@@ -45,6 +45,7 @@
 #include <netsniff-ng/macros.h>
 
 static char spinning_chars[] = { '|', '/', '-', '\\' };
+
 static int spinning_count = 0;
 
 volatile sig_atomic_t cursor_prog_intr = 0;
@@ -52,7 +53,7 @@ static volatile sig_atomic_t cursor_prog_trigger = 0;
 
 void *print_progress_spinner_static(void *msg)
 {
-	info("%s", (char *) msg);
+	info("%s", (char *)msg);
 
 	while (likely(!cursor_prog_intr)) {
 		info("\b%c", spinning_chars[spinning_count++ % sizeof(spinning_chars)]);
@@ -66,13 +67,13 @@ void *print_progress_spinner_static(void *msg)
 void *print_progress_spinner_dynamic(void *msg)
 {
 	unsigned int idle = 0;
-	info("%s", (char *) msg);
+	info("%s", (char *)msg);
 
 	while (likely(!cursor_prog_intr)) {
 		info("\b%c", spinning_chars[spinning_count++ % sizeof(spinning_chars)]);
 		fflush(stdout);
-		while(likely(!cursor_prog_trigger)) {
-			if(idle++ % UINT_MAX) 
+		while (likely(!cursor_prog_trigger)) {
+			if (idle++ % UINT_MAX)
 				break;
 		}
 		cursor_prog_trigger = 0;

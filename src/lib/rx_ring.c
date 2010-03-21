@@ -221,12 +221,14 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 
 	if (!sd->print_pkt)
 		enable_print_progress_spinner();
-	
+
 	if (sd->pcap_fd != PCAP_NO_DUMP) {
 		pcap_write_header(sd->pcap_fd, LINKTYPE_EN10MB, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
 
 		if (!sd->print_pkt) {
-			ret = pthread_create(&progress, NULL, print_progress_spinner_dynamic, "Receive ring dumping ... |");
+			ret =
+			    pthread_create(&progress, NULL, print_progress_spinner_dynamic,
+					   "Receive ring dumping ... |");
 			if (ret) {
 				err("Cannot create thread");
 				exit(EXIT_FAILURE);
@@ -337,7 +339,7 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 		   we'll fetch them within the first for loop. 
 		 */
 	}
-	
+
 	if (!sd->print_pkt)
 		disable_print_progress_spinner();
 }

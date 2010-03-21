@@ -154,6 +154,42 @@ static void inline dump_payload_char_all(const uint8_t * const rbb, int len, int
 	info(") ]\n");
 }
 
+void reduced_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+{
+	/* TODO: oneline summary */
+	info("%d Byte, Timestamp (%u.%u s) \n", tp->tp_len, tp->tp_sec, tp->tp_usec);
+}
+
+void payload_human_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+{
+	packet_t pkt;
+	uint8_t *buffer = (uint8_t *) rbb;
+	int tty_len = get_tty_length();
+
+	assert(buffer);
+	assert(tp);
+
+	parse_packet(buffer, tp->tp_len, &pkt);
+	info("   ");
+	dump_printable(pkt.payload, pkt.payload_len, tty_len - 20, 0);
+	info("\n");
+}
+
+void payload_hex_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+{
+	packet_t pkt;
+	uint8_t *buffer = (uint8_t *) rbb;
+	int tty_len = get_tty_length();
+
+	assert(buffer);
+	assert(tp);
+
+	parse_packet(buffer, tp->tp_len, &pkt);
+	info("   ");
+	dump_hex(pkt.payload, pkt.payload_len, tty_len - 20, 0);
+	info("\n");
+}
+
 void versatile_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 {
 	int len;

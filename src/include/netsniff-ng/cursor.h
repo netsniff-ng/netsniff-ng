@@ -63,4 +63,4 @@ extern void print_progress_spinner_dynamic_trigger(void);
 		fflush(stdout);			\
 	} while (0);
 
-#endif /* _CURSOR_H_ */
+#endif				/* _CURSOR_H_ */

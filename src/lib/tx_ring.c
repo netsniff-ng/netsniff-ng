@@ -237,7 +237,7 @@ int flush_virt_tx_ring(int sock, ring_buff_t * rb)
 	int rc;
 
 	/* Flush buffers with TP_STATUS_SEND_REQUEST */
-	rc = sendto(sock, NULL, 0, 0 /*MSG_DONTWAIT*/, NULL, 0);
+	rc = sendto(sock, NULL, 0, 0 /*MSG_DONTWAIT */ , NULL, 0);
 	if (rc < 0) {
 		err("Cannot flush tx_ring with sendto");
 	}
@@ -268,7 +268,9 @@ static void *fill_virt_tx_ring_thread(void *packed)
 
 			fm = ptd->rb->frames[i].iov_base;
 			header = (struct tpacket_hdr *)&fm->tp_h;
-			buff = (ring_buff_bytes_t *) (ptd->rb->frames[i].iov_base + TPACKET_HDRLEN - sizeof(struct sockaddr_ll));
+			buff =
+			    (ring_buff_bytes_t *) (ptd->rb->frames[i].iov_base + TPACKET_HDRLEN -
+						   sizeof(struct sockaddr_ll));
 
 			switch ((volatile uint32_t)header->tp_status) {
 			default:
@@ -320,9 +322,9 @@ static void *fill_virt_tx_ring_thread(void *packed)
 	flushlock_unlock(ring_lock);
 	/* XXX: Thread may exit */
 	send_intr = 1;
-	
+
  out:
- 	info("Transmit ring has pushed %llu packets!\n", packets);
+	info("Transmit ring has pushed %llu packets!\n", packets);
 	pthread_exit(0);
 }
 
@@ -343,11 +345,11 @@ static void *flush_virt_tx_ring_thread(void *packed)
 	ptd = (struct packed_tx_data *)packed;
 
 	for (; likely(!send_intr); errors = 0) {
-		while (flushlock_trylock(ring_lock)) { 
+		while (flushlock_trylock(ring_lock)) {
 			;
 		}
 		flushlock_lock(ring_lock);
-		
+
 		enable_print_progress_spinner();
 		ret = pthread_create(&progress, NULL, print_progress_spinner_static, "Transmit ring flushing ... |");
 		if (ret) {
@@ -424,13 +426,13 @@ void transmit_packets(system_data_t * sd, int sock, ring_buff_t * rb)
 
 	pthread_attr_init(&attr_send);
 	pthread_attr_init(&attr_fill);
- 
+
 	pthread_attr_setschedpolicy(&attr_send, SCHED_RR);
 	pthread_attr_setschedpolicy(&attr_fill, SCHED_RR);
- 
+
 	para_send.sched_priority = 20;
 	pthread_attr_setschedparam(&attr_send, &para_send);
-	
+
 	para_fill.sched_priority = 20;
 	pthread_attr_setschedparam(&attr_fill, &para_fill);
 
