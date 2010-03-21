@@ -38,9 +38,7 @@
 #ifndef _NET_PRINT_H_
 #define _NET_PRINT_H_
 
-//#include <linux/if_packet.h>
 #include <linux/ip.h>
-//#include <netinet/in.h>
 
 #include <netsniff-ng/types.h>
 
@@ -55,5 +53,9 @@ extern void versatile_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *t
 extern void payload_human_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp);
 extern void payload_hex_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp);
 extern void reduced_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp);
+extern void regex_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp);
+
+extern void init_regex(char *pattern);
+extern void cleanup_regex(void);
 
 #endif				/* _NET_PRINT_H_ */

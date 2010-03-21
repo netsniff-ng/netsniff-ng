@@ -57,10 +57,15 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
 #include <netdb.h>
+#include <regex.h>
+#include <errno.h>
+#include <strings.h>
+
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
@@ -156,8 +161,87 @@ static void inline dump_payload_char_all(const uint8_t * const rbb, int len, int
 
 void reduced_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 {
-	/* TODO: oneline summary */
+	/* TODO: print one-line summary */
 	info("%d Byte, Timestamp (%u.%u s) \n", tp->tp_len, tp->tp_sec, tp->tp_usec);
+}
+
+static regex_t *regex = NULL;
+
+void init_regex(char *pattern)
+{
+	int ret;
+
+	regex = malloc(sizeof(*regex));
+	if(!regex) {
+		err("Cannot malloc regex");
+		exit(EXIT_FAILURE);
+	}
+
+	memset(regex, 0, sizeof(*regex));
+
+	ret = regcomp(regex, pattern, REG_EXTENDED | REG_NOSUB);
+	if(ret != 0)
+	{
+		size_t len; 
+		char *buffer;
+		
+		len = regerror(ret, regex, NULL, 0);
+		buffer = malloc(len);
+		if(!buffer) {
+			err("Cannot malloc regex error buffer");
+			exit(EXIT_FAILURE);
+		}
+		
+		regerror(ret, regex, buffer, len);
+		
+		warn("Regular expression error: %s\n", buffer);
+		
+		free(buffer);
+		regfree(regex);
+		free(regex);
+		
+		exit(EXIT_FAILURE);
+	}
+
+	free(pattern);
+}
+
+void cleanup_regex(void)
+{
+	regfree(regex);
+	free(regex);
+}
+
+void regex_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+{
+	int i;
+	
+	packet_t pkt;
+	uint8_t *buffer = (uint8_t *) rbb;
+	uint8_t *t_buffer = NULL;
+
+	assert(regex);
+
+	parse_packet(buffer, tp->tp_len, &pkt);
+	
+	/* XXX: This is a very slow path! */
+	t_buffer = malloc(pkt.payload_len + 1);
+	if(!t_buffer) {
+		err("Cannot malloc t_buffer");
+		exit(EXIT_FAILURE);
+	}
+
+	/* If we won't copy, regexec stops at the first \0 byte :( */
+	for(i = 0; i < pkt.payload_len; ++i) {
+		t_buffer[i] = (isprint(pkt.payload[i]) ? pkt.payload[i] : '.' );
+	}
+	
+	t_buffer[pkt.payload_len] = 0;
+	if (regexec(regex, (char *) t_buffer, 0, NULL, 0) != REG_NOMATCH) {
+		versatile_print(rbb, tp);
+	}
+	
+	free(t_buffer);
 }
 
 void payload_human_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)

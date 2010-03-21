@@ -71,6 +71,7 @@ static struct option long_options[] = {
 	{"silent", no_argument, 0, 's'},
 	{"payload", no_argument, 0, 'l'},
 	{"payload-hex", no_argument, 0, 'x'},
+	{"regex", no_argument, 0, 'e'},
 	{"less", no_argument, 0, 'q'},
 	{"daemonize", no_argument, 0, 'D'},
 	{"pidfile", required_argument, 0, 'P'},
@@ -101,7 +102,7 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 	assert(argv);
 	assert(sd);
 
-	while ((c = getopt_long(argc, argv, "lqxg:vhd:p:r:P:Df:sb:B:Hnt:", long_options, &opt_idx)) != EOF) {
+	while ((c = getopt_long(argc, argv, "e:lqxg:vhd:p:r:P:Df:sb:B:Hnt:", long_options, &opt_idx)) != EOF) {
 		switch (c) {
 		case 'h':
 			help();
@@ -158,8 +159,12 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 		case 'x':
 			sd->print_pkt = payload_hex_only_print;
 			break;
-		case 'q':	/* for 'quick' */
+		case 'q':
 			sd->print_pkt = reduced_print;
+			break;
+		case 'e':
+			sd->print_pkt = regex_print;
+			init_regex(strdup(optarg));
 			break;
 		case 'D':
 			sd->sysdaemon = SYSD_ENABLE;
@@ -197,7 +202,11 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 		case '?':
 			switch (optopt) {
 			case 'd':
+			case 'e':
+			case 'g':
+			case 'r':
 			case 'f':
+			case 't':
 			case 'p':
 			case 'P':
 			case 'L':
