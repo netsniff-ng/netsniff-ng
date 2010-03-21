@@ -90,7 +90,7 @@ static inline int get_device_bitrate_generic_fallback2(const char *ifname)
 {
 	int speed = get_device_bitrate_generic_cable(ifname);
 	/* If speed is 0 interface could be down or user has choosen a loopback device?! */
-	return (speed > 0 ? speed : FAILSAFE_BITRATE);
+	return (speed > 100 ? speed : FAILSAFE_BITRATE);
 }
 
 #endif				/* _NET_NETDEV_H_ */
