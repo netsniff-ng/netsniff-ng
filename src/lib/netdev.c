@@ -593,9 +593,9 @@ void net_stat(int sock)
 
 	ret = getsockopt(sock, SOL_PACKET, PACKET_STATISTICS, &kstats, &slen);
 	if (ret > -1) {
-		info("%d frames incoming\n", kstats.tp_packets);
-		info("%d frames passed filter\n", kstats.tp_packets - kstats.tp_drops);
-		info("%d frames failed filter (due to out of space)\n", kstats.tp_drops);
+		info("\r%d frames incoming\n", kstats.tp_packets);
+		info("\r%d frames passed filter\n", kstats.tp_packets - kstats.tp_drops);
+		info("\r%d frames failed filter (due to out of space)\n", kstats.tp_drops);
 	}
 }
 

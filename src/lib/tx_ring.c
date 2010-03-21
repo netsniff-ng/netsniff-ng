@@ -65,6 +65,7 @@
 #include <netsniff-ng/tx_ring.h>
 #include <netsniff-ng/netdev.h>
 #include <netsniff-ng/signal.h>
+#include <netsniff-ng/cursor.h>
 
 #define flushlock_lock(x) do{ (x) = 1; } while(0);
 #define flushlock_unlock(x) do{ (x) = 0; } while(0);
@@ -77,12 +78,7 @@ struct packed_tx_data {
 };
 
 volatile sig_atomic_t ring_lock;
-volatile sig_atomic_t prog_intr = 0;
 volatile sig_atomic_t send_intr = 0;
-
-/* TODO: own file, can be used for rx_ring silent mode */
-static char spinning_chars[] = { '|', '/', '-', '\\' };
-static int spinning_count = 0;
 
 #ifdef __HAVE_TX_RING__
 static void set_packet_loss_discard(int sock)
@@ -330,20 +326,6 @@ static void *fill_virt_tx_ring_thread(void *packed)
 	pthread_exit(0);
 }
 
-static void *print_progress_spinner(void *arg)
-{
-	info("Transmit ring flushing ... |");
-
-	while (likely(!prog_intr)) {
-		/* Spinning line for progress */
-		info("\b%c", spinning_chars[spinning_count++ % sizeof(spinning_chars)]);
-		fflush(stdout);
-		usleep(25000);
-	}
-
-	pthread_exit(0);
-}
-
 /**
  * flush_virt_tx_ring_thread - Sends payload of tx_ring
  * @packed:                   packed system data
@@ -366,9 +348,8 @@ static void *flush_virt_tx_ring_thread(void *packed)
 		}
 		flushlock_lock(ring_lock);
 		
-		/* XXX: Enable spinning thread */
-		prog_intr = 0;
-		ret = pthread_create(&progress, NULL, print_progress_spinner, NULL);
+		enable_print_progress_spinner();
+		ret = pthread_create(&progress, NULL, print_progress_spinner_static, "Transmit ring flushing ... |");
 		if (ret) {
 			err("Cannot create thread");
 			exit(EXIT_FAILURE);
@@ -379,11 +360,7 @@ static void *flush_virt_tx_ring_thread(void *packed)
 			exit(EXIT_FAILURE);
 		}
 
-		/* XXX: Disable spinning thread */
-		prog_intr = 1;
-		
-		info("\n");
-		fflush(stdout);
+		disable_print_progress_spinner();
 
 		for (i = 0; i < ptd->rb->layout.tp_frame_nr; i++) {
 			fm = ptd->rb->frames[i].iov_base;

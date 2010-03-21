@@ -7,7 +7,7 @@ include ../.config
 INCLUDE  = -I../include
 
 lib-objs = bpf.o misc.o print.o config.o rx_ring.o system.o dump.o hash.o netdev.o tx_ring.o \
-	   bootstrap.o replay.o ringbuff.o
+	   bootstrap.o replay.o ringbuff.o cursor.o
 
 all: lib
 

@@ -522,8 +522,8 @@ static void footer(void)
 	 * on 32 and 64 bit arch w/o gcc warnings
 	 */
 
-	info("captured frames: %llu, "
-	     "captured bytes: %llu [%llu KiB, %llu MiB, %llu GiB]\n",
+	info("\rcaptured frames: %llu, "
+	     "captured bytes: %llu [%llu KiB, %llu MiB, %llu GiB]\n\r",
 	     netstat.total.frames, netstat.total.bytes,
 	     netstat.total.bytes / 1024,
 	     netstat.total.bytes / (1024 * 1024), netstat.total.bytes / (1024 * 1024 * 1024));

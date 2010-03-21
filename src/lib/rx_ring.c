@@ -62,6 +62,7 @@
 #include <linux/filter.h>
 
 #include <netsniff-ng/pcap.h>
+#include <netsniff-ng/cursor.h>
 #include <netsniff-ng/dump.h>
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/types.h>
@@ -210,14 +211,27 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 {
 	int ret, foo, i = 0;
 
+	pthread_t progress;
+
 	assert(rb);
 	assert(pfd);
 	assert(sd);
 
 	info("--- Listening ---\n\n");
 
+	if (!sd->print_pkt)
+		enable_print_progress_spinner();
+	
 	if (sd->pcap_fd != PCAP_NO_DUMP) {
 		pcap_write_header(sd->pcap_fd, LINKTYPE_EN10MB, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
+
+		if (!sd->print_pkt) {
+			ret = pthread_create(&progress, NULL, print_progress_spinner_dynamic, "Receive ring dumping ... |");
+			if (ret) {
+				err("Cannot create thread");
+				exit(EXIT_FAILURE);
+			}
+		}
 	}
 
 	/* This is our critical path ... */
@@ -237,6 +251,7 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 
 			if (sd->pcap_fd != PCAP_NO_DUMP) {
 				pcap_dump(sd->pcap_fd, &fm->tp_h, (struct ethhdr *)rbb);
+				print_progress_spinner_dynamic_trigger();
 			}
 
 			if (sd->print_pkt) {
@@ -322,4 +337,7 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 		   we'll fetch them within the first for loop. 
 		 */
 	}
+	
+	if (!sd->print_pkt)
+		disable_print_progress_spinner();
 }
