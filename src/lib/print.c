@@ -172,7 +172,7 @@ void init_regex(char *pattern)
 	int ret;
 
 	regex = malloc(sizeof(*regex));
-	if(!regex) {
+	if (!regex) {
 		err("Cannot malloc regex");
 		exit(EXIT_FAILURE);
 	}
@@ -180,26 +180,25 @@ void init_regex(char *pattern)
 	memset(regex, 0, sizeof(*regex));
 
 	ret = regcomp(regex, pattern, REG_EXTENDED | REG_NOSUB);
-	if(ret != 0)
-	{
-		size_t len; 
+	if (ret != 0) {
+		size_t len;
 		char *buffer;
-		
+
 		len = regerror(ret, regex, NULL, 0);
 		buffer = malloc(len);
-		if(!buffer) {
+		if (!buffer) {
 			err("Cannot malloc regex error buffer");
 			exit(EXIT_FAILURE);
 		}
-		
+
 		regerror(ret, regex, buffer, len);
-		
+
 		warn("Regular expression error: %s\n", buffer);
-		
+
 		free(buffer);
 		regfree(regex);
 		free(regex);
-		
+
 		exit(EXIT_FAILURE);
 	}
 
@@ -215,7 +214,7 @@ void cleanup_regex(void)
 void regex_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 {
 	int i;
-	
+
 	packet_t pkt;
 	uint8_t *buffer = (uint8_t *) rbb;
 	uint8_t *t_buffer = NULL;
@@ -223,24 +222,24 @@ void regex_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 	assert(regex);
 
 	parse_packet(buffer, tp->tp_len, &pkt);
-	
+
 	/* XXX: This is a very slow path! */
 	t_buffer = malloc(pkt.payload_len + 1);
-	if(!t_buffer) {
+	if (!t_buffer) {
 		err("Cannot malloc t_buffer");
 		exit(EXIT_FAILURE);
 	}
 
 	/* If we won't copy, regexec stops at the first \0 byte :( */
-	for(i = 0; i < pkt.payload_len; ++i) {
-		t_buffer[i] = (isprint(pkt.payload[i]) ? pkt.payload[i] : '.' );
+	for (i = 0; i < pkt.payload_len; ++i) {
+		t_buffer[i] = (isprint(pkt.payload[i]) ? pkt.payload[i] : '.');
 	}
-	
+
 	t_buffer[pkt.payload_len] = 0;
-	if (regexec(regex, (char *) t_buffer, 0, NULL, 0) != REG_NOMATCH) {
+	if (regexec(regex, (char *)t_buffer, 0, NULL, 0) != REG_NOMATCH) {
 		versatile_print(rbb, tp);
 	}
-	
+
 	free(t_buffer);
 }
 
