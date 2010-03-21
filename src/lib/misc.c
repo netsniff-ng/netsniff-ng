@@ -93,7 +93,8 @@ void help(void)
 	info("Options for system daemon:\n");
 	info("  -D|--daemonize         run as sys daemon\n");
 	info("  -P|--pidfile <arg>     use file <arg> as pidfile (required if -D)\n");
-	info("  -p|--dump <arg>        dump all matching packets in a pcap file (required if -D)\n");
+	info("  -p|--dump <arg>        dump all matching packets in a pcap file\n");
+	info("                         (required if -D)\n");
 	info("\n");
 	info("Options, misc:\n");
 	info("  -v|--version           prints out version\n");
