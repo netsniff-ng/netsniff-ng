@@ -1,0 +1,31 @@
+                                                       
+                                                       
+                 .)`                                   
+              .`(                                      
+             .i.                                       
+            / : \                                      
+            |===|                                      
+      .~-~_ >._.< _~-~.                                
+     /   )  \___/  (   \                               
+    (     .-     -. L   )                              
+    {    `_ - () -`     }                              
+     \.^ >--- )( ---< ^./                              
+       . . .o====o. . .                                
+         .    ||    .                                  
+       .   .  ||  .   .                                
+              ||            .---.          .--.        
+         ¸---^++^-------._.^     \       _(    `.      
+        (       ___               \     (        )     
+         `----=[___E  netsniff-ng  `---( `  .   )  )   
+                                        `--(__-. )     
+                         Use with care!                
+                                                       
+                                                       
+netsniff-ng is a high performance Linux network sniffer 
+for packet inspection. It can be used for protocol analysis 
+and reverse engineering, network debugging, measurement of 
+performance throughput or network statistics creation of 
+incoming packets.
+It works similar to tcpdump, but a 'zero-copy' mechanism 
+for network packets results in better performance than 
+libpcap-based sniffers.
