@@ -2,5 +2,4 @@ README
 AUTHORS
 CREDITS
 TODO
-src/doc/architecture_overview.dia
-src/doc/bpf-usenix93.ps
+src/doc/*
