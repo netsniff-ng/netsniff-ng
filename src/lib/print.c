@@ -260,7 +260,7 @@ void payload_human_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr 
 void payload_hex_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 {
 	packet_t pkt;
-	
+
 	int tty_len = get_tty_length();
 
 	assert(rbb);
@@ -284,7 +284,7 @@ void all_hex_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 	info("\n\n");
 }
 
-static inline void __versatile_header_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp, packet_t *pkt)
+static inline void __versatile_header_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp, packet_t * pkt)
 {
 	uint16_t l4_type = 0;
 
@@ -340,7 +340,7 @@ static inline void __versatile_header_only_print(ring_buff_bytes_t * rbb, const 
 void versatile_header_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 {
 	packet_t pkt;
-	
+
 	__versatile_header_only_print(rbb, tp, &pkt);
 	info("\n");
 }

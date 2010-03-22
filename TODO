@@ -1,14 +1,7 @@
 Some future ToDos
 =================
 
- * (Still) better visualization of packets during debug-output
- * Colorize debug output, according to Proto and checksum 
-   (e.g. bogus packets) - per option
- * Data capturing & replay (TX_RING) in pcap file format
- * Switch to longopts (spport of both)
- * BPF filter code generation
- * Plugin framework (for specialized packet payload output)
- * OS fingerprinting detection (?)
- * Deep Packet Inspection
- * Some more device statistics for wireless net devices
- * Evaluate Packet timestamps --> in ns?
+Probably this will remain deprecated here, so check out 
+http://code.google.com/p/netsniff-ng/ or write an email 
+to danborkmann [at] googlmail [dot] com in order to grab 
+some information.
