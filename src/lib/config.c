@@ -71,6 +71,7 @@ static struct option long_options[] = {
 	{"silent", no_argument, 0, 's'},
 	{"payload", no_argument, 0, 'l'},
 	{"payload-hex", no_argument, 0, 'x'},
+	{"all-hex", no_argument, 0, 'X'},
 	{"regex", no_argument, 0, 'e'},
 	{"less", no_argument, 0, 'q'},
 	{"daemonize", no_argument, 0, 'D'},
@@ -102,7 +103,7 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 	assert(argv);
 	assert(sd);
 
-	while ((c = getopt_long(argc, argv, "e:lqxg:vhd:p:r:P:Df:sb:B:Hnt:", long_options, &opt_idx)) != EOF) {
+	while ((c = getopt_long(argc, argv, "e:lqxXg:vhd:p:r:P:Df:sb:B:Hnt:", long_options, &opt_idx)) != EOF) {
 		switch (c) {
 		case 'h':
 			help();
@@ -158,6 +159,9 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 			break;
 		case 'x':
 			sd->print_pkt = payload_hex_only_print;
+			break;
+		case 'X':
+			sd->print_pkt = all_hex_only_print;
 			break;
 		case 'q':
 			sd->print_pkt = reduced_print;

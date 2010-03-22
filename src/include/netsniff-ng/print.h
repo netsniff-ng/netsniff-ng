@@ -52,6 +52,7 @@ extern void dump_iphdr_all(struct iphdr *ip);
 extern void versatile_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp);
 extern void payload_human_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp);
 extern void payload_hex_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp);
+extern void all_hex_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp);
 extern void reduced_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp);
 extern void regex_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp);
 

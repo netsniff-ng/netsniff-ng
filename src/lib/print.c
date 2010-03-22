@@ -255,7 +255,7 @@ void payload_human_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr 
 	parse_packet(buffer, tp->tp_len, &pkt);
 	info("   ");
 	dump_printable(pkt.payload, pkt.payload_len, tty_len - 20, 0);
-	info("\n");
+	info("\n\n");
 }
 
 void payload_hex_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
@@ -270,7 +270,19 @@ void payload_hex_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *t
 	parse_packet(buffer, tp->tp_len, &pkt);
 	info("   ");
 	dump_hex(pkt.payload, pkt.payload_len, tty_len - 20, 0);
-	info("\n");
+	info("\n\n");
+}
+
+void all_hex_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+{
+	int tty_len = get_tty_length();
+
+	assert(rbb);
+	assert(tp);
+
+	info("   ");
+	dump_hex(rbb, tp->tp_len, tty_len - 20, 0);
+	info("\n\n");
 }
 
 void versatile_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
