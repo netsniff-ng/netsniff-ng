@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Daniel Borkmann <danborkmann@googlemail.com>
 Standards-Version: 3.8.4
 Build-Depends: debhelper (>= 7)
-Homepage: http://code.google.com/p/netsniff-ng/
+Homepage: http://www.netsniff-ng.org/
 
 Package: netsniff-ng
 Architecture: i386 ia64 alpha amd64 arm armeb armel hppa mips mipsel powerpc ppc64 s390 s390x sh3 sh3eb sh4 sh4eb sparc
