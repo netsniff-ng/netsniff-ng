@@ -89,6 +89,7 @@ void help(void)
 	info("  -l|--payload           Only print human-readable payload\n");
 	info("  -x|--payload-hex       Only print payload in hex format\n");
 	info("  -X|--all-hex           Print packets in hex format\n");
+	info("  -N|--no-payload        Only print packet header\n");
 	info("  -e|--regex <arg>       Only print package that matches regex <arg>\n");
 	info("\n");
 	info("Options for system daemon:\n");

@@ -216,43 +216,42 @@ void regex_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 	int i;
 
 	packet_t pkt;
-	uint8_t *buffer = (uint8_t *) rbb;
-	uint8_t *t_buffer = NULL;
+	uint8_t *t_rbb = NULL;
 
 	assert(regex);
 
-	parse_packet(buffer, tp->tp_len, &pkt);
+	parse_packet(rbb, tp->tp_len, &pkt);
 
 	/* XXX: This is a very slow path! */
-	t_buffer = malloc(pkt.payload_len + 1);
-	if (!t_buffer) {
-		err("Cannot malloc t_buffer");
+	t_rbb = malloc(pkt.payload_len + 1);
+	if (!t_rbb) {
+		err("Cannot malloc t_rbb");
 		exit(EXIT_FAILURE);
 	}
 
 	/* If we won't copy, regexec stops at the first \0 byte :( */
 	for (i = 0; i < pkt.payload_len; ++i) {
-		t_buffer[i] = (isprint(pkt.payload[i]) ? pkt.payload[i] : '.');
+		t_rbb[i] = (isprint(pkt.payload[i]) ? pkt.payload[i] : '.');
 	}
 
-	t_buffer[pkt.payload_len] = 0;
-	if (regexec(regex, (char *)t_buffer, 0, NULL, 0) != REG_NOMATCH) {
+	t_rbb[pkt.payload_len] = 0;
+	if (regexec(regex, (char *)t_rbb, 0, NULL, 0) != REG_NOMATCH) {
 		versatile_print(rbb, tp);
 	}
 
-	free(t_buffer);
+	free(t_rbb);
 }
 
 void payload_human_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 {
 	packet_t pkt;
-	uint8_t *buffer = (uint8_t *) rbb;
+
 	int tty_len = get_tty_length();
 
-	assert(buffer);
+	assert(rbb);
 	assert(tp);
 
-	parse_packet(buffer, tp->tp_len, &pkt);
+	parse_packet(rbb, tp->tp_len, &pkt);
 	info("   ");
 	dump_printable(pkt.payload, pkt.payload_len, tty_len - 20, 0);
 	info("\n\n");
@@ -261,13 +260,13 @@ void payload_human_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr 
 void payload_hex_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 {
 	packet_t pkt;
-	uint8_t *buffer = (uint8_t *) rbb;
+	
 	int tty_len = get_tty_length();
 
-	assert(buffer);
+	assert(rbb);
 	assert(tp);
 
-	parse_packet(buffer, tp->tp_len, &pkt);
+	parse_packet(rbb, tp->tp_len, &pkt);
 	info("   ");
 	dump_hex(pkt.payload, pkt.payload_len, tty_len - 20, 0);
 	info("\n\n");
@@ -285,59 +284,76 @@ void all_hex_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 	info("\n\n");
 }
 
-void versatile_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+static inline void __versatile_header_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp, packet_t *pkt)
 {
-	int len;
-	packet_t pkt;
 	uint16_t l4_type = 0;
-	uint8_t *buffer = (uint8_t *) rbb;
-	int tty_len = get_tty_length();
 
-	assert(buffer);
+	assert(rbb);
 	assert(tp);
+	assert(pkt);
 
-	len = tp->tp_len;
-	memset(&pkt, 0, sizeof(pkt));
+	memset(pkt, 0, sizeof(*pkt));
 
-	parse_packet(buffer, len, &pkt);
+	parse_packet(rbb, tp->tp_len, pkt);
 
 	info("%d Byte, Timestamp (%u.%u s) \n", tp->tp_len, tp->tp_sec, tp->tp_usec);
 
-	print_ethhdr(pkt.ethernet_header);
+	print_ethhdr(pkt->ethernet_header);
 
-	switch (get_ethertype(pkt.ethernet_header)) {
+	switch (get_ethertype(pkt->ethernet_header)) {
 	case ETH_P_8021Q:
-		print_vlan(pkt.vlan_header);
+		print_vlan(pkt->vlan_header);
 		break;
 
 	case ETH_P_ARP:
-		print_arphdr(pkt.arp_header);
+		print_arphdr(pkt->arp_header);
 		break;
 
 	case ETH_P_IP:
-		print_iphdr(pkt.ip_header);
-		l4_type = get_l4_type_from_ipv4(pkt.ip_header);
+		print_iphdr(pkt->ip_header);
+		l4_type = get_l4_type_from_ipv4(pkt->ip_header);
 		break;
 
 	case ETH_P_IPV6:
-		print_ipv6hdr(pkt.ipv6_header);
-		l4_type = get_l4_type_from_ipv6(pkt.ipv6_header);
+		print_ipv6hdr(pkt->ipv6_header);
+		l4_type = get_l4_type_from_ipv6(pkt->ipv6_header);
 		break;
 	}
 
 	switch (l4_type) {
 	case IPPROTO_TCP:
-		print_tcphdr(pkt.tcp_header);
+		print_tcphdr(pkt->tcp_header);
 		break;
 
 	case IPPROTO_UDP:
-		print_udphdr(pkt.udp_header);
+		print_udphdr(pkt->udp_header);
 		break;
 
 	default:
 
 		break;
 	}
+
+	return;
+}
+
+void versatile_header_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+{
+	packet_t pkt;
+	
+	__versatile_header_only_print(rbb, tp, &pkt);
+	info("\n");
+}
+
+void versatile_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+{
+	packet_t pkt;
+	int tty_len = get_tty_length();
+
+	assert(rbb);
+	assert(tp);
+
+	__versatile_header_only_print(rbb, tp, &pkt);
 
 	dump_payload_hex_all(pkt.payload, pkt.payload_len, tty_len - 20);
 	dump_payload_char_all(pkt.payload, pkt.payload_len, tty_len - 20);
