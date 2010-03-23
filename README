@@ -1,25 +1,25 @@
 About
 =====
 
-netsniff-ng is a high performance Linux network sniffer 
-for packet inspection. It can be used for protocol analysis 
-and reverse engineering, network debugging, measurement of 
-performance throughput or network statistics creation of 
-incoming packets.
+netsniff-ng is a high performance Linux network sniffer for packet 
+inspection. 
 
-It works similar to tcpdump, but a 'zero-copy' mechanism 
-for network packets results in better performance than 
-libpcap-based sniffers.
+It can be used for protocol analysis and reverse engineering, network 
+debugging, measurement of performance throughput or network statistics 
+creation of incoming packets.
 
-For more information about netsniff-ng have a look at the 
-manpage.
+It works similar to tcpdump, but a 'zero-copy' mechanism for network packets 
+results in better performance than libpcap-based sniffers.
+
+For more information about netsniff-ng have a look at the manpage and 
+the manual.
 
 Requirements (for your own kernels)
 ===================================
 
-Your kernel should have been built with CONFIG_PACKET_MMAP=y 
-in order to use netsniff-ng. This is default on your 
-preinstalled Debian kernel. We recommend >= 2.6.26.
+Your kernel should have been built with CONFIG_PACKET_MMAP=y in order to use 
+netsniff-ng. This is default on your preinstalled Debian kernel. We 
+recommend >= 2.6.26.
 
 Homepage
 ========
@@ -30,21 +30,25 @@ Development
 ===========
 
 For bleeding (and unstable) edge, checkout SVN trunk:
+
 svn checkout http://netsniff-ng.googlecode.com/svn/trunk/ netsniff-ng-read-only
 
 Support
 =======
 
-Join the official support and development mailinglist of netsniff-ng:
+A mailing list for netsniff-ng announcements and moderated discussions is open 
+to the public:
+
 Subscribe and send your questions to netsniff-ng@googlegroups.com.
+
 http://www.netsniff-ng.org/
 
 Contact
 =======
 
-For bugs, improvements, cool hacks and all the rest:
+For bugs, improvements, hacks and all the rest:
 
- * Daniel Borkmann <danborkmann@googlemail.com>
+Daniel Borkmann <danborkmann@googlemail.com>
 
 Leipzig University of Applied Science, 
 Faculty of Computer Science, Mathematics and Natural Sciences
