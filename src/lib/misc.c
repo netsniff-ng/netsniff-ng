@@ -1,17 +1,6 @@
-/* XXX: Coding Style - use the tool indent with the following (Linux kernel
- *                     code indents)
- *
- * indent -nbad -bap -nbc -bbo -hnl -br -brs -c33 -cd33 -ncdb -ce -ci4   \
- *        -cli0 -d0 -di1 -nfc1 -i8 -ip0 -l120 -lp -npcs -nprs -npsl -sai \
- *        -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts8 -il1
- *
- *
- * netsniff-ng
- *
- * High performance network sniffer for packet inspection
- *
- * Copyright (C) 2009, 2010  Daniel Borkmann <danborkmann@googlemail.com> and 
- *                           Emmanuel Roullit <emmanuel.roullit@googlemail.com>
+/*
+ * Copyright (C) 2009, 2010  Daniel Borkmann <daniel@netsniff-ng.org> and 
+ *                           Emmanuel Roullit <emmanuel@netsniff-ng.org>
  *
  * This program is free software; you can redistribute it and/or modify 
  * it under the terms of the GNU General Public License as published by 
@@ -26,9 +15,6 @@
  * You should have received a copy of the GNU General Public License along 
  * with this program; if not, write to the Free Software Foundation, Inc., 
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
- *
- * Note: Your kernel has to be compiled with CONFIG_PACKET_MMAP=y option in 
- *       order to use this.
  */
 
 /*
@@ -106,7 +92,7 @@ void help(void)
 	info("  - Sending a SIGUSR1 will show current packet statistics\n");
 	info("  - For more help try \'man netsniff-ng\'\n");
 	info("\n");
-	info("Please report bugs to <danborkmann@googlemail.com>\n");
+	info("Please report bugs to <daniel@netsniff-ng.org>\n");
 	info("Copyright (C) 2009, 2010 Daniel Borkmann and Emmanuel Roullit\n");
 	info("License: GNU GPL version 2\n");
 	info("This is free software: you are free to change and redistribute it.\n");
@@ -135,7 +121,7 @@ void version(void)
 	     "reverse engineering, network debugging, measurement of\n"
 	     "performance throughput or network statistics creation of\nincoming packets.\n", PROGNAME_STRING);
 	info("\n");
-	info("Please report bugs to <danborkmann@googlemail.com>\n");
+	info("Please report bugs to <daniel@netsniff-ng.org>\n");
 	info("Copyright (C) 2009, 2010 Daniel Borkmann and Emmanuel Roullit\n");
 	info("License: GNU GPL version 2\n");
 	info("This is free software: you are free to change and redistribute it.\n");
