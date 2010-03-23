@@ -40,11 +40,12 @@
  */
 void help(void)
 {
-	info("%s %s\n\n", PROGNAME_STRING, VERSION_STRING);
+	info("\n%s %s\n", PROGNAME_STRING, VERSION_STRING);
+	info("http://www.netsniff-ng.org\n\n");
 	info("%s is a high performance network sniffer for packet\n", PROGNAME_STRING);
 	info("inspection that acts as a raw socket sniffer with kernelspace\n");
-	info("bpf and a \"zero-copy\" mode receive/transmit ring.\n");
-	info("\n");
+	info("bpf and a \"zero-copy\" mode receive/transmit ring.\n\n");
+	info("Usage: netsniff-ng [options]\n\n");
 	info("Options for net dev:\n");
 	info("  -d|--dev <arg>         Use device <arg> for capturing packets, e.g. `eth0`\n");
 	info("\n");
@@ -56,11 +57,6 @@ void help(void)
 	info("Options for packet filtering:\n");
 	info("  -f|--filter <arg>      Use file <arg> as packet filter\n");
 	info("  -t|--type <arg>        Only show packets of type <arg> (slower than BPF)\n");
-/*	info("                           `host`      - to us\n");
-	info("                           `broadcast` - to all\n");
-	info("                           `multicast` - to group\n");
-	info("                           `others`    - to others\n");
-	info("                           `outgoing`  - from us\n");  */
 	info("  -g|--generate <arg>    Generate packet filter code for <arg>\n");
 	info("\n");
 	info("Options for system scheduler/process:\n");
@@ -92,7 +88,7 @@ void help(void)
 	info("  - Sending a SIGUSR1 will show current packet statistics\n");
 	info("  - For more help try \'man netsniff-ng\'\n");
 	info("\n");
-	info("Please report bugs to <daniel@netsniff-ng.org>\n");
+	info("Please report bugs to <bugs@netsniff-ng.org>\n");
 	info("Copyright (C) 2009, 2010 Daniel Borkmann and Emmanuel Roullit\n");
 	info("License: GNU GPL version 2\n");
 	info("This is free software: you are free to change and redistribute it.\n");
@@ -106,7 +102,8 @@ void help(void)
  */
 void version(void)
 {
-	info("%s %s\n\n", PROGNAME_STRING, VERSION_STRING);
+	info("\n%s %s\n", PROGNAME_STRING, VERSION_STRING);
+	info("http://www.netsniff-ng.org\n\n");
 	info("%s is a high performance network sniffer for packet\n", PROGNAME_STRING);
 	info("inspection that acts as a raw socket sniffer with kernelspace\n");
 	info("bpf and a \"zero-copy\" mode receive/transmit ring.\n\n");
@@ -121,7 +118,7 @@ void version(void)
 	     "reverse engineering, network debugging, measurement of\n"
 	     "performance throughput or network statistics creation of\nincoming packets.\n", PROGNAME_STRING);
 	info("\n");
-	info("Please report bugs to <daniel@netsniff-ng.org>\n");
+	info("Please report bugs to <bugs@netsniff-ng.org>\n");
 	info("Copyright (C) 2009, 2010 Daniel Borkmann and Emmanuel Roullit\n");
 	info("License: GNU GPL version 2\n");
 	info("This is free software: you are free to change and redistribute it.\n");
