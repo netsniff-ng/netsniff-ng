@@ -88,6 +88,13 @@ void help(void)
 	info("  - Sending a SIGUSR1 will show current packet statistics\n");
 	info("  - For more help try \'man netsniff-ng\'\n");
 	info("\n");
+	info("Examples:\n");
+	info("  netsniff-ng --dev eth0 --dump out.pcap --silent --bind-cpu 0\n");
+	info("  netsniff-ng --dev eth0 --replay out.pcap\n");
+	info("  netsniff-ng --filter /etc/netsniff-ng/rules/icq.bpf\n");
+	info("  netsniff-ng --regex \"user.*pass\"\n");
+	info("  netsniff-ng --prio-norm --dev wlan0 --all-hex --type outgoing\n");
+	info("\n");
 	info("Please report bugs to <bugs@netsniff-ng.org>\n");
 	info("Copyright (C) 2009, 2010 Daniel Borkmann and Emmanuel Roullit\n");
 	info("License: GNU GPL version 2\n");

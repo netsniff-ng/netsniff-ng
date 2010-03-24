@@ -17,31 +17,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-/*
- * Contains: 
- *    Packet printing routines
- */
-
-/*
- * XXX: Some thoughts:
- *    There could be several printing modes for several needs ... e.g.
- *        * A mode that only prints IPs and their corresponding MACs to 
- *          debug ARP related stuff
- *        * A mode that only prints DNS lookups
- *        * A mode that greps for plaintext passwords
- *        * ...
- *    These functions will be registered during startup to a global list 
- *    ids --> will be shown within -h or -ids and can be selected by user, 
- *    so we have kinda plugin system.
- *
- * XXX: Some more thoughts:
- *    We have a plugin system... plugin/ folder. A plugin consists of 
- *    a static BPF code to load and a special print function, so we can define 
- *    special things for special purposes.
- *    These plugins will be called via command param and the ids are shown 
- *    within help (-h), so users can contribute special plugins ;)
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -187,8 +162,6 @@ void init_regex(char *pattern)
 
 		exit(EXIT_FAILURE);
 	}
-
-	free(pattern);
 }
 
 void cleanup_regex(void)

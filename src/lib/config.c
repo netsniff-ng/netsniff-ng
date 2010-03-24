@@ -59,7 +59,7 @@ static struct option long_options[] = {
 	{"payload-hex", no_argument, 0, 'x'},
 	{"all-hex", no_argument, 0, 'X'},
 	{"no-payload", no_argument, 0, 'N'},
-	{"regex", no_argument, 0, 'e'},
+	{"regex", required_argument, 0, 'e'},
 	{"less", no_argument, 0, 'q'},
 	{"daemonize", no_argument, 0, 'D'},
 	{"pidfile", required_argument, 0, 'P'},
@@ -158,7 +158,7 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 			break;
 		case 'e':
 			sd->print_pkt = regex_print;
-			init_regex(strdup(optarg));
+			init_regex(optarg);
 			break;
 		case 'D':
 			sd->sysdaemon = SYSD_ENABLE;
