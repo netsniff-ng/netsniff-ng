@@ -40,7 +40,8 @@ void help(void)
 	info("%s is a high performance network sniffer for packet\n", PROGNAME_STRING);
 	info("inspection that acts as a raw socket sniffer with kernelspace\n");
 	info("bpf and a \"zero-copy\" mode receive/transmit ring.\n\n");
-	info("Usage: netsniff-ng [options]\n\n");
+	info("Usage: netsniff-ng [options]\n");
+	info("\n");
 	info("Options for net dev:\n");
 	info("  -d|--dev <arg>         Use device <arg> for capturing packets, e.g. `eth0`\n");
 	info("\n");
@@ -53,6 +54,10 @@ void help(void)
 	info("  -f|--filter <arg>      Use file <arg> as packet filter\n");
 	info("  -t|--type <arg>        Only show packets of type <arg> (slower than BPF)\n");
 	info("  -g|--generate <arg>    Generate packet filter code for <arg>\n");
+	info("\n");
+	info("Options for advanced packet sniffing:\n");
+	info("  -a|--arp-poison        ARP poison routing, traffic forwarding\n");
+	info("  -m|--mim <arg>         Man-in-the-middle sniffing of IP <arg>\n");
 	info("\n");
 	info("Options for system scheduler/process:\n");
 	info("  -b|--bind-cpu <arg>    Bind process to specific CPU/CPU-range\n");
@@ -70,10 +75,8 @@ void help(void)
 	info("  -e|--regex <arg>       Only print package that matches regex <arg>\n");
 	info("\n");
 	info("Options for system daemon:\n");
-	info("  -D|--daemonize         Run as sys daemon\n");
-	info("  -P|--pidfile <arg>     Use file <arg> as pidfile (required if -D)\n");
-	info("  -p|--dump <arg>        Dump all matching packets in a pcap file\n");
-	info("                         (required if -D)\n");
+	info("  -D|--daemonize         Run as system daemon\n");
+	info("  -P|--pidfile <arg>     Use file <arg> as pidfile (required)\n");
 	info("\n");
 	info("Options, misc:\n");
 	info("  -v|--version           Print version\n");

@@ -221,9 +221,8 @@ void check_config(system_data_t * sd)
 {
 	assert(sd);
 
-	if (sd->sysdaemon && (!sd->pidfile || sd->pcap_fd == -1)) {
+	if (sd->sysdaemon && !sd->pidfile) {
 		help();
-		exit(EXIT_FAILURE);
 	}
 }
 
