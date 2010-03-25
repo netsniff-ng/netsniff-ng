@@ -17,12 +17,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-/*
- * This file contains a ringbuffer implementation for data exchange via 
- * Netlink protocol and can be used for fetching samples of the netdata 
- * (for instance).
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

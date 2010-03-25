@@ -17,11 +17,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-/*
- * Contains: 
- *    Routines for starting / stopping the beast ;)
- */
-
 #define _GNU_SOURCE
 
 #include <stdio.h>
@@ -39,6 +34,7 @@
 #include <net/if.h>
 
 #include <netsniff-ng/hash.h>
+#include <netsniff-ng/server.h>
 #include <netsniff-ng/dump.h>
 #include <netsniff-ng/replay.h>
 #include <netsniff-ng/system.h>

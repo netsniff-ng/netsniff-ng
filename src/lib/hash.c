@@ -17,11 +17,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-/*
- * Contains: 
- *    Bucket hash related stuff
- */
-
 #include <stdint.h>
 #include <assert.h>
 #include <stdio.h>

@@ -17,14 +17,10 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-#ifndef _NET_BPF_H_
-#define _NET_BPF_H_
+#ifndef	__SERVER_H__
+#define __SERVER_H__
 
-#include <linux/filter.h>
-#include <linux/if_packet.h>
+extern int undaemonize(const char *pidfile);
+extern int daemonize(const char *pidfile);
 
-extern void bpf_dump_all(struct sock_filter *bpf, int len);
-extern int bpf_validate(const struct sock_filter *bpf, int len);
-extern uint32_t bpf_filter(const struct sock_filter *bpf, uint8_t * packet, size_t plen);
-
-#endif				/* _NET_BPF_H_ */
+#endif /* __SERVER_H__ */

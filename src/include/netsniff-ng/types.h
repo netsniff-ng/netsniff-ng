@@ -17,11 +17,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-/*
- * Contains: 
- *    Internal data types
- */
-
 #ifndef _NET_TYPES_H_
 #define _NET_TYPES_H_
 

@@ -17,11 +17,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-/*
- * Contains: 
- *    Bucket hash related stuff
- */
-
 #ifndef _NET_HASH_H_
 #define _NET_HASH_H_
 

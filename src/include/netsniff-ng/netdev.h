@@ -17,15 +17,9 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-/*
- * Contains: 
- *    Networking stuff that doesn't belong to tx or rx_ring
- */
-
 #ifndef _NET_NETDEV_H_
 #define _NET_NETDEV_H_
 
-//#include <linux/if_packet.h>
 #include <stdint.h>
 #include <netinet/ip6.h>
 #include <linux/filter.h>

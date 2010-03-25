@@ -17,11 +17,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-/*
- * Contains: 
- *    Some miscellaneous stuff
- */
-
 #ifndef _NET_MISC_H_
 #define _NET_MISC_H_
 

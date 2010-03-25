@@ -17,11 +17,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-/*
- * Contains: 
- *    Some miscellaneous stuff
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

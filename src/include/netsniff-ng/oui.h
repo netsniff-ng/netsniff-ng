@@ -17,11 +17,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-/*
- * Contains: 
- *    OUI eth addr (vendor IDs)
- */
-
 #ifndef _NET_OUI_H_
 #define _NET_OUI_H_
 

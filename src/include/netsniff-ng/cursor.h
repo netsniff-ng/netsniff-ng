@@ -17,11 +17,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-/*
- * Contains: 
- *    A simple spinning command line cursor
- */
-
 #ifndef _CURSOR_H_
 #define _CURSOR_H_
 

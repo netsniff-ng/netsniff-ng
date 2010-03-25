@@ -17,11 +17,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-/*
- * Contains: 
- *    Configuration and argument evaluation related stuff.
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>

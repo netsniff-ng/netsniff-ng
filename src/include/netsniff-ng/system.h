@@ -17,11 +17,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-/*
- * Contains: 
- *    System related stuff like tweaking of scheduling params or CPU affinity
- */
-
 #ifndef _NET_SYSTEM_H_
 #define _NET_SYSTEM_H_
 
@@ -48,8 +43,6 @@ extern char *get_cpu_affinity(char *cpu_string, size_t len);
 extern int set_proc_prio(int prio);
 extern int set_sched_status(int policy, int priority);
 extern void check_for_root(void);
-extern int undaemonize(const char *pidfile);
-extern int daemonize(const char *pidfile);
 
 /* Inline stuff */
 

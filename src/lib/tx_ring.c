@@ -17,11 +17,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-/*
- * Contains: 
- *    Mostly TX_RING related stuff and other networking code
- */
-
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>

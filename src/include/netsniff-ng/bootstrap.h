@@ -17,11 +17,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-/*
- * Contains: 
- *    Routines for starting / stopping the beast ;)
- */
-
 #ifndef _NET_BOOTSTRAP_H_
 #define _NET_BOOTSTRAP_H_
 

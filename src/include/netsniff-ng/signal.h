@@ -17,11 +17,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-/*
- * Contains: 
- *    Signal related stuff
- */
-
 #ifndef _NET_SIGNAL_H_
 #define _NET_SIGNAL_H_
 

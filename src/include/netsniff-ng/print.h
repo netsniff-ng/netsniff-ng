@@ -17,11 +17,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-/*
- * Contains: 
- *    Packet printing routines
- */
-
 #ifndef _NET_PRINT_H_
 #define _NET_PRINT_H_
 

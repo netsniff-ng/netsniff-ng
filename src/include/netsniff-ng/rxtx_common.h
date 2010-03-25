@@ -17,11 +17,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-/*
- * Contains: 
- *    Stuff that can be used for RX_RING as well as for TX_RING
- */
-
 #ifndef _NET_RXTX_COMMON_H_
 #define _NET_RXTX_COMMON_H_
 

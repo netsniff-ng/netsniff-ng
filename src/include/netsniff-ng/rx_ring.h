@@ -17,11 +17,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-/*
- * Contains: 
- *    Mostly RX_RING related stuff and other networking code
- */
-
 #ifndef _NET_RX_RING_H_
 #define _NET_RX_RING_H_
 

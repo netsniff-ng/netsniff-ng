@@ -17,11 +17,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-/*
- * Contains: 
- *    netsniff-ng configuration related routines
- */
-
 #ifndef	_NET_CONFIG_H_
 #define	_NET_CONFIG_H_
 

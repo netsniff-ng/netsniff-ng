@@ -17,11 +17,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-/*
- * Contains: 
- *    Macros, defines and versioning stuff
- */
-
 #ifndef _NET_MACROS_H_
 #define _NET_MACROS_H_
 

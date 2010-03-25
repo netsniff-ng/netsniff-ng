@@ -17,11 +17,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-/*
- * Contains: 
- *    Networking stuff that doesn't belong to tx or rx_ring
- */
-
 #define _GNU_SOURCE
 
 #include <stdio.h>
