@@ -13,9 +13,9 @@
 \usepackage{varioref}         
 \usepackage[
     pagebackref=true,pdfstartview=FitH,
-    pdfcreator={texi2latex + LaTeX with hyperref package},
+    pdfcreator={LaTeX with hyperref package},
     pdfpagelayout=OneColumn,
-    bookmarks=true,bookmarksopen=false,  colorlinks,pdfpagelabels=true,
+    bookmarks=true,bookmarksopen=false,colorlinks,pdfpagelabels=true,
     draft=false,breaklinks=true,plainpages=false]{hyperref}[2000/05/08]
     \hypersetup{
         pdftitle={netsniff-ng},
@@ -23,140 +23,6 @@
         pdfauthor={Daniel Borkmann, Emmanuel Roullit}
     }
 
-\def\lqHook{\char16 }
-\def\rqHook{\char17 }
-\def\lnqHook{\char96 }
-\def\rnqHook{\char39 }
-
-\newdimen{\standardmargin}
-\setlength{\standardmargin}{15pt}
-
-\newdimen{\tableindent}
-\setlength{\tableindent}{50pt}
-
-\newbox\ItemBox
-
-\setcounter{secnumdepth}{5}
-\setcounter{tocdepth}{5}
-
-\newcommand{\lb}{\ifvmode\else\unskip\relax\nobreak\hfil\break\fi}
-
-\newenvironment{display}[1][\standardmargin]%
-    {\begingroup\def~{\mbox{ }}\let\\=\lb
-     \list{}{\listparindent0pt  \itemindent0pt
-     \rightmargin0pt    \leftmargin#1}%
-     \item}
-    {\endlist\endgroup}
-
-\renewenvironment{quote}
-    {\list{}{\leftmargin\standardmargin\rightmargin\leftmargin}%
-     \item\relax}
-    {\endlist}
-
-\makeatletter
-\newcommand\Nopagebreak{\let\if@nobreak\iftrue \nopagebreak}
-\makeatother
-
-\newcommand{\tabletermHook}[1]{#1}
-
-\newcommand{\codeHook}[1]{\mbox{\ttfamily #1}}
-\newcommand{\kbdHook}[1]{\mbox{\ttfamily\slshape #1}}
-
-\newcommand{\keyHook}[1]{{\fboxsep2pt\fbox{\sffamily\footnotesize #1}}}
-\newcommand{\sampHook}[1]{\lnqHook\texttt{#1}\rnqHook}
-\newcommand{\verbHook}[1]{\mbox{\ttfamily #1}}
-\newcommand{\varHook}[1]{\mbox{\slshape #1}}
-\newcommand{\envHook}[1]{\mbox{\ttfamily #1}}
-\newcommand{\fileHook}[1]{\lnqHook\texttt{#1}\rnqHook}
-\newcommand{\commandHook}[1]{\mbox{\ttfamily #1}}
-\newcommand{\optionHook}[1]{\lnqHook\mbox{\ttfamily #1}\rnqHook}
-\newcommand{\dfnHook}[1]{\emph{#1}}
-\newcommand{\citeHook}[1]{\textit{#1}}
-\newcommand{\abbrevwordHook}[1]{#1}
-\newcommand{\abbrevdescHook}[1]{ (#1)}
-\newcommand{\acronymwordHook}[1]{\mbox{#1}}
-\newcommand{\acronymdescHook}[1]{\footnote{#1}}
-\newcommand{\urlHook}[1]{#1}
-\newcommand{\emailHook}[1]{#1}
-
-\newcommand{\emphHook}[1]{\emph{#1}}
-\newcommand{\strongHook}[1]{\textbf{#1}}
-\newcommand{\scHook}[1]{\textsc{#1}}
-\newcommand{\slantedHook}[1]{\textsl{#1}}
-\newcommand{\sansserifHook}[1]{\textsf{#1}}
-\newcommand{\iHook}[1]{\textit{#1}}
-\newcommand{\bHook}[1]{\textbf{#1}}
-\newcommand{\tHook}[1]{\texttt{#1}}
-\newcommand{\rHook}[1]{\textrm{#1}}
-\newcommand{\dmnHook}[1]{\,\mbox{#1}}
-\newcommand{\mathHook}[1]{\ensuremath{#1}}
-\newcommand{\footnoteHook}[1]{\footnote{#1}}
-
-\newenvironment{quotationHook}{\begin{quote}}{\end{quote}}
-\newenvironment{copyingHook}{\begin{quote}}{\end{quote}}
-\newenvironment{verbatimHook}{\begin{display}[0pt]\ttfamily}{\end{display}}
-\newenvironment{exampleHook}{\begin{display}\ttfamily}{\end{display}}
-\newenvironment{lispHook}{\begin{display}\ttfamily}{\end{display}}
-\newenvironment{displayHook}{\begin{display}\relax}{\end{display}}
-\newenvironment{formatHook}{\begin{display}[0pt]}{\end{display}}
-
-\newenvironment{smallexampleHook}{\begin{small}\begin{exampleHook}}%
-    {\end{exampleHook}\end{small}}
-\newenvironment{smalldisplayHook}{\begin{small}\begin{displayHook}}%
-    {\end{displayHook}\end{small}}
-\newenvironment{smallformatHook}{\begin{small}\begin{formatHook}}%
-    {\end{formatHook}\end{small}}
-\newenvironment{smalllispHook}{\begin{small}\begin{lispHook}}%
-    {\end{lispHook}\end{small}}
-
-\newenvironment{flushleftHook}{\begin{flushleft}}{\end{flushleft}}
-\newenvironment{flushrightHook}{\begin{flushright}}{\end{flushright}}
-\newenvironment{groupHook}{\begin{samepage}}{\end{samepage}}
-
-\newenvironment{cartoucheHook}{\begin{center}\shadowbox\bgroup
-    \hbox to \hsize\bgroup\begin{minipage}{\hsize}}%
-    {\end{minipage}\hss\egroup\egroup\end{center}}
-
-\newcommand{\centerHook}[1]{\centerline{#1}}
-
-\newenvironment{definitionitem}[1][\standardmargin]
-    {\list{}{\listparindent0pt  \itemindent0pt
-     \rightmargin0pt    \leftmargin#1}%
-     \item\removelastskip\relax}
-    {\endlist}
-
-\sloppy               
-\hbadness20000
-
-\usepackage{index,multicol}
-\makeatletter
-
-\renewenvironment{theindex}
-    {\begin{multicols}{2}
-     \thispagestyle{plain}\parindent\z@
-     \parskip\z@ \@plus .3\p@\relax
-     \columnseprule \z@
-     \columnsep 35\p@
-     \let\item\@idxitem}
-    {\end{multicols}}
-\makeatother
-
-\immediate\closeout15
-
-\PassOptionsToPackage{hyphens}{url}
-\newcommand{\xhyphen}{\discretionary{\char127}{}{-}}
-\IfFileExists{pdfcprot.sty}{\usepackage[activate]{pdfcprot}}{}
-
-\urlstyle{rm}
-
-\usepackage{hypbmsec}
-
-\InputIfFileExists{texi2latex.cfg}%
-    {\message{Loading global configuration file texi2latex.cfg}}{}
-\InputIfFileExists{\jobname-t2l.cfg}%
-    {\message{Loading local configuration file \jobname-t2l.cfg}}{}
-
-% End header
 %------------------------------------------------------------------------------
 
 \begin{document}
@@ -164,24 +30,39 @@
 
 %------------------------------------------------------------------------------
 \begin{titlepage}
-\vbox to \vsize{
-    \vspace*{3.8cm}{\bfseries\huge netsniff-ng}
-    \vskip4pt \hrule height 4pt width \hsize \vskip4pt\hbox to \hsize{\hfill For version 0.5.5.0, \today}
-    \vfill{\bfseries\Large Daniel Borkmann\\\relax Emmanuel Roullit\par}
+\vbox to \vsize
+{
+    \vspace*{3.8cm}
+    {
+        \bfseries\huge netsniff-ng
+    }
+    \vskip4pt \hrule height 4pt width \hsize \vskip4pt\hbox to \hsize
+    {
+        \hfill For version 0.5.5.0 $-$ \today
+    }
+    \vfill
+    {
+        \bfseries\Large Daniel Borkmann\\\relax Emmanuel Roullit\par
+    }
     \vskip4pt \hrule height 2pt width \hsize\vspace*{0.4cm}
 }
 \end{titlepage}
 
-\vbox to \vsize{
-    \vfill\par This manual is for netsniff-ng (version 0.5.5.0, \today), \\a high performance network sniffer.
+\vbox to \vsize
+{
+    \vfill
+    \par This manual is for netsniff-ng (version 0.5.5.0 $-$ \today), \\
+         a high performance network sniffer.
     \par Copyright © 2009, 2010 Daniel Borkmann, Emmanuel Roullit
-    \begin{quotationHook}
-      \par Permission is granted to copy, distribute and/or modify this document under the terms of the 
-      {\acronymwordHook{GNU}} Free Documentation License, Version 1.3 or any later version published by 
-      the Free Software Foundation; with no Invariant Sections, with no Front-{}Cover texts, and with 
-      no Back-{}Cover Texts.  A copy of the license is included in the section entitled \char16 
-      {\acronymwordHook{GNU}} Free Documentation License.\char17 
-    \end{quotationHook}
+    
+    \begin{quote}
+      \par Permission is granted to copy, distribute and/or modify this 
+           document under the terms of the GNU Free Documentation License, 
+           Version 1.3 or any later version published by the Free Software 
+           Foundation; with no Invariant Sections, with no Front-{}Cover 
+           texts, and with no Back-{}Cover Texts.  A copy of the license is 
+           included in the section entitled 'GNU Free Documentation License'.
+    \end{quote}
 }
 
 \endgroup
