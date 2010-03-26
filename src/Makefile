@@ -37,8 +37,8 @@ uninstall:
 	@rm $(DESTDIR)/$(MANDIR)/$(target).8.gz || true
 
 indent:
-	$(PWD)/indent_code
+	$(PWD)/scripts/indent_code .
 
 check: indent
-	$(PWD)/code_check
+	$(PWD)/scripts/code_check .
 

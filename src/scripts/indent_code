@@ -5,7 +5,7 @@
 # Code indention script
 #
 
-files=`find . -type f | egrep "*.c$|*.h$"`
+files=`find $1 -type f | egrep "*.c$|*.h$"`
 
 echo "Indenting `echo $files | wc -w` files (`cat $files | wc -l` lines) ..."
 

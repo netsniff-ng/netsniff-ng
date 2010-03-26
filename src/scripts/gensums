@@ -8,7 +8,7 @@
 # XXX: Use diff for comparison of sums
 #
 
-files=`find . -type f | egrep -v "*~|/\.svn/|*.o$"`
+files=`find $1 -type f | egrep -v "*~|/\.svn/|*.o$"`
 
 for file in $files
 do

@@ -2,6 +2,7 @@
 
 #
 # netsniff-ng Project
+# XXX: splint? or other tools
 # Code analysis script... quite a hack, so you better 
 # grab some coffee! ;)
 #
@@ -70,7 +71,7 @@ sub grep_source_files
 	find sub {
 		$_ = $File::Find::name;
 		push(@src_files, $_) if(/\.(c|h)$/);
-	}, getcwd;
+	}, (getcwd)."/../";
 }
 
 # v-- Make related stuff
