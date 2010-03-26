@@ -23,6 +23,7 @@
 #include <linux/ip.h>
 
 #include <netsniff-ng/types.h>
+#include <netsniff-ng/config.h>
 
 /* Function signatures */
 extern void print_packet_buffer_mode_1(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp);

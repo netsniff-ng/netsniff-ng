@@ -48,38 +48,33 @@ static void *start_server(void *arg)
 	//struct sockaddr_nl sa;
 	//struct iovec iov = { (void *) nh, nh->nlmsg_len };
 	//struct msghdr msg;
-	
+
 	sock = socket(PF_NETLINK, SOCK_RAW, NETLINK_USERSOCK);
-	if (sock < 0) {
+	if (sock < 0) {
 		err("Cannot create netlink socket");
 		pthread_exit(0);
 	}
-
-	memset(&nls, 0, sizeof(nls));
-	
-	nls.nl_family = AF_NETLINK;
-	nls.nl_groups = -1;
-
-	ret = bind(sock, (struct sockaddr *) &nls, sizeof(nls));
-	if (ret < 0) {
+	memset(&nls, 0, sizeof(nls));
+	nls.nl_family = AF_NETLINK;
+	nls.nl_groups = -1;
+	ret = bind(sock, (struct sockaddr *)&nls, sizeof(nls));
+	if (ret < 0) {
 		err("Cannot bind netlink socket");
 		goto out;
 	}
-
-	//Example
-	//recv(netlink_fd, data, len, 0);
-
-	//msg = { (void *)&sa, sizeof(sa), &iov, 1, NULL, 0, 0 };
-	//memset (&sa, 0, sizeof(sa));
-	//sa.nl_family = AF_NETLINK;
-	//nh->nlmsg_pid = 0;
-	//nh->nlmsg_seq = ++sequence_number;
-	/* Request an ack from kernel by setting NLM_F_ACK. */
-	//nh->nlmsg_flags |= NLM_F_ACK;
-	//sendmsg (fd, &msg, 0);
-
-out:
-	close(sock);	
+	
+	    //Example
+	    //recv(netlink_fd, data, len, 0);
+	    //msg = { (void *)&sa, sizeof(sa), &iov, 1, NULL, 0, 0 };
+	    //memset (&sa, 0, sizeof(sa));
+	    //sa.nl_family = AF_NETLINK;
+	    //nh->nlmsg_pid = 0;
+	    //nh->nlmsg_seq = ++sequence_number;
+	    /* Request an ack from kernel by setting NLM_F_ACK. */
+	    //nh->nlmsg_flags |= NLM_F_ACK;
+	    //sendmsg (fd, &msg, 0);
+ out:
+	close(sock);
 	pthread_exit(0);
 }
 

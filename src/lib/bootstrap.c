@@ -113,6 +113,10 @@ static void __init_stage_daemon(system_data_t * sd, int *sock, ring_buff_t ** rb
 
 	if (sd->sysdaemon == 0)
 		return;
+	if (sd->mode == MODE_READ)
+		return;
+
+	info("--- Daemonizing ---\n\n");
 
 	ret = daemonize(sd->pidfile);
 	if (ret != 0) {
@@ -136,7 +140,7 @@ static void __init_stage_fallback_dev(system_data_t * sd, int *sock, ring_buff_t
 	assert(pfd);
 
 	/* User specified device, so no work here ... */
-	if (sd->dev)
+	if (sd->dev || sd->mode == MODE_READ)
 		return;
 
 	/* User didn't specify a device, so we switch to the default running 
@@ -195,6 +199,11 @@ static void __init_stage_mode_common(system_data_t * sd, int *sock, ring_buff_t 
 	assert(rb);
 	assert(pfd);
 
+	(*sock) = get_pf_socket();
+
+	if (sd->mode == MODE_READ)
+		return;
+
 	(*rb) = (ring_buff_t *) malloc(sizeof(**rb));
 	if ((*rb) == NULL) {
 		err("Cannot allocate ring buffer");
@@ -208,8 +217,6 @@ static void __init_stage_mode_common(system_data_t * sd, int *sock, ring_buff_t 
 	 */
 
 	put_dev_into_promisc_mode(sd->dev);
-
-	(*sock) = get_pf_socket();
 }
 
 static void __init_stage_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
@@ -258,7 +265,7 @@ static void __init_stage_rx_ring(system_data_t * sd, int *sock, ring_buff_t ** r
 	assert(rb);
 	assert(pfd);
 
-	if (sd->mode == MODE_REPLAY)
+	if (sd->mode == MODE_REPLAY || sd->mode == MODE_READ)
 		return;
 
 	create_virt_rx_ring((*sock), (*rb), sd->dev);
@@ -280,6 +287,9 @@ static void __init_stage_tx_ring(system_data_t * sd, int *sock, ring_buff_t ** r
 
 	if (pcap_validate_header(sd->pcap_fd) < 0)
 		exit(EXIT_FAILURE);
+
+	if (sd->mode == MODE_READ)
+		return;
 
 	create_virt_tx_ring((*sock), (*rb), sd->dev);
 	bind_dev_to_tx_ring((*sock), ethdev_to_ifindex(sd->dev), (*rb));
@@ -431,7 +441,7 @@ static void __exit_stage_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb)
 	assert(sock);
 	assert(rb);
 
-	if (sd->mode == MODE_REPLAY)
+	if (sd->mode == MODE_REPLAY || sd->mode == MODE_READ)
 		return;
 	if (sd->bypass_bpf == BPF_BYPASS)
 		return;
@@ -448,7 +458,7 @@ static void __exit_stage_rx_ring(system_data_t * sd, int *sock, ring_buff_t ** r
 	assert(rb);
 	assert(*rb);
 
-	if (sd->mode == MODE_REPLAY)
+	if (sd->mode == MODE_REPLAY || sd->mode == MODE_READ)
 		return;
 
 	destroy_virt_rx_ring((*sock), (*rb));
@@ -461,7 +471,7 @@ static void __exit_stage_tx_ring(system_data_t * sd, int *sock, ring_buff_t ** r
 	assert(rb);
 	assert(*rb);
 
-	if (sd->mode == MODE_CAPTURE)
+	if (sd->mode == MODE_CAPTURE || sd->mode == MODE_READ)
 		return;
 
 	destroy_virt_tx_ring((*sock), (*rb));
@@ -482,7 +492,7 @@ static void __exit_stage_timer(system_data_t * sd, int *sock, ring_buff_t ** rb)
 	assert(sock);
 	assert(rb);
 
-	net_stat((*sock));
+	net_stat(*sock);
 }
 
 static void __exit_stage_last(system_data_t * sd, int *sock, ring_buff_t ** rb)
@@ -493,7 +503,10 @@ static void __exit_stage_last(system_data_t * sd, int *sock, ring_buff_t ** rb)
 
 	close((*sock));
 
-	free((*rb));
+	if (sd->mode == MODE_READ)
+		return;
+
+	free(*rb);
 	free(sd->dev);
 }
 

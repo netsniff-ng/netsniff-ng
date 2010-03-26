@@ -41,6 +41,7 @@ static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
 	{"dump", required_argument, 0, 'p'},
 	{"replay", required_argument, 0, 'r'},
+	{"read", required_argument, 0, 'i'},
 	{"quit-after", required_argument, 0, 'q'},
 	{"generate", required_argument, 0, 'g'},
 	{"type", required_argument, 0, 't'},
@@ -85,7 +86,7 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 	assert(argv);
 	assert(sd);
 
-	while ((c = getopt_long(argc, argv, "e:lqNxXg:vhd:p:r:P:Df:sb:B:Hnt:", long_options, &opt_idx)) != EOF) {
+	while ((c = getopt_long(argc, argv, "e:lqi:NxXg:vhd:p:r:P:Df:sb:B:Hnt:", long_options, &opt_idx)) != EOF) {
 		switch (c) {
 		case 'h':
 			help();
@@ -185,6 +186,14 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 				exit(EXIT_FAILURE);
 			}
 			break;
+		case 'i':
+			sd->mode = MODE_READ;
+			sd->pcap_fd = open(optarg, O_RDONLY);
+			if (sd->pcap_fd == -1) {
+				err("Can't open file");
+				exit(EXIT_FAILURE);
+			}
+			break;
 		case 'g':
 			info("Option `g` not yet implemented!\n");
 			break;
@@ -198,16 +207,17 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 			case 't':
 			case 'p':
 			case 'P':
+			case 'i':
 			case 'L':
 			case 'b':
 			case 'B':
 				warn("Option -%c requires an argument!\n", optopt);
-				break;
+				exit(EXIT_FAILURE);
 			default:
 				if (isprint(optopt)) {
 					warn("Unknown option character `0x%X\'!\n", optopt);
 				}
-				break;
+				exit(EXIT_FAILURE);
 			}
 
 			return;

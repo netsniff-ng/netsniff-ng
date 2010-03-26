@@ -17,10 +17,12 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-#ifndef	__SERVER_H__
-#define __SERVER_H__
+#ifndef _NET_READ_H_
+#define _NET_READ_H_
 
-extern int undaemonize(const char *pidfile);
-extern int daemonize(const char *pidfile);
+#include <netsniff-ng/config.h>
 
-#endif				/* __SERVER_H__ */
+/* Function signatures */
+extern void display_packets(system_data_t * sd);
+
+#endif				/* _NET_READ_H_ */

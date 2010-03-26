@@ -49,6 +49,7 @@ void help(void)
 	info("  -p|--dump <arg>        Dump all matching packets in a pcap file,\n");
 	info("                         for a better performance combine with -s|--silent\n");
 	info("  -r|--replay <arg>      Replay all packets from a pcap file\n");
+	info("  -i|--read <arg>        Display packets from a pcap file (offline analysis)\n");
 	info("\n");
 	info("Options for packet filtering:\n");
 	info("  -f|--filter <arg>      Use file <arg> as packet filter\n");
@@ -89,6 +90,7 @@ void help(void)
 	info("Examples:\n");
 	info("  netsniff-ng --dev eth0 --dump out.pcap --silent --bind-cpu 0\n");
 	info("  netsniff-ng --dev eth0 --replay out.pcap\n");
+	info("  netsniff-ng --read out.pcap --no-payload\n");
 	info("  netsniff-ng --filter /etc/netsniff-ng/rules/icq.bpf\n");
 	info("  netsniff-ng --regex \"user.*pass\"\n");
 	info("  netsniff-ng --prio-norm --dev wlan0 --all-hex --type outgoing\n");

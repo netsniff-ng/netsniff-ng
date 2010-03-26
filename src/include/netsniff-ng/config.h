@@ -41,8 +41,9 @@
 
 #define PACKET_DONT_CARE        -1
 
-#define MODE_CAPTURE             0
-#define MODE_REPLAY              1
+#define MODE_CAPTURE             1
+#define MODE_REPLAY              2
+#define MODE_READ                3
 
 typedef struct system_data {
 	/* Some more or less boolean conf values */

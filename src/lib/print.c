@@ -39,6 +39,7 @@
 
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/types.h>
+#include <netsniff-ng/read.h>
 #include <netsniff-ng/print.h>
 #include <netsniff-ng/print/l2/ethernet.h>
 #include <netsniff-ng/print/l2/vlan.h>
@@ -49,6 +50,10 @@
 #include <netsniff-ng/print/l4/udp.h>
 #include <netsniff-ng/packet.h>
 #include <netsniff-ng/system.h>
+#include <netsniff-ng/replay.h>
+#include <netsniff-ng/config.h>
+#include <netsniff-ng/signal.h>
+#include <netsniff-ng/bpf.h>
 
 /*
  * dump_hex - Prints payload as bytes to our tty
@@ -318,5 +323,25 @@ void versatile_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 	dump_payload_char_all(pkt.payload, pkt.payload_len, tty_len - 20);
 
 	info("\n");
-	return;
+}
+
+void display_packets(system_data_t * sd)
+{
+	struct tpacket_hdr header;
+	ring_buff_bytes_t buff[TPACKET_ALIGNMENT << 7];
+
+	assert(sd);
+
+	info("--- Printing ---\n\n");
+
+	while (pcap_has_packets(sd->pcap_fd) && likely(!sigint)) {
+		memset(buff, 0, sizeof(buff));
+		pcap_fetch_next_packet(sd->pcap_fd, &header, (struct ethhdr *)buff);
+
+		if (sd->print_pkt)
+			if (bpf_filter(sd->bpf, (uint8_t *) buff, header.tp_len))
+				sd->print_pkt((uint8_t *) buff, &header);
+	}
+
+	close(sd->pcap_fd);
 }

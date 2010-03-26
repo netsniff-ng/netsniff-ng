@@ -289,4 +289,3 @@ void check_for_root(void)
 		exit(EXIT_FAILURE);
 	}
 }
-
