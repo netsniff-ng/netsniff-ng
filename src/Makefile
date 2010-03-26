@@ -1,8 +1,8 @@
 #
-# Makefile for netsniff-ng
+# Makefile for netsniff-ng main
 #
 
-include .config
+include definitions.mk
 
 INCLUDE    = -Iinclude
 
@@ -11,34 +11,60 @@ dep-objs   = lib/
 
 target     = netsniff-ng
 
-all: clean netsniff-ng
+all: clean build
+debug: all
+check: all
 
-netsniff-ng: $(core-objs)
-	@$(CC) -o $(target) $(core-objs) $(shell find $(dep-objs) -name "*.o") $(LIBS)
+#-----------------------------------------------------------------------------
+
+build: $(core-objs)
+	@$(LD) $(target) $(core-objs) $(shell find $(dep-objs) -name "*.o") $(LIBS)
+
+#-----------------------------------------------------------------------------
 
 %.o: %.c
-	@-for d in $(dep-objs); do (cd $$d; $(MAKE) $(MFLAGS) all); done
-	@$(CC) -c $(CFLAGS) $(INCLUDE) $<
+	@-for d in $(dep-objs); do (cd $$d; $(MAKE) $(MFLAGS) $(MAKECMDGOALS)); done
+	@$(CC) $(CFLAGS) $(INCLUDE) $<
 
-install:
-	@install -D $(target) $(DESTDIR)/$(BINDIR)/$(target)
-	@install -d $(DESTDIR)/$(ETCDIR)/$(target)
-	@cp -r rules/ $(DESTDIR)/$(ETCDIR)/$(target)/
-	@cat $(MANDIR_LOCAL)/$(target).8 | gzip --best > $(MANDIR_LOCAL)/$(target).8.gz
-	@install -D $(MANDIR_LOCAL)/$(target).8.gz $(DESTDIR)/$(MANDIR)/$(target).8.gz
+#-----------------------------------------------------------------------------
 
 clean:
 	@-for d in $(dep-objs); do (cd $$d; $(MAKE) $(MFLAGS) clean); done
-	@rm *.o *.tu *.nccout *~ Code.map $(target) $(MANDIR_LOCAL)/$(target).8.gz > /dev/null 2>&1 || true
+	@rm *.o *.tu *.nccout *~ Code.map $(target) \
+	$(MANDIR_LOCAL)/$(target).8.gz > /dev/null 2>&1 || true
+
+#-----------------------------------------------------------------------------
+
+install:
+	@install -D $(target) $(DESTDIR)/$(BINDIR)/$(target)
+	@install -d $(DESTDIR)/$(ETCDIR)/$(target)/rules
+	@cp -r rules/*.bpf $(DESTDIR)/$(ETCDIR)/$(target)/rules/
+	@cat $(MANDIR_LOCAL)/$(target).8 | gzip --best > \
+	$(MANDIR_LOCAL)/$(target).8.gz
+	@install -D $(MANDIR_LOCAL)/$(target).8.gz \
+	$(DESTDIR)/$(MANDIR)/$(target).8.gz
 
 uninstall:
 	@rm $(DESTDIR)/$(BINDIR)/$(target) || true
 	@rm -rf $(DESTDIR)/$(ETCDIR)/$(target) || true
 	@rm $(DESTDIR)/$(MANDIR)/$(target).8.gz || true
 
+#-----------------------------------------------------------------------------
+
 indent:
 	$(PWD)/scripts/indent_code .
 
-check: indent
-	$(PWD)/scripts/code_check .
+help:
+	@echo 'Cleaning targets:'
+	@echo '  clean           - Remove generated files'
+	@echo 'Building targets:'
+	@echo '  all             - Build netsniff-ng (default)'
+	@echo '  debug           - Build netsniff-ng for debugging only'
+	@echo '  check           - Build netsniff-ng for code analysis'
+	@echo 'Setup targets:'
+	@echo '  install         - Install netsniff-ng'
+	@echo '  uninstall       - Uninstall netsniff-ng'
+	@echo 'Other targets:'
+	@echo '  indent          - Indent source code'
+	@echo '  help            - Print this help'
 
