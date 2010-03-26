@@ -45,8 +45,8 @@ endif
 ifeq ($(MAKECMDGOALS), check)
 	LD      = $(CC_SPLINT)
 	CC      = $(CC_SPLINT)
-	CFLAGS  = 
-	CFLAGS += 
+	CFLAGS  = +gnuextensions +posixlib +showfunc +showsummary 
+	CFLAGS += +systemdirs /usr/include +skip-sys-headers
 endif
 
 .PHONY: all
