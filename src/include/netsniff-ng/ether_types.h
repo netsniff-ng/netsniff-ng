@@ -228,8 +228,7 @@ ether_type_t ether_types[] = {
 	{0x9002, "3Com(Bridge) TCP-IP Sys"},
 	{0x9003, "3Com(Bridge) loop detect"},
 	{0xDADA, "Ethertype DSA"},
-	{0xF00, "BBN VITAL-LanBridge cache"},
-	{0xFF00, "ISC Bunker Ramo"},
+	{0xFF00, "BBN VITAL-LanBridge cache"},
 	{0xFFFF, "Reserved"},
 };
 
