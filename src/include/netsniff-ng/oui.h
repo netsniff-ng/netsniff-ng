@@ -27,6 +27,7 @@ typedef struct vendor_id {
 	char *vendor;
 } vendor_id_t;
 
+/* Taken from IEEE oui vendor list. */
 vendor_id_t vendor_db[] = {
 	{0x000000, "XEROX CORPORATION"},
 	{0x000001, "XEROX CORPORATION"},
