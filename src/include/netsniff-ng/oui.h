@@ -22,7 +22,7 @@
 
 #include <stdint.h>
 
-typedef struct vendor_id {
+typedef struct {
 	uint32_t id;
 	char *vendor;
 } vendor_id_t;
