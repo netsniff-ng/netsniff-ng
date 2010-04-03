@@ -13372,6 +13372,11 @@ vendor_id_t vendor_db[] = {
 	{0xFCE192, "Sichuan Jinwangtong Electronic Science&Technology Co,.Ltd"},
 	{0xFCFAF7, "Shanghai Baud Data Communication Co.,Ltd."},
 	{0xFCFBFB, "Cisco Systems"},
+	/* Some additional, unofficial Vendor IDs (taken from Nmap project) */
+	{0x525400, "QEMU Virtual NIC"},
+	{0xB0C420, "Bochs Virtual NIC"},
+	{0xDEADCA, "PearPC Virtual NIC"},
+	{0x00FFD1, "Cooperative Linux Virtual NIC"},
 };
 
 char *vendor_unknown = "Unknown";
