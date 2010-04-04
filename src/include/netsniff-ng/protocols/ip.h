@@ -17,31 +17,63 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-#ifndef	__PRINT_IP_H__
-#define	__PRINT_IP_H__
+#ifndef	__PROTO_IP_H__
+#define __PROTO_IP_H__
 
 #include <stdint.h>
 #include <assert.h>
 
+#include <netinet/in.h>
+#include <linux/ip.h>
+
 #include <netsniff-ng/macros.h>
-#include <netsniff-ng/protocols/l3/ip.h>
+#include <netsniff-ng/protocols/csum.h>
+
+#define	FRAG_OFF_RESERVED_FLAG(x)      ((x) & 0x8000)
+#define	FRAG_OFF_NO_FRAGMENT_FLAG(x)   ((x) & 0x4000)
+#define	FRAG_OFF_MORE_FRAGMENT_FLAG(x) ((x) & 0x2000)
+#define	FRAG_OFF_FRAGMENT_OFFSET(x)    ((x) & 0x1fff)
+
+static inline struct iphdr *get_iphdr(uint8_t ** pkt, uint32_t * pkt_len)
+{
+	struct iphdr *ip_header;
+
+	assert(pkt);
+	assert(*pkt);
+	assert(*pkt_len > sizeof(*ip_header));
+
+	ip_header = (struct iphdr *)*pkt;
+
+	*pkt += sizeof(*ip_header);
+	*pkt_len -= sizeof(*ip_header);
+
+	return (ip_header);
+}
+
+static inline uint16_t get_l4_type_from_ipv4(const struct iphdr *header)
+{
+	assert(header);
+	return (header->protocol);
+}
 
 /*
  * print_iphdr - Just plain dumb formatting
  * @ip:            ip header
  */
-
 void print_iphdr(struct iphdr *ip)
 {
 	/* XXX Version check */
 	assert(ip);
+
 	char src_ip[INET_ADDRSTRLEN] = { 0 };
 	char dst_ip[INET_ADDRSTRLEN] = { 0 };
+
 	uint16_t csum = calc_csum(ip, ip->ihl * 4, 0);
 	uint16_t printable_frag_off;
 
 	inet_ntop(AF_INET, &ip->saddr, src_ip, INET_ADDRSTRLEN);
 	inet_ntop(AF_INET, &ip->daddr, dst_ip, INET_ADDRSTRLEN);
+
 	printable_frag_off = ntohs(ip->frag_off);
 
 	info(" [ IPv4 ");
@@ -65,4 +97,4 @@ void print_iphdr(struct iphdr *ip)
 	info(" ] \n");
 }
 
-#endif				/* __PRINT_IP_H__ */
+#endif				/* __PROTO_IP_H__ */

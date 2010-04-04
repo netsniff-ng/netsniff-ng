@@ -32,7 +32,6 @@
 
 #include <netsniff-ng/system.h>
 #include <netsniff-ng/dump.h>
-#include <netsniff-ng/packet.h>
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/misc.h>
 #include <netsniff-ng/config.h>

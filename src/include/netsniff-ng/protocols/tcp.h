@@ -17,14 +17,31 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-#ifndef	__PRINT_TCP_H__
-#define	__PRINT_TCP_H__
+#ifndef	__PROTO_TCP_H__
+#define	__PROTO_TCP_H__
 
 #include <stdint.h>
 #include <assert.h>
 
+#include <linux/tcp.h>
+
 #include <netsniff-ng/macros.h>
-#include <netsniff-ng/protocols/l4/tcp.h>
+
+static inline struct tcphdr *get_tcphdr(uint8_t ** pkt, uint32_t * pkt_len)
+{
+	struct tcphdr *tcp_header = NULL;
+
+	assert(pkt);
+	assert(*pkt);
+	assert(*pkt_len >= sizeof(*tcp_header));
+
+	tcp_header = (struct tcphdr *)*pkt;
+
+	*pkt += sizeof(*tcp_header);
+	*pkt_len -= sizeof(*tcp_header);
+
+	return (tcp_header);
+}
 
 /*
  * dump_tcphdr_all - Just plain dumb formatting
@@ -80,4 +97,4 @@ static void inline print_tcphdr(struct tcphdr *tcp)
 	/* TODO check csum */
 }
 
-#endif				/* __PRINT_TCP_H__ */
+#endif				/* __PROTO_TCP_H__ */

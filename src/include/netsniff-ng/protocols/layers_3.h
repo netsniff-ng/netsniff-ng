@@ -17,28 +17,10 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-#ifndef	__PROTO_UDP_H__
-#define	__PROTO_UDP_H__
+#ifndef	__LAYERS_3_H__
+#define __LAYERS_3_H__
 
-#include <stdint.h>
-#include <assert.h>
+#include <netsniff-ng/protocols/ip.h>
+#include <netsniff-ng/protocols/ipv6.h>
 
-#include <linux/udp.h>
-
-static inline struct udphdr *get_udphdr(uint8_t ** pkt, uint32_t * pkt_len)
-{
-	struct udphdr *udp_header = NULL;
-
-	assert(pkt);
-	assert(*pkt);
-	assert(*pkt_len >= sizeof(*udp_header));
-
-	udp_header = (struct udphdr *)*pkt;
-
-	*pkt += sizeof(*udp_header);
-	*pkt_len -= sizeof(*udp_header);
-
-	return (udp_header);
-}
-
-#endif				/* __PROTO_UDP_H__ */
+#endif /* __LAYERS_3_H__ */

@@ -35,7 +35,7 @@ typedef struct bucket {
 typedef struct callbacks {
 	void *(*key_copy) (void *k);
 	void (*key_free) (void *k);
-	 uintptr_t(*key_to_hash) (void *k);
+	uintptr_t(*key_to_hash) (void *k);
 	int (*key_equal) (void *k1, void *k2);
 } hashtable_callbacks_t;
 typedef struct hashtable {

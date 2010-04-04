@@ -41,13 +41,7 @@
 #include <netsniff-ng/types.h>
 #include <netsniff-ng/read.h>
 #include <netsniff-ng/print.h>
-#include <netsniff-ng/print/l2/ethernet.h>
-#include <netsniff-ng/print/l2/vlan.h>
-#include <netsniff-ng/print/l2/arp.h>
-#include <netsniff-ng/print/l3/ip.h>
-#include <netsniff-ng/print/l3/ipv6.h>
-#include <netsniff-ng/print/l4/tcp.h>
-#include <netsniff-ng/print/l4/udp.h>
+#include <netsniff-ng/protocols/layers_all.h>
 #include <netsniff-ng/packet.h>
 #include <netsniff-ng/system.h>
 #include <netsniff-ng/replay.h>

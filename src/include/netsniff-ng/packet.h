@@ -22,13 +22,7 @@
 
 #include <stdint.h>
 
-#include <netsniff-ng/protocols/l2/ethernet.h>
-#include <netsniff-ng/protocols/l2/vlan.h>
-#include <netsniff-ng/protocols/l2/arp.h>
-#include <netsniff-ng/protocols/l3/ip.h>
-#include <netsniff-ng/protocols/l3/ipv6.h>
-#include <netsniff-ng/protocols/l4/tcp.h>
-#include <netsniff-ng/protocols/l4/udp.h>
+#include <netsniff-ng/protocols/layers_all.h>
 
 #define ETHERNET 0x4554
 

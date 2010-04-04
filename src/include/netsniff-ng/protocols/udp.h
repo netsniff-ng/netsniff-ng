@@ -17,37 +17,45 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-#ifndef	__PRINT_ETHERNET_H__
-#define	__PRINT_ETHERNET_H__
+#ifndef	__PROTO_UDP_H__
+#define	__PROTO_UDP_H__
 
 #include <stdint.h>
 #include <assert.h>
 
+#include <linux/udp.h>
+
 #include <netsniff-ng/macros.h>
-#include <netsniff-ng/hash.h>
-#include <netsniff-ng/protocols/l2/ethernet.h>
+
+static inline struct udphdr *get_udphdr(uint8_t ** pkt, uint32_t * pkt_len)
+{
+	struct udphdr *udp_header = NULL;
+
+	assert(pkt);
+	assert(*pkt);
+	assert(*pkt_len >= sizeof(*udp_header));
+
+	udp_header = (struct udphdr *)*pkt;
+
+	*pkt += sizeof(*udp_header);
+	*pkt_len -= sizeof(*udp_header);
+
+	return (udp_header);
+}
 
 /*
- * print_ethhdr - Just plain dumb formatting
- * @eth:            ethernet header
+ * dump_udphdr_all - Just plain dumb formatting
+ * @udp:            udp header
  */
-static inline void print_ethhdr(struct ethhdr *eth)
+void print_udphdr(struct udphdr *udp)
 {
-	uint8_t *src_mac = eth->h_source;
-	uint8_t *dst_mac = eth->h_dest;
+	info(" [ UDP ");
 
-	assert(eth);
+	info("Port (%u => %u), ", ntohs(udp->source), ntohs(udp->dest));
+	info("Len (%u), ", ntohs(udp->len));
+	info("Chsum (0x%x)", ntohs(udp->check));
 
-	info(" [ ");
-	info("MAC (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x => %.2x:%.2x:%.2x:%.2x:%.2x:%.2x), ", src_mac[0], src_mac[1],
-	     src_mac[2], src_mac[3], src_mac[4], src_mac[5], dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4],
-	     dst_mac[5]);
-	info("Proto (0x%.4x)", ntohs(eth->h_proto));
-	info(" ] \n");
-
-	info(" [ ");
-	info("Vendor (%s => %s)", ieee_vendors_find(src_mac), ieee_vendors_find(dst_mac));
 	info(" ] \n");
 }
 
-#endif				/* __PRINT_ETHERNET_H__ */
+#endif				/* __PROTO_UDP_H__ */

@@ -24,7 +24,8 @@
 #include <assert.h>
 
 #include <netinet/in.h>
-//#include <linux/if_arp.h>
+
+#include <netsniff-ng/macros.h>
 
 static inline struct arphdr *get_arphdr(uint8_t ** pkt, uint32_t * pkt_len)
 {
@@ -40,6 +41,53 @@ static inline struct arphdr *get_arphdr(uint8_t ** pkt, uint32_t * pkt_len)
 	*pkt_len -= sizeof(*arp_header);
 
 	return (arp_header);
+}
+
+/*
+ * print_arphdr - Just plain dumb formatting
+ * @arp:         arp header
+ */
+void print_arphdr(struct arphdr *arp)
+{
+	char *opcode = NULL;
+
+	assert(arp);
+
+	switch (ntohs(arp->ar_op)) {
+	case ARPOP_REQUEST:
+		opcode = "ARP request";
+		break;
+	case ARPOP_REPLY:
+		opcode = "ARP reply";
+		break;
+	case ARPOP_RREQUEST:
+		opcode = "RARP request";
+		break;
+	case ARPOP_RREPLY:
+		opcode = "RARP reply";
+		break;
+	case ARPOP_InREQUEST:
+		opcode = "InARP request";
+		break;
+	case ARPOP_InREPLY:
+		opcode = "InARP reply";
+		break;
+	case ARPOP_NAK:
+		opcode = "(ATM)ARP NAK";
+		break;
+	default:
+		opcode = "Unknown";
+		break;
+	};
+
+	info(" [ ARP ");
+	info("Format HA (%u), ", ntohs(arp->ar_hrd));
+	info("Format Proto (%u), ", ntohs(arp->ar_pro));
+	info("HA Len (%u), \n", ntohs(arp->ar_hln));
+	info("   Proto Len (%u), ", ntohs(arp->ar_pln));
+	info("Opcode (%u => %s)", ntohs(arp->ar_op), opcode);
+
+	info(" ] \n");
 }
 
 #endif				/* __PROTO_ARP_H__ */

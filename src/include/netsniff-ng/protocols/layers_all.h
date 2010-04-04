@@ -17,28 +17,11 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-#ifndef	__PRINT_UDP_H__
-#define	__PRINT_UDP_H__
+#ifndef	__LAYERS_ALL_H__
+#define __LAYERS_ALL_H__
 
-#include <stdint.h>
-#include <assert.h>
+#include <netsniff-ng/protocols/layers_2.h>
+#include <netsniff-ng/protocols/layers_3.h>
+#include <netsniff-ng/protocols/layers_4.h>
 
-#include <netsniff-ng/macros.h>
-#include <netsniff-ng/protocols/l4/udp.h>
-
-/*
- * dump_udphdr_all - Just plain dumb formatting
- * @udp:            udp header
- */
-void print_udphdr(struct udphdr *udp)
-{
-	info(" [ UDP ");
-
-	info("Port (%u => %u), ", ntohs(udp->source), ntohs(udp->dest));
-	info("Len (%u), ", ntohs(udp->len));
-	info("Chsum (0x%x)", ntohs(udp->check));
-
-	info(" ] \n");
-}
-
-#endif				/* __PRINT_UDP_H__ */
+#endif /* __LAYERS_ALL_H__ */

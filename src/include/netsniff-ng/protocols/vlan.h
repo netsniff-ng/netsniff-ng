@@ -23,6 +23,8 @@
 #include <stdint.h>
 #include <assert.h>
 
+#include <netsniff-ng/macros.h>
+
 #define VLAN_HLEN 4
 #define ETH_P_8021QinQ	0x8200
 #define VLAN_VID_MASK 0xfff
@@ -57,6 +59,17 @@ static inline uint16_t get_vlan_encap_proto(const struct vlan_hdr *header)
 	assert(header);
 	return (header->h_vlan_encapsulated_proto);
 
+}
+
+/*
+ * print_vlan - Just plain dumb formatting
+ * @header:            Vlan header
+ */
+
+static inline void print_vlan(const struct vlan_hdr *header)
+{
+	info(" [ VLAN tag : %u ]", get_vlan_tag(header));
+	info("\n");
 }
 
 #endif				/* __PROTO_VLAN_H__ */
