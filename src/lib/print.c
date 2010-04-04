@@ -260,7 +260,7 @@ static inline void __versatile_header_only_print(ring_buff_bytes_t * rbb, const 
 
 	switch (get_ethertype(pkt->ethernet_header)) {
 	case ETH_P_8021Q:
-		print_vlan(pkt->vlan_header);
+		print_vlanhdr(pkt->vlan_header);
 		break;
 
 	case ETH_P_ARP:

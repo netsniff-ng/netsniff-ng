@@ -23,4 +23,4 @@
 #include <netsniff-ng/protocols/tcp.h>
 #include <netsniff-ng/protocols/udp.h>
 
-#endif /* __LAYERS_4_H__ */
+#endif				/* __LAYERS_4_H__ */

@@ -24,4 +24,4 @@
 #include <netsniff-ng/protocols/layers_3.h>
 #include <netsniff-ng/protocols/layers_4.h>
 
-#endif /* __LAYERS_ALL_H__ */
+#endif				/* __LAYERS_ALL_H__ */

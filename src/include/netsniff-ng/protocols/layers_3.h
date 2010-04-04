@@ -23,4 +23,4 @@
 #include <netsniff-ng/protocols/ip.h>
 #include <netsniff-ng/protocols/ipv6.h>
 
-#endif /* __LAYERS_3_H__ */
+#endif				/* __LAYERS_3_H__ */

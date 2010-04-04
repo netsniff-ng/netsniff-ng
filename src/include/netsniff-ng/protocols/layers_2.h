@@ -24,4 +24,4 @@
 #include <netsniff-ng/protocols/arp.h>
 #include <netsniff-ng/protocols/vlan.h>
 
-#endif /* __LAYERS_2_H__ */
+#endif				/* __LAYERS_2_H__ */

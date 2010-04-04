@@ -67,7 +67,7 @@ static inline int parse_packet(uint8_t * raw, uint32_t len, packet_t * pkt)
 	switch (get_ethertype(pkt->ethernet_header)) {
 	case ETH_P_8021Q:
 	case ETH_P_8021QinQ:
-		pkt->vlan_header = get_vlan_hdr(buffer, &tmp_len);
+		pkt->vlan_header = get_vlanhdr(buffer, &tmp_len);
 		set_pkt_step(pkt, ETH_P_8021Q);
 		break;
 
