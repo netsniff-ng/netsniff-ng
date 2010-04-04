@@ -22,6 +22,5 @@
 
 #include <netsniff-ng/protocols/ip.h>
 #include <netsniff-ng/protocols/ipv6.h>
-#include <netsniff-ng/protocols/icmp.h>
 
 #endif				/* __LAYERS_3_H__ */
