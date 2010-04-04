@@ -37,6 +37,7 @@ typedef struct packet {
 	/* Union l4 */
 	struct tcphdr *tcp_header;
 	struct udphdr *udp_header;
+	struct icmphdr *icmp_header;
 	/* > l4 */
 	/* Make a map of how the packet looks like */
 #define MAX_STEPS		20
@@ -97,9 +98,15 @@ static inline int parse_packet(uint8_t * raw, uint32_t len, packet_t * pkt)
 		pkt->tcp_header = get_tcphdr(buffer, &tmp_len);
 		set_pkt_step(pkt, IPPROTO_TCP);
 		break;
+
 	case IPPROTO_UDP:
 		pkt->udp_header = get_udphdr(buffer, &tmp_len);
 		set_pkt_step(pkt, IPPROTO_UDP);
+		break;
+
+	case IPPROTO_ICMP:
+		pkt->icmp_header = get_icmphdr(buffer, &tmp_len);
+		set_pkt_step(pkt, IPPROTO_ICMP);
 		break;
 
 	default:

@@ -287,6 +287,10 @@ static inline void __versatile_header_only_print(ring_buff_bytes_t * rbb, const 
 		print_udphdr(pkt->udp_header);
 		break;
 
+	case IPPROTO_ICMP:
+		print_icmphdr(pkt->icmp_header);
+		break;
+
 	default:
 
 		break;
