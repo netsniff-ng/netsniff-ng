@@ -70,6 +70,13 @@ Before submitting your patch make sure to indent your code appropriate.
 You can do this by running
     make indent
 
+Propose a release name
+======================
+
+We are always looking for funny release names of netsniff-ng. See
+  netsniff-ng --version
+Write us your proposal to workgroup@netsniff-ng.org !
+
 Credits
 =======
 
