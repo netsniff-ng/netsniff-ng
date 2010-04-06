@@ -129,6 +129,7 @@ static int get_ethtool_bitrate(const char *ifname)
 	assert_dev_name(ifname);
 
 	memset(&ifr, 0, sizeof(ifr));
+	memset(&ecmd, 0, sizeof(ecmd));
 	ecmd.cmd = ETHTOOL_GSET;
 
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);

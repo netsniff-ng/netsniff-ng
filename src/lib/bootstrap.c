@@ -113,6 +113,7 @@ static void __init_stage_daemon(system_data_t * sd, int *sock, ring_buff_t ** rb
 
 	if (sd->sysdaemon == 0)
 		return;
+
 	if (sd->mode == MODE_READ)
 		return;
 
@@ -282,14 +283,11 @@ static void __init_stage_tx_ring(system_data_t * sd, int *sock, ring_buff_t ** r
 	assert(rb);
 	assert(pfd);
 
-	if (sd->mode == MODE_CAPTURE)
+	if (sd->mode == MODE_CAPTURE || sd->mode == MODE_READ)
 		return;
 
 	if (pcap_validate_header(sd->pcap_fd) < 0)
 		exit(EXIT_FAILURE);
-
-	if (sd->mode == MODE_READ)
-		return;
 
 	create_virt_tx_ring((*sock), (*rb), sd->dev);
 	bind_dev_to_tx_ring((*sock), ethdev_to_ifindex(sd->dev), (*rb));
@@ -311,7 +309,7 @@ static void __init_stage_hashtables(system_data_t * sd, int *sock, ring_buff_t *
 static void __init_stage_timer(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
 {
 	int ret;
-	struct itimerval val_r;
+	struct itimerval val_r = {{0}};
 
 	assert(sd);
 	assert(sock);
@@ -336,9 +334,9 @@ static void header(void)
 {
 	int ret;
 	size_t len;
-	char *cpu_string;
+	char *cpu_string = NULL;
 
-	struct sched_param sp;
+	struct sched_param sp = {0};
 
 	len = sysconf(_SC_NPROCESSORS_CONF) + 1;
 
@@ -354,9 +352,9 @@ static void header(void)
 		exit(EXIT_FAILURE);
 	}
 
-	info("%s -- pid (%d)\n\n", colorize_full_str(red, white, PROGNAME_STRING " " VERSION_STRING), (int)getpid());
+	info("%s -- pid (%u)\n\n", colorize_full_str(red, white, PROGNAME_STRING " " VERSION_STRING), getpid());
 
-	info("nice (%d), scheduler (%d prio %d)\n",
+	info("nice (%i), scheduler (%i prio %i)\n",
 	     getpriority(PRIO_PROCESS, getpid()), sched_getscheduler(getpid()), sp.sched_priority);
 
 	info("%ld of %ld CPUs online, affinity bitstring (%s)\n\n",
