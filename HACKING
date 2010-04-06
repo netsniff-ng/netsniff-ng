@@ -1,0 +1,78 @@
+netsniff-ng HACKING
+===================
+
+Some information about potential netsniff-ng hackers!
+
+How to check out netsniff-ng anonymously
+========================================
+
+Always bleedy and probably unstable, but this is latest in development of 
+netsniff-ng! ;)
+
+    svn checkout http://netsniff-ng.googlecode.com/svn/trunk/ netsniff-ng-read-only
+
+Mailing list
+============
+
+netsniff-ng@googlegroups.com is the development and user mailing list. 
+Feel free to sign up (http://groups.google.com/group/netsniff-ng) and 
+mail.
+
+Some ideas of useful contributions/projects
+===========================================
+
+The best way to propose your ideas is to outline them in a short mail to 
+workgroup@netsniff-ng.org or to our public mailing list address 
+netsniff-ng@googlegroups.com . We are looking forward for your proposals!
+Of course, keep in mind that you can mail smaller fixes immediately.
+
+How to make code contributions
+==============================
+
+The best way to make a contribution to netsniff-ng is to send us your 
+code in the form of a unified diff against the latest released version 
+and, preferably, the version in SVN trunk. 
+Your patch should then be sent to bugs@netsniff-ng.org .
+
+To make a unified diff, please follow these instructions:
+   
+1. Remove temporary files:
+    make clean
+
+2. Rename your source tree:
+    cd ..
+    mv netsniff-ng-xxx netsniff-ng-xxx-snazzy-feature
+
+3. Checkout the original netsniff-ng source alongside it:
+    svn checkout http://netsniff-ng.googlecode.com/svn/trunk/ netsniff-ng-read-only
+
+4. Generate the diffs:
+   diff -urNb netsniff-ng-xxx netsniff-ng-xxx-snazzy-feature > /tmp/cool.patch
+
+5. Check the patch and remove any unnecessary patches from the file.
+
+6. If you've added several features, it's best to send them as
+   several independent patches if you can.
+
+If you have just patched one or two files, then making patches is even
+easier. For each file, just do:
+
+  cp file.c file.c.orig
+   [Make changes to file.c ...]
+  diff -u file.c.orig file.c > /tmp/file.c.patch
+
+and just send us the patch: /tmp/file.c.patch.
+
+Style
+=====
+
+Before submitting your patch make sure to indent your code appropriate.
+You can do this by running
+    make indent
+
+Credits
+=======
+
+The idea of the outline and some general parts for this HACKING file 
+derives from GNet (http://www.gnetlibrary.org/). Generally, I followed 
+the general structure of their HACKING file.
