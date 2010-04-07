@@ -70,18 +70,18 @@ typedef unsigned long long ticks_t;
 static __inline__ ticks_t getticks(void)
 {
 	ticks_t ret;
-	__asm__ __volatile__("rdtsc": "=A" (ret));
+	__asm__ __volatile__("rdtsc":"=A"(ret));
 	return ret;
 }
 
 static __inline__ double elapsed(ticks_t t1, ticks_t t0)
 {
-	return (double) t1 - (double) t0;
+	return (double)t1 - (double)t0;
 }
 
 # define HAVE_TICK_COUNTER
-# define TIME_MIN 5000.0   /* Unreliable Pentium IV cycle counter */
-#endif /* Intel Pentium / AMD Time Stamp Counter register */
+# define TIME_MIN 5000.0	/* Unreliable Pentium IV cycle counter */
+#endif				/* Intel Pentium / AMD Time Stamp Counter register */
 
 /* PowerPC */
 #if ((((defined(__GNUC__) && (defined(__powerpc__) || defined(__ppc__))) || \
@@ -96,21 +96,21 @@ static __inline__ ticks_t getticks(void)
 	unsigned int tbl, tbu0, tbu1;
 
 	do {
-		__asm__ __volatile__ ("mftbu %0" : "=r"(tbu0));
-		__asm__ __volatile__ ("mftb %0" : "=r"(tbl));
-		__asm__ __volatile__ ("mftbu %0" : "=r"(tbu1));
+		__asm__ __volatile__("mftbu %0":"=r"(tbu0));
+		__asm__ __volatile__("mftb %0":"=r"(tbl));
+		__asm__ __volatile__("mftbu %0":"=r"(tbu1));
 	} while (tbu0 != tbu1);
 
-	return (((unsigned long long) tbu0) << 32) | tbl;
+	return (((unsigned long long)tbu0) << 32) | tbl;
 }
 
 static __inline__ double elapsed(ticks_t t1, ticks_t t0)
 {
-	return (double) t1 - (double) t0;
+	return (double)t1 - (double)t0;
 }
 
 # define HAVE_TICK_COUNTER
-#endif /* PowerPC */
+#endif				/* PowerPC */
 
 /* Intel Pentium / AMD, 64 Bit Time Stamp Counter register */
 #if (defined(__GNUC__) || defined(__ICC) || defined(__SUNPRO_C)) && \
@@ -119,18 +119,18 @@ typedef unsigned long long ticks_t;
 
 static __inline__ ticks_t getticks(void)
 {
-	unsigned a, d; 
-	__asm__ __volatile__("rdtsc" : "=a" (a), "=d" (d)); 
-	return ((ticks_t) a) | (((ticks_t) d) << 32); 
+	unsigned a, d;
+	__asm__ __volatile__("rdtsc":"=a"(a), "=d"(d));
+	return ((ticks_t) a) | (((ticks_t) d) << 32);
 }
 
 static __inline__ double elapsed(ticks_t t1, ticks_t t0)
 {
-	return (double) t1 - (double) t0;
+	return (double)t1 - (double)t0;
 }
 
 # define HAVE_TICK_COUNTER
-#endif /* Intel Pentium / AMD, 64 Bit Time Stamp Counter register */
+#endif				/* Intel Pentium / AMD, 64 Bit Time Stamp Counter register */
 
 /* IA64 cycle counter, gcc version */
 #if defined(__GNUC__) && defined(__ia64__) && !defined(HAVE_TICK_COUNTER)
@@ -138,18 +138,18 @@ typedef unsigned long ticks_t;
 
 static __inline__ ticks_t getticks(void)
 {
-     ticks_t ret;
-     __asm__ __volatile__ ("mov %0=ar.itc" : "=r"(ret));
-     return ret;
+	ticks_t ret;
+	__asm__ __volatile__("mov %0=ar.itc":"=r"(ret));
+	return ret;
 }
 
 static __inline__ double elapsed(ticks_t t1, ticks_t t0)
 {
-	return (double) t1 - (double) t0;
+	return (double)t1 - (double)t0;
 }
 
 # define HAVE_TICK_COUNTER
-#endif /* IA64 cycle counter, gcc version */
+#endif				/* IA64 cycle counter, gcc version */
 
 /* SPARC */
 #if defined(__GNUC__) && defined(__sparc_v9__) && !defined(HAVE_TICK_COUNTER)
@@ -157,17 +157,17 @@ typedef unsigned long ticks_t;
 
 static __inline__ ticks_t getticks(void)
 {
-     ticks_t ret;
-     __asm__ __volatile__("rd %%tick, %0" : "=r" (ret));
-     return ret;
+	ticks_t ret;
+	__asm__ __volatile__("rd %%tick, %0":"=r"(ret));
+	return ret;
 }
 
 static __inline__ double elapsed(ticks_t t1, ticks_t t0)
 {
-	return (double) t1 - (double) t0;
+	return (double)t1 - (double)t0;
 }
 
 # define HAVE_TICK_COUNTER
-#endif /* SPARC */
+#endif				/* SPARC */
 
-#endif /* _NET_TICKS_H_ */
+#endif				/* _NET_TICKS_H_ */

@@ -59,10 +59,11 @@ void print_icmphdr(struct icmphdr *icmp)
 	info(" [ ICMP ");
 	info("Type (%u), ", icmp->type);
 	info("Code (%u), ", icmp->code);
-	info("Chsum (0x%x)", ntohs(icmp->checksum) /* TODO:, csum ? colorize_full_str(red, black, "bogus (!)") : "ok"Ü*/);
+	info("Chsum (0x%x)",
+	     ntohs(icmp->checksum) /* TODO:, csum ? colorize_full_str(red, black, "bogus (!)") : "ok"Ü */ );
 
 	//if (csum) {
-	//	info(" should be %x", csum_expected(icmp->checksum, csum));
+	//      info(" should be %x", csum_expected(icmp->checksum, csum));
 	//}
 
 	info(" ] \n");

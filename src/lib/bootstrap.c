@@ -309,7 +309,7 @@ static void __init_stage_hashtables(system_data_t * sd, int *sock, ring_buff_t *
 static void __init_stage_timer(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
 {
 	int ret;
-	struct itimerval val_r = {{0}};
+	struct itimerval val_r = { {0} };
 
 	assert(sd);
 	assert(sock);
@@ -336,7 +336,7 @@ static void header(void)
 	size_t len;
 	char *cpu_string = NULL;
 
-	struct sched_param sp = {0};
+	struct sched_param sp = { 0 };
 
 	len = sysconf(_SC_NPROCESSORS_CONF) + 1;
 
@@ -361,10 +361,6 @@ static void header(void)
 	     sysconf(_SC_NPROCESSORS_ONLN), sysconf(_SC_NPROCESSORS_CONF), get_cpu_affinity(cpu_string, len));
 
 	free(cpu_string);
-
-	print_device_info();
-
-	info("\n");
 }
 
 /**

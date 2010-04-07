@@ -35,6 +35,7 @@
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/misc.h>
 #include <netsniff-ng/config.h>
+#include <netsniff-ng/netdev.h>
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -58,6 +59,7 @@ static struct option long_options[] = {
 	{"less", no_argument, 0, 'q'},
 	{"daemonize", no_argument, 0, 'D'},
 	{"pidfile", required_argument, 0, 'P'},
+	{"info", no_argument, 0, 'I'},
 	{"version", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
@@ -85,7 +87,7 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 	assert(argv);
 	assert(sd);
 
-	while ((c = getopt_long(argc, argv, "e:lqi:NxXg:vhd:p:r:P:Df:sb:B:Hnt:", long_options, &opt_idx)) != EOF) {
+	while ((c = getopt_long(argc, argv, "Ie:lqi:NxXg:vhd:p:r:P:Df:sb:B:Hnt:", long_options, &opt_idx)) != EOF) {
 		switch (c) {
 		case 'h':
 			help();
@@ -180,8 +182,7 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 		case 'r':
 			sd->mode = MODE_REPLAY;
 
-			if (access(optarg, R_OK) != 0)
-			{
+			if (access(optarg, R_OK) != 0) {
 				err("Insufficient permission to access %s\n", optarg);
 				exit(EXIT_FAILURE);
 			}
@@ -195,9 +196,8 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 			break;
 		case 'i':
 			sd->mode = MODE_READ;
-			
-			if (access(optarg, R_OK) != 0)
-			{
+
+			if (access(optarg, R_OK) != 0) {
 				err("Insufficient permission to access %s\n", optarg);
 				exit(EXIT_FAILURE);
 			}
@@ -209,6 +209,9 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 			}
 
 			break;
+		case 'I':
+			print_device_info();
+			exit(EXIT_SUCCESS);
 		case 'g':
 			info("Option `g` not yet implemented!\n");
 			break;

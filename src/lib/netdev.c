@@ -52,8 +52,9 @@
 #include <netsniff-ng/bpf.h>
 
 #ifndef PACKET_LOSS
-#define PACKET_LOSS   14
+# define PACKET_LOSS   14
 #endif
+#define MAX_ESSID_LEN  128
 
 static inline void assert_dev_name(const char *dev)
 {
@@ -114,6 +115,75 @@ static int get_wireless_bitrate(const char *ifname)
 
 	close(sock);
 	return (iwr.u.bitrate.value / 1000000);
+}
+
+static int get_wireless_ssid(const char *ifname, char *ssid)
+{
+	int ret, sock;
+	struct iwreq iwr;
+
+	assert(ifname);
+	assert(ssid);
+
+	sock = get_af_socket(AF_INET);
+
+	memset(&iwr, 0, sizeof(iwr));
+	strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+
+	iwr.u.essid.pointer = ssid;
+	iwr.u.essid.length = MAX_ESSID_LEN;
+
+	ret = ioctl(sock, SIOCGIWESSID, &iwr);
+	if (ret == 0)
+		ret = iwr.u.essid.length;
+	else {
+		close(sock);
+		return 0;
+	}
+
+	close(sock);
+	return ret;
+}
+
+#if 0
+static int get_wireless_ap_mac(const char *ifname, char *mac)
+{
+	/* TODO: SIOCGIWAP */
+	return -1;
+}
+
+static int get_wireless_freq(const char *ifname)
+{
+	/* TODO: SIOCGIWFREQ */
+	return -1;
+}
+#endif
+
+static int get_wireless_sigqual(const char *ifname, struct iw_statistics *stats)
+{
+	int ret, sock;
+	struct iwreq iwr;
+
+	assert(ifname);
+	assert(stats);
+
+	sock = get_af_socket(AF_INET);
+
+	memset(&iwr, 0, sizeof(iwr));
+	strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+
+	iwr.u.data.pointer = (caddr_t) stats;
+	iwr.u.data.length = sizeof(*stats);
+	iwr.u.data.flags = 1;
+
+	ret = ioctl(sock, SIOCGIWSTATS, &iwr);
+	if (ret) {
+		close(sock);
+		return -EIO;
+	}
+
+	close(sock);
+	return ret;
 }
 
 /**
@@ -383,12 +453,13 @@ static int get_interface_address(const char *dev, struct in_addr *in, struct in6
 
 /**
  * print_device_info - Prints infos of netdevs
- * XXX this looks like bitch
  */
 void print_device_info(void)
 {
 	int i, ret, speed;
 	short nic_flags = 0;
+
+	char essid[MAX_ESSID_LEN];
 	char tmp_ip[INET6_ADDRSTRLEN] = { 0 };
 
 	struct ifreq *ifr_elem = NULL;
@@ -397,6 +468,7 @@ void print_device_info(void)
 	struct in_addr ipv4 = { 0 };
 	struct in6_addr ipv6;
 	struct ethtool_drvinfo di;
+	struct iw_statistics ws;
 
 	size_t if_buffer_len = sizeof(*ifr_buffer) * MAX_NUMBER_OF_NICS;
 
@@ -407,6 +479,8 @@ void print_device_info(void)
 
 	memset(&ipv6, 0, sizeof(ipv6));
 	memset(&ifc, 0, sizeof(ifc));
+	memset(&ws, 0, sizeof(ws));
+	memset(essid, 0, sizeof(essid));
 	memset(ifr_buffer, 0, if_buffer_len);
 
 	ifc.ifc_len = if_buffer_len;
@@ -415,9 +489,13 @@ void print_device_info(void)
 	get_interface_conf(&ifc);
 
 	info("Networking devs\n");
+
 	for (i = 0; i < (ifc.ifc_len / sizeof(*ifr_buffer)); i++) {
 		ifr_elem = &ifc.ifc_req[i];
 
+		/*
+		 * Fetch NIC addr
+		 */
 		switch (get_interface_address(ifr_elem->ifr_name, &ipv4, &ipv6)) {
 		case AF_INET:
 			inet_ntop(AF_INET, (const void *)&ipv4, tmp_ip, INET_ADDRSTRLEN);
@@ -427,14 +505,23 @@ void print_device_info(void)
 			break;
 		}
 
+		/*
+		 * Basic info as name, HW addr, IP addr
+		 */
 		info(" (%03d) %s%s%s => %s\n", i, colorize_start(bold), ifr_elem->ifr_name, colorize_end(), tmp_ip);
 		info("        hw: %s\n", get_nic_mac_str(ifr_elem->ifr_name));
 
+		/*
+		 * Driver name (for non-wireless)
+		 */
 		ret = get_ethtool_drvinf(ifr_elem->ifr_name, &di);
 		if (!ret) {
 			info("        driver: %s %s\n", di.driver, di.version);
 		}
 
+		/*
+		 * General device flags
+		 */
 		nic_flags = get_nic_flags(ifr_elem->ifr_name);
 		info("        stat:%s%s%s%s\n",
 		     (((nic_flags & IFF_UP) == IFF_UP) ? " up" : " not up"),
@@ -444,9 +531,63 @@ void print_device_info(void)
 
 		info("        mtu: %d Byte\n", get_mtu(ifr_elem->ifr_name));
 
+		/*
+		 * Device Bitrate
+		 */
 		speed = get_device_bitrate_generic(ifr_elem->ifr_name);
 		if (speed) {
 			info("        bitrate: %d Mb/s\n", speed);
+		}
+
+		/*
+		 * Wireless information
+		 */
+		/* XXX: a better way to test for a wireless dev!? */
+		if (get_wireless_bitrate(ifr_elem->ifr_name)) {
+			if (get_wireless_ssid(ifr_elem->ifr_name, essid) > 0)
+				info("        connected to ssid: %s\n", essid);
+			if (get_wireless_sigqual(ifr_elem->ifr_name, &ws) >= 0) {
+				info("        link quality: %u/100\n", ws.qual.qual);
+				info("        signal level (dBm): %d\n", (int)((char)ws.qual.level));
+				info("        noise level (dBm): %d\n", (int)((char)ws.qual.noise));
+
+				switch (ws.status) {
+				case IW_MODE_AUTO:
+					info("        operation mode: auto (%d)\n", ws.status);
+					break;
+				case IW_MODE_ADHOC:
+					info("        operation mode: adhoc (%d, single cell net)\n", ws.status);
+					break;
+				case IW_MODE_INFRA:
+					info("        operation mode: infra (%d, multi cell net)\n", ws.status);
+					break;
+				case IW_MODE_MASTER:
+					info("        operation mode: master (%d, sync master or AP)\n", ws.status);
+					break;
+				case IW_MODE_REPEAT:
+					info("        operation mode: repeat (%d, forwarder)\n", ws.status);
+					break;
+				case IW_MODE_SECOND:
+					info("        operation mode: second (%d, secondary master)\n", ws.status);
+					break;
+				case IW_MODE_MONITOR:
+					info("        operation mode: monitor (%d, passive mode)\n", ws.status);
+					break;
+				case IW_MODE_MESH:
+					info("        operation mode: mesh (%d, mesh net (IEEE 802.11s))\n", ws.status);
+					break;
+				default:
+					info("        operation mode: unknown (%d)\n", ws.status);
+					break;
+				};
+
+				info("        pkg discarded:\n");
+				info("                rx, wrong nwid/essid: %d\n", ws.discard.nwid);
+				info("                rx, unable to encode/decode: %d\n", ws.discard.code);
+				info("                rx, can\'t perform mac reassembly: %d\n", ws.discard.fragment);
+				info("                tx, max mac retries num reached: %d\n", ws.discard.retries);
+				info("                misc reasons: %d\n", ws.discard.misc);
+			}
 		}
 	}
 

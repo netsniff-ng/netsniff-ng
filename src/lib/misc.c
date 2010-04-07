@@ -80,6 +80,7 @@ void help(void)
 	info("  -P|--pidfile <arg>     Use file <arg> as pidfile (required)\n");
 	info("\n");
 	info("Options, misc:\n");
+	info("  -I|--info              Print network device information\n");
 	info("  -v|--version           Print version\n");
 	info("  -h|--help              Print this help\n");
 	info("\n");
