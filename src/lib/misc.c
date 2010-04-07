@@ -44,6 +44,7 @@ void help(void)
 	info("\n");
 	info("Options for net dev:\n");
 	info("  -d|--dev <arg>         Use device <arg> for capturing packets, e.g. `eth0`\n");
+	info("  -I|--info              Print network device information\n");
 	info("\n");
 	info("Options for packet dumping/replaying:\n");
 	info("  -p|--dump <arg>        Dump all matching packets in a pcap file,\n");
@@ -80,7 +81,6 @@ void help(void)
 	info("  -P|--pidfile <arg>     Use file <arg> as pidfile (required)\n");
 	info("\n");
 	info("Options, misc:\n");
-	info("  -I|--info              Print network device information\n");
 	info("  -v|--version           Print version\n");
 	info("  -h|--help              Print this help\n");
 	info("\n");
