@@ -54,7 +54,6 @@
 #ifndef PACKET_LOSS
 # define PACKET_LOSS   14
 #endif
-#define MAX_ESSID_LEN  128
 
 static inline void assert_dev_name(const char *dev)
 {
@@ -131,7 +130,7 @@ static int get_wireless_ssid(const char *ifname, char *ssid)
 	strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
 
 	iwr.u.essid.pointer = ssid;
-	iwr.u.essid.length = MAX_ESSID_LEN;
+	iwr.u.essid.length = IW_ESSID_MAX_SIZE;
 
 	ret = ioctl(sock, SIOCGIWESSID, &iwr);
 	if (ret == 0)
@@ -513,7 +512,7 @@ void print_device_info(void)
 	int i = 0, ret = 0, speed = 0, txp = 0;
 	short nic_flags = 0;
 
-	char essid[MAX_ESSID_LEN] = { 0 };
+	char essid[IW_ESSID_MAX_SIZE] = { 0 };
 	char tmp_ip[INET6_ADDRSTRLEN] = { 0 };
 
 	struct ifreq *ifr_elem = NULL;
