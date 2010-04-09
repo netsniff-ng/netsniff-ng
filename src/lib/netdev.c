@@ -54,6 +54,19 @@
 #ifndef PACKET_LOSS
 # define PACKET_LOSS   14
 #endif
+#define wop_entry(x, i) (wop_mode[(x) % (sizeof(wop_mode)/sizeof(wop_mode[0]))][(i)])
+
+static const char *const wop_mode[][2] = {
+	{"auto", ""},
+	{"adhoc", "single cell net"},
+	{"infra", "multi cell net"},
+	{"master", "sync master or AP"},
+	{"repeat", "forwarder"},
+	{"second", "secondary master"},
+	{"monitor", "passive mode"},
+	{"mesh", "mesh net (IEEE 802.11s)"},
+	{"unknown", ""},
+};
 
 static inline void assert_dev_name(const char *dev)
 {
@@ -144,7 +157,14 @@ static int get_wireless_ssid(const char *ifname, char *ssid)
 	return ret;
 }
 
-int dbm_to_mwatt(int in)
+static inline int adjust_dbm_level(int dbm_val)
+{
+	if (dbm_val >= 64)
+		dbm_val -= 0x100;
+	return dbm_val;
+}
+
+static int dbm_to_mwatt(int in)
 {
 	/* From Jean Tourrilhes <jt@hpl.hp.com> (iwlib.c) */
 	int ip = in / 10;
@@ -593,47 +613,18 @@ void print_device_info(void)
 		 */
 		/* XXX: a better way to test for a wireless dev!? */
 		if (get_wireless_bitrate(ifr_elem->ifr_name)) {
-			txp = get_wireless_tx_power(ifr_elem->ifr_name);
+			txp = adjust_dbm_level(get_wireless_tx_power(ifr_elem->ifr_name));
 
 			if (get_wireless_ssid(ifr_elem->ifr_name, essid) > 0)
 				info("        connected to ssid: %s\n", essid);
 			if (get_wireless_sigqual(ifr_elem->ifr_name, &ws) >= 0) {
 				info("        link quality: %d/%d\n", ws.qual.qual,
 				     get_wireless_rangemax_sigqual(ifr_elem->ifr_name));
-				info("        signal level: %d dBm\n", ws.qual.level);
-				info("        noise level: %d dBm\n", ws.qual.noise);
+				info("        signal level: %d dBm\n", adjust_dbm_level(ws.qual.level));
+				info("        noise level: %d dBm\n", adjust_dbm_level(ws.qual.noise));
 				info("        tx-power: %d dBm (%d mW)\n", txp, dbm_to_mwatt(txp));
-
-				switch (ws.status) {
-				case IW_MODE_AUTO:
-					info("        operation mode: auto (%d)\n", ws.status);
-					break;
-				case IW_MODE_ADHOC:
-					info("        operation mode: adhoc (%d, single cell net)\n", ws.status);
-					break;
-				case IW_MODE_INFRA:
-					info("        operation mode: infra (%d, multi cell net)\n", ws.status);
-					break;
-				case IW_MODE_MASTER:
-					info("        operation mode: master (%d, sync master or AP)\n", ws.status);
-					break;
-				case IW_MODE_REPEAT:
-					info("        operation mode: repeat (%d, forwarder)\n", ws.status);
-					break;
-				case IW_MODE_SECOND:
-					info("        operation mode: second (%d, secondary master)\n", ws.status);
-					break;
-				case IW_MODE_MONITOR:
-					info("        operation mode: monitor (%d, passive mode)\n", ws.status);
-					break;
-				case IW_MODE_MESH:
-					info("        operation mode: mesh (%d, mesh net (IEEE 802.11s))\n", ws.status);
-					break;
-				default:
-					info("        operation mode: unknown (%d)\n", ws.status);
-					break;
-				};
-
+				info("        operation mode: %s (%d) %s\n", wop_entry(ws.status, 0), ws.status,
+				     wop_entry(ws.status, 1));
 				info("        pkg discarded:\n");
 				info("                rx invalid nwid: %d\n", ws.discard.nwid);
 				info("                rx invalid crypt: %d\n", ws.discard.code);
