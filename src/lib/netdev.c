@@ -510,19 +510,19 @@ static int get_interface_address(const char *dev, struct in_addr *in, struct in6
  */
 void print_device_info(void)
 {
-	int i, ret, speed, txp;
+	int i = 0, ret = 0, speed = 0, txp = 0;
 	short nic_flags = 0;
 
-	char essid[MAX_ESSID_LEN];
+	char essid[MAX_ESSID_LEN] = { 0 };
 	char tmp_ip[INET6_ADDRSTRLEN] = { 0 };
 
 	struct ifreq *ifr_elem = NULL;
 	struct ifreq *ifr_buffer = NULL;
-	struct ifconf ifc;
+	struct ifconf ifc = { 0 };
 	struct in_addr ipv4 = { 0 };
-	struct in6_addr ipv6;
-	struct ethtool_drvinfo di;
-	struct iw_statistics ws;
+	struct in6_addr ipv6 = IN6ADDR_ANY_INIT;
+	struct ethtool_drvinfo di = { 0 };
+	struct iw_statistics ws = { 0 };
 
 	size_t if_buffer_len = sizeof(*ifr_buffer) * MAX_NUMBER_OF_NICS;
 
@@ -531,10 +531,6 @@ void print_device_info(void)
 		exit(EXIT_FAILURE);
 	}
 
-	memset(&ipv6, 0, sizeof(ipv6));
-	memset(&ifc, 0, sizeof(ifc));
-	memset(&ws, 0, sizeof(ws));
-	memset(essid, 0, sizeof(essid));
 	memset(ifr_buffer, 0, if_buffer_len);
 
 	ifc.ifc_len = if_buffer_len;
@@ -598,15 +594,15 @@ void print_device_info(void)
 		 */
 		/* XXX: a better way to test for a wireless dev!? */
 		if (get_wireless_bitrate(ifr_elem->ifr_name)) {
-			txp = (int)((char)get_wireless_tx_power(ifr_elem->ifr_name));
+			txp = get_wireless_tx_power(ifr_elem->ifr_name);
 
 			if (get_wireless_ssid(ifr_elem->ifr_name, essid) > 0)
 				info("        connected to ssid: %s\n", essid);
 			if (get_wireless_sigqual(ifr_elem->ifr_name, &ws) >= 0) {
 				info("        link quality: %d/%d\n", ws.qual.qual,
 				     get_wireless_rangemax_sigqual(ifr_elem->ifr_name));
-				info("        signal level: %d dBm\n", (int)((char)ws.qual.level));
-				info("        noise level: %d dBm\n", (int)((char)ws.qual.noise));
+				info("        signal level: %d dBm\n", ws.qual.level);
+				info("        noise level: %d dBm\n", ws.qual.noise);
 				info("        tx-power: %d dBm (%d mW)\n", txp, dbm_to_mwatt(txp));
 
 				switch (ws.status) {
