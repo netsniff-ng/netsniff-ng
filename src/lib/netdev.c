@@ -145,19 +145,45 @@ static int get_wireless_ssid(const char *ifname, char *ssid)
 	return ret;
 }
 
-#if 0
-static int get_wireless_ap_mac(const char *ifname, char *mac)
+int dbm_to_mwatt(int in)
 {
-	/* TODO: SIOCGIWAP */
-	return -1;
+	/* From Jean Tourrilhes <jt@hpl.hp.com> (iwlib.c) */
+	int ip = in / 10;
+	int fp = in % 10;
+	int k;
+
+	double res = 1.0;
+
+	for (k = 0; k < ip; k++)
+		res *= 10;
+	for (k = 0; k < fp; k++)
+		res *= 1.25892541179;	/* LOG10_MAGIC */
+	return ((int)res);
 }
 
-static int get_wireless_freq(const char *ifname)
+static int get_wireless_tx_power(const char *ifname)
 {
-	/* TODO: SIOCGIWFREQ */
-	return -1;
+	int ret, sock;
+	struct iwreq iwr;
+
+	assert(ifname);
+
+	sock = get_af_socket(AF_INET);
+
+	memset(&iwr, 0, sizeof(iwr));
+	strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+
+	ret = ioctl(sock, SIOCGIWTXPOW, &iwr);
+	if (ret == 0)
+		ret = iwr.u.txpower.value;
+	else {
+		close(sock);
+		return 0;
+	}
+
+	close(sock);
+	return ret;
 }
-#endif
 
 static int get_wireless_sigqual(const char *ifname, struct iw_statistics *stats)
 {
@@ -184,6 +210,34 @@ static int get_wireless_sigqual(const char *ifname, struct iw_statistics *stats)
 
 	close(sock);
 	return ret;
+}
+
+static int get_wireless_rangemax_sigqual(const char *ifname)
+{
+	int ret, sock;
+	struct iwreq iwr;
+	struct iw_range iwrange;
+
+	assert(ifname);
+
+	sock = get_af_socket(AF_INET);
+
+	memset(&iwr, 0, sizeof(iwr));
+	memset(&iwrange, 0, sizeof(iwrange));
+	strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+
+	iwr.u.data.pointer = (caddr_t) & iwrange;
+	iwr.u.data.length = sizeof(iwrange);
+	iwr.u.data.flags = 0;
+
+	ret = ioctl(sock, SIOCGIWRANGE, &iwr);
+	if (ret) {
+		close(sock);
+		return 0;
+	}
+
+	close(sock);
+	return iwrange.max_qual.qual;
 }
 
 /**
@@ -456,7 +510,7 @@ static int get_interface_address(const char *dev, struct in_addr *in, struct in6
  */
 void print_device_info(void)
 {
-	int i, ret, speed;
+	int i, ret, speed, txp;
 	short nic_flags = 0;
 
 	char essid[MAX_ESSID_LEN];
@@ -544,12 +598,16 @@ void print_device_info(void)
 		 */
 		/* XXX: a better way to test for a wireless dev!? */
 		if (get_wireless_bitrate(ifr_elem->ifr_name)) {
+			txp = (int)((char)get_wireless_tx_power(ifr_elem->ifr_name));
+
 			if (get_wireless_ssid(ifr_elem->ifr_name, essid) > 0)
 				info("        connected to ssid: %s\n", essid);
 			if (get_wireless_sigqual(ifr_elem->ifr_name, &ws) >= 0) {
-				info("        link quality: %u/100\n", ws.qual.qual);
-				info("        signal level (dBm): %d\n", (int)((char)ws.qual.level));
-				info("        noise level (dBm): %d\n", (int)((char)ws.qual.noise));
+				info("        link quality: %d/%d\n", ws.qual.qual,
+				     get_wireless_rangemax_sigqual(ifr_elem->ifr_name));
+				info("        signal level: %d dBm\n", (int)((char)ws.qual.level));
+				info("        noise level: %d dBm\n", (int)((char)ws.qual.noise));
+				info("        tx-power: %d dBm (%d mW)\n", txp, dbm_to_mwatt(txp));
 
 				switch (ws.status) {
 				case IW_MODE_AUTO:
@@ -582,11 +640,11 @@ void print_device_info(void)
 				};
 
 				info("        pkg discarded:\n");
-				info("                rx, wrong nwid/essid: %d\n", ws.discard.nwid);
-				info("                rx, unable to encode/decode: %d\n", ws.discard.code);
-				info("                rx, can\'t perform mac reassembly: %d\n", ws.discard.fragment);
-				info("                tx, max mac retries num reached: %d\n", ws.discard.retries);
-				info("                misc reasons: %d\n", ws.discard.misc);
+				info("                rx invalid nwid: %d\n", ws.discard.nwid);
+				info("                rx invalid crypt: %d\n", ws.discard.code);
+				info("                rx invalif frag: %d\n", ws.discard.fragment);
+				info("                tx excessive retries: %d\n", ws.discard.retries);
+				info("                invalid misc reasons: %d\n", ws.discard.misc);
 			}
 		}
 	}
