@@ -33,11 +33,43 @@
  *       `-- "Tiny"  changes, bug fixes    - z elem of {0, 1, ...}
  */
 
-/* Stuff for compiler */
-#define likely(x)               __builtin_expect((x), 1)
-#define unlikely(x)             __builtin_expect((x), 0)
+/* Stuff for compiler, see: http://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html */
 
-#define __read_mostly __attribute__((__section__(".data.read_mostly")))
+#ifndef likely
+# define likely(x)               __builtin_expect(!!(x), 1)
+#endif
+
+#ifndef unlikely
+# define unlikely(x)             __builtin_expect(!!(x), 0)
+#endif
+
+#ifndef __deprecated
+# define __deprecated           /* unimplemented */
+#endif
+
+#ifndef unreachable
+# define unreachable()          do { } while (1)
+#endif
+
+#ifndef barrier
+# define barrier()              __memory_barrier()
+#endif
+
+#ifndef bug
+# define bug()                  __builtin_trap()
+#endif
+
+#ifndef mark_unreachable
+# define mark_unreachable()     __builtin_unreachable()
+#endif
+
+#ifndef is_type
+# define is_type(var, type)     __builtin_types_compatible_p(typeof(var), (type))
+#endif
+
+#ifndef __read_mostly
+# define __read_mostly          __attribute__((__section__(".data.read_mostly")))
+#endif
 
 /* Standardized info/warning/error printing routines that should be used source-wide */
 #include <errno.h>
