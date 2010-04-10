@@ -64,11 +64,39 @@
 #endif
 
 #ifndef is_type
-# define is_type(var, type)     __builtin_types_compatible_p(typeof(var), (type))
+# define is_type(x, type)       __builtin_types_compatible_p(typeof(x), (type))
+#endif
+
+#ifndef same_type
+# define same_type(x, y)        __builtin_types_compatible_p(typeof(x), typeof(y))
 #endif
 
 #ifndef __read_mostly
 # define __read_mostly          __attribute__((__section__(".data.read_mostly")))
+#endif
+
+#ifndef __must_check
+# define __must_check           /* unimplemented */
+#endif
+
+#ifndef __used
+# define __used                 /* unimplemented */
+#endif
+
+#ifndef __maybe_unused
+# define __maybe_unused         /* unimplemented */
+#endif
+
+#ifndef __always_unused
+# define __always_unused        /* unimplemented */
+#endif
+
+#ifndef noinline
+# define noinline               /* unimplemented */
+#endif
+
+#ifndef __always_inline
+# define __always_inline        inline
 #endif
 
 /* Standardized info/warning/error printing routines that should be used source-wide */
