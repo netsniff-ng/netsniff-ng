@@ -18,6 +18,7 @@
  */
 
 #define _GNU_SOURCE
+#define _NETSNIFF_NG_SERVER
 
 #include <stdio.h>
 #include <stdlib.h>
