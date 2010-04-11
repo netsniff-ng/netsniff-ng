@@ -27,54 +27,106 @@
 #include <assert.h>
 #include <pthread.h>
 #include <errno.h>
+#include <netsniff-ng.h>
 
-#include <asm/types.h>
 #include <sys/resource.h>
-#include <sys/socket.h>
-#include <linux/netlink.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
 
 #include <netsniff-ng/macros.h>
+
+int send_qmsg(int q_id, struct netsniff_msg *msg, int pid, int type, char *buff, size_t len)
+{
+	int rc;
+
+	if(!msg || !buff || !len)
+		return -EINVAL;
+	if(len > sizeof(msg->buff))
+		return -ENOMEM;
+
+	msg->pid = pid;
+	msg->type = type;
+
+	memcpy(msg->buff, buff, len);
+	memset(msg->buff + len, 0, sizeof(msg->buff) - len);
+
+	rc = msgsnd(q_id, msg, sizeof(*msg) - sizeof(msg->pid), 0);
+	if(rc != 0) {
+                perror("msgsnd");
+                exit(EXIT_FAILURE);
+        }
+
+	return 0;
+}
+
+int recv_qmsg_all(int q_id, struct netsniff_msg *msg)
+{
+	ssize_t rc;
+
+	if(!msg)
+		return -EINVAL;
+
+	memset(msg, 0, sizeof(*msg));
+
+        rc = msgrcv(q_id, msg, sizeof(*msg) - sizeof(msg->pid), 0, 0);
+	if(rc < 0) {
+                perror("msgrcv");
+                exit(EXIT_FAILURE);
+        }
+
+	if(rc != sizeof(*msg) - sizeof(msg->pid))
+		return -EIO;
+
+	return 0;
+}
+
+int init_qmsg(int identifier)
+{
+	int q_id;
+	key_t q_key;
+
+	q_key  = ftok("/dev/random", identifier);
+
+	q_id = msgget(q_key, IPC_CREAT | 0660);
+	if(q_id < 0) {
+                perror("msgget");
+                exit(EXIT_FAILURE);
+        }
+
+	return q_id;
+}
 
 /**
  * start_server - Detached server thread for Daemon
  * @arg:         nullbuff
  */
-static void *start_server(void *arg)
+static void *start_server(void *null)
 {
-	int ret, sock;
-	struct sockaddr_nl nls;
+	int rc;
+	int q_in_id, q_out_id;
 
-	//struct nlmsghdr *nh;
-	//struct sockaddr_nl sa;
-	//struct iovec iov = { (void *) nh, nh->nlmsg_len };
-	//struct msghdr msg;
+	struct netsniff_msg msg;
 
-	sock = socket(PF_NETLINK, SOCK_RAW, NETLINK_USERSOCK);
-	if (sock < 0) {
-		err("Cannot create netlink socket");
-		pthread_exit(0);
+	q_in_id = init_qmsg('O');   /* Client: I */
+	q_out_id = init_qmsg('I');  /* Client: O */
+
+	while(1) {
+		rc = recv_qmsg_all(q_in_id, &msg);
+		if(rc != 0)
+			continue;
+
+		printf("Received msg:\n");
+		printf("  PID:  %ld\n", msg.pid);
+		printf("  Type: %d\n",  msg.type);
+		printf("  Buf:  %s\n",  msg.buff);
+
+		/* Process request ... */
+
+		send_qmsg(q_out_id, &msg, 
+			  msg.pid, msg.type + 1, msg.buff, MAX_SEGMENT_LEN);
 	}
-	memset(&nls, 0, sizeof(nls));
-	nls.nl_family = AF_NETLINK;
-	nls.nl_groups = -1;
-	ret = bind(sock, (struct sockaddr *)&nls, sizeof(nls));
-	if (ret < 0) {
-		err("Cannot bind netlink socket");
-		goto out;
-	}
-	
-	    //Example
-	    //recv(netlink_fd, data, len, 0);
-	    //msg = { (void *)&sa, sizeof(sa), &iov, 1, NULL, 0, 0 };
-	    //memset (&sa, 0, sizeof(sa));
-	    //sa.nl_family = AF_NETLINK;
-	    //nh->nlmsg_pid = 0;
-	    //nh->nlmsg_seq = ++sequence_number;
-	    /* Request an ack from kernel by setting NLM_F_ACK. */
-	    //nh->nlmsg_flags |= NLM_F_ACK;
-	    //sendmsg (fd, &msg, 0);
- out:
-	close(sock);
+
 	pthread_exit(0);
 }
 
