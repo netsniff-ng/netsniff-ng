@@ -30,19 +30,19 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 
-#define MAX_SEGMENT_LEN 256
+#define MAX_SEGMENT_LEN 16
 
 struct netsniff_msg {
-	long int    pid;                     /* Programs process id */
-	int         type;                    /* Message type */
-	char        buff[MAX_SEGMENT_LEN];   /* Message buffer */
+	pid_t   pid;                     /* Programs process id */
+	int     type;                    /* Message type */
+	char    buff[MAX_SEGMENT_LEN];   /* Message buffer */
 };
 
-/* Some simple IPC calls for client implementations */
+/* Some simple provided IPC calls for client implementations */
 
 #ifndef _NETSNIFF_NG_SERVER
-#define init_receive_qmsg()         init_qmsg('I')
-#define init_send_qmsg()            init_qmsg('O')
+# define init_receive_qmsg()         init_qmsg('I')
+# define init_send_qmsg()            init_qmsg('O')
 
 static inline int send_qmsg(int q_id, struct netsniff_msg *msg, int type, char *buff, size_t len)
 {
@@ -53,13 +53,13 @@ static inline int send_qmsg(int q_id, struct netsniff_msg *msg, int type, char *
 	if(len > sizeof(msg->buff))
 		return -ENOMEM;
 
-	msg->pid = (int) getpid();
+	msg->pid = getpid();
 	msg->type = type;
 
 	memcpy(msg->buff, buff, len);
 	memset(msg->buff + len, 0, sizeof(msg->buff) - len);
 
-	rc = msgsnd(q_id, msg, sizeof(*msg) - sizeof(msg->pid), 0);
+	rc = msgsnd(q_id, msg, sizeof(*msg), 0);
 	if(rc != 0) {
                 perror("msgsnd");
                 exit(EXIT_FAILURE);
@@ -75,15 +75,15 @@ static inline int recv_qmsg(int q_id, struct netsniff_msg *msg)
 	if(!msg)
 		return -EINVAL;
 
-        msg->pid = (int) getpid();
+        msg->pid = getpid();
 
-        rc = msgrcv(q_id, msg, sizeof(*msg) - sizeof(msg->pid), (int) getpid(), 0);
+        rc = msgrcv(q_id, msg, sizeof(*msg), 0, 0);
 	if(rc < 0) {
                 perror("msgrcv");
                 exit(EXIT_FAILURE);
         }
 
-	if(rc != sizeof(*msg) - sizeof(msg->pid))
+	if(rc != sizeof(*msg))
 		return -EIO;
 
 	return 0;

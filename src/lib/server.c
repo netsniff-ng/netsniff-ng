@@ -37,7 +37,7 @@
 
 #include <netsniff-ng/macros.h>
 
-int send_qmsg(int q_id, struct netsniff_msg *msg, int pid, int type, char *buff, size_t len)
+int send_qmsg(int q_id, struct netsniff_msg *msg, pid_t pid, int type, char *buff, size_t len)
 {
 	int rc;
 
@@ -52,7 +52,7 @@ int send_qmsg(int q_id, struct netsniff_msg *msg, int pid, int type, char *buff,
 	memcpy(msg->buff, buff, len);
 	memset(msg->buff + len, 0, sizeof(msg->buff) - len);
 
-	rc = msgsnd(q_id, msg, sizeof(*msg) - sizeof(msg->pid), 0);
+	rc = msgsnd(q_id, msg, sizeof(*msg), 0);
 	if(rc != 0) {
                 perror("msgsnd");
                 exit(EXIT_FAILURE);
@@ -68,15 +68,15 @@ int recv_qmsg_all(int q_id, struct netsniff_msg *msg)
 	if(!msg)
 		return -EINVAL;
 
-	memset(msg, 0, sizeof(*msg));
+	msg->pid = 0;
 
-        rc = msgrcv(q_id, msg, sizeof(*msg) - sizeof(msg->pid), 0, 0);
+        rc = msgrcv(q_id, msg, sizeof(*msg), 0, 0);
 	if(rc < 0) {
                 perror("msgrcv");
                 exit(EXIT_FAILURE);
         }
 
-	if(rc != sizeof(*msg) - sizeof(msg->pid))
+	if(rc != sizeof(*msg))
 		return -EIO;
 
 	return 0;
@@ -118,7 +118,7 @@ static void *start_server(void *null)
 			continue;
 
 		printf("Received msg:\n");
-		printf("  PID:  %ld\n", msg.pid);
+		printf("  PID:  %ld\n", (long int) msg.pid);
 		printf("  Type: %d\n",  msg.type);
 		printf("  Buf:  %s\n",  msg.buff);
 
