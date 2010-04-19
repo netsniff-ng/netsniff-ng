@@ -6,9 +6,7 @@ LD_NORM      = echo "LD        $<"; \
                gcc
 CC_NORM      = echo "CC        $<"; \
                gcc
-CC_SPLINT    = echo "CC-CHK    $<"; \
-               splint
-CC_DEBUG     = echo "CC-DBG    $<"; \
+CC_DEBUG     = echo "DBG       $<"; \
                gcc
 
 LIBS         = -lpthread -lrt
@@ -40,13 +38,6 @@ ifeq ($(MAKECMDGOALS), debug)
 	CFLAGS += -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -Werror-implicit-function-declaration -Wno-format-security \
 		  -Wcomments -Wendif-labels
-endif
-
-ifeq ($(MAKECMDGOALS), check)
-	LD      = $(CC_SPLINT)
-	CC      = $(CC_SPLINT)
-	CFLAGS  = +gnuextensions +posixlib +showfunc +showsummary 
-	CFLAGS += +systemdirs /usr/include +skip-sys-headers
 endif
 
 .PHONY: all

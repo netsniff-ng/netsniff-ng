@@ -13,7 +13,6 @@ target     = netsniff-ng
 
 all: clean build
 debug: all
-check: all
 
 #-----------------------------------------------------------------------------
 
@@ -59,8 +58,7 @@ help:
 	@echo '  clean           - Remove generated files'
 	@echo 'Building targets:'
 	@echo '  all             - Build netsniff-ng (default)'
-	@echo '  debug           - Build netsniff-ng for debugging only'
-	@echo '  check           - Build netsniff-ng for code analysis'
+	@echo '  debug           - Build netsniff-ng for debugging _only_'
 	@echo 'Setup targets:'
 	@echo '  install         - Install netsniff-ng'
 	@echo '  uninstall       - Uninstall netsniff-ng'
