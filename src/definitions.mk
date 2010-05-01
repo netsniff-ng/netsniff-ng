@@ -25,7 +25,7 @@ ifneq ($(or $(call eq,$(MAKECMDGOALS),"all"), $(call eq,$(MAKECMDGOALS),"")),)
 	LD      = $(LD_NORM) -o
 	CC      = $(CC_NORM) -c
 	CFLAGS  = -O2 -fomit-frame-pointer -fno-strict-aliasing -fno-common \
-		  -fno-delete-null-pointer-checks
+		  -fno-delete-null-pointer-checks -pedantic -std=gnu99
 	CFLAGS += -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -Werror-implicit-function-declaration -Wno-format-security \
 		  -Wcomments -Wendif-labels
@@ -34,10 +34,11 @@ endif
 ifeq ($(MAKECMDGOALS), debug)
 	LD      = $(LD_NORM) -o
 	CC      = $(CC_DEBUG) -c
-	CFLAGS  = -O0 -g -fno-inline
+	CFLAGS  = -O0 -g -fno-inline -pedantic -std=gnu99
 	CFLAGS += -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -Werror-implicit-function-declaration -Wno-format-security \
 		  -Wcomments -Wendif-labels
 endif
 
 .PHONY: all
+

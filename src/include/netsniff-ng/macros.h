@@ -103,17 +103,22 @@
 #include <errno.h>
 #include <string.h>
 
-#define info(fmt, arg...)                                     \
-                                fprintf(stdout, fmt, ## arg);
+#define info(...)                                             \
+                                fprintf(stdout, __VA_ARGS__);
 
-#define warn(fmt, arg...)                                           \
-                                fprintf(stderr, "W: " fmt, ## arg); \
-                                fflush(stderr);
+#define warn(...)                                                           \
+                                do {                                        \
+                                        fprintf(stderr, "W: " __VA_ARGS__); \
+                                        fflush(stderr);                     \
+                                } while(0);
 
 /* Do not a perror() after this and do not end string with '\n'! */
-#define err(fmt, arg...)                                                                      \
-                                fprintf(stderr, "E: " fmt ": %s\n", ## arg, strerror(errno)); \
-                                fflush(stderr);
+#define err(...)                                                                    \
+                                do {                                                \
+                                        fprintf(stderr, "E: " __VA_ARGS__);         \
+                                        fprintf(stderr, ": %s\n", strerror(errno)); \
+                                        fflush(stderr);                             \
+                                } while(0);
 
 /* Calc macros for Byte conversion */
 #define DIV_KBYTES(x)           ((x) / (1024LLU))

@@ -222,7 +222,7 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 		while (mem_notify_user_for_rx(rb->frames[i]) && likely(!sigint)) {
 			struct frame_map *fm = rb->frames[i].iov_base;
 			ring_buff_bytes_t *rbb =
-			    (ring_buff_bytes_t *) (rb->frames[i].iov_base + sizeof(*fm) + sizeof(short));
+			    (ring_buff_bytes_t *) ((uint8_t *) rb->frames[i].iov_base + sizeof(*fm) + sizeof(short));
 
 			/* Check if the user wants to have a specific 
 			   packet type */

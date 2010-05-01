@@ -34,13 +34,18 @@
  *	are glued to priority now, forming "class".
  */
 
+/*
+ * Bitfield implementation according to ISO C99:
+ *    http://gcc.gnu.org/onlinedocs/gcc/Structures-unions-enumerations-and-bit_002dfields-implementation.html
+ */
+
 struct ipv6hdr {
 #if defined(__LITTLE_ENDIAN_BITFIELD)
-	__u8 priority:4, version:4;
+	unsigned int priority:4, version:4; /* FIXME? */
 #elif defined(__BIG_ENDIAN_BITFIELD)
-	__u8 version:4, priority:4;
+	unsigned int version:4, priority:4; /* FIXME? */
 #else
-#error	"Please fix <asm/byteorder.h>"
+# error	"Please fix <asm/byteorder.h>"
 #endif
 	__u8 flow_lbl[3];
 
