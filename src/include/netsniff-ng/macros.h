@@ -128,8 +128,18 @@
 #define DIV_S2MINUT(x)          ((x) / (60LLU))
 #define MOD_MINUT2S(x)          ((x) % (60LLU))
 
-/* Release alias, some versioning fun ;) */
+/* Release alias, some versioning fun for netsniff-ng ;) */
 #define MOOH     "+-------------------------+     \n" \
+                 "| 0xDECA:FBAD:FADE:DEAD^2 |     \n" \
+                 "+-------------------------+     \n" \
+                 "        \\   ^__^               \n" \
+                 "         \\  (oo)\\_______      \n" \
+                 "            (__)\\       )\\/\\ \n" \
+                 "                ||----w |       \n" \
+                 "                ||     ||       \n"
+
+/* Release alias, some versioning fun for netfire-ng ;) */
+#define FIRE     "+-------------------------+     \n" \
                  "| 0xDECA:FBAD:FADE:DEAD^2 |     \n" \
                  "+-------------------------+     \n" \
                  "        \\   ^__^               \n" \
