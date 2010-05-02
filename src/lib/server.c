@@ -36,6 +36,7 @@
 #include <sys/msg.h>
 
 #include <netsniff-ng/macros.h>
+#include <netsniff-ng/version.h>
 
 int send_qmsg(int q_id, struct netsniff_msg *msg, pid_t pid, int type, char *buff, size_t len)
 {

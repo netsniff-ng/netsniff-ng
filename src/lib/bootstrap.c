@@ -46,6 +46,7 @@
 #include <netsniff-ng/signal.h>
 #include <netsniff-ng/bpf.h>
 #include <netsniff-ng/bootstrap.h>
+#include <netsniff-ng/version.h>
 
 volatile sig_atomic_t sigint = 0;
 

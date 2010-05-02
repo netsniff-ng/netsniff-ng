@@ -25,6 +25,7 @@
 #include <sys/socket.h>
 
 #include <netsniff-ng/macros.h>
+#include <netsniff-ng/version.h>
 #include <netsniff-ng/system.h>
 #include <netsniff-ng/misc.h>
 #include <netsniff-ng/netdev.h>
