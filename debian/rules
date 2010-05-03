@@ -9,14 +9,14 @@
 build: build-stamp
 build-stamp:
 	dh_testdir
-	cd src; $(MAKE) DESTDIR=$(CURDIR)/debian/netsniff-ng all
+	cd netsniff-ng; $(MAKE) DESTDIR=$(CURDIR)/debian/netsniff-ng all
 	touch $@
 
 clean:
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp
-	cd src; $(MAKE) clean
+	cd netsniff-ng; $(MAKE) clean
 	dh_clean
 
 install: build
@@ -24,7 +24,7 @@ install: build
 	dh_testroot
 	dh_prep
 	dh_installdirs
-	cd src; $(MAKE) install DESTDIR=$(CURDIR)/debian/netsniff-ng
+	cd netsniff-ng; $(MAKE) install DESTDIR=$(CURDIR)/debian/netsniff-ng
 
 # Build architecture-independent files here.
 binary-indep: build install
