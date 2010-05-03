@@ -58,10 +58,6 @@ void help(void)
 	info("  -t|--type <arg>        Only show packets of type <arg> (slower than BPF)\n");
 	info("  -g|--generate <arg>    Generate packet filter code for <arg>\n");
 	info("\n");
-	info("Options for advanced packet sniffing:\n");
-	info("  -a|--arp-poison        ARP poison routing, traffic forwarding\n");
-	info("  -m|--mim <arg>         Man-in-the-middle sniffing of IP <arg>\n");
-	info("\n");
 	info("Options for system scheduler/process:\n");
 	info("  -b|--bind-cpu <arg>    Bind process to specific CPU/CPU-range\n");
 	info("  -B|--unbind-cpu <arg>  Forbid process to use specific CPU/CPU-range\n");
