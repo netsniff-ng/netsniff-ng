@@ -237,7 +237,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <netsniff-ng/macros.h>
+#include <netfire-ng/macros.h>
 
 #define PROGNAME_STRING "netfire-ng"
 #define VERSION_STRING  "0.5.5.0"
@@ -258,6 +258,10 @@
 #define STATE_RND_DUD  11
 #define STATE_RND_SMA  12
 #define STATE_RND_DMA  13
+#define STATE_RND_SIL  14
+#define STATE_RND_SIG  15
+#define STATE_RND_DIL  16
+#define STATE_RND_DIG  17
 
 struct config {
 	int dummy;
