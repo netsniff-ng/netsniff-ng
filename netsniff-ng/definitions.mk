@@ -15,7 +15,7 @@ MAKEFLAGS   += --no-print-directory
 BINDIR       = usr/sbin
 ETCDIR       = etc
 MANDIR       = usr/share/man/man8
-MANDIR_LOCAL = doc
+MANDIR_LOCAL = ../doc
 
 define eq
 	$(if $(1:$(2)=),,$(if $(2:$(1)=),,T))

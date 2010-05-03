@@ -138,16 +138,6 @@
                  "                ||----w |       \n" \
                  "                ||     ||       \n"
 
-/* Release alias, some versioning fun for netfire-ng ;) */
-#define FIRE     "+-------------------------+     \n" \
-                 "| 0xDECA:FBAD:FADE:DEAD^2 |     \n" \
-                 "+-------------------------+     \n" \
-                 "        \\   ^__^               \n" \
-                 "         \\  (oo)\\_______      \n" \
-                 "            (__)\\       )\\/\\ \n" \
-                 "                ||----w |       \n" \
-                 "                ||     ||       \n"
-
 /* Some preprocessor terminal color related stuff */
 #define __reset       "0"
 #define __bold        "1"
