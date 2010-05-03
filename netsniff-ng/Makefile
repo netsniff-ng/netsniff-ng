@@ -51,7 +51,7 @@ uninstall:
 #-----------------------------------------------------------------------------
 
 indent:
-	$(PWD)/scripts/indent_code .
+	$(PWD)/../scripts/indent_code .
 
 help:
 	@echo 'Cleaning targets:'

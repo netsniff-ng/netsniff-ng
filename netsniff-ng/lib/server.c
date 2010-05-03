@@ -42,9 +42,9 @@ int send_qmsg(int q_id, struct netsniff_msg *msg, pid_t pid, int type, char *buf
 {
 	int rc;
 
-	if(!msg || !buff || !len)
+	if (!msg || !buff || !len)
 		return -EINVAL;
-	if(len > sizeof(msg->buff))
+	if (len > sizeof(msg->buff))
 		return -ENOMEM;
 
 	msg->pid = pid;
@@ -54,10 +54,10 @@ int send_qmsg(int q_id, struct netsniff_msg *msg, pid_t pid, int type, char *buf
 	memset(msg->buff + len, 0, sizeof(msg->buff) - len);
 
 	rc = msgsnd(q_id, msg, sizeof(*msg), 0);
-	if(rc != 0) {
-                perror("msgsnd");
-                exit(EXIT_FAILURE);
-        }
+	if (rc != 0) {
+		perror("msgsnd");
+		exit(EXIT_FAILURE);
+	}
 
 	return 0;
 }
@@ -66,18 +66,18 @@ int recv_qmsg_all(int q_id, struct netsniff_msg *msg)
 {
 	ssize_t rc;
 
-	if(!msg)
+	if (!msg)
 		return -EINVAL;
 
 	msg->pid = 0;
 
-        rc = msgrcv(q_id, msg, sizeof(*msg), 0, 0);
-	if(rc < 0) {
-                perror("msgrcv");
-                exit(EXIT_FAILURE);
-        }
+	rc = msgrcv(q_id, msg, sizeof(*msg), 0, 0);
+	if (rc < 0) {
+		perror("msgrcv");
+		exit(EXIT_FAILURE);
+	}
 
-	if(rc != sizeof(*msg))
+	if (rc != sizeof(*msg))
 		return -EIO;
 
 	return 0;
@@ -88,13 +88,13 @@ int init_qmsg(int identifier)
 	int q_id;
 	key_t q_key;
 
-	q_key  = ftok("/dev/random", identifier);
+	q_key = ftok("/dev/random", identifier);
 
 	q_id = msgget(q_key, IPC_CREAT | 0660);
-	if(q_id < 0) {
-                perror("msgget");
-                exit(EXIT_FAILURE);
-        }
+	if (q_id < 0) {
+		perror("msgget");
+		exit(EXIT_FAILURE);
+	}
 
 	return q_id;
 }
@@ -110,23 +110,22 @@ static void *start_server(void *null)
 
 	struct netsniff_msg msg;
 
-	q_in_id = init_qmsg('O');   /* Client: I */
-	q_out_id = init_qmsg('I');  /* Client: O */
+	q_in_id = init_qmsg('O');	/* Client: I */
+	q_out_id = init_qmsg('I');	/* Client: O */
 
-	while(1) {
+	while (1) {
 		rc = recv_qmsg_all(q_in_id, &msg);
-		if(rc != 0)
+		if (rc != 0)
 			continue;
 
 		printf("Received msg:\n");
-		printf("  PID:  %ld\n", (long int) msg.pid);
-		printf("  Type: %d\n",  msg.type);
-		printf("  Buf:  %s\n",  msg.buff);
+		printf("  PID:  %ld\n", (long int)msg.pid);
+		printf("  Type: %d\n", msg.type);
+		printf("  Buf:  %s\n", msg.buff);
 
 		/* Process request ... */
 
-		send_qmsg(q_out_id, &msg, 
-			  msg.pid, msg.type + 1, msg.buff, MAX_SEGMENT_LEN);
+		send_qmsg(q_out_id, &msg, msg.pid, msg.type + 1, msg.buff, MAX_SEGMENT_LEN);
 	}
 
 	pthread_exit(0);

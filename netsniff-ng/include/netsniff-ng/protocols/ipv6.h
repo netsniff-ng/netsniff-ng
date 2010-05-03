@@ -41,9 +41,9 @@
 
 struct ipv6hdr {
 #if defined(__LITTLE_ENDIAN_BITFIELD)
-	unsigned int priority:4, version:4; /* FIXME? */
+	unsigned int priority:4, version:4;	/* FIXME? */
 #elif defined(__BIG_ENDIAN_BITFIELD)
-	unsigned int version:4, priority:4; /* FIXME? */
+	unsigned int version:4, priority:4;	/* FIXME? */
 #else
 # error	"Please fix <asm/byteorder.h>"
 #endif

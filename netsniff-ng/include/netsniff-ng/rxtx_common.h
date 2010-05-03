@@ -49,7 +49,7 @@ static inline void alloc_frame_buffer(ring_buff_t * rb)
 	memset(rb->frames, 0, rb->layout.tp_frame_nr * sizeof(*rb->frames));
 
 	for (i = 0; i < rb->layout.tp_frame_nr; ++i) {
-		rb->frames[i].iov_base = (uint8_t *)((long) rb->buffer) + (i * rb->layout.tp_frame_size);
+		rb->frames[i].iov_base = (uint8_t *) ((long)rb->buffer) + (i * rb->layout.tp_frame_size);
 		rb->frames[i].iov_len = rb->layout.tp_frame_size;
 	}
 }

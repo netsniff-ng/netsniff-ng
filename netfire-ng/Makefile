@@ -45,6 +45,9 @@ uninstall:
 
 #-----------------------------------------------------------------------------
 
+indent:
+	$(PWD)/../scripts/indent_code .
+
 help:
 	@echo 'Cleaning targets:'
 	@echo '  clean           - Remove generated files'
@@ -55,5 +58,6 @@ help:
 	@echo '  install         - Install netfire-ng'
 	@echo '  uninstall       - Uninstall netfire-ng'
 	@echo 'Other targets:'
+	@echo '  indent          - Indent source code'
 	@echo '  help            - Print this help'
 

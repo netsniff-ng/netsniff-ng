@@ -31,7 +31,7 @@
 #endif
 
 #ifndef __deprecated
-# define __deprecated           /* unimplemented */
+# define __deprecated		/* unimplemented */
 #endif
 
 #ifndef unreachable
@@ -63,23 +63,23 @@
 #endif
 
 #ifndef __must_check
-# define __must_check           /* unimplemented */
+# define __must_check		/* unimplemented */
 #endif
 
 #ifndef __used
-# define __used                 /* unimplemented */
+# define __used			/* unimplemented */
 #endif
 
 #ifndef __maybe_unused
-# define __maybe_unused         /* unimplemented */
+# define __maybe_unused		/* unimplemented */
 #endif
 
 #ifndef __always_unused
-# define __always_unused        /* unimplemented */
+# define __always_unused	/* unimplemented */
 #endif
 
 #ifndef noinline
-# define noinline               /* unimplemented */
+# define noinline		/* unimplemented */
 #endif
 
 #ifndef __always_inline
