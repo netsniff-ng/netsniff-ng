@@ -53,8 +53,8 @@ typedef struct frame_map {
  */
 
 struct fb_count {
-	uint64_t frames;
-	uint64_t bytes;
+	unsigned long long frames;
+	unsigned long long bytes;
 };
 
 typedef struct ring_buff_private_stat {

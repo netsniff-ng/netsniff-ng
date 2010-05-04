@@ -175,7 +175,7 @@ static inline void refresh_counters(void)
 static inline void print_counters(void)
 {
 	struct timespec t_curr, diff;
-	uint64_t d_day, d_h, d_min, d_sec, d_nsec;
+	unsigned long long d_day, d_h, d_min, d_sec, d_nsec;
 
 	clock_gettime(CLOCK_REALTIME, &t_curr);
 	timespec_subtract(&diff, &t_curr, &netstat.m_start);
