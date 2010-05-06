@@ -182,11 +182,6 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 		case 'r':
 			sd->mode = MODE_REPLAY;
 
-			if (access(optarg, R_OK) != 0) {
-				err("Insufficient permission to access %s\n", optarg);
-				exit(EXIT_FAILURE);
-			}
-
 			sd->pcap_fd = open(optarg, O_RDONLY);
 			if (sd->pcap_fd == -1) {
 				err("Can't open file");
@@ -196,11 +191,6 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 			break;
 		case 'i':
 			sd->mode = MODE_READ;
-
-			if (access(optarg, R_OK) != 0) {
-				err("Insufficient permission to access %s\n", optarg);
-				exit(EXIT_FAILURE);
-			}
 
 			sd->pcap_fd = open(optarg, O_RDONLY);
 			if (sd->pcap_fd == -1) {
