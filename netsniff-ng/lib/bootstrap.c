@@ -284,11 +284,20 @@ static void __init_stage_tx_ring(system_data_t * sd, int *sock, ring_buff_t ** r
 	assert(rb);
 	assert(pfd);
 
-	if (sd->mode == MODE_CAPTURE || sd->mode == MODE_READ)
+	if (sd->mode == MODE_CAPTURE)
 		return;
+
+	/*
+	 * a pcap MUST be validated before reading it
+	 * to check the pcap header and move the file 
+	 * offset to the first packet to fetch
+	 */
 
 	if (pcap_validate_header(sd->pcap_fd) < 0)
 		exit(EXIT_FAILURE);
+
+	if(sd->mode == MODE_READ)
+		return;
 
 	create_virt_tx_ring((*sock), (*rb), sd->dev);
 	bind_dev_to_tx_ring((*sock), ethdev_to_ifindex(sd->dev), (*rb));
