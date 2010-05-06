@@ -227,6 +227,8 @@
  * flowlen
  */
 
+/* TODO: Next step: config parser with flex & bison */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -245,26 +247,63 @@
 #define PKTGEN_PATH     "/proc/net/pktgen/"
 #define PKTGEN_MODP     "modprobe pktgen"
 
-#define STATE_NET_DEV   1
-#define STATE_NUM_PKT   2
-#define STATE_MIN_PKT   3
-#define STATE_MAX_PKT   4
-#define STATE_CLN_SKB   5
-#define STATE_NUM_FRA   6
-#define STATE_LEN_DEL   7
-#define STATE_RND_SIP   8
-#define STATE_RND_DIP   9
-#define STATE_RND_SUD  10
-#define STATE_RND_DUD  11
-#define STATE_RND_SMA  12
-#define STATE_RND_DMA  13
-#define STATE_RND_SIL  14
-#define STATE_RND_SIG  15
-#define STATE_RND_DIL  16
-#define STATE_RND_DIG  17
+typedef enum qstates {
+	STATE_1,
+	STATE_2,
+	STATE_3,
+	STATE_4,
+	STATE_5,
+	STATE_6,
+	STATE_7,
+	STATE_8,
+	STATE_9,
+	STATE_10,
+	STATE_11,
+	STATE_12,
+	STATE_13,
+	STATE_14,
+	STATE_15,
+	STATE_16,
+	STATE_17,
+	STATE_18,
+	STATE_19,
+	STATE_20,
+	STATE_21,
+	STATE_22,
+	STATE_23,
+	STATE_24,
+	STATE_25,
+	STATE_26,
+	STATE_27,
+	STATE_28,
+	STATE_29,
+	STATE_30,
+	STATE_31,
+	STATE_32,
+	STATE_33,
+	STATE_34,
+	STATE_35,
+	STATE_36,
+	STATE_37,
+	STATE_38,
+	STATE_39,
+	STATE_40,
+	STATE_41,
+	STATE_42,
+	STATE_43,
+	STATE_44,
+	STATE_45,
+	STATE_46,
+	STATE_47,
+	STATE_48,
+	STATE_49,
+	STATE_50,
+	STATE_51,
+	STATE_DONE,
+} qstates_t;
 
 struct config {
-	int dummy;
+	char **config;
 };
 
 static struct option long_options[] = {
@@ -334,7 +373,7 @@ static void print_header(void)
 
 static int dummy(char *user, struct config *c)
 {
-	uint8_t newstate = 2;
+	uint8_t newstate = STATE_DONE;
 	return newstate;
 }
 
@@ -364,143 +403,272 @@ static int perform_question(char *question, char *defans, struct config *c,
 
 static void set_interactive_configuration(struct config *c)
 {
-	uint8_t state = STATE_NET_DEV;
+	uint8_t state = STATE_1;
 
 	print_header();
 	info("Starting interactive mode.\n\n");
 
-	while(state != 0) {
+	while(state != STATE_DONE) {
 		switch(state) {
 		default:
-		case STATE_NET_DEV:
+		case STATE_1:
 			state = 
 			perform_question("Networking devices?", 
-					 "eth0,eth1", c, dummy);
+					 "eth0", c, dummy);
 			break;
-		case STATE_NUM_PKT:
+		case STATE_2:
 			state = 
 			perform_question("Number of packets (0 = inf loop)?", 
 					 "1000000", c, dummy);
 			break;
-		case STATE_MIN_PKT:
+		case STATE_3:
+			state = 
+			perform_question("Random packet size range (y/n)?", 
+					 "Y", c, dummy);
+			break;
+		case STATE_4:
 			state = 
 			perform_question("Minimum packet size?", 
 					 "60", c, dummy);
 			break;
-		case STATE_MAX_PKT:
+		case STATE_5:
 			state = 
 			perform_question("Maximum packet size?", 
+					 "1400", c, dummy);
+			break;
+		case STATE_6:
+			state = 
+			perform_question("Which packet size?", 
 					 "60", c, dummy);
 			break;
-		case STATE_CLN_SKB:
+		case STATE_7:
 			state = 
 			perform_question("Clone skbs (0 = single skb)?", 
 					 "1000000", c, dummy);
 			break;
-		case STATE_NUM_FRA:
+		case STATE_8:
 			state = 
 			perform_question("Number fragments per packet?", 
 					 "0", c, dummy);
 			break;
-		case STATE_LEN_DEL:
+		case STATE_9:
 			state = 
 			perform_question("Delay for hard_start_xmit (in ns)?", 
 					 "5000", c, dummy);
 			break;
-		case STATE_RND_SIP:
+		case STATE_10:
 			state = 
-			perform_question("Random source IP (y/n)?", 
+			perform_question("Use IPv4 or IPv6?", 
+					 "ipv4", c, dummy);
+			break;
+		case STATE_11:
+			state = 
+			perform_question("Random source IP range (y/n)?", 
 					 "Y", c, dummy);
 			break;
-		case STATE_RND_SIL:
+		case STATE_12:
+			state = 
+			perform_question("Specifiy random IP range (y/n)?", 
+					 "N", c, dummy);
+			break;
+		case STATE_13:
 			state = 
 			perform_question("Source IP address min?", 
 					 "192.168.0.1", c, dummy);
 			break;
-		case STATE_RND_SIG:
+		case STATE_14:
 			state = 
 			perform_question("Source IP address max?", 
 					 "192.168.0.1", c, dummy);
 			break;
-		case STATE_RND_DIP:
+		case STATE_15:
 			state = 
-			perform_question("Random destination IP (y/n)?", 
+			perform_question("Source IP address?", 
+					 "192.168.0.1", c, dummy);
+			break;
+		case STATE_16:
+			state = 
+			perform_question("Random destination IP range (y/n)?", 
 					 "Y", c, dummy);
 			break;
-		case STATE_RND_DIL:
+		case STATE_17:
+			state = 
+			perform_question("Specifiy random IP range (y/n)?", 
+					 "N", c, dummy);
+			break;
+		case STATE_18:
 			state = 
 			perform_question("Destination IP address min?", 
 					 "192.168.0.1", c, dummy);
 			break;
-		case STATE_RND_DIG:
+		case STATE_19:
 			state = 
 			perform_question("Destination IP address max?", 
 					 "192.168.0.1", c, dummy);
 			break;
-		case STATE_RND_SUD:
+		case STATE_20:
 			state = 
-			perform_question("Random UDP source port (y/n)?", 
+			perform_question("Destination IP address?", 
+					 "192.168.0.1", c, dummy);
+			break;
+		case STATE_21:
+			state = 
+			perform_question("Random UDP source port range (y/n)?", 
 					 "Y", c, dummy);
 			break;
-		case STATE_RND_DUD:
+		case STATE_22:
 			state = 
-			perform_question("Random UDP destination port (y/n)?", 
+			perform_question("Specify random UDP source port range (y/n)?", 
+					 "N", c, dummy);
+			break;
+		case STATE_23:
+			state = 
+			perform_question("UDP source port min?", 
+					 "7", c, dummy);
+			break;
+		case STATE_24:
+			state = 
+			perform_question("UDP source port max?", 
+					 "27374", c, dummy);
+			break;
+		case STATE_25:
+			state = 
+			perform_question("UDP source port?", 
+					 "27374", c, dummy);
+			break;
+		case STATE_26:
+			state = 
+			perform_question("Random UDP destination port range (y/n)?", 
 					 "Y", c, dummy);
 			break;
-		case STATE_RND_SMA:
+		case STATE_27:
+			state = 
+			perform_question("Specify random UDP destination port range (y/n)?", 
+					 "N", c, dummy);
+			break;
+		case STATE_28:
+			state = 
+			perform_question("UDP destination port min?", 
+					 "7", c, dummy);
+			break;
+		case STATE_29:
+			state = 
+			perform_question("UDP destination port max?", 
+					 "27374", c, dummy);
+			break;
+		case STATE_30:
+			state = 
+			perform_question("UDP destination port?", 
+					 "27374", c, dummy);
+			break;
+		case STATE_31:
 			state = 
 			perform_question("Random MAC source address (y/n)?", 
 					 "Y", c, dummy);
 			break;
-		case STATE_RND_DMA:
+		case STATE_32:
+			state = 
+			perform_question("MAC source address?",
+					 "00:00:00:00:00:00", c, dummy);
+			break;
+		case STATE_33:
+			state = 
+			perform_question("Number of MACs to range through?",
+					 "1", c, dummy);
+			break;
+		case STATE_34:
 			state = 
 			perform_question("Random MAC destination address (y/n)?", 
 					 "Y", c, dummy);
 			break;
-
-#if 0
-	info("IP destination address min? [192.168.0.1] ");
-	getchar();
-
-	info("IP destination address max? [192.168.0.1] ");
-	getchar();
-
-	info("MAC source address? [00:00:00:00:00:00] ");
-	getchar();
-
-	info("Number source MACs to range through? [1] ");
-	getchar();
-
-	info("MAC destination address? [00:00:00:00:00:00] ");
-	getchar();
-
-	info("Number destination MACs to range through? [1] ");
-	getchar();
-
-	info("Which IPv4 TOS? [00] ");
-	getchar();
-
-	info("Which IPv6 traffic class? [00] ");
-	getchar();
-
-	info("Set up VLAN/SVLAN/MPLS/None? [none] ");
-	getchar();
-
-	info("Minimum VLAN id? [1000] ");
-	getchar();
-
-	info("Maximum VLAN id? [1000] ");
-	getchar();
-
-	info("VLAN priority bit (0-7)? [0] ");
-	getchar();
-
-	info("VLAN canonical format identifier (0-1)? [0] ");
-	getchar();
-
-	info("Which MPLS labels? [0001000a,0002000a,0000000a] ");
-	getchar();
-#endif	
+		case STATE_35:
+			state = 
+			perform_question("MAC destination address?",
+					 "FF:FF:FF:FF:FF:FF", c, dummy);
+			break;
+		case STATE_36:
+			state = 
+			perform_question("Number of MACs to range through?",
+					 "1", c, dummy);
+			break;
+		case STATE_37:
+			state = 
+			perform_question("Which IPv4 TOS value?",
+					 "00", c, dummy);
+			break;
+		case STATE_38:
+			state = 
+			perform_question("Which IPv6 traffic class?",
+					 "00", c, dummy);
+			break;
+		case STATE_39:
+			state = 
+			perform_question("Do you want to add a VLAN header (y/n)?",
+					 "N", c, dummy);
+			break;
+		case STATE_40:
+			state = 
+			perform_question("Random VLAN header (y/n)?", 
+					 "Y", c, dummy);
+			break;
+		case STATE_41:
+			state = 
+			perform_question("VLAN ID (0-4095)?",
+					 "1000", c, dummy);
+			break;
+		case STATE_42:
+			state = 
+			perform_question("VLAN priority Bit (0-7)?",
+					 "0", c, dummy);
+			break;
+		case STATE_43:
+			state = 
+			perform_question("VLAN canonical format identifier (0-1)?",
+					 "0", c, dummy);
+			break;
+		case STATE_44:
+			state = 
+			perform_question("Random SVLAN header (y/n)?", 
+					 "Y", c, dummy);
+			break;
+		case STATE_45:
+			state = 
+			perform_question("Do you want to add a SVLAN header (y/n)?",
+					 "N", c, dummy);
+			break;
+		case STATE_46:
+			state = 
+			perform_question("SVLAN ID (0-4095)?",
+					 "1000", c, dummy);
+			break;
+		case STATE_47:
+			state = 
+			perform_question("SVLAN priority Bit (0-7)?",
+					 "0", c, dummy);
+			break;
+		case STATE_48:
+			state = 
+			perform_question("SVLAN canonical format identifier (0-1)?",
+					 "0", c, dummy);
+			break;
+		case STATE_49:
+			state = 
+			perform_question("Do you want to add a MPLS header (y/n)?",
+					 "N", c, dummy);
+			break;
+		case STATE_50:
+			state = 
+			perform_question("Random MPLS header (y/n)?", 
+					 "Y", c, dummy);
+			break;
+		case STATE_51:
+			state = 
+			perform_question("Which MPLS labels?",
+					 "0001000a,0002000a,0000000a", c, dummy);
+			break;
+		case STATE_DONE:
+			/* Finish here */
+			break;
 		};
 	}
 }
