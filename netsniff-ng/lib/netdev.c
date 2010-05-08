@@ -396,7 +396,6 @@ static int get_mtu(const char *dev)
 
 /**
  * get_nic_flags - Fetches device flags
- * @sock:             socket
  * @dev:              device name
  */
 short get_nic_flags(const char *dev)
@@ -421,6 +420,35 @@ short get_nic_flags(const char *dev)
 
 	close(sock);
 	return (ethreq.ifr_flags);
+}
+
+/**
+ * set_nic_flags - Set flags attached to a network device
+ * @dev:              device name
+ * @mac:              Flags to set
+ */
+void set_nic_flags(const char * dev, const short nic_flags)
+{
+	int ret;
+	int sock;
+	struct ifreq ethreq;
+
+	assert_dev_name(dev);
+	
+	sock = get_af_socket(AF_INET);
+
+	memset(&ethreq, 0, sizeof(ethreq));
+	strncpy(ethreq.ifr_name, dev, IFNAMSIZ);
+	ethreq.ifr_flags = nic_flags;
+
+	ret = ioctl(sock, SIOCSIFFLAGS, &ethreq);
+	if (ret < 0) {
+		err("ioctl: cannot determine dev number for %s", ethreq.ifr_name);
+		close(sock);
+		exit(EXIT_FAILURE);
+	}
+
+	close(sock);
 }
 
 /**
@@ -636,42 +664,6 @@ void print_device_info(void)
 	}
 
 	free(ifr_buffer);
-}
-
-/**
- * put_dev_into_promisc_mode - Puts network device into promiscuous mode
- * @sock:                     socket
- * @ifindex:                  device number
- */
-void put_dev_into_promisc_mode(const char *dev)
-{
-	int ret;
-	int sock;
-	struct packet_mreq mr;
-
-	assert(dev);
-
-	sock = get_pf_socket();
-
-	memset(&mr, 0, sizeof(mr));
-	mr.mr_ifindex = ethdev_to_ifindex(dev);
-	mr.mr_type = PACKET_MR_PROMISC;
-
-	/* This is better than ioctl(), because the kernel now manages the 
-	   promisc flag for itself via internal counters. If the socket will 
-	   be closed the kernel decrements the counters automatically which 
-	   will not work with ioctl(). There, you have to manage things 
-	   manually ... */
-
-	ret = setsockopt(sock, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mr, sizeof(mr));
-	if (ret < 0) {
-		err("setsockopt: cannot set dev %s to promisc mode", dev);
-
-		close(sock);
-		exit(EXIT_FAILURE);
-	}
-
-	close(sock);
 }
 
 /**

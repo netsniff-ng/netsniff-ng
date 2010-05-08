@@ -59,6 +59,7 @@ typedef struct system_data {
 	char *rulefile;
 	/* Ethernet device */
 	char *dev;
+	short prev_nic_flags;
 	int pcap_fd;
 	struct sock_filter *bpf;
 	void (*print_pkt) (ring_buff_bytes_t *, const struct tpacket_hdr *);

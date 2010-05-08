@@ -215,10 +215,13 @@ static void __init_stage_mode_common(system_data_t * sd, int *sock, ring_buff_t 
 	memset((*rb), 0, sizeof(**rb));
 
 	/* 
-	 * Some further common init stuff
+	 * Save previous nic flags to be able
+	 * restore them at exit time.
 	 */
+	sd->prev_nic_flags = get_nic_flags(sd->dev);
 
-	put_dev_into_promisc_mode(sd->dev);
+	/* Activate promiscuous mode */
+	set_nic_flags(sd->dev, sd->prev_nic_flags | IFF_PROMISC);
 }
 
 static void __init_stage_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
@@ -436,7 +439,9 @@ static void __exit_stage_mode_common(system_data_t * sd, int *sock, ring_buff_t 
 	assert(sd);
 	assert(sock);
 	assert(rb);
-	/* NOP */
+	
+	/* Restore flags which were set at program start */
+	set_nic_flags(sd->dev, sd->prev_nic_flags);
 }
 
 static void __exit_stage_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb)
