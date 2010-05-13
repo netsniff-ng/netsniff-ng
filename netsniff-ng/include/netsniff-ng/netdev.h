@@ -30,7 +30,7 @@ struct in6_ifreq {
 	int ifr6_ifindex;
 };
 
-#define FAILSAFE_BITRATE	1000	/* 1000 Mbits (Chosen arbitrary) */
+#define FAILSAFE_BITRATE	100	/* 100 Mbits (Chosen arbitrary) */
 #define MAX_NUMBER_OF_NICS	15
 
 /* Function signatures */

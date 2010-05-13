@@ -98,7 +98,7 @@ void create_virt_rx_ring(int sock, ring_buff_t * rb, char *ifname, unsigned int 
 		exit(EXIT_FAILURE);
 	}
 
-	dev_speed = get_device_bitrate_generic_fallback(ifname) >> 3;
+	dev_speed = get_device_bitrate_generic_fallback(ifname);
 	memset(&(rb->layout), 0, sizeof(rb->layout));
 
 	/* max: getpagesize() << 11 for i386 */
@@ -107,7 +107,7 @@ void create_virt_rx_ring(int sock, ring_buff_t * rb, char *ifname, unsigned int 
 
 	/* max: 15 for i386, old default: 1 << 13, now: approximated bandwidth size */
 	if(usize == 0) {
-		rb->layout.tp_block_nr = ((dev_speed * 1100000) / rb->layout.tp_block_size) * 2;
+		rb->layout.tp_block_nr = ((dev_speed * 1024 * 1024) / rb->layout.tp_block_size);
 	} else {
 		rb->layout.tp_block_nr = usize / (rb->layout.tp_block_size / 1024);
 	}
