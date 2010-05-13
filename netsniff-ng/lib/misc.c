@@ -95,7 +95,7 @@ void help(void)
 	info("\n");
 	info("Examples:\n");
 	info("  netsniff-ng --dev eth0 --dump out.pcap --silent --bind-cpu 0\n");
-	info("  netsniff-ng --dev eth0 --replay out.pcap\n");
+	info("  netsniff-ng --dev eth0 --replay out.pcap --bind-cpu 0\n");
 	info("  netsniff-ng --read out.pcap --no-payload\n");
 	info("  netsniff-ng --filter /etc/netsniff-ng/rules/icq.bpf\n");
 	info("  netsniff-ng --regex \"user.*pass\"\n");
