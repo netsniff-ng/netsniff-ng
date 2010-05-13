@@ -196,6 +196,8 @@ static void __init_stage_fallback_dev(system_data_t * sd, int *sock, ring_buff_t
 
 static void __init_stage_mode_common(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
 {
+	int intr;
+
 	assert(sd);
 	assert(sock);
 	assert(rb);
@@ -222,6 +224,15 @@ static void __init_stage_mode_common(system_data_t * sd, int *sock, ring_buff_t 
 
 	/* Activate promiscuous mode */
 	set_nic_flags(sd->dev, sd->prev_nic_flags | IFF_PROMISC);
+
+	/* Bind NIC RX/TX INTR to CPU if possible */
+	if(sd->bind_cpu >= 0 && sd->no_touch_irq != PROC_NO_TOUCHIRQ) {
+		intr = get_nic_irq_number(sd->dev);
+		if(intr >= 0) {
+			bind_nic_interrupts_to_cpu(intr, sd->bind_cpu);
+			info("Moved NIC RX/TX INTR %d to CPU %d.\n\n", intr, sd->bind_cpu);
+		}
+	}
 }
 
 static void __init_stage_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)

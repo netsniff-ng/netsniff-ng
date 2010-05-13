@@ -394,9 +394,12 @@ static int get_mtu(const char *dev)
 	return (ifr.ifr_mtu);
 }
 
-static unsigned char get_nic_irq_number_proc(const char *dev)
+static int get_nic_irq_number_proc(const char *dev)
 {
-	int ret = 0;
+	/* Since fetching IRQ numbers from SIOCGIFMAP is deprecated and not
+	   supported anymore, we need to grab them from procfs */
+
+	int ret = -1;
 	char *buffp;
 	char buff[128] = { 0 };
 
@@ -404,8 +407,8 @@ static unsigned char get_nic_irq_number_proc(const char *dev)
 
 	FILE *fp = fopen("/proc/interrupts", "r");
 	if (!fp) {
-		err("Cannot read /proc/interrupts");
-		return 0;
+		err("Cannot open /proc/interrupts");
+		return -ENOENT;
 	}
 
 	memset(buff, 0, sizeof(buff));
@@ -421,14 +424,41 @@ static unsigned char get_nic_irq_number_proc(const char *dev)
 		*buffp = 0;
 		ret = atoi(buff);
 	}
-	
+
 	fclose(fp);
 	return ret;
 }
 
-unsigned char get_nic_irq_number(const char *dev)
+int get_nic_irq_number(const char *dev)
 {
 	return get_nic_irq_number_proc(dev);
+}
+
+int bind_nic_interrupts_to_cpu(int intr, int cpu)
+{
+	int ret;
+	char buff[128] = { 0 };
+	char file[128] = { 0 };
+
+	/* Note: first CPU begins with CPU 0 */
+	if(intr < 0 || cpu < 0)
+		return -EINVAL;
+
+	/* smp_affinity starts counting with CPU 1, 2, ... */
+	cpu = cpu + 1;
+
+	sprintf(file, "/proc/irq/%d/smp_affinity", intr);
+	FILE *fp = fopen(file, "w");
+	if (!fp) {
+		err("Cannot open %s", file);
+		return -ENOENT;
+	}
+
+	sprintf(buff, "%d", cpu);	
+	ret = fwrite(buff, sizeof(buff), 1, fp);	
+
+	fclose(fp);
+	return (ret > 0 ? 0 : ret);
 }
 
 /**
@@ -664,7 +694,7 @@ void print_device_info(void)
 		     (((nic_flags & IFF_POINTOPOINT) == IFF_POINTOPOINT) ? ", point-to-point link" : ""));
 
 		info("        mtu: %d Byte\n", get_mtu(ifr_elem->ifr_name));
-		info("        irq: %u\n", get_nic_irq_number(ifr_elem->ifr_name));
+		info("        irq: %d\n", get_nic_irq_number(ifr_elem->ifr_name));
 
 		/*
 		 * Device Bitrate

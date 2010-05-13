@@ -81,6 +81,7 @@ void init_configuration(system_data_t * sd)
 	sd->pcap_fd = PCAP_NO_DUMP;
 	sd->mode = MODE_CAPTURE;
 	sd->bpf = NULL;
+	sd->bind_cpu = -1;
 }
 
 void set_configuration(int argc, char **argv, system_data_t * sd)
@@ -201,6 +202,8 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 			break;
 		case 'b':
 			set_cpu_affinity(optarg);
+			/* CPU to bind NIC INTR, takes first CPU! */
+			sd->bind_cpu = atoi(optarg);
 			break;
 		case 'B':
 			set_cpu_affinity_inv(optarg);

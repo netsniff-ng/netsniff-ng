@@ -59,7 +59,8 @@ void help(void)
 	info("  -g|--generate <arg>    Generate packet filter code for <arg>\n");
 	info("\n");
 	info("Options for system scheduler/process:\n");
-	info("  -b|--bind-cpu <arg>    Bind process to specific CPU/CPU-range\n");
+	info("  -b|--bind-cpu <arg>    Bind process to specific CPU/CPU-range,\n");
+	info("                         for a better performance try binding to a single CPU\n");
 	info("  -B|--unbind-cpu <arg>  Forbid process to use specific CPU/CPU-range\n");
 	info("  -H|--prio-norm         Do not high priorize process\n");
 	info("  -Q|--notouch-irq       Do not touch IRQ CPU affinity of NIC\n");
@@ -89,6 +90,8 @@ void help(void)
 	info("Note:\n");
 	info("  - Sending a SIGUSR1 will show current packet statistics\n");
 	info("  - For more help try \'man netsniff-ng\'\n");
+	info("  - Binding netsniff-ng to a specific CPU increases performance\n");
+	info("    since NIC RX/TX interrupts will be bound to that CPU, too\n");
 	info("\n");
 	info("Examples:\n");
 	info("  netsniff-ng --dev eth0 --dump out.pcap --silent --bind-cpu 0\n");
