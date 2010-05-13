@@ -230,7 +230,7 @@ static void __init_stage_mode_common(system_data_t * sd, int *sock, ring_buff_t 
 		intr = get_nic_irq_number(sd->dev);
 		if(intr >= 0) {
 			bind_nic_interrupts_to_cpu(intr, sd->bind_cpu);
-			info("Moved NIC RX/TX INTR %d to CPU %d.\n\n", intr, sd->bind_cpu);
+			info("Moved %s RX/TX IRQ (%d) affinity to CPU%d.\n\n", sd->dev, intr, sd->bind_cpu);
 		}
 	}
 }
