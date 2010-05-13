@@ -27,6 +27,6 @@
 
 extern int pcap_validate_header(int fd);
 extern int pcap_has_packets(int fd);
-extern void pcap_fetch_next_packet(int fd, struct tpacket_hdr *tp_h, struct ethhdr *sp);
+extern size_t pcap_fetch_next_packet(int fd, struct tpacket_hdr *tp_h, struct ethhdr *sp);
 
 #endif				/* _REPLAY_H */

@@ -248,7 +248,7 @@ static void *fill_virt_tx_ring_thread(void *packed)
 
 	ptd = (struct packed_tx_data *)packed;
 
-	for (i = 0; pcap_has_packets(ptd->sd->pcap_fd) && likely(!sigint); loop = 1) {
+	for (i = 0; likely(!sigint); loop = 1) {
 		do {
 			int success;
 
@@ -257,6 +257,7 @@ static void *fill_virt_tx_ring_thread(void *packed)
 			buff =
 			    (ring_buff_bytes_t *) ((uintptr_t)ptd->rb->frames[i].iov_base + TPACKET_HDRLEN -
 						   sizeof(struct sockaddr_ll));
+			
 
 			switch ((volatile uint32_t)header->tp_status) {
 			default:
@@ -271,8 +272,8 @@ static void *fill_virt_tx_ring_thread(void *packed)
 
 			case TP_STATUS_AVAILABLE:
 				success = 0;
-				do {
-					pcap_fetch_next_packet(ptd->sd->pcap_fd, header, (struct ethhdr *)buff);
+				while(pcap_fetch_next_packet(ptd->sd->pcap_fd, header, (struct ethhdr *)buff)) {
+					printf("Fetched pkt %p\n", (void *) buff);
 					/* No filter applied */
 					if (!ptd->sd->bpf) {
 						success = 1;
@@ -283,11 +284,14 @@ static void *fill_virt_tx_ring_thread(void *packed)
 						success = 1;
 						break;
 					}
-				} while (pcap_has_packets(ptd->sd->pcap_fd));
-
+					
+					versatile_print(buff, header);
+				}
+				printf("Success? %u\n", success);
 				if (success == 0)
 					goto out;
 				loop = 0;
+				versatile_print(buff, header);
 				break;
 
 			case TP_STATUS_WRONG_FORMAT:
@@ -331,11 +335,12 @@ static void *flush_virt_tx_ring_thread(void *packed)
 	ptd = (struct packed_tx_data *)packed;
 
 	for (; likely(!send_intr); errors = 0) {
+#if 0		
 		while (flushlock_trylock(ring_lock)) {
 			;
 		}
 		flushlock_lock(ring_lock);
-
+#endif
 		enable_print_progress_spinner();
 		ret = pthread_create(&progress, NULL, print_progress_spinner_static, "Transmit ring flushing ... |");
 		if (ret) {
@@ -408,7 +413,7 @@ void transmit_packets(system_data_t * sd, int sock, ring_buff_t * rb)
 	info("--- Transmitting ---\n");
 	info("!!! Experimental !!!\n\n");
 
-	flushlock_lock(ring_lock);
+	//flushlock_lock(ring_lock);
 
 	pthread_attr_init(&attr_send);
 	pthread_attr_init(&attr_fill);

@@ -74,6 +74,8 @@ int pcap_validate_header(int fd)
 {
 	struct pcap_file_header hdr;
 
+	printf("validate pcap\n");
+
 	if (fd < 0) {
 		warn("Can't open file.\n");
 		exit(EXIT_FAILURE);
@@ -95,25 +97,21 @@ int pcap_validate_header(int fd)
 	return 0;
 }
 
-void pcap_fetch_next_packet(int fd, struct tpacket_hdr *tp_h, struct ethhdr *sp)
+size_t pcap_fetch_next_packet(int fd, struct tpacket_hdr *tp_h, struct ethhdr *sp)
 {
 	struct pcap_sf_pkthdr sf_hdr;
 
-	if (fd < 0) {
-		warn("Can't open file.\n");
-		exit(EXIT_FAILURE);
-	}
+	assert(fd > 0);
 
 	if (tp_h == NULL || sp == NULL) {
 		errno = EINVAL;
 		err("Can't access packet header");
-		return;
+		return (0);
 	}
 
 	if (read(fd, (char *)&sf_hdr, sizeof(sf_hdr)) != sizeof(sf_hdr)) {
-		err("Cannot read pcap header");
-		close(fd);
-		exit(EXIT_FAILURE);
+		err("Cannot read packet header");
+		return(0);
 	}
 	//calc offset ?
 	//tp_h->tp_sec = sf_hdr.ts.tv_sec;
@@ -122,8 +120,9 @@ void pcap_fetch_next_packet(int fd, struct tpacket_hdr *tp_h, struct ethhdr *sp)
 	tp_h->tp_len = sf_hdr.len;
 
 	if (read(fd, (char *)sp, sf_hdr.len) != sf_hdr.len) {
-		err("Cannot read pcap payload");
-		close(fd);
-		exit(EXIT_FAILURE);
+		info("Reached end of pcap");
+		return(0);
 	}
+
+	return(sf_hdr.len);
 }

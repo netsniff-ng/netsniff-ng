@@ -326,16 +326,13 @@ void versatile_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 void display_packets(system_data_t * sd)
 {
 	struct tpacket_hdr header;
-	ring_buff_bytes_t buff[TPACKET_ALIGNMENT << 7];
+	ring_buff_bytes_t buff[TPACKET_ALIGNMENT << 7] = {0};
 
 	assert(sd);
 
 	info("--- Printing ---\n\n");
 
-	while (pcap_has_packets(sd->pcap_fd) && likely(!sigint)) {
-		memset(buff, 0, sizeof(buff));
-		pcap_fetch_next_packet(sd->pcap_fd, &header, (struct ethhdr *)buff);
-
+	while (pcap_fetch_next_packet(sd->pcap_fd, &header, (struct ethhdr *)buff) && likely(!sigint)) {
 		if (sd->print_pkt)
 			if (bpf_filter(sd->bpf, (uint8_t *) buff, header.tp_len))
 				sd->print_pkt((uint8_t *) buff, &header);
