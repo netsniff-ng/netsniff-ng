@@ -240,7 +240,7 @@ static void *fill_virt_tx_ring_thread(void *packed)
 	int loop, i;
 
 	ring_buff_bytes_t *buff;
-	uint64_t packets = 0;
+	unsigned long long packets = 0;
 
 	struct frame_map *fm;
 	struct tpacket_hdr *header;
@@ -255,7 +255,7 @@ static void *fill_virt_tx_ring_thread(void *packed)
 			fm = ptd->rb->frames[i].iov_base;
 			header = (struct tpacket_hdr *)&fm->tp_h;
 			buff =
-			    (ring_buff_bytes_t *) (ptd->rb->frames[i].iov_base + TPACKET_HDRLEN -
+			    (ring_buff_bytes_t *) ((uintptr_t)ptd->rb->frames[i].iov_base + TPACKET_HDRLEN -
 						   sizeof(struct sockaddr_ll));
 
 			switch ((volatile uint32_t)header->tp_status) {
@@ -356,7 +356,7 @@ static void *flush_virt_tx_ring_thread(void *packed)
 
 			switch ((volatile uint32_t)header->tp_status) {
 			case TP_STATUS_SEND_REQUEST:
-				warn("Frame has not been sent %p!\n", header);
+				warn("Frame has not been sent %p!\n", (void *)header);
 				fflush(stdout);
 				errors++;
 				break;
