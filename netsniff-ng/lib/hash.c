@@ -81,7 +81,7 @@ void hashtable_destroy(hashtable_t * ht)
 	free(ht);
 }
 
-void *hashtable_insert(hashtable_t * ht, void *key, void *data)
+void *hashtable_insert(hashtable_t * ht, void * key, void *data)
 {
 	uintptr_t val;
 	hashtable_bucket_t *hb;
@@ -238,7 +238,9 @@ const char *ieee_vendors_find(const uint8_t * mac_addr)
 
 	memcpy(&keyp[1], mac_addr, 3);
 
-	vendor = hashtable_find(ieee_vendor_db, (void *)ntohl(key));
+	key = ntohl(key);
+
+	vendor = hashtable_find(ieee_vendor_db, (void *)key);
 
 	if (!vendor)
 		vendor = vendor_unknown;
