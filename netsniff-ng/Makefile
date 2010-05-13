@@ -22,7 +22,7 @@ build: $(core-objs)
 #-----------------------------------------------------------------------------
 
 %.o: %.c
-	@-for d in $(dep-objs); do (cd $$d; $(MAKE) $(MFLAGS) $(MAKECMDGOALS)); done
+	@for d in $(dep-objs); do (cd $$d; $(MAKE) $(MFLAGS) $(MAKECMDGOALS)); done
 	@$(CC) $(CFLAGS) $(INCLUDE) $<
 
 #-----------------------------------------------------------------------------
