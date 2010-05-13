@@ -405,6 +405,10 @@ static int get_nic_irq_number_proc(const char *dev)
 
 	assert_dev_name(dev);
 
+	/* We exclude lo! */
+	if(!strncmp("lo", dev, strlen("lo")))
+		return -1;
+
 	FILE *fp = fopen("/proc/interrupts", "r");
 	if (!fp) {
 		err("Cannot open /proc/interrupts");
