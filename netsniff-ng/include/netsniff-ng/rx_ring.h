@@ -31,7 +31,7 @@
 /* Function signatures */
 
 extern void destroy_virt_rx_ring(int sock, ring_buff_t * rb);
-extern void create_virt_rx_ring(int sock, ring_buff_t * rb, char *ifname);
+extern void create_virt_rx_ring(int sock, ring_buff_t * rb, char *ifname, unsigned int usize);
 extern void mmap_virt_rx_ring(int sock, ring_buff_t * rb);
 extern void bind_dev_to_rx_ring(int sock, int ifindex, ring_buff_t * rb);
 extern void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd *pfd);

@@ -62,7 +62,12 @@ void help(void)
 	info("  -b|--bind-cpu <arg>    Bind process to specific CPU/CPU-range\n");
 	info("  -B|--unbind-cpu <arg>  Forbid process to use specific CPU/CPU-range\n");
 	info("  -H|--prio-norm         Do not high priorize process\n");
+	info("  -Q|--notouch-irq       Do not touch IRQ CPU affinity of NIC\n");
 	info("  -n|--non-block         Non-blocking packet capturing mode\n");
+	info("\n");
+	info("Options for receive and transmit ring:\n");
+	info("  -S|--ring-size <arg>   Manually set ring size to <arg>,\n");
+	info("                         in B/KB/MB/GB, e.g. `100MB`\n");
 	info("\n");
 	info("Options for packet printing:\n");
 	info("  -s|--silent            Do not print captured packets (silent mode)\n");

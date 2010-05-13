@@ -37,6 +37,8 @@
 #include <netsniff-ng/config.h>
 #include <netsniff-ng/netdev.h>
 
+static const char *short_options = "S:QIe:lqi:NxXg:vhd:p:r:P:Df:sb:B:Hnt:";
+
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
 	{"dump", required_argument, 0, 'p'},
@@ -49,7 +51,9 @@ static struct option long_options[] = {
 	{"bind-cpu", required_argument, 0, 'b'},
 	{"unbind-cpu", required_argument, 0, 'B'},
 	{"prio-norm", no_argument, 0, 'H'},
+	{"notouch-irq", no_argument, 0, 'Q'},
 	{"non-block", no_argument, 0, 'n'},
+	{"ring-size", required_argument, 0, 'S'},
 	{"silent", no_argument, 0, 's'},
 	{"payload", no_argument, 0, 'l'},
 	{"payload-hex", no_argument, 0, 'x'},
@@ -81,13 +85,15 @@ void init_configuration(system_data_t * sd)
 
 void set_configuration(int argc, char **argv, system_data_t * sd)
 {
-	int c, sl;
+	int c, sl, slt;
 	int opt_idx;
+	
+	char *optargp = NULL;
 
 	assert(argv);
 	assert(sd);
 
-	while ((c = getopt_long(argc, argv, "Ie:lqi:NxXg:vhd:p:r:P:Df:sb:B:Hnt:", long_options, &opt_idx)) != EOF) {
+	while ((c = getopt_long(argc, argv, short_options, long_options, &opt_idx)) != EOF) {
 		switch (c) {
 		case 'h':
 			help();
@@ -110,6 +116,33 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 			break;
 		case 'n':
 			sd->blocking_mode = POLL_WAIT_NONE;
+			break;
+		case 'Q':
+			sd->no_touch_irq = PROC_NO_TOUCHIRQ;
+			break;
+		case 'S':
+			optargp = optarg;
+			
+			for(slt = sl = strlen(optarg); sl > 0; --sl) {
+				if(!isdigit(optarg[slt - sl]))
+					break;
+				optargp++;
+			}
+
+			sd->ring_size = 0;
+			if (sl == 2 && !strncmp(optargp, "KB", 2)) {
+				sd->ring_size = 1;
+			} else if (sl == 2 && !strncmp(optargp, "MB", 2)) {
+				sd->ring_size = 1024;
+			} else if (sl == 2 && !strncmp(optargp, "GB", 2)) {
+				sd->ring_size = 1024 * 1024;
+			} else {
+				warn("Syntax error in ring size param!\n");
+				exit(EXIT_FAILURE);
+			}
+			
+			memset(optargp, 0, 2);
+			sd->ring_size *= atoi(optarg);
 			break;
 		case 'H':
 			sd->no_prioritization = PROC_NO_HIGHPRIO;
@@ -214,6 +247,7 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 			case 'f':
 			case 't':
 			case 'p':
+			case 'S':
 			case 'P':
 			case 'i':
 			case 'L':

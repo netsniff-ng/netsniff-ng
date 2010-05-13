@@ -39,7 +39,7 @@
 /* Function signatures */
 
 extern void destroy_virt_tx_ring(int sock, ring_buff_t * rb);
-extern void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname);
+extern void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname, unsigned int usize);
 extern void mmap_virt_tx_ring(int sock, ring_buff_t * rb);
 extern void bind_dev_to_tx_ring(int sock, int ifindex, ring_buff_t * rb);
 extern int flush_virt_tx_ring(int sock, ring_buff_t * rb);

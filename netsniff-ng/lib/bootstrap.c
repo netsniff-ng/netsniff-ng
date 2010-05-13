@@ -273,7 +273,7 @@ static void __init_stage_rx_ring(system_data_t * sd, int *sock, ring_buff_t ** r
 	if (sd->mode == MODE_REPLAY || sd->mode == MODE_READ)
 		return;
 
-	create_virt_rx_ring((*sock), (*rb), sd->dev);
+	create_virt_rx_ring((*sock), (*rb), sd->dev, sd->ring_size);
 	bind_dev_to_rx_ring((*sock), ethdev_to_ifindex(sd->dev), (*rb));
 	mmap_virt_rx_ring((*sock), (*rb));
 	alloc_frame_buffer((*rb));
@@ -302,7 +302,7 @@ static void __init_stage_tx_ring(system_data_t * sd, int *sock, ring_buff_t ** r
 	if(sd->mode == MODE_READ)
 		return;
 
-	create_virt_tx_ring((*sock), (*rb), sd->dev);
+	create_virt_tx_ring((*sock), (*rb), sd->dev, sd->ring_size);
 	bind_dev_to_tx_ring((*sock), ethdev_to_ifindex(sd->dev), (*rb));
 	mmap_virt_tx_ring((*sock), (*rb));
 	alloc_frame_buffer((*rb));

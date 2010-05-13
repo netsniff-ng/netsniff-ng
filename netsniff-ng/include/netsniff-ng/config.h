@@ -34,6 +34,7 @@
 #define BPF_NO_BYPASS            0
 
 #define PROC_NO_HIGHPRIO         1
+#define PROC_NO_TOUCHIRQ         1
 
 #define PCAP_NO_DUMP            -1
 
@@ -50,6 +51,7 @@ typedef struct system_data {
 	int sysdaemon;
 	int blocking_mode;
 	int no_prioritization;
+	int no_touch_irq;
 	int bypass_bpf;
 	int packet_type;
 	int mode;
@@ -63,6 +65,7 @@ typedef struct system_data {
 	int pcap_fd;
 	struct sock_filter *bpf;
 	void (*print_pkt) (ring_buff_bytes_t *, const struct tpacket_hdr *);
+	unsigned int ring_size;
 } system_data_t;
 
 extern void init_configuration(system_data_t * config);

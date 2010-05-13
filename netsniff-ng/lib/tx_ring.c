@@ -101,7 +101,7 @@ void destroy_virt_tx_ring(int sock, ring_buff_t * rb)
  * @sock:               socket
  * @rb:                 ring buffer
  */
-void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname)
+void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname, unsigned int usize)
 {
 	short nic_flags;
 	int ret, dev_speed;
@@ -131,7 +131,13 @@ void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname)
 	rb->layout.tp_frame_size = TPACKET_ALIGNMENT << 7;
 
 	/* max: 15 for i386, old default: 1 << 13, now: approximated bandwidth size */
-	rb->layout.tp_block_nr = ((dev_speed * 1100000) / rb->layout.tp_block_size) * 2;
+	if(usize == 0) {
+		rb->layout.tp_block_nr = ((dev_speed * 1100000) / rb->layout.tp_block_size) * 2;
+	} else {
+		rb->layout.tp_block_nr = usize / (rb->layout.tp_block_size / 1024);
+	}
+	
+	
 	rb->layout.tp_frame_nr = rb->layout.tp_block_size / rb->layout.tp_frame_size * rb->layout.tp_block_nr;
 
  __retry_sso:
@@ -449,7 +455,7 @@ void mmap_virt_tx_ring(int sock, ring_buff_t * rb)
 	/* NOP */
 }
 
-void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname)
+void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname, unsigned int usize)
 {
 	/* NOP */
 }
