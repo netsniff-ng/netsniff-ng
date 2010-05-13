@@ -37,6 +37,7 @@ struct in6_ifreq {
 
 extern int get_device_bitrate_generic(const char *ifname);
 extern int get_device_bitrate_generic_cable(const char *ifname);
+extern unsigned char get_nic_irq_number(const char *dev);
 extern short get_nic_flags(const char *dev);
 extern void set_nic_flags(const char *dev, const short flag_to_set);
 extern void unset_nic_flags(const char *dev, const short flag_to_set);

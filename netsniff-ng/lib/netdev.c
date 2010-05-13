@@ -394,6 +394,43 @@ static int get_mtu(const char *dev)
 	return (ifr.ifr_mtu);
 }
 
+static unsigned char get_nic_irq_number_proc(const char *dev)
+{
+	int ret = 0;
+	char *buffp;
+	char buff[128] = { 0 };
+
+	assert_dev_name(dev);
+
+	FILE *fp = fopen("/proc/interrupts", "r");
+	if (!fp) {
+		err("Cannot read /proc/interrupts");
+		return 0;
+	}
+
+	memset(buff, 0, sizeof(buff));
+
+	while (fgets(buff, sizeof(buff), fp) != NULL) {
+		buff[sizeof(buff) - 1] = 0;
+		if(strstr(buff, dev) == NULL)
+			continue;
+		buffp = buff;
+		while(*buffp != ':') {
+			buffp++;
+		}
+		*buffp = 0;
+		ret = atoi(buff);
+	}
+	
+	fclose(fp);
+	return ret;
+}
+
+unsigned char get_nic_irq_number(const char *dev)
+{
+	return get_nic_irq_number_proc(dev);
+}
+
 /**
  * get_nic_flags - Fetches device flags
  * @dev:              device name
@@ -627,6 +664,7 @@ void print_device_info(void)
 		     (((nic_flags & IFF_POINTOPOINT) == IFF_POINTOPOINT) ? ", point-to-point link" : ""));
 
 		info("        mtu: %d Byte\n", get_mtu(ifr_elem->ifr_name));
+		info("        irq: %u\n", get_nic_irq_number(ifr_elem->ifr_name));
 
 		/*
 		 * Device Bitrate
