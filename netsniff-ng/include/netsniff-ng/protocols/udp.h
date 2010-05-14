@@ -84,7 +84,7 @@ void print_udphdr(struct udphdr *udp)
 
 	info(" [ UDP ");
 
-	info("Port (%u => %u, %s), ", udps, udpd, port_desc);
+	info("Port (%u => %u, %s%s%s), ", udps, udpd, colorize_start(bold), port_desc, colorize_end());
 	info("Len (%u), ", ntohs(udp->len));
 	info("Chsum (0x%x)", ntohs(udp->check));
 
