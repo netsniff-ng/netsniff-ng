@@ -49,11 +49,41 @@ static inline struct tcphdr *get_tcphdr(uint8_t ** pkt, uint32_t * pkt_len)
  */
 static void inline print_tcphdr(struct tcphdr *tcp)
 {
+	char *tmp1, *tmp2;
+	char *port_desc = NULL;
+
 	assert(tcp);
+
+	uint16_t tcps = ntohs(tcp->source);
+	uint16_t tcpd = ntohs(tcp->dest);
+
+	/* XXX: Is there a better way to determine? */
+	if(tcps < tcpd && tcps < 1024) {
+		port_desc = (char *) ports_tcp_find(tcp->source);
+	} else if(tcpd < tcps && tcpd < 1024) {
+		port_desc = (char *) ports_tcp_find(tcp->dest);	
+	} else {
+		tmp1 = (char *) ports_tcp_find(tcp->source);
+		tmp2 = (char *) ports_tcp_find(tcp->dest);
+		
+		if(tmp1 && !tmp2) {
+			port_desc = tmp1;
+		} else if(!tmp1 && tmp2) {
+			port_desc = tmp2;
+		} else if(tmp1 && tmp2) {
+			if(tcps < tcpd)
+				port_desc = tmp1;
+			else
+				port_desc = tmp2;
+		}
+	}
+
+	if(!port_desc)
+		port_desc = "Unknown";
 
 	info(" [ TCP ");
 
-	info("Port (%u => %u), ", ntohs(tcp->source), ntohs(tcp->dest));
+	info("Port (%u => %u, %s), ", tcps, tcpd, port_desc);
 	info("SN (0x%x), ", ntohs(tcp->seq));
 	info("AN (0x%x), ", ntohs(tcp->ack_seq));
 	info("Data off (%d), \n", ntohs(tcp->doff));

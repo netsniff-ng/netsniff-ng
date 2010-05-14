@@ -328,6 +328,9 @@ static void __init_stage_hashtables(system_data_t * sd, int *sock, ring_buff_t *
 	assert(pfd);
 
 	ieee_vendors_init();
+	ports_udp_init();
+	ports_tcp_init();
+	ether_types_init();
 }
 
 static void __init_stage_timer(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
@@ -504,6 +507,9 @@ static void __exit_stage_hashtables(system_data_t * sd, int *sock, ring_buff_t *
 	assert(rb);
 
 	ieee_vendors_destroy();
+	ports_udp_destroy();
+	ports_tcp_destroy();
+	ether_types_destroy();
 }
 
 static void __exit_stage_timer(system_data_t * sd, int *sock, ring_buff_t ** rb)

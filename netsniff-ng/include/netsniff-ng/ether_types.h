@@ -286,7 +286,7 @@ ether_type_t ether_types[] = {
 	{0x8808, "IEEE Pause frame"},
 	{0x8809, "Slow Protocol"},
 	{0x880B, "PPP, Point-to-Point Protocol"},
-	{0x880C, "GSMP, General Switch Management Protocol"}
+	{0x880C, "GSMP, General Switch Management Protocol"},
 	{0x8820, "Hitachi Cable (Optoelectronic Systems Laboratory)"},
 	{0x883E, "Web-cache coordination protocol"},
 	{0x8847, "MPLS Unicast traffic"},

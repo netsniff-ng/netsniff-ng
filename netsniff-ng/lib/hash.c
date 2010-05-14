@@ -26,8 +26,12 @@
 #include <arpa/inet.h>
 
 #include <netsniff-ng/macros.h>
-#include <netsniff-ng/oui.h>
 #include <netsniff-ng/hash.h>
+
+#include <netsniff-ng/oui.h>
+#include <netsniff-ng/ports_udp.h>
+#include <netsniff-ng/ports_tcp.h>
+#include <netsniff-ng/ether_types.h>
 
 /*
  * Hash function API
@@ -154,7 +158,7 @@ void *hashtable_delete(hashtable_t * ht, void *key)
 	return data;
 }
 
-int hashtable_foreach(hashtable_t * ht, void (*callback) (void *data))
+int hashtable_foreach(hashtable_t * ht, void (*callback) (void *key, void *data))
 {
 	int i;
 	hashtable_bucket_t *hb;
@@ -164,7 +168,7 @@ int hashtable_foreach(hashtable_t * ht, void (*callback) (void *data))
 
 	for (i = 0; i < ht->size; ++i)
 		for (hb = ht->table[i]; hb != NULL; hb = hb->next)
-			callback(hb->data);
+			callback(hb->key, hb->data);
 
 	return 0;
 }
@@ -193,8 +197,17 @@ int raw_key_equal(void *key1, void *key2)
 	return (key1 == key2);
 }
 
+void debug_callback_strings(void *key, void *data)
+{
+	printf("0x%x - %s\n", (uintptr_t) key, (char *) data);
+}
+
 /*
  * Specific hash function implementations
+ */
+
+/*
+ * IEEE vendor table
  */
 
 static hashtable_t *ieee_vendor_db;
@@ -241,9 +254,161 @@ const char *ieee_vendors_find(const uint8_t * mac_addr)
 	key = ntohl(key);
 
 	vendor = hashtable_find(ieee_vendor_db, (void *)key);
-
 	if (!vendor)
 		vendor = vendor_unknown;
 
 	return vendor;
 }
+
+/*
+ * UDP port table
+ */
+
+static hashtable_t *ports_udp_db;
+static hashtable_callbacks_t ports_udp_cbs = {
+	.key_copy = no_copy,
+	.key_free = no_free,
+	.key_to_hash = raw_key_to_hash,
+	.key_equal = raw_key_equal,
+};
+
+int ports_udp_init(void)
+{
+	int i, ret;
+	size_t len;
+
+	ret = hashtable_init(&ports_udp_db, 14000, &ports_udp_cbs);
+	if (ret < 0) {
+		warn("Could not create udp ports hashtable! No mem left.\n");
+		return ret;
+	}
+
+	len = sizeof(ports_udp) / sizeof(port_udp_t);
+
+	for (i = 0; i < len; ++i) {
+		hashtable_insert(ports_udp_db, (void *)ports_udp[i].id, ports_udp[i].port);
+	}
+
+	return 0;
+}
+
+void ports_udp_destroy(void)
+{
+	hashtable_destroy(ports_udp_db);
+}
+
+const char *ports_udp_find(uint16_t port)
+{
+	uintptr_t key = 0;
+	uint8_t *keyp = (uint8_t *) &key;
+
+	keyp[3] = (port >> 8) & 0xFF;
+	keyp[2] = (port)      & 0xFF;
+	key = ntohl(key);
+
+	return hashtable_find(ports_udp_db, (void *)key);
+}
+
+/*
+ * TCP port table
+ */
+
+static hashtable_t *ports_tcp_db;
+static hashtable_callbacks_t ports_tcp_cbs = {
+	.key_copy = no_copy,
+	.key_free = no_free,
+	.key_to_hash = raw_key_to_hash,
+	.key_equal = raw_key_equal,
+};
+
+int ports_tcp_init(void)
+{
+	int i, ret;
+	size_t len;
+
+	ret = hashtable_init(&ports_tcp_db, 14000, &ports_tcp_cbs);
+	if (ret < 0) {
+		warn("Could not create tcp ports hashtable! No mem left.\n");
+		return ret;
+	}
+
+	len = sizeof(ports_tcp) / sizeof(port_tcp_t);
+
+	for (i = 0; i < len; ++i) {
+		hashtable_insert(ports_tcp_db, (void *)ports_tcp[i].id, ports_tcp[i].port);
+	}
+
+	return 0;
+}
+
+void ports_tcp_destroy(void)
+{
+	hashtable_destroy(ports_tcp_db);
+}
+
+const char *ports_tcp_find(uint16_t port)
+{
+	uintptr_t key = 0;
+	uint8_t *keyp = (uint8_t *) &key;
+
+	keyp[3] = (port >> 8) & 0xFF;
+	keyp[2] = (port)      & 0xFF;
+	key = ntohl(key);
+
+	return hashtable_find(ports_tcp_db, (void *)key);
+}
+
+/*
+ * Ether types table
+ */
+
+static hashtable_t *ether_types_db;
+static hashtable_callbacks_t ether_types_cbs = {
+	.key_copy = no_copy,
+	.key_free = no_free,
+	.key_to_hash = raw_key_to_hash,
+	.key_equal = raw_key_equal,
+};
+
+int ether_types_init(void)
+{
+	int i, ret;
+	size_t len;
+
+	ret = hashtable_init(&ether_types_db, 14000, &ether_types_cbs);
+	if (ret < 0) {
+		warn("Could not create ether types hashtable! No mem left.\n");
+		return ret;
+	}
+
+	len = sizeof(ether_types) / sizeof(ether_type_t);
+
+	for (i = 0; i < len; ++i) {
+		hashtable_insert(ether_types_db, (void *)ether_types[i].id, ether_types[i].type);
+	}
+
+	return 0;
+}
+
+void ether_types_destroy(void)
+{
+	hashtable_destroy(ether_types_db);
+}
+
+const char *ether_types_find(uint16_t type)
+{
+	char *type_str;
+	uintptr_t key = 0;
+	uint8_t *keyp = (uint8_t *) &key;
+
+	keyp[3] = (type >> 8) & 0xFF;
+	keyp[2] = (type)      & 0xFF;
+	key = ntohl(key);
+
+	type_str = hashtable_find(ether_types_db, (void *)key);
+	if (!type_str)
+		type_str = type_unknown;
+
+	return type_str;
+}
+

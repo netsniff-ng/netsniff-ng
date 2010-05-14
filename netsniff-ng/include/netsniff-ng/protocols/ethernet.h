@@ -64,7 +64,7 @@ static inline void print_ethhdr(struct ethhdr *eth)
 	info("MAC (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x => %.2x:%.2x:%.2x:%.2x:%.2x:%.2x), ", src_mac[0], src_mac[1],
 	     src_mac[2], src_mac[3], src_mac[4], src_mac[5], dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4],
 	     dst_mac[5]);
-	info("Proto (0x%.4x)", ntohs(eth->h_proto));
+	info("Proto (0x%.4x, %s)", ntohs(eth->h_proto), ether_types_find(eth->h_proto));
 	info(" ] \n");
 
 	info(" [ ");

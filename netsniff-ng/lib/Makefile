@@ -11,6 +11,7 @@ lib-objs = bpf.o misc.o print.o config.o rx_ring.o system.o dump.o hash.o \
 
 all: clean build
 debug: all
+develop: all
 
 #-----------------------------------------------------------------------------
 

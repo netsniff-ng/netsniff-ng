@@ -54,7 +54,7 @@ extern void hashtable_destroy(hashtable_t * ht);
 extern void *hashtable_insert(hashtable_t * ht, void *key, void *data);
 extern void *hashtable_find(hashtable_t * ht, void *key);
 extern void *hashtable_delete(hashtable_t * ht, void *key);
-extern int hashtable_foreach(hashtable_t * ht, void (*callback) (void *data));
+extern int hashtable_foreach(hashtable_t * ht, void (*callback) (void *key, void *data));
 
 /*
  * Functions, specific hashtables
@@ -63,5 +63,17 @@ extern int hashtable_foreach(hashtable_t * ht, void (*callback) (void *data));
 extern int ieee_vendors_init(void);
 extern void ieee_vendors_destroy(void);
 extern const char *ieee_vendors_find(const uint8_t * mac_addr);
+
+extern int ports_udp_init(void);
+extern void ports_udp_destroy(void);
+extern const char *ports_udp_find(uint16_t port);
+
+extern int ports_tcp_init(void);
+extern void ports_tcp_destroy(void);
+extern const char *ports_tcp_find(uint16_t port);
+
+extern int ether_types_init(void);
+extern void ether_types_destroy(void);
+extern const char *ether_types_find(uint16_t type);
 
 #endif				/* _NET_HASH_H_ */

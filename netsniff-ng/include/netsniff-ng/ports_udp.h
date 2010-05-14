@@ -1083,6 +1083,6 @@ port_udp_t ports_udp[] = {
 	{54321, "bo2k"},
 };
 
-char *port_unknown = "Unknown";
+char *port_udp_unknown = "Unknown";
 
 #endif				/* _NET_PORTS_UDP_H_ */

@@ -26,6 +26,7 @@
 #include <linux/udp.h>
 
 #include <netsniff-ng/macros.h>
+#include <netsniff-ng/hash.h>
 
 static inline struct udphdr *get_udphdr(uint8_t ** pkt, uint32_t * pkt_len)
 {
@@ -49,9 +50,41 @@ static inline struct udphdr *get_udphdr(uint8_t ** pkt, uint32_t * pkt_len)
  */
 void print_udphdr(struct udphdr *udp)
 {
+	char *tmp1, *tmp2;
+	char *port_desc = NULL;
+
+	assert(udp);
+
+	uint16_t udps = ntohs(udp->source);
+	uint16_t udpd = ntohs(udp->dest);
+
+	/* XXX: Is there a better way to determine? */
+	if(udps < udpd && udps < 1024) {
+		port_desc = (char *) ports_udp_find(udp->source);
+	} else if(udpd < udps && udpd < 1024) {
+		port_desc = (char *) ports_udp_find(udp->dest);	
+	} else {
+		tmp1 = (char *) ports_udp_find(udp->source);
+		tmp2 = (char *) ports_udp_find(udp->dest);
+		
+		if(tmp1 && !tmp2) {
+			port_desc = tmp1;
+		} else if(!tmp1 && tmp2) {
+			port_desc = tmp2;
+		} else if(tmp1 && tmp2) {
+			if(udps < udpd)
+				port_desc = tmp1;
+			else
+				port_desc = tmp2;
+		}
+	}
+
+	if(!port_desc)
+		port_desc = "Unknown";
+
 	info(" [ UDP ");
 
-	info("Port (%u => %u), ", ntohs(udp->source), ntohs(udp->dest));
+	info("Port (%u => %u, %s), ", udps, udpd, port_desc);
 	info("Len (%u), ", ntohs(udp->len));
 	info("Chsum (0x%x)", ntohs(udp->check));
 

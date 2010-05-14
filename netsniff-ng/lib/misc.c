@@ -68,7 +68,7 @@ void help(void)
 	info("\n");
 	info("Options for receive and transmit ring:\n");
 	info("  -S|--ring-size <arg>   Manually set ring size to <arg>,\n");
-	info("                         in KB/MB/GB, e.g. `100MB`\n");
+	info("                         mmap space in KB/MB/GB, e.g. `100MB`\n");
 	info("\n");
 	info("Options for packet printing:\n");
 	info("  -s|--silent            Do not print captured packets (silent mode)\n");

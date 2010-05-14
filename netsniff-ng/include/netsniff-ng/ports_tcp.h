@@ -1128,6 +1128,6 @@ port_tcp_t ports_tcp[] = {
 	{65301, "pcanywhere"},
 };
 
-char *port_unknown = "Unknown";
+char *port_tcp_unknown = "Unknown";
 
 #endif				/* _NET_PORTS_TCP_H_ */
