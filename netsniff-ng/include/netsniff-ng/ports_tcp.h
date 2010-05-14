@@ -892,6 +892,7 @@ port_tcp_t ports_tcp[] = {
 	{5190, "aol"},
 	{5191, "aol-1"},
 	{5193, "aol-3"},
+	{5222, "xmpp"},
 	{5232, "sgi-dgl"},
 	{5300, "hacl-hb"},
 	{5301, "hacl-gs"},

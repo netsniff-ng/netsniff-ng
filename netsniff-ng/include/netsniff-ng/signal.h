@@ -210,7 +210,7 @@ static inline void print_counters(void)
 	     DIV_MBYTES(netstat.s_per_sec.bytes), DIV_MBYTES(netstat.s_per_min.bytes), DIV_MBYTES(netstat.total.bytes));
 	info("  in GB    | %24llu | %24llu | %24llu \n",
 	     DIV_GBYTES(netstat.s_per_sec.bytes), DIV_GBYTES(netstat.s_per_min.bytes), DIV_GBYTES(netstat.total.bytes));
-	info("-----------+--------------------------+--------------------------+--------------------------\n");
+	info("-----------+--------------------------+--------------------------+--------------------------\n\n");
 }
 
 #endif				/* _NET_SIGNAL_H_ */

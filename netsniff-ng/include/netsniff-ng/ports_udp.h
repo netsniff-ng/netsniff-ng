@@ -980,6 +980,7 @@ port_udp_t ports_udp[] = {
 	{5191, "aol-1"},
 	{5192, "aol-2"},
 	{5193, "aol-3"},
+	{5222, "xmpp"},
 	{5236, "padl2sim"},
 	{5300, "hacl-hb"},
 	{5301, "hacl-gs"},
