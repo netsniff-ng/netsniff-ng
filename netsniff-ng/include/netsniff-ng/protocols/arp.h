@@ -127,7 +127,7 @@ void print_arphdr_less(struct arphdr *arp)
 		break;
 	};
 
-	info("Op %u, %s", ntohs(arp->ar_op), opcode);
+	info("Op %u, %s%s%s", ntohs(arp->ar_op), colorize_start(bold), opcode, colorize_end());
 }
 
 #endif				/* __PROTO_ARP_H__ */
