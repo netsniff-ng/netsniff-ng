@@ -91,4 +91,46 @@ void print_udphdr(struct udphdr *udp)
 	info(" ] \n");
 }
 
+/*
+ * dump_udphdr_all - Just plain dumb formatting
+ * @udp:            udp header
+ */
+void print_udphdr_less(struct udphdr *udp)
+{
+	char *tmp1, *tmp2;
+	char *port_desc = NULL;
+
+	assert(udp);
+
+	uint16_t udps = ntohs(udp->source);
+	uint16_t udpd = ntohs(udp->dest);
+
+	/* XXX: Is there a better way to determine? */
+	if(udps < udpd && udps < 1024) {
+		port_desc = (char *) ports_udp_find(udp->source);
+	} else if(udpd < udps && udpd < 1024) {
+		port_desc = (char *) ports_udp_find(udp->dest);	
+	} else {
+		tmp1 = (char *) ports_udp_find(udp->source);
+		tmp2 = (char *) ports_udp_find(udp->dest);
+		
+		if(tmp1 && !tmp2) {
+			port_desc = tmp1;
+		} else if(!tmp1 && tmp2) {
+			port_desc = tmp2;
+		} else if(tmp1 && tmp2) {
+			if(udps < udpd)
+				port_desc = tmp1;
+			else
+				port_desc = tmp2;
+		}
+	}
+
+	if(!port_desc)
+		port_desc = "U";
+
+	info("UDP, ");
+	info("%s%s%s, %u => %u\n", colorize_start(bold), port_desc, colorize_end(), udps, udpd);
+}
+
 #endif				/* __PROTO_UDP_H__ */

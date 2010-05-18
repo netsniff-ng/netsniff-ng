@@ -127,4 +127,46 @@ static void inline print_tcphdr(struct tcphdr *tcp)
 	/* TODO check csum */
 }
 
+/*
+ * dump_tcphdr_all - Just plain dumb formatting
+ * @tcp:            tcp header
+ */
+static void inline print_tcphdr_less(struct tcphdr *tcp)
+{
+	char *tmp1, *tmp2;
+	char *port_desc = NULL;
+
+	assert(tcp);
+
+	uint16_t tcps = ntohs(tcp->source);
+	uint16_t tcpd = ntohs(tcp->dest);
+
+	/* XXX: Is there a better way to determine? */
+	if(tcps < tcpd && tcps < 1024) {
+		port_desc = (char *) ports_tcp_find(tcp->source);
+	} else if(tcpd < tcps && tcpd < 1024) {
+		port_desc = (char *) ports_tcp_find(tcp->dest);	
+	} else {
+		tmp1 = (char *) ports_tcp_find(tcp->source);
+		tmp2 = (char *) ports_tcp_find(tcp->dest);
+		
+		if(tmp1 && !tmp2) {
+			port_desc = tmp1;
+		} else if(!tmp1 && tmp2) {
+			port_desc = tmp2;
+		} else if(tmp1 && tmp2) {
+			if(tcps < tcpd)
+				port_desc = tmp1;
+			else
+				port_desc = tmp2;
+		}
+	}
+
+	if(!port_desc)
+		port_desc = "U";
+
+	info("TCP, ");
+	info("%s%s%s, %u => %u\n", colorize_start(bold), port_desc, colorize_end(), tcps, tcpd);
+}
+
 #endif				/* __PROTO_TCP_H__ */

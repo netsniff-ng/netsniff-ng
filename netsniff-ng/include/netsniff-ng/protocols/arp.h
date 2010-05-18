@@ -90,4 +90,44 @@ void print_arphdr(struct arphdr *arp)
 	info(" ] \n");
 }
 
+/*
+ * print_arphdr_less - Just plain dumb formatting
+ * @arp:              arp header
+ */
+void print_arphdr_less(struct arphdr *arp)
+{
+	char *opcode = NULL;
+
+	assert(arp);
+
+	switch (ntohs(arp->ar_op)) {
+	case ARPOP_REQUEST:
+		opcode = "ARP request";
+		break;
+	case ARPOP_REPLY:
+		opcode = "ARP reply";
+		break;
+	case ARPOP_RREQUEST:
+		opcode = "RARP request";
+		break;
+	case ARPOP_RREPLY:
+		opcode = "RARP reply";
+		break;
+	case ARPOP_InREQUEST:
+		opcode = "InARP request";
+		break;
+	case ARPOP_InREPLY:
+		opcode = "InARP reply";
+		break;
+	case ARPOP_NAK:
+		opcode = "(ATM)ARP NAK";
+		break;
+	default:
+		opcode = "Unknown";
+		break;
+	};
+
+	info("Op %u, %s", ntohs(arp->ar_op), opcode);
+}
+
 #endif				/* __PROTO_ARP_H__ */

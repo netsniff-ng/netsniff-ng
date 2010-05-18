@@ -69,4 +69,17 @@ void print_icmphdr(struct icmphdr *icmp)
 	info(" ] \n");
 }
 
+/*
+ * print_icmphdr_less - Just plain dumb formatting
+ * @ip:                icmp header
+ */
+void print_icmphdr_less(struct icmphdr *icmp)
+{
+	assert(icmp);
+
+	info("ICMP, ");
+	info("Type %u, ", icmp->type);
+	info("Code %u\n", icmp->code);
+}
+
 #endif				/* __PROTO_ICMP_H__ */

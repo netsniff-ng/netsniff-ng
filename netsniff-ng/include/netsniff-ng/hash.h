@@ -75,5 +75,6 @@ extern const char *ports_tcp_find(uint16_t port);
 extern int ether_types_init(void);
 extern void ether_types_destroy(void);
 extern const char *ether_types_find(uint16_t type);
+extern const char *ether_types_find_less(uint16_t type);
 
 #endif				/* _NET_HASH_H_ */

@@ -97,4 +97,28 @@ void print_iphdr(struct iphdr *ip)
 	info(" ] \n");
 }
 
+/*
+ * print_iphdr_less - Just plain dumb formatting
+ * @ip:              ip header
+ */
+void print_iphdr_less(struct iphdr *ip)
+{
+	/* XXX Version check */
+	assert(ip);
+
+	char src_ip[INET_ADDRSTRLEN] = { 0 };
+	char dst_ip[INET_ADDRSTRLEN] = { 0 };
+
+	uint16_t csum = calc_csum(ip, ip->ihl * 4, 0);
+
+	inet_ntop(AF_INET, &ip->saddr, src_ip, INET_ADDRSTRLEN);
+	inet_ntop(AF_INET, &ip->daddr, dst_ip, INET_ADDRSTRLEN);
+
+	info("%s => %s, ", src_ip, dst_ip);
+	info("Chsum (0x%x) is %s", ntohs(ip->check), csum ? colorize_full_str(red, black, "bogus (!)") : "ok, ");
+	if (csum) {
+		info(" should be %x, ", csum_expected(ip->check, csum));
+	}
+}
+
 #endif				/* __PROTO_IP_H__ */

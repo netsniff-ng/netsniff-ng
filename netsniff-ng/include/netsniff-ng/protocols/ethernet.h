@@ -72,4 +72,21 @@ static inline void print_ethhdr(struct ethhdr *eth)
 	info(" ] \n");
 }
 
+/*
+ * print_ethhdr_less - Just plain dumb formatting
+ * @eth:              ethernet header
+ */
+static inline void print_ethhdr_less(struct ethhdr *eth)
+{
+	uint8_t *src_mac = eth->h_source;
+	uint8_t *dst_mac = eth->h_dest;
+
+	assert(eth);
+
+	info("%.2x:%.2x:%.2x:%.2x:%.2x:%.2x => %.2x:%.2x:%.2x:%.2x:%.2x:%.2x, %s => %s, ", 
+	     src_mac[0], src_mac[1], src_mac[2], src_mac[3], src_mac[4], src_mac[5], 
+	     dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4], dst_mac[5], 
+	     ieee_vendors_find(src_mac), ieee_vendors_find(dst_mac));
+}
+
 #endif				/* __PROTO_ETHERNET_H__ */

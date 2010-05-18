@@ -412,3 +412,20 @@ const char *ether_types_find(uint16_t type)
 	return type_str;
 }
 
+const char *ether_types_find_less(uint16_t type)
+{
+	char *type_str;
+	uintptr_t key = 0;
+	uint8_t *keyp = (uint8_t *) &key;
+
+	keyp[3] = (type >> 8) & 0xFF;
+	keyp[2] = (type)      & 0xFF;
+	key = ntohl(key);
+
+	type_str = hashtable_find(ether_types_db, (void *)key);
+	if (!type_str)
+		type_str = "U";
+
+	return type_str;
+}
+

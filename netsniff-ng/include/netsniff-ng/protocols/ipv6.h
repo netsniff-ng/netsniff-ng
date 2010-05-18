@@ -108,4 +108,22 @@ void print_ipv6hdr(struct ipv6hdr *ip)
 	info(" ] \n");
 }
 
+/*
+ * print_ipv6hdr_less - Just plain dumb formatting
+ * @ip:                ip header
+ */
+/* TODO To improve */
+void print_ipv6hdr_less(struct ipv6hdr *ip)
+{
+	assert(ip);
+
+	char src_ip[INET6_ADDRSTRLEN] = { 0 };
+	char dst_ip[INET6_ADDRSTRLEN] = { 0 };
+
+	inet_ntop(AF_INET6, &ip->saddr, src_ip, INET6_ADDRSTRLEN);
+	inet_ntop(AF_INET6, &ip->daddr, dst_ip, INET6_ADDRSTRLEN);
+
+	info("%s => %s, ", src_ip, dst_ip);
+}
+
 #endif				/* __PROTO_IPV6_H__ */

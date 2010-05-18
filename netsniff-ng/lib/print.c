@@ -121,8 +121,57 @@ static void inline dump_payload_char_all(const uint8_t * const rbb, int len, int
 
 void reduced_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 {
-	/* TODO: print one-line summary */
-	info("%d Byte, Timestamp (%u.%u s) \n", tp->tp_len, tp->tp_sec, tp->tp_usec);
+	uint16_t l4_type = 0;	
+	packet_t pkt;
+
+	memset(&pkt, 0, sizeof(pkt));
+	
+	parse_packet(rbb, tp->tp_len, &pkt);
+
+	info("%d Byte, %u.%u s, %s, ", tp->tp_len, tp->tp_sec, tp->tp_usec, 
+				       ether_types_find_less(pkt.ethernet_header->h_proto));
+
+	switch (get_ethertype(pkt.ethernet_header)) {
+	case ETH_P_8021Q:
+		print_vlanhdr_less(pkt.vlan_header);
+		break;
+
+	case ETH_P_ARP:
+		print_ethhdr_less(pkt.ethernet_header);
+		print_arphdr_less(pkt.arp_header);
+		break;
+
+	case ETH_P_IP:
+		print_iphdr_less(pkt.ip_header);
+		l4_type = get_l4_type_from_ipv4(pkt.ip_header);
+		break;
+
+	case ETH_P_IPV6:
+		print_ipv6hdr_less(pkt.ipv6_header);
+		l4_type = get_l4_type_from_ipv6(pkt.ipv6_header);
+		break;
+	default:
+		print_ethhdr_less(pkt.ethernet_header);
+		break;
+	}
+
+	switch (l4_type) {
+	case IPPROTO_TCP:
+		print_tcphdr_less(pkt.tcp_header);
+		break;
+
+	case IPPROTO_UDP:
+		print_udphdr_less(pkt.udp_header);
+		break;
+
+	case IPPROTO_ICMP:
+		print_icmphdr_less(pkt.icmp_header);
+		break;
+
+	default:
+		info("\n");
+		break;
+	}	
 }
 
 static regex_t *regex = NULL;

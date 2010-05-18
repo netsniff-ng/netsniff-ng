@@ -61,6 +61,8 @@ static inline uint16_t get_vlan_encap_proto(const struct vlan_hdr *header)
 
 }
 
+/* XXX: Todo!! */
+
 /*
  * print_vlan - Just plain dumb formatting
  * @header:            Vlan header
@@ -69,6 +71,15 @@ static inline void print_vlanhdr(const struct vlan_hdr *header)
 {
 	info(" [ VLAN tag : %u ]", get_vlan_tag(header));
 	info("\n");
+}
+
+/*
+ * print_vlan_less - Just plain dumb formatting
+ * @header:            Vlan header
+ */
+static inline void print_vlanhdr_less(const struct vlan_hdr *header)
+{
+	info("VLAN %u, ", get_vlan_tag(header));
 }
 
 #endif				/* __PROTO_VLAN_H__ */
