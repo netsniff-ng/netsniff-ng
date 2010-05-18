@@ -35,6 +35,7 @@ ether_type_t ether_types[] = {
 	{0x0200, "Xerox PUP packet"},
 	{0x0201, "Xerox PUP Addr Trans packet"},
 	{0x0400, "Nixdorf (conflicts with 802.3 Length Field)"},
+	{0x05f8, "Ethernet II"},
 	{0x0600, "XEROX NS IDP"},
 	{0x0601, "XNS Address Translation (3Mb only)"},
 	{0x0660, "DLOG"},
