@@ -213,7 +213,7 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 
 		if (!sd->print_pkt) {
 			ret =
-			    pthread_create(&progress, NULL, print_progress_spinner_dynamic,
+			    pthread_create(&progress, NULL, print_progress_spinner_static,
 					   "Receive ring dumping ... |");
 			if (ret) {
 				err("Cannot create thread");
@@ -274,6 +274,11 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 
 		while ((ret = poll(pfd, 1, sd->blocking_mode)) <= 0) {
 			if (sigint) {
+				printf("Got SIGINT here!\n");
+
+				if (!sd->print_pkt)
+					disable_print_progress_spinner();
+
 				return;
 			}
 		}
@@ -281,6 +286,10 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 		if (ret > 0 && (pfd->revents & (POLLHUP | POLLRDHUP | POLLERR | POLLNVAL))) {
 			if (pfd->revents & (POLLHUP | POLLRDHUP)) {
 				err("Hangup on socket occured");
+				
+				if (!sd->print_pkt)
+					disable_print_progress_spinner();
+
 				return;
 			} else if (pfd->revents & POLLERR) {
 				/* recv is more specififc on the error */
@@ -292,9 +301,17 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 				} else {
 					err("Receive error");
 				}
+				
+				if (!sd->print_pkt)
+					disable_print_progress_spinner();
+
 				return;
 			} else if (pfd->revents & POLLNVAL) {
 				err("Invalid polling request on socket");
+
+				if (!sd->print_pkt)
+					disable_print_progress_spinner();
+
 				return;
 			}
 		}
