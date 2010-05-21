@@ -197,11 +197,6 @@ int raw_key_equal(void *key1, void *key2)
 	return (key1 == key2);
 }
 
-void debug_callback_strings(void *key, void *data)
-{
-	printf("0x%x - %s\n", (uintptr_t) key, (char *) data);
-}
-
 /*
  * Specific hash function implementations
  */

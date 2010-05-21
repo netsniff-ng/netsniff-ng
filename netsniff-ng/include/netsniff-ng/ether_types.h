@@ -23,7 +23,7 @@
 #include <stdint.h>
 
 typedef struct {
-	uint32_t id;
+	uintptr_t id;
 	char *type;
 } ether_type_t;
 
