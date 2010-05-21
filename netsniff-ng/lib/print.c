@@ -128,8 +128,10 @@ void reduced_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 	
 	parse_packet(rbb, tp->tp_len, &pkt);
 
-	info("%d Byte, %u.%u s, %s, ", tp->tp_len, tp->tp_sec, tp->tp_usec, 
-				       ether_types_find_less(pkt.ethernet_header->h_proto));
+	info("%d Byte, %u.%u s, %s%s%s, ", tp->tp_len, tp->tp_sec, tp->tp_usec, 
+					   colorize_start(bold),
+					   ether_types_find_less(pkt.ethernet_header->h_proto),
+					   colorize_end());
 
 	switch (get_ethertype(pkt.ethernet_header)) {
 	case ETH_P_8021Q:
