@@ -85,9 +85,6 @@ static void __init_stage_common(system_data_t * sd, int *sock, ring_buff_t ** rb
 	assert(rb);
 	assert(pfd);
 
-	/* We are only allowed to do these nasty things as root ;) */
-	check_for_root();
-
 	/* Scheduler timeslice & prio tuning */
 	if (!sd->no_prioritization) {
 		set_proc_prio(DEFAULT_PROCESS_PRIO);
@@ -403,6 +400,9 @@ int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd 
 	assert(sock);
 	assert(rb);
 	assert(pfd);
+
+	/* We are only allowed to do these nasty things as root ;) */
+	check_for_root();
 
 	/* Print program header */
 	header();
