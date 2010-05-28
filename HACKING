@@ -67,8 +67,7 @@ Style
 =====
 
 Before submitting your patch make sure to indent your code appropriate.
-You can do this by running
-    make indent
+See CODING.
 
 Propose a release name
 ======================
