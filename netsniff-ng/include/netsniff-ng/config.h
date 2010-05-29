@@ -30,6 +30,8 @@
 #define POLL_WAIT_INF           -1	/* CPU friendly and appropriate for normal usage */
 #define POLL_WAIT_NONE           0	/* This will pull CPU usage to 100 % */
 
+#define PROMISC_MODE_NONE        1
+
 #define BPF_BYPASS               1
 #define BPF_NO_BYPASS            0
 
@@ -62,6 +64,7 @@ typedef struct system_data {
 	/* Ethernet device */
 	char *dev;
 	short prev_nic_flags;
+	int promisc_mode;
 	int pcap_fd;
 	struct sock_filter *bpf;
 	void (*print_pkt) (ring_buff_bytes_t *, const struct tpacket_hdr *);

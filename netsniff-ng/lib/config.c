@@ -37,10 +37,11 @@
 #include <netsniff-ng/config.h>
 #include <netsniff-ng/netdev.h>
 
-static const char *short_options = "S:QIe:lqi:NxXg:vhd:p:r:P:Df:sb:B:Hnt:";
+static const char *short_options = "MS:QIe:lqi:NxXg:vhd:p:r:P:Df:sb:B:Hnt:";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
+	{"no-promisc", no_argument, 0, 'M'},
 	{"dump", required_argument, 0, 'p'},
 	{"replay", required_argument, 0, 'r'},
 	{"read", required_argument, 0, 'i'},
@@ -117,6 +118,9 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 			break;
 		case 'n':
 			sd->blocking_mode = POLL_WAIT_NONE;
+			break;
+		case 'M':
+			sd->promisc_mode = PROMISC_MODE_NONE;
 			break;
 		case 'Q':
 			sd->no_touch_irq = PROC_NO_TOUCHIRQ;

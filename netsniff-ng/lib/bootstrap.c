@@ -213,14 +213,16 @@ static void __init_stage_mode_common(system_data_t * sd, int *sock, ring_buff_t 
 
 	memset((*rb), 0, sizeof(**rb));
 
-	/* 
-	 * Save previous nic flags to be able
-	 * restore them at exit time.
-	 */
-	sd->prev_nic_flags = get_nic_flags(sd->dev);
+	if(sd->promisc_mode != PROMISC_MODE_NONE) {
+		/* 
+		 * Save previous nic flags to be able
+		 * restore them at exit time.
+		 */
+		sd->prev_nic_flags = get_nic_flags(sd->dev);
 
-	/* Activate promiscuous mode */
-	set_nic_flags(sd->dev, sd->prev_nic_flags | IFF_PROMISC);
+		/* Activate promiscuous mode */
+		set_nic_flags(sd->dev, sd->prev_nic_flags | IFF_PROMISC);
+	}
 
 	/* Bind NIC RX/TX INTR to CPU if possible */
 	if(sd->bind_cpu >= 0 && sd->no_touch_irq != PROC_NO_TOUCHIRQ) {
@@ -454,8 +456,10 @@ static void __exit_stage_mode_common(system_data_t * sd, int *sock, ring_buff_t 
 	assert(sock);
 	assert(rb);
 	
-	/* Restore flags which were set at program start */
-	set_nic_flags(sd->dev, sd->prev_nic_flags);
+	if(sd->promisc_mode != PROMISC_MODE_NONE) {
+		/* Restore flags which were set at program start */
+		set_nic_flags(sd->dev, sd->prev_nic_flags);
+	}
 }
 
 static void __exit_stage_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb)

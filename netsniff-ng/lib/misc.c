@@ -46,6 +46,7 @@ void help(void)
 	info("Options for net dev:\n");
 	info("  -d|--dev <arg>         Use device <arg> for capturing packets, e.g. `eth0`\n");
 	info("  -I|--info              Print network device information\n");
+	info("  -M|--no-promisc        Do not put device into promiscuous mode\n");
 	info("\n");
 	info("Options for packet dumping/replaying:\n");
 	info("  -p|--dump <arg>        Dump all matching packets in a pcap file,\n");
