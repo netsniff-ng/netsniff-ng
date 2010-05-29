@@ -9,7 +9,7 @@ How to check out netsniff-ng anonymously
 Always bleedy and probably unstable, but this is latest in development of 
 netsniff-ng! ;)
 
-    svn checkout http://netsniff-ng.googlecode.com/svn/trunk/ netsniff-ng-read-only
+svn checkout http://netsniff-ng.googlecode.com/svn/trunk/ netsniff-ng-read-only
 
 Mailing list
 ============

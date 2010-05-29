@@ -128,10 +128,10 @@
 #define DIV_S2MINUT(x)          ((x) / (60LLU))
 #define MOD_MINUT2S(x)          ((x) % (60LLU))
 
-/* Release alias, some versioning fun for netsniff-ng ;) */
-#define MOOH     "+-------------------------+     \n" \
-                 "| 0xDECA:FBAD:FADE:DEAD^2 |     \n" \
-                 "+-------------------------+     \n" \
+/* Here we go and the cow moos it out! */
+#define MOOH     "+---------------------------+   \n" \
+                 "| the packet sniffing beast |   \n" \
+                 "+---------------------------+   \n" \
                  "        \\   ^__^               \n" \
                  "         \\  (oo)\\_______      \n" \
                  "            (__)\\       )\\/\\ \n" \
