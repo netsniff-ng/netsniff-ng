@@ -245,7 +245,7 @@ static void __init_stage_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb, s
 	assert(pfd);
 
 	if (sd->bypass_bpf == BPF_BYPASS) {
-		info("No filter applied. Switching to all traffic.\n\n");
+		info("No filter applied. Switching to `all traffic`.\n\n");
 		return;
 	}
 
