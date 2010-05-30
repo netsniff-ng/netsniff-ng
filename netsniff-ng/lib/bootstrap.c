@@ -455,6 +455,9 @@ static void __exit_stage_mode_common(system_data_t * sd, int *sock, ring_buff_t 
 	assert(sd);
 	assert(sock);
 	assert(rb);
+
+	if (sd->mode == MODE_READ)
+		return;
 	
 	if(sd->promisc_mode != PROMISC_MODE_NONE) {
 		/* Restore flags which were set at program start */
