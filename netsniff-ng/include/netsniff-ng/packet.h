@@ -61,6 +61,8 @@ static inline int parse_packet(uint8_t * raw, uint32_t len, packet_t * pkt)
 	uint32_t tmp_len = len;
 	uint16_t l4_type = 0;
 
+	memset(pkt, 0, sizeof(*pkt));
+
 	pkt->raw = raw;
 	pkt->ethernet_header = get_ethhdr(buffer, &tmp_len);
 	set_pkt_step(pkt, ETHERNET);

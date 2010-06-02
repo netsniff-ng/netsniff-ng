@@ -123,8 +123,6 @@ void reduced_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 {
 	uint16_t l4_type = 0;	
 	packet_t pkt;
-
-	memset(&pkt, 0, sizeof(pkt));
 	
 	parse_packet(rbb, tp->tp_len, &pkt);
 
@@ -300,8 +298,6 @@ static inline void __versatile_header_only_print(ring_buff_bytes_t * rbb, const 
 	assert(rbb);
 	assert(tp);
 	assert(pkt);
-
-	memset(pkt, 0, sizeof(*pkt));
 
 	parse_packet(rbb, tp->tp_len, pkt);
 
