@@ -346,3 +346,50 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 	if (!sd->print_pkt)
 		disable_print_progress_spinner();
 }
+
+#if 0
+struct netsniff_ng_rx_nic_context * create_rx_nic_ctx(const char * rx_dev, const size_t	nic_rb_slots)
+{
+	struct netsniff_ng_rx_nic_context * nic_ctx = NULL;
+	ring_buff_t * nic_rbp = NULL;
+
+	if ((nic_ctx = malloc(sizeof(*nic_ctx))) == NULL)
+	{
+		warn("Cannot allocate rx nic context\n");
+		return (NULL);
+	}
+
+	memset(nic_ctx, 0, sizeof(*nic_ctx));
+
+	nic_rbp = &nic_ctx->nic_rb;	
+	
+	if ((ringbuffer_init(&nic_rbp, nic_rb_slots);
+
+	strncpy(nic_ctx->rx_dev, rx_dev, IFNAMSIZ - 1);
+	
+	return(nic_ctx);
+}
+
+struct netsniff_ng_rx_thread_config * create_rx_thread(const cpu_set_t run_on, const int sched_prio, const int sched_policy)
+{
+	int rc;
+	struct netsniff_ng_rx_thread_config * thread_config = NULL;
+
+	if ((thread_config = malloc(sizeof(*thread_config))) == NULL)
+	{
+		warn("Cannot allocate rx thread configuration");
+		return (NULL);
+	}
+
+	memset(thread_config, 0, sizeof(*thread_config));
+
+	if ((rc = init_thread_context(&thread_config->thread_ctx, run_on, sched_prio, sched_policy)) != 0)
+	{
+		warn("Cannot initialize thread");
+		free(thread_config);
+		return (NULL);
+	}
+}
+
+#endif
+

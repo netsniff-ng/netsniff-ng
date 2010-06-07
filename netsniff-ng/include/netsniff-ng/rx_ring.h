@@ -22,12 +22,38 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <pthread.h>
+#include <sys/queue.h>
 
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/types.h>
+#include <netsniff-ng/thread.h>
 #include <netsniff-ng/rxtx_common.h>
 #include <netsniff-ng/config.h>
+#include <netsniff-ng/ringbuff.h>
 
+#if 0
+/* a rx ring must only belong to one entity */
+struct netsniff_ng_rx_nic_context
+{
+	/* Structure which describe a nic instead? */
+	const char *				rx_dev[IFNAMSIZ];
+	void	(*print_pkt)(ring_buff_bytes_t *, const struct tpacket_hdr *);
+	/* Maybe multiple ring buffer for one device */
+	uint32_t				flags;
+	int					bpf_fd;
+	int 					pcap_fd;
+	size_t					nic_rb_slots;
+	ringbuffer_t				nic_rb;
+	SLIST_ENTRY(netsniff_ng_rx_nic_info)	nic_entry;
+};
+
+struct netsniff_ng_rx_thread_config
+{
+	struct netsniff_ng_thread_context			thread_ctx;
+	SLIST_HEAD(rx_rb_head, netsniff_ng_rx_nic_context)	nic_head;
+};
+#endif
 /* Function signatures */
 
 extern void destroy_virt_rx_ring(int sock, ring_buff_t * rb);
