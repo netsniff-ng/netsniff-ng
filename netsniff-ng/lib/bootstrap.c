@@ -61,10 +61,10 @@ void softirq_handler(int number)
 {
 	switch (number) {
 	case SIGALRM:
-		refresh_counters();
+		/* refresh_counters(); */
 		break;
 	case SIGUSR1:
-		print_counters();
+		/* print_counters(); */
 		break;
 	case SIGINT:
 		sigint = 1;
@@ -92,9 +92,11 @@ static void __init_stage_common(system_data_t * sd, int *sock, ring_buff_t ** rb
 	}
 
 	register_softirq(SIGINT, &softirq_handler);
+#if 0
 	register_softirq(SIGALRM, &softirq_handler);
 	register_softirq(SIGUSR1, &softirq_handler);
 	register_softirq(SIGUSR2, &softirq_handler);
+#endif
 	register_softirq(SIGHUP, &softirq_handler);
 
 	memset(&netstat, 0, sizeof(netstat));
@@ -334,6 +336,7 @@ static void __init_stage_hashtables(system_data_t * sd, int *sock, ring_buff_t *
 
 static void __init_stage_timer(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
 {
+#if 0
 	int ret;
 	struct itimerval val_r = { {0} };
 
@@ -354,6 +357,7 @@ static void __init_stage_timer(system_data_t * sd, int *sock, ring_buff_t ** rb,
 	}
 
 	clock_gettime(CLOCK_REALTIME, &netstat.m_start);
+#endif
 }
 
 static void header(void)
@@ -549,12 +553,13 @@ static void footer(void)
 	 * FIXME Find a way to print a uint64_t
 	 * on 32 and 64 bit arch w/o gcc warnings
 	 */
-
+#if 0
 	info("\rcaptured frames: %llu, "
 	     "captured bytes: %llu [%llu KiB, %llu MiB, %llu GiB]\n\r",
 	     netstat.total.frames, netstat.total.bytes,
 	     netstat.total.bytes / 1024,
 	     netstat.total.bytes / (1024 * 1024), netstat.total.bytes / (1024 * 1024 * 1024));
+#endif
 }
 
 /**

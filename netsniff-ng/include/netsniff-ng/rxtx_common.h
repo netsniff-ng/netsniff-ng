@@ -25,10 +25,35 @@
 #include <stdint.h>
 #include <assert.h>
 
+#include <sys/poll.h>
+
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/types.h>
 
+#ifndef POLLRDNORM
+# define POLLRDNORM      0x0040
+#endif
+#ifndef POLLWRNORM
+# define POLLWRNORM      0x0100
+#endif
+
 /* Inline stuff */
+
+ /**
+ * prepare_polling - Sets params for ringbuff polling
+ * @sock:           socket
+ * @pfd:            file descriptor for polling
+ */
+static inline void prepare_polling(int sock, struct pollfd *pfd)
+{
+	assert(pfd);
+
+	memset(pfd, 0, sizeof(*pfd));
+
+	pfd->fd = sock;
+	pfd->revents = 0;
+	pfd->events = POLLIN|POLLRDNORM|POLLOUT|POLLWRNORM|POLLERR;
+}
 
 /**
  * alloc_frame_buffer - Allocates frame buffer

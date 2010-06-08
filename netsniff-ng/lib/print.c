@@ -275,7 +275,10 @@ void payload_hex_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *t
 
 	parse_packet(rbb, tp->tp_len, &pkt);
 	info("   ");
-	dump_hex(pkt.payload, pkt.payload_len, tty_len - 20, 0);
+	if(pkt.payload_len != 0)
+		dump_hex(pkt.payload, pkt.payload_len, tty_len - 20, 0);
+	else
+		info("(no payload)");
 	info("\n\n");
 }
 

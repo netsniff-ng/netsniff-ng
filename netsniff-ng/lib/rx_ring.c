@@ -195,7 +195,7 @@ void bind_dev_to_rx_ring(int sock, int ifindex, ring_buff_t * rb)
  */
 void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd *pfd)
 {
-	int ret, foo, i = 0;
+	int ret, i = 0;
 
 	pthread_t progress;
 
@@ -248,21 +248,6 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 				sd->print_pkt(rbb, &fm->tp_h);
 			}
 
-			/* Pending singals will be delivered after netstat 
-			   manipulation */
-			hold_softirq(2, SIGUSR1, SIGALRM);
-			/* XXX: futex */
-			pthread_mutex_lock(&gs_loc_mutex);
-
-			netstat.per_sec.frames++;
-			netstat.per_sec.bytes += fm->tp_h.tp_len;
-
-			netstat.total.frames++;
-			netstat.total.bytes += fm->tp_h.tp_len;
-
-			pthread_mutex_unlock(&gs_loc_mutex);
-			restore_softirq(2, SIGUSR1, SIGALRM);
-
 			/* Next frame */
 			i = (i + 1) % rb->layout.tp_frame_nr;
 
@@ -272,6 +257,7 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 			mem_notify_kernel_for_rx(&(fm->tp_h));
 		}
 
+#ifdef __WITH_POLL__
 		while ((ret = poll(pfd, 1, sd->blocking_mode)) <= 0) {
 			if (sigint) {
 				printf("Got SIGINT here!\n");
@@ -317,10 +303,12 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 		}
 
  __out_grab_frame:
+#endif /* __WITH_POLL__ */
 		/* Look-ahead if current frame is status kernel, otherwise we have
 		   have incoming frames and poll spins / hangs all the time :( */
 		for (; ((struct tpacket_hdr *)rb->frames[i].iov_base)->tp_status
-		     != TP_STATUS_USER; i = (i + 1) % rb->layout.tp_frame_nr)
+		     != TP_STATUS_USER && likely(!sigint); 
+		     i = (i + 1) % rb->layout.tp_frame_nr)
 			/* NOP */ ;
 		/* Why this should be okay:
 		   1) Current frame[i] is TP_STATUS_USER:
