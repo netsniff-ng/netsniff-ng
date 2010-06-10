@@ -88,7 +88,7 @@ void destroy_virt_tx_ring(int sock, ring_buff_t * rb)
 	setsockopt(sock, SOL_PACKET, PACKET_TX_RING, (void *)&(rb->layout), sizeof(rb->layout));
 
 	if (rb->buffer) {
-		munmap(rb, rb->len);
+		munmap(rb->buffer, rb->len);
 		rb->buffer = 0;
 		rb->len = 0;
 	}
