@@ -50,7 +50,7 @@
 
 volatile sig_atomic_t sigint = 0;
 
-ring_buff_stat_t netstat;
+struct ring_buff_stat netstat;
 pthread_mutex_t gs_loc_mutex;
 
 /**
@@ -78,7 +78,7 @@ void softirq_handler(int number)
 	}
 }
 
-static void __init_stage_common(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __init_stage_common(struct system_data * sd, int *sock, struct ring_buff ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -101,7 +101,7 @@ static void __init_stage_common(system_data_t * sd, int *sock, ring_buff_t ** rb
 	memset(&netstat, 0, sizeof(netstat));
 }
 
-static void __init_stage_daemon(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __init_stage_daemon(struct system_data * sd, int *sock, struct ring_buff ** rb)
 {
 	int ret;
 
@@ -124,7 +124,7 @@ static void __init_stage_daemon(system_data_t * sd, int *sock, ring_buff_t ** rb
 	}
 }
 
-static void __init_stage_fallback_dev(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __init_stage_fallback_dev(struct system_data * sd, int *sock, struct ring_buff ** rb)
 {
 	int i, stmp;
 	char dev_buff[1024];
@@ -190,7 +190,7 @@ static void __init_stage_fallback_dev(system_data_t * sd, int *sock, ring_buff_t
 	info("No device specified, using `%s`.\n\n", sd->dev);
 }
 
-static void __init_stage_mode_common(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __init_stage_mode_common(struct system_data * sd, int *sock, struct ring_buff ** rb)
 {
 	int intr;
 
@@ -203,7 +203,7 @@ static void __init_stage_mode_common(system_data_t * sd, int *sock, ring_buff_t 
 	if (sd->mode == MODE_READ)
 		return;
 
-	(*rb) = (ring_buff_t *) malloc(sizeof(**rb));
+	(*rb) = (struct ring_buff *) malloc(sizeof(**rb));
 	if ((*rb) == NULL) {
 		err("Cannot allocate ring buffer");
 		exit(EXIT_FAILURE);
@@ -232,7 +232,7 @@ static void __init_stage_mode_common(system_data_t * sd, int *sock, ring_buff_t 
 	}
 }
 
-static void __init_stage_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __init_stage_bpf(struct system_data * sd, int *sock, struct ring_buff ** rb)
 {
 	int bpf_len = 0;
 	struct sock_filter *bpf = NULL;
@@ -270,7 +270,7 @@ static void __init_stage_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb)
 	bpf_dump_all(sd->bpf, bpf_len);
 }
 
-static void __init_stage_rx_ring(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __init_stage_rx_ring(struct system_data * sd, int *sock, struct ring_buff ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -285,7 +285,7 @@ static void __init_stage_rx_ring(system_data_t * sd, int *sock, ring_buff_t ** r
 	alloc_frame_buffer((*rb));
 }
 
-static void __init_stage_tx_ring(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __init_stage_tx_ring(struct system_data * sd, int *sock, struct ring_buff ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -312,7 +312,7 @@ static void __init_stage_tx_ring(system_data_t * sd, int *sock, ring_buff_t ** r
 	alloc_frame_buffer((*rb));
 }
 
-static void __init_stage_hashtables(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __init_stage_hashtables(struct system_data * sd, int *sock, struct ring_buff ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -324,7 +324,7 @@ static void __init_stage_hashtables(system_data_t * sd, int *sock, ring_buff_t *
 	ether_types_init();
 }
 
-static void __init_stage_timer(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __init_stage_timer(struct system_data * sd, int *sock, struct ring_buff ** rb)
 {
 #if 0
 	int ret;
@@ -389,7 +389,7 @@ static void header(void)
  * @rb:         ring buffer
  * @pfd:        file descriptor for polling
  */
-int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb)
+int init_system(struct system_data * sd, int *sock, struct ring_buff ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -414,7 +414,7 @@ int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb)
 	return 0;
 }
 
-static void __exit_stage_common(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __exit_stage_common(struct system_data * sd, int *sock, struct ring_buff ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -422,7 +422,7 @@ static void __exit_stage_common(system_data_t * sd, int *sock, ring_buff_t ** rb
 	/* NOP */
 }
 
-static void __exit_stage_daemon(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __exit_stage_daemon(struct system_data * sd, int *sock, struct ring_buff ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -434,7 +434,7 @@ static void __exit_stage_daemon(system_data_t * sd, int *sock, ring_buff_t ** rb
 	undaemonize(sd->pidfile);
 }
 
-static void __exit_stage_fallback_dev(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __exit_stage_fallback_dev(struct system_data * sd, int *sock, struct ring_buff ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -442,7 +442,7 @@ static void __exit_stage_fallback_dev(system_data_t * sd, int *sock, ring_buff_t
 	/* NOP */
 }
 
-static void __exit_stage_mode_common(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __exit_stage_mode_common(struct system_data * sd, int *sock, struct ring_buff ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -457,7 +457,7 @@ static void __exit_stage_mode_common(system_data_t * sd, int *sock, ring_buff_t 
 	}
 }
 
-static void __exit_stage_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __exit_stage_bpf(struct system_data * sd, int *sock, struct ring_buff ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -473,7 +473,7 @@ static void __exit_stage_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb)
 		free(sd->bpf);
 }
 
-static void __exit_stage_rx_ring(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __exit_stage_rx_ring(struct system_data * sd, int *sock, struct ring_buff ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -486,7 +486,7 @@ static void __exit_stage_rx_ring(system_data_t * sd, int *sock, ring_buff_t ** r
 	destroy_virt_rx_ring((*sock), (*rb));
 }
 
-static void __exit_stage_tx_ring(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __exit_stage_tx_ring(struct system_data * sd, int *sock, struct ring_buff ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -499,7 +499,7 @@ static void __exit_stage_tx_ring(system_data_t * sd, int *sock, ring_buff_t ** r
 	destroy_virt_tx_ring((*sock), (*rb));
 }
 
-static void __exit_stage_hashtables(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __exit_stage_hashtables(struct system_data * sd, int *sock, struct ring_buff ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -511,7 +511,7 @@ static void __exit_stage_hashtables(system_data_t * sd, int *sock, ring_buff_t *
 	ether_types_destroy();
 }
 
-static void __exit_stage_timer(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __exit_stage_timer(struct system_data * sd, int *sock, struct ring_buff ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -520,7 +520,7 @@ static void __exit_stage_timer(system_data_t * sd, int *sock, ring_buff_t ** rb)
 	net_stat(*sock);
 }
 
-static void __exit_stage_last(system_data_t * sd, int *sock, ring_buff_t ** rb)
+static void __exit_stage_last(struct system_data * sd, int *sock, struct ring_buff ** rb)
 {
 	assert(sd);
 	assert(sock);
@@ -556,7 +556,7 @@ static void footer(void)
  * @sock:          socket
  * @rb:            ring buffer
  */
-void cleanup_system(system_data_t * sd, int *sock, ring_buff_t ** rb)
+void cleanup_system(struct system_data * sd, int *sock, struct ring_buff ** rb)
 {
 	assert(sd);
 	assert(sock);

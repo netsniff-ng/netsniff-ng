@@ -27,34 +27,36 @@
 #include <stdint.h>
 #include <unistd.h>
 
-typedef struct bucket {
+struct hashtable_bucket {
 	void *key;
 	void *data;
-	struct bucket *next;
-} hashtable_bucket_t;
-typedef struct callbacks {
+	struct hashtable_bucket *next;
+};
+
+struct hashtable_callbacks {
 	void *(*key_copy) (void *k);
 	void (*key_free) (void *k);
 	 uintptr_t(*key_to_hash) (void *k);
 	int (*key_equal) (void *k1, void *k2);
-} hashtable_callbacks_t;
-typedef struct hashtable {
+};
+
+struct hashtable {
 	size_t size;
 	uint32_t elems;
-	hashtable_callbacks_t *f;
-	hashtable_bucket_t **table;
-} hashtable_t;
+	struct hashtable_callbacks *f;
+	struct hashtable_bucket **table;
+};
 
 /*
  * Functions, generic
  */
 
-extern int hashtable_init(hashtable_t ** ht, size_t size, hashtable_callbacks_t * f);
-extern void hashtable_destroy(hashtable_t * ht);
-extern void *hashtable_insert(hashtable_t * ht, void *key, void *data);
-extern void *hashtable_find(hashtable_t * ht, void *key);
-extern void *hashtable_delete(hashtable_t * ht, void *key);
-extern int hashtable_foreach(hashtable_t * ht, void (*callback) (void *key, void *data));
+extern int hashtable_init(struct hashtable ** ht, size_t size, struct hashtable_callbacks * f);
+extern void hashtable_destroy(struct hashtable * ht);
+extern void *hashtable_insert(struct hashtable * ht, void *key, void *data);
+extern void *hashtable_find(struct hashtable * ht, void *key);
+extern void *hashtable_delete(struct hashtable * ht, void *key);
+extern int hashtable_foreach(struct hashtable * ht, void (*callback) (void *key, void *data));
 
 /*
  * Functions, specific hashtables

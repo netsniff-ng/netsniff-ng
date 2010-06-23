@@ -53,9 +53,9 @@
 #define flushlock_trylock(x) ((x) == 1)
 
 struct packed_tx_data {
-	system_data_t *sd;
+	struct system_data *sd;
 	int sock;
-	ring_buff_t *rb;
+	struct ring_buff *rb;
 };
 
 volatile sig_atomic_t ring_lock;
@@ -80,7 +80,7 @@ static void set_packet_loss_discard(int sock)
  * @sock:                socket
  * @rb:                  ring buffer
  */
-void destroy_virt_tx_ring(int sock, ring_buff_t * rb)
+void destroy_virt_tx_ring(int sock, struct ring_buff * rb)
 {
 	assert(rb);
 
@@ -101,7 +101,7 @@ void destroy_virt_tx_ring(int sock, ring_buff_t * rb)
  * @sock:               socket
  * @rb:                 ring buffer
  */
-void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname, unsigned int usize)
+void create_virt_tx_ring(int sock, struct ring_buff * rb, char *ifname, unsigned int usize)
 {
 	short nic_flags;
 	int ret, dev_speed;
@@ -169,7 +169,7 @@ void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname, unsigned int 
  * @sock:             socket
  * @rb:               ring buffer
  */
-void mmap_virt_tx_ring(int sock, ring_buff_t * rb)
+void mmap_virt_tx_ring(int sock, struct ring_buff * rb)
 {
 	assert(rb);
 
@@ -190,7 +190,7 @@ void mmap_virt_tx_ring(int sock, ring_buff_t * rb)
  * @ifindex:            device number
  * @rb:                 ring buffer
  */
-void bind_dev_to_tx_ring(int sock, int ifindex, ring_buff_t * rb)
+void bind_dev_to_tx_ring(int sock, int ifindex, struct ring_buff * rb)
 {
 	int ret;
 
@@ -218,7 +218,7 @@ void bind_dev_to_tx_ring(int sock, int ifindex, ring_buff_t * rb)
  * @sock:              socket
  * @rb:                ring buffer
  */
-int flush_virt_tx_ring(int sock, ring_buff_t * rb)
+int flush_virt_tx_ring(int sock, struct ring_buff * rb)
 {
 	int rc;
 
@@ -239,7 +239,7 @@ static void *fill_virt_tx_ring_thread(void *packed)
 {
 	int loop, i;
 
-	ring_buff_bytes_t *buff;
+	uint8_t *buff;
 	unsigned long long packets = 0;
 
 	struct frame_map *fm;
@@ -255,7 +255,7 @@ static void *fill_virt_tx_ring_thread(void *packed)
 			fm = ptd->rb->frames[i].iov_base;
 			header = (struct tpacket_hdr *)&fm->tp_h;
 			buff =
-			    (ring_buff_bytes_t *) ((uintptr_t)ptd->rb->frames[i].iov_base + TPACKET_HDRLEN -
+			    (uint8_t *) ((uintptr_t)ptd->rb->frames[i].iov_base + TPACKET_HDRLEN -
 						   sizeof(struct sockaddr_ll));
 			
 
@@ -393,7 +393,7 @@ static void *flush_virt_tx_ring_thread(void *packed)
  * @sock:            socket
  * @rb:              ring buffer
  */
-void transmit_packets(system_data_t * sd, int sock, ring_buff_t * rb)
+void transmit_packets(struct system_data * sd, int sock, struct ring_buff * rb)
 {
 	assert(rb);
 	assert(sd);
@@ -449,32 +449,32 @@ void transmit_packets(system_data_t * sd, int sock, ring_buff_t * rb)
  * XXX: do the same stuff but only with sendmsg or similar 
  */
 
-void bind_dev_to_tx_ring(int sock, int ifindex, ring_buff_t * rb)
+void bind_dev_to_tx_ring(int sock, int ifindex, struct ring_buff * rb)
 {
 	/* NOP */
 }
 
-void mmap_virt_tx_ring(int sock, ring_buff_t * rb)
+void mmap_virt_tx_ring(int sock, struct ring_buff * rb)
 {
 	/* NOP */
 }
 
-void create_virt_tx_ring(int sock, ring_buff_t * rb, char *ifname, unsigned int usize)
+void create_virt_tx_ring(int sock, struct ring_buff * rb, char *ifname, unsigned int usize)
 {
 	/* NOP */
 }
 
-void destroy_virt_tx_ring(int sock, ring_buff_t * rb)
+void destroy_virt_tx_ring(int sock, struct ring_buff * rb)
 {
 	/* NOP */
 }
 
-int flush_virt_tx_ring(int sock, ring_buff_t * rb)
+int flush_virt_tx_ring(int sock, struct ring_buff * rb)
 {
 	return 0;
 }
 
-void transmit_packets(system_data_t * sd, int sock, ring_buff_t * rb)
+void transmit_packets(struct system_data * sd, int sock, struct ring_buff * rb)
 {
 	assert(rb);
 	assert(sd);

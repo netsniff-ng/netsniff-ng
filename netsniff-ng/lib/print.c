@@ -119,10 +119,10 @@ static void inline dump_payload_char_all(const uint8_t * const rbb, int len, int
 	info(") ]\n");
 }
 
-void reduced_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+void reduced_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 {
 	uint16_t l4_type = 0;	
-	packet_t pkt;
+	struct packet pkt;
 	
 	parse_packet(rbb, tp->tp_len, &pkt);
 
@@ -218,11 +218,11 @@ void cleanup_regex(void)
 	free(regex);
 }
 
-void regex_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+void regex_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 {
 	int i;
 
-	packet_t pkt;
+	struct packet pkt;
 	uint8_t *t_rbb = NULL;
 
 	assert(regex);
@@ -249,9 +249,9 @@ void regex_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 	free(t_rbb);
 }
 
-void payload_human_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+void payload_human_only_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 {
-	packet_t pkt;
+	struct packet pkt;
 
 	int tty_len = get_tty_length();
 
@@ -264,9 +264,9 @@ void payload_human_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr 
 	info("\n\n");
 }
 
-void payload_hex_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+void payload_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 {
-	packet_t pkt;
+	struct packet pkt;
 
 	int tty_len = get_tty_length();
 
@@ -282,7 +282,7 @@ void payload_hex_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *t
 	info("\n\n");
 }
 
-void all_hex_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+void all_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 {
 	int tty_len = get_tty_length();
 
@@ -294,7 +294,7 @@ void all_hex_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 	info("\n\n");
 }
 
-static inline void __versatile_header_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp, packet_t * pkt)
+static inline void __versatile_header_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, struct packet * pkt)
 {
 	uint16_t l4_type = 0;
 
@@ -349,17 +349,17 @@ static inline void __versatile_header_only_print(ring_buff_bytes_t * rbb, const 
 	return;
 }
 
-void versatile_header_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+void versatile_header_only_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 {
-	packet_t pkt;
+	struct packet pkt;
 
 	__versatile_header_only_print(rbb, tp, &pkt);
 	info("\n");
 }
 
-void versatile_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+void versatile_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 {
-	packet_t pkt;
+	struct packet pkt;
 	int tty_len = get_tty_length();
 
 	assert(rbb);
@@ -373,10 +373,10 @@ void versatile_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 	info("\n");
 }
 
-void display_packets(system_data_t * sd)
+void display_packets(struct system_data * sd)
 {
 	struct tpacket_hdr header;
-	ring_buff_bytes_t buff[TPACKET_ALIGNMENT << 7] = {0};
+	uint8_t buff[TPACKET_ALIGNMENT << 7] = {0};
 
 	assert(sd);
 

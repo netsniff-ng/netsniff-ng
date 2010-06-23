@@ -70,7 +70,7 @@ static struct option long_options[] = {
 	{0, 0, 0, 0}
 };
 
-void init_configuration(system_data_t * sd)
+void init_configuration(struct system_data * sd)
 {
 	assert(sd);
 	memset(sd, 0, sizeof(*sd));
@@ -85,7 +85,7 @@ void init_configuration(system_data_t * sd)
 	sd->bind_cpu = -1;
 }
 
-void set_configuration(int argc, char **argv, system_data_t * sd)
+void set_configuration(int argc, char **argv, struct system_data * sd)
 {
 	int c, sl, slt;
 	int opt_idx;
@@ -276,7 +276,7 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 	}
 }
 
-void check_config(system_data_t * sd)
+void check_config(struct system_data * sd)
 {
 	assert(sd);
 
@@ -285,7 +285,7 @@ void check_config(system_data_t * sd)
 	}
 }
 
-void clean_config(system_data_t * sd)
+void clean_config(struct system_data * sd)
 {
 	assert(sd);
 

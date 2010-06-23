@@ -32,20 +32,18 @@
  * Internal data structures
  */
 
-typedef uint8_t ring_buff_bytes_t;
-
-typedef struct ring_buff_private {
+struct ring_buff {
 	struct sockaddr_ll params;
 	struct tpacket_req layout;
 	struct iovec *frames;
-	ring_buff_bytes_t *buffer;
+	uint8_t * buffer;
 	uint32_t len;
-} ring_buff_t;
+};
 
-typedef struct frame_map {
+struct frame_map {
 	struct tpacket_hdr tp_h __attribute__ ((aligned(TPACKET_ALIGNMENT)));
 	struct sockaddr_ll s_ll __attribute__ ((aligned(TPACKET_ALIGNMENT)));
-} frame_map_t;
+};
 
 /*
  * Some external data structures (wich are used for
@@ -57,7 +55,7 @@ struct fb_count {
 	unsigned long long bytes;
 };
 
-typedef struct ring_buff_private_stat {
+struct ring_buff_stat {
 	struct fb_count total;
 	struct fb_count per_sec;
 	struct fb_count per_min;
@@ -65,6 +63,6 @@ typedef struct ring_buff_private_stat {
 	struct fb_count s_per_min;
 	uint16_t t_elapsed;
 	struct timespec m_start;
-} ring_buff_stat_t;
+};
 
 #endif				/* _NET_TYPES_H_ */

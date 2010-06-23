@@ -48,7 +48,7 @@
 #define MODE_REPLAY              2
 #define MODE_READ                3
 
-typedef struct system_data {
+struct system_data {
 	/* Some more or less boolean conf values */
 	int sysdaemon;
 	int blocking_mode;
@@ -67,14 +67,14 @@ typedef struct system_data {
 	int promisc_mode;
 	int pcap_fd;
 	struct sock_filter *bpf;
-	void (*print_pkt) (ring_buff_bytes_t *, const struct tpacket_hdr *);
+	void (*print_pkt) (uint8_t *, const struct tpacket_hdr *);
 	int bind_cpu;
 	unsigned int ring_size;
-} system_data_t;
+};
 
-extern void init_configuration(system_data_t * config);
-extern void set_configuration(int argc, char **argv, system_data_t * sd);
-extern void check_config(system_data_t * sd);
-extern void clean_config(system_data_t * sd);
+extern void init_configuration(struct system_data * config);
+extern void set_configuration(int argc, char **argv, struct system_data * sd);
+extern void check_config(struct system_data * sd);
+extern void clean_config(struct system_data * sd);
 
 #endif				/* _NET_CONFIG_H_ */

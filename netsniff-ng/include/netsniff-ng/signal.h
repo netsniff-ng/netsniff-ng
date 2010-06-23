@@ -136,7 +136,7 @@ static inline void hold_softirq_pthread(int num_count, ...)
  * Signal handling
  */
 
-extern ring_buff_stat_t netstat;
+extern struct ring_buff_stat netstat;
 extern pthread_mutex_t gs_loc_mutex;
 
 /**

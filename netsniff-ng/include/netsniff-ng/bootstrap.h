@@ -23,7 +23,7 @@
 #include <netsniff-ng/types.h>
 #include <netsniff-ng/config.h>
 
-extern int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb);
-extern void cleanup_system(system_data_t * sd, int *sock, ring_buff_t ** rb);
+extern int init_system(struct system_data * sd, int *sock, struct ring_buff ** rb);
+extern void cleanup_system(struct system_data * sd, int *sock, struct ring_buff ** rb);
 
 #endif				/* _NET_BOOTSTRAP_H_ */
