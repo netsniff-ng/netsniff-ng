@@ -193,16 +193,19 @@ void bind_dev_to_rx_ring(int sock, int ifindex, ring_buff_t * rb)
  * @rb:                     ring buffer
  * @pfd:                    file descriptor for polling
  */
-void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd *pfd)
+void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb)
 {
 	int ret, foo, i = 0;
+	struct pollfd pfd = {0};
 
 	pthread_t progress;
 
 	assert(rb);
-	assert(pfd);
 	assert(sd);
 
+	pfd.fd = sock;
+	pfd.events = POLLIN|POLLRDNORM|POLLERR;
+	
 	info("--- Listening ---\n\n");
 
 	if (!sd->print_pkt)
@@ -272,7 +275,7 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 			mem_notify_kernel_for_rx(&(fm->tp_h));
 		}
 
-		while ((ret = poll(pfd, 1, sd->blocking_mode)) <= 0) {
+		while ((ret = poll(&pfd, 1, sd->blocking_mode)) <= 0) {
 			if (sigint) {
 				printf("Got SIGINT here!\n");
 
@@ -283,15 +286,15 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 			}
 		}
 
-		if (ret > 0 && (pfd->revents & (POLLHUP | POLLRDHUP | POLLERR | POLLNVAL))) {
-			if (pfd->revents & (POLLHUP | POLLRDHUP)) {
+		if (ret > 0 && (pfd.revents & (POLLHUP | POLLRDHUP | POLLERR | POLLNVAL))) {
+			if (pfd.revents & (POLLHUP | POLLRDHUP)) {
 				err("Hangup on socket occured");
 				
 				if (!sd->print_pkt)
 					disable_print_progress_spinner();
 
 				return;
-			} else if (pfd->revents & POLLERR) {
+			} else if (pfd.revents & POLLERR) {
 				/* recv is more specififc on the error */
 				errno = 0;
 				if (recv(sock, &foo, sizeof(foo), MSG_PEEK) != -1)
@@ -306,7 +309,7 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb, struct pollfd
 					disable_print_progress_spinner();
 
 				return;
-			} else if (pfd->revents & POLLNVAL) {
+			} else if (pfd.revents & POLLNVAL) {
 				err("Invalid polling request on socket");
 
 				if (!sd->print_pkt)
