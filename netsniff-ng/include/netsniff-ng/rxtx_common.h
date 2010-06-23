@@ -52,14 +52,14 @@ static inline void prepare_polling(int sock, struct pollfd *pfd)
 
 	pfd->fd = sock;
 	pfd->revents = 0;
-	pfd->events = POLLIN|POLLRDNORM|POLLOUT|POLLWRNORM|POLLERR;
+	pfd->events = POLLIN | POLLRDNORM | POLLOUT | POLLWRNORM | POLLERR;
 }
 
 /**
  * alloc_frame_buffer - Allocates frame buffer
  * @rb:                ring buff struct
  */
-static inline void alloc_frame_buffer(struct ring_buff * rb)
+static inline void alloc_frame_buffer(struct ring_buff *rb)
 {
 	int i = 0;
 

@@ -22,7 +22,7 @@
 
 #include <stdint.h>
 
-struct ether_type{
+struct ether_type {
 	uintptr_t id;
 	char *type;
 };

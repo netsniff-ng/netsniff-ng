@@ -37,7 +37,7 @@
  * Hash function API
  */
 
-int hashtable_init(struct hashtable ** ht, size_t size, struct hashtable_callbacks * f)
+int hashtable_init(struct hashtable **ht, size_t size, struct hashtable_callbacks *f)
 {
 	if (ht == NULL || f == NULL || size == 0)
 		return -EINVAL;
@@ -65,7 +65,7 @@ int hashtable_init(struct hashtable ** ht, size_t size, struct hashtable_callbac
 	return 0;
 }
 
-void hashtable_destroy(struct hashtable * ht)
+void hashtable_destroy(struct hashtable *ht)
 {
 	int i;
 	struct hashtable_bucket *hb, *hb_prev;
@@ -85,7 +85,7 @@ void hashtable_destroy(struct hashtable * ht)
 	free(ht);
 }
 
-void *hashtable_insert(struct hashtable * ht, void * key, void *data)
+void *hashtable_insert(struct hashtable *ht, void *key, void *data)
 {
 	uintptr_t val;
 	struct hashtable_bucket *hb;
@@ -113,7 +113,7 @@ void *hashtable_insert(struct hashtable * ht, void * key, void *data)
 	return data;
 }
 
-void *hashtable_find(struct hashtable * ht, void *key)
+void *hashtable_find(struct hashtable *ht, void *key)
 {
 	uintptr_t val;
 	struct hashtable_bucket *hb;
@@ -129,7 +129,7 @@ void *hashtable_find(struct hashtable * ht, void *key)
 	return NULL;
 }
 
-void *hashtable_delete(struct hashtable * ht, void *key)
+void *hashtable_delete(struct hashtable *ht, void *key)
 {
 	uintptr_t val;
 	struct hashtable_bucket *hb, *hb_prev;
@@ -158,7 +158,7 @@ void *hashtable_delete(struct hashtable * ht, void *key)
 	return data;
 }
 
-int hashtable_foreach(struct hashtable * ht, void (*callback) (void *key, void *data))
+int hashtable_foreach(struct hashtable *ht, void (*callback) (void *key, void *data))
 {
 	int i;
 	struct hashtable_bucket *hb;
@@ -295,10 +295,10 @@ void ports_udp_destroy(void)
 const char *ports_udp_find(uint16_t port)
 {
 	uintptr_t key = 0;
-	uint8_t *keyp = (uint8_t *) &key;
+	uint8_t *keyp = (uint8_t *) & key;
 
 	keyp[3] = (port >> 8) & 0xFF;
-	keyp[2] = (port)      & 0xFF;
+	keyp[2] = (port) & 0xFF;
 	key = ntohl(key);
 
 	return hashtable_find(ports_udp_db, (void *)key);
@@ -344,10 +344,10 @@ void ports_tcp_destroy(void)
 const char *ports_tcp_find(uint16_t port)
 {
 	uintptr_t key = 0;
-	uint8_t *keyp = (uint8_t *) &key;
+	uint8_t *keyp = (uint8_t *) & key;
 
 	keyp[3] = (port >> 8) & 0xFF;
-	keyp[2] = (port)      & 0xFF;
+	keyp[2] = (port) & 0xFF;
 	key = ntohl(key);
 
 	return hashtable_find(ports_tcp_db, (void *)key);
@@ -394,10 +394,10 @@ const char *ether_types_find(uint16_t type)
 {
 	char *type_str;
 	uintptr_t key = 0;
-	uint8_t *keyp = (uint8_t *) &key;
+	uint8_t *keyp = (uint8_t *) & key;
 
 	keyp[3] = (type >> 8) & 0xFF;
-	keyp[2] = (type)      & 0xFF;
+	keyp[2] = (type) & 0xFF;
 	key = ntohl(key);
 
 	type_str = hashtable_find(ether_types_db, (void *)key);
@@ -411,10 +411,10 @@ const char *ether_types_find_less(uint16_t type)
 {
 	char *type_str;
 	uintptr_t key = 0;
-	uint8_t *keyp = (uint8_t *) &key;
+	uint8_t *keyp = (uint8_t *) & key;
 
 	keyp[3] = (type >> 8) & 0xFF;
-	keyp[2] = (type)      & 0xFF;
+	keyp[2] = (type) & 0xFF;
 	key = ntohl(key);
 
 	type_str = hashtable_find(ether_types_db, (void *)key);
@@ -423,4 +423,3 @@ const char *ether_types_find_less(uint16_t type)
 
 	return type_str;
 }
-

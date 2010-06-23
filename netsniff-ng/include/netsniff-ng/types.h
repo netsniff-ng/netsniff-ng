@@ -36,7 +36,7 @@ struct ring_buff {
 	struct sockaddr_ll params;
 	struct tpacket_req layout;
 	struct iovec *frames;
-	uint8_t * buffer;
+	uint8_t *buffer;
 	uint32_t len;
 };
 

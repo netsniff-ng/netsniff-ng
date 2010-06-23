@@ -22,7 +22,7 @@
 
 #include <stdint.h>
 
-struct port_tcp{
+struct port_tcp {
 	uintptr_t id;
 	char *port;
 };

@@ -121,15 +121,13 @@ static void inline dump_payload_char_all(const uint8_t * const rbb, int len, int
 
 void reduced_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 {
-	uint16_t l4_type = 0;	
+	uint16_t l4_type = 0;
 	struct packet pkt;
-	
+
 	parse_packet(rbb, tp->tp_len, &pkt);
 
-	info("%d Byte, %u.%u s, %s%s%s, ", tp->tp_len, tp->tp_sec, tp->tp_usec, 
-					   colorize_start(bold),
-					   ether_types_find_less(pkt.ethernet_header->h_proto),
-					   colorize_end());
+	info("%d Byte, %u.%u s, %s%s%s, ", tp->tp_len, tp->tp_sec, tp->tp_usec,
+	     colorize_start(bold), ether_types_find_less(pkt.ethernet_header->h_proto), colorize_end());
 
 	switch (get_ethertype(pkt.ethernet_header)) {
 	case ETH_P_8021Q:
@@ -171,7 +169,7 @@ void reduced_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 	default:
 		info("\n");
 		break;
-	}	
+	}
 }
 
 static regex_t *regex = NULL;
@@ -275,7 +273,7 @@ void payload_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 
 	parse_packet(rbb, tp->tp_len, &pkt);
 	info("   ");
-	if(pkt.payload_len != 0)
+	if (pkt.payload_len != 0)
 		dump_hex(pkt.payload, pkt.payload_len, tty_len - 20, 0);
 	else
 		info("(no payload)");
@@ -294,7 +292,7 @@ void all_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 	info("\n\n");
 }
 
-static inline void __versatile_header_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, struct packet * pkt)
+static inline void __versatile_header_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, struct packet *pkt)
 {
 	uint16_t l4_type = 0;
 
@@ -373,10 +371,10 @@ void versatile_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 	info("\n");
 }
 
-void display_packets(struct system_data * sd)
+void display_packets(struct system_data *sd)
 {
 	struct tpacket_hdr header;
-	uint8_t buff[TPACKET_ALIGNMENT << 7] = {0};
+	uint8_t buff[TPACKET_ALIGNMENT << 7] = { 0 };
 
 	assert(sd);
 

@@ -72,9 +72,9 @@ struct system_data {
 	unsigned int ring_size;
 };
 
-extern void init_configuration(struct system_data * config);
-extern void set_configuration(int argc, char **argv, struct system_data * sd);
-extern void check_config(struct system_data * sd);
-extern void clean_config(struct system_data * sd);
+extern void init_configuration(struct system_data *config);
+extern void set_configuration(int argc, char **argv, struct system_data *sd);
+extern void check_config(struct system_data *sd);
+extern void clean_config(struct system_data *sd);
 
 #endif				/* _NET_CONFIG_H_ */

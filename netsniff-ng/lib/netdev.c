@@ -392,7 +392,7 @@ static int get_nic_irq_number_proc(const char *dev)
 {
 	/* Since fetching IRQ numbers from SIOCGIFMAP is deprecated and not
 	   supported anymore, we need to grab them from procfs */
-	
+
 	/* XXX Mhh... I think it would cleverer to read our 
 	 * info from /sys/class/net/eth0/device/irq 
 	 */
@@ -404,7 +404,7 @@ static int get_nic_irq_number_proc(const char *dev)
 	assert_dev_name(dev);
 
 	/* We exclude lo! */
-	if(!strncmp("lo", dev, strlen("lo")))
+	if (!strncmp("lo", dev, strlen("lo")))
 		return -1;
 
 	FILE *fp = fopen("/proc/interrupts", "r");
@@ -417,10 +417,10 @@ static int get_nic_irq_number_proc(const char *dev)
 
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
-		if(strstr(buff, dev) == NULL)
+		if (strstr(buff, dev) == NULL)
 			continue;
 		buffp = buff;
-		while(*buffp != ':') {
+		while (*buffp != ':') {
 			buffp++;
 		}
 		*buffp = 0;
@@ -447,7 +447,7 @@ int bind_nic_interrupts_to_cpu(int intr, int cpu)
 	 */
 
 	/* Note: first CPU begins with CPU 0 */
-	if(intr < 0 || cpu < 0)
+	if (intr < 0 || cpu < 0)
 		return -EINVAL;
 
 	/* smp_affinity starts counting with CPU 1, 2, ... */
@@ -460,8 +460,8 @@ int bind_nic_interrupts_to_cpu(int intr, int cpu)
 		return -ENOENT;
 	}
 
-	sprintf(buff, "%d", cpu);	
-	ret = fwrite(buff, sizeof(buff), 1, fp);	
+	sprintf(buff, "%d", cpu);
+	ret = fwrite(buff, sizeof(buff), 1, fp);
 
 	fclose(fp);
 	return (ret > 0 ? 0 : ret);
@@ -500,14 +500,14 @@ short get_nic_flags(const char *dev)
  * @dev:              device name
  * @mac:              Flags to set
  */
-void set_nic_flags(const char * dev, const short nic_flags)
+void set_nic_flags(const char *dev, const short nic_flags)
 {
 	int ret;
 	int sock;
 	struct ifreq ethreq;
 
 	assert_dev_name(dev);
-	
+
 	sock = get_af_socket(AF_INET);
 
 	memset(&ethreq, 0, sizeof(ethreq));
@@ -890,4 +890,3 @@ int parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 	/* bpf_validate() returns 0 on failiure */
 	return (bpf_validate(*bpf, *len));
 }
-

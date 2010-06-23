@@ -27,7 +27,7 @@
 #include <netsniff-ng/ringbuff.h>
 #include <netsniff-ng/macros.h>
 
-int ringbuffer_init(struct ringbuffer ** rb, size_t slots)
+int ringbuffer_init(struct ringbuffer **rb, size_t slots)
 {
 	size_t i, j, rc = 0;
 
@@ -77,7 +77,7 @@ int ringbuffer_init(struct ringbuffer ** rb, size_t slots)
 	return rc;
 }
 
-void ringbuffer_cleanup(struct ringbuffer * rb)
+void ringbuffer_cleanup(struct ringbuffer *rb)
 {
 	size_t i;
 
@@ -89,7 +89,7 @@ void ringbuffer_cleanup(struct ringbuffer * rb)
 	free(rb);
 }
 
-int ringbuffer_put(struct ringbuffer * rb, struct ringbuffer_user * rb_data)
+int ringbuffer_put(struct ringbuffer *rb, struct ringbuffer_user *rb_data)
 {
 	if (rb == NULL || rb_data == NULL)
 		return -EINVAL;
@@ -110,7 +110,7 @@ int ringbuffer_put(struct ringbuffer * rb, struct ringbuffer_user * rb_data)
 	return 0;
 }
 
-int ringbuffer_get(struct ringbuffer * rb, struct ringbuffer_user * rb_data)
+int ringbuffer_get(struct ringbuffer *rb, struct ringbuffer_user *rb_data)
 {
 	if (rb == NULL || rb_data == NULL)
 		return -EINVAL;

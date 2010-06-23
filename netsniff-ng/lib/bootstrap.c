@@ -78,7 +78,7 @@ void softirq_handler(int number)
 	}
 }
 
-static void __init_stage_common(struct system_data * sd, int *sock, struct ring_buff ** rb)
+static void __init_stage_common(struct system_data *sd, int *sock, struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -101,7 +101,7 @@ static void __init_stage_common(struct system_data * sd, int *sock, struct ring_
 	memset(&netstat, 0, sizeof(netstat));
 }
 
-static void __init_stage_daemon(struct system_data * sd, int *sock, struct ring_buff ** rb)
+static void __init_stage_daemon(struct system_data *sd, int *sock, struct ring_buff **rb)
 {
 	int ret;
 
@@ -124,7 +124,7 @@ static void __init_stage_daemon(struct system_data * sd, int *sock, struct ring_
 	}
 }
 
-static void __init_stage_fallback_dev(struct system_data * sd, int *sock, struct ring_buff ** rb)
+static void __init_stage_fallback_dev(struct system_data *sd, int *sock, struct ring_buff **rb)
 {
 	int i, stmp;
 	char dev_buff[1024];
@@ -190,7 +190,7 @@ static void __init_stage_fallback_dev(struct system_data * sd, int *sock, struct
 	info("No device specified, using `%s`.\n\n", sd->dev);
 }
 
-static void __init_stage_mode_common(struct system_data * sd, int *sock, struct ring_buff ** rb)
+static void __init_stage_mode_common(struct system_data *sd, int *sock, struct ring_buff **rb)
 {
 	int intr;
 
@@ -203,7 +203,7 @@ static void __init_stage_mode_common(struct system_data * sd, int *sock, struct 
 	if (sd->mode == MODE_READ)
 		return;
 
-	(*rb) = (struct ring_buff *) malloc(sizeof(**rb));
+	(*rb) = (struct ring_buff *)malloc(sizeof(**rb));
 	if ((*rb) == NULL) {
 		err("Cannot allocate ring buffer");
 		exit(EXIT_FAILURE);
@@ -211,7 +211,7 @@ static void __init_stage_mode_common(struct system_data * sd, int *sock, struct 
 
 	memset((*rb), 0, sizeof(**rb));
 
-	if(sd->promisc_mode != PROMISC_MODE_NONE) {
+	if (sd->promisc_mode != PROMISC_MODE_NONE) {
 		/* 
 		 * Save previous nic flags to be able
 		 * restore them at exit time.
@@ -223,16 +223,16 @@ static void __init_stage_mode_common(struct system_data * sd, int *sock, struct 
 	}
 
 	/* Bind NIC RX/TX INTR to CPU if possible */
-	if(sd->bind_cpu >= 0 && sd->no_touch_irq != PROC_NO_TOUCHIRQ) {
+	if (sd->bind_cpu >= 0 && sd->no_touch_irq != PROC_NO_TOUCHIRQ) {
 		intr = get_nic_irq_number(sd->dev);
-		if(intr >= 0) {
+		if (intr >= 0) {
 			bind_nic_interrupts_to_cpu(intr, sd->bind_cpu);
 			info("Moved %s RX/TX IRQ (%d) affinity to CPU%d.\n\n", sd->dev, intr, sd->bind_cpu);
 		}
 	}
 }
 
-static void __init_stage_bpf(struct system_data * sd, int *sock, struct ring_buff ** rb)
+static void __init_stage_bpf(struct system_data *sd, int *sock, struct ring_buff **rb)
 {
 	int bpf_len = 0;
 	struct sock_filter *bpf = NULL;
@@ -270,7 +270,7 @@ static void __init_stage_bpf(struct system_data * sd, int *sock, struct ring_buf
 	bpf_dump_all(sd->bpf, bpf_len);
 }
 
-static void __init_stage_rx_ring(struct system_data * sd, int *sock, struct ring_buff ** rb)
+static void __init_stage_rx_ring(struct system_data *sd, int *sock, struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -285,7 +285,7 @@ static void __init_stage_rx_ring(struct system_data * sd, int *sock, struct ring
 	alloc_frame_buffer((*rb));
 }
 
-static void __init_stage_tx_ring(struct system_data * sd, int *sock, struct ring_buff ** rb)
+static void __init_stage_tx_ring(struct system_data *sd, int *sock, struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -303,7 +303,7 @@ static void __init_stage_tx_ring(struct system_data * sd, int *sock, struct ring
 	if (pcap_validate_header(sd->pcap_fd) < 0)
 		exit(EXIT_FAILURE);
 
-	if(sd->mode == MODE_READ)
+	if (sd->mode == MODE_READ)
 		return;
 
 	create_virt_tx_ring((*sock), (*rb), sd->dev, sd->ring_size);
@@ -312,7 +312,7 @@ static void __init_stage_tx_ring(struct system_data * sd, int *sock, struct ring
 	alloc_frame_buffer((*rb));
 }
 
-static void __init_stage_hashtables(struct system_data * sd, int *sock, struct ring_buff ** rb)
+static void __init_stage_hashtables(struct system_data *sd, int *sock, struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -324,7 +324,7 @@ static void __init_stage_hashtables(struct system_data * sd, int *sock, struct r
 	ether_types_init();
 }
 
-static void __init_stage_timer(struct system_data * sd, int *sock, struct ring_buff ** rb)
+static void __init_stage_timer(struct system_data *sd, int *sock, struct ring_buff **rb)
 {
 #if 0
 	int ret;
@@ -389,7 +389,7 @@ static void header(void)
  * @rb:         ring buffer
  * @pfd:        file descriptor for polling
  */
-int init_system(struct system_data * sd, int *sock, struct ring_buff ** rb)
+int init_system(struct system_data *sd, int *sock, struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -414,7 +414,7 @@ int init_system(struct system_data * sd, int *sock, struct ring_buff ** rb)
 	return 0;
 }
 
-static void __exit_stage_common(struct system_data * sd, int *sock, struct ring_buff ** rb)
+static void __exit_stage_common(struct system_data *sd, int *sock, struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -422,7 +422,7 @@ static void __exit_stage_common(struct system_data * sd, int *sock, struct ring_
 	/* NOP */
 }
 
-static void __exit_stage_daemon(struct system_data * sd, int *sock, struct ring_buff ** rb)
+static void __exit_stage_daemon(struct system_data *sd, int *sock, struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -434,7 +434,7 @@ static void __exit_stage_daemon(struct system_data * sd, int *sock, struct ring_
 	undaemonize(sd->pidfile);
 }
 
-static void __exit_stage_fallback_dev(struct system_data * sd, int *sock, struct ring_buff ** rb)
+static void __exit_stage_fallback_dev(struct system_data *sd, int *sock, struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -442,7 +442,7 @@ static void __exit_stage_fallback_dev(struct system_data * sd, int *sock, struct
 	/* NOP */
 }
 
-static void __exit_stage_mode_common(struct system_data * sd, int *sock, struct ring_buff ** rb)
+static void __exit_stage_mode_common(struct system_data *sd, int *sock, struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -450,14 +450,14 @@ static void __exit_stage_mode_common(struct system_data * sd, int *sock, struct 
 
 	if (sd->mode == MODE_READ)
 		return;
-	
-	if(sd->promisc_mode != PROMISC_MODE_NONE) {
+
+	if (sd->promisc_mode != PROMISC_MODE_NONE) {
 		/* Restore flags which were set at program start */
 		set_nic_flags(sd->dev, sd->prev_nic_flags);
 	}
 }
 
-static void __exit_stage_bpf(struct system_data * sd, int *sock, struct ring_buff ** rb)
+static void __exit_stage_bpf(struct system_data *sd, int *sock, struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -473,7 +473,7 @@ static void __exit_stage_bpf(struct system_data * sd, int *sock, struct ring_buf
 		free(sd->bpf);
 }
 
-static void __exit_stage_rx_ring(struct system_data * sd, int *sock, struct ring_buff ** rb)
+static void __exit_stage_rx_ring(struct system_data *sd, int *sock, struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -486,7 +486,7 @@ static void __exit_stage_rx_ring(struct system_data * sd, int *sock, struct ring
 	destroy_virt_rx_ring((*sock), (*rb));
 }
 
-static void __exit_stage_tx_ring(struct system_data * sd, int *sock, struct ring_buff ** rb)
+static void __exit_stage_tx_ring(struct system_data *sd, int *sock, struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -499,7 +499,7 @@ static void __exit_stage_tx_ring(struct system_data * sd, int *sock, struct ring
 	destroy_virt_tx_ring((*sock), (*rb));
 }
 
-static void __exit_stage_hashtables(struct system_data * sd, int *sock, struct ring_buff ** rb)
+static void __exit_stage_hashtables(struct system_data *sd, int *sock, struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -511,7 +511,7 @@ static void __exit_stage_hashtables(struct system_data * sd, int *sock, struct r
 	ether_types_destroy();
 }
 
-static void __exit_stage_timer(struct system_data * sd, int *sock, struct ring_buff ** rb)
+static void __exit_stage_timer(struct system_data *sd, int *sock, struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -520,7 +520,7 @@ static void __exit_stage_timer(struct system_data * sd, int *sock, struct ring_b
 	net_stat(*sock);
 }
 
-static void __exit_stage_last(struct system_data * sd, int *sock, struct ring_buff ** rb)
+static void __exit_stage_last(struct system_data *sd, int *sock, struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -556,7 +556,7 @@ static void footer(void)
  * @sock:          socket
  * @rb:            ring buffer
  */
-void cleanup_system(struct system_data * sd, int *sock, struct ring_buff ** rb)
+void cleanup_system(struct system_data *sd, int *sock, struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);

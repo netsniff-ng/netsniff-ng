@@ -70,7 +70,7 @@ static struct option long_options[] = {
 	{0, 0, 0, 0}
 };
 
-void init_configuration(struct system_data * sd)
+void init_configuration(struct system_data *sd)
 {
 	assert(sd);
 	memset(sd, 0, sizeof(*sd));
@@ -85,11 +85,11 @@ void init_configuration(struct system_data * sd)
 	sd->bind_cpu = -1;
 }
 
-void set_configuration(int argc, char **argv, struct system_data * sd)
+void set_configuration(int argc, char **argv, struct system_data *sd)
 {
 	int c, sl, slt;
 	int opt_idx;
-	
+
 	char *optargp = NULL;
 
 	assert(argv);
@@ -127,9 +127,9 @@ void set_configuration(int argc, char **argv, struct system_data * sd)
 			break;
 		case 'S':
 			optargp = optarg;
-			
-			for(slt = sl = strlen(optarg); sl > 0; --sl) {
-				if(!isdigit(optarg[slt - sl]))
+
+			for (slt = sl = strlen(optarg); sl > 0; --sl) {
+				if (!isdigit(optarg[slt - sl]))
 					break;
 				optargp++;
 			}
@@ -145,7 +145,7 @@ void set_configuration(int argc, char **argv, struct system_data * sd)
 				warn("Syntax error in ring size param!\n");
 				exit(EXIT_FAILURE);
 			}
-			
+
 			memset(optargp, 0, 2);
 			sd->ring_size *= atoi(optarg);
 			break;
@@ -276,7 +276,7 @@ void set_configuration(int argc, char **argv, struct system_data * sd)
 	}
 }
 
-void check_config(struct system_data * sd)
+void check_config(struct system_data *sd)
 {
 	assert(sd);
 
@@ -285,7 +285,7 @@ void check_config(struct system_data * sd)
 	}
 }
 
-void clean_config(struct system_data * sd)
+void clean_config(struct system_data *sd)
 {
 	assert(sd);
 

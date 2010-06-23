@@ -58,27 +58,27 @@ static void inline print_tcphdr(struct tcphdr *tcp)
 	uint16_t tcpd = ntohs(tcp->dest);
 
 	/* XXX: Is there a better way to determine? */
-	if(tcps < tcpd && tcps < 1024) {
-		port_desc = (char *) ports_tcp_find(tcp->source);
-	} else if(tcpd < tcps && tcpd < 1024) {
-		port_desc = (char *) ports_tcp_find(tcp->dest);	
+	if (tcps < tcpd && tcps < 1024) {
+		port_desc = (char *)ports_tcp_find(tcp->source);
+	} else if (tcpd < tcps && tcpd < 1024) {
+		port_desc = (char *)ports_tcp_find(tcp->dest);
 	} else {
-		tmp1 = (char *) ports_tcp_find(tcp->source);
-		tmp2 = (char *) ports_tcp_find(tcp->dest);
-		
-		if(tmp1 && !tmp2) {
+		tmp1 = (char *)ports_tcp_find(tcp->source);
+		tmp2 = (char *)ports_tcp_find(tcp->dest);
+
+		if (tmp1 && !tmp2) {
 			port_desc = tmp1;
-		} else if(!tmp1 && tmp2) {
+		} else if (!tmp1 && tmp2) {
 			port_desc = tmp2;
-		} else if(tmp1 && tmp2) {
-			if(tcps < tcpd)
+		} else if (tmp1 && tmp2) {
+			if (tcps < tcpd)
 				port_desc = tmp1;
 			else
 				port_desc = tmp2;
 		}
 	}
 
-	if(!port_desc)
+	if (!port_desc)
 		port_desc = "Unknown";
 
 	info(" [ TCP ");
@@ -142,27 +142,27 @@ static void inline print_tcphdr_less(struct tcphdr *tcp)
 	uint16_t tcpd = ntohs(tcp->dest);
 
 	/* XXX: Is there a better way to determine? */
-	if(tcps < tcpd && tcps < 1024) {
-		port_desc = (char *) ports_tcp_find(tcp->source);
-	} else if(tcpd < tcps && tcpd < 1024) {
-		port_desc = (char *) ports_tcp_find(tcp->dest);	
+	if (tcps < tcpd && tcps < 1024) {
+		port_desc = (char *)ports_tcp_find(tcp->source);
+	} else if (tcpd < tcps && tcpd < 1024) {
+		port_desc = (char *)ports_tcp_find(tcp->dest);
 	} else {
-		tmp1 = (char *) ports_tcp_find(tcp->source);
-		tmp2 = (char *) ports_tcp_find(tcp->dest);
-		
-		if(tmp1 && !tmp2) {
+		tmp1 = (char *)ports_tcp_find(tcp->source);
+		tmp2 = (char *)ports_tcp_find(tcp->dest);
+
+		if (tmp1 && !tmp2) {
 			port_desc = tmp1;
-		} else if(!tmp1 && tmp2) {
+		} else if (!tmp1 && tmp2) {
 			port_desc = tmp2;
-		} else if(tmp1 && tmp2) {
-			if(tcps < tcpd)
+		} else if (tmp1 && tmp2) {
+			if (tcps < tcpd)
 				port_desc = tmp1;
 			else
 				port_desc = tmp2;
 		}
 	}
 
-	if(!port_desc)
+	if (!port_desc)
 		port_desc = "U";
 
 	info("TCP, ");

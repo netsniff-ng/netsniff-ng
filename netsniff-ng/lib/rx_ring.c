@@ -57,7 +57,7 @@
  * @sock:                socket
  * @rb:                  ring buffer
  */
-void destroy_virt_rx_ring(int sock, struct ring_buff * rb)
+void destroy_virt_rx_ring(int sock, struct ring_buff *rb)
 {
 	assert(rb);
 
@@ -78,7 +78,7 @@ void destroy_virt_rx_ring(int sock, struct ring_buff * rb)
  * @sock:               socket
  * @rb:                 ring buffer
  */
-void create_virt_rx_ring(int sock, struct ring_buff * rb, char *ifname, unsigned int usize)
+void create_virt_rx_ring(int sock, struct ring_buff *rb, char *ifname, unsigned int usize)
 {
 	short nic_flags;
 	int ret, dev_speed;
@@ -106,12 +106,12 @@ void create_virt_rx_ring(int sock, struct ring_buff * rb, char *ifname, unsigned
 	rb->layout.tp_frame_size = TPACKET_ALIGNMENT << 7;
 
 	/* max: 15 for i386, old default: 1 << 13, now: approximated bandwidth size */
-	if(usize == 0) {
+	if (usize == 0) {
 		rb->layout.tp_block_nr = ((dev_speed * 1024 * 1024) / rb->layout.tp_block_size);
 	} else {
 		rb->layout.tp_block_nr = usize / (rb->layout.tp_block_size / 1024);
 	}
-	
+
 	rb->layout.tp_frame_nr = rb->layout.tp_block_size / rb->layout.tp_frame_size * rb->layout.tp_block_nr;
 
  __retry_sso:
@@ -144,7 +144,7 @@ void create_virt_rx_ring(int sock, struct ring_buff * rb, char *ifname, unsigned
  * @sock:             socket
  * @rb:               ring buffer
  */
-void mmap_virt_rx_ring(int sock, struct ring_buff * rb)
+void mmap_virt_rx_ring(int sock, struct ring_buff *rb)
 {
 	assert(rb);
 
@@ -164,7 +164,7 @@ void mmap_virt_rx_ring(int sock, struct ring_buff * rb)
  * @ifindex:            device number
  * @rb:                 ring buffer
  */
-void bind_dev_to_rx_ring(int sock, int ifindex, struct ring_buff * rb)
+void bind_dev_to_rx_ring(int sock, int ifindex, struct ring_buff *rb)
 {
 	int ret;
 
@@ -193,10 +193,10 @@ void bind_dev_to_rx_ring(int sock, int ifindex, struct ring_buff * rb)
  * @rb:                     ring buffer
  * @pfd:                    file descriptor for polling
  */
-void fetch_packets(struct system_data * sd, int sock, struct ring_buff * rb)
+void fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
 {
 	int ret, foo, i = 0;
-	struct pollfd pfd = {0};
+	struct pollfd pfd = { 0 };
 
 	pthread_t progress;
 
@@ -204,8 +204,8 @@ void fetch_packets(struct system_data * sd, int sock, struct ring_buff * rb)
 	assert(sd);
 
 	pfd.fd = sock;
-	pfd.events = POLLIN|POLLRDNORM|POLLERR;
-	
+	pfd.events = POLLIN | POLLRDNORM | POLLERR;
+
 	info("--- Listening ---\n\n");
 
 	if (!sd->print_pkt)
@@ -229,7 +229,7 @@ void fetch_packets(struct system_data * sd, int sock, struct ring_buff * rb)
 	while (likely(!sigint)) {
 		while (mem_notify_user_for_rx(rb->frames[i]) && likely(!sigint)) {
 			struct frame_map *fm = rb->frames[i].iov_base;
-			uint8_t * rbb = ((uint8_t *) rb->frames[i].iov_base + sizeof(*fm) + sizeof(short));
+			uint8_t *rbb = ((uint8_t *) rb->frames[i].iov_base + sizeof(*fm) + sizeof(short));
 
 			/* Check if the user wants to have a specific 
 			   packet type */
@@ -273,7 +273,7 @@ void fetch_packets(struct system_data * sd, int sock, struct ring_buff * rb)
 		if (ret > 0 && (pfd.revents & (POLLHUP | POLLRDHUP | POLLERR | POLLNVAL))) {
 			if (pfd.revents & (POLLHUP | POLLRDHUP)) {
 				err("Hangup on socket occured");
-				
+
 				if (!sd->print_pkt)
 					disable_print_progress_spinner();
 
@@ -288,7 +288,7 @@ void fetch_packets(struct system_data * sd, int sock, struct ring_buff * rb)
 				} else {
 					err("Receive error");
 				}
-				
+
 				if (!sd->print_pkt)
 					disable_print_progress_spinner();
 
@@ -307,8 +307,7 @@ void fetch_packets(struct system_data * sd, int sock, struct ring_buff * rb)
 		/* Look-ahead if current frame is status kernel, otherwise we have
 		   have incoming frames and poll spins / hangs all the time :( */
 		for (; ((struct tpacket_hdr *)rb->frames[i].iov_base)->tp_status
-		     != TP_STATUS_USER && likely(!sigint); 
-		     i = (i + 1) % rb->layout.tp_frame_nr)
+		     != TP_STATUS_USER && likely(!sigint); i = (i + 1) % rb->layout.tp_frame_nr)
 			/* NOP */ ;
 		/* Why this should be okay:
 		   1) Current frame[i] is TP_STATUS_USER:

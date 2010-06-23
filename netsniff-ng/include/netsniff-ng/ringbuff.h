@@ -29,18 +29,18 @@
 #define DEFAULT_PAYLOAD_SIZE    1500
 #define DEFAULT_MTU             DEFAULT_PAYLOAD_SIZE + ETH_HLEN
 
-struct ringbuffer_user{
+struct ringbuffer_user {
 	/* XXX: MTU size and aligned */
 	char payload[DEFAULT_MTU];
 	size_t len;
 };
 
-struct ringbuffer_chunk{
+struct ringbuffer_chunk {
 	uint8_t ch_status;
 	struct ringbuffer_user ch_user;
 };
 
-struct ringbuffer{
+struct ringbuffer {
 	size_t max_slots;
 	size_t cur_slots;
 	size_t next_free;
@@ -48,9 +48,9 @@ struct ringbuffer{
 	struct ringbuffer_chunk **ring;
 };
 
-extern int ringbuffer_init(struct ringbuffer ** rb, size_t slots);
-extern void ringbuffer_cleanup(struct ringbuffer * rb);
-extern int ringbuffer_put(struct ringbuffer * rb, struct ringbuffer_user * rb_data);
-extern int ringbuffer_get(struct ringbuffer * rb, struct ringbuffer_user * rb_data);
+extern int ringbuffer_init(struct ringbuffer **rb, size_t slots);
+extern void ringbuffer_cleanup(struct ringbuffer *rb);
+extern int ringbuffer_put(struct ringbuffer *rb, struct ringbuffer_user *rb_data);
+extern int ringbuffer_get(struct ringbuffer *rb, struct ringbuffer_user *rb_data);
 
 #endif				/* _NET_RINGBUFF_H_ */

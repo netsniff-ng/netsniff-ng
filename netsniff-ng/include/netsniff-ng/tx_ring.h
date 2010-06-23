@@ -38,12 +38,12 @@
 
 /* Function signatures */
 
-extern void destroy_virt_tx_ring(int sock, struct ring_buff * rb);
-extern void create_virt_tx_ring(int sock, struct ring_buff * rb, char *ifname, unsigned int usize);
-extern void mmap_virt_tx_ring(int sock, struct ring_buff * rb);
-extern void bind_dev_to_tx_ring(int sock, int ifindex, struct ring_buff * rb);
-extern int flush_virt_tx_ring(int sock, struct ring_buff * rb);
-extern void transmit_packets(struct system_data * sd, int sock, struct ring_buff * rb);
+extern void destroy_virt_tx_ring(int sock, struct ring_buff *rb);
+extern void create_virt_tx_ring(int sock, struct ring_buff *rb, char *ifname, unsigned int usize);
+extern void mmap_virt_tx_ring(int sock, struct ring_buff *rb);
+extern void bind_dev_to_tx_ring(int sock, int ifindex, struct ring_buff *rb);
+extern int flush_virt_tx_ring(int sock, struct ring_buff *rb);
+extern void transmit_packets(struct system_data *sd, int sock, struct ring_buff *rb);
 
 /* Inline stuff */
 
