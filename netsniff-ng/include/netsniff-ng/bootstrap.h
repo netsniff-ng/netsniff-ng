@@ -20,12 +20,10 @@
 #ifndef _NET_BOOTSTRAP_H_
 #define _NET_BOOTSTRAP_H_
 
-#include <sys/poll.h>
-
 #include <netsniff-ng/types.h>
 #include <netsniff-ng/config.h>
 
-extern int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd);
+extern int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb);
 extern void cleanup_system(system_data_t * sd, int *sock, ring_buff_t ** rb);
 
 #endif				/* _NET_BOOTSTRAP_H_ */

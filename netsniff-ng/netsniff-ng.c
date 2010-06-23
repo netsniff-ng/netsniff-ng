@@ -34,17 +34,16 @@ int main(int argc, char **argv)
 	int sock;
 	ring_buff_t *rb;
 	system_data_t sd = { 0 };
-	struct pollfd pfd = { 0 };
 
 	init_configuration(&sd);
 	set_configuration(argc, argv, &sd);
 	check_config(&sd);
 
-	init_system(&sd, &sock, &rb, &pfd);
+	init_system(&sd, &sock, &rb);
 
 	switch (sd.mode) {
 	case MODE_CAPTURE:
-		fetch_packets(&sd, sock, rb, &pfd);
+		fetch_packets(&sd, sock, rb);
 		break;
 	case MODE_REPLAY:
 		transmit_packets(&sd, sock, rb);

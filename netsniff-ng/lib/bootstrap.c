@@ -78,12 +78,11 @@ void softirq_handler(int number)
 	}
 }
 
-static void __init_stage_common(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+static void __init_stage_common(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
 	assert(sd);
 	assert(sock);
 	assert(rb);
-	assert(pfd);
 
 	/* Scheduler timeslice & prio tuning */
 	if (!sd->no_prioritization) {
@@ -102,14 +101,13 @@ static void __init_stage_common(system_data_t * sd, int *sock, ring_buff_t ** rb
 	memset(&netstat, 0, sizeof(netstat));
 }
 
-static void __init_stage_daemon(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+static void __init_stage_daemon(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
 	int ret;
 
 	assert(sd);
 	assert(sock);
 	assert(rb);
-	assert(pfd);
 
 	if (sd->sysdaemon == 0)
 		return;
@@ -126,7 +124,7 @@ static void __init_stage_daemon(system_data_t * sd, int *sock, ring_buff_t ** rb
 	}
 }
 
-static void __init_stage_fallback_dev(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+static void __init_stage_fallback_dev(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
 	int i, stmp;
 	char dev_buff[1024];
@@ -138,7 +136,6 @@ static void __init_stage_fallback_dev(system_data_t * sd, int *sock, ring_buff_t
 	assert(sd);
 	assert(sock);
 	assert(rb);
-	assert(pfd);
 
 	/* User specified device, so no work here ... */
 	if (sd->dev || sd->mode == MODE_READ)
@@ -193,14 +190,13 @@ static void __init_stage_fallback_dev(system_data_t * sd, int *sock, ring_buff_t
 	info("No device specified, using `%s`.\n\n", sd->dev);
 }
 
-static void __init_stage_mode_common(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+static void __init_stage_mode_common(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
 	int intr;
 
 	assert(sd);
 	assert(sock);
 	assert(rb);
-	assert(pfd);
 
 	(*sock) = get_pf_socket();
 
@@ -236,7 +232,7 @@ static void __init_stage_mode_common(system_data_t * sd, int *sock, ring_buff_t 
 	}
 }
 
-static void __init_stage_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+static void __init_stage_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
 	int bpf_len = 0;
 	struct sock_filter *bpf = NULL;
@@ -244,7 +240,6 @@ static void __init_stage_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb, s
 	assert(sd);
 	assert(sock);
 	assert(rb);
-	assert(pfd);
 
 	if (sd->bypass_bpf == BPF_BYPASS) {
 		info("No filter applied. Switching to `all traffic`.\n\n");
@@ -275,12 +270,11 @@ static void __init_stage_bpf(system_data_t * sd, int *sock, ring_buff_t ** rb, s
 	bpf_dump_all(sd->bpf, bpf_len);
 }
 
-static void __init_stage_rx_ring(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+static void __init_stage_rx_ring(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
 	assert(sd);
 	assert(sock);
 	assert(rb);
-	assert(pfd);
 
 	if (sd->mode == MODE_REPLAY || sd->mode == MODE_READ)
 		return;
@@ -289,15 +283,13 @@ static void __init_stage_rx_ring(system_data_t * sd, int *sock, ring_buff_t ** r
 	bind_dev_to_rx_ring((*sock), ethdev_to_ifindex(sd->dev), (*rb));
 	mmap_virt_rx_ring((*sock), (*rb));
 	alloc_frame_buffer((*rb));
-	prepare_polling((*sock), pfd);
 }
 
-static void __init_stage_tx_ring(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+static void __init_stage_tx_ring(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
 	assert(sd);
 	assert(sock);
 	assert(rb);
-	assert(pfd);
 
 	if (sd->mode == MODE_CAPTURE)
 		return;
@@ -318,15 +310,13 @@ static void __init_stage_tx_ring(system_data_t * sd, int *sock, ring_buff_t ** r
 	bind_dev_to_tx_ring((*sock), ethdev_to_ifindex(sd->dev), (*rb));
 	mmap_virt_tx_ring((*sock), (*rb));
 	alloc_frame_buffer((*rb));
-	prepare_polling((*sock), pfd);
 }
 
-static void __init_stage_hashtables(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+static void __init_stage_hashtables(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
 	assert(sd);
 	assert(sock);
 	assert(rb);
-	assert(pfd);
 
 	ieee_vendors_init();
 	ports_udp_init();
@@ -334,7 +324,7 @@ static void __init_stage_hashtables(system_data_t * sd, int *sock, ring_buff_t *
 	ether_types_init();
 }
 
-static void __init_stage_timer(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+static void __init_stage_timer(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
 #if 0
 	int ret;
@@ -343,7 +333,6 @@ static void __init_stage_timer(system_data_t * sd, int *sock, ring_buff_t ** rb,
 	assert(sd);
 	assert(sock);
 	assert(rb);
-	assert(pfd);
 
 	/* Timer settings for counter update */
 	val_r.it_value.tv_sec = (INTERVAL_COUNTER_REFR / 1000);
@@ -400,12 +389,11 @@ static void header(void)
  * @rb:         ring buffer
  * @pfd:        file descriptor for polling
  */
-int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd *pfd)
+int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb)
 {
 	assert(sd);
 	assert(sock);
 	assert(rb);
-	assert(pfd);
 
 	/* We are only allowed to do these nasty things as root ;) */
 	check_for_root();
@@ -413,15 +401,15 @@ int init_system(system_data_t * sd, int *sock, ring_buff_t ** rb, struct pollfd 
 	/* Print program header */
 	header();
 
-	__init_stage_common(sd, sock, rb, pfd);
-	__init_stage_daemon(sd, sock, rb, pfd);
-	__init_stage_fallback_dev(sd, sock, rb, pfd);
-	__init_stage_mode_common(sd, sock, rb, pfd);
-	__init_stage_bpf(sd, sock, rb, pfd);
-	__init_stage_rx_ring(sd, sock, rb, pfd);
-	__init_stage_tx_ring(sd, sock, rb, pfd);
-	__init_stage_hashtables(sd, sock, rb, pfd);
-	__init_stage_timer(sd, sock, rb, pfd);
+	__init_stage_common(sd, sock, rb);
+	__init_stage_daemon(sd, sock, rb);
+	__init_stage_fallback_dev(sd, sock, rb);
+	__init_stage_mode_common(sd, sock, rb);
+	__init_stage_bpf(sd, sock, rb);
+	__init_stage_rx_ring(sd, sock, rb);
+	__init_stage_tx_ring(sd, sock, rb);
+	__init_stage_hashtables(sd, sock, rb);
+	__init_stage_timer(sd, sock, rb);
 
 	return 0;
 }
