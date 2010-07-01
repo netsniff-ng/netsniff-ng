@@ -106,7 +106,7 @@
 #define		BPF_TXA		0x80
 
 #define EXTRACT_SHORT(packet)	((unsigned short) ntohs(*(unsigned short *) packet))
-#define EXTRACT_LONG(packet)		(ntohl(*(uint32_t *) packet))
+#define EXTRACT_LONG(packet)		(ntohl(*(unsigned long *) packet))
 
 /*
  * Number of scratch memory words for: BPF_ST and BPF_STX
