@@ -20,50 +20,60 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <pthread.h>
-#include <limits.h>
+#include <assert.h>
 
 #include <netsniff-ng/cursor.h>
 #include <netsniff-ng/macros.h>
 
-static char spinning_chars[] = { '|', '/', '-', '\\' };
+#define SPINNER_SLEEP_TIME	250000
 
-static int spinning_count = 0;
+static const char spinning_chars[] = { '|', '/', '-', '\\' };
 
-volatile sig_atomic_t cursor_prog_intr = 0;
-static volatile sig_atomic_t cursor_prog_trigger = 0;
-
-void *print_progress_spinner_static(void *msg)
+void spinner_trigger_event(struct spinner_thread_context * ctx)
 {
-	info("%s", (char *)msg);
-
-	while (likely(!cursor_prog_intr)) {
-		info("\b%c", spinning_chars[spinning_count++ % sizeof(spinning_chars)]);
-		fflush(stdout);
-		usleep(25000);
-	}
-
-	pthread_exit(0);
+	ctx->events++;
 }
 
-void *print_progress_spinner_dynamic(void *msg)
+void spinner_set_msg(struct spinner_thread_context * ctx, const char * msg)
 {
-	unsigned int idle = 0;
-	info("%s", (char *)msg);
+	assert(ctx);
+	assert(msg);
 
-	while (likely(!cursor_prog_intr)) {
-		info("\b%c", spinning_chars[spinning_count++ % sizeof(spinning_chars)]);
+	strncpy(ctx->msg, msg, sizeof(ctx->msg) - 1);
+}
+
+void spinner_cancel(struct spinner_thread_context * ctx)
+{
+	if (ctx->active)
+		pthread_cancel(ctx->thread);
+}
+
+int spinner_create(struct spinner_thread_context * ctx)
+{
+	return (pthread_create(&ctx->thread, NULL, print_progress_spinner, ctx));
+}
+
+void * print_progress_spinner(void * arg)
+{
+	uint8_t	spin_count = 0;
+	uint64_t prev_events = 0;
+	struct spinner_thread_context * ctx = (struct spinner_thread_context *) arg;
+
+	ctx->active = 1;
+
+	info("%s", ctx->msg);
+
+	while (1) {
+		info("\b%c", spinning_chars[spin_count]);
 		fflush(stdout);
-		while (likely(!cursor_prog_trigger)) {
-			if (idle++ % UINT_MAX)
-				break;
+		usleep(SPINNER_SLEEP_TIME);
+
+		if (prev_events != ctx->events)
+		{
+			spin_count++;
+			spin_count %= sizeof(spinning_chars);
+			prev_events = ctx->events;
 		}
-		cursor_prog_trigger = 0;
 	}
-
-	pthread_exit(0);
 }
 
-void print_progress_spinner_dynamic_trigger(void)
-{
-	cursor_prog_trigger = 0;
-}

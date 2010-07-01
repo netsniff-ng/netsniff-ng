@@ -330,20 +330,16 @@ static void *flush_virt_tx_ring_thread(void *packed)
 	struct frame_map *fm;
 	struct tpacket_hdr *header;
 	struct packed_tx_data *ptd;
+	struct spinner_thread_context spinner_ctx = {0};
+
+	spinner_set_msg(&spinner_ctx, DEFAULT_TX_RING_SILENT_MESSAGE);
 
 	ptd = (struct packed_tx_data *)packed;
 
 	for (; likely(!send_intr); errors = 0) {
-#if 0
-		while (flushlock_trylock(ring_lock)) {
-			;
-		}
-		flushlock_lock(ring_lock);
-#endif
-		enable_print_progress_spinner();
-		ret = pthread_create(&progress, NULL, print_progress_spinner_static, "Transmit ring flushing ... |");
+		ret = spinner_create(&spinner_ctx);
 		if (ret) {
-			err("Cannot create thread");
+			err("Cannot create spinner thread");
 			exit(EXIT_FAILURE);
 		}
 
@@ -352,7 +348,7 @@ static void *flush_virt_tx_ring_thread(void *packed)
 			exit(EXIT_FAILURE);
 		}
 
-		disable_print_progress_spinner();
+		spinner_trigger_event(&spinner_ctx);
 
 		for (i = 0; i < ptd->rb->layout.tp_frame_nr; i++) {
 			fm = ptd->rb->frames[i].iov_base;
@@ -383,6 +379,7 @@ static void *flush_virt_tx_ring_thread(void *packed)
 		}
 	}
 
+	spinner_cancel(&spinner_ctx);
 	pthread_exit(0);
 }
 

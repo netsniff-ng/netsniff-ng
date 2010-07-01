@@ -36,6 +36,8 @@
 # undef __HAVE_TX_RING__
 #endif				/* LINUX_VERSION_CODE */
 
+#define DEFAULT_TX_RING_SILENT_MESSAGE	"Transmit ring flushing ... |"
+
 /* Function signatures */
 
 extern void destroy_virt_tx_ring(int sock, struct ring_buff *rb);

@@ -198,7 +198,9 @@ void fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
 	int ret, foo, i = 0;
 	struct pollfd pfd = { 0 };
 
-	pthread_t progress;
+	struct spinner_thread_context spinner_ctx = {0};
+
+	spinner_set_msg(&spinner_ctx, DEFAULT_RX_RING_SILENT_MESSAGE);
 
 	assert(rb);
 	assert(sd);
@@ -207,22 +209,16 @@ void fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
 	pfd.events = POLLIN | POLLRDNORM | POLLERR;
 
 	info("--- Listening ---\n\n");
-
-	if (!sd->print_pkt)
-		enable_print_progress_spinner();
+	if (!sd->print_pkt) {
+		ret = spinner_create(&spinner_ctx);
+		if (ret) {
+			err("Cannot create spinner thread");
+			exit(EXIT_FAILURE);
+		}
+	}
 
 	if (sd->pcap_fd != PCAP_NO_DUMP) {
 		pcap_write_header(sd->pcap_fd, LINKTYPE_EN10MB, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
-
-		if (!sd->print_pkt) {
-			ret =
-			    pthread_create(&progress, NULL, print_progress_spinner_static,
-					   "Receive ring dumping ... |");
-			if (ret) {
-				err("Cannot create thread");
-				exit(EXIT_FAILURE);
-			}
-		}
 	}
 
 	/* This is our critical path ... */
@@ -241,7 +237,7 @@ void fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
 
 			if (sd->pcap_fd != PCAP_NO_DUMP) {
 				pcap_dump(sd->pcap_fd, &fm->tp_h, (struct ethhdr *)rbb);
-				print_progress_spinner_dynamic_trigger();
+
 			}
 
 			if (sd->print_pkt) {
@@ -262,20 +258,15 @@ void fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
 		while ((ret = poll(&pfd, 1, sd->blocking_mode)) <= 0) {
 			if (sigint) {
 				printf("Got SIGINT here!\n");
-
-				if (!sd->print_pkt)
-					disable_print_progress_spinner();
-
-				return;
+				goto out;
 			}
 		}
+
+		spinner_trigger_event(&spinner_ctx);
 
 		if (ret > 0 && (pfd.revents & (POLLHUP | POLLRDHUP | POLLERR | POLLNVAL))) {
 			if (pfd.revents & (POLLHUP | POLLRDHUP)) {
 				err("Hangup on socket occured");
-
-				if (!sd->print_pkt)
-					disable_print_progress_spinner();
 
 				return;
 			} else if (pfd.revents & POLLERR) {
@@ -289,17 +280,11 @@ void fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
 					err("Receive error");
 				}
 
-				if (!sd->print_pkt)
-					disable_print_progress_spinner();
-
-				return;
+				goto out;
 			} else if (pfd.revents & POLLNVAL) {
 				err("Invalid polling request on socket");
 
-				if (!sd->print_pkt)
-					disable_print_progress_spinner();
-
-				return;
+				goto out;
 			}
 		}
 
@@ -330,6 +315,6 @@ void fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
 		 */
 	}
 
-	if (!sd->print_pkt)
-		disable_print_progress_spinner();
+out:
+	spinner_cancel(&spinner_ctx);
 }
