@@ -50,7 +50,16 @@ void spinner_cancel(struct spinner_thread_context * ctx)
 
 int spinner_create(struct spinner_thread_context * ctx)
 {
-	return (pthread_create(&ctx->thread, NULL, print_progress_spinner, ctx));
+	int rc;
+
+	rc = pthread_create(&ctx->thread, NULL, print_progress_spinner, ctx);
+
+	if (rc != 0)
+		return (rc);
+
+	rc = pthread_detach(ctx->thread);
+
+	return (rc);
 }
 
 void * print_progress_spinner(void * arg)
