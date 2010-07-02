@@ -1,51 +1,1725 @@
-Version 0.5.1 (08.08.2009)
-==========================
-* Initial, unofficial release
+2010-06-23 20:11  Emmanuel Roullit <emmanuel@netsniff-ng.org>
 
-Version 0.5.2 (06.09.2009)
-==========================
-* Initial, official release
-* Fixed some race condition in netsniff-ng.c
+	* [r405] netsniff-ng/include/netsniff-ng/bootstrap.h,
+	  netsniff-ng/include/netsniff-ng/config.h,
+	  netsniff-ng/include/netsniff-ng/ether_types.h,
+	  netsniff-ng/include/netsniff-ng/hash.h,
+	  netsniff-ng/include/netsniff-ng/oui.h,
+	  netsniff-ng/include/netsniff-ng/packet.h,
+	  netsniff-ng/include/netsniff-ng/ports_tcp.h,
+	  netsniff-ng/include/netsniff-ng/ports_udp.h,
+	  netsniff-ng/include/netsniff-ng/protocols/ethernet.h,
+	  netsniff-ng/include/netsniff-ng/protocols/tcp.h,
+	  netsniff-ng/include/netsniff-ng/protocols/udp.h,
+	  netsniff-ng/include/netsniff-ng/read.h,
+	  netsniff-ng/include/netsniff-ng/ringbuff.h,
+	  netsniff-ng/include/netsniff-ng/rx_ring.h,
+	  netsniff-ng/include/netsniff-ng/rxtx_common.h,
+	  netsniff-ng/include/netsniff-ng/tx_ring.h,
+	  netsniff-ng/include/netsniff-ng/types.h,
+	  netsniff-ng/lib/bootstrap.c, netsniff-ng/lib/config.c,
+	  netsniff-ng/lib/hash.c, netsniff-ng/lib/netdev.c,
+	  netsniff-ng/lib/packet.c, netsniff-ng/lib/print.c,
+	  netsniff-ng/lib/replay.c, netsniff-ng/lib/ringbuff.c,
+	  netsniff-ng/lib/rx_ring.c, netsniff-ng/lib/tx_ring.c: Making
+	  indent. Done for Issue 26
 
-Version 0.5.3 (06.12.2009)
-==========================
-* Added Makefile
-* Added Manpage
-* Documentation
-* (Debian packaging)
-* Some less code refractorings in netsniff-ng.c and 
-  check_packets.c
+2010-06-23 20:01  Emmanuel Roullit <emmanuel@netsniff-ng.org>
 
-Version 0.5.3.1 (16.12.2009)
-============================
-* check_packets.c has been put into src/clients/ due 
-  to not officially supporting it anymore. It is just 
-  a simple unix domain socket client example for netsniff-ng,
-  but nothing more.
+	* [r404] netsniff-ng/include/netsniff-ng/bootstrap.h,
+	  netsniff-ng/include/netsniff-ng/config.h,
+	  netsniff-ng/include/netsniff-ng/ether_types.h,
+	  netsniff-ng/include/netsniff-ng/hash.h,
+	  netsniff-ng/include/netsniff-ng/oui.h,
+	  netsniff-ng/include/netsniff-ng/packet.h,
+	  netsniff-ng/include/netsniff-ng/ports_tcp.h,
+	  netsniff-ng/include/netsniff-ng/ports_udp.h,
+	  netsniff-ng/include/netsniff-ng/print.h,
+	  netsniff-ng/include/netsniff-ng/read.h,
+	  netsniff-ng/include/netsniff-ng/ringbuff.h,
+	  netsniff-ng/include/netsniff-ng/rx_ring.h,
+	  netsniff-ng/include/netsniff-ng/rxtx_common.h,
+	  netsniff-ng/include/netsniff-ng/signal.h,
+	  netsniff-ng/include/netsniff-ng/tx_ring.h,
+	  netsniff-ng/include/netsniff-ng/types.h,
+	  netsniff-ng/lib/bootstrap.c, netsniff-ng/lib/config.c,
+	  netsniff-ng/lib/hash.c, netsniff-ng/lib/packet.c,
+	  netsniff-ng/lib/print.c, netsniff-ng/lib/ringbuff.c,
+	  netsniff-ng/lib/rx_ring.c, netsniff-ng/lib/tx_ring.c,
+	  netsniff-ng/netsniff-ng.c: Massive refactor to have a code which
+	  is friendlier towards the indent script. Done for Issue 26.
 
-Version 0.5.4.0 (30.12.2009) - 'happy GNU year edition'
-=======================================================
-* Better usablility
-* Added high-resolution timer
-* Fixed small bugs / mem-leaks
-* Major code refactorings
-* Added SIGHUP ignorance, so for instance netsniff-ng keeps 
-  alive on ssh-sessions
-* Added pid output during start
-* Better packet visualization
-* Scheduler tweaks
-* Setting process affinity to specific CPU on demand (via Param)
-  This can be useful for a patched init proc, so that on demand
-  netsniff-ng can be the only process for a single CPU
-* -s option can now be switched on and off during runtime via SIGUSR2
-* Option for running netsniff-ng in non-blocking mode
+2010-06-23 06:20  Emmanuel Roullit <emmanuel@netsniff-ng.org>
 
-Version 0.5.4.1 (01.01.2010)
-============================
-* Security fix in netsniff-ng.c
+	* [r402] netsniff-ng/include/netsniff-ng/bootstrap.h,
+	  netsniff-ng/include/netsniff-ng/rx_ring.h,
+	  netsniff-ng/lib/bootstrap.c, netsniff-ng/lib/rx_ring.c,
+	  netsniff-ng/netsniff-ng.c: Fix poll for rx thread. Done for Issue
+	  14 and Issue 16
 
-Version 0.5.4.2 (14.02.2010)
-============================
-* Packet look-ahead within receive ring traversal method
-* Basic BPF checks
+2010-06-10 14:31  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r397] netsniff-ng/lib/netdev.c: Fixed some strncpy(). Done for
+	  Issue 16
+
+2010-06-10 13:19  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r396] netsniff-ng/lib/rx_ring.c, netsniff-ng/lib/tx_ring.c: Made
+	  the munmap() fix in branch for Issue 16
+
+2010-06-08 23:50  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r393] netsniff-ng/include/netsniff-ng/rxtx_common.h,
+	  netsniff-ng/include/netsniff-ng/system.h,
+	  netsniff-ng/lib/bootstrap.c, netsniff-ng/lib/print.c,
+	  netsniff-ng/lib/rx_ring.c: Fix for Issue 14.
+
+2010-06-07 20:04  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r392] .: Creating branch 0.5.5.0 to debug and release before
+	  introduction multi-threading.
+
+2010-06-07 20:00  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r391] Revert thread changes before branching
+
+2010-06-07 05:36  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r390] First start to resolv Issue 15 for the RX ring but for now
+	  the code is not compiled.
+
+2010-06-02 06:07  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r389] First shot fixing Issue 14
+
+2010-05-30 13:18  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r388] Fixed broken read mode. Assertion failed at bootstrap exit
+	  (when restoring nic flags).
+
+2010-05-29 13:57  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r387] Tiny changes within docs.
+
+2010-05-29 13:45  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r386] Cleaned up misc.c option descriptions.
+
+2010-05-29 11:18  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r385] Added cmd option for preventing netsniff-ng to enter
+	  promisc mode.
+
+2010-05-28 15:21  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r384] Added some information about coding guidelines.
+
+2010-05-27 12:39  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r383] A more early exit if user is not root.
+
+2010-05-25 10:15  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r382] Added not ipv6 to not_ip rule.
+
+2010-05-24 23:52  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r381] Added filer rule for layer2 traffic.
+
+2010-05-21 14:57  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r380] Bold written ether type for --less
+
+2010-05-21 14:50  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r379] Fix of issue 11. Compiles on x86_64 again.
+
+2010-05-20 17:02  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r378] Switching back to the static spinner. Done to temporary
+	  fix Issue 10
+
+2010-05-18 09:40  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r377] Added proto 'Ethernet II'... seems there are rare
+	  information about this on the net?!
+
+2010-05-18 08:45  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r376] Bold style of ARP Opcode and printing of ethertype.
+
+2010-05-18 08:39  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r375] Added --less printing for netsniff-ng.
+
+2010-05-14 13:38  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r374] Added XMPP proto to list.
+
+2010-05-14 11:09  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r373] Service names are now written bold.
+
+2010-05-14 09:59  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r372] Added Makefile development option, added hashtables for
+	  udp port, tcp port and ether types and did integration into
+	  header print.
+
+2010-05-13 21:24  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r371] Exclude lo from interrupt affinity setting.
+
+2010-05-13 21:18  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r370] Description change in bootstrap.c
+
+2010-05-13 21:10  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r369] Corrected minimun ringsize to KB instead of B.
+
+2010-05-13 21:06  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r368] Tiny fix in description for example usage.
+
+2010-05-13 21:04  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r367] Closes Issue 5. This patch allows binding a NIC INTR to a
+	  specific CPU where netsniff-ng is running on to reduce cacheline
+	  lookups.
+
+2010-05-13 20:04  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r366] Parsing of NIC IRQ number from procfs (works only for lan
+	  adapters).
+
+2010-05-13 18:23  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r365] Fix replay freeze reported in Issue 8, output packet which
+	  are placed in the tx ring buffer and added checks
+
+2010-05-13 16:30  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r364] Fixed compile warning
+
+2010-05-13 16:30  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r363] Decreased default rx/tx ring size.
+
+2010-05-13 16:18  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r362] Possibility to manually play around with ring buffer size.
+
+2010-05-13 15:51  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r361] Fixed cast warning when an integer is casted to a pointer
+	  (64-bit arch only)
+
+2010-05-13 15:46  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r360] Fixed Issue 7
+
+2010-05-13 13:01  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r359] Convert all warnings to errors
+
+2010-05-08 15:03  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r358] Fixed promiscuous mode. Now saves NIC flags and restores
+	  them when the program exits.
+
+2010-05-06 19:56  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r357] According to access(2), it is not a good idea to use
+	  access to check if there is enough file permissions... And anyway
+	  open() checks for it.
+
+2010-05-06 19:31  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r356] Fixed packet read, when a PCAP is read, it must be
+	  validated first to get to file offset to the first packet to
+	  fetch.
+
+2010-05-06 10:30  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r355] Some further states for the config engine.
+
+2010-05-04 08:27  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r354] Replace types of statistics vars in suppress GCC warning
+	  when building on 64-bit arch
+
+2010-05-03 20:02  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r353] Removed advanced packet sniffing options. This will be
+	  performed by netpoison-ng in the future.
+
+2010-05-03 19:54  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r352] Fixed debian-specific config files.
+
+2010-05-03 19:51  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r351] Code indention, and fixed Makefiles
+
+2010-05-03 19:46  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r350] Moved scripts to src root, tiny changes in Makefile
+
+2010-05-03 19:40  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r349] Basic folder structure for netfire-ng
+
+2010-05-03 19:28  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r348] Moved doc/ to src root.
+
+2010-05-03 18:52  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r347] Some stuff so far, initial working on the netfire-ng
+
+2010-05-03 18:49  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r346] Moved src/ to netsniff-ng/ in order to add other tools
+
+2010-05-02 19:00  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r345] ASCII art contribution by Stefan Seering :)
+
+2010-05-02 18:38  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r344] Third test (and the last one.)
+
+2010-05-02 18:36  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r343] Second tiny test.
+
+2010-05-02 18:16  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r342] Test of commit hook.
+
+2010-05-02 09:48  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r341] Removed versioning information from macros.h
+
+2010-05-01 20:50  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r340] Forces gcc to be pedantic! Fixed compile warnings that.
+
+2010-04-19 13:33  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r339] Removed splint stuff from makefile...
+
+2010-04-13 23:33  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r338] Server IPC fixup
+
+2010-04-11 23:48  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r337] Client side API for IPC
+
+2010-04-11 23:01  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r336] Removed Netlink, added more suitable IPC interface for
+	  communication (still experimental).
+
+2010-04-11 20:50  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r335] Fixed some text encoding problems, and some other tiny
+	  stuff
+
+2010-04-10 11:43  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r334] Further macros and markups that can be used if not
+	  defined.
+
+2010-04-10 11:35  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r333] Added some more useful macros.
+
+2010-04-09 17:13  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r332] Added Can Celasun into credits
+
+2010-04-09 13:27  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r331] Fixed dBm value representation, added lookup table for
+	  wireless operation mode.
+
+2010-04-09 13:04  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r330] Use standard define concerning the length of the ESSID
+
+2010-04-09 12:48  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r329] Initialized some variable and got rid of the couple of
+	  useless cast.
+
+2010-04-09 10:30  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r328] Fixed some stuff of device information output.
+
+2010-04-07 15:30  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r327] Moved --info to net dev options.
+
+2010-04-07 15:25  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r326] Moved device information during startup into a new param:
+	  -I|--info, added some information about wext
+
+2010-04-06 17:58  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r325] Added some more stuff to HACKING ;)
+
+2010-04-06 17:52  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r324] Added HACKING into debian docs
+
+2010-04-06 17:50  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r323] Renamed changelog into common convention
+
+2010-04-06 17:44  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r322] Added HACKING file for a short description of how to make
+	  contributions.
+
+2010-04-06 07:42  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r321] Made a couple of small changes to fix quirks picked up by
+	  valgrind and check file permissions before opening it.
+
+2010-04-04 12:48  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r320] ticks.h API for benchmarking and debugging purpose
+
+2010-04-04 11:00  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r319] Switched ICMP to l4 header
+
+2010-04-04 09:53  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r318] Added icmp proto template (there's more todo).
+
+2010-04-04 09:22  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r317] Code indention, renamed print_vlan/get_vlan_hdr into the
+	  normal convention (print_vlanhdr/get_vlanhdr).
+
+2010-04-04 09:12  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r316] Removed print/ and protocols/l4/, protocols/l3/,
+	  protocols/l2/ and protocols/misc/ in order to have only one file
+	  for a single protocol, to have less folders and to fasten up
+	  integration of new protocols. IMHO this change makes it look more
+	  clearly.
+
+2010-04-03 20:52  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r315] Again, soe more stuff added like EAPOL.
+
+2010-04-03 20:45  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r314] Some more exotic stuff added.
+
+2010-04-03 20:09  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r313] Some other MAC oui entries found.
+
+2010-04-03 19:53  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r312] Tiny fix of 0xFF00 type.
+
+2010-04-03 19:48  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r311] Ethernet type header descriptions
+
+2010-04-03 18:02  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r310] Added parsed tcp service list, fixed structs.
+
+2010-04-03 17:31  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r309] Added udp port descriptions.
+
+2010-04-03 17:06  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r308] Added some unofficial vendor IDs
+
+2010-03-26 20:21  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r307] Reformatting of rule file examples
+
+2010-03-26 18:21  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r306] Options to make splint work
+
+2010-03-26 16:47  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r305] Added some Makefile options, renamed .config, deleted
+	  check_code and use splint instead
+
+2010-03-26 14:25  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r304] Added scripts/ folder for all util shell/perl scripts that
+	  doesn't belong directly to netsniff-ng, but helps in developing
+	  code
+
+2010-03-26 11:25  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r303] Added option and implementation for pcap offline analysis
+	  (-i|--read), this can be combined with --filter and packet
+	  printing options
+
+2010-03-25 21:07  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r302] Added sample code for netlink, added nagios plugin
+	  (skeleton - client for netlink part), added two more future
+	  options
+
+2010-03-25 18:05  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r301] Removed head commment, exported server functions into
+	  another file
+
+2010-03-25 11:22  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r300] Cleaned up latex skeleton
+
+2010-03-25 11:12  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r299] Cleaned up manpage
+
+2010-03-24 19:00  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r298] Added some examples into --help, fixed bug --regex and
+	  removed strdup()
+
+2010-03-23 21:07  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r297] Made --help and --version look a bit better.
+
+2010-03-23 18:07  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r296] Updated email addresses and copyright headers.
+
+2010-03-23 10:36  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r295] Reformatted docs and added latex skeleton for our future
+	  manual (still needs some latex cleanups).
+
+2010-03-22 19:34  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r294] Added forgotten watchfile
+
+2010-03-22 19:33  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r293] Changed website to netsniff-ng.org
+
+2010-03-22 13:09  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r292] Updated some general docs...
+
+2010-03-22 10:17  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r291] Cleaned up print.c, added option for header only output
+
+2010-03-22 09:59  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r290] Added option for displaying the whole packet in hex
+
+2010-03-21 20:06  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r289] Nicer output for --help
+
+2010-03-21 19:58  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r288] Indention forgotten...
+
+2010-03-21 19:57  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r287] Added GNU's regular expression engine that can be applied
+	  to filter out packets that match a regex within ascii payload
+	  (slow but handy).
+
+2010-03-21 17:25  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r286] Added more print options (payload, hex, less), code
+	  indention
+
+2010-03-21 16:57  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r285] Fixed broken 80-width of -h option
+
+2010-03-21 16:49  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r284] Moved cursor to external file, added dynamic cursor
+	  movement into silent rx_ring dump.
+
+2010-03-21 16:04  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r283] Some more examples
+
+2010-03-21 15:54  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r282] Corrected Debian docs
+
+2010-03-21 15:52  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r281] Removed deprecated docs
+
+2010-03-21 09:51  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r280] Switched failsafe to 100mbit/s for transmit (to stay equal
+	  with 54mbit/s wifi)
+
+2010-03-20 21:06  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r279] Fixed broken payload offset.
+
+2010-03-20 20:57  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r278] Damn ugly (!) hack, but it's not crashing anymore.. ;)
+
+2010-03-20 18:59  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r277] Fixed some more stuff for tx_ring, ring slows down if
+	  there's not enough ram.
+
+2010-03-20 17:33  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r276] Fixed segfault, todo fixing->correct packet offset for
+	  tx_ring, still everything highly experimental...
+
+2010-03-20 14:49  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r275] Added BPF filtering for tx_ring
+
+2010-03-20 13:55  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r274] Added experimental tx_ring functionality. Still TODO:
+	  * packets send by tx_ring seem to have a wrong byte offset if you
+	  sniff them
+	  in wireshark, needs to be fixed within netsniff-ng
+	  * sometimes filling ring segfaults when data to be sent is too
+	  large
+	  * testing, testing, testing!
+
+2010-03-18 19:14  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r273] Separated common things from makefiles into include file
+	  and cleaned up makefiles
+
+2010-03-18 18:03  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r272] Typo in Makefile, use define instead of fd
+
+2010-03-18 16:29  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r271] Changed Makefiles, made output cleaner and eliminated
+	  double defined symbol
+
+2010-03-11 19:55  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r270] Fixed corrupted Makefile
+
+2010-03-11 19:54  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r269] Some more preparations and untested stuff for tx_ring load
+	  and flush.
+
+2010-03-11 15:39  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r268] Added Berkeley packet filter userspace VM (needed for
+	  applying filter to pcap trace).
+
+2010-03-11 12:26  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r267] Fixed tx_ring ringbuffer size.
+
+2010-03-11 11:47  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r266] Some refractorings and preparation for tx_ring.
+
+2010-03-10 21:55  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r265] Ringbuffer ds implementation for future usage.
+
+2010-03-05 13:48  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r264] corrected credits
+
+2010-02-24 10:48  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r263] Fixed PCAP dump
+
+2010-02-23 21:53  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r262] Some nicer output of dev info
+
+2010-02-23 21:35  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r261] Indented code & added driver info to dev list.
+
+2010-02-23 20:47  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r260] Some tiny cleanup of hash.c
+
+2010-02-21 12:31  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r259] Made a couple of changes to make the code look nicer
+
+2010-02-19 09:08  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r258] Rule file for monitoring traffic via ssh, but does not
+	  show ssh traffic itself.
+
+2010-02-19 08:51  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r257] Fixing size types for keys.
+
+2010-02-19 08:25  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r256] Fixed memset() and memcpy()
+
+2010-02-18 23:38  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r255] Rule for greping stuff from standard icq port.
+
+2010-02-18 23:05  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r254] Tiny line break...
+
+2010-02-18 23:02  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r253] Adjusted line width of headers -> mostly header fit now
+	  into std 80 width.
+
+2010-02-18 22:28  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r252] Indented lines from hash.c
+
+2010-02-18 22:06  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r251] Removed unused header (forgot to remove, this was only for
+	  testing)...
+
+2010-02-18 22:03  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r250] Hashtable implementation, creation of vendor hashtable and
+	  printing vendors.
+
+2010-02-18 11:10  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r249] Hashes API so far, more of it coming soon. Removed queue.h
+	  -> not needed.
+
+2010-02-17 21:26  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r248] Parsed vendor database from
+	  http://standards.ieee.org/regauth/oui/oui.txt for MAC adresses.
+
+2010-02-17 20:40  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r247] Refractorings, a bit of cleaning up here and there...
+
+2010-02-17 20:14  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r246] Made some local stuff static.
+
+2010-02-17 16:57  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r245] Added check for static function or never used function.
+
+2010-02-16 00:30  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r244] Changed param order to be more uniform ...
+
+2010-02-16 00:26  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r243] Cleaned up signal handling stuff from netsniff-ng.c
+
+2010-02-16 00:10  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r242] Made code look a bit more pretty ;)
+
+2010-02-16 00:03  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r241] Fixed broken code from config.c. The wrong default device
+	  has been choosen if you run only 'netsniff-ng' (without params).
+	  sd->dev has to be NULL if the user does not specify it.
+
+2010-02-15 23:48  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r240] Added bootstrap.c for init and cleanup system routines
+	  (still needs refractoring). Added fetch_packets into rx_ring.c,
+	  moved external datatypes into netsniff-ng/types.h and removed
+	  netsniff-ng.h, cleaned up netsniff-ng.c. Of course this all needs
+	  still work, but it's the first step for a more cleaner code.
+
+2010-02-15 06:55  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r239] Adding patch proposed by James Findley
+
+2010-02-15 06:46  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r238] Changed the type FILE * to a file descriptor for the dump
+	  pcap file
+
+2010-02-14 21:14  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r237] Update for current debian trunk.
+
+2010-02-14 15:49  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r234] Moved the whole code relate to the configuration
+	  management in its own source and header file. Removed some
+	  useless include and changed the prototype of the checksum
+	  function to avoid problem while linking
+
+2010-02-14 13:30  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r233] Updated Changelogs. All the readme stuff needs some
+	  reviews anyways.
+
+2010-02-13 17:04  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r230] Rest of today.
+
+2010-02-13 16:28  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r229] Some more features
+
+2010-02-13 16:06  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r228] Some more improvements, now it only barks when neccessary
+
+2010-02-13 15:50  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r227] Some install instructions
+
+2010-02-13 15:46  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r226] Renamed code_stats into code_check.
+
+2010-02-13 15:45  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r225] Started with development of a code analysis script to
+	  indicate hints for a better code.
+
+2010-02-13 14:10  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r224] Fixed daemon parameters. Damn you glibc to give such not
+	  straightforward parameter names. Damn you daemon() manpages
+	  writer to use a double negation in a sentence!
+
+2010-02-13 12:33  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r223] Uniform interface for printing errors, warnings and infos.
+	  Adapted to the source.
+
+2010-02-11 16:50  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r222] Some cleanups
+
+2010-02-09 08:55  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r221] Added rest of the headers to be safe...
+
+2010-02-08 21:09  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r220] Updated to the latest Debian standards version.
+
+2010-02-08 20:42  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r219] Added header for compilation on 2.6.24 kernels, Issue 3
+
+2010-02-08 17:30  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r218] Some tiny code cleanups.
+
+2010-02-08 16:47  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r217] Add BPF validation after parsing the BPF files
+
+2010-02-06 10:29  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r216] Removed some remaining things..
+
+2010-02-06 10:18  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r215] Removed AF_UNIX socket. This dead end was obsolete all the
+	  time. In future this will
+	  be replaced by the netlink protocol suite, but for the moment,
+	  its fine just to remove
+	  that messy thing. For now, the daemon will silently capture
+	  packets... more coming soon.
+
+2010-02-06 09:38  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r214] Removed --logfile from options.
+
+2010-02-06 09:18  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r213] Refactored the daemon that is uses the standard daemon()
+	  function and the daemon dumps all matching packets in a pcap
+	  file. Help message and daemon requiered parameters adapted
+	  accordingly.
+	  However, if the daemon receive SIGKILL, it is quite like that the
+	  last packet will not be dumped on the pcap resulting in an
+	  incomplete file (but still readable).
+
+2010-02-05 20:48  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r212] Updated CREDITs file
+
+2010-01-31 14:26  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r211] Fix Issue 2
+
+2010-01-31 10:23  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r210] Removed useless commented function and refactored
+	  alloc_pf_sock() to get_pf_socket() to be consistant with the
+	  function get_af_socket()
+
+2010-01-31 10:07  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r209] Encapsulate functionality in respective functions
+
+2010-01-28 18:06  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r208] Made a function to retrieve the MTU of an interface
+
+2010-01-28 15:30  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r207] Isolate MAC address functionality.
+
+2010-01-28 09:11  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r206] Some fixed regressions from Issue 1 fixes
+
+2010-01-27 19:52  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r205] The FAILSAFE_BITRATE makes the rx ring a bit too greedy
+	  (1.4GB of RAM :S)
+
+2010-01-27 19:50  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r204] Check if interface is up and running before allocation the
+	  RX ring. Done to fix Issue 1
+
+2010-01-27 17:00  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r203] Added bitrate fallback for interfaces with no bitrate
+	  (like loopback).
+
+2010-01-25 22:59  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r202] Just colorized bogus checksums
+
+2010-01-25 17:00  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r201] Fixed IP header checksum validation
+
+2010-01-23 22:00  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r200] Commented-out display of IRQ, port and DMA.
+
+2010-01-23 21:49  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r199] Print MTU and some other stuff.
+
+2010-01-22 22:47  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r198] Added ARP to packet.c
+
+2010-01-22 22:44  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r197] Added ARP printing routine. Rest is indention.
+
+2010-01-22 21:57  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r196] Added header comment and added Emmanuel into the header.
+
+2010-01-22 18:05  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r195] RST packet don't have payload... So the assert() rung the
+	  alarms
+
+2010-01-22 18:03  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r194] Dump the packet before printing it... It easing debugging
+	  because when something goes wrong, it is possible to check the
+	  pcap.
+
+2010-01-22 17:51  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r193] Fixed TTY offset
+
+2010-01-22 17:32  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r192] Made a more flexible output organized by layers and
+	  protocols. Each packet are parsed to check where is the beginning
+	  of each layer and where is the payload located. It still needs a
+	  bit of cleanup.
+
+2010-01-21 22:36  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r191] Added empty function body for unsupported tx_ring kernels.
+
+2010-01-21 22:35  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r190] sendto for tx_ring
+
+2010-01-20 12:28  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r189] Fixed ioctl length parameter and check the return value of
+	  unlink() in daemon thread
+
+2010-01-20 11:41  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r188] tiny script for 'code stats' in order to have a better
+	  overview where to refractor
+
+2010-01-20 11:35  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r187] Some more refractoring of the rxtx stuff.
+
+2010-01-20 11:23  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r186] Code for changing MTU. rest is indention.
+
+2010-01-20 11:07  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r185] Renamed routines, experimentally added tx_ring. The
+	  separation of both
+	  is better imho, even is there is some redundant code, but
+	  therefore we
+	  know better what the routines are doing and we keep it simpler.
+
+2010-01-20 10:21  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r184] Renamed pcap.c into dump.c... the other part will be
+	  replay.c.
+
+2010-01-19 08:45  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r183] Allowed the function to be used outside of the print.c
+	  file to allow other features to use these function or to use them
+	  with debugging. Some values on the IP header had their endianess
+	  change when it was not needed. The fragment offset value is also
+	  16-bit field where the 3 MSB are flags and the rest is the real
+	  fragment offset. Output has been fixed accordingly.
+
+2010-01-17 20:03  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r182] Added BPF code output of parsed file.
+
+2010-01-17 19:34  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r181] Changed some file names.
+
+2010-01-17 19:01  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r180] Minor changes
+
+2010-01-17 18:58  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r179] Memset of rule parsing...
+
+2010-01-17 18:24  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r178] rx_ring now adapted to apprx bandw. size
+
+2010-01-17 17:53  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r177] Added some moe colorize features.
+
+2010-01-17 17:43  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r176] Added netdev file, grabbing bitrates of netdevs and so on.
+
+2010-01-17 12:50  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r175] Some more infos for user, added close()
+
+2010-01-17 12:30  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r174] Check for null ptrs
+
+2010-01-17 11:15  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r173] Added automatic device selection if user runs only
+	  "netsniff-ng" without params.
+	  Line width for indent switched to 120. 80 makes code look ugly...
+
+2010-01-11 19:09  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r172] Thanks for putting netsniff-ng into GRML!!! :)
+
+2010-01-11 17:28  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r171] Clean up lintian warning, added ${misc:Depends} to source
+	  pkg.
+
+2010-01-10 12:13  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r170] Another hint. ;)
+
+2010-01-10 11:51  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r169] Adjusted indent code from 80 to 120 chars. Mostly the
+	  printfs get cracked into horrible readable code.
+	  Added (TODO) option for temporary MTU adjustment.
+
+2010-01-10 11:09  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r168] Corrected while statement.
+
+2010-01-10 11:07  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r167] Some more code correction at the rx_ring traversal.
+
+2010-01-10 00:20  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r166] Fixed poll problem. PLease review Emmanuel...
+
+2010-01-09 19:27  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r165] Option for sniffing packet types: now you can sniff only
+	  others, outgoing, boradcast and so on...
+
+2010-01-09 18:41  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r164] Bucket hash skeleton, reset bpf filter function
+
+2010-01-09 17:52  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r163] Removed export.c file --> all stuff is already in pcap.c
+
+2010-01-09 17:42  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r162] Preprocessor terminal color replacements
+
+2010-01-09 12:22  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r161] Avoid future flamewars about KB and KiB...
+
+2010-01-09 12:05  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r160] Added hint to --dump
+
+2010-01-09 11:53  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r159] Some better description
+
+2010-01-09 11:44  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r158] Code indention, removed printf debug call.
+
+2010-01-09 11:40  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r157] Fixed broken CPU affinity, added longopts for better
+	  usability.
+
+2010-01-09 01:42  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r156] NetBSD queue macros
+
+2010-01-06 09:34  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r155] Removed archs from control -> build problem
+
+2010-01-05 23:04  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r154] Updated credits, added Epinephrine ;)
+
+2010-01-05 22:36  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r153] Moved into doc
+
+2010-01-05 22:24  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r152] small update
+
+2010-01-05 21:59  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r151] Adapted Credits, added logo
+
+2010-01-05 19:51  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r150] Some todos (see misc.c help output) for the next release
+	  0.5.5.0
+
+2010-01-05 19:34  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r149] We've both decided to stay with normal Makefiles, not
+	  autotools. May be later, but not for now ;)
+
+2010-01-05 19:21  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r148] Path change --> from /sbin to /usr/sbin. FHS says
+	  "non-vital" sysadmin tools should go there...
+
+2010-01-03 12:53  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r147] After the epic win of Daniel by fixing the "payload cut
+	  off" problem. It is great time to add the pcap file dump!
+
+2010-01-02 17:50  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r145] Fix for payload cut off! See updated manpage!
+
+2010-01-02 10:43  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r143] Again. ... changelog
+
+2010-01-02 10:41  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r142] Made Changelog better readable
+
+2010-01-02 10:32  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r141] Edited debian/changelog and debian/control
+
+2010-01-01 22:51  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r138] Ported desc from branch into trunk
+
+2010-01-01 22:25  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r134] Fixed indentions
+
+2010-01-01 22:25  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r133] Again, fixed the patch. Now better ...
+
+2010-01-01 22:02  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r131] Correction of previous patch ...
+
+2010-01-01 21:28  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r130] Changelog merged from old .5.4.0 with .5.4.1 branch
+
+2010-01-01 20:20  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r128] Some tiny changes, added 0.5.4.1
+
+2010-01-01 20:18  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r127] Version change due to tiny fix
+
+2010-01-01 19:59  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r126] Buffer overflow patch by Pascal Bleser
+
+2010-01-01 19:44  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r125] Added year 2010
+
+2010-01-01 19:01  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r124] Spelling err
+
+2010-01-01 18:57  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r123] Another tiny example
+
+2010-01-01 18:56  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r122] Added forgotten item
+
+2010-01-01 18:25  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r121] Added some stuff for debian/*
+
+2010-01-01 18:04  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r120] Changed some stuff in TODO
+
+2010-01-01 16:55  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r119] Added Pascal Bleser to credits ;)
+
+2009-12-30 22:26  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r118] Added description into trunk
+
+2009-12-29 18:26  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r111] Added missing include and fixed indentation
+
+2009-12-29 18:25  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r110] Added a indent command to start indenting the whole
+	  project using make
+
+2009-12-29 18:20  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r109] Changed/shortened some variable names.
+
+2009-12-29 17:56  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r108] Changed some sizeof()
+
+2009-12-29 17:52  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r107] Reorganized structure to have it packed
+
+2009-12-29 17:49  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r106] Added a "just in case" memset()
+
+2009-12-29 17:42  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r105] Deleted client source.
+
+2009-12-29 15:33  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r104] Hashsum generator. Releases will deliver a HASHSUMS file.
+	  After download people can run the script again and make a
+	  diff of both files.
+
+2009-12-29 13:02  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r103] Added some more description
+
+2009-12-29 12:51  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r102] Some fixes. Made -f non-mandatory.
+
+2009-12-29 11:36  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r101] Updated manpage. Please review for grammer / spelling /
+	  content, too. thx ;)
+
+2009-12-29 11:24  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r100] Some assertions inserted, some code cleaning from
+	  reviewing.
+
+2009-12-29 10:45  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r99] Some more fixing on ttysize
+
+2009-12-29 10:43  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r98] Added check for return value at ioctl (termsize)
+
+2009-12-29 10:24  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r97] Updated Manpage
+
+2009-12-28 22:50  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r96] Basic skeleton for autotools build (patch by Guillaume
+	  Rousse). Still TODO. Old Makefile is Makefile.old, so for the
+	  moment use make -f Makefile.old.
+
+2009-12-28 22:14  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r95] Added Emmanuel :)
+
+2009-12-28 22:10  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r94] Changed E-Mail stuff, added some other things... mostly
+	  doc.
+
+2009-12-28 20:54  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r93] renamed dbg() into info() cause it's not dbg anymore;
+
+2009-12-28 20:37  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r92] Warning message
+
+2009-12-28 20:32  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r91] Payload output adaptive to term-size
+
+2009-12-28 20:05  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r90] Removed BPF for testing --> it is really a bug within the
+	  kern, cause the full payload is shown ...
+	  Removed second non-printing function --> introduced if statement,
+	  I guess CPU heuristics keep perf going...
+
+2009-12-27 22:20  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r89] Added Emmanuel as Committer
+
+2009-12-27 21:56  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r88] Comment about zero filled payload bug
+
+2009-12-27 21:35  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r87] Set inverted CPU affinity
+
+2009-12-27 21:05  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r86] Added some more cmdine options, switched to TP_STATUS_USER
+
+2009-12-27 14:35  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r85] add FIXME
+
+2009-12-27 14:31  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r84] Prevent dump function to go crazy if the length parameter
+	  is negative
+
+2009-12-27 14:30  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r83] Memset freshly allocated frames of the ring buffer
+
+2009-12-27 14:28  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r82] Fixed signal handler functions
+
+2009-12-27 12:43  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r81] Tiny changes
+
+2009-12-27 12:16  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r80] Added stuff
+
+2009-12-27 12:13  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r79] Some minor fixes/adaptions. Somehow payload shows lots of
+	  Zeros --> Bug?
+
+2009-12-27 11:24  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r78] Replaced magic values by standard function/defines
+
+2009-12-27 10:56  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r77] Some cases were missing if some options didn't have any
+	  parameter
+
+2009-12-27 10:34  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r76] Printing of udp header
+
+2009-12-27 10:25  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r75] print payload with chars
+
+2009-12-27 10:16  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r74] More friendly packet output.
+
+2009-12-26 19:19  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r73] Thoughts --> see comment
+
+2009-12-26 19:12  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r72] Added some plain dumb formatting functions, still in work
+
+2009-12-26 16:01  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r71] Some more comments
+
+2009-12-26 15:10  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r70] Some more printing stuff
+
+2009-12-26 11:43  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r69] Packet printing skeletons
+
+2009-12-26 11:21  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r68] Some more refractorings ...
+
+2009-12-26 11:02  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r67] Added some function comments
+
+2009-12-26 10:48  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r66] Some further refractorings
+
+2009-12-26 09:51  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r65] Removed goto --> replaced with function pointer
+
+2009-12-26 00:19  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r64] Tiny change (removed email)
+
+2009-12-26 00:06  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r63] Added code analysis script --> apt-get install ncc
+
+2009-12-25 23:26  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r62] fixed spelling, added some info within indent_code
+
+2009-12-25 23:07  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r61] indent_code script, reformatting with indent (kernel code
+	  indentions)
+
+2009-12-25 22:43  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r60] Added client comment
+
+2009-12-25 22:38  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r59] some tiny changes
+
+2009-12-25 22:33  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r58] fixed headers and dependencies
+
+2009-12-25 21:13  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r57] Lots of new refractorings.
+	  
+	  Build is now broken... will be fixed this eve!
+
+2009-12-25 20:48  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r56] some updates to credits
+
+2009-12-25 20:37  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r55] future library stuff
+
+2009-12-25 20:26  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r54] refractoring part II of (x) ...
+	  
+	  still TODO ref:
+	  * resolv header file dependencies
+	  * cleanup netsniff-ng.c
+
+2009-12-25 20:24  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r53] refractoring, part I of (x) ...
+
+2009-12-25 13:25  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r52] Leaving an array of pointer uninitialized is not a very
+	  good idea
+
+2009-12-25 12:59  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r51] Changes exit number by standard exit defines
+
+2009-12-25 12:54  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r50] Removed some obsole nice functions. It doesn't work so
+	  great to change the type of scheduling without setting a valid
+	  priority number. This changes merges the possibility to change
+	  the scheduling policy and the priority number in one function.
+	  This new function takes 2 parameters : the wanted scheduling
+	  policy and the wanted scheduling priority.
+	  For now, it is only used with the default value but later on,
+	  when we see that there are not so much events, we can inform
+	  on-the-fly the scheduler that we are idle or that we have tons of
+	  events to process.
+
+2009-12-25 10:29  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r49] Fixed compile warnings
+
+2009-12-24 23:40  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r48] scheduler based stuff
+
+2009-12-24 23:09  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r47] removed "I:"
+
+2009-12-24 23:03  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r46] cpu affinity information, process nice value
+
+2009-12-24 14:35  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r45] Committed too fast... Reverting
+
+2009-12-24 14:26  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r44] Changed syntax to avoid Brainfuck effects (and also test if
+	  I can commit again btw)
+
+2009-12-24 13:46  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r43] changed opt
+
+2009-12-24 12:00  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r42] cleanups
+
+2009-12-24 11:55  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r41] small fixes
+
+2009-12-24 11:51  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r40] some more stuff, code refr
+
+2009-12-23 09:54  Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+	* [r39] Added the possibility to adjust the CPU affinity of the
+	  program with the switch "-c". As argument can be given a single
+	  CPU number, a list of CPU comma-separated (eg : 1,2,5) or a range
+	  (eg : 1-5).
+
+2009-12-20 13:39  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r38] just for experimental stuff...
+
+2009-12-20 13:33  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r37] some current work (all testing / experimental)
+
+2009-12-17 22:34  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r36] Minor changes
+
+2009-12-17 21:11  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r35] ITP bug
+
+2009-12-17 20:48  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r34] rsync instead of cp
+
+2009-12-17 20:36  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r33] Removed ITP bug, because there is no bug number
+
+2009-12-17 20:21  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r32]
+
+2009-12-16 19:19  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r31] Updated Credits
+
+2009-12-16 18:13  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r30]
+
+2009-12-16 18:11  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r29]
+
+2009-12-16 17:59  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r28] New version 0.5.3.1, minor changes
+
+2009-12-16 17:21  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r27]
+
+2009-12-16 17:21  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r26]
+
+2009-12-16 17:10  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r25] some more stuff ..
+
+2009-12-16 17:03  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r24] changed some debian related stuff
+
+2009-12-16 09:50  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r23]
+
+2009-12-16 09:48  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r22] Moved check_packets to clients/ and changed some more
+	  stuff, see files
+
+2009-12-13 21:31  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r21] Added thx
+
+2009-12-13 18:12  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r20] added dh_strip
+
+2009-12-12 12:03  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r19] Update todo
+
+2009-12-12 11:42  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r18] Changed mail
+
+2009-12-12 11:36  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r17] Added stuff to docs
+
+2009-12-12 11:20  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r16] Added netsniff-ng architecture overview (dia file) and
+	  programming guide for
+	  berkeley packet filters.
+
+2009-12-11 13:21  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r15]
+
+2009-12-11 12:48  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r14]
+
+2009-12-11 12:43  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r13]
+
+2009-12-11 12:41  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r12] rsync to exclude hidden svn dir
+
+2009-12-11 12:34  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r11]
+
+2009-12-11 12:31  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r10] Changed email
+
+2009-12-11 12:25  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r9] Changed debian/ stuff, added example folder and changed
+	  Makefile
+
+2009-12-09 19:28  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r8] Change of E-Mail address
+
+2009-12-08 20:58  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r6] Credits section
+
+2009-12-07 13:11  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r5] Current working trunk, version 0.5.3
+
+2009-12-07 13:08  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r4] Removing old stuff, because of new dir structures etc
+
+2009-09-05 11:03  Daniel Borkmann <daniel@netsniff-ng.org>
+
+	* [r2]
+
+2009-09-05 10:59  
+
+	* [r1] Initial directory structure.
 
