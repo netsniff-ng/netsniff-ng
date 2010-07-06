@@ -188,6 +188,24 @@ void bind_dev_to_rx_ring(int sock, int ifindex, struct ring_buff *rb)
 	}
 }
 
+int compat_bind_dev(int sock, const char * dev)
+{
+	struct sockaddr saddr = {0};
+	int rc;
+
+	strncpy(saddr.sa_data, dev, sizeof(saddr.sa_data) - 1);
+
+	rc = bind(sock, &saddr, sizeof(saddr));
+
+	if (rc == -1)
+	{
+		err("bind() failed");
+		return (rc);
+	}
+
+	return (0);
+}
+
 /**
  * fetch_packets_and_print - Traverses RX_RING and prints content
  * @rb:                     ring buffer
@@ -317,4 +335,78 @@ void fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
 
 out:
 	spinner_cancel(&spinner_ctx);
+}
+
+void compat_fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
+{
+	struct timeval		now;
+	struct spinner_thread_context spinner_ctx = {0};
+	struct tpacket_hdr tp_h = {0};
+	uint8_t * pkt_buf = NULL;
+	struct sockaddr_ll	from = {0};
+	socklen_t		from_len = sizeof(from);
+	int pf_sock;
+	int ret;
+	int pkt_len;
+	uint16_t mtu = get_mtu(sd->dev);
+
+	pf_sock = socket(PF_INET, SOCK_PACKET, htons(ETH_P_ALL));
+
+	if (compat_bind_dev(pf_sock, sd->dev) != 0)
+	{
+		return;
+	}
+
+	if ((pkt_buf = malloc(mtu)) == NULL)
+	{
+		close(pf_sock);
+		return;
+	}
+
+	memset(pkt_buf, 0, mtu);
+
+	spinner_set_msg(&spinner_ctx, DEFAULT_RX_RING_SILENT_MESSAGE);
+
+	info("--- Listening in compatibility mode---\n\n");
+
+	if (!sd->print_pkt) {
+		ret = spinner_create(&spinner_ctx);
+		if (ret) {
+			err("Cannot create spinner thread");
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	if (sd->pcap_fd != PCAP_NO_DUMP) {
+		pcap_write_header(sd->pcap_fd, LINKTYPE_EN10MB, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
+	}
+	
+	while (likely(!sigint)) {
+		pkt_len = recvfrom(pf_sock, pkt_buf, mtu, MSG_TRUNC, (struct sockaddr *) &from, &from_len);
+
+		if (errno == EINTR)
+			break;
+
+		spinner_trigger_event(&spinner_ctx);
+
+		gettimeofday(&now, NULL);
+
+		tp_h.tp_sec = now.tv_sec;
+		tp_h.tp_usec = now.tv_usec;
+		tp_h.tp_len = tp_h.tp_snaplen = pkt_len;
+
+		if (sd->pcap_fd != PCAP_NO_DUMP) {
+			pcap_dump(sd->pcap_fd, &tp_h, (struct ethhdr *)(pkt_buf));
+		}
+
+		if (sd->print_pkt) {
+			/* This path here slows us down ... well, but
+			   the user wants to see what's going on */
+			sd->print_pkt(pkt_buf, &tp_h);
+		}
+	}
+	
+	spinner_cancel(&spinner_ctx);
+	close(pf_sock);
+	free(pkt_buf);
 }

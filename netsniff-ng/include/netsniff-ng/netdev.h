@@ -50,6 +50,7 @@ extern int ethdev_to_ifindex(const char *dev);
 extern void net_stat(int sock);
 extern int get_pf_socket(void);
 extern int parse_rules(char *rulefile, struct sock_filter **bpf, int *len);
+extern int get_mtu(const char *dev);
 
 /* Inline stuff */
 

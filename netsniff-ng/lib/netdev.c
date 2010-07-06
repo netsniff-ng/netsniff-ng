@@ -367,7 +367,7 @@ int get_device_bitrate_generic_cable(const char *ifname)
  * @sock:                      socket descriptor
  * @ifname:                    device name
  */
-static int get_mtu(const char *dev)
+int get_mtu(const char *dev)
 {
 	int sock;
 	struct ifreq ifr;
