@@ -542,7 +542,6 @@ uint32_t bpf_filter(const struct sock_filter * bpf, uint8_t * packet, size_t ple
 
 		switch (bpf->code) {
 		default:
-			printf("FOO\n");
 			return 0;
 		case BPF_RET | BPF_K:
 			return (uint32_t) bpf->k;
