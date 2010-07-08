@@ -273,13 +273,9 @@ static void *fill_virt_tx_ring_thread(void *packed)
 				success = 0;
 				while (pcap_fetch_next_packet(ptd->sd->pcap_fd, header, (struct ethhdr *)buff)) {
 					printf("Fetched pkt %p\n", (void *)buff);
-					/* No filter applied */
-					if (!ptd->sd->bpf) {
-						success = 1;
-						break;
-					}
+
 					/* Filter packet if user wants so */
-					if (ptd->sd->bpf && bpf_filter(ptd->sd->bpf, buff, header->tp_len)) {
+					if (bpf_filter(&ptd->sd->bpf, buff, header->tp_len)) {
 						success = 1;
 						break;
 					}
@@ -324,8 +320,6 @@ static void *fill_virt_tx_ring_thread(void *packed)
 static void *flush_virt_tx_ring_thread(void *packed)
 {
 	int i, ret, errors = 0;
-
-	pthread_t progress;
 
 	struct frame_map *fm;
 	struct tpacket_hdr *header;
