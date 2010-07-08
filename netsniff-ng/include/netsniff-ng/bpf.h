@@ -23,8 +23,8 @@
 #include <linux/filter.h>
 #include <linux/if_packet.h>
 
-extern void bpf_dump_all(struct sock_filter *bpf, int len);
-extern int bpf_validate(const struct sock_filter *bpf, int len);
-extern uint32_t bpf_filter(const struct sock_filter *bpf, uint8_t * packet, size_t plen);
+extern void bpf_dump_all(struct sock_fprog *bpf);
+extern int bpf_validate(const struct sock_fprog * bpf);
+extern uint32_t bpf_filter(const struct sock_fprog *bpf, uint8_t * packet, size_t plen);
 
 #endif				/* _NET_BPF_H_ */

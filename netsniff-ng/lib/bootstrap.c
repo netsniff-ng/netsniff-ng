@@ -234,9 +234,6 @@ static void __init_stage_mode_common(struct system_data *sd, int *sock, struct r
 
 static void __init_stage_bpf(struct system_data *sd, int *sock, struct ring_buff **rb)
 {
-	int bpf_len = 0;
-	struct sock_filter *bpf = NULL;
-
 	assert(sd);
 	assert(sock);
 	assert(rb);
@@ -256,18 +253,16 @@ static void __init_stage_bpf(struct system_data *sd, int *sock, struct ring_buff
 	 */
 
 	/* Berkeley Packet Filter stuff */
-	if (parse_rules(sd->rulefile, &bpf, &bpf_len) == 0) {
+	if (parse_rules(sd->rulefile, &sd->bpf) == 0) {
 		info("BPF is not valid\n");
 		exit(EXIT_FAILURE);
 	}
 
-	sd->bpf = bpf;
-
 	if (sd->mode == MODE_CAPTURE)
-		inject_kernel_bpf((*sock), sd->bpf, bpf_len * sizeof(*sd->bpf));
+		inject_kernel_bpf((*sock), &sd->bpf);
 
 	/* Print info for the user */
-	bpf_dump_all(sd->bpf, bpf_len);
+	bpf_dump_all(&sd->bpf);
 }
 
 static void __init_stage_rx_ring(struct system_data *sd, int *sock, struct ring_buff **rb)
@@ -469,8 +464,8 @@ static void __exit_stage_bpf(struct system_data *sd, int *sock, struct ring_buff
 		return;
 
 	reset_kernel_bpf((*sock));
-	if (sd->bpf)
-		free(sd->bpf);
+	if (sd->bpf.filter)
+		free(sd->bpf.filter);
 }
 
 static void __exit_stage_rx_ring(struct system_data *sd, int *sock, struct ring_buff **rb)

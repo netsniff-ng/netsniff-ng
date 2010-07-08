@@ -81,7 +81,6 @@ void init_configuration(struct system_data *sd)
 	sd->print_pkt = versatile_print;
 	sd->pcap_fd = PCAP_NO_DUMP;
 	sd->mode = MODE_CAPTURE;
-	sd->bpf = NULL;
 	sd->bind_cpu = -1;
 }
 

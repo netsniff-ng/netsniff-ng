@@ -744,22 +744,14 @@ void print_device_info(void)
  * inject_kernel_bpf - Binds filter code to socket
  * @sock:             socket
  * @bpf:              Berkeley Packet Filter code
- * @len:              length of bpf
  */
-void inject_kernel_bpf(int sock, struct sock_filter *bpf, int len)
+void inject_kernel_bpf(int sock, struct sock_fprog * bpf)
 {
 	int ret;
-	struct sock_fprog filter;
 
 	assert(bpf);
-	assert(len > 0 && (len % sizeof(*bpf) == 0));
 
-	memset(&filter, 0, sizeof(filter));
-
-	filter.len = len / sizeof(*bpf);
-	filter.filter = bpf;
-
-	ret = setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER, &filter, sizeof(filter));
+	ret = setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER, bpf, sizeof(*bpf));
 	if (ret < 0) {
 		err("setsockopt: filter cannot be injected");
 		close(sock);
@@ -838,7 +830,7 @@ void net_stat(int sock)
  * @bpf:        sock filter
  * @len:        len of bpf
  */
-int parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
+int parse_rules(char *rulefile, struct sock_fprog * bpf)
 {
 	int ret;
 	char buff[128] = { 0 };
@@ -846,7 +838,6 @@ int parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 	struct sock_filter sf_single;
 
 	assert(bpf);
-	assert(len);
 	assert(rulefile);
 
 	FILE *fp = fopen(rulefile, "r");
@@ -879,14 +870,16 @@ int parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 			return 0;
 		}
 
-		*len += 1;
-		*bpf = (struct sock_filter *)realloc(*bpf, *len * sizeof(sf_single));
+		bpf->len++;
+		bpf->filter = (struct sock_filter *)realloc(bpf->filter, bpf->len * sizeof(sf_single));
 
-		memcpy(&((*bpf)[*len - 1]), &sf_single, sizeof(sf_single));
+		memcpy(&bpf->filter[bpf->len - 1], &sf_single, sizeof(sf_single));
+
 		memset(buff, 0, sizeof(buff));
 	}
 
 	fclose(fp);
+
 	/* bpf_validate() returns 0 on failiure */
-	return (bpf_validate(*bpf, *len));
+	return (bpf_validate(bpf));
 }

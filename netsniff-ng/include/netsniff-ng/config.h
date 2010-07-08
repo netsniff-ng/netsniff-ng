@@ -22,6 +22,7 @@
 
 #include <netsniff-ng/types.h>
 #include <netsniff-ng/print.h>
+#include <linux/filter.h>
 
 /* Internals */
 #define DEFAULT_INTERFACE "lo"
@@ -66,7 +67,7 @@ struct system_data {
 	short prev_nic_flags;
 	int promisc_mode;
 	int pcap_fd;
-	struct sock_filter *bpf;
+	struct sock_fprog bpf;
 	void (*print_pkt) (uint8_t *, const struct tpacket_hdr *);
 	int bind_cpu;
 	unsigned int ring_size;

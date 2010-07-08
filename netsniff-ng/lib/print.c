@@ -382,7 +382,7 @@ void display_packets(struct system_data *sd)
 
 	while (pcap_fetch_next_packet(sd->pcap_fd, &header, (struct ethhdr *)buff) && likely(!sigint)) {
 		if (sd->print_pkt)
-			if (bpf_filter(sd->bpf, (uint8_t *) buff, header.tp_len))
+			if (bpf_filter(&sd->bpf, (uint8_t *) buff, header.tp_len))
 				sd->print_pkt((uint8_t *) buff, &header);
 	}
 

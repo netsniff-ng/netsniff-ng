@@ -388,7 +388,7 @@ void compat_fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb
 		if (errno == EINTR)
 			break;
 
-		if (bpf_filter(sd->bpf, pkt_buf, pkt_len))
+		if (bpf_filter(&sd->bpf, pkt_buf, pkt_len))
 		{	
 			spinner_trigger_event(&spinner_ctx);
 

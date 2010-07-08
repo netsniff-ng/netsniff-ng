@@ -372,14 +372,14 @@ static char *bpf_dump(const struct sock_filter bpf, int n)
  * @bpf:         bpf program
  * @len:         len of bpf
  */
-void bpf_dump_all(struct sock_filter *bpf, int len)
+void bpf_dump_all(struct sock_fprog *bpf)
 {
 	int i;
 
-	assert(bpf && len > 0);
+	assert(bpf);
 
-	for (i = 0; i < len; ++i) {
-		info(" %s\n", bpf_dump(bpf[i], i));
+	for (i = 0; i < bpf->len; ++i) {
+		info(" %s\n", bpf_dump(bpf->filter[i], i));
 	}
 
 	info("\n");
@@ -390,7 +390,7 @@ void bpf_dump_all(struct sock_filter *bpf, int len)
  * @bpf:         bpf program
  * @len:         len of bpf
  */
-int bpf_validate(const struct sock_filter *bpf, int len)
+int bpf_validate(const struct sock_fprog *bpf)
 {
 	uint32_t i, from;
 	const struct sock_filter *p;
@@ -399,11 +399,11 @@ int bpf_validate(const struct sock_filter *bpf, int len)
 	if (!bpf)
 		return 0;
 
-	if (len < 1)
+	if (bpf->len < 1)
 		return 0;
 
-	for (i = 0; i < len; ++i) {
-		p = &bpf[i];
+	for (i = 0; i < bpf->len; ++i) {
+		p = &bpf->filter[i];
 		switch (BPF_CLASS(p->code)) {
 			/*
 			 * Check that memory operations use valid addresses.
@@ -489,14 +489,14 @@ int bpf_validate(const struct sock_filter *bpf, int len)
 			from = i + 1;
 			switch (BPF_OP(p->code)) {
 			case BPF_JA:
-				if (from + p->k >= len)
+				if (from + p->k >= bpf->len)
 					return 0;
 				break;
 			case BPF_JEQ:
 			case BPF_JGT:
 			case BPF_JGE:
 			case BPF_JSET:
-				if (from + p->jt >= len || from + p->jf >= len)
+				if (from + p->jt >= bpf->len || from + p->jf >= bpf->len)
 					return 0;
 				break;
 			default:
@@ -511,7 +511,8 @@ int bpf_validate(const struct sock_filter *bpf, int len)
 			return 0;
 		}
 	}
-	return BPF_CLASS(bpf[len - 1].code) == BPF_RET;
+
+	return BPF_CLASS(bpf->filter[bpf->len - 1].code) == BPF_RET;
 }
 
 /**
@@ -521,23 +522,27 @@ int bpf_validate(const struct sock_filter *bpf, int len)
  * @packet:    network packet
  * @plen:      len of packet
  */
-uint32_t bpf_filter(const struct sock_filter * bpf, uint8_t * packet, size_t plen)
+
+uint32_t bpf_filter(const struct sock_fprog * fcode, uint8_t * packet, size_t plen)
 {
 	/* XXX: caplen == len */
 	uint32_t A, X;
 	uint32_t k;
-
+	struct sock_filter * bpf;
 	int32_t mem[BPF_MEMWORDS];
 
-	if (bpf == NULL)
+	if (fcode == NULL || fcode->filter == NULL || fcode->len == 0)
 		return 0xFFFFFFFF;
 
 	A = 0;
 	X = 0;
 
+	bpf = fcode->filter;
+
 	--bpf;
 
-	while (1) {
+	while(1) {
+
 		++bpf;
 
 		switch (bpf->code) {
@@ -744,5 +749,7 @@ uint32_t bpf_filter(const struct sock_filter * bpf, uint8_t * packet, size_t ple
 			A = X;
 			continue;
 		}
+
 	}
 }
+
