@@ -52,6 +52,7 @@
 struct system_data {
 	/* Some more or less boolean conf values */
 	int sysdaemon;
+	int compatibility_mode;
 	int blocking_mode;
 	int no_prioritization;
 	int no_touch_irq;

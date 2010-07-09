@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 
 	switch (sd.mode) {
 	case MODE_CAPTURE:
-		fetch_packets(&sd, sock, rb);
+		start_fetching_packets(&sd, sock, rb);
 		break;
 	case MODE_REPLAY:
 		transmit_packets(&sd, sock, rb);

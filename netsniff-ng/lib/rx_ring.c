@@ -414,3 +414,11 @@ void compat_fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb
 	close(pf_sock);
 	free(pkt_buf);
 }
+
+void start_fetching_packets(struct system_data *sd, int sock, struct ring_buff *rb)
+{
+	if (sd->compatibility_mode)
+		compat_fetch_packets(sd, sock, rb);
+	else
+		fetch_packets(sd, sock, rb);
+}

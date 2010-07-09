@@ -37,7 +37,7 @@
 #include <netsniff-ng/config.h>
 #include <netsniff-ng/netdev.h>
 
-static const char *short_options = "MS:QIe:lqi:NxXg:vhd:p:r:P:Df:sb:B:Hnt:";
+static const char *short_options = "MS:QIe:lqi:NxXg:vchd:p:r:P:Df:sb:B:Hnt:";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -66,6 +66,7 @@ static struct option long_options[] = {
 	{"pidfile", required_argument, 0, 'P'},
 	{"info", no_argument, 0, 'I'},
 	{"version", no_argument, 0, 'v'},
+	{"compatibility-mode", no_argument, 0, 'c'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
 };
@@ -243,6 +244,9 @@ void set_configuration(int argc, char **argv, struct system_data *sd)
 			exit(EXIT_SUCCESS);
 		case 'g':
 			info("Option `g` not yet implemented!\n");
+			break;
+		case 'c':
+			sd->compatibility_mode = 1;
 			break;
 		case '?':
 			switch (optopt) {
