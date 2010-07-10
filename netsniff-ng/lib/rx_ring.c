@@ -358,6 +358,8 @@ void compat_fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb
 		return;
 	}
 
+        inject_kernel_bpf(pf_sock, &sd->bpf);
+
 	if ((pkt_buf = malloc(mtu)) == NULL)
 	{
 		close(pf_sock);
@@ -388,26 +390,23 @@ void compat_fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb
 		if (errno == EINTR)
 			break;
 
-		if (bpf_filter(&sd->bpf, pkt_buf, pkt_len))
-		{	
-			spinner_trigger_event(&spinner_ctx);
+                spinner_trigger_event(&spinner_ctx);
 
-			gettimeofday(&now, NULL);
+                gettimeofday(&now, NULL);
 
-			tp_h.tp_sec = now.tv_sec;
-			tp_h.tp_usec = now.tv_usec;
-			tp_h.tp_len = tp_h.tp_snaplen = pkt_len;
+                tp_h.tp_sec = now.tv_sec;
+                tp_h.tp_usec = now.tv_usec;
+                tp_h.tp_len = tp_h.tp_snaplen = pkt_len;
 
-			if (sd->pcap_fd != PCAP_NO_DUMP) {
-				pcap_dump(sd->pcap_fd, &tp_h, (struct ethhdr *)(pkt_buf));
-			}
+                if (sd->pcap_fd != PCAP_NO_DUMP) {
+                        pcap_dump(sd->pcap_fd, &tp_h, (struct ethhdr *)(pkt_buf));
+                }
 
-			if (sd->print_pkt) {
-				/* This path here slows us down ... well, but
-				   the user wants to see what's going on */
-				sd->print_pkt(pkt_buf, &tp_h);
-			}
-		}
+                if (sd->print_pkt) {
+                        /* This path here slows us down ... well, but
+                           the user wants to see what's going on */
+                        sd->print_pkt(pkt_buf, &tp_h);
+                }
 	}
 	
 	spinner_cancel(&spinner_ctx);
