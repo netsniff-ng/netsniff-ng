@@ -44,12 +44,12 @@ extern void set_nic_flags(const char *dev, const short flag_to_set);
 extern void unset_nic_flags(const char *dev, const short flag_to_set);
 extern void print_device_info(void);
 extern void put_dev_into_promisc_mode(const char *dev);
-void inject_kernel_bpf(int sock, struct sock_fprog * bpf);
+void inject_kernel_bpf(int sock, struct sock_fprog *bpf);
 extern void reset_kernel_bpf(int sock);
 extern int ethdev_to_ifindex(const char *dev);
 extern void net_stat(int sock);
 extern int get_pf_socket(void);
-extern int parse_rules(char *rulefile, struct sock_fprog * bpf);
+extern int parse_rules(char *rulefile, struct sock_fprog *bpf);
 extern int get_mtu(const char *dev);
 
 /* Inline stuff */

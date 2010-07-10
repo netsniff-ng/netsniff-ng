@@ -86,7 +86,7 @@ void help(void)
 	info("  -P|--pidfile <file>    Specify a pidfile for the daemon\n");
 	info("\n");
 	info("Options, misc:\n");
-	info("  -c|--count <num>       Quit after receiving n packets\n");
+	info("  -c|--compatibility-mode Activate compatibility mode to receive/send packets\n");
 	info("  -v|--version           Print version\n");
 	info("  -h|--help              Print this help\n");
 	info("\n");

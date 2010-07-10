@@ -528,7 +528,7 @@ uint32_t bpf_filter(const struct sock_fprog * fcode, uint8_t * packet, size_t pl
 	/* XXX: caplen == len */
 	uint32_t A, X;
 	uint32_t k;
-	struct sock_filter * bpf;
+	struct sock_filter *bpf;
 	int32_t mem[BPF_MEMWORDS];
 
 	if (fcode == NULL || fcode->filter == NULL || fcode->len == 0)
@@ -541,7 +541,7 @@ uint32_t bpf_filter(const struct sock_fprog * fcode, uint8_t * packet, size_t pl
 
 	--bpf;
 
-	while(1) {
+	while (1) {
 
 		++bpf;
 
@@ -752,4 +752,3 @@ uint32_t bpf_filter(const struct sock_fprog * fcode, uint8_t * packet, size_t pl
 
 	}
 }
-

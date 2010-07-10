@@ -22,7 +22,7 @@
 
 #include <stdint.h>
 
-struct vendor_id{
+struct vendor_id {
 	uintptr_t id;
 	char *vendor;
 };

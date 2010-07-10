@@ -324,7 +324,7 @@ static void *flush_virt_tx_ring_thread(void *packed)
 	struct frame_map *fm;
 	struct tpacket_hdr *header;
 	struct packed_tx_data *ptd;
-	struct spinner_thread_context spinner_ctx = {0};
+	struct spinner_thread_context spinner_ctx = { 0 };
 
 	spinner_set_msg(&spinner_ctx, DEFAULT_TX_RING_SILENT_MESSAGE);
 

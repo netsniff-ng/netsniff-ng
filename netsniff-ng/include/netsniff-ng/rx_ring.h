@@ -38,7 +38,6 @@ extern void fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb
 extern void compat_fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb);
 extern void start_fetching_packets(struct system_data *sd, int sock, struct ring_buff *rb);
 
-
 #define DEFAULT_RX_RING_SILENT_MESSAGE "Receive ring dumping ... |"
 
 /* Inline stuff */

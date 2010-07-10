@@ -29,12 +29,12 @@
 
 static const char spinning_chars[] = { '|', '/', '-', '\\' };
 
-void spinner_trigger_event(struct spinner_thread_context * ctx)
+void spinner_trigger_event(struct spinner_thread_context *ctx)
 {
 	ctx->events++;
 }
 
-void spinner_set_msg(struct spinner_thread_context * ctx, const char * msg)
+void spinner_set_msg(struct spinner_thread_context *ctx, const char *msg)
 {
 	assert(ctx);
 	assert(msg);
@@ -42,13 +42,13 @@ void spinner_set_msg(struct spinner_thread_context * ctx, const char * msg)
 	strncpy(ctx->msg, msg, sizeof(ctx->msg) - 1);
 }
 
-void spinner_cancel(struct spinner_thread_context * ctx)
+void spinner_cancel(struct spinner_thread_context *ctx)
 {
 	if (ctx->active)
 		pthread_cancel(ctx->thread);
 }
 
-int spinner_create(struct spinner_thread_context * ctx)
+int spinner_create(struct spinner_thread_context *ctx)
 {
 	int rc;
 
@@ -62,11 +62,11 @@ int spinner_create(struct spinner_thread_context * ctx)
 	return (rc);
 }
 
-void * print_progress_spinner(void * arg)
+void *print_progress_spinner(void *arg)
 {
-	uint8_t	spin_count = 0;
+	uint8_t spin_count = 0;
 	uint64_t prev_events = 0;
-	struct spinner_thread_context * ctx = (struct spinner_thread_context *) arg;
+	struct spinner_thread_context *ctx = (struct spinner_thread_context *)arg;
 
 	ctx->active = 1;
 
@@ -77,12 +77,10 @@ void * print_progress_spinner(void * arg)
 		fflush(stdout);
 		usleep(SPINNER_SLEEP_TIME);
 
-		if (prev_events != ctx->events)
-		{
+		if (prev_events != ctx->events) {
 			spin_count++;
 			spin_count %= sizeof(spinning_chars);
 			prev_events = ctx->events;
 		}
 	}
 }
-

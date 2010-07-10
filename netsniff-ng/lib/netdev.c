@@ -745,7 +745,7 @@ void print_device_info(void)
  * @sock:             socket
  * @bpf:              Berkeley Packet Filter code
  */
-void inject_kernel_bpf(int sock, struct sock_fprog * bpf)
+void inject_kernel_bpf(int sock, struct sock_fprog *bpf)
 {
 	int ret;
 
@@ -830,7 +830,7 @@ void net_stat(int sock)
  * @bpf:        sock filter
  * @len:        len of bpf
  */
-int parse_rules(char *rulefile, struct sock_fprog * bpf)
+int parse_rules(char *rulefile, struct sock_fprog *bpf)
 {
 	int ret;
 	char buff[128] = { 0 };

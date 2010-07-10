@@ -189,17 +189,16 @@ void bind_dev_to_rx_ring(int sock, int ifindex, struct ring_buff *rb)
 	}
 }
 
-int compat_bind_dev(int sock, const char * dev)
+int compat_bind_dev(int sock, const char *dev)
 {
-	struct sockaddr saddr = {0};
+	struct sockaddr saddr = { 0 };
 	int rc;
 
 	strncpy(saddr.sa_data, dev, sizeof(saddr.sa_data) - 1);
 
 	rc = bind(sock, &saddr, sizeof(saddr));
 
-	if (rc == -1)
-	{
+	if (rc == -1) {
 		err("bind() failed");
 		return (rc);
 	}
@@ -217,7 +216,7 @@ void fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
 	int ret, foo, i = 0;
 	struct pollfd pfd = { 0 };
 
-	struct spinner_thread_context spinner_ctx = {0};
+	struct spinner_thread_context spinner_ctx = { 0 };
 
 	spinner_set_msg(&spinner_ctx, DEFAULT_RX_RING_SILENT_MESSAGE);
 
@@ -334,18 +333,18 @@ void fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
 		 */
 	}
 
-out:
+ out:
 	spinner_cancel(&spinner_ctx);
 }
 
 void compat_fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
 {
-	struct timeval		now;
-	struct spinner_thread_context spinner_ctx = {0};
-	struct tpacket_hdr tp_h = {0};
-	uint8_t * pkt_buf = NULL;
-	struct sockaddr_ll	from = {0};
-	socklen_t		from_len = sizeof(from);
+	struct timeval now;
+	struct spinner_thread_context spinner_ctx = { 0 };
+	struct tpacket_hdr tp_h = { 0 };
+	uint8_t *pkt_buf = NULL;
+	struct sockaddr_ll from = { 0 };
+	socklen_t from_len = sizeof(from);
 	int pf_sock;
 	int ret;
 	int pkt_len;
@@ -353,15 +352,13 @@ void compat_fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb
 
 	pf_sock = socket(PF_INET, SOCK_PACKET, htons(ETH_P_ALL));
 
-	if (compat_bind_dev(pf_sock, sd->dev) != 0)
-	{
+	if (compat_bind_dev(pf_sock, sd->dev) != 0) {
 		return;
 	}
 
-        inject_kernel_bpf(pf_sock, &sd->bpf);
+	inject_kernel_bpf(pf_sock, &sd->bpf);
 
-	if ((pkt_buf = malloc(mtu)) == NULL)
-	{
+	if ((pkt_buf = malloc(mtu)) == NULL) {
 		close(pf_sock);
 		return;
 	}
@@ -383,32 +380,32 @@ void compat_fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb
 	if (sd->pcap_fd != PCAP_NO_DUMP) {
 		pcap_write_header(sd->pcap_fd, LINKTYPE_EN10MB, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
 	}
-	
+
 	while (likely(!sigint)) {
-		pkt_len = recvfrom(pf_sock, pkt_buf, mtu, MSG_TRUNC, (struct sockaddr *) &from, &from_len);
+		pkt_len = recvfrom(pf_sock, pkt_buf, mtu, MSG_TRUNC, (struct sockaddr *)&from, &from_len);
 
 		if (errno == EINTR)
 			break;
 
-                spinner_trigger_event(&spinner_ctx);
+		spinner_trigger_event(&spinner_ctx);
 
-                gettimeofday(&now, NULL);
+		gettimeofday(&now, NULL);
 
-                tp_h.tp_sec = now.tv_sec;
-                tp_h.tp_usec = now.tv_usec;
-                tp_h.tp_len = tp_h.tp_snaplen = pkt_len;
+		tp_h.tp_sec = now.tv_sec;
+		tp_h.tp_usec = now.tv_usec;
+		tp_h.tp_len = tp_h.tp_snaplen = pkt_len;
 
-                if (sd->pcap_fd != PCAP_NO_DUMP) {
-                        pcap_dump(sd->pcap_fd, &tp_h, (struct ethhdr *)(pkt_buf));
-                }
+		if (sd->pcap_fd != PCAP_NO_DUMP) {
+			pcap_dump(sd->pcap_fd, &tp_h, (struct ethhdr *)(pkt_buf));
+		}
 
-                if (sd->print_pkt) {
-                        /* This path here slows us down ... well, but
-                           the user wants to see what's going on */
-                        sd->print_pkt(pkt_buf, &tp_h);
-                }
+		if (sd->print_pkt) {
+			/* This path here slows us down ... well, but
+			   the user wants to see what's going on */
+			sd->print_pkt(pkt_buf, &tp_h);
+		}
 	}
-	
+
 	spinner_cancel(&spinner_ctx);
 	close(pf_sock);
 	free(pkt_buf);
