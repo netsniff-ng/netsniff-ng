@@ -36,7 +36,7 @@
  */
 void help(void)
 {
-	info("\n%s %s\n", PROGNAME_STRING, VERSION_STRING);
+	info("\n%s %s, the packet sniffing beast\n", PROGNAME_STRING, VERSION_STRING);
 	info("http://www.netsniff-ng.org\n\n");
 	info("Usage: netsniff-ng [options]\n");
 	info("\n");
@@ -118,15 +118,11 @@ void help(void)
  */
 void version(void)
 {
-	info("\n%s %s\n", PROGNAME_STRING, VERSION_STRING);
+	info("\n%s %s, the packet sniffing beast\n", PROGNAME_STRING, VERSION_STRING);
 	info("http://www.netsniff-ng.org\n\n");
 #ifdef __HAVE_TX_RING__
 	info("Compiled with transmit ring functionality :)\n\n");
-#else
-	info("Compiled without transmit ring functionality :(\n\n");
 #endif
-	info("%s", MOOH);	/* ;) */
-	info("\n");
 	info("Please report bugs to <bugs@netsniff-ng.org>\n");
 	info("Copyright (C) 2009, 2010 Daniel Borkmann and Emmanuel Roullit\n");
 	info("License: GNU GPL version 2\n");
