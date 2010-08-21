@@ -32,8 +32,8 @@
 int main(int argc, char **argv)
 {
 	int sock;
-	ring_buff_t *rb;
-	system_data_t sd = { 0 };
+	struct ring_buff *rb;
+	struct system_data sd = { 0 };
 
 	init_configuration(&sd);
 	set_configuration(argc, argv, &sd);
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 
 	switch (sd.mode) {
 	case MODE_CAPTURE:
-		fetch_packets(&sd, sock, rb);
+		start_fetching_packets(&sd, sock, rb);
 		break;
 	case MODE_REPLAY:
 		transmit_packets(&sd, sock, rb);

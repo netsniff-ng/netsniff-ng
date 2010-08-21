@@ -22,13 +22,13 @@
 
 #include <netsniff-ng/packet.h>
 
-static inline void set_pkt_step(packet_t * pkt, uint16_t type)
+static inline void set_pkt_step(struct packet *pkt, uint16_t type)
 {
 	assert(pkt);
 	pkt->pkt[pkt->step++] = type;
 }
 
-int parse_packet(uint8_t * raw, uint32_t len, packet_t * pkt)
+int parse_packet(uint8_t * raw, uint32_t len, struct packet *pkt)
 {
 	uint8_t **buffer = &raw;
 	uint32_t tmp_len = len;

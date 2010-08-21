@@ -59,27 +59,27 @@ void print_udphdr(struct udphdr *udp)
 	uint16_t udpd = ntohs(udp->dest);
 
 	/* XXX: Is there a better way to determine? */
-	if(udps < udpd && udps < 1024) {
-		port_desc = (char *) ports_udp_find(udp->source);
-	} else if(udpd < udps && udpd < 1024) {
-		port_desc = (char *) ports_udp_find(udp->dest);	
+	if (udps < udpd && udps < 1024) {
+		port_desc = (char *)ports_udp_find(udp->source);
+	} else if (udpd < udps && udpd < 1024) {
+		port_desc = (char *)ports_udp_find(udp->dest);
 	} else {
-		tmp1 = (char *) ports_udp_find(udp->source);
-		tmp2 = (char *) ports_udp_find(udp->dest);
-		
-		if(tmp1 && !tmp2) {
+		tmp1 = (char *)ports_udp_find(udp->source);
+		tmp2 = (char *)ports_udp_find(udp->dest);
+
+		if (tmp1 && !tmp2) {
 			port_desc = tmp1;
-		} else if(!tmp1 && tmp2) {
+		} else if (!tmp1 && tmp2) {
 			port_desc = tmp2;
-		} else if(tmp1 && tmp2) {
-			if(udps < udpd)
+		} else if (tmp1 && tmp2) {
+			if (udps < udpd)
 				port_desc = tmp1;
 			else
 				port_desc = tmp2;
 		}
 	}
 
-	if(!port_desc)
+	if (!port_desc)
 		port_desc = "Unknown";
 
 	info(" [ UDP ");
@@ -106,27 +106,27 @@ void print_udphdr_less(struct udphdr *udp)
 	uint16_t udpd = ntohs(udp->dest);
 
 	/* XXX: Is there a better way to determine? */
-	if(udps < udpd && udps < 1024) {
-		port_desc = (char *) ports_udp_find(udp->source);
-	} else if(udpd < udps && udpd < 1024) {
-		port_desc = (char *) ports_udp_find(udp->dest);	
+	if (udps < udpd && udps < 1024) {
+		port_desc = (char *)ports_udp_find(udp->source);
+	} else if (udpd < udps && udpd < 1024) {
+		port_desc = (char *)ports_udp_find(udp->dest);
 	} else {
-		tmp1 = (char *) ports_udp_find(udp->source);
-		tmp2 = (char *) ports_udp_find(udp->dest);
-		
-		if(tmp1 && !tmp2) {
+		tmp1 = (char *)ports_udp_find(udp->source);
+		tmp2 = (char *)ports_udp_find(udp->dest);
+
+		if (tmp1 && !tmp2) {
 			port_desc = tmp1;
-		} else if(!tmp1 && tmp2) {
+		} else if (!tmp1 && tmp2) {
 			port_desc = tmp2;
-		} else if(tmp1 && tmp2) {
-			if(udps < udpd)
+		} else if (tmp1 && tmp2) {
+			if (udps < udpd)
 				port_desc = tmp1;
 			else
 				port_desc = tmp2;
 		}
 	}
 
-	if(!port_desc)
+	if (!port_desc)
 		port_desc = "U";
 
 	info("UDP, ");

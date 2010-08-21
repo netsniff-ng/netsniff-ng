@@ -71,7 +71,7 @@ static const char *const wop_mode[][2] = {
 static inline void assert_dev_name(const char *dev)
 {
 	assert(dev);
-	assert(strnlen(dev, IFNAMSIZ));
+	assert(strlen(dev) < IFNAMSIZ);
 }
 
 static int get_af_socket(int af)
@@ -115,7 +115,7 @@ static int get_wireless_bitrate(const char *ifname)
 	assert_dev_name(ifname);
 
 	memset(&iwr, 0, sizeof(iwr));
-	strncpy(iwr.ifr_name, ifname, IFNAMSIZ);
+	strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name) - 1);
 
 	sock = get_af_socket(AF_INET);
 
@@ -140,7 +140,7 @@ static int get_wireless_ssid(const char *ifname, char *ssid)
 	sock = get_af_socket(AF_INET);
 
 	memset(&iwr, 0, sizeof(iwr));
-	strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+	strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name) - 1);
 
 	iwr.u.essid.pointer = ssid;
 	iwr.u.essid.length = IW_ESSID_MAX_SIZE;
@@ -164,7 +164,7 @@ static inline int adjust_dbm_level(int dbm_val)
 	return dbm_val;
 }
 
-static int dbm_to_mwatt(int in)
+static int dbm_to_mwatt(const int in)
 {
 	/* From Jean Tourrilhes <jt@hpl.hp.com> (iwlib.c) */
 	int ip = in / 10;
@@ -190,7 +190,7 @@ static int get_wireless_tx_power(const char *ifname)
 	sock = get_af_socket(AF_INET);
 
 	memset(&iwr, 0, sizeof(iwr));
-	strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+	strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name) - 1);
 
 	ret = ioctl(sock, SIOCGIWTXPOW, &iwr);
 	if (ret == 0)
@@ -215,8 +215,8 @@ static int get_wireless_sigqual(const char *ifname, struct iw_statistics *stats)
 	sock = get_af_socket(AF_INET);
 
 	memset(&iwr, 0, sizeof(iwr));
-	strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
 
+	strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name) - 1);
 	iwr.u.data.pointer = (caddr_t) stats;
 	iwr.u.data.length = sizeof(*stats);
 	iwr.u.data.flags = 1;
@@ -243,8 +243,8 @@ static int get_wireless_rangemax_sigqual(const char *ifname)
 
 	memset(&iwr, 0, sizeof(iwr));
 	memset(&iwrange, 0, sizeof(iwrange));
-	strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
 
+	strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name) - 1);
 	iwr.u.data.pointer = (caddr_t) & iwrange;
 	iwr.u.data.length = sizeof(iwrange);
 	iwr.u.data.flags = 0;
@@ -275,7 +275,7 @@ static int get_ethtool_bitrate(const char *ifname)
 	memset(&ecmd, 0, sizeof(ecmd));
 	ecmd.cmd = ETHTOOL_GSET;
 
-	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+	strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name) - 1);
 
 	sock = get_af_socket(AF_INET);
 
@@ -289,19 +289,10 @@ static int get_ethtool_bitrate(const char *ifname)
 
 	switch (ecmd.speed) {
 	case SPEED_10:
-		ret = 10;
-		break;
 	case SPEED_100:
-		ret = 100;
-		break;
 	case SPEED_1000:
-		ret = 1000;
-		break;
-	case SPEED_2500:
-		ret = 2500;
-		break;
 	case SPEED_10000:
-		ret = 10000;
+		ret = ecmd.speed;
 		break;
 	default:
 		ret = 0;
@@ -322,12 +313,15 @@ static int get_ethtool_drvinf(const char *ifname, struct ethtool_drvinfo *di)
 	struct ifreq ifr;
 	struct ethtool_drvinfo __di;
 
+	assert(di);
 	assert_dev_name(ifname);
 
 	memset(&ifr, 0, sizeof(ifr));
+	memset(&__di, 0, sizeof(__di));
+
 	__di.cmd = ETHTOOL_GDRVINFO;
 
-	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+	strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name) - 1);
 
 	sock = get_af_socket(AF_INET);
 
@@ -373,7 +367,7 @@ int get_device_bitrate_generic_cable(const char *ifname)
  * @sock:                      socket descriptor
  * @ifname:                    device name
  */
-static int get_mtu(const char *dev)
+int get_mtu(const char *dev)
 {
 	int sock;
 	struct ifreq ifr;
@@ -383,7 +377,7 @@ static int get_mtu(const char *dev)
 	sock = get_af_socket(AF_INET);
 
 	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, dev, IFNAMSIZ);
+	strncpy(ifr.ifr_name, dev, sizeof(ifr.ifr_name) - 1);
 
 	if (ioctl(sock, SIOCGIFMTU, &ifr) < 0) {
 		err("Doing iotcl(SIOCGIFMTU)");
@@ -399,6 +393,10 @@ static int get_nic_irq_number_proc(const char *dev)
 	/* Since fetching IRQ numbers from SIOCGIFMAP is deprecated and not
 	   supported anymore, we need to grab them from procfs */
 
+	/* XXX Mhh... I think it would cleverer to read our 
+	 * info from /sys/class/net/eth0/device/irq 
+	 */
+
 	int ret = -1;
 	char *buffp;
 	char buff[128] = { 0 };
@@ -406,7 +404,7 @@ static int get_nic_irq_number_proc(const char *dev)
 	assert_dev_name(dev);
 
 	/* We exclude lo! */
-	if(!strncmp("lo", dev, strlen("lo")))
+	if (!strncmp("lo", dev, strlen("lo")))
 		return -1;
 
 	FILE *fp = fopen("/proc/interrupts", "r");
@@ -419,10 +417,10 @@ static int get_nic_irq_number_proc(const char *dev)
 
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
-		if(strstr(buff, dev) == NULL)
+		if (strstr(buff, dev) == NULL)
 			continue;
 		buffp = buff;
-		while(*buffp != ':') {
+		while (*buffp != ':') {
 			buffp++;
 		}
 		*buffp = 0;
@@ -444,8 +442,12 @@ int bind_nic_interrupts_to_cpu(int intr, int cpu)
 	char buff[128] = { 0 };
 	char file[128] = { 0 };
 
+	/* XXX Mhh... I think it would cleverer to read our 
+	 * info from /sys/class/net/eth0/device/local_cpulist
+	 */
+
 	/* Note: first CPU begins with CPU 0 */
-	if(intr < 0 || cpu < 0)
+	if (intr < 0 || cpu < 0)
 		return -EINVAL;
 
 	/* smp_affinity starts counting with CPU 1, 2, ... */
@@ -458,8 +460,8 @@ int bind_nic_interrupts_to_cpu(int intr, int cpu)
 		return -ENOENT;
 	}
 
-	sprintf(buff, "%d", cpu);	
-	ret = fwrite(buff, sizeof(buff), 1, fp);	
+	sprintf(buff, "%d", cpu);
+	ret = fwrite(buff, sizeof(buff), 1, fp);
 
 	fclose(fp);
 	return (ret > 0 ? 0 : ret);
@@ -480,7 +482,7 @@ short get_nic_flags(const char *dev)
 	sock = get_af_socket(AF_INET);
 
 	memset(&ethreq, 0, sizeof(ethreq));
-	strncpy(ethreq.ifr_name, dev, IFNAMSIZ);
+	strncpy(ethreq.ifr_name, dev, sizeof(ethreq.ifr_name) - 1);
 
 	ret = ioctl(sock, SIOCGIFFLAGS, &ethreq);
 	if (ret < 0) {
@@ -498,18 +500,18 @@ short get_nic_flags(const char *dev)
  * @dev:              device name
  * @mac:              Flags to set
  */
-void set_nic_flags(const char * dev, const short nic_flags)
+void set_nic_flags(const char *dev, const short nic_flags)
 {
 	int ret;
 	int sock;
 	struct ifreq ethreq;
 
 	assert_dev_name(dev);
-	
+
 	sock = get_af_socket(AF_INET);
 
 	memset(&ethreq, 0, sizeof(ethreq));
-	strncpy(ethreq.ifr_name, dev, IFNAMSIZ);
+	strncpy(ethreq.ifr_name, dev, sizeof(ethreq.ifr_name) - 1);
 	ethreq.ifr_flags = nic_flags;
 
 	ret = ioctl(sock, SIOCSIFFLAGS, &ethreq);
@@ -539,7 +541,7 @@ static int get_nic_mac(const char *dev, uint8_t * mac)
 	sock = get_af_socket(AF_INET);
 
 	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, dev, IFNAMSIZ);
+	strncpy(ifr.ifr_name, dev, sizeof(ifr.ifr_name) - 1);
 
 	ret = ioctl(sock, SIOCGIFHWADDR, &ifr);
 	if (ret) {
@@ -594,9 +596,9 @@ static int get_interface_address(const char *dev, struct in_addr *in, struct in6
 
 	memset(in, 0, sizeof(*in));
 	memset(in6, 0, sizeof(*in6));
-
 	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, dev, IFNAMSIZ);
+
+	strncpy(ifr.ifr_name, dev, sizeof(ifr.ifr_name) - 1);
 
 	sock = get_af_socket(AF_INET);
 
@@ -742,22 +744,14 @@ void print_device_info(void)
  * inject_kernel_bpf - Binds filter code to socket
  * @sock:             socket
  * @bpf:              Berkeley Packet Filter code
- * @len:              length of bpf
  */
-void inject_kernel_bpf(int sock, struct sock_filter *bpf, int len)
+void inject_kernel_bpf(int sock, struct sock_fprog *bpf)
 {
 	int ret;
-	struct sock_fprog filter;
 
 	assert(bpf);
-	assert(len > 0 && (len % sizeof(*bpf) == 0));
 
-	memset(&filter, 0, sizeof(filter));
-
-	filter.len = len / sizeof(*bpf);
-	filter.filter = bpf;
-
-	ret = setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER, &filter, sizeof(filter));
+	ret = setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER, bpf, sizeof(*bpf));
 	if (ret < 0) {
 		err("setsockopt: filter cannot be injected");
 		close(sock);
@@ -797,7 +791,7 @@ int ethdev_to_ifindex(const char *dev)
 	sock = get_af_socket(AF_INET);
 
 	memset(&ethreq, 0, sizeof(ethreq));
-	strncpy(ethreq.ifr_name, dev, IFNAMSIZ);
+	strncpy(ethreq.ifr_name, dev, sizeof(ethreq.ifr_name) - 1);
 
 	ret = ioctl(sock, SIOCGIFINDEX, &ethreq);
 	if (ret < 0) {
@@ -836,7 +830,7 @@ void net_stat(int sock)
  * @bpf:        sock filter
  * @len:        len of bpf
  */
-int parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
+int parse_rules(char *rulefile, struct sock_fprog *bpf)
 {
 	int ret;
 	char buff[128] = { 0 };
@@ -844,7 +838,6 @@ int parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 	struct sock_filter sf_single;
 
 	assert(bpf);
-	assert(len);
 	assert(rulefile);
 
 	FILE *fp = fopen(rulefile, "r");
@@ -877,14 +870,16 @@ int parse_rules(char *rulefile, struct sock_filter **bpf, int *len)
 			return 0;
 		}
 
-		*len += 1;
-		*bpf = (struct sock_filter *)realloc(*bpf, *len * sizeof(sf_single));
+		bpf->len++;
+		bpf->filter = (struct sock_filter *)realloc(bpf->filter, bpf->len * sizeof(sf_single));
 
-		memcpy(&((*bpf)[*len - 1]), &sf_single, sizeof(sf_single));
+		memcpy(&bpf->filter[bpf->len - 1], &sf_single, sizeof(sf_single));
+
 		memset(buff, 0, sizeof(buff));
 	}
 
 	fclose(fp);
+
 	/* bpf_validate() returns 0 on failiure */
-	return (bpf_validate(*bpf, *len));
+	return (bpf_validate(bpf));
 }

@@ -20,33 +20,37 @@
 #ifndef _NET_RINGBUFF_H_
 #define _NET_RINGBUFF_H_
 
+#include <net/ethernet.h>
+
 #define CHUNK_STATUS_FREE 0
 #define CHUNK_STATUS_BUSY 1
 
-typedef size_t ringbuffer_offs_t;
+/* The MTU size is the amount of allowed payload + the ethernet header */
+#define DEFAULT_PAYLOAD_SIZE    1500
+#define DEFAULT_MTU             DEFAULT_PAYLOAD_SIZE + ETH_HLEN
 
-typedef struct {
+struct ringbuffer_user {
 	/* XXX: MTU size and aligned */
-	char payload[1500];
+	char payload[DEFAULT_MTU];
 	size_t len;
-} ringbuffer_user_t;
+};
 
-typedef struct {
+struct ringbuffer_chunk {
 	uint8_t ch_status;
-	ringbuffer_user_t ch_user;
-} ringbuffer_chunk_t;
+	struct ringbuffer_user ch_user;
+};
 
-typedef struct {
+struct ringbuffer {
 	size_t max_slots;
 	size_t cur_slots;
-	ringbuffer_offs_t next_free;
-	ringbuffer_offs_t next_user;
-	ringbuffer_chunk_t **ring;
-} ringbuffer_t;
+	size_t next_free;
+	size_t next_user;
+	struct ringbuffer_chunk **ring;
+};
 
-extern int ringbuffer_init(ringbuffer_t ** rb, size_t slots);
-extern void ringbuffer_cleanup(ringbuffer_t * rb);
-extern int ringbuffer_put(ringbuffer_t * rb, ringbuffer_user_t * rb_data);
-extern int ringbuffer_get(ringbuffer_t * rb, ringbuffer_user_t * rb_data);
+extern int ringbuffer_init(struct ringbuffer **rb, size_t slots);
+extern void ringbuffer_cleanup(struct ringbuffer *rb);
+extern int ringbuffer_put(struct ringbuffer *rb, struct ringbuffer_user *rb_data);
+extern int ringbuffer_get(struct ringbuffer *rb, struct ringbuffer_user *rb_data);
 
 #endif				/* _NET_RINGBUFF_H_ */

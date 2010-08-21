@@ -37,7 +37,7 @@
  * Hash function API
  */
 
-int hashtable_init(hashtable_t ** ht, size_t size, hashtable_callbacks_t * f)
+int hashtable_init(struct hashtable **ht, size_t size, struct hashtable_callbacks *f)
 {
 	if (ht == NULL || f == NULL || size == 0)
 		return -EINVAL;
@@ -65,10 +65,10 @@ int hashtable_init(hashtable_t ** ht, size_t size, hashtable_callbacks_t * f)
 	return 0;
 }
 
-void hashtable_destroy(hashtable_t * ht)
+void hashtable_destroy(struct hashtable *ht)
 {
 	int i;
-	hashtable_bucket_t *hb, *hb_prev;
+	struct hashtable_bucket *hb, *hb_prev;
 
 	assert(ht);
 
@@ -85,10 +85,10 @@ void hashtable_destroy(hashtable_t * ht)
 	free(ht);
 }
 
-void *hashtable_insert(hashtable_t * ht, void * key, void *data)
+void *hashtable_insert(struct hashtable *ht, void *key, void *data)
 {
 	uintptr_t val;
-	hashtable_bucket_t *hb;
+	struct hashtable_bucket *hb;
 
 	assert(ht);
 	assert(ht->size);
@@ -113,10 +113,10 @@ void *hashtable_insert(hashtable_t * ht, void * key, void *data)
 	return data;
 }
 
-void *hashtable_find(hashtable_t * ht, void *key)
+void *hashtable_find(struct hashtable *ht, void *key)
 {
 	uintptr_t val;
-	hashtable_bucket_t *hb;
+	struct hashtable_bucket *hb;
 
 	assert(ht);
 	assert(ht->size);
@@ -129,10 +129,10 @@ void *hashtable_find(hashtable_t * ht, void *key)
 	return NULL;
 }
 
-void *hashtable_delete(hashtable_t * ht, void *key)
+void *hashtable_delete(struct hashtable *ht, void *key)
 {
 	uintptr_t val;
-	hashtable_bucket_t *hb, *hb_prev;
+	struct hashtable_bucket *hb, *hb_prev;
 	void *data = NULL;
 
 	assert(ht);
@@ -158,10 +158,10 @@ void *hashtable_delete(hashtable_t * ht, void *key)
 	return data;
 }
 
-int hashtable_foreach(hashtable_t * ht, void (*callback) (void *key, void *data))
+int hashtable_foreach(struct hashtable *ht, void (*callback) (void *key, void *data))
 {
 	int i;
-	hashtable_bucket_t *hb;
+	struct hashtable_bucket *hb;
 
 	assert(ht);
 	assert(callback);
@@ -205,8 +205,8 @@ int raw_key_equal(void *key1, void *key2)
  * IEEE vendor table
  */
 
-static hashtable_t *ieee_vendor_db;
-static hashtable_callbacks_t ieee_vendor_cbs = {
+static struct hashtable *ieee_vendor_db;
+static struct hashtable_callbacks ieee_vendor_cbs = {
 	.key_copy = no_copy,
 	.key_free = no_free,
 	.key_to_hash = raw_key_to_hash,
@@ -224,7 +224,7 @@ int ieee_vendors_init(void)
 		return ret;
 	}
 
-	len = sizeof(vendor_db) / sizeof(vendor_id_t);
+	len = sizeof(vendor_db) / sizeof(struct vendor_id);
 
 	for (i = 0; i < len; ++i) {
 		hashtable_insert(ieee_vendor_db, (void *)vendor_db[i].id, vendor_db[i].vendor);
@@ -259,8 +259,8 @@ const char *ieee_vendors_find(const uint8_t * mac_addr)
  * UDP port table
  */
 
-static hashtable_t *ports_udp_db;
-static hashtable_callbacks_t ports_udp_cbs = {
+static struct hashtable *ports_udp_db;
+static struct hashtable_callbacks ports_udp_cbs = {
 	.key_copy = no_copy,
 	.key_free = no_free,
 	.key_to_hash = raw_key_to_hash,
@@ -278,7 +278,7 @@ int ports_udp_init(void)
 		return ret;
 	}
 
-	len = sizeof(ports_udp) / sizeof(port_udp_t);
+	len = sizeof(ports_udp) / sizeof(struct port_udp);
 
 	for (i = 0; i < len; ++i) {
 		hashtable_insert(ports_udp_db, (void *)ports_udp[i].id, ports_udp[i].port);
@@ -295,10 +295,10 @@ void ports_udp_destroy(void)
 const char *ports_udp_find(uint16_t port)
 {
 	uintptr_t key = 0;
-	uint8_t *keyp = (uint8_t *) &key;
+	uint8_t *keyp = (uint8_t *) & key;
 
 	keyp[3] = (port >> 8) & 0xFF;
-	keyp[2] = (port)      & 0xFF;
+	keyp[2] = (port) & 0xFF;
 	key = ntohl(key);
 
 	return hashtable_find(ports_udp_db, (void *)key);
@@ -308,8 +308,8 @@ const char *ports_udp_find(uint16_t port)
  * TCP port table
  */
 
-static hashtable_t *ports_tcp_db;
-static hashtable_callbacks_t ports_tcp_cbs = {
+static struct hashtable *ports_tcp_db;
+static struct hashtable_callbacks ports_tcp_cbs = {
 	.key_copy = no_copy,
 	.key_free = no_free,
 	.key_to_hash = raw_key_to_hash,
@@ -327,7 +327,7 @@ int ports_tcp_init(void)
 		return ret;
 	}
 
-	len = sizeof(ports_tcp) / sizeof(port_tcp_t);
+	len = sizeof(ports_tcp) / sizeof(struct port_tcp);
 
 	for (i = 0; i < len; ++i) {
 		hashtable_insert(ports_tcp_db, (void *)ports_tcp[i].id, ports_tcp[i].port);
@@ -344,10 +344,10 @@ void ports_tcp_destroy(void)
 const char *ports_tcp_find(uint16_t port)
 {
 	uintptr_t key = 0;
-	uint8_t *keyp = (uint8_t *) &key;
+	uint8_t *keyp = (uint8_t *) & key;
 
 	keyp[3] = (port >> 8) & 0xFF;
-	keyp[2] = (port)      & 0xFF;
+	keyp[2] = (port) & 0xFF;
 	key = ntohl(key);
 
 	return hashtable_find(ports_tcp_db, (void *)key);
@@ -357,8 +357,8 @@ const char *ports_tcp_find(uint16_t port)
  * Ether types table
  */
 
-static hashtable_t *ether_types_db;
-static hashtable_callbacks_t ether_types_cbs = {
+static struct hashtable *ether_types_db;
+static struct hashtable_callbacks ether_types_cbs = {
 	.key_copy = no_copy,
 	.key_free = no_free,
 	.key_to_hash = raw_key_to_hash,
@@ -376,7 +376,7 @@ int ether_types_init(void)
 		return ret;
 	}
 
-	len = sizeof(ether_types) / sizeof(ether_type_t);
+	len = sizeof(ether_types) / sizeof(ether_types[0]);
 
 	for (i = 0; i < len; ++i) {
 		hashtable_insert(ether_types_db, (void *)ether_types[i].id, ether_types[i].type);
@@ -394,10 +394,10 @@ const char *ether_types_find(uint16_t type)
 {
 	char *type_str;
 	uintptr_t key = 0;
-	uint8_t *keyp = (uint8_t *) &key;
+	uint8_t *keyp = (uint8_t *) & key;
 
 	keyp[3] = (type >> 8) & 0xFF;
-	keyp[2] = (type)      & 0xFF;
+	keyp[2] = (type) & 0xFF;
 	key = ntohl(key);
 
 	type_str = hashtable_find(ether_types_db, (void *)key);
@@ -411,10 +411,10 @@ const char *ether_types_find_less(uint16_t type)
 {
 	char *type_str;
 	uintptr_t key = 0;
-	uint8_t *keyp = (uint8_t *) &key;
+	uint8_t *keyp = (uint8_t *) & key;
 
 	keyp[3] = (type >> 8) & 0xFF;
-	keyp[2] = (type)      & 0xFF;
+	keyp[2] = (type) & 0xFF;
 	key = ntohl(key);
 
 	type_str = hashtable_find(ether_types_db, (void *)key);
@@ -423,4 +423,3 @@ const char *ether_types_find_less(uint16_t type)
 
 	return type_str;
 }
-

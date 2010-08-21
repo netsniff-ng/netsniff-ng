@@ -22,13 +22,13 @@
 
 #include <stdint.h>
 
-typedef struct {
+struct port_udp {
 	uintptr_t id;
 	char *port;
-} port_udp_t;
+};
 
 /* Partly taken from /etc/services and from Nmap's services file. */
-port_udp_t ports_udp[] = {
+static const struct port_udp ports_udp[] = {
 	{1, "tcpmux"},
 	{2, "compressnet"},
 	{3, "compressnet"},

@@ -22,13 +22,13 @@
 
 #include <stdint.h>
 
-typedef struct {
+struct vendor_id {
 	uintptr_t id;
 	char *vendor;
-} vendor_id_t;
+};
 
 /* Taken from IEEE oui vendor list. */
-vendor_id_t vendor_db[] = {
+static const struct vendor_id vendor_db[] = {
 	{0x000000, "XEROX CORPORATION"},
 	{0x000001, "XEROX CORPORATION"},
 	{0x000002, "XEROX CORPORATION"},
@@ -13383,6 +13383,6 @@ vendor_id_t vendor_db[] = {
 	{0xCF0000, "Ethernet Configuration Test protocol (Loopback)"},
 };
 
-char *vendor_unknown = "Unknown";
+char vendor_unknown[] = "Unknown";
 
 #endif				/* _NET_OUI_H_ */

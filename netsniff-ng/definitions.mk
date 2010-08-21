@@ -8,8 +8,6 @@ CC_NORM      = echo "CC        $<"; \
                gcc
 CC_DEBUG     = echo "DBG       $<"; \
                gcc
-CC_PROF      = echo "PRF       $<"; \
-               gcc
 
 LIBS         = -lpthread -lrt
 MAKEFLAGS   += --no-print-directory
@@ -28,15 +26,6 @@ ifneq ($(or $(call eq,$(MAKECMDGOALS),"all"), $(call eq,$(MAKECMDGOALS),"")),)
 	CC      = $(CC_NORM) -c
 	CFLAGS  = -O2 -fomit-frame-pointer -fno-strict-aliasing -fno-common  \
 		  -fno-delete-null-pointer-checks -pedantic -std=gnu99
-	CFLAGS += -Wall -Werror -Wundef -Wstrict-prototypes -Wno-trigraphs   \
-		  -Werror-implicit-function-declaration -Wno-format-security \
-		  -Wcomments -Wendif-labels
-endif
-
-ifeq ($(MAKECMDGOALS), profile)
-	LD      = $(LD_NORM) -pg -o
-	CC      = $(CC_PROF) -pg -c
-	CFLAGS  = -O2 -fno-inline -pedantic -std=gnu99
 	CFLAGS += -Wall -Werror -Wundef -Wstrict-prototypes -Wno-trigraphs   \
 		  -Werror-implicit-function-declaration -Wno-format-security \
 		  -Wcomments -Wendif-labels

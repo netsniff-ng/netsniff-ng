@@ -83,10 +83,10 @@ static inline void print_ethhdr_less(struct ethhdr *eth)
 
 	assert(eth);
 
-	info("0x%.4x, %.2x:%.2x:%.2x:%.2x:%.2x:%.2x => %.2x:%.2x:%.2x:%.2x:%.2x:%.2x, %s => %s, ", 
-	     ntohs(eth->h_proto), 
-	     src_mac[0], src_mac[1], src_mac[2], src_mac[3], src_mac[4], src_mac[5], 
-	     dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4], dst_mac[5], 
+	info("0x%.4x, %.2x:%.2x:%.2x:%.2x:%.2x:%.2x => %.2x:%.2x:%.2x:%.2x:%.2x:%.2x, %s => %s, ",
+	     ntohs(eth->h_proto),
+	     src_mac[0], src_mac[1], src_mac[2], src_mac[3], src_mac[4], src_mac[5],
+	     dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4], dst_mac[5],
 	     ieee_vendors_find(src_mac), ieee_vendors_find(dst_mac));
 }
 

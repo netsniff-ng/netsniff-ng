@@ -12,7 +12,6 @@ dep-objs   = lib/
 target     = netsniff-ng
 
 all: clean build
-profile: all
 debug: all
 develop: all
 
@@ -60,7 +59,6 @@ help:
 	@echo '  clean           - Remove generated files'
 	@echo 'Building targets:'
 	@echo '  all             - Build netsniff-ng (default)'
-	@echo '  profile         - Build netsniff-ng for profiling _only_'
 	@echo '  debug           - Build netsniff-ng for debugging _only_'
 	@echo '  develop         - Build netsniff-ng for developing _only_'
 	@echo 'Setup targets:'

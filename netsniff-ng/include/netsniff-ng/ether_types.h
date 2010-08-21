@@ -22,13 +22,13 @@
 
 #include <stdint.h>
 
-typedef struct {
+struct ether_type {
 	uintptr_t id;
 	char *type;
-} ether_type_t;
+};
 
 /* Partly taken from linux/if_ether.h and some other places on the net. */
-ether_type_t ether_types[] = {
+static const struct ether_type ether_types[] = {
 	{0x0000, "IEEE802.3 Length Field"},
 	{0x0060, "Ethernet Loopback packet"},
 	{0x0101, "Experimental"},
@@ -321,6 +321,6 @@ ether_type_t ether_types[] = {
 	{0xFFFF, "Reserved"},
 };
 
-char *type_unknown = "Unknown";
+char type_unknown[] = "Unknown";
 
 #endif				/* _NET_ETHER_TYPES_H_ */

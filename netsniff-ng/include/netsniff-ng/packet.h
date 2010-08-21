@@ -26,7 +26,7 @@
 
 #define ETHERNET 0x4554
 
-typedef struct packet {
+struct packet {
 	struct ethhdr *ethernet_header;
 	/* Union l2.5 */
 	struct vlan_hdr *vlan_header;
@@ -47,15 +47,15 @@ typedef struct packet {
 	uint32_t payload_len;
 	uint8_t *raw;
 	uint32_t len;
-} packet_t;
+};
 
-static inline void set_pkt_step(packet_t * pkt, uint16_t type)
+static inline void set_pkt_step(struct packet *pkt, uint16_t type)
 {
 	assert(pkt);
 	pkt->pkt_map[pkt->step++] = type;
 }
 
-static inline int parse_packet(uint8_t * raw, uint32_t len, packet_t * pkt)
+static inline int parse_packet(uint8_t * raw, uint32_t len, struct packet *pkt)
 {
 	uint8_t **buffer = &raw;
 	uint32_t tmp_len = len;

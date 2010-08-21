@@ -22,13 +22,13 @@
 
 #include <stdint.h>
 
-typedef struct {
+struct port_tcp {
 	uintptr_t id;
 	char *port;
-} port_tcp_t;
+};
 
 /* Partly taken from /etc/services and from Nmap's services file. */
-port_tcp_t ports_tcp[] = {
+static const struct port_tcp ports_tcp[] = {
 	{1, "tcpmux"},
 	{2, "compressnet"},
 	{3, "compressnet"},
@@ -1129,6 +1129,6 @@ port_tcp_t ports_tcp[] = {
 	{65301, "pcanywhere"},
 };
 
-char *port_tcp_unknown = "Unknown";
+char port_tcp_unknown[] = "Unknown";
 
 #endif				/* _NET_PORTS_TCP_H_ */

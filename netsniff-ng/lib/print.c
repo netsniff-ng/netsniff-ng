@@ -119,17 +119,15 @@ static void inline dump_payload_char_all(const uint8_t * const rbb, int len, int
 	info(") ]\n");
 }
 
-void reduced_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+void reduced_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 {
-	uint16_t l4_type = 0;	
-	packet_t pkt;
-	
+	uint16_t l4_type = 0;
+	struct packet pkt;
+
 	parse_packet(rbb, tp->tp_len, &pkt);
 
-	info("%d Byte, %u.%u s, %s%s%s, ", tp->tp_len, tp->tp_sec, tp->tp_usec, 
-					   colorize_start(bold),
-					   ether_types_find_less(pkt.ethernet_header->h_proto),
-					   colorize_end());
+	info("%d Byte, %u.%u s, %s%s%s, ", tp->tp_len, tp->tp_sec, tp->tp_usec,
+	     colorize_start(bold), ether_types_find_less(pkt.ethernet_header->h_proto), colorize_end());
 
 	switch (get_ethertype(pkt.ethernet_header)) {
 	case ETH_P_8021Q:
@@ -171,7 +169,7 @@ void reduced_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 	default:
 		info("\n");
 		break;
-	}	
+	}
 }
 
 static regex_t *regex = NULL;
@@ -218,11 +216,11 @@ void cleanup_regex(void)
 	free(regex);
 }
 
-void regex_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+void regex_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 {
 	int i;
 
-	packet_t pkt;
+	struct packet pkt;
 	uint8_t *t_rbb = NULL;
 
 	assert(regex);
@@ -249,9 +247,9 @@ void regex_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 	free(t_rbb);
 }
 
-void payload_human_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+void payload_human_only_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 {
-	packet_t pkt;
+	struct packet pkt;
 
 	int tty_len = get_tty_length();
 
@@ -264,9 +262,9 @@ void payload_human_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr 
 	info("\n\n");
 }
 
-void payload_hex_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+void payload_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 {
-	packet_t pkt;
+	struct packet pkt;
 
 	int tty_len = get_tty_length();
 
@@ -275,11 +273,14 @@ void payload_hex_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *t
 
 	parse_packet(rbb, tp->tp_len, &pkt);
 	info("   ");
-	dump_hex(pkt.payload, pkt.payload_len, tty_len - 20, 0);
+	if (pkt.payload_len != 0)
+		dump_hex(pkt.payload, pkt.payload_len, tty_len - 20, 0);
+	else
+		info("(no payload)");
 	info("\n\n");
 }
 
-void all_hex_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+void all_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 {
 	int tty_len = get_tty_length();
 
@@ -291,7 +292,7 @@ void all_hex_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 	info("\n\n");
 }
 
-static inline void __versatile_header_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp, packet_t * pkt)
+static inline void __versatile_header_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, struct packet *pkt)
 {
 	uint16_t l4_type = 0;
 
@@ -346,17 +347,17 @@ static inline void __versatile_header_only_print(ring_buff_bytes_t * rbb, const 
 	return;
 }
 
-void versatile_header_only_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+void versatile_header_only_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 {
-	packet_t pkt;
+	struct packet pkt;
 
 	__versatile_header_only_print(rbb, tp, &pkt);
 	info("\n");
 }
 
-void versatile_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
+void versatile_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 {
-	packet_t pkt;
+	struct packet pkt;
 	int tty_len = get_tty_length();
 
 	assert(rbb);
@@ -370,10 +371,10 @@ void versatile_print(ring_buff_bytes_t * rbb, const struct tpacket_hdr *tp)
 	info("\n");
 }
 
-void display_packets(system_data_t * sd)
+void display_packets(struct system_data *sd)
 {
 	struct tpacket_hdr header;
-	ring_buff_bytes_t buff[TPACKET_ALIGNMENT << 7] = {0};
+	uint8_t buff[TPACKET_ALIGNMENT << 7] = { 0 };
 
 	assert(sd);
 
@@ -381,7 +382,7 @@ void display_packets(system_data_t * sd)
 
 	while (pcap_fetch_next_packet(sd->pcap_fd, &header, (struct ethhdr *)buff) && likely(!sigint)) {
 		if (sd->print_pkt)
-			if (bpf_filter(sd->bpf, (uint8_t *) buff, header.tp_len))
+			if (bpf_filter(&sd->bpf, (uint8_t *) buff, header.tp_len))
 				sd->print_pkt((uint8_t *) buff, &header);
 	}
 

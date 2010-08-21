@@ -37,7 +37,7 @@
 #include <netsniff-ng/config.h>
 #include <netsniff-ng/netdev.h>
 
-static const char *short_options = "MS:QIe:lqi:NxXg:vhd:p:r:P:Df:sb:B:Hnt:";
+static const char *short_options = "MS:QIe:lqi:NxXg:vchd:p:r:P:Df:sb:B:Hnt:";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -66,11 +66,12 @@ static struct option long_options[] = {
 	{"pidfile", required_argument, 0, 'P'},
 	{"info", no_argument, 0, 'I'},
 	{"version", no_argument, 0, 'v'},
+	{"compatibility-mode", no_argument, 0, 'c'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
 };
 
-void init_configuration(system_data_t * sd)
+void init_configuration(struct system_data *sd)
 {
 	assert(sd);
 	memset(sd, 0, sizeof(*sd));
@@ -81,15 +82,14 @@ void init_configuration(system_data_t * sd)
 	sd->print_pkt = versatile_print;
 	sd->pcap_fd = PCAP_NO_DUMP;
 	sd->mode = MODE_CAPTURE;
-	sd->bpf = NULL;
 	sd->bind_cpu = -1;
 }
 
-void set_configuration(int argc, char **argv, system_data_t * sd)
+void set_configuration(int argc, char **argv, struct system_data *sd)
 {
 	int c, sl, slt;
 	int opt_idx;
-	
+
 	char *optargp = NULL;
 
 	assert(argv);
@@ -127,9 +127,9 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 			break;
 		case 'S':
 			optargp = optarg;
-			
-			for(slt = sl = strlen(optarg); sl > 0; --sl) {
-				if(!isdigit(optarg[slt - sl]))
+
+			for (slt = sl = strlen(optarg); sl > 0; --sl) {
+				if (!isdigit(optarg[slt - sl]))
 					break;
 				optargp++;
 			}
@@ -145,7 +145,7 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 				warn("Syntax error in ring size param!\n");
 				exit(EXIT_FAILURE);
 			}
-			
+
 			memset(optargp, 0, 2);
 			sd->ring_size *= atoi(optarg);
 			break;
@@ -245,6 +245,9 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 		case 'g':
 			info("Option `g` not yet implemented!\n");
 			break;
+		case 'c':
+			sd->compatibility_mode = 1;
+			break;
 		case '?':
 			switch (optopt) {
 			case 'd':
@@ -276,7 +279,7 @@ void set_configuration(int argc, char **argv, system_data_t * sd)
 	}
 }
 
-void check_config(system_data_t * sd)
+void check_config(struct system_data *sd)
 {
 	assert(sd);
 
@@ -285,7 +288,7 @@ void check_config(system_data_t * sd)
 	}
 }
 
-void clean_config(system_data_t * sd)
+void clean_config(struct system_data *sd)
 {
 	assert(sd);
 

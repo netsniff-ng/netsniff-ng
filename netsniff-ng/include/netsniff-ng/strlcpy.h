@@ -17,14 +17,9 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-#ifndef _NET_BPF_H_
-#define _NET_BPF_H_
+#ifndef _NET_STRLCPY_H_
+#define _NET_STRLCPY_H_
 
-#include <linux/filter.h>
-#include <linux/if_packet.h>
+size_t strlcpy(char *dest, const char *src, size_t size);
 
-extern void bpf_dump_all(struct sock_fprog *bpf);
-extern int bpf_validate(const struct sock_fprog *bpf);
-extern uint32_t bpf_filter(const struct sock_fprog *bpf, uint8_t * packet, size_t plen);
-
-#endif				/* _NET_BPF_H_ */
+#endif /* _NET_STRLCPY_H_ */

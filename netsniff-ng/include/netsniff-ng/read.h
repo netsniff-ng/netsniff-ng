@@ -23,6 +23,6 @@
 #include <netsniff-ng/config.h>
 
 /* Function signatures */
-extern void display_packets(system_data_t * sd);
+extern void display_packets(struct system_data *sd);
 
 #endif				/* _NET_READ_H_ */

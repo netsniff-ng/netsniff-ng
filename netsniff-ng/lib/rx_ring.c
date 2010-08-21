@@ -51,13 +51,14 @@
 #include <netsniff-ng/netdev.h>
 #include <netsniff-ng/config.h>
 #include <netsniff-ng/signal.h>
+#include <netsniff-ng/bpf.h>
 
 /**
  * destroy_virt_rx_ring - Destroys virtual RX_RING buffer
  * @sock:                socket
  * @rb:                  ring buffer
  */
-void destroy_virt_rx_ring(int sock, ring_buff_t * rb)
+void destroy_virt_rx_ring(int sock, struct ring_buff *rb)
 {
 	assert(rb);
 
@@ -78,7 +79,7 @@ void destroy_virt_rx_ring(int sock, ring_buff_t * rb)
  * @sock:               socket
  * @rb:                 ring buffer
  */
-void create_virt_rx_ring(int sock, ring_buff_t * rb, char *ifname, unsigned int usize)
+void create_virt_rx_ring(int sock, struct ring_buff *rb, char *ifname, unsigned int usize)
 {
 	short nic_flags;
 	int ret, dev_speed;
@@ -106,12 +107,12 @@ void create_virt_rx_ring(int sock, ring_buff_t * rb, char *ifname, unsigned int 
 	rb->layout.tp_frame_size = TPACKET_ALIGNMENT << 7;
 
 	/* max: 15 for i386, old default: 1 << 13, now: approximated bandwidth size */
-	if(usize == 0) {
+	if (usize == 0) {
 		rb->layout.tp_block_nr = ((dev_speed * 1024 * 1024) / rb->layout.tp_block_size);
 	} else {
 		rb->layout.tp_block_nr = usize / (rb->layout.tp_block_size / 1024);
 	}
-	
+
 	rb->layout.tp_frame_nr = rb->layout.tp_block_size / rb->layout.tp_frame_size * rb->layout.tp_block_nr;
 
  __retry_sso:
@@ -144,7 +145,7 @@ void create_virt_rx_ring(int sock, ring_buff_t * rb, char *ifname, unsigned int 
  * @sock:             socket
  * @rb:               ring buffer
  */
-void mmap_virt_rx_ring(int sock, ring_buff_t * rb)
+void mmap_virt_rx_ring(int sock, struct ring_buff *rb)
 {
 	assert(rb);
 
@@ -164,7 +165,7 @@ void mmap_virt_rx_ring(int sock, ring_buff_t * rb)
  * @ifindex:            device number
  * @rb:                 ring buffer
  */
-void bind_dev_to_rx_ring(int sock, int ifindex, ring_buff_t * rb)
+void bind_dev_to_rx_ring(int sock, int ifindex, struct ring_buff *rb)
 {
 	int ret;
 
@@ -188,49 +189,61 @@ void bind_dev_to_rx_ring(int sock, int ifindex, ring_buff_t * rb)
 	}
 }
 
+int compat_bind_dev(int sock, const char *dev)
+{
+	struct sockaddr saddr = { 0 };
+	int rc;
+
+	strncpy(saddr.sa_data, dev, sizeof(saddr.sa_data) - 1);
+
+	rc = bind(sock, &saddr, sizeof(saddr));
+
+	if (rc == -1) {
+		err("bind() failed");
+		return (rc);
+	}
+
+	return (0);
+}
+
 /**
  * fetch_packets_and_print - Traverses RX_RING and prints content
  * @rb:                     ring buffer
  * @pfd:                    file descriptor for polling
  */
-void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb)
+void fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
 {
 	int ret, foo, i = 0;
-	struct pollfd pfd = {0};
+	struct pollfd pfd = { 0 };
 
-	pthread_t progress;
+	struct spinner_thread_context spinner_ctx = { 0 };
+
+	spinner_set_msg(&spinner_ctx, DEFAULT_RX_RING_SILENT_MESSAGE);
 
 	assert(rb);
 	assert(sd);
 
 	pfd.fd = sock;
-	pfd.events = POLLIN|POLLRDNORM|POLLERR;
-	
-	info("--- Listening ---\n\n");
+	pfd.events = POLLIN | POLLRDNORM | POLLERR;
 
-	if (!sd->print_pkt)
-		enable_print_progress_spinner();
+	info("--- Listening ---\n\n");
+	if (!sd->print_pkt) {
+		ret = spinner_create(&spinner_ctx);
+		if (ret) {
+			err("Cannot create spinner thread");
+			exit(EXIT_FAILURE);
+		}
+	}
 
 	if (sd->pcap_fd != PCAP_NO_DUMP) {
 		pcap_write_header(sd->pcap_fd, LINKTYPE_EN10MB, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
-
-		if (!sd->print_pkt) {
-			ret =
-			    pthread_create(&progress, NULL, print_progress_spinner_static,
-					   "Receive ring dumping ... |");
-			if (ret) {
-				err("Cannot create thread");
-				exit(EXIT_FAILURE);
-			}
-		}
 	}
 
 	/* This is our critical path ... */
 	while (likely(!sigint)) {
 		while (mem_notify_user_for_rx(rb->frames[i]) && likely(!sigint)) {
 			struct frame_map *fm = rb->frames[i].iov_base;
-			ring_buff_bytes_t *rbb =
-			    (ring_buff_bytes_t *) ((uint8_t *) rb->frames[i].iov_base + sizeof(*fm) + sizeof(short));
+			uint8_t *rbb = ((uint8_t *) rb->frames[i].iov_base + sizeof(*fm) + sizeof(short));
 
 			/* Check if the user wants to have a specific 
 			   packet type */
@@ -242,7 +255,7 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb)
 
 			if (sd->pcap_fd != PCAP_NO_DUMP) {
 				pcap_dump(sd->pcap_fd, &fm->tp_h, (struct ethhdr *)rbb);
-				print_progress_spinner_dynamic_trigger();
+
 			}
 
 			if (sd->print_pkt) {
@@ -250,21 +263,6 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb)
 				   the user wants to see what's going on */
 				sd->print_pkt(rbb, &fm->tp_h);
 			}
-
-			/* Pending singals will be delivered after netstat 
-			   manipulation */
-			hold_softirq(2, SIGUSR1, SIGALRM);
-			/* XXX: futex */
-			pthread_mutex_lock(&gs_loc_mutex);
-
-			netstat.per_sec.frames++;
-			netstat.per_sec.bytes += fm->tp_h.tp_len;
-
-			netstat.total.frames++;
-			netstat.total.bytes += fm->tp_h.tp_len;
-
-			pthread_mutex_unlock(&gs_loc_mutex);
-			restore_softirq(2, SIGUSR1, SIGALRM);
 
 			/* Next frame */
 			i = (i + 1) % rb->layout.tp_frame_nr;
@@ -278,20 +276,15 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb)
 		while ((ret = poll(&pfd, 1, sd->blocking_mode)) <= 0) {
 			if (sigint) {
 				printf("Got SIGINT here!\n");
-
-				if (!sd->print_pkt)
-					disable_print_progress_spinner();
-
-				return;
+				goto out;
 			}
 		}
+
+		spinner_trigger_event(&spinner_ctx);
 
 		if (ret > 0 && (pfd.revents & (POLLHUP | POLLRDHUP | POLLERR | POLLNVAL))) {
 			if (pfd.revents & (POLLHUP | POLLRDHUP)) {
 				err("Hangup on socket occured");
-				
-				if (!sd->print_pkt)
-					disable_print_progress_spinner();
 
 				return;
 			} else if (pfd.revents & POLLERR) {
@@ -304,18 +297,12 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb)
 				} else {
 					err("Receive error");
 				}
-				
-				if (!sd->print_pkt)
-					disable_print_progress_spinner();
 
-				return;
+				goto out;
 			} else if (pfd.revents & POLLNVAL) {
 				err("Invalid polling request on socket");
 
-				if (!sd->print_pkt)
-					disable_print_progress_spinner();
-
-				return;
+				goto out;
 			}
 		}
 
@@ -323,7 +310,7 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb)
 		/* Look-ahead if current frame is status kernel, otherwise we have
 		   have incoming frames and poll spins / hangs all the time :( */
 		for (; ((struct tpacket_hdr *)rb->frames[i].iov_base)->tp_status
-		     != TP_STATUS_USER; i = (i + 1) % rb->layout.tp_frame_nr)
+		     != TP_STATUS_USER && likely(!sigint); i = (i + 1) % rb->layout.tp_frame_nr)
 			/* NOP */ ;
 		/* Why this should be okay:
 		   1) Current frame[i] is TP_STATUS_USER:
@@ -346,6 +333,88 @@ void fetch_packets(system_data_t * sd, int sock, ring_buff_t * rb)
 		 */
 	}
 
-	if (!sd->print_pkt)
-		disable_print_progress_spinner();
+ out:
+	spinner_cancel(&spinner_ctx);
+}
+
+void compat_fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
+{
+	struct timeval now;
+	struct spinner_thread_context spinner_ctx = { 0 };
+	struct tpacket_hdr tp_h = { 0 };
+	uint8_t *pkt_buf = NULL;
+	struct sockaddr_ll from = { 0 };
+	socklen_t from_len = sizeof(from);
+	int pf_sock;
+	int ret;
+	int pkt_len;
+	uint16_t mtu = get_mtu(sd->dev);
+
+	pf_sock = socket(PF_INET, SOCK_PACKET, htons(ETH_P_ALL));
+
+	if (compat_bind_dev(pf_sock, sd->dev) != 0) {
+		return;
+	}
+
+	inject_kernel_bpf(pf_sock, &sd->bpf);
+
+	if ((pkt_buf = malloc(mtu)) == NULL) {
+		close(pf_sock);
+		return;
+	}
+
+	memset(pkt_buf, 0, mtu);
+
+	spinner_set_msg(&spinner_ctx, DEFAULT_RX_RING_SILENT_MESSAGE);
+
+	info("--- Listening in compatibility mode---\n\n");
+
+	if (!sd->print_pkt) {
+		ret = spinner_create(&spinner_ctx);
+		if (ret) {
+			err("Cannot create spinner thread");
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	if (sd->pcap_fd != PCAP_NO_DUMP) {
+		pcap_write_header(sd->pcap_fd, LINKTYPE_EN10MB, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
+	}
+
+	while (likely(!sigint)) {
+		pkt_len = recvfrom(pf_sock, pkt_buf, mtu, MSG_TRUNC, (struct sockaddr *)&from, &from_len);
+
+		if (errno == EINTR)
+			break;
+
+		spinner_trigger_event(&spinner_ctx);
+
+		gettimeofday(&now, NULL);
+
+		tp_h.tp_sec = now.tv_sec;
+		tp_h.tp_usec = now.tv_usec;
+		tp_h.tp_len = tp_h.tp_snaplen = pkt_len;
+
+		if (sd->pcap_fd != PCAP_NO_DUMP) {
+			pcap_dump(sd->pcap_fd, &tp_h, (struct ethhdr *)(pkt_buf));
+		}
+
+		if (sd->print_pkt) {
+			/* This path here slows us down ... well, but
+			   the user wants to see what's going on */
+			sd->print_pkt(pkt_buf, &tp_h);
+		}
+	}
+
+	spinner_cancel(&spinner_ctx);
+	close(pf_sock);
+	free(pkt_buf);
+}
+
+void start_fetching_packets(struct system_data *sd, int sock, struct ring_buff *rb)
+{
+	if (sd->compatibility_mode)
+		compat_fetch_packets(sd, sock, rb);
+	else
+		fetch_packets(sd, sock, rb);
 }
