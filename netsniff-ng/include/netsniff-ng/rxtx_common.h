@@ -29,6 +29,7 @@
 
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/types.h>
+#include <netsniff-ng/xmalloc.h>
 
 #ifndef POLLRDNORM
 # define POLLRDNORM      0x0040
@@ -65,16 +66,11 @@ static inline void alloc_frame_buffer(struct ring_buff *rb)
 
 	assert(rb);
 
-	rb->frames = malloc(rb->layout.tp_frame_nr * sizeof(*rb->frames));
-	if (!rb->frames) {
-		err("No mem left");
-		exit(EXIT_FAILURE);
-	}
-
-	memset(rb->frames, 0, rb->layout.tp_frame_nr * sizeof(*rb->frames));
+	rb->frames = xzmalloc(rb->layout.tp_frame_nr * sizeof(*rb->frames));
 
 	for (i = 0; i < rb->layout.tp_frame_nr; ++i) {
-		rb->frames[i].iov_base = (uint8_t *) ((long)rb->buffer) + (i * rb->layout.tp_frame_size);
+		rb->frames[i].iov_base = (uint8_t *) ((long)rb->buffer) + 
+					 (i * rb->layout.tp_frame_size);
 		rb->frames[i].iov_len = rb->layout.tp_frame_size;
 	}
 }

@@ -52,6 +52,8 @@
 #include <netsniff-ng/config.h>
 #include <netsniff-ng/signal.h>
 #include <netsniff-ng/bpf.h>
+#include <netsniff-ng/xmalloc.h>
+#include <netsniff-ng/strlcpy.h>
 
 /**
  * destroy_virt_rx_ring - Destroys virtual RX_RING buffer
@@ -71,7 +73,7 @@ void destroy_virt_rx_ring(int sock, struct ring_buff *rb)
 		rb->len = 0;
 	}
 
-	free(rb->frames);
+	xfree(rb->frames);
 }
 
 /**
@@ -194,7 +196,7 @@ int compat_bind_dev(int sock, const char *dev)
 	struct sockaddr saddr = { 0 };
 	int rc;
 
-	strncpy(saddr.sa_data, dev, sizeof(saddr.sa_data) - 1);
+	strlcpy(saddr.sa_data, dev, sizeof(saddr.sa_data) - 1);
 
 	rc = bind(sock, &saddr, sizeof(saddr));
 
@@ -358,12 +360,7 @@ void compat_fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb
 
 	inject_kernel_bpf(pf_sock, &sd->bpf);
 
-	if ((pkt_buf = malloc(mtu)) == NULL) {
-		close(pf_sock);
-		return;
-	}
-
-	memset(pkt_buf, 0, mtu);
+	pkt_buf = xzmalloc(mtu);
 
 	spinner_set_msg(&spinner_ctx, DEFAULT_RX_RING_SILENT_MESSAGE);
 
@@ -408,7 +405,7 @@ void compat_fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb
 
 	spinner_cancel(&spinner_ctx);
 	close(pf_sock);
-	free(pkt_buf);
+	xfree(pkt_buf);
 }
 
 void start_fetching_packets(struct system_data *sd, int sock, struct ring_buff *rb)

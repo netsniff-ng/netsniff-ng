@@ -47,6 +47,7 @@
 #include <netsniff-ng/netdev.h>
 #include <netsniff-ng/signal.h>
 #include <netsniff-ng/cursor.h>
+#include <netsniff-ng/xmalloc.h>
 
 #define flushlock_lock(x) do{ (x) = 1; } while(0);
 #define flushlock_unlock(x) do{ (x) = 0; } while(0);
@@ -93,7 +94,7 @@ void destroy_virt_tx_ring(int sock, struct ring_buff *rb)
 		rb->len = 0;
 	}
 
-	free(rb->frames);
+	xfree(rb->frames);
 }
 
 /**

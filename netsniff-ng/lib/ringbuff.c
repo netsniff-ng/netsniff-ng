@@ -26,36 +26,20 @@
 
 #include <netsniff-ng/ringbuff.h>
 #include <netsniff-ng/macros.h>
+#include <netsniff-ng/xmalloc.h>
 
 int ringbuffer_init(struct ringbuffer **rb, size_t slots)
 {
-	size_t i, j, rc = 0;
+	size_t i, rc = 0;
 
 	if (rb == NULL || slots == 0)
 		return -EINVAL;
 
-	(*rb) = malloc(sizeof(**rb));
-	if ((*rb) == NULL) {
-		rc = -ENOMEM;
-		goto out;
-	}
-
-	memset((*rb), 0, sizeof(**rb));
-
-	(*rb)->ring = malloc(sizeof(*((*rb)->ring)) * slots);
-	if ((*rb)->ring == NULL) {
-		rc = -ENOMEM;
-		goto clean_out;
-	}
+	(*rb) = xzmalloc(sizeof(**rb));
+	(*rb)->ring = xmalloc(sizeof(*((*rb)->ring)) * slots);
 
 	for (i = 0; i < slots; ++i) {
-		(*rb)->ring[i] = malloc(sizeof(**((*rb)->ring)));
-		if ((*rb)->ring[i] == NULL) {
-			rc = -ENOMEM;
-			goto clean_out_ring;
-		}
-
-		memset((*rb)->ring[i], 0, sizeof(**((*rb)->ring)));
+		(*rb)->ring[i] = xzmalloc(sizeof(**((*rb)->ring)));
 		(*rb)->ring[i]->ch_status = CHUNK_STATUS_FREE;
 	}
 
@@ -64,16 +48,6 @@ int ringbuffer_init(struct ringbuffer **rb, size_t slots)
 	(*rb)->next_free = 0;
 	(*rb)->next_user = 0;
 
-	return 0;
-
- clean_out_ring:
-	for (j = 0; j < i; ++j) {
-		free((*rb)->ring[j]);
-	}
-	free((*rb)->ring);
- clean_out:
-	free((*rb));
- out:
 	return rc;
 }
 
@@ -84,9 +58,9 @@ void ringbuffer_cleanup(struct ringbuffer *rb)
 	if (rb == NULL)
 		return;
 	for (i = 0; i < rb->max_slots; ++i)
-		free(rb->ring[i]);
-	free(rb->ring);
-	free(rb);
+		xfree(rb->ring[i]);
+	xfree(rb->ring);
+	xfree(rb);
 }
 
 int ringbuffer_put(struct ringbuffer *rb, struct ringbuffer_user *rb_data)

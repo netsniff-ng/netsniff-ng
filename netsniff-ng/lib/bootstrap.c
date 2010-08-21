@@ -47,6 +47,7 @@
 #include <netsniff-ng/bpf.h>
 #include <netsniff-ng/bootstrap.h>
 #include <netsniff-ng/version.h>
+#include <netsniff-ng/xmalloc.h>
 
 volatile sig_atomic_t sigint = 0;
 
@@ -203,13 +204,7 @@ static void __init_stage_mode_common(struct system_data *sd, int *sock, struct r
 	if (sd->mode == MODE_READ)
 		return;
 
-	(*rb) = (struct ring_buff *)malloc(sizeof(**rb));
-	if ((*rb) == NULL) {
-		err("Cannot allocate ring buffer");
-		exit(EXIT_FAILURE);
-	}
-
-	memset((*rb), 0, sizeof(**rb));
+	(*rb) = (struct ring_buff *)xzmalloc(sizeof(**rb));
 
 	if (sd->promisc_mode != PROMISC_MODE_NONE) {
 		/* 
@@ -354,11 +349,7 @@ static void header(void)
 
 	len = sysconf(_SC_NPROCESSORS_CONF) + 1;
 
-	cpu_string = malloc(len);
-	if (!cpu_string) {
-		err("No mem left");
-		exit(EXIT_FAILURE);
-	}
+	cpu_string = xzmalloc(len);
 
 	ret = sched_getparam(getpid(), &sp);
 	if (ret) {
@@ -374,7 +365,7 @@ static void header(void)
 	info("%ld of %ld CPUs online, affinity bitstring (%s)\n\n",
 	     sysconf(_SC_NPROCESSORS_ONLN), sysconf(_SC_NPROCESSORS_CONF), get_cpu_affinity(cpu_string, len));
 
-	free(cpu_string);
+	xfree(cpu_string);
 }
 
 /**
@@ -465,7 +456,7 @@ static void __exit_stage_bpf(struct system_data *sd, int *sock, struct ring_buff
 
 	reset_kernel_bpf((*sock));
 	if (sd->bpf.filter)
-		free(sd->bpf.filter);
+		xfree(sd->bpf.filter);
 }
 
 static void __exit_stage_rx_ring(struct system_data *sd, int *sock, struct ring_buff **rb)
@@ -526,8 +517,8 @@ static void __exit_stage_last(struct system_data *sd, int *sock, struct ring_buf
 	if (sd->mode == MODE_READ)
 		return;
 
-	free(*rb);
-	free(sd->dev);
+	xfree(*rb);
+	xfree(sd->dev);
 }
 
 static void footer(void)

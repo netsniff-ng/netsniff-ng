@@ -24,6 +24,7 @@
 
 #include <netsniff-ng/cursor.h>
 #include <netsniff-ng/macros.h>
+#include <netsniff-ng/strlcpy.h>
 
 #define SPINNER_SLEEP_TIME	250000
 
@@ -39,7 +40,7 @@ void spinner_set_msg(struct spinner_thread_context *ctx, const char *msg)
 	assert(ctx);
 	assert(msg);
 
-	strncpy(ctx->msg, msg, sizeof(ctx->msg) - 1);
+	strlcpy(ctx->msg, msg, sizeof(ctx->msg) - 1);
 }
 
 void spinner_cancel(struct spinner_thread_context *ctx)

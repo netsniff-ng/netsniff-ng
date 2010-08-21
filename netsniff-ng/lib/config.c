@@ -36,6 +36,7 @@
 #include <netsniff-ng/misc.h>
 #include <netsniff-ng/config.h>
 #include <netsniff-ng/netdev.h>
+#include <netsniff-ng/xmalloc.h>
 
 static const char *short_options = "MS:QIe:lqi:NxXg:vchd:p:r:P:Df:sb:B:Hnt:";
 
@@ -107,10 +108,10 @@ void set_configuration(int argc, char **argv, struct system_data *sd)
 			break;
 		case 'd':
 			if (sd->dev != NULL) {
-				free(sd->dev);
+				xfree(sd->dev);
 			}
 
-			sd->dev = strdup(optarg);
+			sd->dev = xstrdup(optarg);
 			if (!sd->dev) {
 				err("Cannot allocate mem");
 				exit(EXIT_FAILURE);
@@ -170,7 +171,7 @@ void set_configuration(int argc, char **argv, struct system_data *sd)
 			break;
 		case 'f':
 			sd->bypass_bpf = BPF_NO_BYPASS;
-			sd->rulefile = strdup(optarg);
+			sd->rulefile = xstrdup(optarg);
 			break;
 		case 's':
 			/* Switch to silent mode */
@@ -202,7 +203,7 @@ void set_configuration(int argc, char **argv, struct system_data *sd)
 			sd->print_pkt = NULL;
 			break;
 		case 'P':
-			sd->pidfile = strdup(optarg);
+			sd->pidfile = xstrdup(optarg);
 			break;
 		case 'b':
 			set_cpu_affinity(optarg);
@@ -293,11 +294,11 @@ void clean_config(struct system_data *sd)
 	assert(sd);
 
 	if (sd->pidfile)
-		free(sd->pidfile);
+		xfree(sd->pidfile);
 	if (sd->rulefile)
-		free(sd->rulefile);
+		xfree(sd->rulefile);
 	if (sd->dev)
-		free(sd->dev);
+		xfree(sd->dev);
 
 	close(sd->pcap_fd);
 }

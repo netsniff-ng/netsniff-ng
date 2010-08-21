@@ -27,6 +27,7 @@
 
 #include <netsniff-ng/macros.h>
 #include <netsniff-ng/hash.h>
+#include <netsniff-ng/xmalloc.h>
 
 #include <netsniff-ng/oui.h>
 #include <netsniff-ng/ports_udp.h>
@@ -46,21 +47,12 @@ int hashtable_init(struct hashtable **ht, size_t size, struct hashtable_callback
 	if (f->key_copy == NULL || f->key_to_hash == NULL || f->key_equal == NULL)
 		return -EINVAL;
 
-	*ht = malloc(sizeof(**ht));
-	if (*ht == NULL)
-		return -ENOMEM;
+	*ht = xzmalloc(sizeof(**ht));
 
 	(*ht)->size = size;
 	(*ht)->elems = 0;
 	(*ht)->f = f;
-
-	(*ht)->table = malloc(sizeof(*(*ht)->table) * size);
-	if ((*ht)->table == NULL) {
-		free(*ht);
-		return -ENOMEM;
-	}
-
-	memset((*ht)->table, 0, sizeof(*(*ht)->table) * size);
+	(*ht)->table = xzmalloc(sizeof(*(*ht)->table) * size);
 
 	return 0;
 }
@@ -77,12 +69,12 @@ void hashtable_destroy(struct hashtable *ht)
 			hb_prev = hb;
 			ht->f->key_free(hb->key);
 			hb = hb->next;
-			free(hb_prev);
+			xfree(hb_prev);
 		}
 	}
 
-	free(ht->table);
-	free(ht);
+	xfree(ht->table);
+	xfree(ht);
 }
 
 void *hashtable_insert(struct hashtable *ht, void *key, void *data)
@@ -99,9 +91,7 @@ void *hashtable_insert(struct hashtable *ht, void *key, void *data)
 		if (ht->f->key_equal(key, hb->key))
 			return hb->data;
 
-	hb = malloc(sizeof(*hb));
-	if (hb == NULL)
-		return NULL;
+	hb = xzmalloc(sizeof(*hb));
 
 	hb->next = ht->table[val];
 	hb->data = data;
@@ -150,7 +140,7 @@ void *hashtable_delete(struct hashtable *ht, void *key)
 				ht->table[val] = hb->next;
 
 			ht->f->key_free(hb->key);
-			free(hb);
+			xfree(hb);
 			ht->elems--;
 		}
 	}

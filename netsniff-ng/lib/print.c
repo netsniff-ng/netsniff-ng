@@ -38,6 +38,7 @@
 #include <linux/if_packet.h>
 
 #include <netsniff-ng/macros.h>
+#include <netsniff-ng/xmalloc.h>
 #include <netsniff-ng/types.h>
 #include <netsniff-ng/read.h>
 #include <netsniff-ng/print.h>
@@ -178,13 +179,7 @@ void init_regex(char *pattern)
 {
 	int ret;
 
-	regex = malloc(sizeof(*regex));
-	if (!regex) {
-		err("Cannot malloc regex");
-		exit(EXIT_FAILURE);
-	}
-
-	memset(regex, 0, sizeof(*regex));
+	regex = xzmalloc(sizeof(*regex));
 
 	ret = regcomp(regex, pattern, REG_EXTENDED | REG_NOSUB);
 	if (ret != 0) {
@@ -192,19 +187,14 @@ void init_regex(char *pattern)
 		char *buffer;
 
 		len = regerror(ret, regex, NULL, 0);
-		buffer = malloc(len);
-		if (!buffer) {
-			err("Cannot malloc regex error buffer");
-			exit(EXIT_FAILURE);
-		}
-
+		buffer = xmalloc(len);
 		regerror(ret, regex, buffer, len);
 
 		warn("Regular expression error: %s\n", buffer);
 
-		free(buffer);
+		xfree(buffer);
 		regfree(regex);
-		free(regex);
+		xfree(regex);
 
 		exit(EXIT_FAILURE);
 	}
@@ -213,7 +203,7 @@ void init_regex(char *pattern)
 void cleanup_regex(void)
 {
 	regfree(regex);
-	free(regex);
+	xfree(regex);
 }
 
 void regex_print(uint8_t * rbb, const struct tpacket_hdr *tp)
@@ -228,11 +218,7 @@ void regex_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 	parse_packet(rbb, tp->tp_len, &pkt);
 
 	/* XXX: This is a very slow path! */
-	t_rbb = malloc(pkt.payload_len + 1);
-	if (!t_rbb) {
-		err("Cannot malloc t_rbb");
-		exit(EXIT_FAILURE);
-	}
+	t_rbb = xmalloc(pkt.payload_len + 1);
 
 	/* If we won't copy, regexec stops at the first \0 byte :( */
 	for (i = 0; i < pkt.payload_len; ++i) {
@@ -244,7 +230,7 @@ void regex_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 		versatile_print(rbb, tp);
 	}
 
-	free(t_rbb);
+	xfree(t_rbb);
 }
 
 void payload_human_only_print(uint8_t * rbb, const struct tpacket_hdr *tp)
