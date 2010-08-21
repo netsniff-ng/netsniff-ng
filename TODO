@@ -4,3 +4,11 @@ Some future ToDos
 Probably this will remain deprecated here, so check out 
 http://www.netsniff-ng.org/ or write an email to 
 <daniel@netsniff-ng.org> in order to grab some information.
+
+Both tools are long term TODOs:
+
+netpoison-ng:
+	Utility for ARP cache poisoning for Man-In-The-Middle sniffing.
+netfire-ng:
+	High performance replay of PCAP traces.
+
