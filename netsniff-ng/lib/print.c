@@ -327,9 +327,15 @@ static inline void __versatile_header_only_print(uint8_t * rbb, const struct tpa
 	assert(tp);
 	assert(pkt);
 
-	parse_packet(rbb, tp->tp_len, pkt);
-
 	info("%d Byte, Timestamp (%u.%u s) \n", tp->tp_len, tp->tp_sec, tp->tp_usec);
+	if (unlikely(tp->tp_len <= 14)) {
+		info(" [ Malformed Ethernet Packet ]\n");
+		pkt->payload = rbb;
+		pkt->payload_len = tp->tp_len;
+		return;
+	}
+
+	parse_packet(rbb, tp->tp_len, pkt);
 
 	print_ethhdr(pkt->ethernet_header);
 
