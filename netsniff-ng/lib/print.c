@@ -392,7 +392,7 @@ void versatile_hex_cstyle_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 
 	__versatile_header_only_print(rbb, tp, &pkt);
 
-	dump_payload_hex_cstyle(pkt.payload, pkt.payload_len, tty_len - 20);
+	dump_payload_hex_cstyle(rbb, tp->tp_len, tty_len - 20);
 	dump_payload_char_all(pkt.payload, pkt.payload_len, tty_len - 20);
 
 	info("\n");
