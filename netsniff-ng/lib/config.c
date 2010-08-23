@@ -38,7 +38,7 @@
 #include <netsniff-ng/netdev.h>
 #include <netsniff-ng/xmalloc.h>
 
-static const char *short_options = "MS:QIe:lqi:NxXg:vchd:p:r:P:Df:sb:B:Hnt:";
+static const char *short_options = "MS:QIe:lqi:NxXg:vchd:p:r:P:Df:sb:B:Hnt:C";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -58,6 +58,7 @@ static struct option long_options[] = {
 	{"ring-size", required_argument, 0, 'S'},
 	{"silent", no_argument, 0, 's'},
 	{"payload", no_argument, 0, 'l'},
+	{"c-style", no_argument, 0, 'C'},
 	{"payload-hex", no_argument, 0, 'x'},
 	{"all-hex", no_argument, 0, 'X'},
 	{"no-payload", no_argument, 0, 'N'},
@@ -191,6 +192,9 @@ void set_configuration(int argc, char **argv, struct system_data *sd)
 			break;
 		case 'q':
 			sd->print_pkt = reduced_print;
+			break;
+		case 'C':
+			sd->print_pkt = versatile_hex_cstyle_print;
 			break;
 		case 'e':
 			sd->print_pkt = regex_print;

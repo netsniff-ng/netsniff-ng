@@ -33,6 +33,7 @@ extern void dump_iphdr_all(struct iphdr *ip);
 
 extern void versatile_print(uint8_t * rbb, const struct tpacket_hdr *tp);
 extern void versatile_header_only_print(uint8_t * rbb, const struct tpacket_hdr *tp);
+extern void versatile_hex_cstyle_print(uint8_t * rbb, const struct tpacket_hdr *tp);
 extern void payload_human_only_print(uint8_t * rbb, const struct tpacket_hdr *tp);
 extern void payload_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp);
 extern void all_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp);

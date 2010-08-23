@@ -77,6 +77,7 @@ void help(void)
 	info("  -q|--less              Print less-verbose packet information\n");
 	info("  -l|--payload           Only print human-readable payload\n");
 	info("  -x|--payload-hex       Only print payload in hex format\n");
+	info("  -C|--c-style           Print payload in C style hex format\n");
 	info("  -X|--all-hex           Print packets in hex format\n");
 	info("  -N|--no-payload        Only print packet header\n");
 	info("  -e|--regex <expr>      Only print package that matches regex\n");

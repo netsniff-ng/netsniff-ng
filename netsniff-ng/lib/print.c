@@ -73,6 +73,34 @@ void dump_hex(const void const *to_print, int len, size_t tty_len, size_t tty_of
 }
 
 /*
+ * dump_hex_cstyle - Prints payload in C lang style, ready for copying into source
+ * @buff:          payload
+ * @len:           len of buff
+ * @tty_len:       width of terminal
+ * @tty_off:       current offset of tty_len
+ */
+void dump_hex_cstyle(const void const *to_print, int len, size_t tty_len, size_t tty_off)
+{
+	assert(to_print);
+
+	uint8_t *buff = (uint8_t *) to_print;
+
+	info("\n{ ");
+	for (; len-- > 0; tty_off += 6, buff++) {
+		if (unlikely(tty_off >= tty_len - 6)) {
+			info("\n  ");
+			tty_off = 0;
+		}
+		if (likely(len > 0)) {
+			info("0x%.2x, ", *buff);
+		} else {
+			info("0x%.2x ", *buff);
+		}
+	}
+	info("}\n");
+}
+
+/*
  * dump_printable - Prints human readable chars to our tty
  * @buff:          payload
  * @len:           len of buff
@@ -105,6 +133,19 @@ static void inline dump_payload_hex_all(const uint8_t * const rbb, int len, int 
 	info(" [ Payload hex  (");
 	dump_hex(rbb, len, tty_len, 14);
 	info(") ]\n");
+}
+
+/*
+ * dump_payload_hex_cstyle - Just plain dumb formatting
+ * @rbb:                 payload bytes
+ * @len:                 len
+ * @tty_len:             width of terminal
+ */
+static void inline dump_payload_hex_cstyle(const uint8_t * const rbb, int len, int tty_len)
+{
+	info(" [ Payload hex  (");
+	dump_hex_cstyle(rbb, len, 80, 0);
+	info("                ) ]\n");
 }
 
 /*
@@ -340,6 +381,23 @@ void versatile_header_only_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 	__versatile_header_only_print(rbb, tp, &pkt);
 	info("\n");
 }
+
+void versatile_hex_cstyle_print(uint8_t * rbb, const struct tpacket_hdr *tp)
+{
+	struct packet pkt;
+	int tty_len = get_tty_length();
+
+	assert(rbb);
+	assert(tp);
+
+	__versatile_header_only_print(rbb, tp, &pkt);
+
+	dump_payload_hex_cstyle(pkt.payload, pkt.payload_len, tty_len - 20);
+	dump_payload_char_all(pkt.payload, pkt.payload_len, tty_len - 20);
+
+	info("\n");
+}
+
 
 void versatile_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 {
