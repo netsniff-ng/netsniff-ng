@@ -143,7 +143,7 @@ static void inline dump_payload_hex_all(const uint8_t * const rbb, int len, int 
  */
 static void inline dump_payload_hex_cstyle(const uint8_t * const rbb, int len, int tty_len)
 {
-	info(" [ Payload hex  (");
+	info(" [ Full packet  (");
 	dump_hex_cstyle(rbb, len, 80, 0);
 	info("                ) ]\n");
 }
