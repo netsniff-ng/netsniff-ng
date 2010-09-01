@@ -3,13 +3,10 @@ netsniff-ng HACKING
 
 Some information about potential netsniff-ng hackers!
 
-How to check out netsniff-ng anonymously
-========================================
+How to check out netsniff-ng
+============================
 
-Always bleedy and probably unstable, but this is latest in development of 
-netsniff-ng! ;)
-
-svn checkout http://netsniff-ng.googlecode.com/svn/trunk/ netsniff-ng-read-only
+git clone git@github.com:danborkmann/netsniff-ng.git
 
 Mailing list
 ============
@@ -31,7 +28,7 @@ How to make code contributions
 
 The best way to make a contribution to netsniff-ng is to send us your 
 code in the form of a unified diff against the latest released version 
-and, preferably, the version in SVN trunk. 
+and, preferably, the version from Git.
 Your patch should then be sent to bugs@netsniff-ng.org .
 
 To make a unified diff, please follow these instructions:
@@ -44,10 +41,10 @@ To make a unified diff, please follow these instructions:
     mv netsniff-ng-xxx netsniff-ng-xxx-snazzy-feature
 
 3. Checkout the original netsniff-ng source alongside it:
-    svn checkout http://netsniff-ng.googlecode.com/svn/trunk/ netsniff-ng-read-only
+    git clone git@github.com:danborkmann/netsniff-ng.git
 
 4. Generate the diffs:
-   diff -urNb netsniff-ng-xxx netsniff-ng-xxx-snazzy-feature > /tmp/cool.patch
+    diff -urNb netsniff-ng-xxx netsniff-ng-xxx-snazzy-feature > /tmp/cool.patch
 
 5. Check the patch and remove any unnecessary patches from the file.
 

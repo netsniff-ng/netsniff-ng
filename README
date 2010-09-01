@@ -29,8 +29,7 @@ http://www.netsniff-ng.org/
 Development
 ===========
 
-For bleeding (and unstable) edge, checkout SVN trunk:
-svn checkout http://netsniff-ng.googlecode.com/svn/trunk/ netsniff-ng-read-only
+git clone git@github.com:danborkmann/netsniff-ng.git
 
 Support
 =======
