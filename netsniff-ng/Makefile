@@ -7,7 +7,9 @@ include definitions.mk
 INCLUDE    = -Iinclude
 
 core-objs  = netsniff-ng.o
-dep-objs   = lib/
+lib-objs   = bpf.o misc.o print.o config.o rx_ring.o system.o dump.o hash.o \
+	     netdev.o tx_ring.o bootstrap.o replay.o ringbuff.o cursor.o \
+	     server.o xmalloc.o strlcpy.o
 
 target     = netsniff-ng
 
@@ -17,19 +19,17 @@ develop: all
 
 #-----------------------------------------------------------------------------
 
-build: $(core-objs)
-	@$(LD) $(target) $(core-objs) $(shell find $(dep-objs) -name "*.o") $(LIBS)
+build: $(lib-objs) $(core-objs)
+	@$(LD) $(target) $(core-objs) $(lib-objs) $(LIBS)
 
 #-----------------------------------------------------------------------------
 
 %.o: %.c
-	@for d in $(dep-objs); do (cd $$d; $(MAKE) $(MFLAGS) $(MAKECMDGOALS)); done
 	@$(CC) $(CFLAGS) $(INCLUDE) $<
 
 #-----------------------------------------------------------------------------
 
 clean:
-	@-for d in $(dep-objs); do (cd $$d; $(MAKE) $(MFLAGS) clean); done
 	@rm *.o *.tu *.nccout *~ Code.map $(target) \
 	$(MANDIR_LOCAL)/$(target).8.gz > /dev/null 2>&1 || true
 

@@ -17,45 +17,10 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-#include "types.h"
-#include "rx_ring.h"
-#include "tx_ring.h"
-#include "read.h"
-#include "config.h"
-#include "bootstrap.h"
+#ifndef	__LAYERS_3_H__
+#define __LAYERS_3_H__
 
-/**
- * main  - Main routine
- * @argc: number of args
- * @argv: arguments passed from tty
- */
-int main(int argc, char **argv)
-{
-	int sock;
-	struct ring_buff *rb;
-	struct system_data sd = { 0 };
+#include "protocols/ip.h"
+#include "protocols/ipv6.h"
 
-	init_configuration(&sd);
-	set_configuration(argc, argv, &sd);
-	check_config(&sd);
-
-	init_system(&sd, &sock, &rb);
-
-	switch (sd.mode) {
-	case MODE_CAPTURE:
-		start_fetching_packets(&sd, sock, rb);
-		break;
-	case MODE_REPLAY:
-		transmit_packets(&sd, sock, rb);
-		break;
-	case MODE_READ:
-		display_packets(&sd);
-		break;
-	default:
-		break;
-	};
-
-	cleanup_system(&sd, &sock, &rb);
-
-	return 0;
-}
+#endif				/* __LAYERS_3_H__ */

@@ -17,45 +17,13 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
+#ifndef _NET_BOOTSTRAP_H_
+#define _NET_BOOTSTRAP_H_
+
 #include "types.h"
-#include "rx_ring.h"
-#include "tx_ring.h"
-#include "read.h"
 #include "config.h"
-#include "bootstrap.h"
 
-/**
- * main  - Main routine
- * @argc: number of args
- * @argv: arguments passed from tty
- */
-int main(int argc, char **argv)
-{
-	int sock;
-	struct ring_buff *rb;
-	struct system_data sd = { 0 };
+extern int init_system(struct system_data *sd, int *sock, struct ring_buff **rb);
+extern void cleanup_system(struct system_data *sd, int *sock, struct ring_buff **rb);
 
-	init_configuration(&sd);
-	set_configuration(argc, argv, &sd);
-	check_config(&sd);
-
-	init_system(&sd, &sock, &rb);
-
-	switch (sd.mode) {
-	case MODE_CAPTURE:
-		start_fetching_packets(&sd, sock, rb);
-		break;
-	case MODE_REPLAY:
-		transmit_packets(&sd, sock, rb);
-		break;
-	case MODE_READ:
-		display_packets(&sd);
-		break;
-	default:
-		break;
-	};
-
-	cleanup_system(&sd, &sock, &rb);
-
-	return 0;
-}
+#endif				/* _NET_BOOTSTRAP_H_ */

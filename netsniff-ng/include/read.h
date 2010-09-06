@@ -17,45 +17,12 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
-#include "types.h"
-#include "rx_ring.h"
-#include "tx_ring.h"
-#include "read.h"
+#ifndef _NET_READ_H_
+#define _NET_READ_H_
+
 #include "config.h"
-#include "bootstrap.h"
 
-/**
- * main  - Main routine
- * @argc: number of args
- * @argv: arguments passed from tty
- */
-int main(int argc, char **argv)
-{
-	int sock;
-	struct ring_buff *rb;
-	struct system_data sd = { 0 };
+/* Function signatures */
+extern void display_packets(struct system_data *sd);
 
-	init_configuration(&sd);
-	set_configuration(argc, argv, &sd);
-	check_config(&sd);
-
-	init_system(&sd, &sock, &rb);
-
-	switch (sd.mode) {
-	case MODE_CAPTURE:
-		start_fetching_packets(&sd, sock, rb);
-		break;
-	case MODE_REPLAY:
-		transmit_packets(&sd, sock, rb);
-		break;
-	case MODE_READ:
-		display_packets(&sd);
-		break;
-	default:
-		break;
-	};
-
-	cleanup_system(&sd, &sock, &rb);
-
-	return 0;
-}
+#endif				/* _NET_READ_H_ */
