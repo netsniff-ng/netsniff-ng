@@ -263,7 +263,7 @@ void fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
 			if (sd->print_pkt) {
 				/* This path here slows us down ... well, but
 				   the user wants to see what's going on */
-				sd->print_pkt(rbb, &fm->tp_h);
+				sd->print_pkt(rbb, &fm->tp_h, fm->s_ll.sll_pkttype);
 			}
 
 			/* Next frame */
@@ -399,7 +399,7 @@ void compat_fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb
 		if (sd->print_pkt) {
 			/* This path here slows us down ... well, but
 			   the user wants to see what's going on */
-			sd->print_pkt(pkt_buf, &tp_h);
+			sd->print_pkt(pkt_buf, &tp_h, 5);
 		}
 	}
 

@@ -50,6 +50,15 @@
 #include <netsniff-ng/signal.h>
 #include <netsniff-ng/bpf.h>
 
+char *pkt_type_names[]={
+	"<", /* Incoming */
+	"B", /* Broadcast */
+	"M", /* Multicast */
+	"P", /* Promisc */
+	">", /* Outgoing */
+	"?", /* Unknown */
+};
+
 /*
  * dump_hex - Prints payload as bytes to our tty
  * @buff:          payload
@@ -161,14 +170,15 @@ static void inline dump_payload_char_all(const uint8_t * const rbb, int len, int
 	info(") ]\n");
 }
 
-void reduced_print(uint8_t * rbb, const struct tpacket_hdr *tp)
+void reduced_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype)
 {
 	uint16_t l4_type = 0;
 	struct packet pkt;
 
+	pkt.type = pkttype;
 	parse_packet(rbb, tp->tp_len, &pkt);
 
-	info("%d Byte, %u.%u s, %s%s%s, ", tp->tp_len, tp->tp_sec, tp->tp_usec,
+	info("%s%s %d Byte%s, %u.%u s, %s%s%s, ", colorize_start(bold), pkt_type_names[pkttype], tp->tp_len, colorize_end(), tp->tp_sec, tp->tp_usec,
 	     colorize_start(bold), ether_types_find_less(pkt.ethernet_header->h_proto), colorize_end());
 
 	switch (get_ethertype(pkt.ethernet_header)) {
@@ -247,7 +257,7 @@ void cleanup_regex(void)
 	xfree(regex);
 }
 
-void regex_print(uint8_t * rbb, const struct tpacket_hdr *tp)
+void regex_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype)
 {
 	int i;
 
@@ -268,13 +278,13 @@ void regex_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 
 	t_rbb[pkt.payload_len] = 0;
 	if (regexec(regex, (char *)t_rbb, 0, NULL, 0) != REG_NOMATCH) {
-		versatile_print(rbb, tp);
+		versatile_print(rbb, tp, pkttype);
 	}
 
 	xfree(t_rbb);
 }
 
-void payload_human_only_print(uint8_t * rbb, const struct tpacket_hdr *tp)
+void payload_human_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype)
 {
 	struct packet pkt;
 
@@ -289,7 +299,7 @@ void payload_human_only_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 	info("\n\n");
 }
 
-void payload_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp)
+void payload_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype)
 {
 	struct packet pkt;
 
@@ -307,7 +317,7 @@ void payload_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 	info("\n\n");
 }
 
-void all_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp)
+void all_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype)
 {
 	int tty_len = get_tty_length();
 
@@ -327,7 +337,7 @@ static inline void __versatile_header_only_print(uint8_t * rbb, const struct tpa
 	assert(tp);
 	assert(pkt);
 
-	info("%d Byte, Timestamp (%u.%u s) \n", tp->tp_len, tp->tp_sec, tp->tp_usec);
+	info("%s%s %d Byte%s, Timestamp (%u.%u s)\n", colorize_start(bold), pkt_type_names[pkt->type], tp->tp_len, colorize_end(), tp->tp_sec, tp->tp_usec);
 	if (unlikely(tp->tp_len <= 14)) {
 		info(" [ Malformed Ethernet Packet ]\n");
 		pkt->payload = rbb;
@@ -380,15 +390,16 @@ static inline void __versatile_header_only_print(uint8_t * rbb, const struct tpa
 	return;
 }
 
-void versatile_header_only_print(uint8_t * rbb, const struct tpacket_hdr *tp)
+void versatile_header_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype)
 {
 	struct packet pkt;
 
+	pkt.type = pkttype;
 	__versatile_header_only_print(rbb, tp, &pkt);
 	info("\n");
 }
 
-void versatile_hex_cstyle_print(uint8_t * rbb, const struct tpacket_hdr *tp)
+void versatile_hex_cstyle_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype)
 {
 	struct packet pkt;
 	int tty_len = get_tty_length();
@@ -396,6 +407,7 @@ void versatile_hex_cstyle_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 	assert(rbb);
 	assert(tp);
 
+	pkt.type = pkttype;
 	__versatile_header_only_print(rbb, tp, &pkt);
 
 	dump_payload_hex_cstyle(rbb, tp->tp_len, tty_len - 20);
@@ -405,7 +417,7 @@ void versatile_hex_cstyle_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 }
 
 
-void versatile_print(uint8_t * rbb, const struct tpacket_hdr *tp)
+void versatile_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype)
 {
 	struct packet pkt;
 	int tty_len = get_tty_length();
@@ -413,6 +425,7 @@ void versatile_print(uint8_t * rbb, const struct tpacket_hdr *tp)
 	assert(rbb);
 	assert(tp);
 
+	pkt.type = pkttype;
 	__versatile_header_only_print(rbb, tp, &pkt);
 
 	dump_payload_hex_all(pkt.payload, pkt.payload_len, tty_len - 20);
@@ -433,7 +446,7 @@ void display_packets(struct system_data *sd)
 	while (pcap_fetch_next_packet(sd->pcap_fd, &header, (struct ethhdr *)buff) && likely(!sigint)) {
 		if (sd->print_pkt)
 			if (bpf_filter(&sd->bpf, (uint8_t *) buff, header.tp_len))
-				sd->print_pkt((uint8_t *) buff, &header);
+				sd->print_pkt((uint8_t *) buff, &header, 5);
 	}
 
 	close(sd->pcap_fd);

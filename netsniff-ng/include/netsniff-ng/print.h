@@ -31,14 +31,14 @@ extern void dump_printable(const void const *to_print, int len, size_t tty_len, 
 extern void dump_ethhdr_all(struct ethhdr *eth);
 extern void dump_iphdr_all(struct iphdr *ip);
 
-extern void versatile_print(uint8_t * rbb, const struct tpacket_hdr *tp);
-extern void versatile_header_only_print(uint8_t * rbb, const struct tpacket_hdr *tp);
-extern void versatile_hex_cstyle_print(uint8_t * rbb, const struct tpacket_hdr *tp);
-extern void payload_human_only_print(uint8_t * rbb, const struct tpacket_hdr *tp);
-extern void payload_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp);
-extern void all_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp);
-extern void reduced_print(uint8_t * rbb, const struct tpacket_hdr *tp);
-extern void regex_print(uint8_t * rbb, const struct tpacket_hdr *tp);
+extern void versatile_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype);
+extern void versatile_header_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype);
+extern void versatile_hex_cstyle_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype);
+extern void payload_human_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype);
+extern void payload_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype);
+extern void all_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype);
+extern void reduced_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype);
+extern void regex_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype);
 
 extern void init_regex(char *pattern);
 extern void cleanup_regex(void);

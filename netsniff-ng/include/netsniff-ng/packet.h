@@ -27,6 +27,7 @@
 #define ETHERNET 0x4554
 
 struct packet {
+	uint8_t type;
 	struct ethhdr *ethernet_header;
 	/* Union l2.5 */
 	struct vlan_hdr *vlan_header;
