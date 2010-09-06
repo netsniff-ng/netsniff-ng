@@ -2,7 +2,7 @@
 # Makefile definitions for netsniff-ng
 #
 
-LD_NORM      = echo "LD        $<"; \
+LD_NORM      = echo "LD        $(target)"; \
                gcc
 CC_NORM      = echo "CC        $<"; \
                gcc

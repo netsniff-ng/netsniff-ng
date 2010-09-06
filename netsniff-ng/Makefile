@@ -8,7 +8,7 @@ INCLUDE    = -Iinclude
 
 core-objs  = netsniff-ng.o
 lib-objs   = bpf.o misc.o print.o config.o rx_ring.o system.o dump.o hash.o \
-	     netdev.o tx_ring.o bootstrap.o replay.o ringbuff.o cursor.o \
+	     netdev.o tx_ring.o bootstrap.o replay.o ringbuff.o cursor.o    \
 	     server.o xmalloc.o strlcpy.o
 
 target     = netsniff-ng
