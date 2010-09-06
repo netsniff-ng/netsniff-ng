@@ -39,7 +39,7 @@
 #endif
 
 #ifndef barrier
-# define barrier()              __memory_barrier()
+# define barrier()              __sync_synchronize()
 #endif
 
 #ifndef bug

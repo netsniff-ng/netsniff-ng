@@ -62,6 +62,7 @@ static inline void mem_notify_kernel_for_rx(struct tpacket_hdr *header)
 {
 	assert(header);
 	header->tp_status = TP_STATUS_KERNEL;
+	barrier();
 }
 
 #endif				/* _NET_RX_RING_H_ */
