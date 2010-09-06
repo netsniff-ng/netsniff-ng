@@ -1,16 +1,18 @@
-Requirements (for your own kernels)
-===================================
+What platforms are supported?
+=============================
 
-Your kernel should have been built with CONFIG_PACKET_MMAP=y in order to use 
-netsniff-ng. This is default on your preinstalled Debian kernel. We 
-recommend >= 2.6.26.
+Currently only operating systems running on Linux kernels with
+CONFIG_PACKET_MMAP enabled. This feature can be found even back
+to the days of 2.4 kernels. Most operating systems ship pre-compiled
+kernels that have this config option enabled and even the latest
+kernel versions got rid of this option and have this functionality
+built-in. However, we recommend >= 2.6.26. 
 
-Hashsums
-========
-HASHSUMS is signed with: 0x59B7082F (danborkmann@googlemail.com)
+What libraries are required?
+============================
 
-With 'gensums' you can generate another HASHSUMS file and diff it against the 
-provided HASHSUMS to check for possible corruption.
+Well, libc is the only one. Most operating systems already have their
+libc shipped. That's it, nothing else.
 
 Installation
 ============

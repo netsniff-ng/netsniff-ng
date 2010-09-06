@@ -1,20 +1,14 @@
 Some future ToDos
 =================
 
-Probably this will remain deprecated here, so check out 
-http://www.netsniff-ng.org/ or write an email to 
-<workgroup@netsniff-ng.org> in order to grab some information.
-
-* Clean rework of netsniff-ng's packet processing machine
-* Adding tons of protocols to decode (and may be DPI?)
+* ARP cache poisoning for Man-In-The-Middle sniffing
+* Clean and more efficient rework of netsniff-ng's packet processing machine
+* Adding tons of protocols to decode
 * Improvements in TX_RING/sendto PCAP replay code
 * PCAPng support
-* Sysdaemon that provides network statistics for user clients (e.g. Nagios)
+* netsniff-ngd that provides network statistics for user clients (e.g. Nagios)
+* Statistical anomaly detection for netsniff-ngd
+* Kernelcode improvements in af_packet.c
 
-Both tools are long term ToDos:
-
-netpoison-ng:
-	Utility for ARP cache poisoning for Man-In-The-Middle sniffing.
-netfire-ng:
-	High performance replay of PCAP traces (low level, kernel-based).
-
+There are also some information about future plans within our 
+frequently asked questions page: http://netsniff-ng.org/faq.html

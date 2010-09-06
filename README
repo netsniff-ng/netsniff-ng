@@ -1,51 +1,93 @@
-About
-=====
+What is netsniff-ng?
+====================
 
-netsniff-ng is a high performance Linux network sniffer for packet 
-inspection. 
+netsniff-ng is a high performance Linux network sniffer for packet
+inspection.
 
-It can be used for protocol analysis and reverse engineering, network 
-debugging, measurement of performance throughput or network statistics 
-creation of incoming packets.
+Basically it is similar to analyzers like tcpdump, but without the
+need to perform system calls for fetching network packets. A memory
+mapped area within kernelspace will be used for accessing packets,
+thus there is no requirement for copying them to userspace ('zero-copy'
+mechanism). For this purpose netsniff-ng is libpcap independent, but
+nevertheless supports the pcap file format for capturing, replaying and
+performing offline-analysis of pcap dumps. Furthermore we are focussing
+on building a robust, clean and secure analyzer and utilities that
+complete netsniff-ng as a support for penetration testing.
 
-It works similar to tcpdump, but a 'zero-copy' mechanism for network packets 
-results in better performance than libpcap-based sniffers.
+netsniff-ng can be used for protocol analysis, reverse engineering and
+network debugging. 
 
-For more information about netsniff-ng have a look at the manpage and 
-the manual.
+Some use cases and features
+===========================
 
-Requirements (for your own kernels)
-===================================
+* Open source project and free licensing
+* Analizing and debugging of network problems or protocol implementations
+* Reverse engineering of (proprietary) network protocols
+* Dumping, replaying and offline analysis of pcap traces
+* Integrated high performance capabilities
+* Focus on usability, robustness, security and functionality
+* Support utility for penetration testing
+* Regular expression based grepping of specific packet information
+* Monitoring of network usage
+* Network statistic creation (e.g. for Nagios)
 
-Your kernel should have been built with CONFIG_PACKET_MMAP=y in order to use 
-netsniff-ng. This is default on your preinstalled Debian kernel. We 
-recommend >= 2.6.26.
+What are the main goals?
+========================
+
+netsniff-ngs main goal is to be a high performance network sniffer that
+focuses on usability, robustness and functionality. Its aim is to support
+the daily work for networking engineers, developers, admins or Linux
+users by providing support with or in network monitoring, protocol
+analysis, reverse engineering, network debugging and penetration testing.
 
 Homepage
 ========
 
-http://www.netsniff-ng.org/
+You can reach us via http://www.netsniff-ng.org/.
+
+Installation
+============
+
+For installation instructions, have a look at INSTALL.
 
 Development
 ===========
 
-git clone git@github.com:danborkmann/netsniff-ng.git
+There's a public Git repository at http://github.com/danborkmann/netsniff-ng/
+where you can check out the latest code base.
 
-Support
-=======
+git clone git://github.com/danborkmann/netsniff-ng.git
 
-A mailing list for netsniff-ng announcements and moderated discussions is open 
-to the public:
+Note that there is also a HACKING and TODO file for further readings. Next to 
+this we've set up a FAQ page with development questions at 
+http://netsniff-ng.org/faq.html.
 
-Subscribe and send your questions to netsniff-ng@googlegroups.com.
+Our coding conventions can be found in CODING.
 
 Contact
 =======
 
-For bugs, improvements, hacks and all the rest <workgroup@netsniff-ng.org>.
+For questions:
+    <workgroup@netsniff-ng.org>,
+    <netsniff-ng@googlegroups.com>,
+    http://netsniff-ng.org/faq.html
+    #netsniff-ng on freenode.org
 
-Website:                       http://www.netsniff-ng.org/
-Hosted on and associated with: http://www.gnumaniacs.org/
+For bugs:
+    <bugs@netsniff-ng.org>,
+    http://github.com/danborkmann/netsniff-ng/issues/
+
+For improvements, hacks and all the rest:
+    <workgroup@netsniff-ng.org>
+
+Website:
+    http://www.netsniff-ng.org/
+
+IRC:
+    #netsniff-ng on freenode.org
+
+Hosted on and associated with:
+    http://www.gnumaniacs.org/
 
 In honorem ...
 ==============

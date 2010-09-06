@@ -3,9 +3,6 @@ netsniff-ng CODING CONVENTIONS
 
 The coding conventions of netsniff-ng match with the Linux kernel style
 guidelines. So here we go with a copy of linux-xxx/Documentation/CodingStyle.
-For the midterm we are throwing away our indent_code script and change the
-style by hand. Furthermore, indent screws our code up sometimes, so it's 
-better to throw this away. Cheers!
 
 --------------------------------------------------------
 

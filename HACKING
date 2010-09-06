@@ -3,24 +3,17 @@ netsniff-ng HACKING
 
 Some information about potential netsniff-ng hackers!
 
-How to check out netsniff-ng
-============================
+How to check out netsniff-ng?
+=============================
 
-git clone git@github.com:danborkmann/netsniff-ng.git
-
-Mailing list
-============
-
-netsniff-ng@googlegroups.com is the development and user mailing list. 
-Feel free to sign up (http://groups.google.com/group/netsniff-ng) and 
-mail.
+git clone git://github.com/danborkmann/netsniff-ng.git
 
 Some ideas of useful contributions/projects
 ===========================================
 
 The best way to propose your ideas is to outline them in a short mail to 
 workgroup@netsniff-ng.org or to our public mailing list address 
-netsniff-ng@googlegroups.com . We are looking forward for your proposals!
+netsniff-ng@googlegroups.com. We are looking forward for your proposals!
 Of course, keep in mind that you can mail smaller fixes immediately.
 
 How to make code contributions
@@ -41,7 +34,7 @@ To make a unified diff, please follow these instructions:
     mv netsniff-ng-xxx netsniff-ng-xxx-snazzy-feature
 
 3. Checkout the original netsniff-ng source alongside it:
-    git clone git@github.com:danborkmann/netsniff-ng.git
+    git clone git://github.com/danborkmann/netsniff-ng.git
 
 4. Generate the diffs:
     diff -urNb netsniff-ng-xxx netsniff-ng-xxx-snazzy-feature > /tmp/cool.patch
@@ -60,18 +53,11 @@ easier. For each file, just do:
 
 and just send us the patch: /tmp/file.c.patch.
 
-Style
-=====
+Code Style
+==========
 
 Before submitting your patch make sure to indent your code appropriate.
 See CODING.
-
-Propose a release name
-======================
-
-We are always looking for funny release names of netsniff-ng. See
-  netsniff-ng --version
-Write us your proposal to workgroup@netsniff-ng.org !
 
 Credits
 =======
