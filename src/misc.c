@@ -57,7 +57,9 @@ void help(void)
 	info("  -t|--type <type>       Only show packets of defined type\n");
 	info("                         this is slower than BPF, types are\n");
 	info("                         host|broadcast|multicast|others|outgoing\n");
+#if 0 /* Next time */
 	info("  -g|--generate <filter> Generate BPF code for expression\n");
+#endif
 	info("\n");
 	info("Options for system scheduler/process:\n");
 	info("  -b|--bind-cpu <cpu>    Bind to specific CPU/CPU-range,\n");
@@ -70,7 +72,8 @@ void help(void)
 	info("\n");
 	info("Options for receive and transmit ring:\n");
 	info("  -S|--ring-size <size>  Manually set ring size to <arg>,\n");
-	info("                         mmap space in KB/MB/GB, e.g. `100MB`\n");
+	info("                         mmap space in KB/MB/GB, e.g. `10MB`\n");
+	info("  -c|--compat-mode       No usage of packet_mmap features\n");
 	info("\n");
 	info("Options for packet printing:\n");
 	info("  -s|--silent            Do not print captured packets\n");
@@ -82,12 +85,7 @@ void help(void)
 	info("  -N|--no-payload        Only print packet header\n");
 	info("  -e|--regex <expr>      Only print package that matches regex\n");
 	info("\n");
-	info("Options for system daemon:\n");
-	info("  -D|--daemonize         Run as system daemon\n");
-	info("  -P|--pidfile <file>    Specify a pidfile for the daemon\n");
-	info("\n");
 	info("Options, misc:\n");
-	info("  -c|--compatibility-mode Activate compatibility mode to receive/send packets\n");
 	info("  -v|--version           Print version\n");
 	info("  -h|--help              Print this help\n");
 	info("\n");

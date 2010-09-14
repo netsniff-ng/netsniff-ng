@@ -18,9 +18,9 @@
  */
 
 /*
- * Author: Tatu Ylonen <ylo@cs.hut.fi>
- * Copyright (c) 1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland
+ * Copyright (C) 1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland, 
  *                    All rights reserved
+ *
  * Versions of malloc and friends that check their results, and never return
  * failure (they call fatal if they encounter an error).
  *
@@ -31,16 +31,18 @@
  * called by a name other than "ssh" or "Secure Shell".
  */
 
-/* xmalloc.c taken from OpenSSH and adapted */
-
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <signal.h>
+#include <unistd.h>
+#include <time.h>
+#include <pthread.h>
 
 #ifndef SIZE_T_MAX
-#define SIZE_T_MAX  UINT_MAX
+# define SIZE_T_MAX  UINT_MAX
 #endif
 
 #include "macros.h"

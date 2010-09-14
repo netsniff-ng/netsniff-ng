@@ -41,10 +41,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <assert.h>
-
-#include <linux/filter.h>
-
 #include <arpa/inet.h>
+#include <linux/filter.h>
 
 #include "bpf.h"
 #include "macros.h"
@@ -116,8 +114,8 @@
 #endif				/* BPF_MEMWORDS */
 
 /**
- * bpf_dump - Prints bpf program in human readable format. Switch-case code taken 
- *            with the above copyright.
+ * bpf_dump - Prints bpf program in human readable format. Switch-case code
+ *            taken with the above copyright.
  * @bpf:     bpf program
  */
 static char *bpf_dump(const struct sock_filter bpf, int n)

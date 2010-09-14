@@ -36,7 +36,7 @@ struct hashtable_bucket {
 struct hashtable_callbacks {
 	void *(*key_copy) (void *k);
 	void (*key_free) (void *k);
-	 uintptr_t(*key_to_hash) (void *k);
+	uintptr_t(*key_to_hash) (void *k);
 	int (*key_equal) (void *k1, void *k2);
 };
 

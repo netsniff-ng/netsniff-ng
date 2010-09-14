@@ -34,7 +34,6 @@
 #include <net/if.h>
 
 #include "hash.h"
-#include "server.h"
 #include "dump.h"
 #include "replay.h"
 #include "system.h"
@@ -100,29 +99,6 @@ static void __init_stage_common(struct system_data *sd, int *sock, struct ring_b
 	register_softirq(SIGHUP, &softirq_handler);
 
 	memset(&netstat, 0, sizeof(netstat));
-}
-
-static void __init_stage_daemon(struct system_data *sd, int *sock, struct ring_buff **rb)
-{
-	int ret;
-
-	assert(sd);
-	assert(sock);
-	assert(rb);
-
-	if (sd->sysdaemon == 0)
-		return;
-
-	if (sd->mode == MODE_READ)
-		return;
-
-	info("--- Daemonizing ---\n\n");
-
-	ret = daemonize(sd->pidfile);
-	if (ret != 0) {
-		warn("Daemonize failed!\n");
-		exit(EXIT_FAILURE);
-	}
 }
 
 static void __init_stage_fallback_dev(struct system_data *sd, int *sock, struct ring_buff **rb)
@@ -388,7 +364,6 @@ int init_system(struct system_data *sd, int *sock, struct ring_buff **rb)
 	header();
 
 	__init_stage_common(sd, sock, rb);
-	__init_stage_daemon(sd, sock, rb);
 	__init_stage_fallback_dev(sd, sock, rb);
 	__init_stage_mode_common(sd, sock, rb);
 	__init_stage_bpf(sd, sock, rb);
@@ -406,18 +381,6 @@ static void __exit_stage_common(struct system_data *sd, int *sock, struct ring_b
 	assert(sock);
 	assert(rb);
 	/* NOP */
-}
-
-static void __exit_stage_daemon(struct system_data *sd, int *sock, struct ring_buff **rb)
-{
-	assert(sd);
-	assert(sock);
-	assert(rb);
-
-	if (sd->sysdaemon == 0)
-		return;
-
-	undaemonize(sd->pidfile);
 }
 
 static void __exit_stage_fallback_dev(struct system_data *sd, int *sock, struct ring_buff **rb)
@@ -550,7 +513,6 @@ void cleanup_system(struct system_data *sd, int *sock, struct ring_buff **rb)
 	assert(*rb);
 
 	__exit_stage_common(sd, sock, rb);
-	__exit_stage_daemon(sd, sock, rb);
 	__exit_stage_fallback_dev(sd, sock, rb);
 	__exit_stage_mode_common(sd, sock, rb);
 	__exit_stage_bpf(sd, sock, rb);
