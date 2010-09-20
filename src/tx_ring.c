@@ -281,13 +281,19 @@ static void *fill_virt_tx_ring_thread(void *packed)
 						break;
 					}
 
-					versatile_print(buff, header);
+					/* Prints all packets as unknown */
+					if (ptd->sd->print_pkt)
+						ptd->sd->print_pkt(buff, header, 5);
 				}
 				printf("Success? %u\n", success);
 				if (success == 0)
 					goto out;
 				loop = 0;
-				versatile_print(buff, header);
+
+				/* Prints all packets as unknown */
+				if (ptd->sd->print_pkt)
+					ptd->sd->print_pkt(buff, header, 5);
+
 				break;
 
 			case TP_STATUS_WRONG_FORMAT:
