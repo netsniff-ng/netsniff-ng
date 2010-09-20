@@ -337,13 +337,13 @@ static void *flush_virt_tx_ring_thread(void *packed)
 
 	ptd = (struct packed_tx_data *)packed;
 
+	ret = spinner_create(&spinner_ctx);
+	if (ret) {
+		err("Cannot create spinner thread");
+		exit(EXIT_FAILURE);
+	}
+ 
 	for (; likely(!send_intr); errors = 0) {
-		ret = spinner_create(&spinner_ctx);
-		if (ret) {
-			err("Cannot create spinner thread");
-			exit(EXIT_FAILURE);
-		}
-
 		ret = flush_virt_tx_ring(ptd->sock, ptd->rb);
 		if (ret < 0) {
 			exit(EXIT_FAILURE);
