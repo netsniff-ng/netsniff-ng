@@ -57,7 +57,6 @@ void help(void)
 	info("  -t|--type <type>       Only show packets of defined type\n");
 	info("                         this is slower than BPF, types are\n");
 	info("                         host|broadcast|multicast|others|outgoing\n");
-	info("  -g|--generate <filter> Generate BPF code for expression\n");
 	info("\n");
 	info("Options for system scheduler/process:\n");
 	info("  -b|--bind-cpu <cpu>    Bind to specific CPU/CPU-range,\n");
@@ -82,17 +81,11 @@ void help(void)
 	info("  -N|--no-payload        Only print packet header\n");
 	info("  -e|--regex <expr>      Only print package that matches regex\n");
 	info("\n");
-	info("Options for system daemon:\n");
-	info("  -D|--daemonize         Run as system daemon\n");
-	info("  -P|--pidfile <file>    Specify a pidfile for the daemon\n");
-	info("\n");
 	info("Options, misc:\n");
-	info("  -c|--compatibility-mode Activate compatibility mode to receive/send packets\n");
 	info("  -v|--version           Print version\n");
 	info("  -h|--help              Print this help\n");
 	info("\n");
 	info("Note:\n");
-	info("  - Sending a SIGUSR1 will show current packet statistics\n");
 	info("  - For more help try \'man netsniff-ng\'\n");
 	info("  - Binding netsniff-ng to a specific CPU increases performance\n");
 	info("    since NIC RX/TX interrupts will be bound to that CPU, too\n");
