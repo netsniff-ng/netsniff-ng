@@ -64,6 +64,7 @@ void softirq_handler(int number)
 		/* refresh_counters(); */
 		break;
 	case SIGUSR1:
+	case SIGUSR2:
 		/* print_counters(); */
 		break;
 	case SIGINT:
@@ -91,11 +92,9 @@ static void __init_stage_common(struct system_data *sd, int *sock, struct ring_b
 	}
 
 	register_softirq(SIGINT, &softirq_handler);
-#if 0
 	register_softirq(SIGALRM, &softirq_handler);
 	register_softirq(SIGUSR1, &softirq_handler);
 	register_softirq(SIGUSR2, &softirq_handler);
-#endif
 	register_softirq(SIGHUP, &softirq_handler);
 
 	memset(&netstat, 0, sizeof(netstat));

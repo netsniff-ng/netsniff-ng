@@ -73,7 +73,6 @@ void help(void)
 	info("Options for receive and transmit ring:\n");
 	info("  -S|--ring-size <size>  Manually set ring size to <arg>,\n");
 	info("                         mmap space in KB/MB/GB, e.g. `10MB`\n");
-	info("  -c|--compat-mode       No usage of packet_mmap features\n");
 	info("\n");
 	info("Options for packet printing:\n");
 	info("  -s|--silent            Do not print captured packets\n");
@@ -90,7 +89,6 @@ void help(void)
 	info("  -h|--help              Print this help\n");
 	info("\n");
 	info("Note:\n");
-	info("  - Sending a SIGUSR1 will show current packet statistics\n");
 	info("  - For more help try \'man netsniff-ng\'\n");
 	info("  - Binding netsniff-ng to a specific CPU increases performance\n");
 	info("    since NIC RX/TX interrupts will be bound to that CPU, too\n");
