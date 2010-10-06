@@ -110,9 +110,9 @@ size_t pcap_fetch_next_packet(int fd, struct tpacket_hdr * tp_h, struct ethhdr *
 	if (read(fd, (char *)&sf_hdr, sizeof(sf_hdr)) != sizeof(sf_hdr)) {
 		return (0);
 	}
-	//calc offset ?
-	//tp_h->tp_sec = sf_hdr.ts.tv_sec;
-	//tp_h->tp_usec = sf_hdr.ts.tv_usec;
+
+	tp_h->tp_sec = sf_hdr.ts.tv_sec;
+	tp_h->tp_usec = sf_hdr.ts.tv_usec;
 	tp_h->tp_snaplen = sf_hdr.caplen;
 	tp_h->tp_len = sf_hdr.len;
 

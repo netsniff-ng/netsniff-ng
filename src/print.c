@@ -331,13 +331,20 @@ void all_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkt
 
 static inline void __versatile_header_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, struct packet *pkt)
 {
+	/* According to ctime(3), the buffer containing the date should be at least 23 byte, so 32 bytes to preserve alignement */
+	char date[32] = {0};
 	uint16_t l4_type = 0;
+	int pkt_tsec = 0;
 
 	assert(rbb);
 	assert(tp);
 	assert(pkt);
 
-	info("%s%s %d Byte%s, Timestamp (%u.%u s)\n", colorize_start(bold), pkt_type_names[pkt->type], tp->tp_len, colorize_end(), tp->tp_sec, tp->tp_usec);
+	/* time_t is an int, tp->tp_sec is a unsigned int */
+	pkt_tsec = (int) tp->tp_sec;
+	ctime_r((time_t *)&pkt_tsec, date);
+
+	info("%s%s %d Byte%s, Unix TS (%u s %u us), %s", colorize_start(bold), pkt_type_names[pkt->type], tp->tp_len, colorize_end(), tp->tp_sec, tp->tp_usec, date);
 	if (unlikely(tp->tp_len <= 14)) {
 		info(" [ Malformed Ethernet Packet ]\n");
 		pkt->payload = rbb;

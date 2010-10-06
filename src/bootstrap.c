@@ -426,7 +426,6 @@ static void __exit_stage_rx_ring(struct system_data *sd, int *sock, struct ring_
 	assert(sd);
 	assert(sock);
 	assert(rb);
-	assert(*rb);
 
 	if (sd->mode == MODE_REPLAY || sd->mode == MODE_READ)
 		return;
@@ -439,7 +438,6 @@ static void __exit_stage_tx_ring(struct system_data *sd, int *sock, struct ring_
 	assert(sd);
 	assert(sock);
 	assert(rb);
-	assert(*rb);
 
 	if (sd->mode == MODE_CAPTURE || sd->mode == MODE_READ)
 		return;
@@ -509,7 +507,6 @@ void cleanup_system(struct system_data *sd, int *sock, struct ring_buff **rb)
 	assert(sd);
 	assert(sock);
 	assert(rb);
-	assert(*rb);
 
 	__exit_stage_common(sd, sock, rb);
 	__exit_stage_fallback_dev(sd, sock, rb);
