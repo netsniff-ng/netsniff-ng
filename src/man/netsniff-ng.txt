@@ -7,8 +7,9 @@ netsniff-ng - the packet sniffing beast
 
 SYNOPSIS
 --------
-netsniff-ng [-d netdev] [-p pcap-file] [-r pcap-file] [-i pcap-file] 
-            [-f bpf-file] [-t pkt-type] [-b cpu-range] [-B cpu-range] 
+[verse]
+'netsniff-ng' [-d netdev] [-p pcap-file] [-r pcap-file] [-i pcap-file]
+            [-f bpf-file] [-t pkt-type] [-b cpu-range] [-B cpu-range]
             [-S ring-size] [-e regex] [-IMHQnsqlxCXNvh]
 
 DESCRIPTION
@@ -30,42 +31,42 @@ debugging.
 
 OPTIONS
 -------
--d<netdev>::
---dev<netdev>::
+-d <netdev>::
+--dev <netdev>::
 	<netdev> defines the packet capturing device. This can for instance
 	be a typical device like eth0 or wlan0. Running netsniff-ng without
 	a given device parameter, it looks for up and running networking
 	devices and selects the first device that has been found.
 
--p<pcap-file>::
---dump<pcap-file>::
+-p <pcap-file>::
+--dump <pcap-file>::
 	netsniff-ng stores the captured packets into the given <pcap-file>.
 	It understands the PCAP specification, so that dumps can be read or
 	postprocessed with other tools, too. Usually, this option should be 
 	combined with --silent and --bind-cpu to win some performance.
 
--r<pcap-file>::
---replay<pcap-file>::
+-r <pcap-file>::
+--replay <pcap-file>::
 	The given <pcap-file> will be replayed via a memory mapped kernelspace 
 	TX_RING. A BPF filter may be combined to only replay parts of the PCAP 
 	formatted file.
 
--i<pcap-file>::
---read<pcap-file>::
+-i <pcap-file>::
+--read <pcap-file>::
 	<pcap-file> will be read in and printed to the console in order to 
 	perform an offline analysis. Same here: a BPF may be combined to only
 	show relevant parts of the PCAP formatted file. Next to this, packet 
 	printing that are enabled on the normal mode are supported, too.
 
--f<bpf-file>::
---filter<bpf-file>::
+-f <bpf-file>::
+--filter <bpf-file>::
 	Attaches a Berkeley Packet Filter to the socket in order to pre-filter
 	traffic within the kernel. Example files are given within
 	/etc/netsniff-ng/rules/. The section 'BERKELEY PACKET FILTER' describes
 	how to write filter files.
 
--t<pkt-type>::
---type<pkt-type>::
+-t <pkt-type>::
+--type <pkt-type>::
 	A <pkt-type> specification allows to post-filter packets within userspace
 	context (therefore slower than BPF). The following types are supported:
 	host - only show incoming packets to our host,
@@ -74,8 +75,8 @@ OPTIONS
 	others - only show packets from other hosts (promiscuous mode),
 	outgoing - only show outgoing packets from our host
 
--b<cpu-range>::
---bind-cpu<cpu-range>::
+-b <cpu-range>::
+--bind-cpu <cpu-range>::
 	Force system scheduler to schedule netsniff-ng only on specific CPUs. 
 	Parameters may be '0' for using only CPU0, '0,1' for using CPU0 and 
 	CPU1 or even '0-4' for using a whole CPU range. If you have a customized 
@@ -86,14 +87,14 @@ OPTIONS
 	reschedule other processes on other CPUs to let netsniff-ng run on its
 	own CPU.
 
--B<cpu-range>::
---unbind-cpu<cpu-range>::
+-B <cpu-range>::
+--unbind-cpu <cpu-range>::
 	Force system scheduler to not schedule netsniff-ng on specific CPUs.
 	The parameter syntax is equivalent to -b and also the semantics are
 	inverted to -b.
 
--S<ring-size>::
---ring-size<size>::
+-S <ring-size>::
+--ring-size <size>::
 	This manually sets the desired ring size for RX_RING or TX_RING. You
 	should only use this option, if you know what you are doing, because
 	choosing a ring size which is too large for your system, the kernel
@@ -167,8 +168,8 @@ OPTIONS
 --no-payload::
 	Shows only the packet header, not the payload.
 
--e<regex>::
---regex<expr>::
+-e <regex>::
+--regex <expr>::
 	Regular expression printing is useful for grepping ASCII text out of
 	packets, say certain HTML code for instance. Beware, that this has a
 	impact on performance. Regular expressions that comply with the POSIX
@@ -190,7 +191,7 @@ packets within the kernel as early as possible, so that only the relevant
 packets will be brought to the user-level process.
 
 The Linux kernel has adapted this feature, which nowadays is available in 
-PF_PACKET. BPF therefore uses a register-based 'filter-machine' that is 
+PF_PACKET. BPF therefore uses a register-based filter-machine that is 
 efficient on todays RISCs. Since most applications of a packet filter reject
 far more packets than they accept and, thus, good performance of the packet 
 filter is critical to good overall performance [1]. This should also be kept 
@@ -213,28 +214,28 @@ The BPF pseudo-machine consists of an accumulator, an index register (X), a
 scratch memory store and an implicit program counter. Operations on this machine
 can be categorized into (all the following refering to [1]):
 
-1. Load instructions:
+1. 'Load instructions:'
 Load instructions copy a value into the accumulator or index register. The 
 source can be an immediate value, packet data at a fixed offset, packet data 
 at a variable offset, the packet length, or the scratch memory store.
 
-2. Store instructions:
+2. 'Store instructions:'
 Store instructions copy either the accumulator or index register into the 
 scratch memory store.
 
-3. ALU instructions:
+3. 'ALU instructions:'
 ALU instructions perform arithmetic or logic on the accumulator using the index 
 register or a constant as an operand.
 
-4. Branch instructions:
+4. 'Branch instructions:'
 Branch instructions alter the flow of control, based on comparison test between 
 a constant or x register and the accumulator.
 
-5. Return instructions:
+5. 'Return instructions:'
 Return instructions terminate the filter and indicated what portion of the packet 
 to save. The packet is discarded entirely if the filter returns 0.
 
-6. Misc instructions:
+6. 'Misc instructions:'
 Misc instructions comprise everything else - currently, register transfer 
 instructions.
 
@@ -253,6 +254,7 @@ All values are 32 bit words.
 
 The Linux kernel has adapted this within linux/filter.h:
 
+.................
 struct sock_filter {    /* Filter block */
         __u16   code;   /* Actual filter code */
         __u8    jt;     /* Jump true */
@@ -264,10 +266,12 @@ struct sock_fprog {                        /* Required for SO_ATTACH_FILTER. */
         unsigned short             len;    /* Number of filter blocks */
         struct sock_filter __user *filter;
 };
+.................
 
 The instruction set is similar to assembler syntax. There are several instruction
 classes which are similar to the previous categorization:
 
+.................
  LD    0x00  Copy indicated value into accumulator
  LDX   0x01  Copy indicated value into index register
  ST    0x02  Copy accumulator value into the scratch memory store
@@ -276,16 +280,20 @@ classes which are similar to the previous categorization:
  JMP   0x05  Perform a branch instruction
  RET   0x06  Return/exit from filter program
  MISC  0x07  Data transfer between index register and accumulator
+.................
 
 Next to classes, there are class-specific fields which are usually combined with 
 bitwise OR:
  
 LD/LDX specific fields:
+.................
  Size:
   W    0x00  Unsigned Word (32 Bit)
   H    0x08  Unsigned Halfword (16 Bit)
   B    0x10  Unsigned Byte 
+.................
 
+.................
  Mode:
   IMM  0x00  Literal value stored in K
   ABS  0x20  Byte, halfword or word at offset K in the packet
@@ -294,12 +302,14 @@ LD/LDX specific fields:
   LEN  0x80  Length of the packet
   MSH  0xa0  4*([K]&0xf): four times the value of the low four bits
              of the byte at offset K in the packet
+.................
 
 ALU/JMP operations perform the indicated operation using the accumulator and 
 operand, and store the result back into the accumulator. Division by zero 
 terminates the filter.
 
 ALU/JMP specific fields:
+.................
  Operation:
   ADD  0x00  Addition
   SUB  0x10  Subtraction
@@ -319,16 +329,21 @@ ALU/JMP specific fields:
   JGT  0x20  Jump if K or X is greater than accumulator
   JGE  0x30  Jump if K or X is greater or equals the accumulator
   JSET 0x40  Jump if K or X bitwise AND the accumulator > 0
+.................
 
+.................
  Source:
   K    0x00  Value stored in K
   X    0x08  Value stored in the index register
+.................
 
 RET specific fields:
+.................
  Return val:
   A    0x10  Value stored in the accumulator
   K    0x00  Value stored in K
   X    0x08  Value stored in the index register
+.................
 
 The index register cannot use the packet addressing modes. Instead, a packet 
 value must be loaded into the accumulator and transferred to the index 
@@ -337,9 +352,11 @@ used primarily to parse the variable length IP header, which can be loaded
 directly via the 4*([k]&0xf) addressing mode.
 
 MISC specific fields:
+.................
  Operation:
   TAX  0x00 Transfer value from accumulator into index register
   TXA  0x80 Transfer value from index register to accumulator
+.................
 
 Example filter:
 
@@ -392,6 +409,7 @@ The test was about flushing as much frames as possible of a fixed size. The
 IXIA was the counterpart that showed the incoming figures. Figures have been
 rounded to thousands.
 
+.................
 Pkt size, TX_RING pps
    64     422,000
   128     422,000
@@ -400,6 +418,7 @@ Pkt size, TX_RING pps
   750     162,000
 1,000     122,000
 1,500      82,000
+.................
 
 RX_RING, 1GbE:
 
@@ -407,6 +426,7 @@ The test included the reception of frames into the ring buffer, a counter
 increment per frame and the summation of the frame length. Figures have been
 rounded to thousands.
 
+.................
 64-Byte fixed
 Pkt rate (IXIA), % of BW, RX_RING pps
   100,000          6.75   100,000
@@ -415,55 +435,72 @@ Pkt rate (IXIA), % of BW, RX_RING pps
   500,000         33.60   338,000
 1,000,000         67.20   354,000
 1,488,000        100.00   303,000
+.................
 
+.................
 250-Byte fixed
 Pkt rate (IXIA), % of BW, RX_RING pps
 100,000           21.60   100,000
 175,000           37.80   175,000
 250,000           54.00   244,000
 463,000          100.00   381,000
+.................
 
+.................
 500-Byte fixed
 Pkt rate (IXIA), % of BW, RX_RING pps
 100,000           41.60   100,000
 175,000           72.80   169,000
 240,000          100.00   226,000
+.................
 
+.................
 1,500-Byte fixed
 Pkt rate (IXIA), % of BW, RX_RING pps
 82,000           100.00   82,000
+.................
 
+.................
 IMIX distribution (64:7, 570:4, 1518:1)
 Pkt rate (IXIA), % of BW, RX_RING pps
 100,000           29.99   100,000
 175,000           52.35   175,000
 250,000           74.80   240,000
 334,000          100.00   303,000
+.................
 
+.................
 Tolly distribution (64:55, 78:5, 576:17, 1518:23)
 Pkt rate (IXIA), % of BW, RX_RING pps
 100,000           40.50   100,000
 175,000           70.90   174,000
 247,000          100.00   193,000
+.................
 
 EXAMPLES
 --------
 Dump packets on eth0 into a file:
+
   netsniff-ng --dev eth0 --dump out.pcap --silent --bind-cpu 0
 
 Replay a PCAP file via eth0:
+
   netsniff-ng --dev eth0 --replay out.pcap --bind-cpu 0
 
 Only show ICQ related packets:
+
   netsniff-ng --filter /etc/netsniff-ng/rules/icq.bpf
 
 Show only packet headers of a PCAP file:
+
   netsniff-ng --read out.pcap --no-payload
 
 Show only packets that match a regular expression:
-  netsniff-ng --regex \"foo.*bar\"
+
+  netsniff-ng --regex "foo.*bar"
 
 Show only outgoing packets in hex format from wlan0:
+
   netsniff-ng --dev wlan0 --all-hex --type outgoing
 
 NOTES
@@ -504,7 +541,7 @@ to use filter definitions from /etc/netsniff-ng/rules, tcpdump -dd or write his
 own filter by hand.
 
 Please send problems, bugs, questions, desirable enhancements, etc. to 
-<bugs@netsniff-ng.org>.
+bugs@netsniff-ng.org.
 
 GIT
 ---
@@ -512,12 +549,12 @@ git clone git://github.com/danborkmann/netsniff-ng.git
 
 AUTHOR
 ------
-netsniff-ng was originally written by Daniel Borkmann (<daniel@netsniff-ng.org>).
+netsniff-ng was originally written by Daniel Borkmann (daniel@netsniff-ng.org).
  
 Current authors:
 
-Daniel Borkmann (<daniel@netsniff-ng.org>)
-Emmanuel Roullit (<emmanuel@netsniff-ng.org>)
+Daniel Borkmann (daniel@netsniff-ng.org),
+Emmanuel Roullit (emmanuel@netsniff-ng.org)
 
 http://www.netsniff-ng.org/
 
@@ -531,6 +568,7 @@ IN HONOREM
 ----------
 To my alma mater:
 
-Leipzig University of Applied Science
+[verse]
+Leipzig University of Applied Science,
 Faculty of Computer Science, Mathematics and Natural Sciences
 
