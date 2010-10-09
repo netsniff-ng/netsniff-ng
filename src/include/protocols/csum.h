@@ -107,7 +107,8 @@ static inline uint16_t csum_expected(uint16_t sum, uint16_t computed_sum)
 	return (shouldbe);
 }
 
-static inline uint16_t tcp_sum_calc(uint16_t len_tcp, uint16_t src_addr[], uint16_t dest_addr[], uint8_t padding,
+static inline uint16_t tcp_sum_calc(uint16_t len_tcp, uint16_t src_addr[],
+				    uint16_t dest_addr[], uint8_t padding,
 				    uint16_t buff[])
 {
 	uint32_t i;
@@ -132,11 +133,13 @@ static inline uint16_t tcp_sum_calc(uint16_t len_tcp, uint16_t src_addr[], uint1
 	// add the TCP pseudo header which contains:
 	// the IP source and destinationn addresses,
 	for (i = 0; i < 4; i = i + 2) {
-		word16 = ((src_addr[i] << 8) & 0xFF00) + (src_addr[i + 1] & 0xFF);
+		word16 =
+		    ((src_addr[i] << 8) & 0xFF00) + (src_addr[i + 1] & 0xFF);
 		sum = sum + word16;
 	}
 	for (i = 0; i < 4; i = i + 2) {
-		word16 = ((dest_addr[i] << 8) & 0xFF00) + (dest_addr[i + 1] & 0xFF);
+		word16 =
+		    ((dest_addr[i] << 8) & 0xFF00) + (dest_addr[i + 1] & 0xFF);
 		sum = sum + word16;
 	}
 	// the protocol number and the length of the TCP packet

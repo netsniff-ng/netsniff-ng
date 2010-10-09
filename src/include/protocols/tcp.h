@@ -83,7 +83,8 @@ static void inline print_tcphdr(struct tcphdr *tcp)
 
 	info(" [ TCP ");
 
-	info("Port (%u => %u, %s%s%s), ", tcps, tcpd, colorize_start(bold), port_desc, colorize_end());
+	info("Port (%u => %u, %s%s%s), ", tcps, tcpd, colorize_start(bold),
+	     port_desc, colorize_end());
 	info("SN (0x%x), ", ntohs(tcp->seq));
 	info("AN (0x%x), ", ntohs(tcp->ack_seq));
 	info("Data off (%d), \n", ntohs(tcp->doff));
@@ -166,7 +167,8 @@ static void inline print_tcphdr_less(struct tcphdr *tcp)
 		port_desc = "U";
 
 	info("TCP, ");
-	info("%s%s%s, %u => %u\n", colorize_start(bold), port_desc, colorize_end(), tcps, tcpd);
+	info("%s%s%s, %u => %u\n", colorize_start(bold), port_desc,
+	     colorize_end(), tcps, tcpd);
 }
 
 #endif				/* __PROTO_TCP_H__ */

@@ -36,7 +36,9 @@ extern void version(void);
  * @after:            second timespec
  * @before:           first timespec
  */
-static inline int timespec_subtract(struct timespec *result, struct timespec *after, struct timespec *before)
+static inline int timespec_subtract(struct timespec *result,
+				    struct timespec *after,
+				    struct timespec *before)
 {
 	result->tv_nsec = after->tv_nsec - before->tv_nsec;
 

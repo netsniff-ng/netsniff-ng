@@ -65,6 +65,5 @@ help:
 	@echo '  install         - Install netsniff-ng'
 	@echo '  uninstall       - Uninstall netsniff-ng'
 	@echo 'Other targets:'
-	@echo '  indent          - Indent source code'
 	@echo '  help            - Print this help'
 

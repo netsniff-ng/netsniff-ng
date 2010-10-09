@@ -86,7 +86,8 @@ int pcap_validate_header(int fd)
 
 	if (hdr.magic != TCPDUMP_MAGIC
 	    || hdr.version_major != PCAP_VERSION_MAJOR
-	    || hdr.version_minor != PCAP_VERSION_MINOR || hdr.linktype != LINKTYPE_EN10MB) {
+	    || hdr.version_minor != PCAP_VERSION_MINOR
+	    || hdr.linktype != LINKTYPE_EN10MB) {
 		errno = EINVAL;
 		err("This file is certainly not a valid pcap");
 		return -EIO;
@@ -95,7 +96,8 @@ int pcap_validate_header(int fd)
 	return 0;
 }
 
-size_t pcap_fetch_next_packet(int fd, struct tpacket_hdr * tp_h, struct ethhdr * sp)
+size_t pcap_fetch_next_packet(int fd, struct tpacket_hdr * tp_h,
+			      struct ethhdr * sp)
 {
 	struct pcap_sf_pkthdr sf_hdr;
 

@@ -43,4 +43,4 @@ void *xrealloc(void *, size_t, size_t);
 void xfree(void *);
 char *xstrdup(const char *);
 
-#endif /* _NET_XMALLOC_H_ */
+#endif				/* _NET_XMALLOC_H_ */

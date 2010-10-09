@@ -36,7 +36,8 @@
  */
 void help(void)
 {
-	info("\n%s %s, the packet sniffing beast\n", PROGNAME_STRING, VERSION_STRING);
+	info("\n%s %s, the packet sniffing beast\n", PROGNAME_STRING,
+	     VERSION_STRING);
 	info("http://www.netsniff-ng.org\n\n");
 	info("Usage: netsniff-ng [options]\n");
 	info("\n");
@@ -57,7 +58,7 @@ void help(void)
 	info("  -t|--type <type>       Only show packets of defined type\n");
 	info("                         this is slower than BPF, types are\n");
 	info("                         host|broadcast|multicast|others|outgoing\n");
-#if 0 /* Next time */
+#if 0				/* Next time */
 	info("  -g|--generate <filter> Generate BPF code for expression\n");
 #endif
 	info("\n");
@@ -115,7 +116,8 @@ void help(void)
  */
 void version(void)
 {
-	info("\n%s %s, the packet sniffing beast\n", PROGNAME_STRING, VERSION_STRING);
+	info("\n%s %s, the packet sniffing beast\n", PROGNAME_STRING,
+	     VERSION_STRING);
 	info("http://www.netsniff-ng.org\n\n");
 #ifdef __HAVE_TX_RING__
 	info("Compiled with transmit ring functionality :)\n\n");

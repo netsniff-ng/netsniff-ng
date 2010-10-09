@@ -38,13 +38,15 @@
  * Hash function API
  */
 
-int hashtable_init(struct hashtable **ht, size_t size, struct hashtable_callbacks *f)
+int hashtable_init(struct hashtable **ht, size_t size,
+		   struct hashtable_callbacks *f)
 {
 	if (ht == NULL || f == NULL || size == 0)
 		return -EINVAL;
 
 	/* Check hash function pointer validity */
-	if (f->key_copy == NULL || f->key_to_hash == NULL || f->key_equal == NULL)
+	if (f->key_copy == NULL || f->key_to_hash == NULL
+	    || f->key_equal == NULL)
 		return -EINVAL;
 
 	*ht = xzmalloc(sizeof(**ht));
@@ -130,7 +132,8 @@ void *hashtable_delete(struct hashtable *ht, void *key)
 
 	val = ht->f->key_to_hash(key) % ht->size;
 
-	for (hb_prev = NULL, hb = ht->table[val]; hb != NULL; hb_prev = hb, hb = hb->next) {
+	for (hb_prev = NULL, hb = ht->table[val]; hb != NULL;
+	     hb_prev = hb, hb = hb->next) {
 		if (ht->f->key_equal(key, hb->key)) {
 			data = hb->data;
 
@@ -148,7 +151,8 @@ void *hashtable_delete(struct hashtable *ht, void *key)
 	return data;
 }
 
-int hashtable_foreach(struct hashtable *ht, void (*callback) (void *key, void *data))
+int hashtable_foreach(struct hashtable *ht,
+		      void (*callback) (void *key, void *data))
 {
 	int i;
 	struct hashtable_bucket *hb;
@@ -217,7 +221,8 @@ int ieee_vendors_init(void)
 	len = sizeof(vendor_db) / sizeof(struct vendor_id);
 
 	for (i = 0; i < len; ++i) {
-		hashtable_insert(ieee_vendor_db, (void *)vendor_db[i].id, vendor_db[i].vendor);
+		hashtable_insert(ieee_vendor_db, (void *)vendor_db[i].id,
+				 vendor_db[i].vendor);
 	}
 
 	return 0;
@@ -271,7 +276,8 @@ int ports_udp_init(void)
 	len = sizeof(ports_udp) / sizeof(struct port_udp);
 
 	for (i = 0; i < len; ++i) {
-		hashtable_insert(ports_udp_db, (void *)ports_udp[i].id, ports_udp[i].port);
+		hashtable_insert(ports_udp_db, (void *)ports_udp[i].id,
+				 ports_udp[i].port);
 	}
 
 	return 0;
@@ -320,7 +326,8 @@ int ports_tcp_init(void)
 	len = sizeof(ports_tcp) / sizeof(struct port_tcp);
 
 	for (i = 0; i < len; ++i) {
-		hashtable_insert(ports_tcp_db, (void *)ports_tcp[i].id, ports_tcp[i].port);
+		hashtable_insert(ports_tcp_db, (void *)ports_tcp[i].id,
+				 ports_tcp[i].port);
 	}
 
 	return 0;
@@ -369,7 +376,8 @@ int ether_types_init(void)
 	len = sizeof(ether_types) / sizeof(ether_types[0]);
 
 	for (i = 0; i < len; ++i) {
-		hashtable_insert(ether_types_db, (void *)ether_types[i].id, ether_types[i].type);
+		hashtable_insert(ether_types_db, (void *)ether_types[i].id,
+				 ether_types[i].type);
 	}
 
 	return 0;

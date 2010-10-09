@@ -488,7 +488,8 @@ short get_nic_flags(const char *dev)
 
 	ret = ioctl(sock, SIOCGIFFLAGS, &ethreq);
 	if (ret < 0) {
-		err("ioctl: cannot determine dev number for %s", ethreq.ifr_name);
+		err("ioctl: cannot determine dev number for %s",
+		    ethreq.ifr_name);
 		close(sock);
 		exit(EXIT_FAILURE);
 	}
@@ -518,7 +519,8 @@ void set_nic_flags(const char *dev, const short nic_flags)
 
 	ret = ioctl(sock, SIOCSIFFLAGS, &ethreq);
 	if (ret < 0) {
-		err("ioctl: cannot determine dev number for %s", ethreq.ifr_name);
+		err("ioctl: cannot determine dev number for %s",
+		    ethreq.ifr_name);
 		close(sock);
 		exit(EXIT_FAILURE);
 	}
@@ -583,7 +585,8 @@ static int get_interface_conf(struct ifconf *ifconf)
 	return (0);
 }
 
-static int get_interface_address(const char *dev, struct in_addr *in, struct in6_addr *in6)
+static int get_interface_address(const char *dev, struct in_addr *in,
+				 struct in6_addr *in6)
 {
 	int sock;
 
@@ -665,17 +668,20 @@ void print_device_info(void)
 		 */
 		switch (get_interface_address(ifr_elem->ifr_name, &ipv4, &ipv6)) {
 		case AF_INET:
-			inet_ntop(AF_INET, (const void *)&ipv4, tmp_ip, INET_ADDRSTRLEN);
+			inet_ntop(AF_INET, (const void *)&ipv4, tmp_ip,
+				  INET_ADDRSTRLEN);
 			break;
 		case AF_INET6:
-			inet_ntop(AF_INET6, (const void *)&ipv6, tmp_ip, INET6_ADDRSTRLEN);
+			inet_ntop(AF_INET6, (const void *)&ipv6, tmp_ip,
+				  INET6_ADDRSTRLEN);
 			break;
 		}
 
 		/*
 		 * Basic info as name, HW addr, IP addr
 		 */
-		info(" (%03d) %s%s%s => %s\n", i, colorize_start(bold), ifr_elem->ifr_name, colorize_end(), tmp_ip);
+		info(" (%03d) %s%s%s => %s\n", i, colorize_start(bold),
+		     ifr_elem->ifr_name, colorize_end(), tmp_ip);
 		info("        hw: %s\n", get_nic_mac_str(ifr_elem->ifr_name));
 
 		/*
@@ -692,12 +698,16 @@ void print_device_info(void)
 		nic_flags = get_nic_flags(ifr_elem->ifr_name);
 		info("        stat:%s%s%s%s\n",
 		     (((nic_flags & IFF_UP) == IFF_UP) ? " up" : " not up"),
-		     (((nic_flags & IFF_RUNNING) == IFF_RUNNING) ? " running" : ""),
-		     (((nic_flags & IFF_LOOPBACK) == IFF_LOOPBACK) ? ", loops back" : ""),
-		     (((nic_flags & IFF_POINTOPOINT) == IFF_POINTOPOINT) ? ", point-to-point link" : ""));
+		     (((nic_flags & IFF_RUNNING) ==
+		       IFF_RUNNING) ? " running" : ""),
+		     (((nic_flags & IFF_LOOPBACK) ==
+		       IFF_LOOPBACK) ? ", loops back" : ""),
+		     (((nic_flags & IFF_POINTOPOINT) ==
+		       IFF_POINTOPOINT) ? ", point-to-point link" : ""));
 
 		info("        mtu: %d Byte\n", get_mtu(ifr_elem->ifr_name));
-		info("        irq: %d\n", get_nic_irq_number(ifr_elem->ifr_name));
+		info("        irq: %d\n",
+		     get_nic_irq_number(ifr_elem->ifr_name));
 
 		/*
 		 * Device Bitrate
@@ -712,22 +722,33 @@ void print_device_info(void)
 		 */
 		/* XXX: a better way to test for a wireless dev!? */
 		if (get_wireless_bitrate(ifr_elem->ifr_name)) {
-			txp = adjust_dbm_level(get_wireless_tx_power(ifr_elem->ifr_name));
+			txp =
+			    adjust_dbm_level(get_wireless_tx_power
+					     (ifr_elem->ifr_name));
 
 			if (get_wireless_ssid(ifr_elem->ifr_name, essid) > 0)
 				info("        connected to ssid: %s\n", essid);
 			if (get_wireless_sigqual(ifr_elem->ifr_name, &ws) >= 0) {
-				info("        link quality: %d/%d\n", ws.qual.qual,
-				     get_wireless_rangemax_sigqual(ifr_elem->ifr_name));
-				info("        signal level: %d dBm\n", adjust_dbm_level(ws.qual.level));
-				info("        noise level: %d dBm\n", adjust_dbm_level(ws.qual.noise));
-				info("        tx-power: %d dBm (%d mW)\n", txp, dbm_to_mwatt(txp));
-				info("        operation mode: %s (%d) %s\n", wop_entry(ws.status, 0), ws.status,
+				info("        link quality: %d/%d\n",
+				     ws.qual.qual,
+				     get_wireless_rangemax_sigqual(ifr_elem->
+								   ifr_name));
+				info("        signal level: %d dBm\n",
+				     adjust_dbm_level(ws.qual.level));
+				info("        noise level: %d dBm\n",
+				     adjust_dbm_level(ws.qual.noise));
+				info("        tx-power: %d dBm (%d mW)\n", txp,
+				     dbm_to_mwatt(txp));
+				info("        operation mode: %s (%d) %s\n",
+				     wop_entry(ws.status, 0), ws.status,
 				     wop_entry(ws.status, 1));
 				info("        pkg discarded:\n");
-				info("                rx invalid nwid: %d\n", ws.discard.nwid);
-				info("                rx invalid crypt: %d\n", ws.discard.code);
-				info("                rx invalif frag: %d\n", ws.discard.fragment);
+				info("                rx invalid nwid: %d\n",
+				     ws.discard.nwid);
+				info("                rx invalid crypt: %d\n",
+				     ws.discard.code);
+				info("                rx invalif frag: %d\n",
+				     ws.discard.fragment);
 				info("                tx excessive retries: %d\n", ws.discard.retries);
 				info("                invalid misc reasons: %d\n", ws.discard.misc);
 			}
@@ -792,7 +813,8 @@ int ethdev_to_ifindex(const char *dev)
 
 	ret = ioctl(sock, SIOCGIFINDEX, &ethreq);
 	if (ret < 0) {
-		err("ioctl: cannot determine dev number for %s", ethreq.ifr_name);
+		err("ioctl: cannot determine dev number for %s",
+		    ethreq.ifr_name);
 		close(sock);
 		exit(EXIT_FAILURE);
 	}
@@ -816,8 +838,10 @@ void net_stat(int sock)
 	ret = getsockopt(sock, SOL_PACKET, PACKET_STATISTICS, &kstats, &slen);
 	if (ret > -1) {
 		info("\r%d frames incoming\n", kstats.tp_packets);
-		info("\r%d frames passed filter\n", kstats.tp_packets - kstats.tp_drops);
-		info("\r%d frames failed filter (due to out of space)\n", kstats.tp_drops);
+		info("\r%d frames passed filter\n",
+		     kstats.tp_packets - kstats.tp_drops);
+		info("\r%d frames failed filter (due to out of space)\n",
+		     kstats.tp_drops);
 	}
 }
 
@@ -861,16 +885,20 @@ int parse_rules(char *rulefile, struct sock_fprog *bpf)
 
 		ret = sscanf(buff, "{ 0x%x, %d, %d, 0x%08x },",
 			     (unsigned int *)((void *)&(sf_single.code)),
-			     (int *)((void *)&(sf_single.jt)), (int *)((void *)&(sf_single.jf)), &(sf_single.k));
+			     (int *)((void *)&(sf_single.jt)),
+			     (int *)((void *)&(sf_single.jf)), &(sf_single.k));
 		if (ret != 4) {
 			/* No valid bpf opcode format or a syntax error */
 			return 0;
 		}
 
 		bpf->len++;
-		bpf->filter = (struct sock_filter *)realloc(bpf->filter, bpf->len * sizeof(sf_single));
+		bpf->filter =
+		    (struct sock_filter *)realloc(bpf->filter,
+						  bpf->len * sizeof(sf_single));
 
-		memcpy(&bpf->filter[bpf->len - 1], &sf_single, sizeof(sf_single));
+		memcpy(&bpf->filter[bpf->len - 1], &sf_single,
+		       sizeof(sf_single));
 
 		memset(buff, 0, sizeof(buff));
 	}

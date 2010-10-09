@@ -97,7 +97,9 @@ void set_configuration(int argc, char **argv, struct system_data *sd)
 	assert(argv);
 	assert(sd);
 
-	while ((c = getopt_long(argc, argv, short_options, long_options, &opt_idx)) != EOF) {
+	while ((c =
+		getopt_long(argc, argv, short_options, long_options,
+			    &opt_idx)) != EOF) {
 		switch (c) {
 		case 'h':
 			help();
@@ -268,7 +270,8 @@ void set_configuration(int argc, char **argv, struct system_data *sd)
 			case 'L':
 			case 'b':
 			case 'B':
-				warn("Option -%c requires an argument!\n", optopt);
+				warn("Option -%c requires an argument!\n",
+				     optopt);
 				exit(EXIT_FAILURE);
 			default:
 				if (isprint(optopt)) {

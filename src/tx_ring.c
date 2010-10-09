@@ -49,26 +49,15 @@
 #include "cursor.h"
 #include "xmalloc.h"
 
-#define flushlock_lock(x) do{ (x) = 1; } while(0);
-#define flushlock_unlock(x) do{ (x) = 0; } while(0);
-#define flushlock_trylock(x) ((x) == 1)
-
-struct packed_tx_data {
-	struct system_data *sd;
-	int sock;
-	struct ring_buff *rb;
-};
-
-volatile sig_atomic_t ring_lock;
-volatile sig_atomic_t send_intr = 0;
-
 #ifdef __HAVE_TX_RING__
 static void set_packet_loss_discard(int sock)
 {
 	int ret;
 	int foo = 1;		/* we discard wrong packets */
 
-	ret = setsockopt(sock, SOL_PACKET, PACKET_LOSS, (void *)&foo, sizeof(foo));
+	ret =
+	    setsockopt(sock, SOL_PACKET, PACKET_LOSS, (void *)&foo,
+		       sizeof(foo));
 	if (ret < 0) {
 		err("setsockopt: cannot set packet loss");
 		close(sock);
@@ -86,7 +75,8 @@ void destroy_virt_tx_ring(int sock, struct ring_buff *rb)
 	assert(rb);
 
 	memset(&(rb->layout), 0, sizeof(rb->layout));
-	setsockopt(sock, SOL_PACKET, PACKET_TX_RING, (void *)&(rb->layout), sizeof(rb->layout));
+	setsockopt(sock, SOL_PACKET, PACKET_TX_RING, (void *)&(rb->layout),
+		   sizeof(rb->layout));
 
 	if (rb->buffer) {
 		munmap(rb->buffer, rb->len);
@@ -102,7 +92,8 @@ void destroy_virt_tx_ring(int sock, struct ring_buff *rb)
  * @sock:               socket
  * @rb:                 ring buffer
  */
-void create_virt_tx_ring(int sock, struct ring_buff *rb, char *ifname, unsigned int usize)
+void create_virt_tx_ring(int sock, struct ring_buff *rb, char *ifname,
+			 unsigned int usize)
 {
 	short nic_flags;
 	int ret, dev_speed;
@@ -133,19 +124,27 @@ void create_virt_tx_ring(int sock, struct ring_buff *rb, char *ifname, unsigned 
 
 	/* max: 15 for i386, old default: 1 << 13, now: approximated bandwidth size */
 	if (usize == 0) {
-		rb->layout.tp_block_nr = ((dev_speed * 1024 * 1024) / rb->layout.tp_block_size);
+		rb->layout.tp_block_nr =
+		    ((dev_speed * 1024 * 1024) / rb->layout.tp_block_size);
 	} else {
-		rb->layout.tp_block_nr = usize / (rb->layout.tp_block_size / 1024);
+		rb->layout.tp_block_nr =
+		    usize / (rb->layout.tp_block_size / 1024);
 	}
 
-	rb->layout.tp_frame_nr = rb->layout.tp_block_size / rb->layout.tp_frame_size * rb->layout.tp_block_nr;
+	rb->layout.tp_frame_nr =
+	    rb->layout.tp_block_size / rb->layout.tp_frame_size *
+	    rb->layout.tp_block_nr;
 
  __retry_sso:
-	ret = setsockopt(sock, SOL_PACKET, PACKET_TX_RING, (void *)&(rb->layout), sizeof(rb->layout));
+	ret =
+	    setsockopt(sock, SOL_PACKET, PACKET_TX_RING, (void *)&(rb->layout),
+		       sizeof(rb->layout));
 
 	if (errno == ENOMEM && rb->layout.tp_block_nr > 1) {
 		rb->layout.tp_block_nr >>= 1;
-		rb->layout.tp_frame_nr = rb->layout.tp_block_size / rb->layout.tp_frame_size * rb->layout.tp_block_nr;
+		rb->layout.tp_frame_nr =
+		    rb->layout.tp_block_size / rb->layout.tp_frame_size *
+		    rb->layout.tp_block_nr;
 
 		goto __retry_sso;
 	}
@@ -158,10 +157,14 @@ void create_virt_tx_ring(int sock, struct ring_buff *rb, char *ifname, unsigned 
 
 	rb->len = rb->layout.tp_block_size * rb->layout.tp_block_nr;
 
-	info("%.2f MB allocated for transmit ring \n", 1.f * rb->len / (1024 * 1024));
-	info(" [ %d blocks, %d frames ] \n", rb->layout.tp_block_nr, rb->layout.tp_frame_nr);
-	info(" [ %d frames per block ]\n", rb->layout.tp_block_size / rb->layout.tp_frame_size);
-	info(" [ framesize: %d bytes, blocksize: %d bytes ]\n\n", rb->layout.tp_frame_size, rb->layout.tp_block_size);
+	info("%.2f MB allocated for transmit ring \n",
+	     1.f * rb->len / (1024 * 1024));
+	info(" [ %d blocks, %d frames ] \n", rb->layout.tp_block_nr,
+	     rb->layout.tp_frame_nr);
+	info(" [ %d frames per block ]\n",
+	     rb->layout.tp_block_size / rb->layout.tp_frame_size);
+	info(" [ framesize: %d bytes, blocksize: %d bytes ]\n\n",
+	     rb->layout.tp_frame_size, rb->layout.tp_block_size);
 }
 
 /**
@@ -174,7 +177,8 @@ void mmap_virt_tx_ring(int sock, struct ring_buff *rb)
 {
 	assert(rb);
 
-	rb->buffer = mmap(0, rb->len, PROT_READ | PROT_WRITE, MAP_SHARED, sock, 0);
+	rb->buffer =
+	    mmap(0, rb->len, PROT_READ | PROT_WRITE, MAP_SHARED, sock, 0);
 	if (rb->buffer == MAP_FAILED) {
 		err("mmap: cannot mmap the tx ring");
 
@@ -206,7 +210,9 @@ void bind_dev_to_tx_ring(int sock, int ifindex, struct ring_buff *rb)
 	rb->params.sll_halen = 0;
 	rb->params.sll_pkttype = 0;
 
-	ret = bind(sock, (struct sockaddr *)&(rb->params), sizeof(struct sockaddr_ll));
+	ret =
+	    bind(sock, (struct sockaddr *)&(rb->params),
+		 sizeof(struct sockaddr_ll));
 	if (ret < 0) {
 		err("bind: cannot bind device");
 		close(sock);
@@ -214,232 +220,88 @@ void bind_dev_to_tx_ring(int sock, int ifindex, struct ring_buff *rb)
 	}
 }
 
-/**
- * flush_virt_tx_ring - Send payload of tx_ring in non-blocking mode
- * @sock:              socket
- * @rb:                ring buffer
- */
-int flush_virt_tx_ring(int sock, struct ring_buff *rb)
+void transmit_packets(struct system_data *sd, int sock, struct ring_buff *rb)
 {
-	int rc;
-
-	/* Flush buffers with TP_STATUS_SEND_REQUEST */
-	rc = sendto(sock, NULL, 0, 0 /*MSG_DONTWAIT */ , NULL, 0);
-	if (rc < 0) {
-		err("Cannot flush tx_ring with sendto");
-	}
-
-	return rc;
-}
-
-/**
- * fill_virt_tx_ring_thread - Fills payload of tx_ring
- * @packed:                  packed system data
- */
-static void *fill_virt_tx_ring_thread(void *packed)
-{
-	int loop, i;
-
-	uint8_t *buff;
-	unsigned long long packets = 0;
-
 	struct frame_map *fm;
 	struct tpacket_hdr *header;
-	struct packed_tx_data *ptd;
+	uint8_t *buff;
+	size_t pkt_len = 0;
+	int ret;
+	uint32_t i;
+	struct pollfd pfd;
 
-	ptd = (struct packed_tx_data *)packed;
+	assert(rb);
+	assert(sd);
 
-	for (i = 0; likely(!sigint); loop = 1) {
-		do {
-			int success;
+	pfd.fd = sock;
+	pfd.revents = 0;
+	pfd.events = POLLOUT;
 
-			fm = ptd->rb->frames[i].iov_base;
+	info("Starting transmitting\n");
+
+	while (likely(!sigint)) {
+		for (i = 0; i < rb->layout.tp_block_nr; i++) {
+			fm = rb->frames[i].iov_base;
 			header = (struct tpacket_hdr *)&fm->tp_h;
 			buff =
-			    (uint8_t *) ((uintptr_t) ptd->rb->frames[i].iov_base + TPACKET_HDRLEN -
+			    (uint8_t *) ((uintptr_t) rb->frames[i].iov_base +
+					 TPACKET_HDRLEN -
 					 sizeof(struct sockaddr_ll));
 
 			switch ((volatile uint32_t)header->tp_status) {
-			default:
-				sched_yield();
-				break;
-
-			case TP_STATUS_SEND_REQUEST:
-				/* Notify kernel to pull */
-				flushlock_unlock(ring_lock);
-				usleep(0);
-				break;
-
 			case TP_STATUS_AVAILABLE:
-				success = 0;
-				while (pcap_fetch_next_packet(ptd->sd->pcap_fd, header, (struct ethhdr *)buff)) {
-					printf("Fetched pkt %p\n", (void *)buff);
-
-					/* Filter packet if user wants so */
-					if (bpf_filter(&ptd->sd->bpf, buff, header->tp_len)) {
-						success = 1;
+				while ((pkt_len =
+					pcap_fetch_next_packet(sd->pcap_fd,
+							       header,
+							       (struct ethhdr *)
+							       buff)) != 0) {
+					/* If the fetch packet does not match the BPF, take the next one */
+					if (bpf_filter
+					    (&sd->bpf, buff, header->tp_len)) {
 						break;
 					}
-
-					/* Prints all packets as unknown */
-					if (ptd->sd->print_pkt)
-						ptd->sd->print_pkt(buff, header, 5);
 				}
-				printf("Success? %u\n", success);
-				if (success == 0)
-					goto out;
-				loop = 0;
 
-				/* Prints all packets as unknown */
-				if (ptd->sd->print_pkt)
-					ptd->sd->print_pkt(buff, header, 5);
+				/* Prints all packets which match the BFP as unknown */
+				if (pkt_len != 0 && sd->print_pkt)
+					sd->print_pkt(buff, header, 5);
 
+				/* No packets to replay or error, time to exit */
+				if (pkt_len == 0)
+					goto pkt_flush;
+
+				/* Mark packet as ready to send */
+				header->tp_status = TP_STATUS_SEND_REQUEST;
 				break;
 
 			case TP_STATUS_WRONG_FORMAT:
 				warn("An error during transfer!\n");
 				exit(EXIT_FAILURE);
 				break;
-			}
-		} while (loop == 1 && likely(!sigint));
-
-		/* We're done! */
-		mem_notify_kernel_for_tx(header);
-		packets++;
-		/* Next frame */
-		i = (i + 1) % ptd->rb->layout.tp_frame_nr;
-	}
-
-	/* Pull the rest */
-	flushlock_unlock(ring_lock);
-	/* XXX: Thread may exit */
-	send_intr = 1;
-
- out:
-	info("Transmit ring has pushed %llu packets!\n", packets);
-	pthread_exit(0);
-}
-
-/**
- * flush_virt_tx_ring_thread - Sends payload of tx_ring
- * @packed:                   packed system data
- */
-static void *flush_virt_tx_ring_thread(void *packed)
-{
-	int i, ret, errors = 0;
-
-	struct frame_map *fm;
-	struct tpacket_hdr *header;
-	struct packed_tx_data *ptd;
-	struct spinner_thread_context spinner_ctx = { 0 };
-
-	spinner_set_msg(&spinner_ctx, DEFAULT_TX_RING_SILENT_MESSAGE);
-
-	ptd = (struct packed_tx_data *)packed;
-
-	ret = spinner_create(&spinner_ctx);
-	if (ret) {
-		err("Cannot create spinner thread");
-		exit(EXIT_FAILURE);
-	}
- 
-	for (; likely(!send_intr); errors = 0) {
-		ret = flush_virt_tx_ring(ptd->sock, ptd->rb);
-		if (ret < 0) {
-			exit(EXIT_FAILURE);
-		}
-
-		spinner_trigger_event(&spinner_ctx);
-
-		for (i = 0; i < ptd->rb->layout.tp_frame_nr; i++) {
-			fm = ptd->rb->frames[i].iov_base;
-			header = (struct tpacket_hdr *)&fm->tp_h;
-
-			switch ((volatile uint32_t)header->tp_status) {
-			case TP_STATUS_SEND_REQUEST:
-				warn("Frame has not been sent %p!\n", (void *)header);
-				fflush(stdout);
-				errors++;
-				break;
-
-			case TP_STATUS_LOSING:
-				warn("Transfer error of frame!\n");
-				fflush(stdout);
-				errors++;
-				break;
 
 			default:
+				/* NOP */
 				break;
 			}
 		}
 
-		if (errors > 0) {
-			warn("%d errors occured during tx_ring flush!\n", errors);
-		} else {
-			info("Transmit ring has been flushed.\n\n");
+ pkt_flush:
+		ret = send(sock, NULL, 0, 0);
+
+		if (ret < 0) {
+			err("Cannot flush tx_ring with send");
 		}
-	}
 
-	spinner_cancel(&spinner_ctx);
-	pthread_exit(0);
+		/* Now we wait that the kernel place all packet on the medium */
+		ret = poll(&pfd, 1, sd->blocking_mode);
+
+		if (ret < 0)
+			err("An error occured while polling on %s\n", sd->dev);
+
+		if (pkt_len == 0)
+			break;
+	}
 }
-
-/**
- * transmit_packets - TX_RING critical path
- * @sd:              config data
- * @sock:            socket
- * @rb:              ring buffer
- */
-void transmit_packets(struct system_data *sd, int sock, struct ring_buff *rb)
-{
-	assert(rb);
-	assert(sd);
-
-	int ret;
-
-	pthread_t send, fill;
-	pthread_attr_t attr_send, attr_fill;
-
-	struct sched_param para_send, para_fill;
-	struct packed_tx_data ptd = {
-		.sd = sd,
-		.sock = sock,
-		.rb = rb,
-	};
-
-	info("--- Transmitting ---\n");
-	info("!!! Experimental !!!\n\n");
-
-	//flushlock_lock(ring_lock);
-
-	pthread_attr_init(&attr_send);
-	pthread_attr_init(&attr_fill);
-
-	pthread_attr_setschedpolicy(&attr_send, SCHED_RR);
-	pthread_attr_setschedpolicy(&attr_fill, SCHED_RR);
-
-	para_send.sched_priority = 20;
-	pthread_attr_setschedparam(&attr_send, &para_send);
-
-	para_fill.sched_priority = 20;
-	pthread_attr_setschedparam(&attr_fill, &para_fill);
-
-	ret = pthread_create(&fill, &attr_fill, fill_virt_tx_ring_thread, &ptd);
-	if (ret) {
-		err("Cannot create fill thread");
-		exit(EXIT_FAILURE);
-	}
-
-	ret = pthread_create(&send, &attr_send, flush_virt_tx_ring_thread, &ptd);
-	if (ret) {
-		err("Cannot create send thread");
-		exit(EXIT_FAILURE);
-	}
-
-	pthread_join(fill, NULL);
-	pthread_join(send, NULL);
-}
-
 #else
 
 /* 
@@ -456,7 +318,8 @@ void mmap_virt_tx_ring(int sock, struct ring_buff *rb)
 	/* NOP */
 }
 
-void create_virt_tx_ring(int sock, struct ring_buff *rb, char *ifname, unsigned int usize)
+void create_virt_tx_ring(int sock, struct ring_buff *rb, char *ifname,
+			 unsigned int usize)
 {
 	/* NOP */
 }
@@ -475,17 +338,10 @@ void transmit_packets(struct system_data *sd, int sock, struct ring_buff *rb)
 {
 	assert(rb);
 	assert(sd);
-#if 0
-	struct packed_tx_data ptd = {
-		.sd = sd,
-		.sock = sock,
-		.rb = rb,
-	};
-#endif
 	info("--- Transmitting ---\n\n");
 
 	/* Dummy function */
 
-	warn("Not yet implemented!\n\n");
+	warn("The --replay functionality needs a kernel >= 2.6.31 \n\n");
 }
 #endif				/* __HAVE_TX_RING__ */

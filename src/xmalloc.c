@@ -57,14 +57,14 @@ void *xmalloc(size_t size)
 		err("xmalloc: zero size");
 		exit(EXIT_FAILURE);
 	}
-	
+
 	ptr = malloc(size);
 	if (ptr == NULL) {
-		err("xmalloc: out of memory (allocating %lu bytes)", 
+		err("xmalloc: out of memory (allocating %lu bytes)",
 		    (u_long) size);
 		exit(EXIT_FAILURE);
 	}
-	
+
 	return ptr;
 }
 
@@ -79,7 +79,7 @@ void *xzmalloc(size_t size)
 
 	ptr = malloc(size);
 	if (ptr == NULL) {
-		err("xmalloc: out of memory (allocating %lu bytes)", 
+		err("xmalloc: out of memory (allocating %lu bytes)",
 		    (u_long) size);
 		exit(EXIT_FAILURE);
 	}
@@ -105,7 +105,7 @@ void *xcalloc(size_t nmemb, size_t size)
 	ptr = calloc(nmemb, size);
 	if (ptr == NULL) {
 		err("xcalloc: out of memory (allocating %lu bytes)",
-		    (u_long)(size * nmemb));
+		    (u_long) (size * nmemb));
 		exit(EXIT_FAILURE);
 	}
 
@@ -163,4 +163,3 @@ char *xstrdup(const char *str)
 
 	return cp;
 }
-
