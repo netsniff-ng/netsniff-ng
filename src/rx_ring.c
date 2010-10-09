@@ -264,8 +264,8 @@ void fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
 		while (mem_notify_user_for_rx(rb->frames[i]) && likely(!sigint)) {
 			struct frame_map *fm = rb->frames[i].iov_base;
 			uint8_t *rbb =
-			    ((uint8_t *) rb->frames[i].iov_base + sizeof(*fm) +
-			     sizeof(short));
+			    ((uint8_t *) rb->frames[i].iov_base) + fm->tp_h.tp_mac;/*sizeof(*fm) +
+			     sizeof(short));*/
 
 			/* Check if the user wants to have a specific 
 			   packet type */
