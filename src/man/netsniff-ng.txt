@@ -7,15 +7,13 @@ netsniff-ng - the packet sniffing beast
 
 SYNOPSIS
 --------
-[verse]
-
 netsniff-ng [-d netdev] [-p pcap-file] [-r pcap-file] [-i pcap-file] 
-            [-f bpf-file] [-t type] [-b cpu-range] [-B cpu-range] 
+            [-f bpf-file] [-t pkt-type] [-b cpu-range] [-B cpu-range] 
             [-S ring-size] [-e regex] [-IMHQnsqlxCXNvh]
 
 DESCRIPTION
 -----------
-netsniff-ng is is a free (GPL) performant Linux network sniffer for 
+netsniff-ng is is a free (GPL), performant Linux network sniffer for 
 packet inspection.
 
 The gain of performance is reached by 'zero-copy' mechanisms, so that 
@@ -32,7 +30,157 @@ debugging.
 
 OPTIONS
 -------
- ... TODO ...
+-d<netdev>::
+--dev<netdev>::
+	<netdev> defines the packet capturing device. This can for instance
+	be a typical device like eth0 or wlan0. Running netsniff-ng without
+	a given device parameter, it looks for up and running networking
+	devices and selects the first device that has been found.
+
+-p<pcap-file>::
+--dump<pcap-file>::
+	netsniff-ng stores the captured packets into the given <pcap-file>.
+	It understands the PCAP specification, so that dumps can be read or
+	postprocessed with other tools, too. Usually, this option should be 
+	combined with --silent and --bind-cpu to win some performance.
+
+-r<pcap-file>::
+--replay<pcap-file>::
+	The given <pcap-file> will be replayed via a memory mapped kernelspace 
+	TX_RING. A BPF filter may be combined to only replay parts of the PCAP 
+	formatted file.
+
+-i<pcap-file>::
+--read<pcap-file>::
+	<pcap-file> will be read in and printed to the console in order to 
+	perform an offline analysis. Same here: a BPF may be combined to only
+	show relevant parts of the PCAP formatted file. Next to this, packet 
+	printing that are enabled on the normal mode are supported, too.
+
+-f<bpf-file>::
+--filter<bpf-file>::
+	Attaches a Berkeley Packet Filter to the socket in order to pre-filter
+	traffic within the kernel. Example files are given within
+	/etc/netsniff-ng/rules/. The section 'BERKELEY PACKET FILTER' describes
+	how to write filter files.
+
+-t<pkt-type>::
+--type<pkt-type>::
+	A <pkt-type> specification allows to post-filter packets within userspace
+	context (therefore slower than BPF). The following types are supported:
+	host - only show incoming packets to our host,
+	broadcast - only show Broadcast packets,
+	multicast - only show Multicast packets,
+	others - only show packets from other hosts (promiscuous mode),
+	outgoing - only show outgoing packets from our host
+
+-b<cpu-range>::
+--bind-cpu<cpu-range>::
+	Force system scheduler to schedule netsniff-ng only on specific CPUs. 
+	Parameters may be '0' for using only CPU0, '0,1' for using CPU0 and 
+	CPU1 or even '0-4' for using a whole CPU range. If you have a customized 
+	init process that leaves out a special CPU you could bind netsniff-ng 
+	on that free CPU for maximal performance. On the other hand, you can 
+	avoid scheduling netsniff-ng on CPUs which are reserved for other 
+	critical tasks. This can also be combined with taskset(1) in order to
+	reschedule other processes on other CPUs to let netsniff-ng run on its
+	own CPU.
+
+-B<cpu-range>::
+--unbind-cpu<cpu-range>::
+	Force system scheduler to not schedule netsniff-ng on specific CPUs.
+	The parameter syntax is equivalent to -b and also the semantics are
+	inverted to -b.
+
+-S<ring-size>::
+--ring-size<size>::
+	This manually sets the desired ring size for RX_RING or TX_RING. You
+	should only use this option, if you know what you are doing, because
+	choosing a ring size which is too large for your system, the kernel
+	does neither warn you nor throws an error. It simply kills other
+	processes to grab their space. The parameter can be defined in KB,
+	MB or GB as '10MB' for a 10 Megabyte ring size.
+
+-I::
+--info::
+	Shows information about available networking devices.
+
+-M::
+--no-promisc::
+	Forbids the NIC to enter the promiscuous mode. The promiscuous mode is
+	activated by default. It is a configuration of a network card that makes
+	the card pass all traffic it receives to the central processing unit
+	rather than just frames addressed to it. Well, do not ask yourself why
+	you cannot see traffic by others within a switched network. Unlike old
+	hubs, switches are some kind of intelligent devices with internal ARP
+	tables for each port in order to reduce traffic load and prevent
+	sniffing other connections. If you really intent to sniff others traffic,
+	go read about ARP cache poisoning / MITM.
+
+-H::
+--prio-norm::
+	This option prevents to automatically high priorize itself. Normally,
+	netsniff-ng will be scheduled with high priority thus it use the
+	full CPU timeslice.
+
+-Q::
+--notouch-irq::
+	If netsniff-ng will be bound to a single CPU, say CPU0, then it
+	automatically rebinds the NIC interrupt affinity to that CPU, too for 
+	a better performance. This feature is intended to be enabled on 
+	non-wireless interfaces. notouch-irq forbids netsniff-ng to move the 
+	IRQ affinity.
+
+-n::
+--non-block::
+	Lets netsniff-ng run in non-blocking mode. Generally, you won't need 
+	this feature very often unless there is some interest in performance 
+	behaviour analysis. This will bypass the ring polling mechanism thus 
+	CPU load will most certainly rise to 100 percent.
+
+-s::
+--silent::
+	Does not print packets to the terminal.
+
+-q::
+--less::
+	Prints one-liner information summary per packet.
+
+-l::
+--payload::
+	Shows only the payload information of the packet.
+
+-x::
+--payload-hex::
+	Shows only the payload information of the packet in hexadecimal format.
+
+-C::
+--c-style::
+	Instead of printing packet in usual hex format, a copy-and-paste C like
+	format will be printed to the terminal.
+
+-X::
+--all-hex::
+	Shows not only the payload in hexadecimal format, but the whole packet.
+
+-N::
+--no-payload::
+	Shows only the packet header, not the payload.
+
+-e<regex>::
+--regex<expr>::
+	Regular expression printing is useful for grepping ASCII text out of
+	packets, say certain HTML code for instance. Beware, that this has a
+	impact on performance. Regular expressions that comply with the POSIX
+	extended regular expression format are allowed.
+
+-v::
+--version::
+	Shows version number and exits.
+
+-h::
+--help::
+	Shows help and exits.
 
 BERKELEY PACKET FILTER
 ----------------------
@@ -49,12 +197,17 @@ filter is critical to good overall performance [1]. This should also be kept
 in mind during development of filters.
 
 If you don't want to write your own filters, we currently ship some examples 
-within /etc/netsniff-ng/rules that can be used with netsniff-ngs -f option.
+within /etc/netsniff-ng/rules/ that can be used with netsniff-ngs -f option.
 Furthermore 'tcpdump -dd' provides filter creation that netsniff-ng can read,
 but be warned - most certainly you might need to edit the return value, which 
 defines the packet snaplen for your needs. Read section NOTES for more 
 information about this. In future versions netsniff-ng will also ship its own
-filter compiler for a simpler usage.
+filter compiler for a simple usage.
+
+If you are an advanced user and if you would like to have full control of what 
+should be filtered and what not, then writing your own filter could be a suitable
+choice. Hence, in the following the language specification will be described
+in short with given examples on how to use it.
 
 The BPF pseudo-machine consists of an accumulator, an index register (X), a 
 scratch memory store and an implicit program counter. Operations on this machine
@@ -125,7 +278,7 @@ classes which are similar to the previous categorization:
  MISC  0x07  Data transfer between index register and accumulator
 
 Next to classes, there are class-specific fields which are usually combined with 
-binary OR:
+bitwise OR:
  
 LD/LDX specific fields:
  Size:
@@ -202,9 +355,9 @@ netsniff-ngs filter parser treats all lines that doesn't match a format of
 
 The first instruction line is a load instruction, because we have LD|H|ABS which 
 results in 0x28. So the 16 Bit valued halfword at the packet offset 0xc will be 
-copied into the accumulator. This is the ethernet type field. Instruction line 2 
+copied into the accumulator. This is the Ethernet type field. Instruction line 2 
 belongs to the class JMP, more specific JMP|JEQ and takes the value which is stored 
-in K (0x806, the ethernet type identifier for ARP). If 0x806 equals the value that 
+in K (0x806, the Ethernet type identifier for ARP). If 0x806 equals the value that 
 has been loaded into the accumulator, the instruction pointer points to the current
 instruction plus jt value (which is 0) plus 1. So we end up at instruction line 3,
 which is the return opcode as RET|K. By using 0xffffffff as K, we tell the kernel 
@@ -224,6 +377,75 @@ In pretty-print this filter looks like:
 
 Source: [1] http://www.tcpdump.org/papers/bpf-usenix93.pdf
 
+BARE-METAL PERFORMANCE
+----------------------
+This section will provide some figures about the performance of the RX_RING
+and TX_RING. An IBM HS21 Blade with 2 x Intel Xeon E5430 (2.66GHz), 8 GB RAM,
+Broadcom NetXtreme BCM5704S Gigabit Ethernet cards and a 2.6.31-14 kernel
+(Ubuntu Server 9.10) has been used for testing purpose. The IXIA 400 has been
+used on the opposite side for traffic generation (Gigabit wire speed). 
+Date: 17 Sep 2010. 
+
+TX_RING, 1GbE:
+
+The test was about flushing as much frames as possible of a fixed size. The 
+IXIA was the counterpart that showed the incoming figures. Figures have been
+rounded to thousands.
+
+Pkt size, TX_RING pps
+   64     422,000
+  128     422,000
+  250     402,000
+  500     239,000
+  750     162,000
+1,000     122,000
+1,500      82,000
+
+RX_RING, 1GbE:
+
+The test included the reception of frames into the ring buffer, a counter 
+increment per frame and the summation of the frame length. Figures have been
+rounded to thousands.
+
+64-Byte fixed
+Pkt rate (IXIA), % of BW, RX_RING pps
+  100,000          6.75   100,000
+  175,000         11.76   175,000
+  250,000         16.80   250,000
+  500,000         33.60   338,000
+1,000,000         67.20   354,000
+1,488,000        100.00   303,000
+
+250-Byte fixed
+Pkt rate (IXIA), % of BW, RX_RING pps
+100,000           21.60   100,000
+175,000           37.80   175,000
+250,000           54.00   244,000
+463,000          100.00   381,000
+
+500-Byte fixed
+Pkt rate (IXIA), % of BW, RX_RING pps
+100,000           41.60   100,000
+175,000           72.80   169,000
+240,000          100.00   226,000
+
+1,500-Byte fixed
+Pkt rate (IXIA), % of BW, RX_RING pps
+82,000           100.00   82,000
+
+IMIX distribution (64:7, 570:4, 1518:1)
+Pkt rate (IXIA), % of BW, RX_RING pps
+100,000           29.99   100,000
+175,000           52.35   175,000
+250,000           74.80   240,000
+334,000          100.00   303,000
+
+Tolly distribution (64:55, 78:5, 576:17, 1518:23)
+Pkt rate (IXIA), % of BW, RX_RING pps
+100,000           40.50   100,000
+175,000           70.90   174,000
+247,000          100.00   193,000
+
 EXAMPLES
 --------
 Dump packets on eth0 into a file:
@@ -241,7 +463,7 @@ Show only packet headers of a PCAP file:
 Show only packets that match a regular expression:
   netsniff-ng --regex \"foo.*bar\"
 
-Show only outgoing packets from wlan0:
+Show only outgoing packets in hex format from wlan0:
   netsniff-ng --dev wlan0 --all-hex --type outgoing
 
 NOTES
@@ -304,4 +526,11 @@ The manpage has been written by Daniel Borkmann.
 SEE ALSO
 --------
 bpf(4), pcap(3), tcpdump(8)
- 
+
+IN HONOREM
+----------
+To my alma mater:
+
+Leipzig University of Applied Science
+Faculty of Computer Science, Mathematics and Natural Sciences
+
