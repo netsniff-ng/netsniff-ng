@@ -34,7 +34,6 @@
 #include <net/if.h>
 
 #include "hash.h"
-#include "server.h"
 #include "dump.h"
 #include "replay.h"
 #include "system.h"
@@ -65,6 +64,7 @@ void softirq_handler(int number)
 		/* refresh_counters(); */
 		break;
 	case SIGUSR1:
+	case SIGUSR2:
 		/* print_counters(); */
 		break;
 	case SIGINT:
@@ -79,7 +79,8 @@ void softirq_handler(int number)
 	}
 }
 
-static void __init_stage_common(struct system_data *sd, int *sock, struct ring_buff **rb)
+static void __init_stage_common(struct system_data *sd, int *sock,
+				struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -100,30 +101,8 @@ static void __init_stage_common(struct system_data *sd, int *sock, struct ring_b
 	memset(&netstat, 0, sizeof(netstat));
 }
 
-static void __init_stage_daemon(struct system_data *sd, int *sock, struct ring_buff **rb)
-{
-	int ret;
-
-	assert(sd);
-	assert(sock);
-	assert(rb);
-
-	if (sd->sysdaemon == 0)
-		return;
-
-	if (sd->mode == MODE_READ)
-		return;
-
-	info("--- Daemonizing ---\n\n");
-
-	ret = daemonize(sd->pidfile);
-	if (ret != 0) {
-		warn("Daemonize failed!\n");
-		exit(EXIT_FAILURE);
-	}
-}
-
-static void __init_stage_fallback_dev(struct system_data *sd, int *sock, struct ring_buff **rb)
+static void __init_stage_fallback_dev(struct system_data *sd, int *sock,
+				      struct ring_buff **rb)
 {
 	int i, stmp;
 	char dev_buff[1024];
@@ -174,7 +153,8 @@ static void __init_stage_fallback_dev(struct system_data *sd, int *sock, struct 
 		}
 
 		if ((ifr_elem->ifr_flags & IFF_UP) &&
-		    (ifr_elem->ifr_flags & IFF_RUNNING) && strncmp(ifr_elem->ifr_name, "lo", IFNAMSIZ)) {
+		    (ifr_elem->ifr_flags & IFF_RUNNING)
+		    && strncmp(ifr_elem->ifr_name, "lo", IFNAMSIZ)) {
 			sd->dev = strdup(ifr_elem->ifr_name);
 			if (!sd->dev) {
 				err("Cannot allocate mem");
@@ -189,7 +169,8 @@ static void __init_stage_fallback_dev(struct system_data *sd, int *sock, struct 
 	info("No device specified, using `%s`.\n\n", sd->dev);
 }
 
-static void __init_stage_mode_common(struct system_data *sd, int *sock, struct ring_buff **rb)
+static void __init_stage_mode_common(struct system_data *sd, int *sock,
+				     struct ring_buff **rb)
 {
 	int intr;
 
@@ -220,12 +201,14 @@ static void __init_stage_mode_common(struct system_data *sd, int *sock, struct r
 		intr = get_nic_irq_number(sd->dev);
 		if (intr >= 0) {
 			bind_nic_interrupts_to_cpu(intr, sd->bind_cpu);
-			info("Moved %s RX/TX IRQ (%d) affinity to CPU%d.\n\n", sd->dev, intr, sd->bind_cpu);
+			info("Moved %s RX/TX IRQ (%d) affinity to CPU%d.\n\n",
+			     sd->dev, intr, sd->bind_cpu);
 		}
 	}
 }
 
-static void __init_stage_bpf(struct system_data *sd, int *sock, struct ring_buff **rb)
+static void __init_stage_bpf(struct system_data *sd, int *sock,
+			     struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -258,7 +241,8 @@ static void __init_stage_bpf(struct system_data *sd, int *sock, struct ring_buff
 	bpf_dump_all(&sd->bpf);
 }
 
-static void __init_stage_rx_ring(struct system_data *sd, int *sock, struct ring_buff **rb)
+static void __init_stage_rx_ring(struct system_data *sd, int *sock,
+				 struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -273,7 +257,8 @@ static void __init_stage_rx_ring(struct system_data *sd, int *sock, struct ring_
 	alloc_frame_buffer((*rb));
 }
 
-static void __init_stage_tx_ring(struct system_data *sd, int *sock, struct ring_buff **rb)
+static void __init_stage_tx_ring(struct system_data *sd, int *sock,
+				 struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -300,7 +285,8 @@ static void __init_stage_tx_ring(struct system_data *sd, int *sock, struct ring_
 	alloc_frame_buffer((*rb));
 }
 
-static void __init_stage_hashtables(struct system_data *sd, int *sock, struct ring_buff **rb)
+static void __init_stage_hashtables(struct system_data *sd, int *sock,
+				    struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -312,7 +298,8 @@ static void __init_stage_hashtables(struct system_data *sd, int *sock, struct ri
 	ether_types_init();
 }
 
-static void __init_stage_timer(struct system_data *sd, int *sock, struct ring_buff **rb)
+static void __init_stage_timer(struct system_data *sd, int *sock,
+			       struct ring_buff **rb)
 {
 #if 0
 	int ret;
@@ -355,13 +342,17 @@ static void header(void)
 		exit(EXIT_FAILURE);
 	}
 
-	info("%s -- pid (%u)\n\n", colorize_full_str(red, white, PROGNAME_STRING " " VERSION_STRING), getpid());
+	info("%s -- pid (%u)\n\n",
+	     colorize_full_str(red, white, PROGNAME_STRING " " VERSION_STRING),
+	     getpid());
 
 	info("nice (%i), scheduler (%i prio %i)\n",
-	     getpriority(PRIO_PROCESS, getpid()), sched_getscheduler(getpid()), sp.sched_priority);
+	     getpriority(PRIO_PROCESS, getpid()), sched_getscheduler(getpid()),
+	     sp.sched_priority);
 
 	info("%ld of %ld CPUs online, affinity bitstring (%s)\n\n",
-	     sysconf(_SC_NPROCESSORS_ONLN), sysconf(_SC_NPROCESSORS_CONF), get_cpu_affinity(cpu_string, len));
+	     sysconf(_SC_NPROCESSORS_ONLN), sysconf(_SC_NPROCESSORS_CONF),
+	     get_cpu_affinity(cpu_string, len));
 
 	xfree(cpu_string);
 }
@@ -386,7 +377,6 @@ int init_system(struct system_data *sd, int *sock, struct ring_buff **rb)
 	header();
 
 	__init_stage_common(sd, sock, rb);
-	__init_stage_daemon(sd, sock, rb);
 	__init_stage_fallback_dev(sd, sock, rb);
 	__init_stage_mode_common(sd, sock, rb);
 	__init_stage_bpf(sd, sock, rb);
@@ -398,7 +388,8 @@ int init_system(struct system_data *sd, int *sock, struct ring_buff **rb)
 	return 0;
 }
 
-static void __exit_stage_common(struct system_data *sd, int *sock, struct ring_buff **rb)
+static void __exit_stage_common(struct system_data *sd, int *sock,
+				struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -406,19 +397,8 @@ static void __exit_stage_common(struct system_data *sd, int *sock, struct ring_b
 	/* NOP */
 }
 
-static void __exit_stage_daemon(struct system_data *sd, int *sock, struct ring_buff **rb)
-{
-	assert(sd);
-	assert(sock);
-	assert(rb);
-
-	if (sd->sysdaemon == 0)
-		return;
-
-	undaemonize(sd->pidfile);
-}
-
-static void __exit_stage_fallback_dev(struct system_data *sd, int *sock, struct ring_buff **rb)
+static void __exit_stage_fallback_dev(struct system_data *sd, int *sock,
+				      struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -426,7 +406,8 @@ static void __exit_stage_fallback_dev(struct system_data *sd, int *sock, struct 
 	/* NOP */
 }
 
-static void __exit_stage_mode_common(struct system_data *sd, int *sock, struct ring_buff **rb)
+static void __exit_stage_mode_common(struct system_data *sd, int *sock,
+				     struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -441,7 +422,8 @@ static void __exit_stage_mode_common(struct system_data *sd, int *sock, struct r
 	}
 }
 
-static void __exit_stage_bpf(struct system_data *sd, int *sock, struct ring_buff **rb)
+static void __exit_stage_bpf(struct system_data *sd, int *sock,
+			     struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -457,12 +439,12 @@ static void __exit_stage_bpf(struct system_data *sd, int *sock, struct ring_buff
 		xfree(sd->bpf.filter);
 }
 
-static void __exit_stage_rx_ring(struct system_data *sd, int *sock, struct ring_buff **rb)
+static void __exit_stage_rx_ring(struct system_data *sd, int *sock,
+				 struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
 	assert(rb);
-	assert(*rb);
 
 	if (sd->mode == MODE_REPLAY || sd->mode == MODE_READ)
 		return;
@@ -470,12 +452,12 @@ static void __exit_stage_rx_ring(struct system_data *sd, int *sock, struct ring_
 	destroy_virt_rx_ring((*sock), (*rb));
 }
 
-static void __exit_stage_tx_ring(struct system_data *sd, int *sock, struct ring_buff **rb)
+static void __exit_stage_tx_ring(struct system_data *sd, int *sock,
+				 struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
 	assert(rb);
-	assert(*rb);
 
 	if (sd->mode == MODE_CAPTURE || sd->mode == MODE_READ)
 		return;
@@ -483,7 +465,8 @@ static void __exit_stage_tx_ring(struct system_data *sd, int *sock, struct ring_
 	destroy_virt_tx_ring((*sock), (*rb));
 }
 
-static void __exit_stage_hashtables(struct system_data *sd, int *sock, struct ring_buff **rb)
+static void __exit_stage_hashtables(struct system_data *sd, int *sock,
+				    struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -495,7 +478,8 @@ static void __exit_stage_hashtables(struct system_data *sd, int *sock, struct ri
 	ether_types_destroy();
 }
 
-static void __exit_stage_timer(struct system_data *sd, int *sock, struct ring_buff **rb)
+static void __exit_stage_timer(struct system_data *sd, int *sock,
+			       struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -504,7 +488,8 @@ static void __exit_stage_timer(struct system_data *sd, int *sock, struct ring_bu
 	net_stat(*sock);
 }
 
-static void __exit_stage_last(struct system_data *sd, int *sock, struct ring_buff **rb)
+static void __exit_stage_last(struct system_data *sd, int *sock,
+			      struct ring_buff **rb)
 {
 	assert(sd);
 	assert(sock);
@@ -530,7 +515,8 @@ static void footer(void)
 	     "captured bytes: %llu [%llu KiB, %llu MiB, %llu GiB]\n\r",
 	     netstat.total.frames, netstat.total.bytes,
 	     netstat.total.bytes / 1024,
-	     netstat.total.bytes / (1024 * 1024), netstat.total.bytes / (1024 * 1024 * 1024));
+	     netstat.total.bytes / (1024 * 1024),
+	     netstat.total.bytes / (1024 * 1024 * 1024));
 #endif
 }
 
@@ -545,10 +531,8 @@ void cleanup_system(struct system_data *sd, int *sock, struct ring_buff **rb)
 	assert(sd);
 	assert(sock);
 	assert(rb);
-	assert(*rb);
 
 	__exit_stage_common(sd, sock, rb);
-	__exit_stage_daemon(sd, sock, rb);
 	__exit_stage_fallback_dev(sd, sock, rb);
 	__exit_stage_mode_common(sd, sock, rb);
 	__exit_stage_bpf(sd, sock, rb);

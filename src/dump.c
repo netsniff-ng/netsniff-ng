@@ -70,7 +70,8 @@ void pcap_dump(int fd, struct tpacket_hdr *tp_h, const struct ethhdr const *sp)
 	 * or exit gracefully ?
 	 */
 
-	if (write(fd, &sf_hdr, sizeof(sf_hdr)) != sizeof(sf_hdr) || write(fd, sp, sf_hdr.len) != sf_hdr.len) {
+	if (write(fd, &sf_hdr, sizeof(sf_hdr)) != sizeof(sf_hdr)
+	    || write(fd, sp, sf_hdr.len) != sf_hdr.len) {
 		err("Cannot write pcap header");
 		close(fd);
 		exit(EXIT_FAILURE);

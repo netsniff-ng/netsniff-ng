@@ -65,7 +65,8 @@ void destroy_virt_rx_ring(int sock, struct ring_buff *rb)
 	assert(rb);
 
 	memset(&(rb->layout), 0, sizeof(rb->layout));
-	setsockopt(sock, SOL_PACKET, PACKET_RX_RING, (void *)&(rb->layout), sizeof(rb->layout));
+	setsockopt(sock, SOL_PACKET, PACKET_RX_RING, (void *)&(rb->layout),
+		   sizeof(rb->layout));
 
 	if (rb->buffer) {
 		munmap(rb->buffer, rb->len);
@@ -81,7 +82,8 @@ void destroy_virt_rx_ring(int sock, struct ring_buff *rb)
  * @sock:               socket
  * @rb:                 ring buffer
  */
-void create_virt_rx_ring(int sock, struct ring_buff *rb, char *ifname, unsigned int usize)
+void create_virt_rx_ring(int sock, struct ring_buff *rb, char *ifname,
+			 unsigned int usize)
 {
 	short nic_flags;
 	int ret, dev_speed;
@@ -110,19 +112,27 @@ void create_virt_rx_ring(int sock, struct ring_buff *rb, char *ifname, unsigned 
 
 	/* max: 15 for i386, old default: 1 << 13, now: approximated bandwidth size */
 	if (usize == 0) {
-		rb->layout.tp_block_nr = ((dev_speed * 1024 * 1024) / rb->layout.tp_block_size);
+		rb->layout.tp_block_nr =
+		    ((dev_speed * 1024 * 1024) / rb->layout.tp_block_size);
 	} else {
-		rb->layout.tp_block_nr = usize / (rb->layout.tp_block_size / 1024);
+		rb->layout.tp_block_nr =
+		    usize / (rb->layout.tp_block_size / 1024);
 	}
 
-	rb->layout.tp_frame_nr = rb->layout.tp_block_size / rb->layout.tp_frame_size * rb->layout.tp_block_nr;
+	rb->layout.tp_frame_nr =
+	    rb->layout.tp_block_size / rb->layout.tp_frame_size *
+	    rb->layout.tp_block_nr;
 
  __retry_sso:
-	ret = setsockopt(sock, SOL_PACKET, PACKET_RX_RING, (void *)&(rb->layout), sizeof(rb->layout));
+	ret =
+	    setsockopt(sock, SOL_PACKET, PACKET_RX_RING, (void *)&(rb->layout),
+		       sizeof(rb->layout));
 
 	if (errno == ENOMEM && rb->layout.tp_block_nr > 1) {
 		rb->layout.tp_block_nr >>= 1;
-		rb->layout.tp_frame_nr = rb->layout.tp_block_size / rb->layout.tp_frame_size * rb->layout.tp_block_nr;
+		rb->layout.tp_frame_nr =
+		    rb->layout.tp_block_size / rb->layout.tp_frame_size *
+		    rb->layout.tp_block_nr;
 
 		goto __retry_sso;
 	}
@@ -135,10 +145,14 @@ void create_virt_rx_ring(int sock, struct ring_buff *rb, char *ifname, unsigned 
 
 	rb->len = rb->layout.tp_block_size * rb->layout.tp_block_nr;
 
-	info("%.2f MB allocated for receive ring \n", 1.f * rb->len / (1024 * 1024));
-	info(" [ %d blocks, %d frames ] \n", rb->layout.tp_block_nr, rb->layout.tp_frame_nr);
-	info(" [ %d frames per block ]\n", rb->layout.tp_block_size / rb->layout.tp_frame_size);
-	info(" [ framesize: %d bytes, blocksize: %d bytes ]\n\n", rb->layout.tp_frame_size, rb->layout.tp_block_size);
+	info("%.2f MB allocated for receive ring \n",
+	     1.f * rb->len / (1024 * 1024));
+	info(" [ %d blocks, %d frames ] \n", rb->layout.tp_block_nr,
+	     rb->layout.tp_frame_nr);
+	info(" [ %d frames per block ]\n",
+	     rb->layout.tp_block_size / rb->layout.tp_frame_size);
+	info(" [ framesize: %d bytes, blocksize: %d bytes ]\n\n",
+	     rb->layout.tp_frame_size, rb->layout.tp_block_size);
 }
 
 /**
@@ -151,7 +165,8 @@ void mmap_virt_rx_ring(int sock, struct ring_buff *rb)
 {
 	assert(rb);
 
-	rb->buffer = mmap(0, rb->len, PROT_READ | PROT_WRITE, MAP_SHARED, sock, 0);
+	rb->buffer =
+	    mmap(0, rb->len, PROT_READ | PROT_WRITE, MAP_SHARED, sock, 0);
 	if (rb->buffer == MAP_FAILED) {
 		err("mmap: cannot mmap the rx_ring");
 
@@ -182,7 +197,9 @@ void bind_dev_to_rx_ring(int sock, int ifindex, struct ring_buff *rb)
 	rb->params.sll_halen = 0;
 	rb->params.sll_pkttype = 0;
 
-	ret = bind(sock, (struct sockaddr *)&(rb->params), sizeof(struct sockaddr_ll));
+	ret =
+	    bind(sock, (struct sockaddr *)&(rb->params),
+		 sizeof(struct sockaddr_ll));
 	if (ret < 0) {
 		err("bind: cannot bind device");
 
@@ -238,14 +255,17 @@ void fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
 	}
 
 	if (sd->pcap_fd != PCAP_NO_DUMP) {
-		pcap_write_header(sd->pcap_fd, LINKTYPE_EN10MB, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
+		pcap_write_header(sd->pcap_fd, LINKTYPE_EN10MB, 0,
+				  PCAP_DEFAULT_SNAPSHOT_LEN);
 	}
 
 	/* This is our critical path ... */
 	while (likely(!sigint)) {
 		while (mem_notify_user_for_rx(rb->frames[i]) && likely(!sigint)) {
 			struct frame_map *fm = rb->frames[i].iov_base;
-			uint8_t *rbb = ((uint8_t *) rb->frames[i].iov_base + sizeof(*fm) + sizeof(short));
+			uint8_t *rbb =
+			    ((uint8_t *) rb->frames[i].iov_base) + fm->tp_h.tp_mac;/*sizeof(*fm) +
+			     sizeof(short));*/
 
 			/* Check if the user wants to have a specific 
 			   packet type */
@@ -256,14 +276,16 @@ void fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
 			}
 
 			if (sd->pcap_fd != PCAP_NO_DUMP) {
-				pcap_dump(sd->pcap_fd, &fm->tp_h, (struct ethhdr *)rbb);
+				pcap_dump(sd->pcap_fd, &fm->tp_h,
+					  (struct ethhdr *)rbb);
 
 			}
 
 			if (sd->print_pkt) {
 				/* This path here slows us down ... well, but
 				   the user wants to see what's going on */
-				sd->print_pkt(rbb, &fm->tp_h, fm->s_ll.sll_pkttype);
+				sd->print_pkt(rbb, &fm->tp_h,
+					      fm->s_ll.sll_pkttype);
 			}
 
 			/* Next frame */
@@ -284,7 +306,9 @@ void fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
 
 		spinner_trigger_event(&spinner_ctx);
 
-		if (ret > 0 && (pfd.revents & (POLLHUP | POLLRDHUP | POLLERR | POLLNVAL))) {
+		if (ret > 0
+		    && (pfd.
+			revents & (POLLHUP | POLLRDHUP | POLLERR | POLLNVAL))) {
 			if (pfd.revents & (POLLHUP | POLLRDHUP)) {
 				err("Hangup on socket occured");
 
@@ -292,7 +316,8 @@ void fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
 			} else if (pfd.revents & POLLERR) {
 				/* recv is more specififc on the error */
 				errno = 0;
-				if (recv(sock, &foo, sizeof(foo), MSG_PEEK) != -1)
+				if (recv(sock, &foo, sizeof(foo), MSG_PEEK) !=
+				    -1)
 					goto __out_grab_frame;	/* Hmm... no error */
 				if (errno == ENETDOWN) {
 					err("Interface went down");
@@ -312,7 +337,8 @@ void fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
 		/* Look-ahead if current frame is status kernel, otherwise we have
 		   have incoming frames and poll spins / hangs all the time :( */
 		for (; ((struct tpacket_hdr *)rb->frames[i].iov_base)->tp_status
-		     != TP_STATUS_USER && likely(!sigint); i = (i + 1) % rb->layout.tp_frame_nr)
+		     != TP_STATUS_USER && likely(!sigint);
+		     i = (i + 1) % rb->layout.tp_frame_nr)
 			/* NOP */ ;
 		/* Why this should be okay:
 		   1) Current frame[i] is TP_STATUS_USER:
@@ -339,7 +365,8 @@ void fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
 	spinner_cancel(&spinner_ctx);
 }
 
-void compat_fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb)
+void compat_fetch_packets(struct system_data *sd, int sock,
+			  struct ring_buff *rb)
 {
 	struct timeval now;
 	struct spinner_thread_context spinner_ctx = { 0 };
@@ -375,11 +402,14 @@ void compat_fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb
 	}
 
 	if (sd->pcap_fd != PCAP_NO_DUMP) {
-		pcap_write_header(sd->pcap_fd, LINKTYPE_EN10MB, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
+		pcap_write_header(sd->pcap_fd, LINKTYPE_EN10MB, 0,
+				  PCAP_DEFAULT_SNAPSHOT_LEN);
 	}
 
 	while (likely(!sigint)) {
-		pkt_len = recvfrom(pf_sock, pkt_buf, mtu, MSG_TRUNC, (struct sockaddr *)&from, &from_len);
+		pkt_len =
+		    recvfrom(pf_sock, pkt_buf, mtu, MSG_TRUNC,
+			     (struct sockaddr *)&from, &from_len);
 
 		if (errno == EINTR)
 			break;
@@ -393,7 +423,8 @@ void compat_fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb
 		tp_h.tp_len = tp_h.tp_snaplen = pkt_len;
 
 		if (sd->pcap_fd != PCAP_NO_DUMP) {
-			pcap_dump(sd->pcap_fd, &tp_h, (struct ethhdr *)(pkt_buf));
+			pcap_dump(sd->pcap_fd, &tp_h,
+				  (struct ethhdr *)(pkt_buf));
 		}
 
 		if (sd->print_pkt) {
@@ -408,7 +439,8 @@ void compat_fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb
 	xfree(pkt_buf);
 }
 
-void start_fetching_packets(struct system_data *sd, int sock, struct ring_buff *rb)
+void start_fetching_packets(struct system_data *sd, int sock,
+			    struct ring_buff *rb)
 {
 	if (sd->compatibility_mode)
 		compat_fetch_packets(sd, sock, rb);

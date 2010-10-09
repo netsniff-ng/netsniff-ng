@@ -84,7 +84,8 @@ void print_udphdr(struct udphdr *udp)
 
 	info(" [ UDP ");
 
-	info("Port (%u => %u, %s%s%s), ", udps, udpd, colorize_start(bold), port_desc, colorize_end());
+	info("Port (%u => %u, %s%s%s), ", udps, udpd, colorize_start(bold),
+	     port_desc, colorize_end());
 	info("Len (%u), ", ntohs(udp->len));
 	info("Chsum (0x%x)", ntohs(udp->check));
 
@@ -130,7 +131,8 @@ void print_udphdr_less(struct udphdr *udp)
 		port_desc = "U";
 
 	info("UDP, ");
-	info("%s%s%s, %u => %u\n", colorize_start(bold), port_desc, colorize_end(), udps, udpd);
+	info("%s%s%s, %u => %u\n", colorize_start(bold), port_desc,
+	     colorize_end(), udps, udpd);
 }
 
 #endif				/* __PROTO_UDP_H__ */

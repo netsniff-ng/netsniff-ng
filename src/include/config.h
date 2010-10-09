@@ -69,7 +69,8 @@ struct system_data {
 	int promisc_mode;
 	int pcap_fd;
 	struct sock_fprog bpf;
-	void (*print_pkt) (uint8_t *, const struct tpacket_hdr *, uint8_t pkttype);
+	void (*print_pkt) (uint8_t *, const struct tpacket_hdr *,
+			   uint8_t pkttype);
 	int bind_cpu;
 	unsigned int ring_size;
 };

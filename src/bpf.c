@@ -41,10 +41,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <assert.h>
-
-#include <linux/filter.h>
-
 #include <arpa/inet.h>
+#include <linux/filter.h>
 
 #include "bpf.h"
 #include "macros.h"
@@ -116,8 +114,8 @@
 #endif				/* BPF_MEMWORDS */
 
 /**
- * bpf_dump - Prints bpf program in human readable format. Switch-case code taken 
- *            with the above copyright.
+ * bpf_dump - Prints bpf program in human readable format. Switch-case code
+ *            taken with the above copyright.
  * @bpf:     bpf program
  */
 static char *bpf_dump(const struct sock_filter bpf, int n)
@@ -363,7 +361,8 @@ static char *bpf_dump(const struct sock_filter bpf, int n)
 	snprintf(image, sizeof(image),
 		 (BPF_CLASS(bpf.code) == BPF_JMP &&
 		  BPF_OP(bpf.code) != BPF_JA) ?
-		 "(%03d) %-8s %-16s jt %d\tjf %d" : "(%03d) %-8s %s", n, op, operand, n + 1 + bpf.jt, n + 1 + bpf.jf);
+		 "(%03d) %-8s %-16s jt %d\tjf %d" : "(%03d) %-8s %s", n, op,
+		 operand, n + 1 + bpf.jt, n + 1 + bpf.jf);
 	return image;
 }
 
@@ -496,7 +495,8 @@ int bpf_validate(const struct sock_fprog *bpf)
 			case BPF_JGT:
 			case BPF_JGE:
 			case BPF_JSET:
-				if (from + p->jt >= bpf->len || from + p->jf >= bpf->len)
+				if (from + p->jt >= bpf->len
+				    || from + p->jf >= bpf->len)
 					return 0;
 				break;
 			default:
@@ -523,7 +523,8 @@ int bpf_validate(const struct sock_fprog *bpf)
  * @plen:      len of packet
  */
 
-uint32_t bpf_filter(const struct sock_fprog * fcode, uint8_t * packet, size_t plen)
+uint32_t bpf_filter(const struct sock_fprog * fcode, uint8_t * packet,
+		    size_t plen)
 {
 	/* XXX: caplen == len */
 	uint32_t A, X;

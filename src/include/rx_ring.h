@@ -31,12 +31,16 @@
 /* Function signatures */
 
 extern void destroy_virt_rx_ring(int sock, struct ring_buff *rb);
-extern void create_virt_rx_ring(int sock, struct ring_buff *rb, char *ifname, unsigned int usize);
+extern void create_virt_rx_ring(int sock, struct ring_buff *rb, char *ifname,
+				unsigned int usize);
 extern void mmap_virt_rx_ring(int sock, struct ring_buff *rb);
 extern void bind_dev_to_rx_ring(int sock, int ifindex, struct ring_buff *rb);
-extern void fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb);
-extern void compat_fetch_packets(struct system_data *sd, int sock, struct ring_buff *rb);
-extern void start_fetching_packets(struct system_data *sd, int sock, struct ring_buff *rb);
+extern void fetch_packets(struct system_data *sd, int sock,
+			  struct ring_buff *rb);
+extern void compat_fetch_packets(struct system_data *sd, int sock,
+				 struct ring_buff *rb);
+extern void start_fetching_packets(struct system_data *sd, int sock,
+				   struct ring_buff *rb);
 
 #define DEFAULT_RX_RING_SILENT_MESSAGE "Receive ring dumping ... |"
 

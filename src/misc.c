@@ -36,7 +36,8 @@
  */
 void help(void)
 {
-	info("\n%s %s, the packet sniffing beast\n", PROGNAME_STRING, VERSION_STRING);
+	info("\n%s %s, the packet sniffing beast\n", PROGNAME_STRING,
+	     VERSION_STRING);
 	info("http://www.netsniff-ng.org\n\n");
 	info("Usage: netsniff-ng [options]\n");
 	info("\n");
@@ -69,7 +70,7 @@ void help(void)
 	info("\n");
 	info("Options for receive and transmit ring:\n");
 	info("  -S|--ring-size <size>  Manually set ring size to <arg>,\n");
-	info("                         mmap space in KB/MB/GB, e.g. `100MB`\n");
+	info("                         mmap space in KB/MB/GB, e.g. `10MB`\n");
 	info("\n");
 	info("Options for packet printing:\n");
 	info("  -s|--silent            Do not print captured packets\n");
@@ -112,7 +113,8 @@ void help(void)
  */
 void version(void)
 {
-	info("\n%s %s, the packet sniffing beast\n", PROGNAME_STRING, VERSION_STRING);
+	info("\n%s %s, the packet sniffing beast\n", PROGNAME_STRING,
+	     VERSION_STRING);
 	info("http://www.netsniff-ng.org\n\n");
 #ifdef __HAVE_TX_RING__
 	info("Compiled with transmit ring functionality :)\n\n");

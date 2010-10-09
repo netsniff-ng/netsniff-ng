@@ -50,13 +50,13 @@
 #include "nsignal.h"
 #include "bpf.h"
 
-char *pkt_type_names[]={
-	"<", /* Incoming */
-	"B", /* Broadcast */
-	"M", /* Multicast */
-	"P", /* Promisc */
-	">", /* Outgoing */
-	"?", /* Unknown */
+char *pkt_type_names[] = {
+	"<",			/* Incoming */
+	"B",			/* Broadcast */
+	"M",			/* Multicast */
+	"P",			/* Promisc */
+	">",			/* Outgoing */
+	"?",			/* Unknown */
 };
 
 /*
@@ -66,7 +66,8 @@ char *pkt_type_names[]={
  * @tty_len:       width of terminal
  * @tty_off:       current offset of tty_len
  */
-void dump_hex(const void const *to_print, int len, size_t tty_len, size_t tty_off)
+void dump_hex(const void const *to_print, int len, size_t tty_len,
+	      size_t tty_off)
 {
 	assert(to_print);
 
@@ -88,7 +89,8 @@ void dump_hex(const void const *to_print, int len, size_t tty_len, size_t tty_of
  * @tty_len:       width of terminal
  * @tty_off:       current offset of tty_len
  */
-void dump_hex_cstyle(const void const *to_print, int len, size_t tty_len, size_t tty_off)
+void dump_hex_cstyle(const void const *to_print, int len, size_t tty_len,
+		     size_t tty_off)
 {
 	assert(to_print);
 
@@ -116,7 +118,8 @@ void dump_hex_cstyle(const void const *to_print, int len, size_t tty_len, size_t
  * @tty_len:       width of terminal
  * @tty_off:       current offset of tty_len
  */
-void dump_printable(const void const *to_print, int len, size_t tty_len, size_t tty_off)
+void dump_printable(const void const *to_print, int len, size_t tty_len,
+		    size_t tty_off)
 {
 	assert(to_print);
 
@@ -137,7 +140,8 @@ void dump_printable(const void const *to_print, int len, size_t tty_len, size_t 
  * @len:                 len
  * @tty_len:             width of terminal
  */
-static void inline dump_payload_hex_all(const uint8_t * const rbb, int len, int tty_len)
+static void inline dump_payload_hex_all(const uint8_t * const rbb, int len,
+					int tty_len)
 {
 	info(" [ Payload hex  (");
 	dump_hex(rbb, len, tty_len, 14);
@@ -150,7 +154,8 @@ static void inline dump_payload_hex_all(const uint8_t * const rbb, int len, int 
  * @len:                 len
  * @tty_len:             width of terminal
  */
-static void inline dump_payload_hex_cstyle(const uint8_t * const rbb, int len, int tty_len)
+static void inline dump_payload_hex_cstyle(const uint8_t * const rbb, int len,
+					   int tty_len)
 {
 	info(" [ Full packet  (");
 	dump_hex_cstyle(rbb, len, 80, 0);
@@ -163,7 +168,8 @@ static void inline dump_payload_hex_cstyle(const uint8_t * const rbb, int len, i
  * @len:                  len
  * @tty_len:              width of terminal
  */
-static void inline dump_payload_char_all(const uint8_t * const rbb, int len, int tty_len)
+static void inline dump_payload_char_all(const uint8_t * const rbb, int len,
+					 int tty_len)
 {
 	info(" [ Payload char (");
 	dump_printable(rbb, len, tty_len, 14);
@@ -178,8 +184,11 @@ void reduced_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype)
 	pkt.type = pkttype;
 	parse_packet(rbb, tp->tp_len, &pkt);
 
-	info("%s%s %d Byte%s, %u.%u s, %s%s%s, ", colorize_start(bold), pkt_type_names[pkttype], tp->tp_len, colorize_end(), tp->tp_sec, tp->tp_usec,
-	     colorize_start(bold), ether_types_find_less(pkt.ethernet_header->h_proto), colorize_end());
+	info("%s%s %d Byte%s, %u.%u s, %s%s%s, ", colorize_start(bold),
+	     pkt_type_names[pkttype], tp->tp_len, colorize_end(), tp->tp_sec,
+	     tp->tp_usec, colorize_start(bold),
+	     ether_types_find_less(pkt.ethernet_header->h_proto),
+	     colorize_end());
 
 	switch (get_ethertype(pkt.ethernet_header)) {
 	case ETH_P_8021Q:
@@ -284,7 +293,8 @@ void regex_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype)
 	xfree(t_rbb);
 }
 
-void payload_human_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype)
+void payload_human_only_print(uint8_t * rbb, const struct tpacket_hdr *tp,
+			      uint8_t pkttype)
 {
 	struct packet pkt;
 
@@ -299,7 +309,8 @@ void payload_human_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8
 	info("\n\n");
 }
 
-void payload_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype)
+void payload_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp,
+			    uint8_t pkttype)
 {
 	struct packet pkt;
 
@@ -317,7 +328,8 @@ void payload_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t
 	info("\n\n");
 }
 
-void all_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype)
+void all_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp,
+			uint8_t pkttype)
 {
 	int tty_len = get_tty_length();
 
@@ -329,15 +341,26 @@ void all_hex_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkt
 	info("\n\n");
 }
 
-static inline void __versatile_header_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, struct packet *pkt)
+static inline void __versatile_header_only_print(uint8_t * rbb,
+						 const struct tpacket_hdr *tp,
+						 struct packet *pkt)
 {
+	/* According to ctime(3), the buffer containing the date should be at least 23 byte, so 32 bytes to preserve alignement */
+	char date[32] = { 0 };
 	uint16_t l4_type = 0;
+	int pkt_tsec = 0;
 
 	assert(rbb);
 	assert(tp);
 	assert(pkt);
 
-	info("%s%s %d Byte%s, Timestamp (%u.%u s)\n", colorize_start(bold), pkt_type_names[pkt->type], tp->tp_len, colorize_end(), tp->tp_sec, tp->tp_usec);
+	/* time_t is an int, tp->tp_sec is a unsigned int */
+	pkt_tsec = (int)tp->tp_sec;
+	ctime_r((time_t *) & pkt_tsec, date);
+
+	info("%s%s %d Byte%s, Unix TS (%u s %u us), %s", colorize_start(bold),
+	     pkt_type_names[pkt->type], tp->tp_len, colorize_end(), tp->tp_sec,
+	     tp->tp_usec, date);
 	if (unlikely(tp->tp_len <= 14)) {
 		info(" [ Malformed Ethernet Packet ]\n");
 		pkt->payload = rbb;
@@ -390,7 +413,8 @@ static inline void __versatile_header_only_print(uint8_t * rbb, const struct tpa
 	return;
 }
 
-void versatile_header_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype)
+void versatile_header_only_print(uint8_t * rbb, const struct tpacket_hdr *tp,
+				 uint8_t pkttype)
 {
 	struct packet pkt;
 
@@ -399,7 +423,8 @@ void versatile_header_only_print(uint8_t * rbb, const struct tpacket_hdr *tp, ui
 	info("\n");
 }
 
-void versatile_hex_cstyle_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype)
+void versatile_hex_cstyle_print(uint8_t * rbb, const struct tpacket_hdr *tp,
+				uint8_t pkttype)
 {
 	struct packet pkt;
 	int tty_len = get_tty_length();
@@ -416,8 +441,8 @@ void versatile_hex_cstyle_print(uint8_t * rbb, const struct tpacket_hdr *tp, uin
 	info("\n");
 }
 
-
-void versatile_print(uint8_t * rbb, const struct tpacket_hdr *tp, uint8_t pkttype)
+void versatile_print(uint8_t * rbb, const struct tpacket_hdr *tp,
+		     uint8_t pkttype)
 {
 	struct packet pkt;
 	int tty_len = get_tty_length();
@@ -443,9 +468,12 @@ void display_packets(struct system_data *sd)
 
 	info("--- Printing ---\n\n");
 
-	while (pcap_fetch_next_packet(sd->pcap_fd, &header, (struct ethhdr *)buff) && likely(!sigint)) {
+	while (pcap_fetch_next_packet
+	       (sd->pcap_fd, &header, (struct ethhdr *)buff)
+	       && likely(!sigint)) {
 		if (sd->print_pkt)
-			if (bpf_filter(&sd->bpf, (uint8_t *) buff, header.tp_len))
+			if (bpf_filter
+			    (&sd->bpf, (uint8_t *) buff, header.tp_len))
 				sd->print_pkt((uint8_t *) buff, &header, 5);
 	}
 

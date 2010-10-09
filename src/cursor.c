@@ -67,7 +67,8 @@ void *print_progress_spinner(void *arg)
 {
 	uint8_t spin_count = 0;
 	uint64_t prev_events = 0;
-	struct spinner_thread_context *ctx = (struct spinner_thread_context *)arg;
+	struct spinner_thread_context *ctx =
+	    (struct spinner_thread_context *)arg;
 
 	ctx->active = 1;
 

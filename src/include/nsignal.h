@@ -154,16 +154,25 @@ static inline void refresh_counters(void)
 
 	if (unlikely(netstat.t_elapsed % 60 == 0)) {
 		netstat.s_per_min.frames =
-		    curr_weight * netstat.per_min.frames + (1.f - curr_weight) * netstat.s_per_min.frames;
+		    curr_weight * netstat.per_min.frames + (1.f -
+							    curr_weight) *
+		    netstat.s_per_min.frames;
 		netstat.s_per_min.bytes =
-		    curr_weight * netstat.per_min.bytes + (1.f - curr_weight) * netstat.s_per_min.bytes;
+		    curr_weight * netstat.per_min.bytes + (1.f -
+							   curr_weight) *
+		    netstat.s_per_min.bytes;
 
 		netstat.per_min.frames = netstat.per_min.bytes = 0;
 	}
 
 	netstat.s_per_sec.frames =
-	    curr_weight * netstat.per_sec.frames + (1.f - curr_weight) * netstat.s_per_sec.frames;
-	netstat.s_per_sec.bytes = curr_weight * netstat.per_sec.bytes + (1.f - curr_weight) * netstat.s_per_sec.bytes;
+	    curr_weight * netstat.per_sec.frames + (1.f -
+						    curr_weight) *
+	    netstat.s_per_sec.frames;
+	netstat.s_per_sec.bytes =
+	    curr_weight * netstat.per_sec.bytes + (1.f -
+						   curr_weight) *
+	    netstat.s_per_sec.bytes;
 
 	netstat.per_sec.frames = netstat.per_sec.bytes = 0;
 }
@@ -195,21 +204,30 @@ static inline void print_counters(void)
 	 */
 	info("stats summary:\n");
 	info("--------------------------------------------------------------------------------------------\n");
-	info("elapsed time: %llu d, %llu h, %llu min, %llu s, %llu ns\n", d_day, d_h, d_min, d_sec, d_nsec);
+	info("elapsed time: %llu d, %llu h, %llu min, %llu s, %llu ns\n", d_day,
+	     d_h, d_min, d_sec, d_nsec);
 	info("-----------+--------------------------+--------------------------+--------------------------\n");
 	info("           |  per sec                 |  per min                 |  total                   \n");
 	info("-----------+--------------------------+--------------------------+--------------------------\n");
 	info("  frames   | %24llu | %24llu | %24llu \n",
-	     netstat.s_per_sec.frames, netstat.s_per_min.frames, netstat.total.frames);
+	     netstat.s_per_sec.frames, netstat.s_per_min.frames,
+	     netstat.total.frames);
 	info("-----------+--------------------------+--------------------------+--------------------------\n");
 	info("  in B     | %24llu | %24llu | %24llu \n",
-	     netstat.s_per_sec.bytes, netstat.s_per_min.bytes, netstat.total.bytes);
+	     netstat.s_per_sec.bytes, netstat.s_per_min.bytes,
+	     netstat.total.bytes);
 	info("  in KB    | %24llu | %24llu | %24llu \n",
-	     DIV_KBYTES(netstat.s_per_sec.bytes), DIV_KBYTES(netstat.s_per_min.bytes), DIV_KBYTES(netstat.total.bytes));
+	     DIV_KBYTES(netstat.s_per_sec.bytes),
+	     DIV_KBYTES(netstat.s_per_min.bytes),
+	     DIV_KBYTES(netstat.total.bytes));
 	info("  in MB    | %24llu | %24llu | %24llu \n",
-	     DIV_MBYTES(netstat.s_per_sec.bytes), DIV_MBYTES(netstat.s_per_min.bytes), DIV_MBYTES(netstat.total.bytes));
+	     DIV_MBYTES(netstat.s_per_sec.bytes),
+	     DIV_MBYTES(netstat.s_per_min.bytes),
+	     DIV_MBYTES(netstat.total.bytes));
 	info("  in GB    | %24llu | %24llu | %24llu \n",
-	     DIV_GBYTES(netstat.s_per_sec.bytes), DIV_GBYTES(netstat.s_per_min.bytes), DIV_GBYTES(netstat.total.bytes));
+	     DIV_GBYTES(netstat.s_per_sec.bytes),
+	     DIV_GBYTES(netstat.s_per_min.bytes),
+	     DIV_GBYTES(netstat.total.bytes));
 	info("-----------+--------------------------+--------------------------+--------------------------\n\n");
 }
 

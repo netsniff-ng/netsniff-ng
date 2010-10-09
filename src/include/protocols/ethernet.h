@@ -61,14 +61,14 @@ static inline void print_ethhdr(struct ethhdr *eth)
 	assert(eth);
 
 	info(" [ ");
-	info("MAC (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x => %.2x:%.2x:%.2x:%.2x:%.2x:%.2x), ", src_mac[0], src_mac[1],
-	     src_mac[2], src_mac[3], src_mac[4], src_mac[5], dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4],
-	     dst_mac[5]);
-	info("Proto (0x%.4x, %s)", ntohs(eth->h_proto), ether_types_find(eth->h_proto));
+	info("MAC (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x => %.2x:%.2x:%.2x:%.2x:%.2x:%.2x), ", src_mac[0], src_mac[1], src_mac[2], src_mac[3], src_mac[4], src_mac[5], dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4], dst_mac[5]);
+	info("Proto (0x%.4x, %s)", ntohs(eth->h_proto),
+	     ether_types_find(eth->h_proto));
 	info(" ] \n");
 
 	info(" [ ");
-	info("Vendor (%s => %s)", ieee_vendors_find(src_mac), ieee_vendors_find(dst_mac));
+	info("Vendor (%s => %s)", ieee_vendors_find(src_mac),
+	     ieee_vendors_find(dst_mac));
 	info(" ] \n");
 }
 
@@ -83,11 +83,7 @@ static inline void print_ethhdr_less(struct ethhdr *eth)
 
 	assert(eth);
 
-	info("0x%.4x, %.2x:%.2x:%.2x:%.2x:%.2x:%.2x => %.2x:%.2x:%.2x:%.2x:%.2x:%.2x, %s => %s, ",
-	     ntohs(eth->h_proto),
-	     src_mac[0], src_mac[1], src_mac[2], src_mac[3], src_mac[4], src_mac[5],
-	     dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4], dst_mac[5],
-	     ieee_vendors_find(src_mac), ieee_vendors_find(dst_mac));
+	info("0x%.4x, %.2x:%.2x:%.2x:%.2x:%.2x:%.2x => %.2x:%.2x:%.2x:%.2x:%.2x:%.2x, %s => %s, ", ntohs(eth->h_proto), src_mac[0], src_mac[1], src_mac[2], src_mac[3], src_mac[4], src_mac[5], dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4], dst_mac[5], ieee_vendors_find(src_mac), ieee_vendors_find(dst_mac));
 }
 
 #endif				/* __PROTO_ETHERNET_H__ */

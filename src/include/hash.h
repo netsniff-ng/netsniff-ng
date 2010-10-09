@@ -51,12 +51,14 @@ struct hashtable {
  * Functions, generic
  */
 
-extern int hashtable_init(struct hashtable **ht, size_t size, struct hashtable_callbacks *f);
+extern int hashtable_init(struct hashtable **ht, size_t size,
+			  struct hashtable_callbacks *f);
 extern void hashtable_destroy(struct hashtable *ht);
 extern void *hashtable_insert(struct hashtable *ht, void *key, void *data);
 extern void *hashtable_find(struct hashtable *ht, void *key);
 extern void *hashtable_delete(struct hashtable *ht, void *key);
-extern int hashtable_foreach(struct hashtable *ht, void (*callback) (void *key, void *data));
+extern int hashtable_foreach(struct hashtable *ht,
+			     void (*callback) (void *key, void *data));
 
 /*
  * Functions, specific hashtables
