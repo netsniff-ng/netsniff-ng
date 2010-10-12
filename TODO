@@ -1,11 +1,12 @@
 Some future ToDos
 =================
 
+* PCAPng support
 * ARP cache poisoning for Man-In-The-Middle sniffing
 * Adding tons of protocols to decode
-* Improvements in TX_RING/sendto PCAP replay code
-* PCAPng support
-* Statistical anomaly detection for netsniff-ngd
+* Statistical anomaly detection for netsniff-ng-server
+* netsniff-ng-server that provides network statistics for user clients
+  (e.g. Nagios)
 * Kernelcode improvements in af_packet.c
 
 There are also some information about future plans within our 

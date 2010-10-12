@@ -1,0 +1,36 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+
+<head>
+<title>netsniff-ng - manpage</title>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="Robots" content="noarchive">
+
+<link rel="Shortcut Icon" href="http://netsniff-ng.org/img/tiny-logo.png" type="image/png">
+
+<style type="text/css">
+dd { padding-bottom: 1.0em; }
+</style>
+
+<script type="text/javascript">
+  function InsertMail(mailnam,mailsvr,maildom)
+  {
+    document.write('&lt;<a href="mailto:' + mailnam + '@' + mailsvr + '.'
+      + maildom + '">' + mailnam + '@' + mailsvr + '.' + maildom + 
+      '<\/a>&gt;');
+  }
+</script>
+</head>
+
+<body>
+
+<blockquote>
+
+<br>
+<p>
+<a href="http://netsniff-ng.org/"><img src="http://netsniff-ng.org/img/nets.png" border="0" alt="netsniff-ng"></a>
+</p>
+
+<br>
+

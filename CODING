@@ -1,10 +1,10 @@
-netsniff-ng CODING CONVENTIONS
-==============================
+ The coding conventions of netsniff-ng match with the Linux kernel 
+ style guidelines. So here we go with a copy of linux-xxx/Documentation/
+ CodingStyle.
 
-The coding conventions of netsniff-ng match with the Linux kernel style
-guidelines. So here we go with a copy of linux-xxx/Documentation/CodingStyle.
+			Daniel Borkmann
 
---------------------------------------------------------
+--------------------------------------------------------------------------
 
 		Linux kernel coding style
 

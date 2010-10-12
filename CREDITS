@@ -1,22 +1,23 @@
-This is at least a partial credits-file of people that have
-contributed to the netsniff-ng project (in alphabetical 
-acending order of their last names). If I have forgotten 
-someone, let me know.
+ This is at least a partial credits-file of people that have
+ contributed to the netsniff-ng project (in alphabetical 
+ acending order of their last names). If I have forgotten 
+ someone, let me know.
 
-Non-optional fields are:
+ Non-optional fields are:
   name (N),
   email (E) 
 
-Optional fields are: 
+ Optional fields are: 
   web-address (W), 
   PGP key ID and fingerprint (P), 
   description (D), and
   snail-mail address | country (S).
 
-Thanks,
-               Daniel Borkmann
+ Thanks,
 
-----------
+			Daniel Borkmann
+
+--------------------------------------------------------------------------
 
 N: Romain Beauxis
 E: toots [at] rastageeks [dot] org

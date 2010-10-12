@@ -1,25 +1,15 @@
 /*
- * Copyright (C) 2009, 2010  Daniel Borkmann <daniel@netsniff-ng.org> and 
- *                           Emmanuel Roullit <emmanuel@netsniff-ng.org>
- *
- * This program is free software; you can redistribute it and/or modify 
- * it under the terms of the GNU General Public License as published by 
- * the Free Software Foundation; either version 2 of the License, or (at 
- * your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
- * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License 
- * for more details.
- *
- * You should have received a copy of the GNU General Public License along 
- * with this program; if not, write to the Free Software Foundation, Inc., 
- * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
+ * netsniff-ng - the packet sniffing beast
+ * By Daniel Borkmann <daniel@netsniff-ng.org>
+ * Copyright 2009, 2010 Daniel Borkmann.
+ * Subject to the GPL.
  */
 
 /*
  * Copyright (C) 1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland, 
  *                    All rights reserved
+ * Copyright (C) 2010 Daniel Borkmann <daniel@netsniff-ng.org>,
+ *                    Ported from SSH and added several other stuff
  *
  * Versions of malloc and friends that check their results, and never return
  * failure (they call fatal if they encounter an error).
@@ -35,35 +25,28 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
-#include <signal.h>
-#include <unistd.h>
-#include <time.h>
-#include <pthread.h>
 
 #ifndef SIZE_T_MAX
-# define SIZE_T_MAX  UINT_MAX
+# define SIZE_T_MAX  ((size_t) ~0)
 #endif
 
-#include "macros.h"
 #include "xmalloc.h"
 #include "strlcpy.h"
+#include "tty.h"
+#include "error_and_die.h"
 
 void *xmalloc(size_t size)
 {
 	void *ptr;
 
-	if (size == 0) {
-		err("xmalloc: zero size");
-		exit(EXIT_FAILURE);
-	}
+	if (size == 0)
+		error_and_die(EXIT_FAILURE, "xmalloc: zero size\n");
 
 	ptr = malloc(size);
-	if (ptr == NULL) {
-		err("xmalloc: out of memory (allocating %lu bytes)",
-		    (u_long) size);
-		exit(EXIT_FAILURE);
-	}
+	if (ptr == NULL)
+		error_and_die(EXIT_FAILURE, "xmalloc: out of memory "
+			      "(allocating %lu bytes)\n", (u_long) size);
+	debug_blue("%p: %zu", ptr, size);
 
 	return ptr;
 }
@@ -72,19 +55,16 @@ void *xzmalloc(size_t size)
 {
 	void *ptr;
 
-	if (size == 0) {
-		err("xmalloc: zero size");
-		exit(EXIT_FAILURE);
-	}
+	if (size == 0)
+		error_and_die(EXIT_FAILURE, "xzmalloc: zero size\n");
 
 	ptr = malloc(size);
-	if (ptr == NULL) {
-		err("xmalloc: out of memory (allocating %lu bytes)",
-		    (u_long) size);
-		exit(EXIT_FAILURE);
-	}
-
+	if (ptr == NULL)
+		error_and_die(EXIT_FAILURE, "xzmalloc: out of memory "
+			      "(allocating %lu bytes)\n", (u_long) size);
 	memset(ptr, 0, size);
+	debug_blue("%p: %zu", ptr, size);
+
 	return ptr;
 }
 
@@ -92,22 +72,18 @@ void *xcalloc(size_t nmemb, size_t size)
 {
 	void *ptr;
 
-	if (size == 0 || nmemb == 0) {
-		err("xcalloc: zero size");
-		exit(EXIT_FAILURE);
-	}
-
-	if (SIZE_T_MAX / nmemb < size) {
-		err("xcalloc: nmemb * size > SIZE_T_MAX");
-		exit(EXIT_FAILURE);
-	}
+	if (size == 0 || nmemb == 0)
+		error_and_die(EXIT_FAILURE, "xcalloc: zero size\n");
+	if (SIZE_T_MAX / nmemb < size)
+		error_and_die(EXIT_FAILURE, "xcalloc: nmemb * size > "
+			      "SIZE_T_MAX\n");
 
 	ptr = calloc(nmemb, size);
-	if (ptr == NULL) {
-		err("xcalloc: out of memory (allocating %lu bytes)",
-		    (u_long) (size * nmemb));
-		exit(EXIT_FAILURE);
-	}
+	if (ptr == NULL)
+		error_and_die(EXIT_FAILURE, "xcalloc: out of memory "
+			      "(allocating %lu bytes)\n",
+			      (u_long) (size * nmemb));
+	debug_blue("%p: %zu", ptr, size);
 
 	return ptr;
 }
@@ -117,37 +93,31 @@ void *xrealloc(void *ptr, size_t nmemb, size_t size)
 	void *new_ptr;
 	size_t new_size = nmemb * size;
 
-	if (new_size == 0) {
-		err("xrealloc: zero size");
-		exit(EXIT_FAILURE);
-	}
+	if (new_size == 0)
+		error_and_die(EXIT_FAILURE, "xrealloc: zero size\n");
+	if (SIZE_T_MAX / nmemb < size)
+		error_and_die(EXIT_FAILURE, "xrealloc: nmemb * size > "
+			      "SIZE_T_MAX\n");
 
-	if (SIZE_T_MAX / nmemb < size) {
-		err("xrealloc: nmemb * size > SIZE_T_MAX");
-		exit(EXIT_FAILURE);
-	}
-
-	if (ptr == NULL) {
+	if (ptr == NULL)
 		new_ptr = malloc(new_size);
-	} else {
+	else
 		new_ptr = realloc(ptr, new_size);
-	}
 
-	if (new_ptr == NULL) {
-		err("xrealloc: out of memory (new_size %lu bytes)",
-		    (u_long) new_size);
-		exit(EXIT_FAILURE);
-	}
+	if (new_ptr == NULL)
+		error_and_die(EXIT_FAILURE, "xrealloc: out of memory "
+			      "(new_size %lu bytes)\n", (u_long) new_size);
+	debug_blue("%p: %zu => %p: %zu", ptr, size, new_ptr, new_size);
 
 	return new_ptr;
 }
 
 void xfree(void *ptr)
 {
-	if (ptr == NULL) {
-		err("xfree: NULL pointer given as argument");
-		exit(EXIT_FAILURE);
-	}
+	if (ptr == NULL)
+		error_and_die(EXIT_FAILURE, "xfree: NULL pointer given as "
+			      "argument\n");
+	debug_blue("%p => 0", ptr);
 
 	free(ptr);
 }
@@ -163,3 +133,18 @@ char *xstrdup(const char *str)
 
 	return cp;
 }
+
+char *xstrndup(const char *str, size_t size)
+{
+	size_t len;
+	char *cp;
+
+	len = strlen(str) + 1;
+	if (size < len)
+		len = size;
+	cp = xmalloc(len);
+	strlcpy(cp, str, len);
+
+	return cp;
+}
+

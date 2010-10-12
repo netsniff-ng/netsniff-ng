@@ -1,20 +1,9 @@
 /*
- * Copyright (C) 2009, 2010  Daniel Borkmann <daniel@netsniff-ng.org> and 
- *                           Emmanuel Roullit <emmanuel@netsniff-ng.org>
- *
- * This program is free software; you can redistribute it and/or modify 
- * it under the terms of the GNU General Public License as published by 
- * the Free Software Foundation; either version 2 of the License, or (at 
- * your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
- * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License 
- * for more details.
- *
- * You should have received a copy of the GNU General Public License along 
- * with this program; if not, write to the Free Software Foundation, Inc., 
- * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
+ * netsniff-ng - the packet sniffing beast
+ * By Daniel Borkmann <daniel@netsniff-ng.org>
+ * Copyright 2009, 2010 Daniel Borkmann.
+ * Copyright 2009, 2010 Emmanuel Roullit.
+ * Subject to the GPL.
  */
 
 /*
@@ -42,10 +31,10 @@
 #include <stdio.h>
 #include <assert.h>
 #include <arpa/inet.h>
-#include <linux/filter.h>
 
 #include "bpf.h"
-#include "macros.h"
+#include "xmalloc.h"
+#include "error_and_die.h"
 
 /*
  * The instruction encodings.
@@ -103,26 +92,24 @@
 #define		BPF_TAX		0x00
 #define		BPF_TXA		0x80
 
-#define EXTRACT_SHORT(packet)	((unsigned short) ntohs(*(unsigned short *) packet))
-#define EXTRACT_LONG(packet)		(ntohl(*(unsigned long *) packet))
+/* This is a bug in libpcap, they actually use 'unsigned long' instead
+ * of short! */
+#define EXTRACT_SHORT(packet)						\
+		((unsigned short) ntohs(*(unsigned short *) packet))
+#define EXTRACT_LONG(packet)						\
+		(ntohl(*(unsigned long *) packet))
 
 /*
  * Number of scratch memory words for: BPF_ST and BPF_STX
  */
 #ifndef BPF_MEMWORDS
 # define BPF_MEMWORDS 16
-#endif				/* BPF_MEMWORDS */
+#endif /* BPF_MEMWORDS */
 
-/**
- * bpf_dump - Prints bpf program in human readable format. Switch-case code
- *            taken with the above copyright.
- * @bpf:     bpf program
- */
 static char *bpf_dump(const struct sock_filter bpf, int n)
 {
 	int v;
 	const char *fmt, *op;
-
 	static char image[256];
 	char operand[64];
 
@@ -357,47 +344,51 @@ static char *bpf_dump(const struct sock_filter bpf, int n)
 		break;
 	}
 
+	/* XXX: Tell gcc that this here is okay for us */
 	snprintf(operand, sizeof(operand), fmt, v);
 	snprintf(image, sizeof(image),
 		 (BPF_CLASS(bpf.code) == BPF_JMP &&
 		  BPF_OP(bpf.code) != BPF_JA) ?
-		 "(%03d) %-8s %-16s jt %d\tjf %d" : "(%03d) %-8s %s", n, op,
-		 operand, n + 1 + bpf.jt, n + 1 + bpf.jf);
+		 "(%03d) %-8s %-16s jt %d\tjf %d" : "(%03d) %-8s %s",
+		 n, op, operand, n + 1 + bpf.jt, n + 1 + bpf.jf);
 	return image;
 }
 
-/**
- * bpf_dump_all - Returns non-wireless bitrate in Mb/s (via ethtool)
- * @bpf:         bpf program
- * @len:         len of bpf
- */
 void bpf_dump_all(struct sock_fprog *bpf)
 {
 	int i;
-
-	assert(bpf);
-
-	for (i = 0; i < bpf->len; ++i) {
-		info(" %s\n", bpf_dump(bpf->filter[i], i));
-	}
-
-	info("\n");
+	for (i = 0; i < bpf->len; ++i)
+		printf("%s\n", bpf_dump(bpf->filter[i], i));
 }
 
-/**
- * bpf_validate - Does basic validation of the user-defined BPF input
- * @bpf:         bpf program
- * @len:         len of bpf
- */
+void bpf_attach_to_sock(int sock, struct sock_fprog *bpf)
+{
+	/* See Documentation/networking/filter.txt */
+	int ret = setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER, bpf,
+			     sizeof(*bpf));
+	if (ret < 0)
+		error_and_die(EXIT_FAILURE, "Cannot attach filter to "
+			      "socket!\n");
+}
+
+void bpf_detach_from_sock(int sock)
+{
+	int ret, empty = 0;
+	/* See Documentation/networking/filter.txt */
+	ret = setsockopt(sock, SOL_SOCKET, SO_DETACH_FILTER, &empty,
+			 sizeof(empty));
+	if (ret < 0)
+		error_and_die(EXIT_FAILURE, "Cannot detach filter from "
+			      "socket!\n");
+}
+
 int bpf_validate(const struct sock_fprog *bpf)
 {
 	uint32_t i, from;
 	const struct sock_filter *p;
 
-	/* File parsing got nothing usefull  */
 	if (!bpf)
 		return 0;
-
 	if (bpf->len < 1)
 		return 0;
 
@@ -495,8 +486,8 @@ int bpf_validate(const struct sock_fprog *bpf)
 			case BPF_JGT:
 			case BPF_JGE:
 			case BPF_JSET:
-				if (from + p->jt >= bpf->len
-				    || from + p->jf >= bpf->len)
+				if (from + p->jt >= bpf->len ||
+				    from + p->jf >= bpf->len)
 					return 0;
 				break;
 			default:
@@ -515,16 +506,8 @@ int bpf_validate(const struct sock_fprog *bpf)
 	return BPF_CLASS(bpf->filter[bpf->len - 1].code) == BPF_RET;
 }
 
-/**
- * bpf_filter - Berkeley packet filter userspace VM, needed as a 
- *              packet filter for pcap replay
- * @bpf:       bpf program
- * @packet:    network packet
- * @plen:      len of packet
- */
-
-uint32_t bpf_filter(const struct sock_fprog * fcode, uint8_t * packet,
-		    size_t plen)
+uint32_t bpf_run_filter(const struct sock_fprog * fcode, uint8_t * packet,
+		        size_t plen)
 {
 	/* XXX: caplen == len */
 	uint32_t A, X;
@@ -541,7 +524,6 @@ uint32_t bpf_filter(const struct sock_fprog * fcode, uint8_t * packet,
 	bpf = fcode->filter;
 
 	--bpf;
-
 	while (1) {
 
 		++bpf;
@@ -750,6 +732,57 @@ uint32_t bpf_filter(const struct sock_fprog * fcode, uint8_t * packet,
 			A = X;
 			continue;
 		}
-
 	}
+}
+
+void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf)
+{
+	int ret;
+	char buff[256];
+	struct sock_filter sf_single = { 0x06, 0, 0, 0xFFFFFFFF };
+
+	if (rulefile == NULL) {
+		bpf->len = 1;
+		bpf->filter = xmalloc(sizeof(sf_single));
+		memcpy(&bpf->filter[0], &sf_single, sizeof(sf_single));
+		return;
+	}
+
+	FILE *fp = fopen(rulefile, "r");
+	if (!fp)
+		error_and_die(EXIT_FAILURE, "Cannot read BPF rule file!\n");
+
+	memset(buff, 0, sizeof(buff));
+
+	while (fgets(buff, sizeof(buff), fp) != NULL) {
+		buff[sizeof(buff) - 1] = 0;
+
+		/* A comment. Skip this line */
+		if (buff[0] != '{')
+			continue;
+
+		memset(&sf_single, 0, sizeof(sf_single));
+		ret = sscanf(buff, "{ 0x%x, %u, %u, 0x%08x },",
+			     (unsigned int *) &sf_single.code,
+			     (unsigned int *) &sf_single.jt,
+			     (unsigned int *) &sf_single.jf,
+			     (unsigned int *) &sf_single.k);
+		if (ret != 4)
+			/* No valid bpf opcode format or a syntax error */
+			error_and_die(EXIT_FAILURE, "BPF syntax error!\n");
+
+		bpf->len++;
+		bpf->filter = xrealloc(bpf->filter, 1,
+				       bpf->len * sizeof(sf_single));
+		memcpy(&bpf->filter[bpf->len - 1], &sf_single,
+		       sizeof(sf_single));
+
+		memset(buff, 0, sizeof(buff));
+	}
+
+	fclose(fp);
+
+	if (bpf_validate(bpf) == 0)
+		error_and_die(EXIT_FAILURE, "This is not a valid BPF "
+			      "program!\n");
 }
