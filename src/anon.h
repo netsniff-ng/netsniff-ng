@@ -8,6 +8,10 @@
 #ifndef ANON_H
 #define ANON_H
 
+#ifndef COMPILER_H
+# error "Never include <anon.h> directly; use <compiler.h> instead."
+#endif
+
 /*
  * This is a macro for using anonymous functions in C. Be aware of not
  * accessing variables on the same scope where the function is defined
