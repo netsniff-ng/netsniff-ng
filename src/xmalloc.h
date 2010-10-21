@@ -8,6 +8,8 @@
 #ifndef XMALLOC_H
 #define XMALLOC_H
 
+extern void muntrace_handler(int signal);
+
 extern void *xmalloc(size_t size);
 extern void *xzmalloc(size_t size);
 extern void *xcalloc(size_t nmemb, size_t size);

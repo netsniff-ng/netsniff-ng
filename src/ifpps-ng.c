@@ -601,8 +601,9 @@ int main(int argc, char **argv)
 	if (device_mtu(ifname) == 0)
 		error_and_die(EXIT_FAILURE, "This is no networking device!\n");
 
-	register_signal(SIGINT, &signal_handler);
-	register_signal(SIGHUP, &signal_handler);
+	register_signal(SIGINT, signal_handler);
+	register_signal(SIGHUP, signal_handler);
+	register_signal(SIGSEGV, muntrace_handler);
 
 	ret = main_loop(ifname, interval);
 

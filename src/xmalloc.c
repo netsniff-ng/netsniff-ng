@@ -48,6 +48,12 @@ void mcheck_abort(enum mcheck_status stat)
 			      "detected: %d\n", stat);
 }
 
+void muntrace_handler(int signal)
+{
+	muntrace();
+	abort();
+}
+
 void *xmalloc(size_t size)
 {
 	void *ptr;
@@ -61,6 +67,7 @@ void *xmalloc(size_t size)
 		if (ret < 0)
 			error_and_die(EXIT_FAILURE, "xmalloc: cannot init "
 				      "mcheck! bug\n");
+		mtrace();
 		mcheck_init = 0;
 	}
 
@@ -90,6 +97,7 @@ void *xzmalloc(size_t size)
 		if (ret < 0)
 			error_and_die(EXIT_FAILURE, "xmalloc: cannot init "
 				      "mcheck! bug\n");
+		mtrace();
 		mcheck_init = 0;
 	}
 
@@ -125,6 +133,7 @@ void *xcalloc(size_t nmemb, size_t size)
 		if (ret < 0)
 			error_and_die(EXIT_FAILURE, "xmalloc: cannot init "
 				      "mcheck! bug\n");
+		mtrace();
 		mcheck_init = 0;
 	}
 
@@ -160,6 +169,7 @@ void *xrealloc(void *ptr, size_t nmemb, size_t size)
 		if (ret < 0)
 			error_and_die(EXIT_FAILURE, "xmalloc: cannot init "
 				      "mcheck! bug\n");
+		mtrace();
 		mcheck_init = 0;
 	}
 
@@ -194,6 +204,7 @@ void xfree(void *ptr)
 		if (ret < 0)
 			error_and_die(EXIT_FAILURE, "xmalloc: cannot init "
 				      "mcheck! bug\n");
+		mtrace();
 		mcheck_init = 0;
 	}
 

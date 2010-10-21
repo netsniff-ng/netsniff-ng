@@ -570,9 +570,10 @@ int main(int argc, char **argv)
 	if (!mode.device_in)
 		mode.device_in = "any";
 
-	register_signal(SIGINT, &signal_handler);
-	register_signal(SIGHUP, &signal_handler);
-	register_signal(SIGUSR1, &signal_handler);
+	register_signal(SIGINT, signal_handler);
+	register_signal(SIGHUP, signal_handler);
+	register_signal(SIGUSR1, signal_handler);
+	register_signal(SIGSEGV, muntrace_handler);
 
 	tprintf_init();
 	header();
