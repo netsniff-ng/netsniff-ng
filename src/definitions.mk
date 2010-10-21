@@ -3,6 +3,8 @@
 # Author: Daniel Borkmann
 #
 
+# For mem debugging add -D_DEBUG_
+
 LD_NORM      = echo "LD        $(target)"; \
                gcc -pie -z relo
 CC_NORM      = echo "CC        $<";        \
@@ -31,7 +33,7 @@ ifneq ($(or $(call eq,$(MAKECMDGOALS),"all"), $(call eq,$(MAKECMDGOALS),"")),)
 	CFLAGS += -Wall -Werror -Wundef -Wstrict-prototypes -Wno-trigraphs   \
 		  -Werror-implicit-function-declaration -Wno-format-security \
 		  -Wcomments -Wendif-labels -Wno-long-long -Wuninitialized   \
-		  -Wstrict-overflow
+		  -Wstrict-overflow -D_REENTRANT
 endif
 
 ifeq ($(MAKECMDGOALS), debug)

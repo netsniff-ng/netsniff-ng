@@ -9,7 +9,8 @@
  * Copyright (C) 1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland, 
  *                    All rights reserved
  * Copyright (C) 2010 Daniel Borkmann <daniel@netsniff-ng.org>,
- *                    Ported from SSH and added several other stuff
+ *                    Ported from SSH and added several other functions and
+ *                    heap consistency checks
  *
  * Versions of malloc and friends that check their results, and never return
  * failure (they call fatal if they encounter an error).
@@ -21,56 +22,97 @@
  * called by a name other than "ssh" or "Secure Shell".
  */
 
+#define _GNU_SOURCE
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <mcheck.h>
 
 #ifndef SIZE_T_MAX
 # define SIZE_T_MAX  ((size_t) ~0)
 #endif
 
 #include "xmalloc.h"
+#include "compiler.h"
 #include "strlcpy.h"
 #include "tty.h"
 #include "error_and_die.h"
 
+static int mcheck_init = 1;
+
+void mcheck_abort(enum mcheck_status stat)
+{
+	if (stat != MCHECK_OK)
+		error_and_die(EXIT_FAILURE, "mcheck: mem inconsistency "
+			      "detected: %d\n", stat);
+}
+
 void *xmalloc(size_t size)
 {
 	void *ptr;
+	enum mcheck_status stat;
 
 	if (size == 0)
 		error_and_die(EXIT_FAILURE, "xmalloc: zero size\n");
+
+	if (unlikely(mcheck_init)) {
+		int ret = mcheck_pedantic(mcheck_abort);
+		if (ret < 0)
+			error_and_die(EXIT_FAILURE, "xmalloc: cannot init "
+				      "mcheck! bug\n");
+		mcheck_init = 0;
+	}
 
 	ptr = malloc(size);
 	if (ptr == NULL)
 		error_and_die(EXIT_FAILURE, "xmalloc: out of memory "
 			      "(allocating %lu bytes)\n", (u_long) size);
-	debug_blue("%p: %zu", ptr, size);
+	stat = mprobe(ptr);
+	if (stat != MCHECK_OK)
+		error_and_die(EXIT_FAILURE, "xmalloc: mem inconsistency "
+			      "detected: %d\n", stat);
 
+	debug_blue("%p: %zu", ptr, size);
 	return ptr;
 }
 
 void *xzmalloc(size_t size)
 {
 	void *ptr;
+	enum mcheck_status stat;
 
 	if (size == 0)
 		error_and_die(EXIT_FAILURE, "xzmalloc: zero size\n");
+
+	if (unlikely(mcheck_init)) {
+		int ret = mcheck_pedantic(mcheck_abort);
+		if (ret < 0)
+			error_and_die(EXIT_FAILURE, "xmalloc: cannot init "
+				      "mcheck! bug\n");
+		mcheck_init = 0;
+	}
 
 	ptr = malloc(size);
 	if (ptr == NULL)
 		error_and_die(EXIT_FAILURE, "xzmalloc: out of memory "
 			      "(allocating %lu bytes)\n", (u_long) size);
-	memset(ptr, 0, size);
-	debug_blue("%p: %zu", ptr, size);
 
+	stat = mprobe(ptr);
+	if (stat != MCHECK_OK)
+		error_and_die(EXIT_FAILURE, "xzmalloc: mem inconsistency "
+			      "detected: %d\n", stat);
+
+	memset(ptr, 0, size);
+
+	debug_blue("%p: %zu", ptr, size);
 	return ptr;
 }
 
 void *xcalloc(size_t nmemb, size_t size)
 {
 	void *ptr;
+	enum mcheck_status stat;
 
 	if (size == 0 || nmemb == 0)
 		error_and_die(EXIT_FAILURE, "xcalloc: zero size\n");
@@ -78,13 +120,26 @@ void *xcalloc(size_t nmemb, size_t size)
 		error_and_die(EXIT_FAILURE, "xcalloc: nmemb * size > "
 			      "SIZE_T_MAX\n");
 
+	if (unlikely(mcheck_init)) {
+		int ret = mcheck_pedantic(mcheck_abort);
+		if (ret < 0)
+			error_and_die(EXIT_FAILURE, "xmalloc: cannot init "
+				      "mcheck! bug\n");
+		mcheck_init = 0;
+	}
+
 	ptr = calloc(nmemb, size);
 	if (ptr == NULL)
 		error_and_die(EXIT_FAILURE, "xcalloc: out of memory "
 			      "(allocating %lu bytes)\n",
 			      (u_long) (size * nmemb));
-	debug_blue("%p: %zu", ptr, size);
 
+	stat = mprobe(ptr);
+	if (stat != MCHECK_OK)
+		error_and_die(EXIT_FAILURE, "xcalloc: mem inconsistency "
+			      "detected: %d\n", stat);
+
+	debug_blue("%p: %zu", ptr, size);
 	return ptr;
 }
 
@@ -92,12 +147,21 @@ void *xrealloc(void *ptr, size_t nmemb, size_t size)
 {
 	void *new_ptr;
 	size_t new_size = nmemb * size;
+	enum mcheck_status stat;
 
 	if (new_size == 0)
 		error_and_die(EXIT_FAILURE, "xrealloc: zero size\n");
 	if (SIZE_T_MAX / nmemb < size)
 		error_and_die(EXIT_FAILURE, "xrealloc: nmemb * size > "
 			      "SIZE_T_MAX\n");
+
+	if (unlikely(mcheck_init)) {
+		int ret = mcheck_pedantic(mcheck_abort);
+		if (ret < 0)
+			error_and_die(EXIT_FAILURE, "xmalloc: cannot init "
+				      "mcheck! bug\n");
+		mcheck_init = 0;
+	}
 
 	if (ptr == NULL)
 		new_ptr = malloc(new_size);
@@ -107,16 +171,37 @@ void *xrealloc(void *ptr, size_t nmemb, size_t size)
 	if (new_ptr == NULL)
 		error_and_die(EXIT_FAILURE, "xrealloc: out of memory "
 			      "(new_size %lu bytes)\n", (u_long) new_size);
-	debug_blue("%p: %zu => %p: %zu", ptr, size, new_ptr, new_size);
 
+	stat = mprobe(ptr);
+	if (stat != MCHECK_OK)
+		error_and_die(EXIT_FAILURE, "xrealloc: mem inconsistency "
+			      "detected: %d\n", stat);
+
+	debug_blue("%p: %zu => %p: %zu", ptr, size, new_ptr, new_size);
 	return new_ptr;
 }
 
 void xfree(void *ptr)
 {
+	enum mcheck_status stat;
+
 	if (ptr == NULL)
 		error_and_die(EXIT_FAILURE, "xfree: NULL pointer given as "
 			      "argument\n");
+
+	if (unlikely(mcheck_init)) {
+		int ret = mcheck_pedantic(mcheck_abort);
+		if (ret < 0)
+			error_and_die(EXIT_FAILURE, "xmalloc: cannot init "
+				      "mcheck! bug\n");
+		mcheck_init = 0;
+	}
+
+	stat = mprobe(ptr);
+	if (stat != MCHECK_OK)
+		error_and_die(EXIT_FAILURE, "xfree: mem inconsistency "
+			      "detected: %d\n", stat);
+
 	debug_blue("%p => 0", ptr);
 
 	free(ptr);
