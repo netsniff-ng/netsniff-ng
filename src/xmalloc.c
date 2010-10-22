@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <mcheck.h>
+#include <unistd.h>
 
 #ifndef SIZE_T_MAX
 # define SIZE_T_MAX  ((size_t) ~0)
@@ -115,6 +116,25 @@ void *xzmalloc(size_t size)
 
 	debug_blue("%p: %zu", ptr, size);
 	return ptr;
+}
+
+void *xmallocz(size_t size)
+{
+	void *ptr;
+
+	if (size + 1 < size)
+		error_and_die(EXIT_FAILURE, "xmallocz: data too large to fit "
+			      "into virtual memory space\n");
+
+	ptr = xmalloc(size + 1);
+	((char*) ptr)[size] = 0;
+
+	return ptr;
+}
+
+void *xmemdupz(const void *data, size_t len)
+{
+	return memcpy(xmallocz(len), data, len);
 }
 
 void *xcalloc(size_t nmemb, size_t size)
@@ -238,9 +258,19 @@ char *xstrndup(const char *str, size_t size)
 	len = strlen(str) + 1;
 	if (size < len)
 		len = size;
+
 	cp = xmalloc(len);
 	strlcpy(cp, str, len);
 
 	return cp;
+}
+
+int xdup(int fd)
+{
+	int ret = dup(fd);
+	if (ret < 0)
+		error_and_die(EXIT_FAILURE, "xdup: dup failed\n");
+
+	return ret;
 }
 
