@@ -8,7 +8,7 @@
 /*
  * Copyright (C) 1997-2004, Makoto Matsumoto, Takuji Nishimura, and
  * Eric Landry; All rights reserved.
- * Daniel Borkmann: Refactored, added two initialization functions.
+ * Daniel Borkmann: Refactored, added initialization functions.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -48,10 +48,14 @@
  * Vol. 8, No. 1, January 1998, pp 3--30.
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include "mersenne_twister.h"
+#include "write_or_die.h"
 
 #define N           624
 #define M           397
@@ -158,6 +162,22 @@ void mt_init_by_seed_rand_array(void)
 	srand((unsigned int) time(NULL));
 	for (i = 0; i < LEN_INIT; i++)
 		k[i] = rand();
+
+	mt_init_by_seed_array(k, LEN_INIT);
+}
+
+/*
+ * Initialize by an random array read from /dev/random
+ */
+void mt_init_by_random_device(void)
+{
+	int fd;
+	unsigned long k[LEN_INIT];
+
+	fd = open_or_die("/dev/random", O_RDONLY);
+	read_or_die(fd, k, sizeof(unsigned long) * LEN_INIT);
+	close(fd);
+
 	mt_init_by_seed_array(k, LEN_INIT);
 }
 
