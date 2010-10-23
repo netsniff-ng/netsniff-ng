@@ -272,7 +272,7 @@ static int arp_flood(const char *ifname, int obfuscate)
 				     sizeof(pkt_arp_response), 0, &s_addr,
 				     sizeof(s_addr));
 			if (ret < 0) {
-				whine("Cannot send arp packet!\n");
+				whine("Cannot send arp packet! Interface down?\n");
 				goto out;
 			}
 
