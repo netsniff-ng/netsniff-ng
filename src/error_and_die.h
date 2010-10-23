@@ -105,6 +105,45 @@ static inline void debug_green(char *msg, ...)
 }
 #endif /* _DEBUG_ */
 
+static inline void print_blue(char *msg, ...)
+{
+	va_list vl;
+
+	fprintf(stdout, "%s", colorize_start_full(white, blue));
+	va_start(vl, msg);
+	vfprintf(stdout, msg, vl);
+	va_end(vl);
+	fprintf(stdout, "%s\n", colorize_end());
+
+	fflush(stdout);
+}
+
+static inline void print_red(char *msg, ...)
+{
+	va_list vl;
+
+	fprintf(stdout, "%s", colorize_start_full(white, red));
+	va_start(vl, msg);
+	vfprintf(stdout, msg, vl);
+	va_end(vl);
+	fprintf(stdout, "%s\n", colorize_end());
+
+	fflush(stdout);
+}
+
+static inline void print_green(char *msg, ...)
+{
+	va_list vl;
+
+	fprintf(stdout, "%s", colorize_start_full(white, green));
+	va_start(vl, msg);
+	vfprintf(stdout, msg, vl);
+	va_end(vl);
+	fprintf(stdout, "%s\n", colorize_end());
+
+	fflush(stdout);
+}
+
 static inline void puke_and_die_num(int status, int num, char *msg, ...)
 {
 	va_list vl;

@@ -13,6 +13,7 @@ core-objs  = arphunt-ng.o
 lib-objs   = xmalloc.o                  \
 	     strlcpy.o                  \
 	     system.o                   \
+	     bpf.o                      \
 	     mersenne_twister.o         \
 	     write_or_die.o             \
 	     netdev.o
