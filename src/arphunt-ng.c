@@ -478,7 +478,7 @@ static int arp_loop(const char *ifname, const char *routing_table,
 {
 	int sock;
 
-	printf("MD: RED%s\n\n", obfuscate ? " OBCTE" : "");
+	printf("MD: RED ZNE\n\n");
 
 	arptable.entries = xmalloc(sizeof(*arptable.entries) * DEFAULT_INTERCEPTS);
 	arptable.size = DEFAULT_INTERCEPTS;
