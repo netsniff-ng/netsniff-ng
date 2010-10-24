@@ -180,7 +180,7 @@ static void help(void)
 	printf("  -f|--flood             Flood network with random ARP replies\n");
 	printf("  -p|--prefix <pfix>     Use IP prefix like \'192.168\' for generation\n");
 	printf("  -c|--count <num>       Flood with \'num\' packets and exit\n");
-	printf("  -o|--obfuscate         Try to be more calm\n");
+	printf("  -o|--obfuscate         Try to be more calm by adding jitter\n");
 	printf("  -n|--other             Disable use of gratuitous replies\n");
 	printf("  -V|--verbose           Be more verbose\n");
 	printf("  -v|--version           Print version\n");
