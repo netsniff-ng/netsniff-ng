@@ -320,8 +320,10 @@ static void parse_routing_table(const char *file)
 		ptr = ptrb = buff;
 
 		/* A comment. Skip this line */
-		if (*ptr == '#')
+		if (*ptr == '#') {
+			memset(buff, 0, sizeof(buff));
 			continue;
+		}
 
 		if (routec >= routetable.size) {
 			routetable.size += 32;
@@ -415,8 +417,10 @@ static void parse_connection_table(const char *file)
 		ptr = ptrb = buff;
 
 		/* A comment. Skip this line */
-		if (buff[0] == '#')
+		if (buff[0] == '#') {
+			memset(buff, 0, sizeof(buff));
 			continue;
+		}
 
 		if (aggrc >= agresstable.size) {
 			agresstable.size += 32;
@@ -470,7 +474,7 @@ static void parse_connection_table(const char *file)
 }
 
 static int arp_loop(const char *ifname, const char *routing_table,
-		    const char *connections, int obfuscate)
+		    const char *connections)
 {
 	int sock;
 
@@ -745,7 +749,7 @@ int main(int argc, char **argv)
 	if (flood)
 		ret = arp_flood(ifname, prefix, obfuscate, count, other);
 	else
-		ret = arp_loop(ifname, routing_table, connections, obfuscate);
+		ret = arp_loop(ifname, routing_table, connections);
 
 	xfree(ifname);
 	if (prefix)

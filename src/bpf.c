@@ -758,8 +758,10 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf)
 		buff[sizeof(buff) - 1] = 0;
 
 		/* A comment. Skip this line */
-		if (buff[0] != '{')
+		if (buff[0] != '{') {
+			memset(buff, 0, sizeof(buff));
 			continue;
+		}
 
 		memset(&sf_single, 0, sizeof(sf_single));
 		ret = sscanf(buff, "{ 0x%x, %u, %u, 0x%08x },",
