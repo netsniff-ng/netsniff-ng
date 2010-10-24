@@ -191,8 +191,12 @@ static void help(void)
 	printf("  arphunt-ng --dev eth0 --agressive <conn.txt> --routing <table.txt>\n");
 	printf("\n");
 	printf("Note:\n");
-	printf("  - Sending a SIGUSR1 will show internal tables\n");
+	printf("  - Sending a SIGUSR1 will show internal lookup tables\n");
 	printf("  - For more help try \'man arphunt-ng\'\n");
+	printf("  - This tool has been written for research, so only use it\n");
+	printf("    for such a purpose within an isolated testing network to\n");
+	printf("    not cause damages! By using arphunt-ng you are agreeing\n");
+	printf("    to this!\n");
 	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2009, 2010 Daniel Borkmann\n");
@@ -279,7 +283,7 @@ static int arp_loop(const char *ifname, char *prefix,
 		    const char *routing_table,
 		    const char *connections, int obfuscate)
 {
-	printf("MD: MITM%s\n\n", obfuscate ? " OBCTE" : "");
+	printf("MD: RED%s\n\n", obfuscate ? " OBCTE" : "");
 
 	return 0;
 }
