@@ -14,6 +14,7 @@ lib-objs   = xmalloc.o                  \
 	     strlcpy.o                  \
 	     system.o                   \
 	     bpf.o                      \
+	     hash.o                     \
 	     mersenne_twister.o         \
 	     write_or_die.o             \
 	     netdev.o

