@@ -181,7 +181,7 @@ static void help(void)
 	printf("  -p|--prefix <pfix>     Use IP prefix like \'192.168\' for generation\n");
 	printf("  -c|--count <num>       Flood with \'num\' packets and exit\n");
 	printf("  -o|--obfuscate         Try to be more calm\n");
-	printf("  -n|--other             Use other address than sender address\n");
+	printf("  -n|--other             Disable use of gratuitous replies\n");
 	printf("  -V|--verbose           Be more verbose\n");
 	printf("  -v|--version           Print version\n");
 	printf("  -h|--help              Print this help\n");
