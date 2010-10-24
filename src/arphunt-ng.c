@@ -51,6 +51,7 @@
 #define DEFAULT_INTERCEPTS  2000
 #define DEFAULT_ROUTES      32
 #define DEFAULT_AGRESSIVE   64
+#define REFRESH_CHECKS	    1
 
 struct arp_entry {
 	struct ether_addr eth;
@@ -60,6 +61,7 @@ struct arp_entry {
 struct arp_table {
 	struct arp_entry *entries;
 	uint32_t count;
+	uint32_t size;
 };
 
 struct refresh_entry {
@@ -73,17 +75,19 @@ struct refresh_entry {
 struct refresh_table {
 	struct refresh_entry *entries;
 	uint32_t count;
+	uint32_t size;
 };
 
 struct routing_entry {
-	uint32_t network;
-	uint32_t netmask;
+	struct in_addr network;
+	struct in_addr netmask;
 	struct in_addr gateway;
 };
 
 struct routing_table {
 	struct routing_entry *entries;
 	uint32_t count;
+	uint32_t size;
 };
 
 struct agressive_entry {
@@ -93,6 +97,7 @@ struct agressive_entry {
 struct agressive_table {
 	struct agressive_entry *entries;
 	uint32_t count;
+	uint32_t size;
 };
 
 static sig_atomic_t sigint = 0;
@@ -130,6 +135,11 @@ static struct option long_options[] = {
 #define ARPOP_InREPLY   9    /* InARP reply                */
 #define ARPOP_NAK       10   /* (ATM)ARP NAK               */
 
+#define PROTO_ARP 0x0806 
+#define PROTO_IP  0x0800
+
+#define IP_ALEN         4
+
 struct arppkt {
 	uint8_t h_dest[6];   /* destination ether addr     */
 	uint8_t h_source[6]; /* source ether addr          */
@@ -148,8 +158,6 @@ struct arppkt {
 //static struct arppkt pkt_arp_request;
 static struct arppkt pkt_arp_response;
 
-#define IP_ALEN 4
-
 static struct hash_table ethernet_oui;
 
 static void signal_handler(int number)
@@ -166,6 +174,15 @@ static void signal_handler(int number)
 	default:
 		break;
 	}
+}
+
+static void alarm_handler(int number)
+{
+//	arp_refresh();
+//	if (agressive_goflag) 
+//		arp_agressive_intercept();
+
+	alarm(REFRESH_CHECKS);
 }
 
 static void help(void)
@@ -187,8 +204,8 @@ static void help(void)
 	printf("  -h|--help              Print this help\n");
 	printf("\n");
 	printf("Examples:\n");
-	printf("  arphunt-ng --dev eth0 --flood\n");
-	printf("  arphunt-ng --dev eth0 --agressive <conn.txt> --routing <table.txt>\n");
+	printf("  arphunt-ng --dev eth0 --flood --prefix 10.0\n");
+	printf("  arphunt-ng --dev eth0 --agressive conn.txt --routing table.txt\n");
 	printf("\n");
 	printf("Note:\n");
 	printf("  - Sending a SIGUSR1 will show internal lookup tables\n");
@@ -279,19 +296,231 @@ static int prefix_to_addr(char *prefix, uint8_t *ip_pre, size_t len)
 	return ret;
 }
 
-static int arp_loop(const char *ifname, char *prefix,
-		    const char *routing_table,
+static void parse_routing_table(const char *file)
+{
+	int ret, line = 0, routec = routetable.count;
+	char buff[512];
+	char *ptr, *ptrb;
+
+	if (!file)
+		return;
+
+	FILE *fp = fopen(file, "r");
+	if (!fp)
+		error_and_die(EXIT_FAILURE, "Cannot read routing file!\n");
+
+	printf("Routing table:\n");
+	memset(buff, 0, sizeof(buff));
+
+	/* Format: network_address <whitespace>+ netmask <whitespace>+ gateway */
+	while (fgets(buff, sizeof(buff), fp) != NULL) {
+		line++;
+
+		buff[sizeof(buff) - 1] = 0;
+		ptr = ptrb = buff;
+
+		/* A comment. Skip this line */
+		if (*ptr == '#')
+			continue;
+
+		if (routec >= routetable.size) {
+			routetable.size += 32;
+			routetable.entries = xrealloc(routetable.entries, 1,
+						      sizeof(*routetable.entries) *
+						      routetable.size);
+		}
+
+		/* Skip whitespace */
+		while (isblank(*ptr))
+			ptr++;
+
+		/* Network address */
+		ptrb = ptr;
+		while (isdigit(*ptr) || ispunct(*ptr))
+			ptr++;
+		*ptr = 0;
+		ret = inet_aton(ptrb, &routetable.entries[routec].network);
+		if (!ret)
+			error_and_die(EXIT_FAILURE, "Cannot parse network address "
+				      "at line %d!\n", line);
+		ptr++;
+
+		/* Skip whitespace */
+		while (isblank(*ptr))
+			ptr++;
+
+		/* Netmask */
+		ptrb = ptr;
+		while (isdigit(*ptr) || ispunct(*ptr))
+			ptr++;
+		*ptr = 0;
+		ret = inet_aton(ptrb, &routetable.entries[routec].netmask);
+		if (!ret)
+			error_and_die(EXIT_FAILURE, "Cannot parse netmask at "
+				      "line %d!\n", line);
+		ptr++;
+
+		/* Skip whitespace */
+		while (isblank(*ptr))
+			ptr++;
+
+		/* Gateway */
+		ptrb = ptr;
+		while (isdigit(*ptr) || ispunct(*ptr))
+			ptr++;
+		*ptr = 0;
+		ret = inet_aton(ptrb, &routetable.entries[routec].gateway);
+		if (!ret)
+			error_and_die(EXIT_FAILURE, "Cannot parse gateway address at "
+				      "line %d!\n", line);
+		ptr++;
+
+		/* This is a bug in inet_ntoa since it is using a static buffer! */
+		printf("%d: %s/", line,
+		       inet_ntoa(routetable.entries[routec].network));
+		printf("%s via ",
+		       inet_ntoa(routetable.entries[routec].netmask));
+		printf("%s\n", 
+		       inet_ntoa(routetable.entries[routec].gateway));
+
+		memset(buff, 0, sizeof(buff));
+		routec++;
+	}
+
+	routetable.count = routec;
+	fclose(fp);
+}
+
+static void parse_connection_table(const char *file)
+{
+	int ret, line = 0, aggrc = agresstable.count;
+	char buff[512];
+	char *ptr, *ptrb;
+
+	if (!file)
+		return;
+
+	FILE *fp = fopen(file, "r");
+	if (!fp)
+		error_and_die(EXIT_FAILURE, "Cannot read routing file!\n");
+
+	printf("Agressive host table:\n");
+	memset(buff, 0, sizeof(buff));
+
+	/* Format: host1 <whitespace>+ host2 */
+	while (fgets(buff, sizeof(buff), fp) != NULL) {
+		line++;
+
+		buff[sizeof(buff) - 1] = 0;
+		ptr = ptrb = buff;
+
+		/* A comment. Skip this line */
+		if (buff[0] == '#')
+			continue;
+
+		if (aggrc >= agresstable.size) {
+			agresstable.size += 32;
+			agresstable.entries = xrealloc(agresstable.entries, 1,
+						       sizeof(*agresstable.entries) *
+						       agresstable.size);
+		}
+
+		/* Skip whitespace */
+		while (isblank(*ptr))
+			ptr++;
+
+		/* Host address 1 */
+		ptrb = ptr;
+		while (isdigit(*ptr) || ispunct(*ptr))
+			ptr++;
+		*ptr = 0;
+		ret = inet_aton(ptrb, &agresstable.entries[aggrc].host1);
+		if (!ret)
+			error_and_die(EXIT_FAILURE, "Cannot parse host address 1 "
+				      "at line %d!\n", line);
+		ptr++;
+
+		/* Skip whitespace */
+		while (isblank(*ptr))
+			ptr++;
+
+		/* Host address 2 */
+		ptrb = ptr;
+		while (isdigit(*ptr) || ispunct(*ptr))
+			ptr++;
+		*ptr = 0;
+		ret = inet_aton(ptrb, &agresstable.entries[aggrc].host2);
+		if (!ret)
+			error_and_die(EXIT_FAILURE, "Cannot parse host address 2 "
+				      "at line %d!\n", line);
+		ptr++;
+
+		/* This is a bug in inet_ntoa since it is using a static buffer! */
+		printf("%d: %s <=> ", line,
+		       inet_ntoa(agresstable.entries[aggrc].host1));
+		printf("%s\n",
+		       inet_ntoa(agresstable.entries[aggrc].host2));
+
+		memset(buff, 0, sizeof(buff));
+		aggrc++;
+	}
+
+	agresstable.count = aggrc;
+	fclose(fp);
+}
+
+static int arp_loop(const char *ifname, const char *routing_table,
 		    const char *connections, int obfuscate)
 {
+	int sock;
+
 	printf("MD: RED%s\n\n", obfuscate ? " OBCTE" : "");
 
+	arptable.entries = xmalloc(sizeof(*arptable.entries) * DEFAULT_INTERCEPTS);
+	arptable.size = DEFAULT_INTERCEPTS;
+
+	reftable.entries = xmalloc(sizeof(*reftable.entries) * DEFAULT_INTERCEPTS);
+	reftable.size = DEFAULT_INTERCEPTS;
+
+	routetable.entries = xmalloc(sizeof(*routetable.entries) * DEFAULT_ROUTES);
+	routetable.size = DEFAULT_ROUTES;
+
+	agresstable.entries = xmalloc(sizeof(*agresstable.entries) * DEFAULT_AGRESSIVE);
+	agresstable.size = DEFAULT_AGRESSIVE;
+
+	parse_routing_table(routing_table);
+	parse_connection_table(connections);
+
+	alarm(REFRESH_CHECKS);
+
+	sock = pf_socket();
+
+	/* TODO: send out agressive requests */
+
+	/*
+	 * Even if we would like this, but we cannot use a RX_RING here, because
+	 * doing so would effect running netsniff-ng with its RX_RING. Binding a
+	 * socket to the device would register the packet hook function in the
+	 * kernel twice, so basically we would end up with a big mess. We're
+	 * falling back to recvfrom(2) in this case and see if we can replace this
+	 * with vmsplice(2) or others later.
+	 */
+	while (likely(!sigint)) {
+		/* TODO: loop */
+	}
+
+	close(sock);
+	xfree(arptable.entries);
+	xfree(reftable.entries);
+	xfree(routetable.entries);
+	xfree(agresstable.entries);
 	return 0;
 }
 
 static int arp_flood(const char *ifname, char *prefix, int obfuscate,
 		     int count, int other)
 {
-	int i, j, limit, sock, pre_len;
+	int i, j, limit, sock, pre_len, ifindex;
 	uint32_t secs = mt_rand_int32() % 30;
 	uint32_t vendor;
 	uint8_t mac_addr[ETH_ALEN];
@@ -301,19 +530,11 @@ static int arp_flood(const char *ifname, char *prefix, int obfuscate,
 	ssize_t ret;
 	struct in_addr ipa;
 	struct sockaddr_ll s_addr;
-	struct ifreq if_req;
 
 	printf("MD: FLD%s\n\n", obfuscate ? " OBCTE" : "");
 
 	sock = pf_socket();
-
-	memset(&if_req, 0, sizeof(if_req));
-	strlcpy(if_req.ifr_name, ifname, IFNAMSIZ);
-	ret = ioctl(sock, SIOCGIFINDEX, &if_req);
-	if (ret < 0)
-		error_and_die(EXIT_FAILURE, "Cannot ioctl ifname!\n");
-
-	pre_len = 0;
+	ifindex = device_ifindex(ifname);
 	pre_len = prefix_to_addr(prefix, ip_pre, sizeof(ip_pre));
 
 	while (likely(!sigint) && count != 0) {
@@ -324,11 +545,11 @@ static int arp_flood(const char *ifname, char *prefix, int obfuscate,
 		for (i = 0; i < limit && count != 0; ++i) {
 			memset(&pkt_arp_response, 0, sizeof(pkt_arp_response));
 
-			pkt_arp_response.h_proto = htons(0x0806);
+			pkt_arp_response.h_proto = htons(PROTO_ARP);
 			pkt_arp_response.ar_hrd = htons(1);
-			pkt_arp_response.ar_pro = htons(0x0800);
-			pkt_arp_response.ar_hln = 6;
-			pkt_arp_response.ar_pln = 4;
+			pkt_arp_response.ar_pro = htons(PROTO_IP);
+			pkt_arp_response.ar_hln = ETH_ALEN;
+			pkt_arp_response.ar_pln = IP_ALEN;
 			pkt_arp_response.ar_op = htons(ARPOP_REPLY);
 
 			vendor = mt_rand_int32() %
@@ -390,9 +611,9 @@ static int arp_flood(const char *ifname, char *prefix, int obfuscate,
 
 			memset(&s_addr, 0, sizeof(s_addr));
 			s_addr.sll_family = PF_PACKET;
-			s_addr.sll_protocol = htons(0x0806);
-			s_addr.sll_halen = 6;
-			s_addr.sll_ifindex = if_req.ifr_ifindex;
+			s_addr.sll_protocol = htons(PROTO_ARP);
+			s_addr.sll_halen = ETH_ALEN;
+			s_addr.sll_ifindex = ifindex;
 
 			ret = sendto(sock, &pkt_arp_response,
 				     sizeof(pkt_arp_response), 0,
@@ -514,6 +735,7 @@ int main(int argc, char **argv)
 	register_signal(SIGHUP, signal_handler);
 	register_signal(SIGUSR1, signal_handler);
 	register_signal(SIGSEGV, muntrace_handler);
+	register_signal(SIGALRM, alarm_handler);
 
 	mt_init_by_random_device();
 	init_oui_vendors();
@@ -523,8 +745,7 @@ int main(int argc, char **argv)
 	if (flood)
 		ret = arp_flood(ifname, prefix, obfuscate, count, other);
 	else
-		ret = arp_loop(ifname, prefix, routing_table, connections,
-			       obfuscate);
+		ret = arp_loop(ifname, routing_table, connections, obfuscate);
 
 	xfree(ifname);
 	if (prefix)
