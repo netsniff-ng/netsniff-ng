@@ -108,7 +108,7 @@ static struct refresh_table reftable;
 static struct routing_table routetable;
 static struct agressive_table agresstable;
 
-static const char *short_options = "d:a:r:p:fnc:oVvh";
+static const char *short_options = "d:a:r:p:fnc:otVvh";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -117,6 +117,7 @@ static struct option long_options[] = {
 	{"prefix", required_argument, 0, 'p'},
 	{"count", required_argument, 0, 'c'},
 	{"flood", no_argument, 0, 'f'},
+	{"randdest", no_argument, 0, 't'},
 	{"other", no_argument, 0, 'n'},
 	{"obfuscate", no_argument, 0, 'o'},
 	{"verbose", no_argument, 0, 'V'},
@@ -155,8 +156,7 @@ struct arppkt {
 	uint8_t ar_tip[4];   /* target IP address          */
 } __attribute__((packed));
 
-//static struct arppkt pkt_arp_request;
-static struct arppkt pkt_arp_response;
+static struct arppkt pkt_arp;
 
 static struct hash_table ethernet_oui;
 
@@ -190,15 +190,21 @@ static void help(void)
 	printf("\narphunt-ng %s, the arp redirector\n", VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: arphunt-ng [options]\n");
-	printf("Options:\n");
+	printf("Options for normal mode:\n");
 	printf("  -d|--dev <netdev>      Networking device\n");
 	printf("  -a|--agressive <conn>  Agressive startup with known connections\n");
 	printf("  -r|--routing <table>   Use table file for routing information\n");
+	printf("\n");
+	printf("Options for flooding:\n");
+	printf("  -d|--dev <netdev>      Networking device\n");
 	printf("  -f|--flood             Flood network with random ARP replies\n");
 	printf("  -p|--prefix <pfix>     Use IP prefix like \'192.168\' for generation\n");
 	printf("  -c|--count <num>       Flood with \'num\' packets and exit\n");
+	printf("  -t|--randdest          Do not broadcast, use random hw address\n");
 	printf("  -o|--obfuscate         Try to be more calm by adding jitter\n");
 	printf("  -n|--other             Disable use of gratuitous replies\n");
+	printf("\n");
+	printf("Options, misc:\n");
 	printf("  -V|--verbose           Be more verbose\n");
 	printf("  -v|--version           Print version\n");
 	printf("  -h|--help              Print this help\n");
@@ -507,7 +513,8 @@ static int arp_loop(const char *ifname, const char *routing_table,
 	 * socket to the device would register the packet hook function in the
 	 * kernel twice, so basically we would end up with a big mess. We're
 	 * falling back to recvfrom(2) in this case and see if we can replace this
-	 * with vmsplice(2) or others later.
+	 * with vmsplice(2) or others later. In short: RX_RING is not multithreading
+	 * capable.
 	 */
 	while (likely(!sigint)) {
 		/* TODO: loop */
@@ -522,7 +529,7 @@ static int arp_loop(const char *ifname, const char *routing_table,
 }
 
 static int arp_flood(const char *ifname, char *prefix, int obfuscate,
-		     int count, int other)
+		     int count, int other, int randdest)
 {
 	int i, j, limit, sock, pre_len, ifindex;
 	uint32_t secs = mt_rand_int32() % 30;
@@ -542,19 +549,28 @@ static int arp_flood(const char *ifname, char *prefix, int obfuscate,
 	pre_len = prefix_to_addr(prefix, ip_pre, sizeof(ip_pre));
 
 	while (likely(!sigint) && count != 0) {
-		limit = obfuscate ? 1 + mt_rand_int32() % 10 : 1 + mt_rand_int32() % 12000;
+		limit = obfuscate ? 1 + mt_rand_int32() % 10 : 1 +
+					mt_rand_int32() % 12000;
 
 		printf("Begin flooding %u pkts...\n", limit);
 
 		for (i = 0; i < limit && count != 0; ++i) {
-			memset(&pkt_arp_response, 0, sizeof(pkt_arp_response));
+			memset(&pkt_arp, 0, sizeof(pkt_arp));
 
-			pkt_arp_response.h_proto = htons(PROTO_ARP);
-			pkt_arp_response.ar_hrd = htons(1);
-			pkt_arp_response.ar_pro = htons(PROTO_IP);
-			pkt_arp_response.ar_hln = ETH_ALEN;
-			pkt_arp_response.ar_pln = IP_ALEN;
-			pkt_arp_response.ar_op = htons(ARPOP_REPLY);
+			pkt_arp.h_proto = htons(PROTO_ARP);
+			pkt_arp.ar_hrd = htons(0x0001); /* Ethernet */
+			pkt_arp.ar_pro = htons(PROTO_IP);
+			pkt_arp.ar_hln = ETH_ALEN;
+			pkt_arp.ar_pln = IP_ALEN;
+
+			/*
+			 * Some hardware is reacting to requests, some to replies,
+			 * so we try randomly both.
+			 */
+			if (mt_rand_int32() % 2 == 0 && !other)
+				pkt_arp.ar_op = htons(ARPOP_REQUEST);
+			else
+				pkt_arp.ar_op = htons(ARPOP_REPLY);
 
 			vendor = mt_rand_int32() %
 				 (sizeof(vendor_db) / sizeof(struct vendor_id));
@@ -574,22 +590,26 @@ static int arp_flood(const char *ifname, char *prefix, int obfuscate,
 					ip_addr[j] = 1 + mt_rand_int32() % 255;
 			}
 
-			memcpy(pkt_arp_response.h_source, mac_addr, ETH_ALEN);
-			memcpy(pkt_arp_response.ar_sha, mac_addr, ETH_ALEN);
-			memcpy(pkt_arp_response.ar_sip, ip_addr, IP_ALEN);
+			memcpy(pkt_arp.h_source, mac_addr, ETH_ALEN);
+			memcpy(pkt_arp.ar_sha, mac_addr, ETH_ALEN);
+			memcpy(pkt_arp.ar_sip, ip_addr, IP_ALEN);
 
-			vendor = mt_rand_int32() %
-				 (sizeof(vendor_db) / sizeof(struct vendor_id));
-			vendor = vendor_db[vendor].id;
+			if (randdest) {
+				vendor = mt_rand_int32() %
+					 (sizeof(vendor_db) /
+					  sizeof(struct vendor_id));
+				vendor = vendor_db[vendor].id;
 
-			mac_addr[0] = (vendor >> 16) & 0xFF;
-			mac_addr[1] = (vendor >>  8) & 0xFF; 
-			mac_addr[2] = (vendor)       & 0xFF;
+				mac_addr[0] = (vendor >> 16) & 0xFF;
+				mac_addr[1] = (vendor >>  8) & 0xFF; 
+				mac_addr[2] = (vendor)       & 0xFF;
 
-			for (j = 3; j < ETH_ALEN; ++j)
-				mac_addr[j] = 1 + mt_rand_int32() % 255;
+				for (j = 3; j < ETH_ALEN; ++j)
+					mac_addr[j] = 1 + mt_rand_int32() % 255;
+			} else
+				memset(mac_addr, 0xFF, ETH_ALEN);
 
-			if (other) {
+			if (other) { /* Usually you don't want other */
 				for (j = 0; j < IP_ALEN; ++j) {
 					if (j < pre_len)
 						ip_addr[j] = ip_pre[j];
@@ -598,12 +618,16 @@ static int arp_flood(const char *ifname, char *prefix, int obfuscate,
 				}
 			}
 
-			memcpy(pkt_arp_response.h_dest, mac_addr, ETH_ALEN);
-			memcpy(pkt_arp_response.ar_tha, mac_addr, ETH_ALEN);
-			memcpy(pkt_arp_response.ar_tip, ip_addr, IP_ALEN);
+			memcpy(pkt_arp.h_dest, mac_addr, ETH_ALEN);
+			memcpy(pkt_arp.ar_tha, mac_addr, ETH_ALEN);
+			memcpy(pkt_arp.ar_tip, ip_addr, IP_ALEN);
 
 			if (verbose) {
+				if (!randdest)
+					memcpy(mac_addr, pkt_arp.h_source, ETH_ALEN);
 				memcpy(&ipa, ip_addr, IP_ALEN);
+
+				/* Print out source MAC address */
 				print_green("%s is at %.2x:%.2x:%.2x:%.2x:%.2x:%.2x (%s)",
 					    inet_ntoa(ipa), mac_addr[0], mac_addr[1],
 					    mac_addr[2], mac_addr[3], mac_addr[4],
@@ -619,19 +643,16 @@ static int arp_flood(const char *ifname, char *prefix, int obfuscate,
 			s_addr.sll_halen = ETH_ALEN;
 			s_addr.sll_ifindex = ifindex;
 
-			ret = sendto(sock, &pkt_arp_response,
-				     sizeof(pkt_arp_response), 0,
+			ret = sendto(sock, &pkt_arp, sizeof(pkt_arp), 0,
 				     (struct sockaddr *) &s_addr, sizeof(s_addr));
 			if (ret < 0) {
 				perror("Cannot send arp packet! Interface down?");
 				goto out;
 			}
 
-			if (ret != sizeof(pkt_arp_response))
+			if (ret != sizeof(pkt_arp))
 				whine("Hmm.. wrong sent packet size!\n");
 
-			/* We fake at least some time gap ... */
-			xnanosleep(0.0001 * mt_rand_real3());
 			if (count != -1)
 				count--;
 		}
@@ -656,7 +677,8 @@ static void header(void)
 
 int main(int argc, char **argv)
 {
-	int c, opt_index, ret, flood = 0, obfuscate = 0, count = -1, other = 0;
+	int c, opt_index, ret, flood = 0, obfuscate = 0;
+	int randdest = 0, count = -1, other = 0;
 	char *ifname = NULL;
 	char *routing_table = NULL;
 	char *connections = NULL;
@@ -692,6 +714,9 @@ int main(int argc, char **argv)
 			break;
 		case 'f':
 			flood = 1;
+			break;
+		case 't':
+			randdest = 1;
 			break;
 		case 'o':
 			obfuscate = 1;
@@ -747,7 +772,8 @@ int main(int argc, char **argv)
 	header();
 
 	if (flood)
-		ret = arp_flood(ifname, prefix, obfuscate, count, other);
+		ret = arp_flood(ifname, prefix, obfuscate, count,
+				other, randdest);
 	else
 		ret = arp_loop(ifname, routing_table, connections);
 
