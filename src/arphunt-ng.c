@@ -516,7 +516,7 @@ static int arp_loop(const char *ifname, const char *routing_table,
 
 	printf("BPF:\n");
 	bpf_dump_all(&fp);
-	printf("MD: RED ZNE\n\n");
+	printf("MD: RED ZONE%s\n\n", connections ? " AGRRESSIVE" : "");
 
 	arptable.entries = xmalloc(sizeof(*arptable.entries) * DEFAULT_INTERCEPTS);
 	arptable.size = DEFAULT_INTERCEPTS;
@@ -577,7 +577,7 @@ static int arp_flood(const char *ifname, char *prefix, int obfuscate,
 	struct sockaddr_ll s_addr;
 	struct arppkt pkt_arp;
 
-	printf("MD: FLD%s\n\n", obfuscate ? " OBCTE" : "");
+	printf("MD: FLD STRK%s\n\n", obfuscate ? " OBCTE" : "");
 
 	sock = pf_socket();
 	ifindex = device_ifindex(ifname);
