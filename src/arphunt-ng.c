@@ -156,8 +156,6 @@ struct arppkt {
 	uint8_t ar_tip[4];   /* target IP address          */
 } __attribute__((packed));
 
-static struct arppkt pkt_arp;
-
 static struct hash_table ethernet_oui;
 
 static void signal_handler(int number)
@@ -541,6 +539,7 @@ static int arp_flood(const char *ifname, char *prefix, int obfuscate,
 	ssize_t ret;
 	struct in_addr ipa;
 	struct sockaddr_ll s_addr;
+	struct arppkt pkt_arp;
 
 	printf("MD: FLD%s\n\n", obfuscate ? " OBCTE" : "");
 
