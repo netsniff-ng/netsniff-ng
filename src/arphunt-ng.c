@@ -477,11 +477,45 @@ static void parse_connection_table(const char *file)
 	fclose(fp);
 }
 
+static void fetch_default_route(void)
+{
+#if 0
+	ret = inet_aton(ptrb, &routetable.entries[routec].network);
+	if (!ret)
+		error_and_die(EXIT_FAILURE, "Cannot parse network address "
+			      "at line %d!\n", line);
+
+	ret = inet_aton(ptrb, &routetable.entries[routec].netmask);
+	if (!ret)
+		error_and_die(EXIT_FAILURE, "Cannot parse netmask at "
+			      "line %d!\n", line);
+
+	ret = inet_aton(ptrb, &routetable.entries[routec].gateway);
+	if (!ret)
+		error_and_die(EXIT_FAILURE, "Cannot parse gateway address at "
+			      "line %d!\n", line);
+#endif
+}
+
 static int arp_loop(const char *ifname, const char *routing_table,
 		    const char *connections)
 {
 	int sock;
+	struct sock_filter f[] = {
+		/* arp or ip filter */
+		{ 0x28, 0, 0, 0x0000000c },
+		{ 0x15, 1, 0, 0x00000806 },
+		{ 0x15, 0, 1, 0x00000800 },
+		{ 0x06, 0, 0, 0xffffffff },
+		{ 0x06, 0, 0, 0x00000000 },
+	};
+	struct sock_fprog fp = {
+		.len = sizeof(f) / sizeof(f[0]),
+		.filter = f,
+	};
 
+	printf("BPF:\n");
+	bpf_dump_all(&fp);
 	printf("MD: RED ZNE\n\n");
 
 	arptable.entries = xmalloc(sizeof(*arptable.entries) * DEFAULT_INTERCEPTS);
@@ -495,6 +529,8 @@ static int arp_loop(const char *ifname, const char *routing_table,
 
 	agresstable.entries = xmalloc(sizeof(*agresstable.entries) * DEFAULT_AGRESSIVE);
 	agresstable.size = DEFAULT_AGRESSIVE;
+
+	fetch_default_route();
 
 	parse_routing_table(routing_table);
 	parse_connection_table(connections);
