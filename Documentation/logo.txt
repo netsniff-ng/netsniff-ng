@@ -1,0 +1,3 @@
+This is the full-colour version of the official netsniff-ng logo. It was
+created by Denise Menke, and is freely usable as long as you acknowledge
+Denise as the original artist.
