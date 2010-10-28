@@ -118,6 +118,37 @@ void *xzmalloc(size_t size)
 	return ptr;
 }
 
+void *xmalloc_aligned(size_t size, size_t alignment)
+{
+	int ret;
+	void *ptr;
+	enum mcheck_status stat;
+
+	if (size == 0)
+		error_and_die(EXIT_FAILURE, "xmalloc_aligned: zero size\n");
+
+	if (unlikely(mcheck_init)) {
+		int ret = mcheck_pedantic(mcheck_abort);
+		if (ret < 0)
+			error_and_die(EXIT_FAILURE, "xmalloc_aligned: cannot "
+				      "init mcheck! bug\n");
+		mtrace();
+		mcheck_init = 0;
+	}
+
+	ret = posix_memalign(&ptr, alignment, size);
+	if (ret != 0)
+		error_and_die(EXIT_FAILURE, "xmalloc_aligned: out of memory "
+			      "(allocating %lu bytes)\n", (u_long) size);
+	stat = mprobe(ptr);
+	if (stat != MCHECK_OK)
+		error_and_die(EXIT_FAILURE, "xmalloc_aligned: mem "
+			      "inconsistency detected: %d\n", stat);
+
+	debug_blue("%p: %zu", ptr, size);
+	return ptr;
+}
+
 void *xmallocz(size_t size)
 {
 	void *ptr;
