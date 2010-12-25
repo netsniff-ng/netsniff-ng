@@ -1,0 +1,299 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+
+<head>
+<title>netsniff-ng - the packet sniffing beast</title>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="Robots" content="noarchive">
+
+<link rel="Shortcut Icon" href="http://netsniff-ng.org/img/tiny-logo.png" type="image/png">
+
+<script type="text/javascript">
+  function InsertMail(mailnam,mailsvr,maildom)
+  {
+    document.write('&lt;<a href="mailto:' + mailnam + '@' + mailsvr + '.'
+      + maildom + '">' + mailnam + '@' + mailsvr + '.' + maildom + 
+      '<\/a>&gt;');
+  }
+</script>
+</head>
+
+<body>
+<blockquote>
+
+<br>
+<p>
+<table border="0">
+<tr>
+<td>
+<a href="http://netsniff-ng.org"><img src="http://netsniff-ng.org/img/logo.png" border="0" alt="netsniff-ng"></a>
+</td>
+<td>
+<br><br><br>
+<div style="font-size: 25pt"><b>netsniff-ng</b></div>
+<b>the packet sniffing beast</b>
+</td>
+</tr>
+</table>
+</p>
+<br>
+
+<table border="0">
+<tr>
+  <td valign="top" width="200">
+    <b>Latest version:</b>
+  </td>
+  <td valign="top">
+    <a href="http://www.netsniff-ng.org/pub/netsniff-ng/netsniff-ng-0.5.5.0.tar.gz">netsniff-ng 0.5.5.0</a> 
+    (09/10/2010, <a href="http://packetstormsecurity.org/sniffers/netsniff-ng-0.5.5.0.tar.gz">M</a>, sha256: <code>37fafda46acd1d7cbbe01303b50389a27b2f373628c5e720e107426f2b7f41cb</code>) <br>
+    <a href="http://github.com/danborkmann/netsniff-ng/tree/master/">netsniff-ng 0.5.6.0-next</a> 
+  </td>
+</tr>
+<tr>
+  <td>
+    <small><br></small>
+  </td>
+</tr>
+<tr>
+  <td valign="top">
+    <b>Development Blog:</b>
+  </td>
+  <td valign="top">
+    <a href="http://dev.netsniff-ng.org/">http://dev.netsniff-ng.org/</a>
+  </td>
+</tr>
+<tr>
+  <td valign="top">
+    <b>Public repository:</b>
+  </td>
+  <td valign="top">
+    <a href="http://pub.netsniff-ng.org/">http://pub.netsniff-ng.org/</a><br>
+  </td>
+</tr>
+<tr>
+  <td>
+    <small><br></small>
+  </td>
+</tr>
+<tr>
+  <td valign="top">
+    <b>Git repository:</b>
+  </td>
+  <td valign="top">
+    <b>git clone git://github.com/danborkmann/netsniff-ng.git</b>
+  </td>
+</tr>
+<tr>
+  <td valign="top">
+    <b>Git web:</b>
+  </td>
+  <td valign="top">
+    <a href="http://github.com/danborkmann/netsniff-ng/">http://github.com/danborkmann/netsniff-ng/</a>
+  </td>
+</tr>
+<tr>
+  <td>
+    <small><br></small>
+  </td>
+</tr>
+<tr>
+  <td valign="top">
+    <b>Bug tracker:</b>
+  </td>
+  <td valign="top">
+    <a href="http://github.com/danborkmann/netsniff-ng/issues/">http://github.com/danborkmann/netsniff-ng/issues/</a>
+  </td>
+</tr>
+</table>
+
+<br>
+<br>
+
+netsniff-ng is <i>Free Software</i> and released under the <a href="http://www.gnu.org/licenses/gpl-2.0.txt">GNU GPL version 2</a>.
+
+<h2>Abstract</h2>
+<p>
+netsniff-ng is is a free, performant Linux network sniffer for packet inspection.
+</p>
+<p>
+The gain of performance is reached by 'zero-copy' mechanisms, so that 
+the kernel does not need to copy packets from kernelspace to userspace.
+</p>
+<p>
+For this purpose netsniff-ng is libpcap independent, but nevertheless 
+supports the pcap file format for capturing, replaying and performing 
+offline-analysis of pcap dumps. Furthermore we are focussing on building 
+a robust, clean and secure analyzer and utilities that complete 
+netsniff-ng as a support for penetration testing.
+</p>
+<p>
+netsniff-ng can be used for protocol analysis, reverse engineering and network debugging.
+</p>
+
+<h2>Some use cases and features</h2>
+<ul>
+  <li>Open source project and free licensing</li>
+  <li>Analizing and debugging of network problems or protocol implementations</li>
+  <li>Reverse engineering of (proprietary) network protocols</li>
+  <li>Dumping, replaying and offline analysis of pcap traces</li>
+  <li>Integrated <i>high performance capabilities</i></li>
+  <li>Focus on <i>usability</i>, <i>robustness</i>, <i>security</i> and <i>functionality</i></li>
+  <li>Support utility for penetration testing</li>
+  <li>Regular expression based grepping of specific packet information</li>
+  <li>Monitoring of network usage</li>
+  <li>Network statistic creation (e.g. for Nagios)</li>
+</ul>
+
+<h2>Development</h2>
+<p>
+<b>Source control</b>
+</p>
+<p>
+There's a public Git repository at <a href="http://github.com/danborkmann/netsniff-ng/">http://github.com/danborkmann/netsniff-ng/</a> 
+where you can check out the latest code base. 
+</p>
+<p>
+You may also want to check the downloaded tarball for inconsistencies with 
+<code>md5sum -c MD5SUMS</code> or <code>sha256sum -c SHA256SUMS</code>.
+</p>
+<p>
+<b>Documents</b>
+</p>
+<p>
+There is also a netsniff-ng <a href="http://dev.netsniff-ng.org/">development blog</a> and a <a href="faq.html">frequently asked question</a> site. For participating in development have a look at the HACKING file within the source.
+</p>
+<p>
+For reporting bugs please use our <a href="http://github.com/danborkmann/netsniff-ng/issues/">bug tracking system</a> or 
+write an e-mail to <script type="text/javascript">InsertMail("bugs", "netsniff-ng", "org");</script>.
+</p>
+<p>
+<b>Release cycle management</b>
+</p>
+<p>
+We changed our plans into a <i>strict</i> release cycle. A new netsniff-ng release will appear every 6 (<i>six</i>) months. These 6 months are divided into 5.5 month of developing time and 0.5 month of a code freeze where all developers have to test the current source base. During this time only bugfixes are allowed to go in. After the release the next 6 month development cycle starts all over again. The plan is to release on the beginning of <i>October</i> and <i>April</i>.
+</p>
+<p>
+<b>Roadmap for future projects</b>
+</p>
+<p>
+By the time, netsniff-ng will grow into a networking toolkit for developers, administrators and advanced users. On the <i>long</i> term, we plan to do research and development within the following areas:
+<ul>
+  <li>Zero-copy mechanisms for network packets</li>
+  <li>ARP cache poisoning techniques for packet reception in a switched LAN</li>
+  <li>Network traffic anomaly analysis on routers or bridges</li>
+  <li>User-friendly Qdisc management tooling</li>
+  <li>Passive OS fingerprinting</li>
+  <li>Berkeley Packet Filter compiler with multi-language support</li>
+  <li>Reliable and useful kernel statistic gathering</li>
+  <li>Powerful packet analysis, replaying and traffic generation</li>
+</ul>
+</p>
+
+<h2>Documentation</h2>
+<p>
+The <a href="doc/netsniff-ng.html">manpage</a> (<a href="doc/netsniff-ng.pdf">PDF</a>) of each stable release of netsniff-ng will cover all of the usage details. We also have a <a href="faq.html">frequently asked question</a> page. Furthermore, you might want to have a look at some 
+<a href="bench.html">benchmarks</a> of <i>RX_RING</i> versus the usual <i>recvfrom(2)</i>.
+</p>
+<p>
+To dig into the inner workings of the Berkeley Packet Filter architecture have a look at <a href="bpf.pdf">this</a>.
+</p>
+<p>
+Documentation about the packet_mmap architecture with pf_packet sockets for the Linux kernel can be downloaded from <a href="http://www.kernel.org/">http://www.kernel.org/</a> under <i>Documentation/networking/packet_mmap.txt</i>.
+</p>
+
+<h2>Support</h2>
+<p>
+A mailing list for netsniff-ng moderated (spam free) user discussions is open to the <a href="http://groups.google.com/group/netsniff-ng">public</a>. Subscribe and mail to <script type="text/javascript">InsertMail("netsniff-ng", "googlegroups", "com");</script>. There's also an archive at <a href="http://dir.gmane.org/gmane.linux.network.netsniff-ng">Gmane</a> and a <a href="http://www.mail-archive.com/netsniff-ng%40googlegroups.com/">searchable archive</a>.
+</p>
+<p>
+Before posting questions, have a look at our <a href="faq.html">FAQ</a>.
+</p>
+<p>
+<table border="0">
+<tr>
+  <td>
+    Your e-mail address:&nbsp;
+  </td>
+  <td>
+    <form action="http://groups.google.com/group/netsniff-ng/boxsubscribe">
+      <input type="text" name="email">&nbsp;
+      <input type="submit" name="sub" value="Subscribe">
+    </form>
+  </td>
+</tr>
+</table>
+</p>
+<p>
+Furthermore there is an official irc-channel located on <a href="http://freenode.org/">freenode.org</a> named <i>#netsniff-ng</i>.
+</p>
+
+<h2>Distributions</h2>
+<p>
+Some stable distribution specific packages may also be obtained for
+<ul>
+  <li><a href="http://packages.debian.org/search?keywords=netsniff-ng">Debian</a></li>
+  <li><a href="http://grml.org/">GRML</a></li>
+  <li><a href="https://admin.fedoraproject.org/pkgdb/acls/name/netsniff-ng">Fedora/RHEL</a></li>
+  <li><a href="http://packages.ubuntu.com/search?keywords=netsniff-ng">Ubuntu</a></li>
+  <li><a href="http://aur.archlinux.org/packages.php?K=netsniff-ng">Arch Linux</a></li>
+  <li><a href="http://gpo.zugaina.org/net-misc/netsniff-ng">Gentoo/Sabayon</a>
+  <li><a href="http://www.slackers.it/repository/netsniff-ng/">Slackware</a></li>
+  <li><a href="http://software.opensuse.org/search?baseproject=ALL&amp;p=1&amp;q=netsniff-ng">openSUSE/SLE</a></li>
+  <li><a href="http://sophie.zarb.org/srpm/Mandriva,cooker,/netsniff-ng">Mandriva</a></li>
+  <li><a href="http://oswatershed.org/pkg/netsniff-ng">OSWatershed</a></li>
+</ul>
+</p>
+
+<h2>Contact</h2>
+<p>
+For any questions or feedback about netsniff-ng you are welcome to leave us a message to <script type="text/javascript">InsertMail("workgroup", "netsniff-ng", "org");</script>. This site and project is purely non-commercial and will always stay that way! It is our idealism to contribute to Open Source.
+</p>
+
+<h2>Contribute</h2>
+<p>
+<i>If you think this software is good, then please consider donating your money to the <a href="http://www.tibet-foundation.org/">Tibet Foundation</a> instead to us.</i>
+<br><br>
+If you'd like to help otherwise, we'd like to see people to:
+<ul>
+  <li>Test netsniff-ng on their specific platforms</li>
+  <li>Maintain distribution specific packages</li>
+  <li>Adding or updating documentation</li>
+  <li>Contribute to the source code</li>
+  <li>Donate hardware</li>
+</ul>
+</p>
+
+<h2>Associated projects</h2>
+<p>
+Check out <a href="http://netyack.org">netyack</a>!
+</p>
+
+<br>
+
+<a href="http://www.vim.org/"><img src="http://netsniff-ng.org/img/vim.png" border="0" alt="powered by vim"></a>&nbsp;
+<a href="http://www.anybrowser.org/campaign/"><img src="http://netsniff-ng.org/img/vt100.gif" border="0" alt="best viewed with vt100"></a>&nbsp;
+<a href="http://eupat.ffii.org/"><img src="http://netsniff-ng.org/img/no_epatent.png" border="0" alt="no epatents"></a>
+
+<p>
+<hr>
+</p>
+
+<table border="0" width="90%">
+<tr>
+  <td>
+    <address>Copyright (C) 2009, 2010 <a href="http://daniel.netsniff-ng.org">Daniel Borkmann</a> 
+    <script type="text/javascript">InsertMail("daniel", "netsniff-ng", "org");</script> 
+    <i>and</i>
+    <a href="http://emmanuel.netsniff-ng.org">Emmanuel Roullit</a> 
+    <script type="text/javascript">InsertMail("emmanuel", "netsniff-ng", "org");</script>
+    </address>
+  </td>
+</tr>
+</table>
+
+</blockquote>
+</body>
+
+</html>
+

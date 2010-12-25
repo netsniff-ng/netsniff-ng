@@ -1,0 +1,3527 @@
+http://www.spinics.net/lists/netdev/msg13909.html
+
+[1/1] netwrok allocator. Sending and receiving zero-copy support. Benchmark.
+
+    * Subject: [1/1] netwrok allocator. Sending and receiving zero-copy support. Benchmark.
+    * From: Evgeniy Polyakov <johnpol@xxxxxxxxxxx>
+    * Date: Sat, 2 Sep 2006 18:17:44 +0400
+    * Cc: David Miller <davem@xxxxxxxxxxxxx>, Alexey Kuznetsov <kuznet@xxxxxxxxxxxxx>
+    * User-agent: Mutt/1.5.9i
+
+Hello.
+
+This patch introduce network-based receiving and sending zero-copy
+support. Receiving side is used for zero-copy sniffer (it is possible to
+dump all network allocations including netlink, unix socket and so on), 
+sending side zero-copy is used for userspace netchannels network stack
+implementation [4].
+
+Receiving zero-copy support.
+Information about each network allocation is stored in special buffer
+accessible from userspace through read/write for special char device.
+This information is added when skb is freed, so data placed there is
+valid. Such approach does not allow to store transient state of the
+data, for example encrypted IPsec packets if decryption happens
+in-place, to store such states it is required to copy information into
+allocated buffer (which then can be immediately freed, or decryption can
+happen from source do destination buffers).
+Userspace can mmap whole allocation pool (using special commands via
+ioctl() to get appropriate information) and thus access data without any
+copy. 
+Zero-copy sniffer has following overheads: 
+several atomic operations (in the worst case one atomic_set(), one 
+atomic_inc() and one or two atomic_dec_and_test()), 
+one lock (bad global lock per sniffer device), which is held when 
+information about new packet is being put into sniffer's queue when skb
+is freed,
+delayed freeing which can lead to increased memory usage, or (like
+implemented) if introduced maximum amount of "locked" data by sniffer,
+some packets can be dropped by sniffer.
+
+Sending zero-copy support.
+Sending is performaed in two steps. First one is allocation, new object
+can be accessed without any copy like described above (and actually can
+be used with things like kevents to implement proposed by Ulrich Drepper 
+"DMA" allocation (allocation of data, which can be used both by kernel
+and userspace without additional copies)). Second step is data commit,
+where allocated packet is attached to special skb and pushed into the
+stack using dst_output().
+
+Above extensions are possible due to design of network allocator.
+Benchmark test for NTA shows very noticeble performance improvement
+over existing SLAB one (epoll based web server showed 40% improvement 
+in number of processed requests per second, details can be found on 
+project homepage [1]).
+
+For testing zero-copy sniffer I ran scp over 100Mb lan and dump header
+into the file. Graph for both tcpdump and zero-copy sniffer sequence
+numbers is attached. Test shows that there are no dropped packets by
+sniffer (although for scp of big file over 100Mb lan tcpdump does not
+drop packets too), in my current environment it is not very exciting
+test though.
+
+When both sniffers dump the whole traffic into /dev/null, CPU usage for
+zero-copy sniffer is about 2 times less than with tcpdump.
+
+Interested reader can find all userspace applications (zero-copy sniffer
+and sending program) on project homepage [1].
+
+Limitations of current version (introduced not due to design problems,
+but intentionally to test various special usage cases):
+ - use NTA only for netdev_alloc_skb() and sk_stream_alloc_pskb().
+ - always compile zero-copy sniffer in, which increases memory usage
+   and adds described above overhead.
+ - skb_copy() always allocate data from SLAB allocator, although it
+   could check if original skb's data was allocated through NTA, but I
+   think that skb_copy() is completely incompatible with high
+   performance.
+ - it is possible to eliminate several atomic operations (I'm lazy).
+ - debug code (poisoning of the tail of the buffer and additional
+   reference counter) is always compiled in.
+
+
+I would like to ask that should I make some steps for preparing that code
+for inclusion, and if so it would be good to start to discuss it, or if
+that code is not very interesting, so I will use it only for my own
+netchannels [3] developemnt. At this stage I do not copy his message to 
+linux-kernel@ and linux-mm@ mail lists, since practice shows that it is
+not always the right way to solve technical problems.
+
+Thank you.
+
+1. Network tree allocator. 
+http://tservice.net.ru/~s0mbre/old/?section=projects&item=nta
+
+2. Sending and receiving zero-copy networking.
+http://tservice.net.ru/~s0mbre/blog/devel/networking/zcs/index.html
+
+3. Netchannels implementation.
+http://tservice.net.ru/~s0mbre/old/?section=projects&item=netchannel
+
+4. Userspace network stack.
+http://tservice.net.ru/~s0mbre/old/?section=projects&item=unetstack
+
+Signed-off-by: Evgeniy Polyakov <johnpol@xxxxxxxxxxx>
+
+diff --git a/drivers/net/3c59x.c b/drivers/net/3c59x.c
+index 80e8ca0..4aba97b 100644
+--- a/drivers/net/3c59x.c
++++ b/drivers/net/3c59x.c
+@@ -1680,7 +1680,7 @@ vortex_open(struct net_device *dev)
+ 			vp->rx_ring[i].next = cpu_to_le32(vp->rx_ring_dma + sizeof(struct boom_rx_desc) * (i+1));
+ 			vp->rx_ring[i].status = 0;	/* Clear complete bit. */
+ 			vp->rx_ring[i].length = cpu_to_le32(PKT_BUF_SZ | LAST_FRAG);
+-			skb = dev_alloc_skb(PKT_BUF_SZ);
++			skb = netdev_alloc_skb(dev, PKT_BUF_SZ);
+ 			vp->rx_skbuff[i] = skb;
+ 			if (skb == NULL)
+ 				break;			/* Bad news!  */
+@@ -2405,7 +2405,7 @@ static int vortex_rx(struct net_device *
+ 			int pkt_len = rx_status & 0x1fff;
+ 			struct sk_buff *skb;
+ 
+-			skb = dev_alloc_skb(pkt_len + 5);
++			skb = netdev_alloc_skb(dev, pkt_len + 5);
+ 			if (vortex_debug > 4)
+ 				printk(KERN_DEBUG "Receiving packet size %d status %4.4x.\n",
+ 					   pkt_len, rx_status);
+@@ -2486,7 +2486,7 @@ boomerang_rx(struct net_device *dev)
+ 
+ 			/* Check if the packet is long enough to just accept without
+ 			   copying to a properly sized skbuff. */
+-			if (pkt_len < rx_copybreak && (skb = dev_alloc_skb(pkt_len + 2)) != 0) {
++			if (pkt_len < rx_copybreak && (skb = netdev_alloc_skb(dev, pkt_len + 2)) != 0) {
+ 				skb->dev = dev;
+ 				skb_reserve(skb, 2);	/* Align IP on 16 byte boundaries */
+ 				pci_dma_sync_single_for_cpu(VORTEX_PCI(vp), dma, PKT_BUF_SZ, PCI_DMA_FROMDEVICE);
+@@ -2525,7 +2525,7 @@ boomerang_rx(struct net_device *dev)
+ 		struct sk_buff *skb;
+ 		entry = vp->dirty_rx % RX_RING_SIZE;
+ 		if (vp->rx_skbuff[entry] == NULL) {
+-			skb = dev_alloc_skb(PKT_BUF_SZ);
++			skb = netdev_alloc_skb(dev, PKT_BUF_SZ);
+ 			if (skb == NULL) {
+ 				static unsigned long last_jif;
+ 				if (time_after(jiffies, last_jif + 10 * HZ)) {
+diff --git a/include/linux/skbuff.h b/include/linux/skbuff.h
+index 19c96d4..bb1018c 100644
+--- a/include/linux/skbuff.h
++++ b/include/linux/skbuff.h
+@@ -282,7 +282,8 @@ struct sk_buff {
+ 				nfctinfo:3;
+ 	__u8			pkt_type:3,
+ 				fclone:2,
+-				ipvs_property:1;
++				ipvs_property:1,
++				nta:1;
+ 	__be16			protocol;
+ 
+ 	void			(*destructor)(struct sk_buff *skb);
+@@ -327,22 +328,43 @@ #include <linux/slab.h>
+ 
+ #include <asm/system.h>
+ 
++extern void *avl_alloc(unsigned int size, gfp_t gfp_mask);
++extern void avl_free(void *ptr, unsigned int size);
++extern int avl_init(void);
++
+ extern void kfree_skb(struct sk_buff *skb);
+ extern void	       __kfree_skb(struct sk_buff *skb);
+ extern struct sk_buff *__alloc_skb(unsigned int size,
+ 				   gfp_t priority, int fclone);
++extern struct sk_buff *__alloc_skb_emtpy(unsigned int size,
++				   gfp_t priority);
++extern struct sk_buff *__alloc_skb_nta(unsigned int size, gfp_t gfp_mask,
++			    int fclone);
++
+ static inline struct sk_buff *alloc_skb(unsigned int size,
+ 					gfp_t priority)
+ {
+ 	return __alloc_skb(size, priority, 0);
+ }
+ 
++static inline struct sk_buff *alloc_skb_empty(unsigned int size,
++					gfp_t priority)
++{
++	return __alloc_skb_emtpy(size, priority);
++}
++
+ static inline struct sk_buff *alloc_skb_fclone(unsigned int size,
+ 					       gfp_t priority)
+ {
+ 	return __alloc_skb(size, priority, 1);
+ }
+ 
++static inline struct sk_buff *alloc_skb_nta(unsigned int size,
++					gfp_t priority, int fclone)
++{
++	return __alloc_skb_nta(size, priority, fclone);
++}
++
+ extern struct sk_buff *alloc_skb_from_cache(kmem_cache_t *cp,
+ 					    unsigned int size,
+ 					    gfp_t priority);
+diff --git a/include/net/sock.h b/include/net/sock.h
+index 324b3ea..6af3198 100644
+--- a/include/net/sock.h
++++ b/include/net/sock.h
+@@ -1178,7 +1178,7 @@ static inline struct sk_buff *sk_stream_
+ 	int hdr_len;
+ 
+ 	hdr_len = SKB_DATA_ALIGN(sk->sk_prot->max_header);
+-	skb = alloc_skb_fclone(size + hdr_len, gfp);
++	skb = alloc_skb_nta(size + hdr_len, gfp, 1);
+ 	if (skb) {
+ 		skb->truesize += mem;
+ 		if (sk_stream_wmem_schedule(sk, skb->truesize)) {
+diff --git a/net/core/Makefile b/net/core/Makefile
+index 2645ba4..d86d468 100644
+--- a/net/core/Makefile
++++ b/net/core/Makefile
+@@ -10,6 +10,8 @@ obj-$(CONFIG_SYSCTL) += sysctl_net_core.
+ obj-y		     += dev.o ethtool.o dev_mcast.o dst.o netevent.o \
+ 			neighbour.o rtnetlink.o utils.o link_watch.o filter.o
+ 
++obj-y += alloc/
++
+ obj-$(CONFIG_XFRM) += flow.o
+ obj-$(CONFIG_SYSFS) += net-sysfs.o
+ obj-$(CONFIG_NET_DIVERT) += dv.o
+diff --git a/net/core/alloc/Makefile b/net/core/alloc/Makefile
+new file mode 100644
+index 0000000..779eba2
+--- /dev/null
++++ b/net/core/alloc/Makefile
+@@ -0,0 +1,3 @@
++obj-y		:= allocator.o
++
++allocator-y	:= avl.o zc.o
+diff --git a/net/core/alloc/avl.c b/net/core/alloc/avl.c
+new file mode 100644
+index 0000000..8fe7016
+--- /dev/null
++++ b/net/core/alloc/avl.c
+@@ -0,0 +1,767 @@
++/*
++ * 	avl.c
++ * 
++ * 2006 Copyright (c) Evgeniy Polyakov <johnpol@xxxxxxxxxxx>
++ * All rights reserved.
++ * 
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#include <linux/kernel.h>
++#include <linux/types.h>
++#include <linux/string.h>
++#include <linux/errno.h>
++#include <linux/slab.h>
++#include <linux/spinlock.h>
++#include <linux/percpu.h>
++#include <linux/list.h>
++#include <linux/mm.h>
++#include <linux/skbuff.h>
++
++#include "avl.h"
++
++struct avl_allocator_data avl_allocator[NR_CPUS];
++
++#define avl_ptr_to_chunk(ptr, size)	(struct avl_chunk *)(ptr + size)
++
++/*
++ * Get node pointer from address.
++ */
++static inline struct avl_node *avl_get_node_ptr(unsigned long ptr)
++{
++	struct page *page = virt_to_page(ptr);
++	struct avl_node *node = (struct avl_node *)(page->lru.next);
++
++	return node;
++}
++
++/*
++ * Set node pointer for page for given address.
++ */
++static void avl_set_node_ptr(unsigned long ptr, struct avl_node *node, int order)
++{
++	int nr_pages = 1<<order, i;
++	struct page *page = virt_to_page(ptr);
++	
++	for (i=0; i<nr_pages; ++i) {
++		page->lru.next = (void *)node;
++		page++;
++	}
++}
++
++/*
++ * Get allocation CPU from address.
++ */
++static inline int avl_get_cpu_ptr(unsigned long ptr)
++{
++	struct page *page = virt_to_page(ptr);
++	int cpu = (int)(unsigned long)(page->lru.prev);
++
++	return cpu;
++}
++
++/*
++ * Set allocation cpu for page for given address.
++ */
++static void avl_set_cpu_ptr(unsigned long ptr, int cpu, int order)
++{
++	int nr_pages = 1<<order, i;
++	struct page *page = virt_to_page(ptr);
++			
++	for (i=0; i<nr_pages; ++i) {
++		page->lru.prev = (void *)(unsigned long)cpu;
++		page++;
++	}
++}
++
++/*
++ * Convert pointer to node's value.
++ * Node's value is a start address for contiguous chunk bound to given node.
++ */
++static inline unsigned long avl_ptr_to_value(void *ptr)
++{
++	struct avl_node *node = avl_get_node_ptr((unsigned long)ptr);
++	return node->value;
++}
++
++/*
++ * Convert pointer into offset from start address of the contiguous chunk
++ * allocated for appropriate node.
++ */
++static inline int avl_ptr_to_offset(void *ptr)
++{
++	return ((unsigned long)ptr - avl_ptr_to_value(ptr))/AVL_MIN_SIZE;
++}
++
++/*
++ * Count number of bits set down (until first unset is met in a mask) 
++ * to the smaller addresses including bit at @pos in @mask.
++ */
++unsigned int avl_count_set_down(unsigned long *mask, unsigned int pos)
++{
++	unsigned int stop, bits = 0;
++	int idx;
++	unsigned long p, m;
++
++	idx = pos/BITS_PER_LONG;
++	pos = pos%BITS_PER_LONG;
++
++	while (idx >= 0) {
++		m = (~0UL>>pos)<<pos;
++		p = mask[idx] | m;
++
++		if (!(mask[idx] & m))
++			break;
++
++		stop = fls(~p);
++
++		if (!stop) {
++			bits += pos + 1;
++			pos = BITS_PER_LONG - 1;
++			idx--;
++		} else {
++			bits += pos - stop + 1;
++			break;
++		}
++	}
++
++	return bits;
++}
++
++/*
++ * Count number of bits set up (until first unset is met in a mask) 
++ * to the bigger addresses including bit at @pos in @mask.
++ */
++unsigned int avl_count_set_up(unsigned long *mask, unsigned int mask_num, 
++		unsigned int pos)
++{
++	unsigned int idx, stop, bits = 0;
++	unsigned long p, m;
++
++	idx = pos/BITS_PER_LONG;
++	pos = pos%BITS_PER_LONG;
++
++	while (idx < mask_num) {
++		if (!pos)
++			m = 0;
++		else
++			m = (~0UL<<(BITS_PER_LONG-pos))>>(BITS_PER_LONG-pos);
++		p = mask[idx] | m;
++
++		if (!(mask[idx] & ~m))
++			break;
++
++		stop = ffs(~p);
++
++		if (!stop) {
++			bits += BITS_PER_LONG - pos;
++			pos = 0;
++			idx++;
++		} else {
++			bits += stop - pos - 1;
++			break;
++		}
++	}
++
++	return bits;
++}
++
++/*
++ * Fill @num bits from position @pos up with bit value @bit in a @mask.
++ */
++
++static void avl_fill_bits(unsigned long *mask, unsigned int mask_size, 
++		unsigned int pos, unsigned int num, unsigned int bit)
++{
++	unsigned int idx, start;
++
++	idx = pos/BITS_PER_LONG;
++	start = pos%BITS_PER_LONG;
++
++	while (num && idx < mask_size) {
++		unsigned long m = ((~0UL)>>start)<<start;
++
++		if (start + num <= BITS_PER_LONG) {
++			unsigned long upper_bits = BITS_PER_LONG - (start+num);
++
++			m = (m<<upper_bits)>>upper_bits;
++		}
++
++		if (bit)
++			mask[idx] |= m;
++		else
++			mask[idx] &= ~m;
++
++		if (start + num <= BITS_PER_LONG)
++			num = 0;
++		else {
++			num -= BITS_PER_LONG - start;
++			start = 0;
++			idx++;
++		}
++	}
++}
++
++/*
++ * Add free chunk into array.
++ */
++static inline void avl_container_insert(struct avl_container *c, unsigned int pos, int cpu)
++{
++	list_add_tail(&c->centry, &avl_allocator[cpu].avl_container_array[pos]);
++}
++
++/*
++ * Fill zc_data structure for given pointer and node.
++ */
++static void __avl_fill_zc(struct zc_data *zc, void *ptr, unsigned int size, struct avl_node *node)
++{
++	u32 off;
++	
++	off = ((unsigned long)node & ~PAGE_MASK)/sizeof(struct avl_node)*((1U<<node->entry->avl_node_order)<<PAGE_SHIFT);
++	
++	zc->off = off+avl_ptr_to_offset(ptr)*AVL_MIN_SIZE;
++	zc->data.ptr = ptr;
++	zc->size = size;
++	zc->entry = node->entry->avl_entry_num;
++	zc->cpu = avl_get_cpu_ptr((unsigned long)ptr);
++}
++
++void avl_fill_zc(struct zc_data *zc, void *ptr, unsigned int size)
++{
++	struct avl_node *node = avl_get_node_ptr((unsigned long)ptr);
++
++	__avl_fill_zc(zc, ptr, size, node);
++
++	printk("%s: ptr: %p, size: %u, node: entry: %u, order: %u, number: %u.\n",
++			__func__, ptr, size, node->entry->avl_entry_num, 
++			node->entry->avl_node_order, node->entry->avl_node_num);
++}
++
++/*
++ * Update zero-copy information in given @node.
++ * @node - node where given pointer @ptr lives
++ * @num - number of @AVL_MIN_SIZE chunks given pointer @ptr embeds
++ */
++static void avl_update_zc(struct avl_node *node, void *ptr, unsigned int size)
++{
++	struct zc_control *ctl = &zc_sniffer;
++	unsigned long flags;
++
++	spin_lock_irqsave(&ctl->zc_lock, flags);
++	if (ctl->zc_used < ctl->zc_num) {
++		struct zc_data *zc = &ctl->zcb[ctl->zc_pos];
++		struct avl_chunk *ch = avl_ptr_to_chunk(ptr, size);
++
++		if (++ctl->zc_pos >= ctl->zc_num)
++			ctl->zc_pos = 0;
++	
++		atomic_inc(&ch->refcnt);
++
++		__avl_fill_zc(zc, ptr, size, node);
++
++		ctl->zc_used++;
++		wake_up(&ctl->zc_wait);
++
++		ulog("%s: used: %u, pos: %u, num: %u, ptr: %p, size: %u.\n",
++				__func__, ctl->zc_used, ctl->zc_pos, ctl->zc_num, ptr, zc->size);
++	}
++	spin_unlock_irqrestore(&ctl->zc_lock, flags);
++}
++
++/*
++ * Update node's bitmask of free/used chunks.
++ * If processed chunk size is bigger than requested one, 
++ * split it and add the rest into list of free chunks with appropriate size.
++ */
++static void avl_update_node(struct avl_container *c, unsigned int cpos, unsigned int size)
++{
++	struct avl_node *node = avl_get_node_ptr((unsigned long)c->ptr);
++	unsigned int num = AVL_ALIGN(size + sizeof(struct avl_chunk))/AVL_MIN_SIZE;
++
++	BUG_ON(cpos < num - 1);
++
++	avl_fill_bits(node->mask, ARRAY_SIZE(node->mask), avl_ptr_to_offset(c->ptr), num, 0);
++
++	if (cpos != num-1) {
++		void *ptr = c->ptr + AVL_ALIGN(size + sizeof(struct avl_chunk));
++
++		c = ptr;
++		c->ptr = ptr;
++
++		cpos -= num;
++
++		avl_container_insert(c, cpos, smp_processor_id());
++	}
++}
++
++/*
++ * Dereference free chunk into container and add it into list of free
++ * chunks with appropriate size.
++ */
++static int avl_container_add(void *ptr, unsigned int size, int cpu)
++{
++	struct avl_container *c = ptr;
++	unsigned int pos = AVL_ALIGN(size)/AVL_MIN_SIZE-1;
++
++	if (!size)
++		return -EINVAL;
++
++	c->ptr = ptr;
++	avl_container_insert(c, pos, cpu);
++
++	return 0;
++}
++
++/*
++ * Dequeue first free chunk from the list.
++ */
++static inline struct avl_container *avl_dequeue(struct list_head *head)
++{
++	struct avl_container *cnt;
++
++	cnt = list_entry(head->next, struct avl_container, centry);
++	list_del(&cnt->centry);
++
++	return cnt;
++}
++
++/*
++ * Add new node entry int network allocator.
++ * must be called with disabled preemtpion.
++ */
++static void avl_node_entry_commit(struct avl_node_entry *entry, int cpu)
++{
++	int i, idx, off;
++
++	idx = off = 0;
++	for (i=0; i<entry->avl_node_num; ++i) {
++		struct avl_node *node;
++
++		node = &entry->avl_node_array[idx][off];
++
++		if (++off >= AVL_NODES_ON_PAGE) {
++			idx++;
++			off = 0;
++		}
++
++		node->entry = entry;
++
++		avl_set_cpu_ptr(node->value, cpu, entry->avl_node_order);
++		avl_set_node_ptr(node->value, node, entry->avl_node_order);
++		avl_container_add((void *)node->value, (1<<entry->avl_node_order)<<PAGE_SHIFT, cpu);
++	}
++
++	spin_lock(&avl_allocator[cpu].avl_node_lock);
++	entry->avl_entry_num = avl_allocator[cpu].avl_entry_num;
++	list_add_tail(&entry->node_entry, &avl_allocator[cpu].avl_node_list);
++	avl_allocator[cpu].avl_entry_num++;
++	spin_unlock(&avl_allocator[cpu].avl_node_lock);
++
++	printk("Network allocator cache has grown: entry: %u, number: %u, order: %u.\n",
++			entry->avl_entry_num, entry->avl_node_num, entry->avl_node_order);
++}
++
++/*
++ * Simple cache growing function - allocate as much as possible,
++ * but no more than @AVL_NODE_NUM pages when there is a need for that.
++ */
++static struct avl_node_entry *avl_node_entry_alloc(gfp_t gfp_mask, int order)
++{
++	struct avl_node_entry *entry;
++	int i, num = 0, idx, off, j;
++	unsigned long ptr;
++
++	entry = kzalloc(sizeof(struct avl_node_entry), gfp_mask);
++	if (!entry)
++		return NULL;
++
++	entry->avl_node_array = kzalloc(AVL_NODE_PAGES * sizeof(void *), gfp_mask);
++	if (!entry->avl_node_array)
++		goto err_out_free_entry;
++
++	for (i=0; i<AVL_NODE_PAGES; ++i) {
++		entry->avl_node_array[i] = (struct avl_node *)__get_free_page(gfp_mask);
++		if (!entry->avl_node_array[i]) {
++			num = i;
++			goto err_out_free;
++		}
++	}
++
++	idx = off = 0;
++
++	for (i=0; i<AVL_NODE_NUM; ++i) {
++		struct avl_node *node;
++
++		ptr = __get_free_pages(gfp_mask | __GFP_ZERO, order);
++		if (!ptr)
++			break;
++
++		node = &entry->avl_node_array[idx][off];
++
++		if (++off >= AVL_NODES_ON_PAGE) {
++			idx++;
++			off = 0;
++		}
++
++		for (j=0; j<(1<<order); ++j)
++			get_page(virt_to_page(ptr + (j<<PAGE_SHIFT)));
++
++		node->value = ptr;
++		memset(node->mask, 0, sizeof(node->mask));
++		avl_fill_bits(node->mask, ARRAY_SIZE(node->mask), 0, ((1<<order)<<PAGE_SHIFT)/AVL_MIN_SIZE, 1);
++	}
++
++	ulog("%s: entry: %p, node: %u, node_pages: %lu, node_num: %lu, order: %d, allocated: %d, container: %u, max_size: %u, min_size: %u, bits: %u.\n", 
++		__func__, entry, sizeof(struct avl_node), AVL_NODE_PAGES, AVL_NODE_NUM, order, 
++		i, AVL_CONTAINER_ARRAY_SIZE, AVL_MAX_SIZE, AVL_MIN_SIZE, ((1<<order)<<PAGE_SHIFT)/AVL_MIN_SIZE);
++
++	if (i == 0)
++		goto err_out_free;
++
++	entry->avl_node_num = i;
++	entry->avl_node_order = order;
++
++	return entry;
++
++err_out_free:
++	for (i=0; i<AVL_NODE_PAGES; ++i)
++		free_page((unsigned long)entry->avl_node_array[i]);
++err_out_free_entry:
++	kfree(entry);
++	return NULL;
++}
++
++/*
++ * Allocate memory region with given size and mode.
++ * If allocation fails due to unsupported order, otherwise
++ * allocate new node entry with given mode and try to allocate again
++ * Cache growing happens only with 0-order allocations.
++ */
++void *avl_alloc(unsigned int size, gfp_t gfp_mask)
++{
++	unsigned int i, try = 0, osize = size;
++	void *ptr = NULL;
++	unsigned long flags;
++
++	size = AVL_ALIGN(size + sizeof(struct avl_chunk));
++
++	if (size > AVL_MAX_SIZE || size < AVL_MIN_SIZE) {
++		/*
++		 * Print info about unsupported order so user could send a "bug report"
++		 * or increase initial allocation order.
++		 */
++		if (get_order(size) > AVL_ORDER && net_ratelimit()) {
++			printk(KERN_INFO "%s: Failed to allocate %u bytes with %02x mode, order %u, max order %u.\n", 
++					__func__, size, gfp_mask, get_order(size), AVL_ORDER);
++			WARN_ON(1);
++		}
++
++		return NULL;
++	}
++
++	local_irq_save(flags);
++repeat:
++	for (i=size/AVL_MIN_SIZE-1; i<AVL_CONTAINER_ARRAY_SIZE; ++i) {
++		struct list_head *head = &avl_allocator[smp_processor_id()].avl_container_array[i];
++		struct avl_container *c;
++
++		if (!list_empty(head)) {
++			struct avl_chunk *ch;
++
++			c = avl_dequeue(head);
++			ptr = c->ptr;
++
++			ch = avl_ptr_to_chunk(ptr, osize);
++			atomic_set(&ch->refcnt, 1);
++			ch->canary = AVL_CANARY;
++			ch->size = osize;
++
++			avl_update_node(c, i, osize);
++			break;
++		}
++	}
++	local_irq_restore(flags);
++#if 1
++	if (!ptr && !try) {
++		struct avl_node_entry *entry;
++		
++		try = 1;
++
++		entry = avl_node_entry_alloc(gfp_mask, get_order(size));
++		if (entry) {
++			local_irq_save(flags);
++			avl_node_entry_commit(entry, smp_processor_id());
++			goto repeat;
++		}
++			
++	}
++#endif
++	if (unlikely(!ptr && try))
++		if (net_ratelimit())
++			printk("%s: Failed to allocate %u bytes.\n", __func__, size);
++
++	return ptr;
++}
++
++/*
++ * Remove free chunk from the list.
++ */
++static inline struct avl_container *avl_search_container(void *ptr, unsigned int idx, int cpu)
++{
++	struct avl_container *c = ptr;
++	
++	list_del(&c->centry);
++	c->ptr = ptr;
++
++	return c;
++}
++
++/*
++ * Combine neighbour free chunks into the one with bigger size
++ * and put new chunk into list of free chunks with appropriate size.
++ */
++static void avl_combine(struct avl_node *node, void *lp, unsigned int lbits, void *rp, unsigned int rbits, 
++		void *cur_ptr, unsigned int cur_bits, int cpu)
++{
++	struct avl_container *lc, *rc, *c;
++	unsigned int idx;
++	void *ptr;
++
++	lc = rc = c = NULL;
++	idx = cur_bits - 1;
++	ptr = cur_ptr;
++
++	c = (struct avl_container *)cur_ptr;
++	c->ptr = cur_ptr;
++	
++	if (rp) {
++		rc = avl_search_container(rp, rbits-1, cpu);
++		if (!rc) {
++			printk(KERN_ERR "%p.%p: Failed to find a container for right pointer %p, rbits: %u.\n", 
++					node, cur_ptr, rp, rbits);
++			BUG();
++		}
++
++		c = rc;
++		idx += rbits;
++		ptr = c->ptr;
++	}
++
++	if (lp) {
++		lc = avl_search_container(lp, lbits-1, cpu);
++		if (!lc) {
++			printk(KERN_ERR "%p.%p: Failed to find a container for left pointer %p, lbits: %u.\n", 
++					node, cur_ptr, lp, lbits);
++			BUG();
++		}
++
++		idx += lbits;
++		ptr = c->ptr;
++	}
++	avl_container_insert(c, idx, cpu);
++}
++
++/*
++ * Free memory region of given size.
++ * Must be called on the same CPU where allocation happend
++ * with disabled interrupts.
++ */
++static void __avl_free_local(void *ptr, unsigned int size)
++{
++	unsigned long val = avl_ptr_to_value(ptr);
++	unsigned int pos, idx, sbits = AVL_ALIGN(size)/AVL_MIN_SIZE;
++	unsigned int rbits, lbits, cpu = avl_get_cpu_ptr(val);
++	struct avl_node *node;
++	unsigned long p;
++	void *lp, *rp;
++
++	node = avl_get_node_ptr((unsigned long)ptr);
++
++	pos = avl_ptr_to_offset(ptr);
++	idx = pos/BITS_PER_LONG;
++
++	p = node->mask[idx] >> (pos%BITS_PER_LONG);
++	
++	if ((p & 1)) {
++		if (net_ratelimit())
++			printk(KERN_ERR "%p.%p: Broken pointer: value: %lx, pos: %u, idx: %u, mask: %lx, p: %lx.\n", 
++				node, ptr, val, pos, idx, node->mask[idx], p);
++		return;
++	}
++
++	avl_fill_bits(node->mask, ARRAY_SIZE(node->mask), pos, sbits, 1);
++
++	lp = rp = NULL;
++	rbits = lbits = 0;
++
++	idx = (pos+sbits)/BITS_PER_LONG;
++	p = (pos+sbits)%BITS_PER_LONG;
++
++	if ((node->mask[idx] >> p) & 1) {
++		lbits = avl_count_set_up(node->mask, ARRAY_SIZE(node->mask), pos+sbits);
++		if (lbits) {
++			lp = (void *)(val + (pos + sbits)*AVL_MIN_SIZE);
++		}
++	}
++
++	if (pos) {
++		idx = (pos-1)/BITS_PER_LONG;
++		p = (pos-1)%BITS_PER_LONG;
++		if ((node->mask[idx] >> p) & 1) {
++			rbits = avl_count_set_down(node->mask, pos-1);
++			if (rbits) {
++				rp = (void *)(val + (pos-rbits)*AVL_MIN_SIZE);
++			}
++		}
++	}
++
++	avl_combine(node, lp, lbits, rp, rbits, ptr, sbits, cpu);
++}
++
++/*
++ * Free memory region of given size.
++ * If freeing CPU is not the same as allocation one, chunk will 
++ * be placed into list of to-be-freed objects on allocation CPU,
++ * otherwise chunk will be freed and combined with neighbours.
++ * Must be called with disabled interrupts.
++ */
++static void __avl_free(void *ptr, unsigned int size)
++{
++	int cpu = avl_get_cpu_ptr((unsigned long)ptr);
++
++	if (cpu != smp_processor_id()) {
++		struct avl_free_list *l, *this = ptr;
++		struct avl_allocator_data *alloc = &avl_allocator[cpu];
++
++		this->cpu = smp_processor_id();
++		this->size = size;
++
++		spin_lock(&alloc->avl_free_lock);
++		l = alloc->avl_free_list_head;
++		alloc->avl_free_list_head = this;
++		this->next = l;
++		spin_unlock(&alloc->avl_free_lock);
++		return;
++	}
++
++	__avl_free_local(ptr, size);
++}
++
++/*
++ * Free memory region of given size without sniffer data update.
++ */
++void avl_free_no_zc(void *ptr, unsigned int size)
++{
++	unsigned long flags;
++	struct avl_free_list *l;
++	struct avl_allocator_data *alloc;
++	struct avl_chunk *ch = avl_ptr_to_chunk(ptr, size);
++
++	if (unlikely((ch->canary != AVL_CANARY) || ch->size != size)) {
++		printk("Freeing destroyed object: ptr: %p, size: %u, canary: %x, must be %x, refcnt: %d, saved size: %u.\n",
++				ptr, size, ch->canary, AVL_CANARY, atomic_read(&ch->refcnt), ch->size);
++		return;
++	}
++
++	if (atomic_dec_and_test(&ch->refcnt)) {
++		local_irq_save(flags);
++		__avl_free(ptr, size);
++		
++		alloc = &avl_allocator[smp_processor_id()];
++
++		while (alloc->avl_free_list_head) {
++			spin_lock(&alloc->avl_free_lock);
++			l = alloc->avl_free_list_head;
++			alloc->avl_free_list_head = l->next;
++			spin_unlock(&alloc->avl_free_lock);
++			__avl_free_local(l, l->size);
++		}
++		local_irq_restore(flags);
++	}
++}
++
++/*
++ * Free memory region of given size.
++ */
++void avl_free(void *ptr, unsigned int size)
++{
++	struct avl_chunk *ch = avl_ptr_to_chunk(ptr, size);
++
++	if (unlikely((ch->canary != AVL_CANARY) || ch->size != size)) {
++		printk("Freeing destroyed object: ptr: %p, size: %u, canary: %x, must be %x, refcnt: %d, saved size: %u.\n",
++				ptr, size, ch->canary, AVL_CANARY, atomic_read(&ch->refcnt), ch->size);
++		return;
++	}
++	avl_update_zc(avl_get_node_ptr((unsigned long)ptr), ptr, size);
++	avl_free_no_zc(ptr, size);
++}
++
++/*
++ * Initialize per-cpu allocator data.
++ */
++static int avl_init_cpu(int cpu)
++{
++	unsigned int i;
++	struct avl_allocator_data *alloc = &avl_allocator[cpu];
++	struct avl_node_entry *entry;
++
++	spin_lock_init(&alloc->avl_free_lock);
++	spin_lock_init(&alloc->avl_node_lock);
++	INIT_LIST_HEAD(&alloc->avl_node_list);
++
++	alloc->avl_container_array = kzalloc(sizeof(struct list_head) * AVL_CONTAINER_ARRAY_SIZE, GFP_KERNEL);
++	if (!alloc->avl_container_array)
++		goto err_out_exit;
++
++	for (i=0; i<AVL_CONTAINER_ARRAY_SIZE; ++i)
++		INIT_LIST_HEAD(&alloc->avl_container_array[i]);
++
++	entry = avl_node_entry_alloc(GFP_KERNEL, AVL_ORDER);
++	if (!entry)
++		goto err_out_free_container;
++
++	avl_node_entry_commit(entry, cpu);
++
++	return 0;
++
++err_out_free_container:
++	kfree(alloc->avl_container_array);
++err_out_exit:
++	return -ENOMEM;
++}
++
++/*
++ * Initialize network allocator.
++ */
++int avl_init(void)
++{
++	int err, cpu;
++
++	for_each_possible_cpu(cpu) {
++		err = avl_init_cpu(cpu);
++		if (err)
++			goto err_out;
++	}
++
++	err = avl_init_zc();
++
++	printk(KERN_INFO "Network tree allocator has been initialized.\n");
++	return 0;
++
++err_out:
++	panic("Failed to initialize network allocator.\n");
++
++	return -ENOMEM;
++}
+diff --git a/net/core/alloc/avl.h b/net/core/alloc/avl.h
+new file mode 100644
+index 0000000..2a72b9f
+--- /dev/null
++++ b/net/core/alloc/avl.h
+@@ -0,0 +1,224 @@
++/*
++ * 	avl.h
++ * 
++ * 2006 Copyright (c) Evgeniy Polyakov <johnpol@xxxxxxxxxxx>
++ * All rights reserved.
++ * 
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHAAVLBILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#ifndef __AVL_H
++#define __AVL_H
++
++/*
++ * Zero-copy allocation control block.
++ * @ptr - pointer to allocated data.
++ * @off - offset inside given @avl_node_entry pages (absolute number of bytes)
++ * @size - size of the appropriate object
++ * @entry - number of @avl_node_entry which holds allocated object
++ * @number - number of @order-order pages in given @avl_node_entry
++ */
++
++struct zc_data
++{
++	union {
++		__u32		data[2];
++		void		*ptr;
++	} data;
++
++	__u32			off;
++	__u32			size;
++
++	__u32			entry;
++	__u32			cpu;
++};
++
++#define ZC_MAX_ENTRY_NUM	170
++
++/*
++ * Zero-copy allocation request.
++ * @type - type of the message - ipv4/ipv6/...
++ * @res_len - length of reserved area at the beginning.
++ * @data - allocation control block.
++ */
++struct zc_alloc_ctl
++{
++	__u16		type;
++	__u16		res_len;
++	struct zc_data	zc;
++};
++
++struct zc_entry_status
++{
++	__u16		node_order, node_num;
++};
++
++struct zc_status
++{
++	unsigned int	entry_num;
++	struct zc_entry_status	entry[ZC_MAX_ENTRY_NUM];
++};
++
++#define ZC_ALLOC	_IOWR('Z', 1, struct zc_alloc_ctl)
++#define ZC_COMMIT	_IOR('Z', 2, struct zc_alloc_ctl)
++#define ZC_SET_CPU	_IOR('Z', 3, int)
++#define ZC_STATUS	_IOWR('Z', 4, struct zc_status)
++
++#define AVL_ORDER		2	/* Maximum allocation order */
++#define AVL_BITS		7	/* Must cover maximum number of pages used for allocation pools */
++
++#ifdef __KERNEL__
++#include <linux/kernel.h>
++#include <linux/types.h>
++#include <linux/wait.h>
++#include <linux/spinlock.h>
++#include <asm/page.h>
++
++//#define AVL_DEBUG
++
++#ifdef AVL_DEBUG
++#define ulog(f, a...) printk(f, ##a)
++#else
++#define ulog(f, a...)
++#endif
++
++/*
++ * Network tree allocator variables.
++ */
++
++#define AVL_CANARY		0xc0d0e0f0
++
++#define AVL_ALIGN_SIZE		L1_CACHE_BYTES
++#define AVL_ALIGN(x) 		ALIGN(x, AVL_ALIGN_SIZE)
++
++#define AVL_NODES_ON_PAGE	(PAGE_SIZE/sizeof(struct avl_node))
++#define AVL_NODE_NUM		(1UL<<AVL_BITS)
++#define AVL_NODE_PAGES		((AVL_NODE_NUM+AVL_NODES_ON_PAGE-1)/AVL_NODES_ON_PAGE)
++
++#define AVL_MIN_SIZE		AVL_ALIGN_SIZE
++#define AVL_MAX_SIZE		((1<<AVL_ORDER) << PAGE_SHIFT)
++
++#define AVL_CONTAINER_ARRAY_SIZE	(AVL_MAX_SIZE/AVL_MIN_SIZE)
++
++struct avl_node_entry;
++
++/*
++ * Meta-information container for each contiguous block used in allocation.
++ * @value - start address of the contiguous block.
++ * @mask - bitmask of free and empty chunks [1 - free, 0 - used].
++ * @entry - pointer to parent node entry.
++ */
++struct avl_node
++{
++	unsigned long		value;
++	DECLARE_BITMAP(mask, AVL_MAX_SIZE/AVL_MIN_SIZE);
++	struct avl_node_entry	*entry;
++};
++
++/*
++ * Free chunks are dereferenced into this structure and placed into LIFO list.
++ */
++
++struct avl_container
++{
++	void			*ptr;
++	struct list_head	centry;
++};
++
++/*
++ * When freeing happens on different than allocation CPU,
++ * chunk is dereferenced into this structure and placed into
++ * single-linked list in allocation CPU private area.
++ */
++
++struct avl_free_list
++{
++	struct avl_free_list		*next;
++	unsigned int			size;
++	unsigned int			cpu;
++};
++
++/*
++ * This structure is placed after each allocated chunk and contains
++ * @canary - used to check memory overflow and reference counter for
++ * given memory region, which is used for example for zero-copy access.
++ * @size - used to check that freeing size is exactly the size of the object.
++ */
++
++struct avl_chunk
++{
++	unsigned int			canary, size;
++	atomic_t			refcnt;
++};
++
++/*
++ * Each array of nodes is places into dynamically grown list.
++ * @avl_node_array - array of nodes (linked into pages)
++ * @node_entry - entry in avl_allocator_data.avl_node_list.
++ * @avl_node_order - allocation order for each node in @avl_node_array
++ * @avl_node_num - number of nodes in @avl_node_array
++ * @avl_entry_num - number of this entry inside allocator
++ */
++
++struct avl_node_entry
++{
++	struct avl_node 	**avl_node_array;
++	struct list_head	node_entry;
++	u32			avl_entry_num;
++	u16 			avl_node_order, avl_node_num;
++};
++
++/*
++ * Main per-cpu allocator structure.
++ * @avl_container_array - array of lists of free chunks indexed by size of the elements
++ * @avl_free_list_head - single-linked list of objects, which were started to be freed on different CPU
++ * @avl_free_list_map_head - single-linked list of objects, which map update was started on different CPU
++ * @avl_free_lock - lock protecting avl_free_list_head
++ * @avl_node_list - list of avl_node_entry'es
++ * @avl_node_lock - lock used to protect avl_node_list from access from zero-copy devices.
++ * @entry_num - number of entries inside allocator.
++ */
++struct avl_allocator_data
++{
++	struct list_head 	*avl_container_array;
++	struct avl_free_list 	*avl_free_list_head;
++	struct avl_free_list 	*avl_free_map_list_head;
++	spinlock_t 		avl_free_lock;
++	struct list_head 	avl_node_list;
++	spinlock_t 		avl_node_lock;
++	u32			avl_entry_num;
++};
++
++void *avl_alloc(unsigned int size, gfp_t gfp_mask);
++void avl_free(void *ptr, unsigned int size);
++void avl_free_no_zc(void *ptr, unsigned int size);
++
++int avl_init_zc(void);
++int avl_init(void);
++void avl_fill_zc(struct zc_data *zc, void *ptr, unsigned int size);
++
++struct zc_control
++{
++	struct zc_data		*zcb;
++	unsigned int		zc_num, zc_used, zc_pos;
++	spinlock_t		zc_lock;
++	wait_queue_head_t	zc_wait;
++};
++
++extern struct zc_control zc_sniffer;
++extern struct avl_allocator_data avl_allocator[NR_CPUS];
++
++#endif /* __KERNEL__ */
++#endif /* __AVL_H */
+diff --git a/net/core/alloc/zc.c b/net/core/alloc/zc.c
+new file mode 100644
+index 0000000..f321218
+--- /dev/null
++++ b/net/core/alloc/zc.c
+@@ -0,0 +1,483 @@
++/*
++ * 	zc.c
++ * 
++ * 2006 Copyright (c) Evgeniy Polyakov <johnpol@xxxxxxxxxxx>
++ * All rights reserved.
++ * 
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/types.h>
++#include <linux/string.h>
++#include <linux/errno.h>
++#include <linux/slab.h>
++#include <linux/spinlock.h>
++#include <linux/percpu.h>
++#include <linux/list.h>
++#include <linux/mm.h>
++#include <linux/fs.h>
++#include <linux/poll.h>
++#include <linux/ioctl.h>
++#include <linux/skbuff.h>
++#include <linux/netfilter.h>
++#include <linux/netfilter_ipv4.h>
++#include <linux/ip.h>
++#include <net/flow.h>
++#include <net/dst.h>
++#include <net/route.h>
++#include <asm/uaccess.h>
++
++#include "avl.h"
++
++struct zc_private
++{
++	struct zc_data	*zcb;
++	struct mutex	lock;
++	int		cpu;
++};
++
++static char zc_name[] = "zc";
++static int zc_major;
++struct zc_control zc_sniffer;
++
++static int zc_release(struct inode *inode, struct file *file)
++{
++	struct zc_private *priv = file->private_data;
++
++	kfree(priv);
++	return 0;
++}
++
++static int zc_open(struct inode *inode, struct file *file)
++{
++	struct zc_private *priv;
++	struct zc_control *ctl = &zc_sniffer;
++
++	priv = kzalloc(sizeof(struct zc_private) + ctl->zc_num * sizeof(struct zc_data), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++	priv->zcb = (struct zc_data *)(priv+1);
++	priv->cpu = 0; /* Use CPU0 by default */
++	mutex_init(&priv->lock);
++
++	file->private_data = priv;
++
++	return 0;
++}
++
++static int zc_mmap(struct file *file, struct vm_area_struct *vma)
++{
++	struct zc_private *priv = file->private_data;
++	struct avl_allocator_data *alloc = &avl_allocator[priv->cpu];
++	struct avl_node_entry *e;
++	unsigned long flags, start = vma->vm_start;
++	int err = 0, idx, off;
++	unsigned int i, j, st, num, total_num;
++
++	st = vma->vm_pgoff;
++	total_num = (vma->vm_end - vma->vm_start)/PAGE_SIZE;
++
++	printk("%s: start: %lx, end: %lx, total_num: %u, st: %u.\n", __func__, start, vma->vm_end, total_num, st);
++
++	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
++	vma->vm_flags |= VM_RESERVED;
++	vma->vm_file = file;
++
++	spin_lock_irqsave(&alloc->avl_node_lock, flags);
++	list_for_each_entry(e, &alloc->avl_node_list, node_entry) {
++		if (st >= e->avl_node_num*(1U<<e->avl_node_order)) {
++#if 0
++			printk("%s: continue on cpu: %d, e: %p, total_num: %u, node_num: %u, node_order: %u, pages_in_node: %u, st: %u.\n", 
++					__func__, priv->cpu, e, total_num, e->avl_node_num, e->avl_node_order, 
++					e->avl_node_num*(1U<<e->avl_node_order), st);
++#endif
++			st -= e->avl_node_num*(1U<<e->avl_node_order);
++			continue;
++		}
++		num = min_t(unsigned int, total_num, e->avl_node_num*(1<<e->avl_node_order));
++
++		printk("%s: cpu: %d, e: %p, total_num: %u, node_num: %u, node_order: %u, st: %u, num: %u.\n", 
++				__func__, priv->cpu, e, total_num, e->avl_node_num, e->avl_node_order, st, num);
++
++		idx = 0;
++		off = st;
++		for (i=st; i<num;) {
++			struct avl_node *node = &e->avl_node_array[idx][off];
++
++			if (++off >= AVL_NODES_ON_PAGE) {
++				idx++;
++				off = 0;
++			}
++
++			for (j=0; (j<(1<<e->avl_node_order)) && (i<num); ++j, ++i) {
++				unsigned long virt = node->value + (j<<PAGE_SHIFT);
++				err = vm_insert_page(vma, start, virt_to_page(virt));
++				if (err) {
++					printk("\n%s: Failed to insert page for addr %lx into %lx, err: %d.\n",
++							__func__, virt, start, err);
++					break;
++				}
++				start += PAGE_SIZE;
++			}
++		}
++		if (err)
++			break;
++		total_num -= num;
++
++		if (total_num == 0)
++			break;
++	}
++	spin_unlock_irqrestore(&alloc->avl_node_lock, flags);
++
++	return err;
++}
++
++static ssize_t zc_write(struct file *file, const char __user *buf, size_t size, loff_t *off)
++{
++	ssize_t sz = 0;
++	struct zc_private *priv = file->private_data;
++	unsigned long flags;
++	unsigned int req_num = size/sizeof(struct zc_data), cnum, csize, i;
++	struct zc_control *ctl = &zc_sniffer;
++
++	while (size) {
++		cnum = min_t(unsigned int, req_num, ctl->zc_num);
++		csize = cnum*sizeof(struct zc_data);
++
++		if (copy_from_user(priv->zcb, buf, csize)) {
++			printk("%s: copy_from_user() failed.\n", __func__);
++			break;
++		}
++
++		spin_lock_irqsave(&ctl->zc_lock, flags);
++		for (i=0; i<cnum; ++i)
++			avl_free_no_zc(priv->zcb[i].data.ptr, priv->zcb[i].size);
++		ctl->zc_used -= cnum;
++		spin_unlock_irqrestore(&ctl->zc_lock, flags);
++
++		sz += csize;
++		size -= csize;
++		buf += csize;
++	}
++
++	return sz;
++}
++
++static ssize_t zc_read(struct file *file, char __user *buf, size_t size, loff_t *off)
++{
++	ssize_t sz = 0;
++	struct zc_private *priv = file->private_data;
++	unsigned long flags;
++	unsigned int pos, req_num = size/sizeof(struct zc_data), cnum, csize;
++	struct zc_control *ctl = &zc_sniffer;
++
++	wait_event_interruptible(ctl->zc_wait, ctl->zc_used > 0);
++
++	spin_lock_irqsave(&ctl->zc_lock, flags);
++	cnum = min_t(unsigned int, req_num, ctl->zc_used);
++	csize = cnum*sizeof(struct zc_data);
++	if (ctl->zc_used) {
++		if (ctl->zc_pos >= ctl->zc_used) {
++			pos = ctl->zc_pos - ctl->zc_used;
++			memcpy(priv->zcb, &ctl->zcb[pos], csize);
++		} else {
++			memcpy(priv->zcb, &ctl->zcb[0], csize);
++			pos = ctl->zc_num - (ctl->zc_used - ctl->zc_pos);
++			memcpy(&priv->zcb[ctl->zc_pos], &ctl->zcb[pos], 
++					(ctl->zc_used - ctl->zc_pos)*sizeof(struct zc_data));
++		}
++	}
++	spin_unlock_irqrestore(&ctl->zc_lock, flags);
++
++	sz = csize;
++
++	if (copy_to_user(buf, priv->zcb, cnum*sizeof(struct zc_data)))
++		sz = -EFAULT;
++
++	return sz;
++}
++
++static unsigned int zc_poll(struct file *file, struct poll_table_struct *wait)
++{
++	struct zc_control *ctl = &zc_sniffer;
++	unsigned int poll_flags = 0;
++	
++	poll_wait(file, &ctl->zc_wait, wait);
++
++	if (ctl->zc_used)
++		poll_flags = POLLIN | POLLRDNORM;
++
++	return poll_flags;
++}
++
++static int zc_ctl_alloc(struct zc_alloc_ctl *ctl, void __user *arg)
++{
++	void *ptr;
++	unsigned int size = SKB_DATA_ALIGN(ctl->zc.size) + sizeof(struct skb_shared_info);
++
++	ptr = avl_alloc(size, GFP_KERNEL);
++	if (!ptr)
++		return -ENOMEM;
++
++	avl_fill_zc(&ctl->zc, ptr, ctl->zc.size);
++
++	memset(ptr, 0, size);
++	
++	if (copy_to_user(arg, ctl, sizeof(struct zc_alloc_ctl))) {
++		avl_free(ptr, size);
++		return -EFAULT;
++	}
++
++	return 0;
++}
++
++static int netchannel_ip_route_output_flow(struct rtable **rp, struct flowi *flp, int flags)
++{
++	int err;
++
++	err = __ip_route_output_key(rp, flp);
++	if (err)
++		return err;
++
++	if (flp->proto) {
++		if (!flp->fl4_src)
++			flp->fl4_src = (*rp)->rt_src;
++		if (!flp->fl4_dst)
++			flp->fl4_dst = (*rp)->rt_dst;
++	}
++
++	return 0;
++}
++
++struct dst_entry *netchannel_route_get_raw(u32 faddr, u16 fport, 
++		u32 laddr, u16 lport, u8 proto)
++{
++	struct rtable *rt;
++	struct flowi fl = { .oif = 0,
++			    .nl_u = { .ip4_u =
++				      { .daddr = faddr,
++					.saddr = laddr,
++					.tos = 0 } },
++			    .proto = proto,
++			    .uli_u = { .ports =
++				       { .sport = lport,
++					 .dport = fport } } };
++
++	if (netchannel_ip_route_output_flow(&rt, &fl, 0))
++		goto no_route;
++	return dst_clone(&rt->u.dst);
++
++no_route:
++	return NULL;
++}
++
++static int zc_ctl_commit(struct zc_alloc_ctl *ctl)
++{
++	struct iphdr *iph;
++	void *data;
++	struct sk_buff *skb;
++	unsigned int data_len;
++	struct skb_shared_info *shinfo;
++	u16 *thdr;
++
++	printk("%s: ptr: %p, size: %u, reserved: %u, type: %x.\n", 
++			__func__, ctl->zc.data.ptr, ctl->zc.size, ctl->res_len, ctl->type);
++	
++	if (ctl->type != 0)
++		return -ENOTSUPP;
++
++	data = ctl->zc.data.ptr;
++	iph = (struct iphdr *)(data + ctl->res_len);
++	data_len = ntohs(iph->tot_len);
++	thdr = (u16 *)(((u8 *)iph) + (iph->ihl<<2));
++
++	skb = alloc_skb_empty(ctl->zc.size, GFP_KERNEL);
++	if (!skb)
++		return -ENOMEM;
++
++	skb->head = data;
++	skb->data = data;
++	skb->tail = data;
++	skb->end  = data + ctl->zc.size;
++	
++	shinfo = skb_shinfo(skb);
++	atomic_set(&shinfo->dataref, 1);
++	shinfo->nr_frags  = 0;
++	shinfo->gso_size = 0;
++	shinfo->gso_segs = 0;
++	shinfo->gso_type = 0;
++	shinfo->ip6_frag_id = 0;
++	shinfo->frag_list = NULL;
++
++	skb->csum = 0;
++	skb_reserve(skb, ctl->res_len);
++	skb_put(skb, data_len-ctl->res_len);
++
++	printk("%u.%u.%u.%u:%u -> %u.%u.%u.%u:%u, proto: %u, len: %u, skb_len: %u.\n", 
++			NIPQUAD(iph->saddr), ntohs(thdr[0]), 
++			NIPQUAD(iph->daddr), ntohs(thdr[1]), 
++			iph->protocol, data_len, skb->len);
++
++	skb->dst = netchannel_route_get_raw(
++			iph->daddr, thdr[1], 
++			iph->saddr, thdr[0], 
++			iph->protocol);
++	if (!skb->dst) {
++		printk("%s: failed to get route.\n", __func__);
++		goto err_out_free;
++	}
++
++	skb->h.th = (void *)thdr;
++	skb->nh.iph = iph;
++
++	printk("%u.%u.%u.%u:%u -> %u.%u.%u.%u:%u, proto: %u, dev: %s, skb: %p, data: %p.\n", 
++			NIPQUAD(iph->saddr), ntohs(thdr[0]), 
++			NIPQUAD(iph->daddr), ntohs(thdr[1]), 
++			iph->protocol, skb->dst->dev ? skb->dst->dev->name : "<NULL>",
++			skb, skb->data);
++
++	return NF_HOOK(PF_INET, NF_IP_LOCAL_OUT, skb, NULL, skb->dst->dev, dst_output);
++
++err_out_free:
++	kfree_skb(skb);
++	return -EINVAL;
++}
++
++struct zc_status *zc_get_status(int cpu, unsigned int start)
++{
++	unsigned long flags;
++	struct avl_node_entry *e;
++	struct avl_allocator_data *alloc = &avl_allocator[cpu];
++	struct zc_status *st;
++	struct zc_entry_status *es;
++	unsigned int num = 0;
++
++	st = kmalloc(sizeof(struct zc_status), GFP_KERNEL);
++	if (!st)
++		return NULL;
++	
++	spin_lock_irqsave(&alloc->avl_node_lock, flags);
++	list_for_each_entry(e, &alloc->avl_node_list, node_entry) {
++		if (e->avl_entry_num >= start && num < ZC_MAX_ENTRY_NUM) {
++			es = &st->entry[num];
++
++			es->node_order = e->avl_node_order;
++			es->node_num = e->avl_node_num;
++			num++;
++		}
++	}
++	spin_unlock_irqrestore(&alloc->avl_node_lock, flags);
++
++	st->entry_num = num;
++
++	return st;
++}
++
++static int zc_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
++{
++	struct zc_alloc_ctl ctl;
++	struct zc_private *priv = file->private_data;
++	int cpu, ret = -EINVAL;
++	unsigned int start;
++	struct zc_status *st;
++
++	mutex_lock(&priv->lock);
++
++	switch (cmd) {
++		case ZC_ALLOC:
++		case ZC_COMMIT:
++			if (copy_from_user(&ctl, (void __user *)arg, sizeof(struct zc_alloc_ctl))) {
++				ret = -EFAULT;
++				break;
++			}
++
++			if (cmd == ZC_ALLOC) 
++				ret = zc_ctl_alloc(&ctl, (void __user *)arg);
++			else
++				ret = zc_ctl_commit(&ctl);
++			break;
++		case ZC_SET_CPU:
++			if (copy_from_user(&cpu, (void __user *)arg, sizeof(int))) {
++				ret = -EFAULT;
++				break;
++			}
++			if (cpu < NR_CPUS && cpu >= 0) {
++				priv->cpu = cpu;
++				ret = 0;
++			}
++			break;
++		case ZC_STATUS:
++			if (copy_from_user(&start, (void __user *)arg, sizeof(unsigned int))) {
++				printk("%s: failed to read initial entry number.\n", __func__);
++				ret = -EFAULT;
++				break;
++			}
++
++			st = zc_get_status(priv->cpu, start);
++			if (!st) {
++				ret = -ENOMEM;
++				break;
++			}
++
++			ret = 0;
++			if (copy_to_user((void __user *)arg, st, sizeof(struct zc_status))) {
++				printk("%s: failed to write CPU%d status.\n", __func__, priv->cpu);
++				ret = -EFAULT;
++			}
++			kfree(st);
++			break;
++	}
++
++	mutex_unlock(&priv->lock);
++
++	return ret;
++}
++
++static struct file_operations zc_ops = {
++	.poll		= &zc_poll,
++	.ioctl		= &zc_ioctl,
++	.open 		= &zc_open,
++	.release 	= &zc_release,
++	.read		= &zc_read,
++	.write		= &zc_write,
++	.mmap 		= &zc_mmap,
++	.owner 		= THIS_MODULE,
++};
++
++int avl_init_zc(void)
++{
++	struct zc_control *ctl = &zc_sniffer;
++
++	ctl->zc_num = 1024;
++	init_waitqueue_head(&ctl->zc_wait);
++	spin_lock_init(&ctl->zc_lock);
++	ctl->zcb = kmalloc(ctl->zc_num * sizeof(struct zc_data), GFP_KERNEL);
++	if (!ctl->zcb)
++		return -ENOMEM;
++
++	zc_major = register_chrdev(0, zc_name, &zc_ops);
++       	if (zc_major < 0) {
++		printk(KERN_ERR "Failed to register %s char device: err=%d. Zero-copy is disabled.\n", 
++				zc_name, zc_major);
++		return -EINVAL;
++	}
++
++	printk(KERN_INFO "Network zero-copy sniffer has been enabled with %d major number.\n", zc_major);
++
++	return 0;
++}
++
+diff --git a/net/core/skbuff.c b/net/core/skbuff.c
+index 022d889..27f2b9b 100644
+--- a/net/core/skbuff.c
++++ b/net/core/skbuff.c
+@@ -125,6 +125,104 @@ EXPORT_SYMBOL(skb_truesize_bug);
+  *
+  */
+ 
++
++/**
++ * 	__alloc_skb_empty - allocate an empty network buffer
++ *	@size: size to allocate
++ *	@gfp_mask: allocation mask
++ */
++
++struct sk_buff *__alloc_skb_emtpy(unsigned int size, gfp_t gfp_mask)
++{
++	struct sk_buff *skb;
++
++	/* Get the HEAD */
++	skb = kmem_cache_alloc(skbuff_head_cache, gfp_mask & ~__GFP_DMA);
++	if (!skb)
++		goto out;
++
++	memset(skb, 0, offsetof(struct sk_buff, truesize));
++	
++	size = SKB_DATA_ALIGN(size);
++	skb->truesize = size + sizeof(struct sk_buff);
++	atomic_set(&skb->users, 1);
++
++out:
++	return skb;
++}
++
++/**
++ *	__alloc_skb_nta	-	allocate a network buffer
++ *	@size: size to allocate
++ *	@gfp_mask: allocation mask
++ *	@fclone: allocate from fclone cache instead of head cache
++ *		and allocate a cloned (child) skb
++ *
++ *	Allocate a new &sk_buff. The returned buffer has no headroom and a
++ *	tail room of size bytes. The object has a reference count of one.
++ *	The return is the buffer. On a failure the return is %NULL.
++ *
++ *	Buffers may only be allocated from interrupts using a @gfp_mask of
++ *	%GFP_ATOMIC.
++ *
++ *	This function uses special network allocator.
++ */
++struct sk_buff *__alloc_skb_nta(unsigned int size, gfp_t gfp_mask,
++			    int fclone)
++{
++	kmem_cache_t *cache;
++	struct skb_shared_info *shinfo;
++	struct sk_buff *skb;
++	u8 *data;
++
++	cache = fclone ? skbuff_fclone_cache : skbuff_head_cache;
++
++	/* Get the HEAD */
++	skb = kmem_cache_alloc(cache, gfp_mask & ~__GFP_DMA);
++	if (!skb)
++		goto out;
++
++	/* Get the DATA. Size must match skb_add_mtu(). */
++	size = SKB_DATA_ALIGN(size);
++	data = avl_alloc(size + sizeof(struct skb_shared_info), gfp_mask);
++	if (!data)
++		goto nodata;
++
++	memset(skb, 0, offsetof(struct sk_buff, truesize));
++	skb->truesize = size + sizeof(struct sk_buff);
++	skb->nta = 1;
++	atomic_set(&skb->users, 1);
++	skb->head = data;
++	skb->data = data;
++	skb->tail = data;
++	skb->end  = data + size;
++	/* make sure we initialize shinfo sequentially */
++	shinfo = skb_shinfo(skb);
++	atomic_set(&shinfo->dataref, 1);
++	shinfo->nr_frags  = 0;
++	shinfo->gso_size = 0;
++	shinfo->gso_segs = 0;
++	shinfo->gso_type = 0;
++	shinfo->ip6_frag_id = 0;
++	shinfo->frag_list = NULL;
++
++	if (fclone) {
++		struct sk_buff *child = skb + 1;
++		atomic_t *fclone_ref = (atomic_t *) (child + 1);
++
++		skb->fclone = SKB_FCLONE_ORIG;
++		atomic_set(fclone_ref, 1);
++
++		child->fclone = SKB_FCLONE_UNAVAILABLE;
++	}
++out:
++	return skb;
++nodata:
++	kmem_cache_free(cache, skb);
++	skb = NULL;
++	goto out;
++}
++
+ /**
+  *	__alloc_skb	-	allocate a network buffer
+  *	@size: size to allocate
+@@ -267,7 +365,7 @@ struct sk_buff *__netdev_alloc_skb(struc
+ {
+ 	struct sk_buff *skb;
+ 
+-	skb = alloc_skb(length + NET_SKB_PAD, gfp_mask);
++	skb = __alloc_skb_nta(length + NET_SKB_PAD, gfp_mask, 0);
+ 	if (likely(skb))
+ 		skb_reserve(skb, NET_SKB_PAD);
+ 	return skb;
+@@ -313,7 +411,10 @@ static void skb_release_data(struct sk_b
+ 		if (skb_shinfo(skb)->frag_list)
+ 			skb_drop_fraglist(skb);
+ 
+-		kfree(skb->head);
++		if (skb->nta)
++			avl_free(skb->head, skb->end - skb->head + sizeof(struct skb_shared_info));
++		else
++			kfree(skb->head);
+ 	}
+ }
+ 
+@@ -494,6 +595,7 @@ #ifdef CONFIG_NET_CLS_ACT
+ #endif
+ 	skb_copy_secmark(n, skb);
+ #endif
++	C(nta);
+ 	C(truesize);
+ 	atomic_set(&n->users, 1);
+ 	C(head);
+@@ -678,7 +780,7 @@ out:
+ int pskb_expand_head(struct sk_buff *skb, int nhead, int ntail,
+ 		     gfp_t gfp_mask)
+ {
+-	int i;
++	int i, nta = skb->nta;
+ 	u8 *data;
+ 	int size = nhead + (skb->end - skb->head) + ntail;
+ 	long off;
+@@ -687,8 +789,10 @@ int pskb_expand_head(struct sk_buff *skb
+ 		BUG();
+ 
+ 	size = SKB_DATA_ALIGN(size);
+-
+-	data = kmalloc(size + sizeof(struct skb_shared_info), gfp_mask);
++	if (nta)
++		data = avl_alloc(size + sizeof(struct skb_shared_info), gfp_mask);
++	else
++		data = kmalloc(size + sizeof(struct skb_shared_info), gfp_mask);
+ 	if (!data)
+ 		goto nodata;
+ 
+@@ -714,6 +818,7 @@ int pskb_expand_head(struct sk_buff *skb
+ 	skb->mac.raw += off;
+ 	skb->h.raw   += off;
+ 	skb->nh.raw  += off;
++	skb->nta      = nta;
+ 	skb->cloned   = 0;
+ 	skb->nohdr    = 0;
+ 	atomic_set(&skb_shinfo(skb)->dataref, 1);
+@@ -2057,6 +2162,9 @@ void __init skb_init(void)
+ 						NULL, NULL);
+ 	if (!skbuff_fclone_cache)
+ 		panic("cannot create skbuff cache");
++
++	if (avl_init())
++		panic("Failed to initialize network tree allocator.\n");
+ }
+ 
+ EXPORT_SYMBOL(___pskb_trim);
+
+
+-- 
+	Evgeniy Polyakov
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Re: [PATCH 1/1] network memory allocator.
+
+    * Subject: Re: [PATCH 1/1] network memory allocator.
+    * From: Peter Zijlstra <a.p.zijlstra@xxxxxxxxx>
+    * Date: Tue, 15 Aug 2006 12:55:02 +0200
+    * Cc: David Miller <davem@xxxxxxxxxxxxx>, netdev@xxxxxxxxxxxxxxx, linux-kernel@xxxxxxxxxxxxxxx, linux-mm@xxxxxxxxx
+    * In-reply-to: <20060814123530.GA5019@xxxxxxxxxxx>
+    * References: <20060814110359.GA27704@xxxxxxxxxxx> <1155558313.5696.167.camel@twins> <20060814123530.GA5019@xxxxxxxxxxx>
+
+On Mon, 2006-08-14 at 16:35 +0400, Evgeniy Polyakov wrote:
+> On Mon, Aug 14, 2006 at 02:25:13PM +0200, Peter Zijlstra (a.p.zijlstra@xxxxxxxxx) wrote:
+> > On Mon, 2006-08-14 at 15:04 +0400, Evgeniy Polyakov wrote:
+> > 
+> > > Defragmentation is a part of freeing algorithm and initial fragmentation
+> > > avoidance is being done at allocation time by removing power-of-two
+> > > allocations. Rate of fragmentation can be found in some userspace
+> > > modlling tests being done for both power-of-two SLAB-like and NTA
+> > > allocators. (more details on project's homepage [4]).
+> > 
+> > Only with a perfect allocation pattern. And then still only internal
+> > fragmentation; your allocator is still vulnerable to external
+> > fragmentation - you cannot move allocated chunks around because there
+> > are pointers into it, hence you will suffer from external fragmentation.
+> > 
+> > http://en.wikipedia.org/wiki/Fragmentation_%28computer%29
+> 
+> Nature of network dataflow does not obey to that requirements - all
+> chunks are "short-lives", i.e. sooner or later they will be put back and
+> thus initial region will be repaired.
+> With existing allocator it never happens by deisgn.
+> 
+> > > Benchmarks with trivial epoll based web server showed noticeble (more
+> > > than 40%) imrovements of the request rates (1600-1800 requests per
+> > > second vs. more than 2300 ones). It can be described by more
+> > > cache-friendly freeing algorithm, by tighter objects packing and thus
+> > > reduced cache line ping-pongs, reduced lookups into higher-layer caches
+> > > and so on.
+> > 
+> > Nice :-)
+> > 
+> > > Design of allocator allows to map all node's pages into userspace thus
+> > > allows to have true zero-copy support for both sending and receiving
+> > > dataflows.
+> > 
+> > I'm still not clear on how you want to do this, only the trivial case of
+> > a sniffer was mentioned by you. To be able to do true zero-copy receive
+> > each packet will have to have its own page(s). Simply because you do not
+> > know the destination before you receive it, the packet could end up
+> > going to a whole different socket that the prev/next. As soon as you
+> > start packing multiple packets on 1 page, you've lost the zero-copy
+> > receive game.
+> 
+> Userspace can sak for next packet and pointer to the new location will
+> be removed.
+
+/sak/ask/?
+
+I'm not understanding, if you have a page A with two packets, a and b;
+once you map that page into user-space that process has access to both
+packets, which is a security problem. How are you going to solve this?
+
+Also note that zero-copy sending does not have this problem, since data
+is already grouped by socket.
+
+> > > As described in recent threads [3] it is also possible to eliminate any 
+> > > kind of main system OOM influence on network dataflow processing, thus 
+> > > it is possible to prevent deadlock for systems, which use network as 
+> > > memory storage (swap over network, iSCSI, NBD and so on).
+> > 
+> > How? You have never stated how you will avoid getting all packets stuck
+> > in blocked sockets.
+> 
+> Each socket has it's limit, so if allocator got enough memory, blocked
+> sockets will not affect it's behaviour.
+
+But isn't the total capacity of the network stack much larger than any
+allocator can provide?
+
+> > On another note, I think you misunderstand our SLAB allocator; we do not
+> > round up to nearest order page alloc per object; SLAB is build to avoid
+> > that and is designed to pack equal size objects into pages. The kmalloc
+> > allocator is build on top of several SLAB allocators; each with its
+> > specific size objects to serve.
+> > 
+> > For example, the 64 byte SLAB will serve 64 byte objects, and packs
+> > about PAGE_SIZE/64 per page (about since there is some overhead).
+> > 
+> > So the actual internal fragmentation of the current kmalloc/SLAB
+> > allocator is not as bad as you paint it. The biggest problem we have
+> > with the SLAB thing is getting pages back from it. (And the horrific
+> > complexity of the current implementation)
+> 
+> Ok, not SLAB, but kmaloc/SLAB.
+
+The page-allocator does what you describe, but hardly anybody uses that
+to store small objects.
+
+Page allocator - buddy allocator, gives out memory in 1<<n pages.
+
+SLAB allocator - uses the page allocator for backing, each SLAB issues
+objects of a fixed, predetermined size, packed in pages.
+
+kmalloc - uses a collection of SLAB allocators to issue 'variable' size
+objects (see kmalloc_sizes.h - as you will see internal fragmentation
+can become quite large for larger objects, but small objects do rather
+well - and one could always add a frequently used size if it shows to be
+beneficial).
+
+> That allocator uses power-of-two allocation, so there is extremely
+> large overhead for several (and in some cases for all) usage cases
+> (e1000 with jumbo frames and unix sockets).
+
+Wrong example :-), e1000 is the only driver that doesn't do high order
+allocs for jumbo frames. But yes, the other drivers should be fixed,
+relying on higher order allocations is unsound.
+
+> SLAB allows to have chunks of memory from differenct CPU, so it is
+> impossible to create defragmentation, thus kmalloc/SLAB by design will
+> suffer from fragmentation.
+
+*confused* memory is not bound to CPUs other than by NUMA, but even
+there there is only a single address space. 
+
+> Graphs of power-of-two vs. NTA overhead is shown on projects' homepage 
+> - overhead is extremely large.
+
+Yes seen that, but as stated, hardly anybody uses the page allocator to
+store small objects. However if you do, you get large internal
+fragmentation but zero external fragmentation (on that allocation
+level).
+
+This is where my SROG allocator comes in, it is used to group objects by
+lifetime and returns the pages to the page allocator. This makes the
+whole allocator short-lived and hence cannot add (external)
+fragmentation on this level. The use I have for that is that I can then
+properly gauge how much memory there is available. External
+fragmentation and guarantees can be difficult to reconcile.
+
+I have no idea how fast/slow the SROG allocator is, and don't really
+care since its only used as a fallback allocator; what I do care about
+is determinism (in space).
+
+However, I do have a patch that converts the whole skb layer to use the
+SROG allocator, not only the payload, so I could do some test. But this
+is not a serious candidate until all jumbo frame capable drivers have
+been converted to skb fragments instead of high order allocations - a
+Good Thing [tm].
+
+-
+To unsubscribe from this list: send the line "unsubscribe netdev" in
+the body of a message to majordomo@xxxxxxxxxxxxxxx
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+
+
+
+
+
+
+
+Re: [PATCH 1/1] network memory allocator.
+
+    * Subject: Re: [PATCH 1/1] network memory allocator.
+    * From: Evgeniy Polyakov <johnpol@xxxxxxxxxxx>
+    * Date: Tue, 15 Aug 2006 15:26:17 +0400
+    * Cc: David Miller <davem@xxxxxxxxxxxxx>, netdev@xxxxxxxxxxxxxxx, linux-kernel@xxxxxxxxxxxxxxx, linux-mm@xxxxxxxxx
+    * In-reply-to: <1155639302.5696.210.camel@twins>
+    * References: <20060814110359.GA27704@xxxxxxxxxxx> <1155558313.5696.167.camel@twins> <20060814123530.GA5019@xxxxxxxxxxx> <1155639302.5696.210.camel@twins>
+    * User-agent: Mutt/1.5.9i
+
+On Tue, Aug 15, 2006 at 12:55:02PM +0200, Peter Zijlstra (a.p.zijlstra@xxxxxxxxx) wrote:
+> > Userspace can sak for next packet and pointer to the new location will
+> > be removed.
+> 
+> /sak/ask/?
+> 
+> I'm not understanding, if you have a page A with two packets, a and b;
+> once you map that page into user-space that process has access to both
+> packets, which is a security problem. How are you going to solve this?
+
+Yep, there is such issue.
+But no one is ever going to replace socket code with zero-copy
+interfaces - Linux has backward compatibility noone ever had, so
+send()/recv() will be there.
+It is new interface which can be changed as described in previous
+e-mails - copy if next chunk belongs to different socket and so on.
+
+Initial user will be sniffer, which should get all packets.
+
+> Also note that zero-copy sending does not have this problem, since data
+> is already grouped by socket.
+> 
+> > > > As described in recent threads [3] it is also possible to eliminate any 
+> > > > kind of main system OOM influence on network dataflow processing, thus 
+> > > > it is possible to prevent deadlock for systems, which use network as 
+> > > > memory storage (swap over network, iSCSI, NBD and so on).
+> > > 
+> > > How? You have never stated how you will avoid getting all packets stuck
+> > > in blocked sockets.
+> > 
+> > Each socket has it's limit, so if allocator got enough memory, blocked
+> > sockets will not affect it's behaviour.
+> 
+> But isn't the total capacity of the network stack much larger than any
+> allocator can provide?
+
+TCP has 768kb limit on my amd64 with 1gb of ram, so I expect allocator
+can handle all requests.
+And there is a simple task in TODO list to dynamically grow cache when
+threshold of memory is in use. It is really simple task and will be
+implemented as soon as I complete suggestions mentioned by Andrew Morton.
+
+> > > On another note, I think you misunderstand our SLAB allocator; we do not
+> > > round up to nearest order page alloc per object; SLAB is build to avoid
+> > > that and is designed to pack equal size objects into pages. The kmalloc
+> > > allocator is build on top of several SLAB allocators; each with its
+> > > specific size objects to serve.
+> > > 
+> > > For example, the 64 byte SLAB will serve 64 byte objects, and packs
+> > > about PAGE_SIZE/64 per page (about since there is some overhead).
+> > > 
+> > > So the actual internal fragmentation of the current kmalloc/SLAB
+> > > allocator is not as bad as you paint it. The biggest problem we have
+> > > with the SLAB thing is getting pages back from it. (And the horrific
+> > > complexity of the current implementation)
+> > 
+> > Ok, not SLAB, but kmaloc/SLAB.
+> 
+> The page-allocator does what you describe, but hardly anybody uses that
+> to store small objects.
+
+Network stack uses kmalloc.
+
+> Page allocator - buddy allocator, gives out memory in 1<<n pages.
+> 
+> SLAB allocator - uses the page allocator for backing, each SLAB issues
+> objects of a fixed, predetermined size, packed in pages.
+> 
+> kmalloc - uses a collection of SLAB allocators to issue 'variable' size
+> objects (see kmalloc_sizes.h - as you will see internal fragmentation
+> can become quite large for larger objects, but small objects do rather
+> well - and one could always add a frequently used size if it shows to be
+> beneficial).
+
+There is no "frequently used size", kmalloc() does not know what size is
+frequent and what is not. And there are other mentioned problems with
+kmalloc/SLAB besides power-of-two, which prevent fragmentation problem
+resolution.
+
+> > That allocator uses power-of-two allocation, so there is extremely
+> > large overhead for several (and in some cases for all) usage cases
+> > (e1000 with jumbo frames and unix sockets).
+> 
+> Wrong example :-), e1000 is the only driver that doesn't do high order
+> allocs for jumbo frames. But yes, the other drivers should be fixed,
+> relying on higher order allocations is unsound.
+
+:) do you read netdev@? There are several quite long recent discussions 
+where network hackers blame exactly e1000 for it's hardware problems and
+ugly memory usage model.
+We even think how to change struct sk_buff - Holy Grail of network code
+- just to help e1000 driver (well, not exactly for e1000, but that
+driver was a cause).
+
+> > SLAB allows to have chunks of memory from differenct CPU, so it is
+> > impossible to create defragmentation, thus kmalloc/SLAB by design will
+> > suffer from fragmentation.
+> 
+> *confused* memory is not bound to CPUs other than by NUMA, but even
+> there there is only a single address space. 
+
+Each slab can have objects allocated in different CPUs, it was done to
+reduce freeing algorithm. If system wants to defragment several objects
+into bigger one, it must check all CPUs and find in which cache those
+objects are placed, which is extremely expensive, so SLAB can not
+perform defragmentation.
+
+> > Graphs of power-of-two vs. NTA overhead is shown on projects' homepage 
+> > - overhead is extremely large.
+> 
+> Yes seen that, but as stated, hardly anybody uses the page allocator to
+> store small objects. However if you do, you get large internal
+> fragmentation but zero external fragmentation (on that allocation
+> level).
+
+Truncated cat /proc/slabinfo on my machine (usual desktop):
+size-32             1170   1232     32
+size-128             663    780    128
+size-64             4239   9558     64
+
+> This is where my SROG allocator comes in, it is used to group objects by
+> lifetime and returns the pages to the page allocator. This makes the
+> whole allocator short-lived and hence cannot add (external)
+> fragmentation on this level. The use I have for that is that I can then
+> properly gauge how much memory there is available. External
+> fragmentation and guarantees can be difficult to reconcile.
+> 
+> I have no idea how fast/slow the SROG allocator is, and don't really
+> care since its only used as a fallback allocator; what I do care about
+> is determinism (in space).
+> 
+> However, I do have a patch that converts the whole skb layer to use the
+> SROG allocator, not only the payload, so I could do some test. But this
+> is not a serious candidate until all jumbo frame capable drivers have
+> been converted to skb fragments instead of high order allocations - a
+> Good Thing [tm].
+
+You created SROG after my suggestion and discussion about NTA and it works 
+well for it's purpose (doesn't it?), further extension could lead to creation 
+of NTA (or could not).
+SROG is a wrapper on top of alloc_pages and list of free objects,
+there are "several" differencies between allocators and I do not see how
+they can compete right now.
+
+-- 
+	Evgeniy Polyakov
+-
+To unsubscribe from this list: send the line "unsubscribe netdev" in
+the body of a message to majordomo@xxxxxxxxxxxxxxx
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+
+
+
+
+
+
+
+
+
+
+Re: [PATCH 1/1] network memory allocator.
+
+    * Subject: Re: [PATCH 1/1] network memory allocator.
+    * From: Peter Zijlstra <a.p.zijlstra@xxxxxxxxx>
+    * Date: Tue, 15 Aug 2006 14:03:25 +0200
+    * Cc: David Miller <davem@xxxxxxxxxxxxx>, netdev@xxxxxxxxxxxxxxx, linux-kernel@xxxxxxxxxxxxxxx, linux-mm@xxxxxxxxx
+    * In-reply-to: <20060815112617.GB21736@xxxxxxxxxxx>
+    * References: <20060814110359.GA27704@xxxxxxxxxxx> <1155558313.5696.167.camel@twins> <20060814123530.GA5019@xxxxxxxxxxx> <1155639302.5696.210.camel@twins> <20060815112617.GB21736@xxxxxxxxxxx>
+
+On Tue, 2006-08-15 at 15:26 +0400, Evgeniy Polyakov wrote:
+> On Tue, Aug 15, 2006 at 12:55:02PM +0200, Peter Zijlstra (a.p.zijlstra@xxxxxxxxx) wrote:
+> > > Userspace can sak for next packet and pointer to the new location will
+> > > be removed.
+> > 
+> > /sak/ask/?
+> > 
+> > I'm not understanding, if you have a page A with two packets, a and b;
+> > once you map that page into user-space that process has access to both
+> > packets, which is a security problem. How are you going to solve this?
+> 
+> Yep, there is such issue.
+> But no one is ever going to replace socket code with zero-copy
+> interfaces - Linux has backward compatibility noone ever had, so
+> send()/recv() will be there.
+
+The new AIO network API should be able to provide the needed userspace
+changes.
+
+> It is new interface which can be changed as described in previous
+> e-mails - copy if next chunk belongs to different socket and so on.
+
+But if you copy you're not zero-copy anymore. If you copy every second
+packet you have a 1/2 copy receive, but not zero.
+
+> Initial user will be sniffer, which should get all packets.
+
+Only the root user may get all packets. And most enterprise systems I've
+seen don't generally run a sniffer. That is usually done by
+redirecting/copying the data stream in a router and attach a second host
+to analyse the data.
+
+> > > > > As described in recent threads [3] it is also possible to eliminate any 
+> > > > > kind of main system OOM influence on network dataflow processing, thus 
+> > > > > it is possible to prevent deadlock for systems, which use network as 
+> > > > > memory storage (swap over network, iSCSI, NBD and so on).
+> > > > 
+> > > > How? You have never stated how you will avoid getting all packets stuck
+> > > > in blocked sockets.
+> > > 
+> > > Each socket has it's limit, so if allocator got enough memory, blocked
+> > > sockets will not affect it's behaviour.
+> > 
+> > But isn't the total capacity of the network stack much larger than any
+> > allocator can provide?
+> 
+> TCP has 768kb limit on my amd64 with 1gb of ram, so I expect allocator
+> can handle all requests.
+
+But the capacity of the network stack is larger than this (arbitrary)
+limit. It is possible to have all 768kb worth of packets stuck on
+blocked sockets.
+
+> And there is a simple task in TODO list to dynamically grow cache when
+> threshold of memory is in use. It is really simple task and will be
+> implemented as soon as I complete suggestions mentioned by Andrew Morton.
+
+Growing will not help, the problem is you are out of memory, you cannot
+grow at that point.
+
+> > > > On another note, I think you misunderstand our SLAB allocator; we do not
+> > > > round up to nearest order page alloc per object; SLAB is build to avoid
+> > > > that and is designed to pack equal size objects into pages. The kmalloc
+> > > > allocator is build on top of several SLAB allocators; each with its
+> > > > specific size objects to serve.
+> > > > 
+> > > > For example, the 64 byte SLAB will serve 64 byte objects, and packs
+> > > > about PAGE_SIZE/64 per page (about since there is some overhead).
+> > > > 
+> > > > So the actual internal fragmentation of the current kmalloc/SLAB
+> > > > allocator is not as bad as you paint it. The biggest problem we have
+> > > > with the SLAB thing is getting pages back from it. (And the horrific
+> > > > complexity of the current implementation)
+> > > 
+> > > Ok, not SLAB, but kmaloc/SLAB.
+> > 
+> > The page-allocator does what you describe, but hardly anybody uses that
+> > to store small objects.
+> 
+> Network stack uses kmalloc.
+
+skbuff_head_cache and skbuff_fclone_cache are SLABs.
+
+> > Page allocator - buddy allocator, gives out memory in 1<<n pages.
+> > 
+> > SLAB allocator - uses the page allocator for backing, each SLAB issues
+> > objects of a fixed, predetermined size, packed in pages.
+> > 
+> > kmalloc - uses a collection of SLAB allocators to issue 'variable' size
+> > objects (see kmalloc_sizes.h - as you will see internal fragmentation
+> > can become quite large for larger objects, but small objects do rather
+> > well - and one could always add a frequently used size if it shows to be
+> > beneficial).
+> 
+> There is no "frequently used size", kmalloc() does not know what size is
+> frequent and what is not. And there are other mentioned problems with
+> kmalloc/SLAB besides power-of-two, which prevent fragmentation problem
+> resolution.
+
+Yes SLAB is a horrid thing on some points but very good at a lot of
+other things. But surely there are frequently used sizes, kmalloc will
+not know, but a developer with profiling tools might.
+
+> > > That allocator uses power-of-two allocation, so there is extremely
+> > > large overhead for several (and in some cases for all) usage cases
+> > > (e1000 with jumbo frames and unix sockets).
+> > 
+> > Wrong example :-), e1000 is the only driver that doesn't do high order
+> > allocs for jumbo frames. But yes, the other drivers should be fixed,
+> > relying on higher order allocations is unsound.
+> 
+> :) do you read netdev@? There are several quite long recent discussions 
+> where network hackers blame exactly e1000 for it's hardware problems and
+> ugly memory usage model.
+> We even think how to change struct sk_buff - Holy Grail of network code
+> - just to help e1000 driver (well, not exactly for e1000, but that
+> driver was a cause).
+
+Have you seen the latest code? It allocates single pages and puts them
+in the skb_shared_info fragments. Surely it might have been the one
+pushing for these changes, but they are done. Current status.
+
+> > > SLAB allows to have chunks of memory from differenct CPU, so it is
+> > > impossible to create defragmentation, thus kmalloc/SLAB by design will
+> > > suffer from fragmentation.
+> > 
+> > *confused* memory is not bound to CPUs other than by NUMA, but even
+> > there there is only a single address space. 
+> 
+> Each slab can have objects allocated in different CPUs, it was done to
+> reduce freeing algorithm. If system wants to defragment several objects
+> into bigger one, it must check all CPUs and find in which cache those
+> objects are placed, which is extremely expensive, so SLAB can not
+> perform defragmentation.
+
+What you are referring to is coalescence, and yes coalescing over page
+boundaries is hard in the SLAB layer, the page allocator does that.
+
+> > > Graphs of power-of-two vs. NTA overhead is shown on projects' homepage 
+> > > - overhead is extremely large.
+> > 
+> > Yes seen that, but as stated, hardly anybody uses the page allocator to
+> > store small objects. However if you do, you get large internal
+> > fragmentation but zero external fragmentation (on that allocation
+> > level).
+> 
+> Truncated cat /proc/slabinfo on my machine (usual desktop):
+> size-32             1170   1232     32
+> size-128             663    780    128
+> size-64             4239   9558     64
+
+Sure, point being?
+
+size-64             4497   4602     64   59    1 : tunables  120   60
+8 : slabdata     78     78      0
+
+4497 objects used out of 4602 available, object size 64 bytes, 59
+objects per slab of 1 page. .... 78 pages with active objects out of 78
+pages allocated. 
+
+
+> > This is where my SROG allocator comes in, it is used to group objects by
+> > lifetime and returns the pages to the page allocator. This makes the
+> > whole allocator short-lived and hence cannot add (external)
+> > fragmentation on this level. The use I have for that is that I can then
+> > properly gauge how much memory there is available. External
+> > fragmentation and guarantees can be difficult to reconcile.
+> > 
+> > I have no idea how fast/slow the SROG allocator is, and don't really
+> > care since its only used as a fallback allocator; what I do care about
+> > is determinism (in space).
+> > 
+> > However, I do have a patch that converts the whole skb layer to use the
+> > SROG allocator, not only the payload, so I could do some test. But this
+> > is not a serious candidate until all jumbo frame capable drivers have
+> > been converted to skb fragments instead of high order allocations - a
+> > Good Thing [tm].
+> 
+> You created SROG after my suggestion and discussion about NTA and it works 
+> well for it's purpose (doesn't it?), further extension could lead to creation 
+> of NTA (or could not).
+
+I started with a very broken in-situ allocator (that tried to do the
+same thing) in the very first patch. It was only later that I realised
+the full extend of the skbuff requirements.
+
+And no, NTA is too complex an allocator to do what I need. And more
+specifically its design is quite contrary to what I have done. I
+create/destroy an allocator instance per packet, you have one allocator
+instance and serve multiple packets.
+
+> SROG is a wrapper on top of alloc_pages and list of free objects,
+> there are "several" differencies between allocators and I do not see how
+> they can compete right now.
+
+Yes allocators are build in layers, the page allocator the the basic
+building block in Linux.
+
+-
+To unsubscribe from this list: send the line "unsubscribe netdev" in
+the body of a message to majordomo@xxxxxxxxxxxxxxx
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+
+
+
+
+
+
+
+Re: [PATCH 1/1] network memory allocator.
+
+    * Subject: Re: [PATCH 1/1] network memory allocator.
+    * From: Evgeniy Polyakov <johnpol@xxxxxxxxxxx>
+    * Date: Tue, 15 Aug 2006 16:34:38 +0400
+    * Cc: David Miller <davem@xxxxxxxxxxxxx>, netdev@xxxxxxxxxxxxxxx, linux-kernel@xxxxxxxxxxxxxxx, linux-mm@xxxxxxxxx
+    * In-reply-to: <1155643405.5696.236.camel@twins>
+    * References: <20060814110359.GA27704@xxxxxxxxxxx> <1155558313.5696.167.camel@twins> <20060814123530.GA5019@xxxxxxxxxxx> <1155639302.5696.210.camel@twins> <20060815112617.GB21736@xxxxxxxxxxx> <1155643405.5696.236.camel@twins>
+    * User-agent: Mutt/1.5.9i
+
+On Tue, Aug 15, 2006 at 02:03:25PM +0200, Peter Zijlstra (a.p.zijlstra@xxxxxxxxx) wrote:
+> On Tue, 2006-08-15 at 15:26 +0400, Evgeniy Polyakov wrote:
+> > On Tue, Aug 15, 2006 at 12:55:02PM +0200, Peter Zijlstra (a.p.zijlstra@xxxxxxxxx) wrote:
+> > > > Userspace can sak for next packet and pointer to the new location will
+> > > > be removed.
+> > > 
+> > > /sak/ask/?
+> > > 
+> > > I'm not understanding, if you have a page A with two packets, a and b;
+> > > once you map that page into user-space that process has access to both
+> > > packets, which is a security problem. How are you going to solve this?
+> > 
+> > Yep, there is such issue.
+> > But no one is ever going to replace socket code with zero-copy
+> > interfaces - Linux has backward compatibility noone ever had, so
+> > send()/recv() will be there.
+> 
+> The new AIO network API should be able to provide the needed userspace
+> changes.
+
+Kevent based network AIO already handle it.
+This changes are different.
+
+> > It is new interface which can be changed as described in previous
+> > e-mails - copy if next chunk belongs to different socket and so on.
+> 
+> But if you copy you're not zero-copy anymore. If you copy every second
+> packet you have a 1/2 copy receive, but not zero.
+>
+> > Initial user will be sniffer, which should get all packets.
+> 
+> Only the root user may get all packets. And most enterprise systems I've
+> seen don't generally run a sniffer. That is usually done by
+> redirecting/copying the data stream in a router and attach a second host
+> to analyse the data.
+
+Nice words. And what "second host" is supposed to do with that traffic?
+I expect it should not be Linux (not an "enterprise system"?). WIll it
+copy to userspace or have some kind of a zero-copy?
+
+> > > > > > As described in recent threads [3] it is also possible to eliminate any 
+> > > > > > kind of main system OOM influence on network dataflow processing, thus 
+> > > > > > it is possible to prevent deadlock for systems, which use network as 
+> > > > > > memory storage (swap over network, iSCSI, NBD and so on).
+> > > > > 
+> > > > > How? You have never stated how you will avoid getting all packets stuck
+> > > > > in blocked sockets.
+> > > > 
+> > > > Each socket has it's limit, so if allocator got enough memory, blocked
+> > > > sockets will not affect it's behaviour.
+> > > 
+> > > But isn't the total capacity of the network stack much larger than any
+> > > allocator can provide?
+> > 
+> > TCP has 768kb limit on my amd64 with 1gb of ram, so I expect allocator
+> > can handle all requests.
+> 
+> But the capacity of the network stack is larger than this (arbitrary)
+> limit. It is possible to have all 768kb worth of packets stuck on
+> blocked sockets.
+
+And so what? You said, that separated from main allocator can not handle
+all memory requests being done by the stack, as you can see it easily
+can.
+
+> > And there is a simple task in TODO list to dynamically grow cache when
+> > threshold of memory is in use. It is really simple task and will be
+> > implemented as soon as I complete suggestions mentioned by Andrew Morton.
+> 
+> Growing will not help, the problem is you are out of memory, you cannot
+> grow at that point.
+
+You do not see the point of network tree allocator.
+
+It can live with main system OOM since it has preallocated separate
+pool, which can be increased when there is a requirement for that, for
+example when system is not in OOM.
+
+> > > > > On another note, I think you misunderstand our SLAB allocator; we do not
+> > > > > round up to nearest order page alloc per object; SLAB is build to avoid
+> > > > > that and is designed to pack equal size objects into pages. The kmalloc
+> > > > > allocator is build on top of several SLAB allocators; each with its
+> > > > > specific size objects to serve.
+> > > > > 
+> > > > > For example, the 64 byte SLAB will serve 64 byte objects, and packs
+> > > > > about PAGE_SIZE/64 per page (about since there is some overhead).
+> > > > > 
+> > > > > So the actual internal fragmentation of the current kmalloc/SLAB
+> > > > > allocator is not as bad as you paint it. The biggest problem we have
+> > > > > with the SLAB thing is getting pages back from it. (And the horrific
+> > > > > complexity of the current implementation)
+> > > > 
+> > > > Ok, not SLAB, but kmaloc/SLAB.
+> > > 
+> > > The page-allocator does what you describe, but hardly anybody uses that
+> > > to store small objects.
+> > 
+> > Network stack uses kmalloc.
+> 
+> skbuff_head_cache and skbuff_fclone_cache are SLABs.
+
+It is quite small part of the stack, isn't it?
+And btw, they still suffer from SLAB design, since it is possibly to get
+another smaller object right after all skbs are allocated from given page.
+It is a minor thing of course, but nevertheless worh mentioning.
+
+> > > Page allocator - buddy allocator, gives out memory in 1<<n pages.
+> > > 
+> > > SLAB allocator - uses the page allocator for backing, each SLAB issues
+> > > objects of a fixed, predetermined size, packed in pages.
+> > > 
+> > > kmalloc - uses a collection of SLAB allocators to issue 'variable' size
+> > > objects (see kmalloc_sizes.h - as you will see internal fragmentation
+> > > can become quite large for larger objects, but small objects do rather
+> > > well - and one could always add a frequently used size if it shows to be
+> > > beneficial).
+> > 
+> > There is no "frequently used size", kmalloc() does not know what size is
+> > frequent and what is not. And there are other mentioned problems with
+> > kmalloc/SLAB besides power-of-two, which prevent fragmentation problem
+> > resolution.
+> 
+> Yes SLAB is a horrid thing on some points but very good at a lot of
+> other things. But surely there are frequently used sizes, kmalloc will
+> not know, but a developer with profiling tools might.
+
+Does not scale - admin must run system under profiling, add new
+entries into kmalloc_sizes.h recompile the kernel... No way.
+
+> > > > That allocator uses power-of-two allocation, so there is extremely
+> > > > large overhead for several (and in some cases for all) usage cases
+> > > > (e1000 with jumbo frames and unix sockets).
+> > > 
+> > > Wrong example :-), e1000 is the only driver that doesn't do high order
+> > > allocs for jumbo frames. But yes, the other drivers should be fixed,
+> > > relying on higher order allocations is unsound.
+> > 
+> > :) do you read netdev@? There are several quite long recent discussions 
+> > where network hackers blame exactly e1000 for it's hardware problems and
+> > ugly memory usage model.
+> > We even think how to change struct sk_buff - Holy Grail of network code
+> > - just to help e1000 driver (well, not exactly for e1000, but that
+> > driver was a cause).
+> 
+> Have you seen the latest code? It allocates single pages and puts them
+> in the skb_shared_info fragments. Surely it might have been the one
+> pushing for these changes, but they are done. Current status.
+
+Plese check e1000_alloc_rx_buffers() function and rx_buffer_len value.
+You are wrong.
+
+> > > > SLAB allows to have chunks of memory from differenct CPU, so it is
+> > > > impossible to create defragmentation, thus kmalloc/SLAB by design will
+> > > > suffer from fragmentation.
+> > > 
+> > > *confused* memory is not bound to CPUs other than by NUMA, but even
+> > > there there is only a single address space. 
+> > 
+> > Each slab can have objects allocated in different CPUs, it was done to
+> > reduce freeing algorithm. If system wants to defragment several objects
+> > into bigger one, it must check all CPUs and find in which cache those
+> > objects are placed, which is extremely expensive, so SLAB can not
+> > perform defragmentation.
+> 
+> What you are referring to is coalescence, and yes coalescing over page
+> boundaries is hard in the SLAB layer, the page allocator does that.
+
+Page boundaries is only minor part of the problem.
+Objects from the same page can live in different (per-cpu) SLAB caches.
+
+> > > > Graphs of power-of-two vs. NTA overhead is shown on projects' homepage 
+> > > > - overhead is extremely large.
+> > > 
+> > > Yes seen that, but as stated, hardly anybody uses the page allocator to
+> > > store small objects. However if you do, you get large internal
+> > > fragmentation but zero external fragmentation (on that allocation
+> > > level).
+> > 
+> > Truncated cat /proc/slabinfo on my machine (usual desktop):
+> > size-32             1170   1232     32
+> > size-128             663    780    128
+> > size-64             4239   9558     64
+> 
+> Sure, point being?
+> 
+> size-64             4497   4602     64   59    1 : tunables  120   60
+> 8 : slabdata     78     78      0
+> 
+> 4497 objects used out of 4602 available, object size 64 bytes, 59
+> objects per slab of 1 page. .... 78 pages with active objects out of 78
+> pages allocated. 
+
+It was your words quoted above that "hardly anybody uses the page
+allocator to store small objects", as you can see, there are quite a few
+of them allocated through kmalloc but not through kmem_cache.
+ 
+> > > This is where my SROG allocator comes in, it is used to group objects by
+> > > lifetime and returns the pages to the page allocator. This makes the
+> > > whole allocator short-lived and hence cannot add (external)
+> > > fragmentation on this level. The use I have for that is that I can then
+> > > properly gauge how much memory there is available. External
+> > > fragmentation and guarantees can be difficult to reconcile.
+> > > 
+> > > I have no idea how fast/slow the SROG allocator is, and don't really
+> > > care since its only used as a fallback allocator; what I do care about
+> > > is determinism (in space).
+> > > 
+> > > However, I do have a patch that converts the whole skb layer to use the
+> > > SROG allocator, not only the payload, so I could do some test. But this
+> > > is not a serious candidate until all jumbo frame capable drivers have
+> > > been converted to skb fragments instead of high order allocations - a
+> > > Good Thing [tm].
+> > 
+> > You created SROG after my suggestion and discussion about NTA and it works 
+> > well for it's purpose (doesn't it?), further extension could lead to creation 
+> > of NTA (or could not).
+> 
+> I started with a very broken in-situ allocator (that tried to do the
+> same thing) in the very first patch. It was only later that I realised
+> the full extend of the skbuff requirements.
+> 
+> And no, NTA is too complex an allocator to do what I need. And more
+> specifically its design is quite contrary to what I have done. I
+> create/destroy an allocator instance per packet, you have one allocator
+> instance and serve multiple packets.
+> 
+> > SROG is a wrapper on top of alloc_pages and list of free objects,
+> > there are "several" differencies between allocators and I do not see how
+> > they can compete right now.
+> 
+> Yes allocators are build in layers, the page allocator the the basic
+> building block in Linux.
+
+Ok, it's your point.
+Actum est, ilicet.
+
+-- 
+	Evgeniy Polyakov
+-
+To unsubscribe from this list: send the line "unsubscribe netdev" in
+the body of a message to majordomo@xxxxxxxxxxxxxxx
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+
+
+
+
+
+
+
+
+
+
+Re: [PATCH 1/1] network memory allocator.
+
+    * Subject: Re: [PATCH 1/1] network memory allocator.
+    * From: Peter Zijlstra <a.p.zijlstra@xxxxxxxxx>
+    * Date: Tue, 15 Aug 2006 15:49:28 +0200
+    * Cc: David Miller <davem@xxxxxxxxxxxxx>, netdev@xxxxxxxxxxxxxxx, linux-kernel@xxxxxxxxxxxxxxx, linux-mm@xxxxxxxxx
+    * In-reply-to: <20060815123438.GA29896@xxxxxxxxxxx>
+    * References: <20060814110359.GA27704@xxxxxxxxxxx> <1155558313.5696.167.camel@twins> <20060814123530.GA5019@xxxxxxxxxxx> <1155639302.5696.210.camel@twins> <20060815112617.GB21736@xxxxxxxxxxx> <1155643405.5696.236.camel@twins> <20060815123438.GA29896@xxxxxxxxxxx>
+
+On Tue, 2006-08-15 at 16:34 +0400, Evgeniy Polyakov wrote:
+> On Tue, Aug 15, 2006 at 02:03:25PM +0200, Peter Zijlstra (a.p.zijlstra@xxxxxxxxx) wrote:
+> > On Tue, 2006-08-15 at 15:26 +0400, Evgeniy Polyakov wrote:
+> > > On Tue, Aug 15, 2006 at 12:55:02PM +0200, Peter Zijlstra (a.p.zijlstra@xxxxxxxxx) wrote:
+> > > > > Userspace can sak for next packet and pointer to the new location will
+> > > > > be removed.
+> > > > 
+> > > > /sak/ask/?
+> > > > 
+> > > > I'm not understanding, if you have a page A with two packets, a and b;
+> > > > once you map that page into user-space that process has access to both
+> > > > packets, which is a security problem. How are you going to solve this?
+> > > 
+> > > Yep, there is such issue.
+> > > But no one is ever going to replace socket code with zero-copy
+> > > interfaces - Linux has backward compatibility noone ever had, so
+> > > send()/recv() will be there.
+> > 
+> > The new AIO network API should be able to provide the needed userspace
+> > changes.
+> 
+> Kevent based network AIO already handle it.
+> This changes are different.
+
+You said you couldn't do zero-copy because the userspace interface
+didn't allow it.
+I assume the network AIO interface does, but still you have your initial
+allocation problem, one cannot put more than 1 packet on each page.
+
+> > > It is new interface which can be changed as described in previous
+> > > e-mails - copy if next chunk belongs to different socket and so on.
+> > 
+> > But if you copy you're not zero-copy anymore. If you copy every second
+> > packet you have a 1/2 copy receive, but not zero.
+> >
+> > > Initial user will be sniffer, which should get all packets.
+> > 
+> > Only the root user may get all packets. And most enterprise systems I've
+> > seen don't generally run a sniffer. That is usually done by
+> > redirecting/copying the data stream in a router and attach a second host
+> > to analyse the data.
+> 
+> Nice words. And what "second host" is supposed to do with that traffic?
+> I expect it should not be Linux (not an "enterprise system"?). WIll it
+> copy to userspace or have some kind of a zero-copy?
+
+Ofcourse that will sniff, but only having a sniffer zero-copy is not of
+much general use.
+
+> > > > > > > As described in recent threads [3] it is also possible to eliminate any 
+> > > > > > > kind of main system OOM influence on network dataflow processing, thus 
+> > > > > > > it is possible to prevent deadlock for systems, which use network as 
+> > > > > > > memory storage (swap over network, iSCSI, NBD and so on).
+> > > > > > 
+> > > > > > How? You have never stated how you will avoid getting all packets stuck
+> > > > > > in blocked sockets.
+> > > > > 
+> > > > > Each socket has it's limit, so if allocator got enough memory, blocked
+> > > > > sockets will not affect it's behaviour.
+> > > > 
+> > > > But isn't the total capacity of the network stack much larger than any
+> > > > allocator can provide?
+> > > 
+> > > TCP has 768kb limit on my amd64 with 1gb of ram, so I expect allocator
+> > > can handle all requests.
+> > 
+> > But the capacity of the network stack is larger than this (arbitrary)
+> > limit. It is possible to have all 768kb worth of packets stuck on
+> > blocked sockets.
+> 
+> And so what? 
+
+Well, if all packets are stuck, you have a dead system.
+
+> You said, that separated from main allocator can not handle
+> all memory requests being done by the stack, as you can see it easily
+> can.
+
+It could if you can provide adequate detection of memory pressure and
+fallback to a degraded mode within the same allocator/stack and can
+guarantee limited service to critical parts.
+
+> > > And there is a simple task in TODO list to dynamically grow cache when
+> > > threshold of memory is in use. It is really simple task and will be
+> > > implemented as soon as I complete suggestions mentioned by Andrew Morton.
+> > 
+> > Growing will not help, the problem is you are out of memory, you cannot
+> > grow at that point.
+> 
+> You do not see the point of network tree allocator.
+> 
+> It can live with main system OOM since it has preallocated separate
+> pool, which can be increased when there is a requirement for that, for
+> example when system is not in OOM.
+
+It cannot increase enough, ever. The total capacity of the network stack
+is huge.
+And the sole problem I'm addressing is getting the system to work
+reliably in tight memory situations, that is during reclaim; one cannot
+decide to grow then, nor postpone, too late.
+
+> > > > > > On another note, I think you misunderstand our SLAB allocator; we do not
+> > > > > > round up to nearest order page alloc per object; SLAB is build to avoid
+> > > > > > that and is designed to pack equal size objects into pages. The kmalloc
+> > > > > > allocator is build on top of several SLAB allocators; each with its
+> > > > > > specific size objects to serve.
+> > > > > > 
+> > > > > > For example, the 64 byte SLAB will serve 64 byte objects, and packs
+> > > > > > about PAGE_SIZE/64 per page (about since there is some overhead).
+> > > > > > 
+> > > > > > So the actual internal fragmentation of the current kmalloc/SLAB
+> > > > > > allocator is not as bad as you paint it. The biggest problem we have
+> > > > > > with the SLAB thing is getting pages back from it. (And the horrific
+> > > > > > complexity of the current implementation)
+> > > > > 
+> > > > > Ok, not SLAB, but kmaloc/SLAB.
+> > > > 
+> > > > The page-allocator does what you describe, but hardly anybody uses that
+> > > > to store small objects.
+> > > 
+> > > Network stack uses kmalloc.
+> > 
+> > skbuff_head_cache and skbuff_fclone_cache are SLABs.
+> 
+> It is quite small part of the stack, isn't it?
+> And btw, they still suffer from SLAB design, since it is possibly to get
+> another smaller object right after all skbs are allocated from given page.
+> It is a minor thing of course, but nevertheless worh mentioning.
+
+Small but crucial, that is why I've been replacing all.
+
+> > > > Page allocator - buddy allocator, gives out memory in 1<<n pages.
+> > > > 
+> > > > SLAB allocator - uses the page allocator for backing, each SLAB issues
+> > > > objects of a fixed, predetermined size, packed in pages.
+> > > > 
+> > > > kmalloc - uses a collection of SLAB allocators to issue 'variable' size
+> > > > objects (see kmalloc_sizes.h - as you will see internal fragmentation
+> > > > can become quite large for larger objects, but small objects do rather
+> > > > well - and one could always add a frequently used size if it shows to be
+> > > > beneficial).
+> > > 
+> > > There is no "frequently used size", kmalloc() does not know what size is
+> > > frequent and what is not. And there are other mentioned problems with
+> > > kmalloc/SLAB besides power-of-two, which prevent fragmentation problem
+> > > resolution.
+> > 
+> > Yes SLAB is a horrid thing on some points but very good at a lot of
+> > other things. But surely there are frequently used sizes, kmalloc will
+> > not know, but a developer with profiling tools might.
+> 
+> Does not scale - admin must run system under profiling, add new
+> entries into kmalloc_sizes.h recompile the kernel... No way.
+
+s/admin/developer/
+It has been the way so far.
+
+> > > > > That allocator uses power-of-two allocation, so there is extremely
+> > > > > large overhead for several (and in some cases for all) usage cases
+> > > > > (e1000 with jumbo frames and unix sockets).
+> > > > 
+> > > > Wrong example :-), e1000 is the only driver that doesn't do high order
+> > > > allocs for jumbo frames. But yes, the other drivers should be fixed,
+> > > > relying on higher order allocations is unsound.
+> > > 
+> > > :) do you read netdev@? There are several quite long recent discussions 
+> > > where network hackers blame exactly e1000 for it's hardware problems and
+> > > ugly memory usage model.
+> > > We even think how to change struct sk_buff - Holy Grail of network code
+> > > - just to help e1000 driver (well, not exactly for e1000, but that
+> > > driver was a cause).
+> > 
+> > Have you seen the latest code? It allocates single pages and puts them
+> > in the skb_shared_info fragments. Surely it might have been the one
+> > pushing for these changes, but they are done. Current status.
+> 
+> Plese check e1000_alloc_rx_buffers() function and rx_buffer_len value.
+> You are wrong.
+
+e1000_alloc_rx_buffers_ps()
+
+but it does not take away that any card/driver that does depend on
+higher order allocations is unreliable.
+
+> > > > > SLAB allows to have chunks of memory from differenct CPU, so it is
+> > > > > impossible to create defragmentation, thus kmalloc/SLAB by design will
+> > > > > suffer from fragmentation.
+> > > > 
+> > > > *confused* memory is not bound to CPUs other than by NUMA, but even
+> > > > there there is only a single address space. 
+> > > 
+> > > Each slab can have objects allocated in different CPUs, it was done to
+> > > reduce freeing algorithm. If system wants to defragment several objects
+> > > into bigger one, it must check all CPUs and find in which cache those
+> > > objects are placed, which is extremely expensive, so SLAB can not
+> > > perform defragmentation.
+> > 
+> > What you are referring to is coalescence, and yes coalescing over page
+> > boundaries is hard in the SLAB layer, the page allocator does that.
+> 
+> Page boundaries is only minor part of the problem.
+> Objects from the same page can live in different (per-cpu) SLAB caches.
+
+My bad, SLAB never needs to coalesce objects, by design. What SLAB could
+benefit from is compaction.
+
+> > > > > Graphs of power-of-two vs. NTA overhead is shown on projects' homepage 
+> > > > > - overhead is extremely large.
+> > > > 
+> > > > Yes seen that, but as stated, hardly anybody uses the page allocator to
+> > > > store small objects. However if you do, you get large internal
+> > > > fragmentation but zero external fragmentation (on that allocation
+> > > > level).
+> > > 
+> > > Truncated cat /proc/slabinfo on my machine (usual desktop):
+> > > size-32             1170   1232     32
+> > > size-128             663    780    128
+> > > size-64             4239   9558     64
+> > 
+> > Sure, point being?
+> > 
+> > size-64             4497   4602     64   59    1 : tunables  120   60
+> > 8 : slabdata     78     78      0
+> > 
+> > 4497 objects used out of 4602 available, object size 64 bytes, 59
+> > objects per slab of 1 page. .... 78 pages with active objects out of 78
+> > pages allocated. 
+> 
+> It was your words quoted above that "hardly anybody uses the page
+> allocator to store small objects", as you can see, there are quite a few
+> of them allocated through kmalloc but not through kmem_cache.
+
+kmalloc != page allocator. And as I have been trying to explain, kmalloc
+uses kmem_cache.
+
+> > > > This is where my SROG allocator comes in, it is used to group objects by
+> > > > lifetime and returns the pages to the page allocator. This makes the
+> > > > whole allocator short-lived and hence cannot add (external)
+> > > > fragmentation on this level. The use I have for that is that I can then
+> > > > properly gauge how much memory there is available. External
+> > > > fragmentation and guarantees can be difficult to reconcile.
+> > > > 
+> > > > I have no idea how fast/slow the SROG allocator is, and don't really
+> > > > care since its only used as a fallback allocator; what I do care about
+> > > > is determinism (in space).
+> > > > 
+> > > > However, I do have a patch that converts the whole skb layer to use the
+> > > > SROG allocator, not only the payload, so I could do some test. But this
+> > > > is not a serious candidate until all jumbo frame capable drivers have
+> > > > been converted to skb fragments instead of high order allocations - a
+> > > > Good Thing [tm].
+> > > 
+> > > You created SROG after my suggestion and discussion about NTA and it works 
+> > > well for it's purpose (doesn't it?), further extension could lead to creation 
+> > > of NTA (or could not).
+> > 
+> > I started with a very broken in-situ allocator (that tried to do the
+> > same thing) in the very first patch. It was only later that I realised
+> > the full extend of the skbuff requirements.
+> > 
+> > And no, NTA is too complex an allocator to do what I need. And more
+> > specifically its design is quite contrary to what I have done. I
+> > create/destroy an allocator instance per packet, you have one allocator
+> > instance and serve multiple packets.
+> > 
+> > > SROG is a wrapper on top of alloc_pages and list of free objects,
+> > > there are "several" differencies between allocators and I do not see how
+> > > they can compete right now.
+> > 
+> > Yes allocators are build in layers, the page allocator the the basic
+> > building block in Linux.
+> 
+> Ok, it's your point.
+> Actum est, ilicet.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Re: [PATCH 1/1] network memory allocator.
+
+    * Subject: Re: [PATCH 1/1] network memory allocator.
+    * From: Evgeniy Polyakov <johnpol@xxxxxxxxxxx>
+    * Date: Tue, 15 Aug 2006 18:15:01 +0400
+    * Cc: David Miller <davem@xxxxxxxxxxxxx>, netdev@xxxxxxxxxxxxxxx, linux-kernel@xxxxxxxxxxxxxxx, linux-mm@xxxxxxxxx
+    * In-reply-to: <1155649768.5696.262.camel@twins>
+    * References: <20060814110359.GA27704@xxxxxxxxxxx> <1155558313.5696.167.camel@twins> <20060814123530.GA5019@xxxxxxxxxxx> <1155639302.5696.210.camel@twins> <20060815112617.GB21736@xxxxxxxxxxx> <1155643405.5696.236.camel@twins> <20060815123438.GA29896@xxxxxxxxxxx> <1155649768.5696.262.camel@twins>
+    * User-agent: Mutt/1.5.9i
+
+On Tue, Aug 15, 2006 at 03:49:28PM +0200, Peter Zijlstra (a.p.zijlstra@xxxxxxxxx) wrote:
+> On Tue, 2006-08-15 at 16:34 +0400, Evgeniy Polyakov wrote:
+> > On Tue, Aug 15, 2006 at 02:03:25PM +0200, Peter Zijlstra (a.p.zijlstra@xxxxxxxxx) wrote:
+> > > On Tue, 2006-08-15 at 15:26 +0400, Evgeniy Polyakov wrote:
+> > > > On Tue, Aug 15, 2006 at 12:55:02PM +0200, Peter Zijlstra (a.p.zijlstra@xxxxxxxxx) wrote:
+> > > > > > Userspace can sak for next packet and pointer to the new location will
+> > > > > > be removed.
+> > > > > 
+> > > > > /sak/ask/?
+> > > > > 
+> > > > > I'm not understanding, if you have a page A with two packets, a and b;
+> > > > > once you map that page into user-space that process has access to both
+> > > > > packets, which is a security problem. How are you going to solve this?
+> > > > 
+> > > > Yep, there is such issue.
+> > > > But no one is ever going to replace socket code with zero-copy
+> > > > interfaces - Linux has backward compatibility noone ever had, so
+> > > > send()/recv() will be there.
+> > > 
+> > > The new AIO network API should be able to provide the needed userspace
+> > > changes.
+> > 
+> > Kevent based network AIO already handle it.
+> > This changes are different.
+> 
+> You said you couldn't do zero-copy because the userspace interface
+> didn't allow it.
+> I assume the network AIO interface does, but still you have your initial
+> allocation problem, one cannot put more than 1 packet on each page.
+
+Kevent network AIO is completely different from network tree allocator.
+
+> > > > TCP has 768kb limit on my amd64 with 1gb of ram, so I expect allocator
+> > > > can handle all requests.
+> > > 
+> > > But the capacity of the network stack is larger than this (arbitrary)
+> > > limit. It is possible to have all 768kb worth of packets stuck on
+> > > blocked sockets.
+> > 
+> > And so what? 
+> 
+> Well, if all packets are stuck, you have a dead system.
+
+Do you remember what we are talking about?
+About network tree allocator, it does not know how and where packets are
+processed, it only provides a memory. 
+It was shown several times that with appropriate reserve it is possible
+to satisfy all system network requests, even if system is in OOM
+conditions.
+
+> > You said, that separated from main allocator can not handle
+> > all memory requests being done by the stack, as you can see it easily
+> > can.
+> 
+> It could if you can provide adequate detection of memory pressure and
+> fallback to a degraded mode within the same allocator/stack and can
+> guarantee limited service to critical parts.
+
+It is not needed, since network allocations are separated from main
+system ones.
+I think I need to show an example here.
+
+Let's main system works only with TCP for simplicity.
+Let's maximum allowed memory is limited by 1mb (it is 768k on machine
+with 1gb of ram).
+
+So network allocator reserves above megabyte and works with it in a
+smart way (without too much overhead).
+Then system goes into OOM and requires to swap a page, which
+notification was sent to remote swap storage.
+Swap storage then sends an ack for that data, since network allocations
+are separated from main system ones, network allocator easily gets 60
+(or 4k, since it has a reserve, which exeeds maximum allowed TCP memory
+limit) bytes for ack and process than notification thus "freeing" acked
+data and main system can work with that free memory.
+No need to detect OOM or something other - it just works.
+
+I expect you will give me an example, when all above megabyte is going
+to be stuck somewhere.
+But... If it is not acked, each new packet goes slow path since VJ header 
+prediction fails and falls into memory limit check which will drop that
+packet immediately without event trying to select a socket.
+
+> > > > And there is a simple task in TODO list to dynamically grow cache when
+> > > > threshold of memory is in use. It is really simple task and will be
+> > > > implemented as soon as I complete suggestions mentioned by Andrew Morton.
+> > > 
+> > > Growing will not help, the problem is you are out of memory, you cannot
+> > > grow at that point.
+> > 
+> > You do not see the point of network tree allocator.
+> > 
+> > It can live with main system OOM since it has preallocated separate
+> > pool, which can be increased when there is a requirement for that, for
+> > example when system is not in OOM.
+> 
+> It cannot increase enough, ever. The total capacity of the network stack
+> is huge.
+> And the sole problem I'm addressing is getting the system to work
+> reliably in tight memory situations, that is during reclaim; one cannot
+> decide to grow then, nor postpone, too late.
+
+Network *is* limited, it is not terabyte array which is going to be
+placed into VFS cache.
+
+> > > skbuff_head_cache and skbuff_fclone_cache are SLABs.
+> > 
+> > It is quite small part of the stack, isn't it?
+> > And btw, they still suffer from SLAB design, since it is possibly to get
+> > another smaller object right after all skbs are allocated from given page.
+> > It is a minor thing of course, but nevertheless worh mentioning.
+> 
+> Small but crucial, that is why I've been replacing all.
+
+Sigh, replace kmem_cache_alloc() with avl_alloc() - it does not matter.
+
+> > > Yes SLAB is a horrid thing on some points but very good at a lot of
+> > > other things. But surely there are frequently used sizes, kmalloc will
+> > > not know, but a developer with profiling tools might.
+> > 
+> > Does not scale - admin must run system under profiling, add new
+> > entries into kmalloc_sizes.h recompile the kernel... No way.
+> 
+> s/admin/developer/
+> It has been the way so far.
+
+Could you say what are preferred sizes in my testing machines here? :)
+For example MMIO-read based chips (excellent realtek 8139 adapter) can
+allocate not only 1500 bytes of memory, but real size of received frame.
+I even used it for receiving zero-copy (really excellent hardware
+for it's price) into VFS cache implementation (without any kind of
+page-per-packet stuff), but it is not related to our discussion.
+
+> > Plese check e1000_alloc_rx_buffers() function and rx_buffer_len value.
+> > You are wrong.
+> 
+> e1000_alloc_rx_buffers_ps()
+> 
+> but it does not take away that any card/driver that does depend on
+> higher order allocations is unreliable.
+
+Have you seen how many adapters support packet split?
+
+-- 
+	Evgeniy Polyakov
+-
+To unsubscribe from this list: send the line "unsubscribe netdev" in
+the body of a message to majordomo@xxxxxxxxxxxxxxx
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+
+
+
+
+
+
+Re: [PATCH 1/1] network memory allocator.
+
+    * Subject: Re: [PATCH 1/1] network memory allocator.
+    * From: Bill Fink <billfink@xxxxxxxxxxxxxx>
+    * Date: Tue, 15 Aug 2006 22:52:37 -0400
+    * Cc: a.p.zijlstra@xxxxxxxxx, davem@xxxxxxxxxxxxx, netdev@xxxxxxxxxxxxxxx, linux-kernel@xxxxxxxxxxxxxxx, linux-mm@xxxxxxxxx
+    * In-reply-to: <20060815141501.GA10998@xxxxxxxxxxx>
+    * References: <20060814110359.GA27704@xxxxxxxxxxx> <1155558313.5696.167.camel@twins> <20060814123530.GA5019@xxxxxxxxxxx> <1155639302.5696.210.camel@twins> <20060815112617.GB21736@xxxxxxxxxxx> <1155643405.5696.236.camel@twins> <20060815123438.GA29896@xxxxxxxxxxx> <1155649768.5696.262.camel@twins> <20060815141501.GA10998@xxxxxxxxxxx>
+
+On Tue, 15 Aug 2006, Evgeniy Polyakov wrote:
+
+> On Tue, Aug 15, 2006 at 03:49:28PM +0200, Peter Zijlstra (a.p.zijlstra@xxxxxxxxx) wrote:
+> 
+> > It could if you can provide adequate detection of memory pressure and
+> > fallback to a degraded mode within the same allocator/stack and can
+> > guarantee limited service to critical parts.
+> 
+> It is not needed, since network allocations are separated from main
+> system ones.
+> I think I need to show an example here.
+> 
+> Let's main system works only with TCP for simplicity.
+> Let's maximum allowed memory is limited by 1mb (it is 768k on machine
+> with 1gb of ram).
+
+The maximum amount of memory available for TCP on a system with 1 GB
+of memory is 768 MB (not 768 KB).
+
+[bill@chance4 ~]$ cat /proc/meminfo
+MemTotal:      1034924 kB
+...
+
+[bill@chance4 ~]$ cat /proc/sys/net/ipv4/tcp_mem
+98304   131072  196608
+
+Since tcp_mem is in pages (4K in this case), maximum TCP memory
+is 196608*4K or 768 MB.
+
+Or am I missing something obvious.
+
+						-Bill
+-
+
+
+
+
+
+
+
+
+
+Re: [PATCH 1/1] network memory allocator.
+
+    * Subject: Re: [PATCH 1/1] network memory allocator.
+    * From: Evgeniy Polyakov <johnpol@xxxxxxxxxxx>
+    * Date: Wed, 16 Aug 2006 09:38:59 +0400
+    * Cc: a.p.zijlstra@xxxxxxxxx, davem@xxxxxxxxxxxxx, netdev@xxxxxxxxxxxxxxx, linux-kernel@xxxxxxxxxxxxxxx, linux-mm@xxxxxxxxx
+    * In-reply-to: <20060815225237.03df7874.billfink@xxxxxxxxxxxxxx>
+    * References: <20060814110359.GA27704@xxxxxxxxxxx> <1155558313.5696.167.camel@twins> <20060814123530.GA5019@xxxxxxxxxxx> <1155639302.5696.210.camel@twins> <20060815112617.GB21736@xxxxxxxxxxx> <1155643405.5696.236.camel@twins> <20060815123438.GA29896@xxxxxxxxxxx> <1155649768.5696.262.camel@twins> <20060815141501.GA10998@xxxxxxxxxxx> <20060815225237.03df7874.billfink@xxxxxxxxxxxxxx>
+    * User-agent: Mutt/1.5.9i
+
+On Tue, Aug 15, 2006 at 10:52:37PM -0400, Bill Fink (billfink@xxxxxxxxxxxxxx) wrote:
+> > Let's main system works only with TCP for simplicity.
+> > Let's maximum allowed memory is limited by 1mb (it is 768k on machine
+> > with 1gb of ram).
+> 
+> The maximum amount of memory available for TCP on a system with 1 GB
+> of memory is 768 MB (not 768 KB).
+
+It does not matter, let's it be 100mb or any other number, since
+allocation is separated and does not depend on main system one.
+Network allocator can steal pages from main one, but it does not suffer
+from SLAB OOM.
+
+Btw, I have a system with 1gb of ram and 1.5gb of low-mem tcp limit and
+3gb of high-mem tcp memory limit calculated automatically.
+
+-- 
+	Evgeniy Polyakov
+-
+To unsubscribe from this list: send the line "unsubscribe netdev" in
+the body of a message to majordomo@xxxxxxxxxxxxxxx
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+
+
+
+
+
+
+
+
+
+Re: [PATCH 1/1] network memory allocator.
+
+    * Subject: Re: [PATCH 1/1] network memory allocator.
+    * From: Peter Zijlstra <a.p.zijlstra@xxxxxxxxx>
+    * Date: Tue, 15 Aug 2006 16:48:59 +0200
+    * Cc: David Miller <davem@xxxxxxxxxxxxx>, netdev@xxxxxxxxxxxxxxx, linux-kernel@xxxxxxxxxxxxxxx, linux-mm@xxxxxxxxx
+    * In-reply-to: <20060815141501.GA10998@xxxxxxxxxxx>
+    * References: <20060814110359.GA27704@xxxxxxxxxxx> <1155558313.5696.167.camel@twins> <20060814123530.GA5019@xxxxxxxxxxx> <1155639302.5696.210.camel@twins> <20060815112617.GB21736@xxxxxxxxxxx> <1155643405.5696.236.camel@twins> <20060815123438.GA29896@xxxxxxxxxxx> <1155649768.5696.262.camel@twins> <20060815141501.GA10998@xxxxxxxxxxx>
+
+On Tue, 2006-08-15 at 18:15 +0400, Evgeniy Polyakov wrote:
+
+> Kevent network AIO is completely different from network tree allocator.
+
+How can that be? packets still need to be received, yes?
+
+> So network allocator reserves above megabyte and works with it in a
+> smart way (without too much overhead).
+> Then system goes into OOM and requires to swap a page, which
+> notification was sent to remote swap storage.
+> Swap storage then sends an ack for that data, since network allocations
+> are separated from main system ones, network allocator easily gets 60
+> (or 4k, since it has a reserve, which exeeds maximum allowed TCP memory
+> limit) bytes for ack and process than notification thus "freeing" acked
+> data and main system can work with that free memory.
+> No need to detect OOM or something other - it just works.
+> 
+> I expect you will give me an example, when all above megabyte is going
+> to be stuck somewhere.
+> But... If it is not acked, each new packet goes slow path since VJ header 
+> prediction fails and falls into memory limit check which will drop that
+> packet immediately without event trying to select a socket.
+
+Not sure on the details; but you say: when we reach the threshold all
+following packets will be dropped. So if you provide enough memory to
+exceed the limit, you have some extra. If you then use that extra bit to
+allow ACKs to pass through, then you're set.
+
+Sounds good, but you'd have to carve a path for the ACKs, right? Or is
+that already there?
+
+Also, I'm worried with the effects of external fragmentation esp. after
+long run times. Analysing non trivial memory allocators is hard, very
+often too hard.
+
+> > > > > And there is a simple task in TODO list to dynamically grow cache when
+> > > > > threshold of memory is in use. It is really simple task and will be
+> > > > > implemented as soon as I complete suggestions mentioned by Andrew Morton.
+> > > > 
+> > > > Growing will not help, the problem is you are out of memory, you cannot
+> > > > grow at that point.
+> > > 
+> > > You do not see the point of network tree allocator.
+> > > 
+> > > It can live with main system OOM since it has preallocated separate
+> > > pool, which can be increased when there is a requirement for that, for
+> > > example when system is not in OOM.
+> > 
+> > It cannot increase enough, ever. The total capacity of the network stack
+> > is huge.
+> > And the sole problem I'm addressing is getting the system to work
+> > reliably in tight memory situations, that is during reclaim; one cannot
+> > decide to grow then, nor postpone, too late.
+> 
+> Network *is* limited, it is not terabyte array which is going to be
+> placed into VFS cache.
+
+No it is not, but you bound it.
+
+> > > > skbuff_head_cache and skbuff_fclone_cache are SLABs.
+> > > 
+> > > It is quite small part of the stack, isn't it?
+> > > And btw, they still suffer from SLAB design, since it is possibly to get
+> > > another smaller object right after all skbs are allocated from given page.
+> > > It is a minor thing of course, but nevertheless worh mentioning.
+> > 
+> > Small but crucial, that is why I've been replacing all.
+> 
+> Sigh, replace kmem_cache_alloc() with avl_alloc() - it does not matter.
+
+It does matter, you need the whole packet, if you cannot allocate a
+sk_buff you're still stuck.
+
+> > > > Yes SLAB is a horrid thing on some points but very good at a lot of
+> > > > other things. But surely there are frequently used sizes, kmalloc will
+> > > > not know, but a developer with profiling tools might.
+> > > 
+> > > Does not scale - admin must run system under profiling, add new
+> > > entries into kmalloc_sizes.h recompile the kernel... No way.
+> > 
+> > s/admin/developer/
+> > It has been the way so far.
+> 
+> Could you say what are preferred sizes in my testing machines here? :)
+> For example MMIO-read based chips (excellent realtek 8139 adapter) can
+> allocate not only 1500 bytes of memory, but real size of received frame.
+> I even used it for receiving zero-copy (really excellent hardware
+> for it's price) into VFS cache implementation (without any kind of
+> page-per-packet stuff), but it is not related to our discussion.
+
+Well generally the developer of the driver can say, and very often it
+just doesn't matter, but see the wide spread use of private SLABs to see
+there is benefit in manually tuning stuff.
+
+> Have you seen how many adapters support packet split?
+
+Not many I guess. That does not make higher order allocations any more
+reliable.
+
+-
+To unsubscribe from this list: send the line "unsubscribe netdev" in
+the body of a message to majordomo@xxxxxxxxxxxxxxx
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+
+
+
+
+
+
+
+Re: [PATCH 1/1] network memory allocator.
+
+    * Subject: Re: [PATCH 1/1] network memory allocator.
+    * From: Christoph Hellwig <hch@xxxxxxxxxxxxx>
+    * Date: Wed, 16 Aug 2006 09:48:08 +0100
+    * Cc: Arnd Bergmann <arnd@xxxxxxxx>, David Miller <davem@xxxxxxxxxxxxx>, netdev@xxxxxxxxxxxxxxx, linux-kernel@xxxxxxxxxxxxxxx, linux-mm@xxxxxxxxx
+    * In-reply-to: <20060816053545.GB22921@xxxxxxxxxxx>
+    * Mail-followup-to: Christoph Hellwig <hch@xxxxxxxxxxxxx>, Evgeniy Polyakov <johnpol@xxxxxxxxxxx>, Arnd Bergmann <arnd@xxxxxxxx>, David Miller <davem@xxxxxxxxxxxxx>, netdev@xxxxxxxxxxxxxxx, linux-kernel@xxxxxxxxxxxxxxx, linux-mm@xxxxxxxxx
+    * References: <20060814110359.GA27704@xxxxxxxxxxx> <200608152221.22883.arnd@xxxxxxxx> <20060816053545.GB22921@xxxxxxxxxxx>
+    * User-agent: Mutt/1.4.2.1i
+
+On Wed, Aug 16, 2006 at 09:35:46AM +0400, Evgeniy Polyakov wrote:
+> On Tue, Aug 15, 2006 at 10:21:22PM +0200, Arnd Bergmann (arnd@xxxxxxxx) wrote:
+> > Am Monday 14 August 2006 13:04 schrieb Evgeniy Polyakov:
+> > > ?* full per CPU allocation and freeing (objects are never freed on
+> > > ????????different CPU)
+> > 
+> > Many of your data structures are per cpu, but your underlying allocations
+> > are all using regular kzalloc/__get_free_page/__get_free_pages functions.
+> > Shouldn't these be converted to calls to kmalloc_node and alloc_pages_node
+> > in order to get better locality on NUMA systems?
+> >
+> > OTOH, we have recently experimented with doing the dev_alloc_skb calls
+> > with affinity to the NUMA node that holds the actual network adapter, and
+> > got significant improvements on the Cell blade server. That of course
+> > may be a conflicting goal since it would mean having per-cpu per-node
+> > page pools if any CPU is supposed to be able to allocate pages for use
+> > as DMA buffers on any node.
+> 
+> Doesn't alloc_pages() automatically switches to alloc_pages_node() or
+> alloc_pages_current()?
+
+That's not what's wanted.  If you have a slow interconnect you always want
+to allocate memory on the node the network device is attached to.
+
+-
+To unsubscribe from this list: send the line "unsubscribe netdev" in
+the body of a message to majordomo@xxxxxxxxxxxxxxx
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+
+
+
+Re: [PATCH 1/1] network memory allocator.
+
+    * Subject: Re: [PATCH 1/1] network memory allocator.
+    * From: Andi Kleen <ak@xxxxxxx>
+    * Date: Wed, 16 Aug 2006 14:25:57 +0200
+    * Cc: Evgeniy Polyakov <johnpol@xxxxxxxxxxx>, Arnd Bergmann <arnd@xxxxxxxx>, David Miller <davem@xxxxxxxxxxxxx>, netdev@xxxxxxxxxxxxxxx, linux-kernel@xxxxxxxxxxxxxxx, linux-mm@xxxxxxxxx
+    * In-reply-to: <20060816084808.GA7366@xxxxxxxxxxxxx>
+    * References: <20060814110359.GA27704@xxxxxxxxxxx> <200608152221.22883.arnd@xxxxxxxx> <20060816053545.GB22921@xxxxxxxxxxx> <20060816084808.GA7366@xxxxxxxxxxxxx>
+
+On Wed, 16 Aug 2006 09:48:08 +0100
+Christoph Hellwig <hch@xxxxxxxxxxxxx> wrote:
+
+> On Wed, Aug 16, 2006 at 09:35:46AM +0400, Evgeniy Polyakov wrote:
+> > On Tue, Aug 15, 2006 at 10:21:22PM +0200, Arnd Bergmann (arnd@xxxxxxxx) wrote:
+> > > Am Monday 14 August 2006 13:04 schrieb Evgeniy Polyakov:
+> > > > ?* full per CPU allocation and freeing (objects are never freed on
+> > > > ????????different CPU)
+> > > 
+> > > Many of your data structures are per cpu, but your underlying allocations
+> > > are all using regular kzalloc/__get_free_page/__get_free_pages functions.
+> > > Shouldn't these be converted to calls to kmalloc_node and alloc_pages_node
+> > > in order to get better locality on NUMA systems?
+> > >
+> > > OTOH, we have recently experimented with doing the dev_alloc_skb calls
+> > > with affinity to the NUMA node that holds the actual network adapter, and
+> > > got significant improvements on the Cell blade server. That of course
+> > > may be a conflicting goal since it would mean having per-cpu per-node
+> > > page pools if any CPU is supposed to be able to allocate pages for use
+> > > as DMA buffers on any node.
+> > 
+> > Doesn't alloc_pages() automatically switches to alloc_pages_node() or
+> > alloc_pages_current()?
+> 
+> That's not what's wanted.  If you have a slow interconnect you always want
+> to allocate memory on the node the network device is attached to.
+
+That's not true on all NUMA systems (that they have a slow interconnect)
+I think on x86-64 I would prefer if it was distributed evenly or maybe even 
+on the CPU who is finally going to process it.
+
+-Andi "not all NUMA is an Altix"
+-
+To unsubscribe from this list: send the line "unsubscribe netdev" in
+the body of a message to majordomo@xxxxxxxxxxxxxxx
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
