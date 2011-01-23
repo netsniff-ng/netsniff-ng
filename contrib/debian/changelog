@@ -1,11 +1,11 @@
-nnetsniff-ng (0.5.5.0-2) unstable; urgency=low
+netsniff-ng (0.5.5.0-2) unstable; urgency=low
 
   * debian/control:
     + Added armhf support, closes wishlist bug. Closes: #604540
 
- -- Daniel Borkmann <danborkmann@googlemail.com>  Mon, 22 Nov 2010 21:09:17 +0200
+ -- Daniel Borkmann <danborkmann@googlemail.com>  Sun, 23 Jan 2011 21:09:17 +0200
 
-etsniff-ng (0.5.5.0-1) unstable; urgency=low
+netsniff-ng (0.5.5.0-1) unstable; urgency=low
 
   * New upstream release
   * debian/control:
