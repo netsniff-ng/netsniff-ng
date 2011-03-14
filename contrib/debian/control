@@ -2,12 +2,13 @@ Source: netsniff-ng
 Section: net
 Priority: optional
 Maintainer: Daniel Borkmann <danborkmann@googlemail.com>
+Uploaders: Kartik Mistry <kartik@debian.org>
 Standards-Version: 3.9.1
 Build-Depends: debhelper (>= 7)
 Homepage: http://www.netsniff-ng.org/
 
 Package: netsniff-ng
-Architecture: i386 ia64 alpha amd64 arm armeb armel armhf hppa mips mipsel powerpc ppc64 s390 s390x sh3 sh3eb sh4 sh4eb sparc
+Architecture: linux-any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: the packet sniffing beast
  netsniff-ng is a high performance Linux network sniffer
