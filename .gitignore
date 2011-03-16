@@ -13,8 +13,6 @@
 *.order
 *.elf
 *.bin
-*.gz
-*.bz2
 *.lzma
 *.lzo
 *.patch
