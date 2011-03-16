@@ -21,7 +21,7 @@ extern void setup_rx_ring_layout(int sock, struct ring *ring,
 
 static inline int user_may_pull_from_rx(struct tpacket_hdr *hdr)
 {
-	return (hdr->tp_status == TP_STATUS_USER);
+	return ((hdr->tp_status & TP_STATUS_USER) == TP_STATUS_USER);
 }
 
 static inline void kernel_may_pull_from_rx(struct tpacket_hdr *hdr)
