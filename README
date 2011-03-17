@@ -53,10 +53,10 @@ For installation instructions, have a look at INSTALL.
 Development
 ===========
 
-There's a public Git repository at http://github.com/danborkmann/netsniff-ng/
+There's a public Git repository at http://repo.or.cz/w/netsniff-ng.git
 where you can check out the latest code base.
 
-git clone git://github.com/danborkmann/netsniff-ng.git
+git clone git://repo.or.cz/netsniff-ng.git
 
 Note that there is also a HACKING and TODO file for further readings. Next to 
 this we've set up a FAQ page with development questions at 
@@ -75,7 +75,7 @@ For questions:
 
 For bugs:
     <bugs@netsniff-ng.org>,
-    http://github.com/danborkmann/netsniff-ng/issues/
+    http://github.com/eroullit/netsniff-ng/issues/
 
 For improvements, hacks and all the rest:
     <workgroup@netsniff-ng.org>

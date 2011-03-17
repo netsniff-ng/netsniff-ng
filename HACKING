@@ -6,7 +6,7 @@ Some information about potential netsniff-ng hackers!
 How to check out netsniff-ng?
 =============================
 
-git clone git://github.com/danborkmann/netsniff-ng.git
+git clone git://repo.or.cz/netsniff-ng.git
 
 Some ideas of useful contributions/projects
 ===========================================
@@ -34,7 +34,7 @@ To make a unified diff, please follow these instructions:
     mv netsniff-ng-xxx netsniff-ng-xxx-snazzy-feature
 
 3. Checkout the original netsniff-ng source alongside it:
-    git clone git://github.com/danborkmann/netsniff-ng.git
+    git clone git://repo.or.cz/netsniff-ng.git
 
 4. Generate the diffs:
     diff -urNb netsniff-ng-xxx netsniff-ng-xxx-snazzy-feature > /tmp/cool.patch
