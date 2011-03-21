@@ -9,7 +9,7 @@ INCLUDE    = -I..
 CFLAGS    +=
 LIBS       =
 
-core-objs  = arphunt-ng.o
+core-objs  = arphunt.o
 lib-objs   = xmalloc.o                  \
 	     strlcpy.o                  \
 	     system.o                   \
@@ -19,7 +19,7 @@ lib-objs   = xmalloc.o                  \
 	     write_or_die.o             \
 	     netdev.o
 
-target     = arphunt-ng
+target     = arphunt
 
 all: clean gen-version build
 debug: all
@@ -33,7 +33,7 @@ build: $(lib-objs) $(core-objs)
 
 doc:
 	@cd ../../Documentation && make clean
-	@cd ../../Documentation && make arphunt-ng
+	@cd ../../Documentation && make arphunt
 	@cp ../../Documentation/man/* .
 	@cp ../../Documentation/pdf/* .
 	@cp ../../Documentation/html/* .
