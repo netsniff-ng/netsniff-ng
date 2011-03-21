@@ -9,12 +9,12 @@ INCLUDE    = -I..
 CFLAGS    +=
 LIBS       = -lncurses
 
-core-objs  = ifpps-ng.o
+core-objs  = ifpps.o
 lib-objs   = xmalloc.o                  \
 	     strlcpy.o                  \
 	     netdev.o
 
-target     = ifpps-ng
+target     = ifpps
 
 all: clean gen-version build doc
 debug: all
@@ -28,7 +28,7 @@ build: $(lib-objs) $(core-objs)
 
 doc:
 	@cd ../../Documentation && make clean
-	@cd ../../Documentation && make ifpps-ng
+	@cd ../../Documentation && make ifpps
 	@cp ../../Documentation/man/* .
 	@cp ../../Documentation/pdf/* .
 	@cp ../../Documentation/html/* .
