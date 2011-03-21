@@ -29,6 +29,7 @@
 #include "signals.h"
 
 struct counter {
+	uint16_t id;
 	uint8_t min;
 	uint8_t max;
 	uint8_t inc;
@@ -93,6 +94,12 @@ static void signal_handler(int number)
 	}
 }
 
+static void header(void)
+{
+	printf("%s%s%s\n", colorize_start(bold), "trafgen "
+	       VERSION_STRING, colorize_end());
+}
+
 static void help(void)
 {
 	printf("\ntrafgen %s, network packet generator\n",
@@ -143,30 +150,83 @@ static void tx_fire_or_die(char *ifname, struct pktconf *cfg)
 		panic("Panikkk - invalid args for TX trigger!\n");
 }
 
+static inline char *getuint(char *in, uint32_t *out)
+{
+	char *pt = in, tmp;
+	while (*in && (isdigit(*in) || isxdigit(*in) || *in == 'x'))
+		in++;
+	if (!*in)
+		panic("Syntax error!\n");
+	tmp = *in;
+	*in = 0;
+	*out = strtol(pt, NULL, 0);
+	if (errno == EINVAL) {
+		*out = strtol(pt, NULL, 16);
+		if (errno == EINVAL)
+			panic("Syntax error!\n");
+	}
+	*in = tmp;
+	return in;
+}
+
+static inline char *skipchar(char *in, char c)
+{
+	if (*in != c)
+		panic("Syntax error!\n");
+	return ++in;
+}
+
 static void parse_conf_or_die(char *file, struct pktconf *cfg)
 {
+	unsigned long line = 0;
 	char *pb, buff[1024];
 	FILE *fp;
 
 	if (!file || !cfg)
-		panic("Panikkk - invalid parse args!\n");
+		panic("Panikkk - invalid args for the parser!\n");
 
 	fp = fopen(file, "r");
 	if (!fp)
 		panic("Cannot open config file!\n");
 	memset(buff, 0, sizeof(buff));
 
+	header();
+	info("CFG:\n");
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
+		line++;
 		buff[sizeof(buff) - 1] = 0;
 		pb = skips(buff);
 
-		/* A comment. Skip this line */
-		if (*pb == '#') {
+		/* A comment or junk. Skip this line */
+		if (*pb == '#' || *pb == '\n') {
 			memset(buff, 0, sizeof(buff));
 			continue;
 		}
 
-		info("%s", pb);
+		info("%s%s", buff[0] != '$' ? "  " : " ", pb);
+
+		if (*pb == '$') {
+			pb++;
+			if (!strncmp("II", pb, strlen("II"))) {
+				uint32_t id, min = 0, max = 0xFF, inc = 1;
+				pb += 2;
+				pb = getuint(pb, &id);
+				pb = skipchar(pb, ':');
+				pb = skips(pb);
+				pb = getuint(pb, &min);
+				pb = skipchar(pb, ',');
+				pb = getuint(pb, &max);
+				pb = skipchar(pb, ',');
+				pb = getuint(pb, &inc);
+				printf("instruction, counter %u, min %u, max %u, inc %u\n", id, min, max, inc);
+			} else if (!strncmp("P", pb, strlen("P"))) {
+				printf("instruction, packet\n");
+			} else 
+				panic("Unknown instruction! Syntax error "
+				      "on line %lu!\n", line);
+		} else {
+			printf("value if within braces, otherwise junk\n");
+		}
 	}
 
 	fclose(fp);
