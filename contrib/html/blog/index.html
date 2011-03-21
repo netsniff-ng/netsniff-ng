@@ -75,7 +75,7 @@ An article about netsniff-ng has been published at <a href="http://www.linuxtech
 <i>27/10/2010, Emmanuel Roullit, Daniel Borkmann</i>
 <blockquote>
 <p>
-We finally got rid of the old logo since it actually wasn't real a logo. Denise Menke designed a new one which perfectly fits to our slogan <i>the packet sniffing beast</i>. A big thanks for that! The vectorized versions can also be found at our <a href="http://github.com/danborkmann/netsniff-ng.org/tree/master/art">netsniff-ng.org</a> repository.
+We finally got rid of the old logo since it actually wasn't real a logo. Denise Menke designed a new one which perfectly fits to our slogan <i>the packet sniffing beast</i>. A big thanks for that! The vectorized versions can also be found at our <a href="http://repo.or.cz/w/netsniff-ng.git/tree/master:/contrib/art/">netsniff-ng.org</a> repository.
 </p>
 </blockquote>
 </div>
@@ -85,7 +85,7 @@ We finally got rid of the old logo since it actually wasn't real a logo. Denise 
 <i>12/10/2010, Daniel Borkmann</i>
 <blockquote>
 <p>
-Since netsniff-ng 0.5.5.0 has been released, the code tree has been branched from master to <a href="http://github.com/danborkmann/netsniff-ng/tree/0.5.5.0">0.5.5.0</a> in order to fix minor bugs and keep up support. We're now working on distribution specific packages. 0.5.5.0 already got into <a href="http://packages.debian.org/search?keywords=netsniff-ng">Debian GNU/Linux</a>. Our maintainers are also working on versions for Fedora/RHEL, Mandriva, OpenSUSE, Slackware and others.
+Since netsniff-ng 0.5.5.0 has been released, the code tree has been branched from master to <a href="http://repo.or.cz/w/netsniff-ng.git/tree/0.5.5.0/">0.5.5.0</a> in order to fix minor bugs and keep up support. We're now working on distribution specific packages. 0.5.5.0 already got into <a href="http://packages.debian.org/search?keywords=netsniff-ng">Debian GNU/Linux</a>. Our maintainers are also working on versions for Fedora/RHEL, Mandriva, OpenSUSE, Slackware and others.
 </p>
 <p>
 The netsniff-ng.git/master branch already got the new development code base for 0.5.6.0 which is a complete architectural rewrite on the core of netsniff-ng.
@@ -126,7 +126,7 @@ After the RC has been published for quite some time, we're planing to release in
 <i>26/09/2010, Daniel Borkmann</i>
 <blockquote>
 <p>
-As you might have noticed, we're rewriting the core of netsniff-ng (<a href="http://github.com/danborkmann/netsniff-ng.org/tree/master/lab/">http://github.com/danborkmann/netsniff-ng.org/tree/master/lab/</a>) in order to have a better architecture for future netsniff-ng development. The RX-only mode works so far and can be tested. There's still lots of work to cover all of the old functionality, but we're on a good move! As the title mentions we now have a new packet dissector that is far more flexible than the old one. It's based on function call tables and traverses the packet layer by layer. The effort to add a new dissector for a protocol has been reduced to just one header file that has to be added and registered.
+As you might have noticed, we're rewriting the core of netsniff-ng (<a href="http://repo.or.cz/w/netsniff-ng.git/tree/master">http://repo.or.cz/w/netsniff-ng.git/tree/master</a>) in order to have a better architecture for future netsniff-ng development. The RX-only mode works so far and can be tested. There's still lots of work to cover all of the old functionality, but we're on a good move! As the title mentions we now have a new packet dissector that is far more flexible than the old one. It's based on function call tables and traverses the packet layer by layer. The effort to add a new dissector for a protocol has been reduced to just one header file that has to be added and registered.
 </p>
 </blockquote>
 </div>
@@ -141,10 +141,10 @@ From now on, we provide a new networking tool for showing real time RX/TX/IRQ NI
 <p>
 <b>Here's how you can test it:</b><br>
 <pre>
-$ git clone git://github.com/danborkmann/netsniff-ng.org.git
-$ cd netsniff-ng.org/lab/src/ifpps-ng
+$ git clone git://repo.or.cz/netsniff-ng.git
+$ cd netsniff-ng/src/ifpps
 $ make
-$ ./ifpps-ng eth1
+$ ./ifpps eth1
 </pre>
 </p>
 <p>

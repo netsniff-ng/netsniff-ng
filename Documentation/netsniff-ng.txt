@@ -545,7 +545,7 @@ bugs@netsniff-ng.org.
 
 GIT
 ---
-git clone git://github.com/danborkmann/netsniff-ng.git
+git clone git://repo.or.cz/netsniff-ng.git
 
 AUTHOR
 ------

@@ -1,9 +1,9 @@
-arphunt-ng(8)
-=============
+arphunt(8)
+==========
 
 NAME
 ----
-arphunt-ng - the arp redirector
+arphunt - the arp redirector
 
 SYNOPSIS
 --------
@@ -35,7 +35,7 @@ bugs@netsniff-ng.org.
 
 GIT
 ---
-git clone git://github.com/danborkmann/netsniff-ng.git
+git clone git://repo.or.cz/netsniff-ng.git
 
 AUTHOR
 ------

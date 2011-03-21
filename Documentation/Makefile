@@ -10,11 +10,11 @@ A2X_MAN   += -f manpage
 A2X_PDF   += -f pdf
 A2X_HTML  += -f xhtml
 
-netsniff-ng-objs   = netsniff-ng.8
-ifpps-ng-objs      = ifpps-ng.8
+netsniff-ng-objs = netsniff-ng.8
+ifpps-objs       = ifpps.8
 
 all: clean build
-build: netsniff-ng ifpps-ng
+build: netsniff-ng ifpps
 
 netsniff-ng: $(netsniff-ng-objs)
 	@$(foreach page, $(netsniff-ng-objs), cat man/$(page) | \

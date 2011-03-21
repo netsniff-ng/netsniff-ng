@@ -1,15 +1,15 @@
-ifpps-ng(8)
-===========
+ifpps(8)
+========
 
 NAME
 ----
-ifpps-ng - kernel networking statistics per sec
+ifpps - kernel networking statistics per sec
 
 SYNOPSIS
 --------
 [verse]
-'ifpps-ng' device
-'ifpps-ng' -d device [-t interval] [-cCHlvh]
+'ifpps' device
+'ifpps' -d device [-t interval] [-cCHlvh]
 
 DESCRIPTION
 -----------
@@ -42,7 +42,7 @@ bugs@netsniff-ng.org.
 
 GIT
 ---
-git clone git://github.com/danborkmann/netsniff-ng.git
+git clone git://repo.or.cz/netsniff-ng.git
 
 AUTHOR
 ------
