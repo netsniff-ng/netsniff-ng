@@ -23,7 +23,7 @@ lib-objs   = hash.o                  \
 	     twofish.o               \
 	     rx_ring.o               \
 	     tx_ring.o               \
-	     mersenne_twister.o      \
+	     mtrand.o                \
 	     netdev.o                \
 	     tprintf.o
 

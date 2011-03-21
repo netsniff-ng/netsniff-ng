@@ -54,7 +54,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "mersenne_twister.h"
+#include "mtrand.h"
 #include "write_or_die.h"
 
 #define N           624
