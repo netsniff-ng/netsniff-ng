@@ -11,13 +11,17 @@
 #include <getopt.h>
 #include <ctype.h>
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <fcntl.h>
 
-#include "error_and_die.h"
 #include "xmalloc.h"
+#include "strlcpy.h"
+#include "error_and_die.h"
 #include "netdev.h"
 #include "system.h"
 #include "tty.h"
@@ -107,8 +111,8 @@ static void help(void)
 	printf("\n");
 	printf("Example:\n");
 	printf("  See trafgen.txf for configuration file examples.\n");
-	printf("  trafgen --dev eth0 --conf trafgen.txf");
-	printf("  trafgen --dev eth0 --conf trafgen.txf --num 100 --gap 5");
+	printf("  trafgen --dev eth0 --conf trafgen.txf\n");
+	printf("  trafgen --dev eth0 --conf trafgen.txf --num 100 --gap 5\n");
 	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2011 Daniel Borkmann\n");
@@ -135,10 +139,37 @@ static void version(void)
 
 static void tx_fire_or_die(char *ifname, struct pktconf *cfg)
 {
+	if (!ifname || !cfg)
+		panic("Panikkk - invalid args for TX trigger!\n");
 }
 
 static void parse_conf_or_die(char *file, struct pktconf *cfg)
 {
+	char *pb, buff[1024];
+	FILE *fp;
+
+	if (!file || !cfg)
+		panic("Panikkk - invalid parse args!\n");
+
+	fp = fopen(file, "r");
+	if (!fp)
+		panic("Cannot open config file!\n");
+	memset(buff, 0, sizeof(buff));
+
+	while (fgets(buff, sizeof(buff), fp) != NULL) {
+		buff[sizeof(buff) - 1] = 0;
+		pb = skips(buff);
+
+		/* A comment. Skip this line */
+		if (*pb == '#') {
+			memset(buff, 0, sizeof(buff));
+			continue;
+		}
+
+		info("%s", pb);
+	}
+
+	fclose(fp);
 }
 
 static int main_loop(char *ifname, char *confname, unsigned long pkts,

@@ -39,3 +39,37 @@ size_t strlcpy(char *dest, const char *src, size_t size)
 
 	return ret;
 }
+
+char *strtrim_right(register char *p, register char c)
+{
+	register char *end;
+	register int len;
+
+	len = strlen(p);
+	while (*p && len) {
+		end = p + len - 1;
+		if (c == *end)
+			*end = 0;
+		else
+			break;
+		len = strlen(p);
+	}
+
+	return p;
+}
+
+char *strtrim_left(register char *p, register char c)
+{
+	register int len;
+	
+	len = strlen(p);
+	while (*p && len--) {
+		if (c == *p)
+			p++;
+		else
+			break;
+	}
+	
+	return p;
+}
+
