@@ -8,6 +8,8 @@
 #ifndef PORTS_TCP_H
 #define PORTS_TCP_H
 
+#include "compiler.h"
+
 struct port_tcp {
 	unsigned int id;
 	char *port;
@@ -15,7 +17,7 @@ struct port_tcp {
 };
 
 #ifdef __DATA__
-struct port_tcp ports_tcp[] = {
+struct port_tcp ports_tcp[] __read_mostly = {
 	{1, "tcpmux"},
 	{2, "compressnet"},
 	{3, "compressnet"},

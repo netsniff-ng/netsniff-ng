@@ -8,6 +8,8 @@
 #ifndef ETHER_TYPES_H
 #define ETHER_TYPES_H
 
+#include "compiler.h"
+
 struct ether_type {
 	unsigned int id;
 	char *type;
@@ -16,7 +18,7 @@ struct ether_type {
 
 #ifdef __DATA__
 /* Partly taken from linux/if_ether.h and some other places on the net. */
-struct ether_type ether_types[] = {
+struct ether_type ether_types[] __read_mostly = {
 	{0x0000, "IEEE802.3 Length Field"},
 	{0x0060, "Ethernet Loopback packet"},
 	{0x0101, "Experimental"},

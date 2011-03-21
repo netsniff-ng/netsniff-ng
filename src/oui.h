@@ -8,6 +8,8 @@
 #ifndef OUI_H
 #define OUI_H
 
+#include "compiler.h"
+
 struct vendor_id {
 	unsigned int id;
 	char *vendor;
@@ -15,8 +17,9 @@ struct vendor_id {
 };
 
 #ifdef __DATA__
-/* Taken from IEEE oui vendor list. */
-struct vendor_id vendor_db[] = {
+/* Taken from IEEE oui vendor list
+   (http://standards.ieee.org/develop/regauth/oui/oui.txt). */
+struct vendor_id vendor_db[] __read_mostly = {
 	{0x000000, "XEROX CORPORATION"},
 	{0x000001, "XEROX CORPORATION"},
 	{0x000002, "XEROX CORPORATION"},
