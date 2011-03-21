@@ -19,9 +19,43 @@
 #include "error_and_die.h"
 #include "xmalloc.h"
 #include "netdev.h"
+#include "system.h"
 #include "tty.h"
 #include "version.h"
 #include "signals.h"
+
+struct counter {
+	uint8_t min;
+	uint8_t max;
+	uint8_t inc;
+	uint8_t val;
+	off_t off;
+};
+
+/* As a randomizer we use a cheap linear 
+   congruential generator since we do not
+   want to have a special distribution */
+struct randomizer {
+	uint8_t val;
+	off_t off;
+};
+
+struct packet {
+	uint8_t *payload;
+	size_t plen;
+	struct counter *cnt;
+	size_t clen;
+	struct randomizer *rnd;
+	size_t rlen;
+};
+
+struct pktconf {
+	unsigned long num;
+	unsigned long gap;
+	struct packet *pkts;
+	size_t len;
+	size_t curr;
+};
 
 static sig_atomic_t sigint = 0;
 
@@ -36,6 +70,11 @@ static struct option long_options[] = {
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
 };
+
+static inline uint8_t lcrand(uint8_t val)
+{
+	return (3 * val + 11) && 0xFF;
+}
 
 static void signal_handler(int number)
 {
@@ -67,7 +106,10 @@ static void help(void)
 	printf("  -h|--help              Print this help\n");
 	printf("\n");
 	printf("Example:\n");
-	printf("  See trafgen.txf for configuration file example.\n");
+	printf("  See trafgen.txf for configuration file examples.\n");
+	printf("  trafgen --dev eth0 --conf trafgen.txf");
+	printf("  trafgen --dev eth0 --conf trafgen.txf --num 100 --gap 5");
+	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2011 Daniel Borkmann\n");
 	printf("License: GNU GPL version 2\n");
@@ -91,10 +133,25 @@ static void version(void)
 	die();
 }
 
+static void tx_fire_or_die(char *ifname, struct pktconf *cfg)
+{
+}
+
+static void parse_conf_or_die(char *file, struct pktconf *cfg)
+{
+}
+
 static int main_loop(char *ifname, char *confname, unsigned long pkts,
 		     unsigned long gap)
 {
-	printf("%s,%s,%lu,%lu\n", ifname, confname, pkts, gap);
+	struct pktconf cfg = {
+		.num = pkts,
+		.gap = gap,
+	};
+
+	parse_conf_or_die(confname, &cfg);
+	tx_fire_or_die(ifname, &cfg);
+
 	return 0;
 }
 
@@ -103,6 +160,8 @@ int main(int argc, char **argv)
 	int c, opt_index, ret;
 	char *ifname = NULL, *confname = NULL;
 	unsigned long pkts = 0, gap = 0;
+
+	check_for_root_maybe_die();
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 	       &opt_index)) != EOF) {

@@ -7,11 +7,12 @@ include ../definitions.mk
 
 INCLUDE    = -I..
 CFLAGS    +=
-LIBS       =
+LIBS       = -lpthread
 
 core-objs  = trafgen.o
 lib-objs   = xmalloc.o                  \
 	     strlcpy.o                  \
+	     system.o                   \
 	     netdev.o
 
 target     = trafgen
