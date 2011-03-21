@@ -67,6 +67,8 @@ static void help(void)
 	printf("  -v|--version           Print version\n");
 	printf("  -h|--help              Print this help\n");
 	printf("\n");
+	printf("Example:\n");
+	printf("  See trafgen.txf for configuration file example.\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2011 Daniel Borkmann\n");
 	printf("License: GNU GPL version 2\n");
