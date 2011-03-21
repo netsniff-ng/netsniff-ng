@@ -179,9 +179,22 @@ static inline char *skipchar(char *in, char c)
 static void parse_conf_or_die(char *file, struct pktconf *cfg)
 {
 	int withinpkt = 0;
+	size_t ncnts = 0;
 	unsigned long line = 0;
 	char *pb, buff[1024];
 	FILE *fp;
+	struct counter *cnts;
+
+/*
+struct counter {
+	uint16_t id;
+	uint8_t min;
+	uint8_t max;
+	uint8_t inc;
+	uint8_t val;
+	off_t off;
+};
+*/
 
 	if (!file || !cfg)
 		panic("Panikkk - invalid args for the parser!\n");
