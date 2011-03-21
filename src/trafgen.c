@@ -178,6 +178,7 @@ static inline char *skipchar(char *in, char c)
 
 static void parse_conf_or_die(char *file, struct pktconf *cfg)
 {
+	int withinpkt = 0;
 	unsigned long line = 0;
 	char *pb, buff[1024];
 	FILE *fp;
@@ -205,7 +206,7 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 
 		info("%s%s", buff[0] != '$' ? "  " : " ", pb);
 
-		if (*pb == '$') {
+		if (!withinpkt && *pb == '$') {
 			pb++;
 			if (!strncmp("II", pb, strlen("II"))) {
 				uint32_t id, min = 0, max = 0xFF, inc = 1;
@@ -220,13 +221,23 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 				pb = getuint(pb, &inc);
 				printf("instruction, counter %u, min %u, max %u, inc %u\n", id, min, max, inc);
 			} else if (!strncmp("P", pb, strlen("P"))) {
-				printf("instruction, packet\n");
+				uint32_t id;
+				pb ++;
+				pb = getuint(pb, &id);
+				pb = skips(pb);
+				pb = skipchar(pb, '{');
+				withinpkt = 1;
+				printf("instruction, packet %u\n", id);
 			} else 
 				panic("Unknown instruction! Syntax error "
 				      "on line %lu!\n", line);
-		} else {
-			printf("value if within braces, otherwise junk\n");
-		}
+		} else if (withinpkt && *pb == '}')
+				withinpkt = 0;
+		else if (withinpkt) {
+			printf("pkt value\n");
+		} else
+			panic("Syntax error!\n");
+		memset(buff, 0, sizeof(buff));
 	}
 
 	fclose(fp);
