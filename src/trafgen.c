@@ -25,15 +25,13 @@
 
 static sig_atomic_t sigint = 0;
 
-static const char *short_options = "d:t:vhcCHl";
+static const char *short_options = "d:c:n:t:vh";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
-	{"interval", required_argument, 0, 't'},
-	{"loop", no_argument, 0, 'l'},
-	{"term", no_argument, 0, 'c'},
-	{"csv", no_argument, 0, 'C'},
-	{"csv-tablehead", no_argument, 0, 'H'},
+	{"conf", required_argument, 0, 'c'},
+	{"num", required_argument, 0, 'n'},
+	{"gap", required_argument, 0, 't'},
 	{"version", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
@@ -54,17 +52,17 @@ static void signal_handler(int number)
 
 static void help(void)
 {
-	printf("\ntrafgen %s, packet generator\n",
+	printf("\ntrafgen %s, network packet generator\n",
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: trafgen [options]\n");
 	printf("Options:\n");
-	printf("  -d|--dev <netdev>      Device to fetch statistics for\n");
+	printf("  -d|--dev <netdev>      TX Device\n");
 	printf("  -c|--conf <file>       Packet configuration txf-file\n");
 	printf("  -n|--num <uint>        TX mode\n");
-	printf("  `--     0              Loop until interrupt\n");
+	printf("  `--     0              Loop until interrupt (default)\n");
 	printf("   `-     n              Send n packets and done\n");
-	printf("  -t|--time <interval>   Packet interval in msecs, def: 0\n");
+	printf("  -t|--gap <interval>    Packet interval in msecs, def: 0\n");
 	printf("  -v|--version           Print version\n");
 	printf("  -h|--help              Print this help\n");
 	printf("\n");
@@ -76,12 +74,12 @@ static void help(void)
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
 
-	exit(EXIT_SUCCESS);
+	die();
 }
 
 static void version(void)
 {
-	printf("\ntrafgen %s, packet generator\n",
+	printf("\ntrafgen %s, network packet generator\n",
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
@@ -90,13 +88,21 @@ static void version(void)
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
 
-	exit(EXIT_SUCCESS);
+	die();
+}
+
+static int main_loop(char *ifname, char *confname, unsigned long pkts,
+		     unsigned long gap)
+{
+	printf("%s,%s,%lu,%lu\n", ifname, confname, pkts, gap);
+	return 0;
 }
 
 int main(int argc, char **argv)
 {
 	int c, opt_index, ret;
-	char *ifname = NULL;
+	char *ifname = NULL, *confname = NULL;
+	unsigned long pkts = 0, gap = 0;
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 	       &opt_index)) != EOF) {
@@ -111,11 +117,20 @@ int main(int argc, char **argv)
 			ifname = xstrndup(optarg, IFNAMSIZ);
 			break;
 		case 'c':
+			confname = xstrdup(optarg);
+			break;
+		case 'n':
+			pkts = atol(optarg);
+			break;
+		case 't':
+			gap = atol(optarg);
 			break;
 		case '?':
 			switch (optopt) {
 			case 'd':
 			case 'c':
+			case 'n':
+			case 't':
 				error_and_die(EXIT_FAILURE, "Option -%c "
 					      "requires an argument!\n",
 					      optopt);
@@ -123,19 +138,19 @@ int main(int argc, char **argv)
 				if (isprint(optopt))
 					whine("Unknown option character "
 					      "`0x%X\'!\n", optopt);
-				exit(EXIT_FAILURE);
+				die();
 			}
 		default:
 			break;
 		}
 	}
 
-	if (argc == 1)
+	if (argc < 5)
 		help();
-	if (argc == 2)
-		ifname = xstrndup(argv[1], IFNAMSIZ);
 	if (ifname == NULL)
 		error_and_die(EXIT_FAILURE, "No networking device given!\n");
+	if (confname == NULL)
+		error_and_die(EXIT_FAILURE, "No configuration file given!\n");
 	if (device_mtu(ifname) == 0)
 		error_and_die(EXIT_FAILURE, "This is no networking device!\n");
 
@@ -143,10 +158,10 @@ int main(int argc, char **argv)
 	register_signal(SIGHUP, signal_handler);
 	register_signal(SIGSEGV, muntrace_handler);
 
-	ret = 0;
-//	ret = main_loop(ifname, interval);
+	ret = main_loop(ifname, confname, pkts, gap);
 
 	xfree(ifname);
+	xfree(confname);
 	return ret;
 }
 

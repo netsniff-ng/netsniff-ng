@@ -26,11 +26,34 @@ static inline void error_and_die(int status, char *msg, ...)
 	exit(status);
 }
 
+static inline void die(void)
+{
+	exit(EXIT_FAILURE);
+}
+
+static inline void panic(char *msg, ...)
+{
+	va_list vl;
+	va_start(vl, msg);
+	vfprintf(stderr, msg, vl);
+	va_end(vl);
+
+	die();
+}
+
 static inline void whine(char *msg, ...)
 {
 	va_list vl;
 	va_start(vl, msg);
 	vfprintf(stderr, msg, vl);
+	va_end(vl);
+}
+
+static inline void info(char *msg, ...)
+{
+	va_list vl;
+	va_start(vl, msg);
+	vfprintf(stdout, msg, vl);
 	va_end(vl);
 }
 
