@@ -494,10 +494,10 @@ out:
 
 static void help(void)
 {
-	printf("\nifpps-ng %s, kernel networking statistics per sec\n",
+	printf("\nifpps %s, kernel networking statistics per sec\n",
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
-	printf("Usage: ifpps-ng [options] || ifpps-ng <netdev>\n");
+	printf("Usage: ifpps [options] || ifpps <netdev>\n");
 	printf("Options:\n");
 	printf("  -d|--dev <netdev>      Device to fetch statistics for\n");
 	printf("  -t|--interval <time>   Refresh time in seconds as float (default 1.0)\n");
@@ -510,8 +510,8 @@ static void help(void)
 	printf("  -h|--help              Print this help\n");
 	printf("\n");
 	printf("Examples:\n");
-	printf("  ifpps-ng --dev eth0\n");
-	printf("  ifpps-ng --dev eth0 --interval 60 --csv\n");
+	printf("  ifpps --dev eth0\n");
+	printf("  ifpps --dev eth0 --interval 60 --csv\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2009, 2010 Daniel Borkmann\n");
 	printf("License: GNU GPL version 2\n");
@@ -523,7 +523,7 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\nifpps-ng %s, kernel networking statistics per sec\n",
+	printf("\nifpps %s, kernel networking statistics per sec\n",
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");

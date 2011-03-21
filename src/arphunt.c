@@ -185,9 +185,9 @@ static void alarm_handler(int number)
 
 static void help(void)
 {
-	printf("\narphunt-ng %s, the arp redirector\n", VERSION_STRING);
+	printf("\narphunt %s, the arp redirector\n", VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
-	printf("Usage: arphunt-ng [options]\n");
+	printf("Usage: arphunt [options]\n");
 	printf("Options for normal mode:\n");
 	printf("  -d|--dev <netdev>      Networking device\n");
 	printf("  -a|--agressive <conn>  Agressive startup with known connections\n");
@@ -208,15 +208,15 @@ static void help(void)
 	printf("  -h|--help              Print this help\n");
 	printf("\n");
 	printf("Examples:\n");
-	printf("  arphunt-ng --dev eth0 --flood --prefix 10.0\n");
-	printf("  arphunt-ng --dev eth0 --agressive conn.txt --routing table.txt\n");
+	printf("  arphunt --dev eth0 --flood --prefix 10.0\n");
+	printf("  arphunt --dev eth0 --agressive conn.txt --routing table.txt\n");
 	printf("\n");
 	printf("Note:\n");
 	printf("  - Sending a SIGUSR1 will show internal lookup tables\n");
-	printf("  - For more help try \'man arphunt-ng\'\n");
+	printf("  - For more help try \'man arphunt\'\n");
 	printf("  - This tool has been written for research, so only use it\n");
 	printf("    for such a purpose within an isolated testing network to\n");
-	printf("    not cause damages! By using arphunt-ng you are agreeing\n");
+	printf("    not cause damages! By using arphunt you are agreeing\n");
 	printf("    to this!\n");
 	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
@@ -230,7 +230,7 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\narphunt-ng %s, the arp redirector\n", VERSION_STRING);
+	printf("\narphunt %s, the arp redirector\n", VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2009, 2010 Daniel Borkmann\n");
@@ -706,7 +706,7 @@ out:
 
 static void header(void)
 {
-	printf("%s%s%s\n", colorize_start(bold), "arphunt-ng " 
+	printf("%s%s%s\n", colorize_start(bold), "arphunt " 
 	       VERSION_STRING, colorize_end());
 }
 
