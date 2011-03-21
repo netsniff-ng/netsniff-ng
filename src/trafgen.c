@@ -60,10 +60,11 @@ static void help(void)
 	printf("Usage: trafgen [options]\n");
 	printf("Options:\n");
 	printf("  -d|--dev <netdev>      Device to fetch statistics for\n");
-	printf("  -c|--conf <file>       Packet configuration file\n");
-	printf("  -m|--mode <mode>       TX mode\n");
+	printf("  -c|--conf <file>       Packet configuration txf-file\n");
+	printf("  -n|--num <uint>        TX mode\n");
 	printf("  `--     0              Loop until interrupt\n");
 	printf("   `-     n              Send n packets and done\n");
+	printf("  -t|--time <interval>   Packet interval in msecs, def: 0\n");
 	printf("  -v|--version           Print version\n");
 	printf("  -h|--help              Print this help\n");
 	printf("\n");
