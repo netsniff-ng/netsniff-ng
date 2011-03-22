@@ -6,7 +6,7 @@
 include ../definitions.mk
 
 INCLUDE    = -I..
-CFLAGS    += 
+CFLAGS    += -DTARGETNAME="\"netsniff-ng\""
 LIBS       = -lrt -lz -lpthread
 
 core-objs  = netsniff-ng.o
@@ -31,7 +31,7 @@ target     = netsniff-ng
 
 all: clean gen-version gen-tables build doc
 debug: all
-develop: all
+deploy: all strip
 
 gen-version:
 	@cd .. && cat ../VERSION | xargs ./gen_build_info.pl
@@ -41,6 +41,9 @@ gen-tables:
 
 build: $(lib-objs) $(core-objs)
 	@$(LD) $(target) $(core-objs) $(lib-objs) $(LIBS)
+
+strip:
+	@strip $(target)
 
 doc:
 	@cd ../../Documentation && make clean
@@ -72,6 +75,7 @@ help:
 	@echo 'Building targets:'
 	@echo '  all             - Build netsniff-ng (default)'
 	@echo '  debug           - Build netsniff-ng for debugging _only_'
+	@echo '  deploy          - Build netsniff-ng for productive use'
 	@echo 'Setup targets:'
 	@echo '  install         - Install netsniff-ng'
 	@echo '  uninstall       - Uninstall netsniff-ng'

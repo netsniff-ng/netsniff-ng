@@ -13,6 +13,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
 
 #include "tty.h"
 
@@ -29,6 +30,11 @@ static inline void error_and_die(int status, char *msg, ...)
 static inline void die(void)
 {
 	exit(EXIT_FAILURE);
+}
+
+static inline void _die(void)
+{
+	_exit(EXIT_FAILURE);
 }
 
 static inline void panic(char *msg, ...)

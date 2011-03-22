@@ -37,9 +37,6 @@ struct counter {
 	off_t off;
 };
 
-/* As a randomizer we use a cheap linear 
-   congruential generator since we do not
-   want to have a special distribution */
 struct randomizer {
 	uint8_t val;
 	off_t off;
@@ -147,7 +144,7 @@ static void version(void)
 static void tx_fire_or_die(char *ifname, struct pktconf *cfg)
 {
 	if (!ifname || !cfg)
-		panic("Panikkk - invalid args for TX trigger!\n");
+		panic("Panic over invalid args for TX trigger!\n");
 }
 
 static inline char *getuint(char *in, uint32_t *out)
@@ -179,25 +176,14 @@ static inline char *skipchar(char *in, char c)
 static void parse_conf_or_die(char *file, struct pktconf *cfg)
 {
 	int withinpkt = 0;
-	size_t ncnts = 0;
 	unsigned long line = 0;
 	char *pb, buff[1024];
 	FILE *fp;
-	struct counter *cnts;
-
-/*
-struct counter {
-	uint16_t id;
-	uint8_t min;
-	uint8_t max;
-	uint8_t inc;
-	uint8_t val;
-	off_t off;
-};
-*/
+	struct counter *cnts = NULL;
+	size_t l = 0;
 
 	if (!file || !cfg)
-		panic("Panikkk - invalid args for the parser!\n");
+		panic("Panic over invalid args for the parser!\n");
 
 	fp = fopen(file, "r");
 	if (!fp)
@@ -232,10 +218,16 @@ struct counter {
 				pb = getuint(pb, &max);
 				pb = skipchar(pb, ',');
 				pb = getuint(pb, &inc);
-				printf("instruction, counter %u, min %u, max %u, inc %u\n", id, min, max, inc);
+				cnts = xrealloc(cnts, 1, ++l * sizeof(*cnts));
+				cnts[l - 1].id = (uint8_t) id;
+				cnts[l - 1].min = (uint8_t) min;
+				cnts[l - 1].max = (uint8_t) max;
+				cnts[l - 1].inc = (uint8_t) inc;
+				cnts[l - 1].val = 0;
+				cnts[l - 1].off = 0;
 			} else if (!strncmp("P", pb, strlen("P"))) {
 				uint32_t id;
-				pb ++;
+				pb++;
 				pb = getuint(pb, &id);
 				pb = skips(pb);
 				pb = skipchar(pb, '{');
@@ -254,6 +246,7 @@ struct counter {
 	}
 
 	fclose(fp);
+	xfree(cnts);
 }
 
 static int main_loop(char *ifname, char *confname, unsigned long pkts,

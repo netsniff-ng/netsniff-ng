@@ -6,7 +6,7 @@
 include ../definitions.mk
 
 INCLUDE    = -I..
-CFLAGS    +=
+CFLAGS    += -DTARGETNAME="\"ifpps\""
 LIBS       = -lncurses
 
 core-objs  = ifpps.o
@@ -18,13 +18,16 @@ target     = ifpps
 
 all: clean gen-version build doc
 debug: all
-develop: all
+deploy: all strip
 
 gen-version:
 	@cd .. && cat ../VERSION | xargs ./gen_build_info.pl
 
 build: $(lib-objs) $(core-objs)
 	@$(LD) $(target) $(core-objs) $(lib-objs) $(LIBS)
+
+strip:
+	@strip $(target)
 
 doc:
 	@cd ../../Documentation && make clean
@@ -54,6 +57,7 @@ help:
 	@echo 'Building targets:'
 	@echo '  all             - Build ifpps (default)'
 	@echo '  debug           - Build ifpps for debugging _only_'
+	@echo '  deploy          - Build ifpps for productive use'
 	@echo 'Setup targets:'
 	@echo '  install         - Install ifpps'
 	@echo '  uninstall       - Uninstall ifpps'

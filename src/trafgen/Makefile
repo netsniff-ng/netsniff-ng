@@ -6,7 +6,7 @@
 include ../definitions.mk
 
 INCLUDE    = -I..
-CFLAGS    +=
+CFLAGS    += -DTARGETNAME="\"trafgen\""
 LIBS       = -lpthread
 
 core-objs  = trafgen.o
@@ -19,13 +19,16 @@ target     = trafgen
 
 all: clean gen-version build doc
 debug: all
-develop: all
+deploy: all strip
 
 gen-version:
 	@cd .. && cat ../VERSION | xargs ./gen_build_info.pl
 
 build: $(lib-objs) $(core-objs)
 	@$(LD) $(target) $(core-objs) $(lib-objs) $(LIBS)
+
+strip:
+	@strip $(target)
 
 doc:
 	@cd ../../Documentation && make clean
@@ -55,6 +58,7 @@ help:
 	@echo 'Building targets:'
 	@echo '  all             - Build trafgen (default)'
 	@echo '  debug           - Build trafgen for debugging _only_'
+	@echo '  deploy          - Build trafgen for productive use'
 	@echo 'Setup targets:'
 	@echo '  install         - Install trafgen'
 	@echo '  uninstall       - Uninstall trafgen'

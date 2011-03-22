@@ -6,7 +6,7 @@
 include ../definitions.mk
 
 INCLUDE    = -I..
-CFLAGS    +=
+CFLAGS    += -DTARGETNAME="\"arphunt\""
 LIBS       =
 
 core-objs  = arphunt.o
@@ -23,13 +23,16 @@ target     = arphunt
 
 all: clean gen-version build
 debug: all
-develop: all
+deploy: all strip
 
 gen-version:
 	@cd .. && cat ../VERSION | xargs ./gen_build_info.pl
 
 build: $(lib-objs) $(core-objs)
 	@$(LD) $(target) $(core-objs) $(lib-objs) $(LIBS)
+
+strip:
+	@strip $(target)
 
 doc:
 	@cd ../../Documentation && make clean
@@ -57,11 +60,12 @@ help:
 	@echo 'Cleaning targets:'
 	@echo '  clean           - Remove generated files'
 	@echo 'Building targets:'
-	@echo '  all             - Build arphunt-ng (default)'
-	@echo '  debug           - Build arphunt-ng for debugging _only_'
+	@echo '  all             - Build arphunt (default)'
+	@echo '  debug           - Build arphunt for debugging _only_'
+	@echo '  deploy          - Build arphunt for productive use'
 	@echo 'Setup targets:'
-	@echo '  install         - Install arphunt-ng'
-	@echo '  uninstall       - Uninstall arphunt-ng'
+	@echo '  install         - Install arphunt'
+	@echo '  uninstall       - Uninstall arphunt'
 	@echo 'Other targets:'
 	@echo '  help            - Print this help'
 

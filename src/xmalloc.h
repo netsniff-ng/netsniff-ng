@@ -13,6 +13,7 @@ extern void muntrace_handler(int signal);
 extern void *xmalloc(size_t size);
 extern void *xzmalloc(size_t size);
 extern void *xmallocz(size_t size);
+extern void *xvalloc(size_t size);
 extern void *xmalloc_aligned(size_t size, size_t alignment);
 extern void *xmemdupz(const void *data, size_t len);
 extern void *xcalloc(size_t nmemb, size_t size);
