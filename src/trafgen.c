@@ -10,6 +10,7 @@
 #include <curses.h>
 #include <getopt.h>
 #include <ctype.h>
+#include <stdbool.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/stat.h>
