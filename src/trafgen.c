@@ -72,6 +72,9 @@ struct mode {
 	unsigned int reserve_size;
 };
 
+#define CPU_UNKNOWN  -1
+#define CPU_NOTOUCH  -2
+
 static sig_atomic_t sigint = 0;
 
 static const char *short_options = "d:c:n:t:vhS:HQb:B:";
@@ -165,10 +168,9 @@ static void version(void)
 	die();
 }
 
-/* Let's do some Quad Damage ... */
-static void tx_fire_or_die(char *ifname, struct pktconf *cfg)
+static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 {
-	if (!ifname || !cfg)
+	if (!mode || !cfg)
 		panic("Panic over invalid args for TX trigger!\n");
 }
 
@@ -284,7 +286,6 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 		panic("Cannot open config file!\n");
 	memset(buff, 0, sizeof(buff));
 
-	header();
 	info("CFG:\n");
 	srand(time(NULL));
 
@@ -418,7 +419,7 @@ static void cleanup_cfg(struct pktconf *cfg)
 		xfree(cfg->pkts);
 }
 
-static int main_loop(char *ifname, char *confname, unsigned long pkts,
+static int main_loop(struct mode *mode, char *confname, unsigned long pkts,
 		     unsigned long gap)
 {
 	struct pktconf cfg = {
@@ -428,7 +429,7 @@ static int main_loop(char *ifname, char *confname, unsigned long pkts,
 	};
 
 	parse_conf_or_die(confname, &cfg);
-	tx_fire_or_die(ifname, &cfg);
+	tx_fire_or_die(mode, &cfg);
 	cleanup_cfg(&cfg);
 
 	return 0;
@@ -436,11 +437,16 @@ static int main_loop(char *ifname, char *confname, unsigned long pkts,
 
 int main(int argc, char **argv)
 {
-	int c, opt_index, ret;
-	char *ifname = NULL, *confname = NULL;
+	int c, opt_index, ret, i, j;
+	char *confname = NULL, *ptr;
 	unsigned long pkts = 0, gap = 0;
+	bool prio_high = true;
+	struct mode mode;
 
 	check_for_root_maybe_die();
+
+	memset(&mode, 0, sizeof(mode));
+	mode.cpu = CPU_UNKNOWN;
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 	       &opt_index)) != EOF) {
@@ -451,23 +457,63 @@ int main(int argc, char **argv)
 		case 'v':
 			version();
 			break;
-		case 'd':
-			ifname = xstrndup(optarg, IFNAMSIZ);
+		case 'd': /* device */
+			mode.device = xstrndup(optarg, IFNAMSIZ);
 			break;
-		case 'c':
+		case 'c': /* conffile */
 			confname = xstrdup(optarg);
 			break;
-		case 'n':
+		case 'n': /* number pkts */
 			pkts = atol(optarg);
 			break;
-		case 't':
+		case 't': /* interpacket gap */
 			gap = atol(optarg);
+			break;
+		case 'S': /* ring-size + arg */
+			ptr = optarg;
+			mode.reserve_size = 0;
+
+			for (j = i = strlen(optarg); i > 0; --i) {
+				if (!isdigit(optarg[j - i]))
+					break;
+				ptr++;
+			}
+
+			if (!strncmp(ptr, "KB", strlen("KB")))
+				mode.reserve_size = 1 << 10;
+			else if (!strncmp(ptr, "MB", strlen("MB")))
+				mode.reserve_size = 1 << 20;
+			else if (!strncmp(ptr, "GB", strlen("GB")))
+				mode.reserve_size = 1 << 30;
+			else
+				panic("Syntax error in ring size param!\n");
+
+			*ptr = 0;
+			mode.reserve_size *= atoi(optarg);
+			break;
+		case 'b': /* bind-cpu + arg */
+			set_cpu_affinity(optarg, 0);
+			/* Take the first CPU for rebinding the IRQ */
+			if (mode.cpu != CPU_NOTOUCH)
+				mode.cpu = atoi(optarg);
+			break;
+		case 'B': /* unbind-cpu + arg */
+			set_cpu_affinity(optarg, 1);
+			break;
+		case 'H': /* prio-norm */
+			prio_high = false;
+			break;
+		case 'Q': /* notouch-irq */
+			mode.cpu = CPU_NOTOUCH;
 			break;
 		case '?':
 			switch (optopt) {
 			case 'd':
 			case 'c':
 			case 'n':
+			case 'S':
+			case 'b':
+			case 'B':
 			case 't':
 				error_and_die(EXIT_FAILURE, "Option -%c "
 					      "requires an argument!\n",
@@ -485,20 +531,27 @@ int main(int argc, char **argv)
 
 	if (argc < 5)
 		help();
-	if (ifname == NULL)
+	if (mode.device == NULL)
 		error_and_die(EXIT_FAILURE, "No networking device given!\n");
 	if (confname == NULL)
 		error_and_die(EXIT_FAILURE, "No configuration file given!\n");
-	if (device_mtu(ifname) == 0)
+	if (device_mtu(mode.device) == 0)
 		error_and_die(EXIT_FAILURE, "This is no networking device!\n");
 
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
 	register_signal(SIGSEGV, muntrace_handler);
 
-	ret = main_loop(ifname, confname, pkts, gap);
+	header();
 
-	xfree(ifname);
+	if (prio_high == true) {
+		set_proc_prio(DEFAULT_PROCESS_PRIO);
+		set_sched_status(DEFAULT_SCHED_POLICY, DEFAULT_SCHED_PRIO);
+	}
+
+	ret = main_loop(&mode, confname, pkts, gap);
+
+	xfree(mode.device);
 	xfree(confname);
 	return ret;
 }
