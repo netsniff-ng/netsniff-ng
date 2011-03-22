@@ -198,7 +198,7 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 		       mode->cpu);
 	}
 
-	printf("MD: TX\n\n");
+	printf("MD: %s\n\n", !cfg->gap ? "FIRE" : "TX");
 
 	while(likely(sigint == 0)) {
 		; /* do stuff */
@@ -491,19 +491,19 @@ int main(int argc, char **argv)
 		case 'v':
 			version();
 			break;
-		case 'd': /* device */
+		case 'd':
 			mode.device = xstrndup(optarg, IFNAMSIZ);
 			break;
-		case 'c': /* conffile */
+		case 'c':
 			confname = xstrdup(optarg);
 			break;
-		case 'n': /* number pkts */
+		case 'n':
 			pkts = atol(optarg);
 			break;
-		case 't': /* interpacket gap */
+		case 't':
 			gap = atol(optarg);
 			break;
-		case 'S': /* ring-size + arg */
+		case 'S':
 			ptr = optarg;
 			mode.reserve_size = 0;
 
@@ -525,19 +525,19 @@ int main(int argc, char **argv)
 			*ptr = 0;
 			mode.reserve_size *= atoi(optarg);
 			break;
-		case 'b': /* bind-cpu + arg */
+		case 'b':
 			set_cpu_affinity(optarg, 0);
 			/* Take the first CPU for rebinding the IRQ */
 			if (mode.cpu != CPU_NOTOUCH)
 				mode.cpu = atoi(optarg);
 			break;
-		case 'B': /* unbind-cpu + arg */
+		case 'B':
 			set_cpu_affinity(optarg, 1);
 			break;
-		case 'H': /* prio-norm */
+		case 'H':
 			prio_high = false;
 			break;
-		case 'Q': /* notouch-irq */
+		case 'Q':
 			mode.cpu = CPU_NOTOUCH;
 			break;
 		case '?':
