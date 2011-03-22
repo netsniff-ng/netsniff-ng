@@ -119,7 +119,7 @@ static int pull_from_pipe(int fd, char *buffer, int max)
 	return i;
 }
 
-static void stacktrace(void)
+void stacktrace(void)
 {
 	void *p;
 	int i, fd, ret;

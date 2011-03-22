@@ -9,6 +9,7 @@
 #define XMALLOC_H
 
 extern void muntrace_handler(int signal);
+extern void stacktrace(void);
 
 extern void *xmalloc(size_t size);
 extern void *xzmalloc(size_t size);
