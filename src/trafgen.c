@@ -1,7 +1,7 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
- * Copyright 2009, 2010 Daniel Borkmann.
+ * Copyright 2009-2011 Daniel Borkmann.
  * Subject to the GPL.
  */
 
@@ -184,6 +184,15 @@ static inline char *skipchar(char *in, char c)
 	return ++in;
 }
 
+static inline char *skipchar_s(char *in, char c)
+{
+	in = skips(in);
+	in = skipchar(in, c);
+	in = skips(in);
+
+	return in;
+}
+
 static void dump_conf(struct pktconf *cfg)
 {
 	size_t i, j;
@@ -297,6 +306,8 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 				else
 					info("0x%02x - ", val);
 				info("\n");
+
+				pb = skipchar_s(pb, ',');
 			}
 		} else
 			panic("Syntax error!\n");
