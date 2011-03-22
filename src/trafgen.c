@@ -271,8 +271,6 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 			continue;
 		}
 
-		info("%s%s", buff[0] != '$' ? "  " : " ", pb);
-
 		if (!withinpkt && *pb == '$') {
 			pb++;
 			if (!strncmp("II", pb, strlen("II"))) {
@@ -306,6 +304,7 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 				cfg->pkts[cfg->len - 1].plen = 0;
 				cfg->pkts[cfg->len - 1].clen = 0;
 				cfg->pkts[cfg->len - 1].rlen = 0;
+				cfg->pkts[cfg->len - 1].payload = NULL;
 			} else 
 				panic("Unknown instruction! Syntax error "
 				      "on line %lu!\n", line);
@@ -318,14 +317,18 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 				pb = getuint_or_obj(pb, &val, &type);
 				if (type == TYPE_EOL)
 					break;
-				if (type == TYPE_CNT)
-					info("cnt - ");
-				else if (type == TYPE_RND)
-					info("rnd - ");
-				else
-					info("0x%02x - ", val);
-				info("\n");
+				if (type == TYPE_CNT) {
+//					info("cnt %u - ", val);
+				} else if (type == TYPE_RND) {
+//					info("rnd - ");
+				}
 
+				cfg->pkts[cfg->len - 1].plen++;
+				cfg->pkts[cfg->len - 1].payload =
+					xrealloc(cfg->pkts[cfg->len - 1].payload,
+						 1, cfg->pkts[cfg->len - 1].plen);
+				cfg->pkts[cfg->len - 1].payload[cfg->pkts[cfg->len - 1].plen - 1] =
+					(uint8_t) val;
 				pb = skipchar_s(pb, ',');
 			}
 		} else
