@@ -223,15 +223,14 @@ static void dump_conf(struct pktconf *cfg)
 
 	for (i = 0; i < cfg->len; ++i) {
 		info("[%zu] pkt\n", i);
-		info(" len %zu\n", cfg->pkts[i].plen);
-		info(" cnts %zu\n", cfg->pkts[i].clen);
-		info(" rnds %zu\n", cfg->pkts[i].rlen);
+		info(" len %zu cnts %zu rnds %zu\n", cfg->pkts[i].plen,
+		     cfg->pkts[i].clen, cfg->pkts[i].rlen);
 		info(" payload ");
 		for (j = 0; j < cfg->pkts[i].plen; ++j)
-			info("0x%02x ", cfg->pkts[i].payload[j]);
+			info("%02x ", cfg->pkts[i].payload[j]);
 		info("\n");
 		for (j = 0; j < cfg->pkts[i].clen; ++j)
-			info(" cnt%zu %u <= x <= %u, %u, off %zu\n",
+			info(" cnt%zu [%u,%u], inc %u, off %zu\n",
 			     j, cfg->pkts[i].cnt[j].min,
 			     cfg->pkts[i].cnt[j].max,
 			     cfg->pkts[i].cnt[j].inc,
