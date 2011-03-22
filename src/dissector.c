@@ -12,7 +12,7 @@
 #include "compiler.h"
 #include "tprintf.h"
 #include "dissector.h"
-#include "dissector_ethernet.h"
+#include "dissector_eth.h"
 #include "protos/proto_struct.h"
 
 int dissector_set_print_norm(void *ptr)

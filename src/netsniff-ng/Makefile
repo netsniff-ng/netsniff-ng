@@ -12,7 +12,7 @@ LIBS       = -lrt -lz -lpthread
 core-objs  = netsniff-ng.o
 lib-objs   = hash.o                  \
 	     dissector.o             \
-	     dissector_ethernet.o    \
+	     dissector_eth.o         \
 	     xmalloc.o               \
 	     strlcpy.o               \
 	     bpf.o                   \

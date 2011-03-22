@@ -10,7 +10,7 @@
 #include "hash.h"
 #include "protos.h"
 #include "dissector.h"
-#include "dissector_ethernet.h"
+#include "dissector_eth.h"
 #define __DATA__
 #include "oui.h"
 #include "ports_udp.h"

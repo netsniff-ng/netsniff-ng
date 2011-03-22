@@ -14,7 +14,7 @@
 #include <netinet/in.h>    /* for ntohs() */
 
 #include "proto_struct.h"
-#include "dissector_ethernet.h"
+#include "dissector_eth.h"
 
 struct vlanhdr {
 	uint16_t h_vlan_TCI;

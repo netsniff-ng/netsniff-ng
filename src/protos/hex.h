@@ -13,7 +13,7 @@
 #include <ctype.h>
 
 #include "proto_struct.h"
-#include "dissector_ethernet.h"
+#include "dissector_eth.h"
 
 static inline void hex(uint8_t *packet, size_t len)
 {

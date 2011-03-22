@@ -16,7 +16,7 @@
 
 #include "csum.h"
 #include "proto_struct.h"
-#include "dissector_ethernet.h"
+#include "dissector_eth.h"
 
 struct ipv4hdr {
 #if defined(__LITTLE_ENDIAN_BITFIELD)

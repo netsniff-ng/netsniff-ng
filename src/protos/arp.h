@@ -13,7 +13,7 @@
 #include <netinet/in.h>    /* for ntohs() */
 
 #include "proto_struct.h"
-#include "dissector_ethernet.h"
+#include "dissector_eth.h"
 
 struct arphdr {
 	uint16_t ar_hrd;   /* format of hardware address */

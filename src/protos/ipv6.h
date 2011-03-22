@@ -17,7 +17,7 @@
 
 #include "csum.h"
 #include "proto_struct.h"
-#include "dissector_ethernet.h"
+#include "dissector_eth.h"
 
 /*
  * IPv6 fixed header
