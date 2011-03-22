@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <fcntl.h>
+#include <time.h>
 
 #include "xmalloc.h"
 #include "strlcpy.h"
@@ -241,6 +242,7 @@ static void dump_conf(struct pktconf *cfg)
 	}
 }
 
+/* Seems to need a rewrite later ;-) */
 static void parse_conf_or_die(char *file, struct pktconf *cfg)
 {
 	int withinpkt = 0;
@@ -261,6 +263,8 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 
 	header();
 	info("CFG:\n");
+	srand(time(NULL));
+
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		line++;
 		buff[sizeof(buff) - 1] = 0;
@@ -341,7 +345,17 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 					new->off = offset;
 					new->val = val;
 				} else if (type == TYPE_RND) {
-//					info("rnd - ");
+					size_t z;
+					struct randomizer *new;
+
+					val = 0xFF & rand();
+					z = ++(cfg->pkts[cfg->len - 1].rlen);
+					cfg->pkts[cfg->len - 1].rnd =
+						xrealloc(cfg->pkts[cfg->len - 1].rnd,
+							 1, z * sizeof(struct randomizer));
+					new = &cfg->pkts[cfg->len - 1].rnd[z - 1];
+					new->val = val;
+					new->off = offset;
 				}
 
 				cfg->pkts[cfg->len - 1].plen++;
