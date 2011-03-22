@@ -171,12 +171,18 @@ static void version(void)
 
 static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 {
-	int sock, irq, ifindex;
+	int sock, irq, ifindex, mtu;
 	unsigned int size;
+	size_t l;
 	struct ring tx_ring;
 
 	if (!mode || !cfg)
 		panic("Panic over invalid args for TX trigger!\n");
+
+	mtu = device_mtu(mode->device);
+	for (l = 0; l < cfg->len; ++l)
+		if (cfg->pkts[l].plen > mtu)
+			panic("Device MTU < than your packet size!\n");
 
 	sock = pf_socket();
 
