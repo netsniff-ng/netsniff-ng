@@ -59,15 +59,33 @@ struct pktconf {
 	size_t len;
 };
 
+struct stats {
+	unsigned long tx_bytes;
+	unsigned long tx_packets;
+};
+
+struct mode {
+	struct stats stats;
+	char *device;
+	int cpu;
+	/* 0 for automatic, > 0 for manual */
+	unsigned int reserve_size;
+};
+
 static sig_atomic_t sigint = 0;
 
-static const char *short_options = "d:c:n:t:vh";
+static const char *short_options = "d:c:n:t:vhS:HQb:B:";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
 	{"conf", required_argument, 0, 'c'},
 	{"num", required_argument, 0, 'n'},
 	{"gap", required_argument, 0, 't'},
+	{"ring-size", required_argument, 0, 'S'},
+	{"bind-cpu", required_argument, 0, 'b'},
+	{"unbind-cpu", required_argument, 0, 'B'},
+	{"prio-norm", no_argument, 0, 'H'},
+	{"notouch-irq", no_argument, 0, 'Q'},
 	{"version", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
@@ -110,6 +128,12 @@ static void help(void)
 	printf("  `--     0              Loop until interrupt (default)\n");
 	printf("   `-     n              Send n packets and done\n");
 	printf("  -t|--gap <interval>    Packet interval in msecs, def: 0\n");
+	printf("  -S|--ring-size <size>  Manually set ring size to <size>:\n");
+	printf("                         mmap space in KB/MB/GB, e.g. \'10MB\'\n");
+	printf("  -H|--prio-norm         Do not high priorize process\n");
+	printf("  -Q|--notouch-irq       Do not touch IRQ CPU affinity of NIC\n");
+	printf("  -b|--bind-cpu <cpu>    Bind to specific CPU or CPU-range\n");
+	printf("  -B|--unbind-cpu <cpu>  Forbid to use specific CPU or CPU-range\n");
 	printf("  -v|--version           Print version\n");
 	printf("  -h|--help              Print this help\n");
 	printf("\n");
