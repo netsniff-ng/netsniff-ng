@@ -222,21 +222,21 @@ static void dump_conf(struct pktconf *cfg)
 
 	for (i = 0; i < cfg->len; ++i) {
 		info("[%zu] pkt\n", i);
-		info("      len %zu\n", cfg->pkts[i].plen);
-		info("      cnts %zu\n", cfg->pkts[i].clen);
-		info("      rnds %zu\n", cfg->pkts[i].rlen);
-		info("      payload ");
+		info(" len %zu\n", cfg->pkts[i].plen);
+		info(" cnts %zu\n", cfg->pkts[i].clen);
+		info(" rnds %zu\n", cfg->pkts[i].rlen);
+		info(" payload ");
 		for (j = 0; j < cfg->pkts[i].plen; ++j)
 			info("0x%02x ", cfg->pkts[i].payload[j]);
 		info("\n");
 		for (j = 0; j < cfg->pkts[i].clen; ++j)
-			info("      cnt%zu %u <= x <= %u, %u, o %zu\n",
+			info(" cnt%zu %u <= x <= %u, %u, off %zu\n",
 			     j, cfg->pkts[i].cnt[j].min,
 			     cfg->pkts[i].cnt[j].max,
 			     cfg->pkts[i].cnt[j].inc,
 			     cfg->pkts[i].cnt[j].off);
 		for (j = 0; j < cfg->pkts[i].rlen; ++j)
-			info("      rnd%zu o %zu\n",
+			info(" rnd%zu off %zu\n",
 			     cfg->pkts[i].rnd[j].off);
 	}
 }
@@ -249,6 +249,7 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 	FILE *fp;
 	struct counter *cnts = NULL;
 	size_t l = 0;
+	off_t offset = 0;
 
 	if (!file || !cfg)
 		panic("Panic over invalid args for the parser!\n");
@@ -284,13 +285,12 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 				pb = getuint(pb, &max);
 				pb = skipchar(pb, ',');
 				pb = getuint(pb, &inc);
-				cnts = xrealloc(cnts, 1, ++l * sizeof(*cnts));
-				cnts[l - 1].id = (uint8_t) id;
-				cnts[l - 1].min = (uint8_t) min;
-				cnts[l - 1].max = (uint8_t) max;
-				cnts[l - 1].inc = (uint8_t) inc;
-				cnts[l - 1].val = 0;
-				cnts[l - 1].off = 0;
+				l++;
+				cnts = xrealloc(cnts, 1, l * sizeof(*cnts));
+				cnts[l - 1].id = 0xFF & id;
+				cnts[l - 1].min = 0xFF & min;
+				cnts[l - 1].max = 0xFF & max;
+				cnts[l - 1].inc = 0xFF & inc;
 			} else if (!strncmp("P", pb, strlen("P"))) {
 				uint32_t id;
 				pb++;
@@ -301,24 +301,45 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 				cfg->len++;
 				cfg->pkts = xrealloc(cfg->pkts, 1,
 						     cfg->len * sizeof(*cfg->pkts));
-				cfg->pkts[cfg->len - 1].plen = 0;
-				cfg->pkts[cfg->len - 1].clen = 0;
-				cfg->pkts[cfg->len - 1].rlen = 0;
-				cfg->pkts[cfg->len - 1].payload = NULL;
+				memset(&cfg->pkts[cfg->len - 1], 0,
+				       sizeof(cfg->pkts[cfg->len - 1]));
+				offset = 0;
 			} else 
 				panic("Unknown instruction! Syntax error "
 				      "on line %lu!\n", line);
 		} else if (withinpkt && *pb == '}')
 				withinpkt = 0;
 		else if (withinpkt) {
-			int type;
+			int type, i, found;
 			uint32_t val;
 			while (1) {
+				found = 0;
 				pb = getuint_or_obj(pb, &val, &type);
 				if (type == TYPE_EOL)
 					break;
 				if (type == TYPE_CNT) {
-//					info("cnt %u - ", val);
+					size_t z;
+					struct counter *new;
+					for (i = 0; i < l; ++i) {
+						if (val == cnts[i].id) {
+							found = 1;
+							break;
+						}
+					}
+					if (!found)
+						panic("Counter %u not found!\n");
+
+					val = cnts[i].min;
+					z = ++(cfg->pkts[cfg->len - 1].clen);
+					cfg->pkts[cfg->len - 1].cnt =
+						xrealloc(cfg->pkts[cfg->len - 1].cnt,
+							 1, z * sizeof(struct counter));
+					new = &cfg->pkts[cfg->len - 1].cnt[z - 1];
+					new->min = cnts[i].min;
+					new->max = cnts[i].max;
+					new->inc = cnts[i].inc;
+					new->off = offset;
+					new->val = val;
 				} else if (type == TYPE_RND) {
 //					info("rnd - ");
 				}
@@ -328,7 +349,8 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 					xrealloc(cfg->pkts[cfg->len - 1].payload,
 						 1, cfg->pkts[cfg->len - 1].plen);
 				cfg->pkts[cfg->len - 1].payload[cfg->pkts[cfg->len - 1].plen - 1] =
-					(uint8_t) val;
+					0xFF & val;
+				offset++;
 				pb = skipchar_s(pb, ',');
 			}
 		} else
