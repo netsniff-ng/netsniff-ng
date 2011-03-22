@@ -143,7 +143,7 @@ static void help(void)
 	printf("\n");
 	printf("Example:\n");
 	printf("  See trafgen.txf for configuration file examples.\n");
-	printf("  trafgen --dev eth0 --conf trafgen.txf\n");
+	printf("  trafgen --dev eth0 --conf trafgen.txf --prio-norm\n");
 	printf("  trafgen --dev eth0 --conf trafgen.txf --num 100 --gap 5\n");
 	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
