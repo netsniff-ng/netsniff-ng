@@ -173,6 +173,35 @@ static inline char *skipchar(char *in, char c)
 	return ++in;
 }
 
+static void dump_conf(struct pktconf *cfg)
+{
+	size_t i, j;
+
+	info("n %lu, gap %lu ms, pkts %zu\n", cfg->num, cfg->gap, cfg->len);
+	if (cfg->len == 0)
+		return;
+
+	for (i = 0; i < cfg->len; ++i) {
+		info("[%zu] pkt\n", i);
+		info("      len %zu\n", cfg->pkts[i].plen);
+		info("      cnts %zu\n", cfg->pkts[i].clen);
+		info("      rnds %zu\n", cfg->pkts[i].rlen);
+		info("      payload ");
+		for (j = 0; j < cfg->pkts[i].plen; ++j)
+			info("0x%02x ", cfg->pkts[i].payload[j]);
+		info("\n");
+		for (j = 0; j < cfg->pkts[i].clen; ++j)
+			info("      cnt%zu %u <= x <= %u, %u, o %zu\n",
+			     j, cfg->pkts[i].cnt[j].min,
+			     cfg->pkts[i].cnt[j].max,
+			     cfg->pkts[i].cnt[j].inc,
+			     cfg->pkts[i].cnt[j].off);
+		for (j = 0; j < cfg->pkts[i].rlen; ++j)
+			info("      rnd%zu o %zu\n",
+			     cfg->pkts[i].rnd[j].off);
+	}
+}
+
 static void parse_conf_or_die(char *file, struct pktconf *cfg)
 {
 	int withinpkt = 0;
@@ -232,14 +261,19 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 				pb = skips(pb);
 				pb = skipchar(pb, '{');
 				withinpkt = 1;
-				printf("instruction, packet %u\n", id);
+				cfg->len++;
+				cfg->pkts = xrealloc(cfg->pkts, 1,
+						     cfg->len * sizeof(*cfg->pkts));
+				cfg->pkts[cfg->len - 1].plen = 0;
+				cfg->pkts[cfg->len - 1].clen = 0;
+				cfg->pkts[cfg->len - 1].rlen = 0;
 			} else 
 				panic("Unknown instruction! Syntax error "
 				      "on line %lu!\n", line);
 		} else if (withinpkt && *pb == '}')
 				withinpkt = 0;
 		else if (withinpkt) {
-			printf("pkt value\n");
+			//printf("pkt value\n");
 		} else
 			panic("Syntax error!\n");
 		memset(buff, 0, sizeof(buff));
@@ -247,6 +281,8 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 
 	fclose(fp);
 	xfree(cnts);
+
+	dump_conf(cfg);
 }
 
 static int main_loop(char *ifname, char *confname, unsigned long pkts,
@@ -255,6 +291,7 @@ static int main_loop(char *ifname, char *confname, unsigned long pkts,
 	struct pktconf cfg = {
 		.num = pkts,
 		.gap = gap,
+		.len = 0,
 	};
 
 	parse_conf_or_die(confname, &cfg);
