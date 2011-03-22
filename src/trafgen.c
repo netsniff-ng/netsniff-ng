@@ -57,7 +57,6 @@ struct pktconf {
 	unsigned long gap;
 	struct packet *pkts;
 	size_t len;
-	size_t curr;
 };
 
 static sig_atomic_t sigint = 0;
@@ -142,6 +141,7 @@ static void version(void)
 	die();
 }
 
+/* Let's do some Quad Damage ... */
 static void tx_fire_or_die(char *ifname, struct pktconf *cfg)
 {
 	if (!ifname || !cfg)
@@ -377,6 +377,23 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 	dump_conf(cfg);
 }
 
+static void cleanup_cfg(struct pktconf *cfg)
+{
+	size_t l;
+
+	for (l = 0; l < cfg->len; ++l) {
+		if (cfg->pkts[l].plen > 0)
+			xfree(cfg->pkts[l].payload);
+		if (cfg->pkts[l].clen > 0)
+			xfree(cfg->pkts[l].cnt);
+		if (cfg->pkts[l].rlen > 0)
+			xfree(cfg->pkts[l].rnd);
+	}
+
+	if (cfg->len > 0)
+		xfree(cfg->pkts);
+}
+
 static int main_loop(char *ifname, char *confname, unsigned long pkts,
 		     unsigned long gap)
 {
@@ -388,6 +405,7 @@ static int main_loop(char *ifname, char *confname, unsigned long pkts,
 
 	parse_conf_or_die(confname, &cfg);
 	tx_fire_or_die(ifname, &cfg);
+	cleanup_cfg(&cfg);
 
 	return 0;
 }
