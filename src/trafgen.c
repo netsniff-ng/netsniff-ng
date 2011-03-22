@@ -28,6 +28,7 @@
 #include "tty.h"
 #include "version.h"
 #include "signals.h"
+#include "tx_ring.h"
 
 struct counter {
 	uint16_t id;
@@ -170,8 +171,41 @@ static void version(void)
 
 static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 {
+	int sock, irq, ifindex;
+	unsigned int size;
+	struct ring tx_ring;
+
 	if (!mode || !cfg)
 		panic("Panic over invalid args for TX trigger!\n");
+
+	sock = pf_socket();
+
+	memset(&tx_ring, 0, sizeof(tx_ring));
+
+	ifindex = device_ifindex(mode->device);
+	size = ring_size(mode->device, mode->reserve_size);
+
+	setup_tx_ring_layout(sock, &tx_ring, size);
+	create_tx_ring(sock, &tx_ring);
+	mmap_tx_ring(sock, &tx_ring);
+	alloc_tx_ring_frames(&tx_ring);
+	bind_tx_ring(sock, &tx_ring, ifindex);
+
+	if (mode->cpu >= 0 && ifindex > 0) {
+		irq = device_irq_number(mode->device);
+		device_bind_irq_to_cpu(mode->cpu, irq);
+		printf("IRQ: %s:%d > CPU%d\n", mode->device, irq, 
+		       mode->cpu);
+	}
+
+	printf("MD: TX\n\n");
+
+	while(likely(sigint == 0)) {
+		; /* do stuff */
+	}
+
+	destroy_tx_ring(sock, &tx_ring);
+	close(sock);
 }
 
 static inline char *getuint(char *in, uint32_t *out)

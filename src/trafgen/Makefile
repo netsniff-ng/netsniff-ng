@@ -13,6 +13,7 @@ core-objs  = trafgen.o
 lib-objs   = xmalloc.o                  \
 	     strlcpy.o                  \
 	     system.o                   \
+	     tx_ring.o                  \
 	     netdev.o
 
 target     = trafgen
