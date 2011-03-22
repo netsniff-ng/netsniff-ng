@@ -334,7 +334,7 @@ void muntrace_handler(int signal)
 	info("Oops, SIGSEGV received!\n");
 	info("Stacktrace:\n");
 	stacktrace();
-	info("@('_')@ Panic!\n");
+	info("@('_')@ __.-<^*Panic!*^>\n");
 	muntrace();
 	abort();
 }

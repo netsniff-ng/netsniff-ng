@@ -173,7 +173,24 @@ static inline char *getuint(char *in, uint32_t *out)
 
 static inline char *getuint_or_obj(char *in, uint32_t *out, int *type)
 {
-	*type = TYPE_EOL;
+	if (*in == '\n') {
+		*type = TYPE_EOL;
+	} else if (*in == '$') {
+		in++;
+		if (!strncmp("II", in, strlen("II"))) {
+			in += 2;
+			in = getuint(in, out);
+			*type = TYPE_CNT;
+		} else if (!strncmp("PRB", in, strlen("PRB"))) {
+			*type = TYPE_RND;
+			in += 3;
+		} else
+			panic("Syntax error!\n");
+	} else {
+		in = getuint(in, out);
+		*type = TYPE_NUM;
+	}
+
 	return in;
 }
 
@@ -187,6 +204,8 @@ static inline char *skipchar(char *in, char c)
 static inline char *skipchar_s(char *in, char c)
 {
 	in = skips(in);
+	if (*in == '\n')
+		return in;
 	in = skipchar(in, c);
 	in = skips(in);
 
