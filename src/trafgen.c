@@ -166,6 +166,17 @@ static inline char *getuint(char *in, uint32_t *out)
 	return in;
 }
 
+#define TYPE_NUM 0
+#define TYPE_CNT 1
+#define TYPE_RND 2
+#define TYPE_EOL 3
+
+static inline char *getuint_or_obj(char *in, uint32_t *out, int *type)
+{
+	*type = TYPE_EOL;
+	return in;
+}
+
 static inline char *skipchar(char *in, char c)
 {
 	if (*in != c)
@@ -273,7 +284,20 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 		} else if (withinpkt && *pb == '}')
 				withinpkt = 0;
 		else if (withinpkt) {
-			//printf("pkt value\n");
+			int type;
+			uint32_t val;
+			while (1) {
+				pb = getuint_or_obj(pb, &val, &type);
+				if (type == TYPE_EOL)
+					break;
+				if (type == TYPE_CNT)
+					info("cnt - ");
+				else if (type == TYPE_RND)
+					info("rnd - ");
+				else
+					info("0x%02x - ", val);
+				info("\n");
+			}
 		} else
 			panic("Syntax error!\n");
 		memset(buff, 0, sizeof(buff));
