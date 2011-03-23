@@ -317,70 +317,53 @@ static void help(void)
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: netsniff-ng [options]\n");
+	printf("Options for input/output:\n");
+	printf("  -i|-d|--dev|--in <dev|pcap>  Input source as netdev or pcap\n");
+	printf("  -o|--out <dev|pcap>          Output source as netdev or pcap\n");
+	printf("  -r|--randomize               Randomize packet forwarding order\n");
+	printf("  -f|--filter <bpf-file>       Use BPF filter rule from file\n");
+	printf("  -M|--no-promisc              No promiscuous mode for netdev\n");
+	printf("  -t|--type <type>             Only show packets of defined type:\n");
+	printf("                               host|broadcast|multicast|others|outgoing\n");
+	printf("  -S|--ring-size <size>        Manually set ring size to <size>:\n");
+	printf("                               mmap space in KB/MB/GB, e.g. \'10MB\'\n");
+	printf("  -b|--bind-cpu <cpu>          Bind to specific CPU or CPU-range\n");
+	printf("  -B|--unbind-cpu <cpu>        Forbid to use specific CPU or CPU-range\n");
+	printf("  -H|--prio-norm               Do not high priorize process\n");
+	printf("  -Q|--notouch-irq             Do not touch IRQ CPU affinity of NIC\n");
+	printf("  -s|--silent                  Do not print captured packets\n");
+	printf("  -q|--less                    Print less-verbose packet information\n");
+	printf("  -l|--payload                 Only print human-readable payload\n");
+	printf("  -x|--payload-hex             Only print payload in hex format\n");
+	printf("  -C|--c-style                 Print full packet in C style hex format\n");
+	printf("  -X|--all-hex                 Print packets in hex format\n");
+	printf("  -N|--no-payload              Only print packet header\n");
+	printf("  -e|--regex <expr>            Only print packet that matches regex\n");
+	printf("  -v|--version                 Show version\n");
+	printf("  -h|--help                    Show this help\n");
 	printf("\n");
-	printf("Options for input/output (aka capture/replay/analysis/transformation):\n");
-	printf("  -i|--in <dev|pcap>     Input source as netdev or pcap[xz]\n");
-	printf("  -o|--out <dev|pcap>    Output source as netdev or pcap[xz]\n");
-	printf("\n");
-	printf("Options for RX to PCAP and PCAP to PCAP mode:\n");
-	printf("  -z|--compress <level>  Stores packets with Deflate compression\n");
-	printf("  -E|--encrypt           Stores packets Twofish encrypted\n");
-	printf("\n");
-	printf("Options for RX to TX mode:\n");
-	printf("  -r|--randomize         Randomize packet forwarding order\n");
-	printf("\n");
-#if 0 /* Or better as separate program */
-	printf("Options for MITM:\n");
-	printf("  -P|--poison            ARP spoofing for MITM sniffing\n");
-	printf("\n");
-#endif
-	printf("Options for packet filtering:\n");
-	printf("  -f|--filter <bpf-file> Use BPF filter rule from file\n");
-#if 0
-	printf("  -g|--gen-filter <rule> Generates BPF filter expression\n");
-#endif
-	printf("  -M|--no-promisc        No promiscuous mode for netdev\n");
-	printf("  -t|--type <type>       Only show packets of defined type:\n");
-	printf("                         host|broadcast|multicast|others|outgoing\n");
-	printf("\n");
-	printf("Options for RX and TX_RING:\n");
-	printf("  -S|--ring-size <size>  Manually set ring size to <size>:\n");
-	printf("                         mmap space in KB/MB/GB, e.g. \'10MB\'\n");
-	printf("\n");
-	printf("Options for system scheduler/process:\n");
-	printf("  -b|--bind-cpu <cpu>    Bind to specific CPU or CPU-range\n");
-	printf("  -B|--unbind-cpu <cpu>  Forbid to use specific CPU or CPU-range\n");
-	printf("  -H|--prio-norm         Do not high priorize process\n");
-	printf("  -Q|--notouch-irq       Do not touch IRQ CPU affinity of NIC\n");
-	printf("\n");
-	printf("Options for packet printing:\n");
-	printf("  -s|--silent            Do not print captured packets\n");
-	printf("  -q|--less              Print less-verbose packet information\n");
-	printf("  -l|--payload           Only print human-readable payload\n");
-	printf("  -x|--payload-hex       Only print payload in hex format\n");
-	printf("  -C|--c-style           Print full packet in C style hex format\n");
-	printf("  -X|--all-hex           Print packets in hex format\n");
-	printf("  -N|--no-payload        Only print packet header\n");
-	printf("  -e|--regex <expr>      Only print packet that matches regex\n");
-	printf("\n");
-	printf("Options, misc:\n");
-	printf("  -v|--version           Show version\n");
-	printf("  -h|--help              Show this help\n");
+	printf("Examples:\n");
+	printf("  netsniff-ng --in eth0 --out dump.pcap --silent --bind-cpu 0\n");
+	printf("  netsniff-ng --in dump.pcap --out eth0 --silent --bind-cpu 0\n");
+	printf("  netsniff-ng --in dump.pcap --no-payload\n");
+	printf("  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0\n");
+	printf("  netsniff-ng --in any --filter icmp.bpf\n");
+	printf("  netsniff-ng --regex \"user.*pass\"\n");
+	printf("  netsniff-ng --dev wlan0 --prio-norm --all-hex --type outgoing\n");
 	printf("\n");
 	printf("Note:\n");
-	printf("  - Use \'any\' as device for listening on all NICs\n");
-	printf("  - Sending a SIGUSR1 will show current packet statistics\n");
-	printf("  - Binding netsniff-ng to a specific CPU increases performance\n");
-	printf("    since NIC RX/TX interrupts will be bound to that CPU, too\n");
-	printf("  - For more help try \'man netsniff-ng\'\n");
+	printf("  This tool is targeted for network developers! You should\n");
+	printf("  be aware of what you are doing and what these options above\n");
+	printf("  mean! Only use this tool in an isolated LAN that you own!\n");
 	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2009, 2010 Daniel Borkmann and Emmanuel Roullit\n");
+	printf("Copyright (C) 2009-2011 Daniel Borkmann <daniel@netsniff-ng.org>\n");
+	printf("Copyright (C) 2009-2011 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n");
 	printf("License: GNU GPL version 2\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
 
-	exit(EXIT_SUCCESS);
+	die();
 }
 
 static void version(void)
@@ -389,12 +372,13 @@ static void version(void)
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2009, 2010 Daniel Borkmann and Emmanuel Roullit\n");
+	printf("Copyright (C) 2009-2011 Daniel Borkmann <daniel@netsniff-ng.org>\n");
+	printf("Copyright (C) 2009-2011 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n");
 	printf("License: GNU GPL version 2\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
 
-	exit(EXIT_SUCCESS);
+	die();
 }
 
 static void header(void)
