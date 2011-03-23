@@ -214,9 +214,12 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 		panic("Panic over invalid args for TX trigger!\n");
 
 	mtu = device_mtu(mode->device);
-	for (l = 0; l < cfg->len; ++l)
+	for (l = 0; l < cfg->len; ++l) {
 		if (cfg->pkts[l].plen > mtu)
 			panic("Device MTU < than your packet size!\n");
+		if (cfg->pkts[l].plen <= 14)
+			panic("Device packet size too short!\n");
+	}
 
 	sock = pf_socket();
 
