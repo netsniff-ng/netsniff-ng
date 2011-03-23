@@ -173,8 +173,13 @@ static void help(void)
 	printf("\n");
 	printf("Example:\n");
 	printf("  See trafgen.txf for configuration file examples.\n");
-	printf("  trafgen --dev eth0 --conf trafgen.txf --prio-norm\n");
-	printf("  trafgen --dev eth0 --conf trafgen.txf --rand --gap 5\n");
+	printf("  trafgen --dev eth0 --conf trafgen.txf --bind 0\n");
+	printf("  trafgen --dev eth0 --conf trafgen.txf --rand --gap 1000\n");
+	printf("\n");
+	printf("Note:\n");
+	printf("  This tool is targeted for network developers! You should\n");
+	printf("  be aware of what you are doing and what these options above\n");
+	printf("  mean! Only use this tool in a isolated LAN!\n");
 	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2011 Daniel Borkmann\n");
