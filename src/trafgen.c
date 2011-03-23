@@ -21,6 +21,7 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <time.h>
+#include <net/ethernet.h>
 
 #include "xmalloc.h"
 #include "strlcpy.h"
@@ -28,6 +29,7 @@
 #include "netdev.h"
 #include "system.h"
 #include "tty.h"
+#include "timespec.h"
 #include "version.h"
 #include "mtrand.h"
 #include "signals.h"
@@ -154,9 +156,9 @@ static void help(void)
 	printf("  -n|--num <uint>        Packet numbers\n");
 	printf("  `--     0              Loop until interrupt (default)\n");
 	printf("   `-     n              Send n packets and done\n");
-	printf("  -t|--gap <int>         Interpacket gap in ms (approx)\n");
-	printf("  -k|--kernel-pull <int> Kernel pull from user interval in ms\n");
-	printf("                         Default is 10ms where the TX_RING\n");
+	printf("  -t|--gap <int>         Interpacket gap in us (approx)\n");
+	printf("  -k|--kernel-pull <int> Kernel pull from user interval in us\n");
+	printf("                         Default is 10us where the TX_RING\n");
 	printf("                         is populated with payload from uspace\n");
 	printf("  -r|--rand              Randomize packet selection process\n");
 	printf("                         Instead of a round robin selection\n");
@@ -195,6 +197,94 @@ static void version(void)
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
 
 	die();
+}
+
+/*
+ * TX_RING doen't allow us to specify inter-packet gaps, see
+ * http://lingrok.org/source/xref/linux-2.6-linus/net/packet/af_packet.c,
+ * function tpacket_fill_skb(), so instead, we use sendto(2). Since
+ * this is also not high-perf, copying between address spaces is okay.
+ */
+static void tx_tgap_or_die(struct mode *mode, struct pktconf *cfg)
+{
+	int ifindex, mtu, ret;
+	size_t l, c, r;
+	struct sockaddr_ll s_addr;
+	unsigned long num = 1;
+	char *pkt;
+	struct counter *cnt;
+	struct randomizer *rnd;
+
+	if (!mode || !cfg)
+		panic("Panic over invalid args for TX trigger!\n");
+	if (cfg->len == 0)
+		panic("Panic over invalid args for TX trigger!\n");
+
+	mtu = device_mtu(mode->device);
+	for (l = 0; l < cfg->len; ++l) {
+		if (cfg->pkts[l].plen > mtu)
+			panic("Device MTU < than your packet size!\n");
+		if (cfg->pkts[l].plen <= 14)
+			panic("Device packet size too short!\n");
+	}
+
+	sock = pf_socket();
+	pkt = xzmalloc(mtu);
+	ifindex = device_ifindex(mode->device);
+
+	if (cfg->num > 0)
+		num = cfg->num;
+
+	printf("MD: TX %s %luus\n\n", mode->rand ? "RND" : "RR", cfg->gap);
+	printf("Running! Hang up with ^C!\n\n");
+
+	memset(&s_addr, 0, sizeof(s_addr));
+	s_addr.sll_family = PF_PACKET;
+	s_addr.sll_halen = ETH_ALEN;
+	s_addr.sll_ifindex = ifindex;
+
+	l = 0;
+	while (likely(sigint == 0) && likely(num > 0)) {
+		for (c = 0; c < cfg->pkts[l].clen; ++c) {
+			cnt = &(cfg->pkts[l].cnt[c]);
+			cnt->val -= cnt->min;
+			cnt->val = (cnt->val + cnt->inc) %
+				   (cnt->max - cnt->min + 1);
+			cnt->val += cnt->min;
+			cfg->pkts[l].payload[cnt->off] = cnt->val;
+		}
+
+		for (r = 0; r < cfg->pkts[l].rlen; ++r) {
+			rnd = &(cfg->pkts[l].rnd[r]);
+			rnd->val = lcrand(rnd->val); 
+			cfg->pkts[l].payload[rnd->off] = rnd->val;
+		}
+
+		memcpy(pkt, cfg->pkts[l].payload, cfg->pkts[l].plen);
+
+		mode->stats.tx_bytes += cfg->pkts[l].plen;
+		mode->stats.tx_packets++;
+
+		ret = sendto(sock, pkt, cfg->pkts[l].plen, 0,
+			     (struct sockaddr *) &s_addr, sizeof(s_addr));
+		if (ret < 0)
+			whine("sendto error!\n");
+		if (mode->rand)
+			l = mt_rand_int32() % cfg->len;
+		else
+			l = (l + 1) % cfg->len;
+		if (cfg->num > 0)
+			num--;
+
+		xusleep2(cfg->gap);
+	}
+
+	close(sock);
+
+	fflush(stdout);
+	printf("\n");
+	printf("\r%lu frames outgoing\n", mode->stats.tx_packets);
+	printf("\r%lu bytes outgoing\n", mode->stats.tx_bytes);
 }
 
 static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
@@ -249,8 +339,7 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 	if (cfg->num > 0)
 		num = cfg->num;
 
-	printf("MD: %s %s %lums\n\n", !cfg->gap ? "FIRE" : "TX",
-	       mode->rand ? "RND" : "RR", interval);
+	printf("MD: FIRE %s %luus\n\n", mode->rand ? "RND" : "RR", interval);
 	printf("Running! Hang up with ^C!\n\n");
 
 	itimer.it_interval.tv_sec = 0;
@@ -385,7 +474,7 @@ static void dump_conf(struct pktconf *cfg)
 {
 	size_t i, j;
 
-	info("n %lu, gap %lu ms, pkts %zu\n", cfg->num, cfg->gap, cfg->len);
+	info("n %lu, gap %lu us, pkts %zu\n", cfg->num, cfg->gap, cfg->len);
 	if (cfg->len == 0)
 		return;
 
@@ -575,7 +664,10 @@ static int main_loop(struct mode *mode, char *confname, unsigned long pkts,
 	};
 
 	parse_conf_or_die(confname, &cfg);
-	tx_fire_or_die(mode, &cfg);
+	if (gap > 0)
+		tx_tgap_or_die(mode, &cfg);
+	else
+		tx_fire_or_die(mode, &cfg);
 	cleanup_cfg(&cfg);
 
 	return 0;

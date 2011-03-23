@@ -66,6 +66,16 @@ static inline void xusleep(const struct timespec *ts_delay)
 	select(0, NULL, NULL, NULL, &tv_delay);
 }
 
+static inline void xusleep2(long usecs)
+{
+	struct timespec ts = {
+		.tv_sec = 0,
+		.tv_nsec = usecs * 1000,
+	};
+
+	xusleep(&ts);
+}
+
 /* By Paul Eggert, Jim Meyering */
 static inline int xnanosleep(double seconds)
 {
