@@ -260,12 +260,11 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 	setitimer(ITIMER_REAL, &itimer, NULL); 
 
 	l = 0;
-	while (likely(sigint == 0)) {
+	while (likely(sigint == 0) && likely(num > 0)) {
 		while (user_may_pull_from_tx(tx_ring.frames[it].iov_base) &&
 		       likely(num > 0)) {
 			hdr = tx_ring.frames[it].iov_base;
-			out = ((uint8_t *) hdr) + TPACKET_HDRLEN -
-			      sizeof(struct sockaddr_ll);
+			out = ((uint8_t *) hdr) + TPACKET_HDRLEN;
 
 			hdr->tp_snaplen = cfg->pkts[l].plen;
 			hdr->tp_len = cfg->pkts[l].plen;
