@@ -285,6 +285,7 @@ static void tx_tgap_or_die(struct mode *mode, struct pktconf *cfg)
 	}
 
 	close(sock);
+	xfree(pkt);
 
 	fflush(stdout);
 	printf("\n");
