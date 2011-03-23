@@ -199,12 +199,18 @@ static void version(void)
 
 static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 {
-	int irq, ifindex, mtu, it = 0;
-	unsigned int size;
-	size_t l;
+	int irq, ifindex, mtu;
+	unsigned int size, it = 0;
+	uint8_t *out = NULL;
+	size_t l, c, r;
 	struct ring tx_ring;
+	struct tpacket_hdr *hdr;
+	struct counter *cnt;
+	struct randomizer *rnd;
 
 	if (!mode || !cfg)
+		panic("Panic over invalid args for TX trigger!\n");
+	if (cfg->len == 0)
 		panic("Panic over invalid args for TX trigger!\n");
 
 	mtu = device_mtu(mode->device);
@@ -225,6 +231,7 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 	mmap_tx_ring(sock, &tx_ring);
 	alloc_tx_ring_frames(&tx_ring);
 	bind_tx_ring(sock, &tx_ring, ifindex);
+	mt_init_by_seed_time();
 
 	if (mode->cpu >= 0 && ifindex > 0) {
 		irq = device_irq_number(mode->device);
@@ -245,8 +252,42 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 	itimer.it_value.tv_usec = interval;
 	setitimer(ITIMER_REAL, &itimer, NULL); 
 
+	l = 0;
 	while(likely(sigint == 0)) {
 		while(user_may_pull_from_tx(tx_ring.frames[it].iov_base)) {
+			hdr = tx_ring.frames[it].iov_base;
+			out = ((uint8_t *) hdr) + TPACKET_ALIGN(sizeof(*hdr));
+
+			hdr->tp_snaplen = cfg->pkts[l].plen;
+			hdr->tp_len = cfg->pkts[l].plen;
+
+			for (c = 0; c < cfg->pkts[l].clen; ++c) {
+				cnt = &(cfg->pkts[l].cnt[c]);
+				cnt->val -= cnt->min;
+				cnt->val = (cnt->val + cnt->inc) %
+					   (cnt->max - cnt->min + 1);
+				cnt->val += cnt->min;
+				cfg->pkts[l].payload[cnt->off] = cnt->val;
+			}
+
+			for (r = 0; r < cfg->pkts[l].rlen; ++r) {
+				rnd = &(cfg->pkts[l].rnd[r]);
+				rnd->val = lcrand(rnd->val); 
+				cfg->pkts[l].payload[rnd->off] = rnd->val;
+			}
+
+			memcpy(out, cfg->pkts[l].payload, cfg->pkts[l].plen);
+
+			if (mode->rand)
+				l = mt_rand_int32() % cfg->len;
+			else
+				l = l + 1 % cfg->len;
+
+			kernel_may_pull_from_tx(hdr);
+			next_slot(&it, &tx_ring);
+
+			if (unlikely(sigint == 1))
+				break;
 		}
 	}
 
@@ -399,6 +440,10 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 				cnts[l - 1].min = 0xFF & min;
 				cnts[l - 1].max = 0xFF & max;
 				cnts[l - 1].inc = 0xFF & inc;
+				if (cnts[l - 1].min >= cnts[l - 1].max)
+					panic("Counter min >= max!\n");
+				if (cnts[l - 1].inc >= cnts[l - 1].max)
+					panic("Counter inc >= max!\n");
 			} else if (!strncmp("P", pb, strlen("P"))) {
 				uint32_t id;
 				pb++;
