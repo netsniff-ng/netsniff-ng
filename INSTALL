@@ -17,7 +17,7 @@ libc shipped. That's it, nothing else.
 Installation
 ============
 
-$ make
+$ make deploy
 # make install
 
 Uninstall

@@ -201,6 +201,7 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 {
 	int irq, ifindex, mtu;
 	unsigned int size, it = 0;
+	unsigned long num = 1;
 	uint8_t *out = NULL;
 	size_t l , c, r;
 	struct ring tx_ring;
@@ -245,6 +246,8 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 
 	if (mode->kpull)
 		interval = mode->kpull;
+	if (cfg->num > 0)
+		num = cfg->num;
 
 	printf("MD: %s %s %lums\n\n", !cfg->gap ? "FIRE" : "TX",
 	       mode->rand ? "RND" : "RR", interval);
@@ -257,8 +260,9 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 	setitimer(ITIMER_REAL, &itimer, NULL); 
 
 	l = 0;
-	while(likely(sigint == 0)) {
-		while(user_may_pull_from_tx(tx_ring.frames[it].iov_base)) {
+	while (likely(sigint == 0)) {
+		while (user_may_pull_from_tx(tx_ring.frames[it].iov_base) &&
+		       likely(num > 0)) {
 			hdr = tx_ring.frames[it].iov_base;
 			out = ((uint8_t *) hdr) + TPACKET_HDRLEN -
 			      sizeof(struct sockaddr_ll);
@@ -283,6 +287,9 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 
 			memcpy(out, cfg->pkts[l].payload, cfg->pkts[l].plen);
 
+			mode->stats.tx_bytes += cfg->pkts[l].plen;
+			mode->stats.tx_packets++;
+
 			if (mode->rand)
 				l = mt_rand_int32() % cfg->len;
 			else
@@ -291,6 +298,8 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 			kernel_may_pull_from_tx(hdr);
 			next_slot(&it, &tx_ring);
 
+			if (cfg->num > 0)
+				num--;
 			if (unlikely(sigint == 1))
 				break;
 		}
@@ -298,6 +307,9 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 
 	destroy_tx_ring(sock, &tx_ring);
 	close(sock);
+
+	printf("\r%lu frames outgoing\n", mode->stats.tx_packets);
+	printf("\r%lu bytes outgoing\n", mode->stats.tx_bytes);
 }
 
 static inline char *getuint(char *in, uint32_t *out)
