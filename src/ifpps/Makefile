@@ -12,6 +12,7 @@ LIBS       = -lncurses
 core-objs  = ifpps.o
 lib-objs   = xmalloc.o                  \
 	     strlcpy.o                  \
+	     system.o                   \
 	     netdev.o
 
 target     = ifpps

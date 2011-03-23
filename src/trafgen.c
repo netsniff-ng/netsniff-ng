@@ -202,7 +202,7 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 	int irq, ifindex, mtu;
 	unsigned int size, it = 0;
 	uint8_t *out = NULL;
-	size_t l, c, r;
+	size_t l , c, r;
 	struct ring tx_ring;
 	struct tpacket_hdr *hdr;
 	struct counter *cnt;
@@ -256,7 +256,8 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 	while(likely(sigint == 0)) {
 		while(user_may_pull_from_tx(tx_ring.frames[it].iov_base)) {
 			hdr = tx_ring.frames[it].iov_base;
-			out = ((uint8_t *) hdr) + TPACKET_ALIGN(sizeof(*hdr));
+			out = ((uint8_t *) hdr) + /*TPACKET_ALIGN(sizeof(*hdr));*/
+						  TPACKET_HDRLEN - sizeof(struct sockaddr_ll);
 
 			hdr->tp_snaplen = cfg->pkts[l].plen;
 			hdr->tp_len = cfg->pkts[l].plen;
@@ -281,7 +282,7 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 			if (mode->rand)
 				l = mt_rand_int32() % cfg->len;
 			else
-				l = l + 1 % cfg->len;
+				l = (l + 1) % cfg->len;
 
 			kernel_may_pull_from_tx(hdr);
 			next_slot(&it, &tx_ring);

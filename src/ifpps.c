@@ -64,13 +64,14 @@ static int loop = 0;
 
 static sig_atomic_t sigint = 0;
 
-static const char *short_options = "d:t:vhcCHl";
+static const char *short_options = "d:t:vhcCHlp";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
 	{"interval", required_argument, 0, 't'},
 	{"loop", no_argument, 0, 'l'},
 	{"term", no_argument, 0, 'c'},
+	{"promisc", no_argument, 0, 'p'},
 	{"csv", no_argument, 0, 'C'},
 	{"csv-tablehead", no_argument, 0, 'H'},
 	{"version", no_argument, 0, 'v'},
@@ -502,6 +503,7 @@ static void help(void)
 	printf("  -d|--dev <netdev>      Device to fetch statistics for\n");
 	printf("  -t|--interval <time>   Refresh time in seconds as float (default 1.0)\n");
 	printf("  -c|--term              Output to terminal\n");
+	printf("  -p|--promisc           Promisc mode\n");
 	printf("  -C|--csv               Output to terminal as CSV\n");
 	printf("                         E.g. post-processing with Gnuplot et al.\n");
 	printf("  -H|--csv-tablehead     Print CSV table head\n");
@@ -537,7 +539,8 @@ static void version(void)
 
 int main(int argc, char **argv)
 {
-	int c, opt_index, ret;
+	short ifflags = 0;
+	int c, opt_index, ret, promisc = 0;
 	char *ifname = NULL;
 	double interval = 1.0;
 	int (*main_loop)(const char *ifname, double interval) = screen_loop;
@@ -563,6 +566,9 @@ int main(int argc, char **argv)
 			break;
 		case 'l':
 			loop = 1;
+			break;
+		case 'p':
+			promisc = 1;
 			break;
 		case 'C':
 			mode |= TERM_MODE_CSV;
@@ -605,7 +611,13 @@ int main(int argc, char **argv)
 	register_signal(SIGHUP, signal_handler);
 	register_signal(SIGSEGV, muntrace_handler);
 
+	if (promisc) {
+		check_for_root_maybe_die();
+		ifflags = enter_promiscuous_mode(ifname);
+	}
 	ret = main_loop(ifname, interval);
+	if (promisc)
+		leave_promiscuous_mode(ifname, ifflags);
 
 	xfree(ifname);
 	return ret;
