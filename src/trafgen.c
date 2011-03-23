@@ -245,6 +245,7 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 
 	printf("MD: %s %s %lums\n\n", !cfg->gap ? "FIRE" : "TX",
 	       mode->rand ? "RND" : "RR", interval);
+	printf("Running! Hang up with ^C!\n");
 
 	itimer.it_interval.tv_sec = 0;
 	itimer.it_interval.tv_usec = interval;
@@ -256,8 +257,8 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 	while(likely(sigint == 0)) {
 		while(user_may_pull_from_tx(tx_ring.frames[it].iov_base)) {
 			hdr = tx_ring.frames[it].iov_base;
-			out = ((uint8_t *) hdr) + /*TPACKET_ALIGN(sizeof(*hdr));*/
-						  TPACKET_HDRLEN - sizeof(struct sockaddr_ll);
+			out = ((uint8_t *) hdr) + TPACKET_HDRLEN -
+			      sizeof(struct sockaddr_ll);
 
 			hdr->tp_snaplen = cfg->pkts[l].plen;
 			hdr->tp_len = cfg->pkts[l].plen;
