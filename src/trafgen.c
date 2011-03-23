@@ -14,6 +14,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -72,16 +73,18 @@ struct mode {
 	char *device;
 	int cpu;
 	int rand;
+	unsigned long kpull;
 	/* 0 for automatic, > 0 for manual */
 	unsigned int reserve_size;
 };
 
 #define CPU_UNKNOWN  -1
 #define CPU_NOTOUCH  -2
+#define TX_KERNEL_PULL_INT 10
 
 static sig_atomic_t sigint = 0;
 
-static const char *short_options = "d:c:n:t:vhS:HQb:B:r";
+static const char *short_options = "d:c:n:t:vhS:HQb:B:rk:";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -91,6 +94,7 @@ static struct option long_options[] = {
 	{"ring-size", required_argument, 0, 'S'},
 	{"bind-cpu", required_argument, 0, 'b'},
 	{"unbind-cpu", required_argument, 0, 'B'},
+	{"kernel-pull", required_argument, 0, 'k'},
 	{"rand", no_argument, 0, 'r'},
 	{"prio-norm", no_argument, 0, 'H'},
 	{"notouch-irq", no_argument, 0, 'Q'},
@@ -98,6 +102,10 @@ static struct option long_options[] = {
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
 };
+
+static struct itimerval itimer;
+static int sock;
+static unsigned long interval = TX_KERNEL_PULL_INT;
 
 static inline uint8_t lcrand(uint8_t val)
 {
@@ -115,6 +123,17 @@ static void signal_handler(int number)
 	default:
 		break;
 	}
+}
+
+static void timer_elapsed(int number)
+{
+	itimer.it_interval.tv_sec = 0;
+	itimer.it_interval.tv_usec = interval;
+	itimer.it_value.tv_sec = 0;
+	itimer.it_value.tv_usec = interval;
+
+	pull_and_flush_tx_ring(sock);
+	setitimer(ITIMER_REAL, &itimer, NULL); 
 }
 
 static void header(void)
@@ -135,7 +154,10 @@ static void help(void)
 	printf("  -n|--num <uint>        Packet numbers\n");
 	printf("  `--     0              Loop until interrupt (default)\n");
 	printf("   `-     n              Send n packets and done\n");
-	printf("  -t|--gap <interval>    Interpacket gap in msecs (approx)\n");
+	printf("  -t|--gap <int>         Interpacket gap in ms (approx)\n");
+	printf("  -k|--kernel-pull <int> Kernel pull from user interval in ms\n");
+	printf("                         Default is 10ms where the TX_RING\n");
+	printf("                         is populated with payload from uspace\n");
 	printf("  -r|--rand              Randomize packet selection process\n");
 	printf("                         Instead of a round robin selection\n");
 	printf("  -S|--ring-size <size>  Manually set ring size to <size>:\n");
@@ -177,7 +199,7 @@ static void version(void)
 
 static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 {
-	int sock, irq, ifindex, mtu;
+	int irq, ifindex, mtu, it = 0;
 	unsigned int size;
 	size_t l;
 	struct ring tx_ring;
@@ -197,6 +219,7 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 	ifindex = device_ifindex(mode->device);
 	size = ring_size(mode->device, mode->reserve_size);
 
+	set_packet_loss_discard(sock);
 	setup_tx_ring_layout(sock, &tx_ring, size);
 	create_tx_ring(sock, &tx_ring);
 	mmap_tx_ring(sock, &tx_ring);
@@ -210,11 +233,21 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 		       mode->cpu);
 	}
 
-	printf("MD: %s %s\n\n", !cfg->gap ? "FIRE" : "TX",
-	       mode->rand ? "RND" : "RR");
+	if (mode->kpull)
+		interval = mode->kpull;
+
+	printf("MD: %s %s %lums\n\n", !cfg->gap ? "FIRE" : "TX",
+	       mode->rand ? "RND" : "RR", interval);
+
+	itimer.it_interval.tv_sec = 0;
+	itimer.it_interval.tv_usec = interval;
+	itimer.it_value.tv_sec = 0;
+	itimer.it_value.tv_usec = interval;
+	setitimer(ITIMER_REAL, &itimer, NULL); 
 
 	while(likely(sigint == 0)) {
-		; /* do stuff */
+		while(user_may_pull_from_tx(tx_ring.frames[it].iov_base)) {
+		}
 	}
 
 	destroy_tx_ring(sock, &tx_ring);
@@ -513,6 +546,9 @@ int main(int argc, char **argv)
 		case 'c':
 			confname = xstrdup(optarg);
 			break;
+		case 'k':
+			mode.kpull = atol(optarg);
+			break;
 		case 'n':
 			pkts = atol(optarg);
 			break;
@@ -563,11 +599,11 @@ int main(int argc, char **argv)
 			case 'n':
 			case 'S':
 			case 'b':
+			case 'k':
 			case 'B':
 			case 't':
-				error_and_die(EXIT_FAILURE, "Option -%c "
-					      "requires an argument!\n",
-					      optopt);
+				panic("Option -%c requires an argument!\n",
+				      optopt);
 			default:
 				if (isprint(optopt))
 					whine("Unknown option character "
@@ -591,6 +627,7 @@ int main(int argc, char **argv)
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
 	register_signal(SIGSEGV, muntrace_handler);
+	register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO);
 
 	header();
 

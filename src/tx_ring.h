@@ -37,8 +37,8 @@ static inline int user_may_pull_from_tx(struct tpacket_hdr *hdr)
 
 static inline void kernel_may_pull_from_tx(struct tpacket_hdr *hdr)
 {
-	hdr->tp_status = TP_STATUS_SEND_REQUEST;
 	barrier();
+	hdr->tp_status = TP_STATUS_SEND_REQUEST;
 }
 #endif /* HAVE_TX_RING */
 

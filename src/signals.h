@@ -26,4 +26,20 @@ static inline void register_signal(int signal, void (*handler)(int))
 	sigaction(signal, &saction, NULL);
 }
 
+static inline void register_signal_f(int signal, void (*handler)(int),
+				     int flags)
+{
+	sigset_t block_mask;
+	struct sigaction saction;
+
+	assert(handler);
+
+	sigfillset(&block_mask);
+	saction.sa_handler = handler;
+	saction.sa_mask = block_mask;
+	saction.sa_flags = flags;
+
+	sigaction(signal, &saction, NULL);
+}
+
 #endif /* SIGNALS_H */
