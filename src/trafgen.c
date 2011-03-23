@@ -175,6 +175,7 @@ static void help(void)
 	printf("  See trafgen.txf for configuration file examples.\n");
 	printf("  trafgen --dev eth0 --conf trafgen.txf --bind 0\n");
 	printf("  trafgen --dev eth0 --conf trafgen.txf --rand --gap 1000\n");
+	printf("  trafgen --dev eth0 --conf trafgen.txf --bind 0 --num 10 --rand\n");
 	printf("\n");
 	printf("Note:\n");
 	printf("  This tool is targeted for network developers! You should\n");
