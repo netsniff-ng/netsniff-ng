@@ -116,11 +116,12 @@ netsniff-ng is <i>Free Software</i> and released under the <a href="http://www.g
 
 <h2>Abstract</h2>
 <p>
-netsniff-ng is is a free, performant Linux network sniffer for packet inspection.
+netsniff-ng is is a free, performant Linux network analyzer and networking toolkit.
 </p>
 <p>
 The gain of performance is reached by 'zero-copy' mechanisms, so that 
-the kernel does not need to copy packets from kernelspace to userspace.
+the kernel does not need to copy packets from kernelspace to userspace
+and vice versa.
 </p>
 <p>
 For this purpose netsniff-ng is libpcap independent, but nevertheless 
@@ -130,7 +131,15 @@ a robust, clean and secure analyzer and utilities that complete
 netsniff-ng as a support for penetration testing.
 </p>
 <p>
-netsniff-ng can be used for protocol analysis, reverse engineering and network debugging.
+<b>netsniff-ng</b> can be used for protocol analysis, reverse engineering and
+network debugging.
+</p>
+Further networking tools are being shipped<sup>[<a name="id777" href="#ftn.id777">+</a>]</sup>:
+<ul>
+	<li><b>netsniff-ng:</b> the 'zero-copy' sniffer itself</li>
+	<li><b>trafgen:</b> powerful 'zero-copy' network packet generator</li>
+	<li><b>ifpps:</b> top-like kernel networking statistics</li>
+</ul>
 </p>
 
 <h2>Some use cases and features</h2>
@@ -145,6 +154,8 @@ netsniff-ng can be used for protocol analysis, reverse engineering and network d
   <li>Regular expression based grepping of specific packet information</li>
   <li>Monitoring of network usage</li>
   <li>Network statistic creation (e.g. for Nagios)</li>
+  <li>Powerful, flexible and performant traffic generation</li>
+  <li>Reliable, top-like kernel networking statistics</li>
 </ul>
 
 <h2>Development</h2>
@@ -180,7 +191,6 @@ By the time, netsniff-ng will grow into a networking toolkit for developers, adm
   <li>Network traffic anomaly analysis on routers or bridges</li>
   <li>User-friendly Qdisc management tooling</li>
   <li>Berkeley Packet Filter compiler with multi-language support</li>
-  <li>Reliable and useful kernel statistic gathering</li>
   <li>Powerful packet analysis, replaying and traffic generation</li>
 </ul>
 </p>
@@ -260,8 +270,8 @@ If you'd like to help otherwise, we'd like to see people to:
 </p>
 
 <h2>Footnotes</h2>
-<sup>[<a name="ftn.id666" href="#id666">*</a>]</sup> <i>rx_ring.h:</i> The kernel might set other flags then TP_STATUS_USER when a packet is ready.
-
+<sup>[<a name="ftn.id666" href="#id666">*</a>]</sup> <i>rx_ring.h:</i> The kernel might set other flags then TP_STATUS_USER when a packet is ready.<br>
+<sup>[<a name="ftn.id777" href="#id777">+</a>]</sup> Since version 0.5.6.0.
 
 <h2>Associated projects</h2>
 <p>

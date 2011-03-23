@@ -42,6 +42,82 @@
 <h2>Development blog (<a href="http://netsniff-ng.org/dev.rss">RSS</a>)</h2>
 
 <div>
+<h3><a name="20">ifpps now with promisc mode support, new tool: trafgen</a></h3>
+<i>23/03/2011, Daniel Borkmann, Emmanuel Roullit</i>
+<blockquote>
+<p>
+<b>ifpps</b> now also supports promiscuous mode, so under root start it with, i.e. <code>ifpps -d eth0 -p</code> and you're good to go.
+</p>
+<p>
+We proudly announce a new tool within our networking suite. It's called <b>trafgen</b> and it is a powerful 'zero-copy' traffic generator! Here's how you can test trafgen (<i>note:</i> 1. only do this within an isolated test network, 2. trafgen is still experimental!):
+</p>
+<p>
+<pre>
+$ git clone git://repo.or.cz/netsniff-ng.git
+$ cd src/trafgen
+$ make deploy
+# ./trafgen --dev eth0 --conf ../trafgen.txf --bind 0
+</pre>
+</p>
+<p>
+Here's how the trafgen.txf <i>example configuration</i> file looks like:
+<pre>
+#
+# e.g.: trafgen --dev eth0 --conf &lt;conf-file&gt; --bind 0
+#
+# This file is an example of a packet configuration file! Packet skeletons 
+# can be fetched with netsniff-ng -C (C-like printout).
+#
+# Payload content can be hexadecimal, decimal, $PRB or $II&lt;n&gt; and is always
+# separated with commas:
+#
+#  $PRB   means random byte
+#  $II&lt;n&gt; means counter, there can be several counter specified with &lt;n&gt;, e.g.:
+#
+#  $II0: 0,255,1
+#  $II1: 0x4,0xFF,0x2
+#
+#  thus counter0 increments from 0 to 255 (and then turns around),
+#       counter1 from 0x4 to 0xFF in 0x2 steps.
+#
+# Packets are defined with:
+#  $P&lt;n&gt; {
+#    &lt;content&gt;
+#  }
+#
+# If more than 1 packet is defined, packets will be tx'ed in a round robin
+# fashion, but you can also push the packets randomly via command line param.
+#
+# The receiver side can have ifpps running (in promisc mode).
+#
+
+$II0: 0,255,1
+$II1: 0x4,0xFF,0x2
+
+$P1 {
+  $PRB, 0xff, $II0, $II1, $II0, 0xff, 0x00, 0xd0, 0x00, 0x54, 0x9c, 0x00, 0x08, 
+  0x06, 0x00, 0x01, 0x08, 0x00, 0x06, 0x04, 0x00, 0x01, 0x00, 0xd0, 0x00, 0x54, 
+  0x9c, 0x00, 0x52, 0x82, 0x66, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x52, 
+  0x82, 0x66, 0x6f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+}
+
+$P2 {
+  $PRB, 0xff, 0x00, $II1, $II1, 0xff, 0x00, 0xd0, 0x00, 0x54, 0x9c, 0x00, 0x08, 
+  0x06, 0x00, 0x01, 0x08, 0x00, 0x06, 0x04, 0x00, 0x01, 0x00, 0xd0, 0x00, 0x54, 
+  0x9c, 0x00, 0x52, 0x82, 0x66, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x52, 
+  0x82, 0x66, 0x6f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+}
+</pre>
+</p>
+<p>
+We are looking forward for lots of testing and patches! So in this sense ... happy packet generation! ;-)
+</p>
+</blockquote>
+</div>
+
+<div>
 <h3><a name="19">Minor update, nettoolbox-ng library</a></h3>
 <i>17/03/2011, Daniel Borkmann, Emmanuel Roullit</i>
 <blockquote>

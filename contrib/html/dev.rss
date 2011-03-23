@@ -8,6 +8,12 @@
   <language>en</language>
 
   <item>
+    <title>ifpps now with promisc mode support, new tool: trafgen</title>
+    <link>http://dev.netsniff-ng.org/#20</link>
+    <guid>http://dev.netsniff-ng.org/#20</guid>
+  </item>
+
+  <item>
     <title>Minor update, nettoolbox-ng library</title>
     <link>http://dev.netsniff-ng.org/#19</link>
     <guid>http://dev.netsniff-ng.org/#19</guid>
