@@ -483,7 +483,7 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 				withinpkt = 0;
 		else if (withinpkt) {
 			int type, i, found;
-			uint32_t val;
+			uint32_t val = 0;
 			while (1) {
 				found = 0;
 				pb = getuint_or_obj(pb, &val, &type);
