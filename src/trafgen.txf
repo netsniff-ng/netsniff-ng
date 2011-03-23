@@ -1,15 +1,31 @@
-# trafgen -d eth0 -c <conf-file>
-# This file is an example of a packet configuration file!
-# Packet skeleton can be fetched with netsniff-ng -C.
-# $PRB means random byte
-# $IIn means increment, there can be several counter specified with n, e.g.
+#
+# trafgen --dev eth0 --conf <conf-file> --bind 0
+#
+# This file is an example of a packet configuration file! Packet skeletons 
+# can be fetched with netsniff-ng -C (C-like printout).
+#
+# Payload content can be hexadecimal, decimal, $PRB or $II<n> and is always
+# separated with commas:
+#
+#  $PRB   means random byte
+#  $II<n> means counter, there can be several counter specified with <n>, e.g.:
+#
 #  $II0: 0,255,1
-#  $II1: 0x4,0xFF, 0x2
-# means incrementer 0 increments from 0 to 255 (and then turns around),
-# incrementer 1 from 0x4 to 0xFF in 0x2 steps.
-# Packets are defined with $Pn { <content> }. If more than 1 packet is defined,
-# packets will be tx'ed in a round robin fashion. You can also push the packets
-# randomly via command line param.
+#  $II1: 0x4,0xFF,0x2
+#
+#  thus counter0 increments from 0 to 255 (and then turns around),
+#       counter1 from 0x4 to 0xFF in 0x2 steps.
+#
+# Packets are defined with:
+#  $P<n> {
+#    <content>
+#  }
+#
+# If more than 1 packet is defined, packets will be tx'ed in a round robin
+# fashion, but you can also push the packets randomly via command line param.
+#
+# The receiver side can have ifpps running (in promisc mode).
+#
 
 $II0: 0,255,1
 $II1: 0x4,0xFF,0x2
