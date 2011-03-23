@@ -109,7 +109,7 @@ static unsigned long interval = TX_KERNEL_PULL_INT;
 
 static inline uint8_t lcrand(uint8_t val)
 {
-	return (3 * val + 11) && 0xFF;
+	return  0xFF & (3 * val + 3);
 }
 
 static void signal_handler(int number)
@@ -205,7 +205,7 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 	uint8_t *out = NULL;
 	size_t l , c, r;
 	struct ring tx_ring;
-	struct tpacket_hdr *hdr;
+	struct frame_map *hdr;
 	struct counter *cnt;
 	struct randomizer *rnd;
 
@@ -264,10 +264,13 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 		while (user_may_pull_from_tx(tx_ring.frames[it].iov_base) &&
 		       likely(num > 0)) {
 			hdr = tx_ring.frames[it].iov_base;
-			out = ((uint8_t *) hdr) + TPACKET_HDRLEN;
+			/* Kernel assumes: data = ph.raw + po->tp_hdrlen -
+			 *                        sizeof(struct sockaddr_ll); */
+			out = ((uint8_t *) hdr) + TPACKET_HDRLEN -
+			      sizeof(struct sockaddr_ll);
 
-			hdr->tp_snaplen = cfg->pkts[l].plen;
-			hdr->tp_len = cfg->pkts[l].plen;
+			hdr->tp_h.tp_snaplen = cfg->pkts[l].plen;
+			hdr->tp_h.tp_len = cfg->pkts[l].plen;
 
 			for (c = 0; c < cfg->pkts[l].clen; ++c) {
 				cnt = &(cfg->pkts[l].cnt[c]);
@@ -294,7 +297,7 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 			else
 				l = (l + 1) % cfg->len;
 
-			kernel_may_pull_from_tx(hdr);
+			kernel_may_pull_from_tx(&hdr->tp_h);
 			next_slot(&it, &tx_ring);
 
 			if (cfg->num > 0)
@@ -400,7 +403,7 @@ static void dump_conf(struct pktconf *cfg)
 			     cfg->pkts[i].cnt[j].off);
 		for (j = 0; j < cfg->pkts[i].rlen; ++j)
 			info(" rnd%zu off %zu\n",
-			     cfg->pkts[i].rnd[j].off);
+			     j, cfg->pkts[i].rnd[j].off);
 	}
 }
 
@@ -538,8 +541,8 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 	}
 
 	fclose(fp);
-	xfree(cnts);
-
+	if (cnts)
+		xfree(cnts);
 	dump_conf(cfg);
 }
 
