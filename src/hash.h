@@ -8,6 +8,8 @@
 #ifndef HASH_H
 #define HASH_H
 
+/* Hash table implementation from the GIT project. */
+/* Copyright xxxx (C) Linus Torvalds (?), GPL version 2 */
 /*
  * These are some simple generic hash table helper functions.
  * Not necessarily suitable for all users, but good for things

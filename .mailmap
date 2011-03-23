@@ -1,0 +1,11 @@
+#
+# This list is used by git-shortlog to fix a few botched name translations
+# in the git archive, either because the author's full name was messed up
+# and/or not always written the same way, making contributions from the
+# same person appearing not to be so.
+#
+
+Daniel Borkmann <daniel@netsniff-ng.org>
+Daniel Borkmann <borkmann@gnumaniacs.org>
+Daniel Borkmann <danborkmann@googlemail.com>
+Emmanuel Roullit <emmanuel@netsniff-ng.org>

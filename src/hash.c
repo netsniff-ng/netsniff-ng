@@ -9,6 +9,7 @@
 #include "xmalloc.h"
 
 /* Hash table implementation from the GIT project. */
+/* Copyright xxxx (C) Linus Torvalds (?), GPL version 2 */
 
 /*
  * Look up a hash entry in the hash table. Return the pointer to
