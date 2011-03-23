@@ -18,9 +18,7 @@ lib-objs   = hash.o                  \
 	     bpf.o                   \
 	     system.o                \
 	     pcap.o                  \
-	     deflate.o               \
 	     write_or_die.o          \
-	     twofish.o               \
 	     rx_ring.o               \
 	     tx_ring.o               \
 	     mtrand.o                \
@@ -29,15 +27,12 @@ lib-objs   = hash.o                  \
 
 target     = netsniff-ng
 
-all: clean gen-version gen-tables build doc
+all: clean gen-version build doc
 debug: all
 deploy: all strip
 
 gen-version:
 	@cd .. && cat ../VERSION | xargs ./gen_build_info.pl
-
-gen-tables:
-	@cd .. && ./gen_tables.pl
 
 build: $(lib-objs) $(core-objs)
 	@$(LD) $(target) $(core-objs) $(lib-objs) $(LIBS)
