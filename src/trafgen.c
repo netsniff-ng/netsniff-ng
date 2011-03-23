@@ -130,9 +130,9 @@ static void help(void)
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: trafgen [options]\n");
 	printf("Options:\n");
-	printf("  -d|--dev <netdev>      TX Device\n");
+	printf("  -d|--dev <netdev>      Networking Device\n");
 	printf("  -c|--conf <file>       Packet configuration txf-file\n");
-	printf("  -n|--num <uint>        Packet numnbers\n");
+	printf("  -n|--num <uint>        Packet numbers\n");
 	printf("  `--     0              Loop until interrupt (default)\n");
 	printf("   `-     n              Send n packets and done\n");
 	printf("  -t|--gap <interval>    Interpacket gap in msecs (approx)\n");
