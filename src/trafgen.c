@@ -251,7 +251,7 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 
 	printf("MD: %s %s %lums\n\n", !cfg->gap ? "FIRE" : "TX",
 	       mode->rand ? "RND" : "RR", interval);
-	printf("Running! Hang up with ^C!\n");
+	printf("Running! Hang up with ^C!\n\n");
 
 	itimer.it_interval.tv_sec = 0;
 	itimer.it_interval.tv_usec = interval;
@@ -310,6 +310,8 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 	destroy_tx_ring(sock, &tx_ring);
 	close(sock);
 
+	fflush(stdout);
+	printf("\n");
 	printf("\r%lu frames outgoing\n", mode->stats.tx_packets);
 	printf("\r%lu bytes outgoing\n", mode->stats.tx_bytes);
 }
