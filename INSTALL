@@ -8,21 +8,26 @@ kernels that have this config option enabled and even the latest
 kernel versions got rid of this option and have this functionality
 built-in. However, we recommend >= 2.6.26. 
 
+netsniff-ng has been sucessfully tested on x86 and x86_64. Please drop
+us a short mail, if it runs on hardware other than that.
+
 What libraries are required?
 ============================
 
-Well, libc is the only one. Most operating systems already have their
-libc shipped. That's it, nothing else.
+ * libc
+ * libncurses
 
 Installation
 ============
 
+$ cd src/<tool>/
 $ make deploy
 # make install
 
 Uninstall
 =========
 
+$ cd src/<tool>/
 # make uninstall
 $ make clean
 

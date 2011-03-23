@@ -1,7 +1,8 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
- * Copyright 2009-2011 Daniel Borkmann.
+ * Copyright 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,
+ * Swiss federal institute of technology (ETH Zurich)
  * Subject to the GPL.
  */
 
@@ -183,7 +184,8 @@ static void help(void)
 	printf("  mean! Only use this tool in an isolated LAN that you own!\n");
 	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2011 Daniel Borkmann\n");
+	printf("Copyright (C) 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
+	printf("Swiss federal institute of technology (ETH Zurich)\n");
 	printf("License: GNU GPL version 2\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
@@ -197,7 +199,8 @@ static void version(void)
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2011 Daniel Borkmann\n");
+	printf("Copyright (C) 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
+	printf("Swiss federal institute of technology (ETH Zurich)\n");
 	printf("License: GNU GPL version 2\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
