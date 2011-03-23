@@ -13,6 +13,8 @@ core-objs  = trafgen.o
 lib-objs   = xmalloc.o                  \
 	     strlcpy.o                  \
 	     system.o                   \
+	     mtrand.o                   \
+	     write_or_die.o             \
 	     tx_ring.o                  \
 	     netdev.o
 

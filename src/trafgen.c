@@ -28,6 +28,7 @@
 #include "system.h"
 #include "tty.h"
 #include "version.h"
+#include "mtrand.h"
 #include "signals.h"
 #include "tx_ring.h"
 
@@ -70,6 +71,7 @@ struct mode {
 	struct stats stats;
 	char *device;
 	int cpu;
+	int rand;
 	/* 0 for automatic, > 0 for manual */
 	unsigned int reserve_size;
 };
@@ -79,7 +81,7 @@ struct mode {
 
 static sig_atomic_t sigint = 0;
 
-static const char *short_options = "d:c:n:t:vhS:HQb:B:";
+static const char *short_options = "d:c:n:t:vhS:HQb:B:r";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -89,6 +91,7 @@ static struct option long_options[] = {
 	{"ring-size", required_argument, 0, 'S'},
 	{"bind-cpu", required_argument, 0, 'b'},
 	{"unbind-cpu", required_argument, 0, 'B'},
+	{"rand", no_argument, 0, 'r'},
 	{"prio-norm", no_argument, 0, 'H'},
 	{"notouch-irq", no_argument, 0, 'Q'},
 	{"version", no_argument, 0, 'v'},
@@ -129,10 +132,12 @@ static void help(void)
 	printf("Options:\n");
 	printf("  -d|--dev <netdev>      TX Device\n");
 	printf("  -c|--conf <file>       Packet configuration txf-file\n");
-	printf("  -n|--num <uint>        TX mode\n");
+	printf("  -n|--num <uint>        Packet numnbers\n");
 	printf("  `--     0              Loop until interrupt (default)\n");
 	printf("   `-     n              Send n packets and done\n");
-	printf("  -t|--gap <interval>    Packet interval in msecs, def: 0\n");
+	printf("  -t|--gap <interval>    Interpacket gap in msecs (approx)\n");
+	printf("  -r|--rand              Randomize packet selection process\n");
+	printf("                         Instead of a round robin selection\n");
 	printf("  -S|--ring-size <size>  Manually set ring size to <size>:\n");
 	printf("                         mmap space in KB/MB/GB, e.g. \'10MB\'\n");
 	printf("  -H|--prio-norm         Do not high priorize process\n");
@@ -145,7 +150,7 @@ static void help(void)
 	printf("Example:\n");
 	printf("  See trafgen.txf for configuration file examples.\n");
 	printf("  trafgen --dev eth0 --conf trafgen.txf --prio-norm\n");
-	printf("  trafgen --dev eth0 --conf trafgen.txf --num 100 --gap 5\n");
+	printf("  trafgen --dev eth0 --conf trafgen.txf --rand --gap 5\n");
 	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2011 Daniel Borkmann\n");
@@ -205,7 +210,8 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 		       mode->cpu);
 	}
 
-	printf("MD: %s\n\n", !cfg->gap ? "FIRE" : "TX");
+	printf("MD: %s %s\n\n", !cfg->gap ? "FIRE" : "TX",
+	       mode->rand ? "RND" : "RR");
 
 	while(likely(sigint == 0)) {
 		; /* do stuff */
@@ -500,6 +506,9 @@ int main(int argc, char **argv)
 			break;
 		case 'd':
 			mode.device = xstrndup(optarg, IFNAMSIZ);
+			break;
+		case 'r':
+			mode.rand = 1;
 			break;
 		case 'c':
 			confname = xstrdup(optarg);
