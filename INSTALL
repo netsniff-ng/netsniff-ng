@@ -6,10 +6,10 @@ CONFIG_PACKET_MMAP enabled. This feature can be found even back
 to the days of 2.4 kernels. Most operating systems ship pre-compiled
 kernels that have this config option enabled and even the latest
 kernel versions got rid of this option and have this functionality
-built-in. However, we recommend >= 2.6.26. 
+already built-in. However, we recommend a kernel > 2.6.31.
 
 netsniff-ng has been sucessfully tested on x86 and x86_64. Please drop
-us a short mail, if it runs on hardware other than that.
+us a short mail, if it runs on your hardware other than that.
 
 What libraries are required?
 ============================
