@@ -34,18 +34,7 @@
 #define CPU_NOTOUCH  -2
 #define PACKET_ALL   -1
 
-#define TMP_STAT_FILE "/tmp/netsniff-ng"
-
-struct stats {
-	pthread_spinlock_t lock;
-	unsigned long rx_bytes;
-	unsigned long rx_packets;
-	unsigned long tx_bytes;
-	unsigned long tx_packets;
-};
-
 struct mode {
-	struct stats stats;
 	char *device_in;
 	char *device_out;
 	char *filter;
@@ -94,132 +83,39 @@ static struct option long_options[] = {
 	{0, 0, 0, 0}
 };
 
-/* FIXME: only for SIGUSR1 */
-static struct mode *pmode;
-
 static void signal_handler(int number)
 {
-	FILE *fp = NULL;
-	char file[256];
-
 	switch (number) {
 	case SIGINT:
 		sigint = 1;
 		break;
 	case SIGHUP:
 		break;
-	case SIGUSR1:
-		/*
-		 * What we do here is to present a conform way of delivering
-		 * runtime statistics to the user for postprocessing. The user
-		 * is able to decide the interval for his own, since the
-		 * counters are reset after writing. Some Perl or Shell script
-		 * could transform the values and propagate them to Gnuplot or
-		 * even Nagios for instance.
-		 */
-		snprintf(file, sizeof(file), "%s.%u", TMP_STAT_FILE, getpid());
-		fp = fopen(file, "w+");
-		if (fp == NULL)
-			return;
-
-		pthread_spin_lock(&pmode->stats.lock);
-		fprintf(fp, "RX: %lu,%lu TX: %lu,%lu\n",
-			pmode->stats.rx_bytes, pmode->stats.rx_packets,
-			pmode->stats.tx_bytes, pmode->stats.tx_packets);
-
-		/* Reset counters */
-		pmode->stats.rx_bytes = 0;
-		pmode->stats.rx_packets = 0;
-		pmode->stats.tx_bytes = 0;
-		pmode->stats.tx_packets = 0;
-		pthread_spin_unlock(&pmode->stats.lock);
-
-		fclose(fp);
-		break;
 	default:
 		break;
 	}
 }
 
-/*
- * PCAP_TO_TX mode:
- *
- * This means, a PCAP file is read and replayed by the device. By adding BPF
- * program, you can filter what should be retransmitted and what not.
- */
 void enter_mode_pcap_to_tx(struct mode *mode)
 {
 	/* NOP */
 }
 
-/*
- * RX_TO_TX mode:
- *
- * RX to TX means that the packets will arrive into the RX_RING of device 1 
- * and will then be put into the TX_RING of device 2. So this can be considered 
- * as a unidirectional RX/TX_RING bridge. There's a randomize option in order 
- * to bring the packet order out of order. This could be used to test the 
- * robustness of UDP-based programs or to test the TCP stack.
- */
 void enter_mode_rx_to_tx(struct mode *mode)
 {
 	/* NOP */
 }
 
-/*
- * PCAP_TO_PCAP mode:
- *
- * This mode is intended to transform a PCAP file into a PCAP file. netsniff-ng
- * is able to encrypt or compress PCAP files which is an extension to the 
- * standard, so this mode can tranform these files back to readable, 
- * standard-conform PCAP files that can be read with Wireshark and others.
- */
-void enter_mode_pcap_to_pcap(struct mode *mode)
+void enter_mode_read_pcap(struct mode *mode)
 {
 	/* NOP */
 }
 
-/*
- * PCAP_ONLY mode:
- *
- * This mode is intended to do a offline analysis of a PCAP file.
- */
-void enter_mode_pcap_only(struct mode *mode)
-{
-	/* NOP */
-}
-
-/*
- * TX_ONLY mode:
- *
- * This mode is intended to act as a traffic generator. It randomly generates 
- * packets and pushes them into the TX_RING which is then flushed by the 
- * kernel. Configure options will follow soon.
- */
-void enter_mode_tx_only(struct mode *mode)
-{
-	/* NOP */
-}
-
-/*
- * RX_TO_PCAP mode:
- *
- * See RX_ONLY mode but with the additional focus on writing the received 
- * packets into a PCAP formatted file. The focus here is to have a 'fastpath'
- * for dumping, not analyzing, so per default, we do not print packets.
- */
 void enter_mode_rx_to_pcap(struct mode *mode)
 {
 	/* NOP */
 }
 
-/*
- * RX_ONLY mode:
- *
- * In this mode we only make usage of the RX_RING for network debugging.
- * Packets will be pushed into the ring by the kernel and we grab them 
- * with our user-defined printing mode.
- */
 void enter_mode_rx_only(struct mode *mode)
 {
 	int sock, irq, ifindex;
@@ -252,7 +148,6 @@ void enter_mode_rx_only(struct mode *mode)
 	prepare_polling(sock, &rx_poll);
 	dissector_init_all(mode->print_mode);
 
-	/* IRQ affinity settings */
 	if (mode->cpu >= 0 && ifindex > 0) {
 		irq = device_irq_number(mode->device_in);
 		device_bind_irq_to_cpu(mode->cpu, irq);
@@ -260,7 +155,6 @@ void enter_mode_rx_only(struct mode *mode)
 		       mode->cpu);
 	}
 
-	/* Promiscuous mode settings */
 	if (mode->promiscuous == true) {
 		ifflags = enter_promiscuous_mode(mode->device_in);
 		printf("PROMISC\n");
@@ -278,11 +172,6 @@ void enter_mode_rx_only(struct mode *mode)
 			if (mode->packet_type != PACKET_ALL)
 				if (mode->packet_type != hdr->s_ll.sll_pkttype)
 					goto next;
-
-			pthread_spin_lock(&mode->stats.lock);
-			mode->stats.rx_bytes += hdr->tp_h.tp_len;
-			mode->stats.rx_packets++;
-			pthread_spin_unlock(&mode->stats.lock);
 
 			show_frame_hdr(hdr, mode->print_mode);
 			dissector_entry_point(packet, hdr->tp_h.tp_snaplen,
@@ -397,9 +286,7 @@ int main(int argc, char **argv)
 
 	check_for_root_maybe_die();
 
-	/* Default settings */
 	memset(&mode, 0, sizeof(mode));
-	pthread_spin_init(&mode.stats.lock, PTHREAD_PROCESS_SHARED);
 	mode.link_type = LINKTYPE_EN10MB;
 	mode.print_mode = FNTTYPE_PRINT_NORM;
 	mode.cpu = CPU_UNKNOWN;
@@ -412,37 +299,23 @@ int main(int argc, char **argv)
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 	       &opt_index)) != EOF) {
 		switch (c) {
-		case 'd': /* dev + arg */
-		case 'i': /* in + arg */
-			/* file || netdev */
+		case 'd':
+		case 'i':
 			mode.device_in = xstrdup(optarg);
 			break;
-		case 'o': /* out + arg */
-			/* file || netdev */
+		case 'o':
 			mode.device_out = xstrdup(optarg);
 			break;
-		case 'z': /* compress + arg */
-			mode.compress = atoi(optarg);
-			/* Deflate compression levels are between 1 and 9 */
-			if (mode.compress < 1)
-				mode.compress = 1;
-			if (mode.compress > 9)
-				mode.compress = 9;
-			break;
-		case 'E': /* encrypt */
-			mode.encrypt = true;
-			break;
-		case 'r': /* randomize */
+		case 'r':
 			mode.randomize = true;
 			break;
-		case 'f': /* filter + arg */
-			/* file */
+		case 'f':
 			mode.filter = xstrdup(optarg);
 			break;
-		case 'M': /* no-promisc */
+		case 'M':
 			mode.promiscuous = false;
 			break;
-		case 't': /* type + arg */
+		case 't':
 			if (!strncmp(optarg, "host", strlen("host")))
 				mode.packet_type = PACKET_HOST;
 			else if (!strncmp(optarg, "broadcast", strlen("broadcast")))
@@ -456,7 +329,7 @@ int main(int argc, char **argv)
 			else
 				mode.packet_type = PACKET_ALL;
 			break;
-		case 'S': /* ring-size + arg */
+		case 'S':
 			ptr = optarg;
 			mode.reserve_size = 0;
 
@@ -479,49 +352,48 @@ int main(int argc, char **argv)
 			*ptr = 0;
 			mode.reserve_size *= atoi(optarg);
 			break;
-		case 'b': /* bind-cpu + arg */
+		case 'b':
 			set_cpu_affinity(optarg, 0);
-			/* Take the first CPU for rebinding the IRQ */
 			if (mode.cpu != CPU_NOTOUCH)
 				mode.cpu = atoi(optarg);
 			break;
-		case 'B': /* unbind-cpu + arg */
+		case 'B':
 			set_cpu_affinity(optarg, 1);
 			break;
-		case 'H': /* prio-norm */
+		case 'H':
 			prio_high = false;
 			break;
-		case 'Q': /* notouch-irq */
+		case 'Q':
 			mode.cpu = CPU_NOTOUCH;
 			break;
-		case 's': /* silent */
+		case 's':
 			mode.print_mode = FNTTYPE_PRINT_NONE;
 			break;
-		case 'q': /* less */
+		case 'q':
 			mode.print_mode = FNTTYPE_PRINT_LESS;
 			break;
-		case 'l': /* payload */
+		case 'l':
 			mode.print_mode = FNTTYPE_PRINT_CHR1;
 			break;
-		case 'x': /* payload-hex */
+		case 'x':
 			mode.print_mode = FNTTYPE_PRINT_HEX1;
 			break;
-		case 'C': /* c-style */
+		case 'C':
 			mode.print_mode = FNTTYPE_PRINT_PAAC;
 			break;
-		case 'X': /* all-hex */
+		case 'X':
 			mode.print_mode = FNTTYPE_PRINT_HEX2;
 			break;
-		case 'N': /* no-payload */
+		case 'N':
 			mode.print_mode = FNTTYPE_PRINT_NOPA;
 			break;
 		case 'e': /* regex + arg, TODO: arg */
 			mode.print_mode = FNTTYPE_PRINT_REGX;
 			break;
-		case 'v': /* version */
+		case 'v':
 			version();
 			break;
-		case 'h': /* help */
+		case 'h':
 			help();
 			break;
 		case '?':
@@ -529,7 +401,6 @@ int main(int argc, char **argv)
 			case 'd':
 			case 'i':
 			case 'o':
-			case 'z':
 			case 'f':
 			case 't':
 			case 'S':
@@ -550,7 +421,6 @@ int main(int argc, char **argv)
 		}
 	}
 
-	/* Take the any-device (0) as default */
 	if (!mode.device_in)
 		mode.device_in = "any";
 
@@ -568,7 +438,6 @@ int main(int argc, char **argv)
 	}
 
 	/* TODO: mode selection according to device_in and device_out */
-	pmode = &mode;
 	enter_mode = enter_mode_rx_only;
 	enter_mode(&mode);
 
