@@ -7,7 +7,7 @@ include ../definitions.mk
 
 INCLUDE    = -I..
 CFLAGS    += -DTARGETNAME="\"trafgen\""
-LIBS       = -lpthread
+LIBS       =
 
 core-objs  = trafgen.o
 lib-objs   = xmalloc.o                  \
