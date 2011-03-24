@@ -8,9 +8,6 @@
 #ifndef COMPILER_H
 #define COMPILER_H
 
-#include "atomic.h"
-#include "anon.h"
-
 #ifndef likely
 # define likely(x)          __builtin_expect(!!(x), 1)
 #endif
