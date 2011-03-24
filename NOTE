@@ -1,0 +1,6 @@
+You might want to have NAPI drivers [1] enabled in your kernel to
+reduce interrupt load and for high-speed PCAP dumping and replay,
+a fast SSD isn't too bad either.
+
+[1] http://www.linuxfoundation.org/collaborate/workgroups/networking/napi
+
