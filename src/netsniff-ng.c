@@ -1,7 +1,7 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
- * Copyright 2009, 2010 Daniel Borkmann.
+ * Copyright 2009-2011 Daniel Borkmann.
  * Copyright 2010 Emmanuel Roullit.
  * Subject to the GPL.
  */
@@ -53,14 +53,12 @@ struct mode {
 
 static sig_atomic_t sigint = 0;
 
-static const char *short_options = "d:i:o:z:Erf:Mt:S:b:B:HQsqlxCXNe:vh";
+static const char *short_options = "d:i:o:rf:Mt:S:b:B:HQsqlxCXNe:vh";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
 	{"in", required_argument, 0, 'i'},
 	{"out", required_argument, 0, 'o'},
-	{"compress", required_argument, 0, 'z'},
-	{"encrypt", no_argument, 0, 'E'},
 	{"randomize", no_argument, 0, 'r'},
 	{"filter", required_argument, 0, 'f'},
 	{"no-promisc", no_argument, 0, 'M'},
