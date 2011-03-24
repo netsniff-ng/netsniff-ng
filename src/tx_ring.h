@@ -17,6 +17,7 @@
 # define HAVE_TX_RING
 #else
 # undef HAVE_TX_RING
+# error "Your kernel is too old! No TX_RING available!"
 #endif /* LINUX_VERSION_CODE */
 
 #ifdef HAVE_TX_RING
