@@ -45,8 +45,6 @@ struct mode {
 	/* 0 for automatic, > 0 for manual */
 	unsigned int reserve_size;
 	int packet_type;
-	int compress;
-	bool encrypt;
 	bool randomize;
 	bool promiscuous;
 };
@@ -96,22 +94,22 @@ static void signal_handler(int number)
 
 void enter_mode_pcap_to_tx(struct mode *mode)
 {
-	/* NOP */
+	printf("pcap->tx\n");
 }
 
 void enter_mode_rx_to_tx(struct mode *mode)
 {
-	/* NOP */
+	printf("rx->tx\n");
 }
 
 void enter_mode_read_pcap(struct mode *mode)
 {
-	/* NOP */
+	printf("pcap\n");
 }
 
 void enter_mode_rx_to_pcap(struct mode *mode)
 {
-	/* NOP */
+	printf("rx->pcap\n");
 }
 
 void enter_mode_rx_only(struct mode *mode)
@@ -235,13 +233,13 @@ static void help(void)
 	printf("  netsniff-ng --in dump.pcap --no-payload\n");
 	printf("  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0\n");
 	printf("  netsniff-ng --in any --filter icmp.bpf\n");
-	printf("  netsniff-ng --regex \"user.*pass\"\n");
+	printf("  netsniff-ng --regex \"Zaphod.*Beeblebrox\"\n");
 	printf("  netsniff-ng --dev wlan0 --prio-norm --all-hex --type outgoing\n");
 	printf("\n");
 	printf("Note:\n");
 	printf("  This tool is targeted for network developers! You should\n");
 	printf("  be aware of what you are doing and what these options above\n");
-	printf("  mean! Only use this tool in an isolated LAN that you own!\n");
+	printf("  mean!\n");
 	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2009-2011 Daniel Borkmann <daniel@netsniff-ng.org>\n");
@@ -290,8 +288,6 @@ int main(int argc, char **argv)
 	mode.cpu = CPU_UNKNOWN;
 	mode.packet_type = PACKET_ALL;
 	mode.promiscuous = true;
-	mode.encrypt = false;
-	mode.compress = 0;
 	mode.randomize = false;
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
@@ -420,7 +416,7 @@ int main(int argc, char **argv)
 	}
 
 	if (!mode.device_in)
-		mode.device_in = "any";
+		mode.device_in = xstrdup("any");
 
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
@@ -435,11 +431,29 @@ int main(int argc, char **argv)
 		set_sched_status(DEFAULT_SCHED_POLICY, DEFAULT_SCHED_PRIO);
 	}
 
-	/* TODO: mode selection according to device_in and device_out */
-	enter_mode = enter_mode_rx_only;
-	enter_mode(&mode);
+	if (device_mtu(mode.device_in) ||
+	    !strncmp("any", mode.device_in, strlen(mode.device_in))) {
+		if (!mode.device_out)
+			enter_mode = enter_mode_rx_only;
+		else if (device_mtu(mode.device_out))
+			enter_mode = enter_mode_rx_to_tx;
+		else
+			enter_mode = enter_mode_rx_to_pcap;
+	} else {
+		if (device_mtu(mode.device_out))
+			enter_mode = enter_mode_pcap_to_tx;
+		else
+			enter_mode = enter_mode_read_pcap;
+	}
 
+	if (!enter_mode)
+		panic("Selection not supported!\n");
+	enter_mode(&mode);
 	tprintf_cleanup();
+	if (mode.device_in)
+		xfree(mode.device_in);
+	if (mode.device_out)
+		xfree(mode.device_out);
 	return 0;
 }
 

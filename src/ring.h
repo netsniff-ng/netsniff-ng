@@ -10,7 +10,6 @@
 
 /*
  * "I love the smell of 10GbE in the morning. Smells like ... victory."
- *
  *     - W. Richard Stevens, "Secret Teachings of the UNIX Environment"
  */
 
