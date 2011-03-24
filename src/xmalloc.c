@@ -127,7 +127,7 @@ void stacktrace(void)
 	char name[TMPBUFSIZ];
 	struct faddress syms[ADDRESSLISTSIZ + 1];
 	unsigned long addr, hi_addr, lo_addr;
-	pid_t pid;
+	pid_t pid = 0;
 
 	for (i = 0, p = &p; p; ++i) {
 		/*
