@@ -10,6 +10,7 @@
 #define NETDEV_H
 
 #include <linux/ethtool.h>
+#include <linux/if.h>
 #include <linux/wireless.h>
 
 extern int af_socket(int af);

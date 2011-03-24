@@ -53,7 +53,7 @@ ifeq ($(MAKECMDGOALS), debug)
 	CFLAGS += -Wall -Werror -Wundef -Wstrict-prototypes -Wno-trigraphs   \
 		  -Werror-implicit-function-declaration -Wno-format-security \
 		  -Wcomments -Wendif-labels -Wno-long-long -Wstrict-overflow \
-		  -DUSE_BUILTIN -lcl
+		  -DUSE_BUILTIN
 endif
 
 .PHONY: all
