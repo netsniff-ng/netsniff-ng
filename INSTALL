@@ -1,33 +1,30 @@
-What platforms are supported?
-=============================
-
 Currently only operating systems running on Linux kernels with
 CONFIG_PACKET_MMAP enabled. This feature can be found even back
 to the days of 2.4 kernels. Most operating systems ship pre-compiled
 kernels that have this config option enabled and even the latest
 kernel versions got rid of this option and have this functionality
-already built-in. However, we recommend a kernel > 2.6.31.
+already built-in. However, we recommend a kernel >= 2.6.31, because
+the TX_RING is officially integrated since then.
 
 netsniff-ng has been sucessfully tested on x86 and x86_64. Please drop
-us a short mail, if it runs on your hardware other than that.
+us a short mail, if it runs sucessfully on hardware other than that.
 
-What libraries are required?
-============================
+What libraries are required? You'll need libc and libncurses, nothing
+else. It is common, that these libraries are shipped as distribution
+packages for an easy installation.
 
- * libc
- * libncurses
+The installation process is fairly simple:
 
-Installation
-============
+  $ cd netsniff-ng/src/<tool>/
+  $ make deploy
+  # make install
 
-$ cd src/<tool>/
-$ make deploy
-# make install
+Note that by only typing 'make' the binaries are built without optimiztion
+(-O0), so for productive usage, always build with 'make deploy'!
 
-Uninstall
-=========
+The uninstallation process is analogous:
 
-$ cd src/<tool>/
-# make uninstall
-$ make clean
+  $ cd netsniff-ng/src/<tool>/
+  # make uninstall
+  $ make clean
 

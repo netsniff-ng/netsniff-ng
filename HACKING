@@ -1,116 +1,24 @@
-netsniff-ng HACKING
-===================
+Some information about potential netsniff-ng hackers can be found here!
+First of all, you might want to clone our git repository before you start
+hacking on anything:
 
-Some information about potential netsniff-ng hackers!
+ $ git clone git://repo.or.cz/netsniff-ng.git
 
-How to check out netsniff-ng?
-=============================
-
-git clone git://repo.or.cz/netsniff-ng.git
-
-Some ideas of useful contributions/projects
-===========================================
-
-The best way to propose your ideas is to outline them in a short mail to 
-workgroup@netsniff-ng.org or to our public mailing list address 
+The best way to propose your ideas is to outline them in a short mail to
+workgroup@netsniff-ng.org or to our public mailing list address
 netsniff-ng@googlegroups.com. We are looking forward for your proposals!
-Of course, keep in mind that you can mail smaller fixes immediately.
-
-How to make code contributions
-==============================
+Of course, keep in mind that you can mail smaller portions of code like
+bug fixes immediately.
 
 The best way to make a contribution to netsniff-ng is to send us your 
-code in the form of a unified diff against the latest released version 
-and, preferably, the version from Git.
-Your patch should then be sent to bugs@netsniff-ng.org .
-
-To make a unified diff, please follow these instructions:
-   
-1. Remove temporary files:
-    make clean
-
-2. Rename your source tree:
-    cd ..
-    mv netsniff-ng-xxx netsniff-ng-xxx-snazzy-feature
-
-3. Checkout the original netsniff-ng source alongside it:
-    git clone git://repo.or.cz/netsniff-ng.git
-
-4. Generate the diffs:
-    diff -urNb netsniff-ng-xxx netsniff-ng-xxx-snazzy-feature > /tmp/cool.patch
-
-5. Check the patch and remove any unnecessary patches from the file.
-
-6. If you've added several features, it's best to send them as
-   several independent patches if you can.
-
-If you have just patched one or two files, then making patches is even
-easier. For each file, just do:
-
-  cp file.c file.c.orig
-   [Make changes to file.c ...]
-  diff -u file.c.orig file.c > /tmp/file.c.patch
-
-and just send us the patch: /tmp/file.c.patch.
-
-Code Style
-==========
+code in the form of a unified diff against the latest released or
+development version and, preferably, the branch from our Git repository.
+Your patch should then be sent to workgroup@netsniff-ng.org or 
+bugs@netsniff-ng.org.
 
 Before submitting your patch make sure to indent your code appropriate.
-See CODING.
-
-42
-==
+For this, have a look at our coding conventions within the CODING file.
 
 Well, I guess most has been said ... so happy packet hacking! We're looking
-forward for your patches and improvements!
-
-
-                          Here be dragons ...
-                                                  _
-                       /                            )
-                      (                             |\
-                     /|                              \\
-                    //                                \\
-                   ///                                 \|
-                  /( \                                  )\
-                  \\  \_                               //)
-                   \\  :\__                           ///
-                    \\     )                         // \
-                     \\:  /                         // |/
-                      \\ / \                       //  \
-                       /)   \     ___..-'         ((  \_|
-                      //     /  .'  _.'           \ \  \
-                     /|       \(  _\_____          \ | /
-                    (| _ _  __/          '-.       ) /.'
-                     \\ .  '-.__ \          \_    / / \
-                      \\_'.     > '-._   '.   \  / / /
-                       \ \      \     \    \   .' /.'
-                        \ \  '._ /     \  /   / .' |
-                         \ \_     \_   |    .'_/ __/
-                          \  \      \_ |   / /  _/ \_
-                           \  \       / _.' /  /     \
-                           \   |     /.'   / .'       '-,_
-                            \   \  .'   _.'_/             \
-               /\    /\      ) ___(    /_.'           \    |
-              | _\__// \    (.'      _/               |    |
-              \/_  __  /--'`    ,                   __/    /
-              (_ ) /b)  \  '.   :            \___.-:_/ \__/
-              /:/:  ,     ) :        (      /_.'_/-' |_ _ /
-             /:/: __/\ >  __,_.----.__\    /        (/(/(/
-            (_(,_/V .'/--'    _/  __/ |   /
-             VvvV  //`    _.-' _.'     \   \
-               n_n//     (((/->/        |   /
-               '--'         ~='          \  |
-                                          | |_,,,
-                             snd          \  \  /
-                                           '.__)
-
-
-Credits
-=======
-
-The idea of the outline and some general parts for this HACKING file 
-derives from GNet (http://www.gnetlibrary.org/). Generally, I followed 
-the general structure of their HACKING file.
+forward for your patches, ideas and improvements!
 

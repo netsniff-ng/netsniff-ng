@@ -2,12 +2,12 @@ netsniff-ng 0.5.6.0
 
   * netsniff-ng has been completely rewritten
   * Major code cleanups!
-  * New, flexible packet dissector that allows an easy integration of
-    new protocols
-  * New tool 'ifpps' which displays kernel network statistics in a
-    top-like manner, support for wifi
-  * New tool 'trafgen' which is a network packet generator that
-    exploits the kernels zero-copy TX_RING
+  * New, flexible packet dissector that allows an easy integration of new
+    protocols
+  * New tool 'ifpps' which displays kernel network statistics in a top-like
+    manner, support for wifi
+  * New tool 'trafgen' which is a network packet generator that exploits the
+    kernels zero-copy TX_RING
   * New tool 'arphunt' which is a traffic redirection tool
 
  -- Daniel Borkmann, Emmanuel Roullit, xx.xx.2011
@@ -49,14 +49,14 @@ netsniff-ng 0.5.4.0 - 'happy GNU year edition'
   * Added high-resolution timer
   * Fixed small bugs / mem-leaks
   * Major code refactorings
-  * Added SIGHUP ignorance, so for instance netsniff-ng keeps 
-    alive on ssh-sessions
+  * Added SIGHUP ignorance, so for instance netsniff-ng keeps alive on
+    ssh-sessions
   * Added pid output during start
   * Better packet visualization
   * Scheduler tweaks
-  * Setting process affinity to specific CPU on demand (via Param)
-    This can be useful for a patched init proc, so that on demand
-    netsniff-ng can be the only process for a single CPU
+  * Setting process affinity to specific CPU on demand (via Param). This can
+    be useful for a patched init proc, so that on demand netsniff-ng can be
+    the only process for a single CPU
   * -s option can now be switched on and off during runtime via SIGUSR2
   * Option for running netsniff-ng in non-blocking mode
 

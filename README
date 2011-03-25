@@ -1,98 +1,46 @@
-What is netsniff-ng?
-====================
+netsniff-ng is is a free, performant Linux network analyzer and networking
+toolkit [1].
 
-netsniff-ng is a high performance Linux network sniffer for packet
-inspection.
+The gain of performance is reached by 'zero-copy' mechanisms, so that the
+kernel does not need to copy packets from kernelspace to userspace and vice
+versa.
 
-Basically it is similar to analyzers like tcpdump, but without the
-need to perform system calls for fetching network packets. A memory
-mapped area within kernelspace will be used for accessing packets,
-thus there is no requirement for copying them to userspace ('zero-copy'
-mechanism). For this purpose netsniff-ng is libpcap independent, but
-nevertheless supports the pcap file format for capturing, replaying and
-performing offline-analysis of pcap dumps. Furthermore we are focussing
-on building a robust, clean and secure analyzer and utilities that
-complete netsniff-ng as a support for penetration testing.
+For this purpose netsniff-ng is libpcap independent, but nevertheless supports
+the pcap file format for capturing, replaying and performing offline-analysis
+of pcap dumps. Furthermore we are focussing on building a robust, clean and
+secure analyzer and utilities that complete netsniff-ng as a support for
+penetration testing.
 
-netsniff-ng can be used for protocol analysis, reverse engineering and
-network debugging. 
+netsniff-ng can be used for protocol analysis, reverse engineering and network
+debugging and currently consists of the following tools:
 
-Some use cases and features
-===========================
+  * netsniff-ng: the 'zero-copy' sniffer itself
+  * trafgen: a powerful 'zero-copy' network packet generator
+  * ifpps: a top-like kernel networking statistics tool
+  * arphunt: an ARP cache poisoning utility
 
-* Open source project and free licensing
-* Analizing and debugging of network problems or protocol implementations
-* Reverse engineering of (proprietary) network protocols
-* Dumping, replaying and offline analysis of pcap traces
-* Integrated high performance capabilities
-* Focus on usability, robustness, security and functionality
-* Support utility for penetration testing
-* Regular expression based grepping of specific packet information
-* Monitoring of network usage
-* Network statistic creation (e.g. for Nagios)
+For any questions or feedback about netsniff-ng you are welcome to leave us a
+message to <workgroup@netsniff-ng.org>. This project is purely non-commercial
+and will always stay that way! netsniff-ng is developed by Daniel Borkmann and
+Emmanuel Roullit.
 
-What are the main goals?
-========================
+Also, have a look at our FAQ [2] for answering your questions. Furthermore,
+we have a development blog [3] where we sometimes drop some interesting things
+or news for the outside world! A public repository of the old stable releases
+(which you probably do not want to have a look at), can be found here [4]. A 
+probably not so much up-to-date benchmark is available to the public [5], too.
 
-netsniff-ngs main goal is to be a high performance network sniffer that
-focuses on usability, robustness and functionality. Its aim is to support
-the daily work for networking engineers, developers, admins or Linux
-users by providing support with or in network monitoring, protocol
-analysis, reverse engineering, network debugging and penetration testing.
+Sometimes we also hang out in IRC at #netsniff-ng on freenode.org. A mailing
+list for netsniff-ng moderated (spam free) user discussions is open to the
+public, too. Subscribe and mail to <netsniff-ng@googlegroups.com>.
 
-Homepage
-========
+You might want to have a look at NOTE, INSTALL, REPORTING-BUGS, HACKING,
+CODING and COPYING, too. Good lord, so much to read! Anyways, enough talking
+from my side and happy packet hacking! 
 
-You can reach us via http://www.netsniff-ng.org/.
-
-Installation
-============
-
-For installation instructions, have a look at INSTALL.
-
-Development
-===========
-
-There's a public Git repository at http://repo.or.cz/w/netsniff-ng.git
-where you can check out the latest code base.
-
-git clone git://repo.or.cz/netsniff-ng.git
-
-Note that there is also a HACKING and TODO file for further readings. Next to 
-this we've set up a FAQ page with development questions at 
-http://netsniff-ng.org/faq.html.
-
-Our coding conventions can be found in CODING.
-
-Contact
-=======
-
-For questions:
-    <workgroup@netsniff-ng.org>,
-    <netsniff-ng@googlegroups.com>,
-    http://netsniff-ng.org/faq.html
-    #netsniff-ng on freenode.org
-
-For bugs:
-    <bugs@netsniff-ng.org>,
-    http://github.com/eroullit/netsniff-ng/issues/
-
-For improvements, hacks and all the rest:
-    <workgroup@netsniff-ng.org>
-
-Website:
-    http://www.netsniff-ng.org/
-
-IRC:
-    #netsniff-ng on freenode.org
-
-Hosted on and associated with:
-    http://www.gnumaniacs.org/
-
-In honorem ...
-==============
-
-Leipzig University of Applied Science, 
-Faculty of Computer Science, Mathematics and Natural Sciences
-http://www.imn.htwk-leipzig.de/
+[1] http://netsniff-ng.org/
+[2] http://netsniff-ng.org/faq.html
+[3] http://dev.netsniff-ng.org/
+[4] http://pub.netsniff-ng.org/
+[5] http://netsniff-ng.org/bench.html
 
