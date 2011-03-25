@@ -4,7 +4,9 @@ speed) PCAP dumping and replay, a fast SSD isn't too bad either.
 Next to this, (and this refers to packet generation as well), a 
 10-Gbit/s-Ethernet NIC, an appropriate amount of RAM and a fast CPU
 is recommended. Furthermore, you should bind the netsniff-ng tools
-to a specific CPU via commandline option (i.e. --bind 0).
+to a specific CPU via commandline option (i.e. --bind 0). Some
+further recommendations can be found here [2].
 
 [1] http://www.linuxfoundation.org/collaborate/workgroups/networking/napi
+[2] http://datatag.web.cern.ch/datatag/howto/tcp.html
 
