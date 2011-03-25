@@ -17,7 +17,6 @@ debugging and currently consists of the following tools:
   * netsniff-ng: the 'zero-copy' sniffer itself
   * trafgen: a powerful 'zero-copy' network packet generator
   * ifpps: a top-like kernel networking statistics tool
-  * arphunt: an ARP cache poisoning utility
 
 For any questions or feedback about netsniff-ng you are welcome to leave us a
 message to <workgroup@netsniff-ng.org>. This project is purely non-commercial
