@@ -146,10 +146,10 @@ Further networking tools are being shipped<sup>[<a name="id777" href="#ftn.id777
 <ul>
   <li>Open source project and free licensing</li>
   <li>Analizing and debugging of network problems or protocol implementations</li>
-  <li>Reverse engineering of (proprietary) network protocols</li>
+  <li>Reverse engineering of (i.e. proprietary) network protocols</li>
   <li>Dumping, replaying and offline analysis of pcap traces</li>
-  <li>Integrated <i>high performance capabilities</i></li>
-  <li>Focus on <i>usability</i>, <i>robustness</i>, <i>security</i> and <i>functionality</i></li>
+  <li>Integrated high performance capabilities</li>
+  <li>Focus on usability, robustness, security and functionality</li>
   <li>Support utility for penetration testing</li>
   <li>Regular expression based grepping of specific packet information</li>
   <li>Monitoring of network usage</li>
@@ -187,9 +187,9 @@ write an e-mail to <script type="text/javascript">InsertMail("bugs", "netsniff-n
 By the time, netsniff-ng will grow into a networking toolkit for developers, administrators and advanced users. On the <i>long</i> term, we plan to do research and development within the following areas:
 <ul>
   <li>Zero-copy mechanisms for network packets</li>
-  <li>ARP cache poisoning techniques for packet reception in a switched LAN</li>
   <li>Network traffic anomaly analysis on routers or bridges</li>
   <li>User-friendly Qdisc management tooling</li>
+  <li>Secure IP-tunneling</li>
   <li>Berkeley Packet Filter compiler with multi-language support</li>
   <li>Powerful packet analysis, replaying and traffic generation</li>
 </ul>
@@ -198,13 +198,13 @@ By the time, netsniff-ng will grow into a networking toolkit for developers, adm
 <h2>Documentation</h2>
 <p>
 The <a href="doc/netsniff-ng.html">manpage</a> (<a href="doc/netsniff-ng.pdf">PDF</a>) of each stable release of netsniff-ng will cover all of the usage details. We also have a <a href="faq.html">frequently asked question</a> page. Furthermore, you might want to have a look at some 
-<a href="bench.html">benchmarks</a> of <i>RX_RING</i> versus the usual <i>recvfrom(2)</i>.
+<a href="bench.html">benchmarks</a> of the TX_RING and RX_RING versus the usual recvfrom(2).
 </p>
 <p>
 To dig into the inner workings of the Berkeley Packet Filter architecture have a look at <a href="bpf.pdf">this</a>.
 </p>
 <p>
-Documentation about the packet_mmap architecture with pf_packet sockets for the Linux kernel can be downloaded from <a href="http://www.kernel.org/">http://www.kernel.org/</a> under <i>Documentation/networking/packet_mmap.txt</i>.
+Documentation about the packet_mmap architecture with pf_packet sockets for the Linux kernel can be downloaded from <a href="http://www.kernel.org/">http://www.kernel.org/</a> under <a href="http://lingrok.org/source/xref/linux-2.6-linus/Documentation/networking/packet_mmap.txt">packet_mmap.txt</a>.
 </p>
 
 <h2>Support</h2>
@@ -235,7 +235,7 @@ Furthermore there is an official irc-channel located on <a href="http://freenode
 
 <h2>Distributions</h2>
 <p>
-Some stable distribution specific packages may also be obtained for
+Some stable and probably deprecated distribution specific packages may also be obtained for distributions like
 <ul>
   <li><a href="http://packages.debian.org/search?keywords=netsniff-ng">Debian</a></li>
   <li><a href="http://grml.org/">GRML</a></li>
@@ -257,15 +257,15 @@ For any questions or feedback about netsniff-ng you are welcome to leave us a me
 
 <h2>Contribute</h2>
 <p>
-<i>If you think this software is good, then please consider donating your money to the <a href="http://www.tibet-foundation.org/">Tibet Foundation</a> instead to us.</i>
+If you think this software is good, then please consider donating your money to the <a href="http://www.tibet-foundation.org/">Tibet Foundation</a> instead to us.
 <br><br>
-If you'd like to help otherwise, we'd like to see people to:
+If you'd like to help otherwise, we'd like to see more people to:
 <ul>
-  <li>Test netsniff-ng on their specific platforms</li>
   <li>Maintain distribution specific packages</li>
+  <li>Test netsniff-ng on their specific platforms</li>
   <li>Adding or updating documentation</li>
   <li>Contribute to the source code</li>
-  <li>Donate hardware</li>
+  <li>Donate hardware, networking equipment, especially 10-Gbit/s-Ethernet</li>
 </ul>
 </p>
 
@@ -291,9 +291,9 @@ Check out <a href="http://lingrok.org">LinGrok</a>, <a href="http://netyack.org"
 <table border="0" width="90%">
 <tr>
   <td>
-    <address>Copyright (C) 2009, 2010 <a href="http://daniel.netsniff-ng.org">Daniel Borkmann</a> 
+    <address>Copyright (C) 2009-2011 <a href="http://daniel.netsniff-ng.org">Daniel Borkmann</a> 
     <script type="text/javascript">InsertMail("daniel", "netsniff-ng", "org");</script> 
-    <i>and</i>
+    and
     <a href="http://emmanuel.netsniff-ng.org">Emmanuel Roullit</a> 
     <script type="text/javascript">InsertMail("emmanuel", "netsniff-ng", "org");</script>
     </address>
