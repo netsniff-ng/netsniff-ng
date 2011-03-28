@@ -18,6 +18,7 @@ lib-objs   = xmalloc.o                  \
 	     ecc.o                      \
 	     numtheory.o                \
 	     serialize.o                \
+	     stun.o                     \
 	     netdev.o
 
 #	     tlsf.o                     \

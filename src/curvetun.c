@@ -1,9 +1,6 @@
 /*
- * netsniff-ng - the packet sniffing beast
- * Portions of this code derived and modified from:
- *  Copyright 2009 Bertram Poettering <seccure@point-at-infinity.org>
- *  All subject to the GPL, version 2.
  * curvetun - the cipherspace wormhole creator
+ * Part of the netsniff-ng project
  * By Daniel Borkmann <daniel@netsniff-ng.org>
  * Copyright 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,
  * Swiss federal institute of technology (ETH Zurich)
@@ -14,7 +11,6 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <string.h>
-#include <syslog.h>
 #include <ctype.h>
 #include <getopt.h>
 #include <errno.h>
@@ -23,9 +19,11 @@
 #include "xmalloc.h"
 #include "netdev.h"
 #include "version.h"
+#include "stun.h"
 #include "error_and_die.h"
 #include "strlcpy.h"
 #include "signals.h"
+#include "tundev.h"
 
 enum working_mode {
 	MODE_UNKNOW,
@@ -142,16 +140,19 @@ static void version(void)
 
 int main_keygen(void)
 {
+	info("keygen\n");
 	return 0;
 }
 
 int main_client(enum client_mode cmode)
 {
+	info("client\n");
 	return 0;
 }
 
 int main_server(int port)
 {
+	info("server\n");
 	return 0;
 }
 
@@ -210,6 +211,8 @@ int main(int argc, char **argv)
 	register_signal(SIGSEGV, muntrace_handler);
 
 	header();
+	//XXX only for testing here
+	print_stun_probe("stun.voxgratia.org", 3478, 6666);
 
 	switch (wmode) {
 	case MODE_KEYGEN:
