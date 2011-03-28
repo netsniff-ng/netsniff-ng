@@ -1,7 +1,6 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * Portions of this code derived and modified from:
- *  Copyright 1998-2000 Maxim Krasnyansky <max_mk@yahoo.com>
  *  Copyright 2009 Bertram Poettering <seccure@point-at-infinity.org>
  *  All subject to the GPL, version 2.
  * curvetun - the cipherspace wormhole creator
@@ -13,7 +12,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
 #include <syslog.h>
@@ -21,15 +19,8 @@
 #include <getopt.h>
 #include <errno.h>
 #include <stdbool.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <linux/if.h>
-#include <linux/if_tun.h>
 
 #include "xmalloc.h"
-#include "system.h"
 #include "netdev.h"
 #include "version.h"
 #include "error_and_die.h"
@@ -119,6 +110,11 @@ static void help(void)
 	printf("   ~/.curvetun/pub.key      - Your public key\n");
 	printf("   ~/.curvetun/username     - Your username\n");
 	printf("\n");
+	printf("Note:\n");
+	printf("  There is no default port specified, so that users are forced\n");
+	printf("  to select their own!\n");
+	printf("  Elliptic Curve Crypto powered by Bertram Poettering's SECCURE\n");
+	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
 	printf("Swiss federal institute of technology (ETH Zurich)\n");
@@ -143,70 +139,6 @@ static void version(void)
 
 	die();
 }
-
-#if 0
-static int __tun_open_or_die(void)
-{
-	int i, fd;
-	char tunname[IFNAMSIZ];
-
-	for (i = 0; i < 255; ++i) {
-		memset(tunname, 0, sizeof(tunname));
-		sprintf(tunname, "/dev/tun%d", i);
-
-		fd = open(tunname, O_RDWR);
-		if (fd > 0)
-			return fd;
-	}
-
-	panic("Cannot open tunnel device!\n");
-	return 0; /* never reached, but to suppress compiler warning */
-}
-
-#ifndef OTUNSETIFF
-# define OTUNSETIFF (('T' << 8) | 202)
-#endif
-
-static int tun_open_or_die(void)
-{
-	int fd, ret;
-	struct ifreq ifr;
-
-	fd = open("/dev/net/tun", O_RDWR);
-	if (fd < 0)
-		return __tun_open_or_die();
-
-	memset(&ifr, 0, sizeof(ifr));
-	ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
-
-	ret = ioctl(fd, TUNSETIFF, &ifr);
-	if (ret < 0) {
-		if (errno == EBADFD) {
-			ret = ioctl(fd, OTUNSETIFF, &ifr);
-			if (ret < 0)
-				panic("ioctl screwed up!\n");
-		} else
-			panic("ioctl screwed up!\n");
-	}
-
-	return fd;
-}
-
-static inline ssize_t tun_write(int fd, const void *buf, size_t count)
-{
-	return write(fd, buf, count);
-}
-
-static inline int tun_read(int fd, void *buf, size_t count)
-{
-	return read(fd, buf, count);
-}
-
-static inline void tun_close(int fd)
-{
-	close(fd);
-}
-#endif
 
 int main_keygen(void)
 {

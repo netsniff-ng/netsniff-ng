@@ -12,7 +12,7 @@ LIBS       = -lgcrypt
 core-objs  = curvetun.o
 lib-objs   = xmalloc.o                  \
 	     strlcpy.o                  \
-	     system.o                   \
+	     tundev.o                   \
 	     netdev.o
 
 target     = curvetun

@@ -9,6 +9,7 @@
 #ifndef NETDEV_H
 #define NETDEV_H
 
+#include <sys/socket.h>
 #include <linux/ethtool.h>
 #include <linux/if.h>
 #include <linux/wireless.h>
