@@ -5,8 +5,8 @@
  * Subject to the GPL.
  */
 
-#ifndef ERROR_AND_DIE_H
-#define ERROR_AND_DIE_H
+#ifndef DIE_H 
+#define DIE_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <unistd.h>
 
+#include "compiler.h"
 #include "tty.h"
 #include "xmalloc.h"
 
@@ -78,6 +79,21 @@ static inline void BUG(char *msg, ...)
 
 	stacktrace();
 	die();
+}
+
+static inline void BUG_ON(int cond, char *msg, ...)
+{
+	va_list vl;
+
+	if (unlikely(cond)) {
+		whine("BUG: ");
+		va_start(vl, msg);
+		vfprintf(stderr, msg, vl);
+		va_end(vl);
+
+		stacktrace();
+		die();
+	}
 }
 
 static inline void info(char *msg, ...)
@@ -222,4 +238,4 @@ static inline void puke_and_die(int status, char *msg, ...)
 	exit(status);
 }
 
-#endif /* ERROR_AND_DIE_H */
+#endif /* DIE_H */

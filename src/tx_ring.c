@@ -17,7 +17,7 @@
 #include <linux/if_ether.h>
 
 #include "xmalloc.h"
-#include "error_and_die.h"
+#include "die.h"
 #include "tx_ring.h"
 
 #ifdef HAVE_TX_RING

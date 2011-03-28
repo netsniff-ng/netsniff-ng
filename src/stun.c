@@ -18,7 +18,7 @@
 #include <arpa/inet.h>
 #include <sys/select.h>
 
-#include "error_and_die.h"
+#include "die.h"
 #include "xmalloc.h"
 #include "stun.h"
 #include "timespec.h"

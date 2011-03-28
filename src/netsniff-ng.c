@@ -24,7 +24,7 @@
 #include "bpf.h"
 #include "version.h"
 #include "signals.h"
-#include "error_and_die.h"
+#include "die.h"
 #include "tprintf.h"
 #include "dissector.h"
 #include "xmalloc.h"

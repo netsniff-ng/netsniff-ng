@@ -20,7 +20,7 @@
 #include <linux/if_tun.h>
 
 #include "tundev.h"
-#include "error_and_die.h"
+#include "die.h"
 
 static int __tun_open_or_die(void)
 {

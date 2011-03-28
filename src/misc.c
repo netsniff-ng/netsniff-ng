@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 
-#include "error_and_die.h"
+#include "die.h"
 
 void check_for_root_maybe_die(void)
 {

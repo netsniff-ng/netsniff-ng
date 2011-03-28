@@ -13,7 +13,7 @@
 
 #include "tty.h"
 #include "tprintf.h"
-#include "error_and_die.h"
+#include "die.h"
 
 static char buffer[1024];
 static size_t buffer_use = 0;

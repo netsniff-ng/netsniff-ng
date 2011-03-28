@@ -20,7 +20,7 @@
 #include "netdev.h"
 #include "version.h"
 #include "stun.h"
-#include "error_and_die.h"
+#include "die.h"
 #include "strlcpy.h"
 #include "signals.h"
 #include "tundev.h"

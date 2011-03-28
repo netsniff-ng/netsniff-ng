@@ -15,7 +15,7 @@
 #include "io.h"
 #include "io_pcap.h"
 #include "write_or_die.h"
-#include "error_and_die.h"
+#include "die.h"
 
 __must_check int pcap_write_file_header(int fd, uint32_t linktype,
 					int32_t thiszone, uint32_t snaplen)

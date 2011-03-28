@@ -34,7 +34,7 @@
 
 #include "bpf.h"
 #include "xmalloc.h"
-#include "error_and_die.h"
+#include "die.h"
 
 /*
  * The instruction encodings.

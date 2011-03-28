@@ -16,7 +16,7 @@
 #include <linux/if_ether.h>
 
 #include "xmalloc.h"
-#include "error_and_die.h"
+#include "die.h"
 #include "rx_ring.h"
 
 void destroy_rx_ring(int sock, struct ring *ring)

@@ -14,7 +14,7 @@
 #include <sys/poll.h>
 #include <sys/socket.h>
 
-#include "error_and_die.h"
+#include "die.h"
 
 #ifndef POLLRDNORM
 # define POLLRDNORM 0x0040

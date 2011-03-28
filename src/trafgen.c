@@ -25,7 +25,7 @@
 
 #include "xmalloc.h"
 #include "strlcpy.h"
-#include "error_and_die.h"
+#include "die.h"
 #include "netdev.h"
 #include "psched.h"
 #include "misc.h"

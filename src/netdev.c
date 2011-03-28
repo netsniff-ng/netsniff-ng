@@ -23,7 +23,7 @@
 #include <linux/sockios.h>
 
 #include "netdev.h"
-#include "error_and_die.h"
+#include "die.h"
 #include "strlcpy.h"
 
 int af_socket(int af)

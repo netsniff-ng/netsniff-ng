@@ -16,9 +16,9 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "error_and_die.h"
+#include "die.h"
 #include "xmalloc.h"
-#include "sched.h"
+#include "psched.h"
 #include "misc.h"
 #include "timespec.h"
 #include "tty.h"

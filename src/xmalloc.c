@@ -49,7 +49,7 @@
 #include "compiler.h"
 #include "strlcpy.h"
 #include "tty.h"
-#include "error_and_die.h"
+#include "die.h"
 
 struct faddress {
 	unsigned long real_addr;

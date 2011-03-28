@@ -15,7 +15,7 @@
 #include <fcntl.h>
 
 #include "write_or_die.h"
-#include "error_and_die.h"
+#include "die.h"
 
 void fsync_or_die(int fd, const char *msg)
 {

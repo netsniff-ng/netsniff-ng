@@ -16,7 +16,7 @@
 #include <errno.h>
 
 #include "psched.h"
-#include "error_and_die.h"
+#include "die.h"
 
 static inline const char *next_token(const char *q, int sep)
 {
