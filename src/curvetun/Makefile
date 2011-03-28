@@ -1,21 +1,21 @@
 #
-# Makefile for ifpps-ng
+# Makefile for curvetun
 # Author: Daniel Borkmann
 #
 
 include ../definitions.mk
 
 INCLUDE    = -I..
-CFLAGS    += -DTARGETNAME="\"ifpps\""
-LIBS       = -lncurses
+CFLAGS    += -DTARGETNAME="\"curvetun\""
+LIBS       = -lgcrypt
 
-core-objs  = ifpps.o
+core-objs  = curvetun.o
 lib-objs   = xmalloc.o                  \
 	     strlcpy.o                  \
-	     misc.o                     \
+	     system.o                   \
 	     netdev.o
 
-target     = ifpps
+target     = curvetun
 
 all: clean gen-version build doc
 debug: all
@@ -32,7 +32,7 @@ strip:
 
 doc:
 	@cd ../../Documentation && make clean
-	@cd ../../Documentation && make ifpps
+	@cd ../../Documentation && make curvetun
 	@cp ../../Documentation/man/* .
 	@cp ../../Documentation/pdf/* .
 	@cp ../../Documentation/html/* .
@@ -56,12 +56,12 @@ help:
 	@echo 'Cleaning targets:'
 	@echo '  clean           - Remove generated files'
 	@echo 'Building targets:'
-	@echo '  all             - Build ifpps (default)'
-	@echo '  debug           - Build ifpps for debugging _only_'
-	@echo '  deploy          - Build ifpps for productive use'
+	@echo '  all             - Build curvetun (default)'
+	@echo '  debug           - Build curvetun for debugging _only_'
+	@echo '  deploy          - Build curvetun for productive use'
 	@echo 'Setup targets:'
-	@echo '  install         - Install ifpps'
-	@echo '  uninstall       - Uninstall ifpps'
+	@echo '  install         - Install curvetun'
+	@echo '  uninstall       - Uninstall curvetun'
 	@echo 'Other targets:'
 	@echo '  help            - Print this help'
 

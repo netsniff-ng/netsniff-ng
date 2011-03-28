@@ -1,10 +1,12 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
- * Copyright 2009, 2010 Daniel Borkmann.
+ * Copyright 2009-2011 Daniel Borkmann.
  * Copyright 2010 Emmanuel Roullit.
  * Subject to the GPL.
  */
+
+/* Process RT scheduling */
 
 #define _GNU_SOURCE
 #include <stdio.h>
@@ -13,7 +15,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "system.h"
+#include "psched.h"
 #include "error_and_die.h"
 
 static inline const char *next_token(const char *q, int sep)
@@ -78,7 +80,7 @@ int set_cpu_affinity(const char *str, int inverted)
 	ret = sched_setaffinity(getpid(), sizeof(cpu_bitmask),
 				&cpu_bitmask);
 	if (ret)
-		error_and_die(EXIT_FAILURE, "Can't set this cpu affinity!\n");
+		panic("Can't set this cpu affinity!\n");
 	return 0;
 }
 
@@ -114,8 +116,7 @@ int set_proc_prio(int priority)
 	 */
 	int ret = setpriority(PRIO_PROCESS, getpid(), priority);
 	if (ret)
-		error_and_die(EXIT_FAILURE, "Can't set nice val to %i!\n",
-			      priority);
+		panic("Can't set nice val to %i!\n", priority);
 	return 0;
 }
 
@@ -152,8 +153,3 @@ int set_sched_status(int policy, int priority)
 	return 0;
 }
 
-void check_for_root_maybe_die(void)
-{
-	if (geteuid() != 0)
-		error_and_die(EXIT_FAILURE, "Uhhuh, not root?!\n");
-}

@@ -12,7 +12,8 @@ LIBS       =
 core-objs  = trafgen.o
 lib-objs   = xmalloc.o                  \
 	     strlcpy.o                  \
-	     system.o                   \
+	     psched.o                   \
+	     misc.o                     \
 	     mtrand.o                   \
 	     write_or_die.o             \
 	     tx_ring.o                  \

@@ -18,7 +18,8 @@
 
 #include "error_and_die.h"
 #include "xmalloc.h"
-#include "system.h"
+#include "sched.h"
+#include "misc.h"
 #include "timespec.h"
 #include "tty.h"
 #include "version.h"

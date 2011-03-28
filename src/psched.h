@@ -6,8 +6,8 @@
  * Subject to the GPL.
  */
 
-#ifndef SYSTEM_H
-#define SYSTEM_H
+#ifndef PSCHED_H
+#define PSCHED_H
 
 #include <unistd.h>
 #include <sched.h>
@@ -24,6 +24,5 @@ extern int set_cpu_affinity(const char *str, int inverted);
 extern char *get_cpu_affinity(char *cpu_string, size_t len);
 extern int set_proc_prio(int prio);
 extern int set_sched_status(int policy, int priority);
-extern void check_for_root_maybe_die(void);
 
-#endif /* SYSTEM_H */
+#endif /* PSCHED_H */

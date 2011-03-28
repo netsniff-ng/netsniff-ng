@@ -16,8 +16,10 @@ lib-objs   = hash.o                  \
 	     xmalloc.o               \
 	     strlcpy.o               \
 	     bpf.o                   \
-	     system.o                \
-	     pcap.o                  \
+	     psched.o                \
+	     misc.o                  \
+	     io.o                    \
+	     io_pcap.o               \
 	     write_or_die.o          \
 	     rx_ring.o               \
 	     tx_ring.o               \

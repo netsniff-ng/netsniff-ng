@@ -6,8 +6,8 @@
  * Subject to the GPL.
  */
 
-#ifndef PCAP_H
-#define PCAP_H
+#ifndef IO_PCAP_H
+#define IO_PCAP_H
 
 #include <sys/time.h>
 #include <linux/if_packet.h>
@@ -90,4 +90,4 @@ static inline void pcap_pkthdr_to_tpacket_hdr(struct pcap_pkthdr *phdr,
 	thdr->tp_len = phdr->len;
 }
 
-#endif /* PCAP_H */
+#endif /* IO_PCAP_H */

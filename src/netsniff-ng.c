@@ -28,7 +28,8 @@
 #include "tprintf.h"
 #include "dissector.h"
 #include "xmalloc.h"
-#include "system.h"
+#include "psched.h"
+#include "misc.h"
 
 #define CPU_UNKNOWN  -1
 #define CPU_NOTOUCH  -2
@@ -39,6 +40,7 @@ struct mode {
 	char *device_out;
 	char *filter;
 	int cpu;
+	int dump;
 	/* dissector */
 	int link_type;
 	int print_mode;
@@ -107,12 +109,7 @@ void enter_mode_read_pcap(struct mode *mode)
 	printf("pcap\n");
 }
 
-void enter_mode_rx_to_pcap(struct mode *mode)
-{
-	printf("rx->pcap\n");
-}
-
-void enter_mode_rx_only(struct mode *mode)
+void enter_mode_rx_only_or_dump(struct mode *mode)
 {
 	int sock, irq, ifindex;
 	unsigned int size, it = 0;
@@ -340,8 +337,7 @@ int main(int argc, char **argv)
 			else if (!strncmp(ptr, "GB", strlen("GB")))
 				mode.reserve_size = 1 << 30;
 			else
-				error_and_die(EXIT_FAILURE, "Syntax error in "
-					      "ring size param!\n");
+				panic("Syntax error in ring size param!\n");
 
 			*ptr = 0;
 			mode.reserve_size *= atoi(optarg);
@@ -401,14 +397,13 @@ int main(int argc, char **argv)
 			case 'b':
 			case 'B':
 			case 'e':
-				error_and_die(EXIT_FAILURE, "Option -%c "
-					      "requires an argument!\n",
-					      optopt);
+				panic("Option -%c requires an argument!\n",
+				      optopt);
 			default:
 				if (isprint(optopt))
 					whine("Unknown option character "
 					      "`0x%X\'!\n", optopt);
-				exit(EXIT_FAILURE);
+				die();
 			}
 		default:
 			break;
@@ -433,12 +428,15 @@ int main(int argc, char **argv)
 
 	if (device_mtu(mode.device_in) ||
 	    !strncmp("any", mode.device_in, strlen(mode.device_in))) {
-		if (!mode.device_out)
-			enter_mode = enter_mode_rx_only;
-		else if (device_mtu(mode.device_out))
+		if (!mode.device_out) {
+			mode.dump = 0;
+			enter_mode = enter_mode_rx_only_or_dump;
+		} else if (device_mtu(mode.device_out))
 			enter_mode = enter_mode_rx_to_tx;
-		else
-			enter_mode = enter_mode_rx_to_pcap;
+		else {
+			mode.dump = 1;
+			enter_mode = enter_mode_rx_only_or_dump;
+		}
 	} else {
 		if (device_mtu(mode.device_out))
 			enter_mode = enter_mode_pcap_to_tx;
