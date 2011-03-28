@@ -13,7 +13,14 @@ core-objs  = curvetun.o
 lib-objs   = xmalloc.o                  \
 	     strlcpy.o                  \
 	     tundev.o                   \
+	     aes256ctr.o                \
+	     curves.o                   \
+	     ecc.o                      \
+	     numtheory.o                \
+	     serialize.o                \
 	     netdev.o
+
+#	     tlsf.o                     \
 
 target     = curvetun
 

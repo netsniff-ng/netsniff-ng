@@ -20,13 +20,6 @@
 #define TLSF_H
 
 #include <sys/types.h>
-#include <pthread.h>
-
-#define TLSF_MLOCK_T            pthread_mutex_t
-#define TLSF_CREATE_LOCK(l)     pthread_mutex_init (l, NULL)
-#define TLSF_DESTROY_LOCK(l)    pthread_mutex_destroy(l)
-#define TLSF_ACQUIRE_LOCK(l)    pthread_mutex_lock(l)
-#define TLSF_RELEASE_LOCK(l)    pthread_mutex_unlock(l)
 
 extern size_t init_memory_pool(size_t, void *);
 extern size_t get_used_size(void *);
