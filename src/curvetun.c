@@ -91,13 +91,13 @@ static void help(void)
 	printf(" Server settings:\n");
 	printf("  -s|--server             Server mode\n");
 	printf("  -p|--port <num>         Port number (mandatory)\n");
-	printf("  -t|--stun <server:port> Show public IP/Port mapping via STUN\n");
+	printf("  -t|--stun <server>      Show public IP/Port mapping via STUN\n");
 	printf(" Misc:\n");
 	printf("  -v|--version            Print version\n");
 	printf("  -h|--help               Print this help\n");
 	printf("\n");
 	printf("Example:\n");
-	printf("  Server: curvetun --server --port 6666\n");
+	printf("  Server: curvetun --server --port 6666 --stun stun.ekiga.net\n");
 	printf("  Client: curvetun --client --mode random\n");
 	printf("  Where both participants have the following files specified:\n");
 	printf("   ~/.curvetun/clients      - Participants the server accepts\n");
@@ -158,7 +158,9 @@ int main_server(int port)
 
 int main(int argc, char **argv)
 {
-	int c, opt_index, port;
+	int c, opt_index;
+	uint16_t port, stun_port = 3478; /* Future: via --stun */
+	char *stun = NULL;
 	enum working_mode wmode = MODE_UNKNOW;
 	enum client_mode cmode = MODE_ALL_RANDOM;
 
@@ -183,12 +185,16 @@ int main(int argc, char **argv)
 		case 's':
 			wmode = MODE_SERVER;
 			break;
+		case 't':
+			stun = xstrdup(optarg);
+			break;
 		case 'p':
 			port = atoi(optarg);
 			break;
 		case '?':
 			switch (optopt) {
 			case 'm':
+			case 't':
 			case 'p':
 				panic("Option -%c requires an argument!\n",
 				      optopt);
@@ -211,8 +217,6 @@ int main(int argc, char **argv)
 	register_signal(SIGSEGV, muntrace_handler);
 
 	header();
-	//XXX only for testing here
-	print_stun_probe("stun.voxgratia.org", 3478, 6666);
 
 	switch (wmode) {
 	case MODE_KEYGEN:
@@ -222,6 +226,12 @@ int main(int argc, char **argv)
 		main_client(cmode);
 		break;
 	case MODE_SERVER:
+		if (port == 0)
+			panic("No port specified!\n");
+		if (stun) {
+			print_stun_probe(stun, stun_port, port);
+			xfree(stun);
+		}
 		main_server(port);
 		break;
 	default:

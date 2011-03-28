@@ -210,7 +210,7 @@ static int stun_test(const char *server_ip, uint16_t server_port,
 			break;
 
 		in.s_addr = addr->ip;
-		info("Public mapping %s:%u!", inet_ntoa(in), ntohs(addr->port));
+		info("Public mapping %s:%u!\n", inet_ntoa(in), ntohs(addr->port));
 		break;
 next:
 		off += 4;
