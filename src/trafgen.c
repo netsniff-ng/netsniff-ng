@@ -231,7 +231,8 @@ static void tx_tgap_or_die(struct mode *mode, struct pktconf *cfg)
 
 	mtu = device_mtu(mode->device);
 	for (l = 0; l < cfg->len; ++l) {
-		if (cfg->pkts[l].plen > mtu)
+		/* eth src + eth dst + type == 14, fcs added by driver */
+		if (cfg->pkts[l].plen > mtu + 14)
 			panic("Device MTU < than your packet size!\n");
 		if (cfg->pkts[l].plen <= 14)
 			panic("Device packet size too short!\n");
@@ -316,7 +317,8 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 
 	mtu = device_mtu(mode->device);
 	for (l = 0; l < cfg->len; ++l) {
-		if (cfg->pkts[l].plen > mtu)
+		/* eth src + eth dst + type == 14, fcs added by driver */
+		if (cfg->pkts[l].plen > mtu + 14)
 			panic("Device MTU < than your packet size!\n");
 		if (cfg->pkts[l].plen <= 14)
 			panic("Device packet size too short!\n");

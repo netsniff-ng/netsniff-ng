@@ -5,14 +5,15 @@
 # Subject to the GPL.
 # Configuration file generator for trafgen.
 # Generates IMIX packet distribution (64:7, 570:4, 1518:1)
+# In lengths the Frame Check Sequence of 4 Byte is not counted
 
 use warnings;
 use strict;
 
 my %conf = (
-	64   => 7,
-	570  => 4,
-	1518 => 1
+	60   => 7, # 64   - 4
+	566  => 4, # 570  - 4
+	1514 => 1  # 1518 - 4
 );
 
 print "# Run in round-robin mode with trafgen!\n";

@@ -5,14 +5,15 @@
 # Subject to the GPL.
 # Configuration file generator for trafgen.
 # Generates RPR Trimodal packet distribution (64:60, 512:20, 1518:20)
+# In lengths the Frame Check Sequence of 4 Byte is not counted
 
 use warnings;
 use strict;
 
 my %conf = (
-	64   => 60,
-	512  => 20,
-	1518 => 20
+	60   => 60, # 64   - 4
+	508  => 20, # 512  - 4
+	1514 => 20  # 1518 - 4
 );
 
 print "# Run in round-robin mode with trafgen!\n";

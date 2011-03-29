@@ -5,15 +5,16 @@
 # Subject to the GPL.
 # Configuration file generator for trafgen.
 # Generates Tolly packet distribution (64:55, 78:5, 576:17, 1518:23)
+# In lengths the Frame Check Sequence of 4 Byte is not counted
 
 use warnings;
 use strict;
 
 my %conf = (
-	64   => 55,
-	78   => 5,
-	576  => 17,
-	1518 => 23
+	60   => 55, # 64   - 4
+	74   => 5,  # 78   - 4
+	572  => 17, # 576  - 4
+	1514 => 23  # 1518 - 4
 );
 
 print "# Run in round-robin mode with trafgen!\n";
