@@ -53,4 +53,32 @@ static inline void leave_promiscuous_mode(char *ifname, short oldflags)
 	device_set_flags(ifname, oldflags);
 }
 
+static inline int device_up(char *ifname)
+{
+	if (!ifname)
+		return -EINVAL;
+	if (!strncmp("any", ifname, strlen("any")))
+		return 1;
+	return (device_get_flags(ifname) & IFF_UP) == IFF_UP;
+}
+
+static inline int device_running(char *ifname)
+{
+	if (!ifname)
+		return -EINVAL;
+	if (!strncmp("any", ifname, strlen("any")))
+		return 1;
+	return (device_get_flags(ifname) & IFF_RUNNING) == IFF_RUNNING;
+}
+
+static inline int device_up_and_running(char *ifname)
+{
+	if (!ifname)
+		return -EINVAL;
+	if (!strncmp("any", ifname, strlen("any")))
+		return 1;
+	return (device_get_flags(ifname) & (IFF_UP | IFF_RUNNING)) ==
+	       (IFF_UP | IFF_RUNNING);
+}
+
 #endif /* NETDEV_H */

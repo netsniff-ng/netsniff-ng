@@ -97,6 +97,8 @@ static void signal_handler(int number)
 void enter_mode_pcap_to_tx(struct mode *mode)
 {
 	printf("pcap->tx\n");
+// if (device_up_and_running(mode.device) == 0)
+//                error_and_die(EXIT_FAILURE, "Networking device not running!\n");
 }
 
 void enter_mode_rx_to_tx(struct mode *mode)

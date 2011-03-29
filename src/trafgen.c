@@ -793,6 +793,8 @@ int main(int argc, char **argv)
 		error_and_die(EXIT_FAILURE, "No configuration file given!\n");
 	if (device_mtu(mode.device) == 0)
 		error_and_die(EXIT_FAILURE, "This is no networking device!\n");
+	if (device_up_and_running(mode.device) == 0)
+		error_and_die(EXIT_FAILURE, "Networking device not running!\n");
 
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
