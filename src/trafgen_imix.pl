@@ -38,7 +38,7 @@ for (my $pkt = 0; $pkt < $sum; ++$pkt) {
 	} while ($done == 0);
 
 	print "\$P$pkt {\n";
-	for (my $byte = 0; $byte < $len; ++$byte) {
+	for (my $byte = 0; $byte < $len;) {
 		for (my $off = 0; $off < 13 && $byte < $len; ++$off, ++$byte) {
 			my $cur = sprintf("0x%02x", int(rand(256)));
 			print "$cur, ";
