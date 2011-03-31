@@ -17,6 +17,7 @@ lib-objs   = xmalloc.o                  \
 	     curves.o                   \
 	     ecc.o                      \
 	     numtheory.o                \
+	     protocol.o                 \
 	     serialize.o                \
 	     stun.o                     \
 	     netdev.o
