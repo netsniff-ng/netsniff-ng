@@ -256,6 +256,8 @@ static void write_privkey(void)
 	while ((r = read(fd2, &ch, 1)) > 0 && count > 0) {
 		if (r < 0)
 			panic("Cannot read text line!\n");
+		if (ch == '\n')
+			continue;
 		if (write(fd, &ch, 1) < 1)
 			panic("Cannot write private key!\n");
 		printf(".");
@@ -263,8 +265,11 @@ static void write_privkey(void)
 		count--;
 	}
 
+	if (write(fd, "\n", 1) < 1)
+		panic("Cannot write private key!\n");
 	close(fd2);
 	close(fd);
+	sync();
 
 	printf("\n");
 	printf("Private keyfile written to %s!\n", path);
