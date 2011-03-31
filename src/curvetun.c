@@ -324,7 +324,7 @@ static void write_username(void)
 
 void create_curvedir(void)
 {
-	int ret;
+	int ret, fd;
 	char path[512];
 
 	memset(path, 0, sizeof(path));
@@ -335,6 +335,26 @@ void create_curvedir(void)
 	ret = mkdir(path, S_IRWXU);
 	if (ret < 0 && errno != EEXIST)
 		panic("Cannot create curvetun dir!\n");
+
+	/* We also create empty files for clients and servers! */
+
+	memset(path, 0, sizeof(path));
+	snprintf(path, sizeof(path), "%s/%s", home, FILE_CLIENTS);
+	path[sizeof(path) - 1] = 0;
+
+	fd = open(path, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+	if (fd < 0)
+		panic("Cannot open clients file!\n");
+	close(fd);
+
+	memset(path, 0, sizeof(path));
+	snprintf(path, sizeof(path), "%s/%s", home, FILE_SERVERS);
+	path[sizeof(path) - 1] = 0;
+
+	fd = open(path, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+	if (fd < 0)
+		panic("Cannot open servers file!\n");
+	close(fd);
 }
 
 static int main_keygen(void)
