@@ -1,1 +1,0 @@
-TODO note: add options for creating valid packets, i.e. --udp --ipv4 --ipv6
