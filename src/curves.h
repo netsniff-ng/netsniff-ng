@@ -57,6 +57,7 @@ struct curve_params {
 	int elem_len_bin, order_len_bin;
 };
 
+extern void curve_list(void);
 extern struct curve_params *curve_by_name(const char *name);
 extern struct curve_params *curve_by_pk_len_compact(int len);
 extern void curve_release(struct curve_params *cp);

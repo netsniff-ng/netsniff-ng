@@ -24,6 +24,7 @@
 #include "strlcpy.h"
 #include "signals.h"
 #include "tundev.h"
+#include "curves.h"
 
 enum working_mode {
 	MODE_UNKNOW,
@@ -41,15 +42,16 @@ enum client_mode {
 
 static sig_atomic_t sigint = 0;
 
-static const char *short_options = "kc:m:svhp:t:";
+static const char *short_options = "k:c:m:svhp:t:l";
 
 static struct option long_options[] = {
 	{"client", optional_argument, 0, 'c'},
 	{"mode", required_argument, 0, 'm'},
 	{"port", required_argument, 0, 'p'},
 	{"stun", required_argument, 0, 't'},
-	{"keygen", no_argument, 0, 'k'},
+	{"keygen", optional_argument, 0, 'k'},
 	{"server", no_argument, 0, 's'},
+	{"list-curves", no_argument, 0, 'l'},
 	{"version", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
@@ -81,9 +83,11 @@ static void help(void)
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: curvetun [options]\n");
 	printf("Options:\n");
-	printf("  -k|--keygen             Generate public/private keypair\n");
+	printf("  -k|--keygen[=curve]     Generate public/private keypair\n");
+	printf("                          Default curve: 'secp256r1/nistp256'\n");
+	printf("  -l|--list-curves        Show available curves\n");
 	printf(" Client settings:\n");
-	printf("  -c|--client [alias]     Client mode, server alias optional\n");
+	printf("  -c|--client[=alias]     Client mode, server alias optional\n");
 	printf("  -m|--mode <mode>        Working mode, if no alias specified\n");
 	printf("   `--- latency           Select server with lowest latency\n");
 	printf("    `-- rrobin            Select servers in round robin\n");
@@ -97,6 +101,7 @@ static void help(void)
 	printf("  -h|--help               Print this help\n");
 	printf("\n");
 	printf("Example:\n");
+	printf("  Keygen: curvetun --keygen=secp384r1/nistp384\n");
 	printf("  Server: curvetun --server --port 6666 --stun stun.ekiga.net\n");
 	printf("  Client: curvetun --client --mode random\n");
 	printf("  Where both participants have the following files specified:\n");
@@ -138,8 +143,14 @@ static void version(void)
 	die();
 }
 
-int main_keygen(void)
+int main_keygen(char *curve)
 {
+	if (!curve)
+		panic("No curve supplied for keygen!\n");
+	if (!curve_by_name(curve))
+		panic("No such curve available!\n");
+	info("Using curve %s!\n", curve);
+
 	info("keygen\n");
 	return 0;
 }
@@ -160,7 +171,7 @@ int main(int argc, char **argv)
 {
 	int c, opt_index;
 	uint16_t port, stun_port = 3478; /* Future: via --stun */
-	char *stun = NULL;
+	char *stun = NULL, *curve = NULL;
 	enum working_mode wmode = MODE_UNKNOW;
 	enum client_mode cmode = MODE_ALL_RANDOM;
 
@@ -181,6 +192,10 @@ int main(int argc, char **argv)
 			break;
 		case 'k':
 			wmode = MODE_KEYGEN;
+			if (optarg)
+				curve = xstrdup(optarg);
+			else
+				curve = xstrdup("secp256r1/nistp256");
 			break;
 		case 's':
 			wmode = MODE_SERVER;
@@ -190,6 +205,10 @@ int main(int argc, char **argv)
 			break;
 		case 'p':
 			port = atoi(optarg);
+			break;
+		case 'l':
+			curve_list();
+			die();
 			break;
 		case '?':
 			switch (optopt) {
@@ -220,7 +239,8 @@ int main(int argc, char **argv)
 
 	switch (wmode) {
 	case MODE_KEYGEN:
-		main_keygen();
+		main_keygen(curve);
+		xfree(curve);
 		break;
 	case MODE_CLIENT:
 		main_client(cmode);

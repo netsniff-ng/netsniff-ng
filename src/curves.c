@@ -230,6 +230,15 @@ struct curve_params *curve_by_name(const char *name)
 	return NULL;
 }
 
+void curve_list(void)
+{
+	int i;
+	const struct curve *c = curves;
+
+	for (i = 0; i < CURVE_NUM; i++, c++)
+		printf("%s\n", c->name);
+}
+
 struct curve_params *curve_by_pk_len_compact(int len)
 {
 	int i;
