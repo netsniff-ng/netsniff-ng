@@ -36,6 +36,7 @@
 #include "aes256ctr.h"
 
 #define DEFAULT_CURVE   "secp521r1/nistp521"
+#define DEFAULT_KEY_LEN 256
 #define FILE_CLIENTS    ".curvetun/clients"
 #define FILE_SERVERS    ".curvetun/servers"
 #define FILE_PRIVKEY    ".curvetun/priv.key"
@@ -117,12 +118,11 @@ static void help(void)
 	printf("\n");
 	printf("Example:\n");
 	printf("  A. Keygen example:\n");
-	printf("      1. dd if=/dev/random bs=1 count=64 of=~/.curvetun/priv.key\n");
-	printf("      2. chmod go-rwx ~/.curvetun/priv.key\n");
-	printf("      3. curvetun --keygen\n");
-	printf("      4. Now the following files are done setting up:\n");
+	printf("      1. curvetun --keygen\n");
+	printf("      2. Now the following files are done setting up:\n");
 	printf("           ~/.curvetun/priv.key  - Your private key\n");
 	printf("           ~/.curvetun/pub.key   - Your public key\n");
+	printf("           ~/.curvetun/username  - Your username\n");
 	printf("  B. Server: curvetun --server --port 6666 --stun stun.ekiga.net\n");
 	printf("  C. Client: curvetun --client --mode random\n");
 	printf("  Where both participants have the following files specified:\n");
@@ -130,7 +130,6 @@ static void help(void)
 	printf("        line-format:   username:pubkey\n");
 	printf("   ~/.curvetun/servers      - Possible servers the client can connect to\n");
 	printf("        line-format:   alias:serverip|servername:port:pubkey\n");
-	printf("   ~/.curvetun/username     - Your username\n");
 	printf("\n");
 	printf("Note:\n");
 	printf("  There is no default port specified, so that users are forced\n");
@@ -233,6 +232,45 @@ static void read_passphrase(char *hash)
 	gcry_md_close(mh);
 }
 
+static void write_privkey(void)
+{
+	int fd, fd2, count;
+	char ch, path[512];
+	ssize_t r;
+
+	memset(path, 0, sizeof(path));
+	snprintf(path, sizeof(path), "%s/%s", home, FILE_PRIVKEY);
+	path[sizeof(path) - 1] = 0;
+
+	printf("Generating key from /dev/random!\n");
+	printf("To fill entropy pool, move your mouse pointer "
+	       "or press some keys for instance!\n");
+	fflush(stdout);
+
+	fd  = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+	fd2 = open("/dev/random", O_RDONLY);
+	if (fd < 0 || fd2 < 0)
+		panic("Cannot open your private keyfile!\n");
+
+	count = DEFAULT_KEY_LEN;
+	while ((r = read(fd2, &ch, 1)) > 0 && count > 0) {
+		if (r < 0)
+			panic("Cannot read text line!\n");
+		if (write(fd, &ch, 1) < 1)
+			panic("Cannot write private key!\n");
+		sync(fd);
+		printf(".");
+		fflush(stdout);
+		count--;
+	}
+
+	close(fd2);
+	close(fd);
+
+	printf("\n");
+	printf("Private keyfile written to %s!\n", path);
+}
+
 static void write_pubkey(char *hash, size_t len)
 {
 	int fd, ret;
@@ -242,7 +280,7 @@ static void write_pubkey(char *hash, size_t len)
 	snprintf(path, sizeof(path), "%s/%s", home, FILE_PUBKEY);
 	path[sizeof(path) - 1] = 0;
 
-	fd = open(path, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 	if (fd < 0)
 		panic("Cannot open your private keyfile!\n");
 	ret = write(fd, hash, len);
@@ -251,6 +289,53 @@ static void write_pubkey(char *hash, size_t len)
 	close(fd);
 
 	info("Public keyfile written to %s!\n", path);
+}
+
+static void write_username(void)
+{
+	int fd, ret;
+	char path[512];
+	char user[512];
+
+	memset(path, 0, sizeof(path));
+	snprintf(path, sizeof(path), "%s/%s", home, FILE_USERNAM);
+	path[sizeof(path) - 1] = 0;
+
+	printf("Desired username: [%s] ", getenv("USER"));
+	fflush(stdout);
+
+	memset(user, 0, sizeof(user));
+	fgets(user, sizeof(user), stdin);
+	user[sizeof(user) - 1] = 0;
+	user[strlen(user) - 1] = 0;
+
+	if (strlen(user) == 0)
+		strlcpy(user, getenv("USER"), sizeof(user));
+
+	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+	if (fd < 0)
+		panic("Cannot open your username file!\n");
+	ret = write(fd, user, strlen(user));
+	if (ret != strlen(user))
+		panic("Could not write username!\n");
+	close(fd);
+
+	info("Username written to %s!\n", path);
+}
+
+void create_curvedir(void)
+{
+	int ret;
+	char path[512];
+
+	memset(path, 0, sizeof(path));
+	snprintf(path, sizeof(path), "%s/%s", home, ".curvetun/");
+	path[sizeof(path) - 1] = 0;
+
+	errno = 0;
+	ret = mkdir(path, S_IRWXU);
+	if (ret < 0 && errno != EEXIST)
+		panic("Cannot create curvetun dir!\n");
 }
 
 static int main_keygen(void)
@@ -268,7 +353,11 @@ static int main_keygen(void)
 	if (!privkey)
 		panic("Out of secure memory!\n");
 
+	create_curvedir();
+	write_username();
+	write_privkey();
 	read_passphrase(privkey);
+
 	d = hash_to_exponent(privkey, cp);
 	gcry_free(privkey);
 	P = pointmul(&cp->dp.base, d, &cp->dp);
