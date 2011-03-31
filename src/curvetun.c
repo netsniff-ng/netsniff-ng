@@ -118,8 +118,9 @@ static void help(void)
 	printf("Example:\n");
 	printf("  A. Keygen example:\n");
 	printf("      1. dd if=/dev/random bs=1 count=64 of=~/.curvetun/priv.key\n");
-	printf("      2. curvetun --keygen\n");
-	printf("      3. Now the following files are done setting up:\n");
+	printf("      2. chmod go-rwx ~/.curvetun/priv.key\n");
+	printf("      3. curvetun --keygen\n");
+	printf("      4. Now the following files are done setting up:\n");
 	printf("           ~/.curvetun/priv.key  - Your private key\n");
 	printf("           ~/.curvetun/pub.key   - Your public key\n");
 	printf("           ~/.curvetun/curve     - Your used curve\n");
