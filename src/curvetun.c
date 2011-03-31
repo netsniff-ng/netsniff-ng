@@ -120,15 +120,15 @@ static void help(void)
 	printf("  A. Keygen example:\n");
 	printf("      1. curvetun --keygen\n");
 	printf("      2. Now the following files are done setting up:\n");
-	printf("           ~/.curvetun/priv.key  - Your private key\n");
-	printf("           ~/.curvetun/pub.key   - Your public key\n");
-	printf("           ~/.curvetun/username  - Your username\n");
+	printf("           ~/.curvetun/priv.key - Your private key\n");
+	printf("           ~/.curvetun/pub.key  - Your public key\n");
+	printf("           ~/.curvetun/username - Your username\n");
 	printf("  B. Server: curvetun --server --port 6666 --stun stun.ekiga.net\n");
 	printf("  C. Client: curvetun --client --mode random\n");
 	printf("  Where both participants have the following files specified:\n");
-	printf("   ~/.curvetun/clients      - Participants the server accepts\n");
+	printf("   ~/.curvetun/clients - Participants the server accepts\n");
 	printf("        line-format:   username:pubkey\n");
-	printf("   ~/.curvetun/servers      - Possible servers the client can connect to\n");
+	printf("   ~/.curvetun/servers - Possible servers the client can connect to\n");
 	printf("        line-format:   alias:serverip|servername:port:pubkey\n");
 	printf("\n");
 	printf("Note:\n");
@@ -258,7 +258,6 @@ static void write_privkey(void)
 			panic("Cannot read text line!\n");
 		if (write(fd, &ch, 1) < 1)
 			panic("Cannot write private key!\n");
-		sync(fd);
 		printf(".");
 		fflush(stdout);
 		count--;
