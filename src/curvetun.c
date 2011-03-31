@@ -275,7 +275,6 @@ static int main_keygen(void)
 	gcry_mpi_release(d);
 
 	compress_to_string(pubkey, DF_COMPACT, &P, cp);
-	pubkey[cp->pk_len_compact] = 0;
 	write_pubkey(pubkey, cp->pk_len_compact);
 
 	point_release(&P);
