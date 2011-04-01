@@ -20,6 +20,8 @@
 #include <gcrypt.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <unistd.h>
 
 #include "xmalloc.h"
@@ -36,12 +38,14 @@
 #include "aes256ctr.h"
 
 #define DEFAULT_CURVE   "secp521r1/nistp521"
-#define DEFAULT_KEY_LEN 256
 #define FILE_CLIENTS    ".curvetun/clients"
 #define FILE_SERVERS    ".curvetun/servers"
 #define FILE_PRIVKEY    ".curvetun/priv.key"
 #define FILE_PUBKEY     ".curvetun/pub.key"
 #define FILE_USERNAM    ".curvetun/username"
+
+#define DEFAULT_KEY_LEN 256
+#define MAX(a, b)       ((a) > (b) ? (a) : (b))
 
 enum working_mode {
 	MODE_UNKNOW,
@@ -61,11 +65,12 @@ static sig_atomic_t sigint = 0;
 
 static char *home = NULL;
 
-static const char *short_options = "kcm:svhp:t:";
+static const char *short_options = "kcm:svhp:t:d:";
 
 static struct option long_options[] = {
 	{"client", optional_argument, 0, 'c'},
 	{"mode", required_argument, 0, 'm'},
+	{"dev", required_argument, 0, 'd'},
 	{"port", required_argument, 0, 'p'},
 	{"stun", required_argument, 0, 't'},
 	{"keygen", no_argument, 0, 'k'},
@@ -102,6 +107,7 @@ static void help(void)
 	printf("Usage: curvetun [options]\n");
 	printf("Options:\n");
 	printf("  -k|--keygen             Generate public/private keypair\n");
+	printf("  -d|--dev <tun>          Networking tunnel device, e.g. tun0\n");
 	printf(" Client settings:\n");
 	printf("  -c|--client[=alias]     Client mode, server alias optional\n");
 	printf("  -m|--mode <mode>        Working mode, if no alias specified\n");
@@ -396,17 +402,74 @@ static int main_keygen(void)
 	return 0;
 }
 
-static int main_client(enum client_mode cmode)
+static int main_client(char *dev, enum client_mode cmode)
 {
-	info("client\n");
+	int fd;
+
 	check_config_exists_or_die();
+	info("MD: C\n");
+
+	fd = tun_open_or_die();
+	info("Tunnel opened\n");
+
+
+
+	tun_close(fd);
 	return 0;
 }
 
-static int main_server(int port)
+static int main_server(char *dev, unsigned short port)
 {
-	info("server\n");
+	int fdu, fdt, max, ret, set = 1;
+	char buf[1600];
+	struct sockaddr_in saddr;
+	fd_set fds;
+	size_t len;
+
 	check_config_exists_or_die();
+	info("MD: S\n");
+
+	fdt = tun_open_or_die();
+	info("Tunnel opened\n");
+
+	fdu = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (fdu < 0)
+		panic("Cannot obtain socket!\n");
+
+	ret = setsockopt(fdu, SOL_SOCKET, SO_REUSEADDR, &set, sizeof(set));
+	if (ret)
+		panic("Cannot set socket option!\n");
+
+	saddr.sin_family = PF_INET;
+	saddr.sin_port = htons(port);
+	saddr.sin_addr.s_addr = INADDR_ANY;
+
+	ret = bind(fdu, (struct sockaddr *) &saddr, sizeof(saddr));
+	if (ret)
+		panic("Cannot bind udp socket!\n");
+
+	max = MAX(fdu, fdt) + 1;
+
+	while (likely(!sigint)) {
+		FD_ZERO(&fds);
+		FD_SET(fdu, &fds);
+		FD_SET(fdt, &fds);
+
+		select(max, &fds, NULL, NULL, NULL);
+
+		if (FD_ISSET(fdu, &fds)) {
+			len = read(fdu, buf, sizeof(buf));
+			write(fdt, buf, len);
+		}
+
+		if (FD_ISSET(fdt, &fds)) {
+			len = read(fdt, buf, sizeof(buf));
+			write(fdu, buf, len);
+		}
+	}
+
+	close(fdu);
+	tun_close(fdt);
 	return 0;
 }
 
@@ -414,7 +477,7 @@ int main(int argc, char **argv)
 {
 	int c, opt_index;
 	uint16_t port;
-	char *stun = NULL;
+	char *stun = NULL, *dev = NULL;
 	enum working_mode wmode = MODE_UNKNOW;
 	enum client_mode cmode = MODE_ALL_RANDOM;
 	gcry_error_t ret;
@@ -446,6 +509,9 @@ int main(int argc, char **argv)
 		case 'c':
 			wmode = MODE_CLIENT;
 			break;
+		case 'd':
+			dev = xstrdup(optarg);
+			break;
 		case 'm':
 			cmode = MODE_ALL_RANDOM;
 			break;
@@ -465,6 +531,7 @@ int main(int argc, char **argv)
 			switch (optopt) {
 			case 'm':
 			case 't':
+			case 'd':
 			case 'p':
 				panic("Option -%c requires an argument!\n",
 				      optopt);
@@ -493,7 +560,7 @@ int main(int argc, char **argv)
 		main_keygen();
 		break;
 	case MODE_CLIENT:
-		main_client(cmode);
+		main_client(dev, cmode);
 		break;
 	case MODE_SERVER:
 		if (port == 0)
@@ -502,7 +569,7 @@ int main(int argc, char **argv)
 			print_stun_probe(stun, 3478, port);
 			xfree(stun);
 		}
-		main_server(port);
+		main_server(dev, port);
 		break;
 	default:
 		panic("Either select keygen, client or server mode!\n");

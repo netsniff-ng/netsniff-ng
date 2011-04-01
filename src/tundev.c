@@ -61,9 +61,9 @@ int tun_open_or_die(void)
 		if (errno == EBADFD) {
 			ret = ioctl(fd, OTUNSETIFF, &ifr);
 			if (ret < 0)
-				panic("ioctl screwed up!\n");
+				panic("ioctl screwed up 1!\n");
 		} else
-			panic("ioctl screwed up!\n");
+			panic("ioctl screwed up 2!\n");
 	}
 
 	return fd;

@@ -122,7 +122,7 @@ static int stun_test(const char *server_ip, uint16_t server_port,
 		return -EINVAL;
 
 	sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	if (!sock)
+	if (sock < 0)
 		panic("Cannot obtain socket!\n");
 
 	ret = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &set, sizeof(set));
