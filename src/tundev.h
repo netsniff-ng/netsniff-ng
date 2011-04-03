@@ -11,7 +11,7 @@
 
 #include <unistd.h>
 
-extern int tun_open_or_die(void);
+extern int tun_open_or_die(char *name);
 extern ssize_t tun_write(int fd, const void *buf, size_t count);
 extern ssize_t tun_read(int fd, void *buf, size_t count);
 extern void tun_close(int fd);

@@ -409,7 +409,7 @@ static int main_client(char *dev, enum client_mode cmode)
 	check_config_exists_or_die();
 	info("MD: C\n");
 
-	fd = tun_open_or_die();
+	fd = tun_open_or_die("tun0");
 	info("Tunnel opened\n");
 
 
@@ -429,8 +429,8 @@ static int main_server(char *dev, unsigned short port)
 	check_config_exists_or_die();
 	info("MD: S\n");
 
-	fdt = tun_open_or_die();
-	info("Tunnel opened\n");
+	fdt = tun_open_or_die("tun0");
+	info("Tunnel opened!\n");
 
 	fdu = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (fdu < 0)
