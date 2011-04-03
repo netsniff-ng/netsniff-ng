@@ -31,7 +31,6 @@
 #include "die.h"
 #include "strlcpy.h"
 #include "signals.h"
-#include "tundev.h"
 #include "curves.h"
 #include "protocol.h"
 #include "serialize.h"
@@ -404,72 +403,15 @@ static int main_keygen(void)
 
 static int main_client(char *dev, enum client_mode cmode)
 {
-	int fd;
-
 	check_config_exists_or_die();
-	info("MD: C\n");
-
-	fd = tun_open_or_die("tun0");
-	info("Tunnel opened\n");
-
-
-
-	tun_close(fd);
+	info("MD: S\n");
 	return 0;
 }
 
 static int main_server(char *dev, unsigned short port)
 {
-	int fdu, fdt, max, ret, set = 1;
-	char buf[1600];
-	struct sockaddr_in saddr;
-	fd_set fds;
-	size_t len;
-
 	check_config_exists_or_die();
 	info("MD: S\n");
-
-	fdt = tun_open_or_die("tun0");
-	info("Tunnel opened!\n");
-
-	fdu = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	if (fdu < 0)
-		panic("Cannot obtain socket!\n");
-
-	ret = setsockopt(fdu, SOL_SOCKET, SO_REUSEADDR, &set, sizeof(set));
-	if (ret)
-		panic("Cannot set socket option!\n");
-
-	saddr.sin_family = PF_INET;
-	saddr.sin_port = htons(port);
-	saddr.sin_addr.s_addr = INADDR_ANY;
-
-	ret = bind(fdu, (struct sockaddr *) &saddr, sizeof(saddr));
-	if (ret)
-		panic("Cannot bind udp socket!\n");
-
-	max = MAX(fdu, fdt) + 1;
-
-	while (likely(!sigint)) {
-		FD_ZERO(&fds);
-		FD_SET(fdu, &fds);
-		FD_SET(fdt, &fds);
-
-		select(max, &fds, NULL, NULL, NULL);
-
-		if (FD_ISSET(fdu, &fds)) {
-			len = read(fdu, buf, sizeof(buf));
-			write(fdt, buf, len);
-		}
-
-		if (FD_ISSET(fdt, &fds)) {
-			len = read(fdt, buf, sizeof(buf));
-			write(fdu, buf, len);
-		}
-	}
-
-	close(fdu);
-	tun_close(fdt);
 	return 0;
 }
 
