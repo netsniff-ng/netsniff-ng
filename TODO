@@ -1,0 +1,6 @@
+ * Implement the rest of netsniff-ng
+ * Add scatter/gather I/O for PCAP
+ * OProfile it
+ * Maybe URCU
+ * Improve trafgen
+ * Implement rest of curvetun
