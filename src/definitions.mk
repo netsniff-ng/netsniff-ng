@@ -27,7 +27,7 @@ ifneq ($(or $(call eq,$(MAKECMDGOALS),"all"), $(call eq,$(MAKECMDGOALS),"")),)
 	LD      = $(LD_NORM) -o
 	CC      = $(CC_NORM) -c
 	CFLAGS  = -O0 -g -fno-inline -std=gnu99 -pedantic -pedantic-errors   \
-		  -fno-strict-overflow
+		  -fno-strict-overflow -fomit-frame-pointer
 	CFLAGS += -Wall -Werror -Wundef -Wstrict-prototypes -Wno-trigraphs   \
 		  -Werror-implicit-function-declaration -Wno-format-security \
 		  -Wcomments -Wendif-labels -Wno-long-long -Wuninitialized   \
