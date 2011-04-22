@@ -4,3 +4,5 @@
  * Maybe URCU
  * Improve trafgen
  * Implement rest of curvetun
+ * Checksum offload from uspace?
+ * NUMA support?
