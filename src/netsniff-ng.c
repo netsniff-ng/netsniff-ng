@@ -41,6 +41,7 @@ struct mode {
 	char *device_out;
 	char *filter;
 	int cpu;
+	int mmap;
 	int dump;
 	/* dissector */
 	int link_type;
@@ -56,13 +57,14 @@ static sig_atomic_t sigint = 0;
 
 static unsigned long interval = TX_KERNEL_PULL_INT;
 
-static const char *short_options = "d:i:o:rf:Mt:S:k:b:B:HQsqlxCXNvh";
+static const char *short_options = "d:i:o:rf:Mt:S:k:b:B:HQmsqlxCXNvh";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
 	{"in", required_argument, 0, 'i'},
 	{"out", required_argument, 0, 'o'},
 	{"randomize", no_argument, 0, 'r'},
+	{"mmap", no_argument, 0, 'm'},
 	{"filter", required_argument, 0, 'f'},
 	{"no-promisc", no_argument, 0, 'M'},
 	{"type", required_argument, 0, 't'},
@@ -212,6 +214,7 @@ static void help(void)
 	printf("  -M|--no-promisc              No promiscuous mode for netdev\n");
 	printf("  -t|--type <type>             Only show packets of defined type:\n");
 	printf("                               host|broadcast|multicast|others|outgoing\n");
+	printf("  -m|--mmap                    Mmap pcap file, otherwise use scatter/gather I/O\n");
 	printf("  -S|--ring-size <size>        Manually set ring size to <size>:\n");
 	printf("                               mmap space in KB/MB/GB, e.g. \'10MB\'\n");
 	printf("  -k|--kernel-pull <int>       Kernel pull from user interval in us\n");
