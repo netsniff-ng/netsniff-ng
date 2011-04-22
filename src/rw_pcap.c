@@ -17,31 +17,7 @@
 #include "write_or_die.h"
 #include "die.h"
 
-__must_check int pcap_write_file_header(int fd, uint32_t linktype,
-					int32_t thiszone, uint32_t snaplen)
-{
-	ssize_t ret;
-	struct pcap_filehdr hdr;
-
-	hdr.magic = TCPDUMP_MAGIC;
-	hdr.version_major = PCAP_VERSION_MAJOR;
-	hdr.version_minor = PCAP_VERSION_MINOR;
-	hdr.thiszone = thiszone;
-	hdr.sigfigs = 0;
-	hdr.snaplen = snaplen;
-	hdr.linktype = linktype;
-
-	ret = write_or_die(fd, &hdr, sizeof(hdr));
-	if (unlikely(ret != sizeof(hdr))) {
-		whine("Failed to write pcap header!\n");
-		return -EIO;
-	}
-
-	return 0;
-}
-
-__must_check ssize_t pcap_write_pkt(int fd, struct pcap_pkthdr *hdr,
-				    uint8_t *packet)
+ssize_t pcap_write_pkt(int fd, struct pcap_pkthdr *hdr,  uint8_t *packet)
 {
 	ssize_t ret;
 
@@ -61,29 +37,7 @@ __must_check ssize_t pcap_write_pkt(int fd, struct pcap_pkthdr *hdr,
 	return (sizeof(*hdr) + hdr->len);
 }
 
-__must_check int pcap_read_and_validate_file_header(int fd)
-{
-	ssize_t ret;
-	struct pcap_filehdr hdr;
-
-	ret = read(fd, &hdr, sizeof(hdr));
-	if (unlikely(ret != sizeof(hdr))) {
-		whine("Failed to read pcap header!\n");
-		return -EIO;
-	}
-
-	if (unlikely(hdr.magic != TCPDUMP_MAGIC ||
-		     hdr.version_major != PCAP_VERSION_MAJOR ||
-	 	     hdr.version_minor != PCAP_VERSION_MINOR ||
-		     hdr.linktype != LINKTYPE_EN10MB)) {
-		whine("This file has not a valid pcap header!\n");
-		return -EIO;
-	}
-
-	return 0;
-}
-
-__must_check int pcap_read_still_has_packets(int fd)
+int pcap_read_still_has_packets(int fd)
 {
 	ssize_t ret;
 	off_t pos;
@@ -109,8 +63,8 @@ __must_check int pcap_read_still_has_packets(int fd)
 	return 1;
 }
 
-__must_check ssize_t pcap_read_packet(int fd, struct pcap_pkthdr *hdr,
-				      uint8_t *packet, size_t len)
+ssize_t pcap_read_packet(int fd, struct pcap_pkthdr *hdr, uint8_t *packet,
+			 size_t len)
 {
 	ssize_t ret;
 	ret = read(fd, hdr, sizeof(*hdr));

@@ -55,9 +55,9 @@ struct mode {
 
 static sig_atomic_t sigint = 0;
 
-static unsigned long interval = TX_KERNEL_PULL_INT;
+//static unsigned long interval = TX_KERNEL_PULL_INT;
 
-static const char *short_options = "d:i:o:rf:Mt:S:k:b:B:HQmsqlxCXNvh";
+static const char *short_options = "d:i:o:rf:Mt:S:k:b:B:HQmcsqlxCXNvh";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -65,6 +65,7 @@ static struct option long_options[] = {
 	{"out", required_argument, 0, 'o'},
 	{"randomize", no_argument, 0, 'r'},
 	{"mmap", no_argument, 0, 'm'},
+	{"clrw", no_argument, 0, 'c'},
 	{"filter", required_argument, 0, 'f'},
 	{"no-promisc", no_argument, 0, 'M'},
 	{"type", required_argument, 0, 't'},
@@ -215,6 +216,7 @@ static void help(void)
 	printf("  -t|--type <type>             Only show packets of defined type:\n");
 	printf("                               host|broadcast|multicast|others|outgoing\n");
 	printf("  -m|--mmap                    Mmap pcap file, otherwise use scatter/gather I/O\n");
+	printf("  -c|--clrw                    Instead scatter/gather I/O use read/write I/O\n");
 	printf("  -S|--ring-size <size>        Manually set ring size to <size>:\n");
 	printf("                               mmap space in KB/MB/GB, e.g. \'10MB\'\n");
 	printf("  -k|--kernel-pull <int>       Kernel pull from user interval in us\n");
@@ -236,7 +238,7 @@ static void help(void)
 	printf("\n");
 	printf("Examples:\n");
 	printf("  netsniff-ng --in eth0 --out dump.pcap --silent --bind-cpu 0\n");
-	printf("  netsniff-ng --in dump.pcap --out eth0 --silent --bind-cpu 0\n");
+	printf("  netsniff-ng --in dump.pcap --mmap --out eth0 --silent --bind-cpu 0\n");
 	printf("  netsniff-ng --in dump.pcap --no-payload\n");
 	printf("  netsniff-ng --in eth0 --out eth1 --silent --randomize --bind-cpu 0\n");
 	printf("  netsniff-ng --in any --filter icmp.bpf\n");

@@ -15,6 +15,7 @@
 #include <linux/if_packet.h>
 
 #include "compiler.h"
+#include "die.h"
 
 #define TCPDUMP_MAGIC              0xa1b2c3d4
 #define PCAP_VERSION_MAJOR         2
@@ -60,16 +61,6 @@ struct pcap_pkthdr {
 	uint32_t len;
 };
 
-extern __must_check int pcap_write_file_header(int fd, uint32_t linktype,
-					       int32_t thiszone,
-					       uint32_t snaplen);
-extern __must_check ssize_t pcap_write_pkt(int fd, struct pcap_pkthdr *hdr,
-					   uint8_t *packet);
-extern __must_check int pcap_read_and_validate_file_header(int fd);
-extern __must_check int pcap_read_still_has_packets(int fd);
-extern __must_check ssize_t pcap_read_packet(int fd, struct pcap_pkthdr *hdr,
-					     uint8_t *packet, size_t len);
-
 static inline void tpacket_hdr_to_pcap_pkthdr(struct tpacket_hdr *thdr,
 					      struct pcap_pkthdr *phdr)
 {
@@ -86,6 +77,37 @@ static inline void pcap_pkthdr_to_tpacket_hdr(struct pcap_pkthdr *phdr,
 	thdr->tp_usec = phdr->ts.tv_usec;
 	thdr->tp_snaplen = phdr->caplen;
 	thdr->tp_len = phdr->len;
+}
+
+struct pcap_file_ops {
+	int (*pull_file_header)(int fd);
+	int (*push_file_header)(int fd);
+	ssize_t (*write_pcap_pkt)(int fd, struct pcap_pkthdr *hdr,
+				  uint8_t *packet);
+	ssize_t (*read_pcap_pkt)(int fd, struct pcap_pkthdr *hdr,
+				 uint8_t *packet);
+};
+
+static inline void pcap_prepare_header(struct pcap_filehdr *hdr,
+				       uint32_t linktype,
+				       int32_t thiszone, uint32_t snaplen)
+{
+	hdr->magic = TCPDUMP_MAGIC;
+	hdr->version_major = PCAP_VERSION_MAJOR;
+	hdr->version_minor = PCAP_VERSION_MINOR;
+	hdr->thiszone = thiszone;
+	hdr->sigfigs = 0;
+	hdr->snaplen = snaplen;
+	hdr->linktype = linktype;
+}
+
+static inline void pcap_validate_header_maybe_die(struct pcap_filehdr *hdr)
+{
+	if (unlikely(hdr->magic != TCPDUMP_MAGIC ||
+		     hdr->version_major != PCAP_VERSION_MAJOR ||
+		     hdr->version_minor != PCAP_VERSION_MINOR ||
+ 		     hdr->linktype != LINKTYPE_EN10MB))
+		panic("This file has not a valid pcap header!\n");
 }
 
 #endif /* PCAP_H */
