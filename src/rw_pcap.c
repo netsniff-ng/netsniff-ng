@@ -13,6 +13,7 @@
 #include <errno.h>
 
 #include "pcap.h"
+#include "compiler.h"
 #include "write_or_die.h"
 #include "die.h"
 
@@ -31,7 +32,7 @@ __must_check int pcap_write_file_header(int fd, uint32_t linktype,
 	hdr.linktype = linktype;
 
 	ret = write_or_die(fd, &hdr, sizeof(hdr));
-	if (ret != sizeof(hdr)) {
+	if (unlikely(ret != sizeof(hdr))) {
 		whine("Failed to write pcap header!\n");
 		return -EIO;
 	}
@@ -45,20 +46,19 @@ __must_check ssize_t pcap_write_pkt(int fd, struct pcap_pkthdr *hdr,
 	ssize_t ret;
 
 	ret = write_or_die(fd, hdr, sizeof(*hdr));
-	if (ret != sizeof(*hdr)) {
+	if (unlikely(ret != sizeof(*hdr))) {
 		whine("Failed to write pkt header!\n");
 		return -EIO;
 	}
 
 	ret = write_or_die(fd, packet, hdr->len);
-	if (ret != hdr->len) {
+	if (unlikely(ret != hdr->len)) {
 		whine("Failed to write pkt payload!\n");
 		return -EIO;
 	}
 
 	fsync_or_die(fd, "Syncing packet buffer");
-
-	return sizeof(*hdr) + hdr->len;
+	return (sizeof(*hdr) + hdr->len);
 }
 
 __must_check int pcap_read_and_validate_file_header(int fd)
@@ -67,15 +67,15 @@ __must_check int pcap_read_and_validate_file_header(int fd)
 	struct pcap_filehdr hdr;
 
 	ret = read(fd, &hdr, sizeof(hdr));
-	if (ret != sizeof(hdr)) {
+	if (unlikely(ret != sizeof(hdr))) {
 		whine("Failed to read pcap header!\n");
 		return -EIO;
 	}
 
-	if (hdr.magic != TCPDUMP_MAGIC ||
-	    hdr.version_major != PCAP_VERSION_MAJOR ||
-	    hdr.version_minor != PCAP_VERSION_MINOR ||
-	    hdr.linktype != LINKTYPE_EN10MB) {
+	if (unlikely(hdr.magic != TCPDUMP_MAGIC ||
+		     hdr.version_major != PCAP_VERSION_MAJOR ||
+	 	     hdr.version_minor != PCAP_VERSION_MINOR ||
+		     hdr.linktype != LINKTYPE_EN10MB)) {
 		whine("This file has not a valid pcap header!\n");
 		return -EIO;
 	}
@@ -90,18 +90,18 @@ __must_check int pcap_read_still_has_packets(int fd)
 	struct pcap_pkthdr hdr;
 
 	pos = lseek(fd, (off_t) 0, SEEK_CUR);
-	if (pos < 0) {
+	if (unlikely(pos < 0)) {
 		whine("Cannot seek offset of pcap file!\n");
 		return -EIO;
 	}
 
 	ret = read(fd, &hdr, sizeof(hdr));
-	if (ret != sizeof(hdr))
+	if (unlikely(ret != sizeof(hdr)))
 		return 0;
 
-	if (lseek(fd, pos + hdr.len, SEEK_SET) < 0)
+	if (unlikely(lseek(fd, pos + hdr.len, SEEK_SET) < 0))
 		return 0;
-	if (lseek(fd, pos, SEEK_SET) < 0) {
+	if (unlikely(lseek(fd, pos, SEEK_SET) < 0)) {
 		whine("Cannot rewind the pcap file!\n");
 		return -EIO;
 	}
@@ -113,16 +113,14 @@ __must_check ssize_t pcap_read_packet(int fd, struct pcap_pkthdr *hdr,
 				      uint8_t *packet, size_t len)
 {
 	ssize_t ret;
-
 	ret = read(fd, hdr, sizeof(*hdr));
-	if (ret != sizeof(*hdr))
+	if (unlikely(ret != sizeof(*hdr)))
 		return -EIO;
-	if (hdr->len > len)
+	if (unlikely(hdr->len > len))
 		return -ENOMEM;
 	ret = read(fd, packet, hdr->len);
-	if (ret != hdr->len)
+	if (unlikely(ret != hdr->len))
 		return -EIO;
-
 	return hdr->len;
 }
 
