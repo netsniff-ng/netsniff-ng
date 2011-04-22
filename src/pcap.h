@@ -79,6 +79,17 @@ static inline void pcap_pkthdr_to_tpacket_hdr(struct pcap_pkthdr *phdr,
 	thdr->tp_len = phdr->len;
 }
 
+enum pcap_ops_groups {
+	PCAP_OPS_RW = 0,
+#define PCAP_OPS_RW PCAP_OPS_RW
+	PCAP_OPS_SG,
+#define PCAP_OPS_SG PCAP_OPS_SG
+	PCAP_OPS_MMAP,
+#define PCAP_OPS_MMAP PCAP_OPS_MMAP
+	__PCAP_OPS_MAX,
+};
+#define PCAP_OPS_MAX (__PCAP_OPS_MAX - 1)
+
 struct pcap_file_ops {
 	int (*pull_file_header)(int fd);
 	int (*push_file_header)(int fd);
@@ -87,6 +98,18 @@ struct pcap_file_ops {
 	ssize_t (*read_pcap_pkt)(int fd, struct pcap_pkthdr *hdr,
 				 uint8_t *packet);
 };
+
+extern struct pcap_file_ops *pcap_ops[PCAP_OPS_MAX];
+
+extern void pcap_ops_group_register(struct pcap_file_ops *ops,
+				    enum pcap_ops_groups group);
+extern void pcap_ops_group_unregister(enum pcap_ops_groups group);
+
+static inline struct pcap_file_ops *
+pcap_ops_group_get(enum pcap_ops_groups group)
+{
+	return pcap_ops[group];
+}
 
 static inline void pcap_prepare_header(struct pcap_filehdr *hdr,
 				       uint32_t linktype,
