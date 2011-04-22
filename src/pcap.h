@@ -101,8 +101,8 @@ struct pcap_file_ops {
 
 extern struct pcap_file_ops *pcap_ops[PCAP_OPS_MAX];
 
-extern void pcap_ops_group_register(struct pcap_file_ops *ops,
-				    enum pcap_ops_groups group);
+extern int pcap_ops_group_register(struct pcap_file_ops *ops,
+				   enum pcap_ops_groups group);
 extern void pcap_ops_group_unregister(enum pcap_ops_groups group);
 
 static inline struct pcap_file_ops *

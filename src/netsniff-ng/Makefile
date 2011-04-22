@@ -18,6 +18,7 @@ lib-objs   = hash.o                  \
 	     bpf.o                   \
 	     psched.o                \
 	     misc.o                  \
+	     pcap.o                  \
 	     rw_pcap.o               \
 	     mmap_pcap.o             \
 	     sg_pcap.o               \
