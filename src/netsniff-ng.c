@@ -18,6 +18,7 @@
 #include <pthread.h>
 
 #include "rx_ring.h"
+#include "tx_ring.h"
 #include "netdev.h"
 #include "compiler.h"
 #include "poll.h"
@@ -53,7 +54,9 @@ struct mode {
 
 static sig_atomic_t sigint = 0;
 
-static const char *short_options = "d:i:o:rf:Mt:S:b:B:HQsqlxCXNe:vh";
+static unsigned long interval = TX_KERNEL_PULL_INT;
+
+static const char *short_options = "d:i:o:rf:Mt:S:k:b:B:HQsqlxCXNvh";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -64,6 +67,7 @@ static struct option long_options[] = {
 	{"no-promisc", no_argument, 0, 'M'},
 	{"type", required_argument, 0, 't'},
 	{"ring-size", required_argument, 0, 'S'},
+	{"kernel-pull", required_argument, 0, 'k'},
 	{"bind-cpu", required_argument, 0, 'b'},
 	{"unbind-cpu", required_argument, 0, 'B'},
 	{"prio-norm", no_argument, 0, 'H'},
@@ -75,7 +79,6 @@ static struct option long_options[] = {
 	{"c-style", no_argument, 0, 'C'},
 	{"all-hex", no_argument, 0, 'X'},
 	{"no-payload", no_argument, 0, 'N'},
-	{"regex", required_argument, 0, 'e'},
 	{"version", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
@@ -211,6 +214,9 @@ static void help(void)
 	printf("                               host|broadcast|multicast|others|outgoing\n");
 	printf("  -S|--ring-size <size>        Manually set ring size to <size>:\n");
 	printf("                               mmap space in KB/MB/GB, e.g. \'10MB\'\n");
+	printf("  -k|--kernel-pull <int>       Kernel pull from user interval in us\n");
+	printf("                               Default is 10us where the TX_RING\n");
+	printf("                               is populated with payload from uspace\n");
 	printf("  -b|--bind-cpu <cpu>          Bind to specific CPU or CPU-range\n");
 	printf("  -B|--unbind-cpu <cpu>        Forbid to use specific CPU or CPU-range\n");
 	printf("  -H|--prio-norm               Do not high priorize process\n");
@@ -222,7 +228,6 @@ static void help(void)
 	printf("  -C|--c-style                 Print full packet in C style hex format\n");
 	printf("  -X|--all-hex                 Print packets in hex format\n");
 	printf("  -N|--no-payload              Only print packet header\n");
-	printf("  -e|--regex <expr>            Only print packet that matches regex\n");
 	printf("  -v|--version                 Show version\n");
 	printf("  -h|--help                    Show this help\n");
 	printf("\n");
@@ -230,9 +235,8 @@ static void help(void)
 	printf("  netsniff-ng --in eth0 --out dump.pcap --silent --bind-cpu 0\n");
 	printf("  netsniff-ng --in dump.pcap --out eth0 --silent --bind-cpu 0\n");
 	printf("  netsniff-ng --in dump.pcap --no-payload\n");
-	printf("  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0\n");
+	printf("  netsniff-ng --in eth0 --out eth1 --silent --randomize --bind-cpu 0\n");
 	printf("  netsniff-ng --in any --filter icmp.bpf\n");
-	printf("  netsniff-ng --regex \"Zaphod.*Beeblebrox\"\n");
 	printf("  netsniff-ng --dev wlan0 --prio-norm --all-hex --type outgoing\n");
 	printf("\n");
 	printf("Note:\n");

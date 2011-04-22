@@ -21,6 +21,8 @@
 #endif /* LINUX_VERSION_CODE */
 
 #ifdef HAVE_TX_RING
+#define TX_KERNEL_PULL_INT 10
+
 extern void destroy_tx_ring(int sock, struct ring *ring);
 extern void create_tx_ring(int sock, struct ring *ring);
 extern void mmap_tx_ring(int sock, struct ring *ring);
