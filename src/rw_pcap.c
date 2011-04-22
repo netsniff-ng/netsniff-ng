@@ -1,8 +1,7 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
- * Copyright 2009, 2010 Daniel Borkmann.
- * Copyright 2010 Emmanuel Roullit.
+ * Copyright 2009, 2010, 2011 Daniel Borkmann.
  * Subject to the GPL.
  */
 
@@ -17,6 +16,46 @@
 #include "write_or_die.h"
 #include "die.h"
 
+static int rw_pcap_pull_file_header(int fd)
+{
+	return 0;
+}
+
+static int rw_pcap_push_file_header(int fd)
+{
+	return 0;
+}
+
+static ssize_t rw_pcap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
+				      uint8_t *packet, size_t len)
+{
+	return 0;
+}
+
+static ssize_t rw_pcap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
+				     uint8_t *packet, size_t len)
+{
+	return 0;
+}
+
+struct pcap_file_ops rw_pcap_ops __read_mostly = {
+	.pull_file_header = rw_pcap_pull_file_header,
+	.push_file_header = rw_pcap_push_file_header,
+	.write_pcap_pkt = rw_pcap_write_pcap_pkt,
+	.read_pcap_pkt = rw_pcap_read_pcap_pkt,
+};
+
+int init_rw_pcap(void)
+{
+	return pcap_ops_group_register(&rw_pcap_ops, PCAP_OPS_RW);
+}
+
+void cleanup_rw_pcap(void)
+{
+	pcap_ops_group_unregister(PCAP_OPS_RW);
+}
+
+#if 0
 ssize_t pcap_write_pkt(int fd, struct pcap_pkthdr *hdr,  uint8_t *packet)
 {
 	ssize_t ret;
@@ -77,4 +116,4 @@ ssize_t pcap_read_packet(int fd, struct pcap_pkthdr *hdr, uint8_t *packet,
 		return -EIO;
 	return hdr->len;
 }
-
+#endif

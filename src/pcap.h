@@ -94,9 +94,9 @@ struct pcap_file_ops {
 	int (*pull_file_header)(int fd);
 	int (*push_file_header)(int fd);
 	ssize_t (*write_pcap_pkt)(int fd, struct pcap_pkthdr *hdr,
-				  uint8_t *packet);
+				  uint8_t *packet, size_t len);
 	ssize_t (*read_pcap_pkt)(int fd, struct pcap_pkthdr *hdr,
-				 uint8_t *packet);
+				 uint8_t *packet, size_t len);
 };
 
 extern struct pcap_file_ops *pcap_ops[PCAP_OPS_MAX];
@@ -132,5 +132,8 @@ static inline void pcap_validate_header_maybe_die(struct pcap_filehdr *hdr)
  		     hdr->linktype != LINKTYPE_EN10MB))
 		panic("This file has not a valid pcap header!\n");
 }
+
+extern int init_rw_pcap(void);
+extern void cleanup_rw_pcap(void);
 
 #endif /* PCAP_H */

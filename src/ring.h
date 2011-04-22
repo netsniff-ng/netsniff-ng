@@ -20,6 +20,7 @@
 #include "netdev.h"
 #include "tprintf.h"
 #include "dissector.h"
+#include "compiler.h"
 
 #define RING_SIZE_FALLBACK (1 << 26)
 
@@ -43,7 +44,7 @@ struct ring {
 	struct sockaddr_ll s_ll;
 	uint8_t *mm_space;
 	size_t mm_len;
-};
+} __cacheline_aligned;
 
 static inline void next_slot(unsigned int *it, struct ring *ring)
 {
