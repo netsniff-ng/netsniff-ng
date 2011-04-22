@@ -12,8 +12,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "io.h"
-#include "io_pcap.h"
+#include "pcap.h"
 #include "write_or_die.h"
 #include "die.h"
 

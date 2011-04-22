@@ -5,11 +5,10 @@
  * Subject to the GPL.
  */
 
-/* Disc I/O and RT scheduling primitives */
+#ifndef MMAP_PCAP_H
+#define MMAP_PCAP_H
 
-#include "io.h"
+#include "pcap.h"
 
-void dummy(void)
-{
-}
+#endif /* MMAP_PCAP_H */
 

@@ -5,8 +5,7 @@
  * Subject to the GPL.
  */
 
-#ifndef IO_H
-#define IO_H
+#include "sg_pcap.h"
 
+void _dummy(void){}
 
-#endif /* IO_H */

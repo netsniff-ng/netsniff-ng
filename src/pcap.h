@@ -6,9 +6,11 @@
  * Subject to the GPL.
  */
 
-#ifndef IO_PCAP_H
-#define IO_PCAP_H
+#ifndef PCAP_H
+#define PCAP_H
 
+#include <unistd.h>
+#include <stdint.h>
 #include <sys/time.h>
 #include <linux/if_packet.h>
 
@@ -54,10 +56,6 @@ struct pcap_nsf_pkthdr {
 
 struct pcap_pkthdr {
 	struct pcap_timeval ts;
-	/*
-	 * If netsniff-ngs zLib compression used, this is the buff len
-	 * for inflate.
-	 */
 	uint32_t caplen;
 	uint32_t len;
 };
@@ -90,4 +88,4 @@ static inline void pcap_pkthdr_to_tpacket_hdr(struct pcap_pkthdr *phdr,
 	thdr->tp_len = phdr->len;
 }
 
-#endif /* IO_PCAP_H */
+#endif /* PCAP_H */

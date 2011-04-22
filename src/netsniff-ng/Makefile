@@ -18,8 +18,9 @@ lib-objs   = hash.o                  \
 	     bpf.o                   \
 	     psched.o                \
 	     misc.o                  \
-	     io.o                    \
-	     io_pcap.o               \
+	     rw_pcap.o               \
+	     mmap_pcap.o             \
+	     sg_pcap.o               \
 	     write_or_die.o          \
 	     rx_ring.o               \
 	     tx_ring.o               \
