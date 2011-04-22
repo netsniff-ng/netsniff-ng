@@ -31,9 +31,14 @@ lib-objs   = hash.o                  \
 
 target     = netsniff-ng
 
-all: clean gen-version build doc
+all: note clean gen-version build doc
 debug: all
 deploy: all strip
+
+note:
+	@echo "+------------------------------------------+"
+	@echo "NOTE: do a 'make deploy' for production use!"
+	@echo "+------------------------------------------+"
 
 gen-version:
 	@cd .. && cat ../VERSION | xargs ./gen_build_info.pl
