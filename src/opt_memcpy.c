@@ -8,6 +8,7 @@
 #include <string.h>
 #include <signal.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "die.h"
 #include "compiler.h"
@@ -39,6 +40,7 @@ struct cpuid_regs {
 
 static int check_cpu_flags(void)
 {
+	int found = 0, ret = CPU_FLAG_NONE;
 	struct cpuid_regs regs;
 
 #define CPUID ".byte 0x0f, 0xa2; "
@@ -46,14 +48,32 @@ static int check_cpu_flags(void)
 		     "=b" (regs.ebx),
 		     "=c" (regs.ecx),
 		     "=d" (regs.edx) : "0" (1));
-
-	if (regs.edx & 0x4000000)
-		return CPU_FLAG_SSE2;
-	if (regs.edx & 0x2000000)
-		return CPU_FLAG_SSE;
-	if (regs.edx & 0x800000)
-		return CPU_FLAG_MMX;
-	return CPU_FLAG_NONE;
+	/* Note: priority ordered */
+	info("Found ");
+	if (regs.edx & 0x4000000) {
+		info("SSE2 ");
+		found = 1;
+		ret = CPU_FLAG_SSE2;
+		goto out;
+	}
+	if (regs.edx & 0x2000000) {
+		info("SSE ");
+		found = 1;
+		ret = CPU_FLAG_SSE;
+		goto out;
+	}
+	if (regs.edx & 0x800000) {
+		info("MMX ");
+		found = 1;
+		ret = CPU_FLAG_MMX;
+		goto out;
+	}
+	if (!found)
+		info("nothing (:-P) ");
+out:
+	info("on CPU!\n");
+	fflush(stdout);
+	return ret;
 }
 
 #define small_memcpy(dest, src, n)                                       \
@@ -300,16 +320,13 @@ void set_memcpy(void)
 	if (likely(checked))
 		return;
 	cpu_flag = check_cpu_flags();
-	if (cpu_flag == CPU_FLAG_SSE2) {
+	if (cpu_flag == CPU_FLAG_SSE2)
 		____memcpy = __sse_memcpy_64;
-		info("Using __sse_memcpy_64!\n");
-	} else if (cpu_flag == CPU_FLAG_SSE) {
+	else if (cpu_flag == CPU_FLAG_SSE)
 		____memcpy = __sse_memcpy_32;
-		info("Using __sse_memcpy_32!\n");
-	} else if (cpu_flag == CPU_FLAG_MMX) {
+	else if (cpu_flag == CPU_FLAG_MMX)
 		____memcpy = __mmx_memcpy_64;
-		info("Using __sse_memcpy_64!\n");
-	} else
+	else
 		____memcpy = memcpy;
 	checked = 1;
 }
