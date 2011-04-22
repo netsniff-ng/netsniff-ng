@@ -13,8 +13,8 @@
 
 #ifndef __cacheline_aligned
 #define __cacheline_aligned                             \
-	__attribute__((__aligned__(CACHE_ALIGN_BYTES))) \
-	__page_aligned_data
+	__attribute__((__aligned__(CACHE_ALIGN_BYTES)))
+/*	__page_aligned_data */
 #endif
 
 #ifndef likely

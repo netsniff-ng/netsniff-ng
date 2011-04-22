@@ -168,7 +168,7 @@ static inline int set_timeout(struct timeval *timeval, unsigned int msec)
 }
 
 /* x86 ticks */
-static unsigned long long getticks(void)
+static inline unsigned long long getticks(void)
 {
 	unsigned int __a,__d;
 

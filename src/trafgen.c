@@ -24,6 +24,7 @@
 #include <net/ethernet.h>
 
 #include "xmalloc.h"
+#include "opt_memcpy.h"
 #include "strlcpy.h"
 #include "die.h"
 #include "netdev.h"
@@ -269,8 +270,7 @@ static void tx_tgap_or_die(struct mode *mode, struct pktconf *cfg)
 			cfg->pkts[l].payload[rnd->off] = rnd->val;
 		}
 
-		memcpy(pkt, cfg->pkts[l].payload, cfg->pkts[l].plen);
-
+		__memcpy(pkt, cfg->pkts[l].payload, cfg->pkts[l].plen);
 		mode->stats.tx_bytes += cfg->pkts[l].plen;
 		mode->stats.tx_packets++;
 
