@@ -1,5 +1,6 @@
  * Implement the rest of netsniff-ng
  * Add scatter/gather I/O for PCAP
+ * Disc I/O scheduling policy
  * OProfile it
  * Maybe URCU
  * Improve trafgen
