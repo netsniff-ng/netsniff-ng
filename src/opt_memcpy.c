@@ -28,7 +28,7 @@
  */
 
 static sig_atomic_t checked = 0;
-static void *(*____memcpy)(void *dest, const void *src, size_t n) = NULL;
+void *(*____memcpy)(void *dest, const void *src, size_t n) = memcpy;
 
 struct cpuid_regs {
 	unsigned int eax;
@@ -293,13 +293,12 @@ void *__mmx_memcpy_64(void *dest, const void *src, size_t n)
 }
 
 /* Will be extended in future! */
-void *__memcpy(void *dest, const void *src, size_t n)
+void set_memcpy(void)
 {
 	int cpu_flag;
 
 	if (likely(checked))
-		return ____memcpy(dest, src, n);
-
+		return;
 	cpu_flag = check_cpu_flags();
 	if (cpu_flag == CPU_FLAG_SSE2) {
 		____memcpy = __sse_memcpy_64;
@@ -312,7 +311,5 @@ void *__memcpy(void *dest, const void *src, size_t n)
 		info("Using __sse_memcpy_64!\n");
 	} else
 		____memcpy = memcpy;
-
 	checked = 1;
-	return ____memcpy(dest, src, n);
 }

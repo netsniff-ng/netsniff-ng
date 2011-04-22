@@ -238,6 +238,7 @@ static void tx_tgap_or_die(struct mode *mode, struct pktconf *cfg)
 			panic("Device packet size too short!\n");
 	}
 
+	set_memcpy();
 	sock = pf_socket();
 	pkt = xzmalloc(mtu);
 	ifindex = device_ifindex(mode->device);
@@ -323,6 +324,7 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 			panic("Device packet size too short!\n");
 	}
 
+	set_memcpy();
 	sock = pf_socket();
 
 	memset(&tx_ring, 0, sizeof(tx_ring));
@@ -387,7 +389,7 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 				cfg->pkts[l].payload[rnd->off] = rnd->val;
 			}
 
-			memcpy(out, cfg->pkts[l].payload, cfg->pkts[l].plen);
+			__memcpy(out, cfg->pkts[l].payload, cfg->pkts[l].plen);
 
 			mode->stats.tx_bytes += cfg->pkts[l].plen;
 			mode->stats.tx_packets++;
