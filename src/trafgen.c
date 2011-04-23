@@ -99,7 +99,7 @@ static struct option long_options[] = {
 	{"unbind-cpu", required_argument, 0, 'B'},
 	{"kernel-pull", required_argument, 0, 'k'},
 	{"rand", no_argument, 0, 'r'},
-	{"prio-norm", no_argument, 0, 'H'},
+	{"prio-high", no_argument, 0, 'H'},
 	{"notouch-irq", no_argument, 0, 'Q'},
 	{"version", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
@@ -165,7 +165,7 @@ static void help(void)
 	printf("                         Instead of a round robin selection\n");
 	printf("  -S|--ring-size <size>  Manually set ring size to <size>:\n");
 	printf("                         mmap space in KB/MB/GB, e.g. \'10MB\'\n");
-	printf("  -H|--prio-norm         Do not high priorize process\n");
+	printf("  -H|--prio-high         Make this high priorize process\n");
 	printf("  -Q|--notouch-irq       Do not touch IRQ CPU affinity of NIC\n");
 	printf("  -b|--bind-cpu <cpu>    Bind to specific CPU or CPU-range\n");
 	printf("  -B|--unbind-cpu <cpu>  Forbid to use specific CPU or CPU-range\n");
@@ -690,7 +690,7 @@ int main(int argc, char **argv)
 	int c, opt_index, ret, i, j;
 	char *confname = NULL, *ptr;
 	unsigned long pkts = 0, gap = 0;
-	bool prio_high = true;
+	bool prio_high = false;
 	struct mode mode;
 
 	check_for_root_maybe_die();
@@ -757,7 +757,7 @@ int main(int argc, char **argv)
 			set_cpu_affinity(optarg, 1);
 			break;
 		case 'H':
-			prio_high = false;
+			prio_high = true;
 			break;
 		case 'Q':
 			mode.cpu = CPU_NOTOUCH;

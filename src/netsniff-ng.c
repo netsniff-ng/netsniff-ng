@@ -73,7 +73,7 @@ static struct option long_options[] = {
 	{"kernel-pull", required_argument, 0, 'k'},
 	{"bind-cpu", required_argument, 0, 'b'},
 	{"unbind-cpu", required_argument, 0, 'B'},
-	{"prio-norm", no_argument, 0, 'H'},
+	{"prio-high", no_argument, 0, 'H'},
 	{"notouch-irq", no_argument, 0, 'Q'},
 	{"silent", no_argument, 0, 's'},
 	{"less", no_argument, 0, 'q'},
@@ -224,7 +224,7 @@ static void help(void)
 	printf("                               is populated with payload from uspace\n");
 	printf("  -b|--bind-cpu <cpu>          Bind to specific CPU or CPU-range\n");
 	printf("  -B|--unbind-cpu <cpu>        Forbid to use specific CPU or CPU-range\n");
-	printf("  -H|--prio-norm               Do not high priorize process\n");
+	printf("  -H|--prio-high               Make this high priorize process\n");
 	printf("  -Q|--notouch-irq             Do not touch IRQ CPU affinity of NIC\n");
 	printf("  -s|--silent                  Do not print captured packets\n");
 	printf("  -q|--less                    Print less-verbose packet information\n");
@@ -284,7 +284,7 @@ int main(int argc, char **argv)
 {
 	int c, i, j, opt_index;
 	char *ptr;
-	bool prio_high = true;
+	bool prio_high = false;
 	struct mode mode;
 	void (*enter_mode)(struct mode *mode) = NULL;
 
@@ -362,7 +362,7 @@ int main(int argc, char **argv)
 			set_cpu_affinity(optarg, 1);
 			break;
 		case 'H':
-			prio_high = false;
+			prio_high = true;
 			break;
 		case 'Q':
 			mode.cpu = CPU_NOTOUCH;
