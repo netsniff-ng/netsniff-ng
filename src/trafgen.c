@@ -390,7 +390,6 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 			}
 
 			__memcpy(out, cfg->pkts[l].payload, cfg->pkts[l].plen);
-
 			mode->stats.tx_bytes += cfg->pkts[l].plen;
 			mode->stats.tx_packets++;
 
