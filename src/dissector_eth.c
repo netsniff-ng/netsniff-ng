@@ -11,12 +11,6 @@
 #include "protos.h"
 #include "dissector.h"
 #include "dissector_eth.h"
-#define __DATA__
-#include "oui.h"
-#include "ports_udp.h"
-#include "ports_tcp.h"
-#include "ether_types.h"
-#undef __DATA__
 
 /* The entry proto to jump into */
 #define DISSECTOR_ETHERNET_ENTRY_OPS ethernet_ops
@@ -35,34 +29,34 @@ struct hash_table ethernet_oui;
 
 char *lookup_vendor(unsigned int id)
 {
-	struct vendor_id *entry = lookup_hash(id, &ethernet_oui);
-	while (entry && id != entry->id)
-		entry = entry->next;
-	return (entry && id == entry->id ? entry->vendor : "Unknown");
+//	struct vendor_id *entry = lookup_hash(id, &ethernet_oui);
+//	while (entry && id != entry->id)
+//		entry = entry->next;
+	return /*(entry && id == entry->id ? entry->vendor :*/ "Unknown";
 }
 
 char *lookup_port_udp(unsigned int id)
 {
-	struct port_udp *entry = lookup_hash(id, &ethernet_ports_udp);
-	while (entry && id != entry->id)
-		entry = entry->next;
-	return (entry && id == entry->id ? entry->port : "Unknown");
+//	struct port_udp *entry = lookup_hash(id, &ethernet_ports_udp);
+//	while (entry && id != entry->id)
+//		entry = entry->next;
+	return /*(entry && id == entry->id ? entry->port :*/ "Unknown";
 }
 
 char *lookup_port_tcp(unsigned int id)
 {
-	struct port_tcp *entry = lookup_hash(id, &ethernet_ports_tcp);
-	while (entry && id != entry->id)
-		entry = entry->next;
-	return (entry && id == entry->id ? entry->port : "Unknown");
+//	struct port_tcp *entry = lookup_hash(id, &ethernet_ports_tcp);
+//	while (entry && id != entry->id)
+//		entry = entry->next;
+	return /*(entry && id == entry->id ? entry->port :*/ "Unknown";
 }
 
 char *lookup_ether_type(unsigned int id)
 {
-	struct ether_type *entry = lookup_hash(id, &ethernet_ether_types);
-	while (entry && id != entry->id)
-		entry = entry->next;
-	return (entry && id == entry->id ? entry->type : "Unknown");
+//	struct ether_type *entry = lookup_hash(id, &ethernet_ether_types);
+//	while (entry && id != entry->id)
+//		entry = entry->next;
+	return /*(entry && id == entry->id ? entry->type :*/ "Unknown";
 }
 
 static inline void dissector_init_entry(int (*fnt)(void *ptr))
@@ -112,66 +106,66 @@ inline struct protocol *dissector_get_ethernet_exit_point(void)
 
 static inline void dissector_init_oui(void)
 {
-	void **pos;
-	size_t i, len = sizeof(vendor_db) / sizeof(struct vendor_id);
-
-	init_hash(&ethernet_oui);
-	for (i = 0; i < len; ++i) {
-		pos = insert_hash(vendor_db[i].id, &vendor_db[i],
-				  &ethernet_oui);
-		if (pos) {
-			vendor_db[i].next = *pos;
-			*pos = &vendor_db[i];
-		}
-	}
+//	void **pos;
+//	size_t i, len = sizeof(vendor_db) / sizeof(struct vendor_id);
+//
+//	init_hash(&ethernet_oui);
+//	for (i = 0; i < len; ++i) {
+//		pos = insert_hash(vendor_db[i].id, &vendor_db[i],
+//				  &ethernet_oui);
+//		if (pos) {
+//			vendor_db[i].next = *pos;
+//			*pos = &vendor_db[i];
+//		}
+//	}
 }
 
 static inline void dissector_init_ports_udp(void)
 {
-	void **pos;
-	size_t i, len = sizeof(ports_udp) / sizeof(struct port_udp);
-
-	init_hash(&ethernet_ports_udp);
-	for (i = 0; i < len; ++i) {
-		pos = insert_hash(ports_udp[i].id, &ports_udp[i],
-				  &ethernet_ports_udp);
-		if (pos) {
-			ports_udp[i].next = *pos;
-			*pos = &ports_udp[i];
-		}
-	}
+//	void **pos;
+//	size_t i, len = sizeof(ports_udp) / sizeof(struct port_udp);
+//
+//	init_hash(&ethernet_ports_udp);
+//	for (i = 0; i < len; ++i) {
+//		pos = insert_hash(ports_udp[i].id, &ports_udp[i],
+//				  &ethernet_ports_udp);
+//		if (pos) {
+//			ports_udp[i].next = *pos;
+//			*pos = &ports_udp[i];
+//		}
+//	}
 }
 
 static inline void dissector_init_ports_tcp(void)
 {
-	void **pos;
-	size_t i, len = sizeof(ports_tcp) / sizeof(struct port_tcp);
-
-	init_hash(&ethernet_ports_tcp);
-	for (i = 0; i < len; ++i) {
-		pos = insert_hash(ports_tcp[i].id, &ports_tcp[i],
-				  &ethernet_ports_tcp);
-		if (pos) {
-			ports_tcp[i].next = *pos;
-			*pos = &ports_tcp[i];
-		}
-	}
+//	void **pos;
+//	size_t i, len = sizeof(ports_tcp) / sizeof(struct port_tcp);
+//
+//	init_hash(&ethernet_ports_tcp);
+//	for (i = 0; i < len; ++i) {
+//		pos = insert_hash(ports_tcp[i].id, &ports_tcp[i],
+//				  &ethernet_ports_tcp);
+//		if (pos) {
+//			ports_tcp[i].next = *pos;
+//			*pos = &ports_tcp[i];
+//		}
+//	}
 }
 
 static inline void dissector_init_ether_types(void)
 {
-	void **pos;
-	size_t i, len = sizeof(ether_types) / sizeof(struct ether_type);
-
-	init_hash(&ethernet_ether_types);
-	for (i = 0; i < len; ++i) {
-		pos = insert_hash(ether_types[i].id, &ether_types[i],
-				  &ethernet_ether_types);
-		if (pos) {
-			ether_types[i].next = *pos;
-			*pos = &ether_types[i];
-		}
-	}
+//	void **pos;
+//	size_t i, len = sizeof(ether_types) / sizeof(struct ether_type);
+//
+//	init_hash(&ethernet_ether_types);
+//	for (i = 0; i < len; ++i) {
+//		pos = insert_hash(ether_types[i].id, &ether_types[i],
+//				  &ethernet_ether_types);
+//		if (pos) {
+//			ether_types[i].next = *pos;
+//			*pos = &ether_types[i];
+//		}
+//	}
 }
 
 void dissector_init_ethernet(int fnttype)
