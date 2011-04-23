@@ -20,14 +20,9 @@
 #define CPU_FLAG_SSE    3
 #define CPU_FLAG_SSE2   4
 
-/*
- * memcpy(3) provided by glibc does obviously not exploit all the
- * CPU features, i.e. did testing with SSE2 memcpy vs. glibc memcpy
- * and the former was about 4 times as fast!
- */
-
 static sig_atomic_t checked = 0;
-void *(*____memcpy)(void *dest, const void *src, size_t n) = memcpy;
+void *(*____memcpy)(void *__restrict__ dest, const void *__restrict__ src,
+		    size_t n) = ___memcpy;
 
 struct cpuid_regs {
 	unsigned int eax;
@@ -67,42 +62,12 @@ static int check_cpu_flags(void)
 	return CPU_FLAG_NONE;
 }
 
-#define small_memcpy(dest, src, n)                                       \
-	do {                                                             \
-		register unsigned long int dummy;                        \
-		asm volatile ("rep; movsb\n\t"                           \
-			      : "=&D" (dest), "=&S" (src), "=&c" (dummy) \
-			      : "0" (dest), "1" (src), "2" (n)           \
-			      : "memory");                               \
-	} while(0)
-
-/* From the Linux kernel. */
-static inline void *___memcpy(void *dest, const void *src, size_t n)
-{
-	int d0, d1, d2;
-
-	if (n == 4)
-		small_memcpy(dest, src, n);
-	else
-		asm volatile("rep ; movsl\n\t"
-			     "testb $2,%b4\n\t"
-			     "je 1f\n\t"
-			     "movsw\n"
-			     "1:\ttestb $1,%b4\n\t"
-			     "je 2f\n\t"
-			     "movsb\n"
-			     "2:"
-			     : "=&c" (d0), "=&D" (d1), "=&S" (d2)
-			     : "0" (n / 4), "q" (n), "1" ((long)dest), "2" ((long)src)
-			     : "memory");
-	return (dest);
-}
-
 #define MIN_LEN        0x40
 #define SSE_MMREG_SIZE 16
 #define MMX_MMREG_SIZE  8
 
-void *__sse_memcpy(void *dest, const void *src, size_t n)
+void *__sse_memcpy(void *__restrict__ dest,
+		   const void *__restrict__ src, size_t n)
 {
 	uint8_t *to = dest;
 	const uint8_t *from = src;
@@ -117,7 +82,8 @@ void *__sse_memcpy(void *dest, const void *src, size_t n)
 			      "prefetchnta 192(%0)\n"
 			      "prefetchnta 224(%0)\n"
 			      "prefetchnta 256(%0)\n"
-			      "prefetchnta 288(%0)\n"::"r" (from));
+			      "prefetchnta 288(%0)\n"
+			      :: "r" (from));
 
 	if (n >= MIN_LEN) {
 		register int i;
@@ -143,8 +109,9 @@ void *__sse_memcpy(void *dest, const void *src, size_t n)
 					      "movntps %%xmm0, (%1)\n"
 					      "movntps %%xmm1, 16(%1)\n"
 					      "movntps %%xmm2, 32(%1)\n"
-					      "movntps %%xmm3, 48(%1)\n"::"r" (from),
-					      "r" (to):"memory");
+					      "movntps %%xmm3, 48(%1)\n"
+					      :: "r" (from), "r" (to)
+					      : "memory");
 			from += 64;
 			to += 64;
 		}
@@ -156,7 +123,8 @@ void *__sse_memcpy(void *dest, const void *src, size_t n)
 	return save;
 }
 
-void *__sse2_memcpy(void *dest, const void *src, size_t n)
+void *__sse2_memcpy(void *__restrict__ dest, const void *__restrict__ src,
+		    size_t n)
 {
 	uint8_t *to = dest;
 	const uint8_t *from = src;
@@ -166,7 +134,8 @@ void *__sse2_memcpy(void *dest, const void *src, size_t n)
 			      "prefetchnta 64(%0)\n"
 			      "prefetchnta 128(%0)\n"
 			      "prefetchnta 192(%0)\n"
-			      "prefetchnta 256(%0)\n"::"r" (from));
+			      "prefetchnta 256(%0)\n"
+			      :: "r" (from));
 
 	if (n >= MIN_LEN) {
 		register int i;
@@ -191,8 +160,9 @@ void *__sse2_memcpy(void *dest, const void *src, size_t n)
 					      "movntps %%xmm0, (%1)\n"
 					      "movntps %%xmm1, 16(%1)\n"
 					      "movntps %%xmm2, 32(%1)\n"
-					      "movntps %%xmm3, 48(%1)\n"::"r" (from),
-					      "r" (to):"memory");
+					      "movntps %%xmm3, 48(%1)\n"
+					      :: "r" (from), "r" (to)
+					      : "memory");
 			from += 64;
 			to += 64;
 		}
@@ -201,11 +171,12 @@ void *__sse2_memcpy(void *dest, const void *src, size_t n)
 	}
 
 	if (n != 0)
-		___memcpy (to, from, n);
+		___memcpy(to, from, n);
 	return save;
 }
 
-void *__mmx_memcpy(void *dest, const void *src, size_t n)
+void *__mmx_memcpy(void *__restrict__ dest, const void *__restrict__ src,
+		   size_t n)
 {
 	uint8_t *to = dest;
 	const uint8_t *from = src;
@@ -222,7 +193,8 @@ void *__mmx_memcpy(void *dest, const void *src, size_t n)
 			      "prefetchnta 192(%0)\n"
 			      "prefetchnta 224(%0)\n"
 			      "prefetchnta 256(%0)\n"
-			      "prefetchnta 288(%0)\n"::"r" (from));
+			      "prefetchnta 288(%0)\n"
+			      :: "r" (from));
 	j = n >> 6;
 	n &= 63;
 	for (i = 0; i < j; i++) {
@@ -243,8 +215,9 @@ void *__mmx_memcpy(void *dest, const void *src, size_t n)
 				      "movq %%mm4, 32(%1)\n"
 				      "movq %%mm5, 40(%1)\n"
 				      "movq %%mm6, 48(%1)\n"
-				      "movq %%mm7, 56(%1)\n"::"r" (from),
-				      "r" (to):"memory");
+				      "movq %%mm7, 56(%1)\n"
+				      :: "r" (from), "r" (to)
+				      : "memory");
 		from += 64;
 		to += 64;
 	}
@@ -253,11 +226,12 @@ void *__mmx_memcpy(void *dest, const void *src, size_t n)
 	__asm__ __volatile__ ("emms":::"memory");
 
 	if (n != 0)
-		___memcpy (to, from, n);
+		___memcpy(to, from, n);
 	return save;
 }
 
-void *__mmx2_memcpy(void *dest, const void *src, size_t n)
+void *__mmx2_memcpy(void *__restrict__ dest, const void *__restrict__ src,
+		    size_t n)
 {
 	uint8_t *to = dest;
 	const uint8_t *from = src;
@@ -289,8 +263,9 @@ void *__mmx2_memcpy(void *dest, const void *src, size_t n)
 				      "movq %%mm4, 32(%1)\n"
 				      "movq %%mm5, 40(%1)\n"
 				      "movq %%mm6, 48(%1)\n"
-				      "movq %%mm7, 56(%1)\n"::"r" (from),
-				      "r" (to):"memory");
+				      "movq %%mm7, 56(%1)\n"
+				      :: "r" (from), "r" (to)
+				      : "memory");
 		from += 64;
 		to += 64;
 	}
@@ -320,6 +295,6 @@ void set_memcpy(void)
 	else if (cpu_flag == CPU_FLAG_MMX)
 		____memcpy = __mmx_memcpy;
 	else
-		____memcpy = memcpy;
+		____memcpy = ___memcpy;
 	checked = 1;
 }
