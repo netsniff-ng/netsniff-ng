@@ -14,13 +14,11 @@
 #include "compiler.h"
 #include "opt_memcpy.h"
 
-/* TODO: SSSE3? */
-
 #define CPU_FLAG_NONE   0
-#define CPU_FLAG_NOPT   1
-#define CPU_FLAG_MMX    5
-#define CPU_FLAG_SSE    6
-#define CPU_FLAG_SSE2   7
+#define CPU_FLAG_MMX    1
+#define CPU_FLAG_MMX2   2
+#define CPU_FLAG_SSE    3
+#define CPU_FLAG_SSE2   4
 
 /*
  * memcpy(3) provided by glibc does obviously not exploit all the
@@ -40,7 +38,6 @@ struct cpuid_regs {
 
 static int check_cpu_flags(void)
 {
-	int found = 0, ret = CPU_FLAG_NONE;
 	struct cpuid_regs regs;
 
 #define CPUID ".byte 0x0f, 0xa2; "
@@ -48,32 +45,26 @@ static int check_cpu_flags(void)
 		     "=b" (regs.ebx),
 		     "=c" (regs.ecx),
 		     "=d" (regs.edx) : "0" (1));
+
 	/* Note: priority ordered */
 	info("Found ");
-	if (regs.edx & 0x4000000) {
-		info("SSE2 ");
-		found = 1;
-		ret = CPU_FLAG_SSE2;
-		goto out;
-	}
-	if (regs.edx & 0x2000000) {
-		info("SSE ");
-		found = 1;
-		ret = CPU_FLAG_SSE;
-		goto out;
-	}
-	if (regs.edx & 0x800000) {
-		info("MMX ");
-		found = 1;
-		ret = CPU_FLAG_MMX;
-		goto out;
-	}
-	if (!found)
-		info("nothing (:-P) ");
-out:
-	info("on CPU!\n");
-	fflush(stdout);
-	return ret;
+	if (regs.edx & (1 << 26)) {
+		info("SSE2 on CPU!\n");
+		return CPU_FLAG_SSE2;
+	} else if (regs.edx & (1 << 25)) {
+		/* SSE, same as extended MMX, we prefer SSE */
+		info("SSE on CPU!\n");
+		return CPU_FLAG_SSE;
+	} else if (regs.edx & (1 << 25)) {
+		/* Extended MMX */
+		info("MMX2 on CPU!\n");
+		return CPU_FLAG_MMX2;
+	} else if (regs.edx & (1 << 23)) {
+		info("MMX on CPU!\n");
+		return CPU_FLAG_MMX;
+	} else
+		info("nothing on CPU! :-P\n");
+	return CPU_FLAG_NONE;
 }
 
 #define small_memcpy(dest, src, n)                                       \
@@ -111,7 +102,7 @@ static inline void *___memcpy(void *dest, const void *src, size_t n)
 #define SSE_MMREG_SIZE 16
 #define MMX_MMREG_SIZE  8
 
-void *__sse_memcpy_32(void *dest, const void *src, size_t n)
+void *__sse_memcpy(void *dest, const void *src, size_t n)
 {
 	uint8_t *to = dest;
 	const uint8_t *from = src;
@@ -165,7 +156,7 @@ void *__sse_memcpy_32(void *dest, const void *src, size_t n)
 	return save;
 }
 
-void *__sse_memcpy_64(void *dest, const void *src, size_t n)
+void *__sse2_memcpy(void *dest, const void *src, size_t n)
 {
 	uint8_t *to = dest;
 	const uint8_t *from = src;
@@ -214,7 +205,7 @@ void *__sse_memcpy_64(void *dest, const void *src, size_t n)
 	return save;
 }
 
-void *__mmx_memcpy_32(void *dest, const void *src, size_t n)
+void *__mmx_memcpy(void *dest, const void *src, size_t n)
 {
 	uint8_t *to = dest;
 	const uint8_t *from = src;
@@ -266,7 +257,7 @@ void *__mmx_memcpy_32(void *dest, const void *src, size_t n)
 	return save;
 }
 
-void *__mmx_memcpy_64(void *dest, const void *src, size_t n)
+void *__mmx2_memcpy(void *dest, const void *src, size_t n)
 {
 	uint8_t *to = dest;
 	const uint8_t *from = src;
@@ -321,11 +312,13 @@ void set_memcpy(void)
 		return;
 	cpu_flag = check_cpu_flags();
 	if (cpu_flag == CPU_FLAG_SSE2)
-		____memcpy = __sse_memcpy_64;
+		____memcpy = __sse2_memcpy;
 	else if (cpu_flag == CPU_FLAG_SSE)
-		____memcpy = __sse_memcpy_32;
+		____memcpy = __sse_memcpy;
+	else if (cpu_flag == CPU_FLAG_MMX2)
+		____memcpy = __mmx2_memcpy;
 	else if (cpu_flag == CPU_FLAG_MMX)
-		____memcpy = __mmx_memcpy_64;
+		____memcpy = __mmx_memcpy;
 	else
 		____memcpy = memcpy;
 	checked = 1;
