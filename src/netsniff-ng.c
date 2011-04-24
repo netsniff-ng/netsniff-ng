@@ -192,15 +192,17 @@ void enter_mode_pcap_to_tx(struct mode *mode)
 			out = ((uint8_t *) hdr) + TPACKET_HDRLEN -
 			      sizeof(struct sockaddr_ll);
 
-			/* Todo: BPF, dissector! */
-
-			ret = pcap_ops[mode->pcap]->read_pcap_pkt(fd, &phdr,
-					out, ring_frame_size(&tx_ring));
-			if (unlikely(ret <= 0)) {
-				whine("Read error from pcap! Too small MTU "
-				      "or broken pcap?\n");
-				goto out;
-			}
+			/* Todo: dissector! */
+			do {
+				ret = pcap_ops[mode->pcap]->read_pcap_pkt(fd, &phdr,
+						out, ring_frame_size(&tx_ring));
+				if (unlikely(ret <= 0)) {
+					whine("Read error from pcap! Too small MTU "
+					      "or broken pcap?\n");
+					goto out;
+				}
+			} while (mode->filter && bpf_run_filter(&bpf_ops, out,
+								phdr.len));
 			pcap_pkthdr_to_tpacket_hdr(&phdr, &hdr->tp_h);
 
 			stats.tx_bytes += hdr->tp_h.tp_len;;
