@@ -68,6 +68,7 @@ install:
 	@install -D $(target) $(DESTDIR)/$(BINDIR)/$(target)
 	@install -d $(DESTDIR)/$(ETCDIR)/$(target)/rules
 	@cp -r ../rules/*.bpf $(DESTDIR)/$(ETCDIR)/$(target)/rules/
+	@cp -r ../conf/* $(DESTDIR)/$(ETCDIR)/$(target)/
 	@install -D $(target).8.gz $(DESTDIR)/usr/share/man/man8/$(target).8.gz
 
 uninstall:
