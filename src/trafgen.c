@@ -26,6 +26,7 @@
 #include "xmalloc.h"
 #include "opt_memcpy.h"
 #include "strlcpy.h"
+#include "parser.h"
 #include "die.h"
 #include "netdev.h"
 #include "psched.h"
@@ -417,25 +418,6 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 	printf("\r%lu bytes outgoing\n", mode->stats.tx_bytes);
 }
 
-static inline char *getuint(char *in, uint32_t *out)
-{
-	char *pt = in, tmp;
-	while (*in && (isdigit(*in) || isxdigit(*in) || *in == 'x'))
-		in++;
-	if (!*in)
-		panic("Syntax error!\n");
-	tmp = *in;
-	*in = 0;
-	*out = strtol(pt, NULL, 0);
-	if (errno == EINVAL) {
-		*out = strtol(pt, NULL, 16);
-		if (errno == EINVAL)
-			panic("Syntax error!\n");
-	}
-	*in = tmp;
-	return in;
-}
-
 #define TYPE_NUM 0
 #define TYPE_CNT 1
 #define TYPE_RND 2
@@ -460,24 +442,6 @@ static inline char *getuint_or_obj(char *in, uint32_t *out, int *type)
 		in = getuint(in, out);
 		*type = TYPE_NUM;
 	}
-
-	return in;
-}
-
-static inline char *skipchar(char *in, char c)
-{
-	if (*in != c)
-		panic("Syntax error!\n");
-	return ++in;
-}
-
-static inline char *skipchar_s(char *in, char c)
-{
-	in = skips(in);
-	if (*in == '\n')
-		return in;
-	in = skipchar(in, c);
-	in = skips(in);
 
 	return in;
 }

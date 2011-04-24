@@ -14,6 +14,7 @@ lib-objs   = xmalloc.o                  \
 	     strlcpy.o                  \
 	     psched.o                   \
 	     misc.o                     \
+	     parser.o                   \
 	     mtrand.o                   \
 	     opt_memcpy.o               \
 	     write_or_die.o             \

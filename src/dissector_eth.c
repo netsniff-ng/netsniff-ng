@@ -114,6 +114,22 @@ static void dissector_init_lay4(int (*fnt)(void *ptr))
 
 static void dissector_init_oui(void)
 {
+	FILE *fp;
+	char buff[512];
+	struct vendor_id *ven;
+
+	fp = fopen("/etc/netsniff-ng/oui.conf", "r");
+	if (!fp)
+		panic("No /etc/netsniff-ng/oui.conf found!\n");
+	memset(buff, 0, sizeof(buff));
+	while (fgets(buff, sizeof(buff), fp) != NULL) {
+		buff[sizeof(buff) - 1] = 0;
+		
+		memset(buff, 0, sizeof(buff));
+	}
+
+	fclose(fp);
+
 //	void **pos;
 //	size_t i, len = sizeof(vendor_db) / sizeof(struct vendor_id);
 //
