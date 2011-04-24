@@ -86,11 +86,17 @@ static ssize_t rw_pcap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 	return sizeof(*hdr) + hdr->len;
 }
 
+static void rw_pcap_fsync_pcap(int fd)
+{
+	fdatasync(fd);
+}
+
 struct pcap_file_ops rw_pcap_ops __read_mostly = {
 	.pull_file_header = rw_pcap_pull_file_header,
 	.push_file_header = rw_pcap_push_file_header,
 	.write_pcap_pkt = rw_pcap_write_pcap_pkt,
 	.read_pcap_pkt = rw_pcap_read_pcap_pkt,
+	.fsync_pcap = rw_pcap_fsync_pcap,
 };
 
 int init_rw_pcap(void)

@@ -205,7 +205,6 @@ void enter_mode_rx_only_or_dump(struct mode *mode)
 			show_frame_hdr(hdr, mode->print_mode);
 			dissector_entry_point(packet, hdr->tp_h.tp_snaplen,
 					      mode->link_type);
-
 next:
 			kernel_may_pull_from_rx(&hdr->tp_h);
 			next_slot(&it, &rx_ring);
@@ -227,8 +226,10 @@ next:
 		leave_promiscuous_mode(mode->device_in, ifflags);
 
 	close(sock);
-	if (mode->dump)
+	if (mode->dump) {
+		pcap_ops[mode->pcap]->fsync_pcap(fd);
 		close(fd);
+	}
 }
 
 static void help(void)
