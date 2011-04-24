@@ -48,7 +48,9 @@ struct ring {
 
 static inline void next_slot(unsigned int *it, struct ring *ring)
 {
-	*it = (*it + 1) % ring->layout.tp_frame_nr;
+	*it = (*it + 1);
+	if (*it >= ring->layout.tp_frame_nr)
+		*it = 0;
 }
 
 static inline unsigned int ring_size(char *ifname, unsigned int size)
@@ -90,6 +92,11 @@ static inline void show_frame_hdr(struct frame_map *hdr, int mode)
 	default:
 		break;
 	}
+}
+
+static inline unsigned int ring_frame_size(struct ring *ring)
+{
+	return ring->layout.tp_frame_size;
 }
 
 #endif /* RING_H */

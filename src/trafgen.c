@@ -282,8 +282,11 @@ static void tx_tgap_or_die(struct mode *mode, struct pktconf *cfg)
 			whine("sendto error!\n");
 		if (mode->rand)
 			l = mt_rand_int32() % cfg->len;
-		else
-			l = (l + 1) % cfg->len;
+		else {
+			l++;
+			if (l >= cfg->len)
+				l = 0;
+		}
 		if (cfg->num > 0)
 			num--;
 
@@ -396,8 +399,11 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 
 			if (mode->rand)
 				l = mt_rand_int32() % cfg->len;
-			else
-				l = (l + 1) % cfg->len;
+			else {
+				l++;
+				if (l >= cfg->len)
+					l = 0;
+			}
 
 			kernel_may_pull_from_tx(&hdr->tp_h);
 			next_slot(&it, &tx_ring);

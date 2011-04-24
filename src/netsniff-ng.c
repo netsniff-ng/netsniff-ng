@@ -11,10 +11,12 @@
 #include <signal.h>
 #include <getopt.h>
 #include <ctype.h>
+#include <time.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <pthread.h>
@@ -31,6 +33,7 @@
 #include "signals.h"
 #include "write_or_die.h"
 #include "die.h"
+#include "opt_memcpy.h"
 #include "tprintf.h"
 #include "dissector.h"
 #include "xmalloc.h"
@@ -46,7 +49,6 @@ struct mode {
 	char *device_out;
 	char *filter;
 	int cpu;
-	int mmap;
 	int dump;
 	/* dissector */
 	int link_type;
@@ -57,11 +59,14 @@ struct mode {
 	bool randomize;
 	bool promiscuous;
 	enum pcap_ops_groups pcap;
+	unsigned long kpull;
 };
 
 static sig_atomic_t sigint = 0;
 
-//static unsigned long interval = TX_KERNEL_PULL_INT;
+static unsigned long interval = TX_KERNEL_PULL_INT;
+static int tx_sock;
+static struct itimerval itimer;
 
 static const char *short_options = "d:i:o:rf:Mt:S:k:b:B:HQmcsqlxCXNvh";
 
@@ -106,11 +111,105 @@ static void signal_handler(int number)
 	}
 }
 
+static void timer_elapsed(int number)
+{
+	itimer.it_interval.tv_sec = 0;
+	itimer.it_interval.tv_usec = interval;
+	itimer.it_value.tv_sec = 0;
+	itimer.it_value.tv_usec = interval;
+
+	pull_and_flush_tx_ring(tx_sock);
+	setitimer(ITIMER_REAL, &itimer, NULL);
+}
+
 void enter_mode_pcap_to_tx(struct mode *mode)
 {
-	printf("pcap->tx\n");
-// if (device_up_and_running(mode.device) == 0)
-//                error_and_die(EXIT_FAILURE, "Networking device not running!\n");
+	int irq, ifindex, fd = 0, ret;
+	unsigned int size, it = 0;
+	struct ring tx_ring;
+	struct frame_map *hdr;
+	struct sock_fprog bpf_ops;
+	uint8_t *out = NULL;
+
+	set_memcpy();
+	tx_sock = pf_socket();
+
+	if (!pcap_ops[mode->pcap])
+		panic("pcap group not supported!\n");
+	fd = open_or_die(mode->device_in, O_RDONLY);
+	ret = pcap_ops[mode->pcap]->pull_file_header(fd);
+	if (ret)
+		panic("error reading pcap header!\n");
+
+	memset(&tx_ring, 0, sizeof(tx_ring));
+	memset(&bpf_ops, 0, sizeof(bpf_ops));
+
+	ifindex = device_ifindex(mode->device_out);
+	size = ring_size(mode->device_out, mode->reserve_size);
+
+	bpf_parse_rules(mode->filter, &bpf_ops);
+
+	set_packet_loss_discard(tx_sock);
+	setup_tx_ring_layout(tx_sock, &tx_ring, size);
+	create_tx_ring(tx_sock, &tx_ring);
+	mmap_tx_ring(tx_sock, &tx_ring);
+	alloc_tx_ring_frames(&tx_ring);
+	bind_tx_ring(tx_sock, &tx_ring, ifindex);
+
+	if (mode->cpu >= 0 && ifindex > 0) {
+		irq = device_irq_number(mode->device_out);
+		device_bind_irq_to_cpu(mode->cpu, irq);
+		printf("IRQ: %s:%d > CPU%d\n", mode->device_out, irq, 
+		       mode->cpu);
+	}
+
+	if (mode->kpull)
+		interval = mode->kpull;
+
+	itimer.it_interval.tv_sec = 0;
+	itimer.it_interval.tv_usec = interval;
+	itimer.it_value.tv_sec = 0;
+	itimer.it_value.tv_usec = interval;
+	setitimer(ITIMER_REAL, &itimer, NULL); 
+
+	printf("BPF:\n");
+	bpf_dump_all(&bpf_ops);
+	printf("MD: TX %luus\n\n", interval);
+
+	while (likely(sigint == 0)) {
+		while (user_may_pull_from_tx(tx_ring.frames[it].iov_base)) {
+			struct pcap_pkthdr phdr;
+			hdr = tx_ring.frames[it].iov_base;
+			/* Kernel assumes: data = ph.raw + po->tp_hdrlen -
+			 * sizeof(struct sockaddr_ll); */
+			out = ((uint8_t *) hdr) + TPACKET_HDRLEN -
+			      sizeof(struct sockaddr_ll);
+
+			/* Todo: BPF, dissector! */
+
+			ret = pcap_ops[mode->pcap]->read_pcap_pkt(fd, &phdr,
+					out, ring_frame_size(&tx_ring));
+			if (unlikely(ret <= 0))
+				panic("Read error from pcap! Too small MTU?\n");
+			pcap_pkthdr_to_tpacket_hdr(&phdr, &hdr->tp_h);
+
+			kernel_may_pull_from_tx(&hdr->tp_h);
+			next_slot(&it, &tx_ring);
+
+			if (unlikely(sigint == 1))
+				break;
+		}
+	}
+
+	sock_print_net_stats(tx_sock);
+	destroy_tx_ring(tx_sock, &tx_ring);
+
+	close(tx_sock);
+	if (mode->dump) {
+		if (pcap_ops[mode->pcap]->prepare_close_pcap)
+			pcap_ops[mode->pcap]->prepare_close_pcap(fd);
+		close(fd);
+	}
 }
 
 void enter_mode_rx_to_tx(struct mode *mode)
@@ -134,6 +233,7 @@ void enter_mode_rx_only_or_dump(struct mode *mode)
 	struct frame_map *hdr;
 	struct sock_fprog bpf_ops;
 
+	set_memcpy();
 	sock = pf_socket();
 
 	if (mode->dump) {
@@ -197,7 +297,7 @@ void enter_mode_rx_only_or_dump(struct mode *mode)
 				ret = pcap_ops[mode->pcap]->write_pcap_pkt(fd, &phdr,
 									   packet, phdr.len);
 				if (unlikely(ret != sizeof(phdr) + phdr.len))
-					panic("write error to pcap!");
+					panic("write error to pcap!\n");
 			}
 
 			show_frame_hdr(hdr, mode->print_mode);
@@ -426,6 +526,9 @@ int main(int argc, char **argv)
 		case 'N':
 			mode.print_mode = FNTTYPE_PRINT_NOPA;
 			break;
+		case 'k':
+			mode.kpull = atol(optarg);
+			break;
 		case 'v':
 			version();
 			break;
@@ -441,6 +544,7 @@ int main(int argc, char **argv)
 			case 't':
 			case 'S':
 			case 'b':
+			case 'k':
 			case 'B':
 			case 'e':
 				panic("Option -%c requires an argument!\n",
@@ -463,6 +567,7 @@ int main(int argc, char **argv)
 	register_signal(SIGHUP, signal_handler);
 	register_signal(SIGUSR1, signal_handler);
 	register_signal(SIGSEGV, muntrace_handler);
+	register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO);
 
 	init_pcap();
 	tprintf_init();
