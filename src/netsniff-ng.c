@@ -194,7 +194,6 @@ void enter_mode_pcap_to_tx(struct mode *mode)
 			out = ((uint8_t *) hdr) + TPACKET_HDRLEN -
 			      sizeof(struct sockaddr_ll);
 
-			/* Todo: dissector! */
 			do {
 				ret = pcap_ops[mode->pcap]->read_pcap_pkt(fd, &phdr,
 						out, ring_frame_size(&tx_ring));
