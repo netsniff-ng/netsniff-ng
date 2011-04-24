@@ -89,6 +89,7 @@ enum pcap_ops_groups {
 	__PCAP_OPS_MAX,
 };
 #define PCAP_OPS_MAX (__PCAP_OPS_MAX - 1)
+#define PCAP_OPS_SIZ (__PCAP_OPS_MAX)
 
 struct pcap_file_ops {
 	int (*pull_file_header)(int fd);
@@ -98,9 +99,10 @@ struct pcap_file_ops {
 	void (*fsync_pcap)(int fd);
 	ssize_t (*read_pcap_pkt)(int fd, struct pcap_pkthdr *hdr,
 				 uint8_t *packet, size_t len);
+	void (*prepare_close_pcap)(int fd);
 };
 
-extern struct pcap_file_ops *pcap_ops[PCAP_OPS_MAX];
+extern struct pcap_file_ops *pcap_ops[PCAP_OPS_SIZ];
 
 extern int pcap_ops_group_register(struct pcap_file_ops *ops,
 				   enum pcap_ops_groups group);
@@ -138,5 +140,22 @@ extern int init_rw_pcap(void);
 extern void cleanup_rw_pcap(void);
 extern int init_sg_pcap(void);
 extern void cleanup_sg_pcap(void);
+extern int init_mmap_pcap(void);
+extern void cleanup_mmap_pcap(void);
+
+static inline int init_pcap(void)
+{
+	init_rw_pcap();
+	init_sg_pcap();
+	init_mmap_pcap();
+	return 0;
+}
+
+static inline void cleanup_pcap(void)
+{
+	cleanup_rw_pcap();
+	cleanup_sg_pcap();
+	cleanup_mmap_pcap();
+}
 
 #endif /* PCAP_H */

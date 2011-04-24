@@ -139,10 +139,8 @@ void enter_mode_rx_only_or_dump(struct mode *mode)
 	if (mode->dump) {
 		if (!pcap_ops[mode->pcap])
 			panic("pcap group not supported!\n");
-		if (!pcap_ops[mode->pcap]->write_pcap_pkt)
-			panic("pcap group does not support write!\n");
 		fd = open_or_die_m(mode->device_out,
-				   O_CREAT | O_WRONLY | O_TRUNC,
+				   O_RDWR | O_CREAT | O_TRUNC,
 				   S_IRUSR | S_IWUSR);
 		ret = pcap_ops[mode->pcap]->push_file_header(fd);
 		if (ret)
@@ -228,6 +226,8 @@ next:
 	close(sock);
 	if (mode->dump) {
 		pcap_ops[mode->pcap]->fsync_pcap(fd);
+		if (pcap_ops[mode->pcap]->prepare_close_pcap)
+			pcap_ops[mode->pcap]->prepare_close_pcap(fd);
 		close(fd);
 	}
 }
@@ -464,10 +464,7 @@ int main(int argc, char **argv)
 	register_signal(SIGUSR1, signal_handler);
 	register_signal(SIGSEGV, muntrace_handler);
 
-	init_rw_pcap();
-	init_sg_pcap();
-//	init_mmap_pcap();
-
+	init_pcap();
 	tprintf_init();
 	header();
 
@@ -499,9 +496,7 @@ int main(int argc, char **argv)
 	enter_mode(&mode);
 
 	tprintf_cleanup();
-	cleanup_rw_pcap();
-	cleanup_sg_pcap();
-//	cleanup_mmap_pcap();
+	cleanup_pcap();
 
 	if (mode.device_in)
 		xfree(mode.device_in);
