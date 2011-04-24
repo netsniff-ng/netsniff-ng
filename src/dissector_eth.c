@@ -21,36 +21,60 @@ static struct hash_table eth_ports_udp;
 static struct hash_table eth_ports_tcp;
 static struct hash_table eth_oui;
 
+struct vendor_id {
+	unsigned int id;
+	char *vendor;
+	struct vendor_id *next;
+};
+
+struct port_tcp {
+	unsigned int id;
+	char *port;
+	struct port_tcp *next;
+};
+
+struct port_udp {
+	unsigned int id;
+	char *port;
+	struct port_udp *next;
+};
+
+struct ether_type {
+	unsigned int id;
+	char *type;
+	struct ether_type *next;
+};
+
 char *lookup_vendor(unsigned int id)
 {
-//	struct vendor_id *entry = lookup_hash(id, &ethernet_oui);
-//	while (entry && id != entry->id)
-//		entry = entry->next;
-	return /*(entry && id == entry->id ? entry->vendor :*/ "Unknown";
+	struct vendor_id *entry = lookup_hash(id, &eth_oui);
+	while (entry && id != entry->id)
+		entry = entry->next;
+	return (entry && id == entry->id ? entry->vendor : "Unknown");
 }
 
 char *lookup_port_udp(unsigned int id)
 {
-//	struct port_udp *entry = lookup_hash(id, &ethernet_ports_udp);
-//	while (entry && id != entry->id)
-//		entry = entry->next;
-	return /*(entry && id == entry->id ? entry->port :*/ "Unknown";
+	struct port_udp *entry = lookup_hash(id, &eth_ports_udp);
+	while (entry && id != entry->id)
+		entry = entry->next;
+	return (entry && id == entry->id ? entry->port : "Unknown");
 }
 
 char *lookup_port_tcp(unsigned int id)
 {
-//	struct port_tcp *entry = lookup_hash(id, &ethernet_ports_tcp);
-//	while (entry && id != entry->id)
-//		entry = entry->next;
-	return /*(entry && id == entry->id ? entry->port :*/ "Unknown";
+	struct port_tcp *entry = lookup_hash(id, &eth_ports_tcp);
+	while (entry && id != entry->id)
+		entry = entry->next;
+	return (entry && id == entry->id ? entry->port : "Unknown");
 }
 
 char *lookup_ether_type(unsigned int id)
 {
-//	struct ether_type *entry = lookup_hash(id, &ethernet_ether_types);
-//	while (entry && id != entry->id)
-//		entry = entry->next;
-	return /*(entry && id == entry->id ? entry->type :*/ "Unknown";
+	struct ether_type *entry = lookup_hash(id, &eth_ether_types);
+	while (entry && id != entry->id)
+		entry = entry->next;
+	return (entry && id == entry->id ? entry->type : "Unknown");
 }
 
 static inline void dissector_init_entry(int (*fnt)(void *ptr))
