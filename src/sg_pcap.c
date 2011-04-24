@@ -5,7 +5,5 @@
  * Subject to the GPL.
  */
 
-#include "sg_pcap.h"
-
 void _dummy(void){}
 

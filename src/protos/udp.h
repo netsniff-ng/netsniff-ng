@@ -92,7 +92,7 @@ static inline void udp_next(uint8_t *packet, size_t len,
 
 	(*off) = sizeof(struct udphdr);
 	(*key) = udp_port(udp->source, udp->dest);
-	(*table) = &ethernet_level4;
+	(*table) = &eth_lay4;
 
 	return;
 invalid:

@@ -12,20 +12,14 @@
 #include "dissector.h"
 #include "dissector_eth.h"
 
-/* The entry proto to jump into */
-#define DISSECTOR_ETHERNET_ENTRY_OPS ethernet_ops
-/* The exit proto to jump into */
-#define DISSECTOR_ETHERNET_EXIT_OPS hex_ops
+struct hash_table eth_lay2;
+struct hash_table eth_lay3;
+struct hash_table eth_lay4;
 
-/* We call this level since level != layer */
-struct hash_table ethernet_level2;
-struct hash_table ethernet_level3;
-struct hash_table ethernet_level4;
-
-struct hash_table ethernet_ether_types;
-struct hash_table ethernet_ports_udp;
-struct hash_table ethernet_ports_tcp;
-struct hash_table ethernet_oui;
+static struct hash_table eth_ether_types;
+static struct hash_table eth_ports_udp;
+static struct hash_table eth_ports_tcp;
+static struct hash_table eth_oui;
 
 char *lookup_vendor(unsigned int id)
 {
@@ -61,50 +55,40 @@ char *lookup_ether_type(unsigned int id)
 
 static inline void dissector_init_entry(int (*fnt)(void *ptr))
 {
-	fnt(&DISSECTOR_ETHERNET_ENTRY_OPS);
+	fnt(&ethernet_ops);
 }
 
 static inline void dissector_init_exit(int (*fnt)(void *ptr))
 {
-	fnt(&DISSECTOR_ETHERNET_EXIT_OPS);
+	fnt(&hex_ops);
 }
 
-static inline void dissector_init_level2(int (*fnt)(void *ptr))
+static void dissector_init_lay2(int (*fnt)(void *ptr))
 {
-	init_hash(&ethernet_level2);
-	INSERT_HASH_PROTOS(arp_ops, ethernet_level2);
-	INSERT_HASH_PROTOS(vlan_ops, ethernet_level2);
-	INSERT_HASH_PROTOS(ipv4_ops, ethernet_level2);
-	INSERT_HASH_PROTOS(ipv6_ops, ethernet_level2);
-	for_each_hash(&ethernet_level2, fnt);
+	init_hash(&eth_lay2);
+	INSERT_HASH_PROTOS(arp_ops, eth_lay2);
+	INSERT_HASH_PROTOS(vlan_ops, eth_lay2);
+	INSERT_HASH_PROTOS(ipv4_ops, eth_lay2);
+	INSERT_HASH_PROTOS(ipv6_ops, eth_lay2);
+	for_each_hash(&eth_lay2, fnt);
 }
 
-static inline void dissector_init_level3(int (*fnt)(void *ptr))
+static void dissector_init_lay3(int (*fnt)(void *ptr))
 {
-	init_hash(&ethernet_level3);
-	INSERT_HASH_PROTOS(icmp_ops, ethernet_level3);
-	INSERT_HASH_PROTOS(udp_ops, ethernet_level3);
-	INSERT_HASH_PROTOS(tcp_ops, ethernet_level3);
-	for_each_hash(&ethernet_level3, fnt);
+	init_hash(&eth_lay3);
+	INSERT_HASH_PROTOS(icmp_ops, eth_lay3);
+	INSERT_HASH_PROTOS(udp_ops, eth_lay3);
+	INSERT_HASH_PROTOS(tcp_ops, eth_lay3);
+	for_each_hash(&eth_lay3, fnt);
 }
 
-static inline void dissector_init_level4(int (*fnt)(void *ptr))
+static void dissector_init_lay4(int (*fnt)(void *ptr))
 {
-	init_hash(&ethernet_level4);
-	for_each_hash(&ethernet_level4, fnt);
+	init_hash(&eth_lay4);
+	for_each_hash(&eth_lay4, fnt);
 }
 
-inline struct protocol *dissector_get_ethernet_entry_point(void)
-{
-	return &DISSECTOR_ETHERNET_ENTRY_OPS;
-}
-
-inline struct protocol *dissector_get_ethernet_exit_point(void)
-{
-	return &DISSECTOR_ETHERNET_EXIT_OPS;
-}
-
-static inline void dissector_init_oui(void)
+static void dissector_init_oui(void)
 {
 //	void **pos;
 //	size_t i, len = sizeof(vendor_db) / sizeof(struct vendor_id);
@@ -120,7 +104,7 @@ static inline void dissector_init_oui(void)
 //	}
 }
 
-static inline void dissector_init_ports_udp(void)
+static void dissector_init_ports_udp(void)
 {
 //	void **pos;
 //	size_t i, len = sizeof(ports_udp) / sizeof(struct port_udp);
@@ -136,7 +120,7 @@ static inline void dissector_init_ports_udp(void)
 //	}
 }
 
-static inline void dissector_init_ports_tcp(void)
+static void dissector_init_ports_tcp(void)
 {
 //	void **pos;
 //	size_t i, len = sizeof(ports_tcp) / sizeof(struct port_tcp);
@@ -152,7 +136,7 @@ static inline void dissector_init_ports_tcp(void)
 //	}
 }
 
-static inline void dissector_init_ether_types(void)
+static void dissector_init_ether_types(void)
 {
 //	void **pos;
 //	size_t i, len = sizeof(ether_types) / sizeof(struct ether_type);
@@ -184,7 +168,6 @@ void dissector_init_ethernet(int fnttype)
 	case FNTTYPE_PRINT_CHR1:
 	case FNTTYPE_PRINT_NOPA:
 	case FNTTYPE_PRINT_PAAC:
-	case FNTTYPE_PRINT_REGX:
 	default:
 	case FNTTYPE_PRINT_NONE:
 		fnt = dissector_set_print_none;
@@ -192,9 +175,9 @@ void dissector_init_ethernet(int fnttype)
 	};
 
 	dissector_init_entry(fnt);
-	dissector_init_level2(fnt);
-	dissector_init_level3(fnt);
-	dissector_init_level4(fnt);
+	dissector_init_lay2(fnt);
+	dissector_init_lay3(fnt);
+	dissector_init_lay4(fnt);
 	dissector_init_exit(fnt);
 
 	dissector_init_oui();
@@ -205,12 +188,11 @@ void dissector_init_ethernet(int fnttype)
 
 void dissector_cleanup_ethernet(void)
 {
-	free_hash(&ethernet_level2);
-	free_hash(&ethernet_level3);
-	free_hash(&ethernet_level4);
-
-	free_hash(&ethernet_ether_types);
-	free_hash(&ethernet_ports_udp);
-	free_hash(&ethernet_ports_tcp);
-	free_hash(&ethernet_oui);
+	free_hash(&eth_lay2);
+	free_hash(&eth_lay3);
+	free_hash(&eth_lay4);
+	free_hash(&eth_ether_types);
+	free_hash(&eth_ports_udp);
+	free_hash(&eth_ports_tcp);
+	free_hash(&eth_oui);
 }

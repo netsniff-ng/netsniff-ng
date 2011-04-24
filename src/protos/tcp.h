@@ -162,7 +162,7 @@ static inline void tcp_next(uint8_t *packet, size_t len,
 
 	(*off) = sizeof(struct tcphdr);
 	(*key) = tcp_port(tcp->source, tcp->dest);
-	(*table) = &ethernet_level4;
+	(*table) = &eth_lay4;
 
 	return;
 invalid:

@@ -84,7 +84,7 @@ static inline void ethernet_next(uint8_t *packet, size_t len,
 
 	(*off) = sizeof(struct ethhdr);
 	(*key) = ntohs(eth->h_proto);
-	(*table) = &ethernet_level2;
+	(*table) = &eth_lay2;
 
 	return;
 invalid:

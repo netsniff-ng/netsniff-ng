@@ -114,7 +114,7 @@ static inline void ipv4_next(uint8_t *packet, size_t len,
 
 	(*off) = sizeof(struct ipv4hdr);
 	(*key) = ip->h_protocol;
-	(*table) = &ethernet_level3;
+	(*table) = &eth_lay3;
 
 	return;
 invalid:

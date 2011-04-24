@@ -100,7 +100,7 @@ static inline void ipv6_next(uint8_t *packet, size_t len,
 
 	(*off) = sizeof(struct ipv6hdr);
 	(*key) = ip->nexthdr;
-	(*table) = &ethernet_level3;
+	(*table) = &eth_lay3;
 
 	return;
 invalid:

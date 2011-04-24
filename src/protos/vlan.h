@@ -63,7 +63,7 @@ static inline void vlan_next(uint8_t *packet, size_t len,
 
 	(*off) = sizeof(struct vlanhdr);
 	(*key) = ntohs(vlan->h_vlan_encapsulated_proto);
-	(*table) = &ethernet_level2;
+	(*table) = &eth_lay2;
 
 	return;
 invalid:

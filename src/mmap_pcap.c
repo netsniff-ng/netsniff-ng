@@ -5,7 +5,5 @@
  * Subject to the GPL.
  */
 
-#include "mmap_pcap.h"
-
 void __dummy(void) {}
 
