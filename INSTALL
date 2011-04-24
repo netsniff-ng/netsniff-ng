@@ -13,6 +13,9 @@ What libraries are required? You'll need libc, libncurses (only for ifpps)
 and libgcrypt (only for curvetun), nothing else. It is common, that these
 libraries are shipped as distribution packages for an easy installation.
 
+If you have arch x86 or x86_64, you can add -DARCH_X86 to the Makefiles
+CFLAGS in order to exploit some x86-based CPU features (MMX/SSE*).
+
 The installation process is fairly simple:
 
   $ cd netsniff-ng/src/<tool>/
