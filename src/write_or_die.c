@@ -28,9 +28,15 @@ int open_or_die(const char *file, int flags)
 	int ret = open(file, flags);
 	if (ret < 0)
 		puke_and_die(EXIT_FAILURE, "Open error");
-
 	return ret;
+}
 
+int open_or_die_m(const char *file, int flags, mode_t mode)
+{
+	int ret = open(file, flags, mode);
+	if (ret < 0)
+		puke_and_die(EXIT_FAILURE, "Open error");
+	return ret;
 }
 
 ssize_t read_or_die(int fd, void *buf, size_t len)

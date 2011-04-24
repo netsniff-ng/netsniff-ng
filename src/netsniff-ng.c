@@ -13,18 +13,23 @@
 #include <ctype.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <fcntl.h>
 
 #include "rx_ring.h"
 #include "tx_ring.h"
 #include "netdev.h"
 #include "compiler.h"
+#include "pcap.h"
 #include "poll.h"
 #include "bpf.h"
 #include "version.h"
 #include "signals.h"
+#include "write_or_die.h"
 #include "die.h"
 #include "tprintf.h"
 #include "dissector.h"
@@ -51,6 +56,7 @@ struct mode {
 	int packet_type;
 	bool randomize;
 	bool promiscuous;
+	enum pcap_ops_groups pcap;
 };
 
 static sig_atomic_t sigint = 0;
@@ -119,7 +125,7 @@ void enter_mode_read_pcap(struct mode *mode)
 
 void enter_mode_rx_only_or_dump(struct mode *mode)
 {
-	int sock, irq, ifindex;
+	int sock, irq, ifindex, fd = 0, ret;
 	unsigned int size, it = 0;
 	short ifflags = 0;
 	uint8_t *packet;
@@ -129,6 +135,19 @@ void enter_mode_rx_only_or_dump(struct mode *mode)
 	struct sock_fprog bpf_ops;
 
 	sock = pf_socket();
+
+	if (mode->dump) {
+		if (!pcap_ops[mode->pcap])
+			panic("pcap group not supported!\n");
+		if (!pcap_ops[mode->pcap]->write_pcap_pkt)
+			panic("pcap group does not support write!\n");
+		fd = open_or_die_m(mode->device_out,
+				   O_CREAT | O_WRONLY | O_TRUNC,
+				   S_IRUSR | S_IWUSR);
+		ret = pcap_ops[mode->pcap]->push_file_header(fd);
+		if (ret)
+			panic("error writing pcap header!\n");
+	}
 
 	memset(&rx_ring, 0, sizeof(rx_ring));
 	memset(&rx_poll, 0, sizeof(rx_poll));
@@ -174,6 +193,15 @@ void enter_mode_rx_only_or_dump(struct mode *mode)
 				if (mode->packet_type != hdr->s_ll.sll_pkttype)
 					goto next;
 
+			if (mode->dump) {
+				struct pcap_pkthdr phdr;
+				tpacket_hdr_to_pcap_pkthdr(&hdr->tp_h, &phdr);
+				ret = pcap_ops[mode->pcap]->write_pcap_pkt(fd, &phdr,
+									   packet, phdr.len);
+				if (unlikely(ret != sizeof(phdr) + phdr.len))
+					panic("write error to pcap!");
+			}
+
 			show_frame_hdr(hdr, mode->print_mode);
 			dissector_entry_point(packet, hdr->tp_h.tp_snaplen,
 					      mode->link_type);
@@ -199,6 +227,8 @@ next:
 		leave_promiscuous_mode(mode->device_in, ifflags);
 
 	close(sock);
+	if (mode->dump)
+		close(fd);
 }
 
 static void help(void)
@@ -297,6 +327,7 @@ int main(int argc, char **argv)
 	mode.packet_type = PACKET_ALL;
 	mode.promiscuous = true;
 	mode.randomize = false;
+	mode.pcap = PCAP_OPS_SG;
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 	       &opt_index)) != EOF) {
@@ -364,6 +395,12 @@ int main(int argc, char **argv)
 		case 'H':
 			prio_high = true;
 			break;
+		case 'c':
+			mode.pcap = PCAP_OPS_RW;
+			break;
+		case 'm':
+			mode.pcap = PCAP_OPS_MMAP;
+			break;
 		case 'Q':
 			mode.cpu = CPU_NOTOUCH;
 			break;
@@ -387,9 +424,6 @@ int main(int argc, char **argv)
 			break;
 		case 'N':
 			mode.print_mode = FNTTYPE_PRINT_NOPA;
-			break;
-		case 'e': /* regex + arg, TODO: arg */
-			mode.print_mode = FNTTYPE_PRINT_REGX;
 			break;
 		case 'v':
 			version();
@@ -429,6 +463,10 @@ int main(int argc, char **argv)
 	register_signal(SIGUSR1, signal_handler);
 	register_signal(SIGSEGV, muntrace_handler);
 
+	init_rw_pcap();
+//	init_sg_pcap();
+//	init_mmap_pcap();
+
 	tprintf_init();
 	header();
 
@@ -458,7 +496,12 @@ int main(int argc, char **argv)
 	if (!enter_mode)
 		panic("Selection not supported!\n");
 	enter_mode(&mode);
+
 	tprintf_cleanup();
+	cleanup_rw_pcap();
+//	cleanup_sg_pcap();
+//	cleanup_mmap_pcap();
+
 	if (mode.device_in)
 		xfree(mode.device_in);
 	if (mode.device_out)
