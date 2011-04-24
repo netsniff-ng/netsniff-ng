@@ -16,6 +16,7 @@ lib-objs   = hash.o                  \
 	     xmalloc.o               \
 	     strlcpy.o               \
 	     bpf.o                   \
+	     parser.o                \
 	     psched.o                \
 	     misc.o                  \
 	     pcap.o                  \
