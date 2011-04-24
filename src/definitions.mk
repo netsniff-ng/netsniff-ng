@@ -23,10 +23,12 @@ define eq
 	$(if $(1:$(2)=),,$(if $(2:$(1)=),,T))
 endef
 
+# -pedantic -pedantic-errors
+
 ifneq ($(or $(call eq,$(MAKECMDGOALS),"all"), $(call eq,$(MAKECMDGOALS),"")),)
 	LD      = $(LD_NORM) -o
 	CC      = $(CC_NORM) -c
-	CFLAGS  = -O0 -g -fno-inline -std=gnu99 -pedantic -pedantic-errors   \
+	CFLAGS  = -O0 -g -fno-inline -std=gnu99                              \
 		  -fno-strict-overflow -fomit-frame-pointer
 	CFLAGS += -Wall -Werror -Wundef -Wstrict-prototypes -Wno-trigraphs   \
 		  -Werror-implicit-function-declaration -Wno-format-security \
@@ -38,10 +40,9 @@ ifeq ($(MAKECMDGOALS), deploy)
 	LD      = $(LD_NORM) -pie -z relo -o
 	CC      = $(CC_NORM) -c
 	CFLAGS  = -O2 -fomit-frame-pointer -fno-strict-aliasing -fno-common  \
-		  -fno-delete-null-pointer-checks -std=gnu99 -pedantic       \
+		  -fno-delete-null-pointer-checks -std=gnu99                 \
 		  -fstack-protector -D_FORTIFY_SOURCE=2 -fPIE                \
-		  -fno-strict-overflow -D_REENTRANT -DUSE_BUILTIN            \
-		  -pedantic-errors
+		  -fno-strict-overflow -D_REENTRANT -DUSE_BUILTIN
 	CFLAGS += -Wall -Werror -Wundef -Wstrict-prototypes -Wno-trigraphs   \
 		  -Werror-implicit-function-declaration -Wno-format-security \
 		  -Wcomments -Wendif-labels -Wno-long-long -Wuninitialized   \
@@ -51,8 +52,7 @@ endif
 ifeq ($(MAKECMDGOALS), debug)
 	LD      = $(LD_NORM) -o
 	CC      = $(CC_DEBUG) -c
-	CFLAGS  = -O0 -g -fno-inline -std=gnu99 -pedantic -pedantic-errors   \
-		  -fno-strict-overflow
+	CFLAGS  = -O0 -g -fno-inline -std=gnu99 -fno-strict-overflow
 	CFLAGS += -Wall -Werror -Wundef -Wstrict-prototypes -Wno-trigraphs   \
 		  -Werror-implicit-function-declaration -Wno-format-security \
 		  -Wcomments -Wendif-labels -Wno-long-long -Wstrict-overflow \

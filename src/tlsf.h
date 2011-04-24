@@ -20,6 +20,11 @@
 #define TLSF_H
 
 #include <sys/types.h>
+#include <string.h>
+
+#include "die.h"
+#include "compiler.h"
+#include "strlcpy.h"
 
 extern size_t init_memory_pool(size_t, void *);
 extern size_t get_used_size(void *);
@@ -35,6 +40,34 @@ extern void *tlsf_malloc(size_t size);
 extern void tlsf_free(void *ptr);
 extern void *tlsf_realloc(void *ptr, size_t size);
 extern void *tlsf_calloc(size_t nelem, size_t elem_size);
+
+static inline void *xtlsf_malloc(size_t size)
+{
+	void *ptr;
+	if (unlikely(size == 0))
+		panic("xtlsf_malloc: zero size!\n");
+	ptr = tlsf_malloc(size);
+	if (unlikely(!ptr))
+		panic("xtlsf_malloc: out of mem!\n");
+	return ptr;
+}
+
+static inline void xtlsf_free(void *ptr)
+{
+	if (unlikely(!ptr))
+		panic("xtlsf_free: freeing NULL ptr!\n");
+	tlsf_free(ptr);
+}
+
+static inline char *xtlsf_strdup(const char *str)
+{
+	size_t len;
+	char *cp;
+	len = strlen(str) + 1;
+	cp = xtlsf_malloc(len);
+	strlcpy(cp, str, len);
+	return cp;
+}
 
 #endif /* TLSF_H */
 
