@@ -16,6 +16,9 @@ libraries are shipped as distribution packages for an easy installation.
 If you have arch x86 or x86_64, you can add -DARCH_X86 to the Makefiles
 CFLAGS in order to exploit some x86-based CPU features (MMX/SSE*).
 
+Also, you might want to adapt the IO Vector size in src/sg_pcap.c
+(IOVSIZ) if you don't have enough RAM.
+
 The installation process is fairly simple:
 
   $ cd netsniff-ng/src/<tool>/

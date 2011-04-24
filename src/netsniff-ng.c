@@ -465,7 +465,7 @@ int main(int argc, char **argv)
 	register_signal(SIGSEGV, muntrace_handler);
 
 	init_rw_pcap();
-//	init_sg_pcap();
+	init_sg_pcap();
 //	init_mmap_pcap();
 
 	tprintf_init();
@@ -500,7 +500,7 @@ int main(int argc, char **argv)
 
 	tprintf_cleanup();
 	cleanup_rw_pcap();
-//	cleanup_sg_pcap();
+	cleanup_sg_pcap();
 //	cleanup_mmap_pcap();
 
 	if (mode.device_in)

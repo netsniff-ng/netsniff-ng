@@ -136,5 +136,7 @@ static inline void pcap_validate_header_maybe_die(struct pcap_filehdr *hdr)
 
 extern int init_rw_pcap(void);
 extern void cleanup_rw_pcap(void);
+extern int init_sg_pcap(void);
+extern void cleanup_sg_pcap(void);
 
 #endif /* PCAP_H */
