@@ -72,13 +72,14 @@ static ssize_t mmap_pcap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 		ret = write_or_die(fd, "", 1);
 		if (ret != 1)
 			panic("Cannot write file!\n");
-		pstart = pcurr = mmap(0, map_size, PROT_WRITE,
-				      MAP_SHARED /*| MAP_HUGETLB*/, fd, 0);
+		pstart = mmap(0, map_size, PROT_WRITE, MAP_SHARED
+			      /*| MAP_HUGETLB*/, fd, 0);
 		if (pstart == MAP_FAILED)
 			puke_and_die(EXIT_FAILURE, "mmap of file failed!");
 		ret = madvise(pstart, map_size, MADV_SEQUENTIAL);
 		if (ret < 0)
 			panic("Failed to give kernel mmap advise!\n");
+		pcurr = pstart + sizeof(struct pcap_filehdr);
 		flag_map_open = 1;
 	}
 	if ((unsigned long) (pcurr - pstart) + sizeof(*hdr) + len > map_size) {
