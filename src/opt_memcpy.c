@@ -5,6 +5,7 @@
  * Subject to the GPL.
  */
 
+#ifdef ARCH_X86
 #include <string.h>
 #include <signal.h>
 #include <stdint.h>
@@ -298,3 +299,6 @@ void set_memcpy(void)
 		____memcpy = ___memcpy;
 	checked = 1;
 }
+#else
+void dummy_memcpy(void) {} /* For non-empty translation unit on ISO C. */
+#endif /* ARCH_X86 */

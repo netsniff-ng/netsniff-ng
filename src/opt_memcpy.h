@@ -8,6 +8,7 @@
 #ifndef OPT_MEMCPY_H
 #define OPT_MEMCPY_H
 
+#ifdef ARCH_X86
 #define small_memcpy(dest, src, n)                                       \
 	do {                                                             \
 		register unsigned long int dummy;                        \
@@ -55,5 +56,14 @@ extern void *__sse_memcpy(void *__restrict__ dest, const void *__restrict__ src,
 extern void *__sse2_memcpy(void *__restrict__ dest, const void *__restrict__ src, size_t n);
 extern void *__mmx_memcpy(void *__restrict__ dest, const void *__restrict__ src, size_t n);
 extern void *__mmx2_memcpy(void *__restrict__ dest, const void *__restrict__ src, size_t n);
+#else
+#include <linux/string.h>
+#define set_memcpy()   do {} while(0)
 
+static inline void *__memcpy(void *__restrict__ dest, const void *__restrict__ src,
+                             size_t n)
+{
+	return __builtin_memcpy(dest, src, n);
+}
+#endif /* ARCH_X86 */
 #endif /* OPT_MEMCPY_H */
