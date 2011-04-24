@@ -62,6 +62,11 @@ struct mode {
 	unsigned long kpull;
 };
 
+struct tx_stats {
+	unsigned long tx_bytes;
+	unsigned long tx_packets;
+};
+
 static sig_atomic_t sigint = 0;
 
 static unsigned long interval = TX_KERNEL_PULL_INT;
@@ -129,6 +134,7 @@ void enter_mode_pcap_to_tx(struct mode *mode)
 	struct ring tx_ring;
 	struct frame_map *hdr;
 	struct sock_fprog bpf_ops;
+	struct tx_stats stats;
 	uint8_t *out = NULL;
 
 	set_memcpy();
@@ -143,6 +149,7 @@ void enter_mode_pcap_to_tx(struct mode *mode)
 
 	memset(&tx_ring, 0, sizeof(tx_ring));
 	memset(&bpf_ops, 0, sizeof(bpf_ops));
+	memset(&stats, 0, sizeof(stats));
 
 	ifindex = device_ifindex(mode->device_out);
 	size = ring_size(mode->device_out, mode->reserve_size);
@@ -189,9 +196,15 @@ void enter_mode_pcap_to_tx(struct mode *mode)
 
 			ret = pcap_ops[mode->pcap]->read_pcap_pkt(fd, &phdr,
 					out, ring_frame_size(&tx_ring));
-			if (unlikely(ret <= 0))
-				panic("Read error from pcap! Too small MTU?\n");
+			if (unlikely(ret <= 0)) {
+				whine("Read error from pcap! Too small MTU "
+				      "or broken pcap?\n");
+				goto out;
+			}
 			pcap_pkthdr_to_tpacket_hdr(&phdr, &hdr->tp_h);
+
+			stats.tx_bytes += hdr->tp_h.tp_len;;
+			stats.tx_packets++;
 
 			kernel_may_pull_from_tx(&hdr->tp_h);
 			next_slot(&it, &tx_ring);
@@ -200,10 +213,13 @@ void enter_mode_pcap_to_tx(struct mode *mode)
 				break;
 		}
 	}
+out:
+	fflush(stdout);
+	printf("\n");
+	printf("\r%lu frames outgoing\n", stats.tx_packets);
+	printf("\r%lu bytes outgoing\n", stats.tx_bytes);
 
-	sock_print_net_stats(tx_sock);
 	destroy_tx_ring(tx_sock, &tx_ring);
-
 	close(tx_sock);
 	if (mode->dump) {
 		if (pcap_ops[mode->pcap]->prepare_close_pcap)
