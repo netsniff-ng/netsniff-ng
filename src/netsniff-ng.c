@@ -163,6 +163,8 @@ void enter_mode_pcap_to_tx(struct mode *mode)
 	alloc_tx_ring_frames(&tx_ring);
 	bind_tx_ring(tx_sock, &tx_ring, ifindex);
 
+	dissector_init_all(mode->print_mode);
+
 	if (mode->cpu >= 0 && ifindex > 0) {
 		irq = device_irq_number(mode->device_out);
 		device_bind_irq_to_cpu(mode->cpu, irq);
@@ -201,12 +203,15 @@ void enter_mode_pcap_to_tx(struct mode *mode)
 					      "or broken pcap?\n");
 					goto out;
 				}
-			} while (mode->filter && bpf_run_filter(&bpf_ops, out,
-								phdr.len));
+			} while (mode->filter && !bpf_run_filter(&bpf_ops, out, phdr.len));
 			pcap_pkthdr_to_tpacket_hdr(&phdr, &hdr->tp_h);
 
 			stats.tx_bytes += hdr->tp_h.tp_len;;
 			stats.tx_packets++;
+
+			show_frame_hdr(hdr, mode->print_mode, RING_MODE_EGRESS);
+			dissector_entry_point(out, hdr->tp_h.tp_snaplen,
+					      mode->link_type);
 
 			kernel_may_pull_from_tx(&hdr->tp_h);
 			next_slot(&it, &tx_ring);
@@ -221,7 +226,9 @@ out:
 	printf("\r%lu frames outgoing\n", stats.tx_packets);
 	printf("\r%lu bytes outgoing\n", stats.tx_bytes);
 
+	dissector_cleanup_all();
 	destroy_tx_ring(tx_sock, &tx_ring);
+
 	close(tx_sock);
 	if (mode->dump) {
 		if (pcap_ops[mode->pcap]->prepare_close_pcap)
@@ -315,10 +322,10 @@ void enter_mode_rx_only_or_dump(struct mode *mode)
 				ret = pcap_ops[mode->pcap]->write_pcap_pkt(fd, &phdr,
 									   packet, phdr.len);
 				if (unlikely(ret != sizeof(phdr) + phdr.len))
-					panic("write error to pcap!\n");
+					panic("Write error to pcap!\n");
 			}
 
-			show_frame_hdr(hdr, mode->print_mode);
+			show_frame_hdr(hdr, mode->print_mode, RING_MODE_INGRESS);
 			dissector_entry_point(packet, hdr->tp_h.tp_snaplen,
 					      mode->link_type);
 next:

@@ -77,20 +77,32 @@ static inline unsigned int ring_size(char *ifname, unsigned int size)
 	return size;
 }
 
-static inline void show_frame_hdr(struct frame_map *hdr, int mode)
+enum ring_mode {
+	RING_MODE_EGRESS,
+	RING_MODE_INGRESS,
+};
+
+static inline void show_frame_hdr(struct frame_map *hdr, int mode,
+				  enum ring_mode rmode)
 {
-	switch (mode) {
-	case FNTTYPE_PRINT_NORM:
-		tprintf("%s %u %u %u.%u\n", packet_types[hdr->s_ll.sll_pkttype],
-			hdr->s_ll.sll_ifindex, hdr->tp_h.tp_len,
-			hdr->tp_h.tp_sec, hdr->tp_h.tp_usec);
-		break;
-	case FNTTYPE_PRINT_LESS:
-		tprintf("%s %u %u", packet_types[hdr->s_ll.sll_pkttype],
-			hdr->s_ll.sll_ifindex, hdr->tp_h.tp_len);
-		break;
-	default:
-		break;
+	if (rmode == RING_MODE_INGRESS) {
+		switch (mode) {
+		case FNTTYPE_PRINT_NORM:
+			tprintf("%s %u %u %u.%u\n",
+				packet_types[hdr->s_ll.sll_pkttype],
+				hdr->s_ll.sll_ifindex, hdr->tp_h.tp_len,
+				hdr->tp_h.tp_sec, hdr->tp_h.tp_usec);
+			break;
+		case FNTTYPE_PRINT_LESS:
+			tprintf("%s %u %u",
+				packet_types[hdr->s_ll.sll_pkttype],
+				hdr->s_ll.sll_ifindex, hdr->tp_h.tp_len);
+			break;
+		default:
+			break;
+		}
+	} else {
+		tprintf("> %u\n", hdr->tp_h.tp_len);
 	}
 }
 
