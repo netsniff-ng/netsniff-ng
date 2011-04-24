@@ -67,7 +67,7 @@ static ssize_t sg_pcap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 		c = 0;
 	}
 	iov[c].iov_len = 0;
-	__memcpy(iov[c].iov_base, hdr, sizeof(*hdr));
+	__memcpy_small(iov[c].iov_base, hdr, sizeof(*hdr));
 	iov[c].iov_len += sizeof(*hdr);
 	__memcpy(iov[c].iov_base + iov[c].iov_len, packet, len);
 	iov[c].iov_len += len;

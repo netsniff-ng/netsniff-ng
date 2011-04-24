@@ -41,6 +41,12 @@ static inline void *___memcpy(void *__restrict__ dest,
 	return (dest);
 }
 
+static inline void *__memcpy_small(void *__restrict__ dest,
+			 	   const void *__restrict__ src, size_t n)
+{
+	return ___memcpy(dest, src, n);
+}
+
 /* This one checks CPU flags and sets right variant! */
 extern void set_memcpy(void);
 extern void *(*____memcpy)(void *__restrict__ dest, const void *__restrict__ src,
@@ -59,6 +65,12 @@ extern void *__mmx2_memcpy(void *__restrict__ dest, const void *__restrict__ src
 #else
 #include <linux/string.h>
 #define set_memcpy()   do {} while(0)
+
+static inline void *__memcpy_small(void *__restrict__ dest,
+			 	   const void *__restrict__ src, size_t n)
+{
+	return __builtin_memcpy(dest, src, n);
+}
 
 static inline void *__memcpy(void *__restrict__ dest, const void *__restrict__ src,
                              size_t n)
