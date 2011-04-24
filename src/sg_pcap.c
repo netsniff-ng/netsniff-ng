@@ -54,7 +54,6 @@ static int sg_pcap_push_file_header(int fd)
 	return 0;
 }
 
-
 static ssize_t sg_pcap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 				      uint8_t *packet, size_t len)
 {
