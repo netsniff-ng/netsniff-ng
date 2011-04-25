@@ -56,16 +56,18 @@ static int mmap_pcap_push_file_header(int fd)
 static ssize_t mmap_pcap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 					uint8_t *packet, size_t len)
 {
+	/* In contrast to read, write gets ugly ... */
 	int ret;
 	struct stat sb;
 
 	spinlock_lock(&lock);
-	if (!flag_map_open) {
+	if (unlikely(!flag_map_open)) {
 		ret = fstat(fd, &sb);
 		if (ret < 0)
 			panic("Cannot fstat pcap file!\n");
 		if (!S_ISREG (sb.st_mode))
 			panic("pcap dump file is not a regular file!\n");
+		/* Expand file buffer, so that mmap can be done. */
 		ret = lseek(fd, map_size, SEEK_SET);
 		if (ret < 0)
 			panic("Cannot lseek pcap file!\n");
@@ -112,10 +114,37 @@ static ssize_t mmap_pcap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 static ssize_t mmap_pcap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 				       uint8_t *packet, size_t len)
 {
+	int ret;
+	struct stat sb;
+
 	spinlock_lock(&lock);
-	/* blubber */
+	if (unlikely(!flag_map_open)) {
+		ret = fstat(fd, &sb);
+		if (ret < 0)
+			panic("Cannot fstat pcap file!\n");
+		if (!S_ISREG (sb.st_mode))
+			panic("pcap dump file is not a regular file!\n");
+		map_size = sb.st_size;
+		pstart = mmap(0, map_size, PROT_READ, MAP_SHARED
+			      /*| MAP_HUGETLB*/, fd, 0);
+		if (pstart == MAP_FAILED)
+			puke_and_die(EXIT_FAILURE, "mmap of file failed!");
+		ret = madvise(pstart, map_size, MADV_SEQUENTIAL);
+		if (ret < 0)
+			panic("Failed to give kernel mmap advise!\n");
+		pcurr = pstart + sizeof(struct pcap_filehdr);
+		flag_map_open = 1;
+	}
+	if (unlikely((unsigned long) (pcurr + sizeof(*hdr) - pstart) > map_size))
+		return -ENOMEM;
+	__memcpy_small(hdr, pcurr, sizeof(*hdr));
+	pcurr += sizeof(*hdr);
+	if (unlikely((unsigned long) (pcurr + hdr->len - pstart) > map_size))
+		return -ENOMEM;
+	__memcpy(packet, pcurr, hdr->len);
+	pcurr += hdr->len;
 	spinlock_unlock(&lock);
-	return 0;
+	return sizeof(*hdr) + hdr->len;
 }
 
 static void mmap_pcap_fsync_pcap(int fd)
@@ -135,6 +164,7 @@ static void mmap_pcap_prepare_close_pcap(int fd)
 }
 
 struct pcap_file_ops mmap_pcap_ops __read_mostly = {
+	.name = "MMAP",
 	.pull_file_header = mmap_pcap_pull_file_header,
 	.push_file_header = mmap_pcap_push_file_header,
 	.write_pcap_pkt = mmap_pcap_write_pcap_pkt,

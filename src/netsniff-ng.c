@@ -188,7 +188,7 @@ void enter_mode_pcap_to_tx(struct mode *mode)
 
 	printf("BPF:\n");
 	bpf_dump_all(&bpf_ops);
-	printf("MD: TX %luus\n\n", interval);
+	printf("MD: TX %luus %s\n\n", interval, pcap_ops[mode->pcap]->name);
 
 	while (likely(sigint == 0)) {
 		while (user_may_pull_from_tx(tx_ring.frames[it].iov_base)) {

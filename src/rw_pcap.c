@@ -92,6 +92,7 @@ static void rw_pcap_fsync_pcap(int fd)
 }
 
 struct pcap_file_ops rw_pcap_ops __read_mostly = {
+	.name = "READ/WRITE",
 	.pull_file_header = rw_pcap_pull_file_header,
 	.push_file_header = rw_pcap_push_file_header,
 	.write_pcap_pkt = rw_pcap_write_pcap_pkt,

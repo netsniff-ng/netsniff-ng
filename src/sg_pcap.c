@@ -169,6 +169,7 @@ static void sg_pcap_fsync_pcap(int fd)
 }
 
 struct pcap_file_ops sg_pcap_ops __read_mostly = {
+	.name = "SCATTER/GATHER",
 	.pull_file_header = sg_pcap_pull_file_header,
 	.push_file_header = sg_pcap_push_file_header,
 	.write_pcap_pkt = sg_pcap_write_pcap_pkt,

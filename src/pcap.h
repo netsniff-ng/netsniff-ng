@@ -92,6 +92,7 @@ enum pcap_ops_groups {
 #define PCAP_OPS_SIZ (__PCAP_OPS_MAX)
 
 struct pcap_file_ops {
+	char *name;
 	int (*pull_file_header)(int fd);
 	int (*push_file_header)(int fd);
 	ssize_t (*write_pcap_pkt)(int fd, struct pcap_pkthdr *hdr,
