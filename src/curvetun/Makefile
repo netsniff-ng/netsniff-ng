@@ -7,7 +7,7 @@ include ../definitions.mk
 
 INCLUDE    = -I..
 CFLAGS    += -DTARGETNAME="\"curvetun\""
-LIBS       = -lgcrypt
+LIBS       = -lgcrypt -lz -lpthread
 
 core-objs  = curvetun.o
 lib-objs   = xmalloc.o                  \
