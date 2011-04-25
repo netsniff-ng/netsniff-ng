@@ -183,8 +183,10 @@ int init_sg_pcap(void)
 	unsigned long i;
 	c = 0;
 	memset(iov, 0, sizeof(iov));
-	for (i = 0; i < IOVSIZ; ++i)
+	for (i = 0; i < IOVSIZ; ++i) {
 		iov[i].iov_base = xtlsf_malloc(ALLSIZ);
+		iov[i].iov_len = ALLSIZ;
+	}
 	spinlock_init(&lock);
 	return pcap_ops_group_register(&sg_pcap_ops, PCAP_OPS_SG);
 }
