@@ -8,6 +8,12 @@
   <language>en</language>
 
   <item>
+    <title>netsniff-ng now with scatter/gather and mmap pcap I/O and RX-to-TX support</title>
+    <link>http://dev.netsniff-ng.org/#21</link>
+    <guid>http://dev.netsniff-ng.org/#21</guid>
+  </item>
+
+  <item>
     <title>ifpps now with promisc mode support, new tool: trafgen</title>
     <link>http://dev.netsniff-ng.org/#20</link>
     <guid>http://dev.netsniff-ng.org/#20</guid>

@@ -42,6 +42,16 @@
 <h2>Development blog (<a href="http://netsniff-ng.org/dev.rss">RSS</a>)</h2>
 
 <div>
+<h3><a name="21">netsniff-ng now with scatter/gather and mmap pcap I/O and RX-to-TX support</a></h3>
+<i>25/04/2011, Daniel Borkmann</i>
+<blockquote>
+<p>
+Finally, I found some spare time to do a small hackathlon on netsniff-ng. The 0.5.6.0 version now supports all three modes: read/write, scatter/gather (vectorized I/O) and mmap I/O on pcap files. It's still all in unstable stage, but we're making good progress on testing. Furthermore, a faster memcpy(2) has been added to critical regions in trafgen and netsniff-ng. By default, we now use the Linux kernels __builtin_memcpy() which is architecture "independent" or, via compile option, a MMX/SSE/SSE2-optimized version for x86 can be built in, which brings some better packet processing capabilities to netsniff-ng. Offline packet reading is now also supported as well as an RX-to-TX ring mode (half-duplex bridge). The last one can be used for different testing or debugging scenarios, i.e.: netsniff-ng runs on a host, which listens on a testing network and filters out unrelated packages and redirects interesting ones to its output device.
+</p>
+</blockquote>
+</div>
+
+<div>
 <h3><a name="20">ifpps now with promisc mode support, new tool: trafgen</a></h3>
 <i>23/03/2011, Daniel Borkmann, Emmanuel Roullit</i>
 <blockquote>
