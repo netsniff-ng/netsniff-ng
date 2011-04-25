@@ -231,11 +231,9 @@ out:
 	destroy_tx_ring(tx_sock, &tx_ring);
 
 	close(tx_sock);
-	if (mode->dump) {
-		if (pcap_ops[mode->pcap]->prepare_close_pcap)
-			pcap_ops[mode->pcap]->prepare_close_pcap(fd);
-		close(fd);
-	}
+	if (pcap_ops[mode->pcap]->prepare_close_pcap)
+		pcap_ops[mode->pcap]->prepare_close_pcap(fd);
+	close(fd);
 }
 
 void enter_mode_rx_to_tx(struct mode *mode)
@@ -245,7 +243,67 @@ void enter_mode_rx_to_tx(struct mode *mode)
 
 void enter_mode_read_pcap(struct mode *mode)
 {
-	printf("pcap\n");
+	int ret, fd;
+	struct pcap_pkthdr phdr;
+	struct sock_fprog bpf_ops;
+	struct tx_stats stats;
+	struct frame_map fm;
+	uint8_t *out;
+	size_t out_len;
+
+	if (!pcap_ops[mode->pcap])
+		panic("pcap group not supported!\n");
+	fd = open_or_die(mode->device_in, O_RDONLY);
+	ret = pcap_ops[mode->pcap]->pull_file_header(fd);
+	if (ret)
+		panic("error reading pcap header!\n");
+	if (pcap_ops[mode->pcap]->prepare_reading_pcap) {
+		ret = pcap_ops[mode->pcap]->prepare_reading_pcap(fd);
+		if (ret)
+			panic("error prepare reading pcap!\n");
+	}
+
+	memset(&fm, 0, sizeof(fm));
+	memset(&bpf_ops, 0, sizeof(bpf_ops));
+	memset(&stats, 0, sizeof(stats));
+
+	bpf_parse_rules(mode->filter, &bpf_ops);
+	dissector_init_all(mode->print_mode);
+
+	out_len = 15000;
+	out = xmalloc(out_len);
+
+	printf("BPF:\n");
+	bpf_dump_all(&bpf_ops);
+	printf("MD: RD %s\n\n", pcap_ops[mode->pcap]->name);
+
+	while (likely(sigint == 0)) {
+		do {
+			ret = pcap_ops[mode->pcap]->read_pcap_pkt(fd, &phdr,
+					out, out_len);
+			if (unlikely(ret <= 0))
+				goto out;
+		} while (mode->filter && !bpf_run_filter(&bpf_ops, out, phdr.len));
+		pcap_pkthdr_to_tpacket_hdr(&phdr, &fm.tp_h);
+
+		stats.tx_bytes += fm.tp_h.tp_len;;
+		stats.tx_packets++;
+
+		show_frame_hdr(&fm, mode->print_mode, RING_MODE_EGRESS);
+		dissector_entry_point(out, fm.tp_h.tp_snaplen,
+				      mode->link_type);
+	}
+out:
+	fflush(stdout);
+	printf("\n");
+	printf("\r%lu frames outgoing\n", stats.tx_packets);
+	printf("\r%lu bytes outgoing\n", stats.tx_bytes);
+
+	xfree(out);
+	dissector_cleanup_all();
+	if (pcap_ops[mode->pcap]->prepare_close_pcap)
+		pcap_ops[mode->pcap]->prepare_close_pcap(fd);
+	close(fd);
 }
 
 void enter_mode_rx_only_or_dump(struct mode *mode)
@@ -604,8 +662,8 @@ int main(int argc, char **argv)
 		set_sched_status(DEFAULT_SCHED_POLICY, DEFAULT_SCHED_PRIO);
 	}
 
-	if (device_mtu(mode.device_in) ||
-	    !strncmp("any", mode.device_in, strlen(mode.device_in))) {
+	if (mode.device_in && (device_mtu(mode.device_in) ||
+	    !strncmp("any", mode.device_in, strlen(mode.device_in)))) {
 		if (!mode.device_out) {
 			mode.dump = 0;
 			enter_mode = enter_mode_rx_only_or_dump;
@@ -616,7 +674,7 @@ int main(int argc, char **argv)
 			enter_mode = enter_mode_rx_only_or_dump;
 		}
 	} else {
-		if (device_mtu(mode.device_out))
+		if (mode.device_out && device_mtu(mode.device_out))
 			enter_mode = enter_mode_pcap_to_tx;
 		else
 			enter_mode = enter_mode_read_pcap;
