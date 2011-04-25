@@ -306,7 +306,7 @@ void enter_mode_rx_only_or_dump(struct mode *mode)
 
 	printf("BPF:\n");
 	bpf_dump_all(&bpf_ops);
-	printf("MD: RX\n\n");
+	printf("MD: RX %s\n\n", mode->dump ? pcap_ops[mode->pcap]->name : "");
 
 	while(likely(sigint == 0)) {
 		while(user_may_pull_from_rx(rx_ring.frames[it].iov_base)) {
