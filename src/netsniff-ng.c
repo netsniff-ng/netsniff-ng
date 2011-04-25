@@ -238,7 +238,107 @@ out:
 
 void enter_mode_rx_to_tx(struct mode *mode)
 {
-	printf("rx->tx\n");
+	int rx_sock, ifindex_in, ifindex_out;
+	unsigned int size_in, size_out, it_in = 0/*, it_out = 0*/;
+	uint8_t *packet/*, *out*/;
+	short ifflags = 0;
+	struct frame_map *hdr;
+	struct ring tx_ring;
+	struct ring rx_ring;
+	struct pollfd rx_poll;
+	struct sock_fprog bpf_ops;
+
+	if (!strncmp(mode->device_in, mode->device_out,
+		     strlen(mode->device_in)))
+		panic("Ingress/egress devices must be different!\n ");
+
+	set_memcpy();
+	rx_sock = pf_socket();
+	tx_sock = pf_socket();
+
+	memset(&tx_ring, 0, sizeof(tx_ring));
+	memset(&rx_ring, 0, sizeof(rx_ring));
+	memset(&rx_poll, 0, sizeof(rx_poll));
+	memset(&bpf_ops, 0, sizeof(bpf_ops));
+
+	ifindex_in = device_ifindex(mode->device_in);
+	size_in = ring_size(mode->device_in, mode->reserve_size);
+
+	ifindex_out = device_ifindex(mode->device_in);
+	size_out = ring_size(mode->device_in, mode->reserve_size);
+
+	bpf_parse_rules(mode->filter, &bpf_ops);
+	bpf_attach_to_sock(rx_sock, &bpf_ops);
+
+	setup_rx_ring_layout(rx_sock, &rx_ring, size_in);
+	create_rx_ring(rx_sock, &rx_ring);
+	mmap_rx_ring(rx_sock, &rx_ring);
+	alloc_rx_ring_frames(&rx_ring);
+	bind_rx_ring(rx_sock, &rx_ring, ifindex_in);
+	prepare_polling(rx_sock, &rx_poll);
+
+	set_packet_loss_discard(tx_sock);
+	setup_tx_ring_layout(tx_sock, &tx_ring, size_out);
+	create_tx_ring(tx_sock, &tx_ring);
+	mmap_tx_ring(tx_sock, &tx_ring);
+	alloc_tx_ring_frames(&tx_ring);
+	bind_tx_ring(tx_sock, &tx_ring, ifindex_out);
+
+	dissector_init_all(mode->print_mode);
+
+	 if (mode->promiscuous == true) {
+		ifflags = enter_promiscuous_mode(mode->device_in);
+		printf("PROMISC\n");
+	}
+
+	if (mode->kpull)
+		interval = mode->kpull;
+
+	itimer.it_interval.tv_sec = 0;
+	itimer.it_interval.tv_usec = interval;
+	itimer.it_value.tv_sec = 0;
+	itimer.it_value.tv_usec = interval;
+	setitimer(ITIMER_REAL, &itimer, NULL);
+
+	printf("BPF:\n");
+	bpf_dump_all(&bpf_ops);
+	printf("MD: RXTX %luus\n\n", interval);
+	printf("Running! Hang up with ^C!\n\n");
+
+	while (likely(sigint == 0)) {
+		while (user_may_pull_from_rx(rx_ring.frames[it_in].iov_base)) {
+			hdr = rx_ring.frames[it_in].iov_base;
+			packet = ((uint8_t *) hdr) + hdr->tp_h.tp_mac;
+
+			if (mode->packet_type != PACKET_ALL)
+				if (mode->packet_type != hdr->s_ll.sll_pkttype)
+					goto next;
+
+			/* search free slot from tx_ring, push to kernel */
+
+			show_frame_hdr(hdr, mode->print_mode, RING_MODE_INGRESS);
+			dissector_entry_point(packet, hdr->tp_h.tp_snaplen,
+					      mode->link_type);
+next:
+			kernel_may_pull_from_rx(&hdr->tp_h);
+			next_slot(&it_in, &rx_ring);
+
+			if (unlikely(sigint == 1))
+				goto out;
+		}
+	}
+out:
+	sock_print_net_stats(rx_sock);
+
+	dissector_cleanup_all();
+	destroy_tx_ring(tx_sock, &tx_ring);
+	destroy_rx_ring(rx_sock, &rx_ring);
+
+	if (mode->promiscuous == true)
+		leave_promiscuous_mode(mode->device_in, ifflags);
+
+	close(tx_sock);
+	close(rx_sock);
 }
 
 void enter_mode_read_pcap(struct mode *mode)
