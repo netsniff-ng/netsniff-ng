@@ -95,8 +95,8 @@ static ssize_t sg_pcap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 {
 	/* In contrast to writing, reading gets really ugly ... */
 	spinlock_lock(&lock);
-	if (likely(avail - used > sizeof(*hdr) &&
-		   iov[c].iov_len - iov_used > sizeof(*hdr))) {
+	if (likely(avail - used >= sizeof(*hdr) &&
+		   iov[c].iov_len - iov_used >= sizeof(*hdr))) {
 		__memcpy_small(hdr, iov[c].iov_base + iov_used, sizeof(*hdr));
 		iov_used += sizeof(*hdr);
 		used += sizeof(*hdr);
@@ -124,8 +124,8 @@ static ssize_t sg_pcap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 		iov_used += remainder;
 		used += remainder;
 	}
-	if (likely(avail - used > hdr->len &&
-		   iov[c].iov_len - iov_used > hdr->len)) {
+	if (likely(avail - used >= hdr->len &&
+		   iov[c].iov_len - iov_used >= hdr->len)) {
 		__memcpy(packet, iov[c].iov_base + iov_used, hdr->len);
 		iov_used += hdr->len;
 		used += hdr->len;
