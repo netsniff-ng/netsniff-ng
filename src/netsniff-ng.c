@@ -39,6 +39,7 @@
 #include "xmalloc.h"
 #include "psched.h"
 #include "misc.h"
+#include "mtrand.h"
 
 #define CPU_UNKNOWN  -1
 #define CPU_NOTOUCH  -2
@@ -287,6 +288,7 @@ void enter_mode_rx_to_tx(struct mode *mode)
 	alloc_tx_ring_frames(&tx_ring);
 	bind_tx_ring(tx_sock, &tx_ring, ifindex_out);
 
+	mt_init_by_seed_time();
 	dissector_init_all(mode->print_mode);
 
 	 if (mode->promiscuous == true) {
