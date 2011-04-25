@@ -50,7 +50,6 @@ static ssize_t rw_pcap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 				      uint8_t *packet, size_t len)
 {
 	ssize_t ret;
-
 	ret = write_or_die(fd, hdr, sizeof(*hdr));
 	if (unlikely(ret != sizeof(*hdr))) {
 		whine("Failed to write pkt header!\n");
@@ -58,13 +57,11 @@ static ssize_t rw_pcap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 	}
 	if (unlikely(hdr->len != len))
 		return -EINVAL;
-
 	ret = write_or_die(fd, packet, hdr->len);
 	if (unlikely(ret != hdr->len)) {
 		whine("Failed to write pkt payload!\n");
 		return -EIO;
 	}
-
 	return sizeof(*hdr) + hdr->len;
 }
 
@@ -72,17 +69,16 @@ static ssize_t rw_pcap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 				     uint8_t *packet, size_t len)
 {
 	ssize_t ret;
-
 	ret = read(fd, hdr, sizeof(*hdr));
 	if (unlikely(ret != sizeof(*hdr)))
 		return -EIO;
 	if (unlikely(hdr->len > len))
 		return -ENOMEM;
-
 	ret = read(fd, packet, hdr->len);
 	if (unlikely(ret != hdr->len))
 		return -EIO;
-
+	if (unlikely(hdr->len == 0))
+                return -EINVAL; /* Bogus packet */
 	return sizeof(*hdr) + hdr->len;
 }
 

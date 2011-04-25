@@ -144,6 +144,8 @@ static ssize_t mmap_pcap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 	__memcpy(packet, pcurr, hdr->len);
 	pcurr += hdr->len;
 	spinlock_unlock(&lock);
+	if (unlikely(hdr->len == 0))
+		return -EINVAL; /* Bogus packet */
 	return sizeof(*hdr) + hdr->len;
 }
 

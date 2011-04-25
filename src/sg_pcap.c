@@ -154,6 +154,8 @@ static ssize_t sg_pcap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 		used += remainder;
 	}
 	spinlock_unlock(&lock);
+	if (unlikely(hdr->len == 0))
+		return -EINVAL; /* Bogus packet */
 	return sizeof(*hdr) + hdr->len;
 }
 
