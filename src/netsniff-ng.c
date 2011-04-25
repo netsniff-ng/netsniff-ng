@@ -323,7 +323,7 @@ void enter_mode_rx_to_tx(struct mode *mode)
 			      sizeof(struct sockaddr_ll);
 
 			/* If we cannot pull, look for a different slot. */
-			for (; user_may_pull_from_tx(tx_ring.frames[it_out].iov_base) &&
+			for (; !user_may_pull_from_tx(tx_ring.frames[it_out].iov_base) &&
 			       likely(!sigint);) {
 				if (mode->randomize)
 					next_rnd_slot(&it_out, &tx_ring);
@@ -342,7 +342,7 @@ void enter_mode_rx_to_tx(struct mode *mode)
 				next_rnd_slot(&it_out, &tx_ring);
 			else
 				next_slot(&it_out, &tx_ring);
-	
+
 			/* Should actually be avoided ... */
 			show_frame_hdr(hdr_in, mode->print_mode, RING_MODE_INGRESS);
 			dissector_entry_point(in, hdr_in->tp_h.tp_snaplen,
@@ -354,6 +354,9 @@ next:
 			if (unlikely(sigint == 1))
 				goto out;
 		}
+
+		poll(&rx_poll, 1, -1);
+		poll_error_maybe_die(rx_sock, &rx_poll);
 	}
 out:
 	sock_print_net_stats(rx_sock);
