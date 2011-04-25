@@ -48,6 +48,9 @@
 <p>
 Finally, I found some spare time to do a small hackathlon on netsniff-ng. The 0.5.6.0 version now supports all three modes: read/write, <i>scatter/gather</i> (vectorized I/O) and <i>mmap I/O</i> on <i>pcap files</i>. It's still all in unstable stage, but we're making good progress on testing. Furthermore, a <i>faster memcpy(2)</i> has been added to critical regions in trafgen and netsniff-ng. By default, we now use the Linux kernels <i>__builtin_memcpy()</i> which is architecture "independent" or, via compile option, a <i>MMX/SSE/SSE2-optimized</i> version for x86 can be built in, which brings some better packet processing capabilities to netsniff-ng. Offline packet reading is now also supported as well as an <i>RX-to-TX ring mode</i> (half-duplex bridge). The last one can be used for different testing or debugging scenarios, i.e.: netsniff-ng runs on a host, which listens on a testing network and filters out unrelated packages and redirects interesting ones to its output device.
 </p>
+<p>
+<b>Update:</b> Support for the BPF Just in Time Compiler has been added to netsniff-ngs RX/RX-to-PCAP/RX-to-TX modes in order to speed up packet processing (<a href="http://thread.gmane.org/gmane.linux.network/191115">http://thread.gmane.org/gmane.linux.network/191115</a>).
+</p>
 </blockquote>
 </div>
 
