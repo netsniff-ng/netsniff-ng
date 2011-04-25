@@ -587,7 +587,7 @@ static void help(void)
 	printf("  netsniff-ng --in dump.pcap --mmap --out eth0 --silent --bind-cpu 0\n");
 	printf("  netsniff-ng --in any --filter icmp.bpf --all-hex\n");
 	printf("  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0 \\\n");
-	printf("              --type incoming --filter arp.bpf\n");
+	printf("              --type host --filter /etc/netsniff-ng/rules/http.bpf\n");
 	printf("\n");
 	printf("Note:\n");
 	printf("  This tool is targeted for network developers! You should\n");
