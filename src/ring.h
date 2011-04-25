@@ -21,6 +21,7 @@
 #include "tprintf.h"
 #include "dissector.h"
 #include "compiler.h"
+#include "mtrand.h"
 
 #define RING_SIZE_FALLBACK (1 << 26)
 
@@ -51,6 +52,11 @@ static inline void next_slot(unsigned int *it, struct ring *ring)
 	*it = (*it + 1);
 	if (*it >= ring->layout.tp_frame_nr)
 		*it = 0;
+}
+
+static inline void next_rnd_slot(unsigned int *it, struct ring *ring)
+{
+	*it = mt_rand_int32() % ring->layout.tp_frame_nr;
 }
 
 static inline unsigned int ring_size(char *ifname, unsigned int size)
@@ -109,6 +115,15 @@ static inline void show_frame_hdr(struct frame_map *hdr, int mode,
 static inline unsigned int ring_frame_size(struct ring *ring)
 {
 	return ring->layout.tp_frame_size;
+}
+
+static inline void tpacket_hdr_clone(struct tpacket_hdr *thdr_d,
+				     struct tpacket_hdr *thdr_s)
+{
+        thdr_d->tp_sec = thdr_s->tp_sec;
+        thdr_d->tp_usec = thdr_s->tp_usec;
+        thdr_d->tp_snaplen = thdr_s->tp_snaplen;
+        thdr_d->tp_len = thdr_s->tp_len;
 }
 
 #endif /* RING_H */

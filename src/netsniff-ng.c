@@ -242,10 +242,10 @@ out:
 void enter_mode_rx_to_tx(struct mode *mode)
 {
 	int rx_sock, ifindex_in, ifindex_out;
-	unsigned int size_in, size_out, it_in = 0/*, it_out = 0*/;
-	uint8_t *packet/*, *out*/;
+	unsigned int size_in, size_out, it_in = 0, it_out = 0;
+	uint8_t *in, *out;
 	short ifflags = 0;
-	struct frame_map *hdr;
+	struct frame_map *hdr_in, *hdr_out;
 	struct ring tx_ring;
 	struct ring rx_ring;
 	struct pollfd rx_poll;
@@ -310,20 +310,43 @@ void enter_mode_rx_to_tx(struct mode *mode)
 
 	while (likely(sigint == 0)) {
 		while (user_may_pull_from_rx(rx_ring.frames[it_in].iov_base)) {
-			hdr = rx_ring.frames[it_in].iov_base;
-			packet = ((uint8_t *) hdr) + hdr->tp_h.tp_mac;
-
+			hdr_in = rx_ring.frames[it_in].iov_base;
+			in = ((uint8_t *) hdr_in) + hdr_in->tp_h.tp_mac;
 			if (mode->packet_type != PACKET_ALL)
-				if (mode->packet_type != hdr->s_ll.sll_pkttype)
+				if (mode->packet_type != hdr_in->s_ll.sll_pkttype)
 					goto next;
 
-			/* search free slot from tx_ring, push to kernel */
+			hdr_out = tx_ring.frames[it_out].iov_base;
+			out = ((uint8_t *) hdr_out) + TPACKET_HDRLEN -
+			      sizeof(struct sockaddr_ll);
 
-			show_frame_hdr(hdr, mode->print_mode, RING_MODE_INGRESS);
-			dissector_entry_point(packet, hdr->tp_h.tp_snaplen,
+			/* If we cannot pull, look for a different slot. */
+			for (; user_may_pull_from_tx(tx_ring.frames[it_out].iov_base) &&
+			       likely(!sigint);) {
+				if (mode->randomize)
+					next_rnd_slot(&it_out, &tx_ring);
+				else
+					next_slot(&it_out, &tx_ring);
+				hdr_out = tx_ring.frames[it_out].iov_base;
+				out = ((uint8_t *) hdr_out) + TPACKET_HDRLEN -
+				      sizeof(struct sockaddr_ll);
+			}
+
+			tpacket_hdr_clone(&hdr_out->tp_h, &hdr_in->tp_h);
+			__memcpy(out, in, hdr_in->tp_h.tp_len);
+
+			kernel_may_pull_from_tx(&hdr_out->tp_h);
+			if (mode->randomize)
+				next_rnd_slot(&it_out, &tx_ring);
+			else
+				next_slot(&it_out, &tx_ring);
+	
+			/* Should actually be avoided ... */
+			show_frame_hdr(hdr_in, mode->print_mode, RING_MODE_INGRESS);
+			dissector_entry_point(in, hdr_in->tp_h.tp_snaplen,
 					      mode->link_type);
 next:
-			kernel_may_pull_from_rx(&hdr->tp_h);
+			kernel_may_pull_from_rx(&hdr_in->tp_h);
 			next_slot(&it_in, &rx_ring);
 
 			if (unlikely(sigint == 1))
