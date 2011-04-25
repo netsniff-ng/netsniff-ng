@@ -428,7 +428,7 @@ static void help(void)
 	printf("  -r|--randomize               Randomize packet forwarding order\n");
 	printf("  -f|--filter <bpf-file>       Use BPF filter rule from file\n");
 	printf("  -M|--no-promisc              No promiscuous mode for netdev\n");
-	printf("  -t|--type <type>             Only show packets of defined type:\n");
+	printf("  -t|--type <type>             Only handle packets of defined type:\n");
 	printf("                               host|broadcast|multicast|others|outgoing\n");
 	printf("  -m|--mmap                    Mmap pcap file, otherwise use scatter/gather I/O\n");
 	printf("  -c|--clrw                    Instead scatter/gather I/O use read/write I/O\n");
