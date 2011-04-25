@@ -97,6 +97,7 @@ struct pcap_file_ops {
 	ssize_t (*write_pcap_pkt)(int fd, struct pcap_pkthdr *hdr,
 				  uint8_t *packet, size_t len);
 	void (*fsync_pcap)(int fd);
+	int (*prepare_reading_pcap)(int fd);
 	ssize_t (*read_pcap_pkt)(int fd, struct pcap_pkthdr *hdr,
 				 uint8_t *packet, size_t len);
 	void (*prepare_close_pcap)(int fd);

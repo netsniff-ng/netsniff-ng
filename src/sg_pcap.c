@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/uio.h>
+#include <assert.h>
 
 #include "pcap.h"
 #include "tlsf.h"
@@ -17,12 +18,13 @@
 #include "opt_memcpy.h"
 #include "locking.h"
 
-#define IOVSIZ 100000
+#define IOVSIZ   1000
 #define ALLSIZ   9100
 
 static struct iovec iov[IOVSIZ];
 static unsigned long c = 0;
 static struct spinlock lock;
+static ssize_t avail, used, iov_used;
 
 static int sg_pcap_pull_file_header(int fd)
 {
@@ -76,13 +78,77 @@ static ssize_t sg_pcap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 	return ret;
 }
 
+static int sg_pcap_prepare_reading_pcap(int fd)
+{
+	spinlock_lock(&lock);
+	avail = readv(fd, iov, IOVSIZ);
+	if (avail <= 0)
+		return -EIO;
+	used = iov_used = 0;
+	c = 0;
+	spinlock_unlock(&lock);
+	return 0;
+}
+
 static ssize_t sg_pcap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 				     uint8_t *packet, size_t len)
 {
+	/* In contrast to writing, reading gets really ugly ... */
 	spinlock_lock(&lock);
-	/* blubber */
+	if (likely(avail - used > sizeof(*hdr) &&
+		   iov[c].iov_len - iov_used > sizeof(*hdr))) {
+		__memcpy_small(hdr, iov[c].iov_base + iov_used, sizeof(*hdr));
+		iov_used += sizeof(*hdr);
+		used += sizeof(*hdr);
+	} else {
+		size_t remainder, offset = 0;
+		if (avail - used < sizeof(*hdr))
+			return -ENOMEM;
+		offset = iov[c].iov_len - iov_used;
+		remainder = sizeof(*hdr) - offset;
+		assert(offset + remainder == sizeof(*hdr));
+		__memcpy_small(hdr, iov[c].iov_base + iov_used, offset);
+		used += offset;
+		c++;
+		if (c == IOVSIZ) {
+			/* We need to refetch! */
+			c = 0;
+			avail = readv(fd, iov, IOVSIZ);
+			if (avail < 0)
+				return -EIO;
+			used = iov_used = 0;
+		}
+		/* Now we copy the remainder and go on with business ... */
+		__memcpy_small(hdr, iov[c].iov_base + iov_used, remainder);
+	}
+	if (likely(avail - used > hdr->len &&
+		   iov[c].iov_len - iov_used > hdr->len)) {
+		__memcpy(packet, iov[c].iov_base + iov_used, hdr->len);
+		iov_used += hdr->len;
+		used += hdr->len;
+	} else {
+		size_t remainder, offset = 0;
+		if (avail - used < hdr->len)
+			return -ENOMEM;
+		offset = iov[c].iov_len - iov_used;
+		remainder = hdr->len - offset;
+		assert(offset + remainder == hdr->len);
+		__memcpy(packet, iov[c].iov_base + iov_used, offset);
+		used += offset;
+		c++;
+		if (c == IOVSIZ) {
+			/* We need to refetch! */
+			c = 0;
+			avail = readv(fd, iov, IOVSIZ);
+			if (avail < 0)
+				return -EIO;
+			used = iov_used = 0;
+		}
+		/* Now we copy the remainder and go on with business ... */
+		__memcpy(packet, iov[c].iov_base + iov_used, remainder);
+	}
 	spinlock_unlock(&lock);
-	return 0;
+	return sizeof(*hdr) + hdr->len;
 }
 
 static void sg_pcap_fsync_pcap(int fd)
@@ -101,6 +167,7 @@ struct pcap_file_ops sg_pcap_ops __read_mostly = {
 	.push_file_header = sg_pcap_push_file_header,
 	.write_pcap_pkt = sg_pcap_write_pcap_pkt,
 	.read_pcap_pkt = sg_pcap_read_pcap_pkt,
+	.prepare_reading_pcap =  sg_pcap_prepare_reading_pcap,
 	.fsync_pcap = sg_pcap_fsync_pcap,
 };
 

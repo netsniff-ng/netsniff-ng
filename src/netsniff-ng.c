@@ -146,6 +146,11 @@ void enter_mode_pcap_to_tx(struct mode *mode)
 	ret = pcap_ops[mode->pcap]->pull_file_header(fd);
 	if (ret)
 		panic("error reading pcap header!\n");
+	if (pcap_ops[mode->pcap]->prepare_reading_pcap) {
+		ret = pcap_ops[mode->pcap]->prepare_reading_pcap(fd);
+		if (ret)
+			panic("error prepare reading pcap!\n");
+	}
 
 	memset(&tx_ring, 0, sizeof(tx_ring));
 	memset(&bpf_ops, 0, sizeof(bpf_ops));
