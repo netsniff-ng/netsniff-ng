@@ -268,8 +268,8 @@ void enter_mode_rx_to_tx(struct mode *mode)
 	ifindex_in = device_ifindex(mode->device_in);
 	size_in = ring_size(mode->device_in, mode->reserve_size);
 
-	ifindex_out = device_ifindex(mode->device_in);
-	size_out = ring_size(mode->device_in, mode->reserve_size);
+	ifindex_out = device_ifindex(mode->device_out);
+	size_out = ring_size(mode->device_out, mode->reserve_size);
 
 	bpf_parse_rules(mode->filter, &bpf_ops);
 	bpf_attach_to_sock(rx_sock, &bpf_ops);
