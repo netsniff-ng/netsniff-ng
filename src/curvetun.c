@@ -43,7 +43,7 @@
 #define FILE_PUBKEY     ".curvetun/pub.key"
 #define FILE_USERNAM    ".curvetun/username"
 
-#define DEFAULT_KEY_LEN 256
+#define DEFAULT_KEY_LEN 64
 #define MAX(a, b)       ((a) > (b) ? (a) : (b))
 
 enum working_mode {

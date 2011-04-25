@@ -18,10 +18,11 @@ lib-objs   = xmalloc.o                  \
 	     numtheory.o                \
 	     protocol.o                 \
 	     serialize.o                \
+	     deflate.o                  \
 	     stun.o                     \
+	     tlsf.o                     \
 	     netdev.o
 
-#	     tlsf.o                     \
 
 target     = curvetun
 
