@@ -109,6 +109,7 @@ static ssize_t sg_pcap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 		assert(offset + remainder == sizeof(*hdr));
 		__memcpy_small(hdr, iov[c].iov_base + iov_used, offset);
 		used += offset;
+		iov_used = 0;
 		c++;
 		if (c == IOVSIZ) {
 			/* We need to refetch! */
@@ -116,10 +117,12 @@ static ssize_t sg_pcap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 			avail = readv(fd, iov, IOVSIZ);
 			if (avail < 0)
 				return -EIO;
-			used = iov_used = 0;
+			used = 0;
 		}
 		/* Now we copy the remainder and go on with business ... */
 		__memcpy_small(hdr, iov[c].iov_base + iov_used, remainder);
+		iov_used += remainder;
+		used += remainder;
 	}
 	if (likely(avail - used > hdr->len &&
 		   iov[c].iov_len - iov_used > hdr->len)) {
@@ -135,6 +138,7 @@ static ssize_t sg_pcap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 		assert(offset + remainder == hdr->len);
 		__memcpy(packet, iov[c].iov_base + iov_used, offset);
 		used += offset;
+		iov_used = 0;
 		c++;
 		if (c == IOVSIZ) {
 			/* We need to refetch! */
@@ -142,10 +146,12 @@ static ssize_t sg_pcap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 			avail = readv(fd, iov, IOVSIZ);
 			if (avail < 0)
 				return -EIO;
-			used = iov_used = 0;
+			used = 0;
 		}
 		/* Now we copy the remainder and go on with business ... */
 		__memcpy(packet, iov[c].iov_base + iov_used, remainder);
+		iov_used += remainder;
+		used += remainder;
 	}
 	spinlock_unlock(&lock);
 	return sizeof(*hdr) + hdr->len;
