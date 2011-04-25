@@ -273,6 +273,7 @@ void enter_mode_rx_to_tx(struct mode *mode)
 
 	bpf_parse_rules(mode->filter, &bpf_ops);
 	bpf_attach_to_sock(rx_sock, &bpf_ops);
+	enable_kernel_bpf_jit_compiler();
 
 	setup_rx_ring_layout(rx_sock, &rx_ring, size_in);
 	create_rx_ring(rx_sock, &rx_ring);
@@ -471,6 +472,7 @@ void enter_mode_rx_only_or_dump(struct mode *mode)
 
 	bpf_parse_rules(mode->filter, &bpf_ops);
 	bpf_attach_to_sock(sock, &bpf_ops);
+	enable_kernel_bpf_jit_compiler();
 
 	setup_rx_ring_layout(sock, &rx_ring, size);
 	create_rx_ring(sock, &rx_ring);
