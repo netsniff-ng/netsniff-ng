@@ -236,6 +236,9 @@ out:
 	close(fd);
 }
 
+/* If netsniff-ngs in device is on a tap, it can efficiently filter out 
+ * some interesting packets and give them to the out device for testing
+ * or debugging for instance. */
 void enter_mode_rx_to_tx(struct mode *mode)
 {
 	int rx_sock, ifindex_in, ifindex_out;
