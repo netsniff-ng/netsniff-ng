@@ -253,7 +253,7 @@ void enter_mode_rx_to_tx(struct mode *mode)
 
 	if (!strncmp(mode->device_in, mode->device_out,
 		     strlen(mode->device_in)))
-		panic("Ingress/egress devices must be different!\n ");
+		panic("Ingress/egress devices must be different!\n");
 
 	set_memcpy();
 	rx_sock = pf_socket();
