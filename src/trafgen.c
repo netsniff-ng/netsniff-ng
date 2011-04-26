@@ -229,6 +229,8 @@ static void tx_tgap_or_die(struct mode *mode, struct pktconf *cfg)
 		panic("Panic over invalid args for TX trigger!\n");
 	if (cfg->len == 0)
 		panic("Panic over invalid args for TX trigger!\n");
+	if (!device_up_and_running(mode->device))
+		panic("Device not up and running!\n");
 
 	mtu = device_mtu(mode->device);
 	for (l = 0; l < cfg->len; ++l) {
@@ -318,6 +320,8 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 		panic("Panic over invalid args for TX trigger!\n");
 	if (cfg->len == 0)
 		panic("Panic over invalid args for TX trigger!\n");
+	if (!device_up_and_running(mode->device))
+		panic("Device not up and running!\n");
 
 	mtu = device_mtu(mode->device);
 	for (l = 0; l < cfg->len; ++l) {
