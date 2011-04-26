@@ -18,10 +18,21 @@
 #include "opt_memcpy.h"
 #include "locking.h"
 
+#define DEFAULT_SLOTS     1000
+
+#define PAGE_SIZE	  (getpagesize())
+#define PAGE_MASK	  (~(PAGE_SIZE - 1))
+#define PAGE_ALIGN(addr)  (((addr) + PAGE_SIZE - 1) & PAGE_MASK)
+
 static struct spinlock lock;
-static size_t map_size = sizeof(struct pcap_filehdr) + (9100 * 100);
-static int flag_map_open = 0;
+static size_t map_size = 0;
 static char *pstart, *pcurr;
+
+static inline size_t get_map_size(void)
+{
+	return PAGE_ALIGN(sizeof(struct pcap_filehdr) +
+			  (PAGE_SIZE * 3) * DEFAULT_SLOTS);
+}
 
 static int mmap_pcap_pull_file_header(int fd)
 {
@@ -53,41 +64,48 @@ static int mmap_pcap_push_file_header(int fd)
 	return 0;
 }
 
-static ssize_t mmap_pcap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
-					uint8_t *packet, size_t len)
+static int mmap_pcap_prepare_writing_pcap(int fd)
 {
-	/* In contrast to read, write gets ugly ... */
 	int ret;
 	struct stat sb;
 
 	spinlock_lock(&lock);
-	if (unlikely(!flag_map_open)) {
-		ret = fstat(fd, &sb);
-		if (ret < 0)
-			panic("Cannot fstat pcap file!\n");
-		if (!S_ISREG (sb.st_mode))
-			panic("pcap dump file is not a regular file!\n");
-		/* Expand file buffer, so that mmap can be done. */
-		ret = lseek(fd, map_size, SEEK_SET);
-		if (ret < 0)
-			panic("Cannot lseek pcap file!\n");
-		ret = write_or_die(fd, "", 1);
-		if (ret != 1)
-			panic("Cannot write file!\n");
-		pstart = mmap(0, map_size, PROT_WRITE, MAP_SHARED
-			      /*| MAP_HUGETLB*/, fd, 0);
-		if (pstart == MAP_FAILED)
-			puke_and_die(EXIT_FAILURE, "mmap of file failed!");
-		ret = madvise(pstart, map_size, MADV_SEQUENTIAL);
-		if (ret < 0)
-			panic("Failed to give kernel mmap advise!\n");
-		pcurr = pstart + sizeof(struct pcap_filehdr);
-		flag_map_open = 1;
-	}
+	map_size = get_map_size();
+	ret = fstat(fd, &sb);
+	if (ret < 0)
+		panic("Cannot fstat pcap file!\n");
+	if (!S_ISREG (sb.st_mode))
+		panic("pcap dump file is not a regular file!\n");
+	/* Expand file buffer, so that mmap can be done. */
+	ret = lseek(fd, map_size, SEEK_SET);
+	if (ret < 0)
+		panic("Cannot lseek pcap file!\n");
+	ret = write_or_die(fd, "", 1);
+	if (ret != 1)
+		panic("Cannot write file!\n");
+	pstart = mmap(0, map_size, PROT_WRITE, MAP_SHARED
+		      /*| MAP_HUGETLB*/, fd, 0);
+	if (pstart == MAP_FAILED)
+		puke_and_die(EXIT_FAILURE, "mmap of file failed!");
+	ret = madvise(pstart, map_size, MADV_SEQUENTIAL);
+	if (ret < 0)
+		panic("Failed to give kernel mmap advise!\n");
+	pcurr = pstart + sizeof(struct pcap_filehdr);
+	spinlock_unlock(&lock);
+
+	return 0;
+}
+
+static ssize_t mmap_pcap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
+					uint8_t *packet, size_t len)
+{
+	int ret;
+
+	spinlock_lock(&lock);
 	if ((unsigned long) (pcurr - pstart) + sizeof(*hdr) + len > map_size) {
 		size_t map_size_old = map_size;
 		off_t offset = (pcurr - pstart);
-		map_size = map_size_old * 3 / 2;
+		map_size = PAGE_ALIGN(map_size_old * 3 / 2);
 		ret = lseek(fd, map_size, SEEK_SET);
 		if (ret < 0)
 			panic("Cannot lseek pcap file!\n");
@@ -111,39 +129,49 @@ static ssize_t mmap_pcap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 	return sizeof(*hdr) + len;
 }
 
-static ssize_t mmap_pcap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
-				       uint8_t *packet, size_t len)
+static int mmap_pcap_prepare_reading_pcap(int fd)
 {
 	int ret;
 	struct stat sb;
 
 	spinlock_lock(&lock);
-	if (unlikely(!flag_map_open)) {
-		ret = fstat(fd, &sb);
-		if (ret < 0)
-			panic("Cannot fstat pcap file!\n");
-		if (!S_ISREG (sb.st_mode))
-			panic("pcap dump file is not a regular file!\n");
-		map_size = sb.st_size;
-		pstart = mmap(0, map_size, PROT_READ, MAP_SHARED
-			      /*| MAP_HUGETLB*/, fd, 0);
-		if (pstart == MAP_FAILED)
-			puke_and_die(EXIT_FAILURE, "mmap of file failed!");
-		ret = madvise(pstart, map_size, MADV_SEQUENTIAL);
-		if (ret < 0)
-			panic("Failed to give kernel mmap advise!\n");
-		pcurr = pstart + sizeof(struct pcap_filehdr);
-		flag_map_open = 1;
-	}
-	if (unlikely((unsigned long) (pcurr + sizeof(*hdr) - pstart) > map_size))
+	ret = fstat(fd, &sb);
+	if (ret < 0)
+		panic("Cannot fstat pcap file!\n");
+	if (!S_ISREG (sb.st_mode))
+		panic("pcap dump file is not a regular file!\n");
+	map_size = sb.st_size;
+	pstart = mmap(0, map_size, PROT_READ, MAP_SHARED
+		      /*| MAP_HUGETLB*/, fd, 0);
+	if (pstart == MAP_FAILED)
+		puke_and_die(EXIT_FAILURE, "mmap of file failed!");
+	ret = madvise(pstart, map_size, MADV_SEQUENTIAL);
+	if (ret < 0)
+		panic("Failed to give kernel mmap advise!\n");
+	pcurr = pstart + sizeof(struct pcap_filehdr);
+	spinlock_unlock(&lock);
+
+	return 0;
+}
+
+static ssize_t mmap_pcap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
+				       uint8_t *packet, size_t len)
+{
+	spinlock_lock(&lock);
+	if (unlikely((unsigned long) (pcurr + sizeof(*hdr) - pstart) > map_size)) {
+		spinlock_unlock(&lock);
 		return -ENOMEM;
+	}
 	__memcpy_small(hdr, pcurr, sizeof(*hdr));
 	pcurr += sizeof(*hdr);
-	if (unlikely((unsigned long) (pcurr + hdr->len - pstart) > map_size))
+	if (unlikely((unsigned long) (pcurr + hdr->len - pstart) > map_size)) {
+		spinlock_unlock(&lock);
 		return -ENOMEM;
+	}
 	__memcpy(packet, pcurr, hdr->len);
 	pcurr += hdr->len;
 	spinlock_unlock(&lock);
+
 	if (unlikely(hdr->len == 0))
 		return -EINVAL; /* Bogus packet */
 	return sizeof(*hdr) + hdr->len;
@@ -169,7 +197,9 @@ struct pcap_file_ops mmap_pcap_ops __read_mostly = {
 	.name = "MMAP",
 	.pull_file_header = mmap_pcap_pull_file_header,
 	.push_file_header = mmap_pcap_push_file_header,
+	.prepare_writing_pcap = mmap_pcap_prepare_writing_pcap,
 	.write_pcap_pkt = mmap_pcap_write_pcap_pkt,
+	.prepare_reading_pcap = mmap_pcap_prepare_reading_pcap,
 	.read_pcap_pkt = mmap_pcap_read_pcap_pkt,
 	.fsync_pcap = mmap_pcap_fsync_pcap,
 	.prepare_close_pcap = mmap_pcap_prepare_close_pcap,

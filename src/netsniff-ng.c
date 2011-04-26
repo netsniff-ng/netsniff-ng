@@ -461,6 +461,11 @@ void enter_mode_rx_only_or_dump(struct mode *mode)
 		ret = pcap_ops[mode->pcap]->push_file_header(fd);
 		if (ret)
 			panic("error writing pcap header!\n");
+		if (pcap_ops[mode->pcap]->prepare_writing_pcap) {
+			ret = pcap_ops[mode->pcap]->prepare_writing_pcap(fd);
+			if (ret)
+				panic("error prepare writing pcap!\n");
+		}
 	}
 
 	memset(&rx_ring, 0, sizeof(rx_ring));

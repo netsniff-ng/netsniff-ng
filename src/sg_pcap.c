@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include <sys/uio.h>
 #include <assert.h>
+#include <unistd.h>
 
 #include "pcap.h"
 #include "tlsf.h"
@@ -18,8 +19,12 @@
 #include "opt_memcpy.h"
 #include "locking.h"
 
+#define PAGE_SIZE         (getpagesize())
+#define PAGE_MASK         (~(PAGE_SIZE - 1))
+#define PAGE_ALIGN(addr)  (((addr) + PAGE_SIZE - 1) & PAGE_MASK)
+
 #define IOVSIZ   1000
-#define ALLSIZ   9100
+#define ALLSIZ   (PAGE_SIZE * 3)
 
 static struct iovec iov[IOVSIZ];
 static unsigned long c = 0;
@@ -61,7 +66,7 @@ static ssize_t sg_pcap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 {
 	ssize_t ret;
 	spinlock_lock(&lock);
-	if (c == IOVSIZ) {
+	if (unlikely(c == IOVSIZ)) {
 		ret = writev(fd, iov, IOVSIZ);
 		if (ret < 0)
 			panic("writev I/O error!\n");
@@ -175,8 +180,8 @@ struct pcap_file_ops sg_pcap_ops __read_mostly = {
 	.pull_file_header = sg_pcap_pull_file_header,
 	.push_file_header = sg_pcap_push_file_header,
 	.write_pcap_pkt = sg_pcap_write_pcap_pkt,
-	.read_pcap_pkt = sg_pcap_read_pcap_pkt,
 	.prepare_reading_pcap =  sg_pcap_prepare_reading_pcap,
+	.read_pcap_pkt = sg_pcap_read_pcap_pkt,
 	.fsync_pcap = sg_pcap_fsync_pcap,
 };
 
