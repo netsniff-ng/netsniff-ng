@@ -138,6 +138,9 @@ void enter_mode_pcap_to_tx(struct mode *mode)
 	struct tx_stats stats;
 	uint8_t *out = NULL;
 
+	if (!device_up_and_running(mode->device_out))
+		panic("Device not up and running!\n");
+
 	set_memcpy();
 	tx_sock = pf_socket();
 
@@ -255,6 +258,10 @@ void enter_mode_rx_to_tx(struct mode *mode)
 	if (!strncmp(mode->device_in, mode->device_out,
 		     strlen(mode->device_in)))
 		panic("Ingress/egress devices must be different!\n");
+	if (!device_up_and_running(mode->device_out))
+		panic("Egress device not up and running!\n");
+	if (!device_up_and_running(mode->device_in))
+		panic("Ingress device not up and running!\n");
 
 	set_memcpy();
 	rx_sock = pf_socket();
@@ -448,6 +455,9 @@ void enter_mode_rx_only_or_dump(struct mode *mode)
 	struct pollfd rx_poll;
 	struct frame_map *hdr;
 	struct sock_fprog bpf_ops;
+
+	if (!device_up_and_running(mode->device_in))
+		panic("Device not up and running!\n");
 
 	set_memcpy();
 	sock = pf_socket();
