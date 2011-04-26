@@ -18,38 +18,38 @@
 int dissector_set_print_norm(void *ptr)
 {
 	struct protocol *proto = (struct protocol *) ptr;
-
 	while (proto != NULL) {
 		proto->process = proto->print_full;
 		proto = proto->next;
 	}
-
 	return 0;
 }
 
 int dissector_set_print_less(void *ptr)
 {
 	struct protocol *proto = (struct protocol *) ptr;
-
 	while (proto != NULL) {
 		proto->process = proto->print_less;
 		proto = proto->next;
 	}
-
 	return 0;
 }
 
 int dissector_set_print_none(void *ptr)
 {
 	struct protocol *proto = (struct protocol *) ptr;
-
 	while (proto != NULL) {
 		proto->process = NULL;
 		proto = proto->next;
 	}
-
 	return 0;
 }
+
+int dissector_set_print_payload(void *ptr) { return 0; }
+int dissector_set_print_payload_hex(void *ptr) { return 0; }
+int dissector_set_print_c_style(void *ptr) { return 0; }
+int dissector_set_print_all_hex(void *ptr) { return 0; }
+int dissector_set_print_no_payload(void *ptr) { return 0; }
 
 /*
  * The main loop of the dissector. This is designed generic, so it doesn't

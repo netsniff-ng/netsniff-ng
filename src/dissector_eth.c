@@ -341,15 +341,25 @@ void dissector_init_ethernet(int fnttype)
 		fnt = dissector_set_print_less;
 		break;
 	case FNTTYPE_PRINT_HEX1:
+		fnt = dissector_set_print_payload_hex;
+		break;
 	case FNTTYPE_PRINT_HEX2:
+		fnt = dissector_set_print_all_hex;
+		break;
 	case FNTTYPE_PRINT_CHR1:
+		fnt = dissector_set_print_payload;
+		break;
 	case FNTTYPE_PRINT_NOPA:
+		fnt = dissector_set_print_no_payload;
+		break;
 	case FNTTYPE_PRINT_PAAC:
+		fnt = dissector_set_print_c_style;
+		break;
 	default:
 	case FNTTYPE_PRINT_NONE:
 		fnt = dissector_set_print_none;
 		break;
-	};
+	}
 
 	dissector_init_entry(fnt);
 	dissector_init_lay2(fnt);

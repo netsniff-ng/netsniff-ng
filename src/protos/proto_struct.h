@@ -17,6 +17,11 @@ struct protocol {
 	unsigned int key;
 	void (*print_full)(uint8_t *packet, size_t len);
 	void (*print_less)(uint8_t *packet, size_t len);
+	void (*print_pay_ascii)(uint8_t *packet, size_t len);
+	void (*print_pay_hex)(uint8_t *packet, size_t len);
+	void (*print_pay_none)(uint8_t *packet, size_t len);
+	void (*print_all_cstyle)(uint8_t *packet, size_t len);
+	void (*print_all_hex)(uint8_t *packet, size_t len);
 	/* Used by program logic */
 	struct protocol *next;
 	void (*process)(uint8_t *packet, size_t len);

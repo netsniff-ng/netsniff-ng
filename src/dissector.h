@@ -31,7 +31,6 @@
 #define FNTTYPE_PRINT_CHR1  5	/* Only payload as char */
 #define FNTTYPE_PRINT_NOPA  6	/* No payload at all, only header */
 #define FNTTYPE_PRINT_PAAC  7	/* Payload as copy-and-paste C */
-#define FNTTYPE_PRINT_REGX  8	/* Packets that match RegEx */
 
 extern void dissector_init_all(int fnttype);
 extern void dissector_entry_point(uint8_t *packet, size_t len, int linktype);
@@ -40,5 +39,10 @@ extern void dissector_cleanup_all(void);
 extern int dissector_set_print_norm(void *ptr);
 extern int dissector_set_print_less(void *ptr);
 extern int dissector_set_print_none(void *ptr);
+extern int dissector_set_print_payload(void *ptr);
+extern int dissector_set_print_payload_hex(void *ptr);
+extern int dissector_set_print_c_style(void *ptr);
+extern int dissector_set_print_all_hex(void *ptr);
+extern int dissector_set_print_no_payload(void *ptr);
 
 #endif /* DISSECTOR_H */

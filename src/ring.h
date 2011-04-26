@@ -93,6 +93,10 @@ static inline void show_frame_hdr(struct frame_map *hdr, int mode,
 {
 	if (rmode == RING_MODE_INGRESS) {
 		switch (mode) {
+		case FNTTYPE_PRINT_PAAC:
+		case FNTTYPE_PRINT_NOPA:
+		case FNTTYPE_PRINT_HEX1:
+		case FNTTYPE_PRINT_HEX2:
 		case FNTTYPE_PRINT_NORM:
 			tprintf("%s %u %u %u.%u\n",
 				packet_types[hdr->s_ll.sll_pkttype],
@@ -109,6 +113,10 @@ static inline void show_frame_hdr(struct frame_map *hdr, int mode,
 		}
 	} else {
 		switch (mode) {
+		case FNTTYPE_PRINT_PAAC:
+		case FNTTYPE_PRINT_NOPA:
+		case FNTTYPE_PRINT_HEX1:
+		case FNTTYPE_PRINT_HEX2:
 		case FNTTYPE_PRINT_NORM:
 		case FNTTYPE_PRINT_LESS:
 			tprintf("> %u\n", hdr->tp_h.tp_len);
