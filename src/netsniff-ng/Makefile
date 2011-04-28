@@ -33,7 +33,7 @@ lib-objs   = hash.o                  \
 
 target     = netsniff-ng
 
-all: note clean gen-version build doc
+all: note clean gen-version build post-build doc
 debug: all
 deploy: all strip
 
@@ -48,15 +48,20 @@ gen-version:
 build: $(lib-objs) $(core-objs)
 	@$(LD) $(target) $(core-objs) $(lib-objs) $(LIBS)
 
+post-build:
+	@if [ ! -f /etc/netsniff-ng/oui.conf ] ; then echo "NOTE: You need " \
+	"to install /etc/netsniff-ng/* files before running, so do a 'make " \
+	"install'!"; fi
+
 strip:
 	@strip $(target)
 
 doc:
-	@cd ../../Documentation && make clean
-	@cd ../../Documentation && make netsniff-ng
-	@cp ../../Documentation/man/* .
-	@cp ../../Documentation/pdf/* .
-	@cp ../../Documentation/html/* .
+#	@cd ../../Documentation && make clean
+#	@cd ../../Documentation && make netsniff-ng
+#	@cp ../../Documentation/man/* .
+#	@cp ../../Documentation/pdf/* .
+#	@cp ../../Documentation/html/* .
 
 %.o: ../%.c
 	@$(CC) $(CFLAGS) $(INCLUDE) $<

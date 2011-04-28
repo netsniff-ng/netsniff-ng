@@ -36,11 +36,11 @@ strip:
 	@strip $(target)
 
 doc:
-	@cd ../../Documentation && make clean
-	@cd ../../Documentation && make ifpps
-	@cp ../../Documentation/man/* .
-	@cp ../../Documentation/pdf/* .
-	@cp ../../Documentation/html/* .
+#	@cd ../../Documentation && make clean
+#	@cd ../../Documentation && make ifpps
+#	@cp ../../Documentation/man/* .
+#	@cp ../../Documentation/pdf/* .
+#	@cp ../../Documentation/html/* .
 
 %.o: ../%.c
 	@$(CC) $(CFLAGS) $(INCLUDE) $<
