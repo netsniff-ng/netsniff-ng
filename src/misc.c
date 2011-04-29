@@ -9,10 +9,11 @@
 #include <sys/types.h>
 
 #include "die.h"
+#include "misc.h"
 
 void check_for_root_maybe_die(void)
 {
-	if (geteuid() != 0)
+	if (geteuid() != 0 || geteuid() != getuid())
 		panic("Uhhuh, not root?!\n");
 }
 
