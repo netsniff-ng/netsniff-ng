@@ -1,3 +1,9 @@
+////////////////////////////////////////////////////////////////
+
+        netsniff-ng - the packet sniffing beast
+
+\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
 netsniff-ng is is a free, performant Linux network analyzer and networking
 toolkit [1].
 
@@ -17,6 +23,8 @@ debugging and currently consists of the following tools:
   * netsniff-ng: the 'zero-copy' sniffer itself
   * trafgen: a powerful 'zero-copy' network packet generator
   * ifpps: a top-like kernel networking statistics tool
+  * curvetun: an ECC-based multiuser IP tunnel
+  * hoglet: a tiny Haskell nfl to BPF compiler
 
 For any questions or feedback about netsniff-ng you are welcome to leave us a
 message to <workgroup@netsniff-ng.org>. This project is purely non-commercial

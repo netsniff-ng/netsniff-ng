@@ -522,7 +522,7 @@ static void help(void)
 	printf("\n");
 	printf("Examples:\n");
 	printf("  ifpps --dev eth0\n");
-	printf("  ifpps --dev eth0 --interval 60 --csv\n");
+	printf("  ifpps --dev eth0 --interval 60 --csv\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2009, 2010 Daniel Borkmann\n");
 	printf("License: GNU GPL version 2\n");
