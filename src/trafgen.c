@@ -4,6 +4,9 @@
  * Copyright 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,
  * Swiss federal institute of technology (ETH Zurich)
  * Subject to the GPL.
+ *
+ * A high-performance network traffic generator that uses the
+ * zero-copy TX_RING for network I/O.
  */
 
 #include <stdio.h>

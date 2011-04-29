@@ -3,6 +3,14 @@
  * By Daniel Borkmann <daniel@netsniff-ng.org>
  * Copyright 2009, 2010 Daniel Borkmann.
  * Subject to the GPL.
+ *
+ * A tiny tool to provide top-like reliable networking statistics.
+ * Why? Well, some time ago I used iptraf to display network traffic
+ * statistics. During that time and probably also today, they are 
+ * using libpcap to collect statistics. Well, bad idea since this 
+ * will give you false statistics on high I/O load. Therefore, ifpps
+ * reads out the 'real' kernel statistics, so things your NIC sees
+ * and not some userland library.
  */
 
 #include <stdio.h>
