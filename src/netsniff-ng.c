@@ -236,7 +236,7 @@ out:
 
 	close(tx_sock);
 	if (pcap_ops[mode->pcap]->prepare_close_pcap)
-		pcap_ops[mode->pcap]->prepare_close_pcap(fd);
+		pcap_ops[mode->pcap]->prepare_close_pcap(fd, PCAP_MODE_READ);
 	close(fd);
 }
 
@@ -441,7 +441,7 @@ out:
 	xfree(out);
 	dissector_cleanup_all();
 	if (pcap_ops[mode->pcap]->prepare_close_pcap)
-		pcap_ops[mode->pcap]->prepare_close_pcap(fd);
+		pcap_ops[mode->pcap]->prepare_close_pcap(fd, PCAP_MODE_READ);
 	close(fd);
 }
 
@@ -559,7 +559,7 @@ next:
 	if (mode->dump) {
 		pcap_ops[mode->pcap]->fsync_pcap(fd);
 		if (pcap_ops[mode->pcap]->prepare_close_pcap)
-			pcap_ops[mode->pcap]->prepare_close_pcap(fd);
+			pcap_ops[mode->pcap]->prepare_close_pcap(fd, PCAP_MODE_WRITE);
 		close(fd);
 	}
 }

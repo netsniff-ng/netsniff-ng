@@ -91,6 +91,11 @@ enum pcap_ops_groups {
 #define PCAP_OPS_MAX (__PCAP_OPS_MAX - 1)
 #define PCAP_OPS_SIZ (__PCAP_OPS_MAX)
 
+enum pcap_mode {
+	PCAP_MODE_READ = 0,
+	PCAP_MODE_WRITE,
+};
+
 struct pcap_file_ops {
 	char *name;
 	int (*pull_file_header)(int fd);
@@ -102,7 +107,7 @@ struct pcap_file_ops {
 	int (*prepare_reading_pcap)(int fd);
 	ssize_t (*read_pcap_pkt)(int fd, struct pcap_pkthdr *hdr,
 				 uint8_t *packet, size_t len);
-	void (*prepare_close_pcap)(int fd);
+	void (*prepare_close_pcap)(int fd, enum pcap_mode mode);
 };
 
 extern struct pcap_file_ops *pcap_ops[PCAP_OPS_SIZ];

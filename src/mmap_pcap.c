@@ -184,12 +184,17 @@ static void mmap_pcap_fsync_pcap(int fd)
 	spinlock_unlock(&lock);
 }
 
-static void mmap_pcap_prepare_close_pcap(int fd)
+static void mmap_pcap_prepare_close_pcap(int fd, enum pcap_mode mode)
 {
 	spinlock_lock(&lock);
 	int ret = munmap(pstart, map_size);
 	if (ret < 0)
 		panic("Cannot unmap the pcap file!\n");
+	if (mode == PCAP_MODE_WRITE) {
+		ret = ftruncate(fd, (unsigned long) (pcurr - pstart));
+		if (ret)
+			panic("Cannot truncate the pcap file!\n");
+	}
 	spinlock_unlock(&lock);
 }
 
