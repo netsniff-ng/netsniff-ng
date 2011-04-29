@@ -1,6 +1,7 @@
  The coding conventions of netsniff-ng match with the Linux kernel 
  style guidelines. So here we go with a copy of linux-xxx/Documentation/
- CodingStyle.
+ CodingStyle. For Haskell coding conventions, see:
+ http://hackage.haskell.org/trac/ghc/wiki/Commentary/CodingStyle
 
 			Daniel Borkmann
 
