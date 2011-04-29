@@ -21,7 +21,8 @@
 #endif /* LINUX_VERSION_CODE */
 
 #ifdef HAVE_TX_RING
-#define TX_KERNEL_PULL_INT 10
+/* Give userland 10 us time to push packets to the ring */
+#define TX_KERNEL_PULL_INT	10
 
 extern void destroy_tx_ring(int sock, struct ring *ring);
 extern void create_tx_ring(int sock, struct ring *ring);
@@ -42,6 +43,6 @@ static inline void kernel_may_pull_from_tx(struct tpacket_hdr *hdr)
 {
 	hdr->tp_status = TP_STATUS_SEND_REQUEST;
 }
-#endif /* HAVE_TX_RING */
 
+#endif /* HAVE_TX_RING */
 #endif /* TX_RING_H */
