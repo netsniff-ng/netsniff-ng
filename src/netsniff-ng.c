@@ -574,7 +574,7 @@ static void help(void)
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: netsniff-ng [options]\n");
-	printf("Options for input/output:\n");
+	printf("Options:\n");
 	printf("  -i|-d|--dev|--in <dev|pcap>  Input source as netdev or pcap\n");
 	printf("  -o|--out <dev|pcap>          Output source as netdev or pcap\n");
 	printf("  -r|--randomize               Randomize packet forwarding order\n");

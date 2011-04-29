@@ -176,7 +176,7 @@ static void help(void)
 	printf("  -v|--version           Print version\n");
 	printf("  -h|--help              Print this help\n");
 	printf("\n");
-	printf("Example:\n");
+	printf("Examples:\n");
 	printf("  See trafgen.txf for configuration file examples.\n");
 	printf("  trafgen --dev eth0 --conf trafgen.txf --bind 0\n");
 	printf("  trafgen --dev eth0 --conf trafgen.txf --rand --gap 1000\n");
