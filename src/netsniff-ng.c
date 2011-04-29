@@ -4,6 +4,10 @@
  * Copyright 2009-2011 Daniel Borkmann.
  * Copyright 2010 Emmanuel Roullit.
  * Subject to the GPL.
+ *
+ * The first sniffer that invoked both, the zero-copy RX_RING
+ * as well as the zero-copy TX_RING for high-performance network
+ * I/O and scatter/gather as well as mmaped PCAP I/O.
  */
 
 #include <stdio.h>
