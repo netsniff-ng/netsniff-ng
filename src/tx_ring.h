@@ -35,12 +35,11 @@ extern int pull_and_flush_tx_ring(int sock);
 
 static inline int user_may_pull_from_tx(struct tpacket_hdr *hdr)
 {
-	return (hdr->tp_status == TP_STATUS_AVAILABLE);
+	return ((hdr->tp_status & TP_STATUS_AVAILABLE) == TP_STATUS_AVAILABLE);
 }
 
 static inline void kernel_may_pull_from_tx(struct tpacket_hdr *hdr)
 {
-	barrier();
 	hdr->tp_status = TP_STATUS_SEND_REQUEST;
 }
 #endif /* HAVE_TX_RING */

@@ -26,7 +26,6 @@ static inline int user_may_pull_from_rx(struct tpacket_hdr *hdr)
 
 static inline void kernel_may_pull_from_rx(struct tpacket_hdr *hdr)
 {
-	barrier();
 	hdr->tp_status = TP_STATUS_KERNEL;
 }
 
