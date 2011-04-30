@@ -24,7 +24,7 @@ debugging and currently consists of the following tools:
   * trafgen: a powerful 'zero-copy' network packet generator
   * ifpps: a top-like kernel networking statistics tool
   * curvetun: an ECC-based multiuser IP tunnel
-  * hoglet: a tiny Haskell nfl to BPF compiler
+  * bpfc: a tiny BPF compiler
 
 For any questions or feedback about netsniff-ng you are welcome to leave us a
 message to <workgroup@netsniff-ng.org>. This project is purely non-commercial

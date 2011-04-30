@@ -1,6 +1,6 @@
 build:
 	ghc --make Main
-	@mv Main hoglet
+	@mv Main bpfc
 
 clean:
-	@rm *.hi *.o hoglet
+	@rm *.hi *.o bpfc

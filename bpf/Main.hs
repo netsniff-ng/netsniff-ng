@@ -3,7 +3,7 @@
 -- Copyright 2011 Daniel Borkmann.
 -- Subject to the GPL.
 --
--- hoglet, a tiny Haskell nfl to bpf compiler
+-- bpfc, a tiny Haskell nfl to bpf compiler
 
 import System
 import System.Console.GetOpt
@@ -39,7 +39,7 @@ options = [
  ]
 
 showVersion _ = do
-    putStrLn "\nhoglet 0.1, a tiny Haskell nfl to bpf compiler"
+    putStrLn "\nbpfc 0.1, a tiny nfl to bpf compiler"
     putStrLn "http://www.netsniff-ng.org\n"
     putStrLn "Please report bugs to <bugs@netsniff-ng.org>"
     putStrLn "Copyright (C) 2011 Daniel Borkmann <daniel@netsniff-ng.org>"
@@ -49,15 +49,15 @@ showVersion _ = do
     exitWith ExitSuccess
 
 showHelp _ = do
-    putStrLn "\nhoglet 0.1, a tiny Haskell nfl to bpf compiler"
+    putStrLn "\nbpfc 0.1, a tiny nfl to bpf compiler"
     putStrLn "http://www.netsniff-ng.org\n"
-    putStrLn "Usage: hoglet [options]"
+    putStrLn "Usage: bpfc [options]"
     putStrLn "  -i|--in <nfl>       nfl input file"
     putStrLn "  -o|--out <bpf>      BPF output file"
     putStrLn "  -v|--version        Show version"
     putStrLn "  -h|--help           Show this help\n"
     putStrLn "Example:"
-    putStrLn "  hoglet -i prog.nfl -o out.bpf\n"
+    putStrLn "  bpfc -i prog.nfl -o out.bpf\n"
     putStrLn "Please report bugs to <bugs@netsniff-ng.org>"
     putStrLn "Copyright (C) 2011 Daniel Borkmann <daniel@netsniff-ng.org>"
     putStrLn "License: GNU GPL version 2"
