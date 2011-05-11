@@ -282,20 +282,20 @@ static void screen_update(WINDOW *screen, const char *ifname,
 		  ifname);
 
 	mvwprintw(screen, 3, 2,
-		  "RX: %16.3f MB/t %10lu Pkts/t %10lu Drops/t %10lu Errors/t",
+		  "RX: %16.3f MiB/t %10lu Pkts/t %10lu Drops/t %10lu Errors/t",
 		  1.f * s->rx_bytes / (1 << 20), s->rx_packets, s->rx_drops,
 		  s->rx_errors);
 	mvwprintw(screen, 4, 2,
-		  "TX: %16.3f MB/t %10lu Pkts/t %10lu Drops/t %10lu Errors/t",
+		  "TX: %16.3f MiB/t %10lu Pkts/t %10lu Drops/t %10lu Errors/t",
 		  1.f * s->tx_bytes / (1 << 20), s->tx_packets, s->tx_drops,
 		  s->tx_errors);
 
 	mvwprintw(screen, 6, 2,
-		  "RX: %16.3f MB   %10lu Pkts   %10lu Drops   %10lu Errors",
+		  "RX: %16.3f MiB   %10lu Pkts   %10lu Drops   %10lu Errors",
 		  1.f * t->rx_bytes / (1 << 20), t->rx_packets, t->rx_drops,
 		  t->rx_errors);
 	mvwprintw(screen, 7, 2,
-		  "TX: %16.3f MB   %10lu Pkts   %10lu Drops   %10lu Errors",
+		  "TX: %16.3f MiB   %10lu Pkts   %10lu Drops   %10lu Errors",
 		  1.f * t->tx_bytes / (1 << 20), t->tx_packets, t->tx_drops,
 		  t->tx_errors);
 	j = 9;
@@ -344,10 +344,10 @@ static void print_update(const char *ifname, struct ifstat *s,
 {
 	int i;
 
-	printf("RX: %16.3f MB/t %10lu Pkts/t %10lu Drops/t %10lu Errors/t\n",
+	printf("RX: %16.3f MiB/t %10lu Pkts/t %10lu Drops/t %10lu Errors/t\n",
 	       1.f * s->rx_bytes / (1 << 20), s->rx_packets, s->rx_drops,
 	       s->rx_errors);
-	printf("TX: %16.3f MB/t %10lu Pkts/t %10lu Drops/t %10lu Errors/t\n",
+	printf("TX: %16.3f MiB/t %10lu Pkts/t %10lu Drops/t %10lu Errors/t\n",
 	       1.f * s->tx_bytes / (1 << 20), s->tx_packets, s->tx_drops,
 	       s->tx_errors);
 
