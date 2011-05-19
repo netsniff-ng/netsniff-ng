@@ -432,7 +432,7 @@ static void print_update(const char *ifname, struct ifstat *s,
 		for(i = 0; i < s->irqs_len; ++i)
 			printf("CPU%d: %10ld IRQs/t   "
 			       "%10ld SoIRQ RX/t   "
-			       "%10ld SoIRQ TX/t", i,
+			       "%10ld SoIRQ TX/t\n", i,
 			       s->irqs[i], s->irqs_srx[i], s->irqs_stx[i]);
 	if (t->wifi_bitrate > 0) {
 		printf("LinkQual: %6d/%d (%d/t)\n", t->wifi_link_qual,
