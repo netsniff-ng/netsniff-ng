@@ -60,6 +60,8 @@ struct ifstat {
 	unsigned long tx_carrier;
 	unsigned long irq_nr;
 	unsigned long *irqs;
+	unsigned long *irqs_srx;
+	unsigned long *irqs_stx;
 	size_t irqs_len;
 	int wifi_bitrate;
 	int wifi_link_qual;
@@ -169,6 +171,65 @@ static int wifi_stats(const char *ifname, struct ifstat *s)
 	return ret;
 }
 
+static int irq_sstats(struct ifstat *s)
+{
+	int i, rx = 0;
+	char *ptr, *ptr2;
+	char buff[4096];
+
+	FILE *fp = fopen("/proc/softirqs", "r");
+	if (!fp) {
+		whine("Cannot open /proc/softirqs!\n");
+		return -ENOENT;
+	}
+
+	if (s->irqs_len != NR_CPUS) {
+		if (s->irqs)
+			xfree(s->irqs);
+		if (s->irqs_srx)
+			xfree(s->irqs_srx);
+		if (s->irqs_stx)
+			xfree(s->irqs_stx);
+		s->irqs_srx = xzmalloc(sizeof(*(s->irqs_srx)) * NR_CPUS);
+		s->irqs_stx = xzmalloc(sizeof(*(s->irqs_stx)) * NR_CPUS);
+		s->irqs = xzmalloc(sizeof(*(s->irqs)) * NR_CPUS);
+		s->irqs_len = NR_CPUS;
+	}
+
+	memset(buff, 0, sizeof(buff));
+
+	while (fgets(buff, sizeof(buff), fp) != NULL) {
+		buff[sizeof(buff) - 1] = 0;
+
+		if ((ptr = strstr(buff, "NET_TX:")) == NULL) {
+			ptr = strstr(buff, "NET_RX:");
+			if (ptr == NULL)
+				continue;
+			rx = 1;
+		} else
+			rx = 0;
+		ptr += strlen("NET_TX:");
+		for (i = 0; i < s->irqs_len; ++i) {
+			ptr++;
+			while (*ptr == ' ')
+				ptr++;
+			ptr2 = ptr;
+			while (*ptr != ' ' && *ptr != 0)
+				ptr++;
+			*ptr = 0;
+			if (rx)
+				s->irqs_srx[i] = atoi(ptr2);
+			else
+				s->irqs_stx[i] = atoi(ptr2);
+		}
+
+		memset(buff, 0, sizeof(buff));
+	}
+
+	fclose(fp);
+	return 0;
+}
+
 static int irq_stats(const char *ifname, struct ifstat *s)
 {
 	int i;
@@ -188,6 +249,12 @@ static int irq_stats(const char *ifname, struct ifstat *s)
 	if (s->irqs_len != NR_CPUS) {
 		if (s->irqs)
 			xfree(s->irqs);
+		if (s->irqs_srx)
+			xfree(s->irqs_srx);
+		if (s->irqs_stx)
+			xfree(s->irqs_stx);
+		s->irqs_srx = xzmalloc(sizeof(*(s->irqs_srx)) * NR_CPUS);
+		s->irqs_stx = xzmalloc(sizeof(*(s->irqs_stx)) * NR_CPUS);
 		s->irqs = xzmalloc(sizeof(*(s->irqs)) * NR_CPUS);
 		s->irqs_len = NR_CPUS;
 	}
@@ -210,7 +277,7 @@ static int irq_stats(const char *ifname, struct ifstat *s)
 			ptr2 = ptr;
 			while (*ptr == ' ')
 				ptr++;
-			while (*ptr != ' ')
+			while (*ptr != ' '  && *ptr != 0)
 				ptr++;
 			*ptr = 0;
 			s->irqs[i] = atoi(ptr2);
@@ -252,13 +319,22 @@ static void diff_stats(struct ifstat *old, struct ifstat *new,
 	if (diff->irqs_len != NR_CPUS) {
 		if (diff->irqs)
 			xfree(diff->irqs);
+		if (diff->irqs_srx)
+			xfree(diff->irqs_srx);
+		if (diff->irqs_stx)
+			xfree(diff->irqs_stx);
 		diff->irqs = xzmalloc(sizeof(*(diff->irqs)) * NR_CPUS);
+		diff->irqs_srx = xzmalloc(sizeof(*(diff->irqs_srx)) * NR_CPUS);
+		diff->irqs_stx = xzmalloc(sizeof(*(diff->irqs_stx)) * NR_CPUS);
 		diff->irqs_len = NR_CPUS;
 		diff->irq_nr = new->irq_nr;
 	}
 
-	for (i = 0; i < diff->irqs_len; ++i)
+	for (i = 0; i < diff->irqs_len; ++i) {
 		diff->irqs[i] = new->irqs[i] - old->irqs[i];
+		diff->irqs_srx[i] = new->irqs_srx[i] - old->irqs_srx[i];
+		diff->irqs_stx[i] = new->irqs_stx[i] - old->irqs_stx[i];
+	}
 }
 
 static void screen_init(WINDOW **screen)
@@ -303,8 +379,9 @@ static void screen_update(WINDOW *screen, const char *ifname,
 	if (s->irq_nr != 0) {
 		/* IRQ statistics */
 		for(i = 0; i < s->irqs_len; ++i)
-			mvwprintw(screen, j++, 2, "CPU%d: %10ld IRQs/t", i,
-				  s->irqs[i]);
+			mvwprintw(screen, j++, 2, "CPU%d: %10ld IRQs/t   "
+				  "%10ld SoIRQ RX/t   %10ld SoIRQ TX/t", i,
+				  s->irqs[i], s->irqs_srx[i], s->irqs_stx[i]);
 		j++;
 		for(i = 0; i < s->irqs_len; ++i)
 			mvwprintw(screen, j++, 2, "CPU%d: %10ld IRQs",
@@ -353,7 +430,10 @@ static void print_update(const char *ifname, struct ifstat *s,
 
 	if (s->irq_nr != 0)
 		for(i = 0; i < s->irqs_len; ++i)
-			printf("CPU%d: %10ld IRQs/t\n", i, s->irqs[i]);
+			printf("CPU%d: %10ld IRQs/t   "
+			       "%10ld SoIRQ RX/t   "
+			       "%10ld SoIRQ TX/t", i,
+			       s->irqs[i], s->irqs_srx[i], s->irqs_stx[i]);
 	if (t->wifi_bitrate > 0) {
 		printf("LinkQual: %6d/%d (%d/t)\n", t->wifi_link_qual,
 		       t->wifi_link_qual_max, s->wifi_link_qual);
@@ -376,7 +456,8 @@ static void print_update_csv(const char *ifname, struct ifstat *s,
 
 	if (s->irq_nr != 0)
 		for(i = 0; i < s->irqs_len; ++i)
-			printf(",%ld", s->irqs[i]);
+			printf(",%ld,%ld,%ld", s->irqs[i], s->irqs_srx[i],
+			       s->irqs_stx[i]);
 	if (t->wifi_bitrate > 0) {
 		printf(",%d,%d", t->wifi_link_qual, t->wifi_link_qual_max);
 		printf(",%d", t->wifi_signal_level);
@@ -396,7 +477,8 @@ static void print_update_csv_hdr(const char *ifname, struct ifstat *s,
 
 	if (s->irq_nr != 0)
 		for(i = 0; i < s->irqs_len; ++i)
-			printf(",CPU%d IRQs/t", i);
+			printf(",CPU%d IRQs/t,CPU%d SoIRQ RX/t,"
+			       "CPU%d SoIRQ TX/t", i, i, i);
 	if (t->wifi_bitrate > 0)
 		printf(",LinkQual,LinkQualMax,Signal Level,Noise Level");
 
@@ -409,6 +491,7 @@ static inline int do_stats(const char *ifname, struct ifstat *s)
 
 	ret += rxtx_stats(ifname, s);
 	ret += irq_stats(ifname, s);
+	ret += irq_sstats(s);
 	ret += wifi_stats(ifname, s);
 
 	return ret;
