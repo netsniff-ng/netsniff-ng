@@ -73,6 +73,7 @@ struct ifstat {
 	unsigned long procs_run;
 	unsigned long procs_iow;
 	size_t irqs_len;
+	float mem_used;
 	int wifi_bitrate;
 	int wifi_link_qual;
 	int wifi_link_qual_max;
@@ -232,6 +233,48 @@ static int irq_sstats(struct ifstat *s)
 		}
 		memset(buff, 0, sizeof(buff));
 	}
+	fclose(fp);
+	return 0;
+}
+
+static int mem_stats(struct ifstat *s)
+{
+	int ret;
+	unsigned long total, free;
+	char *ptr;
+	char buff[4096];
+
+	FILE *fp = fopen("/proc/meminfo", "r");
+	if (!fp) {
+		whine("Cannot open /proc/meminfo!\n");
+		return -ENOENT;
+	}
+	memset(buff, 0, sizeof(buff));
+	while (fgets(buff, sizeof(buff), fp) != NULL) {
+		buff[sizeof(buff) - 1] = 0;
+		if ((ptr = strstr(buff, "MemTotal:")) != NULL) {
+			ptr += strlen("MemTotal:");
+			ptr++;
+			while (*ptr == ' ')
+				ptr++;
+			ret = sscanf(ptr, "%lu", &total);
+			if (ret != 1)
+				total = 0;
+		} else if ((ptr = strstr(buff, "MemFree:")) != NULL) {
+			ptr += strlen("MemFree:");
+			ptr++;
+			while (*ptr == ' ')
+				ptr++;
+			ret = sscanf(ptr, "%lu", &free);
+			if (ret != 1)
+				free = 0;
+		}
+		memset(buff, 0, sizeof(buff));
+	}
+	if (total > 0)
+		s->mem_used = 100.f * (total - free) / total;
+	else
+		s->mem_used = 0.f;
 	fclose(fp);
 	return 0;
 }
@@ -426,9 +469,9 @@ static void screen_update(WINDOW *screen, const char *ifname,
 		  1.f * t->tx_bytes / (1 << 20), t->tx_packets, t->tx_drops,
 		  t->tx_errors);
 	j = 9;
-	mvwprintw(screen, j++, 2, "SYS:  %14ld cs/t  %10ld forks/t "
-		  "%9ld running %10ld iowait",
-		  s->ctxt, s->forks, t->procs_run, t->procs_iow);
+	mvwprintw(screen, j++, 2, "SYS:  %14ld cs/t  %10.3f mem "
+		  "%13ld running %10ld iowait",
+		  s->ctxt, t->mem_used, t->procs_run, t->procs_iow);
 	j++;
 	if (s->irq_nr != 0) {
 		for(i = 0; i < s->irqs_len; ++i) {
@@ -549,6 +592,7 @@ static inline int do_stats(const char *ifname, struct ifstat *s)
 	ret += irq_stats(ifname, s);
 	ret += irq_sstats(s);
 	ret += sys_stats(s);
+	ret += mem_stats(s);
 	ret += wifi_stats(ifname, s);
 	return ret;
 }
