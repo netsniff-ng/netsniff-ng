@@ -469,7 +469,7 @@ static void screen_update(WINDOW *screen, const char *ifname,
 		  1.f * t->tx_bytes / (1 << 20), t->tx_packets, t->tx_drops,
 		  t->tx_errors);
 	j = 9;
-	mvwprintw(screen, j++, 2, "SYS:  %14ld cs/t  %10.3f mem "
+	mvwprintw(screen, j++, 2, "SYS:  %14ld cs/t %10.1f%% mem "
 		  "%13ld running %10ld iowait",
 		  s->ctxt, t->mem_used, t->procs_run, t->procs_iow);
 	j++;
@@ -478,8 +478,8 @@ static void screen_update(WINDOW *screen, const char *ifname,
 			unsigned long all = s->cpu_user[i] + s->cpu_nice[i] +
 					    s->cpu_sys[i] + s->cpu_idle[i] +
 					    s->cpu_iow[i];
-			mvwprintw(screen, j++, 2, "CPU%d: %14.3f usr/t "
-				  "%10.3f sys/t %11.3f idl/t %12.3f iow/t  ",
+			mvwprintw(screen, j++, 2, "CPU%d: %13.1f%% usr/t "
+				  "%9.1f%% sys/t %10.1f%% idl/t %11.1f%% iow/t  ",
 				  i,
 				  100.f * (s->cpu_user[i] + s->cpu_nice[i]) / all,
 				  100.f * s->cpu_sys[i] / all,
