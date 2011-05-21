@@ -452,14 +452,16 @@ static void screen_update(WINDOW *screen, const char *ifname,
 	curs_set(0);
 	mvwprintw(screen, 1, 2, "Kernel net/sys statistics for %s",
 		  ifname);
-	mvwprintw(screen, 3, 2,
-		  "RX: %16.3f MiB/t %10lu pkts/t %10lu drops/t %10lu errors/t",
+	attron(A_REVERSE);
+	mvwprintw(screen, 3, 0,
+		  "  RX: %16.3f MiB/t %10lu pkts/t %10lu drops/t %10lu errors/t  ",
 		  1.f * s->rx_bytes / (1 << 20), s->rx_packets, s->rx_drops,
 		  s->rx_errors);
-	mvwprintw(screen, 4, 2,
-		  "TX: %16.3f MiB/t %10lu pkts/t %10lu drops/t %10lu errors/t",
+	mvwprintw(screen, 4, 0,
+		  "  TX: %16.3f MiB/t %10lu pkts/t %10lu drops/t %10lu errors/t  ",
 		  1.f * s->tx_bytes / (1 << 20), s->tx_packets, s->tx_drops,
 		  s->tx_errors);
+	attroff(A_REVERSE);
 	mvwprintw(screen, 6, 2,
 		  "RX: %16.3f MiB   %10lu pkts   %10lu drops   %10lu errors",
 		  1.f * t->rx_bytes / (1 << 20), t->rx_packets, t->rx_drops,
