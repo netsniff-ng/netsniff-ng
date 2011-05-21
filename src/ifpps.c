@@ -35,13 +35,14 @@
 #include "signals.h"
 
 /*
- * TODO: Maybe interesting ethtool -S stats, too?
- *       Approximation for longer intervals.
+ * TODO: Cleanups, this got quite a hack over time.
  */
 
 #define TERM_MODE_NORMAL  1
 #define TERM_MODE_CSV     2
 #define TERM_MODE_CSV_HDR 4
+
+#define USER_HZ sysconf(_SC_CLK_TCK)
 
 struct ifstat {
 	unsigned long rx_bytes;
@@ -62,6 +63,15 @@ struct ifstat {
 	unsigned long *irqs;
 	unsigned long *irqs_srx;
 	unsigned long *irqs_stx;
+	unsigned long *cpu_user;
+	unsigned long *cpu_nice;
+	unsigned long *cpu_sys;
+	unsigned long *cpu_idle;
+	unsigned long *cpu_iow;
+	unsigned long ctxt;
+	unsigned long forks;
+	unsigned long procs_run;
+	unsigned long procs_iow;
 	size_t irqs_len;
 	int wifi_bitrate;
 	int wifi_link_qual;
@@ -114,23 +124,17 @@ static int rxtx_stats(const char *ifname, struct ifstat *s)
 		whine("Cannot open /proc/net/dev!\n");
 		return -ENOENT;
 	}
-
 	ptr = fgets(buf, sizeof(buf), fp);
 	ptr = fgets(buf, sizeof(buf), fp);
-
 	memset(buf, 0, sizeof(buf));
-
 	while (fgets(buf, sizeof(buf), fp) != NULL) {
 		buf[sizeof(buf) -1] = 0;
-
 		if (strstr(buf, ifname) == NULL)
 			continue;
-
 		ptr = buf;
 		while (*ptr != ':')
 			ptr++;
 		ptr++;
-
 		ret = sscanf(ptr, "%lu%lu%lu%lu%lu%lu%lu%*u%lu%lu%lu%lu%lu%lu%lu",
 			     &s->rx_bytes, &s->rx_packets, &s->rx_errors,
 			     &s->rx_drops, &s->rx_fifo, &s->rx_frame,
@@ -142,10 +146,8 @@ static int rxtx_stats(const char *ifname, struct ifstat *s)
 			found = 0;
 			break;
 		}
-
 		memset(buf, 0, sizeof(buf));
 	}
-
 	fclose(fp);
 	return found;
 }
@@ -161,14 +163,35 @@ static int wifi_stats(const char *ifname, struct ifstat *s)
 		s->wifi_bitrate = 0;
 		return 0;
 	}
-
 	s->wifi_bitrate = wireless_bitrate(ifname);
 	s->wifi_signal_level = adjust_dbm_level(ws.qual.level);
 	s->wifi_noise_level = adjust_dbm_level(ws.qual.noise);
 	s->wifi_link_qual = ws.qual.qual;
 	s->wifi_link_qual_max = wireless_rangemax_sigqual(ifname);
-
 	return ret;
+}
+
+static void stats_check_alloc(struct ifstat *s)
+{
+	if (s->irqs_len != NR_CPUS) {
+		if (s->irqs) xfree(s->irqs);
+		if (s->irqs_srx) xfree(s->irqs_srx);
+		if (s->irqs_stx) xfree(s->irqs_stx);
+		if (s->cpu_user) xfree(s->cpu_user);
+		if (s->cpu_nice) xfree(s->cpu_nice);
+		if (s->cpu_sys) xfree(s->cpu_sys);
+		if (s->cpu_idle) xfree(s->cpu_idle);
+		if (s->cpu_iow) xfree(s->cpu_iow);
+		s->irqs_srx = xzmalloc(sizeof(*(s->irqs_srx)) * NR_CPUS);
+		s->irqs_stx = xzmalloc(sizeof(*(s->irqs_stx)) * NR_CPUS);
+		s->irqs = xzmalloc(sizeof(*(s->irqs)) * NR_CPUS);
+		s->cpu_user = xzmalloc(sizeof(*(s->cpu_user)) * NR_CPUS);
+		s->cpu_nice = xzmalloc(sizeof(*(s->cpu_nice)) * NR_CPUS);
+		s->cpu_sys = xzmalloc(sizeof(*(s->cpu_sys)) * NR_CPUS);
+		s->cpu_idle = xzmalloc(sizeof(*(s->cpu_idle)) * NR_CPUS);
+		s->cpu_iow = xzmalloc(sizeof(*(s->cpu_iow)) * NR_CPUS);
+		s->irqs_len = NR_CPUS;
+	}
 }
 
 static int irq_sstats(struct ifstat *s)
@@ -182,25 +205,10 @@ static int irq_sstats(struct ifstat *s)
 		whine("Cannot open /proc/softirqs!\n");
 		return -ENOENT;
 	}
-
-	if (s->irqs_len != NR_CPUS) {
-		if (s->irqs)
-			xfree(s->irqs);
-		if (s->irqs_srx)
-			xfree(s->irqs_srx);
-		if (s->irqs_stx)
-			xfree(s->irqs_stx);
-		s->irqs_srx = xzmalloc(sizeof(*(s->irqs_srx)) * NR_CPUS);
-		s->irqs_stx = xzmalloc(sizeof(*(s->irqs_stx)) * NR_CPUS);
-		s->irqs = xzmalloc(sizeof(*(s->irqs)) * NR_CPUS);
-		s->irqs_len = NR_CPUS;
-	}
-
+	stats_check_alloc(s);
 	memset(buff, 0, sizeof(buff));
-
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
-
 		if ((ptr = strstr(buff, "NET_TX:")) == NULL) {
 			ptr = strstr(buff, "NET_RX:");
 			if (ptr == NULL)
@@ -222,10 +230,80 @@ static int irq_sstats(struct ifstat *s)
 			else
 				s->irqs_stx[i] = atoi(ptr2);
 		}
-
 		memset(buff, 0, sizeof(buff));
 	}
+	fclose(fp);
+	return 0;
+}
 
+static int sys_stats(struct ifstat *s)
+{
+	int ret, cpu;
+	char *ptr, *ptr2;
+	char buff[4096];
+
+	FILE *fp = fopen("/proc/stat", "r");
+	if (!fp) {
+		whine("Cannot open /proc/stat!\n");
+		return -ENOENT;
+	}
+	stats_check_alloc(s);
+	memset(buff, 0, sizeof(buff));
+	while (fgets(buff, sizeof(buff), fp) != NULL) {
+		buff[sizeof(buff) - 1] = 0;
+		if ((ptr = strstr(buff, "cpu")) != NULL) {
+			ptr += strlen("cpu");
+			if (*ptr == ' ')
+				goto next;
+			ptr2 = ptr;
+			while (*ptr != ' ' && *ptr != 0)
+				ptr++;
+			*ptr = 0;
+			cpu = atoi(ptr2);
+			if (cpu < 0 || cpu >= s->irqs_len)
+				goto next;
+			ptr++;
+			ret = sscanf(ptr, "%lu%lu%lu%lu%lu", &s->cpu_user[cpu],
+				     &s->cpu_nice[cpu], &s->cpu_sys[cpu],
+				     &s->cpu_idle[cpu], &s->cpu_iow[cpu]);
+			if (ret != 5)
+				goto next;
+		} else if ((ptr = strstr(buff, "ctxt")) != NULL) {
+			ptr += strlen("ctxt");
+			ptr++;
+			while (*ptr == ' ')
+				ptr++;
+			ret = sscanf(ptr, "%lu", &s->ctxt);
+			if (ret != 1)
+				s->ctxt = 0;
+		} else if ((ptr = strstr(buff, "processes")) != NULL) {
+			ptr += strlen("processes");
+			ptr++;
+			while (*ptr == ' ')
+				ptr++;
+			ret = sscanf(ptr, "%lu", &s->forks);
+			if (ret != 1)
+				s->forks = 0;
+		} else if ((ptr = strstr(buff, "procs_running")) != NULL) {
+			ptr += strlen("procs_running");
+			ptr++;
+			while (*ptr == ' ')
+				ptr++;
+			ret = sscanf(ptr, "%lu", &s->procs_run);
+			if (ret != 1)
+				s->procs_run = 0;
+		} else if ((ptr = strstr(buff, "procs_blocked")) != NULL) {
+			ptr += strlen("procs_blocked");
+			ptr++;
+			while (*ptr == ' ')
+				ptr++;
+			ret = sscanf(ptr, "%lu", &s->procs_iow);
+			if (ret != 1)
+				s->procs_iow = 0;
+		}
+next:
+		memset(buff, 0, sizeof(buff));
+	}
 	fclose(fp);
 	return 0;
 }
@@ -239,39 +317,23 @@ static int irq_stats(const char *ifname, struct ifstat *s)
 	/* We exclude lo! */
 	if (!strncmp("lo", ifname, strlen("lo")))
 		return 0;
-
 	FILE *fp = fopen("/proc/interrupts", "r");
 	if (!fp) {
 		whine("Cannot open /proc/interrupts!\n");
 		return -ENOENT;
 	}
-
-	if (s->irqs_len != NR_CPUS) {
-		if (s->irqs)
-			xfree(s->irqs);
-		if (s->irqs_srx)
-			xfree(s->irqs_srx);
-		if (s->irqs_stx)
-			xfree(s->irqs_stx);
-		s->irqs_srx = xzmalloc(sizeof(*(s->irqs_srx)) * NR_CPUS);
-		s->irqs_stx = xzmalloc(sizeof(*(s->irqs_stx)) * NR_CPUS);
-		s->irqs = xzmalloc(sizeof(*(s->irqs)) * NR_CPUS);
-		s->irqs_len = NR_CPUS;
-	}
-
+	stats_check_alloc(s);
 	memset(buff, 0, sizeof(buff));
-
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
-
 		if (strstr(buff, ifname) == NULL)
 			continue;
-
 		ptr = buff;
 		while (*ptr != ':')
 			ptr++;
 		*ptr = 0;
 		s->irq_nr = atoi(buff);
+		assert(s->irq_nr != 0);
 		for (i = 0; i < s->irqs_len; ++i) {
 			ptr++;
 			ptr2 = ptr;
@@ -282,10 +344,8 @@ static int irq_stats(const char *ifname, struct ifstat *s)
 			*ptr = 0;
 			s->irqs[i] = atoi(ptr2);
 		}
-
 		memset(buff, 0, sizeof(buff));
 	}
-
 	fclose(fp);
 	return 0;
 }
@@ -294,10 +354,8 @@ static void diff_stats(struct ifstat *old, struct ifstat *new,
 		       struct ifstat *diff)
 {
 	int i;
-
 	if(old->irqs_len != new->irqs_len)
 		return; /* Refetch stats and take old diff! */
-
 	diff->rx_bytes = new->rx_bytes - old->rx_bytes;
 	diff->rx_packets = new->rx_packets - old->rx_packets;
 	diff->rx_drops = new->rx_drops - old->rx_drops;
@@ -315,32 +373,27 @@ static void diff_stats(struct ifstat *old, struct ifstat *new,
 	diff->wifi_signal_level = new->wifi_signal_level - old->wifi_signal_level;
 	diff->wifi_noise_level = new->wifi_noise_level - old->wifi_noise_level;
 	diff->wifi_link_qual = new->wifi_link_qual - old->wifi_link_qual;
-
-	if (diff->irqs_len != NR_CPUS) {
-		if (diff->irqs)
-			xfree(diff->irqs);
-		if (diff->irqs_srx)
-			xfree(diff->irqs_srx);
-		if (diff->irqs_stx)
-			xfree(diff->irqs_stx);
-		diff->irqs = xzmalloc(sizeof(*(diff->irqs)) * NR_CPUS);
-		diff->irqs_srx = xzmalloc(sizeof(*(diff->irqs_srx)) * NR_CPUS);
-		diff->irqs_stx = xzmalloc(sizeof(*(diff->irqs_stx)) * NR_CPUS);
-		diff->irqs_len = NR_CPUS;
-		diff->irq_nr = new->irq_nr;
-	}
-
+	diff->ctxt = new->ctxt - old->ctxt;
+	diff->forks = new->forks - old->forks;
+	diff->procs_run = new->procs_run - old->procs_run;
+	diff->procs_iow = new->procs_iow - old->procs_iow;
+	stats_check_alloc(diff);
+	diff->irq_nr = new->irq_nr;
 	for (i = 0; i < diff->irqs_len; ++i) {
 		diff->irqs[i] = new->irqs[i] - old->irqs[i];
 		diff->irqs_srx[i] = new->irqs_srx[i] - old->irqs_srx[i];
 		diff->irqs_stx[i] = new->irqs_stx[i] - old->irqs_stx[i];
+		diff->cpu_user[i] = new->cpu_user[i] - old->cpu_user[i];
+		diff->cpu_nice[i] = new->cpu_nice[i] - old->cpu_nice[i];
+		diff->cpu_sys[i] = new->cpu_sys[i] - old->cpu_sys[i];
+		diff->cpu_idle[i] = new->cpu_idle[i] - old->cpu_idle[i];
+		diff->cpu_iow[i] = new->cpu_iow[i] - old->cpu_iow[i];
 	}
 }
 
 static void screen_init(WINDOW **screen)
 {
 	(*screen) = initscr();
-
 	noecho();
 	cbreak();
 	nodelay((*screen), TRUE);
@@ -354,43 +407,54 @@ static void screen_update(WINDOW *screen, const char *ifname,
 	int i, j = 0;
 
 	curs_set(0);
-	mvwprintw(screen, 1, 2, "Kernel networking statistics for %s",
+	mvwprintw(screen, 1, 2, "Kernel net/sys statistics for %s",
 		  ifname);
-
 	mvwprintw(screen, 3, 2,
-		  "RX: %16.3f MiB/t %10lu Pkts/t %10lu Drops/t %10lu Errors/t",
+		  "RX: %16.3f MiB/t %10lu pkts/t %10lu drops/t %10lu errors/t",
 		  1.f * s->rx_bytes / (1 << 20), s->rx_packets, s->rx_drops,
 		  s->rx_errors);
 	mvwprintw(screen, 4, 2,
-		  "TX: %16.3f MiB/t %10lu Pkts/t %10lu Drops/t %10lu Errors/t",
+		  "TX: %16.3f MiB/t %10lu pkts/t %10lu drops/t %10lu errors/t",
 		  1.f * s->tx_bytes / (1 << 20), s->tx_packets, s->tx_drops,
 		  s->tx_errors);
-
 	mvwprintw(screen, 6, 2,
-		  "RX: %16.3f MiB   %10lu Pkts   %10lu Drops   %10lu Errors",
+		  "RX: %16.3f MiB   %10lu pkts   %10lu drops   %10lu errors",
 		  1.f * t->rx_bytes / (1 << 20), t->rx_packets, t->rx_drops,
 		  t->rx_errors);
 	mvwprintw(screen, 7, 2,
-		  "TX: %16.3f MiB   %10lu Pkts   %10lu Drops   %10lu Errors",
+		  "TX: %16.3f MiB   %10lu pkts   %10lu drops   %10lu errors",
 		  1.f * t->tx_bytes / (1 << 20), t->tx_packets, t->tx_drops,
 		  t->tx_errors);
 	j = 9;
-
+	mvwprintw(screen, j++, 2, "SYS:  %14ld cs/t  %10ld forks/t "
+		  "%9ld running %10ld iowait",
+		  s->ctxt, s->forks, t->procs_run, t->procs_iow);
+	j++;
 	if (s->irq_nr != 0) {
-		/* IRQ statistics */
-		for(i = 0; i < s->irqs_len; ++i)
-			mvwprintw(screen, j++, 2, "CPU%d: %10ld IRQs/t   "
-				  "%10ld SoIRQ RX/t   %10ld SoIRQ TX/t", i,
-				  s->irqs[i], s->irqs_srx[i], s->irqs_stx[i]);
+		for(i = 0; i < s->irqs_len; ++i) {
+			unsigned long all = s->cpu_user[i] + s->cpu_nice[i] +
+					    s->cpu_sys[i] + s->cpu_idle[i] +
+					    s->cpu_iow[i];
+			mvwprintw(screen, j++, 2, "CPU%d: %14.3f usr/t "
+				  "%10.3f sys/t %11.3f idl/t %12.3f iow/t  ",
+				  i,
+				  100.f * (s->cpu_user[i] + s->cpu_nice[i]) / all,
+				  100.f * s->cpu_sys[i] / all,
+				  100.f * s->cpu_idle[i] /all,
+				  100.f * s->cpu_iow[i] / all);
+		}
 		j++;
 		for(i = 0; i < s->irqs_len; ++i)
-			mvwprintw(screen, j++, 2, "CPU%d: %10ld IRQs",
+			mvwprintw(screen, j++, 2, "CPU%d: %14ld irqs/t   "
+				  "%15ld soirq RX/t   %15ld soirq TX/t      ",
+				  i, s->irqs[i], s->irqs_srx[i], s->irqs_stx[i]);
+		j++;
+		for(i = 0; i < s->irqs_len; ++i)
+			mvwprintw(screen, j++, 2, "CPU%d: %14ld irqs",
 				  i, t->irqs[i]);
 		j++;
 	}
-
 	if (t->wifi_bitrate > 0) {
-		/* WiFi statistics */
 		mvwprintw(screen, j++, 2, "LinkQual: %6d/%d (%d/t)           ",
 			  t->wifi_link_qual, t->wifi_link_qual_max,
 			  s->wifi_link_qual);
@@ -400,7 +464,6 @@ static void screen_update(WINDOW *screen, const char *ifname,
 			  t->wifi_noise_level, s->wifi_noise_level);
 		j++;
 	}
-
 	if (*first) {
 		mvwprintw(screen, 2, 2, "Collecting data ...");
 		*first = 0;
@@ -420,14 +483,12 @@ static void print_update(const char *ifname, struct ifstat *s,
 			 struct ifstat *t)
 {
 	int i;
-
 	printf("RX: %16.3f MiB/t %10lu Pkts/t %10lu Drops/t %10lu Errors/t\n",
 	       1.f * s->rx_bytes / (1 << 20), s->rx_packets, s->rx_drops,
 	       s->rx_errors);
 	printf("TX: %16.3f MiB/t %10lu Pkts/t %10lu Drops/t %10lu Errors/t\n",
 	       1.f * s->tx_bytes / (1 << 20), s->tx_packets, s->tx_drops,
 	       s->tx_errors);
-
 	if (s->irq_nr != 0)
 		for(i = 0; i < s->irqs_len; ++i)
 			printf("CPU%d: %10ld IRQs/t   "
@@ -453,7 +514,6 @@ static void print_update_csv(const char *ifname, struct ifstat *s,
 	       s->rx_errors);
 	printf("%lu,%lu,%lu,%lu", s->tx_bytes, s->tx_packets, s->tx_drops,
 	       s->tx_errors);
-
 	if (s->irq_nr != 0)
 		for(i = 0; i < s->irqs_len; ++i)
 			printf(",%ld,%ld,%ld", s->irqs[i], s->irqs_srx[i],
@@ -463,7 +523,6 @@ static void print_update_csv(const char *ifname, struct ifstat *s,
 		printf(",%d", t->wifi_signal_level);
 		printf(",%d", t->wifi_noise_level);
 	}
-
 	printf("\n");
 }
 
@@ -474,26 +533,23 @@ static void print_update_csv_hdr(const char *ifname, struct ifstat *s,
 
 	printf("RX Byte/t,RX Pkts/t,RX Drops/t,RX Errors/t,");
 	printf("TX Byte/t,TX Pkts/t,TX Drops/t,TX Errors/t");
-
 	if (s->irq_nr != 0)
 		for(i = 0; i < s->irqs_len; ++i)
 			printf(",CPU%d IRQs/t,CPU%d SoIRQ RX/t,"
 			       "CPU%d SoIRQ TX/t", i, i, i);
 	if (t->wifi_bitrate > 0)
 		printf(",LinkQual,LinkQualMax,Signal Level,Noise Level");
-
 	printf("\n");
 }
 
 static inline int do_stats(const char *ifname, struct ifstat *s)
 {
 	int ret = 0;
-
 	ret += rxtx_stats(ifname, s);
 	ret += irq_stats(ifname, s);
 	ret += irq_sstats(s);
+	ret += sys_stats(s);
 	ret += wifi_stats(ifname, s);
-
 	return ret;
 }
 
@@ -506,15 +562,11 @@ static int screen_loop(const char *ifname, double interval)
 	memset(&old, 0, sizeof(old));
 	memset(&new, 0, sizeof(new));
 	memset(&curr, 0, sizeof(curr));
-
 	screen_init(&screen);
-
 	while (!sigint) {
 		if (getch() == 'q')
 			goto out;
-
 		screen_update(screen, ifname, &curr, &new, &first);
-
 		ret = do_stats(ifname, &old);
 		if (ret != 0)
 			goto out;
@@ -522,10 +574,8 @@ static int screen_loop(const char *ifname, double interval)
 		ret = do_stats(ifname, &new);
 		if (ret != 0)
 			goto out;
-
 		diff_stats(&old, &new, &curr);
 	}
-
 out:
 	screen_end();
 	if (ret != 0)
@@ -536,7 +586,6 @@ out:
 		xfree(new.irqs);
 	if (curr.irqs)
 		xfree(curr.irqs);
-
 	return 0;
 }
 
@@ -548,7 +597,6 @@ static int print_loop(const char *ifname, double interval)
 	memset(&old, 0, sizeof(old));
 	memset(&new, 0, sizeof(new));
 	memset(&curr, 0, sizeof(curr));
-
 	do {
 		ret = do_stats(ifname, &old);
 		if (ret != 0)
@@ -557,21 +605,17 @@ static int print_loop(const char *ifname, double interval)
 		ret = do_stats(ifname, &new);
 		if (ret != 0)
 			goto out;
-
 		diff_stats(&old, &new, &curr);
-
 		if (first && (mode & TERM_MODE_CSV_HDR) ==
 		    TERM_MODE_CSV_HDR) {
 			print_update_csv_hdr(ifname, &curr, &new);
 			first = 0;
 		}
-
 		if ((mode & TERM_MODE_CSV) == TERM_MODE_CSV)
 			print_update_csv(ifname, &curr, &new);
 		else if ((mode & TERM_MODE_NORMAL) == TERM_MODE_NORMAL)
 			print_update(ifname, &curr, &new);
 	} while (loop && !sigint);
-
 out:
 	if (ret != 0)
 		whine("Error fetching stats!\n");
@@ -581,7 +625,6 @@ out:
 		xfree(new.irqs);
 	if (curr.irqs)
 		xfree(curr.irqs);
-
 	return 0;
 }
 
@@ -698,11 +741,9 @@ int main(int argc, char **argv)
 		error_and_die(EXIT_FAILURE, "lo is not supported!\n");
 	if (device_mtu(ifname) == 0)
 		error_and_die(EXIT_FAILURE, "This is no networking device!\n");
-
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
 	register_signal(SIGSEGV, muntrace_handler);
-
 	if (promisc) {
 		check_for_root_maybe_die();
 		ifflags = enter_promiscuous_mode(ifname);
@@ -710,7 +751,6 @@ int main(int argc, char **argv)
 	ret = main_loop(ifname, interval);
 	if (promisc)
 		leave_promiscuous_mode(ifname, ifflags);
-
 	xfree(ifname);
 	return ret;
 }

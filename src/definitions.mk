@@ -30,7 +30,7 @@ ifneq ($(or $(call eq,$(MAKECMDGOALS),"all"), $(call eq,$(MAKECMDGOALS),"")),)
 	CC      = $(CC_NORM) -c
 	CFLAGS  = -O0 -g -fno-inline -std=gnu99                              \
 		  -fno-strict-overflow -fomit-frame-pointer
-	CFLAGS += -Wall -Werror -Wundef -Wstrict-prototypes -Wno-trigraphs   \
+	CFLAGS += -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs           \
 		  -Werror-implicit-function-declaration -Wno-format-security \
 		  -Wcomments -Wendif-labels -Wno-long-long -Wuninitialized   \
 		  -Wstrict-overflow
