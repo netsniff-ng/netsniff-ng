@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 #include "hash.h"
+#include "tprintf.h"
 
 struct protocol {
 	/* Needs to be filled out by user */
@@ -31,5 +32,12 @@ struct protocol {
 };
 
 static inline void empty(uint8_t *packet, size_t len) { }
+
+static inline void __hex(uint8_t *packet, size_t len)
+{
+	uint8_t *buff;
+	for (buff = packet; len-- > 0; buff++)
+		tprintf("%.2x ", *buff);
+}
 
 #endif /* PROTO_H */

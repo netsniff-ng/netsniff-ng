@@ -109,7 +109,7 @@ struct protocol udp_ops = {
 	.print_pay_hex = empty,
 	.print_pay_none = udp,
 	.print_all_cstyle = NULL,
-	.print_all_hex = NULL,
+	.print_all_hex = __hex,
 	.proto_next = udp_next,
 };
 
