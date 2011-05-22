@@ -33,20 +33,38 @@ static inline void hex(uint8_t *packet, size_t len)
 	tprintf("\n");
 }
 
-static inline void hex_less(uint8_t *packet, size_t len)
+static inline void hex_none_newline(uint8_t *packet, size_t len)
 {
 	tprintf("\n");
+}
+
+static inline void hex_hex(uint8_t *packet, size_t len)
+{
+	uint8_t *buff;
+	tprintf("   ");
+	for (buff = packet; len-- > 0; buff++)
+		tprintf("%.2x ", *buff);
+	tprintf("\n\n");
+}
+
+static inline void hex_ascii(uint8_t *packet, size_t len)
+{
+	uint8_t *buff;
+	tprintf("   ");
+	for (buff = packet; len-- > 0; buff++)
+		tprintf("%c ", isprint(*buff) ? *buff : '.');
+	tprintf("\n\n");
 }
 
 struct protocol hex_ops = {
 	.key = 0x01,
 	.print_full = hex,
-	.print_less = hex_less,
-	.print_pay_ascii = NULL,
-	.print_pay_hex = NULL,
+	.print_less = hex_none_newline,
+	.print_pay_ascii = hex_ascii,
+	.print_pay_hex = hex_hex,
 	.print_pay_none = NULL,
 	.print_all_cstyle = NULL,
-	.print_all_hex = NULL,
+	.print_all_hex = hex_hex,
 	.proto_next = NULL,
 };
 

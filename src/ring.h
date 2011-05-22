@@ -98,6 +98,7 @@ static inline void show_frame_hdr(struct frame_map *hdr, int mode,
 		case FNTTYPE_PRINT_HEX1:
 		case FNTTYPE_PRINT_HEX2:
 		case FNTTYPE_PRINT_NORM:
+		default:
 			tprintf("%s %u %u %u.%u\n",
 				packet_types[hdr->s_ll.sll_pkttype],
 				hdr->s_ll.sll_ifindex, hdr->tp_h.tp_len,
@@ -108,8 +109,6 @@ static inline void show_frame_hdr(struct frame_map *hdr, int mode,
 				packet_types[hdr->s_ll.sll_pkttype],
 				hdr->s_ll.sll_ifindex, hdr->tp_h.tp_len);
 			break;
-		default:
-			break;
 		}
 	} else {
 		switch (mode) {
@@ -119,8 +118,8 @@ static inline void show_frame_hdr(struct frame_map *hdr, int mode,
 		case FNTTYPE_PRINT_HEX2:
 		case FNTTYPE_PRINT_NORM:
 		case FNTTYPE_PRINT_LESS:
-			tprintf("> %u\n", hdr->tp_h.tp_len);
 		default:
+			tprintf("> %u\n", hdr->tp_h.tp_len);
 			break;
 		}
 	}

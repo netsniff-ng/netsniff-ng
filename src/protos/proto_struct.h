@@ -30,4 +30,6 @@ struct protocol {
 			   unsigned int *key, size_t *off);
 };
 
+static inline void empty(uint8_t *packet, size_t len) { }
+
 #endif /* PROTO_H */
