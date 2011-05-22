@@ -21,6 +21,15 @@ static pthread_spinlock_t buffer_lock;
 
 static size_t lcount = 0;
 
+size_t tprintf_get_free_count(void)
+{
+	size_t ret;
+	pthread_spin_lock(&buffer_lock);
+	ret = get_tty_size() - 5 - lcount;
+	pthread_spin_unlock(&buffer_lock);
+	return ret;
+}
+
 /*
  * We want to print our stuff terminal aligned. Since we're printing packets
  * we're in slowpath anyways. If stdin/stdout are connected to a terminal 
