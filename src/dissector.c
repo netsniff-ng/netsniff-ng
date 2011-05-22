@@ -15,6 +15,7 @@
 #include "dissector_eth.h"
 #include "protos/proto_struct.h"
 
+/* TODO: Refactoring duplicate code */
 int dissector_set_print_norm(void *ptr)
 {
 	struct protocol *proto = (struct protocol *) ptr;
@@ -45,11 +46,55 @@ int dissector_set_print_none(void *ptr)
 	return 0;
 }
 
-int dissector_set_print_payload(void *ptr) { return 0; }
-int dissector_set_print_payload_hex(void *ptr) { return 0; }
-int dissector_set_print_c_style(void *ptr) { return 0; }
-int dissector_set_print_all_hex(void *ptr) { return 0; }
-int dissector_set_print_no_payload(void *ptr) { return 0; }
+int dissector_set_print_payload(void *ptr)
+{
+	struct protocol *proto = (struct protocol *) ptr;
+	while (proto != NULL) {
+		proto->process = proto->print_pay_ascii;
+		proto = proto->next;
+	}
+	return 0;
+}
+
+int dissector_set_print_payload_hex(void *ptr)
+{
+	struct protocol *proto = (struct protocol *) ptr;
+	while (proto != NULL) {
+		proto->process = proto->print_pay_hex;
+		proto = proto->next;
+	}
+	return 0;
+}
+
+int dissector_set_print_c_style(void *ptr)
+{
+	struct protocol *proto = (struct protocol *) ptr;
+	while (proto != NULL) {
+		proto->process = proto->print_all_cstyle;
+		proto = proto->next;
+	}
+	return 0;
+}
+
+int dissector_set_print_all_hex(void *ptr)
+{
+	struct protocol *proto = (struct protocol *) ptr;
+	while (proto != NULL) {
+		proto->process = proto->print_all_hex;
+		proto = proto->next;
+	}
+	return 0;
+}
+
+int dissector_set_print_no_payload(void *ptr)
+{
+	struct protocol *proto = (struct protocol *) ptr;
+	while (proto != NULL) {
+		proto->process = proto->print_pay_none;
+		proto = proto->next;
+	}
+	return 0;
+}
 
 /*
  * The main loop of the dissector. This is designed generic, so it doesn't
@@ -66,33 +111,22 @@ static void dissector_main(uint8_t *packet, size_t len,
 	while (proto != NULL) {
 		len -= off;
 		packet += off;
-
 		if (unlikely(!proto->process))
 			break; /* We've reached a silent function */
-
 		proto->process(packet, len);
 		if (unlikely(!proto->proto_next))
 			break; /* We've reached an endpoint in the graph */
-
 		proto->proto_next(packet, len, &table, &key, &off);
 		if (unlikely(!table))
 			break; /* Packet seems to be invalid */
-
 		proto = lookup_hash(key, table);
-
-		/*
-		 * We traverse the hash tables bucket list in order
-		 * to fetch our right proto.
-		 */
 		while (proto && key != proto->key)
 			proto = proto->next;
 	}
-
 	/* FIXME: Offset of last proto must be added! */
 	if (end != NULL)
 		if (likely(end->process))
 			end->process(packet, len);
-
 	tprintf_flush();
 }
 
