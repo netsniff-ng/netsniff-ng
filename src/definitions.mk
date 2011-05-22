@@ -25,7 +25,7 @@ endef
 
 # -pedantic -pedantic-errors
 
-ifneq ($(or $(call eq,$(MAKECMDGOALS),"all"), $(call eq,$(MAKECMDGOALS),"")),)
+ifeq ($(MAKECMDGOALS), deploy)
 	LD      = $(LD_NORM) -o
 	CC      = $(CC_NORM) -c
 	CFLAGS  = -O0 -g -fno-inline -std=gnu99                              \
@@ -36,7 +36,7 @@ ifneq ($(or $(call eq,$(MAKECMDGOALS),"all"), $(call eq,$(MAKECMDGOALS),"")),)
 		  -Wstrict-overflow
 endif
 
-ifeq ($(MAKECMDGOALS), deploy)
+ifneq ($(or $(call eq,$(MAKECMDGOALS),"all"), $(call eq,$(MAKECMDGOALS),"")),)
 	LD      = $(LD_NORM) -pie -z relo -o
 	CC      = $(CC_NORM) -c
 	CFLAGS  = -O2 -fomit-frame-pointer -fno-strict-aliasing -fno-common  \

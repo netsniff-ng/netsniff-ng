@@ -23,14 +23,9 @@ lib-objs   = xmalloc.o                  \
 
 target     = trafgen
 
-all: note clean gen-version build doc
+all: clean gen-version build doc strip
 debug: all
 deploy: all strip
-
-note:
-	@echo "+------------------------------------------+"
-	@echo "NOTE: do a 'make deploy' for production use!"
-	@echo "+------------------------------------------+"
 
 gen-version:
 	@cd .. && cat ../VERSION | xargs ./gen_build_info.pl
