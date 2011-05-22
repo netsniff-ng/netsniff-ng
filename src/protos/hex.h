@@ -53,6 +53,12 @@ static inline void hex_all(uint8_t *packet, size_t len)
 	tprintf("\n\n");
 }
 
+static inline void hex_cstyle(uint8_t *packet, size_t len)
+{
+	__hex2(packet, len);
+	tprintf("\n}\n\n");
+}
+
 static inline void hex_ascii(uint8_t *packet, size_t len)
 {
 	uint8_t *buff;
@@ -69,7 +75,7 @@ struct protocol hex_ops = {
 	.print_pay_ascii = hex_ascii,
 	.print_pay_hex = hex_hex,
 	.print_pay_none = hex_none_newline,
-	.print_all_cstyle = NULL,
+	.print_all_cstyle = hex_cstyle,
 	.print_all_hex = hex_all,
 	.proto_next = NULL,
 };

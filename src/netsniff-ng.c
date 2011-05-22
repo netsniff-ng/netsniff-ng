@@ -597,7 +597,7 @@ static void help(void)
 	printf("  -q|--less                    Print less-verbose packet information\n");
 	printf("  -l|--payload                 Only print human-readable payload\n");
 	printf("  -x|--payload-hex             Only print payload in hex format\n");
-	printf("  -C|--c-style                 Print full packet in C style hex format\n");
+	printf("  -C|--c-style                 Print full packet in trafgen/C style hex format\n");
 	printf("  -X|--all-hex                 Print packets in hex format\n");
 	printf("  -N|--no-payload              Only print packet header\n");
 	printf("  -v|--version                 Show version\n");

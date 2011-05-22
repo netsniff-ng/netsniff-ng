@@ -59,6 +59,13 @@ static inline void ethernet_hex_all(uint8_t *packet, size_t len)
 	__hex(packet, len);
 }
 
+static unsigned long num = 0;
+static inline void ethernet_cstyle_all(uint8_t *packet, size_t len)
+{
+	tprintf("$P%lu {\n   ", num++);
+	__hex2(packet, len);
+}
+
 static inline void ethernet_less(uint8_t *packet, size_t len)
 {
 	uint8_t *src_mac, *dst_mac;
@@ -106,7 +113,7 @@ struct protocol ethernet_ops = {
 	.print_pay_ascii = empty,
 	.print_pay_hex = empty,
 	.print_pay_none = ethernet,
-	.print_all_cstyle = NULL,
+	.print_all_cstyle = ethernet_cstyle_all,
 	.print_all_hex = ethernet_hex_all,
 	.proto_next = ethernet_next,
 };

@@ -40,4 +40,11 @@ static inline void __hex(uint8_t *packet, size_t len)
 		tprintf("%.2x ", *buff);
 }
 
+static inline void __hex2(uint8_t *packet, size_t len)
+{
+	uint8_t *buff;
+	for (buff = packet; len-- > 0; buff++)
+		tprintf("0x%.2x, ", *buff);
+}
+
 #endif /* PROTO_H */
