@@ -70,6 +70,7 @@ static inline void hex_ascii(uint8_t *packet, size_t len)
 
 struct protocol hex_ops = {
 	.key = 0x01,
+	.offset = 0,
 	.print_full = hex,
 	.print_less = hex_none_newline,
 	.print_pay_ascii = hex_ascii,

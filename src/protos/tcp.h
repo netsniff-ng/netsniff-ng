@@ -173,6 +173,7 @@ invalid:
 
 struct protocol tcp_ops = {
 	.key = 0x06,
+	.offset = sizeof(struct tcphdr),
 	.print_full = tcp,
 	.print_less = tcp_less,
 	.print_pay_ascii = empty,

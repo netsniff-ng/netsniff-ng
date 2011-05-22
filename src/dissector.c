@@ -15,7 +15,7 @@
 #include "dissector_eth.h"
 #include "protos/proto_struct.h"
 
-/* TODO: Refactoring duplicate code */
+/* TODO: Refactoring duplicate code, clean up code, also in protos */
 int dissector_set_print_norm(void *ptr)
 {
 	struct protocol *proto = (struct protocol *) ptr;
@@ -112,18 +112,22 @@ static void dissector_main(uint8_t *packet, size_t len,
 		len -= off;
 		packet += off;
 		if (unlikely(!proto->process))
-			break; /* We've reached a silent function */
-		proto->process(packet, len);
+			break;
+		off = proto->offset;
+		if (!off)
+			off = len;
+		proto->process(packet, off);
 		if (unlikely(!proto->proto_next))
-			break; /* We've reached an endpoint in the graph */
+			break;
 		proto->proto_next(packet, len, &table, &key, &off);
 		if (unlikely(!table))
-			break; /* Packet seems to be invalid */
+			break;
 		proto = lookup_hash(key, table);
 		while (proto && key != proto->key)
 			proto = proto->next;
 	}
-	/* FIXME: Offset of last proto must be added! */
+	len -= off;
+	packet += off;
 	if (end != NULL)
 		if (likely(end->process))
 			end->process(packet, len);

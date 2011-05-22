@@ -74,6 +74,7 @@ invalid:
 
 struct protocol vlan_ops = {
 	.key = 0x8100,
+	.offset = sizeof(struct vlanhdr),
 	.print_full = vlan,
 	.print_less = vlan_less,
 	.print_pay_ascii = empty,

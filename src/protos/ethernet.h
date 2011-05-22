@@ -108,6 +108,7 @@ invalid:
 
 struct protocol ethernet_ops = {
 	.key = 0,
+	.offset = sizeof(struct ethhdr),
 	.print_full = ethernet,
 	.print_less = ethernet_less,
 	.print_pay_ascii = empty,

@@ -16,6 +16,7 @@
 struct protocol {
 	/* Needs to be filled out by user */
 	unsigned int key;
+	size_t offset;
 	void (*print_full)(uint8_t *packet, size_t len);
 	void (*print_less)(uint8_t *packet, size_t len);
 	void (*print_pay_ascii)(uint8_t *packet, size_t len);

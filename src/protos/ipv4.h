@@ -125,6 +125,7 @@ invalid:
 
 struct protocol ipv4_ops = {
 	.key = 0x0800,
+	.offset = sizeof(struct ipv4hdr),
 	.print_full = ipv4,
 	.print_less = ipv4_less,
 	.print_pay_ascii = empty,

@@ -111,6 +111,7 @@ invalid:
 
 struct protocol ipv6_ops = {
 	.key = 0x86DD,
+	.offset = sizeof(struct ipv6hdr),
 	.print_full = ipv6,
 	.print_less = ipv6_less,
 	.print_pay_ascii = empty,

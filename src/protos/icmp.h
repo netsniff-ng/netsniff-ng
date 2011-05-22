@@ -58,6 +58,7 @@ static inline void icmp_less(uint8_t *packet, size_t len)
 
 struct protocol icmp_ops = {
 	.key = 0x01,
+	.offset = sizeof(struct icmphdr),
 	.print_full = icmp,
 	.print_less = icmp_less,
 	.print_pay_ascii = empty,

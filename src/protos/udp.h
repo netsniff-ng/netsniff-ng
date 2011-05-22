@@ -103,6 +103,7 @@ invalid:
 
 struct protocol udp_ops = {
 	.key = 0x11,
+	.offset = sizeof(struct udphdr),
 	.print_full = udp,
 	.print_less = udp_less,
 	.print_pay_ascii = empty,

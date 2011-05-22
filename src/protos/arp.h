@@ -119,6 +119,7 @@ static inline void arp_less(uint8_t *packet, size_t len)
 
 struct protocol arp_ops = {
 	.key = 0x0806,
+	.offset = sizeof(struct arphdr),
 	.print_full = arp,
 	.print_less = arp_less,
 	.print_pay_ascii = empty,
