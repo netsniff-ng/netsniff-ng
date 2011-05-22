@@ -24,17 +24,16 @@ define eq
 endef
 
 # -pedantic -pedantic-errors
-
-ifeq ($(MAKECMDGOALS), deploy)
-	LD      = $(LD_NORM) -o
-	CC      = $(CC_NORM) -c
-	CFLAGS  = -O0 -g -fno-inline -std=gnu99                              \
-		  -fno-strict-overflow -fomit-frame-pointer
-	CFLAGS += -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs           \
-		  -Werror-implicit-function-declaration -Wno-format-security \
-		  -Wcomments -Wendif-labels -Wno-long-long -Wuninitialized   \
-		  -Wstrict-overflow
-endif
+#ifneq ($(or $(call eq,$(MAKECMDGOALS),"all"), $(call eq,$(MAKECMDGOALS),"")),)
+#	LD      = $(LD_NORM) -o
+#	CC      = $(CC_NORM) -c
+#	CFLAGS  = -O0 -g -fno-inline -std=gnu99                              \
+#		  -fno-strict-overflow -fomit-frame-pointer
+#	CFLAGS += -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs           \
+#		  -Werror-implicit-function-declaration -Wno-format-security \
+#		  -Wcomments -Wendif-labels -Wno-long-long -Wuninitialized   \
+#		  -Wstrict-overflow
+#endif
 
 ifneq ($(or $(call eq,$(MAKECMDGOALS),"all"), $(call eq,$(MAKECMDGOALS),"")),)
 	LD      = $(LD_NORM) -pie -z relo -o
