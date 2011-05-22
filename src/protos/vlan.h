@@ -76,6 +76,11 @@ struct protocol vlan_ops = {
 	.key = 0x8100,
 	.print_full = vlan,
 	.print_less = vlan_less,
+	.print_pay_ascii = NULL,
+	.print_pay_hex = NULL,
+	.print_pay_none = NULL,
+	.print_all_cstyle = NULL,
+	.print_all_hex = NULL,
 	.proto_next = vlan_next,
 };
 

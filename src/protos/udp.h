@@ -105,6 +105,11 @@ struct protocol udp_ops = {
 	.key = 0x11,
 	.print_full = udp,
 	.print_less = udp_less,
+	.print_pay_ascii = NULL,
+	.print_pay_hex = NULL,
+	.print_pay_none = NULL,
+	.print_all_cstyle = NULL,
+	.print_all_hex = NULL,
 	.proto_next = udp_next,
 };
 

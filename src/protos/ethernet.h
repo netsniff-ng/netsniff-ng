@@ -97,6 +97,11 @@ struct protocol ethernet_ops = {
 	.key = 0,
 	.print_full = ethernet,
 	.print_less = ethernet_less,
+	.print_pay_ascii = NULL,
+	.print_pay_hex = NULL,
+	.print_pay_none = NULL,
+	.print_all_cstyle = NULL,
+	.print_all_hex = NULL,
 	.proto_next = ethernet_next,
 };
 
