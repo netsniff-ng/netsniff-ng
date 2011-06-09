@@ -9,7 +9,7 @@ INCLUDE    = -I..
 CFLAGS    += -DTARGETNAME="\"curvetun\""
 LIBS       = -lgcrypt -lz -lpthread -lnuma
 
-core-objs  = ct_server.o
+core-objs  = curvetun.o
 lib-objs   = xmalloc.o                  \
 	     strlcpy.o                  \
 	     aes256ctr.o                \
@@ -21,6 +21,7 @@ lib-objs   = xmalloc.o                  \
 	     deflate.o                  \
 	     stun.o                     \
 	     tlsf.o                     \
+	     ct_server.o                \
 	     netdev.o
 
 target     = curvetun

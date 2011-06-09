@@ -35,6 +35,7 @@
 #include "protocol.h"
 #include "serialize.h"
 #include "aes256ctr.h"
+#include "ct_server.h"
 
 #define DEFAULT_CURVE   "secp521r1/nistp521"
 #define FILE_CLIENTS    ".curvetun/clients"
@@ -60,7 +61,7 @@ enum client_mode {
 	MODE_ALL_LATENCY,
 };
 
-static sig_atomic_t sigint = 0;
+sig_atomic_t sigint = 0;
 
 static char *home = NULL;
 
@@ -410,13 +411,13 @@ static int main_client(char *dev, enum client_mode cmode)
 static int main_server(char *dev, unsigned short port)
 {
 	check_config_exists_or_die();
-	return 0;
+	return server_main(0, port, 5);
 }
 
 int main(int argc, char **argv)
 {
 	int c, opt_index;
-	uint16_t port;
+	uint16_t port = 0;
 	char *stun = NULL, *dev = NULL;
 	enum working_mode wmode = MODE_UNKNOW;
 	enum client_mode cmode = MODE_ALL_RANDOM;

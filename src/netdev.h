@@ -11,9 +11,13 @@
 
 #include <errno.h>
 #include <sys/socket.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <linux/ethtool.h>
 #include <linux/if.h>
 #include <linux/wireless.h>
+
+#include "die.h"
 
 extern int af_socket(int af);
 extern int pf_socket(void);
@@ -80,6 +84,23 @@ static inline int device_up_and_running(char *ifname)
 		return 1;
 	return (device_get_flags(ifname) & (IFF_UP | IFF_RUNNING)) ==
 	       (IFF_UP | IFF_RUNNING);
+}
+
+static inline int set_nonblocking(int fd)
+{
+        int ret = fcntl(fd, F_SETFL, fcntl(fd, F_GETFD, 0) | O_NONBLOCK);
+        if (ret < 0)
+                panic("Cannot fcntl!\n");
+        return 0;
+}
+
+static inline int set_reuseaddr(int fd)
+{
+        int one = 1;
+        int ret = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof (one));
+        if (ret < 0)
+                panic("Cannot reuse addr!\n");
+        return 0;
 }
 
 #endif /* NETDEV_H */
