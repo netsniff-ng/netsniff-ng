@@ -23,6 +23,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <syslog.h>
 
 #include "xmalloc.h"
 #include "netdev.h"
@@ -404,14 +405,15 @@ static int main_keygen(void)
 static int main_client(char *dev, enum client_mode cmode)
 {
 	check_config_exists_or_die();
-	info("MD: S\n");
 	return 0;
 }
 
 static int main_server(char *dev, unsigned short port)
 {
 	check_config_exists_or_die();
-	info("MD: S\n");
+	openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
+	syslog(LOG_INFO, "curvetun server running!\n");
+	closelog();
 	return 0;
 }
 
