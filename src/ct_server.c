@@ -6,6 +6,7 @@
  * Subject to the GPL.
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -24,20 +25,26 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <arpa/inet.h>
+#include <limits.h>
 
 #include "die.h"
 #include "locking.h"
 #include "tlsf.h"
 #include "netdev.h"
+#include "psched.h"
 
 #define MAX_THREADS	16
 #define MAX_BUF		1024
 #define MAX_EPOLL_SIZE	10000
 
 struct worker_struct {
-	pthread_t thread;
 	unsigned int cpu;
+	pthread_t thread;
+	pthread_attr_t tattr;
 	void *mempool;
+	size_t spool;
+	void *stack;
+	size_t sstack;
 };
 
 static struct worker_struct threadpool[MAX_THREADS];
@@ -62,22 +69,76 @@ int handle_frame(int new_fd)
 	return len;
 }
 
-void *worker(void *init)
+static void *worker(void *self)
 {
 	while (likely(!sigint)) {
-		sleep(0);
+		sleep(1);
 	}
 	pthread_exit(0);
 }
 
-void spawn_or_panic(void)
+static void tspawn_or_panic(void)
 {
 	int i, ret;
+	unsigned int cpus = get_number_cpus_online();
+	cpu_set_t cpuset;
+
 	for (i = 0; i < MAX_THREADS; ++i) {
-		ret = pthread_create(&(threadpool[i].thread), 0, worker, NULL);
-		if (ret)
+		CPU_ZERO(&cpuset);
+
+		threadpool[i].cpu = i % cpus;
+		threadpool[i].sstack = PTHREAD_STACK_MIN + 0x4000;
+		threadpool[i].stack = numa_alloc_onnode(threadpool[i].sstack,
+							0); /* FIXME */
+		if (!threadpool[i].stack)
+			panic("No mem left on node!\n");
+
+		threadpool[i].spool = 4096;
+		threadpool[i].mempool = numa_alloc_onnode(threadpool[i].spool,
+							  0); /* FIXME */
+		if (!threadpool[i].mempool)
+			panic("No mem left on node!\n");
+
+		CPU_SET(threadpool[i].cpu, &cpuset);
+
+		ret = pthread_attr_init(&(threadpool[i].tattr));
+		if (ret < 0)
+			panic("Thread attribute init failed!\n");
+		ret = pthread_attr_setinheritsched(&(threadpool[i].tattr),
+						   PTHREAD_EXPLICIT_SCHED);
+		if (ret < 0)
+			panic("Thread attribute set failed!\n");
+		ret = pthread_attr_setstack(&(threadpool[i].tattr),
+					    threadpool[i].stack,
+					    threadpool[i].sstack);
+		if (ret < 0)
+			panic("Thread attribute set failed!\n");
+
+		ret = pthread_create(&(threadpool[i].thread),
+				     &(threadpool[i].tattr), worker,
+				     &threadpool[i]);
+		if (ret < 0)
 			panic("Thread creation failed!\n");
+
+		ret = pthread_setaffinity_np(threadpool[i].thread,
+					     sizeof(cpu_set_t), &cpuset);
+		if (ret < 0)
+			panic("Thread CPU migration failed!\n");
+
 		pthread_detach(threadpool[i].thread);
+	}
+}
+
+static void tfinish(void)
+{
+	int i;
+	for (i = 0; i < MAX_THREADS; ++i) {
+		pthread_cancel(threadpool[i].thread);
+
+//		numa_free(threadpool[i].stack, threadpool[i].sstack);
+//		numa_free(threadpool[i].mempool, threadpool[i].spool);
+
+		pthread_attr_destroy(&(threadpool[i].tattr));
 	}
 }
 
@@ -99,6 +160,8 @@ int server_main(int set_rlim, int port, int lnum)
 		if (ret < 0)
 			whine("Cannot set rlimit!\n");
 	}
+
+	tspawn_or_panic();
 
 	lfd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (lfd < 0)
@@ -141,7 +204,6 @@ int server_main(int set_rlim, int port, int lnum)
 	while (likely(!sigint)) {
 		nfds = epoll_wait(kdpfd, events, curfds, -1);
 		if (nfds < 0) {
-			whine("epoll wait error: %d!\n", errno);
 			break;
 		}
 
@@ -149,7 +211,6 @@ int server_main(int set_rlim, int port, int lnum)
 			if (events[i].data.fd == lfd) {
 				nfd = accept(lfd, (struct sockaddr *) &taddr, &len);
 				if (nfd < 0) {
-					whine("accept error: %d!\n", errno);
 					continue;
 				}
 
@@ -180,6 +241,7 @@ int server_main(int set_rlim, int port, int lnum)
 	close(lfd);
 	syslog(LOG_INFO, "curvetun shut down!\n");
 	closelog();
+	tfinish();
 
 	return 0;
 }
