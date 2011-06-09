@@ -35,7 +35,7 @@ int set_cpu_affinity(const char *str, int inverted)
 	cpu_set_t cpu_bitmask;
 
 	q = str;
-	cpus = sysconf(_SC_NPROCESSORS_CONF);
+	cpus = get_number_cpus();
 	CPU_ZERO(&cpu_bitmask);
 
 	for (i = 0; inverted && i < cpus; ++i)
@@ -89,7 +89,7 @@ char *get_cpu_affinity(char *cpu_string, size_t len)
 	int ret, i, cpu;
 	cpu_set_t cpu_bitmask;
 
-	if (len != sysconf(_SC_NPROCESSORS_CONF) + 1)
+	if (len != get_number_cpus() + 1)
 		return NULL;
 	CPU_ZERO(&cpu_bitmask);
 

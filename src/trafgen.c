@@ -781,8 +781,9 @@ int main(int argc, char **argv)
 	header();
 
 	if (prio_high == true) {
-		set_proc_prio(DEFAULT_PROCESS_PRIO);
-		set_sched_status(DEFAULT_SCHED_POLICY, DEFAULT_SCHED_PRIO);
+		set_proc_prio(get_default_proc_prio());
+		set_sched_status(get_default_sched_policy(),
+				 get_default_sched_prio());
 	}
 
 	ret = main_loop(&mode, confname, pkts, gap);

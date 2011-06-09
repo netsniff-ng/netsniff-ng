@@ -174,7 +174,9 @@ static int wifi_stats(const char *ifname, struct ifstat *s)
 
 static void stats_check_alloc(struct ifstat *s)
 {
-	if (s->irqs_len != NR_CPUS) {
+	int cpus = get_number_cpus();
+
+	if (s->irqs_len != get_number_cpus()) {
 		if (s->irqs) xfree(s->irqs);
 		if (s->irqs_srx) xfree(s->irqs_srx);
 		if (s->irqs_stx) xfree(s->irqs_stx);
@@ -183,15 +185,15 @@ static void stats_check_alloc(struct ifstat *s)
 		if (s->cpu_sys) xfree(s->cpu_sys);
 		if (s->cpu_idle) xfree(s->cpu_idle);
 		if (s->cpu_iow) xfree(s->cpu_iow);
-		s->irqs_srx = xzmalloc(sizeof(*(s->irqs_srx)) * NR_CPUS);
-		s->irqs_stx = xzmalloc(sizeof(*(s->irqs_stx)) * NR_CPUS);
-		s->irqs = xzmalloc(sizeof(*(s->irqs)) * NR_CPUS);
-		s->cpu_user = xzmalloc(sizeof(*(s->cpu_user)) * NR_CPUS);
-		s->cpu_nice = xzmalloc(sizeof(*(s->cpu_nice)) * NR_CPUS);
-		s->cpu_sys = xzmalloc(sizeof(*(s->cpu_sys)) * NR_CPUS);
-		s->cpu_idle = xzmalloc(sizeof(*(s->cpu_idle)) * NR_CPUS);
-		s->cpu_iow = xzmalloc(sizeof(*(s->cpu_iow)) * NR_CPUS);
-		s->irqs_len = NR_CPUS;
+		s->irqs_srx = xzmalloc(sizeof(*(s->irqs_srx)) * cpus);
+		s->irqs_stx = xzmalloc(sizeof(*(s->irqs_stx)) * cpus);
+		s->irqs = xzmalloc(sizeof(*(s->irqs)) * cpus);
+		s->cpu_user = xzmalloc(sizeof(*(s->cpu_user)) * cpus);
+		s->cpu_nice = xzmalloc(sizeof(*(s->cpu_nice)) * cpus);
+		s->cpu_sys = xzmalloc(sizeof(*(s->cpu_sys)) * cpus);
+		s->cpu_idle = xzmalloc(sizeof(*(s->cpu_idle)) * cpus);
+		s->cpu_iow = xzmalloc(sizeof(*(s->cpu_iow)) * cpus);
+		s->irqs_len = cpus;
 	}
 }
 

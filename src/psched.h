@@ -13,16 +13,34 @@
 #include <sched.h>
 #include <sys/resource.h>
 
-#define DEFAULT_SCHED_POLICY  SCHED_FIFO
-#define DEFAULT_SCHED_PRIO    sched_get_priority_max(DEFAULT_SCHED_POLICY)
-#define DEFAULT_PROCESS_PRIO  -20
-
-#define NR_CPUS               sysconf(_SC_NPROCESSORS_CONF)
-#define NR_CPUS_ON            sysconf(_SC_NPROCESSORS_ONLN)
-
 extern int set_cpu_affinity(const char *str, int inverted);
 extern char *get_cpu_affinity(char *cpu_string, size_t len);
 extern int set_proc_prio(int prio);
 extern int set_sched_status(int policy, int priority);
+
+static inline int get_default_sched_policy(void)
+{
+	return SCHED_FIFO;
+}
+
+static inline int get_default_sched_prio(void)
+{
+	return sched_get_priority_max(get_default_sched_policy());
+}
+
+static inline int get_number_cpus(void)
+{
+	return sysconf(_SC_NPROCESSORS_CONF);
+}
+
+static inline int get_number_cpus_online(void)
+{
+	return sysconf(_SC_NPROCESSORS_ONLN);
+}
+
+static inline int get_default_proc_prio(void)
+{
+	return -20;
+}
 
 #endif /* PSCHED_H */
