@@ -83,8 +83,11 @@ static void *worker(void *self)
 		if (len > 0)
 			printf("fd: %d: '%s'，len %zd\n", fd, buff, len);
 		else {
-			if (len < 1 && errno != 11)
-				write(efd_parent, &fd, sizeof(fd));
+			if (len < 1 && errno != 11) {
+				len = write(efd_parent, &fd, sizeof(fd));
+				if (len != sizeof(fd))
+					whine("Event write error from thread!\n");
+			}
 		}
 	}
 
