@@ -66,6 +66,7 @@ int main(int argc, char **argv)
 		ret = write(fd, "hello world!", strlen("hello world!") + 1);
 		if (ret != strlen("hello world!") + 1)
 			perror("write");
+		printf("Written bytes!\n");
 	}
 
 	close(fd);

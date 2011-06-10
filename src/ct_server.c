@@ -58,7 +58,7 @@ static int efd_parent;
 
 static void *worker(void *self)
 {
-	int fd;
+	uint64_t fd64;
 	ssize_t ret, len;
 	const struct worker_struct *ws = self;
 	char buff[1024];
@@ -73,19 +73,19 @@ static void *worker(void *self)
 	syslog(LOG_INFO, "curvetun thread %p/CPU%u up!\n", ws, ws->cpu);
 	while (likely(!sigint)) {
 		poll(&fds, 1, -1);
-		ret = read(ws->efd, &fd, sizeof(fd));
-		if (ret != sizeof(fd)) {
+		ret = read(ws->efd, &fd64, sizeof(fd64));
+		if (ret != sizeof(fd64)) {
 			cpu_relax();
 			sched_yield();
 			continue;
 		}
-		len = recv(fd, buff, sizeof(buff), 0);
+		len = recv((int) fd64, buff, sizeof(buff), 0);
 		if (len > 0)
-			printf("fd: %d: '%s'，len %zd\n", fd, buff, len);
+			printf("fd: %d: '%s'，len %zd\n", (int) fd64, buff, len);
 		else {
 			if (len < 1 && errno != 11) {
-				len = write(efd_parent, &fd, sizeof(fd));
-				if (len != sizeof(fd))
+				len = write(efd_parent, &fd64, sizeof(fd64));
+				if (len != sizeof(fd64))
 					whine("Event write error from thread!\n");
 			}
 		}
@@ -301,19 +301,21 @@ int server_main(int set_rlim, int port, int lnum)
 					panic("Epoll ctl error!\n");
 				curfds++;
 			} else if (events[i].data.fd == efd_parent) {
-				int fd_del;
-				ret = read(efd_parent, &fd_del, sizeof(fd_del));
-				if (ret != sizeof(fd_del))
+				uint64_t fd64_del;
+				ret = read(efd_parent, &fd64_del, sizeof(fd64_del));
+				if (ret != sizeof(fd64_del))
 					continue;
-				epoll_ctl(kdpfd, EPOLL_CTL_DEL, fd_del, &lev);
+				epoll_ctl(kdpfd, EPOLL_CTL_DEL, (int) fd64_del, &lev);
 				curfds--;
 
 				syslog(LOG_INFO, "Closed connection with id %d\n",
-				       fd_del);
+				       (int) fd64_del);
 			} else {
-				ret = write(threadpool[trit].efd,
-					    &events[i].data.fd,
-					    sizeof(events[i].data.fd));
+				uint64_t fd64 = events[i].data.fd;
+				ret = write(threadpool[trit].efd, &fd64,
+					    sizeof(fd64));
+				if (ret != sizeof(fd64))
+					whine("Write error on event dispatch!\n");
 				trit = (trit + 1) % cpus;
 			}
 		}
