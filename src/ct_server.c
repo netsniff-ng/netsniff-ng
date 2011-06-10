@@ -17,6 +17,7 @@
 #include <syslog.h>
 #include <signal.h>
 #include <netinet/in.h>
+#include <sys/poll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
@@ -28,6 +29,7 @@
 #include <arpa/inet.h>
 #include <limits.h>
 #include <netdb.h>
+#include <sched.h>
 
 #include "die.h"
 #include "locking.h"
@@ -52,26 +54,38 @@ static struct worker_struct threadpool[MAX_THREADS];
 
 extern sig_atomic_t sigint;
 
+static int efd_parent;
+
 static void *worker(void *self)
 {
 	int fd;
 	ssize_t ret, len;
 	const struct worker_struct *ws = self;
 	char buff[1024];
+	struct pollfd fds;
 
 	init_memory_pool(ws->mmap_size - 2 * getpagesize(),
 			 ws->mmap_mempool);
 
+	fds.fd = ws->efd;
+	fds.events = POLLIN;
+
 	syslog(LOG_INFO, "curvetun thread %p/CPU%u up!\n", ws, ws->cpu);
 	while (likely(!sigint)) {
+		poll(&fds, 1, -1);
 		ret = read(ws->efd, &fd, sizeof(fd));
-		if (ret != sizeof(fd))
+		if (ret != sizeof(fd)) {
+			cpu_relax();
+			sched_yield();
 			continue;
+		}
 		len = recv(fd, buff, sizeof(buff), 0);
 		if (len > 0)
 			printf("fd: %d: '%s'，len %zd\n", fd, buff, len);
-		else
-			close(fd);
+		else {
+			if (len < 1 && errno != 11)
+				write(efd_parent, &fd, sizeof(fd));
+		}
 	}
 
 	destroy_memory_pool(ws->mmap_mempool);
@@ -125,6 +139,7 @@ static void tspawn_or_panic(void)
 					     sizeof(cpu_set_t), &cpuset);
 		if (ret < 0)
 			panic("Thread CPU migration failed!\n");
+		pthread_detach(threadpool[i].thread);
 	}
 
 	close(fd);
@@ -143,7 +158,7 @@ static void tfinish(void)
 int server_main(int set_rlim, int port, int lnum)
 {
 	int lfd = -1, kdpfd, nfds, nfd, ret, curfds, i, trit;
-	struct epoll_event lev;
+	struct epoll_event lev, eev;
 	struct epoll_event events[MAX_EPOLL_SIZE];
 	struct rlimit rt;
 	struct addrinfo hints, *ahead, *ai;
@@ -216,6 +231,12 @@ int server_main(int set_rlim, int port, int lnum)
 
 	tspawn_or_panic();
 
+	efd_parent = eventfd(0, 0);
+	if (efd_parent < 0)
+		panic("Cannot create parent event fd!\n");
+
+	set_nonblocking(efd_parent);
+
 	kdpfd = epoll_create(MAX_EPOLL_SIZE);
 	if (kdpfd < 0)
 		panic("Cannot create socket!\n");
@@ -224,9 +245,17 @@ int server_main(int set_rlim, int port, int lnum)
 	lev.events = EPOLLIN | EPOLLET;
 	lev.data.fd = lfd;
 
+	memset(&eev, 0, sizeof(lev));
+	eev.events = EPOLLIN | EPOLLET;
+	eev.data.fd = efd_parent;
+
 	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, lfd, &lev);
 	if (ret < 0)
 		panic("Cannot add socket for epoll!\n");
+
+	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, efd_parent, &eev);
+	if (ret < 0)
+		panic("Cannot add socket for events!\n");
 
 	trit = 0;
 	curfds = 1;
@@ -255,10 +284,12 @@ int server_main(int set_rlim, int port, int lnum)
 					    sbuff, sizeof(sbuff),
 					    NI_NUMERICHOST | NI_NUMERICSERV);
 
-				syslog(LOG_INFO, "New connection from: %s:%s\n",
-				       hbuff, sbuff);
+				syslog(LOG_INFO, "New connection from %s:%s with id %d\n",
+				       hbuff, sbuff, nfd);
 
 				set_nonblocking(nfd);
+
+				memset(&lev, 0, sizeof(lev));
 				lev.events = EPOLLIN | EPOLLET;
 				lev.data.fd = nfd;
 
@@ -266,18 +297,20 @@ int server_main(int set_rlim, int port, int lnum)
 				if (ret < 0)
 					panic("Epoll ctl error!\n");
 				curfds++;
+			} else if (events[i].data.fd == efd_parent) {
+				int fd_del;
+				ret = read(efd_parent, &fd_del, sizeof(fd_del));
+				if (ret != sizeof(fd_del))
+					continue;
+				epoll_ctl(kdpfd, EPOLL_CTL_DEL, fd_del, &lev);
+				curfds--;
+
+				syslog(LOG_INFO, "Closed connection with id %d\n",
+				       fd_del);
 			} else {
 				ret = write(threadpool[trit].efd,
 					    &events[i].data.fd,
 					    sizeof(events[i].data.fd));
-
-//				ret = handle_frame(events[i].data.fd);
-//				if (ret < 1 && errno != 11) {
-//					epoll_ctl(kdpfd, EPOLL_CTL_DEL,
-//						  events[i].data.fd, &lev);
-//					curfds--;
-//				}
-
 				trit = (trit + 1) % cpus;
 			}
 		}
