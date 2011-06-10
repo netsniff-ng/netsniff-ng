@@ -26,6 +26,7 @@
 #include <sys/resource.h>
 #include <arpa/inet.h>
 #include <limits.h>
+#include <netdb.h>
 
 #include "die.h"
 #include "locking.h"
@@ -144,12 +145,13 @@ static void tfinish(void)
 
 int server_main(int set_rlim, int port, int lnum)
 {
-	int lfd, kdpfd, nfds, nfd, ret, curfds, i;
-	struct sockaddr_in maddr, taddr;
+	int lfd = -1, kdpfd, nfds, nfd, ret, curfds, i;
 	struct epoll_event lev;
 	struct epoll_event events[MAX_EPOLL_SIZE];
 	struct rlimit rt;
-	socklen_t len;
+	struct addrinfo hints, *ahead, *ai;
+	struct sockaddr_storage taddr;
+	socklen_t tlen;
 
 	openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
 	syslog(LOG_INFO, "curvetun server booting!\n");
@@ -163,28 +165,58 @@ int server_main(int set_rlim, int port, int lnum)
 
 	tspawn_or_panic();
 
-	lfd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = PF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_PASSIVE;
+	hints.ai_protocol = IPPROTO_TCP;
+
+	ret = getaddrinfo(NULL, "6666", &hints, &ahead);
+	if (ret < 0)
+		panic("Cannot get address info!\n");
+
+	for (ai = ahead; ai != NULL && lfd < 0; ai = ai->ai_next) {
+	  	int one = 1;
+
+		lfd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+		if (lfd < 0)
+			continue;
+#ifdef IPV6_V6ONLY
+		ret = setsockopt(lfd, IPPROTO_IPV6, IPV6_V6ONLY,
+				 &one, sizeof(one));
+		if (ret < 0) {
+			close(lfd);
+			lfd = -1;
+			continue;
+		}
+#else
+		close(lfd);
+		lfd = -1;
+		continue;
+#endif /* IPV6_V6ONLY */
+
+		set_nonblocking(lfd);
+		set_reuseaddr(lfd);
+
+		ret = bind(lfd, ai->ai_addr, ai->ai_addrlen);
+		if (ret < 0) {
+			close(lfd);
+			lfd = -1;
+			continue;
+		}
+
+		ret = listen(lfd, 5);
+		if (ret < 0) {
+			close(lfd);
+			lfd = -1;
+			continue;
+		}
+	}
+
+	freeaddrinfo(ahead);
 	if (lfd < 0)
 		panic("Cannot create socket!\n");
-
-	set_nonblocking(lfd);
-	set_reuseaddr(lfd);
-
-	memset(&events, 0, sizeof(events));
-	memset(&maddr, 0, sizeof(maddr));
-	maddr.sin_family = PF_INET;
-	maddr.sin_port = htons(port);
-	maddr.sin_addr.s_addr = INADDR_ANY;
-
-	ret = bind(lfd, (struct sockaddr *) &maddr, sizeof(struct sockaddr));
-	if (ret < 0)
-		panic("Cannot bind sock to address!\n");
-	syslog(LOG_INFO, "curvetun bound to port %d!\n", port);
-
-	ret = listen(lfd, lnum);
-	if (ret < 0)
-		panic("Cannot listen on socket!\n");
-	syslog(LOG_INFO, "curvetun listening on port %d!\n", port);
+	syslog(LOG_INFO, "curvetun up and listening!\n");
 
 	kdpfd = epoll_create(MAX_EPOLL_SIZE);
 	if (kdpfd < 0)
@@ -199,7 +231,7 @@ int server_main(int set_rlim, int port, int lnum)
 		panic("Cannot add socket for epoll!\n");
 
 	curfds = 1;
-	len = sizeof(struct sockaddr);
+	tlen = sizeof(taddr);
 
 	while (likely(!sigint)) {
 		nfds = epoll_wait(kdpfd, events, curfds, -1);
@@ -209,17 +241,25 @@ int server_main(int set_rlim, int port, int lnum)
 
 		for (i = 0; i < nfds; ++i) {
 			if (events[i].data.fd == lfd) {
-				nfd = accept(lfd, (struct sockaddr *) &taddr, &len);
+				char hbuff[256], sbuff[256];
+
+				nfd = accept(lfd, (struct sockaddr *) &taddr, &tlen);
 				if (nfd < 0) {
 					continue;
 				}
 
-				syslog(LOG_INFO, "New connection from: %s:%d\n",
-				       inet_ntoa(taddr.sin_addr),
-				       ntohs(taddr.sin_port));
+				memset(hbuff, 0, sizeof(hbuff));
+				memset(sbuff, 0, sizeof(sbuff));
+
+				getnameinfo((struct sockaddr *) &taddr, tlen,
+					    hbuff, sizeof(hbuff),
+					    sbuff, sizeof(sbuff),
+					    NI_NUMERICHOST | NI_NUMERICSERV);
+
+				syslog(LOG_INFO, "New connection from: %s:%s\n",
+				       hbuff, sbuff);
 
 				set_nonblocking(nfd);
-
 				lev.events = EPOLLIN | EPOLLET;
 				lev.data.fd = nfd;
 
