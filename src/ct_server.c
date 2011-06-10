@@ -13,7 +13,6 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
-#include <numa.h>
 #include <pthread.h>
 #include <syslog.h>
 #include <signal.h>
@@ -24,6 +23,8 @@
 #include <sys/epoll.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/mman.h>
+#include <sys/eventfd.h>
 #include <arpa/inet.h>
 #include <limits.h>
 #include <netdb.h>
@@ -32,120 +33,123 @@
 #include "locking.h"
 #include "tlsf.h"
 #include "netdev.h"
+#include "write_or_die.h"
 #include "psched.h"
 
 #define MAX_THREADS	16
-#define MAX_BUF		1024
 #define MAX_EPOLL_SIZE	10000
 
 struct worker_struct {
+	int efd;
 	unsigned int cpu;
 	pthread_t thread;
-	pthread_attr_t tattr;
-	void *mempool;
-	size_t spool;
-	void *stack;
-	size_t sstack;
+	void *mmap_mempool_raw;
+	void *mmap_mempool;
+	size_t mmap_size;
 };
 
 static struct worker_struct threadpool[MAX_THREADS];
 
 extern sig_atomic_t sigint;
 
-int handle_frame(int new_fd)
-{
-	int len;
-	char buf[MAX_BUF + 1];
-
-	bzero(buf, MAX_BUF + 1);
-	len = recv(new_fd, buf, MAX_BUF, 0);
-	if (len > 0)
-		printf("fd: %d: '%s'，len %d\n", new_fd, buf, len);
-	else {
-		if (len < 0)
-			printf("err %d，'%s'\n", errno, strerror(errno));
-		close(new_fd);
-		return -1;
-	}
-	return len;
-}
-
 static void *worker(void *self)
 {
+	int fd;
+	ssize_t ret, len;
 	const struct worker_struct *ws = self;
+	char buff[1024];
+
+	init_memory_pool(ws->mmap_size - 2 * getpagesize(),
+			 ws->mmap_mempool);
 
 	syslog(LOG_INFO, "curvetun thread %p/CPU%u up!\n", ws, ws->cpu);
 	while (likely(!sigint)) {
-		sleep(1);
+		ret = read(ws->efd, &fd, sizeof(fd));
+		if (ret != sizeof(fd))
+			continue;
+		len = recv(fd, buff, sizeof(buff), 0);
+		if (len > 0)
+			printf("fd: %d: '%s'，len %zd\n", fd, buff, len);
+		else
+			close(fd);
 	}
 
+	destroy_memory_pool(ws->mmap_mempool);
 	pthread_exit(0);
 }
 
 static void tspawn_or_panic(void)
 {
-	int i, ret;
+	int i, ret, fd;
 	unsigned int cpus = get_number_cpus_online();
 	cpu_set_t cpuset;
+
+	fd = open_or_die("/dev/null", O_RDWR);
 
 	for (i = 0; i < MAX_THREADS; ++i) {
 		CPU_ZERO(&cpuset);
 		threadpool[i].cpu = i % cpus;
-//		threadpool[i].sstack = (PTHREAD_STACK_MIN + getpagesize() * 2) & 0x7;
-//		threadpool[i].stack = numa_alloc_onnode(threadpool[i].sstack, 0); /* FIXME */
-//		if (!threadpool[i].stack)
-//			panic("No mem left on node!\n");
-//		threadpool[i].spool = 0;
-//		threadpool[i].mempool = 0;//numa_alloc_onnode(threadpool[i].spool,
-					//		  0); /* FIXME */
-//		if (!threadpool[i].mempool)
-//			panic("No mem left on node!\n");
 		CPU_SET(threadpool[i].cpu, &cpuset);
-//		ret = pthread_attr_init(&(threadpool[i].tattr));
-//		if (ret < 0)
-//			panic("Thread attribute init failed!\n");
-//		ret = pthread_attr_setinheritsched(&(threadpool[i].tattr),
-//						   PTHREAD_EXPLICIT_SCHED);
-//		if (ret < 0)
-//			panic("Thread attribute set failed!\n");
-//		ret = pthread_attr_setstack(&(threadpool[i].tattr),
-//					    threadpool[i].stack,
-//					    threadpool[i].sstack);
-//		if (ret < 0)
-//			panic("Thread attribute set failed!\n");
+
+		threadpool[i].efd = eventfd(0, 0);
+		if (threadpool[i].efd < 0)
+			panic("Cannot create event socket!\n");
+
+		threadpool[i].mmap_size = getpagesize() * (1 << 5);
+		threadpool[i].mmap_mempool_raw = mmap(0, threadpool[i].mmap_size,
+						      PROT_READ | PROT_WRITE,
+						      MAP_PRIVATE | MAP_ANONYMOUS,
+						      fd, 0);
+		if (threadpool[i].mmap_mempool_raw == MAP_FAILED)
+			panic("Cannot mmap memory!\n");
+		ret = mprotect(threadpool[i].mmap_mempool_raw, getpagesize(),
+			       PROT_NONE);
+		if (ret < 0) {
+			perror("");
+			panic("Cannot protect pool start!\n");
+		}
+		ret = mprotect(threadpool[i].mmap_mempool_raw + (unsigned long)
+			       threadpool[i].mmap_size - getpagesize(),
+			       getpagesize(), PROT_NONE);
+		if (ret < 0)
+			panic("Cannot protect pool end!\n");
+		threadpool[i].mmap_mempool = threadpool[i].mmap_mempool_raw +
+					     getpagesize();
+
 		ret = pthread_create(&(threadpool[i].thread), NULL,
-				     /*&(threadpool[i].tattr),*/ worker,
-				     &threadpool[i]);
+				     worker, &threadpool[i]);
 		if (ret < 0)
 			panic("Thread creation failed!\n");
+
 		ret = pthread_setaffinity_np(threadpool[i].thread,
 					     sizeof(cpu_set_t), &cpuset);
 		if (ret < 0)
 			panic("Thread CPU migration failed!\n");
-//		pthread_detach(threadpool[i].thread);
 	}
+
+	close(fd);
 }
 
 static void tfinish(void)
 {
 	int i;
 	for (i = 0; i < MAX_THREADS; ++i) {
+		close(threadpool[i].efd);
 		pthread_cancel(threadpool[i].thread);
-//		numa_free(threadpool[i].stack, threadpool[i].sstack);
-//		numa_free(threadpool[i].mempool, threadpool[i].spool);
-		pthread_attr_destroy(&(threadpool[i].tattr));
+		munmap(threadpool[i].mmap_mempool_raw, threadpool[i].mmap_size);
 	}
 }
 
 int server_main(int set_rlim, int port, int lnum)
 {
-	int lfd = -1, kdpfd, nfds, nfd, ret, curfds, i;
+	int lfd = -1, kdpfd, nfds, nfd, ret, curfds, i, trit;
 	struct epoll_event lev;
 	struct epoll_event events[MAX_EPOLL_SIZE];
 	struct rlimit rt;
 	struct addrinfo hints, *ahead, *ai;
 	struct sockaddr_storage taddr;
 	socklen_t tlen;
+	unsigned int cpus = get_number_cpus_online();
 
 	openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
 	syslog(LOG_INFO, "curvetun server booting!\n");
@@ -224,6 +228,7 @@ int server_main(int set_rlim, int port, int lnum)
 	if (ret < 0)
 		panic("Cannot add socket for epoll!\n");
 
+	trit = 0;
 	curfds = 1;
 	tlen = sizeof(taddr);
 
@@ -262,12 +267,18 @@ int server_main(int set_rlim, int port, int lnum)
 					panic("Epoll ctl error!\n");
 				curfds++;
 			} else {
-				ret = handle_frame(events[i].data.fd);
-				if (ret < 1 && errno != 11) {
-					epoll_ctl(kdpfd, EPOLL_CTL_DEL,
-						  events[i].data.fd, &lev);
-					curfds--;
-				}
+				ret = write(threadpool[trit].efd,
+					    &events[i].data.fd,
+					    sizeof(events[i].data.fd));
+
+//				ret = handle_frame(events[i].data.fd);
+//				if (ret < 1 && errno != 11) {
+//					epoll_ctl(kdpfd, EPOLL_CTL_DEL,
+//						  events[i].data.fd, &lev);
+//					curfds--;
+//				}
+
+				trit = (trit + 1) % cpus;
 			}
 		}
 	}
