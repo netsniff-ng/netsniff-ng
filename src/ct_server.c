@@ -322,6 +322,7 @@ int server_main(int set_rlim, int port, int lnum)
 	}
 
 	close(lfd);
+	close(efd_parent);
 	syslog(LOG_INFO, "curvetun shut down!\n");
 	closelog();
 	tfinish();
