@@ -20,8 +20,8 @@ netsniff-ng: $(netsniff-ng-objs)
 	@$(foreach page, $(netsniff-ng-objs), cat man/$(page) | \
 	gzip --best > man/$(page).gz;)
 
-ifpps-ng: $(ifpps-ng-objs)
-	@$(foreach page, $(ifpps-ng-objs), cat man/$(page) | \
+ifpps: $(ifpps-objs)
+	@$(foreach page, $(ifpps-objs), cat man/$(page) | \
 	gzip --best > man/$(page).gz;)
 
 %.8: %.txt
