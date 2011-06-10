@@ -72,9 +72,13 @@ int handle_frame(int new_fd)
 
 static void *worker(void *self)
 {
+	const struct worker_struct *ws = self;
+
+	syslog(LOG_INFO, "curvetun thread %p/CPU%u up!\n", ws, ws->cpu);
 	while (likely(!sigint)) {
 		sleep(1);
 	}
+
 	pthread_exit(0);
 }
 
@@ -86,47 +90,39 @@ static void tspawn_or_panic(void)
 
 	for (i = 0; i < MAX_THREADS; ++i) {
 		CPU_ZERO(&cpuset);
-
 		threadpool[i].cpu = i % cpus;
-		threadpool[i].sstack = PTHREAD_STACK_MIN + 0x4000;
-		threadpool[i].stack = numa_alloc_onnode(threadpool[i].sstack,
-							0); /* FIXME */
-		if (!threadpool[i].stack)
-			panic("No mem left on node!\n");
-
-		threadpool[i].spool = 4096;
-		threadpool[i].mempool = numa_alloc_onnode(threadpool[i].spool,
-							  0); /* FIXME */
-		if (!threadpool[i].mempool)
-			panic("No mem left on node!\n");
-
+//		threadpool[i].sstack = (PTHREAD_STACK_MIN + getpagesize() * 2) & 0x7;
+//		threadpool[i].stack = numa_alloc_onnode(threadpool[i].sstack, 0); /* FIXME */
+//		if (!threadpool[i].stack)
+//			panic("No mem left on node!\n");
+//		threadpool[i].spool = 0;
+//		threadpool[i].mempool = 0;//numa_alloc_onnode(threadpool[i].spool,
+					//		  0); /* FIXME */
+//		if (!threadpool[i].mempool)
+//			panic("No mem left on node!\n");
 		CPU_SET(threadpool[i].cpu, &cpuset);
-
-		ret = pthread_attr_init(&(threadpool[i].tattr));
-		if (ret < 0)
-			panic("Thread attribute init failed!\n");
-		ret = pthread_attr_setinheritsched(&(threadpool[i].tattr),
-						   PTHREAD_EXPLICIT_SCHED);
-		if (ret < 0)
-			panic("Thread attribute set failed!\n");
-		ret = pthread_attr_setstack(&(threadpool[i].tattr),
-					    threadpool[i].stack,
-					    threadpool[i].sstack);
-		if (ret < 0)
-			panic("Thread attribute set failed!\n");
-
-		ret = pthread_create(&(threadpool[i].thread),
-				     &(threadpool[i].tattr), worker,
+//		ret = pthread_attr_init(&(threadpool[i].tattr));
+//		if (ret < 0)
+//			panic("Thread attribute init failed!\n");
+//		ret = pthread_attr_setinheritsched(&(threadpool[i].tattr),
+//						   PTHREAD_EXPLICIT_SCHED);
+//		if (ret < 0)
+//			panic("Thread attribute set failed!\n");
+//		ret = pthread_attr_setstack(&(threadpool[i].tattr),
+//					    threadpool[i].stack,
+//					    threadpool[i].sstack);
+//		if (ret < 0)
+//			panic("Thread attribute set failed!\n");
+		ret = pthread_create(&(threadpool[i].thread), NULL,
+				     /*&(threadpool[i].tattr),*/ worker,
 				     &threadpool[i]);
 		if (ret < 0)
 			panic("Thread creation failed!\n");
-
 		ret = pthread_setaffinity_np(threadpool[i].thread,
 					     sizeof(cpu_set_t), &cpuset);
 		if (ret < 0)
 			panic("Thread CPU migration failed!\n");
-
-		pthread_detach(threadpool[i].thread);
+//		pthread_detach(threadpool[i].thread);
 	}
 }
 
@@ -135,10 +131,8 @@ static void tfinish(void)
 	int i;
 	for (i = 0; i < MAX_THREADS; ++i) {
 		pthread_cancel(threadpool[i].thread);
-
 //		numa_free(threadpool[i].stack, threadpool[i].sstack);
 //		numa_free(threadpool[i].mempool, threadpool[i].spool);
-
 		pthread_attr_destroy(&(threadpool[i].tattr));
 	}
 }
@@ -162,8 +156,6 @@ int server_main(int set_rlim, int port, int lnum)
 		if (ret < 0)
 			whine("Cannot set rlimit!\n");
 	}
-
-	tspawn_or_panic();
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;
@@ -217,6 +209,8 @@ int server_main(int set_rlim, int port, int lnum)
 	if (lfd < 0)
 		panic("Cannot create socket!\n");
 	syslog(LOG_INFO, "curvetun up and listening!\n");
+
+	tspawn_or_panic();
 
 	kdpfd = epoll_create(MAX_EPOLL_SIZE);
 	if (kdpfd < 0)

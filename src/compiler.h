@@ -33,6 +33,7 @@
 # define unreachable()      do { } while (1)
 #endif
 
+/* from the Linux kernel, GPLv2 */
 #define barrier()           __asm__ __volatile__("": : :"memory")
 #define mb()                asm volatile("mfence":::"memory")
 #define rmb()               asm volatile("lfence":::"memory")
@@ -41,10 +42,12 @@
 #define smp_rmb()           rmb()
 #define smp_wmb()           wmb()
 
+/* from the Linux kernel, GPLv2 */
 #ifndef bug
 # define build_bug_on(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
 #endif
 
+/* from the Linux kernel, GPLv2 */
 #ifndef bug
 # define build_bug_on_zero(e) (sizeof(char[1 - 2 * !!(e)]) - 1)
 #endif
@@ -89,10 +92,24 @@
 # define __always_inline    inline
 #endif
 
+#ifndef __hidden
+# define __hidden           __attribute__((visibility("hidden")))
+#endif
+
+#ifndef __protected
+# define __protected        __attribute__((visibility("protected")))
+#endif
+
+#ifndef __internal
+# define __internal         __attribute__((visibility("internal")))
+#endif
+
+/* from the Linux kernel, GPLv2 */
 #ifndef offsetof
 # define offsetof(type, member) ((size_t) &((type *) 0)->member)
 #endif
 
+/* from the Linux kernel, GPLv2 */
 #ifndef container_of
 # define container_of(ptr, type, member)                             \
 	({                                                           \

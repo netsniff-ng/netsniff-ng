@@ -339,7 +339,7 @@ void muntrace_handler(int signal)
 	abort();
 }
 
-void *xmalloc(size_t size)
+__hidden void *xmalloc(size_t size)
 {
 	void *ptr;
 	enum mcheck_status stat;
@@ -359,7 +359,7 @@ void *xmalloc(size_t size)
 	return ptr;
 }
 
-void *xzmalloc(size_t size)
+__hidden void *xzmalloc(size_t size)
 {
 	void *ptr;
 	enum mcheck_status stat;
@@ -382,7 +382,7 @@ void *xzmalloc(size_t size)
 	return ptr;
 }
 
-void *xmalloc_aligned(size_t size, size_t alignment)
+__hidden void *xmalloc_aligned(size_t size, size_t alignment)
 {
 	int ret;
 	void *ptr;
@@ -404,7 +404,7 @@ void *xmalloc_aligned(size_t size, size_t alignment)
 	return ptr;
 }
 
-void *xvalloc(size_t size)
+__hidden void *xvalloc(size_t size)
 {
 	void *ptr;
 	enum mcheck_status stat;
@@ -424,7 +424,7 @@ void *xvalloc(size_t size)
 	return ptr;
 }
 
-void *xmallocz(size_t size)
+__hidden void *xmallocz(size_t size)
 {
 	void *ptr;
 
@@ -438,12 +438,12 @@ void *xmallocz(size_t size)
 	return ptr;
 }
 
-void *xmemdupz(const void *data, size_t len)
+__hidden void *xmemdupz(const void *data, size_t len)
 {
 	return memcpy(xmallocz(len), data, len);
 }
 
-void *xcalloc(size_t nmemb, size_t size)
+__hidden void *xcalloc(size_t nmemb, size_t size)
 {
 	void *ptr;
 	enum mcheck_status stat;
@@ -466,7 +466,7 @@ void *xcalloc(size_t nmemb, size_t size)
 	return ptr;
 }
 
-void *xrealloc(void *ptr, size_t nmemb, size_t size)
+__hidden void *xrealloc(void *ptr, size_t nmemb, size_t size)
 {
 	void *new_ptr;
 	size_t new_size = nmemb * size;
@@ -494,7 +494,7 @@ void *xrealloc(void *ptr, size_t nmemb, size_t size)
 	return new_ptr;
 }
 
-void xfree(void *ptr)
+__hidden void xfree(void *ptr)
 {
 	enum mcheck_status stat;
 
@@ -509,7 +509,7 @@ void xfree(void *ptr)
 	free(ptr);
 }
 
-char *xstrdup(const char *str)
+__hidden char *xstrdup(const char *str)
 {
 	size_t len;
 	char *cp;
@@ -521,7 +521,7 @@ char *xstrdup(const char *str)
 	return cp;
 }
 
-char *xstrndup(const char *str, size_t size)
+__hidden char *xstrndup(const char *str, size_t size)
 {
 	size_t len;
 	char *cp;
@@ -536,7 +536,7 @@ char *xstrndup(const char *str, size_t size)
 	return cp;
 }
 
-int xdup(int fd)
+__hidden int xdup(int fd)
 {
 	int ret = dup(fd);
 	if (ret < 0)
