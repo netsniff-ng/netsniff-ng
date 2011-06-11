@@ -436,6 +436,9 @@ int main(int argc, char **argv)
 
 	if (getuid() != geteuid())
 		seteuid(getuid());
+	if (getenv("LD_PRELOAD"))
+		panic("curvetun cannot be preloaded!\n");
+
 	fetch_home_dir();
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,

@@ -21,11 +21,11 @@
 
 static const char *rport = "6666";
 static const char *rhost = "localhost";
-static const char *scope = "eth10";
+static const char *scope = "wlan0";
 
 int main(int argc, char **argv)
 {
-	int fd = -1, ret;
+	int fd = -1, ret, try = 1;
 	struct addrinfo hints, *ahead, *ai;
 	struct sockaddr_in6 *saddr6;
 
@@ -41,16 +41,22 @@ int main(int argc, char **argv)
 	for (ai = ahead; ai != NULL && fd < 0; ai = ai->ai_next) {
 		if (ai->ai_family == PF_INET6) {
 			saddr6 = (struct sockaddr_in6 *) ai->ai_addr;
-			if (saddr6->sin6_scope_id == 0)
+			if (saddr6->sin6_scope_id == 0) {
 				saddr6->sin6_scope_id = if_nametoindex(scope);
+				info("Scope set to %d!\n",
+				     saddr6->sin6_scope_id);
+			}
 		}
 
 		fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 		if (fd < 0)
 			continue;
 
+		errno = 0;
 		ret = connect(fd, ai->ai_addr, ai->ai_addrlen);
 		if (ret < 0) {
+			whine("Cannot connect to remote, try %d: %s!\n",
+			      try++, strerror(errno));
 			close(fd);
 			fd = -1;
 			continue;

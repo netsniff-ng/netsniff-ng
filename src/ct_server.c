@@ -222,6 +222,7 @@ int server_main(int set_rlim, int port, int lnum)
 			lfd = -1;
 			continue;
 		}
+		syslog(LOG_INFO, "curvetun bound!\n");
 
 		ret = listen(lfd, 5);
 		if (ret < 0) {
@@ -229,12 +230,12 @@ int server_main(int set_rlim, int port, int lnum)
 			lfd = -1;
 			continue;
 		}
+		syslog(LOG_INFO, "curvetun listening!\n");
 	}
 
 	freeaddrinfo(ahead);
 	if (lfd < 0)
 		panic("Cannot create socket!\n");
-	syslog(LOG_INFO, "curvetun up and listening!\n");
 
 	tspawn_or_panic();
 
@@ -267,6 +268,8 @@ int server_main(int set_rlim, int port, int lnum)
 	trit = 0;
 	curfds = 1;
 	tlen = sizeof(taddr);
+
+	syslog(LOG_INFO, "curvetun up and running!\n");
 
 	while (likely(!sigint)) {
 		nfds = epoll_wait(kdpfd, events, curfds, -1);
