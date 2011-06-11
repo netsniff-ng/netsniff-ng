@@ -23,6 +23,7 @@ lib-objs   = xmalloc.o                  \
 	     tlsf.o                     \
 	     write_or_die.o             \
 	     ct_server.o                \
+	     ct_client.o                \
 	     netdev.o
 
 target     = curvetun

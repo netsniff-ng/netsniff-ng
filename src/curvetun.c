@@ -36,6 +36,7 @@
 #include "serialize.h"
 #include "aes256ctr.h"
 #include "ct_server.h"
+#include "ct_client.h"
 
 #define DEFAULT_CURVE   "secp521r1/nistp521"
 #define FILE_CLIENTS    ".curvetun/clients"
@@ -405,7 +406,7 @@ static int main_keygen(void)
 static int main_client(char *dev, enum client_mode cmode)
 {
 	check_config_exists_or_die();
-	return 0;
+	return client_main();
 }
 
 static int main_server(char *dev, unsigned short port)

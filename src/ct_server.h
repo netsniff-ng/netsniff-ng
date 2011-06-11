@@ -8,7 +8,10 @@
 #ifndef CT_SERVER_H
 #define CT_SERVER_H
 
-int server_main(int set_rlim, int port, int lnum);
+#define THREADS_PER_CPU 2
+#define MAX_EPOLL_SIZE  10000
+
+extern int server_main(int set_rlim, int port, int lnum);
 
 #endif /* CT_SERVER_H */
 

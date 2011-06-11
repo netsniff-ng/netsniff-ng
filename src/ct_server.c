@@ -38,9 +38,7 @@
 #include "write_or_die.h"
 #include "psched.h"
 #include "xmalloc.h"
-
-#define THREADS_PER_CPU	2
-#define MAX_EPOLL_SIZE	10000
+#include "ct_server.h"
 
 struct worker_struct {
 	int efd;
