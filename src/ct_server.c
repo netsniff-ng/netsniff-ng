@@ -37,8 +37,9 @@
 #include "netdev.h"
 #include "write_or_die.h"
 #include "psched.h"
+#include "xmalloc.h"
 
-#define MAX_THREADS	16
+#define THREADS_PER_CPU	2
 #define MAX_EPOLL_SIZE	10000
 
 struct worker_struct {
@@ -50,7 +51,9 @@ struct worker_struct {
 	size_t mmap_size;
 };
 
-static struct worker_struct threadpool[MAX_THREADS];
+static struct worker_struct *threadpool = NULL;
+
+static unsigned int cpus = 0;
 
 extern sig_atomic_t sigint;
 
@@ -98,12 +101,11 @@ static void *worker(void *self)
 static void tspawn_or_panic(void)
 {
 	int i, ret, fd;
-	unsigned int cpus = get_number_cpus_online();
 	cpu_set_t cpuset;
 
 	fd = open_or_die("/dev/null", O_RDWR);
 
-	for (i = 0; i < MAX_THREADS; ++i) {
+	for (i = 0; i < cpus * THREADS_PER_CPU; ++i) {
 		CPU_ZERO(&cpuset);
 		threadpool[i].cpu = i % cpus;
 		CPU_SET(threadpool[i].cpu, &cpuset);
@@ -151,7 +153,7 @@ static void tspawn_or_panic(void)
 static void tfinish(void)
 {
 	int i;
-	for (i = 0; i < MAX_THREADS; ++i) {
+	for (i = 0; i < cpus * THREADS_PER_CPU; ++i) {
 		close(threadpool[i].efd);
 		pthread_cancel(threadpool[i].thread);
 		munmap(threadpool[i].mmap_mempool_raw, threadpool[i].mmap_size);
@@ -167,10 +169,12 @@ int server_main(int set_rlim, int port, int lnum)
 	struct addrinfo hints, *ahead, *ai;
 	struct sockaddr_storage taddr;
 	socklen_t tlen;
-	unsigned int cpus = get_number_cpus_online();
 
 	openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
 	syslog(LOG_INFO, "curvetun server booting!\n");
+
+	cpus = get_number_cpus_online();
+	threadpool = xzmalloc(sizeof(*threadpool) * cpus * THREADS_PER_CPU);
 
 	if (set_rlim) {
 		rt.rlim_max = rt.rlim_cur = MAX_EPOLL_SIZE;
@@ -326,6 +330,8 @@ int server_main(int set_rlim, int port, int lnum)
 	syslog(LOG_INFO, "curvetun shut down!\n");
 	closelog();
 	tfinish();
+
+	xfree(threadpool);
 
 	return 0;
 }
