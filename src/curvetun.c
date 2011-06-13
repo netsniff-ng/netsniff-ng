@@ -123,8 +123,14 @@ static void help(void)
 	printf("           ~/.curvetun/priv.key - Your private key\n");
 	printf("           ~/.curvetun/pub.key  - Your public key\n");
 	printf("           ~/.curvetun/username - Your username\n");
-	printf("  B. Server: curvetun --server --port 6666 --stun stunserver.org\n");
-	printf("  C. Client: curvetun --client --mode random\n");
+	printf("  B. Server:\n");
+	printf("      1. curvetun --server --port 6666 --stun stunserver.org\n");
+	printf("      2. ifconfig curve-s up\n");
+	printf("      3. setup route/bridge\n");
+	printf("  C. Client:\n");
+	printf("      1. curvetun --client --mode random\n");
+	printf("      2. ifconfig curve-c up\n");
+	printf("      3. setup route/bridge\n");
 	printf("  Where both participants have the following files specified:\n");
 	printf("   ~/.curvetun/clients - Participants the server accepts\n");
 	printf("        line-format:   username:pubkey\n");
