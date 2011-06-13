@@ -64,7 +64,7 @@ static void *worker(void *self)
 	uint64_t fd64;
 	ssize_t ret, len;
 	const struct worker_struct *ws = self;
-	char buff[1024]; //XXX
+	char buff[1600]; //XXX
 	struct pollfd fds;
 
 	init_memory_pool(ws->mmap_size - 2 * getpagesize(),
