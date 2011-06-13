@@ -21,6 +21,7 @@
 #include <sched.h>
 #include <ctype.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <sys/poll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -288,6 +289,7 @@ int server_main(int set_rlim, int port, int lnum)
 
 		for (i = 0; i < nfds; ++i) {
 			if (events[i].data.fd == lfd) {
+				int one;
 				char hbuff[256], sbuff[256];
 
 				nfd = accept(lfd, (struct sockaddr *) &taddr, &tlen);
@@ -307,6 +309,12 @@ int server_main(int set_rlim, int port, int lnum)
 				       hbuff, sbuff, nfd);
 
 				set_nonblocking(nfd);
+				one = 1;
+				setsockopt(nfd, SOL_SOCKET, SO_KEEPALIVE,
+					   &one, sizeof(one));
+				one = 1;
+				setsockopt(nfd, IPPROTO_TCP, TCP_NODELAY,
+					   &one, sizeof(one));
 
 				memset(&lev, 0, sizeof(lev));
 				lev.events = EPOLLIN | EPOLLET;

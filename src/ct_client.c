@@ -20,6 +20,7 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/poll.h>
+#include <netinet/tcp.h>
 #include <linux/if.h>
 #include <linux/if_tun.h>
 
@@ -60,7 +61,7 @@ int tun_open_or_die(char *name)
 
 int client_main(void)
 {
-	int fd = -1, fd_tun, err, ret, try = 1, i;
+	int fd = -1, fd_tun, err, ret, try = 1, i, one;
 	struct addrinfo hints, *ahead, *ai;
 	struct sockaddr_in6 *saddr6;
 	struct pollfd fds[2];
@@ -100,6 +101,11 @@ int client_main(void)
 			fd = -1;
 			continue;
 		}
+
+		one = 1;
+		setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &one, sizeof(one));
+		one = 1;
+		setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
 	}
 
 	freeaddrinfo(ahead);
