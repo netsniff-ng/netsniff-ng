@@ -125,6 +125,7 @@ int client_main(void)
 		info("got event!!\n");
 		if (ret > 0) {
 			for (i = 0; i < 2; ++i) {
+				/* XXX: sendfile? or TCP_CORK */
 				if (fds[i].fd == fd_tun) {
 					ret = read(fd_tun, buffer, sizeof(buffer));
 					if (ret <= 0)
