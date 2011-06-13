@@ -90,6 +90,9 @@ int client_main(void)
 	if (fd < 0)
 		panic("Cannot create socket!\n");
 
+	set_nonblocking(fd);
+	set_nonblocking(fd_tun);
+
 	memset(fds, 0, sizeof(fds));
 	fds[0].fd = fd;
 	fds[1].fd = fd_tun;

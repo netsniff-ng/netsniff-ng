@@ -256,6 +256,8 @@ int server_main(int set_rlim, int port, int lnum)
 
 	fd_tun = tun_open_or_die(DEVNAME_SERVER);
 
+	set_nonblocking(fd_tun);
+
 	efd_parent = eventfd(0, 0);
 	if (efd_parent < 0)
 		panic("Cannot create parent event fd!\n");
