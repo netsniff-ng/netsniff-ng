@@ -41,6 +41,7 @@
 #include "psched.h"
 #include "xmalloc.h"
 #include "ct_server.h"
+#include "curvetun.h"
 #include "compiler.h"
 
 struct worker_struct {

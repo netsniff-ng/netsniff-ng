@@ -28,6 +28,7 @@
 #include "strlcpy.h"
 #include "netdev.h"
 #include "ct_client.h"
+#include "curvetun.h"
 #include "compiler.h"
 
 /* XXX: remove */

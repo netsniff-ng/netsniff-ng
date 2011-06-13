@@ -37,15 +37,8 @@
 #include "aes256ctr.h"
 #include "ct_server.h"
 #include "ct_client.h"
+#include "curvetun.h"
 
-#define DEFAULT_CURVE   "secp521r1/nistp521"
-#define FILE_CLIENTS    ".curvetun/clients"
-#define FILE_SERVERS    ".curvetun/servers"
-#define FILE_PRIVKEY    ".curvetun/priv.key"
-#define FILE_PUBKEY     ".curvetun/pub.key"
-#define FILE_USERNAM    ".curvetun/username"
-
-#define DEFAULT_KEY_LEN 64
 #define MAX(a, b)       ((a) > (b) ? (a) : (b))
 
 enum working_mode {
