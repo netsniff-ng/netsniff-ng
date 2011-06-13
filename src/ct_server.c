@@ -59,7 +59,7 @@ static unsigned int cpus = 0;
 
 extern sig_atomic_t sigint;
 
-static int efd_parent;
+static int efd_parent, fd_tun;
 
 static void *worker(void *self)
 {
@@ -84,23 +84,27 @@ static void *worker(void *self)
 			sched_yield();
 			continue;
 		}
-		len = recv((int) fd64, buff, sizeof(buff), 0);
-		if (len > 0) {
-			int i;
-			printf("fd: %d, len %zd\n", (int) fd64, len);
-			printf("ascii:\n");
-			for (i = 0; i < len; i++)
-				printf("%c ", isprint(buff[i]) ? buff[i] : '.');
-			printf("\n");
-			printf("hex:\n");
-			for (i = 0; i < len; i++)
-				printf("0x%.2x ", (uint8_t) buff[i]);
-			printf("\n\n");
+		if (fd64 == fd_tun) {
+			/* incoming tunnel frames */
 		} else {
-			if (len < 1 && errno != 11) {
-				len = write(efd_parent, &fd64, sizeof(fd64));
-				if (len != sizeof(fd64))
-					whine("Event write error from thread!\n");
+			len = recv((int) fd64, buff, sizeof(buff), 0);
+			if (len > 0) {
+				int i;
+				printf("fd: %d, len %zd\n", (int) fd64, len);
+				printf("ascii:\n");
+				for (i = 0; i < len; i++)
+					printf("%c ", isprint(buff[i]) ? buff[i] : '.');
+				printf("\n");
+				printf("hex:\n");
+				for (i = 0; i < len; i++)
+					printf("0x%.2x ", (uint8_t) buff[i]);
+				printf("\n\n");
+			} else {
+				if (len < 1 && errno != 11) {
+					len = write(efd_parent, &fd64, sizeof(fd64));
+					if (len != sizeof(fd64))
+						whine("Event write error from thread!\n");
+				}
 			}
 		}
 	}
@@ -173,7 +177,7 @@ static void tfinish(void)
 
 int server_main(int set_rlim, int port, int lnum)
 {
-	int lfd = -1, kdpfd, nfds, nfd, fd_tun, ret, curfds, i, trit;
+	int lfd = -1, kdpfd, nfds, nfd, ret, curfds, i, trit;
 	struct epoll_event lev, eev, tev, nev;
 	struct epoll_event events[MAX_EPOLL_SIZE];
 	struct rlimit rt;
@@ -335,8 +339,6 @@ int server_main(int set_rlim, int port, int lnum)
 				if (ret < 0)
 					panic("Epoll ctl error!\n");
 				curfds++;
-			} else if (events[i].data.fd == fd_tun) {
-				/* Incoming data from tunnel! */
 			} else if (events[i].data.fd == efd_parent) {
 				uint64_t fd64_del;
 				ret = read(efd_parent, &fd64_del, sizeof(fd64_del));
