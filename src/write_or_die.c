@@ -10,12 +10,18 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <linux/if.h>
+#include <linux/if_tun.h>
 
 #include "write_or_die.h"
 #include "die.h"
+#include "strlcpy.h"
 
 void fsync_or_die(int fd, const char *msg)
 {
@@ -37,6 +43,28 @@ int open_or_die_m(const char *file, int flags, mode_t mode)
 	if (ret < 0)
 		puke_and_die(EXIT_FAILURE, "Open error");
 	return ret;
+}
+
+int tun_open_or_die(char *name)
+{
+	int fd, ret;
+	struct ifreq ifr;
+
+	fd = open("/dev/net/tun", O_RDWR);
+	if (fd < 0)
+		panic("Cannot open /dev/net/tun!\n");
+
+	memset(&ifr, 0, sizeof(ifr));
+	ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
+
+	if (name)
+		strlcpy(ifr.ifr_name, name, IFNAMSIZ);
+
+	ret = ioctl(fd, TUNSETIFF, &ifr);
+	if (ret < 0)
+		panic("ioctl screwed up!\n");
+
+	return fd;
 }
 
 ssize_t read_or_die(int fd, void *buf, size_t len)

@@ -21,9 +21,8 @@
 #include <sys/stat.h>
 #include <sys/poll.h>
 #include <netinet/tcp.h>
-#include <linux/if.h>
-#include <linux/if_tun.h>
 
+#include "write_or_die.h"
 #include "die.h"
 #include "strlcpy.h"
 #include "netdev.h"
@@ -38,28 +37,6 @@ static const char *scope = "wlan0";
 
 extern sig_atomic_t sigint;
 
-int tun_open_or_die(char *name)
-{
-	int fd, ret;
-	struct ifreq ifr;
-
-	fd = open("/dev/net/tun", O_RDWR);
-	if (fd < 0)
-		panic("Cannot open /dev/net/tun!\n");
-
-	memset(&ifr, 0, sizeof(ifr));
-	ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
-
-	if (name)
-		strlcpy(ifr.ifr_name, name, IFNAMSIZ);
-
-	ret = ioctl(fd, TUNSETIFF, &ifr);
-	if (ret < 0)
-		panic("ioctl screwed up!\n");
-
-	return fd;
-}
-
 int client_main(void)
 {
 	int fd = -1, fd_tun, err, ret, try = 1, i, one;
@@ -73,7 +50,7 @@ int client_main(void)
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
 
-	fd_tun = tun_open_or_die("curvetun");
+	fd_tun = tun_open_or_die(DEVNAME_CLIENT);
 
 	ret = getaddrinfo(rhost, rport, &hints, &ahead);
 	if (ret < 0)
@@ -112,8 +89,6 @@ int client_main(void)
 	freeaddrinfo(ahead);
 	if (fd < 0)
 		panic("Cannot create socket!\n");
-
-	system("ifconfig curvetun up");
 
 	memset(fds, 0, sizeof(fds));
 	fds[0].fd = fd;

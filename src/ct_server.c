@@ -173,8 +173,8 @@ static void tfinish(void)
 
 int server_main(int set_rlim, int port, int lnum)
 {
-	int lfd = -1, kdpfd, nfds, nfd, ret, curfds, i, trit;
-	struct epoll_event lev, eev;
+	int lfd = -1, kdpfd, nfds, nfd, fd_tun, ret, curfds, i, trit;
+	struct epoll_event lev, eev, tev, nev;
 	struct epoll_event events[MAX_EPOLL_SIZE];
 	struct rlimit rt;
 	struct addrinfo hints, *ahead, *ai;
@@ -250,6 +250,8 @@ int server_main(int set_rlim, int port, int lnum)
 
 	tspawn_or_panic();
 
+	fd_tun = tun_open_or_die(DEVNAME_SERVER);
+
 	efd_parent = eventfd(0, 0);
 	if (efd_parent < 0)
 		panic("Cannot create parent event fd!\n");
@@ -268,6 +270,10 @@ int server_main(int set_rlim, int port, int lnum)
 	eev.events = EPOLLIN | EPOLLET;
 	eev.data.fd = efd_parent;
 
+	memset(&tev, 0, sizeof(tev));
+	tev.events = EPOLLIN | EPOLLET;
+	tev.data.fd = fd_tun;
+
 	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, lfd, &lev);
 	if (ret < 0)
 		panic("Cannot add socket for epoll!\n");
@@ -275,6 +281,10 @@ int server_main(int set_rlim, int port, int lnum)
 	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, efd_parent, &eev);
 	if (ret < 0)
 		panic("Cannot add socket for events!\n");
+
+	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, fd_tun, &tev);
+	if (ret < 0)
+		panic("Cannot add socket for tundev!\n");
 
 	trit = 0;
 	curfds = 1;
@@ -317,20 +327,22 @@ int server_main(int set_rlim, int port, int lnum)
 				setsockopt(nfd, IPPROTO_TCP, TCP_NODELAY,
 					   &one, sizeof(one));
 
-				memset(&lev, 0, sizeof(lev));
-				lev.events = EPOLLIN | EPOLLET;
-				lev.data.fd = nfd;
+				memset(&nev, 0, sizeof(nev));
+				nev.events = EPOLLIN | EPOLLET;
+				nev.data.fd = nfd;
 
-				ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, nfd, &lev);
+				ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, nfd, &nev);
 				if (ret < 0)
 					panic("Epoll ctl error!\n");
 				curfds++;
+			} else if (events[i].data.fd == fd_tun) {
+				/* Incoming data from tunnel! */
 			} else if (events[i].data.fd == efd_parent) {
 				uint64_t fd64_del;
 				ret = read(efd_parent, &fd64_del, sizeof(fd64_del));
 				if (ret != sizeof(fd64_del))
 					continue;
-				epoll_ctl(kdpfd, EPOLL_CTL_DEL, (int) fd64_del, &lev);
+				epoll_ctl(kdpfd, EPOLL_CTL_DEL, (int) fd64_del, &nev);
 				curfds--;
 
 				syslog(LOG_INFO, "Closed connection with id %d\n",
@@ -348,10 +360,12 @@ int server_main(int set_rlim, int port, int lnum)
 
 	close(lfd);
 	close(efd_parent);
+	close(fd_tun);
+
 	syslog(LOG_INFO, "curvetun shut down!\n");
 	closelog();
-	tfinish();
 
+	tfinish();
 	xfree(threadpool);
 
 	return 0;

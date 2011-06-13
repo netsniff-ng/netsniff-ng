@@ -10,4 +10,6 @@
 
 extern int client_main(void);
 
+#define DEVNAME_CLIENT	"curve-c"
+
 #endif /* CT_CLIENT_H */

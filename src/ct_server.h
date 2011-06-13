@@ -13,5 +13,7 @@
 
 extern int server_main(int set_rlim, int port, int lnum);
 
+#define DEVNAME_SERVER "curve-s"
+
 #endif /* CT_SERVER_H */
 
