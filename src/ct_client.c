@@ -12,12 +12,14 @@
 #include <unistd.h>
 #include <netdb.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <sys/poll.h>
 #include <linux/if.h>
 #include <linux/if_tun.h>
 
@@ -25,10 +27,14 @@
 #include "strlcpy.h"
 #include "netdev.h"
 #include "ct_client.h"
+#include "compiler.h"
 
+/* XXX: remove */
 static const char *rport = "6666";
 static const char *rhost = "localhost";
 static const char *scope = "wlan0";
+
+extern sig_atomic_t sigint;
 
 int tun_open_or_die(char *name)
 {
@@ -54,9 +60,11 @@ int tun_open_or_die(char *name)
 
 int client_main(void)
 {
-	int fd = -1, fd_tun, ret, try = 1;
+	int fd = -1, fd_tun, err, ret, try = 1, i;
 	struct addrinfo hints, *ahead, *ai;
 	struct sockaddr_in6 *saddr6;
+	struct pollfd fds[2];
+	char buffer[1600]; //XXX
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;
@@ -98,12 +106,40 @@ int client_main(void)
 	if (fd < 0)
 		panic("Cannot create socket!\n");
 
-	while (1) {
-		sleep(1);
-		ret = write(fd, "hello world!", strlen("hello world!") + 1);
-		if (ret != strlen("hello world!") + 1)
-			perror("write");
-		printf("Written bytes!\n");
+	system("ifconfig curvetun up");
+
+	memset(fds, 0, sizeof(fds));
+	fds[0].fd = fd;
+	fds[1].fd = fd_tun;
+	fds[0].events = POLLIN;
+	fds[1].events = POLLIN;
+
+	while (likely(!sigint)) {
+		ret = poll(fds, 2, -1);
+		info("got event!!\n");
+		if (ret > 0) {
+			for (i = 0; i < 2; ++i) {
+				if (fds[i].fd == fd_tun) {
+					ret = read(fd_tun, buffer, sizeof(buffer));
+					if (ret <= 0)
+						continue;
+					err = write(fd, buffer, ret);
+					if (err != ret)
+						perror("tun -> net");
+					info("tun -> net done!!!\n");
+				} else if (fds[i].fd == fd) {
+					ret = read(fd, buffer, sizeof(buffer));
+					if (ret < 0)
+						continue;
+					if (ret == 0)
+						break;
+					err = write(fd_tun, buffer, ret);
+					if (err != ret)
+						perror("net -> tun");
+					info("net -> tun done!!!\n");
+				}
+			}
+		}
 	}
 
 	close(fd);

@@ -16,6 +16,10 @@
 #include <pthread.h>
 #include <syslog.h>
 #include <signal.h>
+#include <limits.h>
+#include <netdb.h>
+#include <sched.h>
+#include <ctype.h>
 #include <netinet/in.h>
 #include <sys/poll.h>
 #include <sys/types.h>
@@ -27,9 +31,6 @@
 #include <sys/mman.h>
 #include <sys/eventfd.h>
 #include <arpa/inet.h>
-#include <limits.h>
-#include <netdb.h>
-#include <sched.h>
 
 #include "die.h"
 #include "locking.h"
@@ -39,6 +40,7 @@
 #include "psched.h"
 #include "xmalloc.h"
 #include "ct_server.h"
+#include "compiler.h"
 
 struct worker_struct {
 	int efd;
@@ -62,7 +64,7 @@ static void *worker(void *self)
 	uint64_t fd64;
 	ssize_t ret, len;
 	const struct worker_struct *ws = self;
-	char buff[1024];
+	char buff[1024]; //XXX
 	struct pollfd fds;
 
 	init_memory_pool(ws->mmap_size - 2 * getpagesize(),
@@ -81,9 +83,18 @@ static void *worker(void *self)
 			continue;
 		}
 		len = recv((int) fd64, buff, sizeof(buff), 0);
-		if (len > 0)
-			printf("fd: %d: '%s'，len %zd\n", (int) fd64, buff, len);
-		else {
+		if (len > 0) {
+			int i;
+			printf("fd: %d, len %zd\n", (int) fd64, len);
+			printf("ascii:\n");
+			for (i = 0; i < len; i++)
+				printf("%c ", isprint(buff[i]) ? buff[i] : '.');
+			printf("\n");
+			printf("hex:\n");
+			for (i = 0; i < len; i++)
+				printf("0x%.2x ", (uint8_t) buff[i]);
+			printf("\n\n");
+		} else {
 			if (len < 1 && errno != 11) {
 				len = write(efd_parent, &fd64, sizeof(fd64));
 				if (len != sizeof(fd64))
