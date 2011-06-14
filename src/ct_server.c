@@ -64,7 +64,7 @@ static int efd_parent, fd_tun;
 static void *worker(void *self)
 {
 	uint64_t fd64;
-	ssize_t ret, len;
+	ssize_t ret, len, err;
 	const struct worker_struct *ws = self;
 	char buff[1600]; //XXX
 	struct pollfd fds;
@@ -85,20 +85,16 @@ static void *worker(void *self)
 			continue;
 		}
 		if (fd64 == fd_tun) {
-			/* incoming tunnel frames */
-		} else {
-			len = recv((int) fd64, buff, sizeof(buff), 0);
+			printf("FROM TUNNEL\n");
+			len = read(fd_tun, buff, sizeof(buff));
 			if (len > 0) {
-				int i;
-				printf("fd: %d, len %zd\n", (int) fd64, len);
-				printf("ascii:\n");
-				for (i = 0; i < len; i++)
-					printf("%c ", isprint(buff[i]) ? buff[i] : '.');
-				printf("\n");
-				printf("hex:\n");
-				for (i = 0; i < len; i++)
-					printf("0x%.2x ", (uint8_t) buff[i]);
-				printf("\n\n");
+				/* todo: lookup right socket */
+				err = write(0, buff, len);
+			}
+		} else {
+			len = read((int) fd64, buff, sizeof(buff));
+			if (len > 0) {
+				err = write(fd_tun, buff, len);
 			} else {
 				if (len < 1 && errno != 11) {
 					len = write(efd_parent, &fd64, sizeof(fd64));
@@ -204,29 +200,16 @@ int server_main(int set_rlim, int port, int lnum)
 	hints.ai_flags = AI_PASSIVE;
 	hints.ai_protocol = IPPROTO_TCP;
 
+	fd_tun = tun_open_or_die(DEVNAME_SERVER);
+
 	ret = getaddrinfo(NULL, "6666", &hints, &ahead);
 	if (ret < 0)
 		panic("Cannot get address info!\n");
 
 	for (ai = ahead; ai != NULL && lfd < 0; ai = ai->ai_next) {
-	  	int one = 1;
-
 		lfd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 		if (lfd < 0)
 			continue;
-#ifdef IPV6_V6ONLY
-		ret = setsockopt(lfd, IPPROTO_IPV6, IPV6_V6ONLY,
-				 &one, sizeof(one));
-		if (ret < 0) {
-			close(lfd);
-			lfd = -1;
-			continue;
-		}
-#else
-		close(lfd);
-		lfd = -1;
-		continue;
-#endif /* IPV6_V6ONLY */
 
 		set_nonblocking(lfd);
 		set_reuseaddr(lfd);
@@ -254,15 +237,12 @@ int server_main(int set_rlim, int port, int lnum)
 
 	tspawn_or_panic();
 
-	fd_tun = tun_open_or_die(DEVNAME_SERVER);
-
-	set_nonblocking(fd_tun);
-
 	efd_parent = eventfd(0, 0);
 	if (efd_parent < 0)
 		panic("Cannot create parent event fd!\n");
 
 	set_nonblocking(efd_parent);
+	set_nonblocking(fd_tun);
 
 	kdpfd = epoll_create(MAX_EPOLL_SIZE);
 	if (kdpfd < 0)
@@ -293,7 +273,7 @@ int server_main(int set_rlim, int port, int lnum)
 		panic("Cannot add socket for tundev!\n");
 
 	trit = 0;
-	curfds = 1;
+	curfds = 3;
 	tlen = sizeof(taddr);
 
 	syslog(LOG_INFO, "curvetun up and running!\n");
@@ -311,6 +291,7 @@ int server_main(int set_rlim, int port, int lnum)
 
 				nfd = accept(lfd, (struct sockaddr *) &taddr, &tlen);
 				if (nfd < 0) {
+					perror("accept");
 					continue;
 				}
 
