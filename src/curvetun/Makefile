@@ -21,6 +21,7 @@ lib-objs   = xmalloc.o                  \
 	     deflate.o                  \
 	     stun.o                     \
 	     tlsf.o                     \
+	     patricia.o                 \
 	     write_or_die.o             \
 	     ct_server.o                \
 	     ct_client.o                \
