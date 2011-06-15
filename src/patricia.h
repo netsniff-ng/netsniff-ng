@@ -12,19 +12,25 @@
 #ifndef PATRICIA_H
 #define PATRICIA_H
 
+#include "compiler.h"
+
+/* Note: (char *) keys must be null-terminated! */
 struct patricia_node {
+	char *key;
+	size_t klen;
 	union {
 		int data;
 		int thres_bit;
 	} value;
-	char *key; //TODO save exact key to check lookup string against it
 	struct patricia_node *l, *r;
-};
+} __cacheline_aligned;
 
-//TODO: add remove node
-extern int ptree_search_data(char *str, struct patricia_node *root);
-extern void ptree_add_entry(char *str, int data, char *matchstr,
-			    struct patricia_node **root);
+extern int ptree_search_data_nearest(char *str, struct patricia_node *root);
+extern int ptree_search_data_exact(char *str, struct patricia_node *root);
+extern void ptree_add_entry_exm(char *str, int data, char *matchstr,
+				struct patricia_node **root);
+extern void ptree_add_entry(char *str, int data, struct patricia_node **root);
+extern void ptree_del_entry(char *str, struct patricia_node **root);
 extern void ptree_display(struct patricia_node *node, int level);
 extern void ptree_free(struct patricia_node *root);
 
