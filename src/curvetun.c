@@ -304,7 +304,7 @@ static void write_pubkey(char *hash, size_t len)
 static void write_username(void)
 {
 	int fd, ret;
-	char path[512];
+	char path[512], *eof;
 	char user[512];
 
 	memset(path, 0, sizeof(path));
@@ -315,7 +315,7 @@ static void write_username(void)
 	fflush(stdout);
 
 	memset(user, 0, sizeof(user));
-	fgets(user, sizeof(user), stdin);
+	eof = fgets(user, sizeof(user), stdin);
 	user[sizeof(user) - 1] = 0;
 	user[strlen(user) - 1] = 0;
 
