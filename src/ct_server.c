@@ -469,6 +469,11 @@ int server_main(int set_rlim, int port, int lnum)
 	syslog(LOG_INFO, "curvetun shut down!\n");
 	closelog();
 
+	spinlock_lock(&tree_lock);
+	ptree_free(tree);
+	spinlock_unlock(&tree_lock);
+	spinlock_destroy(&tree_lock);
+
 	tfinish();
 	xfree(threadpool);
 
