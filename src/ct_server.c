@@ -145,11 +145,17 @@ static void trie_addr_maybe_update(char *buff, size_t len, int fd)
 
 static void trie_addr_remove(int fd)
 {
+	int found = 1;
 	struct patricia_node *n = NULL;
 	spinlock_lock(&tree_lock);
-	ptree_get_key(fd, tree, &n);
-	if (n)
-		ptree_del_entry(n->key, n->klen, &tree);
+	while (found) {
+		ptree_get_key(fd, tree, &n);
+		if (n) {
+			ptree_del_entry(n->key, n->klen, &tree);
+			n = NULL;
+		} else
+			found = 0;
+	}
 	spinlock_unlock(&tree_lock);
 }
 
