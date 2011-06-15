@@ -101,7 +101,6 @@ int client_main(void)
 
 	while (likely(!sigint)) {
 		ret = poll(fds, 2, -1);
-		info("got event!!\n");
 		if (ret > 0) {
 			for (i = 0; i < 2; ++i) {
 				/* XXX: sendfile? or TCP_CORK */
@@ -112,7 +111,6 @@ int client_main(void)
 					err = write(fd, buffer, ret);
 					if (err != ret)
 						perror("tun -> net");
-					info("tun -> net done!!!\n");
 				} else if (fds[i].fd == fd) {
 					ret = read(fd, buffer, sizeof(buffer));
 					if (ret < 0)
@@ -122,7 +120,6 @@ int client_main(void)
 					err = write(fd_tun, buffer, ret);
 					if (err != ret)
 						perror("net -> tun");
-					info("net -> tun done!!!\n");
 				}
 			}
 		}

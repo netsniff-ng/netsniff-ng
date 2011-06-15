@@ -1,7 +1,7 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
- * Copyright 2011 Daniel Borkmann
+ * Copyright 2011 Daniel Borkmann, rewritten
  * Copyright 1991-2007 Kawahara Lab., Kyoto University
  * Copyright 2000-2005 Shikano Lab., Nara Institute of Science and Technology
  * Copyright 2005-2007 Julius project team, Nagoya Institute of Technology
@@ -14,9 +14,8 @@
 
 #include "compiler.h"
 
-/* Note: (char *) keys must be null-terminated! */
 struct patricia_node {
-	char *key;
+	void *key;
 	size_t klen;
 	union {
 		int data;
@@ -25,13 +24,19 @@ struct patricia_node {
 	struct patricia_node *l, *r;
 } __cacheline_aligned;
 
-extern int ptree_search_data_nearest(char *str, struct patricia_node *root);
-extern int ptree_search_data_exact(char *str, struct patricia_node *root);
-extern void ptree_add_entry_exm(char *str, int data, char *matchstr,
-				struct patricia_node **root);
-extern void ptree_add_entry(char *str, int data, struct patricia_node **root);
-extern void ptree_del_entry(char *str, struct patricia_node **root);
+extern int ptree_search_data_nearest(void *str, size_t sstr,
+				     struct patricia_node *root);
+extern int ptree_search_data_exact(void *str, size_t sstr,
+				   struct patricia_node *root);
+extern void ptree_add_entry(void *str, size_t sstr, int data,
+			    struct patricia_node **root);
+extern void ptree_del_entry(void *str, size_t sstr,
+			    struct patricia_node **root);
+extern void ptree_get_key(int data, struct patricia_node *node,
+			  struct patricia_node **wanted);
 extern void ptree_display(struct patricia_node *node, int level);
 extern void ptree_free(struct patricia_node *root);
+
+#define ptree_maybe_add_entry ptree_add_entry
 
 #endif /* PATRICIA_H */

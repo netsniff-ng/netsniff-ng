@@ -7,6 +7,7 @@
  */
 
 #define _GNU_SOURCE
+#define __USE_MISC
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -20,6 +21,7 @@
 #include <netdb.h>
 #include <sched.h>
 #include <ctype.h>
+#include <stdint.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sys/poll.h>
@@ -32,6 +34,7 @@
 #include <sys/mman.h>
 #include <sys/eventfd.h>
 #include <arpa/inet.h>
+#include <asm/byteorder.h>
 
 #include "die.h"
 #include "locking.h"
@@ -44,6 +47,45 @@
 #include "curvetun.h"
 #include "compiler.h"
 #include "patricia.h"
+
+struct ipv4hdr {
+#if defined(__LITTLE_ENDIAN_BITFIELD)
+	__extension__ uint8_t h_ihl:4,
+			      h_version:4;
+#elif defined (__BIG_ENDIAN_BITFIELD)
+	__extension__ uint8_t h_version:4,
+			      h_ihl:4;
+#else
+# error "Please fix <asm/byteorder.h>"
+#endif
+	uint8_t h_tos;
+	uint16_t h_tot_len;
+	uint16_t h_id;
+	uint16_t h_frag_off;
+	uint8_t h_ttl;
+	uint8_t h_protocol;
+	uint16_t h_check;
+	uint32_t h_saddr;
+	uint32_t h_daddr;
+} __attribute__((packed));
+
+struct ipv6hdr {
+#if defined(__LITTLE_ENDIAN_BITFIELD)
+	__extension__ uint8_t priority:4,
+			      version:4;
+#elif defined(__BIG_ENDIAN_BITFIELD)
+	__extension__ uint8_t version:4,
+			      priority:4;
+#else
+# error "Please fix <asm/byteorder.h>"
+#endif
+	uint8_t flow_lbl[3];
+	uint16_t payload_len;
+	uint8_t nexthdr;
+	uint8_t hop_limit;
+	struct in6_addr saddr;
+	struct in6_addr daddr;
+} __attribute__((packed));
 
 struct worker_struct {
 	int efd;
@@ -60,14 +102,61 @@ static unsigned int cpus = 0;
 
 extern sig_atomic_t sigint;
 
-static int efd_parent, fd_tun;
+static int efd_parent, fd_tun, ipv4 = 0;
 
 static struct patricia_node *tree = NULL;
 
 static struct spinlock tree_lock;
 
+static void trie_addr_lookup(char *buff, size_t len, int *fd)
+{
+	/* Always happens on the dst address */
+	if (ipv4) {
+		struct ipv4hdr *hdr = (void *) buff;
+		spinlock_lock(&tree_lock);
+		(*fd) = ptree_search_data_exact(&hdr->h_daddr,
+						sizeof(hdr->h_daddr), tree);
+		spinlock_unlock(&tree_lock);
+	} else {
+		struct ipv6hdr *hdr = (void *) buff;
+		spinlock_lock(&tree_lock);
+		(*fd) = ptree_search_data_exact(&hdr->daddr,
+						sizeof(hdr->daddr), tree);
+		spinlock_unlock(&tree_lock);
+	}
+}
+
+static void trie_addr_maybe_update(char *buff, size_t len, int fd)
+{
+	/* Always happens on the src address */
+	if (ipv4) {
+		struct ipv4hdr *hdr = (void *) buff;
+		spinlock_lock(&tree_lock);
+		ptree_maybe_add_entry(&hdr->h_saddr, sizeof(hdr->h_saddr),
+				      fd, &tree);
+		spinlock_unlock(&tree_lock);
+	} else {
+		struct ipv6hdr *hdr = (void *) buff;
+		spinlock_lock(&tree_lock);
+		ptree_maybe_add_entry(&hdr->saddr, sizeof(hdr->saddr),
+				      fd, &tree);
+		spinlock_unlock(&tree_lock);
+	}
+}
+
+static void trie_addr_remove(int fd)
+{
+	struct patricia_node *n = NULL;
+	spinlock_lock(&tree_lock);
+	ptree_get_key(fd, tree, &n);
+	if (n)
+		ptree_del_entry(n->key, n->klen, &tree);
+	spinlock_unlock(&tree_lock);
+}
+
 static void *worker(void *self)
 {
+	int fd;
 	uint64_t fd64;
 	ssize_t ret, len, err;
 	const struct worker_struct *ws = self;
@@ -90,21 +179,25 @@ static void *worker(void *self)
 			continue;
 		}
 		if (fd64 == fd_tun) {
-			printf("FROM TUNNEL\n");
 			len = read(fd_tun, buff, sizeof(buff));
 			if (len > 0) {
-				/* todo: lookup right socket */
-				err = write(0, buff, len);
+				trie_addr_lookup(buff, len, &fd);
+				if (fd < 0)
+					continue;
+				err = write(fd, buff, len);
 			}
 		} else {
-			len = read((int) fd64, buff, sizeof(buff));
+			fd = (int) fd64;
+			len = read(fd, buff, sizeof(buff));
 			if (len > 0) {
+				trie_addr_maybe_update(buff, len, fd);
 				err = write(fd_tun, buff, len);
 			} else {
 				if (len < 1 && errno != 11) {
 					len = write(efd_parent, &fd64, sizeof(fd64));
 					if (len != sizeof(fd64))
 						whine("Event write error from thread!\n");
+					trie_addr_remove(fd);
 				}
 			}
 		}
@@ -189,6 +282,8 @@ int server_main(int set_rlim, int port, int lnum)
 	openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
 	syslog(LOG_INFO, "curvetun server booting!\n");
 
+	spinlock_init(&tree_lock);
+
 	cpus = get_number_cpus_online();
 	threadpool = xzmalloc(sizeof(*threadpool) * cpus * THREADS_PER_CPU);
 
@@ -216,6 +311,23 @@ int server_main(int set_rlim, int port, int lnum)
 		if (lfd < 0)
 			continue;
 
+		if (ai->ai_family == AF_INET6) {
+			int one = 1;
+#ifdef IPV6_V6ONLY
+			ret = setsockopt(lfd, IPPROTO_IPV6, IPV6_V6ONLY,
+					 &one, sizeof(one));
+			if (ret < 0) {
+				close(lfd);
+				lfd = -1;
+				continue;
+			}
+#else
+			close(lfd);
+			lfd = -1;
+			continue;
+#endif /* IPV6_V6ONLY */
+		}
+
 		set_nonblocking(lfd);
 		set_reuseaddr(lfd);
 
@@ -225,7 +337,6 @@ int server_main(int set_rlim, int port, int lnum)
 			lfd = -1;
 			continue;
 		}
-		syslog(LOG_INFO, "curvetun bound!\n");
 
 		ret = listen(lfd, 5);
 		if (ret < 0) {
@@ -233,7 +344,9 @@ int server_main(int set_rlim, int port, int lnum)
 			lfd = -1;
 			continue;
 		}
-		syslog(LOG_INFO, "curvetun listening!\n");
+
+		ipv4 = ai->ai_family == AF_INET6 ? 0 : 1;
+		syslog(LOG_INFO, "curvetun on IPv%d!\n", ipv4 ? 4 : 6);
 	}
 
 	freeaddrinfo(ahead);
@@ -333,6 +446,7 @@ int server_main(int set_rlim, int port, int lnum)
 				if (ret != sizeof(fd64_del))
 					continue;
 				epoll_ctl(kdpfd, EPOLL_CTL_DEL, (int) fd64_del, &nev);
+
 				curfds--;
 
 				syslog(LOG_INFO, "Closed connection with id %d\n",

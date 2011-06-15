@@ -1,7 +1,7 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
- * Copyright 2011 Daniel Borkmann
+ * Copyright 2011 Daniel Borkmann, rewritten
  * Copyright 1991-2007 Kawahara Lab., Kyoto University
  * Copyright 2000-2005 Shikano Lab., Nara Institute of Science and Technology
  * Copyright 2005-2007 Julius project team, Nagoya Institute of Technology
@@ -34,16 +34,14 @@ static inline int testbit_max(char *str, int bitplace, int maxbitplace)
 	return (str[bitplace >> 3] & mbit[bitplace & 7]);
 }
 
-int where_the_bit_differ(char *str1, char *str2)
+static int where_the_bit_differ(char *str1, size_t l1, char *str2, size_t l2)
 {
-	int p = 0, bitloc, slen1, slen2;
+	int p = 0, bitloc;
 	while (str1[p] == str2[p])
 		p++;
 	bitloc = p * 8;
-	slen1 = strlen(str1);
-	slen2 = strlen(str2);
-	while (testbit(str1, slen1, bitloc) ==
-	       testbit(str2, slen2, bitloc))
+	while (testbit(str1, l1, bitloc) ==
+	       testbit(str2, l2, bitloc))
 		bitloc++;
 	return bitloc;
 }
@@ -68,7 +66,7 @@ void ptree_display(struct patricia_node *node, int level)
 	for (i = 0; i < level; ++i)
 		printf("-");
 	if (node->l == NULL && node->r == NULL)
-		printf("leaf: (%s -> %d)\n", node->key, node->value.data);
+		printf("leaf: (%s -> %d)\n", (char *) node->key, node->value.data);
 	else {
 		printf("thres: %d\n", node->value.thres_bit);
 		if (node->l != NULL)
@@ -78,70 +76,86 @@ void ptree_display(struct patricia_node *node, int level)
 	}
 }
 
+void ptree_get_key(int data, struct patricia_node *node,
+		   struct patricia_node **wanted)
+{
+	if (node->l == NULL && node->r == NULL) {
+		if (node->value.data == data)
+			(*wanted) = node;
+	} else {
+		if (node->l != NULL)
+			ptree_get_key(data, node->l, wanted);
+		if (node->r != NULL)
+			ptree_get_key(data, node->r, wanted);
+	}
+
+}
+
 static int ptree_search_data_r(struct patricia_node *node, char *str,
-			       int maxbitplace)
+			       size_t slen, int maxbitplace)
 {
 	if (node->l == NULL && node->r == NULL)
 		return node->value.data;
 	if (testbit_max(str, node->value.thres_bit, maxbitplace) != 0)
-		return ptree_search_data_r(node->r, str, maxbitplace);
+		return ptree_search_data_r(node->r, str, slen, maxbitplace);
 	else
-		return ptree_search_data_r(node->l, str, maxbitplace);
+		return ptree_search_data_r(node->l, str, slen, maxbitplace);
 }
 
 static int *ptree_search_data_r_p(struct patricia_node *node, char *str,
-			          int maxbitplace)
+				  size_t slen, int maxbitplace)
 {
 	if (node->l == NULL && node->r == NULL)
 		return &(node->value.data);
 	if (testbit_max(str, node->value.thres_bit, maxbitplace) != 0)
-		return ptree_search_data_r_p(node->r, str, maxbitplace);
+		return ptree_search_data_r_p(node->r, str, slen, maxbitplace);
 	else
-		return ptree_search_data_r_p(node->l, str, maxbitplace);
+		return ptree_search_data_r_p(node->l, str, slen, maxbitplace);
 }
 
 static int ptree_search_data_r_x(struct patricia_node *node, char *str,
-				 int maxbitplace)
+				 size_t slen, int maxbitplace)
 {
 	if (node->l == NULL && node->r == NULL) {
-		if (node->klen == strlen(str) &&
-		    !strncmp(str, node->key, node->klen))
+		if (node->klen == slen && !memcmp(str, node->key, node->klen))
 			return node->value.data;
 		else
 			return -ENOENT;
 	}
 	if (testbit_max(str, node->value.thres_bit, maxbitplace) != 0)
-		return ptree_search_data_r_x(node->r, str, maxbitplace);
+		return ptree_search_data_r_x(node->r, str, slen, maxbitplace);
 	else
-		return ptree_search_data_r_x(node->l, str, maxbitplace);
+		return ptree_search_data_r_x(node->l, str, slen, maxbitplace);
 }
 
-int ptree_search_data_nearest(char *str, struct patricia_node *root)
+int ptree_search_data_nearest(void *str, size_t sstr, struct patricia_node *root)
 {
 	if (!root)
 		return -ENOENT;
-	return ptree_search_data_r(root, str, strlen(str) * 8 + 8);
+	return ptree_search_data_r(root, str, sstr, sstr * 8);
 }
 
-static int *ptree_search_data_nearest_ptr(char *str, struct patricia_node *root)
+static int *ptree_search_data_nearest_ptr(char *str, size_t sstr,
+					  struct patricia_node *root)
 {
-	return ptree_search_data_r_p(root, str, strlen(str) * 8 + 8);
+	return ptree_search_data_r_p(root, str, sstr, sstr * 8);
 }
 
 
-int ptree_search_data_exact(char *str, struct patricia_node *root)
+int ptree_search_data_exact(void *str, size_t sstr, struct patricia_node *root)
 {
 	if (!root)
 		return -ENOENT;
-	return ptree_search_data_r_x(root, str, strlen(str) * 8 + 8);
+	return ptree_search_data_r_x(root, str, sstr, sstr * 8);
 }
 
-struct patricia_node *ptree_make_root_node(char *str, int data)
+static struct patricia_node *ptree_make_root_node(char *str, size_t sstr,
+						  int data)
 {
 	struct patricia_node *n = new_node();
 	n->value.data = data;
-	n->key = xstrdup(str);
-	n->klen = strlen(str);
+	n->key = xmemdupz(str, sstr);
+	n->klen = sstr;
 	return n;
 }
 
@@ -154,7 +168,7 @@ static void ptree_add_entry_at(char *str, size_t slen, int bitloc, int data,
 		struct patricia_node *newleaf, *newbranch;
 		newleaf = new_node();
 		newleaf->value.data = data;
-		newleaf->key = xstrdup(str);
+		newleaf->key = xmemdupz(str, slen);
 		newleaf->klen = slen;
 		newbranch = new_node();
 		newbranch->value.thres_bit = bitloc;
@@ -175,46 +189,36 @@ static void ptree_add_entry_at(char *str, size_t slen, int bitloc, int data,
 	}
 }
 
-void ptree_add_entry_exm(char *str, int data, char *matchstr,
-			 struct patricia_node **root)
-{
-	if (!(*root))
-		(*root) = ptree_make_root_node(str, data);
-	else {
-		int bitloc = where_the_bit_differ(str, matchstr);
-		ptree_add_entry_at(str, strlen(str), bitloc, data, root);
-	}
-}
-
-void ptree_add_entry(char *str, int data, struct patricia_node **root)
+void ptree_add_entry(void *str, size_t sstr, int data,
+		     struct patricia_node **root)
 {
 	int *ptr, bitloc;
-	char *matchstr;
 	struct patricia_node *n;
 
 	if (!(*root))
-		(*root) = ptree_make_root_node(str, data);
+		(*root) = ptree_make_root_node(str, sstr, data);
 	else {
-		ptr = ptree_search_data_nearest_ptr(str, (*root));
+		ptr = ptree_search_data_nearest_ptr(str, sstr, (*root));
 		n = container_of(ptr, struct patricia_node, value.data);
-		matchstr = n->key;
-		if (n->klen == strlen(str) && !strncmp(str, n->key, n->klen))
+		if (n->klen == sstr && !memcmp(str, n->key, n->klen))
 			return;
-		bitloc = where_the_bit_differ(str, matchstr);
-		ptree_add_entry_at(str, strlen(str), bitloc, data, root);
+		bitloc = where_the_bit_differ(str, sstr, n->key, n->klen);
+		ptree_add_entry_at(str, sstr, bitloc, data, root);
 	}
 }
 
 static void ptree_remove_entry_r(struct patricia_node *now,
 				 struct patricia_node *up,
 				 struct patricia_node *up2,
-				 char *str, int maxbitplace,
+				 char *str, size_t slen, int maxbitplace,
 				 struct patricia_node **root)
 {
 	struct patricia_node *b;
 
 	if (now->l == NULL && now->r == NULL) {
-		if (strncmp(now->key, str, now->klen))
+		if (now->klen != slen)
+			return;
+		if (memcmp(now->key, str, slen))
 			return;
 		if (up == NULL) {
 			*root = NULL;
@@ -237,19 +241,19 @@ static void ptree_remove_entry_r(struct patricia_node *now,
 		return;
 	} else {
 		if (testbit_max(str, now->value.thres_bit, maxbitplace) != 0)
-			ptree_remove_entry_r(now->r, now, up, str,
+			ptree_remove_entry_r(now->r, now, up, str, slen,
 					     maxbitplace, root);
 		else
-			ptree_remove_entry_r(now->l, now, up, str,
+			ptree_remove_entry_r(now->l, now, up, str, slen,
 					     maxbitplace, root);
 	}
 }
 
-void ptree_del_entry(char *str, struct patricia_node **root)
+void ptree_del_entry(void *str, size_t sstr, struct patricia_node **root)
 {
 	if (!(*root))
 		return;
-	ptree_remove_entry_r(*root, NULL, NULL, str, strlen(str) * 8 + 8, root);
+	ptree_remove_entry_r(*root, NULL, NULL, str, sstr, sstr * 8, root);
 }
 
 void ptree_free(struct patricia_node *node)
