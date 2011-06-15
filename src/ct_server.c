@@ -7,7 +7,6 @@
  */
 
 #define _GNU_SOURCE
-#define __USE_MISC
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -345,12 +344,13 @@ int server_main(int set_rlim, int port, int lnum)
 			continue;
 		}
 
-		ipv4 = ai->ai_family == AF_INET6 ? 0 : 1;
+		ipv4 = (ai->ai_family == AF_INET6 ? 0 :
+			(ai->ai_family == AF_INET ? 1 : -1));
 		syslog(LOG_INFO, "curvetun on IPv%d!\n", ipv4 ? 4 : 6);
 	}
 
 	freeaddrinfo(ahead);
-	if (lfd < 0)
+	if (lfd < 0 || ipv4 < 0)
 		panic("Cannot create socket!\n");
 
 	tspawn_or_panic();
