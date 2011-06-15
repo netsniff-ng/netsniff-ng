@@ -43,6 +43,7 @@
 #include "ct_server.h"
 #include "curvetun.h"
 #include "compiler.h"
+#include "patricia.h"
 
 struct worker_struct {
 	int efd;
@@ -60,6 +61,10 @@ static unsigned int cpus = 0;
 extern sig_atomic_t sigint;
 
 static int efd_parent, fd_tun;
+
+static struct patricia_node *tree = NULL;
+
+static struct spinlock tree_lock;
 
 static void *worker(void *self)
 {

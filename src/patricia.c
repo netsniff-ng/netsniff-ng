@@ -57,7 +57,8 @@ static struct patricia_node *new_node(void)
 
 static void free_node(struct patricia_node *n)
 {
-	xfree(n->key);
+	if (n->key)
+		xfree(n->key);
 	xfree(n);
 }
 
@@ -103,7 +104,8 @@ static int ptree_search_data_r_x(struct patricia_node *node, char *str,
 				 int maxbitplace)
 {
 	if (node->l == NULL && node->r == NULL) {
-		if (!strncmp(node->key, str, node->klen))
+		if (node->klen == strlen(str) &&
+		    !strncmp(str, node->key, node->klen))
 			return node->value.data;
 		else
 			return -ENOENT;
@@ -186,14 +188,19 @@ void ptree_add_entry_exm(char *str, int data, char *matchstr,
 
 void ptree_add_entry(char *str, int data, struct patricia_node **root)
 {
+	int *ptr, bitloc;
+	char *matchstr;
+	struct patricia_node *n;
+
 	if (!(*root))
 		(*root) = ptree_make_root_node(str, data);
 	else {
-		int *ptr = ptree_search_data_nearest_ptr(str, (*root));
-		struct patricia_node *n = container_of(ptr, struct patricia_node,
-						       value.data);
-		char *matchstr = n->key;
-		int bitloc = where_the_bit_differ(str, matchstr);
+		ptr = ptree_search_data_nearest_ptr(str, (*root));
+		n = container_of(ptr, struct patricia_node, value.data);
+		matchstr = n->key;
+		if (n->klen == strlen(str) && !strncmp(str, n->key, n->klen))
+			return;
+		bitloc = where_the_bit_differ(str, matchstr);
 		ptree_add_entry_at(str, strlen(str), bitloc, data, root);
 	}
 }
