@@ -79,6 +79,8 @@ void ptree_display(struct patricia_node *node, int level)
 void ptree_get_key(int data, struct patricia_node *node,
 		   struct patricia_node **wanted)
 {
+	if (!node)
+		return;
 	if (node->l == NULL && node->r == NULL) {
 		if (node->value.data == data)
 			(*wanted) = node;
