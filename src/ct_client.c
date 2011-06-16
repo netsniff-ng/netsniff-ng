@@ -72,21 +72,24 @@ int client_main(void)
 		if (fd < 0)
 			continue;
 
-		errno = 0;
-		ret = connect(fd, ai->ai_addr, ai->ai_addrlen);
-		if (ret < 0) {
-			whine("Cannot connect to remote, try %d: %s!\n",
-			      try++, strerror(errno));
-			close(fd);
-			fd = -1;
-			continue;
+		if (!udp) {
+			errno = 0;
+			ret = connect(fd, ai->ai_addr, ai->ai_addrlen);
+			if (ret < 0) {
+				whine("Cannot connect to remote, try %d: %s!\n",
+				      try++, strerror(errno));
+				close(fd);
+				fd = -1;
+				continue;
+			}
 		}
 
 		one = 1;
 		setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &one, sizeof(one));
 		if (!udp) {
 			one = 1;
-			setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
+			setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one,
+				   sizeof(one));
 		}
 	}
 
@@ -107,7 +110,6 @@ int client_main(void)
 		ret = poll(fds, 2, -1);
 		if (ret > 0) {
 			for (i = 0; i < 2; ++i) {
-				/* XXX: sendfile? or TCP_CORK */
 				if (fds[i].fd == fd_tun) {
 					ret = read(fd_tun, buffer, sizeof(buffer));
 					if (ret <= 0)

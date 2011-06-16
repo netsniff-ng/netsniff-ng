@@ -420,6 +420,8 @@ int server_main(int set_rlim, int port, int lnum)
 				if (ret < 0)
 					panic("Epoll ctl error!\n");
 				curfds++;
+			} else if (events[i].data.fd == lfd && udp) {
+				/* setup udp server on new port, add fds to epoll */
 			} else if (events[i].data.fd == efd_parent) {
 				uint64_t fd64_del;
 				ret = read(efd_parent, &fd64_del, sizeof(fd64_del));
