@@ -39,7 +39,7 @@ extern sig_atomic_t sigint;
 
 int client_main(void)
 {
-	int fd = -1, fd_tun, err, ret, try = 1, i, one;
+	int fd = -1, fd_tun, err, ret, try = 1, i, one, rcvbuf, clamp;
 	struct addrinfo hints, *ahead, *ai;
 	struct sockaddr_in6 *saddr6;
 	struct pollfd fds[2];
@@ -84,6 +84,10 @@ int client_main(void)
 		setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &one, sizeof(one));
 		one = 1;
 		setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
+		rcvbuf = 2048;
+		setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &rcvbuf, sizeof(rcvbuf));
+		clamp = 1024;
+		setsockopt(fd, SOL_SOCKET, TCP_WINDOW_CLAMP, &clamp, sizeof(clamp));
 	}
 
 	freeaddrinfo(ahead);
