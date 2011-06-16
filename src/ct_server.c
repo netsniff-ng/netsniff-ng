@@ -410,7 +410,7 @@ int server_main(int set_rlim, int port, int lnum)
 
 		for (i = 0; i < nfds; ++i) {
 			if (events[i].data.fd == lfd) {
-				int one, clamp, rcvbuf;
+				int one;
 				char hbuff[256], sbuff[256];
 
 				nfd = accept(lfd, (struct sockaddr *) &taddr, &tlen);
@@ -437,12 +437,6 @@ int server_main(int set_rlim, int port, int lnum)
 				one = 1;
 				setsockopt(nfd, IPPROTO_TCP, TCP_NODELAY,
 					   &one, sizeof(one));
-				rcvbuf = 2048;
-				setsockopt(nfd, SOL_SOCKET, SO_RCVBUF,
-					   &rcvbuf, sizeof(rcvbuf));
-				clamp = 1024;
-				setsockopt(nfd, SOL_SOCKET, TCP_WINDOW_CLAMP,
-					   &clamp, sizeof(clamp));
 
 				memset(&nev, 0, sizeof(nev));
 				nev.events = EPOLLIN | EPOLLET;
