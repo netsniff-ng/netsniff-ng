@@ -90,9 +90,6 @@ struct worker_struct {
 	int efd;
 	unsigned int cpu;
 	pthread_t thread;
-	void *mmap_mempool_raw;
-	void *mmap_mempool;
-	size_t mmap_size;
 };
 
 static struct worker_struct *threadpool = NULL;
@@ -101,7 +98,7 @@ static unsigned int cpus = 0;
 
 extern sig_atomic_t sigint;
 
-static int efd_parent, fd_tun, ipv4 = 0;
+static int efd_parent, fd_tun, ipv4 = 0, udp = 1;
 
 static struct patricia_node *tree = NULL;
 
@@ -168,9 +165,6 @@ static void *worker(void *self)
 	char buff[1600]; //XXX
 	struct pollfd fds;
 
-	init_memory_pool(ws->mmap_size - 2 * getpagesize(),
-			 ws->mmap_mempool);
-
 	fds.fd = ws->efd;
 	fds.events = POLLIN;
 
@@ -208,7 +202,6 @@ static void *worker(void *self)
 		}
 	}
 
-	destroy_memory_pool(ws->mmap_mempool);
 	pthread_exit(0);
 }
 
@@ -227,27 +220,6 @@ static void tspawn_or_panic(void)
 		threadpool[i].efd = eventfd(0, 0);
 		if (threadpool[i].efd < 0)
 			panic("Cannot create event socket!\n");
-
-		threadpool[i].mmap_size = getpagesize() * (1 << 5);
-		threadpool[i].mmap_mempool_raw = mmap(0, threadpool[i].mmap_size,
-						      PROT_READ | PROT_WRITE,
-						      MAP_PRIVATE | MAP_ANONYMOUS,
-						      fd, 0);
-		if (threadpool[i].mmap_mempool_raw == MAP_FAILED)
-			panic("Cannot mmap memory!\n");
-		ret = mprotect(threadpool[i].mmap_mempool_raw, getpagesize(),
-			       PROT_NONE);
-		if (ret < 0) {
-			perror("");
-			panic("Cannot protect pool start!\n");
-		}
-		ret = mprotect(threadpool[i].mmap_mempool_raw + (unsigned long)
-			       threadpool[i].mmap_size - getpagesize(),
-			       getpagesize(), PROT_NONE);
-		if (ret < 0)
-			panic("Cannot protect pool end!\n");
-		threadpool[i].mmap_mempool = threadpool[i].mmap_mempool_raw +
-					     getpagesize();
 
 		ret = pthread_create(&(threadpool[i].thread), NULL,
 				     worker, &threadpool[i]);
@@ -270,7 +242,6 @@ static void tfinish(void)
 	for (i = 0; i < cpus * THREADS_PER_CPU; ++i) {
 		close(threadpool[i].efd);
 		pthread_cancel(threadpool[i].thread);
-		munmap(threadpool[i].mmap_mempool_raw, threadpool[i].mmap_size);
 	}
 }
 
@@ -301,9 +272,9 @@ int server_main(int set_rlim, int port, int lnum)
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_socktype = udp ? SOCK_DGRAM : SOCK_STREAM;
+	hints.ai_protocol = udp ? IPPROTO_UDP : IPPROTO_TCP;
 	hints.ai_flags = AI_PASSIVE;
-	hints.ai_protocol = IPPROTO_TCP;
 
 	fd_tun = tun_open_or_die(DEVNAME_SERVER);
 
@@ -343,16 +314,19 @@ int server_main(int set_rlim, int port, int lnum)
 			continue;
 		}
 
-		ret = listen(lfd, 5);
-		if (ret < 0) {
-			close(lfd);
-			lfd = -1;
-			continue;
+		if (!udp) {
+			ret = listen(lfd, 5);
+			if (ret < 0) {
+				close(lfd);
+				lfd = -1;
+				continue;
+			}
 		}
 
 		ipv4 = (ai->ai_family == AF_INET6 ? 0 :
 			(ai->ai_family == AF_INET ? 1 : -1));
-		syslog(LOG_INFO, "curvetun on IPv%d!\n", ipv4 ? 4 : 6);
+		syslog(LOG_INFO, "curvetun on IPv%d via %s!\n",
+		       ipv4 ? 4 : 6, udp ? "UDP" : "TCP");
 	}
 
 	freeaddrinfo(ahead);
@@ -409,7 +383,7 @@ int server_main(int set_rlim, int port, int lnum)
 		}
 
 		for (i = 0; i < nfds; ++i) {
-			if (events[i].data.fd == lfd) {
+			if (events[i].data.fd == lfd && !udp) {
 				int one;
 				char hbuff[256], sbuff[256];
 

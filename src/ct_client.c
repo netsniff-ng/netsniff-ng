@@ -35,6 +35,8 @@ static const char *rport = "6666";
 static const char *rhost = "localhost";
 static const char *scope = "wlan0";
 
+static int udp = 1;
+
 extern sig_atomic_t sigint;
 
 int client_main(void)
@@ -47,8 +49,8 @@ int client_main(void)
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_protocol = IPPROTO_TCP;
+	hints.ai_socktype = udp ? SOCK_DGRAM : SOCK_STREAM;
+	hints.ai_protocol = udp ? IPPROTO_UDP : IPPROTO_TCP;
 
 	fd_tun = tun_open_or_die(DEVNAME_CLIENT);
 
@@ -82,8 +84,10 @@ int client_main(void)
 
 		one = 1;
 		setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &one, sizeof(one));
-		one = 1;
-		setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
+		if (!udp) {
+			one = 1;
+			setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
+		}
 	}
 
 	freeaddrinfo(ahead);
