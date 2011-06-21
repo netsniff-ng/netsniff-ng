@@ -41,6 +41,9 @@ extern void ptree_del_entry(void *str, size_t sstr,
 			    struct patricia_node **root);
 extern void ptree_get_key(int data, struct patricia_node *node,
 			  struct patricia_node **wanted);
+extern void ptree_get_key_addr(struct sockaddr_storage *addr, size_t alen,
+			       struct patricia_node *node,
+			       struct patricia_node **wanted);
 extern void ptree_display(struct patricia_node *node, int level);
 extern void ptree_free(struct patricia_node *root);
 

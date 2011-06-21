@@ -158,6 +158,22 @@ static void trie_addr_remove(int fd)
 	spinlock_unlock(&tree_lock);
 }
 
+static void trie_addr_remove_addr(struct sockaddr_storage *addr, size_t alen)
+{
+	int found = 1;
+	struct patricia_node *n = NULL;
+	spinlock_lock(&tree_lock);
+	while (found) {
+		ptree_get_key_addr(addr, alen, tree, &n);
+		if (n) {
+			ptree_del_entry(n->key, n->klen, &tree);
+			n = NULL;
+		} else
+			found = 0;
+	}
+	spinlock_unlock(&tree_lock);
+}
+
 static void *worker_tcp(void *self)
 {
 	int fd;
@@ -256,7 +272,7 @@ static void *worker_udp(void *self)
 					len = write(efd_parent, &fd64, sizeof(fd64));
 					if (len != sizeof(fd64))
 						whine("Event write error from thread!\n");
-					trie_addr_remove(fd);
+					trie_addr_remove_addr(&naddr, nlen);
 				}
 			}
 		}
@@ -264,7 +280,6 @@ static void *worker_udp(void *self)
 
 	pthread_exit(0);
 }
-
 
 static void tspawn_or_panic(void)
 {
