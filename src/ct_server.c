@@ -276,11 +276,8 @@ static void *worker_udp(void *self)
 
 static void tspawn_or_panic(void)
 {
-	int i, ret, fd;
+	int i, ret;
 	cpu_set_t cpuset;
-
-	fd = open_or_die("/dev/null", O_RDWR);
-
 	for (i = 0; i < cpus * THREADS_PER_CPU; ++i) {
 		CPU_ZERO(&cpuset);
 		threadpool[i].cpu = i % cpus;
@@ -302,8 +299,6 @@ static void tspawn_or_panic(void)
 			panic("Thread CPU migration failed!\n");
 		pthread_detach(threadpool[i].thread);
 	}
-
-	close(fd);
 }
 
 static void tfinish(void)
