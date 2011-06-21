@@ -19,6 +19,8 @@
 struct patricia_node {
 	void *key;
 	size_t klen;
+	struct sockaddr_storage *addr;
+	size_t alen;
 	union {
 		int data;
 		int thres_bit;
@@ -27,10 +29,10 @@ struct patricia_node {
 } __cacheline_aligned;
 
 extern int ptree_search_data_nearest(void *str, size_t sstr,
-				     struct sockaddr_storage *addr, size_t alen,
+				     struct sockaddr_storage *addr, size_t *alen,
 				     struct patricia_node *root);
 extern int ptree_search_data_exact(void *str, size_t sstr,
-				   struct sockaddr_storage *addr, size_t alen,
+				   struct sockaddr_storage *addr, size_t *alen,
 				   struct patricia_node *root);
 extern void ptree_add_entry(void *str, size_t sstr, int data,
 			    struct sockaddr_storage *addr, size_t alen,

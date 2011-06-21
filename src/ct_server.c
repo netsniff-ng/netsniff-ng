@@ -105,7 +105,7 @@ static struct patricia_node *tree = NULL;
 static struct spinlock tree_lock;
 
 static void trie_addr_lookup(char *buff, size_t len, int *fd,
-			     struct sockaddr_storage *addr, size_t alen)
+			     struct sockaddr_storage *addr, size_t *alen)
 {
 	/* Always happens on the dst address */
 	if (ipv4) {
@@ -182,7 +182,7 @@ static void *worker_tcp(void *self)
 		if (fd64 == fd_tun) {
 			len = read(fd_tun, buff, sizeof(buff));
 			if (len > 0) {
-				trie_addr_lookup(buff, len, &fd, NULL, 0);
+				trie_addr_lookup(buff, len, &fd, NULL, NULL);
 				if (fd < 0)
 					continue;
 				err = write(fd, buff, len);
@@ -233,10 +233,11 @@ static void *worker_udp(void *self)
 		if (fd64 == fd_tun) {
 			len = read(fd_tun, buff, sizeof(buff));
 			if (len > 0) {
-				nlen = sizeof(naddr);
-				memset(&naddr, 0, nlen);
-				trie_addr_lookup(buff, len, &fd, &naddr, nlen);
-				if (fd < 0)
+				nlen = 0;
+				memset(&naddr, 0, sizeof(naddr));
+				trie_addr_lookup(buff, len, &fd, &naddr,
+						 (size_t *) &nlen);
+				if (fd < 0 || nlen == 0)
 					continue;
 				err = sendto(fd, buff, len, 0,
 					     (struct sockaddr *) &naddr, nlen);
@@ -244,6 +245,7 @@ static void *worker_udp(void *self)
 		} else {
 			fd = (int) fd64;
 			nlen = sizeof(naddr);
+			memset(&naddr, 0, sizeof(naddr));
 			len = recvfrom(fd, buff, sizeof(buff), 0,
 				       (struct sockaddr *) &naddr, &nlen);
 			if (len > 0) {
@@ -480,8 +482,6 @@ int server_main(int set_rlim, int port, int lnum)
 				if (ret < 0)
 					panic("Epoll ctl error!\n");
 				curfds++;
-			} else if (events[i].data.fd == lfd && udp) {
-				/* setup udp server on new port, add fds to epoll */
 			} else if (events[i].data.fd == efd_parent) {
 				uint64_t fd64_del;
 				ret = read(efd_parent, &fd64_del, sizeof(fd64_del));

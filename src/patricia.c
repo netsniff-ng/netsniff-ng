@@ -57,6 +57,8 @@ static void free_node(struct patricia_node *n)
 {
 	if (n->key)
 		xfree(n->key);
+	if (n->addr)
+		xfree(n->addr);
 	xfree(n);
 }
 
@@ -94,14 +96,21 @@ void ptree_get_key(int data, struct patricia_node *node,
 }
 
 static int ptree_search_data_r(struct patricia_node *node, char *str,
-			       size_t slen, int maxbitplace)
+			       size_t slen, struct sockaddr_storage *addr,
+			       size_t *alen, int maxbitplace)
 {
-	if (node->l == NULL && node->r == NULL)
+	if (node->l == NULL && node->r == NULL) {
+		if (node->addr && addr)
+			memcpy(addr, node->addr, node->alen);
+		(*alen) = node->alen;
 		return node->value.data;
+	}
 	if (testbit_max(str, node->value.thres_bit, maxbitplace) != 0)
-		return ptree_search_data_r(node->r, str, slen, maxbitplace);
+		return ptree_search_data_r(node->r, str, slen, addr,
+					   alen, maxbitplace);
 	else
-		return ptree_search_data_r(node->l, str, slen, maxbitplace);
+		return ptree_search_data_r(node->l, str, slen, addr,
+					   alen, maxbitplace);
 }
 
 static int *ptree_search_data_r_p(struct patricia_node *node, char *str,
@@ -116,26 +125,32 @@ static int *ptree_search_data_r_p(struct patricia_node *node, char *str,
 }
 
 static int ptree_search_data_r_x(struct patricia_node *node, char *str,
-				 size_t slen, int maxbitplace)
+				 size_t slen, struct sockaddr_storage *addr,
+				 size_t *alen, int maxbitplace)
 {
 	if (node->l == NULL && node->r == NULL) {
-		if (node->klen == slen && !memcmp(str, node->key, node->klen))
+		if (node->klen == slen && !memcmp(str, node->key, node->klen)) {
+			if (node->addr && addr)
+				memcpy(addr, node->addr, node->alen);
+			(*alen) = node->alen;
 			return node->value.data;
-		else
+		} else
 			return -ENOENT;
 	}
 	if (testbit_max(str, node->value.thres_bit, maxbitplace) != 0)
-		return ptree_search_data_r_x(node->r, str, slen, maxbitplace);
+		return ptree_search_data_r_x(node->r, str, slen, addr,
+					     alen, maxbitplace);
 	else
-		return ptree_search_data_r_x(node->l, str, slen, maxbitplace);
+		return ptree_search_data_r_x(node->l, str, slen, addr,
+					     alen, maxbitplace);
 }
 
 int ptree_search_data_nearest(void *str, size_t sstr, struct sockaddr_storage *addr,
-			      size_t alen, struct patricia_node *root)
+			      size_t *alen, struct patricia_node *root)
 {
 	if (!root)
 		return -ENOENT;
-	return ptree_search_data_r(root, str, sstr, sstr * 8);
+	return ptree_search_data_r(root, str, sstr, addr, alen, sstr * 8);
 }
 
 static int *ptree_search_data_nearest_ptr(char *str, size_t sstr,
@@ -144,36 +159,49 @@ static int *ptree_search_data_nearest_ptr(char *str, size_t sstr,
 	return ptree_search_data_r_p(root, str, sstr, sstr * 8);
 }
 
-
 int ptree_search_data_exact(void *str, size_t sstr, struct sockaddr_storage *addr,
-			    size_t alen, struct patricia_node *root)
+			    size_t *alen, struct patricia_node *root)
 {
 	if (!root)
 		return -ENOENT;
-	return ptree_search_data_r_x(root, str, sstr, sstr * 8);
+	return ptree_search_data_r_x(root, str, sstr, addr, alen, sstr * 8);
 }
 
 static struct patricia_node *ptree_make_root_node(char *str, size_t sstr,
-						  int data)
+						  int data, struct sockaddr_storage *addr,
+						  size_t alen)
 {
 	struct patricia_node *n = new_node();
 	n->value.data = data;
 	n->key = xmemdupz(str, sstr);
 	n->klen = sstr;
+	if (addr)
+		n->addr = xmemdupz(addr, alen);
+	else
+		n->addr = NULL;
+	n->alen = alen;
 	return n;
 }
 
 static void ptree_add_entry_at(char *str, size_t slen, int bitloc, int data,
+			       struct sockaddr_storage *addr, size_t alen,
 			       struct patricia_node **parentlink)
 {
 	struct patricia_node *node = (*parentlink);
 	if (node->value.thres_bit > bitloc ||
 	    (node->l == NULL && node->r == NULL)) {
 		struct patricia_node *newleaf, *newbranch;
+
 		newleaf = new_node();
 		newleaf->value.data = data;
 		newleaf->key = xmemdupz(str, slen);
 		newleaf->klen = slen;
+		if (addr)
+			newleaf->addr = xmemdupz(addr, alen);
+		else
+			newleaf->addr = NULL;
+		newleaf->alen = alen;
+
 		newbranch = new_node();
 		newbranch->value.thres_bit = bitloc;
 		(*parentlink) = newbranch;
@@ -187,9 +215,11 @@ static void ptree_add_entry_at(char *str, size_t slen, int bitloc, int data,
 		return;
 	} else {
 		if (testbit(str, slen, node->value.thres_bit) != 0)
-			ptree_add_entry_at(str, slen, bitloc, data, &(node->r));
+			ptree_add_entry_at(str, slen, bitloc, data,
+					   addr, alen, &(node->r));
 		else
-			ptree_add_entry_at(str, slen, bitloc, data, &(node->l));
+			ptree_add_entry_at(str, slen, bitloc, data,
+					   addr, alen, &(node->l));
 	}
 }
 
@@ -200,14 +230,14 @@ void ptree_add_entry(void *str, size_t sstr, int data, struct sockaddr_storage *
 	struct patricia_node *n;
 
 	if (!(*root))
-		(*root) = ptree_make_root_node(str, sstr, data);
+		(*root) = ptree_make_root_node(str, sstr, data, addr, alen);
 	else {
 		ptr = ptree_search_data_nearest_ptr(str, sstr, (*root));
 		n = container_of(ptr, struct patricia_node, value.data);
 		if (n->klen == sstr && !memcmp(str, n->key, n->klen))
 			return;
 		bitloc = where_the_bit_differ(str, sstr, n->key, n->klen);
-		ptree_add_entry_at(str, sstr, bitloc, data, root);
+		ptree_add_entry_at(str, sstr, bitloc, data, addr, alen, root);
 	}
 }
 
