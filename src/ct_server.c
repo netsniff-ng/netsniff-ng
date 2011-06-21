@@ -267,8 +267,7 @@ static void *worker_udp(void *self)
 			if (len > 0) {
 				trie_addr_maybe_update(buff, len, fd, &naddr, nlen);
 				err = write(fd_tun, buff, len);
-			} else {
-				if (len == 0 && errno != EAGAIN) {
+				if (!strncmp(buff, "\r\r\r", strlen("\r\r\r") + 1)) {
 					len = write(efd_parent, &fd64, sizeof(fd64));
 					if (len != sizeof(fd64))
 						whine("Event write error from thread!\n");
