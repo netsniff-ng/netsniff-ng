@@ -146,6 +146,8 @@ int client_main(void)
 		}
 	}
 
+	if (udp)
+		err = write(fd, "\r\r\r", strlen("\r\r\r") + 1);
 	close(fd);
 	close(fd_tun);
 
