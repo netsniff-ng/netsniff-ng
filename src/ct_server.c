@@ -98,7 +98,7 @@ static unsigned int cpus = 0;
 
 extern sig_atomic_t sigint;
 
-static int efd_parent, fd_tun, ipv4 = 0, udp = 1;
+static int efd_parent, fd_tun, ipv4 = 0, udp = 0;
 
 static struct patricia_node *tree = NULL;
 
@@ -182,6 +182,7 @@ static void *worker_tcp(void *self)
 	const struct worker_struct *ws = self;
 	char buff[1600]; //XXX
 	struct pollfd fds;
+	size_t nlen;
 
 	fds.fd = ws->efd;
 	fds.events = POLLIN;
@@ -198,7 +199,7 @@ static void *worker_tcp(void *self)
 		if (fd64 == fd_tun) {
 			len = read(fd_tun, buff, sizeof(buff));
 			if (len > 0) {
-				trie_addr_lookup(buff, len, &fd, NULL, NULL);
+				trie_addr_lookup(buff, len, &fd, NULL, &nlen);
 				if (fd < 0)
 					continue;
 				err = write(fd, buff, len);

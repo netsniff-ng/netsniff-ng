@@ -32,7 +32,7 @@
 
 /* XXX: remove */
 static const char *rport = "6666";
-static const char *rhost = "82.130.102.59";
+static const char *rhost = "localhost";
 static const char *scope = "eth0";
 
 static int udp = 1;
