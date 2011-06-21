@@ -266,13 +266,10 @@ static void *worker_udp(void *self)
 				       (struct sockaddr *) &naddr, &nlen);
 			if (len > 0) {
 				trie_addr_maybe_update(buff, len, fd, &naddr, nlen);
-				err = write(fd_tun, buff, len);
-				if (!strncmp(buff, "\r\r\r", strlen("\r\r\r") + 1)) {
-					len = write(efd_parent, &fd64, sizeof(fd64));
-					if (len != sizeof(fd64))
-						whine("Event write error from thread!\n");
+				if (!strncmp(buff, "\r\r\r", strlen("\r\r\r") + 1))
 					trie_addr_remove_addr(&naddr, nlen);
-				}
+				else
+					err = write(fd_tun, buff, len);
 			}
 		}
 	}
