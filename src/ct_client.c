@@ -35,7 +35,7 @@ static const char *rport = "6666";
 static const char *rhost = "localhost";
 static const char *scope = "eth0";
 
-static int udp = 1;
+static int udp = 0;
 
 extern sig_atomic_t sigint;
 
