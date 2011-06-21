@@ -315,7 +315,7 @@ static void tfinish(void)
 	int i;
 	for (i = 0; i < cpus * THREADS_PER_CPU; ++i) {
 		close(threadpool[i].efd);
-		pthread_cancel(threadpool[i].thread);
+		pthread_join(threadpool[i].thread, NULL);
 	}
 }
 
@@ -516,12 +516,11 @@ int server_main(int set_rlim, int port, int lnum)
 		}
 	}
 
+	syslog(LOG_INFO, "curvetun prepare shut down!\n");
+
 	close(lfd);
 	close(efd_parent);
 	close(fd_tun);
-
-	syslog(LOG_INFO, "curvetun shut down!\n");
-	closelog();
 
 	spinlock_lock(&tree_lock);
 	ptree_free(tree);
@@ -530,6 +529,9 @@ int server_main(int set_rlim, int port, int lnum)
 
 	tfinish();
 	xfree(threadpool);
+
+	syslog(LOG_INFO, "curvetun shut down!\n");
+	closelog();
 
 	return 0;
 }
