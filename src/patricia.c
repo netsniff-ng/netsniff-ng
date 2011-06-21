@@ -130,7 +130,8 @@ static int ptree_search_data_r_x(struct patricia_node *node, char *str,
 		return ptree_search_data_r_x(node->l, str, slen, maxbitplace);
 }
 
-int ptree_search_data_nearest(void *str, size_t sstr, struct patricia_node *root)
+int ptree_search_data_nearest(void *str, size_t sstr, struct sockaddr_storage *addr,
+			      size_t alen, struct patricia_node *root)
 {
 	if (!root)
 		return -ENOENT;
@@ -144,7 +145,8 @@ static int *ptree_search_data_nearest_ptr(char *str, size_t sstr,
 }
 
 
-int ptree_search_data_exact(void *str, size_t sstr, struct patricia_node *root)
+int ptree_search_data_exact(void *str, size_t sstr, struct sockaddr_storage *addr,
+			    size_t alen, struct patricia_node *root)
 {
 	if (!root)
 		return -ENOENT;
@@ -191,8 +193,8 @@ static void ptree_add_entry_at(char *str, size_t slen, int bitloc, int data,
 	}
 }
 
-void ptree_add_entry(void *str, size_t sstr, int data,
-		     struct patricia_node **root)
+void ptree_add_entry(void *str, size_t sstr, int data, struct sockaddr_storage *addr,
+		     size_t alen, struct patricia_node **root)
 {
 	int *ptr, bitloc;
 	struct patricia_node *n;

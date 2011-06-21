@@ -104,38 +104,40 @@ static struct patricia_node *tree = NULL;
 
 static struct spinlock tree_lock;
 
-static void trie_addr_lookup(char *buff, size_t len, int *fd)
+static void trie_addr_lookup(char *buff, size_t len, int *fd,
+			     struct sockaddr_storage *addr, size_t alen)
 {
 	/* Always happens on the dst address */
 	if (ipv4) {
 		struct ipv4hdr *hdr = (void *) buff;
 		spinlock_lock(&tree_lock);
-		(*fd) = ptree_search_data_exact(&hdr->h_daddr,
-						sizeof(hdr->h_daddr), tree);
+		(*fd) = ptree_search_data_exact(&hdr->h_daddr, sizeof(hdr->h_daddr),
+						addr, alen, tree);
 		spinlock_unlock(&tree_lock);
 	} else {
 		struct ipv6hdr *hdr = (void *) buff;
 		spinlock_lock(&tree_lock);
-		(*fd) = ptree_search_data_exact(&hdr->daddr,
-						sizeof(hdr->daddr), tree);
+		(*fd) = ptree_search_data_exact(&hdr->daddr, sizeof(hdr->daddr),
+						addr, alen, tree);
 		spinlock_unlock(&tree_lock);
 	}
 }
 
-static void trie_addr_maybe_update(char *buff, size_t len, int fd)
+static void trie_addr_maybe_update(char *buff, size_t len, int fd,
+				   struct sockaddr_storage *addr, size_t alen)
 {
 	/* Always happens on the src address */
 	if (ipv4) {
 		struct ipv4hdr *hdr = (void *) buff;
 		spinlock_lock(&tree_lock);
 		ptree_maybe_add_entry(&hdr->h_saddr, sizeof(hdr->h_saddr),
-				      fd, &tree);
+				      fd, addr, alen, &tree);
 		spinlock_unlock(&tree_lock);
 	} else {
 		struct ipv6hdr *hdr = (void *) buff;
 		spinlock_lock(&tree_lock);
 		ptree_maybe_add_entry(&hdr->saddr, sizeof(hdr->saddr),
-				      fd, &tree);
+				      fd, addr, alen, &tree);
 		spinlock_unlock(&tree_lock);
 	}
 }
@@ -156,7 +158,7 @@ static void trie_addr_remove(int fd)
 	spinlock_unlock(&tree_lock);
 }
 
-static void *worker(void *self)
+static void *worker_tcp(void *self)
 {
 	int fd;
 	uint64_t fd64;
@@ -180,7 +182,7 @@ static void *worker(void *self)
 		if (fd64 == fd_tun) {
 			len = read(fd_tun, buff, sizeof(buff));
 			if (len > 0) {
-				trie_addr_lookup(buff, len, &fd);
+				trie_addr_lookup(buff, len, &fd, NULL, 0);
 				if (fd < 0)
 					continue;
 				err = write(fd, buff, len);
@@ -189,7 +191,7 @@ static void *worker(void *self)
 			fd = (int) fd64;
 			len = read(fd, buff, sizeof(buff));
 			if (len > 0) {
-				trie_addr_maybe_update(buff, len, fd);
+				trie_addr_maybe_update(buff, len, fd, NULL, 0);
 				err = write(fd_tun, buff, len);
 			} else {
 				if (len < 1 && errno != 11) {
@@ -204,6 +206,63 @@ static void *worker(void *self)
 
 	pthread_exit(0);
 }
+
+static void *worker_udp(void *self)
+{
+	int fd;
+	uint64_t fd64;
+	ssize_t ret, len, err;
+	const struct worker_struct *ws = self;
+	char buff[1600]; //XXX
+	struct pollfd fds;
+	struct sockaddr_storage naddr;
+	socklen_t nlen;
+
+	fds.fd = ws->efd;
+	fds.events = POLLIN;
+
+	syslog(LOG_INFO, "curvetun thread %p/CPU%u up!\n", ws, ws->cpu);
+	while (likely(!sigint)) {
+		poll(&fds, 1, -1);
+		ret = read(ws->efd, &fd64, sizeof(fd64));
+		if (ret != sizeof(fd64)) {
+			cpu_relax();
+			sched_yield();
+			continue;
+		}
+		if (fd64 == fd_tun) {
+			len = read(fd_tun, buff, sizeof(buff));
+			if (len > 0) {
+				nlen = sizeof(naddr);
+				memset(&naddr, 0, nlen);
+				trie_addr_lookup(buff, len, &fd, &naddr, nlen);
+				if (fd < 0)
+					continue;
+				err = sendto(fd, buff, len, 0,
+					     (struct sockaddr *) &naddr, nlen);
+			}
+		} else {
+			fd = (int) fd64;
+			nlen = sizeof(naddr);
+			len = recvfrom(fd, buff, sizeof(buff), 0,
+				       (struct sockaddr *) &naddr, &nlen);
+			if (len > 0) {
+				trie_addr_maybe_update(buff, len, fd, &naddr, nlen);
+				err = write(fd_tun, buff, len);
+			} else {
+				if (len == 0 && errno != 11) {
+					len = write(efd_parent, &fd64, sizeof(fd64));
+					if (len != sizeof(fd64))
+						whine("Event write error from thread!\n");
+					trie_addr_remove(fd);
+				}
+			}
+		}
+	}
+
+	pthread_exit(0);
+}
+
 
 static void tspawn_or_panic(void)
 {
@@ -222,7 +281,8 @@ static void tspawn_or_panic(void)
 			panic("Cannot create event socket!\n");
 
 		ret = pthread_create(&(threadpool[i].thread), NULL,
-				     worker, &threadpool[i]);
+				     udp ? worker_udp : worker_tcp,
+				     &threadpool[i]);
 		if (ret < 0)
 			panic("Thread creation failed!\n");
 
