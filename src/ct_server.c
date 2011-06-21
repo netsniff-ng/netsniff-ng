@@ -219,7 +219,7 @@ static void *worker_tcp(void *self)
 			}
 		}
 	}
-
+	syslog(LOG_INFO, "curvetun thread %p/CPU%u down!\n", ws, ws->cpu);
 	pthread_exit(0);
 }
 
@@ -273,7 +273,7 @@ static void *worker_udp(void *self)
 			}
 		}
 	}
-
+	syslog(LOG_INFO, "curvetun thread %p/CPU%u down!\n", ws, ws->cpu);
 	pthread_exit(0);
 }
 
