@@ -425,6 +425,11 @@ int main(int argc, char **argv)
 
 	assert(gcry_check_version("1.4.1"));
 
+	if (getuid() != geteuid())
+		seteuid(getuid());
+	if (getenv("LD_PRELOAD"))
+		panic("curvetun cannot be preloaded!\n");
+
 	ret = gcry_control(GCRYCTL_INIT_SECMEM, 1);
 	if (gcry_err_code(ret))
 		panic("Cannot enable gcrypt's secure memory management!\n");
@@ -433,11 +438,6 @@ int main(int argc, char **argv)
 	if (gcry_err_code(ret))
 		panic("Cannot enable gcrypt's secure random "
 		      "number generator!\n");
-
-	if (getuid() != geteuid())
-		seteuid(getuid());
-	if (getenv("LD_PRELOAD"))
-		panic("curvetun cannot be preloaded!\n");
 
 	fetch_home_dir();
 
