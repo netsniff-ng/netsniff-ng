@@ -92,7 +92,22 @@ void ptree_get_key(int data, struct patricia_node *node,
 		if (node->r != NULL)
 			ptree_get_key(data, node->r, wanted);
 	}
+}
 
+void ptree_get_key_addr(struct sockaddr_storage *addr, size_t alen,
+			struct patricia_node *node, struct patricia_node **wanted)
+{
+	if (!node)
+		return;
+	if (node->l == NULL && node->r == NULL) {
+		if (!memcmp(node->addr, addr, node->alen))
+			(*wanted) = node;
+	} else {
+		if (node->l != NULL)
+			ptree_get_key_addr(addr, alen, node->l, wanted);
+		if (node->r != NULL)
+			ptree_get_key_addr(addr, alen, node->r, wanted);
+	}
 }
 
 static int ptree_search_data_r(struct patricia_node *node, char *str,
