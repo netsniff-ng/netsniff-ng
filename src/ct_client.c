@@ -32,7 +32,7 @@
 
 /* XXX: remove */
 static const char *rport = "6666";
-static const char *rhost = "localhost";
+static const char *rhost = "82.130.102.59";
 static const char *scope = "eth0";
 
 static int udp = 1;
@@ -44,8 +44,10 @@ int client_main(void)
 	int fd = -1, fd_tun, err, ret, try = 1, i, one;
 	struct addrinfo hints, *ahead, *ai;
 	struct sockaddr_in6 *saddr6;
+	struct sockaddr_storage sa;
 	struct pollfd fds[2];
 	char buffer[1600]; //XXX
+	socklen_t sa_len;
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;
@@ -72,16 +74,14 @@ int client_main(void)
 		if (fd < 0)
 			continue;
 
-		if (!udp) {
-			errno = 0;
-			ret = connect(fd, ai->ai_addr, ai->ai_addrlen);
-			if (ret < 0) {
-				whine("Cannot connect to remote, try %d: %s!\n",
-				      try++, strerror(errno));
-				close(fd);
-				fd = -1;
-				continue;
-			}
+		errno = 0;
+		ret = connect(fd, ai->ai_addr, ai->ai_addrlen);
+		if (ret < 0) {
+			whine("Cannot connect to remote, try %d: %s!\n",
+			      try++, strerror(errno));
+			close(fd);
+			fd = -1;
+			continue;
 		}
 
 		one = 1;
@@ -110,19 +110,34 @@ int client_main(void)
 		ret = poll(fds, 2, -1);
 		if (ret > 0) {
 			for (i = 0; i < 2; ++i) {
+				errno = 0;
 				if (fds[i].fd == fd_tun) {
 					ret = read(fd_tun, buffer, sizeof(buffer));
-					if (ret <= 0)
+					if (ret < 0 && errno == EAGAIN)
 						continue;
+					else if (ret <= 0) {
+						perror("read tun");
+						break;
+					}
 					err = write(fd, buffer, ret);
 					if (err != ret)
 						perror("tun -> net");
 				} else if (fds[i].fd == fd) {
-					ret = read(fd, buffer, sizeof(buffer));
-					if (ret < 0)
+					if (!udp)
+						ret = read(fd, buffer, sizeof(buffer));
+					else {
+						sa_len = sizeof(sa);
+						memset(&sa, 0, sa_len);
+						ret = recvfrom(fd, buffer, sizeof(buffer),
+							       0, (struct sockaddr *) &sa,
+							       &sa_len);
+					}
+					if (ret < 0 && errno == EAGAIN)
 						continue;
-					if (ret == 0)
+					else if (ret <= 0) {
+						perror("read net");
 						break;
+					}
 					err = write(fd_tun, buffer, ret);
 					if (err != ret)
 						perror("net -> tun");

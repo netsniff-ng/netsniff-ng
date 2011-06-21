@@ -194,7 +194,7 @@ static void *worker_tcp(void *self)
 				trie_addr_maybe_update(buff, len, fd, NULL, 0);
 				err = write(fd_tun, buff, len);
 			} else {
-				if (len < 1 && errno != 11) {
+				if (len < 1 && errno != EAGAIN) {
 					len = write(efd_parent, &fd64, sizeof(fd64));
 					if (len != sizeof(fd64))
 						whine("Event write error from thread!\n");
@@ -252,7 +252,7 @@ static void *worker_udp(void *self)
 				trie_addr_maybe_update(buff, len, fd, &naddr, nlen);
 				err = write(fd_tun, buff, len);
 			} else {
-				if (len == 0 && errno != 11) {
+				if (len == 0 && errno != EAGAIN) {
 					len = write(efd_parent, &fd64, sizeof(fd64));
 					if (len != sizeof(fd64))
 						whine("Event write error from thread!\n");
