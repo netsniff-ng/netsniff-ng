@@ -107,39 +107,35 @@ static struct spinlock tree_lock;
 static void trie_addr_lookup(char *buff, size_t len, int *fd,
 			     struct sockaddr_storage *addr, size_t *alen)
 {
+	void *data;
+	size_t dlen;
+	struct ipv4hdr *hdr4 = (void *) buff;
+	struct ipv6hdr *hdr6 = (void *) buff;
+
+	data = ipv4 ? (void *) &hdr4->h_daddr : (void *) &hdr6->daddr;
+	dlen = ipv4 ? sizeof(hdr4->h_daddr) : sizeof(hdr6->daddr);
+
 	/* Always happens on the dst address */
-	if (ipv4) {
-		struct ipv4hdr *hdr = (void *) buff;
-		spinlock_lock(&tree_lock);
-		(*fd) = ptree_search_data_exact(&hdr->h_daddr, sizeof(hdr->h_daddr),
-						addr, alen, tree);
-		spinlock_unlock(&tree_lock);
-	} else {
-		struct ipv6hdr *hdr = (void *) buff;
-		spinlock_lock(&tree_lock);
-		(*fd) = ptree_search_data_exact(&hdr->daddr, sizeof(hdr->daddr),
-						addr, alen, tree);
-		spinlock_unlock(&tree_lock);
-	}
+	spinlock_lock(&tree_lock);
+	(*fd) = ptree_search_data_exact(data, dlen, addr, alen, tree);
+	spinlock_unlock(&tree_lock);
 }
 
 static void trie_addr_maybe_update(char *buff, size_t len, int fd,
 				   struct sockaddr_storage *addr, size_t alen)
 {
+	void *data;
+	size_t dlen;
+	struct ipv4hdr *hdr4 = (void *) buff;
+	struct ipv6hdr *hdr6 = (void *) buff;
+
+	data = ipv4 ? (void *) &hdr4->h_saddr : (void *) &hdr6->saddr;
+	dlen = ipv4 ? sizeof(hdr4->h_saddr) : sizeof(hdr6->saddr);
+
 	/* Always happens on the src address */
-	if (ipv4) {
-		struct ipv4hdr *hdr = (void *) buff;
-		spinlock_lock(&tree_lock);
-		ptree_maybe_add_entry(&hdr->h_saddr, sizeof(hdr->h_saddr),
-				      fd, addr, alen, &tree);
-		spinlock_unlock(&tree_lock);
-	} else {
-		struct ipv6hdr *hdr = (void *) buff;
-		spinlock_lock(&tree_lock);
-		ptree_maybe_add_entry(&hdr->saddr, sizeof(hdr->saddr),
-				      fd, addr, alen, &tree);
-		spinlock_unlock(&tree_lock);
-	}
+	spinlock_lock(&tree_lock);
+	ptree_maybe_add_entry(data, dlen, fd, addr, alen, &tree);
+	spinlock_unlock(&tree_lock);
 }
 
 static void trie_addr_remove(int fd)
