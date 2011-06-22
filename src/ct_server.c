@@ -147,6 +147,7 @@ static void handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 
 	while ((rlen = read(fd, buff + sizeof(rlen), len - sizeof(rlen))) > 0) {
 		memcpy(buff, &rlen, sizeof(rlen));
+
 		trie_addr_lookup(buff + sizeof(rlen), rlen, ws->parent.ipv4,
 				 &dfd, NULL, (size_t *) &nlen);
 		if (dfd < 0) {
@@ -193,7 +194,7 @@ static void handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 
 			trie_addr_remove(fd);
 		} else {
-			err = write(ws->parent.tunfd, buff, rlen);
+			err = write_exact(ws->parent.tunfd, buff, rlen);
 			if (err < 0) {
 				/* fragmentation issues??? EINVAL due to fact
 				   that we have no ETH_P_IP id! todo with
