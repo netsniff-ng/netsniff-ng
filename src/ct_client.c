@@ -43,7 +43,14 @@ static void handler_tun_to_net(int sfd, int dfd, int udp, char *buff, size_t len
 	ssize_t rlen, err;
 
 	while ((rlen = read(sfd, buff, len)) > 0) {
-		err = write(dfd, buff, rlen);
+		if (!udp) {
+			err = write(dfd, &rlen, sizeof(rlen));
+			err = write_exact(dfd, buff, rlen);
+		} else {
+			err = write(dfd, buff, rlen);
+			if (err < 0)
+				perror("write to network");
+		}
 	}
 }
 
@@ -54,9 +61,10 @@ static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len
 	socklen_t sa_len;
 
 	while (1) {
-		if (!udp)
-			rlen = read(sfd, buff, len);
-		else {
+		if (!udp) {
+			err = read(sfd, &rlen, sizeof(rlen));
+			err = read_exact(sfd, buff, rlen);
+		} else {
 			sa_len = sizeof(sa);
 			memset(&sa, 0, sa_len);
 
@@ -68,6 +76,8 @@ static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len
 			break;
 
 		err = write(dfd, buff, rlen);
+		if (err < 0)
+			perror("write to tunnel");
 	}
 }
 
