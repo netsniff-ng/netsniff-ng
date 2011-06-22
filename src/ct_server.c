@@ -135,6 +135,7 @@ static void handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 		trie_addr_lookup(buff, rlen, ws->parent.ipv4, &dfd, NULL,
 				 (size_t *) &nlen);
 		if (dfd < 0)
+			/* We have no destination for this, drop! */
 			continue;
 
 		err = write(dfd, buff, rlen);
@@ -151,7 +152,7 @@ static void handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 		err = write(ws->parent.tunfd, buff, rlen);
 	}
 
-	if (rlen < 1 && errno != EAGAIN) {
+	if (rlen < 0 && errno != EAGAIN) {
 		uint64_t fd64 = fd;
 		rlen = write(ws->parent.efd, &fd64, sizeof(fd64));
 		if (rlen != sizeof(fd64))
@@ -254,8 +255,7 @@ int server_main(int port, int udp, int lnum)
 	int ipv4 = 0, thread_it = 0, i;
 	unsigned int cpus = 0;
 	ssize_t ret;
-	struct epoll_event lev, eev, tev, nev;
-	struct epoll_event events[MAX_EPOLL_SIZE];
+	struct epoll_event *events;
 	struct addrinfo hints, *ahead, *ai;
 
 	openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
@@ -326,28 +326,29 @@ int server_main(int port, int udp, int lnum)
 	set_nonblocking(efd);
 	set_nonblocking(tunfd);
 
+	events = xzmalloc(MAX_EPOLL_SIZE * sizeof(*events));
+	for (i = 0; i < MAX_EPOLL_SIZE; ++i)
+		events[i].data.fd = -1;
+
 	kdpfd = epoll_create(MAX_EPOLL_SIZE);
 	if (kdpfd < 0)
 		panic("Cannot create socket!\n");
 
-	memset(&lev, 0, sizeof(lev));
-	lev.events = EPOLLIN | EPOLLET;
-	lev.data.fd = lfd;
-	memset(&eev, 0, sizeof(lev));
-	eev.events = EPOLLIN | EPOLLET;
-	eev.data.fd = efd;
-	memset(&tev, 0, sizeof(tev));
-	tev.events = EPOLLIN | EPOLLET;
-	tev.data.fd = tunfd;
+	events[0].events = EPOLLIN | EPOLLET;
+	events[0].data.fd = lfd;
+	events[1].events = EPOLLIN | EPOLLET;
+	events[1].data.fd = efd;
+	events[2].events = EPOLLIN | EPOLLET;
+	events[2].data.fd = tunfd;
 	curfds = 3;
 
-	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, lfd, &lev);
+	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, lfd, &events[0]);
 	if (ret < 0)
 		panic("Cannot add socket for epoll!\n");
-	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, efd, &eev);
+	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, efd, &events[1]);
 	if (ret < 0)
 		panic("Cannot add socket for events!\n");
-	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, tunfd, &tev);
+	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, tunfd, &events[2]);
 	if (ret < 0)
 		panic("Cannot add socket for tundev!\n");
 
@@ -369,7 +370,7 @@ int server_main(int port, int udp, int lnum)
 
 		for (i = 0; i < nfds; ++i) {
 			if (events[i].data.fd == lfd && !udp) {
-				int one;
+				int one, i, found = 0;
 				char hbuff[256], sbuff[256];
 				struct sockaddr_storage taddr;
 				socklen_t tlen;
@@ -382,6 +383,13 @@ int server_main(int port, int udp, int lnum)
 					       strerror(errno));
 					continue;
 				}
+
+				if (curfds + 1 > MAX_EPOLL_SIZE) {
+					close(nfd);
+					continue;
+				}
+
+				curfds++;
 
 				memset(hbuff, 0, sizeof(hbuff));
 				memset(sbuff, 0, sizeof(sbuff));
@@ -403,26 +411,47 @@ int server_main(int port, int udp, int lnum)
 				setsockopt(nfd, IPPROTO_TCP, TCP_NODELAY,
 					   &one, sizeof(one));
 
-				memset(&nev, 0, sizeof(nev));
-				nev.events = EPOLLIN | EPOLLET;
-				nev.data.fd = nfd;
+				for (i = 0; i < MAX_EPOLL_SIZE; ++i) {
+					if (events[i].data.fd == -1) {
+						found = 1;
+						break;
+					}
+				}
+				if (!found) {
+					close(nfd);
+					continue;
+				}
 
-				ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, nfd, &nev);
+				events[i].events = EPOLLIN | EPOLLET;
+				events[i].data.fd = nfd;
+
+				ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, nfd, &events[i]);
 				if (ret < 0)
 					panic("Epoll ctl error!\n");
 
-				curfds++;
 			} else if (events[i].data.fd == efd) {
+				int i, found = 0;
 				uint64_t fd64_del;
 
 				while ((ret = read(efd, &fd64_del,
 						   sizeof(fd64_del))) > 0) {
 					if (ret != sizeof(fd64_del))
 						continue;
+					for (i = 0; i < MAX_EPOLL_SIZE; ++i) {
+						if (events[i].data.fd ==
+						    (int) fd64_del) {
+							found = 1;
+							break;
+						}
+					}
+					if (!found)
+						continue;
 
 					epoll_ctl(kdpfd, EPOLL_CTL_DEL, (int)
-						  fd64_del, &nev);
+						  fd64_del, &events[i]);
 					curfds--;
+					events[i].events = 0;
+					events[i].data.fd = -1;
 
 					syslog(LOG_INFO, "Closed connection with id %d\n",
 					       (int) fd64_del);
@@ -448,6 +477,8 @@ int server_main(int port, int udp, int lnum)
 
 	thread_finish(cpus);
 	xfree(threadpool);
+
+	xfree(events);
 
 	trie_cleanup();
 
