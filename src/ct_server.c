@@ -111,8 +111,7 @@ static void handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 				&nlen)) > 0) {
 		trie_addr_maybe_update(buff, rlen, ws->parent.ipv4, fd,
 				       &naddr, nlen);
-		if (unlikely(rlen < elen))
-			continue;
+
 		if (elen == rlen && !strncmp(buff, EXIT_SEQ, elen))
 			trie_addr_remove_addr(&naddr, nlen);
 		else {
@@ -175,8 +174,7 @@ static void handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 
 	while ((rlen = read(fd, buff, len)) > 0) {
 		trie_addr_maybe_update(buff, rlen, ws->parent.ipv4, fd, NULL, 0);
-		if (unlikely(rlen < elen))
-			continue;
+
 		if (elen == rlen && !strncmp(buff, EXIT_SEQ, elen)) {
 			uint64_t fd64 = fd;
 
