@@ -214,8 +214,10 @@ static void thread_spawn_or_panic(unsigned int cpus, int efd, int tunfd,
 {
 	int i, ret;
 	cpu_set_t cpuset;
+	unsigned int threads;
 
-	for (i = 0; i < cpus * THREADS_PER_CPU; ++i) {
+	threads = cpus * THREADS_PER_CPU;
+	for (i = 0; i < threads; ++i) {
 		CPU_ZERO(&cpuset);
 		threadpool[i].cpu = i % cpus;
 		CPU_SET(threadpool[i].cpu, &cpuset);
@@ -249,7 +251,10 @@ static void thread_spawn_or_panic(unsigned int cpus, int efd, int tunfd,
 static void thread_finish(unsigned int cpus)
 {
 	int i;
-	for (i = 0; i < cpus * THREADS_PER_CPU; ++i) {
+	unsigned int threads;
+
+	threads = cpus * THREADS_PER_CPU;
+	for (i = 0; i < threads; ++i) {
 		close(threadpool[i].efd);
 		pthread_join(threadpool[i].thread, NULL);
 	}
@@ -259,7 +264,7 @@ int server_main(int port, int udp, int lnum)
 {
 	int lfd = -1, kdpfd, nfds, nfd, curfds, efd, tunfd;
 	int ipv4 = 0, thread_it = 0, i;
-	unsigned int cpus = 0;
+	unsigned int cpus = 0, threads;
 	ssize_t ret;
 	struct epoll_event ev, *events;
 	struct addrinfo hints, *ahead, *ai;
@@ -366,7 +371,8 @@ int server_main(int port, int udp, int lnum)
 	trie_init();
 
 	cpus = get_number_cpus_online();
-	threadpool = xzmalloc(sizeof(*threadpool) * cpus * THREADS_PER_CPU);
+	threads = cpus * THREADS_PER_CPU;
+	threadpool = xzmalloc(sizeof(*threadpool) * threads);
 	thread_spawn_or_panic(cpus, efd, tunfd, ipv4, udp);
 
 	syslog(LOG_INFO, "tunnel id %d!\n", tunfd);
@@ -460,7 +466,7 @@ int server_main(int port, int udp, int lnum)
 				if (ret != sizeof(fd64))
 					syslog(LOG_ERR, "Write error on event dispatch!\n");
 
-				thread_it = (thread_it + 1) % cpus;
+				thread_it = (thread_it + 1) % threads;
 			}
 		}
 	}
