@@ -145,17 +145,18 @@ static void handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 	ssize_t rlen, err;
 	socklen_t nlen;
 
-	while ((rlen = read(fd, buff + sizeof(rlen), len - sizeof(rlen))) > 0) {
-		memcpy(buff, &rlen, sizeof(rlen));
-		trie_addr_lookup(buff + sizeof(rlen), rlen, ws->parent.ipv4,
-				 &dfd, NULL, (size_t *) &nlen);
+	while ((rlen = read(fd, buff, len)) > 0) {
+		trie_addr_lookup(buff, rlen, ws->parent.ipv4, &dfd, NULL,
+				 (size_t *) &nlen);
 		if (dfd < 0) {
 			syslog(LOG_ERR, "TCP tunnel lookup error: "
 			       "unknown destination\n");
 			continue;
 		}
 
-		err = write_exact(dfd, buff, rlen + sizeof(rlen));
+		err = write(dfd, &rlen, sizeof(rlen));
+		//XXX: handle err
+		err = write_exact(dfd, buff, rlen);
 		if (err < 0)
 			syslog(LOG_ERR, "TCP tunnel write error: %s\n",
 			       strerror(errno));
@@ -173,14 +174,9 @@ static void handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 
 	elen = strlen(EXIT_SEQ) + 1;
 
-	while ((err = read_exact(fd, &rlen, sizeof(rlen))) > 0) {
+	while ((err = read(fd, &rlen, sizeof(rlen))) > 0) {
 		err = read_exact(fd, buff, rlen);
-		if (err <= 0) {
-			syslog(LOG_ERR, "TCP net read_exact error: %s\n",
-			       strerror(errno));
-			break;
-		}
-
+		//XXX: what if other thread gets data?
 		trie_addr_maybe_update(buff, rlen, ws->parent.ipv4, fd, NULL, 0);
 
 		if (elen == rlen && !strncmp(buff, EXIT_SEQ, elen)) {
@@ -418,8 +414,8 @@ int server_main(int port, int udp, int lnum)
 
 	syslog(LOG_INFO, "tunnel id %d!\n", tunfd);
 	syslog(LOG_INFO, "listen id %d!\n", lfd);
-	syslog(LOG_INFO, "event id %d!\n", efd);
-	syslog(LOG_INFO, "epoll id %d!\n", kdpfd);
+	syslog(LOG_INFO, "event  id %d!\n", efd);
+	syslog(LOG_INFO, "epoll  id %d!\n", kdpfd);
 	syslog(LOG_INFO, "curvetun up and running!\n");
 
 	while (likely(!sigint)) {
@@ -508,7 +504,7 @@ int server_main(int port, int udp, int lnum)
 			} else {
 				uint64_t fd64 = events[i].data.fd;
 
-				ret = write(threadpool[/*thread_it*/ 0].efd,
+				ret = write(threadpool[thread_it].efd,
 					    &fd64, sizeof(fd64));
 				if (ret != sizeof(fd64))
 					syslog(LOG_ERR, "Write error on event "
