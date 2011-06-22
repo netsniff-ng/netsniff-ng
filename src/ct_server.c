@@ -248,10 +248,10 @@ static void thread_finish(unsigned int cpus)
 	}
 }
 
-int server_main(int port, int lnum)
+int server_main(int port, int udp, int lnum)
 {
 	int lfd = -1, kdpfd, nfds, nfd, curfds, efd, tunfd;
-	int ipv4 = 0, udp = 1, thread_it = 0, i;
+	int ipv4 = 0, thread_it = 0, i;
 	unsigned int cpus = 0;
 	ssize_t ret;
 	struct epoll_event lev, eev, tev, nev;

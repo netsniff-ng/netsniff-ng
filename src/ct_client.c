@@ -71,9 +71,9 @@ static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len
 	}
 }
 
-int client_main(void)
+int client_main(int port, int udp)
 {
-	int fd = -1, tunfd, udp = 0;
+	int fd = -1, tunfd;
 	int err, ret, try = 1, i, one;
 	struct addrinfo hints, *ahead, *ai;
 	struct sockaddr_in6 *saddr6;

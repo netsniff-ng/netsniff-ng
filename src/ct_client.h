@@ -8,7 +8,7 @@
 #ifndef CT_CLIENT_H
 #define CT_CLIENT_H
 
-extern int client_main(void);
+extern int client_main(int port, int udp);
 
 #define DEVNAME_CLIENT	"curvec"
 
