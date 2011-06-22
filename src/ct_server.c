@@ -56,6 +56,8 @@ struct worker_struct {
 	unsigned int cpu;
 	pthread_t thread;
 	struct parent_info parent;
+	void (*handler)(int fd, const struct worker_struct *ws,
+			char *buff, size_t len);
 };
 
 static struct worker_struct *threadpool = NULL;
@@ -64,110 +66,140 @@ static unsigned int cpus = 0;
 
 extern sig_atomic_t sigint;
 
-static void *worker_tcp(void *self)
+static void handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
+				   char *buff, size_t len)
 {
-	int fd;
-	uint64_t fd64;
-	ssize_t ret, len, err;
-	const struct worker_struct *ws = self;
-	char buff[1600]; //XXX
-	struct pollfd fds;
-	size_t nlen;
-
-	fds.fd = ws->efd;
-	fds.events = POLLIN;
-
-	syslog(LOG_INFO, "curvetun thread %p/CPU%u up!\n", ws, ws->cpu);
-	while (likely(!sigint)) {
-		poll(&fds, 1, -1);
-		ret = read(ws->efd, &fd64, sizeof(fd64));
-		if (ret != sizeof(fd64)) {
-			cpu_relax();
-			sched_yield();
-			continue;
-		}
-		if (fd64 == ws->parent.tunfd) {
-			len = read(ws->parent.tunfd, buff, sizeof(buff));
-			if (len > 0) {
-				trie_addr_lookup(buff, len, ws->parent.ipv4,
-						 &fd, NULL, &nlen);
-				if (fd < 0)
-					continue;
-				err = write(fd, buff, len);
-			}
-		} else {
-			fd = (int) fd64;
-			len = read(fd, buff, sizeof(buff));
-			if (len > 0) {
-				trie_addr_maybe_update(buff, len, ws->parent.ipv4,
-						       fd, NULL, 0);
-				err = write(ws->parent.tunfd, buff, len);
-			} else {
-				if (len < 1 && errno != EAGAIN) {
-					len = write(ws->parent.efd, &fd64,
-						    sizeof(fd64));
-					if (len != sizeof(fd64))
-						whine("Event write error from thread!\n");
-					trie_addr_remove(fd);
-				}
-			}
-		}
-	}
-	syslog(LOG_INFO, "curvetun thread %p/CPU%u down!\n", ws, ws->cpu);
-	pthread_exit(0);
-}
-
-static void *worker_udp(void *self)
-{
-	int fd;
-	uint64_t fd64;
-	ssize_t ret, len, err;
-	const struct worker_struct *ws = self;
-	char buff[1600]; //XXX
-	struct pollfd fds;
+	int dfd;
+	ssize_t rlen, err;
 	struct sockaddr_storage naddr;
 	socklen_t nlen;
 
+	while ((rlen = read(fd, buff, len)) > 0) {
+		nlen = 0;
+		memset(&naddr, 0, sizeof(naddr));
+
+		trie_addr_lookup(buff, rlen, ws->parent.ipv4, &dfd, &naddr,
+				 (size_t *) &nlen);
+		if (dfd < 0 || nlen == 0)
+			/* We have no destination for this, drop! */
+			continue;
+
+		err = sendto(dfd, buff, rlen, 0, (struct sockaddr *) &naddr,
+			     nlen);
+	}
+}
+
+static void handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
+				   char *buff, size_t len)
+{
+	size_t elen;
+	ssize_t rlen, err;
+	struct sockaddr_storage naddr;
+	socklen_t nlen;
+
+	elen = strlen("\r\r\r") + 1;
+	nlen = sizeof(naddr);
+	memset(&naddr, 0, sizeof(naddr));
+
+	while ((rlen = recvfrom(fd, buff, len, 0, (struct sockaddr *) &naddr,
+				&nlen)) > 0) {
+		trie_addr_maybe_update(buff, rlen, ws->parent.ipv4, fd,
+				       &naddr, nlen);
+		if (unlikely(rlen < elen))
+			continue;
+		if (!strncmp(buff, "\r\r\r", elen))
+			trie_addr_remove_addr(&naddr, nlen);
+		else
+			err = write(ws->parent.tunfd, buff, rlen);
+
+		nlen = sizeof(naddr);
+		memset(&naddr, 0, sizeof(naddr));
+	}
+}
+
+static void handler_udp(int fd, const struct worker_struct *ws,
+		        char *buff, size_t len)
+{
+	if (fd == ws->parent.tunfd)
+		handler_udp_tun_to_net(fd, ws, buff, len);
+	else
+		handler_udp_net_to_tun(fd, ws, buff, len);
+}
+
+static void handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
+				   char *buff, size_t len)
+{
+	int dfd;
+	ssize_t rlen, err;
+	socklen_t nlen;
+
+	while ((rlen = read(fd, buff, len)) > 0) {
+		trie_addr_lookup(buff, rlen, ws->parent.ipv4, &dfd, NULL,
+				 (size_t *) &nlen);
+		if (dfd < 0)
+			continue;
+
+		err = write(dfd, buff, rlen);
+	}
+}
+
+static void handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
+				   char *buff, size_t len)
+{
+	ssize_t rlen, err;
+
+	while ((rlen = read(fd, buff, len)) > 0) {
+		trie_addr_maybe_update(buff, rlen, ws->parent.ipv4, fd, NULL, 0);
+		err = write(ws->parent.tunfd, buff, rlen);
+	}
+
+	if (rlen < 1 && errno != EAGAIN) {
+		uint64_t fd64 = fd;
+		rlen = write(ws->parent.efd, &fd64, sizeof(fd64));
+		if (rlen != sizeof(fd64))
+			whine("Event write error from thread!\n");
+		trie_addr_remove(fd);
+	}
+}
+
+static void handler_tcp(int fd, const struct worker_struct *ws,
+		        char *buff, size_t len)
+{
+	if (fd == ws->parent.tunfd)
+		handler_tcp_tun_to_net(fd, ws, buff, len);
+	else
+		handler_tcp_net_to_tun(fd, ws, buff, len);
+}
+
+static void *worker(void *self)
+{
+	uint64_t fd64;
+	ssize_t ret;
+	size_t blen = 10000; //XXX
+	const struct worker_struct *ws = self;
+	struct pollfd fds;
+	char *buff;
+
 	fds.fd = ws->efd;
 	fds.events = POLLIN;
 
+	buff = xmalloc(blen);
+
 	syslog(LOG_INFO, "curvetun thread %p/CPU%u up!\n", ws, ws->cpu);
+
 	while (likely(!sigint)) {
 		poll(&fds, 1, -1);
-		ret = read(ws->efd, &fd64, sizeof(fd64));
-		if (ret != sizeof(fd64)) {
-			cpu_relax();
-			sched_yield();
-			continue;
-		}
-		if (fd64 == ws->parent.tunfd) {
-			len = read(ws->parent.tunfd, buff, sizeof(buff));
-			if (len > 0) {
-				nlen = 0;
-				memset(&naddr, 0, sizeof(naddr));
-				trie_addr_lookup(buff, len, ws->parent.ipv4,
-						 &fd, &naddr, (size_t *) &nlen);
-				if (fd < 0 || nlen == 0)
-					continue;
-				err = sendto(fd, buff, len, 0,
-					     (struct sockaddr *) &naddr, nlen);
+		while ((ret = read(ws->efd, &fd64, sizeof(fd64))) > 0) {
+			if (ret != sizeof(fd64)) {
+				sched_yield();
+				continue;
 			}
-		} else {
-			fd = (int) fd64;
-			nlen = sizeof(naddr);
-			memset(&naddr, 0, sizeof(naddr));
-			len = recvfrom(fd, buff, sizeof(buff), 0,
-				       (struct sockaddr *) &naddr, &nlen);
-			if (len > 0) {
-				trie_addr_maybe_update(buff, len, ws->parent.ipv4,
-						       fd, &naddr, nlen);
-				if (!strncmp(buff, "\r\r\r", strlen("\r\r\r") + 1))
-					trie_addr_remove_addr(&naddr, nlen);
-				else
-					err = write(ws->parent.tunfd, buff, len);
-			}
+			ws->handler((int) fd64, ws, buff, blen);
 		}
 	}
+
+	xfree(buff);
+
 	syslog(LOG_INFO, "curvetun thread %p/CPU%u down!\n", ws, ws->cpu);
 	pthread_exit(0);
 }
@@ -176,21 +208,26 @@ static void tspawn_or_panic(int efd, int tunfd, int ipv4, int udp)
 {
 	int i, ret;
 	cpu_set_t cpuset;
+
 	for (i = 0; i < cpus * THREADS_PER_CPU; ++i) {
 		CPU_ZERO(&cpuset);
 		threadpool[i].cpu = i % cpus;
 		CPU_SET(threadpool[i].cpu, &cpuset);
+
 		threadpool[i].efd = eventfd(0, 0);
 		if (threadpool[i].efd < 0)
 			panic("Cannot create event socket!\n");
+
+		set_nonblocking(threadpool[i].efd);
+
 		threadpool[i].parent.efd = efd;
 		threadpool[i].parent.tunfd = tunfd;
 		threadpool[i].parent.ipv4 = ipv4;
 		threadpool[i].parent.udp = udp;
+		threadpool[i].handler = udp ? handler_udp : handler_tcp;
 
 		ret = pthread_create(&(threadpool[i].thread), NULL,
-				     udp ? worker_udp : worker_tcp,
-				     &threadpool[i]);
+				     worker, &threadpool[i]);
 		if (ret < 0)
 			panic("Thread creation failed!\n");
 
@@ -198,6 +235,7 @@ static void tspawn_or_panic(int efd, int tunfd, int ipv4, int udp)
 					     sizeof(cpu_set_t), &cpuset);
 		if (ret < 0)
 			panic("Thread CPU migration failed!\n");
+
 		pthread_detach(threadpool[i].thread);
 	}
 }
