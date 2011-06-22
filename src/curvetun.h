@@ -19,5 +19,9 @@
 
 #define EXIT_SEQ        "\r\r\r"
 
+struct ct_proto {
+        uint16_t payload;
+};
+
 #endif /* CURVETUN_H */
 

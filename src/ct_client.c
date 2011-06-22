@@ -41,9 +41,15 @@ extern sig_atomic_t sigint;
 static void handler_tun_to_net(int sfd, int dfd, int udp, char *buff, size_t len)
 {
 	ssize_t rlen, err;
+	struct ct_proto *hdr;
 
-	while ((rlen = read(sfd, buff, len)) > 0) {
-		err = write(dfd, buff, rlen);
+	while ((rlen = read(sfd, buff + sizeof(struct ct_proto),
+			    len - sizeof(struct ct_proto))) > 0) {
+		hdr = (struct ct_proto *) buff;
+		hdr->payload = htons((uint16_t) rlen);
+		err = write(dfd, buff, rlen + sizeof(struct ct_proto));
+		if (err < 0)
+			perror("Error writing tunnel data to net");
 	}
 }
 
@@ -51,23 +57,35 @@ static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len
 {
 	ssize_t rlen, err;
 	struct sockaddr_storage sa;
+	struct ct_proto hdr, *hdrp;
 	socklen_t sa_len;
 
 	while (1) {
-		if (!udp)
-			rlen = read(sfd, buff, len);
-		else {
+		if (!udp) {
+			err = read_exact(sfd, &hdr, sizeof(hdr));
+			if (err < 0)
+				perror("Error reading data from net");
+			rlen = ntohs(hdr.payload);
+			err = read_exact(sfd, buff, rlen);
+			if (err < 0)
+				perror("Error reading data from net");
+		} else {
 			sa_len = sizeof(sa);
 			memset(&sa, 0, sa_len);
-
-			rlen = recvfrom(sfd, buff, len, 0, (struct sockaddr *)
-					&sa, &sa_len);
+			//FIXME
+			err = recvfrom(sfd, buff, len, 0, (struct sockaddr *)
+				       &sa, &sa_len);
+			hdrp = (struct ct_proto *) buff;
+			buff += sizeof(hdr);
+			rlen = ntohs(hdrp->payload);
 		}
 
-		if (rlen <= 0)
+		if (err <= 0)
 			break;
 
 		err = write(dfd, buff, rlen);
+		if (err < 0)
+			perror("Error writing net data to tunnel");
 	}
 }
 

@@ -143,10 +143,16 @@ static void handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 {
 	int dfd;
 	ssize_t rlen, err;
+	struct ct_proto *hdr;
 	socklen_t nlen;
 
-	while ((rlen = read(fd, buff, len)) > 0) {
-		trie_addr_lookup(buff, rlen, ws->parent.ipv4, &dfd, NULL,
+	while ((rlen = read(fd, buff + sizeof(struct ct_proto),
+			    len - sizeof(struct ct_proto))) > 0) {
+		hdr = (struct ct_proto *) buff;
+		hdr->payload = htons((uint16_t) rlen);
+
+		trie_addr_lookup(buff + sizeof(struct ct_proto),
+				 rlen, ws->parent.ipv4, &dfd, NULL,
 				 (size_t *) &nlen);
 		if (dfd < 0) {
 			syslog(LOG_ERR, "TCP tunnel lookup error: "
@@ -154,7 +160,7 @@ static void handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 			continue;
 		}
 
-		err = write(dfd, buff, rlen);
+		err = write(dfd, buff, rlen + sizeof(struct ct_proto));
 		if (err < 0)
 			syslog(LOG_ERR, "TCP tunnel write error: %s\n",
 			       strerror(errno));
@@ -164,6 +170,12 @@ static void handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 		syslog(LOG_ERR, "TCP tunnel read error: %s\n", strerror(errno));
 }
 
+#if 0
+struct ct_proto {
+        uint16_t payload;
+};
+#endif
+
 static void handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 				   char *buff, size_t len)
 {
@@ -171,7 +183,7 @@ static void handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 	ssize_t rlen, err;
 
 	elen = strlen(EXIT_SEQ) + 1;
-
+//TODO: read size, do ntohs, read pkt
 	while ((rlen = read(fd, buff, len)) > 0) {
 		trie_addr_maybe_update(buff, rlen, ws->parent.ipv4, fd, NULL, 0);
 
