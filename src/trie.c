@@ -54,7 +54,7 @@ struct ipv6hdr {
 
 static struct patricia_node *tree = NULL;
 
-static struct spinlock tree_lock;
+static struct rwlock tree_lock;
 
 void trie_addr_lookup(char *buff, size_t len, int ipv4, int *fd,
 		      struct sockaddr_storage *addr, size_t *alen)
@@ -68,9 +68,9 @@ void trie_addr_lookup(char *buff, size_t len, int ipv4, int *fd,
 	dlen = ipv4 ? sizeof(hdr4->h_daddr) : sizeof(hdr6->daddr);
 
 	/* Always happens on the dst address */
-	spinlock_lock(&tree_lock);
+	rwlock_rd_lock(&tree_lock);
 	(*fd) = ptree_search_data_exact(data, dlen, addr, alen, tree);
-	spinlock_unlock(&tree_lock);
+	rwlock_unlock(&tree_lock);
 }
 
 void trie_addr_maybe_update(char *buff, size_t len, int ipv4, int fd,
@@ -85,16 +85,16 @@ void trie_addr_maybe_update(char *buff, size_t len, int ipv4, int fd,
 	dlen = ipv4 ? sizeof(hdr4->h_saddr) : sizeof(hdr6->saddr);
 
 	/* Always happens on the src address */
-	spinlock_lock(&tree_lock);
+	rwlock_wr_lock(&tree_lock);
 	ptree_maybe_add_entry(data, dlen, fd, addr, alen, &tree);
-	spinlock_unlock(&tree_lock);
+	rwlock_unlock(&tree_lock);
 }
 
 void trie_addr_remove(int fd)
 {
 	int found = 1;
 	struct patricia_node *n = NULL;
-	spinlock_lock(&tree_lock);
+	rwlock_wr_lock(&tree_lock);
 	while (found) {
 		ptree_get_key(fd, tree, &n);
 		if (n) {
@@ -103,14 +103,14 @@ void trie_addr_remove(int fd)
 		} else
 			found = 0;
 	}
-	spinlock_unlock(&tree_lock);
+	rwlock_unlock(&tree_lock);
 }
 
 void trie_addr_remove_addr(struct sockaddr_storage *addr, size_t alen)
 {
 	int found = 1;
 	struct patricia_node *n = NULL;
-	spinlock_lock(&tree_lock);
+	rwlock_wr_lock(&tree_lock);
 	while (found) {
 		ptree_get_key_addr(addr, alen, tree, &n);
 		if (n) {
@@ -119,19 +119,19 @@ void trie_addr_remove_addr(struct sockaddr_storage *addr, size_t alen)
 		} else
 			found = 0;
 	}
-	spinlock_unlock(&tree_lock);
+	rwlock_unlock(&tree_lock);
 }
 
 void trie_init(void)
 {
-	spinlock_init(&tree_lock);
+	rwlock_init(&tree_lock);
 }
 
 void trie_cleanup(void)
 {
-	spinlock_lock(&tree_lock);
+	rwlock_wr_lock(&tree_lock);
 	ptree_free(tree);
-	spinlock_unlock(&tree_lock);
-	spinlock_destroy(&tree_lock);
+	rwlock_unlock(&tree_lock);
+	rwlock_destroy(&tree_lock);
 }
 

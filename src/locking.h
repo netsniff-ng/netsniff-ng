@@ -18,6 +18,10 @@ struct mutexlock {
 	pthread_mutex_t lock;
 };
 
+struct rwlock {
+	pthread_rwlock_t lock;
+};
+
 static inline int spinlock_init(struct spinlock *l)
 {
 	return -pthread_spin_init(&l->lock, 0);
@@ -57,6 +61,32 @@ static inline void mutexlock_unlock(struct mutexlock *l)
 {
 	pthread_mutex_unlock(&l->lock);
 }
+
+static inline int rwlock_init(struct rwlock *l)
+{
+	return -pthread_rwlock_init(&l->lock, 0);
+}
+
+static inline void rwlock_destroy(struct rwlock *l)
+{
+	pthread_rwlock_destroy(&l->lock);
+}
+
+static inline void rwlock_rd_lock(struct rwlock *l)
+{
+	pthread_rwlock_rdlock(&l->lock);
+}
+
+static inline void rwlock_wr_lock(struct rwlock *l)
+{
+	pthread_rwlock_wrlock(&l->lock);
+}
+
+static inline void rwlock_unlock(struct rwlock *l)
+{
+	pthread_rwlock_unlock(&l->lock);
+}
+
 
 #endif /* LOCKING_H */
 
