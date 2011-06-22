@@ -451,8 +451,9 @@ int server_main(int port, int udp, int lnum)
 					    sbuff, sizeof(sbuff),
 					    NI_NUMERICHOST | NI_NUMERICSERV);
 
-				syslog(LOG_INFO, "New connection from %s:%s with id %d\n",
-				       hbuff, sbuff, nfd);
+				syslog(LOG_INFO, "New connection from %s:%s "
+				       "with id %d, %d active!\n",
+				       hbuff, sbuff, nfd, curfds);
 
 				set_nonblocking(nfd);
 
@@ -467,9 +468,13 @@ int server_main(int port, int udp, int lnum)
 				ev.events = EPOLLIN | EPOLLET;
 				ev.data.fd = nfd;
 				ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, nfd, &ev);
-				if (ret < 0)
-					panic("Epoll ctl error!\n");
-
+				if (ret < 0) {
+					syslog(LOG_ERR, "Epoll ctl error: %s\n",
+					       strerror(errno));
+					close(nfd);
+					curfds--;
+					continue;
+				}
 			} else if (events[i].data.fd == efd) {
 				int fd_del;
 				uint64_t fd64_del;
@@ -484,8 +489,9 @@ int server_main(int port, int udp, int lnum)
 					close(fd_del);
 					curfds--;
 
-					syslog(LOG_INFO, "Closed connection with id %d\n",
-					       fd_del);
+					syslog(LOG_INFO, "Closed connection with "
+					       "id %d, %d active!\n",
+					       fd_del, curfds);
 				}
 			} else {
 				uint64_t fd64 = events[i].data.fd;
@@ -493,7 +499,8 @@ int server_main(int port, int udp, int lnum)
 				ret = write(threadpool[thread_it].efd,
 					    &fd64, sizeof(fd64));
 				if (ret != sizeof(fd64))
-					syslog(LOG_ERR, "Write error on event dispatch!\n");
+					syslog(LOG_ERR, "Write error on event "
+					       "dispatch: %s\n", strerror(errno));
 
 				thread_it = (thread_it + 1) % threads;
 			}
