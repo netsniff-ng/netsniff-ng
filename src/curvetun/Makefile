@@ -20,6 +20,7 @@ lib-objs   = xmalloc.o                  \
 	     serialize.o                \
 	     deflate.o                  \
 	     stun.o                     \
+	     trie.o                     \
 	     tlsf.o                     \
 	     patricia.o                 \
 	     write_or_die.o             \
