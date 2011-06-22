@@ -369,6 +369,8 @@ int server_main(int port, int udp, int lnum)
 		}
 
 		for (i = 0; i < nfds; ++i) {
+			if (events[i].data.fd < 0)
+				continue;
 			if (events[i].data.fd == lfd && !udp) {
 				int one, i, found = 0;
 				char hbuff[256], sbuff[256];
