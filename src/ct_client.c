@@ -139,9 +139,11 @@ int client_main(int port, int udp)
 	while (likely(!sigint)) {
 		poll(fds, 2, -1);
 		for (i = 0; i < 2; ++i) {
-			if (fds[i].fd == tunfd)
+			if ((fds[i].revents & POLLIN) == POLLIN &&
+			    fds[i].fd == tunfd)
 				handler_tun_to_net(tunfd, fd, udp, buff, blen);
-			else
+			else if ((fds[i].revents & POLLIN) == POLLIN &&
+				 fds[i].fd == fd)
 				handler_net_to_tun(fd, tunfd, udp, buff, blen);
 		}
 	}
