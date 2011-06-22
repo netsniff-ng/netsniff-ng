@@ -186,9 +186,13 @@ static void handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 			trie_addr_remove(fd);
 		} else {
 			err = write(ws->parent.tunfd, buff, rlen);
-			if (err < 0)
+			if (err < 0) {
+				/* fragmentation issues??? EINVAL due to fact
+				   that we have no ETH_P_IP id! todo with
+				   nonblocking? */
 				syslog(LOG_ERR, "TCP net write error: %s\n",
 				       strerror(errno));
+			}
 		}
 	}
 

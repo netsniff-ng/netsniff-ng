@@ -79,6 +79,50 @@ ssize_t read_or_die(int fd, void *buf, size_t len)
 	return ret;
 }
 
+ssize_t read_exact(int fd, char *buf, size_t len)
+{
+	register ssize_t num = 0, written;
+
+	while (len > 0) {
+		if ((written = read(fd, buf, len)) < 0) {
+			if (errno == EAGAIN)
+				continue;
+			return -1;
+		}
+
+		if (!written)
+			return 0;
+
+		len -= written;
+		buf += written;
+		num += written;
+	}
+
+	return num;
+}
+
+ssize_t write_exact(int fd, char *buf, size_t len)
+{
+	register ssize_t num = 0, written;
+
+	while (len > 0) {
+		if ((written = write(fd, buf, len)) < 0) {
+			if (errno == EAGAIN)
+				continue;
+			return -1;
+		}
+
+		if (!written)
+			return 0;
+
+		len -= written;
+		buf += written;
+		num += written;
+	}
+
+	return num;
+}
+
 ssize_t write_or_die(int fd, const void *buf, size_t len)
 {
 	ssize_t ret = write(fd, buf, len);
