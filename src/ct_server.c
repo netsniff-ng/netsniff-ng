@@ -44,10 +44,18 @@
 #include "compiler.h"
 #include "trie.h"
 
+struct parent_info {
+	int efd;
+	int tunfd;
+	int ipv4;
+	int udp;
+};
+
 struct worker_struct {
 	int efd;
 	unsigned int cpu;
 	pthread_t thread;
+	struct parent_info parent;
 };
 
 static struct worker_struct *threadpool = NULL;
@@ -55,8 +63,6 @@ static struct worker_struct *threadpool = NULL;
 static unsigned int cpus = 0;
 
 extern sig_atomic_t sigint;
-
-static int efd_parent, fd_tun, ipv4 = 0, udp = 0;
 
 static void *worker_tcp(void *self)
 {
@@ -80,10 +86,11 @@ static void *worker_tcp(void *self)
 			sched_yield();
 			continue;
 		}
-		if (fd64 == fd_tun) {
-			len = read(fd_tun, buff, sizeof(buff));
+		if (fd64 == ws->parent.tunfd) {
+			len = read(ws->parent.tunfd, buff, sizeof(buff));
 			if (len > 0) {
-				trie_addr_lookup(buff, len, ipv4, &fd, NULL, &nlen);
+				trie_addr_lookup(buff, len, ws->parent.ipv4,
+						 &fd, NULL, &nlen);
 				if (fd < 0)
 					continue;
 				err = write(fd, buff, len);
@@ -92,11 +99,13 @@ static void *worker_tcp(void *self)
 			fd = (int) fd64;
 			len = read(fd, buff, sizeof(buff));
 			if (len > 0) {
-				trie_addr_maybe_update(buff, len, ipv4, fd, NULL, 0);
-				err = write(fd_tun, buff, len);
+				trie_addr_maybe_update(buff, len, ws->parent.ipv4,
+						       fd, NULL, 0);
+				err = write(ws->parent.tunfd, buff, len);
 			} else {
 				if (len < 1 && errno != EAGAIN) {
-					len = write(efd_parent, &fd64, sizeof(fd64));
+					len = write(ws->parent.efd, &fd64,
+						    sizeof(fd64));
 					if (len != sizeof(fd64))
 						whine("Event write error from thread!\n");
 					trie_addr_remove(fd);
@@ -131,13 +140,13 @@ static void *worker_udp(void *self)
 			sched_yield();
 			continue;
 		}
-		if (fd64 == fd_tun) {
-			len = read(fd_tun, buff, sizeof(buff));
+		if (fd64 == ws->parent.tunfd) {
+			len = read(ws->parent.tunfd, buff, sizeof(buff));
 			if (len > 0) {
 				nlen = 0;
 				memset(&naddr, 0, sizeof(naddr));
-				trie_addr_lookup(buff, len, ipv4, &fd, &naddr,
-						 (size_t *) &nlen);
+				trie_addr_lookup(buff, len, ws->parent.ipv4,
+						 &fd, &naddr, (size_t *) &nlen);
 				if (fd < 0 || nlen == 0)
 					continue;
 				err = sendto(fd, buff, len, 0,
@@ -150,11 +159,12 @@ static void *worker_udp(void *self)
 			len = recvfrom(fd, buff, sizeof(buff), 0,
 				       (struct sockaddr *) &naddr, &nlen);
 			if (len > 0) {
-				trie_addr_maybe_update(buff, len, ipv4, fd, &naddr, nlen);
+				trie_addr_maybe_update(buff, len, ws->parent.ipv4,
+						       fd, &naddr, nlen);
 				if (!strncmp(buff, "\r\r\r", strlen("\r\r\r") + 1))
 					trie_addr_remove_addr(&naddr, nlen);
 				else
-					err = write(fd_tun, buff, len);
+					err = write(ws->parent.tunfd, buff, len);
 			}
 		}
 	}
@@ -162,7 +172,7 @@ static void *worker_udp(void *self)
 	pthread_exit(0);
 }
 
-static void tspawn_or_panic(void)
+static void tspawn_or_panic(int efd, int tunfd, int ipv4, int udp)
 {
 	int i, ret;
 	cpu_set_t cpuset;
@@ -170,10 +180,13 @@ static void tspawn_or_panic(void)
 		CPU_ZERO(&cpuset);
 		threadpool[i].cpu = i % cpus;
 		CPU_SET(threadpool[i].cpu, &cpuset);
-
 		threadpool[i].efd = eventfd(0, 0);
 		if (threadpool[i].efd < 0)
 			panic("Cannot create event socket!\n");
+		threadpool[i].parent.efd = efd;
+		threadpool[i].parent.tunfd = tunfd;
+		threadpool[i].parent.ipv4 = ipv4;
+		threadpool[i].parent.udp = udp;
 
 		ret = pthread_create(&(threadpool[i].thread), NULL,
 				     udp ? worker_udp : worker_tcp,
@@ -200,7 +213,8 @@ static void tfinish(void)
 
 int server_main(int set_rlim, int port, int lnum)
 {
-	int lfd = -1, kdpfd, nfds, nfd, ret, curfds, i, trit;
+	int lfd = -1, kdpfd, nfds, nfd, ret, curfds, i, trit, efd, tunfd;
+	int ipv4 = 0, udp = 1;
 	struct epoll_event lev, eev, tev, nev;
 	struct epoll_event events[MAX_EPOLL_SIZE];
 	struct rlimit rt;
@@ -229,7 +243,7 @@ int server_main(int set_rlim, int port, int lnum)
 	hints.ai_protocol = udp ? IPPROTO_UDP : IPPROTO_TCP;
 	hints.ai_flags = AI_PASSIVE;
 
-	fd_tun = tun_open_or_die(DEVNAME_SERVER);
+	tunfd = tun_open_or_die(DEVNAME_SERVER);
 
 	ret = getaddrinfo(NULL, "6666", &hints, &ahead);
 	if (ret < 0)
@@ -257,7 +271,6 @@ int server_main(int set_rlim, int port, int lnum)
 #endif /* IPV6_V6ONLY */
 		}
 
-		set_nonblocking(lfd);
 		set_reuseaddr(lfd);
 
 		ret = bind(lfd, ai->ai_addr, ai->ai_addrlen);
@@ -286,14 +299,13 @@ int server_main(int set_rlim, int port, int lnum)
 	if (lfd < 0 || ipv4 < 0)
 		panic("Cannot create socket!\n");
 
-	tspawn_or_panic();
-
-	efd_parent = eventfd(0, 0);
-	if (efd_parent < 0)
+	efd = eventfd(0, 0);
+	if (efd < 0)
 		panic("Cannot create parent event fd!\n");
 
-	set_nonblocking(efd_parent);
-	set_nonblocking(fd_tun);
+	set_nonblocking(lfd);
+	set_nonblocking(efd);
+	set_nonblocking(tunfd);
 
 	kdpfd = epoll_create(MAX_EPOLL_SIZE);
 	if (kdpfd < 0)
@@ -302,24 +314,22 @@ int server_main(int set_rlim, int port, int lnum)
 	memset(&lev, 0, sizeof(lev));
 	lev.events = EPOLLIN | EPOLLET;
 	lev.data.fd = lfd;
-
 	memset(&eev, 0, sizeof(lev));
 	eev.events = EPOLLIN | EPOLLET;
-	eev.data.fd = efd_parent;
-
+	eev.data.fd = efd;
 	memset(&tev, 0, sizeof(tev));
 	tev.events = EPOLLIN | EPOLLET;
-	tev.data.fd = fd_tun;
+	tev.data.fd = tunfd;
 
 	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, lfd, &lev);
 	if (ret < 0)
 		panic("Cannot add socket for epoll!\n");
 
-	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, efd_parent, &eev);
+	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, efd, &eev);
 	if (ret < 0)
 		panic("Cannot add socket for events!\n");
 
-	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, fd_tun, &tev);
+	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, tunfd, &tev);
 	if (ret < 0)
 		panic("Cannot add socket for tundev!\n");
 
@@ -329,9 +339,12 @@ int server_main(int set_rlim, int port, int lnum)
 
 	syslog(LOG_INFO, "curvetun up and running!\n");
 
+	tspawn_or_panic(efd, tunfd, ipv4, udp);
+
 	while (likely(!sigint)) {
 		nfds = epoll_wait(kdpfd, events, curfds, -1);
 		if (nfds < 0) {
+			perror("");
 			break;
 		}
 
@@ -373,15 +386,13 @@ int server_main(int set_rlim, int port, int lnum)
 				if (ret < 0)
 					panic("Epoll ctl error!\n");
 				curfds++;
-			} else if (events[i].data.fd == efd_parent) {
+			} else if (events[i].data.fd == efd) {
 				uint64_t fd64_del;
-				ret = read(efd_parent, &fd64_del, sizeof(fd64_del));
+				ret = read(efd, &fd64_del, sizeof(fd64_del));
 				if (ret != sizeof(fd64_del))
 					continue;
 				epoll_ctl(kdpfd, EPOLL_CTL_DEL, (int) fd64_del, &nev);
-
 				curfds--;
-
 				syslog(LOG_INFO, "Closed connection with id %d\n",
 				       (int) fd64_del);
 			} else {
@@ -398,8 +409,8 @@ int server_main(int set_rlim, int port, int lnum)
 	syslog(LOG_INFO, "curvetun prepare shut down!\n");
 
 	close(lfd);
-	close(efd_parent);
-	close(fd_tun);
+	close(efd);
+	close(tunfd);
 
 	tfinish();
 	xfree(threadpool);
