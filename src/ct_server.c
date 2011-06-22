@@ -346,7 +346,7 @@ int server_main(int port, int udp, int lnum)
 		panic("Cannot create socket!\n");
 
 	memset(&ev, 0, sizeof(ev));
-	ev.events = EPOLLIN | EPOLLET;
+	ev.events = EPOLLIN;
 	ev.data.fd = lfd;
 	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, lfd, &ev);
 	if (ret < 0)
