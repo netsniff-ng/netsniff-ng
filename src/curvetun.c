@@ -411,7 +411,7 @@ static int main_client(char *dev, enum client_mode cmode)
 static int main_server(char *dev, unsigned short port)
 {
 	check_config_exists_or_die();
-	return server_main(0, port, 5);
+	return server_main(port, 5);
 }
 
 int main(int argc, char **argv)

@@ -62,8 +62,6 @@ struct worker_struct {
 
 static struct worker_struct *threadpool = NULL;
 
-static unsigned int cpus = 0;
-
 extern sig_atomic_t sigint;
 
 static void handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
@@ -204,7 +202,8 @@ static void *worker(void *self)
 	pthread_exit(0);
 }
 
-static void tspawn_or_panic(int efd, int tunfd, int ipv4, int udp)
+static void thread_spawn_or_panic(unsigned int cpus, int efd, int tunfd,
+				  int ipv4, int udp)
 {
 	int i, ret;
 	cpu_set_t cpuset;
@@ -240,7 +239,7 @@ static void tspawn_or_panic(int efd, int tunfd, int ipv4, int udp)
 	}
 }
 
-static void tfinish(void)
+static void thread_finish(unsigned int cpus)
 {
 	int i;
 	for (i = 0; i < cpus * THREADS_PER_CPU; ++i) {
@@ -249,39 +248,24 @@ static void tfinish(void)
 	}
 }
 
-int server_main(int set_rlim, int port, int lnum)
+int server_main(int port, int lnum)
 {
-	int lfd = -1, kdpfd, nfds, nfd, ret, curfds, i, trit, efd, tunfd;
-	int ipv4 = 0, udp = 1;
+	int lfd = -1, kdpfd, nfds, nfd, curfds, efd, tunfd;
+	int ipv4 = 0, udp = 1, thread_it = 0, i;
+	unsigned int cpus = 0;
+	ssize_t ret;
 	struct epoll_event lev, eev, tev, nev;
 	struct epoll_event events[MAX_EPOLL_SIZE];
-	struct rlimit rt;
 	struct addrinfo hints, *ahead, *ai;
-	struct sockaddr_storage taddr;
-	socklen_t tlen;
 
 	openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
 	syslog(LOG_INFO, "curvetun server booting!\n");
-
-	trie_init();
-
-	cpus = get_number_cpus_online();
-	threadpool = xzmalloc(sizeof(*threadpool) * cpus * THREADS_PER_CPU);
-
-	if (set_rlim) {
-		rt.rlim_max = rt.rlim_cur = MAX_EPOLL_SIZE;
-		ret = setrlimit(RLIMIT_NOFILE, &rt);
-		if (ret < 0)
-			whine("Cannot set rlimit!\n");
-	}
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;
 	hints.ai_socktype = udp ? SOCK_DGRAM : SOCK_STREAM;
 	hints.ai_protocol = udp ? IPPROTO_UDP : IPPROTO_TCP;
 	hints.ai_flags = AI_PASSIVE;
-
-	tunfd = tun_open_or_die(DEVNAME_SERVER);
 
 	ret = getaddrinfo(NULL, "6666", &hints, &ahead);
 	if (ret < 0)
@@ -291,7 +275,6 @@ int server_main(int set_rlim, int port, int lnum)
 		lfd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 		if (lfd < 0)
 			continue;
-
 		if (ai->ai_family == AF_INET6) {
 			int one = 1;
 #ifdef IPV6_V6ONLY
@@ -308,16 +291,13 @@ int server_main(int set_rlim, int port, int lnum)
 			continue;
 #endif /* IPV6_V6ONLY */
 		}
-
 		set_reuseaddr(lfd);
-
 		ret = bind(lfd, ai->ai_addr, ai->ai_addrlen);
 		if (ret < 0) {
 			close(lfd);
 			lfd = -1;
 			continue;
 		}
-
 		if (!udp) {
 			ret = listen(lfd, 5);
 			if (ret < 0) {
@@ -326,7 +306,6 @@ int server_main(int set_rlim, int port, int lnum)
 				continue;
 			}
 		}
-
 		ipv4 = (ai->ai_family == AF_INET6 ? 0 :
 			(ai->ai_family == AF_INET ? 1 : -1));
 		syslog(LOG_INFO, "curvetun on IPv%d via %s!\n",
@@ -336,6 +315,8 @@ int server_main(int set_rlim, int port, int lnum)
 	freeaddrinfo(ahead);
 	if (lfd < 0 || ipv4 < 0)
 		panic("Cannot create socket!\n");
+
+	tunfd = tun_open_or_die(DEVNAME_SERVER);
 
 	efd = eventfd(0, 0);
 	if (efd < 0)
@@ -358,31 +339,31 @@ int server_main(int set_rlim, int port, int lnum)
 	memset(&tev, 0, sizeof(tev));
 	tev.events = EPOLLIN | EPOLLET;
 	tev.data.fd = tunfd;
+	curfds = 3;
 
 	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, lfd, &lev);
 	if (ret < 0)
 		panic("Cannot add socket for epoll!\n");
-
 	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, efd, &eev);
 	if (ret < 0)
 		panic("Cannot add socket for events!\n");
-
 	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, tunfd, &tev);
 	if (ret < 0)
 		panic("Cannot add socket for tundev!\n");
 
-	trit = 0;
-	curfds = 3;
-	tlen = sizeof(taddr);
+	trie_init();
+
+	cpus = get_number_cpus_online();
+	threadpool = xzmalloc(sizeof(*threadpool) * cpus * THREADS_PER_CPU);
+	thread_spawn_or_panic(cpus, efd, tunfd, ipv4, udp);
 
 	syslog(LOG_INFO, "curvetun up and running!\n");
-
-	tspawn_or_panic(efd, tunfd, ipv4, udp);
 
 	while (likely(!sigint)) {
 		nfds = epoll_wait(kdpfd, events, curfds, -1);
 		if (nfds < 0) {
-			perror("");
+			syslog(LOG_ERR, "epoll_wait error: %s\n",
+			       strerror(errno));
 			break;
 		}
 
@@ -390,10 +371,15 @@ int server_main(int set_rlim, int port, int lnum)
 			if (events[i].data.fd == lfd && !udp) {
 				int one;
 				char hbuff[256], sbuff[256];
+				struct sockaddr_storage taddr;
+				socklen_t tlen;
 
-				nfd = accept(lfd, (struct sockaddr *) &taddr, &tlen);
+				tlen = sizeof(taddr);
+				nfd = accept(lfd, (struct sockaddr *) &taddr,
+					     &tlen);
 				if (nfd < 0) {
-					perror("accept");
+					syslog(LOG_ERR, "accept error: %s\n",
+					       strerror(errno));
 					continue;
 				}
 
@@ -409,6 +395,7 @@ int server_main(int set_rlim, int port, int lnum)
 				       hbuff, sbuff, nfd);
 
 				set_nonblocking(nfd);
+
 				one = 1;
 				setsockopt(nfd, SOL_SOCKET, SO_KEEPALIVE,
 					   &one, sizeof(one));
@@ -423,23 +410,32 @@ int server_main(int set_rlim, int port, int lnum)
 				ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, nfd, &nev);
 				if (ret < 0)
 					panic("Epoll ctl error!\n");
+
 				curfds++;
 			} else if (events[i].data.fd == efd) {
 				uint64_t fd64_del;
-				ret = read(efd, &fd64_del, sizeof(fd64_del));
-				if (ret != sizeof(fd64_del))
-					continue;
-				epoll_ctl(kdpfd, EPOLL_CTL_DEL, (int) fd64_del, &nev);
-				curfds--;
-				syslog(LOG_INFO, "Closed connection with id %d\n",
-				       (int) fd64_del);
+
+				while ((ret = read(efd, &fd64_del,
+						   sizeof(fd64_del))) > 0) {
+					if (ret != sizeof(fd64_del))
+						continue;
+
+					epoll_ctl(kdpfd, EPOLL_CTL_DEL, (int)
+						  fd64_del, &nev);
+					curfds--;
+
+					syslog(LOG_INFO, "Closed connection with id %d\n",
+					       (int) fd64_del);
+				}
 			} else {
 				uint64_t fd64 = events[i].data.fd;
-				ret = write(threadpool[trit].efd, &fd64,
-					    sizeof(fd64));
+
+				ret = write(threadpool[thread_it].efd,
+					    &fd64, sizeof(fd64));
 				if (ret != sizeof(fd64))
-					whine("Write error on event dispatch!\n");
-				trit = (trit + 1) % cpus;
+					syslog(LOG_ERR, "Write error on event dispatch!\n");
+
+				thread_it = (thread_it + 1) % cpus;
 			}
 		}
 	}
@@ -450,7 +446,7 @@ int server_main(int set_rlim, int port, int lnum)
 	close(efd);
 	close(tunfd);
 
-	tfinish();
+	thread_finish(cpus);
 	xfree(threadpool);
 
 	trie_cleanup();

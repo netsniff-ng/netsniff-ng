@@ -11,9 +11,9 @@
 #define THREADS_PER_CPU 2
 #define MAX_EPOLL_SIZE  10000
 
-extern int server_main(int set_rlim, int port, int lnum);
+extern int server_main(int port, int lnum);
 
-#define DEVNAME_SERVER "curve-s"
+#define DEVNAME_SERVER "curves"
 
 #endif /* CT_SERVER_H */
 
