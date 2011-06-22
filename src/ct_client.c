@@ -22,10 +22,11 @@
 #include <sys/poll.h>
 #include <netinet/tcp.h>
 
-#include "write_or_die.h"
 #include "die.h"
+#include "write_or_die.h"
 #include "strlcpy.h"
 #include "netdev.h"
+#include "xmalloc.h"
 #include "ct_client.h"
 #include "curvetun.h"
 #include "compiler.h"
@@ -35,26 +36,55 @@ static const char *rport = "6666";
 static const char *rhost = "localhost";
 static const char *scope = "eth0";
 
-static int udp = 0;
-
 extern sig_atomic_t sigint;
+
+static void handler_tun_to_net(int sfd, int dfd, int udp, char *buff, size_t len)
+{
+	ssize_t rlen, err;
+
+	while ((rlen = read(sfd, buff, len)) > 0) {
+		err = write(dfd, buff, rlen);
+	}
+}
+
+static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len)
+{
+	ssize_t rlen, err;
+	struct sockaddr_storage sa;
+	socklen_t sa_len;
+
+	while (1) {
+		if (!udp)
+			rlen = read(sfd, buff, len);
+		else {
+			sa_len = sizeof(sa);
+			memset(&sa, 0, sa_len);
+
+			rlen = recvfrom(sfd, buff, len, 0, (struct sockaddr *)
+					&sa, &sa_len);
+		}
+
+		if (rlen <= 0)
+			break;
+
+		err = write(dfd, buff, rlen);
+	}
+}
 
 int client_main(void)
 {
-	int fd = -1, fd_tun, err, ret, try = 1, i, one;
+	int fd = -1, tunfd, udp = 0;
+	int err, ret, try = 1, i, one;
 	struct addrinfo hints, *ahead, *ai;
 	struct sockaddr_in6 *saddr6;
-	struct sockaddr_storage sa;
 	struct pollfd fds[2];
-	char buffer[1600]; //XXX
-	socklen_t sa_len;
+	char *buff;
+	size_t blen = 10000; //XXX
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;
 	hints.ai_socktype = udp ? SOCK_DGRAM : SOCK_STREAM;
 	hints.ai_protocol = udp ? IPPROTO_UDP : IPPROTO_TCP;
-
-	fd_tun = tun_open_or_die(DEVNAME_CLIENT);
 
 	ret = getaddrinfo(rhost, rport, &hints, &ahead);
 	if (ret < 0)
@@ -69,12 +99,9 @@ int client_main(void)
 				     saddr6->sin6_scope_id);
 			}
 		}
-
 		fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 		if (fd < 0)
 			continue;
-
-		errno = 0;
 		ret = connect(fd, ai->ai_addr, ai->ai_addrlen);
 		if (ret < 0) {
 			whine("Cannot connect to remote, try %d: %s!\n",
@@ -83,7 +110,6 @@ int client_main(void)
 			fd = -1;
 			continue;
 		}
-
 		one = 1;
 		setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &one, sizeof(one));
 		if (!udp) {
@@ -97,59 +123,36 @@ int client_main(void)
 	if (fd < 0)
 		panic("Cannot create socket!\n");
 
+	tunfd = tun_open_or_die(DEVNAME_CLIENT);
+
 	set_nonblocking(fd);
-	set_nonblocking(fd_tun);
+	set_nonblocking(tunfd);
 
 	memset(fds, 0, sizeof(fds));
 	fds[0].fd = fd;
-	fds[1].fd = fd_tun;
+	fds[1].fd = tunfd;
 	fds[0].events = POLLIN;
 	fds[1].events = POLLIN;
 
+	buff = xmalloc(blen);
+
 	while (likely(!sigint)) {
-		ret = poll(fds, 2, -1);
-		if (ret > 0) {
-			for (i = 0; i < 2; ++i) {
-				errno = 0;
-				if (fds[i].fd == fd_tun) {
-					ret = read(fd_tun, buffer, sizeof(buffer));
-					if (ret < 0 && errno == EAGAIN)
-						continue;
-					else if (ret <= 0) {
-						perror("read tun");
-						break;
-					}
-					err = write(fd, buffer, ret);
-					if (err != ret)
-						perror("tun -> net");
-				} else if (fds[i].fd == fd) {
-					if (!udp)
-						ret = read(fd, buffer, sizeof(buffer));
-					else {
-						sa_len = sizeof(sa);
-						memset(&sa, 0, sa_len);
-						ret = recvfrom(fd, buffer, sizeof(buffer),
-							       0, (struct sockaddr *) &sa,
-							       &sa_len);
-					}
-					if (ret < 0 && errno == EAGAIN)
-						continue;
-					else if (ret <= 0) {
-						perror("read net");
-						break;
-					}
-					err = write(fd_tun, buffer, ret);
-					if (err != ret)
-						perror("net -> tun");
-				}
-			}
+		poll(fds, 2, -1);
+		for (i = 0; i < 2; ++i) {
+			if (fds[i].fd == tunfd)
+				handler_tun_to_net(tunfd, fd, udp, buff, blen);
+			else
+				handler_net_to_tun(fd, tunfd, udp, buff, blen);
 		}
 	}
 
 	if (udp)
 		err = write(fd, "\r\r\r", strlen("\r\r\r") + 1);
+
+	xfree(buff);
+
 	close(fd);
-	close(fd_tun);
+	close(tunfd);
 
 	return 0;
 }
