@@ -45,10 +45,7 @@ static void handler_tun_to_net(int sfd, int dfd, int udp, char *buff, size_t len
 	while ((rlen = read(sfd, buff + sizeof(rlen), len - sizeof(rlen))) > 0) {
 		if (!udp) {
 			memcpy(buff, &rlen, sizeof(rlen));
-
 			err = write_exact(dfd, buff, rlen + sizeof(rlen));
-			if (err < 0)
-				perror("write to network");
 		} else {
 			//FIXME
 			err = write(dfd, buff, rlen);
@@ -67,11 +64,7 @@ static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len
 	while (1) {
 		if (!udp) {
 			err = read_exact(sfd, &rlen, sizeof(rlen));
-			if (err < 0)
-				perror("read from network, 1");
 			err = read_exact(sfd, buff, rlen);
-			if (err < 0)
-				perror("read from network, 2");
 		} else {
 			//FIXME
 			sa_len = sizeof(sa);
@@ -84,7 +77,7 @@ static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len
 		if (rlen <= 0)
 			break;
 
-		err = write_exact(dfd, buff, rlen);
+		err = write(dfd, buff, rlen);
 		if (err < 0)
 			perror("write to tunnel");
 	}
