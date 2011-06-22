@@ -255,7 +255,7 @@ int server_main(int port, int udp, int lnum)
 	int ipv4 = 0, thread_it = 0, i;
 	unsigned int cpus = 0;
 	ssize_t ret;
-	struct epoll_event *events;
+	struct epoll_event ev, *events;
 	struct addrinfo hints, *ahead, *ai;
 
 	openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
@@ -334,23 +334,28 @@ int server_main(int port, int udp, int lnum)
 	if (kdpfd < 0)
 		panic("Cannot create socket!\n");
 
-	events[0].events = EPOLLIN | EPOLLET;
-	events[0].data.fd = lfd;
-	events[1].events = EPOLLIN | EPOLLET;
-	events[1].data.fd = efd;
-	events[2].events = EPOLLIN | EPOLLET;
-	events[2].data.fd = tunfd;
-	curfds = 3;
-
-	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, lfd, &events[0]);
+	memset(&ev, 0, sizeof(ev));
+	ev.events = EPOLLIN | EPOLLET;
+	ev.data.fd = lfd;
+	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, lfd, &ev);
 	if (ret < 0)
 		panic("Cannot add socket for epoll!\n");
-	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, efd, &events[1]);
+
+	memset(&ev, 0, sizeof(ev));
+	ev.events = EPOLLIN | EPOLLET;
+	ev.data.fd = efd;
+	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, efd, &ev);
 	if (ret < 0)
 		panic("Cannot add socket for events!\n");
-	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, tunfd, &events[2]);
+
+	memset(&ev, 0, sizeof(ev));
+	ev.events = EPOLLIN | EPOLLET;
+	ev.data.fd = tunfd;
+	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, tunfd, &ev);
 	if (ret < 0)
 		panic("Cannot add socket for tundev!\n");
+
+	curfds = 3;
 
 	trie_init();
 
@@ -369,10 +374,10 @@ int server_main(int port, int udp, int lnum)
 		}
 
 		for (i = 0; i < nfds; ++i) {
-			if (events[i].data.fd < 0)
+			if (unlikely(events[i].data.fd < 0))
 				continue;
 			if (events[i].data.fd == lfd && !udp) {
-				int one, i, found = 0;
+				int one;
 				char hbuff[256], sbuff[256];
 				struct sockaddr_storage taddr;
 				socklen_t tlen;
@@ -413,47 +418,24 @@ int server_main(int port, int udp, int lnum)
 				setsockopt(nfd, IPPROTO_TCP, TCP_NODELAY,
 					   &one, sizeof(one));
 
-				for (i = 0; i < MAX_EPOLL_SIZE; ++i) {
-					if (events[i].data.fd == -1) {
-						found = 1;
-						break;
-					}
-				}
-				if (!found) {
-					close(nfd);
-					continue;
-				}
-
-				events[i].events = EPOLLIN | EPOLLET;
-				events[i].data.fd = nfd;
-
-				ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, nfd, &events[i]);
+				memset(&ev, 0, sizeof(ev));
+				ev.events = EPOLLIN | EPOLLET;
+				ev.data.fd = nfd;
+				ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, nfd, &ev);
 				if (ret < 0)
 					panic("Epoll ctl error!\n");
 
 			} else if (events[i].data.fd == efd) {
-				int i, found = 0;
 				uint64_t fd64_del;
 
 				while ((ret = read(efd, &fd64_del,
 						   sizeof(fd64_del))) > 0) {
 					if (ret != sizeof(fd64_del))
 						continue;
-					for (i = 0; i < MAX_EPOLL_SIZE; ++i) {
-						if (events[i].data.fd ==
-						    (int) fd64_del) {
-							found = 1;
-							break;
-						}
-					}
-					if (!found)
-						continue;
 
 					epoll_ctl(kdpfd, EPOLL_CTL_DEL, (int)
-						  fd64_del, &events[i]);
+						  fd64_del, &ev);
 					curfds--;
-					events[i].events = 0;
-					events[i].data.fd = -1;
 
 					syslog(LOG_INFO, "Closed connection with id %d\n",
 					       (int) fd64_del);
