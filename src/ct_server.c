@@ -78,13 +78,21 @@ static void handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 
 		trie_addr_lookup(buff, rlen, ws->parent.ipv4, &dfd, &naddr,
 				 (size_t *) &nlen);
-		if (dfd < 0 || nlen == 0)
-			/* We have no destination for this, drop! */
+		if (dfd < 0 || nlen == 0) {
+			syslog(LOG_ERR, "TCP tunnel lookup error: "
+			       "unknown destination\n");
 			continue;
+		}
 
 		err = sendto(dfd, buff, rlen, 0, (struct sockaddr *) &naddr,
 			     nlen);
+		if (err < 0)
+			syslog(LOG_ERR, "UDP tunnel write error: %s\n",
+			       strerror(errno));
 	}
+
+	if (rlen < 0 && errno != EAGAIN)
+		syslog(LOG_ERR, "UDP tunnel read error: %s\n", strerror(errno));
 }
 
 static void handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
@@ -107,12 +115,19 @@ static void handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 			continue;
 		if (elen == rlen && !strncmp(buff, EXIT_SEQ, elen))
 			trie_addr_remove_addr(&naddr, nlen);
-		else
+		else {
 			err = write(ws->parent.tunfd, buff, rlen);
+			if (err < 0)
+				syslog(LOG_ERR, "UDP net write error: %s\n",
+				       strerror(errno));
+		}
 
 		nlen = sizeof(naddr);
 		memset(&naddr, 0, sizeof(naddr));
 	}
+
+	if (rlen < 0 && errno != EAGAIN)
+		syslog(LOG_ERR, "UDP net read error: %s\n", strerror(errno));
 }
 
 static void handler_udp(int fd, const struct worker_struct *ws,
@@ -134,12 +149,20 @@ static void handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 	while ((rlen = read(fd, buff, len)) > 0) {
 		trie_addr_lookup(buff, rlen, ws->parent.ipv4, &dfd, NULL,
 				 (size_t *) &nlen);
-		if (dfd < 0)
-			/* We have no destination for this, drop! */
+		if (dfd < 0) {
+			syslog(LOG_ERR, "TCP tunnel lookup error: "
+			       "unknown destination\n");
 			continue;
+		}
 
 		err = write(dfd, buff, rlen);
+		if (err < 0)
+			syslog(LOG_ERR, "TCP tunnel write error: %s\n",
+			       strerror(errno));
 	}
+
+	if (rlen < 0 && errno != EAGAIN)
+		syslog(LOG_ERR, "TCP tunnel read error: %s\n", strerror(errno));
 }
 
 static void handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
@@ -159,12 +182,20 @@ static void handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 
 			rlen = write(ws->parent.efd, &fd64, sizeof(fd64));
 			if (rlen != sizeof(fd64))
-				whine("Event write error from thread!\n");
+				syslog(LOG_ERR, "TCP event write error: %s\n",
+				       strerror(errno));
 
 			trie_addr_remove(fd);
-		} else
+		} else {
 			err = write(ws->parent.tunfd, buff, rlen);
+			if (err < 0)
+				syslog(LOG_ERR, "TCP net write error: %s\n",
+				       strerror(errno));
+		}
 	}
+
+	if (rlen < 0 && errno != EAGAIN)
+		syslog(LOG_ERR, "TCP net read error: %s\n", strerror(errno));
 }
 
 static void handler_tcp(int fd, const struct worker_struct *ws,
