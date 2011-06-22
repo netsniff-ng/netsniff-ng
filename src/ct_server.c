@@ -436,6 +436,7 @@ int server_main(int port, int udp, int lnum)
 					panic("Epoll ctl error!\n");
 
 			} else if (events[i].data.fd == efd) {
+				int fd_del;
 				uint64_t fd64_del;
 
 				while ((ret = read(efd, &fd64_del,
@@ -443,12 +444,13 @@ int server_main(int port, int udp, int lnum)
 					if (ret != sizeof(fd64_del))
 						continue;
 
-					epoll_ctl(kdpfd, EPOLL_CTL_DEL, (int)
-						  fd64_del, &ev);
+					fd_del = (int) fd64_del;
+					epoll_ctl(kdpfd, EPOLL_CTL_DEL, fd_del, &ev);
+					close(fd_del);
 					curfds--;
 
 					syslog(LOG_INFO, "Closed connection with id %d\n",
-					       (int) fd64_del);
+					       fd_del);
 				}
 			} else {
 				uint64_t fd64 = events[i].data.fd;
