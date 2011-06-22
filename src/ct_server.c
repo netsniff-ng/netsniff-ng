@@ -95,7 +95,7 @@ static void handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 	struct sockaddr_storage naddr;
 	socklen_t nlen;
 
-	elen = strlen("\r\r\r") + 1;
+	elen = strlen(EXIT_SEQ) + 1;
 	nlen = sizeof(naddr);
 	memset(&naddr, 0, sizeof(naddr));
 
@@ -105,7 +105,7 @@ static void handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 				       &naddr, nlen);
 		if (unlikely(rlen < elen))
 			continue;
-		if (!strncmp(buff, "\r\r\r", elen))
+		if (elen == rlen && !strncmp(buff, EXIT_SEQ, elen))
 			trie_addr_remove_addr(&naddr, nlen);
 		else
 			err = write(ws->parent.tunfd, buff, rlen);
@@ -145,19 +145,25 @@ static void handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 static void handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 				   char *buff, size_t len)
 {
+	size_t elen;
 	ssize_t rlen, err;
+
+	elen = strlen(EXIT_SEQ) + 1;
 
 	while ((rlen = read(fd, buff, len)) > 0) {
 		trie_addr_maybe_update(buff, rlen, ws->parent.ipv4, fd, NULL, 0);
-		err = write(ws->parent.tunfd, buff, rlen);
-	}
+		if (unlikely(rlen < elen))
+			continue;
+		if (elen == rlen && !strncmp(buff, EXIT_SEQ, elen)) {
+			uint64_t fd64 = fd;
 
-	if (rlen < 0 && errno != EAGAIN) {
-		uint64_t fd64 = fd;
-		rlen = write(ws->parent.efd, &fd64, sizeof(fd64));
-		if (rlen != sizeof(fd64))
-			whine("Event write error from thread!\n");
-		trie_addr_remove(fd);
+			rlen = write(ws->parent.efd, &fd64, sizeof(fd64));
+			if (rlen != sizeof(fd64))
+				whine("Event write error from thread!\n");
+
+			trie_addr_remove(fd);
+		} else
+			err = write(ws->parent.tunfd, buff, rlen);
 	}
 }
 
@@ -363,6 +369,10 @@ int server_main(int port, int udp, int lnum)
 	threadpool = xzmalloc(sizeof(*threadpool) * cpus * THREADS_PER_CPU);
 	thread_spawn_or_panic(cpus, efd, tunfd, ipv4, udp);
 
+	syslog(LOG_INFO, "tunnel id %d!\n", tunfd);
+	syslog(LOG_INFO, "listen id %d!\n", lfd);
+	syslog(LOG_INFO, "event  id %d!\n", efd);
+	syslog(LOG_INFO, "epoll  id %d!\n", kdpfd);
 	syslog(LOG_INFO, "curvetun up and running!\n");
 
 	while (likely(!sigint)) {

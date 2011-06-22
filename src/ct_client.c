@@ -146,9 +146,7 @@ int client_main(int port, int udp)
 		}
 	}
 
-	if (udp)
-		err = write(fd, "\r\r\r", strlen("\r\r\r") + 1);
-
+	err = write(fd, EXIT_SEQ, strlen(EXIT_SEQ) + 1);
 	xfree(buff);
 
 	close(fd);

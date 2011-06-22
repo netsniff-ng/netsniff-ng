@@ -430,14 +430,16 @@ int main(int argc, char **argv)
 	if (getenv("LD_PRELOAD"))
 		panic("curvetun cannot be preloaded!\n");
 
-	ret = gcry_control(GCRYCTL_INIT_SECMEM, 1);
-	if (gcry_err_code(ret))
-		panic("Cannot enable gcrypt's secure memory management!\n");
+	xfree(xmalloc(1));
 
-	ret = gcry_control(GCRYCTL_USE_SECURE_RNDPOOL, 1);
-	if (gcry_err_code(ret))
-		panic("Cannot enable gcrypt's secure random "
-		      "number generator!\n");
+//	ret = gcry_control(GCRYCTL_INIT_SECMEM, 1);
+//	if (gcry_err_code(ret))
+//		panic("Cannot enable gcrypt's secure memory management!\n");
+
+//	ret = gcry_control(GCRYCTL_USE_SECURE_RNDPOOL, 1);
+//	if (gcry_err_code(ret))
+//		panic("Cannot enable gcrypt's secure random "
+//		      "number generator!\n");
 
 	fetch_home_dir();
 
@@ -519,7 +521,7 @@ int main(int argc, char **argv)
 		panic("Either select keygen, client or server mode!\n");
 	}
 
-	gcry_control(GCRYCTL_TERM_SECMEM, 1);
+//	gcry_control(GCRYCTL_TERM_SECMEM, 1);
 	return 0;
 }
 
