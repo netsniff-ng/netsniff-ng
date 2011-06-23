@@ -273,6 +273,8 @@ static void *worker(void *self)
 
 	while (likely(!sigint)) {
 		poll(&fds, 1, -1);
+		if ((fds.revents & POLLIN) != POLLIN)
+			continue;
 		while ((ret = read(ws->efd, &fd64, sizeof(fd64))) > 0) {
 			if (ret != sizeof(fd64)) {
 				sched_yield();
