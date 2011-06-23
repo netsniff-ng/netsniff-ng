@@ -275,15 +275,15 @@ static void *worker(void *self)
 		poll(&fds, 1, -1);
 		if ((fds.revents & POLLIN) != POLLIN)
 			continue;
-		while ((ret = read(ws->efd, &fd64, sizeof(fd64))) > 0) {
+		while ((ret = read_exact(ws->efd, &fd64, sizeof(fd64))) > 0) {
 			if (ret != sizeof(fd64)) {
 				sched_yield();
 				continue;
 			}
 			ret = ws->handler((int) fd64, ws, buff, blen);
 			if (ret) {
-				ret = write(ws->parent.refd, &fd64,
-					    sizeof(fd64));
+				ret = write_exact(ws->parent.refd, &fd64,
+						  sizeof(fd64));
 				if (ret != sizeof(fd64))
 					syslog(LOG_ERR, "Retriggering failed: "
 					       "%s\n", strerror(errno));
@@ -549,8 +549,8 @@ int server_main(int port, int udp, int lnum)
 				int fd_one;
 				uint64_t fd64_one;
 
-				while ((ret = read(refd, &fd64_one,
-						   sizeof(fd64_one))) > 0) {
+				while ((ret = read_exact(refd, &fd64_one,
+							 sizeof(fd64_one))) > 0) {
 					if (ret != sizeof(fd64_one))
 						continue;
 
@@ -572,8 +572,8 @@ int server_main(int port, int udp, int lnum)
 				int fd_del;
 				uint64_t fd64_del;
 
-				while ((ret = read(efd, &fd64_del,
-						   sizeof(fd64_del))) > 0) {
+				while ((ret = read_exact(efd, &fd64_del,
+							 sizeof(fd64_del))) > 0) {
 					if (ret != sizeof(fd64_del))
 						continue;
 
@@ -596,8 +596,8 @@ int server_main(int port, int udp, int lnum)
 			} else {
 				uint64_t fd64 = events[i].data.fd;
 
-				ret = write(threadpool[thread_it].efd,
-					    &fd64, sizeof(fd64));
+				ret = write_exact(threadpool[thread_it].efd,
+						  &fd64, sizeof(fd64));
 				if (ret != sizeof(fd64))
 					syslog(LOG_ERR, "Write error on event "
 					       "dispatch: %s\n", strerror(errno));
@@ -610,6 +610,7 @@ int server_main(int port, int udp, int lnum)
 
 	close(lfd);
 	close(efd);
+	close(refd);
 	close(tunfd);
 
 	thread_finish(cpus);
