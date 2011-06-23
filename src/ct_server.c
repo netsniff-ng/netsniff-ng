@@ -69,23 +69,31 @@ static void handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 {
 	int dfd;
 	ssize_t rlen, err;
+	struct ct_proto *hdr;
 	struct sockaddr_storage naddr;
 	socklen_t nlen;
 
-	while ((rlen = read(fd, buff, len)) > 0) {
+	while ((rlen = read(fd, buff + sizeof(struct ct_proto),
+			    len - sizeof(struct ct_proto))) > 0) {
 		nlen = 0;
 		memset(&naddr, 0, sizeof(naddr));
 
-		trie_addr_lookup(buff, rlen, ws->parent.ipv4, &dfd, &naddr,
+		hdr = (struct ct_proto *) buff;
+		hdr->payload = htons((uint16_t) rlen);
+
+		trie_addr_lookup(buff + sizeof(struct ct_proto),
+				 rlen - sizeof(struct ct_proto),
+				 ws->parent.ipv4, &dfd, &naddr,
 				 (size_t *) &nlen);
+
 		if (dfd < 0 || nlen == 0) {
 			syslog(LOG_ERR, "TCP tunnel lookup error: "
 			       "unknown destination\n");
 			continue;
 		}
 
-		err = sendto(dfd, buff, rlen, 0, (struct sockaddr *) &naddr,
-			     nlen);
+		err = sendto(dfd, buff, rlen + sizeof(struct ct_proto), 0,
+			     (struct sockaddr *) &naddr, nlen);
 		if (err < 0)
 			syslog(LOG_ERR, "UDP tunnel write error: %s\n",
 			       strerror(errno));
@@ -100,6 +108,7 @@ static void handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 {
 	size_t elen;
 	ssize_t rlen, err;
+	struct ct_proto *hdr;
 	struct sockaddr_storage naddr;
 	socklen_t nlen;
 
@@ -109,17 +118,27 @@ static void handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 
 	while ((rlen = recvfrom(fd, buff, len, 0, (struct sockaddr *) &naddr,
 				&nlen)) > 0) {
-		trie_addr_maybe_update(buff, rlen, ws->parent.ipv4, fd,
+		if (rlen < sizeof(struct ct_proto))
+			break;
+		hdr = (struct ct_proto *) buff;
+		if (hdr->flags & PROTO_FLAG_EXIT) {
+			trie_addr_remove_addr(&naddr, nlen);
+			nlen = sizeof(naddr);
+			memset(&naddr, 0, sizeof(naddr));
+			continue;
+		}
+
+		trie_addr_maybe_update(buff + sizeof(struct ct_proto),
+				       rlen - sizeof(struct ct_proto),
+				       ws->parent.ipv4, fd,
 				       &naddr, nlen);
 
-		if (elen == rlen && !strncmp(buff, EXIT_SEQ, elen))
-			trie_addr_remove_addr(&naddr, nlen);
-		else {
-			err = write(ws->parent.tunfd, buff, rlen);
-			if (err < 0)
-				syslog(LOG_ERR, "UDP net write error: %s\n",
-				       strerror(errno));
-		}
+		err = write(ws->parent.tunfd,
+			    buff + sizeof(struct ct_proto),
+			    rlen - sizeof(struct ct_proto));
+		if (err < 0)
+			syslog(LOG_ERR, "UDP net write error: %s\n",
+			       strerror(errno));
 
 		nlen = sizeof(naddr);
 		memset(&naddr, 0, sizeof(naddr));
@@ -152,10 +171,12 @@ static void handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 		hdr->payload = htons((uint16_t) rlen);
 
 		trie_addr_lookup(buff + sizeof(struct ct_proto),
-				 rlen, ws->parent.ipv4, &dfd, NULL,
+				 rlen - sizeof(struct ct_proto),
+				 ws->parent.ipv4, &dfd, NULL,
 				 (size_t *) &nlen);
+
 		if (dfd < 0) {
-			syslog(LOG_ERR, "TCP tunnel lookup error: "
+			syslog(LOG_INFO, "TCP tunnel lookup error: "
 			       "unknown destination\n");
 			continue;
 		}
@@ -170,24 +191,23 @@ static void handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 		syslog(LOG_ERR, "TCP tunnel read error: %s\n", strerror(errno));
 }
 
-#if 0
-struct ct_proto {
-        uint16_t payload;
-};
-#endif
-
 static void handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 				   char *buff, size_t len)
 {
 	size_t elen;
 	ssize_t rlen, err;
+	struct ct_proto hdr;
 
 	elen = strlen(EXIT_SEQ) + 1;
-//TODO: read size, do ntohs, read pkt
-	while ((rlen = read(fd, buff, len)) > 0) {
-		trie_addr_maybe_update(buff, rlen, ws->parent.ipv4, fd, NULL, 0);
 
-		if (elen == rlen && !strncmp(buff, EXIT_SEQ, elen)) {
+	while (1) {
+		rlen = read_exact(fd, &hdr, sizeof(hdr));
+		if (rlen < 0 || len < ntohs(hdr.payload))
+			break;
+		rlen = read_exact(fd, buff, ntohs(hdr.payload));
+		if (rlen < 0)
+			break;
+		if (hdr.flags & PROTO_FLAG_EXIT) {
 			uint64_t fd64 = fd;
 
 			rlen = write(ws->parent.efd, &fd64, sizeof(fd64));
@@ -196,16 +216,15 @@ static void handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 				       strerror(errno));
 
 			trie_addr_remove(fd);
-		} else {
-			err = write(ws->parent.tunfd, buff, rlen);
-			if (err < 0) {
-				/* fragmentation issues??? EINVAL due to fact
-				   that we have no ETH_P_IP id! todo with
-				   nonblocking? */
-				syslog(LOG_ERR, "TCP net write error: %s\n",
-				       strerror(errno));
-			}
+			continue;
 		}
+
+		trie_addr_maybe_update(buff, rlen, ws->parent.ipv4, fd, NULL, 0);
+
+		err = write(ws->parent.tunfd, buff, ntohs(hdr.payload));
+		if (err < 0)
+			syslog(LOG_ERR, "TCP net write error: %s\n",
+			       strerror(errno));
 	}
 
 	if (rlen < 0 && errno != EAGAIN)

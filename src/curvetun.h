@@ -19,9 +19,12 @@
 
 #define EXIT_SEQ        "\r\r\r"
 
+#define PROTO_FLAG_EXIT	(1 << 0)
+
 struct ct_proto {
         uint16_t payload;
-};
+        uint8_t flags;
+}  __attribute__((packed));
 
 #endif /* CURVETUN_H */
 

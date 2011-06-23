@@ -47,6 +47,8 @@ static void handler_tun_to_net(int sfd, int dfd, int udp, char *buff, size_t len
 			    len - sizeof(struct ct_proto))) > 0) {
 		hdr = (struct ct_proto *) buff;
 		hdr->payload = htons((uint16_t) rlen);
+		hdr->flags = 0;
+
 		err = write(dfd, buff, rlen + sizeof(struct ct_proto));
 		if (err < 0)
 			perror("Error writing tunnel data to net");
@@ -65,6 +67,7 @@ static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len
 			err = read_exact(sfd, &hdr, sizeof(hdr));
 			if (err < 0)
 				perror("Error reading data from net");
+
 			rlen = ntohs(hdr.payload);
 			err = read_exact(sfd, buff, rlen);
 			if (err < 0)
@@ -72,27 +75,39 @@ static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len
 		} else {
 			sa_len = sizeof(sa);
 			memset(&sa, 0, sa_len);
-			//FIXME
+
 			err = recvfrom(sfd, buff, len, 0, (struct sockaddr *)
 				       &sa, &sa_len);
 			hdrp = (struct ct_proto *) buff;
-			buff += sizeof(hdr);
 			rlen = ntohs(hdrp->payload);
 		}
 
 		if (err <= 0)
 			break;
 
-		err = write(dfd, buff, rlen);
+		err = write(dfd, buff + sizeof(struct ct_proto), rlen);
 		if (err < 0)
 			perror("Error writing net data to tunnel");
 	}
 }
 
+static void notify_close(int fd)
+{
+	ssize_t err;
+	struct ct_proto hdr;
+
+	memset(&hdr, 0, sizeof(hdr));
+	hdr.flags |= PROTO_FLAG_EXIT;
+
+	err = write(fd, &hdr, sizeof(hdr));
+	if (err < 0)
+		perror("Error writing close");
+}
+
 int client_main(int port, int udp)
 {
 	int fd = -1, tunfd;
-	int err, ret, try = 1, i, one;
+	int ret, try = 1, i, one;
 	struct addrinfo hints, *ahead, *ai;
 	struct sockaddr_in6 *saddr6;
 	struct pollfd fds[2];
@@ -166,7 +181,7 @@ int client_main(int port, int udp)
 		}
 	}
 
-	err = write(fd, EXIT_SEQ, strlen(EXIT_SEQ) + 1);
+	notify_close(fd);
 	xfree(buff);
 
 	close(fd);
