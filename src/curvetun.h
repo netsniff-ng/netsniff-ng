@@ -17,8 +17,6 @@
 
 #define DEFAULT_KEY_LEN 64
 
-#define EXIT_SEQ        "\r\r\r"
-
 #define PROTO_FLAG_EXIT	(1 << 0)
 
 struct ct_proto {
