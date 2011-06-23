@@ -110,13 +110,11 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len)
 {
 	int keep = 1;
-	size_t elen;
 	ssize_t rlen, err;
 	struct ct_proto *hdr;
 	struct sockaddr_storage naddr;
 	socklen_t nlen;
 
-	elen = strlen(EXIT_SEQ) + 1;
 	nlen = sizeof(naddr);
 	memset(&naddr, 0, sizeof(naddr));
 
@@ -209,11 +207,8 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len)
 {
 	int keep = 1;
-	size_t elen;
 	ssize_t rlen, err;
 	struct ct_proto hdr;
-
-	elen = strlen(EXIT_SEQ) + 1;
 
 	while (1) {
 		rlen = read_exact(fd, &hdr, sizeof(hdr));
@@ -479,6 +474,7 @@ int server_main(int port, int udp, int lnum)
 	threadpool = xzmalloc(sizeof(*threadpool) * threads);
 	thread_spawn_or_panic(cpus, efd, refd, tunfd, ipv4, udp);
 
+	syslog(LOG_INFO, "tunnel id: %d, listener id: %d\n", tunfd, lfd);
 	syslog(LOG_INFO, "curvetun up and running!\n");
 
 	while (likely(!sigint)) {
@@ -540,7 +536,8 @@ int server_main(int port, int udp, int lnum)
 				ev.data.fd = nfd;
 				ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, nfd, &ev);
 				if (ret < 0) {
-					syslog(LOG_ERR, "Epoll ctl error: %s\n",
+					syslog(LOG_ERR, "Epoll ctl add error"
+					       "on id %d: %s\n", nfd,
 					       strerror(errno));
 					close(nfd);
 					curfds--;
@@ -562,8 +559,9 @@ int server_main(int port, int udp, int lnum)
 					ev.data.fd = fd_one;
 					ret = epoll_ctl(kdpfd, EPOLL_CTL_MOD, fd_one, &ev);
 					if (ret < 0) {
-						syslog(LOG_ERR, "Epoll ctl error: %s\n",
-						       strerror(errno));
+						syslog(LOG_ERR, "Epoll ctl mod "
+						       "error on id %d: %s\n",
+						       fd_one, strerror(errno));
 						close(fd_one);
 						continue;
 					}
@@ -578,7 +576,14 @@ int server_main(int port, int udp, int lnum)
 						continue;
 
 					fd_del = (int) fd64_del;
-					epoll_ctl(kdpfd, EPOLL_CTL_DEL, fd_del, &ev);
+					ret = epoll_ctl(kdpfd, EPOLL_CTL_DEL, fd_del, &ev);
+					if (ret < 0) {
+						syslog(LOG_ERR, "Epoll ctl del "
+						       "error on id %d: %s\n",
+						       fd_del, strerror(errno));
+						close(fd_del);
+						continue;
+					}
 					close(fd_del);
 					curfds--;
 
