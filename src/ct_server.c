@@ -52,7 +52,7 @@ struct parent_info {
 };
 
 struct worker_struct {
-	int efd;
+	int efd[2];
 	unsigned int cpu;
 	pthread_t thread;
 	struct parent_info parent;
@@ -257,14 +257,14 @@ static int handler_tcp(int fd, const struct worker_struct *ws,
 
 static void *worker(void *self)
 {
-	uint64_t fd64;
+	int fd;
 	ssize_t ret;
 	size_t blen = 10000; //XXX
 	const struct worker_struct *ws = self;
 	struct pollfd fds;
 	char *buff;
 
-	fds.fd = ws->efd;
+	fds.fd = ws->efd[0];
 	fds.events = POLLIN;
 
 	buff = xmalloc(blen);
@@ -275,18 +275,17 @@ static void *worker(void *self)
 		poll(&fds, 1, -1);
 		if ((fds.revents & POLLIN) != POLLIN)
 			continue;
-		while ((ret = read_exact(ws->efd, &fd64, sizeof(fd64))) > 0) {
-			if (ret != sizeof(fd64)) {
+		while ((ret = read_exact(ws->efd[0], &fd, sizeof(fd))) > 0) {
+			if (ret != sizeof(fd)) {
 				syslog(LOG_ERR, "Thread could not read event "
 				       "descriptor!\n");
 				sched_yield();
 				continue;
 			}
-			ret = ws->handler((int) fd64, ws, buff, blen);
+			ret = ws->handler(fd, ws, buff, blen);
 			if (ret) {
-				ret = write_exact(ws->parent.refd, &fd64,
-						  sizeof(fd64));
-				if (ret != sizeof(fd64))
+				ret = write_exact(ws->parent.refd, &fd, sizeof(fd));
+				if (ret != sizeof(fd))
 					syslog(LOG_ERR, "Retriggering failed: "
 					       "%s\n", strerror(errno));
 			}
@@ -312,11 +311,9 @@ static void thread_spawn_or_panic(unsigned int cpus, int efd, int refd,
 		threadpool[i].cpu = i % cpus;
 		CPU_SET(threadpool[i].cpu, &cpuset);
 
-		threadpool[i].efd = eventfd(0, 0);
-		if (threadpool[i].efd < 0)
+		ret = pipe2(threadpool[i].efd, O_NONBLOCK);
+		if (ret < 0)
 			panic("Cannot create event socket!\n");
-
-		set_nonblocking(threadpool[i].efd);
 
 		threadpool[i].parent.efd = efd;
 		threadpool[i].parent.refd = refd;
@@ -346,14 +343,15 @@ static void thread_finish(unsigned int cpus)
 
 	threads = cpus * THREADS_PER_CPU;
 	for (i = 0; i < threads; ++i) {
-		close(threadpool[i].efd);
+		close(threadpool[i].efd[0]);
+		close(threadpool[i].efd[1]);
 		pthread_join(threadpool[i].thread, NULL);
 	}
 }
 
 int server_main(int port, int udp, int lnum)
 {
-	int lfd = -1, kdpfd, nfds, nfd, curfds, efd, refd, tunfd;
+	int lfd = -1, kdpfd, nfds, nfd, curfds, efd[2], refd[2], tunfd;
 	int ipv4 = 0, thread_it = 0, i;
 	unsigned int cpus = 0, threads;
 	ssize_t ret;
@@ -420,17 +418,15 @@ int server_main(int port, int udp, int lnum)
 
 	tunfd = tun_open_or_die(DEVNAME_SERVER);
 
-	efd = eventfd(0, 0);
-	if (efd < 0)
+	ret = pipe2(efd, O_NONBLOCK);
+	if (ret < 0)
 		panic("Cannot create parent event fd!\n");
 
-	refd = eventfd(0, 0);
-	if (efd < 0)
+	ret = pipe2(refd, O_NONBLOCK);
+	if (ret < 0)
 		panic("Cannot create parent (r)event fd!\n");
 
 	set_nonblocking(lfd);
-	set_nonblocking(efd);
-	set_nonblocking(refd);
 	set_nonblocking(tunfd);
 
 	events = xzmalloc(MAX_EPOLL_SIZE * sizeof(*events));
@@ -450,15 +446,15 @@ int server_main(int port, int udp, int lnum)
 
 	memset(&ev, 0, sizeof(ev));
 	ev.events = EPOLLIN;
-	ev.data.fd = efd;
-	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, efd, &ev);
+	ev.data.fd = efd[0];
+	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, efd[0], &ev);
 	if (ret < 0)
 		panic("Cannot add socket for events!\n");
 
 	memset(&ev, 0, sizeof(ev));
 	ev.events = EPOLLIN;
-	ev.data.fd = refd;
-	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, refd, &ev);
+	ev.data.fd = refd[0];
+	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, refd[0], &ev);
 	if (ret < 0)
 		panic("Cannot add socket for (r)events!\n");
 
@@ -476,7 +472,7 @@ int server_main(int port, int udp, int lnum)
 	cpus = get_number_cpus_online();
 	threads = cpus * THREADS_PER_CPU;
 	threadpool = xzmalloc(sizeof(*threadpool) * threads);
-	thread_spawn_or_panic(cpus, efd, refd, tunfd, ipv4, udp);
+	thread_spawn_or_panic(cpus, efd[1], refd[1], tunfd, ipv4, udp);
 
 	syslog(LOG_INFO, "tunnel id: %d, listener id: %d\n", tunfd, lfd);
 	syslog(LOG_INFO, "curvetun up and running!\n");
@@ -547,16 +543,12 @@ int server_main(int port, int udp, int lnum)
 					curfds--;
 					continue;
 				}
-			} else if (events[i].data.fd == refd) {
+			} else if (events[i].data.fd == refd[0]) {
 				int fd_one;
-				uint64_t fd64_one;
 
-				ret = read_exact(refd, &fd64_one,
-						 sizeof(fd64_one));
-				if (ret != sizeof(fd64_one))
+				ret = read_exact(refd[0], &fd_one, sizeof(fd_one));
+				if (ret != sizeof(fd_one))
 					continue;
-
-				fd_one = (int) fd64_one;
 
 				memset(&ev, 0, sizeof(ev));
 				ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
@@ -569,16 +561,13 @@ int server_main(int port, int udp, int lnum)
 					close(fd_one);
 					continue;
 				}
-			} else if (events[i].data.fd == efd) {
+			} else if (events[i].data.fd == efd[0]) {
 				int fd_del;
-				uint64_t fd64_del;
 
-				ret = read_exact(efd, &fd64_del,
-						 sizeof(fd64_del));
-				if (ret != sizeof(fd64_del))
+				ret = read_exact(efd[0], &fd_del, sizeof(fd_del));
+				if (ret != sizeof(fd_del))
 					continue;
 
-				fd_del = (int) fd64_del;
 				ret = epoll_ctl(kdpfd, EPOLL_CTL_DEL, fd_del, &ev);
 				if (ret < 0) {
 					syslog(LOG_ERR, "Epoll ctl del "
@@ -594,11 +583,11 @@ int server_main(int port, int udp, int lnum)
 				       "id %d, %d active!\n",
 				       fd_del, curfds);
 			} else {
-				uint64_t fd64 = events[i].data.fd;
+				int fd_work = events[i].data.fd;
 
-				ret = write_exact(threadpool[thread_it].efd,
-						  &fd64, sizeof(fd64));
-				if (ret != sizeof(fd64))
+				ret = write_exact(threadpool[thread_it].efd[1],
+						  &fd_work, sizeof(fd_work));
+				if (ret != sizeof(fd_work))
 					syslog(LOG_ERR, "Write error on event "
 					       "dispatch: %s\n", strerror(errno));
 				thread_it = (thread_it + 1) % threads;
@@ -609,8 +598,10 @@ int server_main(int port, int udp, int lnum)
 	syslog(LOG_INFO, "curvetun prepare shut down!\n");
 
 	close(lfd);
-	close(efd);
-	close(refd);
+	close(efd[0]);
+	close(efd[1]);
+	close(refd[0]);
+	close(refd[1]);
 	close(tunfd);
 
 	thread_finish(cpus);
