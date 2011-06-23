@@ -256,8 +256,6 @@ static void *worker(void *self)
 	const struct worker_struct *ws = self;
 	struct pollfd fds;
 	char *buff;
-//	char buff[1600];
-//	size_t blen = sizeof(buff);
 
 	fds.fd = ws->efd[0];
 	fds.events = POLLIN;
