@@ -33,7 +33,7 @@
 
 /* XXX: remove */
 static const char *rport = "6666";
-static const char *rhost = "localhost";
+static const char *rhost = "82.130.102.59";
 static const char *scope = "eth0";
 
 extern sig_atomic_t sigint;
@@ -42,6 +42,8 @@ static void handler_tun_to_net(int sfd, int dfd, int udp, char *buff, size_t len
 {
 	ssize_t rlen, err;
 	struct ct_proto *hdr;
+
+	printf("in %s\n", __func__);
 
 	while ((rlen = read(sfd, buff + sizeof(struct ct_proto),
 			    len - sizeof(struct ct_proto))) > 0) {
@@ -52,25 +54,30 @@ static void handler_tun_to_net(int sfd, int dfd, int udp, char *buff, size_t len
 		err = write(dfd, buff, rlen + sizeof(struct ct_proto));
 		if (err < 0)
 			perror("Error writing tunnel data to net");
+
+		printf("tun -> net: %d byte, %d payload written\n", rlen + sizeof(struct ct_proto), ntohs(hdr->payload));
 	}
 }
 
 static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len)
 {
+	size_t off = 0;
 	ssize_t rlen, err;
 	struct sockaddr_storage sa;
 	struct ct_proto hdr, *hdrp;
 	socklen_t sa_len;
 
+	printf("in %s\n", __func__);
+
 	while (1) {
 		if (!udp) {
 			err = read_exact(sfd, &hdr, sizeof(hdr));
-			if (err < 0)
+			if (err < 0 || err != sizeof(hdr))
 				perror("Error reading data from net");
 
 			rlen = ntohs(hdr.payload);
 			err = read_exact(sfd, buff, rlen);
-			if (err < 0)
+			if (err < 0 || err != rlen)
 				perror("Error reading data from net");
 		} else {
 			sa_len = sizeof(sa);
@@ -80,14 +87,17 @@ static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len
 				       &sa, &sa_len);
 			hdrp = (struct ct_proto *) buff;
 			rlen = ntohs(hdrp->payload);
+			off = sizeof(struct ct_proto);
 		}
 
 		if (err <= 0)
 			break;
 
-		err = write(dfd, buff + sizeof(struct ct_proto), rlen);
-		if (err < 0)
+		err = write(dfd, buff + off, rlen);
+		if (err < 0 || err != rlen)
 			perror("Error writing net data to tunnel");
+
+		printf("net -> tun: %d byte, %d payload written\n", rlen + sizeof(struct ct_proto), ntohs(hdr.payload));
 	}
 }
 
@@ -180,6 +190,8 @@ int client_main(int port, int udp)
 				handler_net_to_tun(fd, tunfd, udp, buff, blen);
 		}
 	}
+
+	printf("quit\n");
 
 	notify_close(fd);
 	xfree(buff);
