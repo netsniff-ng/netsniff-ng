@@ -11,6 +11,7 @@
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -22,6 +23,8 @@
 #include "write_or_die.h"
 #include "die.h"
 #include "strlcpy.h"
+
+extern sig_atomic_t sigint;
 
 void fsync_or_die(int fd, const char *msg)
 {
@@ -83,9 +86,11 @@ ssize_t read_exact(int fd, void *buf, size_t len)
 {
 	register ssize_t num = 0, written;
 
-	while (len > 0) {
+	while (len > 0 && !sigint) {
+		printf("to read: %zu\n", len);
+		fflush(stdout);
 		if ((written = read(fd, buf, len)) < 0) {
-			if (errno == EAGAIN)
+			if (errno == EAGAIN && num > 0)
 				continue;
 			return -1;
 		}
@@ -105,9 +110,11 @@ ssize_t write_exact(int fd, void *buf, size_t len)
 {
 	register ssize_t num = 0, written;
 
-	while (len > 0) {
+	while (len > 0 && !sigint) {
+		printf("to write: %zu\n", len);
+		fflush(stdout);
 		if ((written = write(fd, buf, len)) < 0) {
-			if (errno == EAGAIN)
+			if (errno == EAGAIN && num > 0)
 				continue;
 			return -1;
 		}
