@@ -319,6 +319,9 @@ static void maybe_exit_by_vomit(enum mcheck_status stat, void *p)
 
 static void checkmem(void *p)
 {
+	//XXX
+	return;
+
 	if (p) {
 		enum mcheck_status stat = mprobe(p);
 		maybe_exit_by_vomit(stat, p);
@@ -343,7 +346,7 @@ static void xmalloc_init_hook(void)
 	xmalloc_mcheck_init();
 }
 
-void (*__malloc_initialize_hook)(void) = xmalloc_init_hook;
+//void (*__malloc_initialize_hook)(void) = xmalloc_init_hook;
 
 void muntrace_handler(int signal)
 {

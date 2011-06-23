@@ -14,7 +14,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
-//#include <syslog.h>
+#include <syslog.h>
 #include <signal.h>
 #include <netdb.h>
 #include <stdint.h>
@@ -35,8 +35,6 @@
 #include "curvetun.h"
 #include "compiler.h"
 #include "trie.h"
-
-#define syslog(p,s,...)
 
 struct parent_info {
 	int efd;
@@ -258,6 +256,8 @@ static void *worker(void *self)
 	const struct worker_struct *ws = self;
 	struct pollfd fds;
 	char *buff;
+//	char buff[1600];
+//	size_t blen = sizeof(buff);
 
 	fds.fd = ws->efd[0];
 	fds.events = POLLIN;
@@ -332,12 +332,14 @@ static void thread_spawn_or_panic(unsigned int cpus, int efd, int refd,
 
 static void thread_finish(unsigned int cpus)
 {
-	int i;
+	int i, ret;
 	unsigned int threads;
 
 	threads = cpus * THREADS_PER_CPU;
 	for (i = 0; i < threads; ++i) {
-		pthread_join(threadpool[i].trid, NULL);
+		ret = pthread_join(threadpool[i].trid, NULL);
+		if (ret < 0)
+			continue;
 		close(threadpool[i].efd[0]);
 		close(threadpool[i].efd[1]);
 	}
@@ -352,7 +354,7 @@ int server_main(int port, int udp, int lnum)
 	struct epoll_event ev, *events;
 	struct addrinfo hints, *ahead, *ai;
 
-//	openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
+	openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
 	syslog(LOG_INFO, "curvetun server booting!\n");
 
 	memset(&hints, 0, sizeof(hints));
@@ -607,7 +609,7 @@ int server_main(int port, int udp, int lnum)
 	trie_cleanup();
 
 	syslog(LOG_INFO, "curvetun shut down!\n");
-//	closelog();
+	closelog();
 
 	return 0;
 }
