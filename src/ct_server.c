@@ -88,7 +88,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 				 (size_t *) &nlen);
 
 		if (dfd < 0 || nlen == 0) {
-			syslog(LOG_ERR, "TCP tunnel lookup error: "
+			syslog(LOG_INFO, "TCP tunnel lookup error: "
 			       "unknown destination\n");
 			continue;
 		}
@@ -132,6 +132,7 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 			trie_addr_remove_addr(&naddr, nlen);
 			nlen = sizeof(naddr);
 			memset(&naddr, 0, sizeof(naddr));
+			syslog(LOG_INFO, "Remote UDP connection closed!\n");
 			continue;
 		}
 
