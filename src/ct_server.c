@@ -88,7 +88,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 				 (size_t *) &nlen);
 
 		if (dfd < 0 || nlen == 0) {
-			syslog(LOG_INFO, "TCP tunnel lookup error: "
+			syslog(LOG_INFO, "TCP tunnel lookup failed: "
 			       "unknown destination\n");
 			continue;
 		}
@@ -186,7 +186,7 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 				 (size_t *) &nlen);
 
 		if (dfd < 0) {
-			syslog(LOG_INFO, "TCP tunnel lookup error: "
+			syslog(LOG_INFO, "TCP tunnel lookup failed: "
 			       "unknown destination\n");
 			continue;
 		}
@@ -277,6 +277,8 @@ static void *worker(void *self)
 			continue;
 		while ((ret = read_exact(ws->efd, &fd64, sizeof(fd64))) > 0) {
 			if (ret != sizeof(fd64)) {
+				syslog(LOG_ERR, "Thread could not read event "
+				       "descriptor!\n");
 				sched_yield();
 				continue;
 			}
@@ -447,14 +449,14 @@ int server_main(int port, int udp, int lnum)
 		panic("Cannot add socket for epoll!\n");
 
 	memset(&ev, 0, sizeof(ev));
-	ev.events = EPOLLIN | EPOLLET;
+	ev.events = EPOLLIN;
 	ev.data.fd = efd;
 	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, efd, &ev);
 	if (ret < 0)
 		panic("Cannot add socket for events!\n");
 
 	memset(&ev, 0, sizeof(ev));
-	ev.events = EPOLLIN | EPOLLET;
+	ev.events = EPOLLIN;
 	ev.data.fd = refd;
 	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, refd, &ev);
 	if (ret < 0)
@@ -549,50 +551,48 @@ int server_main(int port, int udp, int lnum)
 				int fd_one;
 				uint64_t fd64_one;
 
-				while ((ret = read_exact(refd, &fd64_one,
-							 sizeof(fd64_one))) > 0) {
-					if (ret != sizeof(fd64_one))
-						continue;
+				ret = read_exact(refd, &fd64_one,
+						 sizeof(fd64_one));
+				if (ret != sizeof(fd64_one))
+					continue;
 
-					fd_one = (int) fd64_one;
+				fd_one = (int) fd64_one;
 
-					memset(&ev, 0, sizeof(ev));
-					ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
-					ev.data.fd = fd_one;
-					ret = epoll_ctl(kdpfd, EPOLL_CTL_MOD, fd_one, &ev);
-					if (ret < 0) {
-						syslog(LOG_ERR, "Epoll ctl mod "
-						       "error on id %d: %s\n",
-						       fd_one, strerror(errno));
-						close(fd_one);
-						continue;
-					}
+				memset(&ev, 0, sizeof(ev));
+				ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
+				ev.data.fd = fd_one;
+				ret = epoll_ctl(kdpfd, EPOLL_CTL_MOD, fd_one, &ev);
+				if (ret < 0) {
+					syslog(LOG_ERR, "Epoll ctl mod "
+					       "error on id %d: %s\n",
+					       fd_one, strerror(errno));
+					close(fd_one);
+					continue;
 				}
 			} else if (events[i].data.fd == efd) {
 				int fd_del;
 				uint64_t fd64_del;
 
-				while ((ret = read_exact(efd, &fd64_del,
-							 sizeof(fd64_del))) > 0) {
-					if (ret != sizeof(fd64_del))
-						continue;
+				ret = read_exact(efd, &fd64_del,
+						 sizeof(fd64_del));
+				if (ret != sizeof(fd64_del))
+					continue;
 
-					fd_del = (int) fd64_del;
-					ret = epoll_ctl(kdpfd, EPOLL_CTL_DEL, fd_del, &ev);
-					if (ret < 0) {
-						syslog(LOG_ERR, "Epoll ctl del "
-						       "error on id %d: %s\n",
-						       fd_del, strerror(errno));
-						close(fd_del);
-						continue;
-					}
+				fd_del = (int) fd64_del;
+				ret = epoll_ctl(kdpfd, EPOLL_CTL_DEL, fd_del, &ev);
+				if (ret < 0) {
+					syslog(LOG_ERR, "Epoll ctl del "
+					       "error on id %d: %s\n",
+					       fd_del, strerror(errno));
 					close(fd_del);
-					curfds--;
-
-					syslog(LOG_INFO, "Closed connection with "
-					       "id %d, %d active!\n",
-					       fd_del, curfds);
+					continue;
 				}
+				close(fd_del);
+				curfds--;
+
+				syslog(LOG_INFO, "Closed connection with "
+				       "id %d, %d active!\n",
+				       fd_del, curfds);
 			} else {
 				uint64_t fd64 = events[i].data.fd;
 
