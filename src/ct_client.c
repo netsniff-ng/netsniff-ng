@@ -65,12 +65,12 @@ static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len
 	while (1) {
 		if (!udp) {
 			err = read_exact(sfd, &hdr, sizeof(hdr));
-			if (err < 0 || err != sizeof(hdr))
-				perror("Error reading data from net");
+			if (err < 0)
+				break;
 
 			rlen = ntohs(hdr.payload);
 			err = read_exact(sfd, buff, rlen);
-			if (err < 0 || err != rlen)
+			if (err < 0)
 				perror("Error reading data from net");
 		} else {
 			sa_len = sizeof(sa);
@@ -87,7 +87,7 @@ static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len
 			break;
 
 		err = write(dfd, buff + off, rlen);
-		if (err < 0 || err != rlen)
+		if (err < 0)
 			perror("Error writing net data to tunnel");
 	}
 }
