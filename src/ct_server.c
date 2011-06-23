@@ -231,7 +231,7 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 			       strerror(errno));
 	}
 
-	if (rlen < 0 && errno != EAGAIN)
+	if (rlen < 0 && errno != EAGAIN && errno != EBADF)
 		syslog(LOG_ERR, "TCP net read error: %s\n", strerror(errno));
 
 	return keep;
@@ -556,10 +556,14 @@ int server_main(int port, int udp, int lnum)
 					continue;
 				}
 			} else if (events[i].data.fd == efd[0]) {
-				int fd_del;
+				int fd_del, test;
 
 				ret = read_exact(efd[0], &fd_del, sizeof(fd_del));
 				if (ret != sizeof(fd_del) || fd_del <= 0)
+					continue;
+
+				ret = read(fd_del, &test, sizeof(test));
+				if (ret < 0 && errno == EBADF)
 					continue;
 
 				ret = epoll_ctl(kdpfd, EPOLL_CTL_DEL, fd_del, &ev);
