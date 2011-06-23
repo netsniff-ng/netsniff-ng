@@ -81,7 +81,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 				 (size_t *) &nlen);
 
 		if (dfd < 0 || nlen == 0) {
-			syslog(LOG_INFO, "TCP tunnel lookup failed: "
+			syslog(LOG_INFO, "UDP tunnel lookup failed: "
 			       "unknown destination\n");
 			continue;
 		}
@@ -184,7 +184,7 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 			continue;
 		}
 
-		err = write(dfd, buff, rlen + sizeof(struct ct_proto));
+		err = write_exact(dfd, buff, rlen + sizeof(struct ct_proto));
 		if (err < 0)
 			syslog(LOG_ERR, "TCP tunnel write error: %s\n",
 			       strerror(errno));
