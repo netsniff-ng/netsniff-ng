@@ -33,7 +33,7 @@
 
 /* XXX: remove */
 static const char *rport = "6666";
-static const char *rhost = "82.130.102.59";
+static const char *rhost = "localhost";
 static const char *scope = "eth0";
 
 extern sig_atomic_t sigint;
@@ -42,8 +42,6 @@ static void handler_tun_to_net(int sfd, int dfd, int udp, char *buff, size_t len
 {
 	ssize_t rlen, err;
 	struct ct_proto *hdr;
-
-	printf("in %s\n", __func__);
 
 	while ((rlen = read(sfd, buff + sizeof(struct ct_proto),
 			    len - sizeof(struct ct_proto))) > 0) {
@@ -66,8 +64,6 @@ static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len
 	struct sockaddr_storage sa;
 	struct ct_proto hdr, *hdrp;
 	socklen_t sa_len;
-
-	printf("in %s\n", __func__);
 
 	while (1) {
 		if (!udp) {
