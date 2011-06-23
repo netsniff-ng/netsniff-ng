@@ -39,7 +39,6 @@
 #include "write_or_die.h"
 #include "psched.h"
 #include "xmalloc.h"
-#include "ct_server.h"
 #include "curvetun.h"
 #include "compiler.h"
 #include "trie.h"
@@ -197,9 +196,6 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 		if (err < 0)
 			syslog(LOG_ERR, "TCP tunnel write error: %s\n",
 			       strerror(errno));
-
-		printf("tun -> net: %d byte, %d payload written\n", rlen + sizeof(struct ct_proto), ntohs(hdr->payload));
-		fflush(stdout);
 	}
 
 	if (rlen < 0 && errno != EAGAIN)
@@ -244,9 +240,6 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 		if (err < 0)
 			syslog(LOG_ERR, "TCP net write error: %s\n",
 			       strerror(errno));
-
-		printf("net -> tun: %d byte, %d payload written\n", rlen + sizeof(struct ct_proto), ntohs(hdr.payload));
-		fflush(stdout);
 	}
 
 	if (rlen < 0 && errno != EAGAIN)
@@ -296,8 +289,6 @@ static void *worker(void *self)
 				if (ret != sizeof(fd64))
 					syslog(LOG_ERR, "Retriggering failed: "
 					       "%s\n", strerror(errno));
-				printf("Parent shall rearm %d\n", (int)fd64);
-				fflush(stdout);
 			}
 		}
 	}
@@ -451,7 +442,7 @@ int server_main(int port, int udp, int lnum)
 		panic("Cannot create socket!\n");
 
 	memset(&ev, 0, sizeof(ev));
-	ev.events = EPOLLIN;
+	ev.events = udp ? EPOLLIN | EPOLLET | EPOLLONESHOT : EPOLLIN;
 	ev.data.fd = lfd;
 	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, lfd, &ev);
 	if (ret < 0)
@@ -575,8 +566,6 @@ int server_main(int port, int udp, int lnum)
 						close(fd_one);
 						continue;
 					}
-					printf("Parent rearmed %d\n", (int)fd64_one);
-					fflush(stdout);
 				}
 			} else if (events[i].data.fd == efd) {
 				int fd_del;
