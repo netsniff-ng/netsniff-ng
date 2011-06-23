@@ -17,7 +17,7 @@
 #include <getopt.h>
 #include <errno.h>
 #include <stdbool.h>
-#include <gcrypt.h>
+//#include <gcrypt.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
@@ -31,10 +31,10 @@
 #include "die.h"
 #include "strlcpy.h"
 #include "signals.h"
-#include "curves.h"
-#include "protocol.h"
-#include "serialize.h"
-#include "aes256ctr.h"
+//#include "curves.h"
+//#include "protocol.h"
+//#include "serialize.h"
+//#include "aes256ctr.h"
 #include "curvetun.h"
 
 #define MAX(a, b)       ((a) > (b) ? (a) : (b))
@@ -197,6 +197,7 @@ static void fetch_home_dir(void)
 		panic("No HOME defined!\n");
 }
 
+#if 0
 static void read_passphrase(char *hash)
 {
 	int fd, count = 0;
@@ -399,6 +400,12 @@ static int main_keygen(void)
 
 	return 0;
 }
+#endif
+
+static int main_keygen(void)
+{
+	return 0;
+}
 
 static int main_client(char *dev, enum client_mode cmode)
 {
@@ -419,9 +426,9 @@ int main(int argc, char **argv)
 	char *stun = NULL, *dev = NULL;
 	enum working_mode wmode = MODE_UNKNOW;
 	enum client_mode cmode = MODE_ALL_RANDOM;
-	gcry_error_t ret;
+//	gcry_error_t ret;
 
-	assert(gcry_check_version("1.4.1"));
+//	assert(gcry_check_version("1.4.1"));
 
 	if (getuid() != geteuid())
 		seteuid(getuid());
