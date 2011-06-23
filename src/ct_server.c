@@ -14,7 +14,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
-#include <syslog.h>
+//#include <syslog.h>
 #include <signal.h>
 #include <netdb.h>
 #include <stdint.h>
@@ -36,6 +36,8 @@
 #include "compiler.h"
 #include "trie.h"
 
+#define syslog(p,s,...)
+
 struct parent_info {
 	int efd;
 	int refd;
@@ -45,9 +47,9 @@ struct parent_info {
 };
 
 struct worker_struct {
+	pthread_t trid;
 	int efd[2];
 	unsigned int cpu;
-	pthread_t thread;
 	struct parent_info parent;
 	int (*handler)(int fd, const struct worker_struct *ws,
 		       char *buff, size_t len);
@@ -261,8 +263,7 @@ static void *worker(void *self)
 	fds.events = POLLIN;
 
 	buff = xmalloc(blen);
-
-	syslog(LOG_INFO, "curvetun thread %p/CPU%u up!\n", ws, ws->cpu);
+	syslog(LOG_INFO, "curvetun thread on CPU%u up!\n", ws->cpu);
 
 	while (likely(!sigint)) {
 		poll(&fds, 1, -1);
@@ -285,9 +286,9 @@ static void *worker(void *self)
 		}
 	}
 
+	syslog(LOG_INFO, "curvetun thread on CPU%u down!\n", ws->cpu);
 	xfree(buff);
 
-	syslog(LOG_INFO, "curvetun thread %p/CPU%u down!\n", ws, ws->cpu);
 	pthread_exit(0);
 }
 
@@ -315,17 +316,17 @@ static void thread_spawn_or_panic(unsigned int cpus, int efd, int refd,
 		threadpool[i].parent.udp = udp;
 		threadpool[i].handler = udp ? handler_udp : handler_tcp;
 
-		ret = pthread_create(&(threadpool[i].thread), NULL,
+		ret = pthread_create(&threadpool[i].trid, NULL,
 				     worker, &threadpool[i]);
 		if (ret < 0)
 			panic("Thread creation failed!\n");
 
-		ret = pthread_setaffinity_np(threadpool[i].thread,
+		ret = pthread_setaffinity_np(threadpool[i].trid,
 					     sizeof(cpu_set_t), &cpuset);
 		if (ret < 0)
 			panic("Thread CPU migration failed!\n");
 
-		pthread_detach(threadpool[i].thread);
+		pthread_detach(threadpool[i].trid);
 	}
 }
 
@@ -336,9 +337,9 @@ static void thread_finish(unsigned int cpus)
 
 	threads = cpus * THREADS_PER_CPU;
 	for (i = 0; i < threads; ++i) {
+		pthread_join(threadpool[i].trid, NULL);
 		close(threadpool[i].efd[0]);
 		close(threadpool[i].efd[1]);
-		pthread_join(threadpool[i].thread, NULL);
 	}
 }
 
@@ -351,7 +352,7 @@ int server_main(int port, int udp, int lnum)
 	struct epoll_event ev, *events;
 	struct addrinfo hints, *ahead, *ai;
 
-	openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
+//	openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
 	syslog(LOG_INFO, "curvetun server booting!\n");
 
 	memset(&hints, 0, sizeof(hints));
@@ -606,7 +607,7 @@ int server_main(int port, int udp, int lnum)
 	trie_cleanup();
 
 	syslog(LOG_INFO, "curvetun shut down!\n");
-	closelog();
+//	closelog();
 
 	return 0;
 }

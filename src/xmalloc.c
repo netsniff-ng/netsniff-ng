@@ -303,10 +303,31 @@ void stacktrace(void)
 	}
 }
 
+static void maybe_exit_by_vomit(enum mcheck_status stat, void *p)
+{
+	switch (stat) {
+	case MCHECK_HEAD:
+		panic("Memory underrun at %s%p\n", !p ? "??? " : "", p);
+	case MCHECK_TAIL:
+		panic("Memory overrun at %s%p\n", !p ? "??? " : "", p);
+	case MCHECK_FREE:
+		panic("Double free %s%p\n", !p ? "??? " : "", p);
+	default:
+		break;
+	}
+}
+
+static void checkmem(void *p)
+{
+	if (p) {
+		enum mcheck_status stat = mprobe(p);
+		maybe_exit_by_vomit(stat, p);
+	}
+}
+
 void mcheck_abort(enum mcheck_status stat)
 {
-	if (unlikely(stat != MCHECK_OK))
-		panic("mcheck: mem inconsistency detected: %d\n", stat);
+	maybe_exit_by_vomit(stat, NULL);
 }
 
 static void xmalloc_mcheck_init(void)
@@ -342,7 +363,6 @@ void muntrace_handler(int signal)
 __hidden void *xmalloc(size_t size)
 {
 	void *ptr;
-	enum mcheck_status stat;
 
 	if (size == 0)
 		panic("xmalloc: zero size\n");
@@ -351,9 +371,7 @@ __hidden void *xmalloc(size_t size)
 	if (ptr == NULL)
 		panic("xmalloc: out of memory (allocating %lu bytes)\n",
 		      (u_long) size);
-	stat = mprobe(ptr);
-	if (stat > MCHECK_OK)
-		panic("xmalloc: mem inconsistency detected: %d\n", stat);
+	checkmem(ptr);
 
 	debug_blue("%p: %zu", ptr, size);
 	return ptr;
@@ -362,7 +380,6 @@ __hidden void *xmalloc(size_t size)
 __hidden void *xzmalloc(size_t size)
 {
 	void *ptr;
-	enum mcheck_status stat;
 
 	if (size == 0)
 		panic("xzmalloc: zero size\n");
@@ -371,10 +388,7 @@ __hidden void *xzmalloc(size_t size)
 	if (ptr == NULL)
 		panic("xzmalloc: out of memory (allocating %lu bytes)\n",
 		      (u_long) size);
-
-	stat = mprobe(ptr);
-	if (stat > MCHECK_OK)
-		panic("xzmalloc: mem inconsistency detected: %d\n", stat);
+	checkmem(ptr);
 
 	memset(ptr, 0, size);
 
@@ -386,7 +400,6 @@ __hidden void *xmalloc_aligned(size_t size, size_t alignment)
 {
 	int ret;
 	void *ptr;
-	enum mcheck_status stat;
 
 	if (size == 0)
 		panic("xmalloc_aligned: zero size\n");
@@ -395,10 +408,7 @@ __hidden void *xmalloc_aligned(size_t size, size_t alignment)
 	if (ret != 0)
 		panic("xmalloc_aligned: out of memory (allocating %lu "
 		      "bytes)\n", (u_long) size);
-	stat = mprobe(ptr);
-	if (stat > MCHECK_OK)
-		panic("xmalloc_aligned: mem inconsistency detected: %d\n",
-		      stat);
+	checkmem(ptr);
 
 	debug_blue("%p: %zu", ptr, size);
 	return ptr;
@@ -407,7 +417,6 @@ __hidden void *xmalloc_aligned(size_t size, size_t alignment)
 __hidden void *xvalloc(size_t size)
 {
 	void *ptr;
-	enum mcheck_status stat;
 
 	if (size == 0)
 		panic("xvalloc: zero size\n");
@@ -416,9 +425,7 @@ __hidden void *xvalloc(size_t size)
 	if (ptr == NULL)
 		panic("xvalloc: out of memory (allocating %lu bytes)\n",
 		      (u_long) size);
-	stat = mprobe(ptr);
-	if (stat > MCHECK_OK)
-		panic("xvalloc: mem inconsistency detected: %d\n", stat);
+	checkmem(ptr);
 
 	debug_blue("%p: %zu", ptr, size);
 	return ptr;
@@ -446,7 +453,6 @@ __hidden void *xmemdupz(const void *data, size_t len)
 __hidden void *xcalloc(size_t nmemb, size_t size)
 {
 	void *ptr;
-	enum mcheck_status stat;
 
 	if (size == 0 || nmemb == 0)
 		panic("xcalloc: zero size\n");
@@ -457,10 +463,7 @@ __hidden void *xcalloc(size_t nmemb, size_t size)
 	if (ptr == NULL)
 		panic("xcalloc: out of memory (allocating %lu bytes)\n",
 		      (u_long) (size * nmemb));
-
-	stat = mprobe(ptr);
-	if (stat > MCHECK_OK)
-		panic("xcalloc: mem inconsistency detected: %d\n", stat);
+	checkmem(ptr);
 
 	debug_blue("%p: %zu", ptr, size);
 	return ptr;
@@ -470,7 +473,6 @@ __hidden void *xrealloc(void *ptr, size_t nmemb, size_t size)
 {
 	void *new_ptr;
 	size_t new_size = nmemb * size;
-	enum mcheck_status stat;
 
 	if (new_size == 0)
 		panic("xrealloc: zero size\n");
@@ -485,10 +487,7 @@ __hidden void *xrealloc(void *ptr, size_t nmemb, size_t size)
 	if (new_ptr == NULL)
 		panic("xrealloc: out of memory (new_size %lu bytes)\n",
 		      (u_long) new_size);
-
-	stat = mprobe(new_ptr);
-	if (stat > MCHECK_OK)
-		panic("xrealloc: mem inconsistency detected: %d\n", stat);
+	checkmem(ptr);
 
 	debug_blue("%p: %zu => %p: %zu", ptr, size, new_ptr, new_size);
 	return new_ptr;
@@ -496,14 +495,10 @@ __hidden void *xrealloc(void *ptr, size_t nmemb, size_t size)
 
 __hidden void xfree(void *ptr)
 {
-	enum mcheck_status stat;
-
 	if (ptr == NULL)
 		panic("xfree: NULL pointer given as argument\n");
+	checkmem(ptr);
 
-	stat = mprobe(ptr);
-	if (stat > MCHECK_OK)
-		panic("xfree: mem inconsistency detected: %d\n", stat);
 	debug_blue("%p => 0", ptr);
 
 	free(ptr);
