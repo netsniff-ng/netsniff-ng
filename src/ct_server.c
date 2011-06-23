@@ -81,6 +81,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 
 		hdr = (struct ct_proto *) buff;
 		hdr->payload = htons((uint16_t) rlen);
+		hdr->flags = 0;
 
 		trie_addr_lookup(buff + sizeof(struct ct_proto),
 				 rlen - sizeof(struct ct_proto),
@@ -122,8 +123,11 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 
 	while ((rlen = recvfrom(fd, buff, len, 0, (struct sockaddr *) &naddr,
 				&nlen)) > 0) {
-		if (rlen < sizeof(struct ct_proto))
-			break;
+		if (rlen < sizeof(struct ct_proto)) {
+			nlen = sizeof(naddr);
+			memset(&naddr, 0, sizeof(naddr));
+			continue;
+		}
 		hdr = (struct ct_proto *) buff;
 		if (hdr->flags & PROTO_FLAG_EXIT) {
 			trie_addr_remove_addr(&naddr, nlen);
