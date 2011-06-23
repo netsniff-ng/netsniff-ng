@@ -46,6 +46,7 @@
 
 struct parent_info {
 	int efd;
+	int refd;
 	int tunfd;
 	int ipv4;
 	int udp;
@@ -56,18 +57,18 @@ struct worker_struct {
 	unsigned int cpu;
 	pthread_t thread;
 	struct parent_info parent;
-	void (*handler)(int fd, const struct worker_struct *ws,
-			char *buff, size_t len);
+	int (*handler)(int fd, const struct worker_struct *ws,
+		       char *buff, size_t len);
 };
 
 static struct worker_struct *threadpool = NULL;
 
 extern sig_atomic_t sigint;
 
-static void handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
-				   char *buff, size_t len)
+static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
+				  char *buff, size_t len)
 {
-	int dfd;
+	int dfd, keep = 1;
 	ssize_t rlen, err;
 	struct ct_proto *hdr;
 	struct sockaddr_storage naddr;
@@ -101,11 +102,14 @@ static void handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 
 	if (rlen < 0 && errno != EAGAIN)
 		syslog(LOG_ERR, "UDP tunnel read error: %s\n", strerror(errno));
+
+	return keep;
 }
 
-static void handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
-				   char *buff, size_t len)
+static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
+				  char *buff, size_t len)
 {
+	int keep = 1;
 	size_t elen;
 	ssize_t rlen, err;
 	struct ct_proto *hdr;
@@ -146,21 +150,25 @@ static void handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 
 	if (rlen < 0 && errno != EAGAIN)
 		syslog(LOG_ERR, "UDP net read error: %s\n", strerror(errno));
+
+	return keep;
 }
 
-static void handler_udp(int fd, const struct worker_struct *ws,
-		        char *buff, size_t len)
+static int handler_udp(int fd, const struct worker_struct *ws,
+		       char *buff, size_t len)
 {
+	int ret = 0;
 	if (fd == ws->parent.tunfd)
-		handler_udp_tun_to_net(fd, ws, buff, len);
+		ret = handler_udp_tun_to_net(fd, ws, buff, len);
 	else
-		handler_udp_net_to_tun(fd, ws, buff, len);
+		ret = handler_udp_net_to_tun(fd, ws, buff, len);
+	return ret;
 }
 
-static void handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
-				   char *buff, size_t len)
+static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
+				  char *buff, size_t len)
 {
-	int dfd;
+	int dfd, keep = 1;
 	ssize_t rlen, err;
 	struct ct_proto *hdr;
 	socklen_t nlen;
@@ -185,15 +193,21 @@ static void handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 		if (err < 0)
 			syslog(LOG_ERR, "TCP tunnel write error: %s\n",
 			       strerror(errno));
+
+		printf("tun -> net: %d byte, %d payload written\n", rlen + sizeof(struct ct_proto), ntohs(hdr->payload));
+		fflush(stdout);
 	}
 
 	if (rlen < 0 && errno != EAGAIN)
 		syslog(LOG_ERR, "TCP tunnel read error: %s\n", strerror(errno));
+
+	return keep;
 }
 
-static void handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
-				   char *buff, size_t len)
+static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
+				  char *buff, size_t len)
 {
+	int keep = 1;
 	size_t elen;
 	ssize_t rlen, err;
 	struct ct_proto hdr;
@@ -216,6 +230,7 @@ static void handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 				       strerror(errno));
 
 			trie_addr_remove(fd);
+			keep = 0;
 			continue;
 		}
 
@@ -225,19 +240,26 @@ static void handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 		if (err < 0)
 			syslog(LOG_ERR, "TCP net write error: %s\n",
 			       strerror(errno));
+
+		printf("net -> tun: %d byte, %d payload written\n", rlen + sizeof(struct ct_proto), ntohs(hdr.payload));
+		fflush(stdout);
 	}
 
 	if (rlen < 0 && errno != EAGAIN)
 		syslog(LOG_ERR, "TCP net read error: %s\n", strerror(errno));
+
+	return keep;
 }
 
-static void handler_tcp(int fd, const struct worker_struct *ws,
-		        char *buff, size_t len)
+static int handler_tcp(int fd, const struct worker_struct *ws,
+		       char *buff, size_t len)
 {
+	int ret = 0;
 	if (fd == ws->parent.tunfd)
-		handler_tcp_tun_to_net(fd, ws, buff, len);
+		ret = handler_tcp_tun_to_net(fd, ws, buff, len);
 	else
-		handler_tcp_net_to_tun(fd, ws, buff, len);
+		ret = handler_tcp_net_to_tun(fd, ws, buff, len);
+	return ret;
 }
 
 static void *worker(void *self)
@@ -263,7 +285,16 @@ static void *worker(void *self)
 				sched_yield();
 				continue;
 			}
-			ws->handler((int) fd64, ws, buff, blen);
+			ret = ws->handler((int) fd64, ws, buff, blen);
+			if (ret) {
+				ret = write(ws->parent.refd, &fd64,
+					    sizeof(fd64));
+				if (ret != sizeof(fd64))
+					syslog(LOG_ERR, "Retriggering failed: "
+					       "%s\n", strerror(errno));
+				printf("Parent shall rearm %d\n", (int)fd64);
+				fflush(stdout);
+			}
 		}
 	}
 
@@ -273,8 +304,8 @@ static void *worker(void *self)
 	pthread_exit(0);
 }
 
-static void thread_spawn_or_panic(unsigned int cpus, int efd, int tunfd,
-				  int ipv4, int udp)
+static void thread_spawn_or_panic(unsigned int cpus, int efd, int refd,
+				  int tunfd, int ipv4, int udp)
 {
 	int i, ret;
 	cpu_set_t cpuset;
@@ -293,6 +324,7 @@ static void thread_spawn_or_panic(unsigned int cpus, int efd, int tunfd,
 		set_nonblocking(threadpool[i].efd);
 
 		threadpool[i].parent.efd = efd;
+		threadpool[i].parent.refd = refd;
 		threadpool[i].parent.tunfd = tunfd;
 		threadpool[i].parent.ipv4 = ipv4;
 		threadpool[i].parent.udp = udp;
@@ -326,7 +358,7 @@ static void thread_finish(unsigned int cpus)
 
 int server_main(int port, int udp, int lnum)
 {
-	int lfd = -1, kdpfd, nfds, nfd, curfds, efd, tunfd;
+	int lfd = -1, kdpfd, nfds, nfd, curfds, efd, refd, tunfd;
 	int ipv4 = 0, thread_it = 0, i;
 	unsigned int cpus = 0, threads;
 	ssize_t ret;
@@ -397,8 +429,13 @@ int server_main(int port, int udp, int lnum)
 	if (efd < 0)
 		panic("Cannot create parent event fd!\n");
 
+	refd = eventfd(0, 0);
+	if (efd < 0)
+		panic("Cannot create parent (r)event fd!\n");
+
 	set_nonblocking(lfd);
 	set_nonblocking(efd);
+	set_nonblocking(refd);
 	set_nonblocking(tunfd);
 
 	events = xzmalloc(MAX_EPOLL_SIZE * sizeof(*events));
@@ -425,24 +462,27 @@ int server_main(int port, int udp, int lnum)
 
 	memset(&ev, 0, sizeof(ev));
 	ev.events = EPOLLIN | EPOLLET;
+	ev.data.fd = refd;
+	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, refd, &ev);
+	if (ret < 0)
+		panic("Cannot add socket for (r)events!\n");
+
+	memset(&ev, 0, sizeof(ev));
+	ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
 	ev.data.fd = tunfd;
 	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, tunfd, &ev);
 	if (ret < 0)
 		panic("Cannot add socket for tundev!\n");
 
-	curfds = 3;
+	curfds = 4;
 
 	trie_init();
 
 	cpus = get_number_cpus_online();
 	threads = cpus * THREADS_PER_CPU;
 	threadpool = xzmalloc(sizeof(*threadpool) * threads);
-	thread_spawn_or_panic(cpus, efd, tunfd, ipv4, udp);
+	thread_spawn_or_panic(cpus, efd, refd, tunfd, ipv4, udp);
 
-	syslog(LOG_INFO, "tunnel id %d!\n", tunfd);
-	syslog(LOG_INFO, "listen id %d!\n", lfd);
-	syslog(LOG_INFO, "event  id %d!\n", efd);
-	syslog(LOG_INFO, "epoll  id %d!\n", kdpfd);
 	syslog(LOG_INFO, "curvetun up and running!\n");
 
 	while (likely(!sigint)) {
@@ -500,7 +540,7 @@ int server_main(int port, int udp, int lnum)
 					   &one, sizeof(one));
 
 				memset(&ev, 0, sizeof(ev));
-				ev.events = EPOLLIN | EPOLLET;
+				ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
 				ev.data.fd = nfd;
 				ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, nfd, &ev);
 				if (ret < 0) {
@@ -509,6 +549,30 @@ int server_main(int port, int udp, int lnum)
 					close(nfd);
 					curfds--;
 					continue;
+				}
+			} else if (events[i].data.fd == refd) {
+				int fd_one;
+				uint64_t fd64_one;
+
+				while ((ret = read(refd, &fd64_one,
+						   sizeof(fd64_one))) > 0) {
+					if (ret != sizeof(fd64_one))
+						continue;
+
+					fd_one = (int) fd64_one;
+
+					memset(&ev, 0, sizeof(ev));
+					ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
+					ev.data.fd = fd_one;
+					ret = epoll_ctl(kdpfd, EPOLL_CTL_MOD, fd_one, &ev);
+					if (ret < 0) {
+						syslog(LOG_ERR, "Epoll ctl error: %s\n",
+						       strerror(errno));
+						close(fd_one);
+						continue;
+					}
+					printf("Parent rearmed %d\n", (int)fd64_one);
+					fflush(stdout);
 				}
 			} else if (events[i].data.fd == efd) {
 				int fd_del;
@@ -536,7 +600,6 @@ int server_main(int port, int udp, int lnum)
 				if (ret != sizeof(fd64))
 					syslog(LOG_ERR, "Write error on event "
 					       "dispatch: %s\n", strerror(errno));
-
 				thread_it = (thread_it + 1) % threads;
 			}
 		}
