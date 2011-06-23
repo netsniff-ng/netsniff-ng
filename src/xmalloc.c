@@ -352,7 +352,7 @@ __hidden void *xmalloc(size_t size)
 		panic("xmalloc: out of memory (allocating %lu bytes)\n",
 		      (u_long) size);
 	stat = mprobe(ptr);
-	if (stat != MCHECK_OK)
+	if (stat > MCHECK_OK)
 		panic("xmalloc: mem inconsistency detected: %d\n", stat);
 
 	debug_blue("%p: %zu", ptr, size);
@@ -373,7 +373,7 @@ __hidden void *xzmalloc(size_t size)
 		      (u_long) size);
 
 	stat = mprobe(ptr);
-	if (stat != MCHECK_OK)
+	if (stat > MCHECK_OK)
 		panic("xzmalloc: mem inconsistency detected: %d\n", stat);
 
 	memset(ptr, 0, size);
@@ -396,7 +396,7 @@ __hidden void *xmalloc_aligned(size_t size, size_t alignment)
 		panic("xmalloc_aligned: out of memory (allocating %lu "
 		      "bytes)\n", (u_long) size);
 	stat = mprobe(ptr);
-	if (stat != MCHECK_OK)
+	if (stat > MCHECK_OK)
 		panic("xmalloc_aligned: mem inconsistency detected: %d\n",
 		      stat);
 
@@ -417,7 +417,7 @@ __hidden void *xvalloc(size_t size)
 		panic("xvalloc: out of memory (allocating %lu bytes)\n",
 		      (u_long) size);
 	stat = mprobe(ptr);
-	if (stat != MCHECK_OK)
+	if (stat > MCHECK_OK)
 		panic("xvalloc: mem inconsistency detected: %d\n", stat);
 
 	debug_blue("%p: %zu", ptr, size);
@@ -459,7 +459,7 @@ __hidden void *xcalloc(size_t nmemb, size_t size)
 		      (u_long) (size * nmemb));
 
 	stat = mprobe(ptr);
-	if (stat != MCHECK_OK)
+	if (stat > MCHECK_OK)
 		panic("xcalloc: mem inconsistency detected: %d\n", stat);
 
 	debug_blue("%p: %zu", ptr, size);
@@ -487,7 +487,7 @@ __hidden void *xrealloc(void *ptr, size_t nmemb, size_t size)
 		      (u_long) new_size);
 
 	stat = mprobe(new_ptr);
-	if (stat != MCHECK_OK)
+	if (stat > MCHECK_OK)
 		panic("xrealloc: mem inconsistency detected: %d\n", stat);
 
 	debug_blue("%p: %zu => %p: %zu", ptr, size, new_ptr, new_size);
@@ -502,7 +502,7 @@ __hidden void xfree(void *ptr)
 		panic("xfree: NULL pointer given as argument\n");
 
 	stat = mprobe(ptr);
-	if (stat != MCHECK_OK)
+	if (stat > MCHECK_OK)
 		panic("xfree: mem inconsistency detected: %d\n", stat);
 	debug_blue("%p => 0", ptr);
 
