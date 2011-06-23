@@ -31,7 +31,8 @@ lib-objs   = xmalloc.o                  \
 
 target     = curvetun
 
-all: clean gen-version build doc strip
+#all: clean gen-version build doc strip
+all: clean gen-version build doc
 debug: all
 deploy: all strip
 
