@@ -547,7 +547,7 @@ int server_main(int port, int udp, int lnum)
 				int fd_one;
 
 				ret = read_exact(refd[0], &fd_one, sizeof(fd_one));
-				if (ret != sizeof(fd_one))
+				if (ret != sizeof(fd_one) || fd_one <= 0)
 					continue;
 
 				memset(&ev, 0, sizeof(ev));
@@ -565,7 +565,7 @@ int server_main(int port, int udp, int lnum)
 				int fd_del;
 
 				ret = read_exact(efd[0], &fd_del, sizeof(fd_del));
-				if (ret != sizeof(fd_del))
+				if (ret != sizeof(fd_del) || fd_del <= 0)
 					continue;
 
 				ret = epoll_ctl(kdpfd, EPOLL_CTL_DEL, fd_del, &ev);
@@ -590,6 +590,7 @@ int server_main(int port, int udp, int lnum)
 				if (ret != sizeof(fd_work))
 					syslog(LOG_ERR, "Write error on event "
 					       "dispatch: %s\n", strerror(errno));
+
 				thread_it = (thread_it + 1) % threads;
 			}
 		}
