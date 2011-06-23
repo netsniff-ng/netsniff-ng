@@ -16,10 +16,7 @@
 #include <pthread.h>
 #include <syslog.h>
 #include <signal.h>
-#include <limits.h>
 #include <netdb.h>
-#include <sched.h>
-#include <ctype.h>
 #include <stdint.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -28,10 +25,6 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <sys/epoll.h>
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <sys/mman.h>
-#include <sys/eventfd.h>
 #include <arpa/inet.h>
 
 #include "die.h"
