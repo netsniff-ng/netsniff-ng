@@ -432,10 +432,10 @@ int main(int argc, char **argv)
 
 	if (getuid() != geteuid())
 		seteuid(getuid());
-	if (getenv("LD_PRELOAD"))
-		panic("curvetun cannot be preloaded!\n");
+//	if (getenv("LD_PRELOAD"))
+//		panic("curvetun cannot be preloaded!\n");
 
-	xfree(xmalloc(1));
+//	xfree(xmalloc(1));
 
 //	ret = gcry_control(GCRYCTL_INIT_SECMEM, 1);
 //	if (gcry_err_code(ret))
