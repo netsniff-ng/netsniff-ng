@@ -48,7 +48,7 @@ static void handler_tun_to_net(int sfd, int dfd, int udp, char *buff, size_t len
 		hdr->payload = htons((uint16_t) rlen);
 		hdr->flags = 0;
 
-		err = write(dfd, buff, rlen + sizeof(struct ct_proto));
+		err = write_exact(dfd, buff, rlen + sizeof(struct ct_proto));
 		if (err < 0)
 			perror("Error writing tunnel data to net");
 	}
