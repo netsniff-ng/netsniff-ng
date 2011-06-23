@@ -81,7 +81,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 				 (size_t *) &nlen);
 
 		if (dfd < 0 || nlen == 0) {
-			syslog(LOG_INFO, "TCP tunnel lookup failed: "
+			syslog(LOG_INFO, "UDP tunnel lookup failed: "
 			       "unknown destination\n");
 			continue;
 		}
