@@ -544,6 +544,8 @@ int server_main(int port, int udp, int lnum)
 
 	cpus = get_number_cpus_online();
 	threads = cpus * THREADS_PER_CPU;
+	if (!((threads != 0) && ((threads & (threads - 1)) == 0)))
+		panic("thread number not power of two!\n");
 	threadpool = xzmalloc(sizeof(*threadpool) * threads);
 	thread_spawn_or_panic(cpus, efd[1], refd[1], tunfd, ipv4, udp);
 
@@ -668,7 +670,7 @@ int server_main(int port, int udp, int lnum)
 					syslog(LOG_ERR, "Write error on event "
 					       "dispatch: %s\n", strerror(errno));
 
-				thread_it = (thread_it + 1) % threads;
+				thread_it = (thread_it + 1) & (threads - 1);
 			}
 		}
 	}
