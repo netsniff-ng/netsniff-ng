@@ -67,6 +67,10 @@ int tun_open_or_die(char *name)
 	if (ret < 0)
 		panic("ioctl screwed up!\n");
 
+	ret = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);
+	if (ret < 0)
+		panic("fctnl screwed up!\n");
+
 	return fd;
 }
 

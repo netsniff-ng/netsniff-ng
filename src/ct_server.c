@@ -68,6 +68,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 
 	while ((rlen = read(fd, buff + sizeof(struct ct_proto),
 			    len - sizeof(struct ct_proto))) > 0) {
+		dfd = -1;
 		nlen = 0;
 		memset(&naddr, 0, sizeof(naddr));
 
@@ -150,8 +151,9 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 		if (count == 10) {
 			err = write_exact(ws->efd[1], &fd, sizeof(fd));
 			if (err != sizeof(fd))
-				syslog(LOG_ERR, "CPU%u: UDP tunnel put fd back in "
+				syslog(LOG_ERR, "CPU%u: UDP net put fd back in "
 				       "pipe error: %s\n", ws->cpu, strerror(errno));
+			keep = 0;
 			return keep;
 		}
 next:
@@ -187,6 +189,8 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 
 	while ((rlen = read(fd, buff + sizeof(struct ct_proto),
 			    len - sizeof(struct ct_proto))) > 0) {
+		dfd = -1;
+
 		hdr = (struct ct_proto *) buff;
 		hdr->payload = htons((uint16_t) rlen);
 		hdr->canary = htons(CANARY);
@@ -262,8 +266,9 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 		if (count == 10) {
 			err = write_exact(ws->efd[1], &fd, sizeof(fd));
 			if (err != sizeof(fd))
-				syslog(LOG_ERR, "CPU%u: TCP tunnel put fd back in "
+				syslog(LOG_ERR, "CPU%u: TCP net put fd back in "
 				       "pipe error: %s\n", ws->cpu, strerror(errno));
+			keep = 0;
 			return keep;
 		}
 	}
@@ -288,7 +293,7 @@ static int handler_tcp(int fd, const struct worker_struct *ws,
 
 static void *worker(void *self)
 {
-	int fd;
+	int fd, old_state;
 	ssize_t ret;
 	size_t blen = 10000; //XXX
 	const struct worker_struct *ws = self;
@@ -305,6 +310,7 @@ static void *worker(void *self)
 		poll(&fds, 1, -1);
 		if ((fds.revents & POLLIN) != POLLIN)
 			continue;
+		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_state);
 		while ((ret = read_exact(ws->efd[0], &fd, sizeof(fd))) > 0) {
 			if (ret != sizeof(fd)) {
 				syslog(LOG_ERR, "CPU%u: Thread could not read "
@@ -321,6 +327,7 @@ static void *worker(void *self)
 					       "%s\n", ws->cpu, strerror(errno));
 			}
 		}
+		pthread_setcancelstate(old_state, NULL);
 	}
 
 	syslog(LOG_INFO, "curvetun thread on CPU%u down!\n", ws->cpu);
@@ -460,7 +467,6 @@ int server_main(int port, int udp, int lnum)
 		panic("Cannot create parent (r)event fd!\n");
 
 	set_nonblocking(lfd);
-	set_nonblocking(tunfd);
 
 	events = xzmalloc(MAX_EPOLL_SIZE * sizeof(*events));
 	for (i = 0; i < MAX_EPOLL_SIZE; ++i)
