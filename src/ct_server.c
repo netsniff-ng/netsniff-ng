@@ -255,8 +255,18 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 		rlen = read_exact(fd, buff, ntohs(hdr.payload));
 		if (rlen < 0)
 			break;
-		if (ntohs(hdr.canary) != CANARY)
+		if (unlikely(rlen != ntohs(hdr.payload))) {
+			syslog(LOG_ERR, "CPU%u: Got malformed packet from "
+			       "%d (len %zd instead of %u)!\n", ws->cpu, fd,
+			       rlen, ntohs(hdr.payload));
 			break;
+		}
+		if (unlikely(ntohs(hdr.canary) != CANARY)) {
+			syslog(LOG_ERR, "CPU%u: Got malformed packet from "
+			       "%d (canary %0x)!\n", ws->cpu, fd,
+			       ntohs(hdr.canary));
+			break;
+		}
 		if (hdr.flags & PROTO_FLAG_EXIT) {
 			uint64_t fd64 = fd;
 
@@ -651,7 +661,7 @@ int server_main(int port, int udp, int lnum)
 			} else {
 				int fd_work = events[i].data.fd;
 
-				ret = write_exact(threadpool[/*thread_it*/0].efd[1],
+				ret = write_exact(threadpool[thread_it].efd[1],
 						  &fd_work, sizeof(fd_work));
 				if (ret != sizeof(fd_work))
 					syslog(LOG_ERR, "Write error on event "
