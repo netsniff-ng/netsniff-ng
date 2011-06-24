@@ -86,7 +86,7 @@ ssize_t read_or_die(int fd, void *buf, size_t len)
 	return ret;
 }
 
-ssize_t read_exact(int fd, void *buf, size_t len)
+ssize_t read_exact(int fd, void *buf, size_t len, int mayexit)
 {
 	register ssize_t num = 0, written;
 
@@ -94,7 +94,8 @@ ssize_t read_exact(int fd, void *buf, size_t len)
 		if ((written = read(fd, buf, len)) < 0) {
 			if (errno == EAGAIN && num > 0)
 				continue;
-			return -1;
+			if (mayexit)
+				return -1;
 		}
 
 		if (!written)
@@ -108,7 +109,7 @@ ssize_t read_exact(int fd, void *buf, size_t len)
 	return num;
 }
 
-ssize_t write_exact(int fd, void *buf, size_t len)
+ssize_t write_exact(int fd, void *buf, size_t len, int mayexit)
 {
 	register ssize_t num = 0, written;
 
@@ -116,7 +117,8 @@ ssize_t write_exact(int fd, void *buf, size_t len)
 		if ((written = write(fd, buf, len)) < 0) {
 			if (errno == EAGAIN && num > 0)
 				continue;
-			return -1;
+			if (mayexit)
+				return -1;
 		}
 
 		if (!written)

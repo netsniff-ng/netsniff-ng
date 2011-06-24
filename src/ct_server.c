@@ -218,7 +218,7 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 			continue;
 		}
 
-		err = write_exact(dfd, buff, rlen + sizeof(struct ct_proto));
+		err = write_exact(dfd, buff, rlen + sizeof(struct ct_proto), 0);
 		if (err < 0)
 			syslog(LOG_ERR, "CPU%u: TCP tunnel write error: %s\n",
 			       ws->cpu, strerror(errno));
@@ -241,10 +241,10 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 
 	errno = 0;
 	while (1) {
-		rlen = read_exact(fd, &hdr, sizeof(hdr));
+		rlen = read_exact(fd, &hdr, sizeof(hdr), 1);
 		if (rlen < 0 || len < ntohs(hdr.payload))
 			break;
-		rlen = read_exact(fd, buff, ntohs(hdr.payload));
+		rlen = read_exact(fd, buff, ntohs(hdr.payload), 0);
 		if (rlen < 0)
 			break;
 		if (unlikely(rlen != ntohs(hdr.payload))) {
@@ -259,6 +259,7 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 			       ntohs(hdr.canary));
 			break;
 		}
+		/* FIXME: after pattree lookup! */
 		if (hdr.flags & PROTO_FLAG_EXIT) {
 			uint64_t fd64 = fd;
 
@@ -287,7 +288,7 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 
 		count++;
 		if (count == 10) {
-			err = write_exact(ws->efd[1], &fd, sizeof(fd));
+			err = write_exact(ws->efd[1], &fd, sizeof(fd), 1);
 			if (err != sizeof(fd))
 				syslog(LOG_ERR, "CPU%u: TCP net put fd back in "
 				       "pipe error: %s\n", ws->cpu, strerror(errno));
@@ -335,7 +336,7 @@ static void *worker(void *self)
 		if ((fds.revents & POLLIN) != POLLIN)
 			continue;
 		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_state);
-		while ((ret = read_exact(ws->efd[0], &fd, sizeof(fd))) > 0) {
+		while ((ret = read_exact(ws->efd[0], &fd, sizeof(fd), 1)) > 0) {
 			if (ret != sizeof(fd)) {
 				syslog(LOG_ERR, "CPU%u: Thread could not read "
 				       "event descriptor!\n", ws->cpu);
@@ -345,7 +346,7 @@ static void *worker(void *self)
 
 			ret = ws->handler(fd, ws, buff, blen);
 			if (ret) {
-				ret = write_exact(ws->parent.refd, &fd, sizeof(fd));
+				ret = write_exact(ws->parent.refd, &fd, sizeof(fd), 1);
 				if (ret != sizeof(fd))
 					syslog(LOG_ERR, "CPU%u: Retriggering failed: "
 					       "%s\n", ws->cpu, strerror(errno));
@@ -616,7 +617,7 @@ int server_main(int port, int udp, int lnum)
 			} else if (events[i].data.fd == refd[0]) {
 				int fd_one;
 
-				ret = read_exact(refd[0], &fd_one, sizeof(fd_one));
+				ret = read_exact(refd[0], &fd_one, sizeof(fd_one), 1);
 				if (ret != sizeof(fd_one) || fd_one <= 0)
 					continue;
 
@@ -634,7 +635,7 @@ int server_main(int port, int udp, int lnum)
 			} else if (events[i].data.fd == efd[0]) {
 				int fd_del, test;
 
-				ret = read_exact(efd[0], &fd_del, sizeof(fd_del));
+				ret = read_exact(efd[0], &fd_del, sizeof(fd_del), 1);
 				if (ret != sizeof(fd_del) || fd_del <= 0)
 					continue;
 
@@ -662,7 +663,7 @@ int server_main(int port, int udp, int lnum)
 				cpu = socket_to_cpu(fd_work);
 
 				ret = write_exact(threadpool[cpu].efd[1],
-						  &fd_work, sizeof(fd_work));
+						  &fd_work, sizeof(fd_work), 1);
 				if (ret != sizeof(fd_work))
 					syslog(LOG_ERR, "Write error on event "
 					       "dispatch: %s\n", strerror(errno));

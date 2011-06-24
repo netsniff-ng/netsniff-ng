@@ -49,7 +49,7 @@ static void handler_tun_to_net(int sfd, int dfd, int udp, char *buff, size_t len
 		hdr->canary = htons(CANARY);
 		hdr->flags = 0;
 
-		err = write_exact(dfd, buff, rlen + sizeof(struct ct_proto));
+		err = write_exact(dfd, buff, rlen + sizeof(struct ct_proto), 0);
 		if (err < 0)
 			perror("Error writing tunnel data to net");
 	}
@@ -66,13 +66,13 @@ static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len
 
 	while (1) {
 		if (!udp) {
-			err = read_exact(sfd, &hdr, sizeof(hdr));
+			err = read_exact(sfd, &hdr, sizeof(hdr), 1);
 			if (err < 0)
 				break;
 
 			rlen = ntohs(hdr.payload);
 			canary = ntohs(hdr.canary);
-			err = read_exact(sfd, buff, rlen);
+			err = read_exact(sfd, buff, rlen, 0);
 			if (err < 0)
 				perror("Error reading data from net");
 		} else {

@@ -13,8 +13,8 @@ extern int open_or_die(const char *file, int flags);
 extern int open_or_die_m(const char *file, int flags, mode_t mode);
 extern int tun_open_or_die(char *name);
 extern ssize_t read_or_die(int fd, void *buf, size_t count);
-extern ssize_t read_exact(int fd, void *buf, size_t len);
-extern ssize_t write_exact(int fd, void *buf, size_t len);
+extern ssize_t read_exact(int fd, void *buf, size_t len, int mayexit);
+extern ssize_t write_exact(int fd, void *buf, size_t len, int mayexit);
 extern ssize_t write_or_die(int fd, const void *buf, size_t count);
 extern ssize_t write_or_whine_pipe(int fd, const void *buf, size_t len,
 				   const char *msg);
