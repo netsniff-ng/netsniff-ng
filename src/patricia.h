@@ -34,9 +34,9 @@ extern int ptree_search_data_nearest(void *str, size_t sstr,
 extern int ptree_search_data_exact(void *str, size_t sstr,
 				   struct sockaddr_storage *addr, size_t *alen,
 				   struct patricia_node *root);
-extern void ptree_add_entry(void *str, size_t sstr, int data,
-			    struct sockaddr_storage *addr, size_t alen,
-			    struct patricia_node **root);
+extern int ptree_add_entry(void *str, size_t sstr, int data,
+			   struct sockaddr_storage *addr, size_t alen,
+			   struct patricia_node **root);
 extern void ptree_del_entry(void *str, size_t sstr,
 			    struct patricia_node **root);
 extern void ptree_get_key(int data, struct patricia_node *node,

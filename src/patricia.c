@@ -238,10 +238,10 @@ static void ptree_add_entry_at(char *str, size_t slen, int bitloc, int data,
 	}
 }
 
-void ptree_add_entry(void *str, size_t sstr, int data, struct sockaddr_storage *addr,
-		     size_t alen, struct patricia_node **root)
+int ptree_add_entry(void *str, size_t sstr, int data, struct sockaddr_storage *addr,
+		    size_t alen, struct patricia_node **root)
 {
-	int *ptr, bitloc;
+	int *ptr, bitloc, malicious = 0;
 	struct patricia_node *n;
 
 	if (!(*root))
@@ -249,10 +249,24 @@ void ptree_add_entry(void *str, size_t sstr, int data, struct sockaddr_storage *
 	else {
 		ptr = ptree_search_data_nearest_ptr(str, sstr, (*root));
 		n = container_of(ptr, struct patricia_node, value.data);
-		if (n->klen == sstr && !memcmp(str, n->key, n->klen))
-			return;
+		if (n->klen == sstr && !memcmp(str, n->key, n->klen)) {
+			/* Make sure if entry exists, that we also have the
+			 * same data, otherwise, we drop the packet */
+			if (n->value.data != data)
+				malicious = 1;
+			else if (n->alen != alen)
+				malicious = 1;
+			else if ((n->addr && !addr) || (!n->addr && addr))
+				malicious = 1;
+			else if (n->alen == alen && n->addr && addr) {
+				if (memcmp(n->addr, addr, alen))
+					malicious = 1;
+			}
+			return malicious;
+		}
 		bitloc = where_the_bit_differ(str, sstr, n->key, n->klen);
 		ptree_add_entry_at(str, sstr, bitloc, data, addr, alen, root);
+		return malicious;
 	}
 }
 

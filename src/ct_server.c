@@ -127,10 +127,13 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 			continue;
 		}
 
-		trie_addr_maybe_update(buff + sizeof(struct ct_proto),
-				       rlen - sizeof(struct ct_proto),
-				       ws->parent.ipv4, fd,
-				       &naddr, nlen);
+		err = trie_addr_maybe_update(buff + sizeof(struct ct_proto),
+					     rlen - sizeof(struct ct_proto),
+					     ws->parent.ipv4, fd,
+					     &naddr, nlen);
+		if (err)
+			/* Malicious packet */
+			continue;
 
 		err = write(ws->parent.tunfd,
 			    buff + sizeof(struct ct_proto),
@@ -223,7 +226,11 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 			continue;
 		}
 
-		trie_addr_maybe_update(buff, rlen, ws->parent.ipv4, fd, NULL, 0);
+		err = trie_addr_maybe_update(buff, rlen, ws->parent.ipv4, fd,
+					     NULL, 0);
+		if (err)
+			/* Malicious packet */
+			continue;
 
 		err = write(ws->parent.tunfd, buff, ntohs(hdr.payload));
 		if (err < 0)

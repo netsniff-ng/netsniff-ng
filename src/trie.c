@@ -73,9 +73,10 @@ void trie_addr_lookup(char *buff, size_t len, int ipv4, int *fd,
 	rwlock_unlock(&tree_lock);
 }
 
-void trie_addr_maybe_update(char *buff, size_t len, int ipv4, int fd,
-			    struct sockaddr_storage *addr, size_t alen)
+int trie_addr_maybe_update(char *buff, size_t len, int ipv4, int fd,
+			   struct sockaddr_storage *addr, size_t alen)
 {
+	int ret;
 	void *data;
 	size_t dlen;
 	struct ipv4hdr *hdr4 = (void *) buff;
@@ -86,8 +87,10 @@ void trie_addr_maybe_update(char *buff, size_t len, int ipv4, int fd,
 
 	/* Always happens on the src address */
 	rwlock_wr_lock(&tree_lock);
-	ptree_maybe_add_entry(data, dlen, fd, addr, alen, &tree);
+	ret = ptree_maybe_add_entry(data, dlen, fd, addr, alen, &tree);
 	rwlock_unlock(&tree_lock);
+
+	return ret;
 }
 
 void trie_addr_remove(int fd)
