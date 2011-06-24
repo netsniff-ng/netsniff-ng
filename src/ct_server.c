@@ -73,6 +73,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 
 		hdr = (struct ct_proto *) buff;
 		hdr->payload = htons((uint16_t) rlen);
+		hdr->canary = htons(CANARY);
 		hdr->flags = 0;
 
 		trie_addr_lookup(buff + sizeof(struct ct_proto),
@@ -81,20 +82,21 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 				 (size_t *) &nlen);
 
 		if (dfd < 0 || nlen == 0) {
-			syslog(LOG_INFO, "UDP tunnel lookup failed: "
-			       "unknown destination\n");
+			syslog(LOG_INFO, "CPU%u: UDP tunnel lookup failed: "
+			       "unknown destination\n", ws->cpu);
 			continue;
 		}
 
 		err = sendto(dfd, buff, rlen + sizeof(struct ct_proto), 0,
 			     (struct sockaddr *) &naddr, nlen);
 		if (err < 0)
-			syslog(LOG_ERR, "UDP tunnel write error: %s\n",
-			       strerror(errno));
+			syslog(LOG_ERR, "CPU%u: UDP tunnel write error: %s\n",
+			       ws->cpu, strerror(errno));
 	}
 
 	if (rlen < 0 && errno != EAGAIN)
-		syslog(LOG_ERR, "UDP tunnel read error: %s\n", strerror(errno));
+		syslog(LOG_ERR, "CPU%u: UDP tunnel read error: %s\n",
+		       ws->cpu, strerror(errno));
 
 	return keep;
 }
@@ -113,17 +115,17 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 
 	while ((rlen = recvfrom(fd, buff, len, 0, (struct sockaddr *) &naddr,
 				&nlen)) > 0) {
-		if (rlen < sizeof(struct ct_proto)) {
-			nlen = sizeof(naddr);
-			memset(&naddr, 0, sizeof(naddr));
-			continue;
-		}
+		if (rlen < sizeof(struct ct_proto))
+			goto next;
 		hdr = (struct ct_proto *) buff;
+		if (ntohs(hdr->canary) != CANARY)
+			goto next;
 		if (hdr->flags & PROTO_FLAG_EXIT) {
 			trie_addr_remove_addr(&naddr, nlen);
 			nlen = sizeof(naddr);
 			memset(&naddr, 0, sizeof(naddr));
-			syslog(LOG_INFO, "Remote UDP connection closed!\n");
+			syslog(LOG_INFO, "CPU%u: Remote UDP connection "
+			       "closed!\n", ws->cpu);
 			continue;
 		}
 
@@ -132,7 +134,8 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 					     ws->parent.ipv4, fd,
 					     &naddr, nlen);
 		if (err) {
-			syslog(LOG_INFO, "Malicious packet dropped from id %d\n", fd);
+			syslog(LOG_INFO, "CPU%u: Malicious packet dropped "
+			       "from id %d\n", ws->cpu, fd);
 			continue;
 		}
 
@@ -140,15 +143,16 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 			    buff + sizeof(struct ct_proto),
 			    rlen - sizeof(struct ct_proto));
 		if (err < 0)
-			syslog(LOG_ERR, "UDP net write error: %s\n",
-			       strerror(errno));
-
+			syslog(LOG_ERR, "CPU%u: UDP net write error: %s\n",
+			       ws->cpu, strerror(errno));
+next:
 		nlen = sizeof(naddr);
 		memset(&naddr, 0, sizeof(naddr));
 	}
 
 	if (rlen < 0 && errno != EAGAIN)
-		syslog(LOG_ERR, "UDP net read error: %s\n", strerror(errno));
+		syslog(LOG_ERR, "CPU%u: UDP net read error: %s\n",
+		       ws->cpu, strerror(errno));
 
 	return keep;
 }
@@ -176,6 +180,8 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 			    len - sizeof(struct ct_proto))) > 0) {
 		hdr = (struct ct_proto *) buff;
 		hdr->payload = htons((uint16_t) rlen);
+		hdr->canary = htons(CANARY);
+		hdr->flags = 0;
 
 		trie_addr_lookup(buff + sizeof(struct ct_proto),
 				 rlen - sizeof(struct ct_proto),
@@ -183,19 +189,20 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 				 (size_t *) &nlen);
 
 		if (dfd < 0) {
-			syslog(LOG_INFO, "TCP tunnel lookup failed: "
-			       "unknown destination\n");
+			syslog(LOG_INFO, "CPU%u: TCP tunnel lookup failed: "
+			       "unknown destination\n", ws->cpu);
 			continue;
 		}
 
 		err = write_exact(dfd, buff, rlen + sizeof(struct ct_proto));
 		if (err < 0)
-			syslog(LOG_ERR, "TCP tunnel write error: %s\n",
-			       strerror(errno));
+			syslog(LOG_ERR, "CPU%u: TCP tunnel write error: %s\n",
+			       ws->cpu, strerror(errno));
 	}
 
 	if (rlen < 0 && errno != EAGAIN)
-		syslog(LOG_ERR, "TCP tunnel read error: %s\n", strerror(errno));
+		syslog(LOG_ERR, "CPU%u: TCP tunnel read error: %s\n",
+		       ws->cpu, strerror(errno));
 
 	return keep;
 }
@@ -214,13 +221,15 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 		rlen = read_exact(fd, buff, ntohs(hdr.payload));
 		if (rlen < 0)
 			break;
+		if (ntohs(hdr.canary) != CANARY)
+			break;
 		if (hdr.flags & PROTO_FLAG_EXIT) {
 			uint64_t fd64 = fd;
 
 			rlen = write(ws->parent.efd, &fd64, sizeof(fd64));
 			if (rlen != sizeof(fd64))
-				syslog(LOG_ERR, "TCP event write error: %s\n",
-				       strerror(errno));
+				syslog(LOG_ERR, "CPU%u: TCP event write error: %s\n",
+				       ws->cpu, strerror(errno));
 
 			trie_addr_remove(fd);
 			keep = 0;
@@ -230,29 +239,29 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 		err = trie_addr_maybe_update(buff, rlen, ws->parent.ipv4, fd,
 					     NULL, 0);
 		if (err) {
-			syslog(LOG_INFO, "Malicious packet dropped from id %d\n", fd);
+			syslog(LOG_INFO, "CPU%u: Malicious packet dropped "
+			       "from id %d\n", ws->cpu, fd);
 			continue;
 		}
 
 		err = write(ws->parent.tunfd, buff, ntohs(hdr.payload));
 		if (err < 0)
-			syslog(LOG_ERR, "TCP net write error: %s\n",
-			       strerror(errno));
+			syslog(LOG_ERR, "CPU%u: TCP net write error: %s\n",
+			       ws->cpu, strerror(errno));
 
 		count++;
-		/* On high load, we put ourselves back into the pipe and
-		 * fetch the next descriptor after 50 (?) pkts. */
-		if (count >= 50) {
+		if (count == 10) {
 			err = write_exact(ws->efd[1], &fd, sizeof(fd));
 			if (err != sizeof(fd))
-				syslog(LOG_ERR, "TCP tunnel put fd back in "
-				       "pipe error: %s\n", strerror(errno));
+				syslog(LOG_ERR, "CPU%u: TCP tunnel put fd back in "
+				       "pipe error: %s\n", ws->cpu, strerror(errno));
 			return keep;
 		}
 	}
 
 	if (rlen < 0 && errno != EAGAIN && errno != EBADF)
-		syslog(LOG_ERR, "TCP net read error: %s\n", strerror(errno));
+		syslog(LOG_ERR, "CPU%u: TCP net read error: %s\n",
+		       ws->cpu, strerror(errno));
 
 	return keep;
 }
@@ -289,8 +298,8 @@ static void *worker(void *self)
 			continue;
 		while ((ret = read_exact(ws->efd[0], &fd, sizeof(fd))) > 0) {
 			if (ret != sizeof(fd)) {
-				syslog(LOG_ERR, "Thread could not read event "
-				       "descriptor!\n");
+				syslog(LOG_ERR, "CPU%u: Thread could not read "
+				       "event descriptor!\n", ws->cpu);
 				sched_yield();
 				continue;
 			}
@@ -299,8 +308,8 @@ static void *worker(void *self)
 			if (ret) {
 				ret = write_exact(ws->parent.refd, &fd, sizeof(fd));
 				if (ret != sizeof(fd))
-					syslog(LOG_ERR, "Retriggering failed: "
-					       "%s\n", strerror(errno));
+					syslog(LOG_ERR, "CPU%u: Retriggering failed: "
+					       "%s\n", ws->cpu, strerror(errno));
 			}
 		}
 	}

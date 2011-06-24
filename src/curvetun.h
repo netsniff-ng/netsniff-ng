@@ -19,8 +19,11 @@
 
 #define PROTO_FLAG_EXIT	(1 << 0)
 
+#define CANARY 0xACDC
+
 struct ct_proto {
         uint16_t payload;
+        uint16_t canary;
         uint8_t flags;
 }  __attribute__((packed));
 
