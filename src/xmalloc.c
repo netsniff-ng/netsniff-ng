@@ -103,10 +103,10 @@ static int spawn_pipe(const char *cmd, pid_t *pid)
 	return ret;
 }
 
-static int pull_from_pipe(int fd, char *buffer, int max)
+static size_t pull_from_pipe(int fd, char *buffer, size_t max)
 {
 	char c;
-	int i = 0;
+	size_t i = 0;
 
 	do {
 		if (read(fd, &c, 1) < 1)
@@ -262,7 +262,7 @@ void stacktrace(void)
 	if (fd < 0)
 		panic("Cannot spawn pipe to shell!\n");
 
-	while (pull_from_pipe(fd, buffer, sizeof(buffer))) {
+	while (pull_from_pipe(fd, buffer, sizeof(buffer)) > 0) {
 		if (buffer[0] == '\n')
 			continue;
 		ret = sscanf(buffer, "%lx %c %s", &addr, &type, name);
