@@ -163,7 +163,7 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 		if (err < 0)
 			syslog(LOG_ERR, "CPU%u: UDP net write error: %s\n",
 			       ws->cpu, strerror(errno));
-
+#if 0
 		count++;
 		if (count == 10) {
 			err = write_exact(ws->efd[1], &fd, sizeof(fd));
@@ -173,6 +173,7 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 			keep = 0;
 			return keep;
 		}
+#endif
 next:
 		nlen = sizeof(naddr);
 		memset(&naddr, 0, sizeof(naddr));
@@ -292,7 +293,7 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 		if (err < 0)
 			syslog(LOG_ERR, "CPU%u: TCP net write error: %s\n",
 			       ws->cpu, strerror(errno));
-
+#if 0
 		count++;
 		if (count == 10) {
 			err = write_exact(ws->efd[1], &fd, sizeof(fd));
@@ -302,7 +303,7 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 			keep = 0;
 			return keep;
 		}
-
+#endif
 		errno = 0;
 	}
 
