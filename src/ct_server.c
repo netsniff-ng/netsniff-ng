@@ -131,9 +131,10 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 					     rlen - sizeof(struct ct_proto),
 					     ws->parent.ipv4, fd,
 					     &naddr, nlen);
-		if (err)
-			/* Malicious packet */
+		if (err) {
+			syslog(LOG_INFO, "Malicious packet dropped from id %d\n", fd);
 			continue;
+		}
 
 		err = write(ws->parent.tunfd,
 			    buff + sizeof(struct ct_proto),
@@ -228,9 +229,10 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 
 		err = trie_addr_maybe_update(buff, rlen, ws->parent.ipv4, fd,
 					     NULL, 0);
-		if (err)
-			/* Malicious packet */
+		if (err) {
+			syslog(LOG_INFO, "Malicious packet dropped from id %d\n", fd);
 			continue;
+		}
 
 		err = write(ws->parent.tunfd, buff, ntohs(hdr.payload));
 		if (err < 0)

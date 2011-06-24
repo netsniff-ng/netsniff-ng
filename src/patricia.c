@@ -266,8 +266,9 @@ int ptree_add_entry(void *str, size_t sstr, int data, struct sockaddr_storage *a
 		}
 		bitloc = where_the_bit_differ(str, sstr, n->key, n->klen);
 		ptree_add_entry_at(str, sstr, bitloc, data, addr, alen, root);
-		return malicious;
 	}
+
+	return malicious;
 }
 
 static void ptree_remove_entry_r(struct patricia_node *now,
