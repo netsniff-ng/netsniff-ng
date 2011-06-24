@@ -34,6 +34,7 @@
 #include "xmalloc.h"
 #include "curvetun.h"
 #include "compiler.h"
+#include "cpusched.h"
 #include "trie.h"
 
 struct parent_info {
@@ -426,7 +427,7 @@ static void thread_finish(unsigned int cpus)
 int server_main(int port, int udp, int lnum)
 {
 	int lfd = -1, kdpfd, nfds, nfd, curfds, efd[2], refd[2], tunfd;
-	int ipv4 = 0, thread_it = 0, i;
+	int ipv4 = 0, i;
 	unsigned int cpus = 0, threads;
 	ssize_t ret;
 	struct epoll_event ev, *events;
@@ -549,6 +550,10 @@ int server_main(int port, int udp, int lnum)
 	threadpool = xzmalloc(sizeof(*threadpool) * threads);
 	thread_spawn_or_panic(cpus, efd[1], refd[1], tunfd, ipv4, udp);
 
+	init_cpusched(threads, MAX_EPOLL_SIZE);
+	register_socket(tunfd);
+	register_socket(lfd);
+
 	syslog(LOG_INFO, "tunnel id: %d, listener id: %d\n", tunfd, lfd);
 	syslog(LOG_INFO, "curvetun up and running!\n");
 
@@ -564,7 +569,7 @@ int server_main(int port, int udp, int lnum)
 			if (unlikely(events[i].data.fd < 0))
 				continue;
 			if (events[i].data.fd == lfd && !udp) {
-				int one;
+				int one, ncpu;
 				char hbuff[256], sbuff[256];
 				struct sockaddr_storage taddr;
 				socklen_t tlen;
@@ -584,6 +589,7 @@ int server_main(int port, int udp, int lnum)
 				}
 
 				curfds++;
+				ncpu = register_socket(nfd);
 
 				memset(hbuff, 0, sizeof(hbuff));
 				memset(sbuff, 0, sizeof(sbuff));
@@ -594,8 +600,8 @@ int server_main(int port, int udp, int lnum)
 					    NI_NUMERICHOST | NI_NUMERICSERV);
 
 				syslog(LOG_INFO, "New connection from %s:%s "
-				       "with id %d, %d active!\n",
-				       hbuff, sbuff, nfd, curfds);
+				       "with id %d on CPU%d, %d active!\n",
+				       hbuff, sbuff, nfd, ncpu, curfds);
 
 				set_nonblocking(nfd);
 
@@ -657,20 +663,20 @@ int server_main(int port, int udp, int lnum)
 				}
 				close(fd_del);
 				curfds--;
+				unregister_socket(fd_del);
 
 				syslog(LOG_INFO, "Closed connection with "
 				       "id %d, %d active!\n",
 				       fd_del, curfds);
 			} else {
-				int fd_work = events[i].data.fd;
+				int cpu, fd_work = events[i].data.fd;
+				cpu = socket_to_cpu(fd_work);
 
-				ret = write_exact(threadpool[thread_it].efd[1],
+				ret = write_exact(threadpool[cpu].efd[1],
 						  &fd_work, sizeof(fd_work));
 				if (ret != sizeof(fd_work))
 					syslog(LOG_ERR, "Write error on event "
 					       "dispatch: %s\n", strerror(errno));
-
-				thread_it = (thread_it + 1) & (threads - 1);
 			}
 		}
 	}
@@ -686,9 +692,11 @@ int server_main(int port, int udp, int lnum)
 
 	thread_finish(cpus);
 	xfree(threadpool);
-
 	xfree(events);
 
+	unregister_socket(lfd);
+	unregister_socket(tunfd);
+	destroy_cpusched();
 	trie_cleanup();
 
 	syslog(LOG_INFO, "curvetun shut down!\n");

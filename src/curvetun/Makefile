@@ -16,7 +16,9 @@ lib-objs   = xmalloc.o                  \
 	     stun.o                     \
 	     trie.o                     \
 	     patricia.o                 \
+	     hash.o                     \
 	     write_or_die.o             \
+	     cpusched.o                 \
 	     ct_server.o                \
 	     ct_client.o                \
 	     netdev.o
