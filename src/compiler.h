@@ -68,6 +68,10 @@
 # define __read_mostly      __attribute__((__section__(".data.read_mostly")))
 #endif
 
+#ifndef __pure
+# define __pure             __attribute__ ((pure))
+#endif
+
 #ifndef __must_check
 # define __must_check       /* unimplemented */
 #endif

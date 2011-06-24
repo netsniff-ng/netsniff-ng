@@ -58,6 +58,20 @@ static struct worker_struct *threadpool = NULL;
 extern sig_atomic_t sigint;
 
 static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
+				  char *buff, size_t len) __pure;
+static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
+				  char *buff, size_t len) __pure;
+static int handler_udp(int fd, const struct worker_struct *ws,
+		       char *buff, size_t len) __pure;
+static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
+				  char *buff, size_t len) __pure;
+static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
+				  char *buff, size_t len) __pure;
+static int handler_tcp(int fd, const struct worker_struct *ws,
+		       char *buff, size_t len) __pure;
+static void *worker(void *self) __pure;
+
+static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len)
 {
 	int dfd, keep = 1;
@@ -66,6 +80,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 	struct sockaddr_storage naddr;
 	socklen_t nlen;
 
+	errno = 0;
 	while ((rlen = read(fd, buff + sizeof(struct ct_proto),
 			    len - sizeof(struct ct_proto))) > 0) {
 		dfd = -1;
@@ -93,6 +108,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 		if (err < 0)
 			syslog(LOG_ERR, "CPU%u: UDP tunnel write error: %s\n",
 			       ws->cpu, strerror(errno));
+		errno = 0;
 	}
 
 	if (rlen < 0 && errno != EAGAIN)
@@ -114,6 +130,7 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 	nlen = sizeof(naddr);
 	memset(&naddr, 0, sizeof(naddr));
 
+	errno = 0;
 	while ((rlen = recvfrom(fd, buff, len, 0, (struct sockaddr *) &naddr,
 				&nlen)) > 0) {
 		if (rlen < sizeof(struct ct_proto))
@@ -159,6 +176,7 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 next:
 		nlen = sizeof(naddr);
 		memset(&naddr, 0, sizeof(naddr));
+		errno = 0;
 	}
 
 	if (rlen < 0 && errno != EAGAIN)
@@ -187,6 +205,7 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 	struct ct_proto *hdr;
 	socklen_t nlen;
 
+	errno = 0;
 	while ((rlen = read(fd, buff + sizeof(struct ct_proto),
 			    len - sizeof(struct ct_proto))) > 0) {
 		dfd = -1;
@@ -211,6 +230,7 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 		if (err < 0)
 			syslog(LOG_ERR, "CPU%u: TCP tunnel write error: %s\n",
 			       ws->cpu, strerror(errno));
+		errno = 0;
 	}
 
 	if (rlen < 0 && errno != EAGAIN)
@@ -227,6 +247,7 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 	ssize_t rlen, err;
 	struct ct_proto hdr;
 
+	errno = 0;
 	while (1) {
 		rlen = read_exact(fd, &hdr, sizeof(hdr));
 		if (rlen < 0 || len < ntohs(hdr.payload))
@@ -271,6 +292,8 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 			keep = 0;
 			return keep;
 		}
+
+		errno = 0;
 	}
 
 	if (rlen < 0 && errno != EAGAIN && errno != EBADF)

@@ -6,7 +6,7 @@
 include ../definitions.mk
 
 INCLUDE    = -I..
-CFLAGS    += -DTARGETNAME="\"curvetun\""
+CFLAGS    += -DTARGETNAME="\"curvetun\"" -fdce
 LIBS       = -lpthread
 #LIBS       = -lgcrypt -lz -lpthread
 
