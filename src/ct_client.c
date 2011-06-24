@@ -46,6 +46,7 @@ static void handler_tun_to_net(int sfd, int dfd, int udp, char *buff, size_t len
 			    len - sizeof(struct ct_proto))) > 0) {
 		hdr = (struct ct_proto *) buff;
 		hdr->payload = htons((uint16_t) rlen);
+		hdr->canary = htons(CANARY);
 		hdr->flags = 0;
 
 		err = write_exact(dfd, buff, rlen + sizeof(struct ct_proto));
@@ -58,6 +59,7 @@ static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len
 {
 	size_t off = 0;
 	ssize_t rlen, err;
+	uint16_t canary;
 	struct sockaddr_storage sa;
 	struct ct_proto hdr, *hdrp;
 	socklen_t sa_len;
@@ -69,6 +71,7 @@ static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len
 				break;
 
 			rlen = ntohs(hdr.payload);
+			canary = ntohs(hdr.canary);
 			err = read_exact(sfd, buff, rlen);
 			if (err < 0)
 				perror("Error reading data from net");
@@ -80,10 +83,11 @@ static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len
 				       &sa, &sa_len);
 			hdrp = (struct ct_proto *) buff;
 			rlen = ntohs(hdrp->payload);
+			canary = ntohs(hdrp->canary);
 			off = sizeof(struct ct_proto);
 		}
 
-		if (err <= 0)
+		if (err <= 0 || canary != CANARY)
 			break;
 
 		err = write(dfd, buff + off, rlen);
@@ -170,6 +174,8 @@ int client_main(int port, int udp)
 
 	buff = xmalloc(blen);
 
+	info("Ready!\n");
+
 	while (likely(!sigint)) {
 		poll(fds, 2, -1);
 		for (i = 0; i < 2; ++i) {
@@ -181,6 +187,8 @@ int client_main(int port, int udp)
 				handler_net_to_tun(fd, tunfd, udp, buff, blen);
 		}
 	}
+
+	info("Shutting down!\n");
 
 	notify_close(fd);
 	xfree(buff);
