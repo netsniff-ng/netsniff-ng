@@ -103,6 +103,8 @@ static void notify_close(int fd)
 
 	memset(&hdr, 0, sizeof(hdr));
 	hdr.flags |= PROTO_FLAG_EXIT;
+	hdr.payload = 0;
+	hdr.canary = htons(CANARY);
 
 	err = write(fd, &hdr, sizeof(hdr));
 	if (err < 0)
