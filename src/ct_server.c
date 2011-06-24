@@ -104,7 +104,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len)
 {
-	int keep = 1;
+	int keep = 1, count = 0;
 	ssize_t rlen, err;
 	struct ct_proto *hdr;
 	struct sockaddr_storage naddr;
@@ -145,6 +145,15 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 		if (err < 0)
 			syslog(LOG_ERR, "CPU%u: UDP net write error: %s\n",
 			       ws->cpu, strerror(errno));
+
+		count++;
+		if (count == 10) {
+			err = write_exact(ws->efd[1], &fd, sizeof(fd));
+			if (err != sizeof(fd))
+				syslog(LOG_ERR, "CPU%u: UDP tunnel put fd back in "
+				       "pipe error: %s\n", ws->cpu, strerror(errno));
+			return keep;
+		}
 next:
 		nlen = sizeof(naddr);
 		memset(&naddr, 0, sizeof(naddr));
@@ -613,7 +622,7 @@ int server_main(int port, int udp, int lnum)
 			} else {
 				int fd_work = events[i].data.fd;
 
-				ret = write_exact(threadpool[thread_it].efd[1],
+				ret = write_exact(threadpool[/*thread_it*/0].efd[1],
 						  &fd_work, sizeof(fd_work));
 				if (ret != sizeof(fd_work))
 					syslog(LOG_ERR, "Write error on event "
