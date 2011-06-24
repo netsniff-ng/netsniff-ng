@@ -199,7 +199,7 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len)
 {
-	int keep = 1;
+	int keep = 1, count = 0;
 	ssize_t rlen, err;
 	struct ct_proto hdr;
 
@@ -229,6 +229,17 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 		if (err < 0)
 			syslog(LOG_ERR, "TCP net write error: %s\n",
 			       strerror(errno));
+
+		count++;
+		/* On high load, we put ourselves back into the pipe and
+		 * fetch the next descriptor after 50 (?) pkts. */
+		if (count >= 50) {
+			err = write_exact(ws->efd[1], &fd, sizeof(fd));
+			if (err != sizeof(fd))
+				syslog(LOG_ERR, "TCP tunnel put fd back in "
+				       "pipe error: %s\n", strerror(errno));
+			return keep;
+		}
 	}
 
 	if (rlen < 0 && errno != EAGAIN && errno != EBADF)
@@ -274,6 +285,7 @@ static void *worker(void *self)
 				sched_yield();
 				continue;
 			}
+
 			ret = ws->handler(fd, ws, buff, blen);
 			if (ret) {
 				ret = write_exact(ws->parent.refd, &fd, sizeof(fd));
