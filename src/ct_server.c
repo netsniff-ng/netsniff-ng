@@ -417,6 +417,8 @@ static void thread_spawn_or_panic(unsigned int cpus, int efd, int refd,
 
 		pthread_detach(threadpool[i].trid);
 	}
+
+	sleep(1);
 }
 
 static void thread_finish(unsigned int cpus)
