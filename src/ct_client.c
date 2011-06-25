@@ -37,6 +37,10 @@ static const char *scope = "eth0";
 
 extern sig_atomic_t sigint;
 
+static char *buff_free_templ = NULL;
+static size_t buff_free_len = 0;
+static int buff_free_done = 0;
+
 static void handler_tun_to_net(int sfd, int dfd, int udp, char *buff, size_t len)
 {
 	ssize_t rlen, err;
@@ -48,6 +52,13 @@ static void handler_tun_to_net(int sfd, int dfd, int udp, char *buff, size_t len
 		hdr->payload = htons((uint16_t) rlen);
 		hdr->canary = htons(CANARY);
 		hdr->flags = 0;
+
+		if (!buff_free_done) {
+			/* Copy buffer once for free notification; hack */
+			buff_free_len = rlen + sizeof(struct ct_proto);
+			memcpy(buff_free_templ, buff, buff_free_len);
+			buff_free_done = 1;
+		}
 
 		err = write_exact(dfd, buff, rlen + sizeof(struct ct_proto), 0);
 		if (err < 0)
@@ -96,17 +107,17 @@ static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len
 	}
 }
 
-static void notify_close(int fd)
+static void notify_close(int fd, char *buff, size_t len)
 {
 	ssize_t err;
-	struct ct_proto hdr;
+	struct ct_proto *hdr;
 
-	memset(&hdr, 0, sizeof(hdr));
-	hdr.flags |= PROTO_FLAG_EXIT;
-	hdr.payload = 0;
-	hdr.canary = htons(CANARY);
+	hdr = (struct ct_proto *) buff_free_templ;
+	hdr->flags |= PROTO_FLAG_EXIT;
+	hdr->payload = htons(uint16_t (len - sizeof(struct ct_proto)));
+	hdr->canary = htons(CANARY);
 
-	err = write(fd, &hdr, sizeof(hdr));
+	err = write(fd, buff, len);
 	if (err < 0)
 		perror("Error writing close");
 }
@@ -175,6 +186,7 @@ int client_main(int port, int udp)
 	fds[1].events = POLLIN;
 
 	buff = xmalloc(blen);
+	buff_free_templ = xmalloc(blen);
 
 	info("Ready!\n");
 
@@ -192,7 +204,8 @@ int client_main(int port, int udp)
 
 	info("Shutting down!\n");
 
-	notify_close(fd);
+	notify_close(fd, buff_free_templ, buff_free_len);
+	xfree(buff_free_templ);
 	xfree(buff);
 
 	close(fd);
