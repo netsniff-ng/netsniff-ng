@@ -75,6 +75,10 @@ static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len
 			err = read_exact(sfd, buff, rlen, 0);
 			if (err < 0)
 				perror("Error reading data from net");
+			if (hdr.flags & PROTO_FLAG_EXIT) {
+				sigint = 1;
+				return;
+			}
 		} else {
 			sa_len = sizeof(sa);
 			memset(&sa, 0, sa_len);
@@ -85,6 +89,10 @@ static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len
 			rlen = ntohs(hdrp->payload);
 			canary = ntohs(hdrp->canary);
 			off = sizeof(struct ct_proto);
+			if (hdrp->flags & PROTO_FLAG_EXIT) {
+				sigint = 1;
+				return;
+			}
 		}
 
 		if (err <= 0 || canary != CANARY)
