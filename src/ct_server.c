@@ -34,6 +34,7 @@
 #include "xmalloc.h"
 #include "curvetun.h"
 #include "compiler.h"
+#include "deflate.h"
 #include "cpusched.h"
 #include "trie.h"
 
@@ -367,7 +368,7 @@ static void *worker(void *self)
 {
 	int fd, old_state;
 	ssize_t ret;
-	size_t blen = 10000; //XXX
+	size_t blen = TUNBUFF_SIZ; //FIXME
 	const struct worker_struct *ws = self;
 	struct pollfd fds;
 	char *buff;
@@ -474,6 +475,10 @@ int server_main(int port, int udp, int lnum)
 
 	openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
 	syslog(LOG_INFO, "curvetun server booting!\n");
+
+	ret = z_alloc_or_maybe_die(Z_DEFAULT_COMPRESSION);
+	if (ret < 0)
+		panic("Cannot init zLib!\n");
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;
@@ -737,6 +742,7 @@ int server_main(int port, int udp, int lnum)
 	unregister_socket(tunfd);
 	destroy_cpusched();
 	trie_cleanup();
+	z_free();
 
 	syslog(LOG_INFO, "curvetun shut down!\n");
 	closelog();

@@ -27,6 +27,8 @@ struct ct_proto {
         uint8_t flags;
 }  __attribute__((packed));
 
+#define TUNBUFF_SIZ	10000
+
 extern int client_main(int port, int udp);
 
 #define THREADS_PER_CPU 2

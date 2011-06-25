@@ -119,7 +119,7 @@ int client_main(int port, int udp)
 	struct sockaddr_in6 *saddr6;
 	struct pollfd fds[2];
 	char *buff;
-	size_t blen = 10000; //XXX
+	size_t blen = TUNBUFF_SIZ; //FIXME
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;
