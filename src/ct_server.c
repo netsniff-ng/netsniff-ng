@@ -334,8 +334,6 @@ static int handler_tcp(int fd, const struct worker_struct *ws,
 	return ret;
 }
 
-
-
 static void *worker(void *self)
 {
 	int fd, old_state;
