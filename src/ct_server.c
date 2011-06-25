@@ -232,56 +232,73 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 	return keep;
 }
 
+static ssize_t handler_tcp_read(int fd, char *buff, size_t len)
+{
+	ssize_t rlen;
+	struct ct_proto *hdr = (struct ct_proto *) buff;
+
+	/* May exit on EAGAIN if 0 Byte read */
+	rlen = read_exact(fd, buff, sizeof(struct ct_proto), 1);
+	if (rlen < 0)
+		return rlen;
+
+	/* May not exit on EAGAIN if 0 Byte read */
+	rlen = read_exact(fd, buff + sizeof(struct ct_proto),
+			  ntohs(hdr->payload), 0);
+	if (rlen < 0)
+		return rlen;
+
+	return sizeof(struct ct_proto) + rlen;
+}
+
 static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len)
 {
 	int keep = 1, count = 0;
 	ssize_t rlen, err;
-	struct ct_proto hdr;
+	struct ct_proto *hdr;
 
 	errno = 0;
-	while (1) {
-		rlen = read_exact(fd, &hdr, sizeof(hdr), 1);
-		if (rlen < 0 || len < ntohs(hdr.payload))
-			break;
-		rlen = read_exact(fd, buff, ntohs(hdr.payload), 0);
-		if (rlen < 0)
-			break;
-		if (unlikely(rlen != ntohs(hdr.payload))) {
+	while ((rlen = handler_tcp_read(fd, buff, len)) > 0) {
+		if (rlen < sizeof(struct ct_proto))
+			continue;
+		hdr = (struct ct_proto *) buff;
+		if (unlikely(rlen - sizeof(*hdr) != ntohs(hdr->payload))) {
 			syslog(LOG_ERR, "CPU%u: Got malformed packet from "
 			       "%d (len %zd instead of %u)!\n", ws->cpu, fd,
-			       rlen, ntohs(hdr.payload));
+			       rlen, ntohs(hdr->payload));
 			break;
 		}
-		if (unlikely(ntohs(hdr.canary) != CANARY)) {
+		if (unlikely(ntohs(hdr->canary) != CANARY)) {
 			syslog(LOG_ERR, "CPU%u: Got malformed packet from "
 			       "%d (canary %0x)!\n", ws->cpu, fd,
-			       ntohs(hdr.canary));
+			       ntohs(hdr->canary));
 			break;
 		}
 		/* FIXME: after pattree lookup! */
-		if (hdr.flags & PROTO_FLAG_EXIT) {
+		if (hdr->flags & PROTO_FLAG_EXIT) {
 			uint64_t fd64 = fd;
-
+			trie_addr_remove(fd);
 			rlen = write(ws->parent.efd, &fd64, sizeof(fd64));
 			if (rlen != sizeof(fd64))
 				syslog(LOG_ERR, "CPU%u: TCP event write error: %s\n",
 				       ws->cpu, strerror(errno));
-
-			trie_addr_remove(fd);
 			keep = 0;
-			continue;
+			return keep;
 		}
 
-		err = trie_addr_maybe_update(buff, rlen, ws->parent.ipv4, fd,
-					     NULL, 0);
+		err = trie_addr_maybe_update(buff + sizeof(struct ct_proto),
+					     rlen - sizeof(struct ct_proto),
+					     ws->parent.ipv4, fd, NULL, 0);
 		if (err) {
 			syslog(LOG_INFO, "CPU%u: Malicious packet dropped "
 			       "from id %d\n", ws->cpu, fd);
 			continue;
 		}
 
-		err = write(ws->parent.tunfd, buff, ntohs(hdr.payload));
+		err = write(ws->parent.tunfd,
+			    buff + sizeof(struct ct_proto),
+			    rlen - sizeof(struct ct_proto));
 		if (err < 0)
 			syslog(LOG_ERR, "CPU%u: TCP net write error: %s\n",
 			       ws->cpu, strerror(errno));
