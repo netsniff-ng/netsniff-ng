@@ -89,7 +89,7 @@ struct mode {
 #define CPU_UNKNOWN  -1
 #define CPU_NOTOUCH  -2
 
-static sig_atomic_t sigint = 0;
+sig_atomic_t sigint = 0;
 
 static const char *short_options = "d:c:n:t:vhS:HQb:B:rk:";
 
