@@ -80,6 +80,10 @@
 # define __used             /* unimplemented */
 #endif
 
+#ifndef __unused
+# define __unused           __attribute__((unused))
+#endif
+
 #ifndef __maybe_unused
 # define __maybe_unused     /* unimplemented */
 #endif

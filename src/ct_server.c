@@ -348,6 +348,7 @@ static void *worker(void *self)
 
 	buff = xmalloc(blen);
 	syslog(LOG_INFO, "curvetun thread on CPU%u up!\n", ws->cpu);
+	pthread_cleanup_push(xfree, buff);
 
 	while (likely(!sigint)) {
 		poll(&fds, 1, -1);
@@ -374,9 +375,8 @@ static void *worker(void *self)
 	}
 
 	syslog(LOG_INFO, "curvetun thread on CPU%u down!\n", ws->cpu);
-	xfree(buff);
-
-	pthread_exit(0);
+	pthread_cleanup_pop(1);
+	pthread_exit((void *) ((long) ws->cpu));
 }
 
 static void thread_spawn_or_panic(unsigned int cpus, int efd, int refd,
@@ -415,6 +415,8 @@ static void thread_spawn_or_panic(unsigned int cpus, int efd, int refd,
 
 		pthread_detach(threadpool[i].trid);
 	}
+
+	sleep(1);
 }
 
 static void thread_finish(unsigned int cpus)
