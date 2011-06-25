@@ -134,9 +134,10 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 	errno = 0;
 	while ((rlen = recvfrom(fd, buff, len, 0, (struct sockaddr *) &naddr,
 				&nlen)) > 0) {
-		if (rlen < sizeof(struct ct_proto))
-			goto next;
 		hdr = (struct ct_proto *) buff;
+
+		if (unlikely(rlen < sizeof(struct ct_proto)))
+			goto next;
 		if (unlikely(rlen - sizeof(*hdr) != ntohs(hdr->payload)))
 			goto next;
 		if (unlikely(ntohs(hdr->canary) != CANARY))
@@ -265,9 +266,10 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 
 	errno = 0;
 	while ((rlen = handler_tcp_read(fd, buff, len)) > 0) {
-		if (rlen < sizeof(struct ct_proto))
-			continue;
 		hdr = (struct ct_proto *) buff;
+
+		if (unlikely(rlen < sizeof(struct ct_proto)))
+			continue;
 		if (unlikely(rlen - sizeof(*hdr) != ntohs(hdr->payload)))
 			continue;
 		if (unlikely(ntohs(hdr->canary) != CANARY))
