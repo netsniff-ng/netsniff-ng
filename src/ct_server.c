@@ -137,13 +137,13 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 		hdr = (struct ct_proto *) buff;
 
 		if (unlikely(rlen < sizeof(struct ct_proto)))
-			goto next;
+			goto close;
 		if (unlikely(rlen - sizeof(*hdr) != ntohs(hdr->payload)))
-			goto next;
+			goto close;
 		if (unlikely(ntohs(hdr->canary) != CANARY))
-			goto next;
+			goto close;
 		if (unlikely(ntohs(hdr->payload) == 0))
-			goto next;
+			goto close;
 
 		err = trie_addr_maybe_update(buff + sizeof(struct ct_proto),
 					     rlen - sizeof(struct ct_proto),
@@ -156,11 +156,10 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 		}
 
 		if (hdr->flags & PROTO_FLAG_EXIT) {
+close:
 			trie_addr_remove_addr(&naddr, nlen);
 			nlen = sizeof(naddr);
 			memset(&naddr, 0, sizeof(naddr));
-			syslog(LOG_INFO, "CPU%u: Remote UDP connection "
-			       "closed!\n", ws->cpu);
 			continue;
 		}
 
@@ -171,7 +170,6 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 			syslog(LOG_ERR, "CPU%u: UDP net write error: %s\n",
 			       ws->cpu, strerror(errno));
 
-next:
 		nlen = sizeof(naddr);
 		memset(&naddr, 0, sizeof(naddr));
 		errno = 0;
@@ -263,19 +261,20 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 	int keep = 1, count = 0;
 	ssize_t rlen, err;
 	struct ct_proto *hdr;
+	uint64_t fd64;
 
 	errno = 0;
 	while ((rlen = handler_tcp_read(fd, buff, len)) > 0) {
 		hdr = (struct ct_proto *) buff;
 
 		if (unlikely(rlen < sizeof(struct ct_proto)))
-			continue;
+			goto close;
 		if (unlikely(rlen - sizeof(*hdr) != ntohs(hdr->payload)))
-			continue;
+			goto close;
 		if (unlikely(ntohs(hdr->canary) != CANARY))
-			continue;
+			goto close;
 		if (unlikely(ntohs(hdr->payload) == 0))
-			continue;
+			goto close;
 
 		err = trie_addr_maybe_update(buff + sizeof(struct ct_proto),
 					     rlen - sizeof(struct ct_proto),
@@ -287,7 +286,8 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 		}
 
 		if (hdr->flags & PROTO_FLAG_EXIT) {
-			uint64_t fd64 = fd;
+close:
+			fd64 = fd;
 			trie_addr_remove(fd);
 			rlen = write(ws->parent.efd, &fd64, sizeof(fd64));
 			if (rlen != sizeof(fd64))
