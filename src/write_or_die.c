@@ -96,6 +96,8 @@ ssize_t read_exact(int fd, void *buf, size_t len, int mayexit)
 				continue;
 			if (mayexit)
 				return -1;
+			else
+				continue;
 		}
 
 		if (!written)
@@ -119,6 +121,8 @@ ssize_t write_exact(int fd, void *buf, size_t len, int mayexit)
 				continue;
 			if (mayexit)
 				return -1;
+			else
+				continue;
 		}
 
 		if (!written)
