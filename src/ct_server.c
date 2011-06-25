@@ -119,6 +119,20 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 	return keep;
 }
 
+static void handler_udp_notify_close(int fd, struct sockaddr_storage *addr,
+				     socklen_t len)
+{
+	ssize_t err;
+	struct ct_proto hdr;
+
+	memset(&hdr, 0, sizeof(hdr));
+	hdr.flags |= PROTO_FLAG_EXIT;
+	hdr.payload = 0;
+	hdr.canary = htons(CANARY);
+
+	err = sendto(fd, &hdr, sizeof(hdr), 0, (struct sockaddr *) addr, len);
+}
+
 static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len)
 {
@@ -158,6 +172,7 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 		if (hdr->flags & PROTO_FLAG_EXIT) {
 close:
 			trie_addr_remove_addr(&naddr, nlen);
+			handler_udp_notify_close(fd, &naddr, nlen);
 			nlen = sizeof(naddr);
 			memset(&naddr, 0, sizeof(naddr));
 			continue;
@@ -255,6 +270,19 @@ static ssize_t handler_tcp_read(int fd, char *buff, size_t len)
 	return sizeof(struct ct_proto) + rlen;
 }
 
+static void handler_tcp_notify_close(int fd)
+{
+	ssize_t err;
+	struct ct_proto hdr;
+
+	memset(&hdr, 0, sizeof(hdr));
+	hdr.flags |= PROTO_FLAG_EXIT;
+	hdr.payload = 0;
+	hdr.canary = htons(CANARY);
+
+	err = write(fd, &hdr, sizeof(hdr));
+}
+
 static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len)
 {
@@ -289,6 +317,7 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 close:
 			fd64 = fd;
 			trie_addr_remove(fd);
+			handler_tcp_notify_close(fd);
 			rlen = write(ws->parent.efd, &fd64, sizeof(fd64));
 			if (rlen != sizeof(fd64))
 				syslog(LOG_ERR, "CPU%u: TCP event write error: %s\n",
