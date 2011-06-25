@@ -137,16 +137,12 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 		if (rlen < sizeof(struct ct_proto))
 			goto next;
 		hdr = (struct ct_proto *) buff;
-		if (ntohs(hdr->canary) != CANARY)
+		if (unlikely(rlen - sizeof(*hdr) != ntohs(hdr->payload)))
 			goto next;
-		if (hdr->flags & PROTO_FLAG_EXIT) {
-			trie_addr_remove_addr(&naddr, nlen);
-			nlen = sizeof(naddr);
-			memset(&naddr, 0, sizeof(naddr));
-			syslog(LOG_INFO, "CPU%u: Remote UDP connection "
-			       "closed!\n", ws->cpu);
-			continue;
-		}
+		if (unlikely(ntohs(hdr->canary) != CANARY))
+			goto next;
+		if (unlikely(ntohs(hdr->payload) == 0))
+			goto next;
 
 		err = trie_addr_maybe_update(buff + sizeof(struct ct_proto),
 					     rlen - sizeof(struct ct_proto),
@@ -155,6 +151,15 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 		if (err) {
 			syslog(LOG_INFO, "CPU%u: Malicious packet dropped "
 			       "from id %d\n", ws->cpu, fd);
+			continue;
+		}
+
+		if (hdr->flags & PROTO_FLAG_EXIT) {
+			trie_addr_remove_addr(&naddr, nlen);
+			nlen = sizeof(naddr);
+			memset(&naddr, 0, sizeof(naddr));
+			syslog(LOG_INFO, "CPU%u: Remote UDP connection "
+			       "closed!\n", ws->cpu);
 			continue;
 		}
 
@@ -263,19 +268,22 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 		if (rlen < sizeof(struct ct_proto))
 			continue;
 		hdr = (struct ct_proto *) buff;
-		if (unlikely(rlen - sizeof(*hdr) != ntohs(hdr->payload))) {
-			syslog(LOG_ERR, "CPU%u: Got malformed packet from "
-			       "%d (len %zd instead of %u)!\n", ws->cpu, fd,
-			       rlen, ntohs(hdr->payload));
-			break;
+		if (unlikely(rlen - sizeof(*hdr) != ntohs(hdr->payload)))
+			continue;
+		if (unlikely(ntohs(hdr->canary) != CANARY))
+			continue;
+		if (unlikely(ntohs(hdr->payload) == 0))
+			continue;
+
+		err = trie_addr_maybe_update(buff + sizeof(struct ct_proto),
+					     rlen - sizeof(struct ct_proto),
+					     ws->parent.ipv4, fd, NULL, 0);
+		if (err) {
+			syslog(LOG_INFO, "CPU%u: Malicious packet dropped "
+			       "from id %d\n", ws->cpu, fd);
+			continue;
 		}
-		if (unlikely(ntohs(hdr->canary) != CANARY)) {
-			syslog(LOG_ERR, "CPU%u: Got malformed packet from "
-			       "%d (canary %0x)!\n", ws->cpu, fd,
-			       ntohs(hdr->canary));
-			break;
-		}
-		/* FIXME: after pattree lookup! */
+
 		if (hdr->flags & PROTO_FLAG_EXIT) {
 			uint64_t fd64 = fd;
 			trie_addr_remove(fd);
@@ -285,15 +293,6 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 				       ws->cpu, strerror(errno));
 			keep = 0;
 			return keep;
-		}
-
-		err = trie_addr_maybe_update(buff + sizeof(struct ct_proto),
-					     rlen - sizeof(struct ct_proto),
-					     ws->parent.ipv4, fd, NULL, 0);
-		if (err) {
-			syslog(LOG_INFO, "CPU%u: Malicious packet dropped "
-			       "from id %d\n", ws->cpu, fd);
-			continue;
 		}
 
 		err = write(ws->parent.tunfd,
