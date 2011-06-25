@@ -114,10 +114,10 @@ static void notify_close(int fd, char *buff, size_t len)
 
 	hdr = (struct ct_proto *) buff_free_templ;
 	hdr->flags |= PROTO_FLAG_EXIT;
-	hdr->payload = htons(uint16_t (len - sizeof(struct ct_proto)));
+	hdr->payload = htons((uint16_t) (len - sizeof(struct ct_proto)));
 	hdr->canary = htons(CANARY);
 
-	err = write_exact(fd, buff, len);
+	err = write_exact(fd, buff, len, 0);
 	if (err < 0)
 		perror("Error writing close");
 }
