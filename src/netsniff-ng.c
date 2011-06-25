@@ -72,7 +72,7 @@ struct tx_stats {
 	unsigned long tx_packets;
 };
 
-static sig_atomic_t sigint = 0;
+sig_atomic_t sigint = 0;
 
 static unsigned long interval = TX_KERNEL_PULL_INT;
 static int tx_sock;
