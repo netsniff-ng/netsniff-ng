@@ -26,7 +26,7 @@ struct icmphdr {
 		} echo;
 		uint32_t gateway;
 		struct {
-			uint16_t __unused;
+			uint16_t ____unused;
 			uint16_t mtu;
 		} frag;
 	} un;

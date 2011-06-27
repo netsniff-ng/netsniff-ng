@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
@@ -45,6 +46,23 @@ int pf_socket(void)
 	if (sock < 0)
 		error_and_die(EXIT_FAILURE, "Creation of PF socket failed!\n");
 	return sock;
+}
+
+int set_nonblocking(int fd)
+{
+	int ret = fcntl(fd, F_SETFL, fcntl(fd, F_GETFD, 0) | O_NONBLOCK);
+	if (ret < 0)
+		panic("Cannot fcntl!\n");
+	return 0;
+}
+
+int set_reuseaddr(int fd)
+{
+	int one = 1;
+	int ret = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof (one));
+	if (ret < 0)
+	panic("Cannot reuse addr!\n");
+	return 0;
 }
 
 int wireless_bitrate(const char *ifname)
