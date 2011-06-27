@@ -21,10 +21,12 @@
 #include <sys/stat.h>
 #include <sys/poll.h>
 #include <netinet/tcp.h>
+#include <netinet/udp.h>
 
 #include "die.h"
 #include "write_or_die.h"
 #include "strlcpy.h"
+#include "deflate.h"
 #include "netdev.h"
 #include "xmalloc.h"
 #include "curvetun.h"
@@ -37,8 +39,9 @@ static const char *scope = "eth0";
 
 extern sig_atomic_t sigint;
 
-static void handler_tun_to_net(int sfd, int dfd, int udp, char *buff, size_t len)
+static void handler_udp_tun_to_net(int sfd, int dfd, char *buff, size_t len)
 {
+#if 0
 	ssize_t rlen, err;
 	struct ct_proto *hdr;
 
@@ -53,10 +56,12 @@ static void handler_tun_to_net(int sfd, int dfd, int udp, char *buff, size_t len
 		if (err < 0)
 			perror("Error writing tunnel data to net");
 	}
+#endif
 }
 
-static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len)
+static void handler_udp_net_to_tun(int sfd, int dfd, char *buff, size_t len)
 {
+#if 0
 	size_t off = 0;
 	ssize_t rlen, err;
 	uint16_t canary;
@@ -65,34 +70,18 @@ static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len
 	socklen_t sa_len;
 
 	while (1) {
-		if (!udp) {
-			err = read_exact(sfd, &hdr, sizeof(hdr), 1);
-			if (err < 0)
-				break;
+		sa_len = sizeof(sa);
+		memset(&sa, 0, sa_len);
 
-			rlen = ntohs(hdr.payload);
-			canary = ntohs(hdr.canary);
-			err = read_exact(sfd, buff, rlen, 0);
-			if (err < 0)
-				perror("Error reading data from net");
-			if (hdr.flags & PROTO_FLAG_EXIT) {
-				sigint = 1;
-				return;
-			}
-		} else {
-			sa_len = sizeof(sa);
-			memset(&sa, 0, sa_len);
-
-			err = recvfrom(sfd, buff, len, 0, (struct sockaddr *)
-				       &sa, &sa_len);
-			hdrp = (struct ct_proto *) buff;
-			rlen = ntohs(hdrp->payload);
-			canary = ntohs(hdrp->canary);
-			off = sizeof(struct ct_proto);
-			if (hdrp->flags & PROTO_FLAG_EXIT) {
-				sigint = 1;
-				return;
-			}
+		err = recvfrom(sfd, buff, len, 0, (struct sockaddr *)
+			       &sa, &sa_len);
+		hdrp = (struct ct_proto *) buff;
+		rlen = ntohs(hdrp->payload);
+		canary = ntohs(hdrp->canary);
+		off = sizeof(struct ct_proto);
+		if (hdrp->flags & PROTO_FLAG_EXIT) {
+			sigint = 1;
+			return;
 		}
 
 		if (err <= 0 || canary != CANARY)
@@ -102,6 +91,91 @@ static void handler_net_to_tun(int sfd, int dfd, int udp, char *buff, size_t len
 		if (err < 0)
 			perror("Error writing net data to tunnel");
 	}
+#endif
+}
+
+static void handler_tcp_tun_to_net(int sfd, int dfd, char *buff, size_t len)
+{
+	int state;
+	char *pbuff;
+	ssize_t rlen, err, plen;
+	struct ct_proto *hdr;
+
+	errno = 0;
+	while ((rlen = read(sfd, buff + sizeof(struct ct_proto),
+			    len - sizeof(struct ct_proto))) > 0) {
+
+		hdr = (struct ct_proto *) buff;
+		hdr->canary = htons(CANARY);
+		hdr->flags = 0;
+
+		plen = z_deflate(buff + sizeof(struct ct_proto),
+				 rlen - sizeof(struct ct_proto), &pbuff);
+		if (plen < 0) {
+			perror("TCP tunnel deflate error");
+			continue;
+		}
+
+		hdr->payload = htons((uint16_t) plen);
+
+		state = 1;
+		setsockopt(dfd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
+
+		err = write_exact(dfd, hdr, sizeof(struct ct_proto), 0);
+		if (err < 0)
+			perror("Error writing tunnel data to net");
+
+		err = write_exact(dfd, pbuff, plen, 0);
+		if (err < 0)
+			perror("Error writing tunnel data to net");
+
+		state = 0;
+		setsockopt(dfd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
+
+		errno = 0;
+	}
+}
+
+extern ssize_t handler_tcp_read(int fd, char *buff, size_t len);
+
+static void handler_tcp_net_to_tun(int sfd, int dfd, char *buff, size_t len)
+{
+	char *pbuff;
+	ssize_t rlen, err, plen;
+	struct ct_proto *hdr;
+
+	errno = 0;
+	while ((rlen = handler_tcp_read(sfd, buff, len)) > 0) {
+		hdr = (struct ct_proto *) buff;
+
+		if (unlikely(rlen < sizeof(struct ct_proto)))
+			goto close;
+		if (unlikely(rlen - sizeof(*hdr) != ntohs(hdr->payload)))
+			goto close;
+		if (unlikely(ntohs(hdr->canary) != CANARY))
+			goto close;
+		if (unlikely(ntohs(hdr->payload) == 0))
+			goto close;
+		if (hdr->flags & PROTO_FLAG_EXIT)
+			goto close;
+
+		plen = z_inflate(buff + sizeof(struct ct_proto),
+				 rlen - sizeof(struct ct_proto), &pbuff);
+		if (plen < 0) {
+			perror("TCP net inflate error");
+			continue;
+		}
+
+		err = write(dfd, pbuff, plen);
+		if (err < 0)
+			perror("Error writing net data to tunnel");
+
+		errno = 0;
+	}
+
+	return;
+close:
+	sigint = 1;
 }
 
 static void notify_close(int fd)
@@ -128,6 +202,10 @@ int client_main(int port, int udp)
 	struct pollfd fds[2];
 	char *buff;
 	size_t blen = TUNBUFF_SIZ; //FIXME
+
+	ret = z_alloc_or_maybe_die(Z_DEFAULT_COMPRESSION);
+	if (ret < 0)
+		panic("Cannot init zLib!\n");
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;
@@ -189,12 +267,23 @@ int client_main(int port, int udp)
 	while (likely(!sigint)) {
 		poll(fds, 2, -1);
 		for (i = 0; i < 2; ++i) {
-			if ((fds[i].revents & POLLIN) == POLLIN &&
-			    fds[i].fd == tunfd)
-				handler_tun_to_net(tunfd, fd, udp, buff, blen);
-			else if ((fds[i].revents & POLLIN) == POLLIN &&
-				 fds[i].fd == fd)
-				handler_net_to_tun(fd, tunfd, udp, buff, blen);
+			if ((fds[i].revents & POLLIN) != POLLIN)
+				continue;
+			if (fds[i].fd == tunfd) {
+				if (udp)
+					handler_udp_tun_to_net(tunfd, fd,
+							       buff, blen);
+				else
+					handler_tcp_tun_to_net(tunfd, fd,
+							       buff, blen);
+			} else if (fds[i].fd == fd) {
+				if (udp)
+					handler_udp_net_to_tun(fd, tunfd,
+							       buff, blen);
+				else
+					handler_tcp_net_to_tun(fd, tunfd,
+							       buff, blen);
+			}
 		}
 	}
 
@@ -205,6 +294,8 @@ int client_main(int port, int udp)
 
 	close(fd);
 	close(tunfd);
+
+	z_free();
 
 	return 0;
 }

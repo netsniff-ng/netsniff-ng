@@ -306,7 +306,7 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 	return keep;
 }
 
-static ssize_t handler_tcp_read(int fd, char *buff, size_t len)
+ssize_t handler_tcp_read(int fd, char *buff, size_t len)
 {
 	ssize_t rlen;
 	struct ct_proto *hdr = (struct ct_proto *) buff;
