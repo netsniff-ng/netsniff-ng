@@ -53,9 +53,8 @@ static inline void panic(char *msg, ...)
 #define syslog_panic(msg...)		\
 do {					\
 	syslog(LOG_ERR, ##msg);		\
-					\
 	die();				\
-} while (0);
+} while (0)
 
 static inline void panic_trace(char *msg, ...)
 {
