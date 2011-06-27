@@ -38,8 +38,6 @@ enum working_mode {
 
 sig_atomic_t sigint = 0;
 
-static char *home = NULL;
-
 static const char *short_options = "kcsvhp:t:d:u";
 
 static struct option long_options[] = {
@@ -144,7 +142,7 @@ static void version(void)
 	die();
 }
 
-static void check_file_or_die(char *home, char *file)
+static void check_file_or_die(char *home, char *file, int maybeempty)
 {
 	char path[512];
 	struct stat st;
@@ -158,31 +156,104 @@ static void check_file_or_die(char *home, char *file)
 		      path);
 	if (st.st_uid != getuid())
 		panic("You are not the owner of %s!\n", path);
+	if (st.st_mode != (S_IRUSR | S_IWUSR))
+		panic("You have set too many permissions on %s!\n", path);
+	if (maybeempty == 0 && st.st_size == 0)
+		panic("%s is empty!\n", path);
 }
 
-static void check_config_exists_or_die(void)
+static void check_config_exists_or_die(char *home)
 {
-	assert(home != NULL);
-	check_file_or_die(home, FILE_CLIENTS);
-	check_file_or_die(home, FILE_SERVERS);
-	check_file_or_die(home, FILE_PRIVKEY);
-	check_file_or_die(home, FILE_PUBKEY);
-	check_file_or_die(home, FILE_USERNAM);
+	if (!home)
+		panic("No home dir specified!\n");
+	check_file_or_die(home, FILE_CLIENTS, 1);
+	check_file_or_die(home, FILE_SERVERS, 1);
+	check_file_or_die(home, FILE_PRIVKEY, 0);
+	check_file_or_die(home, FILE_PUBKEY, 0);
+	check_file_or_die(home, FILE_USERNAM, 0);
 }
 
-static void fetch_home_dir(void)
+static char *fetch_home_dir(void)
 {
-	home = getenv("HOME");
+	char *home = getenv("HOME");
 	if (!home)
 		panic("No HOME defined!\n");
+	return home;
 }
 
-static int main_keygen(void)
+static void write_username(char *home)
 {
+	int fd, ret;
+	char path[512], *eof;
+	char user[512];
+
+	memset(path, 0, sizeof(path));
+	snprintf(path, sizeof(path), "%s/%s", home, FILE_USERNAM);
+	path[sizeof(path) - 1] = 0;
+
+	printf("Username: [%s] ", getenv("USER"));
+	fflush(stdout);
+
+	memset(user, 0, sizeof(user));
+	eof = fgets(user, sizeof(user), stdin);
+	user[sizeof(user) - 1] = 0;
+
+	if (strlen(user) == 0)
+		strlcpy(user, getenv("USER"), sizeof(user));
+
+	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+	if (fd < 0)
+		panic("Cannot open your username file!\n");
+	ret = write(fd, user, strlen(user));
+	if (ret != strlen(user))
+		panic("Could not write username!\n");
+	close(fd);
+
+	info("Username written to %s!\n", path);
+}
+
+void create_curvedir(char *home)
+{
+	int ret, fd;
+	char path[512];
+
+	memset(path, 0, sizeof(path));
+	snprintf(path, sizeof(path), "%s/%s", home, ".curvetun/");
+	path[sizeof(path) - 1] = 0;
+
+	errno = 0;
+	ret = mkdir(path, S_IRWXU);
+	if (ret < 0 && errno != EEXIST)
+		panic("Cannot create curvetun dir!\n");
+
+	/* We also create empty files for clients and servers! */
+	memset(path, 0, sizeof(path));
+	snprintf(path, sizeof(path), "%s/%s", home, FILE_CLIENTS);
+	path[sizeof(path) - 1] = 0;
+
+	fd = open(path, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+	if (fd < 0)
+		panic("Cannot open clients file!\n");
+	close(fd);
+
+	memset(path, 0, sizeof(path));
+	snprintf(path, sizeof(path), "%s/%s", home, FILE_SERVERS);
+	path[sizeof(path) - 1] = 0;
+
+	fd = open(path, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+	if (fd < 0)
+		panic("Cannot open servers file!\n");
+	close(fd);
+}
+
+static int main_keygen(char *home)
+{
+	create_curvedir(home);
+	write_username(home);
 	return 0;
 }
 
-static int main_client(char *dev)
+static int main_client(char *home, char *dev, char *alias)
 {
 	//Read from conf
 	int udp = 0;
@@ -190,21 +261,22 @@ static int main_client(char *dev)
 	char *port = "6666";
 	char *scope = "eth0";
 
-	check_config_exists_or_die();
+	check_config_exists_or_die(home);
+
 	return client_main(dev, host, port, scope, udp);
 }
 
-static int main_server(char *dev, char *port, int udp)
+static int main_server(char *home, char *dev, char *port, int udp)
 {
-	check_config_exists_or_die();
+	check_config_exists_or_die(home);
+
 	return server_main(dev, port, udp);
 }
 
 int main(int argc, char **argv)
 {
 	int c, opt_index, udp = 0;
-	char *port = NULL;
-	char *stun = NULL, *dev = NULL;
+	char *port = NULL, *stun = NULL, *dev = NULL, *home = NULL;
 	enum working_mode wmode = MODE_UNKNOW;
 
 	if (getuid() != geteuid())
@@ -212,7 +284,7 @@ int main(int argc, char **argv)
 	if (getenv("LD_PRELOAD"))
 		panic("curvetun cannot be preloaded!\n");
 
-	fetch_home_dir();
+	home = fetch_home_dir();
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 	       &opt_index)) != EOF) {
@@ -273,10 +345,10 @@ int main(int argc, char **argv)
 
 	switch (wmode) {
 	case MODE_KEYGEN:
-		main_keygen();
+		main_keygen(home);
 		break;
 	case MODE_CLIENT:
-		main_client(dev);
+		main_client(home, dev, NULL);
 		break;
 	case MODE_SERVER:
 		if (!port)
@@ -285,7 +357,7 @@ int main(int argc, char **argv)
 			print_stun_probe(stun, 3478, atoi(port));
 			xfree(stun);
 		}
-		main_server(dev, port, udp);
+		main_server(home, dev, port, udp);
 		xfree(port);
 		break;
 	default:
