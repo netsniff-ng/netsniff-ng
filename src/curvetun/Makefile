@@ -5,9 +5,9 @@
 
 include ../definitions.mk
 
-INCLUDE    = -I..
+INCLUDE    = -I.. -I./include/
 CFLAGS    += -DTARGETNAME="\"curvetun\""
-LIBS       = -lpthread -lz
+LIBS       = ./nacl/libnacl.a -lpthread -lz
 
 core-objs  = curvetun.o
 lib-objs   = xmalloc.o                  \
@@ -26,9 +26,12 @@ lib-objs   = xmalloc.o                  \
 target     = curvetun
 
 #all: clean gen-version build doc strip
-all: clean gen-version build doc
+all: clean gen-version build-nacl build doc
 debug: all
 deploy: all strip
+
+build-nacl:
+	@sh ./nacl.sh
 
 gen-version:
 	@cd .. && cat ../VERSION | xargs ./gen_build_info.pl
@@ -48,6 +51,9 @@ doc:
 
 %.o: ../%.c
 	@$(CC) $(CFLAGS) $(INCLUDE) $<
+
+clean-nacl:
+	@rm -rf ./nacl/ ./tmp/ ./include/
 
 clean:
 	@rm *.o *~ $(target) ../version.h *.gz *.pdf *.html *.8 *.css > \
