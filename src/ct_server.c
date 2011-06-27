@@ -184,17 +184,6 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 			goto close;
 		if (unlikely(ntohs(hdr->payload) == 0))
 			goto close;
-
-		err = trie_addr_maybe_update(buff + sizeof(struct ct_proto),
-					     rlen - sizeof(struct ct_proto),
-					     ws->parent.ipv4, fd,
-					     &naddr, nlen);
-		if (err) {
-			syslog(LOG_INFO, "CPU%u: Malicious packet dropped "
-			       "from id %d\n", ws->cpu, fd);
-			continue;
-		}
-
 		if (hdr->flags & PROTO_FLAG_EXIT) {
 close:
 			trie_addr_remove_addr(&naddr, nlen);
@@ -210,6 +199,16 @@ close:
 			syslog(LOG_ERR, "CPU%u: UDP net inflate error: %s\n",
 			       ws->cpu, strerror(errno));
 			goto next;
+		}
+
+		err = trie_addr_maybe_update(buff + sizeof(struct ct_proto),
+					     rlen - sizeof(struct ct_proto),
+					     ws->parent.ipv4, fd,
+					     &naddr, nlen);
+		if (err) {
+			syslog(LOG_INFO, "CPU%u: Malicious packet dropped "
+			       "from id %d\n", ws->cpu, fd);
+			continue;
 		}
 
 		err = write(ws->parent.tunfd, pbuff, plen);
@@ -359,16 +358,6 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 			goto close;
 		if (unlikely(ntohs(hdr->payload) == 0))
 			goto close;
-
-		err = trie_addr_maybe_update(buff + sizeof(struct ct_proto),
-					     rlen - sizeof(struct ct_proto),
-					     ws->parent.ipv4, fd, NULL, 0);
-		if (err) {
-			syslog(LOG_INFO, "CPU%u: Malicious packet dropped "
-			       "from id %d\n", ws->cpu, fd);
-			continue;
-		}
-
 		if (hdr->flags & PROTO_FLAG_EXIT) {
 close:
 			fd64 = fd;
@@ -387,6 +376,14 @@ close:
 		if (plen < 0) {
 			syslog(LOG_ERR, "CPU%u: TCP net inflate error: %s\n",
 			       ws->cpu, strerror(errno));
+			continue;
+		}
+
+		err = trie_addr_maybe_update(pbuff, plen, ws->parent.ipv4,
+					     fd, NULL, 0);
+		if (err) {
+			syslog(LOG_INFO, "CPU%u: Malicious packet dropped "
+			       "from id %d\n", ws->cpu, fd);
 			continue;
 		}
 
