@@ -41,57 +41,89 @@ extern sig_atomic_t sigint;
 
 static void handler_udp_tun_to_net(int sfd, int dfd, char *buff, size_t len)
 {
-#if 0
-	ssize_t rlen, err;
+	int state;
+	char *pbuff;
+	ssize_t rlen, err, plen;
 	struct ct_proto *hdr;
 
+	errno = 0;
 	while ((rlen = read(sfd, buff + sizeof(struct ct_proto),
 			    len - sizeof(struct ct_proto))) > 0) {
+
 		hdr = (struct ct_proto *) buff;
-		hdr->payload = htons((uint16_t) rlen);
 		hdr->canary = htons(CANARY);
 		hdr->flags = 0;
 
-		err = write_exact(dfd, buff, rlen + sizeof(struct ct_proto), 0);
+		plen = z_deflate(buff + sizeof(struct ct_proto), rlen, &pbuff);
+		if (plen < 0) {
+			perror("UDP tunnel deflate error");
+			continue;
+		}
+
+		hdr->payload = htons((uint16_t) plen);
+
+		state = 1;
+		setsockopt(dfd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
+
+		err = write_exact(dfd, hdr, sizeof(struct ct_proto), 0);
 		if (err < 0)
 			perror("Error writing tunnel data to net");
+
+		err = write_exact(dfd, pbuff, plen, 0);
+		if (err < 0)
+			perror("Error writing tunnel data to net");
+
+		state = 0;
+		setsockopt(dfd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
+
+		errno = 0;
 	}
-#endif
 }
 
 static void handler_udp_net_to_tun(int sfd, int dfd, char *buff, size_t len)
 {
-#if 0
-	size_t off = 0;
-	ssize_t rlen, err;
-	uint16_t canary;
-	struct sockaddr_storage sa;
-	struct ct_proto hdr, *hdrp;
-	socklen_t sa_len;
+	char *pbuff;
+	ssize_t rlen, err, plen;
+	struct ct_proto *hdr;
+	struct sockaddr_storage naddr;
+	socklen_t nlen;
 
-	while (1) {
-		sa_len = sizeof(sa);
-		memset(&sa, 0, sa_len);
+	nlen = sizeof(naddr);
+	memset(&naddr, 0, sizeof(naddr));
 
-		err = recvfrom(sfd, buff, len, 0, (struct sockaddr *)
-			       &sa, &sa_len);
-		hdrp = (struct ct_proto *) buff;
-		rlen = ntohs(hdrp->payload);
-		canary = ntohs(hdrp->canary);
-		off = sizeof(struct ct_proto);
-		if (hdrp->flags & PROTO_FLAG_EXIT) {
-			sigint = 1;
-			return;
+	errno = 0;
+	while ((rlen = recvfrom(sfd, buff, len, 0, (struct sockaddr *) &naddr,
+				&nlen)) > 0) {
+		hdr = (struct ct_proto *) buff;
+
+		if (unlikely(rlen < sizeof(struct ct_proto)))
+			goto close;
+		if (unlikely(rlen - sizeof(*hdr) != ntohs(hdr->payload)))
+			goto close;
+		if (unlikely(ntohs(hdr->canary) != CANARY))
+			goto close;
+		if (unlikely(ntohs(hdr->payload) == 0))
+			goto close;
+		if (hdr->flags & PROTO_FLAG_EXIT)
+			goto close;
+
+		plen = z_inflate(buff + sizeof(struct ct_proto),
+				 rlen - sizeof(struct ct_proto), &pbuff);
+		if (plen < 0) {
+			perror("UDP net inflate error");
+			continue;
 		}
 
-		if (err <= 0 || canary != CANARY)
-			break;
-
-		err = write(dfd, buff + off, rlen);
+		err = write(dfd, pbuff, plen);
 		if (err < 0)
 			perror("Error writing net data to tunnel");
+
+		errno = 0;
 	}
-#endif
+
+	return;
+close:
+	sigint = 1;
 }
 
 static void handler_tcp_tun_to_net(int sfd, int dfd, char *buff, size_t len)
