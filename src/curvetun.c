@@ -107,13 +107,13 @@ static void help(void)
 	printf("           ~/.curvetun/username - Your username\n");
 	printf("  B. Server:\n");
 	printf("      1. curvetun --server --port 6666 --stun stunserver.org\n");
-	printf("      2. ifconfig curve-s up\n");
-	printf("      2. ifconfig curve-s 10.0.0.1/24\n");
+	printf("      2. ifconfig curves up\n");
+	printf("      2. ifconfig curves 10.0.0.1/24\n");
 	printf("      3. (setup route)\n");
 	printf("  C. Client:\n");
 	printf("      1. curvetun --client\n");
-	printf("      2. ifconfig curve-c up\n");
-	printf("      2. ifconfig curve-s 10.0.0.2/24\n");
+	printf("      2. ifconfig curvec up\n");
+	printf("      2. ifconfig curvec 10.0.0.2/24\n");
 	printf("      3. (setup route)\n");
 	printf("  Where both participants have the following files specified:\n");
 	printf("   ~/.curvetun/clients - Participants the server accepts\n");
