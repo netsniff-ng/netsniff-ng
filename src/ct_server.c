@@ -212,8 +212,9 @@ static int handler_udp(int fd, const struct worker_struct *ws,
 static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len)
 {
-	int dfd, keep = 1;
-	ssize_t rlen, err;
+	int dfd, state, keep = 1;
+	char *pbuff;
+	ssize_t rlen, err, plen;
 	struct ct_proto *hdr;
 	socklen_t nlen;
 
@@ -223,7 +224,6 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 		dfd = -1;
 
 		hdr = (struct ct_proto *) buff;
-		hdr->payload = htons((uint16_t) rlen);
 		hdr->canary = htons(CANARY);
 		hdr->flags = 0;
 
@@ -238,10 +238,32 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 			continue;
 		}
 
-		err = write_exact(dfd, buff, rlen + sizeof(struct ct_proto), 0);
+		plen = z_deflate(buff + sizeof(struct ct_proto),
+				 rlen - sizeof(struct ct_proto), &pbuff);
+		if (plen < 0) {
+			syslog(LOG_ERR, "CPU%u: TCP tunnel deflate error: %s\n",
+			       ws->cpu, strerror(errno));
+			continue;
+		}
+
+		hdr->payload = htons((uint16_t) plen);
+
+		state = 1;
+		setsockopt(dfd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
+
+		err = write_exact(dfd, hdr, sizeof(struct ct_proto), 0);
 		if (err < 0)
 			syslog(LOG_ERR, "CPU%u: TCP tunnel write error: %s\n",
 			       ws->cpu, strerror(errno));
+
+		err = write_exact(dfd, pbuff, plen, 0);
+		if (err < 0)
+			syslog(LOG_ERR, "CPU%u: TCP tunnel write error: %s\n",
+			       ws->cpu, strerror(errno));
+
+		state = 0;
+		setsockopt(dfd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
+
 		errno = 0;
 	}
 
@@ -288,7 +310,8 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len)
 {
 	int keep = 1, count = 0;
-	ssize_t rlen, err;
+	char *pbuff;
+	ssize_t rlen, err, plen;
 	struct ct_proto *hdr;
 	uint64_t fd64;
 
@@ -327,9 +350,15 @@ close:
 			return keep;
 		}
 
-		err = write(ws->parent.tunfd,
-			    buff + sizeof(struct ct_proto),
-			    rlen - sizeof(struct ct_proto));
+		plen = z_inflate(buff + sizeof(struct ct_proto),
+				 rlen - sizeof(struct ct_proto), &pbuff);
+		if (plen < 0) {
+			syslog(LOG_ERR, "CPU%u: TCP net deflate error: %s\n",
+			       ws->cpu, strerror(errno));
+			continue;
+		}
+
+		err = write(ws->parent.tunfd, pbuff, plen);
 		if (err < 0)
 			syslog(LOG_ERR, "CPU%u: TCP net write error: %s\n",
 			       ws->cpu, strerror(errno));
