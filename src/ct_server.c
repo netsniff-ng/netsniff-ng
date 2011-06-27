@@ -201,10 +201,8 @@ close:
 			goto next;
 		}
 
-		err = trie_addr_maybe_update(buff + sizeof(struct ct_proto),
-					     rlen - sizeof(struct ct_proto),
-					     ws->parent.ipv4, fd,
-					     &naddr, nlen);
+		err = trie_addr_maybe_update(pbuff, plen, ws->parent.ipv4,
+					     fd, &naddr, nlen);
 		if (err) {
 			syslog(LOG_INFO, "CPU%u: Malicious packet dropped "
 			       "from id %d\n", ws->cpu, fd);
