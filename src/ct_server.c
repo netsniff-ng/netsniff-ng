@@ -207,7 +207,7 @@ close:
 		plen = z_inflate(buff + sizeof(struct ct_proto),
 				 rlen - sizeof(struct ct_proto), &pbuff);
 		if (plen < 0) {
-			syslog(LOG_ERR, "CPU%u: UDP net deflate error: %s\n",
+			syslog(LOG_ERR, "CPU%u: UDP net inflate error: %s\n",
 			       ws->cpu, strerror(errno));
 			goto next;
 		}
@@ -385,7 +385,7 @@ close:
 		plen = z_inflate(buff + sizeof(struct ct_proto),
 				 rlen - sizeof(struct ct_proto), &pbuff);
 		if (plen < 0) {
-			syslog(LOG_ERR, "CPU%u: TCP net deflate error: %s\n",
+			syslog(LOG_ERR, "CPU%u: TCP net inflate error: %s\n",
 			       ws->cpu, strerror(errno));
 			continue;
 		}
