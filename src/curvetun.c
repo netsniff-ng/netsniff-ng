@@ -410,13 +410,13 @@ static int main_keygen(void)
 static int main_client(char *dev, enum client_mode cmode)
 {
 	check_config_exists_or_die();
-	return client_main(0, 0);
+	return client_main(0, 1);
 }
 
 static int main_server(char *dev, unsigned short port)
 {
 	check_config_exists_or_die();
-	return server_main(port, 0, 5);
+	return server_main(port, 1, 5);
 }
 
 int main(int argc, char **argv)

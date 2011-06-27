@@ -39,7 +39,8 @@ static const char *scope = "eth0";
 
 extern sig_atomic_t sigint;
 
-static void handler_udp_tun_to_net(int sfd, int dfd, char *buff, size_t len)
+static void handler_udp_tun_to_net(int sfd, int dfd, struct z_struct *z,
+				   char *buff, size_t len)
 {
 	int state;
 	char *pbuff;
@@ -54,7 +55,7 @@ static void handler_udp_tun_to_net(int sfd, int dfd, char *buff, size_t len)
 		hdr->canary = htons(CANARY);
 		hdr->flags = 0;
 
-		plen = z_deflate(buff + sizeof(struct ct_proto), rlen, &pbuff);
+		plen = z_deflate(z, buff + sizeof(struct ct_proto), rlen, &pbuff);
 		if (plen < 0) {
 			perror("UDP tunnel deflate error");
 			continue;
@@ -80,7 +81,8 @@ static void handler_udp_tun_to_net(int sfd, int dfd, char *buff, size_t len)
 	}
 }
 
-static void handler_udp_net_to_tun(int sfd, int dfd, char *buff, size_t len)
+static void handler_udp_net_to_tun(int sfd, int dfd, struct z_struct *z,
+				   char *buff, size_t len)
 {
 	char *pbuff;
 	ssize_t rlen, err, plen;
@@ -107,7 +109,7 @@ static void handler_udp_net_to_tun(int sfd, int dfd, char *buff, size_t len)
 		if (hdr->flags & PROTO_FLAG_EXIT)
 			goto close;
 
-		plen = z_inflate(buff + sizeof(struct ct_proto),
+		plen = z_inflate(z, buff + sizeof(struct ct_proto),
 				 rlen - sizeof(struct ct_proto), &pbuff);
 		if (plen < 0) {
 			perror("UDP net inflate error");
@@ -126,7 +128,8 @@ close:
 	sigint = 1;
 }
 
-static void handler_tcp_tun_to_net(int sfd, int dfd, char *buff, size_t len)
+static void handler_tcp_tun_to_net(int sfd, int dfd, struct z_struct *z,
+				   char *buff, size_t len)
 {
 	int state;
 	char *pbuff;
@@ -141,7 +144,7 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, char *buff, size_t len)
 		hdr->canary = htons(CANARY);
 		hdr->flags = 0;
 
-		plen = z_deflate(buff + sizeof(struct ct_proto), rlen, &pbuff);
+		plen = z_deflate(z, buff + sizeof(struct ct_proto), rlen, &pbuff);
 		if (plen < 0) {
 			perror("TCP tunnel deflate error");
 			continue;
@@ -169,7 +172,8 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, char *buff, size_t len)
 
 extern ssize_t handler_tcp_read(int fd, char *buff, size_t len);
 
-static void handler_tcp_net_to_tun(int sfd, int dfd, char *buff, size_t len)
+static void handler_tcp_net_to_tun(int sfd, int dfd, struct z_struct *z,
+				   char *buff, size_t len)
 {
 	char *pbuff;
 	ssize_t rlen, err, plen;
@@ -190,7 +194,7 @@ static void handler_tcp_net_to_tun(int sfd, int dfd, char *buff, size_t len)
 		if (hdr->flags & PROTO_FLAG_EXIT)
 			goto close;
 
-		plen = z_inflate(buff + sizeof(struct ct_proto),
+		plen = z_inflate(z, buff + sizeof(struct ct_proto),
 				 rlen - sizeof(struct ct_proto), &pbuff);
 		if (plen < 0) {
 			perror("TCP net inflate error");
@@ -231,10 +235,12 @@ int client_main(int port, int udp)
 	struct addrinfo hints, *ahead, *ai;
 	struct sockaddr_in6 *saddr6;
 	struct pollfd fds[2];
+	struct z_struct *z;
 	char *buff;
 	size_t blen = TUNBUFF_SIZ; //FIXME
 
-	ret = z_alloc_or_maybe_die(Z_DEFAULT_COMPRESSION);
+	z = xmalloc(sizeof(struct z_struct));
+	ret = z_alloc_or_maybe_die(z, Z_DEFAULT_COMPRESSION);
 	if (ret < 0)
 		panic("Cannot init zLib!\n");
 
@@ -302,17 +308,17 @@ int client_main(int port, int udp)
 				continue;
 			if (fds[i].fd == tunfd) {
 				if (udp)
-					handler_udp_tun_to_net(tunfd, fd,
+					handler_udp_tun_to_net(tunfd, fd, z,
 							       buff, blen);
 				else
-					handler_tcp_tun_to_net(tunfd, fd,
+					handler_tcp_tun_to_net(tunfd, fd, z,
 							       buff, blen);
 			} else if (fds[i].fd == fd) {
 				if (udp)
-					handler_udp_net_to_tun(fd, tunfd,
+					handler_udp_net_to_tun(fd, tunfd, z,
 							       buff, blen);
 				else
-					handler_tcp_net_to_tun(fd, tunfd,
+					handler_tcp_net_to_tun(fd, tunfd, z,
 							       buff, blen);
 			}
 		}
@@ -326,7 +332,8 @@ int client_main(int port, int udp)
 	close(fd);
 	close(tunfd);
 
-	z_free();
+	z_free(z);
+	xfree(z);
 
 	return 0;
 }

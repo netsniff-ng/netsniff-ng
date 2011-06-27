@@ -9,11 +9,23 @@
 #define DEFLATE_H
 
 #include "zlib.h"
+#include "locking.h"
 
-extern int z_alloc_or_maybe_die(int z_level);
-extern ssize_t z_deflate(char *src, size_t size, char **dst);
-extern ssize_t z_inflate(char *src, size_t size, char **dst);
-extern void z_free(void);
+struct z_struct {
+	z_stream inf;
+	unsigned char *inf_z_buf;
+	size_t inf_z_buf_size;
+	struct spinlock inf_lock;
+	z_stream def;
+	unsigned char *def_z_buf;
+	size_t def_z_buf_size;
+	struct spinlock def_lock;
+};
+
+extern int z_alloc_or_maybe_die(struct z_struct *z, int z_level);
+extern ssize_t z_deflate(struct z_struct *z, char *src, size_t size, char **dst);
+extern ssize_t z_inflate(struct z_struct *z, char *src, size_t size, char **dst);
+extern void z_free(void *z);
 extern char *z_get_version(void);
 
 #endif /* DEFLATE_H */

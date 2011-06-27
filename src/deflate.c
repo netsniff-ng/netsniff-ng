@@ -17,63 +17,58 @@
 #include "locking.h"
 #include "curvetun.h"
 
-static z_stream inf, def;
-
-static struct spinlock inf_lock;
-
-static struct spinlock def_lock;
-
-static unsigned char *inf_z_buf = NULL;
-
-static int inf_z_buf_size = TUNBUFF_SIZ;
-
-static unsigned char *def_z_buf = NULL;
-
-static int def_z_buf_size = TUNBUFF_SIZ;
-
-int z_alloc_or_maybe_die(int z_level)
+int z_alloc_or_maybe_die(struct z_struct *z, int z_level)
 {
 	int ret;
 
-	/* Usually can be Z_DEFAULT_COMPRESSION */
+	if (!z)
+		return -EINVAL;
 	if (z_level < -1 || z_level > 9)
 		return -EINVAL;
 
-	def.zalloc = Z_NULL;
-	def.zfree  = Z_NULL;
-	def.opaque = Z_NULL;
+	z->def.zalloc = Z_NULL;
+	z->def.zfree  = Z_NULL;
+	z->def.opaque = Z_NULL;
 
-	inf.zalloc = Z_NULL;
-	inf.zfree  = Z_NULL;
-	inf.opaque = Z_NULL;
+	z->inf.zalloc = Z_NULL;
+	z->inf.zfree  = Z_NULL;
+	z->inf.opaque = Z_NULL;
 
-	ret = deflateInit(&def, z_level);
+	z->inf_z_buf_size = TUNBUFF_SIZ;
+	z->def_z_buf_size = TUNBUFF_SIZ;
+
+	ret = deflateInit(&z->def, z_level);
 	if (ret != Z_OK)
 		panic("Can't initialize zLibs compressor!\n");
 
-	ret = inflateInit(&inf);
+	ret = inflateInit(&z->inf);
 	if (ret != Z_OK)
 		panic("Can't initialize zLibs decompressor!\n");
 
-	inf_z_buf = xmalloc(inf_z_buf_size);
-	def_z_buf = xmalloc(def_z_buf_size);
+	z->inf_z_buf = xmalloc(z->inf_z_buf_size);
+	z->def_z_buf = xmalloc(z->def_z_buf_size);
 
-	spinlock_init(&inf_lock);
-	spinlock_init(&def_lock);
+	spinlock_init(&z->inf_lock);
+	spinlock_init(&z->def_lock);
 
 	return 0;
 }
 
-void z_free(void)
+void z_free(void *vz)
 {
-	deflateEnd(&def);
-	inflateEnd(&inf);
+	struct z_struct *z = vz;
 
-	xfree(inf_z_buf);
-	xfree(def_z_buf);
+	if (!z)
+		return;
 
-	spinlock_destroy(&inf_lock);
-	spinlock_destroy(&def_lock);
+	deflateEnd(&z->def);
+	inflateEnd(&z->inf);
+
+	xfree(z->inf_z_buf);
+	xfree(z->def_z_buf);
+
+	spinlock_destroy(&z->inf_lock);
+	spinlock_destroy(&z->def_lock);
 }
 
 char *z_get_version(void)
@@ -81,86 +76,91 @@ char *z_get_version(void)
 	return ZLIB_VERSION;
 }
 
-static void def_z_buf_expansion_or_die(z_stream *stream, size_t size)
+static void def_z_buf_expansion_or_die(struct z_struct *z, size_t size)
 {
-	def_z_buf = xrealloc(def_z_buf, 1, def_z_buf_size + size);
+	z->def_z_buf = xrealloc(z->def_z_buf, 1, z->def_z_buf_size + size);
 
-	stream->next_out = def_z_buf + def_z_buf_size;
-	stream->avail_out = size;
+	z->def.next_out = z->def_z_buf + z->def_z_buf_size;
+	z->def.avail_out = size;
 
-	def_z_buf_size += size;
+	z->def_z_buf_size += size;
 }
 
-static void inf_z_buf_expansion_or_die(z_stream *stream, size_t size)
+static void inf_z_buf_expansion_or_die(struct z_struct *z, size_t size)
 {
-	inf_z_buf = xrealloc(inf_z_buf, 1, inf_z_buf_size + size);
+	z->inf_z_buf = xrealloc(z->inf_z_buf, 1, z->inf_z_buf_size + size);
 
-	stream->next_out = inf_z_buf + inf_z_buf_size;
-	stream->avail_out = size;
+	z->inf.next_out = z->inf_z_buf + z->inf_z_buf_size;
+	z->inf.avail_out = size;
 
-	inf_z_buf_size += size;
+	z->inf_z_buf_size += size;
 }
  
-ssize_t z_deflate(char *src, size_t size, char **dst)
+ssize_t z_deflate(struct z_struct *z, char *src, size_t size, char **dst)
 {
 	int ret;
 	size_t todo, done = 0;  
 
-	spinlock_lock(&def_lock);
-
-	def.next_in = (void *) src;
-	def.avail_in = size;
-	def.next_out = (void *) def_z_buf;
-	def.avail_out = def_z_buf_size;
+	spinlock_lock(&z->def_lock);
+	z->def.next_in = (void *) src;
+	z->def.avail_in = size;
+	z->def.next_out = (void *) z->def_z_buf;
+	z->def.avail_out = z->def_z_buf_size;
 
 	for (;;) {
-		todo = def.avail_out;
-		ret = deflate(&def, Z_SYNC_FLUSH);
+		todo = z->def.avail_out;
+
+		ret = deflate(&z->def, Z_SYNC_FLUSH);
 		if (ret != Z_OK) {
 			whine("Deflate error %d!\n", ret);
-			spinlock_unlock(&def_lock);
+			spinlock_unlock(&z->def_lock);
 			return -EIO;
 		}
-		done += (todo - def.avail_out);
-		if (def.avail_in == 0)
-			break;
-		def_z_buf_expansion_or_die(&def, 100);
-	}
-	*dst = (void *) def_z_buf;
 
-	spinlock_unlock(&def_lock);
+		done += (todo - z->def.avail_out);
+		if (z->def.avail_in == 0)
+			break;
+
+		def_z_buf_expansion_or_die(z, 100);
+	}
+
+	*dst = (void *) z->def_z_buf;
+	spinlock_unlock(&z->def_lock);
 
 	return done;
 }
 
-ssize_t z_inflate(char *src, size_t size, char **dst)
+ssize_t z_inflate(struct z_struct *z, char *src, size_t size, char **dst)
 {
 	int ret;
 	int todo, done = 0;     
 
-	spinlock_lock(&inf_lock);
-
-	inf.next_in = (void *) src;
-	inf.avail_in = size;
-	inf.next_out = (void *) inf_z_buf;
-	inf.avail_out = inf_z_buf_size;
+	spinlock_lock(&z->inf_lock);
+	z->inf.next_in = (void *) src;
+	z->inf.avail_in = size;
+	z->inf.next_out = (void *) z->inf_z_buf;
+	z->inf.avail_out = z->inf_z_buf_size;
 
 	for (;;) {
-		todo = inf.avail_out;
-		ret = inflate(&inf, Z_SYNC_FLUSH);
+		todo = z->inf.avail_out;
+
+		ret = inflate(&z->inf, Z_SYNC_FLUSH);
 		if (ret != Z_OK) {
 			whine("Inflate error %d!\n", ret);
-			spinlock_unlock(&inf_lock);
+			spinlock_unlock(&z->inf_lock);
 			return -EIO;
 		}
-		done += (todo - inf.avail_out);
-		if (inf.avail_in == 0)
-			break;
-		inf_z_buf_expansion_or_die(&inf, 100);
-	}
-	*dst = (void *) inf_z_buf;
 
-	spinlock_unlock(&inf_lock);
+		done += (todo - z->inf.avail_out);
+		if (z->inf.avail_in == 0)
+			break;
+
+		inf_z_buf_expansion_or_die(z, 100);
+	}
+
+	*dst = (void *) z->inf_z_buf;
+	spinlock_unlock(&z->inf_lock);
 
 	return done;
 }
+

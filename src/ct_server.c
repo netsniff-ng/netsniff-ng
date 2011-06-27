@@ -54,6 +54,7 @@ struct worker_struct {
 	struct parent_info parent;
 	int (*handler)(int fd, const struct worker_struct *ws,
 		       char *buff, size_t len);
+	struct z_struct *z;
 };
 
 static struct worker_struct *threadpool = NULL;
@@ -106,7 +107,8 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 			continue;
 		}
 
-		plen = z_deflate(buff + sizeof(struct ct_proto), rlen, &pbuff);
+		plen = z_deflate(ws->z, buff + sizeof(struct ct_proto),
+				 rlen, &pbuff);
 		if (plen < 0) {
 			syslog(LOG_ERR, "CPU%u: UDP tunnel deflate error: %s\n",
 			       ws->cpu, strerror(errno));
@@ -192,7 +194,7 @@ close:
 			continue;
 		}
 
-		plen = z_inflate(buff + sizeof(struct ct_proto),
+		plen = z_inflate(ws->z, buff + sizeof(struct ct_proto),
 				 rlen - sizeof(struct ct_proto), &pbuff);
 		if (plen < 0) {
 			syslog(LOG_ERR, "CPU%u: UDP net inflate error: %s\n",
@@ -266,7 +268,8 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 			continue;
 		}
 
-		plen = z_deflate(buff + sizeof(struct ct_proto), rlen, &pbuff);
+		plen = z_deflate(ws->z, buff + sizeof(struct ct_proto),
+				 rlen, &pbuff);
 		if (plen < 0) {
 			syslog(LOG_ERR, "CPU%u: TCP tunnel deflate error: %s\n",
 			       ws->cpu, strerror(errno));
@@ -365,7 +368,7 @@ close:
 			return keep;
 		}
 
-		plen = z_inflate(buff + sizeof(struct ct_proto),
+		plen = z_inflate(ws->z, buff + sizeof(struct ct_proto),
 				 rlen - sizeof(struct ct_proto), &pbuff);
 		if (plen < 0) {
 			syslog(LOG_ERR, "CPU%u: TCP net inflate error: %s\n",
@@ -428,9 +431,14 @@ static void *worker(void *self)
 	fds.fd = ws->efd[0];
 	fds.events = POLLIN;
 
+	ret = z_alloc_or_maybe_die(ws->z, Z_DEFAULT_COMPRESSION);
+	if (ret < 0)
+		panic("Cannot init zLib!\n");
+
 	buff = xmalloc(blen);
 	syslog(LOG_INFO, "curvetun thread on CPU%u up!\n", ws->cpu);
 	pthread_cleanup_push(xfree, buff);
+	pthread_cleanup_push(z_free, ws->z);
 
 	while (likely(!sigint)) {
 		poll(&fds, 1, -1);
@@ -458,6 +466,7 @@ static void *worker(void *self)
 
 	syslog(LOG_INFO, "curvetun thread on CPU%u down!\n", ws->cpu);
 	pthread_cleanup_pop(1);
+	pthread_cleanup_pop(1);
 	pthread_exit((void *) ((long) ws->cpu));
 }
 
@@ -478,6 +487,7 @@ static void thread_spawn_or_panic(unsigned int cpus, int efd, int refd,
 		if (ret < 0)
 			panic("Cannot create event socket!\n");
 
+		threadpool[i].z = xmalloc(sizeof(struct z_struct));
 		threadpool[i].parent.efd = efd;
 		threadpool[i].parent.refd = refd;
 		threadpool[i].parent.tunfd = tunfd;
@@ -513,6 +523,7 @@ static void thread_finish(unsigned int cpus)
 			continue;
 		close(threadpool[i].efd[0]);
 		close(threadpool[i].efd[1]);
+		xfree(threadpool[i].z);
 	}
 }
 
@@ -527,10 +538,6 @@ int server_main(int port, int udp, int lnum)
 
 	openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
 	syslog(LOG_INFO, "curvetun server booting!\n");
-
-	ret = z_alloc_or_maybe_die(Z_DEFAULT_COMPRESSION);
-	if (ret < 0)
-		panic("Cannot init zLib!\n");
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;
@@ -794,7 +801,6 @@ int server_main(int port, int udp, int lnum)
 	unregister_socket(tunfd);
 	destroy_cpusched();
 	trie_cleanup();
-	z_free();
 
 	syslog(LOG_INFO, "curvetun shut down!\n");
 	closelog();
