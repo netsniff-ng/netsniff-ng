@@ -105,6 +105,8 @@ static void help(void)
 	printf("           ~/.curvetun/priv.key - Your private key\n");
 	printf("           ~/.curvetun/pub.key  - Your public key\n");
 	printf("           ~/.curvetun/username - Your username\n");
+	printf("      3. To export your key for servers, use:\n");
+	printf("           curvetun --export\n");
 	printf("  B. Server:\n");
 	printf("      1. curvetun --server --port 6666 --stun stunserver.org\n");
 	printf("      2. ifconfig curves up\n");
