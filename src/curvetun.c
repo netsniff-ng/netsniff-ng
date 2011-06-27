@@ -107,7 +107,7 @@ static void help(void)
 	printf("      2. ifconfig curve-s 10.0.0.1/24\n");
 	printf("      3. (setup route)\n");
 	printf("  C. Client:\n");
-	printf("      1. curvetun --client --mode random\n");
+	printf("      1. curvetun --client\n");
 	printf("      2. ifconfig curve-c up\n");
 	printf("      2. ifconfig curve-s 10.0.0.2/24\n");
 	printf("      3. (setup route)\n");
@@ -115,7 +115,7 @@ static void help(void)
 	printf("   ~/.curvetun/clients - Participants the server accepts\n");
 	printf("        line-format:   username;pubkey\n");
 	printf("   ~/.curvetun/servers - Possible servers the client can connect to\n");
-	printf("        line-format:   alias;serverip|servername;port;pubkey\n");
+	printf("        line-format:   alias;serverip|servername;port;udp|tcp;pubkey\n");
 	printf("\n");
 	printf("Note:\n");
 	printf("  There is no default port specified, so that users are forced\n");
