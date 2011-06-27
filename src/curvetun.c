@@ -85,7 +85,7 @@ static void help(void)
 	printf("Usage: curvetun [options]\n");
 	printf("Options:\n");
 	printf("  -k|--keygen             Generate public/private keypair\n");
-	printf("  -x|--export             Export your public key\n");
+	printf("  -x|--export             Export your public data for servers\n");
 	printf("  -d|--dev <tun>          Networking tunnel device, e.g. tun0\n");
 	printf(" Client settings:\n");
 	printf("  -c|--client[=alias]     Client mode, server alias optional\n");
@@ -162,8 +162,9 @@ static void check_file_or_die(char *home, char *file, int maybeempty)
 		      path);
 	if (st.st_uid != getuid())
 		panic("You are not the owner of %s!\n", path);
-	if (st.st_mode != (S_IRUSR | S_IWUSR))
-		panic("You have set too many permissions on %s!\n", path);
+	if (st.st_mode != (S_IRUSR | S_IWUSR | S_IFREG))
+		panic("You have set too many permissions on %s (%o)!\n",
+		      path, st.st_mode);
 	if (maybeempty == 0 && st.st_size == 0)
 		panic("%s is empty!\n", path);
 }
@@ -316,7 +317,42 @@ static int main_keygen(char *home)
 
 static int main_export(char *home)
 {
+	int fd, i;
+	ssize_t ret;
+	char path[512], tmp[64];
+
 	check_config_exists_or_die(home);
+
+	printf("Your exported public information:\n\n");
+
+	memset(path, 0, sizeof(path));
+	snprintf(path, sizeof(path), "%s/%s", home, FILE_USERNAM);
+	path[sizeof(path) - 1] = 0;
+
+	fd = open_or_die(path, O_RDONLY);
+	while ((ret = read(fd, tmp, sizeof(tmp))) > 0) {
+		ret = write(1, tmp, ret);
+	}
+	close(fd);
+
+	printf(";");
+
+	memset(path, 0, sizeof(path));
+	snprintf(path, sizeof(path), "%s/%s", home, FILE_PUBKEY);
+	path[sizeof(path) - 1] = 0;
+
+	fd = open_or_die(path, O_RDONLY);
+	ret = read(fd, tmp, sizeof(tmp));
+	if (ret != crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES)
+		panic("Cannot read public key!\n");
+	for (i = 0; i < ret; ++i)
+		if (i == ret - 1)
+			printf("%02x\n\n", (unsigned char) tmp[i]);
+		else
+			printf("%02x:", (unsigned char) tmp[i]);
+	close(fd);
+	fflush(stdout);
+
 	return 0;
 }
 
