@@ -79,7 +79,7 @@ static void header(void)
 
 static void help(void)
 {
-	printf("\ncurvetun %s, curve25519-based multiuser IP tunnel\n",
+	printf("\ncurvetun %s, lightweight curve25519-based multiuser IP tunnel\n",
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: curvetun [options]\n");
@@ -136,7 +136,7 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\ncurvetun %s, curve25519-based multiuser IP tunnel\n",
+	printf("\ncurvetun %s, lightweight curve25519-based multiuser IP tunnel\n",
                VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
