@@ -342,7 +342,6 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 	char *pbuff;
 	ssize_t rlen, err, plen;
 	struct ct_proto *hdr;
-	uint64_t fd64;
 
 	errno = 0;
 	while ((rlen = handler_tcp_read(fd, buff, len)) > 0) {
@@ -358,11 +357,10 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 			goto close;
 		if (hdr->flags & PROTO_FLAG_EXIT) {
 close:
-			fd64 = fd;
 			trie_addr_remove(fd);
 			handler_tcp_notify_close(fd);
-			rlen = write(ws->parent.efd, &fd64, sizeof(fd64));
-			if (rlen != sizeof(fd64))
+			rlen = write(ws->parent.efd, &fd, sizeof(fd));
+			if (rlen != sizeof(fd))
 				syslog(LOG_ERR, "CPU%u: TCP event write error: %s\n",
 				       ws->cpu, strerror(errno));
 			keep = 0;
