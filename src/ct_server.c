@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <netinet/udp.h>
 #include <sys/poll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -76,8 +77,9 @@ static void *worker(void *self) __pure;
 static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len)
 {
-	int dfd, keep = 1;
-	ssize_t rlen, err;
+	int dfd, state, keep = 1;
+	char *pbuff;
+	ssize_t rlen, err, plen;
 	struct ct_proto *hdr;
 	struct sockaddr_storage naddr;
 	socklen_t nlen;
@@ -90,7 +92,6 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 		memset(&naddr, 0, sizeof(naddr));
 
 		hdr = (struct ct_proto *) buff;
-		hdr->payload = htons((uint16_t) rlen);
 		hdr->canary = htons(CANARY);
 		hdr->flags = 0;
 
@@ -105,11 +106,34 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 			continue;
 		}
 
-		err = sendto(dfd, buff, rlen + sizeof(struct ct_proto), 0,
+		plen = z_deflate(buff + sizeof(struct ct_proto),
+				 rlen - sizeof(struct ct_proto), &pbuff);
+		if (plen < 0) {
+			syslog(LOG_ERR, "CPU%u: UDP tunnel deflate error: %s\n",
+			       ws->cpu, strerror(errno));
+			continue;
+		}
+
+		hdr->payload = htons((uint16_t) plen);
+
+		state = 1;
+		setsockopt(dfd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
+
+		err = sendto(dfd, hdr, sizeof(struct ct_proto), 0,
 			     (struct sockaddr *) &naddr, nlen);
 		if (err < 0)
 			syslog(LOG_ERR, "CPU%u: UDP tunnel write error: %s\n",
 			       ws->cpu, strerror(errno));
+
+		err = sendto(dfd, pbuff, plen, 0, (struct sockaddr *) &naddr,
+			     nlen);
+		if (err < 0)
+			syslog(LOG_ERR, "CPU%u: UDP tunnel write error: %s\n",
+			       ws->cpu, strerror(errno));
+
+		state = 0;
+		setsockopt(dfd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
+
 		errno = 0;
 	}
 
@@ -138,7 +162,8 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len)
 {
 	int keep = 1;
-	ssize_t rlen, err;
+	char *pbuff;
+	ssize_t rlen, err, plen;
 	struct ct_proto *hdr;
 	struct sockaddr_storage naddr;
 	socklen_t nlen;
@@ -179,13 +204,20 @@ close:
 			continue;
 		}
 
-		err = write(ws->parent.tunfd,
-			    buff + sizeof(struct ct_proto),
-			    rlen - sizeof(struct ct_proto));
+		plen = z_inflate(buff + sizeof(struct ct_proto),
+				 rlen - sizeof(struct ct_proto), &pbuff);
+		if (plen < 0) {
+			syslog(LOG_ERR, "CPU%u: UDP net deflate error: %s\n",
+			       ws->cpu, strerror(errno));
+			goto next;
+		}
+
+		err = write(ws->parent.tunfd, pbuff, plen);
 		if (err < 0)
 			syslog(LOG_ERR, "CPU%u: UDP net write error: %s\n",
 			       ws->cpu, strerror(errno));
 
+next:
 		nlen = sizeof(naddr);
 		memset(&naddr, 0, sizeof(naddr));
 		errno = 0;
