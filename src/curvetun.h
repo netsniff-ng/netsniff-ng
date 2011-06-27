@@ -8,7 +8,6 @@
 #ifndef CURVETUN_H
 #define CURVETUN_H
 
-#define DEFAULT_CURVE   "secp521r1/nistp521"
 #define FILE_CLIENTS    ".curvetun/clients"
 #define FILE_SERVERS    ".curvetun/servers"
 #define FILE_PRIVKEY    ".curvetun/priv.key"
