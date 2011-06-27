@@ -106,8 +106,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 			continue;
 		}
 
-		plen = z_deflate(buff + sizeof(struct ct_proto),
-				 rlen - sizeof(struct ct_proto), &pbuff);
+		plen = z_deflate(buff + sizeof(struct ct_proto), rlen, &pbuff);
 		if (plen < 0) {
 			syslog(LOG_ERR, "CPU%u: UDP tunnel deflate error: %s\n",
 			       ws->cpu, strerror(errno));
@@ -267,8 +266,7 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 			continue;
 		}
 
-		plen = z_deflate(buff + sizeof(struct ct_proto),
-				 rlen - sizeof(struct ct_proto), &pbuff);
+		plen = z_deflate(buff + sizeof(struct ct_proto), rlen, &pbuff);
 		if (plen < 0) {
 			syslog(LOG_ERR, "CPU%u: TCP tunnel deflate error: %s\n",
 			       ws->cpu, strerror(errno));

@@ -109,8 +109,7 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, char *buff, size_t len)
 		hdr->canary = htons(CANARY);
 		hdr->flags = 0;
 
-		plen = z_deflate(buff + sizeof(struct ct_proto),
-				 rlen - sizeof(struct ct_proto), &pbuff);
+		plen = z_deflate(buff + sizeof(struct ct_proto), rlen, &pbuff);
 		if (plen < 0) {
 			perror("TCP tunnel deflate error");
 			continue;
