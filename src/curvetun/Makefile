@@ -6,9 +6,8 @@
 include ../definitions.mk
 
 INCLUDE    = -I..
-CFLAGS    += -DTARGETNAME="\"curvetun\"" -fdce
+CFLAGS    += -DTARGETNAME="\"curvetun\""
 LIBS       = -lpthread -lz
-#LIBS       = -lgcrypt -lz -lpthread
 
 core-objs  = curvetun.o
 lib-objs   = xmalloc.o                  \
@@ -23,13 +22,6 @@ lib-objs   = xmalloc.o                  \
 	     ct_server.o                \
 	     ct_client.o                \
 	     netdev.o
-
-#	     aes256ctr.o                \
-#	     curves.o                   \
-#	     serialize.o                \
-#	     protocol.o                 \
-#	     ecc.o                      \
-#	     numtheory.o                \
 
 target     = curvetun
 
