@@ -30,15 +30,13 @@ struct ct_proto {
 }  __attribute__((packed));
 
 #define TUNBUFF_SIZ	10000
-
-extern int client_main(int port, int udp);
-
-#define THREADS_PER_CPU 2
 #define MAX_EPOLL_SIZE  10000
+#define THREADS_PER_CPU 2
 
-extern int server_main(int port, int udp, int lnum);
+extern int server_main(char *dev, char *port, int udp);
+extern int client_main(char *dev, char *host, char *port, char *scope, int udp);
 
-#define DEVNAME_SERVER "curves"
+#define DEVNAME_SERVER	"curves"
 #define DEVNAME_CLIENT  "curvec"
 
 #endif /* CURVETUN_H */

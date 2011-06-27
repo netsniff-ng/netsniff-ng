@@ -46,27 +46,20 @@ enum working_mode {
 	MODE_SERVER,
 };
 
-enum client_mode {
-	MODE_SINGLE,
-	MODE_ALL_RROBIN,
-	MODE_ALL_RANDOM,
-	MODE_ALL_LATENCY,
-};
-
 sig_atomic_t sigint = 0;
 
 static char *home = NULL;
 
-static const char *short_options = "kcm:svhp:t:d:";
+static const char *short_options = "kcsvhp:t:d:u";
 
 static struct option long_options[] = {
 	{"client", optional_argument, 0, 'c'},
-	{"mode", required_argument, 0, 'm'},
 	{"dev", required_argument, 0, 'd'},
 	{"port", required_argument, 0, 'p'},
 	{"stun", required_argument, 0, 't'},
 	{"keygen", no_argument, 0, 'k'},
 	{"server", no_argument, 0, 's'},
+	{"udp", no_argument, 0, 'u'},
 	{"version", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
@@ -102,14 +95,11 @@ static void help(void)
 	printf("  -d|--dev <tun>          Networking tunnel device, e.g. tun0\n");
 	printf(" Client settings:\n");
 	printf("  -c|--client[=alias]     Client mode, server alias optional\n");
-	printf("  -m|--mode <mode>        Working mode, if no alias specified\n");
-	printf("   `--- latency           Select server with lowest latency\n");
-	printf("    `-- rrobin            Select servers in round robin\n");
-	printf("     `- random            Select servers randomly (default)\n");
 	printf(" Server settings:\n");
 	printf("  -s|--server             Server mode\n");
 	printf("  -p|--port <num>         Port number (mandatory)\n");
 	printf("  -t|--stun <server>      Show public IP/Port mapping via STUN\n");
+	printf("  -u|--udp                Use UDP as carrier instead of TCP\n");
 	printf(" Misc:\n");
 	printf("  -v|--version            Print version\n");
 	printf("  -h|--help               Print this help\n");
@@ -407,25 +397,30 @@ static int main_keygen(void)
 	return 0;
 }
 
-static int main_client(char *dev, enum client_mode cmode)
+static int main_client(char *dev)
 {
+	//Read from conf
+	int udp = 0;
+	char *host = "localhost";
+	char *port = "6666";
+	char *scope = "eth0";
+
 	check_config_exists_or_die();
-	return client_main(0, 1);
+	return client_main(dev, host, port, scope, udp);
 }
 
-static int main_server(char *dev, unsigned short port)
+static int main_server(char *dev, char *port, int udp)
 {
 	check_config_exists_or_die();
-	return server_main(port, 1, 5);
+	return server_main(dev, port, udp);
 }
 
 int main(int argc, char **argv)
 {
-	int c, opt_index;
-	uint16_t port = 0;
+	int c, opt_index, udp = 0;
+	char *port = NULL;
 	char *stun = NULL, *dev = NULL;
 	enum working_mode wmode = MODE_UNKNOW;
-	enum client_mode cmode = MODE_ALL_RANDOM;
 //	gcry_error_t ret;
 
 //	assert(gcry_check_version("1.4.1"));
@@ -463,24 +458,23 @@ int main(int argc, char **argv)
 		case 'd':
 			dev = xstrdup(optarg);
 			break;
-		case 'm':
-			cmode = MODE_ALL_RANDOM;
-			break;
 		case 'k':
 			wmode = MODE_KEYGEN;
 			break;
 		case 's':
 			wmode = MODE_SERVER;
 			break;
+		case 'u':
+			udp = 1;
+			break;
 		case 't':
 			stun = xstrdup(optarg);
 			break;
 		case 'p':
-			port = atoi(optarg);
+			port = xstrdup(optarg);
 			break;
 		case '?':
 			switch (optopt) {
-			case 'm':
 			case 't':
 			case 'd':
 			case 'p':
@@ -511,16 +505,17 @@ int main(int argc, char **argv)
 		main_keygen();
 		break;
 	case MODE_CLIENT:
-		main_client(dev, cmode);
+		main_client(dev);
 		break;
 	case MODE_SERVER:
-		if (port == 0)
+		if (!port)
 			panic("No port specified!\n");
 		if (stun) {
-			print_stun_probe(stun, 3478, port);
+			print_stun_probe(stun, 3478, atoi(port));
 			xfree(stun);
 		}
-		main_server(dev, port);
+		main_server(dev, port, udp);
+		xfree(port);
 		break;
 	default:
 		panic("Either select keygen, client or server mode!\n");

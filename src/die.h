@@ -14,6 +14,7 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include <syslog.h>
 
 #include "compiler.h"
 #include "tty.h"
@@ -48,6 +49,13 @@ static inline void panic(char *msg, ...)
 
 	die();
 }
+
+#define syslog_panic(msg...)		\
+do {					\
+	syslog(LOG_ERR, ##msg);		\
+					\
+	die();				\
+} while (0);
 
 static inline void panic_trace(char *msg, ...)
 {

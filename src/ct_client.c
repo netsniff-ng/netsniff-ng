@@ -32,11 +32,6 @@
 #include "curvetun.h"
 #include "compiler.h"
 
-/* XXX: remove */
-static const char *rport = "6666";
-static const char *rhost = "localhost";
-static const char *scope = "eth0";
-
 extern sig_atomic_t sigint;
 
 static void handler_udp_tun_to_net(int sfd, int dfd, struct z_struct *z,
@@ -228,7 +223,7 @@ static void notify_close(int fd)
 		perror("Error writing close");
 }
 
-int client_main(int port, int udp)
+int client_main(char *dev, char *host, char *port, char *scope, int udp)
 {
 	int fd = -1, tunfd;
 	int ret, try = 1, i, one;
@@ -249,18 +244,15 @@ int client_main(int port, int udp)
 	hints.ai_socktype = udp ? SOCK_DGRAM : SOCK_STREAM;
 	hints.ai_protocol = udp ? IPPROTO_UDP : IPPROTO_TCP;
 
-	ret = getaddrinfo(rhost, rport, &hints, &ahead);
+	ret = getaddrinfo(host, port, &hints, &ahead);
 	if (ret < 0)
 		panic("Cannot get address info!\n");
 
 	for (ai = ahead; ai != NULL && fd < 0; ai = ai->ai_next) {
 		if (ai->ai_family == PF_INET6) {
 			saddr6 = (struct sockaddr_in6 *) ai->ai_addr;
-			if (saddr6->sin6_scope_id == 0) {
+			if (saddr6->sin6_scope_id == 0)
 				saddr6->sin6_scope_id = device_ifindex(scope);
-				info("Scope set to %d!\n",
-				     saddr6->sin6_scope_id);
-			}
 		}
 		fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 		if (fd < 0)
@@ -286,7 +278,7 @@ int client_main(int port, int udp)
 	if (fd < 0)
 		panic("Cannot create socket!\n");
 
-	tunfd = tun_open_or_die(DEVNAME_CLIENT);
+	tunfd = tun_open_or_die(dev ? dev : DEVNAME_CLIENT);
 
 	set_nonblocking(fd);
 	set_nonblocking(tunfd);

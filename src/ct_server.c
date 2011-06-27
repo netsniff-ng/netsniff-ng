@@ -313,7 +313,6 @@ ssize_t handler_tcp_read(int fd, char *buff, size_t len)
 	rlen = read_exact(fd, buff, sizeof(struct ct_proto), 1);
 	if (rlen < 0)
 		return rlen;
-
 	/* May not exit on EAGAIN if 0 Byte read */
 	rlen = read_exact(fd, buff + sizeof(struct ct_proto),
 			  ntohs(hdr->payload), 0);
@@ -433,7 +432,7 @@ static void *worker(void *self)
 
 	ret = z_alloc_or_maybe_die(ws->z, Z_DEFAULT_COMPRESSION);
 	if (ret < 0)
-		panic("Cannot init zLib!\n");
+		syslog_panic("Cannot init zLib!\n");
 
 	buff = xmalloc(blen);
 	syslog(LOG_INFO, "curvetun thread on CPU%u up!\n", ws->cpu);
@@ -485,7 +484,7 @@ static void thread_spawn_or_panic(unsigned int cpus, int efd, int refd,
 
 		ret = pipe2(threadpool[i].efd, O_NONBLOCK);
 		if (ret < 0)
-			panic("Cannot create event socket!\n");
+			syslog_panic("Cannot create event socket!\n");
 
 		threadpool[i].z = xmalloc(sizeof(struct z_struct));
 		threadpool[i].parent.efd = efd;
@@ -498,12 +497,12 @@ static void thread_spawn_or_panic(unsigned int cpus, int efd, int refd,
 		ret = pthread_create(&threadpool[i].trid, NULL,
 				     worker, &threadpool[i]);
 		if (ret < 0)
-			panic("Thread creation failed!\n");
+			syslog_panic("Thread creation failed!\n");
 
 		ret = pthread_setaffinity_np(threadpool[i].trid,
 					     sizeof(cpu_set_t), &cpuset);
 		if (ret < 0)
-			panic("Thread CPU migration failed!\n");
+			syslog_panic("Thread CPU migration failed!\n");
 
 		pthread_detach(threadpool[i].trid);
 	}
@@ -527,7 +526,7 @@ static void thread_finish(unsigned int cpus)
 	}
 }
 
-int server_main(int port, int udp, int lnum)
+int server_main(char *dev, char *port, int udp)
 {
 	int lfd = -1, kdpfd, nfds, nfd, curfds, efd[2], refd[2], tunfd;
 	int ipv4 = 0, i;
@@ -545,9 +544,9 @@ int server_main(int port, int udp, int lnum)
 	hints.ai_protocol = udp ? IPPROTO_UDP : IPPROTO_TCP;
 	hints.ai_flags = AI_PASSIVE;
 
-	ret = getaddrinfo(NULL, "6666", &hints, &ahead);
+	ret = getaddrinfo(NULL, port, &hints, &ahead);
 	if (ret < 0)
-		panic("Cannot get address info!\n");
+		syslog_panic("Cannot get address info!\n");
 
 	for (ai = ahead; ai != NULL && lfd < 0; ai = ai->ai_next) {
 		lfd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
@@ -586,23 +585,23 @@ int server_main(int port, int udp, int lnum)
 		}
 		ipv4 = (ai->ai_family == AF_INET6 ? 0 :
 			(ai->ai_family == AF_INET ? 1 : -1));
-		syslog(LOG_INFO, "curvetun on IPv%d via %s!\n",
-		       ipv4 ? 4 : 6, udp ? "UDP" : "TCP");
+		syslog(LOG_INFO, "curvetun on IPv%d via %s on port %s!\n",
+		       ipv4 ? 4 : 6, udp ? "UDP" : "TCP", port);
 	}
 
 	freeaddrinfo(ahead);
 	if (lfd < 0 || ipv4 < 0)
-		panic("Cannot create socket!\n");
+		syslog_panic("Cannot create socket!\n");
 
-	tunfd = tun_open_or_die(DEVNAME_SERVER);
+	tunfd = tun_open_or_die(dev ? dev : DEVNAME_SERVER);
 
 	ret = pipe2(efd, O_NONBLOCK);
 	if (ret < 0)
-		panic("Cannot create parent event fd!\n");
+		syslog_panic("Cannot create parent event fd!\n");
 
 	ret = pipe2(refd, O_NONBLOCK);
 	if (ret < 0)
-		panic("Cannot create parent (r)event fd!\n");
+		syslog_panic("Cannot create parent (r)event fd!\n");
 
 	set_nonblocking(lfd);
 
@@ -612,35 +611,35 @@ int server_main(int port, int udp, int lnum)
 
 	kdpfd = epoll_create(MAX_EPOLL_SIZE);
 	if (kdpfd < 0)
-		panic("Cannot create socket!\n");
+		syslog_panic("Cannot create socket!\n");
 
 	memset(&ev, 0, sizeof(ev));
 	ev.events = udp ? EPOLLIN | EPOLLET | EPOLLONESHOT : EPOLLIN;
 	ev.data.fd = lfd;
 	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, lfd, &ev);
 	if (ret < 0)
-		panic("Cannot add socket for epoll!\n");
+		syslog_panic("Cannot add socket for epoll!\n");
 
 	memset(&ev, 0, sizeof(ev));
 	ev.events = EPOLLIN;
 	ev.data.fd = efd[0];
 	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, efd[0], &ev);
 	if (ret < 0)
-		panic("Cannot add socket for events!\n");
+		syslog_panic("Cannot add socket for events!\n");
 
 	memset(&ev, 0, sizeof(ev));
 	ev.events = EPOLLIN;
 	ev.data.fd = refd[0];
 	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, refd[0], &ev);
 	if (ret < 0)
-		panic("Cannot add socket for (r)events!\n");
+		syslog_panic("Cannot add socket for (r)events!\n");
 
 	memset(&ev, 0, sizeof(ev));
 	ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
 	ev.data.fd = tunfd;
 	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, tunfd, &ev);
 	if (ret < 0)
-		panic("Cannot add socket for tundev!\n");
+		syslog_panic("Cannot add socket for tundev!\n");
 
 	curfds = 4;
 
@@ -649,7 +648,7 @@ int server_main(int port, int udp, int lnum)
 	cpus = get_number_cpus_online();
 	threads = cpus * THREADS_PER_CPU;
 	if (!((threads != 0) && ((threads & (threads - 1)) == 0)))
-		panic("thread number not power of two!\n");
+		syslog_panic("Thread number not power of two!\n");
 	threadpool = xzmalloc(sizeof(*threadpool) * threads);
 	thread_spawn_or_panic(cpus, efd[1], refd[1], tunfd, ipv4, udp);
 
@@ -657,7 +656,6 @@ int server_main(int port, int udp, int lnum)
 	register_socket(tunfd);
 	register_socket(lfd);
 
-	syslog(LOG_INFO, "tunnel id: %d, listener id: %d\n", tunfd, lfd);
 	syslog(LOG_INFO, "curvetun up and running!\n");
 
 	while (likely(!sigint)) {
