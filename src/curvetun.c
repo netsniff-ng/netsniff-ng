@@ -28,17 +28,21 @@
 #include "strlcpy.h"
 #include "signals.h"
 #include "curvetun.h"
+#include "write_or_die.h"
+#include "crypto_box_curve25519xsalsa20poly1305.h"
+#include "crypto_scalarmult_curve25519.h"
 
 enum working_mode {
 	MODE_UNKNOW,
 	MODE_KEYGEN,
+	MODE_EXPORT,
 	MODE_CLIENT,
 	MODE_SERVER,
 };
 
 sig_atomic_t sigint = 0;
 
-static const char *short_options = "kcsvhp:t:d:u";
+static const char *short_options = "kxcsvhp:t:d:u";
 
 static struct option long_options[] = {
 	{"client", optional_argument, 0, 'c'},
@@ -46,6 +50,7 @@ static struct option long_options[] = {
 	{"port", required_argument, 0, 'p'},
 	{"stun", required_argument, 0, 't'},
 	{"keygen", no_argument, 0, 'k'},
+	{"export", no_argument, 0, 'x'},
 	{"server", no_argument, 0, 's'},
 	{"udp", no_argument, 0, 'u'},
 	{"version", no_argument, 0, 'v'},
@@ -80,6 +85,7 @@ static void help(void)
 	printf("Usage: curvetun [options]\n");
 	printf("Options:\n");
 	printf("  -k|--keygen             Generate public/private keypair\n");
+	printf("  -x|--export             Export your public key\n");
 	printf("  -d|--dev <tun>          Networking tunnel device, e.g. tun0\n");
 	printf(" Client settings:\n");
 	printf("  -c|--client[=alias]     Client mode, server alias optional\n");
@@ -197,6 +203,7 @@ static void write_username(char *home)
 	memset(user, 0, sizeof(user));
 	eof = fgets(user, sizeof(user), stdin);
 	user[sizeof(user) - 1] = 0;
+	user[strlen(user) - 1] = 0; /* omit last \n */
 
 	if (strlen(user) == 0)
 		strlcpy(user, getenv("USER"), sizeof(user));
@@ -226,6 +233,8 @@ void create_curvedir(char *home)
 	if (ret < 0 && errno != EEXIST)
 		panic("Cannot create curvetun dir!\n");
 
+	info("curvetun directory %s created!\n", path);
+
 	/* We also create empty files for clients and servers! */
 	memset(path, 0, sizeof(path));
 	snprintf(path, sizeof(path), "%s/%s", home, FILE_CLIENTS);
@@ -236,6 +245,8 @@ void create_curvedir(char *home)
 		panic("Cannot open clients file!\n");
 	close(fd);
 
+	info("Empty client file written to %s!\n", path);
+
 	memset(path, 0, sizeof(path));
 	snprintf(path, sizeof(path), "%s/%s", home, FILE_SERVERS);
 	path[sizeof(path) - 1] = 0;
@@ -244,12 +255,68 @@ void create_curvedir(char *home)
 	if (fd < 0)
 		panic("Cannot open servers file!\n");
 	close(fd);
+
+	info("Empty server file written to %s!\n", path);
+}
+
+void create_keypair(char *home)
+{
+	int fd;
+	ssize_t ret;
+	unsigned char publickey[crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES];
+	unsigned char secretkey[crypto_box_curve25519xsalsa20poly1305_SECRETKEYBYTES];
+	char path[512];
+
+	info("Reading from /dev/random (this may take a while) ...\n");
+
+	fd = open_or_die("/dev/random", O_RDONLY);
+	ret = read_exact(fd, secretkey, sizeof(secretkey), 0);
+	if (ret != sizeof(secretkey))
+		panic("Cannot read from /dev/random!\n");
+	close(fd);
+
+	crypto_scalarmult_curve25519_base(publickey, secretkey);
+
+	memset(path, 0, sizeof(path));
+	snprintf(path, sizeof(path), "%s/%s", home, FILE_PUBKEY);
+	path[sizeof(path) - 1] = 0;
+
+	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+	if (fd < 0)
+		panic("Cannot open pubkey file!\n");
+	ret = write(fd, publickey, sizeof(publickey));
+	if (ret != sizeof(publickey))
+		panic("Cannot write public key!\n");
+	close(fd);
+
+	info("Public key written to %s!\n", path);
+
+	memset(path, 0, sizeof(path));
+	snprintf(path, sizeof(path), "%s/%s", home, FILE_PRIVKEY);
+	path[sizeof(path) - 1] = 0;
+
+	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+	if (fd < 0)
+		panic("Cannot open privkey file!\n");
+	ret = write(fd, secretkey, sizeof(secretkey));
+	if (ret != sizeof(secretkey))
+		panic("Cannot write private key!\n");
+	close(fd);
+
+	info("Private key written to %s!\n", path);
 }
 
 static int main_keygen(char *home)
 {
 	create_curvedir(home);
 	write_username(home);
+	create_keypair(home);
+	return 0;
+}
+
+static int main_export(char *home)
+{
+	check_config_exists_or_die(home);
 	return 0;
 }
 
@@ -275,7 +342,7 @@ static int main_server(char *home, char *dev, char *port, int udp)
 
 int main(int argc, char **argv)
 {
-	int c, opt_index, udp = 0;
+	int ret = 0, c, opt_index, udp = 0;
 	char *port = NULL, *stun = NULL, *dev = NULL, *home = NULL;
 	enum working_mode wmode = MODE_UNKNOW;
 
@@ -303,6 +370,9 @@ int main(int argc, char **argv)
 			break;
 		case 'k':
 			wmode = MODE_KEYGEN;
+			break;
+		case 'x':
+			wmode = MODE_EXPORT;
 			break;
 		case 's':
 			wmode = MODE_SERVER;
@@ -345,25 +415,31 @@ int main(int argc, char **argv)
 
 	switch (wmode) {
 	case MODE_KEYGEN:
-		main_keygen(home);
+		ret = main_keygen(home);
+		break;
+	case MODE_EXPORT:
+		ret = main_export(home);
 		break;
 	case MODE_CLIENT:
-		main_client(home, dev, NULL);
+		ret = main_client(home, dev, NULL);
 		break;
 	case MODE_SERVER:
 		if (!port)
 			panic("No port specified!\n");
-		if (stun) {
-			print_stun_probe(stun, 3478, atoi(port));
-			xfree(stun);
-		}
-		main_server(home, dev, port, udp);
-		xfree(port);
+		if (stun)
+			print_stun_probe(stun, 3478, strtoul(port, NULL, 10));
+		ret = main_server(home, dev, port, udp);
 		break;
 	default:
 		panic("Either select keygen, client or server mode!\n");
 	}
 
-	return 0;
+	if (dev)
+		xfree(dev);
+	if (stun)
+		xfree(stun);
+	if (port)
+		xfree(port);
+	return ret;
 }
 
