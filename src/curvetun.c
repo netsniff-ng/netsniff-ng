@@ -390,6 +390,7 @@ int main(int argc, char **argv)
 			switch (optopt) {
 			case 't':
 			case 'd':
+			case 'u':
 			case 'p':
 				panic("Option -%c requires an argument!\n",
 				      optopt);
