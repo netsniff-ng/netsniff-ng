@@ -206,10 +206,18 @@ int curve25519_alloc_or_maybe_die(struct curve25519_struct *c)
 
 void curve25519_free(void *vc)
 {
+	int i;
         struct curve25519_struct *c = vc;
 
         if (!c)
                 return;
+
+	srand(time(NULL));
+	/* Overwrite buffer contents before releasing */
+	for (i = 0; i < c->enc_buf_size; ++i)
+		c->enc_buf[i] = (unsigned char) rand();
+	for (i = 0; i < c->dec_buf_size; ++i)
+		c->dec_buf[i] = (unsigned char) rand();
 
         xfree(c->enc_buf);
         xfree(c->dec_buf);
@@ -230,7 +238,7 @@ ssize_t curve25519_encode(struct curve25519_struct *c, struct curve25519_proto *
 
 	spinlock_lock(&c->enc_lock);
 	if (unlikely(size + crypto_box_curve25519xsalsa20poly1305_ZEROBYTES >
-	    c->enc_buf_size)) {
+		     c->enc_buf_size)) {
 		spinlock_unlock(&c->enc_lock);
 		return -ENOMEM;
 	}
@@ -268,12 +276,12 @@ ssize_t curve25519_decode(struct curve25519_struct *c, struct curve25519_proto *
 
 	spinlock_lock(&c->dec_lock);
 	if (unlikely(size + crypto_box_curve25519xsalsa20poly1305_ZEROBYTES >
-	    c->dec_buf_size)) {
+		     c->dec_buf_size)) {
 		spinlock_unlock(&c->dec_lock);
 		return -ENOMEM;
 	}
 	if (unlikely(size < crypto_box_curve25519xsalsa20poly1305_BOXZEROBYTES +
-	    NONCE_LENGTH)) {
+		     NONCE_LENGTH)) {
 		spinlock_unlock(&c->dec_lock);
 		return 0;
 	}
