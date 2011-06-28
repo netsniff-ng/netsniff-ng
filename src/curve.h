@@ -9,7 +9,28 @@
 #define CURVE_H
 
 #include "locking.h"
+#include "crypto_box_curve25519xsalsa20poly1305.h"
 
+struct tai {
+	uint64_t x;
+};
+
+struct taia {
+	struct tai sec;
+	uint32_t nano;  /* 0...999999999 */
+	uint32_t atto;  /* 0...999999999 */
+};
+
+/* Per connection */
+struct curve25519_proto {
+	unsigned char enonce[crypto_box_curve25519xsalsa20poly1305_NONCEBYTES];
+	unsigned char dnonce[crypto_box_curve25519xsalsa20poly1305_NONCEBYTES];
+	unsigned char before[crypto_box_curve25519xsalsa20poly1305_BEFORENMBYTES];
+	struct taia dtaip;
+	struct taia dtaie;
+};
+
+/* Per thread */
 struct curve25519_struct {
 	/* Encode buffer */
 	size_t enc_buf_size;

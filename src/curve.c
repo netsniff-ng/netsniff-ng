@@ -9,7 +9,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/time.h>
 
+#include "compiler.h"
 #include "xmalloc.h"
 #include "curve.h"
 #include "die.h"
@@ -18,8 +21,11 @@
 #include "crypto_box_curve25519xsalsa20poly1305.h"
 #include "crypto_scalarmult_curve25519.h"
 
+/* Some parts derived from public domain code from curveprotect project */
+
 void curve25519_selftest(void)
 {
+	/* Test from the NaCl library */
 	int i;
 	unsigned char alicesk[32] = {
 		0x77, 0x07, 0x6d, 0x0a, 0x73, 0x18, 0xa5, 0x7d,
@@ -100,7 +106,87 @@ void curve25519_selftest(void)
 	fflush(stdout);
 }
 
-#if 0
+static void tai_pack(unsigned char *s, struct tai *t)
+{
+	uint64_t x;
+
+	x = t->x;
+	s[7] = x & 255; x >>= 8;
+	s[6] = x & 255; x >>= 8;
+	s[5] = x & 255; x >>= 8;
+	s[4] = x & 255; x >>= 8;
+	s[3] = x & 255; x >>= 8;
+	s[2] = x & 255; x >>= 8;
+	s[1] = x & 255; x >>= 8;
+	s[0] = x;
+}
+
+static void tai_unpack(unsigned char *s, struct tai *t)
+{
+	uint64_t x;
+
+	x = (unsigned char) s[0];
+	x <<= 8; x += (unsigned char) s[1];
+	x <<= 8; x += (unsigned char) s[2];
+	x <<= 8; x += (unsigned char) s[3];
+	x <<= 8; x += (unsigned char) s[4];
+	x <<= 8; x += (unsigned char) s[5];
+	x <<= 8; x += (unsigned char) s[6];
+	x <<= 8; x += (unsigned char) s[7];
+	t->x = x;
+}
+
+static void taia_pack(unsigned char *s, struct taia *t)
+{
+	unsigned long x;
+
+	tai_pack(s, &t->sec);
+	s += 8;
+
+	x = t->atto;
+	s[7] = x & 255; x >>= 8;
+	s[6] = x & 255; x >>= 8;
+	s[5] = x & 255; x >>= 8;
+	s[4] = x;
+
+	x = t->nano;
+	s[3] = x & 255; x >>= 8;
+	s[2] = x & 255; x >>= 8;
+	s[1] = x & 255; x >>= 8;
+	s[0] = x;
+} 
+
+static void taia_unpack(unsigned char *s, struct taia *t)
+{
+	unsigned long x;
+
+	tai_unpack(s, &t->sec);
+	s += 8;
+
+	x = (unsigned char) s[4];
+	x <<= 8; x += (unsigned char) s[5];
+	x <<= 8; x += (unsigned char) s[6];
+	x <<= 8; x += (unsigned char) s[7];
+	t->atto = x;
+
+	x = (unsigned char) s[0];
+	x <<= 8; x += (unsigned char) s[1];
+	x <<= 8; x += (unsigned char) s[2];
+	x <<= 8; x += (unsigned char) s[3];
+	t->nano = x;
+}
+
+#define tai_unix(t, u) ((void) ((t)->x = 4611686018427387914ULL + (uint64_t) (u)))
+
+static void taia_now(struct taia *t)
+{
+	struct timeval now;
+	gettimeofday(&now, NULL);
+	tai_unix(&t->sec, now.tv_sec);
+	t->nano = 1000 * now.tv_usec + 500;
+	t->atto++;
+}
+
 int curve25519_alloc_or_maybe_die(struct curve25519_struct *c)
 {
 	if (!c)
@@ -132,26 +218,39 @@ void curve25519_free(void *vc)
         spinlock_destroy(&c->dec_lock);
 }
 
-ssize_t curve25519_encode(struct curve25519_struct *c, char *plaintext,
-			  size_t size, char **chipertext)
+#define NONCE_LENGTH	16	/* size of taia */
+#define NONCE_OFFSET	(crypto_box_curve25519xsalsa20poly1305_NONCEBYTES - NONCE_LENGTH)
+
+ssize_t curve25519_encode(struct curve25519_struct *c, struct curve25519_proto *p,
+			  unsigned char *plaintext, size_t size,
+			  unsigned char **chipertext)
 {
 	int ret;
 	ssize_t done = size;
 
 	spinlock_lock(&c->enc_lock);
-	if (size + crypto_box_curve25519xsalsa20poly1305_ZEROBYTES >
-	    c->enc_buf_size) {
+	if (unlikely(size + crypto_box_curve25519xsalsa20poly1305_ZEROBYTES >
+	    c->enc_buf_size)) {
 		spinlock_unlock(&c->enc_lock);
 		return -ENOMEM;
 	}
 
+	taia_now(&p->dtaie);
+	taia_pack(p->enonce + NONCE_OFFSET, &p->dtaie);
+
 	ret = crypto_box_curve25519xsalsa20poly1305_afternm(c->enc_buf, plaintext,
 			size + crypto_box_curve25519xsalsa20poly1305_ZEROBYTES,
-			enonce, before);
-	if (ret) {
+			p->enonce, p->before);
+	if (unlikely(ret)) {
 		spinlock_unlock(&c->enc_lock);
 		return -EIO;
 	}
+
+	memcpy(c->enc_buf + crypto_box_curve25519xsalsa20poly1305_BOXZEROBYTES - NONCE_LENGTH,
+	       p->enonce + NONCE_OFFSET, NONCE_LENGTH);
+
+	done += crypto_box_curve25519xsalsa20poly1305_BOXZEROBYTES;
+	done += NONCE_LENGTH;
 
 	(*chipertext) = c->enc_buf;
 	spinlock_unlock(&c->enc_lock);
@@ -159,31 +258,58 @@ ssize_t curve25519_encode(struct curve25519_struct *c, char *plaintext,
 	return done;
 }
 
-ssize_t curve25519_decode(struct curve25519_struct *c, char *chipertext,
-			  size_t size, char **plaintext)
+ssize_t curve25519_decode(struct curve25519_struct *c, struct curve25519_proto *p,
+			  unsigned char *chipertext, size_t size,
+			  unsigned char **plaintext)
 {
 	int ret;
 	ssize_t done = size;
+	struct taia dtaic;
 
 	spinlock_lock(&c->dec_lock);
-	if (size + crypto_box_curve25519xsalsa20poly1305_ZEROBYTES >
-	    c->dec_buf_size) {
+	if (unlikely(size + crypto_box_curve25519xsalsa20poly1305_ZEROBYTES >
+	    c->dec_buf_size)) {
 		spinlock_unlock(&c->dec_lock);
 		return -ENOMEM;
 	}
+	if (unlikely(size < crypto_box_curve25519xsalsa20poly1305_BOXZEROBYTES +
+	    NONCE_LENGTH)) {
+		spinlock_unlock(&c->dec_lock);
+		return 0;
+	}
+
+	done -= NONCE_LENGTH;
+	done -= crypto_box_curve25519xsalsa20poly1305_BOXZEROBYTES;
+
+	memset(&dtaic, 0, sizeof(dtaic));
+	taia_unpack(chipertext + crypto_box_curve25519xsalsa20poly1305_BOXZEROBYTES - NONCE_LENGTH,
+		    &dtaic);
+
+	if (dtaic.sec.x <= p->dtaip.sec.x &&
+	    dtaic.nano  <= p->dtaip.nano &&
+	    dtaic.atto  <= p->dtaip.atto) {
+		/* Ignoring packet */
+		spinlock_unlock(&c->dec_lock);
+		return 0;
+	}
+
+	memcpy(p->dnonce + NONCE_OFFSET,
+	       chipertext + crypto_box_curve25519xsalsa20poly1305_BOXZEROBYTES - NONCE_LENGTH,
+	       NONCE_LENGTH);
 
 	ret = crypto_box_curve25519xsalsa20poly1305_open_afternm(c->dec_buf, chipertext,
 			size + crypto_box_curve25519xsalsa20poly1305_ZEROBYTES,
-			dnonce, before);
-	if (ret) {
+			p->dnonce, p->before);
+	if (unlikely(ret)) {
 		spinlock_unlock(&c->enc_lock);
 		return -EIO;
 	}
+
+	memcpy(&p->dtaip, &dtaic, sizeof(dtaic));
 
 	(*plaintext) = c->dec_buf;
 	spinlock_unlock(&c->dec_lock);
 
 	return done;
 }
-#endif
 
