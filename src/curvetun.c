@@ -28,6 +28,7 @@
 #include "strlcpy.h"
 #include "signals.h"
 #include "curvetun.h"
+#include "curve.h"
 #include "write_or_die.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"
 #include "crypto_scalarmult_curve25519.h"
@@ -451,6 +452,7 @@ int main(int argc, char **argv)
 	register_signal(SIGSEGV, muntrace_handler);
 
 	header();
+	curve25519_selftest();
 
 	switch (wmode) {
 	case MODE_KEYGEN:
