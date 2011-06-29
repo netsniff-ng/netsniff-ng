@@ -9,6 +9,7 @@
 #define CURVE_H
 
 #include <stdint.h>
+#include <sys/time.h>
 
 #include "locking.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"
