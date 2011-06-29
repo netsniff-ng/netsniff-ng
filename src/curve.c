@@ -302,7 +302,7 @@ ssize_t curve25519_encode(struct curve25519_struct *c, struct curve25519_proto *
 
 	ret = crypto_box_afternm(c->enc_buf, plaintext,
 				 size + crypto_box_zerobytes,
-				 p->enonce, p->before);
+				 p->enonce, p->key);
 	if (unlikely(ret)) {
 		spinlock_unlock(&c->enc_lock);
 		return -EIO;
@@ -358,7 +358,7 @@ ssize_t curve25519_decode(struct curve25519_struct *c, struct curve25519_proto *
 
 	ret = crypto_box_open_afternm(c->dec_buf, chipertext,
 				      size + crypto_box_zerobytes,
-				      p->dnonce, p->before);
+				      p->dnonce, p->key);
 	if (unlikely(ret)) {
 		spinlock_unlock(&c->enc_lock);
 		return -EIO;

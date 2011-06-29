@@ -25,7 +25,7 @@ struct taia {
 struct curve25519_proto {
 	unsigned char enonce[crypto_box_curve25519xsalsa20poly1305_NONCEBYTES];
 	unsigned char dnonce[crypto_box_curve25519xsalsa20poly1305_NONCEBYTES];
-	unsigned char before[crypto_box_curve25519xsalsa20poly1305_BEFORENMBYTES];
+	unsigned char key[crypto_box_curve25519xsalsa20poly1305_BEFORENMBYTES];
 	struct taia dtaip;
 	struct taia dtaie;
 };
