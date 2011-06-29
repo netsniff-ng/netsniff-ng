@@ -76,6 +76,8 @@ int username_msg(char *username, size_t len, char *dst, size_t dlen)
 
 	if (dlen < sizeof(*us))
 		return -ENOMEM;
+	if (len < sizeof(uint32_t))
+		return -EINVAL;
 
 	uname = (unsigned char *) xstrdup(username);
 
@@ -110,6 +112,8 @@ int username_msg_is_user(char *src, size_t slen, char *username, size_t len)
 
 	if (slen < sizeof(*us))
 		return -ENOMEM;
+	if (len < sizeof(uint32_t))
+		return -EINVAL;
 
 	uname = (unsigned char *) xstrdup(username);
 
