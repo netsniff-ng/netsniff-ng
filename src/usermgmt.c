@@ -64,7 +64,6 @@ void destroy_store(void)
 }
 
 /* dst: |--32 Byte Salt--|--64 Byte Hash--| */
-/* This function is meant to make the ascii username not visible in the proto */
 int username_msg(char *username, size_t len, char *dst, size_t dlen)
 {
 	int fd, i;
@@ -72,6 +71,7 @@ int username_msg(char *username, size_t len, char *dst, size_t dlen)
 	uint32_t salt, *curr;
 	unsigned char h[crypto_hash_sha512_BYTES];
 	struct username_struct *us = (struct username_struct *) dst;
+	struct taia ts;
 	unsigned char *uname;
 
 	if (dlen < sizeof(*us))
@@ -94,20 +94,32 @@ int username_msg(char *username, size_t len, char *dst, size_t dlen)
 
 	crypto_hash_sha512(h, uname, len);
 
+	memset(&ts, 0, sizeof(ts));
+	taia_now(&ts);
+
 	us->salt = htonl(salt);
 	memcpy(us->hash, h, sizeof(us->hash));
+	taia_pack(us->taia, &ts);
 
 	xfree(uname);
 	return 0;
 }
 
-/* return 1 if names match, 0 if not */
-int username_msg_is_user(char *src, size_t slen, char *username, size_t len)
+static struct taia tolerance_taia = {
+	.sec.x = 0,
+	.nano = 250000000ULL,
+	.atto = 0,
+};
+
+enum is_user_enum username_msg_is_user(char *src, size_t slen, char *username,
+				       size_t len, struct taia *arrival_taia)
 {
-	int i, is_same = 1;
+	int i, is_same = 1, is_ts_good = 0;
+	enum is_user_enum ret = USERNAMES_NE;
 	unsigned char *uname;
 	uint32_t salt, *curr;
 	struct username_struct *us = (struct username_struct *) src;
+	struct taia ts, sub_res;
 	unsigned char h[crypto_hash_sha512_BYTES];
 
 	if (slen < sizeof(*us))
@@ -130,7 +142,20 @@ int username_msg_is_user(char *src, size_t slen, char *username, size_t len)
 			is_same = 0;
 	}
 
+	taia_unpack(us->taia, &ts);
+	taia_sub(&sub_res, arrival_taia, &ts);
+
+	if (taia_less(&sub_res, &tolerance_taia))
+		is_ts_good = 1;
+
+	if (is_same && is_ts_good)
+		ret = USERNAMES_OK;
+	else if (is_same && !is_ts_good)
+		ret = USERNAMES_TS;
+	else
+		ret = USERNAMES_NE;
+
 	xfree(uname);
-	return is_same;
+	return ret;
 }
 
