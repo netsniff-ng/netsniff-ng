@@ -13,8 +13,55 @@
 
 #include "die.h"
 #include "usermgmt.h"
-#include "crypto_hash_sha512.h"
+#include "locking.h"
+#include "xmalloc.h"
 #include "write_or_die.h"
+#include "curvetun.h"
+#include "curve.h"
+#include "crypto_hash_sha512.h"
+#include "crypto_box_curve25519xsalsa20poly1305.h"
+
+#define crypto_box_pub_key_size crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES
+
+struct user_store {
+	char username[256];
+	unsigned char publickey[crypto_box_pub_key_size];
+	struct curve25519_proto proto_inf;
+	struct user_store *next;
+};
+
+static struct user_store *store = NULL;
+
+static struct rwlock store_lock;
+
+static struct user_store *user_store_alloc(void)
+{
+	return xzmalloc(sizeof(struct user_store));
+}
+
+static void user_store_free(struct user_store *us)
+{
+	if (!us)
+		return;
+	memset(us, 0, sizeof(struct user_store));
+	xfree(us);
+}
+
+void parse_userfile_and_generate_store_or_die(void)
+{
+	rwlock_init(&store_lock);
+	rwlock_wr_lock(&store_lock);
+	/* parse ~/.curvetun/clients file */
+	rwlock_unlock(&store_lock);
+}
+
+void destroy_store(void)
+{
+	rwlock_wr_lock(&store_lock);
+	/* free store */
+	rwlock_unlock(&store_lock);
+	rwlock_destroy(&store_lock);
+}
 
 /* dst: |--32 Byte Salt--|--64 Byte Hash--| */
 /* This function is meant to make the ascii username not visible in the proto */

@@ -46,5 +46,18 @@ struct curve25519_struct {
 };
 
 extern void curve25519_selftest(void);
+extern int curve25519_pubkey_hexparse_32(unsigned char *y, size_t ylen,
+					 const char *x, size_t len);
+extern int curve25519_alloc_or_maybe_die(struct curve25519_struct *c);
+extern void curve25519_free(void *vc);
+extern int curve25519_proto_init(struct curve25519_proto *p);
+extern ssize_t curve25519_encode(struct curve25519_struct *c,
+				 struct curve25519_proto *p,
+				 unsigned char *plaintext, size_t size,
+				 unsigned char **chipertext);
+extern ssize_t curve25519_decode(struct curve25519_struct *c,
+				 struct curve25519_proto *p,
+				 unsigned char *chipertext, size_t size,
+				 unsigned char **plaintext);
 
 #endif /* CURVE_H */
