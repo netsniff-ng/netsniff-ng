@@ -21,11 +21,14 @@ struct taia {
 	uint32_t atto;  /* 0...999999999 */
 };
 
+#define crypto_box_noncebytes crypto_box_curve25519xsalsa20poly1305_NONCEBYTES
+#define crypto_box_beforenmbytes crypto_box_curve25519xsalsa20poly1305_BEFORENMBYTES
+
 /* Per connection */
 struct curve25519_proto {
-	unsigned char enonce[crypto_box_curve25519xsalsa20poly1305_NONCEBYTES];
-	unsigned char dnonce[crypto_box_curve25519xsalsa20poly1305_NONCEBYTES];
-	unsigned char key[crypto_box_curve25519xsalsa20poly1305_BEFORENMBYTES];
+	unsigned char enonce[crypto_box_noncebytes] __attribute__((aligned(16)));
+	unsigned char dnonce[crypto_box_noncebytes] __attribute__((aligned(16)));
+	unsigned char key[crypto_box_noncebytes] __attribute__((aligned(16)));
 	struct taia dtaip;
 	struct taia dtaie;
 };
