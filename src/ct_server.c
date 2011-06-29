@@ -315,7 +315,7 @@ ssize_t handler_tcp_read(int fd, char *buff, size_t len)
 		return rlen;
 	if (unlikely(ntohs(hdr->payload) > len - sizeof(struct ct_proto))) {
 		errno = ENOMEM;
-		return -1;
+		return 1; /* Force server to close connection */
 	}
 	/* May not exit on EAGAIN if 0 Byte read */
 	rlen = read_exact(fd, buff + sizeof(struct ct_proto),
