@@ -244,8 +244,8 @@ int curve25519_alloc_or_maybe_die(struct curve25519_struct *c)
 	c->enc_buf_size = TUNBUFF_SIZ;
 	c->dec_buf_size = TUNBUFF_SIZ;
 
-	c->enc_buf = xmalloc(c->enc_buf_size);
-	c->dec_buf = xmalloc(c->dec_buf_size);
+	c->enc_buf = xmalloc_aligned(c->enc_buf_size, 16);
+	c->dec_buf = xmalloc_aligned(c->dec_buf_size, 16);
 
 	spinlock_init(&c->enc_lock);
 	spinlock_init(&c->dec_lock);
@@ -273,6 +273,16 @@ void curve25519_free(void *vc)
 
         spinlock_destroy(&c->enc_lock);
         spinlock_destroy(&c->dec_lock);
+}
+
+int curve25519_proto_init(struct curve25519_proto *p)
+{
+	//TODO
+
+	memset(p->enonce, 0, crypto_box_curve25519xsalsa20poly1305_NONCEBYTES);
+	memset(p->dnonce, 0, crypto_box_curve25519xsalsa20poly1305_NONCEBYTES);
+
+	return 0;
 }
 
 #define crypto_box_afternm 	crypto_box_curve25519xsalsa20poly1305_afternm
