@@ -543,7 +543,7 @@ int server_main(char *home, char *dev, char *port, int udp)
 	openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
 	syslog(LOG_INFO, "curvetun server booting!\n");
 
-	parse_userfile_and_generate_store_or_die(home);
+	parse_userfile_and_generate_user_store_or_die(home);
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;
@@ -806,7 +806,7 @@ int server_main(char *home, char *dev, char *port, int udp)
 	unregister_socket(tunfd);
 	destroy_cpusched();
 	trie_cleanup();
-	destroy_store();
+	destroy_user_store();
 
 	syslog(LOG_INFO, "curvetun shut down!\n");
 	closelog();

@@ -386,9 +386,9 @@ static int main_dumpc(char *home)
 
 	printf("Your clients:\n\n");
 
-	parse_userfile_and_generate_store_or_die(home);
-	dump_store();
-	destroy_store();
+	parse_userfile_and_generate_user_store_or_die(home);
+	dump_user_store();
+	destroy_user_store();
 
 	printf("\n");
 	die();

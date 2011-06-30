@@ -86,7 +86,7 @@ static int __check_duplicate_pubkey(unsigned char *pubkey, size_t len)
 	return duplicate;
 }
 
-void parse_userfile_and_generate_store_or_die(char *homedir)
+void parse_userfile_and_generate_user_store_or_die(char *homedir)
 {
 	FILE *fp;
 	char path[512], buff[512], *username, *key;
@@ -161,7 +161,7 @@ void parse_userfile_and_generate_store_or_die(char *homedir)
 	rwlock_unlock(&store_lock);
 }
 
-void dump_store(void)
+void dump_user_store(void)
 {
 	int i;
 	struct user_store *elem;
@@ -182,7 +182,7 @@ void dump_store(void)
 	rwlock_unlock(&store_lock);
 }
 
-void destroy_store(void)
+void destroy_user_store(void)
 {
 	struct user_store *elem, *nelem = NULL;
 

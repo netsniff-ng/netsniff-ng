@@ -17,6 +17,7 @@ lib-objs   = xmalloc.o                  \
 	     curve.o                    \
 	     deflate.o                  \
 	     usermgmt.o                 \
+	     servmgmt.o                 \
 	     trie.o                     \
 	     patricia.o                 \
 	     hash.o                     \
