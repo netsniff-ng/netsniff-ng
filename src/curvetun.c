@@ -592,7 +592,7 @@ int main(int argc, char **argv)
 		ret = main_server(home, dev, port, udp);
 		break;
 	default:
-		panic("Either select keygen, export, client or server mode!\n");
+		die();
 	}
 
 	if (dev)
