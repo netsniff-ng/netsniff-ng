@@ -19,6 +19,7 @@
 #include "xmalloc.h"
 #include "write_or_die.h"
 #include "curvetun.h"
+#include "strlcpy.h"
 #include "curve.h"
 #include "crypto_verify_32.h"
 #include "crypto_hash_sha512.h"
@@ -140,7 +141,7 @@ void parse_userfile_and_generate_store_or_die(char *homedir)
 		elem->socket = -1;
 		elem->addr = NULL;
 		elem->next = store;
-		memcpy(elem->username, username, strlen(username) + 1);
+		strlcpy(elem->username, username, sizeof(elem->username));
 		memcpy(elem->publickey, pkey, sizeof(elem->publickey));
 		curve25519_proto_init(&elem->proto_inf);
 		store = elem;
