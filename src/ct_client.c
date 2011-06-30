@@ -223,8 +223,7 @@ static void notify_close(int fd)
 		perror("Error writing close");
 }
 
-int client_main(char *home, char *dev, char *host, char *port, char *scope,
-		int udp)
+int client_main(char *home, char *dev, char *host, char *port, int udp)
 {
 	int fd = -1, tunfd;
 	int ret, try = 1, i, one;
@@ -250,11 +249,8 @@ int client_main(char *home, char *dev, char *host, char *port, char *scope,
 		panic("Cannot get address info!\n");
 
 	for (ai = ahead; ai != NULL && fd < 0; ai = ai->ai_next) {
-		if (ai->ai_family == PF_INET6) {
+		if (ai->ai_family == PF_INET6)
 			saddr6 = (struct sockaddr_in6 *) ai->ai_addr;
-			if (saddr6->sin6_scope_id == 0)
-				saddr6->sin6_scope_id = device_ifindex(scope);
-		}
 		fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 		if (fd < 0)
 			continue;

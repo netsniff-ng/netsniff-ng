@@ -374,11 +374,10 @@ static int main_client(char *home, char *dev, char *alias)
 	int udp = 0;
 	char *host = "localhost";
 	char *port = "6666";
-	char *scope = "eth0";
 
 	check_config_exists_or_die(home);
 
-	return client_main(home, dev, host, port, scope, udp);
+	return client_main(home, dev, host, port, udp);
 }
 
 static int main_dumpc(char *home)
