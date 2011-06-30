@@ -242,7 +242,7 @@ static void write_username(char *home)
 	info("Username written to %s!\n", path);
 }
 
-void create_curvedir(char *home)
+static void create_curvedir(char *home)
 {
 	int ret, fd;
 	char path[512];
@@ -282,7 +282,7 @@ void create_curvedir(char *home)
 	info("Empty server file written to %s!\n", path);
 }
 
-void create_keypair(char *home)
+static void create_keypair(char *home)
 {
 	int fd;
 	ssize_t ret;
