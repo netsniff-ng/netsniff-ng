@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <string.h>
 #include <arpa/inet.h>
 
 #include "die.h"
@@ -137,6 +138,10 @@ void parse_userfile_and_generate_store_or_die(char *homedir)
 			panic("Duplicate username in l.%d!\n", line);
 		if (__check_duplicate_pubkey(pkey, sizeof(pkey)))
 			panic("Duplicate publickey in l.%d!\n", line);
+		if (strstr(username, " "))
+			panic("Username consists of whitespace in l.%d!\n", line);
+		if (strstr(username, "\t"))
+			panic("Username consists of whitespace in l.%d!\n", line);
 		elem = user_store_alloc();
 		elem->socket = -1;
 		elem->addr = NULL;
