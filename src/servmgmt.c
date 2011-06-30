@@ -57,7 +57,7 @@ void parse_userfile_and_generate_serv_store_or_die(char *homedir)
 	FILE *fp;
 	char path[512], buff[1024], *alias, *host, *port, *udp, *key;
 	unsigned char pkey[crypto_box_pub_key_size];
-	int line = 1, __udp = 0;
+	int line = 1, __udp = 0, ret;
 	struct server_store *elem;
 
 	memset(path, 0, sizeof(path));
@@ -155,7 +155,12 @@ void parse_userfile_and_generate_serv_store_or_die(char *homedir)
 		strlcpy(elem->host, host, sizeof(elem->host));
 		strlcpy(elem->port, port, sizeof(elem->port));
 		memcpy(elem->publickey, pkey, sizeof(elem->publickey));
-		curve25519_proto_init(&elem->proto_inf);
+		ret = curve25519_proto_init(&elem->proto_inf,
+					    elem->publickey,
+					    sizeof(elem->publickey),
+					    homedir, 0);
+		if (ret)
+			panic("Cannot init curve25519 proto on server!\n");
 		store = elem;
 		smp_wmb();
 		memset(buff, 0, sizeof(buff));

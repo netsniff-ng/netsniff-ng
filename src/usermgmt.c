@@ -93,7 +93,7 @@ void parse_userfile_and_generate_user_store_or_die(char *homedir)
 	FILE *fp;
 	char path[512], buff[512], *username, *key;
 	unsigned char pkey[crypto_box_pub_key_size];
-	int line = 1;
+	int line = 1, ret;
 	struct user_store *elem;
 
 	memset(path, 0, sizeof(path));
@@ -150,7 +150,12 @@ void parse_userfile_and_generate_user_store_or_die(char *homedir)
 		elem->next = store;
 		strlcpy(elem->username, username, sizeof(elem->username));
 		memcpy(elem->publickey, pkey, sizeof(elem->publickey));
-		curve25519_proto_init(&elem->proto_inf);
+		ret = curve25519_proto_init(&elem->proto_inf,
+					    elem->publickey,
+					    sizeof(elem->publickey),
+					    homedir, 1);
+		if (ret)
+			panic("Cannot init curve25519 proto on user!\n");
 		store = elem;
 		smp_wmb();
 		memset(buff, 0, sizeof(buff));

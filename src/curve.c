@@ -9,8 +9,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 
 #include "compiler.h"
 #include "xmalloc.h"
@@ -18,10 +20,20 @@
 #include "die.h"
 #include "curvetun.h"
 #include "locking.h"
+#include "crypto_verify_32.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"
 #include "crypto_scalarmult_curve25519.h"
 
 /* Some parts derived from public domain code from curveprotect project */
+
+#define crypto_box_afternm 	crypto_box_curve25519xsalsa20poly1305_afternm
+#define crypto_box_open_afternm	crypto_box_curve25519xsalsa20poly1305_open_afternm
+
+#define crypto_box_zerobytes	crypto_box_curve25519xsalsa20poly1305_ZEROBYTES
+#define crypto_box_boxzerobytes	crypto_box_curve25519xsalsa20poly1305_BOXZEROBYTES
+
+#define NONCE_LENGTH	16	/* size of taia */
+#define NONCE_OFFSET	(crypto_box_curve25519xsalsa20poly1305_NONCEBYTES - NONCE_LENGTH)
 
 void curve25519_selftest(void)
 {
@@ -187,24 +199,50 @@ void curve25519_free(void *vc)
         spinlock_destroy(&c->dec_lock);
 }
 
-int curve25519_proto_init(struct curve25519_proto *p)
+int curve25519_proto_init(struct curve25519_proto *p, unsigned char *pubkey_remote,
+			  size_t len, char *home, int server)
 {
-	//TODO
+	int fd;
+	ssize_t ret;
+	char path[512];
+	unsigned char secretkey_own[crypto_box_curve25519xsalsa20poly1305_SECRETKEYBYTES];
+	unsigned char publickey_own[crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES];
 
-	memset(p->enonce, 0, crypto_box_curve25519xsalsa20poly1305_NONCEBYTES);
-	memset(p->dnonce, 0, crypto_box_curve25519xsalsa20poly1305_NONCEBYTES);
+	if (!pubkey_remote ||
+	    len != crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES)
+		return -EINVAL;
+
+	memset(path, 0, sizeof(path));
+	snprintf(path, sizeof(path), "%s/%s", home, FILE_PRIVKEY);
+	path[sizeof(path) - 1] = 0;
+
+	fd = open(path, O_RDONLY);
+	if (fd < 0)
+		panic("Cannot open privkey file!\n");
+	ret = read(fd, secretkey_own, sizeof(secretkey_own));
+	if (ret != sizeof(secretkey_own))
+		panic("Cannot read private key!\n");
+	close(fd);
+
+	crypto_scalarmult_curve25519_base(publickey_own, secretkey_own);
+	if (!crypto_verify_32(publickey_own, pubkey_remote))
+		panic("PANIC: remote end has same public key as you have!!!\n");
+
+	crypto_box_curve25519xsalsa20poly1305_beforenm(p->key, pubkey_remote,
+						       secretkey_own);
+
+	memset(p->enonce, 0, sizeof(p->enonce));
+	memset(p->dnonce, 0, sizeof(p->dnonce));
+
+	p->enonce[NONCE_OFFSET - 1] = server ? 1 : 0;
+	p->dnonce[NONCE_OFFSET - 1] = p->enonce[NONCE_OFFSET - 1] ? 0 : 1;
+
+	/* Window for the very first packet */
+	taia_now(&p->dtaip);
+	// TODO
 
 	return 0;
 }
-
-#define crypto_box_afternm 	crypto_box_curve25519xsalsa20poly1305_afternm
-#define crypto_box_open_afternm	crypto_box_curve25519xsalsa20poly1305_open_afternm
-
-#define crypto_box_zerobytes	crypto_box_curve25519xsalsa20poly1305_ZEROBYTES
-#define crypto_box_boxzerobytes	crypto_box_curve25519xsalsa20poly1305_BOXZEROBYTES
-
-#define NONCE_LENGTH	16	/* size of taia */
-#define NONCE_OFFSET	(crypto_box_curve25519xsalsa20poly1305_NONCEBYTES - NONCE_LENGTH)
 
 ssize_t curve25519_encode(struct curve25519_struct *c, struct curve25519_proto *p,
 			  unsigned char *plaintext, size_t size,
