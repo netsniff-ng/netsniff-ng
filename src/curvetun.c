@@ -4,6 +4,14 @@
  * By Daniel Borkmann <daniel@netsniff-ng.org>
  * Copyright 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,
  * Subject to the GPL.
+ *
+ * This is a lightweight multiuser IP tunnel based on Daniel J.
+ * Bernsteins Networking and Cryptography library (NaCl). The tunnel
+ * acts fully in non-blocking I/O and uses epoll(2) for event
+ * notification. Network traffic is being compressed and encrypted
+ * for secure communication. The tunnel supports IPv4 via UDP, IPv4
+ * via TCP, IPv6 via UDP and IPv6 via TCP. Flows are scheduled for
+ * processing in a CPU-local manner.
  */
 
 #include <stdio.h>
