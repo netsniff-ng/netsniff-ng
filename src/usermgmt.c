@@ -26,6 +26,8 @@
 #define crypto_box_pub_key_size crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES
 
 struct user_store {
+	int socket;
+	struct sockaddr_storage *addr;
 	char username[256];
 	unsigned char publickey[crypto_box_pub_key_size];
 	struct curve25519_proto proto_inf;
@@ -65,7 +67,15 @@ void destroy_store(void)
 	rwlock_destroy(&store_lock);
 }
 
-/* dst: |--32 Byte Salt--|--64 Byte Hash--| */
+void get_curve25519_proto_by_socket(int sock, struct curve25519_proto **proto)
+{
+}
+
+void get_curve25519_proto_by_sockaddr(struct sockaddr_storage *sa,
+				      struct curve25519_proto **proto)
+{
+}
+
 int username_msg(char *username, size_t len, char *dst, size_t dlen)
 {
 	int fd;
