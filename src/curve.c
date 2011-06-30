@@ -91,19 +91,12 @@ void curve25519_selftest(void)
 		0xe3, 0x55, 0xa5
 	};
 
-	info("curve25519 selftest ...");
-	fflush(stdout);
-
 	crypto_box_curve25519xsalsa20poly1305(c, m, 163, nonce, bobpk, alicesk);
-
 	for (i = 16; i < 163; ++i) {
 		if (c[i] != result[i - 16])
-			panic("panic - selftest failed at pos %d "
+			panic("PANIC: crypto selftest failed at pos %d "
 			      "(%u != %u)! :-(\n", i, c[i], result[i]);
 	}
-
-	info("ok :-)\n");
-	fflush(stdout);
 }
 
 static int hexdigit(char x)
