@@ -10,8 +10,8 @@ netsniff-ng has been sucessfully tested on x86 and x86_64. Please drop
 us a short mail, if it runs sucessfully on hardware other than that.
 
 What libraries are required? You'll need libc, libncurses (only for ifpps),
-nothing else. It is common, that these libraries are shipped as distribution
-packages for an easy installation.
+and zlib, nothing else. It is common, that these libraries are shipped as
+distribution packages for an easy installation.
 
 If you have arch x86 or x86_64, you can add -DARCH_X86 to the Makefiles
 CFLAGS in order to exploit some x86-based CPU features (MMX/SSE*).
@@ -22,17 +22,13 @@ Also, you might want to adapt the IO Vector size in src/sg_pcap.c
 The installation process is fairly simple:
 
   $ cd netsniff-ng/src/<tool>/
-  $ make deploy
+  $ make
   # make install
 
  where <tool> := { netsniff-ng, ifpps, trafgen, curvetun }
-
-Note that by only typing 'make' the binaries are built without optimiztion
-(-O0), so for productive usage, always build with 'make deploy'!
 
 The uninstallation process is analogous:
 
   $ cd netsniff-ng/src/<tool>/
   # make uninstall
-  $ make clean
 
