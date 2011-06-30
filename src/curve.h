@@ -12,6 +12,7 @@
 #include <sys/time.h>
 
 #include "locking.h"
+#include "compiler.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"
 
 /* Some parts derived from public domain code from curveprotect project */
@@ -31,9 +32,9 @@ struct taia {
 
 /* Per connection */
 struct curve25519_proto {
-	unsigned char enonce[crypto_box_noncebytes] __attribute__((aligned(16)));
-	unsigned char dnonce[crypto_box_noncebytes] __attribute__((aligned(16)));
-	unsigned char key[crypto_box_noncebytes] __attribute__((aligned(16)));
+	unsigned char enonce[crypto_box_noncebytes] __aligned_16;
+	unsigned char dnonce[crypto_box_noncebytes] __aligned_16;
+	unsigned char key[crypto_box_noncebytes] __aligned_16;
 	struct taia dtaip;
 	struct taia dtaie;
 };

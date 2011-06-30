@@ -12,9 +12,13 @@
 #define CACHE_ALIGN_BYTES L1_CACHE_BYTES
 
 #ifndef __cacheline_aligned
-#define __cacheline_aligned                             \
-	__attribute__((__aligned__(CACHE_ALIGN_BYTES)))
+# define __cacheline_aligned                             \
+	 __attribute__((__aligned__(CACHE_ALIGN_BYTES)))
 /*	__page_aligned_data */
+#endif
+
+#ifndef __aligned_16
+# define __aligned_16       __attribute__((aligned(16)))
 #endif
 
 #ifndef likely
