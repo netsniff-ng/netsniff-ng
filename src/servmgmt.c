@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "die.h"
+#include "compiler.h"
 #include "parser.h"
 #include "locking.h"
 #include "xmalloc.h"
