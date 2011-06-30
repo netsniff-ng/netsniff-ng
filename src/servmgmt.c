@@ -31,6 +31,7 @@ struct server_store {
 	char port[6]; /* 5 + \0 */
 	int udp;
 	unsigned char publickey[crypto_box_pub_key_size];
+	struct curve25519_proto proto_inf;
 	struct server_store *next;
 };
 
@@ -154,6 +155,7 @@ void parse_userfile_and_generate_serv_store_or_die(char *homedir)
 		strlcpy(elem->host, host, sizeof(elem->host));
 		strlcpy(elem->port, port, sizeof(elem->port));
 		memcpy(elem->publickey, pkey, sizeof(elem->publickey));
+		curve25519_proto_init(&elem->proto_inf);
 		store = elem;
 		smp_wmb();
 		memset(buff, 0, sizeof(buff));
