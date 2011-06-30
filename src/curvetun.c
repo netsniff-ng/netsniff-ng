@@ -39,13 +39,14 @@ enum working_mode {
 	MODE_KEYGEN,
 	MODE_EXPORT,
 	MODE_DUMPC,
+	MODE_DUMPS,
 	MODE_CLIENT,
 	MODE_SERVER,
 };
 
 sig_atomic_t sigint = 0;
 
-static const char *short_options = "kxcsvhp:t:d:uC";
+static const char *short_options = "kxcsvhp:t:d:uCS";
 
 static struct option long_options[] = {
 	{"client", optional_argument, 0, 'c'},
@@ -55,6 +56,7 @@ static struct option long_options[] = {
 	{"keygen", no_argument, 0, 'k'},
 	{"export", no_argument, 0, 'x'},
 	{"dumpc", no_argument, 0, 'C'},
+	{"dumps", no_argument, 0, 'S'},
 	{"server", no_argument, 0, 's'},
 	{"udp", no_argument, 0, 'u'},
 	{"version", no_argument, 0, 'v'},
@@ -90,7 +92,8 @@ static void help(void)
 	printf("Options:\n");
 	printf("  -k|--keygen             Generate public/private keypair\n");
 	printf("  -x|--export             Export your public data for servers\n");
-	printf("  -C|--dumpc              Dump parsed server clients\n");
+	printf("  -C|--dumpc              Dump parsed clients\n");
+	printf("  -S|--dumps              Dump parsed servers\n");
 	printf("  -d|--dev <tun>          Networking tunnel device, e.g. tun0\n");
 	printf(" Client settings:\n");
 	printf("  -c|--client[=alias]     Client mode, server alias optional\n");
@@ -378,7 +381,7 @@ static int main_client(char *home, char *dev, char *alias)
 	return client_main(home, dev, host, port, scope, udp);
 }
 
-static int main_dump(char *home)
+static int main_dumpc(char *home)
 {
 	check_config_exists_or_die(home);
 
@@ -389,6 +392,20 @@ static int main_dump(char *home)
 	destroy_store();
 
 	printf("\n");
+	die();
+	return 0;
+}
+
+static int main_dumps(char *home)
+{
+	check_config_exists_or_die(home);
+
+	printf("Your servers:\n\n");
+
+	/* TODO */
+
+	printf("\n");
+	die();
 	return 0;
 }
 
@@ -423,6 +440,9 @@ int main(int argc, char **argv)
 			break;
 		case 'C':
 			wmode = MODE_DUMPC;
+			break;
+		case 'S':
+			wmode = MODE_DUMPS;
 			break;
 		case 'c':
 			wmode = MODE_CLIENT;
@@ -485,7 +505,10 @@ int main(int argc, char **argv)
 		ret = main_export(home);
 		break;
 	case MODE_DUMPC:
-		ret = main_dump(home);
+		ret = main_dumpc(home);
+		break;
+	case MODE_DUMPS:
+		ret = main_dumps(home);
 		break;
 	case MODE_CLIENT:
 		ret = main_client(home, dev, NULL);
