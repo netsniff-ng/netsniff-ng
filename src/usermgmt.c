@@ -132,8 +132,10 @@ enum is_user_enum username_msg_is_user(char *src, size_t slen, char *username,
 	struct taia ts, sub_res;
 	unsigned char h[crypto_hash_sha512_BYTES];
 
-	if (slen < sizeof(struct username_struct))
-		return -ENOMEM;
+	if (slen < sizeof(struct username_struct)) {
+		errno = ENOMEM;
+		return USERNAMES_ERR;
+	}
 
 	uname_len = 512;
 	uname = xzmalloc(uname_len);

@@ -18,6 +18,7 @@ enum is_user_enum {
 	USERNAMES_NE,		/* Usernames do not match */
 	USERNAMES_TS,		/* Usernames match, but 'token' invalid,
 				   Drop connection here */
+	USERNAMES_ERR,
 };
 
 struct username_struct {
