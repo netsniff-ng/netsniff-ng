@@ -371,14 +371,14 @@ static int main_client(char *home, char *dev, char *alias)
 
 	check_config_exists_or_die(home);
 
-	return client_main(dev, host, port, scope, udp);
+	return client_main(home, dev, host, port, scope, udp);
 }
 
 static int main_server(char *home, char *dev, char *port, int udp)
 {
 	check_config_exists_or_die(home);
 
-	return server_main(dev, port, udp);
+	return server_main(home, dev, port, udp);
 }
 
 int main(int argc, char **argv)

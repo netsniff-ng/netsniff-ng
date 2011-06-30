@@ -32,8 +32,9 @@ struct ct_proto {
 #define MAX_EPOLL_SIZE  10000
 #define THREADS_PER_CPU 2
 
-extern int server_main(char *dev, char *port, int udp);
-extern int client_main(char *dev, char *host, char *port, char *scope, int udp);
+extern int server_main(char *home, char *dev, char *port, int udp);
+extern int client_main(char *home, char *dev, char *host, char *port,
+		       char *scope, int udp);
 
 #define DEVNAME_SERVER	"curves"
 #define DEVNAME_CLIENT  "curvec"

@@ -223,7 +223,8 @@ static void notify_close(int fd)
 		perror("Error writing close");
 }
 
-int client_main(char *dev, char *host, char *port, char *scope, int udp)
+int client_main(char *home, char *dev, char *host, char *port, char *scope,
+		int udp)
 {
 	int fd = -1, tunfd;
 	int ret, try = 1, i, one;

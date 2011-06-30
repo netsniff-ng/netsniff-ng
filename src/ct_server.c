@@ -531,7 +531,7 @@ static void thread_finish(unsigned int cpus)
 	}
 }
 
-int server_main(char *dev, char *port, int udp)
+int server_main(char *home, char *dev, char *port, int udp)
 {
 	int lfd = -1, kdpfd, nfds, nfd, curfds, efd[2], refd[2], tunfd;
 	int ipv4 = 0, i;
@@ -543,7 +543,8 @@ int server_main(char *dev, char *port, int udp)
 	openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
 	syslog(LOG_INFO, "curvetun server booting!\n");
 
-	parse_userfile_and_generate_store_or_die();
+	parse_userfile_and_generate_store_or_die(home);
+	dump_store();
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;

@@ -14,6 +14,7 @@
 
 #include "die.h"
 #include "usermgmt.h"
+#include "parser.h"
 #include "locking.h"
 #include "xmalloc.h"
 #include "write_or_die.h"
@@ -51,22 +52,142 @@ static void user_store_free(struct user_store *us)
 	xfree(us);
 }
 
-void parse_userfile_and_generate_store_or_die(void)
+/* already in lock */
+static int __check_duplicate_username(char *username, size_t len)
 {
+	int duplicate = 0;
+	struct user_store *elem = store;
+	while (elem) {
+		if (!memcmp(elem->username, username,
+			    strlen(elem->username) + 1)) {
+			duplicate = 1;
+			break;
+		}
+		elem = elem->next;
+	}
+	return duplicate;
+}
+
+/* already in lock */
+static int __check_duplicate_pubkey(unsigned char *pubkey, size_t len)
+{
+	int duplicate = 0;
+	struct user_store *elem = store;
+	while (elem) {
+		if (!memcmp(elem->publickey, pubkey,
+			    sizeof(elem->publickey))) {
+			duplicate = 1;
+			break;
+		}
+		elem = elem->next;
+	}
+	return duplicate;
+}
+
+void parse_userfile_and_generate_store_or_die(char *homedir)
+{
+	FILE *fp;
+	char path[512], buff[512], *username, *key;
+	unsigned char pkey[crypto_box_pub_key_size];
+	int line = 1;
+	struct user_store *elem;
+
+	memset(path, 0, sizeof(path));
+	snprintf(path, sizeof(path), "%s/%s", homedir, FILE_CLIENTS);
+	path[sizeof(path) - 1] = 0;
+
 	rwlock_init(&store_lock);
 	rwlock_wr_lock(&store_lock);
-	/* parse ~/.curvetun/clients file */
+
+	fp = fopen(path, "r");
+	if (!fp)
+		panic("Cannot open client file!\n");
+	memset(buff, 0, sizeof(buff));
+
+	while (fgets(buff, sizeof(buff), fp) != NULL) {
+		buff[sizeof(buff) - 1] = 0;
+		/* A comment. Skip this line */
+		if (buff[0] == '#' || buff[0] == '\n') {
+			memset(buff, 0, sizeof(buff));
+			line++;
+			continue;
+		}
+		username = skips(buff);
+		key = username;
+		while (*key != ';' &&
+		       *key != '\0' &&
+		       *key != ' ' &&
+		       *key != '\t')
+			key++;
+		if (*key != ';')
+			panic("Parse error! No key found in l.%d!\n", line);
+		*key = '\0';
+		key++;
+		if (*key == '\n')
+			panic("Parse error! No key found in l.%d!\n", line);
+		key = strtrim_right(key, '\n');
+		memset(pkey, 0, sizeof(pkey));
+		if (!curve25519_pubkey_hexparse_32(pkey, sizeof(pkey),
+						   key, strlen(key)))
+			panic("Parse error! No key found in l.%d!\n", line);
+		if (strlen(username) + 1 > sizeof(elem->username))
+			panic("Username too long in l.%d!\n", line);
+		if (__check_duplicate_username(username, strlen(username) + 1))
+			panic("Duplicate username in l.%d!\n", line);
+		if (__check_duplicate_pubkey(pkey, sizeof(pkey)))
+			panic("Duplicate publickey in l.%d!\n", line);
+		elem = user_store_alloc();
+		elem->socket = -1;
+		elem->addr = NULL;
+		elem->next = store;
+		memcpy(elem->username, username, strlen(username) + 1);
+		memcpy(elem->publickey, pkey, sizeof(elem->publickey));
+		curve25519_proto_init(&elem->proto_inf);
+		store = elem;
+		smp_wmb();
+		memset(buff, 0, sizeof(buff));
+		line++;
+	}
+
+	fclose(fp);
+	if (store == NULL)
+		panic("No registered clients found!\n");
 	rwlock_unlock(&store_lock);
 }
 
 void dump_store(void)
 {
+	int i;
+	struct user_store *elem;
+
+	rwlock_rd_lock(&store_lock);
+	elem = store;
+	while (elem) {
+		printf("%s -> ", elem->username);
+		for (i = 0; i < sizeof(elem->publickey); ++i)
+			if (i == (sizeof(elem->publickey) - 1))
+				printf("%02x\n", (unsigned char)
+				       elem->publickey[i]);
+			else
+				printf("%02x:", (unsigned char)
+				       elem->publickey[i]);
+		elem = elem->next;
+	}
+	rwlock_unlock(&store_lock);
 }
 
 void destroy_store(void)
 {
+	struct user_store *elem, *nelem = NULL;
+
 	rwlock_wr_lock(&store_lock);
-	/* free store */
+	elem = store;
+	while (elem) {
+		nelem = elem->next;
+		elem->next = NULL;
+		user_store_free(elem);
+		elem = nelem;
+	}
 	rwlock_unlock(&store_lock);
 	rwlock_destroy(&store_lock);
 }

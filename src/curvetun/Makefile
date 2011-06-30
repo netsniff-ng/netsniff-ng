@@ -13,6 +13,7 @@ core-objs  = curvetun.o
 lib-objs   = xmalloc.o                  \
 	     strlcpy.o                  \
 	     stun.o                     \
+	     parser.o                   \
 	     curve.o                    \
 	     deflate.o                  \
 	     usermgmt.o                 \

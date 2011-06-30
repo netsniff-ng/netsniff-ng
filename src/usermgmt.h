@@ -31,7 +31,7 @@ extern int username_msg(char *username, size_t len, char *dst, size_t dlen);
 extern enum is_user_enum username_msg_is_user(char *src, size_t slen,
 					      char *username, size_t len,
 					      struct taia *arrival_taia);
-extern void parse_userfile_and_generate_store_or_die(void);
+extern void parse_userfile_and_generate_store_or_die(char *homedir);
 extern void dump_store(void);
 extern void destroy_store(void);
 
