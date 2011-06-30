@@ -26,6 +26,7 @@
 
 /* Some parts derived from public domain code from curveprotect project */
 
+#define crypto_box_beforenm	crypto_box_curve25519xsalsa20poly1305_beforenm
 #define crypto_box_afternm 	crypto_box_curve25519xsalsa20poly1305_afternm
 #define crypto_box_open_afternm	crypto_box_curve25519xsalsa20poly1305_open_afternm
 
@@ -228,8 +229,7 @@ int curve25519_proto_init(struct curve25519_proto *p, unsigned char *pubkey_remo
 	if (!crypto_verify_32(publickey_own, pubkey_remote))
 		panic("PANIC: remote end has same public key as you have!!!\n");
 
-	crypto_box_curve25519xsalsa20poly1305_beforenm(p->key, pubkey_remote,
-						       secretkey_own);
+	crypto_box_beforenm(p->key, pubkey_remote, secretkey_own);
 
 	memset(p->enonce, 0, sizeof(p->enonce));
 	memset(p->dnonce, 0, sizeof(p->dnonce));
