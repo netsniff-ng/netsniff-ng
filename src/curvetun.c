@@ -128,7 +128,7 @@ static void help(void)
 	printf("  There is no default port specified, so that users are forced\n");
 	printf("  to select their own!\n");
 	printf("\n");
-	printf("7647-14-5\n");
+	printf("Secret ingredient: 7647-14-5\n");
 	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
