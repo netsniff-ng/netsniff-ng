@@ -59,6 +59,10 @@ void parse_userfile_and_generate_store_or_die(void)
 	rwlock_unlock(&store_lock);
 }
 
+void dump_store(void)
+{
+}
+
 void destroy_store(void)
 {
 	rwlock_wr_lock(&store_lock);
