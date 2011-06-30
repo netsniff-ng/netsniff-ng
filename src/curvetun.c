@@ -30,6 +30,7 @@
 #include "curvetun.h"
 #include "curve.h"
 #include "usermgmt.h"
+#include "servmgmt.h"
 #include "write_or_die.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"
 #include "crypto_scalarmult_curve25519.h"
@@ -370,14 +371,22 @@ static int main_export(char *home)
 
 static int main_client(char *home, char *dev, char *alias)
 {
-	//Read from conf
-	int udp = 0;
-	char *host = "localhost";
-	char *port = "6666";
+	int ret, udp;
+	char *host, *port;
 
 	check_config_exists_or_die(home);
 
-	return client_main(home, dev, host, port, udp);
+	parse_userfile_and_generate_serv_store_or_die(home);
+	get_serv_store_entry_by_alias(alias, alias ? strlen(alias) + 1 : 0,
+				      &host, &port, &udp);
+	if (!host || !port || udp < 0)
+		panic("Did not find alias/entry in configuration!\n");
+	printf("Using %s -> %s:%s [%s] as endpoint!\n",
+	       alias, host, port, udp ? "udp" : "tcp");
+	ret = client_main(home, dev, host, port, udp);
+	destroy_serv_store();
+
+	return ret;
 }
 
 static int main_dumpc(char *home)
@@ -401,7 +410,9 @@ static int main_dumps(char *home)
 
 	printf("Your servers:\n\n");
 
-	/* TODO */
+	parse_userfile_and_generate_serv_store_or_die(home);
+	dump_serv_store();
+	destroy_serv_store();
 
 	printf("\n");
 	die();
