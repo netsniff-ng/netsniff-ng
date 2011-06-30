@@ -52,9 +52,114 @@ static void server_store_free(struct server_store *ss)
 
 void parse_userfile_and_generate_serv_store_or_die(char *homedir)
 {
+	FILE *fp;
+	char path[512], buff[1024], *alias, *host, *port, *udp, *key;
+	unsigned char pkey[crypto_box_pub_key_size];
+	int line = 1, __udp = 0;
+	struct server_store *elem;
+
+	memset(path, 0, sizeof(path));
+	snprintf(path, sizeof(path), "%s/%s", homedir, FILE_SERVERS);
+	path[sizeof(path) - 1] = 0;
+
 	rwlock_init(&store_lock);
 	rwlock_wr_lock(&store_lock);
-	/* TODO */
+
+	fp = fopen(path, "r");
+	if (!fp)
+		panic("Cannot open server file!\n");
+	memset(buff, 0, sizeof(buff));
+
+	while (fgets(buff, sizeof(buff), fp) != NULL) {
+		buff[sizeof(buff) - 1] = 0;
+		/* A comment. Skip this line */
+		if (buff[0] == '#' || buff[0] == '\n') {
+			memset(buff, 0, sizeof(buff));
+			line++;
+			continue;
+		}
+		alias = skips(buff);
+		host = alias;
+		while (*host != ';' &&
+		       *host != '\0' &&
+		       *host != ' ' &&
+		       *host != '\t')
+			host++;
+		if (*host != ';')
+			panic("Parse error! No alias found in l.%d!\n", line);
+		*host = '\0';
+		host++;
+		if (*host == '\n')
+			panic("Parse error! No host found in l.%d!\n", line);
+		port = host;
+		while (*port != ';' &&
+		       *port != '\0' &&
+		       *port != ' ' &&
+		       *port != '\t')
+			port++;
+		if (*port != ';')
+			panic("Parse error! No host found in l.%d!\n", line);
+		*port = '\0';
+		port++;
+		if (*port == '\n')
+			panic("Parse error! No port found in l.%d!\n", line);
+		udp = port;
+		while (*udp != ';' &&
+		       *udp != '\0' &&
+		       *udp != ' ' &&
+		       *udp != '\t')
+			udp++;
+		if (*udp != ';')
+			panic("Parse error! No port found in l.%d!\n", line);
+		*udp = '\0';
+		udp++;
+		if (*udp == '\n')
+			panic("Parse error! No udp|tcp found in l.%d!\n", line);
+		if (udp[0] == 'u' && udp[1] == 'd' && udp[2] == 'p')
+			__udp = 1;
+		else if (udp[0] == 't' && udp[1] == 'c' && udp[2] == 'p')
+			__udp = 0;
+		else
+			panic("Parse error! No udp|tcp found in l.%d!\n", line);
+		udp += 3;
+		if (*udp != ';')
+			panic("Parse error! No key found in l.%d!\n", line);
+		*udp = '\0';
+		udp++;
+		key = udp;
+		if (*key == '\n')
+			panic("Parse error! No key found in l.%d!\n", line);
+		key = strtrim_right(key, '\n');
+		memset(pkey, 0, sizeof(pkey));
+		if (!curve25519_pubkey_hexparse_32(pkey, sizeof(pkey),
+						   key, strlen(key)))
+			panic("Parse error! No key found in l.%d!\n", line);
+		if (strlen(alias) + 1 > sizeof(elem->alias))
+			panic("Alias too long in l.%d!\n", line);
+		if (strlen(host) + 1 > sizeof(elem->host))
+			panic("Host too long in l.%d!\n", line);
+		if (strlen(port) + 1 > sizeof(elem->port))
+			panic("Port too long in l.%d!\n", line);
+		if (strstr(alias, " ") || strstr(alias, "\t"))
+			panic("Alias consists of whitespace in l.%d!\n", line);
+		if (strstr(host, " ") || strstr(host, "\t"))
+			panic("Host consists of whitespace in l.%d!\n", line);
+		if (strstr(port, " ") || strstr(port, "\t"))
+			panic("Port consists of whitespace in l.%d!\n", line);
+		elem = server_store_alloc();
+		elem->next = store;
+		elem->udp = __udp;
+		strlcpy(elem->alias, alias, sizeof(elem->alias));
+		strlcpy(elem->host, host, sizeof(elem->host));
+		strlcpy(elem->port, port, sizeof(elem->port));
+		memcpy(elem->publickey, pkey, sizeof(elem->publickey));
+		store = elem;
+		smp_wmb();
+		memset(buff, 0, sizeof(buff));
+		line++;
+	}
+
+	fclose(fp);
 	if (store == NULL)
 		panic("No registered servers found!\n");
 	rwlock_unlock(&store_lock);
@@ -102,10 +207,42 @@ void destroy_serv_store(void)
 void get_serv_store_entry_by_alias(char *alias, size_t len,
 				   char **host, char **port, int *udp)
 {
-	/* if alias == 0, take the first entry */
+	struct server_store *elem;
 
+	rwlock_rd_lock(&store_lock);
+	elem = store;
+	if (!alias) {
+		while (elem && elem->next)
+			elem = elem->next;
+		if (elem) {
+			(*host) = elem->host;
+			(*port) = elem->port;
+			(*udp) = elem->udp;
+		} else {
+			rwlock_unlock(&store_lock);
+			goto nothing;
+		}
+	} else {
+		while (elem) {
+			if (!strncmp(elem->alias, alias,
+				     min(len, strlen(elem->alias) + 1)))
+				break;
+			elem = elem->next;
+		}
+		if (elem) {
+			(*host) = elem->host;
+			(*port) = elem->port;
+			(*udp) = elem->udp;
+		} else {
+			rwlock_unlock(&store_lock);
+			goto nothing;
+		}
+	}
+	rwlock_unlock(&store_lock);
+	return;
+nothing:
 	(*host) = NULL;
 	(*port) = NULL;
-	(*udp) = 0;
+	(*udp) = -1;
 }
 

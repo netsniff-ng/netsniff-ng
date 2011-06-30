@@ -14,6 +14,7 @@
  * processing in a CPU-local manner.
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -55,7 +56,7 @@ enum working_mode {
 
 sig_atomic_t sigint = 0;
 
-static const char *short_options = "kxcsvhp:t:d:uCS";
+static const char *short_options = "kxc::svhp:t:d:uCS";
 
 static struct option long_options[] = {
 	{"client", optional_argument, 0, 'c'},
@@ -390,7 +391,7 @@ static int main_client(char *home, char *dev, char *alias)
 	if (!host || !port || udp < 0)
 		panic("Did not find alias/entry in configuration!\n");
 	printf("Using [%s] -> %s:%s via %s as endpoint!\n",
-	       alias, host, port, udp ? "udp" : "tcp");
+	       alias ? : "default", host, port, udp ? "udp" : "tcp");
 	ret = client_main(home, dev, host, port, udp);
 	destroy_serv_store();
 
@@ -437,7 +438,7 @@ static int main_server(char *home, char *dev, char *port, int udp)
 int main(int argc, char **argv)
 {
 	int ret = 0, c, opt_index, udp = 0;
-	char *port = NULL, *stun = NULL, *dev = NULL, *home = NULL;
+	char *port = NULL, *stun = NULL, *dev = NULL, *home = NULL, *alias=NULL;
 	enum working_mode wmode = MODE_UNKNOW;
 
 	if (getuid() != geteuid())
@@ -464,6 +465,11 @@ int main(int argc, char **argv)
 			break;
 		case 'c':
 			wmode = MODE_CLIENT;
+			if (optarg) {
+				if (*optarg == '=')
+					optarg++;
+				alias = xstrdup(optarg);
+			}
 			break;
 		case 'd':
 			dev = xstrdup(optarg);
@@ -529,7 +535,7 @@ int main(int argc, char **argv)
 		ret = main_dumps(home);
 		break;
 	case MODE_CLIENT:
-		ret = main_client(home, dev, NULL);
+		ret = main_client(home, dev, alias);
 		break;
 	case MODE_SERVER:
 		if (!port)
@@ -548,6 +554,8 @@ int main(int argc, char **argv)
 		xfree(stun);
 	if (port)
 		xfree(port);
+	if (alias)
+		xfree(alias);
 	return ret;
 }
 
