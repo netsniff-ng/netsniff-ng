@@ -41,6 +41,7 @@
 #include "usermgmt.h"
 #include "servmgmt.h"
 #include "write_or_die.h"
+#include "crypto_verify_32.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"
 #include "crypto_scalarmult_curve25519.h"
 
@@ -329,11 +330,52 @@ static void create_keypair(char *home)
 	info("Private key written to %s!\n", path);
 }
 
+static void check_config_keypair_or_die(char *home)
+{
+	int fd;
+	ssize_t ret;
+	unsigned char publickey[crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES];
+	unsigned char publicres[crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES];
+	unsigned char secretkey[crypto_box_curve25519xsalsa20poly1305_SECRETKEYBYTES];
+	char path[512];
+
+	memset(path, 0, sizeof(path));
+	snprintf(path, sizeof(path), "%s/%s", home, FILE_PRIVKEY);
+	path[sizeof(path) - 1] = 0;
+
+	fd = open(path, O_RDONLY);
+	if (fd < 0)
+		panic("Cannot open privkey file!\n");
+	ret = read(fd, secretkey, sizeof(secretkey));
+	if (ret != sizeof(secretkey))
+		panic("Cannot read private key!\n");
+	close(fd);
+
+	memset(path, 0, sizeof(path));
+	snprintf(path, sizeof(path), "%s/%s", home, FILE_PUBKEY);
+	path[sizeof(path) - 1] = 0;
+
+	fd = open(path, O_RDONLY);
+	if (fd < 0)
+		panic("Cannot open pubkey file!\n");
+	ret = read(fd, publickey, sizeof(publickey));
+	if (ret != sizeof(publickey))
+		panic("Cannot read public key!\n");
+	close(fd);
+
+	crypto_scalarmult_curve25519_base(publicres, secretkey);
+
+	if (crypto_verify_32(publicres, publickey))
+		panic("WARNING: your keypair is corrupted!!! You need to "
+		      "generate new keys!!!\n");
+}
+
 static int main_keygen(char *home)
 {
 	create_curvedir(home);
 	write_username(home);
 	create_keypair(home);
+	check_config_keypair_or_die(home);
 	return 0;
 }
 
@@ -344,6 +386,7 @@ static int main_export(char *home)
 	char path[512], tmp[64];
 
 	check_config_exists_or_die(home);
+	check_config_keypair_or_die(home);
 
 	printf("Your exported public information:\n\n");
 
@@ -384,6 +427,7 @@ static int main_client(char *home, char *dev, char *alias)
 	char *host, *port;
 
 	check_config_exists_or_die(home);
+	check_config_keypair_or_die(home);
 
 	parse_userfile_and_generate_serv_store_or_die(home);
 	get_serv_store_entry_by_alias(alias, alias ? strlen(alias) + 1 : 0,
@@ -401,6 +445,7 @@ static int main_client(char *home, char *dev, char *alias)
 static int main_dumpc(char *home)
 {
 	check_config_exists_or_die(home);
+	check_config_keypair_or_die(home);
 
 	printf("Your clients:\n\n");
 
@@ -416,6 +461,7 @@ static int main_dumpc(char *home)
 static int main_dumps(char *home)
 {
 	check_config_exists_or_die(home);
+	check_config_keypair_or_die(home);
 
 	printf("Your servers:\n\n");
 
@@ -431,6 +477,7 @@ static int main_dumps(char *home)
 static int main_server(char *home, char *dev, char *port, int udp)
 {
 	check_config_exists_or_die(home);
+	check_config_keypair_or_die(home);
 
 	return server_main(home, dev, port, udp);
 }
