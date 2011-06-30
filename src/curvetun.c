@@ -389,7 +389,7 @@ static int main_client(char *home, char *dev, char *alias)
 				      &host, &port, &udp);
 	if (!host || !port || udp < 0)
 		panic("Did not find alias/entry in configuration!\n");
-	printf("Using %s -> %s:%s [%s] as endpoint!\n",
+	printf("Using [%s] -> %s:%s via %s as endpoint!\n",
 	       alias, host, port, udp ? "udp" : "tcp");
 	ret = client_main(home, dev, host, port, udp);
 	destroy_serv_store();

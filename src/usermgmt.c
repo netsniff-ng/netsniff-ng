@@ -28,6 +28,8 @@
 
 #define crypto_box_pub_key_size crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES
 
+/* Config line format: username;pubkey\n */
+
 struct user_store {
 	int socket;
 	struct sockaddr_storage *addr;
