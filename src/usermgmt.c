@@ -5,6 +5,7 @@
  * Subject to the GPL.
  */
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -18,6 +19,7 @@
 #include "write_or_die.h"
 #include "curvetun.h"
 #include "curve.h"
+#include "crypto_verify_32.h"
 #include "crypto_hash_sha512.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"
 
@@ -66,20 +68,20 @@ void destroy_store(void)
 /* dst: |--32 Byte Salt--|--64 Byte Hash--| */
 int username_msg(char *username, size_t len, char *dst, size_t dlen)
 {
-	int fd, i;
+	int fd;
 	ssize_t ret;
-	uint32_t salt, *curr;
+	uint32_t salt;
 	unsigned char h[crypto_hash_sha512_BYTES];
 	struct username_struct *us = (struct username_struct *) dst;
 	struct taia ts;
-	unsigned char *uname;
+	char *uname;
+	size_t uname_len;
 
-	if (dlen < sizeof(*us))
+	if (dlen < sizeof(struct username_struct))
 		return -ENOMEM;
-	if (len < sizeof(uint32_t))
-		return -EINVAL;
 
-	uname = (unsigned char *) xstrdup(username);
+	uname_len = 512;
+	uname = xzmalloc(uname_len);
 
 	fd = open_or_die("/dev/random", O_RDONLY);
 	ret = read_exact(fd, &salt, sizeof(salt), 0);
@@ -87,12 +89,9 @@ int username_msg(char *username, size_t len, char *dst, size_t dlen)
 		panic("Cannot read from /dev/random!\n");
 	close(fd);
 
-	for (i = 0; i < len; i += sizeof(salt)) {
-		curr = (uint32_t *) ((void *) (&uname[i]));
-		(*curr) = (*curr) ^ salt;
-	}
-
-	crypto_hash_sha512(h, uname, len);
+	snprintf(uname, uname_len, "%s%u", username, salt);
+	uname[uname_len - 1] = 0;
+	crypto_hash_sha512(h, (unsigned char *) uname, strlen(uname));
 
 	memset(&ts, 0, sizeof(ts));
 	taia_now(&ts);
@@ -114,43 +113,51 @@ static struct taia tolerance_taia = {
 enum is_user_enum username_msg_is_user(char *src, size_t slen, char *username,
 				       size_t len, struct taia *arrival_taia)
 {
-	int i, is_same = 1, is_ts_good = 0;
+	int not_same = 1, is_ts_good = 0;
 	enum is_user_enum ret = USERNAMES_NE;
-	unsigned char *uname;
-	uint32_t salt, *curr;
+	char *uname;
+	size_t uname_len;
+	uint32_t salt;
 	struct username_struct *us = (struct username_struct *) src;
 	struct taia ts, sub_res;
 	unsigned char h[crypto_hash_sha512_BYTES];
 
-	if (slen < sizeof(*us))
+	if (slen < sizeof(struct username_struct))
 		return -ENOMEM;
-	if (len < sizeof(uint32_t))
-		return -EINVAL;
 
-	uname = (unsigned char *) xstrdup(username);
+	uname_len = 512;
+	uname = xzmalloc(uname_len);
 
 	salt = ntohl(us->salt);
-	for (i = 0; i < len; i += sizeof(salt)) {
-		curr = (uint32_t *) ((void *) &uname[i]);
-		(*curr) = (*curr) ^ salt;
-	}
 
-	crypto_hash_sha512(h, uname, len);
+	snprintf(uname, uname_len, "%s%u", username, salt);
+	uname[uname_len - 1] = 0;
+	crypto_hash_sha512(h, (unsigned char *) uname, strlen(uname));
 
-	for (i = 0; i < sizeof(h); ++i) {
-		if (h[i] != us->hash[i])
-			is_same = 0;
-	}
+	if (!crypto_verify_32(&h[0], &us->hash[0]) &&
+	    !crypto_verify_32(&h[32], &us->hash[32]))
+		not_same = 0;
+	else
+		not_same = 1;
 
 	taia_unpack(us->taia, &ts);
-	taia_sub(&sub_res, arrival_taia, &ts);
+	if (taia_less(arrival_taia, &ts)) {
+		taia_sub(&sub_res, &ts, arrival_taia);
+		if (taia_less(&sub_res, &tolerance_taia))
+			is_ts_good = 1;
+		else
+			is_ts_good = 0;
+	} else {
+		taia_sub(&sub_res, arrival_taia, &ts);
+		if (taia_less(&sub_res, &tolerance_taia))
+			is_ts_good = 1;
+		else
+			is_ts_good = 0;
+	}
 
-	if (taia_less(&sub_res, &tolerance_taia))
-		is_ts_good = 1;
-
-	if (is_same && is_ts_good)
+	if (!not_same && is_ts_good)
 		ret = USERNAMES_OK;
-	else if (is_same && !is_ts_good)
+	else if (!not_same && !is_ts_good)
 		ret = USERNAMES_TS;
 	else
 		ret = USERNAMES_NE;
