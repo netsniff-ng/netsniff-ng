@@ -544,7 +544,6 @@ int server_main(char *home, char *dev, char *port, int udp)
 	syslog(LOG_INFO, "curvetun server booting!\n");
 
 	parse_userfile_and_generate_store_or_die(home);
-	dump_store();
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;

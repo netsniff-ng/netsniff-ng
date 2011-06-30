@@ -29,6 +29,7 @@
 #include "signals.h"
 #include "curvetun.h"
 #include "curve.h"
+#include "usermgmt.h"
 #include "write_or_die.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"
 #include "crypto_scalarmult_curve25519.h"
@@ -37,13 +38,14 @@ enum working_mode {
 	MODE_UNKNOW,
 	MODE_KEYGEN,
 	MODE_EXPORT,
+	MODE_DUMPC,
 	MODE_CLIENT,
 	MODE_SERVER,
 };
 
 sig_atomic_t sigint = 0;
 
-static const char *short_options = "kxcsvhp:t:d:u";
+static const char *short_options = "kxcsvhp:t:d:uC";
 
 static struct option long_options[] = {
 	{"client", optional_argument, 0, 'c'},
@@ -52,6 +54,7 @@ static struct option long_options[] = {
 	{"stun", required_argument, 0, 't'},
 	{"keygen", no_argument, 0, 'k'},
 	{"export", no_argument, 0, 'x'},
+	{"dumpc", no_argument, 0, 'C'},
 	{"server", no_argument, 0, 's'},
 	{"udp", no_argument, 0, 'u'},
 	{"version", no_argument, 0, 'v'},
@@ -87,6 +90,7 @@ static void help(void)
 	printf("Options:\n");
 	printf("  -k|--keygen             Generate public/private keypair\n");
 	printf("  -x|--export             Export your public data for servers\n");
+	printf("  -C|--dumpc              Dump parsed server clients\n");
 	printf("  -d|--dev <tun>          Networking tunnel device, e.g. tun0\n");
 	printf(" Client settings:\n");
 	printf("  -c|--client[=alias]     Client mode, server alias optional\n");
@@ -374,6 +378,20 @@ static int main_client(char *home, char *dev, char *alias)
 	return client_main(home, dev, host, port, scope, udp);
 }
 
+static int main_dump(char *home)
+{
+	check_config_exists_or_die(home);
+
+	printf("Your clients:\n\n");
+
+	parse_userfile_and_generate_store_or_die(home);
+	dump_store();
+	destroy_store();
+
+	printf("\n");
+	return 0;
+}
+
 static int main_server(char *home, char *dev, char *port, int udp)
 {
 	check_config_exists_or_die(home);
@@ -402,6 +420,9 @@ int main(int argc, char **argv)
 			break;
 		case 'v':
 			version();
+			break;
+		case 'C':
+			wmode = MODE_DUMPC;
 			break;
 		case 'c':
 			wmode = MODE_CLIENT;
@@ -462,6 +483,9 @@ int main(int argc, char **argv)
 		break;
 	case MODE_EXPORT:
 		ret = main_export(home);
+		break;
+	case MODE_DUMPC:
+		ret = main_dump(home);
 		break;
 	case MODE_CLIENT:
 		ret = main_client(home, dev, NULL);
