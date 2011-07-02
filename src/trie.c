@@ -6,6 +6,7 @@
  */
 
 #include <stdint.h>
+#include <string.h>
 #include <netinet/in.h>
 #include <asm/byteorder.h>
 
@@ -67,6 +68,14 @@ void trie_addr_lookup(char *buff, size_t len, int ipv4, int *fd,
 	data = ipv4 ? (void *) &hdr4->h_daddr : (void *) &hdr6->daddr;
 	dlen = ipv4 ? sizeof(hdr4->h_daddr) : sizeof(hdr6->daddr);
 
+	if (unlikely((ipv4 && ((struct ipv4hdr *) buff)->h_version != 4) ||
+		     (!ipv4 && ((struct ipv6hdr *) buff)->version  != 6))) {
+		memset(addr, 0, sizeof(*addr));
+		(*alen) = 0;
+		(*fd) = -1;
+		return;
+	}
+
 	/* Always happens on the dst address */
 	rwlock_rd_lock(&tree_lock);
 	(*fd) = ptree_search_data_exact(data, dlen, addr, alen, tree);
@@ -84,6 +93,10 @@ int trie_addr_maybe_update(char *buff, size_t len, int ipv4, int fd,
 
 	data = ipv4 ? (void *) &hdr4->h_saddr : (void *) &hdr6->saddr;
 	dlen = ipv4 ? sizeof(hdr4->h_saddr) : sizeof(hdr6->saddr);
+
+	if (unlikely((ipv4 && ((struct ipv4hdr *) buff)->h_version != 4) ||
+		     (!ipv4 && ((struct ipv6hdr *) buff)->version  != 6)))
+		return -1;
 
 	/* Always happens on the src address */
 	rwlock_wr_lock(&tree_lock);
