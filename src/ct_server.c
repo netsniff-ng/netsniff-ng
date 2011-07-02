@@ -81,9 +81,10 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len)
 {
 	int dfd, state, keep = 1;
-	char *pbuff;
-	ssize_t rlen, err, plen;
+	char *pbuff, *cbuff;
+	ssize_t rlen, err, plen, clen;
 	struct ct_proto *hdr;
+	struct curve25519_proto *p;
 	struct sockaddr_storage naddr;
 	socklen_t nlen;
 
@@ -92,6 +93,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 			    len - sizeof(struct ct_proto))) > 0) {
 		dfd = -1;
 		nlen = 0;
+		p = NULL;
 		memset(&naddr, 0, sizeof(naddr));
 
 		hdr = (struct ct_proto *) buff;
@@ -107,7 +109,12 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 			       "unknown destination\n", ws->cpu);
 			continue;
 		}
-
+		err = get_user_by_sockaddr(&naddr, nlen, &p);
+		if (unlikely(err || !p)) {
+			syslog(LOG_ERR, "CPU%u: User protocol not in cache! "
+			       "Dropping connection!\n", ws->cpu);
+			continue;
+		}
 		plen = z_deflate(ws->z, buff + sizeof(struct ct_proto),
 				 rlen, &pbuff);
 		if (unlikely(plen < 0)) {
@@ -115,8 +122,15 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 			       ws->cpu, strerror(errno));
 			continue;
 		}
+		clen = curve25519_encode(ws->c, p, (unsigned char *) pbuff, plen,
+					 (unsigned char **) &cbuff);
+		if (unlikely(clen <= 0)) {
+			syslog(LOG_ERR, "CPU%u: UDP tunnel encrypt error: %s\n",
+			       ws->cpu, strerror(errno));
+			continue;
+		}
 
-		hdr->payload = htons((uint16_t) plen);
+		hdr->payload = htons((uint16_t) clen);
 
 		state = 1;
 		setsockopt(dfd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
@@ -127,7 +141,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 			syslog(LOG_ERR, "CPU%u: UDP tunnel write error: %s\n",
 			       ws->cpu, strerror(errno));
 
-		err = sendto(dfd, pbuff, plen, 0, (struct sockaddr *) &naddr,
+		err = sendto(dfd, cbuff, clen, 0, (struct sockaddr *) &naddr,
 			     nlen);
 		if (unlikely(err < 0))
 			syslog(LOG_ERR, "CPU%u: UDP tunnel write error: %s\n",
@@ -164,9 +178,10 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len)
 {
 	int keep = 1;
-	char *pbuff;
-	ssize_t rlen, err, plen;
+	char *pbuff, *cbuff;
+	ssize_t rlen, err, plen, clen;
 	struct ct_proto *hdr;
+	struct curve25519_proto *p;
 	struct sockaddr_storage naddr;
 	socklen_t nlen;
 
@@ -176,6 +191,7 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 	errno = 0;
 	while ((rlen = recvfrom(fd, buff, len, 0, (struct sockaddr *) &naddr,
 				&nlen)) > 0) {
+		p = NULL;
 		hdr = (struct ct_proto *) buff;
 
 		if (unlikely(rlen < sizeof(struct ct_proto)))
@@ -195,21 +211,48 @@ close:
 			memset(&naddr, 0, sizeof(naddr));
 			continue;
 		}
+		if (hdr->flags & PROTO_FLAG_INIT) {
+			syslog(LOG_INFO, "Got initial userhash from remote end!\n");
+			if (unlikely(rlen - sizeof(*hdr) !=
+				     sizeof(struct username_struct)))
+				goto close;
+			err = try_register_user_by_sockaddr(buff + sizeof(struct ct_proto),
+							    rlen - sizeof(struct ct_proto),
+							    &naddr, nlen);
+			if (unlikely(err)) {
+				syslog(LOG_ERR, "CPU%u: User not found! "
+				       "Dropping connection!\n", ws->cpu);
+				goto close;
+			}
+		}
 
-		plen = z_inflate(ws->z, buff + sizeof(struct ct_proto),
-				 rlen - sizeof(struct ct_proto), &pbuff);
+		err = get_user_by_sockaddr(&naddr, nlen, &p);
+		if (unlikely(err || !p)) {
+			syslog(LOG_ERR, "CPU%u: User protocol not in cache! "
+			       "Dropping connection!\n", ws->cpu);
+			goto close;
+		}
+		clen = curve25519_decode(ws->c, p, (unsigned char *) buff +
+					 sizeof(struct ct_proto),
+					 rlen - sizeof(struct ct_proto),
+					 (unsigned char **) &cbuff);
+                if (unlikely(clen <= 0)) {
+			syslog(LOG_ERR, "CPU%u: TCP net decryption error: %s\n",
+			       ws->cpu, strerror(errno));
+			goto close;
+		}
+		plen = z_inflate(ws->z, cbuff, clen, &pbuff);
 		if (unlikely(plen < 0)) {
 			syslog(LOG_ERR, "CPU%u: UDP net inflate error: %s\n",
 			       ws->cpu, strerror(errno));
-			goto next;
+			goto close;
 		}
-
 		err = trie_addr_maybe_update(pbuff, plen, ws->parent.ipv4,
 					     fd, &naddr, nlen);
 		if (unlikely(err)) {
 			syslog(LOG_INFO, "CPU%u: Malicious packet dropped "
 			       "from id %d\n", ws->cpu, fd);
-			continue;
+			goto next;
 		}
 
 		err = write(ws->parent.tunfd, pbuff, plen);
@@ -285,7 +328,7 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 		}
 		clen = curve25519_encode(ws->c, p, (unsigned char *) pbuff, plen,
 					 (unsigned char **) &cbuff);
-                if (unlikely(clen <= 0)) {
+		if (unlikely(clen <= 0)) {
 			syslog(LOG_ERR, "CPU%u: TCP tunnel encrypt error: %s\n",
 			       ws->cpu, strerror(errno));
 			continue;
