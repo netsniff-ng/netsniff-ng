@@ -33,6 +33,7 @@
 struct user_store {
 	int socket;
 	struct sockaddr_storage *addr;
+	size_t sa_len;
 	char username[256];
 	unsigned char publickey[crypto_box_pub_key_size];
 	struct curve25519_proto proto_inf;
@@ -147,6 +148,7 @@ void parse_userfile_and_generate_user_store_or_die(char *homedir)
 		elem = user_store_alloc();
 		elem->socket = -1;
 		elem->addr = NULL;
+		elem->sa_len = 0;
 		elem->next = store;
 		strlcpy(elem->username, username, sizeof(elem->username));
 		memcpy(elem->publickey, pkey, sizeof(elem->publickey));
@@ -210,7 +212,7 @@ int get_user_by_socket(int sock, struct curve25519_proto **proto)
 	return -1;
 }
 
-int get_user_by_sockaddr(struct sockaddr_storage *sa,
+int get_user_by_sockaddr(struct sockaddr_storage *sa, size_t sa_len,
 			 struct curve25519_proto **proto)
 {
 	return -1;
@@ -222,9 +224,18 @@ int try_register_user_by_socket(char *src, size_t slen, int sock)
 }
 
 int try_register_user_by_sockaddr(char *src, size_t slen,
-				  struct sockaddr_storage *sa)
+				  struct sockaddr_storage *sa,
+				  size_t sa_len)
 {
 	return -1;
+}
+
+void remove_user_by_socket(int sock)
+{
+}
+
+void remove_user_by_sockaddr(struct sockaddr_storage *sa, size_t sa_len)
+{
 }
 
 int username_msg(char *username, size_t len, char *dst, size_t dlen)

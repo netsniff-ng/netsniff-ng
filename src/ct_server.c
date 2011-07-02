@@ -102,8 +102,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 				 rlen - sizeof(struct ct_proto),
 				 ws->parent.ipv4, &dfd, &naddr,
 				 (size_t *) &nlen);
-
-		if (dfd < 0 || nlen == 0) {
+		if (unlikely(dfd < 0 || nlen == 0)) {
 			syslog(LOG_INFO, "CPU%u: UDP tunnel lookup failed: "
 			       "unknown destination\n", ws->cpu);
 			continue;
@@ -111,7 +110,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 
 		plen = z_deflate(ws->z, buff + sizeof(struct ct_proto),
 				 rlen, &pbuff);
-		if (plen < 0) {
+		if (unlikely(plen < 0)) {
 			syslog(LOG_ERR, "CPU%u: UDP tunnel deflate error: %s\n",
 			       ws->cpu, strerror(errno));
 			continue;
@@ -124,13 +123,13 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 
 		err = sendto(dfd, hdr, sizeof(struct ct_proto), 0,
 			     (struct sockaddr *) &naddr, nlen);
-		if (err < 0)
+		if (unlikely(err < 0))
 			syslog(LOG_ERR, "CPU%u: UDP tunnel write error: %s\n",
 			       ws->cpu, strerror(errno));
 
 		err = sendto(dfd, pbuff, plen, 0, (struct sockaddr *) &naddr,
 			     nlen);
-		if (err < 0)
+		if (unlikely(err < 0))
 			syslog(LOG_ERR, "CPU%u: UDP tunnel write error: %s\n",
 			       ws->cpu, strerror(errno));
 
@@ -140,7 +139,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 		errno = 0;
 	}
 
-	if (rlen < 0 && errno != EAGAIN)
+	if (unlikely(rlen < 0 && errno != EAGAIN))
 		syslog(LOG_ERR, "CPU%u: UDP tunnel read error: %s\n",
 		       ws->cpu, strerror(errno));
 
@@ -189,6 +188,7 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 			goto close;
 		if (hdr->flags & PROTO_FLAG_EXIT) {
 close:
+			remove_user_by_sockaddr(&naddr, nlen);
 			trie_addr_remove_addr(&naddr, nlen);
 			handler_udp_notify_close(fd, &naddr, nlen);
 			nlen = sizeof(naddr);
@@ -198,7 +198,7 @@ close:
 
 		plen = z_inflate(ws->z, buff + sizeof(struct ct_proto),
 				 rlen - sizeof(struct ct_proto), &pbuff);
-		if (plen < 0) {
+		if (unlikely(plen < 0)) {
 			syslog(LOG_ERR, "CPU%u: UDP net inflate error: %s\n",
 			       ws->cpu, strerror(errno));
 			goto next;
@@ -206,14 +206,14 @@ close:
 
 		err = trie_addr_maybe_update(pbuff, plen, ws->parent.ipv4,
 					     fd, &naddr, nlen);
-		if (err) {
+		if (unlikely(err)) {
 			syslog(LOG_INFO, "CPU%u: Malicious packet dropped "
 			       "from id %d\n", ws->cpu, fd);
 			continue;
 		}
 
 		err = write(ws->parent.tunfd, pbuff, plen);
-		if (err < 0)
+		if (unlikely(err < 0))
 			syslog(LOG_ERR, "CPU%u: UDP net write error: %s\n",
 			       ws->cpu, strerror(errno));
 
@@ -223,7 +223,7 @@ next:
 		errno = 0;
 	}
 
-	if (rlen < 0 && errno != EAGAIN)
+	if (unlikely(rlen < 0 && errno != EAGAIN))
 		syslog(LOG_ERR, "CPU%u: UDP net read error: %s\n",
 		       ws->cpu, strerror(errno));
 
@@ -378,6 +378,7 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 			goto close;
 		if (hdr->flags & PROTO_FLAG_EXIT) {
 close:
+			remove_user_by_socket(fd);
 			trie_addr_remove(fd);
 			handler_tcp_notify_close(fd);
 			rlen = write(ws->parent.efd, &fd, sizeof(fd));
