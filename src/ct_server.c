@@ -531,10 +531,9 @@ static void thread_finish(unsigned int cpus)
 	}
 }
 
-int server_main(char *home, char *dev, char *port, int udp)
+int server_main(char *home, char *dev, char *port, int udp, int ipv4)
 {
-	int lfd = -1, kdpfd, nfds, nfd, curfds, efd[2], refd[2], tunfd;
-	int ipv4 = 0, i;
+	int lfd = -1, kdpfd, nfds, nfd, curfds, efd[2], refd[2], tunfd, i;
 	unsigned int cpus = 0, threads;
 	ssize_t ret;
 	struct epoll_event ev, *events;
@@ -590,10 +589,15 @@ int server_main(char *home, char *dev, char *port, int udp)
 				continue;
 			}
 		}
-		ipv4 = (ai->ai_family == AF_INET6 ? 0 :
-			(ai->ai_family == AF_INET ? 1 : -1));
+		if (ipv4 == -1) {
+			ipv4 = (ai->ai_family == AF_INET6 ? 0 :
+				(ai->ai_family == AF_INET ? 1 : -1));
+		}
 		syslog(LOG_INFO, "curvetun on IPv%d via %s on port %s!\n",
-		       ipv4 ? 4 : 6, udp ? "UDP" : "TCP", port);
+		       ai->ai_family == AF_INET ? 4 : 6, udp ? "UDP" : "TCP",
+		       port);
+		syslog(LOG_INFO, "Allowed overlay proto is IPv%d!\n",
+		       ipv4 ? 4 : 6);
 	}
 
 	freeaddrinfo(ahead);

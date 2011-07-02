@@ -57,7 +57,7 @@ enum working_mode {
 
 sig_atomic_t sigint = 0;
 
-static const char *short_options = "kxc::svhp:t:d:uCS";
+static const char *short_options = "kxc::svhp:t:d:uCS46";
 
 static struct option long_options[] = {
 	{"client", optional_argument, 0, 'c'},
@@ -70,6 +70,8 @@ static struct option long_options[] = {
 	{"dumps", no_argument, 0, 'S'},
 	{"server", no_argument, 0, 's'},
 	{"udp", no_argument, 0, 'u'},
+	{"ipv4", no_argument, 0, '4'},
+	{"ipv6", no_argument, 0, '6'},
 	{"version", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
@@ -113,6 +115,9 @@ static void help(void)
 	printf("  -p|--port <num>         Port number (mandatory)\n");
 	printf("  -t|--stun <server>      Show public IP/Port mapping via STUN\n");
 	printf("  -u|--udp                Use UDP as carrier instead of TCP\n");
+	printf("  -4|--ipv4               Tunnel devices are IPv4\n");
+	printf("  -6|--ipv6               Tunnel devices are IPv6\n");
+	printf("                          (default: same as carrier protocol)\n");
 	printf(" Misc:\n");
 	printf("  -v|--version            Print version\n");
 	printf("  -h|--help               Print this help\n");
@@ -127,7 +132,7 @@ static void help(void)
 	printf("      3. To export your key for servers, use:\n");
 	printf("           curvetun --export\n");
 	printf("  B. Server:\n");
-	printf("      1. curvetun --server --port 6666 --stun stunserver.org\n");
+	printf("      1. curvetun --server -4 --port 6666 --stun stunserver.org\n");
 	printf("      2. ifconfig curves up\n");
 	printf("      2. ifconfig curves 10.0.0.1/24\n");
 	printf("      3. (setup route)\n");
@@ -474,17 +479,17 @@ static int main_dumps(char *home)
 	return 0;
 }
 
-static int main_server(char *home, char *dev, char *port, int udp)
+static int main_server(char *home, char *dev, char *port, int udp, int ipv4)
 {
 	check_config_exists_or_die(home);
 	check_config_keypair_or_die(home);
 
-	return server_main(home, dev, port, udp);
+	return server_main(home, dev, port, udp, ipv4);
 }
 
 int main(int argc, char **argv)
 {
-	int ret = 0, c, opt_index, udp = 0;
+	int ret = 0, c, opt_index, udp = 0, ipv4 = -1;
 	char *port = NULL, *stun = NULL, *dev = NULL, *home = NULL, *alias=NULL;
 	enum working_mode wmode = MODE_UNKNOW;
 
@@ -523,6 +528,12 @@ int main(int argc, char **argv)
 			break;
 		case 'k':
 			wmode = MODE_KEYGEN;
+			break;
+		case '4':
+			ipv4 = 1;
+			break;
+		case '6':
+			ipv4 = 0;
 			break;
 		case 'x':
 			wmode = MODE_EXPORT;
@@ -589,7 +600,7 @@ int main(int argc, char **argv)
 			panic("No port specified!\n");
 		if (stun)
 			print_stun_probe(stun, 3478, strtoul(port, NULL, 10));
-		ret = main_server(home, dev, port, udp);
+		ret = main_server(home, dev, port, udp, ipv4);
 		break;
 	default:
 		die();
