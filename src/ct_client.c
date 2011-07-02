@@ -260,7 +260,7 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 	clen = curve25519_encode(c, p, (unsigned char *) &us, sizeof(us),
 				 (unsigned char **) &cbuff);
 	if (clen <= 0)
-		panic("TCP init encrypt error!\n");
+		panic("Init encrypt error!\n");
 
 	hdr.payload = htons((uint16_t) clen);
 
