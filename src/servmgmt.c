@@ -203,6 +203,7 @@ void destroy_serv_store(void)
 	struct server_store *elem, *nelem = NULL;
 
 	rwlock_wr_lock(&store_lock);
+	selected = NULL;
 	elem = store;
 	while (elem) {
 		nelem = elem->next;
