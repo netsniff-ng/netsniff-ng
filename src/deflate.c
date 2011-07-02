@@ -102,6 +102,8 @@ ssize_t z_deflate(struct z_struct *z, char *src, size_t size, char **dst)
 	size_t todo, done = 0;  
 
 	spinlock_lock(&z->def_lock);
+	memset(z->def_z_buf, 0, z->def_z_buf_size);
+
 	z->def.next_in = (void *) src;
 	z->def.avail_in = size;
 	z->def.next_out = (void *) z->def_z_buf;
@@ -136,6 +138,8 @@ ssize_t z_inflate(struct z_struct *z, char *src, size_t size, char **dst)
 	int todo, done = 0;     
 
 	spinlock_lock(&z->inf_lock);
+	memset(z->inf_z_buf, 0, z->inf_z_buf_size);
+
 	z->inf.next_in = (void *) src;
 	z->inf.avail_in = size;
 	z->inf.next_out = (void *) z->inf_z_buf;

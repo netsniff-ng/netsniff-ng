@@ -260,6 +260,8 @@ ssize_t curve25519_encode(struct curve25519_struct *c, struct curve25519_proto *
 	taia_now(&p->dtaie);
 	taia_pack(p->enonce + NONCE_OFFSET, &p->dtaie);
 
+	memset(c->enc_buf, 0, c->enc_buf_size);
+
 	ret = crypto_box_afternm(c->enc_buf, plaintext,
 				 size + crypto_box_zerobytes,
 				 p->enonce, p->key);
@@ -315,6 +317,8 @@ ssize_t curve25519_decode(struct curve25519_struct *c, struct curve25519_proto *
 	memcpy(p->dnonce + NONCE_OFFSET,
 	       chipertext + crypto_box_boxzerobytes - NONCE_LENGTH,
 	       NONCE_LENGTH);
+
+	memset(c->dec_buf, 0, c->dec_buf_size);
 
 	ret = crypto_box_open_afternm(c->dec_buf, chipertext,
 				      size + crypto_box_zerobytes,

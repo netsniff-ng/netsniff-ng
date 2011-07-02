@@ -37,6 +37,8 @@ struct server_store {
 
 static struct server_store *store = NULL;
 
+static struct server_store *selected = NULL;
+
 static struct rwlock store_lock;
 
 static struct server_store *server_store_alloc(void)
@@ -226,6 +228,7 @@ void get_serv_store_entry_by_alias(char *alias, size_t len,
 			(*host) = elem->host;
 			(*port) = elem->port;
 			(*udp) = elem->udp;
+			selected = elem;
 		} else {
 			rwlock_unlock(&store_lock);
 			goto nothing;
@@ -241,6 +244,7 @@ void get_serv_store_entry_by_alias(char *alias, size_t len,
 			(*host) = elem->host;
 			(*port) = elem->port;
 			(*udp) = elem->udp;
+			selected = elem;
 		} else {
 			rwlock_unlock(&store_lock);
 			goto nothing;
@@ -252,5 +256,15 @@ nothing:
 	(*host) = NULL;
 	(*port) = NULL;
 	(*udp) = -1;
+}
+
+struct curve25519_proto *get_serv_store_entry_proto_inf(void)
+{
+	struct curve25519_proto *ret = NULL;
+	rwlock_rd_lock(&store_lock);
+	if (selected)
+		ret = &selected->proto_inf;
+	rwlock_unlock(&store_lock);
+	return ret;
 }
 
