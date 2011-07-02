@@ -56,12 +56,16 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 		hdr->flags = 0;
 
 		plen = z_deflate(z, buff + sizeof(struct ct_proto), rlen, &pbuff);
-		if (unlikely(plen < 0))
-			panic("UDP tunnel deflate error!\n");
+		if (unlikely(plen < 0)) {
+			whine("UDP tunnel deflate error!\n");
+			goto close;
+		}
 		clen = curve25519_encode(c, p, (unsigned char *) pbuff, plen,
 					 (unsigned char **) &cbuff);
-		if (unlikely(clen <= 0))
-			panic("UDP tunnel encrypt error!\n");
+		if (unlikely(clen <= 0)) {
+			whine("UDP tunnel encrypt error!\n");
+			goto close;
+		}
 
 		hdr->payload = htons((uint16_t) clen);
 
@@ -81,6 +85,10 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 
 		errno = 0;
 	}
+
+	return;
+close:
+	sigint = 1;
 }
 
 static void handler_udp_net_to_tun(int sfd, int dfd, struct z_struct *z,
@@ -117,11 +125,15 @@ static void handler_udp_net_to_tun(int sfd, int dfd, struct z_struct *z,
 					 sizeof(struct ct_proto),
 					 rlen - sizeof(struct ct_proto),
 					 (unsigned char **) &cbuff);
-		if (unlikely(clen <= 0))
-			panic("UDP net decrypt error!\n");
+		if (unlikely(clen <= 0)) {
+			whine("UDP net decrypt error!\n");
+			goto close;
+		}
 		plen = z_inflate(z, cbuff, clen, &pbuff);
-		if (unlikely(plen < 0))
-			panic("UDP net inflate error!\n");
+		if (unlikely(plen < 0)) {
+			whine("UDP net inflate error!\n");
+			goto close;
+		}
 
 		err = write(dfd, pbuff, plen);
 		if (unlikely(err < 0))
@@ -154,12 +166,16 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 		hdr->flags = 0;
 
 		plen = z_deflate(z, buff + sizeof(struct ct_proto), rlen, &pbuff);
-		if (unlikely(plen < 0))
-			panic("TCP tunnel deflate error!\n");
+		if (unlikely(plen < 0)) {
+			whine("TCP tunnel deflate error!\n");
+			goto close;
+		}
 		clen = curve25519_encode(c, p, (unsigned char *) pbuff, plen,
 					 (unsigned char **) &cbuff);
-		if (unlikely(clen <= 0))
-			panic("TCP tunnel encrypt error!\n");
+		if (unlikely(clen <= 0)) {
+			whine("TCP tunnel encrypt error!\n");
+			goto close;
+		}
 
 		hdr->payload = htons((uint16_t) clen);
 
@@ -179,6 +195,10 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 
 		errno = 0;
 	}
+
+	return;
+close:
+	sigint = 1;
 }
 
 extern ssize_t handler_tcp_read(int fd, char *buff, size_t len);
@@ -211,11 +231,15 @@ static void handler_tcp_net_to_tun(int sfd, int dfd, struct z_struct *z,
 					 sizeof(struct ct_proto),
 					 rlen - sizeof(struct ct_proto),
 					 (unsigned char **) &cbuff);
-		if (unlikely(clen <= 0))
-			panic("TCP net decrypt error!\n");
+		if (unlikely(clen <= 0)) {
+			whine("TCP net decrypt error!\n");
+			goto close;
+		}
 		plen = z_inflate(z, cbuff, clen, &pbuff);
-		if (unlikely(plen < 0))
-			panic("TCP net inflate error!\n");
+		if (unlikely(plen < 0)) {
+			whine("TCP net inflate error!\n");
+			goto close;
+		}
 
 		err = write(dfd, pbuff, plen);
 		if (unlikely(err < 0))
