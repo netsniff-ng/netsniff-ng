@@ -205,13 +205,26 @@ void destroy_user_store(void)
 	rwlock_destroy(&store_lock);
 }
 
-void get_curve25519_proto_by_socket(int sock, struct curve25519_proto **proto)
+int get_user_by_socket(int sock, struct curve25519_proto **proto)
 {
+	return -1;
 }
 
-void get_curve25519_proto_by_sockaddr(struct sockaddr_storage *sa,
-				      struct curve25519_proto **proto)
+int get_user_by_sockaddr(struct sockaddr_storage *sa,
+			 struct curve25519_proto **proto)
 {
+	return -1;
+}
+
+int try_register_user_by_socket(char *src, size_t slen, int sock)
+{
+	return -1;
+}
+
+int try_register_user_by_sockaddr(char *src, size_t slen,
+				  struct sockaddr_storage *sa)
+{
+	return -1;
 }
 
 int username_msg(char *username, size_t len, char *dst, size_t dlen)

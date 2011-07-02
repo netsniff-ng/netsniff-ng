@@ -56,6 +56,7 @@ struct worker_struct {
 	int (*handler)(int fd, const struct worker_struct *ws,
 		       char *buff, size_t len);
 	struct z_struct *z;
+	struct curve25519_struct *c;
 };
 
 static struct worker_struct *threadpool = NULL;
@@ -244,15 +245,17 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len)
 {
 	int dfd, state, keep = 1;
-	char *pbuff;
-	ssize_t rlen, err, plen;
+	char *pbuff, *cbuff;
+	ssize_t rlen, err, plen, clen;
 	struct ct_proto *hdr;
+	struct curve25519_proto *p;
 	socklen_t nlen;
 
 	errno = 0;
 	while ((rlen = read(fd, buff + sizeof(struct ct_proto),
 			    len - sizeof(struct ct_proto))) > 0) {
 		dfd = -1;
+		p = NULL;
 
 		hdr = (struct ct_proto *) buff;
 		hdr->canary = htons(CANARY);
@@ -262,33 +265,44 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 				 rlen - sizeof(struct ct_proto),
 				 ws->parent.ipv4, &dfd, NULL,
 				 (size_t *) &nlen);
-
-		if (dfd < 0) {
+		if (unlikely(dfd < 0)) {
 			syslog(LOG_INFO, "CPU%u: TCP tunnel lookup failed: "
 			       "unknown destination\n", ws->cpu);
 			continue;
 		}
-
+		err = get_user_by_socket(dfd, &p);
+		if (unlikely(err || !p)) {
+			syslog(LOG_ERR, "CPU%u: User protocol not in cache! "
+			       "Dropping connection!\n", ws->cpu);
+			continue;
+		}
 		plen = z_deflate(ws->z, buff + sizeof(struct ct_proto),
 				 rlen, &pbuff);
-		if (plen < 0) {
+		if (unlikely(plen < 0)) {
 			syslog(LOG_ERR, "CPU%u: TCP tunnel deflate error: %s\n",
 			       ws->cpu, strerror(errno));
 			continue;
 		}
+		clen = curve25519_encode(ws->c, p, (unsigned char *) pbuff, plen,
+					 (unsigned char **) &cbuff);
+                if (unlikely(clen <= 0)) {
+			syslog(LOG_ERR, "CPU%u: TCP tunnel encrypt error: %s\n",
+			       ws->cpu, strerror(errno));
+			continue;
+		}
 
-		hdr->payload = htons((uint16_t) plen);
+		hdr->payload = htons((uint16_t) clen);
 
 		state = 1;
 		setsockopt(dfd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
 
 		err = write_exact(dfd, hdr, sizeof(struct ct_proto), 0);
-		if (err < 0)
+		if (unlikely(err < 0))
 			syslog(LOG_ERR, "CPU%u: TCP tunnel write error: %s\n",
 			       ws->cpu, strerror(errno));
 
-		err = write_exact(dfd, pbuff, plen, 0);
-		if (err < 0)
+		err = write_exact(dfd, cbuff, clen, 0);
+		if (unlikely(err < 0))
 			syslog(LOG_ERR, "CPU%u: TCP tunnel write error: %s\n",
 			       ws->cpu, strerror(errno));
 
@@ -298,7 +312,7 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 		errno = 0;
 	}
 
-	if (rlen < 0 && errno != EAGAIN)
+	if (unlikely(rlen < 0 && errno != EAGAIN))
 		syslog(LOG_ERR, "CPU%u: TCP tunnel read error: %s\n",
 		       ws->cpu, strerror(errno));
 
@@ -344,12 +358,14 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len)
 {
 	int keep = 1, count = 0;
-	char *pbuff;
-	ssize_t rlen, err, plen;
+	char *pbuff, *cbuff;
+	ssize_t rlen, err, plen, clen;
 	struct ct_proto *hdr;
+	struct curve25519_proto *p;
 
 	errno = 0;
 	while ((rlen = handler_tcp_read(fd, buff, len)) > 0) {
+		p = NULL;
 		hdr = (struct ct_proto *) buff;
 
 		if (unlikely(rlen < sizeof(struct ct_proto)))
@@ -371,32 +387,59 @@ close:
 			keep = 0;
 			return keep;
 		}
-
-		plen = z_inflate(ws->z, buff + sizeof(struct ct_proto),
-				 rlen - sizeof(struct ct_proto), &pbuff);
-		if (plen < 0) {
-			syslog(LOG_ERR, "CPU%u: TCP net inflate error: %s\n",
-			       ws->cpu, strerror(errno));
-			continue;
+		if (hdr->flags & PROTO_FLAG_INIT) {
+			syslog(LOG_INFO, "Got initial userhash from remote end!\n");
+			if (unlikely(rlen - sizeof(*hdr) !=
+				     sizeof(struct username_struct)))
+				goto close;
+			err = try_register_user_by_socket(buff + sizeof(struct ct_proto),
+							  rlen - sizeof(struct ct_proto),
+							  fd);
+			if (unlikely(err)) {
+				syslog(LOG_ERR, "CPU%u: User not found! "
+				       "Dropping connection!\n", ws->cpu);
+				goto close;
+			}
 		}
 
+		err = get_user_by_socket(fd, &p);
+		if (unlikely(err || !p)) {
+			syslog(LOG_ERR, "CPU%u: User protocol not in cache! "
+			       "Dropping connection!\n", ws->cpu);
+			goto close;
+		}
+		clen = curve25519_decode(ws->c, p, (unsigned char *) buff +
+					 sizeof(struct ct_proto),
+					 rlen - sizeof(struct ct_proto),
+					 (unsigned char **) &cbuff);
+                if (unlikely(clen <= 0)) {
+			syslog(LOG_ERR, "CPU%u: TCP net decryption error: %s\n",
+			       ws->cpu, strerror(errno));
+			goto close;
+		}
+		plen = z_inflate(ws->z, cbuff, clen, &pbuff);
+		if (unlikely(plen < 0)) {
+			syslog(LOG_ERR, "CPU%u: TCP net inflate error: %s\n",
+			       ws->cpu, strerror(errno));
+			goto close;
+		}
 		err = trie_addr_maybe_update(pbuff, plen, ws->parent.ipv4,
 					     fd, NULL, 0);
-		if (err) {
+		if (unlikely(err)) {
 			syslog(LOG_INFO, "CPU%u: Malicious packet dropped "
 			       "from id %d\n", ws->cpu, fd);
 			continue;
 		}
 
 		err = write(ws->parent.tunfd, pbuff, plen);
-		if (err < 0)
+		if (unlikely(err < 0))
 			syslog(LOG_ERR, "CPU%u: TCP net write error: %s\n",
 			       ws->cpu, strerror(errno));
 
 		count++;
 		if (count == 10) {
 			err = write_exact(ws->efd[1], &fd, sizeof(fd), 1);
-			if (err != sizeof(fd))
+			if (unlikely(err != sizeof(fd)))
 				syslog(LOG_ERR, "CPU%u: TCP net put fd back in "
 				       "pipe error: %s\n", ws->cpu, strerror(errno));
 			return keep;
@@ -405,7 +448,7 @@ close:
 		errno = 0;
 	}
 
-	if (rlen < 0 && errno != EAGAIN && errno != EBADF)
+	if (unlikely(rlen < 0 && errno != EAGAIN && errno != EBADF))
 		syslog(LOG_ERR, "CPU%u: TCP net read error: %s\n",
 		       ws->cpu, strerror(errno));
 
@@ -439,10 +482,15 @@ static void *worker(void *self)
 	if (ret < 0)
 		syslog_panic("Cannot init zLib!\n");
 
+	ret = curve25519_alloc_or_maybe_die(ws->c);
+	if (ret < 0)
+		syslog_panic("Cannot init curve25519!\n");
+
 	buff = xmalloc(blen);
 	syslog(LOG_INFO, "curvetun thread on CPU%u up!\n", ws->cpu);
 	pthread_cleanup_push(xfree, buff);
 	pthread_cleanup_push(z_free, ws->z);
+	pthread_cleanup_push(curve25519_free, ws->c);
 
 	while (likely(!sigint)) {
 		poll(&fds, 1, -1);
@@ -471,6 +519,7 @@ static void *worker(void *self)
 	syslog(LOG_INFO, "curvetun thread on CPU%u down!\n", ws->cpu);
 	pthread_cleanup_pop(1);
 	pthread_cleanup_pop(1);
+	pthread_cleanup_pop(1);
 	pthread_exit((void *) ((long) ws->cpu));
 }
 
@@ -492,6 +541,7 @@ static void thread_spawn_or_panic(unsigned int cpus, int efd, int refd,
 			syslog_panic("Cannot create event socket!\n");
 
 		threadpool[i].z = xmalloc(sizeof(struct z_struct));
+		threadpool[i].c = xmalloc(sizeof(struct curve25519_struct));
 		threadpool[i].parent.efd = efd;
 		threadpool[i].parent.refd = refd;
 		threadpool[i].parent.tunfd = tunfd;
@@ -528,6 +578,7 @@ static void thread_finish(unsigned int cpus)
 		close(threadpool[i].efd[0]);
 		close(threadpool[i].efd[1]);
 		xfree(threadpool[i].z);
+		xfree(threadpool[i].c);
 	}
 }
 

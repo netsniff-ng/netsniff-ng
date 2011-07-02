@@ -35,4 +35,11 @@ extern void parse_userfile_and_generate_user_store_or_die(char *homedir);
 extern void dump_user_store(void);
 extern void destroy_user_store(void);
 
+int get_user_by_socket(int sock, struct curve25519_proto **proto);
+int get_user_by_sockaddr(struct sockaddr_storage *sa,
+			 struct curve25519_proto **proto);
+int try_register_user_by_socket(char *src, size_t slen, int sock);
+int try_register_user_by_sockaddr(char *src, size_t slen,
+				  struct sockaddr_storage *sa);
+
 #endif /* USERMGMT_H */

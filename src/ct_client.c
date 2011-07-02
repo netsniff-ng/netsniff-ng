@@ -56,11 +56,11 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 		hdr->flags = 0;
 
 		plen = z_deflate(z, buff + sizeof(struct ct_proto), rlen, &pbuff);
-		if (plen < 0)
+		if (unlikely(plen < 0))
 			panic("UDP tunnel deflate error!\n");
 		clen = curve25519_encode(c, p, (unsigned char *) pbuff, plen,
 					 (unsigned char **) &cbuff);
-		if (clen <= 0)
+		if (unlikely(clen <= 0))
 			panic("UDP tunnel encrypt error!\n");
 
 		hdr->payload = htons((uint16_t) clen);
@@ -69,11 +69,11 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 		setsockopt(dfd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
 
 		err = write_exact(dfd, hdr, sizeof(struct ct_proto), 0);
-		if (err < 0)
+		if (unlikely(err < 0))
 			perror("Error writing tunnel data to net");
 
 		err = write_exact(dfd, cbuff, clen, 0);
-		if (err < 0)
+		if (unlikely(err < 0))
 			perror("Error writing tunnel data to net");
 
 		state = 0;
@@ -117,14 +117,14 @@ static void handler_udp_net_to_tun(int sfd, int dfd, struct z_struct *z,
 					 sizeof(struct ct_proto),
 					 rlen - sizeof(struct ct_proto),
 					 (unsigned char **) &cbuff);
-		if (clen <= 0)
+		if (unlikely(clen <= 0))
 			panic("UDP net decrypt error!\n");
 		plen = z_inflate(z, cbuff, clen, &pbuff);
-		if (plen < 0)
+		if (unlikely(plen < 0))
 			panic("UDP net inflate error!\n");
 
 		err = write(dfd, pbuff, plen);
-		if (err < 0)
+		if (unlikely(err < 0))
 			perror("Error writing net data to tunnel");
 
 		errno = 0;
@@ -154,11 +154,11 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 		hdr->flags = 0;
 
 		plen = z_deflate(z, buff + sizeof(struct ct_proto), rlen, &pbuff);
-		if (plen < 0)
+		if (unlikely(plen < 0))
 			panic("TCP tunnel deflate error!\n");
 		clen = curve25519_encode(c, p, (unsigned char *) pbuff, plen,
 					 (unsigned char **) &cbuff);
-		if (clen <= 0)
+		if (unlikely(clen <= 0))
 			panic("TCP tunnel encrypt error!\n");
 
 		hdr->payload = htons((uint16_t) clen);
@@ -167,11 +167,11 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 		setsockopt(dfd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
 
 		err = write_exact(dfd, hdr, sizeof(struct ct_proto), 0);
-		if (err < 0)
+		if (unlikely(err < 0))
 			perror("Error writing tunnel data to net");
 
 		err = write_exact(dfd, cbuff, clen, 0);
-		if (err < 0)
+		if (unlikely(err < 0))
 			perror("Error writing tunnel data to net");
 
 		state = 0;
@@ -211,14 +211,14 @@ static void handler_tcp_net_to_tun(int sfd, int dfd, struct z_struct *z,
 					 sizeof(struct ct_proto),
 					 rlen - sizeof(struct ct_proto),
 					 (unsigned char **) &cbuff);
-		if (clen <= 0)
+		if (unlikely(clen <= 0))
 			panic("TCP net decrypt error!\n");
 		plen = z_inflate(z, cbuff, clen, &pbuff);
-		if (plen < 0)
+		if (unlikely(plen < 0))
 			panic("TCP net inflate error!\n");
 
 		err = write(dfd, pbuff, plen);
-		if (err < 0)
+		if (unlikely(err < 0))
 			perror("Error writing net data to tunnel");
 
 		errno = 0;
@@ -255,11 +255,11 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 
 	err = username_msg(username, strlen(username) + 1,
 			   (char *) &us, sizeof(us));
-	if (err)
+	if (unlikely(err))
 		panic("Cannot create init message!\n");
 	clen = curve25519_encode(c, p, (unsigned char *) &us, sizeof(us),
 				 (unsigned char **) &cbuff);
-	if (clen <= 0)
+	if (unlikely(clen <= 0))
 		panic("Init encrypt error!\n");
 
 	hdr.payload = htons((uint16_t) clen);
@@ -269,11 +269,11 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 		   udp ? UDP_CORK : TCP_CORK, &state, sizeof(state));
 
 	err = write_exact(fd, &hdr, sizeof(struct ct_proto), 0);
-	if (err < 0)
+	if (unlikely(err < 0))
 		perror("Error writing init data to net");
 
 	err = write_exact(fd, cbuff, clen, 0);
-	if (err < 0)
+	if (unlikely(err < 0))
 		perror("Error writing init data to net");
 
 	state = 0;
@@ -292,7 +292,7 @@ static void notify_close(int fd)
 	hdr.canary = htons(CANARY);
 
 	err = write_exact(fd, &hdr, sizeof(hdr), 0);
-	if (err < 0)
+	if (unlikely(err < 0))
 		perror("Error writing close");
 }
 
