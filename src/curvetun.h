@@ -16,9 +16,8 @@
 
 #define DEFAULT_KEY_LEN 64
 
-#define PROTO_FLAG_IPV4	(1 << 2)
-#define PROTO_FLAG_IPV6	(1 << 1)
 #define PROTO_FLAG_EXIT	(1 << 0)
+#define PROTO_FLAG_INIT	(1 << 1)
 
 #define CANARY 0xACDC
 

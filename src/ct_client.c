@@ -32,6 +32,7 @@
 #include "xmalloc.h"
 #include "curvetun.h"
 #include "servmgmt.h"
+#include "usermgmt.h"
 #include "compiler.h"
 
 extern sig_atomic_t sigint;
@@ -228,9 +229,56 @@ close:
 	sigint = 1;
 }
 
-static void notify_init(int fd)
+static void notify_init(int fd, int udp, struct curve25519_proto *p,
+			struct curve25519_struct *c, char *home)
 {
-	//TODO
+	int state, fd2;
+	ssize_t err;
+	size_t clen;
+	struct ct_proto hdr;
+	struct username_struct us;
+	char username[256], path[512], *cbuff;
+
+	memset(&hdr, 0, sizeof(hdr));
+	hdr.flags |= PROTO_FLAG_INIT;
+	hdr.canary = htons(CANARY);
+
+	memset(path, 0, sizeof(path));
+	snprintf(path, sizeof(path), "%s/%s", home, FILE_USERNAM);
+	path[sizeof(path) - 1] = 0;
+	memset(username, 0, sizeof(username));
+
+	fd2 = open_or_die(path, O_RDONLY);
+	err = read(fd2, username, sizeof(username));
+	username[sizeof(username) -1] = 0;
+	close(fd2);
+
+	err = username_msg(username, strlen(username) + 1,
+			   (char *) &us, sizeof(us));
+	if (err)
+		panic("Cannot create init message!\n");
+	clen = curve25519_encode(c, p, (unsigned char *) &us, sizeof(us),
+				 (unsigned char **) &cbuff);
+	if (clen <= 0)
+		panic("TCP init encrypt error!\n");
+
+	hdr.payload = htons((uint16_t) clen);
+
+	state = 1;
+	setsockopt(fd, udp ? IPPROTO_UDP : IPPROTO_TCP,
+		   udp ? UDP_CORK : TCP_CORK, &state, sizeof(state));
+
+	err = write_exact(fd, &hdr, sizeof(struct ct_proto), 0);
+	if (err < 0)
+		perror("Error writing init data to net");
+
+	err = write_exact(fd, cbuff, clen, 0);
+	if (err < 0)
+		perror("Error writing init data to net");
+
+	state = 0;
+	setsockopt(fd, udp ? IPPROTO_UDP : IPPROTO_TCP,
+		   udp ? UDP_CORK : TCP_CORK, &state, sizeof(state));
 }
 
 static void notify_close(int fd)
@@ -324,7 +372,7 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 
 	buff = xmalloc(blen);
 
-	notify_init(fd);
+	notify_init(fd, udp, p, c, home);
 	info("Ready!\n");
 
 	while (likely(!sigint)) {
