@@ -250,7 +250,7 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 
 	fd2 = open_or_die(path, O_RDONLY);
 	err = read(fd2, username, sizeof(username));
-	username[sizeof(username) -1] = 0;
+	username[sizeof(username) - 1] = 0;
 	close(fd2);
 
 	err = username_msg(username, strlen(username) + 1,
