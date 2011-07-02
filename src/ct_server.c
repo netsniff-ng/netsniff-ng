@@ -100,8 +100,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 		hdr->canary = htons(CANARY);
 		hdr->flags = 0;
 
-		trie_addr_lookup(buff + sizeof(struct ct_proto),
-				 rlen - sizeof(struct ct_proto),
+		trie_addr_lookup(buff + sizeof(struct ct_proto), rlen,
 				 ws->parent.ipv4, &dfd, &naddr,
 				 (size_t *) &nlen);
 		if (unlikely(dfd < 0 || nlen == 0)) {
@@ -304,8 +303,7 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 		hdr->canary = htons(CANARY);
 		hdr->flags = 0;
 
-		trie_addr_lookup(buff + sizeof(struct ct_proto),
-				 rlen - sizeof(struct ct_proto),
+		trie_addr_lookup(buff + sizeof(struct ct_proto), rlen,
 				 ws->parent.ipv4, &dfd, NULL,
 				 (size_t *) &nlen);
 		if (unlikely(dfd < 0)) {
