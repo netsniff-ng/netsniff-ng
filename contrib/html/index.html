@@ -106,23 +106,23 @@ netsniff-ng is <i>Free Software</i> and released under the <a href="http://www.g
 netsniff-ng is is a free, performant Linux network analyzer and networking toolkit.
 </p>
 <p>
-The gain of performance is reached by 'zero-copy' mechanisms, so that 
+The gain of performance is reached by zero-copy mechanisms, so that 
 the kernel does not need to copy packets from kernelspace to userspace
 and vice versa.
 </p>
 <p>
-For this purpose the netsniff-ng suite is libpcap independent, but nevertheless 
+For this purpose, the netsniff-ng suite is libpcap independent, but nevertheless 
 supports the pcap file format for capturing, replaying and performing 
-offline-analysis of pcap dumps. Furthermore we are focussing on building 
+offline-analysis of pcap dumps. Furthermore, we are focussing on building 
 a robust, clean and secure analyzer and utilities that complete 
-netsniff-ng as a support for network development, debugging or penetration testing.
+netsniff-ng as a support for network development, debugging or network
+reconnaissance.
 </p>
 <p>
-netsniff-ng<sup>[<a name="id777" href="#ftn.id777">+</a>]</sup> consists 
-of much more than only a network analyzer. Next to the 'zero-copy' sniffer itself, further
-tools like trafgen, a powerful 'zero-copy' network packet generator, or 
-ifpps, a tool that provides top-like kernel networking statistics, are being 
-shipped.
+netsniff-ng consists of much more than only a network analyzer. Next to the 
+zero-copy sniffer itself, further tools like trafgen, a powerful zero-copy 
+network packet generator, or ifpps, a tool that provides top-like kernel 
+networking statistics, are being shipped. <!-- <sup>[<a name="id777" href="#ftn.id777">+</a>]</sup> -->
 </p>
 
 <h2>Some use cases and features</h2>
@@ -134,7 +134,7 @@ shipped.
   <li>Dumping, replaying and offline analysis of pcap traces</li>
   <li>Focus on usability, robustness, security and functionality</li>
   <li>Support utility for penetration testing, network reconnaissance</li>
-  <li>Network statistic creation (e.g. for Nagios)</li>
+  <li>Network statistic creation (e.g. for Nagios, gnuplot)</li>
   <li>Powerful, flexible and performant traffic generation</li>
   <li>Reliable, top-like kernel networking statistics</li>
 </ul>
@@ -168,7 +168,6 @@ write an e-mail to <script type="text/javascript">InsertMail("bugs", "netsniff-n
 By the time, netsniff-ng will grow into a networking toolkit for developers, administrators and advanced users. On the <i>long</i> term, we plan to do research and development within the following areas:
 <ul>
   <li>Zero-copy mechanisms for network packets</li>
-  <li>Network traffic anomaly analysis on routers or bridges</li>
   <li>User-friendly Qdisc management tooling</li>
   <li>Secure IP-tunneling</li>
   <li>Berkeley Packet Filter compiler with multi-language support</li>
