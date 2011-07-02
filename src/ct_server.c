@@ -236,7 +236,7 @@ close:
 					 rlen - sizeof(struct ct_proto),
 					 (unsigned char **) &cbuff);
                 if (unlikely(clen <= 0)) {
-			syslog(LOG_ERR, "CPU%u: TCP net decryption error: %s\n",
+			syslog(LOG_ERR, "CPU%u: UDP net decryption error: %s\n",
 			       ws->cpu, strerror(errno));
 			goto close;
 		}
