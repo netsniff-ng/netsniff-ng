@@ -416,8 +416,26 @@ static int register_user_by_socket(int fd, struct curve25519_proto *proto)
 	return 0;
 }
 
-static int register_user_by_sockaddr(int sock, struct curve25519_proto *proto)
+static int register_user_by_sockaddr(struct sockaddr_storage *sa,
+				     size_t sa_len,
+				     struct curve25519_proto *proto)
 {
+	void **pos;
+	struct sockaddr_map_entry *entry;
+	unsigned int hash = hash_name((char *) sa, sa_len);
+
+	rwlock_wr_lock(&sockaddr_map_lock);
+	entry = xzmalloc(sizeof(*entry));
+	entry->sa = xmemdupz(sa, sa_len);
+	entry->sa_len = sa_len;
+	entry->proto = proto;
+	pos = insert_hash(hash, entry, &sockaddr_mapper);
+	if (pos) {
+		entry->next = (*pos);
+		(*pos) = entry;
+	}
+	rwlock_unlock(&sockaddr_map_lock);
+
 	return 0;
 }
 
@@ -462,7 +480,37 @@ int try_register_user_by_sockaddr(struct curve25519_struct *c,
 				  struct sockaddr_storage *sa,
 				  size_t sa_len)
 {
-	return -1;
+	int ret = -1;
+	struct user_store *elem;
+	enum is_user_enum err;
+	struct taia arrival_tai;
+
+	rwlock_rd_lock(&store_lock);
+	elem = store;
+	taia_now(&arrival_tai);
+	while (elem) {
+//		clen = curve25519_decode(c, &elem->proto_inf,
+//					 (unsigned char *) src,
+//					 slen, &cbuff);
+//		printf("clen: %d\n", clen);
+//		if (clen <= 0)
+//			goto next;
+		err = username_msg_is_user((char *) src, slen,
+					   elem->username,
+					   strlen(elem->username) + 1,
+					   &arrival_tai);
+		if (err == USERNAMES_OK) {
+			syslog(LOG_INFO, "Found user %s!\n", elem->username);
+			ret = register_user_by_sockaddr(sa, sa_len,
+							&elem->proto_inf);
+			break;
+		} else if (err == USERNAMES_TS)
+			break;
+		elem = elem->next;
+	}
+	rwlock_unlock(&store_lock);
+
+	return ret;
 }
 
 int get_user_by_socket(int fd, struct curve25519_proto **proto)
@@ -490,7 +538,27 @@ int get_user_by_socket(int fd, struct curve25519_proto **proto)
 int get_user_by_sockaddr(struct sockaddr_storage *sa, size_t sa_len,
 			 struct curve25519_proto **proto)
 {
-	return -1;
+	int ret = -1;
+	struct sockaddr_map_entry *entry;
+	unsigned int hash = hash_name((char *) sa, sa_len);
+
+	errno = 0;
+	rwlock_rd_lock(&sockaddr_map_lock);
+	entry = lookup_hash(hash, &sockaddr_mapper);
+	while (entry && entry->sa_len == sa_len &&
+	       memcmp(sa, entry->sa, entry->sa_len))
+		entry = entry->next;
+	if (entry && entry->sa_len == sa_len &&
+	    !memcmp(sa, entry->sa, entry->sa_len)) {
+		(*proto) = entry->proto;
+		ret = 0;
+	} else {
+		(*proto) = NULL;
+		errno = ENOENT;
+	}
+	rwlock_unlock(&sockaddr_map_lock);
+
+	return ret;
 }
 
 static struct sock_map_entry *socket_to_sock_map_entry(int fd)
@@ -530,7 +598,47 @@ void remove_user_by_socket(int fd)
 	rwlock_unlock(&sock_map_lock);
 }
 
+static struct sockaddr_map_entry *
+sockaddr_to_sockaddr_map_entry(struct sockaddr_storage *sa, size_t sa_len)
+{
+	struct sockaddr_map_entry *entry, *ret = NULL;
+	unsigned int hash = hash_name((char *) sa, sa_len);
+
+	errno = 0;
+	rwlock_rd_lock(&sockaddr_map_lock);
+	entry = lookup_hash(hash, &sockaddr_mapper);
+	while (entry && entry->sa_len == sa_len &&
+	       memcmp(sa, entry->sa, entry->sa_len))
+		entry = entry->next;
+	if (entry && entry->sa_len == sa_len &&
+	    !memcmp(sa, entry->sa, entry->sa_len))
+		ret = entry;
+	else
+		errno = ENOENT;
+	rwlock_unlock(&sockaddr_map_lock);
+
+	return ret;
+}
+
 void remove_user_by_sockaddr(struct sockaddr_storage *sa, size_t sa_len)
 {
+	struct sockaddr_map_entry *pos;
+	struct sockaddr_map_entry *entry;
+	unsigned int hash = hash_name((char *) sa, sa_len);
+
+	entry = sockaddr_to_sockaddr_map_entry(sa, sa_len);
+	if (!entry == 0 && errno == ENOENT)
+		return;
+	rwlock_wr_lock(&sockaddr_map_lock);
+	pos = remove_hash(hash, entry, entry->next, &sockaddr_mapper);
+	while (pos && pos->next && pos->next != entry)
+		pos = pos->next;
+	if (pos && pos->next && pos->next == entry)
+		pos->next = entry->next;
+	entry->proto = NULL;
+	entry->next = NULL;
+	xfree(entry->sa);
+	xfree(entry);
+	rwlock_unlock(&sockaddr_map_lock);
 }
 
