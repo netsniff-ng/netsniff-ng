@@ -258,10 +258,10 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 {
 	int state, fd2;
 	ssize_t err;
-	size_t clen;
+//	size_t clen;
 	struct ct_proto hdr;
 	struct username_struct us;
-	char username[256], path[512], *cbuff;
+	char username[256], path[512];//, *cbuff;
 
 	memset(&hdr, 0, sizeof(hdr));
 	hdr.flags |= PROTO_FLAG_INIT;
@@ -281,12 +281,13 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 			   (char *) &us, sizeof(us));
 	if (unlikely(err))
 		panic("Cannot create init message!\n");
-	clen = curve25519_encode(c, p, (unsigned char *) &us, sizeof(us),
-				 (unsigned char **) &cbuff);
-	if (unlikely(clen <= 0))
-		panic("Init encrypt error!\n");
-
-	hdr.payload = htons((uint16_t) clen);
+//	clen = curve25519_encode(c, p, (unsigned char *) &us, sizeof(us),
+//				 (unsigned char **) &cbuff);
+//	if (unlikely(clen <= 0))
+//		panic("Init encrypt error!\n");
+//
+//	hdr.payload = htons((uint16_t) clen);
+	hdr.payload = htons((uint16_t) sizeof(us));
 
 	state = 1;
 	setsockopt(fd, udp ? IPPROTO_UDP : IPPROTO_TCP,
@@ -296,7 +297,8 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 	if (unlikely(err < 0))
 		perror("Error writing init data to net");
 
-	err = write_exact(fd, cbuff, clen, 0);
+//	err = write_exact(fd, cbuff, clen, 0);
+	err = write_exact(fd, &us, sizeof(us), 0);
 	if (unlikely(err < 0))
 		perror("Error writing init data to net");
 

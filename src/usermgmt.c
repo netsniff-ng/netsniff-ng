@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <syslog.h>
 #include <arpa/inet.h>
 
 #include "die.h"
@@ -207,37 +208,6 @@ void destroy_user_store(void)
 	rwlock_destroy(&store_lock);
 }
 
-int get_user_by_socket(int sock, struct curve25519_proto **proto)
-{
-	return -1;
-}
-
-int get_user_by_sockaddr(struct sockaddr_storage *sa, size_t sa_len,
-			 struct curve25519_proto **proto)
-{
-	return -1;
-}
-
-int try_register_user_by_socket(char *src, size_t slen, int sock)
-{
-	return -1;
-}
-
-int try_register_user_by_sockaddr(char *src, size_t slen,
-				  struct sockaddr_storage *sa,
-				  size_t sa_len)
-{
-	return -1;
-}
-
-void remove_user_by_socket(int sock)
-{
-}
-
-void remove_user_by_sockaddr(struct sockaddr_storage *sa, size_t sa_len)
-{
-}
-
 int username_msg(char *username, size_t len, char *dst, size_t dlen)
 {
 	int fd;
@@ -338,5 +308,69 @@ enum is_user_enum username_msg_is_user(char *src, size_t slen, char *username,
 
 	xfree(uname);
 	return ret;
+}
+
+int try_register_user_by_socket(struct curve25519_struct *c,
+				char *src, size_t slen, int sock)
+{
+	int ret = -1;
+	struct user_store *elem;
+	enum is_user_enum err;
+	struct taia arrival_tai;
+
+	rwlock_rd_lock(&store_lock);
+	elem = store;
+	taia_now(&arrival_tai);
+	while (elem) {
+// TODO:
+//		clen = curve25519_decode(c, &elem->proto_inf,
+//					 (unsigned char *) src,
+//					 slen, &cbuff);
+//		printf("clen: %d\n", clen);
+//		if (clen <= 0)
+//			goto next;
+		err = username_msg_is_user((char *) src, slen,
+					   elem->username,
+					   strlen(elem->username) + 1,
+					   &arrival_tai);
+		if (err == USERNAMES_OK) {
+			syslog(LOG_INFO, "Found user %s!\n", elem->username);
+			// register for lookup
+			ret = 0;
+			break;
+		} else if (err == USERNAMES_TS)
+			break;
+		elem = elem->next;
+	}
+	rwlock_unlock(&store_lock);
+
+	return ret;
+}
+
+int try_register_user_by_sockaddr(struct curve25519_struct *c,
+				  char *src, size_t slen,
+				  struct sockaddr_storage *sa,
+				  size_t sa_len)
+{
+	return -1;
+}
+
+int get_user_by_socket(int sock, struct curve25519_proto **proto)
+{
+	return -1;
+}
+
+int get_user_by_sockaddr(struct sockaddr_storage *sa, size_t sa_len,
+			 struct curve25519_proto **proto)
+{
+	return -1;
+}
+
+void remove_user_by_socket(int sock)
+{
+}
+
+void remove_user_by_sockaddr(struct sockaddr_storage *sa, size_t sa_len)
+{
 }
 
