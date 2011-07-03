@@ -524,6 +524,7 @@ void remove_user_by_socket(int fd)
 		pos = pos->next;
 	if (pos && pos->next && pos->next == entry)
 		pos->next = entry->next;
+	entry->proto = NULL;
 	entry->next = NULL;
 	xfree(entry);
 	rwlock_unlock(&sock_map_lock);
