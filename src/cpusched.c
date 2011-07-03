@@ -168,10 +168,12 @@ static int cleanup_batch(void *ptr)
 
 void destroy_cpusched(void)
 {
-	rwlock_destroy(&map_lock);
+	rwlock_wr_lock(&map_lock);
 	xfree(cpu_assigned);
 	cpu_len = 0;
 	for_each_hash(&mapper, cleanup_batch);
 	free_hash(&mapper);
+	rwlock_unlock(&map_lock);
+	rwlock_destroy(&map_lock);
 }
 
