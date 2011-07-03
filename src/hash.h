@@ -9,7 +9,7 @@
 #define HASH_H
 
 /* Hash table implementation from the GIT project. */
-/* Copyright xxxx (C) Linus Torvalds (?), GPL version 2 */
+/* Copyright 2008 (C) Linus Torvalds, GPL version 2 */
 /*
  * These are some simple generic hash table helper functions.
  * Not necessarily suitable for all users, but good for things
@@ -64,6 +64,22 @@ static inline void init_hash(struct hash_table *table)
 	table->size = 0;
 	table->nr = 0;
 	table->array = NULL;
+}
+
+static inline unsigned char icase_hash(unsigned char c)
+{
+	return c & ~((c & 0x40) >> 1);
+}
+
+static inline unsigned int hash_name(const char *name, int namelen)
+{
+	unsigned int hash = 0x123;
+	do {
+		unsigned char c = *name++;
+		c = icase_hash(c);
+		hash = hash * 101 + c;
+	} while (--namelen);
+	return hash;
 }
 
 #endif
