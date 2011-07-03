@@ -213,7 +213,7 @@ close:
 		if (hdr->flags & PROTO_FLAG_INIT) {
 			syslog(LOG_INFO, "Got initial userhash from remote end!\n");
 			if (unlikely(rlen - sizeof(*hdr) !=
-				     sizeof(struct username_struct)))
+				     sizeof(struct username_struct)) + 32)
 				goto close;
 			err = try_register_user_by_sockaddr(buff + sizeof(struct ct_proto),
 							    rlen - sizeof(struct ct_proto),
@@ -432,7 +432,7 @@ close:
 		if (hdr->flags & PROTO_FLAG_INIT) {
 			syslog(LOG_INFO, "Got initial userhash from remote end!\n");
 			if (unlikely(rlen - sizeof(*hdr) !=
-				     sizeof(struct username_struct)))
+				     sizeof(struct username_struct) + 32))
 				goto close;
 			err = try_register_user_by_socket(buff + sizeof(struct ct_proto),
 							  rlen - sizeof(struct ct_proto),
