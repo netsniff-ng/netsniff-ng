@@ -223,6 +223,8 @@ close:
 				       "Dropping connection!\n", ws->cpu);
 				goto close;
 			}
+
+			goto next;
 		}
 
 		err = get_user_by_sockaddr(&naddr, nlen, &p);
@@ -442,6 +444,8 @@ close:
 				       "Dropping connection!\n", ws->cpu);
 				goto close;
 			}
+
+			continue;
 		}
 
 		err = get_user_by_socket(fd, &p);
