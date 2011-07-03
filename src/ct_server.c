@@ -124,8 +124,8 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 		clen = curve25519_encode(ws->c, p, (unsigned char *) pbuff, plen,
 					 (unsigned char **) &cbuff);
 		if (unlikely(clen <= 0)) {
-			syslog(LOG_ERR, "CPU%u: UDP tunnel encrypt error: %s\n",
-			       ws->cpu, strerror(errno));
+			syslog(LOG_ERR, "CPU%u: UDP tunnel encrypt error: %zd\n",
+			       ws->cpu, clen);
 			continue;
 		}
 
@@ -236,8 +236,8 @@ close:
 					 rlen - sizeof(struct ct_proto),
 					 (unsigned char **) &cbuff);
                 if (unlikely(clen <= 0)) {
-			syslog(LOG_ERR, "CPU%u: UDP net decryption error: %s\n",
-			       ws->cpu, strerror(errno));
+			syslog(LOG_ERR, "CPU%u: UDP net decryption error: %zd\n",
+			       ws->cpu, clen);
 			goto close;
 		}
 		plen = z_inflate(ws->z, cbuff, clen, &pbuff);
@@ -327,8 +327,8 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 		clen = curve25519_encode(ws->c, p, (unsigned char *) pbuff, plen,
 					 (unsigned char **) &cbuff);
 		if (unlikely(clen <= 0)) {
-			syslog(LOG_ERR, "CPU%u: TCP tunnel encrypt error: %s\n",
-			       ws->cpu, strerror(errno));
+			syslog(LOG_ERR, "CPU%u: TCP tunnel encrypt error: %zd\n",
+			       ws->cpu, clen);
 			continue;
 		}
 
@@ -455,8 +455,8 @@ close:
 					 rlen - sizeof(struct ct_proto),
 					 (unsigned char **) &cbuff);
                 if (unlikely(clen <= 0)) {
-			syslog(LOG_ERR, "CPU%u: TCP net decryption error: %s\n",
-			       ws->cpu, strerror(errno));
+			syslog(LOG_ERR, "CPU%u: TCP net decryption error: %zd\n",
+			       ws->cpu, clen);
 			goto close;
 		}
 		plen = z_inflate(ws->z, cbuff, clen, &pbuff);
