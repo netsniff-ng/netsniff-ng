@@ -180,18 +180,13 @@ int curve25519_alloc_or_maybe_die(struct curve25519_struct *c)
 
 void curve25519_free(void *vc)
 {
-	int i;
         struct curve25519_struct *c = vc;
 
         if (!c)
                 return;
 
-	srand(time(NULL));
-	/* Overwrite buffer contents before releasing */
-	for (i = 0; i < c->enc_buf_size; ++i)
-		c->enc_buf[i] = (unsigned char) rand();
-	for (i = 0; i < c->dec_buf_size; ++i)
-		c->dec_buf[i] = (unsigned char) rand();
+	memset(c->enc_buf, 0, c->enc_buf_size);
+	memset(c->dec_buf, 0, c->dec_buf_size);
 
         xfree(c->enc_buf);
         xfree(c->dec_buf);
