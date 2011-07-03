@@ -54,7 +54,8 @@ struct hash_table {
 extern void *lookup_hash(unsigned int hash, const struct hash_table *table);
 extern void **insert_hash(unsigned int hash, void *ptr,
 			  struct hash_table *table);
-
+extern void *remove_hash(unsigned int hash, void *ptr, void *ptr_next,
+			 struct hash_table *table);
 extern int for_each_hash(const struct hash_table *table, int (*fn)(void *));
 extern void free_hash(struct hash_table *table);
 

@@ -31,7 +31,7 @@ static unsigned int cpu_len = 0;
 
 static struct rwlock map_lock;
 
-void init_cpusched(unsigned int cpus, size_t num)
+void init_cpusched(unsigned int cpus)
 {
 	rwlock_init(&map_lock);
 	rwlock_wr_lock(&map_lock);
@@ -55,10 +55,30 @@ static int get_appropriate_cpu(void)
 	return cpu;
 }
 
+static int dump_table_row(void *velem)
+{
+	struct map_entry *entry = velem;
+	while (entry) {
+		printf("%p: fd - %d, cpu - %u, next - %p\n",
+		       entry, entry->fd, entry->cpu, entry->next);
+		entry = entry->next;
+	}
+	return 0;
+}
+
+void socket_dump_table(void)
+{
+	printf("dump ---\n");
+	rwlock_rd_lock(&map_lock);
+	for_each_hash(&mapper, dump_table_row);
+	rwlock_unlock(&map_lock);
+}
+
 unsigned int socket_to_cpu(int fd)
 {
 	int cpu = 0;
 	struct map_entry *entry;
+
 	errno = 0;
 	rwlock_rd_lock(&map_lock);
 	entry = lookup_hash(fd, &mapper);
@@ -69,6 +89,7 @@ unsigned int socket_to_cpu(int fd)
 	else
 		errno = ENOENT;
 	rwlock_unlock(&map_lock);
+
 	return cpu;
 }
 
@@ -78,48 +99,68 @@ unsigned int register_socket(int fd)
 	struct map_entry *entry;
 
 	rwlock_wr_lock(&map_lock);
-	entry = lookup_hash(fd, &mapper);
-	while (entry && fd != entry->fd)
-		entry = entry->next;
-	if (entry && fd == entry->fd) {
-		entry->cpu = get_appropriate_cpu();
-		cpu_assigned[entry->cpu]++;
-		rwlock_unlock(&map_lock);
-		return entry->cpu;
-	} else {
-		entry = xzmalloc(sizeof(*entry));
-		entry->fd = fd;
-		entry->cpu = get_appropriate_cpu();
-		cpu_assigned[entry->cpu]++;
-	}
+	entry = xzmalloc(sizeof(*entry));
+	entry->fd = fd;
+	entry->cpu = get_appropriate_cpu();
+	cpu_assigned[entry->cpu]++;
 	pos = insert_hash(entry->fd, entry, &mapper);
 	if (pos) {
-		entry->next = *pos;
-		*pos = &entry;
+		entry->next = (*pos);
+		(*pos) = entry;
 	}
 	rwlock_unlock(&map_lock);
 
 	return entry->cpu;
 }
 
+static struct map_entry *socket_to_map_entry(int fd)
+{
+	struct map_entry *entry, *ret = NULL;
+
+	errno = 0;
+	rwlock_rd_lock(&map_lock);
+	entry = lookup_hash(fd, &mapper);
+	while (entry && fd != entry->fd)
+		entry = entry->next;
+	if (entry && fd == entry->fd)
+		ret = entry;
+	else
+		errno = ENOENT;
+	rwlock_unlock(&map_lock);
+
+	return ret;
+}
+
 void unregister_socket(int fd)
 {
-	unsigned int ncpu = socket_to_cpu(fd);
-	if (ncpu == 0 && errno == ENOENT)
+	struct map_entry *pos;
+	struct map_entry *entry = socket_to_map_entry(fd);
+
+	if (!entry == 0 && errno == ENOENT)
 		return;
 	rwlock_wr_lock(&map_lock);
-	cpu_assigned[ncpu]--;
+	cpu_assigned[entry->cpu]--;
+	pos = remove_hash(entry->fd, entry, entry->next, &mapper);
+	while (pos && pos->next && pos->next != entry)
+		pos = pos->next;
+	if (pos && pos->next && pos->next == entry)
+		pos->next = entry->next;
+	entry->next = NULL;
+	xfree(entry);
 	rwlock_unlock(&map_lock);
 }
 
 static int cleanup_batch(void *ptr)
 {
-	struct map_entry *tmp, *e = ptr;
-	if (!ptr)
+	struct map_entry *next;
+	struct map_entry *e = ptr;
+
+	if (!e)
 		return 0;
-	while ((tmp = e->next)) {
+	while ((next = e->next)) {
+		e->next = NULL;
 		xfree(e);
-		e = tmp;
+		e = next;
 	}
 	xfree(e);
 	return 0;

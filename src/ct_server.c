@@ -756,7 +756,7 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4)
 	threadpool = xzmalloc(sizeof(*threadpool) * threads);
 	thread_spawn_or_panic(cpus, efd[1], refd[1], tunfd, ipv4, udp);
 
-	init_cpusched(threads, MAX_EPOLL_SIZE);
+	init_cpusched(threads);
 	register_socket(tunfd);
 	register_socket(lfd);
 

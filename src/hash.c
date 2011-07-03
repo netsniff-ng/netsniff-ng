@@ -57,6 +57,31 @@ static void **insert_hash_entry(unsigned int hash, void *ptr,
 	return &entry->ptr;
 }
 
+/*
+ * Removes a hash entry pointer from the table.
+ *
+ * If that hash does not exist, NULL is returned, or, if that hash
+ * exists and is the first entry, ptr_next will be set to that entry
+ * and NULL is returned. Otherwise the caller must maintain the
+ * remaining list.
+ */
+static void *remove_hash_entry(unsigned int hash, void *ptr, void *ptr_next,
+			       struct hash_table *table)
+{
+	struct hash_table_entry *entry = lookup_hash_entry(hash, table);
+
+	if (!entry->ptr)
+		return NULL;
+	else if (entry->ptr == ptr) {
+		entry->ptr = ptr_next;
+		entry->hash = hash;
+		if (!ptr_next)
+			table->nr--;
+		return NULL;
+	} else
+		return entry->ptr;
+}
+
 static void grow_hash_table(struct hash_table *table)
 {
 	unsigned int i;
@@ -85,6 +110,14 @@ void *lookup_hash(unsigned int hash, const struct hash_table *table)
 	if (!table->array)
 		return NULL;
 	return lookup_hash_entry(hash, table)->ptr;
+}
+
+void *remove_hash(unsigned int hash, void *ptr, void *ptr_next,
+		  struct hash_table *table)
+{
+	if (!table->array)
+		return NULL;
+	return remove_hash_entry(hash, ptr, ptr_next, table);
 }
 
 void **insert_hash(unsigned int hash, void *ptr, struct hash_table *table)
