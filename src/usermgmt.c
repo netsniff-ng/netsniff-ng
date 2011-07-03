@@ -23,6 +23,7 @@
 #include "curvetun.h"
 #include "strlcpy.h"
 #include "curve.h"
+#include "hash.h"
 #include "crypto_verify_32.h"
 #include "crypto_hash_sha512.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"
@@ -32,18 +33,101 @@
 /* Config line format: username;pubkey\n */
 
 struct user_store {
-	int socket;
-	struct sockaddr_storage *addr;
-	size_t sa_len;
 	char username[256];
 	unsigned char publickey[crypto_box_pub_key_size];
 	struct curve25519_proto proto_inf;
 	struct user_store *next;
 };
 
-static struct user_store *store = NULL;
+struct sock_map_entry {
+	int fd;
+	struct curve25519_proto *proto;
+	struct sock_map_entry *next;
+};
 
+struct sockaddr_map_entry {
+	struct sockaddr_storage *sa;
+	size_t sa_len;
+	struct curve25519_proto *proto;
+	struct sockaddr_map_entry *next;
+};
+
+static struct user_store *store = NULL;
 static struct rwlock store_lock;
+
+static struct hash_table sock_mapper;
+static struct rwlock sock_map_lock;
+
+static struct hash_table sockaddr_mapper;
+static struct rwlock sockaddr_map_lock;
+
+static void init_sock_mapper(void)
+{
+	rwlock_init(&sock_map_lock);
+	rwlock_wr_lock(&sock_map_lock);
+	memset(&sock_mapper, 0, sizeof(sock_mapper));
+	init_hash(&sock_mapper);
+	rwlock_unlock(&sock_map_lock);
+}
+
+static void init_sockaddr_mapper(void)
+{
+	rwlock_init(&sockaddr_map_lock);
+	rwlock_wr_lock(&sockaddr_map_lock);
+	memset(&sockaddr_mapper, 0, sizeof(sockaddr_mapper));
+	init_hash(&sockaddr_mapper);
+	rwlock_unlock(&sockaddr_map_lock);
+}
+
+static int cleanup_batch_sock_mapper(void *ptr)
+{
+	struct sock_map_entry *next;
+	struct sock_map_entry *e = ptr;
+
+	if (!e)
+		return 0;
+	while ((next = e->next)) {
+		e->next = NULL;
+		xfree(e);
+		e = next;
+	}
+	xfree(e);
+	return 0;
+}
+
+static void destroy_sock_mapper(void)
+{
+	rwlock_wr_lock(&sock_map_lock);
+	for_each_hash(&sock_mapper, cleanup_batch_sock_mapper);
+	free_hash(&sock_mapper);
+	rwlock_unlock(&sock_map_lock);
+	rwlock_destroy(&sock_map_lock);
+}
+
+static int cleanup_batch_sockaddr_mapper(void *ptr)
+{
+	struct sockaddr_map_entry *next;
+	struct sockaddr_map_entry *e = ptr;
+
+	if (!e)
+		return 0;
+	while ((next = e->next)) {
+		e->next = NULL;
+		xfree(e);
+		e = next;
+	}
+	xfree(e);
+	return 0;
+}
+
+static void destroy_sockaddr_mapper(void)
+{
+	rwlock_wr_lock(&sockaddr_map_lock);
+	for_each_hash(&sockaddr_mapper, cleanup_batch_sockaddr_mapper);
+	free_hash(&sockaddr_mapper);
+	rwlock_unlock(&sockaddr_map_lock);
+	rwlock_destroy(&sockaddr_map_lock);
+}
 
 static struct user_store *user_store_alloc(void)
 {
@@ -147,9 +231,6 @@ void parse_userfile_and_generate_user_store_or_die(char *homedir)
 		if (strstr(username, "\t"))
 			panic("Username consists of whitespace in l.%d!\n", line);
 		elem = user_store_alloc();
-		elem->socket = -1;
-		elem->addr = NULL;
-		elem->sa_len = 0;
 		elem->next = store;
 		strlcpy(elem->username, username, sizeof(elem->username));
 		memcpy(elem->publickey, pkey, sizeof(elem->publickey));
@@ -169,6 +250,9 @@ void parse_userfile_and_generate_user_store_or_die(char *homedir)
 	if (store == NULL)
 		panic("No registered clients found!\n");
 	rwlock_unlock(&store_lock);
+
+	init_sock_mapper();
+	init_sockaddr_mapper();
 }
 
 void dump_user_store(void)
@@ -206,6 +290,9 @@ void destroy_user_store(void)
 	}
 	rwlock_unlock(&store_lock);
 	rwlock_destroy(&store_lock);
+
+	destroy_sock_mapper();
+	destroy_sockaddr_mapper();
 }
 
 int username_msg(char *username, size_t len, char *dst, size_t dlen)
