@@ -141,11 +141,12 @@ static void help(void)
 	printf("      2. ifconfig curvec up\n");
 	printf("      2. ifconfig curvec 10.0.0.2/24\n");
 	printf("      3. (setup route)\n");
-	printf("  Where both participants have the following files specified:\n");
+	printf("  Where both participants have the following files specified ...\n");
 	printf("   ~/.curvetun/clients - Participants the server accepts\n");
 	printf("        line-format:   username;pubkey\n");
 	printf("   ~/.curvetun/servers - Possible servers the client can connect to\n");
 	printf("        line-format:   alias;serverip|servername;port;udp|tcp;pubkey\n");
+	printf("  ... and are synced to an ntpd!\n");
 	printf("\n");
 	printf("Note:\n");
 	printf("  There is no default port specified, so that users are forced\n");
