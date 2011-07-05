@@ -630,7 +630,7 @@ static void thread_finish(unsigned int cpus)
 
 int server_main(char *home, char *dev, char *port, int udp, int ipv4)
 {
-	int lfd = -1, kdpfd, nfds, nfd, curfds, efd[2], refd[2], tunfd, i;
+	int lfd = -1, kdpfd, nfds, nfd, curfds, efd[2], refd[2], tunfd, i, mtu;
 	unsigned int cpus = 0, threads;
 	ssize_t ret;
 	struct epoll_event ev, *events;
@@ -672,6 +672,8 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4)
 #endif /* IPV6_V6ONLY */
 		}
 		set_reuseaddr(lfd);
+		mtu = IP_PMTUDISC_DONT;
+		setsockopt(lfd, SOL_IP, IP_MTU_DISCOVER, &mtu, sizeof(mtu));
 		ret = bind(lfd, ai->ai_addr, ai->ai_addrlen);
 		if (ret < 0) {
 			close(lfd);

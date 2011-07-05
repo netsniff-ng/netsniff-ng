@@ -325,7 +325,7 @@ static void notify_close(int fd)
 int client_main(char *home, char *dev, char *host, char *port, int udp)
 {
 	int fd = -1, tunfd;
-	int ret, try = 1, i, one;
+	int ret, try = 1, i, one, mtu;
 	struct addrinfo hints, *ahead, *ai;
 	struct sockaddr_in6 *saddr6;
 	struct pollfd fds[2];
@@ -374,6 +374,8 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 		}
 		one = 1;
 		setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &one, sizeof(one));
+		mtu = IP_PMTUDISC_DONT;
+		setsockopt(fd, SOL_IP, IP_MTU_DISCOVER, &mtu, sizeof(mtu));
 		if (!udp) {
 			one = 1;
 			setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one,
