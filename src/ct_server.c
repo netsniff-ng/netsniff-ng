@@ -237,8 +237,8 @@ close:
 		}
 		plen = z_inflate(ws->z, cbuff, clen, crypto_box_zerobytes, &pbuff);
 		if (unlikely(plen < 0)) {
-			syslog(LOG_ERR, "CPU%u: UDP net inflate error: %s\n",
-			       ws->cpu, strerror(errno));
+			syslog(LOG_ERR, "CPU%u: UDP net inflate error: %d/%s\n",
+			       ws->cpu, plen, strerror(errno));
 			goto close;
 		}
 		err = trie_addr_maybe_update(pbuff, plen, ws->parent.ipv4,
@@ -450,8 +450,8 @@ close:
 		}
 		plen = z_inflate(ws->z, cbuff, clen, crypto_box_zerobytes, &pbuff);
 		if (unlikely(plen < 0)) {
-			syslog(LOG_ERR, "CPU%u: TCP net inflate error: %s\n",
-			       ws->cpu, strerror(errno));
+			syslog(LOG_ERR, "CPU%u: TCP net inflate error: %d/%s\n",
+			       ws->cpu, plen, strerror(errno));
 			goto close;
 		}
 		err = trie_addr_maybe_update(pbuff, plen, ws->parent.ipv4,
