@@ -583,8 +583,7 @@ void remove_user_by_socket(int fd)
 {
 	struct sock_map_entry *pos;
 	struct sock_map_entry *entry = socket_to_sock_map_entry(fd);
-
-	if (!entry == 0 && errno == ENOENT)
+	if (!entry)
 		return;
 	rwlock_wr_lock(&sock_map_lock);
 	pos = remove_hash(entry->fd, entry, entry->next, &sock_mapper);
@@ -625,9 +624,8 @@ void remove_user_by_sockaddr(struct sockaddr_storage *sa, size_t sa_len)
 	struct sockaddr_map_entry *pos;
 	struct sockaddr_map_entry *entry;
 	unsigned int hash = hash_name((char *) sa, sa_len);
-
 	entry = sockaddr_to_sockaddr_map_entry(sa, sa_len);
-	if (!entry == 0 && errno == ENOENT)
+	if (!entry)
 		return;
 	rwlock_wr_lock(&sockaddr_map_lock);
 	pos = remove_hash(hash, entry, entry->next, &sockaddr_mapper);
