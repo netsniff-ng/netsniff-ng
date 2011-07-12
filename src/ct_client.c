@@ -55,7 +55,8 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 		hdr->canary = htons(CANARY);
 		hdr->flags = 0;
 
-		plen = z_deflate(z, buff + sizeof(struct ct_proto), rlen, &pbuff);
+		plen = z_deflate(z, buff + sizeof(struct ct_proto), rlen,
+				 crypto_box_zerobytes, &pbuff);
 		if (unlikely(plen < 0)) {
 			whine("UDP tunnel deflate error!\n");
 			goto close;
@@ -129,7 +130,7 @@ static void handler_udp_net_to_tun(int sfd, int dfd, struct z_struct *z,
 			whine("UDP net decrypt error!\n");
 			goto close;
 		}
-		plen = z_inflate(z, cbuff, clen, &pbuff);
+		plen = z_inflate(z, cbuff, clen, crypto_box_zerobytes, &pbuff);
 		if (unlikely(plen < 0)) {
 			whine("UDP net inflate error!\n");
 			goto close;
@@ -165,7 +166,8 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 		hdr->canary = htons(CANARY);
 		hdr->flags = 0;
 
-		plen = z_deflate(z, buff + sizeof(struct ct_proto), rlen, &pbuff);
+		plen = z_deflate(z, buff + sizeof(struct ct_proto), rlen,
+				 crypto_box_zerobytes, &pbuff);
 		if (unlikely(plen < 0)) {
 			whine("TCP tunnel deflate error!\n");
 			goto close;
@@ -235,7 +237,7 @@ static void handler_tcp_net_to_tun(int sfd, int dfd, struct z_struct *z,
 			whine("TCP net decrypt error!\n");
 			goto close;
 		}
-		plen = z_inflate(z, cbuff, clen, &pbuff);
+		plen = z_inflate(z, cbuff, clen, crypto_box_zerobytes, &pbuff);
 		if (unlikely(plen < 0)) {
 			whine("TCP net inflate error!\n");
 			goto close;

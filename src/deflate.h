@@ -25,8 +25,10 @@ struct z_struct {
 };
 
 extern int z_alloc_or_maybe_die(struct z_struct *z, int z_level);
-extern ssize_t z_deflate(struct z_struct *z, char *src, size_t size, char **dst);
-extern ssize_t z_inflate(struct z_struct *z, char *src, size_t size, char **dst);
+extern ssize_t z_deflate(struct z_struct *z, char *src, size_t size,
+			 size_t off, char **dst);
+extern ssize_t z_inflate(struct z_struct *z, char *src, size_t size,
+			 size_t off, char **dst);
 extern void z_free(void *z);
 extern char *z_get_version(void);
 

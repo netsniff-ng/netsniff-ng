@@ -81,17 +81,22 @@ static void inf_z_buf_expansion_or_die(struct z_struct *z, size_t size)
 }
 
 /* Deflates the buffer with offset crypto_box_zerobytes */ 
-ssize_t z_deflate(struct z_struct *z, char *src, size_t size, char **dst)
+ssize_t z_deflate(struct z_struct *z, char *src, size_t size,
+		  size_t off, char **dst)
 {
 	int ret;
 	size_t todo, done = 0;  
 
 	spinlock_lock(&z->def_lock);
+	if (z->def_z_buf_size <= off) {
+		spinlock_unlock(&z->def_lock);
+		return -ENOMEM;
+	}
 	memset(z->def_z_buf, 0, z->def_z_buf_size);
 	z->def.next_in = (void *) src;
 	z->def.avail_in = size;
-	z->def.next_out = (void *) z->def_z_buf + crypto_box_zerobytes;
-	z->def.avail_out = z->def_z_buf_size - crypto_box_zerobytes;
+	z->def.next_out = (void *) z->def_z_buf + off;
+	z->def.avail_out = z->def_z_buf_size - off;
 
 	for (;;) {
 		todo = z->def.avail_out;
@@ -112,19 +117,24 @@ ssize_t z_deflate(struct z_struct *z, char *src, size_t size, char **dst)
 	*dst = (void *) z->def_z_buf;
 	spinlock_unlock(&z->def_lock);
 
-	return done + crypto_box_zerobytes;
+	return done + off;
 }
 
 /* Inflates the buffer with src - crypto_box_zerobytes */
-ssize_t z_inflate(struct z_struct *z, char *src, size_t size, char **dst)
+ssize_t z_inflate(struct z_struct *z, char *src, size_t size,
+		  size_t off, char **dst)
 {
 	int ret;
 	int todo, done = 0;     
 
 	spinlock_lock(&z->inf_lock);
+	if (size <= off) {
+		spinlock_unlock(&z->def_lock);
+		return -ENOMEM;
+	}
 	memset(z->inf_z_buf, 0, z->inf_z_buf_size);
-	z->inf.next_in = (void *) src + crypto_box_zerobytes;
-	z->inf.avail_in = size - crypto_box_zerobytes;
+	z->inf.next_in = (void *) src + off;
+	z->inf.avail_in = size - off;
 	z->inf.next_out = (void *) z->inf_z_buf;
 	z->inf.avail_out = z->inf_z_buf_size;
 
