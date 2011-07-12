@@ -519,9 +519,11 @@ static void *worker(void *self)
 
 	buff = xmalloc(blen);
 	syslog(LOG_INFO, "curvetun thread on CPU%u up!\n", ws->cpu);
-	pthread_cleanup_push(xfree, buff);
-	pthread_cleanup_push(z_free, ws->z);
+	pthread_cleanup_push(xfree, ws->c);
 	pthread_cleanup_push(curve25519_free, ws->c);
+	pthread_cleanup_push(xfree, ws->z);
+	pthread_cleanup_push(z_free, ws->z);
+	pthread_cleanup_push(xfree, buff);
 
 	while (likely(!sigint)) {
 		poll(&fds, 1, -1);
@@ -548,6 +550,8 @@ static void *worker(void *self)
 	}
 
 	syslog(LOG_INFO, "curvetun thread on CPU%u down!\n", ws->cpu);
+	pthread_cleanup_pop(1);
+	pthread_cleanup_pop(1);
 	pthread_cleanup_pop(1);
 	pthread_cleanup_pop(1);
 	pthread_cleanup_pop(1);
@@ -598,18 +602,14 @@ static void thread_spawn_or_panic(unsigned int cpus, int efd, int refd,
 
 static void thread_finish(unsigned int cpus)
 {
-	int i, ret;
+	int i;
 	unsigned int threads;
-
 	threads = cpus * THREADS_PER_CPU;
 	for (i = 0; i < threads; ++i) {
-		ret = pthread_join(threadpool[i].trid, NULL);
-		if (ret < 0)
-			continue;
+		while (pthread_join(threadpool[i].trid, NULL) < 0)
+			;
 		close(threadpool[i].efd[0]);
 		close(threadpool[i].efd[1]);
-		xfree(threadpool[i].z);
-		xfree(threadpool[i].c);
 	}
 }
 
