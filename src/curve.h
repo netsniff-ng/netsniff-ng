@@ -31,7 +31,7 @@ struct taia {
 
 /* Delay tolerance for packets! */
 static struct taia tolerance_taia = {
-	.sec.x = 1ULL,
+	.sec.x = 1,
 	.nano = 500000000ULL,
 	.atto = 0,
 };
