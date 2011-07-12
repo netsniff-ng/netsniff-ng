@@ -441,8 +441,10 @@ int try_register_user_by_socket(struct curve25519_struct *c,
 			       elem->username, sock);
 			ret = register_user_by_socket(sock, &elem->proto_inf);
 			break;
-		} else if (err == USERNAMES_TS)
+		} else if (err == USERNAMES_TS) {
+			syslog(LOG_ERR, "Bad packet time! Dropping connection!\n");
 			break;
+		}
 		elem = elem->next;
 	}
 	rwlock_unlock(&store_lock);
