@@ -27,6 +27,13 @@ struct taia {
 	uint32_t atto;  /* 0...999999999 */
 };
 
+/* Delay tolerance for packets! */
+static struct taia tolerance_taia = {
+	.sec.x = 0,
+	.nano = 250000000ULL,
+	.atto = 0,
+};
+
 #define crypto_box_zerobytes    crypto_box_curve25519xsalsa20poly1305_ZEROBYTES
 #define crypto_box_boxzerobytes crypto_box_curve25519xsalsa20poly1305_BOXZEROBYTES
 
@@ -38,8 +45,6 @@ struct curve25519_proto {
 	unsigned char enonce[crypto_box_noncebytes] __aligned_16;
 	unsigned char dnonce[crypto_box_noncebytes] __aligned_16;
 	unsigned char key[crypto_box_noncebytes] __aligned_16;
-	struct taia dtaip;
-	struct taia dtaie;
 };
 
 /* Per thread */
@@ -198,6 +203,27 @@ static inline int taia_less(const struct taia *t, const struct taia *u)
 	if (t->nano > u->nano)
 		return 0;
 	return t->atto < u->atto;
+}
+
+static inline int is_good_taia(struct taia *arrival_taia,
+			       struct taia *packet_taia)
+{
+	int is_ts_good = 0;
+	struct taia sub_res;
+	if (taia_less(arrival_taia, packet_taia)) {
+		taia_sub(&sub_res, packet_taia, arrival_taia);
+		if (taia_less(&sub_res, &tolerance_taia))
+			is_ts_good = 1;
+		else
+			is_ts_good = 0;
+	} else {
+		taia_sub(&sub_res, arrival_taia, packet_taia);
+		if (taia_less(&sub_res, &tolerance_taia))
+			is_ts_good = 1;
+		else
+			is_ts_good = 0;
+	}
+	return is_ts_good;
 }
 
 #endif /* CURVE_H */

@@ -240,6 +240,7 @@ ssize_t curve25519_encode(struct curve25519_struct *c, struct curve25519_proto *
 {
 	int ret;
 	ssize_t done = size;
+	struct taia packet_taia;
 
 	spinlock_lock(&c->enc_lock);
 	if (unlikely(size > c->enc_buf_size)) {
@@ -247,8 +248,8 @@ ssize_t curve25519_encode(struct curve25519_struct *c, struct curve25519_proto *
 		return -ENOMEM;
 	}
 
-	taia_now(&p->dtaie);
-	taia_pack(p->enonce + NONCE_OFFSET, &p->dtaie);
+	taia_now(&packet_taia);
+	taia_pack(p->enonce + NONCE_OFFSET, &packet_taia);
 
 	memset(c->enc_buf, 0, c->enc_buf_size);
 	ret = crypto_box_afternm(c->enc_buf, plaintext, size,
@@ -276,7 +277,7 @@ ssize_t curve25519_decode(struct curve25519_struct *c, struct curve25519_proto *
 {
 	int ret;
 	ssize_t done = size;
-	struct taia dtaic;
+	struct taia packet_taia, arrival_taia;
 
 	spinlock_lock(&c->dec_lock);
 	if (unlikely(size > c->dec_buf_size)) {
@@ -288,11 +289,10 @@ ssize_t curve25519_decode(struct curve25519_struct *c, struct curve25519_proto *
 		return 0;
 	}
 
-	memset(&dtaic, 0, sizeof(dtaic));
-	taia_unpack(chipertext + crypto_box_boxzerobytes - NONCE_LENGTH, &dtaic);
-	if (dtaic.sec.x <= p->dtaip.sec.x &&
-	    dtaic.nano  <= p->dtaip.nano &&
-	    dtaic.atto  <= p->dtaip.atto) {
+	taia_now(&arrival_taia);
+	taia_unpack(chipertext + crypto_box_boxzerobytes - NONCE_LENGTH,
+		    &packet_taia);
+        if (is_good_taia(&arrival_taia, &packet_taia) == 0) {
 		/* Ignoring packet */
 		spinlock_unlock(&c->dec_lock);
 		syslog(LOG_ERR, "Bad packet time! Dropping connection!\n");
@@ -310,7 +310,6 @@ ssize_t curve25519_decode(struct curve25519_struct *c, struct curve25519_proto *
 		return -EIO;
 	}
 
-	memcpy(&p->dtaip, &dtaic, sizeof(dtaic));
 	(*plaintext) = c->dec_buf;
 	spinlock_unlock(&c->dec_lock);
 

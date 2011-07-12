@@ -333,12 +333,6 @@ int username_msg(char *username, size_t len, char *dst, size_t dlen)
 	return 0;
 }
 
-static struct taia tolerance_taia = {
-	.sec.x = 0,
-	.nano = 250000000ULL,
-	.atto = 0,
-};
-
 enum is_user_enum username_msg_is_user(char *src, size_t slen, char *username,
 				       size_t len, struct taia *arrival_taia)
 {
@@ -348,7 +342,7 @@ enum is_user_enum username_msg_is_user(char *src, size_t slen, char *username,
 	size_t uname_len;
 	uint32_t salt;
 	struct username_struct *us = (struct username_struct *) src;
-	struct taia ts, sub_res;
+	struct taia packet_taia;
 	unsigned char h[crypto_hash_sha512_BYTES];
 
 	if (slen < sizeof(struct username_struct)) {
@@ -371,21 +365,8 @@ enum is_user_enum username_msg_is_user(char *src, size_t slen, char *username,
 	else
 		not_same = 1;
 
-	taia_unpack(us->taia, &ts);
-	if (taia_less(arrival_taia, &ts)) {
-		taia_sub(&sub_res, &ts, arrival_taia);
-		if (taia_less(&sub_res, &tolerance_taia))
-			is_ts_good = 1;
-		else
-			is_ts_good = 0;
-	} else {
-		taia_sub(&sub_res, arrival_taia, &ts);
-		if (taia_less(&sub_res, &tolerance_taia))
-			is_ts_good = 1;
-		else
-			is_ts_good = 0;
-	}
-
+	taia_unpack(us->taia, &packet_taia);
+	is_ts_good = is_good_taia(arrival_taia, &packet_taia);
 	if (!not_same && is_ts_good)
 		ret = USERNAMES_OK;
 	else if (!not_same && !is_ts_good)
@@ -451,12 +432,6 @@ int try_register_user_by_socket(struct curve25519_struct *c,
 	elem = store;
 	taia_now(&arrival_tai);
 	while (elem) {
-//		clen = curve25519_decode(c, &elem->proto_inf,
-//					 (unsigned char *) src,
-//					 slen, &cbuff);
-//		printf("clen: %d\n", clen);
-//		if (clen <= 0)
-//			goto next;
 		err = username_msg_is_user((char *) src, slen,
 					   elem->username,
 					   strlen(elem->username) + 1,
@@ -465,8 +440,6 @@ int try_register_user_by_socket(struct curve25519_struct *c,
 			syslog(LOG_INFO, "Found user %s for id %d!\n",
 			       elem->username, sock);
 			ret = register_user_by_socket(sock, &elem->proto_inf);
-			taia_now(&elem->proto_inf.dtaip);
-			elem->proto_inf.dtaip.sec.x -= 10;
 			break;
 		} else if (err == USERNAMES_TS)
 			break;
@@ -491,12 +464,6 @@ int try_register_user_by_sockaddr(struct curve25519_struct *c,
 	elem = store;
 	taia_now(&arrival_tai);
 	while (elem) {
-//		clen = curve25519_decode(c, &elem->proto_inf,
-//					 (unsigned char *) src,
-//					 slen, &cbuff);
-//		printf("clen: %d\n", clen);
-//		if (clen <= 0)
-//			goto next;
 		err = username_msg_is_user((char *) src, slen,
 					   elem->username,
 					   strlen(elem->username) + 1,
