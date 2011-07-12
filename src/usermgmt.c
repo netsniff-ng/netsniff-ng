@@ -465,6 +465,8 @@ int try_register_user_by_socket(struct curve25519_struct *c,
 			syslog(LOG_INFO, "Found user %s for id %d!\n",
 			       elem->username, sock);
 			ret = register_user_by_socket(sock, &elem->proto_inf);
+			taia_now(&elem->proto_inf.dtaip);
+			elem->proto_inf.dtaip.sec.x -= 10;
 			break;
 		} else if (err == USERNAMES_TS)
 			break;
