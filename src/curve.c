@@ -265,8 +265,8 @@ ssize_t curve25519_encode(struct curve25519_struct *c, struct curve25519_proto *
 
 	memcpy(c->enc_buf + crypto_box_boxzerobytes - NONCE_LENGTH,
 	       p->enonce + NONCE_OFFSET, NONCE_LENGTH);
-	for (i = 0; i < (crypto_box_boxzerobytes - NONCE_LENGTH); ++i)
-		c->enc_buf[i] = mt_rand_int32() & 0xFF;
+	for (i = 0; i < crypto_box_boxzerobytes - NONCE_LENGTH; ++i)
+		c->enc_buf[i] = (uint8_t) mt_rand_int32();
 
 	(*chipertext) = c->enc_buf;
 	spinlock_unlock(&c->enc_lock);
@@ -318,7 +318,6 @@ ssize_t curve25519_decode(struct curve25519_struct *c, struct curve25519_proto *
 
 	(*plaintext) = c->dec_buf;
 	spinlock_unlock(&c->dec_lock);
-
 	return done;
 }
 
