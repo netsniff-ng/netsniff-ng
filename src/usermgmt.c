@@ -504,12 +504,16 @@ int try_register_user_by_sockaddr(struct curve25519_struct *c,
 			ret = register_user_by_sockaddr(sa, sa_len,
 							&elem->proto_inf);
 			break;
-		} else if (err == USERNAMES_TS)
+		} else if (err == USERNAMES_TS) {
+			syslog(LOG_ERR, "Bad packet time! Dropping connection!\n");
 			break;
+		}
 		elem = elem->next;
 	}
 	rwlock_unlock(&store_lock);
 
+	if (ret == -1)
+		syslog(LOG_ERR, "User not found! Dropping connection!\n");
 	return ret;
 }
 

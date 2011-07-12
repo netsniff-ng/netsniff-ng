@@ -218,12 +218,8 @@ close:
 			err = try_register_user_by_sockaddr(ws->c, buff + sizeof(struct ct_proto),
 							    rlen - sizeof(struct ct_proto),
 							    &naddr, nlen);
-			if (unlikely(err)) {
-				syslog(LOG_ERR, "CPU%u: User not found! "
-				       "Dropping connection!\n", ws->cpu);
+			if (unlikely(err))
 				goto close;
-			}
-
 			goto next;
 		}
 
@@ -439,12 +435,8 @@ close:
 			err = try_register_user_by_socket(ws->c, buff + sizeof(struct ct_proto),
 							  rlen - sizeof(struct ct_proto),
 							  fd);
-			if (unlikely(err)) {
-				syslog(LOG_ERR, "CPU%u: User not found! "
-				       "Dropping connection!\n", ws->cpu);
+			if (unlikely(err))
 				goto close;
-			}
-
 			continue;
 		}
 
