@@ -27,6 +27,9 @@ struct taia {
 	uint32_t atto;  /* 0...999999999 */
 };
 
+#define crypto_box_zerobytes    crypto_box_curve25519xsalsa20poly1305_ZEROBYTES
+#define crypto_box_boxzerobytes crypto_box_curve25519xsalsa20poly1305_BOXZEROBYTES
+
 #define crypto_box_noncebytes crypto_box_curve25519xsalsa20poly1305_NONCEBYTES
 #define crypto_box_beforenmbytes crypto_box_curve25519xsalsa20poly1305_BEFORENMBYTES
 
@@ -46,8 +49,8 @@ struct curve25519_struct {
 	unsigned char *enc_buf;
 	struct spinlock enc_lock;
 	/* Decode buffer */
-	unsigned char *dec_buf;
 	size_t dec_buf_size;
+	unsigned char *dec_buf;
 	struct spinlock dec_lock;
 };
 

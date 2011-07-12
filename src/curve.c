@@ -30,9 +30,6 @@
 #define crypto_box_afternm 	crypto_box_curve25519xsalsa20poly1305_afternm
 #define crypto_box_open_afternm	crypto_box_curve25519xsalsa20poly1305_open_afternm
 
-#define crypto_box_zerobytes	crypto_box_curve25519xsalsa20poly1305_ZEROBYTES
-#define crypto_box_boxzerobytes	crypto_box_curve25519xsalsa20poly1305_BOXZEROBYTES
-
 #define NONCE_LENGTH	16	/* size of taia */
 #define NONCE_OFFSET	(crypto_box_curve25519xsalsa20poly1305_NONCEBYTES - NONCE_LENGTH)
 
@@ -229,16 +226,14 @@ int curve25519_proto_init(struct curve25519_proto *p, unsigned char *pubkey_remo
 	memset(p->enonce, 0, sizeof(p->enonce));
 	memset(p->dnonce, 0, sizeof(p->dnonce));
 
-	p->enonce[NONCE_OFFSET - 1] = server ? 1 : 0;
-	p->dnonce[NONCE_OFFSET - 1] = p->enonce[NONCE_OFFSET - 1] ? 0 : 1;
-
-	/* Window for the very first packet */
-	taia_now(&p->dtaip);
-	// TODO
-
+	// TODO: taia, nonce
 	return 0;
 }
 
+/*
+ * plaintext has beginning of crypto_box_zerobytes zeros,
+ * size == crypto_box_zerobytes + len plaintext
+ */
 ssize_t curve25519_encode(struct curve25519_struct *c, struct curve25519_proto *p,
 			  unsigned char *plaintext, size_t size,
 			  unsigned char **chipertext)
@@ -247,29 +242,27 @@ ssize_t curve25519_encode(struct curve25519_struct *c, struct curve25519_proto *
 	ssize_t done = size;
 
 	spinlock_lock(&c->enc_lock);
-	if (unlikely(size + crypto_box_zerobytes > c->enc_buf_size)) {
+	if (unlikely(size > c->enc_buf_size)) {
 		spinlock_unlock(&c->enc_lock);
 		return -ENOMEM;
 	}
 
-	taia_now(&p->dtaie);
-	taia_pack(p->enonce + NONCE_OFFSET, &p->dtaie);
+//	taia_now(&p->dtaie);
+//	taia_pack(p->enonce + NONCE_OFFSET, &p->dtaie);
 
 	memset(c->enc_buf, 0, c->enc_buf_size);
-
-	ret = crypto_box_afternm(c->enc_buf, plaintext,
-				 size + crypto_box_zerobytes,
+	ret = crypto_box_afternm(c->enc_buf, plaintext, size,
 				 p->enonce, p->key);
 	if (unlikely(ret)) {
 		spinlock_unlock(&c->enc_lock);
 		return -EIO;
 	}
 
-	memcpy(c->enc_buf + crypto_box_boxzerobytes - NONCE_LENGTH,
-	       p->enonce + NONCE_OFFSET, NONCE_LENGTH);
-
-	done += crypto_box_boxzerobytes;
-	done += NONCE_LENGTH;
+//	memcpy(c->enc_buf + crypto_box_boxzerobytes - NONCE_LENGTH,
+//	       p->enonce + NONCE_OFFSET, NONCE_LENGTH);
+//
+//	done += crypto_box_boxzerobytes;
+//	done += NONCE_LENGTH;
 
 	(*chipertext) = c->enc_buf;
 	spinlock_unlock(&c->enc_lock);
@@ -277,6 +270,10 @@ ssize_t curve25519_encode(struct curve25519_struct *c, struct curve25519_proto *
 	return done;
 }
 
+/*
+ * ciphertext has beginning of crypto_box_zerobytes zeros,
+ * size == crypto_box_zerobytes + len plaintext
+ */
 ssize_t curve25519_decode(struct curve25519_struct *c, struct curve25519_proto *p,
 			  unsigned char *chipertext, size_t size,
 			  unsigned char **plaintext)
@@ -286,44 +283,42 @@ ssize_t curve25519_decode(struct curve25519_struct *c, struct curve25519_proto *
 	struct taia dtaic;
 
 	spinlock_lock(&c->dec_lock);
-	if (unlikely(size + crypto_box_zerobytes > c->dec_buf_size)) {
+	if (unlikely(size > c->dec_buf_size)) {
 		spinlock_unlock(&c->dec_lock);
 		return -ENOMEM;
 	}
-	if (unlikely(size < crypto_box_boxzerobytes + NONCE_LENGTH)) {
-		spinlock_unlock(&c->dec_lock);
-		return 0;
-	}
-
-	done -= NONCE_LENGTH;
-	done -= crypto_box_boxzerobytes;
-
-	memset(&dtaic, 0, sizeof(dtaic));
-	taia_unpack(chipertext + crypto_box_boxzerobytes - NONCE_LENGTH, &dtaic);
-
-	if (dtaic.sec.x <= p->dtaip.sec.x &&
-	    dtaic.nano  <= p->dtaip.nano &&
-	    dtaic.atto  <= p->dtaip.atto) {
-		/* Ignoring packet */
-		spinlock_unlock(&c->dec_lock);
-		return 0;
-	}
-
-	memcpy(p->dnonce + NONCE_OFFSET,
-	       chipertext + crypto_box_boxzerobytes - NONCE_LENGTH,
-	       NONCE_LENGTH);
+//	if (unlikely(size < crypto_box_boxzerobytes + NONCE_LENGTH)) {
+//		spinlock_unlock(&c->dec_lock);
+//		return 0;
+//	}
+//
+//	done -= NONCE_LENGTH;
+//	done -= crypto_box_boxzerobytes;
+//
+//	memset(&dtaic, 0, sizeof(dtaic));
+//	taia_unpack(chipertext + crypto_box_boxzerobytes - NONCE_LENGTH, &dtaic);
+//
+//	if (dtaic.sec.x <= p->dtaip.sec.x &&
+//	    dtaic.nano  <= p->dtaip.nano &&
+//	    dtaic.atto  <= p->dtaip.atto) {
+//		/* Ignoring packet */
+//		spinlock_unlock(&c->dec_lock);
+//		return 0;
+//	}
+//
+//	memcpy(p->dnonce + NONCE_OFFSET,
+//	       chipertext + crypto_box_boxzerobytes - NONCE_LENGTH,
+//	       NONCE_LENGTH);
 
 	memset(c->dec_buf, 0, c->dec_buf_size);
-
-	ret = crypto_box_open_afternm(c->dec_buf, chipertext,
-				      size + crypto_box_zerobytes,
+	ret = crypto_box_open_afternm(c->dec_buf, chipertext, size,
 				      p->dnonce, p->key);
 	if (unlikely(ret)) {
 		spinlock_unlock(&c->enc_lock);
 		return -EIO;
 	}
 
-	memcpy(&p->dtaip, &dtaic, sizeof(dtaic));
+//	memcpy(&p->dtaip, &dtaic, sizeof(dtaic));
 
 	(*plaintext) = c->dec_buf;
 	spinlock_unlock(&c->dec_lock);
