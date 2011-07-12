@@ -12,7 +12,9 @@
 #include <sys/time.h>
 
 #include "locking.h"
+#include "mtrand.h"
 #include "compiler.h"
+#include "randombytes.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"
 
 /* Some parts derived from public domain code from curveprotect project */
@@ -29,7 +31,7 @@ struct taia {
 
 /* Delay tolerance for packets! */
 static struct taia tolerance_taia = {
-	.sec.x = 0,
+	.sec.x = 1,
 	.nano = 250000000ULL,
 	.atto = 0,
 };
@@ -146,7 +148,7 @@ static inline void taia_now(struct taia *t)
 	gettimeofday(&now, NULL);
 	tai_unix(&t->sec, now.tv_sec);
 	t->nano = 1000 * now.tv_usec + 500;
-	t->atto++;
+	t->atto = mt_rand_int32();
 }
 
 /* XXX: breaks tai encapsulation */

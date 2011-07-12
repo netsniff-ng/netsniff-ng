@@ -19,8 +19,10 @@
 #include "xmalloc.h"
 #include "curve.h"
 #include "die.h"
+#include "mtrand.h"
 #include "curvetun.h"
 #include "locking.h"
+#include "randombytes.h"
 #include "crypto_verify_32.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"
 #include "crypto_scalarmult_curve25519.h"
@@ -173,6 +175,8 @@ int curve25519_alloc_or_maybe_die(struct curve25519_struct *c)
 	spinlock_init(&c->enc_lock);
 	spinlock_init(&c->dec_lock);
 
+	mt_init_by_seed_rand_array();
+
 	return 0;
 }
 
@@ -238,7 +242,7 @@ ssize_t curve25519_encode(struct curve25519_struct *c, struct curve25519_proto *
 			  unsigned char *plaintext, size_t size,
 			  unsigned char **chipertext)
 {
-	int ret;
+	int ret, i;
 	ssize_t done = size;
 	struct taia packet_taia;
 
@@ -261,6 +265,8 @@ ssize_t curve25519_encode(struct curve25519_struct *c, struct curve25519_proto *
 
 	memcpy(c->enc_buf + crypto_box_boxzerobytes - NONCE_LENGTH,
 	       p->enonce + NONCE_OFFSET, NONCE_LENGTH);
+	for (i = 0; i < (crypto_box_boxzerobytes - NONCE_LENGTH); ++i)
+		c->enc_buf[i] = mt_rand_int32() & 0xFF;
 
 	(*chipertext) = c->enc_buf;
 	spinlock_unlock(&c->enc_lock);

@@ -98,7 +98,6 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 		memset(&naddr, 0, sizeof(naddr));
 
 		hdr = (struct ct_proto *) buff;
-		hdr->canary = htons(CANARY);
 		hdr->flags = 0;
 
 		trie_addr_lookup(buff + sizeof(struct ct_proto), rlen,
@@ -169,7 +168,6 @@ static void handler_udp_notify_close(int fd, struct sockaddr_storage *addr,
 	memset(&hdr, 0, sizeof(hdr));
 	hdr.flags |= PROTO_FLAG_EXIT;
 	hdr.payload = 0;
-	hdr.canary = htons(CANARY);
 
 	err = sendto(fd, &hdr, sizeof(hdr), 0, (struct sockaddr *) addr, len);
 }
@@ -197,8 +195,6 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 		if (unlikely(rlen < sizeof(struct ct_proto)))
 			goto close;
 		if (unlikely(rlen - sizeof(*hdr) != ntohs(hdr->payload)))
-			goto close;
-		if (unlikely(ntohs(hdr->canary) != CANARY))
 			goto close;
 		if (unlikely(ntohs(hdr->payload) == 0))
 			goto close;
@@ -299,7 +295,6 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 		p = NULL;
 
 		hdr = (struct ct_proto *) buff;
-		hdr->canary = htons(CANARY);
 		hdr->flags = 0;
 
 		trie_addr_lookup(buff + sizeof(struct ct_proto), rlen,
@@ -389,7 +384,6 @@ static void handler_tcp_notify_close(int fd)
 	memset(&hdr, 0, sizeof(hdr));
 	hdr.flags |= PROTO_FLAG_EXIT;
 	hdr.payload = 0;
-	hdr.canary = htons(CANARY);
 
 	err = write(fd, &hdr, sizeof(hdr));
 }
@@ -411,8 +405,6 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 		if (unlikely(rlen < sizeof(struct ct_proto)))
 			goto close;
 		if (unlikely(rlen - sizeof(*hdr) != ntohs(hdr->payload)))
-			goto close;
-		if (unlikely(ntohs(hdr->canary) != CANARY))
 			goto close;
 		if (unlikely(ntohs(hdr->payload) == 0))
 			goto close;

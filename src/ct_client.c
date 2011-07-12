@@ -52,7 +52,6 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 			    len - sizeof(struct ct_proto))) > 0) {
 
 		hdr = (struct ct_proto *) buff;
-		hdr->canary = htons(CANARY);
 		hdr->flags = 0;
 
 		plen = z_deflate(z, buff + sizeof(struct ct_proto), rlen,
@@ -115,8 +114,6 @@ static void handler_udp_net_to_tun(int sfd, int dfd, struct z_struct *z,
 			goto close;
 		if (unlikely(rlen - sizeof(*hdr) != ntohs(hdr->payload)))
 			goto close;
-		if (unlikely(ntohs(hdr->canary) != CANARY))
-			goto close;
 		if (unlikely(ntohs(hdr->payload) == 0))
 			goto close;
 		if (hdr->flags & PROTO_FLAG_EXIT)
@@ -163,7 +160,6 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 			    len - sizeof(struct ct_proto))) > 0) {
 
 		hdr = (struct ct_proto *) buff;
-		hdr->canary = htons(CANARY);
 		hdr->flags = 0;
 
 		plen = z_deflate(z, buff + sizeof(struct ct_proto), rlen,
@@ -222,8 +218,6 @@ static void handler_tcp_net_to_tun(int sfd, int dfd, struct z_struct *z,
 			goto close;
 		if (unlikely(rlen - sizeof(*hdr) != ntohs(hdr->payload)))
 			goto close;
-		if (unlikely(ntohs(hdr->canary) != CANARY))
-			goto close;
 		if (unlikely(ntohs(hdr->payload) == 0))
 			goto close;
 		if (hdr->flags & PROTO_FLAG_EXIT)
@@ -260,14 +254,12 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 {
 	int state, fd2;
 	ssize_t err;
-//	size_t clen;
 	struct ct_proto hdr;
 	struct username_struct us;
-	char username[256], path[512];//, *cbuff;
+	char username[256], path[512];
 
 	memset(&hdr, 0, sizeof(hdr));
 	hdr.flags |= PROTO_FLAG_INIT;
-	hdr.canary = htons(CANARY);
 
 	memset(path, 0, sizeof(path));
 	snprintf(path, sizeof(path), "%s/%s", home, FILE_USERNAM);
@@ -283,12 +275,6 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 			   (char *) &us, sizeof(us));
 	if (unlikely(err))
 		panic("Cannot create init message!\n");
-//	clen = curve25519_encode(c, p, (unsigned char *) &us, sizeof(us),
-//				 (unsigned char **) &cbuff);
-//	if (unlikely(clen <= 0))
-//		panic("Init encrypt error!\n");
-//
-//	hdr.payload = htons((uint16_t) clen);
 	hdr.payload = htons((uint16_t) sizeof(us));
 
 	state = 1;
@@ -299,7 +285,6 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 	if (unlikely(err < 0))
 		perror("Error writing init data to net");
 
-//	err = write_exact(fd, cbuff, clen, 0);
 	err = write_exact(fd, &us, sizeof(us), 0);
 	if (unlikely(err < 0))
 		perror("Error writing init data to net");
@@ -317,7 +302,6 @@ static void notify_close(int fd)
 	memset(&hdr, 0, sizeof(hdr));
 	hdr.flags |= PROTO_FLAG_EXIT;
 	hdr.payload = 0;
-	hdr.canary = htons(CANARY);
 
 	err = write_exact(fd, &hdr, sizeof(hdr), 0);
 	if (unlikely(err < 0))
