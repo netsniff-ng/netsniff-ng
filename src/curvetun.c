@@ -152,7 +152,7 @@ static void help(void)
 	printf("\n");
 	printf("Note:\n");
 	printf("  There is no default port specified, so that you are forced\n");
-	printf("  to select your own!\n");
+	printf("  to select your own! For status messages see syslog!\n");
 	printf("\n");
 	printf("Secret ingredient: 7647-14-5\n");
 	printf("\n");
