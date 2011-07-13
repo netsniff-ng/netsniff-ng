@@ -57,7 +57,7 @@ enum working_mode {
 
 sig_atomic_t sigint = 0;
 
-static const char *short_options = "kxc::svhp:t:d:uCS46";
+static const char *short_options = "kxc::svhp:t:d:uCS46H";
 
 static struct option long_options[] = {
 	{"client", optional_argument, 0, 'c'},
@@ -149,8 +149,8 @@ static void help(void)
 	printf("  ... and are synced to an ntpd!\n");
 	printf("\n");
 	printf("Note:\n");
-	printf("  There is no default port specified, so that users are forced\n");
-	printf("  to select their own!\n");
+	printf("  There is no default port specified, so that you are forced\n");
+	printf("  to select your own!\n");
 	printf("\n");
 	printf("Secret ingredient: 7647-14-5\n");
 	printf("\n");
@@ -173,6 +173,24 @@ static void version(void)
 	printf("License: GNU GPL version 2\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
+
+	die();
+}
+
+static void towel(void)
+{
+	printf("                \\:.   /                 _.-----._\n");
+	printf("                 `---'          \\)|)_ ,'         `. _))|)\n");
+	printf("        |                        );-'/             \\`-:(\n");
+	printf("      -(o)-            .        //  :               :  \\\\   .\n");
+	printf("    .   |                      //_,'; ,.         ,. |___\\\\\n");
+	printf("           .                   `---':(  `-.___.-'  );----'\n");
+	printf("                                     \\`. `'-'-'' ,'/\n");
+	printf("                                      `.`-.,-.-.','\n");
+	printf("   DON'T FORGET TO APPEND               ``---\\` :\n");
+	printf("    YOUR TOWEL INTO THE         *             `.'       *\n");
+	printf("          PAYLOAD                         .        .\n\n");
+	printf("                                      (by Sebastian Stoecker)\n");
 
 	die();
 }
@@ -506,6 +524,9 @@ int main(int argc, char **argv)
 		switch (c) {
 		case 'h':
 			help();
+			break;
+		case 'H':
+			towel();
 			break;
 		case 'v':
 			version();
