@@ -12,6 +12,7 @@
 #include "locking.h"
 
 struct z_struct {
+	size_t off;
 	/* Inflate buffer */
 	z_stream inf;
 	unsigned char *inf_z_buf;
@@ -24,11 +25,9 @@ struct z_struct {
 	struct spinlock def_lock;
 };
 
-extern int z_alloc_or_maybe_die(struct z_struct *z, int z_level);
-extern ssize_t z_deflate(struct z_struct *z, char *src, size_t size,
-			 size_t off, char **dst);
-extern ssize_t z_inflate(struct z_struct *z, char *src, size_t size,
-			 size_t off, char **dst);
+extern int z_alloc_or_maybe_die(struct z_struct *z, int z_level, size_t off);
+extern ssize_t z_deflate(struct z_struct *z, char *src, size_t size, char **dst);
+extern ssize_t z_inflate(struct z_struct *z, char *src, size_t size, char **dst);
 extern void z_free(void *z);
 extern char *z_get_version(void);
 

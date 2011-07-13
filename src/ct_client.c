@@ -47,20 +47,20 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 	char *pbuff, *cbuff;
 	ssize_t rlen, err, plen, clen;
 	struct ct_proto *hdr;
+	size_t off = sizeof(struct ct_proto) + crypto_box_zerobytes;
 
 	errno = 0;
-	while ((rlen = read(sfd, buff + sizeof(struct ct_proto),
-			    len - sizeof(struct ct_proto))) > 0) {
-
+	while ((rlen = read(sfd, buff + off, len - off)) > 0) {
 		hdr = (struct ct_proto *) buff;
 		hdr->flags = 0;
 
-		plen = z_deflate(z, buff + sizeof(struct ct_proto), rlen,
-				 crypto_box_zerobytes, &pbuff);
+		plen = z_deflate(z, buff + off, rlen, &pbuff);
 		if (unlikely(plen < 0)) {
 			syslog(LOG_ERR, "UDP tunnel deflate error!\n");
 			goto close;
 		}
+		pbuff -= crypto_box_zerobytes;
+		plen += crypto_box_zerobytes;
 		clen = curve25519_encode(c, p, (unsigned char *) pbuff, plen,
 					 (unsigned char **) &cbuff);
 		if (unlikely(clen <= 0)) {
@@ -130,8 +130,9 @@ static void handler_udp_net_to_tun(int sfd, int dfd, struct z_struct *z,
 			syslog(LOG_ERR, "UDP net decrypt error!\n");
 			goto close;
 		}
-		plen = z_inflate(z, cbuff + crypto_box_zerobytes,
-				 clen - crypto_box_zerobytes, 0, &pbuff);
+                cbuff += crypto_box_zerobytes;
+                clen -= crypto_box_zerobytes;
+		plen = z_inflate(z, cbuff, clen, &pbuff);
 		if (unlikely(plen < 0)) {
 			syslog(LOG_ERR, "UDP net inflate error!\n");
 			goto close;
@@ -159,20 +160,20 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 	char *pbuff, *cbuff;
 	ssize_t rlen, err, plen, clen;
 	struct ct_proto *hdr;
+	size_t off = sizeof(struct ct_proto) + crypto_box_zerobytes;
 
 	errno = 0;
-	while ((rlen = read(sfd, buff + sizeof(struct ct_proto),
-			    len - sizeof(struct ct_proto))) > 0) {
-
+	while ((rlen = read(sfd, buff + off, len - off)) > 0) {
 		hdr = (struct ct_proto *) buff;
 		hdr->flags = 0;
 
-		plen = z_deflate(z, buff + sizeof(struct ct_proto), rlen,
-				 crypto_box_zerobytes, &pbuff);
+		plen = z_deflate(z, buff + off, rlen, &pbuff);
 		if (unlikely(plen < 0)) {
 			syslog(LOG_ERR, "TCP tunnel deflate error!\n");
 			goto close;
 		}
+		pbuff -= crypto_box_zerobytes;
+		plen += crypto_box_zerobytes;
 		clen = curve25519_encode(c, p, (unsigned char *) pbuff, plen,
 					 (unsigned char **) &cbuff);
 		if (unlikely(clen <= 0)) {
@@ -238,8 +239,9 @@ static void handler_tcp_net_to_tun(int sfd, int dfd, struct z_struct *z,
 			syslog(LOG_ERR, "TCP net decrypt error!\n");
 			goto close;
 		}
-		plen = z_inflate(z, cbuff + crypto_box_zerobytes,
-				 clen - crypto_box_zerobytes, 0, &pbuff);
+		cbuff += crypto_box_zerobytes;
+		clen -= crypto_box_zerobytes;
+		plen = z_inflate(z, cbuff, clen, &pbuff);
 		if (unlikely(plen < 0)) {
 			syslog(LOG_ERR, "TCP net inflate error!\n");
 			goto close;
@@ -337,7 +339,7 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 	syslog(LOG_INFO, "curvetun client booting!\n");
 
 	z = xmalloc(sizeof(struct z_struct));
-	ret = z_alloc_or_maybe_die(z, Z_DEFAULT_COMPRESSION);
+	ret = z_alloc_or_maybe_die(z, Z_DEFAULT_COMPRESSION, crypto_box_zerobytes);
 	if (ret < 0)
 		syslog_panic("Cannot init zLib!\n");
 

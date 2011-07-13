@@ -18,31 +18,41 @@
 #include "locking.h"
 #include "curvetun.h"
 
-int z_alloc_or_maybe_die(struct z_struct *z, int z_level)
+int z_alloc_or_maybe_die(struct z_struct *z, int z_level, size_t off)
 {
 	int ret;
 	if (!z)
 		return -EINVAL;
 	if (z_level < -1 || z_level > 9)
 		return -EINVAL;
+	z->off = off;
+
 	z->def.zalloc = Z_NULL;
 	z->def.zfree  = Z_NULL;
 	z->def.opaque = Z_NULL;
 	z->inf.zalloc = Z_NULL;
 	z->inf.zfree  = Z_NULL;
 	z->inf.opaque = Z_NULL;
-	z->inf_z_buf_size = TUNBUFF_SIZ;
-	z->def_z_buf_size = TUNBUFF_SIZ;
+
+	z->inf_z_buf_size = TUNBUFF_SIZ + z->off;
+	z->def_z_buf_size = TUNBUFF_SIZ + z->off;
+
 	ret = deflateInit(&z->def, 0);//z_level);
 	if (ret != Z_OK)
 		panic("Can't initialize zLibs compressor!\n");
+
 	ret = inflateInit(&z->inf);
 	if (ret != Z_OK)
 		panic("Can't initialize zLibs decompressor!\n");
+
 	z->inf_z_buf = xmalloc_aligned(z->inf_z_buf_size, 16);
 	z->def_z_buf = xmalloc_aligned(z->def_z_buf_size, 16);
+	z->inf_z_buf += z->off;
+	z->def_z_buf += z->off;
+
 	spinlock_init(&z->inf_lock);
 	spinlock_init(&z->def_lock);
+
 	return 0;
 }
 
@@ -51,10 +61,13 @@ void z_free(void *vz)
 	struct z_struct *z = vz;
 	if (!z)
 		return;
+
 	deflateEnd(&z->def);
 	inflateEnd(&z->inf);
-	xfree(z->inf_z_buf);
-	xfree(z->def_z_buf);
+
+	xfree(z->inf_z_buf - z->off);
+	xfree(z->def_z_buf - z->off);
+
 	spinlock_destroy(&z->inf_lock);
 	spinlock_destroy(&z->def_lock);
 }
@@ -82,21 +95,17 @@ static void inf_z_buf_expansion_or_die(struct z_struct *z, size_t size)
 
 /* Deflates the buffer with offset crypto_box_zerobytes */ 
 ssize_t z_deflate(struct z_struct *z, char *src, size_t size,
-		  size_t off, char **dst)
+		  char **dst)
 {
 	int ret;
 	size_t todo, done = 0;  
 
 	spinlock_lock(&z->def_lock);
-	if (z->def_z_buf_size <= off) {
-		spinlock_unlock(&z->def_lock);
-		return -ENOMEM;
-	}
 	memset(z->def_z_buf, 0, z->def_z_buf_size);
 	z->def.next_in = (void *) src;
 	z->def.avail_in = size;
-	z->def.next_out = (void *) z->def_z_buf + off;
-	z->def.avail_out = z->def_z_buf_size - off;
+	z->def.next_out = (void *) z->def_z_buf;
+	z->def.avail_out = z->def_z_buf_size;
 
 	for (;;) {
 		todo = z->def.avail_out;
@@ -117,24 +126,20 @@ ssize_t z_deflate(struct z_struct *z, char *src, size_t size,
 	*dst = (void *) z->def_z_buf;
 	spinlock_unlock(&z->def_lock);
 
-	return done + off;
+	return done;
 }
 
 /* Inflates the buffer with src - crypto_box_zerobytes */
 ssize_t z_inflate(struct z_struct *z, char *src, size_t size,
-		  size_t off, char **dst)
+		  char **dst)
 {
 	int ret;
 	int todo, done = 0;
 
 	spinlock_lock(&z->inf_lock);
-	if (size <= off) {
-		spinlock_unlock(&z->def_lock);
-		return -ENOMEM;
-	}
 	memset(z->inf_z_buf, 0, z->inf_z_buf_size);
-	z->inf.next_in = (void *) src + off;
-	z->inf.avail_in = size - off;
+	z->inf.next_in = (void *) src;
+	z->inf.avail_in = size;
 	z->inf.next_out = (void *) z->inf_z_buf;
 	z->inf.avail_out = z->inf_z_buf_size;
 

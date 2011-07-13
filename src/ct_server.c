@@ -88,10 +88,10 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 	struct curve25519_proto *p;
 	struct sockaddr_storage naddr;
 	socklen_t nlen;
+	size_t off = sizeof(struct ct_proto) + crypto_box_zerobytes;
 
 	errno = 0;
-	while ((rlen = read(fd, buff + sizeof(struct ct_proto),
-			    len - sizeof(struct ct_proto))) > 0) {
+	while ((rlen = read(fd, buff + off, len - off)) > 0) {
 		dfd = -1;
 		nlen = 0;
 		p = NULL;
@@ -100,8 +100,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 		hdr = (struct ct_proto *) buff;
 		hdr->flags = 0;
 
-		trie_addr_lookup(buff + sizeof(struct ct_proto), rlen,
-				 ws->parent.ipv4, &dfd, &naddr,
+		trie_addr_lookup(buff + off, rlen, ws->parent.ipv4, &dfd, &naddr,
 				 (size_t *) &nlen);
 		if (unlikely(dfd < 0 || nlen == 0)) {
 			syslog(LOG_INFO, "CPU%u: UDP tunnel lookup failed: "
@@ -114,13 +113,14 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 			       "Dropping connection!\n", ws->cpu);
 			continue;
 		}
-		plen = z_deflate(ws->z, buff + sizeof(struct ct_proto),
-				 rlen, crypto_box_zerobytes, &pbuff);
+		plen = z_deflate(ws->z, buff + off, rlen, &pbuff);
 		if (unlikely(plen < 0)) {
 			syslog(LOG_ERR, "CPU%u: UDP tunnel deflate error: %s\n",
 			       ws->cpu, strerror(errno));
 			continue;
 		}
+		pbuff -= crypto_box_zerobytes;
+		plen += crypto_box_zerobytes;
 		clen = curve25519_encode(ws->c, p, (unsigned char *) pbuff, plen,
 					 (unsigned char **) &cbuff);
 		if (unlikely(clen <= 0)) {
@@ -235,8 +235,9 @@ close:
 			       ws->cpu, clen);
 			goto close;
 		}
-		plen = z_inflate(ws->z, cbuff + crypto_box_zerobytes,
-				 clen - crypto_box_zerobytes, 0, &pbuff);
+		cbuff += crypto_box_zerobytes;
+		clen -= crypto_box_zerobytes;
+		plen = z_inflate(ws->z, cbuff, clen, &pbuff);
 		if (unlikely(plen < 0)) {
 			syslog(LOG_ERR, "CPU%u: UDP net inflate error: %s\n",
 			       ws->cpu, strerror(errno));
@@ -288,18 +289,17 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 	struct ct_proto *hdr;
 	struct curve25519_proto *p;
 	socklen_t nlen;
+	size_t off = sizeof(struct ct_proto) + crypto_box_zerobytes;
 
 	errno = 0;
-	while ((rlen = read(fd, buff + sizeof(struct ct_proto),
-			    len - sizeof(struct ct_proto))) > 0) {
+	while ((rlen = read(fd, buff + off, len - off)) > 0) {
 		dfd = -1;
 		p = NULL;
 
 		hdr = (struct ct_proto *) buff;
 		hdr->flags = 0;
 
-		trie_addr_lookup(buff + sizeof(struct ct_proto), rlen,
-				 ws->parent.ipv4, &dfd, NULL,
+		trie_addr_lookup(buff + off, rlen, ws->parent.ipv4, &dfd, NULL,
 				 (size_t *) &nlen);
 		if (unlikely(dfd < 0)) {
 			syslog(LOG_INFO, "CPU%u: TCP tunnel lookup failed: "
@@ -312,13 +312,14 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 			       "Dropping connection!\n", ws->cpu);
 			continue;
 		}
-		plen = z_deflate(ws->z, buff + sizeof(struct ct_proto),
-				 rlen, crypto_box_zerobytes, &pbuff);
+		plen = z_deflate(ws->z, buff + off, rlen, &pbuff);
 		if (unlikely(plen < 0)) {
 			syslog(LOG_ERR, "CPU%u: TCP tunnel deflate error: %s\n",
 			       ws->cpu, strerror(errno));
 			continue;
 		}
+		pbuff -= crypto_box_zerobytes;
+		plen += crypto_box_zerobytes;
 		clen = curve25519_encode(ws->c, p, (unsigned char *) pbuff, plen,
 					 (unsigned char **) &cbuff);
 		if (unlikely(clen <= 0)) {
@@ -449,8 +450,9 @@ close:
 			       ws->cpu, clen);
 			goto close;
 		}
-		plen = z_inflate(ws->z, cbuff + crypto_box_zerobytes,
-				 clen - crypto_box_zerobytes, 0, &pbuff);
+		cbuff += crypto_box_zerobytes;
+		clen -= crypto_box_zerobytes;
+		plen = z_inflate(ws->z, cbuff, clen, &pbuff);
 		if (unlikely(plen < 0)) {
 			syslog(LOG_ERR, "CPU%u: TCP net inflate error: %s\n",
 			       ws->cpu, strerror(errno));
@@ -511,7 +513,8 @@ static void *worker(void *self)
 	fds.fd = ws->efd[0];
 	fds.events = POLLIN;
 
-	ret = z_alloc_or_maybe_die(ws->z, Z_DEFAULT_COMPRESSION);
+	ret = z_alloc_or_maybe_die(ws->z, Z_DEFAULT_COMPRESSION,
+				   crypto_box_zerobytes);
 	if (ret < 0)
 		syslog_panic("Cannot init zLib!\n");
 
