@@ -400,7 +400,7 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 	buff = xmalloc(blen);
 
 	notify_init(fd, udp, p, c, home);
-	info("Ready!\n");
+	syslog(LOG_INFO, "curvetun client ready!\n");
 
 	while (likely(!sigint)) {
 		poll(fds, 2, -1);
@@ -425,7 +425,7 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 		}
 	}
 
-	info("Shutting down!\n");
+	syslog(LOG_INFO, "curvetun client prepare shut down!\n");
 	notify_close(fd);
 
 	xfree(buff);
@@ -435,6 +435,9 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 	xfree(z);
 	curve25519_free(c);
 	xfree(c);
+
+	syslog(LOG_INFO, "curvetun client shut down!\n");
+	closelog();
 
 	return 0;
 }
