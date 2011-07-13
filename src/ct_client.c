@@ -130,7 +130,8 @@ static void handler_udp_net_to_tun(int sfd, int dfd, struct z_struct *z,
 			syslog(LOG_ERR, "UDP net decrypt error!\n");
 			goto close;
 		}
-		plen = z_inflate(z, cbuff, clen, crypto_box_zerobytes, &pbuff);
+		plen = z_inflate(z, cbuff + crypto_box_zerobytes,
+				 clen - crypto_box_zerobytes, 0, &pbuff);
 		if (unlikely(plen < 0)) {
 			syslog(LOG_ERR, "UDP net inflate error!\n");
 			goto close;
@@ -237,7 +238,8 @@ static void handler_tcp_net_to_tun(int sfd, int dfd, struct z_struct *z,
 			syslog(LOG_ERR, "TCP net decrypt error!\n");
 			goto close;
 		}
-		plen = z_inflate(z, cbuff, clen, crypto_box_zerobytes, &pbuff);
+		plen = z_inflate(z, cbuff + crypto_box_zerobytes,
+				 clen - crypto_box_zerobytes, 0, &pbuff);
 		if (unlikely(plen < 0)) {
 			syslog(LOG_ERR, "TCP net inflate error!\n");
 			goto close;

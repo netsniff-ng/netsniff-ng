@@ -235,7 +235,8 @@ close:
 			       ws->cpu, clen);
 			goto close;
 		}
-		plen = z_inflate(ws->z, cbuff, clen, crypto_box_zerobytes, &pbuff);
+		plen = z_inflate(ws->z, cbuff + crypto_box_zerobytes,
+				 clen - crypto_box_zerobytes, 0, &pbuff);
 		if (unlikely(plen < 0)) {
 			syslog(LOG_ERR, "CPU%u: UDP net inflate error: %s\n",
 			       ws->cpu, strerror(errno));
@@ -448,7 +449,8 @@ close:
 			       ws->cpu, clen);
 			goto close;
 		}
-		plen = z_inflate(ws->z, cbuff, clen, crypto_box_zerobytes, &pbuff);
+		plen = z_inflate(ws->z, cbuff + crypto_box_zerobytes,
+				 clen - crypto_box_zerobytes, 0, &pbuff);
 		if (unlikely(plen < 0)) {
 			syslog(LOG_ERR, "CPU%u: TCP net inflate error: %s\n",
 			       ws->cpu, strerror(errno));

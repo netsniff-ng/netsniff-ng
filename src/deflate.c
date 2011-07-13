@@ -33,14 +33,14 @@ int z_alloc_or_maybe_die(struct z_struct *z, int z_level)
 	z->inf.opaque = Z_NULL;
 	z->inf_z_buf_size = TUNBUFF_SIZ;
 	z->def_z_buf_size = TUNBUFF_SIZ;
-	ret = deflateInit(&z->def, z_level);
+	ret = deflateInit(&z->def, 0);//z_level);
 	if (ret != Z_OK)
 		panic("Can't initialize zLibs compressor!\n");
 	ret = inflateInit(&z->inf);
 	if (ret != Z_OK)
 		panic("Can't initialize zLibs decompressor!\n");
-	z->inf_z_buf = xmalloc(z->inf_z_buf_size);
-	z->def_z_buf = xmalloc(z->def_z_buf_size);
+	z->inf_z_buf = xmalloc_aligned(z->inf_z_buf_size, 16);
+	z->def_z_buf = xmalloc_aligned(z->def_z_buf_size, 16);
 	spinlock_init(&z->inf_lock);
 	spinlock_init(&z->def_lock);
 	return 0;
@@ -102,7 +102,7 @@ ssize_t z_deflate(struct z_struct *z, char *src, size_t size,
 		todo = z->def.avail_out;
 		ret = deflate(&z->def, Z_SYNC_FLUSH);
 		if (ret != Z_OK) {
-			whine("Deflate error %d!\n", ret);
+			whine("Deflate: %s\n", z->def.msg);
 			spinlock_unlock(&z->def_lock);
 			return -EIO;
 		}
@@ -125,7 +125,7 @@ ssize_t z_inflate(struct z_struct *z, char *src, size_t size,
 		  size_t off, char **dst)
 {
 	int ret;
-	int todo, done = 0;     
+	int todo, done = 0;
 
 	spinlock_lock(&z->inf_lock);
 	if (size <= off) {
@@ -142,7 +142,7 @@ ssize_t z_inflate(struct z_struct *z, char *src, size_t size,
 		todo = z->inf.avail_out;
 		ret = inflate(&z->inf, Z_SYNC_FLUSH);
 		if (ret != Z_OK) {
-			whine("Inflate error %d!\n", ret);
+			whine("Inflate: %s\n", z->inf.msg);
 			spinlock_unlock(&z->inf_lock);
 			return -EIO;
 		}
