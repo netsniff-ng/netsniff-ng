@@ -445,27 +445,6 @@ static int main_export(char *home)
 	return 0;
 }
 
-static int main_client(char *home, char *dev, char *alias)
-{
-	int ret, udp;
-	char *host, *port;
-
-	check_config_exists_or_die(home);
-	check_config_keypair_or_die(home);
-
-	parse_userfile_and_generate_serv_store_or_die(home);
-	get_serv_store_entry_by_alias(alias, alias ? strlen(alias) + 1 : 0,
-				      &host, &port, &udp);
-	if (!host || !port || udp < 0)
-		panic("Did not find alias/entry in configuration!\n");
-	printf("Using [%s] -> %s:%s via %s as endpoint!\n",
-	       alias ? : "default", host, port, udp ? "udp" : "tcp");
-	ret = client_main(home, dev, host, port, udp);
-	destroy_serv_store();
-
-	return ret;
-}
-
 static int main_dumpc(char *home)
 {
 	check_config_exists_or_die(home);
@@ -498,12 +477,77 @@ static int main_dumps(char *home)
 	return 0;
 }
 
-static int main_server(char *home, char *dev, char *port, int udp, int ipv4)
+static void daemonize(const char *lockfile)
 {
+	pid_t pid, sid;
+	int lfp;
+
+	if (getppid() == 1)
+		return;
+
+	if (lockfile) {
+		lfp = open(lockfile, O_RDWR | O_CREAT | O_EXCL, 0640);
+		if (lfp < 0)
+			panic("Cannot create lockfile at %s! "
+			      "curvetun server already running?\n",
+			      lockfile);
+		close(lfp);
+        }
+
+	pid = fork();
+	if (pid < 0)
+		panic("Unable to fork process!\n");
+	if (pid > 0)
+		exit(0);
+	/* At this point we are executing as the child process */
+	umask(0);
+	sid = setsid();
+	if (sid < 0)
+		panic("Unable to create a new session!\n");
+	if ((chdir("/")) < 0)
+		panic("Unable to set dir to /!\n");
+
+	info("Forked off!\n");
+
+	close(STDIN_FILENO);
+	close(STDOUT_FILENO);
+	close(STDERR_FILENO);
+}
+
+static int main_client(char *home, char *dev, char *alias)
+{
+	int ret, udp;
+	char *host, *port;
+
 	check_config_exists_or_die(home);
 	check_config_keypair_or_die(home);
 
-	return server_main(home, dev, port, udp, ipv4);
+	parse_userfile_and_generate_serv_store_or_die(home);
+	get_serv_store_entry_by_alias(alias, alias ? strlen(alias) + 1 : 0,
+				      &host, &port, &udp);
+	if (!host || !port || udp < 0)
+		panic("Did not find alias/entry in configuration!\n");
+	printf("Using [%s] -> %s:%s via %s as endpoint!\n",
+	       alias ? : "default", host, port, udp ? "udp" : "tcp");
+
+	daemonize(NULL);
+	ret = client_main(home, dev, host, port, udp);
+	destroy_serv_store();
+
+	return ret;
+}
+
+static int main_server(char *home, char *dev, char *port, int udp, int ipv4)
+{
+	int ret;
+
+	check_config_exists_or_die(home);
+	check_config_keypair_or_die(home);
+	daemonize(LOCKFILE);
+	ret = server_main(home, dev, port, udp, ipv4);
+	unlink(LOCKFILE);
+
+	return ret;
 }
 
 int main(int argc, char **argv)

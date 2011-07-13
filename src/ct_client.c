@@ -13,6 +13,7 @@
 #include <netdb.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <syslog.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
@@ -36,6 +37,8 @@
 #include "compiler.h"
 
 extern sig_atomic_t sigint;
+
+//TODO: replace info/panic/... with syslog msgs
 
 static void handler_udp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 				   struct curve25519_proto *p,

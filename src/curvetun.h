@@ -14,6 +14,8 @@
 #define FILE_PUBKEY     ".curvetun/pub.key"
 #define FILE_USERNAM    ".curvetun/username"
 
+#define LOCKFILE	"/var/run/curvetun.pid"
+
 #define DEFAULT_KEY_LEN 64
 
 #define PROTO_FLAG_EXIT	(1 << 0)
