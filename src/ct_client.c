@@ -38,8 +38,6 @@
 
 extern sig_atomic_t sigint;
 
-//TODO: replace info/panic/... with syslog msgs
-
 static void handler_udp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 				   struct curve25519_proto *p,
 				   struct curve25519_struct *c,
@@ -60,13 +58,13 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 		plen = z_deflate(z, buff + sizeof(struct ct_proto), rlen,
 				 crypto_box_zerobytes, &pbuff);
 		if (unlikely(plen < 0)) {
-			whine("UDP tunnel deflate error!\n");
+			syslog(LOG_ERR, "UDP tunnel deflate error!\n");
 			goto close;
 		}
 		clen = curve25519_encode(c, p, (unsigned char *) pbuff, plen,
 					 (unsigned char **) &cbuff);
 		if (unlikely(clen <= 0)) {
-			whine("UDP tunnel encrypt error!\n");
+			syslog(LOG_ERR, "UDP tunnel encrypt error!\n");
 			goto close;
 		}
 
@@ -77,11 +75,13 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 
 		err = write_exact(dfd, hdr, sizeof(struct ct_proto), 0);
 		if (unlikely(err < 0))
-			perror("Error writing tunnel data to net");
+			syslog(LOG_ERR, "Error writing tunnel data to net: %s\n",
+			       strerror(errno));
 
 		err = write_exact(dfd, cbuff, clen, 0);
 		if (unlikely(err < 0))
-			perror("Error writing tunnel data to net");
+			syslog(LOG_ERR, "Error writing tunnel data to net: %s\n",
+			       strerror(errno));
 
 		state = 0;
 		setsockopt(dfd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
@@ -127,18 +127,19 @@ static void handler_udp_net_to_tun(int sfd, int dfd, struct z_struct *z,
 					 rlen - sizeof(struct ct_proto),
 					 (unsigned char **) &cbuff);
 		if (unlikely(clen <= 0)) {
-			whine("UDP net decrypt error!\n");
+			syslog(LOG_ERR, "UDP net decrypt error!\n");
 			goto close;
 		}
 		plen = z_inflate(z, cbuff, clen, crypto_box_zerobytes, &pbuff);
 		if (unlikely(plen < 0)) {
-			whine("UDP net inflate error!\n");
+			syslog(LOG_ERR, "UDP net inflate error!\n");
 			goto close;
 		}
 
 		err = write(dfd, pbuff, plen);
 		if (unlikely(err < 0))
-			perror("Error writing net data to tunnel");
+			syslog(LOG_ERR, "Error writing net data to tunnel: %s\n",
+			       strerror(errno));
 
 		errno = 0;
 	}
@@ -168,13 +169,13 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 		plen = z_deflate(z, buff + sizeof(struct ct_proto), rlen,
 				 crypto_box_zerobytes, &pbuff);
 		if (unlikely(plen < 0)) {
-			whine("TCP tunnel deflate error!\n");
+			syslog(LOG_ERR, "TCP tunnel deflate error!\n");
 			goto close;
 		}
 		clen = curve25519_encode(c, p, (unsigned char *) pbuff, plen,
 					 (unsigned char **) &cbuff);
 		if (unlikely(clen <= 0)) {
-			whine("TCP tunnel encrypt error!\n");
+			syslog(LOG_ERR, "TCP tunnel encrypt error!\n");
 			goto close;
 		}
 
@@ -185,11 +186,13 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 
 		err = write_exact(dfd, hdr, sizeof(struct ct_proto), 0);
 		if (unlikely(err < 0))
-			perror("Error writing tunnel data to net");
+			syslog(LOG_ERR, "Error writing tunnel data to net: %s\n",
+			       strerror(errno));
 
 		err = write_exact(dfd, cbuff, clen, 0);
 		if (unlikely(err < 0))
-			perror("Error writing tunnel data to net");
+			syslog(LOG_ERR, "Error writing tunnel data to net: %s\n",
+			       strerror(errno));
 
 		state = 0;
 		setsockopt(dfd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
@@ -231,18 +234,19 @@ static void handler_tcp_net_to_tun(int sfd, int dfd, struct z_struct *z,
 					 rlen - sizeof(struct ct_proto),
 					 (unsigned char **) &cbuff);
 		if (unlikely(clen <= 0)) {
-			whine("TCP net decrypt error!\n");
+			syslog(LOG_ERR, "TCP net decrypt error!\n");
 			goto close;
 		}
 		plen = z_inflate(z, cbuff, clen, crypto_box_zerobytes, &pbuff);
 		if (unlikely(plen < 0)) {
-			whine("TCP net inflate error!\n");
+			syslog(LOG_ERR, "TCP net inflate error!\n");
 			goto close;
 		}
 
 		err = write(dfd, pbuff, plen);
 		if (unlikely(err < 0))
-			perror("Error writing net data to tunnel");
+			syslog(LOG_ERR, "Error writing net data to tunnel: %s\n",
+			       strerror(errno));
 
 		errno = 0;
 	}
@@ -277,7 +281,7 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 	err = username_msg(username, strlen(username) + 1,
 			   (char *) &us, sizeof(us));
 	if (unlikely(err))
-		panic("Cannot create init message!\n");
+		syslog_panic("Cannot create init message!\n");
 	hdr.payload = htons((uint16_t) sizeof(us));
 
 	state = 1;
@@ -286,11 +290,13 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 
 	err = write_exact(fd, &hdr, sizeof(struct ct_proto), 0);
 	if (unlikely(err < 0))
-		perror("Error writing init data to net");
+		syslog(LOG_ERR, "Error writing init data to net: %s\n",
+		       strerror(errno));
 
 	err = write_exact(fd, &us, sizeof(us), 0);
 	if (unlikely(err < 0))
-		perror("Error writing init data to net");
+		syslog(LOG_ERR, "Error writing init data to net: %s\n",
+		       strerror(errno));
 
 	state = 0;
 	setsockopt(fd, udp ? IPPROTO_UDP : IPPROTO_TCP,
@@ -308,7 +314,8 @@ static void notify_close(int fd)
 
 	err = write_exact(fd, &hdr, sizeof(hdr), 0);
 	if (unlikely(err < 0))
-		perror("Error writing close");
+		syslog(LOG_ERR, "Error writing close: %s\n",
+		       strerror(errno));
 }
 
 int client_main(char *home, char *dev, char *host, char *port, int udp)
@@ -324,19 +331,22 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 	char *buff;
 	size_t blen = TUNBUFF_SIZ; //FIXME
 
+	openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
+	syslog(LOG_INFO, "curvetun client booting!\n");
+
 	z = xmalloc(sizeof(struct z_struct));
 	ret = z_alloc_or_maybe_die(z, Z_DEFAULT_COMPRESSION);
 	if (ret < 0)
-		panic("Cannot init zLib!\n");
+		syslog_panic("Cannot init zLib!\n");
 
 	c = xmalloc(sizeof(struct curve25519_struct));
 	ret = curve25519_alloc_or_maybe_die(c);
 	if (ret < 0)
-		panic("Cannot init curve!\n");
+		syslog_panic("Cannot init curve!\n");
 
 	p = get_serv_store_entry_proto_inf();
 	if (!p)
-		panic("Cannot proto!\n");
+		syslog_panic("Cannot proto!\n");
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;
@@ -345,7 +355,7 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 
 	ret = getaddrinfo(host, port, &hints, &ahead);
 	if (ret < 0)
-		panic("Cannot get address info!\n");
+		syslog_panic("Cannot get address info!\n");
 
 	for (ai = ahead; ai != NULL && fd < 0; ai = ai->ai_next) {
 		if (ai->ai_family == PF_INET6)
@@ -355,8 +365,8 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 			continue;
 		ret = connect(fd, ai->ai_addr, ai->ai_addrlen);
 		if (ret < 0) {
-			whine("Cannot connect to remote, try %d: %s!\n",
-			      try++, strerror(errno));
+			syslog(LOG_ERR, "Cannot connect to remote, try %d: %s!\n",
+			       try++, strerror(errno));
 			close(fd);
 			fd = -1;
 			continue;
@@ -374,7 +384,7 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 
 	freeaddrinfo(ahead);
 	if (fd < 0)
-		panic("Cannot create socket!\n");
+		syslog_panic("Cannot create socket!\n");
 
 	tunfd = tun_open_or_die(dev ? dev : DEVNAME_CLIENT);
 
