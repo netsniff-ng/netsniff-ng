@@ -45,8 +45,8 @@ int z_alloc_or_maybe_die(struct z_struct *z, int z_level, size_t off)
 	if (ret != Z_OK)
 		panic("Can't initialize zLibs decompressor!\n");
 
-	z->inf_z_buf_orig = xmalloc(z->inf_z_buf_size + z->off);
-	z->def_z_buf_orig = xmalloc(z->def_z_buf_size + z->off);
+	z->inf_z_buf_orig = xzmalloc(z->inf_z_buf_size + z->off);
+	z->def_z_buf_orig = xzmalloc(z->def_z_buf_size + z->off);
 	z->inf_z_buf = z->inf_z_buf_orig + z->off;
 	z->def_z_buf = z->def_z_buf_orig + z->off;
 
