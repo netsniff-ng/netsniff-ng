@@ -16,11 +16,13 @@ struct z_struct {
 	/* Inflate buffer */
 	z_stream inf;
 	unsigned char *inf_z_buf;
+	unsigned char *inf_z_buf_orig;
 	size_t inf_z_buf_size;
 	struct spinlock inf_lock;
 	/* Deflate buffer */
 	z_stream def;
 	unsigned char *def_z_buf;
+	unsigned char *def_z_buf_orig;
 	size_t def_z_buf_size;
 	struct spinlock def_lock;
 };

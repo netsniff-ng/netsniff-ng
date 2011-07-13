@@ -34,8 +34,8 @@ int z_alloc_or_maybe_die(struct z_struct *z, int z_level, size_t off)
 	z->inf.zfree  = Z_NULL;
 	z->inf.opaque = Z_NULL;
 
-	z->inf_z_buf_size = TUNBUFF_SIZ + z->off;
-	z->def_z_buf_size = TUNBUFF_SIZ + z->off;
+	z->inf_z_buf_size = TUNBUFF_SIZ;
+	z->def_z_buf_size = TUNBUFF_SIZ;
 
 	ret = deflateInit(&z->def, 0);//z_level);
 	if (ret != Z_OK)
@@ -45,10 +45,10 @@ int z_alloc_or_maybe_die(struct z_struct *z, int z_level, size_t off)
 	if (ret != Z_OK)
 		panic("Can't initialize zLibs decompressor!\n");
 
-	z->inf_z_buf = xmalloc_aligned(z->inf_z_buf_size, 16);
-	z->def_z_buf = xmalloc_aligned(z->def_z_buf_size, 16);
-	z->inf_z_buf += z->off;
-	z->def_z_buf += z->off;
+	z->inf_z_buf_orig = xmalloc(z->inf_z_buf_size + z->off);
+	z->def_z_buf_orig = xmalloc(z->def_z_buf_size + z->off);
+	z->inf_z_buf = z->inf_z_buf_orig + z->off;
+	z->def_z_buf = z->def_z_buf_orig + z->off;
 
 	spinlock_init(&z->inf_lock);
 	spinlock_init(&z->def_lock);
@@ -65,8 +65,8 @@ void z_free(void *vz)
 	deflateEnd(&z->def);
 	inflateEnd(&z->inf);
 
-	xfree(z->inf_z_buf - z->off);
-	xfree(z->def_z_buf - z->off);
+	xfree(z->inf_z_buf_orig);
+	xfree(z->def_z_buf_orig);
 
 	spinlock_destroy(&z->inf_lock);
 	spinlock_destroy(&z->def_lock);
@@ -79,7 +79,9 @@ char *z_get_version(void)
 
 static void def_z_buf_expansion_or_die(struct z_struct *z, size_t size)
 {
-	z->def_z_buf = xrealloc(z->def_z_buf, 1, z->def_z_buf_size + size);
+	z->def_z_buf_orig = xrealloc(z->def_z_buf_orig, 1,
+				     z->def_z_buf_size + z->off + size);
+	z->def_z_buf = z->def_z_buf_orig + z->off;
 	z->def.next_out = z->def_z_buf + z->def_z_buf_size;
 	z->def.avail_out = size;
 	z->def_z_buf_size += size;
@@ -87,13 +89,14 @@ static void def_z_buf_expansion_or_die(struct z_struct *z, size_t size)
 
 static void inf_z_buf_expansion_or_die(struct z_struct *z, size_t size)
 {
-	z->inf_z_buf = xrealloc(z->inf_z_buf, 1, z->inf_z_buf_size + size);
+	z->inf_z_buf_orig = xrealloc(z->inf_z_buf_orig, 1,
+				     z->inf_z_buf_size + z->off + size);
+	z->inf_z_buf = z->inf_z_buf_orig + z->off;
 	z->inf.next_out = z->inf_z_buf + z->inf_z_buf_size;
 	z->inf.avail_out = size;
 	z->inf_z_buf_size += size;
 }
 
-/* Deflates the buffer with offset crypto_box_zerobytes */ 
 ssize_t z_deflate(struct z_struct *z, char *src, size_t size,
 		  char **dst)
 {
@@ -129,7 +132,6 @@ ssize_t z_deflate(struct z_struct *z, char *src, size_t size,
 	return done;
 }
 
-/* Inflates the buffer with src - crypto_box_zerobytes */
 ssize_t z_inflate(struct z_struct *z, char *src, size_t size,
 		  char **dst)
 {
