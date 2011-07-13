@@ -169,6 +169,7 @@ static void version(void)
 {
 	printf("\ncurvetun %s, lightweight curve25519-based multiuser IP tunnel\n",
                VERSION_STRING);
+	printf("Build: %s\n", BUILD_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
