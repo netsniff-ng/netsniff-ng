@@ -57,7 +57,7 @@ enum working_mode {
 
 sig_atomic_t sigint = 0;
 
-static const char *short_options = "kxc::svhp:t:d:uCS46H";
+static const char *short_options = "kxc::svhp:t:d:uCS46HD";
 
 static struct option long_options[] = {
 	{"client", optional_argument, 0, 'c'},
@@ -72,6 +72,7 @@ static struct option long_options[] = {
 	{"udp", no_argument, 0, 'u'},
 	{"ipv4", no_argument, 0, '4'},
 	{"ipv6", no_argument, 0, '6'},
+	{"nofork", no_argument, 0, 'D'},
 	{"version", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
@@ -107,6 +108,7 @@ static void help(void)
 	printf("  -x|--export             Export your public data for servers\n");
 	printf("  -C|--dumpc              Dump parsed clients\n");
 	printf("  -S|--dumps              Dump parsed servers\n");
+	printf("  -D|--nofork             Do not daemonize\n");
 	printf("  -d|--dev <tun>          Networking tunnel device, e.g. tun0\n");
 	printf(" Client settings:\n");
 	printf("  -c|--client[=alias]     Client mode, server alias optional\n");
@@ -514,7 +516,7 @@ static void daemonize(const char *lockfile)
 	close(STDERR_FILENO);
 }
 
-static int main_client(char *home, char *dev, char *alias)
+static int main_client(char *home, char *dev, char *alias, int daemon)
 {
 	int ret, udp;
 	char *host, *port;
@@ -530,20 +532,23 @@ static int main_client(char *home, char *dev, char *alias)
 	printf("Using [%s] -> %s:%s via %s as endpoint!\n",
 	       alias ? : "default", host, port, udp ? "udp" : "tcp");
 
-	daemonize(NULL);
+	if (daemon)
+		daemonize(NULL);
 	ret = client_main(home, dev, host, port, udp);
 	destroy_serv_store();
 
 	return ret;
 }
 
-static int main_server(char *home, char *dev, char *port, int udp, int ipv4)
+static int main_server(char *home, char *dev, char *port, int udp,
+		       int ipv4, int daemon)
 {
 	int ret;
 
 	check_config_exists_or_die(home);
 	check_config_keypair_or_die(home);
-	daemonize(LOCKFILE);
+	if (daemon)
+		daemonize(LOCKFILE);
 	ret = server_main(home, dev, port, udp, ipv4);
 	unlink(LOCKFILE);
 
@@ -552,7 +557,7 @@ static int main_server(char *home, char *dev, char *port, int udp, int ipv4)
 
 int main(int argc, char **argv)
 {
-	int ret = 0, c, opt_index, udp = 0, ipv4 = -1;
+	int ret = 0, c, opt_index, udp = 0, ipv4 = -1, daemon = 1;
 	char *port = NULL, *stun = NULL, *dev = NULL, *home = NULL, *alias=NULL;
 	enum working_mode wmode = MODE_UNKNOW;
 
@@ -574,6 +579,9 @@ int main(int argc, char **argv)
 			break;
 		case 'v':
 			version();
+			break;
+		case 'D':
+			daemon = 0;
 			break;
 		case 'C':
 			wmode = MODE_DUMPC;
@@ -659,14 +667,14 @@ int main(int argc, char **argv)
 		ret = main_dumps(home);
 		break;
 	case MODE_CLIENT:
-		ret = main_client(home, dev, alias);
+		ret = main_client(home, dev, alias, daemon);
 		break;
 	case MODE_SERVER:
 		if (!port)
 			panic("No port specified!\n");
 		if (stun)
 			print_stun_probe(stun, 3478, strtoul(port, NULL, 10));
-		ret = main_server(home, dev, port, udp, ipv4);
+		ret = main_server(home, dev, port, udp, ipv4, daemon);
 		break;
 	default:
 		die();
