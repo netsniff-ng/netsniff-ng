@@ -37,6 +37,7 @@ int z_alloc_or_maybe_die(struct z_struct *z, int z_level, size_t off)
 	z->inf_z_buf_size = TUNBUFF_SIZ;
 	z->def_z_buf_size = TUNBUFF_SIZ;
 
+	//TODO: Fix deflate/inflate bug, for now compression is turned off
 	ret = deflateInit2(&z->def, /*z_level*/ 0, Z_DEFLATED, -15, 9,
 			   Z_DEFAULT_STRATEGY);
 	if (ret != Z_OK)
