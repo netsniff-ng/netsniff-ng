@@ -110,7 +110,7 @@ ssize_t z_deflate(struct z_struct *z, char *src, size_t size,
 	z->def.next_out = (void *) z->def_z_buf;
 	z->def.avail_out = z->def_z_buf_size;
 
-	for (;;) {
+	while (1) {
 		todo = z->def.avail_out;
 		ret = deflate(&z->def, Z_SYNC_FLUSH);
 		if (ret != Z_OK) {
@@ -145,7 +145,7 @@ ssize_t z_inflate(struct z_struct *z, char *src, size_t size,
 	z->inf.next_out = (void *) z->inf_z_buf;
 	z->inf.avail_out = z->inf_z_buf_size;
 
-	for (;;) {
+	while (1) {
 		todo = z->inf.avail_out;
 		ret = inflate(&z->inf, Z_SYNC_FLUSH);
 		if (ret != Z_OK) {
