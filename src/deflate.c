@@ -122,7 +122,6 @@ ssize_t z_deflate(struct z_struct *z, char *src, size_t size,
 		done += (todo - z->def.avail_out);
 		if (z->def.avail_in == 0)
 			break;
-
 		def_z_buf_expansion_or_die(z, 100);
 	}
 
@@ -157,7 +156,6 @@ ssize_t z_inflate(struct z_struct *z, char *src, size_t size,
 		done += (todo - z->inf.avail_out);
 		if (z->inf.avail_in == 0)
 			break;
-
 		inf_z_buf_expansion_or_die(z, 100);
 	}
 
