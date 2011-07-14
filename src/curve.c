@@ -234,15 +234,10 @@ int curve25519_proto_init(struct curve25519_proto *p, unsigned char *pubkey_remo
 	return 0;
 }
 
-/*
- * plaintext has beginning of crypto_box_zerobytes zeros,
- * size == crypto_box_zerobytes + len plaintext
- */
 ssize_t curve25519_encode(struct curve25519_struct *c, struct curve25519_proto *p,
 			  unsigned char *plaintext, size_t size,
 			  unsigned char **chipertext)
 {
-#if 0
 	int ret, i;
 	ssize_t done = size;
 	struct taia packet_taia;
@@ -272,20 +267,12 @@ ssize_t curve25519_encode(struct curve25519_struct *c, struct curve25519_proto *
 	(*chipertext) = c->enc_buf;
 	spinlock_unlock(&c->enc_lock);
 	return done;
-#endif
-	(*chipertext) = plaintext;
-	return size;
 }
 
-/*
- * ciphertext has beginning of crypto_box_zerobytes zeros,
- * size == crypto_box_zerobytes + len plaintext
- */
 ssize_t curve25519_decode(struct curve25519_struct *c, struct curve25519_proto *p,
 			  unsigned char *chipertext, size_t size,
 			  unsigned char **plaintext)
 {
-#if 0
 	int ret;
 	ssize_t done = size;
 	struct taia packet_taia, arrival_taia;
@@ -324,8 +311,5 @@ ssize_t curve25519_decode(struct curve25519_struct *c, struct curve25519_proto *
 	(*plaintext) = c->dec_buf;
 	spinlock_unlock(&c->dec_lock);
 	return done;
-#endif
-	(*plaintext) = chipertext;
-	return size;
 }
 
