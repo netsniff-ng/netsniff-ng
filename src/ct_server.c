@@ -203,9 +203,7 @@ close:
 			remove_user_by_sockaddr(&naddr, nlen);
 			trie_addr_remove_addr(&naddr, nlen);
 			handler_udp_notify_close(fd, &naddr, nlen);
-			nlen = sizeof(naddr);
-			memset(&naddr, 0, sizeof(naddr));
-			continue;
+			return keep;
 		}
 		if (hdr->flags & PROTO_FLAG_INIT) {
 			syslog(LOG_INFO, "Got initial userhash from remote end!\n");
