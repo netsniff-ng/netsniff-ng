@@ -23,7 +23,7 @@ int z_alloc_or_maybe_die(struct z_struct *z, int z_level, size_t off)
 	int ret;
 	if (!z)
 		return -EINVAL;
-	if (z_level < -1 || z_level > 9)
+	if (z_level < Z_DEFAULT_COMPRESSION || z_level > Z_BEST_COMPRESSION)
 		return -EINVAL;
 	z->off = off;
 
