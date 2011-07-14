@@ -38,6 +38,7 @@
 #include "signals.h"
 #include "curvetun.h"
 #include "curve.h"
+#include "deflate.h"
 #include "usermgmt.h"
 #include "servmgmt.h"
 #include "write_or_die.h"
@@ -170,6 +171,7 @@ static void version(void)
 	printf("\ncurvetun %s, lightweight curve25519-based multiuser IP tunnel\n",
                VERSION_STRING);
 	printf("Build: %s\n", BUILD_STRING);
+	printf("zLib: %s\n", z_get_version());
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");

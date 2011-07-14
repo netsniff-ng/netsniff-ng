@@ -566,6 +566,8 @@ void remove_user_by_socket(int fd)
 		pos = pos->next;
 	if (pos && pos->next && pos->next == entry)
 		pos->next = entry->next;
+	memset(entry->proto->enonce, 0, sizeof(entry->proto->enonce));
+	memset(entry->proto->dnonce, 0, sizeof(entry->proto->dnonce));
 	entry->proto = NULL;
 	entry->next = NULL;
 	xfree(entry);
@@ -608,6 +610,8 @@ void remove_user_by_sockaddr(struct sockaddr_storage *sa, size_t sa_len)
 		pos = pos->next;
 	if (pos && pos->next && pos->next == entry)
 		pos->next = entry->next;
+	memset(entry->proto->enonce, 0, sizeof(entry->proto->enonce));
+	memset(entry->proto->dnonce, 0, sizeof(entry->proto->dnonce));
 	entry->proto = NULL;
 	entry->next = NULL;
 	xfree(entry->sa);
