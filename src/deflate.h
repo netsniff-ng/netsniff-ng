@@ -11,20 +11,19 @@
 #include "zlib.h"
 #include "locking.h"
 
+struct z_buffer
+{
+	z_stream stream;
+	unsigned char * buf;
+	unsigned char * origin;
+	size_t size;
+	struct spinlock lock;
+};
+
 struct z_struct {
 	size_t off;
-	/* Inflate buffer */
-	z_stream inf;
-	unsigned char *inf_z_buf;
-	unsigned char *inf_z_buf_orig;
-	size_t inf_z_buf_size;
-	struct spinlock inf_lock;
-	/* Deflate buffer */
-	z_stream def;
-	unsigned char *def_z_buf;
-	unsigned char *def_z_buf_orig;
-	size_t def_z_buf_size;
-	struct spinlock def_lock;
+	struct z_buffer inflate;
+	struct z_buffer deflate;
 };
 
 extern int z_alloc_or_maybe_die(struct z_struct *z, int z_level, size_t off);
