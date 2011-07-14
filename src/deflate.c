@@ -51,7 +51,7 @@ int z_alloc_or_maybe_die(struct z_struct *z, int z_level, size_t off)
 	z_buffer_init(&z->inflate, z->off);
 
 	//TODO: Fix deflate/inflate bug, for now compression is turned off
-	ret = deflateInit2(&z->deflate.stream, /*z_level*/ 0, Z_DEFLATED, -15, 9,
+	ret = deflateInit2(&z->deflate.stream, Z_NO_COMPRESSION, Z_DEFLATED, -15, 9,
 			   Z_DEFAULT_STRATEGY);
 	if (ret != Z_OK)
 		panic("Can't initialize zLibs compressor!\n");
