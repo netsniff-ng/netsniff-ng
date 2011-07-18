@@ -8,11 +8,12 @@
 #ifndef CURVETUN_H
 #define CURVETUN_H
 
-#define FILE_CLIENTS    ".curvetun/clients"
-#define FILE_SERVERS    ".curvetun/servers"
-#define FILE_PRIVKEY    ".curvetun/priv.key"
-#define FILE_PUBKEY     ".curvetun/pub.key"
-#define FILE_USERNAM    ".curvetun/username"
+#define FILE_CLIENTS	".curvetun/clients"
+#define FILE_SERVERS	".curvetun/servers"
+#define FILE_PRIVKEY	".curvetun/priv.key"
+#define FILE_PUBKEY	".curvetun/pub.key"
+#define FILE_TOKEN	".curvetun/auth_token"
+#define FILE_USERNAM	".curvetun/username"
 
 #define LOCKFILE	"/var/run/curvetun.pid"
 
@@ -33,8 +34,8 @@ struct ct_proto {
 extern int server_main(char *home, char *dev, char *port, int udp, int ipv4);
 extern int client_main(char *home, char *dev, char *host, char *port, int udp);
 
-#define DEVNAME_SERVER	"curves"
-#define DEVNAME_CLIENT  "curvec"
+#define DEVNAME_SERVER	"curves0"
+#define DEVNAME_CLIENT  "curvec0"
 
 #endif /* CURVETUN_H */
 
