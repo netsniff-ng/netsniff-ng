@@ -307,7 +307,7 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 	if (unlikely(err))
 		syslog_panic("Cannot create init hmac message!\n");
 
-	assert(148 == clen + sizeof(auth));
+	assert(132 == clen + sizeof(auth));
 
 	pad = mt_rand_int32() % 200;
 	msg_len = clen + sizeof(auth) + pad;
