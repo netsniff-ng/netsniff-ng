@@ -20,10 +20,11 @@
 #include "curve.h"
 #include "servmgmt.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"
+#include "crypto_auth_hmacsha512256.h"
 
 #define crypto_box_pub_key_size crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES
 
-/* Config line format: alias;serverip|servername;port;udp|tcp;pubkey\n */
+/* Config line format: alias;serverip|servername;port;udp|tcp;pubkey;auth_token\n */
 
 struct server_store {
 	char alias[256];
@@ -32,6 +33,7 @@ struct server_store {
 	int udp;
 	unsigned char publickey[crypto_box_pub_key_size];
 	struct curve25519_proto proto_inf;
+	unsigned char auth_token[crypto_auth_hmacsha512256_KEYBYTES];
 	struct server_store *next;
 };
 
@@ -57,8 +59,9 @@ static void server_store_free(struct server_store *ss)
 void parse_userfile_and_generate_serv_store_or_die(char *homedir)
 {
 	FILE *fp;
-	char path[512], buff[1024], *alias, *host, *port, *udp, *key;
+	char path[512], buff[1024], *alias, *host, *port, *udp, *key, *atok;
 	unsigned char pkey[crypto_box_pub_key_size];
+	unsigned char atoken[crypto_auth_hmacsha512256_KEYBYTES];
 	int line = 1, __udp = 0, ret;
 	struct server_store *elem;
 
@@ -130,14 +133,30 @@ void parse_userfile_and_generate_serv_store_or_die(char *homedir)
 			panic("Parse error! No key found in l.%d!\n", line);
 		*udp = '\0';
 		udp++;
-		key = udp;
-		if (*key == '\n')
+		if (*udp == '\n')
 			panic("Parse error! No key found in l.%d!\n", line);
-		key = strtrim_right(key, '\n');
+		key = udp;
+		while (*key != ';' &&
+		       *key != '\0' &&
+		       *key != ' ' &&
+		       *key != '\t')
+			key++;
+		if (*key != ';')
+			panic("Parse error! No key found in l.%d!\n", line);
+		*key = '\0';
 		memset(pkey, 0, sizeof(pkey));
 		if (!curve25519_pubkey_hexparse_32(pkey, sizeof(pkey),
-						   key, strlen(key)))
+						   udp, key - 1 - udp))
 			panic("Parse error! No key found in l.%d!\n", line);
+		key++;
+		atok = key;
+		if (*atok == '\n')
+			panic("Parse error! No auth_token found in l.%d!\n", line);
+		atok = strtrim_right(atok, '\n');
+		memset(atoken, 0, sizeof(atoken));
+		if (!curve25519_pubkey_hexparse_32(atoken, sizeof(atoken),
+						   atok, strlen(atok)))
+			panic("Parse error! No auth_token found in l.%d!\n", line);
 		if (strlen(alias) + 1 > sizeof(elem->alias))
 			panic("Alias too long in l.%d!\n", line);
 		if (strlen(host) + 1 > sizeof(elem->host))
@@ -157,6 +176,7 @@ void parse_userfile_and_generate_serv_store_or_die(char *homedir)
 		strlcpy(elem->host, host, sizeof(elem->host));
 		strlcpy(elem->port, port, sizeof(elem->port));
 		memcpy(elem->publickey, pkey, sizeof(elem->publickey));
+		memcpy(elem->auth_token, atoken, sizeof(elem->auth_token));
 		ret = curve25519_proto_init(&elem->proto_inf,
 					    elem->publickey,
 					    sizeof(elem->publickey),
@@ -188,11 +208,18 @@ void dump_serv_store(void)
 		       elem->udp ? "udp" : "tcp");
 		for (i = 0; i < sizeof(elem->publickey); ++i)
 			if (i == (sizeof(elem->publickey) - 1))
-				printf("%02x\n", (unsigned char)
+				printf("%02x -> auth ", (unsigned char)
 				       elem->publickey[i]);
 			else
 				printf("%02x:", (unsigned char)
 				       elem->publickey[i]);
+		for (i = 0; i < sizeof(elem->auth_token); ++i)
+			if (i == (sizeof(elem->auth_token) - 1))
+				printf("%02x\n", (unsigned char)
+				       elem->auth_token[i]);
+			else
+				printf("%02x:", (unsigned char)
+				       elem->auth_token[i]);
 		elem = elem->next;
 	}
 	rwlock_unlock(&store_lock);
@@ -265,6 +292,16 @@ struct curve25519_proto *get_serv_store_entry_proto_inf(void)
 	rwlock_rd_lock(&store_lock);
 	if (selected)
 		ret = &selected->proto_inf;
+	rwlock_unlock(&store_lock);
+	return ret;
+}
+
+unsigned char *get_serv_store_entry_auth_token(void)
+{
+	unsigned char *ret = NULL;
+	rwlock_rd_lock(&store_lock);
+	if (selected)
+		ret = selected->auth_token;
 	rwlock_unlock(&store_lock);
 	return ret;
 }

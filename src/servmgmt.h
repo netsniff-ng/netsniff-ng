@@ -17,6 +17,7 @@ extern void dump_serv_store(void);
 extern void get_serv_store_entry_by_alias(char *alias, size_t len,
 					  char **host, char **port, int *udp);
 extern struct curve25519_proto *get_serv_store_entry_proto_inf(void);
+extern unsigned char *get_serv_store_entry_auth_token(void);
 extern void destroy_serv_store(void);
 
 #endif /* SERVMGMT_H */

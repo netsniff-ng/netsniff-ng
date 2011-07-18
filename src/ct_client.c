@@ -269,8 +269,7 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 	size_t us_len, msg_len;
 	struct ct_proto hdr;
 	char username[256], path[512], *us, *cbuff, *msg;
-	unsigned char auth[crypto_auth_hmacsha512256_BYTES];
-	unsigned char token[crypto_auth_hmacsha512256_KEYBYTES];
+	unsigned char auth[crypto_auth_hmacsha512256_BYTES], *token;
 
 	memset(&hdr, 0, sizeof(hdr));
 	hdr.flags |= PROTO_FLAG_INIT;
@@ -284,6 +283,10 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 	err = read(fd2, username, sizeof(username));
 	username[sizeof(username) - 1] = 0;
 	close(fd2);
+
+	token = get_serv_store_entry_auth_token();
+	if (!token)
+		syslog_panic("Cannot find auth token for server!\n");
 
 	us_len = sizeof(struct username_struct) + crypto_box_zerobytes;
 	us = xzmalloc(us_len);
