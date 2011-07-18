@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <syslog.h>
+#include <assert.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
@@ -29,6 +30,7 @@
 #include "strlcpy.h"
 #include "deflate.h"
 #include "curve.h"
+#include "mtrand.h"
 #include "netdev.h"
 #include "xmalloc.h"
 #include "curvetun.h"
@@ -264,12 +266,14 @@ close:
 static void notify_init(int fd, int udp, struct curve25519_proto *p,
 			struct curve25519_struct *c, char *home)
 {
-	int state, fd2;
+	int state, fd2, i;
 	ssize_t err, clen;
-	size_t us_len, msg_len;
+	size_t us_len, msg_len, pad;
 	struct ct_proto hdr;
 	char username[256], path[512], *us, *cbuff, *msg;
 	unsigned char auth[crypto_auth_hmacsha512256_BYTES], *token;
+
+	mt_init_by_random_device();
 
 	memset(&hdr, 0, sizeof(hdr));
 	hdr.flags |= PROTO_FLAG_INIT;
@@ -303,10 +307,15 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 	if (unlikely(err))
 		syslog_panic("Cannot create init hmac message!\n");
 
-	msg_len = clen + sizeof(auth);
+	assert(148 == clen + sizeof(auth));
+
+	pad = mt_rand_int32() % 200;
+	msg_len = clen + sizeof(auth) + pad;
 	msg = xzmalloc(msg_len);
 	memcpy(msg, auth, sizeof(auth));
 	memcpy(msg + sizeof(auth), cbuff, clen);
+	for (i = sizeof(auth) + clen; i < msg_len; ++i)
+		msg[i] = (uint8_t) mt_rand_int32();
 	hdr.payload = htons((uint16_t) msg_len);
 
 	state = 1;
