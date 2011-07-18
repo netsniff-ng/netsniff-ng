@@ -14,7 +14,6 @@
 #include "locking.h"
 #include "mtrand.h"
 #include "compiler.h"
-#include "randombytes.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"
 
 /* Some parts derived from public domain code from curveprotect project */

@@ -7,7 +7,7 @@ hdr1=crypto_box_curve25519xsalsa20poly1305.h
 hdr2=crypto_scalarmult_curve25519.h
 hdr3=crypto_hash_sha512.h
 hdr4=crypto_verify_32.h
-hdr5=randombytes.h
+hdr5=crypto_auth_hmacsha512256.h
 
 mkdir -p nacl include
 

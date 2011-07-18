@@ -22,7 +22,6 @@
 #include "mtrand.h"
 #include "curvetun.h"
 #include "locking.h"
-#include "randombytes.h"
 #include "crypto_verify_32.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"
 #include "crypto_scalarmult_curve25519.h"

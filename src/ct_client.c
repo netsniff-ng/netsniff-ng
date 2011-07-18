@@ -35,6 +35,7 @@
 #include "servmgmt.h"
 #include "usermgmt.h"
 #include "compiler.h"
+#include "crypto_auth_hmacsha512256.h"
 
 extern sig_atomic_t sigint;
 
@@ -264,10 +265,12 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 			struct curve25519_struct *c, char *home)
 {
 	int state, fd2;
-	ssize_t err;
+	ssize_t err, clen;
+	size_t us_len, msg_len;
 	struct ct_proto hdr;
-	struct username_struct us;
-	char username[256], path[512];
+	char username[256], path[512], *us, *cbuff, *msg;
+	unsigned char auth[crypto_auth_hmacsha512256_BYTES];
+	unsigned char token[crypto_auth_hmacsha512256_KEYBYTES];
 
 	memset(&hdr, 0, sizeof(hdr));
 	hdr.flags |= PROTO_FLAG_INIT;
@@ -282,11 +285,26 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 	username[sizeof(username) - 1] = 0;
 	close(fd2);
 
+	us_len = sizeof(struct username_struct) + crypto_box_zerobytes;
+	us = xzmalloc(us_len);
 	err = username_msg(username, strlen(username) + 1,
-			   (char *) &us, sizeof(us));
+			   us + crypto_box_zerobytes,
+			   us_len - crypto_box_zerobytes);
 	if (unlikely(err))
 		syslog_panic("Cannot create init message!\n");
-	hdr.payload = htons((uint16_t) sizeof(us));
+	clen = curve25519_encode(c, p, (unsigned char *) us, us_len,
+				 (unsigned char **) &cbuff);
+	if (unlikely(clen <= 0))
+		syslog_panic("Init encrypt error!\n");
+	err = crypto_auth_hmacsha512256(auth, (unsigned char *) cbuff, clen, token);
+	if (unlikely(err))
+		syslog_panic("Cannot create init hmac message!\n");
+
+	msg_len = clen + sizeof(auth);
+	msg = xzmalloc(msg_len);
+	memcpy(msg, auth, sizeof(auth));
+	memcpy(msg + sizeof(auth), cbuff, clen);
+	hdr.payload = htons((uint16_t) msg_len);
 
 	state = 1;
 	setsockopt(fd, udp ? IPPROTO_UDP : IPPROTO_TCP,
@@ -297,7 +315,7 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 		syslog(LOG_ERR, "Error writing init data to net: %s\n",
 		       strerror(errno));
 
-	err = write_exact(fd, &us, sizeof(us), 0);
+	err = write_exact(fd, msg, msg_len, 0);
 	if (unlikely(err < 0))
 		syslog(LOG_ERR, "Error writing init data to net: %s\n",
 		       strerror(errno));
@@ -305,6 +323,8 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 	state = 0;
 	setsockopt(fd, udp ? IPPROTO_UDP : IPPROTO_TCP,
 		   udp ? UDP_CORK : TCP_CORK, &state, sizeof(state));
+	xfree(msg);
+	xfree(us);
 }
 
 static void notify_close(int fd)
