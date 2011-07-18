@@ -302,7 +302,6 @@ int username_msg(char *username, size_t len, char *dst, size_t dlen)
 	uint32_t salt;
 	unsigned char h[crypto_hash_sha512_BYTES];
 	struct username_struct *us = (struct username_struct *) dst;
-	struct taia ts;
 	char *uname;
 	size_t uname_len;
 
@@ -322,27 +321,20 @@ int username_msg(char *username, size_t len, char *dst, size_t dlen)
 	uname[uname_len - 1] = 0;
 	crypto_hash_sha512(h, (unsigned char *) uname, strlen(uname));
 
-	memset(&ts, 0, sizeof(ts));
-	taia_now(&ts);
-
 	us->salt = htonl(salt);
 	memcpy(us->hash, h, sizeof(us->hash));
-	taia_pack(us->taia, &ts);
 
 	xfree(uname);
 	return 0;
 }
 
 enum is_user_enum username_msg_is_user(char *src, size_t slen, char *username,
-				       size_t len, struct taia *arrival_taia)
+				       size_t len)
 {
-	int not_same = 1, is_ts_good = 0;
-	enum is_user_enum ret = USERNAMES_NE;
 	char *uname;
 	size_t uname_len;
 	uint32_t salt;
 	struct username_struct *us = (struct username_struct *) src;
-	struct taia packet_taia;
 	unsigned char h[crypto_hash_sha512_BYTES];
 
 	if (slen < sizeof(struct username_struct)) {
@@ -358,24 +350,13 @@ enum is_user_enum username_msg_is_user(char *src, size_t slen, char *username,
 	snprintf(uname, uname_len, "%s%u", username, salt);
 	uname[uname_len - 1] = 0;
 	crypto_hash_sha512(h, (unsigned char *) uname, strlen(uname));
+	xfree(uname);
 
 	if (!crypto_verify_32(&h[0], &us->hash[0]) &&
 	    !crypto_verify_32(&h[32], &us->hash[32]))
-		not_same = 0;
+		return USERNAMES_OK;
 	else
-		not_same = 1;
-
-	taia_unpack(us->taia, &packet_taia);
-	is_ts_good = is_good_taia(arrival_taia, &packet_taia);
-	if (!not_same && is_ts_good)
-		ret = USERNAMES_OK;
-	else if (!not_same && !is_ts_good)
-		ret = USERNAMES_TS;
-	else
-		ret = USERNAMES_NE;
-
-	xfree(uname);
-	return ret;
+		return USERNAMES_NE;
 }
 
 static int register_user_by_socket(int fd, struct curve25519_proto *proto)
@@ -426,23 +407,17 @@ int try_register_user_by_socket(struct curve25519_struct *c,
 	int ret = -1;
 	struct user_store *elem;
 	enum is_user_enum err;
-	struct taia arrival_tai;
 
 	rwlock_rd_lock(&store_lock);
 	elem = store;
-	taia_now(&arrival_tai);
 	while (elem) {
 		err = username_msg_is_user((char *) src, slen,
 					   elem->username,
-					   strlen(elem->username) + 1,
-					   &arrival_tai);
+					   strlen(elem->username) + 1);
 		if (err == USERNAMES_OK) {
 			syslog(LOG_INFO, "Found user %s for id %d!\n",
 			       elem->username, sock);
 			ret = register_user_by_socket(sock, &elem->proto_inf);
-			break;
-		} else if (err == USERNAMES_TS) {
-			syslog(LOG_ERR, "Bad packet time! Dropping connection!\n");
 			break;
 		}
 		elem = elem->next;
@@ -460,23 +435,17 @@ int try_register_user_by_sockaddr(struct curve25519_struct *c,
 	int ret = -1;
 	struct user_store *elem;
 	enum is_user_enum err;
-	struct taia arrival_tai;
 
 	rwlock_rd_lock(&store_lock);
 	elem = store;
-	taia_now(&arrival_tai);
 	while (elem) {
 		err = username_msg_is_user((char *) src, slen,
 					   elem->username,
-					   strlen(elem->username) + 1,
-					   &arrival_tai);
+					   strlen(elem->username) + 1);
 		if (err == USERNAMES_OK) {
 			syslog(LOG_INFO, "Found user %s!\n", elem->username);
 			ret = register_user_by_sockaddr(sa, sa_len,
 							&elem->proto_inf);
-			break;
-		} else if (err == USERNAMES_TS) {
-			syslog(LOG_ERR, "Bad packet time! Dropping connection!\n");
 			break;
 		}
 		elem = elem->next;
