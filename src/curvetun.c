@@ -110,7 +110,7 @@ static void help(void)
 	printf("Options:\n");
 	printf("  -k|--keygen             Generate public/private keypair\n");
 	printf("  -x|--export             Export your public data for remote servers\n");
-	printf("  -A|--auth-token         Export your auth_token for remote clients\n");
+	printf("  -A|--auth-token         Export your shared auth_token for remote clients\n");
 	printf("  -C|--dumpc              Dump parsed clients\n");
 	printf("  -S|--dumps              Dump parsed servers\n");
 	printf("  -D|--nofork             Do not daemonize\n");
