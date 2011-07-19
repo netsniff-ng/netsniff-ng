@@ -227,7 +227,7 @@ close:
 		clen = curve25519_decode(ws->c, p, (unsigned char *) buff +
 					 sizeof(struct ct_proto),
 					 rlen - sizeof(struct ct_proto),
-					 (unsigned char **) &cbuff);
+					 (unsigned char **) &cbuff, NULL);
                 if (unlikely(clen <= 0)) {
 			syslog(LOG_ERR, "CPU%u: UDP net decryption error: %zd\n",
 			       ws->cpu, clen);
@@ -442,7 +442,7 @@ close:
 		clen = curve25519_decode(ws->c, p, (unsigned char *) buff +
 					 sizeof(struct ct_proto),
 					 rlen - sizeof(struct ct_proto),
-					 (unsigned char **) &cbuff);
+					 (unsigned char **) &cbuff, NULL);
                 if (unlikely(clen <= 0)) {
 			syslog(LOG_ERR, "CPU%u: TCP net decryption error: %zd\n",
 			       ws->cpu, clen);

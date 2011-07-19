@@ -75,7 +75,8 @@ extern ssize_t curve25519_encode(struct curve25519_struct *c,
 extern ssize_t curve25519_decode(struct curve25519_struct *c,
 				 struct curve25519_proto *p,
 				 unsigned char *chipertext, size_t size,
-				 unsigned char **plaintext);
+				 unsigned char **plaintext,
+				 struct taia *arrival_taia);
 
 static inline void tai_pack(unsigned char *s, struct tai *t)
 {

@@ -270,11 +270,11 @@ ssize_t curve25519_encode(struct curve25519_struct *c, struct curve25519_proto *
 
 ssize_t curve25519_decode(struct curve25519_struct *c, struct curve25519_proto *p,
 			  unsigned char *chipertext, size_t size,
-			  unsigned char **plaintext)
+			  unsigned char **plaintext, struct taia *arrival_taia)
 {
 	int ret;
 	ssize_t done = size;
-	struct taia packet_taia, arrival_taia;
+	struct taia packet_taia, __arrival_taia;
 
 	spinlock_lock(&c->dec_lock);
 	if (unlikely(size > c->dec_buf_size)) {
@@ -286,10 +286,13 @@ ssize_t curve25519_decode(struct curve25519_struct *c, struct curve25519_proto *
 		return 0;
 	}
 
-	taia_now(&arrival_taia);
+	if (arrival_taia == NULL) {
+		taia_now(&__arrival_taia);
+		arrival_taia = &__arrival_taia;
+	}
 	taia_unpack(chipertext + crypto_box_boxzerobytes - NONCE_LENGTH,
 		    &packet_taia);
-        if (is_good_taia(&arrival_taia, &packet_taia) == 0) {
+        if (is_good_taia(arrival_taia, &packet_taia) == 0) {
 		/* Ignoring packet */
 		spinlock_unlock(&c->dec_lock);
 		syslog(LOG_ERR, "Bad packet time! Dropping connection!\n");

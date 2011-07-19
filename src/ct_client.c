@@ -128,7 +128,7 @@ static void handler_udp_net_to_tun(int sfd, int dfd, struct z_struct *z,
 		clen = curve25519_decode(c, p, (unsigned char *) buff +
 					 sizeof(struct ct_proto),
 					 rlen - sizeof(struct ct_proto),
-					 (unsigned char **) &cbuff);
+					 (unsigned char **) &cbuff, NULL);
 		if (unlikely(clen <= 0)) {
 			syslog(LOG_ERR, "UDP net decrypt error!\n");
 			goto close;
@@ -237,7 +237,7 @@ static void handler_tcp_net_to_tun(int sfd, int dfd, struct z_struct *z,
 		clen = curve25519_decode(c, p, (unsigned char *) buff +
 					 sizeof(struct ct_proto),
 					 rlen - sizeof(struct ct_proto),
-					 (unsigned char **) &cbuff);
+					 (unsigned char **) &cbuff, NULL);
 		if (unlikely(clen <= 0)) {
 			syslog(LOG_ERR, "TCP net decrypt error!\n");
 			goto close;

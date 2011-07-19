@@ -27,6 +27,7 @@
 #include "crypto_verify_32.h"
 #include "crypto_hash_sha512.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"
+#include "crypto_auth_hmacsha512256.h"
 
 #define crypto_box_pub_key_size crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES
 
@@ -60,6 +61,8 @@ static struct rwlock sock_map_lock;
 
 static struct hash_table sockaddr_mapper;
 static struct rwlock sockaddr_map_lock;
+
+static unsigned char token[crypto_auth_hmacsha512256_KEYBYTES];
 
 static void init_sock_mapper(void)
 {
@@ -179,7 +182,7 @@ void parse_userfile_and_generate_user_store_or_die(char *homedir)
 	FILE *fp;
 	char path[512], buff[512], *username, *key;
 	unsigned char pkey[crypto_box_pub_key_size];
-	int line = 1, ret;
+	int line = 1, ret, fd;
 	struct user_store *elem;
 
 	memset(path, 0, sizeof(path));
@@ -253,6 +256,16 @@ void parse_userfile_and_generate_user_store_or_die(char *homedir)
 
 	init_sock_mapper();
 	init_sockaddr_mapper();
+
+	memset(path, 0, sizeof(path));
+	snprintf(path, sizeof(path), "%s/%s", homedir, FILE_TOKEN);
+	path[sizeof(path) - 1] = 0;
+
+	fd = open_or_die(path, O_RDONLY);
+	ret = read(fd, token, sizeof(token));
+	if (ret != crypto_auth_hmacsha512256_KEYBYTES)
+		panic("Cannot read auth token!\n");
+	close(fd);
 }
 
 void dump_user_store(void)
@@ -405,17 +418,55 @@ int try_register_user_by_socket(struct curve25519_struct *c,
 				char *src, size_t slen, int sock)
 {
 	int ret = -1;
+	char *cbuff = NULL;
+	size_t real_len = 132;
+	ssize_t clen;
 	struct user_store *elem;
 	enum is_user_enum err;
+	unsigned char auth[crypto_auth_hmacsha512256_BYTES];
+	struct taia arrival_taia;
+
+	/* assert(132 == clen + sizeof(auth)); */
+	/*
+	 * Check hmac first, if malicious, drop immediately before we
+	 * investigate more efforts.
+	 */
+	if (slen < real_len)
+		return -1;
+
+	taia_now(&arrival_taia);
+	memcpy(auth, src, sizeof(auth));
+	src += sizeof(auth);
+	real_len -= sizeof(auth);
+	if (crypto_auth_hmacsha512256_verify(auth, (unsigned char *) src,
+					     real_len, token)) {
+		syslog(LOG_ERR, "Bad packet hmac for id %d! Dropping!\n", sock);
+		return -1;
+	} else {
+		syslog(LOG_INFO, "Good packet hmac for id %d!\n", sock);
+	}
 
 	rwlock_rd_lock(&store_lock);
 	elem = store;
 	while (elem) {
-		err = username_msg_is_user((char *) src, slen,
-					   elem->username,
+		clen = curve25519_decode(c, &elem->proto_inf,
+					 (unsigned char *) src, real_len,
+					 (unsigned char **) &cbuff,
+					 &arrival_taia);
+		if (clen <= 0) {
+			elem = elem->next;
+			continue;
+		}
+
+		cbuff += crypto_box_zerobytes;
+		clen -= crypto_box_zerobytes;
+
+		syslog(LOG_INFO, "Packet decoded sucessfully for id %d!\n", sock);
+
+		err = username_msg_is_user(cbuff, clen, elem->username,
 					   strlen(elem->username) + 1);
 		if (err == USERNAMES_OK) {
-			syslog(LOG_INFO, "Found user %s for id %d!\n",
+			syslog(LOG_INFO, "Found user %s for id %d! Registering ...\n",
 			       elem->username, sock);
 			ret = register_user_by_socket(sock, &elem->proto_inf);
 			break;
@@ -424,6 +475,8 @@ int try_register_user_by_socket(struct curve25519_struct *c,
 	}
 	rwlock_unlock(&store_lock);
 
+	if (ret == -1)
+		syslog(LOG_ERR, "User not found! Dropping connection!\n");
 	return ret;
 }
 
@@ -433,17 +486,56 @@ int try_register_user_by_sockaddr(struct curve25519_struct *c,
 				  size_t sa_len)
 {
 	int ret = -1;
+	char *cbuff = NULL;
 	struct user_store *elem;
+	ssize_t clen;
+	size_t real_len = 132;
 	enum is_user_enum err;
+	unsigned char auth[crypto_auth_hmacsha512256_BYTES];
+	struct taia arrival_taia;
+
+	/* assert(132 == clen + sizeof(auth)); */
+	/*
+	 * Check hmac first, if malicious, drop immediately before we
+	 * investigate more efforts.
+	 */
+	if (slen < real_len)
+		return -1;
+
+	taia_now(&arrival_taia);
+	memcpy(auth, src, sizeof(auth));
+	src += sizeof(auth);
+	real_len -= sizeof(auth);
+	if (crypto_auth_hmacsha512256_verify(auth, (unsigned char *) src,
+					     real_len, token)) {
+		syslog(LOG_ERR, "Got bad packet hmac! Dropping!\n");
+		return -1;
+	} else {
+		syslog(LOG_INFO, "Got good packet hmac!\n");
+	}
 
 	rwlock_rd_lock(&store_lock);
 	elem = store;
 	while (elem) {
-		err = username_msg_is_user((char *) src, slen,
-					   elem->username,
+		clen = curve25519_decode(c, &elem->proto_inf,
+					 (unsigned char *) src, real_len,
+					 (unsigned char **) &cbuff,
+					 &arrival_taia);
+		if (clen <= 0) {
+			elem = elem->next;
+			continue;
+		}
+
+		cbuff += crypto_box_zerobytes;
+		clen -= crypto_box_zerobytes;
+
+		syslog(LOG_INFO, "Packet decoded sucessfully!\n");
+
+		err = username_msg_is_user(cbuff, clen, elem->username,
 					   strlen(elem->username) + 1);
 		if (err == USERNAMES_OK) {
-			syslog(LOG_INFO, "Found user %s!\n", elem->username);
+			syslog(LOG_INFO, "Found user %s! Registering ...\n",
+			       elem->username);
 			ret = register_user_by_sockaddr(sa, sa_len,
 							&elem->proto_inf);
 			break;
