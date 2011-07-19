@@ -1,0 +1,35 @@
+Using the curvetun tunnel for browsing the web (example howto):
+
+IPv4 example:
+
+Server side:
+  * You start curvetun server as usual and set up a NAT from eth0/curves0
+    and enable IPv4 forwarding.
+  * Your public IP on eth0, i.e. 1.2.3.4
+  * Clocks periodically synced, i.e. ntpdate ntp.ubuntu.com pool.ntp.org
+
+# ... start curvetun server ...
+# ifconfig curves0 up
+# ifconfig curves0 10.0.0.1/24
+# echo 1 > /proc/sys/net/ipv4/ip_forward
+# iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+# iptables -A FORWARD -i eth0 -o curves0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+# iptables -A FORWARD -i curves0 -o eth0 -j ACCEPT
+
+Client side:
+  * Your IP on eth0, i.e. 5.6.7.8
+  * Clocks periodically synced, i.e. ntpdate ntp.ubuntu.com pool.ntp.org
+
+# ... start curvetun client ...
+# ... lookup your default gateway ...
+  -> either stated in route, or
+  -> traceroute google.ch and take the first IP entry
+  -> default gw here i.e. 5.6.7.9
+# ifconfig curvec0 up
+# ifconfig curvec0 10.0.0.2/24
+# route add -net 1.2.3.0 netmask 255.255.255.0 gw 5.6.7.9 dev eth0
+# route add default gw 10.0.0.1
+# route del default gw 5.6.7.9
+
+... and there you go!
+
