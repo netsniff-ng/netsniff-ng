@@ -94,7 +94,7 @@ static void z_buffer_realloc(struct z_buffer * zb, size_t off, size_t extra)
 ssize_t z_deflate(struct z_struct *z, char *src, size_t size,
 		  char **dst)
 {
-	struct z_buffer * zb = NULL;
+	struct z_buffer *zb = NULL;
 	int ret;
 	size_t todo, done = 0;
 
@@ -131,11 +131,11 @@ ssize_t z_deflate(struct z_struct *z, char *src, size_t size,
 ssize_t z_inflate(struct z_struct *z, char *src, size_t size,
 		  char **dst)
 {
-	struct z_buffer * zb = NULL;
+	struct z_buffer *zb = NULL;
 	int ret;
 	int todo, done = 0;
 
-	zb = &z->deflate;
+	zb = &z->inflate;
 
 	spinlock_lock(&zb->lock);
 	memset(zb->buf, 0, zb->size);
