@@ -17,3 +17,13 @@
     - ...
   + Can be interpreted and transmitted by trafgen
 
+* curvetun:
+  + Fix zlib compression
+
+* netsniff-ng:
+  + Cleanup code, especially in dissector, print-modes and proto sections
+
+* ifpps:
+  + Fix NaN's in CPU usage
+  + Cleanup redundant code
+
