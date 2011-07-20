@@ -26,4 +26,5 @@
 * ifpps:
   + Fix NaN's in CPU usage
   + Cleanup redundant code
+  + Add more gnuplot features, i.e. automatic gnuplot script generation
 
