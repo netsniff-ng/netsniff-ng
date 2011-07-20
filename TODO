@@ -1,0 +1,19 @@
+* bpfc: Berkeley Packet Filter compiler
+  + Generates filter files that can be read by netsniff-ng
+  + Own high-level filter language
+
+* tgc: trafgen config file generator
+  + Generates full packets, i.e. with support for
+    - VLAN
+    - MPLS
+    - BPDU
+    - IGMP
+    - DNS
+    - ARP
+    - ICMP
+    - HTTP
+    - IPv4 / IPv6
+    - UDP / TCP
+    - ...
+  + Can be interpreted and transmitted by trafgen
+
