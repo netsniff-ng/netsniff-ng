@@ -2,6 +2,12 @@
   + Generates filter files that can be read by netsniff-ng
   + Own high-level filter language
 
+* trafgen:
+  + Allow inter departure time as i.e. exponential, uniform, cauchy, normal,
+    pareto, ... distributed
+  + Allow configuration from stdin, so that configs from tgc can be piped to
+    trafgen directly
+
 * tgc: trafgen config file generator
   + Generates full packets, i.e. with support for
     - VLAN
@@ -15,6 +21,8 @@
     - IPv4 / IPv6
     - UDP / TCP
     - ...
+  + Generates set of packets which are i.e. IMIX, Cisco, Tolly,
+    RPR, ... distributed
   + Can be interpreted and transmitted by trafgen
 
 * curvetun:
