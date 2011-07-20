@@ -1,35 +1,152 @@
 Using the curvetun tunnel for browsing the web (example howto):
 
-IPv4 example:
+curvetun inital setup example:
+//////////////////////////////
 
-Server side:
-  * You start curvetun server as usual and set up a NAT from eth0/curves0
-    and enable IPv4 forwarding.
-  * Your public IP on eth0, i.e. 1.2.3.4
-  * Clocks periodically synced, i.e. ntpdate ntp.ubuntu.com pool.ntp.org
+If you've never run curvetun before, you need to do an initial setup once.
 
-# ... start curvetun server ...
-# ifconfig curves0 up
-# ifconfig curves0 10.0.0.1/24
-# echo 1 > /proc/sys/net/ipv4/ip_forward
-# iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-# iptables -A FORWARD -i eth0 -o curves0 -m state --state RELATED,ESTABLISHED -j ACCEPT
-# iptables -A FORWARD -i curves0 -o eth0 -j ACCEPT
+At first, make sure that the servers and clients clocks are periodically
+synced, i.e. with ntpdate ntp.ubuntu.com pool.ntp.org as a cronjob. This is
+necessary to protect against replay attacks.
 
-Client side:
-  * Your IP on eth0, i.e. 5.6.7.8
-  * Clocks periodically synced, i.e. ntpdate ntp.ubuntu.com pool.ntp.org
+Also, make sure if you have read/write access to /dev/net/tun. You should not
+run curvetun as root!
 
-# ... start curvetun client ...
-# ... lookup your default gateway ...
-  -> either stated in route, or
-  -> traceroute google.ch and take the first IP entry
-  -> default gw here i.e. 5.6.7.9
-# ifconfig curvec0 up
-# ifconfig curvec0 10.0.0.2/24
-# route add -net 1.2.3.0 netmask 255.255.255.0 gw 5.6.7.9 dev eth0
-# route add default gw 10.0.0.1
-# route del default gw 5.6.7.9
+Then, the first step is to create keys and config files. On both, the client
+and server do:
 
-... and there you go!
+$ curvetun -k
+
+You are asked for a username. You can use an email address or whatever. Here,
+we assume, you've entered 'mysrv1' on the server and 'myclient1' on the client
+side.
+
+Now on the necessary file have been created:
+	~/.curvetun/priv.key   - Your private key
+	~/.curvetun/pub.key    - Your public key
+	~/.curvetun/username   - Your username (here: mysrv1 or myclient1)
+	~/.curvetun/auth_token - Your server auth token
+	~/.curvetun/clients    - Participants the server accepts
+	~/.curvetun/servers    - Possible servers the client can connect to
+
+'clients' and 'servers' are empty at the beginning and need to be filled now.
+The 'clients' file is meant for the server, so that it knows what clients
+may connect. The 'servers' file is for the client, where it can select
+curvetun servers to connect to.
+
+Now the client exports it's public key for the server:
+
+client$ curvetun -x
+
+... where it prints sth like:
+
+  myclient1;11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11
+  \_______/ \_____________________________________________________________________________________________/
+   username  32 byte public key for 'myclient1'
+
+This line is transferred to the server admin, where the admin add this entry
+into his 'clients' file like:
+
+server$ echo "myclient1;11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11" >> ~/.curvetun/clients
+
+The server admin can check, if the server has registered it properly by ...
+
+server$ curvetun -C
+
+... which prints all parsed clients from ~/.curvetun/clients.
+
+Now, the client 'myclient1' is known to the server; that's it for the server
+config. The next step is to tell the client what he needs to connect to the
+server.
+
+We hereby assume, the tunnel server has an public IP i.e. 1.2.3.4, runs on
+port 6666 and uses UDP as a carrier protocol. In case you are behind a NAT,
+you can use curvetun's --stun option for starting the server, to obtain your
+mapping. However, in this example we continue with 1.2.3.4 and 6666, UDP.
+
+First, the server needs to export its key to the client, as:
+
+server$ curvetun -x
+
+... where it prints sth like:
+
+  mysrv1;22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22
+  \____/ \_____________________________________________________________________________________________/
+ username  32 byte public key for 'mysrv1'
+           ^-- you need this public key
+
+Then, the server needs to export its auth token:
+
+server$ curvetun -A
+
+... where it prints sth like:
+
+  33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33
+  \_____________________________________________________________________________________________/
+    32 byte server auth token (for all clients)
+    ^-- you need this auth token, too
+
+Now, you give the client your connection information:
+   * IP 1.2.3.4
+   * Port 6666
+   * Proto UDP
+   * Pubkey 22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22
+   * Auth token 33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33
+
+... and the client puts it all together in its config like:
+
+client$ echo "myfirstserver;1.2.3.4;6666;udp;22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22;33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33" >> ~/.curvetun/servers
+
+... again, where he can check his config with:
+
+client$ curvetun -S
+
+Okay, assuming we've made it, then we start the server with:
+
+server$ curvetun -s -p 6666 -u
+server# ifconfig curves0 up
+server# ifconfig curves0 10.0.0.1/24
+
+Server-side information, errors or warnings will appear in syslog!
+
+Then, we start the client with ...
+
+client$ curvetun -c=myfirstserver
+client# ifconfig curvec0 up
+client# ifconfig curvec0 10.0.0.2/24
+
+Also, client-side information, errors or warnings will appear in syslog!
+... and we're now able to ping the server:
+
+client$ ping 10.0.0.1
+
+That's it!
+
+IPv4 routing example:
+/////////////////////
+
+Server side: your public IP on eth0 is i.e. 1.2.3.4
+
+server$ ... start curvetun server ...
+server# ifconfig curves0 up
+server# ifconfig curves0 10.0.0.1/24
+server# echo 1 > /proc/sys/net/ipv4/ip_forward
+server# iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+server# iptables -A FORWARD -i eth0 -o curves0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+server# iptables -A FORWARD -i curves0 -o eth0 -j ACCEPT
+
+Client side: your IP on eth0 is i.e. 5.6.7.8
+
+client$ ... start curvetun client ...
+client# ... lookup your default gateway ...
+         -> either stated in route, or
+         -> traceroute google.ch and take the first IP entry
+         -> default gw here i.e. 5.6.7.9
+client# ifconfig curvec0 up
+client# ifconfig curvec0 10.0.0.2/24
+client# route add -net 1.2.3.0 netmask 255.255.255.0 gw 5.6.7.9 dev eth0
+client# route add default gw 10.0.0.1
+client# route del default gw 5.6.7.9
+
+... and there you go, now open your browser (or whatever) on the client side.
 
