@@ -52,6 +52,11 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 	struct ct_proto *hdr;
 	size_t off = sizeof(struct ct_proto) + crypto_box_zerobytes;
 
+	if (!buff || len <= off) {
+		errno = EINVAL;
+		return;
+	}
+
 	errno = 0;
 	while ((rlen = read(sfd, buff + off, len - off)) > 0) {
 		hdr = (struct ct_proto *) buff;
@@ -106,9 +111,13 @@ static void handler_udp_net_to_tun(int sfd, int dfd, struct z_struct *z,
 	ssize_t rlen, err, plen, clen;
 	struct ct_proto *hdr;
 	struct sockaddr_storage naddr;
-	socklen_t nlen;
+	socklen_t nlen = sizeof(naddr);
 
-	nlen = sizeof(naddr);
+	if (!buff || !len) {
+		errno = EINVAL;
+		return;
+	}
+
 	memset(&naddr, 0, sizeof(naddr));
 
 	errno = 0;
@@ -165,6 +174,11 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 	struct ct_proto *hdr;
 	size_t off = sizeof(struct ct_proto) + crypto_box_zerobytes;
 
+	if (!buff || len <= off) {
+		errno = EINVAL;
+		return;
+	}
+
 	errno = 0;
 	while ((rlen = read(sfd, buff + off, len - off)) > 0) {
 		hdr = (struct ct_proto *) buff;
@@ -220,6 +234,11 @@ static void handler_tcp_net_to_tun(int sfd, int dfd, struct z_struct *z,
 	char *pbuff, *cbuff;
 	ssize_t rlen, err, plen, clen;
 	struct ct_proto *hdr;
+
+	if (!buff || !len) {
+		errno = EINVAL;
+		return;
+	}
 
 	errno = 0;
 	while ((rlen = handler_tcp_read(sfd, buff, len)) > 0) {

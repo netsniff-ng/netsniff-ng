@@ -90,6 +90,11 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 	socklen_t nlen;
 	size_t off = sizeof(struct ct_proto) + crypto_box_zerobytes;
 
+	if (!buff || len <= off) {
+		errno = EINVAL;
+		return 0;
+	}
+
 	errno = 0;
 	while ((rlen = read(fd, buff + off, len - off)) > 0) {
 		dfd = -1;
@@ -181,9 +186,13 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 	struct ct_proto *hdr;
 	struct curve25519_proto *p;
 	struct sockaddr_storage naddr;
-	socklen_t nlen;
+	socklen_t nlen = sizeof(naddr);
 
-	nlen = sizeof(naddr);
+	if (!buff || !len) {
+		errno = EINVAL;
+		return 0;
+	}
+
 	memset(&naddr, 0, sizeof(naddr));
 
 	errno = 0;
@@ -289,6 +298,11 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 	socklen_t nlen;
 	size_t off = sizeof(struct ct_proto) + crypto_box_zerobytes;
 
+	if (!buff || len <= off) {
+		errno = EINVAL;
+		return 0;
+	}
+
 	errno = 0;
 	while ((rlen = read(fd, buff + off, len - off)) > 0) {
 		dfd = -1;
@@ -359,6 +373,11 @@ ssize_t handler_tcp_read(int fd, char *buff, size_t len)
 	ssize_t rlen;
 	struct ct_proto *hdr = (struct ct_proto *) buff;
 
+	if (!buff || !len) {
+		errno = EINVAL;
+		return 0;
+	}
+
 	/* May exit on EAGAIN if 0 Byte read */
 	rlen = read_exact(fd, buff, sizeof(struct ct_proto), 1);
 	if (rlen < 0)
@@ -396,6 +415,11 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 	ssize_t rlen, err, plen, clen;
 	struct ct_proto *hdr;
 	struct curve25519_proto *p;
+
+	if (!buff || !len)  {
+		errno = EINVAL;
+		return 0;
+	}
 
 	errno = 0;
 	while ((rlen = handler_tcp_read(fd, buff, len)) > 0) {
