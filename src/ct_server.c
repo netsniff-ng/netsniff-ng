@@ -164,8 +164,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 	return keep;
 }
 
-static void handler_udp_notify_close(int fd, struct sockaddr_storage *addr,
-				     socklen_t len)
+static void handler_udp_notify_close(int fd, struct sockaddr_storage *addr)
 {
 	ssize_t err;
 	struct ct_proto hdr;
@@ -174,7 +173,10 @@ static void handler_udp_notify_close(int fd, struct sockaddr_storage *addr,
 	hdr.flags |= PROTO_FLAG_EXIT;
 	hdr.payload = 0;
 
-	err = sendto(fd, &hdr, sizeof(hdr), 0, (struct sockaddr *) addr, len);
+	err = sendto(fd, &hdr, sizeof(hdr), 0, (struct sockaddr *) addr, sizeof(*addr));
+
+	if (err < 0)
+		syslog(LOG_ERR, "Error while sending close notification: %s!\n", strerror(errno));
 }
 
 static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
@@ -211,7 +213,7 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 close:
 			remove_user_by_sockaddr(&naddr, nlen);
 			trie_addr_remove_addr(&naddr, nlen);
-			handler_udp_notify_close(fd, &naddr, nlen);
+			handler_udp_notify_close(fd, &naddr);
 			return keep;
 		}
 		if (hdr->flags & PROTO_FLAG_INIT) {
@@ -405,6 +407,9 @@ static void handler_tcp_notify_close(int fd)
 	hdr.payload = 0;
 
 	err = write(fd, &hdr, sizeof(hdr));
+
+	if (err < 0)
+		syslog(LOG_ERR, "Error while sending close notification: %s!\n", strerror(errno));
 }
 
 static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
