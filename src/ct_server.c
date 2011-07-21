@@ -607,8 +607,8 @@ static void thread_spawn_or_panic(unsigned int cpus, int efd, int refd,
 		if (ret < 0)
 			syslog_panic("Cannot create event socket!\n");
 
-		threadpool[i].z = xmalloc(sizeof(struct z_struct));
-		threadpool[i].c = xmalloc(sizeof(struct curve25519_struct));
+		threadpool[i].z = xmalloc(sizeof(*threadpool[i].z));
+		threadpool[i].c = xmalloc(sizeof(*threadpool[i].c));
 		threadpool[i].parent.efd = efd;
 		threadpool[i].parent.refd = refd;
 		threadpool[i].parent.tunfd = tunfd;
@@ -622,7 +622,7 @@ static void thread_spawn_or_panic(unsigned int cpus, int efd, int refd,
 			syslog_panic("Thread creation failed!\n");
 
 		ret = pthread_setaffinity_np(threadpool[i].trid,
-					     sizeof(cpu_set_t), &cpuset);
+					     sizeof(cpuset), &cpuset);
 		if (ret < 0)
 			syslog_panic("Thread CPU migration failed!\n");
 
