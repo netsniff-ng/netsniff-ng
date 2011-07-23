@@ -217,11 +217,17 @@ static void check_file_or_die(char *home, char *file, int maybeempty)
 	if (stat(path, &st))
 		panic("No such file %s! Type --help for further information\n",
 		      path);
+
 	if (st.st_uid != getuid())
 		panic("You are not the owner of %s!\n", path);
-	if (st.st_mode != (S_IRUSR | S_IWUSR | S_IFREG))
+
+	if (!S_ISREG(st.st_mode))
+		panic("%s is not a regular file!\n", path);
+
+	if ((st.st_mode & ~S_IFREG) != (S_IRUSR | S_IWUSR))
 		panic("You have set too many permissions on %s (%o)!\n",
 		      path, st.st_mode);
+
 	if (maybeempty == 0 && st.st_size == 0)
 		panic("%s is empty!\n", path);
 }
