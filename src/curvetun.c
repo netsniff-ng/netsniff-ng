@@ -550,11 +550,13 @@ static int main_dumps(char *home)
 
 static void daemonize(const char *lockfile)
 {
-	pid_t pid, sid;
+	mode_t lperm = S_IRWXU | S_IRGRP | S_IXGRP; /* 0750 */
 	int lfp;
 
 	if (getppid() == 1)
 		return;
+
+	umask(lperm);
 
 	if (lockfile) {
 		lfp = open(lockfile, O_RDWR | O_CREAT | O_EXCL, 0640);
@@ -563,26 +565,10 @@ static void daemonize(const char *lockfile)
 			      "curvetun server already running?\n",
 			      lockfile);
 		close(lfp);
-        }
+	}
 
-	pid = fork();
-	if (pid < 0)
-		panic("Unable to fork process!\n");
-	if (pid > 0)
-		exit(0);
-	/* At this point we are executing as the child process */
-	umask(0);
-	sid = setsid();
-	if (sid < 0)
-		panic("Unable to create a new session!\n");
-	if ((chdir("/")) < 0)
-		panic("Unable to set dir to /!\n");
-
-	info("Forked off!\n");
-
-	close(STDIN_FILENO);
-	close(STDOUT_FILENO);
-	close(STDERR_FILENO);
+	if (daemon(0, 0))
+		panic("Cannot daemonize: %s", strerror(errno));
 }
 
 static int main_client(char *home, char *dev, char *alias, int daemon)
