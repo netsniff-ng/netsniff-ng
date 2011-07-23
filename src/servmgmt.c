@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #include "die.h"
 #include "compiler.h"
@@ -59,7 +60,7 @@ static void server_store_free(struct server_store *ss)
 void parse_userfile_and_generate_serv_store_or_die(char *homedir)
 {
 	FILE *fp;
-	char path[512], buff[1024], *alias, *host, *port, *udp, *key, *atok;
+	char path[PATH_MAX], buff[1024], *alias, *host, *port, *udp, *key, *atok;
 	unsigned char pkey[crypto_box_pub_key_size];
 	unsigned char atoken[crypto_auth_hmacsha512256_KEYBYTES];
 	int line = 1, __udp = 0, ret;

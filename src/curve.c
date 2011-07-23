@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <syslog.h>
+#include <limits.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/stat.h>
@@ -201,7 +202,7 @@ int curve25519_proto_init(struct curve25519_proto *p, unsigned char *pubkey_remo
 {
 	int fd;
 	ssize_t ret;
-	char path[512];
+	char path[PATH_MAX];
 	unsigned char secretkey_own[crypto_box_curve25519xsalsa20poly1305_SECRETKEYBYTES];
 	unsigned char publickey_own[crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES];
 

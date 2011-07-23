@@ -23,6 +23,7 @@
 #include <getopt.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
@@ -207,7 +208,7 @@ static void towel(void)
 
 static void check_file_or_die(char *home, char *file, int maybeempty)
 {
-	char path[512];
+	char path[PATH_MAX];
 	struct stat st;
 
 	memset(path, 0, sizeof(path));
@@ -252,7 +253,7 @@ static char *fetch_home_dir(void)
 static void write_username(char *home)
 {
 	int fd, ret;
-	char path[512], *eof;
+	char path[PATH_MAX], *eof;
 	char user[512];
 
 	memset(path, 0, sizeof(path));
@@ -284,7 +285,7 @@ static void write_username(char *home)
 static void create_curvedir(char *home)
 {
 	int ret, fd;
-	char path[512];
+	char path[PATH_MAX];
 
 	memset(path, 0, sizeof(path));
 	snprintf(path, sizeof(path), "%s/%s", home, ".curvetun/");
@@ -327,7 +328,7 @@ static void create_keypair(char *home)
 	ssize_t ret;
 	unsigned char publickey[crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES];
 	unsigned char secretkey[crypto_box_curve25519xsalsa20poly1305_SECRETKEYBYTES];
-	char path[512];
+	char path[PATH_MAX];
 
 	info("Reading from /dev/random (this may take a while) ...\n");
 
@@ -373,7 +374,7 @@ static void create_token(char *home)
 	int fd;
 	ssize_t ret;
 	unsigned char token[crypto_auth_hmacsha512256_KEYBYTES];
-	char path[512];
+	char path[PATH_MAX];
 
 	info("Reading from /dev/random (this may take a while) ...\n");
 
@@ -405,7 +406,7 @@ static void check_config_keypair_or_die(char *home)
 	unsigned char publickey[crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES];
 	unsigned char publicres[crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES];
 	unsigned char secretkey[crypto_box_curve25519xsalsa20poly1305_SECRETKEYBYTES];
-	char path[512];
+	char path[PATH_MAX];
 
 	memset(path, 0, sizeof(path));
 	snprintf(path, sizeof(path), "%s/%s", home, FILE_PRIVKEY);
@@ -452,7 +453,7 @@ static int main_token(char *home)
 {
 	int fd, i;
 	ssize_t ret;
-	char path[512], tmp[64];
+	char path[PATH_MAX], tmp[64];
 
 	check_config_exists_or_die(home);
 
@@ -481,7 +482,7 @@ static int main_export(char *home)
 {
 	int fd, i;
 	ssize_t ret;
-	char path[512], tmp[64];
+	char path[PATH_MAX], tmp[64];
 
 	check_config_exists_or_die(home);
 	check_config_keypair_or_die(home);

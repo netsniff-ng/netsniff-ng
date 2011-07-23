@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <syslog.h>
+#include <limits.h>
 #include <arpa/inet.h>
 
 #include "die.h"
@@ -180,7 +181,7 @@ static int __check_duplicate_pubkey(unsigned char *pubkey, size_t len)
 void parse_userfile_and_generate_user_store_or_die(char *homedir)
 {
 	FILE *fp;
-	char path[512], buff[512], *username, *key;
+	char path[PATH_MAX], buff[512], *username, *key;
 	unsigned char pkey[crypto_box_pub_key_size];
 	int line = 1, ret, fd;
 	struct user_store *elem;

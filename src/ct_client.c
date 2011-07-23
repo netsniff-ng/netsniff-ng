@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <syslog.h>
+#include <limits.h>
 #include <assert.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -289,7 +290,7 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 	ssize_t err, clen;
 	size_t us_len, msg_len, pad;
 	struct ct_proto hdr;
-	char username[256], path[512], *us, *cbuff, *msg;
+	char username[256], path[PATH_MAX], *us, *cbuff, *msg;
 	unsigned char auth[crypto_auth_hmacsha512256_BYTES], *token;
 
 	mt_init_by_random_device();
