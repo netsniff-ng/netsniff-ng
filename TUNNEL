@@ -103,7 +103,7 @@ client$ curvetun -S
 
 Okay, assuming we've made it, then we start the server with:
 
-server$ curvetun -s -p 6666 -u
+server# curvetun -s -p 6666 -u
 server# ifconfig curves0 up
 server# ifconfig curves0 10.0.0.1/24
 
