@@ -218,9 +218,6 @@ static void check_file_or_die(char *home, char *file, int maybeempty)
 		panic("No such file %s! Type --help for further information\n",
 		      path);
 
-	if (st.st_uid != getuid())
-		panic("You are not the owner of %s!\n", path);
-
 	if (!S_ISREG(st.st_mode))
 		panic("%s is not a regular file!\n", path);
 
