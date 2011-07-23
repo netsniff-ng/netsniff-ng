@@ -553,11 +553,15 @@ static int main_dumps(char *home)
 
 static void daemonize(const char *lockfile)
 {
+	char pidstr[8];
 	mode_t lperm = S_IRWXU | S_IRGRP | S_IXGRP; /* 0750 */
 	int lfp;
 
 	if (getppid() == 1)
 		return;
+
+	if (daemon(0, 0))
+		panic("Cannot daemonize: %s", strerror(errno));
 
 	umask(lperm);
 
@@ -567,11 +571,14 @@ static void daemonize(const char *lockfile)
 			panic("Cannot create lockfile at %s! "
 			      "curvetun server already running?\n",
 			      lockfile);
+
+		snprintf(pidstr, sizeof(pidstr), "%u", getpid());
+
+		if (write(lfp, pidstr, strlen(pidstr)) <= 0)
+			panic("Could not write pid to pidfile %s", lockfile);
+
 		close(lfp);
 	}
-
-	if (daemon(0, 0))
-		panic("Cannot daemonize: %s", strerror(errno));
 }
 
 static int main_client(char *home, char *dev, char *alias, int daemon)
