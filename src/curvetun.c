@@ -574,6 +574,7 @@ static void daemonize(const char *lockfile)
 			      lockfile);
 
 		snprintf(pidstr, sizeof(pidstr), "%u", getpid());
+		pidstr[sizeof(pidstr) - 1] = 0;
 
 		if (write(lfp, pidstr, strlen(pidstr)) <= 0)
 			panic("Could not write pid to pidfile %s", lockfile);
