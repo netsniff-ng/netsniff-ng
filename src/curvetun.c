@@ -328,16 +328,23 @@ static void create_keypair(char *home)
 {
 	int fd;
 	ssize_t ret;
-	unsigned char publickey[crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES];
-	unsigned char secretkey[crypto_box_curve25519xsalsa20poly1305_SECRETKEYBYTES];
+	unsigned char publickey[crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES] = { 0 };
+	unsigned char secretkey[crypto_box_curve25519xsalsa20poly1305_SECRETKEYBYTES] = { 0 };
 	char path[PATH_MAX];
+	const char * errstr = NULL;
+	int err = 0;
 
 	info("Reading from %s (this may take a while) ...\n", CURVETUN_ENTROPY_SOURCE);
 
 	fd = open_or_die(CURVETUN_ENTROPY_SOURCE, O_RDONLY);
 	ret = read_exact(fd, secretkey, sizeof(secretkey), 0);
-	if (ret != sizeof(secretkey))
-		panic("Cannot read from %s!\n", CURVETUN_ENTROPY_SOURCE);
+
+	if (ret != sizeof(secretkey)) {
+		err = EIO;
+		errstr = "Cannot read from "CURVETUN_ENTROPY_SOURCE"!\n";
+		goto out;
+	}
+
 	close(fd);
 
 	crypto_scalarmult_curve25519_base(publickey, secretkey);
@@ -347,11 +354,21 @@ static void create_keypair(char *home)
 	path[sizeof(path) - 1] = 0;
 
 	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-	if (fd < 0)
-		panic("Cannot open pubkey file!\n");
+
+	if (fd < 0) {
+		err = EIO;
+		errstr = "Cannot open pubkey file!\n";
+		goto out;
+	}
+
 	ret = write(fd, publickey, sizeof(publickey));
-	if (ret != sizeof(publickey))
-		panic("Cannot write public key!\n");
+
+	if (ret != sizeof(publickey)) {
+		err = EIO;
+		errstr = "Cannot write public key!\n";
+		goto out;
+	}
+
 	close(fd);
 
 	info("Public key written to %s!\n", path);
@@ -361,14 +378,31 @@ static void create_keypair(char *home)
 	path[sizeof(path) - 1] = 0;
 
 	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-	if (fd < 0)
-		panic("Cannot open privkey file!\n");
+
+	if (fd < 0) {
+		err = EIO;
+		errstr = "Cannot open privkey file!\n";
+		goto out;
+	}
+
 	ret = write(fd, secretkey, sizeof(secretkey));
-	if (ret != sizeof(secretkey))
-		panic("Cannot write private key!\n");
+
+	if (ret != sizeof(secretkey)) {
+		err = EIO;
+		errstr = "Cannot write private key!\n";
+		goto out;
+	}
+
+out:
 	close(fd);
 
-	info("Private key written to %s!\n", path);
+	memset(publickey, 0, sizeof(publickey));
+	memset(secretkey, 0, sizeof(secretkey));
+
+	if (err)
+		panic("%s: %s", errstr, strerror(errno));
+	else
+		info("Private key written to %s!\n", path);
 }
 
 static void create_token(char *home)
@@ -377,13 +411,20 @@ static void create_token(char *home)
 	ssize_t ret;
 	unsigned char token[crypto_auth_hmacsha512256_KEYBYTES];
 	char path[PATH_MAX];
+	int err = 0;
+	const char * errstr = NULL;
 
 	info("Reading from %s (this may take a while) ...\n", CURVETUN_ENTROPY_SOURCE);
 
 	fd = open_or_die(CURVETUN_ENTROPY_SOURCE, O_RDONLY);
 	ret = read_exact(fd, token, sizeof(token), 0);
-	if (ret != sizeof(token))
-		panic("Cannot read from %s!\n", CURVETUN_ENTROPY_SOURCE);
+
+	if (ret != sizeof(token)) {
+		err = EIO;
+		errstr = "Cannot read from "CURVETUN_ENTROPY_SOURCE"!\n";
+		goto out;
+	}
+
 	close(fd);
 
 	memset(path, 0, sizeof(path));
@@ -391,20 +432,38 @@ static void create_token(char *home)
 	path[sizeof(path) - 1] = 0;
 
 	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-	if (fd < 0)
-		panic("Cannot open pubkey file!\n");
+
+	if (fd < 0) {
+		err = EIO;
+		errstr = "Cannot open pubkey file!\n";
+		goto out;
+	}
+
 	ret = write(fd, token, sizeof(token));
-	if (ret != sizeof(token))
-		panic("Cannot write auth token!\n");
+
+	if (ret != sizeof(token)) {
+		err = EIO;
+		errstr = "Cannot write auth token!\n";
+		goto out;
+	}
+
+out:
 	close(fd);
 
-	info("Auth token written to %s!\n", path);
+	memset(token, 0, sizeof(token));
+
+	if(err)
+		panic("%s: %s", errstr, strerror(errno));
+	else
+		info("Auth token written to %s!\n", path);
 }
 
 static void check_config_keypair_or_die(char *home)
 {
 	int fd;
 	ssize_t ret;
+	int err;
+	const char * errstr = NULL;
 	unsigned char publickey[crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES];
 	unsigned char publicres[crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES];
 	unsigned char secretkey[crypto_box_curve25519xsalsa20poly1305_SECRETKEYBYTES];
@@ -415,11 +474,21 @@ static void check_config_keypair_or_die(char *home)
 	path[sizeof(path) - 1] = 0;
 
 	fd = open(path, O_RDONLY);
-	if (fd < 0)
-		panic("Cannot open privkey file!\n");
+
+	if (fd < 0) {
+		err = EIO;
+		errstr = "Cannot open privkey file!\n";
+		goto out;
+	}
+
 	ret = read(fd, secretkey, sizeof(secretkey));
-	if (ret != sizeof(secretkey))
-		panic("Cannot read private key!\n");
+
+	if (ret != sizeof(secretkey)) {
+		err = EIO;
+		errstr = "Cannot read private key!\n";
+		goto out;
+	}
+
 	close(fd);
 
 	memset(path, 0, sizeof(path));
@@ -427,18 +496,41 @@ static void check_config_keypair_or_die(char *home)
 	path[sizeof(path) - 1] = 0;
 
 	fd = open(path, O_RDONLY);
-	if (fd < 0)
-		panic("Cannot open pubkey file!\n");
+
+	if (fd < 0) {
+		err = EIO;
+		errstr = "Cannot open pubkey file!\n";
+		goto out;
+	}
+
 	ret = read(fd, publickey, sizeof(publickey));
-	if (ret != sizeof(publickey))
-		panic("Cannot read public key!\n");
-	close(fd);
+
+	if (ret != sizeof(publickey)) {
+		err = EIO;
+		errstr = "Cannot read public key!\n";
+		goto out;
+	}
 
 	crypto_scalarmult_curve25519_base(publicres, secretkey);
 
-	if (crypto_verify_32(publicres, publickey))
-		panic("WARNING: your keypair is corrupted!!! You need to "
-		      "generate new keys!!!\n");
+	err = crypto_verify_32(publicres, publickey);
+
+	if (err) {
+		err = EINVAL;
+		errstr = "WARNING: your keypair is corrupted!!! You need to "
+			 "generate new keys!!!\n";
+		goto out;
+	}
+
+out:
+	close(fd);
+
+	memset(publickey, 0, sizeof(publickey));
+	memset(publicres, 0, sizeof(publicres));
+	memset(secretkey, 0, sizeof(secretkey));
+
+	if (err)
+		panic("%s: %s\n", errstr, strerror(errno));
 }
 
 static int main_keygen(char *home)
