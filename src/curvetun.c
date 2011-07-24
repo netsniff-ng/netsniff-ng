@@ -497,7 +497,7 @@ static int main_export(char *home)
 
 	fd = open_or_die(path, O_RDONLY);
 	while ((ret = read(fd, tmp, sizeof(tmp))) > 0) {
-		ret = write(1, tmp, ret);
+		ret = write(STDOUT_FILENO, tmp, ret);
 	}
 	close(fd);
 
