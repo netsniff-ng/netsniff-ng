@@ -48,6 +48,8 @@
 #include "crypto_scalarmult_curve25519.h"
 #include "crypto_auth_hmacsha512256.h"
 
+#define CURVETUN_ENTROPY_SOURCE	"/dev/random"
+
 enum working_mode {
 	MODE_UNKNOW,
 	MODE_KEYGEN,
@@ -330,12 +332,12 @@ static void create_keypair(char *home)
 	unsigned char secretkey[crypto_box_curve25519xsalsa20poly1305_SECRETKEYBYTES];
 	char path[PATH_MAX];
 
-	info("Reading from /dev/random (this may take a while) ...\n");
+	info("Reading from %s (this may take a while) ...\n", CURVETUN_ENTROPY_SOURCE);
 
-	fd = open_or_die("/dev/random", O_RDONLY);
+	fd = open_or_die(CURVETUN_ENTROPY_SOURCE, O_RDONLY);
 	ret = read_exact(fd, secretkey, sizeof(secretkey), 0);
 	if (ret != sizeof(secretkey))
-		panic("Cannot read from /dev/random!\n");
+		panic("Cannot read from %s!\n", CURVETUN_ENTROPY_SOURCE);
 	close(fd);
 
 	crypto_scalarmult_curve25519_base(publickey, secretkey);
@@ -376,12 +378,12 @@ static void create_token(char *home)
 	unsigned char token[crypto_auth_hmacsha512256_KEYBYTES];
 	char path[PATH_MAX];
 
-	info("Reading from /dev/random (this may take a while) ...\n");
+	info("Reading from %s (this may take a while) ...\n", CURVETUN_ENTROPY_SOURCE);
 
-	fd = open_or_die("/dev/random", O_RDONLY);
+	fd = open_or_die(CURVETUN_ENTROPY_SOURCE, O_RDONLY);
 	ret = read_exact(fd, token, sizeof(token), 0);
 	if (ret != sizeof(token))
-		panic("Cannot read from /dev/random!\n");
+		panic("Cannot read from %s!\n", CURVETUN_ENTROPY_SOURCE);
 	close(fd);
 
 	memset(path, 0, sizeof(path));
