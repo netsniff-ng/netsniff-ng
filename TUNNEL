@@ -111,7 +111,7 @@ Server-side information, errors or warnings will appear in syslog!
 
 Then, we start the client with ...
 
-client$ curvetun -c=myfirstserver
+client# curvetun -c=myfirstserver
 client# ifconfig curvec0 up
 client# ifconfig curvec0 10.0.0.2/24
 
