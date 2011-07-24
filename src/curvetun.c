@@ -455,7 +455,7 @@ static int main_token(char *home)
 {
 	int fd, i;
 	ssize_t ret;
-	char path[PATH_MAX], tmp[64];
+	char path[PATH_MAX], tmp[crypto_auth_hmacsha512256_KEYBYTES];
 
 	check_config_exists_or_die(home);
 
