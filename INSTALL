@@ -9,26 +9,18 @@ the TX_RING is officially integrated since then.
 netsniff-ng has been sucessfully tested on x86 and x86_64. Please drop
 us a short mail, if it runs sucessfully on hardware other than that.
 
-What libraries are required? You'll need libc, libncurses (only for ifpps),
-and zlib, nothing else. It is common, that these libraries are shipped as
-distribution packages for an easy installation.
-
-If you have arch x86 or x86_64, you can add -DARCH_X86 to the Makefiles
-CFLAGS in order to exploit some x86-based CPU features (MMX/SSE*).
-
-Also, you might want to adapt the IO Vector size in src/sg_pcap.c
-(IOVSIZ) and in src/mmap_pcap.c (map_size) if you don't have enough RAM.
+What libraries are required? You'll need libc, libpthread, libncurses
+(only for ifpps), and zlib, nothing else. It is common, that these
+libraries are shipped as distribution packages for an easy installation.
 
 The installation process is fairly simple:
 
-  $ cd netsniff-ng/src/<tool>/
+  $ cd netsniff-ng/src/
   $ make
   # make install
 
- where <tool> := { netsniff-ng, ifpps, trafgen, curvetun }
-
 The uninstallation process is analogous:
 
-  $ cd netsniff-ng/src/<tool>/
+  $ cd netsniff-ng/src/
   # make uninstall
 
