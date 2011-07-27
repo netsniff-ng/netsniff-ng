@@ -21,11 +21,13 @@ netsniff-ng can be used for protocol analysis, reverse engineering and network
 debugging and currently consists of the following tools:
 
   * netsniff-ng: the 'zero-copy' sniffer itself
+  * arppoison: an ARP cache poisoning utility (todo)
   * trafgen: a powerful 'zero-copy' network packet generator
-  * ifpps: a top-like kernel networking statistics tool
+  * tgc: a trafgen config file generator (todo)
   * curvetun: a lightweight curve25519-based multiuser IP tunnel
   * ashunt: an AS trace route utility (todo)
   * bpfc: a tiny BPF compiler (todo)
+  * ifpps: a top-like kernel networking statistics tool
 
 For any questions or feedback about netsniff-ng you are welcome to leave us a
 message to <workgroup@netsniff-ng.org>. This project is purely non-commercial
