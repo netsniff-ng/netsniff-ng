@@ -33,6 +33,9 @@
 * netsniff-ng:
   + Cleanup code, especially in dissector, print-modes and proto sections
 
+* arppoison:
+  + ARP Cache Poisoning utility
+
 * ifpps:
   + Fix NaN's in CPU usage
   + Cleanup redundant code
