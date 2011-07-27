@@ -1,0 +1,96 @@
+netsniff-ng operating system distribution package maintainers:
+
+  1 - OS distribution top-level site
+  2 - OS distribution netsniff-ng site
+  M - Maintainers name
+  W - Maintainers website
+  E - Maintainers e-mail
+  C - Maintainers country
+  F - List of former maintainer (Name, E-mail and/or Website)
+
+We'd hereby like to express a huge thanks to our awesome maintainers! Kudos!
+If you are a maintainer for netsniff-ng and not listed here, please contact
+us at <workgroup@netsniff-ng.org>.
+
+Debian
+ * 1: http://www.debian.org/
+ * 2: http://packages.debian.org/search?keywords=netsniff-ng
+ * M: Kartik Mistry
+ * E: kartik@debian.org
+ * W: http://people.debian.org/~kartik/
+ * C: India
+ * F: Romain Beauxis, toots@rastageeks.org, http://www.lix.polytechnique.fr/Labo/Romain.Beauxis/
+
+Fedora/RHEL
+ * 1: http://fedoraproject.org/
+ * 2: https://admin.fedoraproject.org/pkgdb/acls/name/netsniff-ng
+ * M: Jiří Skála
+ * E: jskala@redhat.com
+ * C: Czech Republic
+ * W: http://fedoraproject.org/wiki/User:Jskala
+ * F: James Findley, sixy@gmx.com
+
+Ubuntu
+ * 1: http://www.ubuntu.com/
+ * 2: https://launchpad.net/ubuntu/+source/netsniff-ng/
+ * (pulled from Debian)
+
+Arch Linux
+ * 1: http://archlinux.org/
+ * 2: http://aur.archlinux.org/packages.php?K=netsniff-ng
+ * M: Can Celasun
+ * E: dcelasun@gmail.com
+ * W: http://durucancelasun.info/
+ * C: Turkey
+
+Gentoo/Sabayon
+ * 1: http://www.gentoo.org/
+ * 2: http://gpo.zugaina.org/net-misc/netsniff-ng
+ * M: Epinephrine
+ * E: epinephrineaddict@gmail.com
+
+Slackware
+ * 1: http://www.slackware.com/
+ * 2: http://www.slackers.it/repository/netsniff-ng/
+ * M: Corrado Franco
+ * E: conraid@gmail.com
+ * W: http://conraid.net/
+ * C: Italy
+
+openSUSE/SLE
+ * 1: http://opensuse.org/
+ * 2: http://software.opensuse.org/search?baseproject=ALL&p=1&q=netsniff-ng
+ * M: Pascal Bleser
+ * E: pascal.bleser@skynet.be
+ * W: http://linux01.gwdg.de/~pbleser/
+ * C: Belgium
+
+Mandriva
+ * 1: http://www.mandriva.com/
+ * 2: http://sophie.zarb.org/srpm/Mandriva,cooker,/netsniff-ng
+ * M: Guillaume Rousse
+ * E: guillomovitch@mandriva.org
+ * W: http://www.zarb.org/~guillomovitch/
+ * C: France
+
+Trisquel
+ * 1: http://trisquel.info/
+ * 2: http://packages.trisquel.info/slaine/net/netsniff-ng
+ * (pulled from Debian)
+
+GRML
+ * 1: http://grml.org/
+ * 2: http://grml.org/changelogs/README-grml-2010.04/
+ * M: Michael Prokop
+ * E: mika@grml.org
+ * W: http://grml.org/
+ * C: Austria
+
+Alpine Linux
+ * 1: http://alpinelinux.org/
+ * 2: http://git.alpinelinux.org/cgit/aports.git/commit/?id=43f91b3d133e6937a3de8372f60733d02f3fa065
+ * M: Fabian Affolter
+ * E: fabian@affolter-engineering.ch
+ * W: http://affolter-engineering.ch
+ * C: Switzerland
+
