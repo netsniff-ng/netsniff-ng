@@ -56,17 +56,6 @@ do {					\
 	die();				\
 } while (0)
 
-static inline void panic_trace(char *msg, ...)
-{
-	va_list vl;
-	va_start(vl, msg);
-	vfprintf(stderr, msg, vl);
-	va_end(vl);
-
-	stacktrace();
-	die();
-}
-
 static inline void whine(char *msg, ...)
 {
 	va_list vl;
@@ -84,7 +73,6 @@ static inline void BUG(char *msg, ...)
 	vfprintf(stderr, msg, vl);
 	va_end(vl);
 
-	stacktrace();
 	die();
 }
 
@@ -98,7 +86,6 @@ static inline void BUG_ON(int cond, char *msg, ...)
 		vfprintf(stderr, msg, vl);
 		va_end(vl);
 
-		stacktrace();
 		die();
 	}
 }

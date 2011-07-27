@@ -6,7 +6,7 @@
 include ../definitions.mk
 
 INCLUDE    = -I..
-CFLAGS    += -DTARGETNAME="\"ashunt\""
+CFLAGS    +=
 LIBS       =
 
 core-objs  = ashunt.o

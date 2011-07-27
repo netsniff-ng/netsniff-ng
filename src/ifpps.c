@@ -791,7 +791,6 @@ int main(int argc, char **argv)
 		error_and_die(EXIT_FAILURE, "This is no networking device!\n");
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
-	register_signal(SIGSEGV, muntrace_handler);
 	if (promisc) {
 		check_for_root_maybe_die();
 		ifflags = enter_promiscuous_mode(ifname);

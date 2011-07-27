@@ -720,7 +720,6 @@ int main(int argc, char **argv)
 
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
-	register_signal(SIGSEGV, muntrace_handler);
 
 	header();
 	curve25519_selftest();

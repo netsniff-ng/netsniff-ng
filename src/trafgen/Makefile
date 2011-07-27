@@ -6,7 +6,7 @@
 include ../definitions.mk
 
 INCLUDE    = -I..
-CFLAGS    += -DTARGETNAME="\"trafgen\""
+CFLAGS    +=
 LIBS       =
 
 core-objs  = trafgen.o

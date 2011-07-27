@@ -6,7 +6,7 @@
 include ../definitions.mk
 
 INCLUDE    = -I.. -I./include/
-CFLAGS    += -DTARGETNAME="\"curvetun\""
+CFLAGS    += 
 LIBS       = ./nacl/libnacl.a -lpthread -lz
 
 core-objs  = curvetun.o

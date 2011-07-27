@@ -801,7 +801,6 @@ int main(int argc, char **argv)
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
 	register_signal(SIGUSR1, signal_handler);
-	register_signal(SIGSEGV, muntrace_handler);
 	register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO);
 
 	init_pcap();

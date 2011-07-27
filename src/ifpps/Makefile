@@ -6,7 +6,7 @@
 include ../definitions.mk
 
 INCLUDE    = -I..
-CFLAGS    += -DTARGETNAME="\"ifpps\""
+CFLAGS    += 
 LIBS       = -lncurses
 
 core-objs  = ifpps.o

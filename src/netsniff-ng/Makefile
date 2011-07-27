@@ -6,7 +6,7 @@
 include ../definitions.mk
 
 INCLUDE    = -I..
-CFLAGS    += -DTARGETNAME="\"netsniff-ng\""
+CFLAGS    +=
 LIBS       = -lpthread
 
 core-objs  = netsniff-ng.o

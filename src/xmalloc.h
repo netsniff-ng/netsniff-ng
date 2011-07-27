@@ -10,9 +10,6 @@
 
 #include "compiler.h"
 
-extern void muntrace_handler(int signal);
-extern void stacktrace(void);
-
 extern __hidden void *xmalloc(size_t size);
 extern __hidden void *xzmalloc(size_t size);
 extern __hidden void *xmallocz(size_t size);
