@@ -25,7 +25,7 @@ int aslookup(char *lhost, size_t len, struct asrecord *rec,
 	int ret, err, fd = -1, try = 1;
 	struct addrinfo hints, *ahead, *ai;
 	struct sockaddr_in6 *saddr6;
-	char buff[20000];
+	char buff[1024];
 
 	if (!lhost || len + 8 > sizeof(buff) || !rec || !server || !port)
 		return -EIO;
