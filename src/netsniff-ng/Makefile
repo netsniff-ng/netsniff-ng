@@ -67,13 +67,13 @@ clean:
 
 install:
 	@install -D $(target) $(DESTDIR)/$(BINDIR)/$(target)
-	@install -d $(DESTDIR)/$(ETCDIR)/$(target)/rules
-	@cp -r ../rules/*.bpf $(DESTDIR)/$(ETCDIR)/$(target)/rules/
-	@cp -r ../conf/* $(DESTDIR)/$(ETCDIR)/$(target)/
+	@install -d $(DESTDIR)/$(ETCDIR)/$(GLOBALCFGDIR)/rules
+	@cp -r ../rules/*.bpf $(DESTDIR)/$(ETCDIR)/$(GLOBALCFGDIR)/rules/
+	@cp -r ../conf/* $(DESTDIR)/$(ETCDIR)/$(GLOBALCFGDIR)/
 	@install -D $(target).8.gz $(DESTDIR)/usr/share/man/man8/$(target).8.gz
 
 uninstall:
-	@rm $(DESTDIR)/$(BINDIR)/$(target) || true
+	@rm $(DESTDIR)/$(BINDIR)/$(GLOBALCFGDIR) || true
 	@rm $(DESTDIR)/usr/share/man/man8/$(target).8.gz || true
 
 help:
