@@ -23,7 +23,7 @@ debugging and currently consists of the following tools:
   * netsniff-ng: the 'zero-copy' sniffer itself
   * arppoison: an ARP cache poisoning utility (todo)
   * trafgen: a powerful 'zero-copy' network packet generator
-  * tgc: a trafgen config file generator (todo)
+  * tgsh: a trafgen frontend shell (todo)
   * curvetun: a lightweight curve25519-based multiuser IP tunnel
   * ashunt: an AS trace route utility (todo)
   * bpfc: a tiny BPF compiler (todo)
@@ -45,8 +45,8 @@ list for netsniff-ng moderated (spam free) user discussions is open to the
 public, too. Subscribe and mail to <netsniff-ng@googlegroups.com>.
 
 You might want to have a look at NOTE, INSTALL, REPORTING-BUGS, HACKING,
-CODING, FAQ, PATENTS and COPYING, too. Good lord, so much to read! Anyways,
-enough talking from my side and happy packet hacking!
+CODING, FAQ, and COPYING, too. Good lord, so much to read! Anyways, enough
+talking from my side and happy packet hacking!
 
 [1] http://netsniff-ng.org/
 [2] http://netsniff-ng.org/faq.html
