@@ -11,6 +11,8 @@ LIBS       =
 
 core-objs  = ashunt.o
 lib-objs   = xmalloc.o                  \
+	     aslookup.o                 \
+	     parser.o                   \
 	     strlcpy.o
 
 target     = ashunt
