@@ -3,6 +3,7 @@
  * Part of the netsniff-ng project
  * By Daniel Borkmann <daniel@netsniff-ng.org>
  * Copyright 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,
+ * Copyright 2011 Emmanuel Roullit.
  * Subject to the GPL.
  *
  * This is a lightweight multiuser IP tunnel based on Daniel J.
