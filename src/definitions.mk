@@ -18,6 +18,7 @@ MAKEFLAGS   += --no-print-directory
 
 BINDIR       = usr/sbin
 ETCDIR       = etc
+GLOBALCFGDIR = netsniff-ng
 
 define eq
 	$(if $(1:$(2)=),,$(if $(2:$(1)=),,T))
