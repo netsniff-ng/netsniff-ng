@@ -29,30 +29,30 @@ The netsniff-ng toolkit currently consists of the following utilities:
   * bpfc: a tiny BPF compiler (todo)
   * ifpps: a top-like kernel networking statistics tool
 
-For any questions or feedback about netsniff-ng you are welcome to leave us a
-message to <workgroup@netsniff-ng.org>. This project is purely non-commercial
-and will always stay that way! netsniff-ng is developed by Daniel Borkmann and
-Emmanuel Roullit.
+The netsniff-ng toolkit is an Open Source project covered by the GNU General 
+Public License. For any questions or feedback about netsniff-ng you are welcome
+to leave us a message to <workgroup@netsniff-ng.org>. This project is purely 
+non-commercial and will always stay that way! netsniff-ng is developed by 
+Daniel Borkmann and Emmanuel Roullit.
 
 Also, have a look at our FAQ [2] for answering your questions. Furthermore,
 we have a development blog [3] where we sometimes drop some interesting things
 or news for the outside world! A public repository of the old stable releases
-(which you probably do not want to have a look at), can be found here [4]. A 
-probably not so much up-to-date benchmark is available to the public [5], too.
+(which you probably do not want to have a look at), can be found here [4].
 
 Sometimes we also hang out in IRC at #netsniff-ng on freenode.org. A mailing
 list for netsniff-ng moderated (spam free) user discussions is open to the
 public, too. Subscribe and mail to <netsniff-ng@googlegroups.com>.
 
-By the way, some notes on zero-copy ... You might want to have NAPI drivers [6]
+By the way, some notes on zero-copy ... You might want to have NAPI drivers [5]
 enabled in your kernel to reduce interrupt load and for high-speed (= relative
 to the CPU speed) PCAP dumping and replay, a fast SSD isn't too bad either,
 and make sure to use netsniff-ngs scatter/gather or mmap I/O options. Next to
 this, (and this refers to packet generation as well), a 10-Gbit/s-Ethernet
 NIC, an appropriate amount of RAM and a fast CPU is recommended. Furthermore,
 you should bind the netsniff-ng tools to a specific CPU via commandline option
-(i.e. --bind 0). Some further recommendations can be found here [7]. Also,
-Eric Dumazets BPF Just-in-Time compiler can speed up the critical path [8].
+(i.e. --bind 0). Some further recommendations can be found here [6]. Also,
+Eric Dumazets BPF Just-in-Time compiler can speed up the critical path [7].
 
 You might want to have a look at INSTALL, REPORTING-BUGS, HACKING, CODING,
 FAQ, and COPYING, too. Anyways, enough talking from my side and happy packet
@@ -62,8 +62,7 @@ hacking!
 [2] http://netsniff-ng.org/faq.html
 [3] http://dev.netsniff-ng.org/
 [4] http://pub.netsniff-ng.org/
-[5] http://netsniff-ng.org/bench.html
-[6] http://www.linuxfoundation.org/collaborate/workgroups/networking/napi
-[7] http://datatag.web.cern.ch/datatag/howto/tcp.html
-[8] http://thread.gmane.org/gmane.linux.network/191115
+[5] http://www.linuxfoundation.org/collaborate/workgroups/networking/napi
+[6] http://datatag.web.cern.ch/datatag/howto/tcp.html
+[7] http://thread.gmane.org/gmane.linux.network/191115
 
