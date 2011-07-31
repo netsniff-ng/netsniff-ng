@@ -15,17 +15,25 @@
 #include <signal.h>
 #include <getopt.h>
 #include <ctype.h>
+#include <stdint.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
+#include "misc.h"
 #include "die.h"
 #include "xmalloc.h"
+#include "write_or_die.h"
 #include "aslookup.h"
 #include "version.h"
+#include "signals.h"
+#include "parser.h"
 
 #define WHOIS_SERVER_SOURCE "/etc/netsniff-ng/whois.conf"
 
 struct ash_cfg {
 	char *host;
-	int port;
+	char *port;
 	int init_ttl;
 	int max_ttl;
 	int dns_resolv;
@@ -38,10 +46,10 @@ struct ash_cfg {
 	int tos, nofrag;
 	int totlen;
 	char *whois;
-	int whois_port;
+	char *whois_port;
 };
 
-static sig_atomic_t sigint = 0;
+sig_atomic_t sigint = 0;
 
 static const char *short_options = "H:p:nNf:m:P:s:i:d:q:x:SAEt:Fl:w:W:hv";
 
@@ -115,7 +123,7 @@ static void help(void)
 	printf(" -w|--whois <server>     Use a different AS whois DB server\n");
 	printf("                         (default: /etc/netsniff-ng/whois.conf)\n");
 	printf(" -W|--wport <port>       Use a different port to AS whois server\n");
-	printf("                         (default: 49, /etc/netsniff-ng/whois.conf)\n");
+	printf("                         (default: /etc/netsniff-ng/whois.conf)\n");
 	printf(" -v|--version            Print version\n");
 	printf(" -h|--help               Print this help\n");
 	printf("\n");
@@ -150,13 +158,171 @@ static void version(void)
 
 static int do_trace(struct ash_cfg *cfg)
 {
+	info("AS TCP trace route to %s:%s, whois at %s:%s\n",
+	     cfg->host, cfg->port, cfg->whois, cfg->whois_port);
 	return 0;
+}
+
+void parse_whois_or_die(struct ash_cfg *cfg)
+{
+	int fd;
+	ssize_t ret;
+	char tmp[512], *ptr, *ptr2;
+
+	fd = open_or_die(WHOIS_SERVER_SOURCE, O_RDONLY);
+	while ((ret = read(fd, tmp, sizeof(tmp))) > 0) {
+		tmp[sizeof(tmp) - 1] = 0;
+		ptr = skips(tmp);
+		ptr2 = ptr;
+		while (*ptr2 != ' ' && ptr2 < &tmp[sizeof(tmp) - 1])
+			ptr2++;
+		if (*ptr2 != ' ')
+			panic("Parser error!\n");
+		*ptr2 = 0;
+		cfg->whois = xstrdup(ptr);
+		ptr = ptr2 + 1;
+		if (ptr >= &tmp[sizeof(tmp) - 1])
+			panic("Parser error!\n");
+		ptr = skips(ptr);
+		ptr[strlen(ptr) - 1] = 0;
+		cfg->whois_port = xstrdup(ptr);
+		break;
+	}
+	close(fd);
 }
 
 int main(int argc, char **argv)
 {
+	int c, opt_index, ret;
 	struct ash_cfg cfg;
-	help();
-	return 0;
+
+	check_for_root_maybe_die();
+
+	memset(&cfg, 0, sizeof(cfg));
+	cfg.init_ttl = 1;
+	cfg.max_ttl = 30;
+	cfg.queries = 3;
+	cfg.timeout = 3;
+
+	while ((c = getopt_long(argc, argv, short_options, long_options,
+		&opt_index)) != EOF) {
+		switch (c) {
+		case 'h':
+			help();
+			break;
+		case 'v':
+			version();
+			break;
+		case 'H':
+			cfg.host = xstrdup(optarg);
+			break;
+		case 'p':
+			cfg.port = xstrdup(optarg);
+			break;
+		case 'n':
+			cfg.dns_resolv = 0;
+			break;
+		case 'N':
+			cfg.dns_resolv = 1;
+			break;
+		case 'f':
+			cfg.init_ttl = atoi(optarg);
+			break;
+		case 'm':
+			cfg.max_ttl = atoi(optarg);
+			break;
+		case 'P':
+			cfg.src_port = atoi(optarg);
+			break;
+		case 's':
+			cfg.src_ip = xstrdup(optarg);
+			break;
+		case 'i':
+		case 'd':
+			cfg.dev = xstrdup(optarg);
+			break;
+		case 'q':
+			cfg.queries = atoi(optarg);
+			break;
+		case 'x':
+			cfg.timeout = atoi(optarg);
+			break;
+		case 'S':
+			cfg.syn = 1;
+			break;
+		case 'A':
+			cfg.ack = 1;
+			break;
+		case 'E':
+			cfg.ecn = 1;
+			break;
+		case 't':
+			cfg.tos = atoi(optarg);
+			break;
+		case 'F':
+			cfg.nofrag = 1;
+			break;
+		case 'l':
+			cfg.totlen = atoi(optarg);
+			break;
+		case 'w':
+			cfg.whois = xstrdup(optarg);
+			break;
+		case 'W':
+			cfg.whois_port = xstrdup(optarg);
+			break;
+		case '?':
+			switch (optopt) {
+			case 'H':
+			case 'p':
+			case 'f':
+			case 'm':
+			case 'P':
+			case 's':
+			case 'i':
+			case 'd':
+			case 'q':
+			case 'x':
+			case 't':
+			case 'l':
+			case 'w':
+			case 'W':
+				panic("Option -%c requires an argument!\n",
+				      optopt);
+			default:
+				if (isprint(optopt))
+					whine("Unknown option character "
+					      "`0x%X\'!\n", optopt);
+				die();
+		}
+		default:
+			break;
+		}
+	}
+
+	if (argc < 5 || !cfg.host || !cfg.port || cfg.init_ttl > cfg.max_ttl)
+		help();
+	if (!cfg.whois || !cfg.whois_port)
+		parse_whois_or_die(&cfg);
+
+	register_signal(SIGINT, signal_handler);
+	register_signal(SIGHUP, signal_handler);
+
+	header();
+	ret = do_trace(&cfg);
+
+	if (cfg.whois_port)
+		xfree(cfg.whois_port);
+	if (cfg.whois)
+		xfree(cfg.whois);
+	if (cfg.dev)
+		xfree(cfg.dev);
+	if (cfg.src_ip)
+		xfree(cfg.src_ip);
+	if (cfg.host)
+		xfree(cfg.host);
+	if (cfg.port)
+		xfree(cfg.port);
+	return ret;
 }
 
