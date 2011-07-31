@@ -20,6 +20,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
+#include <netinet/in.h>
+#include <asm/byteorder.h>
 
 #include "misc.h"
 #include "die.h"
@@ -50,6 +52,86 @@ struct ash_cfg {
 	char *whois_port;
 	int ip;
 };
+
+struct ipv4hdr {
+#if defined(__LITTLE_ENDIAN_BITFIELD)
+	__extension__ uint8_t h_ihl:4,
+			      h_version:4;
+#elif defined (__BIG_ENDIAN_BITFIELD)
+	__extension__ uint8_t h_version:4,
+			      h_ihl:4;
+#else
+# error "Please fix <asm/byteorder.h>"
+#endif
+	uint8_t h_tos;
+	uint16_t h_tot_len;
+	uint16_t h_id;
+	uint16_t h_frag_off;
+	uint8_t h_ttl;
+	uint8_t h_protocol;
+	uint16_t h_check;
+	uint32_t h_saddr;
+	uint32_t h_daddr;
+} __attribute__((packed));
+
+/*
+* IPv6 fixed header
+*
+* BEWARE, it is incorrect. The first 4 bits of flow_lbl
+* are glued to priority now, forming "class".
+*/
+struct ipv6hdr {
+#if defined(__LITTLE_ENDIAN_BITFIELD)
+	__extension__ uint8_t priority:4,
+			      version:4;
+#elif defined(__BIG_ENDIAN_BITFIELD)
+	__extension__ uint8_t version:4,
+			      priority:4;
+#else
+# error "Please fix <asm/byteorder.h>"
+#endif
+	uint8_t flow_lbl[3];
+	uint16_t payload_len;
+	uint8_t nexthdr;
+	uint8_t hop_limit;
+	struct in6_addr saddr;
+	struct in6_addr daddr;
+} __attribute__((packed));
+
+struct tcphdr {
+	uint16_t source;
+	uint16_t dest;
+	uint32_t seq;
+	uint32_t ack_seq;
+#if defined(__LITTLE_ENDIAN_BITFIELD)
+	__extension__ uint16_t res1:4,
+			       doff:4,
+			       fin:1,
+			       syn:1,
+			       rst:1,
+			       psh:1,
+			       ack:1,
+			       urg:1,
+			       ece:1,
+			       cwr:1;
+#elif defined(__BIG_ENDIAN_BITFIELD)
+	__extension__ uint16_t doff:4,
+			       res1:4,
+			       cwr:1,
+			       ece:1,
+			       urg:1,
+			       ack:1,
+			       psh:1,
+			       rst:1,
+			       syn:1,
+			       fin:1;
+#else
+# error "Adjust your <asm/byteorder.h> defines"
+#endif
+	uint16_t window;
+	uint16_t check;
+	uint16_t urg_ptr;
+} __attribute__((packed));
 
 sig_atomic_t sigint = 0;
 
