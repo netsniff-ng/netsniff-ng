@@ -32,8 +32,8 @@ The netsniff-ng toolkit currently consists of the following utilities:
 The netsniff-ng toolkit is an Open Source project covered by the GNU General 
 Public License. For any questions or feedback about netsniff-ng you are welcome
 to leave us a message to <workgroup@netsniff-ng.org>. This project is purely 
-non-commercial and will always stay that way! netsniff-ng is developed by 
-Daniel Borkmann and Emmanuel Roullit [8].
+non-commercial and will always stay that way! netsniff-ng is primary developed
+by Daniel Borkmann and Emmanuel Roullit [8].
 
 Also, have a look at our FAQ [2] for answering your questions. Furthermore,
 we have a development blog [3] where we sometimes drop some interesting things
