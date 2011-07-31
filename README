@@ -4,7 +4,17 @@
 
 \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
-netsniff-ng is a free, performant Linux network analyzer and networking toolkit.
+                                      .      .
+                                     /(      )\
+                                   .' {______} '.
+                                    \ ^,    ,^ /
+ netsniff-ng is a free, performant   |'O\  /O'|   _.<0101011>--
+ Linux network analyzer and          > `'  '` <  /
+ networking toolkit.                 ) ,.==., (  |
+                                    (|/--~~--\|)-'
+                                   /
+                                  (      ___
+                                   \__.=|___E
 
 The gain of performance is reached by 'zero-copy' mechanisms, so that the
 kernel does not need to copy packets from kernelspace to userspace and vice
