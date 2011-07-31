@@ -13,6 +13,8 @@ core-objs  = ashunt.o
 lib-objs   = xmalloc.o                  \
 	     aslookup.o                 \
 	     parser.o                   \
+	     misc.o                     \
+	     write_or_die.o             \
 	     strlcpy.o
 
 target     = ashunt

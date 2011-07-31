@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <syslog.h>
 #include <limits.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/stat.h>

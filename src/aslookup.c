@@ -17,17 +17,17 @@
 #include "parser.h"
 #include "aslookup.h"
 
-/* e.g., aslookup("8.8.8.8", strlen("8.8.8.8") + 1, &rec, "whois.cymru.com", "43"); */
+/* e.g., aslookup("8.8.8.8", &rec, "whois.cymru.com", "43"); */
 
-int aslookup(char *lhost, size_t len, struct asrecord *rec,
-	     char *server, char *port)
+int aslookup(char *lhost, struct asrecord *rec, char *server, char *port)
 {
 	int ret, err, fd = -1, try = 1;
 	struct addrinfo hints, *ahead, *ai;
 	struct sockaddr_in6 *saddr6;
 	char buff[1024];
 
-	if (!lhost || len + 8 > sizeof(buff) || !rec || !server || !port)
+	if (!lhost || strlen(lhost) + 8 > sizeof(buff) || !rec ||
+	    !server || !port)
 		return -EIO;
 
 	memset(&hints, 0, sizeof(hints));

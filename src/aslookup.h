@@ -18,7 +18,7 @@ struct asrecord {
 	char name[256];
 };
 
-extern int aslookup(char *lhost, size_t len, struct asrecord *rec,
+extern int aslookup(char *lhost, struct asrecord *rec,
 		    char *server, char *port);
 
 #endif /* ASLOOKUP_H */
