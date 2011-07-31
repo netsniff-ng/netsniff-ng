@@ -227,12 +227,18 @@ int main(int argc, char **argv)
 			break;
 		case 'f':
 			cfg.init_ttl = atoi(optarg);
+			if (cfg.init_ttl <= 0)
+				help();
 			break;
 		case 'm':
 			cfg.max_ttl = atoi(optarg);
+			if (cfg.max_ttl <= 0)
+				help();
 			break;
 		case 'P':
 			cfg.src_port = atoi(optarg);
+			if (cfg.max_ttl <= 0)
+				help();
 			break;
 		case 's':
 			cfg.src_ip = xstrdup(optarg);
@@ -243,9 +249,13 @@ int main(int argc, char **argv)
 			break;
 		case 'q':
 			cfg.queries = atoi(optarg);
+			if (cfg.queries <= 0)
+				help();
 			break;
 		case 'x':
 			cfg.timeout = atoi(optarg);
+			if (cfg.timeout <= 0)
+				help();
 			break;
 		case 'S':
 			cfg.syn = 1;
@@ -258,12 +268,16 @@ int main(int argc, char **argv)
 			break;
 		case 't':
 			cfg.tos = atoi(optarg);
+			if (cfg.tos < 0)
+				help();
 			break;
 		case 'F':
 			cfg.nofrag = 1;
 			break;
 		case 'l':
 			cfg.totlen = atoi(optarg);
+			if (cfg.totlen <= 0)
+				help();
 			break;
 		case 'w':
 			cfg.whois = xstrdup(optarg);
