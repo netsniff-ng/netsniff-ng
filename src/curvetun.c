@@ -6,13 +6,19 @@
  * Copyright 2011 Emmanuel Roullit.
  * Subject to the GPL.
  *
- * This is a lightweight multiuser IP tunnel based on Daniel J.
- * Bernsteins Networking and Cryptography library (NaCl). The tunnel
- * acts fully in non-blocking I/O and uses epoll(2) for event
- * notification. Network traffic is being compressed and encrypted
- * for secure communication. The tunnel supports IPv4 via UDP, IPv4
- * via TCP, IPv6 via UDP and IPv6 via TCP. Flows are scheduled for
- * processing in a CPU-local manner.
+ * This is curvetun, a lightweight, high-speed ECDH multiuser IP tunnel for
+ * Linux that is based on epoll(2). curvetun uses the Linux TUN/TAP interface
+ * and supports {IPv4,IPv6} over {IPv4,IPv6} with UDP or TCP as carrier
+ * protocols. It has an integrated packet forwarding trie, thus multiple
+ * users with different IPs can be handled via a single tunnel device on the
+ * server side and flows are scheduled for processing in a CPU-local manner.
+ * For transmission, packets are being compressed and encrypted by both, the
+ * client and the server side. As an appropriate key management, public-key
+ * cryptography based on elliptic curves are being used and packets are 
+ * encrypted by a symmetric stream cipher (Salsa20) and authenticated by a MAC
+ * (Poly1305), where keys have previously been computed with the ECDH key 
+ * agreement protocol (Curve25519). Cryptography is based on Daniel J.
+ * Bernsteins Networking and Cryptography library (NaCl).
  */
 
 #define _GNU_SOURCE
