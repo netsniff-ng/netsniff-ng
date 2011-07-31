@@ -49,7 +49,7 @@
 #include "crypto_scalarmult_curve25519.h"
 #include "crypto_auth_hmacsha512256.h"
 
-void *memset (void *__s, int __c, size_t __n) __attribute__ ((__noinline__));
+noinline void *memset(void *__s, int __c, size_t __n);
 
 #define CURVETUN_ENTROPY_SOURCE	"/dev/random"
 
@@ -136,35 +136,15 @@ static void help(void)
 	printf("  -h|--help               Print this help\n");
 	printf("\n");
 	printf("Example:\n");
-	printf("  A. Keygen example:\n");
-	printf("      1. curvetun --keygen\n");
-	printf("      2. Now the following files are done setting up:\n");
-	printf("           ~/.curvetun/priv.key   - Your private key\n");
-	printf("           ~/.curvetun/pub.key    - Your public key\n");
-	printf("           ~/.curvetun/username   - Your username\n");
-	printf("           ~/.curvetun/auth_token - Your server auth token\n");
-	printf("      3. To export your key for remote servers, use:\n");
-	printf("           curvetun --export\n");
-	printf("  B. Server:\n");
-	printf("      1. curvetun --server -4 --port 6666 --stun stunserver.org\n");
-	printf("      2. ifconfig curves0 up\n");
-	printf("      2. ifconfig curves0 10.0.0.1/24\n");
-	printf("      3. (setup route)\n");
-	printf("  C. Client:\n");
-	printf("      1. curvetun --client\n");
-	printf("      2. ifconfig curvec0 up\n");
-	printf("      2. ifconfig curvec0 10.0.0.2/24\n");
-	printf("      3. (setup route)\n");
-	printf("  Where both participants have the following files specified ...\n");
-	printf("   ~/.curvetun/clients - Participants the server accepts\n");
-	printf("        line-format:   username;pubkey\n");
-	printf("   ~/.curvetun/servers - Possible servers the client can connect to\n");
-	printf("        line-format:   alias;serverip|servername;port;udp|tcp;pubkey;auth_token\n");
-	printf("  ... and are synced to an ntpd!\n");
+	printf("  See TUNNEL for a configuration example.\n");
+	printf("  curvetun --keygen\n");
+	printf("  curvetun --export\n");
+	printf("  curvetun --server -4 -u --port 6666 --stun stunserver.org\n");
+	printf("  curvetun --client=ethz\n");
 	printf("\n");
 	printf("Note:\n");
 	printf("  There is no default port specified, so that you are forced\n");
-	printf("  to select your own! For status messages see syslog!\n");
+	printf("  to select your own! For client/server status messages see syslog!\n");
 	printf("\n");
 	printf("Secret ingredient: 7647-14-5\n");
 	printf("\n");
