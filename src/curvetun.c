@@ -73,7 +73,7 @@ enum working_mode {
 
 sig_atomic_t sigint = 0;
 
-static const char *short_options = "kxc::svhp:t:d:uCS46HDA";
+static const char *short_options = "kxc::svhp:t:d:uCS46DA";
 
 static struct option long_options[] = {
 	{"client", optional_argument, 0, 'c'},
@@ -128,6 +128,8 @@ static void help(void)
 	printf("  -S|--dumps              Dump parsed servers\n");
 	printf("  -D|--nofork             Do not daemonize\n");
 	printf("  -d|--dev <tun>          Networking tunnel device, e.g. tun0\n");
+	printf("  -v|--version            Print version\n");
+	printf("  -h|--help               Print this help\n");
 	printf(" Client settings:\n");
 	printf("  -c|--client[=alias]     Client mode, server alias optional\n");
 	printf(" Server settings:\n");
@@ -138,9 +140,6 @@ static void help(void)
 	printf("  -4|--ipv4               Tunnel devices are IPv4\n");
 	printf("  -6|--ipv6               Tunnel devices are IPv6\n");
 	printf("                          (default: same as carrier protocol)\n");
-	printf(" Misc:\n");
-	printf("  -v|--version            Print version\n");
-	printf("  -h|--help               Print this help\n");
 	printf("\n");
 	printf("Example:\n");
 	printf("  See README.curvetun for a configuration example.\n");
@@ -176,24 +175,6 @@ static void version(void)
 	printf("License: GNU GPL version 2\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
-
-	die();
-}
-
-static void towel(void)
-{
-	printf("                \\:.   /                 _.-----._\n");
-	printf("                 `---'          \\)|)_ ,'         `. _))|)\n");
-	printf("        |                        );-'/             \\`-:(\n");
-	printf("      -(o)-            .        //  :               :  \\\\   .\n");
-	printf("    .   |                      //_,'; ,.         ,. |___\\\\\n");
-	printf("           .                   `---':(  `-.___.-'  );----'\n");
-	printf("                                     \\`. `'-'-'' ,'/\n");
-	printf("                                      `.`-.,-.-.','\n");
-	printf("   DON'T FORGET TO APPEND               ``---\\` :\n");
-	printf("    YOUR TOWEL INTO THE         *             `.'       *\n");
-	printf("          PAYLOAD                         .        .\n\n");
-	printf("                                      (by Sebastian Stoecker)\n");
 
 	die();
 }
@@ -726,9 +707,6 @@ int main(int argc, char **argv)
 		switch (c) {
 		case 'h':
 			help();
-			break;
-		case 'H':
-			towel();
 			break;
 		case 'v':
 			version();
