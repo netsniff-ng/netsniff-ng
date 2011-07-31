@@ -8,8 +8,7 @@
   + Allow configuration from stdin, so that configs from tgc can be piped to
     trafgen directly
 
-* tgc: trafgen config file generator (or better do this as a shell replacement,
-  i.e. for traffic generator appliances)
+* tgsh: trafgen Cisco-like frontend CLI for traffic generator appliances
   + Generates full packets, i.e. with support for
     - VLAN
     - MPLS
