@@ -19,6 +19,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <string.h>
 
 #include "misc.h"
 #include "die.h"
@@ -158,8 +159,8 @@ static void version(void)
 
 static int do_trace(struct ash_cfg *cfg)
 {
-	info("AS TCP trace route to %s:%s, whois at %s:%s\n",
-	     cfg->host, cfg->port, cfg->whois, cfg->whois_port);
+	info("Autonomous System path trace to %s on TCP port %s, %u max hops\n",
+	     cfg->host, cfg->port, cfg->max_ttl);
 	return 0;
 }
 
