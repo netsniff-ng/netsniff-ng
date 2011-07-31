@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
+#include <sys/ptrace.h>
 #include <netinet/in.h>
 #include <unistd.h>
 
@@ -715,6 +716,8 @@ int main(int argc, char **argv)
 		seteuid(getuid());
 	if (getenv("LD_PRELOAD"))
 		panic("curvetun cannot be preloaded!\n");
+	if (ptrace(PTRACE_TRACEME, 0, 1, 0) < 0)
+		panic("curvetun cannot be ptraced!\n");
 
 	home = fetch_home_dir();
 
