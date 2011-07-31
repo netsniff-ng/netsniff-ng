@@ -143,7 +143,7 @@ static void help(void)
 	printf("  -h|--help               Print this help\n");
 	printf("\n");
 	printf("Example:\n");
-	printf("  See TUNNEL for a configuration example.\n");
+	printf("  See README.curvetun for a configuration example.\n");
 	printf("  curvetun --keygen\n");
 	printf("  curvetun --export\n");
 	printf("  curvetun --server -4 -u --port 6666 --stun stunserver.org\n");
