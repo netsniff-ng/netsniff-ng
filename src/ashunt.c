@@ -48,11 +48,12 @@ struct ash_cfg {
 	int totlen;
 	char *whois;
 	char *whois_port;
+	int ip;
 };
 
 sig_atomic_t sigint = 0;
 
-static const char *short_options = "H:p:nNf:m:P:s:i:d:q:x:SAEt:Fl:w:W:hv";
+static const char *short_options = "H:p:nNf:m:P:s:i:d:q:x:SAEt:Fl:w:W:hv46";
 
 static struct option long_options[] = {
 	{"host", required_argument, 0, 'H'},
@@ -61,6 +62,8 @@ static struct option long_options[] = {
 	{"max-ttl", required_argument, 0, 'm'},
 	{"numeric", no_argument, 0, 'n'},
 	{"dns", no_argument, 0, 'N'},
+	{"ipv4", no_argument, 0, '4'},
+	{"ipv6", no_argument, 0, '6'},
 	{"src-port", required_argument, 0, 'P'},
 	{"src-addr", required_argument, 0, 's'},
 	{"dev", required_argument, 0, 'd'},
@@ -106,6 +109,8 @@ static void help(void)
 	printf("Options:\n");
 	printf(" -H|--host <host>        Host/IPv4/IPv6 to lookup AS route to\n");
 	printf(" -p|--port <port>        Hosts port to lookup AS route to\n");
+	printf(" -4|--ipv4               Use IPv4 requests (default)\n");
+	printf(" -6|--ipv6               Use IPv6 requests (default)\n");
 	printf(" -n|--numeric            Do not do reverse DNS lookup for hops\n");
 	printf(" -N|--dns                Do a reverse DNS lookup for hops\n");
 	printf(" -f|--init-ttl <ttl>     Set initial TTL\n");
@@ -129,7 +134,7 @@ static void help(void)
 	printf(" -h|--help               Print this help\n");
 	printf("\n");
 	printf("Examples:\n");
-	printf("  trace AS up to netsniff-ng.org:80:\n");
+	printf("  IPv4 trace of AS up to netsniff-ng.org:80:\n");
 	printf("  ashunt -i eth0 -H netsniff-ng.org -p 80\n");
 	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
@@ -159,8 +164,17 @@ static void version(void)
 
 static int do_trace(struct ash_cfg *cfg)
 {
-	info("Autonomous System path trace to %s on TCP port %s, %u max hops\n",
-	     cfg->host, cfg->port, cfg->max_ttl);
+	int ttl, query;
+
+	info("AS path IPv%d trace to %s on TCP port %s, %u max hops\n",
+	     cfg->ip, cfg->host, cfg->port, cfg->max_ttl);
+
+	for (ttl = cfg->init_ttl; ttl <= cfg->max_ttl && !sigint; ++ttl) {
+		for (query = 0; query < cfg->queries; ++query) {
+			info(".");
+		}
+	}
+
 	return 0;
 }
 
@@ -204,6 +218,7 @@ int main(int argc, char **argv)
 	cfg.max_ttl = 30;
 	cfg.queries = 3;
 	cfg.timeout = 3;
+	cfg.ip = 4;
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 		&opt_index)) != EOF) {
@@ -222,6 +237,12 @@ int main(int argc, char **argv)
 			break;
 		case 'n':
 			cfg.dns_resolv = 0;
+			break;
+		case '4':
+			cfg.ip = 4;
+			break;
+		case '6':
+			cfg.ip = 6;
 			break;
 		case 'N':
 			cfg.dns_resolv = 1;
@@ -315,7 +336,11 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (argc < 5 || !cfg.host || !cfg.port || cfg.init_ttl > cfg.max_ttl)
+	if (argc < 5 ||
+	    !cfg.host || !cfg.port ||
+	    cfg.init_ttl > cfg.max_ttl ||
+	    cfg.init_ttl >= 256 ||
+	    cfg.max_ttl >= 256)
 		help();
 	if (!cfg.whois || !cfg.whois_port)
 		parse_whois_or_die(&cfg);
