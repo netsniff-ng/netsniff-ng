@@ -4,8 +4,7 @@
 
 \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
-netsniff-ng is is a free, performant Linux network analyzer and networking
-toolkit [1].
+netsniff-ng is a free, performant Linux network analyzer and networking toolkit.
 
 The gain of performance is reached by 'zero-copy' mechanisms, so that the
 kernel does not need to copy packets from kernelspace to userspace and vice
@@ -18,7 +17,7 @@ secure analyzer and utilities that complete netsniff-ng as a support for the
 the daily work of system administrators, networking engineers, researchers or
 security specialists.
 
-The netsniff-ng toolkit currently consists of the following utilities:
+The netsniff-ng toolkit [1] currently consists of the following utilities:
 
   * netsniff-ng: the 'zero-copy' sniffer itself
   * arppoison: an ARP cache poisoning utility (todo)
