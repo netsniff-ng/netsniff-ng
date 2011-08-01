@@ -67,8 +67,7 @@ void parse_userfile_and_generate_serv_store_or_die(char *homedir)
 	struct server_store *elem;
 
 	memset(path, 0, sizeof(path));
-	snprintf(path, sizeof(path), "%s/%s", homedir, FILE_SERVERS);
-	path[sizeof(path) - 1] = 0;
+	slprintf(path, sizeof(path), "%s/%s", homedir, FILE_SERVERS);
 
 	rwlock_init(&store_lock);
 	rwlock_wr_lock(&store_lock);

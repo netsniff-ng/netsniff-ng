@@ -400,9 +400,8 @@ int device_irq_number(const char *ifname)
 	 * Try sysfs as fallback. Probably wireless devices will be found
 	 * here. We return silently if it fails ...
 	 */
-	snprintf(sysname, sizeof(sysname), "/sys/class/net/%s/device/irq",
+	slprintf(sysname, sizeof(sysname), "/sys/class/net/%s/device/irq",
 		 ifname);
-
 	fp = fopen(sysname, "r");
 	if (!fp)
 		return -ENOENT;

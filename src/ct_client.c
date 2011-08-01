@@ -299,8 +299,7 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 	hdr.flags |= PROTO_FLAG_INIT;
 
 	memset(path, 0, sizeof(path));
-	snprintf(path, sizeof(path), "%s/%s", home, FILE_USERNAM);
-	path[sizeof(path) - 1] = 0;
+	slprintf(path, sizeof(path), "%s/%s", home, FILE_USERNAM);
 	memset(username, 0, sizeof(username));
 
 	fd2 = open_or_die(path, O_RDONLY);

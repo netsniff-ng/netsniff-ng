@@ -34,6 +34,7 @@
 
 #include "bpf.h"
 #include "xmalloc.h"
+#include "strlcpy.h"
 #include "die.h"
 
 /*
@@ -345,8 +346,8 @@ static char *bpf_dump(const struct sock_filter bpf, int n)
 	}
 
 	/* XXX: Tell gcc that this here is okay for us */
-	snprintf(operand, sizeof(operand), fmt, v);
-	snprintf(image, sizeof(image),
+	slprintf(operand, sizeof(operand), fmt, v);
+	slprintf(image, sizeof(image),
 		 (BPF_CLASS(bpf.code) == BPF_JMP &&
 		  BPF_OP(bpf.code) != BPF_JA) ?
 		 "(%03d) %-8s %-16s jt %d\tjf %d" : "(%03d) %-8s %s",

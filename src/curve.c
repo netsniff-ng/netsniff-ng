@@ -20,6 +20,7 @@
 #include "compiler.h"
 #include "xmalloc.h"
 #include "curve.h"
+#include "strlcpy.h"
 #include "die.h"
 #include "mtrand.h"
 #include "curvetun.h"
@@ -212,8 +213,7 @@ int curve25519_proto_init(struct curve25519_proto *p, unsigned char *pubkey_remo
 		return -EINVAL;
 
 	memset(path, 0, sizeof(path));
-	snprintf(path, sizeof(path), "%s/%s", home, FILE_PRIVKEY);
-	path[sizeof(path) - 1] = 0;
+	slprintf(path, sizeof(path), "%s/%s", home, FILE_PRIVKEY);
 
 	fd = open(path, O_RDONLY);
 	if (fd < 0)

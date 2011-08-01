@@ -64,8 +64,7 @@ int aslookup(char *lhost, struct asrecord *rec, char *server, char *port)
 	}
 
 	memset(buff, 0, sizeof(buff));
-	snprintf(buff, sizeof(buff), "-v -f %s\r\n", lhost);
-	buff[sizeof(buff) - 1] = 0;
+	slprintf(buff, sizeof(buff), "-v -f %s\r\n", lhost);
 
 	err = write(fd, buff, strlen(buff));
 	if (unlikely(err < 0)) {

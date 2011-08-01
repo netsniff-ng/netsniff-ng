@@ -187,8 +187,7 @@ void parse_userfile_and_generate_user_store_or_die(char *homedir)
 	struct user_store *elem;
 
 	memset(path, 0, sizeof(path));
-	snprintf(path, sizeof(path), "%s/%s", homedir, FILE_CLIENTS);
-	path[sizeof(path) - 1] = 0;
+	slprintf(path, sizeof(path), "%s/%s", homedir, FILE_CLIENTS);
 
 	rwlock_init(&store_lock);
 	rwlock_wr_lock(&store_lock);
@@ -259,8 +258,7 @@ void parse_userfile_and_generate_user_store_or_die(char *homedir)
 	init_sockaddr_mapper();
 
 	memset(path, 0, sizeof(path));
-	snprintf(path, sizeof(path), "%s/%s", homedir, FILE_TOKEN);
-	path[sizeof(path) - 1] = 0;
+	slprintf(path, sizeof(path), "%s/%s", homedir, FILE_TOKEN);
 
 	fd = open_or_die(path, O_RDONLY);
 	ret = read(fd, token, sizeof(token));
@@ -331,8 +329,7 @@ int username_msg(char *username, size_t len, char *dst, size_t dlen)
 		panic("Cannot read from /dev/random!\n");
 	close(fd);
 
-	snprintf(uname, uname_len, "%s%u", username, salt);
-	uname[uname_len - 1] = 0;
+	slprintf(uname, uname_len, "%s%u", username, salt);
 	crypto_hash_sha512(h, (unsigned char *) uname, strlen(uname));
 
 	us->salt = htonl(salt);
@@ -361,8 +358,7 @@ enum is_user_enum username_msg_is_user(char *src, size_t slen, char *username,
 
 	salt = ntohl(us->salt);
 
-	snprintf(uname, uname_len, "%s%u", username, salt);
-	uname[uname_len - 1] = 0;
+	slprintf(uname, uname_len, "%s%u", username, salt);
 	crypto_hash_sha512(h, (unsigned char *) uname, strlen(uname));
 	xfree(uname);
 

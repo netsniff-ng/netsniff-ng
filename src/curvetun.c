@@ -185,8 +185,7 @@ static void check_file_or_die(char *home, char *file, int maybeempty)
 	struct stat st;
 
 	memset(path, 0, sizeof(path));
-	snprintf(path, sizeof(path), "%s/%s", home, file);
-	path[sizeof(path) - 1] = 0;
+	slprintf(path, sizeof(path), "%s/%s", home, file);
 
 	if (stat(path, &st))
 		panic("No such file %s! Type --help for further information\n",
@@ -230,8 +229,7 @@ static void write_username(char *home)
 	char user[512];
 
 	memset(path, 0, sizeof(path));
-	snprintf(path, sizeof(path), "%s/%s", home, FILE_USERNAM);
-	path[sizeof(path) - 1] = 0;
+	slprintf(path, sizeof(path), "%s/%s", home, FILE_USERNAM);
 
 	printf("Username: [%s] ", getenv("USER"));
 	fflush(stdout);
@@ -261,8 +259,7 @@ static void create_curvedir(char *home)
 	char path[PATH_MAX];
 
 	memset(path, 0, sizeof(path));
-	snprintf(path, sizeof(path), "%s/%s", home, ".curvetun/");
-	path[sizeof(path) - 1] = 0;
+	slprintf(path, sizeof(path), "%s/%s", home, ".curvetun/");
 
 	errno = 0;
 	ret = mkdir(path, S_IRWXU);
@@ -273,8 +270,7 @@ static void create_curvedir(char *home)
 
 	/* We also create empty files for clients and servers! */
 	memset(path, 0, sizeof(path));
-	snprintf(path, sizeof(path), "%s/%s", home, FILE_CLIENTS);
-	path[sizeof(path) - 1] = 0;
+	slprintf(path, sizeof(path), "%s/%s", home, FILE_CLIENTS);
 
 	fd = open(path, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
 	if (fd < 0)
@@ -284,8 +280,7 @@ static void create_curvedir(char *home)
 	info("Empty client file written to %s!\n", path);
 
 	memset(path, 0, sizeof(path));
-	snprintf(path, sizeof(path), "%s/%s", home, FILE_SERVERS);
-	path[sizeof(path) - 1] = 0;
+	slprintf(path, sizeof(path), "%s/%s", home, FILE_SERVERS);
 
 	fd = open(path, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
 	if (fd < 0)
@@ -321,8 +316,7 @@ static void create_keypair(char *home)
 	crypto_scalarmult_curve25519_base(publickey, secretkey);
 
 	memset(path, 0, sizeof(path));
-	snprintf(path, sizeof(path), "%s/%s", home, FILE_PUBKEY);
-	path[sizeof(path) - 1] = 0;
+	slprintf(path, sizeof(path), "%s/%s", home, FILE_PUBKEY);
 
 	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 
@@ -345,8 +339,7 @@ static void create_keypair(char *home)
 	info("Public key written to %s!\n", path);
 
 	memset(path, 0, sizeof(path));
-	snprintf(path, sizeof(path), "%s/%s", home, FILE_PRIVKEY);
-	path[sizeof(path) - 1] = 0;
+	slprintf(path, sizeof(path), "%s/%s", home, FILE_PRIVKEY);
 
 	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 
@@ -399,8 +392,7 @@ static void create_token(char *home)
 	close(fd);
 
 	memset(path, 0, sizeof(path));
-	snprintf(path, sizeof(path), "%s/%s", home, FILE_TOKEN);
-	path[sizeof(path) - 1] = 0;
+	slprintf(path, sizeof(path), "%s/%s", home, FILE_TOKEN);
 
 	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 
@@ -441,8 +433,7 @@ static void check_config_keypair_or_die(char *home)
 	char path[PATH_MAX];
 
 	memset(path, 0, sizeof(path));
-	snprintf(path, sizeof(path), "%s/%s", home, FILE_PRIVKEY);
-	path[sizeof(path) - 1] = 0;
+	slprintf(path, sizeof(path), "%s/%s", home, FILE_PRIVKEY);
 
 	fd = open(path, O_RDONLY);
 
@@ -463,8 +454,7 @@ static void check_config_keypair_or_die(char *home)
 	close(fd);
 
 	memset(path, 0, sizeof(path));
-	snprintf(path, sizeof(path), "%s/%s", home, FILE_PUBKEY);
-	path[sizeof(path) - 1] = 0;
+	slprintf(path, sizeof(path), "%s/%s", home, FILE_PUBKEY);
 
 	fd = open(path, O_RDONLY);
 
@@ -525,8 +515,7 @@ static int main_token(char *home)
 	printf("Your auth token for clients:\n\n");
 
 	memset(path, 0, sizeof(path));
-	snprintf(path, sizeof(path), "%s/%s", home, FILE_TOKEN);
-	path[sizeof(path) - 1] = 0;
+	slprintf(path, sizeof(path), "%s/%s", home, FILE_TOKEN);
 
 	fd = open_or_die(path, O_RDONLY);
 	ret = read(fd, tmp, sizeof(tmp));
@@ -555,8 +544,7 @@ static int main_export(char *home)
 	printf("Your exported public information:\n\n");
 
 	memset(path, 0, sizeof(path));
-	snprintf(path, sizeof(path), "%s/%s", home, FILE_USERNAM);
-	path[sizeof(path) - 1] = 0;
+	slprintf(path, sizeof(path), "%s/%s", home, FILE_USERNAM);
 
 	fd = open_or_die(path, O_RDONLY);
 	while ((ret = read(fd, tmp, sizeof(tmp))) > 0) {
@@ -567,8 +555,7 @@ static int main_export(char *home)
 	printf(";");
 
 	memset(path, 0, sizeof(path));
-	snprintf(path, sizeof(path), "%s/%s", home, FILE_PUBKEY);
-	path[sizeof(path) - 1] = 0;
+	slprintf(path, sizeof(path), "%s/%s", home, FILE_PUBKEY);
 
 	fd = open_or_die(path, O_RDONLY);
 	ret = read(fd, tmp, sizeof(tmp));
@@ -638,8 +625,7 @@ static void daemonize(const char *lockfile)
 			      "curvetun server already running?\n",
 			      lockfile);
 
-		snprintf(pidstr, sizeof(pidstr), "%u", getpid());
-		pidstr[sizeof(pidstr) - 1] = 0;
+		slprintf(pidstr, sizeof(pidstr), "%u", getpid());
 
 		if (write(lfp, pidstr, strlen(pidstr)) <= 0)
 			panic("Could not write pid to pidfile %s", lockfile);

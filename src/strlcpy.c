@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 1991, 1992  Linus Torvalds
+ * strlcpy, Copyright (C) 1991, 1992  Linus Torvalds
  *
  * This program is free software; you can redistribute it and/or modify 
  * it under the terms of the GNU General Public License as published by 
@@ -23,7 +23,11 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
 
+#define _BSD_SOURCE
 #include <string.h>
+#include <stdio.h>
+#include <stdarg.h>
+
 #include "strlcpy.h"
 
 size_t strlcpy(char *dest, const char *src, size_t size)
@@ -38,3 +42,17 @@ size_t strlcpy(char *dest, const char *src, size_t size)
 
 	return ret;
 }
+
+int slprintf(char *dst, int size, const char *fmt, ...)
+{
+	int ret;
+	va_list ap;
+
+	va_start(ap, fmt);
+	ret = vsnprintf(dst, size, fmt, ap);
+	dst[size - 1] = '\0';
+	va_end(ap);
+
+	return ret;
+}
+
