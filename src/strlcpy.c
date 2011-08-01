@@ -43,7 +43,7 @@ size_t strlcpy(char *dest, const char *src, size_t size)
 	return ret;
 }
 
-int slprintf(char *dst, int size, const char *fmt, ...)
+int slprintf(char *dst, size_t size, const char *fmt, ...)
 {
 	int ret;
 	va_list ap;

@@ -9,6 +9,6 @@
 #define STRLCPY_H
 
 extern size_t strlcpy(char *dest, const char *src, size_t size);
-extern int slprintf(char *dst, int size, const char *fmt, ...);
+extern int slprintf(char *dst, size_t size, const char *fmt, ...);
 
 #endif /* STRLCPY_H */
