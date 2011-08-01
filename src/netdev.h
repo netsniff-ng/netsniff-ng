@@ -19,6 +19,7 @@
 #include "die.h"
 
 extern int af_socket(int af);
+extern int af_raw_socket(int af, int proto);
 extern int pf_socket(void);
 extern int wireless_bitrate(const char *ifname);
 extern int wireless_essid(const char *ifname, char *essid);

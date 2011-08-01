@@ -36,7 +36,20 @@ int af_socket(int af)
 
 	int sock = socket(af, SOCK_DGRAM, 0);
 	if (sock < 0)
-		error_and_die(EXIT_FAILURE, "Creation AF socket failed!\n");
+		panic("Creation AF socket failed!\n");
+	return sock;
+}
+
+int af_raw_socket(int af, int proto)
+{
+	if (af != AF_INET && af != AF_INET6) {
+		whine("Wrong AF socket type! Falling back to AF_INET\n");
+		af = AF_INET;
+	}
+
+	int sock = socket(af, SOCK_RAW, proto);
+	if (sock < 0)
+		panic("Creation AF socket failed!\n");
 	return sock;
 }
 
@@ -44,7 +57,7 @@ int pf_socket(void)
 {
 	int sock = socket(PF_PACKET, SOCK_RAW, 0);
 	if (sock < 0)
-		error_and_die(EXIT_FAILURE, "Creation of PF socket failed!\n");
+		panic("Creation of PF socket failed!\n");
 	return sock;
 }
 
