@@ -18,10 +18,17 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
 #include <fcntl.h>
 #include <string.h>
-#include <netinet/in.h>
 #include <asm/byteorder.h>
+#include <linux/tcp.h>
+#include <netinet/ip.h>
+#include <netinet/ip6.h>
+#include <netinet/in.h>
+#include <errno.h>
+#include <netdb.h>
+#include <arpa/inet.h>
 
 #include "misc.h"
 #include "die.h"
@@ -30,6 +37,8 @@
 #include "aslookup.h"
 #include "version.h"
 #include "signals.h"
+#include "netdev.h"
+#include "mtrand.h"
 #include "parser.h"
 
 #define WHOIS_SERVER_SOURCE "/etc/netsniff-ng/whois.conf"
@@ -52,86 +61,6 @@ struct ash_cfg {
 	char *whois_port;
 	int ip;
 };
-
-struct ipv4hdr {
-#if defined(__LITTLE_ENDIAN_BITFIELD)
-	__extension__ uint8_t h_ihl:4,
-			      h_version:4;
-#elif defined (__BIG_ENDIAN_BITFIELD)
-	__extension__ uint8_t h_version:4,
-			      h_ihl:4;
-#else
-# error "Please fix <asm/byteorder.h>"
-#endif
-	uint8_t h_tos;
-	uint16_t h_tot_len;
-	uint16_t h_id;
-	uint16_t h_frag_off;
-	uint8_t h_ttl;
-	uint8_t h_protocol;
-	uint16_t h_check;
-	uint32_t h_saddr;
-	uint32_t h_daddr;
-} __attribute__((packed));
-
-/*
-* IPv6 fixed header
-*
-* BEWARE, it is incorrect. The first 4 bits of flow_lbl
-* are glued to priority now, forming "class".
-*/
-struct ipv6hdr {
-#if defined(__LITTLE_ENDIAN_BITFIELD)
-	__extension__ uint8_t priority:4,
-			      version:4;
-#elif defined(__BIG_ENDIAN_BITFIELD)
-	__extension__ uint8_t version:4,
-			      priority:4;
-#else
-# error "Please fix <asm/byteorder.h>"
-#endif
-	uint8_t flow_lbl[3];
-	uint16_t payload_len;
-	uint8_t nexthdr;
-	uint8_t hop_limit;
-	struct in6_addr saddr;
-	struct in6_addr daddr;
-} __attribute__((packed));
-
-struct tcphdr {
-	uint16_t source;
-	uint16_t dest;
-	uint32_t seq;
-	uint32_t ack_seq;
-#if defined(__LITTLE_ENDIAN_BITFIELD)
-	__extension__ uint16_t res1:4,
-			       doff:4,
-			       fin:1,
-			       syn:1,
-			       rst:1,
-			       psh:1,
-			       ack:1,
-			       urg:1,
-			       ece:1,
-			       cwr:1;
-#elif defined(__BIG_ENDIAN_BITFIELD)
-	__extension__ uint16_t doff:4,
-			       res1:4,
-			       cwr:1,
-			       ece:1,
-			       urg:1,
-			       ack:1,
-			       psh:1,
-			       rst:1,
-			       syn:1,
-			       fin:1;
-#else
-# error "Adjust your <asm/byteorder.h> defines"
-#endif
-	uint16_t window;
-	uint16_t check;
-	uint16_t urg_ptr;
-} __attribute__((packed));
 
 sig_atomic_t sigint = 0;
 
@@ -191,15 +120,15 @@ static void help(void)
 	printf("Options:\n");
 	printf(" -H|--host <host>        Host/IPv4/IPv6 to lookup AS route to\n");
 	printf(" -p|--port <port>        Hosts port to lookup AS route to\n");
+	printf(" -i|-d|--dev <device>    Networking device, i.e. eth0\n");
 	printf(" -4|--ipv4               Use IPv4 requests (default)\n");
-	printf(" -6|--ipv6               Use IPv6 requests (default)\n");
+	printf(" -6|--ipv6               Use IPv6 requests\n");
 	printf(" -n|--numeric            Do not do reverse DNS lookup for hops\n");
 	printf(" -N|--dns                Do a reverse DNS lookup for hops\n");
 	printf(" -f|--init-ttl <ttl>     Set initial TTL\n");
 	printf(" -m|--max-ttl <ttl>      Set maximum TTL (default: 30)\n");
 	printf(" -P|--src-port <port>    Specify local source port (default: bind(2))\n");
 	printf(" -s|--src-addr <addr>    Specify local source addr\n");
-	printf(" -i|-d|--dev <device>    Networking device, i.e. eth0\n");
 	printf(" -q|--num-probes <num>   Number of probes for each hop (default: 3)\n");
 	printf(" -x|--timeout <sec>      Probe response timeout in sec (default: 3)\n");
 	printf(" -S|--syn                Set TCP SYN flag in packets\n");
@@ -217,7 +146,9 @@ static void help(void)
 	printf("\n");
 	printf("Examples:\n");
 	printf("  IPv4 trace of AS up to netsniff-ng.org:80:\n");
-	printf("  ashunt -i eth0 -H netsniff-ng.org -p 80\n");
+	printf("    ashunt -i eth0 -H netsniff-ng.org -p 80\n");
+	printf("  IPv6 trace of AS up to netsniff-ng.org:80:\n");
+	printf("    ashunt -6 -i eth0 -H netsniff-ng.org -p 80\n");
 	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
@@ -244,19 +175,177 @@ static void version(void)
 	die();
 }
 
+static inline unsigned short csum(unsigned short *buf, int nwords)
+{
+	unsigned long sum;
+	for (sum = 0; nwords > 0; nwords--)
+		sum += *buf++;
+	sum = (sum >> 16) + (sum & 0xffff);
+	sum += (sum >> 16);
+	return ~sum;
+}
+
+static ssize_t assemble_data(uint8_t *packet, size_t len)
+{
+	int i;
+	for (i = 0; i < len; ++i)
+		packet[i] = (uint8_t) mt_rand_int32();
+	return len;
+}
+
+static ssize_t assemble_tcp(uint8_t *packet, size_t len,
+			    int syn, int ack, int ecn)
+{
+	struct tcphdr *tcph = (struct tcphdr *) packet;
+
+	if (len < sizeof(struct tcphdr))
+		return -ENOMEM;
+
+	tcph->source = htons(1234);
+	tcph->dest = htons(85);
+	tcph->seq = random();
+	tcph->ack_seq = 0;
+	tcph->doff = 0;
+	tcph->syn = !!syn;
+	tcph->ack = !!ack;
+	tcph->urg = 0;
+	tcph->fin = 0;
+	tcph->rst = 0;
+	tcph->psh = 0;
+	tcph->ece = !!ecn;
+	tcph->cwr = !!ecn;
+	tcph->doff = 0;
+	tcph->window = htonl(65535);
+	tcph->check = 0;
+	tcph->urg_ptr = 0;
+
+	return sizeof(struct tcphdr);
+}
+
+static ssize_t assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
+				 int tos, struct in_addr *src, struct in_addr *dst,
+				 int syn, int ack, int ecn, int nofrag)
+{
+	struct iphdr *iph = (struct iphdr *) packet;
+
+	if (len < sizeof(struct iphdr) + sizeof(struct tcphdr))
+		return -ENOMEM;
+	iph->ihl = 5;
+	iph->version = 4;
+	iph->tos = (uint8_t) tos;
+	iph->tot_len = htons((uint16_t) len);
+	iph->id = htons((uint16_t) mt_rand_int32());
+	iph->frag_off = nofrag ? IP_DF : 0;
+	iph->ttl = (uint8_t) ttl;
+	iph->protocol = 6; /* TCP */
+	iph->saddr = src->s_addr;
+	iph->daddr = dst->s_addr;
+	assemble_tcp(packet + sizeof(struct iphdr),
+		     len - sizeof(struct iphdr),
+		     syn, ack, ecn);
+	assemble_data(packet + sizeof(struct iphdr) + sizeof(struct tcphdr),
+		      len - sizeof(struct iphdr) + sizeof(struct tcphdr));
+	iph->check = csum((unsigned short *) packet,
+			  ntohs(iph->tot_len) >> 1);
+	return len;
+}
+
+static ssize_t assemble_ipv6_tcp(uint8_t *packet, size_t len, int ttl,
+			 	 struct sockaddr_in *sin)
+{
+	return 0;
+}
+
+static ssize_t assemble_packet(uint8_t *packet, size_t len, int ttl,
+			       struct ash_cfg *cfg)
+{
+//	assemble_ipv4_tcp(packet, len, ttl, cfg->tos,
+//			  NULL, NULL, cfg->syn, cfg->ack, cfg->ecn,
+//			  cfg->nofrag);
+	return 0;
+}
+
 static int do_trace(struct ash_cfg *cfg)
 {
-	int ttl, query;
+	int ttl, query, fd = -1, one = 1, ret, fd_cap, last = 0;
+	uint8_t *packet;
+	ssize_t err;
+	size_t len;
+	struct addrinfo hints, *ahead, *ai;
+	char hbuff[256], sbuff[256];
 
-	info("AS path IPv%d trace to %s on TCP port %s, %u max hops\n",
-	     cfg->ip, cfg->host, cfg->port, cfg->max_ttl);
+	mt_init_by_random_device();
 
-	for (ttl = cfg->init_ttl; ttl <= cfg->max_ttl && !sigint; ++ttl) {
-		for (query = 0; query < cfg->queries; ++query) {
-			info(".");
-		}
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = PF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+
+	ret = getaddrinfo(cfg->host, cfg->port, &hints, &ahead);
+	if (ret < 0) {
+		whine("Cannot get address info!\n");
+		return -EIO;
 	}
 
+	for (ai = ahead; ai != NULL && fd < 0; ai = ai->ai_next) {
+		if (!((ai->ai_family == PF_INET6 && cfg->ip == 6) ||
+		      (ai->ai_family == PF_INET && cfg->ip == 4)))
+			continue;
+		fd = socket(ai->ai_family, SOCK_RAW, ai->ai_protocol);
+		if (fd < 0)
+			continue;
+		fd_cap = pf_socket();
+		break;
+	}
+
+	freeaddrinfo(ahead);
+	if (fd < 0) {
+		whine("Cannot create socket! Does remote support IPv%d?!\n",
+		      cfg->ip);
+		return -EIO;
+	}
+
+	len = cfg->totlen ? : cfg->ip == 4 ? 
+		sizeof(struct iphdr) + sizeof(struct tcphdr) :
+		sizeof(struct ip6_hdr) + sizeof(struct tcphdr);
+	if (len >= device_mtu(cfg->dev))
+		panic("Packet len exceeds device MTU!\n");
+	packet = xmalloc(len);
+
+	memset(hbuff, 0, sizeof(hbuff));
+	memset(sbuff, 0, sizeof(sbuff));
+	getnameinfo((struct sockaddr *) ai->ai_addr, ai->ai_addrlen,
+		    hbuff, sizeof(hbuff),
+		    sbuff, sizeof(sbuff),
+		    NI_NUMERICHOST | NI_NUMERICSERV);
+
+	ret = setsockopt(fd, cfg->ip == 4 ? IPPROTO_IP : IPPROTO_IPV6,
+			 IP_HDRINCL, &one, sizeof(one));
+	if (ret < 0)
+		panic("Kernel does not support IP_HDRINCL!\n");
+
+	info("AS path IPv%d trace to %s (%s) on TCP port %s with len %u Bytes, "
+	     "%u max hops\n", cfg->ip, cfg->host, hbuff, cfg->port, len,
+	     cfg->max_ttl);
+	fflush(stdout);
+
+	for (ttl = cfg->init_ttl; ttl <= cfg->max_ttl && !sigint && !last;
+	     ++ttl) {
+		info("hop %02d: ", ttl);
+		for (query = 0; query < cfg->queries; ++query) {
+			assemble_packet(packet, len, ttl, cfg);
+			// setup filter, listen
+			err = sendto(fd, packet, len, 0,
+				     ai->ai_addr, ai->ai_addrlen);
+			if (err < 0)
+				panic("sendto failed: %s\n", strerror(errno));
+		}
+		info("\n");
+	}
+
+	close(fd_cap);
+	close(fd);
+	xfree(packet);
 	return 0;
 }
 
@@ -301,6 +390,7 @@ int main(int argc, char **argv)
 	cfg.queries = 3;
 	cfg.timeout = 3;
 	cfg.ip = 4;
+	cfg.dev = xstrdup("eth0");
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 		&opt_index)) != EOF) {
@@ -421,11 +511,15 @@ int main(int argc, char **argv)
 	if (argc < 5 ||
 	    !cfg.host || !cfg.port ||
 	    cfg.init_ttl > cfg.max_ttl ||
-	    cfg.init_ttl >= 256 ||
-	    cfg.max_ttl >= 256)
+	    cfg.init_ttl > MAXTTL ||
+	    cfg.max_ttl > MAXTTL)
 		help();
+	if (!device_up_and_running(cfg.dev))
+		panic("Networking device not up and running!\n");
 	if (!cfg.whois || !cfg.whois_port)
 		parse_whois_or_die(&cfg);
+	if (device_mtu(cfg.dev) <= cfg.totlen)
+		panic("Packet larger than device MTU!\n");
 
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
