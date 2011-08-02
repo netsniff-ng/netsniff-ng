@@ -8,6 +8,14 @@
  * a better passing of firewalls. Supports IPv4 and IPv6. Based on the idea
  * of tcptraceroute (http://michael.toren.net/code/tcptraceroute/), but hacked
  * for Autonomous Systems tracing.
+ *
+ *   The road must be trod, but it will be very hard. And neither strength nor
+ *   wisdom will carry us far upon it. This quest may be attempted by the weak
+ *   with as much hope as the strong. Yet such is oft the course of deeds that
+ *   move the wheels of the world: small hands do them because they must,
+ *   while the eyes of the great are elsewhere.
+ *
+ *     -- The Lord of the Rings, Elrond, Chapter 'The Council of Elrond'.
  */
 
 #include <stdio.h>
