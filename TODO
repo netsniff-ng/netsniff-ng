@@ -33,6 +33,7 @@
 * netsniff-ng:
   + Cleanup code, especially in dissector, print-modes and proto sections
   + Support more protocols
+  + Add -n|--num option for capturing a number of packets and then quit
 
 * arppoison:
   + ARP Cache Poisoning utility
