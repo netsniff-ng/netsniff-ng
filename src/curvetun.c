@@ -19,6 +19,15 @@
  * (Poly1305), where keys have previously been computed with the ECDH key 
  * agreement protocol (Curve25519). Cryptography is based on Daniel J.
  * Bernsteins Networking and Cryptography library (NaCl).
+ *
+ *   He used often to say there was only one Road; that it was like a great
+ *   river: it's springs were at every doorstep and every path was it's
+ *   tributary. "It's a dangerous business, Frodo, going out of your door,"
+ *   he used to say. "You step into the Road, and if you don't keep your
+ *   feet, there is no telling where you might be swept off to."
+ *
+ *     -- The Lord of the Rings, Frodo about his uncle Bilbo Baggins,
+ *        Chapter 'Three is Company'.
  */
 
 #define _GNU_SOURCE
