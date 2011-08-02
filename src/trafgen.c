@@ -5,8 +5,19 @@
  * Swiss federal institute of technology (ETH Zurich)
  * Subject to the GPL.
  *
- * A high-performance network traffic generator that uses the
- * zero-copy TX_RING for network I/O.
+ * A high-performance network traffic generator that uses the zero-copy
+ * kernelspace TX_RING for network I/O. On comodity Gigabit hardware up
+ * to > 1.1 Mio 64 Byte pps have been achieved with trafgen from the
+ * userspace on a Intel Core 2 Quad Q6600 with 2.40GHz, 4GB RAM, Intel
+ * 82566DC-2 NIC, for instance.
+ *
+ *   Who can now hold the fords when the King of the Nine Riders comes? And
+ *   other armies will come. I am too late. All is lost. I tarried on the
+ *   way. All is lost. Even if my errand is performed, no one will ever
+ *   know. There will be no one I can tell. It will be in vain.
+ *
+ *     -- The Lord of the Rings, Frodo thinking,
+ *        Chapter 'The Stairs of Cirith Ungol'.
  */
 
 #include <stdio.h>
