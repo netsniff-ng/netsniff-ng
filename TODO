@@ -32,12 +32,22 @@
 
 * netsniff-ng:
   + Cleanup code, especially in dissector, print-modes and proto sections
+  + Support more protocols
 
 * arppoison:
   + ARP Cache Poisoning utility
+
+* ashunt:
+  + AS trace route utility
 
 * ifpps:
   + Fix NaN's in CPU usage
   + Cleanup redundant code
   + Add more gnuplot features, i.e. automatic gnuplot script generation
 
+* t: tests, tests, tests
+  + Use Sharness as a framework (https://github.com/misfire/Sharness)
+
+* Documentation:
+  + Manpages
+  + Howtos as REAME.<tool>
