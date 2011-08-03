@@ -1,71 +1,96 @@
 -- netsniff-ng - the packet sniffing beast
 -- By Daniel Borkmann <daniel@netsniff-ng.org>
--- Copyright 2011 Daniel Borkmann.
--- Subject to the GPL.
 --
--- bpfc, a tiny Haskell nfl to bpf compiler
+-- Code written by:
+-- Copyright 2010 Johannes Waldmann <waldmann@imn.htwk-leipzig.de>
+-- Subject to the GPL.
 
-import System
-import System.Console.GetOpt
-import Data.Maybe ( fromMaybe )
+import Exp 
+
+import qualified Type.Pretty
+import qualified Type.Eval
+
+import Program ( prog2exp )
+import Eval ( evaluate, nullEnv )
+import Store ( run )
+import Val ( feed )
+
+
+-- import CPS.Simple ( transform )
+import CPS.Meta ( transform )
+import CC (cc)
+import Lift (lift)
+import Register ( convert )
+import Cee ( program )
 
 main = do
-    args <- getArgs
-    let ( actions, nonOpts, msgs ) = getOpt RequireOrder options args
-    opts <- foldl (>>=) (return defaultOptions) actions
-    let Options {
-        optInput = input,
-        optOutput = output
-    } = opts
-    input >>= output
+    cs <- getContents
+    case parse complete_expression cs of
+        Right x0 -> do
+            let xt = Print x0
 
-data Options = Options {
-    optInput  :: IO String,
-    optOutput :: String -> IO ()
-}
+            heading "Text : P (typed)"
+            print $ out xt
 
-defaultOptions :: Options
-defaultOptions = Options {
-    optInput  = getContents,
-    optOutput = putStr
-}
+            heading "Typprüfung"
+            case Type.Eval.evaluate Type.Eval.nullEnv xt of
+                Right t -> print $ Type.Pretty.out t
+                Left msg -> error $ show  msg
 
-options :: [OptDescr (Options -> IO Options)]
-options = [
-    Option ['i'] ["in"] (ReqArg readInput "FILE") "Input nfl file to read",
-    Option ['o'] ["out"] (ReqArg writeOutput "FILE") "Output BPF file to write",
-    Option ['v'] ["version"] (NoArg showVersion) "Show version",
-    Option ['h'] ["help"] (NoArg showHelp) "Show help"
- ]
+            let x = untype xt
+            heading "Text : P (untyped)"
+            print $ out x
 
-showVersion _ = do
-    putStrLn "\nbpfc 0.1, a tiny nfl to bpf compiler"
-    putStrLn "http://www.netsniff-ng.org\n"
-    putStrLn "Please report bugs to <bugs@netsniff-ng.org>"
-    putStrLn "Copyright (C) 2011 Daniel Borkmann <daniel@netsniff-ng.org>"
-    putStrLn "License: GNU GPL version 2"
-    putStrLn "This is free software: you are free to change and redistribute it."
-    putStrLn "There is NO WARRANTY, to the extent permitted by law.\n"
-    exitWith ExitSuccess
+            heading "Text : CPS(P)"
+            let tx = transform x
+            print $ out tx
+            heading "Text : CC(CPS(P))"
+            let ctx = cc tx
+            print $ out ctx
 
-showHelp _ = do
-    putStrLn "\nbpfc 0.1, a tiny nfl to bpf compiler"
-    putStrLn "http://www.netsniff-ng.org\n"
-    putStrLn "Usage: bpfc [options]"
-    putStrLn "  -i|--in <nfl>       nfl input file"
-    putStrLn "  -o|--out <bpf>      BPF output file"
-    putStrLn "  -v|--version        Show version"
-    putStrLn "  -h|--help           Show this help\n"
-    putStrLn "Example:"
-    putStrLn "  bpfc -i prog.nfl -o out.bpf\n"
-    putStrLn "Please report bugs to <bugs@netsniff-ng.org>"
-    putStrLn "Copyright (C) 2011 Daniel Borkmann <daniel@netsniff-ng.org>"
-    putStrLn "License: GNU GPL version 2"
-    putStrLn "This is free software: you are free to change and redistribute it."
-    putStrLn "There is NO WARRANTY, to the extent permitted by law.\n"
-    exitWith ExitSuccess
+            heading "Text : Lift(CC(CPS(P)))"
+            let lctx = lift ctx
+            print $ lctx
 
--- todo
-readInput arg opt = return opt { optInput = readFile arg }
-writeOutput arg opt = return opt { optOutput = writeFile arg }
+            heading "Text : Reg(Lift(CC(CPS(P))))"
+            let rlctx = convert lctx
+            print $ rlctx
 
+            heading "Text : C-Back(Reg(Lift(CC(CPS(P)))))"
+            let cee = Cee.program rlctx
+            print $ cee
+
+            heading "Wert : P"
+            print $ run 
+                  $ feed ( evaluate nullEnv x )
+                         ( \ v -> return v )
+            heading "Wert : CPS(P)"
+            print $ run 
+                  $ feed ( evaluate nullEnv tx )
+                         ( \ v -> return v )
+            heading "Wert : CC(CPS(P))"
+            print $ run 
+                  $ feed ( evaluate nullEnv ctx )
+                         ( \ v -> return v )
+            heading "Wert : Lift(CC(CPS(P)))"
+            print $ run 
+                  $ feed ( evaluate nullEnv $ prog2exp lctx )
+                         ( \ v -> return v )
+            
+            heading "Wert : Reg(Lift(CC(CPS(P))))"
+            print $ run 
+                  $ feed ( evaluate nullEnv $ prog2exp rlctx )
+                         ( \ v -> return v )
+            
+            heading "schreibe C-Back(Reg(Lift(CC(CPS(P))))) in main.c"
+            writeFile "main.c" $ show cee
+
+
+        Left err -> do
+            putStrLn err
+            
+            
+heading cs = do 
+    putStrLn ""
+    putStrLn cs
+    putStrLn $ replicate ( length cs ) '-'
