@@ -313,13 +313,11 @@ static void create_keypair(char *home)
 
 	fd = open_or_die(CURVETUN_ENTROPY_SOURCE, O_RDONLY);
 	ret = read_exact(fd, secretkey, sizeof(secretkey), 0);
-
 	if (ret != sizeof(secretkey)) {
 		err = EIO;
 		errstr = "Cannot read from "CURVETUN_ENTROPY_SOURCE"!\n";
 		goto out;
 	}
-
 	close(fd);
 
 	crypto_scalarmult_curve25519_base(publickey, secretkey);
@@ -328,21 +326,17 @@ static void create_keypair(char *home)
 	slprintf(path, sizeof(path), "%s/%s", home, FILE_PUBKEY);
 
 	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-
 	if (fd < 0) {
 		err = EIO;
 		errstr = "Cannot open pubkey file!\n";
 		goto out;
 	}
-
 	ret = write(fd, publickey, sizeof(publickey));
-
 	if (ret != sizeof(publickey)) {
 		err = EIO;
 		errstr = "Cannot write public key!\n";
 		goto out;
 	}
-
 	close(fd);
 
 	info("Public key written to %s!\n", path);
@@ -351,7 +345,6 @@ static void create_keypair(char *home)
 	slprintf(path, sizeof(path), "%s/%s", home, FILE_PRIVKEY);
 
 	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-
 	if (fd < 0) {
 		err = EIO;
 		errstr = "Cannot open privkey file!\n";
@@ -359,19 +352,16 @@ static void create_keypair(char *home)
 	}
 
 	ret = write(fd, secretkey, sizeof(secretkey));
-
 	if (ret != sizeof(secretkey)) {
 		err = EIO;
 		errstr = "Cannot write private key!\n";
 		goto out;
 	}
-
 out:
 	close(fd);
 
 	memset(publickey, 0, sizeof(publickey));
 	memset(secretkey, 0, sizeof(secretkey));
-
 	if (err)
 		panic("%s: %s", errstr, strerror(errno));
 	else
@@ -445,36 +435,29 @@ static void check_config_keypair_or_die(char *home)
 	slprintf(path, sizeof(path), "%s/%s", home, FILE_PRIVKEY);
 
 	fd = open(path, O_RDONLY);
-
 	if (fd < 0) {
 		err = EIO;
 		errstr = "Cannot open privkey file!\n";
 		goto out;
 	}
-
 	ret = read(fd, secretkey, sizeof(secretkey));
-
 	if (ret != sizeof(secretkey)) {
 		err = EIO;
 		errstr = "Cannot read private key!\n";
 		goto out;
 	}
-
 	close(fd);
 
 	memset(path, 0, sizeof(path));
 	slprintf(path, sizeof(path), "%s/%s", home, FILE_PUBKEY);
 
 	fd = open(path, O_RDONLY);
-
 	if (fd < 0) {
 		err = EIO;
 		errstr = "Cannot open pubkey file!\n";
 		goto out;
 	}
-
 	ret = read(fd, publickey, sizeof(publickey));
-
 	if (ret != sizeof(publickey)) {
 		err = EIO;
 		errstr = "Cannot read public key!\n";
@@ -482,23 +465,18 @@ static void check_config_keypair_or_die(char *home)
 	}
 
 	crypto_scalarmult_curve25519_base(publicres, secretkey);
-
 	err = crypto_verify_32(publicres, publickey);
-
 	if (err) {
 		err = EINVAL;
 		errstr = "WARNING: your keypair is corrupted!!! You need to "
 			 "generate new keys!!!\n";
 		goto out;
 	}
-
 out:
 	close(fd);
-
 	memset(publickey, 0, sizeof(publickey));
 	memset(publicres, 0, sizeof(publicres));
 	memset(secretkey, 0, sizeof(secretkey));
-
 	if (err)
 		panic("%s: %s\n", errstr, strerror(errno));
 }

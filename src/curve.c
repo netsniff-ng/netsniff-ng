@@ -205,8 +205,8 @@ int curve25519_proto_init(struct curve25519_proto *p, unsigned char *pubkey_remo
 	int fd;
 	ssize_t ret;
 	char path[PATH_MAX];
-	unsigned char secretkey_own[crypto_box_curve25519xsalsa20poly1305_SECRETKEYBYTES];
-	unsigned char publickey_own[crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES];
+	unsigned char secretkey_own[crypto_box_curve25519xsalsa20poly1305_SECRETKEYBYTES] = { 0 };
+	unsigned char publickey_own[crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES] = { 0 };
 
 	if (!pubkey_remote ||
 	    len != crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES)
@@ -219,18 +219,26 @@ int curve25519_proto_init(struct curve25519_proto *p, unsigned char *pubkey_remo
 	if (fd < 0)
 		panic("Cannot open privkey file!\n");
 	ret = read(fd, secretkey_own, sizeof(secretkey_own));
-	if (ret != sizeof(secretkey_own))
+	if (ret != sizeof(secretkey_own)) {
+		memset(secretkey_own, 0, sizeof(secretkey_own));
 		panic("Cannot read private key!\n");
+	}
 	close(fd);
 
 	crypto_scalarmult_curve25519_base(publickey_own, secretkey_own);
-	if (!crypto_verify_32(publickey_own, pubkey_remote))
+	if (!crypto_verify_32(publickey_own, pubkey_remote)) {
+		memset(secretkey_own, 0, sizeof(secretkey_own));
+		memset(publickey_own, 0, sizeof(publickey_own));
 		panic("PANIC: remote end has same public key as you have!!!\n");
+	}
 
 	crypto_box_beforenm(p->key, pubkey_remote, secretkey_own);
 
 	memset(p->enonce, 0, sizeof(p->enonce));
 	memset(p->dnonce, 0, sizeof(p->dnonce));
+
+	memset(secretkey_own, 0, sizeof(secretkey_own));
+	memset(publickey_own, 0, sizeof(publickey_own));
 
 	return 0;
 }
