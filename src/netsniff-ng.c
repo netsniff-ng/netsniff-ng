@@ -5,9 +5,19 @@
  * Copyright 2010 Emmanuel Roullit.
  * Subject to the GPL.
  *
- * The first sniffer that invoked both, the zero-copy RX_RING
- * as well as the zero-copy TX_RING for high-performance network
- * I/O and scatter/gather as well as mmaped PCAP I/O.
+ * The first sniffer that invoked both, the zero-copy RX_RING as well as
+ * the zero-copy TX_RING for high-performance network I/O and scatter/gather
+ * or mmaped PCAP I/O.
+ *
+ *   "I knew that danger lay ahead, of course; but I did not expect to
+ *   meet it in our own Shire. Can't a hobbit walk from the Water to the
+ *   River in peace?" "But it is not your own Shire," said Gildor. "Others
+ *   dwelt here before hobbits were; and others will dwell here again when
+ *   hobbits are no more. The wide world is all about you: you can fence
+ *   yourselves in, but you cannot for ever fence it out."
+ *
+ *     -- The Lord of the Rings, Gildor to Frodo,
+ *        Chapter 'Three is Company'.
  */
 
 #include <stdio.h>

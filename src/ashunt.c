@@ -8,6 +8,14 @@
  * a better passing of firewalls. Supports IPv4 and IPv6. Based on the idea
  * of tcptraceroute (http://michael.toren.net/code/tcptraceroute/), but hacked
  * for Autonomous Systems tracing.
+ *
+ *   The road must be trod, but it will be very hard. And neither strength nor
+ *   wisdom will carry us far upon it. This quest may be attempted by the weak
+ *   with as much hope as the strong. Yet such is oft the course of deeds that
+ *   move the wheels of the world: small hands do them because they must,
+ *   while the eyes of the great are elsewhere.
+ *
+ *     -- The Lord of the Rings, Elrond, Chapter 'The Council of Elrond'.
  */
 
 #include <stdio.h>
@@ -145,10 +153,10 @@ static void help(void)
 	printf(" -h|--help               Print this help\n");
 	printf("\n");
 	printf("Examples:\n");
-	printf("  IPv4 trace of AS up to netsniff-ng.org:80:\n");
-	printf("    ashunt -i eth0 -H netsniff-ng.org -p 80\n");
-	printf("  IPv6 trace of AS up to netsniff-ng.org:80:\n");
-	printf("    ashunt -6 -i eth0 -H netsniff-ng.org -p 80\n");
+	printf("  IPv4 trace of AS up to netsniff-ng.org:\n");
+	printf("    ashunt -i eth0 -H netsniff-ng.org\n");
+	printf("  IPv6 trace of AS up to netsniff-ng.org:\n");
+	printf("    ashunt -6 -i eth0 -H netsniff-ng.org\n");
 	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
@@ -331,7 +339,7 @@ static int do_trace(struct ash_cfg *cfg)
 
 	for (ttl = cfg->init_ttl; ttl <= cfg->max_ttl && !sigint && !last;
 	     ++ttl) {
-		info("hop %02d: ", ttl);
+		info("%2d: ", ttl);
 		for (query = 0; query < cfg->queries; ++query) {
 			assemble_packet(packet, len, ttl, cfg);
 			// setup filter, listen
@@ -391,6 +399,7 @@ int main(int argc, char **argv)
 	cfg.timeout = 3;
 	cfg.ip = 4;
 	cfg.dev = xstrdup("eth0");
+	cfg.port = xstrdup("80");
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 		&opt_index)) != EOF) {
@@ -405,6 +414,8 @@ int main(int argc, char **argv)
 			cfg.host = xstrdup(optarg);
 			break;
 		case 'p':
+			if (cfg.port)
+				xfree(cfg.port);
 			cfg.port = xstrdup(optarg);
 			break;
 		case 'n':
@@ -439,6 +450,8 @@ int main(int argc, char **argv)
 			break;
 		case 'i':
 		case 'd':
+			if (cfg.dev)
+				xfree(cfg.dev);
 			cfg.dev = xstrdup(optarg);
 			break;
 		case 'q':
@@ -508,7 +521,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (argc < 5 ||
+	if (argc < 3 ||
 	    !cfg.host || !cfg.port ||
 	    cfg.init_ttl > cfg.max_ttl ||
 	    cfg.init_ttl > MAXTTL ||

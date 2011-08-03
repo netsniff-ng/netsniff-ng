@@ -11,6 +11,12 @@
  * will give you false statistics on high I/O load. Therefore, ifpps
  * reads out the 'real' kernel statistics, so things your NIC sees
  * and not some userland library.
+ *
+ *   He had all the injured air of a liar suspected when for once he
+ *   has told the truth, or part of it.
+ *
+ *     -- The Lord of the Rings, On Gollum,
+ *        Chapter 'The Black Gate is Closed'.
  */
 
 #include <stdio.h>
