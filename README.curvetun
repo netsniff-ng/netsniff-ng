@@ -56,8 +56,8 @@ curvetun inital setup example:
 If you've never run curvetun before, you need to do an initial setup once.
 
 At first, make sure that the servers and clients clocks are periodically
-synced, i.e. with ntpdate ntp.ubuntu.com pool.ntp.org as a cronjob. This is
-necessary to protect against replay attacks.
+synced, i.e. with ntpdate ntp.ubuntu.com pool.ntp.org as a cronjob or simply
+install the ntp daemon. This is necessary to protect against replay attacks.
 
 Also, make sure if you have read/write access to /dev/net/tun. You should not
 run curvetun as root!
