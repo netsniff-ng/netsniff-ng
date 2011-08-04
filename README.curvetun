@@ -75,7 +75,6 @@ Now on the necessary file have been created:
 	~/.curvetun/priv.key   - Your private key
 	~/.curvetun/pub.key    - Your public key
 	~/.curvetun/username   - Your username (here: mysrv1 or myclient1)
-	~/.curvetun/auth_token - Your server auth token
 	~/.curvetun/clients    - Participants the server accepts
 	~/.curvetun/servers    - Possible servers the client can connect to
 
@@ -125,27 +124,15 @@ server$ curvetun -x
  username  32 byte public key for 'mysrv1'
            ^-- you need this public key
 
-Then, the server needs to export its auth token:
-
-server$ curvetun -A
-
-... where it prints sth like:
-
-  33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33
-  \_____________________________________________________________________________________________/
-    32 byte server auth token (for all clients)
-    ^-- you need this auth token, too
-
 Now, you give the client your connection information:
    * IP 1.2.3.4
    * Port 6666
    * Proto UDP
    * Pubkey 22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22
-   * Auth token 33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33
 
 ... and the client puts it all together in its config like:
 
-client$ echo "myfirstserver;1.2.3.4;6666;udp;22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22;33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33:33" >> ~/.curvetun/servers
+client$ echo "myfirstserver;1.2.3.4;6666;udp;22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22" >> ~/.curvetun/servers
 
 ... again, where he can check his config with:
 

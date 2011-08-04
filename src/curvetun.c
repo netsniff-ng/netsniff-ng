@@ -73,7 +73,6 @@ enum working_mode {
 	MODE_UNKNOW,
 	MODE_KEYGEN,
 	MODE_EXPORT,
-	MODE_TOKEN,
 	MODE_DUMPC,
 	MODE_DUMPS,
 	MODE_CLIENT,
@@ -82,7 +81,7 @@ enum working_mode {
 
 sig_atomic_t sigint = 0;
 
-static const char *short_options = "kxc::svhp:t:d:uCS46DA";
+static const char *short_options = "kxc::svhp:t:d:uCS46D";
 
 static struct option long_options[] = {
 	{"client", optional_argument, 0, 'c'},
@@ -91,7 +90,6 @@ static struct option long_options[] = {
 	{"stun", required_argument, 0, 't'},
 	{"keygen", no_argument, 0, 'k'},
 	{"export", no_argument, 0, 'x'},
-	{"auth-token", no_argument, 0, 'A'},
 	{"dumpc", no_argument, 0, 'C'},
 	{"dumps", no_argument, 0, 'S'},
 	{"server", no_argument, 0, 's'},
@@ -132,7 +130,6 @@ static void help(void)
 	printf("Options:\n");
 	printf("  -k|--keygen             Generate public/private keypair\n");
 	printf("  -x|--export             Export your public data for remote servers\n");
-	printf("  -A|--auth-token         Export your shared auth_token for remote clients\n");
 	printf("  -C|--dumpc              Dump parsed clients\n");
 	printf("  -S|--dumps              Dump parsed servers\n");
 	printf("  -D|--nofork             Do not daemonize\n");
@@ -220,7 +217,6 @@ static void check_config_exists_or_die(char *home)
 	check_file_or_die(home, FILE_PRIVKEY, 0);
 	check_file_or_die(home, FILE_PUBKEY, 0);
 	check_file_or_die(home, FILE_USERNAM, 0);
-	check_file_or_die(home, FILE_TOKEN, 0);
 }
 
 static char *fetch_home_dir(void)
@@ -368,58 +364,6 @@ out:
 		info("Private key written to %s!\n", path);
 }
 
-static void create_token(char *home)
-{
-	int fd;
-	ssize_t ret;
-	unsigned char token[crypto_auth_hmacsha512256_KEYBYTES];
-	char path[PATH_MAX];
-	int err = 0;
-	const char * errstr = NULL;
-
-	info("Reading from %s (this may take a while) ...\n", CURVETUN_ENTROPY_SOURCE);
-
-	fd = open_or_die(CURVETUN_ENTROPY_SOURCE, O_RDONLY);
-	ret = read_exact(fd, token, sizeof(token), 0);
-
-	if (ret != sizeof(token)) {
-		err = EIO;
-		errstr = "Cannot read from "CURVETUN_ENTROPY_SOURCE"!\n";
-		goto out;
-	}
-
-	close(fd);
-
-	memset(path, 0, sizeof(path));
-	slprintf(path, sizeof(path), "%s/%s", home, FILE_TOKEN);
-
-	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-
-	if (fd < 0) {
-		err = EIO;
-		errstr = "Cannot open pubkey file!\n";
-		goto out;
-	}
-
-	ret = write(fd, token, sizeof(token));
-
-	if (ret != sizeof(token)) {
-		err = EIO;
-		errstr = "Cannot write auth token!\n";
-		goto out;
-	}
-
-out:
-	close(fd);
-
-	memset(token, 0, sizeof(token));
-
-	if(err)
-		panic("%s: %s", errstr, strerror(errno));
-	else
-		info("Auth token written to %s!\n", path);
-}
-
 static void check_config_keypair_or_die(char *home)
 {
 	int fd;
@@ -486,36 +430,7 @@ static int main_keygen(char *home)
 	create_curvedir(home);
 	write_username(home);
 	create_keypair(home);
-	create_token(home);
 	check_config_keypair_or_die(home);
-	return 0;
-}
-
-static int main_token(char *home)
-{
-	int fd, i;
-	ssize_t ret;
-	char path[PATH_MAX], tmp[crypto_auth_hmacsha512256_KEYBYTES];
-
-	check_config_exists_or_die(home);
-
-	printf("Your auth token for clients:\n\n");
-
-	memset(path, 0, sizeof(path));
-	slprintf(path, sizeof(path), "%s/%s", home, FILE_TOKEN);
-
-	fd = open_or_die(path, O_RDONLY);
-	ret = read(fd, tmp, sizeof(tmp));
-	if (ret != crypto_auth_hmacsha512256_KEYBYTES)
-		panic("Cannot read auth token!\n");
-	for (i = 0; i < ret; ++i)
-		if (i == ret - 1)
-			printf("%02x\n\n", (unsigned char) tmp[i]);
-		else
-			printf("%02x:", (unsigned char) tmp[i]);
-	close(fd);
-	fflush(stdout);
-
 	return 0;
 }
 
@@ -693,9 +608,6 @@ int main(int argc, char **argv)
 		case 'S':
 			wmode = MODE_DUMPS;
 			break;
-		case 'A':
-			wmode = MODE_TOKEN;
-			break;
 		case 'c':
 			wmode = MODE_CLIENT;
 			if (optarg) {
@@ -765,9 +677,6 @@ int main(int argc, char **argv)
 		break;
 	case MODE_EXPORT:
 		ret = main_export(home);
-		break;
-	case MODE_TOKEN:
-		ret = main_token(home);
 		break;
 	case MODE_DUMPC:
 		ret = main_dumpc(home);

@@ -60,9 +60,8 @@ static void server_store_free(struct server_store *ss)
 void parse_userfile_and_generate_serv_store_or_die(char *homedir)
 {
 	FILE *fp;
-	char path[PATH_MAX], buff[1024], *alias, *host, *port, *udp, *key, *atok;
+	char path[PATH_MAX], buff[1024], *alias, *host, *port, *udp, *key;
 	unsigned char pkey[crypto_box_pub_key_size];
-	unsigned char atoken[crypto_auth_hmacsha512256_KEYBYTES];
 	int line = 1, __udp = 0, ret;
 	struct server_store *elem;
 
@@ -148,15 +147,7 @@ void parse_userfile_and_generate_serv_store_or_die(char *homedir)
 		if (!curve25519_pubkey_hexparse_32(pkey, sizeof(pkey),
 						   udp, key - 1 - udp))
 			panic("Parse error! No key found in l.%d!\n", line);
-		key++;
-		atok = key;
-		if (*atok == '\n')
-			panic("Parse error! No auth_token found in l.%d!\n", line);
-		atok = strtrim_right(atok, '\n');
-		memset(atoken, 0, sizeof(atoken));
-		if (!curve25519_pubkey_hexparse_32(atoken, sizeof(atoken),
-						   atok, strlen(atok)))
-			panic("Parse error! No auth_token found in l.%d!\n", line);
+
 		if (strlen(alias) + 1 > sizeof(elem->alias))
 			panic("Alias too long in l.%d!\n", line);
 		if (strlen(host) + 1 > sizeof(elem->host))
@@ -169,6 +160,7 @@ void parse_userfile_and_generate_serv_store_or_die(char *homedir)
 			panic("Host consists of whitespace in l.%d!\n", line);
 		if (strstr(port, " ") || strstr(port, "\t"))
 			panic("Port consists of whitespace in l.%d!\n", line);
+
 		elem = server_store_alloc();
 		elem->next = store;
 		elem->udp = __udp;
@@ -176,7 +168,7 @@ void parse_userfile_and_generate_serv_store_or_die(char *homedir)
 		strlcpy(elem->host, host, sizeof(elem->host));
 		strlcpy(elem->port, port, sizeof(elem->port));
 		memcpy(elem->publickey, pkey, sizeof(elem->publickey));
-		memcpy(elem->auth_token, atoken, sizeof(elem->auth_token));
+		memcpy(elem->auth_token, elem->publickey, sizeof(elem->auth_token));
 		ret = curve25519_proto_init(&elem->proto_inf,
 					    elem->publickey,
 					    sizeof(elem->publickey),

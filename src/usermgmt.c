@@ -257,13 +257,19 @@ void parse_userfile_and_generate_user_store_or_die(char *homedir)
 	init_sock_mapper();
 	init_sockaddr_mapper();
 
+	/*
+	 * Pubkey is also used as a hmac of the initial packet to check
+	 * the integrity of the packet, so that we know if it's just random
+	 * garbage or a 'valid' packet. Again, just for the integrity!
+	 */
+
 	memset(path, 0, sizeof(path));
-	slprintf(path, sizeof(path), "%s/%s", homedir, FILE_TOKEN);
+	slprintf(path, sizeof(path), "%s/%s", homedir, FILE_PUBKEY);
 
 	fd = open_or_die(path, O_RDONLY);
 	ret = read(fd, token, sizeof(token));
 	if (ret != crypto_auth_hmacsha512256_KEYBYTES)
-		panic("Cannot read auth token!\n");
+		panic("Cannot read public key!\n");
 	close(fd);
 }
 

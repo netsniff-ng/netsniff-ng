@@ -12,7 +12,6 @@
 #define FILE_SERVERS	".curvetun/servers"
 #define FILE_PRIVKEY	".curvetun/priv.key"
 #define FILE_PUBKEY	".curvetun/pub.key"
-#define FILE_TOKEN	".curvetun/auth_token"
 #define FILE_USERNAM	".curvetun/username"
 
 #define LOCKFILE	"/var/run/curvetun.pid"
