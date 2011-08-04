@@ -28,7 +28,6 @@
 
 * curvetun:
   + Fix zlib compression
-  + Re-read the group auth key on SIGUSR1
 
 * netsniff-ng:
   + Cleanup code, especially in dissector, print-modes and proto sections
