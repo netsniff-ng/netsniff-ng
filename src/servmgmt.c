@@ -25,7 +25,7 @@
 
 #define crypto_box_pub_key_size crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES
 
-/* Config line format: alias;serverip|servername;port;udp|tcp;pubkey;auth_token\n */
+/* Config line format: alias;serverip|servername;port;udp|tcp;pubkey\n */
 
 struct server_store {
 	char alias[256];
@@ -76,6 +76,7 @@ void parse_userfile_and_generate_serv_store_or_die(char *homedir)
 		panic("Cannot open server file!\n");
 	memset(buff, 0, sizeof(buff));
 
+	/* TODO: this is huge crap. needs to be rewritten! */
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
 		/* A comment. Skip this line */
@@ -135,17 +136,10 @@ void parse_userfile_and_generate_serv_store_or_die(char *homedir)
 		if (*udp == '\n')
 			panic("Parse error! No key found in l.%d!\n", line);
 		key = udp;
-		while (*key != ';' &&
-		       *key != '\0' &&
-		       *key != ' ' &&
-		       *key != '\t')
-			key++;
-		if (*key != ';')
-			panic("Parse error! No key found in l.%d!\n", line);
-		*key = '\0';
+		key[strlen(key) - 1] = 0;
 		memset(pkey, 0, sizeof(pkey));
 		if (!curve25519_pubkey_hexparse_32(pkey, sizeof(pkey),
-						   udp, key - 1 - udp))
+						   key, strlen(key)))
 			panic("Parse error! No key found in l.%d!\n", line);
 
 		if (strlen(alias) + 1 > sizeof(elem->alias))
@@ -200,18 +194,11 @@ void dump_serv_store(void)
 		       elem->udp ? "udp" : "tcp");
 		for (i = 0; i < sizeof(elem->publickey); ++i)
 			if (i == (sizeof(elem->publickey) - 1))
-				printf("%02x -> auth ", (unsigned char)
-				       elem->publickey[i]);
-			else
-				printf("%02x:", (unsigned char)
-				       elem->publickey[i]);
-		for (i = 0; i < sizeof(elem->auth_token); ++i)
-			if (i == (sizeof(elem->auth_token) - 1))
 				printf("%02x\n", (unsigned char)
-				       elem->auth_token[i]);
+				       elem->publickey[i]);
 			else
 				printf("%02x:", (unsigned char)
-				       elem->auth_token[i]);
+				       elem->publickey[i]);
 		elem = elem->next;
 	}
 	rwlock_unlock(&store_lock);
