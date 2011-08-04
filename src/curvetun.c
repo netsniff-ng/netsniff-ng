@@ -523,15 +523,14 @@ static void daemonize(const char *lockfile)
 	if (lockfile) {
 		lfp = open(lockfile, O_RDWR | O_CREAT | O_EXCL, 0640);
 		if (lfp < 0)
-			panic("Cannot create lockfile at %s! "
-			      "curvetun server already running?\n",
-			      lockfile);
+			syslog_panic("Cannot create lockfile at %s! "
+				     "curvetun server already running?\n",
+				     lockfile);
 
 		slprintf(pidstr, sizeof(pidstr), "%u", getpid());
-
 		if (write(lfp, pidstr, strlen(pidstr)) <= 0)
-			panic("Could not write pid to pidfile %s", lockfile);
-
+			syslog_panic("Could not write pid to pidfile %s",
+				     lockfile);
 		close(lfp);
 	}
 }
