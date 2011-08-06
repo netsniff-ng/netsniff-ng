@@ -32,6 +32,8 @@ extern int ethtool_bitrate(const char *ifname);
 extern int ethtool_drvinf(const char *ifname, struct ethtool_drvinfo *drvinf);
 extern int device_bitrate(const char *ifname);
 extern int device_mtu(const char *ifname);
+extern int device_address(const char *ifname, int af,
+			  struct sockaddr_storage *ss);
 extern int device_irq_number(const char *ifname);
 extern int device_bind_irq_to_cpu(int irq, int cpu);
 extern void sock_print_net_stats(int sock);

@@ -303,6 +303,30 @@ int device_ifindex(const char *ifname)
 	return index;
 }
 
+int device_address(const char *ifname, int af, struct sockaddr_storage *ss)
+{
+	int ret, sock;
+	struct ifreq ifr;
+
+	if (!ss)
+		return -EINVAL;
+	if (!strncmp("any", ifname, strlen("any")))
+		return -EINVAL;
+
+	sock = af_socket(af);
+
+	memset(&ifr, 0, sizeof(ifr));
+	strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
+	ifr.ifr_addr.sa_family = af;
+
+	ret = ioctl(sock, SIOCGIFADDR, &ifr);
+	if (!ret)
+		memcpy(ss, &ifr.ifr_addr, sizeof(ifr.ifr_addr));
+
+	close(sock);
+	return ret;
+}
+
 int device_mtu(const char *ifname)
 {
 	int ret, sock, mtu;

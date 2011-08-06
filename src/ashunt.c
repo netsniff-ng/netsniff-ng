@@ -280,7 +280,8 @@ static int do_trace(struct ash_cfg *cfg)
 	ssize_t err;
 	size_t len;
 	struct addrinfo hints, *ahead, *ai;
-	char hbuff[256], sbuff[256];
+	char hbuff1[256], sbuff1[256], hbuff2[256], sbuff2[256];
+	struct sockaddr_storage ss;
 
 	mt_init_by_random_device();
 
@@ -303,6 +304,10 @@ static int do_trace(struct ash_cfg *cfg)
 		if (fd < 0)
 			continue;
 		fd_cap = pf_socket();
+		memset(&ss, 0, sizeof(ss));
+		ret = device_address(cfg->dev, ai->ai_family, &ss);
+		if (ret < 0)
+			panic("Cannot get own device address!\n");
 		break;
 	}
 
@@ -320,11 +325,18 @@ static int do_trace(struct ash_cfg *cfg)
 		panic("Packet len exceeds device MTU!\n");
 	packet = xmalloc(len);
 
-	memset(hbuff, 0, sizeof(hbuff));
-	memset(sbuff, 0, sizeof(sbuff));
+	memset(hbuff1, 0, sizeof(hbuff1));
+	memset(sbuff1, 0, sizeof(sbuff1));
 	getnameinfo((struct sockaddr *) ai->ai_addr, ai->ai_addrlen,
-		    hbuff, sizeof(hbuff),
-		    sbuff, sizeof(sbuff),
+		    hbuff1, sizeof(hbuff1),
+		    sbuff1, sizeof(sbuff1),
+		    NI_NUMERICHOST | NI_NUMERICSERV);
+
+	memset(hbuff2, 0, sizeof(hbuff2));
+	memset(sbuff2, 0, sizeof(sbuff2));
+	getnameinfo((struct sockaddr *) &ss, sizeof(ss),
+		    hbuff2, sizeof(hbuff2),
+		    sbuff2, sizeof(sbuff2),
 		    NI_NUMERICHOST | NI_NUMERICSERV);
 
 	ret = setsockopt(fd, cfg->ip == 4 ? IPPROTO_IP : IPPROTO_IPV6,
@@ -332,9 +344,9 @@ static int do_trace(struct ash_cfg *cfg)
 	if (ret < 0)
 		panic("Kernel does not support IP_HDRINCL!\n");
 
-	info("AS path IPv%d trace to %s (%s) on TCP port %s with len %u Bytes, "
-	     "%u max hops\n", cfg->ip, cfg->host, hbuff, cfg->port, len,
-	     cfg->max_ttl);
+	info("AS path IPv%d trace from %s to %s (%s)\n"
+	     "Using TCP port %s with len %u Bytes, %u max hops\n", 
+	     cfg->ip, hbuff2, cfg->host, hbuff1, cfg->port, len, cfg->max_ttl);
 	fflush(stdout);
 
 	for (ttl = cfg->init_ttl; ttl <= cfg->max_ttl && !sigint && !last;
