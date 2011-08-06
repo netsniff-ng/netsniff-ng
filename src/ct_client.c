@@ -407,6 +407,7 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 	hints.ai_family = PF_UNSPEC;
 	hints.ai_socktype = udp ? SOCK_DGRAM : SOCK_STREAM;
 	hints.ai_protocol = udp ? IPPROTO_UDP : IPPROTO_TCP;
+	hints.ai_flags = AI_NUMERICSERV;
 
 	ret = getaddrinfo(host, port, &hints, &ahead);
 	if (ret < 0)

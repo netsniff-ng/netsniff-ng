@@ -6,7 +6,7 @@
 include ../definitions.mk
 
 INCLUDE    = -I..
-CFLAGS    +=
+CFLAGS    += 
 LIBS       =
 
 core-objs  = ashunt.o
@@ -14,6 +14,8 @@ lib-objs   = xmalloc.o                  \
 	     aslookup.o                 \
 	     parser.o                   \
 	     misc.o                     \
+	     bpf.o                      \
+	     rx_ring.o                  \
 	     mtrand.o                   \
 	     netdev.o                   \
 	     write_or_die.o             \
@@ -21,7 +23,7 @@ lib-objs   = xmalloc.o                  \
 
 target     = ashunt
 
-all: clean gen-version build doc strip
+all: clean gen-version build doc
 debug: all
 deploy: all strip
 
@@ -42,7 +44,7 @@ doc:
 #	@cp ../../Documentation/html/* .
 
 %.o: ../%.c
-	@$(CC) $(CFLAGS) $(INCLUDE) $<
+	@$(CC) -g $(CFLAGS) $(INCLUDE) $<
 
 clean:
 	@rm *.o *~ $(target) ../version.h *.gz *.pdf *.html *.8 *.css > \

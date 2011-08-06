@@ -40,8 +40,9 @@ ifneq ($(or $(call eq,$(MAKECMDGOALS),"all"), $(call eq,$(MAKECMDGOALS),"")),)
 	LD      = $(LD_NORM) -o
 #-pie -z relo -o
 	CC      = $(CC_NORM) -c
-	CFLAGS  = -O2 -fomit-frame-pointer -fno-strict-aliasing -fno-common  \
-		  -fno-delete-null-pointer-checks -std=gnu99 -g               
+	CFLAGS  = -O2 -fstack-protector -std=gnu99 -g -fno-strict-aliasing
+#-fomit-frame-pointer -fno-strict-aliasing -fno-common  \
+#		  -fno-delete-null-pointer-checks -std=gnu99 -g               
 #		  -fstack-protector -D_FORTIFY_SOURCE=2 -fPIE                \
 #		  -fno-strict-overflow -D_REENTRANT -DUSE_BUILTIN
 	CFLAGS += -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs           \

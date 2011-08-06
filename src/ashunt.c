@@ -24,6 +24,7 @@
 #include <getopt.h>
 #include <ctype.h>
 #include <stdint.h>
+#include <assert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
@@ -37,8 +38,12 @@
 #include <errno.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <linux/if_ether.h>
+#include <linux/icmp.h>
+#include <linux/icmpv6.h>
 
 #include "misc.h"
+#include "bpf.h"
 #include "die.h"
 #include "xmalloc.h"
 #include "write_or_die.h"
@@ -48,6 +53,7 @@
 #include "netdev.h"
 #include "mtrand.h"
 #include "parser.h"
+#include "rx_ring.h"
 
 #define WHOIS_SERVER_SOURCE "/etc/netsniff-ng/whois.conf"
 
@@ -101,6 +107,50 @@ static struct option long_options[] = {
 	{0, 0, 0, 0}
 };
 
+static struct sock_filter ipv4_icmp_type_11[] = {
+	/* (000) ldh  [12] */
+	{ 0x28, 0, 0, 0x0000000c },
+	/* (001) jeq  #0x800 jt 2 jf 10 */
+	{ 0x15, 0, 8, 0x00000800 },
+	/* (002) ldb  [23] */
+	{ 0x30, 0, 0, 0x00000017 },
+	/* (003) jeq  #0x1 jt 4 jf 10 */
+	{ 0x15, 0, 6, 0x00000001 },
+	/* (004) ldh  [20] */
+	{ 0x28, 0, 0, 0x00000014 },
+	/* (005) jset #0x1fff jt 10 jf 6 */
+	{ 0x45, 4, 0, 0x00001fff },
+	/* (006) ldxb 4*([14]&0xf) */
+	{ 0xb1, 0, 0, 0x0000000e },
+	/* (007) ldb  [x + 14] */
+	{ 0x50, 0, 0, 0x0000000e },
+	/* (008) jeq  #0xb jt 9 jf 10 */
+	{ 0x15, 0, 1, 0x0000000b },
+	/* (009) ret  #65535 */
+	{ 0x06, 0, 0, 0xffffffff },
+	/* (010) ret  #0 */
+	{ 0x06, 0, 0, 0x00000000 },
+};
+
+static struct sock_filter ipv6_icmp6_type_3[] = {
+	/* (000) ldh [12] */
+	{ 0x28, 0, 0, 0x0000000c },
+	/* (001) jeq  #0x86dd jt 2 jf 7 */
+	{ 0x15, 0, 5, 0x000086dd },
+	/* (002) ldb  [20] */
+	{ 0x30, 0, 0, 0x00000014 },
+	/* (003) jeq  #0x3a jt 4 jf 7 */
+	{ 0x15, 0, 3, 0x0000003a },
+	/* (004) ldb  [54] */
+	{ 0x30, 0, 0, 0x00000036 },
+	/* (005) jeq  #0x3 jt 6 jf 7 */
+	{ 0x15, 0, 1, 0x00000003 },
+	/* (006) ret  #65535 */
+	{ 0x06, 0, 0, 0xffffffff },
+	/* (007) ret  #0 */
+	{ 0x06, 0, 0, 0x00000000 },
+};
+
 static void signal_handler(int number)
 {
 	switch (number) {
@@ -137,7 +187,7 @@ static void help(void)
 	printf(" -m|--max-ttl <ttl>      Set maximum TTL (default: 30)\n");
 	printf(" -P|--src-port <port>    Specify local source port (default: bind(2))\n");
 	printf(" -s|--src-addr <addr>    Specify local source addr\n");
-	printf(" -q|--num-probes <num>   Number of probes for each hop (default: 3)\n");
+	printf(" -q|--num-probes <num>   Number of max probes for each hop (default: 3)\n");
 	printf(" -x|--timeout <sec>      Probe response timeout in sec (default: 3)\n");
 	printf(" -S|--syn                Set TCP SYN flag in packets\n");
 	printf(" -A|--ack                Set TCP ACK flag in packets\n");
@@ -193,27 +243,23 @@ static inline unsigned short csum(unsigned short *buf, int nwords)
 	return ~sum;
 }
 
-static ssize_t assemble_data(uint8_t *packet, size_t len)
+static void assemble_data(uint8_t *packet, size_t len)
 {
 	int i;
 	for (i = 0; i < len; ++i)
 		packet[i] = (uint8_t) mt_rand_int32();
-	return len;
 }
 
-static ssize_t assemble_tcp(uint8_t *packet, size_t len,
-			    int syn, int ack, int ecn)
+static void assemble_tcp(uint8_t *packet, size_t len,
+			 int syn, int ack, int ecn, int dport)
 {
 	struct tcphdr *tcph = (struct tcphdr *) packet;
-
-	if (len < sizeof(struct tcphdr))
-		return -ENOMEM;
-
-	tcph->source = htons(1234);
-	tcph->dest = htons(85);
+	assert(len >= sizeof(struct tcphdr));
+	tcph->source = htons((uint16_t) mt_rand_int32());
+	tcph->dest = htons((uint16_t) dport);
 	tcph->seq = random();
 	tcph->ack_seq = 0;
-	tcph->doff = 0;
+	tcph->doff = 5;
 	tcph->syn = !!syn;
 	tcph->ack = !!ack;
 	tcph->urg = 0;
@@ -222,22 +268,21 @@ static ssize_t assemble_tcp(uint8_t *packet, size_t len,
 	tcph->psh = 0;
 	tcph->ece = !!ecn;
 	tcph->cwr = !!ecn;
-	tcph->doff = 0;
 	tcph->window = htonl(65535);
 	tcph->check = 0;
 	tcph->urg_ptr = 0;
-
-	return sizeof(struct tcphdr);
 }
 
-static ssize_t assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
-				 int tos, struct in_addr *src, struct in_addr *dst,
-				 int syn, int ack, int ecn, int nofrag)
+/* returns: ipv4 id */
+static int assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
+			     int tos, const struct sockaddr *dst,
+			     const struct sockaddr *src, int syn, int ack,
+			     int ecn, int nofrag, int dport)
 {
 	struct iphdr *iph = (struct iphdr *) packet;
-
-	if (len < sizeof(struct iphdr) + sizeof(struct tcphdr))
-		return -ENOMEM;
+	assert(src && dst);
+	assert(src->sa_family == PF_INET && dst->sa_family == PF_INET);
+	assert(len >= sizeof(struct iphdr) + sizeof(struct tcphdr));
 	iph->ihl = 5;
 	iph->version = 4;
 	iph->tos = (uint8_t) tos;
@@ -246,42 +291,105 @@ static ssize_t assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
 	iph->frag_off = nofrag ? IP_DF : 0;
 	iph->ttl = (uint8_t) ttl;
 	iph->protocol = 6; /* TCP */
-	iph->saddr = src->s_addr;
-	iph->daddr = dst->s_addr;
+	iph->saddr = ((struct sockaddr_in *) src)->sin_addr.s_addr;
+	iph->daddr = ((struct sockaddr_in *) dst)->sin_addr.s_addr;
 	assemble_tcp(packet + sizeof(struct iphdr),
-		     len - sizeof(struct iphdr),
-		     syn, ack, ecn);
+		     len - sizeof(struct iphdr), syn, ack, ecn, dport);
 	assemble_data(packet + sizeof(struct iphdr) + sizeof(struct tcphdr),
 		      len - sizeof(struct iphdr) + sizeof(struct tcphdr));
 	iph->check = csum((unsigned short *) packet,
 			  ntohs(iph->tot_len) >> 1);
-	return len;
+	return ntohs(iph->id);
 }
 
-static ssize_t assemble_ipv6_tcp(uint8_t *packet, size_t len, int ttl,
-			 	 struct sockaddr_in *sin)
+/* returns: ipv6 flow label */
+static int assemble_ipv6_tcp(uint8_t *packet, size_t len, int ttl,
+			     struct sockaddr_in *sin)
 {
 	return 0;
 }
 
-static ssize_t assemble_packet(uint8_t *packet, size_t len, int ttl,
-			       struct ash_cfg *cfg)
+static int assemble_packet_or_die(uint8_t *packet, size_t len, int ttl,
+				  const struct ash_cfg *cfg,
+				  const struct sockaddr *dst,
+				  const struct sockaddr *src)
 {
-//	assemble_ipv4_tcp(packet, len, ttl, cfg->tos,
-//			  NULL, NULL, cfg->syn, cfg->ack, cfg->ecn,
-//			  cfg->nofrag);
-	return 0;
+	return assemble_ipv4_tcp(packet, len, ttl, cfg->tos, dst, src, cfg->syn,
+				 cfg->ack, cfg->ecn, cfg->nofrag,
+				 atoi(cfg->port));
 }
 
-static int do_trace(struct ash_cfg *cfg)
+#define PKT_NOT_FOR_US	0
+#define PKT_GOOD	1
+
+static int handle_ipv4_icmp(uint8_t *packet, size_t len, int ttl, int id,
+			    const struct sockaddr *own)
 {
-	int ttl, query, fd = -1, one = 1, ret, fd_cap, last = 0;
-	uint8_t *packet;
-	ssize_t err;
-	size_t len;
+	int ret;
+	struct iphdr *iph = (struct iphdr *) packet;
+	struct iphdr *iph_inner;
+	struct icmphdr *icmph;
+	char *hbuff;
+	struct sockaddr_in sa;
+	struct asrecord rec;
+
+	if (iph->protocol != 1)
+		return PKT_NOT_FOR_US;
+	if (iph->daddr != ((struct sockaddr_in *) own)->sin_addr.s_addr)
+		return PKT_NOT_FOR_US;
+	icmph = (struct icmphdr *) (packet + sizeof(struct iphdr));
+	if (icmph->type != ICMP_TIME_EXCEEDED)
+		return PKT_NOT_FOR_US;
+	if (icmph->code != ICMP_EXC_TTL)
+		return PKT_NOT_FOR_US;
+	iph_inner = (struct iphdr *) (packet + sizeof(struct iphdr) +
+				      sizeof(struct icmphdr));
+	if (ntohs(iph_inner->id) != id)
+		return PKT_NOT_FOR_US;
+
+	hbuff = xzmalloc(256);
+	memset(&sa, 0, sizeof(sa));
+
+	sa.sin_family = PF_INET;
+	sa.sin_addr.s_addr = iph->saddr;
+	getnameinfo((struct sockaddr *) &sa, sizeof(sa), hbuff, 256, NULL,
+		    0, NI_NUMERICHOST);
+
+	memset(&rec, 0, sizeof(rec));
+	ret = aslookup(hbuff, &rec);
+	if (ret < 0)
+		panic("AS lookup error %d!\n", ret);
+
+	if (strlen(rec.country) > 0) {
+		printf("%s in AS%s (%s), %s %s (%s), %s", hbuff, rec.number,
+		       rec.country, rec.prefix, rec.registry, rec.since,
+		       rec.name);
+	} else {
+		printf("%s in unkown AS", hbuff);
+	}
+
+	xfree(hbuff);
+	return PKT_GOOD;
+}
+
+static int handle_packet(uint8_t *packet, size_t len, int ip, int ttl, int id,
+			 struct sockaddr *own)
+{
+	return handle_ipv4_icmp(packet, len, ttl, id, own);
+}
+
+static int do_trace(const struct ash_cfg *cfg)
+{
+	int ttl, query, fd = -1, one = 1, ret, fd_cap, last = 0, ifindex;
+	int is_okay = 0, id;
+	uint8_t *packet, *packet_rcv;
+	ssize_t err, real_len;
+	size_t len, len_rcv;
 	struct addrinfo hints, *ahead, *ai;
-	char hbuff1[256], sbuff1[256], hbuff2[256], sbuff2[256];
-	struct sockaddr_storage ss;
+	char *hbuff1, *hbuff2;
+	struct sockaddr_storage ss, sd;
+	struct sock_fprog bpf_ops;
+	struct ring dummy_ring;
 
 	mt_init_by_random_device();
 
@@ -289,6 +397,7 @@ static int do_trace(struct ash_cfg *cfg)
 	hints.ai_family = PF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
+	hints.ai_flags = AI_NUMERICSERV;
 
 	ret = getaddrinfo(cfg->host, cfg->port, &hints, &ahead);
 	if (ret < 0) {
@@ -308,6 +417,11 @@ static int do_trace(struct ash_cfg *cfg)
 		ret = device_address(cfg->dev, ai->ai_family, &ss);
 		if (ret < 0)
 			panic("Cannot get own device address!\n");
+		ret = bind(fd, (struct sockaddr *) &ss, sizeof(ss));
+		if (ret < 0)
+			panic("Cannot bind socket!\n");
+		memset(&sd, 0, sizeof(sd));
+		memcpy(&sd, ai->ai_addr, ai->ai_addrlen);
 		break;
 	}
 
@@ -319,53 +433,89 @@ static int do_trace(struct ash_cfg *cfg)
 	}
 
 	len = cfg->totlen ? : cfg->ip == 4 ? 
-		sizeof(struct iphdr) + sizeof(struct tcphdr) :
+		sizeof(struct iphdr) + sizeof(struct tcphdr):
 		sizeof(struct ip6_hdr) + sizeof(struct tcphdr);
 	if (len >= device_mtu(cfg->dev))
 		panic("Packet len exceeds device MTU!\n");
 	packet = xmalloc(len);
+	len_rcv = device_mtu(cfg->dev);
+	packet_rcv = xmalloc(len_rcv);
 
-	memset(hbuff1, 0, sizeof(hbuff1));
-	memset(sbuff1, 0, sizeof(sbuff1));
-	getnameinfo((struct sockaddr *) ai->ai_addr, ai->ai_addrlen,
-		    hbuff1, sizeof(hbuff1),
-		    sbuff1, sizeof(sbuff1),
-		    NI_NUMERICHOST | NI_NUMERICSERV);
+	hbuff1 = xzmalloc(256);
+	getnameinfo((struct sockaddr *) &sd, sizeof(sd), hbuff1, 256,
+		    NULL, 0, NI_NUMERICHOST);
 
-	memset(hbuff2, 0, sizeof(hbuff2));
-	memset(sbuff2, 0, sizeof(sbuff2));
-	getnameinfo((struct sockaddr *) &ss, sizeof(ss),
-		    hbuff2, sizeof(hbuff2),
-		    sbuff2, sizeof(sbuff2),
-		    NI_NUMERICHOST | NI_NUMERICSERV);
+	hbuff2 = xzmalloc(256);
+	getnameinfo((struct sockaddr *) &ss, sizeof(ss), hbuff2, 256,
+		    NULL, 0, NI_NUMERICHOST);
 
 	ret = setsockopt(fd, cfg->ip == 4 ? IPPROTO_IP : IPPROTO_IPV6,
 			 IP_HDRINCL, &one, sizeof(one));
 	if (ret < 0)
 		panic("Kernel does not support IP_HDRINCL!\n");
 
-	info("AS path IPv%d trace from %s to %s (%s)\n"
-	     "Using TCP port %s with len %u Bytes, %u max hops\n", 
-	     cfg->ip, hbuff2, cfg->host, hbuff1, cfg->port, len, cfg->max_ttl);
+	info("AS path IPv%d TCP trace from %s to %s:%s (%s) with len %u "
+	     "Bytes, %u max hops\n", cfg->ip, hbuff2, hbuff1, cfg->port,
+	     cfg->host, len, cfg->max_ttl);
 	fflush(stdout);
 
-	for (ttl = cfg->init_ttl; ttl <= cfg->max_ttl && !sigint && !last;
-	     ++ttl) {
+	xfree(hbuff1);
+	xfree(hbuff2);
+	hbuff1 = hbuff2 = NULL;
+
+	memset(&bpf_ops, 0, sizeof(bpf_ops));
+	if (cfg->ip == 4) {
+		bpf_ops.filter = ipv4_icmp_type_11;
+		bpf_ops.len = (sizeof(ipv4_icmp_type_11) /
+			       sizeof(ipv4_icmp_type_11[0]));
+	} else {
+		bpf_ops.filter = ipv6_icmp6_type_3;
+		bpf_ops.len = (sizeof(ipv6_icmp6_type_3) /
+			       sizeof(ipv6_icmp6_type_3[0]));
+	}
+	bpf_attach_to_sock(fd_cap, &bpf_ops);
+	enable_kernel_bpf_jit_compiler();
+	ifindex = device_ifindex(cfg->dev);
+	bind_rx_ring(fd_cap, &dummy_ring, ifindex);
+
+	for (ttl = cfg->init_ttl; ttl <= cfg->max_ttl && unlikely(!sigint) &&
+	     !last; ++ttl) {
+		is_okay = 0;
 		info("%2d: ", ttl);
-		for (query = 0; query < cfg->queries; ++query) {
-			assemble_packet(packet, len, ttl, cfg);
-			// setup filter, listen
-			err = sendto(fd, packet, len, 0,
-				     ai->ai_addr, ai->ai_addrlen);
+		for (query = 0; query < cfg->queries &&
+		     unlikely(!sigint) && !is_okay; ++query) {
+			id = assemble_packet_or_die(packet, len, ttl, cfg,
+						    (struct sockaddr *) &sd,
+						    (struct sockaddr *) &ss);
+			err = sendto(fd, packet, len, 0, (struct sockaddr *) &sd,
+				     sizeof(sd));
 			if (err < 0)
 				panic("sendto failed: %s\n", strerror(errno));
+			while (!is_okay) {
+				/* TODO: timeout, gettimeofday */
+				real_len = recvfrom(fd_cap, packet_rcv, len_rcv,
+						    0, NULL, NULL);
+				if (real_len < sizeof(struct ethhdr) +
+				    (cfg->ip ? sizeof(struct iphdr) +
+					       sizeof(struct icmphdr) :
+					       sizeof(struct ip6_hdr) +
+					       sizeof(struct icmp6hdr))) {
+					whine("recvfrom failed!\n");
+					continue;
+				}
+				is_okay = handle_packet(packet_rcv + sizeof(struct ethhdr),
+							real_len - sizeof(struct ethhdr),
+							cfg->ip, ttl, id, (struct sockaddr *) &ss);
+			}
 		}
 		info("\n");
+		fflush(stdout);
 	}
 
 	close(fd_cap);
 	close(fd);
 	xfree(packet);
+	xfree(packet_rcv);
 	return 0;
 }
 
@@ -409,6 +559,7 @@ int main(int argc, char **argv)
 	cfg.max_ttl = 30;
 	cfg.queries = 3;
 	cfg.timeout = 3;
+	cfg.syn = 1;
 	cfg.ip = 4;
 	cfg.dev = xstrdup("eth0");
 	cfg.port = xstrdup("80");
@@ -546,10 +697,13 @@ int main(int argc, char **argv)
 	if (device_mtu(cfg.dev) <= cfg.totlen)
 		panic("Packet larger than device MTU!\n");
 
-	register_signal(SIGINT, signal_handler);
+//	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
 
 	header();
+	ret = aslookup_prepare(cfg.whois, cfg.whois_port);
+	if (ret < 0)
+		panic("Cannot resolve whois server!\n");
 	ret = do_trace(&cfg);
 
 	if (cfg.whois_port)
