@@ -38,6 +38,9 @@ int aslookup_prepare(const char *server, const char *port)
 	hints.ai_protocol = IPPROTO_TCP;
 	hints.ai_flags = AI_NUMERICSERV;
 
+	/* This function is really fucked up and seems to have high-stack
+	 * usage since it provokes segfaults in some situations when it is
+	 * directly included in aslookup! */
 	ret = getaddrinfo(server, port, &hints, &ahead);
 	if (ret != 0) {
 		whine("Cannot get address info!\n");
