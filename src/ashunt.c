@@ -7,7 +7,8 @@
  * An Autonomous System trace route utility based on TCP instead of ICMP for
  * a better passing of firewalls. Supports IPv4 and IPv6. Based on the idea
  * of tcptraceroute (http://michael.toren.net/code/tcptraceroute/), but hacked
- * for Autonomous Systems tracing.
+ * for Autonomous Systems tracing, thus you will know an approximate path of
+ * your curvetun tunneled packets, for instance.
  *
  *   The road must be trod, but it will be very hard. And neither strength nor
  *   wisdom will carry us far upon it. This quest may be attempted by the weak
@@ -456,8 +457,9 @@ static int do_trace(const struct ash_cfg *cfg)
 	if (ret < 0)
 		panic("Kernel does not support IP_HDRINCL!\n");
 
-	info("AS path IPv%d TCP trace from %s to %s:%s (%s) with len %u "
-	     "Bytes, %u max hops\n", cfg->ip, hbuff2, hbuff1, cfg->port,
+	info("AS path IPv%d TCP (SYN:%d,ACK:%d,ECN:%d) trace from %s to "
+	     "%s:%s (%s) with len %u Bytes, %u max hops\n", cfg->ip,
+	     cfg->syn, cfg->ack, cfg->ecn, hbuff2, hbuff1, cfg->port,
 	     cfg->host, len, cfg->max_ttl);
 	fflush(stdout);
 
