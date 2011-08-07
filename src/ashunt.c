@@ -54,6 +54,7 @@
 #include "mtrand.h"
 #include "parser.h"
 #include "rx_ring.h"
+#include "poll.h"
 
 #define WHOIS_SERVER_SOURCE "/etc/netsniff-ng/whois.conf"
 
@@ -381,7 +382,7 @@ static int handle_packet(uint8_t *packet, size_t len, int ip, int ttl, int id,
 static int do_trace(const struct ash_cfg *cfg)
 {
 	int ttl, query, fd = -1, one = 1, ret, fd_cap, last = 0, ifindex;
-	int is_okay = 0, id;
+	int is_okay = 0, id, timeout_poll;
 	uint8_t *packet, *packet_rcv;
 	ssize_t err, real_len;
 	size_t len, len_rcv;
@@ -390,6 +391,7 @@ static int do_trace(const struct ash_cfg *cfg)
 	struct sockaddr_storage ss, sd;
 	struct sock_fprog bpf_ops;
 	struct ring dummy_ring;
+	struct pollfd pfd;
 
 	mt_init_by_random_device();
 
@@ -477,13 +479,15 @@ static int do_trace(const struct ash_cfg *cfg)
 	enable_kernel_bpf_jit_compiler();
 	ifindex = device_ifindex(cfg->dev);
 	bind_rx_ring(fd_cap, &dummy_ring, ifindex);
+	prepare_polling(fd_cap, &pfd);
+	timeout_poll = (cfg->timeout > 0 ? cfg->timeout : 3) * 1000;
 
 	for (ttl = cfg->init_ttl; ttl <= cfg->max_ttl && unlikely(!sigint) &&
 	     !last; ++ttl) {
 		is_okay = 0;
 		info("%2d: ", ttl);
-		for (query = 0; query < cfg->queries &&
-		     unlikely(!sigint) && !is_okay; ++query) {
+		fflush(stdout);
+		for (query = 0; query < cfg->queries && !is_okay; ++query) {
 			id = assemble_packet_or_die(packet, len, ttl, cfg,
 						    (struct sockaddr *) &sd,
 						    (struct sockaddr *) &ss);
@@ -491,21 +495,25 @@ static int do_trace(const struct ash_cfg *cfg)
 				     sizeof(sd));
 			if (err < 0)
 				panic("sendto failed: %s\n", strerror(errno));
-			while (!is_okay) {
-				/* TODO: timeout, gettimeofday */
+
+			err = poll(&pfd, 1, timeout_poll);
+			if (err > 0 && pfd.revents & POLLIN) {
 				real_len = recvfrom(fd_cap, packet_rcv, len_rcv,
 						    0, NULL, NULL);
 				if (real_len < sizeof(struct ethhdr) +
 				    (cfg->ip ? sizeof(struct iphdr) +
 					       sizeof(struct icmphdr) :
 					       sizeof(struct ip6_hdr) +
-					       sizeof(struct icmp6hdr))) {
-					whine("recvfrom failed!\n");
+					       sizeof(struct icmp6hdr)))
 					continue;
-				}
 				is_okay = handle_packet(packet_rcv + sizeof(struct ethhdr),
 							real_len - sizeof(struct ethhdr),
-							cfg->ip, ttl, id, (struct sockaddr *) &ss);
+							cfg->ip, ttl, id,
+							(struct sockaddr *) &ss);
+			} else {
+				info("* ");
+				fflush(stdout);
+				is_okay = 0;
 			}
 		}
 		info("\n");
@@ -696,8 +704,6 @@ int main(int argc, char **argv)
 		parse_whois_or_die(&cfg);
 	if (device_mtu(cfg.dev) <= cfg.totlen)
 		panic("Packet larger than device MTU!\n");
-
-//	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
 
 	header();
