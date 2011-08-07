@@ -70,7 +70,7 @@ struct ash_cfg {
 	char *dev;
 	int queries;
 	int timeout;
-	int syn, ack, ecn;
+	int syn, ack, ecn, fin, psh, rst, urg;
 	int tos, nofrag;
 	int totlen;
 	char *whois;
@@ -80,7 +80,7 @@ struct ash_cfg {
 
 sig_atomic_t sigint = 0;
 
-static const char *short_options = "H:p:nNf:m:P:s:i:d:q:x:SAEt:Fl:w:W:hv46";
+static const char *short_options = "H:p:nNf:m:C:s:i:d:q:x:SAEFPURt:Gl:w:W:hv46";
 
 static struct option long_options[] = {
 	{"host", required_argument, 0, 'H'},
@@ -91,16 +91,20 @@ static struct option long_options[] = {
 	{"dns", no_argument, 0, 'N'},
 	{"ipv4", no_argument, 0, '4'},
 	{"ipv6", no_argument, 0, '6'},
-	{"src-port", required_argument, 0, 'P'},
+	{"src-port", required_argument, 0, 'C'},
 	{"src-addr", required_argument, 0, 's'},
 	{"dev", required_argument, 0, 'd'},
 	{"num-probes", required_argument, 0, 'q'},
 	{"timeout", required_argument, 0, 'x'},
 	{"syn", no_argument, 0, 'S'},
 	{"ack", no_argument, 0, 'A'},
+	{"urg", no_argument, 0, 'U'},
+	{"fin", no_argument, 0, 'F'},
+	{"psh", no_argument, 0, 'P'},
+	{"rst", no_argument, 0, 'R'},
 	{"ecn-syn", no_argument, 0, 'E'},
 	{"tos", required_argument, 0, 't'},
-	{"nofrag", no_argument, 0, 'F'},
+	{"nofrag", no_argument, 0, 'G'},
 	{"totlen", required_argument, 0, 'l'},
 	{"whois", required_argument, 0, 'w'},
 	{"wport", required_argument, 0, 'W'},
@@ -187,15 +191,19 @@ static void help(void)
 	printf(" -N|--dns                Do a reverse DNS lookup for hops\n");
 	printf(" -f|--init-ttl <ttl>     Set initial TTL\n");
 	printf(" -m|--max-ttl <ttl>      Set maximum TTL (default: 30)\n");
-	printf(" -P|--src-port <port>    Specify local source port (default: bind(2))\n");
+	printf(" -C|--src-port <port>    Specify local source port (default: bind(2))\n");
 	printf(" -s|--src-addr <addr>    Specify local source addr\n");
 	printf(" -q|--num-probes <num>   Number of max probes for each hop (default: 3)\n");
 	printf(" -x|--timeout <sec>      Probe response timeout in sec (default: 3)\n");
 	printf(" -S|--syn                Set TCP SYN flag in packets\n");
 	printf(" -A|--ack                Set TCP ACK flag in packets\n");
-	printf(" -E|--ecn-syn            Send ECN SYN packets\n");
+	printf(" -F|--fin                Set TCP FIN flag in packets\n");
+	printf(" -P|--psh                Set TCP PSH flag in packets\n");
+	printf(" -U|--urg                Set TCP URG flag in packets\n");
+	printf(" -R|--rst                Set TCP RST flag in packets\n");
+	printf(" -E|--ecn-syn            Send ECN SYN packets (RFC3168)\n");
 	printf(" -t|--tos <tos>          Set the IP TOS field\n");
-	printf(" -F|--nofrag             Set do not fragment bit\n");
+	printf(" -G|--nofrag             Set do not fragment bit\n");
 	printf(" -l|--totlen <len>       Specify total packet len\n");
 	printf(" -w|--whois <server>     Use a different AS whois DB server\n");
 	printf("                         (default: /etc/netsniff-ng/whois.conf)\n");
@@ -252,34 +260,35 @@ static void assemble_data(uint8_t *packet, size_t len)
 		packet[i] = (uint8_t) mt_rand_int32();
 }
 
-static void assemble_tcp(uint8_t *packet, size_t len,
-			 int syn, int ack, int ecn, int dport)
+static void assemble_tcp(uint8_t *packet, size_t len, int syn, int ack,
+			 int urg, int fin, int rst, int psh, int ecn, int dport)
 {
 	struct tcphdr *tcph = (struct tcphdr *) packet;
 	assert(len >= sizeof(struct tcphdr));
 	tcph->source = htons((uint16_t) mt_rand_int32());
 	tcph->dest = htons((uint16_t) dport);
-	tcph->seq = random();
-	tcph->ack_seq = 0;
+	tcph->seq = htonl(mt_rand_int32());
+	tcph->ack_seq = (!!ack ? htonl(mt_rand_int32()) : 0);
 	tcph->doff = 5;
 	tcph->syn = !!syn;
 	tcph->ack = !!ack;
-	tcph->urg = 0;
-	tcph->fin = 0;
-	tcph->rst = 0;
-	tcph->psh = 0;
+	tcph->urg = !!urg;
+	tcph->fin = !!fin;
+	tcph->rst = !!rst;
+	tcph->psh = !!psh;
 	tcph->ece = !!ecn;
 	tcph->cwr = !!ecn;
-	tcph->window = htonl(65535);
+	tcph->window = htons((uint16_t) (100 + (mt_rand_int32() % 65435)));
 	tcph->check = 0;
-	tcph->urg_ptr = 0;
+	tcph->urg_ptr = (!!urg ? htons((uint16_t) mt_rand_int32()) :  0);
 }
 
 /* returns: ipv4 id */
 static int assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
 			     int tos, const struct sockaddr *dst,
 			     const struct sockaddr *src, int syn, int ack,
-			     int ecn, int nofrag, int dport)
+			     int urg, int fin, int rst, int psh, int ecn,
+			     int nofrag, int dport)
 {
 	struct iphdr *iph = (struct iphdr *) packet;
 	assert(src && dst);
@@ -296,7 +305,8 @@ static int assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
 	iph->saddr = ((struct sockaddr_in *) src)->sin_addr.s_addr;
 	iph->daddr = ((struct sockaddr_in *) dst)->sin_addr.s_addr;
 	assemble_tcp(packet + sizeof(struct iphdr),
-		     len - sizeof(struct iphdr), syn, ack, ecn, dport);
+		     len - sizeof(struct iphdr), syn, ack, urg, fin, rst,
+		     psh, ecn, dport);
 	assemble_data(packet + sizeof(struct iphdr) + sizeof(struct tcphdr),
 		      len - sizeof(struct iphdr) + sizeof(struct tcphdr));
 	iph->check = csum((unsigned short *) packet,
@@ -317,8 +327,8 @@ static int assemble_packet_or_die(uint8_t *packet, size_t len, int ttl,
 				  const struct sockaddr *src)
 {
 	return assemble_ipv4_tcp(packet, len, ttl, cfg->tos, dst, src, cfg->syn,
-				 cfg->ack, cfg->ecn, cfg->nofrag,
-				 atoi(cfg->port));
+				 cfg->ack, cfg->urg, cfg->fin, cfg->rst,
+				 cfg->psh, cfg->ecn, cfg->nofrag, atoi(cfg->port));
 }
 
 #define PKT_NOT_FOR_US	0
@@ -457,10 +467,12 @@ static int do_trace(const struct ash_cfg *cfg)
 	if (ret < 0)
 		panic("Kernel does not support IP_HDRINCL!\n");
 
-	info("AS path IPv%d TCP (SYN:%d,ACK:%d,ECN:%d) trace from %s to "
-	     "%s:%s (%s) with len %u Bytes, %u max hops\n", cfg->ip,
-	     cfg->syn, cfg->ack, cfg->ecn, hbuff2, hbuff1, cfg->port,
+	info("AS path IPv%d TCP trace from %s to %s:%s (%s) with len %u "
+	     "Bytes, %u max hops\n", cfg->ip, hbuff2, hbuff1, cfg->port,
 	     cfg->host, len, cfg->max_ttl);
+	info("Using flags SYN:%d,ACK:%d,ECN:%d,FIN:%d,PSH:%d,RST:%d,URG:%d\n",
+	     cfg->syn, cfg->ack, cfg->ecn, cfg->fin, cfg->psh, cfg->rst,
+	     cfg->urg);
 	fflush(stdout);
 
 	xfree(hbuff1);
@@ -568,7 +580,6 @@ int main(int argc, char **argv)
 	cfg.max_ttl = 30;
 	cfg.queries = 3;
 	cfg.timeout = 3;
-	cfg.syn = 1;
 	cfg.ip = 4;
 	cfg.dev = xstrdup("eth0");
 	cfg.port = xstrdup("80");
@@ -612,7 +623,7 @@ int main(int argc, char **argv)
 			if (cfg.max_ttl <= 0)
 				help();
 			break;
-		case 'P':
+		case 'C':
 			cfg.src_port = atoi(optarg);
 			if (cfg.max_ttl <= 0)
 				help();
@@ -642,7 +653,20 @@ int main(int argc, char **argv)
 		case 'A':
 			cfg.ack = 1;
 			break;
+		case 'F':
+			cfg.fin = 1;
+			break;
+		case 'U':
+			cfg.urg = 1;
+			break;
+		case 'P':
+			cfg.psh = 1;
+			break;
+		case 'R':
+			cfg.rst = 1;
+			break;
 		case 'E':
+			cfg.syn = 1;
 			cfg.ecn = 1;
 			break;
 		case 't':
@@ -650,7 +674,7 @@ int main(int argc, char **argv)
 			if (cfg.tos < 0)
 				help();
 			break;
-		case 'F':
+		case 'G':
 			cfg.nofrag = 1;
 			break;
 		case 'l':
@@ -670,7 +694,7 @@ int main(int argc, char **argv)
 			case 'p':
 			case 'f':
 			case 'm':
-			case 'P':
+			case 'C':
 			case 's':
 			case 'i':
 			case 'd':
@@ -705,6 +729,9 @@ int main(int argc, char **argv)
 		parse_whois_or_die(&cfg);
 	if (device_mtu(cfg.dev) <= cfg.totlen)
 		panic("Packet larger than device MTU!\n");
+	if (!cfg.syn && !cfg.ack && !cfg.fin && !cfg.urg && !cfg.psh &&
+	    !cfg.ecn && !cfg.rst)
+		cfg.syn = 1;
 	register_signal(SIGHUP, signal_handler);
 
 	header();
