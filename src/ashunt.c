@@ -445,11 +445,17 @@ static int do_trace(const struct ash_cfg *cfg)
 		return -EIO;
 	}
 
-	len = cfg->totlen ? : cfg->ip == 4 ? 
-		sizeof(struct iphdr) + sizeof(struct tcphdr):
-		sizeof(struct ip6_hdr) + sizeof(struct tcphdr);
+	len = cfg->totlen;
+	if (cfg->ip == 4) {
+		if (len < sizeof(struct iphdr) + sizeof(struct tcphdr))
+			len = sizeof(struct iphdr) + sizeof(struct tcphdr);
+	} else {
+		if (len < sizeof(struct ip6_hdr) + sizeof(struct tcphdr))
+			len = sizeof(struct ip6_hdr) + sizeof(struct tcphdr);
+	}
 	if (len >= device_mtu(cfg->dev))
 		panic("Packet len exceeds device MTU!\n");
+
 	packet = xmalloc(len);
 	len_rcv = device_mtu(cfg->dev);
 	packet_rcv = xmalloc(len_rcv);
