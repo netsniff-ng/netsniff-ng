@@ -38,7 +38,7 @@
   + ARP Cache Poisoning utility
 
 * ashunt:
-  + AS trace route utility
+  + Add IPv6 functionality
 
 * ifpps:
   + Fix NaN's in CPU usage
