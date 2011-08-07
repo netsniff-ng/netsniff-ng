@@ -208,7 +208,7 @@ static void help(void)
 	printf("\n");
 	printf("Examples:\n");
 	printf("  IPv4 trace of AS up to netsniff-ng.org:\n");
-	printf("    ashunt -i eth0 -E -H netsniff-ng.org\n");
+	printf("    ashunt -i eth0 -N -E -H netsniff-ng.org\n");
 	printf("  IPv6 trace of AS up to netsniff-ng.org:\n");
 	printf("    ashunt -6 -i eth0 -H netsniff-ng.org\n");
 	printf("\n");
@@ -302,7 +302,7 @@ static int assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
 		     len - sizeof(struct iphdr), syn, ack, urg, fin, rst,
 		     psh, ecn, dport);
 	assemble_data(packet + sizeof(struct iphdr) + sizeof(struct tcphdr),
-		      len - sizeof(struct iphdr) + sizeof(struct tcphdr));
+		      len - sizeof(struct iphdr) - sizeof(struct tcphdr));
 	iph->check = csum((unsigned short *) packet,
 			  ntohs(iph->tot_len) >> 1);
 	return ntohs(iph->id);
@@ -353,25 +353,38 @@ static int handle_ipv4_icmp(uint8_t *packet, size_t len, int ttl, int id,
 	if (ntohs(iph_inner->id) != id)
 		return PKT_NOT_FOR_US;
 
-	hbuff = xzmalloc(256);
+	hbuff = xzmalloc(NI_MAXHOST);
 	memset(&sa, 0, sizeof(sa));
 
 	sa.sin_family = PF_INET;
 	sa.sin_addr.s_addr = iph->saddr;
-	getnameinfo((struct sockaddr *) &sa, sizeof(sa), hbuff, 256, NULL,
-		    0, NI_NUMERICHOST);
+	getnameinfo((struct sockaddr *) &sa, sizeof(sa), hbuff, NI_MAXHOST,
+		    NULL, 0, NI_NUMERICHOST);
 
 	memset(&rec, 0, sizeof(rec));
 	ret = aslookup(hbuff, &rec);
 	if (ret < 0)
 		panic("AS lookup error %d!\n", ret);
 
-	if (strlen(rec.country) > 0) {
-		printf("%s in AS%s (%s), %s %s (%s), %s", hbuff, rec.number,
-		       rec.country, rec.prefix, rec.registry, rec.since,
-		       rec.name);
+	if (!dns_resolv) {
+		if (strlen(rec.country) > 0) {
+			printf("%s in AS%s (%s), %s %s (%s), %s", hbuff,
+			       rec.number, rec.country, rec.prefix,
+			       rec.registry, rec.since, rec.name);
+		} else {
+			printf("%s in unkown AS", hbuff);
+		}
 	} else {
-		printf("%s in unkown AS", hbuff);
+		struct hostent *hent = gethostbyaddr(&sa.sin_addr,
+						     sizeof(sa.sin_addr),
+						     PF_INET);
+		if (hent != NULL && strlen(rec.country) > 0) {
+			printf("%s (%s) in AS%s (%s), %s %s (%s), %s",
+			       hent->h_name, hbuff, rec.number, rec.country,
+			       rec.prefix, rec.registry, rec.since, rec.name);
+		} else {
+			printf("%s in unkown AS", hbuff);
+		}
 	}
 
 	xfree(hbuff);
