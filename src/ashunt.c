@@ -173,7 +173,7 @@ static void header(void)
 static void help(void)
 {
 
-	printf("\nashunt %s, AS trace route utility\n",
+	printf("\nashunt %s, Autonomous System (AS) trace route utility\n",
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: ashunt [options]\n");
@@ -210,7 +210,7 @@ static void help(void)
 	printf("  IPv4 trace of AS up to netsniff-ng.org:\n");
 	printf("    ashunt -i eth0 -N -E -H netsniff-ng.org\n");
 	printf("  IPv6 trace of AS up to netsniff-ng.org:\n");
-	printf("    ashunt -6 -i eth0 -H netsniff-ng.org\n");
+	printf("    ashunt -6 -S -i eth0 -H netsniff-ng.org\n");
 	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
