@@ -8,7 +8,8 @@
  * a better passing of firewalls. Supports IPv4 and IPv6. Based on the idea
  * of tcptraceroute (http://michael.toren.net/code/tcptraceroute/), but hacked
  * for Autonomous Systems tracing, thus you will know an approximate path of
- * your curvetun tunneled packets, for instance.
+ * your curvetun tunneled packets, for instance. However, ashunt was written
+ * from scratch and does not use any libraries.
  *
  *   The road must be trod, but it will be very hard. And neither strength nor
  *   wisdom will carry us far upon it. This quest may be attempted by the weak
