@@ -65,8 +65,6 @@ struct ash_cfg {
 	int init_ttl;
 	int max_ttl;
 	int dns_resolv;
-	char *src_ip;
-	int src_port;
 	char *dev;
 	int queries;
 	int timeout;
@@ -80,7 +78,7 @@ struct ash_cfg {
 
 sig_atomic_t sigint = 0;
 
-static const char *short_options = "H:p:nNf:m:C:s:i:d:q:x:SAEFPURt:Gl:w:W:hv46";
+static const char *short_options = "H:p:nNf:m:i:d:q:x:SAEFPURt:Gl:w:W:hv46";
 
 static struct option long_options[] = {
 	{"host", required_argument, 0, 'H'},
@@ -91,8 +89,6 @@ static struct option long_options[] = {
 	{"dns", no_argument, 0, 'N'},
 	{"ipv4", no_argument, 0, '4'},
 	{"ipv6", no_argument, 0, '6'},
-	{"src-port", required_argument, 0, 'C'},
-	{"src-addr", required_argument, 0, 's'},
 	{"dev", required_argument, 0, 'd'},
 	{"num-probes", required_argument, 0, 'q'},
 	{"timeout", required_argument, 0, 'x'},
@@ -191,8 +187,6 @@ static void help(void)
 	printf(" -N|--dns                Do a reverse DNS lookup for hops\n");
 	printf(" -f|--init-ttl <ttl>     Set initial TTL\n");
 	printf(" -m|--max-ttl <ttl>      Set maximum TTL (default: 30)\n");
-	printf(" -C|--src-port <port>    Specify local source port (default: bind(2))\n");
-	printf(" -s|--src-addr <addr>    Specify local source addr\n");
 	printf(" -q|--num-probes <num>   Number of max probes for each hop (default: 3)\n");
 	printf(" -x|--timeout <sec>      Probe response timeout in sec (default: 3)\n");
 	printf(" -S|--syn                Set TCP SYN flag in packets\n");
@@ -214,7 +208,7 @@ static void help(void)
 	printf("\n");
 	printf("Examples:\n");
 	printf("  IPv4 trace of AS up to netsniff-ng.org:\n");
-	printf("    ashunt -i eth0 -H netsniff-ng.org\n");
+	printf("    ashunt -i eth0 -E -H netsniff-ng.org\n");
 	printf("  IPv6 trace of AS up to netsniff-ng.org:\n");
 	printf("    ashunt -6 -i eth0 -H netsniff-ng.org\n");
 	printf("\n");
@@ -335,7 +329,7 @@ static int assemble_packet_or_die(uint8_t *packet, size_t len, int ttl,
 #define PKT_GOOD	1
 
 static int handle_ipv4_icmp(uint8_t *packet, size_t len, int ttl, int id,
-			    const struct sockaddr *own)
+			    const struct sockaddr *own, int dns_resolv)
 {
 	int ret;
 	struct iphdr *iph = (struct iphdr *) packet;
@@ -385,9 +379,9 @@ static int handle_ipv4_icmp(uint8_t *packet, size_t len, int ttl, int id,
 }
 
 static int handle_packet(uint8_t *packet, size_t len, int ip, int ttl, int id,
-			 struct sockaddr *own)
+			 struct sockaddr *own, int dns_resolv)
 {
-	return handle_ipv4_icmp(packet, len, ttl, id, own);
+	return handle_ipv4_icmp(packet, len, ttl, id, own, dns_resolv);
 }
 
 static int do_trace(const struct ash_cfg *cfg)
@@ -530,7 +524,8 @@ static int do_trace(const struct ash_cfg *cfg)
 				is_okay = handle_packet(packet_rcv + sizeof(struct ethhdr),
 							real_len - sizeof(struct ethhdr),
 							cfg->ip, ttl, id,
-							(struct sockaddr *) &ss);
+							(struct sockaddr *) &ss,
+							cfg->dns_resolv);
 			} else {
 				info("* ");
 				fflush(stdout);
@@ -631,14 +626,6 @@ int main(int argc, char **argv)
 			if (cfg.max_ttl <= 0)
 				help();
 			break;
-		case 'C':
-			cfg.src_port = atoi(optarg);
-			if (cfg.max_ttl <= 0)
-				help();
-			break;
-		case 's':
-			cfg.src_ip = xstrdup(optarg);
-			break;
 		case 'i':
 		case 'd':
 			if (cfg.dev)
@@ -702,8 +689,6 @@ int main(int argc, char **argv)
 			case 'p':
 			case 'f':
 			case 'm':
-			case 'C':
-			case 's':
 			case 'i':
 			case 'd':
 			case 'q':
@@ -754,8 +739,6 @@ int main(int argc, char **argv)
 		xfree(cfg.whois);
 	if (cfg.dev)
 		xfree(cfg.dev);
-	if (cfg.src_ip)
-		xfree(cfg.src_ip);
 	if (cfg.host)
 		xfree(cfg.host);
 	if (cfg.port)
