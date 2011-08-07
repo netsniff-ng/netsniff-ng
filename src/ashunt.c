@@ -381,7 +381,7 @@ static int handle_packet(uint8_t *packet, size_t len, int ip, int ttl, int id,
 
 static int do_trace(const struct ash_cfg *cfg)
 {
-	int ttl, query, fd = -1, one = 1, ret, fd_cap, last = 0, ifindex;
+	int ttl, query, fd = -1, one = 1, ret, fd_cap, ifindex;
 	int is_okay = 0, id, timeout_poll;
 	uint8_t *packet, *packet_rcv;
 	ssize_t err, real_len;
@@ -482,8 +482,7 @@ static int do_trace(const struct ash_cfg *cfg)
 	prepare_polling(fd_cap, &pfd);
 	timeout_poll = (cfg->timeout > 0 ? cfg->timeout : 3) * 1000;
 
-	for (ttl = cfg->init_ttl; ttl <= cfg->max_ttl && unlikely(!sigint) &&
-	     !last; ++ttl) {
+	for (ttl = cfg->init_ttl; ttl <= cfg->max_ttl; ++ttl) {
 		is_okay = 0;
 		info("%2d: ", ttl);
 		fflush(stdout);
