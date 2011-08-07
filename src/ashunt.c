@@ -316,14 +316,56 @@ static int assemble_ipv6_tcp(uint8_t *packet, size_t len, int ttl,
 	return 0;
 }
 
-static int assemble_packet_or_die(uint8_t *packet, size_t len, int ttl,
+static void assemble_icmp4(uint8_t *packet, size_t len)
+{
+	struct icmphdr *icmph = (struct icmphdr *) packet;
+	assert(len >= sizeof(struct icmphdr));
+	icmph->type = ICMP_ECHO;
+	icmph->code = 0;
+	icmph->checksum = 0;
+}
+
+/* returns: ipv4 id */
+static int assemble_ipv4_icmp4(uint8_t *packet, size_t len, int ttl,
+			       int tos, const struct sockaddr *dst,
+			       const struct sockaddr *src, int nofrag)
+{
+	struct iphdr *iph = (struct iphdr *) packet;
+	assert(src && dst);
+	assert(src->sa_family == PF_INET && dst->sa_family == PF_INET);
+	assert(len >= sizeof(struct iphdr) + sizeof(struct tcphdr));
+	iph->ihl = 5;
+	iph->version = 4;
+	iph->tos = 0;
+	iph->tot_len = htons((uint16_t) len);
+	iph->id = htons((uint16_t) mt_rand_int32());
+	iph->frag_off = nofrag ? IP_DF : 0;
+	iph->ttl = (uint8_t) ttl;
+	iph->protocol = 1; /* ICMP4 */
+	iph->saddr = ((struct sockaddr_in *) src)->sin_addr.s_addr;
+	iph->daddr = ((struct sockaddr_in *) dst)->sin_addr.s_addr;
+	assemble_icmp4(packet + sizeof(struct iphdr),
+		       len - sizeof(struct iphdr));
+	assemble_data(packet + sizeof(struct iphdr) + sizeof(struct icmphdr),
+		      len - sizeof(struct iphdr) - sizeof(struct icmphdr));
+	iph->check = csum((unsigned short *) packet,
+			  ntohs(iph->tot_len) >> 1);
+	return ntohs(iph->id);
+}
+
+static int assemble_packet_or_die(uint8_t *packet, size_t len, int ttl, int icmp,
 				  const struct ash_cfg *cfg,
 				  const struct sockaddr *dst,
 				  const struct sockaddr *src)
 {
-	return assemble_ipv4_tcp(packet, len, ttl, cfg->tos, dst, src, cfg->syn,
-				 cfg->ack, cfg->urg, cfg->fin, cfg->rst,
-				 cfg->psh, cfg->ecn, cfg->nofrag, atoi(cfg->port));
+	if (icmp)
+		return assemble_ipv4_icmp4(packet, len, ttl, cfg->tos, dst, src,
+					   cfg->nofrag);
+	else
+		return assemble_ipv4_tcp(packet, len, ttl, cfg->tos, dst, src,
+					 cfg->syn, cfg->ack, cfg->urg, cfg->fin,
+					 cfg->rst, cfg->psh, cfg->ecn,
+					 cfg->nofrag, atoi(cfg->port));
 }
 
 #define PKT_NOT_FOR_US	0
@@ -513,11 +555,14 @@ static int do_trace(const struct ash_cfg *cfg)
 	timeout_poll = (cfg->timeout > 0 ? cfg->timeout : 3) * 1000;
 
 	for (ttl = cfg->init_ttl; ttl <= cfg->max_ttl; ++ttl) {
+		int icmp = 0;
 		is_okay = 0;
+
 		info("%2d: ", ttl);
 		fflush(stdout);
+retry:
 		for (query = 0; query < cfg->queries && !is_okay; ++query) {
-			id = assemble_packet_or_die(packet, len, ttl, cfg,
+			id = assemble_packet_or_die(packet, len, ttl, icmp, cfg,
 						    (struct sockaddr *) &sd,
 						    (struct sockaddr *) &ss);
 
@@ -548,6 +593,12 @@ static int do_trace(const struct ash_cfg *cfg)
 				is_okay = 0;
 			}
 		}
+
+		if (is_okay == 0 && icmp == 0) {
+			icmp = 1;
+			goto retry;
+		}
+
 		info("\n");
 		fflush(stdout);
 	}
