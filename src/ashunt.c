@@ -378,12 +378,14 @@ static int handle_ipv4_icmp(uint8_t *packet, size_t len, int ttl, int id,
 		struct hostent *hent = gethostbyaddr(&sa.sin_addr,
 						     sizeof(sa.sin_addr),
 						     PF_INET);
-		if (hent != NULL && strlen(rec.country) > 0) {
+		if (strlen(rec.country) > 0) {
 			printf("%s (%s) in AS%s (%s), %s %s (%s), %s",
-			       hent->h_name, hbuff, rec.number, rec.country,
-			       rec.prefix, rec.registry, rec.since, rec.name);
+			       (hent ? hent->h_name : hbuff), hbuff,
+			       rec.number, rec.country, rec.prefix, rec.registry,
+			       rec.since, rec.name);
 		} else {
-			printf("%s in unkown AS", hbuff);
+			printf("%s (%s) in unkown AS",
+			       (hent ? hent->h_name : hbuff), hbuff);
 		}
 	}
 
