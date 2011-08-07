@@ -208,10 +208,22 @@ static void help(void)
 	printf(" -h|--help               Print this help\n");
 	printf("\n");
 	printf("Examples:\n");
-	printf("  IPv4 trace of AS up to netsniff-ng.org:\n");
+	printf("  IPv4 trace of AS with TCP ECN SYN probe:\n");
 	printf("    ashunt -i eth0 -N -E -H netsniff-ng.org\n");
+	printf("  IPv4 trace of AS with TCP SYN probe (this will most-likely pass):\n");
+	printf("    ashunt -i eth0 -N -S -H netsniff-ng.org\n");
+	printf("  IPv4 trace of AS with TCP FIN probe:\n");
+	printf("    ashunt -i eth0 -N -F -H netsniff-ng.org\n");
+	printf("  IPv4 trace of AS with Xmas probe:\n");
+	printf("    ashunt -i eth0 -N -FPU -H netsniff-ng.org\n");
+	printf("  IPv4 trace of AS with Null probe:\n");
+	printf("    ashunt -i eth0 -N -H netsniff-ng.org\n");
 	printf("  IPv6 trace of AS up to netsniff-ng.org:\n");
 	printf("    ashunt -6 -S -i eth0 -H netsniff-ng.org\n");
+	printf("\n");
+	printf("Note:\n");
+	printf("  If the TCP probe did not give any results, then ashunt will\n");
+	printf("  automatically probe for classic ICMP packets!\n");
 	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
@@ -789,9 +801,7 @@ int main(int argc, char **argv)
 		parse_whois_or_die(&cfg);
 	if (device_mtu(cfg.dev) <= cfg.totlen)
 		panic("Packet larger than device MTU!\n");
-	if (!cfg.syn && !cfg.ack && !cfg.fin && !cfg.urg && !cfg.psh &&
-	    !cfg.ecn && !cfg.rst)
-		cfg.syn = 1;
+
 	register_signal(SIGHUP, signal_handler);
 
 	header();
