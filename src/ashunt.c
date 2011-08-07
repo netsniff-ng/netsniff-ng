@@ -504,6 +504,7 @@ static int do_trace(const struct ash_cfg *cfg)
 			id = assemble_packet_or_die(packet, len, ttl, cfg,
 						    (struct sockaddr *) &sd,
 						    (struct sockaddr *) &ss);
+
 			err = sendto(fd, packet, len, 0, (struct sockaddr *) &sd,
 				     sizeof(sd));
 			if (err < 0)
@@ -519,6 +520,7 @@ static int do_trace(const struct ash_cfg *cfg)
 					       sizeof(struct ip6_hdr) +
 					       sizeof(struct icmp6hdr)))
 					continue;
+
 				is_okay = handle_packet(packet_rcv + sizeof(struct ethhdr),
 							real_len - sizeof(struct ethhdr),
 							cfg->ip, ttl, id,
