@@ -223,7 +223,9 @@ static void help(void)
 	printf("\n");
 	printf("Note:\n");
 	printf("  If the TCP probe did not give any results, then ashunt will\n");
-	printf("  automatically probe for classic ICMP packets!\n");
+	printf("  automatically probe for classic ICMP packets! To gather more\n");
+	printf("  information about ashunt's fetched AS numbers, see i.e.\n");
+	printf("  http://bgp.he.net/AS<number>!\n");
 	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
