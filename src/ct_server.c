@@ -648,7 +648,7 @@ static void thread_finish(unsigned int cpus)
 int server_main(char *home, char *dev, char *port, int udp, int ipv4)
 {
 	int lfd = -1, kdpfd, nfds, nfd, curfds, efd[2], refd[2], tunfd, i, mtu;
-	unsigned int cpus = 0, threads;
+	unsigned int cpus = 0, threads, udp_cpu = 0;
 	ssize_t ret;
 	struct epoll_event ev, *events;
 	struct addrinfo hints, *ahead, *ai;
@@ -898,9 +898,11 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4)
 				       fd_del, curfds);
 			} else {
 				int cpu, fd_work = events[i].data.fd;
-				cpu = socket_to_cpu(fd_work);
-
-				ret = write_exact(threadpool[cpu].efd[1],
+				if (!udp)
+					cpu = socket_to_cpu(fd_work);
+				else
+					udp_cpu = (udp_cpu + 1) & (threads - 1);
+				ret = write_exact(threadpool[udp ? udp_cpu : cpu].efd[1],
 						  &fd_work, sizeof(fd_work), 1);
 				if (ret != sizeof(fd_work))
 					syslog(LOG_ERR, "Write error on event "
