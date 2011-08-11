@@ -551,11 +551,11 @@ static void *worker(void *self)
 
 	buff = xmalloc(blen);
 	syslog(LOG_INFO, "curvetun thread on CPU%u up!\n", ws->cpu);
-	pthread_cleanup_push(xfree, ws->c);
+	pthread_cleanup_push(xfree_func, ws->c);
 	pthread_cleanup_push(curve25519_free, ws->c);
-	pthread_cleanup_push(xfree, ws->z);
+	pthread_cleanup_push(xfree_func, ws->z);
 	pthread_cleanup_push(z_free, ws->z);
-	pthread_cleanup_push(xfree, buff);
+	pthread_cleanup_push(xfree_func, buff);
 
 	while (likely(!sigint)) {
 		poll(&fds, 1, -1);

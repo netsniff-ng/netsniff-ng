@@ -208,7 +208,7 @@ __hidden void *xrealloc(void *ptr, size_t nmemb, size_t size)
 	return new_ptr;
 }
 
-__hidden void xfree(void *ptr)
+__hidden void xfree_func(void *ptr)
 {
 	if (ptr == NULL)
 		panic("xfree: NULL pointer given as argument\n");
