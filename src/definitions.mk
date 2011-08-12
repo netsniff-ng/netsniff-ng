@@ -13,12 +13,19 @@ CC_DEBUG     = echo "DC        $<";        \
                gcc
 A2X_NORM     = echo "A2X   $<";            \
                a2x
+FL_NORM      = echo "FL        $<";        \
+               flex
+BI_NORM      = echo "BI        $<";        \
+               bison -d
 
 MAKEFLAGS   += --no-print-directory
 
 BINDIR       = usr/sbin
 ETCDIR       = etc
 GLOBALCFGDIR = netsniff-ng
+
+FL           = $(FL_NORM)
+BI           = $(BI_NORM)
 
 define eq
 	$(if $(1:$(2)=),,$(if $(2:$(1)=),,T))
