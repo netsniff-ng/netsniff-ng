@@ -25,9 +25,19 @@
 %option caseless
 %option noinput
 
+digit		[0-9]
+digit_s		[1-9]
+digit_n		[0]
+hex		[a-fA-F0-9]
+hex_x		[x]
+number_dec	{digit_n}|{digit_s}{digit}*
+number_hex	{digit_n}{hex_x}{hex}+
+label_s		[a-zA-Z]
+label_me	[a-zA-Z0-9_]+
+label		{label_s}{label_me}+
+
 %%
 
-	/* BPF opcodes */
 "ldb"		{ return OP_LDB; }
 "ldh"		{ return OP_LDH; }
 "ld"		{ return OP_LD; }
@@ -51,29 +61,22 @@
 "tax"		{ return OP_TAX; }
 "txa"		{ return OP_TXA; }
 
-	/* Content */
-":"		{ return AD_COLON; }
-","		{ return AD_COMMA; }
-"M["		{ return AD_MEMST; }
-[^M]"["		{ return AD_BLEFT; }
-"]"		{ return AD_BRIGHT; }
-"+"		{ return AD_PLUS; }
-"4*("		{ return AD_BELEFT; }
-"&0xf)"		{ return AD_BERIGHT; }
-"*"		{ return AD_MUL; }
-"#"		{ return AD_NSIGN; }
-"x"		{ return AD_INDEX; }
-"len"		{ return AD_LEN; }
-"0x"[0-9a-f]+	{ yylval.number = strtoul(yytext, NULL, 16);
-		  return AD_HEX_NUMBER; }
-[0-9]+		{ yylval.number = strtoul(yytext, NULL, 10);
-		  return AD_DEC_NUMBER; }
-[A-Z0-9]+	{ yylval.label = xstrdup(yytext);
-		  return AD_LABEL; }
+{number_hex}	{ yylval.number = strtoul(yytext, NULL, 16);
+		  return number_hex; }
 
-	/* Special chars */
-";"[^\n]*	/* NOP, Comment */
-\n		{ yylineno++; }
-[ \t]+		/* NOP */ 
+{number_dec}	{ yylval.number = strtoul(yytext, NULL, 10);
+		  return number_dec; }
+
+{label}		{ yylval.label = xstrdup(yytext);
+		  return label; }
+
+":"		{ return AD_COLON; }
+"+"		{ return AD_PLUS; }
+"["		{ return AD_BROP; }
+"]"		{ return AD_BRCL; }
+
+";"[^\n]*	{/* NOP */}
+"\n"		{ yylineno++; }
+[ \t]+		{/* NOP */ }
 
 %%
