@@ -70,6 +70,8 @@ int main(int argc, char **argv)
 	int ret, verbose = 0, c, opt_index;
 	char *file = NULL;
 
+	if (argc == 1)
+		help();
 	while (argc > 2 && (c = getopt_long(argc, argv, short_options,
 		long_options, &opt_index)) != EOF) {
 		switch (c) {

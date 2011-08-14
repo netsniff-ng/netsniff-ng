@@ -45,6 +45,7 @@ label		{label_s}{label_me}+
 "ldh"		{ return OP_LDH; }
 "ld"		{ return OP_LD; }
 "ldx"		{ return OP_LDX; }
+"ldxb"		{ return OP_LDXB; }
 "st"		{ return OP_ST; }
 "stx"		{ return OP_STX; }
 "jmp"		{ return OP_JMP; }
@@ -63,21 +64,30 @@ label		{label_s}{label_me}+
 "ret"		{ return OP_RET; }
 "tax"		{ return OP_TAX; }
 "txa"		{ return OP_TXA; }
+"len"		{ return PKT_LEN; }
+
+":"		{ return ':'; }
+","		{ return ','; }
+"#"		{ return '#'; }
+"["		{ return '['; }
+"]"		{ return ']'; }
+"("		{ return '('; }
+")"		{ return ')'; }
+"x"		{ return 'x'; }
+"a"		{ return 'a'; }
+"+"		{ return '+'; }
+"M"		{ return 'M'; }
+"*"		{ return '*'; }
+"&"		{ return '&'; }
 
 {number_hex}	{ yylval.number = strtoul(yytext, NULL, 16);
 		  return number_hex; }
 
-{number_dec}	{ yylval.number = strtoul(yytext, NULL, 10);
+{number_dec}	{ yylval.number = strtol(yytext, NULL, 10);
 		  return number_dec; }
 
 {label}		{ yylval.label = xstrdup(yytext);
 		  return label; }
-
-":"		{ return ':'; }
-"["		{ return '['; }
-"]"		{ return ']'; }
-"x"		{ return 'x'; }
-"+"		{ return '+'; }
 
 ";"[^\n]*	{/* NOP */}
 "\n"		{ yylineno++; }
