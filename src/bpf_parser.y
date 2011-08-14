@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <signal.h>
+#include <stdint.h>
 #include <errno.h>
 
 #include "bpf.h"
@@ -41,15 +42,15 @@ extern char *yytext;
 %}
 
 %union {
-	int number;
 	char *label;
+	unsigned int number;
 }
 
 %token OP_LDB OP_LDH OP_LD OP_LDX OP_ST OP_STX OP_JMP OP_JEQ OP_JGT OP_JGE
 %token OP_JSET OP_ADD OP_SUB OP_MUL OP_DIV OP_AND OP_OR OP_LSH OP_RSH OP_RET
 %token OP_TAX OP_TXA
 
-%token AD_COLON AD_PLUS AD_BROP AD_BRCL
+%token ':' '[' ']' 'x' '+'
 
 %token number_hex number_dec label
 
@@ -58,18 +59,22 @@ extern char *yytext;
 
 %%
 
-prog: {}
+prog
+	: {}
 	| prog line { }
 	;
 
-line: instr { }
+line
+	: instr { }
 	| labeled_instr { }
 	;
 
-labeled_instr: do_label instr { }
+labeled_instr
+	: do_label instr { }
 	;
 
-instr: do_ldb { }
+instr
+	: do_ldb { }
 	| do_ldh { }
 	| do_ld { }
 	| do_ldx { }
@@ -93,15 +98,18 @@ instr: do_ldb { }
 	| do_txa { }
 	;
 
-number: number_dec { $$ = $1; }
+number
+	: number_dec { $$ = $1; }
 	| number_hex { $$ = $1; }
 	;
 
-do_label: label AD_COLON { info("got:%s\n", $1); }
+do_label
+	: label ':' { info("got:%s\n", $1); }
 	;
 
-do_ldb: OP_LDB AD_BROP 'x' AD_PLUS number AD_BRCL { info("got:%d\n", $5); }
-	| OP_LDB AD_BROP number AD_BRCL { info("got:%d\n", $3); }
+do_ldb
+	: OP_LDB '[' 'x' '+' number ']' { info("got:%d\n", $5); }
+	| OP_LDB '[' number ']' { info("got:%d\n", $3); }
 	;
 
 do_ldh: OP_LDH { }

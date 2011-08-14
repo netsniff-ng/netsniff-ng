@@ -36,7 +36,7 @@ static void help(void)
 {
 	printf("\nbpfc %s, a tiny BPF compiler\n", VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
-	printf("Usage: bpfc [options]\n");
+	printf("Usage: bpfc [options] || bpfc <program>\n");
 	printf("Options:\n");
 	printf("  -i|--input <program>   Berkeley Packet Filter program file\n");
 	printf("  -V|--verbose           Be more verbose\n");
@@ -70,8 +70,8 @@ int main(int argc, char **argv)
 	int ret, verbose = 0, c, opt_index;
 	char *file = NULL;
 
-	while ((c = getopt_long(argc, argv, short_options, long_options,
-		&opt_index)) != EOF) {
+	while (argc > 2 && (c = getopt_long(argc, argv, short_options,
+		long_options, &opt_index)) != EOF) {
 		switch (c) {
 		case 'h':
 			help();
@@ -100,7 +100,8 @@ int main(int argc, char **argv)
 			break;
 		}
 	}
-
+	if (argc == 2)
+		file = xstrdup(argv[1]);
 	if (!file)
 		panic("No Berkeley Packet Filter program specified!\n");
 	ret = compile_filter(file, verbose);

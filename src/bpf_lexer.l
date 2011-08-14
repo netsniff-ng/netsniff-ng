@@ -15,6 +15,8 @@
 #include "bpf_parser.tab.h"
 #include "xmalloc.h"
 
+extern void yyerror(const char *);
+
 %}
 
 %option align
@@ -24,6 +26,7 @@
 %option 8bit
 %option caseless
 %option noinput
+%option nodefault
 
 digit		[0-9]
 digit_s		[1-9]
@@ -33,7 +36,7 @@ hex_x		[x]
 number_dec	{digit_n}|{digit_s}{digit}*
 number_hex	{digit_n}{hex_x}{hex}+
 label_s		[a-zA-Z]
-label_me	[a-zA-Z0-9_]+
+label_me	[a-zA-Z0-9_]
 label		{label_s}{label_me}+
 
 %%
@@ -70,13 +73,16 @@ label		{label_s}{label_me}+
 {label}		{ yylval.label = xstrdup(yytext);
 		  return label; }
 
-":"		{ return AD_COLON; }
-"+"		{ return AD_PLUS; }
-"["		{ return AD_BROP; }
-"]"		{ return AD_BRCL; }
+":"		{ return ':'; }
+"["		{ return '['; }
+"]"		{ return ']'; }
+"x"		{ return 'x'; }
+"+"		{ return '+'; }
 
 ";"[^\n]*	{/* NOP */}
 "\n"		{ yylineno++; }
 [ \t]+		{/* NOP */ }
+.		{ printf("Unknown character '%s'", yytext);
+		  yyerror("lex Unknown character"); }
 
 %%
