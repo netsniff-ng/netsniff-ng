@@ -35,7 +35,7 @@ The netsniff-ng toolkit [1] currently consists of the following utilities:
   * tgsh: a trafgen frontend shell (todo)
   * curvetun: a lightweight curve25519-based multiuser IP tunnel
   * ashunt: an AS trace route utility
-  * bpfc: a tiny BPF compiler (todo)
+  * bpfc: a tiny BPF compiler
   * ifpps: a top-like kernel networking statistics tool
 
 The netsniff-ng toolkit is an Open Source project covered by the GNU General 
