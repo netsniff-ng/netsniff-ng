@@ -48,7 +48,7 @@ label		{label_s}{label_me}+
 "ldxb"		{ return OP_LDXB; }
 "st"		{ return OP_ST; }
 "stx"		{ return OP_STX; }
-"jmp"		{ return OP_JMP; }
+"jmp"|"ja"	{ return OP_JMP; }
 "jeq"		{ return OP_JEQ; }
 "jgt"		{ return OP_JGT; }
 "jge"		{ return OP_JGE; }

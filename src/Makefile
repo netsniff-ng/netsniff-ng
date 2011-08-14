@@ -1,4 +1,4 @@
-tools = netsniff-ng trafgen curvetun ifpps ashunt
+tools = netsniff-ng trafgen curvetun ifpps ashunt bpfc
 
 all:
 	@for tool in $(tools) ; do \
