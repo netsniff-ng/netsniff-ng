@@ -1,7 +1,8 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
- * Copyright 2011 Daniel Borkmann.
+ * Copyright 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,
+ * Swiss federal institute of technology (ETH Zurich)
  * Subject to the GPL.
  *
  * This is a tiny Berkeley Packet Filter compiler that understands the
@@ -10,6 +11,12 @@
  * Jacobson, Van, Lawrence Berkeley Laboratory}. With this, BPFs can be
  * written the good old way and understood by the Linux kernel and *BSD
  * kernels where Berkeley Packet Filters are used.
+ *
+ *   The one small garden of a free gardener was all his need and due, not
+ *   a garden swollen to a realm; his own hands to use, not the hands of
+ *   others to command.
+ *
+ *     -- The Lord of the Rings, Sam, Chapter 'The Tower of Cirith Ungol'.
  */
 
 #include <stdio.h>
@@ -46,10 +53,12 @@ static void help(void)
 	printf("Examples:\n");
 	printf("  bpfc -i program.bpf\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2011 Daniel Borkmann\n");
+	printf("Copyright (C) 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
+	printf("Swiss federal institute of technology (ETH Zurich)\n");
 	printf("License: GNU GPL version 2\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
+
 	die();
 }
 
@@ -58,10 +67,12 @@ static void version(void)
 	printf("\nbpfc %s, a tiny BPF compiler\n", VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2011 Daniel Borkmann\n");
+	printf("Copyright (C) 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
+	printf("Swiss federal institute of technology (ETH Zurich)\n");
 	printf("License: GNU GPL version 2\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
+
 	die();
 }
 
