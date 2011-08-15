@@ -207,6 +207,11 @@ do_ldx
 			panic("ldxb offset not supported!\n");
 		} else {
 			set_curr_instr(BPF_LDX | BPF_MSH | BPF_B, 0, 0, $6); } }
+	| OP_LDX number '*' '(' '[' number ']' '&' number ')' {
+		if ($2 != 4 || $9 != 0xf) {
+			panic("ldxb offset not supported!\n");
+		} else {
+			set_curr_instr(BPF_LDX | BPF_MSH | BPF_B, 0, 0, $6); } }
 	;
 
 do_st

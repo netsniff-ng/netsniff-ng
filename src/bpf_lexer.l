@@ -65,7 +65,7 @@ label		{label_s}{label_me}+
 "ret"		{ return OP_RET; }
 "tax"		{ return OP_TAX; }
 "txa"		{ return OP_TXA; }
-"len"		{ return PKT_LEN; }
+"len"|"pktlen"	{ return PKT_LEN; }
 
 ":"		{ return ':'; }
 ","		{ return ','; }
