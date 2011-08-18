@@ -2,6 +2,24 @@
 " Language: Berkeley Packet Filter
 " Maintainer: Daniel Borkmann
 " Latest Revision: 08/16/2011
+"
+" In order to make syntax highlighting for BPFs work in vim, copy this file
+" to ~/.vim/syntax/ and activate it in vim by entering:
+"
+"    :set syntax=bpf
+"
+" If you want to automatically load the BPF syntax highlighting for *.bpf 
+" files create the ~/.vim/filetype.vim with the following content:
+"
+"    my filetype file
+"    if exists("did_load_filetypes")
+"      finish
+"    endif
+"
+"    augroup filetypedetect
+"      au! BufRead,BufNewFile *.bpf  setfiletype bpf
+"    augroup END
+"
 
 if exists("b:current_syntax")
   finish
