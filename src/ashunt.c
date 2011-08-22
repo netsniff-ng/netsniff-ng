@@ -18,6 +18,13 @@
  *   while the eyes of the great are elsewhere.
  *
  *     -- The Lord of the Rings, Elrond, Chapter 'The Council of Elrond'.
+ *
+ * Note: To get the latest GeoIP database:
+ *       wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
+ *       and put it into /etc/netsniff-ng/GeoLiteCity.dat
+ *
+ * ashunt includes GeoLite data created by MaxMind, available from
+ * http://www.maxmind.com/. On Debian you need libgeoip-dev and libgeoip1.
  */
 
 #include <stdio.h>
@@ -43,6 +50,8 @@
 #include <linux/if_ether.h>
 #include <linux/icmp.h>
 #include <linux/icmpv6.h>
+#include <GeoIP.h>
+#include <GeoIPCity.h>
 
 #include "misc.h"
 #include "bpf.h"
@@ -59,6 +68,7 @@
 #include "poll.h"
 
 #define WHOIS_SERVER_SOURCE "/etc/netsniff-ng/whois.conf"
+#define WHOIS_GEOCITY_SOURCE "/etc/netsniff-ng/GeoLiteCity.dat"
 
 struct ash_cfg {
 	char *host;
@@ -78,6 +88,9 @@ struct ash_cfg {
 };
 
 sig_atomic_t sigint = 0;
+
+static GeoIP *gi_country = NULL;
+static GeoIP *gi_city = NULL;
 
 static const char *short_options = "H:p:nNf:m:i:d:q:x:SAEFPURt:Gl:w:W:hv46";
 
@@ -385,6 +398,11 @@ static int assemble_packet_or_die(uint8_t *packet, size_t len, int ttl, int icmp
 #define PKT_NOT_FOR_US	0
 #define PKT_GOOD	1
 
+static inline const char *make_n_a(const char *p)
+{
+	return p ? : "N/A";
+}
+
 static int handle_ipv4_icmp(uint8_t *packet, size_t len, int ttl, int id,
 			    const struct sockaddr *own, int dns_resolv)
 {
@@ -395,6 +413,7 @@ static int handle_ipv4_icmp(uint8_t *packet, size_t len, int ttl, int id,
 	char *hbuff;
 	struct sockaddr_in sa;
 	struct asrecord rec;
+	GeoIPRecord *gir;
 
 	if (iph->protocol != 1)
 		return PKT_NOT_FOR_US;
@@ -422,12 +441,20 @@ static int handle_ipv4_icmp(uint8_t *packet, size_t len, int ttl, int id,
 	ret = aslookup(hbuff, &rec);
 	if (ret < 0)
 		panic("AS lookup error %d!\n", ret);
+	gir = GeoIP_record_by_ipnum(gi_city, ntohl(iph->saddr));
 
 	if (!dns_resolv) {
-		if (strlen(rec.country) > 0) {
-			printf("%s in AS%s (%s), %s %s (%s), %s", hbuff,
-			       rec.number, rec.country, rec.prefix,
-			       rec.registry, rec.since, rec.name);
+		if (strlen(rec.country) > 0 && gir) {
+			printf("%s in AS%s (%s, %s, %s, %f, %f), %s %s (%s), %s", hbuff,
+			       rec.number, rec.country,
+			       GeoIP_country_name_by_ipnum(gi_country, ntohl(iph->saddr)),
+			       make_n_a(gir->city), gir->latitude, gir->longitude,
+			       rec.prefix, rec.registry, rec.since, rec.name);
+		} else if (strlen(rec.country) > 0 && !gir) {
+			printf("%s in AS%s (%s, %s), %s %s (%s), %s", hbuff,
+			       rec.number, rec.country,
+			       GeoIP_country_name_by_ipnum(gi_country, ntohl(iph->saddr)),
+			       rec.prefix, rec.registry, rec.since, rec.name);
 		} else {
 			printf("%s in unkown AS", hbuff);
 		}
@@ -435,10 +462,20 @@ static int handle_ipv4_icmp(uint8_t *packet, size_t len, int ttl, int id,
 		struct hostent *hent = gethostbyaddr(&sa.sin_addr,
 						     sizeof(sa.sin_addr),
 						     PF_INET);
-		if (strlen(rec.country) > 0) {
-			printf("%s (%s) in AS%s (%s), %s %s (%s), %s",
+		if (strlen(rec.country) > 0 && gir) {
+			printf("%s (%s) in AS%s (%s, %s, %s, %f, %f), %s %s (%s), %s",
 			       (hent ? hent->h_name : hbuff), hbuff,
-			       rec.number, rec.country, rec.prefix, rec.registry,
+			       rec.number, rec.country,
+			       GeoIP_country_name_by_ipnum(gi_country, ntohl(iph->saddr)),
+			       make_n_a(gir->city), gir->latitude, gir->longitude,
+			       rec.prefix, rec.registry,
+			       rec.since, rec.name);
+		} else if (strlen(rec.country) > 0 && !gir) {
+			printf("%s (%s) in AS%s (%s, %s), %s %s (%s), %s",
+			       (hent ? hent->h_name : hbuff), hbuff,
+			       rec.number, rec.country,
+			       GeoIP_country_name_by_ipnum(gi_country, ntohl(iph->saddr)),
+			       rec.prefix, rec.registry,
 			       rec.since, rec.name);
 		} else {
 			printf("%s (%s) in unkown AS",
@@ -810,7 +847,13 @@ int main(int argc, char **argv)
 	ret = aslookup_prepare(cfg.whois, cfg.whois_port);
 	if (ret < 0)
 		panic("Cannot resolve whois server!\n");
+	gi_country = GeoIP_new(GEOIP_STANDARD);
+	gi_city = GeoIP_open(WHOIS_GEOCITY_SOURCE, GEOIP_STANDARD);
+	if (!gi_country || !gi_city)
+		panic("Cannot open GeoIP database!\n");
 	ret = do_trace(&cfg);
+	GeoIP_delete(gi_city);
+	GeoIP_delete(gi_country);
 
 	if (cfg.whois_port)
 		xfree(cfg.whois_port);
