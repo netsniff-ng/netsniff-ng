@@ -1,12 +1,7 @@
-* bpfc: Berkeley Packet Filter compiler
-  + Generates filter files that can be read by netsniff-ng
-  + Own high-level filter language
-
 * trafgen:
   + Allow inter departure time as i.e. exponential, uniform, cauchy, normal,
     pareto, ... distributed
-  + Allow configuration from stdin, so that configs from tgc can be piped to
-    trafgen directly
+  + Rewrite config parser
 
 * tgsh: trafgen Cisco-like frontend CLI for traffic generator appliances
   + Generates full packets, i.e. with support for
@@ -28,6 +23,8 @@
 
 * curvetun:
   + Fix zlib compression
+  + Rewrite config parsers
+  + Re-read configs on SIGUSR1
 
 * netsniff-ng:
   + Cleanup code, especially in dissector, print-modes and proto sections
@@ -39,6 +36,7 @@
 
 * ashunt:
   + Add IPv6 functionality
+  + Fix aslookup parser
 
 * ifpps:
   + Fix NaN's in CPU usage
@@ -51,3 +49,4 @@
 * Documentation:
   + Manpages
   + Howtos as REAME.<tool>
+
