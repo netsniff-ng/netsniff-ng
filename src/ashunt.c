@@ -19,12 +19,9 @@
  *
  *     -- The Lord of the Rings, Elrond, Chapter 'The Council of Elrond'.
  *
- * Note: To get the latest GeoIP database:
- *       wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
- *       and put it into /etc/netsniff-ng/GeoLiteCity.dat
- *
  * ashunt includes GeoLite data created by MaxMind, available from
- * http://www.maxmind.com/. On Debian you need libgeoip-dev and libgeoip1.
+ * http://www.maxmind.com/. On Debian you need libgeoip-dev, libgeoip1 and
+ * geoip-database-contrib.
  */
 
 #include <stdio.h>
@@ -68,7 +65,6 @@
 #include "poll.h"
 
 #define WHOIS_SERVER_SOURCE "/etc/netsniff-ng/whois.conf"
-#define WHOIS_GEOCITY_SOURCE "/etc/netsniff-ng/GeoLiteCity.dat"
 
 struct ash_cfg {
 	char *host;
@@ -848,7 +844,7 @@ int main(int argc, char **argv)
 	if (ret < 0)
 		panic("Cannot resolve whois server!\n");
 	gi_country = GeoIP_new(GEOIP_STANDARD);
-	gi_city = GeoIP_open(WHOIS_GEOCITY_SOURCE, GEOIP_STANDARD);
+	gi_city = GeoIP_open_type(GEOIP_CITY_EDITION_REV1, GEOIP_STANDARD);
 	if (!gi_country || !gi_city)
 		panic("Cannot open GeoIP database!\n");
 	ret = do_trace(&cfg);

@@ -54,7 +54,6 @@ install:
 	@install -D $(target) $(DESTDIR)/$(BINDIR)/$(target)
 	@install -d $(DESTDIR)/$(ETCDIR)/$(GLOBALCFGDIR)/
 	@cp -r ../conf/whois.conf $(DESTDIR)/$(ETCDIR)/$(GLOBALCFGDIR)/
-	@cp -r ../conf/GeoLiteCity.dat $(DESTDIR)/$(ETCDIR)/$(GLOBALCFGDIR)/
 	@install -D $(target).8.gz $(DESTDIR)/usr/share/man/man8/$(target).8.gz
 
 uninstall:
