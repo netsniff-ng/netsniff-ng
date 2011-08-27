@@ -28,6 +28,7 @@
   + curvetun server integration with LDAP as an alternative to the clients
     config file
   + Show active sessions, possibility to kill active sessions (?)
+  + Automatic client reconnect
 
 * netsniff-ng:
   + Cleanup code, especially in dissector, print-modes and proto sections
