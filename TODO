@@ -24,7 +24,10 @@
 * curvetun:
   + Fix zlib compression
   + Rewrite config parsers
-  + Re-read configs on SIGUSR1
+  + Re-read client config on SIGUSR1
+  + curvetun server integration with LDAP as an alternative to the clients
+    config file
+  + Show active sessions, possibility to kill active sessions (?)
 
 * netsniff-ng:
   + Cleanup code, especially in dissector, print-modes and proto sections
@@ -32,11 +35,12 @@
   + Add -n|--num option for capturing a number of packets and then quit
 
 * arppoison:
-  + ARP Cache Poisoning utility
+  + ARP Cache Poisoning utility as completion with netsniff-ng
 
 * ashunt:
   + Add IPv6 functionality
   + Fix aslookup parser
+  + Add possibility to include user-defined payload
 
 * ifpps:
   + Fix NaN's in CPU usage
@@ -44,6 +48,7 @@
   + Add more gnuplot features, i.e. automatic gnuplot script generation
 
 * t: tests, tests, tests
+  + Highly needed!
   + Use Sharness as a framework (https://github.com/misfire/Sharness)
 
 * Documentation:
