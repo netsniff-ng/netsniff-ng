@@ -48,6 +48,9 @@
   + Cleanup redundant code
   + Add more gnuplot features, i.e. automatic gnuplot script generation
 
+* bpfc:
+  + Add Linux kernel extensions SKF_AD_* (filter.h)
+
 * t: tests, tests, tests
   + Highly needed!
   + Use Sharness as a framework (https://github.com/misfire/Sharness)
