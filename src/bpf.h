@@ -99,4 +99,27 @@ static inline void enable_kernel_bpf_jit_compiler(void)
 #define	BPF_TAX		0x00
 #define	BPF_TXA		0x80
 
+/* Hidden Linux kernel BPF extensions */
+/*
+ * RATIONALE. Negative offsets are invalid in BPF.
+ * We use them to reference ancillary data.
+ * Unlike introduction new instructions, it does not break
+ * existing compilers/optimizers.
+ */
+
+#define SKF_AD_OFF    (-0x1000)
+#define SKF_AD_PROTOCOL 0
+#define SKF_AD_PKTTYPE 	4
+#define SKF_AD_IFINDEX 	8
+#define SKF_AD_NLATTR	12
+#define SKF_AD_NLATTR_NEST	16
+#define SKF_AD_MARK 	20
+#define SKF_AD_QUEUE	24
+#define SKF_AD_HATYPE	28
+#define SKF_AD_RXHASH	32
+#define SKF_AD_CPU	36
+#define SKF_AD_MAX	40
+#define SKF_NET_OFF   (-0x100000)
+#define SKF_LL_OFF    (-0x200000)
+
 #endif /* BPF_H */
