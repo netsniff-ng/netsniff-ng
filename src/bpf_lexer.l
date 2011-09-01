@@ -65,7 +65,17 @@ label		{label_s}{label_me}+
 "ret"		{ return OP_RET; }
 "tax"		{ return OP_TAX; }
 "txa"		{ return OP_TXA; }
-"len"|"pktlen"	{ return PKT_LEN; }
+"len"|"pktlen"	{ return K_PKT_LEN; }
+"proto"		{ return K_PROTO; }
+"type"		{ return K_TYPE; }
+"ifidx"		{ return K_IFIDX; }
+"nla"		{ return K_NLATTR; }
+"nlan"		{ return K_NLATTR_NEST; }
+"mark"		{ return K_MARK; }
+"queue"		{ return K_QUEUE; }
+"hatype"	{ return K_HATYPE; }
+"rxhash"	{ return K_RXHASH; }
+"cpu"		{ return K_CPU; }
 
 ":"		{ return ':'; }
 ","		{ return ','; }

@@ -111,7 +111,8 @@ static int find_intr_offset_or_panic(char *label_to_search)
 
 %token OP_LDB OP_LDH OP_LD OP_LDX OP_ST OP_STX OP_JMP OP_JEQ OP_JGT OP_JGE
 %token OP_JSET OP_ADD OP_SUB OP_MUL OP_DIV OP_AND OP_OR OP_LSH OP_RSH OP_RET
-%token OP_TAX OP_TXA OP_LDXB PKT_LEN
+%token OP_TAX OP_TXA OP_LDXB K_PKT_LEN K_PROTO K_TYPE K_IFIDX K_NLATTR
+%token K_NLATTR_NEST K_MARK K_QUEUE K_HATYPE K_RXHASH K_CPU
 
 %token ':' ',' '[' ']' '(' ')' 'x' 'a' '+' 'M' '*' '&' '#'
 
@@ -175,6 +176,36 @@ do_ldb
 		set_curr_instr(BPF_LD | BPF_B | BPF_IND, 0, 0, $5); }
 	| OP_LDB '[' number ']' {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0, $3); }
+	| OP_LDB '#' K_PROTO {
+		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_PROTOCOL); }
+	| OP_LDB '#' K_TYPE {
+		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_PKTTYPE); }
+	| OP_LDB '#' K_IFIDX {
+		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_IFINDEX); }
+	| OP_LDB '#' K_NLATTR {
+		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_NLATTR); }
+	| OP_LDB '#' K_NLATTR_NEST {
+		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_NLATTR_NEST); }
+	| OP_LDB '#' K_MARK {
+		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_MARK); }
+	| OP_LDB '#' K_QUEUE {
+		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_QUEUE); }
+	| OP_LDB '#' K_HATYPE {
+		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_HATYPE); }
+	| OP_LDB '#' K_RXHASH {
+		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_RXHASH); }
+	| OP_LDB '#' K_CPU {
+		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_CPU); }
 	;
 
 do_ldh
@@ -182,13 +213,73 @@ do_ldh
 		set_curr_instr(BPF_LD | BPF_H | BPF_IND, 0, 0, $5); }
 	| OP_LDH '[' number ']' {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0, $3); }
+	| OP_LDH '#' K_PROTO {
+		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_PROTOCOL); }
+	| OP_LDH '#' K_TYPE {
+		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_PKTTYPE); }
+	| OP_LDH '#' K_IFIDX {
+		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_IFINDEX); }
+	| OP_LDH '#' K_NLATTR {
+		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_NLATTR); }
+	| OP_LDH '#' K_NLATTR_NEST {
+		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_NLATTR_NEST); }
+	| OP_LDH '#' K_MARK {
+		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_MARK); }
+	| OP_LDH '#' K_QUEUE {
+		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_QUEUE); }
+	| OP_LDH '#' K_HATYPE {
+		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_HATYPE); }
+	| OP_LDH '#' K_RXHASH {
+		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_RXHASH); }
+	| OP_LDH '#' K_CPU {
+		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_CPU); }
 	;
 
 do_ld
 	: OP_LD '#' number {
 		set_curr_instr(BPF_LD | BPF_IMM, 0, 0, $3); }
-	| OP_LD '#' PKT_LEN {
+	| OP_LD '#' K_PKT_LEN {
 		set_curr_instr(BPF_LD | BPF_W | BPF_LEN, 0, 0, 0); }
+	| OP_LD '#' K_PROTO {
+		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_PROTOCOL); }
+	| OP_LD '#' K_TYPE {
+		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_PKTTYPE); }
+	| OP_LD '#' K_IFIDX {
+		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_IFINDEX); }
+	| OP_LD '#' K_NLATTR {
+		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_NLATTR); }
+	| OP_LD '#' K_NLATTR_NEST {
+		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_NLATTR_NEST); }
+	| OP_LD '#' K_MARK {
+		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_MARK); }
+	| OP_LD '#' K_QUEUE {
+		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_QUEUE); }
+	| OP_LD '#' K_HATYPE {
+		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_HATYPE); }
+	| OP_LD '#' K_RXHASH {
+		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_RXHASH); }
+	| OP_LD '#' K_CPU {
+		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_CPU); }
 	| OP_LD 'M' '[' number ']' {
 		set_curr_instr(BPF_LD | BPF_MEM, 0, 0, $4); }
 	| OP_LD '[' 'x' '+' number ']' {

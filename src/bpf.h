@@ -107,19 +107,38 @@ static inline void enable_kernel_bpf_jit_compiler(void)
  * existing compilers/optimizers.
  */
 
-#define SKF_AD_OFF    (-0x1000)
-#define SKF_AD_PROTOCOL 0
-#define SKF_AD_PKTTYPE 	4
-#define SKF_AD_IFINDEX 	8
-#define SKF_AD_NLATTR	12
-#define SKF_AD_NLATTR_NEST	16
-#define SKF_AD_MARK 	20
-#define SKF_AD_QUEUE	24
-#define SKF_AD_HATYPE	28
-#define SKF_AD_RXHASH	32
-#define SKF_AD_CPU	36
-#define SKF_AD_MAX	40
-#define SKF_NET_OFF   (-0x100000)
-#define SKF_LL_OFF    (-0x200000)
+#ifndef SKF_AD_OFF
+# define SKF_AD_OFF		(-0x1000)
+#endif
+#ifndef SKF_AD_PROTOCOL
+# define SKF_AD_PROTOCOL 	0
+#endif
+#ifndef SKF_AD_PKTTYPE
+# define SKF_AD_PKTTYPE 	4
+#endif
+#ifndef SKF_AD_IFINDEX
+# define SKF_AD_IFINDEX 	8
+#endif
+#ifndef SKF_AD_NLATTR
+# define SKF_AD_NLATTR		12
+#endif
+#ifndef SKF_AD_NLATTR_NEST
+# define SKF_AD_NLATTR_NEST	16
+#endif
+#ifndef SKF_AD_MARK
+# define SKF_AD_MARK 		20
+#endif
+#ifndef SKF_AD_QUEUE
+# define SKF_AD_QUEUE		24
+#endif
+#ifndef SKF_AD_HATYPE
+# define SKF_AD_HATYPE		28
+#endif
+#ifndef SKF_AD_RXHASH
+# define SKF_AD_RXHASH		32
+#endif
+#ifndef SKF_AD_CPU
+# define SKF_AD_CPU		36
+#endif
 
 #endif /* BPF_H */
