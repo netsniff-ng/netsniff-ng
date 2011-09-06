@@ -1,0 +1,14 @@
+Performance comparison of 
+  *) trafgen, http://netsniff-ng.org
+  *) mausezahn, http://www.perihel.at/sec/mz/
+  *) pktgen, http://www.lingrok.org/source/xref/linux-2.6-linus/net/core/pktgen.c
+
+Systems: two directly connected machines with ...
+  *) Intel(R) Core(TM)2 Quad CPU Q6600 @ 2.40GHz
+  *) 4 GB RAM
+  *) Intel Corporation 82566DC-2 Gigabit Network Connection (rev 02)
+  *) x86_64 GNU/Linux, 2.6.35-30-generic
+
+Machine 1: -> traffic generator
+Machine 2: -> measurement with ifpps, http://netsniff-ng.org
+
