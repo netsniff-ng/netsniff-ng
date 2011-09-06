@@ -29,13 +29,13 @@ security specialists.
 
 The netsniff-ng toolkit [1] currently consists of the following utilities:
 
-  * netsniff-ng: the 'zero-copy' sniffer itself
+  * netsniff-ng: the 'zero-copy' sniffer (and pcap replayer) itself
   * arppoison: an ARP cache poisoning utility (todo)
   * trafgen: a powerful 'zero-copy' network packet generator
-  * tgsh: a trafgen frontend shell (todo)
+  * tgsh: a trafgen Cisco-like frontend shell for appliances (todo)
   * curvetun: a lightweight curve25519-based multiuser IP tunnel
-  * ashunt: an AS trace route utility
-  * bpfc: a tiny BPF compiler
+  * ashunt: an Autonomous System trace route utility
+  * bpfc: a tiny Berkeley Packet Filter compiler supporting kernel extensions
   * ifpps: a top-like kernel networking statistics tool
 
 The netsniff-ng toolkit is an Open Source project covered by the GNU General 
