@@ -19,6 +19,27 @@ bugs@netsniff-ng.org.
 Before submitting your patch make sure to indent your code appropriate.
 For this, have a look at our coding conventions within the CODING file.
 
+The src/s/ directory contains a number of SmPL (Semantic Patch Language)
+scripts that can be used together with Coccinelle's spatch tool. In order
+to install spatch from the official tarballs, you might need to install
+the following packages on Debian:
+ - ocaml-native-compilers (or alternatively ocaml)
+ - ocaml-findlib
+ - libpycaml-ocaml-dev
+ - libsexplib-camlp4-dev
+ - menhir and libmenhir-ocaml-dev
+Afterwards, you can build and install Coccinelle with:
+   wget http://coccinelle.lip6.fr/distrib/coccinelle-1.0.0-rc7.tgz
+   tar xvf coccinelle-1.0.0-rc7.tgz
+   cd coccinelle-1.0.0-rc7/
+   ./configure --prefix=/usr/
+   make depend
+   make all
+   make install
+To check netsniff-ng against scripts from src/s/, do:
+   cd src/
+   make check
+
 Well, I guess most has been said ... so happy packet hacking! We're looking
 forward for your patches, ideas and improvements!
 
