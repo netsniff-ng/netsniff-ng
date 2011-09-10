@@ -33,6 +33,7 @@ The netsniff-ng toolkit [1] currently consists of the following utilities:
   * arppoison: an ARP cache poisoning utility (todo)
   * trafgen: a powerful 'zero-copy' network packet generator
   * tgsh: a trafgen Cisco-like frontend shell for appliances (todo)
+  * flowtop: a top-like netfilter connection tracking tool (todo)
   * curvetun: a lightweight curve25519-based multiuser IP tunnel
   * ashunt: an Autonomous System trace route utility
   * bpfc: a tiny Berkeley Packet Filter compiler supporting kernel extensions

@@ -20,15 +20,17 @@
   + Generates set of packets which are i.e. IMIX, Cisco, Tolly,
     RPR, ... distributed
   + Can be interpreted and transmitted by trafgen
+  + Use libcli (http://code.google.com/p/libcli/)
 
 * curvetun:
   + Fix zlib compression
   + Rewrite config parsers
-  + Re-read client config on SIGUSR1
+  + Re-read client config on SIGUSR1 (?)
   + curvetun server integration with LDAP as an alternative to the clients
-    config file
+    config file (-> Perl script)
   + Show active sessions, possibility to kill active sessions (?)
   + Automatic client reconnect
+  + Make it harder for DPIs to detect
 
 * netsniff-ng:
   + Cleanup code, especially in dissector, print-modes and proto sections
@@ -41,19 +43,20 @@
 * ashunt:
   + Add IPv6 functionality
   + Fix aslookup parser
-  + Add possibility to include user-defined payload
+  + Add possibility to include user-defined payload to test DPIs
 
 * ifpps:
   + Fix NaN's in CPU usage
   + Cleanup redundant code
   + Add more gnuplot features, i.e. automatic gnuplot script generation
 
-* bpfc:
-  + Add Linux kernel extensions SKF_AD_* (filter.h)
+* flowtop:
+  + a top-like netfilter connection tracking tool
 
-* t: tests, tests, tests
+* t: tests, tests, tests / c: Coccinelle
   + Highly needed!
-  + Use Sharness as a framework (https://github.com/misfire/Sharness)
+  + Use Sharness as a framework for tests (https://github.com/misfire/Sharness)
+  + Use SmPL / Coccinelle as a framework for 'code error checking'
 
 * Documentation:
   + Manpages
