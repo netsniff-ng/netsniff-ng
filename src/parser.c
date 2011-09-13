@@ -8,26 +8,26 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdint.h>
+#include <assert.h>
 
 #include "parser.h"
 #include "die.h"
 
 char *getuint(char *in, uint32_t *out)
 {
-	char *pt = in, tmp;
-	while (*in && (isdigit(*in) || isxdigit(*in) || *in == 'x'))
-		in++;
-	if (!*in)
+	char * endptr = NULL;
+
+	assert(in);
+	assert(out);
+
+	errno = 0;
+
+	*out = strtoul(in, &endptr, 0);
+
+	if ((endptr != NULL && *endptr != '\0') || errno != 0) {
 		panic("Syntax error!\n");
-	tmp = *in;
-	*in = 0;
-	*out = strtol(pt, NULL, 0);
-	if (errno == EINVAL) {
-		*out = strtol(pt, NULL, 16);
-		if (errno == EINVAL)
-			panic("Syntax error!\n");
 	}
-	*in = tmp;
+
 	return in;
 }
 
