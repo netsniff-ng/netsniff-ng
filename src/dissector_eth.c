@@ -131,16 +131,16 @@ static void dissector_init_oui(void)
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
 		ven = xtlsf_malloc(sizeof(*ven));
-		ptr = buff;
-		ptr = skips(ptr);
+
+		ptr = strtok(buff, ",");
 		ptr = getuint(ptr, &ven->id);
-		ptr = skips(ptr);
-		ptr = skipchar(ptr, ',');
-		ptr = skips(ptr);
+		ptr = strtok(NULL, ",");
 		ptr = strtrim_right(ptr, '\n');
 		ptr = strtrim_right(ptr, ' ');
+
 		ven->vendor = xtlsf_strdup(ptr);
 		ven->next = NULL;
+
 		pos = insert_hash(ven->id, ven, &eth_oui);
 		if (pos) {
 			ven->next = *pos;
@@ -184,16 +184,16 @@ static void dissector_init_ports_udp(void)
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
 		pudp = xtlsf_malloc(sizeof(*pudp));
-		ptr = buff;
-		ptr = skips(ptr);
+
+		ptr = strtok(buff, ",");
 		ptr = getuint(ptr, &pudp->id);
-		ptr = skips(ptr);
-		ptr = skipchar(ptr, ',');
-		ptr = skips(ptr);
+		ptr = strtok(NULL, ",");
 		ptr = strtrim_right(ptr, '\n');
 		ptr = strtrim_right(ptr, ' ');
+
 		pudp->port = xtlsf_strdup(ptr);
 		pudp->next = NULL;
+
 		pos = insert_hash(pudp->id, pudp, &eth_ports_udp);
 		if (pos) {
 			pudp->next = *pos;
@@ -237,14 +237,13 @@ static void dissector_init_ports_tcp(void)
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
 		ptcp = xtlsf_malloc(sizeof(*ptcp));
-		ptr = buff;
-		ptr = skips(ptr);
+
+		ptr = strtok(buff, ",");
 		ptr = getuint(ptr, &ptcp->id);
-		ptr = skips(ptr);
-		ptr = skipchar(ptr, ',');
-		ptr = skips(ptr);
+		ptr = strtok(NULL, ",");
 		ptr = strtrim_right(ptr, '\n');
 		ptr = strtrim_right(ptr, ' ');
+
 		ptcp->port = xtlsf_strdup(ptr);
 		ptcp->next = NULL;
 		pos = insert_hash(ptcp->id, ptcp, &eth_ports_tcp);
@@ -290,14 +289,13 @@ static void dissector_init_ether_types(void)
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
 		et = xtlsf_malloc(sizeof(*et));
-		ptr = buff;
-		ptr = skips(ptr);
+
+		ptr = strtok(buff, ",");
 		ptr = getuint(ptr, &et->id);
-		ptr = skips(ptr);
-		ptr = skipchar(ptr, ',');
-		ptr = skips(ptr);
+		ptr = strtok(NULL, ",");
 		ptr = strtrim_right(ptr, '\n');
 		ptr = strtrim_right(ptr, ' ');
+
 		et->type = xtlsf_strdup(ptr);
 		et->next = NULL;
 		pos = insert_hash(et->id, et, &eth_ether_types);
