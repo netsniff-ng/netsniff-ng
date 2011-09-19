@@ -172,6 +172,7 @@ static void sg_pcap_fsync_pcap(int fd)
 	if (ret < 0)
 		panic("writev I/O error!\n");
 	c = 0;
+	fdatasync(fd);
 	spinlock_unlock(&lock);
 }
 
