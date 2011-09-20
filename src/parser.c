@@ -15,19 +15,25 @@
 char *getuint(char *in, uint32_t *out)
 {
 	char *pt = in, tmp;
+	char *endptr = NULL;
+
 	while (*in && (isdigit(*in) || isxdigit(*in) || *in == 'x'))
 		in++;
 	if (!*in)
 		panic("Syntax error!\n");
+
+	errno = 0;
+
 	tmp = *in;
 	*in = 0;
-	*out = strtol(pt, NULL, 0);
-	if (errno == EINVAL) {
-		*out = strtol(pt, NULL, 16);
-		if (errno == EINVAL)
-			panic("Syntax error!\n");
+	*out = strtoul(pt, &endptr, 0);
+
+	if ((endptr != NULL && *endptr != '\0') || errno != 0) {
+		panic("Syntax error!\n");
 	}
+
 	*in = tmp;
+
 	return in;
 }
 
