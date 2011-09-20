@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <assert.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -33,18 +34,16 @@ void destroy_rx_ring(int sock, struct ring *ring)
 
 void setup_rx_ring_layout(int sock, struct ring *ring, unsigned int size)
 {
-	/*
-	 * FIXME: We currently have 2048 Byte per frame. Frames need to
-	 * fit exactly into blocks. Blocks can only be a multiple of the 
-	 * systems page size. What do we do with jumbo frames?
-	 */
 	memset(&ring->layout, 0, sizeof(ring->layout));
 	ring->layout.tp_block_size = getpagesize() << 2;
-	ring->layout.tp_frame_size = TPACKET_ALIGNMENT << 7;
+	ring->layout.tp_frame_size = TPACKET_ALIGNMENT << 10;
 	ring->layout.tp_block_nr = size / ring->layout.tp_block_size;
 	ring->layout.tp_frame_nr = ring->layout.tp_block_size /
 				   ring->layout.tp_frame_size *
 				   ring->layout.tp_block_nr;
+
+	assert(ring->layout.tp_block_size >= ring->layout.tp_frame_size);
+	assert((ring->layout.tp_block_size % ring->layout.tp_frame_size) == 0);
 }
 
 void create_rx_ring(int sock, struct ring *ring)
