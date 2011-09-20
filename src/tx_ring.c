@@ -48,8 +48,8 @@ void destroy_tx_ring(int sock, struct ring *ring)
 void setup_tx_ring_layout(int sock, struct ring *ring, unsigned int size)
 {
 	memset(&ring->layout, 0, sizeof(ring->layout));
-	ring->layout.tp_block_size = getpagesize() << 2;
-	ring->layout.tp_frame_size = TPACKET_ALIGNMENT << 10;
+	ring->layout.tp_block_size = getpagesize() << 4;
+	ring->layout.tp_frame_size = TPACKET_ALIGNMENT << 12;
 	ring->layout.tp_block_nr = size / ring->layout.tp_block_size;
 	ring->layout.tp_frame_nr = ring->layout.tp_block_size /
 				   ring->layout.tp_frame_size *
