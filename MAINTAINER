@@ -6,7 +6,6 @@ netsniff-ng operating system distribution package maintainers:
   W - Maintainers website
   E - Maintainers e-mail
   C - Maintainers country
-  F - List of former maintainer (Name, E-mail and/or Website)
 
 We'd hereby like to express a huge thanks to our awesome maintainers! Kudos!
 If you are a maintainer for netsniff-ng and not listed here, please contact
@@ -19,7 +18,6 @@ Debian
  * E: kartik@debian.org
  * W: http://people.debian.org/~kartik/
  * C: India
- * F: Romain Beauxis, toots@rastageeks.org, http://www.lix.polytechnique.fr/Labo/Romain.Beauxis/
 
 Fedora/RHEL
  * 1: http://fedoraproject.org/
@@ -28,7 +26,6 @@ Fedora/RHEL
  * E: jskala@redhat.com
  * C: Czech Republic
  * W: http://fedoraproject.org/wiki/User:Jskala
- * F: James Findley, sixy@gmx.com
 
 Ubuntu
  * 1: http://www.ubuntu.com/
