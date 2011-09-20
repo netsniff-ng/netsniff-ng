@@ -1,0 +1,49 @@
+These people have contributed to netsniff-ng in some way. Some have reported
+problems, others have contributed improvements to the documentation, actual
+code, donated hardware, or helped in discussions or other ways. If your name
+has been left out, if you'd rather not be listed, or if you'd prefer a different
+address be used, please send a note to to us as described in REPORTING-BUGS.
+This list is unsorted and names from the AUTHORS file are left out. Also, titles
+(such as Prof., Dr., ...) are not mentioned.
+
+Ariane Keller                       ariane.keller@tik.ee.ethz.ch
+Wolfgang Mühlbauer                  wolfgang.muehlbauer@tik.ee.ethz.ch
+Team CYMRU                          info@cymru.com
+Kartik Mistry                       kartik@debian.org
+Romain Beauxis                      toots@rastageeks.org
+Jiří Skála                          jskala@redhat.com
+James Findley                       sixy@gmx.com
+Can Celasun                         dcelasun@gmail.com
+Epinephrine (?)                     epinephrineaddict@gmail.com
+Corrado Franco                      conraid@gmail.com
+Pascal Bleser                       pascal.bleser@skynet.be
+Guillaume Rousse                    guillomovitch@mandriva.org
+Michael Prokop                      mika@grml.org
+Fabian Affolter                     fabian@affolter-engineering.ch
+Klaus Hänßgen                       haenssge@imn.htwk-leipzig.de
+Helumt Hayd                         hayd@cbs.mpg.de
+Dietmar Reimann                     reimann@imn.htwk-leipzig.de
+Stefan Seering                      skaarj@gmx.de
+Michael Wuensch                     liganic@gmx.net
+Tobias Kalbitz                      tobias.kalbitz@gmx.de
+Ansgar Jazdzewski                   ansgar.jazdzewski@gmx.de
+Ronald W. Henderson                 rwhalb@nycap.rr.com
+Henning Schulzrinne                 hgs@cs.columbia.edu
+Chris Sanders                       chris@chrissanders.org
+Guy Harris                          guy@alum.mit.edu
+Mathias Lafeldt                     mathias.lafeldt@gmail.com
+Denise Menke                        denise_menke@yahoo.de
+Jose Pedro Oliveira                 jpo@di.uminho.pt
+Antonio Pescape                     pescape@unina.it
+Philippe Langlois                   phil@p1sec.com
+Packetstorm staff                   feedback@packetstormsecurity.org
+Steffen Bauch                       sbauch@datenkobold.de
+Gianluca Costa                      g.costa@xplico.org
+Peter Schwabe                       peter@cryptojedi.org
+Karl-Udo Jahn                       jahn@imn.htwk-leipzig.de
+Lars Wächtler                       waechtler@01019freenet.de
+Dörte König                         koenig@imn.htwk-leipzig.de
+Mathias Schnydrig                   smathias@ee.ethz.ch
+Guido Hungerbühler                  hguido@student.ethz.ch
+Jens-Christoph Brendel              jbrendel@linuxnewmedia.de
+
