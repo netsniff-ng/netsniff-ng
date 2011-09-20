@@ -35,6 +35,7 @@ void destroy_rx_ring(int sock, struct ring *ring)
 void setup_rx_ring_layout(int sock, struct ring *ring, unsigned int size)
 {
 	memset(&ring->layout, 0, sizeof(ring->layout));
+
 	ring->layout.tp_block_size = getpagesize() << 4;
 	ring->layout.tp_frame_size = TPACKET_ALIGNMENT << 12;
 	ring->layout.tp_block_nr = size / ring->layout.tp_block_size;
@@ -44,6 +45,7 @@ void setup_rx_ring_layout(int sock, struct ring *ring, unsigned int size)
 
 	assert(ring->layout.tp_block_size >= ring->layout.tp_frame_size);
 	assert((ring->layout.tp_block_size % ring->layout.tp_frame_size) == 0);
+	assert((ring->layout.tp_block_size % getpagesize()) == 0);
 }
 
 void create_rx_ring(int sock, struct ring *ring)
