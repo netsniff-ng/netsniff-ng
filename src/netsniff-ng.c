@@ -613,7 +613,7 @@ static void help(void)
 	printf("Usage: netsniff-ng [options]\n");
 	printf("Options:\n");
 	printf("  -i|-d|--dev|--in <dev|pcap>  Input source as netdev or pcap\n");
-	printf("  -o|--out <dev|pcap>          Output source as netdev or pcap\n");
+	printf("  -o|--out <dev|pcap>          Output sink as netdev or pcap\n");
 	printf("  -r|--randomize               Randomize packet forwarding order\n");
 	printf("  -f|--filter <bpf-file>       Use BPF filter rule from file\n");
 	printf("  -n|--num <uint>              Number of packets until exit\n");
