@@ -84,11 +84,12 @@ struct tx_stats {
 
 sig_atomic_t sigint = 0;
 
+static unsigned long frame_cnt_max = 0;
 static unsigned long interval = TX_KERNEL_PULL_INT;
 static int tx_sock;
 static struct itimerval itimer;
 
-static const char *short_options = "d:i:o:rf:Mt:S:k:b:B:HQmcsqlxCXNvh";
+static const char *short_options = "d:i:o:rf:Mt:S:k:n:b:B:HQmcsqlxCXNvh";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -99,6 +100,7 @@ static struct option long_options[] = {
 	{"clrw", no_argument, 0, 'c'},
 	{"filter", required_argument, 0, 'f'},
 	{"no-promisc", no_argument, 0, 'M'},
+	{"num", required_argument, 0, 'n'},
 	{"type", required_argument, 0, 't'},
 	{"ring-size", required_argument, 0, 'S'},
 	{"kernel-pull", required_argument, 0, 'k'},
@@ -237,6 +239,11 @@ void enter_mode_pcap_to_tx(struct mode *mode)
 
 			if (unlikely(sigint == 1))
 				break;
+			if (frame_cnt_max != 0 &&
+			    stats.tx_packets >= frame_cnt_max) {
+				sigint = 1;
+				break;
+			}
 		}
 	}
 out:
@@ -261,6 +268,7 @@ void enter_mode_rx_to_tx(struct mode *mode)
 {
 	int rx_sock, ifindex_in, ifindex_out;
 	unsigned int size_in, size_out, it_in = 0, it_out = 0;
+	unsigned long fcnt = 0;
 	uint8_t *in, *out;
 	short ifflags = 0;
 	struct frame_map *hdr_in, *hdr_out;
@@ -336,6 +344,7 @@ void enter_mode_rx_to_tx(struct mode *mode)
 		while (user_may_pull_from_rx(rx_ring.frames[it_in].iov_base)) {
 			hdr_in = rx_ring.frames[it_in].iov_base;
 			in = ((uint8_t *) hdr_in) + hdr_in->tp_h.tp_mac;
+			fcnt++;
 			if (mode->packet_type != PACKET_ALL)
 				if (mode->packet_type != hdr_in->s_ll.sll_pkttype)
 					goto next;
@@ -369,6 +378,11 @@ void enter_mode_rx_to_tx(struct mode *mode)
 			show_frame_hdr(hdr_in, mode->print_mode, RING_MODE_INGRESS);
 			dissector_entry_point(in, hdr_in->tp_h.tp_snaplen,
 					      mode->link_type);
+
+			if (frame_cnt_max != 0 && fcnt >= frame_cnt_max) {
+				sigint = 1;
+				break;
+			}
 next:
 			kernel_may_pull_from_rx(&hdr_in->tp_h);
 			next_slot(&it_in, &rx_ring);
@@ -445,6 +459,12 @@ void enter_mode_read_pcap(struct mode *mode)
 		show_frame_hdr(&fm, mode->print_mode, RING_MODE_EGRESS);
 		dissector_entry_point(out, fm.tp_h.tp_snaplen,
 				      mode->link_type);
+
+		if (frame_cnt_max != 0 &&
+		    stats.tx_packets >= frame_cnt_max) {
+			sigint = 1;
+			break;
+		}
 	}
 out:
 	fflush(stdout);
@@ -463,6 +483,7 @@ void enter_mode_rx_only_or_dump(struct mode *mode)
 {
 	int sock, irq, ifindex, fd = 0, ret;
 	unsigned int size, it = 0;
+	unsigned long fcnt = 0;
 	short ifflags = 0;
 	uint8_t *packet;
 	struct ring rx_ring;
@@ -532,6 +553,7 @@ void enter_mode_rx_only_or_dump(struct mode *mode)
 		while (user_may_pull_from_rx(rx_ring.frames[it].iov_base)) {
 			hdr = rx_ring.frames[it].iov_base;
 			packet = ((uint8_t *) hdr) + hdr->tp_h.tp_mac;
+			fcnt++;
 
 			if (mode->packet_type != PACKET_ALL)
 				if (mode->packet_type != hdr->s_ll.sll_pkttype)
@@ -549,6 +571,11 @@ void enter_mode_rx_only_or_dump(struct mode *mode)
 			show_frame_hdr(hdr, mode->print_mode, RING_MODE_INGRESS);
 			dissector_entry_point(packet, hdr->tp_h.tp_snaplen,
 					      mode->link_type);
+
+			if (frame_cnt_max != 0 && fcnt >= frame_cnt_max) {
+				sigint = 1;
+				break;
+			}
 next:
 			kernel_may_pull_from_rx(&hdr->tp_h);
 			next_slot(&it, &rx_ring);
@@ -589,6 +616,7 @@ static void help(void)
 	printf("  -o|--out <dev|pcap>          Output source as netdev or pcap\n");
 	printf("  -r|--randomize               Randomize packet forwarding order\n");
 	printf("  -f|--filter <bpf-file>       Use BPF filter rule from file\n");
+	printf("  -n|--num <uint>              Number of packets until exit\n");
 	printf("  -M|--no-promisc              No promiscuous mode for netdev\n");
 	printf("  -t|--type <type>             Only handle packets of defined type:\n");
 	printf("                               host|broadcast|multicast|others|outgoing\n");
@@ -774,6 +802,9 @@ int main(int argc, char **argv)
 		case 'k':
 			mode.kpull = atol(optarg);
 			break;
+		case 'n':
+			frame_cnt_max = (unsigned long) atol(optarg);
+			break;
 		case 'v':
 			version();
 			break;
@@ -787,6 +818,7 @@ int main(int argc, char **argv)
 			case 'o':
 			case 'f':
 			case 't':
+			case 'n':
 			case 'S':
 			case 'b':
 			case 'k':
