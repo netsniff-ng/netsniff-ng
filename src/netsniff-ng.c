@@ -617,6 +617,8 @@ static void help(void)
 	printf("  -r|--randomize               Randomize packet forwarding order\n");
 	printf("  -f|--filter <bpf-file>       Use BPF filter rule from file\n");
 	printf("  -n|--num <uint>              Number of packets until exit\n");
+	printf("  `--     0                    Loop until interrupt (default)\n");
+	printf("   `-     n                    Send n packets and done\n");
 	printf("  -M|--no-promisc              No promiscuous mode for netdev\n");
 	printf("  -t|--type <type>             Only handle packets of defined type:\n");
 	printf("                               host|broadcast|multicast|others|outgoing\n");
