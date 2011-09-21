@@ -169,7 +169,7 @@ static void help(void)
 	printf("Options:\n");
 	printf("  -d|--dev <netdev>      Networking Device\n");
 	printf("  -c|--conf <file>       Packet configuration txf-file\n");
-	printf("  -n|--num <uint>        Packet numbers\n");
+	printf("  -n|--num <uint>        Number of packets until exit\n");
 	printf("  `--     0              Loop until interrupt (default)\n");
 	printf("   `-     n              Send n packets and done\n");
 	printf("  -t|--gap <int>         Interpacket gap in us (approx)\n");
