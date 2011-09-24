@@ -40,8 +40,16 @@ Arch Linux
  * W: http://durucancelasun.info/
  * C: Turkey
 
-Gentoo/Sabayon
+Gentoo
  * 1: http://www.gentoo.org/
+ * 2: http://packages.gentoo.org/package/net-analyzer/netsniff-ng
+ * M: Michael Weber
+ * E: xmw@gentoo.org
+ * W: http://cia.vc/stats/author/xmw 
+ * C: Germany
+
+Sabayon
+ * 1: http://www.sabayon.org/
  * 2: http://gpo.zugaina.org/net-misc/netsniff-ng
  * M: Epinephrine
  * E: epinephrineaddict@gmail.com
