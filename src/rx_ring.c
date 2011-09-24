@@ -32,12 +32,15 @@ void destroy_rx_ring(int sock, struct ring *ring)
 	xfree(ring->frames);
 }
 
-void setup_rx_ring_layout(int sock, struct ring *ring, unsigned int size)
+void setup_rx_ring_layout(int sock, struct ring *ring, unsigned int size,
+			  int jumbo_support)
 {
 	memset(&ring->layout, 0, sizeof(ring->layout));
 
-	ring->layout.tp_block_size = getpagesize() << 4;
-	ring->layout.tp_frame_size = TPACKET_ALIGNMENT << 12;
+	ring->layout.tp_block_size = (jumbo_support ?
+				      getpagesize() << 4 : getpagesize() << 2);
+	ring->layout.tp_frame_size = (jumbo_support ?
+				      TPACKET_ALIGNMENT << 12 : TPACKET_ALIGNMENT << 7);
 	ring->layout.tp_block_nr = size / ring->layout.tp_block_size;
 	ring->layout.tp_frame_nr = ring->layout.tp_block_size /
 				   ring->layout.tp_frame_size *

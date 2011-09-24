@@ -95,6 +95,7 @@ struct mode {
 	unsigned long kpull;
 	/* 0 for automatic, > 0 for manual */
 	unsigned int reserve_size;
+	int jumbo_support;
 };
 
 #define CPU_UNKNOWN  -1
@@ -102,7 +103,7 @@ struct mode {
 
 sig_atomic_t sigint = 0;
 
-static const char *short_options = "d:c:n:t:vhS:HQb:B:rk:";
+static const char *short_options = "d:c:n:t:vJhS:HQb:B:rk:";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -113,6 +114,7 @@ static struct option long_options[] = {
 	{"bind-cpu", required_argument, 0, 'b'},
 	{"unbind-cpu", required_argument, 0, 'B'},
 	{"kernel-pull", required_argument, 0, 'k'},
+	{"jumbo-support", no_argument, 0, 'J'},
 	{"rand", no_argument, 0, 'r'},
 	{"prio-high", no_argument, 0, 'H'},
 	{"notouch-irq", no_argument, 0, 'Q'},
@@ -169,6 +171,8 @@ static void help(void)
 	printf("Options:\n");
 	printf("  -d|--dev <netdev>      Networking Device\n");
 	printf("  -c|--conf <file>       Packet configuration txf-file\n");
+	printf("  -J|--jumbo-support     Support for 64KB Super Jumbo Frames\n");
+	printf("                         Default: up to 1500Bytes\n");
 	printf("  -n|--num <uint>        Number of packets until exit\n");
 	printf("  `--     0              Loop until interrupt (default)\n");
 	printf("   `-     n              Send n packets and done\n");
@@ -355,7 +359,7 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 	size = ring_size(mode->device, mode->reserve_size);
 
 	set_packet_loss_discard(sock);
-	setup_tx_ring_layout(sock, &tx_ring, size);
+	setup_tx_ring_layout(sock, &tx_ring, size, mode->jumbo_support);
 	create_tx_ring(sock, &tx_ring);
 	mmap_tx_ring(sock, &tx_ring);
 	alloc_tx_ring_frames(&tx_ring);
@@ -570,9 +574,9 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 			} else 
 				panic("Unknown instruction! Syntax error "
 				      "on line %lu!\n", line);
-		} else if (withinpkt && *pb == '}')
+		} else if (withinpkt && *pb == '}') {
 				withinpkt = 0;
-		else if (withinpkt) {
+		} else if (withinpkt) {
 			int type, i, found;
 			uint32_t val = 0;
 			while (1) {
@@ -700,6 +704,9 @@ int main(int argc, char **argv)
 			break;
 		case 'r':
 			mode.rand = 1;
+			break;
+		case 'J':
+			mode.jumbo_support = 1;
 			break;
 		case 'c':
 			confname = xstrdup(optarg);

@@ -75,6 +75,7 @@ struct mode {
 	bool promiscuous;
 	enum pcap_ops_groups pcap;
 	unsigned long kpull;
+	int jumbo_support;
 };
 
 struct tx_stats {
@@ -89,7 +90,7 @@ static unsigned long interval = TX_KERNEL_PULL_INT;
 static int tx_sock;
 static struct itimerval itimer;
 
-static const char *short_options = "d:i:o:rf:Mt:S:k:n:b:B:HQmcsqlxCXNvh";
+static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqlxCXNvh";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -98,6 +99,7 @@ static struct option long_options[] = {
 	{"randomize", no_argument, 0, 'r'},
 	{"mmap", no_argument, 0, 'm'},
 	{"clrw", no_argument, 0, 'c'},
+	{"jumbo-support", no_argument, 0, 'J'},
 	{"filter", required_argument, 0, 'f'},
 	{"no-promisc", no_argument, 0, 'M'},
 	{"num", required_argument, 0, 'n'},
@@ -182,7 +184,7 @@ void enter_mode_pcap_to_tx(struct mode *mode)
 	bpf_parse_rules(mode->filter, &bpf_ops);
 
 	set_packet_loss_discard(tx_sock);
-	setup_tx_ring_layout(tx_sock, &tx_ring, size);
+	setup_tx_ring_layout(tx_sock, &tx_ring, size, mode->jumbo_support);
 	create_tx_ring(tx_sock, &tx_ring);
 	mmap_tx_ring(tx_sock, &tx_ring);
 	alloc_tx_ring_frames(&tx_ring);
@@ -304,7 +306,7 @@ void enter_mode_rx_to_tx(struct mode *mode)
 	bpf_attach_to_sock(rx_sock, &bpf_ops);
 	enable_kernel_bpf_jit_compiler();
 
-	setup_rx_ring_layout(rx_sock, &rx_ring, size_in);
+	setup_rx_ring_layout(rx_sock, &rx_ring, size_in, mode->jumbo_support);
 	create_rx_ring(rx_sock, &rx_ring);
 	mmap_rx_ring(rx_sock, &rx_ring);
 	alloc_rx_ring_frames(&rx_ring);
@@ -312,7 +314,7 @@ void enter_mode_rx_to_tx(struct mode *mode)
 	prepare_polling(rx_sock, &rx_poll);
 
 	set_packet_loss_discard(tx_sock);
-	setup_tx_ring_layout(tx_sock, &tx_ring, size_out);
+	setup_tx_ring_layout(tx_sock, &tx_ring, size_out, mode->jumbo_support);
 	create_tx_ring(tx_sock, &tx_ring);
 	mmap_tx_ring(tx_sock, &tx_ring);
 	alloc_tx_ring_frames(&tx_ring);
@@ -524,7 +526,7 @@ void enter_mode_rx_only_or_dump(struct mode *mode)
 	bpf_attach_to_sock(sock, &bpf_ops);
 	enable_kernel_bpf_jit_compiler();
 
-	setup_rx_ring_layout(sock, &rx_ring, size);
+	setup_rx_ring_layout(sock, &rx_ring, size, mode->jumbo_support);
 	create_rx_ring(sock, &rx_ring);
 	mmap_rx_ring(sock, &rx_ring);
 	alloc_rx_ring_frames(&rx_ring);
@@ -616,6 +618,8 @@ static void help(void)
 	printf("  -o|--out <dev|pcap>          Output sink as netdev or pcap\n");
 	printf("  -r|--randomize               Randomize packet forwarding order\n");
 	printf("  -f|--filter <bpf-file>       Use BPF filter rule from file\n");
+	printf("  -J|--jumbo-support           Support for 64KB Super Jumbo Frames\n");
+	printf("                               Default: up to 1500Bytes\n");
 	printf("  -n|--num <uint>              Number of packets until exit\n");
 	printf("  `--     0                    Loop until interrupt (default)\n");
 	printf("   `-     n                    Send n packets and done\n");
@@ -717,6 +721,9 @@ int main(int argc, char **argv)
 			break;
 		case 'r':
 			mode.randomize = true;
+			break;
+		case 'J':
+			mode.jumbo_support = 1;
 			break;
 		case 'f':
 			mode.filter = xstrdup(optarg);
