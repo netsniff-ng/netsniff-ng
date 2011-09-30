@@ -261,7 +261,8 @@ static void tx_tgap_or_die(struct mode *mode, struct pktconf *cfg)
 
 	set_memcpy();
 	sock = pf_socket();
-	pkt = xzmalloc(mtu);
+	pkt = xmalloc_aligned(mtu, 64);
+	memset(pkt, 0, mtu);
 	ifindex = device_ifindex(mode->device);
 
 	if (cfg->num > 0)

@@ -101,9 +101,10 @@ void mmap_tx_ring(int sock, struct ring *ring)
 void alloc_tx_ring_frames(struct ring *ring)
 {
 	int i;
+	size_t len = ring->layout.tp_frame_nr * sizeof(*ring->frames);
 
-	ring->frames = xzmalloc(ring->layout.tp_frame_nr *
-				sizeof(*ring->frames));
+	ring->frames = xmalloc_aligned(len, 64);
+	memset(ring->frames, 0, len);
 
 	for (i = 0; i < ring->layout.tp_frame_nr; ++i) {
 		ring->frames[i].iov_len = ring->layout.tp_frame_size;

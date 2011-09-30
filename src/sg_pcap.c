@@ -14,7 +14,7 @@
 #include <unistd.h>
 
 #include "pcap.h"
-#include "tlsf.h"
+#include "xmalloc.h"
 #include "write_or_die.h"
 #include "opt_memcpy.h"
 #include "locking.h"
@@ -192,7 +192,7 @@ int init_sg_pcap(void)
 	c = 0;
 	memset(iov, 0, sizeof(iov));
 	for (i = 0; i < IOVSIZ; ++i) {
-		iov[i].iov_base = xtlsf_malloc(ALLSIZ);
+		iov[i].iov_base = xmalloc_aligned(ALLSIZ, 64);
 		iov[i].iov_len = ALLSIZ;
 	}
 	spinlock_init(&lock);
@@ -204,7 +204,7 @@ void cleanup_sg_pcap(void)
 	unsigned long i;
 	spinlock_destroy(&lock);
 	for (i = 0; i < IOVSIZ; ++i)
-		xtlsf_free(iov[i].iov_base);
+		xfree(iov[i].iov_base);
 	pcap_ops_group_unregister(PCAP_OPS_SG);
 }
 

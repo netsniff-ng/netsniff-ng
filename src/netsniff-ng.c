@@ -440,7 +440,7 @@ void enter_mode_read_pcap(struct mode *mode)
 	dissector_init_all(mode->print_mode);
 
 	out_len = device_mtu("lo");
-	out = xmalloc(out_len);
+	out = xmalloc_aligned(out_len, 64);
 
 	printf("BPF:\n");
 	bpf_dump_all(&bpf_ops);
