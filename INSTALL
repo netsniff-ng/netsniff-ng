@@ -11,9 +11,17 @@ us a short mail, if it runs successfully on hardware other than that.
 We assume, it will run, but unfortunately, we don't have other hardware
 than that.
 
-What libraries are required? You'll need libc, libpthread, libncurses
-(only for ifpps), nothing else. It is common, that these libraries are
-shipped as distribution packages for an easy installation.
+What libraries / tools are required?
+
+ - libc (all)
+ - libpthread (curvetun, netsniff-ng)
+ - libncurses (ifpps)
+ - libGeoIP (ashunt)
+ - flex, bison (bpfc)
+ - libnacl (curvetun, fetched and built automatically on make)
+
+It is common, that these libraries are shipped as distribution packages
+for an easy installation. We try to keep this as minimal as possible.
 
 The installation process is fairly simple:
 
