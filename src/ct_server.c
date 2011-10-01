@@ -86,7 +86,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 	struct curve25519_proto *p;
 	struct sockaddr_storage naddr;
 	socklen_t nlen;
-	size_t off = sizeof(struct ct_proto);
+	size_t off = sizeof(struct ct_proto) + crypto_box_zerobytes;
 
 	if (!buff || len <= off) {
 		errno = EINVAL;
@@ -116,8 +116,10 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 			       "Dropping connection!\n", ws->cpu);
 			continue;
 		}
-		clen = curve25519_encode(ws->c, p, (unsigned char *) buff + off, rlen,
-					 (unsigned char **) &cbuff);
+		clen = curve25519_encode(ws->c, p, (unsigned char *) buff + off -
+					 crypto_box_zerobytes, rlen +
+					 crypto_box_zerobytes, (unsigned char **)
+					 &cbuff);
 		if (unlikely(clen <= 0)) {
 			syslog(LOG_ERR, "CPU%u: UDP tunnel encrypt error: %zd\n",
 			       ws->cpu, clen);
@@ -282,7 +284,7 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 	struct ct_proto *hdr;
 	struct curve25519_proto *p;
 	socklen_t nlen;
-	size_t off = sizeof(struct ct_proto);
+	size_t off = sizeof(struct ct_proto) + crypto_box_zerobytes;
 
 	if (!buff || len <= off) {
 		errno = EINVAL;
@@ -310,8 +312,10 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 			       "Dropping connection!\n", ws->cpu);
 			continue;
 		}
-		clen = curve25519_encode(ws->c, p, (unsigned char *) buff + off, rlen,
-					 (unsigned char **) &cbuff);
+		clen = curve25519_encode(ws->c, p, (unsigned char *) buff + off -
+					 crypto_box_zerobytes, rlen +
+					 crypto_box_zerobytes, (unsigned char **)
+					 &cbuff);
 		if (unlikely(clen <= 0)) {
 			syslog(LOG_ERR, "CPU%u: TCP tunnel encrypt error: %zd\n",
 			       ws->cpu, clen);

@@ -49,7 +49,7 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 	char *cbuff;
 	ssize_t rlen, err, clen;
 	struct ct_proto *hdr;
-	size_t off = sizeof(struct ct_proto);
+	size_t off = sizeof(struct ct_proto) + crypto_box_zerobytes;
 
 	if (!buff || len <= off) {
 		errno = EINVAL;
@@ -61,8 +61,10 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 		hdr = (struct ct_proto *) buff;
 		hdr->flags = 0;
 
-		clen = curve25519_encode(c, p, (unsigned char *) buff + off, rlen,
-					 (unsigned char **) &cbuff);
+		clen = curve25519_encode(c, p, (unsigned char *) buff + off -
+					 crypto_box_zerobytes, rlen +
+					 crypto_box_zerobytes, (unsigned char **)
+					 &cbuff);
 		if (unlikely(clen <= 0)) {
 			syslog(LOG_ERR, "UDP tunnel encrypt error!\n");
 			goto close;
@@ -156,7 +158,7 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 	char *cbuff;
 	ssize_t rlen, err, clen;
 	struct ct_proto *hdr;
-	size_t off = sizeof(struct ct_proto);
+	size_t off = sizeof(struct ct_proto) + crypto_box_zerobytes;
 
 	if (!buff || len <= off) {
 		errno = EINVAL;
@@ -168,8 +170,10 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 		hdr = (struct ct_proto *) buff;
 		hdr->flags = 0;
 
-		clen = curve25519_encode(c, p, (unsigned char *) buff + off, rlen,
-					 (unsigned char **) &cbuff);
+		clen = curve25519_encode(c, p, (unsigned char *) buff + off -
+					 crypto_box_zerobytes, rlen +
+					 crypto_box_zerobytes, (unsigned char **)
+					 &cbuff);
 		if (unlikely(clen <= 0)) {
 			syslog(LOG_ERR, "TCP tunnel encrypt error!\n");
 			goto close;
