@@ -12,12 +12,17 @@ bug fixes immediately.
 
 The best way to make a contribution to netsniff-ng is to send us your 
 code in the form of a unified diff against the latest released or
-development version and, preferably, the branch from our Git repository.
-Your patch should then be sent to workgroup@netsniff-ng.org or 
-bugs@netsniff-ng.org.
+development version and, preferably, the master branch from our Git
+repository. Your patch should then be sent to workgroup@netsniff-ng.org
+or bugs@netsniff-ng.org.
 
 Before submitting your patch make sure to indent your code appropriate.
 For this, have a look at our coding conventions within the CODING file.
+Note: avoid tools like indent for automatic code formatting, since they
+can screw up the format in some cases by not recognizing everything!
+Further, this is only for lazy people that do not stick to the kernel
+coding conventions anyway. We won't accept patches if they don't comply
+to these conventions.
 
 The src/s/ directory contains a number of SmPL (Semantic Patch Language)
 scripts that can be used together with Coccinelle's spatch tool. In order
