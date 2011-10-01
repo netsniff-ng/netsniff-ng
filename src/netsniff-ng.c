@@ -96,7 +96,7 @@ static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
 	{"in", required_argument, 0, 'i'},
 	{"out", required_argument, 0, 'o'},
-	{"randomize", no_argument, 0, 'r'},
+	{"rand", no_argument, 0, 'r'},
 	{"mmap", no_argument, 0, 'm'},
 	{"clrw", no_argument, 0, 'c'},
 	{"jumbo-support", no_argument, 0, 'J'},
@@ -614,50 +614,53 @@ static void help(void)
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: netsniff-ng [options]\n");
 	printf("Options:\n");
-	printf("  -i|-d|--dev|--in <dev|pcap>  Input source as netdev or pcap\n");
-	printf("  -o|--out <dev|pcap>          Output sink as netdev or pcap\n");
-	printf("  -r|--randomize               Randomize packet forwarding order\n");
-	printf("  -f|--filter <bpf-file>       Use BPF filter rule from file\n");
-	printf("  -J|--jumbo-support           Support for 64KB Super Jumbo Frames\n");
-	printf("                               Default: up to 1500Bytes\n");
-	printf("  -n|--num <uint>              Number of packets until exit\n");
-	printf("  `--     0                    Loop until interrupt (default)\n");
-	printf("   `-     n                    Send n packets and done\n");
-	printf("  -M|--no-promisc              No promiscuous mode for netdev\n");
-	printf("  -t|--type <type>             Only handle packets of defined type:\n");
-	printf("                               host|broadcast|multicast|others|outgoing\n");
-	printf("  -m|--mmap                    Mmap pcap file, otherwise use scatter/gather I/O\n");
-	printf("  -c|--clrw                    Instead scatter/gather I/O use read/write I/O\n");
-	printf("  -S|--ring-size <size>        Manually set ring size to <size>:\n");
-	printf("                               mmap space in KB/MB/GB, e.g. \'10MB\'\n");
-	printf("  -k|--kernel-pull <int>       Kernel pull from user interval in us\n");
-	printf("                               Default is 10us where the TX_RING\n");
-	printf("                               is populated with payload from uspace\n");
-	printf("  -b|--bind-cpu <cpu>          Bind to specific CPU or CPU-range\n");
-	printf("  -B|--unbind-cpu <cpu>        Forbid to use specific CPU or CPU-range\n");
-	printf("  -H|--prio-high               Make this high priorize process\n");
-	printf("  -Q|--notouch-irq             Do not touch IRQ CPU affinity of NIC\n");
-	printf("  -s|--silent                  Do not print captured packets\n");
-	printf("  -q|--less                    Print less-verbose packet information\n");
-	printf("  -l|--payload                 Only print human-readable payload\n");
-	printf("  -x|--payload-hex             Only print payload in hex format\n");
-	printf("  -C|--c-style                 Print full packet in trafgen/C style hex format\n");
-	printf("  -X|--all-hex                 Print packets in hex format\n");
-	printf("  -N|--no-payload              Only print packet header\n");
-	printf("  -v|--version                 Show version\n");
-	printf("  -h|--help                    Show this help\n");
+	printf("  -i|-d|--dev|--in <dev|pcap> Input source as netdev or pcap\n");
+	printf("  -o|--out <dev|pcap>         Output sink as netdev or pcap\n");
+	printf("  -f|--filter <bpf-file>      Use BPF filter file from bpfc\n");
+	printf("  -t|--type <type>            Only handle packets of defined type:\n");
+	printf("                              host|broadcast|multicast|others|outgoing\n");
+	printf("  -s|--silent                 Do not print captured packets\n");
+	printf("  -J|--jumbo-support          Support for 64KB Super Jumbo Frames\n");
+	printf("                              Default RX/TX slot: 2048Byte\n");
+	printf("  -n|--num <uint>             Number of packets until exit\n");
+	printf("  `--     0                   Loop until interrupt (default)\n");
+	printf("   `-     n                   Send n packets and done\n");
+	printf("  -r|--rand                   Randomize packet forwarding order\n");
+	printf("  -M|--no-promisc             No promiscuous mode for netdev\n");
+	printf("  -m|--mmap                   Mmap pcap file i.e., for replaying\n");
+	printf("                              Default: scatter/gather I/O\n");
+	printf("  -c|--clrw                   Instead s/g I/O use slower read/write I/O\n");
+	printf("  -S|--ring-size <size>       Manually set ring size to <size>:\n");
+	printf("                              mmap space in KB/MB/GB, e.g. \'10MB\'\n");
+	printf("  -k|--kernel-pull <int>      Kernel pull from user interval in us\n");
+	printf("                              Default is 10us where the TX_RING\n");
+	printf("                              is populated with payload from uspace\n");
+	printf("  -b|--bind-cpu <cpu>         Bind to specific CPU (or CPU-range)\n");
+	printf("  -B|--unbind-cpu <cpu>       Forbid to use specific CPU (or CPU-range)\n");
+	printf("  -H|--prio-high              Make this high priority process\n");
+	printf("  -Q|--notouch-irq            Do not touch IRQ CPU affinity of NIC\n");
+	printf("  -q|--less                   Print less-verbose packet information\n");
+	printf("  -l|--payload                Only print human-readable payload\n");
+	printf("  -x|--payload-hex            Only print payload in hex format\n");
+	printf("  -C|--c-style                Print full packet in trafgen/C style hex format\n");
+	printf("  -X|--all-hex                Print packets in hex format\n");
+	printf("  -N|--no-payload             Only print packet header\n");
+	printf("  -v|--version                Show version\n");
+	printf("  -h|--help                   Guess what?!\n");
 	printf("\n");
 	printf("Examples:\n");
 	printf("  netsniff-ng --in eth0 --out dump.pcap --silent --bind-cpu 0\n");
 	printf("  netsniff-ng --in dump.pcap --mmap --out eth0 --silent --bind-cpu 0\n");
 	printf("  netsniff-ng --in any --filter icmp.bpf --all-hex\n");
-	printf("  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0 \\\n");
-	printf("              --type host --filter /etc/netsniff-ng/rules/http.bpf\n");
+	printf("  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0\\\n");
+	printf("              --type host --filter http.bpf\n");
 	printf("\n");
 	printf("Note:\n");
 	printf("  This tool is targeted for network developers! You should\n");
 	printf("  be aware of what you are doing and what these options above\n");
 	printf("  mean! Use netsniff-ng's bpfc compiler for generating filter files.\n");
+	printf("  Further, netsniff-ng automatically enables the kernel BPF JIT\n");
+	printf("  if present.\n");
 	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2009-2011 Daniel Borkmann <daniel@netsniff-ng.org>\n");
