@@ -152,6 +152,9 @@ server$ curvetun -C
 
 ... which prints all parsed clients from ~/.curvetun/clients.
 
+[Note: in src/ there is also a Perl script curvetun_ldap.pl that can generate
+ a client file from LDAP entries!]
+
 Now, the client 'myclient1' is known to the server; that's it for the server
 config. The next step is to tell the client what he needs to connect to the
 server.
