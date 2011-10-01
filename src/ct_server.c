@@ -37,7 +37,6 @@
 #include "curve.h"
 #include "compiler.h"
 #include "usermgmt.h"
-#include "deflate.h"
 #include "cpusched.h"
 #include "trie.h"
 
@@ -56,7 +55,6 @@ struct worker_struct {
 	struct parent_info parent;
 	int (*handler)(int fd, const struct worker_struct *ws,
 		       char *buff, size_t len);
-	struct z_struct *z;
 	struct curve25519_struct *c;
 };
 
@@ -82,13 +80,13 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len)
 {
 	int dfd, state, keep = 1;
-	char *pbuff, *cbuff;
-	ssize_t rlen, err, plen, clen;
+	char *cbuff;
+	ssize_t rlen, err, clen;
 	struct ct_proto *hdr;
 	struct curve25519_proto *p;
 	struct sockaddr_storage naddr;
 	socklen_t nlen;
-	size_t off = sizeof(struct ct_proto) + crypto_box_zerobytes;
+	size_t off = sizeof(struct ct_proto);
 
 	if (!buff || len <= off) {
 		errno = EINVAL;
@@ -118,15 +116,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 			       "Dropping connection!\n", ws->cpu);
 			continue;
 		}
-		plen = z_deflate(ws->z, buff + off, rlen, &pbuff);
-		if (unlikely(plen < 0)) {
-			syslog(LOG_ERR, "CPU%u: UDP tunnel deflate error: %s\n",
-			       ws->cpu, strerror(errno));
-			continue;
-		}
-		pbuff -= crypto_box_zerobytes;
-		plen += crypto_box_zerobytes;
-		clen = curve25519_encode(ws->c, p, (unsigned char *) pbuff, plen,
+		clen = curve25519_encode(ws->c, p, (unsigned char *) buff + off, rlen,
 					 (unsigned char **) &cbuff);
 		if (unlikely(clen <= 0)) {
 			syslog(LOG_ERR, "CPU%u: UDP tunnel encrypt error: %zd\n",
@@ -183,8 +173,8 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len)
 {
 	int keep = 1;
-	char *pbuff, *cbuff;
-	ssize_t rlen, err, plen, clen;
+	char *cbuff;
+	ssize_t rlen, err, clen;
 	struct ct_proto *hdr;
 	struct curve25519_proto *p;
 	struct sockaddr_storage naddr;
@@ -246,13 +236,7 @@ close:
 		}
 		cbuff += crypto_box_zerobytes;
 		clen -= crypto_box_zerobytes;
-		plen = z_inflate(ws->z, cbuff, clen, &pbuff);
-		if (unlikely(plen < 0)) {
-			syslog(LOG_ERR, "CPU%u: UDP net inflate error: %s\n",
-			       ws->cpu, strerror(errno));
-			goto close;
-		}
-		err = trie_addr_maybe_update(pbuff, plen, ws->parent.ipv4,
+		err = trie_addr_maybe_update(cbuff, clen, ws->parent.ipv4,
 					     fd, &naddr, nlen);
 		if (unlikely(err)) {
 			syslog(LOG_INFO, "CPU%u: Malicious packet dropped "
@@ -260,7 +244,7 @@ close:
 			goto next;
 		}
 
-		err = write(ws->parent.tunfd, pbuff, plen);
+		err = write(ws->parent.tunfd, cbuff, clen);
 		if (unlikely(err < 0))
 			syslog(LOG_ERR, "CPU%u: UDP net write error: %s\n",
 			       ws->cpu, strerror(errno));
@@ -293,12 +277,12 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len)
 {
 	int dfd, state, keep = 1;
-	char *pbuff, *cbuff;
-	ssize_t rlen, err, plen, clen;
+	char *cbuff;
+	ssize_t rlen, err, clen;
 	struct ct_proto *hdr;
 	struct curve25519_proto *p;
 	socklen_t nlen;
-	size_t off = sizeof(struct ct_proto) + crypto_box_zerobytes;
+	size_t off = sizeof(struct ct_proto);
 
 	if (!buff || len <= off) {
 		errno = EINVAL;
@@ -326,15 +310,7 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 			       "Dropping connection!\n", ws->cpu);
 			continue;
 		}
-		plen = z_deflate(ws->z, buff + off, rlen, &pbuff);
-		if (unlikely(plen < 0)) {
-			syslog(LOG_ERR, "CPU%u: TCP tunnel deflate error: %s\n",
-			       ws->cpu, strerror(errno));
-			continue;
-		}
-		pbuff -= crypto_box_zerobytes;
-		plen += crypto_box_zerobytes;
-		clen = curve25519_encode(ws->c, p, (unsigned char *) pbuff, plen,
+		clen = curve25519_encode(ws->c, p, (unsigned char *) buff + off, rlen,
 					 (unsigned char **) &cbuff);
 		if (unlikely(clen <= 0)) {
 			syslog(LOG_ERR, "CPU%u: TCP tunnel encrypt error: %zd\n",
@@ -416,8 +392,8 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len)
 {
 	int keep = 1, count = 0;
-	char *pbuff, *cbuff;
-	ssize_t rlen, err, plen, clen;
+	char *cbuff;
+	ssize_t rlen, err, clen;
 	struct ct_proto *hdr;
 	struct curve25519_proto *p;
 
@@ -479,13 +455,7 @@ close:
 		}
 		cbuff += crypto_box_zerobytes;
 		clen -= crypto_box_zerobytes;
-		plen = z_inflate(ws->z, cbuff, clen, &pbuff);
-		if (unlikely(plen < 0)) {
-			syslog(LOG_ERR, "CPU%u: TCP net inflate error: %s\n",
-			       ws->cpu, strerror(errno));
-			goto close;
-		}
-		err = trie_addr_maybe_update(pbuff, plen, ws->parent.ipv4,
+		err = trie_addr_maybe_update(cbuff, clen, ws->parent.ipv4,
 					     fd, NULL, 0);
 		if (unlikely(err)) {
 			syslog(LOG_INFO, "CPU%u: Malicious packet dropped "
@@ -493,7 +463,7 @@ close:
 			continue;
 		}
 
-		err = write(ws->parent.tunfd, pbuff, plen);
+		err = write(ws->parent.tunfd, cbuff, clen);
 		if (unlikely(err < 0))
 			syslog(LOG_ERR, "CPU%u: TCP net write error: %s\n",
 			       ws->cpu, strerror(errno));
@@ -540,21 +510,14 @@ static void *worker(void *self)
 	fds.fd = ws->efd[0];
 	fds.events = POLLIN;
 
-	ret = z_alloc_or_maybe_die(ws->z, Z_DEFAULT_COMPRESSION,
-				   crypto_box_zerobytes);
-	if (ret < 0)
-		syslog_panic("Cannot init zLib!\n");
-
 	ret = curve25519_alloc_or_maybe_die(ws->c);
 	if (ret < 0)
 		syslog_panic("Cannot init curve25519!\n");
 
-	buff = xmalloc(blen);
+	buff = xmalloc_aligned(blen, 64);
 	syslog(LOG_INFO, "curvetun thread on CPU%u up!\n", ws->cpu);
 	pthread_cleanup_push(xfree_func, ws->c);
 	pthread_cleanup_push(curve25519_free, ws->c);
-	pthread_cleanup_push(xfree_func, ws->z);
-	pthread_cleanup_push(z_free, ws->z);
 	pthread_cleanup_push(xfree_func, buff);
 
 	while (likely(!sigint)) {
@@ -585,8 +548,6 @@ static void *worker(void *self)
 	pthread_cleanup_pop(1);
 	pthread_cleanup_pop(1);
 	pthread_cleanup_pop(1);
-	pthread_cleanup_pop(1);
-	pthread_cleanup_pop(1);
 	pthread_exit((void *) ((long) ws->cpu));
 }
 
@@ -607,8 +568,7 @@ static void thread_spawn_or_panic(unsigned int cpus, int efd, int refd,
 		if (ret < 0)
 			syslog_panic("Cannot create event socket!\n");
 
-		threadpool[i].z = xmalloc(sizeof(*threadpool[i].z));
-		threadpool[i].c = xmalloc(sizeof(*threadpool[i].c));
+		threadpool[i].c = xmalloc_aligned(sizeof(*threadpool[i].c), 64);
 		threadpool[i].parent.efd = efd;
 		threadpool[i].parent.refd = refd;
 		threadpool[i].parent.tunfd = tunfd;

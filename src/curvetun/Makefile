@@ -7,7 +7,7 @@ include ../definitions.mk
 
 INCLUDE    = -I.. -I./include/
 CFLAGS    += 
-LIBS       = ./nacl/libnacl.a -lpthread -lz
+LIBS       = ./nacl/libnacl.a -lpthread
 
 core-objs  = curvetun.o
 lib-objs   = xmalloc.o                  \
@@ -15,7 +15,6 @@ lib-objs   = xmalloc.o                  \
 	     stun.o                     \
 	     parser.o                   \
 	     curve.o                    \
-	     deflate.o                  \
 	     mtrand.o                   \
 	     usermgmt.o                 \
 	     servmgmt.o                 \

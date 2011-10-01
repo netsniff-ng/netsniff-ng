@@ -8,6 +8,8 @@
 #ifndef CURVETUN_H
 #define CURVETUN_H
 
+#include <unistd.h>
+
 #define FILE_CLIENTS	".curvetun/clients"
 #define FILE_SERVERS	".curvetun/servers"
 #define FILE_PRIVKEY	".curvetun/priv.key"
@@ -26,7 +28,8 @@ struct ct_proto {
         uint8_t flags;
 }  __attribute__((packed));
 
-#define TUNBUFF_SIZ	10000
+/* FIXME: think up sth better */
+#define TUNBUFF_SIZ	(2 * getpagesize())
 #define MAX_EPOLL_SIZE  10000
 #define THREADS_PER_CPU 2
 

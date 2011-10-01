@@ -29,7 +29,6 @@
 #include "die.h"
 #include "write_or_die.h"
 #include "strlcpy.h"
-#include "deflate.h"
 #include "curve.h"
 #include "mtrand.h"
 #include "netdev.h"
@@ -42,16 +41,15 @@
 
 extern sig_atomic_t sigint;
 
-static void handler_udp_tun_to_net(int sfd, int dfd, struct z_struct *z,
-				   struct curve25519_proto *p,
-				   struct curve25519_struct *c,
-				   char *buff, size_t len)
+static void handler_udp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
+				   struct curve25519_struct *c, char *buff,
+				   size_t len)
 {
 	int state;
-	char *pbuff, *cbuff;
-	ssize_t rlen, err, plen, clen;
+	char *cbuff;
+	ssize_t rlen, err, clen;
 	struct ct_proto *hdr;
-	size_t off = sizeof(struct ct_proto) + crypto_box_zerobytes;
+	size_t off = sizeof(struct ct_proto);
 
 	if (!buff || len <= off) {
 		errno = EINVAL;
@@ -63,14 +61,7 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 		hdr = (struct ct_proto *) buff;
 		hdr->flags = 0;
 
-		plen = z_deflate(z, buff + off, rlen, &pbuff);
-		if (unlikely(plen < 0)) {
-			syslog(LOG_ERR, "UDP tunnel deflate error!\n");
-			goto close;
-		}
-		pbuff -= crypto_box_zerobytes;
-		plen += crypto_box_zerobytes;
-		clen = curve25519_encode(c, p, (unsigned char *) pbuff, plen,
+		clen = curve25519_encode(c, p, (unsigned char *) buff + off, rlen,
 					 (unsigned char **) &cbuff);
 		if (unlikely(clen <= 0)) {
 			syslog(LOG_ERR, "UDP tunnel encrypt error!\n");
@@ -103,13 +94,12 @@ close:
 	sigint = 1;
 }
 
-static void handler_udp_net_to_tun(int sfd, int dfd, struct z_struct *z,
-				   struct curve25519_proto *p,
-				   struct curve25519_struct *c,
-				   char *buff, size_t len)
+static void handler_udp_net_to_tun(int sfd, int dfd, struct curve25519_proto *p,
+				   struct curve25519_struct *c, char *buff,
+				   size_t len)
 {
-	char *pbuff, *cbuff;
-	ssize_t rlen, err, plen, clen;
+	char *cbuff;
+	ssize_t rlen, err, clen;
 	struct ct_proto *hdr;
 	struct sockaddr_storage naddr;
 	socklen_t nlen = sizeof(naddr);
@@ -145,13 +135,7 @@ static void handler_udp_net_to_tun(int sfd, int dfd, struct z_struct *z,
 		}
                 cbuff += crypto_box_zerobytes;
                 clen -= crypto_box_zerobytes;
-		plen = z_inflate(z, cbuff, clen, &pbuff);
-		if (unlikely(plen < 0)) {
-			syslog(LOG_ERR, "UDP net inflate error!\n");
-			goto close;
-		}
-
-		err = write(dfd, pbuff, plen);
+		err = write(dfd, cbuff, clen);
 		if (unlikely(err < 0))
 			syslog(LOG_ERR, "Error writing net data to tunnel: %s\n",
 			       strerror(errno));
@@ -164,16 +148,15 @@ close:
 	sigint = 1;
 }
 
-static void handler_tcp_tun_to_net(int sfd, int dfd, struct z_struct *z,
-				   struct curve25519_proto *p,
-				   struct curve25519_struct *c,
-				   char *buff, size_t len)
+static void handler_tcp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
+				   struct curve25519_struct *c, char *buff,
+				   size_t len)
 {
 	int state;
-	char *pbuff, *cbuff;
-	ssize_t rlen, err, plen, clen;
+	char *cbuff;
+	ssize_t rlen, err, clen;
 	struct ct_proto *hdr;
-	size_t off = sizeof(struct ct_proto) + crypto_box_zerobytes;
+	size_t off = sizeof(struct ct_proto);
 
 	if (!buff || len <= off) {
 		errno = EINVAL;
@@ -185,14 +168,7 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct z_struct *z,
 		hdr = (struct ct_proto *) buff;
 		hdr->flags = 0;
 
-		plen = z_deflate(z, buff + off, rlen, &pbuff);
-		if (unlikely(plen < 0)) {
-			syslog(LOG_ERR, "TCP tunnel deflate error!\n");
-			goto close;
-		}
-		pbuff -= crypto_box_zerobytes;
-		plen += crypto_box_zerobytes;
-		clen = curve25519_encode(c, p, (unsigned char *) pbuff, plen,
+		clen = curve25519_encode(c, p, (unsigned char *) buff + off, rlen,
 					 (unsigned char **) &cbuff);
 		if (unlikely(clen <= 0)) {
 			syslog(LOG_ERR, "TCP tunnel encrypt error!\n");
@@ -227,13 +203,12 @@ close:
 
 extern ssize_t handler_tcp_read(int fd, char *buff, size_t len);
 
-static void handler_tcp_net_to_tun(int sfd, int dfd, struct z_struct *z,
-				   struct curve25519_proto *p,
-				   struct curve25519_struct *c,
-				   char *buff, size_t len)
+static void handler_tcp_net_to_tun(int sfd, int dfd, struct curve25519_proto *p,
+				   struct curve25519_struct *c, char *buff,
+				   size_t len)
 {
-	char *pbuff, *cbuff;
-	ssize_t rlen, err, plen, clen;
+	char *cbuff;
+	ssize_t rlen, err, clen;
 	struct ct_proto *hdr;
 
 	if (!buff || !len) {
@@ -264,13 +239,7 @@ static void handler_tcp_net_to_tun(int sfd, int dfd, struct z_struct *z,
 		}
 		cbuff += crypto_box_zerobytes;
 		clen -= crypto_box_zerobytes;
-		plen = z_inflate(z, cbuff, clen, &pbuff);
-		if (unlikely(plen < 0)) {
-			syslog(LOG_ERR, "TCP net inflate error!\n");
-			goto close;
-		}
-
-		err = write(dfd, pbuff, plen);
+		err = write(dfd, cbuff, clen);
 		if (unlikely(err < 0))
 			syslog(LOG_ERR, "Error writing net data to tunnel: %s\n",
 			       strerror(errno));
@@ -380,7 +349,6 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 	struct addrinfo hints, *ahead, *ai;
 	struct sockaddr_in6 *saddr6;
 	struct pollfd fds[2];
-	struct z_struct *z;
 	struct curve25519_proto *p;
 	struct curve25519_struct *c;
 	char *buff;
@@ -389,12 +357,7 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 	openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
 	syslog(LOG_INFO, "curvetun client booting!\n");
 
-	z = xmalloc(sizeof(struct z_struct));
-	ret = z_alloc_or_maybe_die(z, Z_DEFAULT_COMPRESSION, crypto_box_zerobytes);
-	if (ret < 0)
-		syslog_panic("Cannot init zLib!\n");
-
-	c = xmalloc(sizeof(struct curve25519_struct));
+	c = xmalloc_aligned(sizeof(struct curve25519_struct), 64);
 	ret = curve25519_alloc_or_maybe_die(c);
 	if (ret < 0)
 		syslog_panic("Cannot init curve!\n");
@@ -453,7 +416,7 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 	fds[0].events = POLLIN;
 	fds[1].events = POLLIN;
 
-	buff = xmalloc(blen);
+	buff = xmalloc_aligned(blen, 64);
 
 	notify_init(fd, udp, p, c, home);
 	syslog(LOG_INFO, "curvetun client ready!\n");
@@ -465,18 +428,18 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 				continue;
 			if (fds[i].fd == tunfd) {
 				if (udp)
-					handler_udp_tun_to_net(tunfd, fd, z, p,
-							       c, buff, blen);
+					handler_udp_tun_to_net(tunfd, fd, p, c,
+							       buff, blen);
 				else
-					handler_tcp_tun_to_net(tunfd, fd, z, p,
-							       c, buff, blen);
+					handler_tcp_tun_to_net(tunfd, fd, p, c,
+							       buff, blen);
 			} else if (fds[i].fd == fd) {
 				if (udp)
-					handler_udp_net_to_tun(fd, tunfd, z, p,
-							       c, buff, blen);
+					handler_udp_net_to_tun(fd, tunfd, p, c,
+							       buff, blen);
 				else
-					handler_tcp_net_to_tun(fd, tunfd, z, p,
-							       c, buff, blen);
+					handler_tcp_net_to_tun(fd, tunfd, p, c,
+							       buff, blen);
 			}
 		}
 	}
@@ -487,8 +450,6 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 	xfree(buff);
 	close(fd);
 	close(tunfd);
-	z_free(z);
-	xfree(z);
 	curve25519_free(c);
 	xfree(c);
 
