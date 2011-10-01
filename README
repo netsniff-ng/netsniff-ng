@@ -65,7 +65,7 @@ you should bind the netsniff-ng tools to a specific CPU via commandline option
 Eric Dumazets BPF Just-in-Time compiler can speed up the critical path [7].
 
 You might want to have a look at INSTALL, REPORTING-BUGS, HACKING, CODING,
-FAQ, and COPYING, too. Anyways, enough talking from my side and happy packet
+and COPYING, too. Anyways, enough talking from my side and happy packet
 hacking!
 
 [1] http://netsniff-ng.org/
