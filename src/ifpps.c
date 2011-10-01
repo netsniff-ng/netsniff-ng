@@ -684,15 +684,15 @@ out:
 
 static void help(void)
 {
-	printf("\nifpps %s, kernel networking statistics per sec\n",
+	printf("\nifpps %s, kernel networking and system statistics\n",
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: ifpps [options] || ifpps <netdev>\n");
 	printf("Options:\n");
-	printf("  -d|--dev <netdev>      Device to fetch statistics for\n");
-	printf("  -t|--interval <time>   Refresh time in seconds as float (default 1.0)\n");
+	printf("  -d|--dev <netdev>      Device to fetch statistics for i.e., eth0\n");
+	printf("  -p|--promisc           Promiscuous mode\n");
+	printf("  -t|--interval <time>   Refresh time in sec (default 1.0)\n");
 	printf("  -c|--term              Output to terminal\n");
-	printf("  -p|--promisc           Promisc mode\n");
 	printf("  -C|--csv               Output to terminal as CSV\n");
 	printf("                         E.g. post-processing with Gnuplot et al.\n");
 	printf("  -H|--csv-tablehead     Print CSV table head\n");
@@ -704,12 +704,12 @@ static void help(void)
 	printf("  ifpps --dev eth0\n");
 	printf("  ifpps --dev eth0 --interval 60 --csv\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2009, 2010 Daniel Borkmann\n");
+	printf("Copyright (C) 2009-2011 Daniel Borkmann <daniel@netsniff-ng.org>\n");
 	printf("License: GNU GPL version 2\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
 
-	exit(EXIT_SUCCESS);
+	die();
 }
 
 static void version(void)

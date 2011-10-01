@@ -45,13 +45,13 @@ static void help(void)
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: bpfc [options] || bpfc <program>\n");
 	printf("Options:\n");
-	printf("  -i|--input <program>   Berkeley Packet Filter program file\n");
+	printf("  -i|--input <program>   Berkeley Packet Filter file\n");
 	printf("  -V|--verbose           Be more verbose\n");
 	printf("  -v|--version           Print version\n");
 	printf("  -h|--help              Print this help\n");
 	printf("\n");
 	printf("Examples:\n");
-	printf("  bpfc -i program.bpf\n\n");
+	printf("  bpfc -i fubar.bpf\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
 	printf("Swiss federal institute of technology (ETH Zurich)\n");
