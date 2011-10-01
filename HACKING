@@ -24,6 +24,15 @@ Further, this is only for lazy people that do not stick to the kernel
 coding conventions anyway. We won't accept patches if they don't comply
 to these conventions, so get your act together.
 
+There are so few source comments?! Yes, there are and this is intended!
+Some people think that lots of source comments means good quality of the
+source repository, or some smililar crude thoughts. Well, read the books.
+Source comments are code smells, except in a few cases. The few cases are
+that you explain why something is done in this way and why not in another.
+Somehow, people tend to explain what the sources itself does, which is
+just wrong. The source itself must be self-descriptive and readable without
+any comments. Keep that in mind while hacking on the toolkit. ;-)
+
 The src/s/ directory contains a number of SmPL (Semantic Patch Language)
 scripts that can be used together with Coccinelle's spatch tool. In order
 to install spatch from the official tarballs, you might need to install
