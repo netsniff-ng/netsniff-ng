@@ -394,6 +394,7 @@ retry:
 		fd = -1;
 		retry_server = 1;
 		closed_by_server = 0;
+		sleep(1);
 		goto retry;
 	}
 
@@ -430,6 +431,7 @@ retry:
 		fd = -1;
 		retry_server = 1;
 		closed_by_server = 0;
+		sleep(1);
 		goto retry;
 	}
 
@@ -473,7 +475,8 @@ retry:
 	}
 
 	syslog(LOG_INFO, "curvetun client prepare shut down!\n");
-	notify_close(fd);
+	if (!closed_by_server)
+		notify_close(fd);
 	xfree(buff);
 	close(fd);
 	curve25519_free(c);
@@ -485,6 +488,7 @@ retry:
 		fd = -1;
 		retry_server = 1;
 		closed_by_server = 0;
+		sleep(1);
 		goto retry;
 	}
 

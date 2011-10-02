@@ -662,10 +662,7 @@ int main(int argc, char **argv)
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
 	register_signal(SIGTERM, signal_handler);
-	register_signal(SIGUSR1, signal_handler);
-	register_signal(SIGUSR2, signal_handler);
-	register_signal(SIGSTOP, signal_handler);
-	register_signal(SIGCONT, signal_handler);
+	register_signal(SIGPIPE, signal_handler);
 
 	header();
 	curve25519_selftest();
