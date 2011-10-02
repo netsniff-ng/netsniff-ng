@@ -47,7 +47,6 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
-#include "xmalloc.h"
 #include "netdev.h"
 #include "version.h"
 #include "stun.h"

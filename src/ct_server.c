@@ -520,7 +520,7 @@ static void *worker(void *self)
 	if (ret < 0)
 		syslog_panic("Cannot init curve25519!\n");
 
-	buff = xmalloc_aligned(blen, 64);
+	buff = xmalloc(blen);
 	syslog(LOG_INFO, "curvetun thread on CPU%u up!\n", ws->cpu);
 	pthread_cleanup_push(xfree_func, ws->c);
 	pthread_cleanup_push(curve25519_free, ws->c);
@@ -574,7 +574,7 @@ static void thread_spawn_or_panic(unsigned int cpus, int efd, int refd,
 		if (ret < 0)
 			syslog_panic("Cannot create event socket!\n");
 
-		threadpool[i].c = xmalloc_aligned(sizeof(*threadpool[i].c), 64);
+		threadpool[i].c = xmalloc(sizeof(*threadpool[i].c));
 		threadpool[i].parent.efd = efd;
 		threadpool[i].parent.refd = refd;
 		threadpool[i].parent.tunfd = tunfd;

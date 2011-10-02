@@ -363,7 +363,7 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 	openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
 	syslog(LOG_INFO, "curvetun client booting!\n");
 
-	c = xmalloc_aligned(sizeof(struct curve25519_struct), 64);
+	c = xmalloc(sizeof(struct curve25519_struct));
 	ret = curve25519_alloc_or_maybe_die(c);
 	if (ret < 0)
 		syslog_panic("Cannot init curve!\n");
@@ -422,7 +422,7 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 	fds[0].events = POLLIN;
 	fds[1].events = POLLIN;
 
-	buff = xmalloc_aligned(blen, 64);
+	buff = xmalloc(blen);
 
 	notify_init(fd, udp, p, c, home);
 	syslog(LOG_INFO, "curvetun client ready!\n");
