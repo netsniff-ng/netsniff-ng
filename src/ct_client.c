@@ -40,6 +40,7 @@
 #include "crypto_auth_hmacsha512256.h"
 
 extern sig_atomic_t sigint;
+static sig_atomic_t closed_by_server = 0;
 
 static void handler_udp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 				   struct curve25519_struct *c, char *buff,
@@ -96,7 +97,7 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 
 	return;
 close:
-	sigint = 1;
+	closed_by_server = 1;
 }
 
 static void handler_udp_net_to_tun(int sfd, int dfd, struct curve25519_proto *p,
@@ -150,7 +151,7 @@ static void handler_udp_net_to_tun(int sfd, int dfd, struct curve25519_proto *p,
 
 	return;
 close:
-	sigint = 1;
+	closed_by_server = 1;
 }
 
 static void handler_tcp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
@@ -208,7 +209,7 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 
 	return;
 close:
-	sigint = 1;
+	closed_by_server = 1;
 }
 
 extern ssize_t handler_tcp_read(int fd, char *buff, size_t len);
@@ -259,7 +260,7 @@ static void handler_tcp_net_to_tun(int sfd, int dfd, struct curve25519_proto *p,
 
 	return;
 close:
-	sigint = 1;
+	closed_by_server = 1;
 }
 
 static void notify_init(int fd, int udp, struct curve25519_proto *p,
@@ -354,7 +355,7 @@ static void notify_close(int fd)
 
 int client_main(char *home, char *dev, char *host, char *port, int udp)
 {
-	int fd = -1, tunfd;
+	int fd = -1, tunfd = 0, retry_server = 0;
 	int ret, try = 1, i, one, mtu;
 	struct addrinfo hints, *ahead, *ai;
 	struct sockaddr_in6 *saddr6;
@@ -364,8 +365,11 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 	char *buff;
 	size_t blen = TUNBUFF_SIZ; //FIXME
 
-	openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
-	syslog(LOG_INFO, "curvetun client booting!\n");
+retry:
+	if (!retry_server) {
+		openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
+		syslog(LOG_INFO, "curvetun client booting!\n");
+	}
 
 	c = xmalloc(sizeof(struct curve25519_struct));
 	ret = curve25519_alloc_or_maybe_die(c);
@@ -383,8 +387,15 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 	hints.ai_flags = AI_NUMERICSERV;
 
 	ret = getaddrinfo(host, port, &hints, &ahead);
-	if (ret < 0)
-		syslog_panic("Cannot get address info!\n");
+	if (ret < 0) {
+		syslog(LOG_ERR, "Cannot get address info! Retry!\n");
+		curve25519_free(c);
+		xfree(c);
+		fd = -1;
+		retry_server = 1;
+		closed_by_server = 0;
+		goto retry;
+	}
 
 	for (ai = ahead; ai != NULL && fd < 0; ai = ai->ai_next) {
 		if (ai->ai_family == PF_INET6)
@@ -412,13 +423,21 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 	}
 
 	freeaddrinfo(ahead);
-	if (fd < 0)
-		syslog_panic("Cannot create socket!\n");
+	if (fd < 0) {
+		syslog(LOG_ERR, "Cannot create socket! Retry!\n");
+		curve25519_free(c);
+		xfree(c);
+		fd = -1;
+		retry_server = 1;
+		closed_by_server = 0;
+		goto retry;
+	}
 
-	tunfd = tun_open_or_die(dev ? dev : DEVNAME_CLIENT);
+	if (!retry_server)
+		tunfd = tun_open_or_die(dev ? dev : DEVNAME_CLIENT);
 
-	set_nonblocking(fd);
-	set_nonblocking(tunfd);
+	set_nonblocking_sloppy(fd);
+	set_nonblocking_sloppy(tunfd);
 
 	memset(fds, 0, sizeof(fds));
 	fds[0].fd = fd;
@@ -427,11 +446,10 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 	fds[1].events = POLLIN;
 
 	buff = xmalloc_aligned(blen, 64);
-
 	notify_init(fd, udp, p, c, home);
 	syslog(LOG_INFO, "curvetun client ready!\n");
 
-	while (likely(!sigint)) {
+	while (likely(!sigint && !closed_by_server)) {
 		poll(fds, 2, -1);
 		for (i = 0; i < 2; ++i) {
 			if ((fds[i].revents & POLLIN) != POLLIN)
@@ -456,13 +474,21 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 
 	syslog(LOG_INFO, "curvetun client prepare shut down!\n");
 	notify_close(fd);
-
 	xfree(buff);
 	close(fd);
-	close(tunfd);
 	curve25519_free(c);
 	xfree(c);
 
+	/* tundev still active */
+	if (closed_by_server && !sigint) {
+		syslog(LOG_ERR, "curvetun connection retry attempt!\n");
+		fd = -1;
+		retry_server = 1;
+		closed_by_server = 0;
+		goto retry;
+	}
+
+	close(tunfd);
 	syslog(LOG_INFO, "curvetun client shut down!\n");
 	closelog();
 

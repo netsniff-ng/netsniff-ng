@@ -69,6 +69,11 @@ int set_nonblocking(int fd)
 	return 0;
 }
 
+int set_nonblocking_sloppy(int fd)
+{
+	return fcntl(fd, F_SETFL, fcntl(fd, F_GETFD, 0) | O_NONBLOCK);
+}
+
 int set_reuseaddr(int fd)
 {
 	int one = 1;
