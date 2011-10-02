@@ -59,11 +59,12 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 	errno = 0;
 	while ((rlen = read(sfd, buff + off, len - off)) > 0) {
 		hdr = (struct ct_proto *) buff;
+		memset(hdr, 0, sizeof(*hdr));
 		hdr->flags = 0;
 
-		clen = curve25519_encode(c, p, (unsigned char *) buff + off -
-					 crypto_box_zerobytes, rlen +
-					 crypto_box_zerobytes, (unsigned char **)
+		clen = curve25519_encode(c, p, (unsigned char *) (buff + off -
+					 crypto_box_zerobytes), (rlen +
+					 crypto_box_zerobytes), (unsigned char **)
 					 &cbuff);
 		if (unlikely(clen <= 0)) {
 			syslog(LOG_ERR, "UDP tunnel encrypt error!\n");
@@ -168,11 +169,12 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 	errno = 0;
 	while ((rlen = read(sfd, buff + off, len - off)) > 0) {
 		hdr = (struct ct_proto *) buff;
+		memset(hdr, 0, sizeof(*hdr));
 		hdr->flags = 0;
 
-		clen = curve25519_encode(c, p, (unsigned char *) buff + off -
-					 crypto_box_zerobytes, rlen +
-					 crypto_box_zerobytes, (unsigned char **)
+		clen = curve25519_encode(c, p, (unsigned char *) (buff + off -
+					 crypto_box_zerobytes), (rlen +
+					 crypto_box_zerobytes), (unsigned char **)
 					 &cbuff);
 		if (unlikely(clen <= 0)) {
 			syslog(LOG_ERR, "TCP tunnel encrypt error!\n");

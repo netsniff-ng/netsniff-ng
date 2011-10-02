@@ -29,7 +29,7 @@ struct ct_proto {
 }  __attribute__((packed));
 
 /* FIXME: think up sth better */
-#define TUNBUFF_SIZ	(2 * getpagesize())
+#define TUNBUFF_SIZ	10000
 #define MAX_EPOLL_SIZE  10000
 #define THREADS_PER_CPU 2
 
