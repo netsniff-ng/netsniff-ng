@@ -23,11 +23,7 @@
   + Use libcli (http://code.google.com/p/libcli/)
 
 * curvetun:
-  + Fix zlib compression
   + Rewrite config parsers
-  + Re-read client config on SIGUSR1 (?)
-  + curvetun server integration with LDAP as an alternative to the clients
-    config file (-> Perl script)
   + Show active sessions, possibility to kill active sessions (?)
   + Automatic client reconnect
   + Make it harder for DPIs to detect
@@ -35,7 +31,6 @@
 * netsniff-ng:
   + Cleanup code, especially in dissector, print-modes and proto sections
   + Support more protocols
-  + Add -n|--num option for capturing a number of packets and then quit
 
 * arppoison:
   + ARP Cache Poisoning utility as completion with netsniff-ng
