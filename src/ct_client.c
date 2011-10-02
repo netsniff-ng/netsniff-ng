@@ -426,7 +426,7 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 	fds[0].events = POLLIN;
 	fds[1].events = POLLIN;
 
-	buff = xmalloc(blen);
+	buff = xmalloc_aligned(blen, 64);
 
 	notify_init(fd, udp, p, c, home);
 	syslog(LOG_INFO, "curvetun client ready!\n");
