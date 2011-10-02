@@ -57,6 +57,7 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 	}
 
 	errno = 0;
+	memset(buff, 0, len);
 	while ((rlen = read(sfd, buff + off, len - off)) > 0) {
 		hdr = (struct ct_proto *) buff;
 		memset(hdr, 0, sizeof(*hdr));
@@ -90,6 +91,7 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 		setsockopt(dfd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
 
 		errno = 0;
+		memset(buff, 0, len);
 	}
 
 	return;
@@ -167,6 +169,7 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 	}
 
 	errno = 0;
+	memset(buff, 0, len);
 	while ((rlen = read(sfd, buff + off, len - off)) > 0) {
 		hdr = (struct ct_proto *) buff;
 		memset(hdr, 0, sizeof(*hdr));
@@ -200,6 +203,7 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 		setsockopt(dfd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
 
 		errno = 0;
+		memset(buff, 0, len);
 	}
 
 	return;

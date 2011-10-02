@@ -94,6 +94,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 	}
 
 	errno = 0;
+	memset(buff, 0, len);
 	while ((rlen = read(fd, buff + off, len - off)) > 0) {
 		dfd = -1;
 		nlen = 0;
@@ -109,12 +110,14 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 		if (unlikely(dfd < 0 || nlen == 0)) {
 			syslog(LOG_INFO, "CPU%u: UDP tunnel lookup failed: "
 			       "unknown destination\n", ws->cpu);
+			memset(buff, 0, len);
 			continue;
 		}
 		err = get_user_by_sockaddr(&naddr, nlen, &p);
 		if (unlikely(err || !p)) {
 			syslog(LOG_ERR, "CPU%u: User protocol not in cache! "
 			       "Dropping connection!\n", ws->cpu);
+			memset(buff, 0, len);
 			continue;
 		}
 		clen = curve25519_encode(ws->c, p, (unsigned char *) (buff + off -
@@ -124,6 +127,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 		if (unlikely(clen <= 0)) {
 			syslog(LOG_ERR, "CPU%u: UDP tunnel encrypt error: %zd\n",
 			       ws->cpu, clen);
+			memset(buff, 0, len);
 			continue;
 		}
 
@@ -148,6 +152,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 		setsockopt(dfd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
 
 		errno = 0;
+		memset(buff, 0, len);
 	}
 
 	if (unlikely(rlen < 0 && errno != EAGAIN))
@@ -293,6 +298,7 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 	}
 
 	errno = 0;
+	memset(buff, 0, len);
 	while ((rlen = read(fd, buff + off, len - off)) > 0) {
 		dfd = -1;
 		p = NULL;
@@ -306,12 +312,14 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 		if (unlikely(dfd < 0)) {
 			syslog(LOG_INFO, "CPU%u: TCP tunnel lookup failed: "
 			       "unknown destination\n", ws->cpu);
+			memset(buff, 0, len);
 			continue;
 		}
 		err = get_user_by_socket(dfd, &p);
 		if (unlikely(err || !p)) {
 			syslog(LOG_ERR, "CPU%u: User protocol not in cache! "
 			       "Dropping connection!\n", ws->cpu);
+			memset(buff, 0, len);
 			continue;
 		}
 		clen = curve25519_encode(ws->c, p, (unsigned char *) (buff + off -
@@ -321,6 +329,7 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 		if (unlikely(clen <= 0)) {
 			syslog(LOG_ERR, "CPU%u: TCP tunnel encrypt error: %zd\n",
 			       ws->cpu, clen);
+			memset(buff, 0, len);
 			continue;
 		}
 
@@ -343,6 +352,7 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 		setsockopt(dfd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
 
 		errno = 0;
+		memset(buff, 0, len);
 	}
 
 	if (unlikely(rlen < 0 && errno != EAGAIN))
