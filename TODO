@@ -25,7 +25,6 @@
 * curvetun:
   + Rewrite config parsers
   + Show active sessions, possibility to kill active sessions (?)
-  + Automatic client reconnect
   + Make it harder for DPIs to detect
 
 * netsniff-ng:
