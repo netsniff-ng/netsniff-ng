@@ -91,6 +91,9 @@ enum ring_mode {
 static inline void show_frame_hdr(struct frame_map *hdr, int mode,
 				  enum ring_mode rmode)
 {
+	if (mode == FNTTYPE_PRINT_NONE)
+		return;
+
 	if (rmode == RING_MODE_INGRESS) {
 		switch (mode) {
 		case FNTTYPE_PRINT_PAAC:
