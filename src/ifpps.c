@@ -453,13 +453,14 @@ static void screen_init(WINDOW **screen)
 }
 
 static void screen_update(WINDOW *screen, const char *ifname,
-			  struct ifstat *s, struct ifstat *t, int *first)
+			  struct ifstat *s, struct ifstat *t,
+			  int *first, double interval)
 {
 	int i, j = 0;
 
 	curs_set(0);
-	mvwprintw(screen, 1, 2, "Kernel net/sys statistics for %s",
-		  ifname);
+	mvwprintw(screen, 1, 2, "Kernel net/sys statistics for %s, t=%.2lfs",
+		  ifname, interval);
 	attron(A_REVERSE);
 	mvwprintw(screen, 3, 0,
 		  "  RX: %16.3f MiB/t %10lu pkts/t %10lu drops/t %10lu errors/t  ",
@@ -533,7 +534,7 @@ static void screen_end(void)
 }
 
 static void print_update(const char *ifname, struct ifstat *s,
-			 struct ifstat *t)
+			 struct ifstat *t, double interval)
 {
 	int i;
 	printf("RX: %16.3f MiB/t %10lu Pkts/t %10lu Drops/t %10lu Errors/t\n",
@@ -559,7 +560,7 @@ static void print_update(const char *ifname, struct ifstat *s,
 }
 
 static void print_update_csv(const char *ifname, struct ifstat *s,
-			     struct ifstat *t)
+			     struct ifstat *t, double interval)
 {
 	int i;
 
@@ -580,7 +581,7 @@ static void print_update_csv(const char *ifname, struct ifstat *s,
 }
 
 static void print_update_csv_hdr(const char *ifname, struct ifstat *s,
-				 struct ifstat *t)
+				 struct ifstat *t, double interval)
 {
 	int i;
 
@@ -620,7 +621,7 @@ static int screen_loop(const char *ifname, double interval)
 	while (!sigint) {
 		if (getch() == 'q')
 			goto out;
-		screen_update(screen, ifname, &curr, &new, &first);
+		screen_update(screen, ifname, &curr, &new, &first, interval);
 		ret = do_stats(ifname, &old);
 		if (ret != 0)
 			goto out;
@@ -662,13 +663,13 @@ static int print_loop(const char *ifname, double interval)
 		diff_stats(&old, &new, &curr);
 		if (first && (mode & TERM_MODE_CSV_HDR) ==
 		    TERM_MODE_CSV_HDR) {
-			print_update_csv_hdr(ifname, &curr, &new);
+			print_update_csv_hdr(ifname, &curr, &new, interval);
 			first = 0;
 		}
 		if ((mode & TERM_MODE_CSV) == TERM_MODE_CSV)
-			print_update_csv(ifname, &curr, &new);
+			print_update_csv(ifname, &curr, &new, interval);
 		else if ((mode & TERM_MODE_NORMAL) == TERM_MODE_NORMAL)
-			print_update(ifname, &curr, &new);
+			print_update(ifname, &curr, &new, interval);
 	} while (loop && !sigint);
 out:
 	if (ret != 0)
