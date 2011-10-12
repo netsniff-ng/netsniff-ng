@@ -506,7 +506,7 @@ static void dump_conf(struct pktconf *cfg)
 /* Seems to need a rewrite later ;-) */
 static void parse_conf_or_die(char *file, struct pktconf *cfg)
 {
-	int withinpkt = 0;
+	unsigned int withinpkt = 0;
 	unsigned long line = 0;
 	char *pb, buff[1024];
 	FILE *fp;
