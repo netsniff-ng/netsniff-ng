@@ -729,7 +729,8 @@ static void version(void)
 int main(int argc, char **argv)
 {
 	short ifflags = 0;
-	int c, opt_index, ret, promisc = 0;
+	int c, opt_index, ret;
+	unsigned int promisc = 0;
 	char *ifname = NULL;
 	double interval = 1.0;
 	int (*main_loop)(const char *ifname, double interval) = screen_loop;
