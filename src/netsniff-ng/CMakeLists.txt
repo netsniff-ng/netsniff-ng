@@ -7,7 +7,6 @@ ADD_EXECUTABLE(netsniff-ng 	../hash.c
 				../bpf.c
 				../parser.c
 				../psched.c
-				../psched.c
 				../pcap.c
 				../tlsf.c
 				../rw_pcap.c
