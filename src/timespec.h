@@ -115,7 +115,8 @@ static inline int xnanosleep(double seconds)
 		time_t t = ts_sleep.tv_sec + 1;
 
 		/* Detect integer overflow.  */
-		overflow |= (t < ts_sleep.tv_sec);
+		if (ts_sleep.tv_sec >= TIME_T_MAX)
+			overflow |= 1;
 
 		ts_sleep.tv_sec = t;
 		ts_sleep.tv_nsec -= BILLION;
