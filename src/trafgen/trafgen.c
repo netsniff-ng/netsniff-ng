@@ -47,7 +47,6 @@
 #include "misc.h"
 #include "tty.h"
 #include "timespec.h"
-#include "version.h"
 #include "mtrand.h"
 #include "signals.h"
 #include "tx_ring.h"

@@ -36,7 +36,6 @@
 #include "misc.h"
 #include "timespec.h"
 #include "tty.h"
-#include "version.h"
 #include "netdev.h"
 #include "signals.h"
 

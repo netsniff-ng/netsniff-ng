@@ -1,4 +1,9 @@
-ADD_EXECUTABLE(trafgen	 	../xmalloc.c
+PROJECT(trafgen C)
+
+SET(VERSION "0.1")
+SET(BUILD_STRING "generic")
+
+ADD_EXECUTABLE(${PROJECT_NAME} 	../xmalloc.c
 				../strlcpy.c
 				../psched.c
 				../misc.c
@@ -9,3 +14,7 @@ ADD_EXECUTABLE(trafgen	 	../xmalloc.c
 				../tx_ring.c
 				../netdev.c
 				trafgen.c)
+
+ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"
+		-DVERSION_STRING="${VERSION}"
+		-DBUILD_STRING="${BUILD_STRING}")
