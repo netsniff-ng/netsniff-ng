@@ -7,10 +7,10 @@
  *
  * A high-performance network traffic generator that uses the zero-copy
  * kernelspace TX_RING for network I/O. On comodity Gigabit hardware up
- * to 1.416 Mio 64 Byte pps have been achieved with 2 trafgen instances
- * bound to different CPUs from the userspace, ask Ronald from NST (Network
- * Security Toolkit) for more details. ;-) So, this result is very similar
- * to pktgen from kernelspace!
+ * to 1,488,095 pps 64 Byte pps have been achieved with 2 trafgen instances
+ * bound to different CPUs from the userspace and turned off pause frames,
+ * ask Ronald from NST (Network Security Toolkit) for more details. ;-)
+ * So, this line-rate result is the very same as pktgen from kernelspace!
  *
  *   Who can now hold the fords when the King of the Nine Riders comes? And
  *   other armies will come. I am too late. All is lost. I tarried on the
