@@ -165,7 +165,7 @@ static void header(void)
 
 static void help(void)
 {
-	printf("\ntrafgen %s, network packet generator\n",
+	printf("\ntrafgen %s, high-perf zero-copy network packet generator\n",
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: trafgen [options]\n");
@@ -215,7 +215,7 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\ntrafgen %s, network packet generator\n",
+	printf("\ntrafgen %s, high-perf zero-copy network packet generator\n",
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
