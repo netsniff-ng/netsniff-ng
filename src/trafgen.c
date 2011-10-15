@@ -5,13 +5,12 @@
  * Swiss federal institute of technology (ETH Zurich)
  * Subject to the GPL.
  *
- * A high-performance NUMA- and multicore-aware network traffic generator
- * that uses the zero-copy kernelspace TX_RING for network I/O. On comodity
- * Gigabit hardware up to 1.416 Mio 64 Byte pps have been achieved with 2
- * trafgen threads bound to different CPUs from the userspace, ask Ronald
- * from NST (Network Security Toolkit) for more details. ;-) So, this result
- * is very similar to pktgen from kernelspace!
- * Debian Deps: libnuma-dev libnuma1
+ * A high-performance network traffic generator that uses the zero-copy
+ * kernelspace TX_RING for network I/O. On comodity Gigabit hardware up
+ * to 1.416 Mio 64 Byte pps have been achieved with 2 trafgen instances
+ * bound to different CPUs from the userspace, ask Ronald from NST (Network
+ * Security Toolkit) for more details. ;-) So, this result is very similar
+ * to pktgen from kernelspace!
  *
  *   Who can now hold the fords when the King of the Nine Riders comes? And
  *   other armies will come. I am too late. All is lost. I tarried on the
@@ -22,7 +21,6 @@
  *        Chapter 'The Stairs of Cirith Ungol'.
  */
 
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>
 #include <getopt.h>
@@ -39,8 +37,6 @@
 #include <fcntl.h>
 #include <time.h>
 #include <net/ethernet.h>
-#include <pthread.h>
-#include <numa.h>
 
 #include "xmalloc.h"
 #include "opt_memcpy.h"
@@ -93,7 +89,6 @@ struct stats {
 };
 
 struct mode {
-	/* stats only used in tgap */
 	struct stats stats;
 	char *device;
 	int cpu;
@@ -107,36 +102,15 @@ struct mode {
 #define CPU_UNKNOWN  -1
 #define CPU_NOTOUCH  -2
 
-struct worker_struct {
-	pthread_t trid;
-	unsigned int cpu;
-	int sock, leader, num;
-	volatile int active;
-	struct itimerval itimer;
-	unsigned long interval;
-	struct pktconf *cfg;
-	struct mode *mode;
-	struct stats stats;
-};
-
 sig_atomic_t sigint = 0;
 
-static const char *short_options = "d:c:n:t:vJhS:HQb:B:rk:x:";
-
-static struct worker_struct *threadpool;
-
-static unsigned int threads __read_mostly = 0;
-
-static unsigned int cpus __read_mostly = 0;
-
-static cpu_set_t cpu_bitmask;
+static const char *short_options = "d:c:n:t:vJhS:HQb:B:rk:";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
 	{"conf", required_argument, 0, 'c'},
 	{"num", required_argument, 0, 'n'},
 	{"gap", required_argument, 0, 't'},
-	{"threads", required_argument, 0, 'x'},
 	{"ring-size", required_argument, 0, 'S'},
 	{"bind-cpu", required_argument, 0, 'b'},
 	{"unbind-cpu", required_argument, 0, 'B'},
@@ -151,8 +125,8 @@ static struct option long_options[] = {
 };
 
 static struct itimerval itimer;
-
-static unsigned long interval __read_mostly = TX_KERNEL_PULL_INT;
+static int sock;
+static unsigned long interval = TX_KERNEL_PULL_INT;
 
 static inline uint8_t lcrand(uint8_t val)
 {
@@ -174,15 +148,12 @@ static void signal_handler(int number)
 
 static void timer_elapsed(int number)
 {
-	int i;
-	for (i = 0; i < threads; ++i) {
-		pull_and_flush_tx_ring(threadpool[i].sock);
-	}
-
 	itimer.it_interval.tv_sec = 0;
 	itimer.it_interval.tv_usec = interval;
 	itimer.it_value.tv_sec = 0;
 	itimer.it_value.tv_usec = interval;
+
+	pull_and_flush_tx_ring(sock);
 	setitimer(ITIMER_REAL, &itimer, NULL); 
 }
 
@@ -194,15 +165,13 @@ static void header(void)
 
 static void help(void)
 {
-	printf("\ntrafgen %s, NUMA- and multicore-aware zero-copy packet generator\n",
+	printf("\ntrafgen %s, network packet generator\n",
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: trafgen [options]\n");
 	printf("Options:\n");
 	printf("  -d|--dev <netdev>      Networking Device i.e., eth0\n");
 	printf("  -c|--conf <file>       Packet configuration file\n");
-	printf("  -x|--threads <num>     Number of TX threads: 1<=x<=#CPUs\n");
-	printf("                         Default: 1 thread\n");
 	printf("  -J|--jumbo-support     Support for 64KB Super Jumbo Frames\n");
 	printf("                         Default TX slot: 2048Byte\n");
 	printf("  -n|--num <uint>        Number of packets until exit\n");
@@ -226,8 +195,6 @@ static void help(void)
 	printf("Examples:\n");
 	printf("  See trafgen.txf for configuration file examples.\n");
 	printf("  trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0\n");
-	printf("  trafgen --dev eth0 --conf trafgen.txf --threads 2 --bind-cpu 2-3\n");
-	printf("  trafgen --dev eth0 --conf trafgen.txf --threads 2 --bind-cpu 0,2\n");
 	printf("  trafgen --dev eth0 --conf trafgen.txf --rand --gap 1000\n");
 	printf("  trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0 --num 10 --rand\n");
 	printf("\n");
@@ -235,7 +202,6 @@ static void help(void)
 	printf("  This tool is targeted for network developers! You should\n");
 	printf("  be aware of what you are doing and what these options above\n");
 	printf("  mean! Only use this tool in an isolated LAN that you own!\n");
-	printf("  Note that too many TX threads /can/ panic your kernel!\n");
 	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
@@ -249,7 +215,7 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\ntrafgen %s, NUMA- and multicore-aware zero-copy packet generator\n",
+	printf("\ntrafgen %s, network packet generator\n",
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
@@ -270,7 +236,7 @@ static void version(void)
  */
 static void tx_tgap_or_die(struct mode *mode, struct pktconf *cfg)
 {
-	int ifindex, mtu, ret, sock;
+	int ifindex, mtu, ret;
 	size_t l, c, r;
 	struct sockaddr_ll s_addr;
 	unsigned long num = 1;
@@ -358,7 +324,7 @@ static void tx_tgap_or_die(struct mode *mode, struct pktconf *cfg)
 	printf("\r%lu bytes outgoing\n", mode->stats.tx_bytes);
 }
 
-static void *tx_fire_or_die(void *tr_self)
+static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 {
 	int irq, ifindex, mtu;
 	unsigned int size, it = 0;
@@ -369,67 +335,59 @@ static void *tx_fire_or_die(void *tr_self)
 	struct frame_map *hdr;
 	struct counter *cnt;
 	struct randomizer *rnd;
-	struct worker_struct *tr = tr_self;
 
-	if (!tr->mode || !tr->cfg)
+	if (!mode || !cfg)
 		panic("Panic over invalid args for TX trigger!\n");
-	if (tr->cfg->len == 0)
+	if (cfg->len == 0)
 		panic("Panic over invalid args for TX trigger!\n");
-	if (!device_up_and_running(tr->mode->device))
+	if (!device_up_and_running(mode->device))
 		panic("Device not up and running!\n");
 
-	mtu = device_mtu(tr->mode->device);
-	for (l = 0; l < tr->cfg->len; ++l) {
+	mtu = device_mtu(mode->device);
+	for (l = 0; l < cfg->len; ++l) {
 		/* eth src + eth dst + type == 14, fcs added by driver */
-		if (tr->cfg->pkts[l].plen > mtu + 14)
+		if (cfg->pkts[l].plen > mtu + 14)
 			panic("Device MTU < than your packet size!\n");
-		if (tr->cfg->pkts[l].plen <= 14)
+		if (cfg->pkts[l].plen <= 14)
 			panic("Device packet size too short!\n");
 	}
 
 	set_memcpy();
-	tr->sock = pf_socket();
+	sock = pf_socket();
 
 	memset(&tx_ring, 0, sizeof(tx_ring));
-	ifindex = device_ifindex(tr->mode->device);
-	size = ring_size(tr->mode->device, tr->mode->reserve_size);
 
-	set_packet_loss_discard(tr->sock);
-	setup_tx_ring_layout(tr->sock, &tx_ring, size, tr->mode->jumbo_support);
-	create_tx_ring(tr->sock, &tx_ring);
-	mmap_tx_ring(tr->sock, &tx_ring);
+	ifindex = device_ifindex(mode->device);
+	size = ring_size(mode->device, mode->reserve_size);
+
+	set_packet_loss_discard(sock);
+	setup_tx_ring_layout(sock, &tx_ring, size, mode->jumbo_support);
+	create_tx_ring(sock, &tx_ring);
+	mmap_tx_ring(sock, &tx_ring);
 	alloc_tx_ring_frames(&tx_ring);
-	bind_tx_ring(tr->sock, &tx_ring, ifindex);
+	bind_tx_ring(sock, &tx_ring, ifindex);
 	mt_init_by_seed_time();
 
-	if (tr->leader && ifindex > 0) {
-		irq = device_irq_number(tr->mode->device);
-		device_bind_irq_to_cpu(tr->cpu, irq);
-		printf("IRQ: %s:%d > CPU%d\n", tr->mode->device, irq, 
-		       tr->cpu);
+	if (mode->cpu >= 0 && ifindex > 0) {
+		irq = device_irq_number(mode->device);
+		device_bind_irq_to_cpu(mode->cpu, irq);
+		printf("IRQ: %s:%d > CPU%d\n", mode->device, irq, 
+		       mode->cpu);
 	}
 
-	if (tr->leader && tr->mode->kpull)
-		interval = tr->mode->kpull;
-	if (tr->cfg->num > 0) {
-		num = tr->cfg->num / threads;
-		if (tr->cfg->num % threads > 0 && tr->leader) {
-			num += tr->cfg->num % threads;
-		}
-	}
-	if (tr->leader) {
-		printf("MD: FIRE %s %luus\n\n", tr->mode->rand ?
-		       "RND" : "RR", interval);
-		printf("Running! Hang up with ^C!\n\n");
-		fflush(stdout);
+	if (mode->kpull)
+		interval = mode->kpull;
+	if (cfg->num > 0)
+		num = cfg->num;
 
-		itimer.it_interval.tv_sec = 0;
-		itimer.it_interval.tv_usec = interval;
-		itimer.it_value.tv_sec = 0;
-		itimer.it_value.tv_usec = interval;
+	printf("MD: FIRE %s %luus\n\n", mode->rand ? "RND" : "RR", interval);
+	printf("Running! Hang up with ^C!\n\n");
 
-		setitimer(ITIMER_REAL, &itimer, NULL); 
-	}
+	itimer.it_interval.tv_sec = 0;
+	itimer.it_interval.tv_usec = interval;
+	itimer.it_value.tv_sec = 0;
+	itimer.it_value.tv_usec = interval;
+	setitimer(ITIMER_REAL, &itimer, NULL); 
 
 	l = 0;
 	while (likely(sigint == 0) && likely(num > 0)) {
@@ -441,199 +399,53 @@ static void *tx_fire_or_die(void *tr_self)
 			out = ((uint8_t *) hdr) + TPACKET_HDRLEN -
 			      sizeof(struct sockaddr_ll);
 
-			hdr->tp_h.tp_snaplen = tr->cfg->pkts[l].plen;
-			hdr->tp_h.tp_len = tr->cfg->pkts[l].plen;
+			hdr->tp_h.tp_snaplen = cfg->pkts[l].plen;
+			hdr->tp_h.tp_len = cfg->pkts[l].plen;
 
-			for (c = 0; c < tr->cfg->pkts[l].clen; ++c) {
-				cnt = &(tr->cfg->pkts[l].cnt[c]);
+			for (c = 0; c < cfg->pkts[l].clen; ++c) {
+				cnt = &(cfg->pkts[l].cnt[c]);
 				cnt->val -= cnt->min;
 				cnt->val = (cnt->val + cnt->inc) %
 					   (cnt->max - cnt->min + 1);
 				cnt->val += cnt->min;
-				tr->cfg->pkts[l].payload[cnt->off] = cnt->val;
+				cfg->pkts[l].payload[cnt->off] = cnt->val;
 			}
 
-			for (r = 0; r < tr->cfg->pkts[l].rlen; ++r) {
-				rnd = &(tr->cfg->pkts[l].rnd[r]);
+			for (r = 0; r < cfg->pkts[l].rlen; ++r) {
+				rnd = &(cfg->pkts[l].rnd[r]);
 				rnd->val = lcrand(rnd->val); 
-				tr->cfg->pkts[l].payload[rnd->off] = rnd->val;
+				cfg->pkts[l].payload[rnd->off] = rnd->val;
 			}
 
-			__memcpy(out, tr->cfg->pkts[l].payload,
-				 tr->cfg->pkts[l].plen);
-			tr->stats.tx_bytes += tr->cfg->pkts[l].plen;
-			tr->stats.tx_packets++;
+			__memcpy(out, cfg->pkts[l].payload, cfg->pkts[l].plen);
+			mode->stats.tx_bytes += cfg->pkts[l].plen;
+			mode->stats.tx_packets++;
 
-			if (tr->mode->rand)
-				l = mt_rand_int32() % tr->cfg->len;
+			if (mode->rand)
+				l = mt_rand_int32() % cfg->len;
 			else {
 				l++;
-				if (l >= tr->cfg->len)
+				if (l >= cfg->len)
 					l = 0;
 			}
 
 			kernel_may_pull_from_tx(&hdr->tp_h);
 			next_slot(&it, &tx_ring);
 
-			if (tr->cfg->num > 0)
+			if (cfg->num > 0)
 				num--;
 			if (unlikely(sigint == 1))
 				break;
 		}
 	}
 
-	destroy_tx_ring(tr->sock, &tx_ring);
-	close(tr->sock);
+	destroy_tx_ring(sock, &tx_ring);
+	close(sock);
 
 	fflush(stdout);
-	info("\n");
-	info("\r%lu frames outgoing on CPU%u\n",
-	     tr->stats.tx_packets, tr->cpu);
-	info("\r%lu bytes outgoing on CPU%u\n",
-	     tr->stats.tx_bytes, tr->cpu);
-	info("Thread%u on CPU%u down!\n", tr->num, tr->cpu);
-	fflush(stdout);
-	tr->active = 0;
-	barrier();
-	pthread_exit(0);
-}
-
-static struct pktconf *clone_cfg(struct pktconf *orig, unsigned int cpu)
-{
-	int i;
-	struct pktconf *ret = numa_alloc_onnode(sizeof(*ret),
-						numa_node_of_cpu(cpu));
-	if (!ret)
-		panic("No NUMA mem left!\n");
-	memset(ret, 0, sizeof(*ret));
-
-	ret->num = orig->num;
-	ret->gap = orig->gap;
-	ret->len = orig->len;
-
-	ret->pkts = numa_alloc_onnode(sizeof(struct packet) * orig->len,
-				      numa_node_of_cpu(cpu));
-	if (!ret->pkts)
-		panic("No NUMA mem left!\n");
-	memset(ret->pkts, 0, sizeof(struct packet) * orig->len);
-
-	for (i = 0; i < ret->len; ++i) {
-		ret->pkts[i].plen = orig->pkts[i].plen;
-		ret->pkts[i].clen = orig->pkts[i].clen;
-		ret->pkts[i].rlen = orig->pkts[i].rlen;
-		ret->pkts[i].payload = numa_alloc_onnode(ret->pkts[i].plen,
-							 numa_node_of_cpu(cpu));
-		if (!ret->pkts[i].payload)
-			panic("No NUMA mem left!\n");
-		memcpy(ret->pkts[i].payload, orig->pkts[i].payload,
-		       ret->pkts[i].plen);
-
-		if (orig->pkts[i].clen > 0) {
-			ret->pkts[i].cnt = numa_alloc_onnode(sizeof(struct counter) *
-							     orig->pkts[i].clen,
-							     numa_node_of_cpu(cpu));
-			if (!ret->pkts[i].cnt)
-				panic("No NUMA mem left!\n");
-			memcpy(ret->pkts[i].cnt, orig->pkts[i].cnt,
-			       sizeof(struct counter) * orig->pkts[i].clen);
-		}
-		if (orig->pkts[i].rlen > 0) {
-			ret->pkts[i].rnd = numa_alloc_onnode(sizeof(struct randomizer) *
-						 	     orig->pkts[i].rlen,
-							     numa_node_of_cpu(cpu));
-			if (!ret->pkts[i].rnd)
-				panic("No NUMA mem left!\n");
-			memcpy(ret->pkts[i].rnd, orig->pkts[i].rnd,
-			       sizeof(struct randomizer) * orig->pkts[i].rlen);
-		}
-	}
-	return ret;
-}
-
-static void cleanup_cloned_cfg(struct pktconf *cfg, unsigned int cpu)
-{
-	size_t l;
-	for (l = 0; l < cfg->len; ++l) {
-		if (cfg->pkts[l].plen > 0)
-			numa_free(cfg->pkts[l].payload, cfg->pkts[l].plen);
-		if (cfg->pkts[l].clen > 0)
-			numa_free(cfg->pkts[l].cnt, sizeof(struct counter) *
-				  cfg->pkts[l].clen);
-		if (cfg->pkts[l].rlen > 0)
-			numa_free(cfg->pkts[l].rnd, sizeof(struct randomizer) *
-				  cfg->pkts[l].rlen);
-	}
-	if (cfg->len > 0)
-		numa_free(cfg->pkts, sizeof(struct packet) * cfg->len);
-	numa_free(cfg, sizeof(struct pktconf));
-}
-
-static void cleanup_cfg(struct pktconf *cfg)
-{
-	size_t l;
-	for (l = 0; l < cfg->len; ++l) {
-		if (cfg->pkts[l].plen > 0)
-			xfree(cfg->pkts[l].payload);
-		if (cfg->pkts[l].clen > 0)
-			xfree(cfg->pkts[l].cnt);
-		if (cfg->pkts[l].rlen > 0)
-			xfree(cfg->pkts[l].rnd);
-	}
-	if (cfg->len > 0)
-		xfree(cfg->pkts);
-}
-
-unsigned int get_next_cpu(unsigned int ccpu)
-{
-	unsigned int i;
-	for (i = ccpu; i < cpus; ++i) {
-		if (CPU_ISSET(i, &cpu_bitmask))
-			return i;
-	}
-	panic("Fuck! Wrong next CPU!\n");
-	return 0;
-}
-
-static void thread_spawn_or_panic(struct mode *mode, struct pktconf *cfg)
-{
-	int i, ret;
-	unsigned int ocpu = 0;
-	cpu_set_t cpuset;
-	for (i = 0; i < threads; ++i) {
-		CPU_ZERO(&cpuset);
-		ocpu = get_next_cpu(i == 0 ? ocpu : ocpu + 1);
-		CPU_SET(ocpu, &cpuset);
-		threadpool[i].cpu = ocpu;
-		threadpool[i].leader = (i == 0);
-		threadpool[i].interval = TX_KERNEL_PULL_INT;
-		threadpool[i].cfg = clone_cfg(cfg, ocpu);
-		threadpool[i].mode = mode;
-		threadpool[i].sock = 0;
-		threadpool[i].num = i;
-		threadpool[i].active = 1;
-		ret = pthread_create(&threadpool[i].trid, NULL,
-				     tx_fire_or_die, &threadpool[i]);
-		if (ret < 0)
-			panic("Thread creation failed!\n");
-		ret = pthread_setaffinity_np(threadpool[i].trid,
-					     sizeof(cpuset), &cpuset);
-		if (ret < 0)
-			panic("Thread CPU migration failed!\n");
-		pthread_detach(threadpool[i].trid);
-		info("Thread%u on CPU%u up!\n", i, ocpu);
-		fflush(stdout);
-	}
-}
-
-static void thread_finish(void)
-{
-	int i;
-	for (i = 0; i < threads; ++i) {
-		while (pthread_join(threadpool[i].trid, NULL) < 0)
-			;
-		barrier();
-		cleanup_cloned_cfg(threadpool[i].cfg, threadpool[i].cpu);
-	}
+	printf("\n");
+	printf("\r%lu frames outgoing\n", mode->stats.tx_packets);
+	printf("\r%lu bytes outgoing\n", mode->stats.tx_bytes);
 }
 
 #define TYPE_NUM 0
@@ -831,10 +643,26 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 	dump_conf(cfg);
 }
 
+static void cleanup_cfg(struct pktconf *cfg)
+{
+	size_t l;
+
+	for (l = 0; l < cfg->len; ++l) {
+		if (cfg->pkts[l].plen > 0)
+			xfree(cfg->pkts[l].payload);
+		if (cfg->pkts[l].clen > 0)
+			xfree(cfg->pkts[l].cnt);
+		if (cfg->pkts[l].rlen > 0)
+			xfree(cfg->pkts[l].rnd);
+	}
+
+	if (cfg->len > 0)
+		xfree(cfg->pkts);
+}
+
 static int main_loop(struct mode *mode, char *confname, unsigned long pkts,
 		     unsigned long gap)
 {
-	int i;
 	struct pktconf cfg = {
 		.num = pkts,
 		.gap = gap,
@@ -844,50 +672,11 @@ static int main_loop(struct mode *mode, char *confname, unsigned long pkts,
 	parse_conf_or_die(confname, &cfg);
 	if (gap > 0)
 		tx_tgap_or_die(mode, &cfg);
-	else {
-		threadpool = xzmalloc(sizeof(*threadpool) * threads);
-		thread_spawn_or_panic(mode, &cfg);
-		while (1) {
-	waitall:
-			sleep(1);
-			for (i = 0; i < threads; ++i) {
-				if (threadpool[i].active)
-					goto waitall;
-			}
-			break;
-		}
-		itimer.it_interval.tv_sec = 0;
-		itimer.it_interval.tv_usec = 0;
-		itimer.it_value.tv_sec = 0;
-		itimer.it_value.tv_usec = 0;
-		setitimer(ITIMER_REAL, &itimer, NULL);
-		thread_finish();
-		xfree(threadpool);
-	}
+	else
+		tx_fire_or_die(mode, &cfg);
 	cleanup_cfg(&cfg);
 
 	return 0;
-}
-
-void set_and_check_affinity_mask()
-{
-	int ret;
-	unsigned int i, c;
-
-	CPU_ZERO(&cpu_bitmask);
-	ret = sched_getaffinity(getpid(), sizeof(cpu_bitmask),
-				&cpu_bitmask);
-	if (ret) {
-		for (i = 0; i < cpus; ++i)
-			CPU_SET(i, &cpu_bitmask);
-		return;
-	}
-	for (c = 0, i = 0; i < cpus; ++i) {
-		if (CPU_ISSET(i, &cpu_bitmask))
-			c++;
-	}
-	if (c < threads)
-		panic("Bound CPUs less then number of threads!\n");
 }
 
 int main(int argc, char **argv)
@@ -902,8 +691,6 @@ int main(int argc, char **argv)
 
 	memset(&mode, 0, sizeof(mode));
 	mode.cpu = CPU_UNKNOWN;
-	cpus = get_number_cpus_online();
-	threads = 1;
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 	       &opt_index)) != EOF) {
@@ -966,11 +753,6 @@ int main(int argc, char **argv)
 		case 'B':
 			set_cpu_affinity(optarg, 1);
 			break;
-		case 'x':
-			threads = (unsigned int) atoi(optarg);
-			if (threads < 1 || threads > cpus)
-				panic("Thread number not possible!\n");
-			break;
 		case 'H':
 			prio_high = true;
 			break;
@@ -984,7 +766,6 @@ int main(int argc, char **argv)
 			case 'n':
 			case 'S':
 			case 'b':
-			case 'x':
 			case 'k':
 			case 'B':
 			case 't':
@@ -1001,22 +782,17 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (!gap) {
-		if (numa_available() < 0)
-			panic("Your system does not support NUMA!\n");
-	}
 	if (argc < 5)
 		help();
 	if (mode.device == NULL)
-		panic("No networking device given!\n");
+		error_and_die(EXIT_FAILURE, "No networking device given!\n");
 	if (confname == NULL)
-		panic("No configuration file given!\n");
+		error_and_die(EXIT_FAILURE, "No configuration file given!\n");
 	if (device_mtu(mode.device) == 0)
-		panic("This is no networking device!\n");
+		error_and_die(EXIT_FAILURE, "This is no networking device!\n");
 	if (device_up_and_running(mode.device) == 0)
-		panic("Networking device not running!\n");
+		error_and_die(EXIT_FAILURE, "Networking device not running!\n");
 
-	set_and_check_affinity_mask();
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
 	register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO);
