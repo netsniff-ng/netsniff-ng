@@ -7,7 +7,7 @@ include ../definitions.mk
 
 INCLUDE    = -I..
 CFLAGS    +=
-LIBS       =
+LIBS       = -lpthread -lnuma
 
 core-objs  = trafgen.o
 lib-objs   = xmalloc.o                  \
