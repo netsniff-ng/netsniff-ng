@@ -12,8 +12,8 @@ BISON_TARGET(BPF_PARSER ../bpf_parser.y ${CMAKE_CURRENT_BINARY_DIR}/bpf_parser.t
 ADD_EXECUTABLE(${PROJECT_NAME} 	../xmalloc.c
 				../bpf.c
 				../strlcpy.c
-				lex.yy.c
-				bpf_parser.tab.c
+				${FLEX_BPF_LEXER_OUTPUTS}
+				${BISON_BPF_PARSER_OUTPUT_SOURCE}
 				bpfc.c)
 
 ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"
