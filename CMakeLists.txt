@@ -39,7 +39,7 @@ ADD_DEFINITIONS(
 	-Wendif-labels
 	-Wno-long-long
 	-Wuninitialized
-	-Wstrict-overflow
+	-Wstrict-overflow=1
 )
 
 
