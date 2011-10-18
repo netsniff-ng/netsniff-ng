@@ -1,0 +1,21 @@
+PROJECT(bpfc C)
+
+SET(VERSION "0.1")
+SET(BUILD_STRING "generic")
+
+FIND_PACKAGE(FLEX REQUIRED)
+FIND_PACKAGE(BISON REQUIRED)
+
+FLEX_TARGET(BPF_LEXER ../bpf_lexer.l ${CMAKE_CURRENT_BINARY_DIR}/lex.yy.c)
+BISON_TARGET(BPF_PARSER ../bpf_parser.y ${CMAKE_CURRENT_BINARY_DIR}/bpf_parser.tab.c)
+
+ADD_EXECUTABLE(${PROJECT_NAME} 	../xmalloc.c
+				../bpf.c
+				../strlcpy.c
+				lex.yy.c
+				bpf_parser.tab.c
+				bpfc.c)
+
+ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"
+		-DVERSION_STRING="${VERSION}"
+		-DBUILD_STRING="${BUILD_STRING}")
