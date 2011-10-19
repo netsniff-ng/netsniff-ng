@@ -56,7 +56,6 @@
 #include "xmalloc.h"
 #include "write_or_die.h"
 #include "aslookup.h"
-#include "version.h"
 #include "signals.h"
 #include "netdev.h"
 #include "mtrand.h"
@@ -65,6 +64,9 @@
 #include "poll.h"
 
 #define WHOIS_SERVER_SOURCE "/etc/netsniff-ng/whois.conf"
+
+static int assemble_ipv6_tcp(uint8_t *packet, size_t len, int ttl,
+			     struct sockaddr_in *sin) __attribute__ ((unused));
 
 struct ash_cfg {
 	char *host;
