@@ -2,7 +2,7 @@
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
  * Copyright 2011 Daniel Borkmann.
- * Subject to the GPL.
+ * Subject to the GPL, version 2.
  *
  * An Autonomous System trace route utility based on TCP instead of ICMP for
  * a better passing of firewalls. Supports IPv4 and IPv6. Based on the idea

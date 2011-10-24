@@ -3,7 +3,7 @@
  * Part of the netsniff-ng project
  * By Daniel Borkmann <daniel@netsniff-ng.org>
  * Copyright 2011 Daniel Borkmann <daniel@netsniff-ng.org>,
- * Subject to the GPL.
+ * Subject to the GPL, version 2.
  */
 
 #include <stdio.h>

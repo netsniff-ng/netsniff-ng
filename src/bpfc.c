@@ -3,7 +3,7 @@
  * By Daniel Borkmann <daniel@netsniff-ng.org>
  * Copyright 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,
  * Swiss federal institute of technology (ETH Zurich)
- * Subject to the GPL.
+ * Subject to the GPL, version 2.
  *
  * This is a tiny Berkeley Packet Filter compiler that understands the
  * Syntax / Semantic from the USENIX paper {"The BSD Packet Filter: A New

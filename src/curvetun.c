@@ -4,7 +4,7 @@
  * By Daniel Borkmann <daniel@netsniff-ng.org>
  * Copyright 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,
  * Copyright 2011 Emmanuel Roullit.
- * Subject to the GPL.
+ * Subject to the GPL, version 2.
  *
  * This is curvetun, a lightweight, high-speed ECDH multiuser IP tunnel for
  * Linux that is based on epoll(2). curvetun uses the Linux TUN/TAP interface

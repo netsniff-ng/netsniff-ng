@@ -6,7 +6,7 @@
  * Copyright 2000-2005 Shikano Lab., Nara Institute of Science and Technology
  * Copyright 2005-2007 Julius project team, Nagoya Institute of Technology
  * All rights reserved
- * Subject to the GPL.
+ * Subject to the GPL, version 2.
  */
 
 #ifndef PATRICIA_H
