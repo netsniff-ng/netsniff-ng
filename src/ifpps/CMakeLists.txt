@@ -3,14 +3,20 @@ PROJECT(ifpps C)
 SET(VERSION "0.1")
 SET(BUILD_STRING "generic")
 
-ADD_EXECUTABLE(${PROJECT_NAME}	../xmalloc.c
-				../strlcpy.c
-				../misc.c
-				../netdev.c
-				ifpps.c)
+FIND_PACKAGE(Curses)
 
-ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"
-		-DVERSION_STRING="${VERSION}"
-		-DBUILD_STRING="${BUILD_STRING}")
+IF(CURSES_FOUND)
+	ADD_EXECUTABLE(${PROJECT_NAME}	../xmalloc.c
+					../strlcpy.c
+					../misc.c
+					../netdev.c
+					ifpps.c)
 
-TARGET_LINK_LIBRARIES(ifpps ${CURSES_NCURSES_LIBRARY})
+	ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"
+			-DVERSION_STRING="${VERSION}"
+			-DBUILD_STRING="${BUILD_STRING}")
+
+	TARGET_LINK_LIBRARIES(ifpps ${CURSES_NCURSES_LIBRARY})
+ELSE(CURSES_FOUND)
+	MESSAGE("ncurses is missing on target. Skipping ${PROJECT_NAME} build.")
+ENDIF(CURSES_FOUND)

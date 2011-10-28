@@ -9,8 +9,6 @@ SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 # Bear in mind that no profiling will be available on 64-bit arch when on
 # SET(BUILD_SHARED_LIBS ON)
 
-FIND_PACKAGE(Curses REQUIRED)
-
 FIND_PACKAGE(Doxygen)
 
 INCLUDE(CheckBPF)
