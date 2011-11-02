@@ -1,0 +1,149 @@
+/* This is the default stylesheet for the screen media type. */
+/* Copyleft (c) 2002-2004 Jonas Fonseca <fonseca@diku.dk> */
+
+/* General style settings for 'clean' html elements {{{1 */
+
+body	{ font-family: Arial, Helvetica, sans-serif; }
+
+/* Link properties */
+a:visited,
+a	{ text-decoration: underline; }
+a:hover	{ text-decoration: none; }
+
+/* Specifically targeted on screenshoots/index.html */
+dt 	{ font-weight: bold; margin-top: 1em; }
+
+h1	{ font-size: 2em; text-align: center; margin: 1.4em; font-weight: normal; }
+h2	{ font-size: 1.2em; margin-top: 2em }
+h3	{ font-size: 1em; }
+h4	{ font-size: 1em; text-decoration: underline; }
+h5	{ font-size: 1em; font-style: italic; }
+
+h2, h3, h4, h5
+	{ margin-left: 1em; margin-right: 1em; font-weight: bold; }
+
+hr	{ display: none; } 
+
+/* No borders around image links */
+img	{ border: 0; }
+
+pre	{ padding: 1em; text-align: left;
+	margin: 0.5em 4em; }
+var	{ font-family: monospace; font-style: normal; }
+
+ul li	{ margin-top: 0em; margin-bottom: 0em }
+ul.toc li	{ margin-top: 0em; margin-bottom: 0em }
+
+/* Indent paragraphs etc. a bit to make them look nested. */
+ul li, dl, p, div.news
+{
+	margin-left: 2em;
+	margin-right: 2em;
+}
+
+ul li, dl, p	{ text-align: justify; }
+
+/* Header and footer {{{1 */
+
+.header,
+.footer	{ padding: 0.4em 1em; margin: 0em; }
+
+.header	{ font-size: 1em; }
+.footer	{ font-size: 0.7em; }
+
+.footer{ margin-top: 4em; }
+
+.header span.menu,
+.footer span.menu	{ text-align: right; display: block; }
+
+.header #top,
+.footer span.left	{ float: left; margin: 0em; }
+
+.header #top		{ display: inline; }
+
+.footer a,
+.header a,
+.footer a:visited,
+
+.footer a:hover,
+
+.header td	{ border: none; }
+/* Various class definitions {{{1 */
+
+div.title	{ font-weight: bold; }
+
+table.releases th,
+table.releases td,
+table.bugmail th,
+table.bugmail td	{ border: none; padding-left: 0.2em; padding-right: 0.2em; }
+table.ccmd td	{ border: 1px; padding-left: 2em; padding-right: 2em; }
+
+.releases th	{ text-align: center; font-weight: bold; }
+.bugmail th	{ text-align: center; }
+
+table		{ margin-left: 1em; margin-right: 1em;
+		  border: none; }
+
+table.code, table.code tr, table.code td,
+{
+	margin: 0em;
+	padding: 0em;
+	border: none;
+	width: 100%;
+}
+
+table.ccmd	{ width: 80%; }
+table.ccmd, code.g { font-family: monospace; }
+table.ccmd td.g	{ width: 40%; }
+table.ccmd td.g, code.g { font-weight: bold; }
+
+table[frame=hsides]
+		{ border: 1px solid #000; }
+thead		{ border-bottom: 1px solid #000; }
+
+.validate	{ font-size: 0.7em; text-align: right; margin: 0.4em 0em; }
+.hide		{ display: none; }
+
+/* Placement abbreviations that is commonly used. */
+.tcenter	{ text-align: center; }
+.tright		{ text-align: right; }
+.tleft		{ text-align: left; }
+.fright		{ float: right; }
+.fleft		{ float: left; }
+
+body	{ color: #000; background: #fff; }
+a	{ color: #124; background: transparent; }
+h2, h3	{ border-bottom: 1px solid #124; }
+dt	{ font-weight: bold; }
+
+pre
+{
+	color: #124;
+	background: #e8d4c2;
+	border: 1px solid #124;
+	font-weight: bold;
+}
+
+.header, div.footer
+{
+	border-top: 1px solid #000;
+	border-bottom: 1px solid #000;
+	color: #000;
+	background: #fff;
+	padding: 0px;
+}
+
+div.footer a:visited,
+.header a:visited	{ color: #124; background: transparent; }
+
+table.releases,
+table.ccmd,
+table.bugmail		{ border: 2px solid #124; }
+
+table.bugmail th,
+table.releases th,
+tr.odd td		{ background: #d9d8d1; color: #124; }
+
+table.ccmd td.g		{ background: #e9e8e1; color: #124; }
+
+
