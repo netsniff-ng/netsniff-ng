@@ -3,7 +3,7 @@
     pareto, ... distributed
   + Rewrite config parser
 
-* tgsh: trafgen Cisco-like frontend CLI for traffic generator appliances
+* tgsh(?): trafgen Cisco-like frontend CLI for traffic generator appliances
   + Generates full packets, i.e. with support for
     - VLAN
     - MPLS
@@ -31,7 +31,7 @@
   + Cleanup code, especially in dissector, print-modes and proto sections
   + Support more protocols
 
-* arppoison:
+* arpswirl:
   + ARP Cache Poisoning utility as completion with netsniff-ng
 
 * ashunt:
