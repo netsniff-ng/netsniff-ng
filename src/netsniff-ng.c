@@ -652,6 +652,7 @@ static void help(void)
 	printf("  netsniff-ng --in eth0 --out dump.pcap --silent --bind-cpu 0\n");
 	printf("  netsniff-ng --in dump.pcap --mmap --out eth0 --silent --bind-cpu 0\n");
 	printf("  netsniff-ng --in any --filter icmp.bpf --all-hex\n");
+	printf("  netsniff-ng --in any --filter http.bpf --payload\n");
 	printf("  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0\\\n");
 	printf("              --type host --filter http.bpf\n");
 	printf("\n");
