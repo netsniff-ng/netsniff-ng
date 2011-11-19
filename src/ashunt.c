@@ -81,6 +81,7 @@ struct ash_cfg {
 	char *whois;
 	char *whois_port;
 	int ip;
+	char *payload;
 };
 
 sig_atomic_t sigint = 0;
@@ -88,7 +89,7 @@ sig_atomic_t sigint = 0;
 static GeoIP *gi_country = NULL;
 static GeoIP *gi_city = NULL;
 
-static const char *short_options = "H:p:nNf:m:i:d:q:x:SAEFPURt:Gl:w:W:hv46";
+static const char *short_options = "H:p:nNf:m:i:d:q:x:SAEFPURt:Gl:w:W:hv46X:";
 
 static struct option long_options[] = {
 	{"host", required_argument, 0, 'H'},
@@ -110,6 +111,7 @@ static struct option long_options[] = {
 	{"rst", no_argument, 0, 'R'},
 	{"ecn-syn", no_argument, 0, 'E'},
 	{"tos", required_argument, 0, 't'},
+	{"payload", required_argument, 0, 'X'},
 	{"nofrag", no_argument, 0, 'G'},
 	{"totlen", required_argument, 0, 'l'},
 	{"whois", required_argument, 0, 'w'},
@@ -208,6 +210,7 @@ static void help(void)
 	printf(" -E|--ecn-syn            Send ECN SYN packets (RFC3168)\n");
 	printf(" -t|--tos <tos>          Set the IP TOS field\n");
 	printf(" -G|--nofrag             Set do not fragment bit\n");
+	printf(" -X|--payload <string>   Specify a payload string to test DPIs\n");
 	printf(" -l|--totlen <len>       Specify total packet len\n");
 	printf(" -w|--whois <server>     Use a different AS whois DB server\n");
 	printf("                         (default: /etc/netsniff-ng/whois.conf)\n");
@@ -225,8 +228,8 @@ static void help(void)
 	printf("    ashunt -i eth0 -N -F -H netsniff-ng.org\n");
 	printf("  IPv4 trace of AS with Xmas probe:\n");
 	printf("    ashunt -i eth0 -N -FPU -H netsniff-ng.org\n");
-	printf("  IPv4 trace of AS with Null probe:\n");
-	printf("    ashunt -i eth0 -N -H netsniff-ng.org\n");
+	printf("  IPv4 trace of AS with Null probe with ASCII payload:\n");
+	printf("    ashunt -i eth0 -N -H netsniff-ng.org -X \"foobar\"\n");
 	printf("  IPv6 trace of AS up to netsniff-ng.org:\n");
 	printf("    ashunt -6 -S -i eth0 -H netsniff-ng.org\n");
 	printf("\n");
@@ -271,11 +274,19 @@ static inline unsigned short csum(unsigned short *buf, int nwords)
 	return ~sum;
 }
 
-static void assemble_data(uint8_t *packet, size_t len)
+static void assemble_data(uint8_t *packet, size_t len, const char *payload)
 {
 	int i;
-	for (i = 0; i < len; ++i)
-		packet[i] = (uint8_t) mt_rand_int32();
+	if (payload == NULL) {
+		for (i = 0; i < len; ++i)
+			packet[i] = (uint8_t) mt_rand_int32();
+	} else {
+		int lmin = min(len, strlen(payload));
+		for (i = 0; i < lmin; ++i)
+			packet[i] = (uint8_t) payload[i];
+		for (i = lmin; i < len; ++i)
+			packet[i] = (uint8_t) mt_rand_int32();
+	}
 }
 
 static void assemble_tcp(uint8_t *packet, size_t len, int syn, int ack,
@@ -306,7 +317,7 @@ static int assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
 			     int tos, const struct sockaddr *dst,
 			     const struct sockaddr *src, int syn, int ack,
 			     int urg, int fin, int rst, int psh, int ecn,
-			     int nofrag, int dport)
+			     int nofrag, int dport, const char *payload)
 {
 	struct iphdr *iph = (struct iphdr *) packet;
 	assert(src && dst);
@@ -326,7 +337,8 @@ static int assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
 		     len - sizeof(struct iphdr), syn, ack, urg, fin, rst,
 		     psh, ecn, dport);
 	assemble_data(packet + sizeof(struct iphdr) + sizeof(struct tcphdr),
-		      len - sizeof(struct iphdr) - sizeof(struct tcphdr));
+		      len - sizeof(struct iphdr) - sizeof(struct tcphdr),
+		      payload);
 	iph->check = csum((unsigned short *) packet,
 			  ntohs(iph->tot_len) >> 1);
 	return ntohs(iph->id);
@@ -351,7 +363,8 @@ static void assemble_icmp4(uint8_t *packet, size_t len)
 /* returns: ipv4 id */
 static int assemble_ipv4_icmp4(uint8_t *packet, size_t len, int ttl,
 			       int tos, const struct sockaddr *dst,
-			       const struct sockaddr *src, int nofrag)
+			       const struct sockaddr *src, int nofrag,
+			       const char *payload)
 {
 	struct iphdr *iph = (struct iphdr *) packet;
 	assert(src && dst);
@@ -370,7 +383,8 @@ static int assemble_ipv4_icmp4(uint8_t *packet, size_t len, int ttl,
 	assemble_icmp4(packet + sizeof(struct iphdr),
 		       len - sizeof(struct iphdr));
 	assemble_data(packet + sizeof(struct iphdr) + sizeof(struct icmphdr),
-		      len - sizeof(struct iphdr) - sizeof(struct icmphdr));
+		      len - sizeof(struct iphdr) - sizeof(struct icmphdr),
+		      payload);
 	iph->check = csum((unsigned short *) packet,
 			  ntohs(iph->tot_len) >> 1);
 	return ntohs(iph->id);
@@ -383,12 +397,13 @@ static int assemble_packet_or_die(uint8_t *packet, size_t len, int ttl, int icmp
 {
 	if (icmp)
 		return assemble_ipv4_icmp4(packet, len, ttl, cfg->tos, dst, src,
-					   cfg->nofrag);
+					   cfg->nofrag, cfg->payload);
 	else
 		return assemble_ipv4_tcp(packet, len, ttl, cfg->tos, dst, src,
 					 cfg->syn, cfg->ack, cfg->urg, cfg->fin,
 					 cfg->rst, cfg->psh, cfg->ecn,
-					 cfg->nofrag, atoi(cfg->port));
+					 cfg->nofrag, atoi(cfg->port),
+					 cfg->payload);
 }
 
 #define PKT_NOT_FOR_US	0
@@ -546,11 +561,17 @@ static int do_trace(const struct ash_cfg *cfg)
 
 	len = cfg->totlen;
 	if (cfg->ip == 4) {
-		if (len < sizeof(struct iphdr) + sizeof(struct tcphdr))
+		if (len < sizeof(struct iphdr) + sizeof(struct tcphdr)) {
 			len = sizeof(struct iphdr) + sizeof(struct tcphdr);
+			if (cfg->payload)
+				len += strlen(cfg->payload);
+		}
 	} else {
-		if (len < sizeof(struct ip6_hdr) + sizeof(struct tcphdr))
+		if (len < sizeof(struct ip6_hdr) + sizeof(struct tcphdr)) {
 			len = sizeof(struct ip6_hdr) + sizeof(struct tcphdr);
+			if (cfg->payload)
+				len += strlen(cfg->payload);
+		}
 	}
 	if (len >= device_mtu(cfg->dev))
 		panic("Packet len exceeds device MTU!\n");
@@ -578,6 +599,9 @@ static int do_trace(const struct ash_cfg *cfg)
 	info("Using flags SYN:%d,ACK:%d,ECN:%d,FIN:%d,PSH:%d,RST:%d,URG:%d\n",
 	     cfg->syn, cfg->ack, cfg->ecn, cfg->fin, cfg->psh, cfg->rst,
 	     cfg->urg);
+	if (cfg->payload) {
+		info("With payload: \'%s\'\n", cfg->payload);
+	}
 	fflush(stdout);
 
 	xfree(hbuff1);
@@ -698,6 +722,7 @@ int main(int argc, char **argv)
 	cfg.queries = 3;
 	cfg.timeout = 3;
 	cfg.ip = 4;
+	cfg.payload = NULL;
 	cfg.dev = xstrdup("eth0");
 	cfg.port = xstrdup("80");
 
@@ -786,6 +811,9 @@ int main(int argc, char **argv)
 		case 'G':
 			cfg.nofrag = 1;
 			break;
+		case 'X':
+			cfg.payload = xstrdup(optarg);
+			break;
 		case 'l':
 			cfg.totlen = atoi(optarg);
 			if (cfg.totlen <= 0)
@@ -807,6 +835,7 @@ int main(int argc, char **argv)
 			case 'd':
 			case 'q':
 			case 'x':
+			case 'X':
 			case 't':
 			case 'l':
 			case 'w':
@@ -861,6 +890,8 @@ int main(int argc, char **argv)
 		xfree(cfg.host);
 	if (cfg.port)
 		xfree(cfg.port);
+	if (cfg.payload)
+		xfree(cfg.payload);
 	return ret;
 }
 
