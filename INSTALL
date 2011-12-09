@@ -26,11 +26,14 @@ for an easy installation. We try to keep this as minimal as possible.
 The installation process is fairly simple:
 
   $ cd netsniff-ng/src/
+  $ mkdir build
+  $ cd build
+  $ cmake ..
   $ make
   # make install
 
 The uninstallation process is analogous:
 
-  $ cd netsniff-ng/src/
+  $ cd netsniff-ng/src/build
   # make uninstall
 
