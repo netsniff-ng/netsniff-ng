@@ -16,7 +16,7 @@ What libraries / tools are required?
  - libc (all)
  - libpthread (curvetun, netsniff-ng)
  - libncurses (ifpps)
- - libGeoIP (ashunt)
+ - libGeoIP and its database (ashunt)
  - flex, bison (bpfc)
  - libnacl (curvetun, fetched and built automatically on make)
 
