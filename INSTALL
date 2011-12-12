@@ -32,8 +32,4 @@ The installation process is fairly simple:
   $ make
   # make install
 
-The uninstallation process is analogous:
-
-  $ cd netsniff-ng/src/build
-  # make uninstall
-
+To uninstall, simply remove all files refered in install_manifest.txt
