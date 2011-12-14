@@ -26,7 +26,6 @@
 
 #include "bpf_parser.h"
 #include "xmalloc.h"
-#include "version.h"
 #include "die.h"
 
 static const char *short_options = "vhi:V";

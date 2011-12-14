@@ -14,23 +14,31 @@ than that.
 What libraries / tools are required?
 
  - libc (all)
+ - cmake
  - libpthread (curvetun, netsniff-ng)
  - libncurses (ifpps)
- - libGeoIP (ashunt)
+ - libGeoIP and its database (ashunt)
  - flex, bison (bpfc)
  - libnacl (curvetun, fetched and built automatically on make)
 
 It is common, that these libraries are shipped as distribution packages
 for an easy installation. We try to keep this as minimal as possible.
 
-The installation process is fairly simple:
+The installation process done by cmake is fairly simple:
 
   $ cd netsniff-ng/src/
+  $ mkdir build
+  $ cd build
+  $ cmake ..
   $ make
   # make install
 
-The uninstallation process is analogous:
+To uninstall, simply remove all files refered in install_manifest.txt
 
-  $ cd netsniff-ng/src/
+Building and install curvetun is done apart of cmake and can be achieved this way:
+  $ cd netsniff-ng/src/curvetun
+  $ make
+  # make install
+
+To uninstall, simply run in the curvetun directory:
   # make uninstall
-

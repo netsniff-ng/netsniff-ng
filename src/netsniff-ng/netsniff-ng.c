@@ -43,7 +43,6 @@
 #include "pcap.h"
 #include "poll.h"
 #include "bpf.h"
-#include "version.h"
 #include "signals.h"
 #include "write_or_die.h"
 #include "die.h"
