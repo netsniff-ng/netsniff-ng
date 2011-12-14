@@ -13,7 +13,7 @@
 #include "tprintf.h"
 #include "dissector.h"
 #include "dissector_eth.h"
-#include "protos/proto_struct.h"
+#include "proto_struct.h"
 
 /* TODO: Refactoring duplicate code, clean up code, also in protos */
 int dissector_set_print_norm(void *ptr)

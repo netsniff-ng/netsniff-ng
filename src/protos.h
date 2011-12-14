@@ -8,14 +8,14 @@
 #ifndef PROTOS_H
 #define PROTOS_H
 
-#include "protos/arp.h"
-#include "protos/ethernet.h"
-#include "protos/vlan.h"
-#include "protos/ipv4.h"
-#include "protos/ipv6.h"
-#include "protos/icmp.h"
-#include "protos/udp.h"
-#include "protos/tcp.h"
-#include "protos/hex.h"
+#include "arp.h"
+#include "ethernet.h"
+#include "vlan.h"
+#include "ipv4.h"
+#include "ipv6.h"
+#include "icmp.h"
+#include "udp.h"
+#include "tcp.h"
+#include "hex.h"
 
 #endif /* PROTOS_H */

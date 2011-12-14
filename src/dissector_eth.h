@@ -9,7 +9,7 @@
 #define DISSECTOR_ETHERNET_H
 
 #include "hash.h"
-#include "protos/proto_struct.h"
+#include "proto_struct.h"
 #include "tprintf.h"
 #include "tty.h"
 
