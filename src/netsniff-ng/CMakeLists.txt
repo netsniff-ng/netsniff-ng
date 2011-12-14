@@ -26,7 +26,7 @@ IF (CMAKE_HAVE_PTHREAD_CREATE)
 					../mtrand.c
 					../netdev.c
 					../tprintf.c
-					netsniff-ng.c)
+					../netsniff-ng.c)
 	ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"
 		-DVERSION_STRING="${VERSION}"
 		-DBUILD_STRING="${BUILD_STRING}")

@@ -10,7 +10,7 @@ IF(CURSES_FOUND)
 					../strlcpy.c
 					../misc.c
 					../netdev.c
-					ifpps.c)
+					../ifpps.c)
 
 	ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"
 			-DVERSION_STRING="${VERSION}"

@@ -16,7 +16,7 @@ IF(LIBGEOIP_FOUND)
 					../mtrand.c
 					../parser.c
 					../rx_ring.c
-					ashunt.c)
+					../ashunt.c)
 
 	ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"
 			-DVERSION_STRING="${VERSION}"

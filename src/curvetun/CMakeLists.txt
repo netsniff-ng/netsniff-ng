@@ -16,7 +16,7 @@ ADD_EXECUTABLE(${PROJECT_NAME}	../xmalloc.c
 				../hash.c
 				../ct_server.c
 				../ct_client.c
-				curvetun.c)
+				../curvetun.c)
 
 ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"
 		-DVERSION_STRING="${VERSION}"

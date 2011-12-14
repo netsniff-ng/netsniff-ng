@@ -3,7 +3,7 @@
 # Author: Daniel Borkmann
 #
 
-include ../definitions.mk
+include definitions.mk
 
 INCLUDE    = -I.. -I./include/
 CFLAGS    += 
