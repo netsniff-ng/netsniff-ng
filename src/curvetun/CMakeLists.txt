@@ -1,6 +1,5 @@
 PROJECT(curvetun C)
 
-SET(VERSION "0.1")
 SET(BUILD_STRING "generic")
 
 ADD_EXECUTABLE(${PROJECT_NAME}	../xmalloc.c

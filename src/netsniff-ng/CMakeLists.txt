@@ -1,6 +1,5 @@
 PROJECT(netsniff-ng C)
 
-SET(VERSION "0.5.6.0")
 SET(BUILD_STRING "generic")
 
 FIND_PACKAGE(Threads)

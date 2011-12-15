@@ -1,6 +1,5 @@
 PROJECT(bpfc C)
 
-SET(VERSION "0.1")
 SET(BUILD_STRING "generic")
 
 FIND_PACKAGE(FLEX)

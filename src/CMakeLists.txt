@@ -1,16 +1,12 @@
-#Project name is not mandatory, but you should use it
 PROJECT(netsniff-ng-toolkit C)
 
-# States that CMake required version must be >= 2.6
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 SET(EXECUTABLE_INSTALL_PATH /usr/sbin)
 SET(CONFIG_INSTALL_PATH /etc/netsniff-ng)
 
-# Activate this when you want to build a shared lib out the the lib/ directory
-# Bear in mind that no profiling will be available on 64-bit arch when on
-# SET(BUILD_SHARED_LIBS ON)
+SET(VERSION "0.5.6")
 
 INCLUDE(CheckBPF)
 INCLUDE(CheckPFPacket)
