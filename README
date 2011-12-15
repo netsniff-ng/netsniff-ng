@@ -70,5 +70,8 @@ hacking!
 [5] http://www.linuxfoundation.org/collaborate/workgroups/networking/napi
 [6] http://datatag.web.cern.ch/datatag/howto/tcp.html
 [7] http://thread.gmane.org/gmane.linux.network/191115
+    Kernel build option:
+      CONFIG_HAVE_BPF_JIT=y
+      CONFIG_BPF_JIT=y
 [8] http://bit.ly/3XbBrM
 
