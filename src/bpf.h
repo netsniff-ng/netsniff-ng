@@ -36,7 +36,7 @@ static inline void enable_kernel_bpf_jit_compiler(void)
 	fd = open(file, O_WRONLY);
 	if (fd < 0)
 		return;
-	ret = write(fd, "1", strlen("1") + 1);
+	ret = write(fd, "1", strlen("1"));
 	if (ret > 0) {
 		info("BPF JIT COMPILER\n");
 	}
