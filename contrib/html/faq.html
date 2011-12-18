@@ -113,7 +113,7 @@ If your question is not answered here, please consult our mailing list.
 <h3><a name="g0">What is netsniff-ng?</a></h3>
 <blockquote>
 <p>
-netsniff-ng is a high performance Linux network sniffer for packet inspection.
+netsniff-ng is a high performance Linux network sniffer for packet inspection. The project started during my B. Sc. thesis at the Max Planck Institute and continued to grow into a useful toolkit ever since. At the time of its initial development, the famous libpcap library did not support the zero-copy extensions of the Linux kernel. Therefore, I closed this gap by developing a sniffer that had a significantly better performance than existing ones that used libpcap.
 </blockquote>
 </div>
 
@@ -423,7 +423,7 @@ We're experimenting on our own kernelspace zero-copy mechanism and also enhancem
 <h3><a name="d11">Will you support the PF_RING from the ntop project?</a></h3>
 <blockquote>
 <p>
-Well, no. There are two reasons for this: <i>First reason</i> is, that it's not part of the mainline kernel. A interesting discussion about getting PF_RING into the kernel can be found at the netdev lists (<a href="http://lists.openwall.net/netdev/2009/10/14/37">http://lists.openwall.net/netdev/2009/10/14/37</a>) and obviously there are no further efforts (browse the netdev/LKML) from the ntop project to merge both architectures or add features to PF_PACKET. <i>Second reason</i> is that we've evaluated the PF_RING (without the commercial Direct NIC Access [DNA]) regarding its performance and came to the conclusion, that there is no significant performance enhancement on our test system. ntops DNA ships its own versions of some modified device drivers like Broadcoms tg3 and NetXtreme, Intels e1000(e), igb and ixgbe. Since these modifications are not official, neither to the kernel, nor to the vendors and cover only a small amout of what is out there, we're not doing further investigations at the moment. Nevertheless, <a href="http://www.ntop.org/">ntop</a> is a very interesting project you definately should check out!
+Well, no. There are two reasons for this: <i>First reason</i> is, that it's not part of the mainline kernel. A interesting discussion about getting PF_RING into the kernel can be found at the netdev lists (<a href="http://lists.openwall.net/netdev/2009/10/14/37">http://lists.openwall.net/netdev/2009/10/14/37</a>) and obviously there are no further efforts (browse the netdev/LKML, also <a href="http://www.spinics.net/lists/netfilter-devel/msg20212.html">netfilter</a>) from the ntop project to merge both architectures or add features to PF_PACKET. <i>Second reason</i> is that we've evaluated the PF_RING (without the commercial Direct NIC Access [DNA]) regarding its performance and came to the conclusion, that there is no significant performance enhancement on our IBM HS21 Bladeserver test system. ntopi's DNA ships its own versions of some modified device drivers like Broadcoms tg3 and NetXtreme, Intels e1000(e), igb and ixgbe. Since these modifications are not official, neither to the kernel, nor to the vendors and cover only a small amout of what is out there, we're not doing further investigations at the moment. Also, netsniff-ng users have reported similar observations. A benchmark with PF_RING in transparent_mode 0 and 1 is even slower than netsniff-ng and in transparent_mode 2 both have the same performance. The test was done on a Dell PowerEdge 2850. Nevertheless, <a href="http://www.ntop.org/">ntop</a> is a very interesting project you definately should check out!
 </blockquote>
 </div>
 
