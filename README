@@ -34,7 +34,7 @@ The netsniff-ng toolkit [1] currently consists of the following utilities:
   * trafgen: a high performance 'zero-copy' network packet generator
   * flowtop: a top-like netfilter connection tracking tool (todo)
   * curvetun: a lightweight curve25519-based multiuser IP tunnel
-  * ashunt: an Autonomous System trace route utility and ISP's DPI tester
+  * ashunt: an Autonomous System trace route and ISP testing utility
   * bpfc: a tiny Berkeley Packet Filter compiler supporting Linux extensions
   * ifpps: a top-like kernel networking and system statistics tool
 
