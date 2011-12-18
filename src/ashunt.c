@@ -53,6 +53,8 @@
 #include "misc.h"
 #include "bpf.h"
 #include "die.h"
+#include "tprintf.h"
+#include "hex.h"
 #include "xmalloc.h"
 #include "write_or_die.h"
 #include "aslookup.h"
@@ -88,10 +90,12 @@ struct ash_cfg {
 
 sig_atomic_t sigint = 0;
 
+static int show_pkt = 0;
+
 static GeoIP *gi_country = NULL;
 static GeoIP *gi_city = NULL;
 
-static const char *short_options = "H:p:nNf:m:i:d:q:x:SAEFPURt:Gl:w:W:hv46X:";
+static const char *short_options = "H:p:nNf:m:i:d:q:x:SAEFPURt:Gl:w:W:hv46X:Z";
 
 static struct option long_options[] = {
 	{"host", required_argument, 0, 'H'},
@@ -114,6 +118,7 @@ static struct option long_options[] = {
 	{"ecn-syn", no_argument, 0, 'E'},
 	{"tos", required_argument, 0, 't'},
 	{"payload", required_argument, 0, 'X'},
+	{"show-packet", no_argument, 0, 'Z'},
 	{"nofrag", no_argument, 0, 'G'},
 	{"totlen", required_argument, 0, 'l'},
 	{"whois", required_argument, 0, 'w'},
@@ -213,6 +218,7 @@ static void help(void)
 	printf(" -t|--tos <tos>          Set the IP TOS field\n");
 	printf(" -G|--nofrag             Set do not fragment bit\n");
 	printf(" -X|--payload <string>   Specify a payload string to test DPIs\n");
+	printf(" -Z|--show-packet        Show returned packet on each hop\n");
 	printf(" -l|--totlen <len>       Specify total packet len\n");
 	printf(" -w|--whois <server>     Use a different AS whois DB server\n");
 	printf("                         (default: /etc/netsniff-ng/whois.conf)\n");
@@ -231,7 +237,7 @@ static void help(void)
 	printf("  IPv4 trace of AS with Xmas probe:\n");
 	printf("    ashunt -i eth0 -N -FPU -H netsniff-ng.org\n");
 	printf("  IPv4 trace of AS with Null probe with ASCII payload:\n");
-	printf("    ashunt -i eth0 -N -H netsniff-ng.org -X \"foobar\"\n");
+	printf("    ashunt -i eth0 -N -H netsniff-ng.org -X \"censor-me\" -Z\n");
 	printf("  IPv6 trace of AS up to netsniff-ng.org:\n");
 	printf("    ashunt -6 -S -i eth0 -H netsniff-ng.org\n");
 	printf("\n");
@@ -631,13 +637,23 @@ static int do_trace(const struct ash_cfg *cfg)
 		int icmp = 0;
 		is_okay = 0;
 
-		info("%2d: ", ttl);
-		fflush(stdout);
+		if ((ttl == cfg->init_ttl && !show_pkt) ||
+		    (ttl > cfg->init_ttl)) {
+			info("%2d: ", ttl);
+			fflush(stdout);
+		}
 retry:
 		for (query = 0; query < cfg->queries && !is_okay; ++query) {
 			id = assemble_packet_or_die(packet, len, ttl, icmp, cfg,
 						    (struct sockaddr *) &sd,
 						    (struct sockaddr *) &ss);
+			if (ttl == cfg->init_ttl && query == 0 && show_pkt) {
+				info("Original packet:\n");
+				hex(packet, len);
+				tprintf_flush();
+				info("\n%2d: ", ttl);
+				fflush(stdout);
+			}
 
 			err = sendto(fd, packet, len, 0, (struct sockaddr *) &sd,
 				     sizeof(sd));
@@ -660,6 +676,11 @@ retry:
 							cfg->ip, ttl, id,
 							(struct sockaddr *) &ss,
 							cfg->dns_resolv);
+				if (is_okay && show_pkt) {
+					info("\n  Received packet:\n");
+					hex(packet_rcv, real_len);
+					tprintf_flush();
+				}
 			} else {
 				info("* ");
 				fflush(stdout);
@@ -753,6 +774,9 @@ int main(int argc, char **argv)
 			break;
 		case '6':
 			cfg.ip = 6;
+			break;
+		case 'Z':
+			show_pkt = 1;
 			break;
 		case 'N':
 			cfg.dns_resolv = 1;
@@ -867,10 +891,9 @@ int main(int argc, char **argv)
 		parse_whois_or_die(&cfg);
 	if (device_mtu(cfg.dev) <= cfg.totlen)
 		panic("Packet larger than device MTU!\n");
-
 	register_signal(SIGHUP, signal_handler);
-
 	header();
+	tprintf_init();
 	ret = aslookup_prepare(cfg.whois, cfg.whois_port);
 	if (ret < 0)
 		panic("Cannot resolve whois server!\n");
@@ -881,7 +904,7 @@ int main(int argc, char **argv)
 	ret = do_trace(&cfg);
 	GeoIP_delete(gi_city);
 	GeoIP_delete(gi_country);
-
+	tprintf_cleanup();
 	if (cfg.whois_port)
 		xfree(cfg.whois_port);
 	if (cfg.whois)
