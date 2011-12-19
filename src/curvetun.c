@@ -48,7 +48,6 @@
 #include <unistd.h>
 
 #include "netdev.h"
-#include "version.h"
 #include "stun.h"
 #include "die.h"
 #include "strlcpy.h"
