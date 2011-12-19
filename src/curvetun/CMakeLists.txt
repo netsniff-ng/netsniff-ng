@@ -15,10 +15,12 @@ IF (LIBNACL_LIB_PATH AND LIBNACL_INCLUDE_PATH AND CMAKE_THREAD_LIBS_INIT)
 					../mtrand.c
 					../usermgmt.c
 					../servmgmt.c
+					../patricia.c
 					../trie.c
 					../hash.c
 					../ct_server.c
 					../ct_client.c
+					../parser.c
 					../curvetun.c)
 
 	ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"
