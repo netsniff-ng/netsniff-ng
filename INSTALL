@@ -19,7 +19,7 @@ What libraries / tools are required?
  - libncurses (ifpps)
  - libGeoIP and its database (ashunt)
  - flex, bison (bpfc)
- - libnacl (curvetun, fetched and built automatically on make)
+ - libnacl (curvetun)
 
 It is common, that these libraries are shipped as distribution packages
 for an easy installation. We try to keep this as minimal as possible.
@@ -35,10 +35,13 @@ The installation process done by cmake is fairly simple:
 
 To uninstall, simply remove all files refered in install_manifest.txt
 
-Building and install curvetun is done apart of cmake and can be achieved this way:
-  $ cd netsniff-ng/src/curvetun
-  $ make
-  # make install
+In order to build curvetun, libnacl must be built first.
+To achieve it, please download the libnacl sources from http://hyperelliptic.org/nacl/nacl-20110221.tar.bz2
+and run the "do" build script.
+However, an helper script called nacl.sh is there to facilitate the process.
 
-To uninstall, simply run in the curvetun directory:
-  # make uninstall
+When done, simply pass the path to the header and library build directory like the following example:
+  $ cd build
+  $ cmake -DNACL_INCLUDE_DIR=~/nacl/build/include -DNACL_LIB_DIR=~/nacl/build/lib ..
+  $ make
+
