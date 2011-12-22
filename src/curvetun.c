@@ -62,8 +62,6 @@
 #include "crypto_scalarmult_curve25519.h"
 #include "crypto_auth_hmacsha512256.h"
 
-noinline void *memset(void *__s, int __c, size_t __n);
-
 #define CURVETUN_ENTROPY_SOURCE	"/dev/random"
 
 enum working_mode {
