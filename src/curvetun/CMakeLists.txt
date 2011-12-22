@@ -2,6 +2,8 @@ PROJECT(curvetun C)
 
 SET(BUILD_STRING "generic")
 
+INCLUDE(nacl_path.cmake)
+
 FIND_PACKAGE(Threads)
 FIND_PACKAGE(LibNaCl)
 
@@ -34,5 +36,5 @@ IF (NACL_FOUND AND CMAKE_THREAD_LIBS_INIT)
 	INSTALL(TARGETS ${PROJECT_NAME} DESTINATION ${EXECUTABLE_INSTALL_PATH})
 
 ELSE (NACL_FOUND AND CMAKE_THREAD_LIBS_INIT)
-	MESSAGE("either there is no libnacl lib/include path or libpthread is missing. Skipping ${PROJECT_NAME} build. Refer to INSTALL for more info")
+	MESSAGE("NaCl was not found. Check if NACL_INCLUDE_DIR and NACL_LIB_DIR are properly set in nacl_path.cmake. Skipping ${PROJECT_NAME} build")
 ENDIF (NACL_FOUND AND CMAKE_THREAD_LIBS_INIT)
