@@ -55,8 +55,7 @@ cd - > /dev/null
 nacl_lib_path=$(dirname $(readlink -f $(find $nacl_build_dir -name libnacl.a)))
 nacl_include_path=$(dirname $(readlink -f $(find $nacl_build_dir -name crypto_box.h)))
 
-echo "SET(NACL_INCLUDE_DIR $nacl_include_path)" > nacl_path.cmake
-echo "SET(NACL_LIB_DIR $nacl_lib_path)" >> nacl_path.cmake
+./nacl_path.sh "$nacl_include_path" "$nacl_lib_path"
 
 echo "Done!"
 
