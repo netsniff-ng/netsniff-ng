@@ -2,7 +2,7 @@ PROJECT(curvetun C)
 
 SET(BUILD_STRING "generic")
 
-INCLUDE(nacl_path.cmake)
+INCLUDE(nacl_path.cmake OPTIONAL)
 
 FIND_PACKAGE(Threads)
 FIND_PACKAGE(LibNaCl)
