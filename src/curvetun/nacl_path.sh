@@ -1,5 +1,12 @@
 #!/bin/sh
 
+#
+# netsniff-ng - the packet sniffing beast
+# By Emmanuel Roullit <emmanuel@netsniff-ng.org>
+# Copyright 2009, 2011 Emmanuel Roullit.
+# Subject to the GPL, version 2.
+#
+
 <<POD
 
 =head1 NAME
