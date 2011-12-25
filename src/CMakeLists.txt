@@ -8,7 +8,7 @@ SET(CONFIG_INSTALL_PATH /etc/netsniff-ng)
 
 SET(VERSION "0.5.6")
 
-INCLUDE(CheckBPF)
+INCLUDE(CheckBPFAttach)
 INCLUDE(CheckPFPacket)
 INCLUDE(CheckStrictAlign)
 INCLUDE(CheckTxRing)
