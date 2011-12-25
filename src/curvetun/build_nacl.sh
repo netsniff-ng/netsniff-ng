@@ -1,9 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 
 #
 # netsniff-ng - the packet sniffing beast
 # By Emmanuel Roullit <emmanuel@netsniff-ng.org>
 # Copyright 2009, 2011 Emmanuel Roullit.
+# Copyright 2011 Daniel Borkmann.
 # Subject to the GPL, version 2.
 #
 
@@ -59,8 +60,47 @@ cd "$nacl_build_dir"/"$nacl_version"
 ./do
 cd - > /dev/null
 
-nacl_lib_path=$(dirname $(readlink -f $(find $nacl_build_dir -name libnacl.a)))
-nacl_include_path=$(dirname $(readlink -f $(find $nacl_build_dir -name crypto_box.h)))
+nacl_lib_vers="`find $nacl_build_dir -name libnacl.a`"
+nacl_inc_vers="`find $nacl_build_dir -name crypto_box.h`"
+nacl_build_arch="`uname -m`"
+nacl_use_arch=""
+nacl_use_inc=""
+
+for i in $nacl_lib_vers; do
+	if [[ $i =~ $nacl_build_arch ]]; then
+		nacl_use_arch=$i
+	# x86_64/amd64 name confusion
+	elif [[ $i =~ "amd64" ]]; then
+		if [[ "x86_64" =~ $nacl_build_arch ]]; then
+			nacl_use_arch=$i
+		fi
+	elif [[ $i =~ "x86_64" ]]; then
+		if [[ "amd64" =~ $nacl_build_arch ]]; then
+			nacl_use_arch=$i
+		fi
+	fi
+done
+
+for i in $nacl_inc_vers; do
+	if [[ $i =~ $nacl_build_arch ]]; then
+		nacl_use_inc=$i
+	# x86_64/amd64 name confusion
+	elif [[ $i =~ "amd64" ]]; then
+		if [[ "x86_64" =~ $nacl_build_arch ]]; then
+			nacl_use_inc=$i
+		fi
+	elif [[ $i =~ "x86_64" ]]; then
+		if [[ "amd64" =~ $nacl_build_arch ]]; then
+			nacl_use_inc=$i
+		fi
+	fi
+done
+
+nacl_lib_path="`readlink -f $nacl_use_arch | xargs dirname`"
+nacl_include_path="`readlink -f $nacl_use_inc | xargs dirname`"
+
+echo "Path for linking: $nacl_lib_path"
+echo "Path for including: $nacl_include_path"
 
 ./nacl_path.sh "$nacl_include_path" "$nacl_lib_path"
 
