@@ -14,7 +14,7 @@ than that.
 What libraries / tools are required?
 
  - libc (all)
- - cmake
+ - cmake (all)
  - libpthread (curvetun, netsniff-ng)
  - libncurses (ifpps)
  - libGeoIP and its database (ashunt)
