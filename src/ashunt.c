@@ -62,7 +62,7 @@
 #include "netdev.h"
 #include "mtrand.h"
 #include "parser.h"
-#include "rx_ring.h"
+#include "ring_rx.h"
 #include "poll.h"
 
 #define WHOIS_SERVER_SOURCE "/etc/netsniff-ng/whois.conf"

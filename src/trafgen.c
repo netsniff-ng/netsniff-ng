@@ -50,7 +50,7 @@
 #include "timespec.h"
 #include "mtrand.h"
 #include "signals.h"
-#include "tx_ring.h"
+#include "ring_tx.h"
 
 struct counter {
 	uint16_t id;

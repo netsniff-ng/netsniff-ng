@@ -10,7 +10,7 @@ ADD_EXECUTABLE(${PROJECT_NAME} 	../xmalloc.c
 				../mtrand.c
 				../opt_memcpy.c
 				../write_or_die.c
-				../tx_ring.c
+				../ring_tx.c
 				../netdev.c
 				../trafgen.c)
 

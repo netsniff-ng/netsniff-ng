@@ -36,8 +36,8 @@
 #include <pthread.h>
 #include <fcntl.h>
 
-#include "rx_ring.h"
-#include "tx_ring.h"
+#include "ring_rx.h"
+#include "ring_tx.h"
 #include "netdev.h"
 #include "compiler.h"
 #include "pcap.h"

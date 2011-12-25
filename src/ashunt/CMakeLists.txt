@@ -16,7 +16,7 @@ IF (LIBGEOIP_FOUND AND CMAKE_HAVE_PTHREAD_CREATE)
 					../mtrand.c
 					../tprintf.c
 					../parser.c
-					../rx_ring.c
+					../ring_rx.c
 					../ashunt.c)
 
 	ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"
