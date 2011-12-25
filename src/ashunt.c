@@ -54,7 +54,7 @@
 #include "bpf.h"
 #include "die.h"
 #include "tprintf.h"
-#include "hex.h"
+#include "proto_hex.h"
 #include "xmalloc.h"
 #include "write_or_die.h"
 #include "aslookup.h"
