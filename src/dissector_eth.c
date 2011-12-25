@@ -12,7 +12,6 @@
 #include "hash.h"
 #include "parser.h"
 #include "protos.h"
-#include "tlsf.h"
 #include "dissector.h"
 #include "dissector_eth.h"
 #include "xmalloc.h"
@@ -130,7 +129,7 @@ static void dissector_init_oui(void)
 	memset(buff, 0, sizeof(buff));
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
-		ven = xtlsf_malloc(sizeof(*ven));
+		ven = xmalloc(sizeof(*ven));
 		ptr = buff;
 		ptr = skips(ptr);
 		ptr = getuint(ptr, &ven->id);
@@ -139,7 +138,7 @@ static void dissector_init_oui(void)
 		ptr = skips(ptr);
 		ptr = strtrim_right(ptr, '\n');
 		ptr = strtrim_right(ptr, ' ');
-		ven->vendor = xtlsf_strdup(ptr);
+		ven->vendor = xstrdup(ptr);
 		ven->next = NULL;
 		pos = insert_hash(ven->id, ven, &eth_oui);
 		if (pos) {
@@ -160,13 +159,13 @@ static int dissector_cleanup_oui(void *ptr)
 		return 0;
 
 	while ((tmp = v->next)) {
-		xtlsf_free(v->vendor);
-		xtlsf_free(v);
+		xfree(v->vendor);
+		xfree(v);
 		v = tmp;
 	}
 
-	xtlsf_free(v->vendor);
-	xtlsf_free(v);
+	xfree(v->vendor);
+	xfree(v);
 	return 0;
 }
 
@@ -183,7 +182,7 @@ static void dissector_init_ports_udp(void)
 	memset(buff, 0, sizeof(buff));
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
-		pudp = xtlsf_malloc(sizeof(*pudp));
+		pudp = xmalloc(sizeof(*pudp));
 		ptr = buff;
 		ptr = skips(ptr);
 		ptr = getuint(ptr, &pudp->id);
@@ -192,7 +191,7 @@ static void dissector_init_ports_udp(void)
 		ptr = skips(ptr);
 		ptr = strtrim_right(ptr, '\n');
 		ptr = strtrim_right(ptr, ' ');
-		pudp->port = xtlsf_strdup(ptr);
+		pudp->port = xstrdup(ptr);
 		pudp->next = NULL;
 		pos = insert_hash(pudp->id, pudp, &eth_ports_udp);
 		if (pos) {
@@ -213,13 +212,13 @@ static int dissector_cleanup_ports_udp(void *ptr)
 		return 0;
 
 	while ((tmp = p->next)) {
-		xtlsf_free(p->port);
-		xtlsf_free(p);
+		xfree(p->port);
+		xfree(p);
 		p = tmp;
 	}
 
-	xtlsf_free(p->port);
-	xtlsf_free(p);
+	xfree(p->port);
+	xfree(p);
 	return 0;
 }
 
@@ -236,7 +235,7 @@ static void dissector_init_ports_tcp(void)
 	memset(buff, 0, sizeof(buff));
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
-		ptcp = xtlsf_malloc(sizeof(*ptcp));
+		ptcp = xmalloc(sizeof(*ptcp));
 		ptr = buff;
 		ptr = skips(ptr);
 		ptr = getuint(ptr, &ptcp->id);
@@ -245,7 +244,7 @@ static void dissector_init_ports_tcp(void)
 		ptr = skips(ptr);
 		ptr = strtrim_right(ptr, '\n');
 		ptr = strtrim_right(ptr, ' ');
-		ptcp->port = xtlsf_strdup(ptr);
+		ptcp->port = xstrdup(ptr);
 		ptcp->next = NULL;
 		pos = insert_hash(ptcp->id, ptcp, &eth_ports_tcp);
 		if (pos) {
@@ -266,13 +265,13 @@ static int dissector_cleanup_ports_tcp(void *ptr)
 		return 0;
 
 	while ((tmp = p->next)) {
-		xtlsf_free(p->port);
-		xtlsf_free(p);
+		xfree(p->port);
+		xfree(p);
 		p = tmp;
 	}
 
-	xtlsf_free(p->port);
-	xtlsf_free(p);
+	xfree(p->port);
+	xfree(p);
 	return 0;
 }
 
@@ -289,7 +288,7 @@ static void dissector_init_ether_types(void)
 	memset(buff, 0, sizeof(buff));
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
-		et = xtlsf_malloc(sizeof(*et));
+		et = xmalloc(sizeof(*et));
 		ptr = buff;
 		ptr = skips(ptr);
 		ptr = getuint(ptr, &et->id);
@@ -298,7 +297,7 @@ static void dissector_init_ether_types(void)
 		ptr = skips(ptr);
 		ptr = strtrim_right(ptr, '\n');
 		ptr = strtrim_right(ptr, ' ');
-		et->type = xtlsf_strdup(ptr);
+		et->type = xstrdup(ptr);
 		et->next = NULL;
 		pos = insert_hash(et->id, et, &eth_ether_types);
 		if (pos) {
@@ -319,13 +318,13 @@ static int dissector_cleanup_ether_types(void *ptr)
 		return 0;
 
 	while ((tmp = p->next)) {
-		xtlsf_free(p->type);
-		xtlsf_free(p);
+		xfree(p->type);
+		xfree(p);
 		p = tmp;
 	}
 
-	xtlsf_free(p->type);
-	xtlsf_free(p);
+	xfree(p->type);
+	xfree(p);
 	return 0;
 }
 
