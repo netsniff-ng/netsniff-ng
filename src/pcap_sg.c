@@ -31,7 +31,7 @@ static unsigned long c = 0;
 static struct spinlock lock;
 static ssize_t avail, used, iov_used;
 
-static int sg_pcap_pull_file_header(int fd)
+static int pcap_sg_pull_file_header(int fd)
 {
 	ssize_t ret;
 	struct pcap_filehdr hdr;
@@ -44,7 +44,7 @@ static int sg_pcap_pull_file_header(int fd)
 	return 0;
 }
 
-static int sg_pcap_push_file_header(int fd)
+static int pcap_sg_push_file_header(int fd)
 {
 	ssize_t ret;
 	struct pcap_filehdr hdr;
@@ -61,7 +61,7 @@ static int sg_pcap_push_file_header(int fd)
 	return 0;
 }
 
-static ssize_t sg_pcap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
+static ssize_t pcap_sg_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 				      uint8_t *packet, size_t len)
 {
 	ssize_t ret;
@@ -83,7 +83,7 @@ static ssize_t sg_pcap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 	return ret;
 }
 
-static int sg_pcap_prepare_reading_pcap(int fd)
+static int pcap_sg_prepare_reading_pcap(int fd)
 {
 	spinlock_lock(&lock);
 	avail = readv(fd, iov, IOVSIZ);
@@ -95,7 +95,7 @@ static int sg_pcap_prepare_reading_pcap(int fd)
 	return 0;
 }
 
-static ssize_t sg_pcap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
+static ssize_t pcap_sg_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 				     uint8_t *packet, size_t len)
 {
 	/* In contrast to writing, reading gets really ugly ... */
@@ -164,7 +164,7 @@ static ssize_t sg_pcap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 	return sizeof(*hdr) + hdr->len;
 }
 
-static void sg_pcap_fsync_pcap(int fd)
+static void pcap_sg_fsync_pcap(int fd)
 {
 	ssize_t ret;
 	spinlock_lock(&lock);
@@ -176,17 +176,17 @@ static void sg_pcap_fsync_pcap(int fd)
 	spinlock_unlock(&lock);
 }
 
-struct pcap_file_ops sg_pcap_ops __read_mostly = {
+struct pcap_file_ops pcap_sg_ops __read_mostly = {
 	.name = "SCATTER/GATHER",
-	.pull_file_header = sg_pcap_pull_file_header,
-	.push_file_header = sg_pcap_push_file_header,
-	.write_pcap_pkt = sg_pcap_write_pcap_pkt,
-	.prepare_reading_pcap =  sg_pcap_prepare_reading_pcap,
-	.read_pcap_pkt = sg_pcap_read_pcap_pkt,
-	.fsync_pcap = sg_pcap_fsync_pcap,
+	.pull_file_header = pcap_sg_pull_file_header,
+	.push_file_header = pcap_sg_push_file_header,
+	.write_pcap_pkt = pcap_sg_write_pcap_pkt,
+	.prepare_reading_pcap =  pcap_sg_prepare_reading_pcap,
+	.read_pcap_pkt = pcap_sg_read_pcap_pkt,
+	.fsync_pcap = pcap_sg_fsync_pcap,
 };
 
-int init_sg_pcap(void)
+int init_pcap_sg(void)
 {
 	unsigned long i;
 	c = 0;
@@ -196,10 +196,10 @@ int init_sg_pcap(void)
 		iov[i].iov_len = ALLSIZ;
 	}
 	spinlock_init(&lock);
-	return pcap_ops_group_register(&sg_pcap_ops, PCAP_OPS_SG);
+	return pcap_ops_group_register(&pcap_sg_ops, PCAP_OPS_SG);
 }
 
-void cleanup_sg_pcap(void)
+void cleanup_pcap_sg(void)
 {
 	unsigned long i;
 	spinlock_destroy(&lock);

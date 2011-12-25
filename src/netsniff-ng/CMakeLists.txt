@@ -15,9 +15,9 @@ IF (CMAKE_HAVE_PTHREAD_CREATE)
 					../parser.c
 					../psched.c
 					../pcap.c
-					../rw_pcap.c
-					../sg_pcap.c
-					../mmap_pcap.c
+					../pcap_rw.c
+					../pcap_sg.c
+					../pcap_mmap.c
 					../write_or_die.c
 					../rx_ring.c
 					../tx_ring.c

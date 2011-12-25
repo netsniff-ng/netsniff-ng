@@ -16,7 +16,7 @@
 #include "write_or_die.h"
 #include "die.h"
 
-static int rw_pcap_pull_file_header(int fd)
+static int pcap_rw_pull_file_header(int fd)
 {
 	ssize_t ret;
 	struct pcap_filehdr hdr;
@@ -29,7 +29,7 @@ static int rw_pcap_pull_file_header(int fd)
 	return 0;
 }
 
-static int rw_pcap_push_file_header(int fd)
+static int pcap_rw_push_file_header(int fd)
 {
 	ssize_t ret;
 	struct pcap_filehdr hdr;
@@ -46,7 +46,7 @@ static int rw_pcap_push_file_header(int fd)
 	return 0;
 }
 
-static ssize_t rw_pcap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
+static ssize_t pcap_rw_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 				      uint8_t *packet, size_t len)
 {
 	ssize_t ret;
@@ -65,7 +65,7 @@ static ssize_t rw_pcap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 	return sizeof(*hdr) + hdr->len;
 }
 
-static ssize_t rw_pcap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
+static ssize_t pcap_rw_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 				     uint8_t *packet, size_t len)
 {
 	ssize_t ret;
@@ -82,26 +82,26 @@ static ssize_t rw_pcap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 	return sizeof(*hdr) + hdr->len;
 }
 
-static void rw_pcap_fsync_pcap(int fd)
+static void pcap_rw_fsync_pcap(int fd)
 {
 	fdatasync(fd);
 }
 
-struct pcap_file_ops rw_pcap_ops __read_mostly = {
+struct pcap_file_ops pcap_rw_ops __read_mostly = {
 	.name = "READ/WRITE",
-	.pull_file_header = rw_pcap_pull_file_header,
-	.push_file_header = rw_pcap_push_file_header,
-	.write_pcap_pkt = rw_pcap_write_pcap_pkt,
-	.read_pcap_pkt = rw_pcap_read_pcap_pkt,
-	.fsync_pcap = rw_pcap_fsync_pcap,
+	.pull_file_header = pcap_rw_pull_file_header,
+	.push_file_header = pcap_rw_push_file_header,
+	.write_pcap_pkt = pcap_rw_write_pcap_pkt,
+	.read_pcap_pkt = pcap_rw_read_pcap_pkt,
+	.fsync_pcap = pcap_rw_fsync_pcap,
 };
 
-int init_rw_pcap(void)
+int init_pcap_rw(void)
 {
-	return pcap_ops_group_register(&rw_pcap_ops, PCAP_OPS_RW);
+	return pcap_ops_group_register(&pcap_rw_ops, PCAP_OPS_RW);
 }
 
-void cleanup_rw_pcap(void)
+void cleanup_pcap_rw(void)
 {
 	pcap_ops_group_unregister(PCAP_OPS_RW);
 }

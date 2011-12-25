@@ -34,7 +34,7 @@ static inline size_t get_map_size(void)
 			  (PAGE_SIZE * 3) * DEFAULT_SLOTS);
 }
 
-static int mmap_pcap_pull_file_header(int fd)
+static int pcap_mmap_pull_file_header(int fd)
 {
 	ssize_t ret;
 	struct pcap_filehdr hdr;
@@ -47,7 +47,7 @@ static int mmap_pcap_pull_file_header(int fd)
 	return 0;
 }
 
-static int mmap_pcap_push_file_header(int fd)
+static int pcap_mmap_push_file_header(int fd)
 {
 	ssize_t ret;
 	struct pcap_filehdr hdr;
@@ -64,7 +64,7 @@ static int mmap_pcap_push_file_header(int fd)
 	return 0;
 }
 
-static int mmap_pcap_prepare_writing_pcap(int fd)
+static int pcap_mmap_prepare_writing_pcap(int fd)
 {
 	int ret;
 	struct stat sb;
@@ -96,7 +96,7 @@ static int mmap_pcap_prepare_writing_pcap(int fd)
 	return 0;
 }
 
-static ssize_t mmap_pcap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
+static ssize_t pcap_mmap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 					uint8_t *packet, size_t len)
 {
 	int ret;
@@ -129,7 +129,7 @@ static ssize_t mmap_pcap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 	return sizeof(*hdr) + len;
 }
 
-static int mmap_pcap_prepare_reading_pcap(int fd)
+static int pcap_mmap_prepare_reading_pcap(int fd)
 {
 	int ret;
 	struct stat sb;
@@ -154,7 +154,7 @@ static int mmap_pcap_prepare_reading_pcap(int fd)
 	return 0;
 }
 
-static ssize_t mmap_pcap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
+static ssize_t pcap_mmap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 				       uint8_t *packet, size_t len)
 {
 	spinlock_lock(&lock);
@@ -177,14 +177,14 @@ static ssize_t mmap_pcap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 	return sizeof(*hdr) + hdr->len;
 }
 
-static void mmap_pcap_fsync_pcap(int fd)
+static void pcap_mmap_fsync_pcap(int fd)
 {
 	spinlock_lock(&lock);
 	msync(pstart, (unsigned long) (pcurr - pstart), MS_ASYNC);
 	spinlock_unlock(&lock);
 }
 
-static void mmap_pcap_prepare_close_pcap(int fd, enum pcap_mode mode)
+static void pcap_mmap_prepare_close_pcap(int fd, enum pcap_mode mode)
 {
 	spinlock_lock(&lock);
 	int ret = munmap(pstart, map_size);
@@ -198,25 +198,25 @@ static void mmap_pcap_prepare_close_pcap(int fd, enum pcap_mode mode)
 	spinlock_unlock(&lock);
 }
 
-struct pcap_file_ops mmap_pcap_ops __read_mostly = {
+struct pcap_file_ops pcap_mmap_ops __read_mostly = {
 	.name = "MMAP",
-	.pull_file_header = mmap_pcap_pull_file_header,
-	.push_file_header = mmap_pcap_push_file_header,
-	.prepare_writing_pcap = mmap_pcap_prepare_writing_pcap,
-	.write_pcap_pkt = mmap_pcap_write_pcap_pkt,
-	.prepare_reading_pcap = mmap_pcap_prepare_reading_pcap,
-	.read_pcap_pkt = mmap_pcap_read_pcap_pkt,
-	.fsync_pcap = mmap_pcap_fsync_pcap,
-	.prepare_close_pcap = mmap_pcap_prepare_close_pcap,
+	.pull_file_header = pcap_mmap_pull_file_header,
+	.push_file_header = pcap_mmap_push_file_header,
+	.prepare_writing_pcap = pcap_mmap_prepare_writing_pcap,
+	.write_pcap_pkt = pcap_mmap_write_pcap_pkt,
+	.prepare_reading_pcap = pcap_mmap_prepare_reading_pcap,
+	.read_pcap_pkt = pcap_mmap_read_pcap_pkt,
+	.fsync_pcap = pcap_mmap_fsync_pcap,
+	.prepare_close_pcap = pcap_mmap_prepare_close_pcap,
 };
 
-int init_mmap_pcap(void)
+int init_pcap_mmap(void)
 {
 	spinlock_init(&lock);
-	return pcap_ops_group_register(&mmap_pcap_ops, PCAP_OPS_MMAP);
+	return pcap_ops_group_register(&pcap_mmap_ops, PCAP_OPS_MMAP);
 }
 
-void cleanup_mmap_pcap(void)
+void cleanup_pcap_mmap(void)
 {
 	spinlock_destroy(&lock);
 	pcap_ops_group_unregister(PCAP_OPS_MMAP);
