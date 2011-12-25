@@ -48,7 +48,6 @@
 #include <unistd.h>
 
 #include "netdev.h"
-#include "version.h"
 #include "stun.h"
 #include "die.h"
 #include "strlcpy.h"
@@ -62,8 +61,6 @@
 #include "crypto_box_curve25519xsalsa20poly1305.h"
 #include "crypto_scalarmult_curve25519.h"
 #include "crypto_auth_hmacsha512256.h"
-
-noinline void *memset(void *__s, int __c, size_t __n);
 
 #define CURVETUN_ENTROPY_SOURCE	"/dev/random"
 
