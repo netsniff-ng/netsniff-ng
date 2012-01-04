@@ -90,6 +90,7 @@ label		{label_s}{label_me}+
 "M"		{ return 'M'; }
 "*"		{ return '*'; }
 "&"		{ return '&'; }
+"/*"([^\*]|\*[^/])*"*/" { return K_COMMENT; }
 
 {number_hex}	{ yylval.number = strtoul(yytext, NULL, 16);
 		  return number_hex; }

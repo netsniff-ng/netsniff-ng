@@ -112,11 +112,11 @@ static int find_intr_offset_or_panic(char *label_to_search)
 %token OP_LDB OP_LDH OP_LD OP_LDX OP_ST OP_STX OP_JMP OP_JEQ OP_JGT OP_JGE
 %token OP_JSET OP_ADD OP_SUB OP_MUL OP_DIV OP_AND OP_OR OP_LSH OP_RSH OP_RET
 %token OP_TAX OP_TXA OP_LDXB K_PKT_LEN K_PROTO K_TYPE K_IFIDX K_NLATTR
-%token K_NLATTR_NEST K_MARK K_QUEUE K_HATYPE K_RXHASH K_CPU
+%token K_NLATTR_NEST K_MARK K_QUEUE K_HATYPE K_RXHASH K_CPU K_COMMENT
 
 %token ':' ',' '[' ']' '(' ')' 'x' 'a' '+' 'M' '*' '&' '#'
 
-%token number_hex number_dec label
+%token number_hex number_dec label comment
 
 %type <number> number_hex number_dec number
 %type <label> label
@@ -160,11 +160,16 @@ instr
 	| do_ret { }
 	| do_tax { }
 	| do_txa { }
+	| do_comment { }
 	;
 
 number
 	: number_dec { $$ = $1; }
 	| number_hex { $$ = $1; }
+	;
+
+do_comment
+	: K_COMMENT { }
 	;
 
 do_label
