@@ -20,7 +20,6 @@
 #include <libnetfilter_conntrack/libnetfilter_conntrack.h>
 
 #include "die.h"
-#include "version.h"
 
 #define CT_INCLUDE_UDP	(1 << 0)
 #define CT_INCLUDE_TCP	(1 << 1)
