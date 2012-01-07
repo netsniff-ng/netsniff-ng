@@ -15,7 +15,7 @@ What libraries / tools are required?
 
  - libc (all)
  - cmake (all)
- - libpthread (curvetun, netsniff-ng)
+ - libpthread (curvetun, netsniff-ng, flowtop)
  - libncurses (ifpps, flowtop)
  - libGeoIP and its database (ashunt, flowtop)
  - flex, bison (bpfc)
