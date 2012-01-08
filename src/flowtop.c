@@ -86,7 +86,6 @@ static const char *short_options = "t:vh";
 
 static double interval = 0.1;
 
-/* Default only TCP */
 static int what = INCLUDE_TCP | INCLUDE_UDP;
 
 static struct flow_list flow_list;
@@ -226,7 +225,6 @@ static inline uint16_t get_port(uint16_t src, uint16_t dst)
 	}
 }
 
-/* TODO: add scrolling! */
 static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 {
 	int i, line = 3;
@@ -376,7 +374,7 @@ static void flow_entry_from_ct(struct flow_entry *n, struct nf_conntrack *ct)
 	n->timestamp_stop = nfct_get_attr_u64(ct, ATTR_TIMESTAMP_STOP);
 }
 
-/* TODO: IP4 + IP6, what about UDP? */
+/* TODO: IP4 + IP6 */
 static void flow_entry_get_extended(struct flow_entry *n)
 {
 	struct sockaddr_in sa;
