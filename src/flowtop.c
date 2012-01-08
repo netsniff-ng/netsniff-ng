@@ -559,18 +559,23 @@ static int collector_cb(enum nf_conntrack_msg_type type,
 	return NFCT_CB_CONTINUE;
 }
 
+static int dummy_cb(enum nf_conntrack_msg_type type, struct nf_conntrack *ct,
+		    void *data)
+{
+	return NFCT_CB_STOP;
+}
+
 static void *collector(void *null)
 {
 	int ret;
+	u_int32_t family = AF_INET;
 	struct nfct_handle *handle;
 	struct nfct_filter *filter;
-	struct nf_conntrack *connt;
-	connt = nfct_new();
-	if (!connt)
-		panic("Cannot create a nf_ct!\n");
 	handle = nfct_open(CONNTRACK, NFCT_ALL_CT_GROUPS);
 	if (!handle)
 		panic("Cannot create a nfct handle!\n");
+	nfct_callback_register(handle, NFCT_T_ALL, dummy_cb, NULL);
+	nfct_query(handle, NFCT_Q_DUMP, &family);
 	filter = nfct_filter_create();
 	if (!filter)
 		panic("Cannot create a nfct filter!\n");
@@ -608,7 +613,6 @@ static void *collector(void *null)
 	GeoIP_delete(gi_city);
 	GeoIP_delete(gi_country);
 	nfct_close(handle);
-	nfct_destroy(connt);
 	pthread_exit(0);
 }
 
