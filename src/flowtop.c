@@ -257,6 +257,8 @@ static void screen_update(WINDOW *screen, struct flow_list *fl)
 	spinlock_lock(&fl->lock);
 	mvwprintw(screen, 1, 2, "Kernel netfilter TCP flow statistics, t=%.2lfs",
 		  fl->size, interval);
+	if (fl->head == NULL)
+		mvwprintw(screen, line, 2, "(No active sessions!)");
 	/* Yes, that's lame :-P */
 	for (i = 0; i < sizeof(states); i++) {
 		n = fl->head;
