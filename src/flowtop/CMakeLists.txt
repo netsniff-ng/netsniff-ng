@@ -2,6 +2,8 @@ PROJECT(flowtop C)
 
 SET(BUILD_STRING "generic")
 
+FIND_PACKAGE(LibGeoIP)
+FIND_PACKAGE(Threads)
 FIND_PACKAGE(Curses)
 
 # TODO: FIND_PACKAGE -lnetfilter_conntrack
@@ -15,7 +17,7 @@ IF(CURSES_FOUND)
 			-DVERSION_STRING="${VERSION}"
 			-DBUILD_STRING="${BUILD_STRING}")
 
-	TARGET_LINK_LIBRARIES(flowtop ${CURSES_NCURSES_LIBRARY} -lnetfilter_conntrack -lpthread) # FIXME
+	TARGET_LINK_LIBRARIES(flowtop ${CURSES_NCURSES_LIBRARY} -lnetfilter_conntrack -lpthread ${LibGeoIP_LIBRARY}) # FIXME
 	INSTALL(TARGETS ${PROJECT_NAME} DESTINATION ${EXECUTABLE_INSTALL_PATH})
 ELSE(CURSES_FOUND)
 	MESSAGE("ncurses is missing on target. Skipping ${PROJECT_NAME} build.")

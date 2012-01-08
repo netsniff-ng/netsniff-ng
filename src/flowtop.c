@@ -21,13 +21,29 @@
 #include <pthread.h>
 #include <curses.h>
 #include <signal.h>
+#include <netdb.h>
 #include <libnetfilter_conntrack/libnetfilter_conntrack.h>
 #include <libnetfilter_conntrack/libnetfilter_conntrack_tcp.h>
+#include <GeoIP.h>
+#include <GeoIPCity.h>
+#include <netinet/in.h>
 
 #include "die.h"
 #include "signals.h"
 #include "locking.h"
 #include "timespec.h"
+
+#ifndef IPPROTO_SCTP
+# define IPPROTO_SCTP 132
+#endif
+
+#ifndef IPPROTO_UDPLITE
+# define IPPROTO_UDPLITE 136
+#endif
+
+#ifndef IPPROTO_DCCP
+# define IPPROTO_DCCP 33
+#endif
 
 #define INCLUDE_UDP	(1 << 0)
 #define INCLUDE_TCP	(1 << 1)
@@ -61,8 +77,12 @@ struct flow_entry {
 	uint64_t counter_bytes;
 	uint64_t timestamp_start;
 	uint64_t timestamp_stop;
-	/* ... geoip data ... */
-	/* ... rev dns ... */
+	char country_src[128];
+	char city_src[128];
+	char rev_dns_src[256];
+	char country_dst[128];
+	char city_dst[128];
+	char rev_dns_dst[256];
 };
 
 struct flow_list {
@@ -75,11 +95,15 @@ static sig_atomic_t sigint = 0;
 
 static const char *short_options = "t:vhTU46";
 
-static double interval = 1.0;
+static double interval = 0.2;
 
-static int what = INCLUDE_UDP | INCLUDE_TCP | INCLUDE_IP4 | INCLUDE_IP6;
+/* Default only TCP */
+static int what = INCLUDE_TCP | INCLUDE_IP4 | INCLUDE_IP6;
 
 static struct flow_list flow_list;
+
+static GeoIP *gi_country = NULL;
+static GeoIP *gi_city = NULL;
 
 static struct option long_options[] = {
 	{"interval", required_argument, 0, 't'},
@@ -90,6 +114,35 @@ static struct option long_options[] = {
 	{"version", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
+};
+
+const char *const l3proto2str[AF_MAX] = {
+	[AF_INET]			= "ipv4",
+	[AF_INET6]			= "ipv6",
+};
+
+const char *const proto2str[IPPROTO_MAX] = {
+	[IPPROTO_TCP]			= "tcp",
+	[IPPROTO_UDP]			= "udp",
+	[IPPROTO_UDPLITE]		= "udplite",
+	[IPPROTO_ICMP]			= "icmp",
+	[IPPROTO_ICMPV6]		= "icmpv6",
+	[IPPROTO_SCTP]			= "sctp",
+	[IPPROTO_GRE]			= "gre",
+	[IPPROTO_DCCP]			= "dccp",
+};
+
+const char *const states[TCP_CONNTRACK_MAX] = {
+	[TCP_CONNTRACK_NONE]		= "NONE",
+	[TCP_CONNTRACK_SYN_SENT]	= "SYN_SENT",
+	[TCP_CONNTRACK_SYN_RECV]	= "SYN_RECV",
+	[TCP_CONNTRACK_ESTABLISHED]	= "ESTABLISHED",
+	[TCP_CONNTRACK_FIN_WAIT]	= "FIN_WAIT",
+	[TCP_CONNTRACK_CLOSE_WAIT]	= "CLOSE_WAIT",
+	[TCP_CONNTRACK_LAST_ACK]	= "LAST_ACK",
+	[TCP_CONNTRACK_TIME_WAIT]	= "TIME_WAIT",
+	[TCP_CONNTRACK_CLOSE]		= "CLOSE",
+	[TCP_CONNTRACK_SYN_SENT2]	= "SYN_SENT2",
 };
 
 static void signal_handler(int number)
@@ -106,22 +159,17 @@ static void signal_handler(int number)
 
 static void help(void)
 {
-	printf("\nflowtop %s, top-like flow connection tracking\n",
+	printf("\nflowtop %s, top-like TCP flow connection tracking\n",
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: flowtop [options]\n");
 	printf("Options:\n");
-	printf("  -t|--interval <time>   Refresh time in sec (default 1.0)\n");
-	printf("  -T|--tcp               TCP connections only\n");
-	printf("  -U|--udp               UDP connections only\n");
-	printf("  -4|--ipv4              IPv4 connections only\n");
-	printf("  -6|--ipv6              IPv6 connections only\n");
+	printf("  -t|--interval <time>   Refresh time in sec (default 0.2)\n");
 	printf("  -v|--version           Print version\n");
 	printf("  -h|--help              Print this help\n");
 	printf("\n");
 	printf("Examples:\n");
-	printf("  flowtop --tcp --ipv4\n");
-	printf("  flowtop --tcp --udp --ipv6 --interval 2.0\n");
+	printf("  flowtop --interval 1.0\n");
 	printf("  flowtop\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2011 Daniel Borkmann <daniel@netsniff-ng.org>\n");
@@ -133,7 +181,7 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\nflowtop %s, top-like flow connection tracking\n",
+	printf("\nflowtop %s, top-like TCP flow connection tracking\n",
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
@@ -142,6 +190,66 @@ static void version(void)
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
 	die();
+}
+
+static void screen_init(WINDOW **screen)
+{
+	(*screen) = initscr();
+	noecho();
+	cbreak();
+	nodelay((*screen), TRUE);
+	refresh();
+	wrefresh((*screen));
+}
+
+/* TODO: add scrolling! */
+static void screen_update(WINDOW *screen, struct flow_list *fl)
+{
+	int line = 3;
+	struct flow_entry *n;
+	curs_set(0);
+	clear();
+	spinlock_lock(&fl->lock);
+	mvwprintw(screen, 1, 2, "Kernel TCP flow statistics (%u flows), t=%.2lfs",
+		  fl->size, interval);
+	n = fl->head;
+	while (n) {
+		mvwprintw(screen, line, 2,
+			  "%s:%s[%s]\t%s:%u (%s, %s) -> %s:%u (%s, %s)"
+			  "                                           ",
+		       l3proto2str[n->l3_proto], proto2str[n->l4_proto], states[n->tcp_state],
+		       n->rev_dns_src, ntohs(n->port_src), n->country_src, n->city_src,
+		       n->rev_dns_dst, ntohs(n->port_dst), n->country_dst, n->city_dst);
+
+		line++;
+		n = n->next;
+	}
+	spinlock_unlock(&fl->lock);
+	wrefresh(screen);
+	refresh();
+}
+
+static void screen_end(void)
+{
+	endwin();
+}
+
+static void presenter(void)
+{
+	WINDOW *screen = NULL;
+	screen_init(&screen);
+	while (!sigint) {
+		if (getch() == 'q')
+			break;
+		screen_update(screen, &flow_list);
+		xnanosleep(interval);
+	}
+	screen_end();
+}
+
+static inline const char *make_n_a(const char *p)
+{
+	return p ? : "N/A";
 }
 
 static void flow_entry_from_ct(struct flow_entry *n, struct nf_conntrack *ct)
@@ -167,6 +275,59 @@ static void flow_entry_from_ct(struct flow_entry *n, struct nf_conntrack *ct)
 	n->counter_bytes = nfct_get_attr_u64(ct, ATTR_ORIG_COUNTER_BYTES);
 	n->timestamp_start = nfct_get_attr_u64(ct, ATTR_TIMESTAMP_START);
 	n->timestamp_stop = nfct_get_attr_u64(ct, ATTR_TIMESTAMP_STOP);
+}
+
+/* TODO: IP4 + IP6, what about UDP? */
+static void flow_entry_get_extended(struct flow_entry *n)
+{
+	struct sockaddr_in sa;
+	struct hostent *hent;
+	GeoIPRecord *gir_src, *gir_dst;
+	if (n->flow_id == 0)
+		return;
+	if (ntohs(n->port_src) == 53 || ntohs(n->port_dst) == 53)
+		return;
+	memset(&sa, 0, sizeof(sa));
+	sa.sin_family = PF_INET; //XXX: IPv4
+	sa.sin_addr.s_addr = n->ip4_src_addr;
+	getnameinfo((struct sockaddr *) &sa, sizeof(sa), n->rev_dns_src,
+		    sizeof(n->rev_dns_src), NULL, 0, NI_NUMERICHOST);
+	hent = gethostbyaddr(&sa.sin_addr, sizeof(sa.sin_addr), PF_INET);
+	if (hent)
+		memcpy(n->rev_dns_src, hent->h_name,
+		       min(sizeof(n->rev_dns_src), strlen(hent->h_name)));
+	gir_src = GeoIP_record_by_ipnum(gi_city, ntohl(n->ip4_src_addr));
+	if (gir_src) {
+		const char *country =
+			make_n_a(GeoIP_country_name_by_ipnum(gi_country,
+							     ntohl(n->ip4_src_addr)));
+		const char *city = make_n_a(gir_src->city);
+		memcpy(n->country_src, country,
+		       min(sizeof(n->country_src), strlen(country)));
+		memcpy(n->city_src, city,
+		       min(sizeof(n->city_src), strlen(city)));
+	}
+
+	memset(&sa, 0, sizeof(sa));
+	sa.sin_family = PF_INET; //XXX: IPv4
+	sa.sin_addr.s_addr = n->ip4_dst_addr;
+	getnameinfo((struct sockaddr *) &sa, sizeof(sa), n->rev_dns_dst,
+		    sizeof(n->rev_dns_dst), NULL, 0, NI_NUMERICHOST);
+	hent = gethostbyaddr(&sa.sin_addr, sizeof(sa.sin_addr), PF_INET);
+	if (hent)
+		memcpy(n->rev_dns_dst, hent->h_name,
+		       min(sizeof(n->rev_dns_dst), strlen(hent->h_name)));
+	gir_dst = GeoIP_record_by_ipnum(gi_city, ntohl(n->ip4_dst_addr));
+	if (gir_dst) {
+		const char *country =
+			make_n_a(GeoIP_country_name_by_ipnum(gi_country,
+							     ntohl(n->ip4_dst_addr)));
+		const char *city = make_n_a(gir_dst->city);
+		memcpy(n->country_dst, country,
+		       min(sizeof(n->country_dst), strlen(country)));
+		memcpy(n->city_dst, city,
+		       min(sizeof(n->city_dst), strlen(city)));
+	}
 }
 
 static void flow_list_init(struct flow_list *fl)
@@ -208,11 +369,13 @@ static void flow_list_new_entry(struct flow_list *fl, struct nf_conntrack *ct)
 	fl->head = n;
 	fl->size++;
 	flow_entry_from_ct(n, ct);
+	flow_entry_get_extended(n);
 	spinlock_unlock(&fl->lock);
 }
 
 static void flow_list_update_entry(struct flow_list *fl, struct nf_conntrack *ct)
 {
+	int do_ext = 0;
 	uint32_t id = nfct_get_attr_u32(ct, ATTR_ID);
 	struct flow_entry *n;
 	spinlock_lock(&fl->lock);
@@ -222,8 +385,11 @@ static void flow_list_update_entry(struct flow_list *fl, struct nf_conntrack *ct
 		n->next = fl->head;
 		fl->head = n;
 		fl->size++;
+		do_ext = 1;
 	}
 	flow_entry_from_ct(n, ct);
+	if (do_ext)
+		flow_entry_get_extended(n);
 	spinlock_unlock(&fl->lock);
 }
 
@@ -285,53 +451,6 @@ static int collector_cb(enum nf_conntrack_msg_type type,
 	return NFCT_CB_CONTINUE;
 }
 
-static void screen_init(WINDOW **screen)
-{
-	(*screen) = initscr();
-	noecho();
-	cbreak();
-	nodelay((*screen), TRUE);
-	refresh();
-	wrefresh((*screen));
-}
-
-static void screen_update(WINDOW *screen, struct flow_list *fl)
-{
-	int line = 0;
-	struct flow_entry *n;
-	curs_set(0);
-	spinlock_lock(&fl->lock);
-	mvwprintw(screen, 1, 2, "Kernel flow statistics (%u flows), t=%.2lfs %p",
-		  fl->size, interval, fl->head);
-//	n = fl->head;
-//	while (n) {
-//		mvwprintw(screen, line, 2, "  %u -> %u", n->ip4_src_addr, n->ip4_dst_addr);
-//		line++;
-//		n = n->next;
-//	}
-	spinlock_unlock(&fl->lock);
-	wrefresh(screen);
-	refresh();
-}
-
-static void screen_end(void)
-{
-	endwin();
-}
-
-static void presenter(void)
-{
-	WINDOW *screen = NULL;
-	screen_init(&screen);
-	while (!sigint) {
-		if (getch() == 'q')
-			break;
-		screen_update(screen, &flow_list);
-		xnanosleep(interval);
-	}
-	screen_end();
-}
-
 static void *collector(void *null)
 {
 	int ret;
@@ -347,16 +466,35 @@ static void *collector(void *null)
 		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO, IPPROTO_UDP);
 	if (what & INCLUDE_TCP)
 		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO, IPPROTO_TCP);
+	struct nfct_filter_ipv4 filter_ipv4 = {
+		.addr = ntohl(inet_addr("127.0.0.1")),
+		.mask = 0xffffffff,
+	};
+	nfct_filter_set_logic(filter, NFCT_FILTER_SRC_IPV4,
+			      NFCT_FILTER_LOGIC_NEGATIVE);
+	nfct_filter_add_attr(filter, NFCT_FILTER_SRC_IPV4, &filter_ipv4);
+	struct nfct_filter_ipv6 filter_ipv6 = {
+		.addr = { 0x0, 0x0, 0x0, 0x1 },
+		.mask = { 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff },
+	}; 
+	nfct_filter_set_logic(filter, NFCT_FILTER_SRC_IPV6,
+			      NFCT_FILTER_LOGIC_NEGATIVE);
+	nfct_filter_add_attr(filter, NFCT_FILTER_SRC_IPV6, &filter_ipv6);
 	ret = nfct_filter_attach(nfct_fd(handle), filter);
 	if (ret < 0)
 		panic("Cannot attach filter to handle!\n");
 	nfct_filter_destroy(filter);
+	gi_country = GeoIP_new(GEOIP_STANDARD);
+	gi_city = GeoIP_open_type(GEOIP_CITY_EDITION_REV1, GEOIP_STANDARD);
+	if (!gi_country || !gi_city)
+		panic("Cannot open GeoIP database!\n");
 	flow_list_init(&flow_list);
 	nfct_callback_register(handle, NFCT_T_ALL, collector_cb, NULL);
-	ret = nfct_catch(handle);
-	if (ret < 0)
-		panic("Error in nfct_catch!\n");
+	while (!sigint)
+		nfct_catch(handle);
 	flow_list_destroy(&flow_list);
+	GeoIP_delete(gi_city);
+	GeoIP_delete(gi_country);
 	nfct_close(handle);
 	pthread_exit(0);
 }
