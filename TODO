@@ -44,7 +44,6 @@
   + Add more gnuplot features, i.e. automatic gnuplot script generation
 
 * flowtop:
-  + Add scrolling if the list exeeds the screen
   + Add IPv6 functionality
 
 * t: tests, tests, tests / c: Coccinelle
