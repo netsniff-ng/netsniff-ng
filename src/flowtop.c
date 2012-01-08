@@ -255,7 +255,7 @@ static void screen_update(WINDOW *screen, struct flow_list *fl)
 	init_pair(4, COLOR_GREEN, COLOR_BLACK);
 	clear();
 	spinlock_lock(&fl->lock);
-	mvwprintw(screen, 1, 2, "Kernel netfilter TCP flow statistics (%u flows), t=%.2lfs",
+	mvwprintw(screen, 1, 2, "Kernel netfilter TCP flow statistics, t=%.2lfs",
 		  fl->size, interval);
 	/* Yes, that's lame :-P */
 	for (i = 0; i < sizeof(states); i++) {
@@ -365,9 +365,11 @@ static void flow_entry_get_extended(struct flow_entry *n)
 	getnameinfo((struct sockaddr *) &sa, sizeof(sa), n->rev_dns_src,
 		    sizeof(n->rev_dns_src), NULL, 0, NI_NUMERICHOST);
 	hent = gethostbyaddr(&sa.sin_addr, sizeof(sa.sin_addr), PF_INET);
-	if (hent)
+	if (hent) {
+		memset(n->rev_dns_src, 0, sizeof(n->rev_dns_src));
 		memcpy(n->rev_dns_src, hent->h_name,
 		       min(sizeof(n->rev_dns_src), strlen(hent->h_name)));
+	}
 	gir_src = GeoIP_record_by_ipnum(gi_city, ntohl(n->ip4_src_addr));
 	if (gir_src) {
 		const char *country =
@@ -386,9 +388,11 @@ static void flow_entry_get_extended(struct flow_entry *n)
 	getnameinfo((struct sockaddr *) &sa, sizeof(sa), n->rev_dns_dst,
 		    sizeof(n->rev_dns_dst), NULL, 0, NI_NUMERICHOST);
 	hent = gethostbyaddr(&sa.sin_addr, sizeof(sa.sin_addr), PF_INET);
-	if (hent)
+	if (hent) {
+		memset(n->rev_dns_dst, 0, sizeof(n->rev_dns_dst));
 		memcpy(n->rev_dns_dst, hent->h_name,
 		       min(sizeof(n->rev_dns_dst), strlen(hent->h_name)));
+	}
 	gir_dst = GeoIP_record_by_ipnum(gi_city, ntohl(n->ip4_dst_addr));
 	if (gir_dst) {
 		const char *country =
@@ -585,6 +589,7 @@ int main(int argc, char **argv)
 			if (interval < 0.1)
 				panic("Choose larger interval!\n");
 			break;
+#if 0
 		case 'T':
 			what_cmd |= INCLUDE_TCP;
 			break;
@@ -597,6 +602,7 @@ int main(int argc, char **argv)
 		case '6':
 			what_cmd |= INCLUDE_IP6;
 			break;
+#endif
 		case 'h':
 			help();
 			break;
