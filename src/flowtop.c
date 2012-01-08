@@ -244,11 +244,13 @@ static inline uint16_t tcp_port(uint16_t src, uint16_t dst)
 }
 
 /* TODO: add scrolling! */
-static void screen_update(WINDOW *screen, struct flow_list *fl)
+static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 {
 	int i, line = 3;
+	int maxx, maxy;
 	struct flow_entry *n;
 	curs_set(0);
+	getmaxyx(screen, maxy, maxx);
 	start_color();
 	init_pair(1, COLOR_RED, COLOR_BLACK);
 	init_pair(2, COLOR_BLUE, COLOR_BLACK);
@@ -256,16 +258,22 @@ static void screen_update(WINDOW *screen, struct flow_list *fl)
 	init_pair(4, COLOR_GREEN, COLOR_BLACK);
 	clear();
 	spinlock_lock(&fl->lock);
-	mvwprintw(screen, 1, 2, "Kernel netfilter TCP flow statistics, t=%.2lfs",
-		  fl->size, interval);
+	mvwprintw(screen, 1, 2, "Kernel netfilter TCP flow statistics, [+%d] t=%.2lfs",
+		  skip_lines, interval);
 	if (fl->head == NULL)
 		mvwprintw(screen, line, 2, "(No active sessions!)");
 	/* Yes, that's lame :-P */
+	maxy -= 4;
 	for (i = 0; i < sizeof(states); i++) {
 		n = fl->head;
-		while (n) {
+		while (n && maxy > 0) {
 			if (n->tcp_state != states[i]) {
 				n = n->next;
+				continue;
+			}
+			if (skip_lines > 0) {
+				n = n->next;
+				skip_lines--;
 				continue;
 			}
 			mvwprintw(screen, line, 2, "%s:%s[", l3proto2str[n->l3_proto],
@@ -294,6 +302,7 @@ static void screen_update(WINDOW *screen, struct flow_list *fl)
 			attroff(COLOR_PAIR(4));
 			printw(", %s)", n->city_dst);
 			line++;
+			maxy--;
 			n = n->next;
 		}
 	}
@@ -309,13 +318,30 @@ static void screen_end(void)
 
 static void presenter(void)
 {
+	int skip_lines = 0;
 	WINDOW *screen = NULL;
 	dissector_init_ethernet(0);
 	screen_init(&screen);
 	while (!sigint) {
-		if (getch() == 'q')
+		fflush(stdin);
+		switch (getch()) {
+		case 'q':
+			sigint = 1;
 			break;
-		screen_update(screen, &flow_list);
+		case KEY_UP:
+		case 'u':
+			skip_lines--;
+			if (skip_lines < 0)
+				skip_lines = 0;
+			break;
+		case KEY_DOWN:
+		case 'd':
+			skip_lines++;
+			break;
+		default:
+			break;
+		}
+		screen_update(screen, &flow_list, skip_lines);
 		xnanosleep(interval);
 	}
 	screen_end();
