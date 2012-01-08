@@ -255,7 +255,7 @@ static void screen_update(WINDOW *screen, struct flow_list *fl)
 	init_pair(4, COLOR_GREEN, COLOR_BLACK);
 	clear();
 	spinlock_lock(&fl->lock);
-	mvwprintw(screen, 1, 2, "Kernel TCP flow statistics (%u flows), t=%.2lfs",
+	mvwprintw(screen, 1, 2, "Kernel netfilter TCP flow statistics (%u flows), t=%.2lfs",
 		  fl->size, interval);
 	/* Yes, that's lame :-P */
 	for (i = 0; i < sizeof(states); i++) {
