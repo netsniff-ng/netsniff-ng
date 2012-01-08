@@ -269,17 +269,21 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 			attroff(COLOR_PAIR(1));
 			printw(":%u (", ntohs(n->port_src));
 			attron(COLOR_PAIR(4));
-			printw("%s", n->country_src);
+			printw("%s", (strlen(n->country_src) > 0 ?
+			       n->country_src : "Unknown"));
 			attroff(COLOR_PAIR(4));
-			printw(", %s) => ", n->city_src);
+			printw(", %s) => ", (strlen(n->city_src) > 0 ?
+			       n->city_src : "Unknown"));
 			attron(COLOR_PAIR(2));
 			printw("%s", n->rev_dns_dst);
 			attroff(COLOR_PAIR(2));
 			printw(":%u (", ntohs(n->port_dst));
 			attron(COLOR_PAIR(4));
-			printw("%s", n->country_dst);
+			printw("%s", strlen(n->country_dst) > 0 ?
+			       n->country_dst : "Unknown");
 			attroff(COLOR_PAIR(4));
-			printw(", %s)", n->city_dst);
+			printw(", %s)", strlen(n->city_dst) > 0 ?
+			       n->city_dst : "Unknown");
 			line++;
 			maxy--;
 			n = n->next;
@@ -614,7 +618,7 @@ int main(int argc, char **argv)
 			if (!optarg)
 				help();
 			interval = atof(optarg);
-			if (interval < 0.1)
+			if (interval < 0.01)
 				panic("Choose larger interval!\n");
 			break;
 		case 'h':
