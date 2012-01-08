@@ -32,7 +32,7 @@ The netsniff-ng toolkit [1] currently consists of the following utilities:
   * netsniff-ng: the 'zero-copy' sniffer, pcap capturer and replayer itself
   * arpswirl: an ARP cache poisoning utility (todo)
   * trafgen: a high performance 'zero-copy' network packet generator
-  * flowtop: a top-like netfilter TCP connection tracking tool
+  * flowtop: a top-like netfilter connection tracking tool
   * curvetun: a lightweight curve25519-based multiuser IP tunnel
   * ashunt: an Autonomous System trace route and ISP testing utility
   * bpfc: a tiny Berkeley Packet Filter compiler supporting Linux extensions

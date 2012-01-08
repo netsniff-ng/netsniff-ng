@@ -4,7 +4,7 @@
  * Copyright 2011 Daniel Borkmann.
  * Subject to the GPL, version 2.
  *
- * A tiny tool to provide top-like netfilter TCP connection
+ * A tiny tool to provide top-like netfilter connection
  * tracking information.
  *
  * Debian: apt-get install libnetfilter-conntrack3 libnetfilter-conntrack-dev
@@ -86,7 +86,7 @@ static const char *short_options = "t:vh";
 static double interval = 0.1;
 
 /* Default only TCP */
-static int what = INCLUDE_TCP;
+static int what = INCLUDE_TCP | INCLUDE_UDP;
 
 static struct flow_list flow_list;
 
@@ -111,7 +111,7 @@ const char *const proto2str[IPPROTO_MAX] = {
 };
 
 const char *const state2str[TCP_CONNTRACK_MAX] = {
-	[TCP_CONNTRACK_NONE]		= "NONE",
+	[TCP_CONNTRACK_NONE]		= "NO_STATE",
 	[TCP_CONNTRACK_SYN_SENT]	= "SYN_SENT",
 	[TCP_CONNTRACK_SYN_RECV]	= "SYN_RECV",
 	[TCP_CONNTRACK_ESTABLISHED]	= "ESTABLISHED",
@@ -150,7 +150,7 @@ static void signal_handler(int number)
 
 static void help(void)
 {
-	printf("\nflowtop %s, top-like netfilter TCP flow tracking\n",
+	printf("\nflowtop %s, top-like netfilter TCP/UDP flow tracking\n",
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: flowtop [options]\n");
@@ -172,7 +172,7 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\nflowtop %s, top-like netfilter TCP flow tracking\n",
+	printf("\nflowtop %s, top-like netfilter TCP/UDP flow tracking\n",
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
@@ -235,7 +235,7 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 	init_pair(4, COLOR_GREEN, COLOR_BLACK);
 	clear();
 	spinlock_lock(&fl->lock);
-	mvwprintw(screen, 1, 2, "Kernel netfilter TCP flow statistics, [+%d] t=%.2lfs",
+	mvwprintw(screen, 1, 2, "Kernel netfilter TCP/UDP flow statistics, [+%d] t=%.2lfs",
 		  skip_lines, interval);
 	if (fl->head == NULL)
 		mvwprintw(screen, line, 2, "(No active sessions!)");
@@ -244,7 +244,9 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 	for (i = 0; i < sizeof(states); i++) {
 		n = fl->head;
 		while (n && maxy > 0) {
-			if (n->tcp_state != states[i]) {
+			if (n->tcp_state != states[i] ||
+			    /* Filter out DNS */
+			    get_port(n->port_src, n->port_dst) == 53) {
 				n = n->next;
 				continue;
 			}
@@ -261,8 +263,13 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 			attroff(COLOR_PAIR(3));
 			printw("]:");
 			attron(A_BOLD);
-			printw("%s\t", lookup_port_tcp(get_port(n->port_src,
-								n->port_dst)));
+			if (n->tcp_state != TCP_CONNTRACK_NONE) {
+				printw("%s\t", lookup_port_tcp(get_port(n->port_src,
+									n->port_dst)));
+			} else {
+				printw("%s\t", lookup_port_udp(get_port(n->port_src,
+									n->port_dst)));
+			}
 			attroff(A_BOLD);
 			attron(COLOR_PAIR(1));
 			printw("%s", n->rev_dns_src);
