@@ -26,6 +26,7 @@ IF(CURSES_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND LIBGEOIP_FOUND AND NETFILTER_C
 	INSTALL(FILES 	../conf/oui.conf
 			../conf/udp.conf
 			../conf/tcp.conf
+			../conf/ether.conf
 		DESTINATION ${CONFIG_INSTALL_PATH})
 ELSE(CURSES_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND LIBGEOIP_FOUND AND NETFILTER_CONNTRACK_FOUND)
 	MESSAGE("Either ncurses, pthread, libGeoIP or netfilter_conntrack is missing on target. Skipping ${PROJECT_NAME} build.")
