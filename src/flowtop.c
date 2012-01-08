@@ -20,7 +20,6 @@
 #include <signal.h>
 #include <getopt.h>
 #include <pthread.h>
-#include <curses.h>
 #include <signal.h>
 #include <netdb.h>
 #include <iconv.h>
@@ -29,6 +28,7 @@
 #include <GeoIP.h>
 #include <GeoIPCity.h>
 #include <netinet/in.h>
+#include <curses.h>
 
 #include "die.h"
 #include "signals.h"
@@ -188,6 +188,7 @@ static void screen_init(WINDOW **screen)
 	(*screen) = initscr();
 	noecho();
 	cbreak();
+	keypad(stdscr, TRUE);
 	nodelay(*screen, TRUE);
 	refresh();
 	wrefresh(*screen);
@@ -307,12 +308,14 @@ static void presenter(void)
 			break;
 		case KEY_UP:
 		case 'u':
+		case 'k':
 			skip_lines--;
 			if (skip_lines < 0)
 				skip_lines = 0;
 			break;
 		case KEY_DOWN:
 		case 'd':
+		case 'j':
 			skip_lines++;
 			break;
 		default:
