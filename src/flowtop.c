@@ -21,8 +21,8 @@
 #include <pthread.h>
 #include <curses.h>
 #include <signal.h>
-#include <locale.h>
 #include <netdb.h>
+#include <iconv.h>
 #include <libnetfilter_conntrack/libnetfilter_conntrack.h>
 #include <libnetfilter_conntrack/libnetfilter_conntrack_tcp.h>
 #include <GeoIP.h>
@@ -358,10 +358,14 @@ static void flow_entry_get_extended(struct flow_entry *n)
 	struct sockaddr_in sa;
 	struct hostent *hent;
 	GeoIPRecord *gir_src, *gir_dst;
+	iconv_t conv;
 	if (n->flow_id == 0)
 		return;
 	if (ntohs(n->port_src) == 53 || ntohs(n->port_dst) == 53)
 		return;
+	conv = iconv_open("UTF-8", "ISO8859-1");
+	if (!conv || conv == (iconv_t)(-1))
+		panic("Cannot open charet converter!\n");
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET; //XXX: IPv4
 	sa.sin_addr.s_addr = n->ip4_src_addr;
@@ -375,16 +379,22 @@ static void flow_entry_get_extended(struct flow_entry *n)
 	}
 	gir_src = GeoIP_record_by_ipnum(gi_city, ntohl(n->ip4_src_addr));
 	if (gir_src) {
+		char city_tmp[128], *ptr;
+		size_t inl, outl;
 		const char *country =
 			make_n_a(GeoIP_country_name_by_ipnum(gi_country,
 							     ntohl(n->ip4_src_addr)));
 		const char *city = make_n_a(gir_src->city);
+		inl = strlen(city);
+		outl = sizeof(city_tmp);
+		ptr = city_tmp;
+		memset(city_tmp, 0, sizeof(city_tmp));
+		iconv(conv, (char ** restrict) &city, &inl, &ptr, &outl);
 		memcpy(n->country_src, country,
 		       min(sizeof(n->country_src), strlen(country)));
-		memcpy(n->city_src, city,
-		       min(sizeof(n->city_src), strlen(city)));
+		memcpy(n->city_src, city_tmp,
+		       min(sizeof(n->city_src), strlen(city_tmp)));
 	}
-
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET; //XXX: IPv4
 	sa.sin_addr.s_addr = n->ip4_dst_addr;
@@ -398,15 +408,23 @@ static void flow_entry_get_extended(struct flow_entry *n)
 	}
 	gir_dst = GeoIP_record_by_ipnum(gi_city, ntohl(n->ip4_dst_addr));
 	if (gir_dst) {
+		char city_tmp[128], *ptr;
+		size_t inl, outl;
 		const char *country =
 			make_n_a(GeoIP_country_name_by_ipnum(gi_country,
 							     ntohl(n->ip4_dst_addr)));
 		const char *city = make_n_a(gir_dst->city);
+		inl = strlen(city);
+		outl = sizeof(city_tmp);
+		ptr = city_tmp;
+		memset(city_tmp, 0, sizeof(city_tmp));
+		iconv(conv, (char ** restrict) &city, &inl, &ptr, &outl);
 		memcpy(n->country_dst, country,
 		       min(sizeof(n->country_dst), strlen(country)));
-		memcpy(n->city_dst, city,
-		       min(sizeof(n->city_dst), strlen(city)));
+		memcpy(n->city_dst, city_tmp,
+		       min(sizeof(n->city_dst), strlen(city_tmp)));
 	}
+	iconv_close(conv);
 }
 
 static void flow_list_init(struct flow_list *fl)
@@ -616,8 +634,6 @@ int main(int argc, char **argv)
 			break;
 		}
 	}
-	if (!setlocale(LC_CTYPE, ""))
-		panic("Cannot set locale!\n");
 	if (what_cmd > 0)
 		what = what_cmd;
 	register_signal(SIGINT, signal_handler);
