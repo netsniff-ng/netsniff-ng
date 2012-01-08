@@ -4,11 +4,12 @@
  * Copyright 2011 Daniel Borkmann.
  * Subject to the GPL, version 2.
  *
- * A tiny tool to provide top-like UDP/TCP connection tracking information.
+ * A tiny tool to provide top-like netfilter TCP connection
+ * tracking information.
  *
  * Debian: apt-get install libnetfilter-conntrack3 libnetfilter-conntrack-dev
  *
- * Start conntrack:
+ * Start conntrack (if not yet running):
  *   iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT
  *   iptables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT
  */
@@ -35,23 +36,8 @@
 #include "timespec.h"
 #include "dissector_eth.h"
 
-#ifndef IPPROTO_SCTP
-# define IPPROTO_SCTP 132
-#endif
-
-#ifndef IPPROTO_UDPLITE
-# define IPPROTO_UDPLITE 136
-#endif
-
-#ifndef IPPROTO_DCCP
-# define IPPROTO_DCCP 33
-#endif
-
 #define INCLUDE_UDP	(1 << 0)
 #define INCLUDE_TCP	(1 << 1)
-#define INCLUDE_TCP_EST	(1 << 2)
-#define INCLUDE_IP4	(1 << 3)
-#define INCLUDE_IP6	(1 << 4)
 
 #ifndef ATTR_TIMESTAMP_START
 # define ATTR_TIMESTAMP_START 63
@@ -95,12 +81,12 @@ struct flow_list {
 
 static sig_atomic_t sigint = 0;
 
-static const char *short_options = "t:vhTU46";
+static const char *short_options = "t:vh";
 
-static double interval = 0.2;
+static double interval = 0.1;
 
 /* Default only TCP */
-static int what = INCLUDE_TCP | INCLUDE_IP4 | INCLUDE_IP6;
+static int what = INCLUDE_TCP;
 
 static struct flow_list flow_list;
 
@@ -109,10 +95,6 @@ static GeoIP *gi_city = NULL;
 
 static struct option long_options[] = {
 	{"interval", required_argument, 0, 't'},
-	{"tcp", no_argument, 0, 'T'},
-	{"udp", no_argument, 0, 'U'},
-	{"ipv4", no_argument, 0, '4'},
-	{"ipv6", no_argument, 0, '6'},
 	{"version", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
@@ -126,12 +108,6 @@ const char *const l3proto2str[AF_MAX] = {
 const char *const proto2str[IPPROTO_MAX] = {
 	[IPPROTO_TCP]			= "tcp",
 	[IPPROTO_UDP]			= "udp",
-	[IPPROTO_UDPLITE]		= "udplite",
-	[IPPROTO_ICMP]			= "icmp",
-	[IPPROTO_ICMPV6]		= "icmpv6",
-	[IPPROTO_SCTP]			= "sctp",
-	[IPPROTO_GRE]			= "gre",
-	[IPPROTO_DCCP]			= "dccp",
 };
 
 const char *const state2str[TCP_CONNTRACK_MAX] = {
@@ -174,12 +150,12 @@ static void signal_handler(int number)
 
 static void help(void)
 {
-	printf("\nflowtop %s, top-like TCP flow connection tracking\n",
+	printf("\nflowtop %s, top-like netfilter TCP flow tracking\n",
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: flowtop [options]\n");
 	printf("Options:\n");
-	printf("  -t|--interval <time>   Refresh time in sec (default 0.2)\n");
+	printf("  -t|--interval <time>   Refresh time in sec (default 0.1)\n");
 	printf("  -v|--version           Print version\n");
 	printf("  -h|--help              Print this help\n");
 	printf("\n");
@@ -196,7 +172,7 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\nflowtop %s, top-like TCP flow connection tracking\n",
+	printf("\nflowtop %s, top-like netfilter TCP flow tracking\n",
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
@@ -212,12 +188,12 @@ static void screen_init(WINDOW **screen)
 	(*screen) = initscr();
 	noecho();
 	cbreak();
-	nodelay((*screen), TRUE);
+	nodelay(*screen, TRUE);
 	refresh();
-	wrefresh((*screen));
+	wrefresh(*screen);
 }
 
-static inline uint16_t tcp_port(uint16_t src, uint16_t dst)
+static inline uint16_t get_port(uint16_t src, uint16_t dst)
 {
 	char *tmp1, *tmp2;
 	src = ntohs(src);
@@ -262,8 +238,8 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 		  skip_lines, interval);
 	if (fl->head == NULL)
 		mvwprintw(screen, line, 2, "(No active sessions!)");
-	/* Yes, that's lame :-P */
 	maxy -= 4;
+	/* Yes, that's lame :-P */
 	for (i = 0; i < sizeof(states); i++) {
 		n = fl->head;
 		while (n && maxy > 0) {
@@ -276,14 +252,16 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 				skip_lines--;
 				continue;
 			}
-			mvwprintw(screen, line, 2, "%s:%s[", l3proto2str[n->l3_proto],
+			mvwprintw(screen, line, 2, "%s:%s[",
+				  l3proto2str[n->l3_proto],
 				  proto2str[n->l4_proto]);
 			attron(COLOR_PAIR(3));
 			printw("%s", state2str[n->tcp_state]);
 			attroff(COLOR_PAIR(3));
 			printw("]:");
 			attron(A_BOLD);
-			printw("%s\t", lookup_port_tcp(tcp_port(n->port_src,n->port_dst)));
+			printw("%s\t", lookup_port_tcp(get_port(n->port_src,
+								n->port_dst)));
 			attroff(A_BOLD);
 			attron(COLOR_PAIR(1));
 			printw("%s", n->rev_dns_src);
@@ -323,7 +301,6 @@ static void presenter(void)
 	dissector_init_ethernet(0);
 	screen_init(&screen);
 	while (!sigint) {
-		fflush(stdin);
 		switch (getch()) {
 		case 'q':
 			sigint = 1;
@@ -342,6 +319,7 @@ static void presenter(void)
 			break;
 		}
 		screen_update(screen, &flow_list, skip_lines);
+		fflush(stdin);
 		xnanosleep(interval);
 	}
 	screen_end();
@@ -636,20 +614,6 @@ int main(int argc, char **argv)
 			if (interval < 0.1)
 				panic("Choose larger interval!\n");
 			break;
-#if 0
-		case 'T':
-			what_cmd |= INCLUDE_TCP;
-			break;
-		case 'U':
-			what_cmd |= INCLUDE_UDP;
-			break;
-		case '4':
-			what_cmd |= INCLUDE_IP4;
-			break;
-		case '6':
-			what_cmd |= INCLUDE_IP6;
-			break;
-#endif
 		case 'h':
 			help();
 			break;
