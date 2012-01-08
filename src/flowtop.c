@@ -21,6 +21,7 @@
 #include <pthread.h>
 #include <curses.h>
 #include <signal.h>
+#include <locale.h>
 #include <netdb.h>
 #include <libnetfilter_conntrack/libnetfilter_conntrack.h>
 #include <libnetfilter_conntrack/libnetfilter_conntrack_tcp.h>
@@ -615,6 +616,8 @@ int main(int argc, char **argv)
 			break;
 		}
 	}
+	if (!setlocale(LC_CTYPE, ""))
+		panic("Cannot set locale!\n");
 	if (what_cmd > 0)
 		what = what_cmd;
 	register_signal(SIGINT, signal_handler);
