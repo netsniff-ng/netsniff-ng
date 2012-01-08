@@ -238,7 +238,7 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 	mvwprintw(screen, 1, 2, "Kernel netfilter TCP/UDP flow statistics, [+%d] t=%.2lfs",
 		  skip_lines, interval);
 	if (fl->head == NULL)
-		mvwprintw(screen, line, 2, "(No active sessions!)");
+		mvwprintw(screen, line, 2, "(No active sessions! Is netfilter running?)");
 	maxy -= 4;
 	/* Yes, that's lame :-P */
 	for (i = 0; i < sizeof(states); i++) {
