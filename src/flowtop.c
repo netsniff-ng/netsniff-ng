@@ -564,6 +564,10 @@ static void *collector(void *null)
 	int ret;
 	struct nfct_handle *handle;
 	struct nfct_filter *filter;
+	struct nf_conntrack *connt;
+	connt = nfct_new();
+	if (!connt)
+		panic("Cannot create a nf_ct!\n");
 	handle = nfct_open(CONNTRACK, NFCT_ALL_CT_GROUPS);
 	if (!handle)
 		panic("Cannot create a nfct handle!\n");
@@ -604,6 +608,7 @@ static void *collector(void *null)
 	GeoIP_delete(gi_city);
 	GeoIP_delete(gi_country);
 	nfct_close(handle);
+	nfct_destroy(connt);
 	pthread_exit(0);
 }
 
