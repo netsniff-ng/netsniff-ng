@@ -32,6 +32,7 @@
 #include "signals.h"
 #include "locking.h"
 #include "timespec.h"
+#include "dissector_eth.h"
 
 #ifndef IPPROTO_SCTP
 # define IPPROTO_SCTP 132
@@ -132,7 +133,7 @@ const char *const proto2str[IPPROTO_MAX] = {
 	[IPPROTO_DCCP]			= "dccp",
 };
 
-const char *const states[TCP_CONNTRACK_MAX] = {
+const char *const state2str[TCP_CONNTRACK_MAX] = {
 	[TCP_CONNTRACK_NONE]		= "NONE",
 	[TCP_CONNTRACK_SYN_SENT]	= "SYN_SENT",
 	[TCP_CONNTRACK_SYN_RECV]	= "SYN_RECV",
@@ -143,6 +144,19 @@ const char *const states[TCP_CONNTRACK_MAX] = {
 	[TCP_CONNTRACK_TIME_WAIT]	= "TIME_WAIT",
 	[TCP_CONNTRACK_CLOSE]		= "CLOSE",
 	[TCP_CONNTRACK_SYN_SENT2]	= "SYN_SENT2",
+};
+
+const uint8_t states[] = {
+	TCP_CONNTRACK_SYN_SENT,
+	TCP_CONNTRACK_SYN_RECV,
+	TCP_CONNTRACK_ESTABLISHED,
+	TCP_CONNTRACK_FIN_WAIT,
+	TCP_CONNTRACK_CLOSE_WAIT,
+	TCP_CONNTRACK_LAST_ACK,
+	TCP_CONNTRACK_TIME_WAIT,
+	TCP_CONNTRACK_CLOSE,
+	TCP_CONNTRACK_SYN_SENT2,
+	TCP_CONNTRACK_NONE,
 };
 
 static void signal_handler(int number)
@@ -169,7 +183,7 @@ static void help(void)
 	printf("  -h|--help              Print this help\n");
 	printf("\n");
 	printf("Examples:\n");
-	printf("  flowtop --interval 1.0\n");
+	printf("  flowtop --interval 0.5\n");
 	printf("  flowtop\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2011 Daniel Borkmann <daniel@netsniff-ng.org>\n");
@@ -202,27 +216,83 @@ static void screen_init(WINDOW **screen)
 	wrefresh((*screen));
 }
 
+static inline uint16_t tcp_port(uint16_t src, uint16_t dst)
+{
+	char *tmp1, *tmp2;
+	src = ntohs(src);
+	dst = ntohs(dst);
+	/* XXX: Is there a better way to determine? */
+	if (src < dst && src < 1024) {
+		return src;
+	} else if (dst < src && dst < 1024) {
+		return dst;
+	} else {
+		tmp1 = lookup_port_tcp(src);
+		tmp2 = lookup_port_tcp(dst);
+		if (tmp1 && !tmp2) {
+			return src;
+		} else if (!tmp1 && tmp2) {
+			return dst;
+		} else {
+			if (src < dst)
+				return src;
+			else
+				return dst;
+		}
+	}
+}
+
 /* TODO: add scrolling! */
 static void screen_update(WINDOW *screen, struct flow_list *fl)
 {
-	int line = 3;
+	int i, line = 3;
 	struct flow_entry *n;
 	curs_set(0);
+	start_color();
+	init_pair(1, COLOR_RED, COLOR_BLACK);
+	init_pair(2, COLOR_BLUE, COLOR_BLACK);
+	init_pair(3, COLOR_YELLOW, COLOR_BLACK);
+	init_pair(4, COLOR_GREEN, COLOR_BLACK);
 	clear();
 	spinlock_lock(&fl->lock);
 	mvwprintw(screen, 1, 2, "Kernel TCP flow statistics (%u flows), t=%.2lfs",
 		  fl->size, interval);
-	n = fl->head;
-	while (n) {
-		mvwprintw(screen, line, 2,
-			  "%s:%s[%s]\t%s:%u (%s, %s) -> %s:%u (%s, %s)"
-			  "                                           ",
-		       l3proto2str[n->l3_proto], proto2str[n->l4_proto], states[n->tcp_state],
-		       n->rev_dns_src, ntohs(n->port_src), n->country_src, n->city_src,
-		       n->rev_dns_dst, ntohs(n->port_dst), n->country_dst, n->city_dst);
-
-		line++;
-		n = n->next;
+	/* Yes, that's lame :-P */
+	for (i = 0; i < sizeof(states); i++) {
+		n = fl->head;
+		while (n) {
+			if (n->tcp_state != states[i]) {
+				n = n->next;
+				continue;
+			}
+			mvwprintw(screen, line, 2, "%s:%s[", l3proto2str[n->l3_proto],
+				  proto2str[n->l4_proto]);
+			attron(COLOR_PAIR(3));
+			printw("%s", state2str[n->tcp_state]);
+			attroff(COLOR_PAIR(3));
+			printw("]:");
+			attron(A_BOLD);
+			printw("%s\t", lookup_port_tcp(tcp_port(n->port_src,n->port_dst)));
+			attroff(A_BOLD);
+			attron(COLOR_PAIR(1));
+			printw("%s", n->rev_dns_src);
+			attroff(COLOR_PAIR(1));
+			printw(":%u (", ntohs(n->port_src));
+			attron(COLOR_PAIR(4));
+			printw("%s", n->country_src);
+			attroff(COLOR_PAIR(4));
+			printw(", %s) => ", n->city_src);
+			attron(COLOR_PAIR(2));
+			printw("%s", n->rev_dns_dst);
+			attroff(COLOR_PAIR(2));
+			printw(":%u (", ntohs(n->port_dst));
+			attron(COLOR_PAIR(4));
+			printw("%s", n->country_dst);
+			attroff(COLOR_PAIR(4));
+			printw(", %s)", n->city_dst);
+			line++;
+			n = n->next;
+		}
 	}
 	spinlock_unlock(&fl->lock);
 	wrefresh(screen);
@@ -237,6 +307,7 @@ static void screen_end(void)
 static void presenter(void)
 {
 	WINDOW *screen = NULL;
+	dissector_init_ethernet(0);
 	screen_init(&screen);
 	while (!sigint) {
 		if (getch() == 'q')
@@ -245,6 +316,7 @@ static void presenter(void)
 		xnanosleep(interval);
 	}
 	screen_end();
+	dissector_cleanup_ethernet();
 }
 
 static inline const char *make_n_a(const char *p)

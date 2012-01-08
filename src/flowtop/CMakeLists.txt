@@ -11,6 +11,11 @@ FIND_PACKAGE(Curses)
 IF(CURSES_FOUND)
 	ADD_EXECUTABLE(${PROJECT_NAME}	../xmalloc.c
 					../strlcpy.c
+					../parser.c
+					../hash.c
+					../dissector_eth.c
+					../dissector.c
+					../tprintf.c
 					../flowtop.c)
 
 	ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"
