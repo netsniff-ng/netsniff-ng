@@ -31,6 +31,7 @@
 #include <curses.h>
 
 #include "die.h"
+#include "misc.h"
 #include "signals.h"
 #include "locking.h"
 #include "timespec.h"
@@ -162,6 +163,11 @@ static void help(void)
 	printf("Examples:\n");
 	printf("  flowtop --interval 0.5\n");
 	printf("  flowtop\n\n");
+	printf("Note:\n");
+	printf("  If netfilter is not running, you can activate it with i.e.:\n");
+	printf("   iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT\n");
+	printf("   iptables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT\n");
+	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2011 Daniel Borkmann <daniel@netsniff-ng.org>\n");
 	printf("License: GNU GPL version 2\n");
@@ -627,6 +633,7 @@ int main(int argc, char **argv)
 {
 	pthread_t tid;
 	int ret, c, opt_index, what_cmd = 0;
+	check_for_root_maybe_die();
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 	       &opt_index)) != EOF) {
 		switch (c) {

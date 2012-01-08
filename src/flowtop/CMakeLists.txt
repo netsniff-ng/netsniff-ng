@@ -12,6 +12,7 @@ IF(CURSES_FOUND)
 	ADD_EXECUTABLE(${PROJECT_NAME}	../xmalloc.c
 					../strlcpy.c
 					../parser.c
+					../misc.c
 					../hash.c
 					../dissector_eth.c
 					../dissector.c
