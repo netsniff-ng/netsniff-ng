@@ -508,7 +508,7 @@ static void screen_update(WINDOW *screen, const char *ifname,
 		j++;
 	}
 	if (t->wifi_bitrate > 0) {
-		mvwprintw(screen, j++, 2, "LinkQual: %6d/%d (%d/t)           ",
+		mvwprintw(screen, j++, 2, "LinkQual: %7d/%d (%d/t)          ",
 			  t->wifi_link_qual, t->wifi_link_qual_max,
 			  s->wifi_link_qual);
 		mvwprintw(screen, j++, 2, "Signal: %8d dBm (%d dBm/t)       ",
