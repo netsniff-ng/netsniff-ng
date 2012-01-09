@@ -4,7 +4,7 @@
  * Copyright 2011 Daniel Borkmann.
  * Subject to the GPL, version 2.
  *
- * A tiny tool to provide top-like netfilter TCP connection
+ * A tiny tool to provide top-like netfilter connection
  * tracking information.
  *
  * Debian: apt-get install libnetfilter-conntrack3 libnetfilter-conntrack-dev
@@ -31,6 +31,7 @@
 #include <curses.h>
 
 #include "die.h"
+#include "misc.h"
 #include "signals.h"
 #include "locking.h"
 #include "timespec.h"
@@ -45,6 +46,8 @@
 #ifndef ATTR_TIMESTAMP_STOP
 # define ATTR_TIMESTAMP_STOP 64
 #endif
+
+#define SCROLL_MAX 1000
 
 struct flow_entry {
 	uint32_t flow_id;
@@ -85,8 +88,7 @@ static const char *short_options = "t:vh";
 
 static double interval = 0.1;
 
-/* Default only TCP */
-static int what = INCLUDE_TCP;
+static int what = INCLUDE_TCP | INCLUDE_UDP;
 
 static struct flow_list flow_list;
 
@@ -108,10 +110,27 @@ const char *const l3proto2str[AF_MAX] = {
 const char *const proto2str[IPPROTO_MAX] = {
 	[IPPROTO_TCP]			= "tcp",
 	[IPPROTO_UDP]			= "udp",
+	[IPPROTO_UDPLITE]               = "udplite",
+	[IPPROTO_ICMP]                  = "icmp",
+	[IPPROTO_ICMPV6]                = "icmpv6",
+	[IPPROTO_SCTP]                  = "sctp",
+	[IPPROTO_GRE]                   = "gre",
+	[IPPROTO_DCCP]                  = "dccp",
+	[IPPROTO_IGMP]			= "igmp",
+	[IPPROTO_IPIP]			= "ipip",
+	[IPPROTO_EGP]			= "egp",
+	[IPPROTO_PUP]			= "pup",
+	[IPPROTO_IDP]			= "idp",
+	[IPPROTO_RSVP]			= "rsvp",
+	[IPPROTO_IPV6]			= "ip6tun",
+	[IPPROTO_ESP]			= "esp",
+	[IPPROTO_AH]			= "ah",
+	[IPPROTO_PIM]			= "pim",
+	[IPPROTO_COMP]			= "comp",
 };
 
 const char *const state2str[TCP_CONNTRACK_MAX] = {
-	[TCP_CONNTRACK_NONE]		= "NONE",
+	[TCP_CONNTRACK_NONE]		= "NOSTATE",
 	[TCP_CONNTRACK_SYN_SENT]	= "SYN_SENT",
 	[TCP_CONNTRACK_SYN_RECV]	= "SYN_RECV",
 	[TCP_CONNTRACK_ESTABLISHED]	= "ESTABLISHED",
@@ -150,7 +169,7 @@ static void signal_handler(int number)
 
 static void help(void)
 {
-	printf("\nflowtop %s, top-like netfilter TCP flow tracking\n",
+	printf("\nflowtop %s, top-like netfilter TCP/UDP flow tracking\n",
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: flowtop [options]\n");
@@ -162,6 +181,11 @@ static void help(void)
 	printf("Examples:\n");
 	printf("  flowtop --interval 0.5\n");
 	printf("  flowtop\n\n");
+	printf("Note:\n");
+	printf("  If netfilter is not running, you can activate it with i.e.:\n");
+	printf("   iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT\n");
+	printf("   iptables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT\n");
+	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2011 Daniel Borkmann <daniel@netsniff-ng.org>\n");
 	printf("License: GNU GPL version 2\n");
@@ -172,7 +196,7 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\nflowtop %s, top-like netfilter TCP flow tracking\n",
+	printf("\nflowtop %s, top-like netfilter TCP/UDP flow tracking\n",
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
@@ -220,7 +244,6 @@ static inline uint16_t get_port(uint16_t src, uint16_t dst)
 	}
 }
 
-/* TODO: add scrolling! */
 static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 {
 	int i, line = 3;
@@ -235,16 +258,18 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 	init_pair(4, COLOR_GREEN, COLOR_BLACK);
 	clear();
 	spinlock_lock(&fl->lock);
-	mvwprintw(screen, 1, 2, "Kernel netfilter TCP flow statistics, [+%d] t=%.2lfs",
+	mvwprintw(screen, 1, 2, "Kernel netfilter TCP/UDP flow statistics, [+%d] t=%.2lfs",
 		  skip_lines, interval);
 	if (fl->head == NULL)
-		mvwprintw(screen, line, 2, "(No active sessions!)");
+		mvwprintw(screen, line, 2, "(No active sessions! Is netfilter running?)");
 	maxy -= 4;
 	/* Yes, that's lame :-P */
 	for (i = 0; i < sizeof(states); i++) {
 		n = fl->head;
 		while (n && maxy > 0) {
-			if (n->tcp_state != states[i]) {
+			if (n->tcp_state != states[i] ||
+			    /* Filter out DNS */
+			    get_port(n->port_src, n->port_dst) == 53) {
 				n = n->next;
 				continue;
 			}
@@ -261,11 +286,16 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 			attroff(COLOR_PAIR(3));
 			printw("]:");
 			attron(A_BOLD);
-			printw("%s\t", lookup_port_tcp(get_port(n->port_src,
-								n->port_dst)));
+			if (n->tcp_state != TCP_CONNTRACK_NONE) {
+				printw("%s\t", lookup_port_tcp(get_port(n->port_src,
+									n->port_dst)));
+			} else {
+				printw("%s\t", lookup_port_udp(get_port(n->port_src,
+									n->port_dst)));
+			}
 			attroff(A_BOLD);
 			attron(COLOR_PAIR(1));
-			printw("%s", n->rev_dns_src);
+			mvwprintw(screen, line, 35, "%s", n->rev_dns_src);
 			attroff(COLOR_PAIR(1));
 			printw(":%u (", ntohs(n->port_src));
 			attron(COLOR_PAIR(4));
@@ -321,6 +351,8 @@ static void presenter(void)
 		case 'd':
 		case 'j':
 			skip_lines++;
+			if (skip_lines > SCROLL_MAX)
+				skip_lines = SCROLL_MAX;
 			break;
 		default:
 			break;
@@ -363,7 +395,7 @@ static void flow_entry_from_ct(struct flow_entry *n, struct nf_conntrack *ct)
 	n->timestamp_stop = nfct_get_attr_u64(ct, ATTR_TIMESTAMP_STOP);
 }
 
-/* TODO: IP4 + IP6, what about UDP? */
+/* TODO: IP4 + IP6 */
 static void flow_entry_get_extended(struct flow_entry *n)
 {
 	struct sockaddr_in sa;
@@ -620,6 +652,7 @@ int main(int argc, char **argv)
 {
 	pthread_t tid;
 	int ret, c, opt_index, what_cmd = 0;
+	check_for_root_maybe_die();
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 	       &opt_index)) != EOF) {
 		switch (c) {

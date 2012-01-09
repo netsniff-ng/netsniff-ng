@@ -32,7 +32,7 @@ The netsniff-ng toolkit [1] currently consists of the following utilities:
   * netsniff-ng: the 'zero-copy' sniffer, pcap capturer and replayer itself
   * arpswirl: an ARP cache poisoning utility (todo)
   * trafgen: a high performance 'zero-copy' network packet generator
-  * flowtop: a top-like netfilter TCP connection tracking tool
+  * flowtop: a top-like netfilter connection tracking tool
   * curvetun: a lightweight curve25519-based multiuser IP tunnel
   * ashunt: an Autonomous System trace route and ISP testing utility
   * bpfc: a tiny Berkeley Packet Filter compiler supporting Linux extensions
@@ -42,7 +42,12 @@ The netsniff-ng toolkit is an Open Source project covered by the GNU General
 Public License. For any questions or feedback about netsniff-ng you are welcome
 to leave us a message to <workgroup@netsniff-ng.org> or to our mailing list
 at <netsniff-ng@googlegroups.com> (Note: you have to register first). This
-project is purely non-commercial and will always stay that way!
+project is purely non-commercial and will always stay that way! The current
+project status can be considered as "working". In general, all tools have been
+tested by us to a great extend including their command-line options. In fact,
+many of our tools are used in production systems. However, we give no guarantee
+that our tools are free of bugs! If you spot some issues, contact us as
+described in REPORTING-BUGS.
 
 Also, have a look at our FAQ [2] for answering your questions. Furthermore,
 we have a development blog [3] where we sometimes drop some interesting things
@@ -59,9 +64,8 @@ you should bind the netsniff-ng tools to a specific CPU via commandline option
 (i.e. --bind 0). Some further recommendations can be found in [6] [8]. Also,
 Eric Dumazets BPF Just-in-Time compiler can speed up the critical path [7].
 
-You might want to have a look at INSTALL, REPORTING-BUGS, HACKING, CODING,
-and COPYING, too. Anyways, enough talking from my side and happy packet
-hacking!
+You might want to have a look at INSTALL, HACKING, CODING and COPYING, too.
+Happy packet hacking!
 
 [1] http://netsniff-ng.org/
 [2] http://netsniff-ng.org/faq.html
