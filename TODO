@@ -45,6 +45,7 @@
 
 * flowtop:
   + Add IPv6 functionality
+  + Fix locking
 
 * t: tests, tests, tests / c: Coccinelle
   + Highly needed!

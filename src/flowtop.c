@@ -4,8 +4,9 @@
  * Copyright 2011 Daniel Borkmann.
  * Subject to the GPL, version 2.
  *
- * A tiny tool to provide top-like netfilter connection
- * tracking information.
+ * A tiny tool to provide top-like netfilter connection tracking information.
+ * Regarding locking the current code is just broken. It also needs clean ups
+ * in general.
  *
  * Debian: apt-get install libnetfilter-conntrack3 libnetfilter-conntrack-dev
  *
