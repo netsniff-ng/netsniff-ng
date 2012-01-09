@@ -271,6 +271,7 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 	maxy -= 4;
 	/* Yes, that's lame :-P */
 	for (i = 0; i < sizeof(states); i++) {
+		barrier();
 		n = fl->head;
 		while (n && maxy > 0) {
 			if (n->tcp_state != states[i] ||
