@@ -114,6 +114,17 @@ const char *const proto2str[IPPROTO_MAX] = {
 	[IPPROTO_SCTP]                  = "sctp",
 	[IPPROTO_GRE]                   = "gre",
 	[IPPROTO_DCCP]                  = "dccp",
+	[IPPROTO_IGMP]			= "igmp",
+	[IPPROTO_IPIP]			= "ipip",
+	[IPPROTO_EGP]			= "egp",
+	[IPPROTO_PUP]			= "pup",
+	[IPPROTO_IDP]			= "idp",
+	[IPPROTO_RSVP]			= "rsvp",
+	[IPPROTO_IPV6]			= "ip6tun",
+	[IPPROTO_ESP]			= "esp",
+	[IPPROTO_AH]			= "ah",
+	[IPPROTO_PIM]			= "pim",
+	[IPPROTO_COMP]			= "comp",
 };
 
 const char *const state2str[TCP_CONNTRACK_MAX] = {
