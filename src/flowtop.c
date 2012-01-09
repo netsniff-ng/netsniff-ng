@@ -31,6 +31,7 @@
 #include <curses.h>
 
 #include "die.h"
+#include "compiler.h"
 #include "misc.h"
 #include "signals.h"
 #include "locking.h"
@@ -78,11 +79,10 @@ struct flow_entry {
 
 struct flow_list {
 	struct flow_entry *head;
-	unsigned long size;
 	struct spinlock lock;
 };
 
-static sig_atomic_t sigint = 0;
+static sig_atomic_t sigint = 0, indisplay = 0;
 
 static const char *short_options = "t:vh";
 
@@ -257,7 +257,9 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 	init_pair(3, COLOR_YELLOW, COLOR_BLACK);
 	init_pair(4, COLOR_GREEN, COLOR_BLACK);
 	clear();
-	spinlock_lock(&fl->lock);
+	indisplay = 1;
+	barrier();
+	//spinlock_lock(&fl->lock);
 	mvwprintw(screen, 1, 2, "Kernel netfilter TCP/UDP flow statistics, [+%d] t=%.2lfs",
 		  skip_lines, interval);
 	if (fl->head == NULL)
@@ -270,10 +272,12 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 			if (n->tcp_state != states[i] ||
 			    /* Filter out DNS */
 			    get_port(n->port_src, n->port_dst) == 53) {
+				barrier();
 				n = n->next;
 				continue;
 			}
 			if (skip_lines > 0) {
+				barrier();
 				n = n->next;
 				skip_lines--;
 				continue;
@@ -316,10 +320,13 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 			       n->city_dst : "Unknown");
 			line++;
 			maxy--;
+			barrier();
 			n = n->next;
 		}
 	}
-	spinlock_unlock(&fl->lock);
+	//spinlock_unlock(&fl->lock);
+	indisplay = 0;
+	barrier();
 	wrefresh(screen);
 	refresh();
 }
@@ -355,10 +362,10 @@ static void presenter(void)
 				skip_lines = SCROLL_MAX;
 			break;
 		default:
+			fflush(stdin);
 			break;
 		}
 		screen_update(screen, &flow_list, skip_lines);
-		fflush(stdin);
 		xnanosleep(interval);
 	}
 	screen_end();
@@ -473,8 +480,7 @@ static void flow_entry_get_extended(struct flow_entry *n)
 static void flow_list_init(struct flow_list *fl)
 {
 	fl->head = NULL;
-	fl->size = 0;
-	spinlock_init(&fl->lock);
+	//spinlock_init(&fl->lock);
 }
 
 static struct flow_entry *__flow_list_find_by_id(struct flow_list *fl, uint32_t id)
@@ -504,13 +510,13 @@ static struct flow_entry *__flow_list_find_prev_by_id(struct flow_list *fl, uint
 static void flow_list_new_entry(struct flow_list *fl, struct nf_conntrack *ct)
 {
 	struct flow_entry *n = xzmalloc(sizeof(*n));
-	spinlock_lock(&fl->lock);
+	//spinlock_lock(&fl->lock);
 	n->next = fl->head;
 	fl->head = n;
-	fl->size++;
+	barrier();
 	flow_entry_from_ct(n, ct);
 	flow_entry_get_extended(n);
-	spinlock_unlock(&fl->lock);
+	//spinlock_unlock(&fl->lock);
 }
 
 static void flow_list_update_entry(struct flow_list *fl, struct nf_conntrack *ct)
@@ -518,55 +524,55 @@ static void flow_list_update_entry(struct flow_list *fl, struct nf_conntrack *ct
 	int do_ext = 0;
 	uint32_t id = nfct_get_attr_u32(ct, ATTR_ID);
 	struct flow_entry *n;
-	spinlock_lock(&fl->lock);
+	//spinlock_lock(&fl->lock);
 	n = __flow_list_find_by_id(fl, id);
 	if (n == NULL) {
 		n = xzmalloc(sizeof(*n));
 		n->next = fl->head;
 		fl->head = n;
-		fl->size++;
+		barrier();
 		do_ext = 1;
 	}
 	flow_entry_from_ct(n, ct);
 	if (do_ext)
 		flow_entry_get_extended(n);
-	spinlock_unlock(&fl->lock);
+	//spinlock_unlock(&fl->lock);
 }
 
 static void flow_list_destroy_entry(struct flow_list *fl, struct nf_conntrack *ct)
 {
 	uint32_t id = nfct_get_attr_u32(ct, ATTR_ID);
 	struct flow_entry *n1, *n2;
-	spinlock_lock(&fl->lock);
+	//spinlock_lock(&fl->lock);
 	n1 = __flow_list_find_by_id(fl, id);
 	if (n1) {
 		n2 = __flow_list_find_prev_by_id(fl, id);
 		if (n2) {
 			n2->next = n1->next;
 			n1->next = NULL;
+			barrier();
 			xfree(n1);
 		} else {
 			xfree(fl->head);
 			fl->head = NULL;
+			barrier();
 		}
-		fl->size--;
 	}
-	spinlock_unlock(&fl->lock);
+	//spinlock_unlock(&fl->lock);
 }
 
 static void flow_list_destroy(struct flow_list *fl)
 {
 	struct flow_entry *n;
-	spinlock_lock(&fl->lock);
+	//spinlock_lock(&fl->lock);
 	while (fl->head != NULL) {
 		n = fl->head->next;
 		fl->head->next = NULL;
 		xfree(fl->head);
-		fl->size--;
 		fl->head = n;
 	}
-	spinlock_unlock(&fl->lock);
-	spinlock_destroy(&fl->lock);
+	//spinlock_unlock(&fl->lock);
+	//spinlock_destroy(&fl->lock);
 }
 
 static int collector_cb(enum nf_conntrack_msg_type type,
@@ -575,6 +581,9 @@ static int collector_cb(enum nf_conntrack_msg_type type,
 {
 	if (sigint)
 		return NFCT_CB_STOP;
+	barrier();
+	while (indisplay)
+		sleep(0);
 	switch (type) {
 	case NFCT_T_NEW:
 		flow_list_new_entry(&flow_list, ct);
