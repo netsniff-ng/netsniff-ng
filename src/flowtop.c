@@ -616,7 +616,7 @@ static void *collector(void *null)
 	if (what & INCLUDE_TCP)
 		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO, IPPROTO_TCP);
 	struct nfct_filter_ipv4 filter_ipv4 = {
-		.addr = ntohl(inet_addr("127.0.0.1")),
+		.addr = ntohl(INADDR_LOOPBACK),
 		.mask = 0xffffffff,
 	};
 	nfct_filter_set_logic(filter, NFCT_FILTER_SRC_IPV4,
