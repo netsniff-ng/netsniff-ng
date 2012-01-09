@@ -47,6 +47,8 @@
 # define ATTR_TIMESTAMP_STOP 64
 #endif
 
+#define SCROLL_MAX 1000
+
 struct flow_entry {
 	uint32_t flow_id;
 	struct flow_entry *next;
@@ -349,6 +351,8 @@ static void presenter(void)
 		case 'd':
 		case 'j':
 			skip_lines++;
+			if (skip_lines > SCROLL_MAX)
+				skip_lines = SCROLL_MAX;
 			break;
 		default:
 			break;
