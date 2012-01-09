@@ -84,7 +84,7 @@ struct flow_list {
 
 static sig_atomic_t sigint = 0, indisplay = 0;
 
-static const char *short_options = "t:vh";
+static const char *short_options = "t:vhTU";
 
 static double interval = 0.1;
 
@@ -97,6 +97,8 @@ static GeoIP *gi_city = NULL;
 
 static struct option long_options[] = {
 	{"interval", required_argument, 0, 't'},
+	{"tcp", no_argument, 0, 'T'},
+	{"udp", no_argument, 0, 'U'},
 	{"version", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
@@ -175,11 +177,13 @@ static void help(void)
 	printf("Usage: flowtop [options]\n");
 	printf("Options:\n");
 	printf("  -t|--interval <time>   Refresh time in sec (default 0.1)\n");
+	printf("  -T|--tcp               Show only TCP flows\n");
+	printf("  -U|--udp               Show only UDP flows\n");
 	printf("  -v|--version           Print version\n");
 	printf("  -h|--help              Print this help\n");
 	printf("\n");
 	printf("Examples:\n");
-	printf("  flowtop --interval 0.5\n");
+	printf("  flowtop -T --interval 0.5\n");
 	printf("  flowtop\n\n");
 	printf("Note:\n");
 	printf("  If netfilter is not running, you can activate it with i.e.:\n");
@@ -615,8 +619,14 @@ static void *collector(void *null)
 	handle = nfct_open(CONNTRACK, NFCT_ALL_CT_GROUPS);
 	if (!handle)
 		panic("Cannot create a nfct handle!\n");
+	/* Hack: inits ct */
 	nfct_callback_register(handle, NFCT_T_ALL, dummy_cb, NULL);
 	nfct_query(handle, NFCT_Q_DUMP, &family);
+	nfct_close(handle);
+	handle = nfct_open(CONNTRACK, NFCT_ALL_CT_GROUPS);
+	if (!handle)
+		panic("Cannot create a nfct handle!\n");
+	nfct_query(handle, NFCT_Q_FLUSH, &family);
 	filter = nfct_filter_create();
 	if (!filter)
 		panic("Cannot create a nfct filter!\n");
@@ -648,8 +658,10 @@ static void *collector(void *null)
 		panic("Cannot open GeoIP database!\n");
 	flow_list_init(&flow_list);
 	nfct_callback_register(handle, NFCT_T_ALL, collector_cb, NULL);
-	while (!sigint)
-		nfct_catch(handle);
+	while (!sigint) {
+		if (nfct_catch(handle) < 0)
+			nfct_query(handle, NFCT_Q_FLUSH, &family);
+	}
 	flow_list_destroy(&flow_list);
 	GeoIP_delete(gi_city);
 	GeoIP_delete(gi_country);
@@ -671,6 +683,12 @@ int main(int argc, char **argv)
 			interval = atof(optarg);
 			if (interval < 0.01)
 				panic("Choose larger interval!\n");
+			break;
+		case 'T':
+			what_cmd |= INCLUDE_TCP;
+			break;
+		case 'U':
+			what_cmd |= INCLUDE_UDP;
 			break;
 		case 'h':
 			help();
