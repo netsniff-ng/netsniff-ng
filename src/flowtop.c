@@ -108,6 +108,12 @@ const char *const l3proto2str[AF_MAX] = {
 const char *const proto2str[IPPROTO_MAX] = {
 	[IPPROTO_TCP]			= "tcp",
 	[IPPROTO_UDP]			= "udp",
+	[IPPROTO_UDPLITE]               = "udplite",
+	[IPPROTO_ICMP]                  = "icmp",
+	[IPPROTO_ICMPV6]                = "icmpv6",
+	[IPPROTO_SCTP]                  = "sctp",
+	[IPPROTO_GRE]                   = "gre",
+	[IPPROTO_DCCP]                  = "dccp",
 };
 
 const char *const state2str[TCP_CONNTRACK_MAX] = {
@@ -276,7 +282,7 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 			}
 			attroff(A_BOLD);
 			attron(COLOR_PAIR(1));
-			printw("%s", n->rev_dns_src);
+			mvwprintw(screen, line, 35, "%s", n->rev_dns_src);
 			attroff(COLOR_PAIR(1));
 			printw(":%u (", ntohs(n->port_src));
 			attron(COLOR_PAIR(4));
