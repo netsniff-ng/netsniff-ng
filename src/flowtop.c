@@ -23,6 +23,7 @@
 #include <pthread.h>
 #include <signal.h>
 #include <netdb.h>
+#include <ctype.h>
 #include <libnetfilter_conntrack/libnetfilter_conntrack.h>
 #include <libnetfilter_conntrack/libnetfilter_conntrack_tcp.h>
 #include <GeoIP.h>
@@ -84,8 +85,6 @@ struct flow_list {
 
 static sig_atomic_t sigint = 0, indisplay = 0;
 
-static const char *short_options = "t:vhTU";
-
 static double interval = 0.1;
 
 static int what = INCLUDE_TCP | INCLUDE_UDP;
@@ -95,10 +94,16 @@ static struct flow_list flow_list;
 static GeoIP *gi_country = NULL;
 static GeoIP *gi_city = NULL;
 
+static char *path_city_db = NULL, *path_country_db = NULL;
+
+static const char *short_options = "t:vhTULK";
+
 static struct option long_options[] = {
 	{"interval", required_argument, 0, 't'},
 	{"tcp", no_argument, 0, 'T'},
 	{"udp", no_argument, 0, 'U'},
+	{"city-db", required_argument, 0, 'L'},
+	{"country-db", required_argument, 0, 'K'},
 	{"version", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
@@ -179,6 +184,8 @@ static void help(void)
 	printf("  -t|--interval <time>   Refresh time in sec (default 0.1)\n");
 	printf("  -T|--tcp               Show only TCP flows\n");
 	printf("  -U|--udp               Show only UDP flows\n");
+	printf("  --city-db <path>       Specifiy path for geoip city database\n");
+	printf("  --country-db <path>    Specifiy path for geoip country database\n");
 	printf("  -v|--version           Print version\n");
 	printf("  -h|--help              Print this help\n");
 	printf("\n");
@@ -634,8 +641,16 @@ static void *collector(void *null)
 	if (ret < 0)
 		panic("Cannot attach filter to handle!\n");
 	nfct_filter_destroy(filter);
-	gi_country = GeoIP_open_type(GEOIP_COUNTRY_EDITION, GEOIP_MMAP_CACHE);
-	gi_city = GeoIP_open_type(GEOIP_CITY_EDITION_REV1, GEOIP_MMAP_CACHE);
+	if (path_country_db)
+		gi_country = GeoIP_open(path_country_db, GEOIP_MMAP_CACHE);
+	else
+		gi_country = GeoIP_open_type(GEOIP_COUNTRY_EDITION,
+					     GEOIP_MMAP_CACHE);
+	if (path_city_db)
+		gi_city = GeoIP_open(path_city_db, GEOIP_MMAP_CACHE);
+	else
+		gi_city = GeoIP_open_type(GEOIP_CITY_EDITION_REV1,
+					  GEOIP_MMAP_CACHE);
 	if (!gi_country || !gi_city)
 		panic("Cannot open GeoIP database!\n");
 	GeoIP_set_charset(gi_country, GEOIP_CHARSET_UTF8);
@@ -650,6 +665,10 @@ static void *collector(void *null)
 	GeoIP_delete(gi_city);
 	GeoIP_delete(gi_country);
 	nfct_close(handle);
+	if (path_city_db)
+		xfree(path_city_db);
+	if (path_country_db)
+		xfree(path_country_db);
 	pthread_exit(0);
 }
 
@@ -674,12 +693,30 @@ int main(int argc, char **argv)
 		case 'U':
 			what_cmd |= INCLUDE_UDP;
 			break;
+		case 'L':
+			path_city_db = xstrdup(optarg);
+			break;
+		case 'K':
+			path_country_db = xstrdup(optarg);
+			break;
 		case 'h':
 			help();
 			break;
 		case 'v':
 			version();
 			break;
+		case '?':
+			switch (optopt) {
+			case 'L':
+			case 'K':
+				panic("Option -%c requires an argument!\n",
+				      optopt);
+			default:
+				if (isprint(optopt))
+					whine("Unknown option character "
+					      "`0x%X\'!\n", optopt);
+				die();
+			}
 		default:
 			break;
 		}
