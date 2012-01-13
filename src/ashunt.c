@@ -95,7 +95,7 @@ static int show_pkt = 0;
 static GeoIP *gi_country = NULL;
 static GeoIP *gi_city = NULL;
 
-static const char *short_options = "H:p:nNf:m:i:d:q:x:SAEFPURt:Gl:w:W:hv46X:Z";
+static const char *short_options = "H:p:nNf:m:i:d:q:x:SAEFPURt:Gl:w:W:hv46X:ZLK";
 
 static struct option long_options[] = {
 	{"host", required_argument, 0, 'H'},
@@ -123,6 +123,8 @@ static struct option long_options[] = {
 	{"totlen", required_argument, 0, 'l'},
 	{"whois", required_argument, 0, 'w'},
 	{"wport", required_argument, 0, 'W'},
+	{"city-db", required_argument, 0, 'L'},
+	{"country-db", required_argument, 0, 'K'},
 	{"version", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
@@ -224,6 +226,8 @@ static void help(void)
 	printf("                         (default: /etc/netsniff-ng/whois.conf)\n");
 	printf(" -W|--wport <port>       Use a different port to AS whois server\n");
 	printf("                         (default: /etc/netsniff-ng/whois.conf)\n");
+	printf(" --city-db <path>        Specifiy path for geoip city database\n");
+	printf(" --country-db <path>     Specifiy path for geoip country database\n");
 	printf(" -v|--version            Print version\n");
 	printf(" -h|--help               Print this help\n");
 	printf("\n");
@@ -732,6 +736,7 @@ int main(int argc, char **argv)
 {
 	int c, opt_index, ret;
 	struct ash_cfg cfg;
+	char *path_city_db = NULL, *path_country_db = NULL;
 
 	check_for_root_maybe_die();
 
@@ -847,10 +852,18 @@ int main(int argc, char **argv)
 		case 'W':
 			cfg.whois_port = xstrdup(optarg);
 			break;
+		case 'L':
+			path_city_db = xstrdup(optarg);
+			break;
+		case 'K':
+			path_country_db = xstrdup(optarg);
+			break;
 		case '?':
 			switch (optopt) {
 			case 'H':
 			case 'p':
+			case 'L':
+			case 'K':
 			case 'f':
 			case 'm':
 			case 'i':
@@ -893,10 +906,18 @@ int main(int argc, char **argv)
 	ret = aslookup_prepare(cfg.whois, cfg.whois_port);
 	if (ret < 0)
 		panic("Cannot resolve whois server!\n");
-	gi_country = GeoIP_open_type(GEOIP_COUNTRY_EDITION, GEOIP_MMAP_CACHE);
-	gi_city = GeoIP_open_type(GEOIP_CITY_EDITION_REV1, GEOIP_MMAP_CACHE);
+	if (path_country_db)
+		gi_country = GeoIP_open(path_country_db, GEOIP_MMAP_CACHE);
+	else
+		gi_country = GeoIP_open_type(GEOIP_COUNTRY_EDITION,
+					     GEOIP_MMAP_CACHE);
+	if (path_city_db)
+		gi_city = GeoIP_open(path_city_db, GEOIP_MMAP_CACHE);
+	else
+		gi_city = GeoIP_open_type(GEOIP_CITY_EDITION_REV1,
+					  GEOIP_MMAP_CACHE);
 	if (!gi_country || !gi_city)
-		panic("Cannot open GeoIP database!\n");
+		panic("Cannot open GeoIP database! Wrong path?!\n");
 	GeoIP_set_charset(gi_country, GEOIP_CHARSET_UTF8);
 	GeoIP_set_charset(gi_city, GEOIP_CHARSET_UTF8);
 	ret = do_trace(&cfg);
@@ -915,6 +936,10 @@ int main(int argc, char **argv)
 		xfree(cfg.port);
 	if (cfg.payload)
 		xfree(cfg.payload);
+	if (path_city_db)
+		xfree(path_city_db);
+	if (path_country_db)
+		xfree(path_country_db);
 	return ret;
 }
 
