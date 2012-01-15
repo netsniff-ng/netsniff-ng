@@ -48,7 +48,7 @@ int open_or_die_m(const char *file, int flags, mode_t mode)
 	return ret;
 }
 
-int tun_open_or_die(char *name)
+int tun_open_or_die(char *name, int type)
 {
 	int fd, ret;
 	struct ifreq ifr;
@@ -58,7 +58,7 @@ int tun_open_or_die(char *name)
 		panic("Cannot open /dev/net/tun!\n");
 
 	memset(&ifr, 0, sizeof(ifr));
-	ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
+	ifr.ifr_flags = type;
 
 	if (name)
 		strlcpy(ifr.ifr_name, name, IFNAMSIZ);

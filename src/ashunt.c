@@ -616,6 +616,7 @@ static int do_trace(const struct ash_cfg *cfg)
 	xfree(hbuff2);
 	hbuff1 = hbuff2 = NULL;
 
+	enable_kernel_bpf_jit_compiler();
 	memset(&bpf_ops, 0, sizeof(bpf_ops));
 	if (cfg->ip == 4) {
 		bpf_ops.filter = ipv4_icmp_type_11;
@@ -627,7 +628,6 @@ static int do_trace(const struct ash_cfg *cfg)
 			       sizeof(ipv6_icmp6_type_3[0]));
 	}
 	bpf_attach_to_sock(fd_cap, &bpf_ops);
-	enable_kernel_bpf_jit_compiler();
 	ifindex = device_ifindex(cfg->dev);
 	bind_rx_ring(fd_cap, &dummy_ring, ifindex);
 	prepare_polling(fd_cap, &pfd);
