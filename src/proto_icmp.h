@@ -53,7 +53,7 @@ static inline void icmp_less(uint8_t *packet, size_t len)
 	if (len < sizeof(struct icmphdr))
 		return;
 
-	tprintf(" ICMP T %u C %u", icmp->type, icmp->code);
+	tprintf(" Type %u Code %u", icmp->type, icmp->code);
 }
 
 struct protocol icmp_ops = {

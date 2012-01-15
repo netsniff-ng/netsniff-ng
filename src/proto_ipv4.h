@@ -99,7 +99,7 @@ static inline void ipv4_less(uint8_t *packet, size_t len)
 	inet_ntop(AF_INET, &ip->h_saddr, src_ip, sizeof(src_ip));
 	inet_ntop(AF_INET, &ip->h_daddr, dst_ip, sizeof(dst_ip));
 
-	tprintf(" IPv4 %s/%s Len %u", src_ip, dst_ip,
+	tprintf(" %s/%s Len %u", src_ip, dst_ip,
 		ntohs(ip->h_tot_len));
 }
 
