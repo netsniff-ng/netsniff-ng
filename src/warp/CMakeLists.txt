@@ -1,0 +1,24 @@
+PROJECT(warp C)
+
+SET(BUILD_STRING "generic")
+
+FIND_PACKAGE(Threads)
+
+IF(CMAKE_HAVE_PTHREAD_CREATE)
+	ADD_EXECUTABLE(${PROJECT_NAME}	../xmalloc.c
+					../strlcpy.c
+					../netdev.c
+					../misc.c
+					../bpf.c
+					../write_or_die.c
+					../warp.c)
+
+	ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"
+			-DVERSION_STRING="${VERSION}"
+			-DBUILD_STRING="${BUILD_STRING}")
+
+	TARGET_LINK_LIBRARIES(warp ${CMAKE_THREAD_LIBS_INIT})
+	INSTALL(TARGETS ${PROJECT_NAME} DESTINATION ${EXECUTABLE_INSTALL_PATH})
+ELSE(CMAKE_HAVE_PTHREAD_CREATE)
+	MESSAGE("pthread is missing on target. Skipping ${PROJECT_NAME} build.")
+ENDIF(CMAKE_HAVE_PTHREAD_CREATE)
