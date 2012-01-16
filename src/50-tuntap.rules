@@ -1,1 +1,1 @@
-KERNEL=="tun", NAME="net/%k", MODE="0666", OPTIONS+="ignore_remove"
+KERNEL=="tun", NAME="net/%k", GROUP="netdev", MODE="0660", OPTIONS+="ignore_remove"
