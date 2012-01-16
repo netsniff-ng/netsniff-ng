@@ -1,15 +1,12 @@
 Currently only operating systems running on Linux kernels with
-CONFIG_PACKET_MMAP enabled. This feature can be found even back
-to the days of 2.4 kernels. Most operating systems ship pre-compiled
-kernels that have this config option enabled and even the latest
-kernel versions got rid of this option and have this functionality
-already built-in. However, we recommend a kernel >= 2.6.31, because
-the TX_RING is officially integrated since then.
+CONFIG_PACKET_MMAP enabled. This feature can be found even back to the days of
+2.4 kernels. Most operating systems ship pre-compiled kernels that have this
+config option enabled and even the latest kernel versions got rid of this
+option and have this functionality already built-in. However, we recommend a
+kernel >= 2.6.31, because the TX_RING is officially integrated since then.
 
 netsniff-ng has been successfully tested on x86 and x86_64. Please drop
 us a short mail, if it runs successfully on hardware other than that.
-We assume, it will run, but unfortunately, we don't have other hardware
-than that.
 
 What libraries / tools are required?
 
@@ -36,20 +33,25 @@ The installation process done by cmake is fairly simple:
 
 To uninstall, simply remove all files refered in install_manifest.txt
 
-For bpfc, we also have a Vim syntax highlighting file. Have a look at src/bpf.vim for
-installation instructions.
+For bpfc, we also have a Vim syntax highlighting file. Have a look at
+src/bpf.vim for installation instructions.
 
-In order to build curvetun, libnacl must be built first.
-However, an helper script called build_nacl.sh is there to facilitate the process.
-If you want to build NaCl in the directory ~/nacl, the script should be called this way:
+In order to build curvetun, libnacl must be built first. A helper script
+called build_nacl.sh is there to facilitate this process. If you want to
+build NaCl in the directory ~/nacl, the script should be called this way:
 
   $ cd src/curvetun
   $ ./build_nacl.sh ~/nacl
 
-If NaCl already has been built on the target, it is quicker to use nacl_path.sh this way:
+If NaCl already has been built on the target, it is quicker to use nacl_path.sh
+this way:
+
   $ cd src/curvetun
   $ ./nacl_path.sh ~/nacl/build/include/x86 ~/nacl/build/lib/x86
 
-When done, netsniff-ng build infrastructure will read nacl_path.cmake to get the needed
-paths to NaCl.
+When done, netsniff-ng build infrastructure will read nacl_path.cmake to get
+the needed paths to NaCl.
+
+For using TUN/TAP devices as a user, copy the file src/50-tuntap.rules into
+/etc/udev/rules.d/ and restart the udev daemon.
 
