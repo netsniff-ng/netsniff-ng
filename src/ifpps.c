@@ -6,8 +6,8 @@
  *
  * A tiny tool to provide top-like reliable networking statistics.
  * Why? Well, some time ago I used iptraf to display network traffic
- * statistics. During that time and probably also today, they are 
- * using libpcap to collect statistics. Well, bad idea since this 
+ * statistics. During that time and probably also today, they are
+ * using libpcap to collect statistics. Well, bad idea since this
  * will give you false statistics on high I/O load. Therefore, ifpps
  * reads out the 'real' kernel statistics, so things your NIC sees
  * and not some userland library.
@@ -18,6 +18,96 @@
  *     -- The Lord of the Rings, On Gollum,
  *        Chapter 'The Black Gate is Closed'.
  */
+
+/*
+
+=head1 NAME
+
+ifpps - fetch and format kernel network statistics
+
+=head1 SYNOPSIS
+
+ifpps	-d|--dev <netdev> [-t|--interval <sec>][-p|--promisc][-c|--term]
+	[-C|--csv][-H|--csv-tablehead][-l|--loop][-v|--version][-h|--help]
+
+=head1 DESCRIPTION
+
+A tiny tool to provide top-like reliable networking statistics.
+ifpps reads out the 'real' kernel statistics, so it does not give erroneous
+statistics on high I/O load.
+
+=head1 OPTIONS
+
+=over
+
+=item ifpps --dev eth0
+
+Fetch eth0 interface statistics.
+
+=item ifpps --dev eth0 --interval 60 --csv
+
+Output eth0 interface statistics every minute in CSV format.
+
+=back
+
+=head1 OPTIONS
+
+=over
+
+=item -h|--help
+
+Print help text and lists all options.
+
+=item -v|--version
+
+Print version.
+
+=item -d|--dev <netdev>
+
+Device to fetch statistics for i.e., eth0.
+
+=item -p|--promisc
+
+Put the device in promiscuous mode
+
+=item -t|--interval <time>
+
+Refresh time in sec (default 1.0)
+
+=item -c|--term
+
+Output to terminal
+
+=item -C|--csv
+
+Output in CSV format.
+E.g. post-processing with Gnuplot et al.
+
+=item -H|--csv-tablehead
+
+Print CSV table head.
+
+=item -l|--loop
+
+Loop terminal output.
+
+=back
+
+=head1 AUTHOR
+
+Written by Daniel Borkmann <daniel@netsniff-ng.org>
+
+=head1 DOCUMENTATION
+
+Documentation by Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+=head1 BUGS
+
+Please report bugs to <bugs@netsniff-ng.org>
+
+=cut
+
+*/
 
 #include <stdio.h>
 #include <string.h>
@@ -522,7 +612,7 @@ static void screen_update(WINDOW *screen, const char *ifname,
 		*first = 0;
 	} else
 		mvwprintw(screen, 2, 2, "                   ");
-	
+
 	wrefresh(screen);
 	refresh();
 }
