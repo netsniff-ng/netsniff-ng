@@ -4,8 +4,9 @@
  * Copyright 2011 Daniel Borkmann.
  * Subject to the GPL, version 2.
  *
- * A tiny tool to provide top-like netfilter connection
- * tracking information.
+ * A tiny tool to provide top-like netfilter connection tracking information.
+ * Regarding locking the current code is just broken. It also needs clean ups
+ * in general.
  *
  * Debian: apt-get install libnetfilter-conntrack3 libnetfilter-conntrack-dev
  *
@@ -22,7 +23,7 @@
 #include <pthread.h>
 #include <signal.h>
 #include <netdb.h>
-#include <iconv.h>
+#include <ctype.h>
 #include <libnetfilter_conntrack/libnetfilter_conntrack.h>
 #include <libnetfilter_conntrack/libnetfilter_conntrack_tcp.h>
 #include <GeoIP.h>
@@ -31,6 +32,7 @@
 #include <curses.h>
 
 #include "die.h"
+#include "compiler.h"
 #include "misc.h"
 #include "signals.h"
 #include "locking.h"
@@ -78,13 +80,10 @@ struct flow_entry {
 
 struct flow_list {
 	struct flow_entry *head;
-	unsigned long size;
 	struct spinlock lock;
 };
 
-static sig_atomic_t sigint = 0;
-
-static const char *short_options = "t:vh";
+static sig_atomic_t sigint = 0, indisplay = 0;
 
 static double interval = 0.1;
 
@@ -95,8 +94,16 @@ static struct flow_list flow_list;
 static GeoIP *gi_country = NULL;
 static GeoIP *gi_city = NULL;
 
+static char *path_city_db = NULL, *path_country_db = NULL;
+
+static const char *short_options = "t:vhTULK";
+
 static struct option long_options[] = {
 	{"interval", required_argument, 0, 't'},
+	{"tcp", no_argument, 0, 'T'},
+	{"udp", no_argument, 0, 'U'},
+	{"city-db", required_argument, 0, 'L'},
+	{"country-db", required_argument, 0, 'K'},
 	{"version", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
@@ -175,11 +182,15 @@ static void help(void)
 	printf("Usage: flowtop [options]\n");
 	printf("Options:\n");
 	printf("  -t|--interval <time>   Refresh time in sec (default 0.1)\n");
+	printf("  -T|--tcp               Show only TCP flows\n");
+	printf("  -U|--udp               Show only UDP flows\n");
+	printf("  --city-db <path>       Specifiy path for geoip city database\n");
+	printf("  --country-db <path>    Specifiy path for geoip country database\n");
 	printf("  -v|--version           Print version\n");
 	printf("  -h|--help              Print this help\n");
 	printf("\n");
 	printf("Examples:\n");
-	printf("  flowtop --interval 0.5\n");
+	printf("  flowtop -T --interval 0.5\n");
 	printf("  flowtop\n\n");
 	printf("Note:\n");
 	printf("  If netfilter is not running, you can activate it with i.e.:\n");
@@ -257,7 +268,9 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 	init_pair(3, COLOR_YELLOW, COLOR_BLACK);
 	init_pair(4, COLOR_GREEN, COLOR_BLACK);
 	clear();
-	spinlock_lock(&fl->lock);
+	indisplay = 1;
+	barrier();
+	//spinlock_lock(&fl->lock);
 	mvwprintw(screen, 1, 2, "Kernel netfilter TCP/UDP flow statistics, [+%d] t=%.2lfs",
 		  skip_lines, interval);
 	if (fl->head == NULL)
@@ -265,15 +278,18 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 	maxy -= 4;
 	/* Yes, that's lame :-P */
 	for (i = 0; i < sizeof(states); i++) {
+		barrier();
 		n = fl->head;
 		while (n && maxy > 0) {
 			if (n->tcp_state != states[i] ||
 			    /* Filter out DNS */
 			    get_port(n->port_src, n->port_dst) == 53) {
+				barrier();
 				n = n->next;
 				continue;
 			}
 			if (skip_lines > 0) {
+				barrier();
 				n = n->next;
 				skip_lines--;
 				continue;
@@ -316,10 +332,13 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 			       n->city_dst : "Unknown");
 			line++;
 			maxy--;
+			barrier();
 			n = n->next;
 		}
 	}
-	spinlock_unlock(&fl->lock);
+	//spinlock_unlock(&fl->lock);
+	indisplay = 0;
+	barrier();
 	wrefresh(screen);
 	refresh();
 }
@@ -355,10 +374,10 @@ static void presenter(void)
 				skip_lines = SCROLL_MAX;
 			break;
 		default:
+			fflush(stdin);
 			break;
 		}
 		screen_update(screen, &flow_list, skip_lines);
-		fflush(stdin);
 		xnanosleep(interval);
 	}
 	screen_end();
@@ -401,14 +420,10 @@ static void flow_entry_get_extended(struct flow_entry *n)
 	struct sockaddr_in sa;
 	struct hostent *hent;
 	GeoIPRecord *gir_src, *gir_dst;
-	iconv_t conv;
 	if (n->flow_id == 0)
 		return;
 	if (ntohs(n->port_src) == 53 || ntohs(n->port_dst) == 53)
 		return;
-	conv = iconv_open("UTF-8", "ISO8859-1");
-	if (!conv || conv == (iconv_t)(-1))
-		panic("Cannot open charet converter!\n");
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET; //XXX: IPv4
 	sa.sin_addr.s_addr = n->ip4_src_addr;
@@ -422,21 +437,14 @@ static void flow_entry_get_extended(struct flow_entry *n)
 	}
 	gir_src = GeoIP_record_by_ipnum(gi_city, ntohl(n->ip4_src_addr));
 	if (gir_src) {
-		char city_tmp[128], *ptr;
-		size_t inl, outl;
 		const char *country =
 			make_n_a(GeoIP_country_name_by_ipnum(gi_country,
 							     ntohl(n->ip4_src_addr)));
 		const char *city = make_n_a(gir_src->city);
-		inl = strlen(city);
-		outl = sizeof(city_tmp);
-		ptr = city_tmp;
-		memset(city_tmp, 0, sizeof(city_tmp));
-		iconv(conv, (char ** restrict) &city, &inl, &ptr, &outl);
 		memcpy(n->country_src, country,
 		       min(sizeof(n->country_src), strlen(country)));
-		memcpy(n->city_src, city_tmp,
-		       min(sizeof(n->city_src), strlen(city_tmp)));
+		memcpy(n->city_src, city,
+		       min(sizeof(n->city_src), strlen(city)));
 	}
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET; //XXX: IPv4
@@ -451,30 +459,21 @@ static void flow_entry_get_extended(struct flow_entry *n)
 	}
 	gir_dst = GeoIP_record_by_ipnum(gi_city, ntohl(n->ip4_dst_addr));
 	if (gir_dst) {
-		char city_tmp[128], *ptr;
-		size_t inl, outl;
 		const char *country =
 			make_n_a(GeoIP_country_name_by_ipnum(gi_country,
 							     ntohl(n->ip4_dst_addr)));
 		const char *city = make_n_a(gir_dst->city);
-		inl = strlen(city);
-		outl = sizeof(city_tmp);
-		ptr = city_tmp;
-		memset(city_tmp, 0, sizeof(city_tmp));
-		iconv(conv, (char ** restrict) &city, &inl, &ptr, &outl);
 		memcpy(n->country_dst, country,
 		       min(sizeof(n->country_dst), strlen(country)));
-		memcpy(n->city_dst, city_tmp,
-		       min(sizeof(n->city_dst), strlen(city_tmp)));
+		memcpy(n->city_dst, city,
+		       min(sizeof(n->city_dst), strlen(city)));
 	}
-	iconv_close(conv);
 }
 
 static void flow_list_init(struct flow_list *fl)
 {
 	fl->head = NULL;
-	fl->size = 0;
-	spinlock_init(&fl->lock);
+	//spinlock_init(&fl->lock);
 }
 
 static struct flow_entry *__flow_list_find_by_id(struct flow_list *fl, uint32_t id)
@@ -504,13 +503,13 @@ static struct flow_entry *__flow_list_find_prev_by_id(struct flow_list *fl, uint
 static void flow_list_new_entry(struct flow_list *fl, struct nf_conntrack *ct)
 {
 	struct flow_entry *n = xzmalloc(sizeof(*n));
-	spinlock_lock(&fl->lock);
+	//spinlock_lock(&fl->lock);
 	n->next = fl->head;
 	fl->head = n;
-	fl->size++;
+	barrier();
 	flow_entry_from_ct(n, ct);
 	flow_entry_get_extended(n);
-	spinlock_unlock(&fl->lock);
+	//spinlock_unlock(&fl->lock);
 }
 
 static void flow_list_update_entry(struct flow_list *fl, struct nf_conntrack *ct)
@@ -518,55 +517,55 @@ static void flow_list_update_entry(struct flow_list *fl, struct nf_conntrack *ct
 	int do_ext = 0;
 	uint32_t id = nfct_get_attr_u32(ct, ATTR_ID);
 	struct flow_entry *n;
-	spinlock_lock(&fl->lock);
+	//spinlock_lock(&fl->lock);
 	n = __flow_list_find_by_id(fl, id);
 	if (n == NULL) {
 		n = xzmalloc(sizeof(*n));
 		n->next = fl->head;
 		fl->head = n;
-		fl->size++;
+		barrier();
 		do_ext = 1;
 	}
 	flow_entry_from_ct(n, ct);
 	if (do_ext)
 		flow_entry_get_extended(n);
-	spinlock_unlock(&fl->lock);
+	//spinlock_unlock(&fl->lock);
 }
 
 static void flow_list_destroy_entry(struct flow_list *fl, struct nf_conntrack *ct)
 {
 	uint32_t id = nfct_get_attr_u32(ct, ATTR_ID);
 	struct flow_entry *n1, *n2;
-	spinlock_lock(&fl->lock);
+	//spinlock_lock(&fl->lock);
 	n1 = __flow_list_find_by_id(fl, id);
 	if (n1) {
 		n2 = __flow_list_find_prev_by_id(fl, id);
 		if (n2) {
 			n2->next = n1->next;
 			n1->next = NULL;
+			barrier();
 			xfree(n1);
 		} else {
 			xfree(fl->head);
 			fl->head = NULL;
+			barrier();
 		}
-		fl->size--;
 	}
-	spinlock_unlock(&fl->lock);
+	//spinlock_unlock(&fl->lock);
 }
 
 static void flow_list_destroy(struct flow_list *fl)
 {
 	struct flow_entry *n;
-	spinlock_lock(&fl->lock);
+	//spinlock_lock(&fl->lock);
 	while (fl->head != NULL) {
 		n = fl->head->next;
 		fl->head->next = NULL;
 		xfree(fl->head);
-		fl->size--;
 		fl->head = n;
 	}
-	spinlock_unlock(&fl->lock);
-	spinlock_destroy(&fl->lock);
+	//spinlock_unlock(&fl->lock);
+	//spinlock_destroy(&fl->lock);
 }
 
 static int collector_cb(enum nf_conntrack_msg_type type,
@@ -575,6 +574,9 @@ static int collector_cb(enum nf_conntrack_msg_type type,
 {
 	if (sigint)
 		return NFCT_CB_STOP;
+	barrier();
+	while (indisplay)
+		sleep(0);
 	switch (type) {
 	case NFCT_T_NEW:
 		flow_list_new_entry(&flow_list, ct);
@@ -606,8 +608,14 @@ static void *collector(void *null)
 	handle = nfct_open(CONNTRACK, NFCT_ALL_CT_GROUPS);
 	if (!handle)
 		panic("Cannot create a nfct handle!\n");
+	/* Hack: inits ct */
 	nfct_callback_register(handle, NFCT_T_ALL, dummy_cb, NULL);
 	nfct_query(handle, NFCT_Q_DUMP, &family);
+	nfct_close(handle);
+	handle = nfct_open(CONNTRACK, NFCT_ALL_CT_GROUPS);
+	if (!handle)
+		panic("Cannot create a nfct handle!\n");
+	nfct_query(handle, NFCT_Q_FLUSH, &family);
 	filter = nfct_filter_create();
 	if (!filter)
 		panic("Cannot create a nfct filter!\n");
@@ -633,18 +641,34 @@ static void *collector(void *null)
 	if (ret < 0)
 		panic("Cannot attach filter to handle!\n");
 	nfct_filter_destroy(filter);
-	gi_country = GeoIP_new(GEOIP_STANDARD);
-	gi_city = GeoIP_open_type(GEOIP_CITY_EDITION_REV1, GEOIP_STANDARD);
+	if (path_country_db)
+		gi_country = GeoIP_open(path_country_db, GEOIP_MMAP_CACHE);
+	else
+		gi_country = GeoIP_open_type(GEOIP_COUNTRY_EDITION,
+					     GEOIP_MMAP_CACHE);
+	if (path_city_db)
+		gi_city = GeoIP_open(path_city_db, GEOIP_MMAP_CACHE);
+	else
+		gi_city = GeoIP_open_type(GEOIP_CITY_EDITION_REV1,
+					  GEOIP_MMAP_CACHE);
 	if (!gi_country || !gi_city)
 		panic("Cannot open GeoIP database!\n");
+	GeoIP_set_charset(gi_country, GEOIP_CHARSET_UTF8);
+	GeoIP_set_charset(gi_city, GEOIP_CHARSET_UTF8);
 	flow_list_init(&flow_list);
 	nfct_callback_register(handle, NFCT_T_ALL, collector_cb, NULL);
-	while (!sigint)
-		nfct_catch(handle);
+	while (!sigint) {
+		if (nfct_catch(handle) < 0)
+			nfct_query(handle, NFCT_Q_FLUSH, &family);
+	}
 	flow_list_destroy(&flow_list);
 	GeoIP_delete(gi_city);
 	GeoIP_delete(gi_country);
 	nfct_close(handle);
+	if (path_city_db)
+		xfree(path_city_db);
+	if (path_country_db)
+		xfree(path_country_db);
 	pthread_exit(0);
 }
 
@@ -663,12 +687,36 @@ int main(int argc, char **argv)
 			if (interval < 0.01)
 				panic("Choose larger interval!\n");
 			break;
+		case 'T':
+			what_cmd |= INCLUDE_TCP;
+			break;
+		case 'U':
+			what_cmd |= INCLUDE_UDP;
+			break;
+		case 'L':
+			path_city_db = xstrdup(optarg);
+			break;
+		case 'K':
+			path_country_db = xstrdup(optarg);
+			break;
 		case 'h':
 			help();
 			break;
 		case 'v':
 			version();
 			break;
+		case '?':
+			switch (optopt) {
+			case 'L':
+			case 'K':
+				panic("Option -%c requires an argument!\n",
+				      optopt);
+			default:
+				if (isprint(optopt))
+					whine("Unknown option character "
+					      "`0x%X\'!\n", optopt);
+				die();
+			}
 		default:
 			break;
 		}

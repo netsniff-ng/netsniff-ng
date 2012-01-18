@@ -27,6 +27,7 @@
 #include <sys/wait.h>
 #include <sys/epoll.h>
 #include <arpa/inet.h>
+#include <linux/if_tun.h>
 
 #include "die.h"
 #include "netdev.h"
@@ -696,7 +697,7 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4)
 	if (lfd < 0 || ipv4 < 0)
 		syslog_panic("Cannot create socket!\n");
 
-	tunfd = tun_open_or_die(dev ? dev : DEVNAME_SERVER);
+	tunfd = tun_open_or_die(dev ? dev : DEVNAME_SERVER, IFF_TUN | IFF_NO_PI);
 
 	ret = pipe2(efd, O_NONBLOCK);
 	if (ret < 0)

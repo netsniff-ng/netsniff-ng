@@ -36,7 +36,6 @@
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <string.h>
-#include <iconv.h>
 #include <asm/byteorder.h>
 #include <linux/tcp.h>
 #include <netinet/ip.h>
@@ -96,7 +95,7 @@ static int show_pkt = 0;
 static GeoIP *gi_country = NULL;
 static GeoIP *gi_city = NULL;
 
-static const char *short_options = "H:p:nNf:m:i:d:q:x:SAEFPURt:Gl:w:W:hv46X:Z";
+static const char *short_options = "H:p:nNf:m:i:d:q:x:SAEFPURt:Gl:w:W:hv46X:ZLK";
 
 static struct option long_options[] = {
 	{"host", required_argument, 0, 'H'},
@@ -124,6 +123,8 @@ static struct option long_options[] = {
 	{"totlen", required_argument, 0, 'l'},
 	{"whois", required_argument, 0, 'w'},
 	{"wport", required_argument, 0, 'W'},
+	{"city-db", required_argument, 0, 'L'},
+	{"country-db", required_argument, 0, 'K'},
 	{"version", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
@@ -225,6 +226,8 @@ static void help(void)
 	printf("                         (default: /etc/netsniff-ng/whois.conf)\n");
 	printf(" -W|--wport <port>       Use a different port to AS whois server\n");
 	printf("                         (default: /etc/netsniff-ng/whois.conf)\n");
+	printf(" --city-db <path>        Specifiy path for geoip city database\n");
+	printf(" --country-db <path>     Specifiy path for geoip country database\n");
 	printf(" -v|--version            Print version\n");
 	printf(" -h|--help               Print this help\n");
 	printf("\n");
@@ -431,12 +434,9 @@ static int handle_ipv4_icmp(uint8_t *packet, size_t len, int ttl, int id,
 	struct iphdr *iph_inner;
 	struct icmphdr *icmph;
 	char *hbuff;
-	char city_tmp[128], *ptr;
-	size_t inl, outl;
 	struct sockaddr_in sa;
 	struct asrecord rec;
 	GeoIPRecord *gir;
-	iconv_t conv;
 	if (iph->protocol != 1)
 		return PKT_NOT_FOR_US;
 	if (iph->daddr != ((struct sockaddr_in *) own)->sin_addr.s_addr)
@@ -450,9 +450,6 @@ static int handle_ipv4_icmp(uint8_t *packet, size_t len, int ttl, int id,
 				      sizeof(struct icmphdr));
 	if (ntohs(iph_inner->id) != id)
 		return PKT_NOT_FOR_US;
-	conv = iconv_open("UTF-8", "ISO8859-1");
-	if (!conv || conv == (iconv_t)(-1))
-		panic("Cannot open charet converter!\n");
 	hbuff = xzmalloc(NI_MAXHOST);
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET;
@@ -467,15 +464,10 @@ static int handle_ipv4_icmp(uint8_t *packet, size_t len, int ttl, int id,
 	if (!dns_resolv) {
 		if (strlen(rec.country) > 0 && gir) {
 			const char *city = make_n_a(gir->city);
-			inl = strlen(city);
-			outl = sizeof(city_tmp);
-			ptr = city_tmp;
-			memset(city_tmp, 0, sizeof(city_tmp));
-			iconv(conv, (char ** restrict) &city, &inl, &ptr, &outl);
 			printf("%s in AS%s (%s, %s, %s, %f, %f), %s %s (%s), %s", hbuff,
 			       rec.number, rec.country,
 			       GeoIP_country_name_by_ipnum(gi_country, ntohl(iph->saddr)),
-			       city_tmp, gir->latitude, gir->longitude,
+			       city, gir->latitude, gir->longitude,
 			       rec.prefix, rec.registry, rec.since, rec.name);
 		} else if (strlen(rec.country) > 0 && !gir) {
 			printf("%s in AS%s (%s, %s), %s %s (%s), %s", hbuff,
@@ -491,16 +483,11 @@ static int handle_ipv4_icmp(uint8_t *packet, size_t len, int ttl, int id,
 						     PF_INET);
 		if (strlen(rec.country) > 0 && gir) {
 			const char *city = make_n_a(gir->city);
-			inl = strlen(city);
-			outl = sizeof(city_tmp);
-			ptr = city_tmp;
-			memset(city_tmp, 0, sizeof(city_tmp));
-			iconv(conv, (char ** restrict) &city, &inl, &ptr, &outl);
 			printf("%s (%s) in AS%s (%s, %s, %s, %f, %f), %s %s (%s), %s",
 			       (hent ? hent->h_name : hbuff), hbuff,
 			       rec.number, rec.country,
 			       GeoIP_country_name_by_ipnum(gi_country, ntohl(iph->saddr)),
-			       city_tmp, gir->latitude, gir->longitude,
+			       city, gir->latitude, gir->longitude,
 			       rec.prefix, rec.registry,
 			       rec.since, rec.name);
 		} else if (strlen(rec.country) > 0 && !gir) {
@@ -629,6 +616,7 @@ static int do_trace(const struct ash_cfg *cfg)
 	xfree(hbuff2);
 	hbuff1 = hbuff2 = NULL;
 
+	enable_kernel_bpf_jit_compiler();
 	memset(&bpf_ops, 0, sizeof(bpf_ops));
 	if (cfg->ip == 4) {
 		bpf_ops.filter = ipv4_icmp_type_11;
@@ -640,7 +628,6 @@ static int do_trace(const struct ash_cfg *cfg)
 			       sizeof(ipv6_icmp6_type_3[0]));
 	}
 	bpf_attach_to_sock(fd_cap, &bpf_ops);
-	enable_kernel_bpf_jit_compiler();
 	ifindex = device_ifindex(cfg->dev);
 	bind_rx_ring(fd_cap, &dummy_ring, ifindex);
 	prepare_polling(fd_cap, &pfd);
@@ -749,6 +736,7 @@ int main(int argc, char **argv)
 {
 	int c, opt_index, ret;
 	struct ash_cfg cfg;
+	char *path_city_db = NULL, *path_country_db = NULL;
 
 	check_for_root_maybe_die();
 
@@ -864,10 +852,18 @@ int main(int argc, char **argv)
 		case 'W':
 			cfg.whois_port = xstrdup(optarg);
 			break;
+		case 'L':
+			path_city_db = xstrdup(optarg);
+			break;
+		case 'K':
+			path_country_db = xstrdup(optarg);
+			break;
 		case '?':
 			switch (optopt) {
 			case 'H':
 			case 'p':
+			case 'L':
+			case 'K':
 			case 'f':
 			case 'm':
 			case 'i':
@@ -910,10 +906,20 @@ int main(int argc, char **argv)
 	ret = aslookup_prepare(cfg.whois, cfg.whois_port);
 	if (ret < 0)
 		panic("Cannot resolve whois server!\n");
-	gi_country = GeoIP_new(GEOIP_STANDARD);
-	gi_city = GeoIP_open_type(GEOIP_CITY_EDITION_REV1, GEOIP_STANDARD);
+	if (path_country_db)
+		gi_country = GeoIP_open(path_country_db, GEOIP_MMAP_CACHE);
+	else
+		gi_country = GeoIP_open_type(GEOIP_COUNTRY_EDITION,
+					     GEOIP_MMAP_CACHE);
+	if (path_city_db)
+		gi_city = GeoIP_open(path_city_db, GEOIP_MMAP_CACHE);
+	else
+		gi_city = GeoIP_open_type(GEOIP_CITY_EDITION_REV1,
+					  GEOIP_MMAP_CACHE);
 	if (!gi_country || !gi_city)
-		panic("Cannot open GeoIP database!\n");
+		panic("Cannot open GeoIP database! Wrong path?!\n");
+	GeoIP_set_charset(gi_country, GEOIP_CHARSET_UTF8);
+	GeoIP_set_charset(gi_city, GEOIP_CHARSET_UTF8);
 	ret = do_trace(&cfg);
 	GeoIP_delete(gi_city);
 	GeoIP_delete(gi_country);
@@ -930,6 +936,10 @@ int main(int argc, char **argv)
 		xfree(cfg.port);
 	if (cfg.payload)
 		xfree(cfg.payload);
+	if (path_city_db)
+		xfree(path_city_db);
+	if (path_country_db)
+		xfree(path_country_db);
 	return ret;
 }
 

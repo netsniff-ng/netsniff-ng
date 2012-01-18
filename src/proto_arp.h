@@ -114,7 +114,7 @@ static inline void arp_less(uint8_t *packet, size_t len)
 		break;
 	};
 
-	tprintf(" ARP Op %s", opcode);
+	tprintf(" Op %s", opcode);
 }
 
 struct protocol arp_ops = {
