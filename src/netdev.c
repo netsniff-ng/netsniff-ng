@@ -13,6 +13,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
 /* Kernel < 2.6.26 */
 #include <linux/if.h>
@@ -55,7 +56,7 @@ int af_raw_socket(int af, int proto)
 
 int pf_socket(void)
 {
-	int sock = socket(PF_PACKET, SOCK_RAW, 0);
+	int sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	if (sock < 0)
 		panic("Creation of PF socket failed!\n");
 	return sock;

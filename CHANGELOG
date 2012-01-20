@@ -1,13 +1,6 @@
 netsniff-ng 0.5.6.0
 
-  * netsniff-ng has been completely rewritten
-  * Major code cleanups!
-  * New, flexible packet dissector that allows an easy integration of new
-    protocols
-  * New tool 'ifpps' which displays kernel network statistics in a top-like
-    manner, support for wifi
-  * New tool 'trafgen' which is a network packet generator that exploits the
-    kernels zero-copy TX_RING
+  * netsniff-ng has been completely rewritten! We highly recommend upgrading!
 
  -- Daniel Borkmann, Emmanuel Roullit, xx.xx.2011
 

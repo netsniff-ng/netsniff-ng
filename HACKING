@@ -2,7 +2,10 @@ Some information about potential netsniff-ng hackers can be found here!
 First of all, you might want to clone our git repository before you start
 hacking on anything:
 
- $ git clone git://repo.or.cz/netsniff-ng.git
+ $ git://github.com/gnumaniacs/netsniff-ng.git
+
+(Or fork it into your local repository on Github:
+ https://github.com/gnumaniacs/netsniff-ng)
 
 The best way to propose your ideas is to outline them in a short mail to
 workgroup@netsniff-ng.org or to our public mailing list address
@@ -14,7 +17,8 @@ The best way to make a contribution to netsniff-ng is to send us your
 code in the form of a unified diff against the latest released or
 development version and, preferably, the master branch from our Git
 repository. Your patch should then be sent to workgroup@netsniff-ng.org
-or bugs@netsniff-ng.org.
+or bugs@netsniff-ng.org. Don't forget to add a signed-off-by line (see
+also http://linux.yyz.us/patch-format.html).
 
 Before submitting your patch make sure to indent your code appropriate.
 For this, have a look at our coding conventions within the CODING file.

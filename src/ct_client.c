@@ -25,6 +25,7 @@
 #include <sys/poll.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
+#include <linux/if_tun.h>
 
 #include "die.h"
 #include "write_or_die.h"
@@ -436,7 +437,8 @@ retry:
 	}
 
 	if (!retry_server)
-		tunfd = tun_open_or_die(dev ? dev : DEVNAME_CLIENT);
+		tunfd = tun_open_or_die(dev ? dev : DEVNAME_CLIENT,
+					IFF_TUN | IFF_NO_PI);
 
 	set_nonblocking_sloppy(fd);
 	set_nonblocking_sloppy(tunfd);

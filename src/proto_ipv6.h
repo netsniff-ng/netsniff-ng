@@ -85,7 +85,7 @@ static inline void ipv6_less(uint8_t *packet, size_t len)
 	inet_ntop(AF_INET6, &ip->saddr, src_ip, sizeof(src_ip));
 	inet_ntop(AF_INET6, &ip->daddr, dst_ip, sizeof(dst_ip));
 
-	tprintf(" IPv6 %s/%s Len %u", src_ip, dst_ip,
+	tprintf(" %s/%s Len %u", src_ip, dst_ip,
 		ntohs(ip->payload_len));
 }
 
