@@ -35,6 +35,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <urcu.h>
+#include <libgen.h>
 
 #include "die.h"
 #include "compiler.h"
@@ -58,6 +59,7 @@
 
 struct flow_entry {
 	uint32_t flow_id;
+	int first;
 	struct flow_entry *next;
 	uint32_t use;
 	uint32_t status;
@@ -296,7 +298,11 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 		n = rcu_dereference(fl->head);
 
 		while (n && maxy > 0) {
+			char tmp[128];
+
 			if (n->tcp_state != states[i] ||
+			    (i != TCP_CONNTRACK_NONE &&
+			     n->tcp_state == TCP_CONNTRACK_NONE) ||
 			    /* Filter out DNS */
 			    get_port(n->port_src, n->port_dst) == 53) {
 				n = rcu_dereference(n->next);
@@ -309,24 +315,31 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 				continue;
 			}
 
-			mvwprintw(screen, line, 2, "%s:%s[",
-				  l3proto2str[n->l3_proto],
-				  proto2str[n->l4_proto]);
+			snprintf(tmp, sizeof(tmp), "%u/%s", n->procnum,
+				 basename(n->cmdline));
+			tmp[sizeof(tmp) - 1] = 0;
+
+			mvwprintw(screen, line, 2, "[");
+			attron(COLOR_PAIR(3));
+			printw("%s", n->procnum > 0 ? tmp : "bridged(?)");
+			attroff(COLOR_PAIR(3));
+			printw("]:%s:%s[", l3proto2str[n->l3_proto],
+			       proto2str[n->l4_proto]);
 			attron(COLOR_PAIR(3));
 			printw("%s", state2str[n->tcp_state]);
 			attroff(COLOR_PAIR(3));
 			printw("]:");
 			attron(A_BOLD);
 			if (n->tcp_state != TCP_CONNTRACK_NONE) {
-				printw("%s\t", lookup_port_tcp(get_port(n->port_src,
-									n->port_dst)));
+				printw("%s -> ", lookup_port_tcp(get_port(n->port_src,
+									  n->port_dst)));
 			} else {
-				printw("%s\t", lookup_port_udp(get_port(n->port_src,
-									n->port_dst)));
+				printw("%s -> ", lookup_port_udp(get_port(n->port_src,
+									  n->port_dst)));
 			}
 			attroff(A_BOLD);
 			attron(COLOR_PAIR(1));
-			mvwprintw(screen, line, 35, "%s", n->rev_dns_src);
+			printw("%s", n->rev_dns_src);
 			attroff(COLOR_PAIR(1));
 			printw(":%u (", ntohs(n->port_src));
 			attron(COLOR_PAIR(4));
@@ -449,7 +462,7 @@ static void walk_processes(struct flow_entry *n)
 	DIR *dir;
 	struct dirent *ent;
 
-	if (n->inode == 0) {
+	if (n->inode <= 0) {
 		memset(n->cmdline, 0, sizeof(n->cmdline));
 		return;
 	}
@@ -463,6 +476,36 @@ static void walk_processes(struct flow_entry *n)
 			walk_process(ent->d_name, n);
 
 	closedir(dir);
+}
+
+static int get_inode_from_local_port(int port, const char *proto, int ip6)
+{
+	int ret = -ENOENT;
+	char path[128];
+	char buff[1024];
+	FILE *proc;
+
+	memset(path, 0, sizeof(path));
+	snprintf(path, sizeof(path), "/proc/net/%s%s", proto, ip6 ? "6" : "");
+	proc = fopen(path, "r");
+	if (!proc)
+		return -EIO;
+	memset(buff, 0, sizeof(buff));
+	while (fgets(buff, sizeof(buff), proc) != NULL) {
+		int lport = 0, inode = 0;
+		buff[sizeof(buff) - 1] = 0;
+		if (sscanf(buff, "%*u: %*X:%X %*X:%*X %*X %*X:%*X %*X:%*X "
+			   "%*X %*u %*u %u", &lport, &inode) == 2) {
+			if (lport == port) {
+				ret = inode;
+				break;
+			}
+		}
+		memset(buff, 0, sizeof(buff));
+	}
+	fclose(proc);
+
+	return ret;
 }
 
 static void flow_entry_from_ct(struct flow_entry *n, struct nf_conntrack *ct)
@@ -491,8 +534,14 @@ static void flow_entry_from_ct(struct flow_entry *n, struct nf_conntrack *ct)
 	n->timestamp_start = nfct_get_attr_u64(ct, ATTR_TIMESTAMP_START);
 	n->timestamp_stop = nfct_get_attr_u64(ct, ATTR_TIMESTAMP_STOP);
 
-	// find socket inode, put into n->inode
-	walk_processes(n);
+	if (n->first) {
+		n->inode = get_inode_from_local_port(ntohs(n->port_src),
+						     proto2str[n->l4_proto],
+						     !!(ipv6_src));
+		if (n->inode > 0)
+			walk_processes(n);
+		n->first = 0;
+	}
 }
 
 /* TODO: IP4 + IP6 */
@@ -591,6 +640,7 @@ static struct flow_entry *__flow_list_find_prev_by_id(struct flow_list *fl, uint
 static void flow_list_new_entry(struct flow_list *fl, struct nf_conntrack *ct)
 {
 	struct flow_entry *n = xzmalloc(sizeof(*n));
+	n->first = 1;
 	rcu_assign_pointer(n->next, fl->head);
 	rcu_assign_pointer(fl->head, n);
 	flow_entry_from_ct(n, ct);
@@ -605,6 +655,7 @@ static void flow_list_update_entry(struct flow_list *fl, struct nf_conntrack *ct
 	n = __flow_list_find_by_id(fl, id);
 	if (n == NULL) {
 		n = xzmalloc(sizeof(*n));
+		n->first = 1;
 		rcu_assign_pointer(n->next, fl->head);
 		rcu_assign_pointer(fl->head, n);
 		do_ext = 1;
@@ -761,7 +812,7 @@ static void *collector(void *null)
 
 	while (!sigint) {
 		if (nfct_catch(handle) < 0)
-			nfct_query(handle, NFCT_Q_FLUSH, &family);
+			;//nfct_query(handle, NFCT_Q_FLUSH, &family);
 	}
 
 	rcu_unregister_thread();
