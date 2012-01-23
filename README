@@ -61,7 +61,7 @@ and make sure to use netsniff-ngs scatter/gather or mmap I/O options. Next to
 this, (and this refers to packet generation as well), a 10-Gbit/s-Ethernet
 NIC, an appropriate amount of RAM and a fast CPU is recommended. Furthermore,
 you should bind the netsniff-ng tools to a specific CPU via commandline option
-(i.e. --bind 0). Some further recommendations can be found in [6] [8]. Also,
+(i.e. --bind-cpu 0). Some further recommendations can be found in [6] [8]. Also,
 Eric Dumazets BPF Just-in-Time compiler can speed up the critical path [7].
 
 You might want to have a look at INSTALL, HACKING, CODING and COPYING, too.
