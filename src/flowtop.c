@@ -83,7 +83,7 @@ struct flow_entry {
 	char rev_dns_dst[256];
 	int procnum;
 	int inode;
-	char cmdline[128];
+	char cmdline[256];
 };
 
 struct flow_list {
