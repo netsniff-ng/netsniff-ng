@@ -9,6 +9,7 @@
  * in general.
  *
  * Debian: apt-get install libnetfilter-conntrack3 libnetfilter-conntrack-dev
+ *                         liburcu0 liburcu-dev
  *
  * Start conntrack (if not yet running):
  *   iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT
@@ -38,6 +39,9 @@
 #include "locking.h"
 #include "timespec.h"
 #include "dissector_eth.h"
+
+#define _LGPL_SOURCE
+#include <urcu.h>
 
 #define INCLUDE_UDP	(1 << 0)
 #define INCLUDE_TCP	(1 << 1)
@@ -83,11 +87,11 @@ struct flow_list {
 	struct spinlock lock;
 };
 
-static sig_atomic_t sigint = 0, indisplay = 0;
+static sig_atomic_t sigint = 0;
 
 static double interval = 0.1;
 
-static int what = INCLUDE_TCP | INCLUDE_UDP;
+static int what = INCLUDE_TCP;
 
 static struct flow_list flow_list;
 
@@ -182,7 +186,7 @@ static void help(void)
 	printf("Usage: flowtop [options]\n");
 	printf("Options:\n");
 	printf("  -t|--interval <time>   Refresh time in sec (default 0.1)\n");
-	printf("  -T|--tcp               Show only TCP flows\n");
+	printf("  -T|--tcp               Show only TCP flows (default)\n");
 	printf("  -U|--udp               Show only UDP flows\n");
 	printf("  --city-db <path>       Specifiy path for geoip city database\n");
 	printf("  --country-db <path>    Specifiy path for geoip country database\n");
@@ -190,7 +194,7 @@ static void help(void)
 	printf("  -h|--help              Print this help\n");
 	printf("\n");
 	printf("Examples:\n");
-	printf("  flowtop -T --interval 0.5\n");
+	printf("  flowtop -U --interval 0.5\n");
 	printf("  flowtop\n\n");
 	printf("Note:\n");
 	printf("  If netfilter is not running, you can activate it with i.e.:\n");
@@ -268,29 +272,24 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 	init_pair(3, COLOR_YELLOW, COLOR_BLACK);
 	init_pair(4, COLOR_GREEN, COLOR_BLACK);
 	clear();
-	indisplay = 1;
-	barrier();
-	//spinlock_lock(&fl->lock);
+	rcu_read_lock();
 	mvwprintw(screen, 1, 2, "Kernel netfilter TCP/UDP flow statistics, [+%d] t=%.2lfs",
 		  skip_lines, interval);
-	if (fl->head == NULL)
+	if (rcu_dereference(fl->head) == NULL)
 		mvwprintw(screen, line, 2, "(No active sessions! Is netfilter running?)");
 	maxy -= 4;
 	/* Yes, that's lame :-P */
 	for (i = 0; i < sizeof(states); i++) {
-		barrier();
-		n = fl->head;
+		n = rcu_dereference(fl->head);
 		while (n && maxy > 0) {
 			if (n->tcp_state != states[i] ||
 			    /* Filter out DNS */
 			    get_port(n->port_src, n->port_dst) == 53) {
-				barrier();
-				n = n->next;
+				n = rcu_dereference(n->next);
 				continue;
 			}
 			if (skip_lines > 0) {
-				barrier();
-				n = n->next;
+				n = rcu_dereference(n->next);
 				skip_lines--;
 				continue;
 			}
@@ -332,13 +331,10 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 			       n->city_dst : "Unknown");
 			line++;
 			maxy--;
-			barrier();
-			n = n->next;
+			n = rcu_dereference(n->next);
 		}
 	}
-	//spinlock_unlock(&fl->lock);
-	indisplay = 0;
-	barrier();
+	rcu_read_unlock();
 	wrefresh(screen);
 	refresh();
 }
@@ -354,6 +350,7 @@ static void presenter(void)
 	WINDOW *screen = NULL;
 	dissector_init_ethernet(0);
 	screen_init(&screen);
+	rcu_register_thread();
 	while (!sigint) {
 		switch (getch()) {
 		case 'q':
@@ -380,6 +377,7 @@ static void presenter(void)
 		screen_update(screen, &flow_list, skip_lines);
 		xnanosleep(interval);
 	}
+	rcu_unregister_thread();
 	screen_end();
 	dissector_cleanup_ethernet();
 }
@@ -473,29 +471,29 @@ static void flow_entry_get_extended(struct flow_entry *n)
 static void flow_list_init(struct flow_list *fl)
 {
 	fl->head = NULL;
-	//spinlock_init(&fl->lock);
+	spinlock_init(&fl->lock);
 }
 
 static struct flow_entry *__flow_list_find_by_id(struct flow_list *fl, uint32_t id)
 {
-	struct flow_entry *n = fl->head;
+	struct flow_entry *n = rcu_dereference(fl->head);
 	while (n != NULL) {
 		if (n->flow_id == id)
 			return n;
-		n = n->next;
+		n = rcu_dereference(n->next);
 	}
 	return NULL;
 }
 
 static struct flow_entry *__flow_list_find_prev_by_id(struct flow_list *fl, uint32_t id)
 {
-	struct flow_entry *n = fl->head;
+	struct flow_entry *n = rcu_dereference(fl->head);
 	if (n->flow_id == id)
 		return NULL;
-	while (n->next != NULL) {
-		if (n->next->flow_id == id)
+	while (rcu_dereference(n->next) != NULL) {
+		if (rcu_dereference(n->next)->flow_id == id)
 			return n;
-		n = n->next;
+		n = rcu_dereference(n->next);
 	}
 	return NULL;
 }
@@ -503,13 +501,10 @@ static struct flow_entry *__flow_list_find_prev_by_id(struct flow_list *fl, uint
 static void flow_list_new_entry(struct flow_list *fl, struct nf_conntrack *ct)
 {
 	struct flow_entry *n = xzmalloc(sizeof(*n));
-	//spinlock_lock(&fl->lock);
-	n->next = fl->head;
-	fl->head = n;
-	barrier();
+	rcu_assign_pointer(n->next, fl->head);
+	rcu_assign_pointer(fl->head, n);
 	flow_entry_from_ct(n, ct);
 	flow_entry_get_extended(n);
-	//spinlock_unlock(&fl->lock);
 }
 
 static void flow_list_update_entry(struct flow_list *fl, struct nf_conntrack *ct)
@@ -517,55 +512,47 @@ static void flow_list_update_entry(struct flow_list *fl, struct nf_conntrack *ct
 	int do_ext = 0;
 	uint32_t id = nfct_get_attr_u32(ct, ATTR_ID);
 	struct flow_entry *n;
-	//spinlock_lock(&fl->lock);
 	n = __flow_list_find_by_id(fl, id);
 	if (n == NULL) {
 		n = xzmalloc(sizeof(*n));
-		n->next = fl->head;
-		fl->head = n;
-		barrier();
+		rcu_assign_pointer(n->next, fl->head);
+		rcu_assign_pointer(fl->head, n);
 		do_ext = 1;
 	}
 	flow_entry_from_ct(n, ct);
 	if (do_ext)
 		flow_entry_get_extended(n);
-	//spinlock_unlock(&fl->lock);
 }
 
 static void flow_list_destroy_entry(struct flow_list *fl, struct nf_conntrack *ct)
 {
 	uint32_t id = nfct_get_attr_u32(ct, ATTR_ID);
 	struct flow_entry *n1, *n2;
-	//spinlock_lock(&fl->lock);
 	n1 = __flow_list_find_by_id(fl, id);
 	if (n1) {
 		n2 = __flow_list_find_prev_by_id(fl, id);
 		if (n2) {
-			n2->next = n1->next;
-			n1->next = NULL;
-			barrier();
+			rcu_assign_pointer(n2->next, n1->next);
+			rcu_assign_pointer(n1->next, NULL);
 			xfree(n1);
 		} else {
 			xfree(fl->head);
-			fl->head = NULL;
-			barrier();
+			rcu_assign_pointer(fl->head, NULL);
 		}
 	}
-	//spinlock_unlock(&fl->lock);
 }
 
 static void flow_list_destroy(struct flow_list *fl)
 {
 	struct flow_entry *n;
-	//spinlock_lock(&fl->lock);
 	while (fl->head != NULL) {
-		n = fl->head->next;
-		fl->head->next = NULL;
+		n = rcu_dereference(fl->head->next);
+		rcu_assign_pointer(fl->head->next, NULL);
 		xfree(fl->head);
-		fl->head = n;
+		rcu_assign_pointer(fl->head, n);
 	}
-	//spinlock_unlock(&fl->lock);
-	//spinlock_destroy(&fl->lock);
+	synchronize_rcu();
+	spinlock_destroy(&fl->lock);
 }
 
 static int collector_cb(enum nf_conntrack_msg_type type,
@@ -574,9 +561,8 @@ static int collector_cb(enum nf_conntrack_msg_type type,
 {
 	if (sigint)
 		return NFCT_CB_STOP;
-	barrier();
-	while (indisplay)
-		sleep(0);
+	synchronize_rcu();
+	spinlock_lock(&flow_list.lock);
 	switch (type) {
 	case NFCT_T_NEW:
 		flow_list_new_entry(&flow_list, ct);
@@ -590,6 +576,7 @@ static int collector_cb(enum nf_conntrack_msg_type type,
 	default:
 		break;
 	}
+	spinlock_unlock(&flow_list.lock);
 	return NFCT_CB_CONTINUE;
 }
 
@@ -656,11 +643,13 @@ static void *collector(void *null)
 	GeoIP_set_charset(gi_country, GEOIP_CHARSET_UTF8);
 	GeoIP_set_charset(gi_city, GEOIP_CHARSET_UTF8);
 	flow_list_init(&flow_list);
+	rcu_register_thread();
 	nfct_callback_register(handle, NFCT_T_ALL, collector_cb, NULL);
 	while (!sigint) {
 		if (nfct_catch(handle) < 0)
 			nfct_query(handle, NFCT_Q_FLUSH, &family);
 	}
+	rcu_unregister_thread();
 	flow_list_destroy(&flow_list);
 	GeoIP_delete(gi_city);
 	GeoIP_delete(gi_country);
@@ -723,6 +712,7 @@ int main(int argc, char **argv)
 	}
 	if (what_cmd > 0)
 		what = what_cmd;
+	rcu_init();
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
 	ret = pthread_create(&tid, NULL, collector, NULL);
