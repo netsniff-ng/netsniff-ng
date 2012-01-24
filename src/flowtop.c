@@ -540,8 +540,9 @@ static void flow_entry_from_ct(struct flow_entry *n, struct nf_conntrack *ct)
 						     !!(ipv6_src));
 		if (n->inode > 0)
 			walk_processes(n);
-		n->first = 0;
 	}
+	/* if this really runs on a router, we try it once and then let it be */
+	n->first = 0;
 }
 
 /* TODO: IP4 + IP6 */
