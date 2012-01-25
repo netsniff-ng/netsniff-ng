@@ -38,13 +38,15 @@
 #endif
 
 /* from the Linux kernel, GPLv2 */
-#define barrier()           __asm__ __volatile__("": : :"memory")
-#define mb()                asm volatile("mfence":::"memory")
-#define rmb()               asm volatile("lfence":::"memory")
-#define wmb()               asm volatile("sfence"::: "memory")
-#define smp_mb()            mb()
-#define smp_rmb()           rmb()
-#define smp_wmb()           wmb()
+#ifndef barrier
+# define barrier()           __asm__ __volatile__("": : :"memory")
+# define mb()                asm volatile("mfence":::"memory")
+# define rmb()               asm volatile("lfence":::"memory")
+# define wmb()               asm volatile("sfence"::: "memory")
+# define smp_mb()            mb()
+# define smp_rmb()           rmb()
+# define smp_wmb()           wmb()
+#endif
 
 /* from the Linux kernel, GPLv2 */
 #ifndef bug
@@ -129,16 +131,6 @@
 		(type *) ((char *) __mptr - offsetof(type, member)); \
 	})
 #endif
-
-static inline void rep_nop(void)
-{
-	asm volatile("rep; nop" ::: "memory");
-}
-
-static inline void cpu_relax(void)
-{
-	rep_nop();
-}
 
 #ifndef max
 # define max(a, b)                         \

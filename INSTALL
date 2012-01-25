@@ -18,6 +18,7 @@ What libraries / tools are required?
  - flex, bison (bpfc)
  - libnacl (curvetun)
  - libnetfilter-conntrack (flowtop)
+ - liburcu (flowtop)
 
 It is common, that these libraries are shipped as distribution packages
 for an easy installation. We try to keep this as minimal as possible.
