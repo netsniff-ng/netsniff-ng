@@ -811,10 +811,8 @@ static void *collector(void *null)
 
 	nfct_callback_register(handle, NFCT_T_ALL, collector_cb, NULL);
 
-	while (!sigint) {
-		if (nfct_catch(handle) < 0)
-			;//nfct_query(handle, NFCT_Q_FLUSH, &family);
-	}
+	while (!sigint)
+		nfct_catch(handle);
 
 	rcu_unregister_thread();
 
