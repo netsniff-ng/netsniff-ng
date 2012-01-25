@@ -14,21 +14,46 @@ INCLUDE(CheckStrictAlign)
 INCLUDE(CheckTxRing)
 
 ADD_DEFINITIONS(
-	-O2
+	-O3
 	-fstack-protector
+	-fpie
 	-std=gnu99
 	-fno-strict-aliasing
 	-Wall
 	-Wundef
 	-Wstrict-prototypes
-	-Wno-trigraphs
 	-Werror-implicit-function-declaration
-	-Wno-format-security
+	-Wformat=2
 	-Wcomments
 	-Wendif-labels
-	-Wno-long-long
 	-Wuninitialized
+	-Winit-self
 	-Wstrict-overflow=1
+	-Wtype-limits
+	-Wmissing-parameter-type
+	-Wclobbered
+	-Wempty-body
+	-Wignored-qualifiers
+	-Wmissing-include-dirs
+	-Woverlength-strings
+	-Wmissing-field-initializers
+	-Wmissing-declarations
+	-Wmissing-prototypes
+	-Wlogical-op
+	-Woverride-init
+	-Wnested-externs
+	-Wredundant-decls
+	-Winvalid-pch
+	-Wlong-long
+	-Wdisabled-optimization
+	-Wstack-protector
+	-Waggregate-return
+	-Wcast-align
+	-Wcast-qual
+	-Wunsafe-loop-optimizations
+	-Wfloat-equal
+	-Wunknown-pragmas
+	-Wunused-function
 )
 
 IF (CMAKE_BUILD_TYPE STREQUAL profile)
