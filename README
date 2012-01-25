@@ -16,16 +16,16 @@
                                   (      ___
  Web: http://netsniff-ng.org       \__.=|___E
 
-The gain of performance is reached by zero-copy mechanisms, so that the
-kernel does not need to copy packets from kernelspace to userspace and vice
-versa.
+The gain of performance is reached by zero-copy mechanisms, so that on packet
+reception and transmission the kernel does not need to copy packets from kernel
+space to user space and vice versa.
 
-For this purpose netsniff-ng is libpcap independent, but nevertheless supports
-the pcap file format for capturing, replaying and performing offline-analysis
-of pcap dumps. Furthermore we are focussing on building a robust, clean and
-secure analyzer and utilities that complete netsniff-ng as a support for the
-the daily work of system administrators, networking engineers, researchers or
-security specialists.
+For this purpose, the netsniff-ng toolkit is libpcap independent (note: libpcap
+starting from 1.0.0 also supports zero-copy for capturing), but nevertheless
+supports the pcap file format for capturing, replaying and performing
+offline-analysis of pcap dumps. Furthermore, we are focussing on building a
+robust and clean analyzer and utilities that complete netsniff-ng as a support
+for network development, debugging or network reconnaissance.
 
 The netsniff-ng toolkit [1] currently consists of the following utilities:
 
