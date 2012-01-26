@@ -24,7 +24,8 @@
 
 * flowtop:
   + Add IPv6 functionality
-  + Fix locking, cleanup code
+  + Add Port->SocketInode->Cmd info
+  + Cleanup code
 
 * t: tests, tests, tests / c: Coccinelle
   + Highly needed!
