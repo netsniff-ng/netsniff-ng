@@ -49,7 +49,8 @@ static inline int get_tty_size(void)
 	int ret = ioctl(0, TIOCGSIZE, &ts);
 	return (ret == 0 ? ts.ts_cols : DEFAULT_TTY_SIZE);
 #elif defined(TIOCGWINSZ)
-	struct winsize ts = {0};
+	struct winsize ts;
+	memset(&ts, 0, sizeof(ts));
 	int ret = ioctl(0, TIOCGWINSZ, &ts);
 	return (ret == 0 ? ts.ws_col : DEFAULT_TTY_SIZE);
 #else

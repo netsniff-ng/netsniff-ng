@@ -22,7 +22,7 @@
 static int ai_family = 0;
 static int ai_socktype = 0;
 static int ai_protocol = 0;
-static struct sockaddr_storage ai_ss = {0};
+static struct sockaddr_storage ai_ss;
 
 int aslookup_prepare(const char *server, const char *port)
 {
@@ -31,6 +31,7 @@ int aslookup_prepare(const char *server, const char *port)
 	struct sockaddr_in6 *saddr6;
 
 	assert(server && port);
+	memset(&ai_ss, 0, sizeof(ai_ss));
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;
