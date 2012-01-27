@@ -32,6 +32,9 @@ The installation process done by cmake is fairly simple:
   $ make
   # make install
 
+Man pages are generated out of the corresponding source files by cmake.
+They are written in POD format as a C header comment within those files.
+
 To uninstall, simply remove all files refered in install_manifest.txt
 
 For bpfc, we also have a Vim syntax highlighting file. Have a look at
