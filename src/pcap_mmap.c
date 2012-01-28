@@ -141,7 +141,7 @@ static int pcap_mmap_prepare_reading_pcap(int fd)
 	if (!S_ISREG (sb.st_mode))
 		panic("pcap dump file is not a regular file!\n");
 	map_size = sb.st_size;
-	pstart = mmap(0, map_size, PROT_READ, MAP_SHARED
+	pstart = mmap(0, map_size, PROT_READ, MAP_SHARED | MAP_LOCKED
 		      /*| MAP_HUGETLB*/, fd, 0);
 	if (pstart == MAP_FAILED)
 		puke_and_die(EXIT_FAILURE, "mmap of file failed!");
