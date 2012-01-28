@@ -91,7 +91,7 @@ retry:
 void mmap_tx_ring(int sock, struct ring *ring)
 {
 	ring->mm_space = mmap(0, ring->mm_len, PROT_READ | PROT_WRITE,
-			      MAP_SHARED, sock, 0);
+			      MAP_SHARED | MAP_LOCKED, sock, 0);
 	if (ring->mm_space == MAP_FAILED) {
 		destroy_tx_ring(sock, ring);
 		error_and_die(EXIT_FAILURE, "Cannot mmap TX_RING!\n");

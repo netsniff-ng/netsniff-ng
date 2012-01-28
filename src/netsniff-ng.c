@@ -614,10 +614,12 @@ static void help(void)
 	printf("Usage: netsniff-ng [options]\n");
 	printf("Options:\n");
 	printf("  -i|-d|--dev|--in <dev|pcap> Input source as netdev or pcap\n");
-	printf("  -o|--out <dev|pcap>         Output sink as netdev or pcap\n");
+	printf("  -o|--out <dev|pcap|dir>     Output sink as netdev or pcap or directory\n");
 	printf("  -f|--filter <bpf-file>      Use BPF filter file from bpfc\n");
 	printf("  -t|--type <type>            Only handle packets of defined type:\n");
 	printf("                              host|broadcast|multicast|others|outgoing\n");
+	printf("  -F|--interval <time>        Dump interval in sec if -o is a directory where\n");
+	printf("                              pcap files should be stored (default: 60)\n");
 	printf("  -s|--silent                 Do not print captured packets\n");
 	printf("  -J|--jumbo-support          Support for 64KB Super Jumbo Frames\n");
 	printf("                              Default RX/TX slot: 2048Byte\n");
@@ -654,6 +656,8 @@ static void help(void)
 	printf("  netsniff-ng --in any --filter http.bpf --payload\n");
 	printf("  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0\\\n");
 	printf("              --type host --filter http.bpf\n");
+	printf("  netsniff-ng --in wlan0 --out /opt/probe1/ --silent --interval 30\\\n");
+	printf("              --bind-cpu 0 --jumbo-support\n");
 	printf("\n");
 	printf("Note:\n");
 	printf("  This tool is targeted for network developers! You should\n");
@@ -668,7 +672,6 @@ static void help(void)
 	printf("License: GNU GPL version 2\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
-
 	die();
 }
 
@@ -683,7 +686,6 @@ static void version(void)
 	printf("License: GNU GPL version 2\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
-
 	die();
 }
 

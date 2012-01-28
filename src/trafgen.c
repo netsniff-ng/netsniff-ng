@@ -319,8 +319,8 @@ static void tx_tgap_or_die(struct mode *mode, struct pktconf *cfg)
 
 	fflush(stdout);
 	printf("\n");
-	printf("\r%lu frames outgoing\n", mode->stats.tx_packets);
-	printf("\r%lu bytes outgoing\n", mode->stats.tx_bytes);
+	printf("\r%12lu frames outgoing\n", mode->stats.tx_packets);
+	printf("\r%12lu bytes outgoing\n", mode->stats.tx_bytes);
 }
 
 static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
@@ -443,8 +443,8 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 
 	fflush(stdout);
 	printf("\n");
-	printf("\r%lu frames outgoing\n", mode->stats.tx_packets);
-	printf("\r%lu bytes outgoing\n", mode->stats.tx_bytes);
+	printf("\r%12lu frames outgoing\n", mode->stats.tx_packets);
+	printf("\r%12lu bytes outgoing\n", mode->stats.tx_bytes);
 }
 
 #define TYPE_NUM 0
