@@ -96,7 +96,7 @@ struct pcap_file_ops pcap_rw_ops __read_mostly = {
 	.fsync_pcap = pcap_rw_fsync_pcap,
 };
 
-int init_pcap_rw(void)
+int init_pcap_rw(int jumbo_support)
 {
 	return pcap_ops_group_register(&pcap_rw_ops, PCAP_OPS_RW);
 }

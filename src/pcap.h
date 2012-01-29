@@ -144,19 +144,19 @@ static inline void pcap_validate_header_maybe_die(struct pcap_filehdr *hdr)
 		panic("This file has not a valid pcap header!\n");
 }
 
-extern int init_pcap_mmap(void);
-extern int init_pcap_rw(void);
-extern int init_pcap_sg(void);
+extern int init_pcap_mmap(int jumbo_support);
+extern int init_pcap_rw(int jumbo_support);
+extern int init_pcap_sg(int jumbo_support);
 
 extern void cleanup_pcap_mmap(void);
 extern void cleanup_pcap_rw(void);
 extern void cleanup_pcap_sg(void);
 
-static inline int init_pcap(void)
+static inline int init_pcap(int jumbo_support)
 {
-	init_pcap_rw();
-	init_pcap_sg();
-	init_pcap_mmap();
+	init_pcap_rw(jumbo_support);
+	init_pcap_sg(jumbo_support);
+	init_pcap_mmap(jumbo_support);
 	return 0;
 }
 

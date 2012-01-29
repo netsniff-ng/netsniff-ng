@@ -25,13 +25,15 @@
 #define PAGE_ALIGN(addr)  (((addr) + PAGE_SIZE - 1) & PAGE_MASK)
 
 static struct spinlock lock;
-static size_t map_size = 0;
+static off_t map_size = 0;
 static char *pstart, *pcurr;
+static int jumbo_frames = 0;
 
-static inline size_t get_map_size(void)
+static inline off_t get_map_size(void)
 {
+	int allocsz = jumbo_frames ? 16 : 3;
 	return PAGE_ALIGN(sizeof(struct pcap_filehdr) +
-			  (PAGE_SIZE * 3) * DEFAULT_SLOTS);
+			  (PAGE_SIZE * allocsz) * DEFAULT_SLOTS);
 }
 
 static int pcap_mmap_pull_file_header(int fd)
@@ -102,8 +104,8 @@ static ssize_t pcap_mmap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 	int ret;
 
 	spinlock_lock(&lock);
-	if ((unsigned long) (pcurr - pstart) + sizeof(*hdr) + len > map_size) {
-		size_t map_size_old = map_size;
+	if ((off_t) (pcurr - pstart) + sizeof(*hdr) + len > map_size) {
+		off_t map_size_old = map_size;
 		off_t offset = (pcurr - pstart);
 		map_size = PAGE_ALIGN(map_size_old * 3 / 2);
 		ret = lseek(fd, map_size, SEEK_SET);
@@ -158,13 +160,13 @@ static ssize_t pcap_mmap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 				       uint8_t *packet, size_t len)
 {
 	spinlock_lock(&lock);
-	if (unlikely((unsigned long) (pcurr + sizeof(*hdr) - pstart) > map_size)) {
+	if (unlikely((off_t) (pcurr + sizeof(*hdr) - pstart) > map_size)) {
 		spinlock_unlock(&lock);
 		return -ENOMEM;
 	}
 	__memcpy_small(hdr, pcurr, sizeof(*hdr));
 	pcurr += sizeof(*hdr);
-	if (unlikely((unsigned long) (pcurr + hdr->len - pstart) > map_size)) {
+	if (unlikely((off_t) (pcurr + hdr->len - pstart) > map_size)) {
 		spinlock_unlock(&lock);
 		return -ENOMEM;
 	}
@@ -180,7 +182,7 @@ static ssize_t pcap_mmap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 static void pcap_mmap_fsync_pcap(int fd)
 {
 	spinlock_lock(&lock);
-	msync(pstart, (unsigned long) (pcurr - pstart), MS_ASYNC);
+	msync(pstart, (off_t) (pcurr - pstart), MS_ASYNC);
 	spinlock_unlock(&lock);
 }
 
@@ -191,7 +193,7 @@ static void pcap_mmap_prepare_close_pcap(int fd, enum pcap_mode mode)
 	if (ret < 0)
 		panic("Cannot unmap the pcap file!\n");
 	if (mode == PCAP_MODE_WRITE) {
-		ret = ftruncate(fd, (unsigned long) (pcurr - pstart));
+		ret = ftruncate(fd, (off_t) (pcurr - pstart));
 		if (ret)
 			panic("Cannot truncate the pcap file!\n");
 	}
@@ -210,9 +212,10 @@ struct pcap_file_ops pcap_mmap_ops __read_mostly = {
 	.prepare_close_pcap = pcap_mmap_prepare_close_pcap,
 };
 
-int init_pcap_mmap(void)
+int init_pcap_mmap(int jumbo_support)
 {
 	spinlock_init(&lock);
+	jumbo_frames = jumbo_support;
 	return pcap_ops_group_register(&pcap_mmap_ops, PCAP_OPS_MMAP);
 }
 

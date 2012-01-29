@@ -24,7 +24,9 @@
 #define PAGE_ALIGN(addr)  (((addr) + PAGE_SIZE - 1) & PAGE_MASK)
 
 #define IOVSIZ   1000
-#define ALLSIZ   (PAGE_SIZE * 3)
+#define ALLSIZ   	(PAGE_SIZE * 3)
+#define ALLSIZ_2K	(PAGE_SIZE * 3)  // 12K max
+#define ALLSIZ_JUMBO	(PAGE_SIZE * 16) // 64K max
 
 static struct iovec iov[IOVSIZ];
 static unsigned long c = 0;
@@ -186,14 +188,19 @@ struct pcap_file_ops pcap_sg_ops __read_mostly = {
 	.fsync_pcap = pcap_sg_fsync_pcap,
 };
 
-int init_pcap_sg(void)
+int init_pcap_sg(int jumbo_support)
 {
 	unsigned long i;
+	size_t allocsz = 0;
 	c = 0;
 	memset(iov, 0, sizeof(iov));
+	if (jumbo_support)
+		allocsz = ALLSIZ_JUMBO; 
+	else
+		allocsz = ALLSIZ_2K;
 	for (i = 0; i < IOVSIZ; ++i) {
-		iov[i].iov_base = xmalloc_aligned(ALLSIZ, 64);
-		iov[i].iov_len = ALLSIZ;
+		iov[i].iov_base = xmalloc_aligned(allocsz, 64);
+		iov[i].iov_len = allocsz;
 	}
 	spinlock_init(&lock);
 	return pcap_ops_group_register(&pcap_sg_ops, PCAP_OPS_SG);

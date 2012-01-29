@@ -990,7 +990,7 @@ int main(int argc, char **argv)
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
 
-	init_pcap();
+	init_pcap(mode.jumbo_support);
 	tprintf_init();
 	header();
 
