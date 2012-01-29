@@ -75,6 +75,7 @@ struct mode {
 	enum pcap_ops_groups pcap;
 	unsigned long kpull;
 	int jumbo_support;
+	int dump_dir;
 	unsigned long dump_interval;
 };
 
@@ -159,7 +160,7 @@ static void timer_next_dump(int number)
 	setitimer(ITIMER_REAL, &itimer, NULL);
 }
 
-void enter_mode_pcap_to_tx(struct mode *mode)
+static void enter_mode_pcap_to_tx(struct mode *mode)
 {
 	int irq, ifindex, fd = 0, ret;
 	unsigned int size, it = 0;
@@ -279,7 +280,7 @@ out:
 /* If netsniff-ngs in device is on a tap, it can efficiently filter out 
  * some interesting packets and give them to the out device for testing
  * or debugging for instance. */
-void enter_mode_rx_to_tx(struct mode *mode)
+static void enter_mode_rx_to_tx(struct mode *mode)
 {
 	int rx_sock, ifindex_in, ifindex_out;
 	unsigned int size_in, size_out, it_in = 0, it_out = 0;
@@ -423,7 +424,7 @@ out:
 	close(rx_sock);
 }
 
-void enter_mode_read_pcap(struct mode *mode)
+static void enter_mode_read_pcap(struct mode *mode)
 {
 	int ret, fd;
 	struct pcap_pkthdr phdr;
@@ -494,7 +495,110 @@ out:
 	close(fd);
 }
 
-void enter_mode_rx_only_or_dump(struct mode *mode)
+static void finish_multi_pcap_file(struct mode *mode, int fd)
+{
+	pcap_ops[mode->pcap]->fsync_pcap(fd);
+	if (pcap_ops[mode->pcap]->prepare_close_pcap)
+		pcap_ops[mode->pcap]->prepare_close_pcap(fd, PCAP_MODE_WRITE);
+	close(fd);
+
+	memset(&itimer, 0, sizeof(itimer));
+	setitimer(ITIMER_REAL, &itimer, NULL);
+}
+
+static int next_multi_pcap_file(struct mode *mode, int fd)
+{
+	int ret;
+	char tmp[512];
+
+	pcap_ops[mode->pcap]->fsync_pcap(fd);
+	if (pcap_ops[mode->pcap]->prepare_close_pcap)
+		pcap_ops[mode->pcap]->prepare_close_pcap(fd, PCAP_MODE_WRITE);
+	close(fd);
+
+	memset(&tmp, 0, sizeof(tmp));
+	snprintf(tmp, sizeof(tmp), "%s/%lu.pcap", mode->device_out, time(0));
+	tmp[sizeof(tmp) - 1] = 0;
+
+	fd = open_or_die_m(tmp, O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE,
+			   S_IRUSR | S_IWUSR);
+	ret = pcap_ops[mode->pcap]->push_file_header(fd);
+	if (ret)
+		panic("error writing pcap header!\n");
+	if (pcap_ops[mode->pcap]->prepare_writing_pcap) {
+		ret = pcap_ops[mode->pcap]->prepare_writing_pcap(fd);
+		if (ret)
+			panic("error prepare writing pcap!\n");
+	}
+
+	return fd;
+}
+
+static int begin_multi_pcap_file(struct mode *mode)
+{
+	int fd, ret;
+	char tmp[512];
+
+	if (!pcap_ops[mode->pcap])
+		panic("pcap group not supported!\n");
+	if (mode->device_out[strlen(mode->device_out) - 1] == '/')
+		mode->device_out[strlen(mode->device_out) - 1] = 0;
+
+	memset(&tmp, 0, sizeof(tmp));
+	snprintf(tmp, sizeof(tmp), "%s/%lu.pcap", mode->device_out, time(0));
+	tmp[sizeof(tmp) - 1] = 0;
+
+	fd = open_or_die_m(tmp, O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE,
+			   S_IRUSR | S_IWUSR);
+	ret = pcap_ops[mode->pcap]->push_file_header(fd);
+	if (ret)
+		panic("error writing pcap header!\n");
+	if (pcap_ops[mode->pcap]->prepare_writing_pcap) {
+		ret = pcap_ops[mode->pcap]->prepare_writing_pcap(fd);
+		if (ret)
+			panic("error prepare writing pcap!\n");
+	}
+
+	interval = mode->dump_interval;
+	itimer.it_interval.tv_sec = interval;
+	itimer.it_interval.tv_usec = 0;
+	itimer.it_value.tv_sec = interval;
+	itimer.it_value.tv_usec = 0;
+	setitimer(ITIMER_REAL, &itimer, NULL);
+
+	return fd;
+}
+
+static void finish_single_pcap_file(struct mode *mode, int fd)
+{
+	pcap_ops[mode->pcap]->fsync_pcap(fd);
+	if (pcap_ops[mode->pcap]->prepare_close_pcap)
+		pcap_ops[mode->pcap]->prepare_close_pcap(fd, PCAP_MODE_WRITE);
+	close(fd);
+}
+
+static int begin_single_pcap_file(struct mode *mode)
+{
+	int fd, ret;
+
+	if (!pcap_ops[mode->pcap])
+		panic("pcap group not supported!\n");
+	fd = open_or_die_m(mode->device_out,
+			   O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE,
+			   S_IRUSR | S_IWUSR);
+	ret = pcap_ops[mode->pcap]->push_file_header(fd);
+	if (ret)
+		panic("error writing pcap header!\n");
+	if (pcap_ops[mode->pcap]->prepare_writing_pcap) {
+		ret = pcap_ops[mode->pcap]->prepare_writing_pcap(fd);
+		if (ret)
+			panic("error prepare writing pcap!\n");
+	}
+
+	return fd;
+}
+
+static void enter_mode_rx_only_or_dump(struct mode *mode)
 {
 	int sock, irq, ifindex, fd = 0, ret;
 	unsigned int size, it = 0;
@@ -513,23 +617,21 @@ void enter_mode_rx_only_or_dump(struct mode *mode)
 	sock = pf_socket();
 
 	if (mode->dump) {
-		if (!pcap_ops[mode->pcap])
-			panic("pcap group not supported!\n");
-		fd = open_or_die_m(mode->device_out,
-				   O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE,
-				   S_IRUSR | S_IWUSR);
-		ret = pcap_ops[mode->pcap]->push_file_header(fd);
-		if (ret)
-			panic("error writing pcap header!\n");
-		if (pcap_ops[mode->pcap]->prepare_writing_pcap) {
-			ret = pcap_ops[mode->pcap]->prepare_writing_pcap(fd);
-			if (ret)
-				panic("error prepare writing pcap!\n");
+		struct stat tmp;
+		memset(&tmp, 0, sizeof(tmp));
+		ret = stat(mode->device_out, &tmp);
+		if (ret < 0) {
+			mode->dump_dir = 0;
+			goto try_file;
+		}
+		mode->dump_dir = !!S_ISDIR(tmp.st_mode);
+		if (mode->dump_dir) {
+			fd = begin_multi_pcap_file(mode);
+		} else {
+try_file:
+			fd = begin_single_pcap_file(mode);
 		}
 	}
-
-	if (mode->dump_interval)
-		interval = mode->dump_interval;
 
 	memset(&rx_ring, 0, sizeof(rx_ring));
 	memset(&rx_poll, 0, sizeof(rx_poll));
@@ -576,7 +678,6 @@ void enter_mode_rx_only_or_dump(struct mode *mode)
 			if (mode->packet_type != PACKET_ALL)
 				if (mode->packet_type != hdr->s_ll.sll_pkttype)
 					goto next;
-
 			if (mode->dump) {
 				struct pcap_pkthdr phdr;
 				tpacket_hdr_to_pcap_pkthdr(&hdr->tp_h, &phdr);
@@ -600,6 +701,14 @@ next:
 
 			if (unlikely(sigint == 1))
 				break;
+			if (mode->dump && next_dump) {
+				fd = next_multi_pcap_file(mode, fd);
+				next_dump = false;
+				if (mode->print_mode == FNTTYPE_PRINT_NONE) {
+					printf(".");
+					fflush(stdout);
+				}
+			}
 		}
 
 		poll(&rx_poll, 1, -1);
@@ -607,19 +716,16 @@ next:
 	}
 
 	sock_print_net_stats(sock);
-
 	dissector_cleanup_all();
 	destroy_rx_ring(sock, &rx_ring);
-
 	if (mode->promiscuous == true)
 		leave_promiscuous_mode(mode->device_in, ifflags);
-
 	close(sock);
 	if (mode->dump) {
-		pcap_ops[mode->pcap]->fsync_pcap(fd);
-		if (pcap_ops[mode->pcap]->prepare_close_pcap)
-			pcap_ops[mode->pcap]->prepare_close_pcap(fd, PCAP_MODE_WRITE);
-		close(fd);
+		if (mode->dump_dir)
+			finish_multi_pcap_file(mode, fd);
+		else
+			finish_single_pcap_file(mode, fd);
 	}
 }
 
