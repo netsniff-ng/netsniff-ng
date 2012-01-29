@@ -20,6 +20,7 @@
  *        Chapter 'Three is Company'.
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -54,9 +55,9 @@
 #include "misc.h"
 #include "mtrand.h"
 
-#define CPU_UNKNOWN  -1
-#define CPU_NOTOUCH  -2
-#define PACKET_ALL   -1
+#define CPU_UNKNOWN	-1
+#define CPU_NOTOUCH	-2
+#define PACKET_ALL	-1
 
 struct mode {
 	char *device_in;
@@ -163,7 +164,7 @@ void enter_mode_pcap_to_tx(struct mode *mode)
 
 	if (!pcap_ops[mode->pcap])
 		panic("pcap group not supported!\n");
-	fd = open_or_die(mode->device_in, O_RDONLY | O_LARGEFILE);
+	fd = open_or_die(mode->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);
 	ret = pcap_ops[mode->pcap]->pull_file_header(fd);
 	if (ret)
 		panic("error reading pcap header!\n");
@@ -421,7 +422,7 @@ void enter_mode_read_pcap(struct mode *mode)
 
 	if (!pcap_ops[mode->pcap])
 		panic("pcap group not supported!\n");
-	fd = open_or_die(mode->device_in, O_RDONLY | O_LARGEFILE);
+	fd = open_or_die(mode->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);
 	ret = pcap_ops[mode->pcap]->pull_file_header(fd);
 	if (ret)
 		panic("error reading pcap header!\n");
