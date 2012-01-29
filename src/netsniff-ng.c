@@ -678,6 +678,13 @@ try_file:
 			if (mode->packet_type != PACKET_ALL)
 				if (mode->packet_type != hdr->s_ll.sll_pkttype)
 					goto next;
+			if (unlikely(rx_ring.layout.tp_frame_size <
+				     hdr->tp_h.tp_snaplen)) {
+				fprintf(stderr, "Skipping too large packet! "
+					"No jumbo support selected?\n");
+				fflush(stderr);
+				goto next;
+			}
 			if (mode->dump) {
 				struct pcap_pkthdr phdr;
 				tpacket_hdr_to_pcap_pkthdr(&hdr->tp_h, &phdr);
