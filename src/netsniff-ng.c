@@ -85,11 +85,11 @@ struct tx_stats {
 
 sig_atomic_t sigint = 0;
 
+static int tx_sock;
 static unsigned long frame_cnt_max = 0;
 static unsigned long interval = TX_KERNEL_PULL_INT;
-static int tx_sock;
 static struct itimerval itimer;
-static volatile bool next_dump;
+static volatile bool next_dump = false;
 
 static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqlxCXNvhF:";
 
