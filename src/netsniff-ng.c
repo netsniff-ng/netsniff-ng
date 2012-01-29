@@ -58,6 +58,7 @@
 #define CPU_UNKNOWN	-1
 #define CPU_NOTOUCH	-2
 #define PACKET_ALL	-1
+#define DUMP_INTERVAL	60
 
 struct mode {
 	char *device_in;
@@ -65,10 +66,8 @@ struct mode {
 	char *filter;
 	int cpu;
 	int dump;
-	/* dissector */
 	int link_type;
 	int print_mode;
-	/* 0 for automatic, > 0 for manual */
 	unsigned int reserve_size;
 	int packet_type;
 	bool randomize;
@@ -76,6 +75,7 @@ struct mode {
 	enum pcap_ops_groups pcap;
 	unsigned long kpull;
 	int jumbo_support;
+	unsigned long dump_interval;
 };
 
 struct tx_stats {
@@ -89,8 +89,9 @@ static unsigned long frame_cnt_max = 0;
 static unsigned long interval = TX_KERNEL_PULL_INT;
 static int tx_sock;
 static struct itimerval itimer;
+static volatile bool next_dump;
 
-static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqlxCXNvh";
+static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqlxCXNvhF:";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -104,6 +105,7 @@ static struct option long_options[] = {
 	{"no-promisc", no_argument, 0, 'M'},
 	{"num", required_argument, 0, 'n'},
 	{"type", required_argument, 0, 't'},
+	{"interval", required_argument, 0, 'F'},
 	{"ring-size", required_argument, 0, 'S'},
 	{"kernel-pull", required_argument, 0, 'k'},
 	{"bind-cpu", required_argument, 0, 'b'},
@@ -143,6 +145,17 @@ static void timer_elapsed(int number)
 	itimer.it_value.tv_usec = interval;
 
 	pull_and_flush_tx_ring(tx_sock);
+	setitimer(ITIMER_REAL, &itimer, NULL);
+}
+
+static void timer_next_dump(int number)
+{
+	itimer.it_interval.tv_sec = interval;
+	itimer.it_interval.tv_usec = 0;
+	itimer.it_value.tv_sec = interval;
+	itimer.it_value.tv_usec = 0;
+
+	next_dump = true;
 	setitimer(ITIMER_REAL, &itimer, NULL);
 }
 
@@ -251,8 +264,8 @@ void enter_mode_pcap_to_tx(struct mode *mode)
 out:
 	fflush(stdout);
 	printf("\n");
-	printf("\r%lu frames outgoing\n", stats.tx_packets);
-	printf("\r%lu bytes outgoing\n", stats.tx_bytes);
+	printf("\r%12lu frames outgoing\n", stats.tx_packets);
+	printf("\r%12lu bytes outgoing\n", stats.tx_bytes);
 
 	dissector_cleanup_all();
 	destroy_tx_ring(tx_sock, &tx_ring);
@@ -471,8 +484,8 @@ void enter_mode_read_pcap(struct mode *mode)
 out:
 	fflush(stdout);
 	printf("\n");
-	printf("\r%lu frames outgoing\n", stats.tx_packets);
-	printf("\r%lu bytes outgoing\n", stats.tx_bytes);
+	printf("\r%12lu frames outgoing\n", stats.tx_packets);
+	printf("\r%12lu bytes outgoing\n", stats.tx_bytes);
 
 	xfree(out);
 	dissector_cleanup_all();
@@ -514,6 +527,9 @@ void enter_mode_rx_only_or_dump(struct mode *mode)
 				panic("error prepare writing pcap!\n");
 		}
 	}
+
+	if (mode->dump_interval)
+		interval = mode.dump_interval;
 
 	memset(&rx_ring, 0, sizeof(rx_ring));
 	memset(&rx_poll, 0, sizeof(rx_poll));
@@ -619,7 +635,7 @@ static void help(void)
 	printf("  -f|--filter <bpf-file>      Use BPF filter file from bpfc\n");
 	printf("  -t|--type <type>            Only handle packets of defined type:\n");
 	printf("                              host|broadcast|multicast|others|outgoing\n");
-	printf("  -F|--interval <time>        Dump interval in sec if -o is a directory where\n");
+	printf("  -F|--interval <int>         Dump interval in sec if -o is a directory where\n");
 	printf("                              pcap files should be stored (default: 60)\n");
 	printf("  -s|--silent                 Do not print captured packets\n");
 	printf("  -J|--jumbo-support          Support for 64KB Super Jumbo Frames\n");
@@ -654,11 +670,9 @@ static void help(void)
 	printf("  netsniff-ng --in eth0 --out dump.pcap --silent --bind-cpu 0\n");
 	printf("  netsniff-ng --in dump.pcap --mmap --out eth0 --silent --bind-cpu 0\n");
 	printf("  netsniff-ng --in any --filter icmp.bpf --all-hex\n");
+	printf("  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0 --type host --filter http.bpf\n");
 	printf("  netsniff-ng --in any --filter http.bpf --payload\n");
-	printf("  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0\\\n");
-	printf("              --type host --filter http.bpf\n");
-	printf("  netsniff-ng --in wlan0 --out /opt/probe1/ --silent --interval 30\\\n");
-	printf("              --bind-cpu 0 --jumbo-support\n");
+	printf("  netsniff-ng --in wlan0 --out /opt/probe1/ --silent --interval 30 --bind-cpu 0 --jumbo-support\n");
 	printf("\n");
 	printf("Note:\n");
 	printf("  This tool is targeted for network developers! You should\n");
@@ -668,8 +682,8 @@ static void help(void)
 	printf("  if present.\n");
 	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2009-2011 Daniel Borkmann <daniel@netsniff-ng.org>\n");
-	printf("Copyright (C) 2009-2011 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n");
+	printf("Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n");
+	printf("Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n");
 	printf("License: GNU GPL version 2\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
@@ -682,8 +696,8 @@ static void version(void)
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2009-2011 Daniel Borkmann <daniel@netsniff-ng.org>\n");
-	printf("Copyright (C) 2009-2011 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n");
+	printf("Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n");
+	printf("Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n");
 	printf("License: GNU GPL version 2\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
@@ -714,6 +728,7 @@ int main(int argc, char **argv)
 	mode.promiscuous = true;
 	mode.randomize = false;
 	mode.pcap = PCAP_OPS_SG;
+	mode.dump_interval = DUMP_INTERVAL;
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 	       &opt_index)) != EOF) {
@@ -820,6 +835,9 @@ int main(int argc, char **argv)
 		case 'n':
 			frame_cnt_max = (unsigned long) atol(optarg);
 			break;
+		case 'F':
+			mode.dump_interval = atol(optarg);
+			break;
 		case 'v':
 			version();
 			break;
@@ -833,6 +851,7 @@ int main(int argc, char **argv)
 			case 'o':
 			case 'f':
 			case 't':
+			case 'F':
 			case 'n':
 			case 'S':
 			case 'b':
@@ -857,8 +876,6 @@ int main(int argc, char **argv)
 
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
-	register_signal(SIGUSR1, signal_handler);
-	register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO);
 
 	init_pcap();
 	tprintf_init();
@@ -875,17 +892,21 @@ int main(int argc, char **argv)
 		if (!mode.device_out) {
 			mode.dump = 0;
 			enter_mode = enter_mode_rx_only_or_dump;
-		} else if (device_mtu(mode.device_out))
+		} else if (device_mtu(mode.device_out)) {
+			register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO);
 			enter_mode = enter_mode_rx_to_tx;
-		else {
+		} else {
 			mode.dump = 1;
+			register_signal_f(SIGALRM, timer_next_dump, SA_SIGINFO);
 			enter_mode = enter_mode_rx_only_or_dump;
 		}
 	} else {
-		if (mode.device_out && device_mtu(mode.device_out))
+		if (mode.device_out && device_mtu(mode.device_out)) {
+			register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO);
 			enter_mode = enter_mode_pcap_to_tx;
-		else
+		} else {
 			enter_mode = enter_mode_read_pcap;
+		}
 	}
 
 	if (!enter_mode)
