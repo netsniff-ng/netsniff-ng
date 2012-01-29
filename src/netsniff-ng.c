@@ -163,7 +163,7 @@ void enter_mode_pcap_to_tx(struct mode *mode)
 
 	if (!pcap_ops[mode->pcap])
 		panic("pcap group not supported!\n");
-	fd = open_or_die(mode->device_in, O_RDONLY);
+	fd = open_or_die(mode->device_in, O_RDONLY | O_LARGEFILE);
 	ret = pcap_ops[mode->pcap]->pull_file_header(fd);
 	if (ret)
 		panic("error reading pcap header!\n");
@@ -421,7 +421,7 @@ void enter_mode_read_pcap(struct mode *mode)
 
 	if (!pcap_ops[mode->pcap])
 		panic("pcap group not supported!\n");
-	fd = open_or_die(mode->device_in, O_RDONLY);
+	fd = open_or_die(mode->device_in, O_RDONLY | O_LARGEFILE);
 	ret = pcap_ops[mode->pcap]->pull_file_header(fd);
 	if (ret)
 		panic("error reading pcap header!\n");
@@ -502,7 +502,7 @@ void enter_mode_rx_only_or_dump(struct mode *mode)
 		if (!pcap_ops[mode->pcap])
 			panic("pcap group not supported!\n");
 		fd = open_or_die_m(mode->device_out,
-				   O_RDWR | O_CREAT | O_TRUNC,
+				   O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE,
 				   S_IRUSR | S_IWUSR);
 		ret = pcap_ops[mode->pcap]->push_file_header(fd);
 		if (ret)
