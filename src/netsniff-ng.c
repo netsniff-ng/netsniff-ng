@@ -936,13 +936,13 @@ int main(int argc, char **argv)
 			mode.print_mode = FNTTYPE_PRINT_NOPA;
 			break;
 		case 'k':
-			mode.kpull = atol(optarg);
+			mode.kpull = (unsigned long) atol(optarg);
 			break;
 		case 'n':
 			frame_cnt_max = (unsigned long) atol(optarg);
 			break;
 		case 'F':
-			mode.dump_interval = atol(optarg);
+			mode.dump_interval = (unsigned long) atol(optarg);
 			break;
 		case 'v':
 			version();
