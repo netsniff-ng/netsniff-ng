@@ -529,7 +529,7 @@ void enter_mode_rx_only_or_dump(struct mode *mode)
 	}
 
 	if (mode->dump_interval)
-		interval = mode.dump_interval;
+		interval = mode->dump_interval;
 
 	memset(&rx_ring, 0, sizeof(rx_ring));
 	memset(&rx_poll, 0, sizeof(rx_poll));
