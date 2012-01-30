@@ -2,6 +2,7 @@
   + Allow inter departure time as i.e. exponential, uniform, cauchy, normal,
     pareto, ... distributed
   + Rewrite config parser
+  + Skip jumbo frame if it doesn't fit into ring slot, give warning
 
 * curvetun:
   + Rewrite config parsers
@@ -11,6 +12,7 @@
 * netsniff-ng:
   + Cleanup code, especially in dissector, print-modes and proto sections
   + Support more protocols
+  + Skip jumbo frame if it doesn't fit into ring slot, give warning
 
 * ashunt:
   + Add IPv6 functionality
