@@ -24,6 +24,182 @@
  * geoip-database-contrib.
  */
 
+/*
+
+=head1 NAME
+
+ashunt - Autonomous System (AS) trace route utility
+
+=head1 SYNOPSIS
+
+ashunt	-H|--host <host> -i|-d|--dev <dev> [-6|--ipv6]
+	[-n|--numeric] [-N|--dns] [-f|--init-ttl <ttl>]
+	[-m|--max-ttl <ttl>] [-q|--num-probes] [-x|--timeout <sec>]
+	[-S|--syn] [-A|--ack] [-F|--fin] [-P|--psh] [-U|--urg]
+	[-R|--rst] [-E|--ecn-syn] [-t|--tos <tos>] [-G|--nofrag]
+	[-X|--payload <string>] [-Z|--show-packet] [-l|--totlen <len>]
+	[-w|--whois <server>] [-W|--wport <port>] [--city-db <path>]
+	[--country-db <path>] [-v|--version] [-h|--help]
+
+=head1 DESCRIPTION
+
+This program provides AS information on each hop between the client
+and the target host.
+
+=head1 OPTIONS
+
+=over
+
+=item ashunt -i eth0 -N -E -H netsniff-ng.org
+
+IPv4 trace of AS with TCP ECN SYN probe
+
+=item ashunt -i eth0 -N -S -H netsniff-ng.org
+
+IPv4 trace of AS with TCP SYN probe
+
+=item ashunt -i eth0 -N -F -H netsniff-ng.org
+
+IPv4 trace of AS with TCP FIN probe
+
+=item ashunt -i eth0 -N -FPU -H netsniff-ng.org
+
+IPv4 trace of AS with Xmas probe
+
+=item ashunt -i eth0 -N -H netsniff-ng.org -X "censor-me" -Z
+
+IPv4 trace of AS with Null probe with ASCII payload
+
+=item ashunt -6 -S -i eth0 -H netsniff-ng.org
+
+IPv6 trace of AS up to netsniff-ng.org
+
+=back
+
+=head1 OPTIONS
+
+=over
+
+=item -h|--help
+
+Print help text and lists all options.
+
+=item -v|--version
+
+Print version.
+
+=item -H|--host <host>
+
+Host/IPv4/IPv6 to lookup AS route to
+
+=item i-|-d|--dev <netdev>
+
+Networking device, i.e. eth0
+
+=item -p|--port <port>
+
+Hosts port to lookup AS route to
+
+=item -4|--ipv4
+
+Use IPv4 requests (default)
+
+=item -6|--ipv6
+
+Use IPv6 requests
+
+=item -n|--numeric
+
+Do not do reverse DNS lookup for hops
+
+=item -N|--dns
+
+Do a reverse DNS lookup for hops
+
+=item -f|--init-ttl <ttl>
+
+Set initial TTL
+
+=item -m|--max-ttl <ttl>
+
+Set maximum TTL (default: 30)
+
+=item -q|--num-probes <num>
+
+Number of max probes for each hop (default: 3)
+
+=item -x|--timeout <sec>
+
+Probe response timeout in sec (default: 3)
+
+=item -S|--syn
+
+Set TCP SYN flag in packets
+
+=item -A|--ack
+
+Set TCP ACK flag in packets
+
+=item -F|--fin
+
+Set TCP FIN flag in packets
+
+=item -P|--psh
+
+Set TCP PSH flag in packets
+
+=item -U|--urg
+
+Set TCP URG flag in packets
+
+=item -R|--rst
+
+Set TCP RST flag in packets
+
+=item -E|--ecn-syn
+
+Send ECN SYN packets (RFC3168)
+
+=item -t|--tos <tos>
+
+Set the IP TOS field
+
+=item -w|--whois <server>
+
+Use a different AS whois DB server
+(default: /etc/netsniff-ng/whois.conf)
+
+=item -W|--wport <port>
+
+Use a different port to AS whois server
+(default: /etc/netsniff-ng/whois.conf)
+
+=item --city-db <path>
+
+Specifiy path for geoip city database
+
+=item --country-db <path>
+
+Specifiy path for geoip country database
+
+=back
+
+=head1 AUTHOR
+
+Written by Daniel Borkmann <daniel@netsniff-ng.org>
+
+=head1 DOCUMENTATION
+
+Documentation by Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+=head1 BUGS
+
+Please report bugs to <bugs@netsniff-ng.org>
+
+=cut
+
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
