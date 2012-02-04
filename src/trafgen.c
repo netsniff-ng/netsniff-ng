@@ -21,6 +21,70 @@
  *        Chapter 'The Stairs of Cirith Ungol'.
  */
 
+/*
+
+=head1 NAME
+
+trafgen - a high-performance zero-copy network packet generator
+
+=head1 SYNOPSIS
+
+trafgen	-d|--dev <netdev> -c|--conf <file> [-J|--jumbo-support][-n|--num <uint>]
+	[-r|--rand][-t|--gap <usec>][-S|--ring-size <size>]
+	[-k|--kernel-pull <usec>][-b|--bind-cpu <cpu>][-B|--unbind-cpu <cpu>]
+	[-H|--prio-high][-Q|--notouch-irq][-v|--version][-h|--help]
+
+=head1 DESCRIPTION
+
+A high-performance network traffic generator that uses the zero-copy TX_RING
+for network I/O. For instance, on comodity Gigabit hardware up to 1,488,095 pps
+64 Byte pps have been achieved with trafgen.
+
+=head1 OPTIONS
+
+=over
+
+=item trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0
+
+Use packet configuration trafgen.txf, eth0 as transmission device and CPU0
+for binding the process.
+
+=back
+
+=head1 OPTIONS
+
+=over
+
+=item -h|--help
+
+Print help text and lists all options.
+
+=item -v|--version
+
+Print version.
+
+=item -d|--dev <netdev>
+
+Device for transmission i.e., eth0.
+
+=back
+
+=head1 AUTHOR
+
+Written by Daniel Borkmann <daniel@netsniff-ng.org>
+
+=head1 DOCUMENTATION
+
+Documentation by Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+=head1 BUGS
+
+Please report bugs to <bugs@netsniff-ng.org>
+
+=cut
+
+*/
+
 #include <stdio.h>
 #include <string.h>
 #include <getopt.h>
