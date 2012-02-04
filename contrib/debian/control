@@ -4,16 +4,26 @@ Priority: optional
 Maintainer: Daniel Borkmann <danborkmann@googlemail.com>
 Uploaders: Kartik Mistry <kartik@debian.org>
 Standards-Version: 3.9.1
-Build-Depends: debhelper (>= 7)
+Build-Depends: debhelper (>= 7), cmake, flex, bison, libgeoip-dev,
+  libnetfilter-conntrack-dev, liburcu-dev, libncurses5-dev,
 Homepage: http://www.netsniff-ng.org/
 
 Package: netsniff-ng
 Architecture: linux-any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: the packet sniffing beast
- netsniff-ng is a high performance Linux network sniffer
- for packet inspection. It can be used for protocol analysis,
- reverse engineering or network debugging. The gain of
- performance is reached by 'zero-copy' mechanisms, so that
- the kernel does not need to copy packets from kernelspace
- to userspace.
+Description: the packet sniffing beast (toolkit)
+ netsniff-ng is a free, performant Linux networking toolkit.
+ .
+ The gain of performance is reached by zero-copy mechanisms, so that on packet
+ reception and transmission the kernel does not need to copy packets from
+ kernel space to user space and vice versa. 
+ .
+ The netsniff-ng toolkit consists of the following utilities:
+ .
+  * netsniff-ng, a zero-copy analyzer, pcap capturer and replayer
+  * trafgen, a high-performance zero-copy network traffic generator
+  * bpfc, a Berkeley Packet Filter compiler supporting Linux extensions
+  * ifpps, a top-like kernel networking and system statistics tool
+  * flowtop, a top-like netfilter connection tracking tool
+  * curvetun, a lightweight multiuser IP tunnel based on elliptic curve crypto
+  * ashunt, an Autonomous System (AS) trace route and ISP testing utility
