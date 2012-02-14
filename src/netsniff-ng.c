@@ -709,10 +709,16 @@ next:
 			if (unlikely(sigint == 1))
 				break;
 			if (mode->dump && next_dump) {
+				struct tpacket_stats kstats;
+				socklen_t slen = sizeof(kstats);
+				memset(&kstats, 0, sizeof(kstats));
+				getsockopt(sock, SOL_PACKET, PACKET_STATISTICS,
+					   &kstats, &slen);
 				fd = next_multi_pcap_file(mode, fd);
 				next_dump = false;
 				if (mode->print_mode == FNTTYPE_PRINT_NONE) {
-					printf(".");
+					printf(".(+%u/-%u)", kstats.tp_packets - kstats.tp_drops,
+					       kstats.tp_drops);
 					fflush(stdout);
 				}
 			}
@@ -722,7 +728,12 @@ next:
 		poll_error_maybe_die(sock, &rx_poll);
 	}
 
-	sock_print_net_stats(sock);
+	if (!(mode->dump_dir && mode->print_mode == FNTTYPE_PRINT_NONE))
+		sock_print_net_stats(sock);
+	else {
+		printf("\n\n");
+		fflush(stdout);
+	}
 	dissector_cleanup_all();
 	destroy_rx_ring(sock, &rx_ring);
 	if (mode->promiscuous == true)
