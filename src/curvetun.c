@@ -76,7 +76,7 @@ enum working_mode {
 
 sig_atomic_t sigint = 0;
 
-static const char *short_options = "kxc::svhp:t:d:uCS46D";
+static const char *short_options = "kxc::svhp:t:d:uCS46DN";
 
 static struct option long_options[] = {
 	{"client", optional_argument, 0, 'c'},
@@ -87,6 +87,7 @@ static struct option long_options[] = {
 	{"export", no_argument, 0, 'x'},
 	{"dumpc", no_argument, 0, 'C'},
 	{"dumps", no_argument, 0, 'S'},
+	{"no-logging", no_argument, 0, 'N'},
 	{"server", no_argument, 0, 's'},
 	{"udp", no_argument, 0, 'u'},
 	{"ipv4", no_argument, 0, '4'},
@@ -129,10 +130,11 @@ static void help(void)
 	printf("  -d|--dev <tun>          Networking tunnel device, e.g. tun0\n");
 	printf("  -v|--version            Print version\n");
 	printf("  -h|--help               Print this help\n");
-	printf(" Client settings:\n");
+	printf(" additional options for client:\n");
 	printf("  -c|--client[=alias]     Client mode, server alias optional\n");
-	printf(" Server settings:\n");
+	printf(" additional options for servers:\n");
 	printf("  -s|--server             Server mode\n");
+	printf("  -N|--no-logging         Disable server logging (for better anonymity)\n");
 	printf("  -p|--port <num>         Port number (mandatory)\n");
 	printf("  -t|--stun <server>      Show public IP/Port mapping via STUN\n");
 	printf("  -u|--udp                Use UDP as carrier instead of TCP\n");
@@ -144,7 +146,7 @@ static void help(void)
 	printf("  See README.curvetun for a configuration example.\n");
 	printf("  curvetun --keygen\n");
 	printf("  curvetun --export\n");
-	printf("  curvetun --server -4 -u --port 6666 --stun stunserver.org\n");
+	printf("  curvetun --server -4 -u -N --port 6666 --stun stunserver.org\n");
 	printf("  curvetun --client=ethz\n");
 	printf("\n");
 	printf("Note:\n");
@@ -158,7 +160,6 @@ static void help(void)
 	printf("License: GNU GPL version 2\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
-
 	die();
 }
 
@@ -173,7 +174,6 @@ static void version(void)
 	printf("License: GNU GPL version 2\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
-
 	die();
 }
 
@@ -552,7 +552,7 @@ static int main_client(char *home, char *dev, char *alias, int daemon)
 }
 
 static int main_server(char *home, char *dev, char *port, int udp,
-		       int ipv4, int daemon)
+		       int ipv4, int daemon, int log)
 {
 	int ret;
 
@@ -560,7 +560,7 @@ static int main_server(char *home, char *dev, char *port, int udp,
 	check_config_keypair_or_die(home);
 	if (daemon)
 		daemonize(LOCKFILE);
-	ret = server_main(home, dev, port, udp, ipv4);
+	ret = server_main(home, dev, port, udp, ipv4, log);
 	unlink(LOCKFILE);
 
 	return ret;
@@ -568,7 +568,7 @@ static int main_server(char *home, char *dev, char *port, int udp,
 
 int main(int argc, char **argv)
 {
-	int ret = 0, c, opt_index, udp = 0, ipv4 = -1, daemon = 1;
+	int ret = 0, c, opt_index, udp = 0, ipv4 = -1, daemon = 1, log = 1;
 	char *port = NULL, *stun = NULL, *dev = NULL, *home = NULL, *alias=NULL;
 	enum working_mode wmode = MODE_UNKNOW;
 
@@ -592,6 +592,9 @@ int main(int argc, char **argv)
 			break;
 		case 'D':
 			daemon = 0;
+			break;
+		case 'N':
+			log = 0;
 			break;
 		case 'C':
 			wmode = MODE_DUMPC;
@@ -685,7 +688,7 @@ int main(int argc, char **argv)
 			panic("No port specified!\n");
 		if (stun)
 			print_stun_probe(stun, 3478, strtoul(port, NULL, 10));
-		ret = main_server(home, dev, port, udp, ipv4, daemon);
+		ret = main_server(home, dev, port, udp, ipv4, daemon, log);
 		break;
 	default:
 		die();

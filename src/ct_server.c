@@ -61,6 +61,8 @@ struct worker_struct {
 
 static struct worker_struct *threadpool = NULL;
 
+static int auth_log = 1;
+
 extern sig_atomic_t sigint;
 
 static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
@@ -75,6 +77,7 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len) __pure;
 static int handler_tcp(int fd, const struct worker_struct *ws,
 		       char *buff, size_t len) __pure;
+ssize_t handler_tcp_read(int fd, char *buff, size_t len);
 static void *worker(void *self) __pure;
 
 static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
@@ -175,7 +178,8 @@ static void handler_udp_notify_close(int fd, struct sockaddr_storage *addr)
 	err = sendto(fd, &hdr, sizeof(hdr), 0, (struct sockaddr *) addr, sizeof(*addr));
 
 	if (err < 0)
-		syslog(LOG_ERR, "Error while sending close notification: %s!\n", strerror(errno));
+		syslog(LOG_ERR, "Error while sending close notification: "
+		       "%s!\n", strerror(errno));
 }
 
 static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
@@ -216,13 +220,14 @@ close:
 			return keep;
 		}
 		if (hdr->flags & PROTO_FLAG_INIT) {
-			syslog(LOG_INFO, "Got initial userhash from remote end!\n");
+			if (auth_log)
+				syslog(LOG_INFO, "Got initial userhash from remote end!\n");
 			if (unlikely(rlen - sizeof(*hdr) <
 				     sizeof(struct username_struct)))
 				goto close;
 			err = try_register_user_by_sockaddr(ws->c, buff + sizeof(struct ct_proto),
 							    rlen - sizeof(struct ct_proto),
-							    &naddr, nlen);
+							    &naddr, nlen, auth_log);
 			if (unlikely(err))
 				goto close;
 			goto next;
@@ -402,7 +407,8 @@ static void handler_tcp_notify_close(int fd)
 	err = write(fd, &hdr, sizeof(hdr));
 
 	if (err < 0)
-		syslog(LOG_ERR, "Error while sending close notification: %s!\n", strerror(errno));
+		syslog(LOG_ERR, "Error while sending close notification: "
+		       "%s!\n", strerror(errno));
 }
 
 static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
@@ -443,13 +449,14 @@ close:
 			return keep;
 		}
 		if (hdr->flags & PROTO_FLAG_INIT) {
-			syslog(LOG_INFO, "Got initial userhash from remote end!\n");
+			if (auth_log)
+				syslog(LOG_INFO, "Got initial userhash from remote end!\n");
 			if (unlikely(rlen - sizeof(*hdr) <
 				     sizeof(struct username_struct)))
 				goto close;
 			err = try_register_user_by_socket(ws->c, buff + sizeof(struct ct_proto),
 							  rlen - sizeof(struct ct_proto),
-							  fd);
+							  fd, auth_log);
 			if (unlikely(err))
 				goto close;
 			continue;
@@ -622,7 +629,7 @@ static void thread_finish(unsigned int cpus)
 	}
 }
 
-int server_main(char *home, char *dev, char *port, int udp, int ipv4)
+int server_main(char *home, char *dev, char *port, int udp, int ipv4, int log)
 {
 	int lfd = -1, kdpfd, nfds, nfd, curfds, efd[2], refd[2], tunfd, i, mtu;
 	unsigned int cpus = 0, threads, udp_cpu = 0;
@@ -630,8 +637,11 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4)
 	struct epoll_event ev, *events;
 	struct addrinfo hints, *ahead, *ai;
 
+	auth_log = !!log;
 	openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
 	syslog(LOG_INFO, "curvetun server booting!\n");
+	if (!auth_log)
+		syslog(LOG_INFO, "curvetun user logging disabled!\n");
 
 	parse_userfile_and_generate_user_store_or_die(home);
 
@@ -686,11 +696,13 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4)
 			ipv4 = (ai->ai_family == AF_INET6 ? 0 :
 				(ai->ai_family == AF_INET ? 1 : -1));
 		}
-		syslog(LOG_INFO, "curvetun on IPv%d via %s on port %s!\n",
-		       ai->ai_family == AF_INET ? 4 : 6, udp ? "UDP" : "TCP",
-		       port);
-		syslog(LOG_INFO, "Allowed overlay proto is IPv%d!\n",
-		       ipv4 ? 4 : 6);
+		if (auth_log) {
+			syslog(LOG_INFO, "curvetun on IPv%d via %s on port %s!\n",
+			       ai->ai_family == AF_INET ? 4 : 6,
+			       udp ? "UDP" : "TCP", port);
+			syslog(LOG_INFO, "Allowed overlay proto is IPv%d!\n",
+			       ipv4 ? 4 : 6);
+		}
 	}
 
 	freeaddrinfo(ahead);
@@ -804,9 +816,11 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4)
 					    sbuff, sizeof(sbuff),
 					    NI_NUMERICHOST | NI_NUMERICSERV);
 
-				syslog(LOG_INFO, "New connection from %s:%s "
-				       "with id %d on CPU%d, %d active!\n",
-				       hbuff, sbuff, nfd, ncpu, curfds);
+				if (auth_log) {
+					syslog(LOG_INFO, "New connection from %s:%s "
+					       "with id %d on CPU%d, %d active!\n",
+					       hbuff, sbuff, nfd, ncpu, curfds);
+				}
 
 				set_nonblocking(nfd);
 
@@ -870,9 +884,11 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4)
 				curfds--;
 				unregister_socket(fd_del);
 
-				syslog(LOG_INFO, "Closed connection with "
-				       "id %d, %d active!\n",
-				       fd_del, curfds);
+				if (auth_log) {
+					syslog(LOG_INFO, "Closed connection with "
+					       "id %d, %d active!\n",
+					       fd_del, curfds);
+				}
 			} else {
 				int cpu, fd_work = events[i].data.fd;
 				if (!udp)

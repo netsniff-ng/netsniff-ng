@@ -37,11 +37,12 @@ extern int get_user_by_socket(int sock, struct curve25519_proto **proto);
 extern int get_user_by_sockaddr(struct sockaddr_storage *sa, size_t sa_len,
 				struct curve25519_proto **proto);
 extern int try_register_user_by_socket(struct curve25519_struct *c,
-				       char *src, size_t slen, int sock);
+				       char *src, size_t slen, int sock,
+				       int log);
 extern int try_register_user_by_sockaddr(struct curve25519_struct *c,
 					 char *src, size_t slen,
 					 struct sockaddr_storage *sa,
-					 size_t sa_len);
+					 size_t sa_len, int log);
 extern void remove_user_by_socket(int sock);
 extern void remove_user_by_sockaddr(struct sockaddr_storage *sa,
 				    size_t sa_len);

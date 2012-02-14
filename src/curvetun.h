@@ -33,7 +33,8 @@ struct ct_proto {
 #define MAX_EPOLL_SIZE  10000
 #define THREADS_PER_CPU 2
 
-extern int server_main(char *home, char *dev, char *port, int udp, int ipv4);
+extern int server_main(char *home, char *dev, char *port, int udp,
+		       int ipv4, int log);
 extern int client_main(char *home, char *dev, char *host, char *port, int udp);
 
 #define DEVNAME_SERVER	"curves0"

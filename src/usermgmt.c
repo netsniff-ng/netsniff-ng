@@ -418,7 +418,7 @@ static int register_user_by_sockaddr(struct sockaddr_storage *sa,
 }
 
 int try_register_user_by_socket(struct curve25519_struct *c,
-				char *src, size_t slen, int sock)
+				char *src, size_t slen, int sock, int log)
 {
 	int ret = -1;
 	char *cbuff = NULL;
@@ -446,7 +446,8 @@ int try_register_user_by_socket(struct curve25519_struct *c,
 		syslog(LOG_ERR, "Bad packet hmac for id %d! Dropping!\n", sock);
 		return -1;
 	} else {
-		syslog(LOG_INFO, "Good packet hmac for id %d!\n", sock);
+		if (log)
+			syslog(LOG_INFO, "Good packet hmac for id %d!\n", sock);
 	}
 
 	rwlock_rd_lock(&store_lock);
@@ -464,13 +465,15 @@ int try_register_user_by_socket(struct curve25519_struct *c,
 		cbuff += crypto_box_zerobytes;
 		clen -= crypto_box_zerobytes;
 
-		syslog(LOG_INFO, "Packet decoded sucessfully for id %d!\n", sock);
+		if (log)
+			syslog(LOG_INFO, "Packet decoded sucessfully for id %d!\n", sock);
 
 		err = username_msg_is_user(cbuff, clen, elem->username,
 					   strlen(elem->username) + 1);
 		if (err == USERNAMES_OK) {
-			syslog(LOG_INFO, "Found user %s for id %d! Registering ...\n",
-			       elem->username, sock);
+			if (log)
+				syslog(LOG_INFO, "Found user %s for id %d! Registering ...\n",
+				       elem->username, sock);
 			ret = register_user_by_socket(sock, &elem->proto_inf);
 			break;
 		}
@@ -486,7 +489,7 @@ int try_register_user_by_socket(struct curve25519_struct *c,
 int try_register_user_by_sockaddr(struct curve25519_struct *c,
 				  char *src, size_t slen,
 				  struct sockaddr_storage *sa,
-				  size_t sa_len)
+				  size_t sa_len, int log)
 {
 	int ret = -1;
 	char *cbuff = NULL;
@@ -514,7 +517,8 @@ int try_register_user_by_sockaddr(struct curve25519_struct *c,
 		syslog(LOG_ERR, "Got bad packet hmac! Dropping!\n");
 		return -1;
 	} else {
-		syslog(LOG_INFO, "Got good packet hmac!\n");
+		if (log)
+			syslog(LOG_INFO, "Got good packet hmac!\n");
 	}
 
 	rwlock_rd_lock(&store_lock);
@@ -532,13 +536,15 @@ int try_register_user_by_sockaddr(struct curve25519_struct *c,
 		cbuff += crypto_box_zerobytes;
 		clen -= crypto_box_zerobytes;
 
-		syslog(LOG_INFO, "Packet decoded sucessfully!\n");
+		if (log)
+			syslog(LOG_INFO, "Packet decoded sucessfully!\n");
 
 		err = username_msg_is_user(cbuff, clen, elem->username,
 					   strlen(elem->username) + 1);
 		if (err == USERNAMES_OK) {
-			syslog(LOG_INFO, "Found user %s! Registering ...\n",
-			       elem->username);
+			if (log)
+				syslog(LOG_INFO, "Found user %s! Registering ...\n",
+				       elem->username);
 			ret = register_user_by_sockaddr(sa, sa_len,
 							&elem->proto_inf);
 			break;
