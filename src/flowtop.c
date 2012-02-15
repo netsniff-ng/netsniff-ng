@@ -344,20 +344,20 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 			printw(":%u (", ntohs(n->port_src));
 			attron(COLOR_PAIR(4));
 			printw("%s", (strlen(n->country_src) > 0 ?
-			       n->country_src : "Unknown"));
+			       n->country_src : "N/A"));
 			attroff(COLOR_PAIR(4));
 			printw(", %s) => ", (strlen(n->city_src) > 0 ?
-			       n->city_src : "Unknown"));
+			       n->city_src : "N/A"));
 			attron(COLOR_PAIR(2));
 			printw("%s", n->rev_dns_dst);
 			attroff(COLOR_PAIR(2));
 			printw(":%u (", ntohs(n->port_dst));
 			attron(COLOR_PAIR(4));
 			printw("%s", strlen(n->country_dst) > 0 ?
-			       n->country_dst : "Unknown");
+			       n->country_dst : "N/A");
 			attroff(COLOR_PAIR(4));
 			printw(", %s)", strlen(n->city_dst) > 0 ?
-			       n->city_dst : "Unknown");
+			       n->city_dst : "N/A");
 
 			line++;
 			maxy--;
