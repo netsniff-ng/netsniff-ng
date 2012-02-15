@@ -434,7 +434,7 @@ static void walk_process(char *process, struct flow_entry *n)
 
 	dir = opendir(path);
 	if (!dir)
-        	panic("Cannot open %s!\n", path);
+        	return;
 
 	while ((ent = readdir(dir))) {
 		struct stat statbuf;
