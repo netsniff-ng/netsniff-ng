@@ -36,4 +36,6 @@ do
     fi
 done
 
+ln -s /usr/share/GeoIP/GeoLiteCity.dat /usr/share/GeoIP/GeoIPCity.dat
+
 exit $FAILED
