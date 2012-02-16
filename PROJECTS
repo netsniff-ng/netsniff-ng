@@ -6,9 +6,8 @@ participation, let us know - we are looking forward):
 	- Required skills: C, Protocols
 	- Difficulty: Easy
 
-- Extensive testing (with eventual code fixing) with Jumbo frames, and general
-  performance evaluation:
-	- Tool: netsniff-ng, trafgen
+- Extensive testing (with eventual code fixing) and performance evaluation:
+	- Tool: netsniff-ng, trafgen (both with Jumbo frames), curvetun
 	- Required skills: Testing, C
 	- Difficulty: Easy
 
@@ -60,7 +59,7 @@ participation, let us know - we are looking forward):
 	- Required skills: C, Protocols
 	- Difficulty: Hard
 
-- Warp implementation:
+- Warp implementation (ARP cache poisoning):
 	- Tool: warp
 	- Required skills: C
 	- Difficulty: Hard
@@ -72,6 +71,11 @@ participation, let us know - we are looking forward):
 
 - Better obfuscation of curvetun's protocol to make it harder for DPIs
   to detect:
+	- Tool: curvetun
+	- Required skills: C
+	- Difficulty: Hard
+
+- Perform a security review of curvetun:
 	- Tool: curvetun
 	- Required skills: C
 	- Difficulty: Hard
