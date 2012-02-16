@@ -67,6 +67,70 @@ Print version.
 
 Device for transmission i.e., eth0.
 
+=item -c|--conf <conf>
+
+Path to packet configuration file.
+
+=item -J|--jumbo-support
+
+Support for 64KB Super Jumbo Frames
+
+=item -n|--num <uint>
+
+Number of packets to generate before exiting.
+0 means forever until SIGINT.
+
+=item -r|--rand
+
+Randomize packet selection process instead of round-robin.
+
+=item -t|--gap <uint>
+
+Interpacket gap in microseconds.
+
+=item -S|--ring-size <size>
+
+Manually set ring size to <size>: mmap space in KB/MB/GB.
+
+=item -k|--kernel-pull <uint>
+
+Kernel pull from user interval in microseconds.
+Default value is 10 microseconds.
+
+=item -b|--bind-cpu <cpu>
+
+Bind to specific CPU (or CPU-range).
+
+=item -B|--unbind-cpu <cpu>
+
+Forbid to use specific CPU (or CPU-range).
+
+=item -H|--prio-high
+
+Make this high priority process.
+
+=item -Q|--notouch-irq
+
+Do not touch IRQ CPU affinity of NIC.
+
+=back
+
+=head1 EXAMPLES
+
+=over
+
+=item Generate traffic defined in trafgen.txf on eth0 using CPU 0
+
+trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0
+
+=item Generate traffic on eth0 using CPU 0, wait 100 us between packets
+
+trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0 --gap 100
+
+=item Generate 100,000 packet on eth0 using CPU 0
+
+trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0 --num 100000
+
 =back
 
 =head1 AUTHOR
@@ -242,10 +306,10 @@ static void help(void)
 	printf("   `-     n              Send n packets and done\n");
 	printf("  -r|--rand              Randomize packet selection process\n");
 	printf("                         Instead of a round robin selection\n");
-	printf("  -t|--gap <int>         Interpacket gap in us (approx)\n");
+	printf("  -t|--gap <uint>        Interpacket gap in us (approx)\n");
 	printf("  -S|--ring-size <size>  Manually set ring size to <size>:\n");
 	printf("                         mmap space in KB/MB/GB, e.g. \'10MB\'\n");
-	printf("  -k|--kernel-pull <int> Kernel pull from user interval in us\n");
+	printf("  -k|--kernel-pull <uint>Kernel pull from user interval in us\n");
 	printf("                         Default is 10us where the TX_RING\n");
 	printf("                         is populated with payload from uspace\n");
 	printf("  -b|--bind-cpu <cpu>    Bind to specific CPU (or CPU-range)\n");
