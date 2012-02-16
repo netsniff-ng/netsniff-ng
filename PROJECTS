@@ -78,12 +78,12 @@ participation, let us know - we are looking forward):
   to detect:
 	- Tool: curvetun
 	- Required skills: C
-	- Difficulty: Hard
+	- Difficulty: Very Hard
 
 - Perform a security review of curvetun:
 	- Tool: curvetun
 	- Required skills: C
-	- Difficulty: Hard
+	- Difficulty: Very Hard
 
 - Design and implement a high-level packet filtering language that compiles
   to bpf code:
