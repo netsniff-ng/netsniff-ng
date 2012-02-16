@@ -23,6 +23,9 @@ What libraries / tools are required?
 It is common, that these libraries are shipped as distribution packages
 for an easy installation. We try to keep this as minimal as possible.
 
+For downloading the latest GeoIP database, you can use the script that
+is located at contrib/misc/geoip-database-update.
+
 The installation process done by cmake is fairly simple:
 
   $ cd netsniff-ng/src/
