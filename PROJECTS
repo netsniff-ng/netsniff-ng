@@ -1,0 +1,78 @@
+Open projects for the netsniff-ng toolkit (if you are interested in
+participation, let us know - we are looking forward):
+
+- Better protocol support for netsniff-ng's dissector:
+	- Tool: netsniff-ng
+	- Required skills: C, Protocols
+	- Difficulty: Easy
+
+- Extensive testing (with eventual code fixing) with Jumbo frames, and general
+  performance evaluation:
+	- Tool: netsniff-ng, trafgen
+	- Required skills: Testing, C
+	- Difficulty: Easy
+
+- Reduce general code size, refactor, improve code (i.e. rewrite parsers):
+	- Tool: all
+	- Required skills: C
+	- Difficulty: Easy - Hard
+
+- Improve manpages, write a user's guide, maybe technical paper:
+	- Tool: all
+	- Required skills: POD, Manpages, LaTeX
+	- Difficulty: Easy - Medium
+
+- TPACKETv2 (TPACKETv3) support:
+	- Tool: netsniff-ng, trafgen
+	- Required skills: C
+	- Difficulty: Easy - Medium
+
+- PCAP anonymization support:
+	- Tool: netsniff-ng
+	- Required skills: C
+	- Difficulty: Easy - Medium
+
+- Add IPv6 support:
+	- Tool: ashunt, flowtop, curvetun (testing)
+	- Required skills: C
+	- Difficulty: Medium
+
+- Packet departure timing models (i.e. exponential, uniform, cauchy, normal,
+  pareto distributed):
+	- Tool: trafgen
+	- Required skills: C
+	- Difficulty: Medium - Hard
+
+- Unit test preparation:
+	- Tool: all
+	- Required skills: C, Shell, Sharness?, Coccinelle?, CMake?
+	- Difficulty: Medium - Hard
+
+- Improve ifpps with things like 'Gnuplot support', 'Power usage / temperature',
+  'Colorized output':
+	- Tool: ifpps
+	- Required skills: C, Gnuplot, Procfs
+	- Difficulty: Hard
+
+- Interactive txf config generator with a set of supported protocols and
+  support for packet distribution models (IMIX, Cisco, ...):
+	- Tool: trafgen
+	- Required skills: C, Protocols
+	- Difficulty: Hard
+
+- Warp implementation:
+	- Tool: warp
+	- Required skills: C
+	- Difficulty: Hard
+
+- PCAP-ng support:
+	- Tool: netsniff-ng
+	- Required skills: C
+	- Difficulty: Hard
+
+- Better obfuscation of curvetun's protocol to make it harder for DPIs
+  to detect:
+	- Tool: curvetun
+	- Required skills: C
+	- Difficulty: Hard
+
