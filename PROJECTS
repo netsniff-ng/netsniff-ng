@@ -69,6 +69,11 @@ participation, let us know - we are looking forward):
 	- Required skills: C
 	- Difficulty: Hard
 
+- ERF support:
+	- Tool: netsniff-ng
+	- Required skills: C
+	- Difficulty: Hard
+
 - Better obfuscation of curvetun's protocol to make it harder for DPIs
   to detect:
 	- Tool: curvetun
@@ -84,5 +89,11 @@ participation, let us know - we are looking forward):
   to bpf code:
 	- Tool: either inclusion in bpfc or a new one
 	- Required skills: C or Haskell
+	- Difficulty: Very Hard
+
+- Implement packet capture, replay and traffic generation for other
+  hardware types (USB, Bluetooth, GSM?, ...)
+	- Tool: netsniff-ng, trafgen (tools need to be extended)
+	- Required skills: C
 	- Difficulty: Very Hard
 
