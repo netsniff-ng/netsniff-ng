@@ -1,4 +1,5 @@
 #!/bin/sh
+# (C) Ludovico Cavedon <cavedon@debian.org>
 
 GEOIP_URL="http://geolite.maxmind.com/download/geoip/database/"
 
