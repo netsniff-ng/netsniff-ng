@@ -52,30 +52,12 @@ described in REPORTING-BUGS.
 Also, have a look at our FAQ [2] for answering your questions. Furthermore,
 we have a development blog [3] where we sometimes drop some interesting things
 or news for the outside world! A public repository of the old stable releases
-(which you probably do not want to have a look at), can be found here [4].
+can be found here [4].
 
-By the way, some notes on zero-copy ... You might want to have NAPI drivers [5]
-enabled in your kernel to reduce interrupt load and for high-speed (= relative
-to the CPU speed) PCAP dumping and replay, a fast SSD isn't too bad either,
-and make sure to use netsniff-ngs scatter/gather or mmap I/O options. Next to
-this, (and this refers to packet generation as well), a 10-Gbit/s-Ethernet
-NIC, an appropriate amount of RAM and a fast CPU is recommended. Furthermore,
-you should bind the netsniff-ng tools to a specific CPU via commandline option
-(i.e. --bind-cpu 0). Some further recommendations can be found in [6] [8]. Also,
-Eric Dumazets BPF Just-in-Time compiler can speed up the critical path [7].
-
-You might want to have a look at INSTALL, HACKING, CODING and COPYING, too.
 Happy packet hacking!
 
 [1] http://netsniff-ng.org/
 [2] http://netsniff-ng.org/faq.html
 [3] http://dev.netsniff-ng.org/
 [4] http://pub.netsniff-ng.org/
-[5] http://www.linuxfoundation.org/collaborate/workgroups/networking/napi
-[6] http://datatag.web.cern.ch/datatag/howto/tcp.html
-[7] http://thread.gmane.org/gmane.linux.network/191115
-    Kernel build option:
-      CONFIG_HAVE_BPF_JIT=y
-      CONFIG_BPF_JIT=y
-[8] http://bit.ly/3XbBrM
 
