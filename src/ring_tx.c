@@ -17,20 +17,17 @@
 #include <arpa/inet.h>
 #include <linux/if_ether.h>
 
-#include "xmalloc.h"
 #include "die.h"
+#include "xmalloc.h"
 #include "ring_tx.h"
 
-#ifdef HAVE_TX_RING
 void set_packet_loss_discard(int sock)
 {
 	int ret, discard = 1;
-
 	ret = setsockopt(sock, SOL_PACKET, PACKET_LOSS, (void *) &discard,
 			 sizeof(discard));
 	if (ret < 0)
-		error_and_die(EXIT_FAILURE, "setsockopt: cannot set packet "
-			      "loss");
+		panic("setsockopt: cannot set packet loss");
 }
 
 void destroy_tx_ring(int sock, struct ring *ring)
@@ -38,10 +35,8 @@ void destroy_tx_ring(int sock, struct ring *ring)
 	memset(&ring->layout, 0, sizeof(ring->layout));
 	setsockopt(sock, SOL_PACKET, PACKET_TX_RING, &ring->layout,
 		   sizeof(ring->layout));
-
 	munmap(ring->mm_space, ring->mm_len);
 	ring->mm_len = 0;
-
 	xfree(ring->frames);
 }
 
@@ -49,7 +44,6 @@ void setup_tx_ring_layout(int sock, struct ring *ring, unsigned int size,
 			  int jumbo_support)
 {
 	memset(&ring->layout, 0, sizeof(ring->layout));
-
 	ring->layout.tp_block_size = (jumbo_support ?
 				      getpagesize() << 4 : getpagesize() << 2);
 	ring->layout.tp_frame_size = (jumbo_support ?
@@ -77,10 +71,8 @@ retry:
 					   ring->layout.tp_block_nr;
 		goto retry;
 	}
-
 	if (ret < 0)
-		error_and_die(EXIT_FAILURE, "Cannot allocate TX_RING!\n");
-
+		panic("Cannot allocate TX_RING!\n");
 	ring->mm_len = ring->layout.tp_block_size * ring->layout.tp_block_nr;
 
 	printf("TX: %.2f MB, %u Frames each %u Byte allocated\n",
@@ -94,7 +86,7 @@ void mmap_tx_ring(int sock, struct ring *ring)
 			      MAP_SHARED | MAP_LOCKED, sock, 0);
 	if (ring->mm_space == MAP_FAILED) {
 		destroy_tx_ring(sock, ring);
-		error_and_die(EXIT_FAILURE, "Cannot mmap TX_RING!\n");
+		panic("Cannot mmap TX_RING!\n");
 	}
 }
 
@@ -102,10 +94,8 @@ void alloc_tx_ring_frames(struct ring *ring)
 {
 	int i;
 	size_t len = ring->layout.tp_frame_nr * sizeof(*ring->frames);
-
 	ring->frames = xmalloc_aligned(len, 64);
 	memset(ring->frames, 0, len);
-
 	for (i = 0; i < ring->layout.tp_frame_nr; ++i) {
 		ring->frames[i].iov_len = ring->layout.tp_frame_size;
 		ring->frames[i].iov_base = ring->mm_space +
@@ -122,19 +112,15 @@ void bind_tx_ring(int sock, struct ring *ring, int ifindex)
 	ring->s_ll.sll_hatype = 0;
 	ring->s_ll.sll_halen = 0;
 	ring->s_ll.sll_pkttype = 0;
-
 	int ret = bind(sock, (struct sockaddr *) &ring->s_ll,
 		       sizeof(ring->s_ll));
 	if (ret < 0) {
 		destroy_tx_ring(sock, ring);
-		error_and_die(EXIT_FAILURE, "Cannot bind TX_RING!\n");
+		panic("Cannot bind TX_RING!\n");
 	}
 }
 
 int pull_and_flush_tx_ring(int sock)
 {
-	/* Flush buffers with TP_STATUS_SEND_REQUEST */
 	return sendto(sock, NULL, 0, MSG_DONTWAIT, NULL, 0);
 }
-
-#endif /* HAVE_TX_RING */

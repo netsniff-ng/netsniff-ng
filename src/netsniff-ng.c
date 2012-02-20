@@ -47,6 +47,7 @@
 #include "signals.h"
 #include "write_or_die.h"
 #include "die.h"
+#include "tty.h"
 #include "opt_memcpy.h"
 #include "tprintf.h"
 #include "dissector.h"

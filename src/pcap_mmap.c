@@ -88,7 +88,7 @@ static int pcap_mmap_prepare_writing_pcap(int fd)
 	pstart = mmap(0, map_size, PROT_WRITE, MAP_SHARED
 		      /*| MAP_HUGETLB*/, fd, 0);
 	if (pstart == MAP_FAILED)
-		puke_and_die(EXIT_FAILURE, "mmap of file failed!");
+		panic("mmap of file failed!");
 	ret = madvise(pstart, map_size, MADV_SEQUENTIAL);
 	if (ret < 0)
 		panic("Failed to give kernel mmap advise!\n");
@@ -116,7 +116,7 @@ static ssize_t pcap_mmap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 			panic("Cannot write file!\n");
 		pstart = mremap(pstart, map_size_old, map_size, MREMAP_MAYMOVE);
 		if (pstart == MAP_FAILED)
-			puke_and_die(EXIT_FAILURE, "mmap of file failed!");
+			panic("mmap of file failed!");
 		ret = madvise(pstart, map_size, MADV_SEQUENTIAL);
 		if (ret < 0)
 			panic("Failed to give kernel mmap advise!\n");
@@ -146,7 +146,7 @@ static int pcap_mmap_prepare_reading_pcap(int fd)
 	pstart = mmap(0, map_size, PROT_READ, MAP_SHARED | MAP_LOCKED
 		      /*| MAP_HUGETLB*/, fd, 0);
 	if (pstart == MAP_FAILED)
-		puke_and_die(EXIT_FAILURE, "mmap of file failed!");
+		panic("mmap of file failed!");
 	ret = madvise(pstart, map_size, MADV_SEQUENTIAL);
 	if (ret < 0)
 		panic("Failed to give kernel mmap advise!\n");

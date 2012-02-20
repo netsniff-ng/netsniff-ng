@@ -308,23 +308,19 @@ void bpf_dump_all(struct sock_fprog *bpf)
 
 void bpf_attach_to_sock(int sock, struct sock_fprog *bpf)
 {
-	/* See Documentation/networking/filter.txt */
 	int ret = setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER, bpf,
 			     sizeof(*bpf));
 	if (ret < 0)
-		error_and_die(EXIT_FAILURE, "Cannot attach filter to "
-			      "socket!\n");
+		panic("Cannot attach filter to socket!\n");
 }
 
 void bpf_detach_from_sock(int sock)
 {
 	int ret, empty = 0;
-	/* See Documentation/networking/filter.txt */
 	ret = setsockopt(sock, SOL_SOCKET, SO_DETACH_FILTER, &empty,
 			 sizeof(empty));
 	if (ret < 0)
-		error_and_die(EXIT_FAILURE, "Cannot detach filter from "
-			      "socket!\n");
+		panic("Cannot detach filter from socket!\n");
 }
 
 int bpf_validate(const struct sock_fprog *bpf)
@@ -695,7 +691,7 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf)
 
 	FILE *fp = fopen(rulefile, "r");
 	if (!fp)
-		error_and_die(EXIT_FAILURE, "Cannot read BPF rule file!\n");
+		panic("Cannot read BPF rule file!\n");
 
 	memset(buff, 0, sizeof(buff));
 
@@ -716,7 +712,7 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf)
 			     (unsigned int *) &sf_single.k);
 		if (ret != 4)
 			/* No valid bpf opcode format or a syntax error */
-			error_and_die(EXIT_FAILURE, "BPF syntax error!\n");
+			panic("BPF syntax error!\n");
 
 		bpf->len++;
 		bpf->filter = xrealloc(bpf->filter, 1,
@@ -730,6 +726,5 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf)
 	fclose(fp);
 
 	if (bpf_validate(bpf) == 0)
-		error_and_die(EXIT_FAILURE, "This is not a valid BPF "
-			      "program!\n");
+		panic("This is not a valid BPF program!\n");
 }

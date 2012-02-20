@@ -862,14 +862,13 @@ int main(int argc, char **argv)
 			switch (optopt) {
 			case 'd':
 			case 't':
-				error_and_die(EXIT_FAILURE, "Option -%c "
-					      "requires an argument!\n",
-					      optopt);
+				panic("Option -%c requires an argument!\n",
+				      optopt);
 			default:
 				if (isprint(optopt))
 					whine("Unknown option character "
 					      "`0x%X\'!\n", optopt);
-				exit(EXIT_FAILURE);
+				die();
 			}
 		default:
 			break;
@@ -881,11 +880,11 @@ int main(int argc, char **argv)
 	if (argc == 2)
 		ifname = xstrndup(argv[1], IFNAMSIZ);
 	if (ifname == NULL)
-		error_and_die(EXIT_FAILURE, "No networking device given!\n");
+		panic("No networking device given!\n");
 	if (!strncmp("lo", ifname, IFNAMSIZ))
-		error_and_die(EXIT_FAILURE, "lo is not supported!\n");
+		panic("lo is not supported!\n");
 	if (device_mtu(ifname) == 0)
-		error_and_die(EXIT_FAILURE, "This is no networking device!\n");
+		panic("This is no networking device!\n");
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
 	if (promisc) {

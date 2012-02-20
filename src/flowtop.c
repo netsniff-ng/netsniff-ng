@@ -38,6 +38,7 @@
 #include <libgen.h>
 
 #include "die.h"
+#include "xmalloc.h"
 #include "compiler.h"
 #include "misc.h"
 #include "signals.h"

@@ -58,23 +58,4 @@ static inline int get_tty_size(void)
 #endif /* TIOCGSIZE */
 }
 
-static inline void set_tty_invisible(struct termios *orig)
-{
-	struct termios now;
-
-	setvbuf(stdout, NULL, _IONBF ,0);
-
-	tcgetattr(0, orig);
-	memcpy(&now, orig, sizeof(*orig));
-	now.c_lflag &= ~(ISIG | ICANON | ECHO);
-	now.c_cc[VMIN] = 1;
-	now.c_cc[VTIME] = 2;
-	tcsetattr(0, TCSANOW, &now);
-}
-
-static inline void set_tty_visible(struct termios *orig)
-{
-	tcsetattr(0, TCSANOW, orig);
-}
-
 #endif /* TTY_H */
