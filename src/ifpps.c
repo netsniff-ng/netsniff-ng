@@ -122,7 +122,6 @@ Please report bugs to <bugs@netsniff-ng.org>
 
 #include "die.h"
 #include "xmalloc.h"
-#include "psched.h"
 #include "timespec.h"
 #include "xsys.h"
 #include "xio.h"

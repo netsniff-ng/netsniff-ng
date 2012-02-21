@@ -172,7 +172,6 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "parser.h"
 #include "die.h"
 #include "xsys.h"
-#include "psched.h"
 #include "xio.h"
 #include "timespec.h"
 #include "mtrand.h"

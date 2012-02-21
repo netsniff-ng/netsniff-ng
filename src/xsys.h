@@ -19,6 +19,8 @@
 #include <linux/if.h>
 #include <linux/wireless.h>
 #include <termios.h>
+#include <sched.h>
+#include <sys/resource.h>
 
 #include "die.h"
 
@@ -71,6 +73,31 @@ static inline void prepare_polling(int sock, struct pollfd *pfd)
 	pfd->events = POLLIN | POLLRDNORM | POLLERR;
 }
 
+static inline int get_default_sched_policy(void)
+{
+	return SCHED_FIFO;
+}
+
+static inline int get_default_sched_prio(void)
+{
+	return sched_get_priority_max(get_default_sched_policy());
+}
+
+static inline int get_number_cpus(void)
+{
+	return sysconf(_SC_NPROCESSORS_CONF);
+}
+
+static inline int get_number_cpus_online(void)
+{
+	return sysconf(_SC_NPROCESSORS_ONLN);
+}
+
+static inline int get_default_proc_prio(void)
+{
+	return -20;
+}
+
 extern int af_socket(int af);
 extern int af_raw_socket(int af, int proto);
 extern int pf_socket(void);
@@ -106,5 +133,9 @@ extern int device_up(char *ifname);
 extern int device_running(char *ifname);
 extern int device_up_and_running(char *ifname);
 extern int poll_error_maybe_die(int sock, struct pollfd *pfd);
+extern int set_cpu_affinity(const char *str, int inverted);
+extern char *get_cpu_affinity(char *cpu_string, size_t len);
+extern int set_proc_prio(int prio);
+extern int set_sched_status(int policy, int priority);
 
 #endif /* XSYS_H */

@@ -14,7 +14,6 @@ IF (CMAKE_HAVE_PTHREAD_CREATE)
 					../strlcpy.c
 					../bpf.c
 					../parser.c
-					../psched.c
 					../pcap.c
 					../pcap_rw.c
 					../pcap_sg.c

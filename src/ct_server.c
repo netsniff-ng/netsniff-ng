@@ -32,7 +32,6 @@
 #include "die.h"
 #include "xsys.h"
 #include "xio.h"
-#include "psched.h"
 #include "xmalloc.h"
 #include "curvetun.h"
 #include "curve.h"

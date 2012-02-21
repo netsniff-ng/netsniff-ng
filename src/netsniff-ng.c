@@ -49,7 +49,6 @@
 #include "tprintf.h"
 #include "dissector.h"
 #include "xmalloc.h"
-#include "psched.h"
 #include "mtrand.h"
 
 #define CPU_UNKNOWN	-1
