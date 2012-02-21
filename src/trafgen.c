@@ -171,7 +171,7 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "strlcpy.h"
 #include "parser.h"
 #include "die.h"
-#include "netdev.h"
+#include "xsys.h"
 #include "psched.h"
 #include "xio.h"
 #include "tty.h"

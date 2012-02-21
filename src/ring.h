@@ -17,7 +17,7 @@
 #include <stdint.h>
 #include <linux/if_packet.h>
 
-#include "netdev.h"
+#include "xsys.h"
 #include "tprintf.h"
 #include "dissector.h"
 #include "compiler.h"

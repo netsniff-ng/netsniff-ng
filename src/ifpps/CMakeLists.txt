@@ -6,9 +6,9 @@ FIND_PACKAGE(Curses)
 
 IF(CURSES_FOUND)
 	ADD_EXECUTABLE(${PROJECT_NAME}	../xmalloc.c
-					../strlcpy.c
 					../xio.c
-					../netdev.c
+					../xsys.c
+					../strlcpy.c
 					../ifpps.c)
 
 	ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"

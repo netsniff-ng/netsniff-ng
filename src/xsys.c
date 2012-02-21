@@ -26,7 +26,7 @@
 #include <linux/sockios.h>
 
 #include "die.h"
-#include "netdev.h"
+#include "xsys.h"
 #include "strlcpy.h"
 
 int af_socket(int af)

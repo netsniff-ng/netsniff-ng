@@ -3,14 +3,14 @@ PROJECT(trafgen C)
 SET(BUILD_STRING "generic")
 
 ADD_EXECUTABLE(${PROJECT_NAME} 	../xmalloc.c
+				../xio.c
+				../xsys.c
 				../strlcpy.c
 				../psched.c
 				../parser.c
 				../mtrand.c
 				../opt_memcpy.c
-				../xio.c
 				../ring_tx.c
-				../netdev.c
 				../trafgen.c)
 
 ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"

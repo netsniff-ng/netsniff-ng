@@ -39,7 +39,7 @@
 
 #include "ring_rx.h"
 #include "ring_tx.h"
-#include "netdev.h"
+#include "xsys.h"
 #include "compiler.h"
 #include "pcap.h"
 #include "poll.h"

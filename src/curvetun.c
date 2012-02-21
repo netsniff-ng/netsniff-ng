@@ -47,7 +47,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
-#include "netdev.h"
+#include "xsys.h"
 #include "stun.h"
 #include "die.h"
 #include "tty.h"

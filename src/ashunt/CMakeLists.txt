@@ -7,13 +7,13 @@ FIND_PACKAGE(Threads)
 
 IF (LIBGEOIP_FOUND AND CMAKE_HAVE_PTHREAD_CREATE)
 	ADD_EXECUTABLE(${PROJECT_NAME}	../xmalloc.c
-					../strlcpy.c
 					../xio.c
-					../netdev.c
+					../xsys.c
+					../strlcpy.c
+					../tprintf.c
 					../aslookup.c
 					../bpf.c
 					../mtrand.c
-					../tprintf.c
 					../parser.c
 					../ring_rx.c
 					../ashunt.c)

@@ -6,8 +6,8 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef NETDEV_H
-#define NETDEV_H
+#ifndef XSYS_H
+#define XSYS_H
 
 #include <errno.h>
 #include <sys/socket.h>
@@ -92,4 +92,4 @@ static inline int device_up_and_running(char *ifname)
 	       (IFF_UP | IFF_RUNNING);
 }
 
-#endif /* NETDEV_H */
+#endif /* XSYS_H */

@@ -32,7 +32,7 @@
 #include "strlcpy.h"
 #include "curve.h"
 #include "mtrand.h"
-#include "netdev.h"
+#include "xsys.h"
 #include "xmalloc.h"
 #include "curvetun.h"
 #include "servmgmt.h"

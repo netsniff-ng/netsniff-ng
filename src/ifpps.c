@@ -126,7 +126,7 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "xio.h"
 #include "timespec.h"
 #include "tty.h"
-#include "netdev.h"
+#include "xsys.h"
 #include "signals.h"
 
 /*

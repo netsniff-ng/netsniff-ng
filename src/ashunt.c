@@ -234,7 +234,7 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "xio.h"
 #include "aslookup.h"
 #include "signals.h"
-#include "netdev.h"
+#include "xsys.h"
 #include "mtrand.h"
 #include "parser.h"
 #include "ring_rx.h"

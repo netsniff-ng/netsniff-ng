@@ -9,6 +9,8 @@ IF (CMAKE_HAVE_PTHREAD_CREATE)
 					../dissector.c
 					../dissector_eth.c
 					../xmalloc.c
+					../xio.c
+					../xsys.c
 					../strlcpy.c
 					../bpf.c
 					../parser.c
@@ -17,11 +19,9 @@ IF (CMAKE_HAVE_PTHREAD_CREATE)
 					../pcap_rw.c
 					../pcap_sg.c
 					../pcap_mmap.c
-					../xio.c
 					../ring_rx.c
 					../ring_tx.c
 					../mtrand.c
-					../netdev.c
 					../tprintf.c
 					../netsniff-ng.c)
 	ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"

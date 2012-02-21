@@ -30,7 +30,7 @@
 #include <linux/if_tun.h>
 
 #include "die.h"
-#include "netdev.h"
+#include "xsys.h"
 #include "xio.h"
 #include "psched.h"
 #include "xmalloc.h"
