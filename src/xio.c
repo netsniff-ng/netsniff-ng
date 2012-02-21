@@ -126,9 +126,3 @@ ssize_t write_exact(int fd, void *buf, size_t len, int mayexit)
 	}
 	return num;
 }
-
-void check_for_root_maybe_die(void)
-{
-	if (geteuid() != 0 || geteuid() != getuid())
-		panic("Uhhuh, not root?!\n");
-}

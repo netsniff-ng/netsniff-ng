@@ -469,3 +469,9 @@ int get_tty_size(void)
 	return DEFAULT_TTY_SIZE;
 #endif
 }
+
+void check_for_root_maybe_die(void)
+{
+	if (geteuid() != 0 || geteuid() != getuid())
+		panic("Uhhuh, not root?!\n");
+}

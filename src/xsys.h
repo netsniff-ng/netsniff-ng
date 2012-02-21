@@ -47,6 +47,7 @@ extern int set_reuseaddr(int fd);
 extern void register_signal(int signal, void (*handler)(int));
 extern void register_signal_f(int signal, void (*handler)(int), int flags);
 extern int get_tty_size(void);
+extern void check_for_root_maybe_die(void);
 
 static inline short enter_promiscuous_mode(char *ifname)
 {

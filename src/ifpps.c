@@ -123,9 +123,9 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "die.h"
 #include "xmalloc.h"
 #include "psched.h"
-#include "xio.h"
 #include "timespec.h"
 #include "xsys.h"
+#include "xio.h"
 
 /*
  * TODO: Cleanups, this got quite a hack over time.
