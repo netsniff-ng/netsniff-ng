@@ -51,7 +51,6 @@
 #include "xsys.h"
 #include "stun.h"
 #include "die.h"
-#include "tty.h"
 #include "xmalloc.h"
 #include "strlcpy.h"
 #include "curvetun.h"

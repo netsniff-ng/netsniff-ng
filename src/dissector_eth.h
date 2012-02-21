@@ -11,7 +11,7 @@
 #include "hash.h"
 #include "proto_struct.h"
 #include "tprintf.h"
-#include "tty.h"
+#include "xsys.h"
 
 extern struct hash_table eth_lay2;
 extern struct hash_table eth_lay3;

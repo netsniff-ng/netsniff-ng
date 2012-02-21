@@ -125,7 +125,6 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "psched.h"
 #include "xio.h"
 #include "timespec.h"
-#include "tty.h"
 #include "xsys.h"
 
 /*

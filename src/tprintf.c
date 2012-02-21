@@ -11,7 +11,7 @@
 #include <pthread.h>
 #include <assert.h>
 
-#include "tty.h"
+#include "xsys.h"
 #include "tprintf.h"
 #include "die.h"
 

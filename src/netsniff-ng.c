@@ -46,7 +46,6 @@
 #include "bpf.h"
 #include "xio.h"
 #include "die.h"
-#include "tty.h"
 #include "opt_memcpy.h"
 #include "tprintf.h"
 #include "dissector.h"

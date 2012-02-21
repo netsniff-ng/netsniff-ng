@@ -174,7 +174,6 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "xsys.h"
 #include "psched.h"
 #include "xio.h"
-#include "tty.h"
 #include "timespec.h"
 #include "mtrand.h"
 #include "ring_tx.h"
