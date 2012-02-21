@@ -42,7 +42,6 @@
 #include "xsys.h"
 #include "compiler.h"
 #include "pcap.h"
-#include "poll.h"
 #include "bpf.h"
 #include "xio.h"
 #include "die.h"

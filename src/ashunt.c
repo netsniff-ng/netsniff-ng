@@ -237,7 +237,6 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "mtrand.h"
 #include "parser.h"
 #include "ring_rx.h"
-#include "poll.h"
 
 #define WHOIS_SERVER_SOURCE "/etc/netsniff-ng/whois.conf"
 

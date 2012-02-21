@@ -9,6 +9,9 @@
 #ifndef XSYS_H
 #define XSYS_H
 
+#define _GNU_SOURCE
+#include <poll.h>
+#include <sys/poll.h>
 #include <errno.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -48,6 +51,26 @@
 #define colorize_full_str(fore, back, text)                          \
 		colorize_start_full(fore, back) text colorize_end()
 
+#ifndef POLLRDNORM
+# define POLLRDNORM	0x0040
+#endif
+#ifndef POLLWRNORM
+# define POLLWRNORM	0x0100
+#endif
+#ifndef POLLRDHUP
+# define POLLRDHUP	0x2000
+#endif
+#define POLL_NEXT_PKT	0
+#define POLL_MOVE_OUT	1
+
+static inline void prepare_polling(int sock, struct pollfd *pfd)
+{
+	memset(pfd, 0, sizeof(*pfd));
+	pfd->fd = sock;
+	pfd->revents = 0;
+	pfd->events = POLLIN | POLLRDNORM | POLLERR;
+}
+
 extern int af_socket(int af);
 extern int af_raw_socket(int af, int proto);
 extern int pf_socket(void);
@@ -82,5 +105,6 @@ extern void leave_promiscuous_mode(char *ifname, short oldflags);
 extern int device_up(char *ifname);
 extern int device_running(char *ifname);
 extern int device_up_and_running(char *ifname);
+extern int poll_error_maybe_die(int sock, struct pollfd *pfd);
 
 #endif /* XSYS_H */
