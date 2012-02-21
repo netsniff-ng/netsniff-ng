@@ -87,6 +87,4 @@ static inline void rwlock_unlock(struct rwlock *l)
 	pthread_rwlock_unlock(&l->lock);
 }
 
-
 #endif /* LOCKING_H */
-
