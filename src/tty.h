@@ -36,7 +36,6 @@
 #define colorize_start(fore)            "\033[" __##fore "m"
 #define colorize_start_full(fore, back) "\033[" __##fore ";" __on_##back "m"
 #define colorize_end()                  "\033[" __reset "m"
-
 #define colorize_str(fore, text)                                     \
 		colorize_start(fore) text colorize_end()
 #define colorize_full_str(fore, back, text)                          \

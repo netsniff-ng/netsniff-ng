@@ -7,7 +7,6 @@
 
 #include <errno.h>
 #include "pcap.h"
-#include "compiler.h"
 
 struct pcap_file_ops *pcap_ops[PCAP_OPS_SIZ] = {0};
 
@@ -19,7 +18,6 @@ int pcap_ops_group_register(struct pcap_file_ops *ops,
 	if (pcap_ops[group])
 		return -EBUSY;
 	pcap_ops[group] = ops;
-	barrier();
 	return 0;
 }
 

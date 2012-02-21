@@ -170,7 +170,6 @@ void parse_userfile_and_generate_serv_store_or_die(char *homedir)
 		if (ret)
 			panic("Cannot init curve25519 proto on server!\n");
 		store = elem;
-		smp_wmb();
 		memset(buff, 0, sizeof(buff));
 		line++;
 	}
