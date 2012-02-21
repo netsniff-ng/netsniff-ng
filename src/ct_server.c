@@ -31,7 +31,7 @@
 
 #include "die.h"
 #include "netdev.h"
-#include "write_or_die.h"
+#include "xio.h"
 #include "psched.h"
 #include "xmalloc.h"
 #include "curvetun.h"

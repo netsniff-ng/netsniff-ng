@@ -9,7 +9,7 @@ ADD_EXECUTABLE(${PROJECT_NAME} 	../xmalloc.c
 				../parser.c
 				../mtrand.c
 				../opt_memcpy.c
-				../write_or_die.c
+				../xio.c
 				../ring_tx.c
 				../netdev.c
 				../trafgen.c)

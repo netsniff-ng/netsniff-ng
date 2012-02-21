@@ -14,7 +14,7 @@
 #include <sys/mman.h>
 
 #include "pcap.h"
-#include "write_or_die.h"
+#include "xio.h"
 #include "opt_memcpy.h"
 #include "locking.h"
 

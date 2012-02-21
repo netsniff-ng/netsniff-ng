@@ -28,7 +28,7 @@
 #include <linux/if_tun.h>
 
 #include "die.h"
-#include "write_or_die.h"
+#include "xio.h"
 #include "strlcpy.h"
 #include "curve.h"
 #include "mtrand.h"

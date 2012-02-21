@@ -55,7 +55,7 @@
 #include <unistd.h>
 
 #include "mtrand.h"
-#include "write_or_die.h"
+#include "xio.h"
 
 #define N           624
 #define M           397

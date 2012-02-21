@@ -13,7 +13,7 @@
 
 #include "pcap.h"
 #include "compiler.h"
-#include "write_or_die.h"
+#include "xio.h"
 #include "die.h"
 
 static int pcap_rw_pull_file_header(int fd)

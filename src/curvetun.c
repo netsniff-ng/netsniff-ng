@@ -58,7 +58,7 @@
 #include "curve.h"
 #include "usermgmt.h"
 #include "servmgmt.h"
-#include "write_or_die.h"
+#include "xio.h"
 #include "crypto_verify_32.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"
 #include "crypto_scalarmult_curve25519.h"

@@ -15,7 +15,7 @@
 
 #include "pcap.h"
 #include "xmalloc.h"
-#include "write_or_die.h"
+#include "xio.h"
 #include "opt_memcpy.h"
 #include "locking.h"
 

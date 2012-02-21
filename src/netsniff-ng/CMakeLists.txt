@@ -18,7 +18,7 @@ IF (CMAKE_HAVE_PTHREAD_CREATE)
 					../pcap_rw.c
 					../pcap_sg.c
 					../pcap_mmap.c
-					../write_or_die.c
+					../xio.c
 					../ring_rx.c
 					../ring_tx.c
 					../mtrand.c

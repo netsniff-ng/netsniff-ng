@@ -20,7 +20,7 @@
 #include "parser.h"
 #include "locking.h"
 #include "xmalloc.h"
-#include "write_or_die.h"
+#include "xio.h"
 #include "curvetun.h"
 #include "strlcpy.h"
 #include "curve.h"

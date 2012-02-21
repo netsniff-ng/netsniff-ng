@@ -232,7 +232,7 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "tprintf.h"
 #include "proto_hex.h"
 #include "xmalloc.h"
-#include "write_or_die.h"
+#include "xio.h"
 #include "aslookup.h"
 #include "signals.h"
 #include "netdev.h"

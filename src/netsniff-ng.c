@@ -45,7 +45,7 @@
 #include "poll.h"
 #include "bpf.h"
 #include "signals.h"
-#include "write_or_die.h"
+#include "xio.h"
 #include "die.h"
 #include "tty.h"
 #include "opt_memcpy.h"
