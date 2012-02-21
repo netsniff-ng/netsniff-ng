@@ -37,7 +37,8 @@ participation, let us know - we are looking forward):
 	- Difficulty: Medium
 
 - Packet departure timing models (i.e. exponential, uniform, cauchy, normal,
-  pareto distributed):
+  pareto distributed) and other packet scheduling behaviours (MB/s, ...),
+  ideally as a plugin architecture:
 	- Tool: trafgen
 	- Required skills: C
 	- Difficulty: Medium - Hard
