@@ -173,7 +173,6 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "die.h"
 #include "xsys.h"
 #include "xio.h"
-#include "timespec.h"
 #include "mtrand.h"
 #include "ring_tx.h"
 

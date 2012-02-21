@@ -21,6 +21,7 @@
 #include <termios.h>
 #include <sched.h>
 #include <sys/resource.h>
+#include <sys/time.h>
 
 #include "die.h"
 
@@ -137,5 +138,9 @@ extern int set_cpu_affinity(const char *str, int inverted);
 extern char *get_cpu_affinity(char *cpu_string, size_t len);
 extern int set_proc_prio(int prio);
 extern int set_sched_status(int policy, int priority);
+extern void xusleep(const struct timespec *ts_delay);
+extern void xusleep2(long usecs);
+extern int xnanosleep(double seconds);
+extern int set_timeout(struct timeval *timeval, unsigned int msec);
 
 #endif /* XSYS_H */

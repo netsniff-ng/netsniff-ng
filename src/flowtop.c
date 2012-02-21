@@ -40,10 +40,9 @@
 #include "die.h"
 #include "xmalloc.h"
 #include "xio.h"
+#include "xsys.h"
 #include "compiler.h"
-#include "misc.h"
 #include "locking.h"
-#include "timespec.h"
 #include "dissector_eth.h"
 
 #define INCLUDE_UDP	(1 << 0)

@@ -10,9 +10,10 @@ FIND_PACKAGE(LibURCU)
 
 IF(CURSES_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND LIBGEOIP_FOUND AND LIBNETFILTER_CONNTRACK_FOUND AND LIBURCU_FOUND)
 	ADD_EXECUTABLE(${PROJECT_NAME}	../xmalloc.c
+					../xio.c
+					../xsys.c
 					../strlcpy.c
 					../parser.c
-					../xio.c
 					../hash.c
 					../dissector_eth.c
 					../dissector.c
