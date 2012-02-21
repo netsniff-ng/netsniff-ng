@@ -41,7 +41,7 @@ They are written in POD format as a C header comment within those files.
 To uninstall, simply remove all files refered in install_manifest.txt
 
 For bpfc, we also have a Vim syntax highlighting file. Have a look at
-src/bpf.vim for installation instructions.
+scripts/bpf.vim for installation instructions.
 
 In order to build curvetun, libnacl must be built first. A helper script
 called build_nacl.sh is there to facilitate this process. If you want to
