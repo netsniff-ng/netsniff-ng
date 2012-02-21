@@ -46,6 +46,7 @@
 #include <sys/ptrace.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include "xsys.h"
 #include "stun.h"
@@ -53,7 +54,6 @@
 #include "tty.h"
 #include "xmalloc.h"
 #include "strlcpy.h"
-#include "signals.h"
 #include "curvetun.h"
 #include "curve.h"
 #include "usermgmt.h"

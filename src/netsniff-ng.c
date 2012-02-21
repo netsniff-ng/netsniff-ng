@@ -44,7 +44,6 @@
 #include "pcap.h"
 #include "poll.h"
 #include "bpf.h"
-#include "signals.h"
 #include "xio.h"
 #include "die.h"
 #include "tty.h"

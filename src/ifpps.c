@@ -127,7 +127,6 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "timespec.h"
 #include "tty.h"
 #include "xsys.h"
-#include "signals.h"
 
 /*
  * TODO: Cleanups, this got quite a hack over time.

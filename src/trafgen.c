@@ -177,7 +177,6 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "tty.h"
 #include "timespec.h"
 #include "mtrand.h"
-#include "signals.h"
 #include "ring_tx.h"
 
 struct counter {

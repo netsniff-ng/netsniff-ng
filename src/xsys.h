@@ -43,7 +43,8 @@ extern void device_set_flags(const char *ifname, const short flags);
 extern int set_nonblocking(int fd);
 extern int set_nonblocking_sloppy(int fd);
 extern int set_reuseaddr(int fd);
-
+extern void register_signal(int signal, void (*handler)(int));
+extern void register_signal_f(int signal, void (*handler)(int), int flags);
 
 static inline short enter_promiscuous_mode(char *ifname)
 {

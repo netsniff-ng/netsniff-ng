@@ -39,9 +39,9 @@
 
 #include "die.h"
 #include "xmalloc.h"
+#include "xio.h"
 #include "compiler.h"
 #include "misc.h"
-#include "signals.h"
 #include "locking.h"
 #include "timespec.h"
 #include "dissector_eth.h"
