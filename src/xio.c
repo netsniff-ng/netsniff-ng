@@ -22,7 +22,7 @@
 
 #include "die.h"
 #include "xio.h"
-#include "strlcpy.h"
+#include "xstring.h"
 
 int open_or_die(const char *file, int flags)
 {

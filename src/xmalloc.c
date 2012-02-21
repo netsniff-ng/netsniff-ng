@@ -16,8 +16,8 @@
 #include <sys/types.h>
 
 #include "xmalloc.h"
+#include "xstring.h"
 #include "compiler.h"
-#include "strlcpy.h"
 #include "die.h"
 
 __hidden void *xmalloc(size_t size)

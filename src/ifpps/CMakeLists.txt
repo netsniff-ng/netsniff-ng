@@ -8,7 +8,7 @@ IF(CURSES_FOUND)
 	ADD_EXECUTABLE(${PROJECT_NAME}	../xmalloc.c
 					../xio.c
 					../xsys.c
-					../strlcpy.c
+					../xstring.c
 					../ifpps.c)
 
 	ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"

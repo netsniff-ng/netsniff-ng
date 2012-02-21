@@ -20,7 +20,7 @@
 #include "compiler.h"
 #include "xmalloc.h"
 #include "curve.h"
-#include "strlcpy.h"
+#include "xstring.h"
 #include "die.h"
 #include "mtrand.h"
 #include "curvetun.h"

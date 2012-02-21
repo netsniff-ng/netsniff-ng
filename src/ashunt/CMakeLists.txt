@@ -9,7 +9,7 @@ IF (LIBGEOIP_FOUND AND CMAKE_HAVE_PTHREAD_CREATE)
 	ADD_EXECUTABLE(${PROJECT_NAME}	../xmalloc.c
 					../xio.c
 					../xsys.c
-					../strlcpy.c
+					../xstring.c
 					../tprintf.c
 					../aslookup.c
 					../bpf.c

@@ -12,7 +12,7 @@ IF (NACL_FOUND AND CMAKE_THREAD_LIBS_INIT)
 	ADD_EXECUTABLE(${PROJECT_NAME}	../xmalloc.c
 					../xio.c
 					../xsys.c
-					../strlcpy.c
+					../xstring.c
 					../cpusched.c
 					../stun.c
 					../mtrand.c

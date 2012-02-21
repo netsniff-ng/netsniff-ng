@@ -29,7 +29,7 @@
 
 #include "die.h"
 #include "xio.h"
-#include "strlcpy.h"
+#include "xstring.h"
 #include "curve.h"
 #include "mtrand.h"
 #include "xsys.h"

@@ -14,7 +14,7 @@
 #include <netinet/in.h>
 
 #include "die.h"
-#include "strlcpy.h"
+#include "xstring.h"
 #include "parser.h"
 #include "aslookup.h"
 #include "xmalloc.h"

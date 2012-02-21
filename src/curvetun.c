@@ -52,7 +52,7 @@
 #include "stun.h"
 #include "die.h"
 #include "xmalloc.h"
-#include "strlcpy.h"
+#include "xstring.h"
 #include "curvetun.h"
 #include "curve.h"
 #include "usermgmt.h"

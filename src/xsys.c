@@ -36,7 +36,7 @@
 
 #include "die.h"
 #include "xsys.h"
-#include "strlcpy.h"
+#include "xstring.h"
 
 int af_socket(int af)
 {

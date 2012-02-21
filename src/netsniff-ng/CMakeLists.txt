@@ -11,7 +11,7 @@ IF (CMAKE_HAVE_PTHREAD_CREATE)
 					../xmalloc.c
 					../xio.c
 					../xsys.c
-					../strlcpy.c
+					../xstring.c
 					../bpf.c
 					../parser.c
 					../pcap.c
