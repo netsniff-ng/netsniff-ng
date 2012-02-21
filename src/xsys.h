@@ -19,6 +19,35 @@
 
 #include "die.h"
 
+#define DEFAULT_TTY_SIZE	80
+
+#define __reset		"0"
+#define __bold		"1"
+#define __black		"30"
+#define __red		"31"
+#define __green		"32"
+#define __yellow	"33"
+#define __blue		"34"
+#define __magenta	"35"
+#define __cyan		"36"
+#define __white		"37"
+#define __on_black	"40"
+#define __on_red	"41"
+#define __on_green	"42"
+#define __on_yellow	"43"
+#define __on_blue	"44"
+#define __on_magenta	"45"
+#define __on_cyan	"46"
+#define __on_white	"47"
+
+#define colorize_start(fore)            "\033[" __##fore "m"
+#define colorize_start_full(fore, back) "\033[" __##fore ";" __on_##back "m"
+#define colorize_end()                  "\033[" __reset "m"
+#define colorize_str(fore, text)                                     \
+		colorize_start(fore) text colorize_end()
+#define colorize_full_str(fore, back, text)                          \
+		colorize_start_full(fore, back) text colorize_end()
+
 extern int af_socket(int af);
 extern int af_raw_socket(int af, int proto);
 extern int pf_socket(void);
@@ -48,81 +77,10 @@ extern void register_signal(int signal, void (*handler)(int));
 extern void register_signal_f(int signal, void (*handler)(int), int flags);
 extern int get_tty_size(void);
 extern void check_for_root_maybe_die(void);
-
-static inline short enter_promiscuous_mode(char *ifname)
-{
-	if (!strncmp("any", ifname, strlen("any")))
-		return 0;
-
-	short ifflags = device_get_flags(ifname);
-	device_set_flags(ifname, ifflags | IFF_PROMISC);
-
-	return ifflags;
-}
-
-static inline void leave_promiscuous_mode(char *ifname, short oldflags)
-{
-	if (!strncmp("any", ifname, strlen("any")))
-		return;
-
-	device_set_flags(ifname, oldflags);
-}
-
-static inline int device_up(char *ifname)
-{
-	if (!ifname)
-		return -EINVAL;
-	if (!strncmp("any", ifname, strlen("any")))
-		return 1;
-	return (device_get_flags(ifname) & IFF_UP) == IFF_UP;
-}
-
-static inline int device_running(char *ifname)
-{
-	if (!ifname)
-		return -EINVAL;
-	if (!strncmp("any", ifname, strlen("any")))
-		return 1;
-	return (device_get_flags(ifname) & IFF_RUNNING) == IFF_RUNNING;
-}
-
-static inline int device_up_and_running(char *ifname)
-{
-	if (!ifname)
-		return -EINVAL;
-	if (!strncmp("any", ifname, strlen("any")))
-		return 1;
-	return (device_get_flags(ifname) & (IFF_UP | IFF_RUNNING)) ==
-	       (IFF_UP | IFF_RUNNING);
-}
-
-#define DEFAULT_TTY_SIZE	80
-
-#define __reset		"0"
-#define __bold		"1"
-#define __black		"30"
-#define __red		"31"
-#define __green		"32"
-#define __yellow	"33"
-#define __blue		"34"
-#define __magenta	"35"
-#define __cyan		"36"
-#define __white		"37"
-#define __on_black	"40"
-#define __on_red	"41"
-#define __on_green	"42"
-#define __on_yellow	"43"
-#define __on_blue	"44"
-#define __on_magenta	"45"
-#define __on_cyan	"46"
-#define __on_white	"47"
-
-#define colorize_start(fore)            "\033[" __##fore "m"
-#define colorize_start_full(fore, back) "\033[" __##fore ";" __on_##back "m"
-#define colorize_end()                  "\033[" __reset "m"
-#define colorize_str(fore, text)                                     \
-		colorize_start(fore) text colorize_end()
-#define colorize_full_str(fore, back, text)                          \
-		colorize_start_full(fore, back) text colorize_end()
+extern short enter_promiscuous_mode(char *ifname);
+extern void leave_promiscuous_mode(char *ifname, short oldflags);
+extern int device_up(char *ifname);
+extern int device_running(char *ifname);
+extern int device_up_and_running(char *ifname);
 
 #endif /* XSYS_H */
