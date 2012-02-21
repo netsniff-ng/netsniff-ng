@@ -33,7 +33,7 @@ IF (CMAKE_HAVE_PTHREAD_CREATE)
 		-D_LARGEFILE64_SOURCE)
 
 	TARGET_LINK_LIBRARIES(netsniff-ng ${CMAKE_THREAD_LIBS_INIT})
-	FILE(GLOB rules_files "../rules/*.bpf")
+	FILE(GLOB rules_files "../examples/bpfc/*.bpf")
 	INSTALL(FILES ${rules_files} DESTINATION ${CONFIG_INSTALL_PATH}/rules/)
 	INSTALL(FILES ../conf/ether.conf ../conf/tcp.conf ../conf/udp.conf ../conf/oui.conf DESTINATION ${CONFIG_INSTALL_PATH})
 	INSTALL(TARGETS ${PROJECT_NAME} DESTINATION ${EXECUTABLE_INSTALL_PATH})
