@@ -18,12 +18,13 @@
 
 #include "bpf.h"
 #include "xmalloc.h"
-#include "bpf_parser.h"
 #include "bpf_parser.tab.h"
 #include "compiler.h"
 #include "die.h"
 
 #define MAX_INSTRUCTIONS	4096
+
+int compile_filter(char *file, int verbose);
 
 static int curr_instr = 0;
 

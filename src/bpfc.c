@@ -88,7 +88,6 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include <getopt.h>
 #include <ctype.h>
 
-#include "bpf_parser.h"
 #include "xmalloc.h"
 #include "die.h"
 
@@ -101,6 +100,8 @@ static struct option long_options[] = {
         {"help", no_argument, 0, 'h'},
         {0, 0, 0, 0}
 };
+
+extern int compile_filter(char *file, int verbose);
 
 static void help(void)
 {
