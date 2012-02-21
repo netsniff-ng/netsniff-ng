@@ -24,7 +24,6 @@ IF (NACL_FOUND AND CMAKE_THREAD_LIBS_INIT)
 					../curve.c
 					../ct_server.c
 					../ct_client.c
-					../parser.c
 					../curvetun.c)
 
 	ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"

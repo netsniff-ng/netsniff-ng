@@ -169,7 +169,6 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "xmalloc.h"
 #include "opt_memcpy.h"
 #include "xstring.h"
-#include "parser.h"
 #include "die.h"
 #include "xsys.h"
 #include "xio.h"

@@ -13,7 +13,6 @@ IF(CURSES_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND LIBGEOIP_FOUND AND LIBNETFILTE
 					../xio.c
 					../xsys.c
 					../xstring.c
-					../parser.c
 					../hash.c
 					../dissector_eth.c
 					../dissector.c

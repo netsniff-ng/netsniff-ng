@@ -15,7 +15,6 @@
 
 #include "die.h"
 #include "xstring.h"
-#include "parser.h"
 #include "aslookup.h"
 #include "xmalloc.h"
 

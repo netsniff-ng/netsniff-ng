@@ -17,7 +17,6 @@
 
 #include "die.h"
 #include "usermgmt.h"
-#include "parser.h"
 #include "locking.h"
 #include "xmalloc.h"
 #include "xio.h"

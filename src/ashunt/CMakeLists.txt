@@ -14,7 +14,6 @@ IF (LIBGEOIP_FOUND AND CMAKE_HAVE_PTHREAD_CREATE)
 					../aslookup.c
 					../bpf.c
 					../mtrand.c
-					../parser.c
 					../ring_rx.c
 					../ashunt.c)
 

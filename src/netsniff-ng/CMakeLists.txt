@@ -13,7 +13,6 @@ IF (CMAKE_HAVE_PTHREAD_CREATE)
 					../xsys.c
 					../xstring.c
 					../bpf.c
-					../parser.c
 					../pcap.c
 					../pcap_rw.c
 					../pcap_sg.c

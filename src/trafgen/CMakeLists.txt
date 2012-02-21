@@ -6,7 +6,6 @@ ADD_EXECUTABLE(${PROJECT_NAME} 	../xmalloc.c
 				../xio.c
 				../xsys.c
 				../xstring.c
-				../parser.c
 				../mtrand.c
 				../opt_memcpy.c
 				../ring_tx.c

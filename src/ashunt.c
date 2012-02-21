@@ -231,11 +231,11 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "tprintf.h"
 #include "proto_hex.h"
 #include "xmalloc.h"
+#include "xstring.h"
 #include "xio.h"
 #include "aslookup.h"
 #include "xsys.h"
 #include "mtrand.h"
-#include "parser.h"
 #include "ring_rx.h"
 
 #define WHOIS_SERVER_SOURCE "/etc/netsniff-ng/whois.conf"
