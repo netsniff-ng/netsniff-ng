@@ -53,7 +53,6 @@
 #include "dissector.h"
 #include "xmalloc.h"
 #include "psched.h"
-#include "misc.h"
 #include "mtrand.h"
 
 #define CPU_UNKNOWN	-1

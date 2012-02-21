@@ -123,7 +123,7 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "die.h"
 #include "xmalloc.h"
 #include "psched.h"
-#include "misc.h"
+#include "xio.h"
 #include "timespec.h"
 #include "tty.h"
 #include "netdev.h"
@@ -179,7 +179,7 @@ struct ifstat {
 static int mode = 0;
 static int loop = 0;
 
-static sig_atomic_t sigint = 0;
+sig_atomic_t sigint = 0;
 
 static const char *short_options = "d:t:vhcCHlp";
 

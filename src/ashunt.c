@@ -226,7 +226,6 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include <GeoIP.h>
 #include <GeoIPCity.h>
 
-#include "misc.h"
 #include "bpf.h"
 #include "die.h"
 #include "tprintf.h"

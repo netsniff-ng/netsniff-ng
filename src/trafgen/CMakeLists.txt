@@ -5,7 +5,6 @@ SET(BUILD_STRING "generic")
 ADD_EXECUTABLE(${PROJECT_NAME} 	../xmalloc.c
 				../strlcpy.c
 				../psched.c
-				../misc.c
 				../parser.c
 				../mtrand.c
 				../opt_memcpy.c

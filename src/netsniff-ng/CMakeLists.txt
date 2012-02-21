@@ -10,7 +10,6 @@ IF (CMAKE_HAVE_PTHREAD_CREATE)
 					../dissector_eth.c
 					../xmalloc.c
 					../strlcpy.c
-					../misc.c
 					../bpf.c
 					../parser.c
 					../psched.c

@@ -173,7 +173,7 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "die.h"
 #include "netdev.h"
 #include "psched.h"
-#include "misc.h"
+#include "xio.h"
 #include "tty.h"
 #include "timespec.h"
 #include "mtrand.h"
