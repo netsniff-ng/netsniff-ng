@@ -70,11 +70,6 @@ participation, let us know - we are looking forward):
 	- Required skills: C
 	- Difficulty: Hard
 
-- ERF support:
-	- Tool: netsniff-ng
-	- Required skills: C
-	- Difficulty: Hard
-
 - Better obfuscation of curvetun's protocol to make it harder for DPIs
   to detect:
 	- Tool: curvetun
