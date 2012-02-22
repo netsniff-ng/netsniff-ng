@@ -93,7 +93,7 @@ struct flow_list {
 	struct spinlock lock;
 };
 
-static sig_atomic_t sigint = 0;
+sig_atomic_t sigint = 0;
 
 static double interval = 0.1;
 
