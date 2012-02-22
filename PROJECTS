@@ -93,3 +93,11 @@ participation, let us know - we are looking forward):
 	- Required skills: C
 	- Difficulty: Very Hard
 
+- Design and implement partial reconfigurable hardware for traffic
+  generation under 10 Gbps, build an interface to trafgen and offload
+  heavily used packets for packet generation (and transmission) in
+  hardware, less heavily used in software (use Xilinx FPGAs)
+	- Tool: trafgen
+	- Required skills: C, VHDL
+	- Difficulty: Very Hard
+
