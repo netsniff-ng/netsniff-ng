@@ -62,7 +62,7 @@ static struct worker_struct *threadpool = NULL;
 
 static int auth_log = 1;
 
-extern sig_atomic_t sigint;
+extern volatile sig_atomic_t sigint;
 
 static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len) __pure;

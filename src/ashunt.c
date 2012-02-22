@@ -261,7 +261,7 @@ struct ash_cfg {
 	char *payload;
 };
 
-sig_atomic_t sigint = 0;
+volatile sig_atomic_t sigint = 0;
 
 static int show_pkt = 0;
 

@@ -80,7 +80,7 @@ struct tx_stats {
 	unsigned long tx_packets;
 };
 
-sig_atomic_t sigint = 0;
+volatile sig_atomic_t sigint = 0;
 
 static int tx_sock;
 static unsigned long frame_cnt_max = 0;

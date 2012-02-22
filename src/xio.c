@@ -83,7 +83,7 @@ ssize_t write_or_die(int fd, const void *buf, size_t len)
 	return ret;
 }
 
-extern sig_atomic_t sigint;
+extern volatile sig_atomic_t sigint;
 
 ssize_t read_exact(int fd, void *buf, size_t len, int mayexit)
 {

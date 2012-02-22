@@ -40,8 +40,8 @@
 #include "compiler.h"
 #include "crypto_auth_hmacsha512256.h"
 
-extern sig_atomic_t sigint;
-static sig_atomic_t closed_by_server = 0;
+extern volatile sig_atomic_t sigint;
+static volatile sig_atomic_t closed_by_server = 0;
 
 static void handler_udp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 				   struct curve25519_struct *c, char *buff,

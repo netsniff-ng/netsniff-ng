@@ -75,7 +75,7 @@ enum working_mode {
 	MODE_SERVER,
 };
 
-sig_atomic_t sigint = 0;
+volatile sig_atomic_t sigint = 0;
 
 static const char *short_options = "kxc::svhp:t:d:uCS46DN";
 

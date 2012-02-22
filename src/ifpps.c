@@ -175,7 +175,7 @@ struct ifstat {
 static int mode = 0;
 static int loop = 0;
 
-sig_atomic_t sigint = 0;
+volatile sig_atomic_t sigint = 0;
 
 static const char *short_options = "d:t:vhcCHlp";
 

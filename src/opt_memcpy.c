@@ -21,7 +21,7 @@
 #define CPU_FLAG_SSE    3
 #define CPU_FLAG_SSE2   4
 
-static sig_atomic_t checked = 0;
+static volatile sig_atomic_t checked = 0;
 void *(*____memcpy)(void *__restrict__ dest, const void *__restrict__ src,
 		    size_t n) = ___memcpy;
 
