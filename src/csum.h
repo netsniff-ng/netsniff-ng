@@ -36,7 +36,7 @@ static inline uint16_t calc_csum(void *addr, size_t len, int csum)
 	}
 
 	if (nleft == 1)
-		sum += htons(*(u_char *) w << 8);
+		sum += htons(*(const uint8_t *) w << 8);
 
 	/*
 	 * Add back carry outs from top 16 bits to low 16 bits
