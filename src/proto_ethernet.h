@@ -15,12 +15,6 @@
 #include "proto_struct.h"
 #include "dissector_eth.h"
 
-struct ethhdr {
-	uint8_t h_dest[6];   /* destination eth addr */
-	uint8_t h_source[6]; /* source ether addr    */
-	uint16_t h_proto;    /* packet type ID field */
-} __attribute__((packed));
-
 static inline void ethernet(uint8_t *packet, size_t len)
 {
 	uint8_t *src_mac, *dst_mac;
