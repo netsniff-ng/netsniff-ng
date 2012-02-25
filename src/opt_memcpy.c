@@ -299,6 +299,4 @@ void set_memcpy(void)
 		____memcpy = ___memcpy;
 	checked = 1;
 }
-#else
-void dummy_memcpy(void) {} /* For non-empty translation unit on ISO C. */
 #endif /* ARCH_X86 */
