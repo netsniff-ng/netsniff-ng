@@ -95,8 +95,6 @@ struct flow_list {
 
 volatile sig_atomic_t sigint = 0;
 
-static uint32_t interval = 1;
-
 static int what = INCLUDE_TCP;
 
 static struct flow_list flow_list;
@@ -106,10 +104,9 @@ static GeoIP *gi_city = NULL;
 
 static char *path_city_db = NULL, *path_country_db = NULL;
 
-static const char *short_options = "t:vhTULK";
+static const char *short_options = "vhTULK";
 
 static struct option long_options[] = {
-	{"interval", required_argument, 0, 't'},
 	{"tcp", no_argument, 0, 'T'},
 	{"udp", no_argument, 0, 'U'},
 	{"city-db", required_argument, 0, 'L'},
@@ -191,7 +188,6 @@ static void help(void)
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: flowtop [options]\n");
 	printf("Options:\n");
-	printf("  -t|--interval <time>   Refresh time in sec (default 1 sec)\n");
 	printf("  -T|--tcp               Show only TCP flows (default)\n");
 	printf("  -U|--udp               Show only UDP flows\n");
 	printf("  --city-db <path>       Specifiy path for geoip city database\n");
@@ -200,7 +196,6 @@ static void help(void)
 	printf("  -h|--help              Print this help\n");
 	printf("\n");
 	printf("Examples:\n");
-	printf("  flowtop -U --interval 5\n");
 	printf("  flowtop\n\n");
 	printf("Note:\n");
 	printf("  If netfilter is not running, you can activate it with i.e.:\n");
@@ -286,8 +281,8 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 
 	rcu_read_lock();
 
-	mvwprintw(screen, 1, 2, "Kernel netfilter TCP/UDP flow statistics, [+%d] t=%u us",
-		  skip_lines, interval);
+	mvwprintw(screen, 1, 2, "Kernel netfilter TCP/UDP flow statistics, [+%d]",
+		  skip_lines);
 
 	if (rcu_dereference(fl->head) == NULL)
 		mvwprintw(screen, line, 2, "(No active sessions! Is netfilter running?)");
@@ -410,7 +405,7 @@ static void presenter(void)
 		}
 
 		screen_update(screen, &flow_list, skip_lines);
-		sleep(interval);
+		usleep(100000);
 	}
 
 	rcu_unregister_thread();
@@ -841,13 +836,6 @@ int main(int argc, char **argv)
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 	       &opt_index)) != EOF) {
 		switch (c) {
-		case 't':
-			if (!optarg)
-				help();
-			interval = atol(optarg);
-			if (interval < 1)
-				panic("Choose larger interval!\n");
-			break;
 		case 'T':
 			what_cmd |= INCLUDE_TCP;
 			break;
