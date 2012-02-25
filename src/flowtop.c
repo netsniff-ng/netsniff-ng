@@ -420,6 +420,7 @@ static inline const char *make_n_a(const char *p)
 
 static void walk_process(char *process, struct flow_entry *n)
 {
+	int rc;
 	DIR *dir;
 	struct dirent *ent;
 	char path[1024];
@@ -442,7 +443,11 @@ static void walk_process(char *process, struct flow_entry *n)
 		if (S_ISSOCK(statbuf.st_mode) && n->inode == statbuf.st_ino) {
 			memset(n->cmdline, 0, sizeof(n->cmdline));
             		snprintf(path, sizeof(path), "/proc/%s/exe", process);
-			readlink(path, n->cmdline, sizeof(n->cmdline) - 1);
+			rc = readlink(path, n->cmdline, sizeof(n->cmdline) - 1);
+
+			if (rc < 0)
+				panic("readlink error: %s\n", strerror(errno));
+
 			n->procnum = atoi(process);
 		}
 	}
