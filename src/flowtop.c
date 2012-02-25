@@ -95,7 +95,7 @@ struct flow_list {
 
 volatile sig_atomic_t sigint = 0;
 
-static double interval = 0.1;
+static uint32_t interval = 1;
 
 static int what = INCLUDE_TCP;
 
@@ -191,7 +191,7 @@ static void help(void)
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: flowtop [options]\n");
 	printf("Options:\n");
-	printf("  -t|--interval <time>   Refresh time in sec (default 0.1)\n");
+	printf("  -t|--interval <time>   Refresh time in usec (default 100 usec)\n");
 	printf("  -T|--tcp               Show only TCP flows (default)\n");
 	printf("  -U|--udp               Show only UDP flows\n");
 	printf("  --city-db <path>       Specifiy path for geoip city database\n");
@@ -200,7 +200,7 @@ static void help(void)
 	printf("  -h|--help              Print this help\n");
 	printf("\n");
 	printf("Examples:\n");
-	printf("  flowtop -U --interval 0.5\n");
+	printf("  flowtop -U --interval 500\n");
 	printf("  flowtop\n\n");
 	printf("Note:\n");
 	printf("  If netfilter is not running, you can activate it with i.e.:\n");
@@ -286,7 +286,7 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 
 	rcu_read_lock();
 
-	mvwprintw(screen, 1, 2, "Kernel netfilter TCP/UDP flow statistics, [+%d] t=%.2lfs",
+	mvwprintw(screen, 1, 2, "Kernel netfilter TCP/UDP flow statistics, [+%d] t=%u us",
 		  skip_lines, interval);
 
 	if (rcu_dereference(fl->head) == NULL)
@@ -410,7 +410,7 @@ static void presenter(void)
 		}
 
 		screen_update(screen, &flow_list, skip_lines);
-		xnanosleep(interval);
+		usleep(interval);
 	}
 
 	rcu_unregister_thread();
@@ -844,8 +844,8 @@ int main(int argc, char **argv)
 		case 't':
 			if (!optarg)
 				help();
-			interval = atof(optarg);
-			if (interval < 0.01)
+			interval = atol(optarg);
+			if (interval < 100)
 				panic("Choose larger interval!\n");
 			break;
 		case 'T':

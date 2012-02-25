@@ -72,7 +72,7 @@ Put the device in promiscuous mode
 
 =item -t|--interval <time>
 
-Refresh time in sec (default 1.0)
+Refresh time in sec (default 1 sec)
 
 =item -c|--term
 
@@ -693,7 +693,7 @@ static inline int do_stats(const char *ifname, struct ifstat *s)
 	return ret;
 }
 
-static int screen_loop(const char *ifname, double interval)
+static int screen_loop(const char *ifname, uint32_t interval)
 {
 	int ret = 0, first = 1;
 	struct ifstat old, new, curr;
@@ -710,7 +710,7 @@ static int screen_loop(const char *ifname, double interval)
 		ret = do_stats(ifname, &old);
 		if (ret != 0)
 			goto out;
-		xnanosleep(interval);
+		sleep(interval);
 		ret = do_stats(ifname, &new);
 		if (ret != 0)
 			goto out;
@@ -729,7 +729,7 @@ out:
 	return 0;
 }
 
-static int print_loop(const char *ifname, double interval)
+static int print_loop(const char *ifname, uint32_t interval)
 {
 	int ret, first = 1;
 	struct ifstat old, new, curr;
@@ -741,7 +741,7 @@ static int print_loop(const char *ifname, double interval)
 		ret = do_stats(ifname, &old);
 		if (ret != 0)
 			goto out;
-		xnanosleep(interval);
+		sleep(interval);
 		ret = do_stats(ifname, &new);
 		if (ret != 0)
 			goto out;
@@ -777,7 +777,7 @@ static void help(void)
 	printf("Options:\n");
 	printf("  -d|--dev <netdev>      Device to fetch statistics for i.e., eth0\n");
 	printf("  -p|--promisc           Promiscuous mode\n");
-	printf("  -t|--interval <time>   Refresh time in sec (default 1.0)\n");
+	printf("  -t|--interval <time>   Refresh time in sec (default 1 s)\n");
 	printf("  -c|--term              Output to terminal\n");
 	printf("  -C|--csv               Output to terminal as CSV\n");
 	printf("                         E.g. post-processing with Gnuplot et al.\n");
@@ -818,8 +818,8 @@ int main(int argc, char **argv)
 	int c, opt_index, ret;
 	unsigned int promisc = 0;
 	char *ifname = NULL;
-	double interval = 1.0;
-	int (*main_loop)(const char *ifname, double interval) = screen_loop;
+	uint32_t interval = 1;
+	int (*main_loop)(const char *ifname, uint32_t interval) = screen_loop;
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 	       &opt_index)) != EOF) {
@@ -834,7 +834,7 @@ int main(int argc, char **argv)
 			ifname = xstrndup(optarg, IFNAMSIZ);
 			break;
 		case 't':
-			interval = atof(optarg);
+			interval = atoi(optarg);
 			break;
 		case 'c':
 			mode |= TERM_MODE_NORMAL;

@@ -434,7 +434,7 @@ static void tx_tgap_or_die(struct mode *mode, struct pktconf *cfg)
 		if (cfg->num > 0)
 			num--;
 
-		xusleep2(cfg->gap);
+		usleep(cfg->gap);
 	}
 
 	close(sock);
