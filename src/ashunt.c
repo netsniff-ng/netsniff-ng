@@ -877,7 +877,7 @@ retry:
 	return 0;
 }
 
-void parse_whois_or_die(struct ash_cfg *cfg)
+static void parse_whois_or_die(struct ash_cfg *cfg)
 {
 	int fd;
 	ssize_t ret;
