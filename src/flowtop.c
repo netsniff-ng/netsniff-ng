@@ -191,7 +191,7 @@ static void help(void)
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: flowtop [options]\n");
 	printf("Options:\n");
-	printf("  -t|--interval <time>   Refresh time in usec (default 100 usec)\n");
+	printf("  -t|--interval <time>   Refresh time in sec (default 1 sec)\n");
 	printf("  -T|--tcp               Show only TCP flows (default)\n");
 	printf("  -U|--udp               Show only UDP flows\n");
 	printf("  --city-db <path>       Specifiy path for geoip city database\n");
@@ -200,7 +200,7 @@ static void help(void)
 	printf("  -h|--help              Print this help\n");
 	printf("\n");
 	printf("Examples:\n");
-	printf("  flowtop -U --interval 500\n");
+	printf("  flowtop -U --interval 5\n");
 	printf("  flowtop\n\n");
 	printf("Note:\n");
 	printf("  If netfilter is not running, you can activate it with i.e.:\n");
@@ -410,7 +410,7 @@ static void presenter(void)
 		}
 
 		screen_update(screen, &flow_list, skip_lines);
-		usleep(interval);
+		sleep(interval);
 	}
 
 	rcu_unregister_thread();
@@ -845,7 +845,7 @@ int main(int argc, char **argv)
 			if (!optarg)
 				help();
 			interval = atol(optarg);
-			if (interval < 100)
+			if (interval < 1)
 				panic("Choose larger interval!\n");
 			break;
 		case 'T':
