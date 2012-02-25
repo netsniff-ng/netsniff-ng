@@ -516,8 +516,8 @@ static int assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
 	iph->frag_off = nofrag ? IP_DF : 0;
 	iph->ttl = (uint8_t) ttl;
 	iph->protocol = 6; /* TCP */
-	iph->saddr = ((struct sockaddr_in *) src)->sin_addr.s_addr;
-	iph->daddr = ((struct sockaddr_in *) dst)->sin_addr.s_addr;
+	iph->saddr = ((const struct sockaddr_in *) src)->sin_addr.s_addr;
+	iph->daddr = ((const struct sockaddr_in *) dst)->sin_addr.s_addr;
 	assemble_tcp(packet + sizeof(struct iphdr),
 		     len - sizeof(struct iphdr), syn, ack, urg, fin, rst,
 		     psh, ecn, dport);
@@ -563,8 +563,8 @@ static int assemble_ipv4_icmp4(uint8_t *packet, size_t len, int ttl,
 	iph->frag_off = nofrag ? IP_DF : 0;
 	iph->ttl = (uint8_t) ttl;
 	iph->protocol = 1; /* ICMP4 */
-	iph->saddr = ((struct sockaddr_in *) src)->sin_addr.s_addr;
-	iph->daddr = ((struct sockaddr_in *) dst)->sin_addr.s_addr;
+	iph->saddr = ((const struct sockaddr_in *) src)->sin_addr.s_addr;
+	iph->daddr = ((const struct sockaddr_in *) dst)->sin_addr.s_addr;
 	assemble_icmp4(packet + sizeof(struct iphdr),
 		       len - sizeof(struct iphdr));
 	assemble_data(packet + sizeof(struct iphdr) + sizeof(struct icmphdr),
@@ -612,7 +612,7 @@ static int handle_ipv4_icmp(uint8_t *packet, size_t len, int ttl, int id,
 	GeoIPRecord *gir;
 	if (iph->protocol != 1)
 		return PKT_NOT_FOR_US;
-	if (iph->daddr != ((struct sockaddr_in *) own)->sin_addr.s_addr)
+	if (iph->daddr != ((const struct sockaddr_in *) own)->sin_addr.s_addr)
 		return PKT_NOT_FOR_US;
 	icmph = (struct icmphdr *) (packet + sizeof(struct iphdr));
 	if (icmph->type != ICMP_TIME_EXCEEDED)
