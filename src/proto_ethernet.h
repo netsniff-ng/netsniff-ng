@@ -10,7 +10,8 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include <netinet/in.h>    /* for ntohs() */
+#include <netinet/in.h>
+#include <linux/if_ether.h>
 
 #include "proto_struct.h"
 #include "dissector_eth.h"
