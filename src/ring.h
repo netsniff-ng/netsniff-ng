@@ -122,7 +122,8 @@ static inline void show_frame_hdr(struct frame_map *hdr, int mode,
 		case FNTTYPE_PRINT_NORM:
 		case FNTTYPE_PRINT_LESS:
 		default:
-			tprintf("> %u\n", hdr->tp_h.tp_len);
+			tprintf("%u %u.%u\n", hdr->tp_h.tp_len,
+				hdr->tp_h.tp_sec, hdr->tp_h.tp_usec);
 			break;
 		}
 	}
