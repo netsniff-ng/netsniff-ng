@@ -93,39 +93,32 @@ static inline void show_frame_hdr(struct frame_map *hdr, int mode,
 {
 	if (mode == FNTTYPE_PRINT_NONE)
 		return;
-
-	if (rmode == RING_MODE_INGRESS) {
-		switch (mode) {
-		case FNTTYPE_PRINT_PAAC:
-		case FNTTYPE_PRINT_NOPA:
-		case FNTTYPE_PRINT_HEX1:
-		case FNTTYPE_PRINT_HEX2:
-		case FNTTYPE_PRINT_NORM:
-		default:
-			tprintf("%s %u %u %u.%u\n",
+	switch (mode) {
+	case FNTTYPE_PRINT_PAAC:
+	case FNTTYPE_PRINT_NOPA:
+	case FNTTYPE_PRINT_HEX1:
+	case FNTTYPE_PRINT_HEX2:
+	case FNTTYPE_PRINT_NORM:
+	default:
+		if (rmode == RING_MODE_INGRESS) {
+			tprintf("%s %u %u %u.%06u\n",
 				packet_types[hdr->s_ll.sll_pkttype],
 				hdr->s_ll.sll_ifindex, hdr->tp_h.tp_len,
 				hdr->tp_h.tp_sec, hdr->tp_h.tp_usec);
-			break;
-		case FNTTYPE_PRINT_LESS:
+		} else {
+			tprintf("%u %u.%06u\n", hdr->tp_h.tp_len,
+				hdr->tp_h.tp_sec, hdr->tp_h.tp_usec);
+		}
+		break;
+	case FNTTYPE_PRINT_LESS:
+		if (rmode == RING_MODE_INGRESS) {
 			tprintf("%s %u %u",
 				packet_types[hdr->s_ll.sll_pkttype],
 				hdr->s_ll.sll_ifindex, hdr->tp_h.tp_len);
-			break;
+		} else {
+			tprintf("%u ", hdr->tp_h.tp_len);
 		}
-	} else {
-		switch (mode) {
-		case FNTTYPE_PRINT_PAAC:
-		case FNTTYPE_PRINT_NOPA:
-		case FNTTYPE_PRINT_HEX1:
-		case FNTTYPE_PRINT_HEX2:
-		case FNTTYPE_PRINT_NORM:
-		case FNTTYPE_PRINT_LESS:
-		default:
-			tprintf("%u %u.%u\n", hdr->tp_h.tp_len,
-				hdr->tp_h.tp_sec, hdr->tp_h.tp_usec);
-			break;
-		}
+		break;
 	}
 }
 
