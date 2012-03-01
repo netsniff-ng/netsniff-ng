@@ -1,5 +1,8 @@
-Open projects for the netsniff-ng toolkit (if you are interested in
-participation, let us know - we are looking forward):
+Open projects for the netsniff-ng toolkit are listed here. However, those are
+current ideas for projects that came to our mind. We are also open for blue-sky
+proposals that are not included in this list. If you are interested in
+participation, let us know! We are always looking forward to get help in
+improving the toolkit:
 
 - Better protocol support for netsniff-ng's dissector:
 	- Tool: netsniff-ng
@@ -43,7 +46,7 @@ participation, let us know - we are looking forward):
 	- Required skills: C
 	- Difficulty: Medium - Hard
 
-- Unit test preparation:
+- Unit test preparation and integration for the whole toolkit:
 	- Tool: all
 	- Required skills: C, Shell, Sharness?, Coccinelle?, CMake?
 	- Difficulty: Medium - Hard
@@ -60,7 +63,8 @@ participation, let us know - we are looking forward):
 	- Required skills: C, Protocols
 	- Difficulty: Hard
 
-- Warp implementation (ARP cache poisoning):
+- Warp implementation (ARP cache poisoning tool, that cannot be detected with
+  current methods):
 	- Tool: warp
 	- Required skills: C
 	- Difficulty: Hard
@@ -70,8 +74,8 @@ participation, let us know - we are looking forward):
 	- Required skills: C
 	- Difficulty: Hard
 
-- Better obfuscation of curvetun's protocol to make it harder for DPIs
-  to detect:
+- Better obfuscation method of curvetun's protocol to make it hard for DPIs
+  to detect curvetun:
 	- Tool: curvetun
 	- Required skills: C
 	- Difficulty: Very Hard
@@ -98,6 +102,6 @@ participation, let us know - we are looking forward):
   heavily used packets for packet generation (and transmission) in
   hardware, less heavily used in software (use Xilinx FPGAs)
 	- Tool: trafgen
-	- Required skills: C, VHDL
+	- Required skills: C, VHDL (plus Xilinx board required)
 	- Difficulty: Very Hard
 
