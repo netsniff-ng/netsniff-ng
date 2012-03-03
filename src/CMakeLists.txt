@@ -49,7 +49,6 @@ ADD_DEFINITIONS(
 	-Wstack-protector
 	-Waggregate-return
 	-Wcast-align
-	-Wcast-qual
 	-Wunsafe-loop-optimizations
 	-Wfloat-equal
 	-Wunknown-pragmas
