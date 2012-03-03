@@ -4,40 +4,65 @@ proposals that are not included in this list. If you are interested in
 participation, let us know! We are always looking forward to get help in
 improving the toolkit:
 
-- Better protocol support for netsniff-ng's dissector:
+
+- Better protocol support for netsniff-ng's dissector: Until now, netsniff-ng
+  only supports a small subsets of protocols with rather low-level information
+  output. The aim is to improve currently supported protocols and add new
+  important protocols that should be shipped with netsniff-ng.
 	- Tool: netsniff-ng
 	- Required skills: C, Protocols
-	- Difficulty: Easy
+	- Difficulty: Easy - Medium
+
 
 - Extensive testing (with eventual code fixing) and performance evaluation:
+  The three more complex projects of the toolkit need a throughout evaluation
+  of all their features, if they work stable under stress, if the features do
+  what they should do. In error cases, code must be fixed of course. Also,
+  the three tools should be evaluated and reviewed regarding performance (pps),
+  if optimizations can be made in the critical path. Optimizations should be
+  compared in regard to packets per second before and after the change.
 	- Tool: netsniff-ng, trafgen (both with Jumbo frames), curvetun
 	- Required skills: Testing, C
-	- Difficulty: Easy
+	- Difficulty: Easy - Hard
+
 
 - Reduce general code size, refactor, improve code (i.e. rewrite parsers):
+  Some of the toolkit's code is quite messy and some code totally unused.
+  The aim is to find such code sections and improve them in order to reduce
+  overall code size, and improve readability and software design without
+  introducing a decrease of performance.
 	- Tool: all
 	- Required skills: C
 	- Difficulty: Easy - Hard
 
-- Improve manpages, write a user's guide, maybe technical paper:
+
+- Improve manpages, write a user's guide, maybe technical paper: Until now,
+  the focus on the toolkit was the implementation, but not that intensively
+  on the documentation. The latter is even more important for potential users.
+  Hence, manpages should be improved in depth, examples should be given and
+  a more complex documentation or technical paper should be written in LaTeX.
 	- Tool: all
 	- Required skills: POD, Manpages, LaTeX
 	- Difficulty: Easy - Medium
+
 
 - TPACKETv2 (TPACKETv3) support:
 	- Tool: netsniff-ng, trafgen
 	- Required skills: C
 	- Difficulty: Easy - Medium
 
+
 - PCAP anonymization support:
 	- Tool: netsniff-ng
 	- Required skills: C
 	- Difficulty: Easy - Medium
 
+
 - Add IPv6 support:
 	- Tool: ashunt, flowtop, curvetun (testing)
 	- Required skills: C
 	- Difficulty: Medium
+
 
 - Packet departure timing models (i.e. exponential, uniform, cauchy, normal,
   pareto distributed) and other packet scheduling behaviours (MB/s, ...),
@@ -46,10 +71,16 @@ improving the toolkit:
 	- Required skills: C
 	- Difficulty: Medium - Hard
 
-- Unit test preparation and integration for the whole toolkit:
+
+- Unit test preparation and integration for the whole toolkit: Right now, the
+  netsniff-ng toolkit does not have a suite with test cases, although
+  netsniff-ng highly needs a test suite. This project's intention is to
+  evaluate which test frameworks are appropriate for the toolkit, to integrate
+  those frameworks with an initial set of unit tests for each framework.
 	- Tool: all
 	- Required skills: C, Shell, Sharness?, Coccinelle?, CMake?
 	- Difficulty: Medium - Hard
+
 
 - Improve ifpps with things like 'Gnuplot support', 'Power usage / temperature',
   'Colorized output':
@@ -57,11 +88,13 @@ improving the toolkit:
 	- Required skills: C, Gnuplot, Procfs
 	- Difficulty: Hard
 
+
 - Interactive txf config generator with a set of supported protocols and
   support for packet distribution models (IMIX, Cisco, ...):
 	- Tool: trafgen
 	- Required skills: C, Protocols
 	- Difficulty: Hard
+
 
 - Warp implementation (ARP cache poisoning tool, that cannot be detected with
   current methods):
@@ -69,10 +102,12 @@ improving the toolkit:
 	- Required skills: C
 	- Difficulty: Hard
 
+
 - PCAP-ng support:
 	- Tool: netsniff-ng
 	- Required skills: C
 	- Difficulty: Hard
+
 
 - Better obfuscation method of curvetun's protocol to make it hard for DPIs
   to detect curvetun:
@@ -80,10 +115,12 @@ improving the toolkit:
 	- Required skills: C
 	- Difficulty: Very Hard
 
+
 - Perform a security review of curvetun:
 	- Tool: curvetun
 	- Required skills: C
 	- Difficulty: Very Hard
+
 
 - Design and implement a high-level packet filtering language that compiles
   to bpf code:
@@ -91,11 +128,13 @@ improving the toolkit:
 	- Required skills: C or Haskell
 	- Difficulty: Very Hard
 
+
 - Implement packet capture, replay and traffic generation for other
   hardware types (USB, Bluetooth, GSM?, ...)
 	- Tool: netsniff-ng, trafgen (tools need to be extended)
 	- Required skills: C
 	- Difficulty: Very Hard
+
 
 - Design and implement partial reconfigurable hardware for traffic
   generation under 10 Gbps, build an interface to trafgen and offload
