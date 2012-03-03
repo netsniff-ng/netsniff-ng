@@ -46,27 +46,53 @@ improving the toolkit:
 	- Difficulty: Easy - Medium
 
 
-- TPACKETv2 (TPACKETv3) support:
+- TPACKETv2 (TPACKETv3) support: Right now, the toolkit uses the TPACKETv1
+  API for the RX_RING and TX_RING of the Linux kernel. We would like to know
+  if there's a potential benefit of migrating the code to TPACKETv2 or
+  TPACKETv3 (if released). If so, then the current code should be migrated
+  to the more up-to-date TPACKET version including a review of a potential
+  performance benefit or degradation.
 	- Tool: netsniff-ng, trafgen
 	- Required skills: C
 	- Difficulty: Easy - Medium
 
 
-- PCAP anonymization support:
+- PCAP anonymization support: Similar to scrub-tcpdump, we would like to see
+  a possibility for packet anonymization in netsniff-ng. This means, that the
+  resulting pcap file can be used for collaboration or released without
+  corrupting anonymity of the network represented by the capture flow.
+  (http://scrub-tcpdump.sourceforge.net/index.php)
 	- Tool: netsniff-ng
 	- Required skills: C
 	- Difficulty: Easy - Medium
 
 
-- Add IPv6 support:
+- Improve ifpps with things like 'Gnuplot support', 'Power usage / temperature',
+  'Colorized output': ifpps is a useful tool to monitor the system and
+  especially the network subsystem. It could be even more useful if it has
+  features like exporting data into Gnuplot or RRD files, like adding more
+  sensor data output like power states or temperature values, and additionally
+  it could also have a colored output just like flowtop.
+	- Tool: ifpps
+	- Required skills: C, Gnuplot, Procfs
+	- Difficulty: Easy - Medium
+
+
+- Add IPv6 support: ashunt and flowtop have been implemented in IPv4 with
+  stubs for IPv6 code. IPv6 support should be implemented and tested
+  intensively. Possibly, existing code needs to be improved and refactored
+  for IPv6 integration. IPv6 support in curvetun already exists. However,
+  it still needs throughout testing.
 	- Tool: ashunt, flowtop, curvetun (testing)
 	- Required skills: C
 	- Difficulty: Medium
 
 
-- Packet departure timing models (i.e. exponential, uniform, cauchy, normal,
-  pareto distributed) and other packet scheduling behaviours (MB/s, ...),
-  ideally as a plugin architecture:
+- Implement Packet departure timing models (i.e. exponential, uniform, cauchy,
+  normal, pareto distributed) and other packet scheduling behaviours (MB/s,
+  ...), ideally as a plugin architecture for trafgen. Until now, there are
+  only two working modes in trafgen: high-speed and a static inter-departure
+  timing gap. Hence, such features need to be added for a traffic generator.
 	- Tool: trafgen
 	- Required skills: C
 	- Difficulty: Medium - Hard
@@ -82,55 +108,73 @@ improving the toolkit:
 	- Difficulty: Medium - Hard
 
 
-- Improve ifpps with things like 'Gnuplot support', 'Power usage / temperature',
-  'Colorized output':
-	- Tool: ifpps
-	- Required skills: C, Gnuplot, Procfs
-	- Difficulty: Hard
-
-
 - Interactive txf config generator with a set of supported protocols and
-  support for packet distribution models (IMIX, Cisco, ...):
+  support for packet distribution models (IMIX, Cisco, ...): We would like
+  to see an interactive txf generator, so that a set of supported protocols
+  can be used to generate full packets in byte format. For instance,
+  protocols such as VLAN, MPLS, BPDU, IGMP, DNS, ARP, ICMP, HTTP, SIP,
+  IPv4 / IPv6, UDP, TCP. The Cisco-like libcli can be used for the UI.
+  (http://code.google.com/p/libcli/)
 	- Tool: trafgen
 	- Required skills: C, Protocols
 	- Difficulty: Hard
 
 
-- Warp implementation (ARP cache poisoning tool, that cannot be detected with
-  current methods):
-	- Tool: warp
-	- Required skills: C
-	- Difficulty: Hard
-
-
-- PCAP-ng support:
+- PCAP-ng support: The PCAP-ng format is the next-generation of PCAP as
+  described in (http://wiki.wireshark.org/Development/PcapNg). We would like
+  to support both, the old PCAP and the new PCAP-ng format. Hence, we're
+  looking for PCAP-ng support in netsniff-ng. Design and implement it
+  appropriately, so that both formats can be used and that the source code
+  stays clear and doesn't introduce artificial software layers that can
+  cause a performance bottleneck.
 	- Tool: netsniff-ng
 	- Required skills: C
 	- Difficulty: Hard
 
 
 - Better obfuscation method of curvetun's protocol to make it hard for DPIs
-  to detect curvetun:
+  to detect curvetun: Right now, curvetun might be quite hard to detect, but
+  with a little effort, it is still possible for DPIs. Find a way to obfuscate
+  the protocol, so that _either_ it is not distinguishable from random byte
+  garbage _or_ find possible ways to use steganography, thus the encrypted
+  payload stream is hidden in real-world traffic.
 	- Tool: curvetun
 	- Required skills: C
 	- Difficulty: Very Hard
 
 
-- Perform a security review of curvetun:
+- Perform a security review of curvetun: The implementation of curvetun is
+  a proof-of-concept and the origin for the implementation was out of interest.
+  Since this tool is useful for real-world deployment, we need security reviews
+  to make sure that the deployment would be appropriate. Hence, this project
+  concentrates on code reviews and improvement regaring security of curvetun.
 	- Tool: curvetun
-	- Required skills: C
+	- Required skills: C, Crypto
 	- Difficulty: Very Hard
 
 
 - Design and implement a high-level packet filtering language that compiles
-  to bpf code:
+  to bpf code: Right now, filters for netsniff-ng needs to be implemented
+  with our bpfc compiler (language: http://netsniff-ng.org/bpf.pdf), or
+  generated with ``tcpdump -dd <filter>''. We would like a higher level
+  filter description language that transforms the resulting filter into
+  the bpf language that can be translated by our bpfc compiler.
 	- Tool: either inclusion in bpfc or a new one
-	- Required skills: C or Haskell
+	- Required skills: Haskell or C
 	- Difficulty: Very Hard
 
 
 - Implement packet capture, replay and traffic generation for other
-  hardware types (USB, Bluetooth, GSM?, ...)
+  hardware types (USB, Bluetooth, GSM?, ...): netsniff-ng and trafgen
+  supports only Ethernet, but there are a lot of other interesting
+  hardware types that we could support. Very exciting would be GSM,
+  thus it could interact with Harald Welte's Open Source GSM Baseband
+  software implementation (http://bb.osmocom.org/). Other possible
+  layers are Bluetooth or USB, for instance. Extend netsniff-ng's and
+  trafgen's architecture, so that new hardware types can easily be
+  added with out a great performance loss and implement standard
+  functionality of netsniff-ng/trafgen similar to Ethernet on those
+  types.
 	- Tool: netsniff-ng, trafgen (tools need to be extended)
 	- Required skills: C
 	- Difficulty: Very Hard
@@ -139,8 +183,8 @@ improving the toolkit:
 - Design and implement partial reconfigurable hardware for traffic
   generation under 10 Gbps, build an interface to trafgen and offload
   heavily used packets for packet generation (and transmission) in
-  hardware, less heavily used in software (use Xilinx FPGAs)
+  hardware, less heavily used in software (use NetFPGA). Evaluate the
+  performance gain.
 	- Tool: trafgen
-	- Required skills: C, VHDL (plus Xilinx board required)
+	- Required skills: C, VHDL (plus NetFPGA board required)
 	- Difficulty: Very Hard
-
