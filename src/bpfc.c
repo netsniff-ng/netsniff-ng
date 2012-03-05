@@ -35,7 +35,7 @@ bpfc is a tool to generate BPF opcode from a literal expression.
 The generated BPF opcode then can be used to filter out the
 corresponding traffic.
 
-=head1 OPTIONS
+=head1 EXAMPLES
 
 =over
 
