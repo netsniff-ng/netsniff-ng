@@ -44,7 +44,6 @@ ADD_DEFINITIONS(
 	-Wnested-externs
 	-Wredundant-decls
 	-Winvalid-pch
-	-Wlong-long
 	-Wdisabled-optimization
 	-Wstack-protector
 	-Waggregate-return
