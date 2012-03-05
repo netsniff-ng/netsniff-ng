@@ -55,25 +55,6 @@ static int get_appropriate_cpu(void)
 	return cpu;
 }
 
-static int dump_table_row(void *velem)
-{
-	struct map_entry *entry = velem;
-	while (entry) {
-		printf("%p: fd - %d, cpu - %u, next - %p\n",
-		       entry, entry->fd, entry->cpu, entry->next);
-		entry = entry->next;
-	}
-	return 0;
-}
-
-void socket_dump_table(void)
-{
-	printf("dump ---\n");
-	rwlock_rd_lock(&map_lock);
-	for_each_hash(&mapper, dump_table_row);
-	rwlock_unlock(&map_lock);
-}
-
 unsigned int socket_to_cpu(int fd)
 {
 	int cpu = 0;
