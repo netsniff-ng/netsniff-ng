@@ -16,6 +16,90 @@
  *   iptables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT
  */
 
+/*
+
+=head1 NAME
+
+flowtop - provide top-like netfilter connection tracking information
+
+=head1 SYNOPSIS
+
+flowtop [--city-db <path>][--country-db <path>]
+[-T|--tcp][-U|--udp][-v|--version][-h|--help]
+
+=head1 DESCRIPTION
+
+flowtop is a tiny tool to print human-readable
+netfilter connection tracking information.
+
+=head1 EXAMPLES
+
+=over
+
+=item flowtop
+
+Show only TCP flows
+
+=item flowtop --udp
+
+Show only UDP flows
+
+=item flowtop --city-db /usr/share/GeoIP/GeoIPCity.dat
+
+Use the specified GeoIP city database
+
+=item flowtop --country-db /usr/share/GeoIP/GeoIP.dat
+
+Use the specified GeoIP country database
+
+=back
+
+=head1 OPTIONS
+
+=over
+
+=item -T|--tcp
+
+Only show TCP flows (default)
+
+=item -U|--udp
+
+Only show UDP flows
+
+=item --city-db
+
+Path to GeoIP city database
+
+=item --country-db
+
+Path to GeoIP country database
+
+=item -v|--version
+
+Print version.
+
+=item -h|--help
+
+Print help text and lists all options.
+
+=back
+
+=head1 AUTHOR
+
+Written by Daniel Borkmann <daniel@netsniff-ng.org>
+
+=head1 DOCUMENTATION
+
+Documentation by Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+=head1 BUGS
+
+Please report bugs to <bugs@netsniff-ng.org>
+
+=cut
+
+*/
+
 #define _LGPL_SOURCE
 #include <stdio.h>
 #include <stdint.h>
