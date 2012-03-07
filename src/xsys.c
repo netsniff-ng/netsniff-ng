@@ -37,16 +37,17 @@
 #include "die.h"
 #include "xsys.h"
 #include "xstring.h"
+#include "compiler.h"
 
 int af_socket(int af)
 {
 	int sock;
-	if (af != AF_INET && af != AF_INET6) {
+	if (unlikely(af != AF_INET && af != AF_INET6)) {
 		whine("Wrong AF socket type! Falling back to AF_INET\n");
 		af = AF_INET;
 	}
 	sock = socket(af, SOCK_DGRAM, 0);
-	if (sock < 0)
+	if (unlikely(sock < 0))
 		panic("Creation AF socket failed!\n");
 	return sock;
 }
@@ -54,12 +55,12 @@ int af_socket(int af)
 int af_raw_socket(int af, int proto)
 {
 	int sock;
-	if (af != AF_INET && af != AF_INET6) {
+	if (unlikely(af != AF_INET && af != AF_INET6)) {
 		whine("Wrong AF socket type! Falling back to AF_INET\n");
 		af = AF_INET;
 	}
 	sock = socket(af, SOCK_RAW, proto);
-	if (sock < 0)
+	if (unlikely(sock < 0))
 		panic("Creation AF socket failed!\n");
 	return sock;
 }
@@ -67,7 +68,7 @@ int af_raw_socket(int af, int proto)
 int pf_socket(void)
 {
 	int sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-	if (sock < 0)
+	if (unlikely(sock < 0))
 		panic("Creation of PF socket failed!\n");
 	return sock;
 }
@@ -75,7 +76,7 @@ int pf_socket(void)
 int set_nonblocking(int fd)
 {
 	int ret = fcntl(fd, F_SETFL, fcntl(fd, F_GETFD, 0) | O_NONBLOCK);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		panic("Cannot fcntl!\n");
 	return 0;
 }
@@ -87,9 +88,9 @@ int set_nonblocking_sloppy(int fd)
 
 int set_reuseaddr(int fd)
 {
-	int one = 1;
-	int ret = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof (one));
-	if (ret < 0)
+	int ret, one = 1;
+	ret = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof (one));
+	if (unlikely(ret < 0))
 		panic("Cannot reuse addr!\n");
 	return 0;
 }
@@ -153,18 +154,14 @@ int wireless_tx_power(const char *ifname)
 {
 	int ret, sock, tx_power;
 	struct iwreq iwr;
-
 	sock = af_socket(AF_INET);
-
 	memset(&iwr, 0, sizeof(iwr));
 	strlcpy(iwr.ifr_name, ifname, IFNAMSIZ);
-
 	ret = ioctl(sock, SIOCGIWTXPOW, &iwr);
 	if (!ret)
 		tx_power = iwr.u.txpower.value;
 	else 
 		tx_power = 0;
-
 	close(sock);
 	return ret;
 }
@@ -551,19 +548,24 @@ int poll_error_maybe_die(int sock, struct pollfd *pfd)
 	return POLL_NEXT_PKT;
 }
 
-static inline const char *next_token(const char *q, int sep)
+static inline char *next_token(char *q, int sep)
 {
 	if (q)
 		q = strchr(q, sep);
+		/*
+		 * glibc defines this as a macro and gcc throws a false
+		 * positive ``logical ‘&&’ with non-zero constant will
+		 * always evaluate as true'' in older versions.
+		 */
 	if (q)
 		q++;
-	return (q);
+	return q;
 }
 
-int set_cpu_affinity(const char *str, int inverted)
+int set_cpu_affinity(char *str, int inverted)
 {
 	int ret, i, cpus;
-	const char *p, *q;
+	char *p, *q;
 	cpu_set_t cpu_bitmask;
 	q = str;
 	cpus = get_number_cpus();
@@ -574,7 +576,7 @@ int set_cpu_affinity(const char *str, int inverted)
 		unsigned int a;	 /* Beginning of range */
 		unsigned int b;	 /* End of range */
 		unsigned int s;	 /* Stride */
-		const char *c1, *c2;
+		char *c1, *c2;
 		if (sscanf(p, "%u", &a) < 1)
 			return -EINVAL;
 		b = a;
