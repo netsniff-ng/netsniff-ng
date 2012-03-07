@@ -52,19 +52,16 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 	ssize_t rlen, err, clen;
 	struct ct_proto *hdr;
 	size_t off = sizeof(struct ct_proto) + crypto_box_zerobytes;
-
 	if (!buff || len <= off) {
 		errno = EINVAL;
 		return;
 	}
-
 	errno = 0;
 	memset(buff, 0, len);
 	while ((rlen = read(sfd, buff + off, len - off)) > 0) {
 		hdr = (struct ct_proto *) buff;
 		memset(hdr, 0, sizeof(*hdr));
 		hdr->flags = 0;
-
 		clen = curve25519_encode(c, p, (unsigned char *) (buff + off -
 					 crypto_box_zerobytes), (rlen +
 					 crypto_box_zerobytes), (unsigned char **)
@@ -73,29 +70,22 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 			syslog(LOG_ERR, "UDP tunnel encrypt error!\n");
 			goto close;
 		}
-
 		hdr->payload = htons((uint16_t) clen);
-
 		state = 1;
 		setsockopt(dfd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
-
 		err = write_exact(dfd, hdr, sizeof(struct ct_proto), 0);
 		if (unlikely(err < 0))
 			syslog(LOG_ERR, "Error writing tunnel data to net: %s\n",
 			       strerror(errno));
-
 		err = write_exact(dfd, cbuff, clen, 0);
 		if (unlikely(err < 0))
 			syslog(LOG_ERR, "Error writing tunnel data to net: %s\n",
 			       strerror(errno));
-
 		state = 0;
 		setsockopt(dfd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
-
 		errno = 0;
 		memset(buff, 0, len);
 	}
-
 	return;
 close:
 	closed_by_server = 1;
@@ -110,19 +100,15 @@ static void handler_udp_net_to_tun(int sfd, int dfd, struct curve25519_proto *p,
 	struct ct_proto *hdr;
 	struct sockaddr_storage naddr;
 	socklen_t nlen = sizeof(naddr);
-
 	if (!buff || !len) {
 		errno = EINVAL;
 		return;
 	}
-
 	memset(&naddr, 0, sizeof(naddr));
-
 	errno = 0;
 	while ((rlen = recvfrom(sfd, buff, len, 0, (struct sockaddr *) &naddr,
 				&nlen)) > 0) {
 		hdr = (struct ct_proto *) buff;
-
 		if (unlikely(rlen < sizeof(struct ct_proto)))
 			goto close;
 		if (unlikely(rlen - sizeof(*hdr) != ntohs(hdr->payload)))
@@ -131,7 +117,6 @@ static void handler_udp_net_to_tun(int sfd, int dfd, struct curve25519_proto *p,
 			goto close;
 		if (hdr->flags & PROTO_FLAG_EXIT)
 			goto close;
-
 		clen = curve25519_decode(c, p, (unsigned char *) buff +
 					 sizeof(struct ct_proto),
 					 rlen - sizeof(struct ct_proto),
@@ -146,10 +131,8 @@ static void handler_udp_net_to_tun(int sfd, int dfd, struct curve25519_proto *p,
 		if (unlikely(err < 0))
 			syslog(LOG_ERR, "Error writing net data to tunnel: %s\n",
 			       strerror(errno));
-
 		errno = 0;
 	}
-
 	return;
 close:
 	closed_by_server = 1;
@@ -164,19 +147,16 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 	ssize_t rlen, err, clen;
 	struct ct_proto *hdr;
 	size_t off = sizeof(struct ct_proto) + crypto_box_zerobytes;
-
 	if (!buff || len <= off) {
 		errno = EINVAL;
 		return;
 	}
-
 	errno = 0;
 	memset(buff, 0, len);
 	while ((rlen = read(sfd, buff + off, len - off)) > 0) {
 		hdr = (struct ct_proto *) buff;
 		memset(hdr, 0, sizeof(*hdr));
 		hdr->flags = 0;
-
 		clen = curve25519_encode(c, p, (unsigned char *) (buff + off -
 					 crypto_box_zerobytes), (rlen +
 					 crypto_box_zerobytes), (unsigned char **)
@@ -185,29 +165,22 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 			syslog(LOG_ERR, "TCP tunnel encrypt error!\n");
 			goto close;
 		}
-
 		hdr->payload = htons((uint16_t) clen);
-
 		state = 1;
 		setsockopt(dfd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
-
 		err = write_exact(dfd, hdr, sizeof(struct ct_proto), 0);
 		if (unlikely(err < 0))
 			syslog(LOG_ERR, "Error writing tunnel data to net: %s\n",
 			       strerror(errno));
-
 		err = write_exact(dfd, cbuff, clen, 0);
 		if (unlikely(err < 0))
 			syslog(LOG_ERR, "Error writing tunnel data to net: %s\n",
 			       strerror(errno));
-
 		state = 0;
 		setsockopt(dfd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
-
 		errno = 0;
 		memset(buff, 0, len);
 	}
-
 	return;
 close:
 	closed_by_server = 1;
@@ -222,16 +195,13 @@ static void handler_tcp_net_to_tun(int sfd, int dfd, struct curve25519_proto *p,
 	char *cbuff;
 	ssize_t rlen, err, clen;
 	struct ct_proto *hdr;
-
 	if (!buff || !len) {
 		errno = EINVAL;
 		return;
 	}
-
 	errno = 0;
 	while ((rlen = handler_tcp_read(sfd, buff, len)) > 0) {
 		hdr = (struct ct_proto *) buff;
-
 		if (unlikely(rlen < sizeof(struct ct_proto)))
 			goto close;
 		if (unlikely(rlen - sizeof(*hdr) != ntohs(hdr->payload)))
@@ -240,7 +210,6 @@ static void handler_tcp_net_to_tun(int sfd, int dfd, struct curve25519_proto *p,
 			goto close;
 		if (hdr->flags & PROTO_FLAG_EXIT)
 			goto close;
-
 		clen = curve25519_decode(c, p, (unsigned char *) buff +
 					 sizeof(struct ct_proto),
 					 rlen - sizeof(struct ct_proto),
@@ -255,10 +224,8 @@ static void handler_tcp_net_to_tun(int sfd, int dfd, struct curve25519_proto *p,
 		if (unlikely(err < 0))
 			syslog(LOG_ERR, "Error writing net data to tunnel: %s\n",
 			       strerror(errno));
-
 		errno = 0;
 	}
-
 	return;
 close:
 	closed_by_server = 1;
@@ -273,25 +240,19 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 	struct ct_proto hdr;
 	char username[256], path[PATH_MAX], *us, *cbuff, *msg;
 	unsigned char auth[crypto_auth_hmacsha512256_BYTES], *token;
-
 	mt_init_by_random_device();
-
 	memset(&hdr, 0, sizeof(hdr));
 	hdr.flags |= PROTO_FLAG_INIT;
-
 	memset(path, 0, sizeof(path));
 	slprintf(path, sizeof(path), "%s/%s", home, FILE_USERNAM);
 	memset(username, 0, sizeof(username));
-
 	fd2 = open_or_die(path, O_RDONLY);
 	err = read(fd2, username, sizeof(username));
 	username[sizeof(username) - 1] = 0;
 	close(fd2);
-
 	token = get_serv_store_entry_auth_token();
 	if (!token)
 		syslog_panic("Cannot find auth token for server!\n");
-
 	us_len = sizeof(struct username_struct) + crypto_box_zerobytes;
 	us = xzmalloc(us_len);
 	err = username_msg(username, strlen(username) + 1,
@@ -306,9 +267,7 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 	err = crypto_auth_hmacsha512256(auth, (unsigned char *) cbuff, clen, token);
 	if (unlikely(err))
 		syslog_panic("Cannot create init hmac message!\n");
-
 	assert(132 == clen + sizeof(auth));
-
 	pad = mt_rand_int32() % 200;
 	msg_len = clen + sizeof(auth) + pad;
 	msg = xzmalloc(msg_len);
@@ -317,21 +276,17 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 	for (i = sizeof(auth) + clen; i < msg_len; ++i)
 		msg[i] = (uint8_t) mt_rand_int32();
 	hdr.payload = htons((uint16_t) msg_len);
-
 	state = 1;
 	setsockopt(fd, udp ? IPPROTO_UDP : IPPROTO_TCP,
 		   udp ? UDP_CORK : TCP_CORK, &state, sizeof(state));
-
 	err = write_exact(fd, &hdr, sizeof(struct ct_proto), 0);
 	if (unlikely(err < 0))
 		syslog(LOG_ERR, "Error writing init data to net: %s\n",
 		       strerror(errno));
-
 	err = write_exact(fd, msg, msg_len, 0);
 	if (unlikely(err < 0))
 		syslog(LOG_ERR, "Error writing init data to net: %s\n",
 		       strerror(errno));
-
 	state = 0;
 	setsockopt(fd, udp ? IPPROTO_UDP : IPPROTO_TCP,
 		   udp ? UDP_CORK : TCP_CORK, &state, sizeof(state));
@@ -343,11 +298,9 @@ static void notify_close(int fd)
 {
 	ssize_t err;
 	struct ct_proto hdr;
-
 	memset(&hdr, 0, sizeof(hdr));
 	hdr.flags |= PROTO_FLAG_EXIT;
 	hdr.payload = 0;
-
 	err = write_exact(fd, &hdr, sizeof(hdr), 0);
 	if (unlikely(err < 0))
 		syslog(LOG_ERR, "Error writing close: %s\n",
@@ -365,28 +318,23 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 	struct curve25519_struct *c;
 	char *buff;
 	size_t blen = TUNBUFF_SIZ; //FIXME
-
 retry:
 	if (!retry_server) {
 		openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
 		syslog(LOG_INFO, "curvetun client booting!\n");
 	}
-
 	c = xmalloc(sizeof(struct curve25519_struct));
 	ret = curve25519_alloc_or_maybe_die(c);
 	if (ret < 0)
 		syslog_panic("Cannot init curve!\n");
-
 	p = get_serv_store_entry_proto_inf();
 	if (!p)
 		syslog_panic("Cannot proto!\n");
-
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;
 	hints.ai_socktype = udp ? SOCK_DGRAM : SOCK_STREAM;
 	hints.ai_protocol = udp ? IPPROTO_UDP : IPPROTO_TCP;
 	hints.ai_flags = AI_NUMERICSERV;
-
 	ret = getaddrinfo(host, port, &hints, &ahead);
 	if (ret < 0) {
 		syslog(LOG_ERR, "Cannot get address info! Retry!\n");
@@ -398,7 +346,6 @@ retry:
 		sleep(1);
 		goto retry;
 	}
-
 	for (ai = ahead; ai != NULL && fd < 0; ai = ai->ai_next) {
 		if (ai->ai_family == PF_INET6)
 			saddr6 = (struct sockaddr_in6 *) ai->ai_addr;
@@ -423,7 +370,6 @@ retry:
 				   sizeof(one));
 		}
 	}
-
 	freeaddrinfo(ahead);
 	if (fd < 0) {
 		syslog(LOG_ERR, "Cannot create socket! Retry!\n");
@@ -435,24 +381,19 @@ retry:
 		sleep(1);
 		goto retry;
 	}
-
 	if (!retry_server)
 		tunfd = tun_open_or_die(dev ? dev : DEVNAME_CLIENT,
 					IFF_TUN | IFF_NO_PI);
-
 	set_nonblocking_sloppy(fd);
 	set_nonblocking_sloppy(tunfd);
-
 	memset(fds, 0, sizeof(fds));
 	fds[0].fd = fd;
 	fds[1].fd = tunfd;
 	fds[0].events = POLLIN;
 	fds[1].events = POLLIN;
-
 	buff = xmalloc_aligned(blen, 64);
 	notify_init(fd, udp, p, c, home);
 	syslog(LOG_INFO, "curvetun client ready!\n");
-
 	while (likely(!sigint && !closed_by_server)) {
 		poll(fds, 2, -1);
 		for (i = 0; i < 2; ++i) {
@@ -475,7 +416,6 @@ retry:
 			}
 		}
 	}
-
 	syslog(LOG_INFO, "curvetun client prepare shut down!\n");
 	if (!closed_by_server)
 		notify_close(fd);
@@ -483,7 +423,6 @@ retry:
 	close(fd);
 	curve25519_free(c);
 	xfree(c);
-
 	/* tundev still active */
 	if (closed_by_server && !sigint) {
 		syslog(LOG_ERR, "curvetun connection retry attempt!\n");
@@ -493,11 +432,8 @@ retry:
 		sleep(1);
 		goto retry;
 	}
-
 	close(tunfd);
 	syslog(LOG_INFO, "curvetun client shut down!\n");
 	closelog();
-
 	return 0;
 }
-
