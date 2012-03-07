@@ -26,7 +26,7 @@ extern __hidden int xdup(int fd);
 
 #define xfree(ptr)							\
 do {									\
-        if ((ptr) == NULL)						\
+        if (unlikely((ptr) == NULL))					\
                 panic("xfree: NULL pointer given as argument\n");	\
         free((ptr));							\
 	(ptr) = NULL;							\
