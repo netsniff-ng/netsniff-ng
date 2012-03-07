@@ -19,6 +19,8 @@ ADD_DEFINITIONS(
 	-fpie
 	-std=gnu99
 	-fno-strict-aliasing
+	-D_FORTIFY_SOURCE=2
+	-D_REENTRANT
 	-Wall
 	-Wundef
 	-Wstrict-prototypes
