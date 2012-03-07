@@ -15,6 +15,7 @@
 #include <stdint.h>
 
 #include "xstring.h"
+#include "compiler.h"
 
 size_t strlcpy(char *dest, const char *src, size_t size)
 {
@@ -36,6 +37,15 @@ int slprintf(char *dst, size_t size, const char *fmt, ...)
 	dst[size - 1] = '\0';
 	va_end(ap);
 	return ret;
+}
+
+noinline void *xmemset(void *s, int c, size_t n)
+{
+	size_t i;
+	uint8_t *ptr = s;
+	for (i = 0; i < n; ++i)
+		ptr[i] = (uint8_t) c;
+	return ptr;
 }
 
 char *getuint(char *in, uint32_t *out)

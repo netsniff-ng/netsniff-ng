@@ -11,12 +11,14 @@
 
 #include <stdint.h>
 #include "die.h"
+#include "compiler.h"
 
+extern size_t strlcpy(char *dest, const char *src, size_t size);
+extern int slprintf(char *dst, size_t size, const char *fmt, ...);
+extern noinline void *xmemset(void *s, int c, size_t n);
 extern char *getuint(char *in, uint32_t *out);
 extern char *strtrim_right(register char *p, register char c);
 extern char *strtrim_left(register char *p, register char c);
-extern size_t strlcpy(char *dest, const char *src, size_t size);
-extern int slprintf(char *dst, size_t size, const char *fmt, ...);
 
 static inline char *skips(char *p)
 {
