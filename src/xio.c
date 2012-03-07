@@ -79,7 +79,6 @@ ssize_t write_or_die(int fd, const void *buf, size_t len)
 			die();
 		panic("Cannot write to descriptor!");
 	}
-
 	return ret;
 }
 
