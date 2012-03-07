@@ -252,7 +252,6 @@ int ethtool_drvinf(const char *ifname, struct ethtool_drvinfo *drvinf)
 int device_bitrate(const char *ifname)
 {
 	int speed_c, speed_w;
-	/* Probe for speed rates */
 	speed_c = ethtool_bitrate(ifname);
 	speed_w = wireless_bitrate(ifname);
 	return (speed_c == 0 ? speed_w : speed_c);
@@ -534,7 +533,6 @@ int poll_error_maybe_die(int sock, struct pollfd *pfd)
 	if (pfd->revents & POLLERR) {
 		int tmp;
 		errno = 0;
-		/* recv is more specififc on the error */
 		if (recv(sock, &tmp, sizeof(tmp), MSG_PEEK) >= 0)
 			return POLL_NEXT_PKT;
 		if (errno == ENETDOWN)
@@ -555,7 +553,8 @@ static inline char *next_token(char *q, int sep)
 		/*
 		 * glibc defines this as a macro and gcc throws a false
 		 * positive ``logical ‘&&’ with non-zero constant will
-		 * always evaluate as true'' in older versions.
+		 * always evaluate as true'' in older versions. See:
+		 * http://gcc.gnu.org/bugzilla/show_bug.cgi?id=36513
 		 */
 	if (q)
 		q++;
