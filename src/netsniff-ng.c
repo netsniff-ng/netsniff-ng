@@ -68,19 +68,21 @@ Use BPF filter file from bpfc.
 
 =item -t|--type <type>
 
-Only handle packets of defined type:
+=over
+
+=item Only handle packets of defined type:
 
 =over
 
-=item host
+=item - broadcast
 
-=item broadcast
+=item - multicast
 
-=item multicast
+=item - others
 
-=item others
+=item - outgoing
 
-=item outgoing
+=back
 
 =back
 
