@@ -48,6 +48,11 @@ Capture traffic from interface 'eth0' and save it pcap file 'dump.pcap'
 
 Capture HTTP traffic from any interface and print its payload on stdout
 
+=item netsniff-ng --in wlan0 --bind-cpu 0,1
+
+Capture all traffic from wlan0 interface.
+Schedule process on CPU 0 and 1.
+
 =back
 
 =head1 OPTIONS
@@ -90,6 +95,83 @@ Use BPF filter file from bpfc.
 
 Dump interval in seconds. if -o is a directory, a new pcap will be created at each interval.
 The older files are left untouched. (default value: 60 seconds)
+
+=item -s|--silent
+
+Do not print captured packets to stdout.
+
+=item -J|--jumbo-support
+
+Support for 64KB Super Jumbo Frames.
+
+=item -n|--num <uint>
+
+When zerp, capture/replay until SIGINT is received (default).
+When non-zero, capture/replay the number of packets.
+
+=item -r|--rand
+
+Randomize packet forwarding order (replay mode only).
+
+=item -M|--no-promisc
+
+Do not place the interface in promiscuous mode.
+
+=item -m|--mmap
+
+Mmap pcap file i.e., for replaying. Default: scatter/gather I/O.
+
+=item -c|--clrw
+
+Instead of using scatter/gather I/O use slower read(2)/write(2) I/O.
+
+=item -S|--ring-size <size>
+
+Manually set ring size in KB/MB/GB, e.g. '10MB'.
+
+=item -k|--kernel-pull <uint>
+
+Kernel pull from user interval in microseconds. Default is 10us. (replay mode only).
+
+=item -b|--bind-cpu <cpu>
+
+Bind to specific CPU (or CPU-range).
+
+=item -B|--unbind-cpu <cpu>
+
+Forbid to use specific CPU (or CPU-range).
+
+=item -H|--prio-high
+
+Run the process in high-priority mode.
+
+=item -Q|--notouch-irq
+
+Do not touch IRQ CPU affinity of NIC.
+
+=item -q|--less
+
+Print less-verbose packet information.
+
+=item -l|--payload
+
+Only print human-readable payload.
+
+=item -x|--payload-hex
+
+Only print payload in hex format.
+
+=item -C|--c-style
+
+Print full packet in trafgen/C style hex format.
+
+=item -X|--all-hex
+
+Print packets in hex format.
+
+=item -N|--no-payload
+
+Only print packet header.
 
 =item -v|--version
 
@@ -864,10 +946,10 @@ static void help(void)
 	printf("  -M|--no-promisc             No promiscuous mode for netdev\n");
 	printf("  -m|--mmap                   Mmap pcap file i.e., for replaying\n");
 	printf("                              Default: scatter/gather I/O\n");
-	printf("  -c|--clrw                   Instead s/g I/O use slower read/write I/O\n");
+	printf("  -c|--clrw                   Instead s/g I/O use slower read(2)/write(2) I/O\n");
 	printf("  -S|--ring-size <size>       Manually set ring size to <size>:\n");
 	printf("                              mmap space in KB/MB/GB, e.g. \'10MB\'\n");
-	printf("  -k|--kernel-pull <int>      Kernel pull from user interval in us\n");
+	printf("  -k|--kernel-pull <uint>     Kernel pull from user interval in us\n");
 	printf("                              Default is 10us where the TX_RING\n");
 	printf("                              is populated with payload from uspace\n");
 	printf("  -b|--bind-cpu <cpu>         Bind to specific CPU (or CPU-range)\n");
