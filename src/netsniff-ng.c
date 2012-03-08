@@ -20,6 +20,101 @@
  *        Chapter 'Three is Company'.
  */
 
+/*
+
+=head1 NAME
+
+netsniff-ng - the packet sniffing beast
+
+=head1 SYNOPSIS
+
+netsniff-ng
+
+=head1 DESCRIPTION
+
+The first sniffer that invoked both, the zero-copy RX_RING as well as
+the zero-copy TX_RING for high-performance network I/O and scatter/gather
+or mmaped PCAP I/O.
+
+=head1 EXAMPLES
+
+=over
+
+=item netsniff-ng --in eth0 --out dump.pcap
+
+Capture traffic from interface 'eth0' and save it pcap file 'dump.pcap'
+
+=item netsniff-ng --in any --filter http.bpf --payload
+
+Capture HTTP traffic from any interface and print its payload on stdout
+
+=back
+
+=head1 OPTIONS
+
+=over
+
+=item -i|-d|--dev|--in <dev|pcap>
+
+Input source. Can be a network device or pcap file.
+
+=item -o|--out <dev|pcap|dir>
+
+Output sink. Can be a network device, pcap file or a directory.
+
+=item -f|--filter <bpf-file>
+
+Use BPF filter file from bpfc.
+
+=item -t|--type <type>
+
+Only handle packets of defined type:
+
+=over
+
+=item host
+
+=item broadcast
+
+=item multicast
+
+=item others
+
+=item outgoing
+
+=back
+
+=item -F|--interval <int>
+
+Dump interval in seconds. if -o is a directory, a new pcap will be created at each interval.
+The older files are left untouched. (default value: 60 seconds)
+
+=item -v|--version
+
+Print version.
+
+=item -h|--help
+
+Print help text and lists all options.
+
+=back
+
+=head1 AUTHOR
+
+Written by Daniel Borkmann <daniel@netsniff-ng.org> and Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+=head1 DOCUMENTATION
+
+Documentation by Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+=head1 BUGS
+
+Please report bugs to <bugs@netsniff-ng.org>
+
+=cut
+
+*/
+
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
