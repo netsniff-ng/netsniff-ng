@@ -28,7 +28,14 @@ netsniff-ng - the packet sniffing beast
 
 =head1 SYNOPSIS
 
-netsniff-ng
+netsniff-ng -i|-d|--dev|--in <dev|pcap> -o|--out <dev|pcap|dir>
+[-f|--filter <bpf-file>][-t|--type <type>][-F|--interval <uint>]
+[-s|--silent][-J|--jumbo-support][-n|--num <uint>][-r|--rand]
+[-M|--no-promisc][-m|--mmap | -c|--clrw][-S|--ring-size <size>]
+[-k|--kernel-pull <uint>][-b|--bind-cpu <cpu> | -B|--unbind-cpu <cpu>]
+[-H|--prio-high][-Q|--notouch-irq][-q|--less | -l|--payload |
+-x|--payload-hex | -C|--c-style | -X|--all-hex | -N|--no-payload]
+[-v|--version][-h|--help]
 
 =head1 DESCRIPTION
 
@@ -91,7 +98,7 @@ Use BPF filter file from bpfc.
 
 =back
 
-=item -F|--interval <int>
+=item -F|--interval <uint>
 
 Dump interval in seconds. if -o is a directory, a new pcap will be created at each interval.
 The older files are left untouched. (default value: 60 seconds)
@@ -934,7 +941,7 @@ static void help(void)
 	printf("  -f|--filter <bpf-file>      Use BPF filter file from bpfc\n");
 	printf("  -t|--type <type>            Only handle packets of defined type:\n");
 	printf("                              host|broadcast|multicast|others|outgoing\n");
-	printf("  -F|--interval <int>         Dump interval in sec if -o is a directory where\n");
+	printf("  -F|--interval <uint>        Dump interval in sec if -o is a directory where\n");
 	printf("                              pcap files should be stored (default: 60)\n");
 	printf("  -s|--silent                 Do not print captured packets\n");
 	printf("  -J|--jumbo-support          Support for 64KB Super Jumbo Frames\n");
