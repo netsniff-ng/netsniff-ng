@@ -132,6 +132,18 @@ improving the toolkit:
 	- Difficulty: Hard
 
 
+- Take Qualcomm's uio-dma and uio-ixgbe and integrate it next to the current
+  (driver-independant) zero-copy approach into netsniff-ng and trafgen, so that
+  the user can choose which approach to use. We assume a performance gain from
+  uio-dma and uio-ixgbe since it directly maps DMA mem which is not necessarily
+  the case in RX_RING / TX_RING. Hence, it could give a good speed up for both
+  tools (under the drawback that it will be driver-dependant).
+  (https://opensource.qualcomm.com/gitphp/index.php)
+	- Tool: netsniff-ng, trafgen
+	- Required skills: C, Linux Kernel, NIC for ixgbe driver
+	- Difficulty: Hard - Very Hard
+
+
 - Better obfuscation method of curvetun's protocol to make it hard for DPIs
   to detect curvetun: Right now, curvetun might be quite hard to detect, but
   with a little effort, it is still possible for DPIs. Find a way to obfuscate
