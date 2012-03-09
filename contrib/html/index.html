@@ -123,7 +123,7 @@ netsniff-ng is a free, performant Linux networking toolkit.
 <br><br>
 The gain of performance is reached by zero-copy mechanisms, so that on packet reception <i>and</i> transmission the kernel does not need to copy packets from kernel space to user space and vice versa.
 <br><br>
-For this purpose, the netsniff-ng toolkit is libpcap independent (note: libpcap starting from 1.0.0 also supports zero-copy for capturing), but nevertheless supports the pcap file format for capturing, replaying and performing offline-analysis of pcap dumps. Furthermore, we are focussing on building a robust and clean analyzer and utilities that complete netsniff-ng as a support for network development, debugging or network reconnaissance.
+For this purpose, the netsniff-ng toolkit is libpcap independent, but nevertheless supports the pcap file format for capturing, replaying and performing offline-analysis of pcap dumps. Furthermore, we are focussing on building a robust and clean analyzer and utilities that complete netsniff-ng as a support for network development, debugging or network reconnaissance.
 <br><br>
 The netsniff-ng toolkit consists of the following utilities:
 <ul>
@@ -135,6 +135,8 @@ The netsniff-ng toolkit consists of the following utilities:
   <li><b>curvetun</b>, a lightweight multiuser IP tunnel based on elliptic curve cryptography</li>
   <li><b>ashunt</b>, an Autonomous System (AS) trace route and ISP testing utility</li>
 </ul>
+<p>
+(Note: <a href="http://www.tcpdump.org/">libpcap</a> starting from 1.0.0 now also supports zero-copy, but for capturing only! netsniff-ng's pcap files can also be opened with tools like <a href="http://www.wireshark.org/">Wireshark</a>, and vice versa!)
 
 <h2>Development</h2>
 <p>
@@ -166,11 +168,11 @@ Currently, netsniff-ng is only available for Linux platforms. If you have a port
 
 <h2>Documentation</h2>
 <p>
-The <a href="doc/netsniff-ng.html">manpage</a> (<a href="doc/netsniff-ng.pdf">PDF</a>) of each stable release of netsniff-ng will cover all of the usage details. We also have a <a href="faq.html">frequently asked question</a> page. Furthermore, the documents within the source will give you some useful information.
+The man page of each stable release of netsniff-ng will cover all of the usage details. It is included within the source code distribution package. We also have a <a href="faq.html">frequently asked question</a> page. Furthermore, the documents within the repository will give you some useful information.
 <p>
 To dig into the inner workings of the Berkeley Packet Filter architecture have a look at <a href="bpf.pdf">this</a>.
 <p>
-Documentation about the packet_mmap architecture with pf_packet sockets for the Linux kernel can be downloaded from <a href="http://www.kernel.org/">http://www.kernel.org/</a> under <a href="http://lingrok.org/source/xref/linux-2.6-linus/Documentation/networking/packet_mmap.txt">packet_mmap.txt</a>.
+Documentation about the ``packet_mmap'' architecture with ``pf_packet'' sockets for the Linux kernel can be downloaded from <a href="http://www.kernel.org/">http://www.kernel.org/</a> under <a href="http://lxr.linux.no/linux+v3.2.9/Documentation/networking/packet_mmap.txt">packet_mmap.txt</a>.
 
 <h2>Support</h2>
 <p>
