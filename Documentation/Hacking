@@ -4,8 +4,10 @@ hacking on anything:
 
  $ git://github.com/gnumaniacs/netsniff-ng.git
 
-(Or fork it into your local repository on Github:
- https://github.com/gnumaniacs/netsniff-ng)
+The best would be if you already have a GitHub account so that you can
+fork it directly into your local repository on Github. Hence login and
+click 'fork' on https://github.com/gnumaniacs/netsniff-ng . (After your
+changes you can send us mail with a pull request, for instance.)
 
 The best way to propose your ideas is to outline them in a short mail to
 workgroup@netsniff-ng.org or to our public mailing list address
