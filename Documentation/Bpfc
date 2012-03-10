@@ -1,7 +1,7 @@
 What is bpfc?
 /////////////
 
-(extract from ftp://ftp.tik.ee.ethz.ch/pub/students/2011-FS/MA-2011-01.pdf)
+(derived from ftp://ftp.tik.ee.ethz.ch/pub/students/2011-FS/MA-2011-01.pdf)
 
 Within this work, we have developed a Berkeley Packet Filter (BPF) compiler.
 Berkeley Packet Filters as described in literature [31] are small
