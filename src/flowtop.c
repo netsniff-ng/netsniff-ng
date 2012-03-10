@@ -2,12 +2,20 @@
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
  * Copyright 2011 Daniel Borkmann.
+ * Copyright 2011 Emmanuel Roullit.
  * Subject to the GPL, version 2.
  *
  * A tiny tool to provide top-like netfilter connection tracking information.
- * Regarding locking the current code is just broken. It also needs clean ups
- * in general.
  *
+ *   The Dark Lord has Nine. But we have One, mightier than they: the White
+ *   Rider. He has passed through the fire and the abyss, and they shall
+ *   fear him. We will go where he leads.
+ *
+ *     -- The Lord of the Rings, Aragorn,
+ *        Chapter 'The White Rider'.
+ */
+
+/*
  * Debian: apt-get install libnetfilter-conntrack3 libnetfilter-conntrack-dev
  *                         liburcu0 liburcu-dev
  *
