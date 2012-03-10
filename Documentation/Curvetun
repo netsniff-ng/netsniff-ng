@@ -236,6 +236,7 @@ client# route add default gw 10.0.0.1
 client# route del default gw 5.6.7.9
 
 ... and there you go, now open your browser on the client side and surf the
-web or do whatever you want. All your traffic will then be tunneled encrypted
-to your server.
+web or do whatever you want. For instance, with curvetun we were able to watch
+Youtube videos in FullHD without problems. All your traffic will then be
+tunneled encrypted to your server.
 
