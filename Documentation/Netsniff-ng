@@ -36,7 +36,7 @@ your kernel sources.
 If you want to run netsniff-ng in combination with -f or --filter <file> you
 need to build a so called Berkeley Packet Filter program within a plaintext
 file (here, marked as: <file>). The Berkeley Packet Filters language
-description can be obtained from netsniff-ngs documentation section. One
+description can be obtained from netsniff-ng's documentation section. One
 way to create a custom filter is to use our bpfc compiler. Read the 'Bpfc'
 documentation on how you can do this. In this case you have all the freedom
 to build filters for your needs. The alternative way is to use tcpdumps -dd
