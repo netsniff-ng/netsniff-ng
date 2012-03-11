@@ -6,7 +6,7 @@ ashunt was that unlike traceroute or tcptraceroute it should not only
 display hops, but also their AS numbers they belong to as well as physical
 locations and other useful information.
 
-Have a short look at an example output of ashunt. We're doing a AS trace
+Have a short look at an example output of ashunt. We're doing an AS trace
 route to baidu.com (note: hop 1 till 6 have been removed):
 
 # ashunt -i eth0 -N -E -S -H baidu.com
