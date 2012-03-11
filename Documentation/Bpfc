@@ -229,3 +229,5 @@ verbosely:
   { 0x6, 0, 0, 0x000fffff },
   { 0x6, 0, 0, 0x00000000 },
 
+[31] Copy of original BPF paper: http://netsniff-ng.org/bpf.pdf
+
