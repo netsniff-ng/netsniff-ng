@@ -1,9 +1,7 @@
 PROJECT(netsniff-ng C)
 
 SET(BUILD_STRING "generic")
-
 FIND_PACKAGE(Threads)
-
 IF (CMAKE_HAVE_PTHREAD_CREATE)
 	ADD_EXECUTABLE(${PROJECT_NAME} 	../hash.c
 					../dissector.c
@@ -28,11 +26,23 @@ IF (CMAKE_HAVE_PTHREAD_CREATE)
 		-D_FILE_OFFSET_BITS=64
 		-D_LARGEFILE_SOURCE
 		-D_LARGEFILE64_SOURCE)
-
+	ADD_CUSTOM_TARGET(ManPages ALL)
+	ADD_CUSTOM_COMMAND(
+		TARGET ManPages
+		SOURCE ../../netsniff-ng.c
+		COMMAND pod2man -s 8 ../../netsniff-ng.c ${CMAKE_CURRENT_BINARY_DIR}/netsniff-ng.8
+		OUTPUTS ${CMAKE_CURRENT_BINARY_DIR}/netsniff-ng.8
+	)
+	ADD_CUSTOM_COMMAND(
+		TARGET ManPages
+		SOURCE ManPages
+		DEPENDS ../../netsniff-ng.c
+	)
 	TARGET_LINK_LIBRARIES(netsniff-ng ${CMAKE_THREAD_LIBS_INIT})
 	FILE(GLOB rules_files "../examples/bpfc/*.bpf")
 	INSTALL(FILES ${rules_files} DESTINATION ${CONFIG_INSTALL_PATH}/rules/)
 	INSTALL(FILES ../conf/ether.conf ../conf/tcp.conf ../conf/udp.conf ../conf/oui.conf DESTINATION ${CONFIG_INSTALL_PATH})
+	INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/netsniff-ng.8 DESTINATION share/man/man8)
 	INSTALL(TARGETS ${PROJECT_NAME} DESTINATION ${EXECUTABLE_INSTALL_PATH})
 ELSE(CMAKE_HAVE_PTHREAD_CREATE)
 	MESSAGE("pthread is missing on target. Skipping ${PROJECT_NAME} build.")
