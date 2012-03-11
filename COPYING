@@ -1,10 +1,12 @@
- Note that the only valid version of the GPL as far as this project
- is concerned is _this_ particular version of the license (i.e. v2, not
- v2.2 or v3.x or whatever), unless explicitly otherwise stated.
+ Note that the only valid version of the GPL as far as this project  is
+ concerned is _this_ particular version of the license (i.e. v2, not  v2.2 or
+ v3.x or whatever), unless explicitly otherwise stated.
 
 			Daniel Borkmann
 
---------------------------------------------------------------------------
+-----------------------------------------------------------------------------
+
+ Copyright (C) 2009-2012  Daniel Borkmann, Emmanuel Roullit and contributors
 
                     GNU GENERAL PUBLIC LICENSE
                        Version 2, June 1991
