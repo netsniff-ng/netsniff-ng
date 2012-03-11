@@ -48,7 +48,7 @@ If you try to create custom socket filters with tcpdump -dd, you have to edit
 the ret opcode (0x6) of the resulting filter, otherwise your payload will be
 cut off on older tcpdump versions:
 
-0x6, 0, 0, 0xFFFFFFFF instead of 0x6, 0, 0, 0x00000060
+ 0x6, 0, 0, 0xFFFFFFFF instead of 0x6, 0, 0, 0x00000060
 
 The Linux kernel now takes skb->len instead of 0xFFFFFFFF. If you do not
 change it, the kernel will take 0x00000060 as buffer length and packets larger
@@ -89,8 +89,7 @@ Broadcoms tg3 and NetXtreme, Intels e1000(e), igb and ixgbe. Since these
 modifications are not official, neither to the kernel, nor to the vendors and
 cover only a small amout of what is out there, we're not doing further
 investigations at the moment. Also, netsniff-ng users have reported similar
-observations as our conclusion. A benchmark with PF_RING in transparent_mode
+observations as our conclusions. A benchmark with PF_RING in transparent_mode
 0 and 1 seems even slower than netsniff-ng and in transparent_mode 2 both have
-they have reported same performance numbers to us. The test was done on a Dell
-PowerEdge 2850.
+comparable performance numbers. The test was done on a Dell PowerEdge 2850.
 
