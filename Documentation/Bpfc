@@ -1,7 +1,7 @@
 What is bpfc?
 /////////////
 
-(extract from ftp://ftp.tik.ee.ethz.ch/pub/students/2011-FS/MA-2011-01.pdf)
+(derived from ftp://ftp.tik.ee.ethz.ch/pub/students/2011-FS/MA-2011-01.pdf)
 
 Within this work, we have developed a Berkeley Packet Filter (BPF) compiler.
 Berkeley Packet Filters as described in literature [31] are small
@@ -228,4 +228,6 @@ verbosely:
   { 0x15, 0, 1, 0x00000806 },
   { 0x6, 0, 0, 0x000fffff },
   { 0x6, 0, 0, 0x00000000 },
+
+[31] Copy of original BPF paper: http://netsniff-ng.org/bpf.pdf
 

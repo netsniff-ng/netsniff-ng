@@ -1,8 +1,9 @@
-netsniff-ng 0.5.6.0
+netsniff-ng 0.5.6
 
-  * netsniff-ng has been completely rewritten! We highly recommend upgrading!
+  * netsniff-ng has been completely rewritten and extended with further
+    tools into a toolkit. We highly recommend upgrading!
 
- -- Daniel Borkmann, Emmanuel Roullit, xx.xx.2011
+ -- Daniel Borkmann, Emmanuel Roullit, xx.03.2012
 
 netsniff-ng 0.5.5.0
 

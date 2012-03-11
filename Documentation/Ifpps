@@ -1,7 +1,7 @@
 What is ifpps?
 //////////////
 
-(extract from ftp://ftp.tik.ee.ethz.ch/pub/students/2011-FS/MA-2011-01.pdf)
+(derived from ftp://ftp.tik.ee.ethz.ch/pub/students/2011-FS/MA-2011-01.pdf)
 
 For measurement purposes, we have implemented a tool called ifpps, which
 periodically provides top-like networking and system statistics from the

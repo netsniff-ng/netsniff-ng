@@ -71,3 +71,8 @@ bison 2.4.1:
 
 Those two warnings occur on generated C code produced by flex and bison
 and there is no possibility on our side to fix them.
+
+Similar to that, gcc will throw a warning on strchr(3) which is a false
+positive (http://gcc.gnu.org/bugzilla/show_bug.cgi?id=36513) from glibc:
+ - warning: logical ‘&&’ with non-zero constant will always evaluate as true
+
