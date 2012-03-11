@@ -1,4 +1,96 @@
 What is netsniff-ng?
 ////////////////////
 
-TODO
+netsniff-ng is a high-performance network analyzer based on zero-copy
+mechanisms. It can record pcap files to disc, replay them and also do
+an offline and online analysis. It was the first tool of the toolkit
+and its initial development started back in 2009 at the Max Planck
+Institute. At that time, zero-copy mechanisms that were provided by the
+Linux kernel, namely RX_RING and TX_RING, were not used in libpcap
+and therefore by the majority of network analyzers. Hence, it was time
+to dig deeper into that topic when we started writing our own analyzer
+that was independant of any library except libc.
+
+Later on, for writing pcap files to disc, we have implemented a write-back
+mechanism based on scatter/gather I/O and also based on mmap(2). Hence,
+the user can decide if he plans to capture a large pcap file that he needs
+scatter/gather I/O, or for a pcap file that fits into RAM that he needs the
+faster mmap(2) operation.
+
+The newly introduced command line option of --in and --out allows a flexible
+combination for different purposes, i.e.
+ 1) --in <netdev> --out <pcap>, writes a network trace to disc
+ 2) --in <pcap> --out <netdev>, replays a network trace from disc
+ 3) --in <pcap>, performs an offline analysis of a trace file
+ 4) --in <netdev>, performs an online analysis
+ 5) --in <netdev> --out <folder>, periodically writes network trace files
+ 6) --in <netdev1> --out <netdev2>, redirects network traffic
+
+Those options can be combined with e.g. different filtering methods or other
+parameters such as printing modes.
+
+The kernel API of RX_RING and TX_RING is the fastest capturing or replaying
+possibility that you can get out of the box from user space without modifying
+your kernel sources.
+
+If you want to run netsniff-ng in combination with -f or --filter <file> you
+need to build a so called Berkeley Packet Filter program within a plaintext
+file (here, marked as: <file>). The Berkeley Packet Filters language
+description can be obtained from netsniff-ngs documentation section. One
+way to create a custom filter is to use our bpfc compiler. Read the 'Bpfc'
+documentation on how you can do this. In this case you have all the freedom
+to build filters for your needs. The alternative way is to use tcpdumps -dd
+option. Simply pipe the output into a textfile and pass this to netsniff-ng.
+Furthermore, we already ship some common filter examples! Most distributions
+will put these files into /etc/netsniff-ng/rules/.
+
+If you try to create custom socket filters with tcpdump -dd, you have to edit
+the ret opcode (0x6) of the resulting filter, otherwise your payload will be
+cut off on older tcpdump versions:
+
+0x6, 0, 0, 0xFFFFFFFF instead of 0x6, 0, 0, 0x00000060
+
+The Linux kernel now takes skb->len instead of 0xFFFFFFFF. If you do not
+change it, the kernel will take 0x00000060 as buffer length and packets larger
+than 96 Byte will be cut off (filled with zero Bytes)! It's a bug (or feature?)
+in libpcap's filter compiler.
+
+How do you sniff in a switched environment? I rudely refer to the dSniff
+documentation that says:
+
+The easiest route is simply to impersonate the local gateway, stealing client
+traffic en route to some remote destination. Of course, the traffic must be
+forwarded by your attacking machine, either by enabling kernel IP forwarding
+or with a userland program that acccomplishes the same (fragrouter -B1).
+
+Several people have reportedly destroyed connectivity on their LAN to the
+outside world by arpspoof'ing the gateway, and forgetting to enable IP
+forwarding on the attacking machine. Don't do this. You have been warned.
+
+Note that in case you are saving network traces as pcap files, you can also
+view them in tools like Wireshark, which has a better dissector than
+netsniff-ng. The other way round, you can also use netsniff-ng to replay traces
+that have been recorded with Wireshark (or other utilities that support pcap
+files). In fact, we have received mails from people switching from Wireshark
+to netsniff-ng because of the fact that netsniff-ng seems to have less packet
+drops, respectively is faster than Wireshark.
+
+Why not PF_RING? There are two reasons for this: First reason is, that it's
+not part of the Linux mainline kernel. A interesting discussion about getting
+PF_RING into the kernel can be found at the netdev lists
+(http://lists.openwall.net/netdev/2009/10/14/37) and obviously there are no
+further efforts (browse the netdev/LKML, also netfilter) from the ntop project
+to marry both architectures or add features to PF_PACKET. Second reason is
+that we've evaluated the PF_RING (without the commercial Direct NIC Access
+[DNA]) regarding its performance and came to the conclusion, that there is no
+significant performance enhancement on our IBM HS21 Bladeserver test system.
+ntop's DNA ships its own versions of some modified device drivers like
+Broadcoms tg3 and NetXtreme, Intels e1000(e), igb and ixgbe. Since these
+modifications are not official, neither to the kernel, nor to the vendors and
+cover only a small amout of what is out there, we're not doing further
+investigations at the moment. Also, netsniff-ng users have reported similar
+observations as our conclusion. A benchmark with PF_RING in transparent_mode
+0 and 1 seems even slower than netsniff-ng and in transparent_mode 2 both have
+they have reported same performance numbers to us. The test was done on a Dell
+PowerEdge 2850.
+
