@@ -26,17 +26,14 @@ IF (CMAKE_HAVE_PTHREAD_CREATE)
 		-D_FILE_OFFSET_BITS=64
 		-D_LARGEFILE_SOURCE
 		-D_LARGEFILE64_SOURCE)
-	ADD_CUSTOM_TARGET(ManPages ALL)
 	ADD_CUSTOM_COMMAND(
-		TARGET ManPages
 		SOURCE ../../netsniff-ng.c
-		COMMAND pod2man -s 8 ../../netsniff-ng.c ${CMAKE_CURRENT_BINARY_DIR}/netsniff-ng.8
-		OUTPUTS ${CMAKE_CURRENT_BINARY_DIR}/netsniff-ng.8
+		COMMAND pod2man
+		ARGS -s 8 ../../netsniff-ng.c ${CMAKE_CURRENT_BINARY_DIR}/netsniff-ng.8
+		OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/netsniff-ng.8
 	)
-	ADD_CUSTOM_COMMAND(
-		TARGET ManPages
-		SOURCE ManPages
-		DEPENDS ../../netsniff-ng.c
+	ADD_CUSTOM_TARGET(netsniff-ng.8 ALL
+		DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/netsniff-ng.8
 	)
 	TARGET_LINK_LIBRARIES(netsniff-ng ${CMAKE_THREAD_LIBS_INIT})
 	FILE(GLOB rules_files "../examples/bpfc/*.bpf")
