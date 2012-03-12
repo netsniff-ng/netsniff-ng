@@ -25,7 +25,7 @@ nevertheless supports the pcap file format for capturing, replaying and
 performing offline-analysis of pcap dumps. Furthermore, we are focussing on
 building a robust and clean analyzer and utilities that complete netsniff-ng as
 a support for network development, debugging or network reconnaissance. (Note:
-libpcap starting from 1.0.0 now also supports zero-copy for capturing only)
+libpcap starting from 1.0.0 now also supports zero-copy, but for capturing only)
 
 The netsniff-ng toolkit currently consists of the following utilities:
 
