@@ -2,6 +2,8 @@ PROJECT(netsniff-ng C)
 
 SET(BUILD_STRING "generic")
 FIND_PACKAGE(Threads)
+INCLUDE(Pod2Man)
+
 IF (CMAKE_HAVE_PTHREAD_CREATE)
 	ADD_EXECUTABLE(${PROJECT_NAME} 	../hash.c
 					../dissector.c
@@ -26,15 +28,9 @@ IF (CMAKE_HAVE_PTHREAD_CREATE)
 		-D_FILE_OFFSET_BITS=64
 		-D_LARGEFILE_SOURCE
 		-D_LARGEFILE64_SOURCE)
-	ADD_CUSTOM_COMMAND(
-		SOURCE ../../netsniff-ng.c
-		COMMAND pod2man
-		ARGS -s 8 ../../netsniff-ng.c ${CMAKE_CURRENT_BINARY_DIR}/netsniff-ng.8
-		OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/netsniff-ng.8
-	)
-	ADD_CUSTOM_TARGET(netsniff-ng.8 ALL
-		DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/netsniff-ng.8
-	)
+	
+	POD2MAN(${CMAKE_SOURCE_DIR}/netsniff-ng.c netsniff-ng 8)
+
 	TARGET_LINK_LIBRARIES(netsniff-ng ${CMAKE_THREAD_LIBS_INIT})
 	FILE(GLOB rules_files "../examples/bpfc/*.bpf")
 	INSTALL(FILES ${rules_files} DESTINATION ${CONFIG_INSTALL_PATH}/rules/)
