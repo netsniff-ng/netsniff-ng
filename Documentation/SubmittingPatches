@@ -1,0 +1,65 @@
+Checklist for Patches:
+//////////////////////
+
+Submitting patches should follow this guideline (derived from the Git project):
+
+* Commits:
+
+- make sure to comply with the coding guidelines (see CodingStyle)
+- make commits of logical units
+- check for unnecessary whitespace with "git diff --check" before committing
+- do not check in commented out code or unneeded files
+- the first line of the commit message should be a short description (50
+  characters is the soft limit, see DISCUSSION in git-commit(1)), and should
+  skip the full stop
+- the body should provide a meaningful commit message, which:
+  . explains the problem the change tries to solve, iow, what is wrong with
+    the current code without the change.
+  . justifies the way the change solves the problem, iow, why the result with
+    the change is better.
+  . alternate solutions considered but discarded, if any.
+- describe changes in imperative mood, e.g. "make xyzzy do frotz" instead of
+  "[This patch] makes xyzzy do frotz" or "[I] changed xyzzy to do frotz", as
+  if you are giving orders to the codebase to change its behaviour.
+- try to make sure your explanation can be understood without external
+  resources. Instead of giving a URL to a mailing list archive, summarize the
+  relevant points of the discussion.
+- add a "Signed-off-by: Your Name <you@example.com>" line to the commit message
+  (or just use the option "-s" when committing) to confirm that you agree to
+  the Developer's Certificate of Origin (see also
+  http://linux.yyz.us/patch-format.html)
+- make sure syntax of man-pages is free of errors: podchecker <tool>.c
+
+* For Patches via GitHub:
+
+- fork the netsniff-ng project on GitHub to your local GitHub account
+  (https://github.com/gnumaniacs/netsniff-ng)
+- make your changes to the latest master branch with respect to the commit
+  section above
+- if you change, add, or remove a command line option or make some other user
+  interface change, the associated documentation should be updated as well.
+- open a pull request on (https://github.com/gnumaniacs/netsniff-ng) and send
+  a notification to the list (netsniff-ng@googlegroups.com) and the maintainer
+  (bugs@netsniff-ng.org) if (and only if) the patch is ready for inclusion.
+- if your name is not writable in ASCII, make sure that you send off a message
+  in the correct encoding.
+- add a short description what the patch or patchset is about
+
+* For Patches via Mail:
+
+- use "git format-patch -M" to create the patch
+- do not PGP sign your patch
+- do not attach your patch, but read in the mail body, unless you cannot teach
+  your mailer to leave the formatting of the patch alone.
+- be careful doing cut & paste into your mailer, not to corrupt whitespaces.
+- provide additional information (which is unsuitable for the commit message)
+  between the "---" and the diffstat
+- if you change, add, or remove a command line option or make some other user
+  interface change, the associated documentation should be updated as well.
+- if your name is not writable in ASCII, make sure that you send off a message
+  in the correct encoding.
+- send the patch to the list (netsniff-ng@googlegroups.com) and the maintainer
+  (bugs@netsniff-ng.org) if (and only if) the patch is ready for inclusion.
+  If you use git-send-email(1), please test it first by sending email to
+  yourself.
+
