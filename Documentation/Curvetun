@@ -6,18 +6,12 @@ that is based on epoll(2). curvetun uses the Linux TUN/TAP interface and
 supports {IPv4,IPv6} over {IPv4,IPv6} with UDP or TCP as carrier protocols.
 It has an integrated packet forwarding trie, thus multiple users with
 different IPs can be handled via a single tunnel device on the server side
-and flows are scheduled for processing in a CPU-local manner. For transmission,
-packets are being compressed and encrypted by both, the client and the
-server side. As an appropriate key management, public-key cryptography based
-on elliptic curves are being used and packets are encrypted by a symmetric
-stream cipher (Salsa20) and authenticated by a MAC (Poly1305), where keys
-have previously been computed with the ECDH key agreement protocol (Curve25519).
-Cryptography is based on Daniel J. Bernsteins Networking and Cryptography
-library (NaCl). One of the motivations for curvetun is to 'bypass' Internet
-censorship, filtering or wiretapping with the help of modern cryptography as
-it is becoming more and more a trend by todays politicians or lobbies of
-large media companies to 'regulate' the Internet. With curvetun, network
-traffic can be tunneled encrypted to censorship-free regions of the Internet.
+and flows are scheduled for processing in a CPU-local manner. As an appropriate
+key management, public-key cryptography based on elliptic curves are being
+used and packets are encrypted by a symmetric stream cipher (Salsa20) and
+authenticated by a MAC (Poly1305), where keys have previously been computed
+with the ECDH key agreement protocol (Curve25519). Cryptography is based on
+Daniel J. Bernsteins Networking and Cryptography library (NaCl).
 
 Motivation
 //////////
