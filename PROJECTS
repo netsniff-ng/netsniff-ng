@@ -114,7 +114,9 @@ improving the toolkit:
   can be used to generate full packets in byte format. For instance,
   protocols such as VLAN, MPLS, BPDU, IGMP, DNS, ARP, ICMP, HTTP, SIP,
   IPv4 / IPv6, UDP, TCP. The Cisco-like libcli can be used for the UI.
-  (http://code.google.com/p/libcli/)
+  It should be triggered by 'trafgen --generate' and write a txf file in the
+  end. Maybe there's something to reuse from the Mausezahn traffic generator
+  (http://www.perihel.at/sec/mz/)? (http://code.google.com/p/libcli/)
 	- Tool: trafgen
 	- Required skills: C, Protocols
 	- Difficulty: Hard
