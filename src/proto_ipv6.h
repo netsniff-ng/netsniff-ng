@@ -96,17 +96,11 @@ static inline void ipv6_next(uint8_t *packet, size_t len,
 	struct ipv6hdr *ip = (struct ipv6hdr *) packet;
 
 	if (len < sizeof(struct ipv6hdr))
-		goto invalid;
+		return;
 
 	(*off) = sizeof(struct ipv6hdr);
 	(*key) = ip->nexthdr;
 	(*table) = &eth_lay3;
-
-	return;
-invalid:
-	(*off) = 0;
-	(*key) = 0;
-	(*table) = NULL;
 }
 
 struct protocol ipv6_ops = {

@@ -88,17 +88,11 @@ static inline void ethernet_next(uint8_t *packet, size_t len,
 	struct ethhdr *eth = (struct ethhdr *) packet;
 
 	if (len < sizeof(struct ethhdr))
-		goto invalid;
+		return;
 
 	(*off) = sizeof(struct ethhdr);
 	(*key) = ntohs(eth->h_proto);
 	(*table) = &eth_lay2;
-
-	return;
-invalid:
-	(*off) = 0;
-	(*key) = 0;
-	(*table) = NULL;
 }
 
 struct protocol ethernet_ops = {

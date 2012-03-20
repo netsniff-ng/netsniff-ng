@@ -59,17 +59,11 @@ static inline void vlan_next(uint8_t *packet, size_t len,
 	struct vlanhdr *vlan = (struct vlanhdr *) packet;
 
 	if (len < sizeof(struct vlanhdr))
-		goto invalid;
+		return;
 
 	(*off) = sizeof(struct vlanhdr);
 	(*key) = ntohs(vlan->h_vlan_encapsulated_proto);
 	(*table) = &eth_lay2;
-
-	return;
-invalid:
-	(*off) = 0;
-	(*key) = 0;
-	(*table) = NULL;
 }
 
 struct protocol vlan_ops = {

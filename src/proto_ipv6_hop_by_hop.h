@@ -62,16 +62,11 @@ static inline void hop_by_hop_next(uint8_t *packet, size_t len,
 	
 	hdr_ext_len = (hop_by_hop->h_hdr_ext_len + 1) * 8;
 	if (len < hdr_ext_len || len < sizeof(struct hop_by_hophdr))
-		goto invalid;
+		return;
 
 	(*off) = hdr_ext_len;
 	(*key) = hop_by_hop->h_next_header;
 	(*table) = &eth_lay3;
-	return;
-invalid:
-	(*off) = 0;
-	(*key) = 0;
-	(*table) = NULL;
 }
 
 struct protocol ipv6_hop_by_hop_ops = {

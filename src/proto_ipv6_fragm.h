@@ -62,15 +62,10 @@ static inline void fragm_next(uint8_t *packet, size_t len,
 {
 	struct fragmhdr *fragm = (struct fragmhdr *) packet;
 	if (len < sizeof(struct fragmhdr))
-		goto invalid;
+		return;
 	(*off) = sizeof(struct fragmhdr);
 	(*key) = fragm->h_fragm_next_header;
 	(*table) = &eth_lay3;
-	return;
-invalid:
-	(*off) = 0;
-	(*key) = 0;
-	(*table) = NULL;
 }
 
 struct protocol ipv6_fragm_ops = {

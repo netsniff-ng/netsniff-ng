@@ -119,6 +119,9 @@ static void dissector_main(uint8_t *packet, size_t len,
 		proto->process(packet, off);
 		if (unlikely(!proto->proto_next))
 			break;
+		off = 0;
+		key = 0;
+		table = NULL;
 		proto->proto_next(packet, len, &table, &key, &off);
 		if (unlikely(!table))
 			break;

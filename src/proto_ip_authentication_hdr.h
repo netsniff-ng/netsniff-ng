@@ -66,16 +66,11 @@ static inline void auth_hdr_next(uint8_t *packet, size_t len,
 
 	hdr_payload_len = (auth_hdr->h_payload_len * 4) + 8;
 	if (len < hdr_payload_len || len < sizeof(struct auth_hdrhdr))
-		goto invalid;
+		return;
 
 	(*off) = hdr_payload_len;
 	(*key) = auth_hdr->h_next_header;
 	(*table) = &eth_lay3;
-	return;
-invalid:
-	(*off) = 0;
-	(*key) = 0;
-	(*table) = NULL;
 }
 
 struct protocol ip_auth_hdr_ops = {

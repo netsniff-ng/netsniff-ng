@@ -77,16 +77,11 @@ static inline void routing_next(uint8_t *packet, size_t len,
 
 	hdr_ext_len = (routing->h_hdr_ext_len + 1) * 8;
 	if (len < hdr_ext_len || len < sizeof(struct routinghdr))
-		goto invalid;
+		return;
 
 	(*off) = hdr_ext_len;
 	(*key) = routing->h_next_header;
 	(*table) = &eth_lay3;
-	return;
-invalid:
-	(*off) = 0;
-	(*key) = 0;
-	(*table) = NULL;
 }
 
 struct protocol ipv6_routing_ops = {

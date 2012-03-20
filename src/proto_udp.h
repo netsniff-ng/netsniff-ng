@@ -88,17 +88,11 @@ static inline void udp_next(uint8_t *packet, size_t len,
 	struct udphdr *udp = (struct udphdr *) packet;
 
 	if (len < sizeof(struct udphdr))
-		goto invalid;
+		return;
 
 	(*off) = sizeof(struct udphdr);
 	(*key) = udp_port(udp->source, udp->dest);
 	(*table) = &eth_lay4;
-
-	return;
-invalid:
-	(*off) = 0;
-	(*key) = 0;
-	(*table) = NULL;
 }
 
 struct protocol udp_ops = {

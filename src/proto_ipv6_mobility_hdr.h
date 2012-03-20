@@ -66,16 +66,11 @@ static inline void mobility_next(uint8_t *packet, size_t len,
 
 	hdr_ext_len = (mobility->h_hdr_ext_len + 1) * 8;	
 	if (len < hdr_ext_len || len < sizeof(struct mobilityhdr))
-		goto invalid;
+		return;
 
 	(*off) = hdr_ext_len;
 	(*key) = mobility->h_next_header;
 	(*table) = &eth_lay3;
-	return;
-invalid:
-	(*off) = 0;
-	(*key) = 0;
-	(*table) = NULL;
 }
 
 struct protocol ipv6_mobility_hdr_ops = {

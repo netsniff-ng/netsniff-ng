@@ -62,16 +62,11 @@ static inline void dest_opts_next(uint8_t *packet, size_t len,
 
 	hdr_ext_len = (dest_opts->h_hdr_ext_len + 1) * 8;
 	if (len < hdr_ext_len || len < sizeof(struct dest_optshdr))
-		goto invalid;
+		return;
 
 	(*off) = hdr_ext_len;
 	(*key) = dest_opts->h_next_header;
 	(*table) = &eth_lay3;
-	return;
-invalid:
-	(*off) = 0;
-	(*key) = 0;
-	(*table) = NULL;
 }
 
 struct protocol ipv6_dest_opts_ops = {

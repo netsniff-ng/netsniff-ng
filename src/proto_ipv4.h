@@ -110,17 +110,11 @@ static inline void ipv4_next(uint8_t *packet, size_t len,
 	struct ipv4hdr *ip = (struct ipv4hdr *) packet;
 
 	if (len < sizeof(struct ipv4hdr))
-		goto invalid;
+		return;
 
 	(*off) = sizeof(struct ipv4hdr);
 	(*key) = ip->h_protocol;
 	(*table) = &eth_lay3;
-
-	return;
-invalid:
-	(*off) = 0;
-	(*key) = 0;
-	(*table) = NULL;
 }
 
 struct protocol ipv4_ops = {
