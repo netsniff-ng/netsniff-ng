@@ -2,8 +2,7 @@
  * IPv6 No Next Header described in RFC2460
  * programmed by Markus Amend 2012 as a contribution to
  * netsniff-ng - the packet sniffing beast
- * Copyright 2009, 2010 Daniel Borkmann.
- * Copyright 2010 Emmanuel Roullit.
+ * Copyright 2012 Markus Amend.
  * Subject to the GPL, version 2.
  */
 
@@ -28,7 +27,6 @@ static inline void no_next_header_next(uint8_t *packet, size_t len,
 
 struct protocol ipv6_no_next_header_ops = {
 	.key = 0x3B,
-// 	.offset = sizeof(struct fragmhdr),
 	.print_full = empty,
 	.print_less = empty,
 	.print_pay_ascii = empty,

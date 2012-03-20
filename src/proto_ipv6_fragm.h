@@ -2,8 +2,7 @@
  * IPv6 Fragmentation Header described in RFC2460
  * programmed by Markus Amend 2012 as a contribution to
  * netsniff-ng - the packet sniffing beast
- * Copyright 2009, 2010 Daniel Borkmann.
- * Copyright 2010 Emmanuel Roullit.
+ * Copyright 2012 Markus Amend.
  * Subject to the GPL, version 2.
  */
 
@@ -27,7 +26,6 @@ struct fragmhdr {
 static inline void fragm(uint8_t *packet, size_t len)
 {
 	uint16_t off_res_M;
-	
 	struct fragmhdr *fragm = (struct fragmhdr *) packet;
 
 	if (len < sizeof(struct fragmhdr))
@@ -47,13 +45,12 @@ static inline void fragm(uint8_t *packet, size_t len)
 
 static inline void fragm_less(uint8_t *packet, size_t len)
 {
-  	uint16_t off_res_M;
-	
+	uint16_t off_res_M;	
 	struct fragmhdr *fragm = (struct fragmhdr *) packet;
 
 	if (len < sizeof(struct fragmhdr))
 		return;
-	
+
 	off_res_M = ntohs(fragm->h_fragm_off_res_M);
 
 	tprintf(" FragmOffs %u", off_res_M >> 3);
@@ -66,11 +63,9 @@ static inline void fragm_next(uint8_t *packet, size_t len,
 	struct fragmhdr *fragm = (struct fragmhdr *) packet;
 	if (len < sizeof(struct fragmhdr))
 		goto invalid;
-
 	(*off) = sizeof(struct fragmhdr);
 	(*key) = fragm->h_fragm_next_header;
 	(*table) = &eth_lay3;
-
 	return;
 invalid:
 	(*off) = 0;
@@ -80,7 +75,6 @@ invalid:
 
 struct protocol ipv6_fragm_ops = {
 	.key = 0x2C,
-// 	.offset = sizeof(struct fragmhdr),
 	.print_full = fragm,
 	.print_less = fragm_less,
 	.print_pay_ascii = empty,
