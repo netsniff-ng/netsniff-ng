@@ -40,7 +40,7 @@ static inline void routing(uint8_t *packet, size_t len)
 	tprintf("Left (%u), ", routing->h_segments_left);
 	if(routing->h_routing_type == 0) {
 		char address[INET6_ADDRSTRLEN];
-		for (uint8_t i = sizeof(struct routinghdr) + 4;
+		for (int i = sizeof(struct routinghdr) + 4;
 		     i < hdr_ext_len; i += 16) {
 			tprintf("\n\tAdress: ");
 			inet_ntop(AF_INET6, &packet[i], address,
