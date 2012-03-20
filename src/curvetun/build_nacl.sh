@@ -42,6 +42,7 @@ nacl_version="nacl-20110221"
 nacl_suffix="tar.bz2"
 nacl_path="$nacl_dir/$nacl_version.$nacl_suffix"
 nacl_build_dir="$1"
+old_pwd="$PWD"
 
 if test -z "$nacl_build_dir"; then
 	echo "Please input the path where NaCl should be build"
@@ -57,10 +58,18 @@ echo "Building NaCl (this takes a while) ..."
 tar xjf "$nacl_path" -C "$nacl_build_dir"
 cd "$nacl_build_dir"/"$nacl_version"
 ./do
-cd - > /dev/null
+cd okcompilers
+./do > /dev/null
+shorthostname=$(hostname | sed 's/\..*//' | tr -cd '[a-z][A-Z][0-9]')
+arch=$(./abiname | awk {'print $2'})
+echo "Built NaCl for arch $arch"
+cd "$old_pwd"
 
-nacl_lib_path=$(dirname $(readlink -f $(find $nacl_build_dir -name libnacl.a)))
-nacl_include_path=$(dirname $(readlink -f $(find $nacl_build_dir -name crypto_box.h)))
+nacl_lib_path="$nacl_build_dir/$nacl_version/build/$shorthostname/lib/$arch"
+nacl_include_path="$nacl_build_dir/$nacl_version/build/$shorthostname/include/$arch"
+
+echo "NaCl lib path $nacl_lib_path"
+echo "NaCl include path $nacl_include_path"
 
 ./nacl_path.sh "$nacl_include_path" "$nacl_lib_path"
 
