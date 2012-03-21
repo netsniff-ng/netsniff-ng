@@ -61,7 +61,8 @@ cd "$nacl_build_dir"/"$nacl_version"
 cd okcompilers
 ./do > /dev/null 2>&1
 shorthostname=$(hostname | sed 's/\..*//' | tr -cd '[a-z][A-Z][0-9]')
-arch=$(./abiname | awk {'print $2'})
+gcc -Wall -O2 $old_pwd/abiname.c -o $old_pwd/abiname
+arch="`$old_pwd/abiname`"
 echo "Built NaCl for arch $arch"
 cd "$old_pwd"
 
