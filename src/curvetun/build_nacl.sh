@@ -59,7 +59,7 @@ tar xjf "$nacl_path" -C "$nacl_build_dir"
 cd "$nacl_build_dir"/"$nacl_version"
 ./do
 cd okcompilers
-./do > /dev/null
+./do > /dev/null 2>&1
 shorthostname=$(hostname | sed 's/\..*//' | tr -cd '[a-z][A-Z][0-9]')
 arch=$(./abiname | awk {'print $2'})
 echo "Built NaCl for arch $arch"
