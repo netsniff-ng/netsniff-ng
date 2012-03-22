@@ -37,6 +37,7 @@ Written by Emmanuel Roullit <emmanuel@netsniff-ng.org>
 
 POD
 
+cc="gcc"
 nacl_dir="../../contrib/nacl/"
 nacl_version="nacl-20110221"
 nacl_suffix="tar.bz2"
@@ -53,17 +54,18 @@ if ! test -d "$nacl_build_dir"; then
 	mkdir "$nacl_build_dir"
 fi
 
-echo "Building NaCl (this takes a while) ..."
-
 tar xjf "$nacl_path" -C "$nacl_build_dir"
+
+$cc -Wall -O2 ./abiname.c -o ./abiname
+arch="`./abiname`"
+shorthostname=$(hostname | sed 's/\..*//' | tr -cd '[a-z][A-Z][0-9]')
+
+echo "Building NaCl for arch $arch on host $shorthostname (grab a coffee, this takes a while) ..."
+
 cd "$nacl_build_dir"/"$nacl_version"
 ./do
 cd okcompilers
 ./do > /dev/null 2>&1
-shorthostname=$(hostname | sed 's/\..*//' | tr -cd '[a-z][A-Z][0-9]')
-gcc -Wall -O2 $old_pwd/abiname.c -o $old_pwd/abiname
-arch="`$old_pwd/abiname`"
-echo "Built NaCl for arch $arch"
 cd "$old_pwd"
 
 nacl_lib_path="$nacl_build_dir/$nacl_version/build/$shorthostname/lib/$arch"

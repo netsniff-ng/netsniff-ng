@@ -52,6 +52,12 @@ build NaCl in the directory ~/nacl, the script should be called this way:
   $ cd src/curvetun
   $ ./build_nacl.sh ~/nacl
 
+This gives an initial output such as "Building NaCl for arch amd64 on host
+fuuubar (grab a coffee, this takes a while) ...". If the automatically
+detected architecture (such as amd64) is not the one you intend to compile
+for, then edit the (cc="gcc") variable within the build_nacl.sh script to
+your cross compiler.
+
 If NaCl already has been built on the target, it is quicker to use nacl_path.sh
 this way:
 
