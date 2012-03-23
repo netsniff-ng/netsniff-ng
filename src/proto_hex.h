@@ -20,17 +20,17 @@ static inline void hex(uint8_t *packet, size_t len)
 	size_t plen = len;
 	uint8_t *buff;
 
+	if (len == 0)
+		return;
+
 	tprintf(" [ Payload hex ");
 	for (buff = packet; len-- > 0; buff++)
 		tprintf("%.2x ", *buff);
 	tprintf("]\n");
-
 	tprintf(" [ Payload chr ");
 	for (buff = packet; plen-- > 0; buff++)
 		tprintf("%c ", isprint(*buff) ? *buff : '.');
-	tprintf("]\n");
-
-	tprintf("\n");
+	tprintf("]\n\n");
 }
 
 static inline void hex_none_newline(uint8_t *packet, size_t len)

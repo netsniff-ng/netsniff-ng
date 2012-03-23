@@ -42,10 +42,9 @@ static inline void routing(uint8_t *packet, size_t len)
 		char address[INET6_ADDRSTRLEN];
 		for (int i = sizeof(struct routinghdr) + 4;
 		     i < hdr_ext_len; i += 16) {
-			tprintf("\n\tAdress: ");
-			inet_ntop(AF_INET6, &packet[i], address,
-				  sizeof(address));
-			tprintf("%s %u", address ,INET6_ADDRSTRLEN);
+			tprintf("\n\t   Address: ");
+			tprintf("%s", inet_ntop(AF_INET6, &packet[i],
+				address, sizeof(address)));
 		}
 	} else {
 		tprintf("Appendix 0x");
