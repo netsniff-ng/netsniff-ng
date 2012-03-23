@@ -43,7 +43,6 @@ nacl_version="nacl-20110221"
 nacl_suffix="tar.bz2"
 nacl_path="$nacl_dir/$nacl_version.$nacl_suffix"
 nacl_build_dir="$1"
-old_pwd="$PWD"
 
 if test -z "$nacl_build_dir"; then
 	echo "Please input the path where NaCl should be build"
@@ -64,9 +63,7 @@ echo "Building NaCl for arch $arch on host $shorthostname (grab a coffee, this t
 
 cd "$nacl_build_dir"/"$nacl_version"
 ./do
-cd okcompilers
-./do > /dev/null 2>&1
-cd "$old_pwd"
+cd - > /dev/null
 
 nacl_lib_path="$nacl_build_dir/$nacl_version/build/$shorthostname/lib/$arch"
 nacl_include_path="$nacl_build_dir/$nacl_version/build/$shorthostname/include/$arch"
