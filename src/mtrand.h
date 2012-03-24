@@ -5,8 +5,8 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef MERSENNE_TWISTER_H
-#define MERSENNE_TWISTER_H
+#ifndef MTRAND_H
+#define MTRAND_H
 
 extern void mt_init_by_seed_rand(unsigned long s);
 extern void mt_init_by_seed_time(void);
@@ -20,4 +20,4 @@ extern double mt_rand_real2(void);
 extern double mt_rand_real3(void);
 extern double mt_rand_res53(void);
 
-#endif /* MERSENNE_TWISTER_H */
+#endif /* MTRAND_H */
