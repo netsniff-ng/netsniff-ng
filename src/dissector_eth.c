@@ -47,7 +47,7 @@ struct ether_type {
 	struct ether_type *next;
 };
 
-#define __do_lookup_inline(struct_name, hash_ptr, struct_member)	      \
+#define __do_lookup_inline(id, struct_name, hash_ptr, struct_member)	      \
 	({								      \
 		struct struct_name *entry = lookup_hash(id, hash_ptr);	      \
 		while (entry && id != entry->id)			      \
@@ -57,22 +57,22 @@ struct ether_type {
 
 char *lookup_vendor(unsigned int id)
 {
-	return __do_lookup_inline(vendor_id, &eth_oui, vendor);
+	return __do_lookup_inline(id, vendor_id, &eth_oui, vendor);
 }
 
 char *lookup_port_udp(unsigned int id)
 {
-	return __do_lookup_inline(port_udp, &eth_ports_udp, port);
+	return __do_lookup_inline(id, port_udp, &eth_ports_udp, port);
 }
 
 char *lookup_port_tcp(unsigned int id)
 {
-	return __do_lookup_inline(port_tcp, &eth_ports_tcp, port);
+	return __do_lookup_inline(id, port_tcp, &eth_ports_tcp, port);
 }
 
 char *lookup_ether_type(unsigned int id)
 {
-	return __do_lookup_inline(ether_type, &eth_ether_types, type);
+	return __do_lookup_inline(id, ether_type, &eth_ether_types, type);
 }
 
 static inline void dissector_init_entry(int type)
