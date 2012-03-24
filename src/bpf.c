@@ -49,7 +49,7 @@
  */
 #ifndef BPF_MEMWORDS
 # define BPF_MEMWORDS 16
-#endif /* BPF_MEMWORDS */
+#endif
 
 static char *bpf_dump(const struct sock_filter bpf, int n)
 {
@@ -59,237 +59,190 @@ static char *bpf_dump(const struct sock_filter bpf, int n)
 	char operand[64];
 
 	v = bpf.k;
-
 	switch (bpf.code) {
 	default:
 		op = "unimp";
 		fmt = "0x%x";
 		v = bpf.code;
 		break;
-
 	case BPF_RET | BPF_K:
 		op = "ret";
 		fmt = "#%d";
 		break;
-
 	case BPF_RET | BPF_A:
 		op = "ret";
 		fmt = "";
 		break;
-
 	case BPF_LD | BPF_W | BPF_ABS:
 		op = "ld";
 		fmt = "[%d]";
 		break;
-
 	case BPF_LD | BPF_H | BPF_ABS:
 		op = "ldh";
 		fmt = "[%d]";
 		break;
-
 	case BPF_LD | BPF_B | BPF_ABS:
 		op = "ldb";
 		fmt = "[%d]";
 		break;
-
 	case BPF_LD | BPF_W | BPF_LEN:
 		op = "ld";
 		fmt = "#pktlen";
 		break;
-
 	case BPF_LD | BPF_W | BPF_IND:
 		op = "ld";
 		fmt = "[x + %d]";
 		break;
-
 	case BPF_LD | BPF_H | BPF_IND:
 		op = "ldh";
 		fmt = "[x + %d]";
 		break;
-
 	case BPF_LD | BPF_B | BPF_IND:
 		op = "ldb";
 		fmt = "[x + %d]";
 		break;
-
 	case BPF_LD | BPF_IMM:
 		op = "ld";
 		fmt = "#0x%x";
 		break;
-
 	case BPF_LDX | BPF_IMM:
 		op = "ldx";
 		fmt = "#0x%x";
 		break;
-
 	case BPF_LDX | BPF_MSH | BPF_B:
 		op = "ldxb";
 		fmt = "4*([%d]&0xf)";
 		break;
-
 	case BPF_LD | BPF_MEM:
 		op = "ld";
 		fmt = "M[%d]";
 		break;
-
 	case BPF_LDX | BPF_MEM:
 		op = "ldx";
 		fmt = "M[%d]";
 		break;
-
 	case BPF_ST:
 		op = "st";
 		fmt = "M[%d]";
 		break;
-
 	case BPF_STX:
 		op = "stx";
 		fmt = "M[%d]";
 		break;
-
 	case BPF_JMP | BPF_JA:
 		op = "ja";
 		fmt = "%d";
 		v = n + 1 + bpf.k;
 		break;
-
 	case BPF_JMP | BPF_JGT | BPF_K:
 		op = "jgt";
 		fmt = "#0x%x";
 		break;
-
 	case BPF_JMP | BPF_JGE | BPF_K:
 		op = "jge";
 		fmt = "#0x%x";
 		break;
-
 	case BPF_JMP | BPF_JEQ | BPF_K:
 		op = "jeq";
 		fmt = "#0x%x";
 		break;
-
 	case BPF_JMP | BPF_JSET | BPF_K:
 		op = "jset";
 		fmt = "#0x%x";
 		break;
-
 	case BPF_JMP | BPF_JGT | BPF_X:
 		op = "jgt";
 		fmt = "x";
 		break;
-
 	case BPF_JMP | BPF_JGE | BPF_X:
 		op = "jge";
 		fmt = "x";
 		break;
-
 	case BPF_JMP | BPF_JEQ | BPF_X:
 		op = "jeq";
 		fmt = "x";
 		break;
-
 	case BPF_JMP | BPF_JSET | BPF_X:
 		op = "jset";
 		fmt = "x";
 		break;
-
 	case BPF_ALU | BPF_ADD | BPF_X:
 		op = "add";
 		fmt = "x";
 		break;
-
 	case BPF_ALU | BPF_SUB | BPF_X:
 		op = "sub";
 		fmt = "x";
 		break;
-
 	case BPF_ALU | BPF_MUL | BPF_X:
 		op = "mul";
 		fmt = "x";
 		break;
-
 	case BPF_ALU | BPF_DIV | BPF_X:
 		op = "div";
 		fmt = "x";
 		break;
-
 	case BPF_ALU | BPF_AND | BPF_X:
 		op = "and";
 		fmt = "x";
 		break;
-
 	case BPF_ALU | BPF_OR | BPF_X:
 		op = "or";
 		fmt = "x";
 		break;
-
 	case BPF_ALU | BPF_LSH | BPF_X:
 		op = "lsh";
 		fmt = "x";
 		break;
-
 	case BPF_ALU | BPF_RSH | BPF_X:
 		op = "rsh";
 		fmt = "x";
 		break;
-
 	case BPF_ALU | BPF_ADD | BPF_K:
 		op = "add";
 		fmt = "#%d";
 		break;
-
 	case BPF_ALU | BPF_SUB | BPF_K:
 		op = "sub";
 		fmt = "#%d";
 		break;
-
 	case BPF_ALU | BPF_MUL | BPF_K:
 		op = "mul";
 		fmt = "#%d";
 		break;
-
 	case BPF_ALU | BPF_DIV | BPF_K:
 		op = "div";
 		fmt = "#%d";
 		break;
-
 	case BPF_ALU | BPF_AND | BPF_K:
 		op = "and";
 		fmt = "#0x%x";
 		break;
-
 	case BPF_ALU | BPF_OR | BPF_K:
 		op = "or";
 		fmt = "#0x%x";
 		break;
-
 	case BPF_ALU | BPF_LSH | BPF_K:
 		op = "lsh";
 		fmt = "#%d";
 		break;
-
 	case BPF_ALU | BPF_RSH | BPF_K:
 		op = "rsh";
 		fmt = "#%d";
 		break;
-
 	case BPF_ALU | BPF_NEG:
 		op = "neg";
 		fmt = "";
 		break;
-
 	case BPF_MISC | BPF_TAX:
 		op = "tax";
 		fmt = "";
 		break;
-
 	case BPF_MISC | BPF_TXA:
 		op = "txa";
 		fmt = "";
 		break;
 	}
-
-	/* XXX: Tell gcc that this here is okay for us */
 	slprintf(operand, sizeof(operand), fmt, v);
 	slprintf(image, sizeof(image),
 		 (BPF_CLASS(bpf.code) == BPF_JMP &&
@@ -332,7 +285,6 @@ int bpf_validate(const struct sock_fprog *bpf)
 		return 0;
 	if (bpf->len < 1)
 		return 0;
-
 	for (i = 0; i < bpf->len; ++i) {
 		p = &bpf->filter[i];
 		switch (BPF_CLASS(p->code)) {
@@ -461,12 +413,9 @@ uint32_t bpf_run_filter(const struct sock_fprog * fcode, uint8_t * packet,
 
 	A = 0;
 	X = 0;
-
 	bpf = fcode->filter;
-
 	--bpf;
 	while (1) {
-
 		++bpf;
 
 		switch (bpf->code) {
@@ -474,201 +423,157 @@ uint32_t bpf_run_filter(const struct sock_fprog * fcode, uint8_t * packet,
 			return 0;
 		case BPF_RET | BPF_K:
 			return (uint32_t) bpf->k;
-
 		case BPF_RET | BPF_A:
 			return (uint32_t) A;
-
 		case BPF_LD | BPF_W | BPF_ABS:
 			k = bpf->k;
 			if (k + sizeof(int32_t) > plen)
 				return 0;
 			A = EXTRACT_LONG(&packet[k]);
 			continue;
-
 		case BPF_LD | BPF_H | BPF_ABS:
 			k = bpf->k;
 			if (k + sizeof(short) > plen)
 				return 0;
 			A = EXTRACT_SHORT(&packet[k]);
 			continue;
-
 		case BPF_LD | BPF_B | BPF_ABS:
 			k = bpf->k;
 			if (k >= plen)
 				return 0;
 			A = packet[k];
 			continue;
-
 		case BPF_LD | BPF_W | BPF_LEN:
 			A = plen;
 			continue;
-
 		case BPF_LDX | BPF_W | BPF_LEN:
 			X = plen;
 			continue;
-
 		case BPF_LD | BPF_W | BPF_IND:
 			k = X + bpf->k;
 			if (k + sizeof(int32_t) > plen)
 				return 0;
 			A = EXTRACT_LONG(&packet[k]);
 			continue;
-
 		case BPF_LD | BPF_H | BPF_IND:
 			k = X + bpf->k;
 			if (k + sizeof(short) > plen)
 				return 0;
 			A = EXTRACT_SHORT(&packet[k]);
 			continue;
-
 		case BPF_LD | BPF_B | BPF_IND:
 			k = X + bpf->k;
 			if (k >= plen)
 				return 0;
 			A = packet[k];
 			continue;
-
 		case BPF_LDX | BPF_MSH | BPF_B:
 			k = bpf->k;
 			if (k >= plen)
 				return 0;
 			X = (packet[bpf->k] & 0xf) << 2;
 			continue;
-
 		case BPF_LD | BPF_IMM:
 			A = bpf->k;
 			continue;
-
 		case BPF_LDX | BPF_IMM:
 			X = bpf->k;
 			continue;
-
 		case BPF_LD | BPF_MEM:
 			A = mem[bpf->k];
 			continue;
-
 		case BPF_LDX | BPF_MEM:
 			X = mem[bpf->k];
 			continue;
-
 		case BPF_ST:
 			mem[bpf->k] = A;
 			continue;
-
 		case BPF_STX:
 			mem[bpf->k] = X;
 			continue;
-
 		case BPF_JMP | BPF_JA:
 			bpf += bpf->k;
 			continue;
-
 		case BPF_JMP | BPF_JGT | BPF_K:
 			bpf += (A > bpf->k) ? bpf->jt : bpf->jf;
 			continue;
-
 		case BPF_JMP | BPF_JGE | BPF_K:
 			bpf += (A >= bpf->k) ? bpf->jt : bpf->jf;
 			continue;
-
 		case BPF_JMP | BPF_JEQ | BPF_K:
 			bpf += (A == bpf->k) ? bpf->jt : bpf->jf;
 			continue;
-
 		case BPF_JMP | BPF_JSET | BPF_K:
 			bpf += (A & bpf->k) ? bpf->jt : bpf->jf;
 			continue;
-
 		case BPF_JMP | BPF_JGT | BPF_X:
 			bpf += (A > X) ? bpf->jt : bpf->jf;
 			continue;
-
 		case BPF_JMP | BPF_JGE | BPF_X:
 			bpf += (A >= X) ? bpf->jt : bpf->jf;
 			continue;
-
 		case BPF_JMP | BPF_JEQ | BPF_X:
 			bpf += (A == X) ? bpf->jt : bpf->jf;
 			continue;
-
 		case BPF_JMP | BPF_JSET | BPF_X:
 			bpf += (A & X) ? bpf->jt : bpf->jf;
 			continue;
-
 		case BPF_ALU | BPF_ADD | BPF_X:
 			A += X;
 			continue;
-
 		case BPF_ALU | BPF_SUB | BPF_X:
 			A -= X;
 			continue;
-
 		case BPF_ALU | BPF_MUL | BPF_X:
 			A *= X;
 			continue;
-
 		case BPF_ALU | BPF_DIV | BPF_X:
 			if (X == 0)
 				return 0;
 			A /= X;
 			continue;
-
 		case BPF_ALU | BPF_AND | BPF_X:
 			A &= X;
 			continue;
-
 		case BPF_ALU | BPF_OR | BPF_X:
 			A |= X;
 			continue;
-
 		case BPF_ALU | BPF_LSH | BPF_X:
 			A <<= X;
 			continue;
-
 		case BPF_ALU | BPF_RSH | BPF_X:
 			A >>= X;
 			continue;
-
 		case BPF_ALU | BPF_ADD | BPF_K:
 			A += bpf->k;
 			continue;
-
 		case BPF_ALU | BPF_SUB | BPF_K:
 			A -= bpf->k;
 			continue;
-
 		case BPF_ALU | BPF_MUL | BPF_K:
 			A *= bpf->k;
 			continue;
-
 		case BPF_ALU | BPF_DIV | BPF_K:
 			A /= bpf->k;
 			continue;
-
 		case BPF_ALU | BPF_AND | BPF_K:
 			A &= bpf->k;
 			continue;
-
 		case BPF_ALU | BPF_OR | BPF_K:
 			A |= bpf->k;
 			continue;
-
 		case BPF_ALU | BPF_LSH | BPF_K:
 			A <<= bpf->k;
 			continue;
-
 		case BPF_ALU | BPF_RSH | BPF_K:
 			A >>= bpf->k;
 			continue;
-
 		case BPF_ALU | BPF_NEG:
 			A = -A;
 			continue;
-
 		case BPF_MISC | BPF_TAX:
 			X = A;
 			continue;
-
 		case BPF_MISC | BPF_TXA:
 			A = X;
 			continue;
@@ -692,12 +597,10 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf)
 	FILE *fp = fopen(rulefile, "r");
 	if (!fp)
 		panic("Cannot read BPF rule file!\n");
-
 	memset(buff, 0, sizeof(buff));
 
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
-
 		/* A comment. Skip this line */
 		if (buff[0] != '{') {
 			memset(buff, 0, sizeof(buff));
@@ -713,7 +616,6 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf)
 		if (ret != 4)
 			/* No valid bpf opcode format or a syntax error */
 			panic("BPF syntax error!\n");
-
 		bpf->len++;
 		bpf->filter = xrealloc(bpf->filter, 1,
 				       bpf->len * sizeof(sf_single));
@@ -724,7 +626,6 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf)
 	}
 
 	fclose(fp);
-
 	if (bpf_validate(bpf) == 0)
 		panic("This is not a valid BPF program!\n");
 }
