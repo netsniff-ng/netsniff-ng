@@ -12,7 +12,7 @@
 #include <stdio.h>
 
 #include "die.h"
-#include "compiler.h"
+#include "built_in.h"
 #include "opt_memcpy.h"
 
 #define CPU_FLAG_NONE   0

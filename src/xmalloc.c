@@ -17,7 +17,7 @@
 
 #include "xmalloc.h"
 #include "xstring.h"
-#include "compiler.h"
+#include "built_in.h"
 #include "die.h"
 
 __hidden void *xmalloc(size_t size)

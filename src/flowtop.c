@@ -133,7 +133,7 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "xmalloc.h"
 #include "xio.h"
 #include "xsys.h"
-#include "compiler.h"
+#include "built_in.h"
 #include "locking.h"
 #include "dissector_eth.h"
 

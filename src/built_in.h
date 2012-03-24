@@ -5,8 +5,8 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef COMPILER_H
-#define COMPILER_H
+#ifndef BUILT_IN_H
+#define BUILT_IN_H
 
 #ifndef __aligned_16
 # define __aligned_16		__attribute__((aligned(16)))
@@ -79,4 +79,4 @@
 	})
 #endif
 
-#endif /* COMPILER_H */
+#endif /* BUILT_IN_H */

@@ -226,7 +226,7 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "ring_rx.h"
 #include "ring_tx.h"
 #include "xsys.h"
-#include "compiler.h"
+#include "built_in.h"
 #include "pcap.h"
 #include "bpf.h"
 #include "xio.h"

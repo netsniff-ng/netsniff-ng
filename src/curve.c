@@ -17,7 +17,7 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 
-#include "compiler.h"
+#include "built_in.h"
 #include "xmalloc.h"
 #include "curve.h"
 #include "xstring.h"

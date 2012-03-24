@@ -35,7 +35,7 @@
 #include "xmalloc.h"
 #include "curvetun.h"
 #include "curve.h"
-#include "compiler.h"
+#include "built_in.h"
 #include "usermgmt.h"
 #include "cpusched.h"
 #include "trie.h"

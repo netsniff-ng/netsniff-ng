@@ -15,7 +15,7 @@
 #include <stdint.h>
 
 #include "xstring.h"
-#include "compiler.h"
+#include "built_in.h"
 
 size_t strlcpy(char *dest, const char *src, size_t size)
 {

@@ -12,7 +12,7 @@
 #include <limits.h>
 
 #include "die.h"
-#include "compiler.h"
+#include "built_in.h"
 #include "locking.h"
 #include "xmalloc.h"
 #include "curvetun.h"

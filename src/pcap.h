@@ -14,7 +14,7 @@
 #include <sys/time.h>
 #include <linux/if_packet.h>
 
-#include "compiler.h"
+#include "built_in.h"
 #include "die.h"
 
 #define TCPDUMP_MAGIC              0xa1b2c3d4

@@ -19,7 +19,7 @@
 #include "bpf.h"
 #include "xmalloc.h"
 #include "bpf_parser.tab.h"
-#include "compiler.h"
+#include "built_in.h"
 #include "die.h"
 
 #define MAX_INSTRUCTIONS	4096

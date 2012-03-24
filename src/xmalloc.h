@@ -10,7 +10,7 @@
 
 #include <stdlib.h>
 
-#include "compiler.h"
+#include "built_in.h"
 #include "die.h"
 
 extern __hidden void *xmalloc(size_t size);

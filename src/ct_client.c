@@ -27,6 +27,7 @@
 #include <netinet/udp.h>
 #include <linux/if_tun.h>
 
+#include "built_in.h"
 #include "die.h"
 #include "xio.h"
 #include "xstring.h"
@@ -37,7 +38,6 @@
 #include "curvetun.h"
 #include "servmgmt.h"
 #include "usermgmt.h"
-#include "compiler.h"
 #include "crypto_auth_hmacsha512256.h"
 
 extern volatile sig_atomic_t sigint;

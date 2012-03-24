@@ -12,7 +12,7 @@
 #include <errno.h>
 
 #include "pcap.h"
-#include "compiler.h"
+#include "built_in.h"
 #include "xio.h"
 #include "die.h"
 

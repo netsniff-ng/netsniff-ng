@@ -10,8 +10,9 @@
 #define XSTRING_H
 
 #include <stdint.h>
+
 #include "die.h"
-#include "compiler.h"
+#include "built_in.h"
 
 extern size_t strlcpy(char *dest, const char *src, size_t size);
 extern int slprintf(char *dst, size_t size, const char *fmt, ...);

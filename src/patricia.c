@@ -14,7 +14,7 @@
 #include <errno.h>
 
 #include "patricia.h"
-#include "compiler.h"
+#include "built_in.h"
 #include "xmalloc.h"
 
 static unsigned char mbit[] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};

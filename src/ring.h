@@ -20,7 +20,7 @@
 #include "xsys.h"
 #include "tprintf.h"
 #include "dissector.h"
-#include "compiler.h"
+#include "built_in.h"
 #include "mtrand.h"
 
 #define RING_SIZE_FALLBACK (1 << 26)
