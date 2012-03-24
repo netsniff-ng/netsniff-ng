@@ -331,7 +331,6 @@ static void help(void)
 	printf("License: GNU GPL version 2\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
-
 	die();
 }
 
@@ -346,7 +345,6 @@ static void version(void)
 	printf("License: GNU GPL version 2\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
-
 	die();
 }
 
