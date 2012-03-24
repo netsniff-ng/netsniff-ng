@@ -454,9 +454,6 @@ out:
 	close(fd);
 }
 
-/* If netsniff-ngs in device is on a tap, it can efficiently filter out 
- * some interesting packets and give them to the out device for testing
- * or debugging for instance. */
 static void enter_mode_rx_to_tx(struct mode *mode)
 {
 	int rx_sock, ifindex_in, ifindex_out;
@@ -546,7 +543,6 @@ static void enter_mode_rx_to_tx(struct mode *mode)
 			out = ((uint8_t *) hdr_out) + TPACKET_HDRLEN -
 			      sizeof(struct sockaddr_ll);
 
-			/* If we cannot pull, look for a different slot. */
 			for (; !user_may_pull_from_tx(tx_ring.frames[it_out].iov_base) &&
 			       likely(!sigint);) {
 				if (mode->randomize)
@@ -567,7 +563,6 @@ static void enter_mode_rx_to_tx(struct mode *mode)
 			else
 				next_slot(&it_out, &tx_ring);
 
-			/* Should actually be avoided ... */
 			show_frame_hdr(hdr_in, mode->print_mode, RING_MODE_INGRESS);
 			dissector_entry_point(in, hdr_in->tp_h.tp_snaplen,
 					      mode->link_type);
