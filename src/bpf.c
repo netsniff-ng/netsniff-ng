@@ -3,28 +3,9 @@
  * By Daniel Borkmann <daniel@netsniff-ng.org>
  * Copyright 2009, 2010 Daniel Borkmann.
  * Copyright 2009, 2010 Emmanuel Roullit.
+ * Copyright 1990-1996 The Regents of the University of
+ * California. All rights reserved. (3-clause BSD license)
  * Subject to the GPL, version 2.
- */
-
-/*
- * Copyright (c) 1990, 1991, 1992, 1994, 1995, 1996
- *	The Regents of the University of California.  All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that: (1) source code distributions
- * retain the above copyright notice and this paragraph in its entirety, (2)
- * distributions including binary code include the above copyright notice and
- * this paragraph in its entirety in the documentation or other materials
- * provided with the distribution, and (3) all advertising materials mentioning
- * features or use of this software display the following acknowledgement:
- * ``This product includes software developed by the University of California,
- * Lawrence Berkeley Laboratory and its contributors.'' Neither the name of
- * the University nor the names of its contributors may be used to endorse
- * or promote products derived from this software without specific prior
- * written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
- * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #include <stdint.h>
@@ -43,10 +24,6 @@
 		((unsigned short) ntohs(*(unsigned short *) packet))
 #define EXTRACT_LONG(packet)						\
 		(ntohl(*(unsigned long *) packet))
-
-/*
- * Number of scratch memory words for: BPF_ST and BPF_STX
- */
 #ifndef BPF_MEMWORDS
 # define BPF_MEMWORDS 16
 #endif
@@ -601,7 +578,6 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf)
 
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
-		/* A comment. Skip this line */
 		if (buff[0] != '{') {
 			memset(buff, 0, sizeof(buff));
 			continue;
@@ -614,7 +590,6 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf)
 			     (unsigned int *) &sf_single.jf,
 			     (unsigned int *) &sf_single.k);
 		if (ret != 4)
-			/* No valid bpf opcode format or a syntax error */
 			panic("BPF syntax error!\n");
 		bpf->len++;
 		bpf->filter = xrealloc(bpf->filter, 1,
