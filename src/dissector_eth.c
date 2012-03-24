@@ -5,8 +5,6 @@
  * Subject to the GPL, version 2.
  */
 
-/* Needs a better rewrite! */
-
 #include <stdint.h>
 
 #include "hash.h"
@@ -49,59 +47,55 @@ struct ether_type {
 	struct ether_type *next;
 };
 
+#define __do_lookup_inline(struct_name, hash_ptr, struct_member)	      \
+	({								      \
+		struct struct_name *entry = lookup_hash(id, hash_ptr);	      \
+		while (entry && id != entry->id)			      \
+			entry = entry->next;				      \
+		(entry && id == entry->id ? entry->struct_member : "Unknown");\
+	})
+
 char *lookup_vendor(unsigned int id)
 {
-	struct vendor_id *entry = lookup_hash(id, &eth_oui);
-	while (entry && id != entry->id)
-		entry = entry->next;
-	return (entry && id == entry->id ? entry->vendor : "Unknown");
+	return __do_lookup_inline(vendor_id, &eth_oui, vendor);
 }
 
 char *lookup_port_udp(unsigned int id)
 {
-	struct port_udp *entry = lookup_hash(id, &eth_ports_udp);
-	while (entry && id != entry->id)
-		entry = entry->next;
-	return (entry && id == entry->id ? entry->port : "Unknown");
+	return __do_lookup_inline(port_udp, &eth_ports_udp, port);
 }
 
 char *lookup_port_tcp(unsigned int id)
 {
-	struct port_tcp *entry = lookup_hash(id, &eth_ports_tcp);
-	while (entry && id != entry->id)
-		entry = entry->next;
-	return (entry && id == entry->id ? entry->port : "Unknown");
+	return __do_lookup_inline(port_tcp, &eth_ports_tcp, port);
 }
 
 char *lookup_ether_type(unsigned int id)
 {
-	struct ether_type *entry = lookup_hash(id, &eth_ether_types);
-	while (entry && id != entry->id)
-		entry = entry->next;
-	return (entry && id == entry->id ? entry->type : "Unknown");
+	return __do_lookup_inline(ether_type, &eth_ether_types, type);
 }
 
-static inline void dissector_init_entry(int (*fnt)(void *ptr))
+static inline void dissector_init_entry(int type)
 {
-	fnt(&ethernet_ops);
+	dissector_set_print_type(&ethernet_ops, type);
 }
 
-static inline void dissector_init_exit(int (*fnt)(void *ptr))
+static inline void dissector_init_exit(int type)
 {
-	fnt(&hex_ops);
+	dissector_set_print_type(&hex_ops, type);
 }
 
-static void dissector_init_lay2(int (*fnt)(void *ptr))
+static void dissector_init_layer_2(int type)
 {
 	init_hash(&eth_lay2);
 	INSERT_HASH_PROTOS(arp_ops, eth_lay2);
 	INSERT_HASH_PROTOS(vlan_ops, eth_lay2);
 	INSERT_HASH_PROTOS(ipv4_ops, eth_lay2);
 	INSERT_HASH_PROTOS(ipv6_ops, eth_lay2);
-	for_each_hash(&eth_lay2, fnt);
+	for_each_hash_int(&eth_lay2, dissector_set_print_type, type);
 }
 
-static void dissector_init_lay3(int (*fnt)(void *ptr))
+static void dissector_init_layer_3(int type)
 {
 	init_hash(&eth_lay3);
 	INSERT_HASH_PROTOS(ipv6_fragm_ops, eth_lay3);
@@ -116,13 +110,13 @@ static void dissector_init_lay3(int (*fnt)(void *ptr))
 	INSERT_HASH_PROTOS(icmp_ops, eth_lay3);
 	INSERT_HASH_PROTOS(udp_ops, eth_lay3);
 	INSERT_HASH_PROTOS(tcp_ops, eth_lay3);
-	for_each_hash(&eth_lay3, fnt);
+	for_each_hash_int(&eth_lay3, dissector_set_print_type, type);
 }
 
-static void dissector_init_lay4(int (*fnt)(void *ptr))
+static void dissector_init_layer_4(int type)
 {
 	init_hash(&eth_lay4);
-	for_each_hash(&eth_lay4, fnt);
+	for_each_hash_int(&eth_lay4, dissector_set_print_type, type);
 }
 
 static void dissector_init_oui(void)
@@ -131,7 +125,6 @@ static void dissector_init_oui(void)
 	char buff[512], *ptr;
 	struct vendor_id *ven;
 	void **pos;
-
 	fp = fopen("/etc/netsniff-ng/oui.conf", "r");
 	if (!fp)
 		panic("No /etc/netsniff-ng/oui.conf found!\n");
@@ -156,23 +149,19 @@ static void dissector_init_oui(void)
 		}
 		memset(buff, 0, sizeof(buff));
 	}
-
 	fclose(fp);
 }
 
 static int dissector_cleanup_oui(void *ptr)
 {
 	struct vendor_id *tmp, *v = ptr;
-
 	if (!ptr)
 		return 0;
-
 	while ((tmp = v->next)) {
 		xfree(v->vendor);
 		xfree(v);
 		v = tmp;
 	}
-
 	xfree(v->vendor);
 	xfree(v);
 	return 0;
@@ -184,7 +173,6 @@ static void dissector_init_ports_udp(void)
 	char buff[512], *ptr;
 	struct port_udp *pudp;
 	void **pos;
-
 	fp = fopen("/etc/netsniff-ng/udp.conf", "r");
 	if (!fp)
 		panic("No /etc/netsniff-ng/udp.conf found!\n");
@@ -209,23 +197,19 @@ static void dissector_init_ports_udp(void)
 		}
 		memset(buff, 0, sizeof(buff));
 	}
-
 	fclose(fp);
 }
 
 static int dissector_cleanup_ports_udp(void *ptr)
 {
 	struct port_udp *tmp, *p = ptr;
-
 	if (!ptr)
 		return 0;
-
 	while ((tmp = p->next)) {
 		xfree(p->port);
 		xfree(p);
 		p = tmp;
 	}
-
 	xfree(p->port);
 	xfree(p);
 	return 0;
@@ -237,7 +221,6 @@ static void dissector_init_ports_tcp(void)
 	char buff[512], *ptr;
 	struct port_tcp *ptcp;
 	void **pos;
-
 	fp = fopen("/etc/netsniff-ng/tcp.conf", "r");
 	if (!fp)
 		panic("No /etc/netsniff-ng/tcp.conf found!\n");
@@ -262,23 +245,19 @@ static void dissector_init_ports_tcp(void)
 		}
 		memset(buff, 0, sizeof(buff));
 	}
-
 	fclose(fp);
 }
 
 static int dissector_cleanup_ports_tcp(void *ptr)
 {
 	struct port_tcp *tmp, *p = ptr;
-
 	if (!ptr)
 		return 0;
-
 	while ((tmp = p->next)) {
 		xfree(p->port);
 		xfree(p);
 		p = tmp;
 	}
-
 	xfree(p->port);
 	xfree(p);
 	return 0;
@@ -290,7 +269,6 @@ static void dissector_init_ether_types(void)
 	char buff[512], *ptr;
 	struct ether_type *et;
 	void **pos;
-
 	fp = fopen("/etc/netsniff-ng/ether.conf", "r");
 	if (!fp)
 		panic("No /etc/netsniff-ng/ether.conf found!\n");
@@ -315,23 +293,19 @@ static void dissector_init_ether_types(void)
 		}
 		memset(buff, 0, sizeof(buff));
 	}
-
 	fclose(fp);
 }
 
 static int dissector_cleanup_ether_types(void *ptr)
 {
 	struct ether_type *tmp, *p = ptr;
-
 	if (!ptr)
 		return 0;
-
 	while ((tmp = p->next)) {
 		xfree(p->type);
 		xfree(p);
 		p = tmp;
 	}
-
 	xfree(p->type);
 	xfree(p);
 	return 0;
@@ -339,51 +313,15 @@ static int dissector_cleanup_ether_types(void *ptr)
 
 void dissector_init_ethernet(int fnttype)
 {
-	int (*fnt)(void *ptr) = NULL;
-
-	switch (fnttype) {
-	case FNTTYPE_PRINT_NORM:
-		fnt = dissector_set_print_norm;
-		break;
-	case FNTTYPE_PRINT_LESS:
-		fnt = dissector_set_print_less;
-		break;
-	case FNTTYPE_PRINT_HEX1:
-		fnt = dissector_set_print_payload_hex;
-		break;
-	case FNTTYPE_PRINT_HEX2:
-		fnt = dissector_set_print_all_hex;
-		break;
-	case FNTTYPE_PRINT_CHR1:
-		fnt = dissector_set_print_payload;
-		break;
-	case FNTTYPE_PRINT_NOPA:
-		fnt = dissector_set_print_no_payload;
-		break;
-	case FNTTYPE_PRINT_PAAC:
-		fnt = dissector_set_print_c_style;
-		break;
-	default:
-	case FNTTYPE_PRINT_NONE:
-		fnt = dissector_set_print_none;
-		break;
-	}
-
-	dissector_init_entry(fnt);
-	dissector_init_lay2(fnt);
-	dissector_init_lay3(fnt);
-	dissector_init_lay4(fnt);
-	dissector_init_exit(fnt);
-
-	info("OUI "); fflush(stdout);
+	dissector_init_entry(fnttype);
+	dissector_init_layer_2(fnttype);
+	dissector_init_layer_3(fnttype);
+	dissector_init_layer_4(fnttype);
+	dissector_init_exit(fnttype);
 	dissector_init_oui();
-	info("UDP "); fflush(stdout);
 	dissector_init_ports_udp();
-	info("TCP "); fflush(stdout);
 	dissector_init_ports_tcp();
-	info("ETH "); fflush(stdout);
 	dissector_init_ether_types();
-	info("\n"); fflush(stdout);
 }
 
 void dissector_cleanup_ethernet(void)
@@ -391,7 +329,6 @@ void dissector_cleanup_ethernet(void)
 	free_hash(&eth_lay2);
 	free_hash(&eth_lay3);
 	free_hash(&eth_lay4);
-
 	for_each_hash(&eth_ether_types, dissector_cleanup_ether_types);
 	free_hash(&eth_ether_types);
 	for_each_hash(&eth_ports_udp, dissector_cleanup_ports_udp);

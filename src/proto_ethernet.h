@@ -26,7 +26,6 @@ static inline void ethernet(uint8_t *packet, size_t len)
 
 	src_mac = eth->h_source;
 	dst_mac = eth->h_dest;
-
 	tprintf(" [ Eth ");
 	tprintf("MAC (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x => ",
 		src_mac[0], src_mac[1], src_mac[2],
@@ -51,14 +50,7 @@ static inline void ethernet(uint8_t *packet, size_t len)
 static inline void ethernet_hex_all(uint8_t *packet, size_t len)
 {
 	tprintf("   ");
-	__hex(packet, len);
-}
-
-static unsigned long num = 0;
-static inline void ethernet_cstyle_all(uint8_t *packet, size_t len)
-{
-	tprintf("$P%lu {\n   ", num++);
-	__hex2(packet, len);
+	hex(packet, len);
 }
 
 static inline void ethernet_less(uint8_t *packet, size_t len)
@@ -68,10 +60,8 @@ static inline void ethernet_less(uint8_t *packet, size_t len)
 
 	if (len < sizeof(struct ethhdr))
 		return;
-
 	src_mac = eth->h_source;
 	dst_mac = eth->h_dest;
-
 	tprintf(" %s => %s ", 
 		lookup_vendor((src_mac[0] << 16) | (src_mac[1] << 8) |
 			      src_mac[2]),
@@ -103,7 +93,6 @@ struct protocol ethernet_ops = {
 	.print_pay_ascii = empty,
 	.print_pay_hex = empty,
 	.print_pay_none = ethernet,
-	.print_all_cstyle = ethernet_cstyle_all,
 	.print_all_hex = ethernet_hex_all,
 	.proto_next = ethernet_next,
 };

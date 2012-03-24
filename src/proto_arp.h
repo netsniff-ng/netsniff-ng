@@ -125,8 +125,7 @@ struct protocol arp_ops = {
 	.print_pay_ascii = empty,
 	.print_pay_hex = empty,
 	.print_pay_none = arp,
-	.print_all_cstyle = __hex2,
-	.print_all_hex = __hex,
+	.print_all_hex = hex,
 	.proto_next = NULL,
 };
 

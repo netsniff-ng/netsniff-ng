@@ -168,17 +168,13 @@ Only print human-readable payload.
 
 Only print payload in hex format.
 
-=item -C|--c-style
+=item -N|--payload-none
 
-Print full packet in trafgen/C style hex format.
+Only print packet header.
 
 =item -X|--all-hex
 
 Print packets in hex format.
-
-=item -N|--no-payload
-
-Only print packet header.
 
 =item -v|--version
 
@@ -274,7 +270,7 @@ static unsigned long interval = TX_KERNEL_PULL_INT;
 static struct itimerval itimer;
 static volatile bool next_dump = false;
 
-static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqlxCXNvhF:";
+static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqlxXNvhF:";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -299,9 +295,8 @@ static struct option long_options[] = {
 	{"less", no_argument, 0, 'q'},
 	{"payload", no_argument, 0, 'l'},
 	{"payload-hex", no_argument, 0, 'x'},
-	{"c-style", no_argument, 0, 'C'},
+	{"payload-none", no_argument, 0, 'N'},
 	{"all-hex", no_argument, 0, 'X'},
-	{"no-payload", no_argument, 0, 'N'},
 	{"version", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
@@ -966,9 +961,8 @@ static void help(void)
 	printf("  -q|--less                   Print less-verbose packet information\n");
 	printf("  -l|--payload                Only print human-readable payload\n");
 	printf("  -x|--payload-hex            Only print payload in hex format\n");
-	printf("  -C|--c-style                Print full packet in trafgen/C style hex format\n");
+	printf("  -N|--payload-none           Only print packet header\n");
 	printf("  -X|--all-hex                Print packets in hex format\n");
-	printf("  -N|--no-payload             Only print packet header\n");
 	printf("  -v|--version                Show version\n");
 	printf("  -h|--help                   Guess what?!\n");
 	printf("\n");
@@ -1120,20 +1114,17 @@ int main(int argc, char **argv)
 		case 'q':
 			mode.print_mode = FNTTYPE_PRINT_LESS;
 			break;
-		case 'l':
-			mode.print_mode = FNTTYPE_PRINT_CHR1;
-			break;
 		case 'x':
-			mode.print_mode = FNTTYPE_PRINT_HEX1;
+			mode.print_mode = FNTTYPE_PRINT_PAY_HEX;
 			break;
-		case 'C':
-			mode.print_mode = FNTTYPE_PRINT_PAAC;
+		case 'l':
+			mode.print_mode = FNTTYPE_PRINT_PAY_ASCII;
 			break;
 		case 'X':
-			mode.print_mode = FNTTYPE_PRINT_HEX2;
+			mode.print_mode = FNTTYPE_PRINT_ALL_HEX;
 			break;
 		case 'N':
-			mode.print_mode = FNTTYPE_PRINT_NOPA;
+			mode.print_mode = FNTTYPE_PRINT_NO_PAY;
 			break;
 		case 'k':
 			mode.kpull = (unsigned long) atol(optarg);

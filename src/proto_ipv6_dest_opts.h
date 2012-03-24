@@ -76,8 +76,7 @@ struct protocol ipv6_dest_opts_ops = {
 	.print_pay_ascii = empty,
 	.print_pay_hex = empty,
 	.print_pay_none = dest_opts,
-	.print_all_cstyle = __hex2,
-	.print_all_hex = __hex,
+	.print_all_hex = hex,
 	.proto_next = dest_opts_next,
 };
 

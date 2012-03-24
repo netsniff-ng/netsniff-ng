@@ -15,14 +15,13 @@
 #include "proto_struct.h"
 #include "dissector_eth.h"
 
-static inline void hex(uint8_t *packet, size_t len)
+static inline void hex_pay(uint8_t *packet, size_t len)
 {
 	size_t plen = len;
 	uint8_t *buff;
 
 	if (len == 0)
 		return;
-
 	tprintf(" [ Payload hex ");
 	for (buff = packet; len-- > 0; buff++)
 		tprintf("%.2x ", *buff);
@@ -49,14 +48,8 @@ static inline void hex_hex(uint8_t *packet, size_t len)
 
 static inline void hex_all(uint8_t *packet, size_t len)
 {
-	__hex(packet, len);
+	hex(packet, len);
 	tprintf("\n\n");
-}
-
-static inline void hex_cstyle(uint8_t *packet, size_t len)
-{
-	__hex2(packet, len);
-	tprintf("\n}\n\n");
 }
 
 static inline void hex_ascii(uint8_t *packet, size_t len)
@@ -71,12 +64,11 @@ static inline void hex_ascii(uint8_t *packet, size_t len)
 struct protocol hex_ops = {
 	.key = 0x01,
 	.offset = 0,
-	.print_full = hex,
+	.print_full = hex_pay,
 	.print_less = hex_none_newline,
 	.print_pay_ascii = hex_ascii,
 	.print_pay_hex = hex_hex,
 	.print_pay_none = hex_none_newline,
-	.print_all_cstyle = hex_cstyle,
 	.print_all_hex = hex_all,
 	.proto_next = NULL,
 };

@@ -22,7 +22,6 @@ static struct hash_table_entry *lookup_hash_entry(unsigned int hash,
 {
 	unsigned int size = table->size, nr = hash % size;
 	struct hash_table_entry *array = table->array;
-
 	while (array[nr].ptr) {
 		if (array[nr].hash == hash)
 			break;
@@ -46,14 +45,12 @@ static void **insert_hash_entry(unsigned int hash, void *ptr,
 				struct hash_table *table)
 {
 	struct hash_table_entry *entry = lookup_hash_entry(hash, table);
-
 	if (!entry->ptr) {
 		entry->ptr = ptr;
 		entry->hash = hash;
 		table->nr++;
 		return NULL;
 	}
-
 	return &entry->ptr;
 }
 
@@ -69,7 +66,6 @@ static void *remove_hash_entry(unsigned int hash, void *ptr, void *ptr_next,
 			       struct hash_table *table)
 {
 	struct hash_table_entry *entry = lookup_hash_entry(hash, table);
-
 	if (!entry->ptr)
 		return NULL;
 	else if (entry->ptr == ptr) {
@@ -87,20 +83,17 @@ static void grow_hash_table(struct hash_table *table)
 	unsigned int i;
 	unsigned int old_size = table->size, new_size;
 	struct hash_table_entry *old_array = table->array, *new_array;
-
 	new_size = alloc_nr(old_size);
 	new_array = xzmalloc(sizeof(struct hash_table_entry) * new_size);
 	table->size = new_size;
 	table->array = new_array;
 	table->nr = 0;
-
 	for (i = 0; i < old_size; i++) {
 		unsigned int hash = old_array[i].hash;
 		void *ptr = old_array[i].ptr;
 		if (ptr)
 			insert_hash_entry(hash, ptr, table);
 	}
-
 	if (old_array)
 		xfree(old_array);
 }
@@ -123,7 +116,6 @@ void *remove_hash(unsigned int hash, void *ptr, void *ptr_next,
 void **insert_hash(unsigned int hash, void *ptr, struct hash_table *table)
 {
 	unsigned int nr = table->nr;
-
 	if (nr >= table->size/2)
 		grow_hash_table(table);
 	return insert_hash_entry(hash, ptr, table);
@@ -135,7 +127,6 @@ int for_each_hash(const struct hash_table *table, int (*fn)(void *))
 	unsigned int i;
 	unsigned int size = table->size;
 	struct hash_table_entry *array = table->array;
-
 	for (i = 0; i < size; i++) {
 		void *ptr = array->ptr;
 		array++;
@@ -146,7 +137,26 @@ int for_each_hash(const struct hash_table *table, int (*fn)(void *))
 			sum += val;
 		}
 	}
+	return sum;
+}
 
+int for_each_hash_int(const struct hash_table *table, int (*fn)(void *, int),
+		      int arg)
+{
+	int sum = 0;
+	unsigned int i;
+	unsigned int size = table->size;
+	struct hash_table_entry *array = table->array;
+	for (i = 0; i < size; i++) {
+		void *ptr = array->ptr;
+		array++;
+		if (ptr) {
+			int val = fn(ptr, arg);
+			if (val < 0)
+				return val;
+			sum += val;
+		}
+	}
 	return sum;
 }
 

@@ -94,10 +94,10 @@ static inline void show_frame_hdr(struct frame_map *hdr, int mode,
 	if (mode == FNTTYPE_PRINT_NONE)
 		return;
 	switch (mode) {
-	case FNTTYPE_PRINT_PAAC:
-	case FNTTYPE_PRINT_NOPA:
-	case FNTTYPE_PRINT_HEX1:
-	case FNTTYPE_PRINT_HEX2:
+	case FNTTYPE_PRINT_PAY_ASCII:
+	case FNTTYPE_PRINT_NO_PAY:
+	case FNTTYPE_PRINT_PAY_HEX:
+	case FNTTYPE_PRINT_ALL_HEX:
 	case FNTTYPE_PRINT_NORM:
 	default:
 		if (rmode == RING_MODE_INGRESS) {

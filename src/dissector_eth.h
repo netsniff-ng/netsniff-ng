@@ -5,8 +5,8 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef DISSECTOR_ETHERNET_H
-#define DISSECTOR_ETHERNET_H
+#ifndef DISSECTOR_ETH_H
+#define DISSECTOR_ETH_H
 
 #include "hash.h"
 #include "proto_struct.h"
@@ -38,4 +38,4 @@ static inline struct protocol *dissector_get_ethernet_exit_point(void)
 	return &hex_ops;
 }
 
-#endif /* DISSECTOR_ETHERNET_H */
+#endif /* DISSECTOR_ETH_H */

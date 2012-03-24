@@ -125,8 +125,7 @@ struct protocol ipv4_ops = {
 	.print_pay_ascii = empty,
 	.print_pay_hex = empty,
 	.print_pay_none = ipv4,
-	.print_all_cstyle = __hex2,
-	.print_all_hex = __hex,
+	.print_all_hex = hex,
 	.proto_next = ipv4_next,
 };
 

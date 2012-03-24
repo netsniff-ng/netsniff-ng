@@ -57,6 +57,8 @@ extern void **insert_hash(unsigned int hash, void *ptr,
 extern void *remove_hash(unsigned int hash, void *ptr, void *ptr_next,
 			 struct hash_table *table);
 extern int for_each_hash(const struct hash_table *table, int (*fn)(void *));
+extern int for_each_hash_int(const struct hash_table *table,
+			     int (*fn)(void *, int), int arg);
 extern void free_hash(struct hash_table *table);
 
 static inline void init_hash(struct hash_table *table)

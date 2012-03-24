@@ -74,8 +74,7 @@ struct protocol vlan_ops = {
 	.print_pay_ascii = empty,
 	.print_pay_hex = empty,
 	.print_pay_none = vlan,
-	.print_all_cstyle = __hex2,
-	.print_all_hex = __hex,
+	.print_all_hex = hex,
 	.proto_next = vlan_next,
 };
 

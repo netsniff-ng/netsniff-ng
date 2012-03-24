@@ -23,26 +23,17 @@
 #define LINKTYPE_PPP        9	/* Point-to-point Protocol */
 #define LINKTYPE_FDDI      10	/* FDDI */
 
-#define FNTTYPE_PRINT_NORM  0	/* Normal printing */
-#define FNTTYPE_PRINT_LESS  1	/* Less verbose printing */
-#define FNTTYPE_PRINT_NONE  2	/* No printing at all */
-#define FNTTYPE_PRINT_HEX1  3	/* Only payload as hex */
-#define FNTTYPE_PRINT_HEX2  4	/* The whole packet as hex */
-#define FNTTYPE_PRINT_CHR1  5	/* Only payload as char */
-#define FNTTYPE_PRINT_NOPA  6	/* No payload at all, only header */
-#define FNTTYPE_PRINT_PAAC  7	/* Payload as copy-and-paste C */
+#define FNTTYPE_PRINT_NORM	0
+#define FNTTYPE_PRINT_LESS	1
+#define FNTTYPE_PRINT_PAY_HEX	2
+#define FNTTYPE_PRINT_ALL_HEX	3
+#define FNTTYPE_PRINT_NO_PAY	4
+#define FNTTYPE_PRINT_PAY_ASCII	5
+#define FNTTYPE_PRINT_NONE	6
 
 extern void dissector_init_all(int fnttype);
 extern void dissector_entry_point(uint8_t *packet, size_t len, int linktype);
 extern void dissector_cleanup_all(void);
-
-extern int dissector_set_print_norm(void *ptr);
-extern int dissector_set_print_less(void *ptr);
-extern int dissector_set_print_none(void *ptr);
-extern int dissector_set_print_payload(void *ptr);
-extern int dissector_set_print_payload_hex(void *ptr);
-extern int dissector_set_print_c_style(void *ptr);
-extern int dissector_set_print_all_hex(void *ptr);
-extern int dissector_set_print_no_payload(void *ptr);
+extern int dissector_set_print_type(void *ptr, int type);
 
 #endif /* DISSECTOR_H */
