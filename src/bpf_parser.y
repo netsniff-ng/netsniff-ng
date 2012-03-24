@@ -488,7 +488,6 @@ int compile_filter(char *file, int verbose)
 	yyin = fopen(file, "r");
 	if (!yyin)
 		panic("Cannot open file!\n");
-
 	memset(out, 0, sizeof(out));
 	memset(labels, 0, sizeof(labels));
 	memset(labels_jf, 0, sizeof(labels_jf));
@@ -502,12 +501,11 @@ int compile_filter(char *file, int verbose)
 	res.len = curr_instr;
 
 	if (verbose) {
-		printf("*** Generated program:\n");
+		printf("Generated program:\n");
 		bpf_dump_all(&res);
 	}
-
 	if (verbose) {
-		printf("*** Validating: ");
+		printf("Validating: ");
 		fflush(stdout);
 	}
 	if (bpf_validate(&res) == 0) {
@@ -517,10 +515,9 @@ int compile_filter(char *file, int verbose)
 			panic("Semantic error! BPF validation failed! "
 			      "Try -V for debugging output!\n");
 	} else if (verbose)
-		printf("is valid!\n");
-
+		printf("is runnable!\n");
 	if (verbose)
-		printf("*** Result:\n");
+		printf("Result:\n");
 	for (i = 0; i < res.len; ++i) {
 		printf("{ 0x%x, %u, %u, 0x%08x },\n",
 		       res.filter[i].code, res.filter[i].jt,
@@ -534,7 +531,6 @@ int compile_filter(char *file, int verbose)
 		if (labels_k[i] != NULL)
 			xfree(labels_k[i]);
 	}
-
 	return 0;
 }
 
