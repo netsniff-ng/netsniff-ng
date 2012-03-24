@@ -93,3 +93,6 @@ observations as our conclusions. A benchmark with PF_RING in transparent_mode
 0 and 1 seems even slower than netsniff-ng and in transparent_mode 2 both have
 comparable performance numbers. The test was done on a Dell PowerEdge 2850.
 
+Netsniff-ng and trafgen performance analysis:
+http://wiki.networksecuritytoolkit.org/nstwiki/index.php/LAN_Ethernet_Maximum_Rates,_Generation,_Capturing_%26_Monitoring
+
