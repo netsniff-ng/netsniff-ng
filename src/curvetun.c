@@ -281,11 +281,12 @@ static void help(void)
 	printf("Note:\n");
 	printf("  There is no default port specified, so that you are forced\n");
 	printf("  to select your own! For client/server status messages see syslog!\n");
+	printf("  This software is an experimental prototype intended for researchers.\n");
 	printf("\n");
 	printf("Secret ingredient: 7647-14-5\n");
 	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
+	printf("Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
 	printf("License: GNU GPL version 2\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
@@ -299,7 +300,7 @@ static void version(void)
 	printf("Build: %s\n", BUILD_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
+	printf("Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
 	printf("License: GNU GPL version 2\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
