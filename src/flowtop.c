@@ -74,6 +74,10 @@ Only show TCP flows (default)
 
 Only show UDP flows
 
+=item -s|--show-src
+
+Also include flow source in top output
+
 =item --city-db
 
 Path to GeoIP city database
@@ -189,6 +193,8 @@ volatile sig_atomic_t sigint = 0;
 
 static int what = INCLUDE_TCP;
 
+static int show_src = 0;
+
 static struct flow_list flow_list;
 
 static GeoIP *gi_country = NULL;
@@ -196,11 +202,12 @@ static GeoIP *gi_city = NULL;
 
 static char *path_city_db = NULL, *path_country_db = NULL;
 
-static const char *short_options = "vhTULK";
+static const char *short_options = "vhTULKs";
 
 static struct option long_options[] = {
 	{"tcp", no_argument, 0, 'T'},
 	{"udp", no_argument, 0, 'U'},
+	{"show-src", no_argument, 0, 's'},
 	{"city-db", required_argument, 0, 'L'},
 	{"country-db", required_argument, 0, 'K'},
 	{"version", no_argument, 0, 'v'},
@@ -282,13 +289,15 @@ static void help(void)
 	printf("Options:\n");
 	printf("  -T|--tcp               Show only TCP flows (default)\n");
 	printf("  -U|--udp               Show only UDP flows\n");
+	printf("  -s|--show-src          Also show source, not only dest\n");
 	printf("  --city-db <path>       Specifiy path for geoip city database\n");
 	printf("  --country-db <path>    Specifiy path for geoip country database\n");
 	printf("  -v|--version           Print version\n");
 	printf("  -h|--help              Print this help\n");
 	printf("\n");
 	printf("Examples:\n");
-	printf("  flowtop\n\n");
+	printf("  flowtop\n");
+	printf("  flowtop -s\n\n");
 	printf("Note:\n");
 	printf("  If netfilter is not running, you can activate it with i.e.:\n");
 	printf("   iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT\n");
@@ -427,16 +436,18 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 									  n->port_dst)));
 			}
 			attroff(A_BOLD);
-			attron(COLOR_PAIR(1));
-			printw("%s", n->rev_dns_src);
-			attroff(COLOR_PAIR(1));
-			printw(":%u (", ntohs(n->port_src));
-			attron(COLOR_PAIR(4));
-			printw("%s", (strlen(n->country_src) > 0 ?
-			       n->country_src : "N/A"));
-			attroff(COLOR_PAIR(4));
-			printw(", %s) => ", (strlen(n->city_src) > 0 ?
-			       n->city_src : "N/A"));
+			if (show_src) {
+				attron(COLOR_PAIR(1));
+				printw("%s", n->rev_dns_src);
+				attroff(COLOR_PAIR(1));
+				printw(":%u (", ntohs(n->port_src));
+				attron(COLOR_PAIR(4));
+				printw("%s", (strlen(n->country_src) > 0 ?
+				       n->country_src : "N/A"));
+				attroff(COLOR_PAIR(4));
+				printw(", %s) => ", (strlen(n->city_src) > 0 ?
+				       n->city_src : "N/A"));
+			}
 			attron(COLOR_PAIR(2));
 			printw("%s", n->rev_dns_dst);
 			attroff(COLOR_PAIR(2));
@@ -940,6 +951,9 @@ int main(int argc, char **argv)
 			break;
 		case 'U':
 			what_cmd |= INCLUDE_UDP;
+			break;
+		case 's':
+			show_src = 1;
 			break;
 		case 'L':
 			path_city_db = xstrdup(optarg);
