@@ -430,7 +430,6 @@ static void help(void)
 	printf("License: GNU GPL version 2\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
-
 	die();
 }
 
@@ -445,7 +444,6 @@ static void version(void)
 	printf("License: GNU GPL version 2\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
-
 	die();
 }
 
@@ -774,14 +772,14 @@ static int do_trace(const struct ash_cfg *cfg)
 	if (ret < 0)
 		panic("Kernel does not support IP_HDRINCL!\n");
 
-	info("AS path IPv%d TCP trace from %s to %s:%s (%s) with len %u "
-	     "Bytes, %u max hops\n", cfg->ip, hbuff2, hbuff1, cfg->port,
-	     cfg->host, len, cfg->max_ttl);
-	info("Using flags SYN:%d,ACK:%d,ECN:%d,FIN:%d,PSH:%d,RST:%d,URG:%d\n",
-	     cfg->syn, cfg->ack, cfg->ecn, cfg->fin, cfg->psh, cfg->rst,
-	     cfg->urg);
+	printf("AS path IPv%d TCP trace from %s to %s:%s (%s) with len %zu "
+	       "Bytes, %u max hops\n", cfg->ip, hbuff2, hbuff1, cfg->port,
+	       cfg->host, len, cfg->max_ttl);
+	printf("Using flags SYN:%d,ACK:%d,ECN:%d,FIN:%d,PSH:%d,RST:%d,URG:%d\n",
+	       cfg->syn, cfg->ack, cfg->ecn, cfg->fin, cfg->psh, cfg->rst,
+	       cfg->urg);
 	if (cfg->payload) {
-		info("With payload: \'%s\'\n", cfg->payload);
+		printf("With payload: \'%s\'\n", cfg->payload);
 	}
 	fflush(stdout);
 
@@ -812,7 +810,7 @@ static int do_trace(const struct ash_cfg *cfg)
 
 		if ((ttl == cfg->init_ttl && !show_pkt) ||
 		    (ttl > cfg->init_ttl)) {
-			info("%2d: ", ttl);
+			printf("%2d: ", ttl);
 			fflush(stdout);
 		}
 retry:
@@ -821,10 +819,10 @@ retry:
 						    (struct sockaddr *) &sd,
 						    (struct sockaddr *) &ss);
 			if (ttl == cfg->init_ttl && query == 0 && show_pkt) {
-				info("Original packet:\n");
-				hex(packet, len);
+				printf("Original packet:\n");
+				hex_pay(packet, len);
 				tprintf_flush();
-				info("\n%2d: ", ttl);
+				printf("\n%2d: ", ttl);
 				fflush(stdout);
 			}
 
@@ -850,12 +848,12 @@ retry:
 							(struct sockaddr *) &ss,
 							cfg->dns_resolv);
 				if (is_okay && show_pkt) {
-					info("\n  Received packet:\n");
-					hex(packet_rcv, real_len);
+					printf("\n  Received packet:\n");
+					hex_pay(packet_rcv, real_len);
 					tprintf_flush();
 				}
 			} else {
-				info("* ");
+				printf("* ");
 				fflush(stdout);
 				is_okay = 0;
 			}
@@ -866,7 +864,7 @@ retry:
 			goto retry;
 		}
 
-		info("\n");
+		printf("\n");
 		fflush(stdout);
 	}
 

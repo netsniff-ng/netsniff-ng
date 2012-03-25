@@ -600,27 +600,26 @@ static void dump_conf(struct pktconf *cfg)
 {
 	size_t i, j;
 
-	info("n %lu, gap %lu us, pkts %zu\n", cfg->num, cfg->gap, cfg->len);
+	printf("n %lu, gap %lu us, pkts %zu\n", cfg->num, cfg->gap, cfg->len);
 	if (cfg->len == 0)
 		return;
-
 	for (i = 0; i < cfg->len; ++i) {
-		info("[%zu] pkt\n", i);
-		info(" len %zu cnts %zu rnds %zu\n", cfg->pkts[i].plen,
-		     cfg->pkts[i].clen, cfg->pkts[i].rlen);
-		info(" payload ");
+		printf("[%zu] pkt\n", i);
+		printf(" len %zu cnts %zu rnds %zu\n", cfg->pkts[i].plen,
+		       cfg->pkts[i].clen, cfg->pkts[i].rlen);
+		printf(" payload ");
 		for (j = 0; j < cfg->pkts[i].plen; ++j)
-			info("%02x ", cfg->pkts[i].payload[j]);
-		info("\n");
+			printf("%02x ", cfg->pkts[i].payload[j]);
+		printf("\n");
 		for (j = 0; j < cfg->pkts[i].clen; ++j)
-			info(" cnt%zu [%u,%u], inc %u, off %zu\n",
-			     j, cfg->pkts[i].cnt[j].min,
-			     cfg->pkts[i].cnt[j].max,
-			     cfg->pkts[i].cnt[j].inc,
-			     cfg->pkts[i].cnt[j].off);
+			printf(" cnt%zu [%u,%u], inc %u, off %zu\n",
+			       j, cfg->pkts[i].cnt[j].min,
+			       cfg->pkts[i].cnt[j].max,
+			       cfg->pkts[i].cnt[j].inc,
+			       cfg->pkts[i].cnt[j].off);
 		for (j = 0; j < cfg->pkts[i].rlen; ++j)
-			info(" rnd%zu off %zu\n",
-			     j, cfg->pkts[i].rnd[j].off);
+			printf(" rnd%zu off %zu\n",
+			       j, cfg->pkts[i].rnd[j].off);
 	}
 }
 
@@ -643,7 +642,7 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 		panic("Cannot open config file!\n");
 	memset(buff, 0, sizeof(buff));
 
-	info("CFG:\n");
+	printf("CFG:\n");
 	srand(time(NULL));
 
 	while (fgets(buff, sizeof(buff), fp) != NULL) {

@@ -365,7 +365,7 @@ static void write_username(char *home)
 	if (ret != strlen(user))
 		panic("Could not write username!\n");
 	close(fd);
-	info("Username written to %s!\n", path);
+	printf("Username written to %s!\n", path);
 }
 
 static void create_curvedir(char *home)
@@ -378,7 +378,7 @@ static void create_curvedir(char *home)
 	ret = mkdir(path, S_IRWXU);
 	if (ret < 0 && errno != EEXIST)
 		panic("Cannot create curvetun dir!\n");
-	info("curvetun directory %s created!\n", path);
+	printf("curvetun directory %s created!\n", path);
 	/* We also create empty files for clients and servers! */
 	memset(path, 0, sizeof(path));
 	slprintf(path, sizeof(path), "%s/%s", home, FILE_CLIENTS);
@@ -386,14 +386,14 @@ static void create_curvedir(char *home)
 	if (fd < 0)
 		panic("Cannot open clients file!\n");
 	close(fd);
-	info("Empty client file written to %s!\n", path);
+	printf("Empty client file written to %s!\n", path);
 	memset(path, 0, sizeof(path));
 	slprintf(path, sizeof(path), "%s/%s", home, FILE_SERVERS);
 	fd = open(path, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
 	if (fd < 0)
 		panic("Cannot open servers file!\n");
 	close(fd);
-	info("Empty server file written to %s!\n", path);
+	printf("Empty server file written to %s!\n", path);
 }
 
 static void create_keypair(char *home)
@@ -404,7 +404,7 @@ static void create_keypair(char *home)
 	unsigned char secretkey[crypto_box_curve25519xsalsa20poly1305_SECRETKEYBYTES] = { 0 };
 	char path[PATH_MAX];
 	const char * errstr = NULL;
-	info("Reading from %s (this may take a while) ...\n", CURVETUN_ENTROPY_SOURCE);
+	printf("Reading from %s (this may take a while) ...\n", CURVETUN_ENTROPY_SOURCE);
 	fd = open_or_die(CURVETUN_ENTROPY_SOURCE, O_RDONLY);
 	ret = read_exact(fd, secretkey, sizeof(secretkey), 0);
 	if (ret != sizeof(secretkey)) {
@@ -429,7 +429,7 @@ static void create_keypair(char *home)
 		goto out;
 	}
 	close(fd);
-	info("Public key written to %s!\n", path);
+	printf("Public key written to %s!\n", path);
 	memset(path, 0, sizeof(path));
 	slprintf(path, sizeof(path), "%s/%s", home, FILE_PRIVKEY);
 	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
@@ -451,7 +451,7 @@ out:
 	if (err)
 		panic("%s: %s", errstr, strerror(errno));
 	else
-		info("Private key written to %s!\n", path);
+		printf("Private key written to %s!\n", path);
 }
 
 static void check_config_keypair_or_die(char *home)
