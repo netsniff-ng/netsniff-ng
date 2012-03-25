@@ -28,7 +28,7 @@ netsniff-ng - the packet sniffing beast
 
 =head1 SYNOPSIS
 
-netsniff-ng -i|-d|--dev|--in <dev|pcap> -o|--out <dev|pcap|dir>
+netsniff-ng -i|-d|--dev|--in <dev|pcap> -o|--out <dev|pcap|dir|txf>
 [-f|--filter <bpf-file>][-t|--type <type>][-F|--interval <uint>]
 [-s|--silent][-J|--jumbo-support][-n|--num <uint>][-r|--rand]
 [-M|--no-promisc][-m|--mmap | -c|--clrw][-S|--ring-size <size>]
@@ -70,9 +70,10 @@ Schedule process on CPU 0 and 1.
 
 Input source. Can be a network device or pcap file.
 
-=item -o|--out <dev|pcap|dir>
+=item -o|--out <dev|pcap|dir|txf>
 
-Output sink. Can be a network device, pcap file or a directory.
+Output sink. Can be a network device, pcap file, a trafgen txf file or a
+directory. (There's only pcap to txf translation possible.)
 
 =item -f|--filter <bpf-file>
 
@@ -226,6 +227,7 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "pcap.h"
 #include "bpf.h"
 #include "xio.h"
+#include "xstring.h"
 #include "die.h"
 #include "opt_memcpy.h"
 #include "tprintf.h"
@@ -598,7 +600,7 @@ out:
 
 static void enter_mode_read_pcap(struct mode *mode)
 {
-	int ret, fd;
+	int ret, fd, fdo = 0;
 	struct pcap_pkthdr phdr;
 	struct sock_fprog bpf_ops;
 	struct tx_stats stats;
@@ -632,6 +634,11 @@ static void enter_mode_read_pcap(struct mode *mode)
 	bpf_dump_all(&bpf_ops);
 	printf("MD: RD %s\n\n", pcap_ops[mode->pcap]->name);
 
+	if (mode->device_out) {
+		fdo = open_or_die_m(mode->device_out, O_RDWR | O_CREAT |
+				    O_TRUNC | O_LARGEFILE, S_IRUSR | S_IWUSR);
+	}
+
 	while (likely(sigint == 0)) {
 		do {
 			ret = pcap_ops[mode->pcap]->read_pcap_pkt(fd, &phdr,
@@ -641,12 +648,35 @@ static void enter_mode_read_pcap(struct mode *mode)
 		} while (mode->filter && !bpf_run_filter(&bpf_ops, out, phdr.len));
 		pcap_pkthdr_to_tpacket_hdr(&phdr, &fm.tp_h);
 
-		stats.tx_bytes += fm.tp_h.tp_len;;
+		stats.tx_bytes += fm.tp_h.tp_len;
 		stats.tx_packets++;
 
 		show_frame_hdr(&fm, mode->print_mode, RING_MODE_EGRESS);
 		dissector_entry_point(out, fm.tp_h.tp_snaplen,
 				      mode->link_type);
+
+		if (mode->device_out) {
+			int i = 0;
+			char bout[80];
+			slprintf(bout, sizeof(bout), "$P%u {\n  ", stats.tx_packets);
+			write_or_die(fdo, bout, strlen(bout));
+
+			while (i < fm.tp_h.tp_snaplen) {
+				slprintf(bout, sizeof(bout), "0x%02x, ", out[i]);
+				write_or_die(fdo, bout, strlen(bout));
+				i++;
+				if (i % 10 == 0) {
+					slprintf(bout, sizeof(bout), "\n  ", out[i]);
+					write_or_die(fdo, bout, strlen(bout));
+				}
+			}
+			if (i % 10 != 0) {
+				slprintf(bout, sizeof(bout), "\n");
+				write_or_die(fdo, bout, strlen(bout));
+			}
+			slprintf(bout, sizeof(bout), "}\n\n");
+			write_or_die(fdo, bout, strlen(bout));
+		}
 
 		if (frame_cnt_max != 0 &&
 		    stats.tx_packets >= frame_cnt_max) {
@@ -665,6 +695,9 @@ out:
 	if (pcap_ops[mode->pcap]->prepare_close_pcap)
 		pcap_ops[mode->pcap]->prepare_close_pcap(fd, PCAP_MODE_READ);
 	close(fd);
+
+	if (mode->device_out)
+		close(fdo);
 }
 
 static void finish_multi_pcap_file(struct mode *mode, int fd)
@@ -927,7 +960,7 @@ static void help(void)
 	printf("Usage: netsniff-ng [options]\n");
 	printf("Options:\n");
 	printf("  -i|-d|--dev|--in <dev|pcap> Input source as netdev or pcap\n");
-	printf("  -o|--out <dev|pcap|dir>     Output sink as netdev or pcap or directory\n");
+	printf("  -o|--out <dev|pcap|dir|txf> Output sink as netdev, pcap, directory, txf file\n");
 	printf("  -f|--filter <bpf-file>      Use BPF filter file from bpfc\n");
 	printf("  -t|--type <type>            Only handle packets of defined type:\n");
 	printf("                              host|broadcast|multicast|others|outgoing\n");
@@ -964,17 +997,18 @@ static void help(void)
 	printf("Examples:\n");
 	printf("  netsniff-ng --in eth0 --out dump.pcap --silent --bind-cpu 0\n");
 	printf("  netsniff-ng --in dump.pcap --mmap --out eth0 --silent --bind-cpu 0\n");
+	printf("  netsniff-ng --in dump.pcap --out dump.txf --silent --bind-cpu 0\n");
 	printf("  netsniff-ng --in any --filter icmp.bpf --all-hex\n");
-	printf("  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0 --type host --filter http.bpf\n");
-	printf("  netsniff-ng --in any --filter http.bpf --payload\n");
-	printf("  netsniff-ng --in wlan0 --out /opt/probe1/ --silent --interval 30 --bind-cpu 0 --jumbo-support\n");
+	printf("  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0 --type host\n");
+	printf("  netsniff-ng --in wlan0 --out /opt/probe1/ --silent --interval 30 --bind-cpu 0\n");
 	printf("\n");
 	printf("Note:\n");
 	printf("  This tool is targeted for network developers! You should\n");
 	printf("  be aware of what you are doing and what these options above\n");
 	printf("  mean! Use netsniff-ng's bpfc compiler for generating filter files.\n");
 	printf("  Further, netsniff-ng automatically enables the kernel BPF JIT\n");
-	printf("  if present.\n");
+	printf("  if present. Txf file output is only possible if the input source\n");
+	printf("  is a pcap file.\n");
 	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n");
