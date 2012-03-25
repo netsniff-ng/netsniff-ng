@@ -25,6 +25,7 @@ combination for different purposes, i.e.
  4) --in <netdev>, performs an online analysis
  5) --in <netdev> --out <folder>, periodically writes network trace files
  6) --in <netdev1> --out <netdev2>, redirects network traffic
+ 7) --in <pcap> --out <txf>, rewrites a pcap file into a txf file for trafgen
 
 Those options can be combined with e.g. different filtering methods or other
 parameters such as printing modes.
