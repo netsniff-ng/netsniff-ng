@@ -47,6 +47,8 @@ struct ether_type {
 	struct ether_type *next;
 };
 
+/* Note: this macro only applies to the lookup_* functions here in this file,
+ * mainly to remove redundand code. */
 #define __do_lookup_inline(id, struct_name, hash_ptr, struct_member)	      \
 	({								      \
 		struct struct_name *entry = lookup_hash(id, hash_ptr);	      \
