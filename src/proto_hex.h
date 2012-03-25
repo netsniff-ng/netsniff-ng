@@ -23,11 +23,11 @@ static inline void hex_pay(uint8_t *packet, size_t len)
 	if (len == 0)
 		return;
 	tprintf(" [ Payload hex ");
-	for (buff = packet; len-- > 0; buff++)
+	for (buff = packet, plen = len; plen-- > 0; buff++)
 		tprintf("%.2x ", *buff);
 	tprintf("]\n");
 	tprintf(" [ Payload chr ");
-	for (buff = packet; plen-- > 0; buff++)
+	for (buff = packet, plen = len; plen-- > 0; buff++)
 		tprintf("%c ", isprint(*buff) ? *buff : '.');
 	tprintf("]\n\n");
 }
