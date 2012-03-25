@@ -438,7 +438,7 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 			attroff(A_BOLD);
 			if (show_src) {
 				attron(COLOR_PAIR(1));
-				printw("%s", n->rev_dns_src);
+				mvwprintw(screen, ++line, 8, "src: %s", n->rev_dns_src);
 				attroff(COLOR_PAIR(1));
 				printw(":%u (", ntohs(n->port_src));
 				attron(COLOR_PAIR(4));
@@ -449,7 +449,7 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 				       n->city_src : "N/A"));
 			}
 			attron(COLOR_PAIR(2));
-			printw("%s", n->rev_dns_dst);
+			mvwprintw(screen, ++line, 8, "dst: %s", n->rev_dns_dst);
 			attroff(COLOR_PAIR(2));
 			printw(":%u (", ntohs(n->port_dst));
 			attron(COLOR_PAIR(4));
