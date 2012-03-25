@@ -666,8 +666,12 @@ static void enter_mode_read_pcap(struct mode *mode)
 				write_or_die(fdo, bout, strlen(bout));
 				i++;
 				if (i % 10 == 0) {
-					slprintf(bout, sizeof(bout), "\n  ", out[i]);
+					slprintf(bout, sizeof(bout), "\n", out[i]);
 					write_or_die(fdo, bout, strlen(bout));
+					if (i < fm.tp_h.tp_snaplen) {
+						slprintf(bout, sizeof(bout), "  ", out[i]);
+						write_or_die(fdo, bout, strlen(bout));
+					}
 				}
 			}
 			if (i % 10 != 0) {
