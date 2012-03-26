@@ -85,16 +85,12 @@ static inline void ipv4(uint8_t *packet, size_t len)
 
 static inline void ipv4_less(uint8_t *packet, size_t len)
 {
-	uint16_t csum, frag_off;
 	char src_ip[INET_ADDRSTRLEN];
 	char dst_ip[INET_ADDRSTRLEN];
 	struct ipv4hdr *ip = (struct ipv4hdr *) packet;
 
 	if (len < sizeof(struct ipv4hdr))
 		return;
-
-	frag_off = ntohs(ip->h_frag_off);
-	csum = calc_csum(ip, ip->h_ihl * 4, 0);
 
 	inet_ntop(AF_INET, &ip->h_saddr, src_ip, sizeof(src_ip));
 	inet_ntop(AF_INET, &ip->h_daddr, dst_ip, sizeof(dst_ip));
