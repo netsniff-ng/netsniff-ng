@@ -612,13 +612,13 @@ static void dump_conf(struct pktconf *cfg)
 			printf("%02x ", cfg->pkts[i].payload[j]);
 		printf("\n");
 		for (j = 0; j < cfg->pkts[i].clen; ++j)
-			printf(" cnt%zu [%u,%u], inc %u, off %zu\n",
+			printf(" cnt%zu [%u,%u], inc %u, off %ld\n",
 			       j, cfg->pkts[i].cnt[j].min,
 			       cfg->pkts[i].cnt[j].max,
 			       cfg->pkts[i].cnt[j].inc,
 			       cfg->pkts[i].cnt[j].off);
 		for (j = 0; j < cfg->pkts[i].rlen; ++j)
-			printf(" rnd%zu off %zu\n",
+			printf(" rnd%zu off %ld\n",
 			       j, cfg->pkts[i].rnd[j].off);
 	}
 }
