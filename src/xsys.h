@@ -105,8 +105,6 @@ extern int pf_socket(void);
 extern int wireless_bitrate(const char *ifname);
 extern int wireless_essid(const char *ifname, char *essid);
 extern int adjust_dbm_level(int dbm_val);
-extern int dbm_to_mwatt(const int in);
-extern int wireless_tx_power(const char *ifname);
 extern int wireless_sigqual(const char *ifname, struct iw_statistics *stats);
 extern int wireless_rangemax_sigqual(const char *ifname);
 extern int ethtool_bitrate(const char *ifname);

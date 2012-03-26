@@ -136,36 +136,6 @@ int adjust_dbm_level(int dbm_val)
 	return dbm_val;
 }
 
-int dbm_to_mwatt(const int in)
-{
-	/* From Jean Tourrilhes <jt@hpl.hp.com> (iwlib.c) */
-	int ip = in / 10;
-	int fp = in % 10;
-	int k;
-	double res = 1.0;
-	for (k = 0; k < ip; k++)
-		res *= 10;
-	for (k = 0; k < fp; k++)
-		res *= 1.25892541179; /* LOG10_MAGIC */
-	return (int) res;
-}
-
-int wireless_tx_power(const char *ifname)
-{
-	int ret, sock, tx_power;
-	struct iwreq iwr;
-	sock = af_socket(AF_INET);
-	memset(&iwr, 0, sizeof(iwr));
-	strlcpy(iwr.ifr_name, ifname, IFNAMSIZ);
-	ret = ioctl(sock, SIOCGIWTXPOW, &iwr);
-	if (!ret)
-		tx_power = iwr.u.txpower.value;
-	else 
-		tx_power = 0;
-	close(sock);
-	return ret;
-}
-
 int wireless_sigqual(const char *ifname, struct iw_statistics *stats)
 {
 	int ret, sock;
