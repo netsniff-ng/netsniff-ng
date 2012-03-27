@@ -16,6 +16,7 @@ What libraries / tools are required?
  - libncurses (ifpps, flowtop)
  - libGeoIP and its database (ashunt, flowtop)
  - flex, bison (bpfc)
+ - ntpd [or equivalent] (curvetun)
  - libnacl (curvetun)
  - libnetfilter-conntrack (flowtop)
  - liburcu (flowtop)
