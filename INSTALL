@@ -68,8 +68,10 @@ this way:
 When done, netsniff-ng build infrastructure will read nacl_path.cmake to get
 the needed paths to NaCl.
 
-For using TUN/TAP devices as a user, copy the file src/50-tuntap.rules into
-/etc/udev/rules.d/ and restart the udev daemon.
+For using TUN/TAP devices as a user, e.g. create a file called
+src/50-tuntap.rules in /etc/udev/rules.d/ with:
+KERNEL=="tun", NAME="net/%k", GROUP="netdev", MODE="0660", OPTIONS+="ignore_remove"
+ and restart the udev daemon. Add yourself to the "netdev" group.
 
 NOTES
 
