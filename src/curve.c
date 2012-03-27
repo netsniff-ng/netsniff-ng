@@ -284,7 +284,7 @@ ssize_t curve25519_decode(struct curve25519_struct *c, struct curve25519_proto *
 	ret = crypto_box_open_afternm(c->dec_buf, chipertext, size,
 				      p->dnonce, p->key);
 	if (unlikely(ret)) {
-		spinlock_unlock(&c->enc_lock);
+		spinlock_unlock(&c->dec_lock);
 		return -EIO;
 	}
 	(*plaintext) = c->dec_buf;
