@@ -268,6 +268,12 @@ could compile the toolkit with an MMX/SSE optimized memcpy, which is available
 in src/opt_memcpy.c for x86/x86_64 architectures. Have a look at the toolkit's
 install instructions for compiling.
 
+<=== Further things worth experimenting regarding performance ====>
+
+- netsniff-ng/trafgen on Ethernet team devices
+  (http://lingrok.org/xref/linux-linus/drivers/net/team/)
+- netsniff-ng/trafgen on virtual tunnel devices
+
 Sources:
 ~~~~~~~~
 
