@@ -83,4 +83,3 @@ ashunt to encode an ASCII string into the packets payload. This can be done
 with the command line option --payload <string>. Thus, if you enable
 --show-packet which prints out the returned packet, you can possibly determine
 if the AS/ISP tries to censor certain packet probes with 'critical' words in it.
-

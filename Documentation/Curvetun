@@ -233,4 +233,3 @@ client# route del default gw 5.6.7.9
 web or do whatever you want. For instance, with curvetun we were able to watch
 Youtube videos in FullHD without problems. All your traffic will then be
 tunneled encrypted to your server.
-

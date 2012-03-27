@@ -87,4 +87,3 @@ Furthermore, ifpps supports setting the network adapter into promiscuous mode
 by applying option --promisc, i.e.
 
   ifpps --dev eth0 --promisc.
-
