@@ -103,7 +103,6 @@ extern int af_socket(int af);
 extern int af_raw_socket(int af, int proto);
 extern int pf_socket(void);
 extern int wireless_bitrate(const char *ifname);
-extern int wireless_essid(const char *ifname, char *essid);
 extern int adjust_dbm_level(int dbm_val);
 extern int wireless_sigqual(const char *ifname, struct iw_statistics *stats);
 extern int wireless_rangemax_sigqual(const char *ifname);

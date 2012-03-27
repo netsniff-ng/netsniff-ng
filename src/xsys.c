@@ -111,24 +111,6 @@ int wireless_bitrate(const char *ifname)
 	return rate_in_mbit;
 }
 
-int wireless_essid(const char *ifname, char *essid)
-{
-	int ret, sock, essid_len;
-	struct iwreq iwr;
-	sock = af_socket(AF_INET);
-	memset(&iwr, 0, sizeof(iwr));
-	strlcpy(iwr.ifr_name, ifname, IFNAMSIZ);
-	iwr.u.essid.pointer = essid;
-	iwr.u.essid.length = IW_ESSID_MAX_SIZE;
-	ret = ioctl(sock, SIOCGIWESSID, &iwr);
-	if (!ret)
-		essid_len = iwr.u.essid.length;
-	else
-		essid_len = 0;
-	close(sock);
-	return essid_len;
-}
-
 int adjust_dbm_level(int dbm_val)
 {
 	if (dbm_val >= 64)
