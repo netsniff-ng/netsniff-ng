@@ -37,7 +37,11 @@ struct ipv4hdr {
 	uint16_t h_check;
 	uint32_t h_saddr;
 	uint32_t h_daddr;
+	uint8_t h_opts[40]; /* optional field of variable length */
 } __attribute__((packed));
+
+#define IP_V4_HEADER_LENGTH_MIN \
+	(sizeof(struct ipv4hdr) - sizeof(((struct ipv4hdr *)0)->h_opts))
 
 #define	FRAG_OFF_RESERVED_FLAG(x)      ((x) & 0x8000)
 #define	FRAG_OFF_NO_FRAGMENT_FLAG(x)   ((x) & 0x4000)
@@ -50,8 +54,10 @@ static inline void ipv4(uint8_t *packet, size_t len)
 	char src_ip[INET_ADDRSTRLEN];
 	char dst_ip[INET_ADDRSTRLEN];
 	struct ipv4hdr *ip = (struct ipv4hdr *) packet;
+	uint8_t *buff;
+	size_t opts_len;
 
-	if (len < sizeof(struct ipv4hdr))
+	if (len < IP_V4_HEADER_LENGTH_MIN)
 		return;
 
 	frag_off = ntohs(ip->h_frag_off);
@@ -81,6 +87,16 @@ static inline void ipv4(uint8_t *packet, size_t len)
 		tprintf("%s should be %x%s", colorize_start_full(black, red),
 			csum_expected(ip->h_check, csum), colorize_end());
 	tprintf(" ]\n");
+
+	/* TODO: do/print something more usefull (dissect options, ...) */
+	opts_len = ip->h_ihl * 4 - 20;
+
+	if (opts_len) {
+		tprintf("   [ Options hex ");
+		for (buff = ip->h_opts; opts_len-- > 0; buff++)
+		       tprintf("%.2x ", *buff);
+		tprintf("]\n");
+	}
 }
 
 static inline void ipv4_less(uint8_t *packet, size_t len)
@@ -89,7 +105,7 @@ static inline void ipv4_less(uint8_t *packet, size_t len)
 	char dst_ip[INET_ADDRSTRLEN];
 	struct ipv4hdr *ip = (struct ipv4hdr *) packet;
 
-	if (len < sizeof(struct ipv4hdr))
+	if (len < IP_V4_HEADER_LENGTH_MIN)
 		return;
 
 	inet_ntop(AF_INET, &ip->h_saddr, src_ip, sizeof(src_ip));
@@ -105,17 +121,17 @@ static inline void ipv4_next(uint8_t *packet, size_t len,
 {
 	struct ipv4hdr *ip = (struct ipv4hdr *) packet;
 
-	if (len < sizeof(struct ipv4hdr))
+	if (len < IP_V4_HEADER_LENGTH_MIN)
 		return;
 
-	(*off) = sizeof(struct ipv4hdr);
+	(*off) = ip->h_ihl * 4;
 	(*key) = ip->h_protocol;
 	(*table) = &eth_lay3;
 }
 
 struct protocol ipv4_ops = {
 	.key = 0x0800,
-	.offset = sizeof(struct ipv4hdr),
+	.offset = IP_V4_HEADER_LENGTH_MIN,
 	.print_full = ipv4,
 	.print_less = ipv4_less,
 	.print_pay_ascii = empty,
