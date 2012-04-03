@@ -110,6 +110,7 @@ static void dissector_init_layer_3(int type)
 	INSERT_HASH_PROTOS(ipv6_mobility_hdr_ops, eth_lay3);
 	INSERT_HASH_PROTOS(esp_ops, eth_lay3);
 	INSERT_HASH_PROTOS(icmp_ops, eth_lay3);
+	INSERT_HASH_PROTOS(icmpv6_ops, eth_lay3);
 	INSERT_HASH_PROTOS(udp_ops, eth_lay3);
 	INSERT_HASH_PROTOS(tcp_ops, eth_lay3);
 	for_each_hash_int(&eth_lay3, dissector_set_print_type, type);
