@@ -42,12 +42,14 @@ static char *icmpv6_type_1_strings[] = {
 static inline void icmpv6_process(struct icmpv6hdr *icmp, char **type,
 				  char **code, char **optional)
 {
+	*type = "Unknown Type";
+	*code = "Unknown Code";
+
 	switch (icmp->h_type) {
 	case 1:
 		*type = "Destination Unreachable";
-		*code = icmpv6_code_range_valid(icmp->h_code,
-						icmpv6_type_1_strings) ?
-			icmpv6_type_1_strings[icmp->h_code] : "Unknown";
+		if (icmpv6_code_range_valid(icmp->h_code, icmpv6_type_1_strings))
+			*code = icmpv6_type_1_strings[icmp->h_code];
 		return;
 	case 2:
 		*type = "Packet Too Big";
@@ -157,10 +159,6 @@ static inline void icmpv6_process(struct icmpv6hdr *icmp, char **type,
 		return;
 	case 255:
 		*type = "Reserved for expansion of ICMPv6 error messages";
-		return;
-	default:
-		*type = "Unknown Type";
-		*code = "Unknown Code";
 		return;
 	}
 }
