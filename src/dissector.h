@@ -11,6 +11,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include "ring.h"
+#include "tprintf.h"
+
 #define LINKTYPE_NULL       0	/* BSD loopback encapsulation */
 #define LINKTYPE_EN10MB     1	/* Ethernet (10Mb) */
 #define LINKTYPE_EN3MB      2	/* Experimental Ethernet (3Mb) */
@@ -35,5 +38,48 @@ extern void dissector_init_all(int fnttype);
 extern void dissector_entry_point(uint8_t *packet, size_t len, int linktype);
 extern void dissector_cleanup_all(void);
 extern int dissector_set_print_type(void *ptr, int type);
+
+static char *packet_types[]={
+	"<", /* Incoming */
+	"B", /* Broadcast */
+	"M", /* Multicast */
+	"P", /* Promisc */
+	">", /* Outgoing */
+	"?", /* Unknown */
+};
+
+static inline void show_frame_hdr(struct frame_map *hdr, int mode,
+				  enum ring_mode rmode)
+{
+	if (mode == FNTTYPE_PRINT_NONE)
+		return;
+	switch (mode) {
+	case FNTTYPE_PRINT_PAY_ASCII:
+	case FNTTYPE_PRINT_NO_PAY:
+	case FNTTYPE_PRINT_PAY_HEX:
+	case FNTTYPE_PRINT_ALL_HEX:
+	case FNTTYPE_PRINT_NORM:
+	default:
+		if (rmode == RING_MODE_INGRESS) {
+			tprintf("%s %u %u %u.%06u\n",
+				packet_types[hdr->s_ll.sll_pkttype],
+				hdr->s_ll.sll_ifindex, hdr->tp_h.tp_len,
+				hdr->tp_h.tp_sec, hdr->tp_h.tp_usec);
+		} else {
+			tprintf("%u %u.%06u\n", hdr->tp_h.tp_len,
+				hdr->tp_h.tp_sec, hdr->tp_h.tp_usec);
+		}
+		break;
+	case FNTTYPE_PRINT_LESS:
+		if (rmode == RING_MODE_INGRESS) {
+			tprintf("%s %u %u",
+				packet_types[hdr->s_ll.sll_pkttype],
+				hdr->s_ll.sll_ifindex, hdr->tp_h.tp_len);
+		} else {
+			tprintf("%u ", hdr->tp_h.tp_len);
+		}
+		break;
+	}
+}
 
 #endif /* DISSECTOR_H */
