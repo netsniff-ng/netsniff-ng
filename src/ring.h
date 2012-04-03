@@ -24,8 +24,8 @@
 #define RING_SIZE_FALLBACK (1 << 26)
 
 struct frame_map {
-	struct tpacket_hdr tp_h __attribute__((aligned(TPACKET_ALIGNMENT)));
-	struct sockaddr_ll s_ll __attribute__((aligned(TPACKET_ALIGNMENT)));
+	struct tpacket_hdr tp_h __aligned_tpacket;
+	struct sockaddr_ll s_ll __aligned_tpacket;
 };
 
 struct ring {

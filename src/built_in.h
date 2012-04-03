@@ -8,8 +8,22 @@
 #ifndef BUILT_IN_H
 #define BUILT_IN_H
 
+#include <linux/if_packet.h>
+
 #ifndef __aligned_16
 # define __aligned_16		__attribute__((aligned(16)))
+#endif
+
+#ifndef __aligned_64
+# define __aligned_64		__attribute__((aligned(64)))
+#endif
+
+#ifndef __cacheline_aligned
+# define __cacheline_aligned	__aligned_64 /* FIXME */
+#endif
+
+#ifndef __aligned_tpacket
+# define __aligned_tpacket	__attribute__((aligned(TPACKET_ALIGNMENT)))
 #endif
 
 #ifndef likely
