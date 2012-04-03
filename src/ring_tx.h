@@ -22,7 +22,6 @@ extern void bind_tx_ring(int sock, struct ring *ring, int ifindex);
 extern void setup_tx_ring_layout(int sock, struct ring *ring,
 				 unsigned int size, int jumbo_support);
 extern void set_packet_loss_discard(int sock);
-extern int pull_and_flush_tx_ring(int sock);
 
 static inline int user_may_pull_from_tx(struct tpacket_hdr *hdr)
 {
@@ -32,6 +31,11 @@ static inline int user_may_pull_from_tx(struct tpacket_hdr *hdr)
 static inline void kernel_may_pull_from_tx(struct tpacket_hdr *hdr)
 {
 	hdr->tp_status = TP_STATUS_SEND_REQUEST;
+}
+
+static inline int pull_and_flush_tx_ring(int sock)
+{
+	return sendto(sock, NULL, 0, MSG_DONTWAIT, NULL, 0);
 }
 
 #endif /* TX_RING_H */
