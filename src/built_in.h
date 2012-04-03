@@ -63,20 +63,20 @@
 #endif
 
 #ifndef max
-# define max(a, b)                         \
-	({                                 \
-		typeof (a) _a = (a);       \
-		typeof (b) _b = (b);       \
-		_a > _b ? _a : _b;         \
+# define max(a, b)							\
+	({								\
+		typeof (a) _a = (a);					\
+		typeof (b) _b = (b);					\
+		_a > _b ? _a : _b;					\
 	})
 #endif /* max */
 
 #ifndef min
-# define min(a, b)                         \
-	({                                 \
-		typeof (a) _a = (a);       \
-		typeof (b) _b = (b);       \
-		_a < _b ? _a : _b;         \
+# define min(a, b)							\
+	({								\
+		typeof (a) _a = (a);					\
+		typeof (b) _b = (b);					\
+		_a < _b ? _a : _b;					\
 	})
 #endif /* min */
 
@@ -86,11 +86,25 @@
 #endif
 
 #ifndef container_of
-# define container_of(ptr, type, member)                             \
-	({                                                           \
-		const typeof(((type *) 0)->member) * __mptr = (ptr); \
-		(type *) ((char *) __mptr - offsetof(type, member)); \
+# define container_of(ptr, type, member)				\
+	({								\
+		const typeof(((type *) 0)->member) * __mptr = (ptr);	\
+		(type *) ((char *) __mptr - offsetof(type, member));	\
 	})
+#endif
+
+#ifndef array_size
+# define array_size(x)	(sizeof(x) / sizeof((x)[0]) + __must_be_array(x))
+#endif
+
+#ifndef __must_be_array
+# define __must_be_array(x)						\
+	build_bug_on_zero(__builtin_types_compatible_p(typeof(x),	\
+						       typeof(&x[0])))
+#endif
+
+#ifndef build_bug_on_zero
+# define build_bug_on_zero(e)	(sizeof(char[1 - 2 * !!(e)]) - 1)
 #endif
 
 #endif /* BUILT_IN_H */
