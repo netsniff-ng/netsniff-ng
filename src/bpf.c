@@ -238,6 +238,11 @@ void bpf_dump_all(struct sock_fprog *bpf)
 
 void bpf_attach_to_sock(int sock, struct sock_fprog *bpf)
 {
+	if (bpf->len == 1)
+		if (bpf->filter[0].code == BPF_RET &&
+		    bpf->filter[0].k == 0xFFFFFFFF)
+			return;
+
 	int ret = setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER, bpf,
 			     sizeof(*bpf));
 	if (ret < 0)
