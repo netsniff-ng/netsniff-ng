@@ -82,6 +82,22 @@
 # define unlikely(x)		__builtin_expect(!!(x), 0)
 #endif
 
+#ifndef prefetch_rd_hi
+# define prefetch_rd_hi(addr)	__builtin_prefetch(addr, 0, 3)
+#endif
+
+#ifndef prefetch_rd_lo
+# define prefetch_rd_lo(addr)	__builtin_prefetch(addr, 0, 0)
+#endif
+
+#ifndef prefetch_wr_hi
+# define prefetch_wr_hi(addr)	__builtin_prefetch(addr, 1, 3)
+#endif
+
+#ifndef prefetch_wr_lo
+# define prefetch_wr_lo(addr)	__builtin_prefetch(addr, 1, 0)
+#endif
+
 #ifndef fmemset
 # define fmemset		__builtin_memset
 #endif

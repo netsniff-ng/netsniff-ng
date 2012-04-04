@@ -547,7 +547,7 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 			}
 
 			kernel_may_pull_from_tx(&hdr->tp_h);
-			next_slot(&it, &tx_ring);
+			next_slot_prewr(&it, &tx_ring);
 
 			if (cfg->num > 0)
 				num--;

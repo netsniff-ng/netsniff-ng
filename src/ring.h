@@ -40,6 +40,20 @@ static inline void next_slot(unsigned int *it, struct ring *ring)
 	atomic_cmp_swp(it, ring->layout.tp_frame_nr, 0);
 }
 
+static inline void next_slot_prerd(unsigned int *it, struct ring *ring)
+{
+	(*it)++;
+	atomic_cmp_swp(it, ring->layout.tp_frame_nr, 0);
+	prefetch_rd_hi(ring->frames[*it].iov_base);
+}
+
+static inline void next_slot_prewr(unsigned int *it, struct ring *ring)
+{
+	(*it)++;
+	atomic_cmp_swp(it, ring->layout.tp_frame_nr, 0);
+	prefetch_wr_hi(ring->frames[*it].iov_base);
+}
+
 static inline void next_rnd_slot(unsigned int *it, struct ring *ring)
 {
 	*it = mt_rand_int32() % ring->layout.tp_frame_nr;

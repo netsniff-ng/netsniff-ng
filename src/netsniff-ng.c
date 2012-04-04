@@ -428,7 +428,7 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 					      mode->link_type);
 
 			kernel_may_pull_from_tx(&hdr->tp_h);
-			next_slot(&it, &tx_ring);
+			next_slot_prewr(&it, &tx_ring);
 
 			if (unlikely(sigint == 1))
 				break;
@@ -905,7 +905,7 @@ try_file:
 			}
 next:
 			kernel_may_pull_from_rx(&hdr->tp_h);
-			next_slot(&it, &rx_ring);
+			next_slot_prerd(&it, &rx_ring);
 
 			if (unlikely(sigint == 1))
 				break;
