@@ -82,6 +82,14 @@
 # define unlikely(x)		__builtin_expect(!!(x), 0)
 #endif
 
+#ifndef fmemset
+# define fmemset		__builtin_memset
+#endif
+
+#ifndef fmemcpy
+# define fmemcpy		__builtin_memcpy
+#endif
+
 #ifndef __deprecated
 # define __deprecated		/* unimplemented */
 #endif
@@ -135,6 +143,10 @@
 		_a < _b ? _a : _b;					\
 	})
 #endif /* min */
+
+#ifndef ispow2
+#define ispow2(x)		({ !!((x) && !((x) & ((x) - 1))); })
+#endif
 
 #ifndef offsetof
 # define offsetof(type, member)	((size_t) &((type *) 0)->member)
