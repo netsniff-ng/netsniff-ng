@@ -21,8 +21,6 @@
 #include "built_in.h"
 #include "mtrand.h"
 
-#define RING_SIZE_FALLBACK (1 << 26)
-
 struct frame_map {
 	struct tpacket_hdr tp_h __aligned_tpacket;
 	struct sockaddr_ll s_ll __aligned_tpacket;
@@ -47,6 +45,8 @@ static inline void next_rnd_slot(unsigned int *it, struct ring *ring)
 {
 	*it = mt_rand_int32() % ring->layout.tp_frame_nr;
 }
+
+#define RING_SIZE_FALLBACK (1 << 26)
 
 static inline unsigned int ring_size(char *ifname, unsigned int size)
 {
