@@ -261,6 +261,23 @@ void bpf_detach_from_sock(int sock)
 		panic("Cannot detach filter from socket!\n");
 }
 
+void enable_kernel_bpf_jit_compiler(void)
+{
+	int fd;
+	ssize_t ret;
+	char *file = "/proc/sys/net/core/bpf_jit_enable";
+
+	fd = open(file, O_WRONLY);
+	if (fd < 0)
+		return;
+
+	ret = write(fd, "1", strlen("1"));
+	if (ret > 0)
+		printf("BPF JIT\n");
+
+	close(fd);
+}
+
 int bpf_validate(const struct sock_fprog *bpf)
 {
 	uint32_t i, from;
