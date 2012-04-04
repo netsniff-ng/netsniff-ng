@@ -15,8 +15,8 @@
 
 #include "pcap.h"
 #include "xio.h"
-#include "opt_memcpy.h"
 #include "locking.h"
+#include "built_in.h"
 
 #define DEFAULT_SLOTS     1000
 
@@ -54,7 +54,7 @@ static int pcap_mmap_push_file_header(int fd)
 	ssize_t ret;
 	struct pcap_filehdr hdr;
 
-	memset(&hdr, 0, sizeof(hdr));
+	fmemset(&hdr, 0, sizeof(hdr));
 	pcap_prepare_header(&hdr, LINKTYPE_EN10MB, 0,
 			    PCAP_DEFAULT_SNAPSHOT_LEN);
 	ret = write_or_die(fd, &hdr, sizeof(hdr));
@@ -122,9 +122,9 @@ static ssize_t pcap_mmap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 			panic("Failed to give kernel mmap advise!\n");
 		pcurr = pstart + offset;
 	}
-	__memcpy_small(pcurr, hdr, sizeof(*hdr));
+	fmemcpy(pcurr, hdr, sizeof(*hdr));
 	pcurr += sizeof(*hdr);
-	__memcpy(pcurr, packet, len);
+	fmemcpy(pcurr, packet, len);
 	pcurr += len;
 	spinlock_unlock(&lock);
 
@@ -164,13 +164,13 @@ static ssize_t pcap_mmap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 		spinlock_unlock(&lock);
 		return -ENOMEM;
 	}
-	__memcpy_small(hdr, pcurr, sizeof(*hdr));
+	fmemcpy(hdr, pcurr, sizeof(*hdr));
 	pcurr += sizeof(*hdr);
 	if (unlikely((off_t) (pcurr + hdr->len - pstart) > map_size)) {
 		spinlock_unlock(&lock);
 		return -ENOMEM;
 	}
-	__memcpy(packet, pcurr, hdr->len);
+	fmemcpy(packet, pcurr, hdr->len);
 	pcurr += hdr->len;
 	spinlock_unlock(&lock);
 

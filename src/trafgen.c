@@ -167,7 +167,6 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include <net/ethernet.h>
 
 #include "xmalloc.h"
-#include "opt_memcpy.h"
 #include "xstring.h"
 #include "die.h"
 #include "xsys.h"
@@ -380,10 +379,9 @@ static void tx_tgap_or_die(struct mode *mode, struct pktconf *cfg)
 			panic("Device packet size too short!\n");
 	}
 
-	set_memcpy();
 	sock = pf_socket();
 	pkt = xmalloc_aligned(mtu, 64);
-	memset(pkt, 0, mtu);
+	fmemset(pkt, 0, mtu);
 	ifindex = device_ifindex(mode->device);
 
 	if (cfg->num > 0)
@@ -392,7 +390,7 @@ static void tx_tgap_or_die(struct mode *mode, struct pktconf *cfg)
 	printf("MD: TX %s %luus\n\n", mode->rand ? "RND" : "RR", cfg->gap);
 	printf("Running! Hang up with ^C!\n\n");
 
-	memset(&s_addr, 0, sizeof(s_addr));
+	fmemset(&s_addr, 0, sizeof(s_addr));
 	s_addr.sll_family = PF_PACKET;
 	s_addr.sll_halen = ETH_ALEN;
 	s_addr.sll_ifindex = ifindex;
@@ -414,7 +412,7 @@ static void tx_tgap_or_die(struct mode *mode, struct pktconf *cfg)
 			cfg->pkts[l].payload[rnd->off] = rnd->val;
 		}
 
-		__memcpy(pkt, cfg->pkts[l].payload, cfg->pkts[l].plen);
+		fmemcpy(pkt, cfg->pkts[l].payload, cfg->pkts[l].plen);
 		mode->stats.tx_bytes += cfg->pkts[l].plen;
 		mode->stats.tx_packets++;
 
@@ -472,10 +470,9 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 			panic("Device packet size too short!\n");
 	}
 
-	set_memcpy();
 	sock = pf_socket();
 
-	memset(&tx_ring, 0, sizeof(tx_ring));
+	fmemset(&tx_ring, 0, sizeof(tx_ring));
 
 	ifindex = device_ifindex(mode->device);
 	size = ring_size(mode->device, mode->reserve_size);
@@ -537,7 +534,7 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 				cfg->pkts[l].payload[rnd->off] = rnd->val;
 			}
 
-			__memcpy(out, cfg->pkts[l].payload, cfg->pkts[l].plen);
+			fmemcpy(out, cfg->pkts[l].payload, cfg->pkts[l].plen);
 			mode->stats.tx_bytes += cfg->pkts[l].plen;
 			mode->stats.tx_packets++;
 
@@ -640,7 +637,7 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 	fp = fopen(file, "r");
 	if (!fp)
 		panic("Cannot open config file!\n");
-	memset(buff, 0, sizeof(buff));
+	fmemset(buff, 0, sizeof(buff));
 
 	printf("CFG:\n");
 	srand(time(NULL));
@@ -652,7 +649,7 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 
 		/* A comment or junk. Skip this line */
 		if (*pb == '#' || *pb == '\n') {
-			memset(buff, 0, sizeof(buff));
+			fmemset(buff, 0, sizeof(buff));
 			continue;
 		}
 
@@ -689,7 +686,7 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 				cfg->len++;
 				cfg->pkts = xrealloc(cfg->pkts, 1,
 						     cfg->len * sizeof(*cfg->pkts));
-				memset(&cfg->pkts[cfg->len - 1], 0,
+				fmemset(&cfg->pkts[cfg->len - 1], 0,
 				       sizeof(cfg->pkts[cfg->len - 1]));
 				offset = 0;
 			} else 
@@ -753,7 +750,7 @@ static void parse_conf_or_die(char *file, struct pktconf *cfg)
 			}
 		} else
 			panic("Syntax error!\n");
-		memset(buff, 0, sizeof(buff));
+		fmemset(buff, 0, sizeof(buff));
 	}
 
 	fclose(fp);
@@ -808,7 +805,7 @@ int main(int argc, char **argv)
 
 	check_for_root_maybe_die();
 
-	memset(&mode, 0, sizeof(mode));
+	fmemset(&mode, 0, sizeof(mode));
 	mode.cpu = CPU_UNKNOWN;
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,

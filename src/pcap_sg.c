@@ -16,8 +16,8 @@
 #include "pcap.h"
 #include "xmalloc.h"
 #include "xio.h"
-#include "opt_memcpy.h"
 #include "locking.h"
+#include "built_in.h"
 
 #define PAGE_SIZE         (getpagesize())
 #define PAGE_MASK         (~(PAGE_SIZE - 1))
@@ -51,7 +51,7 @@ static int pcap_sg_push_file_header(int fd)
 	ssize_t ret;
 	struct pcap_filehdr hdr;
 
-	memset(&hdr, 0, sizeof(hdr));
+	fmemset(&hdr, 0, sizeof(hdr));
 	pcap_prepare_header(&hdr, LINKTYPE_EN10MB, 0,
 			    PCAP_DEFAULT_SNAPSHOT_LEN);
 	ret = write_or_die(fd, &hdr, sizeof(hdr));
@@ -75,9 +75,9 @@ static ssize_t pcap_sg_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 		c = 0;
 	}
 	iov[c].iov_len = 0;
-	__memcpy_small(iov[c].iov_base, hdr, sizeof(*hdr));
+	fmemcpy(iov[c].iov_base, hdr, sizeof(*hdr));
 	iov[c].iov_len += sizeof(*hdr);
-	__memcpy(iov[c].iov_base + iov[c].iov_len, packet, len);
+	fmemcpy(iov[c].iov_base + iov[c].iov_len, packet, len);
 	iov[c].iov_len += len;
 	ret = iov[c].iov_len;
 	c++;
@@ -104,7 +104,7 @@ static ssize_t pcap_sg_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 	spinlock_lock(&lock);
 	if (likely(avail - used >= sizeof(*hdr) &&
 		   iov[c].iov_len - iov_used >= sizeof(*hdr))) {
-		__memcpy_small(hdr, iov[c].iov_base + iov_used, sizeof(*hdr));
+		fmemcpy(hdr, iov[c].iov_base + iov_used, sizeof(*hdr));
 		iov_used += sizeof(*hdr);
 		used += sizeof(*hdr);
 	} else {
@@ -114,7 +114,7 @@ static ssize_t pcap_sg_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 		offset = iov[c].iov_len - iov_used;
 		remainder = sizeof(*hdr) - offset;
 		assert(offset + remainder == sizeof(*hdr));
-		__memcpy_small(hdr, iov[c].iov_base + iov_used, offset);
+		fmemcpy(hdr, iov[c].iov_base + iov_used, offset);
 		used += offset;
 		iov_used = 0;
 		c++;
@@ -127,13 +127,13 @@ static ssize_t pcap_sg_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 			used = 0;
 		}
 		/* Now we copy the remainder and go on with business ... */
-		__memcpy_small(hdr, iov[c].iov_base + iov_used, remainder);
+		fmemcpy(hdr, iov[c].iov_base + iov_used, remainder);
 		iov_used += remainder;
 		used += remainder;
 	}
 	if (likely(avail - used >= hdr->len &&
 		   iov[c].iov_len - iov_used >= hdr->len)) {
-		__memcpy(packet, iov[c].iov_base + iov_used, hdr->len);
+		fmemcpy(packet, iov[c].iov_base + iov_used, hdr->len);
 		iov_used += hdr->len;
 		used += hdr->len;
 	} else {
@@ -143,7 +143,7 @@ static ssize_t pcap_sg_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 		offset = iov[c].iov_len - iov_used;
 		remainder = hdr->len - offset;
 		assert(offset + remainder == hdr->len);
-		__memcpy(packet, iov[c].iov_base + iov_used, offset);
+		fmemcpy(packet, iov[c].iov_base + iov_used, offset);
 		used += offset;
 		iov_used = 0;
 		c++;
@@ -156,7 +156,7 @@ static ssize_t pcap_sg_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 			used = 0;
 		}
 		/* Now we copy the remainder and go on with business ... */
-		__memcpy(packet, iov[c].iov_base + iov_used, remainder);
+		fmemcpy(packet, iov[c].iov_base + iov_used, remainder);
 		iov_used += remainder;
 		used += remainder;
 	}
@@ -193,7 +193,7 @@ int init_pcap_sg(int jumbo_support)
 	unsigned long i;
 	size_t allocsz = 0;
 	c = 0;
-	memset(iov, 0, sizeof(iov));
+	fmemset(iov, 0, sizeof(iov));
 	if (jumbo_support)
 		allocsz = ALLSIZ_JUMBO; 
 	else

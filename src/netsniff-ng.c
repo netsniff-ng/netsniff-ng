@@ -229,7 +229,6 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "xio.h"
 #include "xstring.h"
 #include "die.h"
-#include "opt_memcpy.h"
 #include "tprintf.h"
 #include "dissector.h"
 #include "xmalloc.h"
@@ -352,7 +351,6 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 	if (!device_up_and_running(mode->device_out))
 		panic("Device not up and running!\n");
 
-	set_memcpy();
 	tx_sock = pf_socket();
 
 	if (!pcap_ops[mode->pcap])
@@ -367,9 +365,9 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 			panic("error prepare reading pcap!\n");
 	}
 
-	memset(&tx_ring, 0, sizeof(tx_ring));
-	memset(&bpf_ops, 0, sizeof(bpf_ops));
-	memset(&stats, 0, sizeof(stats));
+	fmemset(&tx_ring, 0, sizeof(tx_ring));
+	fmemset(&bpf_ops, 0, sizeof(bpf_ops));
+	fmemset(&stats, 0, sizeof(stats));
 
 	ifindex = device_ifindex(mode->device_out);
 	size = ring_size(mode->device_out, mode->reserve_size);
@@ -477,14 +475,13 @@ static void enter_mode_rx_to_tx(struct mode *mode)
 	if (!device_up_and_running(mode->device_in))
 		panic("Ingress device not up and running!\n");
 
-	set_memcpy();
 	rx_sock = pf_socket();
 	tx_sock = pf_socket();
 
-	memset(&tx_ring, 0, sizeof(tx_ring));
-	memset(&rx_ring, 0, sizeof(rx_ring));
-	memset(&rx_poll, 0, sizeof(rx_poll));
-	memset(&bpf_ops, 0, sizeof(bpf_ops));
+	fmemset(&tx_ring, 0, sizeof(tx_ring));
+	fmemset(&rx_ring, 0, sizeof(rx_ring));
+	fmemset(&rx_poll, 0, sizeof(rx_poll));
+	fmemset(&bpf_ops, 0, sizeof(bpf_ops));
 
 	ifindex_in = device_ifindex(mode->device_in);
 	size_in = ring_size(mode->device_in, mode->reserve_size);
@@ -557,7 +554,7 @@ static void enter_mode_rx_to_tx(struct mode *mode)
 			}
 
 			tpacket_hdr_clone(&hdr_out->tp_h, &hdr_in->tp_h);
-			__memcpy(out, in, hdr_in->tp_h.tp_len);
+			fmemcpy(out, in, hdr_in->tp_h.tp_len);
 
 			kernel_may_pull_from_tx(&hdr_out->tp_h);
 			if (mode->randomize)
@@ -620,9 +617,9 @@ static void enter_mode_read_pcap(struct mode *mode)
 			panic("error prepare reading pcap!\n");
 	}
 
-	memset(&fm, 0, sizeof(fm));
-	memset(&bpf_ops, 0, sizeof(bpf_ops));
-	memset(&stats, 0, sizeof(stats));
+	fmemset(&fm, 0, sizeof(fm));
+	fmemset(&bpf_ops, 0, sizeof(bpf_ops));
+	fmemset(&stats, 0, sizeof(stats));
 
 	bpf_parse_rules(mode->filter, &bpf_ops);
 	dissector_init_all(mode->print_mode);
@@ -711,7 +708,7 @@ static void finish_multi_pcap_file(struct mode *mode, int fd)
 		pcap_ops[mode->pcap]->prepare_close_pcap(fd, PCAP_MODE_WRITE);
 	close(fd);
 
-	memset(&itimer, 0, sizeof(itimer));
+	fmemset(&itimer, 0, sizeof(itimer));
 	setitimer(ITIMER_REAL, &itimer, NULL);
 }
 
@@ -725,9 +722,7 @@ static int next_multi_pcap_file(struct mode *mode, int fd)
 		pcap_ops[mode->pcap]->prepare_close_pcap(fd, PCAP_MODE_WRITE);
 	close(fd);
 
-	memset(&tmp, 0, sizeof(tmp));
-	snprintf(tmp, sizeof(tmp), "%s/%lu.pcap", mode->device_out, time(0));
-	tmp[sizeof(tmp) - 1] = 0;
+	slprintf(tmp, sizeof(tmp), "%s/%lu.pcap", mode->device_out, time(0));
 
 	fd = open_or_die_m(tmp, O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE,
 			   S_IRUSR | S_IWUSR);
@@ -753,9 +748,7 @@ static int begin_multi_pcap_file(struct mode *mode)
 	if (mode->device_out[strlen(mode->device_out) - 1] == '/')
 		mode->device_out[strlen(mode->device_out) - 1] = 0;
 
-	memset(&tmp, 0, sizeof(tmp));
-	snprintf(tmp, sizeof(tmp), "%s/%lu.pcap", mode->device_out, time(0));
-	tmp[sizeof(tmp) - 1] = 0;
+	slprintf(tmp, sizeof(tmp), "%s/%lu.pcap", mode->device_out, time(0));
 
 	fd = open_or_die_m(tmp, O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE,
 			   S_IRUSR | S_IWUSR);
@@ -822,12 +815,11 @@ static void enter_mode_rx_only_or_dump(struct mode *mode)
 	if (!device_up_and_running(mode->device_in))
 		panic("Device not up and running!\n");
 
-	set_memcpy();
 	sock = pf_socket();
 
 	if (mode->dump) {
 		struct stat tmp;
-		memset(&tmp, 0, sizeof(tmp));
+		fmemset(&tmp, 0, sizeof(tmp));
 		ret = stat(mode->device_out, &tmp);
 		if (ret < 0) {
 			mode->dump_dir = 0;
@@ -842,9 +834,9 @@ try_file:
 		}
 	}
 
-	memset(&rx_ring, 0, sizeof(rx_ring));
-	memset(&rx_poll, 0, sizeof(rx_poll));
-	memset(&bpf_ops, 0, sizeof(bpf_ops));
+	fmemset(&rx_ring, 0, sizeof(rx_ring));
+	fmemset(&rx_poll, 0, sizeof(rx_poll));
+	fmemset(&bpf_ops, 0, sizeof(bpf_ops));
 
 	ifindex = device_ifindex(mode->device_in);
 	size = ring_size(mode->device_in, mode->reserve_size);
@@ -920,7 +912,7 @@ next:
 			if (mode->dump && next_dump) {
 				struct tpacket_stats kstats;
 				socklen_t slen = sizeof(kstats);
-				memset(&kstats, 0, sizeof(kstats));
+				fmemset(&kstats, 0, sizeof(kstats));
 				getsockopt(sock, SOL_PACKET, PACKET_STATISTICS,
 					   &kstats, &slen);
 				fd = next_multi_pcap_file(mode, fd);
@@ -1053,7 +1045,7 @@ int main(int argc, char **argv)
 
 	check_for_root_maybe_die();
 
-	memset(&mode, 0, sizeof(mode));
+	fmemset(&mode, 0, sizeof(mode));
 	mode.link_type = LINKTYPE_EN10MB;
 	mode.print_mode = FNTTYPE_PRINT_NORM;
 	mode.cpu = CPU_UNKNOWN;

@@ -9,7 +9,6 @@ ADD_EXECUTABLE(${PROJECT_NAME} 	../xmalloc.c
 				../xsys.c
 				../xstring.c
 				../mtrand.c
-				../opt_memcpy.c
 				../ring_tx.c
 				../trafgen.c)
 ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"
