@@ -29,12 +29,12 @@ struct frame_map {
 };
 
 struct ring {
-	struct iovec *frames;
+	struct iovec *frames __cacheline_aligned;
+	uint8_t *mm_space __cacheline_aligned;
+	size_t mm_len;
 	struct tpacket_req layout;
 	struct sockaddr_ll s_ll;
-	uint8_t *mm_space;
-	size_t mm_len;
-} __cacheline_aligned;
+};
 
 static inline void next_slot(unsigned int *it, struct ring *ring)
 {
