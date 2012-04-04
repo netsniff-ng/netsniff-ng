@@ -82,13 +82,13 @@ static inline unsigned int ring_frame_size(struct ring *ring)
 	return ring->layout.tp_frame_size;
 }
 
-static inline void tpacket_hdr_clone(struct tpacket_hdr *thdr_d,
-				     struct tpacket_hdr *thdr_s)
+static inline void tpacket_hdr_clone(struct tpacket_hdr *thdrd,
+				     struct tpacket_hdr *thdrs)
 {
-        thdr_d->tp_sec = thdr_s->tp_sec;
-        thdr_d->tp_usec = thdr_s->tp_usec;
-        thdr_d->tp_snaplen = thdr_s->tp_snaplen;
-        thdr_d->tp_len = thdr_s->tp_len;
+        thdrd->tp_sec = thdrs->tp_sec;
+        thdrd->tp_usec = thdrs->tp_usec;
+        thdrd->tp_snaplen = thdrs->tp_snaplen;
+        thdrd->tp_len = thdrs->tp_len;
 }
 
 #endif /* RING_H */

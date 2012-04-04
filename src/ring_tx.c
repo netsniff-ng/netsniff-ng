@@ -20,6 +20,7 @@
 #include "die.h"
 #include "xmalloc.h"
 #include "ring_tx.h"
+#include "built_in.h"
 
 void set_packet_loss_discard(int sock)
 {
@@ -32,7 +33,7 @@ void set_packet_loss_discard(int sock)
 
 void destroy_tx_ring(int sock, struct ring *ring)
 {
-	memset(&ring->layout, 0, sizeof(ring->layout));
+	fmemset(&ring->layout, 0, sizeof(ring->layout));
 	setsockopt(sock, SOL_PACKET, PACKET_TX_RING, &ring->layout,
 		   sizeof(ring->layout));
 
@@ -45,7 +46,7 @@ void destroy_tx_ring(int sock, struct ring *ring)
 void setup_tx_ring_layout(int sock, struct ring *ring, unsigned int size,
 			  int jumbo_support)
 {
-	memset(&ring->layout, 0, sizeof(ring->layout));
+	fmemset(&ring->layout, 0, sizeof(ring->layout));
 
 	ring->layout.tp_block_size = (jumbo_support ?
 				      getpagesize() << 4 :
@@ -102,8 +103,8 @@ void alloc_tx_ring_frames(struct ring *ring)
 	int i;
 	size_t len = ring->layout.tp_frame_nr * sizeof(*ring->frames);
 
-	ring->frames = xmalloc_aligned(len, 64);
-	memset(ring->frames, 0, len);
+	ring->frames = xmalloc_aligned(len, CO_CACHE_LINE_SIZE);
+	fmemset(ring->frames, 0, len);
 
 	for (i = 0; i < ring->layout.tp_frame_nr; ++i) {
 		ring->frames[i].iov_len = ring->layout.tp_frame_size;
@@ -116,7 +117,7 @@ void bind_tx_ring(int sock, struct ring *ring, int ifindex)
 {
 	int ret;
 
-	memset(&ring->s_ll, 0, sizeof(ring->s_ll));
+	fmemset(&ring->s_ll, 0, sizeof(ring->s_ll));
 
 	ring->s_ll.sll_family = AF_PACKET;
 	ring->s_ll.sll_protocol = htons(ETH_P_ALL);

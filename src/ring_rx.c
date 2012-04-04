@@ -19,10 +19,11 @@
 #include "xmalloc.h"
 #include "die.h"
 #include "ring_rx.h"
+#include "built_in.h"
 
 void destroy_rx_ring(int sock, struct ring *ring)
 {
-	memset(&ring->layout, 0, sizeof(ring->layout));
+	fmemset(&ring->layout, 0, sizeof(ring->layout));
 	setsockopt(sock, SOL_PACKET, PACKET_RX_RING, &ring->layout,
 		   sizeof(ring->layout));
 
@@ -35,7 +36,7 @@ void destroy_rx_ring(int sock, struct ring *ring)
 void setup_rx_ring_layout(int sock, struct ring *ring, unsigned int size,
 			  int jumbo_support)
 {
-	memset(&ring->layout, 0, sizeof(ring->layout));
+	fmemset(&ring->layout, 0, sizeof(ring->layout));
 
 	ring->layout.tp_block_size = (jumbo_support ?
 				      getpagesize() << 4 :
@@ -92,8 +93,8 @@ void alloc_rx_ring_frames(struct ring *ring)
 	int i;
 	size_t len = ring->layout.tp_frame_nr * sizeof(*ring->frames);
 
-	ring->frames = xmalloc_aligned(len, 64);
-	memset(ring->frames, 0, len);
+	ring->frames = xmalloc_aligned(len, CO_CACHE_LINE_SIZE);
+	fmemset(ring->frames, 0, len);
 
 	for (i = 0; i < ring->layout.tp_frame_nr; ++i) {
 		ring->frames[i].iov_len = ring->layout.tp_frame_size;
@@ -110,11 +111,11 @@ void bind_rx_ring(int sock, struct ring *ring, int ifindex)
 	 * dev_add_pack(), so we have one single RX_RING for all devs
 	 * otherwise you'll get the packet twice.
 	 */
-	memset(&ring->s_ll, 0, sizeof(ring->s_ll));
+	fmemset(&ring->s_ll, 0, sizeof(ring->s_ll));
 
 	ring->s_ll.sll_family = AF_PACKET;
 	ring->s_ll.sll_protocol = htons(ETH_P_ALL);
-	ring->s_ll.sll_ifindex = ifindex; /* Take 0 for "any"-device */
+	ring->s_ll.sll_ifindex = ifindex;
 	ring->s_ll.sll_hatype = 0;
 	ring->s_ll.sll_halen = 0;
 	ring->s_ll.sll_pkttype = 0;
