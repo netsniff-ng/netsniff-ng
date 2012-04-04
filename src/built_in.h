@@ -1,7 +1,7 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
- * Copyright 2009, 2010 Daniel Borkmann.
+ * Copyright 2009-2012 Daniel Borkmann.
  * Subject to the GPL, version 2.
  */
 
@@ -10,20 +10,68 @@
 
 #include <linux/if_packet.h>
 
+/* /sys/devices/system/cpu/cpuX/cache/indexX/coherency_line_size */
+
+#if defined(__amd64__) || defined(__x86_64__) || defined(__AMD64__) || \
+    defined(_M_X64) || defined(__amd64)
+# define CO_IN_CACHE_SHIFT		7
+#elif defined(__i386__) || defined(__x86__) || defined(__X86__) || \
+      defined(_M_IX86) || defined(__i386)
+# define CO_IN_CACHE_SHIFT		7
+#elif defined(__ia64__) || defined(__IA64__) || defined(__M_IA64)
+# define CO_IN_CACHE_SHIFT		6
+#elif defined(__SPU__)
+# define CO_IN_CACHE_SHIFT		7
+#elif defined(__powerpc64__) || defined(__ppc64__) || defined(__PPC64__) || \
+      defined(_ARCH_PPC64)
+# define CO_IN_CACHE_SHIFT		8
+#elif defined(__powerpc__) || defined(__ppc__) || defined(__PPC__) || \
+      defined(_ARCH_PPC)
+# define CO_IN_CACHE_SHIFT		7
+#elif defined(__sparcv9__) || defined(__sparcv9)
+# define CO_IN_CACHE_SHIFT		6
+#elif defined(__sparc_v8__)
+# define CO_IN_CACHE_SHIFT		5
+#elif defined(__sparc__) || defined(__sparc)
+# define CO_IN_CACHE_SHIFT		5
+#elif defined(__ARM_EABI__)
+# define CO_IN_CACHE_SHIFT		5
+#elif defined(__arm__)
+# define CO_IN_CACHE_SHIFT		5
+#elif defined(__mips__) || defined(__mips) || defined(__MIPS__)
+# if defined(_ABIO32)
+# define CO_IN_CACHE_SHIFT		5
+# elif defined(_ABIN32)
+# define CO_IN_CACHE_SHIFT		5
+# else
+# define CO_IN_CACHE_SHIFT		6
+# endif
+#else
+# define CO_IN_CACHE_SHIFT		5
+#endif
+
+#ifndef CO_CACHE_LINE_SIZE
+# define CO_CACHE_LINE_SIZE	(1 << CO_IN_CACHE_SHIFT)
+#endif
+
 #ifndef __aligned_16
 # define __aligned_16		__attribute__((aligned(16)))
 #endif
 
-#ifndef __aligned_64
-# define __aligned_64		__attribute__((aligned(64)))
-#endif
-
 #ifndef __cacheline_aligned
-# define __cacheline_aligned	__aligned_64 /* FIXME */
+# define __cacheline_aligned	__attribute__((aligned(CO_CACHE_LINE_SIZE)))
 #endif
 
 #ifndef __aligned_tpacket
 # define __aligned_tpacket	__attribute__((aligned(TPACKET_ALIGNMENT)))
+#endif
+
+#ifndef round_up
+# define round_up(x, alignment)	(((x) + (alignment) - 1) & ~((alignment) - 1))
+#endif
+
+#ifndef round_up_cacheline
+# define round_up_cacheline(x)	round_up((x), CO_CACHE_LINE_SIZE)
 #endif
 
 #ifndef likely
@@ -62,6 +110,14 @@
 # define __pure			__attribute__ ((pure))
 #endif
 
+#ifndef force_cast
+# define force_cast(type, arg)	((type) (arg))
+#endif
+
+#ifndef access_once
+# define access_once(x)		(*(volatile typeof(x) *) &(x))
+#endif
+
 #ifndef max
 # define max(a, b)							\
 	({								\
@@ -80,7 +136,6 @@
 	})
 #endif /* min */
 
-/* from the Linux kernel, GPLv2 */
 #ifndef offsetof
 # define offsetof(type, member)	((size_t) &((type *) 0)->member)
 #endif
