@@ -36,9 +36,8 @@ struct ring {
 
 static inline void next_slot(unsigned int *it, struct ring *ring)
 {
-	*it = (*it + 1);
-	if (*it >= ring->layout.tp_frame_nr)
-		*it = 0;
+	(*it)++;
+	atomic_cmp_swp(it, ring->layout.tp_frame_nr, 0);
 }
 
 static inline void next_rnd_slot(unsigned int *it, struct ring *ring)
