@@ -220,12 +220,14 @@ static char *bpf_dump(const struct sock_filter bpf, int n)
 		fmt = "";
 		break;
 	}
+
 	slprintf(operand, sizeof(operand), fmt, v);
 	slprintf(image, sizeof(image),
 		 (BPF_CLASS(bpf.code) == BPF_JMP &&
 		  BPF_OP(bpf.code) != BPF_JA) ?
 		 "(%03d) %-8s %-16s jt %d\tjf %d" : "(%03d) %-8s %s",
 		 n, op, operand, n + 1 + bpf.jt, n + 1 + bpf.jf);
+
 	return image;
 }
 
@@ -252,6 +254,7 @@ void bpf_attach_to_sock(int sock, struct sock_fprog *bpf)
 void bpf_detach_from_sock(int sock)
 {
 	int ret, empty = 0;
+
 	ret = setsockopt(sock, SOL_SOCKET, SO_DETACH_FILTER, &empty,
 			 sizeof(empty));
 	if (ret < 0)
@@ -267,6 +270,7 @@ int bpf_validate(const struct sock_fprog *bpf)
 		return 0;
 	if (bpf->len < 1)
 		return 0;
+
 	for (i = 0; i < bpf->len; ++i) {
 		p = &bpf->filter[i];
 		switch (BPF_CLASS(p->code)) {
@@ -395,8 +399,10 @@ uint32_t bpf_run_filter(const struct sock_fprog * fcode, uint8_t * packet,
 
 	A = 0;
 	X = 0;
+
 	bpf = fcode->filter;
 	--bpf;
+
 	while (1) {
 		++bpf;
 
@@ -568,27 +574,28 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf)
 	int ret;
 	char buff[256];
 	struct sock_filter sf_single = { 0x06, 0, 0, 0xFFFFFFFF };
+	FILE *fp;
 
 	if (rulefile == NULL) {
 		bpf->len = 1;
 		bpf->filter = xmalloc(sizeof(sf_single));
-		memcpy(&bpf->filter[0], &sf_single, sizeof(sf_single));
+		fmemcpy(&bpf->filter[0], &sf_single, sizeof(sf_single));
 		return;
 	}
 
-	FILE *fp = fopen(rulefile, "r");
+	fp = fopen(rulefile, "r");
 	if (!fp)
 		panic("Cannot read BPF rule file!\n");
-	memset(buff, 0, sizeof(buff));
 
+	fmemset(buff, 0, sizeof(buff));
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
 		if (buff[0] != '{') {
-			memset(buff, 0, sizeof(buff));
+			fmemset(buff, 0, sizeof(buff));
 			continue;
 		}
 
-		memset(&sf_single, 0, sizeof(sf_single));
+		fmemset(&sf_single, 0, sizeof(sf_single));
 		ret = sscanf(buff, "{ 0x%x, %u, %u, 0x%08x },",
 			     (unsigned int *) &sf_single.code,
 			     (unsigned int *) &sf_single.jt,
@@ -599,10 +606,10 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf)
 		bpf->len++;
 		bpf->filter = xrealloc(bpf->filter, 1,
 				       bpf->len * sizeof(sf_single));
-		memcpy(&bpf->filter[bpf->len - 1], &sf_single,
+		fmemcpy(&bpf->filter[bpf->len - 1], &sf_single,
 		       sizeof(sf_single));
 
-		memset(buff, 0, sizeof(buff));
+		fmemset(buff, 0, sizeof(buff));
 	}
 
 	fclose(fp);
