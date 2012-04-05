@@ -134,18 +134,6 @@ improving the toolkit:
 	- Difficulty: Hard
 
 
-- Take Qualcomm's uio-dma and uio-ixgbe and integrate it next to the current
-  (driver-independant) zero-copy approach into netsniff-ng and trafgen, so that
-  the user can choose which approach to use. We assume a performance gain from
-  uio-dma and uio-ixgbe since it directly maps DMA mem which is not necessarily
-  the case in RX_RING / TX_RING. Hence, it could give a good speed up for both
-  tools (under the drawback that it will be driver-dependant).
-  (https://opensource.qualcomm.com/gitphp/index.php)
-	- Tool: netsniff-ng, trafgen
-	- Required skills: C, Linux Kernel, NIC for ixgbe driver
-	- Difficulty: Hard - Very Hard
-
-
 - Better obfuscation method of curvetun's protocol to make it hard for DPIs
   to detect curvetun: Right now, curvetun might be quite hard to detect, but
   with a little effort, it is still possible for DPIs. Find a way to obfuscate
@@ -175,30 +163,4 @@ improving the toolkit:
   the bpf language that can be translated by our bpfc compiler.
 	- Tool: either inclusion in bpfc or a new one
 	- Required skills: Haskell or C
-	- Difficulty: Very Hard
-
-
-- Implement packet capture, replay and traffic generation for other
-  hardware types (USB, Bluetooth, GSM?, ...): netsniff-ng and trafgen
-  supports only Ethernet, but there are a lot of other interesting
-  hardware types that we could support. Very exciting would be GSM,
-  thus it could interact with Harald Welte's Open Source GSM Baseband
-  software implementation (http://bb.osmocom.org/). Other possible
-  layers are Bluetooth or USB, for instance. Extend netsniff-ng's and
-  trafgen's architecture, so that new hardware types can easily be
-  added with out a great performance loss and implement standard
-  functionality of netsniff-ng/trafgen similar to Ethernet on those
-  types.
-	- Tool: netsniff-ng, trafgen (tools need to be extended)
-	- Required skills: C
-	- Difficulty: Very Hard
-
-
-- Design and implement partial reconfigurable hardware for traffic
-  generation under 10 Gbps, build an interface to trafgen and offload
-  heavily used packets for packet generation (and transmission) in
-  hardware, less heavily used in software (use NetFPGA). Evaluate the
-  performance gain.
-	- Tool: trafgen
-	- Required skills: C, VHDL (plus NetFPGA board required)
 	- Difficulty: Very Hard
