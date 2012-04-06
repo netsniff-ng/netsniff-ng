@@ -10,7 +10,7 @@ us a short mail, if it runs successfully on hardware other than that.
 
 What libraries / tools are required?
 
- - dietlibc [default] or libc (all)
+ - libc (all)
  - cmake (all)
  - libpthread (curvetun, netsniff-ng, flowtop)
  - libncurses (ifpps, flowtop)
@@ -23,9 +23,6 @@ What libraries / tools are required?
 
 It is common, that these libraries are shipped as distribution packages
 for an easy installation. We try to keep this as minimal as possible.
-
-If you prefer GNU libc as default, remove the first two lines in
-src/CMakeLists.txt.
 
 For downloading the latest GeoIP database, you can use the script that
 is located at scripts/geoip-database-update.
