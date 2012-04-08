@@ -70,6 +70,16 @@ struct igmp_v2_msg {
 #define IGMP_V2_MEMBERSHIP_REPORT 0x16
 #define IGMP_V2_LEAVE_GROUP       0x17
 
+/*
+ * RGMP (RFC-3488)
+ * The RGMP message format resembles the IGMPv2 message format. All RGMP
+ * messages are sent with TTL 1, to destination address 224.0.0.25.
+ */
+#define RGMP_LEAVE_GROUP 0xfc
+#define RGMP_JOIN_GROUP  0xfd
+#define RGMP_BYE         0xfe
+#define RGMP_HELLO       0xff
+
 /* IGMPv3 (RFC-3376) */
 struct igmp_v3_group_record {
 	uint8_t  record_type;
@@ -153,6 +163,14 @@ static char *friendly_msg_type_name(uint8_t msg_type)
 	case IGMP_V3_MEMBERSHIP_REPORT:
 		return "Membership Report";
 	case IGMP_V2_LEAVE_GROUP:
+		return "Leave Group";
+	case RGMP_HELLO:
+		return "Hello";
+	case RGMP_BYE:
+		return "Bye";
+	case RGMP_JOIN_GROUP:
+		return "Join Group";
+	case RGMP_LEAVE_GROUP:
 		return "Leave Group";
 	default:
 		return NULL;
@@ -269,7 +287,18 @@ static inline void dissect_igmp_v2(struct igmp_v2_msg *msg, size_t len)
 	char     addr[INET_ADDRSTRLEN];
 	uint16_t csum;
 
-	tprintf(" [ IGMPv2");
+	switch (msg->type) {
+	case RGMP_HELLO:
+	case RGMP_BYE:
+	case RGMP_JOIN_GROUP:
+	case RGMP_LEAVE_GROUP:
+		tprintf(" [ IGMPv2 (RGMP)");
+		break;
+	default:
+		tprintf(" [ IGMPv2");
+		break;
+	}
+
 	PRINT_FRIENDLY_NAMED_MSG_TYPE(msg->type);
 	tprintf(", Max Resp Time (%u)", msg->max_resp_time);
 	/* TODO: use len instead of sizeof */
@@ -410,6 +439,13 @@ static inline void igmp(uint8_t *packet, size_t len)
 		dissect_igmp_v3_membership_report(
 			(struct igmp_v3_membership_report *) packet, len);
 		break;
+	case RGMP_HELLO:
+	case RGMP_BYE:
+	case RGMP_JOIN_GROUP:
+	case RGMP_LEAVE_GROUP:
+		assert(len == sizeof(struct igmp_v2_msg));
+		dissect_igmp_v2(pkg);
+		break;
 	default:
 		igmp_type_unknown(packet, len);
 		break;
@@ -457,13 +493,31 @@ static inline void igmp_less(uint8_t *packet, size_t len)
 		assert(len >= sizeof(struct igmp_v3_membership_report));
 		version = 3;
 		break;
+	case RGMP_HELLO:
+	case RGMP_BYE:
+	case RGMP_JOIN_GROUP:
+	case RGMP_LEAVE_GROUP:
+		assert(len == sizeof(struct igmp_v2_msg));
+		version = 2;
+		break;
 	default:
 		igmp_type_unknown(packet, len);
 		break;
 	}
 
 	assert(version >= 0);
-	tprintf(" IGMPv%u", version);
+
+	switch (*packet) {
+	case RGMP_HELLO:
+	case RGMP_BYE:
+	case RGMP_JOIN_GROUP:
+	case RGMP_LEAVE_GROUP:
+		tprintf(" IGMPv%u (RGMP)", version);
+		break;
+	default:
+		tprintf(" IGMPv%u", version);
+		break;
+	}
 	PRINT_FRIENDLY_NAMED_MSG_TYPE(*packet);
 }
 
