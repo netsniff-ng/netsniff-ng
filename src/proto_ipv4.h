@@ -1,7 +1,8 @@
 /*
  * netsniff-ng - the packet sniffing beast
- * By Daniel Borkmann <daniel@netsniff-ng.org>
- * Copyright 2009, 2010 Daniel Borkmann.
+ * By Daniel Borkmann <daniel@netsniff-ng.org>.
+ * Copyright (C) 2009, 2010 Daniel Borkmann
+ * Copyright (C) 2012 Christoph Jaeger <christoph@netsniff-ng.org>
  * Subject to the GPL, version 2.
  */
 
@@ -18,6 +19,7 @@
 #include "csum.h"
 #include "proto_struct.h"
 #include "dissector_eth.h"
+#include "pkt_buff.h"
 
 struct ipv4hdr {
 #if defined(__LITTLE_ENDIAN_BITFIELD)
@@ -46,16 +48,16 @@ struct ipv4hdr {
 #define	FRAG_OFF_MORE_FRAGMENT_FLAG(x) ((x) & 0x2000)
 #define	FRAG_OFF_FRAGMENT_OFFSET(x)    ((x) & 0x1fff)
 
-static inline void ipv4(uint8_t *packet, size_t len)
+static inline void ipv4(struct pkt_buff *pkt)
 {
 	uint16_t csum, frag_off;
 	char src_ip[INET_ADDRSTRLEN];
 	char dst_ip[INET_ADDRSTRLEN];
-	struct ipv4hdr *ip = (struct ipv4hdr *) packet;
-	uint8_t *buff;
+	struct ipv4hdr *ip = (struct ipv4hdr *) pkt_pull_head(pkt, sizeof(*ip));
+	uint8_t *opts;
 	size_t opts_len;
 
-	if (len < sizeof(struct ipv4hdr))
+	if (ip == NULL)
 		return;
 
 	frag_off = ntohs(ip->h_frag_off);
@@ -90,22 +92,30 @@ static inline void ipv4(uint8_t *packet, size_t len)
 	opts_len = ip->h_ihl * 4 - 20;
 
 	assert(opts_len <= 40);
+	opts = (uint8_t *) pkt_pull_head(pkt, opts_len);
 
-	if (opts_len) {
+	if (opts_len && opts) {
 		tprintf("   [ Options hex ");
-		for (buff = ip->h_opts; opts_len-- > 0; buff++)
-		       tprintf("%.2x ", *buff);
+		for (; opts_len-- > 0; opts++)
+		       tprintf("%.2x ", *opts);
 		tprintf("]\n");
 	}
+
+	/*
+	 * Cut off everything that is not part of IPv4 payload (ethernet
+	 * trailer, padding... whatever).
+	 */
+	pkt_pull_tail(pkt, pkt_len(pkt) + ip->h_ihl * 4 - ntohs(ip->h_tot_len));
+	pkt_set_proto(pkt, &eth_lay3, ip->h_protocol);
 }
 
-static inline void ipv4_less(uint8_t *packet, size_t len)
+static inline void ipv4_less(struct pkt_buff *pkt)
 {
 	char src_ip[INET_ADDRSTRLEN];
 	char dst_ip[INET_ADDRSTRLEN];
-	struct ipv4hdr *ip = (struct ipv4hdr *) packet;
+	struct ipv4hdr *ip = (struct ipv4hdr *) pkt_pull_head(pkt, sizeof(*ip));
 
-	if (len < sizeof(struct ipv4hdr))
+	if (ip == NULL)
 		return;
 
 	inet_ntop(AF_INET, &ip->h_saddr, src_ip, sizeof(src_ip));
@@ -113,32 +123,23 @@ static inline void ipv4_less(uint8_t *packet, size_t len)
 
 	tprintf(" %s/%s Len %u", src_ip, dst_ip,
 		ntohs(ip->h_tot_len));
-}
 
-static inline void ipv4_next(uint8_t *packet, size_t len,
-			     struct hash_table **table,
-			     unsigned int *key, size_t *off)
-{
-	struct ipv4hdr *ip = (struct ipv4hdr *) packet;
-
-	if (len < sizeof(struct ipv4hdr))
-		return;
-
-	(*off) = ip->h_ihl * 4;
-	(*key) = ip->h_protocol;
-	(*table) = &eth_lay3;
+	/*
+	 * Cut off everything that is not part of IPv4 payload (ethernet
+	 * trailer, padding... whatever).
+	 */
+	pkt_pull_tail(pkt, pkt_len(pkt) + ip->h_ihl * 4 - ntohs(ip->h_tot_len));
+	pkt_set_proto(pkt, &eth_lay3, ip->h_protocol);
 }
 
 struct protocol ipv4_ops = {
 	.key = 0x0800,
-	.offset = sizeof(struct ipv4hdr),
 	.print_full = ipv4,
 	.print_less = ipv4_less,
 	.print_pay_ascii = empty,
 	.print_pay_hex = empty,
 	.print_pay_none = ipv4,
 	.print_all_hex = hex,
-	.proto_next = ipv4_next,
 };
 
 #endif /* IPV4_H */

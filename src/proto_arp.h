@@ -14,6 +14,7 @@
 
 #include "proto_struct.h"
 #include "dissector_eth.h"
+#include "pkt_buff.h"
 
 struct arphdr {
 	uint16_t ar_hrd;   /* format of hardware address */
@@ -35,12 +36,12 @@ struct arphdr {
 #define ARPOP_InREPLY   9  /* InARP reply                */
 #define ARPOP_NAK       10 /* (ATM)ARP NAK               */
 
-static inline void arp(uint8_t *packet, size_t len)
+static inline void arp(struct pkt_buff *pkt)
 {
 	char *opcode = NULL;
-	struct arphdr *arp = (struct arphdr *) packet;
+	struct arphdr *arp = (struct arphdr *) pkt_pull_head(pkt, sizeof(*arp));
 
-	if (len < sizeof(struct arphdr))
+	if (arp == NULL)
 		return;
 
 	switch (ntohs(arp->ar_op)) {
@@ -79,12 +80,12 @@ static inline void arp(uint8_t *packet, size_t len)
 	tprintf(" ]\n");
 }
 
-static inline void arp_less(uint8_t *packet, size_t len)
+static inline void arp_less(struct pkt_buff *pkt)
 {
 	char *opcode = NULL;
-	struct arphdr *arp = (struct arphdr *) packet;
+	struct arphdr *arp = (struct arphdr *) pkt_pull_head(pkt, sizeof(*arp));
 
-	if (len < sizeof(struct arphdr))
+	if (arp == NULL)
 		return;
 
 	switch (ntohs(arp->ar_op)) {
@@ -119,14 +120,12 @@ static inline void arp_less(uint8_t *packet, size_t len)
 
 struct protocol arp_ops = {
 	.key = 0x0806,
-	.offset = sizeof(struct arphdr),
 	.print_full = arp,
 	.print_less = arp_less,
 	.print_pay_ascii = empty,
 	.print_pay_hex = empty,
 	.print_pay_none = arp,
 	.print_all_hex = hex,
-	.proto_next = NULL,
 };
 
 #endif /* ARP_H */
