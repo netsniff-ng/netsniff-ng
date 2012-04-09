@@ -8,7 +8,11 @@
 #ifndef PROTOS_H
 #define PROTOS_H
 
+#include "proto_arp.h"
 #include "proto_ethernet.h"
+#include "proto_vlan.h"
+#include "proto_ipv4.h"
+#include "proto_ipv6.h"
 #include "proto_hex.h"
 
 #endif /* PROTOS_H */
