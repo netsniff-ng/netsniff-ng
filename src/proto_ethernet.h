@@ -15,13 +15,14 @@
 
 #include "proto_struct.h"
 #include "dissector_eth.h"
+#include "pkt_buff.h"
 
-static inline void ethernet(uint8_t *packet, size_t len)
+static inline void ethernet(struct pkt_buff *pkt)
 {
 	uint8_t *src_mac, *dst_mac;
-	struct ethhdr *eth = (struct ethhdr *) packet;
+	struct ethhdr *eth = (struct ethhdr *) pkt_pull_head(pkt, sizeof(*eth));
 
-	if (len < sizeof(struct ethhdr))
+	if (eth == NULL)
 		return;
 
 	src_mac = eth->h_source;
@@ -45,21 +46,24 @@ static inline void ethernet(uint8_t *packet, size_t len)
 		lookup_vendor((dst_mac[0] << 16) | (dst_mac[1] << 8) |
 			      dst_mac[2]));
 	tprintf(" ]\n");
+
+	pkt_set_proto(pkt, &eth_lay2, ntohs(eth->h_proto));
 }
 
-static inline void ethernet_hex_all(uint8_t *packet, size_t len)
+static inline void ethernet_hex_all(struct pkt_buff *pkt)
 {
 	tprintf("   ");
-	hex(packet, len);
+	hex(pkt);
 }
 
-static inline void ethernet_less(uint8_t *packet, size_t len)
+static inline void ethernet_less(struct pkt_buff *pkt)
 {
 	uint8_t *src_mac, *dst_mac;
-	struct ethhdr *eth = (struct ethhdr *) packet;
+	struct ethhdr *eth = (struct ethhdr *) pkt_pull_head(pkt, sizeof(*eth));
 
-	if (len < sizeof(struct ethhdr))
+	if (eth == NULL)
 		return;
+
 	src_mac = eth->h_source;
 	dst_mac = eth->h_dest;
 	tprintf(" %s => %s ", 
@@ -69,32 +73,18 @@ static inline void ethernet_less(uint8_t *packet, size_t len)
 			      dst_mac[2]));
 	tprintf("%s%s%s", colorize_start(bold), 
 		lookup_ether_type(ntohs(eth->h_proto)), colorize_end());
-}
 
-static inline void ethernet_next(uint8_t *packet, size_t len,
-				 struct hash_table **table,
-				 unsigned int *key, size_t *off)
-{
-	struct ethhdr *eth = (struct ethhdr *) packet;
-
-	if (len < sizeof(struct ethhdr))
-		return;
-
-	(*off) = sizeof(struct ethhdr);
-	(*key) = ntohs(eth->h_proto);
-	(*table) = &eth_lay2;
+	pkt_set_proto(pkt, &eth_lay2, ntohs(eth->h_proto));
 }
 
 struct protocol ethernet_ops = {
 	.key = 0,
-	.offset = sizeof(struct ethhdr),
 	.print_full = ethernet,
 	.print_less = ethernet_less,
 	.print_pay_ascii = empty,
 	.print_pay_hex = empty,
 	.print_pay_none = ethernet,
 	.print_all_hex = ethernet_hex_all,
-	.proto_next = ethernet_next,
 };
 
 #endif /* ETHERNET_H */

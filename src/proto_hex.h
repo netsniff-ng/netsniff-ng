@@ -14,14 +14,18 @@
 
 #include "proto_struct.h"
 #include "dissector_eth.h"
+#include "pkt_buff.h"
 
-static inline void hex_pay(uint8_t *packet, size_t len)
+static inline void hex_pay(struct pkt_buff *pkt)
 {
+	unsigned int  len    = pkt_len(pkt);
+	uint8_t      *packet = pkt_pull_head(pkt, len);
 	size_t plen = len;
 	uint8_t *buff;
 
-	if (len == 0)
+	if (packet == NULL)
 		return;
+
 	tprintf(" [ Payload hex ");
 	for (buff = packet, plen = len; plen-- > 0; buff++)
 		tprintf("%.2x ", *buff);
@@ -32,45 +36,43 @@ static inline void hex_pay(uint8_t *packet, size_t len)
 	tprintf("]\n\n");
 }
 
-static inline void hex_none_newline(uint8_t *packet, size_t len)
+static inline void hex_none_newline(struct pkt_buff *pkt)
 {
 	tprintf("\n");
 }
 
-static inline void hex_hex(uint8_t *packet, size_t len)
+static inline void hex_hex(struct pkt_buff *pkt)
 {
-	uint8_t *buff;
 	tprintf("   ");
-	for (buff = packet; len-- > 0; buff++)
-		tprintf("%.2x ", *buff);
+	hex(pkt);
 	tprintf("\n\n");
 }
 
-static inline void hex_all(uint8_t *packet, size_t len)
+static inline void hex_all(struct pkt_buff *pkt)
 {
-	hex(packet, len);
+	hex(pkt);
 	tprintf("\n\n");
 }
 
-static inline void hex_ascii(uint8_t *packet, size_t len)
+static inline void hex_ascii(struct pkt_buff *pkt)
 {
 	uint8_t *buff;
+	unsigned int len = pkt_len(pkt);
+
 	tprintf("   ");
-	for (buff = packet; len-- > 0; buff++)
+	for (buff = pkt_pull_head(pkt, len); buff && len-- > 0; buff++)
 		tprintf("%c ", isprint(*buff) ? *buff : '.');
 	tprintf("\n\n");
 }
 
 struct protocol hex_ops = {
 	.key = 0x01,
-	.offset = 0,
 	.print_full = hex_pay,
 	.print_less = hex_none_newline,
 	.print_pay_ascii = hex_ascii,
 	.print_pay_hex = hex_hex,
 	.print_pay_none = hex_none_newline,
 	.print_all_hex = hex_all,
-	.proto_next = NULL,
 };
 
 #endif /* HEX_H */
