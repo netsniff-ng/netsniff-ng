@@ -13,6 +13,7 @@
 #include <netinet/in.h>    /* for ntohs() */
 #include <arpa/inet.h>     /* for inet_ntop() */
 #include <asm/byteorder.h>
+#include <assert.h>
 
 #include "csum.h"
 #include "proto_struct.h"
@@ -37,11 +38,8 @@ struct ipv4hdr {
 	uint16_t h_check;
 	uint32_t h_saddr;
 	uint32_t h_daddr;
-	uint8_t h_opts[40]; /* optional field of variable length */
+	uint8_t h_opts[0];
 } __attribute__((packed));
-
-#define IP_V4_HEADER_LENGTH_MIN \
-	(sizeof(struct ipv4hdr) - sizeof(((struct ipv4hdr *)0)->h_opts))
 
 #define	FRAG_OFF_RESERVED_FLAG(x)      ((x) & 0x8000)
 #define	FRAG_OFF_NO_FRAGMENT_FLAG(x)   ((x) & 0x4000)
@@ -57,7 +55,7 @@ static inline void ipv4(uint8_t *packet, size_t len)
 	uint8_t *buff;
 	size_t opts_len;
 
-	if (len < IP_V4_HEADER_LENGTH_MIN)
+	if (len < sizeof(struct ipv4hdr))
 		return;
 
 	frag_off = ntohs(ip->h_frag_off);
@@ -91,6 +89,8 @@ static inline void ipv4(uint8_t *packet, size_t len)
 	/* TODO: do/print something more usefull (dissect options, ...) */
 	opts_len = ip->h_ihl * 4 - 20;
 
+	assert(opts_len <= 40);
+
 	if (opts_len) {
 		tprintf("   [ Options hex ");
 		for (buff = ip->h_opts; opts_len-- > 0; buff++)
@@ -105,7 +105,7 @@ static inline void ipv4_less(uint8_t *packet, size_t len)
 	char dst_ip[INET_ADDRSTRLEN];
 	struct ipv4hdr *ip = (struct ipv4hdr *) packet;
 
-	if (len < IP_V4_HEADER_LENGTH_MIN)
+	if (len < sizeof(struct ipv4hdr))
 		return;
 
 	inet_ntop(AF_INET, &ip->h_saddr, src_ip, sizeof(src_ip));
@@ -121,7 +121,7 @@ static inline void ipv4_next(uint8_t *packet, size_t len,
 {
 	struct ipv4hdr *ip = (struct ipv4hdr *) packet;
 
-	if (len < IP_V4_HEADER_LENGTH_MIN)
+	if (len < sizeof(struct ipv4hdr))
 		return;
 
 	(*off) = ip->h_ihl * 4;
@@ -131,7 +131,7 @@ static inline void ipv4_next(uint8_t *packet, size_t len,
 
 struct protocol ipv4_ops = {
 	.key = 0x0800,
-	.offset = IP_V4_HEADER_LENGTH_MIN,
+	.offset = sizeof(struct ipv4hdr),
 	.print_full = ipv4,
 	.print_less = ipv4_less,
 	.print_pay_ascii = empty,
