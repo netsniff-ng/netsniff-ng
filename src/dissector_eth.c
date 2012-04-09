@@ -90,10 +90,6 @@ static inline void dissector_init_exit(int type)
 static void dissector_init_layer_2(int type)
 {
 	init_hash(&eth_lay2);
-	INSERT_HASH_PROTOS(arp_ops, eth_lay2);
-	INSERT_HASH_PROTOS(vlan_ops, eth_lay2);
-	INSERT_HASH_PROTOS(ipv4_ops, eth_lay2);
-	INSERT_HASH_PROTOS(ipv6_ops, eth_lay2);
 	for_each_hash_int(&eth_lay2, dissector_set_print_type, type);
 }
 
