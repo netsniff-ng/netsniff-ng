@@ -72,10 +72,6 @@ struct protocol ipv6_fragm_ops = {
 	.key = 0x2C,
 	.print_full = fragm,
 	.print_less = fragm_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = fragm,
-	.print_all_hex = hex,
 	.proto_next = fragm_next,
 };
 

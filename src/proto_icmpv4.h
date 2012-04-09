@@ -61,10 +61,6 @@ struct protocol icmp_ops = {
 	.offset = sizeof(struct icmphdr),
 	.print_full = icmp,
 	.print_less = icmp_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = icmp,
-	.print_all_hex = hex,
 	.proto_next = NULL,
 };
 

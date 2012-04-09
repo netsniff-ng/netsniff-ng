@@ -87,10 +87,6 @@ struct protocol ipv6_routing_ops = {
 	.key = 0x2B,
 	.print_full = routing,
 	.print_less = routing_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = routing,
-	.print_all_hex = hex,
 	.proto_next = routing_next,
 };
 

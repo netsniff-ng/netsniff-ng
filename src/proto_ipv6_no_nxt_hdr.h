@@ -29,10 +29,6 @@ struct protocol ipv6_no_next_header_ops = {
 	.key = 0x3B,
 	.print_full = empty,
 	.print_less = empty,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = empty,
-	.print_all_hex = empty,
 	.proto_next = no_next_header_next,
 };
 

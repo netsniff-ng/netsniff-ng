@@ -27,18 +27,6 @@ int dissector_set_print_type(void *ptr, int type)
 		case FNTTYPE_PRINT_LESS:
 			proto->process = proto->print_less;
 			break;
-		case FNTTYPE_PRINT_PAY_HEX:
-			proto->process = proto->print_pay_hex;
-			break;
-		case FNTTYPE_PRINT_ALL_HEX:
-			proto->process = proto->print_all_hex;
-			break;
-		case FNTTYPE_PRINT_NO_PAY:
-			proto->process = proto->print_pay_none;
-			break;
-		case FNTTYPE_PRINT_PAY_ASCII:
-			proto->process = proto->print_pay_ascii;
-			break;
 		default:
 		case FNTTYPE_PRINT_NONE:
 			proto->process = NULL;

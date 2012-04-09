@@ -20,10 +20,6 @@ struct protocol ipv6_in_ipv4_ops = {
 	.key = 0x29,
 	.print_full = ipv6,
 	.print_less = ipv6_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = ipv6,
-	.print_all_hex = hex,
 	.proto_next = ipv6_next,
 };
 

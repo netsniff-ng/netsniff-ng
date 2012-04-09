@@ -197,10 +197,6 @@ struct protocol icmpv6_ops = {
 	.key = 0x3A,
 	.print_full = icmpv6,
 	.print_less = icmpv6_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = icmpv6,
-	.print_all_hex = hex,
 	.proto_next = NULL,
 };
 

@@ -81,10 +81,6 @@ struct protocol ethernet_ops = {
 	.key = 0,
 	.print_full = ethernet,
 	.print_less = ethernet_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = ethernet,
-	.print_all_hex = ethernet_hex_all,
 };
 
 #endif /* ETHERNET_H */

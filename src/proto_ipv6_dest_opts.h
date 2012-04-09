@@ -73,10 +73,6 @@ struct protocol ipv6_dest_opts_ops = {
 	.key = 0x3C,
 	.print_full = dest_opts,
 	.print_less = dest_opts_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = dest_opts,
-	.print_all_hex = hex,
 	.proto_next = dest_opts_next,
 };
 

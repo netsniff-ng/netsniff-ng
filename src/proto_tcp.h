@@ -170,10 +170,6 @@ struct protocol tcp_ops = {
 	.offset = sizeof(struct tcphdr),
 	.print_full = tcp,
 	.print_less = tcp_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = tcp,
-	.print_all_hex = hex,
 	.proto_next = tcp_next,
 };
 

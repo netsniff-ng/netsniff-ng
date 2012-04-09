@@ -136,10 +136,6 @@ struct protocol ipv4_ops = {
 	.key = 0x0800,
 	.print_full = ipv4,
 	.print_less = ipv4_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = ipv4,
-	.print_all_hex = hex,
 };
 
 #endif /* IPV4_H */

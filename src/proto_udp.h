@@ -100,10 +100,6 @@ struct protocol udp_ops = {
 	.offset = sizeof(struct udphdr),
 	.print_full = udp,
 	.print_less = udp_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = udp,
-	.print_all_hex = hex,
 	.proto_next = udp_next,
 };
 

@@ -98,10 +98,6 @@ struct protocol ipv6_ops = {
 	.key = 0x86DD,
 	.print_full = ipv6,
 	.print_less = ipv6_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = ipv6,
-	.print_all_hex = hex,
 };
 
 #endif /* IPV6_H */

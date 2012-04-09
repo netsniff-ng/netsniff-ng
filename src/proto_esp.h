@@ -57,10 +57,6 @@ struct protocol esp_ops = {
 	.key = 0x32,
 	.print_full = esp,
 	.print_less = esp_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = esp,
-	.print_all_hex = hex,
 	.proto_next = esp_next,
 };
 

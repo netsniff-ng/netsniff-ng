@@ -69,10 +69,6 @@ struct protocol hex_ops = {
 	.key = 0x01,
 	.print_full = hex_pay,
 	.print_less = hex_none_newline,
-	.print_pay_ascii = hex_ascii,
-	.print_pay_hex = hex_hex,
-	.print_pay_none = hex_none_newline,
-	.print_all_hex = hex_all,
 };
 
 #endif /* HEX_H */

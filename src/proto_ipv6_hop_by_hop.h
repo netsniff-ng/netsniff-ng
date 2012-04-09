@@ -73,10 +73,6 @@ struct protocol ipv6_hop_by_hop_ops = {
 	.key = 0x0,
 	.print_full = hop_by_hop,
 	.print_less = hop_by_hop_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = hop_by_hop,
-	.print_all_hex = hex,
 	.proto_next = hop_by_hop_next,
 };
 

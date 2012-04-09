@@ -77,10 +77,6 @@ struct protocol ipv6_mobility_hdr_ops = {
 	.key = 0x87,
 	.print_full = mobility,
 	.print_less = mobility_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = mobility,
-	.print_all_hex = hex,
 	.proto_next = mobility_next,
 };
 

@@ -122,10 +122,6 @@ struct protocol arp_ops = {
 	.key = 0x0806,
 	.print_full = arp,
 	.print_less = arp_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = arp,
-	.print_all_hex = hex,
 };
 
 #endif /* ARP_H */

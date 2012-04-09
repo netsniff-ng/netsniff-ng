@@ -24,10 +24,6 @@ struct protocol {
 	unsigned int key;
 	void (*print_full)     (struct pkt_buff *pkt);
 	void (*print_less)     (struct pkt_buff *pkt);
-	void (*print_pay_ascii)(struct pkt_buff *pkt);
-	void (*print_pay_hex)  (struct pkt_buff *pkt);
-	void (*print_pay_none) (struct pkt_buff *pkt);
-	void (*print_all_hex)  (struct pkt_buff *pkt);
 	/* Used by program logic */
 	struct protocol *next;
 	void (*process)        (struct pkt_buff *pkt);
