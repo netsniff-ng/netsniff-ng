@@ -12,6 +12,7 @@
 
 #include "hash.h"
 #include "proto_struct.h"
+#include "xmalloc.h"
 
 struct pkt_buff {
 	/* invariant: head <= data <= tail */
@@ -25,14 +26,14 @@ struct pkt_buff {
 
 static struct pkt_buff *pkt_alloc(uint8_t *packet, unsigned int len)
 {
-	struct pkt_buff *pkt = (struct pkt_buff *) malloc(sizeof(*pkt));
+	struct pkt_buff *pkt = xmalloc(sizeof(*pkt));
 
-	if (pkt) {
-	        pkt->head = packet;
-	        pkt->data = packet;
-		pkt->tail = packet + len;
-		pkt->size = len;
-	}
+	pkt->head = packet;
+	pkt->data = packet;
+	pkt->tail = packet + len;
+	pkt->size = len;
+
+	pkt->proto = NULL;
 
 	return pkt;
 }
