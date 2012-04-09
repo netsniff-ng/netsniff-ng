@@ -100,19 +100,6 @@ static void dissector_init_layer_2(int type)
 static void dissector_init_layer_3(int type)
 {
 	init_hash(&eth_lay3);
-	INSERT_HASH_PROTOS(ipv6_fragm_ops, eth_lay3);
-	INSERT_HASH_PROTOS(ipv6_in_ipv4_ops, eth_lay3);
-	INSERT_HASH_PROTOS(ipv6_hop_by_hop_ops, eth_lay3);
-	INSERT_HASH_PROTOS(ipv6_routing_ops, eth_lay3);
-	INSERT_HASH_PROTOS(ipv6_dest_opts_ops, eth_lay3);
-	INSERT_HASH_PROTOS(ipv6_no_next_header_ops, eth_lay3);
-	INSERT_HASH_PROTOS(ip_auth_hdr_ops, eth_lay3);
-	INSERT_HASH_PROTOS(ipv6_mobility_hdr_ops, eth_lay3);
-	INSERT_HASH_PROTOS(esp_ops, eth_lay3);
-	INSERT_HASH_PROTOS(icmp_ops, eth_lay3);
-	INSERT_HASH_PROTOS(icmpv6_ops, eth_lay3);
-	INSERT_HASH_PROTOS(udp_ops, eth_lay3);
-	INSERT_HASH_PROTOS(tcp_ops, eth_lay3);
 	for_each_hash_int(&eth_lay3, dissector_set_print_type, type);
 }
 
