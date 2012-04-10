@@ -45,15 +45,17 @@ static void dissector_main(struct pkt_buff *pkt, struct protocol *start,
 	for (pkt->proto = start; pkt->proto != NULL;) {
 		if (unlikely(!pkt->proto->process))
 			break;
+
 		proto = pkt->proto;
 		pkt->proto = NULL;
 		proto->process(pkt);
 	}
+
 	if (end != NULL)
 		if (likely(end->process))
 			end->process(pkt);
+
 	tprintf_flush();
-	pkt_free(pkt);
 }
 
 void dissector_entry_point(uint8_t *packet, size_t len, int linktype)
@@ -70,7 +72,10 @@ void dissector_entry_point(uint8_t *packet, size_t len, int linktype)
 	default:
 		return;
 	};
+
 	dissector_main(pkt, proto_start, proto_end);
+
+	pkt_free(pkt);
 }
 
 void dissector_init_all(int fnttype)
