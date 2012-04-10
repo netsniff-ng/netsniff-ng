@@ -11,6 +11,7 @@
 #include <stdlib.h>
 
 #include "hash.h"
+#include "built_in.h"
 #include "proto_struct.h"
 #include "xmalloc.h"
 
@@ -32,7 +33,6 @@ static inline struct pkt_buff *pkt_alloc(uint8_t *packet, unsigned int len)
 	pkt->data = packet;
 	pkt->tail = packet + len;
 	pkt->size = len;
-
 	pkt->proto = NULL;
 
 	return pkt;
@@ -45,7 +45,8 @@ static inline void pkt_free(struct pkt_buff *pkt)
 
 static inline unsigned int pkt_len(struct pkt_buff *pkt)
 {
-	assert(pkt && pkt->data <= pkt->tail);
+	bug_on(!pkt || pkt->data > pkt->tail);
+
 	return pkt->tail - pkt->data;
 }
 
@@ -53,12 +54,13 @@ static inline uint8_t *pkt_pull_head(struct pkt_buff *pkt, unsigned int len)
 {
 	uint8_t *data = NULL;
 
-	assert(pkt && pkt->head <= pkt->data && pkt->data <= pkt->tail);
+	bug_on(!pkt || pkt->head > pkt->data || pkt->data > pkt->tail);
 
 	if (pkt_len(pkt) && pkt->data + len <= pkt->tail) {
 		data = pkt->data;
 		pkt->data += len;
 	}
+
 	return data;
 }
 
@@ -66,19 +68,20 @@ static inline uint8_t *pkt_pull_tail(struct pkt_buff *pkt, unsigned int len)
 {
 	uint8_t *tail = NULL;
 
-	assert(pkt && pkt->head <= pkt->data && pkt->data <= pkt->tail);
+	bug_on(!pkt || pkt->head > pkt->data || pkt->data > pkt->tail);
 
 	if (pkt_len(pkt) && pkt->tail - len >= pkt->data) {
 		tail = pkt->tail;
 		pkt->tail -= len;
 	}
+
 	return tail;
 }
 
 static inline void pkt_set_proto(struct pkt_buff *pkt, struct hash_table *table,
 				 unsigned int key)
 {
-	assert(pkt && table);
+	bug_on(!pkt || !table);
 
 	pkt->proto = (struct protocol *) lookup_hash(key, table);
 	while (pkt->proto && key != pkt->proto->key)

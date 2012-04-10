@@ -194,4 +194,8 @@
 # define build_bug_on_zero(e)	(sizeof(char[1 - 2 * !!(e)]) - 1)
 #endif
 
+#ifndef bug_on
+# define bug_on(cond)		assert(!(cond))
+#endif
+
 #endif /* BUILT_IN_H */
