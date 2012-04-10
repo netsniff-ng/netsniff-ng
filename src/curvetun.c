@@ -177,7 +177,6 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include <signal.h>
 
 #include "xsys.h"
-#include "stun.h"
 #include "die.h"
 #include "xmalloc.h"
 #include "xstring.h"
@@ -192,6 +191,8 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "crypto_auth_hmacsha512256.h"
 
 #define CURVETUN_ENTROPY_SOURCE	"/dev/random"
+
+extern void print_stun_probe(char *server, uint16_t sport, uint16_t tunport);
 
 enum working_mode {
 	MODE_UNKNOW,
