@@ -70,9 +70,7 @@ void dissector_entry_point(uint8_t *packet, size_t len, int linktype)
 	default:
 		return;
 	};
-
-	if (pkt != NULL)
-		dissector_main(pkt, proto_start, proto_end);
+	dissector_main(pkt, proto_start, proto_end);
 }
 
 void dissector_init_all(int fnttype)

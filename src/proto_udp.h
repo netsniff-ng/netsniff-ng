@@ -14,6 +14,7 @@
 
 #include "proto_struct.h"
 #include "dissector_eth.h"
+#include "pkt_buff.h"
 
 struct udphdr {
 	uint16_t source;
@@ -50,15 +51,15 @@ static inline uint16_t udp_port(uint16_t src, uint16_t dst)
 	}
 }
 
-static inline void udp(uint8_t *packet, size_t len)
+static inline void udp(struct pkt_buff *pkt)
 {
-	struct udphdr *udp = (struct udphdr *) packet;
+	struct udphdr *udp = (struct udphdr *) pkt_pull_head(pkt, sizeof(*udp));
 
-	if (len < sizeof(struct udphdr))
+	if (udp == NULL)
 		return;
 
 	tprintf(" [ UDP ");
-	tprintf("Port (%u => %u, %s%s%s), ", 
+	tprintf("Port (%u => %u, %s%s%s), ",
 		ntohs(udp->source), ntohs(udp->dest),
 		colorize_start(bold),
 		lookup_port_udp(udp_port(udp->source, udp->dest)),
@@ -66,41 +67,29 @@ static inline void udp(uint8_t *packet, size_t len)
 	tprintf("Len (%u), ", ntohs(udp->len));
 	tprintf("CSum (0x%.4x)", ntohs(udp->check));
 	tprintf(" ]\n");
+
+	pkt_set_proto(pkt, &eth_lay4, udp_port(udp->source, udp->dest));
 }
 
-static inline void udp_less(uint8_t *packet, size_t len)
+static inline void udp_less(struct pkt_buff *pkt)
 {
-	struct udphdr *udp = (struct udphdr *) packet;
+	struct udphdr *udp = (struct udphdr *) pkt_pull_head(pkt, sizeof(*udp));
 
-	if (len < sizeof(struct udphdr))
+	if (udp == NULL)
 		return;
 
-	tprintf(" UDP %s%s%s %u/%u", 
+	tprintf(" UDP %s%s%s %u/%u",
 		colorize_start(bold),
 		lookup_port_udp(udp_port(udp->source, udp->dest)),
 		colorize_end(), ntohs(udp->source), ntohs(udp->dest));
-}
 
-static inline void udp_next(uint8_t *packet, size_t len,
-			    struct hash_table **table,
-			    unsigned int *key, size_t *off)
-{
-	struct udphdr *udp = (struct udphdr *) packet;
-
-	if (len < sizeof(struct udphdr))
-		return;
-
-	(*off) = sizeof(struct udphdr);
-	(*key) = udp_port(udp->source, udp->dest);
-	(*table) = &eth_lay4;
+	pkt_set_proto(pkt, &eth_lay4, udp_port(udp->source, udp->dest));
 }
 
 struct protocol udp_ops = {
 	.key = 0x11,
-	.offset = sizeof(struct udphdr),
 	.print_full = udp,
 	.print_less = udp_less,
-	.proto_next = udp_next,
 };
 
 #endif /* UDP_H */
