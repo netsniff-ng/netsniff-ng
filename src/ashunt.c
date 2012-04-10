@@ -206,7 +206,6 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include <getopt.h>
 #include <ctype.h>
 #include <stdint.h>
-#include <assert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
@@ -237,6 +236,7 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "xsys.h"
 #include "mtrand.h"
 #include "ring_rx.h"
+#include "built_in.h"
 
 #define WHOIS_SERVER_SOURCE "/etc/netsniff-ng/whois.conf"
 
@@ -476,7 +476,9 @@ static void assemble_tcp(uint8_t *packet, size_t len, int syn, int ack,
 			 int urg, int fin, int rst, int psh, int ecn, int dport)
 {
 	struct tcphdr *tcph = (struct tcphdr *) packet;
-	assert(len >= sizeof(struct tcphdr));
+
+	bug_on(len < sizeof(struct tcphdr));
+
 	tcph->source = htons((uint16_t) mt_rand_int32());
 	tcph->dest = htons((uint16_t) dport);
 	tcph->seq = htonl(mt_rand_int32());
@@ -503,9 +505,11 @@ static int assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
 			     int nofrag, int dport, const char *payload)
 {
 	struct iphdr *iph = (struct iphdr *) packet;
-	assert(src && dst);
-	assert(src->sa_family == PF_INET && dst->sa_family == PF_INET);
-	assert(len >= sizeof(struct iphdr) + sizeof(struct tcphdr));
+
+	bug_on(!src || !dst);
+	bug_on(src->sa_family != PF_INET || dst->sa_family != PF_INET);
+	bug_on(len < sizeof(struct iphdr) + sizeof(struct tcphdr));
+
 	iph->ihl = 5;
 	iph->version = 4;
 	iph->tos = (uint8_t) tos;
@@ -516,14 +520,18 @@ static int assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
 	iph->protocol = 6; /* TCP */
 	iph->saddr = ((const struct sockaddr_in *) src)->sin_addr.s_addr;
 	iph->daddr = ((const struct sockaddr_in *) dst)->sin_addr.s_addr;
+
 	assemble_tcp(packet + sizeof(struct iphdr),
 		     len - sizeof(struct iphdr), syn, ack, urg, fin, rst,
 		     psh, ecn, dport);
+
 	assemble_data(packet + sizeof(struct iphdr) + sizeof(struct tcphdr),
 		      len - sizeof(struct iphdr) - sizeof(struct tcphdr),
 		      payload);
+
 	iph->check = csum((unsigned short *) packet,
 			  ntohs(iph->tot_len) >> 1);
+
 	return ntohs(iph->id);
 }
 
@@ -537,7 +545,9 @@ static int assemble_ipv6_tcp(uint8_t *packet, size_t len, int ttl,
 static void assemble_icmp4(uint8_t *packet, size_t len)
 {
 	struct icmphdr *icmph = (struct icmphdr *) packet;
-	assert(len >= sizeof(struct icmphdr));
+
+	bug_on(len < sizeof(struct icmphdr));
+
 	icmph->type = ICMP_ECHO;
 	icmph->code = 0;
 	icmph->checksum = 0;
@@ -550,9 +560,11 @@ static int assemble_ipv4_icmp4(uint8_t *packet, size_t len, int ttl,
 			       const char *payload)
 {
 	struct iphdr *iph = (struct iphdr *) packet;
-	assert(src && dst);
-	assert(src->sa_family == PF_INET && dst->sa_family == PF_INET);
-	assert(len >= sizeof(struct iphdr) + sizeof(struct tcphdr));
+
+	bug_on(!src || !dst);
+	bug_on(src->sa_family != PF_INET || dst->sa_family != PF_INET);
+	bug_on(len < sizeof(struct iphdr) + sizeof(struct tcphdr));
+
 	iph->ihl = 5;
 	iph->version = 4;
 	iph->tos = 0;
@@ -563,13 +575,17 @@ static int assemble_ipv4_icmp4(uint8_t *packet, size_t len, int ttl,
 	iph->protocol = 1; /* ICMP4 */
 	iph->saddr = ((const struct sockaddr_in *) src)->sin_addr.s_addr;
 	iph->daddr = ((const struct sockaddr_in *) dst)->sin_addr.s_addr;
+
 	assemble_icmp4(packet + sizeof(struct iphdr),
 		       len - sizeof(struct iphdr));
+
 	assemble_data(packet + sizeof(struct iphdr) + sizeof(struct icmphdr),
 		      len - sizeof(struct iphdr) - sizeof(struct icmphdr),
 		      payload);
+
 	iph->check = csum((unsigned short *) packet,
 			  ntohs(iph->tot_len) >> 1);
+
 	return ntohs(iph->id);
 }
 
