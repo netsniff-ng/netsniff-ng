@@ -19,6 +19,7 @@
 #include "built_in.h"
 #include "proto_struct.h"
 #include "dissector_eth.h"
+#include "pkt_buff.h"
 
 struct icmpv6hdr {
 	uint8_t h_type;
@@ -163,15 +164,15 @@ static inline void icmpv6_process(struct icmpv6hdr *icmp, char **type,
 	}
 }
 
-static inline void icmpv6(uint8_t *packet, size_t len)
+static inline void icmpv6(struct pkt_buff *pkt)
 {
 	char *type = NULL, *code = NULL, *optional = NULL;
-	struct icmpv6hdr *icmp;
+	struct icmpv6hdr *icmp =
+		(struct icmpv6hdr *) pkt_pull_head(pkt, sizeof(*icmp));
 
-	if (len < sizeof(struct icmpv6hdr))
+	if (icmp == NULL)
 		return;
-	
-	icmp = (struct icmpv6hdr *) packet;
+
 	icmpv6_process(icmp, &type, &code, &optional);
 
 	tprintf(" [ ICMPv6 ");
@@ -183,11 +184,12 @@ static inline void icmpv6(uint8_t *packet, size_t len)
 	tprintf(" ]\n\n");
 }
 
-static inline void icmpv6_less(uint8_t *packet, size_t len)
+static inline void icmpv6_less(struct pkt_buff *pkt)
 {
-	struct icmpv6hdr *icmp = (struct icmpv6hdr *) packet;
- 
-	if (len < (sizeof(struct icmpv6hdr)))
+	struct icmpv6hdr *icmp =
+		(struct icmpv6hdr *) pkt_pull_head(pkt, sizeof(*icmp));
+
+	if (icmp == NULL)
 		return;
 
 	tprintf(" ICMPv6 Type (%u) Code (%u)", icmp->h_type, icmp->h_code);
@@ -197,7 +199,6 @@ struct protocol icmpv6_ops = {
 	.key = 0x3A,
 	.print_full = icmpv6,
 	.print_less = icmpv6_less,
-	.proto_next = NULL,
 };
 
 #endif /* ICMPV6_H */
