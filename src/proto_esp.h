@@ -1,9 +1,9 @@
 /*
- * Encapsulating Security Payload described in RFC4303
- * programmed by Markus Amend 2012 as a contribution to
  * netsniff-ng - the packet sniffing beast
- * Copyright 2012 Markus Amend.
+ * Copyright 2012 Markus Amend <markus@netsniff-ng.org>
  * Subject to the GPL, version 2.
+ *
+ * Encapsulating Security Payload described in RFC4303
  */
 
 #ifndef ESP_H
