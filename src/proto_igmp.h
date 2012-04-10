@@ -4,8 +4,8 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef _PROTO_IGMP_H_
-#define _PROTO_IGMP_H_
+#ifndef PROTO_IGMP_H
+#define PROTO_IGMP_H
 
 #include <arpa/inet.h>
 #include <assert.h>
@@ -561,4 +561,4 @@ struct protocol igmp_ops = {
 	.print_less = igmp_less,
 };
 
-#endif /* _PROTO_IGMP_H_ */
+#endif /* PROTO_IGMP_H */
