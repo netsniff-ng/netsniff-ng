@@ -4,8 +4,8 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef _PKT_BUFF_H_
-#define _PKT_BUFF_H_
+#ifndef PKT_BUFF_H
+#define PKT_BUFF_H
 
 #include <assert.h>
 #include <stdlib.h>
@@ -80,4 +80,4 @@ static void pkt_set_proto(struct pkt_buff *pkt, struct hash_table *table,
 		pkt->proto = pkt->proto->next;
 }
 
-#endif /* _PKT_BUFF_H_ */
+#endif /* PKT_BUFF_H */
