@@ -199,4 +199,8 @@
 # define bug_on(cond)		assert(!(cond))
 #endif
 
+#ifndef bug
+# define bug			assert(0)
+#endif
+
 #endif /* BUILT_IN_H */

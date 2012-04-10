@@ -9,6 +9,7 @@
 
 #include "hash.h"
 #include "protos.h"
+#include "pkt_buff.h"
 #include "dissector.h"
 #include "dissector_eth.h"
 #include "xmalloc.h"
