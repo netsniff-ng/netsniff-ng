@@ -41,26 +41,32 @@
 int af_socket(int af)
 {
 	int sock;
+
 	if (unlikely(af != AF_INET && af != AF_INET6)) {
 		whine("Wrong AF socket type! Falling back to AF_INET\n");
 		af = AF_INET;
 	}
+
 	sock = socket(af, SOCK_DGRAM, 0);
 	if (unlikely(sock < 0))
 		panic("Creation AF socket failed!\n");
+
 	return sock;
 }
 
 int af_raw_socket(int af, int proto)
 {
 	int sock;
+
 	if (unlikely(af != AF_INET && af != AF_INET6)) {
 		whine("Wrong AF socket type! Falling back to AF_INET\n");
 		af = AF_INET;
 	}
+
 	sock = socket(af, SOCK_RAW, proto);
 	if (unlikely(sock < 0))
 		panic("Creation AF socket failed!\n");
+
 	return sock;
 }
 
@@ -88,9 +94,11 @@ int set_nonblocking_sloppy(int fd)
 int set_reuseaddr(int fd)
 {
 	int ret, one = 1;
+
 	ret = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof (one));
 	if (unlikely(ret < 0))
 		panic("Cannot reuse addr!\n");
+
 	return 0;
 }
 
@@ -98,15 +106,20 @@ int wireless_bitrate(const char *ifname)
 {
 	int sock, ret, rate_in_mbit;
 	struct iwreq iwr;
+
 	sock = af_socket(AF_INET);
+
 	memset(&iwr, 0, sizeof(iwr));
 	strlcpy(iwr.ifr_name, ifname, IFNAMSIZ);
+
 	ret = ioctl(sock, SIOCGIWRATE, &iwr);
 	if (!ret)
 		rate_in_mbit = iwr.u.bitrate.value / 1000000;
 	else
 		rate_in_mbit = 0;
+
 	close(sock);
+
 	return rate_in_mbit;
 }
 
@@ -121,14 +134,20 @@ int wireless_sigqual(const char *ifname, struct iw_statistics *stats)
 {
 	int ret, sock;
 	struct iwreq iwr;
+
 	sock = af_socket(AF_INET);
+
 	memset(&iwr, 0, sizeof(iwr));
 	strlcpy(iwr.ifr_name, ifname, IFNAMSIZ);
+
 	iwr.u.data.pointer = (caddr_t) stats;
 	iwr.u.data.length = sizeof(*stats);
 	iwr.u.data.flags = 1;
+
 	ret = ioctl(sock, SIOCGIWSTATS, &iwr);
+
 	close(sock);
+
 	return ret;
 }
 
@@ -137,19 +156,26 @@ int wireless_rangemax_sigqual(const char *ifname)
 	int ret, sock, sigqual;
 	struct iwreq iwr;
 	struct iw_range iwrange;
+
 	sock = af_socket(AF_INET);
+
 	memset(&iwrange, 0, sizeof(iwrange));
+
 	memset(&iwr, 0, sizeof(iwr));
 	strlcpy(iwr.ifr_name, ifname, IFNAMSIZ);
+
 	iwr.u.data.pointer = (caddr_t) &iwrange;
 	iwr.u.data.length = sizeof(iwrange);
 	iwr.u.data.flags = 0;
+
 	ret = ioctl(sock, SIOCGIWRANGE, &iwr);
 	if (!ret)
 		sigqual = iwrange.max_qual.qual;
 	else
 		sigqual = 0;
+
 	close(sock);
+
 	return sigqual;
 }
 
@@ -158,17 +184,23 @@ int ethtool_bitrate(const char *ifname)
 	int ret, sock, bitrate;
 	struct ifreq ifr;
 	struct ethtool_cmd ecmd;
+
 	sock = af_socket(AF_INET);
+
 	memset(&ecmd, 0, sizeof(ecmd));
+
 	memset(&ifr, 0, sizeof(ifr));
 	strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
+
 	ecmd.cmd = ETHTOOL_GSET;
 	ifr.ifr_data = (char *) &ecmd;
+
 	ret = ioctl(sock, SIOCETHTOOL, &ifr);
 	if (ret) {
 		bitrate = 0;
 		goto out;
 	}
+
 	switch (ecmd.speed) {
 	case SPEED_10:
 	case SPEED_100:
@@ -182,6 +214,7 @@ int ethtool_bitrate(const char *ifname)
 	};
 out:
 	close(sock);
+
 	return bitrate;
 }
 
@@ -189,22 +222,31 @@ int ethtool_drvinf(const char *ifname, struct ethtool_drvinfo *drvinf)
 {
 	int ret, sock;
 	struct ifreq ifr;
+
 	sock = af_socket(AF_INET);
+
 	memset(drvinf, 0, sizeof(*drvinf));
+
 	memset(&ifr, 0, sizeof(ifr));
 	strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
+
 	drvinf->cmd = ETHTOOL_GDRVINFO;
 	ifr.ifr_data = (char *) drvinf;
+
 	ret = ioctl(sock, SIOCETHTOOL, &ifr);
+
 	close(sock);
+
 	return ret;
 }
 
 int device_bitrate(const char *ifname)
 {
 	int speed_c, speed_w;
+
 	speed_c = ethtool_bitrate(ifname);
 	speed_w = wireless_bitrate(ifname);
+
 	return (speed_c == 0 ? speed_w : speed_c);
 }
 
@@ -212,17 +254,23 @@ int device_ifindex(const char *ifname)
 {
 	int ret, sock, index;
 	struct ifreq ifr;
+
 	if (!strncmp("any", ifname, strlen("any")))
 		return 0;
+
 	sock = af_socket(AF_INET);
+
 	memset(&ifr, 0, sizeof(ifr));
 	strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
+
 	ret = ioctl(sock, SIOCGIFINDEX, &ifr);
 	if (!ret)
 		index = ifr.ifr_ifindex;
 	else
 		index = -1;
+
 	close(sock);
+
 	return index;
 }
 
@@ -230,18 +278,25 @@ int device_address(const char *ifname, int af, struct sockaddr_storage *ss)
 {
 	int ret, sock;
 	struct ifreq ifr;
+
 	if (!ss)
 		return -EINVAL;
 	if (!strncmp("any", ifname, strlen("any")))
 		return -EINVAL;
+
 	sock = af_socket(af);
+
 	memset(&ifr, 0, sizeof(ifr));
 	strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
+
 	ifr.ifr_addr.sa_family = af;
+
 	ret = ioctl(sock, SIOCGIFADDR, &ifr);
 	if (!ret)
 		memcpy(ss, &ifr.ifr_addr, sizeof(ifr.ifr_addr));
+
 	close(sock);
+
 	return ret;
 }
 
@@ -249,15 +304,20 @@ int device_mtu(const char *ifname)
 {
 	int ret, sock, mtu;
 	struct ifreq ifr;
+
 	sock = af_socket(AF_INET);
+
 	memset(&ifr, 0, sizeof(ifr));
 	strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
+
 	ret = ioctl(sock, SIOCGIFMTU, &ifr);
 	if (!ret)
 		mtu = ifr.ifr_mtu;
 	else
 		mtu = 0;
+
 	close(sock);
+
 	return mtu;
 }
 
@@ -267,15 +327,20 @@ short device_get_flags(const char *ifname)
 	short flags;
 	int ret, sock;
 	struct ifreq ifr;
+
 	sock = af_socket(AF_INET);
+
 	memset(&ifr, 0, sizeof(ifr));
 	strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
+
 	ret = ioctl(sock, SIOCGIFFLAGS, &ifr);
 	if (!ret)
 		flags = ifr.ifr_flags;
 	else
 		flags = 0;
+
 	close(sock);
+
 	return flags;
 }
 
@@ -283,13 +348,18 @@ void device_set_flags(const char *ifname, const short flags)
 {
 	int ret, sock;
 	struct ifreq ifr;
+
 	sock = af_socket(AF_INET);
+
 	memset(&ifr, 0, sizeof(ifr));
 	strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
+
 	ifr.ifr_flags = flags;
+
 	ret = ioctl(sock, SIOCSIFFLAGS, &ifr);
 	if (ret < 0)
 		panic("Cannot set NIC flags!\n");
+
 	close(sock);
 }
 
@@ -303,26 +373,34 @@ int device_irq_number(const char *ifname)
 	char *buffp;
 	char buff[512];
 	char sysname[512];
+
 	if (!strncmp("lo", ifname, strlen("lo")))
 		return 0;
+
 	FILE *fp = fopen("/proc/interrupts", "r");
 	if (!fp) {
 		whine("Cannot open /proc/interrupts!\n");
 		return -ENOENT;
 	}
+
 	memset(buff, 0, sizeof(buff));
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
+
 		if (strstr(buff, ifname) == NULL)
 			continue;
+
 		buffp = buff;
 		while (*buffp != ':')
 			buffp++;
 		*buffp = 0;
 		irq = atoi(buff);
+
 		memset(buff, 0, sizeof(buff));
 	}
+
 	fclose(fp);
+
 	if (irq != 0)
 		return irq;
 	/* 
@@ -331,15 +409,19 @@ int device_irq_number(const char *ifname)
 	 */
 	slprintf(sysname, sizeof(sysname), "/sys/class/net/%s/device/irq",
 		 ifname);
+
 	fp = fopen(sysname, "r");
 	if (!fp)
 		return -ENOENT;
+
 	memset(buff, 0, sizeof(buff));
 	if(fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
 		irq = atoi(buff);
 	}
+
 	fclose(fp);
+
 	return irq;
 }
 
@@ -348,21 +430,27 @@ int device_bind_irq_to_cpu(int irq, int cpu)
 	int ret;
 	char buff[256];
 	char file[256];
+
 	/* Note: first CPU begins with CPU 0 */
 	if (irq < 0 || cpu < 0)
 		return -EINVAL;
+
 	memset(file, 0, sizeof(file));
 	memset(buff, 0, sizeof(buff));
+
 	/* smp_affinity starts counting with CPU 1, 2, ... */
 	cpu = cpu + 1;
 	sprintf(file, "/proc/irq/%d/smp_affinity", irq);
+
 	FILE *fp = fopen(file, "w");
 	if (!fp) {
 		whine("Cannot open file %s!\n", file);
 		return -ENOENT;
 	}
+
 	sprintf(buff, "%d", cpu);
 	ret = fwrite(buff, sizeof(buff), 1, fp);
+
 	fclose(fp);
 	return (ret > 0 ? 0 : ret);
 }
@@ -371,8 +459,11 @@ void sock_print_net_stats(int sock)
 {
 	int ret;
 	struct tpacket_stats kstats;
+
 	socklen_t slen = sizeof(kstats);
+
 	memset(&kstats, 0, sizeof(kstats));
+
 	ret = getsockopt(sock, SOL_PACKET, PACKET_STATISTICS, &kstats, &slen);
 	if (ret > -1) {
 		printf("\r%12d  frames incoming\n",
@@ -391,7 +482,9 @@ void register_signal(int signal, void (*handler)(int))
 {
 	sigset_t block_mask;
 	struct sigaction saction;
+
 	sigfillset(&block_mask);
+
 	saction.sa_handler = handler;
 	saction.sa_mask = block_mask;
 	saction.sa_flags = SA_RESTART;
@@ -402,7 +495,9 @@ void register_signal_f(int signal, void (*handler)(int), int flags)
 {
 	sigset_t block_mask;
 	struct sigaction saction;
+
 	sigfillset(&block_mask);
+
 	saction.sa_handler = handler;
 	saction.sa_mask = block_mask;
 	saction.sa_flags = flags;
@@ -433,10 +528,14 @@ void check_for_root_maybe_die(void)
 
 short enter_promiscuous_mode(char *ifname)
 {
+	short ifflags;
+
 	if (!strncmp("any", ifname, strlen("any")))
 		return 0;
-	short ifflags = device_get_flags(ifname);
+
+	ifflags = device_get_flags(ifname);
 	device_set_flags(ifname, ifflags | IFF_PROMISC);
+
 	return ifflags;
 }
 
@@ -517,11 +616,16 @@ int set_cpu_affinity(char *str, int inverted)
 	int ret, i, cpus;
 	char *p, *q;
 	cpu_set_t cpu_bitmask;
+
 	q = str;
+
 	cpus = get_number_cpus();
+
 	CPU_ZERO(&cpu_bitmask);
+
 	for (i = 0; inverted && i < cpus; ++i)
 		CPU_SET(i, &cpu_bitmask);
+
 	while (p = q, q = next_token(q, ','), p) {
 		unsigned int a;	 /* Beginning of range */
 		unsigned int b;	 /* End of range */
@@ -558,26 +662,6 @@ int set_cpu_affinity(char *str, int inverted)
 	return 0;
 }
 
-char *get_cpu_affinity(char *cpu_string, size_t len)
-{
-	int ret, i, cpu;
-	cpu_set_t cpu_bitmask;
-	if (len != get_number_cpus() + 1)
-		return NULL;
-	CPU_ZERO(&cpu_bitmask);
-	ret = sched_getaffinity(getpid(), sizeof(cpu_bitmask),
-				&cpu_bitmask);
-	if (ret) {
-		whine("Can't fetch cpu affinity!\n");
-		return NULL;
-	}
-	for (i = 0, cpu_string[len - 1] = 0; i < len - 1; ++i) {
-		cpu = CPU_ISSET(i, &cpu_bitmask);
-		cpu_string[i] = (cpu ? '1' : '0');
-	}
-	return cpu_string;
-}
-
 int set_proc_prio(int priority)
 {
 	/*
@@ -594,26 +678,32 @@ int set_sched_status(int policy, int priority)
 {
 	int ret, min_prio, max_prio;
 	struct sched_param sp;
+
 	max_prio = sched_get_priority_max(policy);
 	min_prio = sched_get_priority_min(policy);
+
 	if (max_prio == -1 || min_prio == -1)
 		whine("Cannot determine scheduler prio limits!\n");
 	else if (priority < min_prio)
 		priority = min_prio;
 	else if (priority > max_prio)
 		priority = max_prio;
+
 	memset(&sp, 0, sizeof(sp));
 	sp.sched_priority = priority;
+
 	ret = sched_setscheduler(getpid(), policy, &sp);
 	if (ret) {
 		whine("Cannot set scheduler policy!\n");
 		return -EINVAL;
 	}
+
 	ret = sched_setparam(getpid(), &sp);
 	if (ret) {
 		whine("Cannot set scheduler prio!\n");
 		return -EINVAL;
 	}
+
 	return 0;
 }
 
@@ -621,13 +711,17 @@ int set_timeout(struct timeval *timeval, unsigned int msec)
 {
 	if (msec == 0)
 		return -EINVAL;
+
 	timeval->tv_sec = 0;
 	timeval->tv_usec = 0;
+
 	if (msec < 1000) {
 		timeval->tv_usec = msec * 1000;
 		return 0;
 	}
+
 	timeval->tv_sec = (long) (msec / 1000);
 	timeval->tv_usec = (long) ((msec - (timeval->tv_sec * 1000)) * 1000);
+
 	return 0;
 }
