@@ -14,12 +14,12 @@
 #include <netinet/in.h>    /* for ntohs() */
 #include <arpa/inet.h>     /* for inet_ntop() */
 #include <asm/byteorder.h>
-#include <assert.h>
 
 #include "csum.h"
 #include "proto_struct.h"
 #include "dissector_eth.h"
 #include "pkt_buff.h"
+#include "built_in.h"
 
 struct ipv4hdr {
 #if defined(__LITTLE_ENDIAN_BITFIELD)
@@ -91,7 +91,9 @@ static inline void ipv4(struct pkt_buff *pkt)
 	/* TODO: do/print something more usefull (dissect options, ...) */
 	opts_len = ip->h_ihl * 4 - 20;
 
-	assert(opts_len <= 40);
+	/* XXX: better return and print the rest in hex than panic */
+	bug_on(opts_len > 40);
+
 	opts = (uint8_t *) pkt_pull_head(pkt, opts_len);
 
 	if (opts_len && opts) {

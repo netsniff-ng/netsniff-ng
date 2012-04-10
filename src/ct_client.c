@@ -15,7 +15,6 @@
 #include <signal.h>
 #include <syslog.h>
 #include <limits.h>
-#include <assert.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
@@ -267,7 +266,7 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 	err = crypto_auth_hmacsha512256(auth, (unsigned char *) cbuff, clen, token);
 	if (unlikely(err))
 		syslog_panic("Cannot create init hmac message!\n");
-	assert(132 == clen + sizeof(auth));
+	bug_on(132 != clen + sizeof(auth));
 	pad = mt_rand_int32() % 200;
 	msg_len = clen + sizeof(auth) + pad;
 	msg = xzmalloc(msg_len);
