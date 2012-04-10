@@ -1,9 +1,9 @@
 /*
- * IPv6 Hop-By-Hop Header described in RFC2460
- * programmed by Markus Amend 2012 as a contribution to
  * netsniff-ng - the packet sniffing beast
- * Copyright 2012 Markus Amend.
+ * Copyright 2012 Markus Amend <markus@netsniff-ng.org>
  * Subject to the GPL, version 2.
+ *
+ * IPv6 Hop-By-Hop Header described in RFC2460
  */
 
 #ifndef HOP_BY_HOP_H

@@ -1,6 +1,6 @@
 /*
- * This file is part of netsniff-ng - the packet sniffing beast.
- * Copyright (C) 2012 Christoph Jaeger <christophjaeger@linux.com>
+ * netsniff-ng - the packet sniffing beast
+ * Copyright (C) 2012 Christoph Jaeger <christoph@netsniff-ng.org>
  * Subject to the GPL, version 2.
  */
 

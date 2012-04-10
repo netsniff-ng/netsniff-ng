@@ -1,11 +1,11 @@
 /*
+ * netsniff-ng - the packet sniffing beast
+ * Copyright 2012 Markus Amend <markus@netsniff-ng.org>
+ * Subject to the GPL, version 2.
+ *
  * ICMPv6 described in RFC4443, RFC2710, RFC4861, RFC2894,
  * RFC4620, RFC3122, RFC3810, RFC3775, RFC3971, RFC4065
  * RFC4286
- * written by Markus Amend 2012 as a contribution to
- * netsniff-ng - the packet sniffing beast
- * Copyright 2012 Markus Amend.
- * Subject to the GPL, version 2.
  */
 
 #ifndef ICMPV6_H
