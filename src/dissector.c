@@ -53,6 +53,7 @@ static void dissector_main(struct pkt_buff *pkt, struct protocol *start,
 		if (likely(end->process))
 			end->process(pkt);
 	tprintf_flush();
+	pkt_free(pkt);
 }
 
 void dissector_entry_point(uint8_t *packet, size_t len, int linktype)

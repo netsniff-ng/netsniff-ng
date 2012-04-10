@@ -4,8 +4,8 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef _PKT_BUFF_H_
-#define _PKT_BUFF_H_
+#ifndef PKT_BUFF_H
+#define PKT_BUFF_H
 
 #include <assert.h>
 #include <stdlib.h>
@@ -24,7 +24,7 @@ struct pkt_buff {
 	struct protocol *proto;
 };
 
-static struct pkt_buff *pkt_alloc(uint8_t *packet, unsigned int len)
+static inline struct pkt_buff *pkt_alloc(uint8_t *packet, unsigned int len)
 {
 	struct pkt_buff *pkt = xmalloc(sizeof(*pkt));
 
@@ -38,13 +38,18 @@ static struct pkt_buff *pkt_alloc(uint8_t *packet, unsigned int len)
 	return pkt;
 }
 
+static inline void pkt_free(struct pkt_buff *pkt)
+{
+	xfree(pkt);
+}
+
 static inline unsigned int pkt_len(struct pkt_buff *pkt)
 {
 	assert(pkt && pkt->data <= pkt->tail);
 	return pkt->tail - pkt->data;
 }
 
-static uint8_t *pkt_pull_head(struct pkt_buff *pkt, unsigned int len)
+static inline uint8_t *pkt_pull_head(struct pkt_buff *pkt, unsigned int len)
 {
 	uint8_t *data = NULL;
 
@@ -57,7 +62,7 @@ static uint8_t *pkt_pull_head(struct pkt_buff *pkt, unsigned int len)
 	return data;
 }
 
-static uint8_t *pkt_pull_tail(struct pkt_buff *pkt, unsigned int len)
+static inline uint8_t *pkt_pull_tail(struct pkt_buff *pkt, unsigned int len)
 {
 	uint8_t *tail = NULL;
 
@@ -70,8 +75,8 @@ static uint8_t *pkt_pull_tail(struct pkt_buff *pkt, unsigned int len)
 	return tail;
 }
 
-static void pkt_set_proto(struct pkt_buff *pkt, struct hash_table *table,
-			unsigned int key)
+static inline void pkt_set_proto(struct pkt_buff *pkt, struct hash_table *table,
+				 unsigned int key)
 {
 	assert(pkt && table);
 
@@ -80,4 +85,4 @@ static void pkt_set_proto(struct pkt_buff *pkt, struct hash_table *table,
 		pkt->proto = pkt->proto->next;
 }
 
-#endif /* _PKT_BUFF_H_ */
+#endif /* PKT_BUFF_H */

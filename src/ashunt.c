@@ -819,9 +819,12 @@ retry:
 						    (struct sockaddr *) &sd,
 						    (struct sockaddr *) &ss);
 			if (ttl == cfg->init_ttl && query == 0 && show_pkt) {
+				struct pkt_buff *pkt;
 				printf("Original packet:\n");
-				hex_pay(packet, len);
+				pkt = pkt_alloc(packet, len);
+				hex_pay(pkt);
 				tprintf_flush();
+				pkt_free(pkt);
 				printf("\n%2d: ", ttl);
 				fflush(stdout);
 			}
@@ -848,9 +851,12 @@ retry:
 							(struct sockaddr *) &ss,
 							cfg->dns_resolv);
 				if (is_okay && show_pkt) {
+					struct pkt_buff *pkt;
 					printf("\n  Received packet:\n");
-					hex_pay(packet_rcv, real_len);
+					pkt = pkt_alloc(packet_rcv, real_len);
+					hex_pay(pkt);
 					tprintf_flush();
+					pkt_free(pkt);
 				}
 			} else {
 				printf("* ");
