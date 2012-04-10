@@ -220,7 +220,7 @@ static inline void dissect_igmp_v0(struct pkt_buff *pkt)
 	};
 
 	struct igmp_v0_msg *msg =
-		(struct igmp_v0_msg *) pkt_pull_head(pkt, sizeof(*msg));
+		(struct igmp_v0_msg *) pkt_pull(pkt, sizeof(*msg));
 
 	assert(msg);
 
@@ -273,7 +273,7 @@ static inline void dissect_igmp_v1(struct pkt_buff *pkt)
 	uint16_t csum;
 
 	struct igmp_v1_msg *msg =
-		(struct igmp_v1_msg *) pkt_pull_head(pkt, sizeof(*msg));
+		(struct igmp_v1_msg *) pkt_pull(pkt, sizeof(*msg));
 
 	assert(msg);
 
@@ -296,7 +296,7 @@ static inline void dissect_igmp_v2(struct pkt_buff *pkt)
 	uint16_t csum;
 
 	struct igmp_v2_msg *msg =
-		(struct igmp_v2_msg *) pkt_pull_head(pkt, sizeof(*msg));
+		(struct igmp_v2_msg *) pkt_pull(pkt, sizeof(*msg));
 
 	assert(msg);
 
@@ -333,7 +333,7 @@ static inline void dissect_igmp_v3_membership_query(struct pkt_buff *pkt)
 	uint32_t *src_addr;
 
 	struct igmp_v3_membership_query *msg =
-		(struct igmp_v3_membership_query *) pkt_pull_head(pkt, sizeof(*msg));
+		(struct igmp_v3_membership_query *) pkt_pull(pkt, sizeof(*msg));
 
 	assert(msg);
 
@@ -359,7 +359,7 @@ static inline void dissect_igmp_v3_membership_query(struct pkt_buff *pkt)
 	tprintf(", Num Src (%u)", n);
 
 	if (n) {
-		src_addr = (uint32_t *) pkt_pull_head(pkt, sizeof(*src_addr));
+		src_addr = (uint32_t *) pkt_pull(pkt, sizeof(*src_addr));
 		assert(src_addr);
 		inet_ntop(AF_INET, src_addr, addr, sizeof(addr));
 		tprintf(", Src Addr (%s", addr);
@@ -382,7 +382,7 @@ static inline void dissect_igmp_v3_membership_report(struct pkt_buff *pkt)
 
 	struct igmp_v3_group_record      *rec;
 	struct igmp_v3_membership_report *msg =
-		(struct igmp_v3_membership_report *) pkt_pull_head(pkt, sizeof(*msg));
+		(struct igmp_v3_membership_report *) pkt_pull(pkt, sizeof(*msg));
 
 	assert(msg);
 
@@ -399,7 +399,7 @@ static inline void dissect_igmp_v3_membership_report(struct pkt_buff *pkt)
 	tprintf(" ]\n");
 
 	while (m--) {
-		rec = (struct igmp_v3_group_record *) pkt_pull_head(pkt, sizeof(*rec));
+		rec = (struct igmp_v3_group_record *) pkt_pull(pkt, sizeof(*rec));
 
 		assert(rec);
 
@@ -415,13 +415,13 @@ static inline void dissect_igmp_v3_membership_report(struct pkt_buff *pkt)
 		tprintf(", Multicast Addr (%s)", addr);
 
 		if (n--) {
-			src_addr = (uint32_t *) pkt_pull_head(pkt, sizeof(*src_addr));
+			src_addr = (uint32_t *) pkt_pull(pkt, sizeof(*src_addr));
 			assert(src_addr);
 			inet_ntop(AF_INET, src_addr, addr, sizeof(addr));
 			tprintf(", Src Addr (%s", addr);
 			while (n--) {
 				src_addr = (uint32_t *)
-					pkt_pull_head(pkt, sizeof(*src_addr));
+					pkt_pull(pkt, sizeof(*src_addr));
 				assert(src_addr);
 				inet_ntop(AF_INET, src_addr, addr, sizeof(addr));
 				tprintf(", %s", addr);
@@ -441,7 +441,7 @@ static inline void igmp_type_unknown(struct pkt_buff *pkt)
 
 static inline void igmp(struct pkt_buff *pkt)
 {
-	switch (*pkt_pull_head(pkt, 0)) {
+	switch (*pkt_peek(pkt)) {
 	case IGMP_V0_CREATE_GROUP_REQUEST:
 	case IGMP_V0_CREATE_GROUP_REPLY:
 	case IGMP_V0_JOIN_GROUP_REQUEST:
@@ -456,7 +456,7 @@ static inline void igmp(struct pkt_buff *pkt)
 	case IGMP_MEMBERSHIP_QUERY: /* v1/v2/v3 */
 		if (pkt_len(pkt) >= sizeof(struct igmp_v3_membership_query)) {
 			dissect_igmp_v3_membership_query(pkt);
-		} else if (*(pkt_pull_head(pkt, 0) + 1)) {
+		} else if (*(pkt_peek(pkt) + 1)) {
 			/* v1 and v2 differs in second byte of message */
 			assert(pkt_len(pkt) == sizeof(struct igmp_v2_msg));
 			dissect_igmp_v2(pkt);
@@ -492,7 +492,7 @@ static inline void igmp_less(struct pkt_buff *pkt)
 {
 	int version = -1;
 
-	switch (*pkt_pull_head(pkt, 0)) {
+	switch (*pkt_peek(pkt)) {
 	case IGMP_V0_CREATE_GROUP_REQUEST:
 	case IGMP_V0_CREATE_GROUP_REPLY:
 	case IGMP_V0_JOIN_GROUP_REQUEST:
@@ -507,7 +507,7 @@ static inline void igmp_less(struct pkt_buff *pkt)
 	case IGMP_MEMBERSHIP_QUERY: /* v1/v2/v3 */
 		if (pkt_len(pkt) >= sizeof(struct igmp_v3_membership_query)) {
 			version = 3;
-		} else if (*(pkt_pull_head(pkt, 0) + 1)) {
+		} else if (*(pkt_peek(pkt) + 1)) {
 			/* v1 and v2 differs in second byte of message */
 			assert(pkt_len(pkt) == sizeof(struct igmp_v2_msg));
 			version = 2;
@@ -540,7 +540,7 @@ static inline void igmp_less(struct pkt_buff *pkt)
 
 	assert(version >= 0);
 
-	switch (*pkt_pull_head(pkt, 0)) {
+	switch (*pkt_peek(pkt)) {
 	case RGMP_HELLO:
 	case RGMP_BYE:
 	case RGMP_JOIN_GROUP:
@@ -552,7 +552,7 @@ static inline void igmp_less(struct pkt_buff *pkt)
 		tprintf(" IGMPv%u", version);
 		break;
 	}
-	PRINT_FRIENDLY_NAMED_MSG_TYPE(*pkt_pull_head(pkt, 0));
+	PRINT_FRIENDLY_NAMED_MSG_TYPE(*pkt_peek(pkt));
 }
 
 struct protocol igmp_ops = {

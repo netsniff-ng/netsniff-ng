@@ -17,7 +17,7 @@
 /* necessary forward declarations */
 struct pkt_buff;
 static inline unsigned int pkt_len(struct pkt_buff *pkt);
-static uint8_t *pkt_pull_head(struct pkt_buff *pkt, unsigned int len);
+static uint8_t *pkt_pull(struct pkt_buff *pkt, unsigned int len);
 
 struct protocol {
 	/* Needs to be filled out by user */
@@ -36,7 +36,7 @@ static inline void hex(struct pkt_buff *pkt)
 	uint8_t *buff;
 	unsigned int len = pkt_len(pkt);
 
-	for (buff = pkt_pull_head(pkt, len); buff && len-- > 0; buff++)
+	for (buff = pkt_pull(pkt, len); buff && len-- > 0; buff++)
 		tprintf("%.2x ", *buff);
 }
 

@@ -35,8 +35,7 @@ struct icmphdr {
 
 static inline void icmp(struct pkt_buff *pkt)
 {
-	struct icmphdr *icmp =
-		(struct icmphdr *) pkt_pull_head(pkt, sizeof(*icmp));
+	struct icmphdr *icmp = (struct icmphdr *) pkt_pull(pkt, sizeof(*icmp));
 
 	if (icmp == NULL)
 		return;
@@ -50,8 +49,7 @@ static inline void icmp(struct pkt_buff *pkt)
 
 static inline void icmp_less(struct pkt_buff *pkt)
 {
-	struct icmphdr *icmp =
-		(struct icmphdr *) pkt_pull_head(pkt, sizeof(*icmp));
+	struct icmphdr *icmp = (struct icmphdr *) pkt_pull(pkt, sizeof(*icmp));
 
 	if (icmp == NULL)
 		return;

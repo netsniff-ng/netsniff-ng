@@ -39,7 +39,7 @@ struct arphdr {
 static inline void arp(struct pkt_buff *pkt)
 {
 	char *opcode = NULL;
-	struct arphdr *arp = (struct arphdr *) pkt_pull_head(pkt, sizeof(*arp));
+	struct arphdr *arp = (struct arphdr *) pkt_pull(pkt, sizeof(*arp));
 
 	if (arp == NULL)
 		return;
@@ -83,7 +83,7 @@ static inline void arp(struct pkt_buff *pkt)
 static inline void arp_less(struct pkt_buff *pkt)
 {
 	char *opcode = NULL;
-	struct arphdr *arp = (struct arphdr *) pkt_pull_head(pkt, sizeof(*arp));
+	struct arphdr *arp = (struct arphdr *) pkt_pull(pkt, sizeof(*arp));
 
 	if (arp == NULL)
 		return;

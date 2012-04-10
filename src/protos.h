@@ -14,5 +14,6 @@
 #include "proto_ipv4.h"
 #include "proto_ipv6.h"
 #include "proto_hex.h"
+#include "proto_igmp.h"
 
 #endif /* PROTOS_H */

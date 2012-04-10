@@ -53,7 +53,7 @@ static inline uint16_t udp_port(uint16_t src, uint16_t dst)
 
 static inline void udp(struct pkt_buff *pkt)
 {
-	struct udphdr *udp = (struct udphdr *) pkt_pull_head(pkt, sizeof(*udp));
+	struct udphdr *udp = (struct udphdr *) pkt_pull(pkt, sizeof(*udp));
 
 	if (udp == NULL)
 		return;
@@ -73,7 +73,7 @@ static inline void udp(struct pkt_buff *pkt)
 
 static inline void udp_less(struct pkt_buff *pkt)
 {
-	struct udphdr *udp = (struct udphdr *) pkt_pull_head(pkt, sizeof(*udp));
+	struct udphdr *udp = (struct udphdr *) pkt_pull(pkt, sizeof(*udp));
 
 	if (udp == NULL)
 		return;

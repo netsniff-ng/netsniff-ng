@@ -50,7 +50,7 @@ static inline void ipv6(struct pkt_buff *pkt)
 	uint32_t flow_label;
 	char src_ip[INET6_ADDRSTRLEN];
 	char dst_ip[INET6_ADDRSTRLEN];
-	struct ipv6hdr *ip = (struct ipv6hdr *) pkt_pull_head(pkt, sizeof(*ip));
+	struct ipv6hdr *ip = (struct ipv6hdr *) pkt_pull(pkt, sizeof(*ip));
 
 	if (ip == NULL)
 		return;
@@ -80,7 +80,7 @@ static inline void ipv6_less(struct pkt_buff *pkt)
 {
 	char src_ip[INET6_ADDRSTRLEN];
 	char dst_ip[INET6_ADDRSTRLEN];
-	struct ipv6hdr *ip = (struct ipv6hdr *) pkt_pull_head(pkt, sizeof(*ip));
+	struct ipv6hdr *ip = (struct ipv6hdr *) pkt_pull(pkt, sizeof(*ip));
 
 	if (ip == NULL)
 		return;

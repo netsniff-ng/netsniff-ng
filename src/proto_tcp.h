@@ -81,7 +81,7 @@ static inline uint16_t tcp_port(uint16_t src, uint16_t dst)
 
 static inline void tcp(struct pkt_buff *pkt)
 {
-	struct tcphdr *tcp = (struct tcphdr *) pkt_pull_head(pkt, sizeof(*tcp));
+	struct tcphdr *tcp = (struct tcphdr *) pkt_pull(pkt, sizeof(*tcp));
 
 	if (tcp == NULL)
 		return;
@@ -124,7 +124,7 @@ static inline void tcp(struct pkt_buff *pkt)
 
 static inline void tcp_less(struct pkt_buff *pkt)
 {
-	struct tcphdr *tcp = (struct tcphdr *) pkt_pull_head(pkt, sizeof(*tcp));
+	struct tcphdr *tcp = (struct tcphdr *) pkt_pull(pkt, sizeof(*tcp));
 
 	if (tcp == NULL)
 		return;

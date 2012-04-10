@@ -40,7 +40,7 @@ struct ipv4hdr {
 	uint16_t h_check;
 	uint32_t h_saddr;
 	uint32_t h_daddr;
-	uint8_t h_opts[0];
+	uint8_t h_opts[];
 } __attribute__((packed));
 
 #define	FRAG_OFF_RESERVED_FLAG(x)      ((x) & 0x8000)
@@ -53,7 +53,7 @@ static inline void ipv4(struct pkt_buff *pkt)
 	uint16_t csum, frag_off;
 	char src_ip[INET_ADDRSTRLEN];
 	char dst_ip[INET_ADDRSTRLEN];
-	struct ipv4hdr *ip = (struct ipv4hdr *) pkt_pull_head(pkt, sizeof(*ip));
+	struct ipv4hdr *ip = (struct ipv4hdr *) pkt_pull(pkt, sizeof(*ip));
 	uint8_t *opts;
 	size_t opts_len;
 
@@ -94,7 +94,7 @@ static inline void ipv4(struct pkt_buff *pkt)
 	/* XXX: better return and print the rest in hex than panic */
 	bug_on(opts_len > 40);
 
-	opts = (uint8_t *) pkt_pull_head(pkt, opts_len);
+	opts = (uint8_t *) pkt_pull(pkt, opts_len);
 
 	if (opts_len && opts) {
 		tprintf("   [ Options hex ");
@@ -107,7 +107,7 @@ static inline void ipv4(struct pkt_buff *pkt)
 	 * Cut off everything that is not part of IPv4 payload (ethernet
 	 * trailer, padding... whatever).
 	 */
-	pkt_pull_tail(pkt, pkt_len(pkt) + ip->h_ihl * 4 - ntohs(ip->h_tot_len));
+	pkt_trim(pkt, pkt_len(pkt) + ip->h_ihl * 4 - ntohs(ip->h_tot_len));
 	pkt_set_proto(pkt, &eth_lay3, ip->h_protocol);
 }
 
@@ -115,7 +115,7 @@ static inline void ipv4_less(struct pkt_buff *pkt)
 {
 	char src_ip[INET_ADDRSTRLEN];
 	char dst_ip[INET_ADDRSTRLEN];
-	struct ipv4hdr *ip = (struct ipv4hdr *) pkt_pull_head(pkt, sizeof(*ip));
+	struct ipv4hdr *ip = (struct ipv4hdr *) pkt_pull(pkt, sizeof(*ip));
 
 	if (ip == NULL)
 		return;
@@ -130,8 +130,8 @@ static inline void ipv4_less(struct pkt_buff *pkt)
 	 * Cut off everything that is not part of IPv4 payload (IPv4 options,
 	 * ethernet trailer, padding... whatever).
 	 */
-	pkt_pull_head(pkt, ip->h_ihl * 4 - 20);
-	pkt_pull_tail(pkt, pkt_len(pkt) + ip->h_ihl * 4 - ntohs(ip->h_tot_len));
+	pkt_pull(pkt, ip->h_ihl * 4 - 20);
+	pkt_trim(pkt, pkt_len(pkt) + ip->h_ihl * 4 - ntohs(ip->h_tot_len));
 	pkt_set_proto(pkt, &eth_lay3, ip->h_protocol);
 }
 

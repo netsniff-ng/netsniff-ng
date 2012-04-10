@@ -25,7 +25,7 @@ struct vlanhdr {
 static inline void vlan(struct pkt_buff *pkt)
 {
 	uint16_t tci;
-	struct vlanhdr *vlan = (struct vlanhdr *) pkt_pull_head(pkt, sizeof(*vlan));
+	struct vlanhdr *vlan = (struct vlanhdr *) pkt_pull(pkt, sizeof(*vlan));
 
 	if (vlan == NULL)
 		return;
@@ -45,7 +45,7 @@ static inline void vlan(struct pkt_buff *pkt)
 static inline void vlan_less(struct pkt_buff *pkt)
 {
 	uint16_t tci;
-	struct vlanhdr *vlan = (struct vlanhdr *) pkt_pull_head(pkt, sizeof(*vlan));
+	struct vlanhdr *vlan = (struct vlanhdr *) pkt_pull(pkt, sizeof(*vlan));
 
 	if (vlan == NULL)
 		return;

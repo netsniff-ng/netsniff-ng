@@ -168,7 +168,7 @@ static inline void icmpv6(struct pkt_buff *pkt)
 {
 	char *type = NULL, *code = NULL, *optional = NULL;
 	struct icmpv6hdr *icmp =
-		(struct icmpv6hdr *) pkt_pull_head(pkt, sizeof(*icmp));
+		(struct icmpv6hdr *) pkt_pull(pkt, sizeof(*icmp));
 
 	if (icmp == NULL)
 		return;
@@ -187,7 +187,7 @@ static inline void icmpv6(struct pkt_buff *pkt)
 static inline void icmpv6_less(struct pkt_buff *pkt)
 {
 	struct icmpv6hdr *icmp =
-		(struct icmpv6hdr *) pkt_pull_head(pkt, sizeof(*icmp));
+		(struct icmpv6hdr *) pkt_pull(pkt, sizeof(*icmp));
 
 	if (icmp == NULL)
 		return;

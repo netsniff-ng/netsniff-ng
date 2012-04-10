@@ -20,7 +20,7 @@
 static inline void ethernet(struct pkt_buff *pkt)
 {
 	uint8_t *src_mac, *dst_mac;
-	struct ethhdr *eth = (struct ethhdr *) pkt_pull_head(pkt, sizeof(*eth));
+	struct ethhdr *eth = (struct ethhdr *) pkt_pull(pkt, sizeof(*eth));
 
 	if (eth == NULL)
 		return;
@@ -59,7 +59,7 @@ static inline void ethernet_hex_all(struct pkt_buff *pkt)
 static inline void ethernet_less(struct pkt_buff *pkt)
 {
 	uint8_t *src_mac, *dst_mac;
-	struct ethhdr *eth = (struct ethhdr *) pkt_pull_head(pkt, sizeof(*eth));
+	struct ethhdr *eth = (struct ethhdr *) pkt_pull(pkt, sizeof(*eth));
 
 	if (eth == NULL)
 		return;

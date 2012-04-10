@@ -19,7 +19,7 @@
 static inline void hex_pay(struct pkt_buff *pkt)
 {
 	unsigned int  len    = pkt_len(pkt);
-	uint8_t      *packet = pkt_pull_head(pkt, len);
+	uint8_t      *packet = pkt_pull(pkt, len);
 	size_t plen = len;
 	uint8_t *buff;
 
@@ -60,7 +60,7 @@ static inline void hex_ascii(struct pkt_buff *pkt)
 	unsigned int len = pkt_len(pkt);
 
 	tprintf("   ");
-	for (buff = pkt_pull_head(pkt, len); buff && len-- > 0; buff++)
+	for (buff = pkt_pull(pkt, len); buff && len-- > 0; buff++)
 		tprintf("%c ", isprint(*buff) ? *buff : '.');
 	tprintf("\n\n");
 }
