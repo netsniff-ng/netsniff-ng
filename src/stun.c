@@ -59,7 +59,7 @@ struct stun_mapped_addr {
 };
 
 static int stun_test(const char *server_ip, int server_port,
-		     int transsip_port)
+		     int tun_port)
 {
 	int ret, sock, set = 1;
 	uint8_t pkt[256];
@@ -85,7 +85,7 @@ static int stun_test(const char *server_ip, int server_port,
 		panic("Cannot set socket option!\n");
 
 	saddr.sin_family = PF_INET;
-	saddr.sin_port = htons(transsip_port);
+	saddr.sin_port = htons(tun_port);
 	saddr.sin_addr.s_addr = INADDR_ANY;
 
 	ret = bind(sock, (struct sockaddr *) &saddr, sizeof(saddr));
