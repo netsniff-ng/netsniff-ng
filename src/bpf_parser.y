@@ -14,7 +14,6 @@
 #include <signal.h>
 #include <stdint.h>
 #include <errno.h>
-#include <assert.h>
 
 #include "bpf.h"
 #include "xmalloc.h"
@@ -52,10 +51,12 @@ static inline void set_curr_instr(uint16_t code, uint8_t jt, uint8_t jf, uint32_
 {
 	if (curr_instr >= MAX_INSTRUCTIONS)
 		panic("Exceeded maximal number of instructions!\n");
+
 	out[curr_instr].code = code;
 	out[curr_instr].jt = jt;
 	out[curr_instr].jf = jf;
 	out[curr_instr].k = k;
+
 	curr_instr++;
 }
 
@@ -63,6 +64,7 @@ static inline void set_curr_label(char *label)
 {
 	if (curr_instr >= MAX_INSTRUCTIONS)
 		panic("Exceeded maximal number of instructions!\n");
+
 	labels[curr_instr] = label;
 }
 
@@ -74,7 +76,9 @@ static inline void set_jmp_label(char *label, int which)
 {
 	if (curr_instr >= MAX_INSTRUCTIONS)
 		panic("Exceeded maximal number of instructions!\n");
-	assert(which == JTL || which == JFL || which == JKL);
+
+	bug_on(which != JTL && which != JFL && which != JKL);
+
 	if (which == JTL)
 		labels_jt[curr_instr] = label;
 	else if (which == JFL)
@@ -87,7 +91,8 @@ static int find_intr_offset_or_panic(char *label_to_search)
 {
 	int i, max = curr_instr, ret = -ENOENT;
 
-	assert(label_to_search);
+	bug_on(!label_to_search);
+
 	for (i = 0; i < max; ++i) {
 		if (labels[i] != NULL) {
 			/* Both are \0-terminated! */
@@ -97,6 +102,7 @@ static int find_intr_offset_or_panic(char *label_to_search)
 			}
 		}
 	}
+
 	if (ret == -ENOENT)
 		panic("No such label!\n");
 
