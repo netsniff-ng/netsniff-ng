@@ -7,9 +7,6 @@
 #ifndef PKT_BUFF_H
 #define PKT_BUFF_H
 
-#include <assert.h>
-#include <stdlib.h>
-
 #include "hash.h"
 #include "built_in.h"
 #include "proto_struct.h"

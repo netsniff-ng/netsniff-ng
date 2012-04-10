@@ -9,6 +9,7 @@
 #define BUILT_IN_H
 
 #include <linux/if_packet.h>
+#include <assert.h>
 
 /* /sys/devices/system/cpu/cpuX/cache/indexX/coherency_line_size */
 
