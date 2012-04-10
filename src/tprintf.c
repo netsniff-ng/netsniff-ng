@@ -8,12 +8,12 @@
 #define _BSD_SOURCE
 #include <stdio.h>
 #include <stdarg.h>
-#include <assert.h>
 
 #include "xsys.h"
 #include "tprintf.h"
 #include "die.h"
 #include "locking.h"
+#include "built_in.h"
 
 static char buffer[1024];
 static size_t buffer_use = 0;
@@ -23,9 +23,11 @@ static size_t lcount = 0;
 size_t tprintf_get_free_count(void)
 {
 	size_t ret;
+
 	spinlock_lock(&buffer_lock);
 	ret = get_tty_size() - 5 - lcount;
 	spinlock_unlock(&buffer_lock);
+
 	return ret;
 }
 
@@ -38,6 +40,7 @@ void tprintf_flush(void)
 {
 	char *ptr = buffer;
 	size_t flush_len = get_tty_size() - 5;
+
 	while (buffer_use-- > 0) {
 		if (lcount == flush_len) {
 			fputs("\n   ", stdout);
@@ -48,23 +51,27 @@ void tprintf_flush(void)
 				ptr++;
 			}
 		}
+
 		if (*ptr == '\n') {
 			flush_len = get_tty_size() - 5;
 			lcount = -1;
 		}
+
 		/* Collect in stream buffer. */
 		fputc(*ptr, stdout);
 		ptr++;
 		lcount++;
 	}
+
 	fflush(stdout);
 	buffer_use++;
-	assert(buffer_use == 0);
+
+	bug_on(buffer_use > 0);
 }
 
 void tprintf_init(void)
 {
-	spinlock_init(&buffer_lock/*,PTHREAD_PROCESS_SHARED*/);
+	spinlock_init(&buffer_lock);
 	memset(buffer, 0, sizeof(buffer));
 }
 
@@ -73,6 +80,7 @@ void tprintf_cleanup(void)
 	spinlock_lock(&buffer_lock);
 	tprintf_flush();
 	spinlock_unlock(&buffer_lock);
+
 	spinlock_destroy(&buffer_lock);
 }
 
@@ -82,6 +90,7 @@ void tprintf(char *msg, ...)
 	va_list vl;
 
 	va_start(vl, msg);
+
 	spinlock_lock(&buffer_lock);
 	ret = vsnprintf(buffer + buffer_use,
 			sizeof(buffer) - buffer_use,
@@ -95,6 +104,7 @@ void tprintf(char *msg, ...)
 		ret = vsnprintf(buffer + buffer_use,
 				sizeof(buffer) - buffer_use,
 				msg, vl);
+
 		/* Again, we've failed! This shouldn't happen! So 
 		 * switch to vfprintf temporarily :-( */
 		if (ret >= sizeof(buffer) - buffer_use) {
@@ -104,9 +114,11 @@ void tprintf(char *msg, ...)
 			goto out;
 		}
 	}
+
 	if (ret < sizeof(buffer) - buffer_use)
 		buffer_use += ret;
 out:
 	spinlock_unlock(&buffer_lock);
+
 	va_end(vl);
 }
