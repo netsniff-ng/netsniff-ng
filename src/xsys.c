@@ -18,7 +18,6 @@
 #include <arpa/inet.h>
 #include <time.h>
 #include <sched.h>
-#include <assert.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <sys/time.h>
