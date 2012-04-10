@@ -125,9 +125,10 @@ static inline void ipv4_less(struct pkt_buff *pkt)
 		ntohs(ip->h_tot_len));
 
 	/*
-	 * Cut off everything that is not part of IPv4 payload (ethernet
-	 * trailer, padding... whatever).
+	 * Cut off everything that is not part of IPv4 payload (IPv4 options,
+	 * ethernet trailer, padding... whatever).
 	 */
+	pkt_pull_head(pkt, ip->h_ihl * 4 - 20);
 	pkt_pull_tail(pkt, pkt_len(pkt) + ip->h_ihl * 4 - ntohs(ip->h_tot_len));
 	pkt_set_proto(pkt, &eth_lay3, ip->h_protocol);
 }
