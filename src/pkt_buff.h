@@ -87,6 +87,7 @@ static inline uint8_t *pkt_pull_tail(struct pkt_buff *pkt, unsigned int len)
 	if (pkt_len(pkt) && pkt->tail - len >= pkt->data) {
 		tail = pkt->tail;
 		pkt->tail -= len;
+		pkt->size -= len;
 	}
 
 	return tail;
