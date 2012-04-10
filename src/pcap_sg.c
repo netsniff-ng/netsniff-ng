@@ -227,7 +227,7 @@ static void pcap_sg_fsync_pcap(int fd)
 }
 
 struct pcap_file_ops pcap_sg_ops __read_mostly = {
-	.name = "S/G",
+	.name = "scatter-gather",
 	.pull_file_header = pcap_sg_pull_file_header,
 	.push_file_header = pcap_sg_push_file_header,
 	.write_pcap_pkt = pcap_sg_write_pcap_pkt,

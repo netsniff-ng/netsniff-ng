@@ -24,6 +24,7 @@ static int pcap_rw_pull_file_header(int fd)
 	ret = read(fd, &hdr, sizeof(hdr));
 	if (unlikely(ret != sizeof(hdr)))
 		return -EIO;
+
 	pcap_validate_header_maybe_die(&hdr);
 
 	return 0;
@@ -37,6 +38,7 @@ static int pcap_rw_push_file_header(int fd)
 	memset(&hdr, 0, sizeof(hdr));
 	pcap_prepare_header(&hdr, LINKTYPE_EN10MB, 0,
 			    PCAP_DEFAULT_SNAPSHOT_LEN);
+
 	ret = write_or_die(fd, &hdr, sizeof(hdr));
 	if (unlikely(ret != sizeof(hdr))) {
 		whine("Failed to write pkt file header!\n");
@@ -49,36 +51,41 @@ static int pcap_rw_push_file_header(int fd)
 static ssize_t pcap_rw_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 				      uint8_t *packet, size_t len)
 {
-	ssize_t ret;
-	ret = write_or_die(fd, hdr, sizeof(*hdr));
+	ssize_t ret = write_or_die(fd, hdr, sizeof(*hdr));
 	if (unlikely(ret != sizeof(*hdr))) {
 		whine("Failed to write pkt header!\n");
 		return -EIO;
 	}
+
 	if (unlikely(hdr->len != len))
 		return -EINVAL;
+
 	ret = write_or_die(fd, packet, hdr->len);
 	if (unlikely(ret != hdr->len)) {
 		whine("Failed to write pkt payload!\n");
 		return -EIO;
 	}
+
 	return sizeof(*hdr) + hdr->len;
 }
 
 static ssize_t pcap_rw_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 				     uint8_t *packet, size_t len)
 {
-	ssize_t ret;
-	ret = read(fd, hdr, sizeof(*hdr));
+	ssize_t ret = read(fd, hdr, sizeof(*hdr));
 	if (unlikely(ret != sizeof(*hdr)))
 		return -EIO;
+
 	if (unlikely(hdr->len > len))
 		return -ENOMEM;
+
 	ret = read(fd, packet, hdr->len);
 	if (unlikely(ret != hdr->len))
 		return -EIO;
+
 	if (unlikely(hdr->len == 0))
                 return -EINVAL; /* Bogus packet */
+
 	return sizeof(*hdr) + hdr->len;
 }
 
@@ -88,7 +95,7 @@ static void pcap_rw_fsync_pcap(int fd)
 }
 
 struct pcap_file_ops pcap_rw_ops __read_mostly = {
-	.name = "READ/WRITE",
+	.name = "read-write",
 	.pull_file_header = pcap_rw_pull_file_header,
 	.push_file_header = pcap_rw_push_file_header,
 	.write_pcap_pkt = pcap_rw_write_pcap_pkt,

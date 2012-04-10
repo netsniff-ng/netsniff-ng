@@ -97,7 +97,7 @@ enum pcap_mode {
 };
 
 struct pcap_file_ops {
-	char *name;
+	const char *name;
 	int (*pull_file_header)(int fd);
 	int (*push_file_header)(int fd);
 	int (*prepare_writing_pcap)(int fd);
@@ -157,6 +157,7 @@ static inline int init_pcap(int jumbo_support)
 	init_pcap_rw(jumbo_support);
 	init_pcap_sg(jumbo_support);
 	init_pcap_mmap(jumbo_support);
+
 	return 0;
 }
 

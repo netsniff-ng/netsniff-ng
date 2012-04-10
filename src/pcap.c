@@ -25,4 +25,3 @@ void pcap_ops_group_unregister(enum pcap_ops_groups group)
 {
 	pcap_ops[group] = NULL;
 }
-
