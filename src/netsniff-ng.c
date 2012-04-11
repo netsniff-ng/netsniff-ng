@@ -33,8 +33,7 @@ netsniff-ng -i|-d|--dev|--in <dev|pcap> -o|--out <dev|pcap|dir|txf>
 [-s|--silent][-J|--jumbo-support][-n|--num <uint>][-r|--rand]
 [-M|--no-promisc][-m|--mmap | -c|--clrw][-S|--ring-size <size>]
 [-k|--kernel-pull <uint>][-b|--bind-cpu <cpu> | -B|--unbind-cpu <cpu>]
-[-H|--prio-high][-Q|--notouch-irq][-q|--less | -l|--payload |
--x|--payload-hex | -C|--c-style | -X|--all-hex | -N|--no-payload]
+[-H|--prio-high][-Q|--notouch-irq][-q|--less | -C|--c-style]
 [-v|--version][-h|--help]
 
 =head1 DESCRIPTION
@@ -161,22 +160,6 @@ Do not touch IRQ CPU affinity of NIC.
 
 Print less-verbose packet information.
 
-=item -l|--payload
-
-Only print human-readable payload.
-
-=item -x|--payload-hex
-
-Only print payload in hex format.
-
-=item -N|--payload-none
-
-Only print packet header.
-
-=item -X|--all-hex
-
-Print packets in hex format.
-
 =item -v|--version
 
 Print version.
@@ -271,7 +254,7 @@ static unsigned long interval = TX_KERNEL_PULL_INT;
 static struct itimerval itimer;
 static volatile bool next_dump = false;
 
-static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqlxXNvhF:";
+static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqvhF:";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -294,10 +277,6 @@ static struct option long_options[] = {
 	{"notouch-irq", no_argument, 0, 'Q'},
 	{"silent", no_argument, 0, 's'},
 	{"less", no_argument, 0, 'q'},
-	{"payload", no_argument, 0, 'l'},
-	{"payload-hex", no_argument, 0, 'x'},
-	{"payload-none", no_argument, 0, 'N'},
-	{"all-hex", no_argument, 0, 'X'},
 	{"version", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
@@ -983,10 +962,6 @@ static void help(void)
 	printf("  -H|--prio-high              Make this high priority process\n");
 	printf("  -Q|--notouch-irq            Do not touch IRQ CPU affinity of NIC\n");
 	printf("  -q|--less                   Print less-verbose packet information\n");
-	printf("  -l|--payload                Only print human-readable payload\n");
-	printf("  -x|--payload-hex            Only print payload in hex format\n");
-	printf("  -N|--payload-none           Only print packet header\n");
-	printf("  -X|--all-hex                Print packets in hex format\n");
 	printf("  -v|--version                Show version\n");
 	printf("  -h|--help                   Guess what?!\n");
 	printf("\n");
@@ -994,7 +969,7 @@ static void help(void)
 	printf("  netsniff-ng --in eth0 --out dump.pcap --silent --bind-cpu 0\n");
 	printf("  netsniff-ng --in dump.pcap --mmap --out eth0 --silent --bind-cpu 0\n");
 	printf("  netsniff-ng --in dump.pcap --out dump.txf --silent --bind-cpu 0\n");
-	printf("  netsniff-ng --in any --filter icmp.bpf --all-hex\n");
+	printf("  netsniff-ng --in any --filter icmp.bpf\n");
 	printf("  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0 --type host\n");
 	printf("  netsniff-ng --in wlan0 --out /opt/probe1/ --silent --interval 30 --bind-cpu 0\n");
 	printf("\n");
@@ -1138,18 +1113,6 @@ int main(int argc, char **argv)
 			break;
 		case 'q':
 			mode.print_mode = FNTTYPE_PRINT_LESS;
-			break;
-		case 'x':
-			mode.print_mode = FNTTYPE_PRINT_PAY_HEX;
-			break;
-		case 'l':
-			mode.print_mode = FNTTYPE_PRINT_PAY_ASCII;
-			break;
-		case 'X':
-			mode.print_mode = FNTTYPE_PRINT_ALL_HEX;
-			break;
-		case 'N':
-			mode.print_mode = FNTTYPE_PRINT_NO_PAY;
 			break;
 		case 'k':
 			mode.kpull = (unsigned long) atol(optarg);
