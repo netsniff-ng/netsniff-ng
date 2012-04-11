@@ -33,8 +33,7 @@ netsniff-ng -i|-d|--dev|--in <dev|pcap> -o|--out <dev|pcap|dir|txf>
 [-s|--silent][-J|--jumbo-support][-n|--num <uint>][-r|--rand]
 [-M|--no-promisc][-m|--mmap | -c|--clrw][-S|--ring-size <size>]
 [-k|--kernel-pull <uint>][-b|--bind-cpu <cpu> | -B|--unbind-cpu <cpu>]
-[-H|--prio-high][-Q|--notouch-irq][-q|--less | -C|--c-style]
-[-v|--version][-h|--help]
+[-H|--prio-high][-Q|--notouch-irq][-q|--less][-v|--version][-h|--help]
 
 =head1 DESCRIPTION
 
