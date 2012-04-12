@@ -941,6 +941,9 @@ static void help(void)
 	printf("  -F|--interval <uint>        Dump interval in sec if -o is a directory where\n");
 	printf("                              pcap files should be stored (default: 60)\n");
 	printf("  -s|--silent                 Do not print captured packets\n");
+	printf("  -q|--less                   Print less-verbose packet information\n");
+	printf("  -X|--hex                    Print packet data in hex format\n");
+	printf("  -l|--ascii                  Print human-readable packet data\n");
 	printf("  -J|--jumbo-support          Support for 64KB Super Jumbo Frames\n");
 	printf("                              Default RX/TX slot: 2048Byte\n");
 	printf("  -n|--num <uint>             Number of packets until exit\n");
@@ -949,8 +952,8 @@ static void help(void)
 	printf("  -r|--rand                   Randomize packet forwarding order\n");
 	printf("  -M|--no-promisc             No promiscuous mode for netdev\n");
 	printf("  -m|--mmap                   Mmap pcap file i.e., for replaying\n");
-	printf("                              Default: scatter/gather I/O\n");
-	printf("  -c|--clrw                   Instead s/g I/O use slower read(2)/write(2) I/O\n");
+	printf("                              Default: scatter-gather I/O\n");
+	printf("  -c|--clrw                   Use slower read(2)/write(2) I/O\n");
 	printf("  -S|--ring-size <size>       Manually set ring size to <size>:\n");
 	printf("                              mmap space in KB/MB/GB, e.g. \'10MB\'\n");
 	printf("  -k|--kernel-pull <uint>     Kernel pull from user interval in us\n");
@@ -960,7 +963,6 @@ static void help(void)
 	printf("  -B|--unbind-cpu <cpu>       Forbid to use specific CPU (or CPU-range)\n");
 	printf("  -H|--prio-high              Make this high priority process\n");
 	printf("  -Q|--notouch-irq            Do not touch IRQ CPU affinity of NIC\n");
-	printf("  -q|--less                   Print less-verbose packet information\n");
 	printf("  -v|--version                Show version\n");
 	printf("  -h|--help                   Guess what?!\n");
 	printf("\n");
@@ -968,9 +970,9 @@ static void help(void)
 	printf("  netsniff-ng --in eth0 --out dump.pcap --silent --bind-cpu 0\n");
 	printf("  netsniff-ng --in dump.pcap --mmap --out eth0 --silent --bind-cpu 0\n");
 	printf("  netsniff-ng --in dump.pcap --out dump.txf --silent --bind-cpu 0\n");
-	printf("  netsniff-ng --in any --filter icmp.bpf\n");
 	printf("  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0 --type host\n");
 	printf("  netsniff-ng --in wlan0 --out /opt/probe1/ --silent --interval 30 --bind-cpu 0\n");
+	printf("  netsniff-ng --in any --filter http.bpf --jumbo-support --ascii\n");
 	printf("\n");
 	printf("Note:\n");
 	printf("  This tool is targeted for network developers! You should\n");
