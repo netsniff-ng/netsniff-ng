@@ -145,6 +145,7 @@ int main(int argc, char **argv)
 
 	if (argc == 1)
 		help();
+
 	while (argc > 2 && (c = getopt_long(argc, argv, short_options,
 		long_options, &opt_index)) != EOF) {
 		switch (c) {
@@ -177,9 +178,12 @@ int main(int argc, char **argv)
 	}
 	if (argc == 2)
 		file = xstrdup(argv[1]);
+
 	if (!file)
 		panic("No Berkeley Packet Filter program specified!\n");
+
 	ret = compile_filter(file, verbose);
+
 	xfree(file);
 
 	return ret;

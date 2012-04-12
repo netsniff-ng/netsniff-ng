@@ -105,7 +105,9 @@ void curve25519_selftest(void)
 		0x59, 0x9b, 0x1f, 0x65, 0x4c, 0xb4, 0x5a, 0x74,
 		0xe3, 0x55, 0xa5
 	};
+
 	crypto_box_curve25519xsalsa20poly1305(c, m, 163, nonce, bobpk, alicesk);
+
 	for (i = 16; i < 163; ++i) {
 		if (c[i] != result[i - 16])
 			panic("PANIC: crypto selftest failed at pos %d "
@@ -128,10 +130,13 @@ int curve25519_pubkey_hexparse_32(unsigned char *y, size_t ylen,
 				  const char *x, size_t len)
 {
 	int seen_digits = 0, seen_colons = 0;
+
 	if (!x || !y || ylen != 32)
 		return 0;
+
 	while (len > 0) {
 		int digit0, digit1;
+
 		if (x[0] == '\0')
 			break;
 		if (x[0] == ':') {
@@ -140,19 +145,25 @@ int curve25519_pubkey_hexparse_32(unsigned char *y, size_t ylen,
 			x++;
 			continue;
 		}
+
 		digit0 = hexdigit(x[0]);
 		if (digit0 == -1)
 			return 0;
+
 		digit1 = hexdigit(x[1]);
 		if (digit1 == -1)
 			return 0;
+
 		*y++ = digit1 + 16 * digit0;
+
 		seen_digits++;
 		--len;
 		x += 2;
 	}
+
 	if (x[0] != '\0' || seen_digits != 32 || seen_colons != 31)
 		return 0;
+
 	return 1;
 }
 
@@ -160,25 +171,34 @@ int curve25519_alloc_or_maybe_die(struct curve25519_struct *c)
 {
 	if (!c)
 		return -EINVAL;
+
 	c->enc_buf_size = TUNBUFF_SIZ;
 	c->dec_buf_size = TUNBUFF_SIZ;
+
 	c->enc_buf = xmalloc_aligned(c->enc_buf_size, 16);
 	c->dec_buf = xmalloc_aligned(c->dec_buf_size, 16);
+
 	spinlock_init(&c->enc_lock);
 	spinlock_init(&c->dec_lock);
+
 	mt_init_by_seed_rand_array();
+
 	return 0;
 }
 
 void curve25519_free(void *vc)
 {
         struct curve25519_struct *c = vc;
+
         if (!c)
                 return;
+
 	memset(c->enc_buf, 0, c->enc_buf_size);
 	memset(c->dec_buf, 0, c->dec_buf_size);
+
         xfree(c->enc_buf);
         xfree(c->dec_buf);
+
         spinlock_destroy(&c->enc_lock);
         spinlock_destroy(&c->dec_lock);
 }
@@ -191,31 +211,40 @@ int curve25519_proto_init(struct curve25519_proto *p, unsigned char *pubkey_remo
 	char path[PATH_MAX];
 	unsigned char secretkey_own[crypto_box_curve25519xsalsa20poly1305_SECRETKEYBYTES] = { 0 };
 	unsigned char publickey_own[crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES] = { 0 };
+
 	if (!pubkey_remote ||
 	    len != crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES)
 		return -EINVAL;
+
 	memset(path, 0, sizeof(path));
 	slprintf(path, sizeof(path), "%s/%s", home, FILE_PRIVKEY);
-	fd = open(path, O_RDONLY);
-	if (fd < 0)
-		panic("Cannot open privkey file!\n");
+
+	fd = open_or_die(path, O_RDONLY);
+
 	ret = read(fd, secretkey_own, sizeof(secretkey_own));
 	if (ret != sizeof(secretkey_own)) {
 		xmemset(secretkey_own, 0, sizeof(secretkey_own));
 		panic("Cannot read private key!\n");
 	}
+
 	close(fd);
+
 	crypto_scalarmult_curve25519_base(publickey_own, secretkey_own);
+
 	if (!crypto_verify_32(publickey_own, pubkey_remote)) {
 		xmemset(secretkey_own, 0, sizeof(secretkey_own));
 		xmemset(publickey_own, 0, sizeof(publickey_own));
 		panic("PANIC: remote end has same public key as you have!!!\n");
 	}
+
 	crypto_box_beforenm(p->key, pubkey_remote, secretkey_own);
+
 	xmemset(p->enonce, 0, sizeof(p->enonce));
 	xmemset(p->dnonce, 0, sizeof(p->dnonce));
+
 	xmemset(secretkey_own, 0, sizeof(secretkey_own));
 	xmemset(publickey_own, 0, sizeof(publickey_own));
+
 	return 0;
 }
 
@@ -226,26 +255,36 @@ ssize_t curve25519_encode(struct curve25519_struct *c, struct curve25519_proto *
 	int ret, i;
 	ssize_t done = size;
 	struct taia packet_taia;
+
 	spinlock_lock(&c->enc_lock);
+
 	if (unlikely(size > c->enc_buf_size)) {
 		spinlock_unlock(&c->enc_lock);
 		return -ENOMEM;
 	}
+
 	taia_now(&packet_taia);
 	taia_pack(p->enonce + NONCE_OFFSET, &packet_taia);
+
 	memset(c->enc_buf, 0, c->enc_buf_size);
+
 	ret = crypto_box_afternm(c->enc_buf, plaintext, size,
 				 p->enonce, p->key);
 	if (unlikely(ret)) {
 		spinlock_unlock(&c->enc_lock);
 		return -EIO;
 	}
+
 	memcpy(c->enc_buf + crypto_box_boxzerobytes - NONCE_LENGTH,
 	       p->enonce + NONCE_OFFSET, NONCE_LENGTH);
+
 	for (i = 0; i < crypto_box_boxzerobytes - NONCE_LENGTH; ++i)
 		c->enc_buf[i] = (uint8_t) mt_rand_int32();
+
 	(*chipertext) = c->enc_buf;
+
 	spinlock_unlock(&c->enc_lock);
+
 	return done;
 }
 
@@ -256,11 +295,14 @@ ssize_t curve25519_decode(struct curve25519_struct *c, struct curve25519_proto *
 	int ret;
 	ssize_t done = size;
 	struct taia packet_taia, __arrival_taia;
+
 	spinlock_lock(&c->dec_lock);
+
 	if (unlikely(size > c->dec_buf_size)) {
 		spinlock_unlock(&c->dec_lock);
 		return -ENOMEM;
 	}
+
 	if (unlikely(size < crypto_box_boxzerobytes + NONCE_LENGTH)) {
 		spinlock_unlock(&c->dec_lock);
 		return 0;
@@ -269,6 +311,7 @@ ssize_t curve25519_decode(struct curve25519_struct *c, struct curve25519_proto *
 		taia_now(&__arrival_taia);
 		arrival_taia = &__arrival_taia;
 	}
+
 	taia_unpack(chipertext + crypto_box_boxzerobytes - NONCE_LENGTH,
 		    &packet_taia);
         if (is_good_taia(arrival_taia, &packet_taia) == 0) {
@@ -277,18 +320,23 @@ ssize_t curve25519_decode(struct curve25519_struct *c, struct curve25519_proto *
 		syslog(LOG_ERR, "Bad packet time! Dropping connection!\n");
 		return 0;
 	}
+
 	memcpy(p->dnonce + NONCE_OFFSET,
 	       chipertext + crypto_box_boxzerobytes - NONCE_LENGTH,
 	       NONCE_LENGTH);
+
 	memset(c->dec_buf, 0, c->dec_buf_size);
+
 	ret = crypto_box_open_afternm(c->dec_buf, chipertext, size,
 				      p->dnonce, p->key);
 	if (unlikely(ret)) {
 		spinlock_unlock(&c->dec_lock);
 		return -EIO;
 	}
+
 	(*plaintext) = c->dec_buf;
+
 	spinlock_unlock(&c->dec_lock);
+
 	return done;
 }
-

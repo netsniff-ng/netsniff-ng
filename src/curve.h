@@ -81,6 +81,7 @@ extern ssize_t curve25519_decode(struct curve25519_struct *c,
 static inline void tai_pack(unsigned char *s, struct tai *t)
 {
 	uint64_t x;
+
 	x = t->x;
 	s[7] = x & 255; x >>= 8;
 	s[6] = x & 255; x >>= 8;
@@ -95,6 +96,7 @@ static inline void tai_pack(unsigned char *s, struct tai *t)
 static inline void tai_unpack(unsigned char *s, struct tai *t)
 {
 	uint64_t x;
+
 	x = (unsigned char) s[0];
 	x <<= 8; x += (unsigned char) s[1];
 	x <<= 8; x += (unsigned char) s[2];
@@ -109,6 +111,7 @@ static inline void tai_unpack(unsigned char *s, struct tai *t)
 static inline void taia_pack(unsigned char *s, struct taia *t)
 {
 	unsigned long x;
+
 	tai_pack(s, &t->sec);
 	s += 8;
 	x = t->atto;
@@ -126,6 +129,7 @@ static inline void taia_pack(unsigned char *s, struct taia *t)
 static inline void taia_unpack(unsigned char *s, struct taia *t)
 {
 	unsigned long x;
+
 	tai_unpack(s, &t->sec);
 	s += 8;
 	x = (unsigned char) s[4];
@@ -145,6 +149,7 @@ static inline void taia_unpack(unsigned char *s, struct taia *t)
 static inline void taia_now(struct taia *t)
 {
 	struct timeval now;
+
 	gettimeofday(&now, NULL);
 	tai_unix(&t->sec, now.tv_sec);
 	t->nano = 1000 * now.tv_usec + 500;
@@ -160,13 +165,16 @@ static inline void taia_sub(struct taia *res,
 {
 	unsigned long unano = u->nano;
 	unsigned long uatto = u->atto;
+
 	res->sec.x = u->sec.x - v->sec.x;
 	res->nano = unano - v->nano;
 	res->atto = uatto - v->atto;
+
 	if (res->atto > uatto) {
 		res->atto += 1000000000UL;
 		--res->nano;
 	}
+
 	if (res->nano > unano) {
 		res->nano += 1000000000UL;
 		--res->sec.x;
@@ -183,10 +191,12 @@ static inline void taia_add(struct taia *res,
 	res->sec.x = u->sec.x + v->sec.x;
 	res->nano = u->nano + v->nano;
 	res->atto = u->atto + v->atto;
+
 	if (res->atto > 999999999UL) {
 		res->atto -= 1000000000UL;
 		++res->nano;
 	}
+
 	if (res->nano > 999999999UL) {
 		res->nano -= 1000000000UL;
 		++res->sec.x;
@@ -212,6 +222,7 @@ static inline int is_good_taia(struct taia *arrival_taia,
 {
 	int is_ts_good = 0;
 	struct taia sub_res;
+
 	if (taia_less(arrival_taia, packet_taia)) {
 		taia_sub(&sub_res, packet_taia, arrival_taia);
 		if (taia_less(&sub_res, &tolerance_taia))
@@ -225,6 +236,7 @@ static inline int is_good_taia(struct taia *arrival_taia,
 		else
 			is_ts_good = 0;
 	}
+
 	return is_ts_good;
 }
 

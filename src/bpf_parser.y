@@ -494,6 +494,7 @@ int compile_filter(char *file, int verbose)
 	yyin = fopen(file, "r");
 	if (!yyin)
 		panic("Cannot open file!\n");
+
 	memset(out, 0, sizeof(out));
 	memset(labels, 0, sizeof(labels));
 	memset(labels_jf, 0, sizeof(labels_jf));
@@ -537,6 +538,7 @@ int compile_filter(char *file, int verbose)
 		if (labels_k[i] != NULL)
 			xfree(labels_k[i]);
 	}
+
 	return 0;
 }
 
@@ -545,4 +547,3 @@ void yyerror(const char *err)
 	panic("Syntax error at line %d: %s! %s!\n",
 	      yylineno, yytext, err);
 }
-

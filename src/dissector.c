@@ -19,6 +19,7 @@
 int dissector_set_print_type(void *ptr, int type)
 {
 	struct protocol *proto = (struct protocol *) ptr;
+
 	while (proto != NULL) {
 		switch (type) {
 		case FNTTYPE_PRINT_NORM:
@@ -32,8 +33,10 @@ int dissector_set_print_type(void *ptr, int type)
 			proto->process = NULL;
 			break;
 		}
+
 		proto = proto->next;
 	}
+
 	return 0;
 }
 
@@ -70,7 +73,7 @@ void dissector_entry_point(uint8_t *packet, size_t len, int linktype)
 		proto_end = dissector_get_ethernet_exit_point();
 		break;
 	default:
-		return;
+		panic("Linktype not supported!\n");
 	};
 
 	dissector_main(pkt, proto_start, proto_end);

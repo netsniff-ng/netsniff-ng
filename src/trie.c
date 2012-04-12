@@ -110,7 +110,9 @@ void trie_addr_remove(int fd)
 {
 	int found = 1;
 	struct patricia_node *n = NULL;
+
 	rwlock_wr_lock(&tree_lock);
+
 	while (found) {
 		ptree_get_key(fd, tree, &n);
 		if (n) {
@@ -119,6 +121,7 @@ void trie_addr_remove(int fd)
 		} else
 			found = 0;
 	}
+
 	rwlock_unlock(&tree_lock);
 }
 
@@ -126,7 +129,9 @@ void trie_addr_remove_addr(struct sockaddr_storage *addr, size_t alen)
 {
 	int found = 1;
 	struct patricia_node *n = NULL;
+
 	rwlock_wr_lock(&tree_lock);
+
 	while (found) {
 		ptree_get_key_addr(addr, alen, tree, &n);
 		if (n) {
@@ -135,6 +140,7 @@ void trie_addr_remove_addr(struct sockaddr_storage *addr, size_t alen)
 		} else
 			found = 0;
 	}
+
 	rwlock_unlock(&tree_lock);
 }
 
@@ -148,6 +154,6 @@ void trie_cleanup(void)
 	rwlock_wr_lock(&tree_lock);
 	ptree_free(tree);
 	rwlock_unlock(&tree_lock);
+
 	rwlock_destroy(&tree_lock);
 }
-

@@ -41,4 +41,3 @@ extern int client_main(char *home, char *dev, char *host, char *port, int udp);
 #define DEVNAME_CLIENT  "curvec0"
 
 #endif /* CURVETUN_H */
-
