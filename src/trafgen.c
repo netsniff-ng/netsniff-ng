@@ -29,10 +29,11 @@ trafgen - a high-performance zero-copy network packet generator
 
 =head1 SYNOPSIS
 
-trafgen	-d|--dev <netdev> -c|--conf <file> [-J|--jumbo-support][-n|--num <uint>]
-	[-r|--rand][-t|--gap <usec>][-S|--ring-size <size>]
-	[-k|--kernel-pull <usec>][-b|--bind-cpu <cpu>][-B|--unbind-cpu <cpu>]
-	[-H|--prio-high][-Q|--notouch-irq][-v|--version][-h|--help]
+trafgen	[-d|--dev <netdev>][-c|--conf <file>][-J|--jumbo-support]
+	[-x|--interactive][-n|--num <uint>][-r|--rand][-t|--gap <usec>]
+	[-S|--ring-size <size>][-k|--kernel-pull <usec>][-b|--bind-cpu <cpu>]
+	[-B|--unbind-cpu <cpu>][-H|--prio-high][-Q|--notouch-irq][-v|--version]
+	[-h|--help]
 
 =head1 DESCRIPTION
 
@@ -70,6 +71,10 @@ Device for transmission i.e., eth0.
 =item -c|--conf <conf>
 
 Path to packet configuration file.
+
+=item -x|--interactive
+
+Start trafgen in interactive mode.
 
 =item -J|--jumbo-support
 
@@ -222,9 +227,11 @@ struct mode {
 #define CPU_UNKNOWN  -1
 #define CPU_NOTOUCH  -2
 
+extern int main_loop_interactive(struct mode *mode, char *confname);
+
 sig_atomic_t sigint = 0;
 
-static const char *short_options = "d:c:n:t:vJhS:HQb:B:rk:";
+static const char *short_options = "d:c:n:t:vJhS:HQb:B:rk:x";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -236,6 +243,7 @@ static struct option long_options[] = {
 	{"unbind-cpu", required_argument, 0, 'B'},
 	{"kernel-pull", required_argument, 0, 'k'},
 	{"jumbo-support", no_argument, 0, 'J'},
+	{"interactive", no_argument, 0, 'x'},
 	{"rand", no_argument, 0, 'r'},
 	{"prio-high", no_argument, 0, 'H'},
 	{"notouch-irq", no_argument, 0, 'Q'},
@@ -292,6 +300,7 @@ static void help(void)
 	printf("Options:\n");
 	printf("  -d|--dev <netdev>      Networking Device i.e., eth0\n");
 	printf("  -c|--conf <file>       Packet configuration file\n");
+	printf("  -x|--interactive       Start trafgen in interactive mode\n");
 	printf("  -J|--jumbo-support     Support for 64KB Super Jumbo Frames\n");
 	printf("                         Default TX slot: 2048Byte\n");
 	printf("  -n|--num <uint>        Number of packets until exit\n");
@@ -317,6 +326,9 @@ static void help(void)
 	printf("  trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0\n");
 	printf("  trafgen --dev eth0 --conf trafgen.txf --rand --gap 1000\n");
 	printf("  trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0 --num 10 --rand\n");
+	printf("  trafgen --interactive\n");
+	printf("  trafgen --interactive --dev mgmt0    (only start server on mgmt0)\n");
+	printf("  trafgen --interactive --conf trafgen-cli.batch\n");
 	printf("\n");
 	printf("Note:\n");
 	printf("  This tool is targeted for network developers! You should\n");
@@ -796,7 +808,7 @@ static int main_loop(struct mode *mode, char *confname, unsigned long pkts,
 
 int main(int argc, char **argv)
 {
-	int c, opt_index, ret, i, j;
+	int c, opt_index, ret, i, j, interactive = 0;
 	char *confname = NULL, *ptr;
 	unsigned long pkts = 0, gap = 0;
 	bool prio_high = false;
@@ -818,6 +830,9 @@ int main(int argc, char **argv)
 			break;
 		case 'd':
 			mode.device = xstrndup(optarg, IFNAMSIZ);
+			break;
+		case 'x':
+			interactive = 1;
 			break;
 		case 'r':
 			mode.rand = 1;
@@ -897,15 +912,17 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (argc < 5)
+	if (!interactive && argc < 5)
 		help();
-	if (mode.device == NULL)
+	if (interactive && argc < 2)
+		help();
+	if (!interactive && mode.device == NULL)
 		panic("No networking device given!\n");
-	if (confname == NULL)
+	if (!interactive && confname == NULL)
 		panic("No configuration file given!\n");
-	if (device_mtu(mode.device) == 0)
+	if (!interactive && device_mtu(mode.device) == 0)
 		panic("This is no networking device!\n");
-	if (device_up_and_running(mode.device) == 0)
+	if (!interactive && device_up_and_running(mode.device) == 0)
 		panic("Networking device not running!\n");
 
 	register_signal(SIGINT, signal_handler);
@@ -920,10 +937,14 @@ int main(int argc, char **argv)
 				 get_default_sched_prio());
 	}
 
-	ret = main_loop(&mode, confname, pkts, gap);
+	if (interactive)
+		ret = main_loop_interactive(&mode, confname);
+	else
+		ret = main_loop(&mode, confname, pkts, gap);
 
-	xfree(mode.device);
-	xfree(confname);
+	if (mode.device)
+		xfree(mode.device);
+	if (confname)
+		xfree(confname);
 	return ret;
 }
-
