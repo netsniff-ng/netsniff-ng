@@ -21,6 +21,7 @@
 #include "xmalloc.h"
 #include "curve.h"
 #include "xstring.h"
+#include "xio.h"
 #include "die.h"
 #include "mtrand.h"
 #include "curvetun.h"
