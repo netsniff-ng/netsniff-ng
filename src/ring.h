@@ -16,6 +16,9 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <linux/if_packet.h>
+#include <string.h>
+#include <poll.h>
+#include <sys/poll.h>
 
 #include "xsys.h"
 #include "built_in.h"
@@ -101,6 +104,27 @@ static inline void tpacket_hdr_clone(struct tpacket_hdr *thdrd,
         thdrd->tp_usec = thdrs->tp_usec;
         thdrd->tp_snaplen = thdrs->tp_snaplen;
         thdrd->tp_len = thdrs->tp_len;
+}
+
+#ifndef POLLRDNORM
+# define POLLRDNORM	0x0040
+#endif
+#ifndef POLLWRNORM
+# define POLLWRNORM	0x0100
+#endif
+#ifndef POLLRDHUP
+# define POLLRDHUP	0x2000
+#endif
+
+#define POLL_NEXT_PKT	0
+#define POLL_MOVE_OUT	1
+
+static inline void prepare_polling(int sock, struct pollfd *pfd)
+{
+	memset(pfd, 0, sizeof(*pfd));
+	pfd->fd = sock;
+	pfd->revents = 0;
+	pfd->events = POLLIN | POLLRDNORM | POLLERR;
 }
 
 #endif /* RING_H */

@@ -185,6 +185,7 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "usermgmt.h"
 #include "servmgmt.h"
 #include "xio.h"
+#include "tprintf.h"
 #include "crypto_verify_32.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"
 #include "crypto_scalarmult_curve25519.h"

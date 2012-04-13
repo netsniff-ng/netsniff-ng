@@ -10,94 +10,17 @@
 #define XSYS_H
 
 #define _GNU_SOURCE
-#include <poll.h>
-#include <sys/poll.h>
 #include <errno.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <linux/ethtool.h>
 #include <linux/if.h>
 #include <linux/wireless.h>
-#include <termios.h>
+#include <poll.h>
+#include <sys/poll.h>
 #include <sched.h>
 #include <sys/resource.h>
 #include <sys/time.h>
-
-#include "die.h"
-
-#define DEFAULT_TTY_SIZE	80
-
-#define __reset		"0"
-#define __bold		"1"
-#define __black		"30"
-#define __red		"31"
-#define __green		"32"
-#define __yellow	"33"
-#define __blue		"34"
-#define __magenta	"35"
-#define __cyan		"36"
-#define __white		"37"
-#define __on_black	"40"
-#define __on_red	"41"
-#define __on_green	"42"
-#define __on_yellow	"43"
-#define __on_blue	"44"
-#define __on_magenta	"45"
-#define __on_cyan	"46"
-#define __on_white	"47"
-
-#define colorize_start(fore)            "\033[" __##fore "m"
-#define colorize_start_full(fore, back) "\033[" __##fore ";" __on_##back "m"
-#define colorize_end()                  "\033[" __reset "m"
-#define colorize_str(fore, text)                                     \
-		colorize_start(fore) text colorize_end()
-#define colorize_full_str(fore, back, text)                          \
-		colorize_start_full(fore, back) text colorize_end()
-
-#ifndef POLLRDNORM
-# define POLLRDNORM	0x0040
-#endif
-#ifndef POLLWRNORM
-# define POLLWRNORM	0x0100
-#endif
-#ifndef POLLRDHUP
-# define POLLRDHUP	0x2000
-#endif
-#define POLL_NEXT_PKT	0
-#define POLL_MOVE_OUT	1
-
-static inline void prepare_polling(int sock, struct pollfd *pfd)
-{
-	memset(pfd, 0, sizeof(*pfd));
-	pfd->fd = sock;
-	pfd->revents = 0;
-	pfd->events = POLLIN | POLLRDNORM | POLLERR;
-}
-
-static inline int get_default_sched_policy(void)
-{
-	return SCHED_FIFO;
-}
-
-static inline int get_default_sched_prio(void)
-{
-	return sched_get_priority_max(get_default_sched_policy());
-}
-
-static inline int get_number_cpus(void)
-{
-	return sysconf(_SC_NPROCESSORS_CONF);
-}
-
-static inline int get_number_cpus_online(void)
-{
-	return sysconf(_SC_NPROCESSORS_ONLN);
-}
-
-static inline int get_default_proc_prio(void)
-{
-	return -20;
-}
 
 extern int af_socket(int af);
 extern int af_raw_socket(int af, int proto);
@@ -138,5 +61,30 @@ extern void xusleep(const struct timespec *ts_delay);
 extern void xusleep2(long usecs);
 extern int xnanosleep(double seconds);
 extern int set_timeout(struct timeval *timeval, unsigned int msec);
+
+static inline int get_default_sched_policy(void)
+{
+	return SCHED_FIFO;
+}
+
+static inline int get_default_sched_prio(void)
+{
+	return sched_get_priority_max(get_default_sched_policy());
+}
+
+static inline int get_number_cpus(void)
+{
+	return sysconf(_SC_NPROCESSORS_CONF);
+}
+
+static inline int get_number_cpus_online(void)
+{
+	return sysconf(_SC_NPROCESSORS_ONLN);
+}
+
+static inline int get_default_proc_prio(void)
+{
+	return -20;
+}
 
 #endif /* XSYS_H */

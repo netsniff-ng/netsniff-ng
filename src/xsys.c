@@ -36,6 +36,8 @@
 #include "die.h"
 #include "xsys.h"
 #include "xstring.h"
+#include "ring.h"
+#include "tprintf.h"
 #include "built_in.h"
 
 int af_socket(int af)
