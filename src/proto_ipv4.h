@@ -40,7 +40,6 @@ struct ipv4hdr {
 	uint16_t h_check;
 	uint32_t h_saddr;
 	uint32_t h_daddr;
-	uint8_t h_opts[];
 } __attribute__((packed));
 
 #define	FRAG_OFF_RESERVED_FLAG(x)      ((x) & 0x8000)
@@ -48,14 +47,21 @@ struct ipv4hdr {
 #define	FRAG_OFF_MORE_FRAGMENT_FLAG(x) ((x) & 0x2000)
 #define	FRAG_OFF_FRAGMENT_OFFSET(x)    ((x) & 0x1fff)
 
+/* IP Option Numbers (http://www.iana.org/assignments/ip-parameters) */
+#define IP_OPT_EOOL 0x00
+#define IP_OPT_NOP  0x01
+
+#define IP_OPT_COPIED_FLAG(x)  ((x) & 0x80)
+#define IP_OPT_CLASS(x)       (((x) & 0x60) >> 5)
+#define IP_OPT_NUMBER(x)       ((x) & 0x1F)
+
 static inline void ipv4(struct pkt_buff *pkt)
 {
 	uint16_t csum, frag_off;
 	char src_ip[INET_ADDRSTRLEN];
 	char dst_ip[INET_ADDRSTRLEN];
 	struct ipv4hdr *ip = (struct ipv4hdr *) pkt_pull(pkt, sizeof(*ip));
-	uint8_t *opts;
-	size_t opts_len;
+	uint8_t *opt, opts_len, opt_len;
 
 	if (ip == NULL)
 		return;
@@ -88,25 +94,38 @@ static inline void ipv4(struct pkt_buff *pkt)
 			csum_expected(ip->h_check, csum), colorize_end());
 	tprintf(" ]\n");
 
-	/* TODO: do/print something more usefull (dissect options, ...) */
 	opts_len = ip->h_ihl * 4 - 20;
 
-	/* XXX: better return and print the rest in hex than panic */
-	bug_on(opts_len > 40);
+	for (opt = (uint8_t *) pkt_pull(pkt, opts_len); opt && opts_len; opt++) {
 
-	opts = (uint8_t *) pkt_pull(pkt, opts_len);
+		tprintf("   [ Option  Copied (%u), Class (%u), Number (%u)",
+			IP_OPT_COPIED_FLAG(*opt) ? 1 : 0, IP_OPT_CLASS(*opt),
+			IP_OPT_NUMBER(*opt));
 
-	if (opts_len && opts) {
-		tprintf("   [ Options hex ");
-		for (; opts_len-- > 0; opts++)
-		       tprintf("%.2x ", *opts);
-		tprintf("]\n");
+		switch (*opt) {
+		case IP_OPT_EOOL:
+		case IP_OPT_NOP:
+			tprintf(" ]\n");
+			opts_len--;
+			break;
+		default:
+			/*
+			 * Assuming that EOOL and NOP are the only single-byte
+			 * options, treat all other options as variable in
+			 * length with a minimum of 2.
+			 */
+			opt_len = *(++opt);
+			tprintf(", Len (%u) ]\n", opt_len);
+			opts_len -= opt_len;
+			tprintf("     [ Data hex ");
+			for (opt_len -= 2; opt_len; opt_len--)
+				tprintf(" %.2x", *(++opt));
+			tprintf(" ]\n");
+			break;
+		}
 	}
 
-	/*
-	 * Cut off everything that is not part of IPv4 payload (ethernet
-	 * trailer, padding... whatever).
-	 */
+	/* cut off everything that is not part of IPv4 payload */
 	pkt_trim(pkt, pkt_len(pkt) + ip->h_ihl * 4 - ntohs(ip->h_tot_len));
 	pkt_set_proto(pkt, &eth_lay3, ip->h_protocol);
 }
@@ -126,10 +145,7 @@ static inline void ipv4_less(struct pkt_buff *pkt)
 	tprintf(" %s/%s Len %u", src_ip, dst_ip,
 		ntohs(ip->h_tot_len));
 
-	/*
-	 * Cut off everything that is not part of IPv4 payload (IPv4 options,
-	 * ethernet trailer, padding... whatever).
-	 */
+	/* cut off IP options and everything that is not part of IPv4 payload */
 	pkt_pull(pkt, ip->h_ihl * 4 - 20);
 	pkt_trim(pkt, pkt_len(pkt) + ip->h_ihl * 4 - ntohs(ip->h_tot_len));
 	pkt_set_proto(pkt, &eth_lay3, ip->h_protocol);
