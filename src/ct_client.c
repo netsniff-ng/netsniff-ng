@@ -46,7 +46,6 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 				   struct curve25519_struct *c, char *buff,
 				   size_t len)
 {
-	int state;
 	char *cbuff;
 	ssize_t rlen, err, clen;
 	struct ct_proto *hdr;
@@ -77,8 +76,7 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 
 		hdr->payload = htons((uint16_t) clen);
 
-		state = 1;
-		setsockopt(dfd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
+		set_udp_cork(dfd);
 
 		err = write_exact(dfd, hdr, sizeof(struct ct_proto), 0);
 		if (unlikely(err < 0))
@@ -90,8 +88,7 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 			syslog(LOG_ERR, "Error writing tunnel data to net: %s\n",
 			       strerror(errno));
 
-		state = 0;
-		setsockopt(dfd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
+		set_udp_uncork(dfd);
 
 		errno = 0;
 		memset(buff, 0, len);
@@ -191,8 +188,7 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 
 		hdr->payload = htons((uint16_t) clen);
 
-		state = 1;
-		setsockopt(dfd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
+		set_tcp_cork(dfd);
 
 		err = write_exact(dfd, hdr, sizeof(struct ct_proto), 0);
 		if (unlikely(err < 0))
@@ -204,8 +200,7 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 			syslog(LOG_ERR, "Error writing tunnel data to net: %s\n",
 			       strerror(errno));
 
-		state = 0;
-		setsockopt(dfd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
+		set_tcp_uncork(dfd);
 
 		errno = 0;
 		memset(buff, 0, len);
@@ -329,9 +324,7 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 
 	hdr.payload = htons((uint16_t) msg_len);
 
-	state = 1;
-	setsockopt(fd, udp ? IPPROTO_UDP : IPPROTO_TCP,
-		   udp ? UDP_CORK : TCP_CORK, &state, sizeof(state));
+	set_sock_cork(fd, udp);
 
 	err = write_exact(fd, &hdr, sizeof(struct ct_proto), 0);
 	if (unlikely(err < 0))
@@ -343,9 +336,7 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 		syslog(LOG_ERR, "Error writing init data to net: %s\n",
 		       strerror(errno));
 
-	state = 0;
-	setsockopt(fd, udp ? IPPROTO_UDP : IPPROTO_TCP,
-		   udp ? UDP_CORK : TCP_CORK, &state, sizeof(state));
+	set_sock_uncork(fd, udp);
 
 	xfree(msg);
 	xfree(us);

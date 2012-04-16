@@ -56,28 +56,53 @@ int af_socket(int af)
 	return sock;
 }
 
-int af_raw_socket(int af, int proto)
-{
-	int sock;
-
-	if (unlikely(af != AF_INET && af != AF_INET6)) {
-		whine("Wrong AF socket type! Falling back to AF_INET\n");
-		af = AF_INET;
-	}
-
-	sock = socket(af, SOCK_RAW, proto);
-	if (unlikely(sock < 0))
-		panic("Creation AF socket failed!\n");
-
-	return sock;
-}
-
 int pf_socket(void)
 {
 	int sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	if (unlikely(sock < 0))
 		panic("Creation of PF socket failed!\n");
+
 	return sock;
+}
+
+void set_udp_cork(int fd)
+{
+	int state = 1;
+	setsockopt(fd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
+}
+
+void set_udp_uncork(int fd)
+{
+	int state = 0;
+	setsockopt(fd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
+}
+
+void set_tcp_cork(int fd)
+{
+	int state = 1;
+	setsockopt(fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
+}
+
+void set_tcp_uncork(int fd)
+{
+	int state = 0;
+	setsockopt(fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
+}
+
+void set_sock_cork(int fd, int udp)
+{
+	if (!!udp)
+		set_udp_cork(fd);
+	else
+		set_tcp_cork(fd);
+}
+
+void set_sock_uncork(int fd, int udp)
+{
+	if (!!udp)
+		set_udp_uncork(fd);
+	else
+		set_tcp_uncork(fd);
 }
 
 int set_nonblocking(int fd)
@@ -85,6 +110,7 @@ int set_nonblocking(int fd)
 	int ret = fcntl(fd, F_SETFL, fcntl(fd, F_GETFD, 0) | O_NONBLOCK);
 	if (unlikely(ret < 0))
 		panic("Cannot fcntl!\n");
+
 	return 0;
 }
 

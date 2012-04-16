@@ -82,7 +82,7 @@ static void *worker(void *self) __pure;
 static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len)
 {
-	int dfd, state, keep = 1;
+	int dfd, keep = 1;
 	char *cbuff;
 	ssize_t rlen, err, clen;
 	struct ct_proto *hdr;
@@ -140,8 +140,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 
 		hdr->payload = htons((uint16_t) clen);
 
-		state = 1;
-		setsockopt(dfd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
+		set_udp_cork(dfd);
 
 		err = sendto(dfd, hdr, sizeof(struct ct_proto), 0,
 			     (struct sockaddr *) &naddr, nlen);
@@ -155,8 +154,7 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 			syslog(LOG_ERR, "CPU%u: UDP tunnel write error: %s\n",
 			       ws->cpu, strerror(errno));
 
-		state = 0;
-		setsockopt(dfd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
+		set_udp_uncork(dfd);
 
 		errno = 0;
 		memset(buff, 0, len);
@@ -354,8 +352,7 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 
 		hdr->payload = htons((uint16_t) clen);
 
-		state = 1;
-		setsockopt(dfd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
+		set_tcp_cork(dfd);
 
 		err = write_exact(dfd, hdr, sizeof(struct ct_proto), 0);
 		if (unlikely(err < 0))
@@ -367,8 +364,7 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 			syslog(LOG_ERR, "CPU%u: TCP tunnel write error: %s\n",
 			       ws->cpu, strerror(errno));
 
-		state = 0;
-		setsockopt(dfd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
+		set_tcp_uncork(dfd);
 
 		errno = 0;
 		memset(buff, 0, len);

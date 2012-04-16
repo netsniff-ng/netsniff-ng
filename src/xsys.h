@@ -23,7 +23,6 @@
 #include <sys/time.h>
 
 extern int af_socket(int af);
-extern int af_raw_socket(int af, int proto);
 extern int pf_socket(void);
 extern int wireless_bitrate(const char *ifname);
 extern int adjust_dbm_level(int dbm_val);
@@ -44,6 +43,12 @@ extern void device_set_flags(const char *ifname, const short flags);
 extern int set_nonblocking(int fd);
 extern int set_nonblocking_sloppy(int fd);
 extern int set_reuseaddr(int fd);
+extern void set_tcp_cork(int fd);
+extern void set_tcp_uncork(int fd);
+extern void set_udp_cork(int fd);
+extern void set_udp_uncork(int fd);
+extern void set_sock_cork(int fd, int udp);
+extern void set_sock_uncork(int fd, int udp);
 extern void register_signal(int signal, void (*handler)(int));
 extern void register_signal_f(int signal, void (*handler)(int), int flags);
 extern int get_tty_size(void);
