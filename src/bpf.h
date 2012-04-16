@@ -10,12 +10,6 @@
 
 #include <linux/filter.h>
 #include <stdint.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
-#include "die.h"
 
 extern void bpf_dump_all(struct sock_fprog *bpf);
 extern int bpf_validate(const struct sock_fprog *bpf);
