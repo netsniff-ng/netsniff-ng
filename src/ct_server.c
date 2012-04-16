@@ -296,8 +296,8 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 
 		set_tcp_cork(dfd);
 
-		err = write_exact(dfd, hdr, sizeof(struct ct_proto), 0);
-		err = write_exact(dfd, cbuff, clen, 0);
+		write_exact(dfd, hdr, sizeof(struct ct_proto), 0);
+		write_exact(dfd, cbuff, clen, 0);
 
 		set_tcp_uncork(dfd);
 
@@ -419,7 +419,7 @@ close:
 
 		count++;
 		if (count == 10) {
-			err = write_exact(ws->efd[1], &fd, sizeof(fd), 1);
+			write_exact(ws->efd[1], &fd, sizeof(fd), 1);
 			/* Read later next data and let others process */
 			return keep;
 		}
@@ -479,12 +479,8 @@ static void *worker(void *self)
 			}
 
 			ret = ws->handler(fd, ws, buff, blen);
-			if (ret) {
-				ret = write_exact(ws->parent.refd, &fd, sizeof(fd), 1);
-				if (ret != sizeof(fd))
-					syslog(LOG_ERR, "CPU%u: Retriggering failed: "
-					       "%s\n", ws->cpu, strerror(errno));
-			}
+			if (ret)
+				write_exact(ws->parent.refd, &fd, sizeof(fd), 1);
 		}
 
 		pthread_setcancelstate(old_state, NULL);

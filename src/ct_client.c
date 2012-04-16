@@ -47,16 +47,12 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 				   size_t len)
 {
 	char *cbuff;
-	ssize_t rlen, err, clen;
+	ssize_t rlen, clen;
 	struct ct_proto *hdr;
 	size_t off = sizeof(struct ct_proto) + crypto_box_zerobytes;
 
-	if (!buff || len <= off) {
-		errno = EINVAL;
+	if (!buff || len <= off)
 		return;
-	}
-
-	errno = 0;
 
 	memset(buff, 0, len);
 	while ((rlen = read(sfd, buff + off, len - off)) > 0) {
@@ -69,33 +65,23 @@ static void handler_udp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 					 crypto_box_zerobytes), (rlen +
 					 crypto_box_zerobytes), (unsigned char **)
 					 &cbuff);
-		if (unlikely(clen <= 0)) {
-			syslog(LOG_ERR, "UDP tunnel encrypt error!\n");
+		if (unlikely(clen <= 0))
 			goto close;
-		}
 
 		hdr->payload = htons((uint16_t) clen);
 
 		set_udp_cork(dfd);
 
-		err = write_exact(dfd, hdr, sizeof(struct ct_proto), 0);
-		if (unlikely(err < 0))
-			syslog(LOG_ERR, "Error writing tunnel data to net: %s\n",
-			       strerror(errno));
-
-		err = write_exact(dfd, cbuff, clen, 0);
-		if (unlikely(err < 0))
-			syslog(LOG_ERR, "Error writing tunnel data to net: %s\n",
-			       strerror(errno));
+		write_exact(dfd, hdr, sizeof(struct ct_proto), 0);
+		write_exact(dfd, cbuff, clen, 0);
 
 		set_udp_uncork(dfd);
 
-		errno = 0;
 		memset(buff, 0, len);
 	}
+
 	return;
 close:
-
 	closed_by_server = 1;
 }
 
@@ -110,17 +96,14 @@ static void handler_udp_net_to_tun(int sfd, int dfd, struct curve25519_proto *p,
 
 	socklen_t nlen = sizeof(naddr);
 
-	if (!buff || !len) {
-		errno = EINVAL;
+	if (!buff || !len)
 		return;
-	}
 
 	memset(&naddr, 0, sizeof(naddr));
-	errno = 0;
-
 	while ((rlen = recvfrom(sfd, buff, len, 0, (struct sockaddr *) &naddr,
 				&nlen)) > 0) {
 		hdr = (struct ct_proto *) buff;
+
 		if (unlikely(rlen < sizeof(struct ct_proto)))
 			goto close;
 		if (unlikely(rlen - sizeof(*hdr) != ntohs(hdr->payload)))
@@ -134,20 +117,13 @@ static void handler_udp_net_to_tun(int sfd, int dfd, struct curve25519_proto *p,
 					 sizeof(struct ct_proto),
 					 rlen - sizeof(struct ct_proto),
 					 (unsigned char **) &cbuff, NULL);
-		if (unlikely(clen <= 0)) {
-			syslog(LOG_ERR, "UDP net decrypt error!\n");
+		if (unlikely(clen <= 0))
 			goto close;
-		}
 
                 cbuff += crypto_box_zerobytes;
                 clen -= crypto_box_zerobytes;
 
 		err = write(dfd, cbuff, clen);
-		if (unlikely(err < 0))
-			syslog(LOG_ERR, "Error writing net data to tunnel: %s\n",
-			       strerror(errno));
-
-		errno = 0;
 	}
 
 	return;
@@ -160,16 +136,14 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 				   size_t len)
 {
 	char *cbuff;
-	ssize_t rlen, err, clen;
+	ssize_t rlen, clen;
 	struct ct_proto *hdr;
 	size_t off = sizeof(struct ct_proto) + crypto_box_zerobytes;
-	if (!buff || len <= off) {
-		errno = EINVAL;
-		return;
-	}
-	errno = 0;
-	memset(buff, 0, len);
 
+	if (!buff || len <= off)
+		return;
+
+	memset(buff, 0, len);
 	while ((rlen = read(sfd, buff + off, len - off)) > 0) {
 		hdr = (struct ct_proto *) buff;
 
@@ -180,28 +154,18 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 					 crypto_box_zerobytes), (rlen +
 					 crypto_box_zerobytes), (unsigned char **)
 					 &cbuff);
-		if (unlikely(clen <= 0)) {
-			syslog(LOG_ERR, "TCP tunnel encrypt error!\n");
+		if (unlikely(clen <= 0))
 			goto close;
-		}
 
 		hdr->payload = htons((uint16_t) clen);
 
 		set_tcp_cork(dfd);
 
-		err = write_exact(dfd, hdr, sizeof(struct ct_proto), 0);
-		if (unlikely(err < 0))
-			syslog(LOG_ERR, "Error writing tunnel data to net: %s\n",
-			       strerror(errno));
-
-		err = write_exact(dfd, cbuff, clen, 0);
-		if (unlikely(err < 0))
-			syslog(LOG_ERR, "Error writing tunnel data to net: %s\n",
-			       strerror(errno));
+		write_exact(dfd, hdr, sizeof(struct ct_proto), 0);
+		write_exact(dfd, cbuff, clen, 0);
 
 		set_tcp_uncork(dfd);
 
-		errno = 0;
 		memset(buff, 0, len);
 	}
 
@@ -220,15 +184,12 @@ static void handler_tcp_net_to_tun(int sfd, int dfd, struct curve25519_proto *p,
 	ssize_t rlen, err, clen;
 	struct ct_proto *hdr;
 
-	if (!buff || !len) {
-		errno = EINVAL;
+	if (!buff || !len)
 		return;
-	}
-
-	errno = 0;
 
 	while ((rlen = handler_tcp_read(sfd, buff, len)) > 0) {
 		hdr = (struct ct_proto *) buff;
+
 		if (unlikely(rlen < sizeof(struct ct_proto)))
 			goto close;
 		if (unlikely(rlen - sizeof(*hdr) != ntohs(hdr->payload)))
@@ -242,20 +203,13 @@ static void handler_tcp_net_to_tun(int sfd, int dfd, struct curve25519_proto *p,
 					 sizeof(struct ct_proto),
 					 rlen - sizeof(struct ct_proto),
 					 (unsigned char **) &cbuff, NULL);
-		if (unlikely(clen <= 0)) {
-			syslog(LOG_ERR, "TCP net decrypt error!\n");
+		if (unlikely(clen <= 0))
 			goto close;
-		}
 
 		cbuff += crypto_box_zerobytes;
 		clen -= crypto_box_zerobytes;
 
 		err = write(dfd, cbuff, clen);
-		if (unlikely(err < 0))
-			syslog(LOG_ERR, "Error writing net data to tunnel: %s\n",
-			       strerror(errno));
-
-		errno = 0;
 	}
 
 	return;
@@ -325,15 +279,8 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 
 	set_sock_cork(fd, udp);
 
-	err = write_exact(fd, &hdr, sizeof(struct ct_proto), 0);
-	if (unlikely(err < 0))
-		syslog(LOG_ERR, "Error writing init data to net: %s\n",
-		       strerror(errno));
-
-	err = write_exact(fd, msg, msg_len, 0);
-	if (unlikely(err < 0))
-		syslog(LOG_ERR, "Error writing init data to net: %s\n",
-		       strerror(errno));
+	write_exact(fd, &hdr, sizeof(struct ct_proto), 0);
+	write_exact(fd, msg, msg_len, 0);
 
 	set_sock_uncork(fd, udp);
 
@@ -343,7 +290,6 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 
 static void notify_close(int fd)
 {
-	ssize_t err;
 	struct ct_proto hdr;
 
 	memset(&hdr, 0, sizeof(hdr));
@@ -351,16 +297,13 @@ static void notify_close(int fd)
 	hdr.flags |= PROTO_FLAG_EXIT;
 	hdr.payload = 0;
 
-	err = write_exact(fd, &hdr, sizeof(hdr), 0);
-	if (unlikely(err < 0))
-		syslog(LOG_ERR, "Error writing close: %s\n",
-		       strerror(errno));
+	write_exact(fd, &hdr, sizeof(hdr), 0);
 }
 
 int client_main(char *home, char *dev, char *host, char *port, int udp)
 {
 	int fd = -1, tunfd = 0, retry_server = 0;
-	int ret, try = 1, i, one, mtu;
+	int ret, try = 1, i;
 	struct addrinfo hints, *ahead, *ai;
 	struct sockaddr_in6 *saddr6;
 	struct pollfd fds[2];
@@ -418,16 +361,10 @@ retry:
 			continue;
 		}
 
-		one = 1;
-		setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &one, sizeof(one));
-
-		mtu = IP_PMTUDISC_DONT;
-		setsockopt(fd, SOL_IP, IP_MTU_DISCOVER, &mtu, sizeof(mtu));
-		if (!udp) {
-			one = 1;
-			setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one,
-				   sizeof(one));
-		}
+		set_socket_keepalive(fd);
+		set_mtu_disc_dont(fd);
+		if (!udp)
+			set_tcp_nodelay(fd);
 	}
 
 	freeaddrinfo(ahead);
