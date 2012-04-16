@@ -252,7 +252,7 @@ static void help(void)
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: curvetun [options]\n");
-	printf("Options:\n");
+	printf("Options, general:\n");
 	printf("  -k|--keygen             Generate public/private keypair\n");
 	printf("  -x|--export             Export your public data for remote servers\n");
 	printf("  -C|--dumpc              Dump parsed clients\n");
@@ -261,9 +261,9 @@ static void help(void)
 	printf("  -d|--dev <tun>          Networking tunnel device, e.g. tun0\n");
 	printf("  -v|--version            Print version\n");
 	printf("  -h|--help               Print this help\n");
-	printf(" additional options for client:\n");
+	printf("Options for client:\n");
 	printf("  -c|--client[=alias]     Client mode, server alias optional\n");
-	printf(" additional options for servers:\n");
+	printf("Options for servers:\n");
 	printf("  -s|--server             Server mode\n");
 	printf("  -N|--no-logging         Disable server logging (for better anonymity)\n");
 	printf("  -p|--port <num>         Port number (mandatory)\n");
@@ -274,7 +274,7 @@ static void help(void)
 	printf("                          (default: same as carrier protocol)\n");
 	printf("\n");
 	printf("Example:\n");
-	printf("  See README.curvetun for a configuration example.\n");
+	printf("  See Documentation/Curvetun for a configuration example.\n");
 	printf("  curvetun --keygen\n");
 	printf("  curvetun --export\n");
 	printf("  curvetun --server -4 -u -N --port 6666 --stun stunserver.org\n");
