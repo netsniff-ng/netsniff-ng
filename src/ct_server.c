@@ -298,7 +298,7 @@ static int handler_udp(int fd, const struct worker_struct *ws,
 static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 				  char *buff, size_t len)
 {
-	int dfd, state, keep = 1;
+	int dfd, keep = 1;
 	char *cbuff;
 	ssize_t rlen, err, clen;
 	struct ct_proto *hdr;

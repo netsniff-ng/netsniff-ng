@@ -159,7 +159,6 @@ static void handler_tcp_tun_to_net(int sfd, int dfd, struct curve25519_proto *p,
 				   struct curve25519_struct *c, char *buff,
 				   size_t len)
 {
-	int state;
 	char *cbuff;
 	ssize_t rlen, err, clen;
 	struct ct_proto *hdr;
@@ -267,7 +266,7 @@ close:
 static void notify_init(int fd, int udp, struct curve25519_proto *p,
 			struct curve25519_struct *c, char *home)
 {
-	int state, fd2, i;
+	int fd2, i;
 	ssize_t err, clen;
 	size_t us_len, msg_len, pad;
 	struct ct_proto hdr;

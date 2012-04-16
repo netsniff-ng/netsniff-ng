@@ -32,6 +32,8 @@
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
 #include <linux/sockios.h>
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
 
 #include "die.h"
 #include "xsys.h"
