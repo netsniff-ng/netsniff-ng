@@ -166,7 +166,7 @@
 #endif /* min */
 
 #ifndef ispow2
-#define ispow2(x)		({ !!((x) && !((x) & ((x) - 1))); })
+# define ispow2(x)		({ !!((x) && !((x) & ((x) - 1))); })
 #endif
 
 #ifndef offsetof

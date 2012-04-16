@@ -63,6 +63,10 @@ extern int device_up(char *ifname);
 extern int device_running(char *ifname);
 extern int device_up_and_running(char *ifname);
 extern int poll_error_maybe_die(int sock, struct pollfd *pfd);
+extern void set_epoll_descriptor(int fd_epoll, int action,
+				 int fd_toadd, int events);
+extern int set_epoll_descriptor2(int fd_epoll, int action,
+				 int fd_toadd, int events);
 extern int set_cpu_affinity(char *str, int inverted);
 extern int set_proc_prio(int prio);
 extern int set_sched_status(int policy, int priority);

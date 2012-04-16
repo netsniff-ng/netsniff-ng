@@ -91,18 +91,12 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 	socklen_t nlen;
 	size_t off = sizeof(struct ct_proto) + crypto_box_zerobytes;
 
-	if (!buff || len <= off) {
-		errno = EINVAL;
+	if (!buff || len <= off)
 		return 0;
-	}
-
-	errno = 0;
 
 	memset(buff, 0, len);
 	while ((rlen = read(fd, buff + off, len - off)) > 0) {
-		dfd = -1;
-		nlen = 0;
-		p = NULL;
+		dfd = -1; nlen = 0; p = NULL;
 
 		memset(&naddr, 0, sizeof(naddr));
 
@@ -113,16 +107,12 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 		trie_addr_lookup(buff + off, rlen, ws->parent.ipv4, &dfd, &naddr,
 				 (size_t *) &nlen);
 		if (unlikely(dfd < 0 || nlen == 0)) {
-			syslog(LOG_INFO, "CPU%u: UDP tunnel lookup failed: "
-			       "unknown destination\n", ws->cpu);
 			memset(buff, 0, len);
 			continue;
 		}
 
 		err = get_user_by_sockaddr(&naddr, nlen, &p);
 		if (unlikely(err || !p)) {
-			syslog(LOG_ERR, "CPU%u: User protocol not in cache! "
-			       "Dropping connection!\n", ws->cpu);
 			memset(buff, 0, len);
 			continue;
 		}
@@ -132,8 +122,6 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 					 crypto_box_zerobytes), (unsigned char **)
 					 &cbuff);
 		if (unlikely(clen <= 0)) {
-			syslog(LOG_ERR, "CPU%u: UDP tunnel encrypt error: %zd\n",
-			       ws->cpu, clen);
 			memset(buff, 0, len);
 			continue;
 		}
@@ -142,44 +130,28 @@ static int handler_udp_tun_to_net(int fd, const struct worker_struct *ws,
 
 		set_udp_cork(dfd);
 
-		err = sendto(dfd, hdr, sizeof(struct ct_proto), 0,
-			     (struct sockaddr *) &naddr, nlen);
-		if (unlikely(err < 0))
-			syslog(LOG_ERR, "CPU%u: UDP tunnel write error: %s\n",
-			       ws->cpu, strerror(errno));
-
-		err = sendto(dfd, cbuff, clen, 0, (struct sockaddr *) &naddr,
-			     nlen);
-		if (unlikely(err < 0))
-			syslog(LOG_ERR, "CPU%u: UDP tunnel write error: %s\n",
-			       ws->cpu, strerror(errno));
+		sendto(dfd, hdr, sizeof(struct ct_proto), 0, (struct sockaddr *)
+		       &naddr, nlen);
+		sendto(dfd, cbuff, clen, 0, (struct sockaddr *) &naddr, nlen);
 
 		set_udp_uncork(dfd);
 
-		errno = 0;
 		memset(buff, 0, len);
 	}
-
-	if (unlikely(rlen < 0 && errno != EAGAIN))
-		syslog(LOG_ERR, "CPU%u: UDP tunnel read error: %s\n",
-		       ws->cpu, strerror(errno));
 
 	return keep;
 }
 
 static void handler_udp_notify_close(int fd, struct sockaddr_storage *addr)
 {
-	ssize_t err;
 	struct ct_proto hdr;
 
 	memset(&hdr, 0, sizeof(hdr));
 	hdr.flags |= PROTO_FLAG_EXIT;
 	hdr.payload = 0;
 
-	err = sendto(fd, &hdr, sizeof(hdr), 0, (struct sockaddr *) addr, sizeof(*addr));
-	if (err < 0)
-		syslog(LOG_ERR, "Error while sending close notification: "
-		       "%s!\n", strerror(errno));
+	sendto(fd, &hdr, sizeof(hdr), 0, (struct sockaddr *) addr,
+	       sizeof(*addr));
 }
 
 static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
@@ -193,18 +165,16 @@ static int handler_udp_net_to_tun(int fd, const struct worker_struct *ws,
 	struct sockaddr_storage naddr;
 	socklen_t nlen = sizeof(naddr);
 
-	if (!buff || !len) {
-		errno = EINVAL;
+	if (!buff || !len)
 		return 0;
-	}
 
 	memset(&naddr, 0, sizeof(naddr));
-	errno = 0;
-
 	while ((rlen = recvfrom(fd, buff, len, 0, (struct sockaddr *) &naddr,
 				&nlen)) > 0) {
 		p = NULL;
+
 		hdr = (struct ct_proto *) buff;
+
 		if (unlikely(rlen < sizeof(struct ct_proto)))
 			goto close;
 		if (unlikely(rlen - sizeof(*hdr) != ntohs(hdr->payload)))
@@ -227,9 +197,10 @@ close:
 				     sizeof(struct username_struct)))
 				goto close;
 
-			err = try_register_user_by_sockaddr(ws->c, buff + sizeof(struct ct_proto),
-							    rlen - sizeof(struct ct_proto),
-							    &naddr, nlen, auth_log);
+			err = try_register_user_by_sockaddr(ws->c,
+					buff + sizeof(struct ct_proto),
+					rlen - sizeof(struct ct_proto),
+					&naddr, nlen, auth_log);
 			if (unlikely(err))
 				goto close;
 
@@ -237,47 +208,29 @@ close:
 		}
 
 		err = get_user_by_sockaddr(&naddr, nlen, &p);
-		if (unlikely(err || !p)) {
-			syslog(LOG_ERR, "CPU%u: User protocol not in cache! "
-			       "Dropping connection!\n", ws->cpu);
+		if (unlikely(err || !p))
 			goto close;
-		}
 
 		clen = curve25519_decode(ws->c, p, (unsigned char *) buff +
 					 sizeof(struct ct_proto),
 					 rlen - sizeof(struct ct_proto),
 					 (unsigned char **) &cbuff, NULL);
-                if (unlikely(clen <= 0)) {
-			syslog(LOG_ERR, "CPU%u: UDP net decryption error: %zd\n",
-			       ws->cpu, clen);
+                if (unlikely(clen <= 0))
 			goto close;
-		}
 
 		cbuff += crypto_box_zerobytes;
 		clen -= crypto_box_zerobytes;
 
 		err = trie_addr_maybe_update(cbuff, clen, ws->parent.ipv4,
 					     fd, &naddr, nlen);
-		if (unlikely(err)) {
-			syslog(LOG_INFO, "CPU%u: Malicious packet dropped "
-			       "from id %d\n", ws->cpu, fd);
+		if (unlikely(err))
 			goto next;
-		}
 
 		err = write(ws->parent.tunfd, cbuff, clen);
-		if (unlikely(err < 0))
-			syslog(LOG_ERR, "CPU%u: UDP net write error: %s\n",
-			       ws->cpu, strerror(errno));
 next:
 		nlen = sizeof(naddr);
-
 		memset(&naddr, 0, sizeof(naddr));
-		errno = 0;
 	}
-
-	if (unlikely(rlen < 0 && errno != EAGAIN))
-		syslog(LOG_ERR, "CPU%u: UDP net read error: %s\n",
-		       ws->cpu, strerror(errno));
 
 	return keep;
 }
@@ -306,17 +259,12 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 	socklen_t nlen;
 	size_t off = sizeof(struct ct_proto) + crypto_box_zerobytes;
 
-	if (!buff || len <= off) {
-		errno = EINVAL;
+	if (!buff || len <= off)
 		return 0;
-	}
 
-	errno = 0;
 	memset(buff, 0, len);
-
 	while ((rlen = read(fd, buff + off, len - off)) > 0) {
-		dfd = -1;
-		p = NULL;
+		dfd = -1; p = NULL;
 
 		hdr = (struct ct_proto *) buff;
 		memset(hdr, 0, sizeof(*hdr));
@@ -325,16 +273,12 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 		trie_addr_lookup(buff + off, rlen, ws->parent.ipv4, &dfd, NULL,
 				 (size_t *) &nlen);
 		if (unlikely(dfd < 0)) {
-			syslog(LOG_INFO, "CPU%u: TCP tunnel lookup failed: "
-			       "unknown destination\n", ws->cpu);
 			memset(buff, 0, len);
 			continue;
 		}
 
 		err = get_user_by_socket(dfd, &p);
 		if (unlikely(err || !p)) {
-			syslog(LOG_ERR, "CPU%u: User protocol not in cache! "
-			       "Dropping connection!\n", ws->cpu);
 			memset(buff, 0, len);
 			continue;
 		}
@@ -344,8 +288,6 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 					 crypto_box_zerobytes), (unsigned char **)
 					 &cbuff);
 		if (unlikely(clen <= 0)) {
-			syslog(LOG_ERR, "CPU%u: TCP tunnel encrypt error: %zd\n",
-			       ws->cpu, clen);
 			memset(buff, 0, len);
 			continue;
 		}
@@ -355,24 +297,12 @@ static int handler_tcp_tun_to_net(int fd, const struct worker_struct *ws,
 		set_tcp_cork(dfd);
 
 		err = write_exact(dfd, hdr, sizeof(struct ct_proto), 0);
-		if (unlikely(err < 0))
-			syslog(LOG_ERR, "CPU%u: TCP tunnel write error: %s\n",
-			       ws->cpu, strerror(errno));
-
 		err = write_exact(dfd, cbuff, clen, 0);
-		if (unlikely(err < 0))
-			syslog(LOG_ERR, "CPU%u: TCP tunnel write error: %s\n",
-			       ws->cpu, strerror(errno));
 
 		set_tcp_uncork(dfd);
 
-		errno = 0;
 		memset(buff, 0, len);
 	}
-
-	if (unlikely(rlen < 0 && errno != EAGAIN))
-		syslog(LOG_ERR, "CPU%u: TCP tunnel read error: %s\n",
-		       ws->cpu, strerror(errno));
 
 	return keep;
 }
@@ -382,10 +312,8 @@ ssize_t handler_tcp_read(int fd, char *buff, size_t len)
 	ssize_t rlen;
 	struct ct_proto *hdr = (struct ct_proto *) buff;
 
-	if (!buff || !len) {
-		errno = EINVAL;
+	if (!buff || !len)
 		return 0;
-	}
 
 	/* May exit on EAGAIN if 0 Byte read */
 	rlen = read_exact(fd, buff, sizeof(struct ct_proto), 1);
@@ -415,9 +343,6 @@ static void handler_tcp_notify_close(int fd)
 	hdr.payload = 0;
 
 	err = write(fd, &hdr, sizeof(hdr));
-	if (err < 0)
-		syslog(LOG_ERR, "Error while sending close notification: "
-		       "%s!\n", strerror(errno));
 }
 
 static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
@@ -429,16 +354,14 @@ static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
 	struct ct_proto *hdr;
 	struct curve25519_proto *p;
 
-	if (!buff || !len)  {
-		errno = EINVAL;
+	if (!buff || !len)
 		return 0;
-	}
-
-	errno = 0;
 
 	while ((rlen = handler_tcp_read(fd, buff, len)) > 0) {
 		p = NULL;
+
 		hdr = (struct ct_proto *) buff;
+
 		if (unlikely(rlen < sizeof(struct ct_proto)))
 			goto close;
 		if (unlikely(rlen - sizeof(*hdr) != ntohs(hdr->payload)))
@@ -450,11 +373,7 @@ close:
 			remove_user_by_socket(fd);
 			trie_addr_remove(fd);
 			handler_tcp_notify_close(fd);
-
 			rlen = write(ws->parent.efd, &fd, sizeof(fd));
-			if (rlen != sizeof(fd))
-				syslog(LOG_ERR, "CPU%u: TCP event write error: %s\n",
-				       ws->cpu, strerror(errno));
 
 			keep = 0;
 			return keep;
@@ -467,9 +386,10 @@ close:
 				     sizeof(struct username_struct)))
 				goto close;
 
-			err = try_register_user_by_socket(ws->c, buff + sizeof(struct ct_proto),
-							  rlen - sizeof(struct ct_proto),
-							  fd, auth_log);
+			err = try_register_user_by_socket(ws->c,
+					buff + sizeof(struct ct_proto),
+					rlen - sizeof(struct ct_proto),
+					fd, auth_log);
 			if (unlikely(err))
 				goto close;
 
@@ -477,53 +397,33 @@ close:
 		}
 
 		err = get_user_by_socket(fd, &p);
-		if (unlikely(err || !p)) {
-			syslog(LOG_ERR, "CPU%u: User protocol not in cache! "
-			       "Dropping connection!\n", ws->cpu);
-			goto close;
-		}
+		if (unlikely(err || !p))
+			continue;
 
 		clen = curve25519_decode(ws->c, p, (unsigned char *) buff +
 					 sizeof(struct ct_proto),
 					 rlen - sizeof(struct ct_proto),
 					 (unsigned char **) &cbuff, NULL);
-                if (unlikely(clen <= 0)) {
-			syslog(LOG_ERR, "CPU%u: TCP net decryption error: %zd\n",
-			       ws->cpu, clen);
-			goto close;
-		}
+                if (unlikely(clen <= 0))
+			continue;
 
 		cbuff += crypto_box_zerobytes;
 		clen -= crypto_box_zerobytes;
 
 		err = trie_addr_maybe_update(cbuff, clen, ws->parent.ipv4,
 					     fd, NULL, 0);
-		if (unlikely(err)) {
-			syslog(LOG_INFO, "CPU%u: Malicious packet dropped "
-			       "from id %d\n", ws->cpu, fd);
+		if (unlikely(err))
 			continue;
-		}
 
 		err = write(ws->parent.tunfd, cbuff, clen);
-		if (unlikely(err < 0))
-			syslog(LOG_ERR, "CPU%u: TCP net write error: %s\n",
-			       ws->cpu, strerror(errno));
 
 		count++;
 		if (count == 10) {
 			err = write_exact(ws->efd[1], &fd, sizeof(fd), 1);
-			if (unlikely(err != sizeof(fd)))
-				syslog(LOG_ERR, "CPU%u: TCP net put fd back in "
-				       "pipe error: %s\n", ws->cpu, strerror(errno));
+			/* Read later next data and let others process */
 			return keep;
 		}
-
-		errno = 0;
 	}
-
-	if (unlikely(rlen < 0 && errno != EAGAIN && errno != EBADF))
-		syslog(LOG_ERR, "CPU%u: TCP net read error: %s\n",
-		       ws->cpu, strerror(errno));
 
 	return keep;
 }
@@ -574,10 +474,7 @@ static void *worker(void *self)
 
 		while ((ret = read_exact(ws->efd[0], &fd, sizeof(fd), 1)) > 0) {
 			if (ret != sizeof(fd)) {
-				syslog(LOG_ERR, "CPU%u: Thread could not read "
-				       "event descriptor!\n", ws->cpu);
 				sched_yield();
-
 				continue;
 			}
 
@@ -665,7 +562,7 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4, int log)
 	int lfd = -1, kdpfd, nfds, nfd, curfds, efd[2], refd[2], tunfd, i;
 	unsigned int cpus = 0, threads, udp_cpu = 0;
 	ssize_t ret;
-	struct epoll_event ev, *events;
+	struct epoll_event *events;
 	struct addrinfo hints, *ahead, *ai;
 
 	auth_log = !!log;
@@ -756,49 +653,22 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4, int log)
 	if (kdpfd < 0)
 		syslog_panic("Cannot create socket!\n");
 
-	memset(&ev, 0, sizeof(ev));
-	ev.events = udp ? EPOLLIN | EPOLLET | EPOLLONESHOT : EPOLLIN;
-	ev.data.fd = lfd;
-
-	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, lfd, &ev);
-	if (ret < 0)
-		syslog_panic("Cannot add socket for epoll!\n");
-
-	memset(&ev, 0, sizeof(ev));
-	ev.events = EPOLLIN;
-	ev.data.fd = efd[0];
-
-	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, efd[0], &ev);
-	if (ret < 0)
-		syslog_panic("Cannot add socket for events!\n");
-
-	memset(&ev, 0, sizeof(ev));
-	ev.events = EPOLLIN;
-	ev.data.fd = refd[0];
-
-	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, refd[0], &ev);
-	if (ret < 0)
-		syslog_panic("Cannot add socket for (r)events!\n");
-
-	memset(&ev, 0, sizeof(ev));
-	ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
-	ev.data.fd = tunfd;
-
-	ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, tunfd, &ev);
-	if (ret < 0)
-		syslog_panic("Cannot add socket for tundev!\n");
-
+	set_epoll_descriptor(kdpfd, EPOLL_CTL_ADD, lfd,
+			     udp ? EPOLLIN | EPOLLET | EPOLLONESHOT : EPOLLIN);
+	set_epoll_descriptor(kdpfd, EPOLL_CTL_ADD, efd[0], EPOLLIN);
+	set_epoll_descriptor(kdpfd, EPOLL_CTL_ADD, refd[0], EPOLLIN);
+	set_epoll_descriptor(kdpfd, EPOLL_CTL_ADD, tunfd,
+			     EPOLLIN | EPOLLET | EPOLLONESHOT);
 	curfds = 4;
 
 	trie_init();
 
 	cpus = get_number_cpus_online();
 	threads = cpus * THREADS_PER_CPU;
-	if (!((threads != 0) && ((threads & (threads - 1)) == 0)))
+	if (!ispow2(threads))
 		syslog_panic("Thread number not power of two!\n");
 
 	threadpool = xzmalloc(sizeof(*threadpool) * threads);
-
 	thread_spawn_or_panic(cpus, efd[1], refd[1], tunfd, ipv4, udp);
 
 	init_cpusched(threads);
@@ -859,45 +729,32 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4, int log)
 				set_nonblocking(nfd);
 				set_socket_keepalive(nfd);
 				set_tcp_nodelay(nfd);
-
-				memset(&ev, 0, sizeof(ev));
-				ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
-				ev.data.fd = nfd;
-
-				ret = epoll_ctl(kdpfd, EPOLL_CTL_ADD, nfd, &ev);
+				ret = set_epoll_descriptor2(kdpfd, EPOLL_CTL_ADD,
+						nfd, EPOLLIN | EPOLLET | EPOLLONESHOT);
 				if (ret < 0) {
-					syslog(LOG_ERR, "Epoll ctl add error"
-					       "on id %d: %s\n", nfd,
-					       strerror(errno));
 					close(nfd);
 					curfds--;
-
 					continue;
 				}
 			} else if (events[i].data.fd == refd[0]) {
 				int fd_one;
 
-				ret = read_exact(refd[0], &fd_one, sizeof(fd_one), 1);
+				ret = read_exact(refd[0], &fd_one,
+						 sizeof(fd_one), 1);
 				if (ret != sizeof(fd_one) || fd_one <= 0)
 					continue;
 
-				memset(&ev, 0, sizeof(ev));
-				ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
-				ev.data.fd = fd_one;
-
-				ret = epoll_ctl(kdpfd, EPOLL_CTL_MOD, fd_one, &ev);
+				ret = set_epoll_descriptor2(kdpfd, EPOLL_CTL_MOD,
+						fd_one, EPOLLIN | EPOLLET | EPOLLONESHOT);
 				if (ret < 0) {
-					syslog(LOG_ERR, "Epoll ctl mod "
-					       "error on id %d: %s\n",
-					       fd_one, strerror(errno));
 					close(fd_one);
-
 					continue;
 				}
 			} else if (events[i].data.fd == efd[0]) {
 				int fd_del, test;
 
-				ret = read_exact(efd[0], &fd_del, sizeof(fd_del), 1);
+				ret = read_exact(efd[0], &fd_del,
+						 sizeof(fd_del), 1);
 				if (ret != sizeof(fd_del) || fd_del <= 0)
 					continue;
 
@@ -905,11 +762,9 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4, int log)
 				if (ret < 0 && errno == EBADF)
 					continue;
 
-				ret = epoll_ctl(kdpfd, EPOLL_CTL_DEL, fd_del, &ev);
+				ret = set_epoll_descriptor2(kdpfd, EPOLL_CTL_DEL,
+						fd_del, 0);
 				if (ret < 0) {
-					syslog(LOG_ERR, "Epoll ctl del "
-					       "error on id %d: %s\n",
-					       fd_del, strerror(errno));
 					close(fd_del);
 					continue;
 				}
@@ -929,11 +784,8 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4, int log)
 				else
 					udp_cpu = (udp_cpu + 1) & (threads - 1);
 
-				ret = write_exact(threadpool[udp ? udp_cpu : cpu].efd[1],
-						  &fd_work, sizeof(fd_work), 1);
-				if (ret != sizeof(fd_work))
-					syslog(LOG_ERR, "Write error on event "
-					       "dispatch: %s\n", strerror(errno));
+				write_exact(threadpool[udp ? udp_cpu : cpu].efd[1],
+					    &fd_work, sizeof(fd_work), 1);
 			}
 		}
 	}
