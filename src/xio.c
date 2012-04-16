@@ -41,6 +41,12 @@ int open_or_die_m(const char *file, int flags, mode_t mode)
 	return ret;
 }
 
+void create_or_die(const char *file, mode_t mode)
+{
+	int fd = open_or_die_m(file, O_WRONLY | O_CREAT, mode);
+	close(fd);
+}
+
 int tun_open_or_die(char *name, int type)
 {
 	int fd, ret;

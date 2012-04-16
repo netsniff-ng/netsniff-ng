@@ -371,9 +371,7 @@ static void write_username(char *home)
 	if (strlen(user) == 0)
 		strlcpy(user, getenv("USER"), sizeof(user));
 
-	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-	if (fd < 0)
-		panic("Cannot open your username file!\n");
+	fd = open_or_die_m(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 
 	ret = write(fd, user, strlen(user));
 	if (ret != strlen(user))
@@ -386,7 +384,7 @@ static void write_username(char *home)
 
 static void create_curvedir(char *home)
 {
-	int ret, fd;
+	int ret;
 	char path[PATH_MAX];
 
 	memset(path, 0, sizeof(path));
@@ -404,20 +402,14 @@ static void create_curvedir(char *home)
 	memset(path, 0, sizeof(path));
 	slprintf(path, sizeof(path), "%s/%s", home, FILE_CLIENTS);
 
-	fd = open(path, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
-	if (fd < 0)
-		panic("Cannot open clients file!\n");
-	close(fd);
+	create_or_die(path, S_IRUSR | S_IWUSR);
 
 	printf("Empty client file written to %s!\n", path);
 
 	memset(path, 0, sizeof(path));
 	slprintf(path, sizeof(path), "%s/%s", home, FILE_SERVERS);
 
-	fd = open(path, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
-	if (fd < 0)
-		panic("Cannot open servers file!\n");
-	close(fd);
+	create_or_die(path, S_IRUSR | S_IWUSR);
 
 	printf("Empty server file written to %s!\n", path);
 }
