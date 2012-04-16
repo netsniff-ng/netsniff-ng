@@ -658,7 +658,8 @@ static void daemonize(const char *lockfile)
 
 	umask(lperm);
 	if (lockfile) {
-		lfp = open(lockfile, O_RDWR | O_CREAT | O_EXCL, 0640);
+		lfp = open(lockfile, O_RDWR | O_CREAT | O_EXCL,
+			   S_IRUSR | S_IWUSR | S_IRGRP);
 		if (lfp < 0)
 			syslog_panic("Cannot create lockfile at %s! "
 				     "curvetun server already running?\n",
