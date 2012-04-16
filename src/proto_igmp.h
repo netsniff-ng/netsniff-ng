@@ -37,16 +37,18 @@ struct igmp_v0_msg {
 /* IGMPv1 (RFC-1054/RFC-1112, obsoletes RFC-988) */
 struct igmp_v1_msg {
 	union {
+		uint8_t version__type;
+		struct {
 #if defined(__LITTLE_ENDIAN_BITFIELD)
-		uint8_t type:4,
-			version:4;
+			uint8_t type    :4,
+				version :4;
 #elif defined(__BIG_ENDIAN_BITFIELD)
-		uint8_t version:4,
-			type:4;
+			uint8_t version :4,
+				type    :4;
 #else
 # error "Please fix <asm/byteorder.h>"
 #endif
-		uint8_t version__type;
+		};
 	};
 	uint8_t  unused; /* always zero */
 	uint16_t checksum;
@@ -75,10 +77,10 @@ struct igmp_v2_msg {
  * The RGMP message format resembles the IGMPv2 message format. All RGMP
  * messages are sent with TTL 1, to destination address 224.0.0.25.
  */
-#define RGMP_LEAVE_GROUP 0xfc
-#define RGMP_JOIN_GROUP  0xfd
-#define RGMP_BYE         0xfe
-#define RGMP_HELLO       0xff
+#define RGMP_LEAVE_GROUP 0xFC
+#define RGMP_JOIN_GROUP  0xFD
+#define RGMP_BYE         0xFE
+#define RGMP_HELLO       0xFF
 
 /* IGMPv3 (RFC-3376) */
 struct igmp_v3_group_record {
@@ -113,13 +115,13 @@ struct igmp_v3_membership_query {
 	uint16_t checksum;
 	uint32_t group_address;
 #if defined(__LITTLE_ENDIAN_BITFIELD)
-	uint8_t  qrv:3,
-		 s_flag:1,
-		 reserved:4;
+	uint8_t qrv    :3,
+		s_flag :1,
+		       :4;
 #elif defined(__BIG_ENDIAN_BITFIELD)
-	uint8_t  reserved:4,
-		 s_flag:1,
-		 qrv:3;
+	uint8_t        :4,
+		s_flag :1,
+		qrv    :3;
 #else
 # error "Please fix <asm/byteorder.h>"
 #endif
