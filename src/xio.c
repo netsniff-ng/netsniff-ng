@@ -5,6 +5,7 @@
  * Subject to the GPL, version 2.
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -45,6 +46,13 @@ void create_or_die(const char *file, mode_t mode)
 {
 	int fd = open_or_die_m(file, O_WRONLY | O_CREAT, mode);
 	close(fd);
+}
+
+void pipe_or_die(int pipefd[2], int flags)
+{
+	int ret = pipe2(pipefd, flags);
+        if (ret < 0)
+                panic("Cannot create pipe2 event fd!\n");
 }
 
 int tun_open_or_die(char *name, int type)

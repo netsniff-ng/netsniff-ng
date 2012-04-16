@@ -220,8 +220,8 @@ close:
 			return keep;
 		}
 		if (hdr->flags & PROTO_FLAG_INIT) {
-			if (auth_log)
-				syslog(LOG_INFO, "Got initial userhash from remote end!\n");
+			syslog_maybe(auth_log, LOG_INFO, "Got initial userhash "
+				     "from remote end!\n");
 
 			if (unlikely(rlen - sizeof(*hdr) <
 				     sizeof(struct username_struct)))
@@ -460,8 +460,9 @@ close:
 			return keep;
 		}
 		if (hdr->flags & PROTO_FLAG_INIT) {
-			if (auth_log)
-				syslog(LOG_INFO, "Got initial userhash from remote end!\n");
+			syslog_maybe(auth_log, LOG_INFO, "Got initial userhash "
+				     "from remote end!\n");
+
 			if (unlikely(rlen - sizeof(*hdr) <
 				     sizeof(struct username_struct)))
 				goto close;
@@ -661,7 +662,7 @@ static void thread_finish(unsigned int cpus)
 
 int server_main(char *home, char *dev, char *port, int udp, int ipv4, int log)
 {
-	int lfd = -1, kdpfd, nfds, nfd, curfds, efd[2], refd[2], tunfd, i, mtu;
+	int lfd = -1, kdpfd, nfds, nfd, curfds, efd[2], refd[2], tunfd, i;
 	unsigned int cpus = 0, threads, udp_cpu = 0;
 	ssize_t ret;
 	struct epoll_event ev, *events;
@@ -669,9 +670,9 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4, int log)
 
 	auth_log = !!log;
 	openlog("curvetun", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_DAEMON);
+
 	syslog(LOG_INFO, "curvetun server booting!\n");
-	if (!auth_log)
-		syslog(LOG_INFO, "curvetun user logging disabled!\n");
+	syslog_maybe(!auth_log, LOG_INFO, "curvetun user logging disabled!\n");
 
 	parse_userfile_and_generate_user_store_or_die(home);
 
@@ -690,10 +691,8 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4, int log)
 		if (lfd < 0)
 			continue;
 		if (ai->ai_family == AF_INET6) {
-			int one = 1;
 #ifdef IPV6_V6ONLY
-			ret = setsockopt(lfd, IPPROTO_IPV6, IPV6_V6ONLY,
-					 &one, sizeof(one));
+			ret = set_ipv6_only(lfd);
 			if (ret < 0) {
 				close(lfd);
 				lfd = -1;
@@ -707,9 +706,7 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4, int log)
 		}
 
 		set_reuseaddr(lfd);
-
-		mtu = IP_PMTUDISC_DONT;
-		setsockopt(lfd, SOL_IP, IP_MTU_DISCOVER, &mtu, sizeof(mtu));
+		set_mtu_disc_dont(lfd);
 
 		ret = bind(lfd, ai->ai_addr, ai->ai_addrlen);
 		if (ret < 0) {
@@ -726,17 +723,17 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4, int log)
 				continue;
 			}
 		}
+
 		if (ipv4 == -1) {
 			ipv4 = (ai->ai_family == AF_INET6 ? 0 :
 				(ai->ai_family == AF_INET ? 1 : -1));
 		}
-		if (auth_log) {
-			syslog(LOG_INFO, "curvetun on IPv%d via %s on port %s!\n",
-			       ai->ai_family == AF_INET ? 4 : 6,
-			       udp ? "UDP" : "TCP", port);
-			syslog(LOG_INFO, "Allowed overlay proto is IPv%d!\n",
-			       ipv4 ? 4 : 6);
-		}
+
+		syslog_maybe(auth_log, LOG_INFO, "curvetun on IPv%d via %s "
+			     "on port %s!\n", ai->ai_family == AF_INET ? 4 : 6,
+			     udp ? "UDP" : "TCP", port);
+		syslog_maybe(auth_log, LOG_INFO, "Allowed overlay proto is "
+			     "IPv%d!\n", ipv4 ? 4 : 6);
 	}
 
 	freeaddrinfo(ahead);
@@ -746,13 +743,8 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4, int log)
 
 	tunfd = tun_open_or_die(dev ? dev : DEVNAME_SERVER, IFF_TUN | IFF_NO_PI);
 
-	ret = pipe2(efd, O_NONBLOCK);
-	if (ret < 0)
-		syslog_panic("Cannot create parent event fd!\n");
-
-	ret = pipe2(refd, O_NONBLOCK);
-	if (ret < 0)
-		syslog_panic("Cannot create parent (r)event fd!\n");
+	pipe_or_die(efd, O_NONBLOCK);
+	pipe_or_die(refd, O_NONBLOCK);
 
 	set_nonblocking(lfd);
 
@@ -829,7 +821,7 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4, int log)
 				continue;
 
 			if (events[i].data.fd == lfd && !udp) {
-				int one, ncpu;
+				int ncpu;
 				char hbuff[256], sbuff[256];
 				struct sockaddr_storage taddr;
 				socklen_t tlen;
@@ -859,24 +851,16 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4, int log)
 					    sbuff, sizeof(sbuff),
 					    NI_NUMERICHOST | NI_NUMERICSERV);
 
-				if (auth_log) {
-					syslog(LOG_INFO, "New connection from %s:%s "
-					       "with id %d on CPU%d, %d active!\n",
-					       hbuff, sbuff, nfd, ncpu, curfds);
-				}
+				syslog_maybe(auth_log, LOG_INFO, "New connection "
+					     "from %s:%s with id %d on CPU%d, %d "
+					     "active!\n", hbuff, sbuff, nfd, ncpu,
+					     curfds);
 
 				set_nonblocking(nfd);
-
-				one = 1;
-				setsockopt(nfd, SOL_SOCKET, SO_KEEPALIVE,
-					   &one, sizeof(one));
-
-				one = 1;
-				setsockopt(nfd, IPPROTO_TCP, TCP_NODELAY,
-					   &one, sizeof(one));
+				set_socket_keepalive(nfd);
+				set_tcp_nodelay(nfd);
 
 				memset(&ev, 0, sizeof(ev));
-
 				ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
 				ev.data.fd = nfd;
 
@@ -931,16 +915,12 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4, int log)
 				}
 
 				close(fd_del);
-
 				curfds--;
-
 				unregister_socket(fd_del);
 
-				if (auth_log) {
-					syslog(LOG_INFO, "Closed connection with "
-					       "id %d, %d active!\n",
-					       fd_del, curfds);
-				}
+				syslog_maybe(auth_log, LOG_INFO, "Closed connection "
+					     "with id %d, %d active!\n", fd_del,
+					     curfds);
 			} else {
 				int cpu, fd_work = events[i].data.fd;
 

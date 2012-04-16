@@ -121,6 +121,24 @@ int set_nonblocking_sloppy(int fd)
 	return fcntl(fd, F_SETFL, fcntl(fd, F_GETFD, 0) | O_NONBLOCK);
 }
 
+void set_socket_keepalive(int fd)
+{
+	int one = 1;
+	setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &one, sizeof(one));
+}
+
+void set_tcp_nodelay(int fd)
+{
+	int one = 1;
+	setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
+}
+
+int set_ipv6_only(int fd)
+{
+	int one = 1;
+	return setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &one, sizeof(one));
+}
+
 int set_reuseaddr(int fd)
 {
 	int ret, one = 1;
@@ -130,6 +148,12 @@ int set_reuseaddr(int fd)
 		panic("Cannot reuse addr!\n");
 
 	return 0;
+}
+
+void set_mtu_disc_dont(int fd)
+{
+	int mtu = IP_PMTUDISC_DONT;
+	setsockopt(fd, SOL_IP, IP_MTU_DISCOVER, &mtu, sizeof(mtu));
 }
 
 int wireless_bitrate(const char *ifname)
