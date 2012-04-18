@@ -95,31 +95,15 @@ static inline void routing(struct pkt_buff *pkt)
 
 static inline void routing_less(struct pkt_buff *pkt)
 {
-// 	uint8_t hdr_ext_len;
-// 	struct routinghdr *routing = (struct routinghdr *) packet;
-// 
-// 	hdr_ext_len = (routing->h_hdr_ext_len + 1) * 8;
-// 	if (len < hdr_ext_len || len < sizeof(struct routinghdr))
-// 		return;
-// 
-// 	tprintf(" Routing Type %u", routing->h_routing_type);
-}
+	struct routinghdr *routing = (struct routinghdr *) pkt_pull(pkt, sizeof(*routing));
+	
+	if (routing == NULL)
+		return;
+	
+	tprintf(" Routing ");
+	tprintf("Addresses (%u)", routing->h_hdr_ext_len * 8 / sizeof(struct ipv6_adrr));
 
-// static inline void routing_next(uint8_t *packet, size_t len,
-// 			     struct hash_table **table,
-// 			     unsigned int *key, size_t *off)
-// {
-// 	uint8_t hdr_ext_len;
-// 	struct routinghdr *routing = (struct routinghdr *) packet;
-// 
-// 	hdr_ext_len = (routing->h_hdr_ext_len + 1) * 8;
-// 	if (len < hdr_ext_len || len < sizeof(struct routinghdr))
-// 		return;
-// 
-// 	(*off) = hdr_ext_len;
-// 	(*key) = routing->h_next_header;
-// 	(*table) = &eth_lay3;
-// }
+}
 
 struct protocol ipv6_routing_ops = {
 	.key = 0x2B,
