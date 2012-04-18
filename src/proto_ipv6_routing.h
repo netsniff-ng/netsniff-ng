@@ -17,6 +17,8 @@
 #include "proto_struct.h"
 #include "dissector_eth.h"
 
+#define ROUTING_HEADER_TYPE_0 0x00
+
 struct routinghdr {
 	uint8_t h_next_header;
 	uint8_t h_hdr_ext_len;
@@ -24,70 +26,105 @@ struct routinghdr {
 	uint8_t h_segments_left;
 } __attribute__((packed));
 
-static inline void routing(uint8_t *packet, size_t len)
+struct routinghdr_0 {
+	uint32_t reserved;
+	uint32_t addresses[0];
+} __attribute__((packed));
+
+struct ipv6_adrr {
+	uint32_t first_block;
+	uint32_t second_block;
+	uint32_t third_block;
+	uint32_t fourth_block;
+} __attribute__((packed));
+
+static inline void dissect_routinghdr_type_0(struct pkt_buff *pkt, uint8_t *hdr_ext_len)
+{
+	char address[INET6_ADDRSTRLEN];
+	struct ipv6_adrr *addr;
+	uint8_t num_addr = *hdr_ext_len * 8 / sizeof(* addr);
+	
+  	struct routinghdr_0 *routing_0 = (struct routinghdr_0 *) pkt_pull(pkt, sizeof(*routing_0));
+	
+	if (routing_0 == NULL)
+		return;
+	
+	tprintf("Res (%x)", routing_0->reserved);
+	
+	while (num_addr--) {
+		addr = (struct ipv6_adrr *) pkt_pull(pkt, sizeof(*addr));
+		
+		if (addr == NULL)
+			return;
+		
+		tprintf("\n\t   Address: ");
+		tprintf("%s", inet_ntop(AF_INET6, addr,
+			address, sizeof(address)));
+		
+	}	
+}
+
+static inline void routing(struct pkt_buff *pkt)
 {
 	uint8_t hdr_ext_len;
-	struct routinghdr *routing = (struct routinghdr *) packet;
+	struct routinghdr *routing = (struct routinghdr *) pkt_pull(pkt, sizeof(*routing));
 	
+	/* Total Header Length in Bytes */
 	hdr_ext_len = (routing->h_hdr_ext_len + 1) * 8;
-	if (len < hdr_ext_len || len < sizeof(struct routinghdr))
+	if (routing == NULL)
 		return;
 
 	tprintf("\t [ Routing ");
 	tprintf("NextHdr (%u), ", routing->h_next_header);
-	tprintf("HdrExtLen (%u), ", hdr_ext_len);
+	tprintf("HdrExtLen (%u, %u Bytes), ", routing->h_hdr_ext_len, hdr_ext_len);
 	tprintf("Type (%u), ", routing->h_routing_type);
 	tprintf("Left (%u), ", routing->h_segments_left);
-	if(routing->h_routing_type == 0) {
-		char address[INET6_ADDRSTRLEN];
-		for (int i = sizeof(struct routinghdr) + 4;
-		     i < hdr_ext_len; i += 16) {
-			tprintf("\n\t   Address: ");
-			tprintf("%s", inet_ntop(AF_INET6, &packet[i],
-				address, sizeof(address)));
-		}
-	} else {
-		tprintf("Appendix 0x");
-		for (uint8_t i = sizeof(struct routinghdr);
-		     i < hdr_ext_len; i++)
-			tprintf("%02x",(uint8_t) packet[i]);
+	
+	switch (routing->h_routing_type) {
+	  case ROUTING_HEADER_TYPE_0:
+		dissect_routinghdr_type_0(pkt, &routing->h_hdr_ext_len);
+		break;
+	  default:
+		tprintf("Type %u is unknown", routing->h_routing_type);
 	}
+
 	tprintf(" ]\n");
+	
+	pkt_set_proto(pkt, &eth_lay3, routing->h_next_header);
 }
 
-static inline void routing_less(uint8_t *packet, size_t len)
+static inline void routing_less(struct pkt_buff *pkt)
 {
-	uint8_t hdr_ext_len;
-	struct routinghdr *routing = (struct routinghdr *) packet;
-
-	hdr_ext_len = (routing->h_hdr_ext_len + 1) * 8;
-	if (len < hdr_ext_len || len < sizeof(struct routinghdr))
-		return;
-
-	tprintf(" Routing Type %u", routing->h_routing_type);
+// 	uint8_t hdr_ext_len;
+// 	struct routinghdr *routing = (struct routinghdr *) packet;
+// 
+// 	hdr_ext_len = (routing->h_hdr_ext_len + 1) * 8;
+// 	if (len < hdr_ext_len || len < sizeof(struct routinghdr))
+// 		return;
+// 
+// 	tprintf(" Routing Type %u", routing->h_routing_type);
 }
 
-static inline void routing_next(uint8_t *packet, size_t len,
-			     struct hash_table **table,
-			     unsigned int *key, size_t *off)
-{
-	uint8_t hdr_ext_len;
-	struct routinghdr *routing = (struct routinghdr *) packet;
-
-	hdr_ext_len = (routing->h_hdr_ext_len + 1) * 8;
-	if (len < hdr_ext_len || len < sizeof(struct routinghdr))
-		return;
-
-	(*off) = hdr_ext_len;
-	(*key) = routing->h_next_header;
-	(*table) = &eth_lay3;
-}
+// static inline void routing_next(uint8_t *packet, size_t len,
+// 			     struct hash_table **table,
+// 			     unsigned int *key, size_t *off)
+// {
+// 	uint8_t hdr_ext_len;
+// 	struct routinghdr *routing = (struct routinghdr *) packet;
+// 
+// 	hdr_ext_len = (routing->h_hdr_ext_len + 1) * 8;
+// 	if (len < hdr_ext_len || len < sizeof(struct routinghdr))
+// 		return;
+// 
+// 	(*off) = hdr_ext_len;
+// 	(*key) = routing->h_next_header;
+// 	(*table) = &eth_lay3;
+// }
 
 struct protocol ipv6_routing_ops = {
 	.key = 0x2B,
 	.print_full = routing,
 	.print_less = routing_less,
-	.proto_next = routing_next,
 };
 
 #endif /* ROUTING_H */

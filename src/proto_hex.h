@@ -32,7 +32,7 @@ static inline void hex_pay(struct pkt_buff *pkt)
 	tprintf("]\n");
 	tprintf(" [ Payload chr ");
 	for (buff = packet, plen = len; plen-- > 0; buff++)
-		tprintf("%c ", isprint(*buff) ? *buff : '.');
+		tprintf("%c  ", isprint(*buff) ? *buff : '.');
 	tprintf("]\n\n");
 }
 
