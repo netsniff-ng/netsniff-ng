@@ -5,8 +5,8 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef HEX_H
-#define HEX_H
+#ifndef PROTO_HEX_H
+#define PROTO_HEX_H
 
 #include <stdio.h>
 #include <stdint.h>
@@ -71,4 +71,4 @@ struct protocol hex_ops = {
 	.print_less = hex_none_newline,
 };
 
-#endif /* HEX_H */
+#endif /* PROTO_HEX_H */

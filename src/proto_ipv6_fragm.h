@@ -6,8 +6,8 @@
  * IPv6 Fragmentation Header described in RFC2460
  */
 
-#ifndef FRAGM_H
-#define FRAGM_H
+#ifndef PROTO_IPV6_FRAGM_H
+#define PROTO_IPV6_FRAGM_H
 
 #include <stdio.h>
 #include <stdint.h>
@@ -15,13 +15,14 @@
 
 #include "proto_struct.h"
 #include "dissector_eth.h"
+#include "built_in.h"
 
 struct fragmhdr {
 	uint8_t h_fragm_next_header;
 	uint8_t h_fragm_reserved;
 	uint16_t h_fragm_off_res_M;	
 	uint32_t h_fragm_identification;
-} __attribute__((packed));
+} __packed;
 
 static inline void fragm(uint8_t *packet, size_t len)
 {
@@ -75,4 +76,4 @@ struct protocol ipv6_fragm_ops = {
 	.proto_next = fragm_next,
 };
 
-#endif /* FRAGM_H */
+#endif /* PROTO_IPV6_FRAGM_H */

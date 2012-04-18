@@ -5,8 +5,8 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef ARP_H
-#define ARP_H
+#ifndef PROTO_ARP_H
+#define PROTO_ARP_H
 
 #include <stdint.h>
 #include <stdint.h>
@@ -15,6 +15,7 @@
 #include "proto_struct.h"
 #include "dissector_eth.h"
 #include "pkt_buff.h"
+#include "built_in.h"
 
 struct arphdr {
 	uint16_t ar_hrd;   /* format of hardware address */
@@ -26,7 +27,7 @@ struct arphdr {
 	uint8_t ar_sip[4]; /* sender IP address          */
 	uint8_t ar_tha[6]; /* target hardware address    */
 	uint8_t ar_tip[4]; /* target IP address          */
-} __attribute__((packed));
+} __packed;
 
 #define ARPOP_REQUEST   1  /* ARP request                */
 #define ARPOP_REPLY     2  /* ARP reply                  */
@@ -124,4 +125,4 @@ struct protocol arp_ops = {
 	.print_less = arp_less,
 };
 
-#endif /* ARP_H */
+#endif /* PROTO_ARP_H */

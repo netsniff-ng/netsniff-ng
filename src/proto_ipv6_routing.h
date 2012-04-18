@@ -16,6 +16,7 @@
 
 #include "proto_struct.h"
 #include "dissector_eth.h"
+#include "built_in.h"
 
 #define ROUTING_HEADER_TYPE_0	0x00
 
@@ -24,19 +25,19 @@ struct routinghdr {
 	uint8_t h_hdr_ext_len;
 	uint8_t h_routing_type;
 	uint8_t h_segments_left;
-} __attribute__((packed));
+} __packed;
 
 struct routinghdr_0 {
 	uint32_t reserved;
 	uint32_t addresses[0];
-} __attribute__((packed));
+} __packed;
 
 struct ipv6_adrr {
 	uint32_t first_block;
 	uint32_t second_block;
 	uint32_t third_block;
 	uint32_t fourth_block;
-} __attribute__((packed));
+} __packed;
 
 static inline void dissect_routinghdr_type_0(struct pkt_buff *pkt,
 					     uint8_t *hdr_ext_len)

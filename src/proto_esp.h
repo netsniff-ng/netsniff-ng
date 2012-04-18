@@ -6,8 +6,8 @@
  * Encapsulating Security Payload described in RFC4303
  */
 
-#ifndef ESP_H
-#define ESP_H
+#ifndef PROTO_ESP_H
+#define PROTO_ESP_H
 
 #include <stdio.h>
 #include <stdint.h>
@@ -15,11 +15,12 @@
 
 #include "proto_struct.h"
 #include "dissector_eth.h"
+#include "built_in.h"
 
 struct esphdr {
 	uint32_t h_spi;
 	uint32_t h_sn;
-} __attribute__((packed));
+} __packed;
 
 static inline void esp(uint8_t *packet, size_t len)
 {
@@ -60,4 +61,4 @@ struct protocol esp_ops = {
 	.proto_next = esp_next,
 };
 
-#endif /* ESP_H */
+#endif /* PROTO_ESP_H */

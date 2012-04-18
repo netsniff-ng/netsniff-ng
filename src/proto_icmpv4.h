@@ -5,8 +5,8 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef ICMP_H
-#define ICMP_H
+#ifndef PROTO_ICMP_H
+#define PROTO_ICMP_H
 
 #include <stdio.h>
 #include <stdint.h>
@@ -15,6 +15,7 @@
 #include "proto_struct.h"
 #include "dissector_eth.h"
 #include "pkt_buff.h"
+#include "built_in.h"
 
 struct icmphdr {
 	uint8_t type;
@@ -31,7 +32,7 @@ struct icmphdr {
 			uint16_t mtu;
 		} frag;
 	} un;
-} __attribute__((packed));
+} __packed;
 
 static inline void icmp(struct pkt_buff *pkt)
 {
@@ -63,4 +64,4 @@ struct protocol icmp_ops = {
 	.print_less = icmp_less,
 };
 
-#endif /* ICMP_H */
+#endif /* PROTO_ICMP_H */

@@ -6,8 +6,8 @@
  * IPv6 No Next Header described in RFC2460
  */
 
-#ifndef NO_NEXT_HEADER_H
-#define NO_NEXT_HEADER_H
+#ifndef PROTO_IPV6_NO_NXT_HDR_H
+#define PROTO_IPV6_NO_NXT_HDR_H
 
 #include <stdio.h>
 #include <stdint.h>
@@ -32,4 +32,4 @@ struct protocol ipv6_no_next_header_ops = {
 	.proto_next = no_next_header_next,
 };
 
-#endif /* NO_NEXT_HEADER_H */
+#endif /* PROTO_IPV6_NO_NXT_HDR_H */

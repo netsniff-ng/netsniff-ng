@@ -6,8 +6,8 @@
  * IPv6 Destination Options Header described in RFC2460
  */
 
-#ifndef DESTINATION_OPTIONS_H
-#define DESTINATION_OPTIONS_H
+#ifndef PROTO_IPV6_DEST_OPTS_H
+#define PROTO_IPV6_DEST_OPTS_H
 
 #include <stdio.h>
 #include <stdint.h>
@@ -15,12 +15,13 @@
 
 #include "proto_struct.h"
 #include "dissector_eth.h"
+#include "built_in.h"
 
 struct dest_optshdr {
 	uint8_t h_next_header;
 	uint8_t h_hdr_ext_len;
 	uint8_t h_dest_option_type;
-} __attribute__((packed));
+} __packed;
 
 static inline void dest_opts(uint8_t *packet, size_t len)
 {
@@ -76,4 +77,4 @@ struct protocol ipv6_dest_opts_ops = {
 	.proto_next = dest_opts_next,
 };
 
-#endif /* DESTINATION_OPTIONS_H */
+#endif /* PROTO_IPV6_DEST_OPTS_H */

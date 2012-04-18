@@ -6,8 +6,8 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef IPV6_H
-#define IPV6_H
+#ifndef PROTO_IPV6_H
+#define PROTO_IPV6_H
 
 #include <stdio.h>
 #include <stdint.h>
@@ -19,6 +19,7 @@
 #include "proto_struct.h"
 #include "dissector_eth.h"
 #include "pkt_buff.h"
+#include "built_in.h"
 
 /*
  * IPv6 fixed header
@@ -42,7 +43,7 @@ struct ipv6hdr {
 	uint8_t hop_limit;
 	struct in6_addr saddr;
 	struct in6_addr daddr;
-} __attribute__((packed));
+} __packed;
 
 static inline void ipv6(struct pkt_buff *pkt)
 {
@@ -100,4 +101,4 @@ struct protocol ipv6_ops = {
 	.print_less = ipv6_less,
 };
 
-#endif /* IPV6_H */
+#endif /* PROTO_IPV6_H */

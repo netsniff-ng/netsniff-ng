@@ -8,8 +8,8 @@
  * RFC4286
  */
 
-#ifndef ICMPV6_H
-#define ICMPV6_H
+#ifndef PROTO_ICMPV6_H
+#define PROTO_ICMPV6_H
 
 #include <stdio.h>
 #include <stdint.h>
@@ -20,12 +20,13 @@
 #include "proto_struct.h"
 #include "dissector_eth.h"
 #include "pkt_buff.h"
+#include "built_in.h"
 
 struct icmpv6hdr {
 	uint8_t h_type;
 	uint8_t h_code;
 	uint16_t h_chksum;
-} __attribute__((packed));
+} __packed;
 
 static char *icmpv6_type_1_strings[] = {
 	"No route to destination",
@@ -201,4 +202,4 @@ struct protocol icmpv6_ops = {
 	.print_less = icmpv6_less,
 };
 
-#endif /* ICMPV6_H */
+#endif /* PROTO_ICMPV6_H */

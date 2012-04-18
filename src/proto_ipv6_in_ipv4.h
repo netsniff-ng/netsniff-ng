@@ -6,8 +6,8 @@
  * IPv6 in IPv4 encapsulation described in RFC3056
  */
 
-#ifndef IP6_IN_IP4_H
-#define IP6_IN_IP4_H
+#ifndef PROTO_IP6_IN_IP4_H
+#define PROTO_IP6_IN_IP4_H
 
 #include <stdio.h>
 #include <stdint.h>
@@ -23,4 +23,4 @@ struct protocol ipv6_in_ipv4_ops = {
 	.proto_next = ipv6_next,
 };
 
-#endif /* IP6_IN_IP4_H */
+#endif /* PROTO_IP6_IN_IP4_H */

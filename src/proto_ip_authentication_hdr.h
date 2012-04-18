@@ -6,8 +6,8 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef AUTHENTICATION_HEADER_H
-#define AUTHENTICATION_HEADER_H
+#ifndef PROTO_IP_AUTHENTICATION_HDR_H
+#define PROTO_IP_AUTHENTICATION_HDR_H
 
 #include <stdio.h>
 #include <stdint.h>
@@ -15,6 +15,7 @@
 
 #include "proto_struct.h"
 #include "dissector_eth.h"
+#include "built_in.h"
 
 struct auth_hdrhdr {
 	uint8_t h_next_header;
@@ -22,7 +23,7 @@ struct auth_hdrhdr {
 	uint16_t h_reserved;
 	uint32_t h_spi;
 	uint32_t h_snf;
-} __attribute__((packed));
+} __packed;
 
 static inline void auth_hdr(uint8_t *packet, size_t len)
 {
@@ -80,4 +81,4 @@ struct protocol ip_auth_hdr_ops = {
 	.proto_next = auth_hdr_next,
 };
 
-#endif /* AUTHENTICATION_HEADER_H */
+#endif /* PROTO_IP_AUTHENTICATION_HDR_H */

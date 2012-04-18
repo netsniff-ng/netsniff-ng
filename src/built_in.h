@@ -67,6 +67,10 @@
 # define __aligned_tpacket	__attribute__((aligned(TPACKET_ALIGNMENT)))
 #endif
 
+#ifndef __packed
+# define __packed		__attribute__((packed))
+#endif
+
 #ifndef round_up
 # define round_up(x, alignment)	(((x) + (alignment) - 1) & ~((alignment) - 1))
 #endif

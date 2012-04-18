@@ -6,8 +6,8 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef IPV4_H
-#define IPV4_H
+#ifndef PROTO_IPV4_H
+#define PROTO_IPV4_H
 
 #include <stdio.h>
 #include <stdint.h>
@@ -40,7 +40,7 @@ struct ipv4hdr {
 	uint16_t h_check;
 	uint32_t h_saddr;
 	uint32_t h_daddr;
-} __attribute__((packed));
+} __packed;
 
 #define	FRAG_OFF_RESERVED_FLAG(x)      ((x) & 0x8000)
 #define	FRAG_OFF_NO_FRAGMENT_FLAG(x)   ((x) & 0x4000)
@@ -157,4 +157,4 @@ struct protocol ipv4_ops = {
 	.print_less = ipv4_less,
 };
 
-#endif /* IPV4_H */
+#endif /* PROTO_IPV4_H */

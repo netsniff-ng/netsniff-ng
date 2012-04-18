@@ -13,6 +13,7 @@
 
 #include "dissector_eth.h"
 #include "proto_struct.h"
+#include "built_in.h"
 
 /* IGMPv0 (RFC-988) */
 struct igmp_v0_msg {
@@ -22,7 +23,7 @@ struct igmp_v0_msg {
 	uint32_t identifier;
 	uint32_t group_address;
 	uint64_t access_key;
-} __attribute__((packed));
+} __packed;
 
 /* igmp_v0_msg.type */
 #define IGMP_V0_CREATE_GROUP_REQUEST  0x01

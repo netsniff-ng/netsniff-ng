@@ -5,8 +5,8 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef ETHERNET_H
-#define ETHERNET_H
+#ifndef PROTO_ETHERNET_H
+#define PROTO_ETHERNET_H
 
 #include <stdio.h>
 #include <stdint.h>
@@ -83,4 +83,4 @@ struct protocol ethernet_ops = {
 	.print_less = ethernet_less,
 };
 
-#endif /* ETHERNET_H */
+#endif /* PROTO_ETHERNET_H */

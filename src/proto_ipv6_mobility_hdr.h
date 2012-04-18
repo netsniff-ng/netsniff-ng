@@ -6,8 +6,8 @@
  * IPv6 Mobility Header described in RFC6275
  */
 
-#ifndef MOBILITY_HEADER_H
-#define MOBILITY_HEADER_H
+#ifndef PROTO_IPV6_MOBILITY_HDR_H
+#define PROTO_IPV6_MOBILITY_HDR_H
 
 #include <stdio.h>
 #include <stdint.h>
@@ -15,6 +15,7 @@
 
 #include "proto_struct.h"
 #include "dissector_eth.h"
+#include "built_in.h"
 
 struct mobilityhdr {
 	uint8_t h_next_header;
@@ -22,7 +23,7 @@ struct mobilityhdr {
 	uint8_t h_MH_type;
 	uint8_t h_reserved;
 	uint16_t h_checksum;
-} __attribute__((packed));
+} __packed;
 
 static inline void mobility(uint8_t *packet, size_t len)
 {
@@ -80,4 +81,4 @@ struct protocol ipv6_mobility_hdr_ops = {
 	.proto_next = mobility_next,
 };
 
-#endif /* MOBILITY_HEADER_H */
+#endif /* PROTO_IPV6_MOBILITY_HDR_H */

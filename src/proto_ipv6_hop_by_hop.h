@@ -6,8 +6,8 @@
  * IPv6 Hop-By-Hop Header described in RFC2460
  */
 
-#ifndef HOP_BY_HOP_H
-#define HOP_BY_HOP_H
+#ifndef PROTO_IPV6_HOP_BY_HOP_H
+#define PROTO_IPV6_HOP_BY_HOP_H
 
 #include <stdio.h>
 #include <stdint.h>
@@ -15,12 +15,13 @@
 
 #include "proto_struct.h"
 #include "dissector_eth.h"
+#include "built_in.h"
 
 struct hop_by_hophdr {
 	uint8_t h_next_header;
 	uint8_t h_hdr_ext_len;
 	uint8_t h_hdr_option_type;
-} __attribute__((packed));
+} __packed;
 
 static inline void hop_by_hop(uint8_t *packet, size_t len)
 {
@@ -76,4 +77,4 @@ struct protocol ipv6_hop_by_hop_ops = {
 	.proto_next = hop_by_hop_next,
 };
 
-#endif /* HOP_BY_HOP_H */
+#endif /* PROTO_IPV6_HOP_BY_HOP_H */
