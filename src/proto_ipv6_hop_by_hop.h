@@ -1,9 +1,9 @@
 /*
- * IPv6 Hop-By-Hop Header described in RFC2460
- * programmed by Markus Amend 2012 as a contribution to
  * netsniff-ng - the packet sniffing beast
- * Copyright 2012 Markus Amend.
+ * Copyright 2012 Markus Amend <markus@netsniff-ng.org>
  * Subject to the GPL, version 2.
+ *
+ * IPv6 Hop-By-Hop Header described in RFC2460
  */
 
 #ifndef HOP_BY_HOP_H
@@ -73,10 +73,6 @@ struct protocol ipv6_hop_by_hop_ops = {
 	.key = 0x0,
 	.print_full = hop_by_hop,
 	.print_less = hop_by_hop_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = hop_by_hop,
-	.print_all_hex = hex,
 	.proto_next = hop_by_hop_next,
 };
 

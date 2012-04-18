@@ -256,6 +256,7 @@ void get_serv_store_entry_by_alias(char *alias, size_t len,
 		}
 	}
 	rwlock_unlock(&store_lock);
+
 	return;
 nothing:
 	(*host) = NULL;
@@ -266,20 +267,23 @@ nothing:
 struct curve25519_proto *get_serv_store_entry_proto_inf(void)
 {
 	struct curve25519_proto *ret = NULL;
+
 	rwlock_rd_lock(&store_lock);
 	if (selected)
 		ret = &selected->proto_inf;
 	rwlock_unlock(&store_lock);
+
 	return ret;
 }
 
 unsigned char *get_serv_store_entry_auth_token(void)
 {
 	unsigned char *ret = NULL;
+
 	rwlock_rd_lock(&store_lock);
 	if (selected)
 		ret = selected->auth_token;
 	rwlock_unlock(&store_lock);
+
 	return ret;
 }
-

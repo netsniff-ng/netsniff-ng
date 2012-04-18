@@ -9,6 +9,7 @@
 #define BUILT_IN_H
 
 #include <linux/if_packet.h>
+#include <assert.h>
 
 /* /sys/devices/system/cpu/cpuX/cache/indexX/coherency_line_size */
 
@@ -165,7 +166,7 @@
 #endif /* min */
 
 #ifndef ispow2
-#define ispow2(x)		({ !!((x) && !((x) & ((x) - 1))); })
+# define ispow2(x)		({ !!((x) && !((x) & ((x) - 1))); })
 #endif
 
 #ifndef offsetof
@@ -192,6 +193,14 @@
 
 #ifndef build_bug_on_zero
 # define build_bug_on_zero(e)	(sizeof(char[1 - 2 * !!(e)]) - 1)
+#endif
+
+#ifndef bug_on
+# define bug_on(cond)		assert(!(cond))
+#endif
+
+#ifndef bug
+# define bug			assert(0)
 #endif
 
 #endif /* BUILT_IN_H */

@@ -177,7 +177,6 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include <signal.h>
 
 #include "xsys.h"
-#include "stun.h"
 #include "die.h"
 #include "xmalloc.h"
 #include "xstring.h"
@@ -186,12 +185,15 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "usermgmt.h"
 #include "servmgmt.h"
 #include "xio.h"
+#include "tprintf.h"
 #include "crypto_verify_32.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"
 #include "crypto_scalarmult_curve25519.h"
 #include "crypto_auth_hmacsha512256.h"
 
 #define CURVETUN_ENTROPY_SOURCE	"/dev/random"
+
+extern void print_stun_probe(char *server, uint16_t sport, uint16_t tunport);
 
 enum working_mode {
 	MODE_UNKNOW,
@@ -250,7 +252,7 @@ static void help(void)
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: curvetun [options]\n");
-	printf("Options:\n");
+	printf("Options, general:\n");
 	printf("  -k|--keygen             Generate public/private keypair\n");
 	printf("  -x|--export             Export your public data for remote servers\n");
 	printf("  -C|--dumpc              Dump parsed clients\n");
@@ -259,9 +261,9 @@ static void help(void)
 	printf("  -d|--dev <tun>          Networking tunnel device, e.g. tun0\n");
 	printf("  -v|--version            Print version\n");
 	printf("  -h|--help               Print this help\n");
-	printf(" additional options for client:\n");
+	printf("Options for client:\n");
 	printf("  -c|--client[=alias]     Client mode, server alias optional\n");
-	printf(" additional options for servers:\n");
+	printf("Options for servers:\n");
 	printf("  -s|--server             Server mode\n");
 	printf("  -N|--no-logging         Disable server logging (for better anonymity)\n");
 	printf("  -p|--port <num>         Port number (mandatory)\n");
@@ -272,7 +274,7 @@ static void help(void)
 	printf("                          (default: same as carrier protocol)\n");
 	printf("\n");
 	printf("Example:\n");
-	printf("  See README.curvetun for a configuration example.\n");
+	printf("  See Documentation/Curvetun for a configuration example.\n");
 	printf("  curvetun --keygen\n");
 	printf("  curvetun --export\n");
 	printf("  curvetun --server -4 -u -N --port 6666 --stun stunserver.org\n");
@@ -311,16 +313,21 @@ static void check_file_or_die(char *home, char *file, int maybeempty)
 {
 	char path[PATH_MAX];
 	struct stat st;
+
 	memset(path, 0, sizeof(path));
 	slprintf(path, sizeof(path), "%s/%s", home, file);
+
 	if (stat(path, &st))
 		panic("No such file %s! Type --help for further information\n",
 		      path);
+
 	if (!S_ISREG(st.st_mode))
 		panic("%s is not a regular file!\n", path);
+
 	if ((st.st_mode & ~S_IFREG) != (S_IRUSR | S_IWUSR))
 		panic("You have set too many permissions on %s (%o)!\n",
 		      path, st.st_mode);
+
 	if (maybeempty == 0 && st.st_size == 0)
 		panic("%s is empty!\n", path);
 }
@@ -329,6 +336,7 @@ static void check_config_exists_or_die(char *home)
 {
 	if (!home)
 		panic("No home dir specified!\n");
+
 	check_file_or_die(home, FILE_CLIENTS, 1);
 	check_file_or_die(home, FILE_SERVERS, 1);
 	check_file_or_die(home, FILE_PRIVKEY, 0);
@@ -349,51 +357,60 @@ static void write_username(char *home)
 	int fd, ret;
 	char path[PATH_MAX], *eof;
 	char user[512];
+
 	memset(path, 0, sizeof(path));
 	slprintf(path, sizeof(path), "%s/%s", home, FILE_USERNAM);
+
 	printf("Username: [%s] ", getenv("USER"));
 	fflush(stdout);
+
 	memset(user, 0, sizeof(user));
 	eof = fgets(user, sizeof(user), stdin);
 	user[sizeof(user) - 1] = 0;
 	user[strlen(user) - 1] = 0; /* omit last \n */
 	if (strlen(user) == 0)
 		strlcpy(user, getenv("USER"), sizeof(user));
-	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-	if (fd < 0)
-		panic("Cannot open your username file!\n");
+
+	fd = open_or_die_m(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+
 	ret = write(fd, user, strlen(user));
 	if (ret != strlen(user))
 		panic("Could not write username!\n");
+
 	close(fd);
+
 	printf("Username written to %s!\n", path);
 }
 
 static void create_curvedir(char *home)
 {
-	int ret, fd;
+	int ret;
 	char path[PATH_MAX];
+
 	memset(path, 0, sizeof(path));
 	slprintf(path, sizeof(path), "%s/%s", home, ".curvetun/");
+
 	errno = 0;
+
 	ret = mkdir(path, S_IRWXU);
 	if (ret < 0 && errno != EEXIST)
 		panic("Cannot create curvetun dir!\n");
+
 	printf("curvetun directory %s created!\n", path);
 	/* We also create empty files for clients and servers! */
+
 	memset(path, 0, sizeof(path));
 	slprintf(path, sizeof(path), "%s/%s", home, FILE_CLIENTS);
-	fd = open(path, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
-	if (fd < 0)
-		panic("Cannot open clients file!\n");
-	close(fd);
+
+	create_or_die(path, S_IRUSR | S_IWUSR);
+
 	printf("Empty client file written to %s!\n", path);
+
 	memset(path, 0, sizeof(path));
 	slprintf(path, sizeof(path), "%s/%s", home, FILE_SERVERS);
-	fd = open(path, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
-	if (fd < 0)
-		panic("Cannot open servers file!\n");
-	close(fd);
+
+	create_or_die(path, S_IRUSR | S_IWUSR);
+
 	printf("Empty server file written to %s!\n", path);
 }
 
@@ -405,40 +422,53 @@ static void create_keypair(char *home)
 	unsigned char secretkey[crypto_box_curve25519xsalsa20poly1305_SECRETKEYBYTES] = { 0 };
 	char path[PATH_MAX];
 	const char * errstr = NULL;
+
 	printf("Reading from %s (this may take a while) ...\n", CURVETUN_ENTROPY_SOURCE);
+
 	fd = open_or_die(CURVETUN_ENTROPY_SOURCE, O_RDONLY);
+
 	ret = read_exact(fd, secretkey, sizeof(secretkey), 0);
 	if (ret != sizeof(secretkey)) {
 		err = EIO;
 		errstr = "Cannot read from "CURVETUN_ENTROPY_SOURCE"!\n";
 		goto out;
 	}
+
 	close(fd);
+
 	crypto_scalarmult_curve25519_base(publickey, secretkey);
+
 	memset(path, 0, sizeof(path));
 	slprintf(path, sizeof(path), "%s/%s", home, FILE_PUBKEY);
+
 	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 	if (fd < 0) {
 		err = EIO;
 		errstr = "Cannot open pubkey file!\n";
 		goto out;
 	}
+
 	ret = write(fd, publickey, sizeof(publickey));
 	if (ret != sizeof(publickey)) {
 		err = EIO;
 		errstr = "Cannot write public key!\n";
 		goto out;
 	}
+
 	close(fd);
+
 	printf("Public key written to %s!\n", path);
+
 	memset(path, 0, sizeof(path));
 	slprintf(path, sizeof(path), "%s/%s", home, FILE_PRIVKEY);
+
 	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 	if (fd < 0) {
 		err = EIO;
 		errstr = "Cannot open privkey file!\n";
 		goto out;
 	}
+
 	ret = write(fd, secretkey, sizeof(secretkey));
 	if (ret != sizeof(secretkey)) {
 		err = EIO;
@@ -447,8 +477,10 @@ static void create_keypair(char *home)
 	}
 out:
 	close(fd);
+
 	xmemset(publickey, 0, sizeof(publickey));
 	xmemset(secretkey, 0, sizeof(secretkey));
+
 	if (err)
 		panic("%s: %s", errstr, strerror(errno));
 	else
@@ -464,36 +496,45 @@ static void check_config_keypair_or_die(char *home)
 	unsigned char publicres[crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES];
 	unsigned char secretkey[crypto_box_curve25519xsalsa20poly1305_SECRETKEYBYTES];
 	char path[PATH_MAX];
+
 	memset(path, 0, sizeof(path));
 	slprintf(path, sizeof(path), "%s/%s", home, FILE_PRIVKEY);
+
 	fd = open(path, O_RDONLY);
 	if (fd < 0) {
 		err = EIO;
 		errstr = "Cannot open privkey file!\n";
 		goto out;
 	}
+
 	ret = read(fd, secretkey, sizeof(secretkey));
 	if (ret != sizeof(secretkey)) {
 		err = EIO;
 		errstr = "Cannot read private key!\n";
 		goto out;
 	}
+
 	close(fd);
+
 	memset(path, 0, sizeof(path));
 	slprintf(path, sizeof(path), "%s/%s", home, FILE_PUBKEY);
+
 	fd = open(path, O_RDONLY);
 	if (fd < 0) {
 		err = EIO;
 		errstr = "Cannot open pubkey file!\n";
 		goto out;
 	}
+
 	ret = read(fd, publickey, sizeof(publickey));
 	if (ret != sizeof(publickey)) {
 		err = EIO;
 		errstr = "Cannot read public key!\n";
 		goto out;
 	}
+
 	crypto_scalarmult_curve25519_base(publicres, secretkey);
+
 	err = crypto_verify_32(publicres, publickey);
 	if (err) {
 		err = EINVAL;
@@ -503,9 +544,11 @@ static void check_config_keypair_or_die(char *home)
 	}
 out:
 	close(fd);
+
 	xmemset(publickey, 0, sizeof(publickey));
 	xmemset(publicres, 0, sizeof(publicres));
 	xmemset(secretkey, 0, sizeof(secretkey));
+
 	if (err)
 		panic("%s: %s\n", errstr, strerror(errno));
 }
@@ -516,6 +559,7 @@ static int main_keygen(char *home)
 	write_username(home);
 	create_keypair(home);
 	check_config_keypair_or_die(home);
+
 	return 0;
 }
 
@@ -527,28 +571,40 @@ static int main_export(char *home)
 
 	check_config_exists_or_die(home);
 	check_config_keypair_or_die(home);
+
 	printf("Your exported public information:\n\n");
+
 	memset(path, 0, sizeof(path));
 	slprintf(path, sizeof(path), "%s/%s", home, FILE_USERNAM);
+
 	fd = open_or_die(path, O_RDONLY);
+
 	while ((ret = read(fd, tmp, sizeof(tmp))) > 0) {
 		ret = write(STDOUT_FILENO, tmp, ret);
 	}
+
 	close(fd);
+
 	printf(";");
+
 	memset(path, 0, sizeof(path));
 	slprintf(path, sizeof(path), "%s/%s", home, FILE_PUBKEY);
+
 	fd = open_or_die(path, O_RDONLY);
+
 	ret = read(fd, tmp, sizeof(tmp));
 	if (ret != crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES)
 		panic("Cannot read public key!\n");
+
 	for (i = 0; i < ret; ++i)
 		if (i == ret - 1)
 			printf("%02x\n\n", (unsigned char) tmp[i]);
 		else
 			printf("%02x:", (unsigned char) tmp[i]);
+
 	close(fd);
 	fflush(stdout);
+
 	return 0;
 }
 
@@ -556,10 +612,15 @@ static int main_dumpc(char *home)
 {
 	check_config_exists_or_die(home);
 	check_config_keypair_or_die(home);
+
 	printf("Your clients:\n\n");
+
 	parse_userfile_and_generate_user_store_or_die(home);
+
 	dump_user_store();
+
 	destroy_user_store();
+
 	printf("\n");
 	die();
 	return 0;
@@ -569,10 +630,15 @@ static int main_dumps(char *home)
 {
 	check_config_exists_or_die(home);
 	check_config_keypair_or_die(home);
+
 	printf("Your servers:\n\n");
+
 	parse_userfile_and_generate_serv_store_or_die(home);
+
 	dump_serv_store();
+
 	destroy_serv_store();
+
 	printf("\n");
 	die();
 	return 0;
@@ -583,21 +649,27 @@ static void daemonize(const char *lockfile)
 	char pidstr[8];
 	mode_t lperm = S_IRWXU | S_IRGRP | S_IXGRP; /* 0750 */
 	int lfp;
+
 	if (getppid() == 1)
 		return;
+
 	if (daemon(0, 0))
 		panic("Cannot daemonize: %s", strerror(errno));
+
 	umask(lperm);
 	if (lockfile) {
-		lfp = open(lockfile, O_RDWR | O_CREAT | O_EXCL, 0640);
+		lfp = open(lockfile, O_RDWR | O_CREAT | O_EXCL,
+			   S_IRUSR | S_IWUSR | S_IRGRP);
 		if (lfp < 0)
 			syslog_panic("Cannot create lockfile at %s! "
 				     "curvetun server already running?\n",
 				     lockfile);
+
 		slprintf(pidstr, sizeof(pidstr), "%u", getpid());
 		if (write(lfp, pidstr, strlen(pidstr)) <= 0)
 			syslog_panic("Could not write pid to pidfile %s",
 				     lockfile);
+
 		close(lfp);
 	}
 }
@@ -606,19 +678,26 @@ static int main_client(char *home, char *dev, char *alias, int daemon)
 {
 	int ret, udp;
 	char *host, *port;
+
 	check_config_exists_or_die(home);
 	check_config_keypair_or_die(home);
+
 	parse_userfile_and_generate_serv_store_or_die(home);
+
 	get_serv_store_entry_by_alias(alias, alias ? strlen(alias) + 1 : 0,
 				      &host, &port, &udp);
 	if (!host || !port || udp < 0)
 		panic("Did not find alias/entry in configuration!\n");
+
 	printf("Using [%s] -> %s:%s via %s as endpoint!\n",
 	       alias ? : "default", host, port, udp ? "udp" : "tcp");
 	if (daemon)
 		daemonize(NULL);
+
 	ret = client_main(home, dev, host, port, udp);
+
 	destroy_serv_store();
+
 	return ret;
 }
 
@@ -626,27 +705,31 @@ static int main_server(char *home, char *dev, char *port, int udp,
 		       int ipv4, int daemon, int log)
 {
 	int ret;
+
 	check_config_exists_or_die(home);
 	check_config_keypair_or_die(home);
+
 	if (daemon)
 		daemonize(LOCKFILE);
+
 	ret = server_main(home, dev, port, udp, ipv4, log);
+
 	unlink(LOCKFILE);
+
 	return ret;
 }
 
 int main(int argc, char **argv)
 {
 	int ret = 0, c, opt_index, udp = 0, ipv4 = -1, daemon = 1, log = 1;
-	char *port = NULL, *stun = NULL, *dev = NULL, *home = NULL, *alias=NULL;
+	char *port = NULL, *stun = NULL, *dev = NULL, *home = NULL, *alias = NULL;
 	enum working_mode wmode = MODE_UNKNOW;
+
 	if (getuid() != geteuid())
 		seteuid(getuid());
-	if (getenv("LD_PRELOAD"))
-		panic("curvetun cannot be preloaded!\n");
-	if (ptrace(PTRACE_TRACEME, 0, 1, 0) < 0)
-		panic("curvetun cannot be ptraced!\n");
+
 	home = fetch_home_dir();
+
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 	       &opt_index)) != EOF) {
 		switch (c) {
@@ -724,12 +807,16 @@ int main(int argc, char **argv)
 
 	if (argc < 2)
 		help();
+
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
 	register_signal(SIGTERM, signal_handler);
 	register_signal(SIGPIPE, signal_handler);
+
 	header();
+
 	curve25519_selftest();
+
 	switch (wmode) {
 	case MODE_KEYGEN:
 		ret = main_keygen(home);
@@ -756,6 +843,7 @@ int main(int argc, char **argv)
 	default:
 		die();
 	}
+
 	if (dev)
 		xfree(dev);
 	if (stun)
@@ -764,5 +852,6 @@ int main(int argc, char **argv)
 		xfree(port);
 	if (alias)
 		xfree(alias);
+
 	return ret;
 }

@@ -140,6 +140,7 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "built_in.h"
 #include "locking.h"
 #include "dissector_eth.h"
+#include "pkt_buff.h"
 
 #define INCLUDE_UDP	(1 << 0)
 #define INCLUDE_TCP	(1 << 1)

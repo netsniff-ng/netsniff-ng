@@ -1,9 +1,9 @@
 /*
- * IPv6 Routing Header described in RFC2460
- * programmed by Markus Amend 2012 as a contribution to
  * netsniff-ng - the packet sniffing beast
- * Copyright 2012 Markus Amend.
+ * Copyright 2012 Markus Amend <markus@netsniff-ng.org>
  * Subject to the GPL, version 2.
+ *
+ * IPv6 Routing Header described in RFC2460
  */
 
 #ifndef ROUTING_H
@@ -87,10 +87,6 @@ struct protocol ipv6_routing_ops = {
 	.key = 0x2B,
 	.print_full = routing,
 	.print_less = routing_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = routing,
-	.print_all_hex = hex,
 	.proto_next = routing_next,
 };
 

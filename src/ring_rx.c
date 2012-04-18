@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <assert.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -49,9 +48,9 @@ void setup_rx_ring_layout(int sock, struct ring *ring, unsigned int size,
 				   ring->layout.tp_frame_size *
 				   ring->layout.tp_block_nr;
 
-	assert(ring->layout.tp_block_size >= ring->layout.tp_frame_size);
-	assert((ring->layout.tp_block_size % ring->layout.tp_frame_size) == 0);
-	assert((ring->layout.tp_block_size % getpagesize()) == 0);
+	bug_on(ring->layout.tp_block_size < ring->layout.tp_frame_size);
+	bug_on((ring->layout.tp_block_size % ring->layout.tp_frame_size) != 0);
+	bug_on((ring->layout.tp_block_size % getpagesize()) != 0);
 }
 
 void create_rx_ring(int sock, struct ring *ring)

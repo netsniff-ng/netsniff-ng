@@ -20,6 +20,7 @@ What libraries / tools are required?
  - libnacl (curvetun)
  - libnetfilter-conntrack (flowtop)
  - liburcu (flowtop)
+ - libcli (trafgen)
 
 It is common, that these libraries are shipped as distribution packages
 for an easy installation. We try to keep this as minimal as possible.

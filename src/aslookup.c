@@ -10,13 +10,13 @@
 #include <string.h>
 #include <errno.h>
 #include <netdb.h>
-#include <assert.h>
 #include <netinet/in.h>
 
 #include "die.h"
 #include "xstring.h"
 #include "aslookup.h"
 #include "xmalloc.h"
+#include "built_in.h"
 
 static int ai_family = 0;
 static int ai_socktype = 0;
@@ -29,10 +29,11 @@ int aslookup_prepare(const char *server, const char *port)
 	struct addrinfo hints, *ahead, *ai;
 	struct sockaddr_in6 *saddr6;
 
-	assert(server && port);
-	memset(&ai_ss, 0, sizeof(ai_ss));
+	bug_on(!server || !port);
 
+	memset(&ai_ss, 0, sizeof(ai_ss));
 	memset(&hints, 0, sizeof(hints));
+
 	hints.ai_family = PF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
@@ -78,11 +79,12 @@ int aslookup(const char *lhost, struct asrecord *rec)
 	char *buff;
 	size_t len = 1024;
 
-	assert(strlen(lhost) + 8 < len);
+	bug_on(strlen(lhost) + 8 >= len);
 
 	fd = socket(ai_family, ai_socktype, ai_protocol);
 	if (fd < 0)
 		return -EIO;
+
 	ret = connect(fd, (struct sockaddr *) &ai_ss, sizeof(ai_ss));
 	if (ret < 0)
 		return -EIO;
@@ -102,78 +104,94 @@ int aslookup(const char *lhost, struct asrecord *rec)
 	while ((err = read(fd, buff, len)) > 0) {
 		int state = 0, i;
 		char *ptr = skips(buff), *ptr2;
+
 		for (i = 0; i < len; ++i) {
 			if (buff[i] == '|' && state == 0) {
 				buff[i] = 0;
 				ptr2 = &buff[i] - 1;
+
 				while (*ptr2 == ' ' && ptr2 > ptr) {
 					*ptr2 = 0;
 					ptr2--;
 				}
+
 				strlcpy(rec->number, ptr, strlen(ptr) + 1);
 				ptr = skips(&buff[i] + 1);
 				state = 1;
 			} else if (buff[i] == '|' && state == 1) {
 				buff[i] = 0;
 				ptr2 = &buff[i] - 1;
+
 				while (*ptr2 == ' ' && ptr2 > ptr) {
 					*ptr2 = 0;
 					ptr2--;
 				}
+
 				strlcpy(rec->ip, ptr, strlen(ptr) + 1);
 				ptr = skips(&buff[i] + 1);
 				state = 2;
 			} else if (buff[i] == '|' && state == 2) {
 				buff[i] = 0;
 				ptr2 = &buff[i] - 1;
+
 				while (*ptr2 == ' ' && ptr2 > ptr) {
 					*ptr2 = 0;
 					ptr2--;
 				}
+
 				strlcpy(rec->prefix, ptr, strlen(ptr) + 1);
 				ptr = skips(&buff[i] + 1);
 				state = 3;
 			} else if (buff[i] == '|' && state == 3) {
 				buff[i] = 0;
 				ptr2 = &buff[i] - 1;
+
 				while (*ptr2 == ' ' && ptr2 > ptr) {
 					*ptr2 = 0;
 					ptr2--;
 				}
+
 				strlcpy(rec->country, ptr, strlen(ptr) + 1);
 				ptr = skips(&buff[i] + 1);
 				state = 4;
 			} else if (buff[i] == '|' && state == 4) {
 				buff[i] = 0;
 				ptr2 = &buff[i] - 1;
+
 				while (*ptr2 == ' ' && ptr2 > ptr) {
 					*ptr2 = 0;
 					ptr2--;
 				}
+
 				strlcpy(rec->registry, ptr, strlen(ptr) + 1);
 				ptr = skips(&buff[i] + 1);
 				state = 5;
 			} else if (buff[i] == '|' && state == 5) {
 				buff[i] = 0;
 				ptr2 = &buff[i] - 1;
+
 				while (*ptr2 == ' ' && ptr2 > ptr) {
 					*ptr2 = 0;
 					ptr2--;
 				}
+
 				strlcpy(rec->since, ptr, strlen(ptr) + 1);
 				ptr = skips(&buff[i] + 1);
 				state = 6;
 			} else if (buff[i] == '\n' && state == 6) {
 				buff[i] = 0;
 				ptr2 = &buff[i] - 1;
+
 				while (*ptr2 == ' ' && ptr2 > ptr) {
 					*ptr2 = 0;
 					ptr2--;
 				}
+
 				strlcpy(rec->name, ptr, strlen(ptr) + 1);
 				goto out;
 			}
 		}
+
 		memset(buff, 0, len);
 	}
 out:
@@ -181,4 +199,3 @@ out:
 	xfree(buff);
 	return 0;
 }
-

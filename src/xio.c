@@ -5,6 +5,7 @@
  * Subject to the GPL, version 2.
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -29,6 +30,7 @@ int open_or_die(const char *file, int flags)
 	int ret = open(file, flags);
 	if (ret < 0)
 		panic("Cannot open file!\n");
+
 	return ret;
 }
 
@@ -40,23 +42,40 @@ int open_or_die_m(const char *file, int flags, mode_t mode)
 	return ret;
 }
 
+void create_or_die(const char *file, mode_t mode)
+{
+	int fd = open_or_die_m(file, O_WRONLY | O_CREAT, mode);
+	close(fd);
+}
+
+void pipe_or_die(int pipefd[2], int flags)
+{
+	int ret = pipe2(pipefd, flags);
+        if (ret < 0)
+                panic("Cannot create pipe2 event fd!\n");
+}
+
 int tun_open_or_die(char *name, int type)
 {
 	int fd, ret;
 	struct ifreq ifr;
-	fd = open("/dev/net/tun", O_RDWR);
-	if (fd < 0)
-		panic("Cannot open /dev/net/tun!\n");
+
+	fd = open_or_die("/dev/net/tun", O_RDWR);
+
 	memset(&ifr, 0, sizeof(ifr));
 	ifr.ifr_flags = type;
+
 	if (name)
 		strlcpy(ifr.ifr_name, name, IFNAMSIZ);
+
 	ret = ioctl(fd, TUNSETIFF, &ifr);
 	if (ret < 0)
 		panic("ioctl screwed up!\n");
+
 	ret = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);
 	if (ret < 0)
 		panic("fctnl screwed up!\n");
+
 	return fd;
 }
 
@@ -68,6 +87,7 @@ ssize_t read_or_die(int fd, void *buf, size_t len)
 			die();
 		panic("Cannot read from descriptor!\n");
 	}
+
 	return ret;
 }
 
@@ -79,6 +99,7 @@ ssize_t write_or_die(int fd, const void *buf, size_t len)
 			die();
 		panic("Cannot write to descriptor!");
 	}
+
 	return ret;
 }
 
@@ -87,6 +108,7 @@ extern volatile sig_atomic_t sigint;
 ssize_t read_exact(int fd, void *buf, size_t len, int mayexit)
 {
 	register ssize_t num = 0, written;
+
 	while (len > 0 && !sigint) {
 		if ((written = read(fd, buf, len)) < 0) {
 			if (errno == EAGAIN && num > 0)
@@ -102,12 +124,14 @@ ssize_t read_exact(int fd, void *buf, size_t len, int mayexit)
 		buf += written;
 		num += written;
 	}
+
 	return num;
 }
 
 ssize_t write_exact(int fd, void *buf, size_t len, int mayexit)
 {
 	register ssize_t num = 0, written;
+
 	while (len > 0 && !sigint) {
 		if ((written = write(fd, buf, len)) < 0) {
 			if (errno == EAGAIN && num > 0)
@@ -123,5 +147,6 @@ ssize_t write_exact(int fd, void *buf, size_t len, int mayexit)
 		buf += written;
 		num += written;
 	}
+
 	return num;
 }

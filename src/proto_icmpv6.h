@@ -1,11 +1,11 @@
 /*
+ * netsniff-ng - the packet sniffing beast
+ * Copyright 2012 Markus Amend <markus@netsniff-ng.org>
+ * Subject to the GPL, version 2.
+ *
  * ICMPv6 described in RFC4443, RFC2710, RFC4861, RFC2894,
  * RFC4620, RFC3122, RFC3810, RFC3775, RFC3971, RFC4065
  * RFC4286
- * written by Markus Amend 2012 as a contribution to
- * netsniff-ng - the packet sniffing beast
- * Copyright 2012 Markus Amend.
- * Subject to the GPL, version 2.
  */
 
 #ifndef ICMPV6_H
@@ -19,6 +19,7 @@
 #include "built_in.h"
 #include "proto_struct.h"
 #include "dissector_eth.h"
+#include "pkt_buff.h"
 
 struct icmpv6hdr {
 	uint8_t h_type;
@@ -163,15 +164,15 @@ static inline void icmpv6_process(struct icmpv6hdr *icmp, char **type,
 	}
 }
 
-static inline void icmpv6(uint8_t *packet, size_t len)
+static inline void icmpv6(struct pkt_buff *pkt)
 {
 	char *type = NULL, *code = NULL, *optional = NULL;
-	struct icmpv6hdr *icmp;
+	struct icmpv6hdr *icmp =
+		(struct icmpv6hdr *) pkt_pull(pkt, sizeof(*icmp));
 
-	if (len < sizeof(struct icmpv6hdr))
+	if (icmp == NULL)
 		return;
-	
-	icmp = (struct icmpv6hdr *) packet;
+
 	icmpv6_process(icmp, &type, &code, &optional);
 
 	tprintf(" [ ICMPv6 ");
@@ -183,11 +184,12 @@ static inline void icmpv6(uint8_t *packet, size_t len)
 	tprintf(" ]\n\n");
 }
 
-static inline void icmpv6_less(uint8_t *packet, size_t len)
+static inline void icmpv6_less(struct pkt_buff *pkt)
 {
-	struct icmpv6hdr *icmp = (struct icmpv6hdr *) packet;
- 
-	if (len < (sizeof(struct icmpv6hdr)))
+	struct icmpv6hdr *icmp =
+		(struct icmpv6hdr *) pkt_pull(pkt, sizeof(*icmp));
+
+	if (icmp == NULL)
 		return;
 
 	tprintf(" ICMPv6 Type (%u) Code (%u)", icmp->h_type, icmp->h_code);
@@ -197,11 +199,6 @@ struct protocol icmpv6_ops = {
 	.key = 0x3A,
 	.print_full = icmpv6,
 	.print_less = icmpv6_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = icmpv6,
-	.print_all_hex = hex,
-	.proto_next = NULL,
 };
 
 #endif /* ICMPV6_H */

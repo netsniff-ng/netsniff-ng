@@ -77,10 +77,6 @@ struct protocol ip_auth_hdr_ops = {
 	.key = 0x33,
 	.print_full = auth_hdr,
 	.print_less = auth_hdr_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = auth_hdr,
-	.print_all_hex = hex,
 	.proto_next = auth_hdr_next,
 };
 

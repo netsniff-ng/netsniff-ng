@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <errno.h>
 #include <time.h>
 #include <unistd.h>
 #include <netdb.h>
@@ -18,54 +19,18 @@
 #include <arpa/inet.h>
 #include <sys/select.h>
 
-#include "die.h"
 #include "xmalloc.h"
 #include "xsys.h"
-#include "stun.h"
+#include "die.h"
 
-/* Discovery type result */
-#define RESULT_NONE                   0
-#define RESULT_OPEN_INTERNET          1
-#define RESULT_FIREWALL_BLOCKS_UDP    2
-#define RESULT_SYMMETRIC_UDP_FIREWALL 3
-#define RESULT_FULL_CONE_NAT          4
-#define RESULT_SYMMETRIC_NAT          5
-#define RESULT_RESTRICTED_CONE_NAT    6
-#define RESULT_PORT_RESTR_CONE_NAT    7
+extern int print_stun_probe(char *server, int sport, int tport);
 
-/* Message types */
 #define BINDING_REQUEST               0x0001
 #define BINDING_RESPONSE              0x0101
-#define BINDING_ERROR_RESPONSE        0x0111
-#define SHARED_SECRET_REQUEST         0x0002
-#define SHARED_SECRET_RESPONSE        0x0102
-#define SHARED_SECRET_ERROR_RESPONSE  0x0112
 
-/* Attribute types */
 #define MAPPED_ADDRESS                0x0001
-#define RESPONSE_ADDRESS              0x0002
-#define CHANGE_REQUEST                0x0003
-#define SOURCE_ADDRESS                0x0004
-#define CHANGED_ADDRESS               0x0005
-#define USERNAME                      0x0006
-#define PASSWORD                      0x0007
-#define MESSAGE_INTEGRITY             0x0008
-#define ERROR_CODE                    0x0009
-#define UNKNOWN_ATTRIBUTES            0x000a
-#define REFLECTED_FROM                0x000b
 
-/* Error response codes */
-#define ERROR_BAD_REQUEST             400
-#define ERROR_UNAUTHORIZED            401
-#define ERROR_UNKNOWN_ATTRIBUTE       420
-#define ERROR_STALE_CREDENTIALS       430
-#define ERROR_INTEGRITY_CHECK_FAIL    431
-#define ERROR_MISSING_USERNAME        432
-#define ERROR_USE_TLS                 433
-#define ERROR_SERVER_ERROR            500
-#define ERROR_GLOBAL_FAILURE          600
-
-#define TIMEOUT                       1000
+#define TIMEOUT                       5000
 #define REQUEST_LEN                   20
 
 #define ID_COOKIE_FIELD               htonl(((int) 'a' << 24) + \
@@ -75,17 +40,7 @@
 
 struct stun_header {
 	uint16_t type;
-	/*
-	 * Message length is the count, in bytes, of the size of the
-	 * message, not including the 20 byte header. (RFC-3489)
-	 */
 	uint16_t len;
-	/*
-	 * transid also serves as salt to randomize the request and the 
-	 * response. All responses carry the same identifier as 
-	 * the request they correspond to.
-	 */
-	/* For the new RFC this would be 0x2112A442 in network Byte order. */
 	uint32_t magic_cookie; 
 	uint32_t transid[3];
 };
@@ -103,8 +58,8 @@ struct stun_mapped_addr {
 	uint32_t ip;
 };
 
-static int stun_test(const char *server_ip, uint16_t server_port,
-		     uint16_t tun_port)
+static int stun_test(const char *server_ip, int server_port,
+		     int tun_port)
 {
 	int ret, sock, set = 1;
 	uint8_t pkt[256];
@@ -210,7 +165,8 @@ static int stun_test(const char *server_ip, uint16_t server_port,
 			break;
 
 		in.s_addr = addr->ip;
-		printf("Public mapping %s:%u!\n", inet_ntoa(in), ntohs(addr->port));
+		printf("Public mapping %s:%u!\n",
+		       inet_ntoa(in), ntohs(addr->port));
 		break;
 next:
 		off += 4;
@@ -220,16 +176,17 @@ next:
 	return 0;
 }
 
-void print_stun_probe(char *server, uint16_t sport, uint16_t tunport)
+int print_stun_probe(char *server, int sport, int tport)
 {
 	char *address;
 	struct hostent *hp;
 
 	printf("STUN on %s:%u\n", server, sport);
+
 	srand(time(NULL));
 	hp = gethostbyname(server);
 	if (!hp)
-		return;
+		return -EIO;
 	address = inet_ntoa(*(struct in_addr *) hp->h_addr_list[0]);
-	stun_test(address, sport, tunport);
+	return stun_test(address, sport, tport);
 }

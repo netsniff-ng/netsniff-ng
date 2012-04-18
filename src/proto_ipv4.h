@@ -1,7 +1,8 @@
 /*
  * netsniff-ng - the packet sniffing beast
- * By Daniel Borkmann <daniel@netsniff-ng.org>
- * Copyright 2009, 2010 Daniel Borkmann.
+ * By Daniel Borkmann <daniel@netsniff-ng.org>.
+ * Copyright (C) 2009, 2010 Daniel Borkmann
+ * Copyright (C) 2012 Christoph Jaeger <christoph@netsniff-ng.org>
  * Subject to the GPL, version 2.
  */
 
@@ -13,11 +14,12 @@
 #include <netinet/in.h>    /* for ntohs() */
 #include <arpa/inet.h>     /* for inet_ntop() */
 #include <asm/byteorder.h>
-#include <assert.h>
 
 #include "csum.h"
 #include "proto_struct.h"
 #include "dissector_eth.h"
+#include "pkt_buff.h"
+#include "built_in.h"
 
 struct ipv4hdr {
 #if defined(__LITTLE_ENDIAN_BITFIELD)
@@ -38,7 +40,6 @@ struct ipv4hdr {
 	uint16_t h_check;
 	uint32_t h_saddr;
 	uint32_t h_daddr;
-	uint8_t h_opts[0];
 } __attribute__((packed));
 
 #define	FRAG_OFF_RESERVED_FLAG(x)      ((x) & 0x8000)
@@ -46,16 +47,23 @@ struct ipv4hdr {
 #define	FRAG_OFF_MORE_FRAGMENT_FLAG(x) ((x) & 0x2000)
 #define	FRAG_OFF_FRAGMENT_OFFSET(x)    ((x) & 0x1fff)
 
-static inline void ipv4(uint8_t *packet, size_t len)
+/* IP Option Numbers (http://www.iana.org/assignments/ip-parameters) */
+#define IP_OPT_EOOL 0x00
+#define IP_OPT_NOP  0x01
+
+#define IP_OPT_COPIED_FLAG(x)  ((x) & 0x80)
+#define IP_OPT_CLASS(x)       (((x) & 0x60) >> 5)
+#define IP_OPT_NUMBER(x)       ((x) & 0x1F)
+
+static inline void ipv4(struct pkt_buff *pkt)
 {
 	uint16_t csum, frag_off;
 	char src_ip[INET_ADDRSTRLEN];
 	char dst_ip[INET_ADDRSTRLEN];
-	struct ipv4hdr *ip = (struct ipv4hdr *) packet;
-	uint8_t *buff;
-	size_t opts_len;
+	struct ipv4hdr *ip = (struct ipv4hdr *) pkt_pull(pkt, sizeof(*ip));
+	uint8_t *opt, opts_len, opt_len;
 
-	if (len < sizeof(struct ipv4hdr))
+	if (ip == NULL)
 		return;
 
 	frag_off = ntohs(ip->h_frag_off);
@@ -86,26 +94,49 @@ static inline void ipv4(uint8_t *packet, size_t len)
 			csum_expected(ip->h_check, csum), colorize_end());
 	tprintf(" ]\n");
 
-	/* TODO: do/print something more usefull (dissect options, ...) */
 	opts_len = ip->h_ihl * 4 - 20;
 
-	assert(opts_len <= 40);
+	for (opt = (uint8_t *) pkt_pull(pkt, opts_len); opt && opts_len; opt++) {
 
-	if (opts_len) {
-		tprintf("   [ Options hex ");
-		for (buff = ip->h_opts; opts_len-- > 0; buff++)
-		       tprintf("%.2x ", *buff);
-		tprintf("]\n");
+		tprintf("   [ Option  Copied (%u), Class (%u), Number (%u)",
+			IP_OPT_COPIED_FLAG(*opt) ? 1 : 0, IP_OPT_CLASS(*opt),
+			IP_OPT_NUMBER(*opt));
+
+		switch (*opt) {
+		case IP_OPT_EOOL:
+		case IP_OPT_NOP:
+			tprintf(" ]\n");
+			opts_len--;
+			break;
+		default:
+			/*
+			 * Assuming that EOOL and NOP are the only single-byte
+			 * options, treat all other options as variable in
+			 * length with a minimum of 2.
+			 */
+			opt_len = *(++opt);
+			tprintf(", Len (%u) ]\n", opt_len);
+			opts_len -= opt_len;
+			tprintf("     [ Data hex ");
+			for (opt_len -= 2; opt_len; opt_len--)
+				tprintf(" %.2x", *(++opt));
+			tprintf(" ]\n");
+			break;
+		}
 	}
+
+	/* cut off everything that is not part of IPv4 payload */
+	pkt_trim(pkt, pkt_len(pkt) + ip->h_ihl * 4 - ntohs(ip->h_tot_len));
+	pkt_set_proto(pkt, &eth_lay3, ip->h_protocol);
 }
 
-static inline void ipv4_less(uint8_t *packet, size_t len)
+static inline void ipv4_less(struct pkt_buff *pkt)
 {
 	char src_ip[INET_ADDRSTRLEN];
 	char dst_ip[INET_ADDRSTRLEN];
-	struct ipv4hdr *ip = (struct ipv4hdr *) packet;
+	struct ipv4hdr *ip = (struct ipv4hdr *) pkt_pull(pkt, sizeof(*ip));
 
-	if (len < sizeof(struct ipv4hdr))
+	if (ip == NULL)
 		return;
 
 	inet_ntop(AF_INET, &ip->h_saddr, src_ip, sizeof(src_ip));
@@ -113,32 +144,17 @@ static inline void ipv4_less(uint8_t *packet, size_t len)
 
 	tprintf(" %s/%s Len %u", src_ip, dst_ip,
 		ntohs(ip->h_tot_len));
-}
 
-static inline void ipv4_next(uint8_t *packet, size_t len,
-			     struct hash_table **table,
-			     unsigned int *key, size_t *off)
-{
-	struct ipv4hdr *ip = (struct ipv4hdr *) packet;
-
-	if (len < sizeof(struct ipv4hdr))
-		return;
-
-	(*off) = ip->h_ihl * 4;
-	(*key) = ip->h_protocol;
-	(*table) = &eth_lay3;
+	/* cut off IP options and everything that is not part of IPv4 payload */
+	pkt_pull(pkt, ip->h_ihl * 4 - 20);
+	pkt_trim(pkt, pkt_len(pkt) + ip->h_ihl * 4 - ntohs(ip->h_tot_len));
+	pkt_set_proto(pkt, &eth_lay3, ip->h_protocol);
 }
 
 struct protocol ipv4_ops = {
 	.key = 0x0800,
-	.offset = sizeof(struct ipv4hdr),
 	.print_full = ipv4,
 	.print_less = ipv4_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = ipv4,
-	.print_all_hex = hex,
-	.proto_next = ipv4_next,
 };
 
 #endif /* IPV4_H */

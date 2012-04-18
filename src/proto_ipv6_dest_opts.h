@@ -1,9 +1,9 @@
 /*
- * IPv6 Destination Options Header described in RFC2460
- * programmed by Markus Amend 2012 as a contribution to
  * netsniff-ng - the packet sniffing beast
- * Copyright 2012 Markus Amend.
+ * Copyright 2012 Markus Amend <markus@netsniff-ng.org>
  * Subject to the GPL, version 2.
+ *
+ * IPv6 Destination Options Header described in RFC2460
  */
 
 #ifndef DESTINATION_OPTIONS_H
@@ -73,10 +73,6 @@ struct protocol ipv6_dest_opts_ops = {
 	.key = 0x3C,
 	.print_full = dest_opts,
 	.print_less = dest_opts_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = dest_opts,
-	.print_all_hex = hex,
 	.proto_next = dest_opts_next,
 };
 

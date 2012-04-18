@@ -118,12 +118,12 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include <signal.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <assert.h>
 
 #include "die.h"
 #include "xmalloc.h"
 #include "xsys.h"
 #include "xio.h"
+#include "built_in.h"
 
 /*
  * TODO: Cleanups, this got quite a hack over time.
@@ -216,17 +216,23 @@ static int rxtx_stats(const char *ifname, struct ifstat *s)
 		whine("Cannot open /proc/net/dev!\n");
 		return -ENOENT;
 	}
+
+	/* Omit header */
 	ptr = fgets(buf, sizeof(buf), fp);
 	ptr = fgets(buf, sizeof(buf), fp);
+
 	memset(buf, 0, sizeof(buf));
 	while (fgets(buf, sizeof(buf), fp) != NULL) {
 		buf[sizeof(buf) -1] = 0;
+
 		if (strstr(buf, ifname) == NULL)
 			continue;
+
 		ptr = buf;
 		while (*ptr != ':')
 			ptr++;
 		ptr++;
+
 		ret = sscanf(ptr, "%lu%lu%lu%lu%lu%lu%lu%*u%lu%lu%lu%lu%lu%lu%lu",
 			     &s->rx_bytes, &s->rx_packets, &s->rx_errors,
 			     &s->rx_drops, &s->rx_fifo, &s->rx_frame,
@@ -238,9 +244,12 @@ static int rxtx_stats(const char *ifname, struct ifstat *s)
 			found = 0;
 			break;
 		}
+
 		memset(buf, 0, sizeof(buf));
 	}
+
 	fclose(fp);
+
 	return found;
 }
 
@@ -255,11 +264,13 @@ static int wifi_stats(const char *ifname, struct ifstat *s)
 		s->wifi_bitrate = 0;
 		return 0;
 	}
+
 	s->wifi_bitrate = wireless_bitrate(ifname);
 	s->wifi_signal_level = adjust_dbm_level(ws.qual.level);
 	s->wifi_noise_level = adjust_dbm_level(ws.qual.noise);
 	s->wifi_link_qual = ws.qual.qual;
 	s->wifi_link_qual_max = wireless_rangemax_sigqual(ifname);
+
 	return ret;
 }
 
@@ -276,6 +287,7 @@ static void stats_check_alloc(struct ifstat *s)
 		if (s->cpu_sys) xfree(s->cpu_sys);
 		if (s->cpu_idle) xfree(s->cpu_idle);
 		if (s->cpu_iow) xfree(s->cpu_iow);
+
 		s->irqs_srx = xzmalloc(sizeof(*(s->irqs_srx)) * cpus);
 		s->irqs_stx = xzmalloc(sizeof(*(s->irqs_stx)) * cpus);
 		s->irqs = xzmalloc(sizeof(*(s->irqs)) * cpus);
@@ -299,18 +311,25 @@ static int irq_sstats(struct ifstat *s)
 		whine("Cannot open /proc/softirqs!\n");
 		return -ENOENT;
 	}
+
 	stats_check_alloc(s);
+
 	memset(buff, 0, sizeof(buff));
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
+
 		if ((ptr = strstr(buff, "NET_TX:")) == NULL) {
 			ptr = strstr(buff, "NET_RX:");
+
 			if (ptr == NULL)
 				continue;
 			rx = 1;
-		} else
+		} else {
 			rx = 0;
+		}
+
 		ptr += strlen("NET_TX:");
+
 		for (i = 0; i < s->irqs_len; ++i) {
 			ptr++;
 			while (*ptr == ' ')
@@ -324,9 +343,12 @@ static int irq_sstats(struct ifstat *s)
 			else
 				s->irqs_stx[i] = atoi(ptr2);
 		}
+
 		memset(buff, 0, sizeof(buff));
 	}
+
 	fclose(fp);
+
 	return 0;
 }
 
@@ -342,33 +364,43 @@ static int mem_stats(struct ifstat *s)
 		whine("Cannot open /proc/meminfo!\n");
 		return -ENOENT;
 	}
+
 	memset(buff, 0, sizeof(buff));
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
+
 		if ((ptr = strstr(buff, "MemTotal:")) != NULL) {
 			ptr += strlen("MemTotal:");
 			ptr++;
+
 			while (*ptr == ' ')
 				ptr++;
+
 			ret = sscanf(ptr, "%lu", &total);
 			if (ret != 1)
 				total = 0;
 		} else if ((ptr = strstr(buff, "MemFree:")) != NULL) {
 			ptr += strlen("MemFree:");
 			ptr++;
+
 			while (*ptr == ' ')
 				ptr++;
+
 			ret = sscanf(ptr, "%lu", &free);
 			if (ret != 1)
 				free = 0;
 		}
+
 		memset(buff, 0, sizeof(buff));
 	}
+
 	if (total > 0)
 		s->mem_used = 100.f * (total - free) / total;
 	else
 		s->mem_used = 0.f;
+
 	fclose(fp);
+
 	return 0;
 }
 
@@ -383,22 +415,28 @@ static int sys_stats(struct ifstat *s)
 		whine("Cannot open /proc/stat!\n");
 		return -ENOENT;
 	}
+
 	stats_check_alloc(s);
+
 	memset(buff, 0, sizeof(buff));
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
+
 		if ((ptr = strstr(buff, "cpu")) != NULL) {
 			ptr += strlen("cpu");
 			if (*ptr == ' ')
 				goto next;
 			ptr2 = ptr;
+
 			while (*ptr != ' ' && *ptr != 0)
 				ptr++;
 			*ptr = 0;
+
 			cpu = atoi(ptr2);
 			if (cpu < 0 || cpu >= s->irqs_len)
 				goto next;
 			ptr++;
+
 			ret = sscanf(ptr, "%lu%lu%lu%lu%lu", &s->cpu_user[cpu],
 				     &s->cpu_nice[cpu], &s->cpu_sys[cpu],
 				     &s->cpu_idle[cpu], &s->cpu_iow[cpu]);
@@ -407,32 +445,40 @@ static int sys_stats(struct ifstat *s)
 		} else if ((ptr = strstr(buff, "ctxt")) != NULL) {
 			ptr += strlen("ctxt");
 			ptr++;
+
 			while (*ptr == ' ')
 				ptr++;
+
 			ret = sscanf(ptr, "%lu", &s->ctxt);
 			if (ret != 1)
 				s->ctxt = 0;
 		} else if ((ptr = strstr(buff, "processes")) != NULL) {
 			ptr += strlen("processes");
 			ptr++;
+
 			while (*ptr == ' ')
 				ptr++;
+
 			ret = sscanf(ptr, "%lu", &s->forks);
 			if (ret != 1)
 				s->forks = 0;
 		} else if ((ptr = strstr(buff, "procs_running")) != NULL) {
 			ptr += strlen("procs_running");
 			ptr++;
+
 			while (*ptr == ' ')
 				ptr++;
+
 			ret = sscanf(ptr, "%lu", &s->procs_run);
 			if (ret != 1)
 				s->procs_run = 0;
 		} else if ((ptr = strstr(buff, "procs_blocked")) != NULL) {
 			ptr += strlen("procs_blocked");
 			ptr++;
+
 			while (*ptr == ' ')
 				ptr++;
+
 			ret = sscanf(ptr, "%lu", &s->procs_iow);
 			if (ret != 1)
 				s->procs_iow = 0;
@@ -440,7 +486,9 @@ static int sys_stats(struct ifstat *s)
 next:
 		memset(buff, 0, sizeof(buff));
 	}
+
 	fclose(fp);
+
 	return 0;
 }
 
@@ -453,23 +501,30 @@ static int irq_stats(const char *ifname, struct ifstat *s)
 	/* We exclude lo! */
 	if (!strncmp("lo", ifname, strlen("lo")))
 		return 0;
+
 	FILE *fp = fopen("/proc/interrupts", "r");
 	if (!fp) {
 		whine("Cannot open /proc/interrupts!\n");
 		return -ENOENT;
 	}
+
 	stats_check_alloc(s);
+
 	memset(buff, 0, sizeof(buff));
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
+
 		if (strstr(buff, ifname) == NULL)
 			continue;
+
 		ptr = buff;
 		while (*ptr != ':')
 			ptr++;
 		*ptr = 0;
 		s->irq_nr = atoi(buff);
-		assert(s->irq_nr != 0);
+
+		bug_on(s->irq_nr == 0);
+
 		for (i = 0; i < s->irqs_len; ++i) {
 			ptr++;
 			ptr2 = ptr;
@@ -480,9 +535,12 @@ static int irq_stats(const char *ifname, struct ifstat *s)
 			*ptr = 0;
 			s->irqs[i] = atoi(ptr2);
 		}
+
 		memset(buff, 0, sizeof(buff));
 	}
+
 	fclose(fp);
+
 	return 0;
 }
 
@@ -490,8 +548,10 @@ static void diff_stats(struct ifstat *old, struct ifstat *new,
 		       struct ifstat *diff)
 {
 	int i;
+
 	if(old->irqs_len != new->irqs_len)
 		return; /* Refetch stats and take old diff! */
+
 	diff->rx_bytes = new->rx_bytes - old->rx_bytes;
 	diff->rx_packets = new->rx_packets - old->rx_packets;
 	diff->rx_drops = new->rx_drops - old->rx_drops;
@@ -513,8 +573,11 @@ static void diff_stats(struct ifstat *old, struct ifstat *new,
 	diff->forks = new->forks - old->forks;
 	diff->procs_run = new->procs_run - old->procs_run;
 	diff->procs_iow = new->procs_iow - old->procs_iow;
+
 	stats_check_alloc(diff);
+
 	diff->irq_nr = new->irq_nr;
+
 	for (i = 0; i < diff->irqs_len; ++i) {
 		diff->irqs[i] = new->irqs[i] - old->irqs[i];
 		diff->irqs_srx[i] = new->irqs_srx[i] - old->irqs_srx[i];
@@ -622,6 +685,7 @@ static void print_update(const char *ifname, struct ifstat *s,
 			 struct ifstat *t, double interval)
 {
 	int i;
+
 	printf("RX: %16.3f MiB/t %10lu Pkts/t %10lu Drops/t %10lu Errors/t\n",
 	       1.f * s->rx_bytes / (1 << 20), s->rx_packets, s->rx_drops,
 	       s->rx_errors);
@@ -684,12 +748,14 @@ static void print_update_csv_hdr(const char *ifname, struct ifstat *s,
 static inline int do_stats(const char *ifname, struct ifstat *s)
 {
 	int ret = 0;
+
 	ret += rxtx_stats(ifname, s);
 	ret += irq_stats(ifname, s);
 	ret += irq_sstats(s);
 	ret += sys_stats(s);
 	ret += mem_stats(s);
 	ret += wifi_stats(ifname, s);
+
 	return ret;
 }
 
@@ -702,22 +768,30 @@ static int screen_loop(const char *ifname, uint32_t interval)
 	memset(&old, 0, sizeof(old));
 	memset(&new, 0, sizeof(new));
 	memset(&curr, 0, sizeof(curr));
+
 	screen_init(&screen);
+
 	while (!sigint) {
 		if (getch() == 'q')
 			goto out;
+
 		screen_update(screen, ifname, &curr, &new, &first, interval);
+
 		ret = do_stats(ifname, &old);
 		if (ret != 0)
 			goto out;
+
 		sleep(interval);
+
 		ret = do_stats(ifname, &new);
 		if (ret != 0)
 			goto out;
+
 		diff_stats(&old, &new, &curr);
 	}
 out:
 	screen_end();
+
 	if (ret != 0)
 		whine("Error fetching stats!\n");
 	if (old.irqs)
@@ -726,6 +800,7 @@ out:
 		xfree(new.irqs);
 	if (curr.irqs)
 		xfree(curr.irqs);
+
 	return 0;
 }
 
@@ -741,16 +816,21 @@ static int print_loop(const char *ifname, uint32_t interval)
 		ret = do_stats(ifname, &old);
 		if (ret != 0)
 			goto out;
+
 		sleep(interval);
+
 		ret = do_stats(ifname, &new);
 		if (ret != 0)
 			goto out;
+
 		diff_stats(&old, &new, &curr);
+
 		if (first && (mode & TERM_MODE_CSV_HDR) ==
 		    TERM_MODE_CSV_HDR) {
 			print_update_csv_hdr(ifname, &curr, &new, interval);
 			first = 0;
 		}
+
 		if ((mode & TERM_MODE_CSV) == TERM_MODE_CSV)
 			print_update_csv(ifname, &curr, &new, interval);
 		else if ((mode & TERM_MODE_NORMAL) == TERM_MODE_NORMAL)
@@ -765,6 +845,7 @@ out:
 		xfree(new.irqs);
 	if (curr.irqs)
 		xfree(curr.irqs);
+
 	return 0;
 }
 
@@ -889,6 +970,7 @@ int main(int argc, char **argv)
 	if (promisc)
 		leave_promiscuous_mode(ifname, ifflags);
 	xfree(ifname);
+
 	return ret;
 }
 

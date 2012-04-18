@@ -206,7 +206,6 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include <getopt.h>
 #include <ctype.h>
 #include <stdint.h>
-#include <assert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
@@ -237,6 +236,7 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "xsys.h"
 #include "mtrand.h"
 #include "ring_rx.h"
+#include "built_in.h"
 
 #define WHOIS_SERVER_SOURCE "/etc/netsniff-ng/whois.conf"
 
@@ -450,16 +450,19 @@ static void version(void)
 static inline unsigned short csum(unsigned short *buf, int nwords)
 {
 	unsigned long sum;
+
 	for (sum = 0; nwords > 0; nwords--)
 		sum += *buf++;
 	sum = (sum >> 16) + (sum & 0xffff);
 	sum += (sum >> 16);
+
 	return ~sum;
 }
 
 static void assemble_data(uint8_t *packet, size_t len, const char *payload)
 {
 	int i;
+
 	if (payload == NULL) {
 		for (i = 0; i < len; ++i)
 			packet[i] = (uint8_t) mt_rand_int32();
@@ -476,7 +479,9 @@ static void assemble_tcp(uint8_t *packet, size_t len, int syn, int ack,
 			 int urg, int fin, int rst, int psh, int ecn, int dport)
 {
 	struct tcphdr *tcph = (struct tcphdr *) packet;
-	assert(len >= sizeof(struct tcphdr));
+
+	bug_on(len < sizeof(struct tcphdr));
+
 	tcph->source = htons((uint16_t) mt_rand_int32());
 	tcph->dest = htons((uint16_t) dport);
 	tcph->seq = htonl(mt_rand_int32());
@@ -503,9 +508,11 @@ static int assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
 			     int nofrag, int dport, const char *payload)
 {
 	struct iphdr *iph = (struct iphdr *) packet;
-	assert(src && dst);
-	assert(src->sa_family == PF_INET && dst->sa_family == PF_INET);
-	assert(len >= sizeof(struct iphdr) + sizeof(struct tcphdr));
+
+	bug_on(!src || !dst);
+	bug_on(src->sa_family != PF_INET || dst->sa_family != PF_INET);
+	bug_on(len < sizeof(struct iphdr) + sizeof(struct tcphdr));
+
 	iph->ihl = 5;
 	iph->version = 4;
 	iph->tos = (uint8_t) tos;
@@ -516,14 +523,18 @@ static int assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
 	iph->protocol = 6; /* TCP */
 	iph->saddr = ((const struct sockaddr_in *) src)->sin_addr.s_addr;
 	iph->daddr = ((const struct sockaddr_in *) dst)->sin_addr.s_addr;
+
 	assemble_tcp(packet + sizeof(struct iphdr),
 		     len - sizeof(struct iphdr), syn, ack, urg, fin, rst,
 		     psh, ecn, dport);
+
 	assemble_data(packet + sizeof(struct iphdr) + sizeof(struct tcphdr),
 		      len - sizeof(struct iphdr) - sizeof(struct tcphdr),
 		      payload);
+
 	iph->check = csum((unsigned short *) packet,
 			  ntohs(iph->tot_len) >> 1);
+
 	return ntohs(iph->id);
 }
 
@@ -537,7 +548,9 @@ static int assemble_ipv6_tcp(uint8_t *packet, size_t len, int ttl,
 static void assemble_icmp4(uint8_t *packet, size_t len)
 {
 	struct icmphdr *icmph = (struct icmphdr *) packet;
-	assert(len >= sizeof(struct icmphdr));
+
+	bug_on(len < sizeof(struct icmphdr));
+
 	icmph->type = ICMP_ECHO;
 	icmph->code = 0;
 	icmph->checksum = 0;
@@ -550,9 +563,11 @@ static int assemble_ipv4_icmp4(uint8_t *packet, size_t len, int ttl,
 			       const char *payload)
 {
 	struct iphdr *iph = (struct iphdr *) packet;
-	assert(src && dst);
-	assert(src->sa_family == PF_INET && dst->sa_family == PF_INET);
-	assert(len >= sizeof(struct iphdr) + sizeof(struct tcphdr));
+
+	bug_on(!src || !dst);
+	bug_on(src->sa_family != PF_INET || dst->sa_family != PF_INET);
+	bug_on(len < sizeof(struct iphdr) + sizeof(struct tcphdr));
+
 	iph->ihl = 5;
 	iph->version = 4;
 	iph->tos = 0;
@@ -563,13 +578,17 @@ static int assemble_ipv4_icmp4(uint8_t *packet, size_t len, int ttl,
 	iph->protocol = 1; /* ICMP4 */
 	iph->saddr = ((const struct sockaddr_in *) src)->sin_addr.s_addr;
 	iph->daddr = ((const struct sockaddr_in *) dst)->sin_addr.s_addr;
+
 	assemble_icmp4(packet + sizeof(struct iphdr),
 		       len - sizeof(struct iphdr));
+
 	assemble_data(packet + sizeof(struct iphdr) + sizeof(struct icmphdr),
 		      len - sizeof(struct iphdr) - sizeof(struct icmphdr),
 		      payload);
+
 	iph->check = csum((unsigned short *) packet,
 			  ntohs(iph->tot_len) >> 1);
+
 	return ntohs(iph->id);
 }
 
@@ -608,33 +627,42 @@ static int handle_ipv4_icmp(uint8_t *packet, size_t len, int ttl, int id,
 	struct sockaddr_in sa;
 	struct asrecord rec;
 	GeoIPRecord *gir;
+
 	if (iph->protocol != 1)
 		return PKT_NOT_FOR_US;
 	if (iph->daddr != ((const struct sockaddr_in *) own)->sin_addr.s_addr)
 		return PKT_NOT_FOR_US;
+
 	icmph = (struct icmphdr *) (packet + sizeof(struct iphdr));
 	if (icmph->type != ICMP_TIME_EXCEEDED)
 		return PKT_NOT_FOR_US;
 	if (icmph->code != ICMP_EXC_TTL)
 		return PKT_NOT_FOR_US;
+
 	iph_inner = (struct iphdr *) (packet + sizeof(struct iphdr) +
 				      sizeof(struct icmphdr));
 	if (ntohs(iph_inner->id) != id)
 		return PKT_NOT_FOR_US;
+
 	hbuff = xzmalloc(NI_MAXHOST);
+
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET;
 	sa.sin_addr.s_addr = iph->saddr;
+
 	getnameinfo((struct sockaddr *) &sa, sizeof(sa), hbuff, NI_MAXHOST,
 		    NULL, 0, NI_NUMERICHOST);
+
 	memset(&rec, 0, sizeof(rec));
 	ret = aslookup(hbuff, &rec);
 	if (ret < 0)
 		panic("AS lookup error %d!\n", ret);
+
 	gir = GeoIP_record_by_ipnum(gi_city, ntohl(iph->saddr));
 	if (!dns_resolv) {
 		if (strlen(rec.country) > 0 && gir) {
 			const char *city = make_n_a(gir->city);
+
 			printf("%s in AS%s (%s, %s, %s, %f, %f), %s %s (%s), %s", hbuff,
 			       rec.number, rec.country,
 			       GeoIP_country_name_by_ipnum(gi_country, ntohl(iph->saddr)),
@@ -652,6 +680,7 @@ static int handle_ipv4_icmp(uint8_t *packet, size_t len, int ttl, int id,
 		struct hostent *hent = gethostbyaddr(&sa.sin_addr,
 						     sizeof(sa.sin_addr),
 						     PF_INET);
+
 		if (strlen(rec.country) > 0 && gir) {
 			const char *city = make_n_a(gir->city);
 			printf("%s (%s) in AS%s (%s, %s, %s, %f, %f), %s %s (%s), %s",
@@ -673,7 +702,9 @@ static int handle_ipv4_icmp(uint8_t *packet, size_t len, int ttl, int id,
 			       (hent ? hent->h_name : hbuff), hbuff);
 		}
 	}
+
 	xfree(hbuff);
+
 	return PKT_GOOD;
 }
 
@@ -718,20 +749,26 @@ static int do_trace(const struct ash_cfg *cfg)
 		fd = socket(ai->ai_family, SOCK_RAW, ai->ai_protocol);
 		if (fd < 0)
 			continue;
+
 		fd_cap = pf_socket();
+
 		memset(&ss, 0, sizeof(ss));
 		ret = device_address(cfg->dev, ai->ai_family, &ss);
 		if (ret < 0)
 			panic("Cannot get own device address!\n");
+
 		ret = bind(fd, (struct sockaddr *) &ss, sizeof(ss));
 		if (ret < 0)
 			panic("Cannot bind socket!\n");
+
 		memset(&sd, 0, sizeof(sd));
 		memcpy(&sd, ai->ai_addr, ai->ai_addrlen);
+
 		break;
 	}
 
 	freeaddrinfo(ahead);
+
 	if (fd < 0) {
 		whine("Cannot create socket! Does remote support IPv%d?!\n",
 		      cfg->ip);
@@ -752,6 +789,7 @@ static int do_trace(const struct ash_cfg *cfg)
 				len += strlen(cfg->payload);
 		}
 	}
+
 	if (len >= device_mtu(cfg->dev))
 		panic("Packet len exceeds device MTU!\n");
 
@@ -775,19 +813,23 @@ static int do_trace(const struct ash_cfg *cfg)
 	printf("AS path IPv%d TCP trace from %s to %s:%s (%s) with len %zu "
 	       "Bytes, %u max hops\n", cfg->ip, hbuff2, hbuff1, cfg->port,
 	       cfg->host, len, cfg->max_ttl);
+
 	printf("Using flags SYN:%d,ACK:%d,ECN:%d,FIN:%d,PSH:%d,RST:%d,URG:%d\n",
 	       cfg->syn, cfg->ack, cfg->ecn, cfg->fin, cfg->psh, cfg->rst,
 	       cfg->urg);
-	if (cfg->payload) {
+
+	if (cfg->payload)
 		printf("With payload: \'%s\'\n", cfg->payload);
-	}
+
 	fflush(stdout);
 
 	xfree(hbuff1);
 	xfree(hbuff2);
+
 	hbuff1 = hbuff2 = NULL;
 
 	enable_kernel_bpf_jit_compiler();
+
 	memset(&bpf_ops, 0, sizeof(bpf_ops));
 	if (cfg->ip == 4) {
 		bpf_ops.filter = ipv4_icmp_type_11;
@@ -798,10 +840,12 @@ static int do_trace(const struct ash_cfg *cfg)
 		bpf_ops.len = (sizeof(ipv6_icmp6_type_3) /
 			       sizeof(ipv6_icmp6_type_3[0]));
 	}
+
 	bpf_attach_to_sock(fd_cap, &bpf_ops);
 	ifindex = device_ifindex(cfg->dev);
 	bind_rx_ring(fd_cap, &dummy_ring, ifindex);
 	prepare_polling(fd_cap, &pfd);
+
 	timeout_poll = (cfg->timeout > 0 ? cfg->timeout : 3) * 1000;
 
 	for (ttl = cfg->init_ttl; ttl <= cfg->max_ttl; ++ttl) {
@@ -819,9 +863,15 @@ retry:
 						    (struct sockaddr *) &sd,
 						    (struct sockaddr *) &ss);
 			if (ttl == cfg->init_ttl && query == 0 && show_pkt) {
+				struct pkt_buff *pkt;
+
 				printf("Original packet:\n");
-				hex_pay(packet, len);
+
+				pkt = pkt_alloc(packet, len);
+				hex_pay(pkt);
 				tprintf_flush();
+				pkt_free(pkt);
+
 				printf("\n%2d: ", ttl);
 				fflush(stdout);
 			}
@@ -848,9 +898,14 @@ retry:
 							(struct sockaddr *) &ss,
 							cfg->dns_resolv);
 				if (is_okay && show_pkt) {
+					struct pkt_buff *pkt;
+
 					printf("\n  Received packet:\n");
-					hex_pay(packet_rcv, real_len);
+
+					pkt = pkt_alloc(packet_rcv, real_len);
+					hex_pay(pkt);
 					tprintf_flush();
+					pkt_free(pkt);
 				}
 			} else {
 				printf("* ");
@@ -870,8 +925,10 @@ retry:
 
 	close(fd_cap);
 	close(fd);
+
 	xfree(packet);
 	xfree(packet_rcv);
+
 	return 0;
 }
 
@@ -882,6 +939,7 @@ static void parse_whois_or_die(struct ash_cfg *cfg)
 	char tmp[512], *ptr, *ptr2;
 
 	fd = open_or_die(WHOIS_SERVER_SOURCE, O_RDONLY);
+
 	while ((ret = read(fd, tmp, sizeof(tmp))) > 0) {
 		tmp[sizeof(tmp) - 1] = 0;
 		ptr = skips(tmp);
@@ -900,6 +958,7 @@ static void parse_whois_or_die(struct ash_cfg *cfg)
 		cfg->whois_port = xstrdup(ptr);
 		break;
 	}
+
 	close(fd);
 }
 
@@ -1065,36 +1124,49 @@ int main(int argc, char **argv)
 	    cfg.init_ttl > MAXTTL ||
 	    cfg.max_ttl > MAXTTL)
 		help();
+
 	if (!device_up_and_running(cfg.dev))
 		panic("Networking device not up and running!\n");
 	if (!cfg.whois || !cfg.whois_port)
 		parse_whois_or_die(&cfg);
 	if (device_mtu(cfg.dev) <= cfg.totlen)
 		panic("Packet larger than device MTU!\n");
+
 	register_signal(SIGHUP, signal_handler);
+
 	header();
+
 	tprintf_init();
+
 	ret = aslookup_prepare(cfg.whois, cfg.whois_port);
 	if (ret < 0)
 		panic("Cannot resolve whois server!\n");
+
 	if (path_country_db)
 		gi_country = GeoIP_open(path_country_db, GEOIP_MMAP_CACHE);
 	else
 		gi_country = GeoIP_open_type(GEOIP_COUNTRY_EDITION,
 					     GEOIP_MMAP_CACHE);
+
 	if (path_city_db)
 		gi_city = GeoIP_open(path_city_db, GEOIP_MMAP_CACHE);
 	else
 		gi_city = GeoIP_open_type(GEOIP_CITY_EDITION_REV1,
 					  GEOIP_MMAP_CACHE);
+
 	if (!gi_country || !gi_city)
 		panic("Cannot open GeoIP database! Wrong path?!\n");
+
 	GeoIP_set_charset(gi_country, GEOIP_CHARSET_UTF8);
 	GeoIP_set_charset(gi_city, GEOIP_CHARSET_UTF8);
+
 	ret = do_trace(&cfg);
+
 	GeoIP_delete(gi_city);
 	GeoIP_delete(gi_country);
+
 	tprintf_cleanup();
+
 	if (cfg.whois_port)
 		xfree(cfg.whois_port);
 	if (cfg.whois)
@@ -1111,6 +1183,6 @@ int main(int argc, char **argv)
 		xfree(path_city_db);
 	if (path_country_db)
 		xfree(path_country_db);
+
 	return ret;
 }
-

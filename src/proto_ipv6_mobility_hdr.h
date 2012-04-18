@@ -1,9 +1,9 @@
 /*
- * IPv6 Mobility Header described in RFC6275
- * programmed by Markus Amend 2012 as a contribution to
  * netsniff-ng - the packet sniffing beast
- * Copyright 2012 Markus Amend.
+ * Copyright 2012 Markus Amend <markus@netsniff-ng.org>
  * Subject to the GPL, version 2.
+ *
+ * IPv6 Mobility Header described in RFC6275
  */
 
 #ifndef MOBILITY_HEADER_H
@@ -77,10 +77,6 @@ struct protocol ipv6_mobility_hdr_ops = {
 	.key = 0x87,
 	.print_full = mobility,
 	.print_less = mobility_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = mobility,
-	.print_all_hex = hex,
 	.proto_next = mobility_next,
 };
 

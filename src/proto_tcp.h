@@ -14,6 +14,7 @@
 
 #include "proto_struct.h"
 #include "dissector_eth.h"
+#include "pkt_buff.h"
 
 struct tcphdr {
 	uint16_t source;
@@ -44,7 +45,7 @@ struct tcphdr {
 			       fin:1;
 #else
 # error  "Adjust your <asm/byteorder.h> defines"
-#endif  
+#endif
 	uint16_t window;
 	uint16_t check;
 	uint16_t urg_ptr;
@@ -78,11 +79,11 @@ static inline uint16_t tcp_port(uint16_t src, uint16_t dst)
 	}
 }
 
-static inline void tcp(uint8_t *packet, size_t len)
+static inline void tcp(struct pkt_buff *pkt)
 {
-	struct tcphdr *tcp = (struct tcphdr *) packet;
+	struct tcphdr *tcp = (struct tcphdr *) pkt_pull(pkt, sizeof(*tcp));
 
-	if (len < sizeof(struct tcphdr))
+	if (tcp == NULL)
 		return;
 
 	tprintf(" [ TCP ");
@@ -117,13 +118,15 @@ static inline void tcp(uint8_t *packet, size_t len)
 	tprintf("CSum (0x%.4x), ", ntohs(tcp->check));
 	tprintf("UrgPtr (%u)", ntohs(tcp->urg_ptr));
 	tprintf(" ]\n");
+
+	pkt_set_proto(pkt, &eth_lay4, tcp_port(tcp->source, tcp->dest));
 }
 
-static inline void tcp_less(uint8_t *packet, size_t len)
+static inline void tcp_less(struct pkt_buff *pkt)
 {
-	struct tcphdr *tcp = (struct tcphdr *) packet;
+	struct tcphdr *tcp = (struct tcphdr *) pkt_pull(pkt, sizeof(*tcp));
 
-	if (len < sizeof(struct tcphdr))
+	if (tcp == NULL)
 		return;
 
 	tprintf(" TCP %s%s%s %u/%u F%s",
@@ -149,32 +152,14 @@ static inline void tcp_less(uint8_t *packet, size_t len)
 		tprintf(" CWR");
 	tprintf("%s Win %u S/A 0x%x/0x%x", colorize_end(),
 		ntohs(tcp->window), ntohl(tcp->seq), ntohl(tcp->ack_seq));
-}
 
-static inline void tcp_next(uint8_t *packet, size_t len,
-			    struct hash_table **table,
-			    unsigned int *key, size_t *off)
-{
-	struct tcphdr *tcp = (struct tcphdr *) packet;
-
-	if (len < sizeof(struct tcphdr))
-		return;
-
-	(*off) = sizeof(struct tcphdr);
-	(*key) = tcp_port(tcp->source, tcp->dest);
-	(*table) = &eth_lay4;
+	pkt_set_proto(pkt, &eth_lay4, tcp_port(tcp->source, tcp->dest));
 }
 
 struct protocol tcp_ops = {
 	.key = 0x06,
-	.offset = sizeof(struct tcphdr),
 	.print_full = tcp,
 	.print_less = tcp_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = tcp,
-	.print_all_hex = hex,
-	.proto_next = tcp_next,
 };
 
 #endif /* TCP_H */

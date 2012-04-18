@@ -18,6 +18,7 @@
 #include "csum.h"
 #include "proto_struct.h"
 #include "dissector_eth.h"
+#include "pkt_buff.h"
 
 /*
  * IPv6 fixed header
@@ -43,15 +44,15 @@ struct ipv6hdr {
 	struct in6_addr daddr;
 } __attribute__((packed));
 
-static inline void ipv6(uint8_t *packet, size_t len)
+static inline void ipv6(struct pkt_buff *pkt)
 {
 	uint8_t traffic_class;
 	uint32_t flow_label;
 	char src_ip[INET6_ADDRSTRLEN];
 	char dst_ip[INET6_ADDRSTRLEN];
-	struct ipv6hdr *ip = (struct ipv6hdr *) packet;
+	struct ipv6hdr *ip = (struct ipv6hdr *) pkt_pull(pkt, sizeof(*ip));
 
-	if (len < sizeof(struct ipv6hdr))
+	if (ip == NULL)
 		return;
 
 	traffic_class = (ip->priority << 4) | 
@@ -71,15 +72,17 @@ static inline void ipv6(uint8_t *packet, size_t len)
 	tprintf("NextHdr (%u), ", ip->nexthdr);
 	tprintf("HopLimit (%u)", ip->hop_limit);
 	tprintf(" ]\n");
+
+	pkt_set_proto(pkt, &eth_lay3, ip->nexthdr);
 }
 
-static inline void ipv6_less(uint8_t *packet, size_t len)
+static inline void ipv6_less(struct pkt_buff *pkt)
 {
 	char src_ip[INET6_ADDRSTRLEN];
 	char dst_ip[INET6_ADDRSTRLEN];
-	struct ipv6hdr *ip = (struct ipv6hdr *) packet;
+	struct ipv6hdr *ip = (struct ipv6hdr *) pkt_pull(pkt, sizeof(*ip));
 
-	if (len < sizeof(struct ipv6hdr))
+	if (ip == NULL)
 		return;
 
 	inet_ntop(AF_INET6, &ip->saddr, src_ip, sizeof(src_ip));
@@ -87,32 +90,14 @@ static inline void ipv6_less(uint8_t *packet, size_t len)
 
 	tprintf(" %s/%s Len %u", src_ip, dst_ip,
 		ntohs(ip->payload_len));
-}
 
-static inline void ipv6_next(uint8_t *packet, size_t len,
-			     struct hash_table **table,
-			     unsigned int *key, size_t *off)
-{
-	struct ipv6hdr *ip = (struct ipv6hdr *) packet;
-
-	if (len < sizeof(struct ipv6hdr))
-		return;
-
-	(*off) = sizeof(struct ipv6hdr);
-	(*key) = ip->nexthdr;
-	(*table) = &eth_lay3;
+	pkt_set_proto(pkt, &eth_lay3, ip->nexthdr);
 }
 
 struct protocol ipv6_ops = {
 	.key = 0x86DD,
-	.offset = sizeof(struct ipv6hdr),
 	.print_full = ipv6,
 	.print_less = ipv6_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = ipv6,
-	.print_all_hex = hex,
-	.proto_next = ipv6_next,
 };
 
 #endif /* IPV6_H */

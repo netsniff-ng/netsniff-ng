@@ -15,18 +15,19 @@
 
 #include "proto_struct.h"
 #include "dissector_eth.h"
+#include "pkt_buff.h"
 
 struct vlanhdr {
 	uint16_t h_vlan_TCI;
 	uint16_t h_vlan_encapsulated_proto;
 } __attribute__((packed));
 
-static inline void vlan(uint8_t *packet, size_t len)
+static inline void vlan(struct pkt_buff *pkt)
 {
 	uint16_t tci;
-	struct vlanhdr *vlan = (struct vlanhdr *) packet;
+	struct vlanhdr *vlan = (struct vlanhdr *) pkt_pull(pkt, sizeof(*vlan));
 
-	if (len < sizeof(struct vlanhdr))
+	if (vlan == NULL)
 		return;
 
 	tci = ntohs(vlan->h_vlan_TCI);
@@ -37,45 +38,29 @@ static inline void vlan(uint8_t *packet, size_t len)
 	tprintf("ID (%d), ", (tci & 0x0FFF));
 	tprintf("Proto (0x%.4x)", ntohs(vlan->h_vlan_encapsulated_proto));
 	tprintf(" ]\n");
+
+	pkt_set_proto(pkt, &eth_lay2, ntohs(vlan->h_vlan_encapsulated_proto));
 }
 
-static inline void vlan_less(uint8_t *packet, size_t len)
+static inline void vlan_less(struct pkt_buff *pkt)
 {
 	uint16_t tci;
-	struct vlanhdr *vlan = (struct vlanhdr *) packet;
+	struct vlanhdr *vlan = (struct vlanhdr *) pkt_pull(pkt, sizeof(*vlan));
 
-	if (len < sizeof(struct vlanhdr))
+	if (vlan == NULL)
 		return;
 
 	tci = ntohs(vlan->h_vlan_TCI);
 
 	tprintf(" VLAN%d", (tci & 0x0FFF));
-}
 
-static inline void vlan_next(uint8_t *packet, size_t len,
-			     struct hash_table **table,
-			     unsigned int *key, size_t *off)
-{
-	struct vlanhdr *vlan = (struct vlanhdr *) packet;
-
-	if (len < sizeof(struct vlanhdr))
-		return;
-
-	(*off) = sizeof(struct vlanhdr);
-	(*key) = ntohs(vlan->h_vlan_encapsulated_proto);
-	(*table) = &eth_lay2;
+	pkt_set_proto(pkt, &eth_lay2, ntohs(vlan->h_vlan_encapsulated_proto));
 }
 
 struct protocol vlan_ops = {
 	.key = 0x8100,
-	.offset = sizeof(struct vlanhdr),
 	.print_full = vlan,
 	.print_less = vlan_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = vlan,
-	.print_all_hex = hex,
-	.proto_next = vlan_next,
 };
 
 #endif /* VLAN_H */

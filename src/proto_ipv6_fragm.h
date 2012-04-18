@@ -1,9 +1,9 @@
 /*
- * IPv6 Fragmentation Header described in RFC2460
- * programmed by Markus Amend 2012 as a contribution to
  * netsniff-ng - the packet sniffing beast
- * Copyright 2012 Markus Amend.
+ * Copyright 2012 Markus Amend <markus@netsniff-ng.org>
  * Subject to the GPL, version 2.
+ *
+ * IPv6 Fragmentation Header described in RFC2460
  */
 
 #ifndef FRAGM_H
@@ -72,10 +72,6 @@ struct protocol ipv6_fragm_ops = {
 	.key = 0x2C,
 	.print_full = fragm,
 	.print_less = fragm_less,
-	.print_pay_ascii = empty,
-	.print_pay_hex = empty,
-	.print_pay_none = fragm,
-	.print_all_hex = hex,
 	.proto_next = fragm_next,
 };
 
