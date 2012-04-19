@@ -207,4 +207,14 @@
 # define bug			assert(0)
 #endif
 
+#ifndef ntohll
+#define ntohll(x) 		(((uint64_t)(				\
+	ntohl((uint32_t)((x << 32) >> 32))) << 32) |			\
+	ntohl(((uint32_t)(x >> 32))))
+#endif
+
+#ifndef htonll
+#define htonll(x) ntohll(x)
+#endif
+
 #endif /* BUILT_IN_H */
