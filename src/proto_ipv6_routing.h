@@ -51,7 +51,7 @@ static inline void dissect_routinghdr_type_0(struct pkt_buff *pkt,
 	if (routing_0 == NULL)
 		return;
 
-	tprintf("Res (%x)", routing_0->reserved);
+	tprintf("Res (0x%x)", routing_0->reserved);
 
 	num_addr = *hdr_ext_len * 8 / sizeof(*addr);
 	while (num_addr--) {
