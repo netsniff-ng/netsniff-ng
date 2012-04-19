@@ -40,7 +40,7 @@ static inline void fragm(uint8_t *packet, size_t len)
 	tprintf("Offset (%u), ", off_res_M >> 3);
 	tprintf("Res (%u), ", (off_res_M >> 1) & 0x3);
 	tprintf("M flag (%u), ", off_res_M & 0x1);
-	tprintf("Identification (%u) ", ntohs(fragm->h_fragm_identification));
+	tprintf("Identification (%u) ", ntohl(fragm->h_fragm_identification));
 	tprintf(" ]\n");
 }
 
