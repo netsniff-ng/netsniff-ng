@@ -5,8 +5,8 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef USERMGMT_H
-#define USERMGMT_H
+#ifndef CT_USERMGMT_H
+#define CT_USERMGMT_H
 
 #include <stdint.h>
 
@@ -47,4 +47,4 @@ extern void remove_user_by_socket(int sock);
 extern void remove_user_by_sockaddr(struct sockaddr_storage *sa,
 				    size_t sa_len);
 
-#endif /* USERMGMT_H */
+#endif /* CT_USERMGMT_H */

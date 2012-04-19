@@ -18,7 +18,7 @@
 #include "curvetun.h"
 #include "xstring.h"
 #include "curve.h"
-#include "servmgmt.h"
+#include "ct_servmgmt.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"
 #include "crypto_auth_hmacsha512256.h"
 

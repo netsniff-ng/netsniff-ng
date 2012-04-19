@@ -35,8 +35,8 @@
 #include "xsys.h"
 #include "xmalloc.h"
 #include "curvetun.h"
-#include "servmgmt.h"
-#include "usermgmt.h"
+#include "ct_servmgmt.h"
+#include "ct_usermgmt.h"
 #include "crypto_auth_hmacsha512256.h"
 
 extern volatile sig_atomic_t sigint;

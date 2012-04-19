@@ -15,12 +15,12 @@ IF (NACL_FOUND AND CMAKE_THREAD_LIBS_INIT)
 					../cpusched.c
 					../stun.c
 					../mtrand.c
-					../usermgmt.c
-					../servmgmt.c
 					../patricia.c
 					../trie.c
 					../hash.c
 					../curve.c
+					../ct_usermgmt.c
+					../ct_servmgmt.c
 					../ct_server.c
 					../ct_client.c
 					../curvetun.c)

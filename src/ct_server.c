@@ -36,7 +36,7 @@
 #include "curvetun.h"
 #include "curve.h"
 #include "built_in.h"
-#include "usermgmt.h"
+#include "ct_usermgmt.h"
 #include "cpusched.h"
 #include "trie.h"
 

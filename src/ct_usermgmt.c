@@ -16,7 +16,7 @@
 #include <arpa/inet.h>
 
 #include "die.h"
-#include "usermgmt.h"
+#include "ct_usermgmt.h"
 #include "locking.h"
 #include "xmalloc.h"
 #include "xio.h"

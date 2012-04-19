@@ -5,11 +5,10 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef SERVMGMT_H
-#define SERVMGMT_H
+#ifndef CT_SERVMGMT_H
+#define CT_SERVMGMT_H
 
 #include <stdio.h>
-
 #include "curve.h"
 
 extern void parse_userfile_and_generate_serv_store_or_die(char *homedir);
@@ -20,5 +19,4 @@ extern struct curve25519_proto *get_serv_store_entry_proto_inf(void);
 extern unsigned char *get_serv_store_entry_auth_token(void);
 extern void destroy_serv_store(void);
 
-#endif /* SERVMGMT_H */
-
+#endif /* CT_SERVMGMT_H */
