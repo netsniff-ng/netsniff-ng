@@ -10,6 +10,9 @@
 
 #include <linux/if_packet.h>
 #include <assert.h>
+#include <endian.h>
+#include <byteswap.h>
+#include <stdint.h>
 
 /* /sys/devices/system/cpu/cpuX/cache/indexX/coherency_line_size */
 
@@ -207,14 +210,28 @@
 # define bug			assert(0)
 #endif
 
-#ifndef ntohll
-#define ntohll(x) 		(((uint64_t)(				\
-	ntohl((uint32_t)((x << 32) >> 32))) << 32) |			\
-	ntohl(((uint32_t)(x >> 32))))
-#endif
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+static inline uint64_t htonll(uint64_t x)
+{
+	return bswap_64(x);
+}
 
-#ifndef htonll
-#define htonll(x) ntohll(x)
+static inline uint64_t ntohll(uint64_t x)
+{
+	return bswap_64(x);
+}
+#elif __BYTE_ORDER == __BIG_ENDIAN
+static inline uint64_t htonll(uint64_t x)
+{
+	return x;
+}
+
+static inline uint64_t ntohll(uint64_t x)
+{
+	return x;
+}
+#else
+# error __BYTE_ORDER is neither __LITTLE_ENDIAN nor __BIG_ENDIAN
 #endif
 
 #endif /* BUILT_IN_H */
