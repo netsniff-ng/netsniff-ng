@@ -623,6 +623,7 @@ void leave_promiscuous_mode(char *ifname, short oldflags)
 {
 	if (!strncmp("any", ifname, strlen("any")))
 		return;
+
 	device_set_flags(ifname, oldflags);
 }
 
@@ -632,6 +633,7 @@ int device_up(char *ifname)
 		return -EINVAL;
 	if (!strncmp("any", ifname, strlen("any")))
 		return 1;
+
 	return (device_get_flags(ifname) & IFF_UP) == IFF_UP;
 }
 
@@ -641,6 +643,7 @@ int device_running(char *ifname)
 		return -EINVAL;
 	if (!strncmp("any", ifname, strlen("any")))
 		return 1;
+
 	return (device_get_flags(ifname) & IFF_RUNNING) == IFF_RUNNING;
 }
 
@@ -650,6 +653,7 @@ int device_up_and_running(char *ifname)
 		return -EINVAL;
 	if (!strncmp("any", ifname, strlen("any")))
 		return 1;
+
 	return (device_get_flags(ifname) & (IFF_UP | IFF_RUNNING)) ==
 	       (IFF_UP | IFF_RUNNING);
 }
@@ -662,17 +666,21 @@ int poll_error_maybe_die(int sock, struct pollfd *pfd)
 		panic("Hangup on socket occured!\n");
 	if (pfd->revents & POLLERR) {
 		int tmp;
+
 		errno = 0;
 		if (recv(sock, &tmp, sizeof(tmp), MSG_PEEK) >= 0)
 			return POLL_NEXT_PKT;
 		if (errno == ENETDOWN)
 			panic("Interface went down!\n");
+
 		return POLL_MOVE_OUT;
 	}
 	if (pfd->revents & POLLNVAL) {
 		whine("Invalid polling request on socket!\n");
+
 		return POLL_MOVE_OUT;
 	}
+
 	return POLL_NEXT_PKT;
 }
 
@@ -711,22 +719,30 @@ int set_cpu_affinity(char *str, int inverted)
 		unsigned int b;	 /* End of range */
 		unsigned int s;	 /* Stride */
 		char *c1, *c2;
+
 		if (sscanf(p, "%u", &a) < 1)
 			return -EINVAL;
+
 		b = a;
 		s = 1;
+
 		c1 = next_token(p, '-');
 		c2 = next_token(p, ',');
+
 		if (c1 != NULL && (c2 == NULL || c1 < c2)) {
 			if (sscanf(c1, "%u", &b) < 1)
 				return -EINVAL;
+
 			c1 = next_token(c1, ':');
+
 			if (c1 != NULL && (c2 == NULL || c1 < c2))
 				if (sscanf(c1, "%u", &s) < 1)
 					return -EINVAL;
 		}
+
 		if (!(a <= b))
 			return -EINVAL;
+
 		while (a <= b) {
 			if (inverted)
 				CPU_CLR(a, &cpu_bitmask);
@@ -735,10 +751,12 @@ int set_cpu_affinity(char *str, int inverted)
 			a += s;
 		}
 	}
+
 	ret = sched_setaffinity(getpid(), sizeof(cpu_bitmask),
 				&cpu_bitmask);
 	if (ret)
 		panic("Can't set this cpu affinity!\n");
+
 	return 0;
 }
 
@@ -751,6 +769,7 @@ int set_proc_prio(int priority)
 	int ret = setpriority(PRIO_PROCESS, getpid(), priority);
 	if (ret)
 		panic("Can't set nice val to %i!\n", priority);
+
 	return 0;
 }
 
