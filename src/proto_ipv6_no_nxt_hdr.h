@@ -16,20 +16,22 @@
 #include "proto_struct.h"
 #include "dissector_eth.h"
 
-static inline void no_next_header_next(uint8_t *packet, size_t len,
-			     struct hash_table **table,
-			     unsigned int *key, size_t *off)
+static inline void no_next_header(struct pkt_buff *pkt)
 {
-	(*off) = 0;
-	(*key) = 0;
-	(*table) = NULL;
+	/*
+	  The value 59 in the Next Header field of an IPv6 header or any
+	  extension header indicates that there is nothing following that
+	  header.  If the Payload Length field of the IPv6 header indicates the
+	  presence of octets past the end of a header whose Next Header field
+	  contains 59, those octets must be ignored, and passed on unchanged if
+	  the packet is forwarded.
+	*/
 }
 
 struct protocol ipv6_no_next_header_ops = {
 	.key = 0x3B,
-	.print_full = empty,
-	.print_less = empty,
-	.proto_next = no_next_header_next,
+	.print_full = no_next_header,
+	.print_less = no_next_header,
 };
 
 #endif /* PROTO_IPV6_NO_NXT_HDR_H */

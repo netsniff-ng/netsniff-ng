@@ -16,5 +16,6 @@
 #include "proto_hex.h"
 #include "proto_igmp.h"
 #include "proto_ipv6_routing.h"
+#include "proto_ipv6_no_nxt_hdr.h"
 
 #endif /* PROTOS_H */
