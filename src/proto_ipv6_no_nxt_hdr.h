@@ -19,19 +19,26 @@
 static inline void no_next_header(struct pkt_buff *pkt)
 {
 	/*
-	  The value 59 in the Next Header field of an IPv6 header or any
-	  extension header indicates that there is nothing following that
-	  header.  If the Payload Length field of the IPv6 header indicates the
-	  presence of octets past the end of a header whose Next Header field
-	  contains 59, those octets must be ignored, and passed on unchanged if
-	  the packet is forwarded.
-	*/
+	 * The value 59 in the Next Header field of an IPv6 header or any
+	 * extension header indicates that there is nothing following that
+	 * header.  If the Payload Length field of the IPv6 header indicates the
+	 * presence of octets past the end of a header whose Next Header field
+	 * contains 59, those octets must be ignored, and passed on unchanged if
+	 * the packet is forwarded.
+	 */
+	tprintf(" [ No Next Header");
+	tprintf(" ]\n");
+}
+
+static inline void no_next_header_less(struct pkt_buff *pkt)
+{
+	tprintf(" No Next Header");
 }
 
 struct protocol ipv6_no_next_header_ops = {
 	.key = 0x3B,
 	.print_full = no_next_header,
-	.print_less = no_next_header,
+	.print_less = no_next_header_less,
 };
 
 #endif /* PROTO_IPV6_NO_NXT_HDR_H */
