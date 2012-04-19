@@ -108,6 +108,8 @@ static inline void routing_less(struct pkt_buff *pkt)
 	tprintf(" Routing ");
 	tprintf("Addresses (%u)",
 		routing->h_hdr_ext_len * 8 / sizeof(struct ipv6_adrr));
+
+	pkt_set_proto(pkt, &eth_lay3, routing->h_next_header);
 }
 
 struct protocol ipv6_routing_ops = {
