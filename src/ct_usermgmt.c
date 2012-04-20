@@ -109,10 +109,8 @@ static int cleanup_batch_sock_mapper(void *ptr)
 static void destroy_sock_mapper(void)
 {
 	rwlock_wr_lock(&sock_map_lock);
-
 	for_each_hash(&sock_mapper, cleanup_batch_sock_mapper);
 	free_hash(&sock_mapper);
-
 	rwlock_unlock(&sock_map_lock);
 
 	rwlock_destroy(&sock_map_lock);
@@ -133,17 +131,14 @@ static int cleanup_batch_sockaddr_mapper(void *ptr)
 	}
 
 	xfree(e);
-
 	return 0;
 }
 
 static void destroy_sockaddr_mapper(void)
 {
 	rwlock_wr_lock(&sockaddr_map_lock);
-
 	for_each_hash(&sockaddr_mapper, cleanup_batch_sockaddr_mapper);
 	free_hash(&sockaddr_mapper);
-
 	rwlock_unlock(&sockaddr_map_lock);
 
 	rwlock_destroy(&sockaddr_map_lock);
@@ -158,7 +153,6 @@ static void user_store_free(struct user_store *us)
 {
 	if (!us)
 		return;
-
 	memset(us, 0, sizeof(struct user_store));
 	xfree(us);
 }
@@ -199,13 +193,65 @@ static int __check_duplicate_pubkey(unsigned char *pubkey, size_t len)
 	return duplicate;
 }
 
+enum parse_states {
+	PARSE_USERNAME,
+	PARSE_PUBKEY,
+	PARSE_DONE,
+};
+
+static int parse_line(char *line, char *homedir)
+{
+	int ret;
+	char *str;
+	enum parse_states s = PARSE_USERNAME;
+	struct user_store *elem;
+	unsigned char pkey[crypto_box_pub_key_size];
+
+	elem = user_store_alloc();
+	elem->next = store;
+
+	str = strtok(line, ";");
+	for (; str != NULL;) {
+		switch (s) {
+		case PARSE_USERNAME:
+			if (__check_duplicate_username(str, strlen(str) + 1))
+				return -EINVAL;
+			strlcpy(elem->username, str, sizeof(elem->username));
+			s = PARSE_PUBKEY;
+			break;
+		case PARSE_PUBKEY:
+			if (!curve25519_pubkey_hexparse_32(pkey, sizeof(pkey),
+							   str, strlen(str)))
+				return -EINVAL;
+			if (__check_duplicate_pubkey(pkey, sizeof(pkey)))
+				return -EINVAL;
+			memcpy(elem->publickey, pkey, sizeof(elem->publickey));
+			ret = curve25519_proto_init(&elem->proto_inf,
+					 	    elem->publickey,
+						    sizeof(elem->publickey),
+						    homedir, 1);
+			if (ret)
+				return -EIO;
+			s = PARSE_DONE;
+			break;
+		case PARSE_DONE:
+			break;
+		default:
+			return -EIO;
+		}
+
+		str = strtok(NULL, ";");
+	}
+
+	store = elem;
+	return 0;
+}
+
 void parse_userfile_and_generate_user_store_or_die(char *homedir)
 {
 	FILE *fp;
-	char path[PATH_MAX], buff[512], *username, *key;
-	unsigned char pkey[crypto_box_pub_key_size];
+	char path[PATH_MAX], buff[512];
 	int line = 1, ret, fd;
-	struct user_store *elem;
 
 	memset(path, 0, sizeof(path));
 	slprintf(path, sizeof(path), "%s/%s", homedir, FILE_CLIENTS);
@@ -216,8 +262,8 @@ void parse_userfile_and_generate_user_store_or_die(char *homedir)
 	fp = fopen(path, "r");
 	if (!fp)
 		panic("Cannot open client file!\n");
-	memset(buff, 0, sizeof(buff));
 
+	memset(buff, 0, sizeof(buff));
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
 		/* A comment. Skip this line */
@@ -226,52 +272,19 @@ void parse_userfile_and_generate_user_store_or_die(char *homedir)
 			line++;
 			continue;
 		}
-		username = skips(buff);
-		key = username;
-		while (*key != ';' &&
-		       *key != '\0' &&
-		       *key != ' ' &&
-		       *key != '\t')
-			key++;
-		if (*key != ';')
-			panic("Parse error! No key found in l.%d!\n", line);
-		*key = '\0';
-		key++;
-		if (*key == '\n')
-			panic("Parse error! No key found in l.%d!\n", line);
-		key = strtrim_right(key, '\n');
-		memset(pkey, 0, sizeof(pkey));
-		if (!curve25519_pubkey_hexparse_32(pkey, sizeof(pkey),
-						   key, strlen(key)))
-			panic("Parse error! No key found in l.%d!\n", line);
-		if (strlen(username) + 1 > sizeof(elem->username))
-			panic("Username too long in l.%d!\n", line);
-		if (__check_duplicate_username(username, strlen(username) + 1))
-			panic("Duplicate username in l.%d!\n", line);
-		if (__check_duplicate_pubkey(pkey, sizeof(pkey)))
-			panic("Duplicate publickey in l.%d!\n", line);
-		if (strstr(username, " "))
-			panic("Username consists of whitespace in l.%d!\n", line);
-		if (strstr(username, "\t"))
-			panic("Username consists of whitespace in l.%d!\n", line);
-		elem = user_store_alloc();
-		elem->next = store;
-		strlcpy(elem->username, username, sizeof(elem->username));
-		memcpy(elem->publickey, pkey, sizeof(elem->publickey));
-		ret = curve25519_proto_init(&elem->proto_inf,
-					    elem->publickey,
-					    sizeof(elem->publickey),
-					    homedir, 1);
-		if (ret)
-			panic("Cannot init curve25519 proto on user!\n");
-		store = elem;
-		memset(buff, 0, sizeof(buff));
+
+		ret = parse_line(buff, homedir);
+		if (ret < 0)
+			panic("Cannot parse line %d from clients!\n", line);
 		line++;
+		memset(buff, 0, sizeof(buff));
 	}
 
 	fclose(fp);
+
 	if (store == NULL)
 		panic("No registered clients found!\n");
+
 	rwlock_unlock(&store_lock);
 
 	init_sock_mapper();

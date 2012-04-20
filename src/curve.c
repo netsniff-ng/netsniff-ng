@@ -135,7 +135,7 @@ int curve25519_pubkey_hexparse_32(unsigned char *y, size_t ylen,
 	if (!x || !y || ylen != 32)
 		return 0;
 
-	while (len > 0) {
+	while (len > 0 && seen_digits != 32) {
 		int digit0, digit1;
 
 		if (x[0] == '\0')
@@ -162,7 +162,7 @@ int curve25519_pubkey_hexparse_32(unsigned char *y, size_t ylen,
 		x += 2;
 	}
 
-	if (x[0] != '\0' || seen_digits != 32 || seen_colons != 31)
+	if (/*x[0] != '\0' ||*/ seen_digits != 32 || seen_colons != 31)
 		return 0;
 
 	return 1;
