@@ -38,9 +38,7 @@ struct server_store {
 };
 
 static struct server_store *store = NULL;
-
 static struct server_store *selected = NULL;
-
 static struct rwlock store_lock;
 
 static struct server_store *server_store_alloc(void)
