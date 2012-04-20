@@ -27,10 +27,10 @@
 /* Config line format: alias;serverip|servername;port;udp|tcp;pubkey\n */
 
 struct server_store {
+	int udp;
 	char alias[256];
 	char host[256];
 	char port[6]; /* 5 + \0 */
-	int udp;
 	unsigned char publickey[crypto_box_pub_key_size];
 	struct curve25519_proto proto_inf;
 	unsigned char auth_token[crypto_auth_hmacsha512256_KEYBYTES];
@@ -56,13 +56,80 @@ static void server_store_free(struct server_store *ss)
 	xfree(ss);
 }
 
+enum parse_states {
+	PARSE_ALIAS,
+	PARSE_SERVER,
+	PARSE_PORT,
+	PARSE_CARRIER,
+	PARSE_PUBKEY,
+	PARSE_DONE,
+};
+
+static int parse_line(char *line, char *homedir)
+{
+	int ret;
+	char *str;
+	enum parse_states s = PARSE_ALIAS;
+	struct server_store *elem;
+	unsigned char pkey[crypto_box_pub_key_size];
+
+	elem = server_store_alloc();
+	elem->next = store;
+
+	str = strtok(line, ";");
+	for (; str != NULL;) {
+		switch (s) {
+		case PARSE_ALIAS:
+			strlcpy(elem->alias, str, sizeof(elem->alias));
+			s = PARSE_SERVER;
+			break;
+		case PARSE_SERVER:
+			strlcpy(elem->host, str, sizeof(elem->host));
+			s = PARSE_PORT;
+			break;
+		case PARSE_PORT:
+			strlcpy(elem->port, str, sizeof(elem->port));
+			s = PARSE_CARRIER;
+			break;
+		case PARSE_CARRIER:
+			if (!strncmp("udp", str, strlen("udp")))
+				elem->udp = 1;
+			else
+				elem->udp = 0;
+			s = PARSE_PUBKEY;
+			break;
+		case PARSE_PUBKEY:
+			if (!curve25519_pubkey_hexparse_32(pkey, sizeof(pkey),
+							   str, strlen(str)))
+				return -EINVAL;
+			memcpy(elem->publickey, pkey, sizeof(elem->publickey));
+			memcpy(elem->auth_token, pkey, sizeof(elem->auth_token));
+			ret = curve25519_proto_init(&elem->proto_inf,
+					 	    elem->publickey,
+						    sizeof(elem->publickey),
+						    homedir, 1);
+			if (ret)
+				return -EIO;
+			s = PARSE_DONE;
+			break;
+		case PARSE_DONE:
+			break;
+		default:
+			return -EIO;
+		}
+
+		str = strtok(NULL, ";");
+	}
+
+	store = elem;
+	return 0;
+}
+
 void parse_userfile_and_generate_serv_store_or_die(char *homedir)
 {
 	FILE *fp;
-	char path[PATH_MAX], buff[1024], *alias, *host, *port, *udp, *key;
-	unsigned char pkey[crypto_box_pub_key_size];
-	int line = 1, __udp = 0, ret;
-	struct server_store *elem;
+	char path[PATH_MAX], buff[1024];
+	int line = 1, ret;
 
 	memset(path, 0, sizeof(path));
 	slprintf(path, sizeof(path), "%s/%s", homedir, FILE_SERVERS);
@@ -73,9 +140,8 @@ void parse_userfile_and_generate_serv_store_or_die(char *homedir)
 	fp = fopen(path, "r");
 	if (!fp)
 		panic("Cannot open server file!\n");
-	memset(buff, 0, sizeof(buff));
 
-	/* TODO: this is huge crap. needs to be rewritten! */
+	memset(buff, 0, sizeof(buff));
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
 		/* A comment. Skip this line */
@@ -84,98 +150,19 @@ void parse_userfile_and_generate_serv_store_or_die(char *homedir)
 			line++;
 			continue;
 		}
-		alias = skips(buff);
-		host = alias;
-		while (*host != ';' &&
-		       *host != '\0' &&
-		       *host != ' ' &&
-		       *host != '\t')
-			host++;
-		if (*host != ';')
-			panic("Parse error! No alias found in l.%d!\n", line);
-		*host = '\0';
-		host++;
-		if (*host == '\n')
-			panic("Parse error! No host found in l.%d!\n", line);
-		port = host;
-		while (*port != ';' &&
-		       *port != '\0' &&
-		       *port != ' ' &&
-		       *port != '\t')
-			port++;
-		if (*port != ';')
-			panic("Parse error! No host found in l.%d!\n", line);
-		*port = '\0';
-		port++;
-		if (*port == '\n')
-			panic("Parse error! No port found in l.%d!\n", line);
-		udp = port;
-		while (*udp != ';' &&
-		       *udp != '\0' &&
-		       *udp != ' ' &&
-		       *udp != '\t')
-			udp++;
-		if (*udp != ';')
-			panic("Parse error! No port found in l.%d!\n", line);
-		*udp = '\0';
-		udp++;
-		if (*udp == '\n')
-			panic("Parse error! No udp|tcp found in l.%d!\n", line);
-		if (udp[0] == 'u' && udp[1] == 'd' && udp[2] == 'p')
-			__udp = 1;
-		else if (udp[0] == 't' && udp[1] == 'c' && udp[2] == 'p')
-			__udp = 0;
-		else
-			panic("Parse error! No udp|tcp found in l.%d!\n", line);
-		udp += 3;
-		if (*udp != ';')
-			panic("Parse error! No key found in l.%d!\n", line);
-		*udp = '\0';
-		udp++;
-		if (*udp == '\n')
-			panic("Parse error! No key found in l.%d!\n", line);
-		key = udp;
-		key[strlen(key) - 1] = 0;
-		memset(pkey, 0, sizeof(pkey));
-		if (!curve25519_pubkey_hexparse_32(pkey, sizeof(pkey),
-						   key, strlen(key)))
-			panic("Parse error! No key found in l.%d!\n", line);
 
-		if (strlen(alias) + 1 > sizeof(elem->alias))
-			panic("Alias too long in l.%d!\n", line);
-		if (strlen(host) + 1 > sizeof(elem->host))
-			panic("Host too long in l.%d!\n", line);
-		if (strlen(port) + 1 > sizeof(elem->port))
-			panic("Port too long in l.%d!\n", line);
-		if (strstr(alias, " ") || strstr(alias, "\t"))
-			panic("Alias consists of whitespace in l.%d!\n", line);
-		if (strstr(host, " ") || strstr(host, "\t"))
-			panic("Host consists of whitespace in l.%d!\n", line);
-		if (strstr(port, " ") || strstr(port, "\t"))
-			panic("Port consists of whitespace in l.%d!\n", line);
-
-		elem = server_store_alloc();
-		elem->next = store;
-		elem->udp = __udp;
-		strlcpy(elem->alias, alias, sizeof(elem->alias));
-		strlcpy(elem->host, host, sizeof(elem->host));
-		strlcpy(elem->port, port, sizeof(elem->port));
-		memcpy(elem->publickey, pkey, sizeof(elem->publickey));
-		memcpy(elem->auth_token, elem->publickey, sizeof(elem->auth_token));
-		ret = curve25519_proto_init(&elem->proto_inf,
-					    elem->publickey,
-					    sizeof(elem->publickey),
-					    homedir, 0);
-		if (ret)
-			panic("Cannot init curve25519 proto on server!\n");
-		store = elem;
-		memset(buff, 0, sizeof(buff));
+		ret = parse_line(buff, homedir);
+		if (ret < 0)
+			panic("Cannot parse line %d from clients!\n", line);
 		line++;
+		memset(buff, 0, sizeof(buff));
 	}
 
 	fclose(fp);
+
 	if (store == NULL)
 		panic("No registered servers found!\n");
+
 	rwlock_unlock(&store_lock);
 }
 
