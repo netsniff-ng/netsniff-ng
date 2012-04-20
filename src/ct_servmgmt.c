@@ -120,7 +120,7 @@ static int parse_line(char *line, char *homedir)
 	}
 
 	store = elem;
-	return 0;
+	return s == PARSE_DONE ? 0 : -EIO;
 }
 
 void parse_userfile_and_generate_serv_store_or_die(char *homedir)
