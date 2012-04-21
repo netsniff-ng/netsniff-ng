@@ -6,6 +6,9 @@ archive=ftp://wireshark.org/automated/captures/
 usage="Usage: dissector_fuzz [show_output (default: no)] [run_through (default: no)]"
 show_output="0"
 run_through="0"
+fuckups_norm=0
+fuckups_less=0
+count_files=0
 arg=("$@")
 case "$arg" in
 s|sh|sho|show|show_|show_o|show_ou|show_out|show_outp|show_outpu|show_output)
@@ -35,12 +38,14 @@ do
 	fi
 	if [ -e core ]; then
 		echo "Fuck, core dumped on this one (normal print)!"
+		let fuckups_norm=fuckups_norm+1
 		if [ "$run_through" != "0" ]; then
 			rm core
 		else
 			exit
 		fi
 	fi
+	let count_files=count_files+1
 done
 echo "Starting less printing test ..."
 for file in *.pcap
@@ -53,6 +58,7 @@ do
 	fi
 	if [ -e core ]; then
 		echo "Fuck, core dumped on this one (less print)!"
+		let fuckups_less=fuckups_less+1
 		if [ "$run_through" != "0" ]; then
 			rm core
 		else
@@ -60,3 +66,9 @@ do
 		fi
 	fi
 done
+echo "========================="
+echo "      Fuckup Score       "
+echo "========================="
+echo "tested pcaps:    $count_files"
+echo "dissectors_norm: $fuckups_norm"
+echo "dissectors_less: $fuckups_less"
