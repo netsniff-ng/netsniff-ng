@@ -8,14 +8,16 @@ It has an integrated packet forwarding trie, thus multiple users with
 different IPs can be handled via a single tunnel device on the server side
 and flows are scheduled for processing in a CPU-local manner. As an appropriate
 key management, public-key cryptography based on elliptic curves are being
-used and packets are encrypted by a symmetric stream cipher (Salsa20) and
-authenticated by a MAC (Poly1305), where keys have previously been computed
+used and packets are encrypted end-to-end by a symmetric stream cipher (Salsa20)
+and authenticated by a MAC (Poly1305), where keys have previously been computed
 with the ECDH key agreement protocol (Curve25519). Cryptography is based on
 Daniel J. Bernsteins Networking and Cryptography library (NaCl). By design,
-curvetun does not provide any particular pattern that gives certainty that
-the software from a particular packet stream is actually curvetun. However,
-if you have further needs to bypass censorship, you can try using curvetun
-in combination with Tor's obfsproxy [1] [2].
+curvetun does not provide any particular pattern or default port numbers
+that gives certainty that the software from a particular packet stream is
+actually curvetun. However, if you have further needs to bypass censorship,
+you can try using curvetun in combination with Tor's obfsproxy [1] [2].
+Furthermore, curvetun also protects you against replay attacks and DH man
+in the mittle. Optionally, server event logging can be disabled.
 
 [1] https://www.torproject.org/projects/obfsproxy.html.en
 [2] git clone git://git.torproject.org/obfsproxy.git
