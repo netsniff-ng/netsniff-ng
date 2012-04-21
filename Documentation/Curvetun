@@ -11,19 +11,26 @@ key management, public-key cryptography based on elliptic curves are being
 used and packets are encrypted by a symmetric stream cipher (Salsa20) and
 authenticated by a MAC (Poly1305), where keys have previously been computed
 with the ECDH key agreement protocol (Curve25519). Cryptography is based on
-Daniel J. Bernsteins Networking and Cryptography library (NaCl).
+Daniel J. Bernsteins Networking and Cryptography library (NaCl). By design,
+curvetun does not provide any particular pattern that gives certainty that
+the software from a particular packet stream is actually curvetun. However,
+if you have further needs to bypass censorship, you can try using curvetun
+in combination with Tor's obfsproxy [1] [2].
+
+[1] https://www.torproject.org/projects/obfsproxy.html.en
+[2] git clone git://git.torproject.org/obfsproxy.git
 
 Motivation
 //////////
 
-IP tunnels are usually used to create virtual private networks (VPN) where
+IP tunnels are usually used to create virtual private networks (VPN), where
 parts of the network can only be reached via an unsecure or untrusted underlay
-network like the Internet. Only few software exists to create such tunnels, 
+network like the Internet. Only few software exists to create such tunnels,
 or, VPNs. Two popular representatives of such software are OpenVPN and VTUN.
 The latter also introduced the TUN/TAP interfaces into the Linux kernel.
-VTUN only has a rather basic encryption module, that doesn’t fit into todays
+VTUN only has a rather basic encryption module, that doesn't fit into todays
 cryptographic needs. By default MD5 is used to create 128-Bit wide keys for
-the symmetric BlowFish cipher in ECB mode. Although OpenSSL is used in both,
+the symmetric BlowFish cipher in ECB mode [1]. Although OpenSSL is used in both,
 VTUN and OpenVPN, OpenVPN is much more feature rich regarding ciphers and user
 authentication. Nevertheless, letting people choose ciphers or authentication
 methods does not necessarily mean a good thing: administrators could either
@@ -41,6 +48,8 @@ is called NaCl (pronounced 'salt'). NaCl challenges such addressed problems
 as in OpenSSL and, in contrast to the rather generic use of OpenSSL, was
 created with a strong focus on public-key authenticated encryption based on
 elliptic curve cryptography, which is used in curvetun.
+
+[1] http://www.off.net/~jme/vtun_secu.html
 
 Elliptic-curve cryptography and Curve25519
 //////////////////////////////////////////
