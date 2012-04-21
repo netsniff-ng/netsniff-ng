@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# TODO: add --ascii and --hex when ready
 # Note: build and _install_ the toolkit first!
 
 archive=ftp://wireshark.org/automated/captures/
@@ -8,6 +9,7 @@ show_output="0"
 run_through="0"
 fuckups_norm=0
 fuckups_less=0
+fuckups_silent=0
 count_files=0
 arg=("$@")
 case "$arg" in
@@ -66,9 +68,29 @@ do
 		fi
 	fi
 done
+echo "Starting silent printing test ..."
+for file in *.pcap
+do
+	echo "Testing file $file ..."
+	if [ "$show_output" != "0" ]; then
+		netsniff-ng --in $file --silent
+	else
+		netsniff-ng --in $file --silent > /dev/null
+	fi
+	if [ -e core ]; then
+		echo "Fuck, core dumped on this one (silent print)!"
+		let fuckups_silent=fuckups_silent+1
+		if [ "$run_through" != "0" ]; then
+			rm core
+		else
+			exit
+		fi
+	fi
+done
 echo "========================="
 echo "      Fuckup Score       "
 echo "========================="
-echo "tested pcaps:    $count_files"
-echo "dissectors_norm: $fuckups_norm"
-echo "dissectors_less: $fuckups_less"
+echo "tested pcaps:       $count_files"
+echo "dissectors_norm:    $fuckups_norm"
+echo "dissectors_less:    $fuckups_less"
+echo "dissectors_silent:  $fuckups_silent"
