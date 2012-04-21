@@ -3,7 +3,7 @@
  * Copyright 2012 Markus Amend <markus@netsniff-ng.org>
  * Subject to the GPL, version 2.
  *
- * IPv6 Routing Header described in RFC2460
+ * IPv6 Mobility Header described in RFC6275
  */
 
 #ifndef PROTO_IPV6_MOBILITY_HDR_H
