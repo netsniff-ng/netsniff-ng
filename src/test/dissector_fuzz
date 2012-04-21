@@ -7,9 +7,7 @@ archive=ftp://wireshark.org/automated/captures/
 usage="Usage: dissector_fuzz [show_output (default: no)] [run_through (default: no)]"
 show_output="0"
 run_through="0"
-fuckups_norm=0
-fuckups_less=0
-fuckups_silent=0
+count_cores=0
 count_files=0
 arg=("$@")
 case "$arg" in
@@ -29,46 +27,7 @@ ulimit -c unlimited
 if [ -e core ]; then
 	rm core
 fi
-echo "Starting normal printing test ..."
-for file in *.pcap
-do
-	echo "Testing file $file ..."
-	if [ "$show_output" != "0" ]; then
-		netsniff-ng --in $file
-	else
-		netsniff-ng --in $file > /dev/null
-	fi
-	if [ -e core ]; then
-		echo "Fuck, core dumped on this one (normal print)!"
-		let fuckups_norm=fuckups_norm+1
-		if [ "$run_through" != "0" ]; then
-			rm core
-		else
-			exit
-		fi
-	fi
-	let count_files=count_files+1
-done
-echo "Starting less printing test ..."
-for file in *.pcap
-do
-	echo "Testing file $file ..."
-	if [ "$show_output" != "0" ]; then
-		netsniff-ng --in $file --less
-	else
-		netsniff-ng --in $file --less > /dev/null
-	fi
-	if [ -e core ]; then
-		echo "Fuck, core dumped on this one (less print)!"
-		let fuckups_less=fuckups_less+1
-		if [ "$run_through" != "0" ]; then
-			rm core
-		else
-			exit
-		fi
-	fi
-done
-echo "Starting silent printing test ..."
+echo "Starting test ..."
 for file in *.pcap
 do
 	echo "Testing file $file ..."
@@ -79,7 +38,7 @@ do
 	fi
 	if [ -e core ]; then
 		echo "Fuck, core dumped on this one (silent print)!"
-		let fuckups_silent=fuckups_silent+1
+		let count_cores=count_cores+1
 		if [ "$run_through" != "0" ]; then
 			rm core
 		else
@@ -90,7 +49,5 @@ done
 echo "========================="
 echo "      Fuckup Score       "
 echo "========================="
-echo "tested pcaps:       $count_files"
-echo "dissectors_norm:    $fuckups_norm"
-echo "dissectors_less:    $fuckups_less"
-echo "dissectors_silent:  $fuckups_silent"
+echo "tested pcaps:   $count_files"
+echo "core dumps:     $count_cores"

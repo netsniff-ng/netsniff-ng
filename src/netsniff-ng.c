@@ -325,6 +325,7 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 	struct sock_fprog bpf_ops;
 	struct tx_stats stats;
 	uint8_t *out = NULL;
+	unsigned long trunced = 0;
 
 	if (!device_up_and_running(mode->device_out))
 		panic("Device not up and running!\n");
@@ -393,10 +394,15 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 			      sizeof(struct sockaddr_ll);
 
 			do {
+				memset(&phdr, 0, sizeof(phdr));
 				ret = pcap_ops[mode->pcap]->read_pcap_pkt(fd, &phdr,
 						out, ring_frame_size(&tx_ring));
 				if (unlikely(ret <= 0))
 					goto out;
+				if (ring_frame_size(&tx_ring) < phdr.len) {
+					phdr.len = ring_frame_size(&tx_ring);
+					trunced++;
+				}
 			} while (mode->filter && !bpf_run_filter(&bpf_ops, out, phdr.len));
 			pcap_pkthdr_to_tpacket_hdr(&phdr, &hdr->tp_h);
 
@@ -405,7 +411,7 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 
 			show_frame_hdr(hdr, mode->print_mode, RING_MODE_EGRESS);
 			dissector_entry_point(out, hdr->tp_h.tp_snaplen,
-					      mode->link_type);
+					      mode->link_type, mode->print_mode);
 
 			kernel_may_pull_from_tx(&hdr->tp_h);
 			next_slot_prewr(&it, &tx_ring);
@@ -423,6 +429,7 @@ out:
 	fflush(stdout);
 	printf("\n");
 	printf("\r%12lu frames outgoing\n", stats.tx_packets);
+	printf("\r%12lu frames truncated (larger than frame)\n", trunced);
 	printf("\r%12lu bytes outgoing\n", stats.tx_bytes);
 
 	dissector_cleanup_all();
@@ -544,7 +551,7 @@ static void enter_mode_rx_to_tx(struct mode *mode)
 
 			show_frame_hdr(hdr_in, mode->print_mode, RING_MODE_INGRESS);
 			dissector_entry_point(in, hdr_in->tp_h.tp_snaplen,
-					      mode->link_type);
+					      mode->link_type, mode->print_mode);
 
 			if (frame_cnt_max != 0 && fcnt >= frame_cnt_max) {
 				sigint = 1;
@@ -562,7 +569,7 @@ next:
 		poll_error_maybe_die(rx_sock, &rx_poll);
 	}
 out:
-	sock_print_net_stats(rx_sock);
+	sock_print_net_stats(rx_sock, 0);
 
 	dissector_cleanup_all();
 	destroy_tx_ring(tx_sock, &tx_ring);
@@ -584,6 +591,7 @@ static void enter_mode_read_pcap(struct mode *mode)
 	struct frame_map fm;
 	uint8_t *out;
 	size_t out_len;
+	unsigned long trunced = 0;
 
 	if (!pcap_ops[mode->pcap])
 		panic("pcap group not supported!\n");
@@ -604,8 +612,10 @@ static void enter_mode_read_pcap(struct mode *mode)
 	bpf_parse_rules(mode->filter, &bpf_ops);
 	dissector_init_all(mode->print_mode);
 
-	out_len = device_mtu("lo");
-	out = xmalloc_aligned(out_len, 64);
+	out_len = device_mtu("eth0");
+	if (out_len == 0)
+		out_len = device_mtu("lo");
+	out = xmalloc_aligned(out_len, CO_CACHE_LINE_SIZE);
 
 	printf("BPF:\n");
 	bpf_dump_all(&bpf_ops);
@@ -620,11 +630,22 @@ static void enter_mode_read_pcap(struct mode *mode)
 
 	while (likely(sigint == 0)) {
 		do {
+			memset(&phdr, 0, sizeof(phdr));
 			ret = pcap_ops[mode->pcap]->read_pcap_pkt(fd, &phdr,
 					out, out_len);
-			if (unlikely(ret <= 0))
+			if (unlikely(ret < 0))
 				goto out;
-		} while (mode->filter && !bpf_run_filter(&bpf_ops, out, phdr.len));
+			if (unlikely(phdr.len == 0)) {
+				trunced++;
+				continue;
+			}
+			if (unlikely(phdr.len > out_len)) {
+				phdr.len = out_len;
+				trunced++;
+			}
+		} while (mode->filter &&
+			 !bpf_run_filter(&bpf_ops, out, phdr.len));
+
 		pcap_pkthdr_to_tpacket_hdr(&phdr, &fm.tp_h);
 
 		stats.tx_bytes += fm.tp_h.tp_len;
@@ -632,7 +653,7 @@ static void enter_mode_read_pcap(struct mode *mode)
 
 		show_frame_hdr(&fm, mode->print_mode, RING_MODE_EGRESS);
 		dissector_entry_point(out, fm.tp_h.tp_snaplen,
-				      mode->link_type);
+				      mode->link_type, mode->print_mode);
 
 		if (mode->device_out) {
 			int i = 0;
@@ -671,6 +692,7 @@ out:
 	fflush(stdout);
 	printf("\n");
 	printf("\r%12lu frames outgoing\n", stats.tx_packets);
+	printf("\r%12lu frames truncated (larger than mtu)\n", trunced);
 	printf("\r%12lu bytes outgoing\n", stats.tx_bytes);
 
 	xfree(out);
@@ -786,7 +808,7 @@ static void enter_mode_rx_only_or_dump(struct mode *mode)
 {
 	int sock, irq, ifindex, fd = 0, ret;
 	unsigned int size, it = 0;
-	unsigned long fcnt = 0;
+	unsigned long fcnt = 0, skipped = 0;
 	short ifflags = 0;
 	uint8_t *packet;
 	struct ring rx_ring;
@@ -863,11 +885,9 @@ try_file:
 			if (mode->packet_type != PACKET_ALL)
 				if (mode->packet_type != hdr->s_ll.sll_pkttype)
 					goto next;
-			if (unlikely(rx_ring.layout.tp_frame_size <
+			if (unlikely(ring_frame_size(&rx_ring) <
 				     hdr->tp_h.tp_snaplen)) {
-				fprintf(stderr, "Skipping too large packet! "
-					"No jumbo support selected?\n");
-				fflush(stderr);
+				skipped++;
 				goto next;
 			}
 			if (mode->dump) {
@@ -881,7 +901,7 @@ try_file:
 
 			show_frame_hdr(hdr, mode->print_mode, RING_MODE_INGRESS);
 			dissector_entry_point(packet, hdr->tp_h.tp_snaplen,
-					      mode->link_type);
+					      mode->link_type, mode->print_mode);
 
 			if (frame_cnt_max != 0 && fcnt >= frame_cnt_max) {
 				sigint = 1;
@@ -902,8 +922,11 @@ next:
 				fd = next_multi_pcap_file(mode, fd);
 				next_dump = false;
 				if (mode->print_mode == FNTTYPE_PRINT_NONE) {
-					printf(".(+%u/-%u)", kstats.tp_packets - kstats.tp_drops,
-					       kstats.tp_drops);
+					printf(".(+%lu/-%lu)",
+					       1UL * kstats.tp_packets -
+					       kstats.tp_drops -
+					       skipped, 1UL * kstats.tp_drops +
+					       skipped);
 					fflush(stdout);
 				}
 			}
@@ -914,7 +937,7 @@ next:
 	}
 
 	if (!(mode->dump_dir && mode->print_mode == FNTTYPE_PRINT_NONE))
-		sock_print_net_stats(sock);
+		sock_print_net_stats(sock, skipped);
 	else {
 		printf("\n\n");
 		fflush(stdout);

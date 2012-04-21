@@ -61,11 +61,16 @@ static void dissector_main(struct pkt_buff *pkt, struct protocol *start,
 	tprintf_flush();
 }
 
-void dissector_entry_point(uint8_t *packet, size_t len, int linktype)
+void dissector_entry_point(uint8_t *packet, size_t len, int linktype, int mode)
 {
 	struct protocol *proto_start = NULL;
-	struct protocol *proto_end   = NULL;
-	struct pkt_buff *pkt         = pkt_alloc(packet, len);
+	struct protocol *proto_end = NULL;
+	struct pkt_buff *pkt = NULL;
+
+	if (mode == FNTTYPE_PRINT_NONE)
+		return;
+
+	pkt = pkt_alloc(packet, len);
 
 	switch (linktype) {
 	case LINKTYPE_EN10MB:
