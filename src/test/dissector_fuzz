@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# Note: build and _install_ the toolkit first!
+
+archive=ftp://wireshark.org/automated/captures/
+usage="Usage: dissector_fuzz [show_output (default: no)] [run_through (default: no)]"
+show_output="0"
+run_through="0"
+arg=("$@")
+case "$arg" in
+s|sh|sho|show|show_|show_o|show_ou|show_out|show_outp|show_outpu|show_output)
+	show_output="1"
+	;;
+r|ru|run|run_|run_t|run_th|run_thr|run_thro|run_throu|run_throug|run_through)
+	run_through="1"
+	;;
+*)
+	;;
+esac
+mkdir -p fuzzing
+cd fuzzing
+wget -r -Nc -np -nd -A.pcap $archive |& grep -E "%|^--"
+ulimit -c unlimited
+if [ -e core ]; then
+	rm core
+fi
+echo "Starting normal printing test ..."
+for file in *.pcap
+do
+	echo "Testing file $file ..."
+	if [ "$show_output" != "0" ]; then
+		netsniff-ng --in $file
+	else
+		netsniff-ng --in $file > /dev/null
+	fi
+	if [ -e core ]; then
+		echo "Fuck core dumped on this one (normal print)!"
+		if [ "$run_through" != "0" ]; then
+			rm core
+		else
+			exit
+		fi
+	fi
+done
+echo "Starting less printing test ..."
+for file in *.pcap
+do
+	echo "Testing file $file ..."
+	if [ "$show_output" != "0" ]; then
+		netsniff-ng --in $file --less
+	else
+		netsniff-ng --in $file --less > /dev/null
+	fi
+	if [ -e core ]; then
+		echo "Fuck core dumped on this one (less print)!"
+		if [ "$run_through" != "0" ]; then
+			rm core
+		else
+			exit
+		fi
+	fi
+done
