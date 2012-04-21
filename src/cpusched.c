@@ -24,11 +24,8 @@ struct map_entry {
 };
 
 static struct hash_table mapper;
-
 static unsigned int *cpu_assigned = NULL;
-
 static unsigned int cpu_len = 0;
-
 static struct rwlock map_lock;
 
 void init_cpusched(unsigned int cpus)
