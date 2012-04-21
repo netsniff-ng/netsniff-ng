@@ -18,6 +18,13 @@
 #include "dissector_eth.h"
 #include "built_in.h"
 
+#ifndef FNTTYPE_PRINT_NORM
+#define FNTTYPE_PRINT_NORM	0
+#endif
+#ifndef FNTTYPE_PRINT_LESS
+#define FNTTYPE_PRINT_LESS	1
+#endif
+
 #define ROUTING_HEADER_TYPE_0	0x00
 
 struct routinghdr {
@@ -34,7 +41,7 @@ struct routinghdr_0 {
 
 
 static inline void dissect_routinghdr_type_0(struct pkt_buff *pkt,
-					     uint8_t *hdr_ext_len)
+					     uint8_t *data_len, int less)
 {
 	uint8_t num_addr;
 	char address[INET6_ADDRSTRLEN];
@@ -42,15 +49,23 @@ static inline void dissect_routinghdr_type_0(struct pkt_buff *pkt,
 	struct routinghdr_0 *routing_0;
 
   	routing_0 = (struct routinghdr_0 *) pkt_pull(pkt, sizeof(*routing_0));
-	if (routing_0 == NULL)
+	*data_len -= sizeof(*routing_0);
+	if (routing_0 == NULL || *data_len > pkt_len(pkt))
 		return;
+
+	if (less) {
+		tprintf("Addresses (%u)", *data_len / sizeof(struct in6_addr));
+		return;
+	}
 
 	tprintf("Res (0x%x)", routing_0->reserved);
 
-	num_addr = *hdr_ext_len * 8 / sizeof(*addr);
+	num_addr = *data_len / sizeof(*addr);
+	
 	while (num_addr--) {
 		addr = (struct in6_addr *) pkt_pull(pkt, sizeof(*addr));
-		if (addr == NULL)
+		*data_len -= sizeof(*addr);
+		if (addr == NULL || *data_len > pkt_len(pkt))
 			return;
 
 		tprintf("\n\t   Address: %s",
@@ -61,14 +76,15 @@ static inline void dissect_routinghdr_type_0(struct pkt_buff *pkt,
 
 static inline void routing(struct pkt_buff *pkt)
 {
-	uint8_t hdr_ext_len;
+	uint8_t hdr_ext_len, data_len;
 	struct routinghdr *routing;
 
 	routing = (struct routinghdr *) pkt_pull(pkt, sizeof(*routing));
 
 	/* Total Header Length in Bytes */
 	hdr_ext_len = (routing->h_hdr_ext_len + 1) * 8;
-	if (routing == NULL)
+	data_len = hdr_ext_len - sizeof(*routing);
+	if (routing == NULL || data_len > pkt_len(pkt))
 		return;
 
 	tprintf("\t [ Routing ");
@@ -80,7 +96,7 @@ static inline void routing(struct pkt_buff *pkt)
 
 	switch (routing->h_routing_type) {
 	case ROUTING_HEADER_TYPE_0:
-		dissect_routinghdr_type_0(pkt, &routing->h_hdr_ext_len);
+		dissect_routinghdr_type_0(pkt, &data_len, FNTTYPE_PRINT_NORM);
 		break;
 	default:
 		tprintf("Type %u is unknown", routing->h_routing_type);
@@ -88,21 +104,34 @@ static inline void routing(struct pkt_buff *pkt)
 
 	tprintf(" ]\n");
 
+	pkt_pull(pkt, data_len);
 	pkt_set_proto(pkt, &eth_lay3, routing->h_next_header);
 }
 
 static inline void routing_less(struct pkt_buff *pkt)
 {
+	uint8_t hdr_ext_len, data_len;
 	struct routinghdr *routing;
 
 	routing = (struct routinghdr *) pkt_pull(pkt, sizeof(*routing));
-	if (routing == NULL)
+
+	/* Total Header Length in Bytes */
+	hdr_ext_len = (routing->h_hdr_ext_len + 1) * 8;
+	data_len = hdr_ext_len - sizeof(*routing);
+	if (routing == NULL || data_len > pkt_len(pkt))
 		return;
 
 	tprintf(" Routing ");
-	tprintf("Addresses (%u)",
-		routing->h_hdr_ext_len * 8 / sizeof(struct in6_addr));
+	
+	switch (routing->h_routing_type) {
+	case ROUTING_HEADER_TYPE_0:
+		dissect_routinghdr_type_0(pkt, &data_len, FNTTYPE_PRINT_LESS);
+		break;
+	default:
+		tprintf("Type %u is unknown", routing->h_routing_type);
+	}
 
+	pkt_pull(pkt, data_len);
 	pkt_set_proto(pkt, &eth_lay3, routing->h_next_header);
 }
 
