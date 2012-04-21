@@ -12,13 +12,13 @@ IF (NACL_FOUND AND CMAKE_THREAD_LIBS_INIT)
 					../xio.c
 					../xsys.c
 					../xstring.c
-					../cpusched.c
 					../stun.c
 					../mtrand.c
 					../patricia.c
 					../trie.c
 					../hash.c
 					../curve.c
+					../ct_cpusched.c
 					../ct_usermgmt.c
 					../ct_servmgmt.c
 					../ct_server.c

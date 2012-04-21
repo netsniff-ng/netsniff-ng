@@ -12,7 +12,7 @@
 #include <string.h>
 
 #include "locking.h"
-#include "cpusched.h"
+#include "ct_cpusched.h"
 #include "xmalloc.h"
 #include "hash.h"
 
