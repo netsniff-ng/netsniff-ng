@@ -22,6 +22,8 @@ ADD_DEFINITIONS(
 	-fno-strict-aliasing
 	-D_FORTIFY_SOURCE=2
 	-D_REENTRANT
+	-march=native
+	-mtune=native
 	-Wall
 	-Wundef
 	-Wstrict-prototypes
