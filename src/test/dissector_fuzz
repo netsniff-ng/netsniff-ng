@@ -34,7 +34,7 @@ do
 		netsniff-ng --in $file > /dev/null
 	fi
 	if [ -e core ]; then
-		echo "Fuck core dumped on this one (normal print)!"
+		echo "Fuck, core dumped on this one (normal print)!"
 		if [ "$run_through" != "0" ]; then
 			rm core
 		else
@@ -52,7 +52,7 @@ do
 		netsniff-ng --in $file --less > /dev/null
 	fi
 	if [ -e core ]; then
-		echo "Fuck core dumped on this one (less print)!"
+		echo "Fuck, core dumped on this one (less print)!"
 		if [ "$run_through" != "0" ]; then
 			rm core
 		else
