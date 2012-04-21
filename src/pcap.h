@@ -141,7 +141,8 @@ static inline void pcap_validate_header_maybe_die(struct pcap_filehdr *hdr)
 		     hdr->version_major != PCAP_VERSION_MAJOR ||
 		     hdr->version_minor != PCAP_VERSION_MINOR ||
  		     hdr->linktype != LINKTYPE_EN10MB))
-		panic("This file has not a valid pcap header!\n");
+		/* don't panic, but only whine */
+		whine("This file has not a valid pcap header, continuing ..\n");
 }
 
 extern int init_pcap_mmap(int jumbo_support);
