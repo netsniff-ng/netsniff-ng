@@ -11,7 +11,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include <netinet/in.h>    /* for ntohs() */
+#include <netinet/in.h>    /* for ntohs() and "struct in6_addr" */
 #include <arpa/inet.h>     /* for inet_ntop() */
 
 #include "proto_struct.h"
@@ -32,19 +32,13 @@ struct routinghdr_0 {
 	uint32_t addresses[0];
 } __packed;
 
-struct ipv6_adrr {
-	uint32_t first_block;
-	uint32_t second_block;
-	uint32_t third_block;
-	uint32_t fourth_block;
-} __packed;
 
 static inline void dissect_routinghdr_type_0(struct pkt_buff *pkt,
 					     uint8_t *hdr_ext_len)
 {
 	uint8_t num_addr;
 	char address[INET6_ADDRSTRLEN];
-	struct ipv6_adrr *addr;
+	struct in6_addr *addr;
 	struct routinghdr_0 *routing_0;
 
   	routing_0 = (struct routinghdr_0 *) pkt_pull(pkt, sizeof(*routing_0));
@@ -55,7 +49,7 @@ static inline void dissect_routinghdr_type_0(struct pkt_buff *pkt,
 
 	num_addr = *hdr_ext_len * 8 / sizeof(*addr);
 	while (num_addr--) {
-		addr = (struct ipv6_adrr *) pkt_pull(pkt, sizeof(*addr));
+		addr = (struct in6_addr *) pkt_pull(pkt, sizeof(*addr));
 		if (addr == NULL)
 			return;
 
