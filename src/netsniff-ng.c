@@ -379,7 +379,9 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 
 	printf("BPF:\n");
 	bpf_dump_all(&bpf_ops);
-	printf("MD: TX %luus %s\n\n", interval, pcap_ops[mode->pcap]->name);
+	printf("MD: TX %luus %s ", interval, pcap_ops[mode->pcap]->name);
+	ioprio_print();
+	printf("\n");
 
 	while (likely(sigint == 0)) {
 		while (user_may_pull_from_tx(tx_ring.frames[it].iov_base)) {
@@ -607,7 +609,9 @@ static void enter_mode_read_pcap(struct mode *mode)
 
 	printf("BPF:\n");
 	bpf_dump_all(&bpf_ops);
-	printf("MD: RD %s\n\n", pcap_ops[mode->pcap]->name);
+	printf("MD: RD %s ", pcap_ops[mode->pcap]->name);
+	ioprio_print();
+	printf("\n");
 
 	if (mode->device_out) {
 		fdo = open_or_die_m(mode->device_out, O_RDWR | O_CREAT |
@@ -846,7 +850,9 @@ try_file:
 
 	printf("BPF:\n");
 	bpf_dump_all(&bpf_ops);
-	printf("MD: RX %s\n\n", mode->dump ? pcap_ops[mode->pcap]->name : "");
+	printf("MD: RX %s ", mode->dump ? pcap_ops[mode->pcap]->name : "");
+	ioprio_print();
+	printf("\n");
 
 	while (likely(sigint == 0)) {
 		while (user_may_pull_from_rx(rx_ring.frames[it].iov_base)) {

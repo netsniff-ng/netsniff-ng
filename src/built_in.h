@@ -130,6 +130,10 @@
 # define __read_mostly		__attribute__((__section__(".data.read_mostly")))
 #endif
 
+#ifndef __unused
+# define __unused		 __attribute__ ((__unused__))
+#endif
+
 #ifndef noinline
 # define noinline		__attribute__((noinline))
 #endif

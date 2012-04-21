@@ -13,6 +13,7 @@
 
 #include "pcap.h"
 #include "built_in.h"
+#include "xsys.h"
 #include "xio.h"
 #include "die.h"
 
@@ -94,6 +95,18 @@ static void pcap_rw_fsync_pcap(int fd)
 	fdatasync(fd);
 }
 
+static int pcap_rw_prepare_writing_pcap(int fd)
+{
+	set_ioprio_rt();
+	return 0;
+}
+
+static int pcap_rw_prepare_reading_pcap(int fd)
+{
+	set_ioprio_rt();
+	return 0;
+}
+
 struct pcap_file_ops pcap_rw_ops __read_mostly = {
 	.name = "read-write",
 	.pull_file_header = pcap_rw_pull_file_header,
@@ -101,6 +114,8 @@ struct pcap_file_ops pcap_rw_ops __read_mostly = {
 	.write_pcap_pkt = pcap_rw_write_pcap_pkt,
 	.read_pcap_pkt = pcap_rw_read_pcap_pkt,
 	.fsync_pcap = pcap_rw_fsync_pcap,
+	.prepare_writing_pcap = pcap_rw_prepare_writing_pcap,
+	.prepare_reading_pcap = pcap_rw_prepare_reading_pcap,
 };
 
 int init_pcap_rw(int jumbo_support)

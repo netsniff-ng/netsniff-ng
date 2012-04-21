@@ -70,6 +70,9 @@ extern int set_epoll_descriptor2(int fd_epoll, int action,
 extern int set_cpu_affinity(char *str, int inverted);
 extern int set_proc_prio(int prio);
 extern int set_sched_status(int policy, int priority);
+extern void ioprio_print(void);
+extern void set_ioprio_rt(void);
+extern void set_ioprio_be(void);
 extern void xusleep(const struct timespec *ts_delay);
 extern void xusleep2(long usecs);
 extern int xnanosleep(double seconds);

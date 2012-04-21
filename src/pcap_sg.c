@@ -15,6 +15,7 @@
 #include "pcap.h"
 #include "xmalloc.h"
 #include "xio.h"
+#include "xsys.h"
 #include "locking.h"
 #include "built_in.h"
 
@@ -63,6 +64,12 @@ static int pcap_sg_push_file_header(int fd)
 	return 0;
 }
 
+static int pcap_sg_prepare_writing_pcap(int fd)
+{
+	set_ioprio_be();
+	return 0;
+}
+
 static ssize_t pcap_sg_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 				      uint8_t *packet, size_t len)
 {
@@ -96,6 +103,8 @@ static ssize_t pcap_sg_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 
 static int pcap_sg_prepare_reading_pcap(int fd)
 {
+	set_ioprio_be();
+
 	spinlock_lock(&lock);
 
 	avail = readv(fd, iov, IOVSIZ);
@@ -232,6 +241,7 @@ struct pcap_file_ops pcap_sg_ops __read_mostly = {
 	.push_file_header = pcap_sg_push_file_header,
 	.write_pcap_pkt = pcap_sg_write_pcap_pkt,
 	.prepare_reading_pcap =  pcap_sg_prepare_reading_pcap,
+	.prepare_writing_pcap =  pcap_sg_prepare_writing_pcap,
 	.read_pcap_pkt = pcap_sg_read_pcap_pkt,
 	.fsync_pcap = pcap_sg_fsync_pcap,
 };

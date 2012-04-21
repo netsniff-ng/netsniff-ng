@@ -15,6 +15,7 @@
 
 #include "pcap.h"
 #include "xio.h"
+#include "xsys.h"
 #include "locking.h"
 #include "built_in.h"
 
@@ -73,6 +74,8 @@ static int pcap_mmap_prepare_writing_pcap(int fd)
 {
 	int ret;
 	struct stat sb;
+
+	set_ioprio_be();
 
 	spinlock_lock(&lock);
 
@@ -156,6 +159,8 @@ static int pcap_mmap_prepare_reading_pcap(int fd)
 {
 	int ret;
 	struct stat sb;
+
+	set_ioprio_be();
 
 	spinlock_lock(&lock);
 
