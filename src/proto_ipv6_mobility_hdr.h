@@ -26,7 +26,6 @@
 #define BINDING_ACKNOWLEDGEMENT_MESSAGE	0x06
 #define BINDING_ERROR_MESSAGE		0x07
 
-
 struct mobilityhdr {
 	uint8_t		payload_proto;
 	uint8_t		hdr_len;
@@ -94,7 +93,7 @@ static inline void dissect_mobility_options(struct pkt_buff *pkt,
 }
 
 static inline void dissect_mobilityhdr_type_0(struct pkt_buff *pkt,
-					     uint8_t *message_data_len)
+					      uint8_t *message_data_len)
 {
 	struct bin_refr_req_msg *type_0;
 	
@@ -102,7 +101,6 @@ static inline void dissect_mobilityhdr_type_0(struct pkt_buff *pkt,
 	*message_data_len -= sizeof(*type_0);
 	if (type_0 == NULL || *message_data_len > pkt_len(pkt))
 		return;
-
 
 	dissect_mobility_options(pkt, message_data_len);
 }
@@ -118,7 +116,6 @@ static inline void dissect_mobilityhdr_type_1_2(struct pkt_buff *pkt,
 		return;
 
 	tprintf("Init Cookie (0x%x)", ntohll(type_1_2->init_cookie));
-
 
 	dissect_mobility_options(pkt, message_data_len);
 }
@@ -137,7 +134,6 @@ static inline void dissect_mobilityhdr_type_3_4(struct pkt_buff *pkt,
 	tprintf("Init Cookie (0x%x) ", ntohll(type_3_4->init_cookie));
 	tprintf("Keygen Token (0x%x)", ntohll(type_3_4->keygen_token));
 
-
 	dissect_mobility_options(pkt, message_data_len);
 }
 
@@ -154,7 +150,6 @@ static inline void dissect_mobilityhdr_type_5(struct pkt_buff *pkt,
 	tprintf("Sequence (0x%x) ", ntohs(type_5->sequence));
 	tprintf("A|H|L|K (0x%x) ", ntohs(type_5->ahlk_res) >> 12);
 	tprintf("Lifetime (%us)", ntohs(type_5->lifetime) * 4);
-
 
 	dissect_mobility_options(pkt, message_data_len);
 }
@@ -173,7 +168,6 @@ static inline void dissect_mobilityhdr_type_6(struct pkt_buff *pkt,
 	tprintf("K (%u) ", type_6->k_res >> 7);
 	tprintf("Sequence (0x%x)", ntohs(type_6->sequence));
 	tprintf("Lifetime (%us)", ntohs(type_6->lifetime) * 4);
-
 
 	dissect_mobility_options(pkt, message_data_len);
 }
@@ -195,7 +189,6 @@ static inline void dissect_mobilityhdr_type_7(struct pkt_buff *pkt,
 	tprintf("Home Addr (%s)",
 		inet_ntop(AF_INET6, &addr, address,
 		sizeof(address)));
-
 
 	dissect_mobility_options(pkt, message_data_len);
 }

@@ -18,13 +18,6 @@
 #include "dissector_eth.h"
 #include "built_in.h"
 
-#ifndef FNTTYPE_PRINT_NORM
-#define FNTTYPE_PRINT_NORM	0
-#endif
-#ifndef FNTTYPE_PRINT_LESS
-#define FNTTYPE_PRINT_LESS	1
-#endif
-
 #define ROUTING_HEADER_TYPE_0	0x00
 
 struct routinghdr {
@@ -38,7 +31,6 @@ struct routinghdr_0 {
 	uint32_t reserved;
 	uint32_t addresses[0];
 } __packed;
-
 
 static inline void dissect_routinghdr_type_0(struct pkt_buff *pkt,
 					     uint8_t *data_len, int less)
@@ -61,7 +53,7 @@ static inline void dissect_routinghdr_type_0(struct pkt_buff *pkt,
 	tprintf("Res (0x%x)", routing_0->reserved);
 
 	num_addr = *data_len / sizeof(*addr);
-	
+
 	while (num_addr--) {
 		addr = (struct in6_addr *) pkt_pull(pkt, sizeof(*addr));
 		*data_len -= sizeof(*addr);
@@ -72,6 +64,18 @@ static inline void dissect_routinghdr_type_0(struct pkt_buff *pkt,
 			inet_ntop(AF_INET6, addr, address,
 				  sizeof(address)));
 	}
+}
+
+static inline void dissect_routinghdr_type_0_norm(struct pkt_buff *pkt,
+						  uint8_t *data_len)
+{
+	dissect_routinghdr_type_0(pkt, data_len, 0);
+}
+
+static inline void dissect_routinghdr_type_0_less(struct pkt_buff *pkt,
+						  uint8_t *data_len)
+{
+	dissect_routinghdr_type_0(pkt, data_len, 1);
 }
 
 static inline void routing(struct pkt_buff *pkt)
@@ -97,7 +101,7 @@ static inline void routing(struct pkt_buff *pkt)
 
 	switch (routing->h_routing_type) {
 	case ROUTING_HEADER_TYPE_0:
-		dissect_routinghdr_type_0(pkt, &data_len, FNTTYPE_PRINT_NORM);
+		dissect_routinghdr_type_0_norm(pkt, &data_len);
 		break;
 	default:
 		tprintf("Type %u is unknown", routing->h_routing_type);
@@ -127,7 +131,7 @@ static inline void routing_less(struct pkt_buff *pkt)
 	
 	switch (routing->h_routing_type) {
 	case ROUTING_HEADER_TYPE_0:
-		dissect_routinghdr_type_0(pkt, &data_len, FNTTYPE_PRINT_LESS);
+		dissect_routinghdr_type_0_less(pkt, &data_len);
 		break;
 	default:
 		tprintf("Type %u is unknown", routing->h_routing_type);

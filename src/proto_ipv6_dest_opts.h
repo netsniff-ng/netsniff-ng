@@ -23,8 +23,7 @@ struct dest_optshdr {
 } __packed;
 
 
-static inline void dissect_opt(struct pkt_buff *pkt,
-						uint8_t *opt_len)
+static inline void dissect_opt(struct pkt_buff *pkt, uint8_t *opt_len)
 {
 	/* Have to been upgraded.
 	 * http://tools.ietf.org/html/rfc2460#section-4.2
@@ -59,7 +58,7 @@ static inline void dest_opts(struct pkt_buff *pkt)
 		opt_len);
 
 	dissect_opt(pkt, &opt_len);
-	
+
 	tprintf(" ]\n");
 
 	pkt_pull(pkt, opt_len);
