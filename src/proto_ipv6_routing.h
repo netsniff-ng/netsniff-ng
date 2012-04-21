@@ -83,6 +83,7 @@ static inline void routing(struct pkt_buff *pkt)
 
 	/* Total Header Length in Bytes */
 	hdr_ext_len = (routing->h_hdr_ext_len + 1) * 8;
+	/* Data length in Bytes */
 	data_len = hdr_ext_len - sizeof(*routing);
 	if (routing == NULL || data_len > pkt_len(pkt))
 		return;
@@ -117,6 +118,7 @@ static inline void routing_less(struct pkt_buff *pkt)
 
 	/* Total Header Length in Bytes */
 	hdr_ext_len = (routing->h_hdr_ext_len + 1) * 8;
+	/* Data length in Bytes */
 	data_len = hdr_ext_len - sizeof(*routing);
 	if (routing == NULL || data_len > pkt_len(pkt))
 		return;
