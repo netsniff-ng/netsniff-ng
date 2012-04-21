@@ -79,12 +79,6 @@ struct bind_err_msg {
 } __packed;
 
 
-static inline void jmp_to_mh_end(struct pkt_buff *pkt,
-					     uint8_t *message_data_len)
-{
-	pkt_pull(pkt, *message_data_len);
-}
-
 static inline void dissect_mobility_options(struct pkt_buff *pkt,
 					     uint8_t *message_data_len)
 {
@@ -93,6 +87,10 @@ static inline void dissect_mobility_options(struct pkt_buff *pkt,
 	 */
 	if (*message_data_len)
 		tprintf("MH Option(s) recognized ");
+
+	/* If adding dissector reduce message_data_len for each using of
+	 * pkt_pull to the same size.
+	 */
 }
 
 static inline void dissect_mobilityhdr_type_0(struct pkt_buff *pkt,
@@ -241,8 +239,6 @@ static inline void get_mh_type(struct pkt_buff *pkt,
 	default:
 		tprintf("Type %u is unknown. Error", *mh_type);
 	}
-
-	jmp_to_mh_end(pkt, message_data_len);
 }
 
 static inline void mobility(struct pkt_buff *pkt)
@@ -272,19 +268,27 @@ static inline void mobility(struct pkt_buff *pkt)
 
 	tprintf(" ]\n");
 
+	pkt_pull(pkt, message_data_len);
 	pkt_set_proto(pkt, &eth_lay3, mobility->payload_proto);
 }
 
 static inline void mobility_less(struct pkt_buff *pkt)
 {
+	uint8_t hdr_ext_len, message_data_len;
 	struct mobilityhdr *mobility;
 
 	mobility = (struct mobilityhdr *) pkt_pull(pkt, sizeof(*mobility));
-	if (mobility == NULL)
+
+	/* Total Header Length in Bytes */
+	hdr_ext_len = (mobility->hdr_len + 1) * 8;
+	/* Total Message Data length in Bytes*/
+	message_data_len = (hdr_ext_len - sizeof(*mobility));
+	if (mobility == NULL || message_data_len > pkt_len(pkt))
 		return;
 
 	tprintf(" Mobility Type (%u), ", mobility->MH_type);
 
+	pkt_pull(pkt, message_data_len);
 	pkt_set_proto(pkt, &eth_lay3, mobility->payload_proto);
 }
 
