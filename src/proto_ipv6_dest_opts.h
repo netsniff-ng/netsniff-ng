@@ -19,62 +19,77 @@
 
 struct dest_optshdr {
 	uint8_t h_next_header;
-	uint8_t h_hdr_ext_len;
-	uint8_t h_dest_option_type;
+	uint8_t hdr_len;
 } __packed;
 
-static inline void dest_opts(uint8_t *packet, size_t len)
-{
-	uint8_t hdr_ext_len;
-	struct dest_optshdr *dest_opts = (struct dest_optshdr *) packet;
 
-	hdr_ext_len = (dest_opts->h_hdr_ext_len + 1) * 8;
-	if (len < hdr_ext_len || len < sizeof(struct dest_optshdr))
+static inline void dissect_opt(struct pkt_buff *pkt,
+						uint8_t *opt_len)
+{
+	/* Have to been upgraded.
+	 * http://tools.ietf.org/html/rfc2460#section-4.2
+	 * Look also for proto_ipv6_hop_by_hop.h, it needs
+	 * dissect_opt(), too.
+	 */
+	if (*opt_len)
+		tprintf(", Option(s) recognized ");
+
+	/* If adding dissector reduce opt_len for each using of pkt_pull
+	 * to the same size.
+	 */
+}
+
+static inline void dest_opts(struct pkt_buff *pkt)
+{
+	uint8_t hdr_ext_len, opt_len;
+	struct dest_optshdr *dest_ops;
+
+	dest_ops = (struct dest_optshdr *) pkt_pull(pkt, sizeof(*dest_ops));
+
+	/* Total Header Length in Bytes */
+	hdr_ext_len = (dest_ops->hdr_len + 1) * 8;
+	/* Options length in Bytes */
+	opt_len = hdr_ext_len - sizeof(*dest_ops);
+	if (dest_ops == NULL || opt_len > pkt_len(pkt))
 		return;
 
 	tprintf("\t [ Destination Options ");
-	tprintf("NextHdr (%u), ", dest_opts->h_next_header);
-	tprintf("HdrExtLen (%u), ", hdr_ext_len);
-	tprintf("Opt (%u), ", dest_opts->h_dest_option_type);
-	tprintf("Appendix 0x");
-	for (uint8_t i = sizeof(struct dest_optshdr); i < hdr_ext_len; i++)
-		tprintf("%02x",(uint8_t) packet[i]);
-	tprintf(" ]\n");
-}
+	tprintf("NextHdr (%u), ", dest_ops->h_next_header);
+	tprintf("HdrExtLen (%u, %u Bytes)", dest_ops->hdr_len,
+		opt_len);
 
-static inline void dest_opts_less(uint8_t *packet, size_t len)
-{
-  	uint8_t hdr_ext_len;
-	struct dest_optshdr *dest_opts = (struct dest_optshdr *) packet;
+	dissect_opt(pkt, &opt_len);
 	
-	hdr_ext_len = (dest_opts->h_hdr_ext_len + 1) * 8;
-	if (len < hdr_ext_len || len < sizeof(struct dest_optshdr))
-		return;
+	tprintf(" ]\n");
 
-	tprintf(" Destination Options Opt %u", dest_opts->h_dest_option_type);
+	pkt_pull(pkt, opt_len);
+	pkt_set_proto(pkt, &eth_lay3, dest_ops->h_next_header);
 }
 
-static inline void dest_opts_next(uint8_t *packet, size_t len,
-			     struct hash_table **table,
-			     unsigned int *key, size_t *off)
+static inline void dest_opts_less(struct pkt_buff *pkt)
 {
-    	uint8_t hdr_ext_len;	
-	struct dest_optshdr *dest_opts = (struct dest_optshdr *) packet;
+	uint8_t hdr_ext_len, opt_len;
+	struct dest_optshdr *dest_ops;
 
-	hdr_ext_len = (dest_opts->h_hdr_ext_len + 1) * 8;
-	if (len < hdr_ext_len || len < sizeof(struct dest_optshdr))
+	dest_ops = (struct dest_optshdr *) pkt_pull(pkt, sizeof(*dest_ops));
+
+	/* Total Header Length in Bytes */
+	hdr_ext_len = (dest_ops->hdr_len + 1) * 8;
+	/* Options length in Bytes */
+	opt_len = hdr_ext_len - sizeof(*dest_ops);
+	if (dest_ops == NULL || opt_len > pkt_len(pkt))
 		return;
 
-	(*off) = hdr_ext_len;
-	(*key) = dest_opts->h_next_header;
-	(*table) = &eth_lay3;
+	tprintf(" Dest Ops");
+
+	pkt_pull(pkt, opt_len);
+	pkt_set_proto(pkt, &eth_lay3, dest_ops->h_next_header);
 }
 
 struct protocol ipv6_dest_opts_ops = {
 	.key = 0x3C,
 	.print_full = dest_opts,
 	.print_less = dest_opts_less,
-	.proto_next = dest_opts_next,
 };
 
 #endif /* PROTO_IPV6_DEST_OPTS_H */
