@@ -11,6 +11,7 @@
 
 #include <unistd.h>
 #include <stdint.h>
+#include <errno.h>
 #include <sys/time.h>
 #include <linux/if_packet.h>
 
@@ -135,14 +136,18 @@ static inline void pcap_prepare_header(struct pcap_filehdr *hdr,
 	hdr->linktype = linktype;
 }
 
-static inline void pcap_validate_header_maybe_die(struct pcap_filehdr *hdr)
+static inline int pcap_validate_header(struct pcap_filehdr *hdr)
 {
 	if (unlikely(hdr->magic != TCPDUMP_MAGIC ||
 		     hdr->version_major != PCAP_VERSION_MAJOR ||
 		     hdr->version_minor != PCAP_VERSION_MINOR ||
- 		     hdr->linktype != LINKTYPE_EN10MB))
+ 		     hdr->linktype != LINKTYPE_EN10MB)) {
 		/* don't panic, but only whine */
 		whine("This file has not a valid pcap header, continuing ..\n");
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 extern int init_pcap_mmap(int jumbo_support);
