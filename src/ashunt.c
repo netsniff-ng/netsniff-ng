@@ -228,7 +228,8 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "bpf.h"
 #include "die.h"
 #include "tprintf.h"
-#include "proto_hex.h"
+#include "pkt_buff.h"
+#include "proto_struct.h"
 #include "xmalloc.h"
 #include "xstring.h"
 #include "xio.h"
@@ -868,7 +869,7 @@ retry:
 				printf("Original packet:\n");
 
 				pkt = pkt_alloc(packet, len);
-				hex_pay(pkt);
+				hex_ascii(pkt);
 				tprintf_flush();
 				pkt_free(pkt);
 
@@ -903,7 +904,7 @@ retry:
 					printf("\n  Received packet:\n");
 
 					pkt = pkt_alloc(packet_rcv, real_len);
-					hex_pay(pkt);
+					hex_ascii(pkt);
 					tprintf_flush();
 					pkt_free(pkt);
 				}

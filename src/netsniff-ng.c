@@ -33,7 +33,8 @@ netsniff-ng -i|-d|--dev|--in <dev|pcap> -o|--out <dev|pcap|dir|txf>
 [-s|--silent][-J|--jumbo-support][-n|--num <uint>][-r|--rand]
 [-M|--no-promisc][-m|--mmap | -c|--clrw][-S|--ring-size <size>]
 [-k|--kernel-pull <uint>][-b|--bind-cpu <cpu> | -B|--unbind-cpu <cpu>]
-[-H|--prio-high][-Q|--notouch-irq][-q|--less][-v|--version][-h|--help]
+[-H|--prio-high][-Q|--notouch-irq][-q|--less | -X|--hex | -l|--ascii]
+[-v|--version][-h|--help]
 
 =head1 DESCRIPTION
 
@@ -159,6 +160,14 @@ Do not touch IRQ CPU affinity of NIC.
 
 Print less-verbose packet information.
 
+=item -X|--hex
+
+Print packet data in hex format.
+
+=item -l|--ascii
+
+Print human-readable packet data.
+
 =item -v|--version
 
 Print version.
@@ -253,7 +262,7 @@ static unsigned long interval = TX_KERNEL_PULL_INT;
 static struct itimerval itimer;
 static volatile bool next_dump = false;
 
-static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqvhF:";
+static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqXlvhF:";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -276,6 +285,8 @@ static struct option long_options[] = {
 	{"notouch-irq", no_argument, 0, 'Q'},
 	{"silent", no_argument, 0, 's'},
 	{"less", no_argument, 0, 'q'},
+	{"hex", no_argument, 0, 'X'},
+	{"ascii", no_argument, 0, 'l'},
 	{"version", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
@@ -1145,6 +1156,12 @@ int main(int argc, char **argv)
 			break;
 		case 'q':
 			mode.print_mode = FNTTYPE_PRINT_LESS;
+			break;
+		case 'X':
+			mode.print_mode = FNTTYPE_PRINT_HEX;
+			break;
+		case 'l':
+			mode.print_mode = FNTTYPE_PRINT_ASCII;
 			break;
 		case 'k':
 			mode.kpull = (unsigned long) atol(optarg);
