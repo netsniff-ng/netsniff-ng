@@ -50,6 +50,13 @@ struct icmpv6_type_128_129 {
 	uint8_t data[0];
 } __packed;
 
+/* MLD format */
+struct icmpv6_type_130_131_132 {
+	uint16_t maxrespdel;
+	uint16_t res;
+	struct in6_addr ipv6_addr;
+} __packed;
+
 static char *icmpv6_type_1_codes[] = {
 	"No route to destination",
 	"Communication with destination administratively prohibited",
@@ -148,6 +155,23 @@ static inline void dissect_icmpv6_type129(struct pkt_buff *pkt)
 	tprintf(" Payload include Data");
 }
 
+static inline void dissect_icmpv6_type130(struct pkt_buff *pkt)
+{
+	char address[INET6_ADDRSTRLEN];
+	struct icmpv6_type_130_131_132 *icmp_130;
+
+	icmp_130 = (struct icmpv6_type_130_131_132 *)
+		      pkt_pull(pkt,sizeof(*icmp_130));
+	if (icmp_130 == NULL)
+		return;
+
+	tprintf(", Max Resp Delay (%ums)",ntohs(icmp_130->maxrespdel));
+	tprintf(", Res (0x%x)",ntohs(icmp_130->res));
+	tprintf(", Address: %s",
+			inet_ntop(AF_INET6, &icmp_130->ipv6_addr,
+				  address, sizeof(address)));
+}
+
 #define icmpv6_code_range_valid(code, sarr)	((code) < array_size((sarr)))
 
 static inline void icmpv6_process(struct icmpv6_general_hdr *icmp, char **type,
@@ -199,6 +223,7 @@ static inline void icmpv6_process(struct icmpv6_general_hdr *icmp, char **type,
 		return;
 	case 130:
 		*type = "Multicast Listener Query";
+		*optional = dissect_icmpv6_type130;
 		return;
 	case 131:
 		*type = "Multicast Listener Report";
