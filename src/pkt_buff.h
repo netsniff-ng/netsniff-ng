@@ -53,10 +53,12 @@ static inline uint8_t *pkt_pull(struct pkt_buff *pkt, unsigned int len)
 
 	bug_on(!pkt || pkt->head > pkt->data || pkt->data > pkt->tail);
 
-	if (pkt_len(pkt) && pkt->data + len <= pkt->tail) {
+	if (len <= pkt_len(pkt)) {
 		data = pkt->data;
 		pkt->data += len;
 	}
+
+	bug_on(!pkt || pkt->head > pkt->data || pkt->data > pkt->tail);
 
 	return data;
 }
@@ -68,12 +70,19 @@ static inline uint8_t *pkt_peek(struct pkt_buff *pkt)
 	return pkt->data;
 }
 
-static inline void pkt_trim(struct pkt_buff *pkt, unsigned int len)
+static inline unsigned int pkt_trim(struct pkt_buff *pkt, unsigned int len)
 {
+	unsigned int ret = 0;
+
 	bug_on(!pkt || pkt->head > pkt->data || pkt->data > pkt->tail);
 
-	if (pkt_len(pkt) && pkt->tail - len >= pkt->data)
-		pkt->tail -= len;
+	if (len <= pkt_len(pkt))
+		ret = len;
+
+	pkt->tail -= ret;
+	bug_on(!pkt || pkt->head > pkt->data || pkt->data > pkt->tail);
+
+	return ret;
 }
 
 static inline uint8_t *pkt_pull_tail(struct pkt_buff *pkt, unsigned int len)
@@ -82,7 +91,7 @@ static inline uint8_t *pkt_pull_tail(struct pkt_buff *pkt, unsigned int len)
 
 	bug_on(!pkt || pkt->head > pkt->data || pkt->data > pkt->tail);
 
-	if (pkt_len(pkt) && pkt->tail - len >= pkt->data) {
+	if (len <= pkt_len(pkt)) {
 		tail = pkt->tail;
 		pkt->tail -= len;
 	}
