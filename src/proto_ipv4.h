@@ -42,10 +42,10 @@ struct ipv4hdr {
 	uint32_t h_daddr;
 } __packed;
 
-#define	FRAG_OFF_RESERVED_FLAG(x)      ((x) & 0x8000)
-#define	FRAG_OFF_NO_FRAGMENT_FLAG(x)   ((x) & 0x4000)
-#define	FRAG_OFF_MORE_FRAGMENT_FLAG(x) ((x) & 0x2000)
-#define	FRAG_OFF_FRAGMENT_OFFSET(x)    ((x) & 0x1fff)
+#define FRAG_OFF_RESERVED_FLAG(x)      ((x) & 0x8000)
+#define FRAG_OFF_NO_FRAGMENT_FLAG(x)   ((x) & 0x4000)
+#define FRAG_OFF_MORE_FRAGMENT_FLAG(x) ((x) & 0x2000)
+#define FRAG_OFF_FRAGMENT_OFFSET(x)    ((x) & 0x1fff)
 
 /* IP Option Numbers (http://www.iana.org/assignments/ip-parameters) */
 #define IP_OPT_EOOL 0x00
@@ -63,7 +63,7 @@ static inline void ipv4(struct pkt_buff *pkt)
 	struct ipv4hdr *ip = (struct ipv4hdr *) pkt_pull(pkt, sizeof(*ip));
 	uint8_t *opt, opts_len, opt_len;
 
-	if (ip == NULL)
+	if (!ip)
 		return;
 
 	frag_off = ntohs(ip->h_frag_off);
@@ -86,17 +86,18 @@ static inline void ipv4(struct pkt_buff *pkt)
 		FRAG_OFF_NO_FRAGMENT_FLAG(frag_off) ? 1 : 0,
 		FRAG_OFF_MORE_FRAGMENT_FLAG(frag_off) ? 1 : 0,
 		FRAG_OFF_FRAGMENT_OFFSET(frag_off));
-	tprintf("CSum (0x%x) is %s", ntohs(ip->h_check), 
-		csum ? colorize_start_full(black, red) "bogus (!)" 
+	tprintf("CSum (0x%.4x) is %s", ntohs(ip->h_check),
+		csum ? colorize_start_full(black, red) "bogus (!)"
 		       colorize_end() : "ok");
 	if (csum)
-		tprintf("%s should be %x%s", colorize_start_full(black, red),
+		tprintf("%s should be 0x%.4x%s", colorize_start_full(black, red),
 			csum_expected(ip->h_check, csum), colorize_end());
 	tprintf(" ]\n");
 
-	opts_len = ip->h_ihl * 4 - 20;
+	opts_len = max((uint8_t) ip->h_ihl, sizeof(*ip) / sizeof(uint32_t))
+		* sizeof(uint32_t) - sizeof(*ip);
 
-	for (opt = (uint8_t *) pkt_pull(pkt, opts_len); opt && opts_len; opt++) {
+	for (opt = pkt_pull(pkt, opts_len); opt && opts_len; opt++) {
 
 		tprintf("   [ Option  Copied (%u), Class (%u), Number (%u)",
 			IP_OPT_COPIED_FLAG(*opt) ? 1 : 0, IP_OPT_CLASS(*opt),
@@ -113,6 +114,9 @@ static inline void ipv4(struct pkt_buff *pkt)
 			 * Assuming that EOOL and NOP are the only single-byte
 			 * options, treat all other options as variable in
 			 * length with a minimum of 2.
+			 *
+			 * TODO: option length might be incorrect in malformed packets,
+			 *       check and handle that
 			 */
 			opt_len = *(++opt);
 			tprintf(", Len (%u) ]\n", opt_len);
@@ -126,7 +130,7 @@ static inline void ipv4(struct pkt_buff *pkt)
 	}
 
 	/* cut off everything that is not part of IPv4 payload */
-	pkt_trim(pkt, pkt_len(pkt) + ip->h_ihl * 4 - ntohs(ip->h_tot_len));
+	pkt_trim(pkt, pkt_len(pkt) - min(pkt_len(pkt), (ntohs(ip->h_tot_len) - ip->h_ihl * sizeof(uint32_t))));
 	pkt_set_proto(pkt, &eth_lay3, ip->h_protocol);
 }
 
@@ -136,7 +140,7 @@ static inline void ipv4_less(struct pkt_buff *pkt)
 	char dst_ip[INET_ADDRSTRLEN];
 	struct ipv4hdr *ip = (struct ipv4hdr *) pkt_pull(pkt, sizeof(*ip));
 
-	if (ip == NULL)
+	if (!ip)
 		return;
 
 	inet_ntop(AF_INET, &ip->h_saddr, src_ip, sizeof(src_ip));
@@ -146,8 +150,9 @@ static inline void ipv4_less(struct pkt_buff *pkt)
 		ntohs(ip->h_tot_len));
 
 	/* cut off IP options and everything that is not part of IPv4 payload */
-	pkt_pull(pkt, ip->h_ihl * 4 - 20);
-	pkt_trim(pkt, pkt_len(pkt) + ip->h_ihl * 4 - ntohs(ip->h_tot_len));
+	pkt_pull(pkt, max((uint8_t) ip->h_ihl, sizeof(*ip) / sizeof(uint32_t))
+		* sizeof(uint32_t) - sizeof(*ip));
+	pkt_trim(pkt, pkt_len(pkt) - min(pkt_len(pkt), (ntohs(ip->h_tot_len) - ip->h_ihl * sizeof(uint32_t))));
 	pkt_set_proto(pkt, &eth_lay3, ip->h_protocol);
 }
 
