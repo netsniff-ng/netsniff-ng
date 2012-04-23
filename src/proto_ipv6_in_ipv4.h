@@ -20,7 +20,6 @@ struct protocol ipv6_in_ipv4_ops = {
 	.key = 0x29,
 	.print_full = ipv6,
 	.print_less = ipv6_less,
-	.proto_next = ipv6_next,
 };
 
 #endif /* PROTO_IP6_IN_IP4_H */

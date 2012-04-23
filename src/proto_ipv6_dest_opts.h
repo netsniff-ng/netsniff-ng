@@ -23,7 +23,7 @@ struct dest_optshdr {
 } __packed;
 
 
-static inline void dissect_opt(struct pkt_buff *pkt, uint8_t *opt_len)
+static inline void dissect_opt_dest(struct pkt_buff *pkt, size_t *opt_len)
 {
 	/* Have to been upgraded.
 	 * http://tools.ietf.org/html/rfc2460#section-4.2
@@ -40,7 +40,8 @@ static inline void dissect_opt(struct pkt_buff *pkt, uint8_t *opt_len)
 
 static inline void dest_opts(struct pkt_buff *pkt)
 {
-	uint8_t hdr_ext_len, opt_len;
+	uint8_t hdr_ext_len;
+	size_t opt_len;
 	struct dest_optshdr *dest_ops;
 
 	dest_ops = (struct dest_optshdr *) pkt_pull(pkt, sizeof(*dest_ops));
@@ -57,7 +58,7 @@ static inline void dest_opts(struct pkt_buff *pkt)
 	tprintf("HdrExtLen (%u, %u Bytes)", dest_ops->hdr_len,
 		opt_len);
 
-	dissect_opt(pkt, &opt_len);
+	dissect_opt_dest(pkt, &opt_len);
 
 	tprintf(" ]\n");
 
@@ -67,7 +68,8 @@ static inline void dest_opts(struct pkt_buff *pkt)
 
 static inline void dest_opts_less(struct pkt_buff *pkt)
 {
-	uint8_t hdr_ext_len, opt_len;
+	uint8_t hdr_ext_len;
+	size_t opt_len;
 	struct dest_optshdr *dest_ops;
 
 	dest_ops = (struct dest_optshdr *) pkt_pull(pkt, sizeof(*dest_ops));

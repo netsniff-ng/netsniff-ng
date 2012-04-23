@@ -1,9 +1,9 @@
 /*
- * IP Authentication Header described in RFC4302
- * programmed by Markus Amend 2012 as a contribution to
  * netsniff-ng - the packet sniffing beast
- * Copyright 2012 Markus Amend.
+ * Copyright 2012 Markus Amend <markus@netsniff-ng.org>
  * Subject to the GPL, version 2.
+ *
+ * IP Authentication Header described in RFC4302
  */
 
 #ifndef PROTO_IP_AUTHENTICATION_HDR_H
@@ -17,7 +17,7 @@
 #include "dissector_eth.h"
 #include "built_in.h"
 
-struct auth_hdrhdr {
+struct auth_hdr {
 	uint8_t h_next_header;
 	uint8_t h_payload_len;
 	uint16_t h_reserved;
@@ -25,60 +25,54 @@ struct auth_hdrhdr {
 	uint32_t h_snf;
 } __packed;
 
-static inline void auth_hdr(uint8_t *packet, size_t len)
+static inline void auth_hdr(struct pkt_buff *pkt)
 {
-	uint8_t hdr_payload_len;	
-	struct auth_hdrhdr *auth_hdr = (struct auth_hdrhdr *) packet;
+	size_t hdr_len;
+	struct auth_hdr *auth_ops;
 
-	hdr_payload_len = (auth_hdr->h_payload_len * 4) + 8;
-	if (len < hdr_payload_len || len < sizeof(struct auth_hdrhdr))
+	auth_ops = (struct auth_hdr *) pkt_pull(pkt, sizeof(*auth_ops));
+	hdr_len = (auth_ops->h_payload_len * 4) + 8;
+	if (auth_ops == NULL || hdr_len > pkt_len(pkt))
 		return;
 
 	tprintf(" [ Authentication Header ");
-	tprintf("NextHdr (%u), ", auth_hdr->h_next_header);
-	tprintf("HdrLen (%u), ", hdr_payload_len);
-	tprintf("Reserved (0x%x), ", ntohs(auth_hdr->h_reserved));
-	tprintf("SPI (0x%x), ", ntohl(auth_hdr->h_spi));
-	tprintf("SNF (0x%x), ", ntohl(auth_hdr->h_snf));
+	tprintf("NextHdr (%u), ", auth_ops->h_next_header);
+	tprintf("HdrLen (%u), ", hdr_len);
+	tprintf("Reserved (0x%x), ", ntohs(auth_ops->h_reserved));
+	/* TODO
+	 * Upgrade for Extended (64-bit) Sequence Number
+	 * http://tools.ietf.org/html/rfc4302#section-2.5.1
+	 */
+	tprintf("SPI (0x%x), ", ntohl(auth_ops->h_spi));
+	tprintf("SNF (0x%x), ", ntohl(auth_ops->h_snf));
 	tprintf("ICV 0x");
-	for (uint8_t i = sizeof(struct auth_hdrhdr); i < hdr_payload_len; i++)
-		tprintf("%02x",(uint8_t) packet[i]);
+	for (size_t i = sizeof(struct auth_hdr); i < hdr_len; i++)
+		tprintf("%02x", *pkt_pull(pkt, 1));
 	tprintf(" ]\n");
+
+	pkt_set_proto(pkt, &eth_lay3, auth_ops->h_next_header);
 }
 
-static inline void auth_hdr_less(uint8_t *packet, size_t len)
+static inline void auth_hdr_less(struct pkt_buff *pkt)
 {
-  	uint8_t hdr_payload_len;
-	struct auth_hdrhdr *auth_hdr = (struct auth_hdrhdr *) packet;
+  	size_t hdr_len;
+	struct auth_hdr *auth_ops;
 
-	hdr_payload_len = (auth_hdr->h_payload_len * 4) + 8;
-	if (len < hdr_payload_len || len < sizeof(struct auth_hdrhdr))
+	auth_ops = (struct auth_hdr *) pkt_pull(pkt, sizeof(*auth_ops));
+	hdr_len = (auth_ops->h_payload_len * 4) + 8;
+	if (auth_ops == NULL || hdr_len > pkt_len(pkt))
 		return;
 
 	tprintf(" AH");
-}
 
-static inline void auth_hdr_next(uint8_t *packet, size_t len,
-				 struct hash_table **table,
-				 unsigned int *key, size_t *off)
-{
-    	uint8_t hdr_payload_len;
-	struct auth_hdrhdr *auth_hdr = (struct auth_hdrhdr *) packet;
-
-	hdr_payload_len = (auth_hdr->h_payload_len * 4) + 8;
-	if (len < hdr_payload_len || len < sizeof(struct auth_hdrhdr))
-		return;
-
-	(*off) = hdr_payload_len;
-	(*key) = auth_hdr->h_next_header;
-	(*table) = &eth_lay3;
+	pkt_pull(pkt, hdr_len - sizeof(*auth_ops));
+	pkt_set_proto(pkt, &eth_lay3, auth_ops->h_next_header);
 }
 
 struct protocol ip_auth_hdr_ops = {
 	.key = 0x33,
 	.print_full = auth_hdr,
 	.print_less = auth_hdr_less,
-	.proto_next = auth_hdr_next,
 };
 
 #endif /* PROTO_IP_AUTHENTICATION_HDR_H */

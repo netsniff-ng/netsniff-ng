@@ -22,13 +22,35 @@
 #include "pkt_buff.h"
 #include "built_in.h"
 
-struct icmpv6hdr {
+struct icmpv6_general_hdr {
 	uint8_t h_type;
 	uint8_t h_code;
 	uint16_t h_chksum;
 } __packed;
 
-static char *icmpv6_type_1_strings[] = {
+/* for type 0x01 and 0x03 */
+struct icmpv6_type_1_3 {
+	uint32_t unused;
+	uint8_t invoking_pkt[0];
+} __packed;
+
+struct icmpv6_type_2 {
+	uint32_t MTU;
+	uint8_t invoking_pkt[0];
+} __packed;
+
+struct icmpv6_type_4 {
+	uint32_t pointer;
+	uint8_t invoking_pkt[0];
+} __packed;
+
+struct icmpv6_type_128_129 {
+	uint16_t id;
+	uint16_t sn;
+	uint8_t data[0];
+} __packed;
+
+static char *icmpv6_type_1_codes[] = {
 	"No route to destination",
 	"Communication with destination administratively prohibited",
 	"Beyond scope of source address",
@@ -39,10 +61,98 @@ static char *icmpv6_type_1_strings[] = {
 	"Error in Source Routing Header",
 };
 
+static inline void dissect_icmpv6_type1(struct pkt_buff *pkt)
+{
+	struct icmpv6_type_1_3 *icmp_1;
+	
+	icmp_1 = (struct icmpv6_type_1_3 *) pkt_pull(pkt,sizeof(*icmp_1));
+	if (icmp_1 == NULL)
+		return;
+
+	tprintf(", Unused (0x%x)",ntohl(icmp_1->unused));
+	tprintf(" Payload include as much of invoking packet");
+}
+
+static inline void dissect_icmpv6_type2(struct pkt_buff *pkt)
+{
+	struct icmpv6_type_2 *icmp_2;
+
+	icmp_2 = (struct icmpv6_type_2 *) pkt_pull(pkt,sizeof(*icmp_2));
+	if (icmp_2 == NULL)
+		return;
+
+	tprintf(", MTU (0x%x)",ntohl(icmp_2->MTU));
+	tprintf(" Payload include as much of invoking packet");
+}
+
+static char *icmpv6_type_3_codes[] = {
+	"Hop limit exceeded in transit",
+	"Fragment reassembly time exceeded",
+};
+
+static inline void dissect_icmpv6_type3(struct pkt_buff *pkt)
+{
+	struct icmpv6_type_1_3 *icmp_3;
+
+	icmp_3 = (struct icmpv6_type_1_3 *) pkt_pull(pkt,sizeof(*icmp_3));
+	if (icmp_3 == NULL)
+		return;
+
+	tprintf(", Unused (0x%x)",ntohl(icmp_3->unused));
+	tprintf(" Payload include as much of invoking packet");
+}
+
+static char *icmpv6_type_4_codes[] = {
+	"Erroneous header field encountered",
+	"Unrecognized Next Header type encountered",
+	"Unrecognized IPv6 option encountered",
+};
+
+static inline void dissect_icmpv6_type4(struct pkt_buff *pkt)
+{
+	struct icmpv6_type_4 *icmp_4;
+
+	icmp_4 = (struct icmpv6_type_4 *) pkt_pull(pkt,sizeof(*icmp_4));
+	if (icmp_4 == NULL)
+		return;
+
+	tprintf(", Pointer (0x%x)",ntohl(icmp_4->pointer));
+	tprintf(" Payload include as much of invoking packet");
+}
+
+static inline void dissect_icmpv6_type128(struct pkt_buff *pkt)
+{
+	struct icmpv6_type_128_129 *icmp_128;
+
+	icmp_128 = (struct icmpv6_type_128_129 *)
+		      pkt_pull(pkt,sizeof(*icmp_128));
+	if (icmp_128 == NULL)
+		return;
+
+	tprintf(", ID (0x%x)",ntohs(icmp_128->id));
+	tprintf(", Seq. Nr. (%u)",ntohs(icmp_128->sn));
+	tprintf(" Payload include Data");
+}
+
+static inline void dissect_icmpv6_type129(struct pkt_buff *pkt)
+{
+	struct icmpv6_type_128_129 *icmp_129;
+
+	icmp_129 = (struct icmpv6_type_128_129 *)
+		      pkt_pull(pkt,sizeof(*icmp_129));
+	if (icmp_129 == NULL)
+		return;
+
+	tprintf(", ID (0x%x)",ntohs(icmp_129->id));
+	tprintf(", Seq. Nr. (%u)",ntohs(icmp_129->sn));
+	tprintf(" Payload include Data");
+}
+
 #define icmpv6_code_range_valid(code, sarr)	((code) < array_size((sarr)))
 
-static inline void icmpv6_process(struct icmpv6hdr *icmp, char **type,
-				  char **code, char **optional)
+static inline void icmpv6_process(struct icmpv6_general_hdr *icmp, char **type,
+				  char **code,
+				  void (**optional)(struct pkt_buff *pkt))
 {
 	*type = "Unknown Type";
 	*code = "Unknown Code";
@@ -50,17 +160,25 @@ static inline void icmpv6_process(struct icmpv6hdr *icmp, char **type,
 	switch (icmp->h_type) {
 	case 1:
 		*type = "Destination Unreachable";
-		if (icmpv6_code_range_valid(icmp->h_code, icmpv6_type_1_strings))
-			*code = icmpv6_type_1_strings[icmp->h_code];
+		if (icmpv6_code_range_valid(icmp->h_code, icmpv6_type_1_codes))
+			*code = icmpv6_type_1_codes[icmp->h_code];
+		*optional = dissect_icmpv6_type1;
 		return;
 	case 2:
 		*type = "Packet Too Big";
+		*optional = dissect_icmpv6_type2;
 		return;
 	case 3:
 		*type = "Time Exceeded";
+		if (icmpv6_code_range_valid(icmp->h_code, icmpv6_type_3_codes))
+			*code = icmpv6_type_3_codes[icmp->h_code];
+		*optional = dissect_icmpv6_type3;
 		return;
 	case 4:
 		*type = "Parameter Problem";
+		if (icmpv6_code_range_valid(icmp->h_code, icmpv6_type_4_codes))
+			*code = icmpv6_type_4_codes[icmp->h_code];
+		*optional = dissect_icmpv6_type4;
 		return;
 	case 100:
 		*type = "Private experimation";
@@ -73,9 +191,11 @@ static inline void icmpv6_process(struct icmpv6hdr *icmp, char **type,
 		return;
 	case 128:
 		*type = "Echo Request";
+		*optional = dissect_icmpv6_type128;
 		return;
 	case 129:
 		*type = "Echo Reply";
+		*optional = dissect_icmpv6_type129;
 		return;
 	case 130:
 		*type = "Multicast Listener Query";
@@ -167,9 +287,10 @@ static inline void icmpv6_process(struct icmpv6hdr *icmp, char **type,
 
 static inline void icmpv6(struct pkt_buff *pkt)
 {
-	char *type = NULL, *code = NULL, *optional = NULL;
-	struct icmpv6hdr *icmp =
-		(struct icmpv6hdr *) pkt_pull(pkt, sizeof(*icmp));
+	char *type = NULL, *code = NULL;
+	void (*optional)(struct pkt_buff *pkt) = NULL;
+	struct icmpv6_general_hdr *icmp =
+		(struct icmpv6_general_hdr *) pkt_pull(pkt, sizeof(*icmp));
 
 	if (icmp == NULL)
 		return;
@@ -181,14 +302,14 @@ static inline void icmpv6(struct pkt_buff *pkt)
 	tprintf("%s (%u), ", code, icmp->h_code);
 	tprintf("Chks (0x%x)", ntohs(icmp->h_chksum));
 	if (optional)
-		tprintf(" %s", optional);
+		(*optional) (pkt);
 	tprintf(" ]\n\n");
 }
 
 static inline void icmpv6_less(struct pkt_buff *pkt)
 {
-	struct icmpv6hdr *icmp =
-		(struct icmpv6hdr *) pkt_pull(pkt, sizeof(*icmp));
+	struct icmpv6_general_hdr *icmp =
+		(struct icmpv6_general_hdr *) pkt_pull(pkt, sizeof(*icmp));
 
 	if (icmp == NULL)
 		return;
