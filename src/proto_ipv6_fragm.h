@@ -24,56 +24,50 @@ struct fragmhdr {
 	uint32_t h_fragm_identification;
 } __packed;
 
-static inline void fragm(uint8_t *packet, size_t len)
+static inline void fragm(struct pkt_buff *pkt)
 {
 	uint16_t off_res_M;
-	struct fragmhdr *fragm = (struct fragmhdr *) packet;
+	struct fragmhdr *fragm_ops;
 
-	if (len < sizeof(struct fragmhdr))
+	fragm_ops = (struct fragmhdr *) pkt_pull(pkt, sizeof(*fragm_ops));
+	if (fragm_ops == NULL)
 		return;
 
-	off_res_M = ntohs(fragm->h_fragm_off_res_M);
+	off_res_M = ntohs(fragm_ops->h_fragm_off_res_M);
 	
 	tprintf("\t [ Fragment ");
-	tprintf("NextHdr (%u), ", fragm->h_fragm_next_header);
-	tprintf("Reserved (%u), ", fragm->h_fragm_reserved);
+	tprintf("NextHdr (%u), ", fragm_ops->h_fragm_next_header);
+	tprintf("Reserved (%u), ", fragm_ops->h_fragm_reserved);
 	tprintf("Offset (%u), ", off_res_M >> 3);
 	tprintf("Res (%u), ", (off_res_M >> 1) & 0x3);
 	tprintf("M flag (%u), ", off_res_M & 0x1);
-	tprintf("Identification (%u) ", ntohl(fragm->h_fragm_identification));
+	tprintf("Identification (%u)",
+		ntohl(fragm_ops->h_fragm_identification));
 	tprintf(" ]\n");
+
+	pkt_set_proto(pkt, &eth_lay3, fragm_ops->h_fragm_next_header);
 }
 
-static inline void fragm_less(uint8_t *packet, size_t len)
+static inline void fragm_less(struct pkt_buff *pkt)
 {
-	uint16_t off_res_M;	
-	struct fragmhdr *fragm = (struct fragmhdr *) packet;
+	uint16_t off_res_M;
+	struct fragmhdr *fragm_ops;
 
-	if (len < sizeof(struct fragmhdr))
+	fragm_ops = (struct fragmhdr *) pkt_pull(pkt, sizeof(*fragm_ops));
+	if (fragm_ops == NULL)
 		return;
 
-	off_res_M = ntohs(fragm->h_fragm_off_res_M);
+	off_res_M = ntohs(fragm_ops->h_fragm_off_res_M);
 
 	tprintf(" FragmOffs %u", off_res_M >> 3);
-}
 
-static inline void fragm_next(uint8_t *packet, size_t len,
-			     struct hash_table **table,
-			     unsigned int *key, size_t *off)
-{
-	struct fragmhdr *fragm = (struct fragmhdr *) packet;
-	if (len < sizeof(struct fragmhdr))
-		return;
-	(*off) = sizeof(struct fragmhdr);
-	(*key) = fragm->h_fragm_next_header;
-	(*table) = &eth_lay3;
+	pkt_set_proto(pkt, &eth_lay3, fragm_ops->h_fragm_next_header);
 }
 
 struct protocol ipv6_fragm_ops = {
 	.key = 0x2C,
 	.print_full = fragm,
 	.print_less = fragm_less,
-	.proto_next = fragm_next,
 };
 
 #endif /* PROTO_IPV6_FRAGM_H */
