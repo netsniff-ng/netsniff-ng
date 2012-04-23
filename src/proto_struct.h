@@ -34,6 +34,9 @@ static inline void empty(struct pkt_buff *pkt) {}
 
 static inline void _hex(uint8_t *ptr, size_t len)
 {
+	if (!len)
+		return;
+
 	tprintf(" [ hex ");
 	for (; ptr && len-- > 0; ptr++)
 		tprintf(" %.2x", *ptr);
@@ -43,12 +46,19 @@ static inline void _hex(uint8_t *ptr, size_t len)
 static inline void hex(struct pkt_buff *pkt)
 {
 	size_t len = pkt_len(pkt);
+
+	if (!len)
+		return;
+
 	_hex(pkt_pull(pkt, len), len);
 	tprintf("\n");
 }
 
 static inline void _ascii(uint8_t *ptr, size_t len)
 {
+	if (!len)
+		return;
+
 	tprintf(" [ chr ");
 	for (; ptr && len-- > 0; ptr++)
 		tprintf(" %c ", isprint(*ptr) ? *ptr : '.');
@@ -58,6 +68,10 @@ static inline void _ascii(uint8_t *ptr, size_t len)
 static inline void ascii(struct pkt_buff *pkt)
 {
 	size_t len = pkt_len(pkt);
+
+	if (!len)
+		return;
+
 	_ascii(pkt_pull(pkt, len), len);
 	tprintf("\n");
 }
@@ -66,6 +80,10 @@ static inline void hex_ascii(struct pkt_buff *pkt)
 {
 	size_t   len = pkt_len(pkt);
 	uint8_t *ptr = pkt_pull(pkt, len);
+
+	if (!len)
+		return;
+
 	_hex(ptr, len);
 	_ascii(ptr, len);
 	tprintf("\n");
