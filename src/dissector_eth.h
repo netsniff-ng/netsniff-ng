@@ -26,7 +26,7 @@ extern char *lookup_port_tcp(unsigned int id);
 extern char *lookup_ether_type(unsigned int id);
 
 extern struct protocol ethernet_ops;
-extern struct protocol hex_ops;
+extern struct protocol none_ops;
 
 static inline struct protocol *dissector_get_ethernet_entry_point(void)
 {
@@ -35,7 +35,7 @@ static inline struct protocol *dissector_get_ethernet_entry_point(void)
 
 static inline struct protocol *dissector_get_ethernet_exit_point(void)
 {
-	return &hex_ops;
+	return &none_ops;
 }
 
 #endif /* DISSECTOR_ETH_H */

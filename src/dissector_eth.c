@@ -85,7 +85,7 @@ static inline void dissector_init_entry(int type)
 
 static inline void dissector_init_exit(int type)
 {
-	dissector_set_print_type(&hex_ops, type);
+	dissector_set_print_type(&none_ops, type);
 }
 
 static void dissector_init_layer_2(int type)
