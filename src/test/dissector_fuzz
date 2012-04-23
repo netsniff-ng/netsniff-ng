@@ -1,25 +1,22 @@
 #!/bin/bash
 
-# TODO: add --ascii and --hex when ready
 # Note: build and _install_ the toolkit first!
 
 archive=ftp://wireshark.org/automated/captures/
-usage="Usage: dissector_fuzz [show_output (default: no)] [run_through (default: no)]"
+usage="Usage: dissector_fuzz [-s (show,default: no)] [-r (run,default: no)] [netsniff-ng long-args]"
 show_output="0"
 run_through="0"
 count_cores=0
 count_files=0
-arg=("$@")
-case "$arg" in
-s|sh|sho|show|show_|show_o|show_ou|show_out|show_outp|show_outpu|show_output)
-	show_output="1"
-	;;
-r|ru|run|run_|run_t|run_th|run_thr|run_thro|run_throu|run_throug|run_through)
-	run_through="1"
-	;;
-*)
-	;;
-esac
+if [[ ! "$1" =~ ^--[a-z]* ]]; then
+	while getopts "sr" opt; do
+		case $opt in
+		s) show_output="1";;
+		r) run_through="1";;
+		esac
+	done
+fi
+shift $(( $OPTIND -1 ))
 mkdir -p fuzzing
 cd fuzzing
 wget -r -Nc -np -nd -A.pcap $archive |& grep -E "%|^--"
@@ -27,17 +24,17 @@ ulimit -c unlimited
 if [ -e core ]; then
 	rm core
 fi
-echo "Starting test ..."
+echo "Starting test ... with: $@"
 for file in *.pcap
 do
 	echo "Testing file $file ..."
 	if [ "$show_output" != "0" ]; then
-		netsniff-ng --in $file --silent
+		netsniff-ng --in $file $@
 	else
-		netsniff-ng --in $file --silent > /dev/null
+		netsniff-ng --in $file $@ > /dev/null
 	fi
 	if [ -e core ]; then
-		echo "Fuck, core dumped on this one (silent print)!"
+		echo "Fuck, core dumped on this one!"
 		let count_cores=count_cores+1
 		if [ "$run_through" != "0" ]; then
 			rm core
@@ -46,8 +43,13 @@ do
 		fi
 	fi
 done
-echo "========================="
-echo "      Fuckup Score       "
-echo "========================="
-echo "tested pcaps:   $count_files"
-echo "core dumps:     $count_cores"
+echo " ___________________"
+echo "< Your fuckup Score >"
+echo " -------------------"
+echo "        \   ^__^"
+echo "         \  (oo)\_______"
+echo "            (__)\       )\/\ "
+echo "                ||----w |"
+echo "                ||     ||"
+echo " * tested pcaps: $count_files"
+echo " * core dumps:   $count_cores"
