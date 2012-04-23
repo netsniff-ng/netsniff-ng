@@ -22,11 +22,11 @@ struct hop_by_hophdr {
 	uint8_t hdr_len;
 } __packed;
 
-static inline void dissect_opt(struct pkt_buff *pkt, size_t *opt_len)
+static inline void dissect_opt_hop (struct pkt_buff *pkt, size_t *opt_len)
 {
 	/* Have to been upgraded.
 	 * http://tools.ietf.org/html/rfc2460#section-4.2
-// 	 * Look also for proto_ipv6_dest_opts.h, it needs
+	 * Look also for proto_ipv6_dest_opts.h, it needs
 	 * dissect_opt(), too.
 	 */
 	if (*opt_len)
@@ -57,7 +57,7 @@ static inline void hop_by_hop(struct pkt_buff *pkt)
 	tprintf("HdrExtLen (%u, %u Bytes)", hop_ops->hdr_len,
 		opt_len);
 
-	dissect_opt(pkt, &opt_len);
+	dissect_opt_hop(pkt, &opt_len);
 
 	tprintf(" ]\n");
 
