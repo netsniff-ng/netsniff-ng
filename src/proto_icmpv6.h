@@ -132,6 +132,15 @@ struct icmpv6_neighb_disc_ops_type_5 {
 } __packed;
 /* end Neighbor Discovery msg */
 
+struct icmpv6_type_138 {
+	uint16_t chks;
+	uint32_t seq_nr;
+	uint8_t seg_nr;
+	uint8_t flags;
+	uint16_t maxdelay;
+	uint32_t res;
+} __packed;
+
 static inline void print_ipv6_addr_list(struct pkt_buff *pkt, uint8_t nr_addr)
 {
 	char address[INET6_ADDRSTRLEN];
@@ -536,6 +545,34 @@ static inline void dissect_icmpv6_type137(struct pkt_buff *pkt)
 				  address, sizeof(address)));
 
 	dissect_neighb_disc_ops(pkt);
+}
+
+static inline void dissect_icmpv6_rr_body(struct pkt_buff *pkt)
+{
+	 /*
+	  * Upgrade Dissector for Message Body
+	  * from http://tools.ietf.org/html/rfc2894#section-3.2
+	  */
+}
+
+static char *icmpv6_type_138_codes[] = {
+	"Router Renumbering Command",
+	"Router Renumbering Result",
+	"Sequence Number Reset",
+};
+
+static inline void dissect_icmpv6_type138(struct pkt_buff *pkt)
+{
+	struct icmpv6_type_138 *icmp_138;
+
+	icmp_138 = (struct icmpv6_type_138 *)
+		      pkt_pull(pkt,sizeof(*icmp_138));
+	if (icmp_138 == NULL)
+		return;
+
+	tprintf(", Chks (0x%x)",icmp_138->chks);
+
+	dissect_icmpv6_rr_body(pkt);
 }
 
 static inline void icmpv6_process(struct icmpv6_general_hdr *icmp, char **type,
