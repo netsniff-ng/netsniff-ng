@@ -50,12 +50,101 @@ struct icmpv6_type_128_129 {
 	uint8_t data[0];
 } __packed;
 
-/* MLD format */
+/* MLDv1 msg */
 struct icmpv6_type_130_131_132 {
 	uint16_t maxrespdel;
 	uint16_t res;
 	struct in6_addr ipv6_addr;
 } __packed;
+/* end MLDv1 msg */
+
+struct icmpv6_type_130_mldv2 {
+	uint8_t resv_S_QRV;
+	uint8_t QQIC;
+	uint16_t nr_src;
+	struct in6_addr ipv6_addr[0];
+} __packed;
+
+/* Neighbor Discovery msg */
+struct icmpv6_type_133 {
+	uint32_t res;
+	uint8_t ops[0];
+} __packed;
+
+struct icmpv6_type_134 {
+	uint8_t cur_hop_limit;
+	uint8_t m_o_res;
+	uint16_t router_lifetime;
+	uint32_t reachable_time;
+	uint32_t retrans_timer;
+	uint8_t ops[0];
+} __packed;
+
+struct icmpv6_type_135 {
+	uint32_t res;
+	struct in6_addr ipv6_addr;
+	uint8_t ops[0];
+} __packed;
+
+struct icmpv6_type_136 {
+	uint32_t r_s_o_res;
+	struct in6_addr ipv6_addr;
+	uint8_t ops[0];
+} __packed;
+
+struct icmpv6_type_137 {
+	uint32_t res;
+	struct in6_addr ipv6_targ_addr;
+	struct in6_addr ipv6_dest_addr;
+	uint8_t ops[0];
+} __packed;
+
+struct icmpv6_neighb_disc_ops_general {
+	uint8_t type;
+	uint8_t length;
+	uint8_t ops[0];
+} __packed;
+
+struct icmpv6_neighb_disc_ops_type_1_2 {
+	uint8_t link_lay_addr[0];
+} __packed;
+
+struct icmpv6_neighb_disc_ops_type_3 {
+	uint8_t prefix_len;
+	uint8_t l_a_res1;
+	uint32_t valid_lifetime;
+	uint32_t preferred_lifetime;
+	uint32_t res2;
+	struct in6_addr prefix;
+} __packed;
+
+struct icmpv6_neighb_disc_ops_type_4 {
+	uint16_t res1;
+	uint32_t res2;
+	uint8_t ip_hdr_data[0];
+} __packed;
+
+struct icmpv6_neighb_disc_ops_type_5 {
+	uint16_t res1;
+	uint32_t MTU;
+} __packed;
+/* end Neighbor Discovery msg */
+
+static inline void print_ipv6_addr_list(struct pkt_buff *pkt, uint8_t nr_addr)
+{
+	char address[INET6_ADDRSTRLEN];
+	struct in6_addr *addr;
+	
+	while (nr_addr--) {
+	    addr = (struct in6_addr *) pkt_pull(pkt, sizeof(*addr));
+	    if (addr == NULL)
+		    return;
+
+	    tprintf("\n\t   Address: %s",
+		    inet_ntop(AF_INET6, addr, address,
+			      sizeof(address)));
+	}
+}
 
 static char *icmpv6_type_1_codes[] = {
 	"No route to destination",
@@ -158,18 +247,181 @@ static inline void dissect_icmpv6_type129(struct pkt_buff *pkt)
 static inline void dissect_icmpv6_type130(struct pkt_buff *pkt)
 {
 	char address[INET6_ADDRSTRLEN];
+	uint16_t nr_src, maxrespdel;
+	uint8_t switch_mldv2 = 0;
 	struct icmpv6_type_130_131_132 *icmp_130;
 
 	icmp_130 = (struct icmpv6_type_130_131_132 *)
 		      pkt_pull(pkt,sizeof(*icmp_130));
 	if (icmp_130 == NULL)
 		return;
+	maxrespdel = ntohs(icmp_130->maxrespdel);
 
-	tprintf(", Max Resp Delay (%ums)",ntohs(icmp_130->maxrespdel));
+	if(pkt_len(pkt) >= sizeof(struct icmpv6_type_130_mldv2))
+		  switch_mldv2 = 1;
+
+	if(switch_mldv2)
+		tprintf(", Max Resp Delay (%ums)", maxrespdel >> 15 ?
+			(((maxrespdel & 0xFFF) | 0x1000) <<
+			(((maxrespdel >> 12) & 0x3) + 3)) : maxrespdel);
+	else
+		tprintf(", Max Resp Delay (%ums)",maxrespdel);
 	tprintf(", Res (0x%x)",ntohs(icmp_130->res));
 	tprintf(", Address: %s",
 			inet_ntop(AF_INET6, &icmp_130->ipv6_addr,
 				  address, sizeof(address)));
+
+	if(switch_mldv2) {
+		struct icmpv6_type_130_mldv2 *icmp_130_mldv2;
+		
+		icmp_130_mldv2 = (struct icmpv6_type_130_mldv2 *)
+			      pkt_pull(pkt,sizeof(*icmp_130_mldv2));
+		if (icmp_130_mldv2 == NULL)
+			return;
+		
+		nr_src = ntohs(icmp_130_mldv2->nr_src);
+
+		tprintf(", Resv (0x%x)",icmp_130_mldv2->resv_S_QRV >> 4);
+		tprintf(", S (%u)",(icmp_130_mldv2->resv_S_QRV >> 3) & 0x1);
+		tprintf(", QRV (0x%x)",icmp_130_mldv2->resv_S_QRV & 0x3);
+		tprintf(", QQIC (%u)",icmp_130_mldv2->QQIC);
+		tprintf(", Nr Src (0x%x)",nr_src);
+
+		print_ipv6_addr_list(pkt, nr_src);
+	}
+}
+
+static inline void dissect_icmpv6_type131(struct pkt_buff *pkt)
+{
+	char address[INET6_ADDRSTRLEN];
+	struct icmpv6_type_130_131_132 *icmp_131;
+
+	icmp_131 = (struct icmpv6_type_130_131_132 *)
+		      pkt_pull(pkt,sizeof(*icmp_131));
+	if (icmp_131 == NULL)
+		return;
+
+	tprintf(", Max Resp Delay (%ums)",ntohs(icmp_131->maxrespdel));
+	tprintf(", Res (0x%x)",ntohs(icmp_131->res));
+	tprintf(", Address: %s",
+			inet_ntop(AF_INET6, &icmp_131->ipv6_addr,
+				  address, sizeof(address)));
+}
+
+static inline void dissect_icmpv6_type132(struct pkt_buff *pkt)
+{
+	dissect_icmpv6_type131(pkt);
+}
+
+static char *icmpv6_neighb_disc_ops[] = {
+	"Source Link-Layer Address",
+	"Target Link-Layer Address",
+	"Prefix Information",
+	"Redirected Header",
+	"MTU",
+};
+
+static inline void dissect_neighb_disc_ops(struct pkt_buff *pkt)
+{
+// 	while(pkt_len(pkt)) {
+// 		if (icmpv6_code_range_valid(icmp->h_code, icmpv6_type_1_codes))
+// 				      *ops = icmpv6_type_1_codes[icmp->h_code];
+// 		  tprintf(", Option(s) recognized");
+// 	}
+}
+
+static inline void dissect_icmpv6_type133(struct pkt_buff *pkt)
+{
+	struct icmpv6_type_133 *icmp_133;
+
+	icmp_133 = (struct icmpv6_type_133 *)
+		      pkt_pull(pkt,sizeof(*icmp_133));
+	if (icmp_133 == NULL)
+		return;
+
+	tprintf(", Reserved (0x%x)",ntohl(icmp_133->res));
+
+	dissect_neighb_disc_ops(pkt);
+}
+
+static inline void dissect_icmpv6_type134(struct pkt_buff *pkt)
+{
+	struct icmpv6_type_134 *icmp_134;
+
+	icmp_134 = (struct icmpv6_type_134 *)
+		      pkt_pull(pkt,sizeof(*icmp_134));
+	if (icmp_134 == NULL)
+		return;
+
+	tprintf(", Cur Hop Limit (%u)",icmp_134->cur_hop_limit);
+	tprintf(", M (%u) O (%u)",icmp_134->m_o_res >> 7,
+		(icmp_134->m_o_res >> 6) & 0x1);
+	tprintf(", Router Lifetime (%us)",ntohs(icmp_134->router_lifetime));
+	tprintf(", Reachable Time (%ums)",ntohl(icmp_134->reachable_time));
+	tprintf(", Retrans Timer (%ums)",ntohl(icmp_134->retrans_timer));
+
+	dissect_neighb_disc_ops(pkt);
+}
+
+static inline void dissect_icmpv6_type135(struct pkt_buff *pkt)
+{
+	char address[INET6_ADDRSTRLEN];
+	struct icmpv6_type_135 *icmp_135;
+
+	icmp_135 = (struct icmpv6_type_135 *)
+		      pkt_pull(pkt,sizeof(*icmp_135));
+	if (icmp_135 == NULL)
+		return;
+
+	tprintf(", Reserved (0x%x)",ntohl(icmp_135->res));
+	tprintf(", Target Address: %s",
+			inet_ntop(AF_INET6, &icmp_135->ipv6_addr,
+				  address, sizeof(address)));
+
+	dissect_neighb_disc_ops(pkt);
+}
+
+static inline void dissect_icmpv6_type136(struct pkt_buff *pkt)
+{
+	char address[INET6_ADDRSTRLEN];
+	uint32_t r_s_o_res;
+	struct icmpv6_type_136 *icmp_136;
+
+	icmp_136 = (struct icmpv6_type_136 *)
+		      pkt_pull(pkt,sizeof(*icmp_136));
+	if (icmp_136 == NULL)
+		return;
+	r_s_o_res = ntohl(icmp_136->r_s_o_res);
+
+	tprintf(", R (%u) S (%u) O (%u) Reserved (0x%x)", r_s_o_res >> 31,
+		(r_s_o_res >> 30) & 0x1, (r_s_o_res >> 29) & 0x1,
+		r_s_o_res & 0x1FFFFFFF);
+	tprintf(", Target Address: %s",
+			inet_ntop(AF_INET6, &icmp_136->ipv6_addr,
+				  address, sizeof(address)));
+
+	dissect_neighb_disc_ops(pkt);
+}
+
+static inline void dissect_icmpv6_type137(struct pkt_buff *pkt)
+{
+	char address[INET6_ADDRSTRLEN];
+	struct icmpv6_type_137 *icmp_137;
+
+	icmp_137 = (struct icmpv6_type_137 *)
+		      pkt_pull(pkt,sizeof(*icmp_137));
+	if (icmp_137 == NULL)
+		return;
+
+	tprintf(", Reserved (0x%x)",icmp_137->res);
+	tprintf(", Target Address: %s",
+			inet_ntop(AF_INET6, &icmp_137->ipv6_targ_addr,
+				  address, sizeof(address)));
+	tprintf(", Dest Address: %s",
+			inet_ntop(AF_INET6, &icmp_137->ipv6_dest_addr,
+				  address, sizeof(address)));
+
+	dissect_neighb_disc_ops(pkt);
 }
 
 #define icmpv6_code_range_valid(code, sarr)	((code) < array_size((sarr)))
@@ -227,24 +479,31 @@ static inline void icmpv6_process(struct icmpv6_general_hdr *icmp, char **type,
 		return;
 	case 131:
 		*type = "Multicast Listener Report";
+		*optional = dissect_icmpv6_type131;
 		return;
 	case 132:
 		*type = "Multicast Listener Done";
+		*optional = dissect_icmpv6_type132;
 		return;
 	case 133:
 		*type = "Router Solicitation";
+		*optional = dissect_icmpv6_type133;
 		return;
 	case 134:
 		*type = "Router Advertisement";
+		*optional = dissect_icmpv6_type134;
 		return;
 	case 135:
 		*type = "Neighbor Solicitation";
+		*optional = dissect_icmpv6_type135;
 		return;
 	case 136:
 		*type = "Neighbor Advertisement";
+		*optional = dissect_icmpv6_type136;
 		return;
 	case 137:
 		*type = "Redirect Message";
+		*optional = dissect_icmpv6_type137;
 		return;
 	case 138:
 		*type = "Router Renumbering";
