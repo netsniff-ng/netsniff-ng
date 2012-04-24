@@ -22,6 +22,8 @@
 #include "pkt_buff.h"
 #include "built_in.h"
 
+#define icmpv6_code_range_valid(code, sarr)	((code) < array_size((sarr)))
+
 struct icmpv6_general_hdr {
 	uint8_t h_type;
 	uint8_t h_code;
@@ -101,7 +103,7 @@ struct icmpv6_type_137 {
 
 struct icmpv6_neighb_disc_ops_general {
 	uint8_t type;
-	uint8_t length;
+	uint8_t len;
 	uint8_t ops[0];
 } __packed;
 
@@ -313,6 +315,83 @@ static inline void dissect_icmpv6_type132(struct pkt_buff *pkt)
 	dissect_icmpv6_type131(pkt);
 }
 
+static inline void dissect_neighb_disc_ops_1(struct pkt_buff *pkt, size_t len)
+{
+	struct icmpv6_neighb_disc_ops_type_1_2 *icmp_neighb_disc_1;
+	
+	icmp_neighb_disc_1 = (struct icmpv6_neighb_disc_ops_type_1_2 *)
+				pkt_pull(pkt,sizeof(*icmp_neighb_disc_1));
+	if (icmp_neighb_disc_1 == NULL)
+			return;
+
+	tprintf("Address 0x");
+
+	while(len--){
+		    tprintf("%x", *pkt_pull(pkt,1));
+	}
+}
+
+static inline void dissect_neighb_disc_ops_2(struct pkt_buff *pkt, size_t len)
+{
+	dissect_neighb_disc_ops_1(pkt, len);
+}
+
+static inline void dissect_neighb_disc_ops_3(struct pkt_buff *pkt, size_t len)
+{
+	char address[INET6_ADDRSTRLEN];
+	struct icmpv6_neighb_disc_ops_type_3 *icmp_neighb_disc_3;
+
+	icmp_neighb_disc_3 = (struct icmpv6_neighb_disc_ops_type_3 *)
+				pkt_pull(pkt,sizeof(*icmp_neighb_disc_3));
+	if (icmp_neighb_disc_3 == NULL)
+			return;
+
+	tprintf("Prefix Len (%u) ",icmp_neighb_disc_3->prefix_len);
+	tprintf("L (%u) A (%u) Res1 (0x%x) ",icmp_neighb_disc_3->l_a_res1 >> 7,
+				(icmp_neighb_disc_3->l_a_res1 >> 7) & 0x1,
+				icmp_neighb_disc_3->l_a_res1 & 0x3F);
+	tprintf("Valid Lifetime (%us) ",
+				ntohl(icmp_neighb_disc_3->valid_lifetime));
+	tprintf("Preferred Lifetime (%us) ",
+				ntohl(icmp_neighb_disc_3->preferred_lifetime));
+	tprintf("Reserved2 (0x%x) ",
+				ntohl(icmp_neighb_disc_3->res2));
+	tprintf(", Prefix: %s ",
+				inet_ntop(AF_INET6,&icmp_neighb_disc_3->prefix,
+				address, sizeof(address)));
+}
+
+static inline void dissect_neighb_disc_ops_4(struct pkt_buff *pkt, size_t len)
+{
+	struct icmpv6_neighb_disc_ops_type_4 *icmp_neighb_disc_4;
+
+	icmp_neighb_disc_4 = (struct icmpv6_neighb_disc_ops_type_4 *)
+				pkt_pull(pkt,sizeof(*icmp_neighb_disc_4));
+	if (icmp_neighb_disc_4 == NULL)
+			return;
+
+	tprintf("Reserved 1 (0x%x) ", ntohs(icmp_neighb_disc_4->res1));
+	tprintf("Reserved 2 (0x%x) ", ntohl(icmp_neighb_disc_4->res2));
+	tprintf("IP header + data ");
+
+	while(len--){
+		    tprintf("%x", *pkt_pull(pkt,1));
+	}
+}
+
+static inline void dissect_neighb_disc_ops_5(struct pkt_buff *pkt, size_t len)
+{
+	struct icmpv6_neighb_disc_ops_type_5 *icmp_neighb_disc_5;
+
+	icmp_neighb_disc_5 = (struct icmpv6_neighb_disc_ops_type_5 *)
+				pkt_pull(pkt,sizeof(*icmp_neighb_disc_5));
+	if (icmp_neighb_disc_5 == NULL)
+			return;
+
+	tprintf("Reserved (0x%x) ", ntohs(icmp_neighb_disc_5->res1));
+	tprintf("MTU (%u)", ntohl(icmp_neighb_disc_5->MTU));
+}
+
 static char *icmpv6_neighb_disc_ops[] = {
 	"Source Link-Layer Address",
 	"Target Link-Layer Address",
@@ -323,11 +402,46 @@ static char *icmpv6_neighb_disc_ops[] = {
 
 static inline void dissect_neighb_disc_ops(struct pkt_buff *pkt)
 {
-// 	while(pkt_len(pkt)) {
-// 		if (icmpv6_code_range_valid(icmp->h_code, icmpv6_type_1_codes))
-// 				      *ops = icmpv6_type_1_codes[icmp->h_code];
-// 		  tprintf(", Option(s) recognized");
-// 	}
+	size_t ops_total_len, ops_payl_len;
+	struct icmpv6_neighb_disc_ops_general *icmp_neighb_disc;
+	
+	while(pkt_len(pkt)) {
+		icmp_neighb_disc = (struct icmpv6_neighb_disc_ops_general *)
+				pkt_pull(pkt,sizeof(*icmp_neighb_disc));
+		if (icmp_neighb_disc == NULL)
+			return;
+
+		ops_total_len = icmp_neighb_disc->len * 8;
+		ops_payl_len = ops_total_len - sizeof(*icmp_neighb_disc);
+
+		tprintf("\n\tOption %s (%u) ",
+			  icmpv6_code_range_valid(icmp_neighb_disc->type - 1,
+			  icmpv6_neighb_disc_ops) ?
+			  icmpv6_neighb_disc_ops[icmp_neighb_disc->type - 1]
+			  : "Type Unknown", icmp_neighb_disc->type);
+		tprintf("Length (%u, %u bytes) ", icmp_neighb_disc->len,
+			ops_total_len);
+		
+		switch (icmp_neighb_disc->type) {
+		case 1:
+			dissect_neighb_disc_ops_1(pkt, ops_payl_len);
+			break;
+		case 2:
+			dissect_neighb_disc_ops_2(pkt, ops_payl_len);
+			break;
+		case 3:
+			dissect_neighb_disc_ops_3(pkt, ops_payl_len);
+			break;
+		case 4:
+			dissect_neighb_disc_ops_4(pkt, ops_payl_len);
+			break;
+		case 5:
+			dissect_neighb_disc_ops_5(pkt, ops_payl_len);
+			break;
+		default:
+			pkt_pull(pkt, ops_payl_len);
+		}
+	}
 }
 
 static inline void dissect_icmpv6_type133(struct pkt_buff *pkt)
@@ -423,8 +537,6 @@ static inline void dissect_icmpv6_type137(struct pkt_buff *pkt)
 
 	dissect_neighb_disc_ops(pkt);
 }
-
-#define icmpv6_code_range_valid(code, sarr)	((code) < array_size((sarr)))
 
 static inline void icmpv6_process(struct icmpv6_general_hdr *icmp, char **type,
 				  char **code,
