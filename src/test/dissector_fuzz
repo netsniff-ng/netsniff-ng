@@ -35,17 +35,16 @@ fi
 
 mkdir -p fuzzing
 cd fuzzing
-wget -r -Nc -np -nd -A.pcap "$archive"
+wget -r -Nc -np -nd -A.pcap "$archive"  |& grep -E "%|^--"
 ulimit -c unlimited
 rm -f core
-echo "Starting test ... with: ${netsniff_ng_opts}"
 for file in *.pcap
 do
-	echo "Testing file $file ..."
+	echo "Testing file $file, ${netsniff_ng_opts} ..."
 	if [ $show_output ]; then
-		echo netsniff-ng --in "$file" "${netsniff_ng_opts}"
+		netsniff-ng --in "$file" "${netsniff_ng_opts}"
 	else
-		echo netsniff-ng --in "$file" "${netsniff_ng_opts}" > /dev/null
+		netsniff-ng --in "$file" "${netsniff_ng_opts}" > /dev/null
 	fi
 	if [ -e core ]; then
 		echo 'Fuck, core dumped on this one!'
