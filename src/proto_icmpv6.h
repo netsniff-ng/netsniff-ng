@@ -133,13 +133,21 @@ struct icmpv6_neighb_disc_ops_type_5 {
 /* end Neighbor Discovery msg */
 
 struct icmpv6_type_138 {
-	uint16_t chks;
 	uint32_t seq_nr;
 	uint8_t seg_nr;
 	uint8_t flags;
 	uint16_t maxdelay;
 	uint32_t res;
 } __packed;
+
+/* Node Information Queries */
+struct icmpv6_type_139_140 {
+	uint16_t qtype;
+	uint16_t flags;
+	uint64_t nonce;
+	uint8_t data[0];
+} __packed;
+/* end Node Information Queries */
 
 static inline void print_ipv6_addr_list(struct pkt_buff *pkt, uint8_t nr_addr)
 {
@@ -401,12 +409,51 @@ static inline void dissect_neighb_disc_ops_5(struct pkt_buff *pkt, size_t len)
 	tprintf("MTU (%u)", ntohl(icmp_neighb_disc_5->MTU));
 }
 
-static char *icmpv6_neighb_disc_ops[] = {
-	"Source Link-Layer Address",
-	"Target Link-Layer Address",
-	"Prefix Information",
-	"Redirected Header",
-	"MTU",
+static inline void dissect_neighb_disc_ops_9(struct pkt_buff *pkt, size_t len)
+{
+// 	struct icmpv6_neighb_disc_ops_type_5 *icmp_neighb_disc_5;
+// 
+// 	icmp_neighb_disc_5 = (struct icmpv6_neighb_disc_ops_type_5 *)
+// 				pkt_pull(pkt,sizeof(*icmp_neighb_disc_5));
+// 	if (icmp_neighb_disc_5 == NULL)
+// 			return;
+// 
+// 	tprintf("Reserved (0x%x) ", ntohs(icmp_neighb_disc_5->res1));
+// 	tprintf("MTU (%u)", ntohl(icmp_neighb_disc_5->MTU));
+}
+
+static inline void dissect_neighb_disc_ops_10(struct pkt_buff *pkt, size_t len)
+{
+// 	struct icmpv6_neighb_disc_ops_type_5 *icmp_neighb_disc_5;
+//
+// 	icmp_neighb_disc_5 = (struct icmpv6_neighb_disc_ops_type_5 *)
+// 				pkt_pull(pkt,sizeof(*icmp_neighb_disc_5));
+// 	if (icmp_neighb_disc_5 == NULL)
+// 			return;
+//
+// 	tprintf("Reserved (0x%x) ", ntohs(icmp_neighb_disc_5->res1));
+// 	tprintf("MTU (%u)", ntohl(icmp_neighb_disc_5->MTU));
+}
+
+static inline char *icmpv6_neighb_disc_ops(uint8_t code) {
+	switch (code) {
+	case 1:
+		return "Source Link-Layer Address";
+	case 2:
+		return "Target Link-Layer Address";
+	case 3:
+		return "Prefix Information";
+	case 4:
+		return "Redirected Header";
+	case 5:
+		return "MTU";
+	case 9:
+		return "Source Address List";
+	case 10:
+		return "Target Address List";
+	}
+
+	return NULL;
 };
 
 static inline void dissect_neighb_disc_ops(struct pkt_buff *pkt)
@@ -424,9 +471,8 @@ static inline void dissect_neighb_disc_ops(struct pkt_buff *pkt)
 		ops_payl_len = ops_total_len - sizeof(*icmp_neighb_disc);
 
 		tprintf("\n\tOption %s (%u) ",
-			  icmpv6_code_range_valid(icmp_neighb_disc->type - 1,
-			  icmpv6_neighb_disc_ops) ?
-			  icmpv6_neighb_disc_ops[icmp_neighb_disc->type - 1]
+			  icmpv6_neighb_disc_ops(icmp_neighb_disc->type) ?
+			  icmpv6_neighb_disc_ops(icmp_neighb_disc->type)
 			  : "Type Unknown", icmp_neighb_disc->type);
 		tprintf("Length (%u, %u bytes) ", icmp_neighb_disc->len,
 			ops_total_len);
@@ -446,6 +492,15 @@ static inline void dissect_neighb_disc_ops(struct pkt_buff *pkt)
 			break;
 		case 5:
 			dissect_neighb_disc_ops_5(pkt, ops_payl_len);
+			break;
+		/* Type 9 and 10 defined in
+		 * http://tools.ietf.org/html/rfc3122#section-3.1
+		 */
+		case 9:
+			dissect_neighb_disc_ops_9(pkt, ops_payl_len);
+			break;
+		case 10:
+			dissect_neighb_disc_ops_10(pkt, ops_payl_len);
 			break;
 		default:
 			pkt_pull(pkt, ops_payl_len);
@@ -553,12 +608,21 @@ static inline void dissect_icmpv6_rr_body(struct pkt_buff *pkt)
 	  * Upgrade Dissector for Message Body
 	  * from http://tools.ietf.org/html/rfc2894#section-3.2
 	  */
+	 if(pkt_len(pkt))
+		tprintf(" Message Body recognized");
 }
 
-static char *icmpv6_type_138_codes[] = {
-	"Router Renumbering Command",
-	"Router Renumbering Result",
-	"Sequence Number Reset",
+static inline char *icmpv6_type_138_codes(uint8_t code) {
+	switch (code) {
+	case 1:
+		return "Router Renumbering Command";
+	case 2:
+		return "Router Renumbering Result";
+	case 255:
+		return "Sequence Number Reset";
+	}
+	
+	return NULL;
 };
 
 static inline void dissect_icmpv6_type138(struct pkt_buff *pkt)
@@ -570,9 +634,73 @@ static inline void dissect_icmpv6_type138(struct pkt_buff *pkt)
 	if (icmp_138 == NULL)
 		return;
 
-	tprintf(", Chks (0x%x)",icmp_138->chks);
+	tprintf(", Sequence Nr. (%u)",ntohl(icmp_138->seq_nr));
+	tprintf(", Segment Nr. (%u)",icmp_138->seg_nr);
+	tprintf(", T (%u) R (%u) A (%u) S (%u) P (%u) Res \
+		(0x%x) ",icmp_138->flags >> 7, (icmp_138->flags >> 6) & 1,
+		(icmp_138->flags >> 5) & 1, (icmp_138->flags >> 4) & 1,
+		(icmp_138->flags >> 3) & 1, icmp_138->flags & 7);
+	tprintf(", Max Delay (%ums)", ntohs(icmp_138->maxdelay));
+	tprintf(", Res (0x%x)", ntohl(icmp_138->res));
 
 	dissect_icmpv6_rr_body(pkt);
+}
+
+static inline void dissect_icmpv6_node_inf_data(struct pkt_buff *pkt)
+{
+	 /*
+	  * Upgrade Dissector for Data field
+	  * http://tools.ietf.org/html/rfc4620#section-4
+	  */
+	 if(pkt_len(pkt))
+		tprintf(" Data recognized");
+}
+
+static char *icmpv6_node_inf_qtypes[] = {
+	"NOOP",
+	"unused",
+	"Node Name",
+	"Node Addresses",
+	"IPv4 Addresses ",
+};
+
+static char *icmpv6_type_139_codes[] = {
+	"Data contains IPv6 Address",
+	"Data contains Name or nothing",
+	"Data contains IPv4 Address",
+};
+
+static inline void dissect_icmpv6_type139(struct pkt_buff *pkt)
+{
+	char *qtype_name = "Unknown";
+	uint16_t qtype_nr;
+	struct icmpv6_type_139_140 *icmp_139;
+
+	icmp_139 = (struct icmpv6_type_139_140 *)
+		      pkt_pull(pkt,sizeof(*icmp_139));
+	if (icmp_139 == NULL)
+		return;
+
+	qtype_nr = ntohs(icmp_139->qtype);
+	if (icmpv6_code_range_valid(qtype_nr, icmpv6_node_inf_qtypes))
+			qtype_name = icmpv6_node_inf_qtypes[qtype_nr];
+
+	tprintf(", Qtype %s (%u)",qtype_name, qtype_nr);
+	tprintf(", Flags (0x%x)",ntohs(icmp_139->flags));
+	tprintf(", Nonce (0x%x)",ntohll(icmp_139->nonce));
+
+	dissect_icmpv6_node_inf_data(pkt);
+}
+
+static char *icmpv6_type_140_codes[] = {
+	"Successfull reply",
+	"Responder refuses answer",
+	"Qtype is unknown to the Responder",
+};
+
+static inline void dissect_icmpv6_type140(struct pkt_buff *pkt)
+{
+	dissect_icmpv6_type139(pkt);
 }
 
 static inline void icmpv6_process(struct icmpv6_general_hdr *icmp, char **type,
@@ -656,12 +784,23 @@ static inline void icmpv6_process(struct icmpv6_general_hdr *icmp, char **type,
 		return;
 	case 138:
 		*type = "Router Renumbering";
+		if(icmpv6_type_138_codes(icmp->h_code))
+			*code = icmpv6_type_138_codes(icmp->h_code);
+		*optional = dissect_icmpv6_type138;
 		return;
 	case 139:
 		*type = "ICMP Node Information Query";
+		if (icmpv6_code_range_valid(icmp->h_code,
+					  icmpv6_type_139_codes))
+			*code = icmpv6_type_139_codes[icmp->h_code];
+		*optional = dissect_icmpv6_type139;
 		return;
 	case 140:
 		*type = "ICMP Node Information Response";
+		if (icmpv6_code_range_valid(icmp->h_code,
+					  icmpv6_type_140_codes))
+			*code = icmpv6_type_140_codes[icmp->h_code];
+		*optional = dissect_icmpv6_type140;
 		return;
 	case 141:
 		*type = "Inverse Neighbor Discovery Solicitation Message";
