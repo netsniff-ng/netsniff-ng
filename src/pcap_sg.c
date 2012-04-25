@@ -68,7 +68,7 @@ static int pcap_sg_push_file_header(int fd)
 
 static int pcap_sg_prepare_writing_pcap(int fd)
 {
-	set_ioprio_be();
+	set_ioprio_rt();
 	return 0;
 }
 
@@ -105,17 +105,15 @@ static ssize_t pcap_sg_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 
 static int pcap_sg_prepare_reading_pcap(int fd)
 {
-	set_ioprio_be();
+	set_ioprio_rt();
 
 	spinlock_lock(&lock);
-
 	avail = readv(fd, iov, IOVSIZ);
 	if (avail <= 0)
 		return -EIO;
 
 	used = iov_used = 0;
 	c = 0;
-
 	spinlock_unlock(&lock);
 
 	return 0;
