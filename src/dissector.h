@@ -30,7 +30,8 @@
 #define FNTTYPE_PRINT_LESS	1
 #define FNTTYPE_PRINT_HEX	2
 #define FNTTYPE_PRINT_ASCII	3
-#define FNTTYPE_PRINT_NONE	4
+#define FNTTYPE_PRINT_HEX_ASCII 4
+#define FNTTYPE_PRINT_NONE	5
 
 extern void dissector_init_all(int fnttype);
 extern void dissector_entry_point(uint8_t *packet, size_t len, int linktype, int mode);
@@ -65,6 +66,7 @@ static inline void show_frame_hdr(struct frame_map *hdr, int mode,
 	case FNTTYPE_PRINT_NORM:
 	case FNTTYPE_PRINT_HEX:
 	case FNTTYPE_PRINT_ASCII:
+	case FNTTYPE_PRINT_HEX_ASCII:
 	default:
 		if (rmode == RING_MODE_INGRESS) {
 			tprintf("%s %u %u %u.%06u\n",
