@@ -8,9 +8,10 @@
 #define PROTO_IGMP_H
 
 #include <arpa/inet.h>
-#include <assert.h>
+#include <asm/byteorder.h>
 #include <netinet/in.h>
 
+#include "csum.h"
 #include "dissector_eth.h"
 #include "proto_struct.h"
 #include "built_in.h"

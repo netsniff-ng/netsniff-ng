@@ -30,6 +30,7 @@ int dissector_set_print_type(void *ptr, int type)
 			break;
 		case FNTTYPE_PRINT_HEX:
 		case FNTTYPE_PRINT_ASCII:
+		case FNTTYPE_PRINT_HEX_ASCII:
 		case FNTTYPE_PRINT_NONE:
 		default:
 			proto->process = NULL;
@@ -86,6 +87,9 @@ void dissector_entry_point(uint8_t *packet, size_t len, int linktype, int mode)
 		break;
 	case FNTTYPE_PRINT_ASCII:
 		ascii(pkt);
+		break;
+	case FNTTYPE_PRINT_HEX_ASCII:
+		hex_ascii(pkt);
 		break;
 	}
 

@@ -1158,10 +1158,12 @@ int main(int argc, char **argv)
 			mode.print_mode = FNTTYPE_PRINT_LESS;
 			break;
 		case 'X':
-			mode.print_mode = FNTTYPE_PRINT_HEX;
+			mode.print_mode = (mode.print_mode == FNTTYPE_PRINT_ASCII) ?
+				FNTTYPE_PRINT_HEX_ASCII : FNTTYPE_PRINT_HEX;
 			break;
 		case 'l':
-			mode.print_mode = FNTTYPE_PRINT_ASCII;
+			mode.print_mode = (mode.print_mode == FNTTYPE_PRINT_HEX) ?
+				FNTTYPE_PRINT_HEX_ASCII : FNTTYPE_PRINT_ASCII;
 			break;
 		case 'k':
 			mode.kpull = (unsigned long) atol(optarg);
