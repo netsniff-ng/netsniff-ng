@@ -138,6 +138,20 @@ struct icmpv6_neighb_disc_ops_type_9_10 {
 	uint32_t res2;
 	uint8_t ip_hdr_data[0];
 } __packed;
+
+struct icmpv6_neighb_disc_ops_type_15 {
+	uint8_t name_type;
+	size_t pad_len;
+	char name[0];
+	uint8_t pad[0];
+} __packed;
+
+struct icmpv6_neighb_disc_ops_type_16 {
+	uint8_t cert_type;
+	uint8_t res;
+	uint8_t cert[0];
+	uint8_t pad[0];
+} __packed;
 /* end Neighbor Discovery msg */
 
 struct icmpv6_type_138 {
@@ -191,6 +205,22 @@ struct icmpv6_type_147 {
 	uint8_t ops[0];
 } __packed;
 /* end ICMP Mobility Support */
+
+/* SEcure Neighbor Discovery */
+struct icmpv6_type_148 {
+	uint16_t id;
+	uint16_t comp;
+	uint8_t ops[0];
+} __packed;
+
+struct icmpv6_type_149 {
+	uint16_t id;
+	uint16_t all_comp;
+	uint16_t comp;
+	uint16_t res;
+	uint8_t ops[0];
+} __packed;
+/* end SEcure Neighbor Discovery */
 
 static inline void print_ipv6_addr_list(struct pkt_buff *pkt, uint8_t nr_addr)
 {
@@ -258,6 +288,7 @@ static inline void dissect_neighb_disc_ops_1(struct pkt_buff *pkt, size_t len)
 				pkt_pull(pkt,sizeof(*icmp_neighb_disc_1));
 	if (icmp_neighb_disc_1 == NULL)
 			return;
+	len -= sizeof(*icmp_neighb_disc_1);
 
 	tprintf("Address 0x");
 
@@ -280,6 +311,7 @@ static inline void dissect_neighb_disc_ops_3(struct pkt_buff *pkt, size_t len)
 				pkt_pull(pkt,sizeof(*icmp_neighb_disc_3));
 	if (icmp_neighb_disc_3 == NULL)
 			return;
+	len -= sizeof(*icmp_neighb_disc_3);
 
 	tprintf("Prefix Len (%u) ",icmp_neighb_disc_3->prefix_len);
 	tprintf("L (%u) A (%u) Res1 (0x%x) ",icmp_neighb_disc_3->l_a_res1 >> 7,
@@ -304,6 +336,7 @@ static inline void dissect_neighb_disc_ops_4(struct pkt_buff *pkt, size_t len)
 				pkt_pull(pkt,sizeof(*icmp_neighb_disc_4));
 	if (icmp_neighb_disc_4 == NULL)
 			return;
+	len -= sizeof(*icmp_neighb_disc_4);
 
 	tprintf("Reserved 1 (0x%x) ", ntohs(icmp_neighb_disc_4->res1));
 	tprintf("Reserved 2 (0x%x) ", ntohl(icmp_neighb_disc_4->res2));
@@ -322,6 +355,7 @@ static inline void dissect_neighb_disc_ops_5(struct pkt_buff *pkt, size_t len)
 				pkt_pull(pkt,sizeof(*icmp_neighb_disc_5));
 	if (icmp_neighb_disc_5 == NULL)
 			return;
+	len -= sizeof(*icmp_neighb_disc_5);
 
 	tprintf("Reserved (0x%x) ", ntohs(icmp_neighb_disc_5->res1));
 	tprintf("MTU (%u)", ntohl(icmp_neighb_disc_5->MTU));
@@ -335,6 +369,7 @@ static inline void dissect_neighb_disc_ops_9(struct pkt_buff *pkt, size_t len)
 				pkt_pull(pkt,sizeof(*icmp_neighb_disc_9));
 	if (icmp_neighb_disc_9 == NULL)
 			return;
+	len -= sizeof(*icmp_neighb_disc_9);
 
 	tprintf("Reserved 1 (0x%x) ", ntohs(icmp_neighb_disc_9->res1));
 	tprintf("Reserved 2 (0x%x) ", ntohl(icmp_neighb_disc_9->res2));
@@ -345,6 +380,75 @@ static inline void dissect_neighb_disc_ops_9(struct pkt_buff *pkt, size_t len)
 static inline void dissect_neighb_disc_ops_10(struct pkt_buff *pkt, size_t len)
 {
 	dissect_neighb_disc_ops_9(pkt, len);
+}
+
+static char *icmpv6_neighb_disc_ops_15_name[] = {
+	"DER Encoded X.501 Name",
+	"FQDN",
+};
+
+static inline void dissect_neighb_disc_ops_15(struct pkt_buff *pkt, size_t len)
+{
+	uint8_t name_len, pad_len;
+	struct icmpv6_neighb_disc_ops_type_15 *icmp_neighb_disc_15;
+
+	icmp_neighb_disc_15 = (struct icmpv6_neighb_disc_ops_type_15 *)
+				pkt_pull(pkt,sizeof(*icmp_neighb_disc_15));
+	if (icmp_neighb_disc_15 == NULL)
+			return;
+	len -= sizeof(*icmp_neighb_disc_15);
+	pad_len = icmp_neighb_disc_15->pad_len;
+	name_len = len - pad_len;
+
+	tprintf("Name Type %s (%u) ",
+		icmpv6_code_range_valid(icmp_neighb_disc_15->name_type - 1,
+		icmpv6_neighb_disc_ops_15_name) ?
+		icmpv6_neighb_disc_ops_15_name[
+		icmp_neighb_disc_15->name_type - 1] : "Unknown",
+		icmp_neighb_disc_15->name_type);
+	tprintf("Pad Len (0x%x) ", icmp_neighb_disc_15->pad_len);
+	
+	tprintf("Name (");
+	while(name_len--){
+		    tprintf("%c", *pkt_pull(pkt,1));
+	}
+	tprintf(") ");
+	
+	tprintf("Padding (");
+
+	while(pad_len--){
+		    tprintf("%x", *pkt_pull(pkt,1));
+	}
+	tprintf(")");
+}
+
+static char *icmpv6_neighb_disc_ops_16_cert[] = {
+	"X.509v3 Certificate",
+};
+
+static inline void dissect_neighb_disc_ops_16(struct pkt_buff *pkt, size_t len)
+{
+	struct icmpv6_neighb_disc_ops_type_16 *icmp_neighb_disc_16;
+
+	icmp_neighb_disc_16 = (struct icmpv6_neighb_disc_ops_type_16 *)
+				pkt_pull(pkt,sizeof(*icmp_neighb_disc_16));
+	if (icmp_neighb_disc_16 == NULL)
+			return;
+	len -= sizeof(*icmp_neighb_disc_16);
+
+	tprintf("Cert Type %s (%u) ",
+		icmpv6_code_range_valid(icmp_neighb_disc_16->cert_type - 1,
+		icmpv6_neighb_disc_ops_16_cert) ?
+		icmpv6_neighb_disc_ops_16_cert[
+		icmp_neighb_disc_16->cert_type - 1] : "Unknown",
+		icmp_neighb_disc_16->cert_type);
+	tprintf("Res (0x%x) ", icmp_neighb_disc_16->res);
+
+	tprintf("Certificate + Padding (");
+	while(len--){
+		    tprintf("%x", *pkt_pull(pkt,1));
+	}
+	tprintf(") ");
 }
 
 static inline char *icmpv6_neighb_disc_ops(uint8_t code) {
@@ -470,6 +574,16 @@ static inline void dissect_neighb_disc_ops(struct pkt_buff *pkt)
 			break;
 		case 10:
 			dissect_neighb_disc_ops_10(pkt, ops_payl_len);
+			break;
+		/* Type 9 and 10 defined in
+		 * http://tools.ietf.org/html/rfc3971#section-6.4.3
+		 * http://tools.ietf.org/html/rfc3971#section-6.4.4
+		 */
+		case 15:
+			dissect_neighb_disc_ops_15(pkt, ops_payl_len);
+			break;
+		case 16:
+			dissect_neighb_disc_ops_16(pkt, ops_payl_len);
 			break;
 		default:
 			pkt_pull(pkt, ops_payl_len);
@@ -917,6 +1031,38 @@ static inline void dissect_icmpv6_type147(struct pkt_buff *pkt)
 	dissect_neighb_disc_ops(pkt);
 }
 
+static inline void dissect_icmpv6_type148(struct pkt_buff *pkt)
+{
+	struct icmpv6_type_148 *icmp_148;
+
+	icmp_148 = (struct icmpv6_type_148 *)
+		      pkt_pull(pkt,sizeof(*icmp_148));
+	if (icmp_148 == NULL)
+		return;
+
+	tprintf(", ID (%u)",ntohs(icmp_148->id));
+	tprintf(", Component (%u)",ntohs(icmp_148->comp));
+
+	dissect_neighb_disc_ops(pkt);
+}
+
+static inline void dissect_icmpv6_type149(struct pkt_buff *pkt)
+{
+	struct icmpv6_type_149 *icmp_149;
+
+	icmp_149 = (struct icmpv6_type_149 *)
+		      pkt_pull(pkt,sizeof(*icmp_149));
+	if (icmp_149 == NULL)
+		return;
+
+	tprintf(", ID (%u)",ntohs(icmp_149->id));
+	tprintf(", All Components (%u)",ntohs(icmp_149->all_comp));
+	tprintf(", Component (%u)",ntohs(icmp_149->comp));
+	tprintf(", Res (0x%x)",ntohs(icmp_149->res));
+
+	dissect_neighb_disc_ops(pkt);
+}
+
 static inline void icmpv6_process(struct icmpv6_general_hdr *icmp, char **type,
 				  char **code,
 				  void (**optional)(struct pkt_buff *pkt))
@@ -1030,21 +1176,27 @@ static inline void icmpv6_process(struct icmpv6_general_hdr *icmp, char **type,
 		return;
 	case 144:
 		*type = "Home Agent Address Discovery Request Message";
+		*optional = dissect_icmpv6_type144;
 		return;
 	case 145:
 		*type = "Home Agent Address Discovery Reply Message";
+		*optional = dissect_icmpv6_type145;
 		return;
 	case 146:
 		*type = "Mobile Prefix Solicitation";
+		*optional = dissect_icmpv6_type146;
 		return;
 	case 147:
 		*type = "Mobile Prefix Advertisement";
+		*optional = dissect_icmpv6_type147;
 		return;
 	case 148:
 		*type = "Certification Path Solicitation";
+		*optional = dissect_icmpv6_type148;
 		return;
 	case 149:
 		*type = "Certification Path Advertisement";
+		*optional = dissect_icmpv6_type149;
 		return;
 	case 150:
 		*type = "ICMP messages utilized by experimental mobility "
