@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <asm/byteorder.h>
 
 #include "built_in.h"
 #include "proto_struct.h"
@@ -221,6 +222,46 @@ struct icmpv6_type_149 {
 	uint8_t ops[0];
 } __packed;
 /* end SEcure Neighbor Discovery */
+
+struct icmpv6_type_150 {
+	union {
+		uint32_t subtype_res;
+		struct {
+#if defined(__LITTLE_ENDIAN_BITFIELD)
+			uint32_t res     :24,
+				 subtype :8;
+#elif defined(__BIG_ENDIAN_BITFIELD)
+			uint32_t subtype :8,
+				 res     :24;
+#else
+# error "Please fix <asm/byteorder.h>"
+#endif
+		};
+	};
+	uint8_t ops[0];
+} __packed;
+
+/* Multicast Router Discovery */
+struct icmpv6_type_151 {
+	uint16_t query_intv;
+	uint16_t rob_var;
+} __packed;
+
+struct icmpv6_type_152 {
+	uint8_t null[0];
+} __packed;
+
+struct icmpv6_type_153 {
+	uint8_t null[0];
+} __packed;
+/* end Multicast Router Discovery */
+
+struct icmpv6_type_154 {
+	uint8_t subtype;
+	uint8_t res;
+	uint16_t id;
+	uint8_t ops[0];
+} __packed;
 
 static inline void print_ipv6_addr_list(struct pkt_buff *pkt, uint8_t nr_addr)
 {
@@ -1063,6 +1104,94 @@ static inline void dissect_icmpv6_type149(struct pkt_buff *pkt)
 	dissect_neighb_disc_ops(pkt);
 }
 
+static inline void dissect_icmpv6_type150(struct pkt_buff *pkt)
+{
+	struct icmpv6_type_150 *icmp_150;
+
+	icmp_150 = (struct icmpv6_type_150 *)
+		      pkt_pull(pkt,sizeof(*icmp_150));
+	if (icmp_150 == NULL)
+		return;
+
+	tprintf(", Subtype (%u)",icmp_150->subtype);
+	tprintf(", Res (0x%x)",icmp_150->res);
+	tprintf(", Options in Payload");
+}
+
+static inline void dissect_icmpv6_type151(struct pkt_buff *pkt)
+{
+	struct icmpv6_type_151 *icmp_151;
+
+	icmp_151 = (struct icmpv6_type_151 *)
+		      pkt_pull(pkt,sizeof(*icmp_151));
+	if (icmp_151 == NULL)
+		return;
+
+	tprintf(", Query Interval (%us)",ntohs(icmp_151->query_intv));
+	tprintf(", Robustness Variable  (%u)",ntohs(icmp_151->rob_var));
+}
+
+static inline void dissect_icmpv6_type152(struct pkt_buff *pkt)
+{
+	struct icmpv6_type_152 *icmp_152;
+
+	icmp_152 = (struct icmpv6_type_152 *)
+		      pkt_pull(pkt,sizeof(*icmp_152));
+	if (icmp_152 == NULL)
+		return;
+}
+
+static inline void dissect_icmpv6_type153(struct pkt_buff *pkt)
+{
+	struct icmpv6_type_153 *icmp_153;
+
+	icmp_153 = (struct icmpv6_type_153 *)
+		      pkt_pull(pkt,sizeof(*icmp_153));
+	if (icmp_153 == NULL)
+		return;
+}
+
+static inline void dissect_icmpv6_type154(struct pkt_buff *pkt)
+{
+	struct icmpv6_type_154 *icmp_154;
+
+	icmp_154 = (struct icmpv6_type_154 *)
+		      pkt_pull(pkt,sizeof(*icmp_154));
+	if (icmp_154 == NULL)
+		return;
+
+	tprintf(", Subtype (%u)",icmp_154->subtype);
+	tprintf(", Res (0x%x)",icmp_154->res);
+	tprintf(", ID (%u)",ntohs(icmp_154->id));
+
+	dissect_neighb_disc_ops(pkt);
+}
+
+static inline char *icmpv6_type_155_codes(uint8_t code) {
+	switch (code) {
+	case 0x00:
+		return "DODAG Information Solicitation";
+	case 0x01:
+		return "DODAG Information Object";
+	case 0x02:
+		return "Destination Advertisement Object";
+	case 0x03:
+		return "Destination Advertisement Object Acknowledgment";
+	case 0x80:
+		return "Secure DODAG Information Solicitation";
+	case 0x81:
+		return "Secure DODAG Information Object";
+	case 0x82:
+		return "Secure Destination Advertisement Object";
+	case 0x83:
+		return "Secure Destination Advertisement Object Acknowledgment";
+	case 0x8A:
+		return "Consistency Check";
+	}
+
+	return NULL;
+};
+
 static inline void icmpv6_process(struct icmpv6_general_hdr *icmp, char **type,
 				  char **code,
 				  void (**optional)(struct pkt_buff *pkt))
@@ -1201,21 +1330,31 @@ static inline void icmpv6_process(struct icmpv6_general_hdr *icmp, char **type,
 	case 150:
 		*type = "ICMP messages utilized by experimental mobility "
 			"protocols such as Seamoby";
+		*optional = dissect_icmpv6_type150;
 		return;
 	case 151:
 		*type = "Multicast Router Advertisement";
+		*code = "Ad. Interval";
+		*optional = dissect_icmpv6_type151;
 		return;
 	case 152:
 		*type = "Multicast Router Solicitation";
+		*code = "Reserved";
+		*optional = dissect_icmpv6_type152;
 		return;
 	case 153:
 		*type = "Multicast Router Termination";
+		*code = "Reserved";
+		*optional = dissect_icmpv6_type153;
 		return;
 	case 154:
 		*type = "FMIPv6 Messages";
+		*optional = dissect_icmpv6_type154;
 		return;
 	case 155:
 		*type = "RPL Control Message";
+		if(icmpv6_type_155_codes(icmp->h_code))
+			*code = icmpv6_type_155_codes(icmp->h_code);
 		return;
 	case 200:
 		*type = "Private experimation";
