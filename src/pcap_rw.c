@@ -82,12 +82,12 @@ static ssize_t pcap_rw_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 	if (unlikely(hdr->len > len))
 		return -ENOMEM;
 
+	if (unlikely(hdr->len == 0))
+                return -EINVAL; /* Bogus packet */
+
 	ret = read(fd, packet, hdr->len);
 	if (unlikely(ret != hdr->len))
 		return -EIO;
-
-	if (unlikely(hdr->len == 0))
-                return -EINVAL; /* Bogus packet */
 
 	return sizeof(*hdr) + hdr->len;
 }
