@@ -136,18 +136,13 @@ static inline void pcap_prepare_header(struct pcap_filehdr *hdr,
 	hdr->linktype = linktype;
 }
 
-static inline int pcap_validate_header(struct pcap_filehdr *hdr)
+static inline void pcap_validate_header(struct pcap_filehdr *hdr)
 {
 	if (unlikely(hdr->magic != TCPDUMP_MAGIC ||
 		     hdr->version_major != PCAP_VERSION_MAJOR ||
 		     hdr->version_minor != PCAP_VERSION_MINOR ||
- 		     hdr->linktype != LINKTYPE_EN10MB)) {
-		/* don't panic, but only whine */
-		whine("This file has not a valid pcap header, continuing ..\n");
-		return -EINVAL;
-	}
-
-	return 0;
+ 		     hdr->linktype != LINKTYPE_EN10MB))
+		panic("This file has not a valid pcap header\n");
 }
 
 extern int init_pcap_mmap(int jumbo_support);

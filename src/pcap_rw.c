@@ -26,9 +26,7 @@ static int pcap_rw_pull_file_header(int fd)
 	if (unlikely(ret != sizeof(hdr)))
 		return -EIO;
 
-	ret = pcap_validate_header(&hdr);
-	if (ret < 0)
-		lseek(fd, -sizeof(hdr), SEEK_CUR);
+	pcap_validate_header(&hdr);
 
 	return 0;
 }

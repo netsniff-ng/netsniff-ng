@@ -29,7 +29,6 @@ static struct spinlock lock;
 static off_t map_size = 0;
 static char *pstart, *pcurr;
 static int jumbo_frames = 0;
-static int valid_header = 1;
 
 static inline off_t get_map_size(void)
 {
@@ -48,11 +47,7 @@ static int pcap_mmap_pull_file_header(int fd)
 	if (unlikely(ret != sizeof(hdr)))
 		return -EIO;
 
-	ret = pcap_validate_header(&hdr);
-	if (ret < 0) {
-		lseek(fd, -sizeof(hdr), SEEK_CUR);
-		valid_header = 0;
-	}
+	pcap_validate_header(&hdr);
 
 	return 0;
 }
@@ -187,7 +182,7 @@ static int pcap_mmap_prepare_reading_pcap(int fd)
 	if (ret < 0)
 		panic("Failed to give kernel mmap advise!\n");
 
-	pcurr = pstart + sizeof(struct pcap_filehdr) * valid_header;
+	pcurr = pstart + sizeof(struct pcap_filehdr);
 
 	spinlock_unlock(&lock);
 
