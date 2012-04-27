@@ -125,35 +125,30 @@ static ssize_t pcap_sg_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 	/* In contrast to writing, reading gets really ugly ... */
 	spinlock_lock(&lock);
 
-	if (likely(avail - used >= sizeof(*hdr) &&
-		   iov[c].iov_len - iov_used >= sizeof(*hdr))) {
-
+	if (likely(iov[c].iov_len - iov_used >= sizeof(*hdr))) {
 		fmemcpy(hdr, iov[c].iov_base + iov_used, sizeof(*hdr));
 		iov_used += sizeof(*hdr);
 		used += sizeof(*hdr);
 	} else {
-		size_t remainder, offset = 0;
-
-		if (avail - used < sizeof(*hdr)) {
-			ret = -ENOMEM;
-			goto out_err;
-		}
+		size_t offset = 0;
+		ssize_t remainder;
 
 		offset = iov[c].iov_len - iov_used;
 		remainder = sizeof(*hdr) - offset;
+		if (remainder < 0)
+			remainder = 0;
 
 		bug_on(offset + remainder != sizeof(*hdr));
 
 		fmemcpy(hdr, iov[c].iov_base + iov_used, offset);
 		used += offset;
-
 		iov_used = 0;
 		c++;
 		if (c == IOVSIZ) {
 			/* We need to refetch! */
 			c = 0;
 			avail = readv(fd, iov, IOVSIZ);
-			if (avail < 0) {
+			if (avail <= 0) {
 				ret = -EIO;
 				goto out_err;
 			}
@@ -161,46 +156,45 @@ static ssize_t pcap_sg_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 		}
 
 		/* Now we copy the remainder and go on with business ... */
-		fmemcpy((uint8_t *) hdr /*+ offset*/,
+		fmemcpy((uint8_t *) hdr + offset,
 			iov[c].iov_base + iov_used, remainder);
 		iov_used += remainder;
 		used += remainder;
 	}
+
+	/* header read completed */
 
 	if (unlikely(hdr->len == 0 || hdr->len > len)) {
 		ret = -EINVAL; /* Bogus packet */
 		goto out_err;
 	}
 
-	if (likely(avail - used >= hdr->len &&
-		   iov[c].iov_len - iov_used >= hdr->len)) {
+	/* now we read data ... */
 
+	if (likely(iov[c].iov_len - iov_used >= hdr->len)) {
 		fmemcpy(packet, iov[c].iov_base + iov_used, hdr->len);
 		iov_used += hdr->len;
 		used += hdr->len;
 	} else {
-		size_t remainder, offset = 0;
-
-		if (avail - used < hdr->len) {
-			ret = -ENOMEM;
-			goto out_err;
-		}
+		size_t offset = 0;
+		ssize_t remainder;
 
 		offset = iov[c].iov_len - iov_used;
 		remainder = hdr->len - offset;
+		if (remainder < 0)
+			remainder = 0;
 
 		bug_on(offset + remainder != hdr->len);
 
 		fmemcpy(packet, iov[c].iov_base + iov_used, offset);
 		used += offset;
-
 		iov_used = 0;
 		c++;
 		if (c == IOVSIZ) {
 			/* We need to refetch! */
 			c = 0;
 			avail = readv(fd, iov, IOVSIZ);
-			if (avail < 0) {
+			if (avail <= 0) {
 				ret = -EIO;
 				goto out_err;
 			}
@@ -208,7 +202,7 @@ static ssize_t pcap_sg_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 		}
 
 		/* Now we copy the remainder and go on with business ... */
-		fmemcpy(packet, iov[c].iov_base + iov_used, remainder);
+		fmemcpy(packet + offset, iov[c].iov_base + iov_used, remainder);
 		iov_used += remainder;
 		used += remainder;
 	}
