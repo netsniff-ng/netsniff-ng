@@ -32,6 +32,7 @@ static struct iovec iov[IOVSIZ];
 static unsigned long c = 0;
 static struct spinlock lock;
 static ssize_t avail, used, iov_used;
+// TODO: remove avail + used
 
 static int pcap_sg_pull_file_header(int fd)
 {
