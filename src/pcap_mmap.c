@@ -197,6 +197,7 @@ static int pcap_mmap_prepare_reading_pcap(int fd)
 static ssize_t pcap_mmap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 				       uint8_t *packet, size_t len)
 {
+	ssize_t ret;
 	spinlock_lock(&lock);
 
 	if (unlikely((off_t) (pcurr + sizeof(*hdr) - pstart) > map_size)) {
@@ -208,8 +209,13 @@ static ssize_t pcap_mmap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 	pcurr += sizeof(*hdr);
 
 	if (unlikely((off_t) (pcurr + hdr->len - pstart) > map_size)) {
-		spinlock_unlock(&lock);
-		return -ENOMEM;
+		ret = -ENOMEM;
+		goto out_err;
+	}
+
+	if (unlikely(hdr->len == 0 || hdr->len > len)) {
+		ret = -EINVAL; /* Bogus packet */
+		goto out_err;
 	}
 
 	fmemcpy(packet, pcurr, hdr->len);
@@ -217,10 +223,11 @@ static ssize_t pcap_mmap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 
 	spinlock_unlock(&lock);
 
-	if (unlikely(hdr->len == 0))
-		return -EINVAL; /* Bogus packet */
-
 	return sizeof(*hdr) + hdr->len;
+
+out_err:
+	spinlock_unlock(&lock);
+	return ret;
 }
 
 static void pcap_mmap_fsync_pcap(int fd)
