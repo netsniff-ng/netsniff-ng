@@ -1,45 +1,79 @@
-{ 0x28, 0, 0, 0x0000000c }, / Load Ethernet at 12
-{ 0x15, 0, 5, 0x00008100 }, / Check for VLAN.
-{ 0x01, 0, 0, 0x18	 }, / Load 24 -> X (start IP Nxt Hdr)
-{ 0x28, 0, 0, 0x00000010 }, / Load Ethernet at 16
-{ 0x15, 39, 0, 0x00000800 }, / Check IPv4
-{ 0x28, 0, 0, 0x00000010 },
-{ 0x15, 4, 0, 0x000086dd }, / Check IPv6
-{ 0x01, 0, 0, 0x14	 }, / Load 20 -> X (start IP Nxt Hdr)
-{ 0x28, 0, 0, 0x000000c  },
-{ 0x15, 34, 0, 0x00000800 }, / Check IPv4
-{ 0x28, 0, 0, 0x0000000c },
-{ 0x15, 0, 32, 0x000086dd }, / Check IPv6
-{ 0x50, 0, 0, 0x0	 }, / Load IPv6 Nxt Header
-{ 0x02, 0, 0, 0x0 	 }, / A -> M0
-{ 0x87, 0, 0, 0x0	 }, / A <- X
-{ 0x04, 0, 0, 0x22	 }, / add 34 -> X (end ipv6 packet)
-{ 0x07, 0, 0, 0x0	 }, / A -> X
-{ 0x60, 0, 0, 0x0 	 }, / A <- M0
-{ 0x15, 0, 23, 0x0	 }, / Check for HopbyHop
-{ 0x50, 0, 0, 0x0	 }, / Load HopbyHop Nxt Header
-{ 0x02, 0, 0, 0x0 	 }, / A -> M0
-{ 0x50, 0, 0, 0x1	 }, / Load HopbyHop Ext Len
-{ 0x04, 0, 0, 0x8	 }, / add 8 to HopbyHop Ext Len
-{ 0x0c, 0, 0, 0x0 	 }. / A + X
-{ 0x07, 0, 0, 0x0	 }, / A -> X
-{ 0x60, 0, 0, 0x0 	 }, / A <- M0
-{ 0x15, 0, 15, 0x3c	 }, / Check for Dest Opt
-{ 0x50, 0, 0, 0x0	 }, / Load Dest Opt Nxt Header
-{ 0x02, 0, 0, 0x0 	 }, / A -> M0
-{ 0x50, 0, 0, 0x1	 }, / Load Dest Opt Ext Len
-{ 0x04, 0, 0, 0x8	 }, / add 8 to Dest Opt Ext Len
-{ 0x0c, 0, 0, 0x0 	 }. / A + X
-{ 0x07, 0, 0, 0x0	 }, / A -> X
-{ 0x60, 0, 0, 0x0 	 }, / A <- M0
-{ 0x15, 0, 7, 0x3c	 }, / Check for Routing
-{ 0x50, 0, 0, 0x0	 }, / Load Routing Nxt Header
-{ 0x02, 0, 0, 0x0 	 }, / A -> M0
-{ 0x50, 0, 0, 0x1	 }, / Load Routing Ext Len
-{ 0x04, 0, 0, 0x8	 }, / add 8 to Routing Ext Len
-{ 0x0c, 0, 0, 0x0 	 }. / A + X
-{ 0x07, 0, 0, 0x0	 }, / A -> X
-{ 0x60, 0, 0, 0x0 	 }, / A <- M0
-{ 0x15, 0, 1, 0x3a	 }, / Check for ICMPv6
-{ 0x6, 0, 0, 0xffffffff  },
-{ 0x6, 0, 0, 0x00000000  },
+{ 0x28, 0, 0, 0x0000000c  }, / Load Ethernet at 12
+{ 0x15, 0, 5, 0x00008100  }, / Check for VLAN.
+{ 0x01, 0, 0, 0x18	  }, / Load 24 -> X (start IP Nxt Hdr)
+{ 0x28, 0, 0, 0x00000010  }, / Load Ethernet at 16
+{ 0x15, 73, 0, 0x00000800 }, / Check IPv4
+{ 0x28, 0, 0, 0x00000010  }, / Load Ethernet at 16
+{ 0x15, 4, 0, 0x000086dd  }, / Check IPv6
+{ 0x01, 0, 0, 0x14	  }, / Load 20 -> X (start IP Nxt Hdr)
+{ 0x28, 0, 0, 0x000000c   }, / Load Ethernet at 12
+{ 0x15, 68, 0, 0x00000800 }, / Check IPv4
+{ 0x28, 0, 0, 0x0000000c  }, / Load Ethernet at 12
+{ 0x15, 0, 66, 0x000086dd }, / Check IPv6
+{ 0x50, 0, 0, 0x0	  }, / Load IPv6 Nxt Header
+{ 0x02, 0, 0, 0x0 	  }, / A -> M0
+{ 0x87, 0, 0, 0x0	  }, / A <- X
+{ 0x04, 0, 0, 0x22	  }, / add 34 -> X (end ipv6 packet)
+{ 0x07, 0, 0, 0x0	  }, / A -> X
+{ 0x60, 0, 0, 0x0 	  }, / A <- M0
+{ 0x15, 0, 7, 0x0	  }, / Check for HopbyHop
+{ 0x50, 0, 0, 0x0	  }, / Load HopbyHop Nxt Header
+{ 0x02, 0, 0, 0x0 	  }, / A -> M0
+{ 0x50, 0, 0, 0x1	  }, / Load HopbyHop Ext Len
+{ 0x04, 0, 0, 0x8	  }, / add 8 to HopbyHop Ext Len
+{ 0x0c, 0, 0, 0x0 	  }. / A + X
+{ 0x07, 0, 0, 0x0	  }, / A -> X
+{ 0x60, 0, 0, 0x0 	  }, / A <- M0
+{ 0x15, 0, 7, 0x3c	  }, / Check for Dest Opts
+{ 0x50, 0, 0, 0x0	  }, / Load Dest Opts Nxt Header
+{ 0x02, 0, 0, 0x0 	  }, / A -> M0
+{ 0x50, 0, 0, 0x1	  }, / Load Dest Opts Ext Len
+{ 0x04, 0, 0, 0x8	  }, / add 8 to Dest Opts Ext Len
+{ 0x0c, 0, 0, 0x0 	  }. / A + X
+{ 0x07, 0, 0, 0x0	  }, / A -> X
+{ 0x60, 0, 0, 0x0 	  }, / A <- M0
+{ 0x15, 0, 7, 0x2b	  }, / Check for Routing
+{ 0x50, 0, 0, 0x0	  }, / Load Routing Nxt Header
+{ 0x02, 0, 0, 0x0 	  }, / A -> M0
+{ 0x50, 0, 0, 0x1	  }, / Load Routing Ext Len
+{ 0x04, 0, 0, 0x8	  }, / add 8 to Routing Ext Len
+{ 0x0c, 0, 0, 0x0 	  }. / A + X
+{ 0x07, 0, 0, 0x0	  }, / A -> X
+{ 0x60, 0, 0, 0x0 	  }, / A <- M0
+{ 0x15, 0, 6, 0x2c	  }, / Check for Fragment
+{ 0x50, 0, 0, 0x0	  }, / Load Fragment Nxt Header
+{ 0x02, 0, 0, 0x0 	  }, / A -> M0
+{ 0x00, 0, 0, 0x8	  }, / Load 8
+{ 0x0c, 0, 0, 0x0 	  }. / A + X
+{ 0x07, 0, 0, 0x0	  }, / A -> X
+{ 0x60, 0, 0, 0x0 	  }, / A <- M0
+{ 0x15, 0, 8, 0x33	  }, / Check for Authentication
+{ 0x50, 0, 0, 0x0	  }, / Load Authentication Nxt Header
+{ 0x02, 0, 0, 0x0 	  }, / A -> M0
+{ 0x50, 0, 0, 0x1	  }, / Load Authentication Ext Len
+{ 0x04, 0, 0, 0x2	  }, / add 2 to Authentication Ext Len
+{ 0x64, 0, 0, 0x2	  }, / multiply by 4
+{ 0x0c, 0, 0, 0x0 	  }. / A + X
+{ 0x07, 0, 0, 0x0	  }, / A -> X
+{ 0x60, 0, 0, 0x0 	  }, / A <- M0
+{ 0x15, 19, 0, 0x32	  }, / Check for ESP
+{ 0x15, 0, 7, 0x3c	  }, / Check for Dest Opts
+{ 0x50, 0, 0, 0x0	  }, / Load Dest Opts Nxt Header
+{ 0x02, 0, 0, 0x0 	  }, / A -> M0
+{ 0x50, 0, 0, 0x1	  }, / Load Dest Opts Ext Len
+{ 0x04, 0, 0, 0x8	  }, / add 8 to Dest Opts Ext Len
+{ 0x0c, 0, 0, 0x0 	  }. / A + X
+{ 0x07, 0, 0, 0x0	  }, / A -> X
+{ 0x60, 0, 0, 0x0 	  }, / A <- M0
+{ 0x15, 0, 7, 0x87	  }, / Check for Mobility
+{ 0x50, 0, 0, 0x0	  }, / Load Mobility Nxt Header
+{ 0x02, 0, 0, 0x0 	  }, / A -> M0
+{ 0x50, 0, 0, 0x1	  }, / Load Mobility Ext Len
+{ 0x04, 0, 0, 0x8	  }, / add 8 to Mobility Ext Len
+{ 0x0c, 0, 0, 0x0 	  }. / A + X
+{ 0x07, 0, 0, 0x0	  }, / A -> X
+{ 0x60, 0, 0, 0x0 	  }, / A <- M0
+{ 0x15, 2, 0, 0x3b	  }, / Check for No Nxt Hdr
+{ 0x15, 0, 1, 0x3a	  }, / Check for ICMPv6
+{ 0x6, 0, 0, 0xffffffff   }, / return pkt
+{ 0x6, 0, 0, 0x00000000   }, / return nothing
