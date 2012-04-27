@@ -40,7 +40,7 @@ ulimit -c unlimited
 rm -f core
 for file in *.pcap
 do
-	echo "Testing file $file, ${netsniff_ng_opts} ..."
+	echo "Testing file $file ..."
 	if [ $show_output ]; then
 		netsniff-ng --in "$file" "${netsniff_ng_opts}"
 	else
