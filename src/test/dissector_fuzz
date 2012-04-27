@@ -47,7 +47,7 @@ do
 		netsniff-ng --in "$file" "${netsniff_ng_opts}" > /dev/null
 	fi
 	if [ -e core ]; then
-		echo 'Fuck, core dumped on this one!'
+		echo "Fuck, core dumped on $file!"
 		let count_cores=count_cores+1
 		if [ $run_through ]; then
 			rm core
