@@ -1,0 +1,9 @@
+icmpv6.bpf:
+Detect ICMPv6 messages in IPv6-packets on ethernet with respect to VLAN and
+IPv6 Extension Headers
+
+igmp_and_icmpv6.bpf:
+Detect
+- ICMPv6 messages in IPv6-packets
+- IGMP messages in IPv4-packets
+on ethernet with respect to VLAN and IPv6 Extension Headers
