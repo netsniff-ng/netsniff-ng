@@ -1,0 +1,6 @@
+ldh [12]		; Load Ethernet type field
+jeq #0x800, Cont, Drop	; Check value against 0x800
+Cont: ldb [23]		; Load IP proto
+jeq #0x6, Keep, Drop	; Check against 0x6
+Keep: ret #0xffffffff	; Return packet
+Drop: ret #0		; Discard packet
