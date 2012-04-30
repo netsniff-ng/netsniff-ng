@@ -55,7 +55,7 @@ static inline void hop_by_hop(struct pkt_buff *pkt)
 	tprintf("\t [ Hop-by-Hop Options ");
 	tprintf("NextHdr (%u), ", hop_ops->h_next_header);
 	tprintf("HdrExtLen (%u, %u Bytes)", hop_ops->hdr_len,
-		opt_len);
+		hdr_ext_len);
 
 	dissect_opt_hop(pkt, &opt_len);
 
