@@ -56,7 +56,7 @@ static inline void dest_opts(struct pkt_buff *pkt)
 	tprintf("\t [ Destination Options ");
 	tprintf("NextHdr (%u), ", dest_ops->h_next_header);
 	tprintf("HdrExtLen (%u, %u Bytes)", dest_ops->hdr_len,
-		opt_len);
+		hdr_ext_len);
 
 	dissect_opt_dest(pkt, &opt_len);
 
