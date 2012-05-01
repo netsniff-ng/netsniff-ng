@@ -1,0 +1,13 @@
+ldh [12]
+jeq #0x800, Cont1, Drop
+Cont1: ldb [23]
+jeq #0x6, Cont2, Drop
+Cont2: ldh [20]
+jset #0x1fff, Drop, Cont3
+Cont3: ldxb 4 * ([14] & 0xf)
+ldh [x + 14]
+jeq #0x16, Keep, Cont4
+Cont4: ldh [x + 16]
+jeq #0x16, Keep, Drop
+Keep: ret #0xffffffff
+Drop: ret #0
