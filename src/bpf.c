@@ -46,7 +46,7 @@ static char *bpf_dump(const struct sock_filter bpf, int n)
 		break;
 	case BPF_RET | BPF_K:
 		op = "ret";
-		fmt = "#%d";
+		fmt = "#0x%x";
 		break;
 	case BPF_RET | BPF_A:
 		op = "ret";
@@ -227,7 +227,7 @@ static char *bpf_dump(const struct sock_filter bpf, int n)
 	slprintf(image, sizeof(image),
 		 (BPF_CLASS(bpf.code) == BPF_JMP &&
 		  BPF_OP(bpf.code) != BPF_JA) ?
-		 "(%03d) %-8s %-16s jt %d\tjf %d" : "(%03d) %-8s %s",
+		 "L%d: %s %s, L%d, L%d" : "L%d: %s %s",
 		 n, op, operand, n + 1 + bpf.jt, n + 1 + bpf.jf);
 
 	return image;
