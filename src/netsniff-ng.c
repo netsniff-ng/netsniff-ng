@@ -623,9 +623,7 @@ static void enter_mode_read_pcap(struct mode *mode)
 	bpf_parse_rules(mode->filter, &bpf_ops);
 	dissector_init_all(mode->print_mode);
 
-	out_len = device_mtu("eth0");
-	if (out_len == 0)
-		out_len = device_mtu("lo");
+	out_len = 64 * 1024;
 	out = xmalloc_aligned(out_len, CO_CACHE_LINE_SIZE);
 
 	printf("BPF:\n");
