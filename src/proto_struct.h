@@ -81,11 +81,11 @@ static inline void hex_ascii(struct pkt_buff *pkt)
 	size_t   len = pkt_len(pkt);
 	uint8_t *ptr = pkt_pull(pkt, len);
 
-	if (!len)
-		return;
+	if (len) {
+		_hex(ptr, len);
+		_ascii(ptr, len);
+	}
 
-	_hex(ptr, len);
-	_ascii(ptr, len);
 	tprintf("\n");
 }
 
