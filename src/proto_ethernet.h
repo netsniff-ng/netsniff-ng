@@ -14,6 +14,7 @@
 #include <linux/if_ether.h>
 
 #include "proto_struct.h"
+#include "proto_none.h"
 #include "dissector_eth.h"
 #include "pkt_buff.h"
 

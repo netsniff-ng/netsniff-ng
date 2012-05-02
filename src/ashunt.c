@@ -230,6 +230,7 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "tprintf.h"
 #include "pkt_buff.h"
 #include "proto_struct.h"
+#include "proto_none.h"
 #include "xmalloc.h"
 #include "xstring.h"
 #include "xio.h"
