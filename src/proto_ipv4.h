@@ -61,7 +61,8 @@ static inline void ipv4(struct pkt_buff *pkt)
 	char src_ip[INET_ADDRSTRLEN];
 	char dst_ip[INET_ADDRSTRLEN];
 	struct ipv4hdr *ip = (struct ipv4hdr *) pkt_pull(pkt, sizeof(*ip));
-	uint8_t *opt, opts_len, opt_len;
+	uint8_t *opt;
+	ssize_t opts_len, opt_len;
 
 	if (!ip)
 		return;
@@ -94,11 +95,10 @@ static inline void ipv4(struct pkt_buff *pkt)
 			csum_expected(ip->h_check, csum), colorize_end());
 	tprintf(" ]\n");
 
-	opts_len = max((uint8_t) ip->h_ihl, sizeof(*ip) / sizeof(uint32_t))
-		* sizeof(uint32_t) - sizeof(*ip);
+	opts_len = max((uint8_t) ip->h_ihl, sizeof(*ip) / sizeof(uint32_t)) *
+		   sizeof(uint32_t) - sizeof(*ip);
 
-	for (opt = pkt_pull(pkt, opts_len); opt && opts_len; opt++) {
-
+	for (opt = pkt_pull(pkt, opts_len); opt && opts_len > 0; opt++) {
 		tprintf("   [ Option  Copied (%u), Class (%u), Number (%u)",
 			IP_OPT_COPIED_FLAG(*opt) ? 1 : 0, IP_OPT_CLASS(*opt),
 			IP_OPT_NUMBER(*opt));
@@ -119,16 +119,20 @@ static inline void ipv4(struct pkt_buff *pkt)
 			 *       check and handle that
 			 */
 			opt_len = *(++opt);
-			tprintf(", Len (%u) ]\n", opt_len);
+			if (opt_len > opts_len) {
+				tprintf(", Len (%u, invalid) ]\n", opt_len);
+				goto out;
+			} else
+				tprintf(", Len (%u) ]\n", opt_len);
 			opts_len -= opt_len;
 			tprintf("     [ Data hex ");
-			for (opt_len -= 2; opt_len; opt_len--)
+			for (opt_len -= 2; opt_len > 0; opt_len--)
 				tprintf(" %.2x", *(++opt));
 			tprintf(" ]\n");
 			break;
 		}
 	}
-
+out:
 	/* cut off everything that is not part of IPv4 payload */
 	pkt_trim(pkt, pkt_len(pkt) - min(pkt_len(pkt), (ntohs(ip->h_tot_len) - ip->h_ihl * sizeof(uint32_t))));
 	pkt_set_proto(pkt, &eth_lay3, ip->h_protocol);
