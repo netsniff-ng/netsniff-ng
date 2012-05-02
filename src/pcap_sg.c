@@ -165,27 +165,27 @@ static ssize_t pcap_sg_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 
 	/* header read completed */
 
-	if (unlikely(hdr->len == 0 || hdr->len > len)) {
+	if (unlikely(hdr->caplen == 0 || hdr->caplen > len)) {
 		ret = -EINVAL; /* Bogus packet */
 		goto out_err;
 	}
 
 	/* now we read data ... */
 
-	if (likely(iov[c].iov_len - iov_used >= hdr->len)) {
-		fmemcpy(packet, iov[c].iov_base + iov_used, hdr->len);
-		iov_used += hdr->len;
-		used += hdr->len;
+	if (likely(iov[c].iov_len - iov_used >= hdr->caplen)) {
+		fmemcpy(packet, iov[c].iov_base + iov_used, hdr->caplen);
+		iov_used += hdr->caplen;
+		used += hdr->caplen;
 	} else {
 		size_t offset = 0;
 		ssize_t remainder;
 
 		offset = iov[c].iov_len - iov_used;
-		remainder = hdr->len - offset;
+		remainder = hdr->caplen - offset;
 		if (remainder < 0)
 			remainder = 0;
 
-		bug_on(offset + remainder != hdr->len);
+		bug_on(offset + remainder != hdr->caplen);
 
 		fmemcpy(packet, iov[c].iov_base + iov_used, offset);
 		used += offset;
@@ -210,7 +210,7 @@ static ssize_t pcap_sg_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 
 	spinlock_unlock(&lock);
 
-	return sizeof(*hdr) + hdr->len;
+	return sizeof(*hdr) + hdr->caplen;
 
 out_err:
 	spinlock_unlock(&lock);
@@ -222,7 +222,6 @@ static void pcap_sg_fsync_pcap(int fd)
 	ssize_t ret;
 
 	spinlock_lock(&lock);
-
 	ret = writev(fd, iov, c);
 	if (ret < 0)
 		panic("writev I/O error!\n");
@@ -230,7 +229,6 @@ static void pcap_sg_fsync_pcap(int fd)
 	c = 0;
 
 	fdatasync(fd);
-
 	spinlock_unlock(&lock);
 }
 

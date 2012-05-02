@@ -77,14 +77,14 @@ static ssize_t pcap_rw_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 	if (unlikely(ret != sizeof(*hdr)))
 		return -EIO;
 
-	if (unlikely(hdr->len == 0 || hdr->len > len))
+	if (unlikely(hdr->caplen == 0 || hdr->caplen > len))
                 return -EINVAL; /* Bogus packet */
 
-	ret = read(fd, packet, hdr->len);
-	if (unlikely(ret != hdr->len))
+	ret = read(fd, packet, hdr->caplen);
+	if (unlikely(ret != hdr->caplen))
 		return -EIO;
 
-	return sizeof(*hdr) + hdr->len;
+	return sizeof(*hdr) + hdr->caplen;
 }
 
 static void pcap_rw_fsync_pcap(int fd)

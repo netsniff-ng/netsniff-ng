@@ -203,22 +203,22 @@ static ssize_t pcap_mmap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 	fmemcpy(hdr, pcurr, sizeof(*hdr));
 	pcurr += sizeof(*hdr);
 
-	if (unlikely((off_t) (pcurr + hdr->len - pstart) > map_size)) {
+	if (unlikely((off_t) (pcurr + hdr->caplen - pstart) > map_size)) {
 		ret = -ENOMEM;
 		goto out_err;
 	}
 
-	if (unlikely(hdr->len == 0 || hdr->len > len)) {
+	if (unlikely(hdr->caplen == 0 || hdr->caplen > len)) {
 		ret = -EINVAL; /* Bogus packet */
 		goto out_err;
 	}
 
-	fmemcpy(packet, pcurr, hdr->len);
-	pcurr += hdr->len;
+	fmemcpy(packet, pcurr, hdr->caplen);
+	pcurr += hdr->caplen;
 
 	spinlock_unlock(&lock);
 
-	return sizeof(*hdr) + hdr->len;
+	return sizeof(*hdr) + hdr->caplen;
 
 out_err:
 	spinlock_unlock(&lock);
