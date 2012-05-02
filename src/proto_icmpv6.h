@@ -1524,7 +1524,7 @@ static inline void icmpv6(struct pkt_buff *pkt)
 	tprintf("Chks (0x%x)", ntohs(icmp->h_chksum));
 	if (optional)
 		(*optional) (pkt);
-	tprintf(" ]\n\n");
+	tprintf(" ]\n");
 }
 
 static inline void icmpv6_less(struct pkt_buff *pkt)
