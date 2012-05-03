@@ -311,8 +311,7 @@ static char *icmpv6_mcast_rec_types[] = {
 static inline void dissect_icmpv6_mcast_rec(struct pkt_buff *pkt,
 					    uint16_t nr_rec)
 {
-	size_t aux_data_len_bytes;
-	uint16_t nr_src;
+	uint16_t nr_src, aux_data_len_bytes;
 	struct icmpv6_mldv2_addr_rec *addr_rec;
 
 	while (nr_rec--) {
@@ -341,7 +340,8 @@ static inline void dissect_icmpv6_mcast_rec(struct pkt_buff *pkt,
 	}
 }
 
-static inline void dissect_neighb_disc_ops_1(struct pkt_buff *pkt, size_t len)
+static inline void dissect_neighb_disc_ops_1(struct pkt_buff *pkt,
+					      uint16_t len)
 {
 	struct icmpv6_neighb_disc_ops_type_1_2 *icmp_neighb_disc_1;
 
@@ -358,12 +358,14 @@ static inline void dissect_neighb_disc_ops_1(struct pkt_buff *pkt, size_t len)
 	}
 }
 
-static inline void dissect_neighb_disc_ops_2(struct pkt_buff *pkt, size_t len)
+static inline void dissect_neighb_disc_ops_2(struct pkt_buff *pkt,
+					      uint16_t len)
 {
 	dissect_neighb_disc_ops_1(pkt, len);
 }
 
-static inline void dissect_neighb_disc_ops_3(struct pkt_buff *pkt, size_t len)
+static inline void dissect_neighb_disc_ops_3(struct pkt_buff *pkt,
+					      uint16_t len)
 {
 	char address[INET6_ADDRSTRLEN];
 	struct icmpv6_neighb_disc_ops_type_3 *icmp_neighb_disc_3;
@@ -389,7 +391,8 @@ static inline void dissect_neighb_disc_ops_3(struct pkt_buff *pkt, size_t len)
 				address, sizeof(address)));
 }
 
-static inline void dissect_neighb_disc_ops_4(struct pkt_buff *pkt, size_t len)
+static inline void dissect_neighb_disc_ops_4(struct pkt_buff *pkt,
+					      uint16_t len)
 {
 	struct icmpv6_neighb_disc_ops_type_4 *icmp_neighb_disc_4;
 
@@ -408,7 +411,8 @@ static inline void dissect_neighb_disc_ops_4(struct pkt_buff *pkt, size_t len)
 	}
 }
 
-static inline void dissect_neighb_disc_ops_5(struct pkt_buff *pkt, size_t len)
+static inline void dissect_neighb_disc_ops_5(struct pkt_buff *pkt,
+					      uint16_t len)
 {
 	struct icmpv6_neighb_disc_ops_type_5 *icmp_neighb_disc_5;
 
@@ -422,7 +426,8 @@ static inline void dissect_neighb_disc_ops_5(struct pkt_buff *pkt, size_t len)
 	tprintf("MTU (%u)", ntohl(icmp_neighb_disc_5->MTU));
 }
 
-static inline void dissect_neighb_disc_ops_9(struct pkt_buff *pkt, size_t len)
+static inline void dissect_neighb_disc_ops_9(struct pkt_buff *pkt,
+					      uint16_t len)
 {
 	struct icmpv6_neighb_disc_ops_type_9_10 *icmp_neighb_disc_9;
 
@@ -438,7 +443,8 @@ static inline void dissect_neighb_disc_ops_9(struct pkt_buff *pkt, size_t len)
 	print_ipv6_addr_list(pkt, len / sizeof(struct in6_addr));
 }
 
-static inline void dissect_neighb_disc_ops_10(struct pkt_buff *pkt, size_t len)
+static inline void dissect_neighb_disc_ops_10(struct pkt_buff *pkt,
+					      uint16_t len)
 {
 	dissect_neighb_disc_ops_9(pkt, len);
 }
@@ -448,9 +454,11 @@ static char *icmpv6_neighb_disc_ops_15_name[] = {
 	"FQDN",
 };
 
-static inline void dissect_neighb_disc_ops_15(struct pkt_buff *pkt, size_t len)
+static inline void dissect_neighb_disc_ops_15(struct pkt_buff *pkt,
+					      uint16_t len)
 {
-	uint8_t name_len, pad_len;
+	size_t pad_len;
+	uint16_t name_len;
 	struct icmpv6_neighb_disc_ops_type_15 *icmp_neighb_disc_15;
 
 	icmp_neighb_disc_15 = (struct icmpv6_neighb_disc_ops_type_15 *)
@@ -487,7 +495,8 @@ static char *icmpv6_neighb_disc_ops_16_cert[] = {
 	"X.509v3 Certificate",
 };
 
-static inline void dissect_neighb_disc_ops_16(struct pkt_buff *pkt, size_t len)
+static inline void dissect_neighb_disc_ops_16(struct pkt_buff *pkt,
+					      uint16_t len)
 {
 	struct icmpv6_neighb_disc_ops_type_16 *icmp_neighb_disc_16;
 
@@ -519,7 +528,8 @@ static char *icmpv6_neighb_disc_ops_17_codes[] = {
 	"NAR's Prefix",
 };
 
-static inline void dissect_neighb_disc_ops_17(struct pkt_buff *pkt, size_t len)
+static inline void dissect_neighb_disc_ops_17(struct pkt_buff *pkt,
+					      uint16_t len)
 {
 	char address[INET6_ADDRSTRLEN];
 	struct icmpv6_neighb_disc_ops_type_17 *icmp_neighb_disc_17;
@@ -554,7 +564,7 @@ static inline void dissect_neighb_disc_ops_17(struct pkt_buff *pkt, size_t len)
 			  inet_ntop(AF_INET6,&icmp_neighb_disc_17_1->ipv6_addr,
 			  address, sizeof(address)));
 	}
-	else if (len == sizeof(struct icmpv6_neighb_disc_ops_type_17_1)) {
+	else if (len == sizeof(struct icmpv6_neighb_disc_ops_type_17_2)) {
 		    struct icmpv6_neighb_disc_ops_type_17_2
 						      *icmp_neighb_disc_17_2;
 
@@ -569,12 +579,13 @@ static inline void dissect_neighb_disc_ops_17(struct pkt_buff *pkt, size_t len)
 			  inet_ntop(AF_INET6,&icmp_neighb_disc_17_2->ipv6_addr,
 			  address, sizeof(address)));
 	}
-	
-	tprintf("Error Wrong Params (");
-	while (len--) {
-		    tprintf("%x", *pkt_pull(pkt,1));
+	else {
+		    tprintf("Error Wrong Params (");
+		    while (len--) {
+				tprintf("%x", *pkt_pull(pkt,1));
+		    }
+		    tprintf(") ");
 	}
-	tprintf(") ");
 }
 
 static char *icmpv6_neighb_disc_ops_19_codes[] = {
@@ -592,7 +603,8 @@ static char *icmpv6_neighb_disc_ops_19_codes[] = {
          identified by the LLA",
 };
 
-static inline void dissect_neighb_disc_ops_19(struct pkt_buff *pkt, size_t len)
+static inline void dissect_neighb_disc_ops_19(struct pkt_buff *pkt,
+					      uint16_t len)
 {
 	struct icmpv6_neighb_disc_ops_type_19 *icmp_neighb_disc_19;
 
@@ -696,7 +708,8 @@ static inline char *icmpv6_neighb_disc_ops(uint8_t code) {
 
 static inline void dissect_neighb_disc_ops(struct pkt_buff *pkt)
 {
-	size_t ops_total_len, ops_payl_len, pad_bytes;
+	size_t pad_bytes;
+	uint16_t ops_total_len, ops_payl_len;
 	struct icmpv6_neighb_disc_ops_general *icmp_neighb_disc;
 
 	while(pkt_len(pkt)) {
@@ -706,7 +719,7 @@ static inline void dissect_neighb_disc_ops(struct pkt_buff *pkt)
 			return;
 
 		ops_total_len = icmp_neighb_disc->len * 8;
-		pad_bytes = ops_total_len % 8;
+		pad_bytes = (size_t) (ops_total_len % 8);
 		ops_payl_len = ops_total_len - sizeof(*icmp_neighb_disc) -
 								pad_bytes;
 
