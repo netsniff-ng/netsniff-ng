@@ -79,7 +79,7 @@ struct bind_err_msg {
 
 
 static inline void dissect_mobility_options(struct pkt_buff *pkt,
-					     size_t *message_data_len)
+					     uint16_t *message_data_len)
 {
 	/* Have to been upgraded.
 	 * http://tools.ietf.org/html/rfc6275#section-6.2.1
@@ -93,7 +93,7 @@ static inline void dissect_mobility_options(struct pkt_buff *pkt,
 }
 
 static inline void dissect_mobilityhdr_type_0(struct pkt_buff *pkt,
-					      size_t *message_data_len)
+					      uint16_t *message_data_len)
 {
 	struct bin_refr_req_msg *type_0;
 	
@@ -106,7 +106,7 @@ static inline void dissect_mobilityhdr_type_0(struct pkt_buff *pkt,
 }
 
 static inline void dissect_mobilityhdr_type_1_2(struct pkt_buff *pkt,
-						size_t *message_data_len)
+						uint16_t *message_data_len)
 {
 	struct tst_init_msg *type_1_2;
 
@@ -121,7 +121,7 @@ static inline void dissect_mobilityhdr_type_1_2(struct pkt_buff *pkt,
 }
 
 static inline void dissect_mobilityhdr_type_3_4(struct pkt_buff *pkt,
-						size_t *message_data_len)
+						uint16_t *message_data_len)
 {
 	struct tst_msg *type_3_4;
 
@@ -138,7 +138,7 @@ static inline void dissect_mobilityhdr_type_3_4(struct pkt_buff *pkt,
 }
 
 static inline void dissect_mobilityhdr_type_5(struct pkt_buff *pkt,
-						size_t *message_data_len)
+						uint16_t *message_data_len)
 {
 	struct bind_upd_msg *type_5;
 
@@ -155,7 +155,7 @@ static inline void dissect_mobilityhdr_type_5(struct pkt_buff *pkt,
 }
 
 static inline void dissect_mobilityhdr_type_6(struct pkt_buff *pkt,
-						size_t *message_data_len)
+						uint16_t *message_data_len)
 {
 	struct bind_ack_msg *type_6;
 
@@ -173,7 +173,7 @@ static inline void dissect_mobilityhdr_type_6(struct pkt_buff *pkt,
 }
 
 static inline void dissect_mobilityhdr_type_7(struct pkt_buff *pkt,
-						size_t *message_data_len)
+						uint16_t *message_data_len)
 {
 	char address[INET6_ADDRSTRLEN];
 	uint64_t addr;
@@ -194,7 +194,7 @@ static inline void dissect_mobilityhdr_type_7(struct pkt_buff *pkt,
 }
 
 static inline void get_mh_type(struct pkt_buff *pkt,
-			       size_t *message_data_len, uint8_t *mh_type)
+			       uint16_t *message_data_len, uint8_t *mh_type)
 {
 	switch (*mh_type) {
 	case BINDING_REFRESH_REQUEST_MESSAGE:
@@ -236,8 +236,7 @@ static inline void get_mh_type(struct pkt_buff *pkt,
 
 static inline void mobility(struct pkt_buff *pkt)
 {
-	uint8_t hdr_ext_len;
-	size_t message_data_len;
+	uint16_t hdr_ext_len, message_data_len;
 	struct mobilityhdr *mobility;
 
 	mobility = (struct mobilityhdr *) pkt_pull(pkt, sizeof(*mobility));
@@ -268,8 +267,7 @@ static inline void mobility(struct pkt_buff *pkt)
 
 static inline void mobility_less(struct pkt_buff *pkt)
 {
-	uint8_t hdr_ext_len;
-	size_t message_data_len;
+	uint16_t hdr_ext_len, message_data_len;
 	struct mobilityhdr *mobility;
 
 	mobility = (struct mobilityhdr *) pkt_pull(pkt, sizeof(*mobility));

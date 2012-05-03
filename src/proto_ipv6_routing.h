@@ -33,7 +33,7 @@ struct routinghdr_0 {
 } __packed;
 
 static inline void dissect_routinghdr_type_0(struct pkt_buff *pkt,
-					     size_t *data_len, int less)
+					     uint16_t *data_len, int less)
 {
 	uint8_t num_addr;
 	char address[INET6_ADDRSTRLEN];
@@ -67,21 +67,20 @@ static inline void dissect_routinghdr_type_0(struct pkt_buff *pkt,
 }
 
 static inline void dissect_routinghdr_type_0_norm(struct pkt_buff *pkt,
-						  size_t *data_len)
+						  uint16_t *data_len)
 {
 	dissect_routinghdr_type_0(pkt, data_len, 0);
 }
 
 static inline void dissect_routinghdr_type_0_less(struct pkt_buff *pkt,
-						  size_t *data_len)
+						  uint16_t *data_len)
 {
 	dissect_routinghdr_type_0(pkt, data_len, 1);
 }
 
 static inline void routing(struct pkt_buff *pkt)
 {
-	uint8_t hdr_ext_len;
-	size_t data_len;
+	uint16_t hdr_ext_len, data_len;
 	struct routinghdr *routing;
 
 	routing = (struct routinghdr *) pkt_pull(pkt, sizeof(*routing));
@@ -116,8 +115,7 @@ static inline void routing(struct pkt_buff *pkt)
 
 static inline void routing_less(struct pkt_buff *pkt)
 {
-	uint8_t hdr_ext_len;
-	size_t data_len;
+	uint16_t hdr_ext_len, data_len;
 	struct routinghdr *routing;
 
 	routing = (struct routinghdr *) pkt_pull(pkt, sizeof(*routing));

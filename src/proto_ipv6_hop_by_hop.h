@@ -39,7 +39,7 @@ static inline void dissect_opt_hop (struct pkt_buff *pkt, size_t *opt_len)
 
 static inline void hop_by_hop(struct pkt_buff *pkt)
 {
-	uint8_t hdr_ext_len;
+	uint16_t hdr_ext_len;
 	size_t opt_len;
 	struct hop_by_hophdr *hop_ops;
 
@@ -67,7 +67,7 @@ static inline void hop_by_hop(struct pkt_buff *pkt)
 
 static inline void hop_by_hop_less(struct pkt_buff *pkt)
 {
-	uint8_t hdr_ext_len;
+	uint16_t hdr_ext_len;
 	size_t opt_len;
 	struct hop_by_hophdr *hop_ops;
 
