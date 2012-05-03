@@ -27,7 +27,7 @@ struct auth_hdr {
 
 static inline void auth_hdr(struct pkt_buff *pkt)
 {
-	size_t hdr_len;
+	uint16_t hdr_len;
 	struct auth_hdr *auth_ops;
 
 	auth_ops = (struct auth_hdr *) pkt_pull(pkt, sizeof(*auth_ops));
@@ -55,7 +55,7 @@ static inline void auth_hdr(struct pkt_buff *pkt)
 
 static inline void auth_hdr_less(struct pkt_buff *pkt)
 {
-  	size_t hdr_len;
+  	uint16_t hdr_len;
 	struct auth_hdr *auth_ops;
 
 	auth_ops = (struct auth_hdr *) pkt_pull(pkt, sizeof(*auth_ops));
