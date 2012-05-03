@@ -40,7 +40,7 @@ static inline void dissect_opt_dest(struct pkt_buff *pkt, size_t *opt_len)
 
 static inline void dest_opts(struct pkt_buff *pkt)
 {
-	uint8_t hdr_ext_len;
+	uint16_t hdr_ext_len;
 	size_t opt_len;
 	struct dest_optshdr *dest_ops;
 
@@ -68,7 +68,7 @@ static inline void dest_opts(struct pkt_buff *pkt)
 
 static inline void dest_opts_less(struct pkt_buff *pkt)
 {
-	uint8_t hdr_ext_len;
+	uint16_t hdr_ext_len;
 	size_t opt_len;
 	struct dest_optshdr *dest_ops;
 
