@@ -31,8 +31,7 @@
 static struct iovec iov[IOVSIZ];
 static unsigned long c = 0;
 static struct spinlock lock;
-static ssize_t avail, used, iov_used;
-// TODO: remove avail + used
+static ssize_t iov_used;
 
 static int pcap_sg_pull_file_header(int fd)
 {
@@ -107,11 +106,10 @@ static int pcap_sg_prepare_reading_pcap(int fd)
 	set_ioprio_rt();
 
 	spinlock_lock(&lock);
-	avail = readv(fd, iov, IOVSIZ);
-	if (avail <= 0)
+	if (readv(fd, iov, IOVSIZ) <= 0)
 		return -EIO;
 
-	used = iov_used = 0;
+	iov_used = 0;
 	c = 0;
 	spinlock_unlock(&lock);
 
@@ -129,7 +127,6 @@ static ssize_t pcap_sg_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 	if (likely(iov[c].iov_len - iov_used >= sizeof(*hdr))) {
 		fmemcpy(hdr, iov[c].iov_base + iov_used, sizeof(*hdr));
 		iov_used += sizeof(*hdr);
-		used += sizeof(*hdr);
 	} else {
 		size_t offset = 0;
 		ssize_t remainder;
@@ -142,25 +139,23 @@ static ssize_t pcap_sg_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 		bug_on(offset + remainder != sizeof(*hdr));
 
 		fmemcpy(hdr, iov[c].iov_base + iov_used, offset);
-		used += offset;
+
 		iov_used = 0;
 		c++;
+
 		if (c == IOVSIZ) {
 			/* We need to refetch! */
 			c = 0;
-			avail = readv(fd, iov, IOVSIZ);
-			if (avail <= 0) {
+			if (readv(fd, iov, IOVSIZ) <= 0) {
 				ret = -EIO;
 				goto out_err;
 			}
-			used = 0;
 		}
 
 		/* Now we copy the remainder and go on with business ... */
 		fmemcpy((uint8_t *) hdr + offset,
 			iov[c].iov_base + iov_used, remainder);
 		iov_used += remainder;
-		used += remainder;
 	}
 
 	/* header read completed */
@@ -175,7 +170,6 @@ static ssize_t pcap_sg_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 	if (likely(iov[c].iov_len - iov_used >= hdr->caplen)) {
 		fmemcpy(packet, iov[c].iov_base + iov_used, hdr->caplen);
 		iov_used += hdr->caplen;
-		used += hdr->caplen;
 	} else {
 		size_t offset = 0;
 		ssize_t remainder;
@@ -188,24 +182,22 @@ static ssize_t pcap_sg_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 		bug_on(offset + remainder != hdr->caplen);
 
 		fmemcpy(packet, iov[c].iov_base + iov_used, offset);
-		used += offset;
+
 		iov_used = 0;
 		c++;
+
 		if (c == IOVSIZ) {
 			/* We need to refetch! */
 			c = 0;
-			avail = readv(fd, iov, IOVSIZ);
-			if (avail <= 0) {
+			if (readv(fd, iov, IOVSIZ)) {
 				ret = -EIO;
 				goto out_err;
 			}
-			used = 0;
 		}
 
 		/* Now we copy the remainder and go on with business ... */
 		fmemcpy(packet + offset, iov[c].iov_base + iov_used, remainder);
 		iov_used += remainder;
-		used += remainder;
 	}
 
 	spinlock_unlock(&lock);
@@ -258,7 +250,7 @@ int init_pcap_sg(int jumbo_support)
 		allocsz = ALLSIZ_2K;
 
 	for (i = 0; i < IOVSIZ; ++i) {
-		iov[i].iov_base = xmalloc_aligned(allocsz, 64);
+		iov[i].iov_base = xzmalloc_aligned(allocsz, 64);
 		iov[i].iov_len = allocsz;
 	}
 

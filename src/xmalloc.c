@@ -58,6 +58,13 @@ __hidden void *xmalloc_aligned(size_t size, size_t alignment)
 	return ptr;
 }
 
+__hidden void *xzmalloc_aligned(size_t size, size_t alignment)
+{
+	void *ptr = xmalloc_aligned(size, alignment);
+	memset(ptr, 0, size);
+	return ptr;
+}
+
 __hidden void *xmallocz(size_t size)
 {
 	void *ptr;

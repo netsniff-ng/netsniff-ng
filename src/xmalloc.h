@@ -17,6 +17,7 @@ extern __hidden void *xmalloc(size_t size);
 extern __hidden void *xzmalloc(size_t size);
 extern __hidden void *xmallocz(size_t size);
 extern __hidden void *xmalloc_aligned(size_t size, size_t alignment);
+extern __hidden void *xzmalloc_aligned(size_t size, size_t alignment);
 extern __hidden void *xmemdupz(const void *data, size_t len);
 extern __hidden void *xrealloc(void *ptr, size_t nmemb, size_t size);
 extern __hidden void xfree_func(void *ptr);
