@@ -443,6 +443,7 @@ out:
 	printf("\r%12lu frames truncated (larger than frame)\n", trunced);
 	printf("\r%12lu bytes outgoing\n", stats.tx_bytes);
 
+	bpf_release(&bpf_ops);
 	dissector_cleanup_all();
 	destroy_tx_ring(tx_sock, &tx_ring);
 
@@ -582,6 +583,7 @@ next:
 out:
 	sock_print_net_stats(rx_sock, 0);
 
+	bpf_release(&bpf_ops);
 	dissector_cleanup_all();
 	destroy_tx_ring(tx_sock, &tx_ring);
 	destroy_rx_ring(rx_sock, &rx_ring);
@@ -705,6 +707,8 @@ out:
 	printf("\r%12lu bytes outgoing\n", stats.tx_bytes);
 
 	xfree(out);
+
+	bpf_release(&bpf_ops);
 	dissector_cleanup_all();
 	if (pcap_ops[mode->pcap]->prepare_close_pcap)
 		pcap_ops[mode->pcap]->prepare_close_pcap(fd, PCAP_MODE_READ);
@@ -951,11 +955,16 @@ next:
 		printf("\n\n");
 		fflush(stdout);
 	}
+
+	bpf_release(&bpf_ops);
 	dissector_cleanup_all();
 	destroy_rx_ring(sock, &rx_ring);
+
 	if (mode->promiscuous == true)
 		leave_promiscuous_mode(mode->device_in, ifflags);
+
 	close(sock);
+
 	if (mode->dump) {
 		if (mode->dump_dir)
 			finish_multi_pcap_file(mode, fd);

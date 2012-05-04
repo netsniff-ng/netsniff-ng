@@ -10,6 +10,9 @@
 
 #include <linux/filter.h>
 #include <stdint.h>
+#include <stdlib.h>
+
+#include "xmalloc.h"
 
 extern void bpf_dump_all(struct sock_fprog *bpf);
 extern int bpf_validate(const struct sock_fprog *bpf);
@@ -19,6 +22,11 @@ extern void bpf_attach_to_sock(int sock, struct sock_fprog *bpf);
 extern void bpf_detach_from_sock(int sock);
 extern void enable_kernel_bpf_jit_compiler(void);
 extern void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf);
+
+static inline void bpf_release(struct sock_fprog *bpf)
+{
+	free(bpf->filter);
+}
 
 /*
  * The instruction encodings.
