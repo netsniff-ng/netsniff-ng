@@ -227,7 +227,7 @@ static char *bpf_dump(const struct sock_filter bpf, int n)
 	slprintf(image, sizeof(image),
 		 (BPF_CLASS(bpf.code) == BPF_JMP &&
 		  BPF_OP(bpf.code) != BPF_JA) ?
-		 "L%d: %s %s, L%d, L%d" : "L%d: %s %s",
+		 " L%d: %s %s, L%d, L%d" : " L%d: %s %s",
 		 n, op, operand, n + 1 + bpf.jt, n + 1 + bpf.jf);
 
 	return image;
