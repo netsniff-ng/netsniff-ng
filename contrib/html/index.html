@@ -130,7 +130,7 @@ The netsniff-ng toolkit consists of the following utilities:
 <ul>
   <li><b>netsniff-ng</b>, a high-performance zero-copy analyzer, pcap capturing and replaying tool</li>
   <li><b>trafgen</b>, a high-performance zero-copy network traffic generator</li>
-  <li><b>bpfc</b>, a Berkeley Packet Filter compiler supporting Linux extensions</li>
+  <li><b>bpfc</b>, a Berkeley Packet Filter (BPF) compiler supporting Linux extensions</li>
   <li><b>ifpps</b>, a top-like kernel networking and system statistics tool</li>
   <li><b>flowtop</b>, a top-like netfilter connection tracking tool</li>
   <li><b>curvetun</b>, a lightweight multiuser IP tunnel based on elliptic curve cryptography</li>
@@ -143,33 +143,32 @@ The netsniff-ng toolkit consists of the following utilities:
 <p>
 <b>Source control</b>
 <p>
-There's a public Git repository at <a href="https://github.com/gnumaniacs/netsniff-ng">GitHub</a> where you can check out the entire code base. If you are curious about the latest development happenings, you really might prefer our Git master's branch instead of the tarballs within our <a href="http://pub.netsniff-ng.org/">public archive</a>. However, in case of the tarballs, you might want to check the downloaded archives for inconsistencies with <code>md5sum -c MD5SUMS</code> or <code>sha256sum -c SHA256SUMS</code>.
+There's a public Git repository at <a href="https://github.com/gnumaniacs/netsniff-ng">GitHub</a> where you can check out the entire code base. If you are curious about the latest development happenings, you really might prefer our Git master's branch instead of the tarballs within our <a href="http://pub.netsniff-ng.org/">public archive</a>. For tamper resistant downloading, clone the Git repository and checkout the corresponding version tag.
 <p>
 <b>Documents</b>
 <p>
 There is a netsniff-ng <a href="faq.html">frequently asked question</a> site and for participating in development have a look at the documentation files within the source code. <a href="http://www.gnu.org/licenses/old-licenses/gpl-2.0-faq.html">Here</a> is also a FAQ about the GNU GPL version 2, under which netsniff-ng is licensed.
 <p>
-For reporting bugs please use our <a href="http://bugs.netsniff-ng.org/">bug tracking system</a> or 
-write an e-mail to <script type="text/javascript">InsertMail("bugs", "netsniff-ng", "org");</script>.
+For reporting bugs please use our <a href="http://bugs.netsniff-ng.org/">bug tracking system</a> or write an e-mail to <script type="text/javascript">InsertMail("bugs", "netsniff-ng", "org");</script>.
 <p>
 <b>Contribute</b>
 <p>
 If you think this software is great, then please consider <a href="http://flattr.com/thing/421382/gnumaniacs-devs" target="_blank">donating</a> (Flattr) some money to help us to keep up development, server fees, or travelling costs for conferences. If you would like to help otherwise, we would like to see more people to:
 <ul>
-  <li>Review and contribute to the <a href="https://github.com/gnumaniacs/netsniff-ng">source code</a> (see <a href="https://github.com/gnumaniacs/netsniff-ng/blob/master/PROJECTS">projects</a> file)</li>
-  <li>Add or update documentation, Man-pages, write interesting howtos</li>
-  <li>Donate hardware, networking equipment, especially for 10-Gbit/s-Ethernet</li>
+  <li>Review and contribute to the <a href="https://github.com/gnumaniacs/netsniff-ng">source code</a> (see <a href="https://github.com/gnumaniacs/netsniff-ng/blob/master/Documentation/Projects">projects</a> file)</li>
+  <li>Add or improve documentation, Man-pages, write interesting howtos</li>
   <li>Maintain distribution specific packages</li>
+  <li>Donate hardware, networking equipment, especially for 10-Gbit/s-Ethernet</li>
   <li>Test netsniff-ng on your specific platform, especially on non-x86</li>
 </ul>
 <p>
-Currently, netsniff-ng is only available for Linux platforms. If you have a port for *BSD, let us know for merging your port into the main source tree. However, please do NOT PORT netsniff-ng to Windows! (Here is a nice explanation why; we really share <a href="http://www.fefe.de/nowindows/">Felix von Leitner's point of view</a>.)
+Currently, netsniff-ng is only available for Linux platforms. If you have a port for *BSD, let us know for merging your port into the main source tree. However, please do NOT PORT netsniff-ng to Windows or other proprietary crap! (Here is a nice explanation why; we really share <a href="http://www.fefe.de/nowindows/">Felix von Leitner's point of view</a>.)
 
 <h2>Documentation</h2>
 <p>
 The man page of each stable release of netsniff-ng will cover all of the usage details. It is included within the source code distribution package. We also have a <a href="faq.html">frequently asked question</a> page. Furthermore, the documents within the <a href="https://github.com/gnumaniacs/netsniff-ng">repository</a> will give you some useful information.
 <p>
-To dig into the inner workings of the Berkeley Packet Filter architecture have a look at <a href="bpf.pdf">this</a>.
+To dig into the inner workings of the Berkeley Packet Filter architecture, have a look at <a href="bpf.pdf">this</a>.
 <p>
 Documentation about the ``packet_mmap'' architecture with ``pf_packet'' sockets for the Linux kernel can be downloaded from <a href="http://www.kernel.org/">kernel.org</a> under <a href="http://lxr.linux.no/linux+v3.2.9/Documentation/networking/packet_mmap.txt">packet_mmap.txt</a>.
 
@@ -239,4 +238,3 @@ Note: If your netsniff-ng related project / article / paper / ... should be adde
 
 </body>
 </html>
-
