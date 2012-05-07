@@ -23,6 +23,13 @@
 #include "xsys.h"
 #include "built_in.h"
 #include "mtrand.h"
+#include "die.h"
+
+#ifndef PACKET_FANOUT
+# define PACKET_FANOUT		18
+# define PACKET_FANOUT_HASH	0
+# define PACKET_FANOUT_LB	1
+#endif
 
 struct frame_map {
 	struct tpacket_hdr tp_h __aligned_tpacket;
@@ -125,6 +132,16 @@ static inline void prepare_polling(int sock, struct pollfd *pfd)
 	pfd->fd = sock;
 	pfd->revents = 0;
 	pfd->events = POLLIN | POLLRDNORM | POLLERR;
+}
+
+static inline void set_sockopt_fanout(int sock, unsigned int fanout_id,
+				      unsigned int fanout_type)
+{
+	unsigned int fanout_arg = (fanout_id | (fanout_type << 16));
+	int ret = setsockopt(sock, SOL_PACKET, PACKET_FANOUT, &fanout_arg,
+			     sizeof(fanout_arg));
+	if (ret)
+		panic("No packet fanout support!\n");
 }
 
 #endif /* RING_H */
