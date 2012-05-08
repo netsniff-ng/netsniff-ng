@@ -19,7 +19,7 @@
 { 0x00, 0b00110011, 0b10101010, rnd(60), 0x04 }
 
 # Usage of drnd macro, generates random 64 bytes _during_ runtime
-{ drnd(64) }
+{ rnd(64) drnd() }
 
 # Usage of seqinc macro, generates a sequence of 64 incr. bytes starting 0x00
 { seqinc(0x00, 64) }

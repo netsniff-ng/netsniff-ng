@@ -385,15 +385,22 @@ static void tx_tgap_or_die(struct mode *mode, struct pktconf *cfg)
 
 	l = 0;
 	while (likely(sigint == 0) && likely(num > 0)) {
+		//FIXME
 		for (c = 0; c < cfg->pkts[l].clen; ++c) {
 			cnt = &(cfg->pkts[l].cnt[c]);
 			cnt->val -= cnt->min;
-			cnt->val = (cnt->val + cnt->inc) %
-				   (cnt->max - cnt->min + 1);
+			if (cnt->type == TYPE_INC) {
+				cnt->val = (cnt->val + cnt->inc) %
+					   (cnt->max - cnt->min + 1);
+			} else {
+				cnt->val = (cnt->val - cnt->inc) %
+					   (cnt->max - cnt->min + 1);
+			}
 			cnt->val += cnt->min;
 			cfg->pkts[l].payload[cnt->off] = cnt->val;
 		}
 
+		//FIXME
 		for (r = 0; r < cfg->pkts[l].rlen; ++r) {
 			rnd = &(cfg->pkts[l].rnd[r]);
 			rnd->val = lcrand(rnd->val); 
@@ -507,15 +514,22 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 			hdr->tp_h.tp_snaplen = cfg->pkts[l].plen;
 			hdr->tp_h.tp_len = cfg->pkts[l].plen;
 
+			//FIXME
 			for (c = 0; c < cfg->pkts[l].clen; ++c) {
 				cnt = &(cfg->pkts[l].cnt[c]);
 				cnt->val -= cnt->min;
-				cnt->val = (cnt->val + cnt->inc) %
-					   (cnt->max - cnt->min + 1);
+				if (cnt->type == TYPE_INC) {
+					cnt->val = (cnt->val + cnt->inc) %
+						   (cnt->max - cnt->min + 1);
+				} else {
+					cnt->val = (cnt->val - cnt->inc) %
+						   (cnt->max - cnt->min + 1);
+				}
 				cnt->val += cnt->min;
 				cfg->pkts[l].payload[cnt->off] = cnt->val;
 			}
 
+			//FIXME
 			for (r = 0; r < cfg->pkts[l].rlen; ++r) {
 				rnd = &(cfg->pkts[l].rnd[r]);
 				rnd->val = lcrand(rnd->val); 

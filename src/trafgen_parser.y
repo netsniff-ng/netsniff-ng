@@ -34,8 +34,18 @@ extern int yylineno;
 extern char *yytext;
 
 static struct pktconf *conf = NULL;
+static int note_flag = 0;
 
 #define am(x)	((x)->len - 1)
+
+static void give_note_dynamic(void)
+{
+	if (!note_flag) {
+		printf("Note: dynamic elements like drnd, dinc, ddec and "
+		       "others make trafgen slower!\n");
+		note_flag = 1;
+	}
+}
 
 static void dump_conf(struct pktconf *cfg)
 {
@@ -53,11 +63,13 @@ static void dump_conf(struct pktconf *cfg)
 			printf("%02x ", cfg->pkts[i].payload[j]);
 		printf("\n");
 		for (j = 0; j < cfg->pkts[i].clen; ++j)
-			printf(" cnt%zu [%u,%u], inc %u, off %ld\n",
+			printf(" cnt%zu [%u,%u], inc %u, off %ld type %s\n",
 			       j, cfg->pkts[i].cnt[j].min,
 			       cfg->pkts[i].cnt[j].max,
 			       cfg->pkts[i].cnt[j].inc,
-			       cfg->pkts[i].cnt[j].off);
+			       cfg->pkts[i].cnt[j].off,
+			       cfg->pkts[i].cnt[j].type == TYPE_INC ?
+			       "inc" : "dec");
 		for (j = 0; j < cfg->pkts[i].rlen; ++j)
 			printf(" rnd%zu off %ld\n",
 			       j, cfg->pkts[i].rnd[j].off);
@@ -143,6 +155,54 @@ static void set_seqdec(uint8_t start, size_t len, uint8_t stepping)
 	}
 }
 
+static void set_drnd(void)
+{
+	int base, rnds;
+	struct randomizer *new;
+
+	give_note_dynamic();
+
+	conf->pkts[am(conf)].plen++;
+	conf->pkts[am(conf)].payload = xrealloc(conf->pkts[am(conf)].payload,
+						1, conf->pkts[am(conf)].plen);
+
+	base = conf->pkts[am(conf)].plen - 1;
+	rnds = ++(conf->pkts[am(conf)].rlen);
+
+	conf->pkts[am(conf)].rnd = xrealloc(conf->pkts[am(conf)].rnd,
+					    1, rnds * sizeof(struct randomizer));
+
+	new = &conf->pkts[am(conf)].rnd[rnds - 1];
+	new->val = (uint8_t) mt_rand_int32();
+	new->off = base;
+}
+
+static void set_dincdec(uint8_t start, uint8_t stop, uint8_t stepping, int type)
+{
+	int base, cnts;
+	struct counter *new;
+
+	give_note_dynamic();
+
+	conf->pkts[am(conf)].plen++;
+	conf->pkts[am(conf)].payload = xrealloc(conf->pkts[am(conf)].payload,
+						1, conf->pkts[am(conf)].plen);
+
+	base = conf->pkts[am(conf)].plen - 1;
+	cnts = ++(conf->pkts[am(conf)].clen);
+
+	conf->pkts[am(conf)].cnt = xrealloc(conf->pkts[am(conf)].cnt,
+					    1, cnts * sizeof(struct counter));
+
+	new = &conf->pkts[am(conf)].cnt[cnts - 1];
+	new->min = start;
+	new->max = stop;
+	new->inc = stepping;
+	new->val = type == TYPE_INC ? start : stop;
+	new->off = base;
+	new->type = type;
+}
+
 %}
 
 %union {
@@ -206,11 +266,6 @@ rnd
 		{ set_rnd($3); }
 	;
 
-drnd
-	: K_DRND '(' number ')'
-		{ printf("Drnd times %u\n", $3); }
-	;
-
 seqinc
 	: K_SEQINC '(' number delimiter number ')'
 		{ set_seqinc($3, $5, 1); }
@@ -225,18 +280,23 @@ seqdec
 		{ set_seqdec($3, $5, $7); }
 	;
 
+drnd
+	: K_DRND '(' ')'
+		{ set_drnd(); }
+	;
+
 dinc
 	: K_DINC '(' number delimiter number ')'
-		{ printf("Dinc from %u to %u\n", $3, $5); }
+		{ set_dincdec($3, $5, 1, TYPE_INC); }
 	| K_DINC '(' number delimiter number delimiter number ')'
-		{ printf("Seqinc from %u to %u stepping %u\n", $3, $5, $7); }
+		{ set_dincdec($3, $5, $7, TYPE_INC); }
 	;
 
 ddec
 	: K_DDEC '(' number delimiter number ')'
-		{ printf("Ddec from %u to %u\n", $3, $5); }
+		{ set_dincdec($3, $5, 1, TYPE_DEC); }
 	| K_DDEC '(' number delimiter number delimiter number ')'
-		{ printf("Ddec from %u to %u stepping %u\n", $3, $5, $7); }
+		{ set_dincdec($3, $5, $7, TYPE_DEC); }
 	;
 
 elem
