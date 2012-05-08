@@ -175,39 +175,10 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "die.h"
 #include "xsys.h"
 #include "xio.h"
+#include "trafgen_conf.h"
 #include "tprintf.h"
 #include "mtrand.h"
 #include "ring_tx.h"
-
-struct counter {
-	uint16_t id;
-	uint8_t min;
-	uint8_t max;
-	uint8_t inc;
-	uint8_t val;
-	off_t off;
-};
-
-struct randomizer {
-	uint8_t val;
-	off_t off;
-};
-
-struct packet {
-	uint8_t *payload;
-	size_t plen;
-	struct counter *cnt;
-	size_t clen;
-	struct randomizer *rnd;
-	size_t rlen;
-};
-
-struct pktconf {
-	unsigned long num;
-	unsigned long gap;
-	struct packet *pkts;
-	size_t len;
-};
 
 struct stats {
 	unsigned long tx_bytes;
@@ -229,14 +200,16 @@ struct mode {
 #define CPU_NOTOUCH  -2
 
 extern int main_loop_interactive(struct mode *mode, char *confname);
-extern int compile_packets(char *file);
+extern int compile_packets(char *file, struct pktconf *cfg, int verbose);
 
 sig_atomic_t sigint = 0;
 
-static const char *short_options = "d:c:n:t:vJhS:HQb:B:rk:x";
+static const char *short_options = "d:c:n:t:vJhS:HQb:B:rk:xi:o:";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
+	{"out", required_argument, 0, 'o'},
+	{"in", required_argument, 0, 'i'},
 	{"conf", required_argument, 0, 'c'},
 	{"num", required_argument, 0, 'n'},
 	{"gap", required_argument, 0, 't'},
@@ -301,7 +274,7 @@ static void help(void)
 	printf("Usage: trafgen [options]\n");
 	printf("Options:\n");
 	printf("  -o|-d|--out|--dev <netdev|pcap>   Networking Device i.e., eth0 or pcap\n");
-	printf("  -i|-c|--in|--conf <file>          Packet configuration file\n");
+	printf("  -i|-c|--in|--conf <cfg-file>      Packet configuration file\n");
 	printf("  -x|--interactive                  Start trafgen in interactive server mode\n");
 	printf("  -J|--jumbo-support                Support for 64KB Super Jumbo Frames\n");
 	printf("                                    Default TX slot: 2048Byte\n");
@@ -580,200 +553,6 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 	printf("\r%12lu bytes outgoing\n", mode->stats.tx_bytes);
 }
 
-#define TYPE_NUM 0
-#define TYPE_CNT 1
-#define TYPE_RND 2
-#define TYPE_EOL 3
-
-static inline char *getuint_or_obj(char *in, uint32_t *out, int *type)
-{
-	if (*in == '\n') {
-		*type = TYPE_EOL;
-	} else if (*in == '$') {
-		in++;
-		if (!strncmp("II", in, strlen("II"))) {
-			in += 2;
-			in = getuint(in, out);
-			*type = TYPE_CNT;
-		} else if (!strncmp("PRB", in, strlen("PRB"))) {
-			*type = TYPE_RND;
-			in += 3;
-		} else
-			panic("Syntax error!\n");
-	} else {
-		in = getuint(in, out);
-		*type = TYPE_NUM;
-	}
-
-	return in;
-}
-
-static void dump_conf(struct pktconf *cfg)
-{
-	size_t i, j;
-
-	printf("n %lu, gap %lu us, pkts %zu\n", cfg->num, cfg->gap, cfg->len);
-	if (cfg->len == 0)
-		return;
-	for (i = 0; i < cfg->len; ++i) {
-		printf("[%zu] pkt\n", i);
-		printf(" len %zu cnts %zu rnds %zu\n", cfg->pkts[i].plen,
-		       cfg->pkts[i].clen, cfg->pkts[i].rlen);
-		printf(" payload ");
-		for (j = 0; j < cfg->pkts[i].plen; ++j)
-			printf("%02x ", cfg->pkts[i].payload[j]);
-		printf("\n");
-		for (j = 0; j < cfg->pkts[i].clen; ++j)
-			printf(" cnt%zu [%u,%u], inc %u, off %ld\n",
-			       j, cfg->pkts[i].cnt[j].min,
-			       cfg->pkts[i].cnt[j].max,
-			       cfg->pkts[i].cnt[j].inc,
-			       cfg->pkts[i].cnt[j].off);
-		for (j = 0; j < cfg->pkts[i].rlen; ++j)
-			printf(" rnd%zu off %ld\n",
-			       j, cfg->pkts[i].rnd[j].off);
-	}
-}
-
-/* Seems to need a rewrite later ;-) */
-static void parse_conf_or_die(char *file, struct pktconf *cfg)
-{
-	unsigned int withinpkt = 0;
-	unsigned long line = 0;
-	char *pb, buff[1024];
-	FILE *fp;
-	struct counter *cnts = NULL;
-	size_t l = 0;
-	off_t offset = 0;
-
-	if (!file || !cfg)
-		panic("Panic over invalid args for the parser!\n");
-
-	fp = fopen(file, "r");
-	if (!fp)
-		panic("Cannot open config file!\n");
-	fmemset(buff, 0, sizeof(buff));
-
-	printf("CFG:\n");
-	srand(time(NULL));
-
-	while (fgets(buff, sizeof(buff), fp) != NULL) {
-		line++;
-		buff[sizeof(buff) - 1] = 0;
-		pb = skips(buff);
-
-		/* A comment or junk. Skip this line */
-		if (*pb == '#' || *pb == '\n') {
-			fmemset(buff, 0, sizeof(buff));
-			continue;
-		}
-
-		if (!withinpkt && *pb == '$') {
-			pb++;
-			if (!strncmp("II", pb, strlen("II"))) {
-				uint32_t id, min = 0, max = 0xFF, inc = 1;
-				pb += 2;
-				pb = getuint(pb, &id);
-				pb = skipchar(pb, ':');
-				pb = skips(pb);
-				pb = getuint(pb, &min);
-				pb = skipchar(pb, ',');
-				pb = getuint(pb, &max);
-				pb = skipchar(pb, ',');
-				pb = getuint(pb, &inc);
-				l++;
-				cnts = xrealloc(cnts, 1, l * sizeof(*cnts));
-				cnts[l - 1].id = 0xFF & id;
-				cnts[l - 1].min = 0xFF & min;
-				cnts[l - 1].max = 0xFF & max;
-				cnts[l - 1].inc = 0xFF & inc;
-				if (cnts[l - 1].min >= cnts[l - 1].max)
-					panic("Counter min >= max!\n");
-				if (cnts[l - 1].inc >= cnts[l - 1].max)
-					panic("Counter inc >= max!\n");
-			} else if (!strncmp("P", pb, strlen("P"))) {
-				uint32_t id;
-				pb++;
-				pb = getuint(pb, &id);
-				pb = skips(pb);
-				pb = skipchar(pb, '{');
-				withinpkt = 1;
-				cfg->len++;
-				cfg->pkts = xrealloc(cfg->pkts, 1,
-						     cfg->len * sizeof(*cfg->pkts));
-				fmemset(&cfg->pkts[cfg->len - 1], 0,
-				       sizeof(cfg->pkts[cfg->len - 1]));
-				offset = 0;
-			} else 
-				panic("Unknown instruction! Syntax error "
-				      "on line %lu!\n", line);
-		} else if (withinpkt && *pb == '}') {
-				withinpkt = 0;
-		} else if (withinpkt) {
-			int type, i, found;
-			uint32_t val = 0;
-			while (1) {
-				found = 0;
-				pb = getuint_or_obj(pb, &val, &type);
-				if (type == TYPE_EOL)
-					break;
-				if (type == TYPE_CNT) {
-					size_t z;
-					struct counter *new;
-					for (i = 0; i < l; ++i) {
-						if (val == cnts[i].id) {
-							found = 1;
-							break;
-						}
-					}
-					if (!found)
-						panic("Counter %u not found!\n");
-
-					val = cnts[i].min;
-					z = ++(cfg->pkts[cfg->len - 1].clen);
-					cfg->pkts[cfg->len - 1].cnt =
-						xrealloc(cfg->pkts[cfg->len - 1].cnt,
-							 1, z * sizeof(struct counter));
-					new = &cfg->pkts[cfg->len - 1].cnt[z - 1];
-					new->min = cnts[i].min;
-					new->max = cnts[i].max;
-					new->inc = cnts[i].inc;
-					new->off = offset;
-					new->val = val;
-				} else if (type == TYPE_RND) {
-					size_t z;
-					struct randomizer *new;
-
-					val = 0xFF & rand();
-					z = ++(cfg->pkts[cfg->len - 1].rlen);
-					cfg->pkts[cfg->len - 1].rnd =
-						xrealloc(cfg->pkts[cfg->len - 1].rnd,
-							 1, z * sizeof(struct randomizer));
-					new = &cfg->pkts[cfg->len - 1].rnd[z - 1];
-					new->val = val;
-					new->off = offset;
-				}
-
-				cfg->pkts[cfg->len - 1].plen++;
-				cfg->pkts[cfg->len - 1].payload =
-					xrealloc(cfg->pkts[cfg->len - 1].payload,
-						 1, cfg->pkts[cfg->len - 1].plen);
-				cfg->pkts[cfg->len - 1].payload[cfg->pkts[cfg->len - 1].plen - 1] =
-					0xFF & val;
-				offset++;
-				pb = skipchar_s(pb, ',');
-			}
-		} else
-			panic("Syntax error!\n");
-		fmemset(buff, 0, sizeof(buff));
-	}
-
-	fclose(fp);
-	if (cnts)
-		xfree(cnts);
-	dump_conf(cfg);
-}
-
 static void cleanup_cfg(struct pktconf *cfg)
 {
 	size_t l;
@@ -794,17 +573,19 @@ static void cleanup_cfg(struct pktconf *cfg)
 static int main_loop(struct mode *mode, char *confname, unsigned long pkts,
 		     unsigned long gap)
 {
-	struct pktconf cfg = {
-		.num = pkts,
-		.gap = gap,
-		.len = 0,
-	};
+	struct pktconf cfg;
 
-	parse_conf_or_die(confname, &cfg);
+	fmemset(&cfg, 0, sizeof(cfg));
+	cfg.num = pkts,
+	cfg.gap = gap,
+	cfg.len = 0,
+
+	compile_packets(confname, &cfg, 1);
 	if (gap > 0)
 		tx_tgap_or_die(mode, &cfg);
 	else
 		tx_fire_or_die(mode, &cfg);
+
 	cleanup_cfg(&cfg);
 
 	return 0;
@@ -833,6 +614,7 @@ int main(int argc, char **argv)
 			version();
 			break;
 		case 'd':
+		case 'o':
 			mode.device = xstrndup(optarg, IFNAMSIZ);
 			break;
 		case 'x':
@@ -845,11 +627,8 @@ int main(int argc, char **argv)
 			mode.jumbo_support = 1;
 			break;
 		case 'c':
-			// XXX
+		case 'i':
 			confname = xstrdup(optarg);
-			compile_packets(confname);
-			die();
-
 			break;
 		case 'k':
 			mode.kpull = atol(optarg);
@@ -904,6 +683,8 @@ int main(int argc, char **argv)
 			case 'n':
 			case 'S':
 			case 'b':
+			case 'o':
+			case 'i':
 			case 'k':
 			case 'B':
 			case 't':

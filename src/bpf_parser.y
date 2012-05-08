@@ -539,6 +539,7 @@ int compile_filter(char *file, int verbose)
 			xfree(labels_k[i]);
 	}
 
+	fclose(yyin);
 	return 0;
 }
 
