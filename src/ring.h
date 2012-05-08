@@ -26,9 +26,10 @@
 #include "die.h"
 
 #ifndef PACKET_FANOUT
-# define PACKET_FANOUT		18
-# define PACKET_FANOUT_HASH	0
-# define PACKET_FANOUT_LB	1
+# define PACKET_FANOUT			18
+# define PACKET_FANOUT_POLICY_HASH	0
+# define PACKET_FANOUT_POLICY_LB	1
+# define PACKET_FANOUT_POLICY_DEFAULT	PACKET_FANOUT_HASH
 #endif
 
 struct frame_map {
