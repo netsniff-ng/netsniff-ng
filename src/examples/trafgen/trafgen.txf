@@ -21,8 +21,8 @@
 # Usage of seqinc macro, generates a sequence of 64 incr. bytes starting 0x00
 { seqinc(0x00, 64) }
 
-# Usage of seqdec macro, generates a sequence of 64 decr. bytes starting 0xff
-{ seqdec(0xff, 64) }
+# Usage of seqdec macro, generates a sequence of 64 2-decr. bytes starting 0xff
+{ seqdec(0xff, 64, 2) }
 
 # Mixture between hex and decimal and ascii
 { 0x00, 1, 2, 0x4, fill(123, 60), f, o, o, b, a, r }
