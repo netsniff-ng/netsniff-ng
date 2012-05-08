@@ -37,7 +37,7 @@ extern char *yytext;
 	long int number;
 }
 
-%token K_COMMENT K_FILL K_RND K_INC K_DEC
+%token K_COMMENT K_FILL K_RND K_SEQINC K_SEQDEC K_DRND K_DINC K_DDEC
 
 %token ' ' ',' '{' '}' '(' ')' '[' ']'
 
@@ -92,22 +92,39 @@ rnd
 	: K_RND '(' number ')' { printf("Rnd times %u\n", $3); }
 	;
 
+drnd
+	: K_DRND '(' number ')' { printf("Drnd times %u\n", $3); }
+	;
+
 seqinc
-	: K_INC '(' number delimiter number ')' { printf("Seqinc from %u times %u\n", $3, $5); }
-	| K_INC '(' number delimiter number delimiter number ')' { printf("Seqinc from %u times %u steps %u\n", $3, $5, $7); }
+	: K_SEQINC '(' number delimiter number ')' { printf("Seqinc from %u times %u\n", $3, $5); }
+	| K_SEQINC '(' number delimiter number delimiter number ')' { printf("Seqinc from %u times %u steps %u\n", $3, $5, $7); }
 	;
 
 seqdec
-	: K_DEC '(' number delimiter number ')' { printf("Seqdec from %u times %u\n", $3, $5); }
-	| K_DEC '(' number delimiter number delimiter number ')' { printf("Seqdec from %u times %u steps %u\n", $3, $5, $7); }
+	: K_SEQDEC '(' number delimiter number ')' { printf("Seqdec from %u times %u\n", $3, $5); }
+	| K_SEQDEC '(' number delimiter number delimiter number ')' { printf("Seqdec from %u times %u steps %u\n", $3, $5, $7); }
+	;
+
+dinc
+	: K_DINC '(' number delimiter number ')' { printf("Dinc from %u to %u\n", $3, $5); }
+	| K_DINC '(' number delimiter number delimiter number ')' { printf("Seqinc from %u to %u stepping %u\n", $3, $5, $7); }
+	;
+
+ddec
+	: K_DDEC '(' number delimiter number ')' { printf("Ddec from %u to %u\n", $3, $5); }
+	| K_DDEC '(' number delimiter number delimiter number ')' { printf("Ddec from %u to %u stepping %u\n", $3, $5, $7); }
 	;
 
 elem
 	: number {}
 	| fill {}
 	| rnd {}
+	| drnd {}
 	| seqinc {}
 	| seqdec {}
+	| dinc {}
+	| ddec {}
 	| inline_comment {}
 	;
 

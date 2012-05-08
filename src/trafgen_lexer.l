@@ -47,8 +47,11 @@ number_ascii	[a-zA-Z]
 
 "fill"		{ return K_FILL; }
 "rnd"		{ return K_RND; }
-"seqinc"	{ return K_INC; }
-"seqdec"	{ return K_DEC; }
+"drnd"		{ return K_DRND; }
+"dinc"		{ return K_DINC; }
+"ddec"		{ return K_DDEC; }
+"seqinc"	{ return K_SEQINC; }
+"seqdec"	{ return K_SEQDEC; }
 
 "{"		{ return '{'; }
 "}"		{ return '}'; }
