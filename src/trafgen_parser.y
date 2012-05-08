@@ -73,43 +73,75 @@ static void realloc_packet(void)
 
 static void set_byte(uint8_t val)
 {
+	int base;
+
 	conf->pkts[am(conf)].plen++;
 	conf->pkts[am(conf)].payload = xrealloc(conf->pkts[am(conf)].payload,
 						1, conf->pkts[am(conf)].plen);
 
-	conf->pkts[am(conf)].payload[conf->pkts[am(conf)].plen - 1] = val;
+	base = conf->pkts[am(conf)].plen - 1;
+	conf->pkts[am(conf)].payload[base] = val;
 }
 
 static void set_fill(uint8_t val, size_t len)
 {
-	int i;
+	int i, base;
 
 	conf->pkts[am(conf)].plen += len;
 	conf->pkts[am(conf)].payload = xrealloc(conf->pkts[am(conf)].payload,
 						1, conf->pkts[am(conf)].plen);
 
+	base = conf->pkts[am(conf)].plen - 1;
 	for (i = 0; i < len; ++i) {
-		conf->pkts[am(conf)].
-			payload[conf->pkts[am(conf)].plen - 1 - i] = val;
+		conf->pkts[am(conf)].payload[base - i] = val;
 	}
 }
 
 static void set_rnd(size_t len)
 {
-	int i;
+	int i, base;
 
 	conf->pkts[am(conf)].plen += len;
 	conf->pkts[am(conf)].payload = xrealloc(conf->pkts[am(conf)].payload,
 						1, conf->pkts[am(conf)].plen);
 
+	base = conf->pkts[am(conf)].plen - 1;
 	for (i = 0; i < len; ++i) {
-		conf->pkts[am(conf)].
-			payload[conf->pkts[am(conf)].plen - 1 - i] =
-				(uint8_t) mt_rand_int32();
+		conf->pkts[am(conf)].payload[base - i] = (uint8_t) mt_rand_int32();
 	}
 }
 
+static void set_seqinc(uint8_t start, size_t len, uint8_t stepping)
+{
+	int i, base;
 
+	conf->pkts[am(conf)].plen += len;
+	conf->pkts[am(conf)].payload = xrealloc(conf->pkts[am(conf)].payload,
+						1, conf->pkts[am(conf)].plen);
+
+	base = conf->pkts[am(conf)].plen - 1;
+	for (i = 0; i < len; ++i) {
+		int off = len - 1 - i;
+		conf->pkts[am(conf)].payload[base - off] = start;
+		start += stepping;
+	}
+}
+
+static void set_seqdec(uint8_t start, size_t len, uint8_t stepping)
+{
+	int i, base;
+
+	conf->pkts[am(conf)].plen += len;
+	conf->pkts[am(conf)].payload = xrealloc(conf->pkts[am(conf)].payload,
+						1, conf->pkts[am(conf)].plen);
+
+	base = conf->pkts[am(conf)].plen - 1;
+	for (i = 0; i < len; ++i) {
+		int off = len - 1 - i;
+		conf->pkts[am(conf)].payload[base - off] = start;
+		start -= stepping;
+	}
+}
 
 %}
 
@@ -165,11 +197,13 @@ number
 	;
 
 fill
-	: K_FILL '(' number delimiter number ')' { set_fill($3, $5); }
+	: K_FILL '(' number delimiter number ')'
+		{ set_fill($3, $5); }
 	;
 
 rnd
-	: K_RND '(' number ')' { set_rnd($3); }
+	: K_RND '(' number ')'
+		{ set_rnd($3); }
 	;
 
 drnd
@@ -179,16 +213,16 @@ drnd
 
 seqinc
 	: K_SEQINC '(' number delimiter number ')'
-		{ printf("Seqinc from %u times %u\n", $3, $5); }
+		{ set_seqinc($3, $5, 1); }
 	| K_SEQINC '(' number delimiter number delimiter number ')'
-		{ printf("Seqinc from %u times %u steps %u\n", $3, $5, $7); }
+		{ set_seqinc($3, $5, $7); }
 	;
 
 seqdec
 	: K_SEQDEC '(' number delimiter number ')'
-		{ printf("Seqdec from %u times %u\n", $3, $5); }
+		{ set_seqdec($3, $5, 1); }
 	| K_SEQDEC '(' number delimiter number delimiter number ')'
-		{ printf("Seqdec from %u times %u steps %u\n", $3, $5, $7); }
+		{ set_seqdec($3, $5, $7); }
 	;
 
 dinc
