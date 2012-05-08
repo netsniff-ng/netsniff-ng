@@ -229,6 +229,7 @@ struct mode {
 #define CPU_NOTOUCH  -2
 
 extern int main_loop_interactive(struct mode *mode, char *confname);
+extern int compile_packets(char *file);
 
 sig_atomic_t sigint = 0;
 
@@ -299,32 +300,34 @@ static void help(void)
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: trafgen [options]\n");
 	printf("Options:\n");
-	printf("  -d|--dev <netdev>      Networking Device i.e., eth0\n");
-	printf("  -c|--conf <file>       Packet configuration file\n");
-	printf("  -x|--interactive       Start trafgen in interactive mode\n");
-	printf("  -J|--jumbo-support     Support for 64KB Super Jumbo Frames\n");
-	printf("                         Default TX slot: 2048Byte\n");
-	printf("  -n|--num <uint>        Number of packets until exit\n");
-	printf("  `--     0              Loop until interrupt (default)\n");
-	printf("   `-     n              Send n packets and done\n");
-	printf("  -r|--rand              Randomize packet selection process\n");
-	printf("                         Instead of a round robin selection\n");
-	printf("  -t|--gap <uint>        Interpacket gap in us (approx)\n");
-	printf("  -S|--ring-size <size>  Manually set ring size to <size>:\n");
-	printf("                         mmap space in KB/MB/GB, e.g. \'10MB\'\n");
-	printf("  -k|--kernel-pull <uint>Kernel pull from user interval in us\n");
-	printf("                         Default is 10us where the TX_RING\n");
-	printf("                         is populated with payload from uspace\n");
-	printf("  -b|--bind-cpu <cpu>    Bind to specific CPU (or CPU-range)\n");
-	printf("  -B|--unbind-cpu <cpu>  Forbid to use specific CPU (or CPU-range)\n");
-	printf("  -H|--prio-high         Make this high priority process\n");
-	printf("  -Q|--notouch-irq       Do not touch IRQ CPU affinity of NIC\n");
-	printf("  -v|--version           Show version\n");
-	printf("  -h|--help              Guess what?!\n");
+	printf("  -o|-d|--out|--dev <netdev|pcap>   Networking Device i.e., eth0 or pcap\n");
+	printf("  -i|-c|--in|--conf <file>          Packet configuration file\n");
+	printf("  -x|--interactive                  Start trafgen in interactive server mode\n");
+	printf("  -J|--jumbo-support                Support for 64KB Super Jumbo Frames\n");
+	printf("                                    Default TX slot: 2048Byte\n");
+	printf("  -n|--num <uint>                   Number of packets until exit\n");
+	printf("  `--     0                         Loop until interrupt (default)\n");
+	printf("   `-     n                         Send n packets and done\n");
+	printf("  -r|--rand                         Randomize packet selection process\n");
+	printf("                                    Instead of a round robin selection\n");
+	printf("  -t|--gap <uint>                   Interpacket gap in us (approx)\n");
+	printf("  -S|--ring-size <size>             Manually set ring size to <size>:\n");
+	printf("                                    mmap space in KB/MB/GB, e.g. \'10MB\'\n");
+	printf("  -k|--kernel-pull <uint>           Kernel pull from user interval in us\n");
+	printf("                                    Default is 10us where the TX_RING\n");
+	printf("                                    is populated with payload from uspace\n");
+	printf("  -b|--bind-cpu <cpu>               Bind to specific CPU (or CPU-range)\n");
+	printf("  -B|--unbind-cpu <cpu>             Forbid to use specific CPU (or CPU-range)\n");
+	printf("  -H|--prio-high                    Make this high priority process\n");
+	printf("  -Q|--notouch-irq                  Do not touch IRQ CPU affinity of NIC\n");
+	printf("  -v|--version                      Show version\n");
+	printf("  -h|--help                         Guess what?!\n");
 	printf("\n");
 	printf("Examples:\n");
 	printf("  See trafgen.txf for configuration file examples.\n");
 	printf("  trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0\n");
+	printf("  trafgen --out eth0 --in trafgen.txf --bind-cpu 0\n");
+	printf("  trafgen --out test.pcap --in trafgen.txf --bind-cpu 0\n");
 	printf("  trafgen --dev eth0 --conf trafgen.txf --rand --gap 1000\n");
 	printf("  trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0 --num 10 --rand\n");
 	printf("  trafgen --interactive\n");
@@ -842,7 +845,11 @@ int main(int argc, char **argv)
 			mode.jumbo_support = 1;
 			break;
 		case 'c':
+			// XXX
 			confname = xstrdup(optarg);
+			compile_packets(confname);
+			die();
+
 			break;
 		case 'k':
 			mode.kpull = atol(optarg);

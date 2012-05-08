@@ -7,16 +7,16 @@
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-  0xff, 0xff, 0xff, 0xff, }
+  0xff, 0xff, 0xff, 0xff }
 
 # Usage of fill macro, fills 60 bytes with 0xff
-{ 0x00, 0x01, 0x03, fill(0xff, 60), 0x04 }
+{ 0x00, 0x01, 0x03, fill(0xff, 60) /* fill 60 bytes with ff */, 0x04 }
 
 # Usage of rnd macro, fills 60 bytes with rnd values
 { 0x00, 0x01, 0x03, rnd(60), 0x04 }
 
 # Usage of bitvectors (always width of 8)
-{ 0x00, bx00110011, bx10101010, rnd(60), 0x04 }
+{ 0x00, 0b00110011, 0b10101010, rnd(60), 0x04 }
 
 # Usage of seqinc macro, generates a sequence of 64 incr. bytes starting 0x00
 { seqinc(0x00, 64) }
@@ -31,16 +31,16 @@
 { 0x00, 0x01, 0x03 fill(0xff, 60) 0x04 }
 
 # Usage of ethernet header macro
-{ ether(src[ff:ff:ff:ff:ff:ff], dst[ff:ff:ff:ff:ff:ff], type[0x800]), rnd(50)}
+#{ ether(src[ff:ff:ff:ff:ff:ff], dst[ff:ff:ff:ff:ff:ff], type[0x800]), rnd(50)}
 
 # Mixture of several types
-{
-  ether(src[ff:ff:ff:ff:ff:ff], dst[ff:ff:ff:ff:ff:ff], type[0x800])
-  rnd(50) 0xff 0xaa s c h n u b b e l fill(0xaa, 10)
-}
+#{
+#  ether(src[ff:ff:ff:ff:ff:ff], dst[ff:ff:ff:ff:ff:ff], type[0x800])
+#  rnd(50) 0xff 0xaa s c h n u b b e l fill(0xaa, 10)
+#}
 
 # Usage of ethernet header macro, incomplete (unspecified fields will be random!)
-{ ether(dst[ff:ff:ff:ff:ff:ff], type[0x800]), rnd(50)}
+#{ ether(dst[ff:ff:ff:ff:ff:ff], type[0x800]), rnd(50)}
 
 # Usage of several macros
-{ ether(dst[ff:ff:ff:ff:ff:ff], type[0x800]) ipv4(dst[255.255.255.255]) }
+#{ ether(dst[ff:ff:ff:ff:ff:ff], type[0x800]) ipv4(dst[255.255.255.255]) }
