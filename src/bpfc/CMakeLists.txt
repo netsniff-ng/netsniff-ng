@@ -7,7 +7,7 @@ FIND_PACKAGE(BISON)
 INCLUDE(Pod2Man)
 
 IF (FLEX_FOUND AND BISON_FOUND)
-	FLEX_TARGET(BPF_LEXER ../bpf_lexer.l ${CMAKE_CURRENT_BINARY_DIR}/lex.yy.c)
+	FLEX_TARGET(BPF_LEXER ../bpf_lexer.l ${CMAKE_CURRENT_BINARY_DIR}/bpfc_lex.yy.c)
 	BISON_TARGET(BPF_PARSER ../bpf_parser.y ${CMAKE_CURRENT_BINARY_DIR}/bpf_parser.tab.c)
 	ADD_EXECUTABLE(${PROJECT_NAME} 	../xmalloc.c
 					../xstring.c
