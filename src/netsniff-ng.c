@@ -669,7 +669,7 @@ static void enter_mode_read_pcap(struct mode *mode)
 		if (mode->device_out) {
 			int i = 0;
 			char bout[80];
-			slprintf(bout, sizeof(bout), "$P%u {\n  ", stats.tx_packets);
+			slprintf(bout, sizeof(bout), "{\n  ");
 			write_or_die(fdo, bout, strlen(bout));
 
 			while (i < fm.tp_h.tp_snaplen) {

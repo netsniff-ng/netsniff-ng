@@ -60,7 +60,8 @@ number_ascii	[a-zA-Z]
 "["		{ return '['; }
 "]"		{ return ']'; }
 ","		{ return ','; }
-" "+		{ return ' '; }
+"\n"		{ yylineno++; return K_NEWL; }
+[ \t\r]+	{ return K_WHITE; }
 
 "/*"([^\*]|\*[^/])*"*/" { return K_COMMENT; }
 
@@ -84,8 +85,6 @@ number_ascii	[a-zA-Z]
 
 ";"[^\n]*	{/* NOP */}
 "#"[^\n]*	{/* NOP */}
-"\n"		{ yylineno++; }
-[ \t]+		{/* NOP */ }
 .		{ printf("Unknown character '%s'", yytext);
 		  yyerror("lex Unknown character"); }
 

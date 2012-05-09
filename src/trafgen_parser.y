@@ -209,9 +209,10 @@ static void set_dincdec(uint8_t start, uint8_t stop, uint8_t stepping, int type)
 	long int number;
 }
 
-%token K_COMMENT K_FILL K_RND K_SEQINC K_SEQDEC K_DRND K_DINC K_DDEC
+%token K_COMMENT K_FILL K_RND K_SEQINC K_SEQDEC K_DRND K_DINC K_DDEC K_WHITE
+%token K_NEWL
 
-%token ' ' ',' '{' '}' '(' ')' '[' ']'
+%token ',' '{' '}' '(' ')' '[' ']'
 
 %token number_hex number_dec number_ascii number_bin number_oct
 
@@ -223,6 +224,7 @@ packets
 	: { }
 	| packets packet { }
 	| packets inline_comment { }
+	| packets white { }
 	;
 
 inline_comment
@@ -230,7 +232,7 @@ inline_comment
 	;
 
 packet
-	: '{' ' ' payload ' ' '}' { realloc_packet(); }
+	: '{' delimiter payload delimiter '}' { realloc_packet(); }
 	;
 
 payload
@@ -238,10 +240,17 @@ payload
 	| payload elem_delimiter { }
 	;
 
+white
+	: white K_WHITE
+	| white K_NEWL
+	| K_WHITE
+	| K_NEWL
+	;
+
 delimiter
 	: ','
-	| ' '
-	| ',' ' '
+	| white
+	| ',' white
 	;
 
 elem_delimiter
