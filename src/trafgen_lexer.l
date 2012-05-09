@@ -60,7 +60,7 @@ number_ascii	[a-zA-Z]
 "["		{ return '['; }
 "]"		{ return ']'; }
 ","		{ return ','; }
-" "		{ return ' '; }
+" "+		{ return ' '; }
 
 "/*"([^\*]|\*[^/])*"*/" { return K_COMMENT; }
 
