@@ -186,6 +186,8 @@ struct stats {
 };
 
 struct mode {
+#define CPU_UNKNOWN  -1
+#define CPU_NOTOUCH  -2
 	struct stats stats;
 	char *device;
 	int cpu;
@@ -195,15 +197,23 @@ struct mode {
 	unsigned int reserve_size;
 	int jumbo_support;
 	int verbose;
+	unsigned long num; 
+	unsigned long gap;
 };
 
-#define CPU_UNKNOWN  -1
-#define CPU_NOTOUCH  -2
+__import int main_loop_interactive(struct mode *mode, char *confname);
+__import int compile_packets(char *file, int verbose);
 
-extern int main_loop_interactive(struct mode *mode, char *confname);
-extern int compile_packets(char *file, struct pktconf *cfg, int verbose);
+static int sock;
+static struct itimerval itimer;
+static unsigned long interval = TX_KERNEL_PULL_INT;
 
-sig_atomic_t sigint = 0;
+__export sig_atomic_t sigint = 0;
+
+__export struct packet *packets = NULL;
+__export unsigned int packets_len = 0;
+__export struct packet_dynamics *packet_dyns = NULL;
+__export unsigned int packet_dyn_len = 0;
 
 static const char *short_options = "d:c:n:t:vJhS:HQb:B:rk:xi:o:V";
 
@@ -229,15 +239,6 @@ static struct option long_options[] = {
 	{0, 0, 0, 0}
 };
 
-static struct itimerval itimer;
-static int sock;
-static unsigned long interval = TX_KERNEL_PULL_INT;
-
-static inline uint8_t lcrand(uint8_t val)
-{
-	return  0xFF & (3 * val + 3);
-}
-
 static void signal_handler(int number)
 {
 	switch (number) {
@@ -245,7 +246,6 @@ static void signal_handler(int number)
 		sigint = 1;
 		break;
 	case SIGHUP:
-		break;
 	default:
 		break;
 	}
@@ -337,47 +337,84 @@ static void version(void)
 	die();
 }
 
-/*
- * TX_RING doen't allow us to specify inter-packet gaps, see
- * http://lingrok.org/source/xref/linux-2.6-linus/net/packet/af_packet.c,
- * function tpacket_fill_skb(), so instead, we use sendto(2). Since
- * this is also not high-perf, copying between address spaces is okay.
- */
-static void tx_tgap_or_die(struct mode *mode, struct pktconf *cfg)
+static inline void apply_counter(int i)
 {
-	int ifindex, mtu, ret;
-	size_t l, c, r;
-	struct sockaddr_ll s_addr;
-	unsigned long num = 1;
-	char *pkt;
-	struct counter *cnt;
-	struct randomizer *rnd;
+	int j;
 
-	if (!mode || !cfg)
+	for (j = 0; j < packet_dyns[i].counter_len; ++j) {
+		uint8_t val;
+		struct counter *counter = &packet_dyns[i].counter[j];
+
+		val = counter->val;
+		val -= counter->min;
+
+		if (counter->type == TYPE_INC)
+			val = (val + counter->inc) %
+			      (counter->max - counter->min + 1);
+		else
+			val = (val - counter->inc) %
+			      (counter->min - counter->max + 1);
+
+		val += counter->min;
+		counter->val = val;
+
+		packets[i].payload[counter->off] = val;
+	}
+}
+
+static inline void apply_randomizer(int i)
+{
+	int j;
+
+	for (j = 0; j < packet_dyns[i].randomizer_len; ++j) {
+		uint8_t val = (uint8_t) mt_rand_int32();
+		struct randomizer *randomizer = &packet_dyns[i].randomizer[j];
+
+		randomizer->val = val;
+		packets[i].payload[randomizer->off] = val;
+	}
+}
+
+static void tx_precheck(struct mode *mode)
+{
+	int i, mtu;
+
+	if (!mode)
 		panic("Panic over invalid args for TX trigger!\n");
-	if (cfg->len == 0)
+	if (packets_len == 0 || packets_len != packet_dyn_len)
 		panic("Panic over invalid args for TX trigger!\n");
 	if (!device_up_and_running(mode->device))
 		panic("Device not up and running!\n");
 
 	mtu = device_mtu(mode->device);
-	for (l = 0; l < cfg->len; ++l) {
-		/* eth src + eth dst + type == 14, fcs added by driver */
-		if (cfg->pkts[l].plen > mtu + 14)
+
+	for (i = 0; i < packets_len; ++i) {
+		if (packets[i].len > mtu + 14)
 			panic("Device MTU < than your packet size!\n");
-		if (cfg->pkts[l].plen <= 14)
+		if (packets[i].len <= 14)
 			panic("Device packet size too short!\n");
 	}
+}
+
+static void tx_slowpath_or_die(struct mode *mode)
+{
+	int ifindex, ret;
+	unsigned int i;
+	struct sockaddr_ll s_addr;
+	unsigned long num = 1;
+
+	tx_precheck(mode);
 
 	sock = pf_socket();
-	pkt = xmalloc_aligned(mtu, 64);
-	fmemset(pkt, 0, mtu);
+
 	ifindex = device_ifindex(mode->device);
 
-	if (cfg->num > 0)
-		num = cfg->num;
+	if (mode->num > 0)
+		num = mode->num;
+	if (mode->rand)
+		printf("Note: randomizes output makes trafgen slower!\n");
 
-	printf("MD: TX %s %luus\n\n", mode->rand ? "RND" : "RR", cfg->gap);
+	printf("MD: TX slowpath %s %luus\n\n", mode->rand ? "RND" : "RR", mode->gap);
 	printf("Running! Hang up with ^C!\n\n");
 
 	fmemset(&s_addr, 0, sizeof(s_addr));
@@ -385,53 +422,34 @@ static void tx_tgap_or_die(struct mode *mode, struct pktconf *cfg)
 	s_addr.sll_halen = ETH_ALEN;
 	s_addr.sll_ifindex = ifindex;
 
-	l = 0;
+	i = 0;
+
 	while (likely(sigint == 0) && likely(num > 0)) {
-		//FIXME
-		for (c = 0; c < cfg->pkts[l].clen; ++c) {
-			cnt = &(cfg->pkts[l].cnt[c]);
-			cnt->val -= cnt->min;
-			if (cnt->type == TYPE_INC) {
-				cnt->val = (cnt->val + cnt->inc) %
-					   (cnt->max - cnt->min + 1);
-			} else {
-				cnt->val = (cnt->val - cnt->inc) %
-					   (cnt->max - cnt->min + 1);
-			}
-			cnt->val += cnt->min;
-			cfg->pkts[l].payload[cnt->off] = cnt->val;
-		}
+		apply_counter(i);
+		apply_randomizer(i);
 
-		//FIXME
-		for (r = 0; r < cfg->pkts[l].rlen; ++r) {
-			rnd = &(cfg->pkts[l].rnd[r]);
-			rnd->val = lcrand(rnd->val); 
-			cfg->pkts[l].payload[rnd->off] = rnd->val;
-		}
-
-		fmemcpy(pkt, cfg->pkts[l].payload, cfg->pkts[l].plen);
-		mode->stats.tx_bytes += cfg->pkts[l].plen;
-		mode->stats.tx_packets++;
-
-		ret = sendto(sock, pkt, cfg->pkts[l].plen, 0,
+		ret = sendto(sock, packets[i].payload, packets[i].len, 0,
 			     (struct sockaddr *) &s_addr, sizeof(s_addr));
 		if (ret < 0)
 			whine("sendto error!\n");
-		if (mode->rand)
-			l = mt_rand_int32() % cfg->len;
-		else {
-			l++;
-			if (l >= cfg->len)
-				l = 0;
+
+		mode->stats.tx_bytes += packets[i].len;
+		mode->stats.tx_packets++;
+
+		if (mode->rand) {
+			i = mt_rand_int32() % packets_len;
+		} else {
+			i++;
+			atomic_cmp_swp(&i, packets_len, 0);
 		}
-		if (cfg->num > 0)
+
+		if (mode->num > 0)
 			num--;
 
-		usleep(cfg->gap);
+		usleep(mode->gap);
 	}
 
 	close(sock);
-	xfree(pkt);
 
 	fflush(stdout);
 	printf("\n");
@@ -439,38 +457,20 @@ static void tx_tgap_or_die(struct mode *mode, struct pktconf *cfg)
 	printf("\r%12lu bytes outgoing\n", mode->stats.tx_bytes);
 }
 
-static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
+static void tx_fastpath_or_die(struct mode *mode)
 {
-	int irq, ifindex, mtu;
-	unsigned int size, it = 0;
+	int irq, ifindex;
+	unsigned int i, size, it = 0;
 	unsigned long num = 1;
 	uint8_t *out = NULL;
-	size_t l , c, r;
 	struct ring tx_ring;
 	struct frame_map *hdr;
-	struct counter *cnt;
-	struct randomizer *rnd;
 
-	if (!mode || !cfg)
-		panic("Panic over invalid args for TX trigger!\n");
-	if (cfg->len == 0)
-		panic("Panic over invalid args for TX trigger!\n");
-	if (!device_up_and_running(mode->device))
-		panic("Device not up and running!\n");
-
-	mtu = device_mtu(mode->device);
-	for (l = 0; l < cfg->len; ++l) {
-		/* eth src + eth dst + type == 14, fcs added by driver */
-		if (cfg->pkts[l].plen > mtu + 14)
-			panic("Device MTU < than your packet size!\n");
-		if (cfg->pkts[l].plen <= 14)
-			panic("Device packet size too short!\n");
-	}
+	tx_precheck(mode);
 
 	sock = pf_socket();
 
 	fmemset(&tx_ring, 0, sizeof(tx_ring));
-
 	ifindex = device_ifindex(mode->device);
 	size = ring_size(mode->device, mode->reserve_size);
 
@@ -480,7 +480,6 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 	mmap_tx_ring(sock, &tx_ring);
 	alloc_tx_ring_frames(&tx_ring);
 	bind_tx_ring(sock, &tx_ring, ifindex);
-	mt_init_by_seed_time();
 
 	if (mode->cpu >= 0 && ifindex > 0) {
 		irq = device_irq_number(mode->device);
@@ -491,10 +490,12 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 
 	if (mode->kpull)
 		interval = mode->kpull;
-	if (cfg->num > 0)
-		num = cfg->num;
+	if (mode->num > 0)
+		num = mode->num;
+	if (mode->rand)
+		printf("Note: randomizes output makes trafgen slower!\n");
 
-	printf("MD: FIRE %s %luus\n\n", mode->rand ? "RND" : "RR", interval);
+	printf("MD: TX fastpath %s %luus\n\n", mode->rand ? "RND" : "RR", interval);
 	printf("Running! Hang up with ^C!\n\n");
 
 	itimer.it_interval.tv_sec = 0;
@@ -503,57 +504,40 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 	itimer.it_value.tv_usec = interval;
 	setitimer(ITIMER_REAL, &itimer, NULL); 
 
-	l = 0;
+	i = 0;
+
 	while (likely(sigint == 0) && likely(num > 0)) {
 		while (user_may_pull_from_tx(tx_ring.frames[it].iov_base) &&
 		       likely(num > 0)) {
 			hdr = tx_ring.frames[it].iov_base;
+
 			/* Kernel assumes: data = ph.raw + po->tp_hdrlen -
 			 *                        sizeof(struct sockaddr_ll); */
 			out = ((uint8_t *) hdr) + TPACKET_HDRLEN -
 			      sizeof(struct sockaddr_ll);
 
-			hdr->tp_h.tp_snaplen = cfg->pkts[l].plen;
-			hdr->tp_h.tp_len = cfg->pkts[l].plen;
+			hdr->tp_h.tp_snaplen = packets[i].len;
+			hdr->tp_h.tp_len = packets[i].len;
 
-			//FIXME
-			for (c = 0; c < cfg->pkts[l].clen; ++c) {
-				cnt = &(cfg->pkts[l].cnt[c]);
-				cnt->val -= cnt->min;
-				if (cnt->type == TYPE_INC) {
-					cnt->val = (cnt->val + cnt->inc) %
-						   (cnt->max - cnt->min + 1);
-				} else {
-					cnt->val = (cnt->val - cnt->inc) %
-						   (cnt->max - cnt->min + 1);
-				}
-				cnt->val += cnt->min;
-				cfg->pkts[l].payload[cnt->off] = cnt->val;
-			}
+			apply_counter(i);
+			apply_randomizer(i);
 
-			//FIXME
-			for (r = 0; r < cfg->pkts[l].rlen; ++r) {
-				rnd = &(cfg->pkts[l].rnd[r]);
-				rnd->val = lcrand(rnd->val); 
-				cfg->pkts[l].payload[rnd->off] = rnd->val;
-			}
+			fmemcpy(out, packets[i].payload, packets[i].len);
 
-			fmemcpy(out, cfg->pkts[l].payload, cfg->pkts[l].plen);
-			mode->stats.tx_bytes += cfg->pkts[l].plen;
+			mode->stats.tx_bytes += packets[i].len;
 			mode->stats.tx_packets++;
 
-			if (mode->rand)
-				l = mt_rand_int32() % cfg->len;
-			else {
-				l++;
-				if (l >= cfg->len)
-					l = 0;
+			if (mode->rand) {
+				i = mt_rand_int32() % packets_len;
+			} else {
+				i++;
+				atomic_cmp_swp(&i, packets_len, 0);
 			}
 
 			kernel_may_pull_from_tx(&hdr->tp_h);
 			next_slot_prewr(&it, &tx_ring);
 
-			if (cfg->num > 0)
+			if (mode->num > 0)
 				num--;
 			if (unlikely(sigint == 1))
 				break;
@@ -569,49 +553,46 @@ static void tx_fire_or_die(struct mode *mode, struct pktconf *cfg)
 	printf("\r%12lu bytes outgoing\n", mode->stats.tx_bytes);
 }
 
-static void cleanup_cfg(struct pktconf *cfg)
+static void cleanup_packets(void)
 {
-	size_t l;
+	int i;
 
-	for (l = 0; l < cfg->len; ++l) {
-		if (cfg->pkts[l].plen > 0)
-			xfree(cfg->pkts[l].payload);
-		if (cfg->pkts[l].clen > 0)
-			xfree(cfg->pkts[l].cnt);
-		if (cfg->pkts[l].rlen > 0)
-			xfree(cfg->pkts[l].rnd);
+	for (i = 0; i < packets_len; ++i) {
+		if (packets[i].len > 0)
+			xfree(packets[i].payload);
 	}
 
-	if (cfg->len > 0)
-		xfree(cfg->pkts);
+	if (packets_len > 0)
+		xfree(packets);
+
+	for (i = 0; i < packet_dyn_len; ++i) {
+		if (packet_dyns[i].counter_len > 0)
+			xfree(packet_dyns[i].counter);
+
+		if (packet_dyns[i].randomizer_len > 0)
+			xfree(packet_dyns[i].randomizer);
+	}
+
+	if (packet_dyn_len > 0)
+		xfree(packet_dyns);
 }
 
-static int main_loop(struct mode *mode, char *confname, unsigned long pkts,
-		     unsigned long gap)
+static void main_loop(struct mode *mode, char *confname)
 {
-	struct pktconf cfg;
+	compile_packets(confname, mode->verbose);
 
-	fmemset(&cfg, 0, sizeof(cfg));
-	cfg.num = pkts,
-	cfg.gap = gap,
-	cfg.len = 0,
-
-	compile_packets(confname, &cfg, mode->verbose);
-	if (gap > 0)
-		tx_tgap_or_die(mode, &cfg);
+	if (mode->gap > 0)
+		tx_slowpath_or_die(mode);
 	else
-		tx_fire_or_die(mode, &cfg);
+		tx_fastpath_or_die(mode);
 
-	cleanup_cfg(&cfg);
-
-	return 0;
+	cleanup_packets();
 }
 
 int main(int argc, char **argv)
 {
-	int c, opt_index, ret, i, j, interactive = 0;
+	int c, opt_index, i, j, interactive = 0;
 	char *confname = NULL, *ptr;
-	unsigned long pkts = 0, gap = 0;
 	bool prio_high = false;
 	struct mode mode;
 
@@ -619,6 +600,8 @@ int main(int argc, char **argv)
 
 	fmemset(&mode, 0, sizeof(mode));
 	mode.cpu = CPU_UNKNOWN;
+	mode.gap = 0;
+	mode.num = 0;
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 	       &opt_index)) != EOF) {
@@ -653,10 +636,10 @@ int main(int argc, char **argv)
 			mode.kpull = atol(optarg);
 			break;
 		case 'n':
-			pkts = atol(optarg);
+			mode.num = atol(optarg);
 			break;
 		case 't':
-			gap = atol(optarg);
+			mode.gap = atol(optarg);
 			break;
 		case 'S':
 			ptr = optarg;
@@ -676,8 +659,8 @@ int main(int argc, char **argv)
 				mode.reserve_size = 1 << 30;
 			else
 				panic("Syntax error in ring size param!\n");
-
 			*ptr = 0;
+
 			mode.reserve_size *= atoi(optarg);
 			break;
 		case 'b':
@@ -746,13 +729,14 @@ int main(int argc, char **argv)
 	}
 
 	if (interactive)
-		ret = main_loop_interactive(&mode, confname);
+		main_loop_interactive(&mode, confname);
 	else
-		ret = main_loop(&mode, confname, pkts, gap);
+		main_loop(&mode, confname);
 
 	if (mode.device)
 		xfree(mode.device);
 	if (confname)
 		xfree(confname);
-	return ret;
+
+	return 0;
 }

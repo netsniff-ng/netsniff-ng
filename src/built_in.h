@@ -122,6 +122,14 @@
 # define __deprecated		/* unimplemented */
 #endif
 
+#ifndef __export
+# define __export		/* unimplemented */
+#endif
+
+#ifndef __import
+# define __import		extern
+#endif
+
 #ifndef unreachable
 # define unreachable()		do { } while (1)
 #endif

@@ -15,12 +15,11 @@
 #define TYPE_DEC	1
 
 struct counter {
-	uint16_t id;
+	int type;
 	uint8_t min;
 	uint8_t max;
 	uint8_t inc;
 	uint8_t val;
-	int type;
 	off_t off;
 };
 
@@ -31,18 +30,14 @@ struct randomizer {
 
 struct packet {
 	uint8_t *payload;
-	size_t plen;
-	struct counter *cnt;
-	size_t clen;
-	struct randomizer *rnd;
-	size_t rlen;
+	size_t len;
 };
 
-struct pktconf {
-	unsigned long num;
-	unsigned long gap;
-	struct packet *pkts;
-	size_t len;
+struct packet_dynamics {
+	struct counter *counter;
+	size_t counter_len;
+	struct randomizer *randomizer;
+	size_t randomizer_len;
 };
 
 #endif /* TRAFGEN_CONF */

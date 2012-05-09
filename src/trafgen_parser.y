@@ -32,175 +32,173 @@ extern int yylex(void);
 extern void yyerror(const char *);
 extern int yylineno;
 extern char *yytext;
+extern int compile_packets(char *file, int verbose);
 
-static struct pktconf *conf = NULL;
-static int note_flag = 0;
+__import struct packet *packets;
+__import unsigned int packets_len;
+#define packets_last		(packets_len - 1)
+#define payload_last		(packets[packets_last].len - 1)
 
-#define am(x)	((x)->len - 1)
+__import struct packet_dynamics *packet_dyns;
+__import unsigned int packet_dyn_len;
+#define packetds_last		(packet_dyn_len - 1)
+#define packetds_c_last		(packet_dyns[packetds_last].counter_len - 1)
+#define packetds_r_last		(packet_dyns[packetds_last].randomizer_len - 1)
+
+static int dfunc_note_flag = 0;
 
 static void give_note_dynamic(void)
 {
-	if (!note_flag) {
+	if (!dfunc_note_flag) {
 		printf("Note: dynamic elements like drnd, dinc, ddec and "
 		       "others make trafgen slower!\n");
-		note_flag = 1;
+		dfunc_note_flag = 1;
 	}
 }
 
-static void dump_conf(struct pktconf *cfg)
+static inline void init_new_packet_slot(struct packet *slot)
 {
-	size_t i, j;
+	slot->payload = NULL;
+	slot->len = 0;
+}
 
-	printf("n %lu, gap %lu us, pkts %zu\n", cfg->num, cfg->gap, cfg->len);
-	if (cfg->len == 0)
-		return;
-	for (i = 0; i < cfg->len; ++i) {
-		printf("[%zu] pkt\n", i);
-		printf(" len %zu cnts %zu rnds %zu\n", cfg->pkts[i].plen,
-		       cfg->pkts[i].clen, cfg->pkts[i].rlen);
-		printf(" payload ");
-		for (j = 0; j < cfg->pkts[i].plen; ++j)
-			printf("%02x ", cfg->pkts[i].payload[j]);
-		printf("\n");
-		for (j = 0; j < cfg->pkts[i].clen; ++j)
-			printf(" cnt%zu [%u,%u], inc %u, off %ld type %s\n",
-			       j, cfg->pkts[i].cnt[j].min,
-			       cfg->pkts[i].cnt[j].max,
-			       cfg->pkts[i].cnt[j].inc,
-			       cfg->pkts[i].cnt[j].off,
-			       cfg->pkts[i].cnt[j].type == TYPE_INC ?
-			       "inc" : "dec");
-		for (j = 0; j < cfg->pkts[i].rlen; ++j)
-			printf(" rnd%zu off %ld\n",
-			       j, cfg->pkts[i].rnd[j].off);
-	}
+static inline void init_new_counter_slot(struct packet_dynamics *slot)
+{
+	slot->counter = NULL;
+	slot->counter_len = 0;
+}
+
+static inline void init_new_randomizer_slot(struct packet_dynamics *slot)
+{
+	slot->randomizer = NULL;
+	slot->randomizer_len = 0;
 }
 
 static void realloc_packet(void)
 {
-	conf->len++;
-	conf->pkts = xrealloc(conf->pkts, 1, conf->len * sizeof(*conf->pkts));
-	fmemset(&conf->pkts[am(conf)], 0, sizeof(conf->pkts[am(conf)]));
+	packets_len++;
+	packets = xrealloc(packets, 1, packets_len * sizeof(*packets));
+
+	init_new_packet_slot(&packets[packets_last]);
+
+	packet_dyn_len++;
+	packet_dyns = xrealloc(packet_dyns, 1,
+			       packet_dyn_len * sizeof(*packet_dyns));
+
+	init_new_counter_slot(&packet_dyns[packetds_last]);
+	init_new_randomizer_slot(&packet_dyns[packetds_last]);
 }
 
 static void set_byte(uint8_t val)
 {
-	int base;
-
-	conf->pkts[am(conf)].plen++;
-	conf->pkts[am(conf)].payload = xrealloc(conf->pkts[am(conf)].payload,
-						1, conf->pkts[am(conf)].plen);
-
-	base = conf->pkts[am(conf)].plen - 1;
-	conf->pkts[am(conf)].payload[base] = val;
+	packets[packets_last].len++;
+	packets[packets_last].payload = xrealloc(packets[packets_last].payload,
+						 1, packets[packets_last].len);
+	packets[packets_last].payload[payload_last] = val;
 }
 
 static void set_fill(uint8_t val, size_t len)
 {
-	int i, base;
+	int i;
 
-	conf->pkts[am(conf)].plen += len;
-	conf->pkts[am(conf)].payload = xrealloc(conf->pkts[am(conf)].payload,
-						1, conf->pkts[am(conf)].plen);
-
-	base = conf->pkts[am(conf)].plen - 1;
-	for (i = 0; i < len; ++i) {
-		conf->pkts[am(conf)].payload[base - i] = val;
-	}
+	packets[packets_last].len += len;
+	packets[packets_last].payload = xrealloc(packets[packets_last].payload,
+						 1, packets[packets_last].len);
+	for (i = 0; i < len; ++i)
+		packets[packets_last].payload[payload_last - i] = val;
 }
 
 static void set_rnd(size_t len)
 {
-	int i, base;
+	int i;
 
-	conf->pkts[am(conf)].plen += len;
-	conf->pkts[am(conf)].payload = xrealloc(conf->pkts[am(conf)].payload,
-						1, conf->pkts[am(conf)].plen);
-
-	base = conf->pkts[am(conf)].plen - 1;
-	for (i = 0; i < len; ++i) {
-		conf->pkts[am(conf)].payload[base - i] = (uint8_t) mt_rand_int32();
-	}
+	packets[packets_last].len += len;
+	packets[packets_last].payload = xrealloc(packets[packets_last].payload,
+						 1, packets[packets_last].len);
+	for (i = 0; i < len; ++i)
+		packets[packets_last].payload[payload_last - i] =
+			(uint8_t) mt_rand_int32();
 }
 
 static void set_seqinc(uint8_t start, size_t len, uint8_t stepping)
 {
-	int i, base;
+	int i;
 
-	conf->pkts[am(conf)].plen += len;
-	conf->pkts[am(conf)].payload = xrealloc(conf->pkts[am(conf)].payload,
-						1, conf->pkts[am(conf)].plen);
-
-	base = conf->pkts[am(conf)].plen - 1;
+	packets[packets_last].len += len;
+	packets[packets_last].payload = xrealloc(packets[packets_last].payload,
+						 1, packets[packets_last].len);
 	for (i = 0; i < len; ++i) {
 		int off = len - 1 - i;
-		conf->pkts[am(conf)].payload[base - off] = start;
+		packets[packets_last].payload[payload_last - off] = start;
 		start += stepping;
 	}
 }
 
 static void set_seqdec(uint8_t start, size_t len, uint8_t stepping)
 {
-	int i, base;
+	int i;
 
-	conf->pkts[am(conf)].plen += len;
-	conf->pkts[am(conf)].payload = xrealloc(conf->pkts[am(conf)].payload,
-						1, conf->pkts[am(conf)].plen);
-
-	base = conf->pkts[am(conf)].plen - 1;
+	packets[packets_last].len += len;
+	packets[packets_last].payload = xrealloc(packets[packets_last].payload,
+						 1, packets[packets_last].len);
 	for (i = 0; i < len; ++i) {
 		int off = len - 1 - i;
-		conf->pkts[am(conf)].payload[base - off] = start;
+		packets[packets_last].payload[payload_last - off] = start;
 		start -= stepping;
 	}
 }
 
+static inline void setup_new_counter(struct counter *counter, uint8_t start,
+				     uint8_t stop, uint8_t stepping, int type)
+{
+	counter->min = start;
+	counter->max = stop;
+	counter->inc = stepping;
+	counter->val = (type == TYPE_INC) ? start : stop;
+	counter->off = payload_last;
+	counter->type = type;
+}
+
+static inline void setup_new_randomizer(struct randomizer *randomizer)
+{
+	randomizer->val = (uint8_t) mt_rand_int32();
+	randomizer->off = payload_last;
+}
+
 static void set_drnd(void)
 {
-	int base, rnds;
-	struct randomizer *new;
-
 	give_note_dynamic();
 
-	conf->pkts[am(conf)].plen++;
-	conf->pkts[am(conf)].payload = xrealloc(conf->pkts[am(conf)].payload,
-						1, conf->pkts[am(conf)].plen);
+	packets[packets_last].len++;
+	packets[packets_last].payload = xrealloc(packets[packets_last].payload,
+						 1, packets[packets_last].len);
 
-	base = conf->pkts[am(conf)].plen - 1;
-	rnds = ++(conf->pkts[am(conf)].rlen);
+	packet_dyns[packetds_last].randomizer_len++;
+	packet_dyns[packetds_last].randomizer =
+		xrealloc(packet_dyns[packetds_last].randomizer, 1,
+			 packet_dyns[packetds_last].randomizer_len *
+				sizeof(struct randomizer));
 
-	conf->pkts[am(conf)].rnd = xrealloc(conf->pkts[am(conf)].rnd,
-					    1, rnds * sizeof(struct randomizer));
-
-	new = &conf->pkts[am(conf)].rnd[rnds - 1];
-	new->val = (uint8_t) mt_rand_int32();
-	new->off = base;
+	setup_new_randomizer(&packet_dyns[packetds_last].
+				randomizer[packetds_r_last]);
 }
 
 static void set_dincdec(uint8_t start, uint8_t stop, uint8_t stepping, int type)
 {
-	int base, cnts;
-	struct counter *new;
-
 	give_note_dynamic();
 
-	conf->pkts[am(conf)].plen++;
-	conf->pkts[am(conf)].payload = xrealloc(conf->pkts[am(conf)].payload,
-						1, conf->pkts[am(conf)].plen);
+	packets[packets_last].len++;
+	packets[packets_last].payload = xrealloc(packets[packets_last].payload,
+						 1, packets[packets_last].len);
 
-	base = conf->pkts[am(conf)].plen - 1;
-	cnts = ++(conf->pkts[am(conf)].clen);
+	packet_dyns[packetds_last].counter_len++;
+	packet_dyns[packetds_last].counter =
+		xrealloc(packet_dyns[packetds_last].counter, 1,
+			 packet_dyns[packetds_last].counter_len *
+				sizeof(struct counter));
 
-	conf->pkts[am(conf)].cnt = xrealloc(conf->pkts[am(conf)].cnt,
-					    1, cnts * sizeof(struct counter));
-
-	new = &conf->pkts[am(conf)].cnt[cnts - 1];
-	new->min = start;
-	new->max = stop;
-	new->inc = stepping;
-	new->val = type == TYPE_INC ? start : stop;
-	new->off = base;
-	new->type = type;
+	setup_new_counter(&packet_dyns[packetds_last].counter[packetds_c_last],
+			  start, stop, stepping, type);
 }
 
 %}
@@ -322,32 +320,60 @@ elem
 
 %%
 
-int compile_packets(char *file, struct pktconf *cfg, int verbose)
+static void dump_conf(void)
 {
+	size_t i, j;
+
+	for (i = 0; i < packets_len; ++i) {
+		printf("[%zu] pkt\n", i);
+		printf(" len %zu cnts %zu rnds %zu\n",
+		       packets[i].len,
+		       packet_dyns[i].counter_len,
+		       packet_dyns[i].randomizer_len);
+
+		printf(" payload ");
+		for (j = 0; j < packets[i].len; ++j)
+			printf("%02x ", packets[i].payload[j]);
+		printf("\n");
+
+		for (j = 0; j < packet_dyns[i].counter_len; ++j)
+			printf(" cnt%zu [%u,%u], inc %u, off %ld type %s\n", j,
+			       packet_dyns[i].counter[j].min,
+			       packet_dyns[i].counter[j].max,
+			       packet_dyns[i].counter[j].inc,
+			       packet_dyns[i].counter[j].off,
+			       packet_dyns[i].counter[j].type == TYPE_INC ?
+			       "inc" : "dec");
+
+		for (j = 0; j < packet_dyns[i].randomizer_len; ++j)
+			printf(" rnd%zu off %ld\n", j,
+			       packet_dyns[i].randomizer[j].off);
+	}
+}
+
+int compile_packets(char *file, int verbose)
+{
+	mt_init_by_seed_time();
+
 	yyin = fopen(file, "r");
 	if (!yyin)
 		panic("Cannot open file!\n");
-	if (!cfg)
-		panic("No config given!\n");
 
-	mt_init_by_seed_time();
-	conf = cfg;
 	realloc_packet();
-
 	yyparse();
-	/* hack ... */
-	conf->len--;
+	/* XXX hack ... */
+	packets_len--;
+	packet_dyn_len--;
 
-	if (verbose)
-		dump_conf(cfg);
-	else {
+	if (verbose) {
+		dump_conf();
+	} else {
 		int i;
 		size_t total_len = 0;
 
-		printf("%zu packets to schedule\n", conf->len);
-
-		for (i = 0; i < conf->len; ++i)
-			total_len += conf->pkts[i].plen;
+		printf("%u packets to schedule\n", packets_len);
+		for (i = 0; i < packets_len; ++i)
+			total_len += packets[i].len;
 		printf("%zu bytes in total\n", total_len);
 	}
 
@@ -357,6 +383,5 @@ int compile_packets(char *file, struct pktconf *cfg, int verbose)
 
 void yyerror(const char *err)
 {
-	panic("Syntax error at line %d: '%s'! %s!\n",
-	      yylineno, yytext, err);
+	panic("Syntax error at line %d: '%s'! %s!\n", yylineno, yytext, err);
 }
