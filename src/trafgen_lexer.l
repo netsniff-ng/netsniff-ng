@@ -79,6 +79,9 @@ number_ascii	[a-zA-Z]
 {number_ascii}	{ yylval.number = (uint8_t) (*yytext);
 		  return number_ascii; }
 
+"'"."'"		{ yylval.number = (uint8_t) (*(yytext + 1));
+		  return number_ascii; }
+
 ";"[^\n]*	{/* NOP */}
 "#"[^\n]*	{/* NOP */}
 "\n"		{ yylineno++; }
