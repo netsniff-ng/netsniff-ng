@@ -239,16 +239,16 @@ payload
 	;
 
 white
-	: white K_WHITE
-	| white K_NEWL
-	| K_WHITE
-	| K_NEWL
+	: white K_WHITE { }
+	| white K_NEWL { }
+	| K_WHITE { }
+	| K_NEWL { }
 	;
 
 delimiter
-	: ','
-	| white
-	| ',' white
+	: ',' { }
+	| white { }
+	| ',' white { }
 	;
 
 elem_delimiter
