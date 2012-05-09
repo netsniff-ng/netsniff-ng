@@ -10,9 +10,12 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <sys/types.h>
 
 #define TYPE_INC	0
 #define TYPE_DEC	1
+
+struct mode;
 
 struct counter {
 	int type;
@@ -39,5 +42,10 @@ struct packet_dynamics {
 	struct randomizer *randomizer;
 	size_t randomizer_len;
 };
+
+extern int compile_packets(char *file, int verbose);
+extern void cleanup_packets(void);
+
+extern int main_loop_interactive(struct mode *mode, char *confname);
 
 #endif /* TRAFGEN_CONF */

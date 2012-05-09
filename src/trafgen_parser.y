@@ -32,7 +32,6 @@ extern int yylex(void);
 extern void yyerror(const char *);
 extern int yylineno;
 extern char *yytext;
-extern int compile_packets(char *file, int verbose);
 
 __import struct packet *packets;
 __import unsigned int packets_len;
@@ -356,6 +355,30 @@ static void dump_conf(void)
 			printf(" rnd%zu off %ld\n", j,
 			       packet_dyns[i].randomizer[j].off);
 	}
+}
+
+void cleanup_packets(void)
+{
+	int i;
+
+	for (i = 0; i < packets_len; ++i) {
+		if (packets[i].len > 0)
+			xfree(packets[i].payload);
+	}
+
+	if (packets_len > 0)
+		xfree(packets);
+
+	for (i = 0; i < packet_dyn_len; ++i) {
+		if (packet_dyns[i].counter_len > 0)
+			xfree(packet_dyns[i].counter);
+
+		if (packet_dyns[i].randomizer_len > 0)
+			xfree(packet_dyns[i].randomizer);
+	}
+
+	if (packet_dyn_len > 0)
+		xfree(packet_dyns);
 }
 
 int compile_packets(char *file, int verbose)

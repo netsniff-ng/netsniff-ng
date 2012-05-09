@@ -1,8 +1,6 @@
 #include <libcli.h>
 
-struct mode;
-
-extern int main_loop_interactive(struct mode *mode, char *confname);
+#include "trafgen_conf.h"
 
 int main_loop_interactive(struct mode *mode, char *confname)
 {

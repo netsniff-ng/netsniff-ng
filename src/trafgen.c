@@ -201,9 +201,6 @@ struct mode {
 	unsigned long gap;
 };
 
-__import int main_loop_interactive(struct mode *mode, char *confname);
-__import int compile_packets(char *file, int verbose);
-
 static int sock;
 static struct itimerval itimer;
 static unsigned long interval = TX_KERNEL_PULL_INT;
@@ -551,30 +548,6 @@ static void tx_fastpath_or_die(struct mode *mode)
 	printf("\n");
 	printf("\r%12lu frames outgoing\n", mode->stats.tx_packets);
 	printf("\r%12lu bytes outgoing\n", mode->stats.tx_bytes);
-}
-
-static void cleanup_packets(void)
-{
-	int i;
-
-	for (i = 0; i < packets_len; ++i) {
-		if (packets[i].len > 0)
-			xfree(packets[i].payload);
-	}
-
-	if (packets_len > 0)
-		xfree(packets);
-
-	for (i = 0; i < packet_dyn_len; ++i) {
-		if (packet_dyns[i].counter_len > 0)
-			xfree(packet_dyns[i].counter);
-
-		if (packet_dyns[i].randomizer_len > 0)
-			xfree(packet_dyns[i].randomizer);
-	}
-
-	if (packet_dyn_len > 0)
-		xfree(packet_dyns);
 }
 
 static void main_loop(struct mode *mode, char *confname)
