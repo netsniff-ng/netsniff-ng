@@ -340,6 +340,16 @@ int compile_packets(char *file, struct pktconf *cfg, int verbose)
 
 	if (verbose)
 		dump_conf(cfg);
+	else {
+		int i;
+		size_t total_len = 0;
+
+		printf("%zu packets to schedule\n", conf->len);
+
+		for (i = 0; i < conf->len; ++i)
+			total_len += conf->pkts[i].plen;
+		printf("%zu bytes in total\n", total_len);
+	}
 
 	fclose(yyin);
 	return 0;

@@ -194,6 +194,7 @@ struct mode {
 	/* 0 for automatic, > 0 for manual */
 	unsigned int reserve_size;
 	int jumbo_support;
+	int verbose;
 };
 
 #define CPU_UNKNOWN  -1
@@ -204,7 +205,7 @@ extern int compile_packets(char *file, struct pktconf *cfg, int verbose);
 
 sig_atomic_t sigint = 0;
 
-static const char *short_options = "d:c:n:t:vJhS:HQb:B:rk:xi:o:";
+static const char *short_options = "d:c:n:t:vJhS:HQb:B:rk:xi:o:V";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -222,6 +223,7 @@ static struct option long_options[] = {
 	{"rand", no_argument, 0, 'r'},
 	{"prio-high", no_argument, 0, 'H'},
 	{"notouch-irq", no_argument, 0, 'Q'},
+	{"verbose", no_argument, 0, 'V'},
 	{"version", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
@@ -594,7 +596,7 @@ static int main_loop(struct mode *mode, char *confname, unsigned long pkts,
 	cfg.gap = gap,
 	cfg.len = 0,
 
-	compile_packets(confname, &cfg, 1);
+	compile_packets(confname, &cfg, mode->verbose);
 	if (gap > 0)
 		tx_tgap_or_die(mode, &cfg);
 	else
@@ -626,6 +628,9 @@ int main(int argc, char **argv)
 			break;
 		case 'v':
 			version();
+			break;
+		case 'V':
+			mode.verbose = 1;
 			break;
 		case 'd':
 		case 'o':
