@@ -320,6 +320,13 @@ elem
 
 %%
 
+static void finalize_packet(void)
+{
+	/* XXX hack ... we allocated one packet pointer too much */
+	packets_len--;
+	packet_dyn_len--;
+}
+
 static void dump_conf(void)
 {
 	size_t i, j;
@@ -361,9 +368,7 @@ int compile_packets(char *file, int verbose)
 
 	realloc_packet();
 	yyparse();
-	/* XXX hack ... */
-	packets_len--;
-	packet_dyn_len--;
+	finalize_packet();
 
 	if (verbose) {
 		dump_conf();
