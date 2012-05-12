@@ -10,12 +10,12 @@ us a short mail, if it runs successfully on hardware other than that.
 
 What libraries / tools are required?
 
- - libc (all)
+ - glibc (all)
  - cmake (all)
  - libpthread (curvetun, netsniff-ng, flowtop)
  - libncurses (ifpps, flowtop)
  - libGeoIP and its database (ashunt, flowtop)
- - flex, bison (bpfc)
+ - flex, bison (bpfc, trafgen)
  - ntpd [or equivalent] (curvetun)
  - libnacl (curvetun)
  - libnetfilter-conntrack (flowtop)
