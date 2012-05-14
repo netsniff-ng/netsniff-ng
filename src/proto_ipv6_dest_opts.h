@@ -41,7 +41,7 @@ static inline void dissect_opt_dest(struct pkt_buff *pkt, size_t *opt_len)
 static inline void dest_opts(struct pkt_buff *pkt)
 {
 	uint16_t hdr_ext_len;
-	size_t opt_len;
+	ssize_t opt_len;
 	struct dest_optshdr *dest_ops;
 
 	dest_ops = (struct dest_optshdr *) pkt_pull(pkt, sizeof(*dest_ops));
@@ -50,11 +50,16 @@ static inline void dest_opts(struct pkt_buff *pkt)
 	hdr_ext_len = (dest_ops->hdr_len + 1) * 8;
 	/* Options length in Bytes */
 	opt_len = hdr_ext_len - sizeof(*dest_ops);
-	if (dest_ops == NULL || opt_len > pkt_len(pkt))
+	if (dest_ops == NULL)
 		return;
 
 	tprintf("\t [ Destination Options ");
 	tprintf("NextHdr (%u), ", dest_ops->h_next_header);
+	if (opt_len > pkt_len(pkt) || opt_len < 0) {
+	      tprintf("HdrExtLen (%u, %u Bytes, %s)", dest_ops->hdr_len,
+		    hdr_ext_len, colorize_start_full(black, red)
+		    "invalid" colorize_end());
+	}
 	tprintf("HdrExtLen (%u, %u Bytes)", dest_ops->hdr_len,
 		hdr_ext_len);
 
@@ -69,7 +74,7 @@ static inline void dest_opts(struct pkt_buff *pkt)
 static inline void dest_opts_less(struct pkt_buff *pkt)
 {
 	uint16_t hdr_ext_len;
-	size_t opt_len;
+	ssize_t opt_len;
 	struct dest_optshdr *dest_ops;
 
 	dest_ops = (struct dest_optshdr *) pkt_pull(pkt, sizeof(*dest_ops));
@@ -78,7 +83,7 @@ static inline void dest_opts_less(struct pkt_buff *pkt)
 	hdr_ext_len = (dest_ops->hdr_len + 1) * 8;
 	/* Options length in Bytes */
 	opt_len = hdr_ext_len - sizeof(*dest_ops);
-	if (dest_ops == NULL || opt_len > pkt_len(pkt))
+	if (dest_ops == NULL || opt_len > pkt_len(pkt) || opt_len < 0)
 		return;
 
 	tprintf(" Dest Ops");
