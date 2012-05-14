@@ -15,6 +15,7 @@ IF(LIBCLI_FOUND AND FLEX_FOUND AND BISON_FOUND)
 					../xsys.c
 					../xstring.c
 					../mtrand.c
+					../mac80211.c
 					../ring_tx.c
 					${FLEX_BPF_LEXER_OUTPUTS}
 					${BISON_BPF_PARSER_OUTPUT_SOURCE}
