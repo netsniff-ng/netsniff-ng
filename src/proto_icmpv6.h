@@ -790,10 +790,11 @@ static inline int8_t dissect_neighb_disc_ops(struct pkt_buff *pkt)
 			  icmpv6_neighb_disc_ops(icmp_neighb_disc->type)
 			  : "Type Unknown", icmp_neighb_disc->type);
 		if (ops_payl_len > pkt_len(pkt) || ops_payl_len < 0) {
-			tprintf("Length (%u, %u bytes, %s) ",
-					  colorize_start_full(black, red)
-					  "invalid" colorize_end(),
-					  icmp_neighb_disc->len, ops_total_len);
+			tprintf("Length (%u, %u bytes, %s%s%s) ",
+					  icmp_neighb_disc->len,
+					  ops_total_len,
+					  colorize_start_full(black, red),
+					  "invalid", colorize_end());
 			return 0;
 		}
 
@@ -1656,8 +1657,8 @@ static inline void icmpv6(struct pkt_buff *pkt)
 	tprintf("Chks (0x%x)", ntohs(icmp->h_chksum));
 	if (optional)
 		if (!((*optional) (pkt)))
-		      tprintf("%s", colorize_start_full(black, red)
-			    "Failed to dissect Message" colorize_end());
+		      tprintf("\n%s%s%s", colorize_start_full(black, red),
+			    "Failed to dissect Message", colorize_end());
 	tprintf(" ]\n");
 }
 
