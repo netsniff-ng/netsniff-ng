@@ -79,7 +79,7 @@ struct bind_err_msg {
 
 
 static inline void dissect_mobility_options(struct pkt_buff *pkt,
-					     uint16_t *message_data_len)
+					     ssize_t *message_data_len)
 {
 	/* Have to been upgraded.
 	 * http://tools.ietf.org/html/rfc6275#section-6.2.1
@@ -93,26 +93,28 @@ static inline void dissect_mobility_options(struct pkt_buff *pkt,
 }
 
 static inline void dissect_mobilityhdr_type_0(struct pkt_buff *pkt,
-					      uint16_t *message_data_len)
+					      ssize_t *message_data_len)
 {
 	struct bin_refr_req_msg *type_0;
 	
 	type_0 = (struct bin_refr_req_msg *) pkt_pull(pkt, sizeof(*type_0));
 	*message_data_len -= sizeof(*type_0);
-	if (type_0 == NULL || *message_data_len > pkt_len(pkt))
+	if (type_0 == NULL || *message_data_len > pkt_len(pkt) ||
+							*message_data_len < 0)
 		return;
 
 	dissect_mobility_options(pkt, message_data_len);
 }
 
 static inline void dissect_mobilityhdr_type_1_2(struct pkt_buff *pkt,
-						uint16_t *message_data_len)
+						ssize_t *message_data_len)
 {
 	struct tst_init_msg *type_1_2;
 
 	type_1_2 = (struct tst_init_msg *) pkt_pull(pkt, sizeof(*type_1_2));
 	*message_data_len -= sizeof(*type_1_2);
-	if (type_1_2 == NULL || *message_data_len > pkt_len(pkt))
+	if (type_1_2 == NULL || *message_data_len > pkt_len(pkt) ||
+							*message_data_len < 0)
 		return;
 
 	tprintf("Init Cookie (0x%x)", ntohll(type_1_2->init_cookie));
@@ -121,13 +123,14 @@ static inline void dissect_mobilityhdr_type_1_2(struct pkt_buff *pkt,
 }
 
 static inline void dissect_mobilityhdr_type_3_4(struct pkt_buff *pkt,
-						uint16_t *message_data_len)
+						ssize_t *message_data_len)
 {
 	struct tst_msg *type_3_4;
 
 	type_3_4 = (struct tst_msg *) pkt_pull(pkt, sizeof(*type_3_4));
 	*message_data_len -= sizeof(*type_3_4);
-	if (type_3_4 == NULL || *message_data_len > pkt_len(pkt))
+	if (type_3_4 == NULL || *message_data_len > pkt_len(pkt) ||
+							*message_data_len < 0)
 		return;
 
 	tprintf("HN Index (%u) ", ntohs(type_3_4->nonce_index));
@@ -138,13 +141,14 @@ static inline void dissect_mobilityhdr_type_3_4(struct pkt_buff *pkt,
 }
 
 static inline void dissect_mobilityhdr_type_5(struct pkt_buff *pkt,
-						uint16_t *message_data_len)
+						ssize_t *message_data_len)
 {
 	struct bind_upd_msg *type_5;
 
 	type_5 = (struct bind_upd_msg *) pkt_pull(pkt, sizeof(*type_5));
 	*message_data_len -= sizeof(*type_5);
-	if (type_5 == NULL || *message_data_len > pkt_len(pkt))
+	if (type_5 == NULL || *message_data_len > pkt_len(pkt) ||
+							*message_data_len < 0)
 		return;
 
 	tprintf("Sequence (0x%x) ", ntohs(type_5->sequence));
@@ -155,13 +159,14 @@ static inline void dissect_mobilityhdr_type_5(struct pkt_buff *pkt,
 }
 
 static inline void dissect_mobilityhdr_type_6(struct pkt_buff *pkt,
-						uint16_t *message_data_len)
+						ssize_t *message_data_len)
 {
 	struct bind_ack_msg *type_6;
 
 	type_6 = (struct bind_ack_msg *) pkt_pull(pkt, sizeof(*type_6));
 	*message_data_len -= sizeof(*type_6);
-	if (type_6 == NULL || *message_data_len > pkt_len(pkt))
+	if (type_6 == NULL || *message_data_len > pkt_len(pkt) ||
+							*message_data_len < 0)
 		return;
 
 	tprintf("Status (0x%x) ", type_6->status);
@@ -173,7 +178,7 @@ static inline void dissect_mobilityhdr_type_6(struct pkt_buff *pkt,
 }
 
 static inline void dissect_mobilityhdr_type_7(struct pkt_buff *pkt,
-						uint16_t *message_data_len)
+						ssize_t *message_data_len)
 {
 	char address[INET6_ADDRSTRLEN];
 	uint64_t addr;
@@ -182,7 +187,8 @@ static inline void dissect_mobilityhdr_type_7(struct pkt_buff *pkt,
 	type_7 = (struct bind_err_msg *) pkt_pull(pkt, sizeof(*type_7));
 	*message_data_len -= sizeof(*type_7);
 	addr = ntohll(type_7->home_addr);
-	if (type_7 == NULL || *message_data_len > pkt_len(pkt))
+	if (type_7 == NULL || *message_data_len > pkt_len(pkt) ||
+							*message_data_len < 0)
 		return;
 
 	tprintf("Status (0x%x) ", type_7->status);
@@ -194,7 +200,7 @@ static inline void dissect_mobilityhdr_type_7(struct pkt_buff *pkt,
 }
 
 static inline void get_mh_type(struct pkt_buff *pkt,
-			       uint16_t *message_data_len, uint8_t *mh_type)
+			       ssize_t *message_data_len, uint8_t *mh_type)
 {
 	switch (*mh_type) {
 	case BINDING_REFRESH_REQUEST_MESSAGE:
@@ -236,7 +242,8 @@ static inline void get_mh_type(struct pkt_buff *pkt,
 
 static inline void mobility(struct pkt_buff *pkt)
 {
-	uint16_t hdr_ext_len, message_data_len;
+	uint16_t hdr_ext_len;
+	ssize_t message_data_len;
 	struct mobilityhdr *mobility;
 
 	mobility = (struct mobilityhdr *) pkt_pull(pkt, sizeof(*mobility));
@@ -245,11 +252,17 @@ static inline void mobility(struct pkt_buff *pkt)
 	hdr_ext_len = (mobility->hdr_len + 1) * 8;
 	/* Total Message Data length in Bytes*/
 	message_data_len = (hdr_ext_len - sizeof(*mobility));
-	if (mobility == NULL || message_data_len > pkt_len(pkt))
+	if (mobility == NULL)
 		return;
 
 	tprintf("\t [ Mobility ");
 	tprintf("NextHdr (%u), ", mobility->payload_proto);
+	if (message_data_len > pkt_len(pkt) || message_data_len < 0){
+		tprintf("HdrExtLen (%u, %u Bytes %s), ", mobility->hdr_len,
+				hdr_ext_len, colorize_start_full(black, red)
+				"invalid" colorize_end());
+		return;
+	}
 	tprintf("HdrExtLen (%u, %u Bytes), ", mobility->hdr_len,
 		hdr_ext_len);
 	tprintf("MH Type (%u), ", mobility->MH_type);
@@ -261,13 +274,16 @@ static inline void mobility(struct pkt_buff *pkt)
 
 	tprintf(" ]\n");
 
+	if (message_data_len > pkt_len(pkt) || message_data_len < 0)
+		return;
 	pkt_pull(pkt, message_data_len);
 	pkt_set_proto(pkt, &eth_lay3, mobility->payload_proto);
 }
 
 static inline void mobility_less(struct pkt_buff *pkt)
 {
-	uint16_t hdr_ext_len, message_data_len;
+	uint16_t hdr_ext_len;
+	ssize_t message_data_len;
 	struct mobilityhdr *mobility;
 
 	mobility = (struct mobilityhdr *) pkt_pull(pkt, sizeof(*mobility));
@@ -276,7 +292,8 @@ static inline void mobility_less(struct pkt_buff *pkt)
 	hdr_ext_len = (mobility->hdr_len + 1) * 8;
 	/* Total Message Data length in Bytes*/
 	message_data_len = (hdr_ext_len - sizeof(*mobility));
-	if (mobility == NULL || message_data_len > pkt_len(pkt))
+	if (mobility == NULL || message_data_len > pkt_len(pkt) ||
+					      message_data_len < 0)
 		return;
 
 	tprintf(" Mobility Type (%u), ", mobility->MH_type);

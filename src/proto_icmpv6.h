@@ -283,7 +283,7 @@ struct icmpv6_type_154 {
 	uint8_t ops[0];
 } __packed;
 
-static inline void print_ipv6_addr_list(struct pkt_buff *pkt, uint8_t nr_addr)
+static inline int8_t print_ipv6_addr_list(struct pkt_buff *pkt, uint8_t nr_addr)
 {
 	char address[INET6_ADDRSTRLEN];
 	struct in6_addr *addr;
@@ -291,12 +291,14 @@ static inline void print_ipv6_addr_list(struct pkt_buff *pkt, uint8_t nr_addr)
 	while (nr_addr--) {
 	    addr = (struct in6_addr *) pkt_pull(pkt, sizeof(*addr));
 	    if (addr == NULL)
-		    return;
+		    return 0;
 
 	    tprintf("\n\t   Address: %s",
 		    inet_ntop(AF_INET6, addr, address,
 			      sizeof(address)));
 	}
+
+	return 1;
 }
 
 static char *icmpv6_mcast_rec_types[] = {
@@ -308,7 +310,7 @@ static char *icmpv6_mcast_rec_types[] = {
 	"BLOCK_OLD_SOURCES",
 };
 
-static inline void dissect_icmpv6_mcast_rec(struct pkt_buff *pkt,
+static inline int8_t dissect_icmpv6_mcast_rec(struct pkt_buff *pkt,
 					    uint16_t nr_rec)
 {
 	uint16_t nr_src, aux_data_len_bytes;
@@ -318,7 +320,7 @@ static inline void dissect_icmpv6_mcast_rec(struct pkt_buff *pkt,
 		addr_rec = (struct icmpv6_mldv2_addr_rec *)
 		      pkt_pull(pkt,sizeof(*addr_rec));
 		if (addr_rec == NULL)
-			return;
+			return 0;
 		aux_data_len_bytes = addr_rec->aux_data_len * 4;
 		nr_src = ntohs(addr_rec->nr_src);
 
@@ -327,45 +329,60 @@ static inline void dissect_icmpv6_mcast_rec(struct pkt_buff *pkt,
 			icmpv6_mcast_rec_types) ?
 			icmpv6_mcast_rec_types[addr_rec->rec_type - 1]
 			: "Unknown", addr_rec->rec_type);
+		if (aux_data_len_bytes > pkt_len(pkt)) {
+			tprintf(", Aux Data Len (%u, %u bytes) %s",
+			      addr_rec->aux_data_len,
+			      aux_data_len_bytes,
+			      colorize_start_full(black, red) "invalid"
+			      colorize_end());
+			return 0;
+		}
 		tprintf(", Aux Data Len (%u, %u bytes)",addr_rec->aux_data_len,
 			aux_data_len_bytes);
 		tprintf(", Nr. of Sources (%u)",nr_src);
 
-		print_ipv6_addr_list(pkt, nr_src);
+		if(!print_ipv6_addr_list(pkt, nr_src))
+			return 0;
 
 		tprintf(", Aux Data: ");
 		while (aux_data_len_bytes--) {
 			  tprintf("%x", *pkt_pull(pkt,1));
 		}
 	}
+
+	return 1;
 }
 
-static inline void dissect_neighb_disc_ops_1(struct pkt_buff *pkt,
-					      uint16_t len)
+static inline int8_t dissect_neighb_disc_ops_1(struct pkt_buff *pkt,
+					      ssize_t len)
 {
 	struct icmpv6_neighb_disc_ops_type_1_2 *icmp_neighb_disc_1;
 
 	icmp_neighb_disc_1 = (struct icmpv6_neighb_disc_ops_type_1_2 *)
 				pkt_pull(pkt,sizeof(*icmp_neighb_disc_1));
 	if (icmp_neighb_disc_1 == NULL)
-			return;
+			return 0;
 	len -= sizeof(*icmp_neighb_disc_1);
+	if (len < 0)
+	      return 0;
 
 	tprintf("Address 0x");
 
 	while(len--){
 		    tprintf("%x", *pkt_pull(pkt,1));
 	}
+
+	return 1;
 }
 
-static inline void dissect_neighb_disc_ops_2(struct pkt_buff *pkt,
-					      uint16_t len)
+static inline int8_t dissect_neighb_disc_ops_2(struct pkt_buff *pkt,
+					      ssize_t len)
 {
-	dissect_neighb_disc_ops_1(pkt, len);
+	return dissect_neighb_disc_ops_1(pkt, len);
 }
 
-static inline void dissect_neighb_disc_ops_3(struct pkt_buff *pkt,
-					      uint16_t len)
+static inline int8_t dissect_neighb_disc_ops_3(struct pkt_buff *pkt,
+					      ssize_t len)
 {
 	char address[INET6_ADDRSTRLEN];
 	struct icmpv6_neighb_disc_ops_type_3 *icmp_neighb_disc_3;
@@ -373,8 +390,10 @@ static inline void dissect_neighb_disc_ops_3(struct pkt_buff *pkt,
 	icmp_neighb_disc_3 = (struct icmpv6_neighb_disc_ops_type_3 *)
 				pkt_pull(pkt,sizeof(*icmp_neighb_disc_3));
 	if (icmp_neighb_disc_3 == NULL)
-			return;
+			return 0;
 	len -= sizeof(*icmp_neighb_disc_3);
+	if (len < 0)
+	      return 0;
 
 	tprintf("Prefix Len (%u) ",icmp_neighb_disc_3->prefix_len);
 	tprintf("L (%u) A (%u) Res1 (0x%x) ",icmp_neighb_disc_3->l_a_res1 >> 7,
@@ -389,18 +408,22 @@ static inline void dissect_neighb_disc_ops_3(struct pkt_buff *pkt,
 	tprintf("Prefix: %s ",
 				inet_ntop(AF_INET6,&icmp_neighb_disc_3->prefix,
 				address, sizeof(address)));
+
+	return 1;
 }
 
-static inline void dissect_neighb_disc_ops_4(struct pkt_buff *pkt,
-					      uint16_t len)
+static inline int8_t dissect_neighb_disc_ops_4(struct pkt_buff *pkt,
+					      ssize_t len)
 {
 	struct icmpv6_neighb_disc_ops_type_4 *icmp_neighb_disc_4;
 
 	icmp_neighb_disc_4 = (struct icmpv6_neighb_disc_ops_type_4 *)
 				pkt_pull(pkt,sizeof(*icmp_neighb_disc_4));
 	if (icmp_neighb_disc_4 == NULL)
-			return;
+			return 0;
 	len -= sizeof(*icmp_neighb_disc_4);
+	if (len < 0)
+	      return 0;
 
 	tprintf("Reserved 1 (0x%x) ", ntohs(icmp_neighb_disc_4->res1));
 	tprintf("Reserved 2 (0x%x) ", ntohl(icmp_neighb_disc_4->res2));
@@ -409,44 +432,52 @@ static inline void dissect_neighb_disc_ops_4(struct pkt_buff *pkt,
 	while (len--) {
 		    tprintf("%x", *pkt_pull(pkt,1));
 	}
+
+	return 1;
 }
 
-static inline void dissect_neighb_disc_ops_5(struct pkt_buff *pkt,
-					      uint16_t len)
+static inline int8_t dissect_neighb_disc_ops_5(struct pkt_buff *pkt,
+					      ssize_t len)
 {
 	struct icmpv6_neighb_disc_ops_type_5 *icmp_neighb_disc_5;
 
 	icmp_neighb_disc_5 = (struct icmpv6_neighb_disc_ops_type_5 *)
 				pkt_pull(pkt,sizeof(*icmp_neighb_disc_5));
 	if (icmp_neighb_disc_5 == NULL)
-			return;
+			return 0;
 	len -= sizeof(*icmp_neighb_disc_5);
+	if (len < 0)
+	      return 0;
 
 	tprintf("Reserved (0x%x) ", ntohs(icmp_neighb_disc_5->res1));
 	tprintf("MTU (%u)", ntohl(icmp_neighb_disc_5->MTU));
+
+	return 1;
 }
 
-static inline void dissect_neighb_disc_ops_9(struct pkt_buff *pkt,
-					      uint16_t len)
+static inline int8_t dissect_neighb_disc_ops_9(struct pkt_buff *pkt,
+					      ssize_t len)
 {
 	struct icmpv6_neighb_disc_ops_type_9_10 *icmp_neighb_disc_9;
 
 	icmp_neighb_disc_9 = (struct icmpv6_neighb_disc_ops_type_9_10 *)
 				pkt_pull(pkt,sizeof(*icmp_neighb_disc_9));
 	if (icmp_neighb_disc_9 == NULL)
-			return;
+			return 0;
 	len -= sizeof(*icmp_neighb_disc_9);
+	if (len < 0)
+	      return 0;
 
 	tprintf("Reserved 1 (0x%x) ", ntohs(icmp_neighb_disc_9->res1));
 	tprintf("Reserved 2 (0x%x) ", ntohl(icmp_neighb_disc_9->res2));
 
-	print_ipv6_addr_list(pkt, len / sizeof(struct in6_addr));
+	return print_ipv6_addr_list(pkt, len / sizeof(struct in6_addr));
 }
 
-static inline void dissect_neighb_disc_ops_10(struct pkt_buff *pkt,
-					      uint16_t len)
+static inline int8_t dissect_neighb_disc_ops_10(struct pkt_buff *pkt,
+					      ssize_t len)
 {
-	dissect_neighb_disc_ops_9(pkt, len);
+	return dissect_neighb_disc_ops_9(pkt, len);
 }
 
 static char *icmpv6_neighb_disc_ops_15_name[] = {
@@ -454,20 +485,21 @@ static char *icmpv6_neighb_disc_ops_15_name[] = {
 	"FQDN",
 };
 
-static inline void dissect_neighb_disc_ops_15(struct pkt_buff *pkt,
-					      uint16_t len)
+static inline int8_t dissect_neighb_disc_ops_15(struct pkt_buff *pkt,
+					      ssize_t len)
 {
 	size_t pad_len;
-	uint16_t name_len;
+	ssize_t name_len;
 	struct icmpv6_neighb_disc_ops_type_15 *icmp_neighb_disc_15;
 
 	icmp_neighb_disc_15 = (struct icmpv6_neighb_disc_ops_type_15 *)
 				pkt_pull(pkt,sizeof(*icmp_neighb_disc_15));
 	if (icmp_neighb_disc_15 == NULL)
-			return;
+			return 0;
 	len -= sizeof(*icmp_neighb_disc_15);
+	if (len < 0)
+	      return 0;
 	pad_len = icmp_neighb_disc_15->pad_len;
-	name_len = len - pad_len;
 
 	tprintf("Name Type %s (%u) ",
 		icmpv6_code_range_valid(icmp_neighb_disc_15->name_type - 1,
@@ -475,7 +507,17 @@ static inline void dissect_neighb_disc_ops_15(struct pkt_buff *pkt,
 		icmpv6_neighb_disc_ops_15_name[
 		icmp_neighb_disc_15->name_type - 1] : "Unknown",
 		icmp_neighb_disc_15->name_type);
-	tprintf("Pad Len (0x%x) ", icmp_neighb_disc_15->pad_len);
+	if (pad_len > len) {
+		tprintf("Pad Len (%u, invalid)\n%s", pad_len,
+			colorize_start_full(black, red)
+			"Skip Option" colorize_end());
+		pkt_pull(pkt, len);
+		return 1;
+	}
+	else
+		tprintf("Pad Len (%u) ", pad_len);
+
+	name_len = len - pad_len;
 	
 	tprintf("Name (");
 	while (name_len--) {
@@ -489,22 +531,26 @@ static inline void dissect_neighb_disc_ops_15(struct pkt_buff *pkt,
 		    tprintf("%x", *pkt_pull(pkt,1));
 	}
 	tprintf(")");
+
+	return 1;
 }
 
 static char *icmpv6_neighb_disc_ops_16_cert[] = {
 	"X.509v3 Certificate",
 };
 
-static inline void dissect_neighb_disc_ops_16(struct pkt_buff *pkt,
-					      uint16_t len)
+static inline int8_t dissect_neighb_disc_ops_16(struct pkt_buff *pkt,
+					      ssize_t len)
 {
 	struct icmpv6_neighb_disc_ops_type_16 *icmp_neighb_disc_16;
 
 	icmp_neighb_disc_16 = (struct icmpv6_neighb_disc_ops_type_16 *)
 				pkt_pull(pkt,sizeof(*icmp_neighb_disc_16));
 	if (icmp_neighb_disc_16 == NULL)
-			return;
+			return 0;
 	len -= sizeof(*icmp_neighb_disc_16);
+	if (len < 0)
+	      return 0;
 
 	tprintf("Cert Type %s (%u) ",
 		icmpv6_code_range_valid(icmp_neighb_disc_16->cert_type - 1,
@@ -519,6 +565,8 @@ static inline void dissect_neighb_disc_ops_16(struct pkt_buff *pkt,
 		    tprintf("%x", *pkt_pull(pkt,1));
 	}
 	tprintf(") ");
+
+	return 1;
 }
 
 static char *icmpv6_neighb_disc_ops_17_codes[] = {
@@ -528,8 +576,8 @@ static char *icmpv6_neighb_disc_ops_17_codes[] = {
 	"NAR's Prefix",
 };
 
-static inline void dissect_neighb_disc_ops_17(struct pkt_buff *pkt,
-					      uint16_t len)
+static inline int8_t dissect_neighb_disc_ops_17(struct pkt_buff *pkt,
+					      ssize_t len)
 {
 	char address[INET6_ADDRSTRLEN];
 	struct icmpv6_neighb_disc_ops_type_17 *icmp_neighb_disc_17;
@@ -537,8 +585,10 @@ static inline void dissect_neighb_disc_ops_17(struct pkt_buff *pkt,
 	icmp_neighb_disc_17 = (struct icmpv6_neighb_disc_ops_type_17 *)
 				pkt_pull(pkt,sizeof(*icmp_neighb_disc_17));
 	if (icmp_neighb_disc_17 == NULL)
-			return;
+			return 0;
 	len -= sizeof(*icmp_neighb_disc_17);
+	if (len < 0)
+	      return 0;
 
 	tprintf("Opt Code %s (%u) ",
 		icmpv6_code_range_valid(icmp_neighb_disc_17->opt_code - 1,
@@ -556,8 +606,10 @@ static inline void dissect_neighb_disc_ops_17(struct pkt_buff *pkt,
 				  (struct icmpv6_neighb_disc_ops_type_17_1 *)
 				  pkt_pull(pkt,sizeof(*icmp_neighb_disc_17_1));
 		    if (icmp_neighb_disc_17_1 == NULL)
-				  return;
+				  return 0;
 		    len -= sizeof(*icmp_neighb_disc_17_1);
+		    if (len < 0)
+			  return 0;
 
 		    tprintf("Res (0x%x) ",icmp_neighb_disc_17_1->res);
 		    tprintf("Addr: %s ",
@@ -572,20 +624,25 @@ static inline void dissect_neighb_disc_ops_17(struct pkt_buff *pkt,
 				  (struct icmpv6_neighb_disc_ops_type_17_2 *)
 				  pkt_pull(pkt,sizeof(*icmp_neighb_disc_17_2));
 		    if (icmp_neighb_disc_17_2 == NULL)
-				  return;
+				  return 0;
 		    len -= sizeof(*icmp_neighb_disc_17_2);
+		    if (len < 0)
+			  return 0;
 
 		    tprintf("Addr: %s ",
 			  inet_ntop(AF_INET6,&icmp_neighb_disc_17_2->ipv6_addr,
 			  address, sizeof(address)));
 	}
 	else {
-		    tprintf("Error Wrong Params (");
+		    tprintf("%s (", colorize_start_full(black, red)
+			      "Error Wrong Length. Skip Option" colorize_end());
 		    while (len--) {
 				tprintf("%x", *pkt_pull(pkt,1));
 		    }
 		    tprintf(") ");
 	}
+
+	return 1;
 }
 
 static char *icmpv6_neighb_disc_ops_19_codes[] = {
@@ -603,16 +660,18 @@ static char *icmpv6_neighb_disc_ops_19_codes[] = {
          identified by the LLA",
 };
 
-static inline void dissect_neighb_disc_ops_19(struct pkt_buff *pkt,
-					      uint16_t len)
+static inline int8_t dissect_neighb_disc_ops_19(struct pkt_buff *pkt,
+					      ssize_t len)
 {
 	struct icmpv6_neighb_disc_ops_type_19 *icmp_neighb_disc_19;
 
 	icmp_neighb_disc_19 = (struct icmpv6_neighb_disc_ops_type_19 *)
 				pkt_pull(pkt,sizeof(*icmp_neighb_disc_19));
 	if (icmp_neighb_disc_19 == NULL)
-			return;
+			return 0;
 	len -= sizeof(*icmp_neighb_disc_19);
+	if (len < 0)
+	      return 0;
 
 	tprintf("Opt Code %s (%u) ",
 		icmpv6_code_range_valid(icmp_neighb_disc_19->opt_code,
@@ -626,6 +685,8 @@ static inline void dissect_neighb_disc_ops_19(struct pkt_buff *pkt,
 		    tprintf("%x", *pkt_pull(pkt,1));
 	}
 	tprintf(") ");
+
+	return 1;
 }
 
 static inline char *icmpv6_neighb_disc_ops(uint8_t code) {
@@ -706,17 +767,18 @@ static inline char *icmpv6_neighb_disc_ops(uint8_t code) {
 	return NULL;
 };
 
-static inline void dissect_neighb_disc_ops(struct pkt_buff *pkt)
+static inline int8_t dissect_neighb_disc_ops(struct pkt_buff *pkt)
 {
 	size_t pad_bytes;
-	uint16_t ops_total_len, ops_payl_len;
+	uint16_t ops_total_len;
+	ssize_t ops_payl_len;
 	struct icmpv6_neighb_disc_ops_general *icmp_neighb_disc;
 
 	while(pkt_len(pkt)) {
 		icmp_neighb_disc = (struct icmpv6_neighb_disc_ops_general *)
 				pkt_pull(pkt,sizeof(*icmp_neighb_disc));
 		if (icmp_neighb_disc == NULL)
-			return;
+			return 0;
 
 		ops_total_len = icmp_neighb_disc->len * 8;
 		pad_bytes = (size_t) (ops_total_len % 8);
@@ -727,60 +789,87 @@ static inline void dissect_neighb_disc_ops(struct pkt_buff *pkt)
 			  icmpv6_neighb_disc_ops(icmp_neighb_disc->type) ?
 			  icmpv6_neighb_disc_ops(icmp_neighb_disc->type)
 			  : "Type Unknown", icmp_neighb_disc->type);
-		tprintf("Length (%u, %u bytes) ", icmp_neighb_disc->len,
-			ops_total_len);
+		if (ops_payl_len > pkt_len(pkt) || ops_payl_len < 0) {
+			tprintf("Length (%u, %u bytes, %s%s%s) ",
+					  icmp_neighb_disc->len,
+					  ops_total_len,
+					  colorize_start_full(black, red),
+					  "invalid", colorize_end());
+			return 0;
+		}
+
+		tprintf("Length (%u, %u bytes) ",icmp_neighb_disc->len,
+						 ops_total_len);
 
 		switch (icmp_neighb_disc->type) {
 		case 1:
-			dissect_neighb_disc_ops_1(pkt, ops_payl_len);
+			if (!dissect_neighb_disc_ops_1(pkt, ops_payl_len))
+			      return 0;
 			break;
 		case 2:
-			dissect_neighb_disc_ops_2(pkt, ops_payl_len);
+			if (!dissect_neighb_disc_ops_2(pkt, ops_payl_len))
+			      return 0;
 			break;
 		case 3:
-			dissect_neighb_disc_ops_3(pkt, ops_payl_len);
+			if (!dissect_neighb_disc_ops_3(pkt, ops_payl_len))
+			      return 0;
 			break;
 		case 4:
-			dissect_neighb_disc_ops_4(pkt, ops_payl_len);
+			if (!dissect_neighb_disc_ops_4(pkt, ops_payl_len))
+			      return 0;
 			break;
 		case 5:
-			dissect_neighb_disc_ops_5(pkt, ops_payl_len);
+			if (!dissect_neighb_disc_ops_5(pkt, ops_payl_len))
+			      return 0;
 			break;
 		/* Type 9 and 10 defined in
 		 * http://tools.ietf.org/html/rfc3122#section-3.1
 		 */
 		case 9:
-			dissect_neighb_disc_ops_9(pkt, ops_payl_len);
+			if (!dissect_neighb_disc_ops_9(pkt, ops_payl_len))
+			      return 0;
 			break;
 		case 10:
-			dissect_neighb_disc_ops_10(pkt, ops_payl_len);
+			if (!dissect_neighb_disc_ops_10(pkt, ops_payl_len))
+			      return 0;
 			break;
 		/* Type 15 and 16 defined in
 		 * http://tools.ietf.org/html/rfc3971#section-6.4.3
 		 * http://tools.ietf.org/html/rfc3971#section-6.4.4
 		 */
 		case 15:
-			dissect_neighb_disc_ops_15(pkt, ops_payl_len);
+			if (!dissect_neighb_disc_ops_15(pkt, ops_payl_len))
+			      return 0;
 			break;
 		case 16:
-			dissect_neighb_disc_ops_16(pkt, ops_payl_len);
+			if (!dissect_neighb_disc_ops_16(pkt, ops_payl_len))
+			      return 0;
 			break;
 		/* Type 17 and 19 defined in
 		 * http://tools.ietf.org/html/rfc5568#section-6.4
 		 */
 		case 17:
-			dissect_neighb_disc_ops_17(pkt, ops_payl_len);
+			if (!dissect_neighb_disc_ops_17(pkt, ops_payl_len))
+			      return 0;
 			break;
 		case 19:
-			dissect_neighb_disc_ops_19(pkt, ops_payl_len);
+			if (!dissect_neighb_disc_ops_19(pkt, ops_payl_len))
+			      return 0;
 			break;
 		default:
 			pkt_pull(pkt, ops_payl_len);
 		}
 
 		/* Skip Padding Bytes */
+		if (pad_bytes > pkt_len(pkt)) {
+			tprintf(" %s",colorize_start_full(black, red)
+			"Invalid Padding" colorize_end());
+			return 0;
+		}
 		pkt_pull(pkt, pad_bytes);
 	}
+
+	return 1;
 }
 
 static char *icmpv6_type_1_codes[] = {
@@ -794,28 +883,32 @@ static char *icmpv6_type_1_codes[] = {
 	"Error in Source Routing Header",
 };
 
-static inline void dissect_icmpv6_type1(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type1(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_1_3 *icmp_1;
 	
 	icmp_1 = (struct icmpv6_type_1_3 *) pkt_pull(pkt,sizeof(*icmp_1));
 	if (icmp_1 == NULL)
-		return;
+		return 0;
 
 	tprintf(", Unused (0x%x)",ntohl(icmp_1->unused));
 	tprintf(" Payload include as much of invoking packet");
+
+	return 1;
 }
 
-static inline void dissect_icmpv6_type2(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type2(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_2 *icmp_2;
 
 	icmp_2 = (struct icmpv6_type_2 *) pkt_pull(pkt,sizeof(*icmp_2));
 	if (icmp_2 == NULL)
-		return;
+		return 0;
 
 	tprintf(", MTU (0x%x)",ntohl(icmp_2->MTU));
 	tprintf(" Payload include as much of invoking packet");
+
+	return 1;
 }
 
 static char *icmpv6_type_3_codes[] = {
@@ -823,16 +916,18 @@ static char *icmpv6_type_3_codes[] = {
 	"Fragment reassembly time exceeded",
 };
 
-static inline void dissect_icmpv6_type3(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type3(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_1_3 *icmp_3;
 
 	icmp_3 = (struct icmpv6_type_1_3 *) pkt_pull(pkt,sizeof(*icmp_3));
 	if (icmp_3 == NULL)
-		return;
+		return 0;
 
 	tprintf(", Unused (0x%x)",ntohl(icmp_3->unused));
 	tprintf(" Payload include as much of invoking packet");
+
+	return 1;
 }
 
 static char *icmpv6_type_4_codes[] = {
@@ -841,47 +936,53 @@ static char *icmpv6_type_4_codes[] = {
 	"Unrecognized IPv6 option encountered",
 };
 
-static inline void dissect_icmpv6_type4(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type4(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_4 *icmp_4;
 
 	icmp_4 = (struct icmpv6_type_4 *) pkt_pull(pkt,sizeof(*icmp_4));
 	if (icmp_4 == NULL)
-		return;
+		return 0;
 
 	tprintf(", Pointer (0x%x)",ntohl(icmp_4->pointer));
 	tprintf(" Payload include as much of invoking packet");
+
+	return 1;
 }
 
-static inline void dissect_icmpv6_type128(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type128(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_128_129 *icmp_128;
 
 	icmp_128 = (struct icmpv6_type_128_129 *)
 		      pkt_pull(pkt,sizeof(*icmp_128));
 	if (icmp_128 == NULL)
-		return;
+		return 0;
 
 	tprintf(", ID (0x%x)",ntohs(icmp_128->id));
 	tprintf(", Seq. Nr. (%u)",ntohs(icmp_128->sn));
 	tprintf(" Payload include Data");
+
+	return 1;
 }
 
-static inline void dissect_icmpv6_type129(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type129(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_128_129 *icmp_129;
 
 	icmp_129 = (struct icmpv6_type_128_129 *)
 		      pkt_pull(pkt,sizeof(*icmp_129));
 	if (icmp_129 == NULL)
-		return;
+		return 0;
 
 	tprintf(", ID (0x%x)",ntohs(icmp_129->id));
 	tprintf(", Seq. Nr. (%u)",ntohs(icmp_129->sn));
 	tprintf(" Payload include Data");
+
+	return 1;
 }
 
-static inline void dissect_icmpv6_type130(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type130(struct pkt_buff *pkt)
 {
 	char address[INET6_ADDRSTRLEN];
 	uint16_t nr_src, maxrespdel;
@@ -891,7 +992,7 @@ static inline void dissect_icmpv6_type130(struct pkt_buff *pkt)
 	icmp_130 = (struct icmpv6_type_130_131_132 *)
 		      pkt_pull(pkt,sizeof(*icmp_130));
 	if (icmp_130 == NULL)
-		return;
+		return 0;
 	maxrespdel = ntohs(icmp_130->maxrespdel);
 
 	if(pkt_len(pkt) >= sizeof(struct icmpv6_type_130_mldv2))
@@ -914,7 +1015,7 @@ static inline void dissect_icmpv6_type130(struct pkt_buff *pkt)
 		icmp_130_mldv2 = (struct icmpv6_type_130_mldv2 *)
 			      pkt_pull(pkt,sizeof(*icmp_130_mldv2));
 		if (icmp_130_mldv2 == NULL)
-			return;
+			return 0;
 		
 		nr_src = ntohs(icmp_130_mldv2->nr_src);
 
@@ -924,11 +1025,13 @@ static inline void dissect_icmpv6_type130(struct pkt_buff *pkt)
 		tprintf(", QQIC (%u)",icmp_130_mldv2->QQIC);
 		tprintf(", Nr Src (0x%x)",nr_src);
 
-		print_ipv6_addr_list(pkt, nr_src);
+		return print_ipv6_addr_list(pkt, nr_src);
 	}
+
+	return 1;
 }
 
-static inline void dissect_icmpv6_type131(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type131(struct pkt_buff *pkt)
 {
 	char address[INET6_ADDRSTRLEN];
 	struct icmpv6_type_130_131_132 *icmp_131;
@@ -936,42 +1039,44 @@ static inline void dissect_icmpv6_type131(struct pkt_buff *pkt)
 	icmp_131 = (struct icmpv6_type_130_131_132 *)
 		      pkt_pull(pkt,sizeof(*icmp_131));
 	if (icmp_131 == NULL)
-		return;
+		return 0;
 
 	tprintf(", Max Resp Delay (%ums)",ntohs(icmp_131->maxrespdel));
 	tprintf(", Res (0x%x)",ntohs(icmp_131->res));
 	tprintf(", Address: %s",
 			inet_ntop(AF_INET6, &icmp_131->ipv6_addr,
 				  address, sizeof(address)));
+
+	return 1;
 }
 
-static inline void dissect_icmpv6_type132(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type132(struct pkt_buff *pkt)
 {
-	dissect_icmpv6_type131(pkt);
+	return dissect_icmpv6_type131(pkt);
 }
 
-static inline void dissect_icmpv6_type133(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type133(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_133_141_142 *icmp_133;
 
 	icmp_133 = (struct icmpv6_type_133_141_142 *)
 		      pkt_pull(pkt,sizeof(*icmp_133));
 	if (icmp_133 == NULL)
-		return;
+		return 0;
 
 	tprintf(", Reserved (0x%x)",ntohl(icmp_133->res));
 
-	dissect_neighb_disc_ops(pkt);
+	return dissect_neighb_disc_ops(pkt);
 }
 
-static inline void dissect_icmpv6_type134(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type134(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_134 *icmp_134;
 
 	icmp_134 = (struct icmpv6_type_134 *)
 		      pkt_pull(pkt,sizeof(*icmp_134));
 	if (icmp_134 == NULL)
-		return;
+		return 0;
 
 	tprintf(", Cur Hop Limit (%u)",icmp_134->cur_hop_limit);
 	tprintf(", M (%u) O (%u)",icmp_134->m_o_res >> 7,
@@ -980,10 +1085,10 @@ static inline void dissect_icmpv6_type134(struct pkt_buff *pkt)
 	tprintf(", Reachable Time (%ums)",ntohl(icmp_134->reachable_time));
 	tprintf(", Retrans Timer (%ums)",ntohl(icmp_134->retrans_timer));
 
-	dissect_neighb_disc_ops(pkt);
+	return dissect_neighb_disc_ops(pkt);
 }
 
-static inline void dissect_icmpv6_type135(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type135(struct pkt_buff *pkt)
 {
 	char address[INET6_ADDRSTRLEN];
 	struct icmpv6_type_135 *icmp_135;
@@ -991,17 +1096,17 @@ static inline void dissect_icmpv6_type135(struct pkt_buff *pkt)
 	icmp_135 = (struct icmpv6_type_135 *)
 		      pkt_pull(pkt,sizeof(*icmp_135));
 	if (icmp_135 == NULL)
-		return;
+		return 0;
 
 	tprintf(", Reserved (0x%x)",ntohl(icmp_135->res));
 	tprintf(", Target Address: %s",
 			inet_ntop(AF_INET6, &icmp_135->ipv6_addr,
 				  address, sizeof(address)));
 
-	dissect_neighb_disc_ops(pkt);
+	return dissect_neighb_disc_ops(pkt);
 }
 
-static inline void dissect_icmpv6_type136(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type136(struct pkt_buff *pkt)
 {
 	char address[INET6_ADDRSTRLEN];
 	uint32_t r_s_o_res;
@@ -1010,7 +1115,7 @@ static inline void dissect_icmpv6_type136(struct pkt_buff *pkt)
 	icmp_136 = (struct icmpv6_type_136 *)
 		      pkt_pull(pkt,sizeof(*icmp_136));
 	if (icmp_136 == NULL)
-		return;
+		return 0;
 	r_s_o_res = ntohl(icmp_136->r_s_o_res);
 
 	tprintf(", R (%u) S (%u) O (%u) Reserved (0x%x)", r_s_o_res >> 31,
@@ -1020,10 +1125,10 @@ static inline void dissect_icmpv6_type136(struct pkt_buff *pkt)
 			inet_ntop(AF_INET6, &icmp_136->ipv6_addr,
 				  address, sizeof(address)));
 
-	dissect_neighb_disc_ops(pkt);
+	return dissect_neighb_disc_ops(pkt);
 }
 
-static inline void dissect_icmpv6_type137(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type137(struct pkt_buff *pkt)
 {
 	char address[INET6_ADDRSTRLEN];
 	struct icmpv6_type_137 *icmp_137;
@@ -1031,7 +1136,7 @@ static inline void dissect_icmpv6_type137(struct pkt_buff *pkt)
 	icmp_137 = (struct icmpv6_type_137 *)
 		      pkt_pull(pkt,sizeof(*icmp_137));
 	if (icmp_137 == NULL)
-		return;
+		return 0;
 
 	tprintf(", Reserved (0x%x)",icmp_137->res);
 	tprintf(", Target Address: %s",
@@ -1041,7 +1146,7 @@ static inline void dissect_icmpv6_type137(struct pkt_buff *pkt)
 			inet_ntop(AF_INET6, &icmp_137->ipv6_dest_addr,
 				  address, sizeof(address)));
 
-	dissect_neighb_disc_ops(pkt);
+	return dissect_neighb_disc_ops(pkt);
 }
 
 static inline void dissect_icmpv6_rr_body(struct pkt_buff *pkt)
@@ -1067,14 +1172,14 @@ static inline char *icmpv6_type_138_codes(uint8_t code) {
 	return NULL;
 };
 
-static inline void dissect_icmpv6_type138(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type138(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_138 *icmp_138;
 
 	icmp_138 = (struct icmpv6_type_138 *)
 		      pkt_pull(pkt,sizeof(*icmp_138));
 	if (icmp_138 == NULL)
-		return;
+		return 0;
 
 	tprintf(", Sequence Nr. (%u)",ntohl(icmp_138->seq_nr));
 	tprintf(", Segment Nr. (%u)",icmp_138->seg_nr);
@@ -1086,6 +1191,8 @@ static inline void dissect_icmpv6_type138(struct pkt_buff *pkt)
 	tprintf(", Res (0x%x)", ntohl(icmp_138->res));
 
 	dissect_icmpv6_rr_body(pkt);
+
+	return 1;
 }
 
 static inline void dissect_icmpv6_node_inf_data(struct pkt_buff *pkt)
@@ -1112,7 +1219,7 @@ static char *icmpv6_type_139_codes[] = {
 	"Data contains IPv4 Address",
 };
 
-static inline void dissect_icmpv6_type139(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type139(struct pkt_buff *pkt)
 {
 	char *qtype_name = "Unknown";
 	uint16_t qtype_nr;
@@ -1121,7 +1228,7 @@ static inline void dissect_icmpv6_type139(struct pkt_buff *pkt)
 	icmp_139 = (struct icmpv6_type_139_140 *)
 		      pkt_pull(pkt,sizeof(*icmp_139));
 	if (icmp_139 == NULL)
-		return;
+		return 0;
 
 	qtype_nr = ntohs(icmp_139->qtype);
 	if (icmpv6_code_range_valid(qtype_nr, icmpv6_node_inf_qtypes))
@@ -1132,6 +1239,8 @@ static inline void dissect_icmpv6_type139(struct pkt_buff *pkt)
 	tprintf(", Nonce (0x%x)",ntohll(icmp_139->nonce));
 
 	dissect_icmpv6_node_inf_data(pkt);
+
+	return 1;
 }
 
 static char *icmpv6_type_140_codes[] = {
@@ -1140,22 +1249,22 @@ static char *icmpv6_type_140_codes[] = {
 	"Qtype is unknown to the Responder",
 };
 
-static inline void dissect_icmpv6_type140(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type140(struct pkt_buff *pkt)
 {
-	dissect_icmpv6_type139(pkt);
+	return dissect_icmpv6_type139(pkt);
 }
 
-static inline void dissect_icmpv6_type141(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type141(struct pkt_buff *pkt)
 {
-	dissect_icmpv6_type133(pkt);
+	return dissect_icmpv6_type133(pkt);
 }
 
-static inline void dissect_icmpv6_type142(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type142(struct pkt_buff *pkt)
 {
-	dissect_icmpv6_type133(pkt);
+	return dissect_icmpv6_type133(pkt);
 }
 
-static inline void dissect_icmpv6_type143(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type143(struct pkt_buff *pkt)
 {
 	uint16_t nr_rec;
 	struct icmpv6_type_143 *icmp_143;
@@ -1163,49 +1272,52 @@ static inline void dissect_icmpv6_type143(struct pkt_buff *pkt)
 	icmp_143 = (struct icmpv6_type_143 *)
 		      pkt_pull(pkt,sizeof(*icmp_143));
 	if (icmp_143 == NULL)
-		return;
+		return 0;
 	nr_rec = ntohs(icmp_143->nr_rec);
 	
 	tprintf(", Res (0x%x)",ntohs(icmp_143->res));
 	tprintf(", Nr. Mcast Addr Records (%u)",nr_rec);
 
-	dissect_icmpv6_mcast_rec(pkt, nr_rec);
+	return dissect_icmpv6_mcast_rec(pkt, nr_rec);
 }
 
-static inline void dissect_icmpv6_type144(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type144(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_144_146 *icmp_144;
 
 	icmp_144 = (struct icmpv6_type_144_146 *)
 		      pkt_pull(pkt,sizeof(*icmp_144));
 	if (icmp_144 == NULL)
-		return;
+		return 0;
 
 	tprintf(", ID (%u)",ntohs(icmp_144->id));
 	tprintf(", Res (0x%x)",ntohs(icmp_144->res));
+
+	return 1;
 }
 
-static inline void dissect_icmpv6_type145(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type145(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_145 *icmp_145;
 
 	icmp_145 = (struct icmpv6_type_145 *)
 		      pkt_pull(pkt,sizeof(*icmp_145));
 	if (icmp_145 == NULL)
-		return;
+		return 0;
 
 	tprintf(", ID (%u)",ntohs(icmp_145->id));
 	tprintf(", Res (0x%x)",ntohs(icmp_145->res));
 
-	print_ipv6_addr_list(pkt, pkt_len(pkt) / sizeof(struct in6_addr));
+	return print_ipv6_addr_list(pkt, pkt_len(pkt) /
+					sizeof(struct in6_addr));
 }
 
-static inline void dissect_icmpv6_type146(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type146(struct pkt_buff *pkt)
 {
-	dissect_icmpv6_type144(pkt);
+	return dissect_icmpv6_type144(pkt);
 }
 
-static inline void dissect_icmpv6_type147(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type147(struct pkt_buff *pkt)
 {
 	uint16_t m_o_res;
 	struct icmpv6_type_147 *icmp_147;
@@ -1213,109 +1325,117 @@ static inline void dissect_icmpv6_type147(struct pkt_buff *pkt)
 	icmp_147 = (struct icmpv6_type_147 *)
 		      pkt_pull(pkt,sizeof(*icmp_147));
 	if (icmp_147 == NULL)
-		return;
+		return 0;
 	m_o_res = ntohs(icmp_147->m_o_res);
 
 	tprintf(", ID (%u)",ntohs(icmp_147->id));
 	tprintf(", M (%u) O (%u) Res (0x%x)",m_o_res >> 15,
 		      (m_o_res >> 14) & 1, m_o_res & 0x3FFF);
 
-	dissect_neighb_disc_ops(pkt);
+	return dissect_neighb_disc_ops(pkt);
 }
 
-static inline void dissect_icmpv6_type148(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type148(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_148 *icmp_148;
 
 	icmp_148 = (struct icmpv6_type_148 *)
 		      pkt_pull(pkt,sizeof(*icmp_148));
 	if (icmp_148 == NULL)
-		return;
+		return 0;
 
 	tprintf(", ID (%u)",ntohs(icmp_148->id));
 	tprintf(", Component (%u)",ntohs(icmp_148->comp));
 
-	dissect_neighb_disc_ops(pkt);
+	return dissect_neighb_disc_ops(pkt);
 }
 
-static inline void dissect_icmpv6_type149(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type149(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_149 *icmp_149;
 
 	icmp_149 = (struct icmpv6_type_149 *)
 		      pkt_pull(pkt,sizeof(*icmp_149));
 	if (icmp_149 == NULL)
-		return;
+		return 0;
 
 	tprintf(", ID (%u)",ntohs(icmp_149->id));
 	tprintf(", All Components (%u)",ntohs(icmp_149->all_comp));
 	tprintf(", Component (%u)",ntohs(icmp_149->comp));
 	tprintf(", Res (0x%x)",ntohs(icmp_149->res));
 
-	dissect_neighb_disc_ops(pkt);
+	return dissect_neighb_disc_ops(pkt);
 }
 
-static inline void dissect_icmpv6_type150(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type150(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_150 *icmp_150;
 
 	icmp_150 = (struct icmpv6_type_150 *)
 		      pkt_pull(pkt,sizeof(*icmp_150));
 	if (icmp_150 == NULL)
-		return;
+		return 0;
 
 	tprintf(", Subtype (%u)",icmp_150->subtype);
 	tprintf(", Res (0x%x)",icmp_150->res);
 	tprintf(", Options in Payload");
+
+	return 1;
 }
 
-static inline void dissect_icmpv6_type151(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type151(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_151 *icmp_151;
 
 	icmp_151 = (struct icmpv6_type_151 *)
 		      pkt_pull(pkt,sizeof(*icmp_151));
 	if (icmp_151 == NULL)
-		return;
+		return 0;
 
 	tprintf(", Query Interval (%us)",ntohs(icmp_151->query_intv));
 	tprintf(", Robustness Variable  (%u)",ntohs(icmp_151->rob_var));
+
+	return 1;
 }
 
-static inline void dissect_icmpv6_type152(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type152(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_152 *icmp_152;
 
 	icmp_152 = (struct icmpv6_type_152 *)
 		      pkt_pull(pkt,sizeof(*icmp_152));
 	if (icmp_152 == NULL)
-		return;
+		return 0;
+
+	return 1;
 }
 
-static inline void dissect_icmpv6_type153(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type153(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_153 *icmp_153;
 
 	icmp_153 = (struct icmpv6_type_153 *)
 		      pkt_pull(pkt,sizeof(*icmp_153));
 	if (icmp_153 == NULL)
-		return;
+		return 0;
+
+	return 1;
 }
 
-static inline void dissect_icmpv6_type154(struct pkt_buff *pkt)
+static inline int8_t dissect_icmpv6_type154(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_154 *icmp_154;
 
 	icmp_154 = (struct icmpv6_type_154 *)
 		      pkt_pull(pkt,sizeof(*icmp_154));
 	if (icmp_154 == NULL)
-		return;
+		return 0;
 
 	tprintf(", Subtype (%u)",icmp_154->subtype);
 	tprintf(", Res (0x%x)",icmp_154->res);
 	tprintf(", ID (%u)",ntohs(icmp_154->id));
 
-	dissect_neighb_disc_ops(pkt);
+	return dissect_neighb_disc_ops(pkt);
 }
 
 static inline char *icmpv6_type_155_codes(uint8_t code) {
@@ -1345,7 +1465,7 @@ static inline char *icmpv6_type_155_codes(uint8_t code) {
 
 static inline void icmpv6_process(struct icmpv6_general_hdr *icmp, char **type,
 				  char **code,
-				  void (**optional)(struct pkt_buff *pkt))
+				  int8_t (**optional)(struct pkt_buff *pkt))
 {
 	*type = "Unknown Type";
 	*code = "Unknown Code";
@@ -1522,7 +1642,7 @@ static inline void icmpv6_process(struct icmpv6_general_hdr *icmp, char **type,
 static inline void icmpv6(struct pkt_buff *pkt)
 {
 	char *type = NULL, *code = NULL;
-	void (*optional)(struct pkt_buff *pkt) = NULL;
+	int8_t (*optional)(struct pkt_buff *pkt) = NULL;
 	struct icmpv6_general_hdr *icmp =
 		(struct icmpv6_general_hdr *) pkt_pull(pkt, sizeof(*icmp));
 
@@ -1536,7 +1656,9 @@ static inline void icmpv6(struct pkt_buff *pkt)
 	tprintf("%s (%u), ", code, icmp->h_code);
 	tprintf("Chks (0x%x)", ntohs(icmp->h_chksum));
 	if (optional)
-		(*optional) (pkt);
+		if (!((*optional) (pkt)))
+		      tprintf("\n%s%s%s", colorize_start_full(black, red),
+			    "Failed to dissect Message", colorize_end());
 	tprintf(" ]\n");
 }
 

@@ -22,7 +22,7 @@ struct hop_by_hophdr {
 	uint8_t hdr_len;
 } __packed;
 
-static inline void dissect_opt_hop (struct pkt_buff *pkt, size_t *opt_len)
+static inline void dissect_opt_hop (struct pkt_buff *pkt, ssize_t *opt_len)
 {
 	/* Have to been upgraded.
 	 * http://tools.ietf.org/html/rfc2460#section-4.2
@@ -40,7 +40,7 @@ static inline void dissect_opt_hop (struct pkt_buff *pkt, size_t *opt_len)
 static inline void hop_by_hop(struct pkt_buff *pkt)
 {
 	uint16_t hdr_ext_len;
-	size_t opt_len;
+	ssize_t opt_len;
 	struct hop_by_hophdr *hop_ops;
 
 	hop_ops = (struct hop_by_hophdr *) pkt_pull(pkt, sizeof(*hop_ops));
@@ -49,11 +49,17 @@ static inline void hop_by_hop(struct pkt_buff *pkt)
 	hdr_ext_len = (hop_ops->hdr_len + 1) * 8;
 	/* Options length in Bytes */
 	opt_len = hdr_ext_len - sizeof(*hop_ops);
-	if (hop_ops == NULL || opt_len > pkt_len(pkt))
+	if (hop_ops == NULL)
 		return;
 
 	tprintf("\t [ Hop-by-Hop Options ");
 	tprintf("NextHdr (%u), ", hop_ops->h_next_header);
+	if (opt_len > pkt_len(pkt) || opt_len < 0){
+		tprintf("HdrExtLen (%u, %u Bytes, %s)", hop_ops->hdr_len,
+		      hdr_ext_len, colorize_start_full(black, red)
+		      "invalid" colorize_end());
+		      return;
+	}
 	tprintf("HdrExtLen (%u, %u Bytes)", hop_ops->hdr_len,
 		hdr_ext_len);
 
@@ -68,7 +74,7 @@ static inline void hop_by_hop(struct pkt_buff *pkt)
 static inline void hop_by_hop_less(struct pkt_buff *pkt)
 {
 	uint16_t hdr_ext_len;
-	size_t opt_len;
+	ssize_t opt_len;
 	struct hop_by_hophdr *hop_ops;
 
 	hop_ops = (struct hop_by_hophdr *) pkt_pull(pkt, sizeof(*hop_ops));
@@ -77,7 +83,7 @@ static inline void hop_by_hop_less(struct pkt_buff *pkt)
 	hdr_ext_len = (hop_ops->hdr_len + 1) * 8;
 	/* Options length in Bytes */
 	opt_len = hdr_ext_len - sizeof(*hop_ops);
-	if (hop_ops == NULL || opt_len > pkt_len(pkt))
+	if (hop_ops == NULL || opt_len > pkt_len(pkt) || opt_len < 0)
 		return;
 
 	tprintf(" Hop Ops");

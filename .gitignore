@@ -19,6 +19,7 @@
 *.gcno
 *.orig
 *~
+*src/build/
 \#*#
 
 !.gitignore

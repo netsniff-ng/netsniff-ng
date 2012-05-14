@@ -32,11 +32,17 @@ static inline void auth_hdr(struct pkt_buff *pkt)
 
 	auth_ops = (struct auth_hdr *) pkt_pull(pkt, sizeof(*auth_ops));
 	hdr_len = (auth_ops->h_payload_len * 4) + 8;
-	if (auth_ops == NULL || hdr_len > pkt_len(pkt))
+	if (auth_ops == NULL)
 		return;
 
 	tprintf(" [ Authentication Header ");
 	tprintf("NextHdr (%u), ", auth_ops->h_next_header);
+	if (hdr_len > pkt_len(pkt)) {
+		tprintf("HdrLen (%u, %s), ", hdr_len,
+			colorize_start_full(black, red),
+			"invalid" colorize_end());
+		return;
+	}
 	tprintf("HdrLen (%u), ", hdr_len);
 	tprintf("Reserved (0x%x), ", ntohs(auth_ops->h_reserved));
 	/* TODO

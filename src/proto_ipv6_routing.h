@@ -33,7 +33,7 @@ struct routinghdr_0 {
 } __packed;
 
 static inline void dissect_routinghdr_type_0(struct pkt_buff *pkt,
-					     uint16_t *data_len, int less)
+					     ssize_t *data_len, int less)
 {
 	uint8_t num_addr;
 	char address[INET6_ADDRSTRLEN];
@@ -42,7 +42,7 @@ static inline void dissect_routinghdr_type_0(struct pkt_buff *pkt,
 
   	routing_0 = (struct routinghdr_0 *) pkt_pull(pkt, sizeof(*routing_0));
 	*data_len -= sizeof(*routing_0);
-	if (routing_0 == NULL || *data_len > pkt_len(pkt))
+	if (routing_0 == NULL || *data_len > pkt_len(pkt) || *data_len < 0)
 		return;
 
 	if (less) {
@@ -57,7 +57,7 @@ static inline void dissect_routinghdr_type_0(struct pkt_buff *pkt,
 	while (num_addr--) {
 		addr = (struct in6_addr *) pkt_pull(pkt, sizeof(*addr));
 		*data_len -= sizeof(*addr);
-		if (addr == NULL || *data_len > pkt_len(pkt))
+		if (addr == NULL || *data_len > pkt_len(pkt) || *data_len < 0)
 			return;
 
 		tprintf("\n\t   Address: %s",
@@ -67,20 +67,21 @@ static inline void dissect_routinghdr_type_0(struct pkt_buff *pkt,
 }
 
 static inline void dissect_routinghdr_type_0_norm(struct pkt_buff *pkt,
-						  uint16_t *data_len)
+						  ssize_t *data_len)
 {
 	dissect_routinghdr_type_0(pkt, data_len, 0);
 }
 
 static inline void dissect_routinghdr_type_0_less(struct pkt_buff *pkt,
-						  uint16_t *data_len)
+						  ssize_t *data_len)
 {
 	dissect_routinghdr_type_0(pkt, data_len, 1);
 }
 
 static inline void routing(struct pkt_buff *pkt)
 {
-	uint16_t hdr_ext_len, data_len;
+	uint16_t hdr_ext_len;
+	ssize_t data_len;
 	struct routinghdr *routing;
 
 	routing = (struct routinghdr *) pkt_pull(pkt, sizeof(*routing));
@@ -89,11 +90,17 @@ static inline void routing(struct pkt_buff *pkt)
 	hdr_ext_len = (routing->h_hdr_ext_len + 1) * 8;
 	/* Data length in Bytes */
 	data_len = hdr_ext_len - sizeof(*routing);
-	if (routing == NULL || data_len > pkt_len(pkt))
+	if (routing == NULL)
 		return;
 
 	tprintf("\t [ Routing ");
 	tprintf("NextHdr (%u), ", routing->h_next_header);
+	if (data_len > pkt_len(pkt) || data_len < 0){
+		tprintf("HdrExtLen (%u, %u Bytes %s), ", routing->h_hdr_ext_len,
+		      hdr_ext_len, colorize_start_full(black, red)
+		      "invalid" colorize_end());
+		      return;
+	}
 	tprintf("HdrExtLen (%u, %u Bytes), ", routing->h_hdr_ext_len,
 		hdr_ext_len);
 	tprintf("Type (%u), ", routing->h_routing_type);
@@ -109,13 +116,17 @@ static inline void routing(struct pkt_buff *pkt)
 
 	tprintf(" ]\n");
 
+	if (data_len > pkt_len(pkt) || data_len < 0)
+		return;
+
 	pkt_pull(pkt, data_len);
 	pkt_set_proto(pkt, &eth_lay3, routing->h_next_header);
 }
 
 static inline void routing_less(struct pkt_buff *pkt)
 {
-	uint16_t hdr_ext_len, data_len;
+	uint16_t hdr_ext_len;
+	ssize_t data_len;
 	struct routinghdr *routing;
 
 	routing = (struct routinghdr *) pkt_pull(pkt, sizeof(*routing));
@@ -124,7 +135,7 @@ static inline void routing_less(struct pkt_buff *pkt)
 	hdr_ext_len = (routing->h_hdr_ext_len + 1) * 8;
 	/* Data length in Bytes */
 	data_len = hdr_ext_len - sizeof(*routing);
-	if (routing == NULL || data_len > pkt_len(pkt))
+	if (routing == NULL || data_len > pkt_len(pkt) || data_len < 0)
 		return;
 
 	tprintf(" Routing ");
@@ -136,6 +147,9 @@ static inline void routing_less(struct pkt_buff *pkt)
 	default:
 		tprintf("Type %u is unknown", routing->h_routing_type);
 	}
+
+	if (data_len > pkt_len(pkt) || data_len < 0)
+		return;
 
 	pkt_pull(pkt, data_len);
 	pkt_set_proto(pkt, &eth_lay3, routing->h_next_header);
