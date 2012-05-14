@@ -149,6 +149,23 @@ static inline void set_sockopt_fanout(int sock, unsigned int fanout_id,
 		panic("No packet fanout support!\n");
 }
 
+#ifndef SO_TIMESTAMPING
+# define SO_TIMESTAMPING	37
+# define SCM_TIMESTAMPING	SO_TIMESTAMPING
+#endif
+
+#ifndef SO_TIMESTAMPNS
+# define SO_TIMESTAMPNS		35
+#endif
+
+#ifndef SIOCGSTAMPNS
+# define SIOCGSTAMPNS		0x8907
+#endif
+
+#ifndef SIOCSHWTSTAMP
+# define SIOCSHWTSTAMP		0x89b0
+#endif
+
 #ifndef PACKET_TIMESTAMP
 enum {
 	SOF_TIMESTAMPING_TX_HARDWARE = (1<<0),
@@ -185,7 +202,7 @@ enum hwtstamp_rx_filters {
 # include <linux/net_tstamp.h>
 #endif /* PACKET_TIMESTAMP */
 
-static inline void set_sockopt_hwtimestamp(int sock, char *dev)
+static inline void set_sockopt_hwtimestamp(int sock, const char *dev)
 {
 	int timesource, ret;
 	struct hwtstamp_config hwconfig;
