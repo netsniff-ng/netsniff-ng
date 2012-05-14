@@ -16,6 +16,9 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <linux/if_packet.h>
+#include <linux/socket.h>
+#include <linux/sockios.h>
+#include <sys/ioctl.h>
 #include <string.h>
 #include <poll.h>
 #include <sys/poll.h>
@@ -23,6 +26,7 @@
 #include "xsys.h"
 #include "built_in.h"
 #include "mtrand.h"
+#include "xstring.h"
 #include "die.h"
 
 #ifndef PACKET_FANOUT
@@ -143,6 +147,68 @@ static inline void set_sockopt_fanout(int sock, unsigned int fanout_id,
 			     sizeof(fanout_arg));
 	if (ret)
 		panic("No packet fanout support!\n");
+}
+
+#ifndef PACKET_TIMESTAMP
+enum {
+	SOF_TIMESTAMPING_TX_HARDWARE = (1<<0),
+	SOF_TIMESTAMPING_TX_SOFTWARE = (1<<1),
+	SOF_TIMESTAMPING_RX_HARDWARE = (1<<2),
+	SOF_TIMESTAMPING_RX_SOFTWARE = (1<<3),
+	SOF_TIMESTAMPING_SOFTWARE = (1<<4),
+	SOF_TIMESTAMPING_SYS_HARDWARE = (1<<5),
+	SOF_TIMESTAMPING_RAW_HARDWARE = (1<<6),
+	SOF_TIMESTAMPING_MASK =
+	(SOF_TIMESTAMPING_RAW_HARDWARE - 1) |
+	SOF_TIMESTAMPING_RAW_HARDWARE
+};
+
+struct hwtstamp_config {
+	int flags;
+	int tx_type;
+	int rx_filter;
+};
+
+enum hwtstamp_tx_types {
+	HWTSTAMP_TX_OFF,
+	HWTSTAMP_TX_ON,
+	HWTSTAMP_TX_ONESTEP_SYNC,
+};
+
+enum hwtstamp_rx_filters {
+	HWTSTAMP_FILTER_NONE,
+	HWTSTAMP_FILTER_ALL,
+};
+
+# define PACKET_TIMESTAMP	17
+#else
+# include <linux/net_tstamp.h>
+#endif /* PACKET_TIMESTAMP */
+
+static inline void set_sockopt_hwtimestamp(int sock, char *dev)
+{
+	int timesource, ret;
+	struct hwtstamp_config hwconfig;
+	struct ifreq ifr;
+
+	memset(&hwconfig, 0, sizeof(hwconfig));
+	hwconfig.tx_type = HWTSTAMP_TX_ON;
+	hwconfig.rx_filter = HWTSTAMP_FILTER_ALL;
+
+	memset(&ifr, 0, sizeof(ifr));
+	strlcpy(ifr.ifr_name, dev, sizeof(ifr.ifr_name));
+	ifr.ifr_data = &hwconfig;
+
+	ret = ioctl(sock, SIOCSHWTSTAMP, &ifr);
+	if (ret < 0)
+		return;
+
+	timesource = SOF_TIMESTAMPING_RAW_HARDWARE;
+
+	ret = setsockopt(sock, SOL_PACKET, PACKET_TIMESTAMP, &timesource,
+			 sizeof(timesource));
+	if (ret)
+		panic("Cannot set timestamping!\n");
 }
 
 #endif /* RING_H */

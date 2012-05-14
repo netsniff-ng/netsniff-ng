@@ -365,6 +365,7 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 	bpf_parse_rules(mode->filter, &bpf_ops);
 
 	set_packet_loss_discard(tx_sock);
+	set_sockopt_hwtimestamp(tx_sock, mode->device_out);
 	setup_tx_ring_layout(tx_sock, &tx_ring, size, mode->jumbo_support);
 	create_tx_ring(tx_sock, &tx_ring);
 	mmap_tx_ring(tx_sock, &tx_ring);
@@ -862,6 +863,7 @@ try_file:
 	bpf_parse_rules(mode->filter, &bpf_ops);
 	bpf_attach_to_sock(sock, &bpf_ops);
 
+	set_sockopt_hwtimestamp(sock, mode->device_in);
 	setup_rx_ring_layout(sock, &rx_ring, size, mode->jumbo_support);
 	create_rx_ring(sock, &rx_ring);
 	mmap_rx_ring(sock, &rx_ring);
