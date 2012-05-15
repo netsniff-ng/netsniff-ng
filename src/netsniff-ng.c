@@ -213,6 +213,7 @@ Please report bugs to <bugs@netsniff-ng.org>
 
 #include "ring_rx.h"
 #include "ring_tx.h"
+#include "mac80211.h"
 #include "xsys.h"
 #include "built_in.h"
 #include "pcap.h"
@@ -233,8 +234,10 @@ Please report bugs to <bugs@netsniff-ng.org>
 struct mode {
 	char *device_in;
 	char *device_out;
+	char *device_trans;
 	char *filter;
 	int cpu;
+	int rfraw;
 	int dump;
 	int link_type;
 	int print_mode;
@@ -262,13 +265,14 @@ static unsigned long interval = TX_KERNEL_PULL_INT;
 static struct itimerval itimer;
 static volatile bool next_dump = false;
 
-static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqXlvhF:";
+static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqXlvhF:R";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
 	{"in", required_argument, 0, 'i'},
 	{"out", required_argument, 0, 'o'},
 	{"rand", no_argument, 0, 'r'},
+	{"rfraw", no_argument, 0, 'R'},
 	{"mmap", no_argument, 0, 'm'},
 	{"clrw", no_argument, 0, 'c'},
 	{"jumbo-support", no_argument, 0, 'J'},
@@ -359,6 +363,14 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 	fmemset(&bpf_ops, 0, sizeof(bpf_ops));
 	fmemset(&stats, 0, sizeof(stats));
 
+	if (mode->rfraw) {
+		mode->device_trans = xstrdup(mode->device_out);
+		xfree(mode->device_out);
+
+		enter_rfmon_mac80211(mode->device_trans, &mode->device_out);
+		mode->link_type = LINKTYPE_IEEE802_11;
+	}
+
 	ifindex = device_ifindex(mode->device_out);
 	size = ring_size(mode->device_out, mode->reserve_size);
 
@@ -393,6 +405,8 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 	printf("BPF:\n");
 	bpf_dump_all(&bpf_ops);
 	printf("MD: TX %luus %s ", interval, pcap_ops[mode->pcap]->name);
+	if (mode->rfraw)
+		printf("802.11 raw via %s ", mode->device_out);
 	ioprio_print();
 	printf("\n");
 
@@ -447,6 +461,9 @@ out:
 	bpf_release(&bpf_ops);
 	dissector_cleanup_all();
 	destroy_tx_ring(tx_sock, &tx_ring);
+
+	if (mode->rfraw)
+		leave_rfmon_mac80211(mode->device_trans, mode->device_out);
 
 	close(tx_sock);
 	if (pcap_ops[mode->pcap]->prepare_close_pcap)
@@ -856,6 +873,14 @@ try_file:
 	fmemset(&rx_poll, 0, sizeof(rx_poll));
 	fmemset(&bpf_ops, 0, sizeof(bpf_ops));
 
+	if (mode->rfraw) {
+		mode->device_trans = xstrdup(mode->device_in);
+		xfree(mode->device_in);
+
+		enter_rfmon_mac80211(mode->device_trans, &mode->device_in);
+		mode->link_type = LINKTYPE_IEEE802_11;
+	}
+
 	ifindex = device_ifindex(mode->device_in);
 	size = ring_size(mode->device_in, mode->reserve_size);
 
@@ -888,6 +913,8 @@ try_file:
 	printf("BPF:\n");
 	bpf_dump_all(&bpf_ops);
 	printf("MD: RX %s ", mode->dump ? pcap_ops[mode->pcap]->name : "");
+	if (mode->rfraw)
+		printf("802.11 raw via %s ", mode->device_in);
 	ioprio_print();
 	printf("\n");
 
@@ -965,6 +992,9 @@ next:
 	if (mode->promiscuous == true)
 		leave_promiscuous_mode(mode->device_in, ifflags);
 
+	if (mode->rfraw)
+		leave_rfmon_mac80211(mode->device_trans, mode->device_in);
+
 	close(sock);
 
 	if (mode->dump) {
@@ -991,6 +1021,7 @@ static void help(void)
 	printf("                              pcap files should be stored (default: 60)\n");
 	printf("  -J|--jumbo-support          Support for 64KB Super Jumbo Frames\n");
 	printf("                              Default RX/TX slot: 2048Byte\n");
+	printf("  -R|--rfraw                  Capture or inject raw 802.11 frames\n");
 	printf("  -n|--num <uint>             Number of packets until exit\n");
 	printf("  `--     0                   Loop until interrupted (default)\n");
 	printf("   `-     n                   Send n packets and done\n");
@@ -1019,6 +1050,7 @@ static void help(void)
 	printf("\n");
 	printf("Examples:\n");
 	printf("  netsniff-ng --in eth0 --out dump.pcap --silent --bind-cpu 0\n");
+	printf("  netsniff-ng --in wlan0 --rfraw --out dump.pcap --silent --bind-cpu 0\n");
 	printf("  netsniff-ng --in dump.pcap --mmap --out eth0 --silent --bind-cpu 0\n");
 	printf("  netsniff-ng --in dump.pcap --out dump.txf --silent --bind-cpu 0\n");
 	printf("  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0 --type host\n");
@@ -1091,6 +1123,9 @@ int main(int argc, char **argv)
 			break;
 		case 'o':
 			mode.device_out = xstrdup(optarg);
+			break;
+		case 'R':
+			mode.rfraw = 1;
 			break;
 		case 'r':
 			mode.randomize = true;
@@ -1265,6 +1300,8 @@ int main(int argc, char **argv)
 		xfree(mode.device_in);
 	if (mode.device_out)
 		xfree(mode.device_out);
+	if (mode.device_trans)
+		xfree(mode.device_trans);
 	return 0;
 }
 

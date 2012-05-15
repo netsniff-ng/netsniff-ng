@@ -48,6 +48,9 @@ static void dissector_main(struct pkt_buff *pkt, struct protocol *start,
 {
 	struct protocol *proto;
 
+	if (!start)
+		return;
+
 	for (pkt->proto = start; pkt->proto; ) {
 		if (unlikely(!pkt->proto->process))
 			break;
@@ -76,6 +79,10 @@ void dissector_entry_point(uint8_t *packet, size_t len, int linktype, int mode)
 	case LINKTYPE_EN10MB:
 		proto_start = dissector_get_ethernet_entry_point();
 		proto_end = dissector_get_ethernet_exit_point();
+		break;
+	case LINKTYPE_IEEE802_11:
+		/* FIXME */
+		mode = FNTTYPE_PRINT_HEX;
 		break;
 	default:
 		panic("Linktype not supported!\n");

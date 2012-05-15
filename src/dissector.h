@@ -14,17 +14,18 @@
 #include "ring.h"
 #include "tprintf.h"
 
-#define LINKTYPE_NULL       0	/* BSD loopback encapsulation */
-#define LINKTYPE_EN10MB     1	/* Ethernet (10Mb) */
-#define LINKTYPE_EN3MB      2	/* Experimental Ethernet (3Mb) */
-#define LINKTYPE_AX25       3	/* Amateur Radio AX.25 */
-#define LINKTYPE_PRONET     4	/* Proteon ProNET Token Ring */
-#define LINKTYPE_CHAOS      5	/* Chaos */
-#define LINKTYPE_IEEE802    6	/* 802.5 Token Ring */
-#define LINKTYPE_ARCNET     7	/* ARCNET, with BSD-style header */
-#define LINKTYPE_SLIP       8	/* Serial Line IP */
-#define LINKTYPE_PPP        9	/* Point-to-point Protocol */
-#define LINKTYPE_FDDI      10	/* FDDI */
+#define LINKTYPE_NULL       	0	/* BSD loopback encapsulation */
+#define LINKTYPE_EN10MB     	1	/* Ethernet (10Mb) */
+#define LINKTYPE_EN3MB      	2	/* Experimental Ethernet (3Mb) */
+#define LINKTYPE_AX25      	3	/* Amateur Radio AX.25 */
+#define LINKTYPE_PRONET     	4	/* Proteon ProNET Token Ring */
+#define LINKTYPE_CHAOS      	5	/* Chaos */
+#define LINKTYPE_IEEE802    	6	/* 802.5 Token Ring */
+#define LINKTYPE_ARCNET     	7	/* ARCNET, with BSD-style header */
+#define LINKTYPE_SLIP       	8	/* Serial Line IP */
+#define LINKTYPE_PPP        	9	/* Point-to-point Protocol */
+#define LINKTYPE_FDDI      	10	/* FDDI */
+#define LINKTYPE_IEEE802_11	105	/* IEEE 802.11 wireless */
 
 #define FNTTYPE_PRINT_NORM	0
 #define FNTTYPE_PRINT_LESS	1

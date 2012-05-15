@@ -192,6 +192,7 @@ struct mode {
 	char *device;
 	int cpu;
 	int rand;
+	int rfraw;
 	unsigned long kpull;
 	/* 0 for automatic, > 0 for manual */
 	unsigned int reserve_size;
@@ -212,7 +213,7 @@ __export unsigned int packets_len = 0;
 __export struct packet_dynamics *packet_dyns = NULL;
 __export unsigned int packet_dyn_len = 0;
 
-static const char *short_options = "d:c:n:t:vJhS:HQb:B:rk:xi:o:V";
+static const char *short_options = "d:c:n:t:vJhS:HQb:B:rk:xi:o:VR";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -226,6 +227,7 @@ static struct option long_options[] = {
 	{"unbind-cpu", required_argument, 0, 'B'},
 	{"kernel-pull", required_argument, 0, 'k'},
 	{"jumbo-support", no_argument, 0, 'J'},
+	{"rfraw", no_argument, 0, 'R'},
 	{"interactive", no_argument, 0, 'x'},
 	{"rand", no_argument, 0, 'r'},
 	{"prio-high", no_argument, 0, 'H'},
@@ -277,6 +279,7 @@ static void help(void)
 	printf("  -x|--interactive                  Start trafgen in interactive server mode\n");
 	printf("  -J|--jumbo-support                Support for 64KB Super Jumbo Frames\n");
 	printf("                                    Default TX slot: 2048Byte\n");
+	printf("  -R|--rfraw                        Inject raw 802.11 frames\n");
 	printf("  -n|--num <uint>                   Number of packets until exit\n");
 	printf("  `--     0                         Loop until interrupt (default)\n");
 	printf("   `-     n                         Send n packets and done\n");
@@ -298,6 +301,7 @@ static void help(void)
 	printf("Examples:\n");
 	printf("  See trafgen.txf for configuration file examples.\n");
 	printf("  trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0\n");
+	printf("  trafgen --dev wlan0 --rfraw --conf beacon-test.txf --bind-cpu 0\n");
 	printf("  trafgen --out eth0 --in trafgen.txf --bind-cpu 0\n");
 	printf("  trafgen --out test.pcap --in trafgen.txf --bind-cpu 0\n");
 	printf("  trafgen --dev eth0 --conf trafgen.txf --rand --gap 1000\n");
@@ -411,7 +415,8 @@ static void tx_slowpath_or_die(struct mode *mode)
 	if (mode->rand)
 		printf("Note: randomizes output makes trafgen slower!\n");
 
-	printf("MD: TX slowpath %s %luus\n\n", mode->rand ? "RND" : "RR", mode->gap);
+	printf("MD: TX slowpath %s %luus %s\n\n", mode->rand ? "RND" : "RR",
+	       mode->gap, mode->rfraw ? "802.11raw" : "");
 	printf("Running! Hang up with ^C!\n\n");
 
 	fmemset(&s_addr, 0, sizeof(s_addr));
@@ -492,7 +497,8 @@ static void tx_fastpath_or_die(struct mode *mode)
 	if (mode->rand)
 		printf("Note: randomizes output makes trafgen slower!\n");
 
-	printf("MD: TX fastpath %s %luus\n\n", mode->rand ? "RND" : "RR", interval);
+	printf("MD: TX fastpath %s %luus %s\n\n", mode->rand ? "RND" : "RR",
+	       interval, mode->rfraw ? "802.11raw" : "");
 	printf("Running! Hang up with ^C!\n\n");
 
 	itimer.it_interval.tv_sec = 0;
@@ -597,6 +603,9 @@ int main(int argc, char **argv)
 			break;
 		case 'r':
 			mode.rand = 1;
+			break;
+		case 'R':
+			mode.rfraw = 1;
 			break;
 		case 'J':
 			mode.jumbo_support = 1;
