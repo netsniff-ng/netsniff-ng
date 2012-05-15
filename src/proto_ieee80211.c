@@ -11,6 +11,7 @@
 #include "proto.h"
 #include "protos.h"
 #include "dissector_80211.h"
+#include "built_in.h"
 #include "pkt_buff.h"
 #include "oui.h"
 
@@ -21,7 +22,7 @@ struct ieee80211hdr {
 	u8 sa[6];
 	u8 bssid[6];
 	u16 seq_ctrl;
-};
+} __packed;
 
 /* TODO: fix lots of things analyze frame control */
 /* this is really just a simple start */
