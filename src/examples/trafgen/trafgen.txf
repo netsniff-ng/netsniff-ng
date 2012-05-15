@@ -39,7 +39,7 @@
 # Usage of drnd macro, generates one random byte _during_ runtime
 { rnd(64) drnd() }
 
-# Usage of drnd macro, generates one random byte _during_ runtime
+# Usage of drnd macro, generates 64 random bytes _during_ runtime
 { drnd(64) }
 
 # Usage of ethernet header macro
