@@ -17,6 +17,7 @@
 
 static char buffer[1024];
 static size_t buffer_use = 0;
+
 static struct spinlock buffer_lock;
 static size_t lcount = 0;
 
@@ -80,45 +81,37 @@ void tprintf_cleanup(void)
 	spinlock_lock(&buffer_lock);
 	tprintf_flush();
 	spinlock_unlock(&buffer_lock);
-
 	spinlock_destroy(&buffer_lock);
 }
 
 void tprintf(char *msg, ...)
 {
 	int ret;
+	ssize_t avail;
 	va_list vl;
 
-	va_start(vl, msg);
-
 	spinlock_lock(&buffer_lock);
-	ret = vsnprintf(buffer + buffer_use,
-			sizeof(buffer) - buffer_use,
-			msg, vl);
-	if (ret < 0)
-		/* Something screwed up! Unexpected. */
-		goto out;
-	if (ret >= sizeof(buffer) - buffer_use) {
-		tprintf_flush();
-		/* Rewrite the buffer */
-		ret = vsnprintf(buffer + buffer_use,
-				sizeof(buffer) - buffer_use,
-				msg, vl);
+	avail = sizeof(buffer) - buffer_use;
 
-		/* Again, we've failed! This shouldn't happen! So 
-		 * switch to vfprintf temporarily :-( */
-		if (ret >= sizeof(buffer) - buffer_use) {
-			fprintf(stderr, "BUG (buffer too large) -->\n");
-			vfprintf(stdout, msg, vl);
-			fprintf(stderr, " <--\n");
-			goto out;
-		}
+	va_start(vl, msg);
+	ret = vsnprintf(buffer + buffer_use, avail, msg, vl);
+	va_end(vl);
+	if (ret < 0)
+		panic("vsnprintf screwed up in tprintf!\n");
+	if (ret > sizeof(buffer))
+		panic("No mem in tprintf left!\n");
+	if (ret >= avail) {
+		buffer[buffer_use] = 0;
+		tprintf_flush();
+
+		avail = sizeof(buffer) - buffer_use;
+		va_start(vl, msg);
+		ret = vsnprintf(buffer + buffer_use, avail, msg, vl);
+		va_end(vl);
+		if (ret < 0)
+			panic("vsnprintf screwed up in tprintf!\n");
 	}
 
-	if (ret < sizeof(buffer) - buffer_use)
-		buffer_use += ret;
-out:
+	buffer_use += ret;
 	spinlock_unlock(&buffer_lock);
-
-	va_end(vl);
 }
