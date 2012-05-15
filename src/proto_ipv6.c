@@ -6,17 +6,15 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef PROTO_IPV6_H
-#define PROTO_IPV6_H
-
 #include <stdio.h>
 #include <stdint.h>
 #include <netinet/in.h>    /* for ntohs() */
 #include <arpa/inet.h>     /* for inet_ntop() */
 #include <asm/byteorder.h>
 
+#include "proto.h"
+#include "protos.h"
 #include "csum.h"
-#include "proto_struct.h"
 #include "dissector_eth.h"
 #include "pkt_buff.h"
 #include "built_in.h"
@@ -45,7 +43,10 @@ struct ipv6hdr {
 	struct in6_addr daddr;
 } __packed;
 
-static inline void ipv6(struct pkt_buff *pkt)
+extern void ipv6(struct pkt_buff *pkt);
+extern void ipv6_less(struct pkt_buff *pkt);
+
+void ipv6(struct pkt_buff *pkt)
 {
 	uint8_t traffic_class;
 	uint32_t flow_label;
@@ -77,7 +78,7 @@ static inline void ipv6(struct pkt_buff *pkt)
 	pkt_set_proto(pkt, &eth_lay3, ip->nexthdr);
 }
 
-static inline void ipv6_less(struct pkt_buff *pkt)
+void ipv6_less(struct pkt_buff *pkt)
 {
 	char src_ip[INET6_ADDRSTRLEN];
 	char dst_ip[INET6_ADDRSTRLEN];
@@ -101,4 +102,4 @@ struct protocol ipv6_ops = {
 	.print_less = ipv6_less,
 };
 
-#endif /* PROTO_IPV6_H */
+EXPORT_SYMBOL(ipv6_ops);

@@ -5,14 +5,12 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef PROTO_ARP_H
-#define PROTO_ARP_H
-
 #include <stdint.h>
 #include <stdint.h>
 #include <netinet/in.h>    /* for ntohs() */
 
-#include "proto_struct.h"
+#include "proto.h"
+#include "protos.h"
 #include "dissector_eth.h"
 #include "pkt_buff.h"
 #include "built_in.h"
@@ -37,7 +35,7 @@ struct arphdr {
 #define ARPOP_InREPLY   9  /* InARP reply                */
 #define ARPOP_NAK       10 /* (ATM)ARP NAK               */
 
-static inline void arp(struct pkt_buff *pkt)
+static void arp(struct pkt_buff *pkt)
 {
 	char *opcode = NULL;
 	struct arphdr *arp = (struct arphdr *) pkt_pull(pkt, sizeof(*arp));
@@ -81,7 +79,7 @@ static inline void arp(struct pkt_buff *pkt)
 	tprintf(" ]\n");
 }
 
-static inline void arp_less(struct pkt_buff *pkt)
+static void arp_less(struct pkt_buff *pkt)
 {
 	char *opcode = NULL;
 	struct arphdr *arp = (struct arphdr *) pkt_pull(pkt, sizeof(*arp));
@@ -125,4 +123,4 @@ struct protocol arp_ops = {
 	.print_less = arp_less,
 };
 
-#endif /* PROTO_ARP_H */
+EXPORT_SYMBOL(arp_ops);

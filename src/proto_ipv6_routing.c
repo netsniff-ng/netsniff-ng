@@ -6,17 +6,16 @@
  * IPv6 Routing Header described in RFC2460
  */
 
-#ifndef PROTO_IPV6_ROUTING_H
-#define PROTO_IPV6_ROUTING_H
-
 #include <stdio.h>
 #include <stdint.h>
 #include <netinet/in.h>    /* for ntohs() and "struct in6_addr" */
 #include <arpa/inet.h>     /* for inet_ntop() */
 
-#include "proto_struct.h"
+#include "proto.h"
+#include "protos.h"
 #include "dissector_eth.h"
 #include "built_in.h"
+#include "pkt_buff.h"
 
 #define ROUTING_HEADER_TYPE_0	0x00
 
@@ -32,8 +31,8 @@ struct routinghdr_0 {
 	uint32_t addresses[0];
 } __packed;
 
-static inline void dissect_routinghdr_type_0(struct pkt_buff *pkt,
-					     ssize_t *data_len, int less)
+static void dissect_routinghdr_type_0(struct pkt_buff *pkt,
+				      ssize_t *data_len, int less)
 {
 	uint8_t num_addr;
 	char address[INET6_ADDRSTRLEN];
@@ -78,7 +77,7 @@ static inline void dissect_routinghdr_type_0_less(struct pkt_buff *pkt,
 	dissect_routinghdr_type_0(pkt, data_len, 1);
 }
 
-static inline void routing(struct pkt_buff *pkt)
+static void routing(struct pkt_buff *pkt)
 {
 	uint16_t hdr_ext_len;
 	ssize_t data_len;
@@ -123,7 +122,7 @@ static inline void routing(struct pkt_buff *pkt)
 	pkt_set_proto(pkt, &eth_lay3, routing->h_next_header);
 }
 
-static inline void routing_less(struct pkt_buff *pkt)
+static void routing_less(struct pkt_buff *pkt)
 {
 	uint16_t hdr_ext_len;
 	ssize_t data_len;
@@ -161,4 +160,4 @@ struct protocol ipv6_routing_ops = {
 	.print_less = routing_less,
 };
 
-#endif /* PROTO_IPV6_ROUTING_H */
+EXPORT_SYMBOL(ipv6_routing_ops);

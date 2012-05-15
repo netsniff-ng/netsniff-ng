@@ -6,15 +6,17 @@
  * IPv6 in IPv4 encapsulation described in RFC3056
  */
 
-#ifndef PROTO_IP6_IN_IP4_H
-#define PROTO_IP6_IN_IP4_H
-
 #include <stdio.h>
 #include <stdint.h>
 #include <netinet/in.h>    /* for ntohs() */
 
-#include "proto_struct.h"
+#include "proto.h"
+#include "protos.h"
 #include "dissector_eth.h"
+#include "built_in.h"
+
+extern void ipv6(struct pkt_buff *pkt);
+extern void ipv6_less(struct pkt_buff *pkt);
 
 struct protocol ipv6_in_ipv4_ops = {
 	.key = 0x29,
@@ -22,4 +24,4 @@ struct protocol ipv6_in_ipv4_ops = {
 	.print_less = ipv6_less,
 };
 
-#endif /* PROTO_IP6_IN_IP4_H */
+EXPORT_SYMBOL(ipv6_in_ipv4_ops);

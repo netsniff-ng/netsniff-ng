@@ -6,23 +6,22 @@
  * IPv6 Hop-By-Hop Header described in RFC2460
  */
 
-#ifndef PROTO_IPV6_HOP_BY_HOP_H
-#define PROTO_IPV6_HOP_BY_HOP_H
-
 #include <stdio.h>
 #include <stdint.h>
 #include <netinet/in.h>    /* for ntohs() */
 
-#include "proto_struct.h"
+#include "proto.h"
+#include "protos.h"
 #include "dissector_eth.h"
 #include "built_in.h"
+#include "pkt_buff.h"
 
 struct hop_by_hophdr {
 	uint8_t h_next_header;
 	uint8_t hdr_len;
 } __packed;
 
-static inline void dissect_opt_hop (struct pkt_buff *pkt, ssize_t *opt_len)
+static void dissect_opt_hop (struct pkt_buff *pkt, ssize_t *opt_len)
 {
 	/* Have to been upgraded.
 	 * http://tools.ietf.org/html/rfc2460#section-4.2
@@ -37,7 +36,7 @@ static inline void dissect_opt_hop (struct pkt_buff *pkt, ssize_t *opt_len)
 	 */
 }
 
-static inline void hop_by_hop(struct pkt_buff *pkt)
+static void hop_by_hop(struct pkt_buff *pkt)
 {
 	uint16_t hdr_ext_len;
 	ssize_t opt_len;
@@ -71,7 +70,7 @@ static inline void hop_by_hop(struct pkt_buff *pkt)
 	pkt_set_proto(pkt, &eth_lay3, hop_ops->h_next_header);
 }
 
-static inline void hop_by_hop_less(struct pkt_buff *pkt)
+static void hop_by_hop_less(struct pkt_buff *pkt)
 {
 	uint16_t hdr_ext_len;
 	ssize_t opt_len;
@@ -98,4 +97,4 @@ struct protocol ipv6_hop_by_hop_ops = {
 	.print_less = hop_by_hop_less,
 };
 
-#endif /* PROTO_IPV6_HOP_BY_HOP_H */
+EXPORT_SYMBOL(ipv6_hop_by_hop_ops);

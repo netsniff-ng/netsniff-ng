@@ -6,14 +6,12 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef VLAN_H
-#define VLAN_H
-
 #include <stdio.h>
 #include <stdint.h>
 #include <netinet/in.h>    /* for ntohs() */
 
-#include "proto_struct.h"
+#include "proto.h"
+#include "protos.h"
 #include "dissector_eth.h"
 #include "pkt_buff.h"
 
@@ -22,7 +20,7 @@ struct vlanhdr {
 	uint16_t h_vlan_encapsulated_proto;
 } __attribute__((packed));
 
-static inline void vlan(struct pkt_buff *pkt)
+static void vlan(struct pkt_buff *pkt)
 {
 	uint16_t tci;
 	struct vlanhdr *vlan = (struct vlanhdr *) pkt_pull(pkt, sizeof(*vlan));
@@ -42,7 +40,7 @@ static inline void vlan(struct pkt_buff *pkt)
 	pkt_set_proto(pkt, &eth_lay2, ntohs(vlan->h_vlan_encapsulated_proto));
 }
 
-static inline void vlan_less(struct pkt_buff *pkt)
+static void vlan_less(struct pkt_buff *pkt)
 {
 	uint16_t tci;
 	struct vlanhdr *vlan = (struct vlanhdr *) pkt_pull(pkt, sizeof(*vlan));
@@ -63,4 +61,4 @@ struct protocol vlan_ops = {
 	.print_less = vlan_less,
 };
 
-#endif /* VLAN_H */
+EXPORT_SYMBOL(vlan_ops);

@@ -5,20 +5,18 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef PROTO_ETHERNET_H
-#define PROTO_ETHERNET_H
-
 #include <stdio.h>
 #include <stdint.h>
 #include <netinet/in.h>
 #include <linux/if_ether.h>
 
-#include "proto_struct.h"
-#include "proto_none.h"
+#include "proto.h"
+#include "protos.h"
 #include "dissector_eth.h"
 #include "pkt_buff.h"
+#include "oui.h"
 
-static inline void ethernet(struct pkt_buff *pkt)
+static void ethernet(struct pkt_buff *pkt)
 {
 	uint8_t *src_mac, *dst_mac;
 	struct ethhdr *eth = (struct ethhdr *) pkt_pull(pkt, sizeof(*eth));
@@ -51,13 +49,7 @@ static inline void ethernet(struct pkt_buff *pkt)
 	pkt_set_proto(pkt, &eth_lay2, ntohs(eth->h_proto));
 }
 
-static inline void ethernet_hex_all(struct pkt_buff *pkt)
-{
-	tprintf("   ");
-	hex(pkt);
-}
-
-static inline void ethernet_less(struct pkt_buff *pkt)
+static void ethernet_less(struct pkt_buff *pkt)
 {
 	uint8_t *src_mac, *dst_mac;
 	struct ethhdr *eth = (struct ethhdr *) pkt_pull(pkt, sizeof(*eth));
@@ -84,4 +76,4 @@ struct protocol ethernet_ops = {
 	.print_less = ethernet_less,
 };
 
-#endif /* PROTO_ETHERNET_H */
+EXPORT_SYMBOL(ethernet_ops);

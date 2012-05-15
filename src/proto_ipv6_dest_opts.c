@@ -6,16 +6,15 @@
  * IPv6 Destination Options Header described in RFC2460
  */
 
-#ifndef PROTO_IPV6_DEST_OPTS_H
-#define PROTO_IPV6_DEST_OPTS_H
-
 #include <stdio.h>
 #include <stdint.h>
 #include <netinet/in.h>    /* for ntohs() */
 
-#include "proto_struct.h"
+#include "proto.h"
+#include "protos.h"
 #include "dissector_eth.h"
 #include "built_in.h"
+#include "pkt_buff.h"
 
 struct dest_optshdr {
 	uint8_t h_next_header;
@@ -23,7 +22,7 @@ struct dest_optshdr {
 } __packed;
 
 
-static inline void dissect_opt_dest(struct pkt_buff *pkt, ssize_t *opt_len)
+static void dissect_opt_dest(struct pkt_buff *pkt, ssize_t *opt_len)
 {
 	/* Have to been upgraded.
 	 * http://tools.ietf.org/html/rfc2460#section-4.2
@@ -38,7 +37,7 @@ static inline void dissect_opt_dest(struct pkt_buff *pkt, ssize_t *opt_len)
 	 */
 }
 
-static inline void dest_opts(struct pkt_buff *pkt)
+static void dest_opts(struct pkt_buff *pkt)
 {
 	uint16_t hdr_ext_len;
 	ssize_t opt_len;
@@ -72,7 +71,7 @@ static inline void dest_opts(struct pkt_buff *pkt)
 	pkt_set_proto(pkt, &eth_lay3, dest_ops->h_next_header);
 }
 
-static inline void dest_opts_less(struct pkt_buff *pkt)
+static void dest_opts_less(struct pkt_buff *pkt)
 {
 	uint16_t hdr_ext_len;
 	ssize_t opt_len;
@@ -99,4 +98,4 @@ struct protocol ipv6_dest_opts_ops = {
 	.print_less = dest_opts_less,
 };
 
-#endif /* PROTO_IPV6_DEST_OPTS_H */
+EXPORT_SYMBOL(ipv6_dest_opts_ops);

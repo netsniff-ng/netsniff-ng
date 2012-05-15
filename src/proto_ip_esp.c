@@ -6,23 +6,22 @@
  * Encapsulating Security Payload described in RFC4303
  */
 
-#ifndef PROTO_ESP_H
-#define PROTO_ESP_H
-
 #include <stdio.h>
 #include <stdint.h>
 #include <netinet/in.h>    /* for ntohs() */
 
-#include "proto_struct.h"
+#include "proto.h"
+#include "protos.h"
 #include "dissector_eth.h"
 #include "built_in.h"
+#include "pkt_buff.h"
 
 struct esp_hdr {
 	uint32_t h_spi;
 	uint32_t h_sn;
 } __packed;
 
-static inline void esp(struct pkt_buff *pkt)
+static void esp(struct pkt_buff *pkt)
 {
 	struct esp_hdr *esp_ops;
 
@@ -36,7 +35,7 @@ static inline void esp(struct pkt_buff *pkt)
 	tprintf(" ]\n");
 }
 
-static inline void esp_less(struct pkt_buff *pkt)
+static void esp_less(struct pkt_buff *pkt)
 {
 	struct esp_hdr *esp_ops;
 
@@ -53,4 +52,4 @@ struct protocol ip_esp_ops = {
 	.print_less = esp_less,
 };
 
-#endif /* PROTO_ESP_H */
+EXPORT_SYMBOL(ip_esp_ops);

@@ -6,16 +6,15 @@
  * IP Authentication Header described in RFC4302
  */
 
-#ifndef PROTO_IP_AUTHENTICATION_HDR_H
-#define PROTO_IP_AUTHENTICATION_HDR_H
-
 #include <stdio.h>
 #include <stdint.h>
 #include <netinet/in.h>    /* for ntohs() */
 
-#include "proto_struct.h"
+#include "proto.h"
+#include "protos.h"
 #include "dissector_eth.h"
 #include "built_in.h"
+#include "pkt_buff.h"
 
 struct auth_hdr {
 	uint8_t h_next_header;
@@ -25,7 +24,7 @@ struct auth_hdr {
 	uint32_t h_snf;
 } __packed;
 
-static inline void auth_hdr(struct pkt_buff *pkt)
+static void auth_hdr(struct pkt_buff *pkt)
 {
 	uint16_t hdr_len;
 	struct auth_hdr *auth_ops;
@@ -59,7 +58,7 @@ static inline void auth_hdr(struct pkt_buff *pkt)
 	pkt_set_proto(pkt, &eth_lay3, auth_ops->h_next_header);
 }
 
-static inline void auth_hdr_less(struct pkt_buff *pkt)
+static void auth_hdr_less(struct pkt_buff *pkt)
 {
   	uint16_t hdr_len;
 	struct auth_hdr *auth_ops;
@@ -75,10 +74,10 @@ static inline void auth_hdr_less(struct pkt_buff *pkt)
 	pkt_set_proto(pkt, &eth_lay3, auth_ops->h_next_header);
 }
 
-struct protocol ip_auth_hdr_ops = {
+struct protocol ip_auth_ops = {
 	.key = 0x33,
 	.print_full = auth_hdr,
 	.print_less = auth_hdr_less,
 };
 
-#endif /* PROTO_IP_AUTHENTICATION_HDR_H */
+EXPORT_SYMBOL(ip_auth_hdr_ops);

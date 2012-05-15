@@ -10,17 +10,14 @@
  * http://www.iana.org/assignments/icmpv6-parameters
  */
 
-#ifndef PROTO_ICMPV6_H
-#define PROTO_ICMPV6_H
-
 #include <stdio.h>
 #include <stdint.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <asm/byteorder.h>
 
-#include "built_in.h"
-#include "proto_struct.h"
+#include "proto.h"
+#include "protos.h"
 #include "dissector_eth.h"
 #include "pkt_buff.h"
 #include "built_in.h"
@@ -283,7 +280,7 @@ struct icmpv6_type_154 {
 	uint8_t ops[0];
 } __packed;
 
-static inline int8_t print_ipv6_addr_list(struct pkt_buff *pkt, uint8_t nr_addr)
+static int8_t print_ipv6_addr_list(struct pkt_buff *pkt, uint8_t nr_addr)
 {
 	char address[INET6_ADDRSTRLEN];
 	struct in6_addr *addr;
@@ -310,8 +307,8 @@ static char *icmpv6_mcast_rec_types[] = {
 	"BLOCK_OLD_SOURCES",
 };
 
-static inline int8_t dissect_icmpv6_mcast_rec(struct pkt_buff *pkt,
-					    uint16_t nr_rec)
+static int8_t dissect_icmpv6_mcast_rec(struct pkt_buff *pkt,
+				       uint16_t nr_rec)
 {
 	uint16_t nr_src, aux_data_len_bytes;
 	struct icmpv6_mldv2_addr_rec *addr_rec;
@@ -353,8 +350,8 @@ static inline int8_t dissect_icmpv6_mcast_rec(struct pkt_buff *pkt,
 	return 1;
 }
 
-static inline int8_t dissect_neighb_disc_ops_1(struct pkt_buff *pkt,
-					      ssize_t len)
+static int8_t dissect_neighb_disc_ops_1(struct pkt_buff *pkt,
+					ssize_t len)
 {
 	struct icmpv6_neighb_disc_ops_type_1_2 *icmp_neighb_disc_1;
 
@@ -375,14 +372,14 @@ static inline int8_t dissect_neighb_disc_ops_1(struct pkt_buff *pkt,
 	return 1;
 }
 
-static inline int8_t dissect_neighb_disc_ops_2(struct pkt_buff *pkt,
-					      ssize_t len)
+static int8_t dissect_neighb_disc_ops_2(struct pkt_buff *pkt,
+					ssize_t len)
 {
 	return dissect_neighb_disc_ops_1(pkt, len);
 }
 
-static inline int8_t dissect_neighb_disc_ops_3(struct pkt_buff *pkt,
-					      ssize_t len)
+static int8_t dissect_neighb_disc_ops_3(struct pkt_buff *pkt,
+				        ssize_t len)
 {
 	char address[INET6_ADDRSTRLEN];
 	struct icmpv6_neighb_disc_ops_type_3 *icmp_neighb_disc_3;
@@ -412,8 +409,8 @@ static inline int8_t dissect_neighb_disc_ops_3(struct pkt_buff *pkt,
 	return 1;
 }
 
-static inline int8_t dissect_neighb_disc_ops_4(struct pkt_buff *pkt,
-					      ssize_t len)
+static int8_t dissect_neighb_disc_ops_4(struct pkt_buff *pkt,
+					ssize_t len)
 {
 	struct icmpv6_neighb_disc_ops_type_4 *icmp_neighb_disc_4;
 
@@ -436,8 +433,8 @@ static inline int8_t dissect_neighb_disc_ops_4(struct pkt_buff *pkt,
 	return 1;
 }
 
-static inline int8_t dissect_neighb_disc_ops_5(struct pkt_buff *pkt,
-					      ssize_t len)
+static int8_t dissect_neighb_disc_ops_5(struct pkt_buff *pkt,
+					ssize_t len)
 {
 	struct icmpv6_neighb_disc_ops_type_5 *icmp_neighb_disc_5;
 
@@ -455,8 +452,8 @@ static inline int8_t dissect_neighb_disc_ops_5(struct pkt_buff *pkt,
 	return 1;
 }
 
-static inline int8_t dissect_neighb_disc_ops_9(struct pkt_buff *pkt,
-					      ssize_t len)
+static int8_t dissect_neighb_disc_ops_9(struct pkt_buff *pkt,
+					ssize_t len)
 {
 	struct icmpv6_neighb_disc_ops_type_9_10 *icmp_neighb_disc_9;
 
@@ -474,8 +471,8 @@ static inline int8_t dissect_neighb_disc_ops_9(struct pkt_buff *pkt,
 	return print_ipv6_addr_list(pkt, len / sizeof(struct in6_addr));
 }
 
-static inline int8_t dissect_neighb_disc_ops_10(struct pkt_buff *pkt,
-					      ssize_t len)
+static int8_t dissect_neighb_disc_ops_10(struct pkt_buff *pkt,
+					 ssize_t len)
 {
 	return dissect_neighb_disc_ops_9(pkt, len);
 }
@@ -485,8 +482,8 @@ static char *icmpv6_neighb_disc_ops_15_name[] = {
 	"FQDN",
 };
 
-static inline int8_t dissect_neighb_disc_ops_15(struct pkt_buff *pkt,
-					      ssize_t len)
+static int8_t dissect_neighb_disc_ops_15(struct pkt_buff *pkt,
+					 ssize_t len)
 {
 	size_t pad_len;
 	ssize_t name_len;
@@ -539,8 +536,8 @@ static char *icmpv6_neighb_disc_ops_16_cert[] = {
 	"X.509v3 Certificate",
 };
 
-static inline int8_t dissect_neighb_disc_ops_16(struct pkt_buff *pkt,
-					      ssize_t len)
+static int8_t dissect_neighb_disc_ops_16(struct pkt_buff *pkt,
+					 ssize_t len)
 {
 	struct icmpv6_neighb_disc_ops_type_16 *icmp_neighb_disc_16;
 
@@ -576,8 +573,8 @@ static char *icmpv6_neighb_disc_ops_17_codes[] = {
 	"NAR's Prefix",
 };
 
-static inline int8_t dissect_neighb_disc_ops_17(struct pkt_buff *pkt,
-					      ssize_t len)
+static int8_t dissect_neighb_disc_ops_17(struct pkt_buff *pkt,
+					 ssize_t len)
 {
 	char address[INET6_ADDRSTRLEN];
 	struct icmpv6_neighb_disc_ops_type_17 *icmp_neighb_disc_17;
@@ -660,8 +657,8 @@ static char *icmpv6_neighb_disc_ops_19_codes[] = {
          identified by the LLA",
 };
 
-static inline int8_t dissect_neighb_disc_ops_19(struct pkt_buff *pkt,
-					      ssize_t len)
+static int8_t dissect_neighb_disc_ops_19(struct pkt_buff *pkt,
+					 ssize_t len)
 {
 	struct icmpv6_neighb_disc_ops_type_19 *icmp_neighb_disc_19;
 
@@ -767,7 +764,7 @@ static inline char *icmpv6_neighb_disc_ops(uint8_t code) {
 	return NULL;
 };
 
-static inline int8_t dissect_neighb_disc_ops(struct pkt_buff *pkt)
+static int8_t dissect_neighb_disc_ops(struct pkt_buff *pkt)
 {
 	size_t pad_bytes;
 	uint16_t ops_total_len;
@@ -883,7 +880,7 @@ static char *icmpv6_type_1_codes[] = {
 	"Error in Source Routing Header",
 };
 
-static inline int8_t dissect_icmpv6_type1(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type1(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_1_3 *icmp_1;
 	
@@ -897,7 +894,7 @@ static inline int8_t dissect_icmpv6_type1(struct pkt_buff *pkt)
 	return 1;
 }
 
-static inline int8_t dissect_icmpv6_type2(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type2(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_2 *icmp_2;
 
@@ -916,7 +913,7 @@ static char *icmpv6_type_3_codes[] = {
 	"Fragment reassembly time exceeded",
 };
 
-static inline int8_t dissect_icmpv6_type3(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type3(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_1_3 *icmp_3;
 
@@ -936,7 +933,7 @@ static char *icmpv6_type_4_codes[] = {
 	"Unrecognized IPv6 option encountered",
 };
 
-static inline int8_t dissect_icmpv6_type4(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type4(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_4 *icmp_4;
 
@@ -950,7 +947,7 @@ static inline int8_t dissect_icmpv6_type4(struct pkt_buff *pkt)
 	return 1;
 }
 
-static inline int8_t dissect_icmpv6_type128(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type128(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_128_129 *icmp_128;
 
@@ -966,7 +963,7 @@ static inline int8_t dissect_icmpv6_type128(struct pkt_buff *pkt)
 	return 1;
 }
 
-static inline int8_t dissect_icmpv6_type129(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type129(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_128_129 *icmp_129;
 
@@ -982,7 +979,7 @@ static inline int8_t dissect_icmpv6_type129(struct pkt_buff *pkt)
 	return 1;
 }
 
-static inline int8_t dissect_icmpv6_type130(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type130(struct pkt_buff *pkt)
 {
 	char address[INET6_ADDRSTRLEN];
 	uint16_t nr_src, maxrespdel;
@@ -1031,7 +1028,7 @@ static inline int8_t dissect_icmpv6_type130(struct pkt_buff *pkt)
 	return 1;
 }
 
-static inline int8_t dissect_icmpv6_type131(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type131(struct pkt_buff *pkt)
 {
 	char address[INET6_ADDRSTRLEN];
 	struct icmpv6_type_130_131_132 *icmp_131;
@@ -1055,7 +1052,7 @@ static inline int8_t dissect_icmpv6_type132(struct pkt_buff *pkt)
 	return dissect_icmpv6_type131(pkt);
 }
 
-static inline int8_t dissect_icmpv6_type133(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type133(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_133_141_142 *icmp_133;
 
@@ -1069,7 +1066,7 @@ static inline int8_t dissect_icmpv6_type133(struct pkt_buff *pkt)
 	return dissect_neighb_disc_ops(pkt);
 }
 
-static inline int8_t dissect_icmpv6_type134(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type134(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_134 *icmp_134;
 
@@ -1088,7 +1085,7 @@ static inline int8_t dissect_icmpv6_type134(struct pkt_buff *pkt)
 	return dissect_neighb_disc_ops(pkt);
 }
 
-static inline int8_t dissect_icmpv6_type135(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type135(struct pkt_buff *pkt)
 {
 	char address[INET6_ADDRSTRLEN];
 	struct icmpv6_type_135 *icmp_135;
@@ -1106,7 +1103,7 @@ static inline int8_t dissect_icmpv6_type135(struct pkt_buff *pkt)
 	return dissect_neighb_disc_ops(pkt);
 }
 
-static inline int8_t dissect_icmpv6_type136(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type136(struct pkt_buff *pkt)
 {
 	char address[INET6_ADDRSTRLEN];
 	uint32_t r_s_o_res;
@@ -1128,7 +1125,7 @@ static inline int8_t dissect_icmpv6_type136(struct pkt_buff *pkt)
 	return dissect_neighb_disc_ops(pkt);
 }
 
-static inline int8_t dissect_icmpv6_type137(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type137(struct pkt_buff *pkt)
 {
 	char address[INET6_ADDRSTRLEN];
 	struct icmpv6_type_137 *icmp_137;
@@ -1149,7 +1146,7 @@ static inline int8_t dissect_icmpv6_type137(struct pkt_buff *pkt)
 	return dissect_neighb_disc_ops(pkt);
 }
 
-static inline void dissect_icmpv6_rr_body(struct pkt_buff *pkt)
+static void dissect_icmpv6_rr_body(struct pkt_buff *pkt)
 {
 	 /*
 	  * Upgrade Dissector for Message Body
@@ -1172,7 +1169,7 @@ static inline char *icmpv6_type_138_codes(uint8_t code) {
 	return NULL;
 };
 
-static inline int8_t dissect_icmpv6_type138(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type138(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_138 *icmp_138;
 
@@ -1195,7 +1192,7 @@ static inline int8_t dissect_icmpv6_type138(struct pkt_buff *pkt)
 	return 1;
 }
 
-static inline void dissect_icmpv6_node_inf_data(struct pkt_buff *pkt)
+static void dissect_icmpv6_node_inf_data(struct pkt_buff *pkt)
 {
 	 /*
 	  * Upgrade Dissector for Data field
@@ -1219,7 +1216,7 @@ static char *icmpv6_type_139_codes[] = {
 	"Data contains IPv4 Address",
 };
 
-static inline int8_t dissect_icmpv6_type139(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type139(struct pkt_buff *pkt)
 {
 	char *qtype_name = "Unknown";
 	uint16_t qtype_nr;
@@ -1264,7 +1261,7 @@ static inline int8_t dissect_icmpv6_type142(struct pkt_buff *pkt)
 	return dissect_icmpv6_type133(pkt);
 }
 
-static inline int8_t dissect_icmpv6_type143(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type143(struct pkt_buff *pkt)
 {
 	uint16_t nr_rec;
 	struct icmpv6_type_143 *icmp_143;
@@ -1281,7 +1278,7 @@ static inline int8_t dissect_icmpv6_type143(struct pkt_buff *pkt)
 	return dissect_icmpv6_mcast_rec(pkt, nr_rec);
 }
 
-static inline int8_t dissect_icmpv6_type144(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type144(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_144_146 *icmp_144;
 
@@ -1296,7 +1293,7 @@ static inline int8_t dissect_icmpv6_type144(struct pkt_buff *pkt)
 	return 1;
 }
 
-static inline int8_t dissect_icmpv6_type145(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type145(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_145 *icmp_145;
 
@@ -1317,7 +1314,7 @@ static inline int8_t dissect_icmpv6_type146(struct pkt_buff *pkt)
 	return dissect_icmpv6_type144(pkt);
 }
 
-static inline int8_t dissect_icmpv6_type147(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type147(struct pkt_buff *pkt)
 {
 	uint16_t m_o_res;
 	struct icmpv6_type_147 *icmp_147;
@@ -1335,7 +1332,7 @@ static inline int8_t dissect_icmpv6_type147(struct pkt_buff *pkt)
 	return dissect_neighb_disc_ops(pkt);
 }
 
-static inline int8_t dissect_icmpv6_type148(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type148(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_148 *icmp_148;
 
@@ -1350,7 +1347,7 @@ static inline int8_t dissect_icmpv6_type148(struct pkt_buff *pkt)
 	return dissect_neighb_disc_ops(pkt);
 }
 
-static inline int8_t dissect_icmpv6_type149(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type149(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_149 *icmp_149;
 
@@ -1367,7 +1364,7 @@ static inline int8_t dissect_icmpv6_type149(struct pkt_buff *pkt)
 	return dissect_neighb_disc_ops(pkt);
 }
 
-static inline int8_t dissect_icmpv6_type150(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type150(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_150 *icmp_150;
 
@@ -1383,7 +1380,7 @@ static inline int8_t dissect_icmpv6_type150(struct pkt_buff *pkt)
 	return 1;
 }
 
-static inline int8_t dissect_icmpv6_type151(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type151(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_151 *icmp_151;
 
@@ -1398,7 +1395,7 @@ static inline int8_t dissect_icmpv6_type151(struct pkt_buff *pkt)
 	return 1;
 }
 
-static inline int8_t dissect_icmpv6_type152(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type152(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_152 *icmp_152;
 
@@ -1410,7 +1407,7 @@ static inline int8_t dissect_icmpv6_type152(struct pkt_buff *pkt)
 	return 1;
 }
 
-static inline int8_t dissect_icmpv6_type153(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type153(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_153 *icmp_153;
 
@@ -1422,7 +1419,7 @@ static inline int8_t dissect_icmpv6_type153(struct pkt_buff *pkt)
 	return 1;
 }
 
-static inline int8_t dissect_icmpv6_type154(struct pkt_buff *pkt)
+static int8_t dissect_icmpv6_type154(struct pkt_buff *pkt)
 {
 	struct icmpv6_type_154 *icmp_154;
 
@@ -1463,9 +1460,8 @@ static inline char *icmpv6_type_155_codes(uint8_t code) {
 	return NULL;
 };
 
-static inline void icmpv6_process(struct icmpv6_general_hdr *icmp, char **type,
-				  char **code,
-				  int8_t (**optional)(struct pkt_buff *pkt))
+static void icmpv6_process(struct icmpv6_general_hdr *icmp, char **type,
+			   char **code, int8_t (**optional)(struct pkt_buff *pkt))
 {
 	*type = "Unknown Type";
 	*code = "Unknown Code";
@@ -1639,7 +1635,7 @@ static inline void icmpv6_process(struct icmpv6_general_hdr *icmp, char **type,
 	}
 }
 
-static inline void icmpv6(struct pkt_buff *pkt)
+static void icmpv6(struct pkt_buff *pkt)
 {
 	char *type = NULL, *code = NULL;
 	int8_t (*optional)(struct pkt_buff *pkt) = NULL;
@@ -1662,7 +1658,7 @@ static inline void icmpv6(struct pkt_buff *pkt)
 	tprintf(" ]\n");
 }
 
-static inline void icmpv6_less(struct pkt_buff *pkt)
+static void icmpv6_less(struct pkt_buff *pkt)
 {
 	struct icmpv6_general_hdr *icmp =
 		(struct icmpv6_general_hdr *) pkt_pull(pkt, sizeof(*icmp));
@@ -1679,4 +1675,4 @@ struct protocol icmpv6_ops = {
 	.print_less = icmpv6_less,
 };
 
-#endif /* PROTO_ICMPV6_H */
+EXPORT_SYMBOL(icmpv6_ops);

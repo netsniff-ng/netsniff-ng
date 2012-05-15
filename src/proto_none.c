@@ -5,19 +5,17 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef PROTO_NONE_H
-#define PROTO_NONE_H
-
 #include <stdio.h>
 #include <stdint.h>
 #include <ctype.h>
 
-#include "proto_struct.h"
+#include "proto.h"
+#include "protos.h"
 #include "pkt_buff.h"
 
-static inline void empty(struct pkt_buff *pkt) {}
+void empty(struct pkt_buff *pkt) {}
 
-static inline void _hex(uint8_t *ptr, size_t len)
+static void _hex(uint8_t *ptr, size_t len)
 {
 	if (!len)
 		return;
@@ -28,7 +26,7 @@ static inline void _hex(uint8_t *ptr, size_t len)
 	tprintf(" ]\n");
 }
 
-static inline void hex(struct pkt_buff *pkt)
+void hex(struct pkt_buff *pkt)
 {
 	size_t len = pkt_len(pkt);
 
@@ -39,7 +37,7 @@ static inline void hex(struct pkt_buff *pkt)
 	tprintf("\n");
 }
 
-static inline void _ascii(uint8_t *ptr, size_t len)
+static void _ascii(uint8_t *ptr, size_t len)
 {
 	if (!len)
 		return;
@@ -50,7 +48,7 @@ static inline void _ascii(uint8_t *ptr, size_t len)
 	tprintf(" ]\n");
 }
 
-static inline void ascii(struct pkt_buff *pkt)
+void ascii(struct pkt_buff *pkt)
 {
 	size_t len = pkt_len(pkt);
 
@@ -61,7 +59,7 @@ static inline void ascii(struct pkt_buff *pkt)
 	tprintf("\n");
 }
 
-static inline void hex_ascii(struct pkt_buff *pkt)
+void hex_ascii(struct pkt_buff *pkt)
 {
 	size_t   len = pkt_len(pkt);
 	uint8_t *ptr = pkt_pull(pkt, len);
@@ -74,8 +72,7 @@ static inline void hex_ascii(struct pkt_buff *pkt)
 	tprintf("\n");
 }
 
-#ifndef __without_ops
-static inline void none_less(struct pkt_buff *pkt)
+static void none_less(struct pkt_buff *pkt)
 {
 	tprintf("\n");
 }
@@ -85,5 +82,5 @@ struct protocol none_ops = {
 	.print_full = hex_ascii,
 	.print_less = none_less,
 };
-#endif /* __without_ops */
-#endif /* PROTO_NONE_H */
+
+EXPORT_SYMBOL(none_ops);

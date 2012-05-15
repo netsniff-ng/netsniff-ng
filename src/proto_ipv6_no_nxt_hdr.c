@@ -6,17 +6,16 @@
  * IPv6 No Next Header described in RFC2460
  */
 
-#ifndef PROTO_IPV6_NO_NXT_HDR_H
-#define PROTO_IPV6_NO_NXT_HDR_H
-
 #include <stdio.h>
 #include <stdint.h>
 #include <netinet/in.h>    /* for ntohs() */
 
-#include "proto_struct.h"
+#include "proto.h"
+#include "protos.h"
 #include "dissector_eth.h"
+#include "built_in.h"
 
-static inline void no_next_header(struct pkt_buff *pkt)
+static void no_next_header(struct pkt_buff *pkt)
 {
 	/*
 	 * The value 59 in the Next Header field of an IPv6 header or any
@@ -30,7 +29,7 @@ static inline void no_next_header(struct pkt_buff *pkt)
 	tprintf(" ]\n");
 }
 
-static inline void no_next_header_less(struct pkt_buff *pkt)
+static void no_next_header_less(struct pkt_buff *pkt)
 {
 	tprintf(" No Next Header");
 }
@@ -41,4 +40,4 @@ struct protocol ipv6_no_next_header_ops = {
 	.print_less = no_next_header_less,
 };
 
-#endif /* PROTO_IPV6_NO_NXT_HDR_H */
+EXPORT_SYMBOL(ipv6_no_next_header_ops);

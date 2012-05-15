@@ -4,17 +4,16 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef PROTO_IGMP_H
-#define PROTO_IGMP_H
-
 #include <arpa/inet.h>
 #include <asm/byteorder.h>
 #include <netinet/in.h>
 
+#include "proto.h"
+#include "protos.h"
 #include "csum.h"
 #include "dissector_eth.h"
-#include "proto_struct.h"
 #include "built_in.h"
+#include "pkt_buff.h"
 
 /* IGMPv0 (RFC-988) */
 struct igmp_v0_msg {
@@ -210,7 +209,7 @@ static char *friendly_group_rec_type_name(uint8_t rec_type)
 	}
 }
 
-static inline void dissect_igmp_v0(struct pkt_buff *pkt)
+static void dissect_igmp_v0(struct pkt_buff *pkt)
 {
 	char     addr[INET_ADDRSTRLEN];
 	uint16_t csum;
@@ -272,7 +271,7 @@ static inline void dissect_igmp_v0(struct pkt_buff *pkt)
 	tprintf(" ]\n\n");
 }
 
-static inline void dissect_igmp_v1(struct pkt_buff *pkt)
+static void dissect_igmp_v1(struct pkt_buff *pkt)
 {
 	char     addr[INET_ADDRSTRLEN];
 	uint16_t csum;
@@ -296,7 +295,7 @@ static inline void dissect_igmp_v1(struct pkt_buff *pkt)
 	tprintf(" ]\n\n");
 }
 
-static inline void dissect_igmp_v2(struct pkt_buff *pkt)
+static void dissect_igmp_v2(struct pkt_buff *pkt)
 {
 	char     addr[INET_ADDRSTRLEN];
 	uint16_t csum;
@@ -332,7 +331,7 @@ static inline void dissect_igmp_v2(struct pkt_buff *pkt)
 	tprintf(" ]\n\n");
 }
 
-static inline void dissect_igmp_v3_membership_query(struct pkt_buff *pkt)
+static void dissect_igmp_v3_membership_query(struct pkt_buff *pkt)
 {
 	char      addr[INET_ADDRSTRLEN];
 	size_t    n;
@@ -386,7 +385,7 @@ static inline void dissect_igmp_v3_membership_query(struct pkt_buff *pkt)
 	tprintf(" ]\n\n");
 }
 
-static inline void dissect_igmp_v3_membership_report(struct pkt_buff *pkt)
+static void dissect_igmp_v3_membership_report(struct pkt_buff *pkt)
 {
 	char      addr[INET_ADDRSTRLEN];
 	size_t    m, n;
@@ -451,7 +450,7 @@ static inline void dissect_igmp_v3_membership_report(struct pkt_buff *pkt)
 	tprintf("\n");
 }
 
-static inline void igmp(struct pkt_buff *pkt)
+static void igmp(struct pkt_buff *pkt)
 {
 	switch (*pkt_peek(pkt)) {
 	case IGMP_V0_CREATE_GROUP_REQUEST:
@@ -494,7 +493,7 @@ static inline void igmp(struct pkt_buff *pkt)
 	}
 }
 
-static inline void igmp_less(struct pkt_buff *pkt)
+static void igmp_less(struct pkt_buff *pkt)
 {
 	int version = -1;
 
@@ -561,4 +560,4 @@ struct protocol igmp_ops = {
 	.print_less = igmp_less,
 };
 
-#endif /* PROTO_IGMP_H */
+EXPORT_SYMBOL(igmp_ops);

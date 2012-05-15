@@ -9,7 +9,7 @@
 
 #include "hash.h"
 #include "built_in.h"
-#include "proto_struct.h"
+#include "proto.h"
 #include "xmalloc.h"
 
 struct pkt_buff {

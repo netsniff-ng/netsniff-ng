@@ -9,7 +9,28 @@ IF (CMAKE_HAVE_PTHREAD_CREATE)
 					../dissector.c
 					../dissector_eth.c
 					../dissector_80211.c
+					../proto_arp.c
+					../proto_ethernet.c
+					../proto_icmpv4.c
+					../proto_icmpv6.c
+					../proto_igmp.c
+					../proto_ip_authentication_hdr.c
+					../proto_ip_esp.c
+					../proto_ipv4.c
+					../proto_ipv6.c
+					../proto_ipv6_dest_opts.c
+					../proto_ipv6_fragm.c
+					../proto_ipv6_hop_by_hop.c
+					../proto_ipv6_in_ipv4.c
+					../proto_ipv6_mobility_hdr.c
+					../proto_ipv6_no_nxt_hdr.c
+					../proto_ipv6_routing.c
+					../proto_none.c
+					../proto_tcp.c
+					../proto_udp.c
+					../proto_vlan.c
 					../xmalloc.c
+					../oui.c
 					../xio.c
 					../xsys.c
 					../xstring.c
@@ -29,7 +50,8 @@ IF (CMAKE_HAVE_PTHREAD_CREATE)
 		-DBUILD_STRING="${BUILD_STRING}"
 		-D_FILE_OFFSET_BITS=64
 		-D_LARGEFILE_SOURCE
-		-D_LARGEFILE64_SOURCE)
+		-D_LARGEFILE64_SOURCE
+		-D__WITH_PROTOS)
 	POD2MAN(${CMAKE_SOURCE_DIR}/netsniff-ng.c netsniff-ng 8)
 	TARGET_LINK_LIBRARIES(netsniff-ng ${CMAKE_THREAD_LIBS_INIT} -lnl)
 #	FILE(GLOB rules_files "../examples/bpfc/*.bpf")

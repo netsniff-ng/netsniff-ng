@@ -11,12 +11,15 @@ INCLUDE(Pod2Man)
 
 IF(CURSES_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND LIBGEOIP_FOUND AND LIBNETFILTER_CONNTRACK_FOUND AND LIBURCU_FOUND)
 	ADD_EXECUTABLE(${PROJECT_NAME}	../xmalloc.c
+					../oui.c
 					../xio.c
 					../xsys.c
 					../xstring.c
 					../hash.c
 					../dissector_eth.c
+					../dissector_80211.c
 					../dissector.c
+					../proto_none.c
 					../tprintf.c
 					../flowtop.c)
 	ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"

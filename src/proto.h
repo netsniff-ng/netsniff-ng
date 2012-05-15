@@ -27,4 +27,9 @@ struct protocol {
 	void (*process)   (struct pkt_buff *pkt);
 };
 
+extern void empty(struct pkt_buff *pkt);
+extern void hex(struct pkt_buff *pkt);
+extern void ascii(struct pkt_buff *pkt);
+extern void hex_ascii(struct pkt_buff *pkt);
+
 #endif /* PROTO_H */

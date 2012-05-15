@@ -6,17 +6,15 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef PROTO_IPV4_H
-#define PROTO_IPV4_H
-
 #include <stdio.h>
 #include <stdint.h>
 #include <netinet/in.h>    /* for ntohs() */
 #include <arpa/inet.h>     /* for inet_ntop() */
 #include <asm/byteorder.h>
 
+#include "proto.h"
+#include "protos.h"
 #include "csum.h"
-#include "proto_struct.h"
 #include "dissector_eth.h"
 #include "pkt_buff.h"
 #include "built_in.h"
@@ -55,7 +53,7 @@ struct ipv4hdr {
 #define IP_OPT_CLASS(x)       (((x) & 0x60) >> 5)
 #define IP_OPT_NUMBER(x)       ((x) & 0x1F)
 
-static inline void ipv4(struct pkt_buff *pkt)
+static void ipv4(struct pkt_buff *pkt)
 {
 	uint16_t csum, frag_off;
 	char src_ip[INET_ADDRSTRLEN];
@@ -138,7 +136,7 @@ out:
 	pkt_set_proto(pkt, &eth_lay3, ip->h_protocol);
 }
 
-static inline void ipv4_less(struct pkt_buff *pkt)
+static void ipv4_less(struct pkt_buff *pkt)
 {
 	char src_ip[INET_ADDRSTRLEN];
 	char dst_ip[INET_ADDRSTRLEN];
@@ -166,4 +164,4 @@ struct protocol ipv4_ops = {
 	.print_less = ipv4_less,
 };
 
-#endif /* PROTO_IPV4_H */
+EXPORT_SYMBOL(ipv4_ops);

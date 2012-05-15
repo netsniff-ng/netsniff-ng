@@ -9,23 +9,20 @@
 #define DISSECTOR_80211_H
 
 #include "hash.h"
-#include "proto_struct.h"
+#include "proto.h"
+#include "protos.h"
 #include "tprintf.h"
 #include "xsys.h"
+#include "oui.h"
 
 extern struct hash_table ieee80211_lay2;
 
 extern void dissector_init_ieee80211(int fnttype);
 extern void dissector_cleanup_ieee80211(void);
 
-extern char *lookup_vendor(unsigned int id);
-
-extern struct protocol ieee80211_mac_ops;
-extern struct protocol none_ops;
-
 static inline struct protocol *dissector_get_ieee80211_entry_point(void)
 {
-	return &ieee80211_mac_ops;
+	return &none_ops;
 }
 
 static inline struct protocol *dissector_get_ieee80211_exit_point(void)

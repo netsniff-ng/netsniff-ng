@@ -5,15 +5,16 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef TCP_H
-#define TCP_H
-
 #include <stdio.h>
 #include <stdint.h>
+#include <endian.h>
 #include <netinet/in.h>    /* for ntohs() */
+#include <asm/byteorder.h>
 
-#include "proto_struct.h"
+#include "proto.h"
+#include "protos.h"
 #include "dissector_eth.h"
+#include "built_in.h"
 #include "pkt_buff.h"
 
 struct tcphdr {
@@ -51,7 +52,7 @@ struct tcphdr {
 	uint16_t urg_ptr;
 } __attribute__((packed));
 
-static inline uint16_t tcp_port(uint16_t src, uint16_t dst)
+static uint16_t tcp_port(uint16_t src, uint16_t dst)
 {
 	char *tmp1, *tmp2;
 
@@ -79,7 +80,7 @@ static inline uint16_t tcp_port(uint16_t src, uint16_t dst)
 	}
 }
 
-static inline void tcp(struct pkt_buff *pkt)
+static void tcp(struct pkt_buff *pkt)
 {
 	struct tcphdr *tcp = (struct tcphdr *) pkt_pull(pkt, sizeof(*tcp));
 
@@ -122,7 +123,7 @@ static inline void tcp(struct pkt_buff *pkt)
 	pkt_set_proto(pkt, &eth_lay4, tcp_port(tcp->source, tcp->dest));
 }
 
-static inline void tcp_less(struct pkt_buff *pkt)
+static void tcp_less(struct pkt_buff *pkt)
 {
 	struct tcphdr *tcp = (struct tcphdr *) pkt_pull(pkt, sizeof(*tcp));
 
@@ -162,4 +163,4 @@ struct protocol tcp_ops = {
 	.print_less = tcp_less,
 };
 
-#endif /* TCP_H */
+EXPORT_SYMBOL(tcp_ops);

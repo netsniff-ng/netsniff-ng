@@ -8,25 +8,27 @@
 #ifndef PROTOS_H
 #define PROTOS_H
 
-#include "proto_arp.h"
-#include "proto_ethernet.h"
-#include "proto_icmpv4.h"
-#include "proto_icmpv6.h"
-#include "proto_igmp.h"
-#include "proto_ip_authentication_hdr.h"
-#include "proto_ip_esp.h"
-#include "proto_ipv4.h"
-#include "proto_ipv6.h"
-#include "proto_ipv6_dest_opts.h"
-#include "proto_ipv6_fragm.h"
-#include "proto_ipv6_hop_by_hop.h"
-#include "proto_ipv6_in_ipv4.h"
-#include "proto_ipv6_mobility_hdr.h"
-#include "proto_ipv6_no_nxt_hdr.h"
-#include "proto_ipv6_routing.h"
-#include "proto_none.h"
-#include "proto_tcp.h"
-#include "proto_udp.h"
-#include "proto_vlan.h"
+#include "proto.h"
+
+extern struct protocol arp_ops;
+extern struct protocol ethernet_ops;
+extern struct protocol icmpv4_ops;
+extern struct protocol icmpv6_ops;
+extern struct protocol igmp_ops;
+extern struct protocol ip_auth_ops;
+extern struct protocol ip_esp_ops;
+extern struct protocol ipv4_ops;
+extern struct protocol ipv6_ops;
+extern struct protocol ipv6_dest_opts_ops;
+extern struct protocol ipv6_fragm_ops;
+extern struct protocol ipv6_hop_by_hop_ops;
+extern struct protocol ipv6_in_ipv4_ops;
+extern struct protocol ipv6_mobility_ops;
+extern struct protocol ipv6_no_next_header_ops;
+extern struct protocol ipv6_routing_ops;
+extern struct protocol none_ops;
+extern struct protocol tcp_ops;
+extern struct protocol udp_ops;
+extern struct protocol vlan_ops;
 
 #endif /* PROTOS_H */

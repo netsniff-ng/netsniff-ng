@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include "hash.h"
+#include "oui.h"
 #include "protos.h"
 #include "pkt_buff.h"
 #include "dissector.h"
@@ -22,13 +23,6 @@ struct hash_table eth_lay4;
 static struct hash_table eth_ether_types;
 static struct hash_table eth_ports_udp;
 static struct hash_table eth_ports_tcp;
-static struct hash_table eth_oui;
-
-struct vendor_id {
-	unsigned int id;
-	char *vendor;
-	struct vendor_id *next;
-};
 
 struct port_tcp {
 	unsigned int id;
@@ -58,11 +52,6 @@ struct ether_type {
 		(entry && id == entry->id ? entry->struct_member : "Unknown");\
 	})
 
-char *lookup_vendor(unsigned int id)
-{
-	return __do_lookup_inline(id, vendor_id, &eth_oui, vendor);
-}
-
 char *lookup_port_udp(unsigned int id)
 {
 	return __do_lookup_inline(id, port_udp, &eth_ports_udp, port);
@@ -78,6 +67,7 @@ char *lookup_ether_type(unsigned int id)
 	return __do_lookup_inline(id, ether_type, &eth_ether_types, type);
 }
 
+#ifdef __WITH_PROTOS
 static inline void dissector_init_entry(int type)
 {
 	dissector_set_print_type(&ethernet_ops, type);
@@ -101,10 +91,10 @@ static void dissector_init_layer_2(int type)
 static void dissector_init_layer_3(int type)
 {
 	init_hash(&eth_lay3);
-	INSERT_HASH_PROTOS(icmp_ops, eth_lay3);
+	INSERT_HASH_PROTOS(icmpv4_ops, eth_lay3);
 	INSERT_HASH_PROTOS(icmpv6_ops, eth_lay3);
 	INSERT_HASH_PROTOS(igmp_ops, eth_lay3);
-	INSERT_HASH_PROTOS(ip_auth_hdr_ops, eth_lay3);
+	INSERT_HASH_PROTOS(ip_auth_ops, eth_lay3);
 	INSERT_HASH_PROTOS(ip_esp_ops, eth_lay3);
 	INSERT_HASH_PROTOS(ipv6_dest_opts_ops, eth_lay3);
 	INSERT_HASH_PROTOS(ipv6_fragm_ops, eth_lay3);
@@ -123,54 +113,13 @@ static void dissector_init_layer_4(int type)
 	init_hash(&eth_lay4);
 	for_each_hash_int(&eth_lay4, dissector_set_print_type, type);
 }
-
-static void dissector_init_oui(void)
-{
-	FILE *fp;
-	char buff[512], *ptr;
-	struct vendor_id *ven;
-	void **pos;
-	fp = fopen("/etc/netsniff-ng/oui.conf", "r");
-	if (!fp)
-		panic("No /etc/netsniff-ng/oui.conf found!\n");
-	memset(buff, 0, sizeof(buff));
-	while (fgets(buff, sizeof(buff), fp) != NULL) {
-		buff[sizeof(buff) - 1] = 0;
-		ven = xmalloc(sizeof(*ven));
-		ptr = buff;
-		ptr = skips(ptr);
-		ptr = getuint(ptr, &ven->id);
-		ptr = skips(ptr);
-		ptr = skipchar(ptr, ',');
-		ptr = skips(ptr);
-		ptr = strtrim_right(ptr, '\n');
-		ptr = strtrim_right(ptr, ' ');
-		ven->vendor = xstrdup(ptr);
-		ven->next = NULL;
-		pos = insert_hash(ven->id, ven, &eth_oui);
-		if (pos) {
-			ven->next = *pos;
-			*pos = ven;
-		}
-		memset(buff, 0, sizeof(buff));
-	}
-	fclose(fp);
-}
-
-static int dissector_cleanup_oui(void *ptr)
-{
-	struct vendor_id *tmp, *v = ptr;
-	if (!ptr)
-		return 0;
-	while ((tmp = v->next)) {
-		xfree(v->vendor);
-		xfree(v);
-		v = tmp;
-	}
-	xfree(v->vendor);
-	xfree(v);
-	return 0;
-}
+#else
+static inline void dissector_init_entry(int type) {}
+static inline void dissector_init_exit(int type) {}
+static void dissector_init_layer_2(int type) {}
+static void dissector_init_layer_3(int type) {}
+static void dissector_init_layer_4(int type) {}
+#endif /* __WITH_PROTOS */
 
 static void dissector_init_ports_udp(void)
 {
@@ -323,7 +272,9 @@ void dissector_init_ethernet(int fnttype)
 	dissector_init_layer_3(fnttype);
 	dissector_init_layer_4(fnttype);
 	dissector_init_exit(fnttype);
+#ifdef __WITH_PROTOS
 	dissector_init_oui();
+#endif
 	dissector_init_ports_udp();
 	dissector_init_ports_tcp();
 	dissector_init_ether_types();
@@ -340,6 +291,7 @@ void dissector_cleanup_ethernet(void)
 	free_hash(&eth_ports_udp);
 	for_each_hash(&eth_ports_tcp, dissector_cleanup_ports_tcp);
 	free_hash(&eth_ports_tcp);
-	for_each_hash(&eth_oui, dissector_cleanup_oui);
-	free_hash(&eth_oui);
+#ifdef __WITH_PROTOS
+	dissector_cleanup_oui();
+#endif
 }

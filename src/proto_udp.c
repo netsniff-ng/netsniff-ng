@@ -5,14 +5,12 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef UDP_H
-#define UDP_H
-
 #include <stdio.h>
 #include <stdint.h>
 #include <netinet/in.h>    /* for ntohs() */
 
-#include "proto_struct.h"
+#include "proto.h"
+#include "protos.h"
 #include "dissector_eth.h"
 #include "pkt_buff.h"
 
@@ -23,7 +21,7 @@ struct udphdr {
 	uint16_t check;
 } __attribute__((packed));
 
-static inline uint16_t udp_port(uint16_t src, uint16_t dst)
+static uint16_t udp_port(uint16_t src, uint16_t dst)
 {
 	char *tmp1, *tmp2;
 
@@ -51,7 +49,7 @@ static inline uint16_t udp_port(uint16_t src, uint16_t dst)
 	}
 }
 
-static inline void udp(struct pkt_buff *pkt)
+static void udp(struct pkt_buff *pkt)
 {
 	struct udphdr *udp = (struct udphdr *) pkt_pull(pkt, sizeof(*udp));
 
@@ -71,7 +69,7 @@ static inline void udp(struct pkt_buff *pkt)
 	pkt_set_proto(pkt, &eth_lay4, udp_port(udp->source, udp->dest));
 }
 
-static inline void udp_less(struct pkt_buff *pkt)
+static void udp_less(struct pkt_buff *pkt)
 {
 	struct udphdr *udp = (struct udphdr *) pkt_pull(pkt, sizeof(*udp));
 
@@ -92,4 +90,4 @@ struct protocol udp_ops = {
 	.print_less = udp_less,
 };
 
-#endif /* UDP_H */
+EXPORT_SYMBOL(udp_ops);

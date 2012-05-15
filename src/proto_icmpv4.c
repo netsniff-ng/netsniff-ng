@@ -5,14 +5,12 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef PROTO_ICMP_H
-#define PROTO_ICMP_H
-
 #include <stdio.h>
 #include <stdint.h>
 #include <netinet/in.h>    /* for ntohs() */
 
-#include "proto_struct.h"
+#include "proto.h"
+#include "protos.h"
 #include "dissector_eth.h"
 #include "pkt_buff.h"
 #include "built_in.h"
@@ -34,7 +32,7 @@ struct icmphdr {
 	} un;
 } __packed;
 
-static inline void icmp(struct pkt_buff *pkt)
+static void icmp(struct pkt_buff *pkt)
 {
 	struct icmphdr *icmp = (struct icmphdr *) pkt_pull(pkt, sizeof(*icmp));
 
@@ -48,7 +46,7 @@ static inline void icmp(struct pkt_buff *pkt)
 	tprintf(" ]\n");
 }
 
-static inline void icmp_less(struct pkt_buff *pkt)
+static void icmp_less(struct pkt_buff *pkt)
 {
 	struct icmphdr *icmp = (struct icmphdr *) pkt_pull(pkt, sizeof(*icmp));
 
@@ -58,10 +56,10 @@ static inline void icmp_less(struct pkt_buff *pkt)
 	tprintf(" Type %u Code %u", icmp->type, icmp->code);
 }
 
-struct protocol icmp_ops = {
+struct protocol icmpv4_ops = {
 	.key = 0x01,
 	.print_full = icmp,
 	.print_less = icmp_less,
 };
 
-#endif /* PROTO_ICMP_H */
+EXPORT_SYMBOL(icmp_ops);

@@ -6,16 +6,16 @@
  * IPv6 Mobility Header described in RFC6275
  */
 
-#ifndef PROTO_IPV6_MOBILITY_HDR_H
-#define PROTO_IPV6_MOBILITY_HDR_H
-
 #include <stdio.h>
 #include <stdint.h>
 #include <netinet/in.h>    /* for ntohs() */
+#include <arpa/inet.h>
 
-#include "proto_struct.h"
+#include "proto.h"
+#include "protos.h"
 #include "dissector_eth.h"
 #include "built_in.h"
+#include "pkt_buff.h"
 
 #define BINDING_REFRESH_REQUEST_MESSAGE	0x00
 #define HOME_TEST_INIT_MESSAGE		0x01
@@ -78,8 +78,8 @@ struct bind_err_msg {
 } __packed;
 
 
-static inline void dissect_mobility_options(struct pkt_buff *pkt,
-					     ssize_t *message_data_len)
+static void dissect_mobility_options(struct pkt_buff *pkt,
+				     ssize_t *message_data_len)
 {
 	/* Have to been upgraded.
 	 * http://tools.ietf.org/html/rfc6275#section-6.2.1
@@ -92,8 +92,8 @@ static inline void dissect_mobility_options(struct pkt_buff *pkt,
 	 */
 }
 
-static inline void dissect_mobilityhdr_type_0(struct pkt_buff *pkt,
-					      ssize_t *message_data_len)
+static void dissect_mobilityhdr_type_0(struct pkt_buff *pkt,
+				       ssize_t *message_data_len)
 {
 	struct bin_refr_req_msg *type_0;
 	
@@ -106,8 +106,8 @@ static inline void dissect_mobilityhdr_type_0(struct pkt_buff *pkt,
 	dissect_mobility_options(pkt, message_data_len);
 }
 
-static inline void dissect_mobilityhdr_type_1_2(struct pkt_buff *pkt,
-						ssize_t *message_data_len)
+static void dissect_mobilityhdr_type_1_2(struct pkt_buff *pkt,
+					 ssize_t *message_data_len)
 {
 	struct tst_init_msg *type_1_2;
 
@@ -122,8 +122,8 @@ static inline void dissect_mobilityhdr_type_1_2(struct pkt_buff *pkt,
 	dissect_mobility_options(pkt, message_data_len);
 }
 
-static inline void dissect_mobilityhdr_type_3_4(struct pkt_buff *pkt,
-						ssize_t *message_data_len)
+static void dissect_mobilityhdr_type_3_4(struct pkt_buff *pkt,
+					 ssize_t *message_data_len)
 {
 	struct tst_msg *type_3_4;
 
@@ -140,8 +140,8 @@ static inline void dissect_mobilityhdr_type_3_4(struct pkt_buff *pkt,
 	dissect_mobility_options(pkt, message_data_len);
 }
 
-static inline void dissect_mobilityhdr_type_5(struct pkt_buff *pkt,
-						ssize_t *message_data_len)
+static void dissect_mobilityhdr_type_5(struct pkt_buff *pkt,
+				       ssize_t *message_data_len)
 {
 	struct bind_upd_msg *type_5;
 
@@ -158,8 +158,8 @@ static inline void dissect_mobilityhdr_type_5(struct pkt_buff *pkt,
 	dissect_mobility_options(pkt, message_data_len);
 }
 
-static inline void dissect_mobilityhdr_type_6(struct pkt_buff *pkt,
-						ssize_t *message_data_len)
+static void dissect_mobilityhdr_type_6(struct pkt_buff *pkt,
+				       ssize_t *message_data_len)
 {
 	struct bind_ack_msg *type_6;
 
@@ -177,8 +177,8 @@ static inline void dissect_mobilityhdr_type_6(struct pkt_buff *pkt,
 	dissect_mobility_options(pkt, message_data_len);
 }
 
-static inline void dissect_mobilityhdr_type_7(struct pkt_buff *pkt,
-						ssize_t *message_data_len)
+static void dissect_mobilityhdr_type_7(struct pkt_buff *pkt,
+				       ssize_t *message_data_len)
 {
 	char address[INET6_ADDRSTRLEN];
 	uint64_t addr;
@@ -199,8 +199,8 @@ static inline void dissect_mobilityhdr_type_7(struct pkt_buff *pkt,
 	dissect_mobility_options(pkt, message_data_len);
 }
 
-static inline void get_mh_type(struct pkt_buff *pkt,
-			       ssize_t *message_data_len, uint8_t *mh_type)
+static void get_mh_type(struct pkt_buff *pkt, ssize_t *message_data_len,
+			uint8_t *mh_type)
 {
 	switch (*mh_type) {
 	case BINDING_REFRESH_REQUEST_MESSAGE:
@@ -240,7 +240,7 @@ static inline void get_mh_type(struct pkt_buff *pkt,
 	}
 }
 
-static inline void mobility(struct pkt_buff *pkt)
+static void mobility(struct pkt_buff *pkt)
 {
 	uint16_t hdr_ext_len;
 	ssize_t message_data_len;
@@ -280,7 +280,7 @@ static inline void mobility(struct pkt_buff *pkt)
 	pkt_set_proto(pkt, &eth_lay3, mobility->payload_proto);
 }
 
-static inline void mobility_less(struct pkt_buff *pkt)
+static void mobility_less(struct pkt_buff *pkt)
 {
 	uint16_t hdr_ext_len;
 	ssize_t message_data_len;
@@ -308,4 +308,4 @@ struct protocol ipv6_mobility_ops = {
 	.print_less = mobility_less,
 };
 
-#endif /* PROTO_IPV6_MOBILITY_HDR_H */
+EXPORT_SYMBOL(ipv6_mobility_ops);
