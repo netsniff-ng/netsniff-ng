@@ -101,7 +101,7 @@ enum pcap_mode {
 struct pcap_file_ops {
 	const char *name;
 	int (*pull_file_header)(int fd, uint32_t *linktype);
-	int (*push_file_header)(int fd);
+	int (*push_file_header)(int fd, uint32_t linktype);
 	int (*prepare_writing_pcap)(int fd);
 	ssize_t (*write_pcap_pkt)(int fd, struct pcap_pkthdr *hdr,
 				  uint8_t *packet, size_t len);

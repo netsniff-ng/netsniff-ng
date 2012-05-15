@@ -49,14 +49,14 @@ static int pcap_sg_pull_file_header(int fd, uint32_t *linktype)
 	return 0;
 }
 
-static int pcap_sg_push_file_header(int fd)
+static int pcap_sg_push_file_header(int fd, uint32_t linktype)
 {
 	ssize_t ret;
 	struct pcap_filehdr hdr;
 
 	fmemset(&hdr, 0, sizeof(hdr));
-	pcap_prepare_header(&hdr, LINKTYPE_EN10MB, 0,
-			    PCAP_DEFAULT_SNAPSHOT_LEN);
+	pcap_prepare_header(&hdr, linktype, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
+
 	ret = write_or_die(fd, &hdr, sizeof(hdr));
 	if (unlikely(ret != sizeof(hdr))) {
 		whine("Failed to write pkt file header!\n");

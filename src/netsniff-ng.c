@@ -239,7 +239,7 @@ struct mode {
 	int cpu;
 	int rfraw;
 	int dump;
-	int link_type;
+	uint32_t link_type;
 	int print_mode;
 	unsigned int reserve_size;
 	int packet_type;
@@ -340,7 +340,6 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 	struct sock_fprog bpf_ops;
 	struct tx_stats stats;
 	uint8_t *out = NULL;
-	uint32_t linktype;
 	unsigned long trunced = 0;
 
 	if (!device_up_and_running(mode->device_out))
@@ -351,7 +350,7 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 	if (!pcap_ops[mode->pcap])
 		panic("pcap group not supported!\n");
 	fd = open_or_die(mode->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);
-	ret = pcap_ops[mode->pcap]->pull_file_header(fd, &linktype);
+	ret = pcap_ops[mode->pcap]->pull_file_header(fd, &mode->link_type);
 	if (ret)
 		panic("error reading pcap header!\n");
 	if (pcap_ops[mode->pcap]->prepare_reading_pcap) {
@@ -369,7 +368,8 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 		xfree(mode->device_out);
 
 		enter_rfmon_mac80211(mode->device_trans, &mode->device_out);
-		mode->link_type = LINKTYPE_IEEE802_11;
+		if (mode->link_type != LINKTYPE_IEEE802_11)
+			panic("Wrong linktype of pcap!\n");
 	}
 
 	ifindex = device_ifindex(mode->device_out);
@@ -622,14 +622,13 @@ static void enter_mode_read_pcap(struct mode *mode)
 	struct tx_stats stats;
 	struct frame_map fm;
 	uint8_t *out;
-	uint32_t linktype;
 	size_t out_len;
 	unsigned long trunced = 0;
 
 	if (!pcap_ops[mode->pcap])
 		panic("pcap group not supported!\n");
 	fd = open_or_die(mode->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);
-	ret = pcap_ops[mode->pcap]->pull_file_header(fd, &linktype);
+	ret = pcap_ops[mode->pcap]->pull_file_header(fd, &mode->link_type);
 	if (ret)
 		panic("error reading pcap header!\n");
 	if (pcap_ops[mode->pcap]->prepare_reading_pcap) {
@@ -684,7 +683,7 @@ static void enter_mode_read_pcap(struct mode *mode)
 
 		show_frame_hdr(&fm, mode->print_mode, RING_MODE_EGRESS);
 		dissector_entry_point(out, fm.tp_h.tp_snaplen,
-				      linktype, mode->print_mode);
+				      mode->link_type, mode->print_mode);
 
 		if (mode->device_out) {
 			int i = 0;
@@ -763,7 +762,7 @@ static int next_multi_pcap_file(struct mode *mode, int fd)
 
 	fd = open_or_die_m(tmp, O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE,
 			   S_IRUSR | S_IWUSR);
-	ret = pcap_ops[mode->pcap]->push_file_header(fd);
+	ret = pcap_ops[mode->pcap]->push_file_header(fd, mode->link_type);
 	if (ret)
 		panic("error writing pcap header!\n");
 	if (pcap_ops[mode->pcap]->prepare_writing_pcap) {
@@ -789,7 +788,7 @@ static int begin_multi_pcap_file(struct mode *mode)
 
 	fd = open_or_die_m(tmp, O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE,
 			   S_IRUSR | S_IWUSR);
-	ret = pcap_ops[mode->pcap]->push_file_header(fd);
+	ret = pcap_ops[mode->pcap]->push_file_header(fd, mode->link_type);
 	if (ret)
 		panic("error writing pcap header!\n");
 	if (pcap_ops[mode->pcap]->prepare_writing_pcap) {
@@ -825,7 +824,7 @@ static int begin_single_pcap_file(struct mode *mode)
 	fd = open_or_die_m(mode->device_out,
 			   O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE,
 			   S_IRUSR | S_IWUSR);
-	ret = pcap_ops[mode->pcap]->push_file_header(fd);
+	ret = pcap_ops[mode->pcap]->push_file_header(fd, mode->link_type);
 	if (ret)
 		panic("error writing pcap header!\n");
 	if (pcap_ops[mode->pcap]->prepare_writing_pcap) {
@@ -854,6 +853,14 @@ static void enter_mode_rx_only_or_dump(struct mode *mode)
 
 	sock = pf_socket();
 
+	if (mode->rfraw) {
+		mode->device_trans = xstrdup(mode->device_in);
+		xfree(mode->device_in);
+
+		enter_rfmon_mac80211(mode->device_trans, &mode->device_in);
+		mode->link_type = LINKTYPE_IEEE802_11;
+	}
+
 	if (mode->dump) {
 		struct stat tmp;
 		fmemset(&tmp, 0, sizeof(tmp));
@@ -874,14 +881,6 @@ try_file:
 	fmemset(&rx_ring, 0, sizeof(rx_ring));
 	fmemset(&rx_poll, 0, sizeof(rx_poll));
 	fmemset(&bpf_ops, 0, sizeof(bpf_ops));
-
-	if (mode->rfraw) {
-		mode->device_trans = xstrdup(mode->device_in);
-		xfree(mode->device_in);
-
-		enter_rfmon_mac80211(mode->device_trans, &mode->device_in);
-		mode->link_type = LINKTYPE_IEEE802_11;
-	}
 
 	ifindex = device_ifindex(mode->device_in);
 	size = ring_size(mode->device_in, mode->reserve_size);
@@ -1304,6 +1303,6 @@ int main(int argc, char **argv)
 		xfree(mode.device_out);
 	if (mode.device_trans)
 		xfree(mode.device_trans);
+
 	return 0;
 }
-
