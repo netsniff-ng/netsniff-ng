@@ -33,7 +33,8 @@ struct ieee80211hdr {
  * http://www.ieee802.org/
  * PHY Sublayer (FH, DSSS etc) is not relevant, because it's physical :-)
  *
- * How to make sure which protocol is included? Only IPv4/6?
+ * How to make sure which protocol is included (in unencrypted mode)? Only
+ * IPv4/6?
  */
 
 static void ieee80211(struct pkt_buff *pkt)
