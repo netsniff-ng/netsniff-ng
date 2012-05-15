@@ -34,6 +34,7 @@
 #define LINKTYPE_SLIP              8   /* Serial Line IP */
 #define LINKTYPE_PPP               9   /* Point-to-point Protocol */
 #define LINKTYPE_FDDI              10  /* FDDI */
+#define LINKTYPE_IEEE802_11	   105	/* IEEE 802.11 wireless */
 
 struct pcap_filehdr {
 	uint32_t magic;
@@ -141,7 +142,8 @@ static inline void pcap_validate_header(struct pcap_filehdr *hdr)
 	if (unlikely(hdr->magic != TCPDUMP_MAGIC ||
 		     hdr->version_major != PCAP_VERSION_MAJOR ||
 		     hdr->version_minor != PCAP_VERSION_MINOR ||
- 		     hdr->linktype != LINKTYPE_EN10MB))
+ 		     (hdr->linktype != LINKTYPE_EN10MB &&
+ 		     hdr->linktype != LINKTYPE_IEEE802_11)))
 		panic("This file has not a valid pcap header\n");
 }
 
