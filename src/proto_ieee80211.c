@@ -26,6 +26,7 @@ struct ieee80211hdr {
 
 /* TODO: fix lots of things analyze frame control */
 /* this is really just a simple start */
+/* FIXME: duration, sequence number */
 
 static void ieee80211(struct pkt_buff *pkt)
 {
@@ -44,14 +45,13 @@ static void ieee80211(struct pkt_buff *pkt)
 	tprintf("%.2x:%.2x:%.2x:%.2x:%.2x:%.2x), ",
 		hdr->bssid[0], hdr->bssid[1], hdr->bssid[2],
 		hdr->bssid[3], hdr->bssid[4], hdr->bssid[5]);
-	tprintf("Frame Control (%x), Duration (%x), SeqCtrl (%x)",
+	tprintf("Frame Control (%x), Duration (%x), Sequence Number (%u)",
 		hdr->frame_control, hdr->duration, hdr->seq_ctrl);
 	tprintf(" ]\n");
 
-	tprintf(" [ Vendor ");
-	tprintf("(%s => %s)",
-		lookup_vendor((hdr->sa[0] << 16) | (hdr->sa[1] << 8) | hdr->sa[2]),
-		lookup_vendor((hdr->da[0] << 16) | (hdr->da[1] << 8) | hdr->da[2]));
+	tprintf(" [ BSS Vendor ");
+	tprintf("(%s)", lookup_vendor((hdr->bssid[0] << 16) |
+				      (hdr->bssid[1] << 8) | hdr->bssid[2]));
 	tprintf(" ]\n");
 
 //	pkt_set_proto(pkt, &ieee802_lay2, ntohs(eth->h_proto));
