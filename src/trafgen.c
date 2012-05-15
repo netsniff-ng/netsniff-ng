@@ -173,6 +173,7 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "xmalloc.h"
 #include "xstring.h"
 #include "die.h"
+#include "mac80211.h"
 #include "xsys.h"
 #include "xio.h"
 #include "trafgen_conf.h"
@@ -190,6 +191,7 @@ struct mode {
 #define CPU_NOTOUCH  -2
 	struct stats stats;
 	char *device;
+	char *device_trans;
 	int cpu;
 	int rand;
 	int rfraw;
@@ -408,6 +410,13 @@ static void tx_slowpath_or_die(struct mode *mode)
 
 	sock = pf_socket();
 
+	if (mode->rfraw) {
+		mode->device_trans = xstrdup(mode->device);
+		xfree(mode->device);
+
+		enter_rfmon_mac80211(mode->device_trans, &mode->device);
+	}
+
 	ifindex = device_ifindex(mode->device);
 
 	if (mode->num > 0)
@@ -415,8 +424,10 @@ static void tx_slowpath_or_die(struct mode *mode)
 	if (mode->rand)
 		printf("Note: randomizes output makes trafgen slower!\n");
 
-	printf("MD: TX slowpath %s %luus %s\n\n", mode->rand ? "RND" : "RR",
-	       mode->gap, mode->rfraw ? "802.11raw" : "");
+	printf("MD: TX slowpath %s %luus", mode->rand ? "RND" : "RR", mode->gap);
+	if (mode->rfraw)
+		printf(" 802.11 raw via %s", mode->device);
+	printf("\n\n");
 	printf("Running! Hang up with ^C!\n\n");
 
 	fmemset(&s_addr, 0, sizeof(s_addr));
@@ -451,6 +462,9 @@ static void tx_slowpath_or_die(struct mode *mode)
 		usleep(mode->gap);
 	}
 
+	if (mode->rfraw)
+		leave_rfmon_mac80211(mode->device_trans, mode->device);
+
 	close(sock);
 
 	fflush(stdout);
@@ -473,6 +487,14 @@ static void tx_fastpath_or_die(struct mode *mode)
 	sock = pf_socket();
 
 	fmemset(&tx_ring, 0, sizeof(tx_ring));
+
+	if (mode->rfraw) {
+		mode->device_trans = xstrdup(mode->device);
+		xfree(mode->device);
+
+		enter_rfmon_mac80211(mode->device_trans, &mode->device);
+	}
+
 	ifindex = device_ifindex(mode->device);
 	size = ring_size(mode->device, mode->reserve_size);
 
@@ -497,8 +519,10 @@ static void tx_fastpath_or_die(struct mode *mode)
 	if (mode->rand)
 		printf("Note: randomizes output makes trafgen slower!\n");
 
-	printf("MD: TX fastpath %s %luus %s\n\n", mode->rand ? "RND" : "RR",
-	       interval, mode->rfraw ? "802.11raw" : "");
+	printf("MD: TX fastpath %s %luus", mode->rand ? "RND" : "RR", interval);
+	if (mode->rfraw)
+		printf(" 802.11 raw via %s", mode->device);
+	printf("\n\n");
 	printf("Running! Hang up with ^C!\n\n");
 
 	itimer.it_interval.tv_sec = 0;
@@ -548,6 +572,10 @@ static void tx_fastpath_or_die(struct mode *mode)
 	}
 
 	destroy_tx_ring(sock, &tx_ring);
+
+	if (mode->rfraw)
+		leave_rfmon_mac80211(mode->device_trans, mode->device);
+
 	close(sock);
 
 	fflush(stdout);
@@ -717,6 +745,8 @@ int main(int argc, char **argv)
 
 	if (mode.device)
 		xfree(mode.device);
+	if (mode.device_trans)
+		xfree(mode.device_trans);
 	if (confname)
 		xfree(confname);
 
