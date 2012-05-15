@@ -1126,6 +1126,7 @@ int main(int argc, char **argv)
 			mode.device_out = xstrdup(optarg);
 			break;
 		case 'R':
+			mode.link_type = LINKTYPE_IEEE802_11;
 			mode.rfraw = 1;
 			break;
 		case 'r':

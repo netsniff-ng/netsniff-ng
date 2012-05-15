@@ -18,25 +18,28 @@
 
 struct hash_table ieee80211_lay2;
 
+#ifdef __WITH_PROTOS
 static inline void dissector_init_entry(int type)
 {
-//	dissector_set_print_type(&ieee80211_mac_ops, type);
+	dissector_set_print_type(&ieee80211_ops, type);
 }
 
 static inline void dissector_init_exit(int type)
 {
-//	dissector_set_print_type(&none_ops, type);
+	dissector_set_print_type(&none_ops, type);
 }
 
 static void dissector_init_layer_2(int type)
 {
 	init_hash(&ieee80211_lay2);
-//	INSERT_HASH_PROTOS(arp_ops, eth_lay2);
-//	INSERT_HASH_PROTOS(vlan_ops, eth_lay2);
-//	INSERT_HASH_PROTOS(ipv4_ops, eth_lay2);
-//	INSERT_HASH_PROTOS(ipv6_ops, eth_lay2);
+//	INSERT_HASH_PROTOS(blubber_ops, ieee80211_lay2);
 	for_each_hash_int(&ieee80211_lay2, dissector_set_print_type, type);
 }
+#else
+static inline void dissector_init_entry(int type) {}
+static inline void dissector_init_exit(int type) {}
+static void dissector_init_layer_2(int type) {}
+#endif /* __WITH_PROTOS */
 
 void dissector_init_ieee80211(int fnttype)
 {
