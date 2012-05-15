@@ -23,6 +23,7 @@
 
 #include "die.h"
 #include "xio.h"
+#include "xsys.h"
 #include "xstring.h"
 
 int open_or_die(const char *file, int flags)
@@ -58,15 +59,17 @@ void pipe_or_die(int pipefd[2], int flags)
 int tun_open_or_die(char *name, int type)
 {
 	int fd, ret;
+	short flags;
 	struct ifreq ifr;
+
+	if (!name)
+		panic("No name provided for tundev!\n");
 
 	fd = open_or_die("/dev/net/tun", O_RDWR);
 
 	memset(&ifr, 0, sizeof(ifr));
 	ifr.ifr_flags = type;
-
-	if (name)
-		strlcpy(ifr.ifr_name, name, IFNAMSIZ);
+	strlcpy(ifr.ifr_name, name, IFNAMSIZ);
 
 	ret = ioctl(fd, TUNSETIFF, &ifr);
 	if (ret < 0)
@@ -75,6 +78,10 @@ int tun_open_or_die(char *name, int type)
 	ret = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);
 	if (ret < 0)
 		panic("fctnl screwed up!\n");
+
+	flags = device_get_flags(name);
+	flags |= IFF_UP | IFF_RUNNING;
+	device_set_flags(name, flags);
 
 	return fd;
 }
