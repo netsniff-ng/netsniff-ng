@@ -27,6 +27,14 @@ struct ieee80211hdr {
 /* TODO: fix lots of things analyze frame control */
 /* this is really just a simple start */
 /* FIXME: duration, sequence number, addresses... */
+/* Look @:
+ * http://www.rhyshaden.com/wireless.htm
+ * http://technet.microsoft.com/en-us/library/cc757419(v=ws.10).aspx
+ * http://www.ieee802.org/
+ * PHY Sublayer (FH, DSSS etc) is not relevant, because it's physical :-)
+ *
+ * How to make sure which protocol is included? Only IPv4/6?
+ */
 
 static void ieee80211(struct pkt_buff *pkt)
 {
