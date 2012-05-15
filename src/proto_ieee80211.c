@@ -18,15 +18,24 @@
 struct ieee80211hdr {
 	u16 frame_control;
 	u16 duration;
-	u8 da[6];
+/*	u8 da[6];
 	u8 sa[6];
 	u8 bssid[6];
-	u16 seq_ctrl;
+	u16 seq_ctrl;*/
 } __packed;
 
 /* TODO: fix lots of things analyze frame control */
 /* this is really just a simple start */
-/* FIXME: duration, sequence number */
+/* FIXME: duration, sequence number, addresses... */
+/* Look @:
+ * http://www.rhyshaden.com/wireless.htm
+ * http://technet.microsoft.com/en-us/library/cc757419(v=ws.10).aspx
+ * http://www.ieee802.org/
+ * PHY Sublayer (FH, DSSS etc) is not relevant, because it's physical :-)
+ *
+ * How to make sure which protocol is included (in unencrypted mode)? Only
+ * IPv4/6?
+ */
 
 static void ieee80211(struct pkt_buff *pkt)
 {
@@ -36,7 +45,8 @@ static void ieee80211(struct pkt_buff *pkt)
 		return;
 
 	tprintf(" [ 802.11 ");
-	tprintf("MAC (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x => ",
+	/* FIXME: See above */
+	/*tprintf("MAC (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x => ",
 		hdr->sa[0], hdr->sa[1], hdr->sa[2],
 		hdr->sa[3], hdr->sa[4], hdr->sa[5]);
 	tprintf("%.2x:%.2x:%.2x:%.2x:%.2x:%.2x via BSSID ",
@@ -44,15 +54,15 @@ static void ieee80211(struct pkt_buff *pkt)
 		hdr->da[3], hdr->da[4], hdr->da[5]);
 	tprintf("%.2x:%.2x:%.2x:%.2x:%.2x:%.2x), ",
 		hdr->bssid[0], hdr->bssid[1], hdr->bssid[2],
-		hdr->bssid[3], hdr->bssid[4], hdr->bssid[5]);
-	tprintf("Frame Control (%x), Duration (%x), Sequence Number (%u)",
-		hdr->frame_control, hdr->duration, hdr->seq_ctrl);
+		hdr->bssid[3], hdr->bssid[4], hdr->bssid[5]);*/
+	tprintf("Frame Control (%x), Duration (%x)",
+		hdr->frame_control, hdr->duration);
 	tprintf(" ]\n");
 
-	tprintf(" [ BSS Vendor ");
+	/*tprintf(" [ BSS Vendor ");
 	tprintf("(%s)", lookup_vendor((hdr->bssid[0] << 16) |
 				      (hdr->bssid[1] << 8) | hdr->bssid[2]));
-	tprintf(" ]\n");
+	tprintf(" ]\n");*/
 
 //	pkt_set_proto(pkt, &ieee802_lay2, ntohs(eth->h_proto));
 }
