@@ -21,6 +21,7 @@ What libraries / tools are required?
  - libnetfilter-conntrack (flowtop)
  - liburcu (flowtop)
  - libcli (trafgen)
+ - libnl (netsniff-ng, trafgen)
 
 It is common, that these libraries are shipped as distribution packages
 for an easy installation. We try to keep this as minimal as possible.
