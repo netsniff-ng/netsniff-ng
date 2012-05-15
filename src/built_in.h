@@ -122,14 +122,6 @@
 # define __deprecated		/* unimplemented */
 #endif
 
-#ifndef __export
-# define __export		/* unimplemented */
-#endif
-
-#ifndef __import
-# define __import		extern
-#endif
-
 #ifndef EXPORT_SYMBOL
 # define EXPORT_SYMBOL(x)	/* empty, just for readability */
 #endif

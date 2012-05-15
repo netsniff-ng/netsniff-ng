@@ -208,12 +208,13 @@ static int sock;
 static struct itimerval itimer;
 static unsigned long interval = TX_KERNEL_PULL_INT;
 
-__export sig_atomic_t sigint = 0;
+sig_atomic_t sigint = 0;
 
-__export struct packet *packets = NULL;
-__export unsigned int packets_len = 0;
-__export struct packet_dynamics *packet_dyns = NULL;
-__export unsigned int packet_dyn_len = 0;
+struct packet *packets = NULL;
+unsigned int packets_len = 0;
+
+struct packet_dynamics *packet_dyns = NULL;
+unsigned int packet_dyn_len = 0;
 
 static const char *short_options = "d:c:n:t:vJhS:HQb:B:rk:xi:o:VR";
 

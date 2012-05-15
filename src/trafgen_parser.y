@@ -33,13 +33,13 @@ extern void yyerror(const char *);
 extern int yylineno;
 extern char *yytext;
 
-__import struct packet *packets;
-__import unsigned int packets_len;
+extern struct packet *packets;
+extern unsigned int packets_len;
 #define packets_last		(packets_len - 1)
 #define payload_last		(packets[packets_last].len - 1)
 
-__import struct packet_dynamics *packet_dyns;
-__import unsigned int packet_dyn_len;
+extern struct packet_dynamics *packet_dyns;
+extern unsigned int packet_dyn_len;
 #define packetds_last		(packet_dyn_len - 1)
 #define packetds_c_last		(packet_dyns[packetds_last].counter_len - 1)
 #define packetds_r_last		(packet_dyns[packetds_last].randomizer_len - 1)
