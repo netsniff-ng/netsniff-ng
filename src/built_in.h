@@ -130,6 +130,10 @@
 # define __import		extern
 #endif
 
+#ifndef EXPORT_SYMBOL
+# define EXPORT_SYMBOL(x)	/* empty, just for readability */
+#endif
+
 #ifndef unreachable
 # define unreachable()		do { } while (1)
 #endif

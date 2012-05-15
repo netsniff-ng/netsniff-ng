@@ -8,6 +8,7 @@ IF (CMAKE_HAVE_PTHREAD_CREATE)
 	ADD_EXECUTABLE(${PROJECT_NAME} 	../hash.c
 					../dissector.c
 					../dissector_eth.c
+					../dissector_80211.c
 					../xmalloc.c
 					../xio.c
 					../xsys.c

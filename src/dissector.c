@@ -17,6 +17,7 @@
 #include "proto_none.h"
 #include "dissector.h"
 #include "dissector_eth.h"
+#include "dissector_80211.h"
 
 int dissector_set_print_type(void *ptr, int type)
 {
@@ -81,8 +82,8 @@ void dissector_entry_point(uint8_t *packet, size_t len, int linktype, int mode)
 		proto_end = dissector_get_ethernet_exit_point();
 		break;
 	case LINKTYPE_IEEE802_11:
-		/* FIXME */
-		mode = FNTTYPE_PRINT_HEX;
+		proto_start = dissector_get_ieee80211_entry_point();
+		proto_end = dissector_get_ieee80211_exit_point();
 		break;
 	default:
 		panic("Linktype not supported!\n");
@@ -109,9 +110,11 @@ void dissector_entry_point(uint8_t *packet, size_t len, int linktype, int mode)
 void dissector_init_all(int fnttype)
 {
 	dissector_init_ethernet(fnttype);
+	dissector_init_ieee80211(fnttype);
 }
 
 void dissector_cleanup_all(void)
 {
 	dissector_cleanup_ethernet();
+	dissector_cleanup_ieee80211();
 }
