@@ -340,6 +340,7 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 	struct sock_fprog bpf_ops;
 	struct tx_stats stats;
 	uint8_t *out = NULL;
+	uint32_t linktype;
 	unsigned long trunced = 0;
 
 	if (!device_up_and_running(mode->device_out))
@@ -350,7 +351,7 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 	if (!pcap_ops[mode->pcap])
 		panic("pcap group not supported!\n");
 	fd = open_or_die(mode->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);
-	ret = pcap_ops[mode->pcap]->pull_file_header(fd);
+	ret = pcap_ops[mode->pcap]->pull_file_header(fd, &linktype);
 	if (ret)
 		panic("error reading pcap header!\n");
 	if (pcap_ops[mode->pcap]->prepare_reading_pcap) {
@@ -621,13 +622,14 @@ static void enter_mode_read_pcap(struct mode *mode)
 	struct tx_stats stats;
 	struct frame_map fm;
 	uint8_t *out;
+	uint32_t linktype;
 	size_t out_len;
 	unsigned long trunced = 0;
 
 	if (!pcap_ops[mode->pcap])
 		panic("pcap group not supported!\n");
 	fd = open_or_die(mode->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);
-	ret = pcap_ops[mode->pcap]->pull_file_header(fd);
+	ret = pcap_ops[mode->pcap]->pull_file_header(fd, &linktype);
 	if (ret)
 		panic("error reading pcap header!\n");
 	if (pcap_ops[mode->pcap]->prepare_reading_pcap) {
@@ -682,7 +684,7 @@ static void enter_mode_read_pcap(struct mode *mode)
 
 		show_frame_hdr(&fm, mode->print_mode, RING_MODE_EGRESS);
 		dissector_entry_point(out, fm.tp_h.tp_snaplen,
-				      mode->link_type, mode->print_mode);
+				      linktype, mode->print_mode);
 
 		if (mode->device_out) {
 			int i = 0;
