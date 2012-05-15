@@ -33,7 +33,7 @@ static unsigned long c = 0;
 static struct spinlock lock;
 static ssize_t iov_used;
 
-static int pcap_sg_pull_file_header(int fd)
+static int pcap_sg_pull_file_header(int fd, uint32_t *linktype)
 {
 	ssize_t ret;
 	struct pcap_filehdr hdr;
@@ -43,6 +43,8 @@ static int pcap_sg_pull_file_header(int fd)
 		return -EIO;
 
 	pcap_validate_header(&hdr);
+
+	*linktype = hdr.linktype;
 
 	return 0;
 }

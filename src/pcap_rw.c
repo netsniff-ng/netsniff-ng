@@ -17,7 +17,7 @@
 #include "xio.h"
 #include "die.h"
 
-static int pcap_rw_pull_file_header(int fd)
+static int pcap_rw_pull_file_header(int fd, uint32_t *linktype)
 {
 	ssize_t ret;
 	struct pcap_filehdr hdr;
@@ -27,6 +27,8 @@ static int pcap_rw_pull_file_header(int fd)
 		return -EIO;
 
 	pcap_validate_header(&hdr);
+
+	*linktype = hdr.linktype;
 
 	return 0;
 }
