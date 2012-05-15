@@ -39,6 +39,9 @@
 # Usage of drnd macro, generates one random byte _during_ runtime
 { rnd(64) drnd() }
 
+# Usage of drnd macro, generates one random byte _during_ runtime
+{ drnd(64) }
+
 # Usage of ethernet header macro
 #{ ether(src[ff:ff:ff:ff:ff:ff], dst[ff:ff:ff:ff:ff:ff], type[0x800]), rnd(50)}
 

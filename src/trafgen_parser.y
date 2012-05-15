@@ -289,6 +289,12 @@ seqdec
 drnd
 	: K_DRND '(' ')'
 		{ set_drnd(); }
+	| K_DRND '(' number ')'
+		{
+			int i, max = $3;
+			for (i = 0; i < max; ++i)
+				set_drnd();
+		}
 	;
 
 dinc
