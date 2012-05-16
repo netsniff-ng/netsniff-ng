@@ -21,67 +21,72 @@ struct udphdr {
 	uint16_t check;
 } __attribute__((packed));
 
-static uint16_t udp_port(uint16_t src, uint16_t dst)
-{
-	char *tmp1, *tmp2;
-
-	src = ntohs(src);
-	dst = ntohs(dst);
-
-	/* XXX: Is there a better way to determine? */
-	if (src < dst && src < 1024) {
-		return src;
-	} else if (dst < src && dst < 1024) {
-		return dst;
-	} else {
-		tmp1 = lookup_port_udp(src);
-		tmp2 = lookup_port_udp(dst);
-		if (tmp1 && !tmp2) {
-			return src;
-		} else if (!tmp1 && tmp2) {
-			return dst;
-		} else {
-			if (src < dst)
-				return src;
-			else
-				return dst;
-		}
-	}
-}
 
 static void udp(struct pkt_buff *pkt)
 {
 	struct udphdr *udp = (struct udphdr *) pkt_pull(pkt, sizeof(*udp));
+	ssize_t len;
+	uint16_t src, dest;
+	char *src_name, *dest_name;
 
 	if (udp == NULL)
 		return;
 
+	len = ntohs(udp->len) - sizeof(*udp);
+	src = ntohs(udp->source);
+	dest = ntohs(udp->dest);
+
+	src_name = lookup_port_udp(src);
+	dest_name = lookup_port_udp(dest);
+	
+
 	tprintf(" [ UDP ");
-	tprintf("Port (%u => %u, %s%s%s), ",
-		ntohs(udp->source), ntohs(udp->dest),
-		colorize_start(bold),
-		lookup_port_udp(udp_port(udp->source, udp->dest)),
-		colorize_end());
-	tprintf("Len (%u), ", ntohs(udp->len));
+	tprintf("Port (%u", src);
+	if (src_name)
+		 tprintf(" (%s%s%s)", colorize_start(bold), src_name,
+							      colorize_end());
+	tprintf(" => %u", dest);
+	if (dest_name)
+		 tprintf(" (%s%s%s)", colorize_start(bold), dest_name,
+							      colorize_end());
+	tprintf("), ");
+	if(len > pkt_len(pkt) || len < 0){
+		tprintf("Len (%u) %s, ", ntohs(udp->len),
+			      colorize_start_full(black, red)
+			      "invalid" colorize_end());
+	}
+	tprintf("Len (%u Bytes, %u Bytes Data), ", ntohs(udp->len), len);
 	tprintf("CSum (0x%.4x)", ntohs(udp->check));
 	tprintf(" ]\n");
 
-	pkt_set_proto(pkt, &eth_lay4, udp_port(udp->source, udp->dest));
+// 	pkt_set_proto(pkt, &eth_lay4, udp_port(udp->source, udp->dest));
 }
 
 static void udp_less(struct pkt_buff *pkt)
 {
 	struct udphdr *udp = (struct udphdr *) pkt_pull(pkt, sizeof(*udp));
+	uint16_t src, dest;
+	char *src_name, *dest_name;
 
 	if (udp == NULL)
 		return;
 
-	tprintf(" UDP %s%s%s %u/%u",
-		colorize_start(bold),
-		lookup_port_udp(udp_port(udp->source, udp->dest)),
-		colorize_end(), ntohs(udp->source), ntohs(udp->dest));
+	src = ntohs(udp->source);
+	dest = ntohs(udp->dest);
 
-	pkt_set_proto(pkt, &eth_lay4, udp_port(udp->source, udp->dest));
+	src_name = lookup_port_udp(src);
+	dest_name = lookup_port_udp(dest);
+
+	tprintf(" UDP %u", src);
+	if(src_name)
+		tprintf("(%s%s%s)", colorize_start(bold), src_name,
+							    colorize_end());
+	tprintf("/%u", dest);
+	if(dest_name)
+		tprintf("(%s%s%s)", colorize_start(bold), dest_name,
+							    colorize_end());
+
+// 	pkt_set_proto(pkt, &eth_lay4, udp_port(udp->source, udp->dest));
 }
 
 struct protocol udp_ops = {
