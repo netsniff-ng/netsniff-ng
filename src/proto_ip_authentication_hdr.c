@@ -26,23 +26,25 @@ struct auth_hdr {
 
 static void auth_hdr(struct pkt_buff *pkt)
 {
-	uint16_t hdr_len;
+	ssize_t hdr_len;
 	struct auth_hdr *auth_ops;
 
 	auth_ops = (struct auth_hdr *) pkt_pull(pkt, sizeof(*auth_ops));
-	hdr_len = (auth_ops->h_payload_len * 4) + 8;
 	if (auth_ops == NULL)
 		return;
+	
+	hdr_len = (auth_ops->h_payload_len * 4) + 8;
 
 	tprintf(" [ Authentication Header ");
 	tprintf("NextHdr (%u), ", auth_ops->h_next_header);
-	if (hdr_len > pkt_len(pkt)) {
-		tprintf("HdrLen (%u, %s), ", hdr_len,
-			colorize_start_full(black, red),
-			"invalid" colorize_end());
-		return;
+	if (hdr_len > pkt_len(pkt) || hdr_len < 0){
+		tprintf("HdrLen (%u, %u Bytes %s), ",
+		      auth_ops->h_payload_len, hdr_len,
+		      colorize_start_full(black, red)
+		      "invalid" colorize_end());
+		      return;
 	}
-	tprintf("HdrLen (%u), ", hdr_len);
+	tprintf("HdrLen (%u, %u Bytes), ",auth_ops->h_payload_len, hdr_len);
 	tprintf("Reserved (0x%x), ", ntohs(auth_ops->h_reserved));
 	/* TODO
 	 * Upgrade for Extended (64-bit) Sequence Number
@@ -60,13 +62,14 @@ static void auth_hdr(struct pkt_buff *pkt)
 
 static void auth_hdr_less(struct pkt_buff *pkt)
 {
-  	uint16_t hdr_len;
+  	ssize_t hdr_len;
 	struct auth_hdr *auth_ops;
 
 	auth_ops = (struct auth_hdr *) pkt_pull(pkt, sizeof(*auth_ops));
-	hdr_len = (auth_ops->h_payload_len * 4) + 8;
-	if (auth_ops == NULL || hdr_len > pkt_len(pkt))
+	if (auth_ops == NULL || hdr_len > pkt_len(pkt) || hdr_len < 0)
 		return;
+	
+	hdr_len = (auth_ops->h_payload_len * 4) + 8;
 
 	tprintf(" AH");
 
