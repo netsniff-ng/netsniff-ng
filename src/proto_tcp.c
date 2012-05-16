@@ -52,7 +52,6 @@ struct tcphdr {
 	uint16_t urg_ptr;
 } __attribute__((packed));
 
-
 static void tcp(struct pkt_buff *pkt)
 {
 	struct tcphdr *tcp = (struct tcphdr *) pkt_pull(pkt, sizeof(*tcp));
@@ -71,12 +70,12 @@ static void tcp(struct pkt_buff *pkt)
 	tprintf(" [ TCP ");
 	tprintf("Port (%u", src);
 	if (src_name)
-		 tprintf(" (%s%s%s)", colorize_start(bold), src_name,
-							      colorize_end());
+		tprintf(" (%s%s%s)", colorize_start(bold), src_name,
+			colorize_end());
 	tprintf(" => %u", dest);
 	if (dest_name)
-		 tprintf(" (%s%s%s)", colorize_start(bold), dest_name,
-							      colorize_end());
+		tprintf(" (%s%s%s)", colorize_start(bold), dest_name,
+			colorize_end());
 	tprintf("), ");
 	tprintf("SN (0x%x), ", ntohl(tcp->seq));
 	tprintf("AN (0x%x), ", ntohl(tcp->ack_seq));
@@ -104,8 +103,6 @@ static void tcp(struct pkt_buff *pkt)
 	tprintf("CSum (0x%.4x), ", ntohs(tcp->check));
 	tprintf("UrgPtr (%u)", ntohs(tcp->urg_ptr));
 	tprintf(" ]\n");
-
-// 	pkt_set_proto(pkt, &eth_lay4, tcp_port(tcp->source, tcp->dest));
 }
 
 static void tcp_less(struct pkt_buff *pkt)
@@ -126,11 +123,11 @@ static void tcp_less(struct pkt_buff *pkt)
 	tprintf(" TCP %u", src);
 	if(src_name)
 		tprintf("(%s%s%s)", colorize_start(bold), src_name,
-							    colorize_end());
+			colorize_end());
 	tprintf("/%u", dest);
 	if(dest_name)
 		tprintf("(%s%s%s)", colorize_start(bold), dest_name,
-							    colorize_end());
+			colorize_end());
 	tprintf(" F%s",colorize_start(bold));
 	if (tcp->fin)
 		tprintf(" FIN");
@@ -150,8 +147,6 @@ static void tcp_less(struct pkt_buff *pkt)
 		tprintf(" CWR");
 	tprintf("%s Win %u S/A 0x%x/0x%x", colorize_end(),
 		ntohs(tcp->window), ntohl(tcp->seq), ntohl(tcp->ack_seq));
-
-// 	pkt_set_proto(pkt, &eth_lay4, tcp_port(tcp->source, tcp->dest));
 }
 
 struct protocol tcp_ops = {

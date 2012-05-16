@@ -18,7 +18,6 @@
 
 struct hash_table eth_lay2;
 struct hash_table eth_lay3;
-struct hash_table eth_lay4;
 
 static struct hash_table eth_ether_types;
 static struct hash_table eth_ports_udp;
@@ -107,18 +106,11 @@ static void dissector_init_layer_3(int type)
 	INSERT_HASH_PROTOS(udp_ops, eth_lay3);
 	for_each_hash_int(&eth_lay3, dissector_set_print_type, type);
 }
-
-static void dissector_init_layer_4(int type)
-{
-	init_hash(&eth_lay4);
-	for_each_hash_int(&eth_lay4, dissector_set_print_type, type);
-}
 #else
 static inline void dissector_init_entry(int type) {}
 static inline void dissector_init_exit(int type) {}
 static void dissector_init_layer_2(int type) {}
 static void dissector_init_layer_3(int type) {}
-static void dissector_init_layer_4(int type) {}
 #endif /* __WITH_PROTOS */
 
 static void dissector_init_ports_udp(void)
@@ -270,7 +262,6 @@ void dissector_init_ethernet(int fnttype)
 	dissector_init_entry(fnttype);
 	dissector_init_layer_2(fnttype);
 	dissector_init_layer_3(fnttype);
-	dissector_init_layer_4(fnttype);
 	dissector_init_exit(fnttype);
 #ifdef __WITH_PROTOS
 	dissector_init_oui();
@@ -284,7 +275,6 @@ void dissector_cleanup_ethernet(void)
 {
 	free_hash(&eth_lay2);
 	free_hash(&eth_lay3);
-	free_hash(&eth_lay4);
 	for_each_hash(&eth_ether_types, dissector_cleanup_ether_types);
 	free_hash(&eth_ether_types);
 	for_each_hash(&eth_ports_udp, dissector_cleanup_ports_udp);
