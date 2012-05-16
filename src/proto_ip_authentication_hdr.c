@@ -66,10 +66,12 @@ static void auth_hdr_less(struct pkt_buff *pkt)
 	struct auth_hdr *auth_ops;
 
 	auth_ops = (struct auth_hdr *) pkt_pull(pkt, sizeof(*auth_ops));
-	if (auth_ops == NULL || hdr_len > pkt_len(pkt) || hdr_len < 0)
+	if (auth_ops == NULL)
 		return;
 	
 	hdr_len = (auth_ops->h_payload_len * 4) + 8;
+	if (hdr_len > pkt_len(pkt) || hdr_len < 0)
+		return;
 
 	tprintf(" AH");
 
