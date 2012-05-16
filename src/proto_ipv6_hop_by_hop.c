@@ -43,13 +43,13 @@ static void hop_by_hop(struct pkt_buff *pkt)
 	struct hop_by_hophdr *hop_ops;
 
 	hop_ops = (struct hop_by_hophdr *) pkt_pull(pkt, sizeof(*hop_ops));
+	if (hop_ops == NULL)
+		return;
 
 	/* Total Header Length in Bytes */
 	hdr_ext_len = (hop_ops->hdr_len + 1) * 8;
 	/* Options length in Bytes */
 	opt_len = hdr_ext_len - sizeof(*hop_ops);
-	if (hop_ops == NULL)
-		return;
 
 	tprintf("\t [ Hop-by-Hop Options ");
 	tprintf("NextHdr (%u), ", hop_ops->h_next_header);
@@ -77,12 +77,14 @@ static void hop_by_hop_less(struct pkt_buff *pkt)
 	struct hop_by_hophdr *hop_ops;
 
 	hop_ops = (struct hop_by_hophdr *) pkt_pull(pkt, sizeof(*hop_ops));
+	if (hop_ops == NULL)
+		return;
 
 	/* Total Header Length in Bytes */
 	hdr_ext_len = (hop_ops->hdr_len + 1) * 8;
 	/* Options length in Bytes */
 	opt_len = hdr_ext_len - sizeof(*hop_ops);
-	if (hop_ops == NULL || opt_len > pkt_len(pkt) || opt_len < 0)
+	if (opt_len > pkt_len(pkt) || opt_len < 0)
 		return;
 
 	tprintf(" Hop Ops");
