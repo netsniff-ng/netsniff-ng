@@ -341,6 +341,13 @@ static int8_t dissect_icmpv6_mcast_rec(struct pkt_buff *pkt,
 		if(!print_ipv6_addr_list(pkt, nr_src))
 			return 0;
 
+		if (aux_data_len_bytes > pkt_len(pkt)) {
+			tprintf("\nAux Data Len %s",
+			      colorize_start_full(black, red) "invalid"
+			      colorize_end());
+			return 0;
+		}
+		
 		tprintf(", Aux Data: ");
 		while (aux_data_len_bytes--) {
 			  tprintf("%x", *pkt_pull(pkt,1));
