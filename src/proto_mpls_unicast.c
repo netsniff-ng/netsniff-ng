@@ -45,6 +45,8 @@ static void mpls_uc_full(struct pkt_buff *pkt)
 		tprintf(" ]\n");
 	} while (!s);
 
+	/* Test for IP Version field */
+	/* Are there other protos possible ? */
 	if(pkt_len(pkt))
 	  proto = *(pkt->data);
 	else
@@ -83,7 +85,9 @@ static void mpls_uc_less(struct pkt_buff *pkt)
 
 		tprintf(" MPLS/%u", mpls_uc_data >> 12);
 	} while (!s);
-
+	
+	/* Test for IP Version field */
+	/* Are there other protos possible ? */
 	if(pkt_len(pkt))
 	  proto = *(pkt->data);
 	else
