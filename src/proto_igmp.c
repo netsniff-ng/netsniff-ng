@@ -268,7 +268,7 @@ static void dissect_igmp_v0(struct pkt_buff *pkt)
 	inet_ntop(AF_INET, &msg->group_address, addr, sizeof(addr));
 	tprintf(", Group Addr (%s)", addr);
 	tprintf(", Access Key (0x%.16x)", msg->access_key);
-	tprintf(" ]\n\n");
+	tprintf(" ]\n");
 }
 
 static void dissect_igmp_v1(struct pkt_buff *pkt)
@@ -292,7 +292,7 @@ static void dissect_igmp_v1(struct pkt_buff *pkt)
 			csum_expected(msg->checksum, csum), colorize_end());
 	inet_ntop(AF_INET, &msg->group_address, addr, sizeof(addr));
 	tprintf(", Group Addr (%s)", addr);
-	tprintf(" ]\n\n");
+	tprintf(" ]\n");
 }
 
 static void dissect_igmp_v2(struct pkt_buff *pkt)
@@ -328,7 +328,7 @@ static void dissect_igmp_v2(struct pkt_buff *pkt)
 			csum_expected(msg->checksum, csum), colorize_end());
 	inet_ntop(AF_INET, &msg->group_address, addr, sizeof(addr));
 	tprintf(", Group Addr (%s)", addr);
-	tprintf(" ]\n\n");
+	tprintf(" ]\n");
 }
 
 static void dissect_igmp_v3_membership_query(struct pkt_buff *pkt)
@@ -381,8 +381,7 @@ static void dissect_igmp_v3_membership_query(struct pkt_buff *pkt)
 			tprintf(")");
 		}
 	}
-
-	tprintf(" ]\n\n");
+	tprintf(" ]\n");
 }
 
 static void dissect_igmp_v3_membership_report(struct pkt_buff *pkt)
