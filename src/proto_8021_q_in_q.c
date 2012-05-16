@@ -13,12 +13,13 @@
 #include "proto.h"
 #include "protos.h"
 #include "dissector_eth.h"
+#include "built_in.h"
 #include "pkt_buff.h"
 
 struct QinQhdr {
 	uint16_t TCI;
 	uint16_t TPID;
-} __attribute__((packed));
+} __packed;
 
 static void QinQ_full(struct pkt_buff *pkt)
 {
