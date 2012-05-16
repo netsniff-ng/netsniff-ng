@@ -30,7 +30,7 @@ IF (CMAKE_HAVE_PTHREAD_CREATE)
 					../proto_tcp.c
 					../proto_udp.c
 					../proto_vlan.c
-					../proto_802.1QinQ.c
+					../proto_8021_q_in_q.c
 					../proto_mpls_unicast.c
 					../xmalloc.c
 					../oui.c
