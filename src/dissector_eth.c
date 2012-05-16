@@ -49,7 +49,7 @@ struct ether_type {
 		struct struct_name *entry = lookup_hash(id, hash_ptr);	      \
 		while (entry && id != entry->id)			      \
 			entry = entry->next;				      \
-		(entry && id == entry->id ? entry->struct_member : "Unknown");\
+		(entry && id == entry->id ? entry->struct_member : 0);\
 	})
 
 char *lookup_port_udp(unsigned int id)

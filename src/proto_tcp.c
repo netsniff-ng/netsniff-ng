@@ -52,47 +52,32 @@ struct tcphdr {
 	uint16_t urg_ptr;
 } __attribute__((packed));
 
-static uint16_t tcp_port(uint16_t src, uint16_t dst)
-{
-	char *tmp1, *tmp2;
-
-	src = ntohs(src);
-	dst = ntohs(dst);
-
-	/* XXX: Is there a better way to determine? */
-	if (src < dst && src < 1024) {
-		return src;
-	} else if (dst < src && dst < 1024) {
-		return dst;
-	} else {
-		tmp1 = lookup_port_tcp(src);
-		tmp2 = lookup_port_tcp(dst);
-		if (tmp1 && !tmp2) {
-			return src;
-		} else if (!tmp1 && tmp2) {
-			return dst;
-		} else {
-			if (src < dst)
-				return src;
-			else
-				return dst;
-		}
-	}
-}
 
 static void tcp(struct pkt_buff *pkt)
 {
 	struct tcphdr *tcp = (struct tcphdr *) pkt_pull(pkt, sizeof(*tcp));
+	uint16_t src, dest;
+	char *src_name, *dest_name;
 
 	if (tcp == NULL)
 		return;
 
+	src = ntohs(tcp->source);
+	dest = ntohs(tcp->dest);
+
+	src_name = lookup_port_tcp(src);
+	dest_name = lookup_port_tcp(dest);
+
 	tprintf(" [ TCP ");
-	tprintf("Port (%u => %u, %s%s%s), ",
-		ntohs(tcp->source), ntohs(tcp->dest),
-		colorize_start(bold),
-		lookup_port_tcp(tcp_port(tcp->source, tcp->dest)),
-		colorize_end());
+	tprintf("Port (%u", src);
+	if (src_name)
+		 tprintf(" (%s%s%s)", colorize_start(bold), src_name,
+							      colorize_end());
+	tprintf(" => %u", dest);
+	if (dest_name)
+		 tprintf(" (%s%s%s)", colorize_start(bold), dest_name,
+							      colorize_end());
+	tprintf("), ");
 	tprintf("SN (0x%x), ", ntohl(tcp->seq));
 	tprintf("AN (0x%x), ", ntohl(tcp->ack_seq));
 	tprintf("DataOff (%u), ", tcp->doff);
@@ -120,21 +105,33 @@ static void tcp(struct pkt_buff *pkt)
 	tprintf("UrgPtr (%u)", ntohs(tcp->urg_ptr));
 	tprintf(" ]\n");
 
-	pkt_set_proto(pkt, &eth_lay4, tcp_port(tcp->source, tcp->dest));
+// 	pkt_set_proto(pkt, &eth_lay4, tcp_port(tcp->source, tcp->dest));
 }
 
 static void tcp_less(struct pkt_buff *pkt)
 {
 	struct tcphdr *tcp = (struct tcphdr *) pkt_pull(pkt, sizeof(*tcp));
+	uint16_t src, dest;
+	char *src_name, *dest_name;
 
 	if (tcp == NULL)
 		return;
 
-	tprintf(" TCP %s%s%s %u/%u F%s",
-		colorize_start(bold),
-		lookup_port_tcp(tcp_port(tcp->source, tcp->dest)),
-		colorize_end(), ntohs(tcp->source), ntohs(tcp->dest),
-		colorize_start(bold));
+	src = ntohs(tcp->source);
+	dest = ntohs(tcp->dest);
+
+	src_name = lookup_port_tcp(src);
+	dest_name = lookup_port_tcp(dest);
+
+	tprintf(" TCP %u", src);
+	if(src_name)
+		tprintf("(%s%s%s)", colorize_start(bold), src_name,
+							    colorize_end());
+	tprintf("/%u", dest);
+	if(dest_name)
+		tprintf("(%s%s%s)", colorize_start(bold), dest_name,
+							    colorize_end());
+	tprintf(" F%s",colorize_start(bold));
 	if (tcp->fin)
 		tprintf(" FIN");
 	if (tcp->syn)
@@ -154,7 +151,7 @@ static void tcp_less(struct pkt_buff *pkt)
 	tprintf("%s Win %u S/A 0x%x/0x%x", colorize_end(),
 		ntohs(tcp->window), ntohl(tcp->seq), ntohl(tcp->ack_seq));
 
-	pkt_set_proto(pkt, &eth_lay4, tcp_port(tcp->source, tcp->dest));
+// 	pkt_set_proto(pkt, &eth_lay4, tcp_port(tcp->source, tcp->dest));
 }
 
 struct protocol tcp_ops = {
