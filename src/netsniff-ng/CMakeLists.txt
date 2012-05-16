@@ -11,7 +11,7 @@ IF (CMAKE_HAVE_PTHREAD_CREATE)
 					../dissector_80211.c
 					../proto_arp.c
 					../proto_ethernet.c
-					../proto_ieee80211.c
+					../proto_80211_framectl.c
 					../proto_icmpv4.c
 					../proto_icmpv6.c
 					../proto_igmp.c
@@ -30,7 +30,7 @@ IF (CMAKE_HAVE_PTHREAD_CREATE)
 					../proto_tcp.c
 					../proto_udp.c
 					../proto_vlan.c
-					../proto_8021_q_in_q.c
+					../proto_vlan_q_in_q.c
 					../proto_mpls_unicast.c
 					../xmalloc.c
 					../oui.c
