@@ -67,6 +67,8 @@ static void ieee80211(struct pkt_buff *pkt)
 	if (hdr == NULL)
 		return;
 
+	/* XXX: cpu_to_le16, ... */
+
 	tprintf(" [ 802.11 Frame Control (0x%04x), Duration/ID (%u) ]\n",
 		/*ntohs(*/hdr->frame_control/*)*/, /*ntohs(*/hdr->duration);
 	tprintf("\t [ Proto Version (%u), ", hdr->proto_version);
