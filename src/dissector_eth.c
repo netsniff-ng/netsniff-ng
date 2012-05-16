@@ -85,6 +85,7 @@ static void dissector_init_layer_2(int type)
 	INSERT_HASH_PROTOS(ipv4_ops, eth_lay2);
 	INSERT_HASH_PROTOS(ipv6_ops, eth_lay2);
 	INSERT_HASH_PROTOS(QinQ_ops, eth_lay2);
+	INSERT_HASH_PROTOS(mpls_uc_ops, eth_lay2);
 	for_each_hash_int(&eth_lay2, dissector_set_print_type, type);
 }
 
