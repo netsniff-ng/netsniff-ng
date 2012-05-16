@@ -17,24 +17,12 @@
 #include "pkt_buff.h"
 #include "oui.h"
 
-/* XXX: clarify which endianess */
-
+/* Note: Fields are encoded in little-endian! */
 struct ieee80211hdr {
-//	union {
-//		u16 frame_control;
-#if defined(__BIG_ENDIAN_BITFIELD)
-		__extension__ u16 subtype:4,
-				  type:2,
-				  proto_version:2,
-				  order:1,
-				  wep:1,
-				  more_data:1,
-				  power_mgmt:1,
-				  retry:1,
-				  more_frags:1,
-				  from_ds:1,
-				  to_ds:1;
-#elif defined(__LITTLE_ENDIAN_BITFIELD)
+	union {
+		u16 frame_control;
+#if defined(__LITTLE_ENDIAN_BITFIELD)
+		/* Correct order here ... */
 		__extension__ u16 proto_version:2,
 				  type:2,
 				  subtype:4,
@@ -46,12 +34,31 @@ struct ieee80211hdr {
 				  more_data:1,
 				  wep:1,
 				  order:1;
+#elif defined(__BIG_ENDIAN_BITFIELD)
+		__extension__ u16 subtype:4,
+				  type:2,
+				  proto_version:2,
+				  order:1,
+				  wep:1,
+				  more_data:1,
+				  power_mgmt:1,
+				  retry:1,
+				  more_frags:1,
+				  from_ds:1,
+				  to_ds:1;
 #else
 # error  "Adjust your <asm/byteorder.h> defines"
 #endif
-//	};
+	};
 	u16 duration;
 } __packed;
+
+static const char *frame_control_types[] = {
+	"Management",	/* 00 */
+	"Control",	/* 01 */
+	"Data",		/* 10 */
+	"Reserved",	/* 11 */
+};
 
 static void ieee80211(struct pkt_buff *pkt)
 {
@@ -60,10 +67,10 @@ static void ieee80211(struct pkt_buff *pkt)
 	if (hdr == NULL)
 		return;
 
-	tprintf(" [ 802.11 Frame Control (0x%x), Duration/ID (%u) ]\n",
-		0/*ntohs(hdr->frame_control)*/, /*ntohs(*/hdr->duration);
+	tprintf(" [ 802.11 Frame Control (0x%04x), Duration/ID (%u) ]\n",
+		/*ntohs(*/hdr->frame_control/*)*/, /*ntohs(*/hdr->duration);
 	tprintf("\t [ Proto Version (%u), ", hdr->proto_version);
-	tprintf("Type (%u), ", hdr->type /*XXX*/);
+	tprintf("Type (%u, %s), ", hdr->type, frame_control_types[hdr->type]);
 	tprintf("Subtype (%u)", hdr->subtype /*XXX*/);
 	tprintf("%s%s",
 		hdr->to_ds ? ", Frame goes to DS" : "",
