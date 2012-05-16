@@ -132,7 +132,11 @@ static void ipv4(struct pkt_buff *pkt)
 	}
 out:
 	/* cut off everything that is not part of IPv4 payload */
-	pkt_trim(pkt, pkt_len(pkt) - min(pkt_len(pkt), (ntohs(ip->h_tot_len) - ip->h_ihl * sizeof(uint32_t))));
+	/* XXX there coul still be an Ethernet trailer included or others */
+#if 0
+	pkt_trim(pkt, pkt_len(pkt) - min(pkt_len(pkt),
+		 (ntohs(ip->h_tot_len) - ip->h_ihl * sizeof(uint32_t))));
+#endif
 	pkt_set_proto(pkt, &eth_lay3, ip->h_protocol);
 }
 
@@ -154,7 +158,11 @@ static void ipv4_less(struct pkt_buff *pkt)
 	/* cut off IP options and everything that is not part of IPv4 payload */
 	pkt_pull(pkt, max((uint8_t) ip->h_ihl, sizeof(*ip) / sizeof(uint32_t))
 		* sizeof(uint32_t) - sizeof(*ip));
-	pkt_trim(pkt, pkt_len(pkt) - min(pkt_len(pkt), (ntohs(ip->h_tot_len) - ip->h_ihl * sizeof(uint32_t))));
+	/* XXX there coul still be an Ethernet trailer included or others */
+#if 0
+	pkt_trim(pkt, pkt_len(pkt) - min(pkt_len(pkt),
+		 (ntohs(ip->h_tot_len) - ip->h_ihl * sizeof(uint32_t))));
+#endif
 	pkt_set_proto(pkt, &eth_lay3, ip->h_protocol);
 }
 
