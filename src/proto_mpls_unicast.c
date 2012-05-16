@@ -22,7 +22,7 @@ struct mpls_uchdr {
 static void mpls_uc_full(struct pkt_buff *pkt)
 {
 	uint8_t s = 0;
-	uint16_t mpls_uc_data;
+	uint32_t mpls_uc_data;
 
 	do {
 		struct mpls_uchdr *mpls_uc = (struct mpls_uchdr *) pkt_pull(pkt,
@@ -30,14 +30,13 @@ static void mpls_uc_full(struct pkt_buff *pkt)
 
 		if (mpls_uc == NULL)
 			return;
-tprintf("%x\n",mpls_uc->mpls_uc_hdr);
+
 		mpls_uc_data = ntohl(mpls_uc->mpls_uc_hdr);
 		s = (mpls_uc_data >> 8) & 0x1;
-tprintf("%x\n",mpls_uc_data);
-tprintf("%x",mpls_uc->mpls_uc_hdr);
+
 		tprintf(" [ MPLS ");
 		tprintf("Label (%u), ", mpls_uc_data >> 12);
-		tprintf("Exp (%u), ", (mpls_uc_data >> 9) & 0x3);
+		tprintf("Exp (%u), ", (mpls_uc_data >> 9) & 0x7);
 		tprintf("S (%u), ", s);
 		tprintf("TTL (%u), ", (mpls_uc_data & 0xFF));
 		tprintf(" ]\n");
