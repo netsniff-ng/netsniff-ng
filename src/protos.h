@@ -31,5 +31,6 @@ extern struct protocol tcp_ops;
 extern struct protocol udp_ops;
 extern struct protocol vlan_ops;
 extern struct protocol ieee80211_ops;
+extern struct protocol QinQ_ops;
 
 #endif /* PROTOS_H */
