@@ -247,13 +247,13 @@ static void mobility(struct pkt_buff *pkt)
 	struct mobilityhdr *mobility;
 
 	mobility = (struct mobilityhdr *) pkt_pull(pkt, sizeof(*mobility));
+	if (mobility == NULL)
+		return;
 
 	/* Total Header Length in Bytes */
 	hdr_ext_len = (mobility->hdr_len + 1) * 8;
 	/* Total Message Data length in Bytes*/
 	message_data_len = (hdr_ext_len - sizeof(*mobility));
-	if (mobility == NULL)
-		return;
 
 	tprintf("\t [ Mobility ");
 	tprintf("NextHdr (%u), ", mobility->payload_proto);
@@ -287,13 +287,14 @@ static void mobility_less(struct pkt_buff *pkt)
 	struct mobilityhdr *mobility;
 
 	mobility = (struct mobilityhdr *) pkt_pull(pkt, sizeof(*mobility));
+	if (mobility == NULL)
+		return;
 
 	/* Total Header Length in Bytes */
 	hdr_ext_len = (mobility->hdr_len + 1) * 8;
 	/* Total Message Data length in Bytes*/
 	message_data_len = (hdr_ext_len - sizeof(*mobility));
-	if (mobility == NULL || message_data_len > pkt_len(pkt) ||
-					      message_data_len < 0)
+	if (message_data_len > pkt_len(pkt) || message_data_len < 0)
 		return;
 
 	tprintf(" Mobility Type (%u), ", mobility->MH_type);
