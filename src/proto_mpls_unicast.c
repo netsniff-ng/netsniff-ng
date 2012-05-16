@@ -13,21 +13,21 @@
 #include "proto.h"
 #include "protos.h"
 #include "dissector_eth.h"
+#include "built_in.h"
 #include "pkt_buff.h"
 
 struct mpls_uchdr {
 	uint32_t mpls_uc_hdr;
-} __attribute__((packed));
+} __packed;
 
 static void mpls_uc_full(struct pkt_buff *pkt)
 {
 	uint8_t s = 0;
 	uint32_t mpls_uc_data;
+	struct mpls_uchdr *mpls_uc;
 
 	do {
-		struct mpls_uchdr *mpls_uc = (struct mpls_uchdr *) pkt_pull(pkt,
-							      sizeof(*mpls_uc));
-
+		mpls_uc = (struct mpls_uchdr *) pkt_pull(pkt, sizeof(*mpls_uc));
 		if (mpls_uc == NULL)
 			return;
 
@@ -40,7 +40,7 @@ static void mpls_uc_full(struct pkt_buff *pkt)
 		tprintf("S (%u), ", s);
 		tprintf("TTL (%u), ", (mpls_uc_data & 0xFF));
 		tprintf(" ]\n");
-	}while(!s);
+	} while (!s);
 
 // 	pkt_set_proto(pkt, &eth_lay2, ntohs(mpls_uc->TPID));
 }
