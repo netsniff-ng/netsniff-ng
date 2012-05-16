@@ -44,13 +44,13 @@ static void dest_opts(struct pkt_buff *pkt)
 	struct dest_optshdr *dest_ops;
 
 	dest_ops = (struct dest_optshdr *) pkt_pull(pkt, sizeof(*dest_ops));
+	if (dest_ops == NULL)
+		return;
 
 	/* Total Header Length in Bytes */
 	hdr_ext_len = (dest_ops->hdr_len + 1) * 8;
 	/* Options length in Bytes */
 	opt_len = hdr_ext_len - sizeof(*dest_ops);
-	if (dest_ops == NULL)
-		return;
 
 	tprintf("\t [ Destination Options ");
 	tprintf("NextHdr (%u), ", dest_ops->h_next_header);
@@ -78,12 +78,14 @@ static void dest_opts_less(struct pkt_buff *pkt)
 	struct dest_optshdr *dest_ops;
 
 	dest_ops = (struct dest_optshdr *) pkt_pull(pkt, sizeof(*dest_ops));
+	if (dest_ops == NULL)
+		return;
 
 	/* Total Header Length in Bytes */
 	hdr_ext_len = (dest_ops->hdr_len + 1) * 8;
 	/* Options length in Bytes */
 	opt_len = hdr_ext_len - sizeof(*dest_ops);
-	if (dest_ops == NULL || opt_len > pkt_len(pkt) || opt_len < 0)
+	if (opt_len > pkt_len(pkt) || opt_len < 0)
 		return;
 
 	tprintf(" Dest Ops");
