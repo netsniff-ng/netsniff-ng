@@ -52,11 +52,11 @@ static void mpls_uc_full(struct pkt_buff *pkt)
 
 	switch (proto >> 4) {
 	case 4:
-	    key = 0x800; /* IPv4*/
-	    break;
+		key = 0x800; /* IPv4*/
+		break;
 	case 6:
-	    key = 0x86DD; /* IPv6*/
-	    break;
+		key = 0x86DD; /* IPv6*/
+		break;
 	default:
 	    key = 0;
 	}
@@ -82,7 +82,7 @@ static void mpls_uc_less(struct pkt_buff *pkt)
 		s = (mpls_uc_data >> 8) & 0x1;
 
 		tprintf(" MPLS/%u", mpls_uc_data >> 12);
-	}while(!s);
+	} while (!s);
 
 	if(pkt_len(pkt))
 	  proto = *(pkt->data);
@@ -91,11 +91,11 @@ static void mpls_uc_less(struct pkt_buff *pkt)
 
 	switch (proto >> 4) {
 	case 4:
-	    key = 0x800; /* IPv4*/
-	    break;
+		key = 0x800; /* IPv4*/
+		break;
 	case 6:
-	    key = 0x86DD; /* IPv6*/
-	    break;
+		key = 0x86DD; /* IPv6*/
+		break;
 	default:
 	    key = 0;
 	}
