@@ -342,6 +342,7 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 	struct tx_stats stats;
 	uint8_t *out = NULL;
 	unsigned long trunced = 0;
+	struct timeval start, end, diff;
 
 	if (!device_up_and_running(mode->device_out))
 		panic("Device not up and running!\n");
@@ -415,6 +416,8 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 	ioprio_print();
 	printf("\n");
 
+	gettimeofday(&start, NULL);
+
 	while (likely(sigint == 0)) {
 		while (user_may_pull_from_tx(tx_ring.frames[it].iov_base)) {
 			struct pcap_pkthdr phdr;
@@ -457,11 +460,15 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 		}
 	}
 out:
+	gettimeofday(&end, NULL);
+	diff = tv_subtract(end, start);
+
 	fflush(stdout);
 	printf("\n");
 	printf("\r%12lu frames outgoing\n", stats.tx_packets);
 	printf("\r%12lu frames truncated (larger than frame)\n", trunced);
 	printf("\r%12lu bytes outgoing\n", stats.tx_bytes);
+	printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec, diff.tv_usec);
 
 	bpf_release(&bpf_ops);
 	dissector_cleanup_all();
@@ -628,6 +635,7 @@ static void enter_mode_read_pcap(struct mode *mode)
 	uint8_t *out;
 	size_t out_len;
 	unsigned long trunced = 0;
+	struct timeval start, end, diff;
 
 	if (!pcap_ops[mode->pcap])
 		panic("pcap group not supported!\n");
@@ -664,6 +672,8 @@ static void enter_mode_read_pcap(struct mode *mode)
 		fdo = open_or_die_m(mode->device_out, O_RDWR | O_CREAT |
 				    O_TRUNC | O_LARGEFILE, S_IRUSR | S_IWUSR);
 	}
+
+	gettimeofday(&start, NULL);
 
 	while (likely(sigint == 0)) {
 		do {
@@ -726,11 +736,15 @@ static void enter_mode_read_pcap(struct mode *mode)
 		}
 	}
 out:
+	gettimeofday(&end, NULL);
+	diff = tv_subtract(end, start);
+
 	fflush(stdout);
 	printf("\n");
 	printf("\r%12lu frames outgoing\n", stats.tx_packets);
 	printf("\r%12lu frames truncated (larger than mtu)\n", trunced);
 	printf("\r%12lu bytes outgoing\n", stats.tx_bytes);
+	printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec, diff.tv_usec);
 
 	xfree(out);
 
@@ -854,6 +868,7 @@ static void enter_mode_rx_only_or_dump(struct mode *mode)
 	struct pollfd rx_poll;
 	struct frame_map *hdr;
 	struct sock_fprog bpf_ops;
+	struct timeval start, end, diff;
 
 	if (!device_up_and_running(mode->device_in))
 		panic("Device not up and running!\n");
@@ -929,6 +944,8 @@ try_file:
 	ioprio_print();
 	printf("\n");
 
+	gettimeofday(&start, NULL);
+
 	while (likely(sigint == 0)) {
 		while (user_may_pull_from_rx(rx_ring.frames[it].iov_base)) {
 			hdr = rx_ring.frames[it].iov_base;
@@ -989,9 +1006,14 @@ next:
 		poll_error_maybe_die(sock, &rx_poll);
 	}
 
-	if (!(mode->dump_dir && mode->print_mode == FNTTYPE_PRINT_NONE))
+	gettimeofday(&end, NULL);
+	diff = tv_subtract(end, start);
+
+	if (!(mode->dump_dir && mode->print_mode == FNTTYPE_PRINT_NONE)) {
 		sock_print_net_stats(sock, skipped);
-	else {
+		printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec,
+		       diff.tv_usec);
+	} else {
 		printf("\n\n");
 		fflush(stdout);
 	}
