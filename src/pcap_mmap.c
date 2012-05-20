@@ -74,6 +74,7 @@ static int pcap_mmap_push_file_header(int fd, uint32_t linktype)
 static int pcap_mmap_prepare_writing_pcap(int fd)
 {
 	int ret;
+	off_t pos;
 	struct stat sb;
 
 	set_ioprio_be();
@@ -88,9 +89,8 @@ static int pcap_mmap_prepare_writing_pcap(int fd)
 	if (!S_ISREG (sb.st_mode))
 		panic("pcap dump file is not a regular file!\n");
 
-	/* Expand file buffer, so that mmap can be done. */
-	ret = lseek(fd, map_size, SEEK_SET);
-	if (ret < 0)
+	pos = lseek(fd, map_size, SEEK_SET);
+	if (pos < 0)
 		panic("Cannot lseek pcap file!\n");
 
 	ret = write_or_die(fd, "", 1);
@@ -117,6 +117,7 @@ static ssize_t pcap_mmap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 					uint8_t *packet, size_t len)
 {
 	int ret;
+	off_t pos;
 
 	spinlock_lock(&lock);
 
@@ -126,8 +127,8 @@ static ssize_t pcap_mmap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 
 		map_size = PAGE_ALIGN(map_size_old * 3 / 2);
 
-		ret = lseek(fd, map_size, SEEK_SET);
-		if (ret < 0)
+		pos = lseek(fd, map_size, SEEK_SET);
+		if (pos < 0)
 			panic("Cannot lseek pcap file!\n");
 
 		ret = write_or_die(fd, "", 1);
