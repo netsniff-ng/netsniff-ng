@@ -1011,7 +1011,7 @@ next:
 
 	if (!(mode->dump_dir && mode->print_mode == FNTTYPE_PRINT_NONE)) {
 		sock_print_net_stats(sock, skipped);
-		printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec,
+		printf("\r%12lu  sec, %lu usec in total\n", diff.tv_sec,
 		       diff.tv_usec);
 	} else {
 		printf("\n\n");
