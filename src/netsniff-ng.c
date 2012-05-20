@@ -265,7 +265,7 @@ static unsigned long interval = TX_KERNEL_PULL_INT;
 static struct itimerval itimer;
 static volatile bool next_dump = false;
 
-static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqXlvhF:R";
+static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqXlvhF:Rg";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -274,6 +274,7 @@ static struct option long_options[] = {
 	{"rand", no_argument, 0, 'r'},
 	{"rfraw", no_argument, 0, 'R'},
 	{"mmap", no_argument, 0, 'm'},
+	{"sg", no_argument, 0, 'g'},
 	{"clrw", no_argument, 0, 'c'},
 	{"jumbo-support", no_argument, 0, 'J'},
 	{"filter", required_argument, 0, 'f'},
@@ -1044,7 +1045,7 @@ static void help(void)
 	printf("  -r|--rand                   Randomize packet forwarding order\n");
 	printf("  -M|--no-promisc             No promiscuous mode for netdev\n");
 	printf("  -m|--mmap                   Mmap pcap file i.e., for replaying\n");
-	printf("                              Default: scatter-gather I/O\n");
+	printf("  -g|--sg                     Scatter/gather pcap file I/O\n");
 	printf("  -c|--clrw                   Use slower read(2)/write(2) I/O\n");
 	printf("  -S|--ring-size <size>       Manually set ring size to <size>:\n");
 	printf("                              mmap space in KB/MB/GB, e.g. \'10MB\'\n");
@@ -1106,7 +1107,7 @@ static void header(void)
 
 int main(int argc, char **argv)
 {
-	int c, i, j, opt_index;
+	int c, i, j, opt_index, ops_touched = 0;
 	char *ptr;
 	bool prio_high = false;
 	struct mode mode;
@@ -1199,9 +1200,15 @@ int main(int argc, char **argv)
 			break;
 		case 'c':
 			mode.pcap = PCAP_OPS_RW;
+			ops_touched = 1;
 			break;
 		case 'm':
 			mode.pcap = PCAP_OPS_MMAP;
+			ops_touched = 1;
+			break;
+		case 'g':
+			mode.pcap = PCAP_OPS_SG;
+			ops_touched = 1;
 			break;
 		case 'Q':
 			mode.cpu = CPU_NOTOUCH;
@@ -1290,13 +1297,19 @@ int main(int argc, char **argv)
 			mode.dump = 1;
 			register_signal_f(SIGALRM, timer_next_dump, SA_SIGINFO);
 			enter_mode = enter_mode_rx_only_or_dump;
+			if (!ops_touched)
+				mode.pcap = PCAP_OPS_SG;
 		}
 	} else {
 		if (mode.device_out && device_mtu(mode.device_out)) {
 			register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO);
 			enter_mode = enter_mode_pcap_to_tx;
+			if (!ops_touched)
+				mode.pcap = PCAP_OPS_MMAP;
 		} else {
 			enter_mode = enter_mode_read_pcap;
+			if (!ops_touched)
+				mode.pcap = PCAP_OPS_SG;
 		}
 	}
 

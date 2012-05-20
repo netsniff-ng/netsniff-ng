@@ -19,12 +19,8 @@
 #include "locking.h"
 #include "built_in.h"
 
-#define PAGE_SIZE         (getpagesize())
-#define PAGE_MASK         (~(PAGE_SIZE - 1))
-#define PAGE_ALIGN(addr)  (((addr) + PAGE_SIZE - 1) & PAGE_MASK)
-
-#define IOVSIZ   1000
-#define ALLSIZ   	(PAGE_SIZE * 3)
+#define IOVSIZ		1000
+#define ALLSIZ		(PAGE_SIZE * 3)
 #define ALLSIZ_2K	(PAGE_SIZE * 3)  // 12K max
 #define ALLSIZ_JUMBO	(PAGE_SIZE * 16) // 64K max
 
