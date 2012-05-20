@@ -33,7 +33,6 @@ static int jumbo_frames = 0;
 static inline off_t get_map_size(void)
 {
 	int allocsz = jumbo_frames ? 16 : 3;
-
 	return PAGE_ALIGN(sizeof(struct pcap_filehdr) +
 			  (PAGE_SIZE * allocsz) * DEFAULT_SLOTS);
 }
@@ -125,7 +124,7 @@ static ssize_t pcap_mmap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 		off_t map_size_old = map_size;
 		off_t offset = (pcurr - pstart);
 
-		map_size = PAGE_ALIGN(map_size_old * 3 / 2);
+		map_size = PAGE_ALIGN(map_size_old * 10 / 8);
 
 		pos = lseek(fd, map_size, SEEK_SET);
 		if (pos < 0)
