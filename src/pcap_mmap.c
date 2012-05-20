@@ -21,10 +21,6 @@
 
 #define DEFAULT_SLOTS     1000
 
-#define PAGE_SIZE	  (getpagesize())
-#define PAGE_MASK	  (~(PAGE_SIZE - 1))
-#define PAGE_ALIGN(addr)  (((addr) + PAGE_SIZE - 1) & PAGE_MASK)
-
 static struct spinlock lock;
 static off_t map_size = 0;
 static char *pstart, *pcurr;
