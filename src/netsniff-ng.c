@@ -408,6 +408,9 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 	printf("MD: TX %luus %s ", interval, pcap_ops[mode->pcap]->name);
 	if (mode->rfraw)
 		printf("802.11 raw via %s ", mode->device_out);
+#ifdef _LARGEFILE64_SOURCE
+	printf("lf64 ");
+#endif 
 	ioprio_print();
 	printf("\n");
 
@@ -650,6 +653,9 @@ static void enter_mode_read_pcap(struct mode *mode)
 	printf("BPF:\n");
 	bpf_dump_all(&bpf_ops);
 	printf("MD: RD %s ", pcap_ops[mode->pcap]->name);
+#ifdef _LARGEFILE64_SOURCE
+	printf("lf64 ");
+#endif 
 	ioprio_print();
 	printf("\n");
 
@@ -916,6 +922,9 @@ try_file:
 	printf("MD: RX %s ", mode->dump ? pcap_ops[mode->pcap]->name : "");
 	if (mode->rfraw)
 		printf("802.11 raw via %s ", mode->device_in);
+#ifdef _LARGEFILE64_SOURCE
+	printf("lf64 ");
+#endif 
 	ioprio_print();
 	printf("\n");
 
