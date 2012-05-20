@@ -387,7 +387,7 @@ static void tx_precheck(struct mode *mode)
 		panic("Panic over invalid args for TX trigger!\n");
 	if (packets_len == 0 || packets_len != packet_dyn_len)
 		panic("Panic over invalid args for TX trigger!\n");
-	if (!device_up_and_running(mode->device))
+	if (!mode->rfraw && !device_up_and_running(mode->device))
 		panic("Device not up and running!\n");
 
 	mtu = device_mtu(mode->device);
@@ -738,7 +738,8 @@ int main(int argc, char **argv)
 		panic("No configuration file given!\n");
 	if (!interactive && device_mtu(mode.device) == 0)
 		panic("This is no networking device!\n");
-	if (!interactive && device_up_and_running(mode.device) == 0)
+	if (!interactive && !mode.rfraw &&
+	    device_up_and_running(mode.device) == 0)
 		panic("Networking device not running!\n");
 
 	register_signal(SIGINT, signal_handler);
