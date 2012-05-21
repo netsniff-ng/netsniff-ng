@@ -73,10 +73,9 @@ static void ipv4(struct pkt_buff *pkt)
 	inet_ntop(AF_INET, &ip->h_saddr, src_ip, sizeof(src_ip));
 	inet_ntop(AF_INET, &ip->h_daddr, dst_ip, sizeof(dst_ip));
 
-	if((pkt_len(pkt) + sizeof(*ip)) > h_tot_len) {
-		trailer_len =  pkt_len(pkt) + sizeof(*ip) -
-				h_tot_len;
-		trailer = pkt->data  + h_tot_len + trailer_len;
+	if ((pkt_len(pkt) + sizeof(*ip)) > h_tot_len) {
+		trailer_len = pkt_len(pkt) + sizeof(*ip) - h_tot_len;
+		trailer = pkt->data + h_tot_len + trailer_len;
 	}
 
 	if (trailer_len) {
