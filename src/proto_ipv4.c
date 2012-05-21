@@ -55,21 +55,37 @@ struct ipv4hdr {
 
 static void ipv4(struct pkt_buff *pkt)
 {
-	uint16_t csum, frag_off;
+	uint16_t csum, frag_off, h_tot_len;
 	char src_ip[INET_ADDRSTRLEN];
 	char dst_ip[INET_ADDRSTRLEN];
 	struct ipv4hdr *ip = (struct ipv4hdr *) pkt_pull(pkt, sizeof(*ip));
-	uint8_t *opt;
+	uint8_t *opt, *trailer;
+	unsigned int trailer_len = 0;
 	ssize_t opts_len, opt_len;
 
 	if (!ip)
 		return;
 
 	frag_off = ntohs(ip->h_frag_off);
+	h_tot_len = ntohs(ip->h_tot_len);
 	csum = calc_csum(ip, ip->h_ihl * 4, 0);
 
 	inet_ntop(AF_INET, &ip->h_saddr, src_ip, sizeof(src_ip));
 	inet_ntop(AF_INET, &ip->h_daddr, dst_ip, sizeof(dst_ip));
+
+	if((pkt_len(pkt) + sizeof(*ip)) > h_tot_len) {
+		trailer_len =  pkt_len(pkt) + sizeof(*ip) -
+				h_tot_len;
+		trailer = pkt->data  + h_tot_len + trailer_len;
+	}
+
+	if (trailer_len) {
+		 tprintf(" [ Eth trailer ");
+		 while (trailer_len--) {
+			tprintf("%x", *(trailer - trailer_len));
+		 }
+		 tprintf(" ]\n");
+	}
 
 	tprintf(" [ IPv4 ");
 	tprintf("Addr (%s => %s), ", src_ip, dst_ip);
@@ -132,11 +148,11 @@ static void ipv4(struct pkt_buff *pkt)
 	}
 out:
 	/* cut off everything that is not part of IPv4 payload */
-	/* XXX there coul still be an Ethernet trailer included or others */
-#if 0
+	/* XXX there could still be an Ethernet trailer included or others */
+
 	pkt_trim(pkt, pkt_len(pkt) - min(pkt_len(pkt),
 		 (ntohs(ip->h_tot_len) - ip->h_ihl * sizeof(uint32_t))));
-#endif
+
 	pkt_set_proto(pkt, &eth_lay3, ip->h_protocol);
 }
 
