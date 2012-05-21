@@ -387,7 +387,7 @@ static void tx_precheck(struct mode *mode)
 		panic("Panic over invalid args for TX trigger!\n");
 	if (packets_len == 0 || packets_len != packet_dyn_len)
 		panic("Panic over invalid args for TX trigger!\n");
-	if (!device_up_and_running(mode->device))
+	if (!mode->rfraw && !device_up_and_running(mode->device))
 		panic("Device not up and running!\n");
 
 	mtu = device_mtu(mode->device);
@@ -406,6 +406,7 @@ static void tx_slowpath_or_die(struct mode *mode)
 	unsigned int i;
 	struct sockaddr_ll s_addr;
 	unsigned long num = 1;
+	struct timeval start, end, diff;
 
 	tx_precheck(mode);
 
@@ -438,6 +439,8 @@ static void tx_slowpath_or_die(struct mode *mode)
 
 	i = 0;
 
+	gettimeofday(&start, NULL);
+
 	while (likely(sigint == 0) && likely(num > 0)) {
 		apply_counter(i);
 		apply_randomizer(i);
@@ -463,6 +466,9 @@ static void tx_slowpath_or_die(struct mode *mode)
 		usleep(mode->gap);
 	}
 
+	gettimeofday(&end, NULL);
+	diff = tv_subtract(end, start);
+
 	if (mode->rfraw)
 		leave_rfmon_mac80211(mode->device_trans, mode->device);
 
@@ -472,6 +478,7 @@ static void tx_slowpath_or_die(struct mode *mode)
 	printf("\n");
 	printf("\r%12lu frames outgoing\n", mode->stats.tx_packets);
 	printf("\r%12lu bytes outgoing\n", mode->stats.tx_bytes);
+	printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec, diff.tv_usec);
 }
 
 static void tx_fastpath_or_die(struct mode *mode)
@@ -482,6 +489,7 @@ static void tx_fastpath_or_die(struct mode *mode)
 	uint8_t *out = NULL;
 	struct ring tx_ring;
 	struct frame_map *hdr;
+	struct timeval start, end, diff;
 
 	tx_precheck(mode);
 
@@ -534,6 +542,8 @@ static void tx_fastpath_or_die(struct mode *mode)
 
 	i = 0;
 
+	gettimeofday(&start, NULL);
+
 	while (likely(sigint == 0) && likely(num > 0)) {
 		while (user_may_pull_from_tx(tx_ring.frames[it].iov_base) &&
 		       likely(num > 0)) {
@@ -572,6 +582,9 @@ static void tx_fastpath_or_die(struct mode *mode)
 		}
 	}
 
+	gettimeofday(&end, NULL);
+	diff = tv_subtract(end, start);
+
 	destroy_tx_ring(sock, &tx_ring);
 
 	if (mode->rfraw)
@@ -583,6 +596,7 @@ static void tx_fastpath_or_die(struct mode *mode)
 	printf("\n");
 	printf("\r%12lu frames outgoing\n", mode->stats.tx_packets);
 	printf("\r%12lu bytes outgoing\n", mode->stats.tx_bytes);
+	printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec, diff.tv_usec);
 }
 
 static void main_loop(struct mode *mode, char *confname)
@@ -724,7 +738,8 @@ int main(int argc, char **argv)
 		panic("No configuration file given!\n");
 	if (!interactive && device_mtu(mode.device) == 0)
 		panic("This is no networking device!\n");
-	if (!interactive && device_up_and_running(mode.device) == 0)
+	if (!interactive && !mode.rfraw &&
+	    device_up_and_running(mode.device) == 0)
 		panic("Networking device not running!\n");
 
 	register_signal(SIGINT, signal_handler);

@@ -44,7 +44,7 @@ static void _ascii(uint8_t *ptr, size_t len)
 
 	tprintf(" [ chr ");
 	for (; ptr && len-- > 0; ptr++)
-		tprintf(" %c ", isprint(*ptr) ? *ptr : '.');
+		tprintf("%c", isprint(*ptr) ? *ptr : '.');
 	tprintf(" ]\n");
 }
 
@@ -65,8 +65,8 @@ void hex_ascii(struct pkt_buff *pkt)
 	uint8_t *ptr = pkt_pull(pkt, len);
 
 	if (len) {
-		_hex(ptr, len);
 		_ascii(ptr, len);
+		_hex(ptr, len);
 	}
 
 	tprintf("\n");

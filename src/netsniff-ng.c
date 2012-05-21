@@ -265,7 +265,7 @@ static unsigned long interval = TX_KERNEL_PULL_INT;
 static struct itimerval itimer;
 static volatile bool next_dump = false;
 
-static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqXlvhF:R";
+static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqXlvhF:Rg";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -274,6 +274,7 @@ static struct option long_options[] = {
 	{"rand", no_argument, 0, 'r'},
 	{"rfraw", no_argument, 0, 'R'},
 	{"mmap", no_argument, 0, 'm'},
+	{"sg", no_argument, 0, 'g'},
 	{"clrw", no_argument, 0, 'c'},
 	{"jumbo-support", no_argument, 0, 'J'},
 	{"filter", required_argument, 0, 'f'},
@@ -341,6 +342,7 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 	struct tx_stats stats;
 	uint8_t *out = NULL;
 	unsigned long trunced = 0;
+	struct timeval start, end, diff;
 
 	if (!device_up_and_running(mode->device_out))
 		panic("Device not up and running!\n");
@@ -408,8 +410,13 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 	printf("MD: TX %luus %s ", interval, pcap_ops[mode->pcap]->name);
 	if (mode->rfraw)
 		printf("802.11 raw via %s ", mode->device_out);
+#ifdef _LARGEFILE64_SOURCE
+	printf("lf64 ");
+#endif 
 	ioprio_print();
 	printf("\n");
+
+	gettimeofday(&start, NULL);
 
 	while (likely(sigint == 0)) {
 		while (user_may_pull_from_tx(tx_ring.frames[it].iov_base)) {
@@ -453,11 +460,15 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 		}
 	}
 out:
+	gettimeofday(&end, NULL);
+	diff = tv_subtract(end, start);
+
 	fflush(stdout);
 	printf("\n");
 	printf("\r%12lu frames outgoing\n", stats.tx_packets);
 	printf("\r%12lu frames truncated (larger than frame)\n", trunced);
 	printf("\r%12lu bytes outgoing\n", stats.tx_bytes);
+	printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec, diff.tv_usec);
 
 	bpf_release(&bpf_ops);
 	dissector_cleanup_all();
@@ -624,6 +635,7 @@ static void enter_mode_read_pcap(struct mode *mode)
 	uint8_t *out;
 	size_t out_len;
 	unsigned long trunced = 0;
+	struct timeval start, end, diff;
 
 	if (!pcap_ops[mode->pcap])
 		panic("pcap group not supported!\n");
@@ -650,6 +662,9 @@ static void enter_mode_read_pcap(struct mode *mode)
 	printf("BPF:\n");
 	bpf_dump_all(&bpf_ops);
 	printf("MD: RD %s ", pcap_ops[mode->pcap]->name);
+#ifdef _LARGEFILE64_SOURCE
+	printf("lf64 ");
+#endif 
 	ioprio_print();
 	printf("\n");
 
@@ -657,6 +672,8 @@ static void enter_mode_read_pcap(struct mode *mode)
 		fdo = open_or_die_m(mode->device_out, O_RDWR | O_CREAT |
 				    O_TRUNC | O_LARGEFILE, S_IRUSR | S_IWUSR);
 	}
+
+	gettimeofday(&start, NULL);
 
 	while (likely(sigint == 0)) {
 		do {
@@ -719,11 +736,15 @@ static void enter_mode_read_pcap(struct mode *mode)
 		}
 	}
 out:
+	gettimeofday(&end, NULL);
+	diff = tv_subtract(end, start);
+
 	fflush(stdout);
 	printf("\n");
 	printf("\r%12lu frames outgoing\n", stats.tx_packets);
 	printf("\r%12lu frames truncated (larger than mtu)\n", trunced);
 	printf("\r%12lu bytes outgoing\n", stats.tx_bytes);
+	printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec, diff.tv_usec);
 
 	xfree(out);
 
@@ -847,6 +868,7 @@ static void enter_mode_rx_only_or_dump(struct mode *mode)
 	struct pollfd rx_poll;
 	struct frame_map *hdr;
 	struct sock_fprog bpf_ops;
+	struct timeval start, end, diff;
 
 	if (!device_up_and_running(mode->device_in))
 		panic("Device not up and running!\n");
@@ -916,8 +938,13 @@ try_file:
 	printf("MD: RX %s ", mode->dump ? pcap_ops[mode->pcap]->name : "");
 	if (mode->rfraw)
 		printf("802.11 raw via %s ", mode->device_in);
+#ifdef _LARGEFILE64_SOURCE
+	printf("lf64 ");
+#endif 
 	ioprio_print();
 	printf("\n");
+
+	gettimeofday(&start, NULL);
 
 	while (likely(sigint == 0)) {
 		while (user_may_pull_from_rx(rx_ring.frames[it].iov_base)) {
@@ -979,9 +1006,14 @@ next:
 		poll_error_maybe_die(sock, &rx_poll);
 	}
 
-	if (!(mode->dump_dir && mode->print_mode == FNTTYPE_PRINT_NONE))
+	gettimeofday(&end, NULL);
+	diff = tv_subtract(end, start);
+
+	if (!(mode->dump_dir && mode->print_mode == FNTTYPE_PRINT_NONE)) {
 		sock_print_net_stats(sock, skipped);
-	else {
+		printf("\r%12lu  sec, %lu usec in total\n", diff.tv_sec,
+		       diff.tv_usec);
+	} else {
 		printf("\n\n");
 		fflush(stdout);
 	}
@@ -1035,7 +1067,7 @@ static void help(void)
 	printf("  -r|--rand                   Randomize packet forwarding order\n");
 	printf("  -M|--no-promisc             No promiscuous mode for netdev\n");
 	printf("  -m|--mmap                   Mmap pcap file i.e., for replaying\n");
-	printf("                              Default: scatter-gather I/O\n");
+	printf("  -g|--sg                     Scatter/gather pcap file I/O\n");
 	printf("  -c|--clrw                   Use slower read(2)/write(2) I/O\n");
 	printf("  -S|--ring-size <size>       Manually set ring size to <size>:\n");
 	printf("                              mmap space in KB/MB/GB, e.g. \'10MB\'\n");
@@ -1097,7 +1129,7 @@ static void header(void)
 
 int main(int argc, char **argv)
 {
-	int c, i, j, opt_index;
+	int c, i, j, opt_index, ops_touched = 0;
 	char *ptr;
 	bool prio_high = false;
 	struct mode mode;
@@ -1190,9 +1222,15 @@ int main(int argc, char **argv)
 			break;
 		case 'c':
 			mode.pcap = PCAP_OPS_RW;
+			ops_touched = 1;
 			break;
 		case 'm':
 			mode.pcap = PCAP_OPS_MMAP;
+			ops_touched = 1;
+			break;
+		case 'g':
+			mode.pcap = PCAP_OPS_SG;
+			ops_touched = 1;
 			break;
 		case 'Q':
 			mode.cpu = CPU_NOTOUCH;
@@ -1281,13 +1319,19 @@ int main(int argc, char **argv)
 			mode.dump = 1;
 			register_signal_f(SIGALRM, timer_next_dump, SA_SIGINFO);
 			enter_mode = enter_mode_rx_only_or_dump;
+			if (!ops_touched)
+				mode.pcap = PCAP_OPS_SG;
 		}
 	} else {
 		if (mode.device_out && device_mtu(mode.device_out)) {
 			register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO);
 			enter_mode = enter_mode_pcap_to_tx;
+			if (!ops_touched)
+				mode.pcap = PCAP_OPS_MMAP;
 		} else {
 			enter_mode = enter_mode_read_pcap;
+			if (!ops_touched)
+				mode.pcap = PCAP_OPS_SG;
 		}
 	}
 

@@ -218,6 +218,10 @@
 # define bug			assert(0)
 #endif
 
+#define PAGE_SIZE		(getpagesize())
+#define PAGE_MASK		(~(PAGE_SIZE - 1))
+#define PAGE_ALIGN(addr)	(((addr) + PAGE_SIZE - 1) & PAGE_MASK)
+
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 static inline uint64_t htonll(uint64_t x)
 {

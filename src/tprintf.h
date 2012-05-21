@@ -14,7 +14,6 @@ extern void tprintf_init(void);
 extern void tprintf(char *msg, ...);
 extern void tprintf_flush(void);
 extern void tprintf_cleanup(void);
-extern size_t tprintf_get_free_count(void);
 
 #define __reset			"0"
 #define __bold			"1"
