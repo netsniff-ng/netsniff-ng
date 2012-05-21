@@ -14,6 +14,11 @@
 #include <byteswap.h>
 #include <stdint.h>
 
+typedef uint64_t	u64;
+typedef uint32_t	u32;
+typedef uint16_t	u16;
+typedef uint8_t		u8;
+
 /* /sys/devices/system/cpu/cpuX/cache/indexX/coherency_line_size */
 
 #if defined(__amd64__) || defined(__x86_64__) || defined(__AMD64__) || \
@@ -246,9 +251,68 @@ static inline uint64_t ntohll(uint64_t x)
 # error __BYTE_ORDER is neither __LITTLE_ENDIAN nor __BIG_ENDIAN
 #endif
 
-typedef uint64_t	u64;
-typedef uint32_t	u32;
-typedef uint16_t	u16;
-typedef uint8_t		u8;
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+static inline u16 cpu_to_be16(u16 val)
+{
+	return bswap_16(val);
+}
+
+static inline u32 cpu_to_be32(u32 val)
+{
+	return bswap_32(val);
+}
+
+static inline u64 cpu_to_be64(u64 val)
+{
+	return bswap_64(val);
+}
+
+static inline u16 cpu_to_le16(u16 val)
+{
+	return val;
+}
+
+static inline u32 cpu_to_le32(u32 val)
+{
+	return val;
+}
+
+static inline u64 cpu_to_le64(u64 val)
+{
+	return val;
+}
+#elif __BYTE_ORDER == __BIG_ENDIAN
+static inline u16 cpu_to_be16(u16 val)
+{
+	return val;
+}
+
+static inline u32 cpu_to_be32(u32 val)
+{
+	return val;
+}
+
+static inline u64 cpu_to_be64(u64 val)
+{
+	return val;
+}
+
+static inline u16 cpu_to_le16(u16 val)
+{
+	return bswap_16(val);
+}
+
+static inline u32 cpu_to_le32(u32 val)
+{
+	return bswap_32(val);
+}
+
+static inline u64 cpu_to_le64(u64 val)
+{
+	return bswap_64(val);
+}
+#else
+# error __BYTE_ORDER is neither __LITTLE_ENDIAN nor __BIG_ENDIAN
+#endif
 
 #endif /* BUILT_IN_H */
