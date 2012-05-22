@@ -187,8 +187,9 @@ static ssize_t pcap_sg_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 		if (c == IOVSIZ) {
 			/* We need to refetch! */
 			c = 0;
-			if (readv(fd, iov, IOVSIZ)) {
+			if (readv(fd, iov, IOVSIZ) <= 0) {
 				ret = -EIO;
+				perror("ZZZ");
 				goto out_err;
 			}
 		}
