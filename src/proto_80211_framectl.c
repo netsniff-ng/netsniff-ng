@@ -68,7 +68,7 @@ static void ieee80211(struct pkt_buff *pkt)
 		return;
 
 	tprintf(" [ 802.11 Frame Control (0x%04x), Duration/ID (%u) ]\n",
-		cpu_to_le16(hdr->frame_control), cpu_to_le16(hdr->duration));
+		le16_to_cpu(hdr->frame_control), le16_to_cpu(hdr->duration));
 	tprintf("\t [ Proto Version (%u), ", hdr->proto_version);
 	tprintf("Type (%u, %s), ", hdr->type, frame_control_types[hdr->type]);
 	tprintf("Subtype (%u)", hdr->subtype /*XXX*/);

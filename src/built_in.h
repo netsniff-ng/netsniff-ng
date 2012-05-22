@@ -315,4 +315,11 @@ static inline u64 cpu_to_le64(u64 val)
 # error __BYTE_ORDER is neither __LITTLE_ENDIAN nor __BIG_ENDIAN
 #endif
 
+#define le64_to_cpu	cpu_to_le64
+#define le32_to_cpu	cpu_to_le32
+#define le16_to_cpu	cpu_to_le16
+#define be64_to_cpu	cpu_to_be64
+#define be32_to_cpu	cpu_to_be32
+#define be16_to_cpu	cpu_to_be16
+
 #endif /* BUILT_IN_H */
