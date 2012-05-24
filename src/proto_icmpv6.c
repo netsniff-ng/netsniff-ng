@@ -311,6 +311,7 @@ static int8_t dissect_icmpv6_mcast_rec(struct pkt_buff *pkt,
 				       uint16_t nr_rec)
 {
 	uint16_t nr_src, aux_data_len_bytes;
+	char address[INET6_ADDRSTRLEN];
 	struct icmpv6_mldv2_addr_rec *addr_rec;
 
 	while (nr_rec--) {
@@ -337,6 +338,9 @@ static int8_t dissect_icmpv6_mcast_rec(struct pkt_buff *pkt,
 		tprintf(", Aux Data Len (%u, %u bytes)",addr_rec->aux_data_len,
 			aux_data_len_bytes);
 		tprintf(", Nr. of Sources (%u)",nr_src);
+		tprintf(", Address: %s",
+			inet_ntop(AF_INET6, &addr_rec->multic_addr,
+				  address, sizeof(address)));
 
 		if(!print_ipv6_addr_list(pkt, nr_src))
 			return 0;
@@ -1027,7 +1031,7 @@ static int8_t dissect_icmpv6_type130(struct pkt_buff *pkt)
 		tprintf(", S (%u)",(icmp_130_mldv2->resv_S_QRV >> 3) & 0x1);
 		tprintf(", QRV (0x%x)",icmp_130_mldv2->resv_S_QRV & 0x3);
 		tprintf(", QQIC (%u)",icmp_130_mldv2->QQIC);
-		tprintf(", Nr Src (0x%x)",nr_src);
+		tprintf(", Nr Src (%u)",nr_src);
 
 		return print_ipv6_addr_list(pkt, nr_src);
 	}
