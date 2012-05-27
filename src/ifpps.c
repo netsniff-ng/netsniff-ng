@@ -118,6 +118,7 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include <signal.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "die.h"
 #include "xmalloc.h"
@@ -713,8 +714,8 @@ static void print_update_csv(const char *ifname, struct ifstat *s,
 {
 	int i;
 
-	printf("%lu,%lu,%lu,%lu,", s->rx_bytes, s->rx_packets, s->rx_drops,
-	       s->rx_errors);
+	printf("%ld,%lu,%lu,%lu,%lu,", time(0), s->rx_bytes, s->rx_packets,
+	       s->rx_drops, s->rx_errors);
 	printf("%lu,%lu,%lu,%lu", s->tx_bytes, s->tx_packets, s->tx_drops,
 	       s->tx_errors);
 	if (s->irq_nr != 0)
@@ -734,7 +735,7 @@ static void print_update_csv_hdr(const char *ifname, struct ifstat *s,
 {
 	int i;
 
-	printf("RX Byte/t,RX Pkts/t,RX Drops/t,RX Errors/t,");
+	printf("Unixtime,RX Byte/t,RX Pkts/t,RX Drops/t,RX Errors/t,");
 	printf("TX Byte/t,TX Pkts/t,TX Drops/t,TX Errors/t");
 	if (s->irq_nr != 0)
 		for(i = 0; i < s->irqs_len; ++i)
