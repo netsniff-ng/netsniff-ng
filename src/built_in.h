@@ -322,4 +322,10 @@ static inline u64 cpu_to_le64(u64 val)
 #define be32_to_cpu	cpu_to_be32
 #define be16_to_cpu	cpu_to_be16
 
+#undef memset
+#undef memcpy
+
+#define memset		fmemset
+#define memcpy		fmemcpy
+
 #endif /* BUILT_IN_H */
