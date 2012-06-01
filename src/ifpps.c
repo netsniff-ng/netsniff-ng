@@ -267,8 +267,10 @@ static int wifi_stats(const char *ifname, struct ifstat *s)
 	}
 
 	s->wifi_bitrate = wireless_bitrate(ifname);
-	s->wifi_signal_level = adjust_dbm_level(ws.qual.level);
-	s->wifi_noise_level = adjust_dbm_level(ws.qual.noise);
+	s->wifi_signal_level = adjust_dbm_level(ws.qual.updated & IW_QUAL_DBM,
+						ws.qual.level);
+	s->wifi_noise_level = adjust_dbm_level(ws.qual.updated & IW_QUAL_DBM,
+					       ws.qual.noise);
 	s->wifi_link_qual = ws.qual.qual;
 	s->wifi_link_qual_max = wireless_rangemax_sigqual(ifname);
 
@@ -591,6 +593,23 @@ static void diff_stats(struct ifstat *old, struct ifstat *new,
 	}
 }
 
+static char *snr_to_str(int level)
+{
+	// empirical values
+	if (level > 40)
+		return "very good signal";
+	if (level > 25 && level <= 40)
+		return "good signal";
+	if (level > 15 && level <= 25)
+		return "poor signal";
+	if (level > 10 && level <= 15)
+		return "very poor signal";
+	if (level <= 10)
+		return "no signal";
+	/* unreachable */
+	return "unknown";
+}
+
 static void screen_init(WINDOW **screen)
 {
 	(*screen) = initscr();
@@ -665,6 +684,9 @@ static void screen_update(WINDOW *screen, const char *ifname,
 			  t->wifi_signal_level, s->wifi_signal_level);
 		mvwprintw(screen, j++, 2, "Noise:  %8d dBm (%d dBm/t)       ",
 			  t->wifi_noise_level, s->wifi_noise_level);
+		mvwprintw(screen, j++, 2, "SNR:    %8d dBm (%s)             ",
+			  t->wifi_signal_level - t->wifi_noise_level,
+			  snr_to_str(t->wifi_signal_level - t->wifi_noise_level));
 		j++;
 	}
 	if (*first) {

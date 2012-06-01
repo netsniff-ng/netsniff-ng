@@ -25,7 +25,7 @@
 extern int af_socket(int af);
 extern int pf_socket(void);
 extern int wireless_bitrate(const char *ifname);
-extern int adjust_dbm_level(int dbm_val);
+extern int adjust_dbm_level(int in_dbm, int dbm_val);
 extern int wireless_sigqual(const char *ifname, struct iw_statistics *stats);
 extern int wireless_rangemax_sigqual(const char *ifname);
 extern int ethtool_bitrate(const char *ifname);

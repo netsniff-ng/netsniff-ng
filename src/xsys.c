@@ -224,11 +224,12 @@ int wireless_bitrate(const char *ifname)
 	return rate_in_mbit;
 }
 
-int adjust_dbm_level(int dbm_val)
+int adjust_dbm_level(int in_dbm, int dbm_val)
 {
-	if (dbm_val >= 64)
-		dbm_val -= 0x100;
-	return dbm_val;
+	if (!in_dbm)
+		return dbm_val;
+
+	return dbm_val - 0x100;
 }
 
 int wireless_sigqual(const char *ifname, struct iw_statistics *stats)
