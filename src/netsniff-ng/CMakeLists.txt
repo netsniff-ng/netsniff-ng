@@ -11,7 +11,7 @@ IF (CMAKE_HAVE_PTHREAD_CREATE)
 					../dissector_80211.c
 					../proto_arp.c
 					../proto_ethernet.c
-					../proto_80211_framectl.c
+					../proto_framectl.c
 					../proto_icmpv4.c
 					../proto_icmpv6.c
 					../proto_igmp.c
