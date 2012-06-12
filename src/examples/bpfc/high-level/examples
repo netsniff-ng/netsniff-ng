@@ -1,0 +1,6 @@
+# each line represents one particular filter that shall be interpreted
+# and translated by bpfc
+
+ipv4 || ipv6
+src.ipv4.proto==udp || dst.ipv4
+src.udp.port==80 && ipv4
