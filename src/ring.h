@@ -149,58 +149,13 @@ static inline void set_sockopt_fanout(int sock, unsigned int fanout_id,
 		panic("No packet fanout support!\n");
 }
 
-#ifndef SO_TIMESTAMPING
-# define SO_TIMESTAMPING	37
-# define SCM_TIMESTAMPING	SO_TIMESTAMPING
-#endif
-
-#ifndef SO_TIMESTAMPNS
-# define SO_TIMESTAMPNS		35
-#endif
-
-#ifndef SIOCGSTAMPNS
-# define SIOCGSTAMPNS		0x8907
-#endif
-
-#ifndef SIOCSHWTSTAMP
-# define SIOCSHWTSTAMP		0x89b0
-#endif
-
-#ifndef PACKET_TIMESTAMP
-enum {
-	SOF_TIMESTAMPING_TX_HARDWARE = (1<<0),
-	SOF_TIMESTAMPING_TX_SOFTWARE = (1<<1),
-	SOF_TIMESTAMPING_RX_HARDWARE = (1<<2),
-	SOF_TIMESTAMPING_RX_SOFTWARE = (1<<3),
-	SOF_TIMESTAMPING_SOFTWARE = (1<<4),
-	SOF_TIMESTAMPING_SYS_HARDWARE = (1<<5),
-	SOF_TIMESTAMPING_RAW_HARDWARE = (1<<6),
-	SOF_TIMESTAMPING_MASK =
-	(SOF_TIMESTAMPING_RAW_HARDWARE - 1) |
-	SOF_TIMESTAMPING_RAW_HARDWARE
-};
-
-struct hwtstamp_config {
-	int flags;
-	int tx_type;
-	int rx_filter;
-};
-
-enum hwtstamp_tx_types {
-	HWTSTAMP_TX_OFF,
-	HWTSTAMP_TX_ON,
-	HWTSTAMP_TX_ONESTEP_SYNC,
-};
-
-enum hwtstamp_rx_filters {
-	HWTSTAMP_FILTER_NONE,
-	HWTSTAMP_FILTER_ALL,
-};
-
-# define PACKET_TIMESTAMP	17
-#else
+#if !defined (SIOCSHWTSTAMP) || !defined (PACKET_TIMESTAMP)
+static inline void set_sockopt_hwtimestamp(int sock, const char *dev)
+{
+	return;
+}
+#else /* !defined (SIOCSHWTSTAMP) || !defined (PACKET_TIMESTAMP) */
 # include <linux/net_tstamp.h>
-#endif /* PACKET_TIMESTAMP */
 
 static inline void set_sockopt_hwtimestamp(int sock, const char *dev)
 {
@@ -227,5 +182,5 @@ static inline void set_sockopt_hwtimestamp(int sock, const char *dev)
 	if (ret)
 		panic("Cannot set timestamping!\n");
 }
-
+#endif /* !defined (SIOCSHWTSTAMP) || !defined (PACKET_TIMESTAMP) */
 #endif /* RING_H */
