@@ -1,6 +1,6 @@
 /*
  * netsniff-ng - the packet sniffing beast
- * Copyright 2012 Markus Amend <markus@netsniff-ng.org>
+ * Copyright 2012 Markus Amend <markus@netsniff-ng.org>, Deutsche Flugsicherung 
  * Subject to the GPL, version 2.
  *
  * IPv6 in IPv4 encapsulation described in RFC3056

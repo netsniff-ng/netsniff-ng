@@ -1,6 +1,6 @@
 /*
  * netsniff-ng - the packet sniffing beast
- * Copyright 2012 Markus Amend <markus@netsniff-ng.org>
+ * Copyright 2012 Markus Amend <markus@netsniff-ng.org>, Deutsche Flugsicherung 
  * Subject to the GPL, version 2.
  *
  * http://www.ieee802.org/1/pages/802.1ad.html
