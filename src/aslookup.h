@@ -9,13 +9,8 @@
 #define ASLOOKUP_H
 
 struct asrecord {
-	char number[16];
-	char ip[64];
-	char prefix[96];
-	char country[16];
-	char registry[256];
-	char since[64];
-	char name[256];
+	char number[16], ip[64], prefix[96], country[16], registry[256];
+	char since[64], name[256];
 };
 
 extern int aslookup(const char *lhost, struct asrecord *rec);
