@@ -26,26 +26,11 @@ static inline char *skips(char *p)
 	return strtrim_left(p, ' ');
 }
 
-static inline char *skipt(char *p)
-{
-	return strtrim_left(p, '\t');
-}
-
 static inline char *skipchar(char *in, char c)
 {
 	if (*in != c)
 		panic("Syntax error!\n");
 	return ++in;
-}
-
-static inline char *skipchar_s(char *in, char c)
-{
-	in = skips(in);
-	if (*in == '\n')
-		return in;
-	in = skipchar(in, c);
-	in = skips(in);
-	return in;
 }
 
 #endif /* XSTRING_H */
