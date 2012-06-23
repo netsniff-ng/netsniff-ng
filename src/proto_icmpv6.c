@@ -1,6 +1,6 @@
 /*
  * netsniff-ng - the packet sniffing beast
- * Copyright 2012 Markus Amend <markus@netsniff-ng.org>, Deutsche Flugsicherung 
+ * Copyright 2012 Markus Amend <markus@netsniff-ng.org>, Deutsche Flugsicherung GmbH
  * Subject to the GPL, version 2.
  *
  * ICMPv6 described in RFC4443, RFC2710, RFC4861, RFC2894,

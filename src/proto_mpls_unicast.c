@@ -1,6 +1,6 @@
 /*
  * netsniff-ng - the packet sniffing beast
- * Copyright 2012 Markus Amend <markus@netsniff-ng.org>, Deutsche Flugsicherung 
+ * Copyright 2012 Markus Amend <markus@netsniff-ng.org>, Deutsche Flugsicherung GmbH
  * Subject to the GPL, version 2.
  *
  * http://tools.ietf.org/html/rfc3032
