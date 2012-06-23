@@ -120,6 +120,7 @@ int aslookup(const char *lhost, struct asrecord *rec)
 				}
 
 				strlcpy(rec->number, ptr, strlen(ptr) + 1);
+
 				ptr = skips(&buff[i] + 1);
 				state = STATE_IP;
 			} else if (buff[i] == '|' && state == STATE_IP) {
@@ -132,9 +133,11 @@ int aslookup(const char *lhost, struct asrecord *rec)
 				}
 
 				strlcpy(rec->ip, ptr, strlen(ptr) + 1);
+
 				ptr = skips(&buff[i] + 1);
 				state = STATE_BGP_PREFIX;
-			} else if (buff[i] == '|' && state == STATE_BGP_PREFIX) {
+			} else if (buff[i] == '|' &&
+				   state == STATE_BGP_PREFIX) {
 				buff[i] = 0;
 				ptr2 = &buff[i] - 1;
 
@@ -144,6 +147,7 @@ int aslookup(const char *lhost, struct asrecord *rec)
 				}
 
 				strlcpy(rec->prefix, ptr, strlen(ptr) + 1);
+
 				ptr = skips(&buff[i] + 1);
 				state = STATE_CC;
 			} else if (buff[i] == '|' && state == STATE_CC) {
@@ -156,6 +160,7 @@ int aslookup(const char *lhost, struct asrecord *rec)
 				}
 
 				strlcpy(rec->country, ptr, strlen(ptr) + 1);
+
 				ptr = skips(&buff[i] + 1);
 				state = STATE_REGISTRY;
 			} else if (buff[i] == '|' && state == STATE_REGISTRY) {
@@ -168,6 +173,7 @@ int aslookup(const char *lhost, struct asrecord *rec)
 				}
 
 				strlcpy(rec->registry, ptr, strlen(ptr) + 1);
+
 				ptr = skips(&buff[i] + 1);
 				state = STATE_ALLOCATED;
 			} else if (buff[i] == '|' && state == STATE_ALLOCATED) {
@@ -180,6 +186,7 @@ int aslookup(const char *lhost, struct asrecord *rec)
 				}
 
 				strlcpy(rec->since, ptr, strlen(ptr) + 1);
+
 				ptr = skips(&buff[i] + 1);
 				state = 6;
 			} else if (buff[i] == '\n' && state == STATE_AS_NAME) {
@@ -192,6 +199,7 @@ int aslookup(const char *lhost, struct asrecord *rec)
 				}
 
 				strlcpy(rec->name, ptr, strlen(ptr) + 1);
+
 				goto out;
 			}
 		}
