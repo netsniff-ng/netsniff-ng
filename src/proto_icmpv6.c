@@ -298,7 +298,7 @@ static int8_t print_ipv6_addr_list(struct pkt_buff *pkt, uint8_t nr_addr)
 	return 1;
 }
 
-static char *icmpv6_mcast_rec_types[] = {
+static const char *icmpv6_mcast_rec_types[] = {
 	"MODE_IS_INCLUDE",
 	"MODE_IS_EXCLUDE",
 	"CHANGE_TO_INCLUDE_MODE",
@@ -488,7 +488,7 @@ static int8_t dissect_neighb_disc_ops_10(struct pkt_buff *pkt,
 	return dissect_neighb_disc_ops_9(pkt, len);
 }
 
-static char *icmpv6_neighb_disc_ops_15_name[] = {
+static const char *icmpv6_neighb_disc_ops_15_name[] = {
 	"DER Encoded X.501 Name",
 	"FQDN",
 };
@@ -543,7 +543,7 @@ static int8_t dissect_neighb_disc_ops_15(struct pkt_buff *pkt,
 	return 1;
 }
 
-static char *icmpv6_neighb_disc_ops_16_cert[] = {
+static const char *icmpv6_neighb_disc_ops_16_cert[] = {
 	"X.509v3 Certificate",
 };
 
@@ -577,7 +577,7 @@ static int8_t dissect_neighb_disc_ops_16(struct pkt_buff *pkt,
 	return 1;
 }
 
-static char *icmpv6_neighb_disc_ops_17_codes[] = {
+static const char *icmpv6_neighb_disc_ops_17_codes[] = {
 	"Old Care-of Address",
 	"New Care-of Address",
 	"NAR's IP address",
@@ -653,7 +653,7 @@ static int8_t dissect_neighb_disc_ops_17(struct pkt_buff *pkt,
 	return 1;
 }
 
-static char *icmpv6_neighb_disc_ops_19_codes[] = {
+static const char *icmpv6_neighb_disc_ops_19_codes[] = {
 	"Wildcard requesting resolution for all nearby access points",
 	"Link-Layer Address of the New Access Point",
 	"Link-Layer Address of the MN",
@@ -699,77 +699,43 @@ static int8_t dissect_neighb_disc_ops_19(struct pkt_buff *pkt,
 
 static inline char *icmpv6_neighb_disc_ops(uint8_t code) {
 	switch (code) {
-	case 1:
-		return "Source Link-Layer Address";
-	case 2:
-		return "Target Link-Layer Address";
-	case 3:
-		return "Prefix Information";
-	case 4:
-		return "Redirected Header";
-	case 5:
-		return "MTU";
-	case 6:
-		return "NBMA Shortcut Limit Option";
-	case 7:
-		return "Advertisement Interval Option";
-	case 8:
-		return "Home Agent Information Option";
-	case 9:
-		return "Source Address List";
-	case 10:
-		return "Target Address List";
-	case 11:
-		return "CGA option";
-	case 12:
-		return "RSA Signature option";
-	case 13:
-		return "Timestamp option";
-	case 14:
-		return "Nonce option";
-	case 15:
-		return "Trust Anchor option";
-	case 16:
-		return "Certificate option";
-	case 17:
-		return "IP Address/Prefix Option";
-	case 18:
-		return "New Router Prefix Information Option";
-	case 19:
-		return "Link-layer Address Option";
-	case 20:
-		return "Neighbor Advertisement Acknowledgment Option";
+	case  1: return "Source Link-Layer Address";
+	case  2: return "Target Link-Layer Address";
+	case  3: return "Prefix Information";
+	case  4: return "Redirected Header";
+	case  5: return "MTU";
+	case  6: return "NBMA Shortcut Limit Option";
+	case  7: return "Advertisement Interval Option";
+	case  8: return "Home Agent Information Option";
+	case  9: return "Source Address List";
+	case 10: return "Target Address List";
+	case 11: return "CGA option";
+	case 12: return "RSA Signature option";
+	case 13: return "Timestamp option";
+	case 14: return "Nonce option";
+	case 15: return "Trust Anchor option";
+	case 16: return "Certificate option";
+	case 17: return "IP Address/Prefix Option";
+	case 18: return "New Router Prefix Information Option";
+	case 19: return "Link-layer Address Option";
+	case 20: return "Neighbor Advertisement Acknowledgment Option";
 
-	case 23:
-		return "Prefix Information";
-	case 24:
-		return "Redirected Header";
-	case 25:
-		return "MTU";
-	case 26:
-		return "NBMA Shortcut Limit Option";
-	case 27:
-		return "Advertisement Interval Option";
-	case 28:
-		return "Home Agent Information Option";
-	case 29:
-		return "Source Address List";
-	case 30:
-		return "Target Address List";
-	case 31:
-		return "DNS Search List Option";
-	case 32:
-		return "Proxy Signature (PS)";
+	case 23: return "Prefix Information";
+	case 24: return "Redirected Header";
+	case 25: return "MTU";
+	case 26: return "NBMA Shortcut Limit Option";
+	case 27: return "Advertisement Interval Option";
+	case 28: return "Home Agent Information Option";
+	case 29: return "Source Address List";
+	case 30: return "Target Address List";
+	case 31: return "DNS Search List Option";
+	case 32: return "Proxy Signature (PS)";
 
-	case 138:
-		return "CARD Request option";
-	case 139:
-		return "CARD Reply option";
+	case 138: return "CARD Request option";
+	case 139: return "CARD Reply option";
 
-	case 253:
-		return "RFC3692-style Experiment 1";
-	case 254:
-		return "RFC3692-style Experiment 2";
+	case 253: return "RFC3692-style Experiment 1";
+	case 254: return "RFC3692-style Experiment 2";
 	}
 
 	return NULL;
@@ -880,7 +846,7 @@ static int8_t dissect_neighb_disc_ops(struct pkt_buff *pkt)
 	return 1;
 }
 
-static char *icmpv6_type_1_codes[] = {
+static const char *icmpv6_type_1_codes[] = {
 	"No route to destination",
 	"Communication with destination administratively prohibited",
 	"Beyond scope of source address",
@@ -919,7 +885,7 @@ static int8_t dissect_icmpv6_type2(struct pkt_buff *pkt)
 	return 1;
 }
 
-static char *icmpv6_type_3_codes[] = {
+static const char *icmpv6_type_3_codes[] = {
 	"Hop limit exceeded in transit",
 	"Fragment reassembly time exceeded",
 };
@@ -938,7 +904,7 @@ static int8_t dissect_icmpv6_type3(struct pkt_buff *pkt)
 	return 1;
 }
 
-static char *icmpv6_type_4_codes[] = {
+static const char *icmpv6_type_4_codes[] = {
 	"Erroneous header field encountered",
 	"Unrecognized Next Header type encountered",
 	"Unrecognized IPv6 option encountered",
@@ -1169,12 +1135,9 @@ static void dissect_icmpv6_rr_body(struct pkt_buff *pkt)
 
 static inline char *icmpv6_type_138_codes(uint8_t code) {
 	switch (code) {
-	case 1:
-		return "Router Renumbering Command";
-	case 2:
-		return "Router Renumbering Result";
-	case 255:
-		return "Sequence Number Reset";
+	case   1: return "Router Renumbering Command";
+	case   2: return "Router Renumbering Result";
+	case 255: return "Sequence Number Reset";
 	}
 	
 	return NULL;
@@ -1213,7 +1176,7 @@ static void dissect_icmpv6_node_inf_data(struct pkt_buff *pkt)
 		tprintf(" Data recognized");
 }
 
-static char *icmpv6_node_inf_qtypes[] = {
+static const char *icmpv6_node_inf_qtypes[] = {
 	"NOOP",
 	"unused",
 	"Node Name",
@@ -1221,7 +1184,7 @@ static char *icmpv6_node_inf_qtypes[] = {
 	"IPv4 Addresses ",
 };
 
-static char *icmpv6_type_139_codes[] = {
+static const char *icmpv6_type_139_codes[] = {
 	"Data contains IPv6 Address",
 	"Data contains Name or nothing",
 	"Data contains IPv4 Address",
@@ -1229,7 +1192,7 @@ static char *icmpv6_type_139_codes[] = {
 
 static int8_t dissect_icmpv6_type139(struct pkt_buff *pkt)
 {
-	char *qtype_name = "Unknown";
+	const char *qtype_name = "Unknown";
 	uint16_t qtype_nr;
 	struct icmpv6_type_139_140 *icmp_139;
 
@@ -1242,9 +1205,9 @@ static int8_t dissect_icmpv6_type139(struct pkt_buff *pkt)
 	if (icmpv6_code_range_valid(qtype_nr, icmpv6_node_inf_qtypes))
 			qtype_name = icmpv6_node_inf_qtypes[qtype_nr];
 
-	tprintf(", Qtype %s (%u)",qtype_name, qtype_nr);
-	tprintf(", Flags (0x%x)",ntohs(icmp_139->flags));
-	tprintf(", Nonce (0x%x)",ntohll(icmp_139->nonce));
+	tprintf(", Qtype %s (%u)", qtype_name, qtype_nr);
+	tprintf(", Flags (0x%x)", ntohs(icmp_139->flags));
+	tprintf(", Nonce (0x%x)", ntohll(icmp_139->nonce));
 
 	dissect_icmpv6_node_inf_data(pkt);
 
@@ -1448,31 +1411,22 @@ static int8_t dissect_icmpv6_type154(struct pkt_buff *pkt)
 
 static inline char *icmpv6_type_155_codes(uint8_t code) {
 	switch (code) {
-	case 0x00:
-		return "DODAG Information Solicitation";
-	case 0x01:
-		return "DODAG Information Object";
-	case 0x02:
-		return "Destination Advertisement Object";
-	case 0x03:
-		return "Destination Advertisement Object Acknowledgment";
-	case 0x80:
-		return "Secure DODAG Information Solicitation";
-	case 0x81:
-		return "Secure DODAG Information Object";
-	case 0x82:
-		return "Secure Destination Advertisement Object";
-	case 0x83:
-		return "Secure Destination Advertisement Object Acknowledgment";
-	case 0x8A:
-		return "Consistency Check";
+	case 0x00: return "DODAG Information Solicitation";
+	case 0x01: return "DODAG Information Object";
+	case 0x02: return "Destination Advertisement Object";
+	case 0x03: return "Destination Advertisement Object Acknowledgment";
+	case 0x80: return "Secure DODAG Information Solicitation";
+	case 0x81: return "Secure DODAG Information Object";
+	case 0x82: return "Secure Destination Advertisement Object";
+	case 0x83: return "Secure Destination Advertisement Object Acknowledgment";
+	case 0x8A: return "Consistency Check";
 	}
 
 	return NULL;
 };
 
-static void icmpv6_process(struct icmpv6_general_hdr *icmp, char **type,
-			   char **code, int8_t (**optional)(struct pkt_buff *pkt))
+static void icmpv6_process(struct icmpv6_general_hdr *icmp, const char **type,
+			   const char **code, int8_t (**optional)(struct pkt_buff *pkt))
 {
 	*type = "Unknown Type";
 	*code = "Unknown Code";
@@ -1648,7 +1602,7 @@ static void icmpv6_process(struct icmpv6_general_hdr *icmp, char **type,
 
 static void icmpv6(struct pkt_buff *pkt)
 {
-	char *type = NULL, *code = NULL;
+	const char *type = NULL, *code = NULL;
 	int8_t (*optional)(struct pkt_buff *pkt) = NULL;
 	struct icmpv6_general_hdr *icmp =
 		(struct icmpv6_general_hdr *) pkt_pull(pkt, sizeof(*icmp));
