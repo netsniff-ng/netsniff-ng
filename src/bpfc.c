@@ -94,11 +94,11 @@ Please report bugs to <bugs@netsniff-ng.org>
 static const char *short_options = "vhi:V";
 
 static struct option long_options[] = {
-        {"input", required_argument, 0, 'i'},
-        {"verbose", no_argument, 0, 'V'},
-        {"version", no_argument, 0, 'v'},
-        {"help", no_argument, 0, 'h'},
-        {0, 0, 0, 0}
+	{"input", required_argument, 0, 'i'},
+	{"verbose", no_argument, 0, 'V'},
+	{"version", no_argument, 0, 'v'},
+	{"help", no_argument, 0, 'h'},
+	{0, 0, 0, 0}
 };
 
 extern int compile_filter(char *file, int verbose);
