@@ -149,12 +149,7 @@ static inline void set_sockopt_fanout(int sock, unsigned int fanout_id,
 		panic("No packet fanout support!\n");
 }
 
-#if !defined (SIOCSHWTSTAMP) || !defined (PACKET_TIMESTAMP)
-static inline void set_sockopt_hwtimestamp(int sock, const char *dev)
-{
-	return;
-}
-#else /* !defined (SIOCSHWTSTAMP) || !defined (PACKET_TIMESTAMP) */
+#if defined(__WITH_HARDWARE_TIMESTAMPING)
 # include <linux/net_tstamp.h>
 
 static inline void set_sockopt_hwtimestamp(int sock, const char *dev)
@@ -182,5 +177,10 @@ static inline void set_sockopt_hwtimestamp(int sock, const char *dev)
 	if (ret)
 		panic("Cannot set timestamping!\n");
 }
-#endif /* !defined (SIOCSHWTSTAMP) || !defined (PACKET_TIMESTAMP) */
+#else
+static inline void set_sockopt_hwtimestamp(int sock, const char *dev)
+{
+	return;
+}
+#endif /* defined(__WITH_HARDWARE_TIMESTAMPING) */
 #endif /* RING_H */
