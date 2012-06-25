@@ -1,7 +1,8 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
- * Copyright 2012 Daniel Borkmann.
+ * Copyright (C) 2012 Daniel Borkmann
+ * Copyright (C) 2012 Markus Amend <markus@netsniff-ng.org>
  * Subject to the GPL, version 2.
  */
 
