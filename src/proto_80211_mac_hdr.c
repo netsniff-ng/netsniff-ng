@@ -2,7 +2,7 @@
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
  * Copyright (C) 2012 Daniel Borkmann
- * Copyright (C) 2012 Markus Amend <markus@netsniff-ng.org>
+ * Copyright (C) 2012 Markus Amend <markus@netsniff-ng.org>, , Deutsche Flugsicherung GmbH
  * Subject to the GPL, version 2.
  */
 
@@ -17,11 +17,6 @@
 #include "built_in.h"
 #include "pkt_buff.h"
 #include "oui.h"
-
-/* Link Collection for extension */
-/* http://www.rhyshaden.com/wireless.htm */
-/* http://www.wildpackets.com/resources/compendium/wireless_lan/wlan_packets */
-
 
 /* Note: Fields are encoded in little-endian! */
 struct ieee80211_frm_ctrl {
@@ -62,7 +57,6 @@ struct ieee80211_frm_ctrl {
 
 /* Management Frame start */
 /* Note: Fields are encoded in little-endian! */
-/* http://www.scribd.com/doc/78443651/111/Management-Frames */
 struct ieee80211_mgmt {
 	u16 duration;
 	u8 da[6];
@@ -142,7 +136,6 @@ struct ieee80211_mgmt_probe_resp {
 
 /* Control Frame start */
 /* Note: Fields are encoded in little-endian! */
-/* http://www.scribd.com/doc/78443651/147/Control-Frames */
 struct ieee80211_ctrl {
 } __packed;
 
@@ -183,13 +176,11 @@ struct ieee80211_ctrl_cf_end_ack {
 
 /* Data Frame start */
 /* Note: Fields are encoded in little-endian! */
-/* http://www.scribd.com/doc/78443651/156/Data-Frames */
 struct ieee80211_data {
 } __packed;
 
 /* TODO: Extend */
 /* Control Frame end */
-
 
 static const char *frame_control_types[] = {
 	"Management",	/* 00 */
