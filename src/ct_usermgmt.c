@@ -21,7 +21,7 @@
 #include "xmalloc.h"
 #include "xio.h"
 #include "curvetun.h"
-#include "xstring.h"
+#include "xutils.h"
 #include "curve.h"
 #include "hash.h"
 #include "crypto_verify_32.h"

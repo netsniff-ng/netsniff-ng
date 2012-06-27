@@ -30,7 +30,7 @@
 #include <linux/if_tun.h>
 
 #include "die.h"
-#include "xsys.h"
+#include "xutils.h"
 #include "xio.h"
 #include "xmalloc.h"
 #include "curvetun.h"

@@ -176,10 +176,9 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include <unistd.h>
 #include <signal.h>
 
-#include "xsys.h"
+#include "xutils.h"
 #include "die.h"
 #include "xmalloc.h"
-#include "xstring.h"
 #include "curvetun.h"
 #include "curve.h"
 #include "ct_usermgmt.h"

@@ -20,7 +20,7 @@
 #include <sys/select.h>
 
 #include "xmalloc.h"
-#include "xsys.h"
+#include "xutils.h"
 #include "die.h"
 
 extern int print_stun_probe(char *server, int sport, int tport);

@@ -13,8 +13,7 @@ IF(CURSES_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND LIBGEOIP_FOUND AND LIBNETFILTE
 	ADD_EXECUTABLE(${PROJECT_NAME}	../xmalloc.c
 					../oui.c
 					../xio.c
-					../xsys.c
-					../xstring.c
+					../xutils.c
 					../hash.c
 					../dissector_eth.c
 					../dissector_80211.c

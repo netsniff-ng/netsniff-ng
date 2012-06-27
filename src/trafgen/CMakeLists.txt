@@ -13,8 +13,7 @@ IF(LIBCLI_FOUND AND FLEX_FOUND AND BISON_FOUND AND LIBNL_FOUND)
         BISON_TARGET(BPF_PARSER ../trafgen_parser.y ${CMAKE_CURRENT_BINARY_DIR}/trafgen_parser.tab.c)
 	ADD_EXECUTABLE(${PROJECT_NAME} 	../xmalloc.c
 					../xio.c
-					../xsys.c
-					../xstring.c
+					../xutils.c
 					../mtrand.c
 					../mac80211.c
 					../ring_tx.c

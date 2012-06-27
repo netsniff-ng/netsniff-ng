@@ -14,7 +14,6 @@
 #include "dissector.h"
 #include "dissector_eth.h"
 #include "xmalloc.h"
-#include "xstring.h"
 
 struct hash_table eth_lay2;
 struct hash_table eth_lay3;

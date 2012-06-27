@@ -23,8 +23,7 @@
 
 #include "die.h"
 #include "xio.h"
-#include "xsys.h"
-#include "xstring.h"
+#include "xutils.h"
 
 int open_or_die(const char *file, int flags)
 {

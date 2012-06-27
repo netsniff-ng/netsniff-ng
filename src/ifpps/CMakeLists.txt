@@ -8,8 +8,7 @@ INCLUDE(Pod2Man)
 IF(CURSES_FOUND)
 	ADD_EXECUTABLE(${PROJECT_NAME}	../xmalloc.c
 					../xio.c
-					../xsys.c
-					../xstring.c
+					../xutils.c
 					../ifpps.c)
 	ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"
 			-DVERSION_STRING="${VERSION}"

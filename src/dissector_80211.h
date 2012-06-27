@@ -12,7 +12,7 @@
 #include "proto.h"
 #include "protos.h"
 #include "tprintf.h"
-#include "xsys.h"
+#include "xutils.h"
 #include "oui.h"
 
 extern struct hash_table ieee80211_lay2;

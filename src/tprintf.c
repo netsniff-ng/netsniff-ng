@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "xsys.h"
+#include "xutils.h"
 #include "tprintf.h"
 #include "die.h"
 #include "locking.h"

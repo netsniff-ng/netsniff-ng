@@ -13,7 +13,7 @@
 
 #include "pcap.h"
 #include "built_in.h"
-#include "xsys.h"
+#include "xutils.h"
 #include "xio.h"
 #include "die.h"
 

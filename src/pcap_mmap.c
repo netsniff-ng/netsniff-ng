@@ -15,7 +15,7 @@
 
 #include "pcap.h"
 #include "xio.h"
-#include "xsys.h"
+#include "xutils.h"
 #include "locking.h"
 #include "built_in.h"
 

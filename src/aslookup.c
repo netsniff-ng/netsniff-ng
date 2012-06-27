@@ -13,7 +13,7 @@
 #include <netinet/in.h>
 
 #include "die.h"
-#include "xstring.h"
+#include "xutils.h"
 #include "aslookup.h"
 #include "xmalloc.h"
 #include "built_in.h"
@@ -107,9 +107,10 @@ int aslookup(const char *lhost, struct asrecord *rec)
 	while ((ret = read(fd, buff, len)) > 0) {
 		int i;
 		enum parser_state state = STATE_AS;
-		char *ptr = skips(buff), *ptr2;
+		char *ptr, *ptr2;
 
-		for (i = 0; i < len; ++i) {
+		buff[len - 1] = 0;
+		for (i = 0, ptr = skips(buff); i < len; ++i) {
 			if (buff[i] == '|' && state == STATE_AS) {
 				buff[i] = 0;
 				ptr2 = &buff[i] - 1;

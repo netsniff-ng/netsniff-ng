@@ -9,7 +9,7 @@
 
 #include "hash.h"
 #include "xmalloc.h"
-#include "xstring.h"
+#include "xutils.h"
 #include "oui.h"
 
 static struct hash_table oui;

@@ -16,7 +16,7 @@
 #include <sys/types.h>
 
 #include "xmalloc.h"
-#include "xstring.h"
+#include "xutils.h"
 #include "built_in.h"
 #include "die.h"
 

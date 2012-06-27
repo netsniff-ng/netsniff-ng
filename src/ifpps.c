@@ -122,7 +122,7 @@ Please report bugs to <bugs@netsniff-ng.org>
 
 #include "die.h"
 #include "xmalloc.h"
-#include "xsys.h"
+#include "xutils.h"
 #include "xio.h"
 #include "built_in.h"
 

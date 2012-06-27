@@ -16,7 +16,7 @@
 #include "locking.h"
 #include "xmalloc.h"
 #include "curvetun.h"
-#include "xstring.h"
+#include "xutils.h"
 #include "curve.h"
 #include "ct_servmgmt.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"

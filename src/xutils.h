@@ -11,6 +11,7 @@
 
 #define _GNU_SOURCE
 #include <errno.h>
+#include <stdint.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <linux/ethtool.h>
@@ -21,6 +22,9 @@
 #include <sched.h>
 #include <sys/resource.h>
 #include <sys/time.h>
+
+#include "die.h"
+#include "built_in.h"
 
 extern int af_socket(int af);
 extern int pf_socket(void);
@@ -77,6 +81,12 @@ extern void xusleep(const struct timespec *ts_delay);
 extern void xusleep2(long usecs);
 extern int xnanosleep(double seconds);
 extern int set_timeout(struct timeval *timeval, unsigned int msec);
+extern size_t strlcpy(char *dest, const char *src, size_t size);
+extern int slprintf(char *dst, size_t size, const char *fmt, ...);
+extern noinline void *xmemset(void *s, int c, size_t n);
+extern char *getuint(char *in, uint32_t *out);
+extern char *strtrim_right(register char *p, register char c);
+extern char *strtrim_left(register char *p, register char c);
 
 static inline int get_default_sched_policy(void)
 {
@@ -124,6 +134,18 @@ static inline struct timeval tv_subtract(struct timeval time1,
 	}
 
 	return result;
+}
+
+static inline char *skips(char *p)
+{
+	return strtrim_left(p, ' ');
+}
+
+static inline char *skipchar(char *in, char c)
+{
+	if (*in != c)
+		panic("Syntax error!\n");
+	return ++in;
 }
 
 #endif /* XSYS_H */

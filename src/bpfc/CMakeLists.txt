@@ -10,7 +10,7 @@ IF (FLEX_FOUND AND BISON_FOUND)
 	FLEX_TARGET(BPF_LEXER ../bpf_lexer.l ${CMAKE_CURRENT_BINARY_DIR}/bpfc_lex.yy.c)
 	BISON_TARGET(BPF_PARSER ../bpf_parser.y ${CMAKE_CURRENT_BINARY_DIR}/bpf_parser.tab.c)
 	ADD_EXECUTABLE(${PROJECT_NAME} 	../xmalloc.c
-					../xstring.c
+					../xutils.c
 					../bpf.c
 					${FLEX_BPF_LEXER_OUTPUTS}
 					${BISON_BPF_PARSER_OUTPUT_SOURCE}

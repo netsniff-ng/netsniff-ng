@@ -24,8 +24,7 @@
 #include <netlink/attr.h>
 
 #include "die.h"
-#include "xsys.h"
-#include "xstring.h"
+#include "xutils.h"
 #include "mac80211.h"
 #include "xmalloc.h"
 #include "built_in.h"

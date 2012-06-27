@@ -20,7 +20,7 @@
 #include "built_in.h"
 #include "xmalloc.h"
 #include "curve.h"
-#include "xstring.h"
+#include "xutils.h"
 #include "xio.h"
 #include "die.h"
 #include "mtrand.h"

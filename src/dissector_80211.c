@@ -13,7 +13,6 @@
 #include "dissector.h"
 #include "dissector_80211.h"
 #include "xmalloc.h"
-#include "xstring.h"
 #include "oui.h"
 
 struct hash_table ieee80211_lay2;

@@ -17,7 +17,7 @@
 
 #include "bpf.h"
 #include "xmalloc.h"
-#include "xstring.h"
+#include "xutils.h"
 #include "die.h"
 
 /* This is a bug in libpcap, they actually use 'unsigned long' instead

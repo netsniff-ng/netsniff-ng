@@ -136,7 +136,7 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include "die.h"
 #include "xmalloc.h"
 #include "xio.h"
-#include "xsys.h"
+#include "xutils.h"
 #include "built_in.h"
 #include "locking.h"
 #include "dissector_eth.h"

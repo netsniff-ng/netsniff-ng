@@ -23,10 +23,9 @@
 #include <poll.h>
 #include <sys/poll.h>
 
-#include "xsys.h"
+#include "xutils.h"
 #include "built_in.h"
 #include "mtrand.h"
-#include "xstring.h"
 #include "die.h"
 
 #ifndef PACKET_FANOUT

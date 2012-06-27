@@ -36,8 +36,7 @@ IF (CMAKE_HAVE_PTHREAD_CREATE AND LIBNL_FOUND)
 					../xmalloc.c
 					../oui.c
 					../xio.c
-					../xsys.c
-					../xstring.c
+					../xutils.c
 					../bpf.c
 					../mac80211.c
 					../pcap.c

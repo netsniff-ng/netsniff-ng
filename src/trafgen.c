@@ -171,10 +171,9 @@ Please report bugs to <bugs@netsniff-ng.org>
 #include <net/ethernet.h>
 
 #include "xmalloc.h"
-#include "xstring.h"
 #include "die.h"
 #include "mac80211.h"
-#include "xsys.h"
+#include "xutils.h"
 #include "xio.h"
 #include "trafgen_conf.h"
 #include "tprintf.h"

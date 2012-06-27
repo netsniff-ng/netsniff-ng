@@ -10,8 +10,7 @@ FIND_PACKAGE(LibNaCl)
 IF (NACL_FOUND AND CMAKE_THREAD_LIBS_INIT)
 	ADD_EXECUTABLE(${PROJECT_NAME}	../xmalloc.c
 					../xio.c
-					../xsys.c
-					../xstring.c
+					../xutils.c
 					../stun.c
 					../mtrand.c
 					../patricia.c
