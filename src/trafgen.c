@@ -276,9 +276,10 @@ static void help(void)
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Usage: trafgen [options]\n");
 	printf("Options:\n");
-	printf("  -o|-d|--out|--dev <netdev|pcap>   Networking Device i.e., eth0 or pcap\n");
+/*	printf("  -o|-d|--out|--dev <netdev|pcap>   Networking Device i.e., eth0 or pcap\n"); */
+	printf("  -o|-d|--out|--dev <netdev>        Networking Device i.e., eth0\n");
 	printf("  -i|-c|--in|--conf <cfg-file>      Packet configuration file\n");
-	printf("  -x|--interactive                  Start trafgen in interactive server mode\n");
+/*	printf("  -x|--interactive                  Start trafgen in interactive server mode\n"); */
 	printf("  -J|--jumbo-support                Support for 64KB Super Jumbo Frames\n");
 	printf("                                    Default TX slot: 2048Byte\n");
 	printf("  -R|--rfraw                        Inject raw 802.11 frames\n");
@@ -305,12 +306,12 @@ static void help(void)
 	printf("  trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0\n");
 	printf("  trafgen --dev wlan0 --rfraw --conf beacon-test.txf --bind-cpu 0\n");
 	printf("  trafgen --out eth0 --in trafgen.txf --bind-cpu 0\n");
-	printf("  trafgen --out test.pcap --in trafgen.txf --bind-cpu 0\n");
+/*	printf("  trafgen --out test.pcap --in trafgen.txf --bind-cpu 0\n"); */
 	printf("  trafgen --dev eth0 --conf trafgen.txf --rand --gap 1000\n");
 	printf("  trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0 --num 10 --rand\n");
-	printf("  trafgen --interactive\n");
+/*	printf("  trafgen --interactive\n");
 	printf("  trafgen --interactive --dev mgmt0    (only start server on mgmt0)\n");
-	printf("  trafgen --interactive --conf trafgen-cli.batch\n");
+	printf("  trafgen --interactive --conf trafgen-cli.batch\n");*/
 	printf("\n");
 	printf("Note:\n");
 	printf("  This tool is targeted for network developers! You should\n");
