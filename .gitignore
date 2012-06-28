@@ -1,26 +1,68 @@
-.*
-*.o
-*.o.*
-*.a
-*.s
-*.ko
-*.so
-*.so.dbg
-*.mod.c
-*.i
-*.lst
-*.symtypes
-*.order
-*.elf
-*.bin
-*.lzma
-*.lzo
-*.patch
-*.gcno
+# Editor crap (emacs, vim, ...)
+*.swp
 *.orig
+\#*\#
+.\#*
+.*.sw[a-z]
+*.un~
+
+# Hidden files, general things
+.*
 *~
+
+# Compiled object files
+*.slo
+*.lo
+*.o
+
+# Compiled dynamic libraries
+*.so
+
+# Compiled static libraries
+*.lai
+*.la
+*.a
+
+# Build and testing folders
 src/build/
 src/test/fuzzing/
-\#*#
 
+# LaTeX documentation files
+*.acn
+*.acr
+*.alg
+*.aux
+*.bbl
+*.blg
+*.dvi
+*.fdb_latexmk
+*.glg
+*.glo
+*.gls
+*.idx
+*.ilg
+*.ind
+*.ist
+*.lof
+*.log
+*.lot
+*.maf
+*.mtc
+*.mtc0
+*.nav
+*.nlo
+*.out
+*.pdfsync
+*.ps
+*.snm
+*.synctex.gz
+*.toc
+*.vrb
+*.xdy
+
+# Other documentation ignores
+*.md
+*.ps
+
+# Excluded from ignorance
 !.gitignore
