@@ -369,11 +369,11 @@ static inline uint16_t get_port(uint16_t src, uint16_t dst)
 static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 {
 	int i, line = 3;
-	int maxx, maxy;
+	int maxy;
 	struct flow_entry *n;
 
 	curs_set(0);
-	getmaxyx(screen, maxy, maxx);
+	maxy = getmaxy(screen);
 
 	start_color();
 	init_pair(1, COLOR_RED, COLOR_BLACK);
