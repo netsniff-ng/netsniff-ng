@@ -61,10 +61,10 @@ Summary:
 - 3 months timespan
 - Git commits excluding merges since 0.5.6:
 
-   261  Daniel Borkmann
+   266  Daniel Borkmann
     96  Markus Amend
     34  Christoph Jaeger
-     5  Emmanuel Roullit
+     7  Emmanuel Roullit
      1  Stefan Seering
 
   Plus distribution maintenance by:
@@ -87,7 +87,7 @@ Reporting bugs:
 
 Detailed file changes:
 
- .gitignore                                         |    3 +-
+ .gitignore                                         |   83 +-
  .mailmap                                           |    6 +-
  AUTHORS                                            |    2 +
  Documentation/Curvetun                             |   25 +-
@@ -95,7 +95,8 @@ Detailed file changes:
  Documentation/Mirrors                              |   12 +
  Documentation/Notes-0.5.6                          |  451 ---
  Documentation/RelNotes/Notes-0.5.6                 |  448 +++
- INSTALL                                            |    6 +-
+ Documentation/RelNotes/Notes-0.5.7                 |  325 ++
+ INSTALL                                            |    9 +-
  MAINTAINER                                         |  100 -
  MIRRORS                                            |    9 -
  PROJECTS                                           |  204 --
@@ -113,6 +114,9 @@ Detailed file changes:
  .../pub/netsniff-ng/netsniff-ng-0.5.4.1.tar.gz     |  Bin 137477 -> 0 bytes
  .../pub/netsniff-ng/netsniff-ng-0.5.4.2.tar.gz     |  Bin 141979 -> 0 bytes
  .../pub/netsniff-ng/netsniff-ng-0.5.5.0.tar.gz     |  Bin 265313 -> 0 bytes
+ contrib/patches/cflags_notune.patch                |   22 +
+ contrib/patches/manpage_path.patch                 |   14 +
+ contrib/patches/nacl_path.patch                    |    8 +
  src/CMakeLists.txt                                 |    5 +-
  src/ashunt.c                                       |  106 +-
  src/ashunt/.gitignore                              |    1 -
@@ -210,7 +214,7 @@ Detailed file changes:
  src/examples/trafgen/nst_udp_pkt_18.txf            |   50 +
  src/examples/trafgen/trafgen.txf                   |  104 +-
  src/examples/trafgen/trafgen2.txf                  |    6 +-
- src/flowtop.c                                      |    3 +-
+ src/flowtop.c                                      |    7 +-
  src/flowtop/.gitignore                             |    1 -
  src/flowtop/CMakeLists.txt                         |    6 +-
  src/ifpps.c                                        |  123 +-
@@ -218,7 +222,7 @@ Detailed file changes:
  src/ifpps/CMakeLists.txt                           |    3 +-
  src/mac80211.c                                     |  257 ++
  src/mac80211.h                                     |   14 +
- src/netsniff-ng.c                                  |  301 ++-
+ src/netsniff-ng.c                                  |  309 ++-
  src/netsniff-ng/.gitignore                         |    1 -
  src/netsniff-ng/CMakeLists.txt                     |   47 +-
  src/opt_memcpy.c                                   |  302 --
@@ -226,7 +230,7 @@ Detailed file changes:
  src/oui.c                                          |  102 +
  src/oui.h                                          |   15 +
  src/pcap.c                                         |    1 -
- src/pcap.h                                         |   16 +-
+ src/pcap.h                                         |   20 +-
  src/pcap_mmap.c                                    |  109 +-
  src/pcap_rw.c                                      |   54 +-
  src/pcap_sg.c                                      |  175 +-
@@ -306,7 +310,7 @@ Detailed file changes:
  src/xsys.h                                         |  143 -
  src/xutils.c                                       |  986 ++++++
  src/xutils.h                                       |  151 +
- 219 files changed, 12373 insertions(+), 10534 deletions(-)
+ 223 files changed, 12815 insertions(+), 10560 deletions(-)
 
 ---
 		,---------------------,
