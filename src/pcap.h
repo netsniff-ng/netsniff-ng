@@ -69,7 +69,9 @@ static inline void tpacket_hdr_to_pcap_pkthdr(struct tpacket_hdr *thdr,
 	phdr->ts.tv_sec = thdr->tp_sec;
 	phdr->ts.tv_usec = thdr->tp_usec;
 	phdr->caplen = thdr->tp_snaplen;
-	phdr->len = thdr->tp_len;
+/* FIXME */
+/*	phdr->len = thdr->tp_len; */
+	phdr->len = thdr->tp_snaplen;
 }
 
 static inline void pcap_pkthdr_to_tpacket_hdr(struct pcap_pkthdr *phdr,
