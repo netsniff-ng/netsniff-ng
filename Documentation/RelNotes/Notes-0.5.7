@@ -12,6 +12,8 @@ This time, only three months passed since the release of 0.5.6. We've ruled out
 a number of bugs and added new features such as raw 802.11 support for capturing
 and traffic generation! We've added new protocol dissectors and improved current
 ones, trafgen now has a better configuration language, and many more things.
+Furthermore, two new upstream maintainer joined our team: Markus Amend and
+Christoph Jaeger.
 
 The to-do list for future releases is still long and full of features and
 improvements for our current set of tools, so, again, note that the version
@@ -20,7 +22,7 @@ join us in hacking on netsniff-ng, we'd be very happy! On the mid-term future,
 we're planning to add full IPv6 support, an additional high-level filtering
 language to bpfc, further protocol dissectors, protocol-specific functions to
 trafgen's configuration language and Cisco-like CLIs for netsniff-ng and
-trafgen for use as a hw/sw applicance.
+trafgen for use as a hw/sw appliance.
 
 Please find documentation about the individual tools in the Documentation/
 folder. The netsniff-ng toolkit is purely non-profit and provided in the hope,
@@ -42,16 +44,17 @@ Highlights:
 
 - New netsniff-ng dissectors for ICMPv6, IGMP, VLAN Q-in-Q, MPLS.
 
-- Major improvmenets in trafgen's packet configuration language, thanks to flex
+- Major improvements in trafgen's packet configuration language, thanks to flex
   and bison.
 
 - Timing statistics in netsniff-ng and trafgen.
 
-- Hardware-timestamp support for netsniff-ng's RX_RING.
+- Hardware-timestamp support for netsniff-ng's RX_RING
+  (build with -D__WITH_HARDWARE_TIMESTAMPING).
 
-- Many bug fixes such as in pcap I/O methods, packet dissectors and so on.
+- Many bug fixes such as in pcap I/O methods, packet dissectors.
 
-- Many internal refactorings and code cleanups.
+- Many internal refactorings, new minor features and code cleanups.
 
 Summary:
 
