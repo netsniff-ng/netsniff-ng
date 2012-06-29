@@ -669,7 +669,7 @@ static void enter_mode_read_pcap(struct mode *mode)
 
 	if (mode->device_out) {
 		fdo = open_or_die_m(mode->device_out, O_RDWR | O_CREAT |
-				    O_TRUNC | O_LARGEFILE, S_IRUSR | S_IWUSR);
+				    O_TRUNC | O_LARGEFILE, DEFFILEMODE);
 	}
 
 	gettimeofday(&start, NULL);
@@ -781,7 +781,7 @@ static int next_multi_pcap_file(struct mode *mode, int fd)
 	slprintf(tmp, sizeof(tmp), "%s/%lu.pcap", mode->device_out, time(0));
 
 	fd = open_or_die_m(tmp, O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE,
-			   S_IRUSR | S_IWUSR);
+			   DEFFILEMODE);
 	ret = pcap_ops[mode->pcap]->push_file_header(fd, mode->link_type);
 	if (ret)
 		panic("error writing pcap header!\n");
@@ -807,7 +807,7 @@ static int begin_multi_pcap_file(struct mode *mode)
 	slprintf(tmp, sizeof(tmp), "%s/%lu.pcap", mode->device_out, time(0));
 
 	fd = open_or_die_m(tmp, O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE,
-			   S_IRUSR | S_IWUSR);
+			   DEFFILEMODE);
 	ret = pcap_ops[mode->pcap]->push_file_header(fd, mode->link_type);
 	if (ret)
 		panic("error writing pcap header!\n");
@@ -843,7 +843,7 @@ static int begin_single_pcap_file(struct mode *mode)
 		panic("pcap group not supported!\n");
 	fd = open_or_die_m(mode->device_out,
 			   O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE,
-			   S_IRUSR | S_IWUSR);
+			   DEFFILEMODE);
 	ret = pcap_ops[mode->pcap]->push_file_header(fd, mode->link_type);
 	if (ret)
 		panic("error writing pcap header!\n");
