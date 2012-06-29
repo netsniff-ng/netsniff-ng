@@ -1,0 +1,22 @@
+Description: Make build without tuning
+Author: Daniel Borkmann <daniel@netsniff-ng.org>
+Last-Update: 2012-04-01
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -15,15 +15,13 @@ INCLUDE(CheckTxRing)
+ INCLUDE(Pod2Man)
+ 
+ ADD_DEFINITIONS(
+-	-O3
++	-O2
+ 	-fstack-protector
+ 	-fpie
+ 	-std=gnu99
+ 	-fno-strict-aliasing
+ 	-D_FORTIFY_SOURCE=2
+ 	-D_REENTRANT
+-	-march=native
+-	-mtune=native
+ 	-Wall
+ 	-Wundef
+ 	-Wstrict-prototypes

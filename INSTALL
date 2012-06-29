@@ -77,6 +77,9 @@ KERNEL=="tun", NAME="net/%k", GROUP="netdev", MODE="0660", OPTIONS+="ignore_remo
 
 NOTES
 
+If you are a package distribution maintainer, have a look at the patch set under
+contrib/patches which makes packaging a little easier for you.
+
 The following warnings can be seen when compiling bpfc with flex 2.5.35 and
 bison 2.4.1:
  - redundant redeclaration of ‘isatty’
