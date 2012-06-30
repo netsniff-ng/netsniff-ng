@@ -1,3 +1,5 @@
+#include <sys/time.h>
+#include <time.h>
 #include <libcli.h>
 
 #include "trafgen_conf.h"
