@@ -3,6 +3,6 @@ Emmanuel Roullit <emmanuel@netsniff-ng.org>
 Markus Amend <markus@netsniff-ng.org>
 Christoph Jaeger <christoph@netsniff-ng.org>
 
-The order of authors is sorted by contributions:
- git log --no-merges $@ | grep Author: | cut -d: -f2 | cut -d\< -f1 | \
- sort | uniq -c | sort -n -r
+The order of authors with > 30 commits listed here is sorted by contributions
+from high to low through ``git log --no-merges $@ | grep Author: | \
+cut -d: -f2 | cut -d\< -f1 | sort | uniq -c | sort -n -r''.
