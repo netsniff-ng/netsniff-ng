@@ -24,7 +24,7 @@ What libraries / tools are required?
 
 What additional tools are recommended?
 
- - ntpd or equivalent (curvetun)
+ - ntpd, tlsdate or equivalent (curvetun)
 
 It is common, that these libraries are shipped as distribution packages
 for an easy installation. We try to keep this as minimal as possible.
