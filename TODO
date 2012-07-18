@@ -29,5 +29,6 @@ appreciated):
 20) Add an interactive mode (libcli) for netsniff-ng, make it look similar to
     trafgen's interactive mode and as useful, so that both can be used as a
     sw/hw applicance.
-21) Obfuscate curvetun's protocol to make it hard/resource-intensive for DPI's
-    to detect.
+21) Obfuscate curvetun's protocol to make it hard/resource-intensive
+    for DPI's to detect.
+22) Add different timing models to trafgen, not just a static interpacket gap.
