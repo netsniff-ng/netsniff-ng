@@ -1,0 +1,31 @@
+Here's a list of things we need to do (contributions welcome and highly
+appreciated):
+
+ 1) Cleanup and refactor the code and build system to make it more maintainable!
+ 2) Implement test cases with libtap (src/test/). Make the output readable
+    (currently cmake hides it all).
+ 3) Add full IPv6 support for ashunt and flowtop, test IPv6 on curvetun.
+ 4) GeoIP support during netsniff-ng sniffing would be nice.
+ 5) Make trafgen write to a pcap instead to a device.
+ 6) Let netsniff-ng and trafgen support pcap and pcap-ng!
+ 7) Include an ARP cache poisoning switch into netsniff-ng.
+ 8) Add an interactive mode (libcli) for trafgen and make the interface
+    nice and useable such as in Mausezahn.
+ 9) Add fork + fanout mode for a threaded netsniff-ng and trafgen.
+10) Add a proper 802.11 dissector for netsniff-ng.
+11) Add WEP/WPA (live) decryption support, where keys are passed via cmdline.
+12) Add new dissectors (e.g. BGP, DNS, DCCP, SCTP, RSVP, IPsec, LISP, RADIUS,
+    LLC, fix MPLS?, improve ARP, BPDU, PVST, CDP, LLDP, RTP, Syslog, NTP, ...).
+13) Easier language for /fast/ filtering (e.g. on top of BPF so that it can run
+    in the kernel), include this into bpfc.
+14) Add timedb for ifpps, so that we have round robin time series database
+    measurements (https://github.com/EPiCS/reconos/tree/master/linux/tools/timedb).
+15) netsniff-ng, trafgen: give recommendation or tune socket rmem/wmem.
+16) Further micro-optimize netsniff-ng and trafgen's performance.
+17) Security review of curvetun.
+18) Add a new tool tlsplonk for debugging and analysis of TLS/SSL certs (and
+    make it useful to find suspicious certs).
+19) Option for anonymizing pcap/pcap-ng files.
+20) Add an interactive mode (libcli) for netsniff-ng, make it look similar to
+    trafgen's interactive mode and as useful, so that both can be used as a
+    sw/hw applicance.
