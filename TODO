@@ -32,3 +32,8 @@ appreciated):
 21) Obfuscate curvetun's protocol to make it hard/resource-intensive
     for DPI's to detect.
 22) Add different timing models to trafgen, not just a static interpacket gap.
+23) Check if we can further improve linux-net/net/packet/af_packet.c.
+24) Do we need TPACKETV2 or even TPACKETV3 if it is eventually implemented? Are
+    there performance benefits?
+25) Do performance tests with 10 Gigabit cards and more appropriate servers than
+    we own now.
