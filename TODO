@@ -37,3 +37,7 @@ appreciated):
     there performance benefits?
 25) Do performance tests with 10 Gigabit cards and more appropriate servers than
     we own now.
+26) Offload dissector implementations into a scripting engine in order to i)
+    make it more secure (just an assumption), ii) speed up dissector development
+    iii) keep the core less complex. Printing out dissectors is a slow task
+    anyways and people should always use --silent for recording.
