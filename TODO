@@ -1,5 +1,6 @@
-Here's a list of things we need to do (contributions welcome and highly
-appreciated):
+Here's a list of things we need to do (contributions are welcome and highly
+appreciated, please also read Documentation/SubmittingPatches about how to
+submit your contributions):
 
  1) Cleanup and refactor the code and build system to make it more maintainable!
  2) Implement test cases with libtap (src/test/). Make the output readable
