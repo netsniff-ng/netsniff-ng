@@ -63,7 +63,15 @@ enum {
 };
 
 static const char *const to_prio[] = {
-	"none", "realtime", "best-effort", "idle", };
+	"none", "realtime", "best-effort", "idle",
+};
+
+static const char *const sock_mem[] = {
+	"/proc/sys/net/core/rmem_max",
+	"/proc/sys/net/core/rmem_default",
+	"/proc/sys/net/core/wmem_max",
+	"/proc/sys/net/core/wmem_default",
+};
 
 int af_socket(int af)
 {
@@ -231,6 +239,44 @@ int adjust_dbm_level(int in_dbm, int dbm_val)
 		return dbm_val;
 
 	return dbm_val - 0x100;
+}
+
+int get_system_socket_mem(int which)
+{
+	int fd, val = -1;
+	ssize_t ret;
+	const char *file = sock_mem[which];
+	char buff[64];
+
+	fd = open(file, O_RDONLY);
+	if (fd < 0)
+		return val;
+
+	ret = read(fd, buff, sizeof(buff));
+	if (ret > 0)
+		val = atoi(buff);
+
+	close(fd);
+	return val;
+}
+
+void set_system_socket_mem(int which, int val)
+{
+	int fd;
+	ssize_t ret;
+	const char *file = sock_mem[which];
+	char buff[64];
+
+	fd = open(file, O_WRONLY);
+	if (fd < 0)
+		return;
+
+	memset(buff, 0, sizeof(buff));
+	slprintf(buff, sizeof(buff), "%d", val);
+
+	ret = write(fd, buff, strlen(buff));
+
+	close(fd);
 }
 
 int wireless_sigqual(const char *ifname, struct iw_statistics *stats)

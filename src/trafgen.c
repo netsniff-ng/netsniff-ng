@@ -215,7 +215,7 @@ unsigned int packets_len = 0;
 struct packet_dynamics *packet_dyns = NULL;
 unsigned int packet_dyn_len = 0;
 
-static const char *short_options = "d:c:n:t:vJhS:HQb:B:rk:xi:o:VR";
+static const char *short_options = "d:c:n:t:vJhS:HQb:B:rk:xi:o:VRA";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -235,6 +235,7 @@ static struct option long_options[] = {
 	{"prio-high", no_argument, 0, 'H'},
 	{"notouch-irq", no_argument, 0, 'Q'},
 	{"verbose", no_argument, 0, 'V'},
+	{"no-sock-mem", no_argument, 0, 'A'},
 	{"version", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
@@ -289,6 +290,7 @@ static void help(void)
 	printf("  -r|--rand                         Randomize packet selection process\n");
 	printf("                                    Instead of a round robin selection\n");
 	printf("  -t|--gap <uint>                   Interpacket gap in us (approx)\n");
+	printf("  -A|--no-sock-mem                  Don't tune core socket memory\n");
 	printf("  -S|--ring-size <size>             Manually set ring size to <size>:\n");
 	printf("                                    mmap space in KB/MB/GB, e.g. \'10MB\'\n");
 	printf("  -k|--kernel-pull <uint>           Kernel pull from user interval in us\n");
@@ -616,6 +618,7 @@ int main(int argc, char **argv)
 	int c, opt_index, i, j, interactive = 0;
 	char *confname = NULL, *ptr;
 	bool prio_high = false;
+	bool setsockmem = true;
 	struct mode mode;
 
 	check_for_root_maybe_die();
@@ -665,6 +668,9 @@ int main(int argc, char **argv)
 			break;
 		case 't':
 			mode.gap = atol(optarg);
+			break;
+		case 'A':
+			setsockmem = false;
 			break;
 		case 'S':
 			ptr = optarg;
@@ -752,6 +758,17 @@ int main(int argc, char **argv)
 		set_proc_prio(get_default_proc_prio());
 		set_sched_status(get_default_sched_policy(),
 				 get_default_sched_prio());
+	}
+
+	if (setsockmem == true) {
+		if (get_system_socket_mem(sock_rmem_max) < SMEM_SUG_MAX)
+			set_system_socket_mem(sock_rmem_max, SMEM_SUG_MAX);
+		if (get_system_socket_mem(sock_rmem_def) < SMEM_SUG_DEF)
+			set_system_socket_mem(sock_rmem_def, SMEM_SUG_DEF);
+		if (get_system_socket_mem(sock_wmem_max) < SMEM_SUG_MAX)
+			set_system_socket_mem(sock_wmem_max, SMEM_SUG_MAX);
+		if (get_system_socket_mem(sock_wmem_def) < SMEM_SUG_DEF)
+			set_system_socket_mem(sock_wmem_def, SMEM_SUG_DEF);
 	}
 
 	if (interactive)

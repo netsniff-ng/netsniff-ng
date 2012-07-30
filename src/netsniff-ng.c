@@ -264,7 +264,7 @@ static unsigned long interval = TX_KERNEL_PULL_INT;
 static struct itimerval itimer;
 static volatile bool next_dump = false;
 
-static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqXlvhF:Rg";
+static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqXlvhF:RgA";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -291,6 +291,7 @@ static struct option long_options[] = {
 	{"less", no_argument, 0, 'q'},
 	{"hex", no_argument, 0, 'X'},
 	{"ascii", no_argument, 0, 'l'},
+	{"no-sock-mem", no_argument, 0, 'A'},
 	{"version", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{0, 0, 0, 0}
@@ -1065,6 +1066,7 @@ static void help(void)
 	printf("Options, advanced:\n");
 	printf("  -r|--rand                   Randomize packet forwarding order\n");
 	printf("  -M|--no-promisc             No promiscuous mode for netdev\n");
+	printf("  -A|--no-sock-mem            Don't tune core socket memory\n");
 	printf("  -m|--mmap                   Mmap pcap file i.e., for replaying\n");
 	printf("  -g|--sg                     Scatter/gather pcap file I/O\n");
 	printf("  -c|--clrw                   Use slower read(2)/write(2) I/O\n");
@@ -1131,6 +1133,7 @@ int main(int argc, char **argv)
 	int c, i, j, opt_index, ops_touched = 0;
 	char *ptr;
 	bool prio_high = false;
+	bool setsockmem = true;
 	struct mode mode;
 	void (*enter_mode)(struct mode *mode) = NULL;
 
@@ -1171,6 +1174,9 @@ int main(int argc, char **argv)
 			break;
 		case 'M':
 			mode.promiscuous = false;
+			break;
+		case 'A':
+			setsockmem = false;
 			break;
 		case 't':
 			if (!strncmp(optarg, "host", strlen("host")))
@@ -1304,6 +1310,17 @@ int main(int argc, char **argv)
 		set_proc_prio(get_default_proc_prio());
 		set_sched_status(get_default_sched_policy(),
 				 get_default_sched_prio());
+	}
+
+	if (setsockmem == true) {
+		if (get_system_socket_mem(sock_rmem_max) < SMEM_SUG_MAX)
+			set_system_socket_mem(sock_rmem_max, SMEM_SUG_MAX);
+		if (get_system_socket_mem(sock_rmem_def) < SMEM_SUG_DEF)
+			set_system_socket_mem(sock_rmem_def, SMEM_SUG_DEF);
+		if (get_system_socket_mem(sock_wmem_max) < SMEM_SUG_MAX)
+			set_system_socket_mem(sock_wmem_max, SMEM_SUG_MAX);
+		if (get_system_socket_mem(sock_wmem_def) < SMEM_SUG_DEF)
+			set_system_socket_mem(sock_wmem_def, SMEM_SUG_DEF);
 	}
 
 	if (mode.device_in && (device_mtu(mode.device_in) ||

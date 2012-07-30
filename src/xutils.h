@@ -26,6 +26,16 @@
 #include "die.h"
 #include "built_in.h"
 
+enum {
+	sock_rmem_max = 0,
+	sock_rmem_def,
+	sock_wmem_max,
+	sock_wmem_def,
+};
+
+#define SMEM_SUG_MAX	104857600
+#define SMEM_SUG_DEF	4194304
+
 extern int af_socket(int af);
 extern int pf_socket(void);
 extern int wireless_bitrate(const char *ifname);
@@ -57,6 +67,8 @@ extern void set_tcp_nodelay(int fd);
 extern void set_socket_keepalive(int fd);
 extern int set_ipv6_only(int fd);
 extern void set_mtu_disc_dont(int fd);
+extern int get_system_socket_mem(int which);
+extern void set_system_socket_mem(int which, int val);
 extern void register_signal(int signal, void (*handler)(int));
 extern void register_signal_f(int signal, void (*handler)(int), int flags);
 extern int get_tty_size(void);
