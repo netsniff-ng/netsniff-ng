@@ -1131,6 +1131,7 @@ static void header(void)
 int main(int argc, char **argv)
 {
 	int c, i, j, opt_index, ops_touched = 0;
+	int vals[4] = {0};
 	char *ptr;
 	bool prio_high = false;
 	bool setsockmem = true;
@@ -1313,13 +1314,13 @@ int main(int argc, char **argv)
 	}
 
 	if (setsockmem == true) {
-		if (get_system_socket_mem(sock_rmem_max) < SMEM_SUG_MAX)
+		if ((vals[0] = get_system_socket_mem(sock_rmem_max)) < SMEM_SUG_MAX)
 			set_system_socket_mem(sock_rmem_max, SMEM_SUG_MAX);
-		if (get_system_socket_mem(sock_rmem_def) < SMEM_SUG_DEF)
+		if ((vals[1] = get_system_socket_mem(sock_rmem_def)) < SMEM_SUG_DEF)
 			set_system_socket_mem(sock_rmem_def, SMEM_SUG_DEF);
-		if (get_system_socket_mem(sock_wmem_max) < SMEM_SUG_MAX)
+		if ((vals[2] = get_system_socket_mem(sock_wmem_max)) < SMEM_SUG_MAX)
 			set_system_socket_mem(sock_wmem_max, SMEM_SUG_MAX);
-		if (get_system_socket_mem(sock_wmem_def) < SMEM_SUG_DEF)
+		if ((vals[3] = get_system_socket_mem(sock_wmem_def)) < SMEM_SUG_DEF)
 			set_system_socket_mem(sock_wmem_def, SMEM_SUG_DEF);
 	}
 
@@ -1357,6 +1358,13 @@ int main(int argc, char **argv)
 
 	tprintf_cleanup();
 	cleanup_pcap();
+
+	if (setsockmem == true) {
+		set_system_socket_mem(sock_rmem_max, vals[0]);
+		set_system_socket_mem(sock_rmem_def, vals[1]);
+		set_system_socket_mem(sock_wmem_max, vals[2]);
+		set_system_socket_mem(sock_wmem_def, vals[3]);
+	}
 
 	if (mode.device_in)
 		xfree(mode.device_in);
