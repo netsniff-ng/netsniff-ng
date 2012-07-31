@@ -1,8 +1,16 @@
-Daniel Borkmann <daniel@netsniff-ng.org>
-Emmanuel Roullit <emmanuel@netsniff-ng.org>
-Markus Amend <markus@netsniff-ng.org>
-Christoph Jaeger <christoph@netsniff-ng.org>
+Main contributors:
+
+ * Daniel Borkmann <daniel@netsniff-ng.org>
+ * Emmanuel Roullit <emmanuel@netsniff-ng.org>
+ * Markus Amend <markus@netsniff-ng.org>
+ * Christoph Jaeger <christoph@netsniff-ng.org>
 
 The order of authors with > 30 commits listed here is sorted by contributions
 from high to low through ``git log --no-merges $@ | grep Author: | \
 cut -d: -f2 | cut -d\< -f1 | sort | uniq -c | sort -n -r''.
+
+Want to join the core team? Submit enough great patches over a long time,
+implement what's on the TODO file and show an ongoing, active interest in
+supporting netsniff-ng. What's in for you? If you ever come to Switzerland,
+you get a free beer on Daniel and you can meet some great people involved in
+this project. ;)
