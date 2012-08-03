@@ -2,7 +2,8 @@ Here's a list of things we need to do (contributions are welcome and highly
 appreciated, please also read Documentation/SubmittingPatches about how to
 submit your contributions):
 
- 1) Cleanup and refactor the code and build system to make it more maintainable!
+ 1) Highest prio: Cleanup and refactor the code and build system to make it
+    more maintainable, stable, and probably faster!
  2) Implement test cases with libtap (src/test/). Make the output readable
     (currently cmake hides it all).
  3) Add full IPv6 support for ashunt and flowtop, test IPv6 on curvetun.
@@ -42,3 +43,7 @@ submit your contributions):
     make it more secure (just an assumption), ii) speed up dissector development
     iii) keep the core less complex. Printing out dissectors is a slow task
     anyways and people should always use --silent for recording.
+27) Integration of our repository with Travis-CI
+28) Remove liburcu dependency from flowtop
+29) Improve the kernel's net/packet/af_packet.c (that we rely on)
+30) Process raw VLAN headers with TPACKETv2 as in Issue #36 described
