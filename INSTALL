@@ -80,6 +80,10 @@ KERNEL=="tun", NAME="net/%k", GROUP="netdev", MODE="0660", OPTIONS+="ignore_remo
 
 NOTES
 
+Add the flag -D__WITH_HARDWARE_TIMESTAMPING=1 into src/CMakeLists.txt for hardware
+timestamping support. Note that your kernel must be configured for this (e.g. to
+ship the linux/net_tstamp.h header file).
+
 If you are a package distribution maintainer, have a look at the patch set under
 contrib/patches which makes packaging a little easier for you.
 
