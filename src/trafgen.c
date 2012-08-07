@@ -619,7 +619,7 @@ int main(int argc, char **argv)
 	int vals[4] = {0};
 	char *confname = NULL, *ptr;
 	bool prio_high = false;
-	bool setsockmem = true;
+	bool setsockmem = false; //true; TODO: fix kernel on TX first!
 	struct mode mode;
 
 	check_for_root_maybe_die();
