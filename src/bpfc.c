@@ -181,10 +181,7 @@ int main(int argc, char **argv)
 
 	if (!file)
 		panic("No Berkeley Packet Filter program specified!\n");
-
 	ret = compile_filter(file, verbose);
-
 	xfree(file);
-
 	return ret;
 }

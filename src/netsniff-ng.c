@@ -1366,12 +1366,9 @@ int main(int argc, char **argv)
 		set_system_socket_mem(sock_wmem_def, vals[3]);
 	}
 
-	if (mode.device_in)
-		xfree(mode.device_in);
-	if (mode.device_out)
-		xfree(mode.device_out);
-	if (mode.device_trans)
-		xfree(mode.device_trans);
+	free(mode.device_in);
+	free(mode.device_out);
+	free(mode.device_trans);
 
 	return 0;
 }

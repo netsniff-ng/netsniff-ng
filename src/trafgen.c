@@ -30,7 +30,7 @@ trafgen - a high-performance zero-copy network packet generator
 =head1 SYNOPSIS
 
 trafgen	[-d|--dev <netdev>][-c|--conf <file>][-J|--jumbo-support]
-	[-x|--interactive][-n|--num <uint>][-r|--rand][-t|--gap <usec>]
+	[-n|--num <uint>][-r|--rand][-t|--gap <usec>]
 	[-S|--ring-size <size>][-k|--kernel-pull <usec>][-b|--bind-cpu <cpu>]
 	[-B|--unbind-cpu <cpu>][-H|--prio-high][-Q|--notouch-irq][-v|--version]
 	[-h|--help]
@@ -71,10 +71,6 @@ Device for transmission i.e., eth0.
 =item -c|--conf <conf>
 
 Path to packet configuration file.
-
-=item -x|--interactive
-
-Start trafgen in interactive mode.
 
 =item -J|--jumbo-support
 
@@ -215,7 +211,7 @@ unsigned int packets_len = 0;
 struct packet_dynamics *packet_dyns = NULL;
 unsigned int packet_dyn_len = 0;
 
-static const char *short_options = "d:c:n:t:vJhS:HQb:B:rk:xi:o:VRA";
+static const char *short_options = "d:c:n:t:vJhS:HQb:B:rk:i:o:VRA";
 
 static struct option long_options[] = {
 	{"dev", required_argument, 0, 'd'},
@@ -230,7 +226,6 @@ static struct option long_options[] = {
 	{"kernel-pull", required_argument, 0, 'k'},
 	{"jumbo-support", no_argument, 0, 'J'},
 	{"rfraw", no_argument, 0, 'R'},
-	{"interactive", no_argument, 0, 'x'},
 	{"rand", no_argument, 0, 'r'},
 	{"prio-high", no_argument, 0, 'H'},
 	{"notouch-irq", no_argument, 0, 'Q'},
@@ -280,7 +275,6 @@ static void help(void)
 /*	printf("  -o|-d|--out|--dev <netdev|pcap>   Networking Device i.e., eth0 or pcap\n"); */
 	printf("  -o|-d|--out|--dev <netdev>        Networking Device i.e., eth0\n");
 	printf("  -i|-c|--in|--conf <cfg-file>      Packet configuration file\n");
-/*	printf("  -x|--interactive                  Start trafgen in interactive server mode\n"); */
 	printf("  -J|--jumbo-support                Support for 64KB Super Jumbo Frames\n");
 	printf("                                    Default TX slot: 2048Byte\n");
 	printf("  -R|--rfraw                        Inject raw 802.11 frames\n");
@@ -311,9 +305,6 @@ static void help(void)
 /*	printf("  trafgen --out test.pcap --in trafgen.txf --bind-cpu 0\n"); */
 	printf("  trafgen --dev eth0 --conf trafgen.txf --rand --gap 1000\n");
 	printf("  trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0 --num 10 --rand\n");
-/*	printf("  trafgen --interactive\n");
-	printf("  trafgen --interactive --dev mgmt0    (only start server on mgmt0)\n");
-	printf("  trafgen --interactive --conf trafgen-cli.batch\n");*/
 	printf("\n");
 	printf("Note:\n");
 	printf("  This tool is targeted for network developers! You should\n");
@@ -615,7 +606,7 @@ static void main_loop(struct mode *mode, char *confname)
 
 int main(int argc, char **argv)
 {
-	int c, opt_index, i, j, interactive = 0;
+	int c, opt_index, i, j;
 	int vals[4] = {0};
 	char *confname = NULL, *ptr;
 	bool prio_high = false;
@@ -644,9 +635,6 @@ int main(int argc, char **argv)
 		case 'd':
 		case 'o':
 			mode.device = xstrndup(optarg, IFNAMSIZ);
-			break;
-		case 'x':
-			interactive = 1;
 			break;
 		case 'r':
 			mode.rand = 1;
@@ -735,18 +723,15 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (!interactive && argc < 5)
+	if (argc < 5)
 		help();
-	if (interactive && argc < 2)
-		help();
-	if (!interactive && mode.device == NULL)
+	if (mode.device == NULL)
 		panic("No networking device given!\n");
-	if (!interactive && confname == NULL)
+	if (confname == NULL)
 		panic("No configuration file given!\n");
-	if (!interactive && device_mtu(mode.device) == 0)
+	if (device_mtu(mode.device) == 0)
 		panic("This is no networking device!\n");
-	if (!interactive && !mode.rfraw &&
-	    device_up_and_running(mode.device) == 0)
+	if (!mode.rfraw && device_up_and_running(mode.device) == 0)
 		panic("Networking device not running!\n");
 
 	register_signal(SIGINT, signal_handler);
@@ -772,10 +757,7 @@ int main(int argc, char **argv)
 			set_system_socket_mem(sock_wmem_def, SMEM_SUG_DEF);
 	}
 
-	if (interactive)
-		main_loop_interactive(&mode, confname);
-	else
-		main_loop(&mode, confname);
+	main_loop(&mode, confname);
 
 	if (setsockmem == true) {
 		set_system_socket_mem(sock_rmem_max, vals[0]);
@@ -784,12 +766,9 @@ int main(int argc, char **argv)
 		set_system_socket_mem(sock_wmem_def, vals[3]);
 	}
 
-	if (mode.device)
-		xfree(mode.device);
-	if (mode.device_trans)
-		xfree(mode.device_trans);
-	if (confname)
-		xfree(confname);
+	free(mode.device);
+	free(mode.device_trans);
+	free(confname);
 
 	return 0;
 }

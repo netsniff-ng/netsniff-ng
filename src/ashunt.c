@@ -1167,22 +1167,14 @@ int main(int argc, char **argv)
 
 	tprintf_cleanup();
 
-	if (cfg.whois_port)
-		xfree(cfg.whois_port);
-	if (cfg.whois)
-		xfree(cfg.whois);
-	if (cfg.dev)
-		xfree(cfg.dev);
-	if (cfg.host)
-		xfree(cfg.host);
-	if (cfg.port)
-		xfree(cfg.port);
-	if (cfg.payload)
-		xfree(cfg.payload);
-	if (path_city_db)
-		xfree(path_city_db);
-	if (path_country_db)
-		xfree(path_country_db);
+	free(cfg.whois_port);
+	free(cfg.whois);
+	free(cfg.dev);
+	free(cfg.host);
+	free(cfg.port);
+	free(cfg.payload);
+	free(path_city_db);
+	free(path_country_db);
 
 	return ret;
 }

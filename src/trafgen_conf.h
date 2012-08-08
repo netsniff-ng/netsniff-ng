@@ -46,6 +46,4 @@ struct packet_dynamics {
 extern int compile_packets(char *file, int verbose);
 extern void cleanup_packets(void);
 
-extern int main_loop_interactive(struct mode *mode, char *confname);
-
 #endif /* TRAFGEN_CONF */
