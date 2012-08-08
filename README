@@ -30,6 +30,7 @@ The netsniff-ng toolkit currently consists of the following utilities:
 
   * netsniff-ng: a zero-copy analyzer, pcap capturing and replaying tool
   * trafgen: a high performance zero-copy network packet generator
+  * gremlin: a threaded zero-copy packet source/sink with Cisco-cli (todo)
   * ifpps: a top-like kernel networking and system statistics tool
   * curvetun: a lightweight curve25519-based multiuser IP tunnel
   * ashunt: an autonomous system trace route and ISP testing utility

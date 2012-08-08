@@ -7,14 +7,11 @@ submit your contributions):
  2) Implement test cases with libtap (src/test/). Make the output readable
     (currently cmake hides it all).
  3) Add full IPv6 support for ashunt and flowtop, test IPv6 on curvetun.
- 4) GeoIP support during netsniff-ng sniffing would be nice.
  5) Make trafgen write to a pcap instead to a device.
  6) Let netsniff-ng and trafgen support pcap and pcap-ng!
- 7) Include an ARP cache poisoning switch into netsniff-ng.
- 8) Add an interactive mode (libcli) for trafgen and make the interface
-    nice and useable such as in Mausezahn.
- 9) Add fork + fanout mode for a threaded netsniff-ng and trafgen /or/ create
-    a new tool with libCLI that combine both, leave the old ones 'small' enough.
+ 7) Include an ARP cache poisoning switch into netsniff-ng, or as a tool.
+ 8) gremlin: fork + fanout mode for a threaded netsniff-ng and trafgen
+    front-end with Cisco-cli for a hw/sw applicance.
 10) Add a proper 802.11 dissector for netsniff-ng.
 11) Add WEP/WPA (live) decryption support, where keys are passed via cmdline.
 12) Add new dissectors (e.g. BGP, DNS, DCCP, SCTP, RSVP, IPsec, LISP, RADIUS,
@@ -24,28 +21,15 @@ submit your contributions):
     in the kernel), include this into bpfc.
 14) Add timedb for ifpps, so that we have round robin time series database
     measurements (https://github.com/EPiCS/reconos/tree/master/linux/tools/timedb).
-15) netsniff-ng, trafgen: give recommendation or tune socket rmem/wmem.
 16) Further micro-optimize netsniff-ng and trafgen's performance.
 17) Security review of curvetun.
-18) Add a new tool tlsplonk for debugging and analysis of TLS/SSL certs (and
-    make it useful to find suspicious certs).
-19) Option for anonymizing pcap/pcap-ng files.
-20) Add an interactive mode (libcli) for netsniff-ng, make it look similar to
-    trafgen's interactive mode and as useful, so that both can be used as a
-    sw/hw applicance.
-21) Obfuscate curvetun's protocol to make it hard/resource-intensive
-    for DPI's to detect.
+21) Obfuscate curvetun's protocol to make it hard/resource-intensive for DPIs.
 22) Add different timing models to trafgen, not just a static interpacket gap.
 23) Check if we can further improve linux-net/net/packet/af_packet.c.
-24) Do we need TPACKETV2 or even TPACKETV3 if it is eventually implemented? Are
-    there performance benefits?
-25) Do performance tests with 10 Gigabit cards and more appropriate servers than
-    we own now.
-26) Offload dissector implementations into a scripting engine in order to i)
-    make it more secure (just an assumption), ii) speed up dissector development
-    iii) keep the core less complex. Printing out dissectors is a slow task
-    anyways and people should always use --silent for recording.
+24) Do we need TPACKETV2 or even TPACKETV3 if it is eventually implemented?
+    Are there performance benefits?
+25) Do performance tests with 10 Gigabit cards.
 27) Integration of our repository with Travis-CI
 28) Remove liburcu dependency from flowtop
 29) Improve the kernel's net/packet/af_packet.c (that we rely on)
-30) Process raw VLAN headers with TPACKETv2 as in Issue #36 described
+30) Fix UDP+TCP tracking in flowtop.
