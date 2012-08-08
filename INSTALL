@@ -19,7 +19,6 @@ What libraries / tools are required?
  - libnacl (curvetun)
  - libnetfilter-conntrack (flowtop)
  - liburcu (flowtop)
- - libcli (trafgen)
  - libnl (netsniff-ng, trafgen)
 
 What additional tools are recommended?
