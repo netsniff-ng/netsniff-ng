@@ -3,17 +3,16 @@
                     netsniff-ng - the packet sniffing beast
 
 \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-                                      .      .
-                                     /(      )\
-                                   .' {______} '.
-                                    \ ^,    ,^ /
- netsniff-ng is a free, performant   |'O\  /O'|   _.<0101011>--
- Linux network analyzer and          > `'  '` <  /
- networking toolkit.                 ) ,.==., (  |
-                                    (|/--~~--\|)-'
- Release: 2012-06-29               /
-                                  (      ___
- Web: http://netsniff-ng.org       \__.=|___E
+                                         .      .
+netsniff-ng is a free, performant       /(      )\
+Linux network analyzer and            .' {______} '.
+networking toolkit. If you will,       \ ^,    ,^ /
+the Swiss army knife for network        |'O\  /O'|   _.<0101011>--
+packets.                                > `'  '` <  /
+                                        ) ,.==., (  |
+Release: 2012-06-29                  .-(|/--~~--\|)-'
+                                    (      ___
+Web: http://netsniff-ng.org          \__.=|___E 
 
 The gain of performance is reached by zero-copy mechanisms, so that on packet
 reception and transmission the kernel does not need to copy packets from kernel
@@ -21,43 +20,38 @@ space to user space and vice versa.
 
 For this purpose, the netsniff-ng toolkit [1] is libpcap independent, but
 nevertheless supports the pcap file format for capturing, replaying and
-performing offline-analysis of pcap dumps. Furthermore, we are focussing on
-building a robust and clean analyzer and utilities that complete netsniff-ng as
-a support for network development, debugging or network reconnaissance. (Note:
-libpcap starting from 1.0.0 now also supports zero-copy, but for capturing only)
+performing offline-analysis of pcap dumps. Furthermore, this project focusses
+on building a robust, fast and clean analyzer and utilities that complete
+netsniff-ng as a support for network development, debugging or network
+reconnaissance.
 
 The netsniff-ng toolkit currently consists of the following utilities:
 
-  * netsniff-ng: a zero-copy analyzer, pcap capturing and replaying tool
-  * trafgen: a high performance zero-copy network packet generator
-  * gremlin: a threaded zero-copy packet source/sink with Cisco-cli (todo)
+  * netsniff-ng: a zero-copy packet analyzer, pcap capturing/replaying tool
+  * trafgen: a zero-copy network packet generator
+  * gremlin: a threaded analyzer/generator with Cisco-cli for hw/sw appliances
   * ifpps: a top-like kernel networking and system statistics tool
   * curvetun: a lightweight curve25519-based multiuser IP tunnel
-  * ashunt: an autonomous system trace route and ISP testing utility
+  * ashunt: an autonomous system trace route and DPI testing utility
   * flowtop: a top-like netfilter connection tracking tool
-  * bpfc: a tiny Berkeley Packet Filter compiler supporting Linux extensions
+  * bpfc: a tiny Berkeley Packet Filter compiler with Linux extensions
 
 Have a look at the Documentation/ folder for further information.
 
 The netsniff-ng toolkit is an Open Source project covered by the GNU General 
 Public License. For any questions or feedback about netsniff-ng you are welcome
 to leave us a message to <workgroup@netsniff-ng.org> or to our mailing list
-at <netsniff-ng@googlegroups.com> (Note: you have to register first). This
-project is purely non-commercial and will always stay that way! The current
-project status can be considered as "working". In general, all tools have been
-tested by us to a great extend including their command-line options. In fact,
-many of our tools are used in production systems. However, we give no guarantee
-that our tools are free of bugs! If you spot some issues, contact us as
-described in REPORTING-BUGS.
-
-Also, have a look at our FAQ [2] for answering your questions. Furthermore,
-we have a development blog [3] where we sometimes drop some interesting things
-or news for the outside world! A public repository of the old stable releases
-can be found here [4].
+at <netsniff-ng@googlegroups.com> (Note: you have to register first).
+netsniff-ng is purely non-profit and provided in the hope, that it is found
+useful. The current project status can be considered as "working". In general,
+all tools have been tested by us to a great extend including their command-line
+options. In fact, many of our tools are used in production systems. However, we
+give no guarantee that our tools are free of bugs! If you spot some issues,
+contact us as described in REPORTING-BUGS. Also, have a look at our FAQ [2] for
+answering your questions. This project has received support from institutions
+listed in Documentation/Sponsors.
 
 Happy packet hacking!
 
 [1] http://netsniff-ng.org/
 [2] http://netsniff-ng.org/faq.html
-[3] http://dev.netsniff-ng.org/
-[4] http://pub.netsniff-ng.org/
