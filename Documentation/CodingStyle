@@ -1,5 +1,5 @@
  The coding conventions of the netsniff-ng toolkit match with the Linux 
- kernel style guidelines. So here we go with a copy of linux-xxx/Documentation/
+ kernel style guidelines. So here we go with a copy of linux/Documentation/
  CodingStyle written by Linus.
 
 			Daniel Borkmann
