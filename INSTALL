@@ -3,10 +3,14 @@ CONFIG_PACKET_MMAP enabled. This feature can be found even back to the days of
 2.4 kernels. Most operating systems ship pre-compiled kernels that have this
 config option enabled and even the latest kernel versions got rid of this
 option and have this functionality already built-in. However, we recommend a
-kernel >= 2.6.31, because the TX_RING is officially integrated since then.
+kernel >= 2.6.31, because the TX_RING is officially integrated since then. In
+any case, if you have the possibility, consider getting the latest kernel from
+Linus' Git repository, tweak and compile it and run this one!
 
-netsniff-ng has been successfully tested on x86 and x86_64. Please drop
-us a short mail, if it runs successfully on hardware other than that.
+netsniff-ng has been successfully tested on x86 and x86_64. It should also run
+on most other major architectures. However, since we don't have a possibility
+to test it, please drop us a short mail, if it runs successfully on hardware
+other than x86/x86_64.
 
 What libraries / tools are required?
 
@@ -62,10 +66,12 @@ This gives an initial output such as "Building NaCl for arch amd64 on host
 fuuubar (grab a coffee, this takes a while) ...". If the automatically
 detected architecture (such as amd64) is not the one you intend to compile
 for, then edit the (cc="gcc") variable within the build_nacl.sh script to
-your cross compiler.
+your cross compiler. Yes, we know, the build system of NaCl is a bit of a
+pain, so you might check for a pre-built package from your distribution in
+case you are not cross compiling.
 
-If NaCl already has been built on the target, it is quicker to use nacl_path.sh
-this way:
+If NaCl already has been built on the target, it is quicker to use
+nacl_path.sh this way:
 
   $ cd src/curvetun
   $ ./nacl_path.sh ~/nacl/build/include/x86 ~/nacl/build/lib/x86
@@ -74,26 +80,43 @@ When done, netsniff-ng build infrastructure will read nacl_path.cmake to get
 the needed paths to NaCl.
 
 For using TUN/TAP devices as a user, e.g. create a file called
-src/50-tuntap.rules in /etc/udev/rules.d/ with:
-KERNEL=="tun", NAME="net/%k", GROUP="netdev", MODE="0660", OPTIONS+="ignore_remove"
- and restart the udev daemon. Add yourself to the "netdev" group.
+src/50-tuntap.rules in /etc/udev/rules.d/ with ...
 
-NOTES
+KERNEL=="tun",NAME="net/%k",GROUP="netdev",MODE="0660",OPTIONS+="ignore_remove"
 
-Add the flag -D__WITH_HARDWARE_TIMESTAMPING=1 into src/CMakeLists.txt for hardware
-timestamping support. Note that your kernel must be configured for this (e.g. to
-ship the linux/net_tstamp.h header file).
+... and restart the udev daemon. Add yourself to the "netdev" group.
 
-If you are a package distribution maintainer, have a look at the patch set under
-contrib/patches which makes packaging a little easier for you.
+Further notes:
+
+Add the flag -D__WITH_HARDWARE_TIMESTAMPING=1 into src/CMakeLists.txt for
+hardware timestamping support. Note that your kernel must be configured for
+this (e.g. to ship the linux/net_tstamp.h header file).
+
+If you are a package distribution maintainer, have a look at the patch set
+under contrib/patches which makes packaging a little easier for you.
+
+If you are a developer and would like to add unit tests, forget CMake's
+'make test', it's seriously broken! CMake developers obviously thought that
+the output of a CTest program is something noone should care about. This is
+why they not only print nothing on default, but they also did not think of
+adding an option for lets say 'power-users' to enable output. This is why we
+recommend to leave this brain damage aside and use a small helper script that
+is able to show you libtap's output:
+
+#!/bin/sh
+# ctest --verbose prints all output from tests programs, something that CMake's
+# 'make test' heavily fails; 'sed' removes the heading test number ("5:" for
+# instance); 'grep' removes all lines which does not contains TAP output lines
+# starting with 'ok','nok','1..*' and '#' are considered TAP output
+ctest --verbose | sed -e 's/^[0-9]*: //g' | grep -E '^nok|^ok|^#|^[0-9]+\.\.'
 
 The following warnings can be seen when compiling bpfc with flex 2.5.35 and
 bison 2.4.1:
  - redundant redeclaration of ‘isatty’
  - cannot optimize loop, the loop counter may overflow
 
-Those two warnings occur on generated C code produced by flex and bison
-and there is no possibility on our side to fix them.
+Those two warnings occur on generated C code produced by flex and bison and
+there is no possibility on our side to fix them while staying with both tools.
 
 Similar to that, gcc will throw a warning on strchr(3) which is a false
 positive (http://gcc.gnu.org/bugzilla/show_bug.cgi?id=36513) from glibc:
