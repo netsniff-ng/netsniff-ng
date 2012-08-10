@@ -1,10 +1,12 @@
- The coding conventions of the netsniff-ng toolkit match with the Linux 
- kernel style guidelines. So here we go with a copy of linux/Documentation/
- CodingStyle written by Linus.
+ The coding conventions of the netsniff-ng toolkit match with the Linux kernel
+ style guidelines. So here we go with a copy of linux/Documentation/CodingStyle
+ written by Linus.
+
+ In general, keep this in mind: (i) simplicity, (ii) brevity, (iii) elegance.
 
 			Daniel Borkmann
 
---------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 		Linux kernel coding style
 
