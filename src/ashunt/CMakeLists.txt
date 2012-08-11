@@ -35,7 +35,7 @@ if(LIBGEOIP_FOUND AND CMAKE_HAVE_PTHREAD_CREATE)
 
   pod2man(
     ${CMAKE_SOURCE_DIR}/ashunt.c
-    ashunt 8
+    ${PROJECT_NAME} 8
   )
 
   install(

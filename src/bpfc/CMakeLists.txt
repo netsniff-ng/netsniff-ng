@@ -35,7 +35,7 @@ if(FLEX_FOUND AND BISON_FOUND)
 
   pod2man(
     ${CMAKE_SOURCE_DIR}/bpfc.c
-    bpfc 8
+    ${PROJECT_NAME} 8
   )
 
   install(
