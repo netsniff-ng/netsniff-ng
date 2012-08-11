@@ -1,37 +1,64 @@
-PROJECT(flowtop C)
+project(flowtop C)
 
-SET(BUILD_STRING "generic")
+set(BUILD_STRING "generic")
 
-FIND_PACKAGE(LibGeoIP)
-FIND_PACKAGE(Threads)
-FIND_PACKAGE(Curses)
-FIND_PACKAGE(LibNetFilterConnTrack)
-FIND_PACKAGE(LibURCU)
-INCLUDE(Pod2Man)
+find_package(LibGeoIP)
+find_package(Threads)
+find_package(Curses)
+find_package(LibNetFilterConnTrack)
+find_package(LibURCU)
+include(Pod2Man)
 
-IF(CURSES_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND LIBGEOIP_FOUND AND LIBNETFILTER_CONNTRACK_FOUND AND LIBURCU_FOUND)
-	ADD_EXECUTABLE(${PROJECT_NAME}	../xmalloc.c
-					../oui.c
-					../xio.c
-					../xutils.c
-					../hash.c
-					../dissector_eth.c
-					../dissector_80211.c
-					../dissector.c
-					../proto_none.c
-					../tprintf.c
-					../flowtop.c)
-	ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"
-			-DVERSION_STRING="${VERSION}"
-			-DBUILD_STRING="${BUILD_STRING}")
-	TARGET_LINK_LIBRARIES(flowtop ${CURSES_NCURSES_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} ${LIBNETFILTER_CONNTRACK_LIBRARY} ${LIBGEOIP_LIBRARY} ${LIBURCU_LIBRARY})
-	POD2MAN(${CMAKE_SOURCE_DIR}/flowtop.c flowtop 8)
-	INSTALL(TARGETS ${PROJECT_NAME} DESTINATION ${EXECUTABLE_INSTALL_PATH})
-	INSTALL(FILES 	../conf/oui.conf
-			../conf/udp.conf
-			../conf/tcp.conf
-			../conf/ether.conf
-		DESTINATION ${CONFIG_INSTALL_PATH})
-ELSE(CURSES_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND LIBGEOIP_FOUND AND LIBNETFILTER_CONNTRACK_FOUND AND LIBURCU_FOUND)
-	MESSAGE("Either ncurses, pthread, libGeoIP, liburcu or netfilter_conntrack is missing on target. Skipping ${PROJECT_NAME} build.")
-ENDIF(CURSES_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND LIBGEOIP_FOUND AND LIBNETFILTER_CONNTRACK_FOUND AND LIBURCU_FOUND)
+if(CURSES_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND LIBGEOIP_FOUND AND
+   LIBNETFILTER_CONNTRACK_FOUND AND LIBURCU_FOUND)
+
+  add_executable(
+    ${PROJECT_NAME}
+    ../xmalloc.c
+    ../oui.c
+    ../xio.c
+    ../xutils.c
+    ../hash.c
+    ../dissector_eth.c
+    ../dissector_80211.c
+    ../dissector.c
+    ../proto_none.c
+    ../tprintf.c
+    ../flowtop.c
+  )
+
+  add_definitions(
+    -DPROGNAME_STRING="${PROJECT_NAME}"
+    -DVERSION_STRING="${VERSION}"
+    -DBUILD_STRING="${BUILD_STRING}"
+  )
+
+  target_link_libraries(
+    ${PROJECT_NAME}
+    ${CURSES_NCURSES_LIBRARY}
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${LIBNETFILTER_CONNTRACK_LIBRARY}
+    ${LIBGEOIP_LIBRARY}
+    ${LIBURCU_LIBRARY}
+  )
+
+  pod2man(
+    ${CMAKE_SOURCE_DIR}/flowtop.c
+    ${PROJECT_NAME} 8
+  )
+
+  install(
+    TARGETS ${PROJECT_NAME}
+    DESTINATION ${EXECUTABLE_INSTALL_PATH}
+  )
+
+  install(
+    FILES ../conf/oui.conf ../conf/udp.conf ../conf/tcp.conf ../conf/ether.conf
+    DESTINATION ${CONFIG_INSTALL_PATH}
+  )
+else(CURSES_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND LIBGEOIP_FOUND AND
+     LIBNETFILTER_CONNTRACK_FOUND AND LIBURCU_FOUND)
+  message("Either ncurses, pthread, libGeoIP, liburcu or netfilter_conntrack "
+          "is missing on target. Skipping ${PROJECT_NAME} build.")
+endif(CURSES_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND LIBGEOIP_FOUND AND
+      LIBNETFILTER_CONNTRACK_FOUND AND LIBURCU_FOUND)

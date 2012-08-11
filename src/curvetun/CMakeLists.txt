@@ -2,9 +2,10 @@ project(curvetun C)
 
 set(BUILD_STRING "generic")
 
-include(nacl_path.cmake OPTIONAL)
 find_package(Threads)
 find_package(LibNaCl)
+include(nacl_path.cmake OPTIONAL)
+include(Pod2Man)
 
 if(NACL_FOUND AND CMAKE_THREAD_LIBS_INIT)
   add_executable(
