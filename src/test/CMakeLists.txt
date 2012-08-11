@@ -1,5 +1,15 @@
-INCLUDE_DIRECTORIES (${CMAKE_SOURCE_DIR})
-LINK_DIRECTORIES (${CMAKE_SOURCE_DIR})
+include_directories(${CMAKE_SOURCE_DIR})
+link_directories(${CMAKE_SOURCE_DIR})
 
-ADD_EXECUTABLE(test_dummy test_dummy.c tap.c ../xutils.c ../xmalloc.c)
-ADD_TEST(Test1 test_dummy)
+add_executable(
+  test_dummy
+  test_dummy.c
+  tap.c
+  ../xutils.c
+  ../xmalloc.c
+)
+
+add_test(
+  Test1
+  test_dummy
+)
