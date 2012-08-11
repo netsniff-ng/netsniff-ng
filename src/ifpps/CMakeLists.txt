@@ -1,21 +1,39 @@
-PROJECT(ifpps C)
+project(ifpps C)
 
-SET(BUILD_STRING "generic")
+set(BUILD_STRING "generic")
 
-FIND_PACKAGE(Curses)
-INCLUDE(Pod2Man)
+find_package(Curses)
+include(Pod2Man)
 
-IF(CURSES_FOUND)
-	ADD_EXECUTABLE(${PROJECT_NAME}	../xmalloc.c
-					../xio.c
-					../xutils.c
-					../ifpps.c)
-	ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"
-			-DVERSION_STRING="${VERSION}"
-			-DBUILD_STRING="${BUILD_STRING}")
-	TARGET_LINK_LIBRARIES(ifpps ${CURSES_NCURSES_LIBRARY})
-	POD2MAN(${CMAKE_SOURCE_DIR}/ifpps.c ifpps 8)
-	INSTALL(TARGETS ${PROJECT_NAME} DESTINATION ${EXECUTABLE_INSTALL_PATH})
-ELSE(CURSES_FOUND)
-	MESSAGE("ncurses is missing on target. Skipping ${PROJECT_NAME} build.")
-ENDIF(CURSES_FOUND)
+if(CURSES_FOUND)
+  add_executable(
+    ${PROJECT_NAME}
+    ../xmalloc.c
+    ../xio.c
+    ../xutils.c
+    ../ifpps.c
+  )
+
+  add_definitions(
+    -DPROGNAME_STRING="${PROJECT_NAME}"
+    -DVERSION_STRING="${VERSION}"
+    -DBUILD_STRING="${BUILD_STRING}"
+  )
+
+  target_link_libraries(
+    ${PROJECT_NAME}
+    ${CURSES_NCURSES_LIBRARY}
+  )
+
+  pod2man(
+    ${CMAKE_SOURCE_DIR}/ifpps.c
+    ${PROJECT_NAME} 8
+  )
+
+  install(
+    TARGETS ${PROJECT_NAME}
+    DESTINATION ${EXECUTABLE_INSTALL_PATH}
+  )
+else(CURSES_FOUND)
+  message("ncurses is missing on target. Skipping ${PROJECT_NAME} build.")
+endif(CURSES_FOUND)
