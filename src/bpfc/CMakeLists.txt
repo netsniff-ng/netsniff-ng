@@ -1,25 +1,48 @@
-PROJECT(bpfc C)
+project(bpfc C)
 
-SET(BUILD_STRING "generic")
+set(BUILD_STRING "generic")
 
-FIND_PACKAGE(FLEX)
-FIND_PACKAGE(BISON)
-INCLUDE(Pod2Man)
+find_package(FLEX)
+find_package(BISON)
+include(Pod2Man)
 
-IF (FLEX_FOUND AND BISON_FOUND)
-	FLEX_TARGET(BPF_LEXER ../bpf_lexer.l ${CMAKE_CURRENT_BINARY_DIR}/bpfc_lex.yy.c)
-	BISON_TARGET(BPF_PARSER ../bpf_parser.y ${CMAKE_CURRENT_BINARY_DIR}/bpf_parser.tab.c)
-	ADD_EXECUTABLE(${PROJECT_NAME} 	../xmalloc.c
-					../xutils.c
-					../bpf.c
-					${FLEX_BPF_LEXER_OUTPUTS}
-					${BISON_BPF_PARSER_OUTPUT_SOURCE}
-					../bpfc.c)
-	ADD_DEFINITIONS(-DPROGNAME_STRING="${PROJECT_NAME}"
-			-DVERSION_STRING="${VERSION}"
-			-DBUILD_STRING="${BUILD_STRING}")
-	POD2MAN(${CMAKE_SOURCE_DIR}/bpfc.c bpfc 8)
-	INSTALL(TARGETS ${PROJECT_NAME} DESTINATION ${EXECUTABLE_INSTALL_PATH})
-ELSE (FLEX_FOUND AND BISON_FOUND)
-	MESSAGE("either flex or bison is missing on target. Skipping ${PROJECT_NAME} build.")
-ENDIF (FLEX_FOUND AND BISON_FOUND)
+if(FLEX_FOUND AND BISON_FOUND)
+  flex_target(
+    BPF_LEXER ../bpf_lexer.l
+    ${CMAKE_CURRENT_BINARY_DIR}/bpfc_lex.yy.c
+  )
+
+  bison_target(
+    BPF_PARSER ../bpf_parser.y
+    ${CMAKE_CURRENT_BINARY_DIR}/bpf_parser.tab.c
+  )
+
+  add_executable(
+    ${PROJECT_NAME}
+    ../xmalloc.c
+    ../xutils.c
+    ../bpf.c
+    ${FLEX_BPF_LEXER_OUTPUTS}
+    ${BISON_BPF_PARSER_OUTPUT_SOURCE}
+    ../bpfc.c
+  )
+
+  add_definitions(
+    -DPROGNAME_STRING="${PROJECT_NAME}"
+    -DVERSION_STRING="${VERSION}"
+    -DBUILD_STRING="${BUILD_STRING}"
+  )
+
+  pod2man(
+    ${CMAKE_SOURCE_DIR}/bpfc.c
+    bpfc 8
+  )
+
+  install(
+    TARGETS ${PROJECT_NAME}
+    DESTINATION ${EXECUTABLE_INSTALL_PATH}
+  )
+else(FLEX_FOUND AND BISON_FOUND)
+  message("Either flex or bison is missing on target. "
+          "Skipping ${PROJECT_NAME} build.")
+endif(FLEX_FOUND AND BISON_FOUND)
