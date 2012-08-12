@@ -14,20 +14,18 @@ check_c_source_runs("
 #include <sys/socket.h>
 #include <linux/filter.h>
 
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 	struct sock_fprog bpf;
-	int empty;
-	int sock = 0;
+	int empty, sock = 0;
 
 	memset(&bpf, 0, sizeof(bpf));
 
 	setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER, &bpf, sizeof(bpf));
 	setsockopt(sock, SOL_SOCKET, SO_DETACH_FILTER, &empty, sizeof(empty));
+
 	exit(0);
-}
-" BPFATTACH_RUN_RESULT)
+}" BPFATTACH_RUN_RESULT)
 
 set(HAVE_BPF_ATTACH NO)
 
