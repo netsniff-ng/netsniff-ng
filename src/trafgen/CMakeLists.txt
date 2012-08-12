@@ -37,6 +37,12 @@ if(FLEX_FOUND AND BISON_FOUND AND LIBNL_FOUND)
     -DBUILD_STRING="${BUILD_STRING}"
   )
 
+  if(HAVE_HWTSTAMP)
+    add_definitions(
+      -D__WITH_HARDWARE_TIMESTAMPING
+    )
+  endif(HAVE_HWTSTAMP)
+
   target_link_libraries(
     ${PROJECT_NAME}
     ${LIBNL_LIBRARIES}

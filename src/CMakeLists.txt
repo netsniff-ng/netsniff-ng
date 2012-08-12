@@ -12,6 +12,7 @@ include(CheckBPFAttach)
 include(CheckPFPacket)
 include(CheckStrictAlign)
 include(CheckTxRing)
+include(CheckHwTimestamp)
 include(Pod2Man)
 
 add_definitions(
