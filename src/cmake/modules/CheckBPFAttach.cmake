@@ -5,9 +5,9 @@
 # Subject to the GPL, version 2.
 #
 
-INCLUDE(CheckCSourceRuns)
-      
-CHECK_C_SOURCE_RUNS("
+include(CheckCSourceRuns)
+
+check_c_source_runs("
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,13 +27,13 @@ main(int argc, char *argv[])
 	setsockopt(sock, SOL_SOCKET, SO_DETACH_FILTER, &empty, sizeof(empty));
 	exit(0);
 }
-"
-	BPFATTACH_RUN_RESULT)
+" BPFATTACH_RUN_RESULT)
 
-SET(HAVE_BPF_ATTACH NO)
-IF(BPFATTACH_RUN_RESULT EQUAL 1)
-    SET(HAVE_BPF_ATTACH YES)
-    MESSAGE(STATUS "System has SO_ATTACH_FILTER/SO_DETACH_FILTER support")
-ELSE(BPFATTACH_RUN_RESULT EQUAL 1)
-    MESSAGE(STATUS "System does not have SO_ATTACH_FILTER/SO_DETACH_FILTER support")
-ENDIF(BPFATTACH_RUN_RESULT EQUAL 1)
+set(HAVE_BPF_ATTACH NO)
+
+if(BPFATTACH_RUN_RESULT EQUAL 1)
+  set(HAVE_BPF_ATTACH YES)
+  message(STATUS "System has SO_ATTACH_FILTER/SO_DETACH_FILTER support")
+else(BPFATTACH_RUN_RESULT EQUAL 1)
+  message(STATUS "System has no SO_ATTACH_FILTER/SO_DETACH_FILTER support")
+endif(BPFATTACH_RUN_RESULT EQUAL 1)

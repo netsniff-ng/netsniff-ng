@@ -34,3 +34,4 @@ submit your contributions):
 29) Improve the kernel's net/packet/af_packet.c (that we rely on)
 30) Fix UDP+TCP tracking in flowtop.
 31) Improve manpages, extend the documentation or write useful howtos.
+32) CMake hardware-timestamp module, if available use it in netsniff-ng
