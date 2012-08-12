@@ -43,6 +43,11 @@ if(FLEX_FOUND AND BISON_FOUND)
     DESTINATION ${EXECUTABLE_INSTALL_PATH}
   )
 else(FLEX_FOUND AND BISON_FOUND)
-  message("Either flex or bison is missing on target. "
-          "Skipping ${PROJECT_NAME} build.")
+  if(NOT FLEX_FOUND)
+    message("flex is missing on target. Skipping ${PROJECT_NAME} build.")
+  endif(NOT FLEX_FOUND)
+
+  if(NOT BISON_FOUND)
+    message("bison is missing on target. Skipping ${PROJECT_NAME} build.")
+  endif(NOT BISON_FOUND)
 endif(FLEX_FOUND AND BISON_FOUND)

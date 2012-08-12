@@ -35,5 +35,5 @@ if(CURSES_FOUND)
     DESTINATION ${EXECUTABLE_INSTALL_PATH}
   )
 else(CURSES_FOUND)
-  message("ncurses is missing on target. Skipping ${PROJECT_NAME} build.")
+  message("libncurses is missing on target. Skipping ${PROJECT_NAME} build.")
 endif(CURSES_FOUND)

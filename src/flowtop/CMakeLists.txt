@@ -58,7 +58,25 @@ if(CURSES_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND LIBGEOIP_FOUND AND
   )
 else(CURSES_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND LIBGEOIP_FOUND AND
      LIBNETFILTER_CONNTRACK_FOUND AND LIBURCU_FOUND)
-  message("Either ncurses, pthread, libGeoIP, liburcu or netfilter_conntrack "
-          "is missing on target. Skipping ${PROJECT_NAME} build.")
+  if(NOT CURSES_FOUND)
+    message("libncurses is missing on target. Skipping ${PROJECT_NAME} build.")
+  endif(NOT CURSES_FOUND)
+
+  if(NOT CMAKE_HAVE_PTHREAD_CREATE)
+    message("libpthread is missing on target. Skipping ${PROJECT_NAME} build.")
+  endif(NOT CMAKE_HAVE_PTHREAD_CREATE)
+
+  if(NOT LIBGEOIP_FOUND)
+    message("libgeoip is missing on target. Skipping ${PROJECT_NAME} build.")
+  endif(NOT LIBGEOIP_FOUND)
+
+  if(NOT LIBNETFILTER_CONNTRACK_FOUND)
+    message("libnetfilter_conntrack is missing on target. "
+            "Skipping ${PROJECT_NAME} build.")
+  endif(NOT LIBNETFILTER_CONNTRACK_FOUND)
+
+  if(NOT LIBURCU_FOUND)
+    message("liburcu is missing on target. Skipping ${PROJECT_NAME} build.")
+  endif(NOT LIBURCU_FOUND)
 endif(CURSES_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND LIBGEOIP_FOUND AND
       LIBNETFILTER_CONNTRACK_FOUND AND LIBURCU_FOUND)

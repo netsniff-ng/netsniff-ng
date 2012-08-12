@@ -53,7 +53,14 @@ if(NACL_FOUND AND CMAKE_THREAD_LIBS_INIT)
     DESTINATION ${EXECUTABLE_INSTALL_PATH}
   )
 else(NACL_FOUND AND CMAKE_THREAD_LIBS_INIT)
-  message("NaCl was not found. Check if NACL_INCLUDE_DIR and NACL_LIB_DIR "
-          "are properly set in nacl_path.cmake. Skipping ${PROJECT_NAME} "
-          "build")
+  if(NOT NACL_FOUND)
+    message("NaCl was not found. Check if NACL_INCLUDE_DIR and NACL_LIB_DIR "
+            "are properly set in nacl_path.cmake. Skipping ${PROJECT_NAME} "
+            "build.")
+  endif(NOT NACL_FOUND)
+
+  if(NOT CMAKE_THREAD_LIBS_INIT)
+    message("libpthread is missing on target. Skipping ${PROJECT_NAME} build.")
+  endif(NOT CMAKE_THREAD_LIBS_INIT)
+
 endif(NACL_FOUND AND CMAKE_THREAD_LIBS_INIT)

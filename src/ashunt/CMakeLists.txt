@@ -47,6 +47,11 @@ if(LIBGEOIP_FOUND AND CMAKE_HAVE_PTHREAD_CREATE)
     DESTINATION ${CONFIG_INSTALL_PATH}
   )
 else(LIBGEOIP_FOUND AND CMAKE_HAVE_PTHREAD_CREATE)
-  message("libgeoip is missing on target. "
-          "Skipping ${PROJECT_NAME} build.")
+  if(NOT LIBGEOIP_FOUND)
+    message("libgeoip is missing on target. Skipping ${PROJECT_NAME} build.")
+  endif(NOT LIBGEOIP_FOUND)
+
+  if(NOT CMAKE_HAVE_PTHREAD_CREATE)
+    message("libpthread is missing on target. Skipping ${PROJECT_NAME} build.")
+  endif(NOT CMAKE_HAVE_PTHREAD_CREATE)
 endif(LIBGEOIP_FOUND AND CMAKE_HAVE_PTHREAD_CREATE)

@@ -96,6 +96,11 @@ if(CMAKE_HAVE_PTHREAD_CREATE AND LIBNL_FOUND)
   )
 
 else(CMAKE_HAVE_PTHREAD_CREATE AND LIBNL_FOUND)
-  message("pthread or libnl is missing on target. "
-          "Skipping ${PROJECT_NAME} build.")
+  if(NOT CMAKE_HAVE_PTHREAD_CREATE)
+    message("libpthread is missing on target. Skipping ${PROJECT_NAME} build.")
+  endif(NOT CMAKE_HAVE_PTHREAD_CREATE)
+
+  if(NOT LIBNL_FOUND)
+    message("libnl is missing on target. Skipping ${PROJECT_NAME} build.")
+  endif(NOT LIBNL_FOUND)
 endif(CMAKE_HAVE_PTHREAD_CREATE AND LIBNL_FOUND)
