@@ -5,40 +5,40 @@
 # Subject to the GPL, version 2.
 #
 
-# - Find Userspace Read-Copy-Update library
-# Find liburcu includes and library.
-# Once done this will define
-#
-#  LIBURCU_INCLUDE_DIR    - where to find header files, etc.
-#  LIBURCU_LIBRARY        - List of LIBURCU libraries.
-#  LIBURCU_FOUND          - True if liburcu is found.
-#
+# Find liburcu includes and library. This module defines:
+#  LIBURCU_FOUND       - whether the liburcu library was found
+#  LIBURCU_LIBRARY     - the liburcu library
+#  LIBURCU_INCLUDE_DIR - the include path of the liburcu library
 
-FIND_PATH(LIBURCU_ROOT_DIR
-    NAMES include/urcu.h
+set(LIBURCU_NAME urcu)
+
+find_library(
+  LIBURCU_LIBRARY
+  NAMES ${LIBURCU_NAME}
+  HINTS ${LIBURCU_ROOT_DIR}/lib
 )
 
-SET(LIBURCU_NAME urcu)
-
-FIND_LIBRARY(LIBURCU_LIBRARY
-    NAMES ${LIBURCU_NAME}
-    HINTS ${LIBURCU_ROOT_DIR}/lib
+find_path(
+  LIBURCU_ROOT_DIR
+  NAMES include/urcu.h
 )
 
-FIND_PATH(LIBURCU_INCLUDE_DIR
-    NAMES urcu.h
-    HINTS ${LIBURCU_ROOT_DIR}/include
+find_path(
+  LIBURCU_INCLUDE_DIR
+  NAMES urcu.h
+  HINTS ${LIBURCU_ROOT_DIR}/include
 )
 
-# handle the QUIETLY and REQUIRED arguments and set LIBURCU_FOUND to TRUE if 
-# all listed variables are TRUE
-INCLUDE(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(liburcu REQUIRED_VARS
-	LIBURCU_LIBRARY
-	LIBURCU_INCLUDE_DIR)
+include(FindPackageHandleStandardArgs)
 
-MARK_AS_ADVANCED(
-	LIBURCU_ROOT_DIR
-	LIBURCU_LIBRARY
-    	LIBURCU_INCLUDE_DIR
+find_package_handle_standard_args(
+  liburcu REQUIRED_VARS
+  LIBURCU_LIBRARY
+  LIBURCU_INCLUDE_DIR
+)
+
+mark_as_advanced(
+  LIBURCU_ROOT_DIR
+  LIBURCU_LIBRARY
+  LIBURCU_INCLUDE_DIR
 )
