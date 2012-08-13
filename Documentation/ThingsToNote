@@ -1,9 +1,0 @@
-Things to note when using netsniff-ng:
-//////////////////////////////////////
-
-If not otherwise specified, netsniff-ng tries to get a good performance on
-default. For instance, this includes things like tuning the system's socket
-memory, enabling the BPF JIT compiler, migrating the NIC's interrupt affinity
-and so on. If you don't want netsniff-ng to do this, look at the relevant cmd
-line options that disable them with ``--help'' and explicitly specify them on
-the program start.

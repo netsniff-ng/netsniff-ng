@@ -52,6 +52,13 @@ A: We have fixed this ``bug'' in the Linux kernel under commit
    7f5c3e3a80e6654cf48dfba7cf94f88c6b505467 (http://bit.ly/PcH5Nd). Either
    update your kernel to the latest version, e.g. clone and build it from
    git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git or don't
-   start multiple trafgen instances at once resp. start trafgen with flag -A!
-   Although trafgen's mechanism is written in a correct manner, some probably
-   Linux internal side-effects cause the tigger of the BUG macro.
+   start multiple trafgen instances at once resp. start trafgen with flag -A
+   to disable temporary socket memory tuning! Although trafgen's mechanism is
+   written in a correct manner, some probably Linux internal side-effects
+   cause the tigger of the BUG macro. Why tuning? In general, if not otherwise
+   specified, the netsniff-ng suite tries to get a good performance on default.
+   For instance, this includes things like tuning the system's socket memory,
+   enabling the BPF JIT compiler, migrating the NIC's interrupt affinity and
+   so on. If you don't want netsniff-ng to do this, look at the relevant cmd
+   line options that disable them with ``--help'' and explicitly specify them
+   on the program start.
