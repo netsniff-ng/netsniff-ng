@@ -2,16 +2,17 @@ Here's a list of things we need to do (contributions are welcome and highly
 appreciated, please also read Documentation/SubmittingPatches about how to
 submit your contributions):
 
+ 0) Improve manpages, extend the documentation or write useful howtos.
  1) Highest prio: Cleanup and refactor the code and build system to make it
     more maintainable, stable, and probably faster!
  2) Implement test cases with libtap (src/test/). Make the output readable
     (currently cmake hides it all).
  3) Add full IPv6 support for ashunt and flowtop, test IPv6 on curvetun.
- 5) Make trafgen write to a pcap instead to a device.
+ 5) Make trafgen also write to a pcap instead to a device.
  6) Let netsniff-ng and trafgen support pcap and pcap-ng!
  7) Include an ARP cache poisoning switch into netsniff-ng, or as a tool.
  8) gremlin: fork + fanout mode for a threaded netsniff-ng and trafgen
-    front-end with Cisco-cli for a hw/sw applicance.
+    front-end with Cisco-cli for a hw/sw applicance. Do it Mausezahn like.
 10) Add a proper 802.11 dissector for netsniff-ng.
 11) Add WEP/WPA (live) decryption support, where keys are passed via cmdline.
 12) Add new dissectors (e.g. BGP, DNS, DCCP, SCTP, RSVP, IPsec, LISP, RADIUS,
@@ -30,6 +31,5 @@ submit your contributions):
 25) Do performance tests with 10 Gigabit cards.
 27) Integration of our repository with Travis-CI
 28) Remove liburcu dependency from flowtop
-29) Improve the kernel's net/packet/af_packet.c (that we rely on)
+29) Improve the Linux kernel's net/packet/af_packet.c (that we rely on)
 30) Fix UDP+TCP tracking in flowtop.
-31) Improve manpages, extend the documentation or write useful howtos.
