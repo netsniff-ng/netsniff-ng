@@ -25,7 +25,6 @@ submit your contributions):
 17) Security review of curvetun.
 21) Obfuscate curvetun's protocol to make it hard/resource-intensive for DPIs.
 22) Add different timing models to trafgen, not just a static interpacket gap.
-23) Check if we can further improve linux-net/net/packet/af_packet.c.
 24) Do we need TPACKETV2 or even TPACKETV3 if it is eventually implemented?
     Are there performance benefits?
 25) Do performance tests with 10 Gigabit cards.
@@ -34,4 +33,3 @@ submit your contributions):
 29) Improve the kernel's net/packet/af_packet.c (that we rely on)
 30) Fix UDP+TCP tracking in flowtop.
 31) Improve manpages, extend the documentation or write useful howtos.
-32) CMake hardware-timestamp module, if available use it in netsniff-ng
