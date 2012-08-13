@@ -300,7 +300,7 @@ static void help(void)
 	printf("Examples:\n");
 	printf("  See trafgen.txf for configuration file examples.\n");
 	printf("  trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0\n");
-	printf("  trafgen --dev wlan0 --rfraw --conf beacon-test.txf --bind-cpu 0\n");
+	printf("  trafgen --dev wlan0 --rfraw --conf beacon-test.txf --bind-cpu 0 -A\n");
 	printf("  trafgen --out eth0 --in trafgen.txf --bind-cpu 0\n");
 /*	printf("  trafgen --out test.pcap --in trafgen.txf --bind-cpu 0\n"); */
 	printf("  trafgen --dev eth0 --conf trafgen.txf --rand --gap 1000\n");
@@ -610,7 +610,7 @@ int main(int argc, char **argv)
 	int vals[4] = {0};
 	char *confname = NULL, *ptr;
 	bool prio_high = false;
-	bool setsockmem = false; //true; TODO: fix kernel on TX first!
+	bool setsockmem = true;
 	struct mode mode;
 
 	check_for_root_maybe_die();

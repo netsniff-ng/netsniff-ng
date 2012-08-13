@@ -5,7 +5,6 @@ Q: When I perform a traffic capture on the Ethernet interface, the PCAP file is
    created and packets are received but without 802.1Q header. If I use
    tshark, I get all headers but netsniff-ng removes 802.1Q headers. Is that
    normal behavior?
-
 A: Yes and no. The way how VLAN headers are handled in PF_PACKET sockets by the
    kernel is somewhat problematic [1]. The problem in the Linux kernel is that
    some drivers already handle VLAN, others not. Those who handle it have
@@ -47,3 +46,12 @@ A: Yes and no. The way how VLAN headers are handled in PF_PACKET sockets by the
     transferred to the userland.
 
     [1] http://lkml.indiana.edu/hypermail/linux/kernel/0710.3/3816.html
+
+Q: When I start trafgen, my kernel crashes! What is happening?
+A: We have fixed this ``bug'' in the Linux kernel under commit
+   7f5c3e3a80e6654cf48dfba7cf94f88c6b505467 (http://bit.ly/PcH5Nd). Either
+   update your kernel to the latest version, e.g. clone and build it from
+   git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git or don't
+   start multiple trafgen instances at once resp. start trafgen with flag -A!
+   Although trafgen's mechanism is written in a correct manner, some probably
+   Linux internal side-effects cause the tigger of the BUG macro.
