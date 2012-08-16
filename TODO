@@ -33,3 +33,5 @@ submit your contributions):
 28) Remove liburcu dependency from flowtop
 29) Improve the Linux kernel's net/packet/af_packet.c (that we rely on)
 30) Fix UDP+TCP tracking in flowtop.
+31) ashunt: implement reverse traceroute, DNS traceroute for detecting
+    DNS injections.
