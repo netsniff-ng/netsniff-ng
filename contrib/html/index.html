@@ -87,7 +87,7 @@
     <b>Mailing list:</b>
   </td>
   <td valign="top">
-    via <a href="http://groups.google.com/group/netsniff-ng">Google</a> (<a href="http://news.gmane.org/gmane.linux.network.netsniff-ng">M</a>, <a href="http://www.mail-archive.com/netsniff-ng%40googlegroups.com/">M</a>, <a href="http://stackoverflow.com/search?q=netsniff-ng">S</a>), <a href="http://tools.ietf.org/html/rfc1855">How to Post</a>
+    via <a href="http://groups.google.com/group/netsniff-ng">Google</a> (<a href="http://news.gmane.org/gmane.linux.network.netsniff-ng">M</a>, <a href="http://www.mail-archive.com/netsniff-ng%40googlegroups.com/">M</a>), <a href="http://tools.ietf.org/html/rfc1855">How to Post</a>
   </td>
 </tr>
 <tr>
@@ -95,7 +95,7 @@
     <b>Contribute:</b>
   </td>
   <td valign="top">
-    <a href="mailto:workgroup@netsniff-ng.org">Sponsorship</a>, <a href="https://github.com/gnumaniacs/netsniff-ng/blob/master/TODO">Hack the Code</a>
+    <a href="https://github.com/gnumaniacs/netsniff-ng/blob/master/TODO">Hack the Code</a>, <a href="https://github.com/gnumaniacs/netsniff-ng/blob/master/Documentation/SubmittingPatches">How to Hack</a>
   </td>
 </tr>
 </table>
@@ -107,7 +107,7 @@ netsniff-ng is a free, performant Linux networking toolkit.
 <br><br>
 The gain of performance is reached by zero-copy mechanisms, so that on packet reception <i>and</i> transmission the kernel does not need to copy packets from kernel space to user space and vice versa.
 <br><br>
-For this purpose, the netsniff-ng toolkit is libpcap independent, but nevertheless supports the pcap file format for capturing, replaying and performing offline-analysis of pcap dumps. Furthermore, we are focussing on building a robust and clean analyzer and utilities that complete netsniff-ng as a support for network development, debugging or network reconnaissance.
+Our toolkit can be used for network development and analysis, debugging, auditing or network reconnaissance.
 <br><br>
 The netsniff-ng toolkit consists of the following utilities:
 <ul>
@@ -120,7 +120,6 @@ The netsniff-ng toolkit consists of the following utilities:
   <li><b>ashunt</b>, an Autonomous System (AS) trace route and ISP testing utility</li>
 </ul>
 <p>
-(Note: <a href="http://www.tcpdump.org/">libpcap</a> starting from 1.0.0 now also supports zero-copy, but for capturing only! netsniff-ng's pcap files can also be opened with tools like <a href="http://www.wireshark.org/">Wireshark</a>, and vice versa!)
 
 <h2>Development</h2>
 <p>
@@ -136,74 +135,31 @@ For reporting bugs please use our <a href="http://bugs.netsniff-ng.org/">bug tra
 <p>
 <b>Contribute</b>
 <p>
-If you think this software is great, then please consider <a href="http://flattr.com/thing/421382/gnumaniacs-devs" target="_blank">donating</a> (Flattr) some money to help us to keep up development, server fees, or travelling costs for conferences. If you would like to help otherwise, we would like to see more people to:
+If you think this software is great, then please consider to contribute in one of the following ways:
 <ul>
-  <li>Review and contribute to the <a href="https://github.com/gnumaniacs/netsniff-ng">source code</a> (see <a href="https://github.com/gnumaniacs/netsniff-ng/blob/master/Documentation/Projects">projects</a> file)</li>
-  <li>Add or improve documentation, Man-pages, write interesting howtos</li>
+  <li>Review and contribute to the <a href="https://github.com/gnumaniacs/netsniff-ng">source code</a> (see <a href="https://github.com/gnumaniacs/netsniff-ng/blob/master/TODO">todo</a> file)</li>
+  <li>Add or improve documentation, Man-pages, write interesting howtos or blog articles</li>
+  <li>Mention us in your talks at conferences</li>
   <li>Maintain distribution specific packages</li>
   <li>Donate hardware, networking equipment, especially for 10-Gbit/s-Ethernet</li>
-  <li>Test netsniff-ng on your specific platform, especially on non-x86</li>
+  <li>Test netsniff-ng on your specific platform, especially on non-x86/x86_64</li>
 </ul>
 <p>
-Currently, netsniff-ng is only available for Linux platforms. If you have a port for *BSD, let us know for merging your port into the main source tree. However, please do NOT PORT netsniff-ng to Windows or other proprietary crap! (Here is a nice explanation why; we really share <a href="http://www.fefe.de/nowindows/">Felix von Leitner's point of view</a>.)
+Currently, netsniff-ng is only available for Linux platforms. If you have a port for *BSD, let us know for merging your port into the main source tree. However, please do not port netsniff-ng to Windows or other proprietary junk! Here is a nice explanation why; we share Felix von Leitner's <a href="http://www.fefe.de/nowindows/">point of view</a>.
 
 <h2>Documentation</h2>
 <p>
-The man page of each stable release of netsniff-ng will cover all of the usage details. It is included within the source code distribution package. We also have a <a href="faq.html">frequently asked question</a> page. Furthermore, the documents within the <a href="https://github.com/gnumaniacs/netsniff-ng">repository</a> will give you some useful information.
+The man page of each stable release of netsniff-ng will cover all of the usage details. It is included within the source code distribution package. We also have a <a href="faq.html">frequently asked question</a> page. Furthermore, the documents within the <a href="https://github.com/gnumaniacs/netsniff-ng/tree/master/Documentation">repository</a> will give you some useful information.
 <p>
 To dig into the inner workings of the Berkeley Packet Filter architecture, have a look at <a href="bpf.pdf">this</a>.
 <p>
 Documentation about the ``packet_mmap'' architecture with ``pf_packet'' sockets for the Linux kernel can be downloaded from <a href="http://www.kernel.org/">kernel.org</a> under <a href="http://lxr.linux.no/linux+v3.2.9/Documentation/networking/packet_mmap.txt">packet_mmap.txt</a>.
-<p>
-If you need the netsniff-ng logo in vector format, feel free to use them from our repository either in <a href="https://github.com/gnumaniacs/netsniff-ng/blob/master/contrib/art/netsniff_logo3_paths.pdf">black</a> or <a href="https://github.com/gnumaniacs/netsniff-ng/blob/master/contrib/art/netsniff_logo3_paths_white.pdf">white</a>.
 
 <h2>Support</h2>
 <p>
 A mailing list for netsniff-ng moderated (spam free) user discussions is open to the <a href="http://groups.google.com/group/netsniff-ng">public</a>. Subscribe and mail to <script type="text/javascript">InsertMail("netsniff-ng", "googlegroups", "com");</script>. There's also an archive at <a href="http://dir.gmane.org/gmane.linux.network.netsniff-ng">Gmane</a> and a <a href="http://www.mail-archive.com/netsniff-ng%40googlegroups.com/">searchable archive</a>.
 <p>
-Before posting questions, have a look at our <a href="faq.html">FAQ</a>.
-
-<h2>netsniff-ng around the world</h2>
-<p>
-<table width="90%">
-<tr>
-<td valign="top" width="30%">
-Distribution specific packages - a huge thanks to our awesome maintainers - may be found here:
-<ul>
-  <li><a href="http://packages.debian.org/search?keywords=netsniff-ng">Debian</a> - by <a href="http://people.debian.org/~kartik/">Kartik Mistry</a></li>
-  <li><a href="https://admin.fedoraproject.org/pkgdb/acls/name/netsniff-ng">Fedora/RHEL</a> - by <a href="http://fedoraproject.org/wiki/User:Jskala">Jiří Skála </a></li>
-  <li><a href="https://launchpad.net/ubuntu/+source/netsniff-ng/">Ubuntu</a> - pulled from Debian</li>
-  <li><a href="http://aur.archlinux.org/packages.php?K=netsniff-ng">Arch Linux</a> - by <a href="mailto:dcelasun@nospam.gmail.com">Dcelasun</a></li>
-  <li><a href="http://packages.gentoo.org/package/net-analyzer/netsniff-ng">Gentoo</a> - by <a href="mailto:xmw@nospam.gentoo.org">Michael Weber</a></li>
-  <li><a href="http://gpo.zugaina.org/net-misc/netsniff-ng">Sabayon</a> - by <a href="mailto:epinephrineaddict@nospam.gmail.com">Epinephrine</a></li>
-  <li><a href="http://www.slackers.it/repository/netsniff-ng/">Slackware</a> - by <a href="mailto:conraid@nospam.gmail.com">Corrado Franco</a></li>
-  <li><a href="http://software.opensuse.org/search?baseproject=ALL&amp;p=1&amp;q=netsniff-ng">openSUSE/SLE</a> - by <a href="mailto:pascal.bleser@nospam.skynet.be">Pascal Bleser</a></li>
-  <li><a href="http://sophie.zarb.org/srpm/Mandriva,cooker,/netsniff-ng">Mandriva</a> - by <a href="mailto:guillomovitch@nospam.mandriva.org">Guillaume Rousse</a></li>
-  <li><a href="http://packages.trisquel.info/slaine/net/netsniff-ng">Trisquel</a> - pulled from Debian</li>
-  <li><a href="http://grml.org/">GRML</a> - pulled from Debian</li>
-  <li><a href="http://git.alpinelinux.org/cgit/aports.git/commit/?id=43f91b3d133e6937a3de8372f60733d02f3fa065">Alpine Linux</a> - by <a href="mailto:fabian@nospam.affolter-engineering.ch">Fabian Affolter</a></li>
-</ul>
-</td>
-<td valign="top">
-Some selected documents and other resources may be found here:
-<ul>
-  <li><a href="http://files.kramse.org/tmp/creative-packets-screen.pdf">Creative packets for Network Operators</a></li>
-  <li><a href="http://pastebin.com/1aHHYbGC">Fedora's Security Spin</a></li>
-  <li><a href="http://www.xplico.org/archives/1184">netsniff-ng for Xplico</a></li>
-  <li><a href="http://carnivore.it/2011/12/27/linux_3.0_bpf_jit_x86_64_exploit">Linux 3.0 BPF JIT x86_64 exploit (utilized bpfc)</a></li>
-  <li><a href="http://www.cs.columbia.edu/~hgs/internet/traffic-generator.html">Columbia University</a></li>
-  <li><a href="http://wiki.networksecuritytoolkit.org/nstwiki/index.php/LAN_Ethernet_Maximum_Rates,_Generation,_Capturing_%26_Monitoring">NST Wiki article, including netsniff-ng</a></li>
-  <li><a href="http://sickbits.networklabs.org/wordpress/netsniff-ng-performant-packet-sniff/">Netsniff-ng usage tutorial</a></li>
-  <li><a href="http://wiki.alpinelinux.org/wiki/Alpine_security">Alpine Linux Security Toolset</a></li>
-  <li><a href="http://directory.fsf.org/wiki/Netsniff-ng">netsniff-ng at FSF directory</a></li>
-  <li><a href="http://packetpushers.net/could-you-set-the-go-faster-bit/">Could You Set the "Go Faster" Bit?</a></li>
-  <li><a href="http://lwn.net/Articles/490674/">Linux Weekly News (LWN) Article</a></li>
-  <li><a href="http://netsniff-ng.spreadshirt.de/">netsniff-ng at Spreadshirt (commission-free)</a></li>
-  <li><a href="http://www.youtube.com/watch?feature=player_embedded&v=26_BFP3Zy9c">An Introduction to Traffic Analysis: A Pragmatic Approach</a></li>
-</ul>
-</td>
-</tr>
-</table>
+Before posting questions, have a look at our <a href="faq.html">FAQ</a>.<br><br>
 
 <p>
 <a href="http://www.debian.org/"><img src="http://netsniff-ng.org/img/debian.png" border="0" alt="powered by Debian"></a>&nbsp;
@@ -211,7 +167,6 @@ Some selected documents and other resources may be found here:
 <a href="http://www.anybrowser.org/campaign/"><img src="http://netsniff-ng.org/img/vt100.gif" border="0" alt="best viewed with vt100"></a>&nbsp;
 <a href="http://eupat.ffii.org/"><img src="http://netsniff-ng.org/img/no_epatent.png" border="0" alt="no epatents"></a>&nbsp;
 <a href="http://www.laquadrature.net/"><img src="http://netsniff-ng.org/img/qdn.png" border="0" alt="qdn"></a>
-
 <table border="0" width="90%">
 <tr>
   <td>
