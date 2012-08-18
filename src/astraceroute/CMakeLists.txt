@@ -34,7 +34,7 @@ if(LIBGEOIP_FOUND AND CMAKE_HAVE_PTHREAD_CREATE)
   )
 
   pod2man(
-    ${CMAKE_SOURCE_DIR}/astraceroute.c
+    ${CMAKE_SOURCE_DIR}/../Documentation/Manpages/${PROJECT_NAME}.8
     ${PROJECT_NAME} 8
   )
 

@@ -1,0 +1,124 @@
+=head1 NAME
+
+trafgen - a high-performance zero-copy network packet generator
+
+=head1 SYNOPSIS
+
+trafgen	[-d|--dev <netdev>][-c|--conf <file>][-J|--jumbo-support]
+	[-n|--num <uint>][-r|--rand][-t|--gap <usec>]
+	[-S|--ring-size <size>][-k|--kernel-pull <usec>][-b|--bind-cpu <cpu>]
+	[-B|--unbind-cpu <cpu>][-H|--prio-high][-Q|--notouch-irq][-v|--version]
+	[-h|--help]
+
+=head1 DESCRIPTION
+
+A high-performance network traffic generator that uses the zero-copy TX_RING
+for network I/O. For instance, on comodity Gigabit hardware up to 1,488,095 pps
+64 Byte pps have been achieved with trafgen.
+
+=head1 OPTIONS
+
+=over
+
+=item trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0
+
+Use packet configuration trafgen.txf, eth0 as transmission device and CPU0
+for binding the process.
+
+=back
+
+=head1 OPTIONS
+
+=over
+
+=item -h|--help
+
+Print help text and lists all options.
+
+=item -v|--version
+
+Print version.
+
+=item -d|--dev <netdev>
+
+Device for transmission i.e., eth0.
+
+=item -c|--conf <conf>
+
+Path to packet configuration file.
+
+=item -J|--jumbo-support
+
+Support for 64KB Super Jumbo Frames
+
+=item -n|--num <uint>
+
+Number of packets to generate before exiting.
+0 means forever until SIGINT.
+
+=item -r|--rand
+
+Randomize packet selection process instead of round-robin.
+
+=item -t|--gap <uint>
+
+Interpacket gap in microseconds.
+
+=item -S|--ring-size <size>
+
+Manually set ring size to <size>: mmap space in KB/MB/GB.
+
+=item -k|--kernel-pull <uint>
+
+Kernel pull from user interval in microseconds.
+Default value is 10 microseconds.
+
+=item -b|--bind-cpu <cpu>
+
+Bind to specific CPU (or CPU-range).
+
+=item -B|--unbind-cpu <cpu>
+
+Forbid to use specific CPU (or CPU-range).
+
+=item -H|--prio-high
+
+Make this high priority process.
+
+=item -Q|--notouch-irq
+
+Do not touch IRQ CPU affinity of NIC.
+
+=back
+
+=head1 EXAMPLES
+
+=over
+
+=item Generate traffic defined in trafgen.txf on eth0 using CPU 0
+
+trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0
+
+=item Generate traffic on eth0 using CPU 0, wait 100 us between packets
+
+trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0 --gap 100
+
+=item Generate 100,000 packet on eth0 using CPU 0
+
+trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0 --num 100000
+
+=back
+
+=head1 AUTHOR
+
+Written by Daniel Borkmann <daniel@netsniff-ng.org>
+
+=head1 DOCUMENTATION
+
+Documentation by Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+=head1 BUGS
+
+Please report bugs to <bugs@netsniff-ng.org>
+
+=cut

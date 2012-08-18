@@ -26,7 +26,7 @@ if(CURSES_FOUND)
   )
 
   pod2man(
-    ${CMAKE_SOURCE_DIR}/ifpps.c
+    ${CMAKE_SOURCE_DIR}/../Documentation/Manpages/${PROJECT_NAME}.8
     ${PROJECT_NAME} 8
   )
 

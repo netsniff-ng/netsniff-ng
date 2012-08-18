@@ -45,7 +45,7 @@ The installation process done by cmake is fairly simple:
   $ make
   # make install
 
-Man pages are generated out of the corresponding source files by cmake.
+Man pages are generated out of the files from Documentation/Manpages dir.
 They are written in POD format as a C header comment within those files.
 For this, you need the tool pod2man which is distributed with Perl and
 should therefore be available on most systems.

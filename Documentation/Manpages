@@ -1,2 +1,0 @@
-Each tool has it's man page integrated as a header comment in POD format.
-Hence, check out src/<tool>.c for performing changes on the tool's man page.

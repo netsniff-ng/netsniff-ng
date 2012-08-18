@@ -44,7 +44,7 @@ if(NACL_FOUND AND CMAKE_THREAD_LIBS_INIT)
   )
 
   pod2man(
-    ${CMAKE_SOURCE_DIR}/curvetun.c
+    ${CMAKE_SOURCE_DIR}/../Documentation/Manpages/${PROJECT_NAME}.8
     ${PROJECT_NAME} 8
   )
 

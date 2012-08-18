@@ -43,7 +43,7 @@ if(CURSES_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND LIBGEOIP_FOUND AND
   )
 
   pod2man(
-    ${CMAKE_SOURCE_DIR}/flowtop.c
+    ${CMAKE_SOURCE_DIR}/../Documentation/Manpages/${PROJECT_NAME}.8
     ${PROJECT_NAME} 8
   )
 

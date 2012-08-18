@@ -76,7 +76,7 @@ if(CMAKE_HAVE_PTHREAD_CREATE AND LIBNL_FOUND)
   )
 
   pod2man(
-    ${CMAKE_SOURCE_DIR}/netsniff-ng.c
+    ${CMAKE_SOURCE_DIR}/../Documentation/Manpages/${PROJECT_NAME}.8
     ${PROJECT_NAME} 8
   )
 
