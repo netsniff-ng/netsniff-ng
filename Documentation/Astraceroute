@@ -1,16 +1,16 @@
-What is ashunt?
-///////////////
+What is astraceroute?
+/////////////////////
 
-ashunt is an Autonomous System (AS) trace route utility. The idea behind
-ashunt was that unlike traceroute or tcptraceroute it should not only
+astraceroute is an Autonomous System (AS) trace route utility. The idea behind
+astraceroute was that unlike traceroute or tcptraceroute it should not only
 display hops, but also their AS numbers they belong to as well as physical
 locations and other useful information.
 
-Have a short look at an example output of ashunt. We're doing an AS trace
+Have a short look at an example output of astraceroute. We're doing an AS trace
 route to baidu.com (note: hop 1 till 6 have been removed):
 
-# ashunt -i eth0 -N -E -S -H baidu.com
-ashunt 0.5.6
+# astraceroute -i eth0 -N -E -S -H baidu.com
+astraceroute 0.5.6
 AS path IPv4 TCP trace from *.*.*.* to 220.181.111.86:80 (baidu.com) with
 len 40 Bytes, 30 max hops
 Using flags SYN:1,ACK:0,ECN:1,FIN:0,PSH:0,RST:0,URG:0
@@ -53,14 +53,14 @@ Using flags SYN:1,ACK:0,ECN:1,FIN:0,PSH:0,RST:0,URG:0
 19: * * * * * ^C
 #
 
-In our case, on default, ashunt tries to perform a TCP SYN connection
-establishment with a TTL number that corresponds to the wanted hop. If ashunt
-does not receive a ICMP type 11 reply ('time to live exceeded in transit',
-RFC792) after 3 tries (default), then it falls back to an ICMP echo request
-with a specified TTL value for this hop. This behaviour can, for instance,
-be observed in hop 8 and 10.
+In our case, on default, astraceroute tries to perform a TCP SYN connection
+establishment with a TTL number that corresponds to the wanted hop. If
+astraceroute does not receive a ICMP type 11 reply ('time to live exceeded
+in transit', RFC792) after 3 tries (default), then it falls back to an ICMP
+echo request with a specified TTL value for this hop. This behaviour can, for
+instance, be observed in hop 8 and 10.
 
-ashunt prints out the following information in this example:
+astraceroute prints out the following information in this example:
  - Reverse DNS name of hop
  - IP address of hop
  - AS number
@@ -73,13 +73,14 @@ ashunt prints out the following information in this example:
  - AS registered since
  - Name of AS
 
-Note that ashunt does not stop automatically if the last hop has been reached
-since there is no generic possibility to determine this with an arbitrarily
-assembled TCP packet that does not necessarily have the SYN flag set.
+Note that astraceroute does not stop automatically if the last hop has been
+reached since there is no generic possibility to determine this with an
+arbitrarily assembled TCP packet that does not necessarily have the SYN flag
+set.
 
-With ashunt, you can also specify a bunch of other information that shall be
-encoded into the probe packet. Next to IP and TCP fields, you can also tell
-ashunt to encode an ASCII string into the packets payload. This can be done
-with the command line option --payload <string>. Thus, if you enable
+With astraceroute, you can also specify a bunch of other information that shall
+be encoded into the probe packet. Next to IP and TCP fields, you can also tell
+astraceroute to encode an ASCII string into the packets payload. This can be
+done with the command line option --payload <string>. Thus, if you enable
 --show-packet which prints out the returned packet, you can possibly determine
 if the AS/ISP tries to censor certain packet probes with 'critical' words in it.

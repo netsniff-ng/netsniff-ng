@@ -18,21 +18,16 @@ The gain of performance is reached by zero-copy mechanisms, so that on packet
 reception and transmission the kernel does not need to copy packets from kernel
 space to user space and vice versa.
 
-For this purpose, the netsniff-ng toolkit [1] is libpcap independent, but
-nevertheless supports the pcap file format for capturing, replaying and
-performing offline-analysis of pcap dumps. Furthermore, this project focusses
-on building a robust, fast and clean analyzer and utilities that complete
-netsniff-ng as a support for network development, debugging or network
-reconnaissance.
-
-The netsniff-ng toolkit currently consists of the following utilities:
+The netsniff-ng toolkit can be used for network development and analysis,
+debugging, auditing or network reconnaissance. It currently consists of the
+following utilities:
 
   * netsniff-ng: a zero-copy packet analyzer, pcap capturing/replaying tool
   * trafgen: a zero-copy network packet generator
   * gremlin: a threaded analyzer/generator with Cisco-cli for hw/sw appliances
   * ifpps: a top-like kernel networking and system statistics tool
   * curvetun: a lightweight curve25519-based multiuser IP tunnel
-  * ashunt: an autonomous system trace route and DPI testing utility
+  * astraceroute: an autonomous system trace route and DPI testing utility
   * flowtop: a top-like netfilter connection tracking tool
   * bpfc: a tiny Berkeley Packet Filter compiler with Linux extensions
 
