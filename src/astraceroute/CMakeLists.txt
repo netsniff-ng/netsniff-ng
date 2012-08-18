@@ -1,4 +1,4 @@
-project(ashunt C)
+project(astraceroute C)
 
 set(BUILD_STRING "generic")
 
@@ -18,7 +18,7 @@ if(LIBGEOIP_FOUND AND CMAKE_HAVE_PTHREAD_CREATE)
     ../bpf.c
     ../mtrand.c
     ../ring_rx.c
-    ../ashunt.c
+    ../astraceroute.c
   )
 
   add_definitions(
@@ -34,7 +34,7 @@ if(LIBGEOIP_FOUND AND CMAKE_HAVE_PTHREAD_CREATE)
   )
 
   pod2man(
-    ${CMAKE_SOURCE_DIR}/ashunt.c
+    ${CMAKE_SOURCE_DIR}/astraceroute.c
     ${PROJECT_NAME} 8
   )
 

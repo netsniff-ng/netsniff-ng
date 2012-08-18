@@ -8,8 +8,9 @@
  * a better passing of firewalls. Supports IPv4 and IPv6. Based on the idea
  * of tcptraceroute (http://michael.toren.net/code/tcptraceroute/), but hacked
  * for Autonomous Systems tracing, thus you will know an approximate path of
- * your curvetun tunneled packets, for instance. However, ashunt was written
- * from scratch and does not use any libraries. Special thanks to Team CYMRU!
+ * your curvetun tunneled packets, for instance. However, astraceroute was
+ * written from scratch and does not use any libraries. Special thanks to
+ * Team CYMRU!
  *
  *   The road must be trod, but it will be very hard. And neither strength nor
  *   wisdom will carry us far upon it. This quest may be attempted by the weak
@@ -19,7 +20,7 @@
  *
  *     -- The Lord of the Rings, Elrond, Chapter 'The Council of Elrond'.
  *
- * ashunt includes GeoLite data created by MaxMind, available from
+ * astraceroute includes GeoLite data created by MaxMind, available from
  * http://www.maxmind.com/. On Debian you need libgeoip-dev, libgeoip1 and
  * geoip-database-contrib.
  */
@@ -28,11 +29,11 @@
 
 =head1 NAME
 
-ashunt - Autonomous System (AS) trace route utility
+astraceroute - Autonomous System (AS) trace route utility
 
 =head1 SYNOPSIS
 
-ashunt	-H|--host <host> -i|-d|--dev <dev> [-6|--ipv6]
+astraceroute	-H|--host <host> -i|-d|--dev <dev> [-6|--ipv6]
 	[-n|--numeric] [-N|--dns] [-f|--init-ttl <ttl>]
 	[-m|--max-ttl <ttl>] [-q|--num-probes] [-x|--timeout <sec>]
 	[-S|--syn] [-A|--ack] [-F|--fin] [-P|--psh] [-U|--urg]
@@ -50,27 +51,27 @@ and the target host.
 
 =over
 
-=item ashunt -i eth0 -N -E -H netsniff-ng.org
+=item astraceroute -i eth0 -N -E -H netsniff-ng.org
 
 IPv4 trace of AS with TCP ECN SYN probe
 
-=item ashunt -i eth0 -N -S -H netsniff-ng.org
+=item astraceroute -i eth0 -N -S -H netsniff-ng.org
 
 IPv4 trace of AS with TCP SYN probe
 
-=item ashunt -i eth0 -N -F -H netsniff-ng.org
+=item astraceroute -i eth0 -N -F -H netsniff-ng.org
 
 IPv4 trace of AS with TCP FIN probe
 
-=item ashunt -i eth0 -N -FPU -H netsniff-ng.org
+=item astraceroute -i eth0 -N -FPU -H netsniff-ng.org
 
 IPv4 trace of AS with Xmas probe
 
-=item ashunt -i eth0 -N -H netsniff-ng.org -X "censor-me" -Z
+=item astraceroute -i eth0 -N -H netsniff-ng.org -X "censor-me" -Z
 
 IPv4 trace of AS with Null probe with ASCII payload
 
-=item ashunt -6 -S -i eth0 -H netsniff-ng.org
+=item astraceroute -6 -S -i eth0 -H netsniff-ng.org
 
 IPv6 trace of AS up to netsniff-ng.org
 
@@ -360,17 +361,17 @@ static void signal_handler(int number)
 
 static void header(void)
 {
-	printf("%s%s%s\n", colorize_start(bold), "ashunt "
+	printf("%s%s%s\n", colorize_start(bold), "astraceroute "
 	       VERSION_STRING, colorize_end());
 }
 
 static void help(void)
 {
 
-	printf("\nashunt %s, Autonomous System (AS) trace route utility\n",
+	printf("\nastraceroute %s, Autonomous System (AS) trace route utility\n",
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
-	printf("Usage: ashunt [options]\n");
+	printf("Usage: astraceroute [options]\n");
 	printf("Options:\n");
 	printf(" -H|--host <host>        Host/IPv4/IPv6 to lookup AS route to\n");
 	printf(" -p|--port <port>        Hosts port to lookup AS route to\n");
@@ -406,22 +407,22 @@ static void help(void)
 	printf("\n");
 	printf("Examples:\n");
 	printf("  IPv4 trace of AS with TCP ECN SYN probe:\n");
-	printf("    ashunt -i eth0 -N -E -H netsniff-ng.org\n");
+	printf("    astraceroute -i eth0 -N -E -H netsniff-ng.org\n");
 	printf("  IPv4 trace of AS with TCP SYN probe (this will most-likely pass):\n");
-	printf("    ashunt -i eth0 -N -S -H netsniff-ng.org\n");
+	printf("    astraceroute -i eth0 -N -S -H netsniff-ng.org\n");
 	printf("  IPv4 trace of AS with TCP FIN probe:\n");
-	printf("    ashunt -i eth0 -N -F -H netsniff-ng.org\n");
+	printf("    astraceroute -i eth0 -N -F -H netsniff-ng.org\n");
 	printf("  IPv4 trace of AS with Xmas probe:\n");
-	printf("    ashunt -i eth0 -N -FPU -H netsniff-ng.org\n");
+	printf("    astraceroute -i eth0 -N -FPU -H netsniff-ng.org\n");
 	printf("  IPv4 trace of AS with Null probe with ASCII payload:\n");
-	printf("    ashunt -i eth0 -N -H netsniff-ng.org -X \"censor-me\" -Z\n");
+	printf("    astraceroute -i eth0 -N -H netsniff-ng.org -X \"censor-me\" -Z\n");
 	printf("  IPv6 trace of AS up to netsniff-ng.org:\n");
-	printf("    ashunt -6 -S -i eth0 -H netsniff-ng.org\n");
+	printf("    astraceroute -6 -S -i eth0 -H netsniff-ng.org\n");
 	printf("\n");
 	printf("Note:\n");
-	printf("  If the TCP probe did not give any results, then ashunt will\n");
+	printf("  If the TCP probe did not give any results, then astraceroute will\n");
 	printf("  automatically probe for classic ICMP packets! To gather more\n");
-	printf("  information about ashunt's fetched AS numbers, see i.e.\n");
+	printf("  information about astraceroute's fetched AS numbers, see i.e.\n");
 	printf("  http://bgp.he.net/AS<number>!\n");
 	printf("\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
@@ -435,7 +436,7 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\nashunt %s, AS trace route utility\n",
+	printf("\nastraceroute %s, AS trace route utility\n",
 	       VERSION_STRING);
 	printf("http://www.netsniff-ng.org\n\n");
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");

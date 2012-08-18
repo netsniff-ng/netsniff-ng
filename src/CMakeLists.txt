@@ -78,7 +78,7 @@ add_subdirectory(ifpps)
 add_subdirectory(trafgen)
 add_subdirectory(bpfc)
 add_subdirectory(gremlin)
-add_subdirectory(ashunt)
+add_subdirectory(astraceroute)
 add_subdirectory(curvetun)
 add_subdirectory(flowtop)
 
