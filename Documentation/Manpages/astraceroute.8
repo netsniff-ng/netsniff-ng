@@ -1,24 +1,42 @@
 =head1 NAME
 
-astraceroute - Autonomous System (AS) trace route utility
+astraceroute - autonomous system (AS) trace route utility
 
 =head1 SYNOPSIS
 
-astraceroute	-H|--host <host> -i|-d|--dev <dev> [-6|--ipv6]
-	[-n|--numeric] [-N|--dns] [-f|--init-ttl <ttl>]
-	[-m|--max-ttl <ttl>] [-q|--num-probes] [-x|--timeout <sec>]
-	[-S|--syn] [-A|--ack] [-F|--fin] [-P|--psh] [-U|--urg]
-	[-R|--rst] [-E|--ecn-syn] [-t|--tos <tos>] [-G|--nofrag]
-	[-X|--payload <string>] [-Z|--show-packet] [-l|--totlen <len>]
-	[-w|--whois <server>] [-W|--wport <port>] [--city-db <path>]
-	[--country-db <path>] [-v|--version] [-h|--help]
+  astraceroute [-Hpi46nNfmqxSAFPUREtGXZlwWvh]
+    [-H|--host <host>]     [-p|--port <port>]
+    [-i|-d|--dev <dev>]           [-4|--ipv4]
+    [-6|--ipv6]                [-n|--numeric]
+    [-N|--dns]          [-f|--init-ttl <ttl>]
+    [-m|--max-ttl <ttl>]    [-q|--num-probes]
+    [-x|--timeout <sec>]           [-S|--syn]
+    [-A|--ack]                     [-F|--fin]
+    [-P|--psh]                     [-U|--urg]
+    [-R|--rst]                 [-E|--ecn-syn]
+    [-t|--tos <tos>]            [-G|--nofrag]
+    [-X|--payload <string>][-Z|--show-packet]
+    [-l|--totlen <len>] [-w|--whois <server>]
+    [-W|--wport <port>]    [--city-db <path>]
+    [--country-db <path>]      [-v|--version]
+    [-h|--help]
+  astraceroute6 [options]
 
 =head1 DESCRIPTION
 
-This program provides AS information on each hop between the client
-and the target host.
+astraceroute provides traceroute-like AS and estimated geographical information
+on each hop between the client and the targeted host. Unlike L<traceroute(1)>,
+it uses TCP-based packets (e.g. a TCP-SYN packet for opening a new connection)
+in order to prevent being filtered by firewalls. It automatically falls back to
+ICMP-based probes in case a timeout occurred after no answer was received and
+the probe times threshold was exceeded. Also, unlike L<tcptraceroute(1)>, the
+packet flags are fully customizable and AS information such as the AS number of
+the hop as well as country code, country and city are provided with estimated
+longitude and latitude. Furthermore, astraceroute provides the reverse DNS name
+of the hop, its IP address, the network prefix of the AS, the registry name of
+the AS, a registered since of the AS and the human readable AS name.
 
-=head1 OPTIONS
+=head1 EXAMPLES
 
 =over
 
@@ -156,16 +174,31 @@ Specifiy path for geoip country database
 
 =back
 
+=head1 AVAILABILITY
+
+astraceroute is part of the netsniff-ng toolkit. More information about the
+toolkit can be obtained from its website: http://netsniff-ng.org/
+
+=head1 GIT
+
+All source code is available under the terms of the GNU GPL, version 2.0.
+Obtain it via Git from: git://github.com/gnumaniacs/netsniff-ng.git
+
 =head1 AUTHOR
 
-Written by Daniel Borkmann <daniel@netsniff-ng.org>
+astraceroute was written by Daniel Borkmann <daniel@netsniff-ng.org>.
 
 =head1 DOCUMENTATION
 
-Documentation by Emmanuel Roullit <emmanuel@netsniff-ng.org>
+The documentation was written by Emmanuel Roullit <emmanuel@netsniff-ng.org>
+and Daniel Borkmann <daniel@netsniff-ng.org>.
 
 =head1 BUGS
 
-Please report bugs to <bugs@netsniff-ng.org>
+Please report bugs to <bugs@netsniff-ng.org>.
+
+=head1 SEE ALSO
+
+L<traceroute(1)>, L<tcptraceroute(1)>, L<ping(8)>
 
 =cut
