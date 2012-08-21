@@ -188,6 +188,43 @@ static const char *frame_control_types[] = {
 	"Reserved",	/* 11 */
 };
 
+/* http://www.sss-mag.com/pdf/802_11tut.pdf
+ * http://www.scribd.com/doc/78443651/111/Management-Frames
+ * http://www.wildpackets.com/resources/compendium/wireless_lan/wlan_packets
+ * http://www.rhyshaden.com/wireless.htm
+*/
+
+/*static char *mgt_sub(u8 subtype, void (**get_content)) {
+	case 0b0000:
+		      *get_content = assoc_req;
+		      return "Association Request";
+	case 0b0001:
+		      *get_content = assoc_resp;
+		      return "Association Response";
+}
+
+static char *ctrl_sub() {
+}
+
+static char *data_sub() {
+}
+
+static char *frame_control_type(u8 type, char *(**get_subtype)(u8 subtype, NULL)) {
+	case 0b00:
+		    *get_subtype = mgt_sub;
+		    return "Management";
+	case 0b01:
+		    *get_subtype = ctrl_sub;
+		    return "Control";
+	case 0b10:
+		    *get_subtype = data_sub;
+		    return "Data";
+	case 0b11: return "Reserved";
+
+	return "Control Type not supported"
+	
+};*/
+
 static void ieee80211(struct pkt_buff *pkt)
 {
 	struct ieee80211_frm_ctrl *frm_ctrl =
