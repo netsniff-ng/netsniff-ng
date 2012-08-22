@@ -10,9 +10,9 @@
 #  LIBNL_LIBRARIES   - the libnl library
 #  LIBNL_INCLUDE_DIR - the include path of the libnl library
 
-set(LIBNL_LIBRARIES ${LIBNL_LIBRARY})
-
 find_library(LIBNL_LIBRARY nl)
+
+set(LIBNL_LIBRARIES ${LIBNL_LIBRARY})
 
 find_path(
   LIBNL_INCLUDE_DIR
