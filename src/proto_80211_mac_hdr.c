@@ -21,6 +21,7 @@
 struct ieee80211_frm_ctrl {
 	union {
 		u16 frame_control;
+		struct {
 #if defined(__LITTLE_ENDIAN_BITFIELD)
 		/* Correct order here ... */
 		__extension__ u16 proto_version:2,
@@ -49,9 +50,8 @@ struct ieee80211_frm_ctrl {
 #else
 # error  "Adjust your <asm/byteorder.h> defines"
 #endif
+		};
 	};
-	/* TODO: delete if use structs below*/
-	u16 duration;
 } __packed;
 
 /* Management Frame start */
@@ -181,12 +181,6 @@ struct ieee80211_data {
 /* TODO: Extend */
 /* Control Frame end */
 
-static const char *frame_control_types[] = {
-	"Management",	/* 00 */
-	"Control",	/* 01 */
-	"Data",		/* 10 */
-	"Reserved",	/* 11 */
-};
 
 /* http://www.sss-mag.com/pdf/802_11tut.pdf
  * http://www.scribd.com/doc/78443651/111/Management-Frames
@@ -194,22 +188,37 @@ static const char *frame_control_types[] = {
  * http://www.rhyshaden.com/wireless.htm
 */
 
-/*static char *mgt_sub(u8 subtype, void (**get_content)) {
+static int8_t assoc_req(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t assoc_resp(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static char *mgt_sub(u8 subtype, int8_t (**get_content)(struct pkt_buff *pkt)) {
+	switch (subtype) {
 	case 0b0000:
 		      *get_content = assoc_req;
 		      return "Association Request";
 	case 0b0001:
 		      *get_content = assoc_resp;
 		      return "Association Response";
+	}
+
+	return "Management SubType not supported";
 }
 
-static char *ctrl_sub() {
+static char *ctrl_sub(u8 subtype, int8_t (**get_content)(struct pkt_buff *pkt)) {
+	return "Control SubType not supported";
 }
 
-static char *data_sub() {
+static char *data_sub(u8 subtype, int8_t (**get_content)(struct pkt_buff *pkt)) {
+	return "Data SubType not supported";
 }
 
-static char *frame_control_type(u8 type, char *(**get_subtype)(u8 subtype, NULL)) {
+static char *frame_control_type(u8 type, char *(**get_subtype)(u8 subtype, int8_t (**get_content)(struct pkt_buff *pkt))) {
+	switch (type) {
 	case 0b00:
 		    *get_subtype = mgt_sub;
 		    return "Management";
@@ -220,23 +229,31 @@ static char *frame_control_type(u8 type, char *(**get_subtype)(u8 subtype, NULL)
 		    *get_subtype = data_sub;
 		    return "Data";
 	case 0b11: return "Reserved";
+	}
 
-	return "Control Type not supported"
+	return "Control Type not supported";
 	
-};*/
+}
 
 static void ieee80211(struct pkt_buff *pkt)
 {
+	int8_t (*get_content)(struct pkt_buff *pkt) = NULL;
+	char *(*get_subtype)(u8 subtype, int8_t (**get_content)(struct pkt_buff *pkt)) = NULL;
+	
 	struct ieee80211_frm_ctrl *frm_ctrl =
 		(struct ieee80211_frm_ctrl *) pkt_pull(pkt, sizeof(*frm_ctrl));
 	if (frm_ctrl == NULL)
 		return;
 
-	tprintf(" [ 802.11 Frame Control (0x%04x), Duration/ID (%u) ]\n",
-		le16_to_cpu(frm_ctrl->frame_control), le16_to_cpu(frm_ctrl->duration));
+	tprintf(" [ 802.11 Frame Control (0x%04x)]\n",
+		le16_to_cpu(frm_ctrl->frame_control));
 	tprintf("\t [ Proto Version (%u), ", frm_ctrl->proto_version);
-	tprintf("Type (%u, %s), ", frm_ctrl->type, frame_control_types[frm_ctrl->type]);
-	tprintf("Subtype (%u)", frm_ctrl->subtype /*XXX*/);
+	tprintf("Type (%u, %s), ", frm_ctrl->type, frame_control_type(frm_ctrl->type, &get_subtype));
+	if (get_subtype)
+		tprintf("Subtype (%u, %s)", frm_ctrl->subtype, (*get_subtype)(frm_ctrl->subtype, &get_content));
+	else
+		tprintf("\n%s%s%s", colorize_start_full(black, red),
+			    "Failed to get Subtype", colorize_end());
 	tprintf("%s%s",
 		frm_ctrl->to_ds ? ", Frame goes to DS" : "",
 		frm_ctrl->from_ds ?  ", Frame comes from DS" : "");
@@ -247,6 +264,15 @@ static void ieee80211(struct pkt_buff *pkt)
 	tprintf("%s", frm_ctrl->wep ? ", Needs WEP" : "");
 	tprintf("%s", frm_ctrl->order ? ", Order" : "");
 	tprintf(" ]\n");
+
+	if (get_content) {
+		if (!((*get_content) (pkt)))
+		      tprintf("\n%s%s%s", colorize_start_full(black, red),
+			    "Failed to dissect Subtype", colorize_end());
+	}
+	else
+		tprintf("\n%s%s%s", colorize_start_full(black, red),
+			    "Failed to dissect Subtype", colorize_end());
 
 //	pkt_set_proto(pkt, &ieee802_lay2, ntohs(eth->h_proto));
 }
