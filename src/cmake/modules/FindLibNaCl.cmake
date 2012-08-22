@@ -18,15 +18,15 @@ find_library(
   HINTS ${NACL_LIB_DIR}
 )
 
-mark_as_advanced(
-  NACL_LIBRARY
-  NACL_INCLUDE_DIR
-)
-
 include(FindPackageHandleStandardArgs)
 
 find_package_handle_standard_args(
   NaCl REQUIRED_VARS
+  NACL_LIBRARY
+  NACL_INCLUDE_DIR
+)
+
+mark_as_advanced(
   NACL_LIBRARY
   NACL_INCLUDE_DIR
 )
