@@ -10,6 +10,7 @@
 #  LIBNL_LIBRARIES   - the libnl library
 #  LIBNL_INCLUDE_DIR - the include path of the libnl library
 
+<<<<<<< HEAD
 FIND_LIBRARY(LIBNL_LIBRARY nl)
 
 SET(LIBNL_LIBRARIES ${LIBNL_LIBRARY})
@@ -17,6 +18,16 @@ SET(LIBNL_LIBRARIES ${LIBNL_LIBRARY})
 FIND_PATH(LIBNL_INCLUDE_DIR
 	NAMES netlink.h
 	PATH_SUFFIXES netlink
+=======
+find_library(LIBNL_LIBRARY nl)
+
+set(LIBNL_LIBRARIES ${LIBNL_LIBRARY})
+
+find_path(
+  LIBNL_INCLUDE_DIR
+  NAMES netlink.h
+  PATH_SUFFIXES netlink
+>>>>>>> 79a25c629bcf36727809eac999281f33a4f66b8d
 )
 
 INCLUDE(FindPackageHandleStandardArgs)
