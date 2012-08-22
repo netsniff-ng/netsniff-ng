@@ -188,6 +188,7 @@ struct ieee80211_data {
  * http://www.rhyshaden.com/wireless.htm
 */
 
+/* Management Dissectors */
 static int8_t assoc_req(struct pkt_buff *pkt) {
 	return 0;
 }
@@ -196,7 +197,105 @@ static int8_t assoc_resp(struct pkt_buff *pkt) {
 	return 0;
 }
 
+static int8_t reassoc_req(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t reassoc_resp(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t probe_req(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t probe_resp(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t beacon(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t atim(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t disassoc(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t auth(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t deauth(struct pkt_buff *pkt) {
+	return 0;
+}
+/* End Management Dissectors */
+
+/* Control Dissectors */
+static int8_t ps_poll(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t rts(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t cts(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t ack(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t cf_end(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t cf_end_ack(struct pkt_buff *pkt) {
+	return 0;
+}
+/* End Control Dissectors */
+
+/* Data Dissectors */
+static int8_t data(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t data_cf_ack(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t data_cf_poll(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t data_cf_ack_poll(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t null(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t cf_ack(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t cf_poll(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t cf_ack_poll(struct pkt_buff *pkt) {
+	return 0;
+}
+/* End Data Dissectors */
+
 static char *mgt_sub(u8 subtype, int8_t (**get_content)(struct pkt_buff *pkt)) {
+  
 	switch (subtype) {
 	case 0b0000:
 		      *get_content = assoc_req;
@@ -204,16 +303,102 @@ static char *mgt_sub(u8 subtype, int8_t (**get_content)(struct pkt_buff *pkt)) {
 	case 0b0001:
 		      *get_content = assoc_resp;
 		      return "Association Response";
+	case 0b0010:
+		      *get_content = reassoc_req;
+		      return "Reassociation Request";
+	case 0b0011:
+		      *get_content = reassoc_resp;
+		      return "Reassociation Response";
+	case 0b0100:
+		      *get_content = probe_req;
+		      return "Probe Request";
+	case 0b0101:
+		      *get_content = probe_resp;
+		      return "Probe Response";
+	case 0b1000:
+		      *get_content = beacon;
+		      return "Beacon";
+	case 0b1001:
+		      *get_content = atim;
+		      return "ATIM";
+	case 0b1010:
+		      *get_content = disassoc;
+		      return "Disassociation";
+	case 0b1011:
+		      *get_content = auth;
+		      return "Authentication";
+	case 0b1100:
+		      *get_content = deauth;
+		      return "Deauthentication";
 	}
+
+	if ((subtype >= 0b0110 && subtype <= 0b0111) || (subtype >= 0b1101 && subtype <= 0b1111))
+		      return "Reserved";
 
 	return "Management SubType not supported";
 }
 
 static char *ctrl_sub(u8 subtype, int8_t (**get_content)(struct pkt_buff *pkt)) {
+
+	switch (subtype) {
+	case 0b1010:
+		      *get_content = ps_poll;
+		      return "PS-Poll";
+	case 0b1011:
+		      *get_content = rts;
+		      return "RTS";
+	case 0b1100:
+		      *get_content = cts;
+		      return "CTS";
+	case 0b1101:
+		      *get_content = ack;
+		      return "ACK";
+	case 0b1110:
+		      *get_content = cf_end;
+		      return "CF End";
+	case 0b1111:
+		      *get_content = cf_end_ack;
+		      return "CF End + CF-ACK";
+	}
+
+	if (subtype <= 0b1001)
+		      return "Reserved";
+	
 	return "Control SubType not supported";
 }
 
 static char *data_sub(u8 subtype, int8_t (**get_content)(struct pkt_buff *pkt)) {
+
+	switch (subtype) {
+	case 0b0000:
+		      *get_content = data;
+		      return "Data";
+	case 0b0001:
+		      *get_content = data_cf_ack;
+		      return "Data + CF-ACK";
+	case 0b0010:
+		      *get_content = data_cf_poll;
+		      return "Data + CF-Poll";
+	case 0b0011:
+		      *get_content = data_cf_ack_poll;
+		      return "Data + CF-ACK + CF-Poll";
+	case 0b0100:
+		      *get_content = null;
+		      return "Null";
+	case 0b0101:
+		      *get_content = cf_ack;
+		      return "CF-ACK";
+	case 0b0110:
+		      *get_content = cf_poll;
+		      return "CF-Poll";
+	case 0b0111:
+		      *get_content = cf_ack_poll;
+		      return "CF-ACK + CF-Poll";
+	}
+
+	if (subtype >= 0b1000 && subtype <= 0b1111)
+		      return "Reserved";
+	
 	return "Data SubType not supported";
 }
 
@@ -253,7 +438,7 @@ static void ieee80211(struct pkt_buff *pkt)
 		tprintf("Subtype (%u, %s)", frm_ctrl->subtype, (*get_subtype)(frm_ctrl->subtype, &get_content));
 	else
 		tprintf("\n%s%s%s", colorize_start_full(black, red),
-			    "Failed to get Subtype", colorize_end());
+			    "No SubType Data available", colorize_end());
 	tprintf("%s%s",
 		frm_ctrl->to_ds ? ", Frame goes to DS" : "",
 		frm_ctrl->from_ds ?  ", Frame comes from DS" : "");
@@ -272,7 +457,7 @@ static void ieee80211(struct pkt_buff *pkt)
 	}
 	else
 		tprintf("\n%s%s%s", colorize_start_full(black, red),
-			    "Failed to dissect Subtype", colorize_end());
+			    "No SubType Data available", colorize_end());
 
 //	pkt_set_proto(pkt, &ieee802_lay2, ntohs(eth->h_proto));
 }
