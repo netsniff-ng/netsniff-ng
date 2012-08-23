@@ -30,10 +30,22 @@ struct vendor_id {
 			entry = entry->next;				      \
 		(entry && id == entry->id ? entry->struct_member : "Unknown");\
 	})
+#define __do_lookup_inline_silent(id, struct_name, hash_ptr, struct_member)   \
+	({								      \
+		struct struct_name *entry = lookup_hash(id, hash_ptr);	      \
+		while (entry && id != entry->id)			      \
+			entry = entry->next;				      \
+		(entry && id == entry->id ? entry->struct_member : NULL);     \
+	})
 
 char *lookup_vendor(unsigned int id)
 {
 	return __do_lookup_inline(id, vendor_id, &oui, vendor);
+}
+
+char *lookup_vendor_silent(unsigned int id)
+{
+	return __do_lookup_inline_silent(id, vendor_id, &oui, vendor);
 }
 
 void dissector_init_oui(void)

@@ -214,7 +214,14 @@ static int8_t probe_resp(struct pkt_buff *pkt) {
 }
 
 static int8_t beacon(struct pkt_buff *pkt) {
-	return 0;
+	struct ieee80211_mgmt_beacon *beacon =
+		(struct ieee80211_mgmt_beacon *) pkt_pull(pkt, sizeof(*beacon));
+	if (beacon == NULL)
+		return 0;
+	tprintf("Timestamp 0x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x, ", beacon->timestamp[0], beacon->timestamp[1],
+		beacon->timestamp[2], beacon->timestamp[3], beacon->timestamp[4], beacon->timestamp[5], beacon->timestamp[6], beacon->timestamp[7]);
+	tprintf("Beacon Interval (%fs)", le16_to_cpu(beacon->beacon_int) * 0.001024);
+	return 1;
 }
 
 static int8_t atim(struct pkt_buff *pkt) {
@@ -294,7 +301,32 @@ static int8_t cf_ack_poll(struct pkt_buff *pkt) {
 }
 /* End Data Dissectors */
 
-static char *mgt_sub(u8 subtype, int8_t (**get_content)(struct pkt_buff *pkt)) {
+static char *mgt_sub(u8 subtype, struct pkt_buff *pkt, int8_t (**get_content)(struct pkt_buff *pkt)) {
+
+	struct ieee80211_mgmt *mgmt =
+		(struct ieee80211_mgmt *) pkt_pull(pkt, sizeof(*mgmt));
+	if (mgmt == NULL)
+		return 0;
+
+	char *dst = lookup_vendor_silent((mgmt->da[0] << 16) | (mgmt->da[1] << 8) | mgmt->da[2]);
+	char *src = lookup_vendor_silent((mgmt->sa[0] << 16) | (mgmt->sa[1] << 8) | mgmt->sa[2]);
+	char *bssid = lookup_vendor_silent((mgmt->bssid[0] << 16) | (mgmt->bssid[1] << 8) | mgmt->bssid[2]);
+	u16 seq_ctrl = le16_to_cpu(mgmt->seq_ctrl);
+
+	tprintf("Duration (%u),", le16_to_cpu(mgmt->duration));
+	tprintf("\n\tDestination (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x) ",
+			      mgmt->da[0], mgmt->da[1], mgmt->da[2], mgmt->da[3], mgmt->da[4], mgmt->da[5]);
+	if(dst)
+		tprintf("=> (%s:%.2x:%.2x:%.2x)", dst, mgmt->da[3], mgmt->da[4], mgmt->da[5]);
+	tprintf("\n\tSource (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x) ",
+			      mgmt->sa[0], mgmt->sa[1], mgmt->sa[2], mgmt->sa[3], mgmt->sa[4], mgmt->sa[5]);
+	if(src)
+		tprintf("=> (%s:%.2x:%.2x:%.2x)", src, mgmt->sa[3], mgmt->sa[4], mgmt->sa[5]);
+	tprintf("\n\tBSSID (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x) ",
+			      mgmt->bssid[0], mgmt->bssid[1], mgmt->bssid[2], mgmt->bssid[3], mgmt->bssid[4], mgmt->bssid[5]);
+	if(bssid)
+		tprintf("=> (%s:%.2x:%.2x:%.2x)", bssid, mgmt->bssid[3], mgmt->bssid[4], mgmt->bssid[5]);
+	tprintf("\n\tFragmentnr. (%u), Seqnr. (%u). ", seq_ctrl & 0xf, seq_ctrl >> 4);
   
 	switch (subtype) {
 	case 0b0000:
@@ -338,7 +370,7 @@ static char *mgt_sub(u8 subtype, int8_t (**get_content)(struct pkt_buff *pkt)) {
 	return "Management SubType not supported";
 }
 
-static char *ctrl_sub(u8 subtype, int8_t (**get_content)(struct pkt_buff *pkt)) {
+static char *ctrl_sub(u8 subtype, struct pkt_buff *pkt, int8_t (**get_content)(struct pkt_buff *pkt)) {
 
 	switch (subtype) {
 	case 0b1010:
@@ -367,7 +399,7 @@ static char *ctrl_sub(u8 subtype, int8_t (**get_content)(struct pkt_buff *pkt)) 
 	return "Control SubType not supported";
 }
 
-static char *data_sub(u8 subtype, int8_t (**get_content)(struct pkt_buff *pkt)) {
+static char *data_sub(u8 subtype, struct pkt_buff *pkt, int8_t (**get_content)(struct pkt_buff *pkt)) {
 
 	switch (subtype) {
 	case 0b0000:
@@ -402,7 +434,7 @@ static char *data_sub(u8 subtype, int8_t (**get_content)(struct pkt_buff *pkt)) 
 	return "Data SubType not supported";
 }
 
-static char *frame_control_type(u8 type, char *(**get_subtype)(u8 subtype, int8_t (**get_content)(struct pkt_buff *pkt))) {
+static char *frame_control_type(u8 type, char *(**get_subtype)(u8 subtype, struct pkt_buff *pkt, int8_t (**get_content)(struct pkt_buff *pkt))) {
 	switch (type) {
 	case 0b00:
 		    *get_subtype = mgt_sub;
@@ -423,7 +455,7 @@ static char *frame_control_type(u8 type, char *(**get_subtype)(u8 subtype, int8_
 static void ieee80211(struct pkt_buff *pkt)
 {
 	int8_t (*get_content)(struct pkt_buff *pkt) = NULL;
-	char *(*get_subtype)(u8 subtype, int8_t (**get_content)(struct pkt_buff *pkt)) = NULL;
+	char *(*get_subtype)(u8 subtype, struct pkt_buff *pkt, int8_t (**get_content)(struct pkt_buff *pkt)) = NULL;
 	
 	struct ieee80211_frm_ctrl *frm_ctrl =
 		(struct ieee80211_frm_ctrl *) pkt_pull(pkt, sizeof(*frm_ctrl));
@@ -435,7 +467,7 @@ static void ieee80211(struct pkt_buff *pkt)
 	tprintf("\t [ Proto Version (%u), ", frm_ctrl->proto_version);
 	tprintf("Type (%u, %s), ", frm_ctrl->type, frame_control_type(frm_ctrl->type, &get_subtype));
 	if (get_subtype)
-		tprintf("Subtype (%u, %s)", frm_ctrl->subtype, (*get_subtype)(frm_ctrl->subtype, &get_content));
+		tprintf("Subtype (%u, %s)", frm_ctrl->subtype, (*get_subtype)(frm_ctrl->subtype, pkt, &get_content));
 	else
 		tprintf("\n%s%s%s", colorize_start_full(black, red),
 			    "No SubType Data available", colorize_end());

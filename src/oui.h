@@ -9,6 +9,7 @@
 #define OUI_H
 
 extern char *lookup_vendor(unsigned int id);
+extern char *lookup_vendor_silent(unsigned int id);
 extern void dissector_init_oui(void);
 extern void dissector_cleanup_oui(void);
 
