@@ -7,7 +7,7 @@ submit your contributions):
     more maintainable, stable, and probably faster!
  2) Implement test cases with libtap (src/test/). Make the output readable
     (currently cmake hides it all).
- 3) Add full IPv6 support for ashunt and flowtop, test IPv6 on curvetun.
+ 3) Add full IPv6 support for flowtop, test IPv6 on curvetun.
  5) Make trafgen also write to a pcap instead to a device.
  6) Let netsniff-ng and trafgen support pcap and pcap-ng!
  7) Include an ARP cache poisoning switch into netsniff-ng, or as a tool.
