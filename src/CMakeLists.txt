@@ -81,5 +81,3 @@ add_subdirectory(gremlin)
 add_subdirectory(astraceroute)
 add_subdirectory(curvetun)
 add_subdirectory(flowtop)
-
-add_subdirectory(test)
