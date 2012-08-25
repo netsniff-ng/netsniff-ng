@@ -377,12 +377,12 @@ static int assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
 	iph->saddr = ((const struct sockaddr_in *) src)->sin_addr.s_addr;
 	iph->daddr = ((const struct sockaddr_in *) dst)->sin_addr.s_addr;
 
-	data = packet + sizeof(struct iphdr);
-	data_len = len - sizeof(struct iphdr);
+	data = packet + sizeof(*iph);
+	data_len = len - sizeof(*iph);
 	assemble_tcp(data, data_len, syn, ack, urg, fin, rst, psh, ecn, dport);
 
-	data = packet + sizeof(struct iphdr) + sizeof(struct tcphdr);
-	data_len = len - sizeof(struct iphdr) - sizeof(struct tcphdr);
+	data = packet + sizeof(*iph) + sizeof(struct tcphdr);
+	data_len = len - sizeof(*iph) - sizeof(struct tcphdr);
 	assemble_data(data, data_len, payload);
 
 	iph->check = csum((unsigned short *) packet, ntohs(iph->tot_len) >> 1);
