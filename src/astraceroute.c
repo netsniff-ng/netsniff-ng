@@ -364,7 +364,7 @@ static int assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
 
 	bug_on(!src || !dst);
 	bug_on(src->sa_family != PF_INET || dst->sa_family != PF_INET);
-	bug_on(len < sizeof(struct iphdr) + sizeof(struct tcphdr));
+	bug_on(len < sizeof(*iph) + sizeof(struct tcphdr));
 
 	iph->ihl = 5;
 	iph->version = 4;
