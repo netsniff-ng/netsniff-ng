@@ -169,6 +169,14 @@ static struct sock_filter ipv6_icmp6_type_3[] = {
 	{ 0x06, 0, 0, 0x00000000 },
 };
 
+#define PKT_NOT_FOR_US	0
+#define PKT_GOOD	1
+
+static inline const char *make_n_a(const char *p)
+{
+	return p ? : "N/A";
+}
+
 static void signal_handler(int number)
 {
 	switch (number) {
@@ -238,7 +246,7 @@ static void help(void)
 	printf("  IPv4 trace of AS with Null probe with ASCII payload:\n");
 	printf("    astraceroute -i eth0 -N -H netsniff-ng.org -X \"censor-me\" -Z\n");
 	printf("  IPv6 trace of AS up to www.6bone.net:\n");
-	printf("    astraceroute -6 -i eth0 -S -E -H www.6bone.net\n");
+	printf("    astraceroute -6 -i eth0 -S -E -N -H www.6bone.net\n");
 	printf("\n");
 	printf("Note:\n");
 	printf("  If the TCP probe did not give any results, then astraceroute will\n");
@@ -306,6 +314,17 @@ static void assemble_icmp4(uint8_t *packet, size_t len)
 	icmph->type = ICMP_ECHO;
 	icmph->code = 0;
 	icmph->checksum = 0;
+}
+
+static void assemble_icmp6(uint8_t *packet, size_t len)
+{
+	struct icmp6hdr *icmp6h = (struct icmp6hdr *) packet;
+
+	bug_on(len < sizeof(struct icmp6hdr));
+
+	icmp6h->icmp6_type = ICMPV6_ECHO_REQUEST;
+	icmp6h->icmp6_code = 0;
+	icmp6h->icmp6_cksum = 0;
 }
 
 static void assemble_tcp(uint8_t *packet, size_t len, int syn, int ack,
@@ -390,8 +409,10 @@ static int assemble_ipv6_tcp(uint8_t *packet, size_t len, int ttl,
 	ip6h->ip6_plen = htons((uint16_t) len - sizeof(*ip6h));
 	ip6h->ip6_nxt = 6; /* TCP */
 	ip6h->ip6_hlim = (uint8_t) ttl;
-	memcpy(&ip6h->ip6_src, &(((const struct sockaddr_in6 *) src)->sin6_addr), sizeof(ip6h->ip6_src));
-	memcpy(&ip6h->ip6_dst, &(((const struct sockaddr_in6 *) dst)->sin6_addr), sizeof(ip6h->ip6_dst));
+	memcpy(&ip6h->ip6_src, &(((const struct sockaddr_in6 *)
+	       src)->sin6_addr), sizeof(ip6h->ip6_src));
+	memcpy(&ip6h->ip6_dst, &(((const struct sockaddr_in6 *)
+	       dst)->sin6_addr), sizeof(ip6h->ip6_dst));
 
 	data = packet + sizeof(*ip6h);
 	data_len = len - sizeof(*ip6h);
@@ -399,6 +420,40 @@ static int assemble_ipv6_tcp(uint8_t *packet, size_t len, int ttl,
 
 	data = packet + sizeof(*ip6h) + sizeof(struct tcphdr);
 	data_len = len - sizeof(*ip6h) - sizeof(struct tcphdr);
+	assemble_data(data, data_len, payload);
+
+	return ntohl(ip6h->ip6_flow) & 0x000fffff;
+}
+
+static int assemble_ipv6_icmp6(uint8_t *packet, size_t len, int ttl,
+			       const struct sockaddr *dst,
+			       const struct sockaddr *src,
+			       const char *payload)
+{
+	struct ip6_hdr *ip6h = (struct ip6_hdr *) packet;
+	uint8_t *data;
+	size_t data_len;
+
+	bug_on(!src || !dst);
+	bug_on(src->sa_family != PF_INET6 || dst->sa_family != PF_INET6);
+	bug_on(len < sizeof(*ip6h) + sizeof(struct icmp6hdr));
+
+	ip6h->ip6_flow = htonl(mt_rand_int32() & 0x000fffff);
+	ip6h->ip6_vfc = 0x60;
+	ip6h->ip6_plen = htons((uint16_t) len - sizeof(*ip6h));
+	ip6h->ip6_nxt = 0x3a; /* ICMP6 */
+	ip6h->ip6_hlim = (uint8_t) ttl;
+	memcpy(&ip6h->ip6_src, &(((const struct sockaddr_in6 *)
+	       src)->sin6_addr), sizeof(ip6h->ip6_src));
+	memcpy(&ip6h->ip6_dst, &(((const struct sockaddr_in6 *)
+	       dst)->sin6_addr), sizeof(ip6h->ip6_dst));
+
+	data = packet + sizeof(*ip6h);
+	data_len = len - sizeof(*ip6h);
+	assemble_icmp6(data, data_len);
+
+	data = packet + sizeof(*ip6h) + sizeof(struct icmp6hdr);
+	data_len = len - sizeof(*ip6h) - sizeof(struct icmp6hdr);
 	assemble_data(data, data_len, payload);
 
 	return ntohl(ip6h->ip6_flow) & 0x000fffff;
@@ -415,7 +470,7 @@ static int assemble_ipv4_icmp4(uint8_t *packet, size_t len, int ttl,
 
 	bug_on(!src || !dst);
 	bug_on(src->sa_family != PF_INET || dst->sa_family != PF_INET);
-	bug_on(len < sizeof(struct iphdr) + sizeof(struct tcphdr));
+	bug_on(len < sizeof(struct iphdr) + sizeof(struct icmphdr));
 
 	iph->ihl = 5;
 	iph->version = 4;
@@ -452,9 +507,9 @@ static int assemble_packet_or_die(uint8_t *packet, size_t len,
 			return assemble_ipv4_icmp4(packet, len, ttl, cfg->tos,
 						   dst, src, cfg->nofrag,
 						   cfg->payload);
-//		} else {
-//			return assemble_ipv6_icmp6(packet, len, ttl, dst, src,
-//						   cfg->payload);
+		} else {
+			return assemble_ipv6_icmp6(packet, len, ttl, dst, src,
+						   cfg->payload);
 		}
 	} else {
 		if (cfg->ip == 4) {
@@ -474,14 +529,6 @@ static int assemble_packet_or_die(uint8_t *packet, size_t len,
 	}
 
 	return -EIO;
-}
-
-#define PKT_NOT_FOR_US	0
-#define PKT_GOOD	1
-
-static inline const char *make_n_a(const char *p)
-{
-	return p ? : "N/A";
 }
 
 static int handle_ipv4_icmp(uint8_t *packet, size_t len, int ttl, int id,
