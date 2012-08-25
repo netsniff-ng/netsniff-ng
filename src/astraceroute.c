@@ -637,9 +637,8 @@ static int handle_ipv6_icmp(uint8_t *packet, size_t len, int ttl, int id,
 			printf("%s in unkown AS", hbuff);
 		}
 	} else {
-#if 0
-		struct hostent *hent = gethostbyaddr(&sa.sin_addr,
-						     sizeof(sa.sin_addr),
+		struct hostent *hent = gethostbyaddr(&sa.sin6_addr,
+						     sizeof(sa.sin6_addr),
 						     PF_INET6);
 
 		if (strlen(rec.country) > 0 && gir) {
@@ -647,7 +646,7 @@ static int handle_ipv6_icmp(uint8_t *packet, size_t len, int ttl, int id,
 			printf("%s (%s) in AS%s (%s, %s, %s, %f, %f), %s %s (%s), %s",
 			       (hent ? hent->h_name : hbuff), hbuff,
 			       rec.number, rec.country,
-			       GeoIP_country_name_by_ipnum(gi_country, ntohl(iph->saddr)),
+			       GeoIP_country_name_by_ipnum_v6(gi_country, sa.sin6_addr),
 			       city, gir->latitude, gir->longitude,
 			       rec.prefix, rec.registry,
 			       rec.since, rec.name);
@@ -655,14 +654,13 @@ static int handle_ipv6_icmp(uint8_t *packet, size_t len, int ttl, int id,
 			printf("%s (%s) in AS%s (%s, %s), %s %s (%s), %s",
 			       (hent ? hent->h_name : hbuff), hbuff,
 			       rec.number, rec.country,
-			       GeoIP_country_name_by_ipnum(gi_country, ntohl(iph->saddr)),
+			       GeoIP_country_name_by_ipnum_v6(gi_country, sa.sin6_addr),
 			       rec.prefix, rec.registry,
 			       rec.since, rec.name);
 		} else {
 			printf("%s (%s) in unkown AS",
 			       (hent ? hent->h_name : hbuff), hbuff);
 		}
-#endif
 	}
 
 	xfree(hbuff);
