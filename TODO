@@ -10,11 +10,10 @@ submit your contributions):
  3) Add full IPv6 support for flowtop, test IPv6 on curvetun.
  5) Make trafgen also write to a pcap instead to a device.
  6) Let netsniff-ng and trafgen support pcap and pcap-ng!
- 7) Include an ARP cache poisoning switch into netsniff-ng, or as a tool.
+ 7) Include an ARP cache poisoning tool.
  8) gremlin: fork + fanout mode for a threaded netsniff-ng and trafgen
     front-end with Cisco-cli for a hw/sw applicance. Do it Mausezahn like.
 10) Add a proper 802.11 dissector for netsniff-ng.
-11) Add WEP/WPA (live) decryption support, where keys are passed via cmdline.
 12) Add new dissectors (e.g. BGP, DNS, DCCP, SCTP, RSVP, IPsec, LISP, RADIUS,
     LLC, fix MPLS?, improve ARP, BPDU, PVST, CDP, LLDP, RTP, Syslog, NTP,
     OpenFlow, ...).
@@ -27,11 +26,9 @@ submit your contributions):
 21) Obfuscate curvetun's protocol to make it hard/resource-intensive for DPIs.
 22) Add different timing models to trafgen, not just a static interpacket gap.
 24) Do we need TPACKETV2 or even TPACKETV3 if it is eventually implemented?
-    Are there performance benefits?
 25) Do performance tests with 10 Gigabit cards.
 27) Integration of our repository with Travis-CI
 28) Remove liburcu dependency from flowtop
 29) Improve the Linux kernel's net/packet/af_packet.c (that we rely on)
 30) Fix UDP+TCP tracking in flowtop.
-31) ashunt: implement reverse traceroute, DNS traceroute for detecting
-    DNS injections.
+31) astraceroute: implement DNS traceroute with AS/Geo information
