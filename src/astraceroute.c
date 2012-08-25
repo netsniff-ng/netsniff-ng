@@ -238,7 +238,7 @@ static void help(void)
 	printf("  IPv4 trace of AS with Null probe with ASCII payload:\n");
 	printf("    astraceroute -i eth0 -N -H netsniff-ng.org -X \"censor-me\" -Z\n");
 	printf("  IPv6 trace of AS up to www.6bone.net:\n");
-	printf("    astraceroute -6 -S -i eth0 -H www.6bone.net\n");
+	printf("    astraceroute -6 -i eth0 -S -E -H www.6bone.net\n");
 	printf("\n");
 	printf("Note:\n");
 	printf("  If the TCP probe did not give any results, then astraceroute will\n");
@@ -333,7 +333,6 @@ static void assemble_tcp(uint8_t *packet, size_t len, int syn, int ack,
 	tcph->urg_ptr = (!!urg ? htons((uint16_t) mt_rand_int32()) :  0);
 }
 
-/* returns: ipv4 id */
 static int assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
 			     int tos, const struct sockaddr *dst,
 			     const struct sockaddr *src, int syn, int ack,
@@ -372,7 +371,6 @@ static int assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
 	return ntohs(iph->id);
 }
 
-/* returns: ipv6 flow label */
 static int assemble_ipv6_tcp(uint8_t *packet, size_t len, int ttl,
 			     const struct sockaddr *dst,
 			     const struct sockaddr *src, int syn, int ack,
@@ -387,8 +385,8 @@ static int assemble_ipv6_tcp(uint8_t *packet, size_t len, int ttl,
 	bug_on(src->sa_family != PF_INET6 || dst->sa_family != PF_INET6);
 	bug_on(len < sizeof(*ip6h) + sizeof(struct tcphdr));
 
+	ip6h->ip6_flow = htonl(mt_rand_int32() & 0x000fffff);
 	ip6h->ip6_vfc = 0x60;
-	ip6h->ip6_flow = mt_rand_int32();
 	ip6h->ip6_plen = htons((uint16_t) len - sizeof(*ip6h));
 	ip6h->ip6_nxt = 6; /* TCP */
 	ip6h->ip6_hlim = (uint8_t) ttl;
@@ -403,10 +401,9 @@ static int assemble_ipv6_tcp(uint8_t *packet, size_t len, int ttl,
 	data_len = len - sizeof(*ip6h) - sizeof(struct tcphdr);
 	assemble_data(data, data_len, payload);
 
-	return ntohl(ip6h->ip6_flow);
+	return ntohl(ip6h->ip6_flow) & 0x000fffff;
 }
 
-/* returns: ipv4 id */
 static int assemble_ipv4_icmp4(uint8_t *packet, size_t len, int ttl,
 			       int tos, const struct sockaddr *dst,
 			       const struct sockaddr *src, int nofrag,
@@ -431,12 +428,12 @@ static int assemble_ipv4_icmp4(uint8_t *packet, size_t len, int ttl,
 	iph->saddr = ((const struct sockaddr_in *) src)->sin_addr.s_addr;
 	iph->daddr = ((const struct sockaddr_in *) dst)->sin_addr.s_addr;
 
-	data = packet + sizeof(struct iphdr);
-	data_len = len - sizeof(struct iphdr);
+	data = packet + sizeof(*iph);
+	data_len = len - sizeof(*iph);
 	assemble_icmp4(data, data_len);
 
-	data = packet + sizeof(struct iphdr) + sizeof(struct icmphdr);
-	data_len = len - sizeof(struct iphdr) - sizeof(struct icmphdr);
+	data = packet + sizeof(*iph) + sizeof(struct icmphdr);
+	data_len = len - sizeof(*iph) - sizeof(struct icmphdr);
 	assemble_data(data, data_len, payload);
 
 	iph->check = csum((unsigned short *) packet, ntohs(iph->tot_len) >> 1);
@@ -579,10 +576,107 @@ static int handle_ipv4_icmp(uint8_t *packet, size_t len, int ttl, int id,
 	return PKT_GOOD;
 }
 
+static int handle_ipv6_icmp(uint8_t *packet, size_t len, int ttl, int id,
+			    const struct sockaddr *own, int dns_resolv)
+{
+	int ret;
+	struct ip6_hdr *ip6h = (struct ip6_hdr *) packet;
+	struct ip6_hdr *ip6h_inner;
+	struct icmp6hdr *icmp6h;
+	char *hbuff;
+	struct sockaddr_in6 sa;
+	struct asrecord rec;
+	GeoIPRecord *gir;
+
+	if (ip6h->ip6_nxt != 0x3a)
+		return PKT_NOT_FOR_US;
+	if (memcmp(&ip6h->ip6_dst, &(((const struct sockaddr_in6 *)
+		   own)->sin6_addr), sizeof(ip6h->ip6_dst)))
+		return PKT_NOT_FOR_US;
+
+	icmp6h = (struct icmp6hdr *) (packet + sizeof(*ip6h));
+	if (icmp6h->icmp6_type != ICMPV6_TIME_EXCEED)
+		return PKT_NOT_FOR_US;
+	if (icmp6h->icmp6_code != ICMPV6_EXC_HOPLIMIT)
+		return PKT_NOT_FOR_US;
+
+	ip6h_inner = (struct ip6_hdr *) (packet + sizeof(*ip6h) + sizeof(*icmp6h));
+	if ((ntohl(ip6h_inner->ip6_flow) & 0x000fffff) != id)
+		return PKT_NOT_FOR_US;
+
+	hbuff = xzmalloc(NI_MAXHOST);
+
+	memset(&sa, 0, sizeof(sa));
+	sa.sin6_family = PF_INET6;
+	memcpy(&sa.sin6_addr, &ip6h->ip6_src, sizeof(ip6h->ip6_src));
+
+	getnameinfo((struct sockaddr *) &sa, sizeof(sa), hbuff, NI_MAXHOST,
+		    NULL, 0, NI_NUMERICHOST);
+
+	memset(&rec, 0, sizeof(rec));
+	ret = aslookup(hbuff, &rec);
+	if (ret < 0)
+		panic("AS lookup error %d!\n", ret);
+
+	gir = GeoIP_record_by_ipnum_v6(gi_city, sa.sin6_addr);
+	if (!dns_resolv) {
+		if (strlen(rec.country) > 0 && gir) {
+			const char *city = make_n_a(gir->city);
+
+			printf("%s in AS%s (%s, %s, %s, %f, %f), %s %s (%s), %s", hbuff,
+			       rec.number, rec.country,
+			       GeoIP_country_name_by_ipnum_v6(gi_country, sa.sin6_addr),
+			       city, gir->latitude, gir->longitude,
+			       rec.prefix, rec.registry, rec.since, rec.name);
+		} else if (strlen(rec.country) > 0 && !gir) {
+			printf("%s in AS%s (%s, %s), %s %s (%s), %s", hbuff,
+			       rec.number, rec.country,
+			       GeoIP_country_name_by_ipnum_v6(gi_country, sa.sin6_addr),
+			       rec.prefix, rec.registry, rec.since, rec.name);
+		} else {
+			printf("%s in unkown AS", hbuff);
+		}
+	} else {
+#if 0
+		struct hostent *hent = gethostbyaddr(&sa.sin_addr,
+						     sizeof(sa.sin_addr),
+						     PF_INET6);
+
+		if (strlen(rec.country) > 0 && gir) {
+			const char *city = make_n_a(gir->city);
+			printf("%s (%s) in AS%s (%s, %s, %s, %f, %f), %s %s (%s), %s",
+			       (hent ? hent->h_name : hbuff), hbuff,
+			       rec.number, rec.country,
+			       GeoIP_country_name_by_ipnum(gi_country, ntohl(iph->saddr)),
+			       city, gir->latitude, gir->longitude,
+			       rec.prefix, rec.registry,
+			       rec.since, rec.name);
+		} else if (strlen(rec.country) > 0 && !gir) {
+			printf("%s (%s) in AS%s (%s, %s), %s %s (%s), %s",
+			       (hent ? hent->h_name : hbuff), hbuff,
+			       rec.number, rec.country,
+			       GeoIP_country_name_by_ipnum(gi_country, ntohl(iph->saddr)),
+			       rec.prefix, rec.registry,
+			       rec.since, rec.name);
+		} else {
+			printf("%s (%s) in unkown AS",
+			       (hent ? hent->h_name : hbuff), hbuff);
+		}
+#endif
+	}
+
+	xfree(hbuff);
+
+	return PKT_GOOD;
+}
+
 static int handle_packet(uint8_t *packet, size_t len, int ip, int ttl, int id,
 			 struct sockaddr *own, int dns_resolv)
 {
-	return handle_ipv4_icmp(packet, len, ttl, id, own, dns_resolv);
+	if (ip == 4)
+		return handle_ipv4_icmp(packet, len, ttl, id, own, dns_resolv);
+	else
+		return handle_ipv6_icmp(packet, len, ttl, id, own, dns_resolv);
 }
 
 static int do_trace(const struct ash_cfg *cfg)
@@ -1020,13 +1114,17 @@ int main(int argc, char **argv)
 	if (path_country_db)
 		gi_country = GeoIP_open(path_country_db, GEOIP_MMAP_CACHE);
 	else
-		gi_country = GeoIP_open_type(GEOIP_COUNTRY_EDITION,
+		gi_country = GeoIP_open_type(cfg.ip == 4 ?
+					     GEOIP_COUNTRY_EDITION :
+					     GEOIP_COUNTRY_EDITION_V6,
 					     GEOIP_MMAP_CACHE);
 
 	if (path_city_db)
 		gi_city = GeoIP_open(path_city_db, GEOIP_MMAP_CACHE);
 	else
-		gi_city = GeoIP_open_type(GEOIP_CITY_EDITION_REV1,
+		gi_city = GeoIP_open_type(cfg.ip == 4 ?
+					  GEOIP_CITY_EDITION_REV1 :
+					  GEOIP_CITY_EDITION_REV1_V6,
 					  GEOIP_MMAP_CACHE);
 
 	if (!gi_country || !gi_city)

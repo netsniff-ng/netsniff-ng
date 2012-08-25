@@ -12,6 +12,9 @@ GEOLITE_COUNTRY_IPV6_FILE="GeoIPv6.dat.gz"
 GEOLITE_CITY_PATH=""
 GEOLITE_CITY_FILE="GeoLiteCity.dat.gz"
 
+GEOLITE_CITY_IPV6_PATH="GeoLiteCityv6-beta/"
+GEOLITE_CITY_IPV6_FILE="GeoLiteCityv6.dat.gz"
+
 GEOLITE_ASNUM_PATH="asnum/"
 GEOLITE_ASNUM_FILE="GeoIPASNum.dat.gz"
 
@@ -21,6 +24,7 @@ for url in \
     "$GEOIP_URL$GEOLITE_COUNTRY_PATH$GEOLITE_COUNTRY_FILE" \
     "$GEOIP_URL$GEOLITE_COUNTRY_IPV6_PATH$GEOLITE_COUNTRY_IPV6_FILE" \
     "$GEOIP_URL$GEOLITE_CITY_PATH$GEOLITE_CITY_FILE" \
+    "$GEOIP_URL$GEOLITE_CITY_IPV6_PATH$GEOLITE_CITY_IPV6_FILE" \
     "$GEOIP_URL$GEOLITE_ASNUM_PATH$GEOLITE_ASNUM_FILE"
 do
     echo "Downloading $url"
@@ -38,5 +42,6 @@ do
 done
 
 ln -s /usr/share/GeoIP/GeoLiteCity.dat /usr/share/GeoIP/GeoIPCity.dat
+ln -s /usr/share/GeoIP/GeoLiteCityv6.dat /usr/share/GeoIP/GeoIPCityv6.dat
 
 exit $FAILED
