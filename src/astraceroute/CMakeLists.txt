@@ -40,7 +40,13 @@ if(LIBGEOIP_FOUND AND CMAKE_HAVE_PTHREAD_CREATE)
 
   install(
     TARGETS ${PROJECT_NAME}
-    DESTINATION ${EXECUTABLE_INSTALL_PATH})
+    DESTINATION ${EXECUTABLE_INSTALL_PATH}
+  )
+
+  install(
+    PROGRAMS ../../scripts/astraceroute6
+    DESTINATION ${EXECUTABLE_INSTALL_PATH}
+  )
 
   install(
     FILES ../conf/whois.conf
