@@ -6,7 +6,7 @@ find_package(LibGeoIP)
 find_package(Threads)
 include(Pod2Man)
 
-if(LIBGEOIP_FOUND AND CMAKE_HAVE_PTHREAD_CREATE)
+if(LIBGEOIP_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND HAVE_GEOIPV6)
   add_executable(
     ${PROJECT_NAME}
     ../xmalloc.c
@@ -52,12 +52,16 @@ if(LIBGEOIP_FOUND AND CMAKE_HAVE_PTHREAD_CREATE)
     FILES ../conf/whois.conf
     DESTINATION ${CONFIG_INSTALL_PATH}
   )
-else(LIBGEOIP_FOUND AND CMAKE_HAVE_PTHREAD_CREATE)
+else(LIBGEOIP_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND HAVE_GEOIPV6)
   if(NOT LIBGEOIP_FOUND)
     message("libgeoip is missing on target. Skipping ${PROJECT_NAME} build.")
   endif(NOT LIBGEOIP_FOUND)
 
+  if(NOT HAVE_GEOIPV6)
+    message("libgeoip is too old on target. Skipping ${PROJECT_NAME} build.")
+  endif(NOT HAVE_GEOIPV6)
+
   if(NOT CMAKE_HAVE_PTHREAD_CREATE)
     message("libpthread is missing on target. Skipping ${PROJECT_NAME} build.")
   endif(NOT CMAKE_HAVE_PTHREAD_CREATE)
-endif(LIBGEOIP_FOUND AND CMAKE_HAVE_PTHREAD_CREATE)
+endif(LIBGEOIP_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND HAVE_GEOIPV6)
