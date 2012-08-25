@@ -23,6 +23,8 @@
 #include <sched.h>
 #include <limits.h>
 #include <stdbool.h>
+#include <netdb.h>
+#include <ifaddrs.h>
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -423,6 +425,31 @@ int device_ifindex(const char *ifname)
 	return index;
 }
 
+static int __device_address6(const char *ifname, struct sockaddr_storage *ss)
+{
+	int ret, family, found = -EINVAL;
+	struct ifaddrs *ifaddr, *ifa;
+
+	ret = getifaddrs(&ifaddr);
+	if (ret < 0)
+		panic("Cannot get device addresses for IPv6!\n");
+
+	for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+		family = ifa->ifa_addr->sa_family;
+		if (family != AF_INET6)
+			continue;
+		if (strcmp(ifa->ifa_name, ifname))
+			continue;
+
+		memcpy(ss, ifa->ifa_addr, sizeof(*ss));
+		found = 0;
+		break;
+	}
+
+	freeifaddrs(ifaddr);
+	return found;
+}
+
 int device_address(const char *ifname, int af, struct sockaddr_storage *ss)
 {
 	int ret, sock;
@@ -432,6 +459,8 @@ int device_address(const char *ifname, int af, struct sockaddr_storage *ss)
 		return -EINVAL;
 	if (!strncmp("any", ifname, strlen("any")))
 		return -EINVAL;
+	if (af == AF_INET6)
+		return __device_address6(ifname, ss);
 
 	sock = af_socket(af);
 

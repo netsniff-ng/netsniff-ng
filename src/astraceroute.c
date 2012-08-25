@@ -65,9 +65,6 @@
 
 #define WHOIS_SERVER_SOURCE "/etc/netsniff-ng/whois.conf"
 
-static int assemble_ipv6_tcp(uint8_t *packet, size_t len, int ttl,
-			     struct sockaddr_in *sin) __attribute__ ((unused));
-
 struct ash_cfg {
 	char *host;
 	char *port;
@@ -230,18 +227,18 @@ static void help(void)
 	printf(" -h|--help               Print this help\n");
 	printf("\n");
 	printf("Examples:\n");
-	printf("  IPv4 trace of AS with TCP ECN SYN probe:\n");
-	printf("    astraceroute -i eth0 -N -E -H netsniff-ng.org\n");
 	printf("  IPv4 trace of AS with TCP SYN probe (this will most-likely pass):\n");
 	printf("    astraceroute -i eth0 -N -S -H netsniff-ng.org\n");
+	printf("  IPv4 trace of AS with TCP ECN SYN probe:\n");
+	printf("    astraceroute -i eth0 -N -E -H netsniff-ng.org\n");
 	printf("  IPv4 trace of AS with TCP FIN probe:\n");
 	printf("    astraceroute -i eth0 -N -F -H netsniff-ng.org\n");
 	printf("  IPv4 trace of AS with Xmas probe:\n");
 	printf("    astraceroute -i eth0 -N -FPU -H netsniff-ng.org\n");
 	printf("  IPv4 trace of AS with Null probe with ASCII payload:\n");
 	printf("    astraceroute -i eth0 -N -H netsniff-ng.org -X \"censor-me\" -Z\n");
-	printf("  IPv6 trace of AS up to netsniff-ng.org:\n");
-	printf("    astraceroute -6 -S -i eth0 -H netsniff-ng.org\n");
+	printf("  IPv6 trace of AS up to www.6bone.net:\n");
+	printf("    astraceroute -6 -S -i eth0 -H www.6bone.net\n");
 	printf("\n");
 	printf("Note:\n");
 	printf("  If the TCP probe did not give any results, then astraceroute will\n");
@@ -300,6 +297,17 @@ static void assemble_data(uint8_t *packet, size_t len, const char *payload)
 	}
 }
 
+static void assemble_icmp4(uint8_t *packet, size_t len)
+{
+	struct icmphdr *icmph = (struct icmphdr *) packet;
+
+	bug_on(len < sizeof(struct icmphdr));
+
+	icmph->type = ICMP_ECHO;
+	icmph->code = 0;
+	icmph->checksum = 0;
+}
+
 static void assemble_tcp(uint8_t *packet, size_t len, int syn, int ack,
 			 int urg, int fin, int rst, int psh, int ecn, int dport)
 {
@@ -333,6 +341,8 @@ static int assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
 			     int nofrag, int dport, const char *payload)
 {
 	struct iphdr *iph = (struct iphdr *) packet;
+	uint8_t *data;
+	size_t data_len;
 
 	bug_on(!src || !dst);
 	bug_on(src->sa_family != PF_INET || dst->sa_family != PF_INET);
@@ -349,36 +359,51 @@ static int assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
 	iph->saddr = ((const struct sockaddr_in *) src)->sin_addr.s_addr;
 	iph->daddr = ((const struct sockaddr_in *) dst)->sin_addr.s_addr;
 
-	assemble_tcp(packet + sizeof(struct iphdr),
-		     len - sizeof(struct iphdr), syn, ack, urg, fin, rst,
-		     psh, ecn, dport);
+	data = packet + sizeof(struct iphdr);
+	data_len = len - sizeof(struct iphdr);
+	assemble_tcp(data, data_len, syn, ack, urg, fin, rst, psh, ecn, dport);
 
-	assemble_data(packet + sizeof(struct iphdr) + sizeof(struct tcphdr),
-		      len - sizeof(struct iphdr) - sizeof(struct tcphdr),
-		      payload);
+	data = packet + sizeof(struct iphdr) + sizeof(struct tcphdr);
+	data_len = len - sizeof(struct iphdr) - sizeof(struct tcphdr);
+	assemble_data(data, data_len, payload);
 
-	iph->check = csum((unsigned short *) packet,
-			  ntohs(iph->tot_len) >> 1);
+	iph->check = csum((unsigned short *) packet, ntohs(iph->tot_len) >> 1);
 
 	return ntohs(iph->id);
 }
 
 /* returns: ipv6 flow label */
 static int assemble_ipv6_tcp(uint8_t *packet, size_t len, int ttl,
-			     struct sockaddr_in *sin)
+			     const struct sockaddr *dst,
+			     const struct sockaddr *src, int syn, int ack,
+			     int urg, int fin, int rst, int psh, int ecn,
+			     int dport, const char *payload)
 {
-	return 0;
-}
+	struct ip6_hdr *ip6h = (struct ip6_hdr *) packet;
+	uint8_t *data;
+	size_t data_len;
 
-static void assemble_icmp4(uint8_t *packet, size_t len)
-{
-	struct icmphdr *icmph = (struct icmphdr *) packet;
+	bug_on(!src || !dst);
+	bug_on(src->sa_family != PF_INET6 || dst->sa_family != PF_INET6);
+	bug_on(len < sizeof(*ip6h) + sizeof(struct tcphdr));
 
-	bug_on(len < sizeof(struct icmphdr));
+	ip6h->ip6_vfc = 0x60;
+	ip6h->ip6_flow = mt_rand_int32();
+	ip6h->ip6_plen = htons((uint16_t) len - sizeof(*ip6h));
+	ip6h->ip6_nxt = 6; /* TCP */
+	ip6h->ip6_hlim = (uint8_t) ttl;
+	memcpy(&ip6h->ip6_src, &(((const struct sockaddr_in6 *) src)->sin6_addr), sizeof(ip6h->ip6_src));
+	memcpy(&ip6h->ip6_dst, &(((const struct sockaddr_in6 *) dst)->sin6_addr), sizeof(ip6h->ip6_dst));
 
-	icmph->type = ICMP_ECHO;
-	icmph->code = 0;
-	icmph->checksum = 0;
+	data = packet + sizeof(*ip6h);
+	data_len = len - sizeof(*ip6h);
+	assemble_tcp(data, data_len, syn, ack, urg, fin, rst, psh, ecn, dport);
+
+	data = packet + sizeof(*ip6h) + sizeof(struct tcphdr);
+	data_len = len - sizeof(*ip6h) - sizeof(struct tcphdr);
+	assemble_data(data, data_len, payload);
+
+	return ntohl(ip6h->ip6_flow);
 }
 
 /* returns: ipv4 id */
@@ -388,6 +413,8 @@ static int assemble_ipv4_icmp4(uint8_t *packet, size_t len, int ttl,
 			       const char *payload)
 {
 	struct iphdr *iph = (struct iphdr *) packet;
+	uint8_t *data;
+	size_t data_len;
 
 	bug_on(!src || !dst);
 	bug_on(src->sa_family != PF_INET || dst->sa_family != PF_INET);
@@ -404,33 +431,52 @@ static int assemble_ipv4_icmp4(uint8_t *packet, size_t len, int ttl,
 	iph->saddr = ((const struct sockaddr_in *) src)->sin_addr.s_addr;
 	iph->daddr = ((const struct sockaddr_in *) dst)->sin_addr.s_addr;
 
-	assemble_icmp4(packet + sizeof(struct iphdr),
-		       len - sizeof(struct iphdr));
+	data = packet + sizeof(struct iphdr);
+	data_len = len - sizeof(struct iphdr);
+	assemble_icmp4(data, data_len);
 
-	assemble_data(packet + sizeof(struct iphdr) + sizeof(struct icmphdr),
-		      len - sizeof(struct iphdr) - sizeof(struct icmphdr),
-		      payload);
+	data = packet + sizeof(struct iphdr) + sizeof(struct icmphdr);
+	data_len = len - sizeof(struct iphdr) - sizeof(struct icmphdr);
+	assemble_data(data, data_len, payload);
 
-	iph->check = csum((unsigned short *) packet,
-			  ntohs(iph->tot_len) >> 1);
+	iph->check = csum((unsigned short *) packet, ntohs(iph->tot_len) >> 1);
 
 	return ntohs(iph->id);
 }
 
-static int assemble_packet_or_die(uint8_t *packet, size_t len, int ttl, int icmp,
+static int assemble_packet_or_die(uint8_t *packet, size_t len,
+				  int ttl, int icmp,
 				  const struct ash_cfg *cfg,
 				  const struct sockaddr *dst,
 				  const struct sockaddr *src)
 {
-	if (icmp)
-		return assemble_ipv4_icmp4(packet, len, ttl, cfg->tos, dst, src,
-					   cfg->nofrag, cfg->payload);
-	else
-		return assemble_ipv4_tcp(packet, len, ttl, cfg->tos, dst, src,
-					 cfg->syn, cfg->ack, cfg->urg, cfg->fin,
-					 cfg->rst, cfg->psh, cfg->ecn,
-					 cfg->nofrag, atoi(cfg->port),
-					 cfg->payload);
+	if (icmp) {
+		if (cfg->ip == 4) {
+			return assemble_ipv4_icmp4(packet, len, ttl, cfg->tos,
+						   dst, src, cfg->nofrag,
+						   cfg->payload);
+//		} else {
+//			return assemble_ipv6_icmp6(packet, len, ttl, dst, src,
+//						   cfg->payload);
+		}
+	} else {
+		if (cfg->ip == 4) {
+			return assemble_ipv4_tcp(packet, len, ttl, cfg->tos,
+						 dst, src, cfg->syn, cfg->ack,
+						 cfg->urg, cfg->fin, cfg->rst,
+						 cfg->psh, cfg->ecn,
+						 cfg->nofrag, atoi(cfg->port),
+						 cfg->payload);
+		} else {
+			return assemble_ipv6_tcp(packet, len, ttl, dst, src,
+						 cfg->syn, cfg->ack, cfg->urg,
+						 cfg->fin, cfg->rst, cfg->psh,
+						 cfg->ecn, atoi(cfg->port),
+						 cfg->payload);
+		}
+	}
+
+	return -EIO;
 }
 
 #define PKT_NOT_FOR_US	0
@@ -544,7 +590,7 @@ static int do_trace(const struct ash_cfg *cfg)
 	int ttl, query, fd = -1, one = 1, ret, fd_cap, ifindex;
 	int is_okay = 0, id, timeout_poll;
 	uint8_t *packet, *packet_rcv;
-	ssize_t err, real_len;
+	ssize_t err, real_len, sd_len;
 	size_t len, len_rcv;
 	struct addrinfo hints, *ahead, *ai;
 	char *hbuff1, *hbuff2;
@@ -571,10 +617,9 @@ static int do_trace(const struct ash_cfg *cfg)
 		if (!((ai->ai_family == PF_INET6 && cfg->ip == 6) ||
 		      (ai->ai_family == PF_INET && cfg->ip == 4)))
 			continue;
-		fd = socket(ai->ai_family, SOCK_RAW, ai->ai_protocol);
+		fd = socket(ai->ai_family, SOCK_RAW, IPPROTO_RAW);
 		if (fd < 0)
 			continue;
-
 		fd_cap = pf_socket();
 
 		memset(&ss, 0, sizeof(ss));
@@ -588,6 +633,11 @@ static int do_trace(const struct ash_cfg *cfg)
 
 		memset(&sd, 0, sizeof(sd));
 		memcpy(&sd, ai->ai_addr, ai->ai_addrlen);
+		if (ai->ai_family == PF_INET6) {
+			struct sockaddr_in6 *sd6 = (struct sockaddr_in6 *) &sd;
+			sd6->sin6_port = htons(0);
+		}
+		sd_len = ai->ai_addrlen;
 
 		break;
 	}
@@ -702,7 +752,7 @@ retry:
 			}
 
 			err = sendto(fd, packet, len, 0, (struct sockaddr *) &sd,
-				     sizeof(sd));
+				     sd_len);
 			if (err < 0)
 				panic("sendto failed: %s\n", strerror(errno));
 
