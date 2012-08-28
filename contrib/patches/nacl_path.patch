@@ -1,8 +1,0 @@
-Description: Fix for nacl headers and libs
-Author: Kartik Mistry <kartik@debian.org>
-Last-Update: 2012-04-01
---- /dev/null
-+++ b/src/curvetun/nacl_path.cmake
-@@ -0,0 +1,2 @@
-+SET(NACL_INCLUDE_DIR /usr/include/nacl)
-+SET(NACL_LIB_DIR /usr/lib)
