@@ -23,7 +23,6 @@ What libraries / tools are required?
  - libnacl (curvetun)
  - libnetfilter-conntrack (flowtop)
  - liburcu (flowtop)
- - libcli (gremlin)
  - libnl (netsniff-ng, trafgen)
 
 What additional tools are recommended?

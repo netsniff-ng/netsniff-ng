@@ -24,7 +24,6 @@ following utilities:
 
   * netsniff-ng: a zero-copy packet analyzer, pcap capturing/replaying tool
   * trafgen: a zero-copy network packet generator
-  * gremlin: a threaded analyzer/generator with Cisco-cli for hw/sw appliances
   * ifpps: a top-like kernel networking and system statistics tool
   * curvetun: a lightweight curve25519-based multiuser IP tunnel
   * astraceroute: an autonomous system trace route and DPI testing utility

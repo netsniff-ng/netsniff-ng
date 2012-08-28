@@ -11,8 +11,9 @@ submit your contributions):
  5) Make trafgen also write to a pcap instead to a device.
  6) Let netsniff-ng and trafgen support pcap and pcap-ng!
  7) Include an ARP cache poisoning tool.
- 8) gremlin: fork + fanout mode for a threaded netsniff-ng and trafgen
-    front-end with Cisco-cli for a hw/sw applicance. Do it Mausezahn like.
+ 8) integrate Mausezahn: maintain it, clean it up, add fork + fanout mode for
+    a threaded "netsniff-ng and trafgen" front-end with Cisco-cli for a hw/sw
+    applicance. Only leave interactive mode.
 10) Add a proper 802.11 dissector for netsniff-ng.
 12) Add new dissectors (e.g. BGP, DNS, DCCP, SCTP, RSVP, IPsec, LISP, RADIUS,
     LLC, fix MPLS?, improve ARP, BPDU, PVST, CDP, LLDP, RTP, Syslog, NTP,
