@@ -31,7 +31,8 @@ following utilities:
   * bpfc: a tiny Berkeley Packet Filter compiler with Linux extensions
 
 Have a look at the Documentation/ folder for further information, also at known
-issues under Documentation/KnownIssues.
+issues under Documentation/KnownIssues. Carefully read the INSTALL document for
+the next steps in building netsniff-ng.
 
 The netsniff-ng toolkit is an Open Source project covered by the GNU General 
 Public License. For any questions or feedback about netsniff-ng you are welcome

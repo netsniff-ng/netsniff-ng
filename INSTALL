@@ -14,7 +14,7 @@ What tools are required to build netsniff-ng?
  - flex, bison (bpfc, trafgen)
  - pod2man (all, only for manpages)
 
-What libraries / tools are required?
+What libraries are required?
 
  - glibc (all)
  - libpthread (curvetun, netsniff-ng, flowtop)
