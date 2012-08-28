@@ -1,0 +1,34 @@
+Further reading:
+////////////////
+
+Here are some further third party links to tutorials or interesting slides that
+mention the netsniff-ng toolkit in some way (if you have anything interesting
+for us, let us know):
+
+Creative packets for network operators
+ * T: slides
+ * W: http://files.kramse.org/tmp/creative-packets-screen.pdf
+
+Ethernet maximum rates, packet generation, capturing and monitoring
+ * T: wiki
+ * W: http://wiki.networksecuritytoolkit.org/nstwiki/index.php/LAN_Ethernet_Maximum_Rates,_Generation,_Capturing_%26_Monitoring
+
+Linux 3.0 BPF JIT x86_64 exploit (utilized bpfc)
+ * T: blog
+ * W: http://carnivore.it/2011/12/27/linux_3.0_bpf_jit_x86_64_exploit
+
+Netsniff-ng usage tutorial
+ * T: article
+ * W: http://sickbits.networklabs.org/wordpress/netsniff-ng-performant-packet-sniff/
+
+Could you set the "go faster" bit?
+ * T: news
+ * W: http://packetpushers.net/could-you-set-the-go-faster-bit/
+
+An introduction to traffic analysis: a pragmatic approach
+ * T: video
+ * W: http://www.youtube.com/watch?feature=player_embedded&v=26_BFP3Zy9c
+
+netsniff-ng for Xplico
+ * T: news
+ * W: http://www.xplico.org/archives/1184
