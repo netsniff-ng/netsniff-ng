@@ -52,6 +52,11 @@ if(LIBGEOIP_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND HAVE_GEOIPV6)
     FILES ../conf/whois.conf
     DESTINATION ${CONFIG_INSTALL_PATH}
   )
+
+  install(
+    FILES ../../Documentation/Astraceroute
+    DESTINATION ${DOC_INSTALL_PATH}
+  )
 else(LIBGEOIP_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND HAVE_GEOIPV6)
   if(NOT LIBGEOIP_FOUND)
     message("libgeoip is missing on target. Skipping ${PROJECT_NAME} build.")

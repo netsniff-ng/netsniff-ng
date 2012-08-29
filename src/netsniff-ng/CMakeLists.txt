@@ -95,6 +95,10 @@ if(CMAKE_HAVE_PTHREAD_CREATE AND LIBNL_FOUND)
     DESTINATION ${CONFIG_INSTALL_PATH}
   )
 
+  install(
+    FILES ../../Documentation/Netsniff-ng
+    DESTINATION ${DOC_INSTALL_PATH}
+  )
 else(CMAKE_HAVE_PTHREAD_CREATE AND LIBNL_FOUND)
   if(NOT CMAKE_HAVE_PTHREAD_CREATE)
     message("libpthread is missing on target. Skipping ${PROJECT_NAME} build.")

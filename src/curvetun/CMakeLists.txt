@@ -52,6 +52,11 @@ if(NACL_FOUND AND CMAKE_THREAD_LIBS_INIT)
     TARGETS ${PROJECT_NAME}
     DESTINATION ${EXECUTABLE_INSTALL_PATH}
   )
+
+  install(
+    FILES ../../Documentation/Curvetun
+    DESTINATION ${DOC_INSTALL_PATH}
+  )
 else(NACL_FOUND AND CMAKE_THREAD_LIBS_INIT)
   if(NOT NACL_FOUND)
     message("NaCl was not found. Check if NACL_INCLUDE_DIR and NACL_LIB_DIR "

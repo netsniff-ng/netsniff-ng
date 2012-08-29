@@ -57,6 +57,11 @@ if(FLEX_FOUND AND BISON_FOUND AND LIBNL_FOUND)
     TARGETS ${PROJECT_NAME}
     DESTINATION ${EXECUTABLE_INSTALL_PATH}
   )
+
+  install(
+    FILES ../../Documentation/Trafgen
+    DESTINATION ${DOC_INSTALL_PATH}
+  )
 else(FLEX_FOUND AND BISON_FOUND AND LIBNL_FOUND)
   if(NOT FLEX_FOUND)
     message("flex is missing on target. Skipping ${PROJECT_NAME} build.")

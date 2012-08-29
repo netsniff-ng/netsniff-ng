@@ -34,6 +34,11 @@ if(CURSES_FOUND)
     TARGETS ${PROJECT_NAME}
     DESTINATION ${EXECUTABLE_INSTALL_PATH}
   )
+
+  install(
+    FILES ../../Documentation/Ifpps
+    DESTINATION ${DOC_INSTALL_PATH}
+  )
 else(CURSES_FOUND)
   message("libncurses is missing on target. Skipping ${PROJECT_NAME} build.")
 endif(CURSES_FOUND)

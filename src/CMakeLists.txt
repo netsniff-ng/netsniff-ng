@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 2.6)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 set(EXECUTABLE_INSTALL_PATH /usr/sbin)
 set(CONFIG_INSTALL_PATH /etc/netsniff-ng)
+SET(DOC_INSTALL_PATH share/doc/netsniff-ng)
 
 set(VERSION "0.5.8")
 
@@ -85,25 +86,44 @@ add_subdirectory(astraceroute)
 add_subdirectory(curvetun)
 add_subdirectory(flowtop)
 
-SET(DOCDIR share/doc/netsniff-ng)
-
-# Tools
-install(FILES ../Documentation/Astraceroute DESTINATION ${DOCDIR})
-install(FILES ../Documentation/Bpfc DESTINATION ${DOCDIR})
-install(FILES ../Documentation/Curvetun DESTINATION ${DOCDIR})
-install(FILES ../Documentation/Flowtop DESTINATION ${DOCDIR})
-install(FILES ../Documentation/Ifpps DESTINATION ${DOCDIR})
-install(FILES ../Documentation/Netsniff-ng DESTINATION ${DOCDIR})
-install(FILES ../Documentation/Trafgen DESTINATION ${DOCDIR})
-
 # Release notes
-install(FILES ../Documentation/RelNotes/Notes-0.5.6 DESTINATION ${DOCDIR})
-install(FILES ../Documentation/RelNotes/Notes-0.5.7 DESTINATION ${DOCDIR})
+install(
+  FILES ../Documentation/RelNotes/Notes-0.5.6
+  DESTINATION ${DOC_INSTALL_PATH}
+)
+
+install(
+  FILES ../Documentation/RelNotes/Notes-0.5.7
+  DESTINATION ${DOC_INSTALL_PATH}
+)
 
 # Additional usage information
-install(FILES ../Documentation/FurtherReading DESTINATION ${DOCDIR})
-install(FILES ../Documentation/IPv6Notes DESTINATION ${DOCDIR})
-install(FILES ../Documentation/KnownIssues DESTINATION ${DOCDIR})
-install(FILES ../Documentation/Performance DESTINATION ${DOCDIR})
-install(FILES ../Documentation/RelatedWork DESTINATION ${DOCDIR})
-install(FILES ../Documentation/Sponsors DESTINATION ${DOCDIR})
+install(
+  FILES ../Documentation/FurtherReading
+  DESTINATION ${DOC_INSTALL_PATH}
+)
+
+install(
+  FILES ../Documentation/IPv6Notes
+  DESTINATION ${DOC_INSTALL_PATH}
+)
+
+install(
+  FILES ../Documentation/KnownIssues
+  DESTINATION ${DOC_INSTALL_PATH}
+)
+
+install(
+  FILES ../Documentation/Performance
+  DESTINATION ${DOC_INSTALL_PATH}
+)
+
+install(
+  FILES ../Documentation/RelatedWork
+  DESTINATION ${DOC_INSTALL_PATH}
+)
+
+install(
+  FILES ../Documentation/Sponsors
+  DESTINATION ${DOC_INSTALL_PATH}
+)
