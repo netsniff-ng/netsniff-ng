@@ -84,3 +84,26 @@ add_subdirectory(bpfc)
 add_subdirectory(astraceroute)
 add_subdirectory(curvetun)
 add_subdirectory(flowtop)
+
+SET(DOCDIR share/doc/netsniff-ng)
+
+# Tools
+install(FILES ../Documentation/Astraceroute DESTINATION ${DOCDIR})
+install(FILES ../Documentation/Bpfc DESTINATION ${DOCDIR})
+install(FILES ../Documentation/Curvetun DESTINATION ${DOCDIR})
+install(FILES ../Documentation/Flowtop DESTINATION ${DOCDIR})
+install(FILES ../Documentation/Ifpps DESTINATION ${DOCDIR})
+install(FILES ../Documentation/Netsniff-ng DESTINATION ${DOCDIR})
+install(FILES ../Documentation/Trafgen DESTINATION ${DOCDIR})
+
+# Release notes
+install(FILES ../Documentation/RelNotes/Notes-0.5.6 DESTINATION ${DOCDIR})
+install(FILES ../Documentation/RelNotes/Notes-0.5.7 DESTINATION ${DOCDIR})
+
+# Additional usage information
+install(FILES ../Documentation/FurtherReading DESTINATION ${DOCDIR})
+install(FILES ../Documentation/IPv6Notes DESTINATION ${DOCDIR})
+install(FILES ../Documentation/KnownIssues DESTINATION ${DOCDIR})
+install(FILES ../Documentation/Performance DESTINATION ${DOCDIR})
+install(FILES ../Documentation/RelatedWork DESTINATION ${DOCDIR})
+install(FILES ../Documentation/Sponsors DESTINATION ${DOCDIR})
