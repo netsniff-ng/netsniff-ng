@@ -19,9 +19,12 @@ include(Pod2Man)
 add_definitions(
   -O3
   -fstack-protector
+  --param=ssp-buffer-size=4
   -fpie
   -std=gnu99
   -fno-strict-aliasing
+  -fexceptions
+  -fasynchronous-unwind-tables
   -D_FORTIFY_SOURCE=2
   -D_REENTRANT
   -march=native
