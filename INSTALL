@@ -48,7 +48,8 @@ Man pages are generated out of the files from Documentation/Manpages dir.
 They are written in POD format. For this, you need the tool pod2man which
 is distributed with Perl and should therefore be available on most systems.
 
-To uninstall, simply remove all files refered in install_manifest.txt
+To uninstall, simply remove all files referred in install_manifest.txt, e.g.
+by running 'xargs rm < install_manifest.txt'.
 
 For bpfc, we also have a Vim syntax highlighting file. Have a look at
 scripts/bpf.vim for installation instructions.
