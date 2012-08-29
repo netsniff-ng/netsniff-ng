@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 2.6)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 set(EXECUTABLE_INSTALL_PATH /usr/sbin)
 set(CONFIG_INSTALL_PATH /etc/netsniff-ng)
-SET(DOC_INSTALL_PATH share/doc/netsniff-ng)
+set(DOC_INSTALL_PATH share/doc/netsniff-ng)
 
 set(VERSION "0.5.8")
 
