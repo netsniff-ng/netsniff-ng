@@ -114,6 +114,20 @@ patch from Emmanuel Roullit:
      	)
  ENDMACRO(POD2MAN PODFILE MANFILE SECTION)
 
+The same thing counts for installing relevant files from the documentation:
+
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -85,7 +85,7 @@ add_subdirectory(astraceroute)
+ add_subdirectory(curvetun)
+ add_subdirectory(flowtop)
+ 
+-SET(DOCDIR share/doc/netsniff-ng)
++SET(DOCDIR /usr/share/doc/netsniff-ng)
+ 
+ # Tools
+ install(FILES ../Documentation/Astraceroute DESTINATION ${DOCDIR})
+
 In case there is already a NaCl library version shipped with your distribution
 so that you only need to tell cmake pointers to the library and include path,
 you can add a new cmake file into src/curvetun and apply the patch from Kartik
