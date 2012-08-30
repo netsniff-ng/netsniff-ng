@@ -72,10 +72,9 @@ openSUSE/SLE
 Mandriva
  * 1: http://www.mandriva.com/
  * 2: http://sophie.zarb.org/srpm/Mandriva,cooker,/netsniff-ng
- * M: Guillaume Rousse
- * W: http://www.zarb.org/~guillomovitch/
- * E: guillomovitch@mandriva.org
- * C: France
+ * M: Dmitry Mikhirev
+ * E: dmikhirev@mandriva.org
+ * C: Russia
 
 Trisquel
  * 1: http://trisquel.info/
