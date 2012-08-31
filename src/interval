@@ -1,0 +1,376 @@
+cli_arp.c:   struct mops_ext_arp * pd = clipkt->p_desc;
+cli_arp.c:   struct mops_ext_arp * pd = clipkt->p_desc;
+cli_arp.c:   struct mops_ext_arp * pd = clipkt->p_desc;
+cli_arp.c:   struct mops_ext_arp * pd = clipkt->p_desc;
+cli_arp.c:   struct mops_ext_arp * pd = clipkt->p_desc;
+cli_arp.c:   struct mops_ext_arp * pd = clipkt->p_desc;
+cli_arp.c:   struct mops_ext_arp * pd = clipkt->p_desc;
+cli_arp.c:   struct mops_ext_arp * pd = clipkt->p_desc;
+cli_arp.c:   struct mops_ext_arp * pd = clipkt->p_desc;
+cli_arp.c:   struct mops_ext_arp * pd = (MOPS_EXT_ARP) clipkt->p_desc;
+cli_arp.c:   sprintf(prompt, "pkt-%i",clipkt->id);
+cli_bpdu.c:   struct mops_ext_bpdu * pd = clipkt->p_desc;
+cli_bpdu.c:   struct mops_ext_bpdu * pd = clipkt->p_desc;
+cli_bpdu.c:	struct mops_ext_bpdu * pd = clipkt->p_desc;
+cli_bpdu.c:   struct mops_ext_bpdu * pd = clipkt->p_desc;
+cli_bpdu.c:	struct mops_ext_bpdu * pd = clipkt->p_desc;   
+cli_bpdu.c:   struct mops_ext_bpdu * pd = clipkt->p_desc;   
+cli_bpdu.c:   struct mops_ext_bpdu * pd = clipkt->p_desc;   
+cli_bpdu.c:   struct mops_ext_bpdu * pd = clipkt->p_desc;   
+cli_bpdu.c:   struct mops_ext_bpdu * pd = clipkt->p_desc;   
+cli_bpdu.c:   struct mops_ext_bpdu * pd = clipkt->p_desc;   
+cli_bpdu.c:   struct mops_ext_bpdu * pd = clipkt->p_desc;   
+cli_bpdu.c:   struct mops_ext_bpdu * pd = clipkt->p_desc;   
+cli_bpdu.c:   struct mops_ext_bpdu * pd = clipkt->p_desc;
+cli_bpdu.c:   sprintf(prompt, "pkt-%i",clipkt->id);
+cli_cmds.c:	     bs2str(clipkt->eth_snap, line, clipkt->eth_snap_s);
+cli_cmds.c:	     k = clipkt->dot1Q_s/4; // number of tags
+cli_cmds.c:		  x0 = (unsigned char*) &clipkt->dot1Q[(j*4)+2];
+cli_cmds.c:		  x1 = (unsigned char*) &clipkt->dot1Q[(j*4)+3];
+cli_cmds.c:	     k = clipkt->mpls_s/4; // number of tags
+cli_cmds.c:		  x0 = (unsigned char*) &clipkt->mpls[(j*4)+0];
+cli_cmds.c:		  x1 = (unsigned char*) &clipkt->mpls[(j*4)+1];
+cli_cmds.c:		  x2 = (unsigned char*) &clipkt->mpls[(j*4)+2];
+cli_cmds.c:		  x3 = (unsigned char*) &clipkt->mpls[(j*4)+3];
+cli_cmds.c:	     x0 = (unsigned char*) & clipkt->ip_src;
+cli_cmds.c:	     if (clipkt->ip_src_isrange) 
+cli_cmds.c:		  x1 = (unsigned char*) & clipkt->ip_src_start;
+cli_cmds.c:		  x2 = (unsigned char*) & clipkt->ip_src_stop;
+cli_cmds.c:		     (clipkt->ip_src_israndom) ? "RANDOM" : "(not random)",
+cli_cmds.c:		     (clipkt->ip_src_isrange) ? "RANGE:" : "(no range)",
+cli_cmds.c:	     x0 = (unsigned char*) & clipkt->ip_dst;
+cli_cmds.c:	     if (clipkt->ip_dst_isrange) 
+cli_cmds.c:		  x1 = (unsigned char*) & clipkt->ip_dst_start;
+cli_cmds.c:		  x2 = (unsigned char*) & clipkt->ip_dst_stop;
+cli_cmds.c:		     (clipkt->ip_dst_isrange) ? "RANGE:" : "(no range)",
+cli_cmds.c:		     clipkt->ip_tos, clipkt->ip_proto, clipkt->ip_ttl, clipkt->ip_id, clipkt->ip_frag_offset,
+cli_cmds.c:		     (clipkt->ip_flags_RS) ? "RS" : "-",
+cli_cmds.c:		     (clipkt->ip_flags_DF) ? "DF" : "-",
+cli_cmds.c:		     (clipkt->ip_flags_MF) ? "MF" : "-");
+cli_cmds.c:		     clipkt->frame[clipkt->begin_IP+2]*256+clipkt->frame[clipkt->begin_IP+3],
+cli_cmds.c:		     (clipkt->ip_len_false) ? "false" : "correct",
+cli_cmds.c:		     clipkt->frame[clipkt->begin_IP+10],
+cli_cmds.c:		     clipkt->frame[clipkt->begin_IP+11],
+cli_cmds.c:		     (clipkt->ip_sum_false) ? "false" : "correct");
+cli_cmds.c:	     if (clipkt->sp_isrange)
+cli_cmds.c:			  sprintf(line2, "RANGE: %u-%u", clipkt->sp_start, clipkt->sp_stop);
+cli_cmds.c:	     if (clipkt->dp_isrange)
+cli_cmds.c:			  sprintf(line3, "RANGE: %u-%u", clipkt->dp_start, clipkt->dp_stop);
+cli_cmds.c:		     clipkt->sp, 
+cli_cmds.c:		     (clipkt->sp_isrand) ? "RANDOM" : "(not random)",
+cli_cmds.c:		     clipkt->dp, 
+cli_cmds.c:		     (clipkt->dp_isrand) ? "RANDOM" : "(not random)");
+cli_cmds.c:		     clipkt->udp_sum, (clipkt->udp_sum_false) ? "false" : "correct",
+cli_cmds.c:		     clipkt->udp_len, (clipkt->udp_len_false) ? "false" : "correct");
+cli_cmds.c:	     if (clipkt->sp_isrange)
+cli_cmds.c:		 sprintf(line2, "RANGE: %u-%u", clipkt->sp_start, clipkt->sp_stop);
+cli_cmds.c:	     if (clipkt->dp_isrange)
+cli_cmds.c:	         sprintf(line3, "RANGE: %u-%u", clipkt->dp_start, clipkt->dp_stop);
+cli_cmds.c:		     clipkt->sp, 
+cli_cmds.c:		     (clipkt->sp_isrand) ? "RANDOM" : "(not random)",
+cli_cmds.c:		     clipkt->dp, 
+cli_cmds.c:		     (clipkt->dp_isrand) ? "RANDOM" : "(not random)");
+cli_cmds.c:		     clipkt->tcp_seq,
+cli_cmds.c:		     clipkt->tcp_seq_start,
+cli_cmds.c:		     clipkt->tcp_seq_stop,
+cli_cmds.c:		     clipkt->tcp_seq_delta,
+cli_cmds.c:		     clipkt->tcp_ack,
+cli_cmds.c:		     (clipkt->tcp_ctrl_ACK) ? "(valid)" : "(invalid)");
+cli_cmds.c:		     clipkt->tcp_res,
+cli_cmds.c:		     clipkt->tcp_urg);
+cli_cmds.c:	     sprintf(line, "Announced window size= %u", clipkt->tcp_win);
+cli_cmds.c:	     clipkt->tcp_offset,
+cli_cmds.c:	     (clipkt->tcp_offset_false) ? "FALSE" : "valid",
+cli_cmds.c:	     clipkt->tcp_sum,
+cli_cmds.c:	     (clipkt->tcp_sum_false) ? "FALSE" : "valid");
+cli_cmds.c:		     (clipkt->tcp_option_used) ? "TCP options attached" : "(No TCP options attached)",
+cli_cmds.c:		     clipkt->tcp_option_s);
+cli_dns.c:   sprintf(prompt, "pkt-%i",clipkt->id);
+cli_eth.c:	     clipkt->eth_src_israndom = 1;
+cli_eth.c:	     while (strncmp(device_list[i].dev, clipkt->device, 10) && (i<device_list_entries)) i++;
+cli_eth.c:	     for (j=0;j<6;j++) clipkt->eth_src[j] = device_list[i].mac_mops[j];
+cli_eth.c:	     clipkt->eth_src_israndom = 0;
+cli_eth.c:	if (mops_pdesc_mac(clipkt->eth_src, argv[0]))
+cli_eth.c:	     clipkt->eth_src_israndom = 0;
+cli_eth.c:	     mops_pdesc_mac (clipkt->eth_dst, "ff:ff:ff:ff:ff:ff");
+cli_eth.c:	     mops_pdesc_mac (clipkt->eth_dst, "01:00:0C:CC:CC:CD");
+cli_eth.c:	     mops_pdesc_mac (clipkt->eth_dst, "01:00:0C:CC:CC:CC");
+cli_eth.c:	     mops_pdesc_mac (clipkt->eth_dst, "01:80:C2:00:00:00");
+cli_eth.c:	if (mops_pdesc_mac(clipkt->eth_dst, argv[0]))
+cli_eth.c:	clipkt->eth_type = (u_int16_t) t32;
+cli_eth.c:	clipkt->eth_len = (u_int16_t) t32;
+cli_eth.c:   memcpy(&clipkt->eth_snap[0], &t8, 3);
+cli_eth.c:   memcpy(&clipkt->eth_snap[3], &oui, 3);
+cli_eth.c:   memcpy(&clipkt->eth_snap[6], &etp, 2);
+cli_eth.c:   clipkt->eth_snap_s = 8;
+cli_igmp.c:	clipkt->ip_dst = str2ip32("224.0.0.1");
+cli_igmp.c:	clipkt->ip_ttl = 1;
+cli_igmp.c:	clipkt->ndelay.tv_sec = 125;
+cli_igmp.c:	clipkt->ndelay.tv_nsec = 0;
+cli_igmp.c:	clipkt->ip_dst = mip;
+cli_igmp.c:	clipkt->ip_ttl = 1;
+cli_igmp.c:	clipkt->ndelay.tv_sec = 125;
+cli_igmp.c:	clipkt->ndelay.tv_nsec = 0;
+cli_igmp.c:	clipkt->ip_dst = mip;
+cli_igmp.c:	clipkt->ip_ttl = 1;
+cli_igmp.c:	clipkt->ndelay.tv_sec = 1;
+cli_igmp.c:	clipkt->ndelay.tv_nsec = 0;
+cli_igmp.c:	clipkt->ip_dst = str2ip32("224.0.0.2");
+cli_igmp.c:	clipkt->ip_ttl = 1;
+cli_igmp.c:	clipkt->ndelay.tv_sec = 1;
+cli_igmp.c:	clipkt->ndelay.tv_nsec = 0;
+cli_igmp.c:	clipkt->ip_dst = str2ip32("224.0.0.1");
+cli_igmp.c:	clipkt->ip_ttl = 1;
+cli_igmp.c:	clipkt->ndelay.tv_sec = 125;
+cli_igmp.c:	clipkt->ndelay.tv_nsec = 0;
+cli_igmp.c:	clipkt->ip_dst = mip;
+cli_igmp.c:	clipkt->ip_ttl = 1;
+cli_igmp.c:	clipkt->ndelay.tv_sec = 1;
+cli_igmp.c:	clipkt->ndelay.tv_nsec = 0;
+cli_ip.c:	     while (strncmp(device_list[i].dev, clipkt->device, 10) && (i<device_list_entries)) i++;
+cli_ip.c:	     clipkt->ip_src = device_list[i].ip_mops[3] 
+cli_ip.c:	     clipkt->ip_src_israndom = 0;
+cli_ip.c:	     clipkt->ip_src_isrange = 0;
+cli_ip.c:	     clipkt->ip_src_israndom = 1;
+cli_ip.c:	     clipkt->ip_src_isrange = 0;
+cli_ip.c:	     clipkt->ip_src =  str2ip32(argv[0]);
+cli_ip.c:	     clipkt->ip_src_israndom = 0;
+cli_ip.c:	     clipkt->ip_src_isrange = 0;
+cli_ip.c:	     clipkt->ip_src_start = str2ip32(argv[0]);
+cli_ip.c:		       clipkt->ip_src_start    = ip1;
+cli_ip.c:		       clipkt->ip_src_stop     = ip2;
+cli_ip.c:		       clipkt->ip_src_isrange  = 1;
+cli_ip.c:		       clipkt->ip_src_israndom = 0;
+cli_ip.c:		  if (str2ip32(argv[1]) > clipkt->ip_src_start)
+cli_ip.c:		       clipkt->ip_src_stop = str2ip32(argv[1]);
+cli_ip.c:		       clipkt->ip_src_isrange  = 1;
+cli_ip.c:		       clipkt->ip_src_israndom = 0;
+cli_ip.c:	     clipkt->ip_dst =  str2ip32(argv[0]);
+cli_ip.c:	     clipkt->ip_dst_isrange = 0;
+cli_ip.c:	     clipkt->ip_dst_start = str2ip32(argv[0]);
+cli_ip.c:		       clipkt->ip_dst_start    = ip1;
+cli_ip.c:		       clipkt->ip_dst_stop     = ip2;
+cli_ip.c:		       clipkt->ip_dst_isrange  = 1;
+cli_ip.c:		  if (str2ip32(argv[1]) > clipkt->ip_dst_start)
+cli_ip.c:		       clipkt->ip_dst_stop = str2ip32(argv[1]);
+cli_ip.c:		       clipkt->ip_dst_isrange  = 1;
+cli_ip.c:   clipkt->ip_version = ver;
+cli_ip.c:   clipkt->ip_ttl = ttl;
+cli_ip.c:   clipkt->ip_proto = proto;
+cli_ip.c:   clipkt->ip_IHL = ihl;
+cli_ip.c:   clipkt->ip_len = len;
+cli_ip.c:   clipkt->ip_id = id;
+cli_ip.c:   clipkt->ip_frag_offset = offset;
+cli_ip.c:	clipkt->ip_sum_false=0;
+cli_ip.c:   clipkt->ip_sum = (u_int16_t) sum;
+cli_ip.c:   clipkt->ip_sum_false=1;
+cli_ip.c:	clipkt->ip_tos = (u_int8_t) str2bin8 (argv[0]);
+cli_ip.c:	clipkt->ip_tos = (u_int8_t) xstr2int (tmp);
+cli_ip.c:	clipkt->ip_flags_RS = 1;
+cli_ip.c:	clipkt->ip_flags_RS = 0;
+cli_ip.c:	clipkt->ip_flags_DF = 1;
+cli_ip.c:	clipkt->ip_flags_DF = 0;
+cli_ip.c:	clipkt->ip_flags_MF = 1;
+cli_ip.c:	clipkt->ip_flags_MF = 0;
+cli_ip.c:		sprintf(str, "%s", (clipkt->auto_delivery_off) ? "DISABLED" : "ENABLED");
+cli_ip.c:		clipkt->auto_delivery_off=0;
+cli_ip.c:		clipkt->auto_delivery_off=1;
+cli_ip.c:	sprintf(str, "%s", (clipkt->auto_delivery_off) ? "DISABLED" : "ENABLED");
+cli_ip.c:   sprintf(prompt, "pkt-%i",clipkt->id);
+cli_launch.c:	strncpy (clipkt->packet_name, "sysBPDU", 7);
+cli_launch.c:	cli_print(cli, "Allocated new packet %s at slot %i",clipkt->packet_name, clipkt->id);
+cli_launch.c:		clipkt->use_ETHER = 1;
+cli_launch.c:		clipkt->use_SNAP  = 1;
+cli_launch.c:		clipkt->count = 0;
+cli_launch.c:		clipkt->ndelay.tv_sec  = 2;
+cli_launch.c:		clipkt->ndelay.tv_nsec = 0;
+cli_launch.c:		pd = clipkt->p_desc;
+cli_launch.c:	strncpy (clipkt->packet_name, "sysFlood_TCPSYN", 15);
+cli_launch.c:	cli_print(cli, "Allocated new packet %s at slot %i",clipkt->packet_name, clipkt->id);
+cli_launch.c:	clipkt->use_ETHER = 1;
+cli_launch.c:	clipkt->use_IP  = 1;
+cli_launch.c:	clipkt->use_TCP  = 1;
+cli_launch.c:	clipkt->ip_proto = 6;
+cli_launch.c:	clipkt->count = 0;
+cli_launch.c:	clipkt->ip_dst = str2ip32(argv[0]);
+cli_launch.c:	clipkt->ip_src_israndom=1;
+cli_launch.c:		clipkt->dp = valid_port;
+cli_launch.c:		clipkt->dp_isrange=1;
+cli_launch.c:		clipkt->dp_start=1;
+cli_launch.c:		clipkt->dp_stop=1023;
+cli_launch.c:	clipkt->ndelay.tv_sec  = 0;
+cli_launch.c:	clipkt->ndelay.tv_nsec = 0;
+cli_lldp.c:	struct mops_ext_lldp * pd = clipkt->p_desc;
+cli_lldp.c:	struct mops_ext_lldp * pd = clipkt->p_desc;
+cli_lldp.c:	struct mops_ext_lldp * pd = clipkt->p_desc;
+cli_lldp.c:	struct mops_ext_lldp * pd = clipkt->p_desc;
+cli_packet.c:		snprintf(prompt, 16, "pkt-%i",clipkt->id);
+cli_packet.c:		cli_print(cli, "Allocated new packet %s at slot %i",clipkt->packet_name, clipkt->id);
+cli_packet.c:		snprintf(prompt, 16, "pkt-%i",clipkt->id);
+cli_packet.c:		cli_print(cli, "Modify packet parameters for packet %s [%i]",clipkt->packet_name, clipkt->id);
+cli_packet.c:			clipkt->use_ETHER = 1;
+cli_packet.c:			clipkt->eth_type = 0x806;
+cli_packet.c:			sprintf(prompt, "pkt-%i-arp",clipkt->id);
+cli_packet.c:			clipkt->use_ETHER = 1;
+cli_packet.c:			clipkt->use_IP= 1;
+cli_packet.c:			clipkt->use_UDP= 1;
+cli_packet.c:			sprintf(prompt, "pkt-%i-dns",clipkt->id);
+cli_packet.c:			clipkt->use_ETHER = 1;
+cli_packet.c:			clipkt->use_IP= 1;
+cli_packet.c:			sprintf(prompt, "pkt-%i-icmp",clipkt->id);
+cli_packet.c:			clipkt->use_ETHER = 1;
+cli_packet.c:			clipkt->use_IP= 1;
+cli_packet.c:			clipkt->ip_proto = 2;
+cli_packet.c:			sprintf(prompt, "pkt-%i-igmp",clipkt->id);
+cli_packet.c:			clipkt->use_ETHER = 1;
+cli_packet.c:			sprintf(prompt, "pkt-%i-cdp",clipkt->id);
+cli_packet.c:			clipkt->use_ETHER = 1;
+cli_packet.c:			clipkt->use_SNAP  = 1;
+cli_packet.c:			sprintf(prompt, "pkt-%i-bpdu",clipkt->id);
+cli_packet.c:		clipkt->use_ETHER = 1;
+cli_packet.c:		clipkt->use_IP = 1;
+cli_packet.c:		sprintf(prompt, "pkt-%i-ip",clipkt->id);
+cli_packet.c:		clipkt->use_ETHER = 1;
+cli_packet.c:		clipkt->use_IP = 1;
+cli_packet.c:		clipkt->use_UDP = 1;
+cli_packet.c:		clipkt->ip_proto = 17;
+cli_packet.c:		sprintf(prompt, "pkt-%i-udp",clipkt->id);
+cli_packet.c:		clipkt->use_ETHER = 1;
+cli_packet.c:		clipkt->use_IP = 1;
+cli_packet.c:		clipkt->use_TCP = 1;
+cli_packet.c:		clipkt->ip_proto = 6;
+cli_packet.c:		sprintf(prompt, "pkt-%i-tcp",clipkt->id);
+cli_packet.c:			clipkt->use_ETHER = 1;
+cli_packet.c:			clipkt->use_IP = 1;
+cli_packet.c:			clipkt->use_UDP = 1;
+cli_packet.c:			sprintf(prompt, "pkt-%i-syslog",clipkt->id);
+cli_packet.c:			clipkt->use_ETHER = 1;
+cli_packet.c:			sprintf(prompt, "pkt-%i-lldp",clipkt->id);
+cli_packet.c:			clipkt->use_ETHER = 1;
+cli_packet.c:			clipkt->use_IP = 1;
+cli_packet.c:			clipkt->use_UDP = 1;
+cli_packet.c:			sprintf(prompt, "pkt-%i-rtp",clipkt->id);
+cli_packet.c:   strncpy(clipkt->packet_name, argv[0], MAX_MOPS_PACKET_NAME_LEN);
+cli_packet.c:   clipkt->packet_name[MAX_MOPS_PACKET_NAME_LEN-1] = 0x00; 
+cli_packet.c:// cli_print(cli, "Changed packet name to '%s'\n", clipkt->packet_name);
+cli_packet.c:   if (mops_pdesc_mstrings (clipkt->description, argv, argc, MAX_MOPS_DESCRIPTION_LEN))
+cli_packet.c:	cli_print(cli, "Current description is:\n%s\n", clipkt->description);
+cli_packet.c:	clipkt->count = (unsigned long) str2int(argv[0]);
+cli_packet.c:	if (clipkt->count) 
+cli_packet.c:	     clipkt->cntx = clipkt->count; // count is finite: cntx will count down
+cli_packet.c:	     clipkt->cntx = 0;  // infinity: cntx will count up
+cli_packet.c:		ret = delay_parse(&clipkt->ndelay, argv[0], NULL);
+cli_packet.c:		ret = delay_parse(&clipkt->ndelay, argv[0], argv[1]);
+cli_packet.c:	sprintf(str, "Inter-packet delay set to %lu sec and %lu nsec", clipkt->ndelay.tv_sec, clipkt->ndelay.tv_nsec);
+cli_packet.c:	     i = mops_get_device_index(clipkt->device);
+cli_packet.c:	     // Copy device_list[i].ip_mops and .mac_mops to clipkt->ip_src and ->eth_src
+cli_packet.c:	     memcpy((void *) &clipkt->eth_src, (void *) &device_list[i].mac_mops[0], 6);
+cli_packet.c:	     memcpy((void *) &clipkt->ip_src, (void *) &device_list[i].ip_mops[0], 4);
+cli_packet.c:		  strncpy(clipkt->device, argv[0], 16); // assign device to this mops
+cli_packet.c:	       cli_print(cli, "Unknown device, will stick on %s\n", clipkt->device);
+cli_packet.c:     cli_print(cli, "Nothing specified, will stick on %s\n", clipkt->device);
+cli_packet.c:   n = clipkt->dot1Q_s/4; // n = number of tags
+cli_packet.c:	if (clipkt->use_MPLS==0)
+cli_packet.c:	clipkt->eth_type = 0x8847;
+cli_packet.c:	if (clipkt->use_MPLS==0)
+cli_packet.c:	clipkt->eth_type = 0x8848;
+cli_packet.c:   k = clipkt->mpls_s/4; // number of available tags
+cli_packet.c:	len = str2hex (str, clipkt->msg, MAX_MOPS_MSG_SIZE);
+cli_packet.c:	clipkt->msg_s = (u_int32_t) len;
+cli_packet.c:	memcpy((void*) clipkt->msg, (void*) str, len);
+cli_packet.c:	clipkt->msg_s = len;
+cli_packet.c:		clipkt->interval_used = 0;
+cli_packet.c:	if (clipkt->count==0) {
+cli_packet.c:		clipkt->count=1;
+cli_packet.c:	if ((clipkt->count * clipkt->ndelay.tv_sec)>tv_sec) {
+cli_packet.c:	clipkt->interval.tv_sec = tv_sec;
+cli_packet.c:	clipkt->interval_used = 1;
+cli_rtp.c:	struct mops_ext_rtp * pd = clipkt->p_desc;
+cli_rtp.c:	struct mops_ext_rtp * pd = clipkt->p_desc;
+cli_rtp.c:	struct mops_ext_rtp * pd = clipkt->p_desc;
+cli_rtp.c:	struct mops_ext_rtp * pd = clipkt->p_desc;
+cli_rtp.c:	struct mops_ext_rtp * pd = clipkt->p_desc;
+cli_rtp.c:	struct mops_ext_rtp * pd = clipkt->p_desc;
+cli_rtp.c:	struct mops_ext_rtp * pd = clipkt->p_desc;
+cli_rtp.c:	struct mops_ext_rtp * pd = clipkt->p_desc;
+cli_rtp.c:	struct mops_ext_rtp * pd = clipkt->p_desc;
+cli_rtp.c:	struct mops_ext_rtp * pd = clipkt->p_desc;
+cli_rtp.c://	struct mops_ext_rtp * pd = clipkt->p_desc;
+cli_rtp.c:	struct mops_ext_rtp * pd = clipkt->p_desc;
+cli_tcp.c:		clipkt->tcp_seq = (u_int32_t) tmp;
+cli_tcp.c:	clipkt->tcp_seq_delta = 0;
+cli_tcp.c:			clipkt->tcp_seq_start = clipkt->tcp_seq;
+cli_tcp.c:			clipkt->tcp_seq_stop = (u_int32_t) tmp;
+cli_tcp.c:		clipkt->tcp_seq_delta = 1;
+cli_tcp.c:			clipkt->tcp_seq_delta = (u_int32_t) tmp;
+cli_tcp.c:		clipkt->tcp_ack = (u_int32_t) tmp;
+cli_tcp.c:	clipkt->tcp_ack_delta = 0;
+cli_tcp.c:			clipkt->tcp_ack_start = clipkt->tcp_ack;
+cli_tcp.c:			clipkt->tcp_ack_stop = (u_int32_t) tmp;
+cli_tcp.c:		clipkt->tcp_ack_delta = 1;
+cli_tcp.c:			clipkt->tcp_ack_delta = (u_int32_t) tmp;
+cli_tcp.c:     clipkt->tcp_offset = (u_int8_t) tmp;
+cli_tcp.c:     clipkt->tcp_res = (u_int8_t) tmp;     
+cli_tcp.c:	clipkt->tcp_ctrl_CWR = 0;
+cli_tcp.c:	clipkt->tcp_ctrl_ECE = 0;
+cli_tcp.c:	clipkt->tcp_ctrl_URG = 0;
+cli_tcp.c:	clipkt->tcp_ctrl_ACK = 0; 
+cli_tcp.c:	clipkt->tcp_ctrl_PSH = 0;
+cli_tcp.c:	clipkt->tcp_ctrl_RST = 0;
+cli_tcp.c:	clipkt->tcp_ctrl_SYN = 0;
+cli_tcp.c:	clipkt->tcp_ctrl_FIN = 0;
+cli_tcp.c:		   clipkt->tcp_ctrl_CWR = 1;
+cli_tcp.c:		   clipkt->tcp_ctrl_ECE = 1;
+cli_tcp.c:		   clipkt->tcp_ctrl_URG = 1;
+cli_tcp.c:		   clipkt->tcp_ctrl_ACK = 1;
+cli_tcp.c:		   clipkt->tcp_ctrl_PSH = 1;
+cli_tcp.c:		   clipkt->tcp_ctrl_RST = 1;
+cli_tcp.c:		   clipkt->tcp_ctrl_SYN = 1;
+cli_tcp.c:		   clipkt->tcp_ctrl_FIN = 1;
+cli_tcp.c:		clipkt->tcp_ctrl_CWR = 1;
+cli_tcp.c:		clipkt->tcp_ctrl_CWR = 0;
+cli_tcp.c:		clipkt->tcp_ctrl_ECE = 1;
+cli_tcp.c:		clipkt->tcp_ctrl_ECE = 0;
+cli_tcp.c:		clipkt->tcp_ctrl_URG = 1;
+cli_tcp.c:		clipkt->tcp_ctrl_URG = 0;
+cli_tcp.c:		clipkt->tcp_ctrl_ACK = 1;
+cli_tcp.c:		clipkt->tcp_ctrl_ACK = 0;
+cli_tcp.c:		clipkt->tcp_ctrl_PSH = 1;
+cli_tcp.c:		clipkt->tcp_ctrl_PSH = 0;
+cli_tcp.c:		clipkt->tcp_ctrl_RST = 1;
+cli_tcp.c:		clipkt->tcp_ctrl_RST = 0;
+cli_tcp.c:		clipkt->tcp_ctrl_SYN = 1;
+cli_tcp.c:		clipkt->tcp_ctrl_SYN = 0;
+cli_tcp.c:		clipkt->tcp_ctrl_FIN = 1;
+cli_tcp.c:		clipkt->tcp_ctrl_FIN = 0;
+cli_tcp.c:	clipkt->tcp_win = (u_int16_t) tmp;	
+cli_tcp.c:	clipkt->tcp_sum_false=0;
+cli_tcp.c:   clipkt->tcp_sum = (u_int16_t) sum;
+cli_tcp.c:   clipkt->tcp_sum_false=1;
+cli_tcp.c:	clipkt->tcp_urg = (u_int16_t) tmp;	
+cli_tcp.c:	if (clipkt->tcp_option_used) {
+cli_tcp.c:		clipkt->tcp_option_used = 0; 
+cli_tcp.c:   sprintf(prompt, "pkt-%i",clipkt->id);
+cli_udp.c:		clipkt->sp_isrand = 1;
+cli_udp.c:		clipkt->sp_isrange = 0;
+cli_udp.c:		clipkt->sp_isrand = 0;
+cli_udp.c:			clipkt->sp= (u_int16_t) t32;
+cli_udp.c:			clipkt->sp_isrange = 0;
+cli_udp.c:			clipkt->sp_start = clipkt->sp;
+cli_udp.c:			clipkt->sp_stop  = (u_int16_t) t32;
+cli_udp.c:			clipkt->sp_isrange = 1;
+cli_udp.c:		clipkt->dp_isrand = 1;
+cli_udp.c:		clipkt->dp_isrange = 0;
+cli_udp.c:		clipkt->dp_isrand = 0;
+cli_udp.c:			clipkt->dp= (u_int16_t) t32;
+cli_udp.c:			clipkt->dp_isrange = 0;
+cli_udp.c:			clipkt->dp_start = clipkt->dp;
+cli_udp.c:			clipkt->dp_stop  = (u_int16_t) t32;
+cli_udp.c:			clipkt->dp_isrange = 1;
+cli_udp.c:	clipkt->udp_sum_false=0;
+cli_udp.c:	clipkt->udp_sum_false=1;
+cli_udp.c:	clipkt->udp_sum = 0xffff;
+cli_udp.c:   clipkt->udp_sum = (u_int16_t) sum;
+cli_udp.c:   clipkt->udp_sum_false=1;
+cli_udp.c:   sprintf(prompt, "pkt-%i",clipkt->id);
+mops_ext.c:// mops_pdesc_mstrings (clipkt->description, argv, argc, 20);
