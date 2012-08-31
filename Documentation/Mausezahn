@@ -1,0 +1,17 @@
+The file example_lldp.conf contains an example list of commands to create a
+bogus LLDP packet.
+
+You can load this configuration from the Mausezahn command line, e. g. via:
+
+mz-0.39# load /home/hh/tmp/example_lldp.conf
+
+in case you copied the file in that path. Now when you enter 'show packet' you
+will see a new packet entry in the packet list. Use the 'start slot <nr>'
+command to activate this packet.
+
+You can store your own packet creations in such file and easily load them when
+you need them. Every command within such configuration files is executed on the
+command line interface as if you had typed it in -- so be careful about the
+order and don't forget to use 'configure terminal' as first command.
+
+You can even load other files from within a central config file.
