@@ -79,12 +79,13 @@ add_manpage_target()
 include_directories(.)
 
 add_subdirectory(netsniff-ng)
-add_subdirectory(ifpps)
 add_subdirectory(trafgen)
+add_subdirectory(mausezahn)
 add_subdirectory(bpfc)
+add_subdirectory(ifpps)
+add_subdirectory(flowtop)
 add_subdirectory(astraceroute)
 add_subdirectory(curvetun)
-add_subdirectory(flowtop)
 
 # Release notes
 install(

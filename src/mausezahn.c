@@ -16,8 +16,6 @@
  * 
 */
 
-
-
 #include "mz.h"
 #include "cli.h"
 #include "mops.h"

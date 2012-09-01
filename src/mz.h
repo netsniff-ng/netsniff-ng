@@ -24,7 +24,7 @@
 #define _GNU_SOURCE
 
 #include <libnet.h>
-#include <pcap.h>
+#include <pcap/pcap.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
@@ -136,7 +136,7 @@ struct device_struct
 	u_int8_t   ip_gw[4];              // IP address of default gateway
 	// ---- various device-specific handles ----
 	pthread_t  arprx_thread;            
-   	pcap_t     *p_arp;                  // pcap handle
+   	struct pcap     *p_arp;                  // pcap handle
 	struct arp_table_struct *arp_table; // dedicated ARP table
 	int        ps;                    // packet socket
 } device_list[MZ_MAX_DEVICES];
@@ -509,7 +509,7 @@ int delay_parse (struct timespec *t, char *a, char *b);
 //
 // ************************************
  
-int            send_eth();
+int            send_eth(void);
 libnet_ptag_t  create_eth_frame (libnet_t *l, libnet_ptag_t  t3, libnet_ptag_t  t4);
 
 // ************************************
@@ -518,9 +518,9 @@ libnet_ptag_t  create_eth_frame (libnet_t *l, libnet_ptag_t  t3, libnet_ptag_t  
 //
 // ************************************
 
-int send_arp ();
-int send_bpdu ();
-int send_cdp ();
+int send_arp (void);
+int send_bpdu (void);
+int send_cdp (void);
 
 // ************************************
 // 
@@ -529,7 +529,7 @@ int send_cdp ();
 // ************************************
 
 
-libnet_t*      get_link_context();
+libnet_t*      get_link_context(void);
 libnet_ptag_t  create_ip_packet (libnet_t *l);
 libnet_ptag_t  create_ip6_packet (libnet_t *l);
 int            send_frame (libnet_t *l, libnet_ptag_t  t3, libnet_ptag_t  t4);
@@ -552,9 +552,9 @@ libnet_ptag_t  create_tcp_packet (libnet_t *l);
 //   Prototypes: Layer 7
 //
 // ************************************
-int  create_dns_packet ();
-int  create_rtp_packet();
-int create_syslog_packet();
+int  create_dns_packet (void);
+int  create_rtp_packet(void);
+int create_syslog_packet(void);
 
 // ************************************
 // 
@@ -659,7 +659,7 @@ int check_eth_mac_txt(int src_or_dst);
 int get_port_range (int sp_or_dp, char *arg);
 
 // Return a 4-byte unsigned int random number
-u_int32_t  mz_rand32 ();
+u_int32_t  mz_rand32 (void);
 
 // Scans argument for TCP flags and sets 
 // tx.tcp_control accordingly.
@@ -760,13 +760,13 @@ int update_TSUM(libnet_t *l, libnet_ptag_t t);
 
 //
 //
-int print_frame_details();
+int print_frame_details(void);
 
 
 // Calculates the number of frames to be sent.
 // Should be used as standard output except the
 // 'quiet' option (-q) has been specified.
-int complexity();
+int complexity(void);
 
 
 // Purpose: Calculate time deltas of two timestamps stored in struct timeval.
@@ -812,10 +812,10 @@ int timestamp_human(char* result, const char* prefix);
 int timestamp_hms(char* result);
 
 // Initialize the rcv_rtp process: Read user parameters and initialize globals
-int rcv_rtp_init();
+int rcv_rtp_init(void);
   
 // Defines the pcap handler and the callback function
-int rcv_rtp();
+int rcv_rtp(void);
 
 // Print current RFC-Jitter on screen
 void print_jitterbar (long int j, unsigned int d);
@@ -836,7 +836,7 @@ int compare4B (u_int8_t *ip1, u_int8_t *ip2);
 //  0 if usable device found (device_list[] and tx.device set)
 //  1 if no usable device found
 //  
-int lookupdev();
+int lookupdev(void);
 
 
 // For a given device name, find out the following parameters:
@@ -858,14 +858,14 @@ void got_rtp_packet(u_char *args,
 // Additionally, measure the precision.
 // This function should be called upon program start.
 // 
-int check_timer();
+int check_timer(void);
 
 // This is the replacement for gettimeofday() which would result in 'jumps' if
 // the system clock is adjusted (e. g. via a NTP process) and finally the jitter
 // measurement would include wrong datapoints.
 // 
 // Furthermore the function below utilizes the newer hi-res nanosecond timers.
-inline void getcurtime (struct mz_timestamp *t);
+void getcurtime (struct mz_timestamp *t);
 
 // Only print out the help text for the 02.1Q option
 void print_dot1Q_help(void);

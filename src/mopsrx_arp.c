@@ -59,7 +59,7 @@ int mops_rx_arp ()
 void *rx_arp (void *arg) 
 {
 	char errbuf[PCAP_ERRBUF_SIZE];
-   	pcap_t  *p_arp;
+   	struct pcap  *p_arp;
 	struct bpf_program filter;
 	char filter_str[] = "arp";  // We want to analyze both requests and responses!
 	struct device_struct *dev =  (struct device_struct*) arg;

@@ -693,8 +693,8 @@ struct mops *mp_head; // This global will point to the head of the mops list
 /////////////////////////////////////////////////////////////////
 // MOPS Prototypes:
 
-inline void mops_hton2 (u_int16_t *host16, u_int8_t *net16);
-inline void mops_hton4 (u_int32_t *host32, u_int8_t *net32);
+void mops_hton2 (u_int16_t *host16, u_int8_t *net16);
+void mops_hton4 (u_int32_t *host32, u_int8_t *net32);
 
 int  mops_get_proto_info (struct mops *mp, char *layers, char *proto);
 
@@ -715,7 +715,7 @@ int  mops_get_proto_info (struct mops *mp, char *layers, char *proto);
 //     1) shift=0 means no shift
 //     2) Because of speed we do not check if the arguments are reasonable
 //     
-inline void mops_flags (u_int8_t *target, u_int8_t *flag, int shift);
+void mops_flags (u_int8_t *target, u_int8_t *flag, int shift);
 
 u_int16_t mops_sum16 (u_int16_t len, u_int8_t buff[]);
 
