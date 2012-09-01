@@ -1,11 +1,97 @@
-The file example_lldp.conf contains an example list of commands to create a
-bogus LLDP packet.
+What is mausezahn?
+//////////////////
 
-You can load this configuration from the Mausezahn command line, e. g. via:
+We have decided to take over further development and maintenance of Herbert
+Haas' mausezahn traffic generator since he passed away 25.6.2011 [1]. We
+believe that mausezahn is a great tool for packet generation and analysis. It
+will take quite a long process to cleanly merge it into the netsniff-ng
+toolkit, to fix code quality and some bugs. However, after this process, we
+are going to add further protocols and features to mausezahn. How does it fit
+into the big picture of the toolkit? There's netsniff-ng and trafgen. Both
+tools are mostly used on host-side on the development machine for debugging
+and other purposes and controlled directly from command-line. Then, there is
+mauseszahn, which is intended to be used on a HW/SW appliance that runs on a
+dedicated box/server in your network lab. E.g. on a server with a couple of
+Ethernet interfaces where you simply connect a cable to one of those interfaces
+and to your development server's input. Then, you'll login to mausezahn
+management interface through telnet in your local lab, configure mausezahn and
+run test packets respectively analyze your server's output.
 
-mz-0.39# load /home/hh/tmp/example_lldp.conf
+So, now to the actual question: what is mausezahn? mausezahn is a fast traffic
+generator and analyzer for HW/SW appliances, which allows you to send nearly
+every possible and impossible packet. mausezahn can be used for example ...
 
-in case you copied the file in that path. Now when you enter 'show packet' you
+  * As a traffic generator (e.g. to stress multicast networks)
+  * For penetration testing of firewalls and IDS
+  * For DoS attacks on networks (for audit purposes of course)
+  * To find bugs in network software or appliances
+  * For reconnaissance attacks using ping sweeps and port scans
+  * To test network behaviour under strange circumstances (stress test,
+    malformed packets, ...)
+  * As didactical tool during lab exercises
+
+... and more. mausezahn is basically a versatile packet creation tool on the
+command line with a simple configuration syntax. It could also be used within
+(bash-)scripts to perform combination of tests.
+
+First steps:
+
+Using the interactive mode requires to start mausezahn as server:
+
+  # mausezahn -x
+
+Now you can telnet to that server using the default port number 25542, but also
+an arbitrary port number can be specified:
+
+  # mausezahn -x 99
+
+mausezahn accepts incoming telnet connections on port 99.
+
+  mz: Problems opening config file. Will use defaults
+
+Either from another terminal or from another host try to telnet to the
+mausezahn server:
+
+  caprica$ telnet galactica 99
+  Trying 192.168.0.4...
+  Connected to galactica.
+  Escape character is '^]'.
+  
+  ------------------------------------------
+  Mausezahn, version 0.38
+  Copyright (C) 2007-2009 by Herbert Haas.
+  ------------------------------------------
+  
+  Mausezahn comes with ABSOLUTELY NO WARRANTY; for details
+  type 'warranty'.  This is free software, and you are welcome
+  to redistribute it under certain conditions; see COPYING
+  (included in the Mausezahn source package) for details.
+  
+  For Mausezahn NEWS visit http://www.perihel.at/sec/mz/
+  
+  Username: mz
+  Password: mz
+  
+  mz-0.38> enable
+  Password: mops
+  mz-0.38#
+
+It is recommended to configure your own login credentials in
+/etc/mausezahn/mz.cfg, such as:
+
+  user = herbert
+  password = TopSecret
+  enable = MauseZa#n42
+
+
+
+The file src/examples/mausezahn/example_lldp.conf contains an example list of
+commands to create a bogus LLDP packet. You can load this configuration from
+the mausezahn command line, e. g. via:
+
+  mz-0.39# load /home/hh/tmp/example_lldp.conf
+
+In case you copied the file in that path. Now when you enter 'show packet' you
 will see a new packet entry in the packet list. Use the 'start slot <nr>'
 command to activate this packet.
 
@@ -15,3 +101,5 @@ command line interface as if you had typed it in -- so be careful about the
 order and don't forget to use 'configure terminal' as first command.
 
 You can even load other files from within a central config file.
+
+[1] http://www.perihel.at/
