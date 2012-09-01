@@ -4,10 +4,9 @@ set(BUILD_STRING "generic")
 
 find_package(LibCLI)
 find_package(Threads)
-find_package(PCAP)
 include(Pod2Man)
 
-if(LIBCLI_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND HAVE_LIBPCAP)
+if(LIBCLI_FOUND AND CMAKE_HAVE_PTHREAD_CREATE)
   add_executable(
     ${PROJECT_NAME}
     ../mausezahn.c
@@ -81,8 +80,7 @@ if(LIBCLI_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND HAVE_LIBPCAP)
     ${PROJECT_NAME}
     ${LIBCLI_LIBRARY}
     ${CMAKE_THREAD_LIBS_INIT}
-    ${PCAP_LIBRARY}
-    -lnet -lrt -lm
+    -lnet -lpcap -lrt -lm
   )
 
   pod2man(
@@ -99,12 +97,8 @@ if(LIBCLI_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND HAVE_LIBPCAP)
     FILES ../../Documentation/Mausezahn
     DESTINATION ${DOC_INSTALL_PATH}
   )
-else(LIBCLI_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND HAVE_LIBPCAP)
-  if(NOT CMAKE_HAVE_PTHREAD_CREATE)
-    message("libpthread is missing on target. Skipping ${PROJECT_NAME} build.")
-  endif(NOT CMAKE_HAVE_PTHREAD_CREATE)
-
+else(LIBCLI_FOUND AND CMAKE_HAVE_PTHREAD_CREATE)
   if(NOT LIBCLI_FOUND)
     message("libcli is missing on target. Skipping ${PROJECT_NAME} build.")
   endif(NOT LIBCLI_FOUND)
-endif(LIBCLI_FOUND AND CMAKE_HAVE_PTHREAD_CREATE AND HAVE_LIBPCAP)
+endif(LIBCLI_FOUND AND CMAKE_HAVE_PTHREAD_CREATE)
