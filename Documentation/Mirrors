@@ -14,3 +14,4 @@ Official mirrors for the netsniff-ng Git repository:
 Distribution specific maintenance/release Git repositories:
 
  * Debian Linux: git://anonscm.debian.org/collab-maint/netsniff-ng.git
+ * Fedora/RHEL Linux: git://pkgs.fedoraproject.org/netsniff-ng.git
