@@ -21,9 +21,9 @@ Debian
 Fedora/RHEL
  * 1: http://fedoraproject.org/
  * 2: https://admin.fedoraproject.org/pkgdb/acls/name/netsniff-ng
- * M: Jiří Skála
- * W: http://fedoraproject.org/wiki/User:Jskala
- * E: jskala@redhat.com
+ * M: Jaroslav Škarvada
+ * W: https://admin.fedoraproject.org/pkgdb/users/packages/jskarvad
+ * E: jskarvad@redhat.com
  * C: Czech Republic
 
 Ubuntu
