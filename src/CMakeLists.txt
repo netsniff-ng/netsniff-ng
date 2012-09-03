@@ -31,39 +31,44 @@ add_definitions(
   -march=native
   -mtune=native
   -Wall
-  -Wundef
-  -Wstrict-prototypes
-  -Werror-implicit-function-declaration
-  -Wformat=2
-  -Wcomments
-  -Wendif-labels
-  -Wuninitialized
-  -Winit-self
-  -Wstrict-overflow=1
-  -Wtype-limits
-  -Wmissing-parameter-type
-  -Wclobbered
-  -Wempty-body
-  -Wignored-qualifiers
-  -Wmissing-include-dirs
-  -Woverlength-strings
-  -Wmissing-field-initializers
-  -Wmissing-declarations
-  -Wmissing-prototypes
-  -Wlogical-op
-  -Woverride-init
-  -Wnested-externs
-  -Wredundant-decls
-  -Winvalid-pch
-  -Wdisabled-optimization
-  -Wstack-protector
-  -Waggregate-return
-  -Wcast-align
-  -Wunsafe-loop-optimizations
-  -Wfloat-equal
-  -Wunknown-pragmas
-  -Wunused-function
 )
+
+if(CMAKE_BUILD_TYPE STREQUAL pedantic)
+  add_definitions(
+    -Wundef
+    -Wstrict-prototypes
+    -Werror-implicit-function-declaration
+    -Wformat=2
+    -Wcomments
+    -Wendif-labels
+    -Wuninitialized
+    -Winit-self
+    -Wstrict-overflow=1
+    -Wtype-limits
+    -Wmissing-parameter-type
+    -Wclobbered
+    -Wempty-body
+    -Wignored-qualifiers
+    -Wmissing-include-dirs
+    -Woverlength-strings
+    -Wmissing-field-initializers
+    -Wmissing-declarations
+    -Wmissing-prototypes
+    -Wlogical-op
+    -Woverride-init
+    -Wnested-externs
+    -Wredundant-decls
+    -Winvalid-pch
+    -Wdisabled-optimization
+    -Wstack-protector
+    -Waggregate-return
+    -Wcast-align
+    -Wunsafe-loop-optimizations
+    -Wfloat-equal
+    -Wunknown-pragmas
+    -Wunused-function
+  )
+endif(CMAKE_BUILD_TYPE STREQUAL pedantic)
 
 if(CMAKE_BUILD_TYPE STREQUAL profile)
   add_definitions(
