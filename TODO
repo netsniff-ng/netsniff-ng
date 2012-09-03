@@ -4,32 +4,24 @@ submit your contributions):
 
  0) Improve manpages, extend the documentation or write useful howtos.
  1) Highest prio: Cleanup and refactor the code and build system to make it
-    more maintainable, stable, and probably faster!
- 2) Implement test cases with libtap (src/test/). Make the output readable
-    (currently cmake hides it all).
+    more maintainable, stable, and probably faster! mausezahn: clean it up
+    add fork + fanout mode, remove libpcap dependency.
  3) Add full IPv6 support for flowtop, test IPv6 on curvetun.
  5) Make trafgen also write to a pcap instead to a device.
  6) Let netsniff-ng and trafgen support pcap and pcap-ng!
- 7) Include an ARP cache poisoning tool.
- 8) integrate Mausezahn: maintain it, clean it up, add fork + fanout mode for
-    a threaded "netsniff-ng and trafgen" front-end with Cisco-cli for a hw/sw
-    applicance. Only leave interactive mode.
 10) Add a proper 802.11 dissector for netsniff-ng.
 12) Add new dissectors (e.g. BGP, DNS, DCCP, SCTP, RSVP, IPsec, LISP, RADIUS,
     LLC, fix MPLS?, improve ARP, BPDU, PVST, CDP, LLDP, RTP, Syslog, NTP,
-    OpenFlow, ...).
+    OpenFlow, ...), add new protocols to mausezahn.
 13) Easier language for /fast/ filtering (e.g. on top of BPF so that it can run
     in the kernel), include this into bpfc.
-14) Add timedb for ifpps, so that we have round robin time series database
-    measurements (https://github.com/EPiCS/reconos/tree/master/linux/tools/timedb).
-16) Further micro-optimize netsniff-ng and trafgen's performance.
+16) Further micro-optimize netsniff-ng, trafgen, mausezahn's performance.
 17) Security review of curvetun.
 21) Obfuscate curvetun's protocol to make it hard/resource-intensive for DPIs.
 22) Add different timing models to trafgen, not just a static interpacket gap.
 24) Do we need TPACKETV2 or even TPACKETV3 if it is eventually implemented?
 25) Do performance tests with 10 Gigabit cards.
-27) Integration of our repository with Travis-CI
-28) Remove liburcu dependency from flowtop
+28) Remove liburcu dependency from flowtop.
 29) Improve the Linux kernel's net/packet/af_packet.c (that we rely on)
 30) Fix UDP+TCP tracking in flowtop.
 31) astraceroute: implement DNS traceroute with AS/Geo information
