@@ -465,7 +465,7 @@ interprets spaces as a delimiter character. That is, if you are specifying
 an argument that consists of multiple words with spaces in between, you MUST
 group this with quotes. For example, instead of
 
-  # mausezahn eth0 -t udp sp=1, dp=80, p=00:11:22:33
+  # mausezahn eth0 -t udp sp=1,dp=80,p=00:11:22:33
 
  you could either omit the spaces
 
@@ -473,7 +473,7 @@ group this with quotes. For example, instead of
 
  or, even more safe, use quotes:
 
-  # mausezahn eth0 -t udp "sp=1, dp=80, p=00:11:22:33"
+  # mausezahn eth0 -t udp "sp=1,dp=80,p=00:11:22:33"
 
 In order to monitor what's going on, you can enable the verbose mode using
 the -v option. The opposite is the quiet mode (-q) which will keep mausezahn
