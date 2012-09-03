@@ -26,47 +26,24 @@ add_definitions(
   -fno-strict-aliasing
   -fexceptions
   -fasynchronous-unwind-tables
+  -fno-delete-null-pointer-checks
   -D_FORTIFY_SOURCE=2
   -D_REENTRANT
   -march=native
   -mtune=native
   -Wall
+  -Wmissing-prototypes
+#  -Wstrict-prototypes
+  -Wdeclaration-after-statement
+  -Werror-implicit-function-declaration
+  -Wundef
+  -Wformat=2
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL pedantic)
   add_definitions(
-    -Wundef
-    -Wstrict-prototypes
-    -Werror-implicit-function-declaration
-    -Wformat=2
-    -Wcomments
-    -Wendif-labels
-    -Wuninitialized
-    -Winit-self
-    -Wstrict-overflow=1
-    -Wtype-limits
-    -Wmissing-parameter-type
-    -Wclobbered
-    -Wempty-body
-    -Wignored-qualifiers
-    -Wmissing-include-dirs
-    -Woverlength-strings
-    -Wmissing-field-initializers
-    -Wmissing-declarations
-    -Wmissing-prototypes
-    -Wlogical-op
-    -Woverride-init
-    -Wnested-externs
-    -Wredundant-decls
-    -Winvalid-pch
-    -Wdisabled-optimization
-    -Wstack-protector
-    -Waggregate-return
-    -Wcast-align
-    -Wunsafe-loop-optimizations
-    -Wfloat-equal
-    -Wunknown-pragmas
-    -Wunused-function
+    -Wextra
+    -Werror
   )
 endif(CMAKE_BUILD_TYPE STREQUAL pedantic)
 
