@@ -3,8 +3,8 @@ Major contributors (> 30 commits):
  * Daniel Borkmann <daniel@netsniff-ng.org>
  * Emmanuel Roullit <emmanuel@netsniff-ng.org>
  * Markus Amend <markus@netsniff-ng.org>
- * Herbert Haas <herbert@perihel.at>*
  * Christoph Jaeger <christoph@netsniff-ng.org>
+ * Herbert Haas <herbert@perihel.at>*
 
 Minor contributors (<= 30 commits):
 
@@ -29,7 +29,7 @@ through Git or email.
 
 Note that we have taken over the maintenance and further development of Herbert
 Haas' mausezahn utility after he passed away in 2011. There were no Git commit
-statistics available from the import of his project.
+statistics available from the import of his project. (*)
 
 Want to join the core team? Submit enough great patches over a long time,
 implement what's on the TODO file and show an ongoing, active interest in
