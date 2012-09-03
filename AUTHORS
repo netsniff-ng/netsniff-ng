@@ -7,6 +7,9 @@ Major contributors (> 30 commits):
 
 Minor contributors (<= 30 commits):
 
+ * Jaroslav Škarvada <jskarvad@redhat.com>
+ * Dennis Gilmore <dennis@ausil.us>
+ * Dan Horák <dan@danny.cz>
  * Kartik Mistry <kartik@debian.org>
  * Markus Kötter <nepenthesdev@gmail.com>
  * Jim Binder <jbinder6342@gmail.com>
@@ -19,7 +22,8 @@ The order of authors with > 30 commits listed here is sorted by contributions
 from high to low through ``git log --no-merges $@ | grep Author: | \
 cut -d: -f2 | cut -d\< -f1 | sort | uniq -c | sort -n -r''. The list of minor
 contributors is currently unsorted and contains people who have contributed
-code ``in some way'', either through Git or email.
+code ``in some way'' (e.g. on the upstream or maintenance repositories), either
+through Git or email.
 
 Want to join the core team? Submit enough great patches over a long time,
 implement what's on the TODO file and show an ongoing, active interest in
