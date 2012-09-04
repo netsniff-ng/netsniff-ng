@@ -943,6 +943,7 @@ static void version(void)
 	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
 	printf("Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n");
 	printf("Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n");
+	printf("Copyright (C) 2012 Markus Amend <markus@netsniff-ng.org>\n");
 	printf("License: GNU GPL version 2\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
