@@ -30,3 +30,9 @@ submit your contributions):
 32) ifpps: add option for --dev eth0,eth1,eth2 and accumulate stats
 33) flowtop: can we get per socket pps, bytes per sec without sniffing?
 34) Are there other interesting (e.g. ethtool) stats for ifpps?
+35) Build a generic interface that is somewhat transparant to RX_RING/TX_RING
+    where we can user uio-dma, integrate uio-ixgbe and probably port others.
+    This could be invoked through a special build option. Default should always
+    be RX_RING / TX_RING.
+    [1] http://pub.netsniff-ng.org/misc/uio-dma.tar.bz2
+    [2] http://pub.netsniff-ng.org/misc/uio-ixgbe.tar.bz2
