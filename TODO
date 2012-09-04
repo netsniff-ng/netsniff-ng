@@ -16,7 +16,8 @@ submit your contributions):
     OpenFlow, ...), add new protocols to mausezahn.
 13) Easier language for /fast/ filtering (e.g. on top of BPF so that it can run
     in the kernel), include this into bpfc.
-16) Further micro-optimize netsniff-ng, trafgen, mausezahn's performance.
+16) Further micro-optimize netsniff-ng, trafgen, mausezahn's performance. Use
+    Oprofile for optimize tools!
 17) Security review of curvetun.
 21) Obfuscate curvetun's protocol to make it hard/resource-intensive for DPIs.
 22) Add different timing models to trafgen, not just a static interpacket gap.
