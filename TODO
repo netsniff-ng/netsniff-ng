@@ -5,7 +5,8 @@ submit your contributions):
  0) Improve manpages, extend the documentation or write useful howtos.
  1) Highest prio: Cleanup and refactor the code and build system to make it
     more maintainable, stable, and probably faster! mausezahn: clean it up
-    add fork + fanout mode, remove libpcap dependency.
+    add fork + fanout mode, remove libpcap dependency, let it also store
+    pcap files e.g. on a network filesystem of the mausezahn box.
  3) Add full IPv6 support for flowtop, test IPv6 on curvetun.
  5) Make trafgen also write to a pcap instead to a device.
  6) Let netsniff-ng and trafgen support pcap and pcap-ng!
