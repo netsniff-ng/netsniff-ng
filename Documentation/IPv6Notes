@@ -16,3 +16,4 @@ Tools that still lack support for IPv6:
 Tools that have implemented IPv6 support, but need more testing:
 
  * curvetun
+ * mausezahn
