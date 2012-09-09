@@ -79,6 +79,14 @@ nacl_path.sh this way:
 When done, netsniff-ng build infrastructure will read nacl_path.cmake to get
 the needed paths to NaCl.
 
+In case you have to manually install libgeoip in version 1.4.8 or higher, you
+can also use the provided helper script called build_geoip.sh from the
+src/astraceroute directory (depending on your distribution, you might want to
+adapt paths within the script):
+
+  $ cd src/astraceroute
+  # ./build_geoip.sh
+
 Further notes:
 //////////////
 
