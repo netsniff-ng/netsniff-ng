@@ -15,15 +15,6 @@
  *        Chapter 'The White Rider'.
  */
 
-/*
- * Debian: apt-get install libnetfilter-conntrack3 libnetfilter-conntrack-dev
- *                         liburcu0 liburcu-dev
- *
- * Start conntrack (if not yet running):
- *   iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT
- *   iptables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT
- */
-
 #define _LGPL_SOURCE
 #include <stdio.h>
 #include <stdint.h>
@@ -116,16 +107,15 @@ static GeoIP *gi_city = NULL;
 static char *path_city_db = NULL, *path_country_db = NULL;
 
 static const char *short_options = "vhTULKs";
-
-static struct option long_options[] = {
-	{"tcp", no_argument, 0, 'T'},
-	{"udp", no_argument, 0, 'U'},
-	{"show-src", no_argument, 0, 's'},
-	{"city-db", required_argument, 0, 'L'},
-	{"country-db", required_argument, 0, 'K'},
-	{"version", no_argument, 0, 'v'},
-	{"help", no_argument, 0, 'h'},
-	{0, 0, 0, 0}
+static const struct option long_options[] = {
+	{"tcp",		no_argument,		NULL, 'T'},
+	{"udp",		no_argument,		NULL, 'U'},
+	{"show-src",	no_argument,		NULL, 's'},
+	{"city-db",	required_argument,	NULL, 'L'},
+	{"country-db",	required_argument,	NULL, 'K'},
+	{"version",	no_argument,		NULL, 'v'},
+	{"help",	no_argument,		NULL, 'h'},
+	{NULL, 0, NULL, 0}
 };
 
 const char *const l3proto2str[AF_MAX] = {
@@ -195,47 +185,45 @@ static void signal_handler(int number)
 
 static void help(void)
 {
-	printf("\nflowtop %s, top-like netfilter TCP/UDP flow tracking\n",
-	       VERSION_STRING);
-	printf("http://www.netsniff-ng.org\n\n");
-	printf("Usage: flowtop [options]\n");
-	printf("Options:\n");
-	printf("  -T|--tcp               Show only TCP flows (default)\n");
-	printf("  -U|--udp               Show only UDP flows\n");
-	printf("  -s|--show-src          Also show source, not only dest\n");
-	printf("  --city-db <path>       Specifiy path for geoip city database\n");
-	printf("  --country-db <path>    Specifiy path for geoip country database\n");
-	printf("  -v|--version           Print version\n");
-	printf("  -h|--help              Print this help\n");
-	printf("\n");
-	printf("Examples:\n");
-	printf("  flowtop\n");
-	printf("  flowtop -s\n\n");
-	printf("Note:\n");
-	printf("  If netfilter is not running, you can activate it with i.e.:\n");
-	printf("   iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT\n");
-	printf("   iptables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT\n");
-	printf("\n");
-	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2011-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n");
-	printf("Copyright (C) 2011-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n");
-	printf("License: GNU GPL version 2\n");
-	printf("This is free software: you are free to change and redistribute it.\n");
-	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
+	printf("\n%s %s, top-like netfilter TCP/UDP flow tracking\n",
+	       PROGNAME_STRING, VERSION_STRING);
+	puts("http://www.netsniff-ng.org\n\n"
+	     "Usage: flowtop [options]\n"
+	     "Options:\n"
+	     "  -T|--tcp               Show only TCP flows (default)\n"
+	     "  -U|--udp               Show only UDP flows\n"
+	     "  -s|--show-src          Also show source, not only dest\n"
+	     "  --city-db <path>       Specifiy path for geoip city database\n"
+	     "  --country-db <path>    Specifiy path for geoip country database\n"
+	     "  -v|--version           Print version\n"
+	     "  -h|--help              Print this help\n\n"
+	     "Examples:\n"
+	     "  flowtop\n"
+	     "  flowtop -s\n\n"
+	     "Note:\n"
+	     "  If netfilter is not running, you can activate it with i.e.:\n"
+	     "   iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT\n"
+	     "   iptables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT\n\n"
+	     "Please report bugs to <bugs@netsniff-ng.org>\n"
+	     "Copyright (C) 2011-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
+	     "Copyright (C) 2011-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n"
+	     "License: GNU GPL version 2.0\n"
+	     "This is free software: you are free to change and redistribute it.\n"
+	     "There is NO WARRANTY, to the extent permitted by law.\n\n");
 	die();
 }
 
 static void version(void)
 {
-	printf("\nflowtop %s, top-like netfilter TCP/UDP flow tracking\n",
-	       VERSION_STRING);
-	printf("http://www.netsniff-ng.org\n\n");
-	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2011-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n");
-	printf("Copyright (C) 2011-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n");
-	printf("License: GNU GPL version 2\n");
-	printf("This is free software: you are free to change and redistribute it.\n");
-	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
+	printf("\n%s %s, top-like netfilter TCP/UDP flow tracking\n",
+	       PROGNAME_STRING, VERSION_STRING);
+	puts("http://www.netsniff-ng.org\n\n"
+	     "Please report bugs to <bugs@netsniff-ng.org>\n"
+	     "Copyright (C) 2011-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
+	     "Copyright (C) 2011-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n"
+	     "License: GNU GPL version 2.0\n"
+	     "This is free software: you are free to change and redistribute it.\n"
+	     "There is NO WARRANTY, to the extent permitted by law.\n\n");
 	die();
 }
 
