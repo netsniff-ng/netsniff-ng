@@ -79,25 +79,24 @@ enum working_mode {
 volatile sig_atomic_t sigint = 0;
 
 static const char *short_options = "kxc::svhp:t:d:uCS46DN";
-
-static struct option long_options[] = {
-	{"client", optional_argument, 0, 'c'},
-	{"dev", required_argument, 0, 'd'},
-	{"port", required_argument, 0, 'p'},
-	{"stun", required_argument, 0, 't'},
-	{"keygen", no_argument, 0, 'k'},
-	{"export", no_argument, 0, 'x'},
-	{"dumpc", no_argument, 0, 'C'},
-	{"dumps", no_argument, 0, 'S'},
-	{"no-logging", no_argument, 0, 'N'},
-	{"server", no_argument, 0, 's'},
-	{"udp", no_argument, 0, 'u'},
-	{"ipv4", no_argument, 0, '4'},
-	{"ipv6", no_argument, 0, '6'},
-	{"nofork", no_argument, 0, 'D'},
-	{"version", no_argument, 0, 'v'},
-	{"help", no_argument, 0, 'h'},
-	{0, 0, 0, 0}
+static const struct option long_options[] = {
+	{"client",	optional_argument,	NULL, 'c'},
+	{"dev",		required_argument,	NULL, 'd'},
+	{"port",	required_argument,	NULL, 'p'},
+	{"stun",	required_argument,	NULL, 't'},
+	{"keygen",	no_argument,		NULL, 'k'},
+	{"export",	no_argument,		NULL, 'x'},
+	{"dumpc",	no_argument,		NULL, 'C'},
+	{"dumps",	no_argument,		NULL, 'S'},
+	{"no-logging",	no_argument,		NULL, 'N'},
+	{"server",	no_argument,		NULL, 's'},
+	{"udp",		no_argument,		NULL, 'u'},
+	{"ipv4",	no_argument,		NULL, '4'},
+	{"ipv6",	no_argument,		NULL, '6'},
+	{"nofork",	no_argument,		NULL, 'D'},
+	{"version",	no_argument,		NULL, 'v'},
+	{"help",	no_argument,		NULL, 'h'},
+	{NULL, 0, NULL, 0}
 };
 
 static void signal_handler(int number)
@@ -119,64 +118,57 @@ static void header(void)
 
 static void help(void)
 {
-	printf("\ncurvetun %s, lightweight curve25519-based multiuser IP tunnel\n",
-	       VERSION_STRING);
-	printf("http://www.netsniff-ng.org\n\n");
-	printf("Usage: curvetun [options]\n");
-	printf("Options, general:\n");
-	printf("  -k|--keygen             Generate public/private keypair\n");
-	printf("  -x|--export             Export your public data for remote servers\n");
-	printf("  -C|--dumpc              Dump parsed clients\n");
-	printf("  -S|--dumps              Dump parsed servers\n");
-	printf("  -D|--nofork             Do not daemonize\n");
-	printf("  -d|--dev <tun>          Networking tunnel device, e.g. tun0\n");
-	printf("  -v|--version            Print version\n");
-	printf("  -h|--help               Print this help\n");
-	printf("Options for client:\n");
-	printf("  -c|--client[=alias]     Client mode, server alias optional\n");
-	printf("Options for servers:\n");
-	printf("  -s|--server             Server mode\n");
-	printf("  -N|--no-logging         Disable server logging (for better anonymity)\n");
-	printf("  -p|--port <num>         Port number (mandatory)\n");
-	printf("  -t|--stun <server>      Show public IP/Port mapping via STUN\n");
-	printf("  -u|--udp                Use UDP as carrier instead of TCP\n");
-	printf("  -4|--ipv4               Tunnel devices are IPv4\n");
-	printf("  -6|--ipv6               Tunnel devices are IPv6\n");
-	printf("                          (default: same as carrier protocol)\n");
-	printf("\n");
-	printf("Example:\n");
-	printf("  See Documentation/Curvetun for a configuration example.\n");
-	printf("  curvetun --keygen\n");
-	printf("  curvetun --export\n");
-	printf("  curvetun --server -4 -u -N --port 6666 --stun stunserver.org\n");
-	printf("  curvetun --client=ethz\n");
-	printf("\n");
-	printf("Note:\n");
-	printf("  There is no default port specified, so that you are forced\n");
-	printf("  to select your own! For client/server status messages see syslog!\n");
-	printf("  This software is an experimental prototype intended for researchers.\n");
-	printf("\n");
-	printf("Secret ingredient: 7647-14-5\n");
-	printf("\n");
-	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
-	printf("License: GNU GPL version 2\n");
-	printf("This is free software: you are free to change and redistribute it.\n");
-	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
+	printf("\n%s %s, lightweight curve25519-based VPN/IP tunnel\n",
+	       PROGNAME_STRING, VERSION_STRING);
+	puts("http://www.netsniff-ng.org\n\n"
+	     "Usage: curvetun [options]\n"
+	     "Options, general:\n"
+	     "  -k|--keygen             Generate public/private keypair\n"
+	     "  -x|--export             Export your public data for remote servers\n"
+	     "  -C|--dumpc              Dump parsed clients\n"
+	     "  -S|--dumps              Dump parsed servers\n"
+	     "  -D|--nofork             Do not daemonize\n"
+	     "  -d|--dev <tun>          Networking tunnel device, e.g. tun0\n"
+	     "  -v|--version            Print version\n"
+	     "  -h|--help               Print this help\n"
+	     "  -c|--client[=alias]     Client mode, server alias optional\n"
+	     "  -s|--server             Server mode, options follow below\n"
+	     "  -N|--no-logging         Disable server logging (for better anonymity)\n"
+	     "  -p|--port <num>         Server port number (mandatory)\n"
+	     "  -t|--stun <server>      Show public IP/Port mapping via STUN\n"
+	     "  -u|--udp                Use UDP as carrier instead of TCP\n"
+	     "  -4|--ipv4               Tunnel devices are IPv4\n"
+	     "  -6|--ipv6               Tunnel devices are IPv6\n"
+	     "                          (default: same as carrier protocol)\n\n"
+	     "Example:\n"
+	     "  See Documentation/Curvetun for a configuration example.\n"
+	     "  curvetun --keygen\n"
+	     "  curvetun --export\n"
+	     "  curvetun --server -4 -u -N --port 6666 --stun stunserver.org\n"
+	     "  curvetun --client=ethz\n\n"
+	     "Note:\n"
+	     "  There is no default port specified, so that you are forced\n"
+	     "  to select your own! For client/server status messages see syslog!\n"
+	     "  This software is an experimental prototype intended for researchers.\n\n"
+	     "Secret ingredient: 7647-14-5\n\n"
+	     "Please report bugs to <bugs@netsniff-ng.org>\n"
+	     "Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
+	     "License: GNU GPL version 2.0\n"
+	     "This is free software: you are free to change and redistribute it.\n"
+	     "There is NO WARRANTY, to the extent permitted by law.\n\n");
 	die();
 }
 
 static void version(void)
 {
-	printf("\ncurvetun %s, lightweight curve25519-based multiuser IP tunnel\n",
-               VERSION_STRING);
-	printf("Build: %s\n", BUILD_STRING);
-	printf("http://www.netsniff-ng.org\n\n");
-	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
-	printf("License: GNU GPL version 2\n");
-	printf("This is free software: you are free to change and redistribute it.\n");
-	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
+	printf("\n%s %s, lightweight curve25519-based VPN/IP tunnel\n",
+               PROGNAME_STRING, VERSION_STRING);
+	puts("http://www.netsniff-ng.org\n\n"
+	     "Please report bugs to <bugs@netsniff-ng.org>\n"
+	     "Copyright (C) 2011-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
+	     "License: GNU GPL version 2.0\n"
+	     "This is free software: you are free to change and redistribute it.\n"
+	     "There is NO WARRANTY, to the extent permitted by law.\n\n");
 	die();
 }
 
