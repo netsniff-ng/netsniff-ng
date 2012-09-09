@@ -69,44 +69,18 @@ add_subdirectory(flowtop)
 add_subdirectory(astraceroute)
 add_subdirectory(curvetun)
 
-# Release notes
 install(
   FILES ../Documentation/RelNotes/Notes-0.5.6
+        ../Documentation/RelNotes/Notes-0.5.7
   DESTINATION ${DOC_INSTALL_PATH}
 )
 
-install(
-  FILES ../Documentation/RelNotes/Notes-0.5.7
-  DESTINATION ${DOC_INSTALL_PATH}
-)
-
-# Additional usage information
 install(
   FILES ../Documentation/FurtherReading
-  DESTINATION ${DOC_INSTALL_PATH}
-)
-
-install(
-  FILES ../Documentation/IPv6Notes
-  DESTINATION ${DOC_INSTALL_PATH}
-)
-
-install(
-  FILES ../Documentation/KnownIssues
-  DESTINATION ${DOC_INSTALL_PATH}
-)
-
-install(
-  FILES ../Documentation/Performance
-  DESTINATION ${DOC_INSTALL_PATH}
-)
-
-install(
-  FILES ../Documentation/RelatedWork
-  DESTINATION ${DOC_INSTALL_PATH}
-)
-
-install(
-  FILES ../Documentation/Sponsors
+        ../Documentation/IPv6Notes
+        ../Documentation/KnownIssues
+        ../Documentation/Performance
+        ../Documentation/RelatedWork
+        ../Documentation/Sponsors
   DESTINATION ${DOC_INSTALL_PATH}
 )
