@@ -924,7 +924,7 @@ static void help(void)
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
 	     "Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n"
-	     "Copyright (C) 2012 Markus Amend <markus@netsniff-ng.org>\n"
+	     "Copyright (C) 2012      Markus Amend <markus@netsniff-ng.org>\n"
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
 	     "There is NO WARRANTY, to the extent permitted by law.\n\n");
@@ -939,7 +939,7 @@ static void version(void)
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
 	     "Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n"
-	     "Copyright (C) 2012 Markus Amend <markus@netsniff-ng.org>\n"
+	     "Copyright (C) 2012      Markus Amend <markus@netsniff-ng.org>\n"
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
 	     "There is NO WARRANTY, to the extent permitted by law.\n\n");
