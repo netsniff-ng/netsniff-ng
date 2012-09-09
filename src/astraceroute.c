@@ -19,10 +19,6 @@
  *   while the eyes of the great are elsewhere.
  *
  *     -- The Lord of the Rings, Elrond, Chapter 'The Council of Elrond'.
- *
- * astraceroute includes GeoLite data created by MaxMind, available from
- * http://www.maxmind.com/. On Debian you need libgeoip-dev, libgeoip1 and
- * geoip-database-contrib.
  */
 
 #include <stdio.h>
@@ -91,38 +87,37 @@ static GeoIP *gi_country = NULL;
 static GeoIP *gi_city = NULL;
 
 static const char *short_options = "H:p:nNf:m:i:d:q:x:SAEFPURt:Gl:w:W:hv46X:ZLK";
-
-static struct option long_options[] = {
-	{"host", required_argument, 0, 'H'},
-	{"port", required_argument, 0, 'p'},
-	{"init-ttl", required_argument, 0, 'f'},
-	{"max-ttl", required_argument, 0, 'm'},
-	{"numeric", no_argument, 0, 'n'},
-	{"dns", no_argument, 0, 'N'},
-	{"ipv4", no_argument, 0, '4'},
-	{"ipv6", no_argument, 0, '6'},
-	{"dev", required_argument, 0, 'd'},
-	{"num-probes", required_argument, 0, 'q'},
-	{"timeout", required_argument, 0, 'x'},
-	{"syn", no_argument, 0, 'S'},
-	{"ack", no_argument, 0, 'A'},
-	{"urg", no_argument, 0, 'U'},
-	{"fin", no_argument, 0, 'F'},
-	{"psh", no_argument, 0, 'P'},
-	{"rst", no_argument, 0, 'R'},
-	{"ecn-syn", no_argument, 0, 'E'},
-	{"tos", required_argument, 0, 't'},
-	{"payload", required_argument, 0, 'X'},
-	{"show-packet", no_argument, 0, 'Z'},
-	{"nofrag", no_argument, 0, 'G'},
-	{"totlen", required_argument, 0, 'l'},
-	{"whois", required_argument, 0, 'w'},
-	{"wport", required_argument, 0, 'W'},
-	{"city-db", required_argument, 0, 'L'},
-	{"country-db", required_argument, 0, 'K'},
-	{"version", no_argument, 0, 'v'},
-	{"help", no_argument, 0, 'h'},
-	{0, 0, 0, 0}
+static const struct option long_options[] = {
+	{"host",	required_argument,	NULL, 'H'},
+	{"port",	required_argument,	NULL, 'p'},
+	{"init-ttl",	required_argument,	NULL, 'f'},
+	{"max-ttl",	required_argument,	NULL, 'm'},
+	{"dev",		required_argument,	NULL, 'd'},
+	{"num-probes",	required_argument,	NULL, 'q'},
+	{"timeout",	required_argument,	NULL, 'x'},
+	{"tos",		required_argument,	NULL, 't'},
+	{"payload",	required_argument,	NULL, 'X'},
+	{"totlen",	required_argument,	NULL, 'l'},
+	{"whois",	required_argument,	NULL, 'w'},
+	{"wport",	required_argument,	NULL, 'W'},
+	{"city-db",	required_argument,	NULL, 'L'},
+	{"country-db",	required_argument,	NULL, 'K'},
+	{"numeric",	no_argument,		NULL, 'n'},
+	{"dns",		no_argument,		NULL, 'N'},
+	{"ipv4",	no_argument,		NULL, '4'},
+	{"ipv6",	no_argument,		NULL, '6'},
+	{"syn",		no_argument,		NULL, 'S'},
+	{"ack",		no_argument,		NULL, 'A'},
+	{"urg",		no_argument,		NULL, 'U'},
+	{"fin",		no_argument,		NULL, 'F'},
+	{"psh",		no_argument,		NULL, 'P'},
+	{"rst",		no_argument,		NULL, 'R'},
+	{"ecn-syn",	no_argument,		NULL, 'E'},
+	{"show-packet",	no_argument,		NULL, 'Z'},
+	{"nofrag",	no_argument,		NULL, 'G'},
+	{"version",	no_argument,		NULL, 'v'},
+	{"help",	no_argument,		NULL, 'h'},
+	{NULL, 0, NULL, 0}
 };
 
 static struct sock_filter ipv4_icmp_type_11[] = {
@@ -197,83 +192,80 @@ static void header(void)
 static void help(void)
 {
 
-	printf("\nastraceroute %s, Autonomous System (AS) trace route utility\n",
-	       VERSION_STRING);
-	printf("http://www.netsniff-ng.org\n\n");
-	printf("Usage: astraceroute [options]\n");
-	printf("Options:\n");
-	printf(" -H|--host <host>        Host/IPv4/IPv6 to lookup AS route to\n");
-	printf(" -p|--port <port>        Hosts port to lookup AS route to\n");
-	printf(" -i|-d|--dev <device>    Networking device, i.e. eth0\n");
-	printf(" -4|--ipv4               Use IPv4 requests (default)\n");
-	printf(" -6|--ipv6               Use IPv6 requests\n");
-	printf(" -n|--numeric            Do not do reverse DNS lookup for hops\n");
-	printf(" -N|--dns                Do a reverse DNS lookup for hops\n");
-	printf(" -f|--init-ttl <ttl>     Set initial TTL\n");
-	printf(" -m|--max-ttl <ttl>      Set maximum TTL (default: 30)\n");
-	printf(" -q|--num-probes <num>   Number of max probes for each hop (default: 3)\n");
-	printf(" -x|--timeout <sec>      Probe response timeout in sec (default: 3)\n");
-	printf(" -S|--syn                Set TCP SYN flag in packets\n");
-	printf(" -A|--ack                Set TCP ACK flag in packets\n");
-	printf(" -F|--fin                Set TCP FIN flag in packets\n");
-	printf(" -P|--psh                Set TCP PSH flag in packets\n");
-	printf(" -U|--urg                Set TCP URG flag in packets\n");
-	printf(" -R|--rst                Set TCP RST flag in packets\n");
-	printf(" -E|--ecn-syn            Send ECN SYN packets (RFC3168)\n");
-	printf(" -t|--tos <tos>          Set the IP TOS field\n");
-	printf(" -G|--nofrag             Set do not fragment bit\n");
-	printf(" -X|--payload <string>   Specify a payload string to test DPIs\n");
-	printf(" -Z|--show-packet        Show returned packet on each hop\n");
-	printf(" -l|--totlen <len>       Specify total packet len\n");
-	printf(" -w|--whois <server>     Use a different AS whois DB server\n");
-	printf("                         (default: /etc/netsniff-ng/whois.conf)\n");
-	printf(" -W|--wport <port>       Use a different port to AS whois server\n");
-	printf("                         (default: /etc/netsniff-ng/whois.conf)\n");
-	printf(" --city-db <path>        Specifiy path for geoip city database\n");
-	printf(" --country-db <path>     Specifiy path for geoip country database\n");
-	printf(" -v|--version            Print version\n");
-	printf(" -h|--help               Print this help\n");
-	printf("\n");
-	printf("Examples:\n");
-	printf("  IPv4 trace of AS with TCP SYN probe (this will most-likely pass):\n");
-	printf("    astraceroute -i eth0 -N -S -H netsniff-ng.org\n");
-	printf("  IPv4 trace of AS with TCP ECN SYN probe:\n");
-	printf("    astraceroute -i eth0 -N -E -H netsniff-ng.org\n");
-	printf("  IPv4 trace of AS with TCP FIN probe:\n");
-	printf("    astraceroute -i eth0 -N -F -H netsniff-ng.org\n");
-	printf("  IPv4 trace of AS with Xmas probe:\n");
-	printf("    astraceroute -i eth0 -N -FPU -H netsniff-ng.org\n");
-	printf("  IPv4 trace of AS with Null probe with ASCII payload:\n");
-	printf("    astraceroute -i eth0 -N -H netsniff-ng.org -X \"censor-me\" -Z\n");
-	printf("  IPv6 trace of AS up to www.6bone.net:\n");
-	printf("    astraceroute -6 -i eth0 -S -E -N -H www.6bone.net\n");
-	printf("\n");
-	printf("Note:\n");
-	printf("  If the TCP probe did not give any results, then astraceroute will\n");
-	printf("  automatically probe for classic ICMP packets! To gather more\n");
-	printf("  information about astraceroute's fetched AS numbers, see i.e.\n");
-	printf("  http://bgp.he.net/AS<number>!\n");
-	printf("\n");
-	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
-	printf("Swiss federal institute of technology (ETH Zurich)\n");
-	printf("License: GNU GPL version 2\n");
-	printf("This is free software: you are free to change and redistribute it.\n");
-	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
+	printf("\n%s %s, autonomous system trace route utility\n",
+	       PROGNAME_STRING, VERSION_STRING);
+	puts("http://www.netsniff-ng.org\n\n"
+	     "Usage: astraceroute [options]\n"
+	     "Options:\n"
+	     " -H|--host <host>        Host/IPv4/IPv6 to lookup AS route to\n"
+	     " -p|--port <port>        Hosts port to lookup AS route to\n"
+	     " -i|-d|--dev <device>    Networking device, i.e. eth0\n"
+	     " -4|--ipv4               Use IPv4 requests (default)\n"
+	     " -6|--ipv6               Use IPv6 requests\n"
+	     " -n|--numeric            Do not do reverse DNS lookup for hops\n"
+	     " -N|--dns                Do a reverse DNS lookup for hops\n"
+	     " -f|--init-ttl <ttl>     Set initial TTL\n"
+	     " -m|--max-ttl <ttl>      Set maximum TTL (default: 30)\n"
+	     " -q|--num-probes <num>   Number of max probes for each hop (default: 3)\n"
+	     " -x|--timeout <sec>      Probe response timeout in sec (default: 3)\n"
+	     " -S|--syn                Set TCP SYN flag in packets\n"
+	     " -A|--ack                Set TCP ACK flag in packets\n"
+	     " -F|--fin                Set TCP FIN flag in packets\n"
+	     " -P|--psh                Set TCP PSH flag in packets\n"
+	     " -U|--urg                Set TCP URG flag in packets\n"
+	     " -R|--rst                Set TCP RST flag in packets\n"
+	     " -E|--ecn-syn            Send ECN SYN packets (RFC3168)\n"
+	     " -t|--tos <tos>          Set the IP TOS field\n"
+	     " -G|--nofrag             Set do not fragment bit\n"
+	     " -X|--payload <string>   Specify a payload string to test DPIs\n"
+	     " -Z|--show-packet        Show returned packet on each hop\n"
+	     " -l|--totlen <len>       Specify total packet len\n"
+	     " -w|--whois <server>     Use a different AS whois DB server\n"
+	     "                         (default: /etc/netsniff-ng/whois.conf)\n"
+	     " -W|--wport <port>       Use a different port to AS whois server\n"
+	     "                         (default: /etc/netsniff-ng/whois.conf)\n"
+	     " --city-db <path>        Specifiy path for geoip city database\n"
+	     " --country-db <path>     Specifiy path for geoip country database\n"
+	     " -v|--version            Print version\n"
+	     " -h|--help               Print this help\n\n"
+	     "Examples:\n"
+	     "  IPv4 trace of AS with TCP SYN probe (this will most-likely pass):\n"
+	     "    astraceroute -i eth0 -N -S -H netsniff-ng.org\n"
+	     "  IPv4 trace of AS with TCP ECN SYN probe:\n"
+	     "    astraceroute -i eth0 -N -E -H netsniff-ng.org\n"
+	     "  IPv4 trace of AS with TCP FIN probe:\n"
+	     "    astraceroute -i eth0 -N -F -H netsniff-ng.org\n"
+	     "  IPv4 trace of AS with Xmas probe:\n"
+	     "    astraceroute -i eth0 -N -FPU -H netsniff-ng.org\n"
+	     "  IPv4 trace of AS with Null probe with ASCII payload:\n"
+	     "    astraceroute -i eth0 -N -H netsniff-ng.org -X \"censor-me\" -Z\n"
+	     "  IPv6 trace of AS up to www.6bone.net:\n"
+	     "    astraceroute -6 -i eth0 -S -E -N -H www.6bone.net\n\n"
+	     "Note:\n"
+	     "  If the TCP probe did not give any results, then astraceroute will\n"
+	     "  automatically probe for classic ICMP packets! To gather more\n"
+	     "  information about astraceroute's fetched AS numbers, see i.e.\n"
+	     "  http://bgp.he.net/AS<number>!\n\n"
+	     "Please report bugs to <bugs@netsniff-ng.org>\n"
+	     "Copyright (C) 2011-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
+	     "Swiss federal institute of technology (ETH Zurich)\n"
+	     "License: GNU GPL version 2.0\n"
+	     "This is free software: you are free to change and redistribute it.\n"
+	     "There is NO WARRANTY, to the extent permitted by law.\n\n");
 	die();
 }
 
 static void version(void)
 {
-	printf("\nastraceroute %s, AS trace route utility\n",
-	       VERSION_STRING);
-	printf("http://www.netsniff-ng.org\n\n");
-	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
-	printf("Swiss federal institute of technology (ETH Zurich)\n");
-	printf("License: GNU GPL version 2\n");
-	printf("This is free software: you are free to change and redistribute it.\n");
-	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
+	printf("\n%s %s, autonomous system trace route utility\n",
+	       PROGNAME_STRING, VERSION_STRING);
+	puts("http://www.netsniff-ng.org\n\n"
+	     "Please report bugs to <bugs@netsniff-ng.org>\n"
+	     "Copyright (C) 2011-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
+	     "Swiss federal institute of technology (ETH Zurich)\n"
+	     "License: GNU GPL version 2.0\n"
+	     "This is free software: you are free to change and redistribute it.\n"
+	     "There is NO WARRANTY, to the extent permitted by law.\n\n");
 	die();
 }
 
