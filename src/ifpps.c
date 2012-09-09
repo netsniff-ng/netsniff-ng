@@ -89,18 +89,17 @@ static int loop = 0;
 volatile sig_atomic_t sigint = 0;
 
 static const char *short_options = "d:t:vhcCHlp";
-
-static struct option long_options[] = {
-	{"dev", required_argument, 0, 'd'},
-	{"interval", required_argument, 0, 't'},
-	{"loop", no_argument, 0, 'l'},
-	{"term", no_argument, 0, 'c'},
-	{"promisc", no_argument, 0, 'p'},
-	{"csv", no_argument, 0, 'C'},
-	{"csv-tablehead", no_argument, 0, 'H'},
-	{"version", no_argument, 0, 'v'},
-	{"help", no_argument, 0, 'h'},
-	{0, 0, 0, 0}
+static const struct option long_options[] = {
+	{"dev",			required_argument,	NULL, 'd'},
+	{"interval",		required_argument,	NULL, 't'},
+	{"loop",		no_argument,		NULL, 'l'},
+	{"term",		no_argument,		NULL, 'c'},
+	{"promisc",		no_argument,		NULL, 'p'},
+	{"csv",			no_argument,		NULL, 'C'},
+	{"csv-tablehead",	no_argument,		NULL, 'H'},
+	{"version",		no_argument,		NULL, 'v'},
+	{"help",		no_argument,		NULL, 'h'},
+	{NULL, 0, NULL, 0}
 };
 
 static void signal_handler(int number)
@@ -784,43 +783,42 @@ out:
 
 static void help(void)
 {
-	printf("\nifpps %s, kernel networking and system statistics\n",
-	       VERSION_STRING);
-	printf("http://www.netsniff-ng.org\n\n");
-	printf("Usage: ifpps [options] || ifpps <netdev>\n");
-	printf("Options:\n");
-	printf("  -d|--dev <netdev>      Device to fetch statistics for i.e., eth0\n");
-	printf("  -p|--promisc           Promiscuous mode\n");
-	printf("  -t|--interval <time>   Refresh time in sec (default 1 s)\n");
-	printf("  -c|--term              Output to terminal\n");
-	printf("  -C|--csv               Output to terminal as CSV\n");
-	printf("                         E.g. post-processing with Gnuplot et al.\n");
-	printf("  -H|--csv-tablehead     Print CSV table head\n");
-	printf("  -l|--loop              Loop terminal output\n");
-	printf("  -v|--version           Print version\n");
-	printf("  -h|--help              Print this help\n");
-	printf("\n");
-	printf("Examples:\n");
-	printf("  ifpps --dev eth0\n");
-	printf("  ifpps --dev eth0 --interval 60 --csv\n\n");
-	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n");
-	printf("License: GNU GPL version 2\n");
-	printf("This is free software: you are free to change and redistribute it.\n");
-	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
+	printf("\n%s %s, top-like kernel networking and system statistics\n",
+	       PROGNAME_STRING, VERSION_STRING);
+	puts("http://www.netsniff-ng.org\n\n"
+	     "Usage: ifpps [options] || ifpps <netdev>\n"
+	     "Options:\n"
+	     "  -d|--dev <netdev>      Device to fetch statistics for i.e., eth0\n"
+	     "  -p|--promisc           Promiscuous mode\n"
+	     "  -t|--interval <time>   Refresh time in sec (default 1 s)\n"
+	     "  -c|--term              Output to terminal\n"
+	     "  -C|--csv               Output to terminal as CSV\n"
+	     "                         E.g. post-processing with Gnuplot et al.\n"
+	     "  -H|--csv-tablehead     Print CSV table head\n"
+	     "  -l|--loop              Loop terminal output\n"
+	     "  -v|--version           Print version\n"
+	     "  -h|--help              Print this help\n\n"
+	     "Examples:\n"
+	     "  ifpps --dev eth0\n"
+	     "  ifpps --dev eth0 --interval 60 --csv\n\n"
+	     "Please report bugs to <bugs@netsniff-ng.org>\n"
+	     "Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
+	     "License: GNU GPL version 2.0\n"
+	     "This is free software: you are free to change and redistribute it.\n"
+	     "There is NO WARRANTY, to the extent permitted by law.\n\n");
 	die();
 }
 
 static void version(void)
 {
-	printf("\nifpps %s, kernel networking statistics per sec\n",
-	       VERSION_STRING);
-	printf("http://www.netsniff-ng.org\n\n");
-	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n");
-	printf("License: GNU GPL version 2\n");
-	printf("This is free software: you are free to change and redistribute it.\n");
-	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
+	printf("\n%s %s, top-like kernel networking statistics per sec\n",
+	       PROGNAME_STRING, VERSION_STRING);
+	puts("http://www.netsniff-ng.org\n\n"
+	     "Please report bugs to <bugs@netsniff-ng.org>\n"
+	     "Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
+	     "License: GNU GPL version 2.0\n"
+	     "This is free software: you are free to change and redistribute it.\n"
+	     "There is NO WARRANTY, to the extent permitted by law.\n\n");
 	die();
 }
 
