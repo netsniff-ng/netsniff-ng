@@ -83,28 +83,27 @@ struct packet_dynamics *packet_dyns = NULL;
 unsigned int packet_dyn_len = 0;
 
 static const char *short_options = "d:c:n:t:vJhS:HQb:B:rk:i:o:VRA";
-
-static struct option long_options[] = {
-	{"dev", required_argument, 0, 'd'},
-	{"out", required_argument, 0, 'o'},
-	{"in", required_argument, 0, 'i'},
-	{"conf", required_argument, 0, 'c'},
-	{"num", required_argument, 0, 'n'},
-	{"gap", required_argument, 0, 't'},
-	{"ring-size", required_argument, 0, 'S'},
-	{"bind-cpu", required_argument, 0, 'b'},
-	{"unbind-cpu", required_argument, 0, 'B'},
-	{"kernel-pull", required_argument, 0, 'k'},
-	{"jumbo-support", no_argument, 0, 'J'},
-	{"rfraw", no_argument, 0, 'R'},
-	{"rand", no_argument, 0, 'r'},
-	{"prio-high", no_argument, 0, 'H'},
-	{"notouch-irq", no_argument, 0, 'Q'},
-	{"verbose", no_argument, 0, 'V'},
-	{"no-sock-mem", no_argument, 0, 'A'},
-	{"version", no_argument, 0, 'v'},
-	{"help", no_argument, 0, 'h'},
-	{0, 0, 0, 0}
+static const struct option long_options[] = {
+	{"dev",			required_argument,	NULL, 'd'},
+	{"out",			required_argument,	NULL, 'o'},
+	{"in",			required_argument,	NULL, 'i'},
+	{"conf",		required_argument,	NULL, 'c'},
+	{"num",			required_argument,	NULL, 'n'},
+	{"gap",			required_argument,	NULL, 't'},
+	{"ring-size",		required_argument,	NULL, 'S'},
+	{"bind-cpu",		required_argument,	NULL, 'b'},
+	{"unbind-cpu",		required_argument,	NULL, 'B'},
+	{"kernel-pull",		required_argument,	NULL, 'k'},
+	{"jumbo-support",	no_argument,		NULL, 'J'},
+	{"rfraw",		no_argument,		NULL, 'R'},
+	{"rand",		no_argument,		NULL, 'r'},
+	{"prio-high",		no_argument,		NULL, 'H'},
+	{"notouch-irq",		no_argument,		NULL, 'Q'},
+	{"verbose",		no_argument,		NULL, 'V'},
+	{"no-sock-mem",		no_argument,		NULL, 'A'},
+	{"version",		no_argument,		NULL, 'v'},
+	{"help",		no_argument,		NULL, 'h'},
+	{NULL, 0, NULL, 0}
 };
 
 static void signal_handler(int number)
@@ -138,70 +137,67 @@ static void header(void)
 
 static void help(void)
 {
-	printf("\ntrafgen %s, high-perf zero-copy network packet generator\n",
-	       VERSION_STRING);
-	printf("http://www.netsniff-ng.org\n\n");
-	printf("Usage: trafgen [options]\n");
-	printf("Options:\n");
-/*	printf("  -o|-d|--out|--dev <netdev|pcap>   Networking Device i.e., eth0 or pcap\n"); */
-	printf("  -o|-d|--out|--dev <netdev>        Networking Device i.e., eth0\n");
-	printf("  -i|-c|--in|--conf <cfg-file>      Packet configuration file\n");
-	printf("  -J|--jumbo-support                Support for 64KB Super Jumbo Frames\n");
-	printf("                                    Default TX slot: 2048Byte\n");
-	printf("  -R|--rfraw                        Inject raw 802.11 frames\n");
-	printf("  -n|--num <uint>                   Number of packets until exit\n");
-	printf("  `--     0                         Loop until interrupt (default)\n");
-	printf("   `-     n                         Send n packets and done\n");
-	printf("  -r|--rand                         Randomize packet selection process\n");
-	printf("                                    Instead of a round robin selection\n");
-	printf("  -t|--gap <uint>                   Interpacket gap in us (approx)\n");
-	printf("  -A|--no-sock-mem                  Don't tune core socket memory\n");
-	printf("  -S|--ring-size <size>             Manually set ring size to <size>:\n");
-	printf("                                    mmap space in KB/MB/GB, e.g. \'10MB\'\n");
-	printf("  -k|--kernel-pull <uint>           Kernel pull from user interval in us\n");
-	printf("                                    Default is 10us where the TX_RING\n");
-	printf("                                    is populated with payload from uspace\n");
-	printf("  -b|--bind-cpu <cpu>               Bind to specific CPU (or CPU-range)\n");
-	printf("  -B|--unbind-cpu <cpu>             Forbid to use specific CPU (or CPU-range)\n");
-	printf("  -H|--prio-high                    Make this high priority process\n");
-	printf("  -Q|--notouch-irq                  Do not touch IRQ CPU affinity of NIC\n");
-	printf("  -v|--version                      Show version\n");
-	printf("  -h|--help                         Guess what?!\n");
-	printf("\n");
-	printf("Examples:\n");
-	printf("  See trafgen.txf for configuration file examples.\n");
-	printf("  trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0\n");
-	printf("  trafgen --dev wlan0 --rfraw --conf beacon-test.txf --bind-cpu 0 -A\n");
-	printf("  trafgen --out eth0 --in trafgen.txf --bind-cpu 0\n");
-/*	printf("  trafgen --out test.pcap --in trafgen.txf --bind-cpu 0\n"); */
-	printf("  trafgen --dev eth0 --conf trafgen.txf --rand --gap 1000\n");
-	printf("  trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0 --num 10 --rand\n");
-	printf("\n");
-	printf("Note:\n");
-	printf("  This tool is targeted for network developers! You should\n");
-	printf("  be aware of what you are doing and what these options above\n");
-	printf("  mean! Only use this tool in an isolated LAN that you own!\n");
-	printf("\n");
-	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
-	printf("Swiss federal institute of technology (ETH Zurich)\n");
-	printf("License: GNU GPL version 2\n");
-	printf("This is free software: you are free to change and redistribute it.\n");
-	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
+	printf("\n%s %s, zero-copy network packet generator\n",
+	       PROGNAME_STRING, VERSION_STRING);
+	puts("http://www.netsniff-ng.org\n\n"
+	     "Usage: trafgen [options]\n"
+	     "Options:\n"
+/*	     "  -o|-d|--out|--dev <netdev|pcap>   Networking Device i.e., eth0 or pcap\n" */
+	     "  -o|-d|--out|--dev <netdev>        Networking Device i.e., eth0\n"
+	     "  -i|-c|--in|--conf <cfg-file>      Packet configuration file\n"
+	     "  -J|--jumbo-support                Support for 64KB Super Jumbo Frames\n"
+	     "                                    Default TX slot: 2048Byte\n"
+	     "  -R|--rfraw                        Inject raw 802.11 frames\n"
+	     "  -n|--num <uint>                   Number of packets until exit\n"
+	     "  `--     0                         Loop until interrupt (default)\n"
+	     "   `-     n                         Send n packets and done\n"
+	     "  -r|--rand                         Randomize packet selection process\n"
+	     "                                    Instead of a round robin selection\n"
+	     "  -t|--gap <uint>                   Interpacket gap in us (approx)\n"
+	     "  -A|--no-sock-mem                  Don't tune core socket memory\n"
+	     "  -S|--ring-size <size>             Manually set ring size to <size>:\n"
+	     "                                    mmap space in KB/MB/GB, e.g. \'10MB\'\n"
+	     "  -k|--kernel-pull <uint>           Kernel pull from user interval in us\n"
+	     "                                    Default is 10us where the TX_RING\n"
+	     "                                    is populated with payload from uspace\n"
+	     "  -b|--bind-cpu <cpu>               Bind to specific CPU (or CPU-range)\n"
+	     "  -B|--unbind-cpu <cpu>             Forbid to use specific CPU (or CPU-range)\n"
+	     "  -H|--prio-high                    Make this high priority process\n"
+	     "  -Q|--notouch-irq                  Do not touch IRQ CPU affinity of NIC\n"
+	     "  -v|--version                      Show version\n"
+	     "  -h|--help                         Guess what?!\n\n"
+	     "Examples:\n"
+	     "  See trafgen.txf for configuration file examples.\n"
+	     "  trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0\n"
+	     "  trafgen --dev wlan0 --rfraw --conf beacon-test.txf --bind-cpu 0 -A\n"
+	     "  trafgen --out eth0 --in trafgen.txf --bind-cpu 0\n"
+/*	     "  trafgen --out test.pcap --in trafgen.txf --bind-cpu 0\n" */
+	     "  trafgen --dev eth0 --conf trafgen.txf --rand --gap 1000\n"
+	     "  trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0 --num 10 --rand\n\n"
+	     "Note:\n"
+	     "  This tool is targeted for network developers! You should\n"
+	     "  be aware of what you are doing and what these options above\n"
+	     "  mean! Only use this tool in an isolated LAN that you own!\n\n"
+	     "Please report bugs to <bugs@netsniff-ng.org>\n"
+	     "Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
+	     "Swiss federal institute of technology (ETH Zurich)\n"
+	     "License: GNU GPL version 2.0\n"
+	     "This is free software: you are free to change and redistribute it.\n"
+	     "There is NO WARRANTY, to the extent permitted by law.\n\n");
 	die();
 }
 
 static void version(void)
 {
-	printf("\ntrafgen %s, high-perf zero-copy network packet generator\n",
-	       VERSION_STRING);
-	printf("http://www.netsniff-ng.org\n\n");
-	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
-	printf("Swiss federal institute of technology (ETH Zurich)\n");
-	printf("License: GNU GPL version 2\n");
-	printf("This is free software: you are free to change and redistribute it.\n");
-	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
+	printf("\n%s %s, zero-copy network packet generator\n",
+	       PROGNAME_STRING, VERSION_STRING);
+	puts("http://www.netsniff-ng.org\n\n"
+	     "Please report bugs to <bugs@netsniff-ng.org>\n"
+	     "Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
+	     "Swiss federal institute of technology (ETH Zurich)\n"
+	     "License: GNU GPL version 2.0\n"
+	     "This is free software: you are free to change and redistribute it.\n"
+	     "There is NO WARRANTY, to the extent permitted by law.\n\n");
 	die();
 }
 
