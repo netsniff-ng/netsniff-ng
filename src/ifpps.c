@@ -805,7 +805,7 @@ static void help(void)
 	     "Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
-	     "There is NO WARRANTY, to the extent permitted by law.\n\n");
+	     "There is NO WARRANTY, to the extent permitted by law.\n");
 	die();
 }
 
@@ -818,7 +818,7 @@ static void version(void)
 	     "Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
-	     "There is NO WARRANTY, to the extent permitted by law.\n\n");
+	     "There is NO WARRANTY, to the extent permitted by law.\n");
 	die();
 }
 

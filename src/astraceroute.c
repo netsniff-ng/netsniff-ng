@@ -251,7 +251,7 @@ static void help(void)
 	     "Swiss federal institute of technology (ETH Zurich)\n"
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
-	     "There is NO WARRANTY, to the extent permitted by law.\n\n");
+	     "There is NO WARRANTY, to the extent permitted by law.\n");
 	die();
 }
 
@@ -265,7 +265,7 @@ static void version(void)
 	     "Swiss federal institute of technology (ETH Zurich)\n"
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
-	     "There is NO WARRANTY, to the extent permitted by law.\n\n");
+	     "There is NO WARRANTY, to the extent permitted by law.\n");
 	die();
 }
 
