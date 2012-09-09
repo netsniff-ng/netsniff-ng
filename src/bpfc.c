@@ -28,49 +28,49 @@
 #include "die.h"
 
 static const char *short_options = "vhi:V";
-
-static struct option long_options[] = {
-	{"input", required_argument, 0, 'i'},
-	{"verbose", no_argument, 0, 'V'},
-	{"version", no_argument, 0, 'v'},
-	{"help", no_argument, 0, 'h'},
-	{0, 0, 0, 0}
+static const struct option long_options[] = {
+	{"input",	required_argument,	NULL, 'i'},
+	{"verbose",	no_argument,		NULL, 'V'},
+	{"version",	no_argument,		NULL, 'v'},
+	{"help",	no_argument,		NULL, 'h'},
+	{NULL, 0, NULL, 0}
 };
 
 extern int compile_filter(char *file, int verbose);
 
 static void help(void)
 {
-	printf("\nbpfc %s, a tiny BPF compiler\n", VERSION_STRING);
-	printf("http://www.netsniff-ng.org\n\n");
-	printf("Usage: bpfc [options] || bpfc <program>\n");
-	printf("Options:\n");
-	printf("  -i|--input <program>   Berkeley Packet Filter file\n");
-	printf("  -V|--verbose           Be more verbose\n");
-	printf("  -v|--version           Print version\n");
-	printf("  -h|--help              Print this help\n");
-	printf("\n");
-	printf("Examples:\n");
-	printf("  bpfc -i fubar.bpf\n\n");
-	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
-	printf("Swiss federal institute of technology (ETH Zurich)\n");
-	printf("License: GNU GPL version 2\n");
-	printf("This is free software: you are free to change and redistribute it.\n");
-	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
+	printf("\n%s %s, a tiny BPF compiler\n",
+	       PROGNAME_STRING, VERSION_STRING);
+	puts("http://www.netsniff-ng.org\n\n"
+	     "Usage: bpfc [options] || bpfc <program>\n"
+	     "Options:\n"
+	     "  -i|--input <program>   Berkeley Packet Filter file\n"
+	     "  -V|--verbose           Be more verbose\n"
+	     "  -v|--version           Print version\n"
+	     "  -h|--help              Print this help\n\n"
+	     "Examples:\n"
+	     "  bpfc -i fubar.bpf\n\n"
+	     "Please report bugs to <bugs@netsniff-ng.org>\n"
+	     "Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
+	     "Swiss federal institute of technology (ETH Zurich)\n"
+	     "License: GNU GPL version 2.0\n"
+	     "This is free software: you are free to change and redistribute it.\n"
+	     "There is NO WARRANTY, to the extent permitted by law.\n\n");
 	die();
 }
 
 static void version(void)
 {
-	printf("\nbpfc %s, a tiny BPF compiler\n", VERSION_STRING);
-	printf("http://www.netsniff-ng.org\n\n");
-	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n");
-	printf("Swiss federal institute of technology (ETH Zurich)\n");
-	printf("License: GNU GPL version 2\n");
-	printf("This is free software: you are free to change and redistribute it.\n");
-	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
+	printf("\n%s %s, a tiny BPF compiler\n",
+	       PROGNAME_STRING, VERSION_STRING);
+	puts("http://www.netsniff-ng.org\n\n"
+	     "Please report bugs to <bugs@netsniff-ng.org>\n"
+	     "Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
+	     "Swiss federal institute of technology (ETH Zurich)\n"
+	     "License: GNU GPL version 2.0\n"
+	     "This is free software: you are free to change and redistribute it.\n"
+	     "There is NO WARRANTY, to the extent permitted by law.\n\n");
 	die();
 }
 
