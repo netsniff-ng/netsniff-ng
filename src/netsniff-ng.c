@@ -91,36 +91,35 @@ static struct itimerval itimer;
 static volatile bool next_dump = false;
 
 static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqXlvhF:RgA";
-
-static struct option long_options[] = {
-	{"dev", required_argument, 0, 'd'},
-	{"in", required_argument, 0, 'i'},
-	{"out", required_argument, 0, 'o'},
-	{"rand", no_argument, 0, 'r'},
-	{"rfraw", no_argument, 0, 'R'},
-	{"mmap", no_argument, 0, 'm'},
-	{"sg", no_argument, 0, 'g'},
-	{"clrw", no_argument, 0, 'c'},
-	{"jumbo-support", no_argument, 0, 'J'},
-	{"filter", required_argument, 0, 'f'},
-	{"no-promisc", no_argument, 0, 'M'},
-	{"num", required_argument, 0, 'n'},
-	{"type", required_argument, 0, 't'},
-	{"interval", required_argument, 0, 'F'},
-	{"ring-size", required_argument, 0, 'S'},
-	{"kernel-pull", required_argument, 0, 'k'},
-	{"bind-cpu", required_argument, 0, 'b'},
-	{"unbind-cpu", required_argument, 0, 'B'},
-	{"prio-high", no_argument, 0, 'H'},
-	{"notouch-irq", no_argument, 0, 'Q'},
-	{"silent", no_argument, 0, 's'},
-	{"less", no_argument, 0, 'q'},
-	{"hex", no_argument, 0, 'X'},
-	{"ascii", no_argument, 0, 'l'},
-	{"no-sock-mem", no_argument, 0, 'A'},
-	{"version", no_argument, 0, 'v'},
-	{"help", no_argument, 0, 'h'},
-	{0, 0, 0, 0}
+static const struct option long_options[] = {
+	{"dev",			required_argument,	NULL, 'd'},
+	{"in",			required_argument,	NULL, 'i'},
+	{"out",			required_argument,	NULL, 'o'},
+	{"filter",		required_argument,	NULL, 'f'},
+	{"num",			required_argument,	NULL, 'n'},
+	{"type",		required_argument,	NULL, 't'},
+	{"interval",		required_argument,	NULL, 'F'},
+	{"ring-size",		required_argument,	NULL, 'S'},
+	{"kernel-pull",		required_argument,	NULL, 'k'},
+	{"bind-cpu",		required_argument,	NULL, 'b'},
+	{"unbind-cpu",		required_argument,	NULL, 'B'},
+	{"rand",		no_argument,		NULL, 'r'},
+	{"rfraw",		no_argument,		NULL, 'R'},
+	{"mmap",		no_argument,		NULL, 'm'},
+	{"sg",			no_argument,		NULL, 'g'},
+	{"clrw",		no_argument,		NULL, 'c'},
+	{"jumbo-support",	no_argument,		NULL, 'J'},
+	{"no-promisc",		no_argument,		NULL, 'M'},
+	{"prio-high",		no_argument,		NULL, 'H'},
+	{"notouch-irq",		no_argument,		NULL, 'Q'},
+	{"silent",		no_argument,		NULL, 's'},
+	{"less",		no_argument,		NULL, 'q'},
+	{"hex",			no_argument,		NULL, 'X'},
+	{"ascii",		no_argument,		NULL, 'l'},
+	{"no-sock-mem",		no_argument,		NULL, 'A'},
+	{"version",		no_argument,		NULL, 'v'},
+	{"help",		no_argument,		NULL, 'h'},
+	{NULL, 0, NULL, 0}
 };
 
 static void signal_handler(int number)
@@ -866,87 +865,84 @@ next:
 
 static void help(void)
 {
-	printf("\n%s %s, the packet sniffing beast\n", PROGNAME_STRING,
-	       VERSION_STRING);
-	printf("http://www.netsniff-ng.org\n\n");
-	printf("Usage: netsniff-ng [options]\n");
-	printf("Options:\n");
-	printf("  -i|-d|--dev|--in <dev|pcap> Input source as netdev or pcap\n");
-	printf("  -o|--out <dev|pcap|dir|txf> Output sink as netdev, pcap, directory, txf file\n");
-	printf("  -f|--filter <bpf-file>      Use BPF filter file from bpfc\n");
-	printf("  -t|--type <type>            Only handle packets of defined type:\n");
-	printf("                              host|broadcast|multicast|others|outgoing\n");
-	printf("  -F|--interval <uint>        Dump interval in sec if -o is a directory where\n");
-	printf("                              pcap files should be stored (default: 60)\n");
-	printf("  -J|--jumbo-support          Support for 64KB Super Jumbo Frames\n");
-	printf("                              Default RX/TX slot: 2048Byte\n");
-	printf("  -R|--rfraw                  Capture or inject raw 802.11 frames\n");
-	printf("  -n|--num <uint>             Number of packets until exit\n");
-	printf("  `--     0                   Loop until interrupted (default)\n");
-	printf("   `-     n                   Send n packets and done\n");
-	printf("Options for printing:\n");
-	printf("  -s|--silent                 Do not print captured packets\n");
-	printf("  -q|--less                   Print less-verbose packet information\n");
-	printf("  -X|--hex                    Print packet data in hex format\n");
-	printf("  -l|--ascii                  Print human-readable packet data\n");
-	printf("Options, advanced:\n");
-	printf("  -r|--rand                   Randomize packet forwarding order\n");
-	printf("  -M|--no-promisc             No promiscuous mode for netdev\n");
-	printf("  -A|--no-sock-mem            Don't tune core socket memory\n");
-	printf("  -m|--mmap                   Mmap pcap file i.e., for replaying\n");
-	printf("  -g|--sg                     Scatter/gather pcap file I/O\n");
-	printf("  -c|--clrw                   Use slower read(2)/write(2) I/O\n");
-	printf("  -S|--ring-size <size>       Manually set ring size to <size>:\n");
-	printf("                              mmap space in KB/MB/GB, e.g. \'10MB\'\n");
-	printf("  -k|--kernel-pull <uint>     Kernel pull from user interval in us\n");
-	printf("                              Default is 10us where the TX_RING\n");
-	printf("                              is populated with payload from uspace\n");
-	printf("  -b|--bind-cpu <cpu>         Bind to specific CPU (or CPU-range)\n");
-	printf("  -B|--unbind-cpu <cpu>       Forbid to use specific CPU (or CPU-range)\n");
-	printf("  -H|--prio-high              Make this high priority process\n");
-	printf("  -Q|--notouch-irq            Do not touch IRQ CPU affinity of NIC\n");
-	printf("  -v|--version                Show version\n");
-	printf("  -h|--help                   Guess what?!\n");
-	printf("\n");
-	printf("Examples:\n");
-	printf("  netsniff-ng --in eth0 --out dump.pcap --silent --bind-cpu 0\n");
-	printf("  netsniff-ng --in wlan0 --rfraw --out dump.pcap --silent --bind-cpu 0\n");
-	printf("  netsniff-ng --in dump.pcap --mmap --out eth0 --silent --bind-cpu 0\n");
-	printf("  netsniff-ng --in dump.pcap --out dump.txf --silent --bind-cpu 0\n");
-	printf("  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0 --type host\n");
-	printf("  netsniff-ng --in eth1 --out /opt/probe1/ -s -m -J --interval 30 -b 0\n");
-	printf("  netsniff-ng --in any --filter http.bpf --jumbo-support --ascii\n");
-	printf("\n");
-	printf("Note:\n");
-	printf("  This tool is targeted for network developers! You should\n");
-	printf("  be aware of what you are doing and what these options above\n");
-	printf("  mean! Use netsniff-ng's bpfc compiler for generating filter files.\n");
-	printf("  Further, netsniff-ng automatically enables the kernel BPF JIT\n");
-	printf("  if present. Txf file output is only possible if the input source\n");
-	printf("  is a pcap file.\n");
-	printf("\n");
-	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n");
-	printf("Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n");
-	printf("Copyright (C) 2012 Markus Amend <markus@netsniff-ng.org>\n");
-	printf("License: GNU GPL version 2\n");
-	printf("This is free software: you are free to change and redistribute it.\n");
-	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
+	printf("\n%s %s, the packet sniffing beast\n",
+	       PROGNAME_STRING, VERSION_STRING);
+	puts("http://www.netsniff-ng.org\n\n"
+	     "Usage: netsniff-ng [options]\n"
+	     "Options:\n"
+	     "  -i|-d|--dev|--in <dev|pcap> Input source as netdev or pcap\n"
+	     "  -o|--out <dev|pcap|dir|txf> Output sink as netdev, pcap, directory, txf file\n"
+	     "  -f|--filter <bpf-file>      Use BPF filter file from bpfc\n"
+	     "  -t|--type <type>            Only handle packets of defined type:\n"
+	     "                              host|broadcast|multicast|others|outgoing\n"
+	     "  -F|--interval <uint>        Dump interval in sec if -o is a directory where\n"
+	     "                              pcap files should be stored (default: 60)\n"
+	     "  -J|--jumbo-support          Support for 64KB Super Jumbo Frames\n"
+	     "                              Default RX/TX slot: 2048Byte\n"
+	     "  -R|--rfraw                  Capture or inject raw 802.11 frames\n"
+	     "  -n|--num <uint>             Number of packets until exit\n"
+	     "  `--     0                   Loop until interrupted (default)\n"
+	     "   `-     n                   Send n packets and done\n"
+	     "Options for printing:\n"
+	     "  -s|--silent                 Do not print captured packets\n"
+	     "  -q|--less                   Print less-verbose packet information\n"
+	     "  -X|--hex                    Print packet data in hex format\n"
+	     "  -l|--ascii                  Print human-readable packet data\n"
+	     "Options, advanced:\n"
+	     "  -r|--rand                   Randomize packet forwarding order\n"
+	     "  -M|--no-promisc             No promiscuous mode for netdev\n"
+	     "  -A|--no-sock-mem            Don't tune core socket memory\n"
+	     "  -m|--mmap                   Mmap pcap file i.e., for replaying\n"
+	     "  -g|--sg                     Scatter/gather pcap file I/O\n"
+	     "  -c|--clrw                   Use slower read(2)/write(2) I/O\n"
+	     "  -S|--ring-size <size>       Manually set ring size to <size>:\n"
+	     "                              mmap space in KB/MB/GB, e.g. \'10MB\'\n"
+	     "  -k|--kernel-pull <uint>     Kernel pull from user interval in us\n"
+	     "                              Default is 10us where the TX_RING\n"
+	     "                              is populated with payload from uspace\n"
+	     "  -b|--bind-cpu <cpu>         Bind to specific CPU (or CPU-range)\n"
+	     "  -B|--unbind-cpu <cpu>       Forbid to use specific CPU (or CPU-range)\n"
+	     "  -H|--prio-high              Make this high priority process\n"
+	     "  -Q|--notouch-irq            Do not touch IRQ CPU affinity of NIC\n"
+	     "  -v|--version                Show version\n"
+	     "  -h|--help                   Guess what?!\n\n"
+	     "Examples:\n"
+	     "  netsniff-ng --in eth0 --out dump.pcap --silent --bind-cpu 0\n"
+	     "  netsniff-ng --in wlan0 --rfraw --out dump.pcap --silent --bind-cpu 0\n"
+	     "  netsniff-ng --in dump.pcap --mmap --out eth0 --silent --bind-cpu 0\n"
+	     "  netsniff-ng --in dump.pcap --out dump.txf --silent --bind-cpu 0\n"
+	     "  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0 --type host\n"
+	     "  netsniff-ng --in eth1 --out /opt/probe1/ -s -m -J --interval 30 -b 0\n"
+	     "  netsniff-ng --in any --filter http.bpf --jumbo-support --ascii\n\n"
+	     "Note:\n"
+	     "  This tool is targeted for network developers! You should\n"
+	     "  be aware of what you are doing and what these options above\n"
+	     "  mean! Use netsniff-ng's bpfc compiler for generating filter files.\n"
+	     "  Further, netsniff-ng automatically enables the kernel BPF JIT\n"
+	     "  if present. Txf file output is only possible if the input source\n"
+	     "  is a pcap file.\n\n"
+	     "Please report bugs to <bugs@netsniff-ng.org>\n"
+	     "Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
+	     "Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n"
+	     "Copyright (C) 2012 Markus Amend <markus@netsniff-ng.org>\n"
+	     "License: GNU GPL version 2.0\n"
+	     "This is free software: you are free to change and redistribute it.\n"
+	     "There is NO WARRANTY, to the extent permitted by law.\n\n");
 	die();
 }
 
 static void version(void)
 {
-	printf("\n%s %s, the packet sniffing beast\n", PROGNAME_STRING,
-	       VERSION_STRING);
-	printf("http://www.netsniff-ng.org\n\n");
-	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
-	printf("Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n");
-	printf("Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n");
-	printf("Copyright (C) 2012 Markus Amend <markus@netsniff-ng.org>\n");
-	printf("License: GNU GPL version 2\n");
-	printf("This is free software: you are free to change and redistribute it.\n");
-	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
+	printf("\n%s %s, the packet sniffing beast\n",
+	       PROGNAME_STRING, VERSION_STRING);
+	puts("http://www.netsniff-ng.org\n\n"
+	     "Please report bugs to <bugs@netsniff-ng.org>\n"
+	     "Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
+	     "Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n"
+	     "Copyright (C) 2012 Markus Amend <markus@netsniff-ng.org>\n"
+	     "License: GNU GPL version 2.0\n"
+	     "This is free software: you are free to change and redistribute it.\n"
+	     "There is NO WARRANTY, to the extent permitted by law.\n\n");
 	die();
 }
 
