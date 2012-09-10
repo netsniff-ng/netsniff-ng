@@ -118,7 +118,7 @@ static int find_intr_offset_or_panic(char *label_to_search)
 
 %token OP_LDB OP_LDH OP_LD OP_LDX OP_ST OP_STX OP_JMP OP_JEQ OP_JGT OP_JGE
 %token OP_JSET OP_ADD OP_SUB OP_MUL OP_DIV OP_AND OP_OR OP_LSH OP_RSH OP_RET
-%token OP_TAX OP_TXA OP_LDXB K_PKT_LEN K_PROTO K_TYPE K_IFIDX K_NLATTR
+%token OP_TAX OP_TXA OP_LDXB OP_MOD K_PKT_LEN K_PROTO K_TYPE K_IFIDX K_NLATTR
 %token K_NLATTR_NEST K_MARK K_QUEUE K_HATYPE K_RXHASH K_CPU K_COMMENT
 
 %token ':' ',' '[' ']' '(' ')' 'x' 'a' '+' 'M' '*' '&' '#'
@@ -160,6 +160,7 @@ instr
 	| do_sub { }
 	| do_mul { }
 	| do_div { }
+	| do_mod { }
 	| do_and { }
 	| do_or { }
 	| do_lsh { }
@@ -403,6 +404,13 @@ do_div
 		set_curr_instr(BPF_ALU | BPF_DIV | BPF_K, 0, 0, $3); }
 	| OP_DIV 'x' {
 		set_curr_instr(BPF_ALU | BPF_DIV | BPF_X, 0, 0, 0); }
+	;
+
+do_mod
+	: OP_MOD '#' number {
+		set_curr_instr(BPF_ALU | BPF_MOD | BPF_K, 0, 0, $3); }
+	| OP_MOD 'x' {
+		set_curr_instr(BPF_ALU | BPF_MOD | BPF_X, 0, 0, 0); }
 	;
 
 do_and

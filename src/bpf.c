@@ -161,6 +161,10 @@ static char *bpf_dump(const struct sock_filter bpf, int n)
 		op = "div";
 		fmt = "x";
 		break;
+	case BPF_ALU | BPF_MOD | BPF_X:
+		op = "mod";
+		fmt = "x";
+		break;
 	case BPF_ALU | BPF_AND | BPF_X:
 		op = "and";
 		fmt = "x";
@@ -191,6 +195,10 @@ static char *bpf_dump(const struct sock_filter bpf, int n)
 		break;
 	case BPF_ALU | BPF_DIV | BPF_K:
 		op = "div";
+		fmt = "#%d";
+		break;
+	case BPF_ALU | BPF_MOD | BPF_K:
+		op = "mod";
 		fmt = "#%d";
 		break;
 	case BPF_ALU | BPF_AND | BPF_K:
@@ -242,13 +250,14 @@ void bpf_dump_all(struct sock_fprog *bpf)
 
 void bpf_attach_to_sock(int sock, struct sock_fprog *bpf)
 {
+	int ret;
+
 	if (bpf->len == 1)
 		if (bpf->filter[0].code == BPF_RET &&
 		    bpf->filter[0].k == 0xFFFFFFFF)
 			return;
 
-	int ret = setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER, bpf,
-			     sizeof(*bpf));
+	ret = setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER, bpf, sizeof(*bpf));
 	if (ret < 0)
 		panic("Cannot attach filter to socket!\n");
 }
@@ -337,8 +346,9 @@ int bpf_validate(const struct sock_fprog *bpf)
 			case BPF_NEG:
 				break;
 			case BPF_DIV:
-				/*
-				 * Check for constant division by 0.
+			case BPF_MOD:
+				/* Check for constant division by 0 (undefined
+				 * for div and mod).
 				 */
 				if (BPF_RVAL(p->code) == BPF_K && p->k == 0)
 					return 0;
@@ -539,6 +549,11 @@ uint32_t bpf_run_filter(const struct sock_fprog * fcode, uint8_t * packet,
 				return 0;
 			A /= X;
 			continue;
+		case BPF_ALU | BPF_MOD | BPF_X:
+			if (X == 0)
+				return 0;
+			A %= X;
+			continue;
 		case BPF_ALU | BPF_AND | BPF_X:
 			A &= X;
 			continue;
@@ -562,6 +577,9 @@ uint32_t bpf_run_filter(const struct sock_fprog * fcode, uint8_t * packet,
 			continue;
 		case BPF_ALU | BPF_DIV | BPF_K:
 			A /= bpf->k;
+			continue;
+		case BPF_ALU | BPF_MOD | BPF_K:
+			A %= bpf->k;
 			continue;
 		case BPF_ALU | BPF_AND | BPF_K:
 			A &= bpf->k;
