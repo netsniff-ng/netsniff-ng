@@ -36,3 +36,4 @@ submit your contributions):
     be RX_RING / TX_RING.
     [1] http://pub.netsniff-ng.org/misc/uio-dma.tar.bz2
     [2] http://pub.netsniff-ng.org/misc/uio-ixgbe.tar.bz2
+36) bpfc: option for listing all supported instructions
