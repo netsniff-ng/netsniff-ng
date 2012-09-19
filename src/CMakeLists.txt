@@ -52,6 +52,9 @@ if(CMAKE_BUILD_TYPE STREQUAL profile)
   add_definitions(
     -g
     -pg
+    -gnato
+    -fmudflap
+    -fstack-check
   )
 endif(CMAKE_BUILD_TYPE STREQUAL profile)
 
