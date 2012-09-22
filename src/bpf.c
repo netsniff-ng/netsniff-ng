@@ -81,188 +81,188 @@ static char *bpf_dump(const struct sock_filter bpf, int n)
 		v = bpf.code;
 		break;
 	case BPF_RET | BPF_K:
-		op = "ret";
+		op = op_table[BPF_RET];
 		fmt = "#0x%x";
 		break;
 	case BPF_RET | BPF_A:
-		op = "ret";
+		op = op_table[BPF_RET];
 		fmt = "";
 		break;
 	case BPF_LD | BPF_W | BPF_ABS:
-		op = "ld";
+		op = op_table[BPF_LD | BPF_W];
 		fmt = "[%d]";
 		break;
 	case BPF_LD | BPF_H | BPF_ABS:
-		op = "ldh";
+		op = op_table[BPF_LD | BPF_H];
 		fmt = "[%d]";
 		break;
 	case BPF_LD | BPF_B | BPF_ABS:
-		op = "ldb";
+		op = op_table[BPF_LD | BPF_B];
 		fmt = "[%d]";
 		break;
 	case BPF_LD | BPF_W | BPF_LEN:
-		op = "ld";
+		op = op_table[BPF_LD | BPF_W];
 		fmt = "#pktlen";
 		break;
 	case BPF_LD | BPF_W | BPF_IND:
-		op = "ld";
+		op = op_table[BPF_LD | BPF_W];
 		fmt = "[x + %d]";
 		break;
 	case BPF_LD | BPF_H | BPF_IND:
-		op = "ldh";
+		op = op_table[BPF_LD | BPF_H];
 		fmt = "[x + %d]";
 		break;
 	case BPF_LD | BPF_B | BPF_IND:
-		op = "ldb";
+		op = op_table[BPF_LD | BPF_B];
 		fmt = "[x + %d]";
 		break;
 	case BPF_LD | BPF_IMM:
-		op = "ld";
+		op = op_table[BPF_LD | BPF_W];
 		fmt = "#0x%x";
 		break;
 	case BPF_LDX | BPF_IMM:
-		op = "ldx";
+		op = op_table[BPF_LDX];
 		fmt = "#0x%x";
 		break;
-	case BPF_LDX | BPF_MSH | BPF_B:
-		op = "ldxb";
+	case BPF_LDX | BPF_B | BPF_MSH:
+		op = op_table[BPF_LDX | BPF_B];
 		fmt = "4*([%d]&0xf)";
 		break;
 	case BPF_LD | BPF_MEM:
-		op = "ld";
+		op = op_table[BPF_LD | BPF_W];
 		fmt = "M[%d]";
 		break;
 	case BPF_LDX | BPF_MEM:
-		op = "ldx";
+		op = op_table[BPF_LDX];
 		fmt = "M[%d]";
 		break;
 	case BPF_ST:
-		op = "st";
+		op = op_table[BPF_ST];
 		fmt = "M[%d]";
 		break;
 	case BPF_STX:
-		op = "stx";
+		op = op_table[BPF_STX];
 		fmt = "M[%d]";
 		break;
 	case BPF_JMP | BPF_JA:
-		op = "ja";
+		op = op_table[BPF_JMP | BPF_JA];
 		fmt = "%d";
 		v = n + 1 + bpf.k;
 		break;
 	case BPF_JMP | BPF_JGT | BPF_K:
-		op = "jgt";
+		op = op_table[BPF_JMP | BPF_JGT];
 		fmt = "#0x%x";
 		break;
 	case BPF_JMP | BPF_JGE | BPF_K:
-		op = "jge";
+		op = op_table[BPF_JMP | BPF_JGE];
 		fmt = "#0x%x";
 		break;
 	case BPF_JMP | BPF_JEQ | BPF_K:
-		op = "jeq";
+		op = op_table[BPF_JMP | BPF_JEQ];
 		fmt = "#0x%x";
 		break;
 	case BPF_JMP | BPF_JSET | BPF_K:
-		op = "jset";
+		op = op_table[BPF_JMP | BPF_JSET];
 		fmt = "#0x%x";
 		break;
 	case BPF_JMP | BPF_JGT | BPF_X:
-		op = "jgt";
+		op = op_table[BPF_JMP | BPF_JGT];
 		fmt = "x";
 		break;
 	case BPF_JMP | BPF_JGE | BPF_X:
-		op = "jge";
+		op = op_table[BPF_JMP | BPF_JGE];
 		fmt = "x";
 		break;
 	case BPF_JMP | BPF_JEQ | BPF_X:
-		op = "jeq";
+		op = op_table[BPF_JMP | BPF_JEQ];
 		fmt = "x";
 		break;
 	case BPF_JMP | BPF_JSET | BPF_X:
-		op = "jset";
+		op = op_table[BPF_JMP | BPF_JSET];
 		fmt = "x";
 		break;
 	case BPF_ALU | BPF_ADD | BPF_X:
-		op = "add";
+		op = op_table[BPF_ALU | BPF_ADD];
 		fmt = "x";
 		break;
 	case BPF_ALU | BPF_SUB | BPF_X:
-		op = "sub";
+		op = op_table[BPF_ALU | BPF_SUB];
 		fmt = "x";
 		break;
 	case BPF_ALU | BPF_MUL | BPF_X:
-		op = "mul";
+		op = op_table[BPF_ALU | BPF_MUL];
 		fmt = "x";
 		break;
 	case BPF_ALU | BPF_DIV | BPF_X:
-		op = "div";
+		op = op_table[BPF_ALU | BPF_DIV];
 		fmt = "x";
 		break;
 	case BPF_ALU | BPF_MOD | BPF_X:
-		op = "mod";
+		op = op_table[BPF_ALU | BPF_MOD];
 		fmt = "x";
 		break;
 	case BPF_ALU | BPF_AND | BPF_X:
-		op = "and";
+		op = op_table[BPF_ALU | BPF_AND];
 		fmt = "x";
 		break;
 	case BPF_ALU | BPF_OR | BPF_X:
-		op = "or";
+		op = op_table[BPF_ALU | BPF_OR];
 		fmt = "x";
 		break;
 	case BPF_ALU | BPF_LSH | BPF_X:
-		op = "lsh";
+		op = op_table[BPF_ALU | BPF_LSH];
 		fmt = "x";
 		break;
 	case BPF_ALU | BPF_RSH | BPF_X:
-		op = "rsh";
+		op = op_table[BPF_ALU | BPF_RSH];
 		fmt = "x";
 		break;
 	case BPF_ALU | BPF_ADD | BPF_K:
-		op = "add";
+		op = op_table[BPF_ALU | BPF_ADD];
 		fmt = "#%d";
 		break;
 	case BPF_ALU | BPF_SUB | BPF_K:
-		op = "sub";
+		op = op_table[BPF_ALU | BPF_SUB];
 		fmt = "#%d";
 		break;
 	case BPF_ALU | BPF_MUL | BPF_K:
-		op = "mul";
+		op = op_table[BPF_ALU | BPF_MUL];
 		fmt = "#%d";
 		break;
 	case BPF_ALU | BPF_DIV | BPF_K:
-		op = "div";
+		op = op_table[BPF_ALU | BPF_DIV];
 		fmt = "#%d";
 		break;
 	case BPF_ALU | BPF_MOD | BPF_K:
-		op = "mod";
+		op = op_table[BPF_ALU | BPF_MOD];
 		fmt = "#%d";
 		break;
 	case BPF_ALU | BPF_AND | BPF_K:
-		op = "and";
+		op = op_table[BPF_ALU | BPF_AND];
 		fmt = "#0x%x";
 		break;
 	case BPF_ALU | BPF_OR | BPF_K:
-		op = "or";
+		op = op_table[BPF_ALU | BPF_OR];
 		fmt = "#0x%x";
 		break;
 	case BPF_ALU | BPF_LSH | BPF_K:
-		op = "lsh";
+		op = op_table[BPF_ALU | BPF_LSH];
 		fmt = "#%d";
 		break;
 	case BPF_ALU | BPF_RSH | BPF_K:
-		op = "rsh";
+		op = op_table[BPF_ALU | BPF_RSH];
 		fmt = "#%d";
 		break;
 	case BPF_ALU | BPF_NEG:
-		op = "neg";
+		op = op_table[BPF_ALU | BPF_NEG];
 		fmt = "";
 		break;
 	case BPF_MISC | BPF_TAX:
-		op = "tax";
+		op = op_table[BPF_MISC | BPF_TAX];
 		fmt = "";
 		break;
 	case BPF_MISC | BPF_TXA:
-		op = "txa";
+		op = op_table[BPF_MISC | BPF_TXA];
 		fmt = "";
 		break;
 	}
