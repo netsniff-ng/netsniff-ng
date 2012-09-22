@@ -30,6 +30,42 @@
 # define BPF_MEMWORDS 16
 #endif
 
+static const char *op_table[] = {
+	[BPF_LD | BPF_B] = "ldb",
+	[BPF_LD | BPF_H] = "ldh",
+	[BPF_LD | BPF_W] = "ld",
+	[BPF_LDX ] = "ldx",
+	[BPF_LDX | BPF_B] = "ldxb",
+	[BPF_ST] = "st",
+	[BPF_STX] = "stx",
+	[BPF_JMP | BPF_JA] = "ja",
+	[BPF_JMP | BPF_JEQ] = "jeq",
+	[BPF_JMP | BPF_JGT] = "jgt",
+	[BPF_JMP | BPF_JGE] = "jge",
+	[BPF_JMP | BPF_JSET] = "jset",
+	[BPF_ALU | BPF_ADD] = "add",
+	[BPF_ALU | BPF_SUB] = "sub",
+	[BPF_ALU | BPF_MUL] = "mul",
+	[BPF_ALU | BPF_DIV] = "div",
+	[BPF_ALU | BPF_MOD] = "mod",
+	[BPF_ALU | BPF_AND] = "and",
+	[BPF_ALU | BPF_OR] = "or",
+	[BPF_ALU | BPF_LSH] = "lsh",
+	[BPF_ALU | BPF_RSH] = "rsh",
+	[BPF_RET] = "ret",
+	[BPF_MISC | BPF_TAX] = "tax",
+	[BPF_MISC | BPF_TXA] = "txa",
+};
+
+void bpf_dump_op_table(void)
+{
+	int i;
+	for (i = 0; i < array_size(op_table); ++i) {
+		if (op_table[i])
+			printf("%s\n", op_table[i]);
+	}
+}
+
 static char *bpf_dump(const struct sock_filter bpf, int n)
 {
 	int v;

@@ -26,11 +26,13 @@
 
 #include "xmalloc.h"
 #include "die.h"
+#include "bpf.h"
 
-static const char *short_options = "vhi:V";
+static const char *short_options = "vhi:Vd";
 static const struct option long_options[] = {
 	{"input",	required_argument,	NULL, 'i'},
 	{"verbose",	no_argument,		NULL, 'V'},
+	{"dump",	no_argument,		NULL, 'd'},
 	{"version",	no_argument,		NULL, 'v'},
 	{"help",	no_argument,		NULL, 'h'},
 	{NULL, 0, NULL, 0}
@@ -47,6 +49,7 @@ static void help(void)
 	     "Options:\n"
 	     "  -i|--input <program>   Berkeley Packet Filter file\n"
 	     "  -V|--verbose           Be more verbose\n"
+	     "  -d|--dump              Dump supported instruction table\n"
 	     "  -v|--version           Print version\n"
 	     "  -h|--help              Print this help\n\n"
 	     "Examples:\n"
@@ -82,8 +85,8 @@ int main(int argc, char **argv)
 	if (argc == 1)
 		help();
 
-	while (argc > 2 && (c = getopt_long(argc, argv, short_options,
-		long_options, &opt_index)) != EOF) {
+	while ((c = getopt_long(argc, argv, short_options,
+			        long_options, &opt_index)) != EOF) {
 		switch (c) {
 		case 'h':
 			help();
@@ -94,6 +97,9 @@ int main(int argc, char **argv)
 		case 'V':
 			verbose = 1;
 			break;
+		case 'd':
+			bpf_dump_op_table();
+			die();
 		case 'i':
 			file = xstrdup(optarg);
 			break;

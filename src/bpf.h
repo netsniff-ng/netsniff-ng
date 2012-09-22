@@ -14,6 +14,7 @@
 
 #include "xmalloc.h"
 
+extern void bpf_dump_op_table(void);
 extern void bpf_dump_all(struct sock_fprog *bpf);
 extern int bpf_validate(const struct sock_fprog *bpf);
 extern uint32_t bpf_run_filter(const struct sock_fprog *bpf, uint8_t *packet,
