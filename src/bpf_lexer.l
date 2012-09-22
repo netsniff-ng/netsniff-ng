@@ -59,6 +59,7 @@ label		{label_s}{label_me}+
 "mul"		{ return OP_MUL; }
 "div"		{ return OP_DIV; }
 "mod"		{ return OP_MOD; }
+"neg"		{ return OP_NEG; }
 "and"		{ return OP_AND; }
 "or"		{ return OP_OR; }
 "lsh"		{ return OP_LSH; }

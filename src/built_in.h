@@ -95,6 +95,10 @@ typedef uint8_t		u8;
 # define unlikely(x)		__builtin_expect(!!(x), 0)
 #endif
 
+#ifndef constant
+# define constant(x)		__builtin_constant_p(x)
+#endif
+
 #ifndef prefetch_rd_hi
 # define prefetch_rd_hi(addr)	__builtin_prefetch(addr, 0, 3)
 #endif
