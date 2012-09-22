@@ -317,12 +317,14 @@ void bpf_attach_to_sock(int sock, struct sock_fprog *bpf)
 {
 	int ret;
 
-	if (bpf->len == 1)
+	if (bpf->len == 1) {
 		if (bpf->filter[0].code == BPF_RET &&
 		    bpf->filter[0].k == 0xFFFFFFFF)
 			return;
+	}
 
-	ret = setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER, bpf, sizeof(*bpf));
+	ret = setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER,
+			 bpf, sizeof(*bpf));
 	if (ret < 0)
 		panic("Cannot attach filter to socket!\n");
 }
@@ -331,8 +333,8 @@ void bpf_detach_from_sock(int sock)
 {
 	int ret, empty = 0;
 
-	ret = setsockopt(sock, SOL_SOCKET, SO_DETACH_FILTER, &empty,
-			 sizeof(empty));
+	ret = setsockopt(sock, SOL_SOCKET, SO_DETACH_FILTER,
+			 &empty, sizeof(empty));
 	if (ret < 0)
 		panic("Cannot detach filter from socket!\n");
 }
@@ -367,9 +369,7 @@ int bpf_validate(const struct sock_fprog *bpf)
 	for (i = 0; i < bpf->len; ++i) {
 		p = &bpf->filter[i];
 		switch (BPF_CLASS(p->code)) {
-			/*
-			 * Check that memory operations use valid addresses.
-			 */
+			/* Check that memory operations use valid addresses. */
 		case BPF_LD:
 		case BPF_LDX:
 			switch (BPF_MODE(p->code)) {
@@ -378,8 +378,7 @@ int bpf_validate(const struct sock_fprog *bpf)
 			case BPF_ABS:
 			case BPF_IND:
 			case BPF_MSH:
-				/*
-				 * There's no maximum packet data size
+				/* There's no maximum packet data size
 				 * in userland.  The runtime packet length
 				 * check suffices.
 				 */
@@ -423,8 +422,7 @@ int bpf_validate(const struct sock_fprog *bpf)
 			}
 			break;
 		case BPF_JMP:
-			/*
-			 * Check that jumps are within the code block,
+			/* Check that jumps are within the code block,
 			 * and that unconditional branches don't go
 			 * backwards as a result of an overflow.
 			 * Unconditional branches have a 32-bit offset,
@@ -496,10 +494,8 @@ uint32_t bpf_run_filter(const struct sock_fprog * fcode, uint8_t * packet,
 
 	bpf = fcode->filter;
 	--bpf;
-
 	while (1) {
 		++bpf;
-
 		switch (bpf->code) {
 		default:
 			return 0;
@@ -508,18 +504,21 @@ uint32_t bpf_run_filter(const struct sock_fprog * fcode, uint8_t * packet,
 		case BPF_RET | BPF_A:
 			return (uint32_t) A;
 		case BPF_LD | BPF_W | BPF_ABS:
+			/* No Linux extensions supported here! */
 			k = bpf->k;
 			if (k + sizeof(int32_t) > plen)
 				return 0;
 			A = EXTRACT_LONG(&packet[k]);
 			continue;
 		case BPF_LD | BPF_H | BPF_ABS:
+			/* No Linux extensions supported here! */
 			k = bpf->k;
 			if (k + sizeof(short) > plen)
 				return 0;
 			A = EXTRACT_SHORT(&packet[k]);
 			continue;
 		case BPF_LD | BPF_B | BPF_ABS:
+			/* No Linux extensions supported here! */
 			k = bpf->k;
 			if (k >= plen)
 				return 0;
@@ -705,16 +704,18 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf)
 			     (unsigned int *) &sf_single.k);
 		if (ret != 4)
 			panic("BPF syntax error!\n");
+
 		bpf->len++;
 		bpf->filter = xrealloc(bpf->filter, 1,
 				       bpf->len * sizeof(sf_single));
+
 		fmemcpy(&bpf->filter[bpf->len - 1], &sf_single,
 		       sizeof(sf_single));
-
 		fmemset(buff, 0, sizeof(buff));
 	}
 
 	fclose(fp);
+
 	if (bpf_validate(bpf) == 0)
 		panic("This is not a valid BPF program!\n");
 }
