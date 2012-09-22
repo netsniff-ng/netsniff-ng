@@ -66,6 +66,35 @@ void bpf_dump_op_table(void)
 	}
 }
 
+static const char *bpf_dump_linux_k(uint32_t k)
+{
+	switch (k) {
+	default:
+		return "[%d]";
+	/* Linux specific arguments */
+	case SKF_AD_OFF + SKF_AD_PROTOCOL:
+		return "#proto";
+	case SKF_AD_OFF + SKF_AD_PKTTYPE:
+		return "#type";
+	case SKF_AD_OFF + SKF_AD_IFINDEX:
+		return "#ifidx";
+	case SKF_AD_OFF + SKF_AD_NLATTR:
+		return "#nla";
+	case SKF_AD_OFF + SKF_AD_NLATTR_NEST:
+		return "#nlan";
+	case SKF_AD_OFF + SKF_AD_MARK:
+		return "#mark";
+	case SKF_AD_OFF + SKF_AD_QUEUE:
+		return "#queue";
+	case SKF_AD_OFF + SKF_AD_HATYPE:
+		return "#hatype";
+	case SKF_AD_OFF + SKF_AD_RXHASH:
+		return "#rxhash";
+	case SKF_AD_OFF + SKF_AD_CPU:
+		return "#cpu";
+	}
+}
+
 static char *bpf_dump(const struct sock_filter bpf, int n)
 {
 	int v;
@@ -90,19 +119,19 @@ static char *bpf_dump(const struct sock_filter bpf, int n)
 		break;
 	case BPF_LD | BPF_W | BPF_ABS:
 		op = op_table[BPF_LD | BPF_W];
-		fmt = "[%d]";
+		fmt = bpf_dump_linux_k(bpf.k);
 		break;
 	case BPF_LD | BPF_H | BPF_ABS:
 		op = op_table[BPF_LD | BPF_H];
-		fmt = "[%d]";
+		fmt = bpf_dump_linux_k(bpf.k);
 		break;
 	case BPF_LD | BPF_B | BPF_ABS:
 		op = op_table[BPF_LD | BPF_B];
-		fmt = "[%d]";
+		fmt = bpf_dump_linux_k(bpf.k);
 		break;
 	case BPF_LD | BPF_W | BPF_LEN:
 		op = op_table[BPF_LD | BPF_W];
-		fmt = "#pktlen";
+		fmt = "#len";
 		break;
 	case BPF_LD | BPF_W | BPF_IND:
 		op = op_table[BPF_LD | BPF_W];
