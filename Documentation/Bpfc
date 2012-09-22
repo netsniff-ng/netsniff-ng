@@ -87,6 +87,7 @@ sub    #k or x                  Subtraction applied to accumulator
 mul    #k or x                  Multiplication applied to accumulator
 div    #k or x                  Division applied to accumulator
 mod    #k or x                  Modulo applied to accumulator (Linux-only)
+neg                             Negate accumulator (Linux-only)
 and    #k or x                  Bitwise and applied to accumulator
 or     #k or x                  Bitwise or applied to accumulator
 lsh    #k or x                  Left shift applied to accumulator
