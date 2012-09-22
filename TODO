@@ -36,7 +36,6 @@ submit your contributions, items marked with '!' are of high importance):
     be RX_RING / TX_RING.
     [1] http://pub.netsniff-ng.org/misc/uio-dma.tar.bz2
     [2] http://pub.netsniff-ng.org/misc/uio-ixgbe.tar.bz2
-36! bpfc: option for listing all supported instructions
 37! netsniff-ng has a build-dependency on libnl-dev [1]. libnl-1.x is no longer
     actively developed [2] and has been superseded by libnl-3.x [3]. Please
     port netsniff-ng to this new version resp. notify upstream to get
