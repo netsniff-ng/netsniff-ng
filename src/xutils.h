@@ -57,6 +57,7 @@ extern void device_set_flags(const char *ifname, const short flags);
 extern int set_nonblocking(int fd);
 extern int set_nonblocking_sloppy(int fd);
 extern int set_reuseaddr(int fd);
+extern void set_sock_prio(int fd, int prio);
 extern void set_tcp_cork(int fd);
 extern void set_tcp_uncork(int fd);
 extern void set_udp_cork(int fd);

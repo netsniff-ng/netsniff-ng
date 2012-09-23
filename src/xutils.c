@@ -100,6 +100,12 @@ int pf_socket(void)
 	return sock;
 }
 
+void set_sock_prio(int fd, int prio)
+{
+	int val = prio;
+	setsockopt(fd, SOL_SOCKET, SO_PRIORITY, &val, sizeof(val));
+}
+
 void set_udp_cork(int fd)
 {
 	int state = 1;

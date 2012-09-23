@@ -367,6 +367,7 @@ static void tx_fastpath_or_die(struct mode *mode)
 	ifindex = device_ifindex(mode->device);
 	size = ring_size(mode->device, mode->reserve_size);
 
+	set_sock_prio(sock, 512);
 	set_packet_loss_discard(sock);
 	setup_tx_ring_layout(sock, &tx_ring, size, mode->jumbo_support);
 	create_tx_ring(sock, &tx_ring);
