@@ -124,9 +124,9 @@ static int find_intr_offset_or_panic(char *label_to_search)
 
 %token ':' ',' '[' ']' '(' ')' 'x' 'a' '+' 'M' '*' '&' '#'
 
-%token number_hex number_dec label comment
+%token number_hex number_dec number_oct number_bin label comment
 
-%type <number> number_hex number_dec number
+%type <number> number_hex number_dec number_oct number_bin number
 %type <label> label
 
 %%
@@ -177,6 +177,8 @@ instr
 number
 	: number_dec { $$ = $1; }
 	| number_hex { $$ = $1; }
+	| number_oct { $$ = $1; }
+	| number_bin { $$ = $1; }
 	;
 
 do_comment

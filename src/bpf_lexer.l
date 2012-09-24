@@ -32,10 +32,16 @@ extern void yyerror(const char *);
 digit		[0-9]
 digit_s		[1-9]
 digit_n		[0]
+bindigit	[0-1]
+bindigit_b	[b]
 hex		[a-fA-F0-9]
 hex_x		[x]
+
 number_dec	{digit_n}|{digit_s}{digit}*
+number_oct	{digit_n}{digit}+
 number_hex	{digit_n}{hex_x}{hex}+
+number_bin	{digit_n}{bindigit_b}{bindigit}+
+
 label_s		[a-zA-Z]
 label_me	[a-zA-Z0-9_]
 label		{label_s}{label_me}+
@@ -100,6 +106,12 @@ label		{label_s}{label_me}+
 
 {number_dec}	{ yylval.number = strtol(yytext, NULL, 10);
 		  return number_dec; }
+
+{number_oct}	{ yylval.number = strtol(yytext, NULL, 8);
+		  return number_oct; }
+
+{number_bin}	{ yylval.number = strtol(yytext + 2, NULL, 2);
+		  return number_bin; }
 
 {label}		{ yylval.label = xstrdup(yytext);
 		  return label; }
