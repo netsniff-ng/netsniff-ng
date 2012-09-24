@@ -61,6 +61,7 @@ label		{label_s}{label_me}+
 "mod"		{ return OP_MOD; }
 "neg"		{ return OP_NEG; }
 "and"		{ return OP_AND; }
+"xor"		{ return OP_XOR; }
 "or"		{ return OP_OR; }
 "lsh"		{ return OP_LSH; }
 "rsh"		{ return OP_RSH; }

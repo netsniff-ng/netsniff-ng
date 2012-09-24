@@ -48,6 +48,7 @@
 #define BPF_ALU_NEG	(BPF_ALU | BPF_NEG)
 #define BPF_ALU_AND	(BPF_ALU | BPF_AND)
 #define BPF_ALU_OR	(BPF_ALU | BPF_OR)
+#define BPF_ALU_XOR	(BPF_ALU | BPF_XOR)
 #define BPF_ALU_LSH	(BPF_ALU | BPF_LSH)
 #define BPF_ALU_RSH	(BPF_ALU | BPF_RSH)
 #define BPF_MISC_TAX	(BPF_MISC | BPF_TAX)
@@ -74,6 +75,7 @@ static const char *op_table[] = {
 	[BPF_ALU_NEG]	=	"neg",
 	[BPF_ALU_AND]	=	"and",
 	[BPF_ALU_OR]	=	"or",
+	[BPF_ALU_XOR]	=	"xor",
 	[BPF_ALU_LSH]	=	"lsh",
 	[BPF_ALU_RSH]	=	"rsh",
 	[BPF_RET]	=	"ret",
@@ -262,6 +264,10 @@ static char *bpf_dump(const struct sock_filter bpf, int n)
 		op = op_table[BPF_ALU_OR];
 		fmt = "x";
 		break;
+	case BPF_ALU_XOR | BPF_X:
+		op = op_table[BPF_ALU_XOR];
+		fmt = "x";
+		break;
 	case BPF_ALU_LSH | BPF_X:
 		op = op_table[BPF_ALU_LSH];
 		fmt = "x";
@@ -296,6 +302,10 @@ static char *bpf_dump(const struct sock_filter bpf, int n)
 		break;
 	case BPF_ALU_OR | BPF_K:
 		op = op_table[BPF_ALU_OR];
+		fmt = "#0x%x";
+		break;
+	case BPF_ALU_XOR | BPF_K:
+		op = op_table[BPF_ALU_XOR];
 		fmt = "#0x%x";
 		break;
 	case BPF_ALU_LSH | BPF_K:
@@ -428,6 +438,7 @@ int bpf_validate(const struct sock_fprog *bpf)
 			case BPF_SUB:
 			case BPF_MUL:
 			case BPF_OR:
+			case BPF_XOR:
 			case BPF_AND:
 			case BPF_LSH:
 			case BPF_RSH:
@@ -648,6 +659,9 @@ uint32_t bpf_run_filter(const struct sock_fprog * fcode, uint8_t * packet,
 		case BPF_ALU_OR | BPF_X:
 			A |= X;
 			continue;
+		case BPF_ALU_XOR | BPF_X:
+			A ^= X;
+			continue;
 		case BPF_ALU_LSH | BPF_X:
 			A <<= X;
 			continue;
@@ -674,6 +688,9 @@ uint32_t bpf_run_filter(const struct sock_fprog * fcode, uint8_t * packet,
 			continue;
 		case BPF_ALU_OR | BPF_K:
 			A |= bpf->k;
+			continue;
+		case BPF_ALU_XOR | BPF_K:
+			A ^= bpf->k;
 			continue;
 		case BPF_ALU_LSH | BPF_K:
 			A <<= bpf->k;

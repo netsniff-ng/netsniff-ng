@@ -117,9 +117,10 @@ static int find_intr_offset_or_panic(char *label_to_search)
 }
 
 %token OP_LDB OP_LDH OP_LD OP_LDX OP_ST OP_STX OP_JMP OP_JEQ OP_JGT OP_JGE
-%token OP_JSET OP_ADD OP_SUB OP_MUL OP_DIV OP_AND OP_OR OP_LSH OP_RSH OP_RET
-%token OP_TAX OP_TXA OP_LDXB OP_MOD OP_NEG K_PKT_LEN K_PROTO K_TYPE K_IFIDX
+%token OP_JSET OP_ADD OP_SUB OP_MUL OP_DIV OP_AND OP_OR OP_XOR OP_LSH OP_RSH
+%token OP_RET OP_TAX OP_TXA OP_LDXB OP_MOD OP_NEG K_PKT_LEN K_PROTO K_TYPE
 %token K_NLATTR K_NLATTR_NEST K_MARK K_QUEUE K_HATYPE K_RXHASH K_CPU K_COMMENT
+%token K_IFIDX
 
 %token ':' ',' '[' ']' '(' ')' 'x' 'a' '+' 'M' '*' '&' '#'
 
@@ -164,6 +165,7 @@ instr
 	| do_neg { }
 	| do_and { }
 	| do_or { }
+	| do_xor { }
 	| do_lsh { }
 	| do_rsh { }
 	| do_ret { }
@@ -431,6 +433,13 @@ do_or
 		set_curr_instr(BPF_ALU | BPF_OR | BPF_K, 0, 0, $3); }
 	| OP_OR 'x' {
 		set_curr_instr(BPF_ALU | BPF_OR | BPF_X, 0, 0, 0); }
+	;
+
+do_xor
+	: OP_XOR '#' number {
+		set_curr_instr(BPF_ALU | BPF_XOR | BPF_K, 0, 0, $3); }
+	| OP_XOR 'x' {
+		set_curr_instr(BPF_ALU | BPF_XOR | BPF_X, 0, 0, 0); }
 	;
 
 do_lsh

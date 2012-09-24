@@ -90,6 +90,7 @@ mod    #k or x                  Modulo applied to accumulator (Linux-only)
 neg                             Negate accumulator (Linux-only)
 and    #k or x                  Bitwise and applied to accumulator
 or     #k or x                  Bitwise or applied to accumulator
+xor    #k or x                  Bitwise xor applied to accumulator (Linux-only)
 lsh    #k or x                  Left shift applied to accumulator
 rsh    #k or x                  Right shift applied to accumulator
 
