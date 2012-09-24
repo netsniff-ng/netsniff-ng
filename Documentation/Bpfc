@@ -137,6 +137,9 @@ Mode     Description
 #rxhash  The packet hash computed on reception
 #cpu     CPU number the packet was received on
 
+The #k argument can be in hex (0xff), decimal (256), binary (0b11111111) or
+octal (0377) format.
+
 A simple example on how BPF works is demonstrated by retrieving the previous
 example of an ARP filter. This time, it is written in BPF language, that bpfc
 understands:
