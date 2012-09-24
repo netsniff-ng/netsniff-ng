@@ -23,7 +23,7 @@
 
 #define MAX_INSTRUCTIONS	4096
 
-int compile_filter(char *file, int verbose);
+int compile_filter(char *file, int verbose, int bypass);
 
 static int curr_instr = 0;
 
@@ -500,7 +500,7 @@ static void stage_2_label_reduce(void)
 	}
 }
 
-int compile_filter(char *file, int verbose)
+int compile_filter(char *file, int verbose, int bypass)
 {
 	int i;
 	struct sock_fprog res;
@@ -525,18 +525,25 @@ int compile_filter(char *file, int verbose)
 		printf("Generated program:\n");
 		bpf_dump_all(&res);
 	}
-	if (verbose) {
-		printf("Validating: ");
-		fflush(stdout);
+
+	if (!bypass) {
+		if (verbose) {
+			printf("Validating: ");
+			fflush(stdout);
+		}
+
+		if (bpf_validate(&res) == 0) {
+			if (verbose)
+				whine("Semantic error! BPF validation "
+				      "failed!\n");
+			else
+				panic("Semantic error! BPF validation failed! "
+				      "Try -V for debugging output!\n");
+		} else if (verbose) {
+			printf("is runnable!\n");
+		}
 	}
-	if (bpf_validate(&res) == 0) {
-		if (verbose)
-			whine("semantic error! BPF validation failed!\n");
-		else
-			panic("Semantic error! BPF validation failed! "
-			      "Try -V for debugging output!\n");
-	} else if (verbose)
-		printf("is runnable!\n");
+
 	if (verbose)
 		printf("Result:\n");
 	for (i = 0; i < res.len; ++i) {

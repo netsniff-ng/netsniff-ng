@@ -28,17 +28,18 @@
 #include "die.h"
 #include "bpf.h"
 
-static const char *short_options = "vhi:Vd";
+static const char *short_options = "vhi:Vdb";
 static const struct option long_options[] = {
 	{"input",	required_argument,	NULL, 'i'},
 	{"verbose",	no_argument,		NULL, 'V'},
+	{"bypass",	no_argument,		NULL, 'b'},
 	{"dump",	no_argument,		NULL, 'd'},
 	{"version",	no_argument,		NULL, 'v'},
 	{"help",	no_argument,		NULL, 'h'},
 	{NULL, 0, NULL, 0}
 };
 
-extern int compile_filter(char *file, int verbose);
+extern int compile_filter(char *file, int verbose, int bypass);
 
 static void help(void)
 {
@@ -49,6 +50,7 @@ static void help(void)
 	     "Options:\n"
 	     "  -i|--input <program>   Berkeley Packet Filter file\n"
 	     "  -V|--verbose           Be more verbose\n"
+	     "  -b|--bypass            Bypass filter validation (e.g. for bug testing)\n"
 	     "  -d|--dump              Dump supported instruction table\n"
 	     "  -v|--version           Print version\n"
 	     "  -h|--help              Print this help\n\n"
@@ -79,7 +81,7 @@ static void version(void)
 
 int main(int argc, char **argv)
 {
-	int ret, verbose = 0, c, opt_index;
+	int ret, verbose = 0, c, opt_index, bypass = 0;
 	char *file = NULL;
 
 	if (argc == 1)
@@ -96,6 +98,9 @@ int main(int argc, char **argv)
 			break;
 		case 'V':
 			verbose = 1;
+			break;
+		case 'b':
+			bypass = 1;
 			break;
 		case 'd':
 			bpf_dump_op_table();
@@ -123,7 +128,9 @@ int main(int argc, char **argv)
 
 	if (!file)
 		panic("No Berkeley Packet Filter program specified!\n");
-	ret = compile_filter(file, verbose);
+
+	ret = compile_filter(file, verbose, bypass);
+
 	xfree(file);
 	return ret;
 }
