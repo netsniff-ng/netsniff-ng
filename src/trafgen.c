@@ -42,6 +42,7 @@
 #include "mac80211.h"
 #include "xutils.h"
 #include "xio.h"
+#include "built_in.h"
 #include "trafgen_conf.h"
 #include "tprintf.h"
 #include "mtrand.h"
@@ -443,7 +444,7 @@ static void tx_fastpath_or_die(struct mode *mode)
 		}
 	}
 
-	bug_on(gettimeofday(&end, NULL)_;
+	bug_on(gettimeofday(&end, NULL));
 	diff = tv_subtract(end, start);
 
 	destroy_tx_ring(sock, &tx_ring);
