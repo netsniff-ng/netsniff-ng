@@ -241,7 +241,7 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 	ioprio_print();
 	printf("\n");
 
-	gettimeofday(&start, NULL);
+	bug_on(gettimeofday(&start, NULL));
 
 	while (likely(sigint == 0)) {
 		while (user_may_pull_from_tx(tx_ring.frames[it].iov_base)) {
@@ -285,7 +285,7 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 		}
 	}
 out:
-	gettimeofday(&end, NULL);
+	bug_on(gettimeofday(&end, NULL));
 	diff = tv_subtract(end, start);
 
 	fflush(stdout);
@@ -498,7 +498,7 @@ static void enter_mode_read_pcap(struct mode *mode)
 				    O_TRUNC | O_LARGEFILE, DEFFILEMODE);
 	}
 
-	gettimeofday(&start, NULL);
+	bug_on(gettimeofday(&start, NULL));
 
 	while (likely(sigint == 0)) {
 		do {
@@ -561,7 +561,7 @@ static void enter_mode_read_pcap(struct mode *mode)
 		}
 	}
 out:
-	gettimeofday(&end, NULL);
+	bug_on(gettimeofday(&end, NULL));
 	diff = tv_subtract(end, start);
 
 	fflush(stdout);
@@ -769,7 +769,7 @@ try_file:
 	ioprio_print();
 	printf("\n");
 
-	gettimeofday(&start, NULL);
+	bug_on(gettimeofday(&start, NULL));
 
 	while (likely(sigint == 0)) {
 		while (user_may_pull_from_rx(rx_ring.frames[it].iov_base)) {
@@ -831,7 +831,7 @@ next:
 		poll_error_maybe_die(sock, &rx_poll);
 	}
 
-	gettimeofday(&end, NULL);
+	bug_on(gettimeofday(&end, NULL));
 	diff = tv_subtract(end, start);
 
 	if (!(mode->dump_dir && mode->print_mode == FNTTYPE_PRINT_NONE)) {

@@ -299,7 +299,7 @@ static void tx_slowpath_or_die(struct mode *mode)
 
 	i = 0;
 
-	gettimeofday(&start, NULL);
+	bug_on(gettimeofday(&start, NULL));
 
 	while (likely(sigint == 0) && likely(num > 0)) {
 		apply_counter(i);
@@ -326,7 +326,7 @@ static void tx_slowpath_or_die(struct mode *mode)
 		usleep(mode->gap);
 	}
 
-	gettimeofday(&end, NULL);
+	bug_on(gettimeofday(&end, NULL));
 	diff = tv_subtract(end, start);
 
 	if (mode->rfraw)
@@ -403,7 +403,7 @@ static void tx_fastpath_or_die(struct mode *mode)
 
 	i = 0;
 
-	gettimeofday(&start, NULL);
+	bug_on(gettimeofday(&start, NULL));
 
 	while (likely(sigint == 0) && likely(num > 0)) {
 		while (user_may_pull_from_tx(tx_ring.frames[it].iov_base) &&
@@ -443,7 +443,7 @@ static void tx_fastpath_or_die(struct mode *mode)
 		}
 	}
 
-	gettimeofday(&end, NULL);
+	bug_on(gettimeofday(&end, NULL)_;
 	diff = tv_subtract(end, start);
 
 	destroy_tx_ring(sock, &tx_ring);
