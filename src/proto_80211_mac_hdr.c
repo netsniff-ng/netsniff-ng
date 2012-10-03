@@ -115,7 +115,7 @@ struct ieee80211_mgmt_probe_req {
 } __packed;
 
 struct ieee80211_mgmt_beacon {
-	u8 timestamp[8];
+	u64 timestamp;
 	u16 beacon_int;
 	u16 capab_info;
 	/* followed by some of SSID, Supported rates,
@@ -179,7 +179,7 @@ struct ieee80211_data {
 } __packed;
 
 /* TODO: Extend */
-/* Control Frame end */
+/* Data Frame end */
 
 
 /* http://www.sss-mag.com/pdf/802_11tut.pdf
@@ -218,9 +218,11 @@ static int8_t beacon(struct pkt_buff *pkt) {
 		(struct ieee80211_mgmt_beacon *) pkt_pull(pkt, sizeof(*beacon));
 	if (beacon == NULL)
 		return 0;
-	tprintf("Timestamp 0x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x, ", beacon->timestamp[0], beacon->timestamp[1],
-		beacon->timestamp[2], beacon->timestamp[3], beacon->timestamp[4], beacon->timestamp[5], beacon->timestamp[6], beacon->timestamp[7]);
-	tprintf("Beacon Interval (%fs)", le16_to_cpu(beacon->beacon_int) * 0.001024);
+	tprintf("Timestamp 0x%.16x, ", le64_to_cpu(beacon->timestamp));
+	tprintf("Beacon Interval (%fs), ",
+				    le16_to_cpu(beacon->beacon_int) * 0.001024);
+	tprintf("Capabilites (0x%.8x)",
+				    le16_to_cpu(beacon->capab_info));
 	return 1;
 }
 
