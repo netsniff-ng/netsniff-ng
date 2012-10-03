@@ -100,7 +100,7 @@ static void dissect_mobilityhdr_type_0(struct pkt_buff *pkt,
 	type_0 = (struct bin_refr_req_msg *) pkt_pull(pkt, sizeof(*type_0));
 	*message_data_len -= sizeof(*type_0);
 	if (type_0 == NULL || *message_data_len > pkt_len(pkt) ||
-							*message_data_len < 0)
+	    *message_data_len < 0)
 		return;
 
 	dissect_mobility_options(pkt, message_data_len);
@@ -114,7 +114,7 @@ static void dissect_mobilityhdr_type_1_2(struct pkt_buff *pkt,
 	type_1_2 = (struct tst_init_msg *) pkt_pull(pkt, sizeof(*type_1_2));
 	*message_data_len -= sizeof(*type_1_2);
 	if (type_1_2 == NULL || *message_data_len > pkt_len(pkt) ||
-							*message_data_len < 0)
+	    *message_data_len < 0)
 		return;
 
 	tprintf("Init Cookie (0x%lx)", ntohll(type_1_2->init_cookie));
@@ -129,8 +129,8 @@ static void dissect_mobilityhdr_type_3_4(struct pkt_buff *pkt,
 
 	type_3_4 = (struct tst_msg *) pkt_pull(pkt, sizeof(*type_3_4));
 	*message_data_len -= sizeof(*type_3_4);
-	if (type_3_4 == NULL || *message_data_len > pkt_len(pkt) ||64
-							*message_data_len < 0)
+	if (type_3_4 == NULL || *message_data_len > pkt_len(pkt) ||
+	    *message_data_len < 0)
 		return;
 
 	tprintf("HN Index (%u) ", ntohs(type_3_4->nonce_index));
@@ -148,7 +148,7 @@ static void dissect_mobilityhdr_type_5(struct pkt_buff *pkt,
 	type_5 = (struct bind_upd_msg *) pkt_pull(pkt, sizeof(*type_5));
 	*message_data_len -= sizeof(*type_5);
 	if (type_5 == NULL || *message_data_len > pkt_len(pkt) ||
-							*message_data_len < 0)
+	    *message_data_len < 0)
 		return;
 
 	tprintf("Sequence (0x%x) ", ntohs(type_5->sequence));
@@ -166,7 +166,7 @@ static void dissect_mobilityhdr_type_6(struct pkt_buff *pkt,
 	type_6 = (struct bind_ack_msg *) pkt_pull(pkt, sizeof(*type_6));
 	*message_data_len -= sizeof(*type_6);
 	if (type_6 == NULL || *message_data_len > pkt_len(pkt) ||
-							*message_data_len < 0)
+	    *message_data_len < 0)
 		return;
 
 	tprintf("Status (0x%x) ", type_6->status);
@@ -188,7 +188,7 @@ static void dissect_mobilityhdr_type_7(struct pkt_buff *pkt,
 	*message_data_len -= sizeof(*type_7);
 	addr = ntohll(type_7->home_addr);
 	if (type_7 == NULL || *message_data_len > pkt_len(pkt) ||
-							*message_data_len < 0)
+	    *message_data_len < 0)
 		return;
 
 	tprintf("Status (0x%x) ", type_7->status);
@@ -276,6 +276,7 @@ static void mobility(struct pkt_buff *pkt)
 
 	if (message_data_len > pkt_len(pkt) || message_data_len < 0)
 		return;
+
 	pkt_pull(pkt, message_data_len);
 	pkt_set_proto(pkt, &eth_lay3, mobility->payload_proto);
 }

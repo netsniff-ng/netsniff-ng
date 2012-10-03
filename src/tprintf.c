@@ -84,8 +84,6 @@ void tprintf_cleanup(void)
 	spinlock_destroy(&buffer_lock);
 }
 
-/* for long datatypes take prefix l for specifiers i, d, o, u, x and X
- * tprintf throws no warning if you not use */
 void tprintf(char *msg, ...)
 {
 	ssize_t ret;
