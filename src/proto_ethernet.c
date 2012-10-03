@@ -44,9 +44,9 @@ static void ethernet(struct pkt_buff *pkt)
 	tprintf(") ]\n");
 	tprintf(" [ Vendor ");
 	tprintf("(%s => %s)",
-		lookup_vendor((src_mac[0] << 16) | (src_mac[1] << 8) |
+		lookup_vendor_str((src_mac[0] << 16) | (src_mac[1] << 8) |
 			      src_mac[2]),
-		lookup_vendor((dst_mac[0] << 16) | (dst_mac[1] << 8) |
+		lookup_vendor_str((dst_mac[0] << 16) | (dst_mac[1] << 8) |
 			      dst_mac[2]));
 	tprintf(" ]\n");
 
@@ -64,9 +64,9 @@ static void ethernet_less(struct pkt_buff *pkt)
 	src_mac = eth->h_source;
 	dst_mac = eth->h_dest;
 	tprintf(" %s => %s ", 
-		lookup_vendor((src_mac[0] << 16) | (src_mac[1] << 8) |
+		lookup_vendor_str((src_mac[0] << 16) | (src_mac[1] << 8) |
 			      src_mac[2]),
-		lookup_vendor((dst_mac[0] << 16) | (dst_mac[1] << 8) |
+		lookup_vendor_str((dst_mac[0] << 16) | (dst_mac[1] << 8) |
 			      dst_mac[2]));
 	tprintf("%s%s%s", colorize_start(bold), 
 		lookup_ether_type(ntohs(eth->h_proto)), colorize_end());

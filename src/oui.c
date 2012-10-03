@@ -31,7 +31,7 @@ struct vendor_id {
 		(entry && id == entry->id ? entry->struct_member : NULL);     \
 	})
 
-char *lookup_vendor(unsigned int id)
+const char *lookup_vendor(unsigned int id)
 {
 	return __do_lookup_inline(id, vendor_id, &oui, vendor);
 }
