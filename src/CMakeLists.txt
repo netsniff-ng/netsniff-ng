@@ -39,6 +39,7 @@ add_definitions(
   -Werror-implicit-function-declaration
   -Wundef
   -Wformat=2
+#  -Wframe-larger-than=2048
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL pedantic)
