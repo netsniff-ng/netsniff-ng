@@ -308,9 +308,9 @@ static char *mgt_sub(u8 subtype, struct pkt_buff *pkt, int8_t (**get_content)(st
 	if (mgmt == NULL)
 		return 0;
 
-	char *dst = lookup_vendor_silent((mgmt->da[0] << 16) | (mgmt->da[1] << 8) | mgmt->da[2]);
-	char *src = lookup_vendor_silent((mgmt->sa[0] << 16) | (mgmt->sa[1] << 8) | mgmt->sa[2]);
-	char *bssid = lookup_vendor_silent((mgmt->bssid[0] << 16) | (mgmt->bssid[1] << 8) | mgmt->bssid[2]);
+	char *dst = lookup_vendor((mgmt->da[0] << 16) | (mgmt->da[1] << 8) | mgmt->da[2]);
+	char *src = lookup_vendor((mgmt->sa[0] << 16) | (mgmt->sa[1] << 8) | mgmt->sa[2]);
+	char *bssid = lookup_vendor((mgmt->bssid[0] << 16) | (mgmt->bssid[1] << 8) | mgmt->bssid[2]);
 	u16 seq_ctrl = le16_to_cpu(mgmt->seq_ctrl);
 
 	tprintf("Duration (%u),", le16_to_cpu(mgmt->duration));
