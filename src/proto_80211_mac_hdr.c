@@ -218,7 +218,7 @@ static int8_t beacon(struct pkt_buff *pkt) {
 		(struct ieee80211_mgmt_beacon *) pkt_pull(pkt, sizeof(*beacon));
 	if (beacon == NULL)
 		return 0;
-	tprintf("Timestamp 0x%.16x, ", le64_to_cpu(beacon->timestamp));
+	tprintf("Timestamp 0x%.16lx, ", le64_to_cpu(beacon->timestamp));
 	tprintf("Beacon Interval (%fs), ",
 				    le16_to_cpu(beacon->beacon_int) * 0.001024);
 	tprintf("Capabilites (0x%.8x)",
