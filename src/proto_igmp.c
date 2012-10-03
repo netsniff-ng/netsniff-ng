@@ -267,7 +267,7 @@ static void dissect_igmp_v0(struct pkt_buff *pkt)
 	tprintf(", Id (%u)", ntohs(msg->identifier));
 	inet_ntop(AF_INET, &msg->group_address, addr, sizeof(addr));
 	tprintf(", Group Addr (%s)", addr);
-	tprintf(", Access Key (0x%.16x)", msg->access_key);
+	tprintf(", Access Key (0x%.16lx)", msg->access_key);
 	tprintf(" ]\n");
 }
 

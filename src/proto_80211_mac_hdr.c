@@ -21,6 +21,7 @@
 struct ieee80211_frm_ctrl {
 	union {
 		u16 frame_control;
+		struct {
 #if defined(__LITTLE_ENDIAN_BITFIELD)
 		/* Correct order here ... */
 		__extension__ u16 proto_version:2,
@@ -49,9 +50,8 @@ struct ieee80211_frm_ctrl {
 #else
 # error  "Adjust your <asm/byteorder.h> defines"
 #endif
+		};
 	};
-	/* TODO: delete if use structs below*/
-	u16 duration;
 } __packed;
 
 /* Management Frame start */
@@ -115,7 +115,7 @@ struct ieee80211_mgmt_probe_req {
 } __packed;
 
 struct ieee80211_mgmt_beacon {
-	u8 timestamp[8];
+	u64 timestamp;
 	u16 beacon_int;
 	u16 capab_info;
 	/* followed by some of SSID, Supported rates,
@@ -179,27 +179,300 @@ struct ieee80211_data {
 } __packed;
 
 /* TODO: Extend */
-/* Control Frame end */
+/* Data Frame end */
 
-static const char *frame_control_types[] = {
-	"Management",	/* 00 */
-	"Control",	/* 01 */
-	"Data",		/* 10 */
-	"Reserved",	/* 11 */
-};
+
+/* http://www.sss-mag.com/pdf/802_11tut.pdf
+ * http://www.scribd.com/doc/78443651/111/Management-Frames
+ * http://www.wildpackets.com/resources/compendium/wireless_lan/wlan_packets
+ * http://www.rhyshaden.com/wireless.htm
+*/
+
+/* Management Dissectors */
+static int8_t assoc_req(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t assoc_resp(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t reassoc_req(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t reassoc_resp(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t probe_req(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t probe_resp(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t beacon(struct pkt_buff *pkt) {
+	struct ieee80211_mgmt_beacon *beacon =
+		(struct ieee80211_mgmt_beacon *) pkt_pull(pkt, sizeof(*beacon));
+	if (beacon == NULL)
+		return 0;
+	tprintf("Timestamp 0x%.16lx, ", le64_to_cpu(beacon->timestamp));
+	tprintf("Beacon Interval (%fs), ",
+				    le16_to_cpu(beacon->beacon_int) * 0.001024);
+	tprintf("Capabilites (0x%.8x)",
+				    le16_to_cpu(beacon->capab_info));
+	return 1;
+}
+
+static int8_t atim(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t disassoc(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t auth(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t deauth(struct pkt_buff *pkt) {
+	return 0;
+}
+/* End Management Dissectors */
+
+/* Control Dissectors */
+static int8_t ps_poll(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t rts(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t cts(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t ack(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t cf_end(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t cf_end_ack(struct pkt_buff *pkt) {
+	return 0;
+}
+/* End Control Dissectors */
+
+/* Data Dissectors */
+static int8_t data(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t data_cf_ack(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t data_cf_poll(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t data_cf_ack_poll(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t null(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t cf_ack(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t cf_poll(struct pkt_buff *pkt) {
+	return 0;
+}
+
+static int8_t cf_ack_poll(struct pkt_buff *pkt) {
+	return 0;
+}
+/* End Data Dissectors */
+
+static char *mgt_sub(u8 subtype, struct pkt_buff *pkt, int8_t (**get_content)(struct pkt_buff *pkt)) {
+
+	struct ieee80211_mgmt *mgmt =
+		(struct ieee80211_mgmt *) pkt_pull(pkt, sizeof(*mgmt));
+	if (mgmt == NULL)
+		return 0;
+
+	const char *dst = lookup_vendor((mgmt->da[0] << 16) | (mgmt->da[1] << 8) | mgmt->da[2]);
+	const char *src = lookup_vendor((mgmt->sa[0] << 16) | (mgmt->sa[1] << 8) | mgmt->sa[2]);
+	const char *bssid = lookup_vendor((mgmt->bssid[0] << 16) | (mgmt->bssid[1] << 8) | mgmt->bssid[2]);
+	u16 seq_ctrl = le16_to_cpu(mgmt->seq_ctrl);
+
+	tprintf("Duration (%u),", le16_to_cpu(mgmt->duration));
+	tprintf("\n\tDestination (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x) ",
+			      mgmt->da[0], mgmt->da[1], mgmt->da[2], mgmt->da[3], mgmt->da[4], mgmt->da[5]);
+	if(dst)
+		tprintf("=> (%s:%.2x:%.2x:%.2x)", dst, mgmt->da[3], mgmt->da[4], mgmt->da[5]);
+	tprintf("\n\tSource (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x) ",
+			      mgmt->sa[0], mgmt->sa[1], mgmt->sa[2], mgmt->sa[3], mgmt->sa[4], mgmt->sa[5]);
+	if(src)
+		tprintf("=> (%s:%.2x:%.2x:%.2x)", src, mgmt->sa[3], mgmt->sa[4], mgmt->sa[5]);
+	tprintf("\n\tBSSID (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x) ",
+			      mgmt->bssid[0], mgmt->bssid[1], mgmt->bssid[2], mgmt->bssid[3], mgmt->bssid[4], mgmt->bssid[5]);
+	if(bssid)
+		tprintf("=> (%s:%.2x:%.2x:%.2x)", bssid, mgmt->bssid[3], mgmt->bssid[4], mgmt->bssid[5]);
+	tprintf("\n\tFragmentnr. (%u), Seqnr. (%u). ", seq_ctrl & 0xf, seq_ctrl >> 4);
+  
+	switch (subtype) {
+	case 0b0000:
+		      *get_content = assoc_req;
+		      return "Association Request";
+	case 0b0001:
+		      *get_content = assoc_resp;
+		      return "Association Response";
+	case 0b0010:
+		      *get_content = reassoc_req;
+		      return "Reassociation Request";
+	case 0b0011:
+		      *get_content = reassoc_resp;
+		      return "Reassociation Response";
+	case 0b0100:
+		      *get_content = probe_req;
+		      return "Probe Request";
+	case 0b0101:
+		      *get_content = probe_resp;
+		      return "Probe Response";
+	case 0b1000:
+		      *get_content = beacon;
+		      return "Beacon";
+	case 0b1001:
+		      *get_content = atim;
+		      return "ATIM";
+	case 0b1010:
+		      *get_content = disassoc;
+		      return "Disassociation";
+	case 0b1011:
+		      *get_content = auth;
+		      return "Authentication";
+	case 0b1100:
+		      *get_content = deauth;
+		      return "Deauthentication";
+	}
+
+	if ((subtype >= 0b0110 && subtype <= 0b0111) || (subtype >= 0b1101 && subtype <= 0b1111))
+		      return "Reserved";
+
+	return "Management SubType not supported";
+}
+
+static char *ctrl_sub(u8 subtype, struct pkt_buff *pkt, int8_t (**get_content)(struct pkt_buff *pkt)) {
+
+	switch (subtype) {
+	case 0b1010:
+		      *get_content = ps_poll;
+		      return "PS-Poll";
+	case 0b1011:
+		      *get_content = rts;
+		      return "RTS";
+	case 0b1100:
+		      *get_content = cts;
+		      return "CTS";
+	case 0b1101:
+		      *get_content = ack;
+		      return "ACK";
+	case 0b1110:
+		      *get_content = cf_end;
+		      return "CF End";
+	case 0b1111:
+		      *get_content = cf_end_ack;
+		      return "CF End + CF-ACK";
+	}
+
+	if (subtype <= 0b1001)
+		      return "Reserved";
+	
+	return "Control SubType not supported";
+}
+
+static char *data_sub(u8 subtype, struct pkt_buff *pkt, int8_t (**get_content)(struct pkt_buff *pkt)) {
+
+	switch (subtype) {
+	case 0b0000:
+		      *get_content = data;
+		      return "Data";
+	case 0b0001:
+		      *get_content = data_cf_ack;
+		      return "Data + CF-ACK";
+	case 0b0010:
+		      *get_content = data_cf_poll;
+		      return "Data + CF-Poll";
+	case 0b0011:
+		      *get_content = data_cf_ack_poll;
+		      return "Data + CF-ACK + CF-Poll";
+	case 0b0100:
+		      *get_content = null;
+		      return "Null";
+	case 0b0101:
+		      *get_content = cf_ack;
+		      return "CF-ACK";
+	case 0b0110:
+		      *get_content = cf_poll;
+		      return "CF-Poll";
+	case 0b0111:
+		      *get_content = cf_ack_poll;
+		      return "CF-ACK + CF-Poll";
+	}
+
+	if (subtype >= 0b1000 && subtype <= 0b1111)
+		      return "Reserved";
+	
+	return "Data SubType not supported";
+}
+
+static char *frame_control_type(u8 type, char *(**get_subtype)(u8 subtype, struct pkt_buff *pkt, int8_t (**get_content)(struct pkt_buff *pkt))) {
+	switch (type) {
+	case 0b00:
+		    *get_subtype = mgt_sub;
+		    return "Management";
+	case 0b01:
+		    *get_subtype = ctrl_sub;
+		    return "Control";
+	case 0b10:
+		    *get_subtype = data_sub;
+		    return "Data";
+	case 0b11: return "Reserved";
+	}
+
+	return "Control Type not supported";
+	
+}
 
 static void ieee80211(struct pkt_buff *pkt)
 {
+	int8_t (*get_content)(struct pkt_buff *pkt) = NULL;
+	char *(*get_subtype)(u8 subtype, struct pkt_buff *pkt, int8_t (**get_content)(struct pkt_buff *pkt)) = NULL;
+	
 	struct ieee80211_frm_ctrl *frm_ctrl =
 		(struct ieee80211_frm_ctrl *) pkt_pull(pkt, sizeof(*frm_ctrl));
 	if (frm_ctrl == NULL)
 		return;
 
-	tprintf(" [ 802.11 Frame Control (0x%04x), Duration/ID (%u) ]\n",
-		le16_to_cpu(frm_ctrl->frame_control), le16_to_cpu(frm_ctrl->duration));
+	tprintf(" [ 802.11 Frame Control (0x%04x)]\n",
+		le16_to_cpu(frm_ctrl->frame_control));
 	tprintf("\t [ Proto Version (%u), ", frm_ctrl->proto_version);
-	tprintf("Type (%u, %s), ", frm_ctrl->type, frame_control_types[frm_ctrl->type]);
-	tprintf("Subtype (%u)", frm_ctrl->subtype /*XXX*/);
+	tprintf("Type (%u, %s), ", frm_ctrl->type, frame_control_type(frm_ctrl->type, &get_subtype));
+	if (get_subtype)
+		tprintf("Subtype (%u, %s)", frm_ctrl->subtype, (*get_subtype)(frm_ctrl->subtype, pkt, &get_content));
+	else
+		tprintf("\n%s%s%s", colorize_start_full(black, red),
+			    "No SubType Data available", colorize_end());
 	tprintf("%s%s",
 		frm_ctrl->to_ds ? ", Frame goes to DS" : "",
 		frm_ctrl->from_ds ?  ", Frame comes from DS" : "");
@@ -210,6 +483,15 @@ static void ieee80211(struct pkt_buff *pkt)
 	tprintf("%s", frm_ctrl->wep ? ", Needs WEP" : "");
 	tprintf("%s", frm_ctrl->order ? ", Order" : "");
 	tprintf(" ]\n");
+
+	if (get_content) {
+		if (!((*get_content) (pkt)))
+		      tprintf("\n%s%s%s", colorize_start_full(black, red),
+			    "Failed to dissect Subtype", colorize_end());
+	}
+	else
+		tprintf("\n%s%s%s", colorize_start_full(black, red),
+			    "No SubType Data available", colorize_end());
 
 //	pkt_set_proto(pkt, &ieee802_lay2, ntohs(eth->h_proto));
 }
