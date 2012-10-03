@@ -75,6 +75,11 @@ typedef uint8_t		u8;
 # define __aligned_tpacket	__attribute__((aligned(TPACKET_ALIGNMENT)))
 #endif
 
+#ifndef __check_format_printf
+# define __check_format_printf(pos_fmtstr, pos_fmtargs)		\
+		__attribute__ ((format (printf, (pos_fmtstr), (pos_fmtargs))))
+#endif
+
 #ifndef __packed
 # define __packed		__attribute__((packed))
 #endif
