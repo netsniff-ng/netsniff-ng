@@ -17,6 +17,8 @@
 #include "pkt_buff.h"
 #include "oui.h"
 
+#define	TU		0.001024
+
 /* Note: Fields are encoded in little-endian! */
 struct ieee80211_frm_ctrl {
 	union {
@@ -231,6 +233,37 @@ struct element_tim {
 	u8 part_virt_bmp[0];
 } __packed;
 
+struct element_ibss_ps {
+	u8 len;
+	u16 atim_win;
+} __packed;
+
+struct element_country_tripled {
+	u8 frst_ch;
+	u8 nr_ch;
+	u8 max_trans;
+} __packed;
+
+struct element_country {
+	u8 len;
+#if defined(__LITTLE_ENDIAN_BITFIELD)
+		/* Correct order here ... */
+	u8 country_first;
+	u8 country_sec;
+	u8 country_third;
+#elif defined(__BIG_ENDIAN_BITFIELD)
+	u8 country_third;
+	u8 country_sec;
+	u8 country_first;
+#else
+# error  "Adjust your <asm/byteorder.h> defines"
+#endif
+	/* triplet may repeat */
+	struct element_country_tripled tripled [0];
+	/* end triplet */
+	u8 pad[0];
+} __packed;
+
 
 
 
@@ -307,10 +340,15 @@ static int8_t inf_reserved(struct pkt_buff *pkt, u8 *id) {
 	if (reserved == NULL)
 		return 0;
 
-	tprintf(" Reserved (%u, Len (%u)): ", *id, reserved->len);
+	tprintf("Reserved (%u, Len (%u)): ", *id, reserved->len);
 
-	if (!pkt_pull(pkt, reserved->len))
+	u8 *data = pkt_pull(pkt, reserved->len);
+	if (data == NULL)
 		return 0;
+
+	tprintf("Data 0x");
+	for(u8 i=0; i < reserved->len; i++)
+		tprintf("%.2x", data[i]);
 
 	return 1;
 }
@@ -364,7 +402,7 @@ static int8_t inf_fh_ps(struct pkt_buff *pkt, u8 *id) {
 		return 0;
 
 	tprintf("FH Param Set (%u, Len(%u)): ", *id, fh_ps->len);
-	tprintf("Dwell Time: %fs, ", le16_to_cpu(fh_ps->dwell_time) * 0.001024);
+	tprintf("Dwell Time: %fs, ", le16_to_cpu(fh_ps->dwell_time) * TU);
 	tprintf("HopSet: %u, ", fh_ps->hop_set);
 	tprintf("HopPattern: %u, ", fh_ps->hop_pattern);
 	tprintf("HopIndex: %u", fh_ps->hop_index);
@@ -393,8 +431,8 @@ static int8_t inf_cf_ps(struct pkt_buff *pkt, u8 *id) {
 	tprintf("CF Param Set (%u, Len(%u)): ", *id, cf_ps->len);
 	tprintf("CFP Count: %u, ", cf_ps->cfp_cnt);
 	tprintf("CFP Period: %u, ", cf_ps->cfp_period);
-	tprintf("CFP MaxDur: %fs, ", le16_to_cpu(cf_ps->cfp_max_dur) * 0.001024);
-	tprintf("CFP DurRem: %fs", le16_to_cpu(cf_ps->cfp_dur_rem) * 0.001024);
+	tprintf("CFP MaxDur: %fs, ", le16_to_cpu(cf_ps->cfp_max_dur) * TU);
+	tprintf("CFP DurRem: %fs", le16_to_cpu(cf_ps->cfp_dur_rem) * TU);
 
 	return 1;
 }
@@ -422,10 +460,49 @@ static int8_t inf_tim(struct pkt_buff *pkt, u8 *id) {
 }
 
 static int8_t inf_ibss_ps(struct pkt_buff *pkt, u8 *id) {
+	struct element_ibss_ps *ibss_ps =
+		(struct element_ibss_ps *) pkt_pull(pkt, sizeof(*ibss_ps));
+	if (ibss_ps == NULL)
+		return 0;
+
+	tprintf("IBSS Param Set (%u, Len(%u)): ", *id, ibss_ps->len);
+	tprintf("ATIM Window: %fs", le16_to_cpu(ibss_ps->atim_win) * TU);
+
 	return 1;
 }
 
 static int8_t inf_country(struct pkt_buff *pkt, u8 *id) {
+	struct element_country *country =
+		(struct element_country *) pkt_pull(pkt, sizeof(*country));
+	if (country == NULL)
+		return 0;
+
+	tprintf("Country (%u, Len(%u)): ", *id, country->len);
+	tprintf("Country String: %c%c%c", country->country_first,
+			      country->country_sec, country->country_third);
+	for(u8 i=0; i < (country->len - 3); i += 3) {
+		struct element_country_tripled *country_tripled =
+		(struct element_country_tripled *) pkt_pull(pkt, sizeof(*country_tripled));
+		if (country_tripled == NULL)
+			return 0;
+		if(country_tripled->frst_ch >= 201) {
+			tprintf("Oper Ext ID: %u, ", country_tripled->frst_ch);
+			tprintf("Operating Class: %u, ", country_tripled->nr_ch);
+			tprintf("Coverage Class: %u", country_tripled->max_trans);
+		}
+		else {
+			tprintf("First Ch Nr: %u, ", country_tripled->frst_ch);
+			tprintf("Nr of Ch: %u, ", country_tripled->nr_ch);
+			tprintf("Max Transmit Pwr Lvl: %u", country_tripled->max_trans);
+		}
+	}
+	if(country->len % 2) {
+		u8 *pad = pkt_pull(pkt, 1);
+		if (pad == NULL)
+			return 0;
+		tprintf(", Pad: 0x%x", *pad);
+	}
+
 	return 1;
 }
 
@@ -1278,7 +1355,7 @@ static int8_t beacon(struct pkt_buff *pkt) {
 		return 0;
 	tprintf("Timestamp 0x%.16lx, ", le64_to_cpu(beacon->timestamp));
 	tprintf("Beacon Interval (%fs), ",
-				    le16_to_cpu(beacon->beacon_int) * 0.001024);
+				    le16_to_cpu(beacon->beacon_int) * TU);
 	tprintf("Capabilities (0x%x <->",
 				    le16_to_cpu(beacon->capab_info));
 	cap_field(le16_to_cpu(beacon->capab_info));
@@ -1538,7 +1615,7 @@ static void ieee80211(struct pkt_buff *pkt)
 
 	tprintf(" [ 802.11 Frame Control (0x%04x)]\n",
 		le16_to_cpu(frm_ctrl->frame_control));
-	tprintf("\t [ Proto Version (%u), ", frm_ctrl->proto_version);
+	tprintf(" [ Proto Version (%u), ", frm_ctrl->proto_version);
 	tprintf("Type (%u, %s), ", frm_ctrl->type, frame_control_type(frm_ctrl->type, &get_subtype));
 	if (get_subtype) {
 		subtype = (*get_subtype)(frm_ctrl->subtype, pkt, &get_content);
