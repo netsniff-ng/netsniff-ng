@@ -79,3 +79,7 @@ submit your contributions, items marked with '!' are of high importance):
 
 38! netsniff-ng (and others): if interface goes down, properly exit
 	@TODO: Daniel Borkmann
+
+39! Add a pcap indxeing utility fo a faster retrival, analysis on huge
+    pcap files.
+	@TODO: Daniel Borkmann
