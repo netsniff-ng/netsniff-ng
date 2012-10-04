@@ -43,5 +43,6 @@ done
 
 ln -s /usr/share/GeoIP/GeoLiteCity.dat /usr/share/GeoIP/GeoIPCity.dat
 ln -s /usr/share/GeoIP/GeoLiteCityv6.dat /usr/share/GeoIP/GeoIPCityv6.dat
+ln -s /usr/share/GeoIP/ /usr/local/share/
 
 exit $FAILED
