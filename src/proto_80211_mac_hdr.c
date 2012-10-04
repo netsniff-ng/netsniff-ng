@@ -264,6 +264,21 @@ struct element_country {
 	u8 pad[0];
 } __packed;
 
+struct element_hop_pp {
+	u8 len;
+	u8 prime_radix;
+	u8 nr_ch;
+} __packed;
+
+struct element_hop_pt {
+	u8 len;
+	u8 flag;
+	u8 nr_sets;
+	u8 modules;
+	u8 offs;
+	u8 rand_tabl[0];
+} __packed;
+
 
 
 
@@ -507,10 +522,38 @@ static int8_t inf_country(struct pkt_buff *pkt, u8 *id) {
 }
 
 static int8_t inf_hop_pp(struct pkt_buff *pkt, u8 *id) {
+	struct element_hop_pp *hop_pp =
+		(struct element_hop_pp *) pkt_pull(pkt, sizeof(*hop_pp));
+	if (hop_pp == NULL)
+		return 0;
+
+	tprintf("Hopping Pattern Param (%u, Len(%u)): ", *id, hop_pp->len);
+	tprintf("Nr of Ch: %u", hop_pp->nr_ch);
+
 	return 1;
 }
 
 static int8_t inf_hop_pt(struct pkt_buff *pkt, u8 *id) {
+	struct element_hop_pt *hop_pt =
+		(struct element_hop_pt *) pkt_pull(pkt, sizeof(*hop_pt));
+	if (hop_pt == NULL)
+		return 0;
+
+	tprintf("Hopping Pattern Table (%u, Len(%u)): ", *id, hop_pt->len);
+	tprintf("Flag: %u, ", hop_pt->flag);
+	tprintf("Nr of Sets: %u, ", hop_pt->nr_sets);
+	tprintf("Modules: %u, ", hop_pt->modules);
+	tprintf("Offs: %u", hop_pt->offs);
+
+	if((hop_pt->len - sizeof(*hop_pt) + 1) > 0) {
+		u8 *rand_tabl = pkt_pull(pkt, (hop_pt->len - sizeof(*hop_pt) + 1));
+		if (rand_tabl == NULL)
+			return 0;
+		tprintf(", Rand table: 0x");
+		for(u8 i=0; i < (hop_pt->len - sizeof(*hop_pt) + 1); i++)
+		  tprintf("%.2x ", rand_tabl[i]);
+	}
+
 	return 1;
 }
 
