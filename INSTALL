@@ -16,7 +16,7 @@ What tools are required to build netsniff-ng?
 
 What libraries are required?
 
- - libc, inc. libm, librt, libpthread (all)
+ - libc, including libm, librt, libpthread (all)
  - libncurses (ifpps, flowtop)
  - libGeoIP >=1.4.8 (astraceroute, flowtop)
  - libnacl (curvetun)
