@@ -29,6 +29,7 @@ What libraries are required?
 What additional tools are recommended after the build?
 
  - ntpd, tlsdate or equivalent (curvetun)
+ - setcap (all)
 
 It is common, that these libraries are shipped as distribution packages
 for an easy installation. We try to keep this as minimal as possible.
@@ -45,15 +46,14 @@ The installation process done by cmake is fairly simple:
   $ make
   # make install
 
-Man pages are generated out of the files from Documentation/Manpages dir.
-They are written in POD format. For this, you need the tool pod2man which
-is distributed with Perl and should therefore be available on most systems.
+In order to run the toolkit as a normal user, set the following privilege
+separation after the build/installation:
 
-To uninstall, simply remove all files referred in install_manifest.txt, e.g.
-by running 'xargs rm < install_manifest.txt'.
-
-For bpfc, we also have a Vim syntax highlighting file. Have a look at
-scripts/bpf.vim for installation instructions.
+  $ sudo setcap cap_net_raw=ep astraceroute
+  $ sudo setcap cap_net_admin=ep flowtop
+  $ sudo setcap cap_net_raw=ep mausezahn
+  $ sudo setcap "cap_net_raw=ep cap_ipc_lock=ep" netsniff-ng
+  $ sudo setcap "cap_net_raw=ep cap_ipc_lock=ep" trafgen
 
 In order to build curvetun, libnacl must be built first. A helper script
 called build_nacl.sh is there to facilitate this process. If you want to
@@ -86,6 +86,16 @@ adapt paths within the script):
 
   $ cd src/astraceroute
   # ./build_geoip.sh
+
+Man pages are generated out of the files from Documentation/Manpages dir.
+They are written in POD format. For this, you need the tool pod2man which
+is distributed with Perl and should therefore be available on most systems.
+
+For bpfc, we also have a Vim syntax highlighting file. Have a look at
+scripts/bpf.vim for installation instructions.
+
+To uninstall, simply remove all files referred in install_manifest.txt, e.g.
+by running 'xargs rm < install_manifest.txt'.
 
 Further notes:
 //////////////
