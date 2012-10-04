@@ -1,0 +1,10 @@
+This repository remove root check
+
+after build, set privilege separation:
+sudo setcap cap_net_raw=ep astraceroute
+sudo setcap cap_net_admin=ep flowtop
+sudo setcap cap_net_raw=ep mausezahn
+sudo setcap "cap_net_raw=ep cap_ipc_lock=ep" netsniff-ng
+sudo setcap "cap_net_raw=ep cap_ipc_lock=ep" trafgen
+
+for more info, contact me @egeektronic
