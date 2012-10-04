@@ -962,8 +962,6 @@ int main(int argc, char **argv)
 	struct mode mode;
 	void (*enter_mode)(struct mode *mode) = NULL;
 
-	check_for_root_maybe_die();
-
 	fmemset(&mode, 0, sizeof(mode));
 	mode.link_type = LINKTYPE_EN10MB;
 	mode.print_mode = FNTTYPE_PRINT_NORM;

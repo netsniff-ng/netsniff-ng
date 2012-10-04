@@ -842,8 +842,6 @@ int main(int argc, char **argv)
 	pthread_t tid;
 	int ret, c, opt_index, what_cmd = 0;
 
-	check_for_root_maybe_die();
-
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 	       &opt_index)) != EOF) {
 		switch (c) {

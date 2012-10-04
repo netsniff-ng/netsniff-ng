@@ -154,13 +154,6 @@ int main(int argc, char *argv[])
    libnet_ptag_t         t2=0, t3=0, t4=0;      // handles to layers 
    
    double cpu_time_used;
-
-   // Check if we have root priviliges
-   if ( (getuid()!=0) && (geteuid()!=0) )
-     {
-	fprintf(stderr, " Mausezahn requires root privileges.\n Exit.\n");
-	return 1;
-     }
    
    
    // Reset all globals
