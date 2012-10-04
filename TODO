@@ -83,3 +83,7 @@ submit your contributions, items marked with '!' are of high importance):
 39! Add a pcap indxeing utility fo a faster retrival, analysis on huge
     pcap files.
 	@TODO: Daniel Borkmann
+
+40! Give more than just a one-line description of each tool on the website.
+    Probably, a new section after Abstract might help.
+	@TODO: Daniel Borkmann
