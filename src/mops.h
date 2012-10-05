@@ -697,6 +697,22 @@ void mops_hton2 (u_int16_t *host16, u_int8_t *net16);
 void mops_hton4 (u_int32_t *host32, u_int8_t *net32);
 
 int  mops_get_proto_info (struct mops *mp, char *layers, char *proto);
+int stop_all_sequences ();
+int mops_rx_arp ();
+void automops_delete_all (struct automops *list);
+int ensure_single_word(char *w);
+struct automops * automops_search_protocol(struct automops *list, char *name);
+struct automops * automops_delete_protocol(struct automops *cur);
+struct automops * automops_alloc_protocol(struct automops *cur);
+struct automops * automops_init();
+int mops_tcp_option_remove_all (struct mops* mp);
+int mops_ip_option_sec (struct mops* mp);
+int mops_ip_option_ts (struct mops* mp);
+int mops_ip_option_rr (struct mops* mp);
+int mops_ip_option_ssr (struct mops* mp);
+int mops_ip_option_lsr (struct mops* mp);
+int mops_ip_option_eol (struct mops* mp);
+int mops_ip_option_nop (struct mops* mp);
 
 // Inserts value in 'flag' (up to 7 bits are useful) into the target
 // with an optional left-shift. For example if flag contains a 4-bit value
