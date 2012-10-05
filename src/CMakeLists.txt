@@ -35,7 +35,7 @@ add_definitions(
   -Wall
   -Wmissing-prototypes
 #  -Wstrict-prototypes
-  -Wdeclaration-after-statement
+  -Wno-declaration-after-statement
   -Werror-implicit-function-declaration
   -Wundef
   -Wformat=2
