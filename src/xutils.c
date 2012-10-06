@@ -220,7 +220,7 @@ int set_epoll_descriptor2(int fd_epoll, int action, int fd_toadd, int events)
 	return epoll_ctl(fd_epoll, action, fd_toadd, &ev);
 }
 
-int wireless_bitrate(const char *ifname)
+u32 wireless_bitrate(const char *ifname)
 {
 	int sock, ret, rate_in_mbit;
 	struct iwreq iwr;
@@ -271,8 +271,8 @@ int get_system_socket_mem(int which)
 void set_system_socket_mem(int which, int val)
 {
 	int fd;
-	ssize_t ret;
 	const char *file = sock_mem[which];
+	ssize_t ret;
 	char buff[64];
 
 	fd = open(file, O_WRONLY);
@@ -283,6 +283,7 @@ void set_system_socket_mem(int which, int val)
 	slprintf(buff, sizeof(buff), "%d", val);
 
 	ret = write(fd, buff, strlen(buff));
+	ret = ret;
 
 	close(fd);
 }
@@ -336,7 +337,7 @@ int wireless_rangemax_sigqual(const char *ifname)
 	return sigqual;
 }
 
-int ethtool_bitrate(const char *ifname)
+u32 ethtool_bitrate(const char *ifname)
 {
 	int ret, sock, bitrate;
 	struct ifreq ifr;
@@ -362,6 +363,7 @@ int ethtool_bitrate(const char *ifname)
 	case SPEED_10:
 	case SPEED_100:
 	case SPEED_1000:
+	case SPEED_2500:
 	case SPEED_10000:
 		bitrate = ecmd.speed;
 		break;
@@ -373,6 +375,32 @@ out:
 	close(sock);
 
 	return bitrate;
+}
+
+int ethtool_link(const char *ifname)
+{
+	int ret, sock;
+	struct ifreq ifr;
+	struct ethtool_value ecmd;
+
+	sock = af_socket(AF_INET);
+
+	memset(&ecmd, 0, sizeof(ecmd));
+
+	memset(&ifr, 0, sizeof(ifr));
+	strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
+
+	ecmd.cmd = ETHTOOL_GLINK;
+	ifr.ifr_data = (char *) &ecmd;
+
+	ret = ioctl(sock, SIOCETHTOOL, &ifr);
+	if (ret)
+		ret = -EINVAL;
+	else
+		ret = !!ecmd.data;
+
+	close(sock);
+	return ret;
 }
 
 int ethtool_drvinf(const char *ifname, struct ethtool_drvinfo *drvinf)
@@ -397,9 +425,9 @@ int ethtool_drvinf(const char *ifname, struct ethtool_drvinfo *drvinf)
 	return ret;
 }
 
-int device_bitrate(const char *ifname)
+u32 device_bitrate(const char *ifname)
 {
-	int speed_c, speed_w;
+	u32 speed_c, speed_w;
 
 	speed_c = ethtool_bitrate(ifname);
 	speed_w = wireless_bitrate(ifname);
@@ -547,6 +575,7 @@ void device_set_flags(const char *ifname, const short flags)
 	close(sock);
 }
 
+/* XXX: also probe ethtool driver name if it fails */
 int device_irq_number(const char *ifname)
 {
 	/*
@@ -610,6 +639,26 @@ int device_irq_number(const char *ifname)
 	return irq;
 }
 
+int device_set_irq_affinity_list(int irq, unsigned long from, unsigned long to)
+{
+	int ret, fd;
+	char file[256], list[64];
+
+	slprintf(file, sizeof(file), "/proc/irq/%d/smp_affinity_list", irq);
+	slprintf(list, sizeof(list), "%lu-%lu\n", from, to);
+
+	fd = open(file, O_WRONLY);
+	if (fd < 0) {
+		whine("Cannot open file %s!\n", file);
+		return -ENOENT;
+	}
+
+	ret = write(fd, list, strlen(list));
+
+	close(fd);
+	return ret;
+}
+
 int device_bind_irq_to_cpu(int irq, int cpu)
 {
 	int ret;
@@ -652,15 +701,17 @@ void sock_print_net_stats(int sock, unsigned long skipped)
 
 	ret = getsockopt(sock, SOL_PACKET, PACKET_STATISTICS, &kstats, &slen);
 	if (ret > -1) {
-		printf("\r%12ld  frames incoming\n",
-		       1UL * kstats.tp_packets);
-		printf("\r%12ld  frames passed filter\n", 
-		       1UL * kstats.tp_packets - kstats.tp_drops - skipped);
-		printf("\r%12ld  frames failed filter (out of space)\n",
-		       1UL * kstats.tp_drops + skipped);
+		uint64_t packets = kstats.tp_packets;
+		uint64_t drops = kstats.tp_drops;
+
+		printf("\r%12ld  packets incoming\n", packets);
+		printf("\r%12ld  packets passed filter\n",
+		       packets - drops - skipped);
+		printf("\r%12ld  packets failed filter (out of space)\n",
+		       drops + skipped);
 		if (kstats.tp_packets > 0)
-			printf("\r%12.4f%% frame droprate\n", 1.f *
-			       kstats.tp_drops / kstats.tp_packets * 100.f);
+			printf("\r%12.4f%\% packet droprate\n",
+			       1.f * drops / packets * 100.f);
 	}
 }
 
@@ -796,6 +847,20 @@ static inline char *next_token(char *q, int sep)
 	if (q)
 		q++;
 	return q;
+}
+
+void cpu_affinity(int cpu)
+{
+	int ret;
+	cpu_set_t cpu_bitmask;
+
+	CPU_ZERO(&cpu_bitmask);
+	CPU_SET(cpu, &cpu_bitmask);
+
+	ret = sched_setaffinity(getpid(), sizeof(cpu_bitmask),
+				&cpu_bitmask);
+	if (ret)
+		panic("Can't set this cpu affinity!\n");
 }
 
 int set_cpu_affinity(char *str, int inverted)
@@ -981,16 +1046,35 @@ size_t strlcpy(char *dest, const char *src, size_t size)
 	return ret;
 }
 
+static inline int vslprintf(char *dst, size_t size, const char *fmt, va_list ap)
+{
+	int ret;
+
+	ret = vsnprintf(dst, size, fmt, ap);
+	dst[size - 1] = '\0';
+
+	return ret;
+}
+
 int slprintf(char *dst, size_t size, const char *fmt, ...)
 {
 	int ret;
 	va_list ap;
 
 	va_start(ap, fmt);
+	ret = vslprintf(dst, size, fmt, ap);
+	va_end(ap);
 
-	ret = vsnprintf(dst, size, fmt, ap);
-	dst[size - 1] = '\0';
+	return ret;
+}
 
+int slprintf_nocheck(char *dst, size_t size, const char *fmt, ...)
+{
+	int ret;
+	va_list ap;
+
+	va_start(ap, fmt);
+	ret = vslprintf(dst, size, fmt, ap);
 	va_end(ap);
 
 	return ret;

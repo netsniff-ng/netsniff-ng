@@ -6,6 +6,8 @@
  * Subject to the GPL, version 2.
  */
 
+/* lex-func-prefix: zz */
+
 %{
 
 #include <stdio.h>
@@ -42,7 +44,7 @@ static const struct res_keywords keytab[] = {
 
 void bpf_hla_lex_init(void)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < array_size(keytab); ++i)
 		bpf_symtab_insert(keytab[i].key, keytab[i].token);
 }
@@ -65,18 +67,10 @@ extern void zzerror(const char *);
 alpha		[A-Za-z]
 alphanum	[A-Za-z0-9]
 
-digit		[0-9]
-digit_s		[1-9]
-digit_n		[0]
-bindigit	[0-1]
-bindigit_b	[b]
-hex		[a-fA-F0-9]
-hex_x		[x]
-
-number_dec	{digit_n}|{digit_s}{digit}*
-number_oct	{digit_n}{digit}+
-number_hex	{digit_n}{hex_x}{hex}+
-number_bin	{digit_n}{bindigit_b}{bindigit}+
+number_oct	([0][0-9]+)
+number_hex	([0][x][a-fA-F0-9]+)
+number_bin	([0][b][0-1]+)
+number_dec	(([0])|([-+]?[1-9][0-9]*))
 
 %%
 
@@ -109,16 +103,16 @@ number_bin	{digit_n}{bindigit_b}{bindigit}+
 "%"		{ return '%'; }
 
 {number_hex}	{ zzlval.number = strtoul(zztext, NULL, 16);
-		  return number_hex; }
+		  return number; }
 
 {number_dec}	{ zzlval.number = strtol(zztext, NULL, 10);
-		  return number_dec; }
+		  return number; }
 
-{number_oct}	{ zzlval.number = strtol(zztext, NULL, 8);
-		  return number_oct; }
+{number_oct}	{ zzlval.number = strtol(zztext + 1, NULL, 8);
+		  return number; }
 
 {number_bin}	{ zzlval.number = strtol(zztext + 2, NULL, 2);
-		  return number_bin; }
+		  return number; }
 
 "/*"([^\*]|\*[^/])*"*/" { /* NOP */ }
 ";"[^\n]*	{/* NOP */}

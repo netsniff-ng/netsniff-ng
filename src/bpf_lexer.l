@@ -6,6 +6,8 @@
  * Subject to the GPL, version 2.
  */
 
+/* lex-func-prefix: yy */
+
 %{
 
 #include <stdio.h>
@@ -29,34 +31,29 @@ extern void yyerror(const char *);
 %option noinput
 %option nodefault
 
-digit		[0-9]
-digit_s		[1-9]
-digit_n		[0]
-bindigit	[0-1]
-bindigit_b	[b]
-hex		[a-fA-F0-9]
-hex_x		[x]
+number_oct	([0][0-9]+)
+number_hex	([0][x][a-fA-F0-9]+)
+number_bin	([0][b][0-1]+)
+number_dec	(([0])|([-+]?[1-9][0-9]*))
 
-number_dec	{digit_n}|{digit_s}{digit}*
-number_oct	{digit_n}{digit}+
-number_hex	{digit_n}{hex_x}{hex}+
-number_bin	{digit_n}{bindigit_b}{bindigit}+
-
-label_s		[a-zA-Z_]
-label_me	[a-zA-Z0-9_]
-label		{label_s}{label_me}+
+label		[a-zA-Z_][a-zA-Z0-9_]+
 
 %%
 
 "ldb"		{ return OP_LDB; }
 "ldh"		{ return OP_LDH; }
 "ld"		{ return OP_LD; }
+"ldi"		{ return OP_LDI; }
 "ldx"		{ return OP_LDX; }
+"ldxi"		{ return OP_LDXI; }
 "ldxb"		{ return OP_LDXB; }
 "st"		{ return OP_ST; }
 "stx"		{ return OP_STX; }
 "jmp"|"ja"	{ return OP_JMP; }
 "jeq"		{ return OP_JEQ; }
+"jneq"|"jne"	{ return OP_JNEQ; }
+"jlt"		{ return OP_JLT; }
+"jle"		{ return OP_JLE; }
 "jgt"		{ return OP_JGT; }
 "jge"		{ return OP_JGE; }
 "jset"		{ return OP_JSET; }
@@ -74,17 +71,21 @@ label		{label_s}{label_me}+
 "ret"		{ return OP_RET; }
 "tax"		{ return OP_TAX; }
 "txa"		{ return OP_TXA; }
-"len"|"pktlen"	{ return K_PKT_LEN; }
-"pto"|"proto"	{ return K_PROTO; }
-"type"		{ return K_TYPE; }
-"ifx"|"ifidx"	{ return K_IFIDX; }
-"nla"		{ return K_NLATTR; }
-"nlan"		{ return K_NLATTR_NEST; }
-"mark"		{ return K_MARK; }
-"que"|"queue"	{ return K_QUEUE; }
-"hat"|"hatype"	{ return K_HATYPE; }
-"rxh"|"rxhash"	{ return K_RXHASH; }
-"cpu"		{ return K_CPU; }
+
+"#"?("len"|"pktlen")	{ return K_PKT_LEN; }
+"#"?("pto"|"proto")	{ return K_PROTO; }
+"#"?("type")		{ return K_TYPE; }
+"#"?("ifx"|"ifidx")	{ return K_IFIDX; }
+"#"?("nla")		{ return K_NLATTR; }
+"#"?("nlan")		{ return K_NLATTR_NEST; }
+"#"?("mark")		{ return K_MARK; }
+"#"?("que"|"queue"|"Q")	{ return K_QUEUE; }
+"#"?("hat"|"hatype")	{ return K_HATYPE; }
+"#"?("rxh"|"rxhash")	{ return K_RXHASH; }
+"#"?("cpu")		{ return K_CPU; }
+"#"?("vlant"|"vlan_tci") { return K_VLANT; }
+"#"?("vlana"|"vlan_acc") { return K_VLANP; }
+"#"?("vlanp") 		 { return K_VLANP; }
 
 ":"		{ return ':'; }
 ","		{ return ','; }
@@ -101,16 +102,16 @@ label		{label_s}{label_me}+
 "&"		{ return '&'; }
 
 {number_hex}	{ yylval.number = strtoul(yytext, NULL, 16);
-		  return number_hex; }
+		  return number; }
 
-{number_dec}	{ yylval.number = strtol(yytext, NULL, 10);
-		  return number_dec; }
-
-{number_oct}	{ yylval.number = strtol(yytext, NULL, 8);
-		  return number_oct; }
+{number_oct}	{ yylval.number = strtol(yytext + 1, NULL, 8);
+		  return number; }
 
 {number_bin}	{ yylval.number = strtol(yytext + 2, NULL, 2);
-		  return number_bin; }
+		  return number; }
+
+{number_dec}	{ yylval.number = strtol(yytext, NULL, 10);
+		  return number; }
 
 {label}		{ yylval.label = xstrdup(yytext);
 		  return label; }

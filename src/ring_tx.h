@@ -15,7 +15,7 @@
 #define TX_KERNEL_PULL_INT	10
 
 extern void destroy_tx_ring(int sock, struct ring *ring);
-extern void create_tx_ring(int sock, struct ring *ring);
+extern void create_tx_ring(int sock, struct ring *ring, int verbose);
 extern void mmap_tx_ring(int sock, struct ring *ring);
 extern void alloc_tx_ring_frames(struct ring *ring);
 extern void bind_tx_ring(int sock, struct ring *ring, int ifindex);

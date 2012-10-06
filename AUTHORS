@@ -1,6 +1,7 @@
 Major contributors (> 30 commits):
 
- * Daniel Borkmann <daniel@netsniff-ng.org>
+ * Daniel Borkmann <borkmann@redhat.com> (lead developer, maintainer)
+ * Tobias Klauser <tklauser@distanz.ch> (co-maintainer)
  * Emmanuel Roullit <emmanuel@netsniff-ng.org>
  * Markus Amend <markus@netsniff-ng.org>
  * Christoph Jaeger <christoph@netsniff-ng.org>
@@ -8,9 +9,11 @@ Major contributors (> 30 commits):
 
 Minor contributors (<= 30 commits):
 
+ * Jesper Dangaard Brouer <brouer@redhat.com>
  * Jaroslav Škarvada <jskarvad@redhat.com>
  * Dennis Gilmore <dennis@ausil.us>
  * Dan Horák <dan@danny.cz>
+ * Doug Burks <doug.burks@gmail.com>
  * Kartik Mistry <kartik@debian.org>
  * Ulrich Weber <uweber@astaro.com>
  * Teguh <info@egeektronic.com>
@@ -19,6 +22,7 @@ Minor contributors (<= 30 commits):
  * Ronald W. Henderson <rwhalb@nycap.rr.com>
  * Stefan Seering <sseerin@imn.htwk-leipzig.de>
  * Jon Schipp <jonschipp@gmail.com>
+ * Sibir Chakraborty <sibir.chakraborty@gmail.com>
 
 Notes:
 

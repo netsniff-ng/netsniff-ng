@@ -6,6 +6,8 @@
  * Subject to the GPL, version 2.
  */
 
+/* lex-func-prefix: yy */
+
 %{
 
 #include <stdio.h>
@@ -29,30 +31,41 @@ extern void yyerror(const char *);
 %option noinput
 %option nodefault
 
-digit		[0-9]
-digit_s		[1-9]
-digit_n		[0]
-bindigit	[0-1]
-bindigit_b	[b]
-hex		[a-fA-F0-9]
-hex_x		[x]
-
-number_dec	{digit_n}|{digit_s}{digit}*
-number_oct	{digit_n}{digit}+
-number_hex	{digit_n}{hex_x}{hex}+
-number_bin	{digit_n}{bindigit_b}{bindigit}+
-number_ascii	[a-zA-Z]
+number_oct	([0][0-9]+)
+number_hex	([0][x][a-fA-F0-9]+)
+number_bin	([0][b][0-1]+)
+number_dec	(([0])|([-+]?[1-9][0-9]*))
+number_ascii	([a-zA-Z])
 
 %%
 
+"cpu"		{ return K_CPU; }
 "fill"		{ return K_FILL; }
 "rnd"		{ return K_RND; }
+"csumip"	{ return K_CSUMIP; }
+"csumip4"	{ return K_CSUMIP; }
+"csumudp"	{ return K_CSUMUDP; }
+"csumtcp"	{ return K_CSUMTCP; }
 "drnd"		{ return K_DRND; }
 "dinc"		{ return K_DINC; }
 "ddec"		{ return K_DDEC; }
 "seqinc"	{ return K_SEQINC; }
 "seqdec"	{ return K_SEQDEC; }
+"const8"|"c8"	{ return K_CONST8; }
+"const16"|"c16"	{ return K_CONST16; }
+"const32"|"c32"	{ return K_CONST32; }
+"const64"|"c64"	{ return K_CONST64; }
 
+[ ]*"-"[ ]*	{ return '-'; }
+[ ]*"+"[ ]*	{ return '+'; }
+[ ]*"*"[ ]*	{ return '*'; }
+[ ]*"/"[ ]*	{ return '/'; }
+[ ]*"%"[ ]*	{ return '%'; }
+[ ]*"&"[ ]*	{ return '&'; }
+[ ]*"|"[ ]*	{ return '|'; }
+[ ]*"<"[ ]*	{ return '<'; }
+[ ]*">"[ ]*	{ return '>'; }
+[ ]*"^"[ ]*	{ return '^'; }
 "{"		{ return '{'; }
 "}"		{ return '}'; }
 "("		{ return '('; }
@@ -60,31 +73,38 @@ number_ascii	[a-zA-Z]
 "["		{ return '['; }
 "]"		{ return ']'; }
 ","		{ return ','; }
-"\n"		{ yylineno++; return K_NEWL; }
-[ \t\r]+	{ return K_WHITE; }
+":"		{ return ':'; }
+
+"\n"		{ yylineno++; }
+
+"\""[^\"]+"\""	{ yylval.str = xstrdup(yytext);
+		  return string; }
+
+([ \t\r\n]+)?	{ return K_WHITE; }
 
 "/*"([^\*]|\*[^/])*"*/" { return K_COMMENT; }
 
+"#"[^\n]*	{ return K_COMMENT; }
+
 {number_hex}	{ yylval.number = strtoul(yytext, NULL, 16);
-		  return number_hex; }
+		  return number; }
 
 {number_dec}	{ yylval.number = strtol(yytext, NULL, 10);
-		  return number_dec; }
+		  return number; }
 
-{number_oct}	{ yylval.number = strtol(yytext, NULL, 8);
-		  return number_oct; }
+{number_oct}	{ yylval.number = strtol(yytext + 1, NULL, 8);
+		  return number; }
 
 {number_bin}	{ yylval.number = strtol(yytext + 2, NULL, 2);
-		  return number_bin; }
+		  return number; }
 
 {number_ascii}	{ yylval.number = (uint8_t) (*yytext);
-		  return number_ascii; }
+		  return number; }
 
 "'"."'"		{ yylval.number = (uint8_t) (*(yytext + 1));
-		  return number_ascii; }
+		  return number; }
 
 ";"[^\n]*	{/* NOP */}
-"#"[^\n]*	{/* NOP */}
 .		{ printf("Unknown character '%s'", yytext);
 		  yyerror("lex Unknown character"); }
 

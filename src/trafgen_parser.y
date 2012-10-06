@@ -6,6 +6,8 @@
  * Subject to the GPL, version 2.
  */
 
+/* yaac-func-prefix: yy */
+
 %{
 
 #include <stdio.h>
@@ -13,13 +15,15 @@
 #include <signal.h>
 #include <stdint.h>
 #include <errno.h>
+#include <stdbool.h>
 
 #include "xmalloc.h"
 #include "trafgen_parser.tab.h"
 #include "trafgen_conf.h"
 #include "built_in.h"
 #include "die.h"
-#include "mtrand.h"
+#include "csum.h"
+#include "xutils.h"
 
 #define YYERROR_VERBOSE		0
 #define YYDEBUG			0
@@ -34,186 +38,297 @@ extern int yylineno;
 extern char *yytext;
 
 extern struct packet *packets;
-extern unsigned int packets_len;
-#define packets_last		(packets_len - 1)
-#define payload_last		(packets[packets_last].len - 1)
+extern size_t plen;
 
-extern struct packet_dynamics *packet_dyns;
-extern unsigned int packet_dyn_len;
-#define packetds_last		(packet_dyn_len - 1)
-#define packetds_c_last		(packet_dyns[packetds_last].counter_len - 1)
-#define packetds_r_last		(packet_dyns[packetds_last].randomizer_len - 1)
+#define packet_last		(plen - 1)
 
-static int dfunc_note_flag = 0;
+#define payload_last		(packets[packet_last].len - 1)
 
-static void give_note_dynamic(void)
+extern struct packet_dyn *packet_dyn;
+extern size_t dlen;
+
+#define packetd_last		(dlen - 1)
+
+#define packetdc_last		(packet_dyn[packetd_last].clen - 1)
+#define packetdr_last		(packet_dyn[packetd_last].rlen - 1)
+#define packetds_last		(packet_dyn[packetd_last].slen - 1)
+
+static int our_cpu, min_cpu = -1, max_cpu = -1;
+
+static inline int test_ignore(void)
 {
-	if (!dfunc_note_flag) {
-		printf("Note: dynamic elements like drnd, dinc, ddec and "
-		       "others make trafgen slower!\n");
-		dfunc_note_flag = 1;
-	}
+	if (min_cpu < 0 && max_cpu < 0)
+		return 0;
+	else if (max_cpu >= our_cpu && min_cpu <= our_cpu)
+		return 0;
+	else
+		return 1;
 }
 
-static inline void init_new_packet_slot(struct packet *slot)
+static inline int has_dynamic_elems(struct packet_dyn *p)
+{
+	return (p->rlen + p->slen + p->clen);
+}
+
+static inline void __init_new_packet_slot(struct packet *slot)
 {
 	slot->payload = NULL;
 	slot->len = 0;
 }
 
-static inline void init_new_counter_slot(struct packet_dynamics *slot)
+static inline void __init_new_counter_slot(struct packet_dyn *slot)
 {
-	slot->counter = NULL;
-	slot->counter_len = 0;
+	slot->cnt = NULL;
+	slot->clen = 0;
 }
 
-static inline void init_new_randomizer_slot(struct packet_dynamics *slot)
+static inline void __init_new_randomizer_slot(struct packet_dyn *slot)
 {
-	slot->randomizer = NULL;
-	slot->randomizer_len = 0;
+	slot->rnd = NULL;
+	slot->rlen = 0;
+}
+
+static inline void __init_new_csum_slot(struct packet_dyn *slot)
+{
+	slot->csum = NULL;
+	slot->slen = 0;
+}
+
+static inline void __setup_new_counter(struct counter *c, uint8_t start,
+				       uint8_t stop, uint8_t stepping,
+				       int type)
+{
+	c->min = start;
+	c->max = stop;
+	c->inc = stepping;
+	c->val = (type == TYPE_INC) ? start : stop;
+	c->off = payload_last;
+	c->type = type;
+}
+
+static inline void __setup_new_randomizer(struct randomizer *r)
+{
+	r->off = payload_last;
+}
+
+static inline void __setup_new_csum16(struct csum16 *s, off_t from, off_t to,
+				      enum csum which)
+{
+	s->off = payload_last - 1;
+	s->from = from;
+	s->to = to;
+	s->which = which;
 }
 
 static void realloc_packet(void)
 {
-	packets_len++;
-	packets = xrealloc(packets, 1, packets_len * sizeof(*packets));
+	if (test_ignore())
+		return;
 
-	init_new_packet_slot(&packets[packets_last]);
+	plen++;
+	packets = xrealloc(packets, 1, plen * sizeof(*packets));
 
-	packet_dyn_len++;
-	packet_dyns = xrealloc(packet_dyns, 1,
-			       packet_dyn_len * sizeof(*packet_dyns));
+	__init_new_packet_slot(&packets[packet_last]);
 
-	init_new_counter_slot(&packet_dyns[packetds_last]);
-	init_new_randomizer_slot(&packet_dyns[packetds_last]);
+	dlen++;
+	packet_dyn = xrealloc(packet_dyn, 1, dlen * sizeof(*packet_dyn));
+
+	__init_new_counter_slot(&packet_dyn[packetd_last]);
+	__init_new_randomizer_slot(&packet_dyn[packetd_last]);
+	__init_new_csum_slot(&packet_dyn[packetd_last]);
 }
 
 static void set_byte(uint8_t val)
 {
-	packets[packets_last].len++;
-	packets[packets_last].payload = xrealloc(packets[packets_last].payload,
-						 1, packets[packets_last].len);
-	packets[packets_last].payload[payload_last] = val;
+	struct packet *pkt = &packets[packet_last];
+
+	if (test_ignore())
+		return;
+
+	pkt->len++;
+	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
+	pkt->payload[payload_last] = val;
+}
+
+static void set_multi_byte(uint8_t *s, size_t len)
+{
+	int i;
+
+	for (i = 0; i < len; ++i)
+		set_byte(s[i]);
 }
 
 static void set_fill(uint8_t val, size_t len)
 {
-	int i;
+	size_t i;
+	struct packet *pkt = &packets[packet_last];
 
-	packets[packets_last].len += len;
-	packets[packets_last].payload = xrealloc(packets[packets_last].payload,
-						 1, packets[packets_last].len);
+	if (test_ignore())
+		return;
+
+	pkt->len += len;
+	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
 	for (i = 0; i < len; ++i)
-		packets[packets_last].payload[payload_last - i] = val;
+		pkt->payload[payload_last - i] = val;
+}
+
+static void __set_csum16_dynamic(size_t from, size_t to, enum csum which)
+{
+	struct packet *pkt = &packets[packet_last];
+	struct packet_dyn *pktd = &packet_dyn[packetd_last];
+
+	pkt->len += 2;
+	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
+
+	pktd->slen++;
+	pktd->csum = xrealloc(pktd->csum, 1, pktd->slen * sizeof(struct csum16));
+
+	__setup_new_csum16(&pktd->csum[packetds_last], from, to, which);
+}
+
+static void __set_csum16_static(size_t from, size_t to, enum csum which)
+{
+	struct packet *pkt = &packets[packet_last];
+	uint16_t sum;
+	uint8_t *psum;
+
+	sum = htons(calc_csum(pkt->payload + from, to - from, 0));
+	psum = (uint8_t *) &sum;
+
+	set_byte(psum[0]);
+	set_byte(psum[1]);
+}
+
+static void set_csum16(size_t from, size_t to, enum csum which)
+{
+	int make_it_dynamic = 0;
+	struct packet *pkt = &packets[packet_last];
+	struct packet_dyn *pktd = &packet_dyn[packetd_last];
+
+	if (test_ignore())
+		return;
+
+	if (to < from) {
+		size_t tmp = to;
+
+		to = from;
+		from = tmp;
+	}
+
+	bug_on(!(from < to));
+
+	if (to >= pkt->len || which == CSUM_TCP || which == CSUM_UDP)
+		make_it_dynamic = 1;
+
+	if (has_dynamic_elems(pktd) || make_it_dynamic)
+		__set_csum16_dynamic(from, to, which);
+	else
+		__set_csum16_static(from, to, which);
 }
 
 static void set_rnd(size_t len)
 {
-	int i;
+	size_t i;
+	struct packet *pkt = &packets[packet_last];
 
-	packets[packets_last].len += len;
-	packets[packets_last].payload = xrealloc(packets[packets_last].payload,
-						 1, packets[packets_last].len);
+	if (test_ignore())
+		return;
+
+	pkt->len += len;
+	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
 	for (i = 0; i < len; ++i)
-		packets[packets_last].payload[payload_last - i] =
-			(uint8_t) mt_rand_int32();
+		pkt->payload[payload_last - i] = (uint8_t) rand();
 }
 
-static void set_seqinc(uint8_t start, size_t len, uint8_t stepping)
+static void set_sequential_inc(uint8_t start, size_t len, uint8_t stepping)
 {
-	int i;
+	size_t i;
+	struct packet *pkt = &packets[packet_last];
 
-	packets[packets_last].len += len;
-	packets[packets_last].payload = xrealloc(packets[packets_last].payload,
-						 1, packets[packets_last].len);
+	if (test_ignore())
+		return;
+
+	pkt->len += len;
+	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
 	for (i = 0; i < len; ++i) {
-		int off = len - 1 - i;
-		packets[packets_last].payload[payload_last - off] = start;
+		off_t off = len - 1 - i;
+
+		pkt->payload[payload_last - off] = start;
 		start += stepping;
 	}
 }
 
-static void set_seqdec(uint8_t start, size_t len, uint8_t stepping)
+static void set_sequential_dec(uint8_t start, size_t len, uint8_t stepping)
 {
-	int i;
+	size_t i;
+	struct packet *pkt = &packets[packet_last];
 
-	packets[packets_last].len += len;
-	packets[packets_last].payload = xrealloc(packets[packets_last].payload,
-						 1, packets[packets_last].len);
+	if (test_ignore())
+		return;
+
+	pkt->len += len;
+	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
 	for (i = 0; i < len; ++i) {
 		int off = len - 1 - i;
-		packets[packets_last].payload[payload_last - off] = start;
+
+		pkt->payload[payload_last - off] = start;
 		start -= stepping;
 	}
 }
 
-static inline void setup_new_counter(struct counter *counter, uint8_t start,
-				     uint8_t stop, uint8_t stepping, int type)
+static void set_dynamic_rnd(void)
 {
-	counter->min = start;
-	counter->max = stop;
-	counter->inc = stepping;
-	counter->val = (type == TYPE_INC) ? start : stop;
-	counter->off = payload_last;
-	counter->type = type;
+	struct packet *pkt = &packets[packet_last];
+	struct packet_dyn *pktd = &packet_dyn[packetd_last];
+
+	if (test_ignore())
+		return;
+
+	pkt->len++;
+	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
+
+	pktd->rlen++;
+	pktd->rnd = xrealloc(pktd->rnd, 1, pktd->rlen *	sizeof(struct randomizer));
+
+	__setup_new_randomizer(&pktd->rnd[packetdr_last]);
 }
 
-static inline void setup_new_randomizer(struct randomizer *randomizer)
+static void set_dynamic_incdec(uint8_t start, uint8_t stop, uint8_t stepping,
+			       int type)
 {
-	randomizer->val = (uint8_t) mt_rand_int32();
-	randomizer->off = payload_last;
-}
+	struct packet *pkt = &packets[packet_last];
+	struct packet_dyn *pktd = &packet_dyn[packetd_last];
 
-static void set_drnd(void)
-{
-	give_note_dynamic();
+	if (test_ignore())
+		return;
 
-	packets[packets_last].len++;
-	packets[packets_last].payload = xrealloc(packets[packets_last].payload,
-						 1, packets[packets_last].len);
+	pkt->len++;
+	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
 
-	packet_dyns[packetds_last].randomizer_len++;
-	packet_dyns[packetds_last].randomizer =
-		xrealloc(packet_dyns[packetds_last].randomizer, 1,
-			 packet_dyns[packetds_last].randomizer_len *
-				sizeof(struct randomizer));
+	pktd->clen++;
+	pktd->cnt =xrealloc(pktd->cnt, 1, pktd->clen * sizeof(struct counter));
 
-	setup_new_randomizer(&packet_dyns[packetds_last].
-				randomizer[packetds_r_last]);
-}
-
-static void set_dincdec(uint8_t start, uint8_t stop, uint8_t stepping, int type)
-{
-	give_note_dynamic();
-
-	packets[packets_last].len++;
-	packets[packets_last].payload = xrealloc(packets[packets_last].payload,
-						 1, packets[packets_last].len);
-
-	packet_dyns[packetds_last].counter_len++;
-	packet_dyns[packetds_last].counter =
-		xrealloc(packet_dyns[packetds_last].counter, 1,
-			 packet_dyns[packetds_last].counter_len *
-				sizeof(struct counter));
-
-	setup_new_counter(&packet_dyns[packetds_last].counter[packetds_c_last],
-			  start, stop, stepping, type);
+	__setup_new_counter(&pktd->cnt[packetdc_last], start, stop, stepping, type);
 }
 
 %}
 
 %union {
-	long int number;
+	long long int number;
+	char *str;
 }
 
 %token K_COMMENT K_FILL K_RND K_SEQINC K_SEQDEC K_DRND K_DINC K_DDEC K_WHITE
-%token K_NEWL
+%token K_CPU K_CSUMIP K_CSUMUDP K_CSUMTCP K_CONST8 K_CONST16 K_CONST32 K_CONST64
 
-%token ',' '{' '}' '(' ')' '[' ']'
+%token ',' '{' '}' '(' ')' '[' ']' ':' '-' '+' '*' '/' '%' '&' '|' '<' '>' '^'
 
-%token number_hex number_dec number_ascii number_bin number_oct
+%token number string
 
-%type <number> number_hex number_dec number_ascii number_bin number_oct number
+%type <number> number expression
+%type <str> string
+
+%left '-' '+' '*' '/' '%' '&' '|' '<' '>' '^'
 
 %%
 
@@ -221,7 +336,7 @@ packets
 	: { }
 	| packets packet { }
 	| packets inline_comment { }
-	| packets white { }
+	| packets K_WHITE { }
 	;
 
 inline_comment
@@ -229,7 +344,27 @@ inline_comment
 	;
 
 packet
-	: '{' delimiter payload delimiter '}' { realloc_packet(); }
+	: '{' delimiter payload delimiter '}' {
+			min_cpu = max_cpu = -1;
+			realloc_packet();
+		}
+	| K_CPU '(' number ':' number ')' ':' K_WHITE '{' delimiter payload delimiter '}' {
+			min_cpu = $3;
+			max_cpu = $5;
+
+			if (min_cpu > max_cpu) {
+				int tmp = min_cpu;
+
+				min_cpu = max_cpu;
+				max_cpu = tmp;
+			}
+
+			realloc_packet();
+		}
+	| K_CPU '(' number ')' ':' K_WHITE '{' delimiter payload delimiter '}' {
+			min_cpu = max_cpu = $3;
+			realloc_packet();
+		}
 	;
 
 payload
@@ -237,82 +372,19 @@ payload
 	| payload elem_delimiter { }
 	;
 
-white
-	: white K_WHITE { }
-	| white K_NEWL { }
-	| K_WHITE { }
-	| K_NEWL { }
-	;
-
 delimiter
 	: ',' { }
-	| white { }
-	| ',' white { }
+	| K_WHITE { }
+	| ',' K_WHITE { }
 	;
 
 elem_delimiter
 	: delimiter elem { }
 	;
 
-number
-	: number_dec { $$ = $1; }
-	| number_hex { $$ = $1; }
-	| number_ascii { $$ = $1; }
-	| number_bin { $$ = $1; }
-	| number_oct { $$ = $1; }
-	;
-
-fill
-	: K_FILL '(' number delimiter number ')'
-		{ set_fill($3, $5); }
-	;
-
-rnd
-	: K_RND '(' number ')'
-		{ set_rnd($3); }
-	;
-
-seqinc
-	: K_SEQINC '(' number delimiter number ')'
-		{ set_seqinc($3, $5, 1); }
-	| K_SEQINC '(' number delimiter number delimiter number ')'
-		{ set_seqinc($3, $5, $7); }
-	;
-
-seqdec
-	: K_SEQDEC '(' number delimiter number ')'
-		{ set_seqdec($3, $5, 1); }
-	| K_SEQDEC '(' number delimiter number delimiter number ')'
-		{ set_seqdec($3, $5, $7); }
-	;
-
-drnd
-	: K_DRND '(' ')'
-		{ set_drnd(); }
-	| K_DRND '(' number ')'
-		{
-			int i, max = $3;
-			for (i = 0; i < max; ++i)
-				set_drnd();
-		}
-	;
-
-dinc
-	: K_DINC '(' number delimiter number ')'
-		{ set_dincdec($3, $5, 1, TYPE_INC); }
-	| K_DINC '(' number delimiter number delimiter number ')'
-		{ set_dincdec($3, $5, $7, TYPE_INC); }
-	;
-
-ddec
-	: K_DDEC '(' number delimiter number ')'
-		{ set_dincdec($3, $5, 1, TYPE_DEC); }
-	| K_DDEC '(' number delimiter number delimiter number ')'
-		{ set_dincdec($3, $5, $7, TYPE_DEC); }
-	;
-
 elem
 	: number { set_byte((uint8_t) $1); }
+	| string { set_multi_byte((uint8_t *) $1 + 1, strlen($1) - 2); }
 	| fill { }
 	| rnd { }
 	| drnd { }
@@ -320,7 +392,114 @@ elem
 	| seqdec { }
 	| dinc { }
 	| ddec { }
+	| csum { }
+	| const { }
 	| inline_comment { }
+	;
+
+expression
+	: number
+		{ $$ = $1; }
+	| expression '+' expression
+		{ $$ = $1 + $3; }
+	| expression '-' expression
+		{ $$ = $1 - $3; }
+	| expression '*' expression
+		{ $$ = $1 * $3; }
+	| expression '/' expression
+		{ $$ = $1 / $3; }
+	| expression '%' expression
+		{ $$ = $1 % $3; }
+	| expression '&' expression
+		{ $$ = $1 & $3; }
+	| expression '|' expression
+		{ $$ = $1 | $3; }
+	| expression '^' expression
+		{ $$ = $1 ^ $3; }
+	| expression '<' '<' expression
+		{ $$ = $1 << $4; }
+	| expression '>' '>' expression
+		{ $$ = $1 >> $4; }
+	| '(' expression ')'
+		{ $$ = $2;}
+	;
+
+fill
+	: K_FILL '(' number delimiter number ')'
+		{ set_fill($3, $5); }
+	;
+
+const
+	: K_CONST8 '(' expression ')'
+		{ set_byte((uint8_t) $3); }
+	| K_CONST16 '(' expression ')' {
+			uint16_t __c = cpu_to_be16((uint16_t) $3);
+
+			set_multi_byte((uint8_t *) &__c, sizeof(__c));
+		}
+	| K_CONST32 '(' expression ')' {
+			uint32_t __c = cpu_to_be32((uint32_t) $3);
+
+			set_multi_byte((uint8_t *) &__c, sizeof(__c));
+		}
+	| K_CONST64 '(' expression ')' {
+			uint64_t __c = cpu_to_be64((uint64_t) $3);
+
+			set_multi_byte((uint8_t *) &__c, sizeof(__c));
+		}
+	;
+
+rnd
+	: K_RND '(' number ')'
+		{ set_rnd($3); }
+	;
+
+csum
+	: K_CSUMIP '(' number delimiter number ')'
+		{ set_csum16($3, $5, CSUM_IP); }
+	| K_CSUMTCP '(' number delimiter number ')'
+		{ set_csum16($3, $5, CSUM_TCP); }
+	| K_CSUMUDP '(' number delimiter number ')'
+		{ set_csum16($3, $5, CSUM_UDP); }
+	;
+
+seqinc
+	: K_SEQINC '(' number delimiter number ')'
+		{ set_sequential_inc($3, $5, 1); }
+	| K_SEQINC '(' number delimiter number delimiter number ')'
+		{ set_sequential_inc($3, $5, $7); }
+	;
+
+seqdec
+	: K_SEQDEC '(' number delimiter number ')'
+		{ set_sequential_dec($3, $5, 1); }
+	| K_SEQDEC '(' number delimiter number delimiter number ')'
+		{ set_sequential_dec($3, $5, $7); }
+	;
+
+drnd
+	: K_DRND '(' ')'
+		{ set_dynamic_rnd(); }
+	| K_DRND '(' number ')'
+		{
+			int i, max = $3;
+			for (i = 0; i < max; ++i)
+				set_dynamic_rnd();
+		}
+	;
+
+dinc
+	: K_DINC '(' number delimiter number ')'
+		{ set_dynamic_incdec($3, $5, 1, TYPE_INC); }
+	| K_DINC '(' number delimiter number delimiter number ')'
+		{ set_dynamic_incdec($3, $5, $7, TYPE_INC); }
+	;
+
+ddec
+	: K_DDEC '(' number delimiter number ')'
+		{ set_dynamic_incdec($3, $5, 1, TYPE_DEC); }
+	| K_DDEC '(' number delimiter number delimiter number ')'
+		{ set_dynamic_incdec($3, $5, $7, TYPE_DEC); }
 	;
 
 %%
@@ -328,70 +507,82 @@ elem
 static void finalize_packet(void)
 {
 	/* XXX hack ... we allocated one packet pointer too much */
-	packets_len--;
-	packet_dyn_len--;
+	plen--;
+	dlen--;
 }
 
 static void dump_conf(void)
 {
 	size_t i, j;
 
-	for (i = 0; i < packets_len; ++i) {
+	for (i = 0; i < plen; ++i) {
 		printf("[%zu] pkt\n", i);
 		printf(" len %zu cnts %zu rnds %zu\n",
 		       packets[i].len,
-		       packet_dyns[i].counter_len,
-		       packet_dyns[i].randomizer_len);
+		       packet_dyn[i].clen,
+		       packet_dyn[i].rlen);
 
 		printf(" payload ");
 		for (j = 0; j < packets[i].len; ++j)
 			printf("%02x ", packets[i].payload[j]);
 		printf("\n");
 
-		for (j = 0; j < packet_dyns[i].counter_len; ++j)
+		for (j = 0; j < packet_dyn[i].clen; ++j)
 			printf(" cnt%zu [%u,%u], inc %u, off %ld type %s\n", j,
-			       packet_dyns[i].counter[j].min,
-			       packet_dyns[i].counter[j].max,
-			       packet_dyns[i].counter[j].inc,
-			       packet_dyns[i].counter[j].off,
-			       packet_dyns[i].counter[j].type == TYPE_INC ?
+			       packet_dyn[i].cnt[j].min,
+			       packet_dyn[i].cnt[j].max,
+			       packet_dyn[i].cnt[j].inc,
+			       packet_dyn[i].cnt[j].off,
+			       packet_dyn[i].cnt[j].type == TYPE_INC ?
 			       "inc" : "dec");
 
-		for (j = 0; j < packet_dyns[i].randomizer_len; ++j)
+		for (j = 0; j < packet_dyn[i].rlen; ++j)
 			printf(" rnd%zu off %ld\n", j,
-			       packet_dyns[i].randomizer[j].off);
+			       packet_dyn[i].rnd[j].off);
 	}
 }
 
 void cleanup_packets(void)
 {
-	int i;
+	size_t i;
 
-	for (i = 0; i < packets_len; ++i) {
+	for (i = 0; i < plen; ++i) {
 		if (packets[i].len > 0)
 			xfree(packets[i].payload);
 	}
 
-	if (packets_len > 0)
-		xfree(packets);
+	free(packets);
 
-	for (i = 0; i < packet_dyn_len; ++i) {
-		if (packet_dyns[i].counter_len > 0)
-			xfree(packet_dyns[i].counter);
-
-		if (packet_dyns[i].randomizer_len > 0)
-			xfree(packet_dyns[i].randomizer);
+	for (i = 0; i < dlen; ++i) {
+		free(packet_dyn[i].cnt);
+		free(packet_dyn[i].rnd);
 	}
 
-	if (packet_dyn_len > 0)
-		xfree(packet_dyns);
+	free(packet_dyn);
 }
 
-int compile_packets(char *file, int verbose)
+int compile_packets(char *file, int verbose, int cpu, bool invoke_cpp)
 {
-	mt_init_by_seed_time();
+	char tmp_file[128];
 
-	yyin = fopen(file, "r");
+	memset(tmp_file, 0, sizeof(tmp_file));
+	our_cpu = cpu;
+
+	if (invoke_cpp) {
+		char cmd[256];
+
+		slprintf(tmp_file, sizeof(tmp_file), ".tmp.%s", file);
+		slprintf(cmd, sizeof(cmd), "cpp %s > %s", file, tmp_file);
+		system(cmd);
+
+		xfree(file);
+		file = tmp_file;
+	}
+
+	if (!strncmp("-", file, strlen("-")))
+		yyin = stdin;
+	else
+		yyin = fopen(file, "r");
 	if (!yyin)
 		panic("Cannot open file!\n");
 
@@ -399,23 +590,17 @@ int compile_packets(char *file, int verbose)
 	yyparse();
 	finalize_packet();
 
-	if (verbose) {
+	if (our_cpu == 0 && verbose)
 		dump_conf();
-	} else {
-		int i;
-		size_t total_len = 0;
-
-		printf("%u packets to schedule\n", packets_len);
-		for (i = 0; i < packets_len; ++i)
-			total_len += packets[i].len;
-		printf("%zu bytes in total\n", total_len);
-	}
 
 	fclose(yyin);
+	if (invoke_cpp)
+		unlink(tmp_file);
+
 	return 0;
 }
 
 void yyerror(const char *err)
 {
-	panic("Syntax error at line %d: '%s'! %s!\n", yylineno, yytext, err);
+	panic("Syntax error at line%d, at char '%s'! %s!\n", yylineno, yytext, err);
 }

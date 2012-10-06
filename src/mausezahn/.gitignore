@@ -1,4 +1,4 @@
 *.*
 
 !.gitignore
-!CMakeLists.txt
+!Makefile

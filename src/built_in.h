@@ -2,6 +2,7 @@
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
  * Copyright 2009-2012 Daniel Borkmann.
+ * Parts taken from the Linux kernel, GPL, version 2.
  * Subject to the GPL, version 2.
  */
 
@@ -63,6 +64,10 @@ typedef uint8_t		u8;
 # define CO_CACHE_LINE_SIZE	(1 << CO_IN_CACHE_SHIFT)
 #endif
 
+#ifndef MAX_CPUS
+# define MAX_CPUS			32
+#endif
+
 #ifndef __aligned_16
 # define __aligned_16		__attribute__((aligned(16)))
 #endif
@@ -73,6 +78,10 @@ typedef uint8_t		u8;
 
 #ifndef __aligned_tpacket
 # define __aligned_tpacket	__attribute__((aligned(TPACKET_ALIGNMENT)))
+#endif
+
+#ifndef __align_tpacket
+# define __align_tpacket(x)	__attribute__((aligned(TPACKET_ALIGN(x))))
 #endif
 
 #ifndef __check_format_printf
@@ -148,6 +157,10 @@ typedef uint8_t		u8;
 # define __pure			__attribute__ ((pure))
 #endif
 
+#ifndef __force
+# define __force		/* unimplemented */
+#endif
+
 #ifndef force_cast
 # define force_cast(type, arg)	((type) (arg))
 #endif
@@ -209,7 +222,7 @@ typedef uint8_t		u8;
 #endif
 
 #ifndef bug
-# define bug			assert(0)
+# define bug()			assert(0)
 #endif
 
 #define PAGE_SIZE		(getpagesize())
@@ -239,7 +252,18 @@ static inline uint64_t ntohll(uint64_t x)
 #else
 # error __BYTE_ORDER is neither __LITTLE_ENDIAN nor __BIG_ENDIAN
 #endif
-
+#ifndef ___constant_swab16
+# define ___constant_swab16(x) ((__u16)(			\
+	(((__u16)(x) & (__u16)0x00ffU) << 8) |			\
+	(((__u16)(x) & (__u16)0xff00U) >> 8)))
+#endif
+#ifndef ___constant_swab32
+# define ___constant_swab32(x) ((__u32)(			\
+	(((__u32)(x) & (__u32)0x000000ffUL) << 24) |		\
+	(((__u32)(x) & (__u32)0x0000ff00UL) <<  8) |		\
+	(((__u32)(x) & (__u32)0x00ff0000UL) >>  8) |		\
+	(((__u32)(x) & (__u32)0xff000000UL) >> 24)))
+#endif
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 static inline u16 cpu_to_be16(u16 val)
 {
@@ -270,6 +294,19 @@ static inline u64 cpu_to_le64(u64 val)
 {
 	return val;
 }
+
+# ifndef __constant_htonl
+#  define __constant_htonl(x) ((__force __be32)___constant_swab32((x)))
+# endif
+# ifndef __constant_ntohl
+#  define __constant_ntohl(x) ___constant_swab32((__force __be32)(x))
+# endif
+# ifndef __constant_htons
+#  define __constant_htons(x) ((__force __be16)___constant_swab16((x)))
+# endif
+# ifndef __constant_ntohs
+#  define __constant_ntohs(x) ___constant_swab16((__force __be16)(x))
+# endif
 #elif __BYTE_ORDER == __BIG_ENDIAN
 static inline u16 cpu_to_be16(u16 val)
 {
@@ -300,6 +337,19 @@ static inline u64 cpu_to_le64(u64 val)
 {
 	return bswap_64(val);
 }
+
+# ifndef __constant_htonl
+#  define __constant_htonl(x) ((__force __be32)(__u32)(x))
+# endif
+# ifndef __constant_ntohl
+#  define __constant_ntohl(x) ((__force __u32)(__be32)(x))
+# endif
+# ifndef __constant_htons
+#  define __constant_htons(x) ((__force __be16)(__u16)(x))
+# endif
+# ifndef __constant_ntohs
+#  define __constant_ntohs(x) ((__force __u16)(__be16)(x))
+# endif
 #else
 # error __BYTE_ORDER is neither __LITTLE_ENDIAN nor __BIG_ENDIAN
 #endif

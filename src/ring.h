@@ -25,7 +25,6 @@
 
 #include "xutils.h"
 #include "built_in.h"
-#include "mtrand.h"
 #include "die.h"
 
 #ifndef PACKET_FANOUT
@@ -37,45 +36,20 @@
 
 struct frame_map {
 	struct tpacket2_hdr tp_h __aligned_tpacket;
-	struct sockaddr_ll s_ll;
+	struct sockaddr_ll s_ll __align_tpacket(sizeof(struct tpacket2_hdr));
 };
 
 struct ring {
-	struct iovec *frames __cacheline_aligned;
+	struct iovec *frames;
 	uint8_t *mm_space;
 	size_t mm_len;
 	struct tpacket_req layout;
 	struct sockaddr_ll s_ll;
 };
 
-static inline void next_slot(unsigned int *it, struct ring *ring)
-{
-	(*it)++;
-	atomic_cmp_swp(it, ring->layout.tp_frame_nr, 0);
-}
-
-#if 0
-static inline void next_slot_prerd(unsigned int *it, struct ring *ring)
-{
-	(*it)++;
-	atomic_cmp_swp(it, ring->layout.tp_frame_nr, 0);
-	prefetch_rd_hi(ring->frames[*it].iov_base);
-}
-
-static inline void next_slot_prewr(unsigned int *it, struct ring *ring)
-{
-	(*it)++;
-	atomic_cmp_swp(it, ring->layout.tp_frame_nr, 0);
-	prefetch_wr_hi(ring->frames[*it].iov_base);
-}
-#else
-# define next_slot_prerd	next_slot
-# define next_slot_prewr	next_slot
-#endif
-
 static inline void next_rnd_slot(unsigned int *it, struct ring *ring)
 {
-	*it = mt_rand_int32() % ring->layout.tp_frame_nr;
+	*it = rand() % ring->layout.tp_frame_nr;
 }
 
 #define RING_SIZE_FALLBACK (1 << 26)

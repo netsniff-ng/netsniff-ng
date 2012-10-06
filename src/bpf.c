@@ -1,7 +1,7 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
- * Copyright 2009, 2010 Daniel Borkmann.
+ * Copyright 2009 - 2012 Daniel Borkmann.
  * Copyright 2009, 2010 Emmanuel Roullit.
  * Copyright 1990-1996 The Regents of the University of
  * California. All rights reserved. (3-clause BSD license)
@@ -118,6 +118,10 @@ static const char *bpf_dump_linux_k(uint32_t k)
 		return "#rxhash";
 	case (SKF_AD_OFF + SKF_AD_CPU):
 		return "#cpu";
+	case (SKF_AD_OFF + SKF_AD_VLAN_TAG):
+		return "#vlant";
+	case (SKF_AD_OFF + SKF_AD_VLAN_TAG_PRESENT):
+		return "#vlanp";
 	}
 }
 
@@ -141,7 +145,11 @@ static char *bpf_dump(const struct sock_filter bpf, int n)
 		break;
 	case BPF_RET | BPF_A:
 		op = op_table[BPF_RET];
-		fmt = "";
+		fmt = "a";
+		break;
+	case BPF_RET | BPF_X:
+		op = op_table[BPF_RET];
+		fmt = "x";
 		break;
 	case BPF_LD_W | BPF_ABS:
 		op = op_table[BPF_LD_W];
@@ -330,13 +338,12 @@ static char *bpf_dump(const struct sock_filter bpf, int n)
 		break;
 	}
 
-	slprintf(operand, sizeof(operand), fmt, v);
-	slprintf(image, sizeof(image),
-		 (BPF_CLASS(bpf.code) == BPF_JMP &&
-		  BPF_OP(bpf.code) != BPF_JA) ?
-		 " L%d: %s %s, L%d, L%d" : " L%d: %s %s",
-		 n, op, operand, n + 1 + bpf.jt, n + 1 + bpf.jf);
-
+	slprintf_nocheck(operand, sizeof(operand), fmt, v);
+	slprintf_nocheck(image, sizeof(image),
+			 (BPF_CLASS(bpf.code) == BPF_JMP &&
+			  BPF_OP(bpf.code) != BPF_JA) ?
+			 " L%d: %s %s, L%d, L%d" : " L%d: %s %s",
+			 n, op, operand, n + 1 + bpf.jt, n + 1 + bpf.jf);
 	return image;
 }
 
@@ -371,7 +378,7 @@ void bpf_detach_from_sock(int sock)
 		panic("Cannot detach filter from socket!\n");
 }
 
-void enable_kernel_bpf_jit_compiler(void)
+int enable_kernel_bpf_jit_compiler(void)
 {
 	int fd;
 	ssize_t ret;
@@ -379,13 +386,12 @@ void enable_kernel_bpf_jit_compiler(void)
 
 	fd = open(file, O_WRONLY);
 	if (fd < 0)
-		return;
+		return -1;
 
 	ret = write(fd, "1", strlen("1"));
-	if (ret > 0)
-		printf("BPF JIT\n");
 
 	close(fd);
+	return ret;
 }
 
 int bpf_validate(const struct sock_fprog *bpf)
@@ -517,7 +523,7 @@ uint32_t bpf_run_filter(const struct sock_fprog * fcode, uint8_t * packet,
 	uint32_t A, X;
 	uint32_t k;
 	struct sock_filter *bpf;
-	int32_t mem[BPF_MEMWORDS];
+	int32_t mem[BPF_MEMWORDS] = { 0, };
 
 	if (fcode == NULL || fcode->filter == NULL || fcode->len == 0)
 		return 0xFFFFFFFF;

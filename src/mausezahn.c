@@ -30,7 +30,6 @@
 #include "mops.h"
 #include "llist.h"
 #include "die.h"
-#include "list.h"
 
 int verbose_level = 0;
 
@@ -105,8 +104,7 @@ void  clean_up(int sig)
 
 static void help(void)
 {
-	printf("\n%s %s, a fast versatile traffic generator\n",
-	       PROGNAME_STRING, VERSION_STRING);
+	printf("\nmausezahn %s, a fast versatile traffic generator\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: mausezahn [options] [interface] <keyword>|<arg-string>|<hex-string>\n"
 	     "Options:\n"
@@ -173,8 +171,7 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\n%s %s, a fast versatile traffic generator\n",
-	       PROGNAME_STRING, VERSION_STRING);
+	printf("\nmausezahn %s, a fast versatile traffic generator\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2008-2010 Herbert Haas <herbert@perihel.at>,\n"

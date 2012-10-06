@@ -38,11 +38,12 @@ falsify statistics on high packet rates. For wireless, data about link
 connectivity is provided as well.
 
 *flowtop* is a top-like connection tracking tool that can run on an end host
-or router. It is able to present TCP or UDP flows that have been collected by
-the kernel's netfilter framework. GeoIP and TCP state machine information is
-displayed. Also, on end hosts flowtop can show PIDs and application names that
-flows relate to. No user space traffic monitoring is done, thus all data is
-gathered by the kernel.
+or router. It is able to present TCP, UDP(lite), SCTP, DCCP, ICMP(v6) flows
+that have been collected by the kernel's netfilter connection tracking
+framework. GeoIP and TCP/SCTP/DCCP state machine information is displayed.
+Also, on end hosts flowtop can show PIDs and application names that flows
+relate to as well as aggregated packet and byte counter (if available). No
+user space traffic monitoring is done, thus all data is gathered by the kernel.
 
 *curvetun* is a lightweight, high-speed ECDH multiuser VPN for Linux. curvetun
 uses the Linux TUN/TAP interface and supports {IPv4,IPv6} over {IPv4,IPv6} with

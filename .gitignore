@@ -27,42 +27,17 @@
 src/build/
 src/test/fuzzing/
 
-# LaTeX documentation files
-*.acn
-*.acr
-*.alg
-*.aux
-*.bbl
-*.blg
-*.dvi
-*.fdb_latexmk
-*.glg
-*.glo
-*.gls
-*.idx
-*.ilg
-*.ind
-*.ist
-*.lof
-*.log
-*.lot
-*.maf
-*.mtc
-*.mtc0
-*.nav
-*.nlo
-*.out
-*.pdfsync
-*.ps
-*.snm
-*.synctex.gz
-*.toc
-*.vrb
-*.xdy
+# Ignore if someone adapts Makefile
+src/Makefile
 
 # Other documentation ignores
 *.md
 *.ps
+
+# Compressed archives
+*.tar.bz2
+*.tar.bz
+*.tar.xz
 
 # Excluded from ignorance
 !.gitignore

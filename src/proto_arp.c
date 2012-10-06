@@ -6,7 +6,6 @@
  */
 
 #include <stdint.h>
-#include <stdint.h>
 #include <netinet/in.h>    /* for ntohs() */
 
 #include "proto.h"

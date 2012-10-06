@@ -14,39 +14,45 @@ Release: 2012-06-29                  .-(|/--~~--\|)-'
                                     (      ___
 Web: http://netsniff-ng.org          \__.=|___E 
 
-The gain of performance is reached by zero-copy mechanisms, so that on packet
-reception and transmission the kernel does not need to copy packets from kernel
-space to user space and vice versa.
+The gain of performance is reached by built-in zero-copy mechanisms, so that
+on packet reception and transmission the kernel does not need to copy packets
+from kernel space to user space, and vice versa.
 
-The netsniff-ng toolkit can be used for network development and analysis,
-debugging, auditing or network reconnaissance. It currently consists of the
-following utilities:
+The netsniff-ng toolkit's primary usage goal is to facilitate a network
+developer's / hacker's daily Linux plumbing. It can be used for network
+development, debugging, analysis, auditing or network reconnaissance. It
+consists of the following fixed set of utilities:
 
   * netsniff-ng: a zero-copy packet analyzer, pcap capturing/replaying tool
-  * trafgen: a zero-copy network packet generator
-  * mausezahn: packet generator and analyzer for HW/SW appliances with Cisco-CLI
+  * trafgen: a multithreaded low-level zero-copy network packet generator
+  * mausezahn: high-level packet generator for HW/SW appliances with Cisco-CLI
   * ifpps: a top-like kernel networking and system statistics tool
   * curvetun: a lightweight curve25519-based multiuser IP tunnel
   * astraceroute: an autonomous system trace route and DPI testing utility
   * flowtop: a top-like netfilter connection tracking tool
-  * bpfc: a tiny Berkeley Packet Filter compiler with Linux extensions
+  * bpfc: a Berkeley Packet Filter compiler with Linux extensions
 
 Have a look at the Documentation/ folder for further information, also at known
 issues under Documentation/KnownIssues. Carefully read the INSTALL document for
-the next steps in building netsniff-ng.
+the next steps in building netsniff-ng. Note that the toolkit is still quite
+young and under heavy development, not yet feature complete and in a quality
+level where we're satisfied with (i.e. for mausezahn). However, we're on a good
+way towards tackling all these goals.
 
-The netsniff-ng toolkit is an Open Source project covered by the GNU General 
-Public License. For any questions or feedback about netsniff-ng you are welcome
-to leave us a message to <workgroup@netsniff-ng.org> or to our mailing list
-at <netsniff-ng@googlegroups.com> (Note: you have to register first).
-netsniff-ng is purely non-profit and provided in the hope, that it is found
-useful. The current project status can be considered as "working". In general,
-all tools have been tested by us to a great extend including their command-line
-options. In fact, many of our tools are used in production systems. However, we
+The netsniff-ng toolkit is an open source project covered by the GNU General 
+Public License, version 2.0. For any questions or feedback about netsniff-ng
+you are welcome to leave us a message to <workgroup@netsniff-ng.org> or to our
+mailing list at <netsniff-ng@googlegroups.com>.
+
+netsniff-ng is non-profit and provided in the hope, that it is found useful.
+The current project status can be considered as "working". In general, all tools
+have been tested by us to a great extend including their command-line options.
+In fact, many of our tools are used in a lot of production systems. However, we
 give no guarantee that our tools are free of bugs! If you spot some issues,
 contact us as described in REPORTING-BUGS. Also, have a look at our FAQ [2] for
-answering your questions. This project has received support from institutions
-listed in Documentation/Sponsors.
+answering your questions. This project has received support from companies and
+institutions listed in Documentation/Sponsors. Thanks for contributing, we're
+thrilled to provide you with netsniff-ng!
 
 Happy packet hacking!
 

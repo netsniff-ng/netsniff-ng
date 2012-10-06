@@ -1,7 +1,7 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
- * Copyright 2009, 2010 Daniel Borkmann.
+ * Copyright 2009 - 2012 Daniel Borkmann.
  * Subject to the GPL, version 2.
  *
  * A tiny tool to provide top-like reliable networking statistics.
@@ -25,6 +25,7 @@
 #include <getopt.h>
 #include <ctype.h>
 #include <sys/socket.h>
+#include <sys/fsuid.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -36,67 +37,39 @@
 #include "xio.h"
 #include "built_in.h"
 
-/*
- * TODO: Cleanups, this got quite a hack over time.
- */
-
-#define TERM_MODE_NORMAL  1
-#define TERM_MODE_CSV     2
-#define TERM_MODE_CSV_HDR 4
-
-#define USER_HZ sysconf(_SC_CLK_TCK)
-
-struct ifstat {
-	unsigned long rx_bytes;
-	unsigned long rx_packets;
-	unsigned long rx_drops;
-	unsigned long rx_errors;
-	unsigned long rx_fifo;
-	unsigned long rx_frame;
-	unsigned long rx_multi;
-	unsigned long tx_bytes;
-	unsigned long tx_packets;
-	unsigned long tx_drops;
-	unsigned long tx_errors;
-	unsigned long tx_fifo;
-	unsigned long tx_colls;
-	unsigned long tx_carrier;
-	unsigned long irq_nr;
-	unsigned long *irqs;
-	unsigned long *irqs_srx;
-	unsigned long *irqs_stx;
-	unsigned long *cpu_user;
-	unsigned long *cpu_nice;
-	unsigned long *cpu_sys;
-	unsigned long *cpu_idle;
-	unsigned long *cpu_iow;
-	unsigned long ctxt;
-	unsigned long forks;
-	unsigned long procs_run;
-	unsigned long procs_iow;
-	size_t irqs_len;
-	float mem_used;
-	int wifi_bitrate;
-	int wifi_link_qual;
-	int wifi_link_qual_max;
-	int wifi_signal_level;
-	int wifi_noise_level;
+struct wifi_stat {
+	uint32_t bitrate;
+	int16_t link_qual, link_qual_max;
+	int signal_level /*, noise_level*/;
 };
 
-static int mode = 0;
-static int loop = 0;
+struct ifstat {
+	long long unsigned int rx_bytes, rx_packets, rx_drops, rx_errors;
+	long long unsigned int rx_fifo, rx_frame, rx_multi;
+	long long unsigned int tx_bytes, tx_packets, tx_drops, tx_errors;
+	long long unsigned int tx_fifo, tx_colls, tx_carrier;
+	long long unsigned int irqs[MAX_CPUS], irqs_srx[MAX_CPUS], irqs_stx[MAX_CPUS];
+	int64_t cpu_user[MAX_CPUS], cpu_nice[MAX_CPUS], cpu_sys[MAX_CPUS];
+	int64_t cpu_idle[MAX_CPUS], cpu_iow[MAX_CPUS], mem_free, mem_total;
+	uint32_t irq_nr, procs_run, procs_iow, cswitch, forks;
+	struct wifi_stat wifi;
+};
 
 volatile sig_atomic_t sigint = 0;
 
-static const char *short_options = "d:t:vhcCHlp";
+static struct ifstat stats_old, stats_new, stats_delta;
+
+static int stats_loop = 0;
+
+static WINDOW *stats_screen = NULL;
+
+static const char *short_options = "d:t:vhclp";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"interval",		required_argument,	NULL, 't'},
-	{"loop",		no_argument,		NULL, 'l'},
-	{"term",		no_argument,		NULL, 'c'},
 	{"promisc",		no_argument,		NULL, 'p'},
-	{"csv",			no_argument,		NULL, 'C'},
-	{"csv-tablehead",	no_argument,		NULL, 'H'},
+	{"csv",			no_argument,		NULL, 'c'},
+	{"loop",		no_argument,		NULL, 'l'},
 	{"version",		no_argument,		NULL, 'v'},
 	{"help",		no_argument,		NULL, 'h'},
 	{NULL, 0, NULL, 0}
@@ -109,403 +82,13 @@ static void signal_handler(int number)
 		sigint = 1;
 		break;
 	case SIGHUP:
-		break;
 	default:
 		break;
 	}
 }
 
-static int rxtx_stats(const char *ifname, struct ifstat *s)
+static inline char *snr_to_str(int level)
 {
-	int ret, found = -1;
-	char *ptr;
-	char buf[1024];
-
-	FILE *fp = fopen("/proc/net/dev", "r");
-	if (!fp) {
-		whine("Cannot open /proc/net/dev!\n");
-		return -ENOENT;
-	}
-
-	/* Omit header */
-	ptr = fgets(buf, sizeof(buf), fp);
-	ptr = fgets(buf, sizeof(buf), fp);
-
-	memset(buf, 0, sizeof(buf));
-	while (fgets(buf, sizeof(buf), fp) != NULL) {
-		buf[sizeof(buf) -1] = 0;
-
-		if (strstr(buf, ifname) == NULL)
-			continue;
-
-		ptr = buf;
-		while (*ptr != ':')
-			ptr++;
-		ptr++;
-
-		ret = sscanf(ptr, "%lu%lu%lu%lu%lu%lu%lu%*u%lu%lu%lu%lu%lu%lu%lu",
-			     &s->rx_bytes, &s->rx_packets, &s->rx_errors,
-			     &s->rx_drops, &s->rx_fifo, &s->rx_frame,
-			     &s->rx_multi,
-			     &s->tx_bytes, &s->tx_packets, &s->tx_errors,
-			     &s->tx_drops, &s->tx_fifo, &s->tx_colls,
-			     &s->tx_carrier);
-		if (ret == 14) {
-			found = 0;
-			break;
-		}
-
-		memset(buf, 0, sizeof(buf));
-	}
-
-	fclose(fp);
-
-	return found;
-}
-
-static int wifi_stats(const char *ifname, struct ifstat *s)
-{
-	int ret;
-	struct iw_statistics ws;
-
-	ret = wireless_sigqual(ifname, &ws);
-	if (ret != 0) {
-		/* We don't want to trouble in case of eth* */
-		s->wifi_bitrate = 0;
-		return 0;
-	}
-
-	s->wifi_bitrate = wireless_bitrate(ifname);
-	s->wifi_signal_level = adjust_dbm_level(ws.qual.updated & IW_QUAL_DBM,
-						ws.qual.level);
-	s->wifi_noise_level = adjust_dbm_level(ws.qual.updated & IW_QUAL_DBM,
-					       ws.qual.noise);
-	s->wifi_link_qual = ws.qual.qual;
-	s->wifi_link_qual_max = wireless_rangemax_sigqual(ifname);
-
-	return ret;
-}
-
-static void stats_check_alloc(struct ifstat *s)
-{
-	int cpus = get_number_cpus();
-
-	if (s->irqs_len != get_number_cpus()) {
-		if (s->irqs) xfree(s->irqs);
-		if (s->irqs_srx) xfree(s->irqs_srx);
-		if (s->irqs_stx) xfree(s->irqs_stx);
-		if (s->cpu_user) xfree(s->cpu_user);
-		if (s->cpu_nice) xfree(s->cpu_nice);
-		if (s->cpu_sys) xfree(s->cpu_sys);
-		if (s->cpu_idle) xfree(s->cpu_idle);
-		if (s->cpu_iow) xfree(s->cpu_iow);
-
-		s->irqs_srx = xzmalloc(sizeof(*(s->irqs_srx)) * cpus);
-		s->irqs_stx = xzmalloc(sizeof(*(s->irqs_stx)) * cpus);
-		s->irqs = xzmalloc(sizeof(*(s->irqs)) * cpus);
-		s->cpu_user = xzmalloc(sizeof(*(s->cpu_user)) * cpus);
-		s->cpu_nice = xzmalloc(sizeof(*(s->cpu_nice)) * cpus);
-		s->cpu_sys = xzmalloc(sizeof(*(s->cpu_sys)) * cpus);
-		s->cpu_idle = xzmalloc(sizeof(*(s->cpu_idle)) * cpus);
-		s->cpu_iow = xzmalloc(sizeof(*(s->cpu_iow)) * cpus);
-		s->irqs_len = cpus;
-	}
-}
-
-static int irq_sstats(struct ifstat *s)
-{
-	int i, rx = 0;
-	char *ptr, *ptr2;
-	char buff[4096];
-
-	FILE *fp = fopen("/proc/softirqs", "r");
-	if (!fp) {
-		whine("Cannot open /proc/softirqs!\n");
-		return -ENOENT;
-	}
-
-	stats_check_alloc(s);
-
-	memset(buff, 0, sizeof(buff));
-	while (fgets(buff, sizeof(buff), fp) != NULL) {
-		buff[sizeof(buff) - 1] = 0;
-
-		if ((ptr = strstr(buff, "NET_TX:")) == NULL) {
-			ptr = strstr(buff, "NET_RX:");
-
-			if (ptr == NULL)
-				continue;
-			rx = 1;
-		} else {
-			rx = 0;
-		}
-
-		ptr += strlen("NET_TX:");
-
-		for (i = 0; i < s->irqs_len; ++i) {
-			ptr++;
-			while (*ptr == ' ')
-				ptr++;
-			ptr2 = ptr;
-			while (*ptr != ' ' && *ptr != 0)
-				ptr++;
-			*ptr = 0;
-			if (rx)
-				s->irqs_srx[i] = atoi(ptr2);
-			else
-				s->irqs_stx[i] = atoi(ptr2);
-		}
-
-		memset(buff, 0, sizeof(buff));
-	}
-
-	fclose(fp);
-
-	return 0;
-}
-
-static int mem_stats(struct ifstat *s)
-{
-	int ret;
-	unsigned long total, free;
-	char *ptr;
-	char buff[4096];
-
-	FILE *fp = fopen("/proc/meminfo", "r");
-	if (!fp) {
-		whine("Cannot open /proc/meminfo!\n");
-		return -ENOENT;
-	}
-
-	memset(buff, 0, sizeof(buff));
-	while (fgets(buff, sizeof(buff), fp) != NULL) {
-		buff[sizeof(buff) - 1] = 0;
-
-		if ((ptr = strstr(buff, "MemTotal:")) != NULL) {
-			ptr += strlen("MemTotal:");
-			ptr++;
-
-			while (*ptr == ' ')
-				ptr++;
-
-			ret = sscanf(ptr, "%lu", &total);
-			if (ret != 1)
-				total = 0;
-		} else if ((ptr = strstr(buff, "MemFree:")) != NULL) {
-			ptr += strlen("MemFree:");
-			ptr++;
-
-			while (*ptr == ' ')
-				ptr++;
-
-			ret = sscanf(ptr, "%lu", &free);
-			if (ret != 1)
-				free = 0;
-		}
-
-		memset(buff, 0, sizeof(buff));
-	}
-
-	if (total > 0)
-		s->mem_used = 100.f * (total - free) / total;
-	else
-		s->mem_used = 0.f;
-
-	fclose(fp);
-
-	return 0;
-}
-
-static int sys_stats(struct ifstat *s)
-{
-	int ret, cpu;
-	char *ptr, *ptr2;
-	char buff[4096];
-
-	FILE *fp = fopen("/proc/stat", "r");
-	if (!fp) {
-		whine("Cannot open /proc/stat!\n");
-		return -ENOENT;
-	}
-
-	stats_check_alloc(s);
-
-	memset(buff, 0, sizeof(buff));
-	while (fgets(buff, sizeof(buff), fp) != NULL) {
-		buff[sizeof(buff) - 1] = 0;
-
-		if ((ptr = strstr(buff, "cpu")) != NULL) {
-			ptr += strlen("cpu");
-			if (*ptr == ' ')
-				goto next;
-			ptr2 = ptr;
-
-			while (*ptr != ' ' && *ptr != 0)
-				ptr++;
-			*ptr = 0;
-
-			cpu = atoi(ptr2);
-			if (cpu < 0 || cpu >= s->irqs_len)
-				goto next;
-			ptr++;
-
-			ret = sscanf(ptr, "%lu%lu%lu%lu%lu", &s->cpu_user[cpu],
-				     &s->cpu_nice[cpu], &s->cpu_sys[cpu],
-				     &s->cpu_idle[cpu], &s->cpu_iow[cpu]);
-			if (ret != 5)
-				goto next;
-		} else if ((ptr = strstr(buff, "ctxt")) != NULL) {
-			ptr += strlen("ctxt");
-			ptr++;
-
-			while (*ptr == ' ')
-				ptr++;
-
-			ret = sscanf(ptr, "%lu", &s->ctxt);
-			if (ret != 1)
-				s->ctxt = 0;
-		} else if ((ptr = strstr(buff, "processes")) != NULL) {
-			ptr += strlen("processes");
-			ptr++;
-
-			while (*ptr == ' ')
-				ptr++;
-
-			ret = sscanf(ptr, "%lu", &s->forks);
-			if (ret != 1)
-				s->forks = 0;
-		} else if ((ptr = strstr(buff, "procs_running")) != NULL) {
-			ptr += strlen("procs_running");
-			ptr++;
-
-			while (*ptr == ' ')
-				ptr++;
-
-			ret = sscanf(ptr, "%lu", &s->procs_run);
-			if (ret != 1)
-				s->procs_run = 0;
-		} else if ((ptr = strstr(buff, "procs_blocked")) != NULL) {
-			ptr += strlen("procs_blocked");
-			ptr++;
-
-			while (*ptr == ' ')
-				ptr++;
-
-			ret = sscanf(ptr, "%lu", &s->procs_iow);
-			if (ret != 1)
-				s->procs_iow = 0;
-		}
-next:
-		memset(buff, 0, sizeof(buff));
-	}
-
-	fclose(fp);
-
-	return 0;
-}
-
-static int irq_stats(const char *ifname, struct ifstat *s)
-{
-	int i;
-	char *ptr, *ptr2;
-	char buff[4096];
-	FILE *fp;
-
-	/* We exclude lo! */
-	if (!strncmp("lo", ifname, strlen("lo")))
-		return 0;
-
-	fp = fopen("/proc/interrupts", "r");
-	if (!fp) {
-		whine("Cannot open /proc/interrupts!\n");
-		return -ENOENT;
-	}
-
-	stats_check_alloc(s);
-
-	memset(buff, 0, sizeof(buff));
-	while (fgets(buff, sizeof(buff), fp) != NULL) {
-		buff[sizeof(buff) - 1] = 0;
-
-		if (strstr(buff, ifname) == NULL)
-			continue;
-
-		ptr = buff;
-		while (*ptr != ':')
-			ptr++;
-		*ptr = 0;
-		s->irq_nr = atoi(buff);
-
-		bug_on(s->irq_nr == 0);
-
-		for (i = 0; i < s->irqs_len; ++i) {
-			ptr++;
-			ptr2 = ptr;
-			while (*ptr == ' ')
-				ptr++;
-			while (*ptr != ' '  && *ptr != 0)
-				ptr++;
-			*ptr = 0;
-			s->irqs[i] = atoi(ptr2);
-		}
-
-		memset(buff, 0, sizeof(buff));
-	}
-
-	fclose(fp);
-
-	return 0;
-}
-
-static void diff_stats(struct ifstat *old, struct ifstat *new,
-		       struct ifstat *diff)
-{
-	int i;
-
-	if(old->irqs_len != new->irqs_len)
-		return; /* Refetch stats and take old diff! */
-
-	diff->rx_bytes = new->rx_bytes - old->rx_bytes;
-	diff->rx_packets = new->rx_packets - old->rx_packets;
-	diff->rx_drops = new->rx_drops - old->rx_drops;
-	diff->rx_errors = new->rx_errors - old->rx_errors;
-	diff->rx_fifo = new->rx_fifo - old->rx_fifo;
-	diff->rx_frame = new->rx_frame - old->rx_frame;
-	diff->rx_multi = new->rx_multi - old->rx_multi;
-	diff->tx_bytes = new->tx_bytes - old->tx_bytes;
-	diff->tx_packets = new->tx_packets - old->tx_packets;
-	diff->tx_drops = new->tx_drops - old->tx_drops;
-	diff->tx_errors = new->tx_errors - old->tx_errors;
-	diff->tx_fifo = new->tx_fifo - old->tx_fifo;
-	diff->tx_colls = new->tx_colls - old->tx_colls;
-	diff->tx_carrier = new->tx_carrier - old->tx_carrier;
-	diff->wifi_signal_level = new->wifi_signal_level - old->wifi_signal_level;
-	diff->wifi_noise_level = new->wifi_noise_level - old->wifi_noise_level;
-	diff->wifi_link_qual = new->wifi_link_qual - old->wifi_link_qual;
-	diff->ctxt = new->ctxt - old->ctxt;
-	diff->forks = new->forks - old->forks;
-	diff->procs_run = new->procs_run - old->procs_run;
-	diff->procs_iow = new->procs_iow - old->procs_iow;
-
-	stats_check_alloc(diff);
-
-	diff->irq_nr = new->irq_nr;
-
-	for (i = 0; i < diff->irqs_len; ++i) {
-		diff->irqs[i] = new->irqs[i] - old->irqs[i];
-		diff->irqs_srx[i] = new->irqs_srx[i] - old->irqs_srx[i];
-		diff->irqs_stx[i] = new->irqs_stx[i] - old->irqs_stx[i];
-		diff->cpu_user[i] = new->cpu_user[i] - old->cpu_user[i];
-		diff->cpu_nice[i] = new->cpu_nice[i] - old->cpu_nice[i];
-		diff->cpu_sys[i] = new->cpu_sys[i] - old->cpu_sys[i];
-		diff->cpu_idle[i] = new->cpu_idle[i] - old->cpu_idle[i];
-		diff->cpu_iow[i] = new->cpu_iow[i] - old->cpu_iow[i];
-	}
-}
-
-static char *snr_to_str(int level)
-{
-	// empirical values
 	if (level > 40)
 		return "very good signal";
 	if (level > 25 && level <= 40)
@@ -516,292 +99,34 @@ static char *snr_to_str(int level)
 		return "very poor signal";
 	if (level <= 10)
 		return "no signal";
-	/* unreachable */
+
 	return "unknown";
 }
 
-static void screen_init(WINDOW **screen)
+static inline int iswireless(const struct ifstat *stats)
 {
-	(*screen) = initscr();
-	noecho();
-	cbreak();
-	nodelay((*screen), TRUE);
-	refresh();
-	wrefresh((*screen));
-}
-
-static void screen_update(WINDOW *screen, const char *ifname,
-			  struct ifstat *s, struct ifstat *t,
-			  int *first, double interval)
-{
-	int i, j = 0;
-
-	curs_set(0);
-	mvwprintw(screen, 1, 2, "Kernel net/sys statistics for %s, t=%.2lfs",
-		  ifname, interval);
-	attron(A_REVERSE);
-	mvwprintw(screen, 3, 0,
-		  "  RX: %16.3f MiB/t %10lu pkts/t %10lu drops/t %10lu errors/t  ",
-		  1.f * s->rx_bytes / (1 << 20), s->rx_packets, s->rx_drops,
-		  s->rx_errors);
-	mvwprintw(screen, 4, 0,
-		  "  TX: %16.3f MiB/t %10lu pkts/t %10lu drops/t %10lu errors/t  ",
-		  1.f * s->tx_bytes / (1 << 20), s->tx_packets, s->tx_drops,
-		  s->tx_errors);
-	attroff(A_REVERSE);
-	mvwprintw(screen, 6, 2,
-		  "RX: %16.3f MiB   %10lu pkts   %10lu drops   %10lu errors",
-		  1.f * t->rx_bytes / (1 << 20), t->rx_packets, t->rx_drops,
-		  t->rx_errors);
-	mvwprintw(screen, 7, 2,
-		  "TX: %16.3f MiB   %10lu pkts   %10lu drops   %10lu errors",
-		  1.f * t->tx_bytes / (1 << 20), t->tx_packets, t->tx_drops,
-		  t->tx_errors);
-	j = 9;
-	mvwprintw(screen, j++, 2, "SYS:  %14ld cs/t %10.1f%% mem "
-		  "%13ld running %10ld iowait",
-		  s->ctxt, t->mem_used, t->procs_run, t->procs_iow);
-	j++;
-	if (s->irq_nr != 0) {
-		for(i = 0; i < s->irqs_len; ++i) {
-			unsigned long all = s->cpu_user[i] + s->cpu_nice[i] +
-					    s->cpu_sys[i] + s->cpu_idle[i] +
-					    s->cpu_iow[i];
-			mvwprintw(screen, j++, 2, "CPU%d: %13.1f%% usr/t "
-				  "%9.1f%% sys/t %10.1f%% idl/t %11.1f%% iow/t  ",
-				  i,
-				  100.f * (s->cpu_user[i] + s->cpu_nice[i]) / all,
-				  100.f * s->cpu_sys[i] / all,
-				  100.f * s->cpu_idle[i] /all,
-				  100.f * s->cpu_iow[i] / all);
-		}
-		j++;
-		for(i = 0; i < s->irqs_len; ++i)
-			mvwprintw(screen, j++, 2, "CPU%d: %14ld irqs/t   "
-				  "%15ld soirq RX/t   %15ld soirq TX/t      ",
-				  i, s->irqs[i], s->irqs_srx[i], s->irqs_stx[i]);
-		j++;
-		for(i = 0; i < s->irqs_len; ++i)
-			mvwprintw(screen, j++, 2, "CPU%d: %14ld irqs",
-				  i, t->irqs[i]);
-		j++;
-	}
-	if (t->wifi_bitrate > 0) {
-		mvwprintw(screen, j++, 2, "LinkQual: %7d/%d (%d/t)          ",
-			  t->wifi_link_qual, t->wifi_link_qual_max,
-			  s->wifi_link_qual);
-		mvwprintw(screen, j++, 2, "Signal: %8d dBm (%d dBm/t)       ",
-			  t->wifi_signal_level, s->wifi_signal_level);
-		mvwprintw(screen, j++, 2, "Noise:  %8d dBm (%d dBm/t)       ",
-			  t->wifi_noise_level, s->wifi_noise_level);
-		mvwprintw(screen, j++, 2, "SNR:    %8d dBm (%s)             ",
-			  t->wifi_signal_level - t->wifi_noise_level,
-			  snr_to_str(t->wifi_signal_level - t->wifi_noise_level));
-		j++;
-	}
-	if (*first) {
-		mvwprintw(screen, 2, 2, "Collecting data ...");
-		*first = 0;
-	} else
-		mvwprintw(screen, 2, 2, "                   ");
-
-	wrefresh(screen);
-	refresh();
-}
-
-static void screen_end(void)
-{
-	endwin();
-}
-
-static void print_update(const char *ifname, struct ifstat *s,
-			 struct ifstat *t, double interval)
-{
-	int i;
-
-	printf("RX: %16.3f MiB/t %10lu Pkts/t %10lu Drops/t %10lu Errors/t\n",
-	       1.f * s->rx_bytes / (1 << 20), s->rx_packets, s->rx_drops,
-	       s->rx_errors);
-	printf("TX: %16.3f MiB/t %10lu Pkts/t %10lu Drops/t %10lu Errors/t\n",
-	       1.f * s->tx_bytes / (1 << 20), s->tx_packets, s->tx_drops,
-	       s->tx_errors);
-	if (s->irq_nr != 0)
-		for(i = 0; i < s->irqs_len; ++i)
-			printf("CPU%d: %10ld IRQs/t   "
-			       "%10ld SoIRQ RX/t   "
-			       "%10ld SoIRQ TX/t\n", i,
-			       s->irqs[i], s->irqs_srx[i], s->irqs_stx[i]);
-	if (t->wifi_bitrate > 0) {
-		printf("LinkQual: %6d/%d (%d/t)\n", t->wifi_link_qual,
-		       t->wifi_link_qual_max, s->wifi_link_qual);
-		printf("Signal: %8d dBm (%d dBm/t)\n", t->wifi_signal_level,
-		       s->wifi_signal_level);
-		printf("Noise:  %8d dBm (%d dBm/t)\n", t->wifi_noise_level,
-		       s->wifi_noise_level);
-	}
-}
-
-static void print_update_csv(const char *ifname, struct ifstat *s,
-			     struct ifstat *t, double interval)
-{
-	int i;
-
-	printf("%ld,%lu,%lu,%lu,%lu,", time(0), s->rx_bytes, s->rx_packets,
-	       s->rx_drops, s->rx_errors);
-	printf("%lu,%lu,%lu,%lu", s->tx_bytes, s->tx_packets, s->tx_drops,
-	       s->tx_errors);
-	if (s->irq_nr != 0)
-		for(i = 0; i < s->irqs_len; ++i)
-			printf(",%ld,%ld,%ld", s->irqs[i], s->irqs_srx[i],
-			       s->irqs_stx[i]);
-	if (t->wifi_bitrate > 0) {
-		printf(",%d,%d", t->wifi_link_qual, t->wifi_link_qual_max);
-		printf(",%d", t->wifi_signal_level);
-		printf(",%d", t->wifi_noise_level);
-	}
-	printf("\n");
-}
-
-static void print_update_csv_hdr(const char *ifname, struct ifstat *s,
-				 struct ifstat *t, double interval)
-{
-	int i;
-
-	printf("Unixtime,RX Byte/t,RX Pkts/t,RX Drops/t,RX Errors/t,");
-	printf("TX Byte/t,TX Pkts/t,TX Drops/t,TX Errors/t");
-	if (s->irq_nr != 0)
-		for(i = 0; i < s->irqs_len; ++i)
-			printf(",CPU%d IRQs/t,CPU%d SoIRQ RX/t,"
-			       "CPU%d SoIRQ TX/t", i, i, i);
-	if (t->wifi_bitrate > 0)
-		printf(",LinkQual,LinkQualMax,Signal Level,Noise Level");
-	printf("\n");
-}
-
-static inline int do_stats(const char *ifname, struct ifstat *s)
-{
-	int ret = 0;
-
-	ret += rxtx_stats(ifname, s);
-	ret += irq_stats(ifname, s);
-	ret += irq_sstats(s);
-	ret += sys_stats(s);
-	ret += mem_stats(s);
-	ret += wifi_stats(ifname, s);
-
-	return ret;
-}
-
-static int screen_loop(const char *ifname, uint32_t interval)
-{
-	int ret = 0, first = 1;
-	struct ifstat old, new, curr;
-	WINDOW *screen = NULL;
-
-	memset(&old, 0, sizeof(old));
-	memset(&new, 0, sizeof(new));
-	memset(&curr, 0, sizeof(curr));
-
-	screen_init(&screen);
-
-	while (!sigint) {
-		if (getch() == 'q')
-			goto out;
-
-		screen_update(screen, ifname, &curr, &new, &first, interval);
-
-		ret = do_stats(ifname, &old);
-		if (ret != 0)
-			goto out;
-
-		sleep(interval);
-
-		ret = do_stats(ifname, &new);
-		if (ret != 0)
-			goto out;
-
-		diff_stats(&old, &new, &curr);
-	}
-out:
-	screen_end();
-
-	if (ret != 0)
-		whine("Error fetching stats!\n");
-	if (old.irqs)
-		xfree(old.irqs);
-	if (new.irqs)
-		xfree(new.irqs);
-	if (curr.irqs)
-		xfree(curr.irqs);
-
-	return 0;
-}
-
-static int print_loop(const char *ifname, uint32_t interval)
-{
-	int ret, first = 1;
-	struct ifstat old, new, curr;
-
-	memset(&old, 0, sizeof(old));
-	memset(&new, 0, sizeof(new));
-	memset(&curr, 0, sizeof(curr));
-	do {
-		ret = do_stats(ifname, &old);
-		if (ret != 0)
-			goto out;
-
-		sleep(interval);
-
-		ret = do_stats(ifname, &new);
-		if (ret != 0)
-			goto out;
-
-		diff_stats(&old, &new, &curr);
-
-		if (first && (mode & TERM_MODE_CSV_HDR) ==
-		    TERM_MODE_CSV_HDR) {
-			print_update_csv_hdr(ifname, &curr, &new, interval);
-			first = 0;
-		}
-
-		if ((mode & TERM_MODE_CSV) == TERM_MODE_CSV)
-			print_update_csv(ifname, &curr, &new, interval);
-		else if ((mode & TERM_MODE_NORMAL) == TERM_MODE_NORMAL)
-			print_update(ifname, &curr, &new, interval);
-	} while (loop && !sigint);
-out:
-	if (ret != 0)
-		whine("Error fetching stats!\n");
-	if (old.irqs)
-		xfree(old.irqs);
-	if (new.irqs)
-		xfree(new.irqs);
-	if (curr.irqs)
-		xfree(curr.irqs);
-
-	return 0;
+	return stats->wifi.bitrate > 0;
 }
 
 static void help(void)
 {
-	printf("\n%s %s, top-like kernel networking and system statistics\n",
-	       PROGNAME_STRING, VERSION_STRING);
+	printf("\nifpps %s, top-like kernel networking and system statistics\n",
+	       VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: ifpps [options] || ifpps <netdev>\n"
 	     "Options:\n"
-	     "  -d|--dev <netdev>      Device to fetch statistics for i.e., eth0\n"
+	     "  -d|--dev <netdev>      Device to fetch statistics for e.g., eth0\n"
+	     "  -t|--interval <time>   Refresh time in ms (default 1000 ms)\n"
 	     "  -p|--promisc           Promiscuous mode\n"
-	     "  -t|--interval <time>   Refresh time in sec (default 1 s)\n"
-	     "  -c|--term              Output to terminal\n"
-	     "  -C|--csv               Output to terminal as CSV\n"
+	     "  -c|--csv               Output to terminal as CSV\n"
 	     "                         E.g. post-processing with Gnuplot et al.\n"
-	     "  -H|--csv-tablehead     Print CSV table head\n"
-	     "  -l|--loop              Loop terminal output\n"
+	     "  -l|--loop              Continuous CSV output\n"
 	     "  -v|--version           Print version\n"
 	     "  -h|--help              Print this help\n\n"
 	     "Examples:\n"
-	     "  ifpps --dev eth0\n"
-	     "  ifpps --dev eth0 --interval 60 --csv\n\n"
+	     "  ifpps eth0\n"
+	     "  ifpps -pd eth0\n"
+	     "  ifpps -lpcd wlan0 > plot.dat\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
 	     "License: GNU GPL version 2.0\n"
@@ -812,8 +137,8 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\n%s %s, top-like kernel networking statistics per sec\n",
-	       PROGNAME_STRING, VERSION_STRING);
+	printf("\nifpps %s, top-like kernel networking and system statistics\n",
+	       VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
@@ -823,14 +148,742 @@ static void version(void)
 	die();
 }
 
+static int stats_proc_net_dev(const char *ifname, struct ifstat *stats)
+{
+	int ret = -EINVAL;
+	char buff[256];
+	FILE *fp;
+
+	fp = fopen("/proc/net/dev", "r");
+	if (!fp)
+		panic("Cannot open /proc/net/dev!\n");
+
+	if (fgets(buff, sizeof(buff), fp)) { ; }
+	if (fgets(buff, sizeof(buff), fp)) { ; }
+
+	memset(buff, 0, sizeof(buff));
+
+	while (fgets(buff, sizeof(buff), fp) != NULL) {
+		buff[sizeof(buff) -1] = 0;
+
+		if (strstr(buff, ifname) == NULL)
+			continue;
+
+		if (sscanf(buff, "%*[a-z0-9 .-]:%llu%llu%llu%llu%llu%llu"
+			   "%llu%*u%llu%llu%llu%llu%llu%llu%llu",
+			   &stats->rx_bytes, &stats->rx_packets,
+			   &stats->rx_errors, &stats->rx_drops,
+			   &stats->rx_fifo, &stats->rx_frame,
+			   &stats->rx_multi, &stats->tx_bytes,
+			   &stats->tx_packets, &stats->tx_errors,
+			   &stats->tx_drops, &stats->tx_fifo,
+			   &stats->tx_colls, &stats->tx_carrier) == 14) {
+			ret = 0;
+			break;
+		}
+
+		memset(buff, 0, sizeof(buff));
+	}
+
+	fclose(fp);
+	return ret;
+}
+
+static int stats_proc_interrupts(char *ifname, struct ifstat *stats)
+{
+	int ret = -EINVAL, i, cpus, try = 0;
+	char *ptr, buff[256];
+	struct ethtool_drvinfo drvinf;
+	FILE *fp;
+
+	fp = fopen("/proc/interrupts", "r");
+	if (!fp)
+		panic("Cannot open /proc/interrupts!\n");
+
+	cpus = get_number_cpus();
+	bug_on(cpus > MAX_CPUS);
+retry:
+	fseek(fp, 0, SEEK_SET);
+	memset(buff, 0, sizeof(buff));
+
+	while (fgets(buff, sizeof(buff), fp) != NULL) {
+		buff[sizeof(buff) - 1] = 0;
+		ptr = buff;
+
+		if (strstr(buff, ifname) == NULL)
+			continue;
+
+		stats->irq_nr = strtol(ptr, &ptr, 10);
+		bug_on(stats->irq_nr == 0);
+
+		if (ptr)
+			ptr++;
+		for (i = 0; i < cpus && ptr; ++i) {
+			stats->irqs[i] = strtol(ptr, &ptr, 10);
+			if (i == cpus - 1) {
+				ret = 0;
+				goto done;
+			}
+		}
+
+		memset(buff, 0, sizeof(buff));
+	}
+
+	if (ret == -EINVAL && try == 0) {
+		memset(&drvinf, 0, sizeof(drvinf));
+		if (ethtool_drvinf(ifname, &drvinf) < 0)
+			goto done;
+
+		ifname = drvinf.driver;
+		try++;
+
+		goto retry;
+	}
+done:
+	fclose(fp);
+	return ret;
+}
+
+static int stats_proc_softirqs(struct ifstat *stats)
+{
+	int i, cpus;
+	char *ptr, buff[256];
+	FILE *fp;
+	enum {
+		softirqs_net_rx,
+		softirqs_net_tx,
+		softirqs_net_none,
+	} net_type = softirqs_net_none;
+
+	fp = fopen("/proc/softirqs", "r");
+	if (!fp)
+		panic("Cannot open /proc/softirqs!\n");
+
+	cpus = get_number_cpus();
+	bug_on(cpus > MAX_CPUS);
+
+	memset(buff, 0, sizeof(buff));
+
+	while (fgets(buff, sizeof(buff), fp) != NULL) {
+		buff[sizeof(buff) - 1] = 0;
+
+		if ((ptr = strstr(buff, "NET_TX:")))
+			net_type = softirqs_net_tx;
+		else if ((ptr = strstr(buff, "NET_RX:")))
+			net_type = softirqs_net_rx;
+		else
+			continue;
+
+		for (ptr += strlen("NET_xX:"), i = 0; i < cpus; ++i) {
+			switch (net_type) {
+			case softirqs_net_tx:
+				stats->irqs_stx[i] = strtol(ptr, &ptr, 10);
+				break;
+			case softirqs_net_rx:
+				stats->irqs_srx[i] = strtol(ptr, &ptr, 10);
+				break;
+			default:
+				bug();
+			}
+		}
+
+		memset(buff, 0, sizeof(buff));
+	}
+
+	fclose(fp);
+	return 0;
+}
+
+static int stats_proc_memory(struct ifstat *stats)
+{
+	char *ptr, buff[256];
+	FILE *fp;
+
+	fp = fopen("/proc/meminfo", "r");
+	if (!fp)
+		panic("Cannot open /proc/meminfo!\n");
+
+	memset(buff, 0, sizeof(buff));
+
+	while (fgets(buff, sizeof(buff), fp) != NULL) {
+		buff[sizeof(buff) - 1] = 0;
+
+		if ((ptr = strstr(buff, "MemTotal:"))) {
+			ptr += strlen("MemTotal:");
+			stats->mem_total = strtol(ptr, &ptr, 10);
+		} else if ((ptr = strstr(buff, "MemFree:"))) {
+			ptr += strlen("MemFree:");
+			stats->mem_free = strtol(ptr, &ptr, 10);
+		}
+
+		memset(buff, 0, sizeof(buff));
+	}
+
+	fclose(fp);
+	return 0;
+}
+
+static int stats_proc_system(struct ifstat *stats)
+{
+	int cpu, cpus;
+	char *ptr, buff[256];
+	FILE *fp;
+
+	fp = fopen("/proc/stat", "r");
+	if (!fp)
+		panic("Cannot open /proc/stat!\n");
+
+	cpus = get_number_cpus();
+	bug_on(cpus > MAX_CPUS);
+
+	memset(buff, 0, sizeof(buff));
+
+	while (fgets(buff, sizeof(buff), fp) != NULL) {
+		buff[sizeof(buff) - 1] = 0;
+
+		if ((ptr = strstr(buff, "cpu"))) {
+			ptr += strlen("cpu");
+			if (isblank(*ptr))
+				goto next;
+
+			cpu = strtol(ptr, &ptr, 10);
+			bug_on(cpu > cpus);
+
+			if (sscanf(ptr, "%lu%lu%lu%lu%lu",
+				   &stats->cpu_user[cpu],
+				   &stats->cpu_nice[cpu],
+				   &stats->cpu_sys[cpu],
+				   &stats->cpu_idle[cpu],
+				   &stats->cpu_iow[cpu]) != 5)
+				goto next;
+		} else if ((ptr = strstr(buff, "ctxt"))) {
+			ptr += strlen("ctxt");
+			stats->cswitch = strtoul(ptr, &ptr, 10);
+		} else if ((ptr = strstr(buff, "processes"))) {
+			ptr += strlen("processes");
+			stats->forks = strtoul(ptr, &ptr, 10);
+		} else if ((ptr = strstr(buff, "procs_running"))) {
+			ptr += strlen("procs_running");
+			stats->procs_run = strtoul(ptr, &ptr, 10);
+		} else if ((ptr = strstr(buff, "procs_blocked"))) {
+			ptr += strlen("procs_blocked");
+			stats->procs_iow = strtoul(ptr, &ptr, 10);
+		}
+next:
+		memset(buff, 0, sizeof(buff));
+	}
+
+	fclose(fp);
+	return 0;
+}
+
+static int stats_wireless(const char *ifname, struct ifstat *stats)
+{
+	int ret;
+	struct iw_statistics ws;
+
+	ret = wireless_sigqual(ifname, &ws);
+	if (ret != 0) {
+		stats->wifi.bitrate = 0;
+		return -EINVAL;
+	}
+
+	stats->wifi.bitrate = wireless_bitrate(ifname);
+
+	stats->wifi.signal_level =
+		adjust_dbm_level(ws.qual.updated & IW_QUAL_DBM, ws.qual.level);
+
+	stats->wifi.link_qual = ws.qual.qual;
+	stats->wifi.link_qual_max = wireless_rangemax_sigqual(ifname);
+
+	return ret;
+}
+
+#define DIFF1(member)	do { diff->member = new->member - old->member; } while (0)
+#define DIFF(member)	do { \
+		if (sizeof(diff->member) != sizeof(new->member) || \
+		    sizeof(diff->member) != sizeof(old->member)) \
+			bug(); \
+		bug_on((new->member - old->member) > (new->member)); \
+		DIFF1(member); \
+	} while (0)
+
+static void stats_diff(struct ifstat *old, struct ifstat *new,
+		       struct ifstat *diff)
+{
+	int cpus, i;
+
+	DIFF(rx_bytes);
+	DIFF(rx_packets);
+	DIFF(rx_drops);
+	DIFF(rx_errors);
+	DIFF(rx_fifo);
+	DIFF(rx_frame);
+	DIFF(rx_multi);
+
+	DIFF(tx_bytes);
+	DIFF(tx_bytes);
+	DIFF(tx_packets);
+	DIFF(tx_drops);
+	DIFF(tx_errors);
+	DIFF(tx_fifo);
+	DIFF(tx_colls);
+	DIFF(tx_carrier);
+
+	DIFF1(procs_run);
+	DIFF1(procs_iow);
+
+	DIFF1(wifi.signal_level);
+	DIFF1(wifi.link_qual);
+
+	DIFF1(cswitch);
+	DIFF1(forks);
+
+	cpus = get_number_cpus();
+	bug_on(cpus > MAX_CPUS);
+
+	for (i = 0; i < cpus; ++i) {
+		DIFF(irqs[i]);
+		DIFF(irqs_srx[i]);
+		DIFF(irqs_stx[i]);
+
+		DIFF1(cpu_user[i]);
+		DIFF1(cpu_nice[i]);
+		DIFF1(cpu_sys[i]);
+		DIFF1(cpu_idle[i]);
+		DIFF1(cpu_iow[i]);
+	}
+}
+
+static void stats_fetch(const char *ifname, struct ifstat *stats)
+{
+	if (stats_proc_net_dev(ifname, stats) < 0)
+		panic("Cannot fetch device stats!\n");
+	if (stats_proc_softirqs(stats) < 0)
+		panic("Cannot fetch software interrupts!\n");
+	if (stats_proc_memory(stats) < 0)
+		panic("Cannot fetch memory stats!\n");
+	if (stats_proc_system(stats) < 0)
+		panic("Cannot fetch system stats!\n");
+
+	stats_proc_interrupts((char *) ifname, stats);
+
+	stats_wireless(ifname, stats);
+}
+
+static void stats_sample_generic(const char *ifname, uint64_t ms_interval)
+{
+	memset(&stats_old, 0, sizeof(stats_old));
+	memset(&stats_new, 0, sizeof(stats_new));
+	memset(&stats_delta, 0, sizeof(stats_delta));
+
+	stats_fetch(ifname, &stats_old);
+	usleep(ms_interval * 1000);
+	stats_fetch(ifname, &stats_new);
+
+	stats_diff(&stats_old, &stats_new, &stats_delta);
+}
+
+static void screen_init(WINDOW **screen)
+{
+	(*screen) = initscr();
+
+	raw();
+	noecho();
+	cbreak();
+	nodelay((*screen), TRUE);
+
+	keypad(stdscr, TRUE);
+
+	refresh();
+	wrefresh((*screen));
+}
+
+static void screen_header(WINDOW *screen, const char *ifname, int *voff,
+			  uint64_t ms_interval)
+{
+	size_t len = 0;
+	char buff[64];
+	struct ethtool_drvinfo drvinf;
+	u32 rate = device_bitrate(ifname);
+	int link = ethtool_link(ifname);
+
+	memset(&drvinf, 0, sizeof(drvinf));
+	ethtool_drvinf(ifname, &drvinf);
+
+	memset(buff, 0, sizeof(buff));
+	if (rate)
+		len += snprintf(buff + len, sizeof(buff) - len, " %uMbit/s", rate);
+	if (link >= 0)
+		len += snprintf(buff + len, sizeof(buff) - len, " link:%s",
+				link == 0 ? "no" : "yes");
+
+	mvwprintw(screen, (*voff)++, 2,
+		  "Kernel net/sys statistics for %s (%s%s), t=%lums"
+		  "               ",
+		  ifname, drvinf.driver, buff, ms_interval);
+}
+
+static void screen_net_dev_rel(WINDOW *screen, const struct ifstat *rel,
+			       int *voff)
+{
+	attron(A_REVERSE);
+
+	mvwprintw(screen, (*voff)++, 0,
+		  "  RX: %16.3llf MiB/t "
+		        "%10llu pkts/t "
+			"%10llu drops/t "
+			"%10llu errors/t  ",
+		  ((long double) rel->rx_bytes) / (1LLU << 20),
+		  rel->rx_packets, rel->rx_drops, rel->rx_errors);
+
+	mvwprintw(screen, (*voff)++, 0,
+		  "  TX: %16.3llf MiB/t "
+			"%10llu pkts/t "
+			"%10llu drops/t "
+			"%10llu errors/t  ",
+		  ((long double) rel->tx_bytes) / (1LLU << 20),
+		  rel->tx_packets, rel->tx_drops, rel->tx_errors);
+
+	attroff(A_REVERSE);
+}
+
+static void screen_net_dev_abs(WINDOW *screen, const struct ifstat *abs,
+			       int *voff)
+{
+	mvwprintw(screen, (*voff)++, 2,
+		  "RX: %16.3llf MiB   "
+		      "%10llu pkts   "
+		      "%10llu drops   "
+		      "%10llu errors",
+		  ((long double) abs->rx_bytes) / (1LLU << 20),
+		  abs->rx_packets, abs->rx_drops, abs->rx_errors);
+
+	mvwprintw(screen, (*voff)++, 2,
+		  "TX: %16.3llf MiB   "
+		      "%10llu pkts   "
+		      "%10llu drops   "
+		      "%10llu errors",
+		  ((long double) abs->tx_bytes) / (1LLU << 20),
+		  abs->tx_packets, abs->tx_drops, abs->tx_errors);
+}
+
+static void screen_sys_mem(WINDOW *screen, const struct ifstat *rel,
+			   const struct ifstat *abs, int *voff)
+{
+	mvwprintw(screen, (*voff)++, 2,
+		  "SYS:  %14u cs/t "
+			"%10.1lf%% mem "
+			"%13u running "
+			"%10u iowait",
+		  rel->cswitch,
+		  (100.0 * (abs->mem_total - abs->mem_free)) / abs->mem_total,
+		  abs->procs_run, abs->procs_iow);
+}
+
+static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
+				 int cpus, int *voff)
+{
+	int i;
+	uint64_t all;
+
+	for (i = 0; i < cpus; ++i) {
+		all = rel->cpu_user[i] + rel->cpu_nice[i] + rel->cpu_sys[i] +
+		      rel->cpu_idle[i] + rel->cpu_iow[i];
+
+		mvwprintw(screen, (*voff)++, 2,
+			  "CPU%d: %13.1lf%% usr/t "
+				 "%9.1lf%% sys/t "
+				 "%10.1lf%% idl/t "
+				 "%11.1lf%% iow/t  ", i,
+			  100.0 * (rel->cpu_user[i] + rel->cpu_nice[i]) / all,
+			  100.0 * rel->cpu_sys[i] / all,
+			  100.0 * rel->cpu_idle[i] / all,
+			  100.0 * rel->cpu_iow[i] / all);
+	}
+}
+
+static void screen_percpu_irqs_rel(WINDOW *screen, const struct ifstat *rel,
+				   int cpus, int *voff)
+{
+	int i;
+
+	for (i = 0; i < cpus; ++i) {
+		mvwprintw(screen, (*voff)++, 2,
+			  "CPU%d: %14llu irqs/t   "
+				 "%15llu soirq RX/t   "
+				 "%15llu soirq TX/t      ", i,
+			  rel->irqs[i],
+			  rel->irqs_srx[i],
+			  rel->irqs_stx[i]);
+	}
+}
+
+static void screen_percpu_irqs_abs(WINDOW *screen, const struct ifstat *abs,
+				   int cpus, int *voff)
+{
+	int i;
+
+	for (i = 0; i < cpus; ++i) {
+		mvwprintw(screen, (*voff)++, 2,
+			  "CPU%d: %14llu irqs", i,
+			  abs->irqs[i]);
+	}
+}
+
+static void screen_wireless(WINDOW *screen, const struct ifstat *rel,
+			    const struct ifstat *abs, int *voff)
+{
+	if (iswireless(abs)) {
+		mvwprintw(screen, (*voff)++, 2,
+			  "LinkQual: %7d/%d (%d/t)          ",
+			  abs->wifi.link_qual,
+			  abs->wifi.link_qual_max,
+			  rel->wifi.link_qual);
+
+		mvwprintw(screen, (*voff)++, 2,
+			  "Signal: %8d dBm (%d dBm/t)       ",
+			  abs->wifi.signal_level,
+			  rel->wifi.signal_level);
+	}
+}
+
+static void screen_update(WINDOW *screen, const char *ifname, const struct ifstat *rel,
+			  const struct ifstat *abs, int *first, uint64_t ms_interval)
+{
+	int cpus, voff = 1, cvoff = 2;
+
+	curs_set(0);
+
+	cpus = get_number_cpus();
+	bug_on(cpus > MAX_CPUS);
+
+	screen_header(screen, ifname, &voff, ms_interval);
+
+	voff++;
+	screen_net_dev_rel(screen, rel, &voff);
+
+	voff++;
+	screen_net_dev_abs(screen, abs, &voff);
+
+	voff++;
+	screen_sys_mem(screen, rel, abs, &voff);
+
+	voff++;
+	screen_percpu_states(screen, rel, cpus, &voff);
+
+	voff++;
+	screen_percpu_irqs_rel(screen, rel, cpus, &voff);
+
+	voff++;
+	screen_percpu_irqs_abs(screen, abs, cpus, &voff);
+
+	voff++;
+	screen_wireless(screen, rel, abs, &voff);
+
+	if (*first) {
+		mvwprintw(screen, cvoff, 2, "Collecting data ...");
+		*first = 0;
+	} else {
+		mvwprintw(screen, cvoff, 2, "                   ");
+	}
+
+	wrefresh(screen);
+	refresh();
+}
+
+static void screen_end(void)
+{
+	endwin();
+}
+
+static int screen_main(const char *ifname, uint64_t ms_interval)
+{
+	int first = 1, key;
+
+	screen_init(&stats_screen);
+
+	while (!sigint) {
+		key = getch();
+		if (key == 'q' || key == 0x1b || key == KEY_F(10))
+			break;
+
+		screen_update(stats_screen, ifname, &stats_delta, &stats_new,
+			      &first, ms_interval);
+
+		stats_sample_generic(ifname, ms_interval);
+	}
+
+	screen_end();
+
+	return 0;
+}
+
+static void term_csv(const char *ifname, const struct ifstat *rel,
+		     const struct ifstat *abs, uint64_t ms_interval)
+{
+	int cpus, i;
+
+	printf("%ld ", time(0));
+
+	printf("%llu ", rel->rx_bytes);
+	printf("%llu ", rel->rx_packets);
+	printf("%llu ", rel->rx_drops);
+	printf("%llu ", rel->rx_errors);
+
+	printf("%llu ", abs->rx_bytes);
+	printf("%llu ", abs->rx_packets);
+	printf("%llu ", abs->rx_drops);
+	printf("%llu ", abs->rx_errors);
+
+	printf("%llu ", rel->tx_bytes);
+	printf("%llu ", rel->tx_packets);
+	printf("%llu ", rel->tx_drops);
+	printf("%llu ", rel->tx_errors);
+
+	printf("%llu ", abs->tx_bytes);
+	printf("%llu ", abs->tx_packets);
+	printf("%llu ", abs->tx_drops);
+	printf("%llu ", abs->tx_errors);
+
+	printf("%u ",  rel->cswitch);
+	printf("%lu ", abs->mem_free);
+	printf("%lu ", abs->mem_total - abs->mem_free);
+	printf("%lu ", abs->mem_total);
+	printf("%u ",  abs->procs_run);
+	printf("%u ",  abs->procs_iow);
+
+	cpus = get_number_cpus();
+	bug_on(cpus > MAX_CPUS);
+
+	for (i = 0; i < cpus; ++i) {
+		printf("%lu ", rel->cpu_user[i]);
+		printf("%lu ", rel->cpu_nice[i]);
+		printf("%lu ", rel->cpu_sys[i]);
+		printf("%lu ", rel->cpu_idle[i]);
+		printf("%lu ", rel->cpu_iow[i]);
+
+		printf("%llu ", rel->irqs[i]);
+		printf("%llu ", abs->irqs[i]);
+
+		printf("%llu ", rel->irqs_srx[i]);
+		printf("%llu ", abs->irqs_srx[i]);
+
+		printf("%llu ", rel->irqs_stx[i]);
+		printf("%llu ", abs->irqs_stx[i]);
+	}
+
+	if (iswireless(abs)) {
+		printf("%u ", rel->wifi.link_qual);
+		printf("%u ", abs->wifi.link_qual);
+		printf("%u ", abs->wifi.link_qual_max);
+
+		printf("%d ", rel->wifi.signal_level);
+		printf("%d ", abs->wifi.signal_level);
+	}
+
+	puts("");
+	fflush(stdout);
+}
+
+static void term_csv_header(const char *ifname, const struct ifstat *abs,
+			    uint64_t ms_interval)
+{
+	int cpus, i, j = 1;
+
+	printf("# gnuplot dump (#col:description)\n");
+	printf("# networking interface: %s\n", ifname);
+	printf("# sampling interval (t): %lu ms\n", ms_interval);
+	printf("# %d:unixtime ", j++);
+
+	printf("%d:rx-bytes-per-t ", j++);
+	printf("%d:rx-pkts-per-t ", j++);
+	printf("%d:rx-drops-per-t ", j++);
+	printf("%d:rx-errors-per-t ", j++);
+
+	printf("%d:rx-bytes ", j++);
+	printf("%d:rx-pkts ", j++);
+	printf("%d:rx-drops ", j++);
+	printf("%d:rx-errors ", j++);
+
+	printf("%d:tx-bytes-per-t ", j++);
+	printf("%d:tx-pkts-per-t ", j++);
+	printf("%d:tx-drops-per-t ", j++);
+	printf("%d:tx-errors-per-t ", j++);
+
+	printf("%d:tx-bytes ", j++);
+	printf("%d:tx-pkts ", j++);
+	printf("%d:tx-drops ", j++);
+	printf("%d:tx-errors ", j++);
+
+	printf("%d:context-switches-per-t ", j++);
+	printf("%d:mem-free ", j++);
+	printf("%d:mem-used ", j++);
+	printf("%d:mem-total ", j++);
+	printf("%d:procs-in-run ", j++);
+	printf("%d:procs-in-iow ", j++);
+
+	cpus = get_number_cpus();
+	bug_on(cpus > MAX_CPUS);
+
+	for (i = 0, j = 22; i < cpus; ++i) {
+		printf("%d:cpu%i-usr-per-t ", j++, i);
+		printf("%d:cpu%i-nice-per-t ", j++, i);
+		printf("%d:cpu%i-sys-per-t ", j++, i);
+		printf("%d:cpu%i-idle-per-t ", j++, i);
+		printf("%d:cpu%i-iow-per-t ", j++, i);
+
+		printf("%d:cpu%i-net-irqs-per-t ", j++, i);
+		printf("%d:cpu%i-net-irqs ", j++, i);
+
+		printf("%d:cpu%i-net-rx-soft-irqs-per-t ", j++, i);
+		printf("%d:cpu%i-net-rx-soft-irqs ", j++, i);
+		printf("%d:cpu%i-net-tx-soft-irqs-per-t ", j++, i);
+		printf("%d:cpu%i-net-tx-soft-irqs ", j++, i);
+	}
+
+	if (iswireless(abs)) {
+		printf("%d:wifi-link-qual-per-t ", j++);
+		printf("%d:wifi-link-qual ", j++);
+		printf("%d:wifi-link-qual-max ", j++);
+
+		printf("%d:wifi-signal-dbm-per-t ", j++);
+		printf("%d:wifi-signal-dbm ", j++);
+	}
+
+	puts("");
+	printf("# data:\n");
+	fflush(stdout);
+}
+
+static int term_main(const char *ifname, uint64_t ms_interval)
+{
+	int first = 1;
+
+	do {
+		stats_sample_generic(ifname, ms_interval);
+
+		if (first) {
+			first = 0;
+			term_csv_header(ifname, &stats_new, ms_interval);
+		}
+
+		term_csv(ifname, &stats_delta, &stats_new, ms_interval);
+	} while (stats_loop && !sigint);
+
+	return 0;
+}
+
 int main(int argc, char **argv)
 {
 	short ifflags = 0;
-	int c, opt_index, ret;
-	unsigned int promisc = 0;
+	int c, opt_index, ret, promisc = 0;
+	uint64_t interval = 1000;
 	char *ifname = NULL;
-	uint32_t interval = 1;
-	int (*main_loop)(const char *ifname, uint32_t interval) = screen_loop;
+	int (*func_main)(const char *ifname, uint64_t ms_interval) = screen_main;
+
+	setfsuid(getuid());
+	setfsgid(getgid());
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 	       &opt_index)) != EOF) {
@@ -845,25 +898,16 @@ int main(int argc, char **argv)
 			ifname = xstrndup(optarg, IFNAMSIZ);
 			break;
 		case 't':
-			interval = atoi(optarg);
-			break;
-		case 'c':
-			mode |= TERM_MODE_NORMAL;
-			main_loop = print_loop;
+			interval = strtol(optarg, NULL, 10);
 			break;
 		case 'l':
-			loop = 1;
+			stats_loop = 1;
 			break;
 		case 'p':
 			promisc = 1;
 			break;
-		case 'C':
-			mode |= TERM_MODE_CSV;
-			main_loop = print_loop;
-			break;
-		case 'H':
-			mode |= TERM_MODE_CSV_HDR;
-			main_loop = print_loop;
+		case 'c':
+			func_main = term_main;
 			break;
 		case '?':
 			switch (optopt) {
@@ -884,24 +928,26 @@ int main(int argc, char **argv)
 
 	if (argc == 1)
 		help();
+
 	if (argc == 2)
 		ifname = xstrndup(argv[1], IFNAMSIZ);
 	if (ifname == NULL)
 		panic("No networking device given!\n");
+
 	if (!strncmp("lo", ifname, IFNAMSIZ))
 		panic("lo is not supported!\n");
 	if (device_mtu(ifname) == 0)
 		panic("This is no networking device!\n");
+
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
 
 	if (promisc)
 		ifflags = enter_promiscuous_mode(ifname);
-	ret = main_loop(ifname, interval);
+	ret = func_main(ifname, interval);
 	if (promisc)
 		leave_promiscuous_mode(ifname, ifflags);
 
 	xfree(ifname);
 	return ret;
 }
-

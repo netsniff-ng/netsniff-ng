@@ -335,14 +335,13 @@ ssize_t handler_tcp_read(int fd, char *buff, size_t len)
 
 static void handler_tcp_notify_close(int fd)
 {
-	ssize_t err;
 	struct ct_proto hdr;
 
 	memset(&hdr, 0, sizeof(hdr));
 	hdr.flags |= PROTO_FLAG_EXIT;
 	hdr.payload = 0;
 
-	err = write(fd, &hdr, sizeof(hdr));
+	if (write(fd, &hdr, sizeof(hdr))) { ; }
 }
 
 static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,

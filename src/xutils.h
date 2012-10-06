@@ -38,17 +38,20 @@ enum {
 
 extern int af_socket(int af);
 extern int pf_socket(void);
-extern int wireless_bitrate(const char *ifname);
 extern int adjust_dbm_level(int in_dbm, int dbm_val);
 extern int wireless_sigqual(const char *ifname, struct iw_statistics *stats);
 extern int wireless_rangemax_sigqual(const char *ifname);
-extern int ethtool_bitrate(const char *ifname);
+extern u32 wireless_bitrate(const char *ifname);
+extern u32 ethtool_bitrate(const char *ifname);
+extern u32 device_bitrate(const char *ifname);
 extern int ethtool_drvinf(const char *ifname, struct ethtool_drvinfo *drvinf);
-extern int device_bitrate(const char *ifname);
+extern int ethtool_link(const char *ifname);
 extern int device_mtu(const char *ifname);
 extern int device_address(const char *ifname, int af,
 			  struct sockaddr_storage *ss);
 extern int device_irq_number(const char *ifname);
+extern int device_set_irq_affinity_list(int irq, unsigned long from,
+					unsigned long to);
 extern int device_bind_irq_to_cpu(int irq, int cpu);
 extern void sock_print_net_stats(int sock, unsigned long skipped);
 extern int device_ifindex(const char *ifname);
@@ -83,6 +86,7 @@ extern void set_epoll_descriptor(int fd_epoll, int action,
 				 int fd_toadd, int events);
 extern int set_epoll_descriptor2(int fd_epoll, int action,
 				 int fd_toadd, int events);
+extern void cpu_affinity(int cpu);
 extern int set_cpu_affinity(char *str, int inverted);
 extern int set_proc_prio(int prio);
 extern int set_sched_status(int policy, int priority);
@@ -94,7 +98,8 @@ extern void xusleep2(long usecs);
 extern int xnanosleep(double seconds);
 extern int set_timeout(struct timeval *timeval, unsigned int msec);
 extern size_t strlcpy(char *dest, const char *src, size_t size);
-extern int slprintf(char *dst, size_t size, const char *fmt, ...);
+extern int slprintf(char *dst, size_t size, const char *fmt, ...)  __check_format_printf(3, 4);
+extern int slprintf_nocheck(char *dst, size_t size, const char *fmt, ...);
 extern noinline void *xmemset(void *s, int c, size_t n);
 extern char *getuint(char *in, uint32_t *out);
 extern char *strtrim_right(register char *p, register char c);

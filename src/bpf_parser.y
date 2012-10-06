@@ -6,6 +6,8 @@
  * Subject to the GPL, version 2.
  */
 
+/* yaac-func-prefix: yy */
+
 %{
 
 #include <stdio.h>
@@ -47,10 +49,15 @@ extern void yyerror(const char *);
 extern int yylineno;
 extern char *yytext;
 
-static inline void set_curr_instr(uint16_t code, uint8_t jt, uint8_t jf, uint32_t k)
+static inline void check_max_instr(void)
 {
 	if (curr_instr >= MAX_INSTRUCTIONS)
 		panic("Exceeded maximal number of instructions!\n");
+}
+
+static inline void set_curr_instr(uint16_t code, uint8_t jt, uint8_t jf, uint32_t k)
+{
+	check_max_instr();
 
 	out[curr_instr].code = code;
 	out[curr_instr].jt = jt;
@@ -62,8 +69,7 @@ static inline void set_curr_instr(uint16_t code, uint8_t jt, uint8_t jf, uint32_
 
 static inline void set_curr_label(char *label)
 {
-	if (curr_instr >= MAX_INSTRUCTIONS)
-		panic("Exceeded maximal number of instructions!\n");
+	check_max_instr();
 
 	labels[curr_instr] = label;
 }
@@ -74,17 +80,21 @@ static inline void set_curr_label(char *label)
 
 static inline void set_jmp_label(char *label, int which)
 {
-	if (curr_instr >= MAX_INSTRUCTIONS)
-		panic("Exceeded maximal number of instructions!\n");
+	check_max_instr();
 
-	bug_on(which != JTL && which != JFL && which != JKL);
-
-	if (which == JTL)
+	switch (which) {
+	case JTL:
 		labels_jt[curr_instr] = label;
-	else if (which == JFL)
+		break;
+	case JFL:
 		labels_jf[curr_instr] = label;
-	else
+		break;
+	case JKL:
 		labels_k[curr_instr] = label;
+		break;
+	default:
+		bug();
+	}
 }
 
 static int find_intr_offset_or_panic(char *label_to_search)
@@ -118,14 +128,17 @@ static int find_intr_offset_or_panic(char *label_to_search)
 
 %token OP_LDB OP_LDH OP_LD OP_LDX OP_ST OP_STX OP_JMP OP_JEQ OP_JGT OP_JGE
 %token OP_JSET OP_ADD OP_SUB OP_MUL OP_DIV OP_AND OP_OR OP_XOR OP_LSH OP_RSH
-%token OP_RET OP_TAX OP_TXA OP_LDXB OP_MOD OP_NEG K_PKT_LEN K_PROTO K_TYPE
-%token K_NLATTR K_NLATTR_NEST K_MARK K_QUEUE K_HATYPE K_RXHASH K_CPU K_IFIDX
+%token OP_RET OP_TAX OP_TXA OP_LDXB OP_MOD OP_NEG OP_JNEQ OP_JLT OP_JLE OP_LDI
+%token OP_LDXI
+
+%token K_PKT_LEN K_PROTO K_TYPE K_NLATTR K_NLATTR_NEST K_MARK K_QUEUE K_HATYPE
+%token K_RXHASH K_CPU K_IFIDX K_VLANT K_VLANP
 
 %token ':' ',' '[' ']' '(' ')' 'x' 'a' '+' 'M' '*' '&' '#'
 
-%token number_hex number_dec number_oct number_bin label
+%token number label
 
-%type <number> number_hex number_dec number_oct number_bin number
+%type <number> number
 %type <label> label
 
 %%
@@ -137,161 +150,182 @@ prog
 
 line
 	: instr
-	| labeled_instr
+	| labelled_instr
 	;
 
-labeled_instr
-	: do_label instr
+labelled_instr
+	: labelled instr
 	;
 
 instr
-	: do_ldb
-	| do_ldh
-	| do_ld
-	| do_ldx
-	| do_st
-	| do_stx
-	| do_jmp
-	| do_jeq
-	| do_jgt
-	| do_jge
-	| do_jset
-	| do_add
-	| do_sub
-	| do_mul
-	| do_div
-	| do_mod
-	| do_neg
-	| do_and
-	| do_or
-	| do_xor
-	| do_lsh
-	| do_rsh
-	| do_ret
-	| do_tax
-	| do_txa
+	: ldb
+	| ldh
+	| ld
+	| ldi
+	| ldx
+	| ldxi
+	| st
+	| stx
+	| jmp
+	| jeq
+	| jneq
+	| jlt
+	| jle
+	| jgt
+	| jge
+	| jset
+	| add
+	| sub
+	| mul
+	| div
+	| mod
+	| neg
+	| and
+	| or
+	| xor
+	| lsh
+	| rsh
+	| ret
+	| tax
+	| txa
 	;
 
-number
-	: number_dec { $$ = $1; }
-	| number_hex { $$ = $1; }
-	| number_oct { $$ = $1; }
-	| number_bin { $$ = $1; }
-	;
-
-do_label
+labelled
 	: label ':' { set_curr_label($1); }
 	;
 
-do_ldb
+ldb
 	: OP_LDB '[' 'x' '+' number ']' {
 		set_curr_instr(BPF_LD | BPF_B | BPF_IND, 0, 0, $5); }
 	| OP_LDB '[' number ']' {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0, $3); }
-	| OP_LDB '#' K_PROTO {
+	| OP_LDB K_PROTO {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_PROTOCOL); }
-	| OP_LDB '#' K_TYPE {
+	| OP_LDB K_TYPE {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_PKTTYPE); }
-	| OP_LDB '#' K_IFIDX {
+	| OP_LDB K_IFIDX {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_IFINDEX); }
-	| OP_LDB '#' K_NLATTR {
+	| OP_LDB K_NLATTR {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_NLATTR); }
-	| OP_LDB '#' K_NLATTR_NEST {
+	| OP_LDB K_NLATTR_NEST {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_NLATTR_NEST); }
-	| OP_LDB '#' K_MARK {
+	| OP_LDB K_MARK {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_MARK); }
-	| OP_LDB '#' K_QUEUE {
+	| OP_LDB K_QUEUE {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_QUEUE); }
-	| OP_LDB '#' K_HATYPE {
+	| OP_LDB K_HATYPE {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_HATYPE); }
-	| OP_LDB '#' K_RXHASH {
+	| OP_LDB K_RXHASH {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_RXHASH); }
-	| OP_LDB '#' K_CPU {
+	| OP_LDB K_CPU {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_CPU); }
+	| OP_LDB K_VLANT {
+		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_VLAN_TAG); }
+	| OP_LDB K_VLANP {
+		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_VLAN_TAG_PRESENT); }
 	;
 
-do_ldh
+ldh
 	: OP_LDH '[' 'x' '+' number ']' {
 		set_curr_instr(BPF_LD | BPF_H | BPF_IND, 0, 0, $5); }
 	| OP_LDH '[' number ']' {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0, $3); }
-	| OP_LDH '#' K_PROTO {
+	| OP_LDH K_PROTO {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_PROTOCOL); }
-	| OP_LDH '#' K_TYPE {
+	| OP_LDH K_TYPE {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_PKTTYPE); }
-	| OP_LDH '#' K_IFIDX {
+	| OP_LDH K_IFIDX {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_IFINDEX); }
-	| OP_LDH '#' K_NLATTR {
+	| OP_LDH K_NLATTR {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_NLATTR); }
-	| OP_LDH '#' K_NLATTR_NEST {
+	| OP_LDH K_NLATTR_NEST {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_NLATTR_NEST); }
-	| OP_LDH '#' K_MARK {
+	| OP_LDH K_MARK {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_MARK); }
-	| OP_LDH '#' K_QUEUE {
+	| OP_LDH K_QUEUE {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_QUEUE); }
-	| OP_LDH '#' K_HATYPE {
+	| OP_LDH K_HATYPE {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_HATYPE); }
-	| OP_LDH '#' K_RXHASH {
+	| OP_LDH K_RXHASH {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_RXHASH); }
-	| OP_LDH '#' K_CPU {
+	| OP_LDH K_CPU {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_CPU); }
+	| OP_LDH K_VLANT {
+		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_VLAN_TAG); }
+	| OP_LDH K_VLANP {
+		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_VLAN_TAG_PRESENT); }
 	;
 
-do_ld
+ldi
+	: OP_LDI number {
+		set_curr_instr(BPF_LD | BPF_IMM, 0, 0, $2); }
+	;
+
+ld
 	: OP_LD '#' number {
 		set_curr_instr(BPF_LD | BPF_IMM, 0, 0, $3); }
-	| OP_LD '#' K_PKT_LEN {
+	| OP_LD K_PKT_LEN {
 		set_curr_instr(BPF_LD | BPF_W | BPF_LEN, 0, 0, 0); }
-	| OP_LD '#' K_PROTO {
+	| OP_LD K_PROTO {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_PROTOCOL); }
-	| OP_LD '#' K_TYPE {
+	| OP_LD K_TYPE {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_PKTTYPE); }
-	| OP_LD '#' K_IFIDX {
+	| OP_LD K_IFIDX {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_IFINDEX); }
-	| OP_LD '#' K_NLATTR {
+	| OP_LD K_NLATTR {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_NLATTR); }
-	| OP_LD '#' K_NLATTR_NEST {
+	| OP_LD K_NLATTR_NEST {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_NLATTR_NEST); }
-	| OP_LD '#' K_MARK {
+	| OP_LD K_MARK {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_MARK); }
-	| OP_LD '#' K_QUEUE {
+	| OP_LD K_QUEUE {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_QUEUE); }
-	| OP_LD '#' K_HATYPE {
+	| OP_LD K_HATYPE {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_HATYPE); }
-	| OP_LD '#' K_RXHASH {
+	| OP_LD K_RXHASH {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_RXHASH); }
-	| OP_LD '#' K_CPU {
+	| OP_LD K_CPU {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_CPU); }
+	| OP_LD K_VLANT {
+		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_VLAN_TAG); }
+	| OP_LD K_VLANP {
+		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_VLAN_TAG_PRESENT); }
 	| OP_LD 'M' '[' number ']' {
 		set_curr_instr(BPF_LD | BPF_MEM, 0, 0, $4); }
 	| OP_LD '[' 'x' '+' number ']' {
@@ -300,7 +334,12 @@ do_ld
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0, $3); }
 	;
 
-do_ldx
+ldxi
+	: OP_LDXI number {
+		set_curr_instr(BPF_LDX | BPF_IMM, 0, 0, $2); }
+	;
+
+ldx
 	: OP_LDX '#' number {
 		set_curr_instr(BPF_LDX | BPF_IMM, 0, 0, $3); }
 	| OP_LDX 'M' '[' number ']' {
@@ -317,23 +356,23 @@ do_ldx
 			set_curr_instr(BPF_LDX | BPF_MSH | BPF_B, 0, 0, $6); } }
 	;
 
-do_st
+st
 	: OP_ST 'M' '[' number ']' {
 		set_curr_instr(BPF_ST, 0, 0, $4); }
 	;
 
-do_stx
+stx
 	: OP_STX 'M' '[' number ']' {
 		set_curr_instr(BPF_STX, 0, 0, $4); }
 	;
 
-do_jmp
+jmp
 	: OP_JMP label {
 		set_jmp_label($2, JKL);
 		set_curr_instr(BPF_JMP | BPF_JA, 0, 0, 0); }
 	;
 
-do_jeq
+jeq
 	: OP_JEQ '#' number ',' label ',' label {
 		set_jmp_label($5, JTL);
 		set_jmp_label($7, JFL);
@@ -342,9 +381,42 @@ do_jeq
 		set_jmp_label($4, JTL);
 		set_jmp_label($6, JFL);
 		set_curr_instr(BPF_JMP | BPF_JEQ | BPF_X, 0, 0, 0); }
+	| OP_JEQ '#' number ',' label {
+		set_jmp_label($5, JTL);
+		set_curr_instr(BPF_JMP | BPF_JEQ | BPF_K, 0, 0, $3); }
+	| OP_JEQ 'x' ',' label {
+		set_jmp_label($4, JTL);
+		set_curr_instr(BPF_JMP | BPF_JEQ | BPF_X, 0, 0, 0); }
 	;
 
-do_jgt
+jneq
+	: OP_JNEQ '#' number ',' label {
+		set_jmp_label($5, JFL);
+		set_curr_instr(BPF_JMP | BPF_JEQ | BPF_K, 0, 0, $3); }
+	| OP_JNEQ 'x' ',' label {
+		set_jmp_label($4, JFL);
+		set_curr_instr(BPF_JMP | BPF_JEQ | BPF_X, 0, 0, 0); }
+	;
+
+jlt
+	: OP_JLT '#' number ',' label {
+		set_jmp_label($5, JFL);
+		set_curr_instr(BPF_JMP | BPF_JGE | BPF_K, 0, 0, $3); }  
+	| OP_JLT 'x' ',' label {
+		set_jmp_label($4, JFL);
+		set_curr_instr(BPF_JMP | BPF_JGE | BPF_X, 0, 0, 0); }
+	;
+
+jle
+	: OP_JLE '#' number ',' label {
+		set_jmp_label($5, JFL);
+		set_curr_instr(BPF_JMP | BPF_JGT | BPF_K, 0, 0, $3); }  
+	| OP_JLE 'x' ',' label {
+		set_jmp_label($4, JFL);
+		set_curr_instr(BPF_JMP | BPF_JGT | BPF_X, 0, 0, 0); }
+	;
+
+jgt
 	: OP_JGT '#' number ',' label ',' label {
 		set_jmp_label($5, JTL);
 		set_jmp_label($7, JFL);
@@ -353,118 +425,138 @@ do_jgt
 		set_jmp_label($4, JTL);
 		set_jmp_label($6, JFL);
 		set_curr_instr(BPF_JMP | BPF_JGT | BPF_X, 0, 0, 0); }
+	| OP_JGT '#' number ',' label {
+		set_jmp_label($5, JTL);
+		set_curr_instr(BPF_JMP | BPF_JGT | BPF_K, 0, 0, $3); }  
+	| OP_JGT 'x' ',' label {
+		set_jmp_label($4, JTL);
+		set_curr_instr(BPF_JMP | BPF_JGT | BPF_X, 0, 0, 0); }
 	;
 
-do_jge
+jge
 	: OP_JGE '#' number ',' label ',' label {
 		set_jmp_label($5, JTL);
 		set_jmp_label($7, JFL);
-		set_curr_instr(BPF_JMP | BPF_JGE | BPF_K, 0, 0, $3); }  
+		set_curr_instr(BPF_JMP | BPF_JGE | BPF_K, 0, 0, $3); }
 	| OP_JGE 'x' ',' label ',' label {
 		set_jmp_label($4, JTL);
 		set_jmp_label($6, JFL);
 		set_curr_instr(BPF_JMP | BPF_JGE | BPF_X, 0, 0, 0); }
+	| OP_JGE '#' number ',' label {
+		set_jmp_label($5, JTL);
+		set_curr_instr(BPF_JMP | BPF_JGE | BPF_K, 0, 0, $3); }
+	| OP_JGE 'x' ',' label {
+		set_jmp_label($4, JTL);
+		set_curr_instr(BPF_JMP | BPF_JGE | BPF_X, 0, 0, 0); }
 	;
 
-do_jset
+jset
 	: OP_JSET '#' number ',' label ',' label {
 		set_jmp_label($5, JTL);
 		set_jmp_label($7, JFL);
-		set_curr_instr(BPF_JMP | BPF_JSET | BPF_K, 0, 0, $3); }  
+		set_curr_instr(BPF_JMP | BPF_JSET | BPF_K, 0, 0, $3); }
 	| OP_JSET 'x' ',' label ',' label {
 		set_jmp_label($4, JTL);
 		set_jmp_label($6, JFL);
 		set_curr_instr(BPF_JMP | BPF_JSET | BPF_X, 0, 0, 0); }
+	| OP_JSET '#' number ',' label {
+		set_jmp_label($5, JTL);
+		set_curr_instr(BPF_JMP | BPF_JSET | BPF_K, 0, 0, $3); }
+	| OP_JSET 'x' ',' label {
+		set_jmp_label($4, JTL);
+		set_curr_instr(BPF_JMP | BPF_JSET | BPF_X, 0, 0, 0); }
 	;
 
-do_add
+add
 	: OP_ADD '#' number {
 		set_curr_instr(BPF_ALU | BPF_ADD | BPF_K, 0, 0, $3); }
 	| OP_ADD 'x' {
 		set_curr_instr(BPF_ALU | BPF_ADD | BPF_X, 0, 0, 0); }
 	;
 
-do_sub
+sub
 	: OP_SUB '#' number {
 		set_curr_instr(BPF_ALU | BPF_SUB | BPF_K, 0, 0, $3); }
 	| OP_SUB 'x' {
 		set_curr_instr(BPF_ALU | BPF_SUB | BPF_X, 0, 0, 0); }
 	;
 
-do_mul
+mul
 	: OP_MUL '#' number {
 		set_curr_instr(BPF_ALU | BPF_MUL | BPF_K, 0, 0, $3); }
 	| OP_MUL 'x' {
 		set_curr_instr(BPF_ALU | BPF_MUL | BPF_X, 0, 0, 0); }
 	;
 
-do_div
+div
 	: OP_DIV '#' number {
 		set_curr_instr(BPF_ALU | BPF_DIV | BPF_K, 0, 0, $3); }
 	| OP_DIV 'x' {
 		set_curr_instr(BPF_ALU | BPF_DIV | BPF_X, 0, 0, 0); }
 	;
 
-do_mod
+mod
 	: OP_MOD '#' number {
 		set_curr_instr(BPF_ALU | BPF_MOD | BPF_K, 0, 0, $3); }
 	| OP_MOD 'x' {
 		set_curr_instr(BPF_ALU | BPF_MOD | BPF_X, 0, 0, 0); }
 	;
 
-do_neg
+neg
 	: OP_NEG {
 		set_curr_instr(BPF_ALU | BPF_NEG, 0, 0, 0); }
 	;
 
-do_and
+and
 	: OP_AND '#' number {
 		set_curr_instr(BPF_ALU | BPF_AND | BPF_K, 0, 0, $3); }
 	| OP_AND 'x' {
 		set_curr_instr(BPF_ALU | BPF_AND | BPF_X, 0, 0, 0); }
 	;
 
-do_or
+or
 	: OP_OR '#' number {
 		set_curr_instr(BPF_ALU | BPF_OR | BPF_K, 0, 0, $3); }
 	| OP_OR 'x' {
 		set_curr_instr(BPF_ALU | BPF_OR | BPF_X, 0, 0, 0); }
 	;
 
-do_xor
+xor
 	: OP_XOR '#' number {
 		set_curr_instr(BPF_ALU | BPF_XOR | BPF_K, 0, 0, $3); }
 	| OP_XOR 'x' {
 		set_curr_instr(BPF_ALU | BPF_XOR | BPF_X, 0, 0, 0); }
 	;
 
-do_lsh
+lsh
 	: OP_LSH '#' number {
 		set_curr_instr(BPF_ALU | BPF_LSH | BPF_K, 0, 0, $3); }
 	| OP_LSH 'x' {
 		set_curr_instr(BPF_ALU | BPF_LSH | BPF_X, 0, 0, 0); }
 	;
 
-do_rsh
+rsh
 	: OP_RSH '#' number {
 		set_curr_instr(BPF_ALU | BPF_RSH | BPF_K, 0, 0, $3); }
 	| OP_RSH 'x' {
 		set_curr_instr(BPF_ALU | BPF_RSH | BPF_X, 0, 0, 0); }
 	;
 
-do_ret
+ret
 	: OP_RET 'a' {
 		set_curr_instr(BPF_RET | BPF_A, 0, 0, 0); }
+	| OP_RET 'x' {
+		set_curr_instr(BPF_RET | BPF_X, 0, 0, 0); }
 	| OP_RET '#' number {
 		set_curr_instr(BPF_RET | BPF_K, 0, 0, $3); }
 	;
 
-do_tax
+tax
 	: OP_TAX {
 		set_curr_instr(BPF_MISC | BPF_TAX, 0, 0, 0); }
 	;
 
-do_txa
+txa
 	: OP_TXA {
 		set_curr_instr(BPF_MISC | BPF_TXA, 0, 0, 0); }
 	;

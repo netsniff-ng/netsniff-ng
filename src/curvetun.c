@@ -44,6 +44,7 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/ptrace.h>
+#include <sys/fsuid.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <signal.h>
@@ -118,8 +119,8 @@ static void header(void)
 
 static void help(void)
 {
-	printf("\n%s %s, lightweight curve25519-based VPN/IP tunnel\n",
-	       PROGNAME_STRING, VERSION_STRING);
+	printf("\ncurvetun %s, lightweight curve25519-based VPN/IP tunnel\n",
+	       VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: curvetun [options]\n"
 	     "Options, general:\n"
@@ -161,8 +162,8 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\n%s %s, lightweight curve25519-based VPN/IP tunnel\n",
-               PROGNAME_STRING, VERSION_STRING);
+	printf("\ncurvetun %s, lightweight curve25519-based VPN/IP tunnel\n",
+               VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2011-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
@@ -218,7 +219,7 @@ static char *fetch_home_dir(void)
 static void write_username(char *home)
 {
 	int fd, ret;
-	char path[PATH_MAX], *eof;
+	char path[PATH_MAX];
 	char user[512];
 
 	memset(path, 0, sizeof(path));
@@ -228,7 +229,8 @@ static void write_username(char *home)
 	fflush(stdout);
 
 	memset(user, 0, sizeof(user));
-	eof = fgets(user, sizeof(user), stdin);
+	if (fgets(user, sizeof(user), stdin) == NULL)
+		panic("Could not read from stdin!\n");
 	user[sizeof(user) - 1] = 0;
 	user[strlen(user) - 1] = 0; /* omit last \n */
 	if (strlen(user) == 0)
@@ -588,8 +590,8 @@ int main(int argc, char **argv)
 	char *port = NULL, *stun = NULL, *dev = NULL, *home = NULL, *alias = NULL;
 	enum working_mode wmode = MODE_UNKNOW;
 
-	if (getuid() != geteuid())
-		seteuid(getuid());
+	setfsuid(getuid());
+	setfsgid(getgid());
 
 	home = fetch_home_dir();
 

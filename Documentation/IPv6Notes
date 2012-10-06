@@ -8,9 +8,6 @@ Tools that fully support IPv6 (or are independent of it):
  * ifpps
  * bpfc
  * astraceroute
-
-Tools that still lack support for IPv6:
-
  * flowtop
 
 Tools that have implemented IPv6 support, but need more testing:

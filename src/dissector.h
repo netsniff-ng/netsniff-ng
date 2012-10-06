@@ -27,12 +27,12 @@
 #define LINKTYPE_FDDI      	10	/* FDDI */
 #define LINKTYPE_IEEE802_11	105	/* IEEE 802.11 wireless */
 
-#define FNTTYPE_PRINT_NORM	0
-#define FNTTYPE_PRINT_LESS	1
-#define FNTTYPE_PRINT_HEX	2
-#define FNTTYPE_PRINT_ASCII	3
-#define FNTTYPE_PRINT_HEX_ASCII 4
-#define FNTTYPE_PRINT_NONE	5
+#define PRINT_NORM	0
+#define PRINT_LESS	1
+#define PRINT_HEX	2
+#define PRINT_ASCII	3
+#define PRINT_HEX_ASCII 4
+#define PRINT_NONE	5
 
 extern void dissector_init_all(int fnttype);
 extern void dissector_entry_point(uint8_t *packet, size_t len, int linktype, int mode);
@@ -51,26 +51,26 @@ static char *packet_types[]={
 static inline void show_frame_hdr(struct frame_map *hdr, int mode,
 				  enum ring_mode rmode)
 {
-	if (mode == FNTTYPE_PRINT_NONE)
+	if (mode == PRINT_NONE)
 		return;
 
 	switch (mode) {
-	case FNTTYPE_PRINT_LESS:
+	case PRINT_LESS:
 		if (rmode == RING_MODE_INGRESS) {
-			tprintf("%s %u %u",
+			tprintf("%s %d %u",
 				packet_types[hdr->s_ll.sll_pkttype],
 				hdr->s_ll.sll_ifindex, hdr->tp_h.tp_len);
 		} else {
 			tprintf("%u ", hdr->tp_h.tp_len);
 		}
 		break;
-	case FNTTYPE_PRINT_NORM:
-	case FNTTYPE_PRINT_HEX:
-	case FNTTYPE_PRINT_ASCII:
-	case FNTTYPE_PRINT_HEX_ASCII:
+	case PRINT_NORM:
+	case PRINT_HEX:
+	case PRINT_ASCII:
+	case PRINT_HEX_ASCII:
 	default:
 		if (rmode == RING_MODE_INGRESS) {
-			tprintf("%s %u %u %us.%uns\n",
+			tprintf("%s %d %u %us.%uns\n",
 				packet_types[hdr->s_ll.sll_pkttype],
 				hdr->s_ll.sll_ifindex, hdr->tp_h.tp_len,
 				hdr->tp_h.tp_sec, hdr->tp_h.tp_nsec);
