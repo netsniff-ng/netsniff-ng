@@ -53,7 +53,7 @@ static void udp(struct pkt_buff *pkt)
 			colorize_start_full(black, red)
 			"invalid" colorize_end());
 	}
-	tprintf("Len (%u Bytes, %u Bytes Data), ", ntohs(udp->len), len);
+	tprintf("Len (%u Bytes, %lu Bytes Data), ", ntohs(udp->len), len);
 	tprintf("CSum (0x%.4x)", ntohs(udp->check));
 	tprintf(" ]\n");
 }
