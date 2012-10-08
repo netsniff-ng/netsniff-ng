@@ -1059,3 +1059,4 @@ char *strtrim_left(register char *p, register char c)
 
 	return p;
 }
+

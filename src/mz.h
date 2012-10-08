@@ -502,6 +502,13 @@ int char2bits (char c, char *str);
 int mz_strcmp(char* usr, char* str, int min);
 int mz_tok(char * str, char * delim, int anz, ...);
 int delay_parse (struct timespec *t, char *a, char *b);
+int mz_def16 (char *def, u_int16_t val, char *str256);
+int dns_process_label(char* label, u_int8_t *buf);
+unsigned int create_tlv (u_int16_t        type,       // The 16-bit TYPE number
+			 u_int8_t        *value,      // The VALUE as prepared hex-array
+			 unsigned int     value_len,  // needed because VALUE maybe not \0 terminated
+			 u_int8_t        *target);
+u_int16_t checksum16 (u_int16_t len, u_int8_t buff[]);
 
 // ************************************
 // 

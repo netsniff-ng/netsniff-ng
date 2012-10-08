@@ -115,9 +115,9 @@ int cli_read_cfg(char *str)
 			amp = sscanf(line, " automops = %s ", path);
 			if (amp) {
 				ampfile = mapfile(path);
+				j = 0;
 				if (ampfile==NULL) fprintf(stderr, " Warning: Cannot read %s\n", path);
-				else {
-					j = 0;
+				else {					
 					j = parse_protocol (ampfile);
 					if (j) {
 						if (verbose) {

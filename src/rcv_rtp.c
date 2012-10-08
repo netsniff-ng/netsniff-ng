@@ -767,3 +767,4 @@ void print_jitterbar (long int j, u_int32_t d)
 	fprintf(stdout,"%s\n", bar);
 }
 
+

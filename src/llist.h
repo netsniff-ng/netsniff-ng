@@ -57,7 +57,9 @@ struct mz_ll * mz_ll_create_new_element(struct mz_ll *list);
 int  mz_ll_delete_element (struct mz_ll *cur);
 int mz_ll_delete_list(struct mz_ll *list);
 struct mz_ll * mz_ll_search_name (struct mz_ll *list, char *str);
+struct mz_ll * mz_ll_search_index (struct mz_ll *list, int i);
 void _mz_ll_set_default (struct mz_ll *cur);
+int mz_ll_size(struct mz_ll *list);
 int mz_ll_dump_all(struct mz_ll *list);
 int mops_tx_sequence (struct mz_ll *seq);
 

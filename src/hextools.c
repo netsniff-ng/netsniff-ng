@@ -320,3 +320,4 @@ int type2str(u_int16_t type, char *str)
    return i;
 }
 
+

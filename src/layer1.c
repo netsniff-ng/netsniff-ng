@@ -343,7 +343,7 @@ int send_eth()
 	     fprintf(stderr,"\n");
 	  }
 	
-	fprintf(stderr, " mz: sent %u frames.\n",loop);
+	fprintf(stderr, " mz: sent %lu frames.\n",loop);
      }
    
    
