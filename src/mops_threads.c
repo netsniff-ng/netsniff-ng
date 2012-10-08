@@ -81,7 +81,7 @@ int mops_is_seqact (struct mops *mp)
 // return mops state (0=MOPS_STATE_NULL, 1=MOPS_STATE_INIT, 2=MOPS_STATE_CONFIG, 3=MOPS_STATE_ACTIVE, 4=MOPS_STATE_SEQACT)
 int mops_state (struct mops *mp)
 {
-   int i=0;
+   int i;
    pthread_mutex_lock (& (mp->mops_mutex) );
    i = mp->state;
    pthread_mutex_unlock (& (mp->mops_mutex) );

@@ -172,7 +172,7 @@ int create_syslog_packet()
 	day = (unsigned int) str2int(argval);
 	if ( (day<1) || (day>31) )
 	  {
-	     fprintf(stderr, " mz/syslog: Invalid day; will use current day(%i)!\n", curday);
+	     fprintf(stderr, " mz/syslog: Invalid day; will use current day(%u)!\n", curday);
 	     day = curday;
 	  }
      }
@@ -209,7 +209,7 @@ int create_syslog_packet()
    
    pri = 8*fac+sev;
 
-   sprintf((char*) tx.udp_payload, "<%d>%s %2i %s %s ",
+   sprintf((char*) tx.udp_payload, "<%u>%s %2u %s %s ",
 	   pri,
 	   Months[mon],
 	   day,

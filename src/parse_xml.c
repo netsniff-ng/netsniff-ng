@@ -236,7 +236,7 @@ int xml_getnext_tag (char *p, char *t)
 	// basic length checks
 	i=0; j=0;
 	if ((len<3)||(len==AUTOMOPS_MAX_FILE_SIZE)) { // 3 is minimum tag length
-		snprintf(t, XML_STRLEN, "invalid length (%u)",len);
+		snprintf(t, XML_STRLEN, "invalid length (%d)",len);
 		return 0;
 	}
 		
@@ -305,7 +305,7 @@ int xml_get_data (char *p, char *t)
 	if (len==0) return 0;
 	
 	if (len>AUTOMOPS_MAX_FILE_SIZE) {
-		snprintf(t, XML_STRLEN, "invalid length (%u)",len);
+		snprintf(t, XML_STRLEN, "invalid length (%d)",len);
 		return -1;
 	}
 	

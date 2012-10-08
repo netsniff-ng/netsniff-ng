@@ -273,7 +273,7 @@ u_int32_t str2ip32_rev (char* str)
 int type2str(u_int16_t type, char *str)
 {
    char hex[8];
-   int i=0;
+   int i;
    
    (void) sprintf (hex, "%x",type);
    i=strlen(hex);
