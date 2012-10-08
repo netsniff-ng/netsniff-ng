@@ -704,12 +704,6 @@ int get_tty_size(void)
 #endif
 }
 
-void check_for_root_maybe_die(void)
-{
-	if (geteuid() != 0 || geteuid() != getuid())
-		panic("Uhhuh, not root?!\n");
-}
-
 short enter_promiscuous_mode(char *ifname)
 {
 	short ifflags;
