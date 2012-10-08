@@ -133,10 +133,10 @@ static void ipv4(struct pkt_buff *pkt)
 			 */
 			opt_len = *(++opt);
 			if (opt_len > opts_len) {
-				tprintf(", Len (%u, invalid) ]\n", opt_len);
+				tprintf(", Len (%zd, invalid) ]\n", opt_len);
 				goto out;
 			} else
-				tprintf(", Len (%u) ]\n", opt_len);
+				tprintf(", Len (%zd) ]\n", opt_len);
 			opts_len -= opt_len;
 			tprintf("     [ Data hex ");
 			for (opt_len -= 2; opt_len > 0; opt_len--)

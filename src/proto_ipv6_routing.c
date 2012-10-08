@@ -45,7 +45,7 @@ static void dissect_routinghdr_type_0(struct pkt_buff *pkt,
 		return;
 
 	if (less) {
-		tprintf("Addresses (%u)", *data_len / sizeof(struct in6_addr));
+		tprintf("Addresses (%lu)", *data_len / sizeof(struct in6_addr));
 		return;
 	}
 
