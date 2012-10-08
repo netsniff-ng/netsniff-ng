@@ -81,7 +81,7 @@ submit your contributions, items marked with '!' are of high importance):
 	@TODO: Daniel Borkmann
 
 39! Add a pcap indxeing utility fo a faster retrival, analysis on huge
-    pcap files.
+    pcap files. Write the index file out for each pcap capture.
 	@TODO: Daniel Borkmann
 
 40! Give more than just a one-line description of each tool on the website.
