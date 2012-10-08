@@ -557,11 +557,12 @@ int device_irq_number(const char *ifname)
 	char *buffp;
 	char buff[512];
 	char sysname[512];
+	FILE *fp;
 
 	if (!strncmp("lo", ifname, strlen("lo")))
 		return 0;
 
-	FILE *fp = fopen("/proc/interrupts", "r");
+	fp = fopen("/proc/interrupts", "r");
 	if (!fp) {
 		whine("Cannot open /proc/interrupts!\n");
 		return -ENOENT;
@@ -614,6 +615,7 @@ int device_bind_irq_to_cpu(int irq, int cpu)
 	int ret;
 	char buff[256];
 	char file[256];
+	FILE *fp;
 
 	/* Note: first CPU begins with CPU 0 */
 	if (irq < 0 || cpu < 0)
@@ -626,7 +628,7 @@ int device_bind_irq_to_cpu(int irq, int cpu)
 	cpu = cpu + 1;
 	sprintf(file, "/proc/irq/%d/smp_affinity", irq);
 
-	FILE *fp = fopen(file, "w");
+	fp = fopen(file, "w");
 	if (!fp) {
 		whine("Cannot open file %s!\n", file);
 		return -ENOENT;
@@ -692,13 +694,12 @@ int get_tty_size(void)
 {
 #ifdef TIOCGSIZE
 	struct ttysize ts = {0};
-	int ret = ioctl(0, TIOCGSIZE, &ts);
-	return (ret == 0 ? ts.ts_cols : DEFAULT_TTY_SIZE);
+	return (ioctl(0, TIOCGSIZE, &ts) == 0 ?
+		ts.ts_cols : DEFAULT_TTY_SIZE);
 #elif defined(TIOCGWINSZ)
 	struct winsize ts;
-	memset(&ts, 0, sizeof(ts));
-	int ret = ioctl(0, TIOCGWINSZ, &ts);
-	return (ret == 0 ? ts.ws_col : DEFAULT_TTY_SIZE);
+	return (ioctl(0, TIOCGWINSZ, &ts) == 0 ?
+		ts.ws_col : DEFAULT_TTY_SIZE);
 #else
 	return DEFAULT_TTY_SIZE;
 #endif
