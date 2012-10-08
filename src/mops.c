@@ -54,12 +54,13 @@
 // 
 struct mops * mops_init()
 {
+	// Create initial mops element:
+	struct mops *new_mops = (struct mops*) malloc(sizeof(struct mops));
+	
 	// these defaults can be changed by the user:
 	min_frame_s = MIN_MOPS_FRAME_SIZE; // important global; depends on used packet tx subsystem such as libnet
 	max_frame_s = MAX_MOPS_FRAME_SIZE-MOPS_SIZE_MARGIN; 
-	
-	// Create initial mops element:
-	struct mops *new_mops = (struct mops*) malloc(sizeof(struct mops));
+
 	new_mops->next = new_mops;
 	new_mops->prev = new_mops;
 	new_mops->state = MOPS_STATE_NULL;

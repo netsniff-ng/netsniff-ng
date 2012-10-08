@@ -139,12 +139,12 @@ int mops_create_igmpv2 (struct mops *mp,
 
 int mops_update_igmp (struct mops * mp)
 {
-	struct mops_ext_igmp * pd;
-   
-	pd = mp->p_desc; 
-	if (pd==NULL) return 1;  // no valid pointer to a p_desc
+
+	struct mops_ext_igmp * pd; 
+	pd = mp->p_desc;
 	mp->msg_s = 0; // important! Otherwise the msg would get longer and longer after each call!
 	u_int16_t sum;
+	if (pd==NULL) return 1;  // no valid pointer to a p_desc
 	
 	switch (pd->version) {
 		

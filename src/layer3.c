@@ -144,6 +144,9 @@ libnet_ptag_t  create_ip_packet (libnet_t *l)
    libnet_ptag_t  t; 
    char argval[MAX_PAYLOAD_SIZE];
    int i, T; // only an abbreviation for tx.packet_mode 
+   unsigned int dummy;
+   size_t len;
+   char *s;
 
    if (ipv6_mode)
      return create_ip6_packet(l);
@@ -155,13 +158,6 @@ libnet_ptag_t  create_ip_packet (libnet_t *l)
    tx.ip_sum   = 0;              // default: automatically calculate checksum
    tx.ip_tos   = 0;
    tx.ip_ttl   = 255;
-
-   
-   // temporary variables
-   unsigned int dummy;
-   size_t len;
-   char *s;
-
    
    T = tx.packet_mode; // >0 means automatic L2 creation
    
@@ -461,6 +457,9 @@ libnet_ptag_t  create_ip6_packet (libnet_t *l)
    libnet_ptag_t  t;
    char argval[MAX_PAYLOAD_SIZE];
    int i, T; // only an abbreviation for tx.packet_mode
+   unsigned int dummy;
+   size_t len;
+   char *s;
 
    // Default IP header fields
    tx.ip_len   = 0;
@@ -471,11 +470,6 @@ libnet_ptag_t  create_ip6_packet (libnet_t *l)
    tx.ip_frag  = 0;              // Flags and Offset !!!
    tx.ip_tos   = 0;
    tx.ip_ttl   = 255;
-
-   // temporary variables
-   unsigned int dummy;
-   size_t len;
-   char *s;
 
    T = tx.packet_mode; // >0 means automatic L2 creation
 

@@ -516,6 +516,9 @@ static int get_inode_from_local_port(int port, const char *proto, int ip6)
 
 static void flow_entry_from_ct(struct flow_entry *n, struct nf_conntrack *ct)
 {
+	const uint8_t *ipv6_src = nfct_get_attr(ct, ATTR_ORIG_IPV6_SRC);
+	const uint8_t *ipv6_dst = nfct_get_attr(ct, ATTR_ORIG_IPV6_DST);
+
 	n->flow_id = nfct_get_attr_u32(ct, ATTR_ID);
 	n->use = nfct_get_attr_u32(ct, ATTR_USE);
 	n->status = nfct_get_attr_u32(ct, ATTR_STATUS);
@@ -524,10 +527,8 @@ static void flow_entry_from_ct(struct flow_entry *n, struct nf_conntrack *ct)
 	n->ip4_src_addr = nfct_get_attr_u32(ct, ATTR_ORIG_IPV4_SRC);
 	n->ip4_dst_addr = nfct_get_attr_u32(ct, ATTR_ORIG_IPV4_DST);
 
-	const uint8_t *ipv6_src = nfct_get_attr(ct, ATTR_ORIG_IPV6_SRC);
 	if (ipv6_src)
 		memcpy(n->ip6_src_addr, ipv6_src, sizeof(n->ip6_src_addr));
-	const uint8_t *ipv6_dst = nfct_get_attr(ct, ATTR_ORIG_IPV6_DST);
 	if (ipv6_dst)
 		memcpy(n->ip6_dst_addr, ipv6_dst, sizeof(n->ip6_dst_addr));
 
@@ -746,6 +747,14 @@ static void *collector(void *null)
 	u_int32_t family = AF_INET;
 	struct nfct_handle *handle;
 	struct nfct_filter *filter;
+	struct nfct_filter_ipv4 filter_ipv4 = {
+		.addr = ntohl(INADDR_LOOPBACK),
+		.mask = 0xffffffff,
+	};
+	struct nfct_filter_ipv6 filter_ipv6 = {
+		.addr = { 0x0, 0x0, 0x0, 0x1 },
+		.mask = { 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff },
+	};
 
 	handle = nfct_open(CONNTRACK, NFCT_ALL_CT_GROUPS);
 	if (!handle)
@@ -770,19 +779,10 @@ static void *collector(void *null)
 	if (what & INCLUDE_TCP)
 		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO, IPPROTO_TCP);
 
-	struct nfct_filter_ipv4 filter_ipv4 = {
-		.addr = ntohl(INADDR_LOOPBACK),
-		.mask = 0xffffffff,
-	};
 
 	nfct_filter_set_logic(filter, NFCT_FILTER_SRC_IPV4,
 			      NFCT_FILTER_LOGIC_NEGATIVE);
-	nfct_filter_add_attr(filter, NFCT_FILTER_SRC_IPV4, &filter_ipv4);
-
-	struct nfct_filter_ipv6 filter_ipv6 = {
-		.addr = { 0x0, 0x0, 0x0, 0x1 },
-		.mask = { 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff },
-	}; 
+	nfct_filter_add_attr(filter, NFCT_FILTER_SRC_IPV4, &filter_ipv4); 
 
 	nfct_filter_set_logic(filter, NFCT_FILTER_SRC_IPV6,
 			      NFCT_FILTER_LOGIC_NEGATIVE);

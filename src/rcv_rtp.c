@@ -375,16 +375,17 @@ void got_rtp_packet(u_char *args,
 	int size_ethernet = sizeof(struct struct_ethernet);
 	int size_ip = sizeof(struct struct_ip);
 	int size_udp = sizeof(struct struct_udp);
+	
+	struct mz_timestamp 
+		deltaTX,
+		deltaRX;
+
 	// int size_rtp = sizeof(struct struct_rtp);
    	// 
 	ethernet = (struct struct_ethernet*)(packet);
 	ip       = (struct struct_ip*)(packet+size_ethernet);
 	udp      = (struct struct_udp*)(packet+size_ethernet+size_ip);
 	rtp      = (struct struct_rtp*)(packet+size_ethernet+size_ip+size_udp);
-	
-	struct mz_timestamp 
-		deltaTX,
-		deltaRX;
 	
 	u_int32_t 
 		i,

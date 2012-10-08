@@ -410,11 +410,12 @@ static int irq_stats(const char *ifname, struct ifstat *s)
 	char *ptr, *ptr2;
 	char buff[4096];
 
+	FILE *fp = fopen("/proc/interrupts", "r");
+
 	/* We exclude lo! */
 	if (!strncmp("lo", ifname, strlen("lo")))
 		return 0;
 
-	FILE *fp = fopen("/proc/interrupts", "r");
 	if (!fp) {
 		whine("Cannot open /proc/interrupts!\n");
 		return -ENOENT;

@@ -87,11 +87,9 @@ int str2hex(char* str, u_int8_t *hp, int n)
 {
 	char *hs;
 	int curval,i;
-	
+	char tmp[8192]=""; //for very long payloads 	
 	
 	if (strlen(str)==0) return 0;
-	
-	char tmp[8192]=""; //for very long payloads 
 	
 	strncpy(tmp,str,8191); // necessary because strtok cannot operate on fixed strings
 	
@@ -122,10 +120,9 @@ int num2hex(char* str, u_int8_t *hp)
    char *hs;
    int i;
    unsigned int curval;
+   char tmp[8192]=""; //for very long payloads 
    
    if (strlen(str)==0) return 0;
-   
-   char tmp[8192]=""; //for very long payloads 
      
    strncpy(tmp,str,8192); // necessary because strtok cannot operate on fixed strings
    
