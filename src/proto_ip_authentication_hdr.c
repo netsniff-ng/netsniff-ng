@@ -38,13 +38,13 @@ static void auth_hdr(struct pkt_buff *pkt)
 	tprintf(" [ Authentication Header ");
 	tprintf("NextHdr (%u), ", auth_ops->h_next_header);
 	if (hdr_len > pkt_len(pkt) || hdr_len < 0){
-		tprintf("HdrLen (%u, %lu Bytes %s), ",
+		tprintf("HdrLen (%u, %zd Bytes %s), ",
 		      auth_ops->h_payload_len, hdr_len,
 		      colorize_start_full(black, red)
 		      "invalid" colorize_end());
 		      return;
 	}
-	tprintf("HdrLen (%u, %lu Bytes), ",auth_ops->h_payload_len, hdr_len);
+	tprintf("HdrLen (%u, %zd Bytes), ",auth_ops->h_payload_len, hdr_len);
 	tprintf("Reserved (0x%x), ", ntohs(auth_ops->h_reserved));
 	/* TODO
 	 * Upgrade for Extended (64-bit) Sequence Number

@@ -516,14 +516,14 @@ static int8_t dissect_neighb_disc_ops_15(struct pkt_buff *pkt,
 		icmp_neighb_disc_15->name_type - 1] : "Unknown",
 		icmp_neighb_disc_15->name_type);
 	if (pad_len > len) {
-		tprintf("Pad Len (%lu, invalid)\n%s", pad_len,
+		tprintf("Pad Len (%zu, invalid)\n%s", pad_len,
 			colorize_start_full(black, red)
 			"Skip Option" colorize_end());
 		pkt_pull(pkt, len);
 		return 1;
 	}
 	else
-		tprintf("Pad Len (%lu) ", pad_len);
+		tprintf("Pad Len (%zu) ", pad_len);
 
 	name_len = len - pad_len;
 	
