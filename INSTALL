@@ -81,11 +81,7 @@ adapt paths within the script):
 In order to run the toolkit as a normal user, set the following privilege
 separation after the build/installation:
 
-  $ sudo setcap cap_net_raw=ep astraceroute
-  $ sudo setcap cap_net_admin=ep flowtop
-  $ sudo setcap cap_net_raw=ep mausezahn
-  $ sudo setcap "cap_net_raw=ep cap_ipc_lock=ep" netsniff-ng
-  $ sudo setcap "cap_net_raw=ep cap_ipc_lock=ep" trafgen
+  $ sudo setcap cap_net_raw,cap_ipc_lock,cap_net_admin=eip {toolname}
 
 Man pages are generated out of the files from Documentation/Manpages dir.
 They are written in POD format. For this, you need the tool pod2man which
