@@ -303,17 +303,21 @@ static int8_t cf_ack_poll(struct pkt_buff *pkt) {
 }
 /* End Data Dissectors */
 
-static char *mgt_sub(u8 subtype, struct pkt_buff *pkt, int8_t (**get_content)(struct pkt_buff *pkt)) {
+static char *mgt_sub(u8 subtype, struct pkt_buff *pkt, int8_t (**get_content)(struct pkt_buff *pkt))
+{
+	struct ieee80211_mgmt *mgmt;
+	const char *dst, *src, *bssid;
+	u16 seq_ctrl;
 
-	struct ieee80211_mgmt *mgmt =
-		(struct ieee80211_mgmt *) pkt_pull(pkt, sizeof(*mgmt));
+	mgmt = (struct ieee80211_mgmt *) pkt_pull(pkt, sizeof(*mgmt));
 	if (mgmt == NULL)
 		return 0;
 
-	const char *dst = lookup_vendor((mgmt->da[0] << 16) | (mgmt->da[1] << 8) | mgmt->da[2]);
-	const char *src = lookup_vendor((mgmt->sa[0] << 16) | (mgmt->sa[1] << 8) | mgmt->sa[2]);
-	const char *bssid = lookup_vendor((mgmt->bssid[0] << 16) | (mgmt->bssid[1] << 8) | mgmt->bssid[2]);
-	u16 seq_ctrl = le16_to_cpu(mgmt->seq_ctrl);
+	dst = lookup_vendor((mgmt->da[0] << 16) | (mgmt->da[1] << 8) | mgmt->da[2]);
+	src = lookup_vendor((mgmt->sa[0] << 16) | (mgmt->sa[1] << 8) | mgmt->sa[2]);
+	bssid = lookup_vendor((mgmt->bssid[0] << 16) | (mgmt->bssid[1] << 8) | mgmt->bssid[2]);
+
+	seq_ctrl = le16_to_cpu(mgmt->seq_ctrl);
 
 	tprintf("Duration (%u),", le16_to_cpu(mgmt->duration));
 	tprintf("\n\tDestination (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x) ",
