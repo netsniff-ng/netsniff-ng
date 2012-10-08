@@ -894,10 +894,7 @@ int main(int argc, char **argv)
 		panic("This is no networking device!\n");
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
-	if (promisc) {
-		check_for_root_maybe_die();
-		ifflags = enter_promiscuous_mode(ifname);
-	}
+
 	ret = main_loop(ifname, interval);
 	if (promisc)
 		leave_promiscuous_mode(ifname, ifflags);
