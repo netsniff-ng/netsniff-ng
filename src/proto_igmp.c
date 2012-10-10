@@ -363,7 +363,7 @@ static void dissect_igmp_v3_membership_query(struct pkt_buff *pkt)
 	tprintf(", QQIC (0x%.2x => %u)", msg->qqic, DECODE_QQIC(msg->qqic));
 	tprintf(", Group Addr (%s)", addr);
 	n = ntohs(msg->number_of_sources);
-	tprintf(", Num Src (%u)", n);
+	tprintf(", Num Src (%zu)", n);
 
 	if (n--) {
 		src_addr = (uint32_t *) pkt_pull(pkt, sizeof(*src_addr));
@@ -407,7 +407,7 @@ static void dissect_igmp_v3_membership_report(struct pkt_buff *pkt)
 		tprintf(" - %s should be %x%s", colorize_start_full(black, red),
 			csum_expected(msg->checksum, csum), colorize_end());
 	m = ntohs(msg->number_of_group_records);
-	tprintf(", Num Group Rec (%u)", m);
+	tprintf(", Num Group Rec (%zu)", m);
 	tprintf(" ]\n");
 
 	while (m--) {
@@ -423,7 +423,7 @@ static void dissect_igmp_v3_membership_report(struct pkt_buff *pkt)
 		else
 			tprintf("  Type (%u)", rec->record_type);
 		n = ntohs(rec->number_of_sources);
-		tprintf(", Num Src (%u)", n);
+		tprintf(", Num Src (%zu)", n);
 		inet_ntop(AF_INET, &rec->multicast_address, addr, sizeof(addr));
 		tprintf(", Multicast Addr (%s)", addr);
 

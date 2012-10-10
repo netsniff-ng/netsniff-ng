@@ -974,8 +974,6 @@ int main(int argc, char **argv)
 	struct ash_cfg cfg;
 	char *path_city_db = NULL, *path_country_db = NULL;
 
-	check_for_root_maybe_die();
-
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.init_ttl = 1;
 	cfg.max_ttl = 30;

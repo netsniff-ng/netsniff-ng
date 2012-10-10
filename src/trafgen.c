@@ -482,8 +482,6 @@ int main(int argc, char **argv)
 	bool setsockmem = true;
 	struct mode mode;
 
-	check_for_root_maybe_die();
-
 	fmemset(&mode, 0, sizeof(mode));
 	mode.cpu = CPU_UNKNOWN;
 	mode.gap = 0;

@@ -409,12 +409,13 @@ static int irq_stats(const char *ifname, struct ifstat *s)
 	int i;
 	char *ptr, *ptr2;
 	char buff[4096];
+	FILE *fp;
 
 	/* We exclude lo! */
 	if (!strncmp("lo", ifname, strlen("lo")))
 		return 0;
 
-	FILE *fp = fopen("/proc/interrupts", "r");
+	fp = fopen("/proc/interrupts", "r");
 	if (!fp) {
 		whine("Cannot open /proc/interrupts!\n");
 		return -ENOENT;
@@ -893,15 +894,14 @@ int main(int argc, char **argv)
 		panic("This is no networking device!\n");
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
-	if (promisc) {
-		check_for_root_maybe_die();
+
+	if (promisc)
 		ifflags = enter_promiscuous_mode(ifname);
-	}
 	ret = main_loop(ifname, interval);
 	if (promisc)
 		leave_promiscuous_mode(ifname, ifflags);
-	xfree(ifname);
 
+	xfree(ifname);
 	return ret;
 }
 

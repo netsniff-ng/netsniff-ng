@@ -233,9 +233,11 @@ static void pcap_mmap_fsync_pcap(int fd)
 
 static void pcap_mmap_prepare_close_pcap(int fd, enum pcap_mode mode)
 {
+	int ret;
+
 	spinlock_lock(&lock);
 
-	int ret = munmap(pstart, map_size);
+	ret = munmap(pstart, map_size);
 	if (ret < 0)
 		panic("Cannot unmap the pcap file!\n");
 
