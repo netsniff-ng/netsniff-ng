@@ -14,7 +14,6 @@ if(LIBCLI_FOUND AND CMAKE_HAVE_PTHREAD_CREATE)
     ../layer2.c
     ../layer3.c
     ../layer4.c
-    ../init.c
     ../hextools.c
     ../tools.c
     ../lookupdev.c
@@ -68,6 +67,7 @@ if(LIBCLI_FOUND AND CMAKE_HAVE_PTHREAD_CREATE)
     ../mops_sequence.c
     ../llist.c
     ../directmops.c
+    ../xutils.c
   )
 
   add_definitions(

@@ -22,7 +22,6 @@
 #define __MAUSEZAHN__
 
 #define _GNU_SOURCE
-
 #include <libnet.h>
 #include <pcap/pcap.h>
 #include <stdio.h>
@@ -39,12 +38,8 @@
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
-#include <net/if.h>
 #include <stdarg.h>
 #include <math.h>
-
-//#include <ctype.h>
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -486,7 +481,8 @@ u_int32_t gbuf_s;                  //
 		  
 void clean_up(int sig);
 int reset();
-void usage();
+void help();
+void version();
 int getopts(int argc, char *argv[]);
 int getarg(char *str, char *arg_name, char *arg_value);
 unsigned long int str2int(char *str);       // converts "65535" to 65535
