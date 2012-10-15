@@ -30,6 +30,9 @@
 #include "mops.h"
 #include "llist.h"
 #include "die.h"
+#include "list.h"
+
+int verbose_level = 0;
 
 static const char *short_options = "46hqvVSxra:A:b:B:c:d:E:f:F:p:P:t:T:M:Q:X:";
 
@@ -45,10 +48,11 @@ void  clean_up(int sig)
 	
 	if (!quiet) fprintf(stderr, "\nMausezahn cleans up...\n");
 	
-	if (fp!=NULL) {
-		if (verbose) fprintf(stderr, " close files (1) ...\n");
-		(void) fflush(fp);
-		(void) fclose(fp);
+	if (fp != NULL) {
+		verbose_l1(" close files (1) ...\n");
+
+		fflush(fp);
+		fclose(fp);
 	}
    
 	if (fp2!=NULL) {
@@ -99,7 +103,7 @@ void  clean_up(int sig)
 }
 
 
-void help(void)
+static void help(void)
 {
 	printf("\n%s %s, a fast versatile traffic generator\n",
 	       PROGNAME_STRING, VERSION_STRING);
@@ -167,7 +171,7 @@ void help(void)
 	die();
 }
 
-void version(void)
+static void version(void)
 {
 	printf("\n%s %s, a fast versatile traffic generator\n",
 	       PROGNAME_STRING, VERSION_STRING);
@@ -182,7 +186,6 @@ void version(void)
 	die();
 }
 
-// Purpose: reset globals, global structs, etc.
 int reset()
 {
    int i;
@@ -840,7 +843,7 @@ int main(int argc, char **argv)
    libnet_ptag_t         t2=0, t3=0, t4=0;      // handles to layers 
    double cpu_time_used;
 
-   reset(0); 
+   reset(); 
    
    if ( getopts(argc, argv) ) 
      {
