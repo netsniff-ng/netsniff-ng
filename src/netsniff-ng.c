@@ -169,7 +169,8 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 	unsigned long trunced = 0;
 	struct timeval start, end, diff;
 
-	if (!device_up_and_running(mode->device_out))
+	if (!device_up_and_running(mode->device_out) &&
+	    !mode->rfraw)
 		panic("Device not up and running!\n");
 
 	tx_sock = pf_socket();
@@ -695,7 +696,8 @@ static void enter_mode_rx_only_or_dump(struct mode *mode)
 	struct sock_fprog bpf_ops;
 	struct timeval start, end, diff;
 
-	if (!device_up_and_running(mode->device_in))
+	if (!device_up_and_running(mode->device_in) &&
+	    !mode->rfraw)
 		panic("Device not up and running!\n");
 
 	sock = pf_socket();
