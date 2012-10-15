@@ -29,9 +29,15 @@
 #include "cli.h"
 #include "mops.h"
 #include "llist.h"
-//#include "xutils.h"
+#include "die.h"
 
-// Catch SIGINT and clean up, close everything...
+static const char *short_options = "46hqvVSxra:A:b:B:c:d:E:f:F:p:P:t:T:M:Q:X:";
+
+static void signal_handler(int number)
+{
+	clean_up(number);
+}
+
 void  clean_up(int sig)
 {
 	int i;
@@ -54,11 +60,11 @@ void  clean_up(int sig)
 	// interactive mode?
 	if (mz_port) { 
 		if (verbose) fprintf(stderr, " clear mops list...\n");
-		mops_cleanup (mp_head);
+		mops_cleanup(mp_head);
 		if (verbose) fprintf(stderr, " clear automops list...\n");
-		automops_cleanup (amp_head);
+		automops_cleanup(amp_head);
 		if (verbose) fprintf(stderr, " clear packet sequences...\n");
-		mz_ll_delete_list (packet_sequences);
+		mz_ll_delete_list(packet_sequences);
 	}
 
 	for (i=0; i<device_list_entries; i++) {
@@ -88,8 +94,6 @@ void  clean_up(int sig)
 		
 	}
 
-
-	
 	if (verbose) fprintf(stderr, "finished.\n");
 	exit(sig);
 }
@@ -160,7 +164,7 @@ void help(void)
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
 	     "There is NO WARRANTY, to the extent permitted by law.\n");
-	exit(1);
+	die();
 }
 
 void version(void)
@@ -175,7 +179,7 @@ void version(void)
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
 	     "There is NO WARRANTY, to the extent permitted by law.\n");
-	exit(1);//die();
+	die();
 }
 
 // Purpose: reset globals, global structs, etc.
@@ -362,7 +366,7 @@ int getopts (int argc, char *argv[])
 	opterr = 1; // let getopt print error message if necessary
 
 
-	while ((c = getopt(argc, argv, "46hqvVSxra:A:b:B:c:d:E:f:F:p:P:t:T:M:Q:X:")) != -1)
+	while ((c = getopt(argc, argv, short_options)) != -1)
 		switch (c) {
 		 case '4':
 			tx.eth_type = 0x0800;
@@ -836,10 +840,8 @@ int main(int argc, char **argv)
    libnet_ptag_t         t2=0, t3=0, t4=0;      // handles to layers 
    double cpu_time_used;
 
-   // Reset all globals
-   (void) reset(0); 
+   reset(0); 
    
-   // Get all CLI options (sets globals, see mz.h)
    if ( getopts(argc, argv) ) 
      {
 	(void) fprintf(stderr, " Invalid command line parameters!\n");
@@ -849,25 +851,7 @@ int main(int argc, char **argv)
    // Check whether hires timers are supported or not:
    (void) check_timer();
 
-   // *********************************************************************
-   //           First prefer data in a mausezahn description file!
-   // *********************************************************************
-
-   
-   
-               // >>> TODO:
-               // Note that argument 'device' is also used here!
-               // Support libpcap
-               // Must end in state machine!
-
-   
-   
-   // *********************************************************************
-   //    If no MDF given, then send packet according CLI specifications
-   // *********************************************************************
-   
-
-   (void) signal(SIGINT, clean_up);  // to close all file pointers etc upon SIGINT
+	signal(SIGINT, signal_handler);  // to close all file pointers etc upon SIGINT
 
    switch (mode)
      {
