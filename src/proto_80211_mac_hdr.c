@@ -1,6 +1,5 @@
 /*
  * netsniff-ng - the packet sniffing beast
- * Copyright 2012 Daniel Borkmann <borkmann@iogearbox.net>
  * Copyright 2012 Markus Amend <markus@netsniff-ng.org>
  * Subject to the GPL, version 2.
  */
@@ -183,7 +182,6 @@ struct ieee80211_data {
 /* TODO: Extend */
 /* Data Frame end */
 
-
 /* http://www.sss-mag.com/pdf/802_11tut.pdf
  * http://www.scribd.com/doc/78443651/111/Management-Frames
  * http://www.wildpackets.com/resources/compendium/wireless_lan/wlan_packets
@@ -279,22 +277,15 @@ struct element_hop_pt {
 	u8 rand_tabl[0];
 } __packed;
 
-
-
-
 struct element_erp {
 	u8 len;
 	u8 param;
 } __packed;
 
-
-
-
 struct element_ext_supp_rates {
 	u8 len;
 	u8 rates[0];
 } __packed;
-
 
 struct element_vend_spec {
 	u8 len;
@@ -302,117 +293,117 @@ struct element_vend_spec {
 	u8 specific[0];
 } __packed;
 
-static float data_rates(u8 id) {
+static float data_rates(u8 id)
+{
+	/* XXX Why not (id / 2.f)? */
 	switch (id) {
-	case 2:
-		      return 1;
-	case 3:
-		      return 1.5;
-	case 4:
-		      return 2;
-	case 5:
-		      return 2.5;
-	case 6:
-		      return 3;
-	case 9:
-		      return 4.5;
-	case 11:
-		      return 5.5;
-	case 12:
-		      return 6;
-	case 18:
-		      return 9;
-	case 22:
-		      return 11;
-	case 24:
-		      return 12;
-	case 27:
-		      return 13.5;
-	case 36:
-		      return 18;
-	case 44:
-		      return 22;
-	case 48:
-		      return 24;
-	case 54:
-		      return 27;
-	case 66:
-		      return 33;
-	case 72:
-		      return 36;
-	case 96:
-		      return 48;
-	case 108:
-		      return 54;
+	case   2: return  1.0f;
+	case   3: return  1.5f;
+	case   4: return  2.0f;
+	case   5: return  2.5f;
+	case   6: return  3.0f;
+	case   9: return  4.5f;
+	case  11: return  5.5f;
+	case  12: return  6.0f;
+	case  18: return  9.0f;
+	case  22: return 11.0f;
+	case  24: return 12.0f;
+	case  27: return 13.5f;
+	case  36: return 18.0f;
+	case  44: return 22.0f;
+	case  48: return 24.0f;
+	case  54: return 27.0f;
+	case  66: return 33.0f;
+	case  72: return 36.0f;
+	case  96: return 48.0f;
+	case 108: return 54.0f;
 	}
 
-	return 0;
+	return 0.f;
 }
 
-static int8_t inf_reserved(struct pkt_buff *pkt, u8 *id) {
-	struct element_reserved *reserved =
-		(struct element_reserved *) pkt_pull(pkt, sizeof(*reserved));
+static int8_t inf_reserved(struct pkt_buff *pkt, u8 *id)
+{
+	int i;
+	u8 *data;
+	struct element_reserved *reserved;
+
+	reserved = (struct element_reserved *) pkt_pull(pkt, sizeof(*reserved));
 	if (reserved == NULL)
 		return 0;
 
 	tprintf("Reserved (%u, Len (%u)): ", *id, reserved->len);
 
-	u8 *data = pkt_pull(pkt, reserved->len);
+	data = pkt_pull(pkt, reserved->len);
 	if (data == NULL)
 		return 0;
 
 	tprintf("Data 0x");
-	for(u8 i=0; i < reserved->len; i++)
+	for (i = 0; i < reserved->len; i++)
 		tprintf("%.2x", data[i]);
 
 	return 1;
 }
 
-static int8_t inf_ssid(struct pkt_buff *pkt, u8 *id) {
-	struct element_ssid *ssid =
-		(struct element_ssid *) pkt_pull(pkt, sizeof(*ssid));
+static int8_t inf_ssid(struct pkt_buff *pkt, u8 *id)
+{
+	int i;
+	struct element_ssid *ssid;
+	char *ssid_name;
+
+	ssid = (struct element_ssid *) pkt_pull(pkt, sizeof(*ssid));
 	if (ssid == NULL)
 		return 0;
 
 	tprintf(" SSID (%u, Len (%u)): ", *id, ssid->len);
 
 	if (ssid->len) {
-		char *ssid_name = (char *) pkt_pull(pkt, ssid->len);
+		ssid_name = (char *) pkt_pull(pkt, ssid->len);
 		if (ssid_name == NULL)
 			return 0;
-		for(u8 i=0; i < ssid->len; i++)
-		  tprintf("%c",ssid_name[i]);
-	}
-	else
+
+		for (i = 0; i < ssid->len; i++)
+			tprintf("%c",ssid_name[i]);
+	} else {
 		tprintf("Wildcard SSID");
+	}
 
 	return 1;
 }
 
-static int8_t inf_supp_rates(struct pkt_buff *pkt, u8 *id) {
-	struct element_supp_rates *supp_rates =
-		(struct element_supp_rates *) pkt_pull(pkt, sizeof(*supp_rates));
+static int8_t inf_supp_rates(struct pkt_buff *pkt, u8 *id)
+{
+	int i;
+	u8 *rates;
+	struct element_supp_rates *supp_rates;
+
+	supp_rates = (struct element_supp_rates *)
+			pkt_pull(pkt, sizeof(*supp_rates));
 	if (supp_rates == NULL)
 		return 0;
 
 	tprintf("Rates (%u, Len (%u)): ", *id, supp_rates->len);
 
 	if (supp_rates->len) {
-		u8 *rates = pkt_pull(pkt, supp_rates->len);
+		rates = pkt_pull(pkt, supp_rates->len);
 		if (rates == NULL)
 			return 0;
-		for(u8 i=0; i < supp_rates->len; i++)
-		  tprintf("%g ",(rates[i] & 0x80) ? ((rates[i] & 0x3f) * 0.5) : data_rates(rates[i]));
-	}
-	else
-		return 0;
 
-	return 1;
+		for (i = 0; i < supp_rates->len; i++)
+			tprintf("%g ", (rates[i] & 0x80) ?
+				((rates[i] & 0x3f) * 0.5) :
+				data_rates(rates[i]));
+		return 1;
+	}
+
+	return 0;
 }
 
-static int8_t inf_fh_ps(struct pkt_buff *pkt, u8 *id) {
-	struct element_fh_ps *fh_ps =
-		(struct element_fh_ps *) pkt_pull(pkt, sizeof(*fh_ps));
+static int8_t inf_fh_ps(struct pkt_buff *pkt, u8 *id)
+{
+	struct element_fh_ps *fh_ps;
+
+	fh_ps =	(struct element_fh_ps *) pkt_pull(pkt, sizeof(*fh_ps));
 	if (fh_ps == NULL)
 		return 0;
 
@@ -425,9 +416,11 @@ static int8_t inf_fh_ps(struct pkt_buff *pkt, u8 *id) {
 	return 1;
 }
 
-static int8_t inf_dsss_ps(struct pkt_buff *pkt, u8 *id) {
-	struct element_dsss_ps *dsss_ps =
-		(struct element_dsss_ps *) pkt_pull(pkt, sizeof(*dsss_ps));
+static int8_t inf_dsss_ps(struct pkt_buff *pkt, u8 *id)
+{
+	struct element_dsss_ps *dsss_ps;
+
+	dsss_ps = (struct element_dsss_ps *) pkt_pull(pkt, sizeof(*dsss_ps));
 	if (dsss_ps == NULL)
 		return 0;
 
@@ -437,9 +430,11 @@ static int8_t inf_dsss_ps(struct pkt_buff *pkt, u8 *id) {
 	return 1;
 }
 
-static int8_t inf_cf_ps(struct pkt_buff *pkt, u8 *id) {
-	struct element_cf_ps *cf_ps =
-		(struct element_cf_ps *) pkt_pull(pkt, sizeof(*cf_ps));
+static int8_t inf_cf_ps(struct pkt_buff *pkt, u8 *id)
+{
+	struct element_cf_ps *cf_ps;
+
+	cf_ps = (struct element_cf_ps *) pkt_pull(pkt, sizeof(*cf_ps));
 	if (cf_ps == NULL)
 		return 0;
 
@@ -452,9 +447,11 @@ static int8_t inf_cf_ps(struct pkt_buff *pkt, u8 *id) {
 	return 1;
 }
 
-static int8_t inf_tim(struct pkt_buff *pkt, u8 *id) {
-	struct element_tim *tim =
-		(struct element_tim *) pkt_pull(pkt, sizeof(*tim));
+static int8_t inf_tim(struct pkt_buff *pkt, u8 *id)
+{
+	struct element_tim *tim;
+
+	tim = (struct element_tim *) pkt_pull(pkt, sizeof(*tim));
 	if (tim == NULL)
 		return 0;
 
@@ -466,17 +463,20 @@ static int8_t inf_tim(struct pkt_buff *pkt, u8 *id) {
 		u8 *bmp = pkt_pull(pkt, (tim->len - sizeof(*tim) + 1));
 		if (bmp == NULL)
 			return 0;
+
 		tprintf("Partial Virtual Bitmap: 0x");
 		for(u8 i=0; i < (tim->len - sizeof(*tim) + 1); i++)
-		  tprintf("%.2x ", bmp[i]);
+			tprintf("%.2x ", bmp[i]);
 	}
 
 	return 1;
 }
 
-static int8_t inf_ibss_ps(struct pkt_buff *pkt, u8 *id) {
-	struct element_ibss_ps *ibss_ps =
-		(struct element_ibss_ps *) pkt_pull(pkt, sizeof(*ibss_ps));
+static int8_t inf_ibss_ps(struct pkt_buff *pkt, u8 *id)
+{
+	struct element_ibss_ps *ibss_ps;
+
+	ibss_ps = (struct element_ibss_ps *) pkt_pull(pkt, sizeof(*ibss_ps));
 	if (ibss_ps == NULL)
 		return 0;
 
@@ -486,44 +486,55 @@ static int8_t inf_ibss_ps(struct pkt_buff *pkt, u8 *id) {
 	return 1;
 }
 
-static int8_t inf_country(struct pkt_buff *pkt, u8 *id) {
-	struct element_country *country =
-		(struct element_country *) pkt_pull(pkt, sizeof(*country));
+static int8_t inf_country(struct pkt_buff *pkt, u8 *id)
+{
+	int i;
+	u8 *pad;
+	struct element_country *country;
+
+	country = (struct element_country *) pkt_pull(pkt, sizeof(*country));
 	if (country == NULL)
 		return 0;
 
 	tprintf("Country (%u, Len(%u)): ", *id, country->len);
 	tprintf("Country String: %c%c%c", country->country_first,
-			      country->country_sec, country->country_third);
-	for(u8 i=0; i < (country->len - 3); i += 3) {
-		struct element_country_tripled *country_tripled =
-		(struct element_country_tripled *) pkt_pull(pkt, sizeof(*country_tripled));
+		country->country_sec, country->country_third);
+
+	for (i = 0; i < (country->len - 3); i += 3) {
+		struct element_country_tripled *country_tripled;
+
+		country_tripled = (struct element_country_tripled *)
+				    pkt_pull(pkt, sizeof(*country_tripled));
 		if (country_tripled == NULL)
 			return 0;
+
 		if(country_tripled->frst_ch >= 201) {
 			tprintf("Oper Ext ID: %u, ", country_tripled->frst_ch);
 			tprintf("Operating Class: %u, ", country_tripled->nr_ch);
 			tprintf("Coverage Class: %u", country_tripled->max_trans);
-		}
-		else {
+		} else {
 			tprintf("First Ch Nr: %u, ", country_tripled->frst_ch);
 			tprintf("Nr of Ch: %u, ", country_tripled->nr_ch);
 			tprintf("Max Transmit Pwr Lvl: %u", country_tripled->max_trans);
 		}
 	}
+
 	if(country->len % 2) {
-		u8 *pad = pkt_pull(pkt, 1);
+		pad = pkt_pull(pkt, 1);
 		if (pad == NULL)
 			return 0;
+
 		tprintf(", Pad: 0x%x", *pad);
 	}
 
 	return 1;
 }
 
-static int8_t inf_hop_pp(struct pkt_buff *pkt, u8 *id) {
-	struct element_hop_pp *hop_pp =
-		(struct element_hop_pp *) pkt_pull(pkt, sizeof(*hop_pp));
+static int8_t inf_hop_pp(struct pkt_buff *pkt, u8 *id)
+{
+	struct element_hop_pp *hop_pp;
+
+	hop_pp = (struct element_hop_pp *) pkt_pull(pkt, sizeof(*hop_pp));
 	if (hop_pp == NULL)
 		return 0;
 
@@ -533,9 +544,13 @@ static int8_t inf_hop_pp(struct pkt_buff *pkt, u8 *id) {
 	return 1;
 }
 
-static int8_t inf_hop_pt(struct pkt_buff *pkt, u8 *id) {
-	struct element_hop_pt *hop_pt =
-		(struct element_hop_pt *) pkt_pull(pkt, sizeof(*hop_pt));
+static int8_t inf_hop_pt(struct pkt_buff *pkt, u8 *id)
+{
+	int i;
+	u8 *rand_tabl;
+	struct element_hop_pt *hop_pt;
+
+	hop_pt = (struct element_hop_pt *) pkt_pull(pkt, sizeof(*hop_pt));
 	if (hop_pt == NULL)
 		return 0;
 
@@ -545,89 +560,109 @@ static int8_t inf_hop_pt(struct pkt_buff *pkt, u8 *id) {
 	tprintf("Modules: %u, ", hop_pt->modules);
 	tprintf("Offs: %u", hop_pt->offs);
 
-	if((hop_pt->len - sizeof(*hop_pt) + 1) > 0) {
-		u8 *rand_tabl = pkt_pull(pkt, (hop_pt->len - sizeof(*hop_pt) + 1));
+	if ((hop_pt->len - sizeof(*hop_pt) + 1) > 0) {
+		rand_tabl = pkt_pull(pkt, (hop_pt->len - sizeof(*hop_pt) + 1));
 		if (rand_tabl == NULL)
 			return 0;
+
 		tprintf(", Rand table: 0x");
-		for(u8 i=0; i < (hop_pt->len - sizeof(*hop_pt) + 1); i++)
-		  tprintf("%.2x ", rand_tabl[i]);
+		for (i = 0; i < (hop_pt->len - sizeof(*hop_pt) + 1); i++)
+			tprintf("%.2x ", rand_tabl[i]);
 	}
 
 	return 1;
 }
 
-static int8_t inf_req(struct pkt_buff *pkt, u8 *id) {
+static int8_t inf_req(struct pkt_buff *pkt, u8 *id)
+{
 	return 1;
 }
 
-static int8_t inf_bss_load(struct pkt_buff *pkt, u8 *id) {
+static int8_t inf_bss_load(struct pkt_buff *pkt, u8 *id)
+{
 	return 1;
 }
 
-static int8_t inf_edca_ps(struct pkt_buff *pkt, u8 *id) {
+static int8_t inf_edca_ps(struct pkt_buff *pkt, u8 *id)
+{
 	return 1;
 }
 
-static int8_t inf_tspec(struct pkt_buff *pkt, u8 *id) {
+static int8_t inf_tspec(struct pkt_buff *pkt, u8 *id)
+{
 	return 1;
 }
 
-static int8_t inf_tclas(struct pkt_buff *pkt, u8 *id) {
+static int8_t inf_tclas(struct pkt_buff *pkt, u8 *id)
+{
 	return 1;
 }
 
-static int8_t inf_sched(struct pkt_buff *pkt, u8 *id) {
+static int8_t inf_sched(struct pkt_buff *pkt, u8 *id)
+{
 	return 1;
 }
 
-static int8_t inf_chall_txt(struct pkt_buff *pkt, u8 *id) {
+static int8_t inf_chall_txt(struct pkt_buff *pkt, u8 *id)
+{
 	return 1;
 }
 
-static int8_t inf_pwr_constr(struct pkt_buff *pkt, u8 *id) {
+static int8_t inf_pwr_constr(struct pkt_buff *pkt, u8 *id)
+{
 	return 1;
 }
 
-static int8_t inf_pwr_cap(struct pkt_buff *pkt, u8 *id) {
+static int8_t inf_pwr_cap(struct pkt_buff *pkt, u8 *id)
+{
 	return 1;
 }
 
-static int8_t inf_tpc_req(struct pkt_buff *pkt, u8 *id) {
+static int8_t inf_tpc_req(struct pkt_buff *pkt, u8 *id)
+{
 	return 1;
 }
 
-static int8_t inf_tpc_rep(struct pkt_buff *pkt, u8 *id) {
+static int8_t inf_tpc_rep(struct pkt_buff *pkt, u8 *id)
+{
 	return 1;
 }
 
-static int8_t inf_supp_ch(struct pkt_buff *pkt, u8 *id) {
+static int8_t inf_supp_ch(struct pkt_buff *pkt, u8 *id)
+{
 	return 1;
 }
 
-static int8_t inf_ch_sw_ann(struct pkt_buff *pkt, u8 *id) {
+static int8_t inf_ch_sw_ann(struct pkt_buff *pkt, u8 *id)
+{
 	return 1;
 }
 
-static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id) {
+static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
+{
 	return 1;
 }
 
-static int8_t inf_meas_rep(struct pkt_buff *pkt, u8 *id) {
+static int8_t inf_meas_rep(struct pkt_buff *pkt, u8 *id)
+{
 	return 1;
 }
 
-static int8_t inf_quiet(struct pkt_buff *pkt, u8 *id) {
+static int8_t inf_quiet(struct pkt_buff *pkt, u8 *id)
+{
 	return 1;
 }
 
-static int8_t inf_ibss_dfs(struct pkt_buff *pkt, u8 *id) {
+static int8_t inf_ibss_dfs(struct pkt_buff *pkt, u8 *id)
+{
 	return 1;
 }
 
-static int8_t inf_erp(struct pkt_buff *pkt, u8 *id) {
-	struct element_erp *erp =
-		(struct element_erp *) pkt_pull(pkt, sizeof(*erp));
+static int8_t inf_erp(struct pkt_buff *pkt, u8 *id)
+{
+	struct element_erp *erp;
+
+	erp = (struct element_erp *) pkt_pull(pkt, sizeof(*erp));
 	if (erp == NULL)
 		return 0;
 
@@ -640,45 +675,57 @@ static int8_t inf_erp(struct pkt_buff *pkt, u8 *id) {
 	return 1;
 }
 
-static int8_t inf_ts_del(struct pkt_buff *pkt, u8 *id) {
+static int8_t inf_ts_del(struct pkt_buff *pkt, u8 *id)
+{
 	return 1;
 }
 
-static int8_t inf_tclas_proc(struct pkt_buff *pkt, u8 *id) {
+static int8_t inf_tclas_proc(struct pkt_buff *pkt, u8 *id)
+{
 	return 1;
 }
 
-static int8_t inf_ht_cap(struct pkt_buff *pkt, u8 *id) {
+static int8_t inf_ht_cap(struct pkt_buff *pkt, u8 *id)
+{
 	return 1;
 }
 
-static int8_t inf_qos_cap(struct pkt_buff *pkt, u8 *id) {
+static int8_t inf_qos_cap(struct pkt_buff *pkt, u8 *id)
+{
 	return 1;
 }
 
-static int8_t inf_rsn(struct pkt_buff *pkt, u8 *id) {
+static int8_t inf_rsn(struct pkt_buff *pkt, u8 *id)
+{
 	return 1;
 }
 
-static int8_t inf_ext_supp_rates(struct pkt_buff *pkt, u8 *id) {
-	struct element_ext_supp_rates *ext_supp_rates =
-		(struct element_ext_supp_rates *) pkt_pull(pkt, sizeof(*ext_supp_rates));
+static int8_t inf_ext_supp_rates(struct pkt_buff *pkt, u8 *id)
+{
+	int i;
+	u8 *rates;
+	struct element_ext_supp_rates *ext_supp_rates;
+
+	ext_supp_rates = (struct element_ext_supp_rates *)
+				pkt_pull(pkt, sizeof(*ext_supp_rates));
 	if (ext_supp_rates == NULL)
 		return 0;
 
 	tprintf("Ext Support Rates (%u, Len(%u)): ", *id, ext_supp_rates->len);
 
 	if (ext_supp_rates->len) {
-		u8 *rates = pkt_pull(pkt, ext_supp_rates->len);
+		rates = pkt_pull(pkt, ext_supp_rates->len);
 		if (rates == NULL)
 			return 0;
-		for(u8 i=0; i < ext_supp_rates->len; i++)
-		  tprintf("%g ",(rates[i] & 0x80) ? ((rates[i] & 0x3f) * 0.5) : data_rates(rates[i]));
-	}
-	else
-		return 0;
 
-	return 1;
+		for (i = 0; i < ext_supp_rates->len; i++)
+			tprintf("%g ", (rates[i] & 0x80) ?
+				((rates[i] & 0x3f) * 0.5) :
+				data_rates(rates[i]));
+		return 1;
+	}
+
+	return 0;
 }
 
 static int8_t inf_ap_ch_exp(struct pkt_buff *pkt, u8 *id) {
@@ -1021,297 +1068,171 @@ static int8_t inf_mccaop_adv_overv(struct pkt_buff *pkt, u8 *id) {
 	return 1;
 }
 
-static int8_t inf_vend_spec(struct pkt_buff *pkt, u8 *id) {
-	struct element_vend_spec *vend_spec =
-		(struct element_vend_spec *) pkt_pull(pkt, sizeof(*vend_spec));
+static int8_t inf_vend_spec(struct pkt_buff *pkt, u8 *id)
+{
+	int i;
+	u8 *data;
+	struct element_vend_spec *vend_spec;
+
+	vend_spec = (struct element_vend_spec *)
+			pkt_pull(pkt, sizeof(*vend_spec));
 	if (vend_spec == NULL)
 		return 0;
 
 	tprintf("Vendor Specific (%u, Len (%u)): ", *id, vend_spec->len);
 
-	u8 *data = pkt_pull(pkt, vend_spec->len);
+	data = pkt_pull(pkt, vend_spec->len);
 	if (data == NULL)
 		return 0;
 
 	tprintf("Data 0x");
-	for(u8 i=0; i < vend_spec->len; i++)
+	for (i = 0; i < vend_spec->len; i++)
 		tprintf("%.2x", data[i]);
 
 	return 1;
 }
 
-static int8_t inf_elements(struct pkt_buff *pkt) {
+static int8_t inf_elements(struct pkt_buff *pkt)
+{
 	u8 *id = pkt_pull(pkt, 1);
-
 	if (id == NULL)
 		return 0;
 	
 	switch (*id) {
-	case 0:
-		      return inf_ssid(pkt, id);
-	case 1:
-		      return inf_supp_rates(pkt, id);
-	case 2:
-		      return inf_fh_ps(pkt, id);
-	case 3:
-		      return inf_dsss_ps(pkt, id);
-	case 4:
-		      return inf_cf_ps(pkt, id);
-	case 5:
-		      return inf_tim(pkt, id);
-	case 6:
-		      return inf_ibss_ps(pkt, id);
-	case 7:
-		      return inf_country(pkt, id);
-	case 8:
-		      return inf_hop_pp(pkt, id);
-	case 9:
-		      return inf_hop_pt(pkt, id);
-	case 10:
-		      return inf_req(pkt, id);
-	case 11:
-		      return inf_bss_load(pkt, id);
-	case 12:
-		      return inf_edca_ps(pkt, id);
-	case 13:
-		      return inf_tspec(pkt, id);
-	case 14:
-		      return inf_tclas(pkt, id);
-	case 15:
-		      return inf_sched(pkt, id);
-	case 16:
-		      return inf_chall_txt(pkt, id);
-	case 32:
-		      return inf_pwr_constr(pkt, id);
-	case 33:
-		      return inf_pwr_cap(pkt, id);
-	case 34:
-		      return inf_tpc_req(pkt, id);
-	case 35:
-		      return inf_tpc_rep(pkt, id);
-	case 36:
-		      return inf_supp_ch(pkt, id);
-	case 37:
-		      return inf_ch_sw_ann(pkt, id);
-	case 38:
-		      return inf_meas_req(pkt, id);
-	case 39:
-		      return inf_meas_rep(pkt, id);
-	case 40:
-		      return inf_quiet(pkt, id);
-	case 41:
-		      return inf_ibss_dfs(pkt, id);
-	case 42:
-		      return inf_erp(pkt, id);
-	case 43:
-		      return inf_ts_del(pkt, id);
-	case 44:
-		      return inf_tclas_proc(pkt, id);
-	case 45:
-		      return inf_ht_cap(pkt, id);
-	case 46:
-		      return inf_qos_cap(pkt, id);
-	case 47:
-		      return inf_reserved(pkt, id);
-	case 48:
-		      return inf_rsn(pkt, id);
-	case 49:
-		      return inf_rsn(pkt, id);
-	case 50:
-		      return inf_ext_supp_rates(pkt, id);
-	case 51:
-		      return inf_ap_ch_exp(pkt, id);
-	case 52:
-		      return inf_neighb_rep(pkt, id);
-	case 53:
-		      return inf_rcpi(pkt, id);
-	case 54:
-		      return inf_mde(pkt, id);
-	case 55:
-		      return inf_fte(pkt, id);
-	case 56:
-		      return inf_time_out_int(pkt, id);
-	case 57:
-		      return inf_rde(pkt, id);
-	case 58:
-		      return inf_dse_reg_loc(pkt, id);
-	case 59:
-		      return inf_supp_op_class(pkt, id);
-	case 60:
-		      return inf_ext_ch_sw_ann(pkt, id);
-	case 61:
-		      return inf_ht_op(pkt, id);
-	case 62:
-		      return inf_sec_ch_offs(pkt, id);
-	case 63:
-		      return inf_bss_avg_acc_del(pkt, id);
-	case 64:
-		      return inf_ant(pkt, id);
-	case 65:
-		      return inf_rsni(pkt, id);
-	case 66:
-		      return inf_meas_pilot_trans(pkt, id);
-	case 67:
-		      return inf_bss_avl_adm_cap(pkt, id);
-	case 68:
-		      return inf_bss_ac_acc_del(pkt, id);
-	case 69:
-		      return inf_time_adv(pkt, id);
-	case 70:
-		      return inf_rm_ena_cap(pkt, id);
-	case 71:
-		      return inf_mult_bssid(pkt, id);
-	case 72:
-		      return inf_20_40_bss_coex(pkt, id);
-	case 73:
-		      return inf_20_40_bss_int_ch_rep(pkt, id);
-	case 74:
-		      return inf_overl_bss_scan_para(pkt, id);
-	case 75:
-		      return inf_ric_desc(pkt, id);
-	case 76:
-		      return inf_mgmt_mic(pkt, id);
-	case 78:
-		      return inf_ev_req(pkt, id);
-	case 79:
-		      return inf_ev_rep(pkt, id);
-	case 80:
-		      return inf_diagn_req(pkt, id);
-	case 81:
-		      return inf_diagn_rep(pkt, id);
-	case 82:
-		      return inf_loc_para(pkt, id);
-	case 83:
-		      return inf_nontr_bssid_cap(pkt, id);
-	case 84:
-		      return inf_ssid_list(pkt, id);
-	case 85:
-		      return inf_mult_bssid_index(pkt, id);
-	case 86:
-		      return inf_fms_desc(pkt, id);
-	case 87:
-		      return inf_fms_req(pkt, id);
-	case 88:
-		      return inf_fms_resp(pkt, id);
-	case 89:
-		      return inf_qos_tfc_cap(pkt, id);
-	case 90:
-		      return inf_bss_max_idle_per(pkt, id);
-	case 91:
-		      return inf_tfs_req(pkt, id);
-	case 92:
-		      return inf_tfs_resp(pkt, id);
-	case 93:
-		      return inf_wnm_sleep_mod(pkt, id);
-	case 94:
-		      return inf_tim_bcst_req(pkt, id);
-	case 95:
-		      return inf_tim_bcst_resp(pkt, id);
-	case 96:
-		      return inf_coll_interf_rep(pkt, id);
-	case 97:
-		      return inf_ch_usage(pkt, id);
-	case 98:
-		      return inf_time_zone(pkt, id);
-	case 99:
-		      return inf_dms_req(pkt, id);
-	case 100:
-		      return inf_dms_resp(pkt, id);
-	case 101:
-		      return inf_link_id(pkt, id);
-	case 102:
-		      return inf_wakeup_sched(pkt, id);
-	case 104:
-		      return inf_ch_sw_timing(pkt, id);
-	case 105:
-		      return inf_pti_ctrl(pkt, id);
-	case 106:
-		      return inf_tpu_buff_status(pkt, id);
-	case 107:
-		      return inf_interw(pkt, id);
-	case 108:
-		      return inf_adv_proto(pkt, id);
-	case 109:
-		      return inf_exp_bandw_req(pkt, id);
-	case 110:
-		      return inf_qos_map_set(pkt, id);
-	case 111:
-		      return inf_roam_cons(pkt, id);
-	case 112:
-		      return inf_emer_alert_id(pkt, id);
-	case 113:
-		      return inf_mesh_conf(pkt, id);
-	case 114:
-		      return inf_mesh_id(pkt, id);
-	case 115:
-		      return inf_mesh_link_metr_rep(pkt, id);
-	case 116:
-		      return inf_cong_notif(pkt, id);
-	case 117:
-		      return inf_mesh_peer_mgmt(pkt, id);
-	case 118:
-		      return inf_mesh_ch_sw_para(pkt, id);
-	case 119:
-		      return inf_mesh_awake_win(pkt, id);
-	case 120:
-		      return inf_beacon_timing(pkt, id);
-	case 121:
-		      return inf_mccaop_setup_req(pkt, id);
-	case 122:
-		      return inf_mccaop_setup_rep(pkt, id);
-	case 123:
-		      return inf_mccaop_adv(pkt, id);
-	case 124:
-		      return inf_mccaop_teardwn(pkt, id);
-	case 125:
-		      return inf_gann(pkt, id);
-	case 126:
-		      return inf_rann(pkt, id);
-	case 127:
-		      return inf_ext_cap(pkt, id);
-	case 128:
-		      return inf_reserved(pkt, id);
-	case 129:
-		      return inf_reserved(pkt, id);
-	case 130:
-		      return inf_preq(pkt, id);
-	case 131:
-		      return inf_prep(pkt, id);
-	case 132:
-		      return inf_perr(pkt, id);
-	case 133:
-		      return inf_reserved(pkt, id);
-	case 134:
-		      return inf_reserved(pkt, id);
-	case 135:
-		      return inf_reserved(pkt, id);
-	case 136:
-		      return inf_reserved(pkt, id);
-	case 137:
-		      return inf_pxu(pkt, id);
-	case 138:
-		      return inf_pxuc(pkt, id);
-	case 139:
-		      return inf_auth_mesh_peer_exch(pkt, id);
-	case 140:
-		      return inf_mic(pkt, id);
-	case 141:
-		      return inf_dest_uri(pkt, id);
-	case 142:
-		      return inf_u_apsd_coex(pkt, id);
-	case 174:
-		      return inf_mccaop_adv_overv(pkt, id);
-	case 221:
-		      return inf_vend_spec(pkt, id);
+	case   0: return inf_ssid(pkt, id);
+	case   1: return inf_supp_rates(pkt, id);
+	case   2: return inf_fh_ps(pkt, id);
+	case   3: return inf_dsss_ps(pkt, id);
+	case   4: return inf_cf_ps(pkt, id);
+	case   5: return inf_tim(pkt, id);
+	case   6: return inf_ibss_ps(pkt, id);
+	case   7: return inf_country(pkt, id);
+	case   8: return inf_hop_pp(pkt, id);
+	case   9: return inf_hop_pt(pkt, id);
+	case  10: return inf_req(pkt, id);
+	case  11: return inf_bss_load(pkt, id);
+	case  12: return inf_edca_ps(pkt, id);
+	case  13: return inf_tspec(pkt, id);
+	case  14: return inf_tclas(pkt, id);
+	case  15: return inf_sched(pkt, id);
+	case  16: return inf_chall_txt(pkt, id);
+	case  17 ... 31: return inf_reserved(pkt, id);
+	case  32: return inf_pwr_constr(pkt, id);
+	case  33: return inf_pwr_cap(pkt, id);
+	case  34: return inf_tpc_req(pkt, id);
+	case  35: return inf_tpc_rep(pkt, id);
+	case  36: return inf_supp_ch(pkt, id);
+	case  37: return inf_ch_sw_ann(pkt, id);
+	case  38: return inf_meas_req(pkt, id);
+	case  39: return inf_meas_rep(pkt, id);
+	case  40: return inf_quiet(pkt, id);
+	case  41: return inf_ibss_dfs(pkt, id);
+	case  42: return inf_erp(pkt, id);
+	case  43: return inf_ts_del(pkt, id);
+	case  44: return inf_tclas_proc(pkt, id);
+	case  45: return inf_ht_cap(pkt, id);
+	case  46: return inf_qos_cap(pkt, id);
+	case  47: return inf_reserved(pkt, id);
+	case  48: return inf_rsn(pkt, id);
+	case  49: return inf_rsn(pkt, id);
+	case  50: return inf_ext_supp_rates(pkt, id);
+	case  51: return inf_ap_ch_exp(pkt, id);
+	case  52: return inf_neighb_rep(pkt, id);
+	case  53: return inf_rcpi(pkt, id);
+	case  54: return inf_mde(pkt, id);
+	case  55: return inf_fte(pkt, id);
+	case  56: return inf_time_out_int(pkt, id);
+	case  57: return inf_rde(pkt, id);
+	case  58: return inf_dse_reg_loc(pkt, id);
+	case  59: return inf_supp_op_class(pkt, id);
+	case  60: return inf_ext_ch_sw_ann(pkt, id);
+	case  61: return inf_ht_op(pkt, id);
+	case  62: return inf_sec_ch_offs(pkt, id);
+	case  63: return inf_bss_avg_acc_del(pkt, id);
+	case  64: return inf_ant(pkt, id);
+	case  65: return inf_rsni(pkt, id);
+	case  66: return inf_meas_pilot_trans(pkt, id);
+	case  67: return inf_bss_avl_adm_cap(pkt, id);
+	case  68: return inf_bss_ac_acc_del(pkt, id);
+	case  69: return inf_time_adv(pkt, id);
+	case  70: return inf_rm_ena_cap(pkt, id);
+	case  71: return inf_mult_bssid(pkt, id);
+	case  72: return inf_20_40_bss_coex(pkt, id);
+	case  73: return inf_20_40_bss_int_ch_rep(pkt, id);
+	case  74: return inf_overl_bss_scan_para(pkt, id);
+	case  75: return inf_ric_desc(pkt, id);
+	case  76: return inf_mgmt_mic(pkt, id);
+	case  78: return inf_ev_req(pkt, id);
+	case  79: return inf_ev_rep(pkt, id);
+	case  80: return inf_diagn_req(pkt, id);
+	case  81: return inf_diagn_rep(pkt, id);
+	case  82: return inf_loc_para(pkt, id);
+	case  83: return inf_nontr_bssid_cap(pkt, id);
+	case  84: return inf_ssid_list(pkt, id);
+	case  85: return inf_mult_bssid_index(pkt, id);
+	case  86: return inf_fms_desc(pkt, id);
+	case  87: return inf_fms_req(pkt, id);
+	case  88: return inf_fms_resp(pkt, id);
+	case  89: return inf_qos_tfc_cap(pkt, id);
+	case  90: return inf_bss_max_idle_per(pkt, id);
+	case  91: return inf_tfs_req(pkt, id);
+	case  92: return inf_tfs_resp(pkt, id);
+	case  93: return inf_wnm_sleep_mod(pkt, id);
+	case  94: return inf_tim_bcst_req(pkt, id);
+	case  95: return inf_tim_bcst_resp(pkt, id);
+	case  96: return inf_coll_interf_rep(pkt, id);
+	case  97: return inf_ch_usage(pkt, id);
+	case  98: return inf_time_zone(pkt, id);
+	case  99: return inf_dms_req(pkt, id);
+	case 100: return inf_dms_resp(pkt, id);
+	case 101: return inf_link_id(pkt, id);
+	case 102: return inf_wakeup_sched(pkt, id);
+	case 104: return inf_ch_sw_timing(pkt, id);
+	case 105: return inf_pti_ctrl(pkt, id);
+	case 106: return inf_tpu_buff_status(pkt, id);
+	case 107: return inf_interw(pkt, id);
+	case 108: return inf_adv_proto(pkt, id);
+	case 109: return inf_exp_bandw_req(pkt, id);
+	case 110: return inf_qos_map_set(pkt, id);
+	case 111: return inf_roam_cons(pkt, id);
+	case 112: return inf_emer_alert_id(pkt, id);
+	case 113: return inf_mesh_conf(pkt, id);
+	case 114: return inf_mesh_id(pkt, id);
+	case 115: return inf_mesh_link_metr_rep(pkt, id);
+	case 116: return inf_cong_notif(pkt, id);
+	case 117: return inf_mesh_peer_mgmt(pkt, id);
+	case 118: return inf_mesh_ch_sw_para(pkt, id);
+	case 119: return inf_mesh_awake_win(pkt, id);
+	case 120: return inf_beacon_timing(pkt, id);
+	case 121: return inf_mccaop_setup_req(pkt, id);
+	case 122: return inf_mccaop_setup_rep(pkt, id);
+	case 123: return inf_mccaop_adv(pkt, id);
+	case 124: return inf_mccaop_teardwn(pkt, id);
+	case 125: return inf_gann(pkt, id);
+	case 126: return inf_rann(pkt, id);
+	case 127: return inf_ext_cap(pkt, id);
+	case 128: return inf_reserved(pkt, id);
+	case 129: return inf_reserved(pkt, id);
+	case 130: return inf_preq(pkt, id);
+	case 131: return inf_prep(pkt, id);
+	case 132: return inf_perr(pkt, id);
+	case 133: return inf_reserved(pkt, id);
+	case 134: return inf_reserved(pkt, id);
+	case 135: return inf_reserved(pkt, id);
+	case 136: return inf_reserved(pkt, id);
+	case 137: return inf_pxu(pkt, id);
+	case 138: return inf_pxuc(pkt, id);
+	case 139: return inf_auth_mesh_peer_exch(pkt, id);
+	case 140: return inf_mic(pkt, id);
+	case 141: return inf_dest_uri(pkt, id);
+	case 142: return inf_u_apsd_coex(pkt, id);
+	case 143 ... 173: return inf_reserved(pkt, id);
+	case 174: return inf_mccaop_adv_overv(pkt, id);
+	case 221: return inf_vend_spec(pkt, id);
 	}
-
-	if((*id >= 17 && *id <= 31) || (*id >= 143 && *id <= 173))
-		      return inf_reserved(pkt, id);
 
 	return 0;
 }
-
-static int8_t cap_field(u16 cap_inf) {
 
 #define	ESS		0b0000000000000001
 #define	IBSS		0b0000000000000010
@@ -1330,38 +1251,40 @@ static int8_t cap_field(u16 cap_inf) {
 #define	Del_Block_ACK	0b0100000000000000
 #define	Imm_Block_ACK	0b1000000000000000
 
-	if(ESS & cap_inf)
-	      tprintf(" ESS;");
-	if(IBSS & cap_inf)
-	      tprintf(" IBSS;");
-	if(CF_Pollable & cap_inf)
-	      tprintf(" CF Pollable;");
-	if(CF_Poll_Req & cap_inf)
-	      tprintf(" CF-Poll Request;");
-	if(Privacy & cap_inf)
-	      tprintf(" Privacy;");
-	if(Short_Pre & cap_inf)
-	      tprintf(" Short Preamble;");
-	if(PBCC & cap_inf)
-	      tprintf(" PBCC;");
-	if(Ch_Agility & cap_inf)
-	      tprintf(" Channel Agility;");
-	if(Spec_Mgmt & cap_inf)
-	      tprintf(" Spectrum Management;");
-	if(QoS & cap_inf)
-	      tprintf(" QoS;");
-	if(Short_Slot_t & cap_inf)
-	      tprintf(" Short Slot Time;");
-	if(APSD & cap_inf)
-	      tprintf(" APSD;");
-	if(Radio_Meas & cap_inf)
-	      tprintf(" Radio Measurement;");
-	if(DSSS_OFDM & cap_inf)
-	      tprintf(" DSSS-OFDM;");
-	if(Del_Block_ACK & cap_inf)
-	      tprintf(" Delayed Block Ack;");
-	if(Imm_Block_ACK & cap_inf)
-	      tprintf(" Immediate Block Ack;");
+static int8_t cap_field(u16 cap_inf)
+{
+	if (ESS & cap_inf)
+		tprintf(" ESS;");
+	if (IBSS & cap_inf)
+		tprintf(" IBSS;");
+	if (CF_Pollable & cap_inf)
+		tprintf(" CF Pollable;");
+	if (CF_Poll_Req & cap_inf)
+		tprintf(" CF-Poll Request;");
+	if (Privacy & cap_inf)
+		tprintf(" Privacy;");
+	if (Short_Pre & cap_inf)
+		tprintf(" Short Preamble;");
+	if (PBCC & cap_inf)
+		tprintf(" PBCC;");
+	if (Ch_Agility & cap_inf)
+		tprintf(" Channel Agility;");
+	if (Spec_Mgmt & cap_inf)
+		tprintf(" Spectrum Management;");
+	if (QoS & cap_inf)
+		tprintf(" QoS;");
+	if (Short_Slot_t & cap_inf)
+		tprintf(" Short Slot Time;");
+	if (APSD & cap_inf)
+		tprintf(" APSD;");
+	if (Radio_Meas & cap_inf)
+		tprintf(" Radio Measurement;");
+	if (DSSS_OFDM & cap_inf)
+		tprintf(" DSSS-OFDM;");
+	if (Del_Block_ACK & cap_inf)
+		tprintf(" Delayed Block Ack;");
+	if (Imm_Block_ACK & cap_inf)
+		tprintf(" Immediate Block Ack;");
 	
 	return 1;
 }
@@ -1391,16 +1314,18 @@ static int8_t probe_resp(struct pkt_buff *pkt) {
 	return 0;
 }
 
-static int8_t beacon(struct pkt_buff *pkt) {
-	struct ieee80211_mgmt_beacon *beacon =
-		(struct ieee80211_mgmt_beacon *) pkt_pull(pkt, sizeof(*beacon));
+static int8_t beacon(struct pkt_buff *pkt)
+{
+	struct ieee80211_mgmt_beacon *beacon;
+
+	beacon = (struct ieee80211_mgmt_beacon *)
+			pkt_pull(pkt, sizeof(*beacon));
 	if (beacon == NULL)
 		return 0;
+
 	tprintf("Timestamp 0x%.16lx, ", le64_to_cpu(beacon->timestamp));
-	tprintf("Beacon Interval (%fs), ",
-				    le16_to_cpu(beacon->beacon_int) * TU);
-	tprintf("Capabilities (0x%x <->",
-				    le16_to_cpu(beacon->capab_info));
+	tprintf("Beacon Interval (%fs), ", le16_to_cpu(beacon->beacon_int)*TU);
+	tprintf("Capabilities (0x%x <->", le16_to_cpu(beacon->capab_info));
 	cap_field(le16_to_cpu(beacon->capab_info));
 	tprintf(")");
 
@@ -1413,7 +1338,6 @@ static int8_t beacon(struct pkt_buff *pkt) {
 
 	if(pkt_len(pkt))
 		return 0;
-	
 	return 1;
 }
 
@@ -1494,185 +1418,219 @@ static int8_t cf_ack_poll(struct pkt_buff *pkt) {
 }
 /* End Data Dissectors */
 
-static char *mgt_sub(u8 subtype, struct pkt_buff *pkt, int8_t (**get_content)(struct pkt_buff *pkt))
+static const char *mgt_sub(u8 subtype, struct pkt_buff *pkt,
+			   int8_t (**get_content)(struct pkt_buff *pkt))
 {
+	u16 seq_ctrl;
 	struct ieee80211_mgmt *mgmt;
 	const char *dst, *src, *bssid;
-	u16 seq_ctrl;
 
 	mgmt = (struct ieee80211_mgmt *) pkt_pull(pkt, sizeof(*mgmt));
 	if (mgmt == NULL)
 		return 0;
 
-	dst = lookup_vendor((mgmt->da[0] << 16) | (mgmt->da[1] << 8) | mgmt->da[2]);
-	src = lookup_vendor((mgmt->sa[0] << 16) | (mgmt->sa[1] << 8) | mgmt->sa[2]);
-	bssid = lookup_vendor((mgmt->bssid[0] << 16) | (mgmt->bssid[1] << 8) | mgmt->bssid[2]);
+	dst = lookup_vendor((mgmt->da[0] << 16) |
+			    (mgmt->da[1] <<  8) |
+			     mgmt->da[2]);
+	src = lookup_vendor((mgmt->sa[0] << 16) |
+			    (mgmt->sa[1] <<  8) |
+			     mgmt->sa[2]);
 
+	bssid = lookup_vendor((mgmt->bssid[0] << 16) |
+			      (mgmt->bssid[1] <<  8) |
+			       mgmt->bssid[2]);
 	seq_ctrl = le16_to_cpu(mgmt->seq_ctrl);
 
 	tprintf("Duration (%u),", le16_to_cpu(mgmt->duration));
 	tprintf("\n\tDestination (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x) ",
-			      mgmt->da[0], mgmt->da[1], mgmt->da[2], mgmt->da[3], mgmt->da[4], mgmt->da[5]);
-	if(dst)
-		tprintf("=> (%s:%.2x:%.2x:%.2x)", dst, mgmt->da[3], mgmt->da[4], mgmt->da[5]);
+		mgmt->da[0], mgmt->da[1], mgmt->da[2],
+		mgmt->da[3], mgmt->da[4], mgmt->da[5]);
+	if (dst) {
+		tprintf("=> (%s:%.2x:%.2x:%.2x)", dst,
+			mgmt->da[3], mgmt->da[4], mgmt->da[5]);
+	}
+
 	tprintf("\n\tSource (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x) ",
-			      mgmt->sa[0], mgmt->sa[1], mgmt->sa[2], mgmt->sa[3], mgmt->sa[4], mgmt->sa[5]);
-	if(src)
-		tprintf("=> (%s:%.2x:%.2x:%.2x)", src, mgmt->sa[3], mgmt->sa[4], mgmt->sa[5]);
+		mgmt->sa[0], mgmt->sa[1], mgmt->sa[2],
+		mgmt->sa[3], mgmt->sa[4], mgmt->sa[5]);
+	if (src) {
+		tprintf("=> (%s:%.2x:%.2x:%.2x)", src,
+			mgmt->sa[3], mgmt->sa[4], mgmt->sa[5]);
+	}
+
 	tprintf("\n\tBSSID (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x) ",
-			      mgmt->bssid[0], mgmt->bssid[1], mgmt->bssid[2], mgmt->bssid[3], mgmt->bssid[4], mgmt->bssid[5]);
-	if(bssid)
-		tprintf("=> (%s:%.2x:%.2x:%.2x)", bssid, mgmt->bssid[3], mgmt->bssid[4], mgmt->bssid[5]);
-	tprintf("\n\tFragmentnr. (%u), Seqnr. (%u). ", seq_ctrl & 0xf, seq_ctrl >> 4);
+		mgmt->bssid[0], mgmt->bssid[1], mgmt->bssid[2],
+		mgmt->bssid[3], mgmt->bssid[4], mgmt->bssid[5]);
+	if(bssid) {
+		tprintf("=> (%s:%.2x:%.2x:%.2x)", bssid,
+			mgmt->bssid[3], mgmt->bssid[4], mgmt->bssid[5]);
+	}
+
+	tprintf("\n\tFragmentnr. (%u), Seqnr. (%u). ",
+		seq_ctrl & 0xf, seq_ctrl >> 4);
   
 	switch (subtype) {
 	case 0b0000:
-		      *get_content = assoc_req;
-		      return "Association Request";
+		*get_content = assoc_req;
+		return "Association Request";
 	case 0b0001:
-		      *get_content = assoc_resp;
-		      return "Association Response";
+		*get_content = assoc_resp;
+		return "Association Response";
 	case 0b0010:
-		      *get_content = reassoc_req;
-		      return "Reassociation Request";
+		*get_content = reassoc_req;
+		return "Reassociation Request";
 	case 0b0011:
-		      *get_content = reassoc_resp;
-		      return "Reassociation Response";
+		*get_content = reassoc_resp;
+		return "Reassociation Response";
 	case 0b0100:
-		      *get_content = probe_req;
-		      return "Probe Request";
+		*get_content = probe_req;
+		return "Probe Request";
 	case 0b0101:
-		      *get_content = probe_resp;
-		      return "Probe Response";
+		*get_content = probe_resp;
+		return "Probe Response";
 	case 0b1000:
-		      *get_content = beacon;
-		      return "Beacon";
+		*get_content = beacon;
+		return "Beacon";
 	case 0b1001:
-		      *get_content = atim;
-		      return "ATIM";
+		*get_content = atim;
+		return "ATIM";
 	case 0b1010:
-		      *get_content = disassoc;
-		      return "Disassociation";
+		*get_content = disassoc;
+		return "Disassociation";
 	case 0b1011:
-		      *get_content = auth;
-		      return "Authentication";
+		*get_content = auth;
+		return "Authentication";
 	case 0b1100:
-		      *get_content = deauth;
-		      return "Deauthentication";
+		*get_content = deauth;
+		return "Deauthentication";
+	case 0b0110 ... 0b0111:
+	case 0b1101 ... 0b1111:
+		*get_content = NULL;
+		return "Reserved";
+	default:
+		*get_content = NULL;
+		return "Management SubType unknown";
 	}
-
-	if ((subtype >= 0b0110 && subtype <= 0b0111) || (subtype >= 0b1101 && subtype <= 0b1111))
-		      return "Reserved";
-
-	return "Management SubType not supported";
 }
 
-static char *ctrl_sub(u8 subtype, struct pkt_buff *pkt, int8_t (**get_content)(struct pkt_buff *pkt)) {
-
+static const char *ctrl_sub(u8 subtype, struct pkt_buff *pkt,
+			    int8_t (**get_content)(struct pkt_buff *pkt))
+{
 	switch (subtype) {
 	case 0b1010:
-		      *get_content = ps_poll;
-		      return "PS-Poll";
+		*get_content = ps_poll;
+		return "PS-Poll";
 	case 0b1011:
-		      *get_content = rts;
-		      return "RTS";
+		*get_content = rts;
+		return "RTS";
 	case 0b1100:
-		      *get_content = cts;
-		      return "CTS";
+		*get_content = cts;
+		return "CTS";
 	case 0b1101:
-		      *get_content = ack;
-		      return "ACK";
+		*get_content = ack;
+		return "ACK";
 	case 0b1110:
-		      *get_content = cf_end;
-		      return "CF End";
+		*get_content = cf_end;
+		return "CF End";
 	case 0b1111:
-		      *get_content = cf_end_ack;
-		      return "CF End + CF-ACK";
+		*get_content = cf_end_ack;
+		return "CF End + CF-ACK";
+	case 0b0000 ... 0b1001:
+		*get_content = NULL;
+		return "Reserved";
+	default:
+		return "Control SubType unkown";
 	}
-
-	if (subtype <= 0b1001)
-		      return "Reserved";
-	
-	return "Control SubType not supported";
 }
 
-static char *data_sub(u8 subtype, struct pkt_buff *pkt, int8_t (**get_content)(struct pkt_buff *pkt)) {
-
+static const char *data_sub(u8 subtype, struct pkt_buff *pkt,
+		 	    int8_t (**get_content)(struct pkt_buff *pkt))
+{
 	switch (subtype) {
 	case 0b0000:
-		      *get_content = data;
-		      return "Data";
+		*get_content = data;
+		return "Data";
 	case 0b0001:
-		      *get_content = data_cf_ack;
-		      return "Data + CF-ACK";
+		*get_content = data_cf_ack;
+		return "Data + CF-ACK";
 	case 0b0010:
-		      *get_content = data_cf_poll;
-		      return "Data + CF-Poll";
+		*get_content = data_cf_poll;
+		return "Data + CF-Poll";
 	case 0b0011:
-		      *get_content = data_cf_ack_poll;
-		      return "Data + CF-ACK + CF-Poll";
+		*get_content = data_cf_ack_poll;
+		return "Data + CF-ACK + CF-Poll";
 	case 0b0100:
-		      *get_content = null;
-		      return "Null";
+		*get_content = null;
+		return "Null";
 	case 0b0101:
-		      *get_content = cf_ack;
-		      return "CF-ACK";
+		*get_content = cf_ack;
+		return "CF-ACK";
 	case 0b0110:
-		      *get_content = cf_poll;
-		      return "CF-Poll";
+		*get_content = cf_poll;
+		return "CF-Poll";
 	case 0b0111:
-		      *get_content = cf_ack_poll;
-		      return "CF-ACK + CF-Poll";
+		*get_content = cf_ack_poll;
+		return "CF-ACK + CF-Poll";
+	case 0b1000 ... 0b1111:
+		*get_content = NULL;
+		return "Reserved";
+	default:
+		*get_content = NULL;
+		return "Data SubType unkown";
 	}
-
-	if (subtype >= 0b1000 && subtype <= 0b1111)
-		      return "Reserved";
-	
-	return "Data SubType not supported";
 }
 
-static char *frame_control_type(u8 type, char *(**get_subtype)(u8 subtype, struct pkt_buff *pkt, int8_t (**get_content)(struct pkt_buff *pkt))) {
+static const char *
+frame_control_type(u8 type, const char *(**get_subtype)(u8 subtype,
+		   struct pkt_buff *pkt, int8_t (**get_content)(struct pkt_buff *pkt)))
+{
 	switch (type) {
 	case 0b00:
-		    *get_subtype = mgt_sub;
-		    return "Management";
+		*get_subtype = mgt_sub;
+		return "Management";
 	case 0b01:
-		    *get_subtype = ctrl_sub;
-		    return "Control";
+		*get_subtype = ctrl_sub;
+		return "Control";
 	case 0b10:
-		    *get_subtype = data_sub;
-		    return "Data";
-	case 0b11: return "Reserved";
+		*get_subtype = data_sub;
+		return "Data";
+	case 0b11:
+		*get_subtype = NULL;
+		return "Reserved";
+	default:
+		*get_subtype = NULL;
+		return "Control Type unkown";
 	}
-
-	return "Control Type not supported";
-	
 }
 
 static void ieee80211(struct pkt_buff *pkt)
 {
 	int8_t (*get_content)(struct pkt_buff *pkt) = NULL;
-	char *(*get_subtype)(u8 subtype, struct pkt_buff *pkt, int8_t (**get_content)(struct pkt_buff *pkt)) = NULL;
-	char *subtype = NULL;
-	
-	struct ieee80211_frm_ctrl *frm_ctrl =
-		(struct ieee80211_frm_ctrl *) pkt_pull(pkt, sizeof(*frm_ctrl));
+	const char *(*get_subtype)(u8 subtype, struct pkt_buff *pkt,
+		int8_t (**get_content)(struct pkt_buff *pkt)) = NULL;
+	const char *subtype = NULL;
+	struct ieee80211_frm_ctrl *frm_ctrl;
+
+	frm_ctrl = (struct ieee80211_frm_ctrl *)
+			pkt_pull(pkt, sizeof(*frm_ctrl));
 	if (frm_ctrl == NULL)
 		return;
 
 	tprintf(" [ 802.11 Frame Control (0x%04x)]\n",
 		le16_to_cpu(frm_ctrl->frame_control));
+
 	tprintf(" [ Proto Version (%u), ", frm_ctrl->proto_version);
-	tprintf("Type (%u, %s), ", frm_ctrl->type, frame_control_type(frm_ctrl->type, &get_subtype));
+	tprintf("Type (%u, %s), ", frm_ctrl->type,
+		frame_control_type(frm_ctrl->type, &get_subtype));
 	if (get_subtype) {
 		subtype = (*get_subtype)(frm_ctrl->subtype, pkt, &get_content);
 		tprintf("Subtype (%u, %s)", frm_ctrl->subtype, subtype);
-	}
-	else
+	} else {
 		tprintf("\n%s%s%s", colorize_start_full(black, red),
-			    "No SubType Data available", colorize_end());
-	tprintf("%s%s",
-		frm_ctrl->to_ds ? ", Frame goes to DS" : "",
+			"No SubType Data available", colorize_end());
+	}
+
+	tprintf("%s%s", frm_ctrl->to_ds ? ", Frame goes to DS" : "",
 		frm_ctrl->from_ds ?  ", Frame comes from DS" : "");
 	tprintf("%s", frm_ctrl->more_frags ? ", More Fragments" : "");
 	tprintf("%s", frm_ctrl->retry ? ", Frame is retransmitted" : "");
@@ -1685,13 +1643,13 @@ static void ieee80211(struct pkt_buff *pkt)
 	if (get_content) {
 		tprintf(" [ Subtype %s: ", subtype);
 		if (!((*get_content) (pkt)))
-		      tprintf("\n%s%s%s", colorize_start_full(black, red),
-			    "Failed to dissect Subtype", colorize_end());
+			tprintf("\n%s%s%s", colorize_start_full(black, red),
+				"Failed to dissect Subtype", colorize_end());
 		tprintf(" ]");
-	}
-	else
+	} else {
 		tprintf("\n%s%s%s", colorize_start_full(black, red),
-			    "No SubType Data available", colorize_end());
+			"No SubType Data available", colorize_end());
+	}
 
 //	pkt_set_proto(pkt, &ieee802_lay2, ntohs(eth->h_proto));
 }
