@@ -1627,7 +1627,7 @@ static void ieee80211(struct pkt_buff *pkt)
 		subtype = (*get_subtype)(frm_ctrl->subtype, pkt, &get_content);
 		tprintf("Subtype (%u, %s)", frm_ctrl->subtype, subtype);
 	} else {
-		tprintf("\n%s%s%s", colorize_start_full(black, red),
+		tprintf("%s%s%s", colorize_start_full(black, red),
 			"No SubType Data available", colorize_end());
 	}
 
@@ -1644,13 +1644,15 @@ static void ieee80211(struct pkt_buff *pkt)
 	if (get_content) {
 		tprintf(" [ Subtype %s: ", subtype);
 		if (!((*get_content) (pkt)))
-			tprintf("\n%s%s%s", colorize_start_full(black, red),
+			tprintf("%s%s%s", colorize_start_full(black, red),
 				"Failed to dissect Subtype", colorize_end());
 		tprintf(" ]");
 	} else {
-		tprintf("\n%s%s%s", colorize_start_full(black, red),
+		tprintf("%s%s%s", colorize_start_full(black, red),
 			"No SubType Data available", colorize_end());
 	}
+
+	tprintf("\n");
 
 //	pkt_set_proto(pkt, &ieee802_lay2, ntohs(eth->h_proto));
 }
