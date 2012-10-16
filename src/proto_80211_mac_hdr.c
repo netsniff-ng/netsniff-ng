@@ -1,6 +1,7 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * Copyright 2012 Markus Amend <markus@netsniff-ng.org>
+ * Copyright 2012 Daniel Borkmann <daniel@netsniff-ng.org>
  * Subject to the GPL, version 2.
  */
 
