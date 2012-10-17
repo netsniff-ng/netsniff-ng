@@ -184,8 +184,11 @@ int compile_hla_filter(char *file, int verbose, int debug)
 	}
 
 	fclose(zzin);
+
+	bpf_symtab_cleanup();
 	if (debug)
 		die();
+
 	return 0;
 }
 

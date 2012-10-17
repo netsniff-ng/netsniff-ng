@@ -40,6 +40,8 @@ void bpf_symtab_cleanup(void)
 
 	for (i = 0; i < symbol_used; ++i)
 		xfree(symbol_table[i].name);
+
+	symbol_used = 0;
 }
 
 int bpf_symtab_insert(const char *name, int type)
