@@ -89,6 +89,7 @@ number_bin	{digit_n}{bindigit_b}{bindigit}+
 "}"		{ return '}'; }
 "="		{ return '='; }
 ";"		{ return ';'; }
+","		{ return ','; }
 "+"		{ return '+'; }
 "-"		{ return '-'; }
 "&"		{ return '&'; }

@@ -22,6 +22,16 @@
 #include "built_in.h"
 #include "die.h"
 
+#if 0
+example:
+{
+  def x;
+  def y;
+  x = pkt(12, 2);
+  ret x;
+}
+#endif
+
 int compile_hla_filter(char *file, int verbose, int bypass);
 
 #define YYERROR_VERBOSE		0
@@ -36,9 +46,6 @@ extern void zzerror(const char *);
 extern int zzlineno;
 extern char *zztext;
 
-#define PROLOGUE "; bpf-hla"
-#define EPILOGUE "keep: ret #0xffffffff\ndrop: ret #0"
-
 %}
 
 %union {
@@ -47,25 +54,88 @@ extern char *zztext;
 }
 
 %token K_NAME K_DEF K_PKT K_RET K_IF K_ELIF K_ELSE
-%token '(' ')' '{' '}' '=' ';' '+' '-' '&' '|' '^' '!' '<' '>' '*' '/' '%'
+%token '(' ')' '{' '}' '=' ';' '+' '-' '&' '|' '^' '!' '<' '>' '*' '/' '%' ','
 
 %token number_hex number_dec number_oct number_bin
 
-%type <idx> K_NAME
+%type <idx> K_NAME var
 %type <number> number_hex number_dec number_oct number_bin number
 
 %%
 
-prog
-	: '{' { puts(PROLOGUE); } decl_list stmt_list '}' { puts(EPILOGUE); }
+program
+	: '{' declaration_list statement_list '}'
 	;
 
-decl_list
-	:
+declaration_list
+	: declaration ';' declaration_list
+	| /* empty */
 	;
 
-stmt_list
-	:
+statement_list
+	: statement ';' statement_list
+	| /* empty */
+	;
+
+declaration
+	: K_DEF K_NAME { 
+		if (bpf_symtab_declared($2)) {
+			panic("Variable \"%s\" already declared (l%d)\n",
+			      bpf_symtab_name($2), zzlineno);
+		} else {
+			printf("; @var %s\n", bpf_symtab_name($2));
+			bpf_symtab_declare($2); 
+		}}
+	;
+
+statement
+	: assignment
+	| return
+	;
+
+return
+	: K_RET { printf("ret\n"); }
+	| K_RET number { printf("ret #%ld\n", $2); }
+	| K_RET var { printf("ret\n"); }
+	;
+
+assignment
+	: var '=' expression { printf("; @asn %s\n", bpf_symtab_name($1)); }
+	| var '=' K_PKT '(' number ',' number ')' {
+			switch ($7) {
+			case 1:
+				printf("ldb [%ld]\n", $5);
+				break;
+			case 2:
+				printf("ldh [%ld]\n", $5);
+				break;
+			case 4:
+				printf("ld [%ld]\n", $5);
+				break;
+			default:
+				panic("Invalid argument (l%d)\n", zzlineno);
+			}
+		}
+	;
+
+expression
+	: term
+	| term '+' term { printf("; @+\n"); }
+	| term '-' term { printf("; @-\n"); }
+	;
+
+term
+	: number { printf("; @num %ld\n", $1); }
+	| var { printf("; @var %s\n", bpf_symtab_name($1)); }
+	| '(' expression ')'
+	;
+
+var
+	: K_NAME {
+		if (!bpf_symtab_declared($1))
+			panic("Variable \"%s\" not declared (l%d)\n", 
+			      bpf_symtab_name($1), zzlineno);
+		$$ = $1; }
 	;
 
 number
@@ -82,7 +152,7 @@ static void stage_1_compile(void)
 	zzparse();
 }
 
-int compile_hla_filter(char *file, int verbose, int bypass)
+int compile_hla_filter(char *file, int verbose, int debug)
 {
 	int fd;
 	fpos_t pos;
@@ -94,23 +164,28 @@ int compile_hla_filter(char *file, int verbose, int bypass)
 		zzin = fopen(file, "r");
 	if (!zzin)
 		panic("Cannot open file!\n");
+	if (!debug) {
+		fd = dup(fileno(stdout));
 
-	fd = dup(fileno(stdout));
-
-	slprintf(file_tmp, sizeof(file_tmp), ".%s", file);
-	if (freopen(file_tmp, "w", stdout) == NULL)
-		panic("Cannot reopen file!\n");
+		slprintf(file_tmp, sizeof(file_tmp), ".%s", file);
+		if (freopen(file_tmp, "w", stdout) == NULL)
+			panic("Cannot reopen file!\n");
+	}
 
 	stage_1_compile();
 
-	fflush(stdout);
-	dup2(fd, fileno(stdout));
+	if (!debug) {
+		fflush(stdout);
+		dup2(fd, fileno(stdout));
 
-	close(fd);
-	clearerr(stdout);
-	fsetpos(stdout, &pos);
+		close(fd);
+		clearerr(stdout);
+		fsetpos(stdout, &pos);
+	}
 
 	fclose(zzin);
+	if (debug)
+		die();
 	return 0;
 }
 

@@ -30,12 +30,13 @@
 #include "die.h"
 #include "bpf.h"
 
-static const char *short_options = "vhi:VdbHL";
+static const char *short_options = "vhi:VdbHLg";
 static const struct option long_options[] = {
 	{"input",	required_argument,	NULL, 'i'},
 	{"verbose",	no_argument,		NULL, 'V'},
 	{"hla",		no_argument,		NULL, 'H'},
 	{"lla",		no_argument,		NULL, 'L'},
+	{"hla-debug",	no_argument,		NULL, 'g'},
 	{"bypass",	no_argument,		NULL, 'b'},
 	{"dump",	no_argument,		NULL, 'd'},
 	{"version",	no_argument,		NULL, 'v'},
@@ -44,7 +45,7 @@ static const struct option long_options[] = {
 };
 
 extern int compile_filter(char *file, int verbose, int bypass);
-extern int compile_hla_filter(char *file, int verbose, int bypass);
+extern int compile_hla_filter(char *file, int verbose, int debug);
 
 static void help(void)
 {
@@ -58,6 +59,7 @@ static void help(void)
 	     "  -L|--lla               Compile low-level BPF\n"
 	     "  -V|--verbose           Be more verbose\n"
 	     "  -b|--bypass            Bypass filter validation (e.g. for bug testing)\n"
+	     "  -g|--hla-debug         Print BPF expressions to stdout\n"
 	     "  -d|--dump              Dump supported instruction table\n"
 	     "  -v|--version           Print version\n"
 	     "  -h|--help              Print this help\n\n"
@@ -90,7 +92,7 @@ static void version(void)
 
 int main(int argc, char **argv)
 {
-	int ret, verbose = 0, c, opt_index, bypass = 0, hla = 0;
+	int ret, verbose = 0, c, opt_index, bypass = 0, hla = 0, debug = 0;
 	char *file = NULL;
 
 	if (argc == 1)
@@ -110,6 +112,9 @@ int main(int argc, char **argv)
 			break;
 		case 'L':
 			hla = 0;
+			break;
+		case 'g':
+			debug = 1;
 			break;
 		case 'V':
 			verbose = 1;
@@ -145,7 +150,7 @@ int main(int argc, char **argv)
 		panic("No Berkeley Packet Filter program specified!\n");
 
 	if (hla) {
-		ret = compile_hla_filter(file, verbose, bypass);
+		ret = compile_hla_filter(file, verbose, debug);
 		if (!ret) {
 			char file_tmp[128];
 
