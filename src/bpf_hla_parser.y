@@ -32,7 +32,7 @@ example:
 }
 #endif
 
-int compile_hla_filter(char *file, int verbose, int bypass);
+int compile_hla_filter(char *file, int verbose, int debug);
 
 #define YYERROR_VERBOSE		0
 #define YYDEBUG			0
