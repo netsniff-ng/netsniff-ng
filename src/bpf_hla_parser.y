@@ -94,9 +94,9 @@ statement
 	;
 
 return
-	: K_RET { printf("ret\n"); }
+	: K_RET { printf("ret a\n"); }
 	| K_RET number { printf("ret #%ld\n", $2); }
-	| K_RET var { printf("ret\n"); }
+	| K_RET var { printf("ret a\n"); }
 	;
 
 assignment
