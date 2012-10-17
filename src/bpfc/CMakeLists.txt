@@ -9,12 +9,26 @@ include(Pod2Man)
 if(FLEX_FOUND AND BISON_FOUND)
   flex_target(
     BPF_LEXER ../bpf_lexer.l
-    ${CMAKE_CURRENT_BINARY_DIR}/bpfc_lex.yy.c
+    ${CMAKE_CURRENT_BINARY_DIR}/bpf_lex.yy.c
+    COMPILE_FLAGS "-P yy"
   )
 
   bison_target(
     BPF_PARSER ../bpf_parser.y
     ${CMAKE_CURRENT_BINARY_DIR}/bpf_parser.tab.c
+    COMPILE_FLAGS "-p yy"
+  )
+
+  flex_target(
+    BPF_HLA_LEXER ../bpf_hla_lexer.l
+    ${CMAKE_CURRENT_BINARY_DIR}/bpf_hla_lex.yy.c
+    COMPILE_FLAGS "-P zz"
+  )
+
+  bison_target(
+    BPF_HLA_PARSER ../bpf_hla_parser.y
+    ${CMAKE_CURRENT_BINARY_DIR}/bpf_hla_parser.tab.c
+    COMPILE_FLAGS "-p zz"
   )
 
   add_executable(
@@ -22,8 +36,11 @@ if(FLEX_FOUND AND BISON_FOUND)
     ../xmalloc.c
     ../xutils.c
     ../bpf.c
+    ../bpf_symtab.c
     ${FLEX_BPF_LEXER_OUTPUTS}
     ${BISON_BPF_PARSER_OUTPUT_SOURCE}
+    ${FLEX_BPF_HLA_LEXER_OUTPUTS}
+    ${BISON_BPF_HLA_PARSER_OUTPUT_SOURCE}
     ../bpfc.c
   )
 

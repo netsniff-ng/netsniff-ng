@@ -1,7 +1,7 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
- * Copyright 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,
+ * Copyright 2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,
  * Swiss federal institute of technology (ETH Zurich)
  * Subject to the GPL, version 2.
  */
@@ -42,7 +42,7 @@ number_oct	{digit_n}{digit}+
 number_hex	{digit_n}{hex_x}{hex}+
 number_bin	{digit_n}{bindigit_b}{bindigit}+
 
-label_s		[a-zA-Z]
+label_s		[a-zA-Z_]
 label_me	[a-zA-Z0-9_]
 label		{label_s}{label_me}+
 
@@ -75,15 +75,15 @@ label		{label_s}{label_me}+
 "tax"		{ return OP_TAX; }
 "txa"		{ return OP_TXA; }
 "len"|"pktlen"	{ return K_PKT_LEN; }
-"proto"		{ return K_PROTO; }
+"pto"|"proto"	{ return K_PROTO; }
 "type"		{ return K_TYPE; }
-"ifidx"		{ return K_IFIDX; }
+"ifx"|"ifidx"	{ return K_IFIDX; }
 "nla"		{ return K_NLATTR; }
 "nlan"		{ return K_NLATTR_NEST; }
 "mark"		{ return K_MARK; }
-"queue"		{ return K_QUEUE; }
-"hatype"	{ return K_HATYPE; }
-"rxhash"	{ return K_RXHASH; }
+"que"|"queue"	{ return K_QUEUE; }
+"hat"|"hatype"	{ return K_HATYPE; }
+"rxh"|"rxhash"	{ return K_RXHASH; }
 "cpu"		{ return K_CPU; }
 
 ":"		{ return ':'; }

@@ -23,15 +23,19 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <ctype.h>
+#include <unistd.h>
 
 #include "xmalloc.h"
+#include "xutils.h"
 #include "die.h"
 #include "bpf.h"
 
-static const char *short_options = "vhi:Vdb";
+static const char *short_options = "vhi:VdbHL";
 static const struct option long_options[] = {
 	{"input",	required_argument,	NULL, 'i'},
 	{"verbose",	no_argument,		NULL, 'V'},
+	{"hla",		no_argument,		NULL, 'H'},
+	{"lla",		no_argument,		NULL, 'L'},
 	{"bypass",	no_argument,		NULL, 'b'},
 	{"dump",	no_argument,		NULL, 'd'},
 	{"version",	no_argument,		NULL, 'v'},
@@ -40,6 +44,7 @@ static const struct option long_options[] = {
 };
 
 extern int compile_filter(char *file, int verbose, int bypass);
+extern int compile_hla_filter(char *file, int verbose, int bypass);
 
 static void help(void)
 {
@@ -48,14 +53,18 @@ static void help(void)
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: bpfc [options] || bpfc <program>\n"
 	     "Options:\n"
-	     "  -i|--input <program>   Berkeley Packet Filter file\n"
+	     "  -i|--input <program/-> Berkeley Packet Filter file/stdin\n"
+	     "  -H|--hla               Compile high-level BPF\n"
+	     "  -L|--lla               Compile low-level BPF\n"
 	     "  -V|--verbose           Be more verbose\n"
 	     "  -b|--bypass            Bypass filter validation (e.g. for bug testing)\n"
 	     "  -d|--dump              Dump supported instruction table\n"
 	     "  -v|--version           Print version\n"
 	     "  -h|--help              Print this help\n\n"
 	     "Examples:\n"
-	     "  bpfc -i fubar.bpf\n\n"
+	     "  bpfc -Hi fubar.bpfh\n"
+	     "  bpfc -Li fubar.bpfl\n"
+	     "  bpfc -Li -    (read from stdin)\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
 	     "Swiss federal institute of technology (ETH Zurich)\n"
@@ -81,7 +90,7 @@ static void version(void)
 
 int main(int argc, char **argv)
 {
-	int ret, verbose = 0, c, opt_index, bypass = 0;
+	int ret, verbose = 0, c, opt_index, bypass = 0, hla = 0;
 	char *file = NULL;
 
 	if (argc == 1)
@@ -95,6 +104,12 @@ int main(int argc, char **argv)
 			break;
 		case 'v':
 			version();
+			break;
+		case 'H':
+			hla = 1;
+			break;
+		case 'L':
+			hla = 0;
 			break;
 		case 'V':
 			verbose = 1;
@@ -129,7 +144,18 @@ int main(int argc, char **argv)
 	if (!file)
 		panic("No Berkeley Packet Filter program specified!\n");
 
-	ret = compile_filter(file, verbose, bypass);
+	if (hla) {
+		ret = compile_hla_filter(file, verbose, bypass);
+		if (!ret) {
+			char file_tmp[128];
+
+			slprintf(file_tmp, sizeof(file_tmp), ".%s", file);
+			ret = compile_filter(file_tmp, verbose, bypass);
+			unlink(file_tmp);
+		}
+	} else {
+		ret = compile_filter(file, verbose, bypass);
+	}
 
 	xfree(file);
 	return ret;

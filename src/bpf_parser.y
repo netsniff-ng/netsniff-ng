@@ -516,7 +516,10 @@ int compile_filter(char *file, int verbose, int bypass)
 	int i;
 	struct sock_fprog res;
 
-	yyin = fopen(file, "r");
+	if (!strncmp("-", file, strlen("-")))
+		yyin = stdin;
+	else
+		yyin = fopen(file, "r");
 	if (!yyin)
 		panic("Cannot open file!\n");
 
