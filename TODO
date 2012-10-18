@@ -39,8 +39,6 @@ submit your contributions, items marked with '!' are of high importance):
 22! Add different timing models to trafgen, not just a static interpacket gap.
 	@TODO: Daniel Borkmann
 
-24) Do we need TPACKETV2 or even TPACKETV3 if it is eventually implemented?
-
 25) Do performance tests with 10 Gigabit cards.
 
 28! Remove liburcu dependency from flowtop.
