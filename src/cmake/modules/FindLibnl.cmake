@@ -10,14 +10,14 @@
 #  LIBNL_LIBRARIES   - the libnl library
 #  LIBNL_INCLUDE_DIR - the include path of the libnl library
 
-find_library(LIBNL_LIBRARY nl)
+find_library(LIBNL_LIBRARY nl-genl-3)
 
 set(LIBNL_LIBRARIES ${LIBNL_LIBRARY})
 
 find_path(
   LIBNL_INCLUDE_DIR
-  NAMES netlink.h
-  PATH_SUFFIXES netlink
+  NAMES netlink/version.h
+  PATH_SUFFIXES include/libnl3
 )
 
 include(FindPackageHandleStandardArgs)

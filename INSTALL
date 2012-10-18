@@ -10,19 +10,19 @@ distribution package maintainers is at the end of this document.
 
 What tools are required to build netsniff-ng?
 
- - cmake (all)
+ - gcc, cmake (all)
  - flex, bison (bpfc, trafgen)
  - pod2man (all, only for manpages)
 
 What libraries are required?
 
- - libc, including libm, librt, libpthread (all)
+ - glibc (all)
  - libncurses (ifpps, flowtop)
  - libGeoIP >=1.4.8 (astraceroute, flowtop)
  - libnacl (curvetun)
  - libnetfilter-conntrack (flowtop)
  - liburcu (flowtop)
- - libnl (netsniff-ng, trafgen)
+ - libnl3 (netsniff-ng, trafgen)
  - libnet (mausezahn)
  - libcli (mausezahn)
 

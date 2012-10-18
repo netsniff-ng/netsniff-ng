@@ -17,50 +17,17 @@
 #include <string.h>
 #include <limits.h>
 #include <linux/nl80211.h>
-#include <netlink/genl/genl.h>
-#include <netlink/genl/family.h>
-#include <netlink/genl/ctrl.h>
-#include <netlink/msg.h>
-#include <netlink/attr.h>
+#include <libnl3/netlink/genl/genl.h>
+#include <libnl3/netlink/genl/family.h>
+#include <libnl3/netlink/genl/ctrl.h>
+#include <libnl3/netlink/msg.h>
+#include <libnl3/netlink/attr.h>
 
 #include "die.h"
 #include "xutils.h"
 #include "mac80211.h"
 #include "xmalloc.h"
 #include "built_in.h"
-
-#ifdef HAVE_LIBNL_2_x
-# define LIBNL_FAILURE	NLE_FAILURE
-# define get_nl_errmsg	nl_geterror
-#else
-# define LIBNL_FAILURE	ENFILE
-/* libnl 2.x compatibility code */
-# define nl_sock	nl_handle
-
-static inline struct nl_handle *nl_socket_alloc(void)
-{
-	return nl_handle_alloc();
-}
-
-static inline void nl_socket_free(struct nl_handle *h)
-{
-	nl_handle_destroy(h);
-}
-
-# define get_nl_errmsg	strerror
-
-static inline int __genl_ctrl_alloc_cache(struct nl_handle *h,
-					  struct nl_cache **cache)
-{
-	struct nl_cache *tmp = genl_ctrl_alloc_cache(h);
-	if (!tmp)
-		return -ENOMEM;
-	*cache = tmp;
-	return 0;
-}
-
-# define genl_ctrl_alloc_cache	__genl_ctrl_alloc_cache
-#endif /* !HAVE_LIBNL_2_x */
 
 struct nl80211_state {
 	struct nl_sock *nl_sock;
@@ -98,9 +65,9 @@ static inline struct nl_msg *nl80211_nlmsg_xalloc(void)
 	return ret;
 }
 
-static inline struct nl_handle *nl80211_nl_socket_xalloc(void)
+static inline struct nl_sock *nl80211_nl_socket_xalloc(void)
 {
-	struct nl_handle *ret = nl_socket_alloc();
+	struct nl_sock *ret = nl_socket_alloc();
 	if (!ret)
 		panic("Cannot allocate nl socket memory!\n");
 	return ret;
@@ -119,7 +86,7 @@ static void nl80211_init(struct nl80211_state *state, const char *device)
 	ret = genl_ctrl_alloc_cache(state->nl_sock, &state->nl_cache);
 	if (ret < 0)
 		panic("Failed to allocate generic netlink cache: %s!",
-		      get_nl_errmsg(-ret));
+		      nl_geterror(-ret));
 
 	state->nl80211 = genl_ctrl_search_by_name(state->nl_cache, "nl80211");
 	if (!state->nl80211)
@@ -153,7 +120,7 @@ static int nl80211_add_mon_if(struct nl80211_state *state, const char *device,
 
 	ret = nl_send_auto_complete(state->nl_sock, msg);
 	if (ret < 0) {
-		if (ret == -LIBNL_FAILURE) {
+		if (ret == -ENFILE) {
 			nlmsg_free(msg);
 			return -EBUSY;
 		}
@@ -163,7 +130,7 @@ static int nl80211_add_mon_if(struct nl80211_state *state, const char *device,
 
 	ret = nl_wait_for_ack(state->nl_sock);
 	if (ret < 0) {
-		if (ret == -LIBNL_FAILURE) {
+		if (ret == -ENFILE) {
 			nlmsg_free(msg);
 			return -EBUSY;
 		}
