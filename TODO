@@ -55,7 +55,8 @@ submit your contributions, items marked with '!' are of high importance):
 
 33) flowtop: can we get per socket pps, bytes per sec without sniffing?
 
-34) Are there other interesting (e.g. ethtool) stats for ifpps?
+34) Are there other interesting (e.g. ethtool) stats for ifpps? E.g. backlog
+    queue statistics in ifpps (discussion with Jon Schipp).
 
 35) Build a generic interface that is somewhat transparant to RX_RING/TX_RING
     where we can user uio-dma, integrate uio-ixgbe and probably port others.
