@@ -351,11 +351,9 @@ void bpf_attach_to_sock(int sock, struct sock_fprog *bpf)
 {
 	int ret;
 
-	if (bpf->len == 1) {
-		if (bpf->filter[0].code == BPF_RET &&
-		    bpf->filter[0].k == 0xFFFFFFFF)
-			return;
-	}
+	if (bpf->filter[0].code == BPF_RET &&
+	    bpf->filter[0].k == 0xFFFFFFFF)
+		return;
 
 	ret = setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER,
 			 bpf, sizeof(*bpf));
