@@ -78,10 +78,12 @@ submit your contributions, items marked with '!' are of high importance):
 38! netsniff-ng (and others): if interface goes down, properly exit
 	@TODO: Daniel Borkmann
 
-39! Add a pcap indxeing utility fo a faster retrival, analysis on huge
+39! Add a pcap indexing utility fo a faster retrival, analysis on huge
     pcap files. Write the index file out for each pcap capture.
 	@TODO: Daniel Borkmann
 
 40! Give more than just a one-line description of each tool on the website.
     Probably, a new section after Abstract might help.
 	@TODO: Daniel Borkmann
+
+41! Add vlan support for bpfc (http://www.spinics.net/lists/netdev/msg213464.html).
