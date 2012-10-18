@@ -56,6 +56,8 @@ void setup_rx_ring_layout(int sock, struct ring *ring, unsigned int size,
 void create_rx_ring(int sock, struct ring *ring)
 {
 	int ret;
+
+	set_sockopt_tpacket(sock);
 retry:
 	ret = setsockopt(sock, SOL_PACKET, PACKET_RX_RING, &ring->layout,
 			 sizeof(ring->layout));

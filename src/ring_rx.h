@@ -19,12 +19,12 @@ extern void bind_rx_ring(int sock, struct ring *ring, int ifindex);
 extern void setup_rx_ring_layout(int sock, struct ring *ring,
 				 unsigned int size, int jumbo_support);
 
-static inline int user_may_pull_from_rx(struct tpacket_hdr *hdr)
+static inline int user_may_pull_from_rx(struct tpacket2_hdr *hdr)
 {
 	return ((hdr->tp_status & TP_STATUS_USER) == TP_STATUS_USER);
 }
 
-static inline void kernel_may_pull_from_rx(struct tpacket_hdr *hdr)
+static inline void kernel_may_pull_from_rx(struct tpacket2_hdr *hdr)
 {
 	hdr->tp_status = TP_STATUS_KERNEL;
 }

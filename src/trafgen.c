@@ -413,7 +413,7 @@ static void tx_fastpath_or_die(struct mode *mode)
 
 			/* Kernel assumes: data = ph.raw + po->tp_hdrlen -
 			 *                        sizeof(struct sockaddr_ll); */
-			out = ((uint8_t *) hdr) + TPACKET_HDRLEN -
+			out = ((uint8_t *) hdr) + TPACKET2_HDRLEN -
 			      sizeof(struct sockaddr_ll);
 
 			hdr->tp_h.tp_snaplen = packets[i].len;

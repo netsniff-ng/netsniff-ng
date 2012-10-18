@@ -70,13 +70,13 @@ static inline void show_frame_hdr(struct frame_map *hdr, int mode,
 	case FNTTYPE_PRINT_HEX_ASCII:
 	default:
 		if (rmode == RING_MODE_INGRESS) {
-			tprintf("%s %u %u %u.%06u\n",
+			tprintf("%s %u %u %us.%uns\n",
 				packet_types[hdr->s_ll.sll_pkttype],
 				hdr->s_ll.sll_ifindex, hdr->tp_h.tp_len,
-				hdr->tp_h.tp_sec, hdr->tp_h.tp_usec);
+				hdr->tp_h.tp_sec, hdr->tp_h.tp_nsec);
 		} else {
-			tprintf("%u %u.%06u\n", hdr->tp_h.tp_len,
-				hdr->tp_h.tp_sec, hdr->tp_h.tp_usec);
+			tprintf("%u %us.%uns\n", hdr->tp_h.tp_len,
+				hdr->tp_h.tp_sec, hdr->tp_h.tp_nsec);
 		}
 		break;
 	}

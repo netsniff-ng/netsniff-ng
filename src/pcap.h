@@ -63,11 +63,11 @@ struct pcap_pkthdr {
 	uint32_t len;
 };
 
-static inline void tpacket_hdr_to_pcap_pkthdr(struct tpacket_hdr *thdr,
+static inline void tpacket_hdr_to_pcap_pkthdr(struct tpacket2_hdr *thdr,
 					      struct pcap_pkthdr *phdr)
 {
 	phdr->ts.tv_sec = thdr->tp_sec;
-	phdr->ts.tv_usec = thdr->tp_usec;
+	phdr->ts.tv_usec = (thdr->tp_nsec / 1000);
 	phdr->caplen = thdr->tp_snaplen;
 /* FIXME */
 /*	phdr->len = thdr->tp_len; */
@@ -75,10 +75,10 @@ static inline void tpacket_hdr_to_pcap_pkthdr(struct tpacket_hdr *thdr,
 }
 
 static inline void pcap_pkthdr_to_tpacket_hdr(struct pcap_pkthdr *phdr,
-					      struct tpacket_hdr *thdr)
+					      struct tpacket2_hdr *thdr)
 {
 	thdr->tp_sec = phdr->ts.tv_sec;
-	thdr->tp_usec = phdr->ts.tv_usec;
+	thdr->tp_nsec = phdr->ts.tv_usec * 1000;
 	thdr->tp_snaplen = phdr->caplen;
 	thdr->tp_len = phdr->len;
 }

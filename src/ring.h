@@ -36,7 +36,7 @@
 #endif
 
 struct frame_map {
-	struct tpacket_hdr tp_h __aligned_tpacket;
+	struct tpacket2_hdr tp_h __aligned_tpacket;
 	struct sockaddr_ll s_ll __aligned_tpacket;
 };
 
@@ -108,11 +108,11 @@ static inline unsigned int ring_frame_size(struct ring *ring)
 	return ring->layout.tp_frame_size;
 }
 
-static inline void tpacket_hdr_clone(struct tpacket_hdr *thdrd,
-				     struct tpacket_hdr *thdrs)
+static inline void tpacket_hdr_clone(struct tpacket2_hdr *thdrd,
+				     struct tpacket2_hdr *thdrs)
 {
         thdrd->tp_sec = thdrs->tp_sec;
-        thdrd->tp_usec = thdrs->tp_usec;
+        thdrd->tp_nsec = thdrs->tp_nsec;
         thdrd->tp_snaplen = thdrs->tp_snaplen;
         thdrd->tp_len = thdrs->tp_len;
 }
@@ -146,6 +146,15 @@ static inline void set_sockopt_fanout(int sock, unsigned int fanout_id,
 			     sizeof(fanout_arg));
 	if (ret)
 		panic("No packet fanout support!\n");
+}
+
+static inline void set_sockopt_tpacket(int sock)
+{
+	int ret, val = TPACKET_V2;
+
+	ret = setsockopt(sock, SOL_PACKET, PACKET_VERSION, &val, sizeof(val));
+	if (ret)
+		panic("Cannot set tpacketv2!\n");
 }
 
 #if defined(__WITH_HARDWARE_TIMESTAMPING)

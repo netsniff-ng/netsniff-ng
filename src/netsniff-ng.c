@@ -250,7 +250,7 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 			hdr = tx_ring.frames[it].iov_base;
 			/* Kernel assumes: data = ph.raw + po->tp_hdrlen -
 			 * sizeof(struct sockaddr_ll); */
-			out = ((uint8_t *) hdr) + TPACKET_HDRLEN -
+			out = ((uint8_t *) hdr) + TPACKET2_HDRLEN -
 			      sizeof(struct sockaddr_ll);
 
 			do {
@@ -394,7 +394,7 @@ static void enter_mode_rx_to_tx(struct mode *mode)
 					goto next;
 
 			hdr_out = tx_ring.frames[it_out].iov_base;
-			out = ((uint8_t *) hdr_out) + TPACKET_HDRLEN -
+			out = ((uint8_t *) hdr_out) + TPACKET2_HDRLEN -
 			      sizeof(struct sockaddr_ll);
 
 			for (; !user_may_pull_from_tx(tx_ring.frames[it_out].iov_base) &&
@@ -404,7 +404,7 @@ static void enter_mode_rx_to_tx(struct mode *mode)
 				else
 					next_slot(&it_out, &tx_ring);
 				hdr_out = tx_ring.frames[it_out].iov_base;
-				out = ((uint8_t *) hdr_out) + TPACKET_HDRLEN -
+				out = ((uint8_t *) hdr_out) + TPACKET2_HDRLEN -
 				      sizeof(struct sockaddr_ll);
 			}
 
