@@ -37,12 +37,12 @@
 
 struct frame_map {
 	struct tpacket2_hdr tp_h __aligned_tpacket;
-	struct sockaddr_ll s_ll __aligned_tpacket;
+	struct sockaddr_ll s_ll;
 };
 
 struct ring {
 	struct iovec *frames __cacheline_aligned;
-	uint8_t *mm_space __cacheline_aligned;
+	uint8_t *mm_space;
 	size_t mm_len;
 	struct tpacket_req layout;
 	struct sockaddr_ll s_ll;
