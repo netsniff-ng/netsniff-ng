@@ -27,7 +27,7 @@ submit your contributions, items marked with '!' are of high importance):
 
 13! Easier language (bpf-hla) for /fast/ filtering (e.g. on top of BPF so
     that it can run in the kernel), include this into bpfc (bpfc-hla).
-	@TODO: Tobias Kalbitz, Markus Amend
+	@TODO: Tobias Kalbitz, Markus Amend, Daniel Borkmann
 
 16) Further micro-optimize netsniff-ng, trafgen, mausezahn's performance. Use
     Oprofile for optimize tools!
@@ -40,6 +40,7 @@ submit your contributions, items marked with '!' are of high importance):
 	@TODO: Daniel Borkmann
 
 25) Do performance tests with 10 Gigabit cards.
+	@TODO: Sibir Chakraborty
 
 28! Remove liburcu dependency from flowtop.
 	@TODO: Daniel Borkmann
@@ -64,13 +65,14 @@ submit your contributions, items marked with '!' are of high importance):
     be RX_RING / TX_RING.
     [1] http://pub.netsniff-ng.org/misc/uio-dma.tar.bz2
     [2] http://pub.netsniff-ng.org/misc/uio-ixgbe.tar.bz2
+	@TODO: Sibir Chakraborty
 
 38! netsniff-ng (and others): if interface goes down, properly exit
 	@TODO: Daniel Borkmann
 
 39! Add a pcap indexing utility fo a faster retrival, analysis on huge
     pcap files. Write the index file out for each pcap capture.
-	@TODO: Daniel Borkmann
+	@TODO: Daniel Borkmann, Francesco Fusco
 
 40! Give more than just a one-line description of each tool on the website.
     Probably, a new section after Abstract might help.
