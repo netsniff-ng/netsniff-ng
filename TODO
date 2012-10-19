@@ -74,8 +74,4 @@ submit your contributions, items marked with '!' are of high importance):
     pcap files. Write the index file out for each pcap capture.
 	@TODO: Daniel Borkmann, Francesco Fusco
 
-40! Give more than just a one-line description of each tool on the website.
-    Probably, a new section after Abstract might help.
-	@TODO: Daniel Borkmann
-
 41! Add vlan support for bpfc (http://www.spinics.net/lists/netdev/msg213464.html).
