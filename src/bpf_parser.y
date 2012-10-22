@@ -131,7 +131,7 @@ static int find_intr_offset_or_panic(char *label_to_search)
 %%
 
 prog
-	:
+	: line
 	| prog line
 	;
 
