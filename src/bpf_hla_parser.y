@@ -45,6 +45,7 @@ extern char *zztext;
 int compile_hla_filter(char *file, int verbose, int debug);
 
 static unsigned int num_vars = 0;
+static unsigned int num_ifs = 0;
 
 %}
 
@@ -66,23 +67,22 @@ static unsigned int num_vars = 0;
 %%
 
 program
-	: declaration_list statement_list
+	: declaration_list { printf("_entry:\n"); } statement_list
 	| short_ret /* for short filter statements */
 	;
 
 declaration_list
-	: declaration ';' { num_vars++; } declaration_list
+	: declaration { num_vars++; } declaration_list
 	| /* empty */
 	;
 
 statement_list
-	: statement ';' statement_list
-	| block statement_list
-	| statement ';'
+	: statement statement_list
+	| statement
 	;
 
 declaration
-	: K_DEF K_NAME { 
+	: K_DEF K_NAME ';' { 
 		if (bpf_symtab_declared($2)) {
 			panic("Variable \"%s\" already declared (l%d)\n",
 			      bpf_symtab_name($2), zzlineno);
@@ -97,8 +97,9 @@ block
 	;
 
 statement
-	: assignment
-	| return
+	: assignment ';'
+	| return ';'
+	| block
 	;
 
 short_ret
@@ -106,10 +107,10 @@ short_ret
 	;
 
 return
-	: K_RET { printf("ret a\n"); }
-	| K_RET number { printf("ret #%ld\n", $2); }
-	| K_RET var { printf("ret a\n"); }
-	| K_RET expression { printf("ret macro\n"); }
+	: K_RET { printf("  ret a\n"); }
+	| K_RET number { printf("  ret #%ld\n", $2); }
+	| K_RET var { printf("  ret a\n"); }
+	| K_RET expression { printf("  ret macro\n"); }
 	;
 
 macro
@@ -121,12 +122,14 @@ macro
 	;
 
 condition
-	: K_IF '(' expression ')' '{' statement_list '}' condition_contd
+	: { num_ifs++; } K_IF '(' expression ')' '{'
+		{ printf("jpt_f%ld:\n", num_ifs); }
+	  statement_list '}' condition_contd
 	;
 
 condition_contd
 	: K_ELIF '(' expression ')' '{' statement_list '}' condition_contd
-	| K_ELSE '{' statement_list '}'
+	| K_ELSE '{' { printf("jpt_e%ld:\n", num_ifs); } statement_list '}'
 	| /* None */
 	;
 
@@ -135,13 +138,13 @@ assignment
 	| var '=' K_PKT '(' number ',' number ')' {
 			switch ($7) {
 			case 1:
-				printf("ldb [%ld]\n", $5);
+				printf("  ldb [%ld]\n", $5);
 				break;
 			case 2:
-				printf("ldh [%ld]\n", $5);
+				printf("  ldh [%ld]\n", $5);
 				break;
 			case 4:
-				printf("ld [%ld]\n", $5);
+				printf("  ld [%ld]\n", $5);
 				break;
 			default:
 				panic("Invalid argument (l%d)\n", zzlineno);
