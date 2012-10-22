@@ -1,4 +1,7 @@
-ldh [12]		; Load Ethernet type field
-jeq #0x806, Keep, Drop	; Check value against 0x806
-Keep: ret #0xffffffff	; Return packet
-Drop: ret #0		; Discard packet
+_main:
+  ldh [12]			; Load Ethernet type field
+  jeq #0x806, keep, drop	; Check value against 0x806
+keep:
+  ret #0xffffffff		; Return packet
+drop:
+  ret #0			; Discard packet
