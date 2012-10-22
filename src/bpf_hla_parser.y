@@ -6,6 +6,14 @@
  * Subject to the GPL, version 2.
  */
 
+/*
+    TODO:
+	- intermediate representation
+	- code optimization (symbolic reduction?)
+	- linearization (jumps, etc)
+	- bpf emitter
+ */
+
 %{
 
 #include <stdio.h>
@@ -70,7 +78,7 @@ declaration_list
 statement_list
 	: statement ';' statement_list
 	| block statement_list
-	| /* empty */
+	| statement ';'
 	;
 
 declaration
