@@ -119,12 +119,11 @@ static int find_intr_offset_or_panic(char *label_to_search)
 %token OP_LDB OP_LDH OP_LD OP_LDX OP_ST OP_STX OP_JMP OP_JEQ OP_JGT OP_JGE
 %token OP_JSET OP_ADD OP_SUB OP_MUL OP_DIV OP_AND OP_OR OP_XOR OP_LSH OP_RSH
 %token OP_RET OP_TAX OP_TXA OP_LDXB OP_MOD OP_NEG K_PKT_LEN K_PROTO K_TYPE
-%token K_NLATTR K_NLATTR_NEST K_MARK K_QUEUE K_HATYPE K_RXHASH K_CPU K_COMMENT
-%token K_IFIDX
+%token K_NLATTR K_NLATTR_NEST K_MARK K_QUEUE K_HATYPE K_RXHASH K_CPU K_IFIDX
 
 %token ':' ',' '[' ']' '(' ')' 'x' 'a' '+' 'M' '*' '&' '#'
 
-%token number_hex number_dec number_oct number_bin label comment
+%token number_hex number_dec number_oct number_bin label
 
 %type <number> number_hex number_dec number_oct number_bin number
 %type <label> label
@@ -132,46 +131,45 @@ static int find_intr_offset_or_panic(char *label_to_search)
 %%
 
 prog
-	: {}
-	| prog line { }
+	:
+	| prog line
 	;
 
 line
-	: instr { }
-	| labeled_instr { }
+	: instr
+	| labeled_instr
 	;
 
 labeled_instr
-	: do_label instr { }
+	: do_label instr
 	;
 
 instr
-	: do_ldb { }
-	| do_ldh { }
-	| do_ld { }
-	| do_ldx { }
-	| do_st { }
-	| do_stx { }
-	| do_jmp { }
-	| do_jeq { }
-	| do_jgt { }
-	| do_jge { }
-	| do_jset { }
-	| do_add { }
-	| do_sub { }
-	| do_mul { }
-	| do_div { }
-	| do_mod { }
-	| do_neg { }
-	| do_and { }
-	| do_or { }
-	| do_xor { }
-	| do_lsh { }
-	| do_rsh { }
-	| do_ret { }
-	| do_tax { }
-	| do_txa { }
-	| do_comment { }
+	: do_ldb
+	| do_ldh
+	| do_ld
+	| do_ldx
+	| do_st
+	| do_stx
+	| do_jmp
+	| do_jeq
+	| do_jgt
+	| do_jge
+	| do_jset
+	| do_add
+	| do_sub
+	| do_mul
+	| do_div
+	| do_mod
+	| do_neg
+	| do_and
+	| do_or
+	| do_xor
+	| do_lsh
+	| do_rsh
+	| do_ret
+	| do_tax
+	| do_txa
 	;
 
 number
@@ -179,10 +177,6 @@ number
 	| number_hex { $$ = $1; }
 	| number_oct { $$ = $1; }
 	| number_bin { $$ = $1; }
-	;
-
-do_comment
-	: K_COMMENT { }
 	;
 
 do_label
