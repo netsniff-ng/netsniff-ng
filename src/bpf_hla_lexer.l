@@ -32,6 +32,12 @@ static const struct res_keywords keytab[] = {
 	KEYPAIR("if",   K_IF),
 	KEYPAIR("elif", K_ELIF),
 	KEYPAIR("else", K_ELSE),
+	/* short macros */
+	KEYPAIR("ipv4", K_MACRO_IPV4),
+	KEYPAIR("ipv6", K_MACRO_IPV6),
+	KEYPAIR("ip",   K_MACRO_IP),
+	KEYPAIR("udp",  K_MACRO_UDP),
+	KEYPAIR("tcp",  K_MACRO_TCP),
 };
 
 void bpf_hla_lex_init(void)

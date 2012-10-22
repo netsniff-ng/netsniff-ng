@@ -22,18 +22,6 @@
 #include "built_in.h"
 #include "die.h"
 
-#if 0
-example:
-{
-  def x;
-  def y;
-  x = pkt(12, 2);
-  ret x;
-}
-#endif
-
-int compile_hla_filter(char *file, int verbose, int debug);
-
 #define YYERROR_VERBOSE		0
 #define YYDEBUG			0
 #define YYENABLE_NLS		1
@@ -46,6 +34,10 @@ extern void zzerror(const char *);
 extern int zzlineno;
 extern char *zztext;
 
+int compile_hla_filter(char *file, int verbose, int debug);
+
+static unsigned int num_vars = 0;
+
 %}
 
 %union {
@@ -54,6 +46,8 @@ extern char *zztext;
 }
 
 %token K_NAME K_DEF K_PKT K_RET K_IF K_ELIF K_ELSE
+%token K_MACRO_IPV4 K_MACRO_IPV6 K_MACRO_IP K_MACRO_UDP K_MACRO_TCP
+
 %token '(' ')' '{' '}' '=' ';' '+' '-' '&' '|' '^' '!' '<' '>' '*' '/' '%' ','
 
 %token number_hex number_dec number_oct number_bin
@@ -64,16 +58,18 @@ extern char *zztext;
 %%
 
 program
-	: '{' declaration_list statement_list '}'
+	: declaration_list statement_list
+	| short_ret /* for short filter statements */
 	;
 
 declaration_list
-	: declaration ';' declaration_list
+	: declaration ';' { num_vars++; } declaration_list
 	| /* empty */
 	;
 
 statement_list
 	: statement ';' statement_list
+	| block statement_list
 	| /* empty */
 	;
 
@@ -88,15 +84,42 @@ declaration
 		}}
 	;
 
+block
+	: condition
+	;
+
 statement
 	: assignment
 	| return
+	;
+
+short_ret
+	: expression
 	;
 
 return
 	: K_RET { printf("ret a\n"); }
 	| K_RET number { printf("ret #%ld\n", $2); }
 	| K_RET var { printf("ret a\n"); }
+	| K_RET expression { printf("ret macro\n"); }
+	;
+
+macro
+	: K_MACRO_IPV4 { printf("ipv4\n"); }
+	| K_MACRO_IPV6 { printf("ipv6\n"); }
+	| K_MACRO_IP { printf("ip\n"); }
+	| K_MACRO_UDP { printf("udp\n"); }
+	| K_MACRO_TCP { printf("tcp\n"); }
+	;
+
+condition
+	: K_IF '(' expression ')' '{' statement_list '}' condition_contd
+	;
+
+condition_contd
+	: K_ELIF '(' expression ')' '{' statement_list '}' condition_contd
+	| K_ELSE '{' statement_list '}'
+	| /* None */
 	;
 
 assignment
@@ -120,13 +143,28 @@ assignment
 
 expression
 	: term
+	| '!' term { printf("; @!\n"); }
 	| term '+' term { printf("; @+\n"); }
 	| term '-' term { printf("; @-\n"); }
+	| term '/' term { printf("; @/\n"); }
+	| term '*' term { printf("; @*\n"); }
+	| term '%' term { printf("; @\n"); }
+	| term '&' term { printf("; @&\n"); }
+	| term '|' term { printf("; @|\n"); }
+	| term '^' term { printf("; @^\n"); }
+	| term '<' term { printf("; @<\n"); }
+	| term '>' term { printf("; @>\n"); }
+	| term '=' '=' term { printf("; @==\n"); }
+	| term '&' '&' term { printf("; @&&\n"); }
+	| term '|' '|' term { printf("; @||\n"); }
+	| term '<' '<' term { printf("; @<<\n"); }
+	| term '>' '>' term { printf("; @>>\n"); }
 	;
 
 term
 	: number { printf("; @num %ld\n", $1); }
 	| var { printf("; @var %s\n", bpf_symtab_name($1)); }
+	| macro
 	| '(' expression ')'
 	;
 
