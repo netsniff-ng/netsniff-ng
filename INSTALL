@@ -28,7 +28,7 @@ What libraries are required?
 
 What additional tools are recommended after the build?
 
- - ntpd, tlsdate or equivalent (curvetun)
+ - ntpd (curvetun)
  - setcap (all)
 
 It is common, that these libraries are shipped as distribution packages
