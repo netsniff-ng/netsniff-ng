@@ -54,6 +54,7 @@ static inline void next_slot(unsigned int *it, struct ring *ring)
 	atomic_cmp_swp(it, ring->layout.tp_frame_nr, 0);
 }
 
+#if 0
 static inline void next_slot_prerd(unsigned int *it, struct ring *ring)
 {
 	(*it)++;
@@ -67,6 +68,10 @@ static inline void next_slot_prewr(unsigned int *it, struct ring *ring)
 	atomic_cmp_swp(it, ring->layout.tp_frame_nr, 0);
 	prefetch_wr_hi(ring->frames[*it].iov_base);
 }
+#else
+# define next_slot_prerd	next_slot
+# define next_slot_prewr	next_slot
+#endif
 
 static inline void next_rnd_slot(unsigned int *it, struct ring *ring)
 {

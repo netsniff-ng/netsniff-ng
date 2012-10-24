@@ -114,13 +114,13 @@ struct pcap_file_ops {
 	void (*prepare_close_pcap)(int fd, enum pcap_mode mode);
 };
 
-extern struct pcap_file_ops *pcap_ops[PCAP_OPS_SIZ];
+extern const struct pcap_file_ops *pcap_ops[PCAP_OPS_SIZ];
 
-extern int pcap_ops_group_register(struct pcap_file_ops *ops,
+extern int pcap_ops_group_register(const struct pcap_file_ops *ops,
 				   enum pcap_ops_groups group);
 extern void pcap_ops_group_unregister(enum pcap_ops_groups group);
 
-static inline struct pcap_file_ops *
+static inline const struct pcap_file_ops *
 pcap_ops_group_get(enum pcap_ops_groups group)
 {
 	return pcap_ops[group];

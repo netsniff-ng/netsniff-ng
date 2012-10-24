@@ -105,7 +105,7 @@ static int pcap_rw_prepare_reading_pcap(int fd)
 	return 0;
 }
 
-struct pcap_file_ops pcap_rw_ops __read_mostly = {
+const struct pcap_file_ops pcap_rw_ops = {
 	.name = "read-write",
 	.pull_file_header = pcap_rw_pull_file_header,
 	.push_file_header = pcap_rw_push_file_header,

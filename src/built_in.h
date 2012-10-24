@@ -104,22 +104,6 @@ typedef uint8_t		u8;
 # define constant(x)		__builtin_constant_p(x)
 #endif
 
-#ifndef prefetch_rd_hi
-# define prefetch_rd_hi(addr)	__builtin_prefetch(addr, 0, 3)
-#endif
-
-#ifndef prefetch_rd_lo
-# define prefetch_rd_lo(addr)	__builtin_prefetch(addr, 0, 0)
-#endif
-
-#ifndef prefetch_wr_hi
-# define prefetch_wr_hi(addr)	__builtin_prefetch(addr, 1, 3)
-#endif
-
-#ifndef prefetch_wr_lo
-# define prefetch_wr_lo(addr)	__builtin_prefetch(addr, 1, 0)
-#endif
-
 #ifndef fmemset
 # define fmemset		__builtin_memset
 #endif
@@ -142,10 +126,6 @@ typedef uint8_t		u8;
 
 #ifndef unreachable
 # define unreachable()		do { } while (1)
-#endif
-
-#ifndef __read_mostly
-# define __read_mostly		__attribute__((__section__(".data.read_mostly")))
 #endif
 
 #ifndef __unused

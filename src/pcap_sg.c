@@ -222,7 +222,7 @@ static void pcap_sg_fsync_pcap(int fd)
 	spinlock_unlock(&lock);
 }
 
-struct pcap_file_ops pcap_sg_ops __read_mostly = {
+const struct pcap_file_ops pcap_sg_ops = {
 	.name = "scatter-gather",
 	.pull_file_header = pcap_sg_pull_file_header,
 	.push_file_header = pcap_sg_push_file_header,

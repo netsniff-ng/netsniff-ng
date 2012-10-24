@@ -250,7 +250,7 @@ static void pcap_mmap_prepare_close_pcap(int fd, enum pcap_mode mode)
 	spinlock_unlock(&lock);
 }
 
-struct pcap_file_ops pcap_mmap_ops __read_mostly = {
+const struct pcap_file_ops pcap_mmap_ops = {
 	.name = "mmap",
 	.pull_file_header = pcap_mmap_pull_file_header,
 	.push_file_header = pcap_mmap_push_file_header,

@@ -8,9 +8,9 @@
 #include <errno.h>
 #include "pcap.h"
 
-struct pcap_file_ops *pcap_ops[PCAP_OPS_SIZ] = {0};
+const struct pcap_file_ops *pcap_ops[PCAP_OPS_SIZ] = {0};
 
-int pcap_ops_group_register(struct pcap_file_ops *ops,
+int pcap_ops_group_register(const struct pcap_file_ops *ops,
 			    enum pcap_ops_groups group)
 {
 	if (!ops)
