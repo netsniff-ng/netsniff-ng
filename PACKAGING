@@ -1,0 +1,70 @@
+If you are a package distribution maintainer, this is the right file for you.
+By default, netsniff-ng has some architecture-specific tuning options enabled
+that don't belong into a package binary of a distribution. Hence, you might
+want to adapt some build-related things before starting to package the toolkit.
+Have a look at the patches that are described in the following:
+
+In case you want cmake to install manpages under /usr/share/man/, apply the
+following patch from Emmanuel Roullit:
+
+--- a/src/cmake/modules/Pod2Man.cmake
++++ b/src/cmake/modules/Pod2Man.cmake
+@@ -47,7 +47,7 @@
+ 
+ 	INSTALL(
+ 		FILES ${CMAKE_CURRENT_BINARY_DIR}/${MANFILE}.${SECTION}.gz
+-		DESTINATION share/man/man${SECTION}
++		DESTINATION /usr/share/man/man${SECTION}
+     	)
+ ENDMACRO(POD2MAN PODFILE MANFILE SECTION)
+
+The same thing counts for installing relevant files from the documentation:
+
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 2.6)
+ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
+ set(EXECUTABLE_INSTALL_PATH /usr/sbin)
+ set(CONFIG_INSTALL_PATH /etc/netsniff-ng)
+-set(DOC_INSTALL_PATH share/doc/netsniff-ng)
++set(DOC_INSTALL_PATH /usr/share/doc/netsniff-ng)
+ 
+ set(VERSION "0.5.8")
+
+In case there is already a NaCl library version shipped with your distribution
+so that you only need to tell cmake pointers to the library and include path,
+you can add a new cmake file into src/curvetun and apply the patch from Kartik
+Mistry with perhaps changed paths:
+
+--- /dev/null
++++ b/src/curvetun/nacl_path.cmake
+@@ -0,0 +1,2 @@
++SET(NACL_INCLUDE_DIR /usr/include/nacl)
++SET(NACL_LIB_DIR /usr/lib)
+
+Last but not least, if you package a binary distribution, make sure that
+architecture specific tuning has been turned off. You can do this by changing
+the following flags in the src/CMakeLists.txt file:
+
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -16,15 +16,13 @@ include(CheckHwTimestamp)
+ include(Pod2Man)
+ 
+ add_definitions(
+-  -O3
++  -O2
+   -fstack-protector
+   -fpie
+   -std=gnu99
+   -fno-strict-aliasing
+   -D_FORTIFY_SOURCE=2
+   -D_REENTRANT
+-  -march=native
+-  -mtune=native
+   -Wall
+   -Wundef
+   -Wstrict-prototypes
+
+This should be it. However, in case we missed to describe something, drop us an
+email as stated in REPORTING-BUGS.
