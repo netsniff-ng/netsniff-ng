@@ -100,6 +100,7 @@ static inline unsigned int ring_size(char *ifname, unsigned int size)
 	size = size * 2;
 	if (size == 0)
 		size = RING_SIZE_FALLBACK;
+
 	return round_up_cacheline(size);
 }
 
