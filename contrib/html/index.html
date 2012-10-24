@@ -124,8 +124,6 @@ The netsniff-ng toolkit consists of the following utilities:
 
 <h2>Tools</h2>
 <p>
-The toolkit is split into small, useful utilities that are or are not necessarily related to each other. Each program for itself fills a gap as a helper in your daily network debugging, development or audit.
-<p>
 <b>netsniff-ng</b> is a high-performance network analyzer based on packet mmap(2) mechanisms. It can record pcap files to disc, replay them and also do an offline and online analysis. Capturing, analysis or replay of raw 802.11 frames are supported as well. pcap files are also compatible with tcpdump or Wireshark traces. netsniff-ng processes those pcap traces either in scatter-gather I/O or by mmap(2) I/O.
 <p>
 <b>trafgen</b> is a high-performance network traffic generator based on packet mmap(2) mechanisms. It has its own flexible, macro-based low-level packet configuration language. Injection of raw 802.11 frames are supported as well. trafgen has a significantly higher speed than mausezahn and comes very close to pktgen, but runs from user space. pcap traces can also be converted into a trafgen packet configuration.
@@ -141,6 +139,10 @@ The toolkit is split into small, useful utilities that are or are not necessaril
 <b>curvetun</b> is a lightweight, high-speed ECDH multiuser VPN for Linux. curvetun uses the Linux TUN/TAP interface and supports {IPv4,IPv6} over {IPv4,IPv6} with UDP or TCP as carrier protocols. Packets are encrypted end-to-end by a symmetric stream cipher (Salsa20) and authenticated by a MAC (Poly1305), where keys have previously been computed with the ECDH key agreement protocol (Curve25519).
 <p>
 <b>astraceroute</b> is an autonomous system (AS) trace route utility. Unlike traceroute or tcptraceroute, it not only display hops, but also their AS information they belong to as well as GeoIP information and other interesting things. On default, it uses a TCP probe packet and falls back to ICMP probes in case no ICMP answer has been received.
+<p>
+Concluding, the toolkit is split into small, useful utilities that are or are not necessarily related to each other. Each program for itself fills a gap as a helper in your daily network debugging, development or audit. Here's a big picture:
+<p>
+<center><img src="img/bp2.png" border="0"></center>
 
 <h2>Development</h2>
 <p>
