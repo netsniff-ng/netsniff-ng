@@ -18,7 +18,7 @@ Debian
  * E: kartik@debian.org
  * C: India
 
-Fedora/RHEL
+Fedora / Fedora Security Lab Spin / Red Hat Enterprise Linux
  * 1: http://fedoraproject.org/
  * 2: https://admin.fedoraproject.org/pkgdb/acls/name/netsniff-ng
  * M: Jaroslav Škarvada
@@ -66,7 +66,7 @@ Slackware
  * E: conraid@gmail.com
  * C: Italy
 
-openSUSE/SLE
+openSUSE / SUSE Linux Enterprise
  * 1: http://opensuse.org/
  * 2: http://software.opensuse.org/search?baseproject=ALL&p=1&q=netsniff-ng
  * M: Pascal Bleser
@@ -128,7 +128,7 @@ Backtrack
  * 2: http://redmine.backtrack-linux.org:8080/issues/572
  * E: slyscorpion@gmail.com
 
-Scientific Linux by Fermilab, CERN
+Scientific Linux by Fermilab / CERN
  * 1: http://linux.web.cern.ch/linux/scientific.shtml
  * E: linux.support@cern.ch
  * C: Switzerland
