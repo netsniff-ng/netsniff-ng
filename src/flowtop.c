@@ -281,6 +281,7 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 	init_pair(3, COLOR_YELLOW, COLOR_BLACK);
 	init_pair(4, COLOR_GREEN, COLOR_BLACK);
 
+	wclear(screen);
 	clear();
 
 	rcu_read_lock();
