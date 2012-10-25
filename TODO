@@ -75,3 +75,5 @@ submit your contributions, items marked with '!' are of high importance):
 	@TODO: Daniel Borkmann, Francesco Fusco
 
 41! Add vlan support for bpfc (http://www.spinics.net/lists/netdev/msg213464.html).
+
+42) Flowtop: add interesting things from socket diag (e.g. socket states, ...)?
