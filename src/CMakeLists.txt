@@ -81,11 +81,19 @@ install(
 )
 
 install(
-  FILES ../Documentation/FurtherReading
-        ../Documentation/IPv6Notes
+  FILES ../Documentation/IPv6Notes
         ../Documentation/KnownIssues
         ../Documentation/Performance
         ../Documentation/RelatedWork
         ../Documentation/Sponsors
+        ../Documentation/Summary
+        ../Documentation/SubmittingPatches
+        ../Documentation/CodingStyle
+        ../Documentation/Maintainer
+        ../Documentation/VendorWishlist
+        ../Documentation/Motivation
+        ../Documentation/Mirrors
+        ../Documentation/BigPicture.pdf
+        ../Documentation/logo.png
   DESTINATION ${DOC_INSTALL_PATH}
 )
