@@ -75,6 +75,7 @@ struct mode {
 	int jumbo_support;
 	int dump_dir;
 	unsigned long dump_interval;
+	char *prefix;
 };
 
 struct tx_stats {
@@ -90,7 +91,7 @@ static unsigned long interval = TX_KERNEL_PULL_INT;
 static struct itimerval itimer;
 static volatile bool next_dump = false;
 
-static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqXlvhF:RgA";
+static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqXlvhF:RgAP:";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"in",			required_argument,	NULL, 'i'},
@@ -103,6 +104,7 @@ static const struct option long_options[] = {
 	{"kernel-pull",		required_argument,	NULL, 'k'},
 	{"bind-cpu",		required_argument,	NULL, 'b'},
 	{"unbind-cpu",		required_argument,	NULL, 'B'},
+	{"prefix",		required_argument,	NULL, 'P'},
 	{"rand",		no_argument,		NULL, 'r'},
 	{"rfraw",		no_argument,		NULL, 'R'},
 	{"mmap",		no_argument,		NULL, 'm'},
@@ -605,7 +607,8 @@ static int next_multi_pcap_file(struct mode *mode, int fd)
 		pcap_ops[mode->pcap]->prepare_close_pcap(fd, PCAP_MODE_WRITE);
 	close(fd);
 
-	slprintf(tmp, sizeof(tmp), "%s/%lu.pcap", mode->device_out, time(0));
+	slprintf(tmp, sizeof(tmp), "%s/%s-%lu.pcap",
+		 mode->device_out, mode->prefix ? : "dump", time(0));
 
 	fd = open_or_die_m(tmp, O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE,
 			   DEFFILEMODE);
@@ -631,7 +634,8 @@ static int begin_multi_pcap_file(struct mode *mode)
 	if (mode->device_out[strlen(mode->device_out) - 1] == '/')
 		mode->device_out[strlen(mode->device_out) - 1] = 0;
 
-	slprintf(tmp, sizeof(tmp), "%s/%lu.pcap", mode->device_out, time(0));
+	slprintf(tmp, sizeof(tmp), "%s/%s-%lu.pcap",
+		 mode->device_out, mode->prefix ? : "dump", time(0));
 
 	fd = open_or_die_m(tmp, O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE,
 			   DEFFILEMODE);
@@ -891,6 +895,7 @@ static void help(void)
 	     "  -X|--hex                    Print packet data in hex format\n"
 	     "  -l|--ascii                  Print human-readable packet data\n"
 	     "Options, advanced:\n"
+	     "  -P|--prefix <name>          Prefix for pcaps stored in directory\n"
 	     "  -r|--rand                   Randomize packet forwarding order\n"
 	     "  -M|--no-promisc             No promiscuous mode for netdev\n"
 	     "  -A|--no-sock-mem            Don't tune core socket memory\n"
@@ -983,6 +988,9 @@ int main(int argc, char **argv)
 			break;
 		case 'o':
 			mode.device_out = xstrdup(optarg);
+			break;
+		case 'P':
+			mode.prefix = xstrdup(optarg);
 			break;
 		case 'R':
 			mode.link_type = LINKTYPE_IEEE802_11;
@@ -1101,6 +1109,7 @@ int main(int argc, char **argv)
 			case 'o':
 			case 'f':
 			case 't':
+			case 'P':
 			case 'F':
 			case 'n':
 			case 'S':
@@ -1193,6 +1202,7 @@ int main(int argc, char **argv)
 	free(mode.device_in);
 	free(mode.device_out);
 	free(mode.device_trans);
+	free(mode.prefix);
 
 	return 0;
 }

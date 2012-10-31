@@ -78,6 +78,7 @@ submit your contributions, items marked with '!' are of high importance):
 
 42) Flowtop: add interesting things from socket diag (e.g. socket states, ...)?
 
-43! netsniff-ng: provide pcap file name prefix, switch multi-pcaps by size as
-    well with --interval option.
+43! netsniff-ng: switch multi-pcaps by size as well with --interval option.
 	@TODO: Daniel Borkmann, (Doug Burks)
+
+44! mac80211: waiting for netlink ack failed with libnl3!
