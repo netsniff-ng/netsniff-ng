@@ -77,3 +77,7 @@ submit your contributions, items marked with '!' are of high importance):
 41! Add vlan support for bpfc (http://www.spinics.net/lists/netdev/msg213464.html).
 
 42) Flowtop: add interesting things from socket diag (e.g. socket states, ...)?
+
+43! netsniff-ng: provide pcap file name prefix, switch multi-pcaps by size as
+    well with --interval option.
+	@TODO: Daniel Borkmann, (Doug Burks)
