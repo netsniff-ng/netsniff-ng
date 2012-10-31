@@ -78,7 +78,7 @@ submit your contributions, items marked with '!' are of high importance):
 
 42) Flowtop: add interesting things from socket diag (e.g. socket states, ...)?
 
-43! netsniff-ng: switch multi-pcaps by size as well with --interval option.
-	@TODO: Daniel Borkmann, (Doug Burks)
-
 44! mac80211: waiting for netlink ack failed with libnl3!
+
+45! fix sll struct / hdr->s_ll.sll_ifindex in TPACKETv2 (provides
+    wrong information in dissector output)

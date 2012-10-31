@@ -51,31 +51,24 @@
 #include "xmalloc.h"
 #include "mtrand.h"
 
-#define CPU_UNKNOWN	-1
-#define CPU_NOTOUCH	-2
-#define PACKET_ALL	-1
-#define DUMP_INTERVAL	60
+#define DUMP_INTERVAL_DEF	60
+enum dump_mode {
+	DUMP_INTERVAL_TIME,
+	DUMP_INTERVAL_SIZE,
+};
 
 struct mode {
-	char *device_in;
-	char *device_out;
-	char *device_trans;
-	char *filter;
-	int cpu;
-	int rfraw;
-	int dump;
-	uint32_t link_type;
-	int print_mode;
-	unsigned int reserve_size;
+	char *device_in, *device_out, *device_trans, *filter, *prefix;
+#define CPU_UNKNOWN	-1
+#define CPU_NOTOUCH	-2
+	int cpu, rfraw, dump, print_mode, dump_dir, jumbo_support;
+#define PACKET_ALL	-1
 	int packet_type;
-	bool randomize;
-	bool promiscuous;
+	uint32_t link_type;
+	bool randomize, promiscuous;
 	enum pcap_ops_groups pcap;
-	unsigned long kpull;
-	int jumbo_support;
-	int dump_dir;
-	unsigned long dump_interval;
-	char *prefix;
+	unsigned long kpull, dump_interval, reserve_size;
+	enum dump_mode dump_mode;
 };
 
 struct tx_stats {
@@ -84,10 +77,8 @@ struct tx_stats {
 };
 
 volatile sig_atomic_t sigint = 0;
-
 static int tx_sock;
-static unsigned long frame_cnt_max = 0;
-static unsigned long interval = TX_KERNEL_PULL_INT;
+static unsigned long frame_cnt_max = 0, interval = TX_KERNEL_PULL_INT;
 static struct itimerval itimer;
 static volatile bool next_dump = false;
 
@@ -648,12 +639,18 @@ static int begin_multi_pcap_file(struct mode *mode)
 			panic("error prepare writing pcap!\n");
 	}
 
-	interval = mode->dump_interval;
-	itimer.it_interval.tv_sec = interval;
-	itimer.it_interval.tv_usec = 0;
-	itimer.it_value.tv_sec = interval;
-	itimer.it_value.tv_usec = 0;
-	setitimer(ITIMER_REAL, &itimer, NULL);
+	if (mode->dump_mode == DUMP_INTERVAL_TIME) {
+		interval = mode->dump_interval;
+
+		itimer.it_interval.tv_sec = interval;
+		itimer.it_interval.tv_usec = 0;
+		itimer.it_value.tv_sec = interval;
+		itimer.it_value.tv_usec = 0;
+
+		setitimer(ITIMER_REAL, &itimer, NULL);
+	} else {
+		interval = 0;
+	}
 
 	return fd;
 }
@@ -814,21 +811,35 @@ next:
 
 			if (unlikely(sigint == 1))
 				break;
-			if (mode->dump && next_dump) {
-				struct tpacket_stats kstats;
-				socklen_t slen = sizeof(kstats);
-				fmemset(&kstats, 0, sizeof(kstats));
-				getsockopt(sock, SOL_PACKET, PACKET_STATISTICS,
-					   &kstats, &slen);
-				fd = next_multi_pcap_file(mode, fd);
-				next_dump = false;
-				if (mode->print_mode == FNTTYPE_PRINT_NONE) {
-					printf(".(+%lu/-%lu)",
-					       1UL * kstats.tp_packets -
-					       kstats.tp_drops -
-					       skipped, 1UL * kstats.tp_drops +
-					       skipped);
-					fflush(stdout);
+
+			if (mode->dump) {
+				if (mode->dump_mode == DUMP_INTERVAL_SIZE) {
+					interval += hdr->tp_h.tp_snaplen;
+					if (interval > mode->dump_interval) {
+						next_dump = true;
+						interval = 0;
+					}
+				}
+
+				if (next_dump) {
+					struct tpacket_stats kstats;
+					socklen_t slen = sizeof(kstats);
+
+					fmemset(&kstats, 0, sizeof(kstats));
+					getsockopt(sock, SOL_PACKET, PACKET_STATISTICS,
+						   &kstats, &slen);
+	
+					fd = next_multi_pcap_file(mode, fd);
+					next_dump = false;
+
+					if (mode->print_mode == FNTTYPE_PRINT_NONE) {
+						printf(".(+%lu/-%lu)",
+						       1UL * kstats.tp_packets -
+						       kstats.tp_drops -
+						       skipped, 1UL * kstats.tp_drops +
+						       skipped);
+						fflush(stdout);
+					}
 				}
 			}
 		}
@@ -881,8 +892,8 @@ static void help(void)
 	     "  -f|--filter <bpf-file>      Use BPF filter file from bpfc\n"
 	     "  -t|--type <type>            Only handle packets of defined type:\n"
 	     "                              host|broadcast|multicast|others|outgoing\n"
-	     "  -F|--interval <uint>        Dump interval in sec if -o is a directory where\n"
-	     "                              pcap files should be stored (default: 60)\n"
+	     "  -F|--interval <size/time>   Dump interval in time or size if -o is a directory\n"
+	     "                              pcap swap spec: <num>KiB/MiB/GiB/s/sec/min/hrs\n"
 	     "  -J|--jumbo-support          Support for 64KB Super Jumbo Frames\n"
 	     "                              Default RX/TX slot: 2048Byte\n"
 	     "  -R|--rfraw                  Capture or inject raw 802.11 frames\n"
@@ -903,7 +914,7 @@ static void help(void)
 	     "  -g|--sg                     Scatter/gather pcap file I/O\n"
 	     "  -c|--clrw                   Use slower read(2)/write(2) I/O\n"
 	     "  -S|--ring-size <size>       Manually set ring size to <size>:\n"
-	     "                              mmap space in KB/MB/GB, e.g. \'10MB\'\n"
+	     "                              mmap space in KiB/MiB/GiB, e.g. \'10MiB\'\n"
 	     "  -k|--kernel-pull <uint>     Kernel pull from user interval in us\n"
 	     "                              Default is 10us where the TX_RING\n"
 	     "                              is populated with payload from uspace\n"
@@ -919,7 +930,7 @@ static void help(void)
 	     "  netsniff-ng --in dump.pcap --mmap --out eth0 --silent --bind-cpu 0\n"
 	     "  netsniff-ng --in dump.pcap --out dump.txf --silent --bind-cpu 0\n"
 	     "  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0 --type host\n"
-	     "  netsniff-ng --in eth1 --out /opt/probe1/ -s -m -J --interval 30 -b 0\n"
+	     "  netsniff-ng --in eth1 --out /opt/probe/ -s -m -J --interval 100MiB -b 0\n"
 	     "  netsniff-ng --in any --filter http.bpf --jumbo-support --ascii\n\n"
 	     "Note:\n"
 	     "  This tool is targeted for network developers! You should\n"
@@ -977,7 +988,8 @@ int main(int argc, char **argv)
 	mode.promiscuous = true;
 	mode.randomize = false;
 	mode.pcap = PCAP_OPS_SG;
-	mode.dump_interval = DUMP_INTERVAL;
+	mode.dump_interval = DUMP_INTERVAL_DEF;
+	mode.dump_mode = DUMP_INTERVAL_TIME;
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 	       &opt_index)) != EOF) {
@@ -1035,11 +1047,11 @@ int main(int argc, char **argv)
 				ptr++;
 			}
 
-			if (!strncmp(ptr, "KB", strlen("KB")))
+			if (!strncmp(ptr, "KiB", strlen("KiB")))
 				mode.reserve_size = 1 << 10;
-			else if (!strncmp(ptr, "MB", strlen("MB")))
+			else if (!strncmp(ptr, "MiB", strlen("MiB")))
 				mode.reserve_size = 1 << 20;
-			else if (!strncmp(ptr, "GB", strlen("GB")))
+			else if (!strncmp(ptr, "GiB", strlen("GiB")))
 				mode.reserve_size = 1 << 30;
 			else
 				panic("Syntax error in ring size param!\n");
@@ -1094,7 +1106,42 @@ int main(int argc, char **argv)
 			frame_cnt_max = (unsigned long) atol(optarg);
 			break;
 		case 'F':
-			mode.dump_interval = (unsigned long) atol(optarg);
+			ptr = optarg;
+			mode.dump_interval = 0;
+
+			for (j = i = strlen(optarg); i > 0; --i) {
+				if (!isdigit(optarg[j - i]))
+					break;
+				ptr++;
+			}
+
+			if (!strncmp(ptr, "KiB", strlen("KiB"))) {
+				mode.dump_interval = 1 << 10;
+				mode.dump_mode = DUMP_INTERVAL_SIZE;
+			} else if (!strncmp(ptr, "MiB", strlen("MiB"))) {
+				mode.dump_interval = 1 << 20;
+				mode.dump_mode = DUMP_INTERVAL_SIZE;
+			} else if (!strncmp(ptr, "GiB", strlen("GiB"))) {
+				mode.dump_interval = 1 << 30;
+				mode.dump_mode = DUMP_INTERVAL_SIZE;
+			} else if (!strncmp(ptr, "sec", strlen("sec"))) {
+				mode.dump_interval = 1;
+				mode.dump_mode = DUMP_INTERVAL_TIME;
+			} else if (!strncmp(ptr, "min", strlen("min"))) {
+				mode.dump_interval = 60;
+				mode.dump_mode = DUMP_INTERVAL_TIME;
+			} else if (!strncmp(ptr, "hrs", strlen("hrs"))) {
+				mode.dump_interval = 60 * 60;
+				mode.dump_mode = DUMP_INTERVAL_TIME;
+			} else if (!strncmp(ptr, "s", strlen("s"))) {
+				mode.dump_interval = 1;
+				mode.dump_mode = DUMP_INTERVAL_TIME;
+			} else {
+				panic("Syntax error in time/size param!\n");
+			}
+
+			*ptr = 0;
+			mode.dump_interval *= (unsigned long) atoi(optarg);
 			break;
 		case 'v':
 			version();
