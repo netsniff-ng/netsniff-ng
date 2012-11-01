@@ -278,6 +278,11 @@ struct element_hop_pt {
 	u8 rand_tabl[0];
 } __packed;
 
+struct element_req {
+	u8 len;
+	u8 req_elem_idl[0];
+} __packed;
+
 struct element_erp {
 	u8 len;
 	u8 param;
@@ -576,6 +581,15 @@ static int8_t inf_hop_pt(struct pkt_buff *pkt, u8 *id)
 
 static int8_t inf_req(struct pkt_buff *pkt, u8 *id)
 {
+// 	struct element_req *req;
+// 
+// 	req = (struct element_req *) pkt_pull(pkt, sizeof(*req));
+// 	if (req == NULL)
+// 		return 0;
+// 
+// 	tprintf("Request Element (%u, Len(%u)): ", *id, req->len);
+// 	tprintf("Nr of Ch: %u", hop_pp->nr_ch);
+
 	return 1;
 }
 
