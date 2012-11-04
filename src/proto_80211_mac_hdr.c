@@ -801,67 +801,67 @@ static int8_t inf_tspec(struct pkt_buff *pkt, u8 *id)
 
 static int8_t inf_tclas(struct pkt_buff *pkt, u8 *id)
 {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_sched(struct pkt_buff *pkt, u8 *id)
 {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_chall_txt(struct pkt_buff *pkt, u8 *id)
 {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_pwr_constr(struct pkt_buff *pkt, u8 *id)
 {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_pwr_cap(struct pkt_buff *pkt, u8 *id)
 {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_tpc_req(struct pkt_buff *pkt, u8 *id)
 {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_tpc_rep(struct pkt_buff *pkt, u8 *id)
 {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_supp_ch(struct pkt_buff *pkt, u8 *id)
 {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_ch_sw_ann(struct pkt_buff *pkt, u8 *id)
 {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_meas_rep(struct pkt_buff *pkt, u8 *id)
 {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_quiet(struct pkt_buff *pkt, u8 *id)
 {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_ibss_dfs(struct pkt_buff *pkt, u8 *id)
 {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_erp(struct pkt_buff *pkt, u8 *id)
@@ -885,27 +885,27 @@ static int8_t inf_erp(struct pkt_buff *pkt, u8 *id)
 
 static int8_t inf_ts_del(struct pkt_buff *pkt, u8 *id)
 {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_tclas_proc(struct pkt_buff *pkt, u8 *id)
 {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_ht_cap(struct pkt_buff *pkt, u8 *id)
 {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_qos_cap(struct pkt_buff *pkt, u8 *id)
 {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_rsn(struct pkt_buff *pkt, u8 *id)
 {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_ext_supp_rates(struct pkt_buff *pkt, u8 *id)
@@ -937,343 +937,343 @@ static int8_t inf_ext_supp_rates(struct pkt_buff *pkt, u8 *id)
 }
 
 static int8_t inf_ap_ch_exp(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_neighb_rep(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_rcpi(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_mde(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_fte(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_time_out_int(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_rde(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_dse_reg_loc(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_supp_op_class(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_ext_ch_sw_ann(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_ht_op(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_sec_ch_offs(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_bss_avg_acc_del(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_ant(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_rsni(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_meas_pilot_trans(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_bss_avl_adm_cap(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_bss_ac_acc_del(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_time_adv(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_rm_ena_cap(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_mult_bssid(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_20_40_bss_coex(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_20_40_bss_int_ch_rep(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_overl_bss_scan_para(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_ric_desc(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_mgmt_mic(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_ev_req(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_ev_rep(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_diagn_req(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_diagn_rep(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_loc_para(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_nontr_bssid_cap(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_ssid_list(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_mult_bssid_index(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_fms_desc(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_fms_req(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_fms_resp(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_qos_tfc_cap(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_bss_max_idle_per(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_tfs_req(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_tfs_resp(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_wnm_sleep_mod(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_tim_bcst_req(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_tim_bcst_resp(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_coll_interf_rep(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_ch_usage(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_time_zone(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_dms_req(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_dms_resp(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_link_id(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_wakeup_sched(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_ch_sw_timing(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_pti_ctrl(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_tpu_buff_status(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_interw(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_adv_proto(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_exp_bandw_req(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_qos_map_set(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_roam_cons(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_emer_alert_id(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_mesh_conf(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_mesh_id(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_mesh_link_metr_rep(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_cong_notif(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_mesh_peer_mgmt(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_mesh_ch_sw_para(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_mesh_awake_win(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_beacon_timing(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_mccaop_setup_req(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_mccaop_setup_rep(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_mccaop_adv(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_mccaop_teardwn(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_gann(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_rann(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_ext_cap(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_preq(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_prep(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_perr(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_pxu(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_pxuc(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_auth_mesh_peer_exch(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_mic(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_dest_uri(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_u_apsd_coex(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_mccaop_adv_overv(struct pkt_buff *pkt, u8 *id) {
-	return 1;
+	return 0;
 }
 
 static int8_t inf_vend_spec(struct pkt_buff *pkt, u8 *id)
