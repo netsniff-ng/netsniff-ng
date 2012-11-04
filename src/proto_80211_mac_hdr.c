@@ -351,6 +351,12 @@ struct element_tspec {
 	u16 med_time;
 } __packed;
 
+struct element_tclas {
+	u8 len;
+	u8 user_priority;
+	u8 frame_class[0];
+} __packed;
+
 struct element_erp {
 	u8 len;
 	u8 param;
@@ -367,10 +373,20 @@ struct element_vend_spec {
 	u8 specific[0];
 } __packed;
 
-static int8_t len_error(u8 len, u8 intended)
+static int8_t len_neq_error(u8 len, u8 intended)
 {
 	if(len != intended) {
 		tprintf("Length should be %u Bytes", intended);
+		return 1;
+	}
+
+	return 0;
+}
+
+static int8_t len_gt_error(u8 len, u8 intended)
+{
+	if(len > intended) {
+		tprintf("Length should be greater %u Bytes", intended);
 		return 1;
 	}
 
@@ -467,6 +483,8 @@ static int8_t inf_supp_rates(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("Rates (%u, Len (%u)): ", *id, supp_rates->len);
+	if (len_gt_error(supp_rates->len, 1))
+		return 0;
 
 	if ((supp_rates->len - sizeof(*supp_rates) + 1) > 0) {
 		rates = pkt_pull(pkt, supp_rates->len);
@@ -492,7 +510,7 @@ static int8_t inf_fh_ps(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("FH Param Set (%u, Len(%u)): ", *id, fh_ps->len);
-	if (len_error(fh_ps->len, 5))
+	if (len_neq_error(fh_ps->len, 5))
 		return 0;
 	tprintf("Dwell Time: %fs, ", le16_to_cpu(fh_ps->dwell_time) * TU);
 	tprintf("HopSet: %u, ", fh_ps->hop_set);
@@ -511,7 +529,7 @@ static int8_t inf_dsss_ps(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("DSSS Param Set (%u, Len(%u)): ", *id, dsss_ps->len);
-	if (len_error(dsss_ps->len, 1))
+	if (len_neq_error(dsss_ps->len, 1))
 		return 0;
 	tprintf("Current Channel: %u", dsss_ps->curr_ch);
 
@@ -527,7 +545,7 @@ static int8_t inf_cf_ps(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("CF Param Set (%u, Len(%u)): ", *id, cf_ps->len);
-	if (len_error(cf_ps->len, 6))
+	if (len_neq_error(cf_ps->len, 6))
 		return 0;
 	tprintf("CFP Count: %u, ", cf_ps->cfp_cnt);
 	tprintf("CFP Period: %u, ", cf_ps->cfp_period);
@@ -546,6 +564,8 @@ static int8_t inf_tim(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("TIM (%u, Len(%u)): ", *id, tim->len);
+	if (len_gt_error(tim->len, 3))
+		return 0;
 	tprintf("DTIM Count: %u, ", tim->dtim_cnt);
 	tprintf("DTIM Period: %u, ", tim->dtim_period);
 	tprintf("Bitmap Control: %u, ", tim->bmp_cntrl);
@@ -571,7 +591,7 @@ static int8_t inf_ibss_ps(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("IBSS Param Set (%u, Len(%u)): ", *id, ibss_ps->len);
-	if (len_error(ibss_ps->len, 2))
+	if (len_neq_error(ibss_ps->len, 2))
 		return 0;
 	tprintf("ATIM Window: %fs", le16_to_cpu(ibss_ps->atim_win) * TU);
 
@@ -589,6 +609,8 @@ static int8_t inf_country(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("Country (%u, Len(%u)): ", *id, country->len);
+	if (len_gt_error(country->len, 6))
+		return 0;
 	tprintf("Country String: %c%c%c", country->country_first,
 		country->country_sec, country->country_third);
 
@@ -631,7 +653,7 @@ static int8_t inf_hop_pp(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("Hopping Pattern Param (%u, Len(%u)): ", *id, hop_pp->len);
-	if (len_error(hop_pp->len, 2))
+	if (len_neq_error(hop_pp->len, 2))
 		return 0;
 	tprintf("Nr of Ch: %u", hop_pp->nr_ch);
 
@@ -649,6 +671,8 @@ static int8_t inf_hop_pt(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("Hopping Pattern Table (%u, Len(%u)): ", *id, hop_pt->len);
+	if (len_gt_error(hop_pt->len, 4))
+		return 0;
 	tprintf("Flag: %u, ", hop_pt->flag);
 	tprintf("Nr of Sets: %u, ", hop_pt->nr_sets);
 	tprintf("Modules: %u, ", hop_pt->modules);
@@ -700,7 +724,7 @@ static int8_t inf_bss_load(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("BSS Load element (%u, Len(%u)): ", *id, bss_load->len);
-	if (len_error(bss_load->len, 5))
+	if (len_neq_error(bss_load->len, 5))
 		return 0;
 	tprintf("Station Count: %u, ", le16_to_cpu(bss_load->station_cnt));
 	tprintf("Channel Utilization: %u, ", bss_load->ch_util);
@@ -725,7 +749,7 @@ static int8_t inf_edca_ps(struct pkt_buff *pkt, u8 *id)
 	ac_vo = le32_to_cpu(edca_ps->ac_vo);
 
 	tprintf("EDCA Param Set (%u, Len(%u)): ", *id, edca_ps->len);
-	if (len_error(edca_ps->len, 18))
+	if (len_neq_error(edca_ps->len, 18))
 		return 0;
 	tprintf("QoS Info: 0x%x (-> EDCA Param Set Update Count (%u),"
 		"Q-Ack (%u), Queue Re (%u), TXOP Req(%u), Res(%u)), ",
@@ -770,7 +794,7 @@ static int8_t inf_tspec(struct pkt_buff *pkt, u8 *id)
 	surplus_bandw_allow = le16_to_cpu(tspec->surplus_bandw_allow);
 
 	tprintf("TSPEC (%u, Len(%u)): ", *id, tspec->len);
-	if (len_error(tspec->len, 55))
+	if (len_neq_error(tspec->len, 55))
 		return 0;
 	tprintf("Traffic Type: %u, ", tspec->traffic_type);
 	tprintf("TSID: %u, ", tspec->tsid);
@@ -808,7 +832,18 @@ static int8_t inf_tspec(struct pkt_buff *pkt, u8 *id)
 
 static int8_t inf_tclas(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_tclas *tclas;
+
+	tclas =	(struct element_tclas *) pkt_pull(pkt, sizeof(*tclas));
+	if (tclas == NULL)
+		return 0;
+
+	tprintf("TCLAS (%u, Len(%u)): ", *id, tclas->len);
+	if (len_gt_error(tclas->len, 1))
+		return 0;
+	tprintf("User Priority: %u, ", tclas->user_priority);
+
+	return 1;
 }
 
 static int8_t inf_sched(struct pkt_buff *pkt, u8 *id)
@@ -880,7 +915,7 @@ static int8_t inf_erp(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("ERP (%u, Len(%u)): ", *id, erp->len);
-	if (len_error(erp->len, 1))
+	if (len_neq_error(erp->len, 1))
 		return 0;
 	tprintf("Non ERP Present (%u), ", erp->param & 0x1);
 	tprintf("Use Protection (%u), ", (erp->param >> 1) & 0x1);
