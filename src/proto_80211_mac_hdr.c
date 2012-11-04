@@ -283,6 +283,74 @@ struct element_req {
 	u8 req_elem_idl[0];
 } __packed;
 
+struct element_bss_load {
+	u8 len;
+	u16 station_cnt;
+	u8 ch_util;
+	u16 avlb_adm_cap;
+} __packed;
+
+struct element_edca_ps {
+	u8 len;
+	u8 qos_inf;
+	u8 res;
+	u32 ac_be;
+	u32 ac_bk;
+	u32 ac_vi;
+	u32 ac_vo;
+} __packed;
+
+struct element_tspec {
+	union {
+		u32 len_ts_info;
+		struct {
+#if defined(__LITTLE_ENDIAN_BITFIELD)
+		/* Correct order here ... */
+		__extension__ u32 len:8,
+				  traffic_type:1,
+				  tsid:4,
+				  direction:2,
+				  access_policy:2,
+				  aggr:1,
+				  apsid:1,
+				  user_prior:3,
+				  tsinfo_ack_pol:2,
+				  schedule:1,
+				  res:7;
+#elif defined(__BIG_ENDIAN_BITFIELD)
+		__extension__ u32 len:8,
+				  res:7,
+				  schedule:1,
+				  tsinfo_ack_pol:2,
+				  user_prior:3,
+				  apsid:1,
+				  aggr:1,
+				  access_policy:2,
+				  direction:2,
+				  tsid:4,
+				  traffic_type:1;
+#else
+# error  "Adjust your <asm/byteorder.h> defines"
+#endif
+		};
+	};
+	u16 nom_msdu_size;
+	u16 max_msdu_size;
+	u32 min_srv_intv;
+	u32 max_srv_intv;
+	u32 inactive_intv;
+	u32 susp_intv;
+	u32 srv_start_time;
+	u32 min_data_rate;
+	u32 mean_data_rate;
+	u32 peak_data_rate;
+	u32 burst_size;
+	u32 delay_bound;
+	u32 min_phy_rate;
+	u16 surplus_bandw_allow;
+	u16 med_time;
+} __packed;
+
 struct element_erp {
 	u8 len;
 	u8 param;
@@ -298,6 +366,16 @@ struct element_vend_spec {
 	u8 oui[0];
 	u8 specific[0];
 } __packed;
+
+static int8_t len_error(u8 len, u8 intended)
+{
+	if(len != intended) {
+		tprintf("Length should be %u Bytes", intended);
+		return 1;
+	}
+
+	return 0;
+}
 
 static float data_rates(u8 id)
 {
@@ -330,7 +408,7 @@ static float data_rates(u8 id)
 
 static int8_t inf_reserved(struct pkt_buff *pkt, u8 *id)
 {
-	int i;
+	u8 i;
 	u8 *data;
 	struct element_reserved *reserved;
 
@@ -353,7 +431,7 @@ static int8_t inf_reserved(struct pkt_buff *pkt, u8 *id)
 
 static int8_t inf_ssid(struct pkt_buff *pkt, u8 *id)
 {
-	int i;
+	u8 i;
 	struct element_ssid *ssid;
 	char *ssid_name;
 
@@ -363,7 +441,7 @@ static int8_t inf_ssid(struct pkt_buff *pkt, u8 *id)
 
 	tprintf(" SSID (%u, Len (%u)): ", *id, ssid->len);
 
-	if (ssid->len) {
+	if ((ssid->len - sizeof(*ssid) + 1) > 0) {
 		ssid_name = (char *) pkt_pull(pkt, ssid->len);
 		if (ssid_name == NULL)
 			return 0;
@@ -379,7 +457,7 @@ static int8_t inf_ssid(struct pkt_buff *pkt, u8 *id)
 
 static int8_t inf_supp_rates(struct pkt_buff *pkt, u8 *id)
 {
-	int i;
+	u8 i;
 	u8 *rates;
 	struct element_supp_rates *supp_rates;
 
@@ -390,7 +468,7 @@ static int8_t inf_supp_rates(struct pkt_buff *pkt, u8 *id)
 
 	tprintf("Rates (%u, Len (%u)): ", *id, supp_rates->len);
 
-	if (supp_rates->len) {
+	if ((supp_rates->len - sizeof(*supp_rates) + 1) > 0) {
 		rates = pkt_pull(pkt, supp_rates->len);
 		if (rates == NULL)
 			return 0;
@@ -414,6 +492,8 @@ static int8_t inf_fh_ps(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("FH Param Set (%u, Len(%u)): ", *id, fh_ps->len);
+	if (len_error(fh_ps->len, 5))
+		return 0;
 	tprintf("Dwell Time: %fs, ", le16_to_cpu(fh_ps->dwell_time) * TU);
 	tprintf("HopSet: %u, ", fh_ps->hop_set);
 	tprintf("HopPattern: %u, ", fh_ps->hop_pattern);
@@ -431,6 +511,8 @@ static int8_t inf_dsss_ps(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("DSSS Param Set (%u, Len(%u)): ", *id, dsss_ps->len);
+	if (len_error(dsss_ps->len, 1))
+		return 0;
 	tprintf("Current Channel: %u", dsss_ps->curr_ch);
 
 	return 1;
@@ -445,6 +527,8 @@ static int8_t inf_cf_ps(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("CF Param Set (%u, Len(%u)): ", *id, cf_ps->len);
+	if (len_error(cf_ps->len, 6))
+		return 0;
 	tprintf("CFP Count: %u, ", cf_ps->cfp_cnt);
 	tprintf("CFP Period: %u, ", cf_ps->cfp_period);
 	tprintf("CFP MaxDur: %fs, ", le16_to_cpu(cf_ps->cfp_max_dur) * TU);
@@ -487,6 +571,8 @@ static int8_t inf_ibss_ps(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("IBSS Param Set (%u, Len(%u)): ", *id, ibss_ps->len);
+	if (len_error(ibss_ps->len, 2))
+		return 0;
 	tprintf("ATIM Window: %fs", le16_to_cpu(ibss_ps->atim_win) * TU);
 
 	return 1;
@@ -494,7 +580,7 @@ static int8_t inf_ibss_ps(struct pkt_buff *pkt, u8 *id)
 
 static int8_t inf_country(struct pkt_buff *pkt, u8 *id)
 {
-	int i;
+	u8 i;
 	u8 *pad;
 	struct element_country *country;
 
@@ -545,6 +631,8 @@ static int8_t inf_hop_pp(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("Hopping Pattern Param (%u, Len(%u)): ", *id, hop_pp->len);
+	if (len_error(hop_pp->len, 2))
+		return 0;
 	tprintf("Nr of Ch: %u", hop_pp->nr_ch);
 
 	return 1;
@@ -581,30 +669,133 @@ static int8_t inf_hop_pt(struct pkt_buff *pkt, u8 *id)
 
 static int8_t inf_req(struct pkt_buff *pkt, u8 *id)
 {
-// 	struct element_req *req;
-// 
-// 	req = (struct element_req *) pkt_pull(pkt, sizeof(*req));
-// 	if (req == NULL)
-// 		return 0;
-// 
-// 	tprintf("Request Element (%u, Len(%u)): ", *id, req->len);
-// 	tprintf("Nr of Ch: %u", hop_pp->nr_ch);
+	int i;
+	struct element_req *req;
+	u8 *req_ids;
+
+	req = (struct element_req *) pkt_pull(pkt, sizeof(*req));
+	if (req == NULL)
+		return 0;
+
+	tprintf("Request Element (%u, Len(%u)): ", *id, req->len);
+	if ((req->len - sizeof(*req) + 1) > 0) {
+		req_ids = pkt_pull(pkt, (req->len - sizeof(*req) + 1));
+		if (req_ids == NULL)
+			return 0;
+
+		tprintf(", Requested Element IDs: ");
+		for (i = 0; i < (req->len - sizeof(*req) + 1); i++)
+			tprintf("%u ", req_ids[i]);
+	}
 
 	return 1;
 }
 
 static int8_t inf_bss_load(struct pkt_buff *pkt, u8 *id)
 {
+	struct element_bss_load *bss_load;
+
+	bss_load = (struct element_bss_load *) pkt_pull(pkt, sizeof(*bss_load));
+	if (bss_load == NULL)
+		return 0;
+
+	tprintf("BSS Load element (%u, Len(%u)): ", *id, bss_load->len);
+	if (len_error(bss_load->len, 5))
+		return 0;
+	tprintf("Station Count: %u, ", le16_to_cpu(bss_load->station_cnt));
+	tprintf("Channel Utilization: %u, ", bss_load->ch_util);
+	tprintf("Available Admission Capacity: %uus",
+		bss_load->avlb_adm_cap * 32);
+
 	return 1;
 }
 
 static int8_t inf_edca_ps(struct pkt_buff *pkt, u8 *id)
 {
+	u32 ac_be, ac_bk, ac_vi, ac_vo;
+	struct element_edca_ps *edca_ps;
+
+	edca_ps = (struct element_edca_ps *) pkt_pull(pkt, sizeof(*edca_ps));
+	if (edca_ps == NULL)
+		return 0;
+
+	ac_be = le32_to_cpu(edca_ps->ac_be);
+	ac_bk = le32_to_cpu(edca_ps->ac_bk);
+	ac_vi = le32_to_cpu(edca_ps->ac_vi);
+	ac_vo = le32_to_cpu(edca_ps->ac_vo);
+
+	tprintf("EDCA Param Set (%u, Len(%u)): ", *id, edca_ps->len);
+	if (len_error(edca_ps->len, 18))
+		return 0;
+	tprintf("QoS Info: 0x%x (-> EDCA Param Set Update Count (%u),"
+		"Q-Ack (%u), Queue Re (%u), TXOP Req(%u), Res(%u)), ",
+		edca_ps->qos_inf, edca_ps->qos_inf >> 4,
+		(edca_ps->qos_inf >> 3) & 1, (edca_ps->qos_inf >> 2) & 1,
+		(edca_ps->qos_inf >> 1) & 1, edca_ps->qos_inf & 1);
+	tprintf("Reserved: 0x%x, ", edca_ps->res);
+	tprintf("AC_BE Param Rec: 0x%x (-> AIFSN (%u), ACM (%u), ACI (%u),"
+		"Res (%u), ECWmin (%u), ECWmax(%u)), TXOP Limit (%uus)), ", ac_be,
+		ac_be >> 28, (ac_be >> 27) & 1, (ac_be >> 25) & 3,
+		(ac_be >> 24) & 1, (ac_be >> 20) & 15, (ac_be >> 16) & 15,
+		bswap_16(ac_be & 0xFFFF) * 32);
+	tprintf("AC_BK Param Rec: 0x%x (-> AIFSN (%u), ACM (%u), ACI (%u),"
+		"Res (%u), ECWmin (%u), ECWmax(%u)), TXOP Limit (%uus)), ", ac_bk,
+		ac_bk >> 28, (ac_bk >> 27) & 1, (ac_bk >> 25) & 3,
+		(ac_bk >> 24) & 1, (ac_bk >> 20) & 15, (ac_bk >> 16) & 15,
+		bswap_16(ac_bk & 0xFFFF) * 32);
+	tprintf("AC_VI Param Rec: 0x%x (-> AIFSN (%u), ACM (%u), ACI (%u),"
+		"Res (%u), ECWmin (%u), ECWmax(%u)), TXOP Limit (%uus)), ", ac_vi,
+		ac_vi >> 28, (ac_vi >> 27) & 1, (ac_vi >> 25) & 3,
+		(ac_vi >> 24) & 1, (ac_vi >> 20) & 15, (ac_vi >> 16) & 15,
+		bswap_16(ac_vi & 0xFFFF) * 32);
+	tprintf("AC_VO Param Rec: 0x%x (-> AIFSN (%u), ACM (%u), ACI (%u),"
+		"Res (%u), ECWmin (%u), ECWmax(%u)), TXOP Limit (%uus)", ac_vo,
+		ac_vo >> 28, (ac_vo >> 27) & 1, (ac_vo >> 25) & 3,
+		(ac_vo >> 24) & 1, (ac_vo >> 20) & 15, (ac_vo >> 16) & 15,
+		bswap_16(ac_vo & 0xFFFF) * 32);
+
 	return 1;
 }
 
 static int8_t inf_tspec(struct pkt_buff *pkt, u8 *id)
 {
+// 	u32 ac_be, ac_bk, ac_vi, ac_vo;
+	struct element_tspec *tspec;
+
+	tspec = (struct element_tspec *) pkt_pull(pkt, sizeof(*tspec));
+	if (tspec == NULL)
+		return 0;
+
+	tprintf("TSPEC (%u, Len(%u)): ", *id, tspec->len);
+	if (len_error(tspec->len, 55))
+		return 0;
+	tprintf("Traffic Type: %u, ", tspec->traffic_type);
+	tprintf("TSID: %u, ", tspec->tsid);
+	tprintf("Direction: %u, ", tspec->direction);
+	tprintf("Access Policy: %u, ", tspec->access_policy);
+	tprintf("Aggregation: %u, ", tspec->aggr);
+	tprintf("User Priority: %u, ", tspec->user_prior);
+	tprintf("TSinfo Ack Policy: %u, ", tspec->tsinfo_ack_pol);
+	tprintf("Schedule: %u, ", tspec->schedule);
+	tprintf("Reserved: 0x%x, ", tspec->res);
+	tprintf("Nominal MSDU Size: %uB (Fixed (%u)), ",
+		tspec->nom_msdu_size >> 1, tspec->nom_msdu_size & 1);
+	tprintf("Maximum MSDU Size: %uB, ", tspec->max_msdu_size);
+	tprintf("Minimum Service Interval: %uus, ", tspec->min_srv_intv);
+	tprintf("Maximum Service Interval: %uus, ", tspec->max_srv_intv);
+	tprintf("Inactivity Interval: %uus, ", tspec->inactive_intv);
+	tprintf("Suspension Interval: %uus, ", tspec->susp_intv);
+	tprintf("Service Start Time: %uus, ", tspec->srv_start_time);
+	tprintf("Minimum Data Rate: %ub/s, ", tspec->min_data_rate);
+	tprintf("Mean Data Rate: %ub/s, ", tspec->mean_data_rate);
+	tprintf("Peak Data Rate: %ub/s, ", tspec->peak_data_rate);
+	tprintf("Burst Size: %uB, ", tspec->burst_size);
+	tprintf("Delay Bound: %uus, ", tspec->delay_bound);
+	tprintf("Minimum PHY Rate: %ub/s, ", tspec->min_phy_rate);
+	tprintf("Surplus Bandwidth: %u.%u, ", tspec->surplus_bandw_allow >> 13,
+		tspec->surplus_bandw_allow & 0x1FFF);
+	tprintf("Medium Time: %uus, ", tspec->med_time * 32);
+
 	return 1;
 }
 
@@ -682,6 +873,8 @@ static int8_t inf_erp(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("ERP (%u, Len(%u)): ", *id, erp->len);
+	if (len_error(erp->len, 1))
+		return 0;
 	tprintf("Non ERP Present (%u), ", erp->param & 0x1);
 	tprintf("Use Protection (%u), ", (erp->param >> 1) & 0x1);
 	tprintf("Barker Preamble Mode (%u), ", (erp->param >> 2) & 0x1);
@@ -717,7 +910,7 @@ static int8_t inf_rsn(struct pkt_buff *pkt, u8 *id)
 
 static int8_t inf_ext_supp_rates(struct pkt_buff *pkt, u8 *id)
 {
-	int i;
+	u8 i;
 	u8 *rates;
 	struct element_ext_supp_rates *ext_supp_rates;
 
@@ -728,7 +921,7 @@ static int8_t inf_ext_supp_rates(struct pkt_buff *pkt, u8 *id)
 
 	tprintf("Ext Support Rates (%u, Len(%u)): ", *id, ext_supp_rates->len);
 
-	if (ext_supp_rates->len) {
+	if ((ext_supp_rates->len - sizeof(*ext_supp_rates) + 1) > 0) {
 		rates = pkt_pull(pkt, ext_supp_rates->len);
 		if (rates == NULL)
 			return 0;
@@ -1085,7 +1278,7 @@ static int8_t inf_mccaop_adv_overv(struct pkt_buff *pkt, u8 *id) {
 
 static int8_t inf_vend_spec(struct pkt_buff *pkt, u8 *id)
 {
-	int i;
+	u8 i;
 	u8 *data;
 	struct element_vend_spec *vend_spec;
 
