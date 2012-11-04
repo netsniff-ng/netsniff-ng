@@ -759,12 +759,15 @@ static int8_t inf_edca_ps(struct pkt_buff *pkt, u8 *id)
 
 static int8_t inf_tspec(struct pkt_buff *pkt, u8 *id)
 {
-// 	u32 ac_be, ac_bk, ac_vi, ac_vo;
+	u16 nom_msdu_size, surplus_bandw_allow;
 	struct element_tspec *tspec;
 
 	tspec = (struct element_tspec *) pkt_pull(pkt, sizeof(*tspec));
 	if (tspec == NULL)
 		return 0;
+
+	nom_msdu_size = le16_to_cpu(tspec->nom_msdu_size);
+	surplus_bandw_allow = le16_to_cpu(tspec->surplus_bandw_allow);
 
 	tprintf("TSPEC (%u, Len(%u)): ", *id, tspec->len);
 	if (len_error(tspec->len, 55))
@@ -779,22 +782,26 @@ static int8_t inf_tspec(struct pkt_buff *pkt, u8 *id)
 	tprintf("Schedule: %u, ", tspec->schedule);
 	tprintf("Reserved: 0x%x, ", tspec->res);
 	tprintf("Nominal MSDU Size: %uB (Fixed (%u)), ",
-		tspec->nom_msdu_size >> 1, tspec->nom_msdu_size & 1);
-	tprintf("Maximum MSDU Size: %uB, ", tspec->max_msdu_size);
-	tprintf("Minimum Service Interval: %uus, ", tspec->min_srv_intv);
-	tprintf("Maximum Service Interval: %uus, ", tspec->max_srv_intv);
-	tprintf("Inactivity Interval: %uus, ", tspec->inactive_intv);
-	tprintf("Suspension Interval: %uus, ", tspec->susp_intv);
-	tprintf("Service Start Time: %uus, ", tspec->srv_start_time);
-	tprintf("Minimum Data Rate: %ub/s, ", tspec->min_data_rate);
-	tprintf("Mean Data Rate: %ub/s, ", tspec->mean_data_rate);
-	tprintf("Peak Data Rate: %ub/s, ", tspec->peak_data_rate);
-	tprintf("Burst Size: %uB, ", tspec->burst_size);
-	tprintf("Delay Bound: %uus, ", tspec->delay_bound);
-	tprintf("Minimum PHY Rate: %ub/s, ", tspec->min_phy_rate);
-	tprintf("Surplus Bandwidth: %u.%u, ", tspec->surplus_bandw_allow >> 13,
-		tspec->surplus_bandw_allow & 0x1FFF);
-	tprintf("Medium Time: %uus, ", tspec->med_time * 32);
+		nom_msdu_size >> 1, nom_msdu_size & 1);
+	tprintf("Maximum MSDU Size: %uB, ", le16_to_cpu(tspec->max_msdu_size));
+	tprintf("Minimum Service Interval: %uus, ",
+		le32_to_cpu(tspec->min_srv_intv));
+	tprintf("Maximum Service Interval: %uus, ",
+		le32_to_cpu(tspec->max_srv_intv));
+	tprintf("Inactivity Interval: %uus, ",
+		le32_to_cpu(tspec->inactive_intv));
+	tprintf("Suspension Interval: %uus, ", le32_to_cpu(tspec->susp_intv));
+	tprintf("Service Start Time: %uus, ",
+		le32_to_cpu(tspec->srv_start_time));
+	tprintf("Minimum Data Rate: %ub/s, ",le32_to_cpu(tspec->min_data_rate));
+	tprintf("Mean Data Rate: %ub/s, ", le32_to_cpu(tspec->mean_data_rate));
+	tprintf("Peak Data Rate: %ub/s, ",le32_to_cpu(tspec->peak_data_rate));
+	tprintf("Burst Size: %uB, ", le32_to_cpu(tspec->burst_size));
+	tprintf("Delay Bound: %uus, ", le32_to_cpu(tspec->delay_bound));
+	tprintf("Minimum PHY Rate: %ub/s, ", le32_to_cpu(tspec->min_phy_rate));
+	tprintf("Surplus Bandwidth: %u.%u, ", surplus_bandw_allow >> 13,
+		surplus_bandw_allow & 0x1FFF);
+	tprintf("Medium Time: %uus, ", le16_to_cpu(tspec->med_time) * 32);
 
 	return 1;
 }
