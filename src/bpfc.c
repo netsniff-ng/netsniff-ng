@@ -49,8 +49,7 @@ extern int compile_hla_filter(char *file, int verbose, int debug);
 
 static void help(void)
 {
-	printf("\n%s %s, a tiny BPF compiler\n",
-	       PROGNAME_STRING, VERSION_STRING);
+	printf("\nbpfc %s, a tiny BPF compiler\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: bpfc [options] || bpfc <program>\n"
 	     "Options:\n"
@@ -80,8 +79,7 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\n%s %s, a tiny BPF compiler\n",
-	       PROGNAME_STRING, VERSION_STRING);
+	printf("\nbpfc %s, a tiny BPF compiler\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"

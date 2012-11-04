@@ -192,8 +192,8 @@ static void header(void)
 static void help(void)
 {
 
-	printf("\n%s %s, autonomous system trace route utility\n",
-	       PROGNAME_STRING, VERSION_STRING);
+	printf("\nastraceroute %s, autonomous system trace route utility\n",
+	       VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: astraceroute [options]\n"
 	     "Options:\n"
@@ -257,8 +257,8 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\n%s %s, autonomous system trace route utility\n",
-	       PROGNAME_STRING, VERSION_STRING);
+	printf("\nastraceroute %s, autonomous system trace route utility\n",
+	       VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2011-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"

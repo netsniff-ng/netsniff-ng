@@ -6,6 +6,8 @@
  * Subject to the GPL, version 2.
  */
 
+/* lex-func-prefix: zz */
+
 %{
 
 #include <stdio.h>

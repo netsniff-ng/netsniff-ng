@@ -6,6 +6,8 @@
  * Subject to the GPL, version 2.
  */
 
+/* lex-func-prefix: yy */
+
 %{
 
 #include <stdio.h>
