@@ -843,7 +843,9 @@ static int8_t inf_tclas(struct pkt_buff *pkt, u8 *id)
 		return 0;
 	tprintf("User Priority: %u, ", tclas->user_priority);
 
-	return 1;
+	/*TODO add Classifier p.574*/
+
+	return 0;
 }
 
 static int8_t inf_sched(struct pkt_buff *pkt, u8 *id)
