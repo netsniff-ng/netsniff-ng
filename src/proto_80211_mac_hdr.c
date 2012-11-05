@@ -375,7 +375,7 @@ struct element_vend_spec {
 
 static int8_t len_neq_error(u8 len, u8 intended)
 {
-	if(len != intended) {
+	if(intended != len) {
 		tprintf("Length should be %u Bytes", intended);
 		return 1;
 	}
@@ -385,7 +385,7 @@ static int8_t len_neq_error(u8 len, u8 intended)
 
 static int8_t len_gt_error(u8 len, u8 intended)
 {
-	if(len > intended) {
+	if(intended > len) {
 		tprintf("Length should be greater %u Bytes", intended);
 		return 1;
 	}
