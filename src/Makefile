@@ -14,6 +14,7 @@ EXTRAVERSION = -rc0
 
 BINDIR = $(PREFIX)/usr/bin
 SBINDIR = $(PREFIX)/usr/sbin
+INCDIR = $(PREFIX)/usr/include
 ETCDIR = $(PREFIX)/etc
 
 MAKEFLAGS += -rR --no-print-directory
@@ -90,7 +91,7 @@ clean_showinfo:
 
 netsniff-ng-target = netsniff-ng
 include $(netsniff-ng-target)/Makefile
-netsniff-ng: ALL_CFLAGS += -Wstrict-prototypes -Wframe-larger-than=2048 \
+netsniff-ng: ALL_CFLAGS += -I$(INCDIR)/libnl3/ -Wstrict-prototypes -Wframe-larger-than=2048 \
 	     -D__WITH_PROTOS #-D__WITH_HARDWARE_TIMESTAMPING
 netsniff-ng netsniff-ng%: BUILD_DIR = $(netsniff-ng-target)
 netsniff-ng_prehook:
@@ -107,8 +108,8 @@ netsniff-ng_distclean:
 
 trafgen-target = trafgen
 include $(trafgen-target)/Makefile
-trafgen: ALL_CFLAGS += -I.. -Wstrict-prototypes -Wframe-larger-than=2048 \
-	 -D__WITH_PROTOS #-D__WITH_HARDWARE_TIMESTAMPING
+trafgen: ALL_CFLAGS += -I.. -I$(INCDIR)/libnl3/ -Wstrict-prototypes \
+	 -Wframe-larger-than=2048 -D__WITH_PROTOS #-D__WITH_HARDWARE_TIMESTAMPING
 trafgen trafgen%: BUILD_DIR = $(trafgen-target)
 trafgen_prehook:
 	@echo "$(bold)Building $(trafgen-target):$(normal)"
