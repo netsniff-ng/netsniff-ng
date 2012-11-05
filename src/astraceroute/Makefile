@@ -1,4 +1,5 @@
-astraceroute-libs =	-lGeoIP -lpthread
+astraceroute-libs =	-lGeoIP \
+			-lpthread
 
 astraceroute-objs =	xmalloc.o \
 			xio.o \

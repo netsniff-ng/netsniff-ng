@@ -1,4 +1,5 @@
-trafgen-libs =	-lnl-genl-3
+trafgen-libs =	-lnl-genl-3 \
+		-lnl-3
 
 trafgen-objs =	xmalloc.o \
 		xio.o \

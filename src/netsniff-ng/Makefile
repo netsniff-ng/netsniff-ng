@@ -1,5 +1,6 @@
-netsniff-ng-libs =	-lpthread \
-			-lnl-genl-3
+netsniff-ng-libs =	-lnl-genl-3 \
+			-lnl-3 \
+			-lpthread
 
 netsniff-ng-objs =	hash.o \
 			mac80211.o \
