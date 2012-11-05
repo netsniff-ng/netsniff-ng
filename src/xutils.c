@@ -271,8 +271,8 @@ int get_system_socket_mem(int which)
 void set_system_socket_mem(int which, int val)
 {
 	int fd;
-	ssize_t ret;
 	const char *file = sock_mem[which];
+	ssize_t ret;
 	char buff[64];
 
 	fd = open(file, O_WRONLY);
@@ -283,6 +283,7 @@ void set_system_socket_mem(int which, int val)
 	slprintf(buff, sizeof(buff), "%d", val);
 
 	ret = write(fd, buff, strlen(buff));
+	ret = ret;
 
 	close(fd);
 }
