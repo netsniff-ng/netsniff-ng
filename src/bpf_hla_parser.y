@@ -6,6 +6,8 @@
  * Subject to the GPL, version 2.
  */
 
+/* yaac-func-prefix: zz */
+
 /*
     TODO:
 	- intermediate representation
@@ -123,13 +125,13 @@ macro
 
 condition
 	: { num_ifs++; } K_IF '(' expression ')' '{'
-		{ printf("jpt_f%ld:\n", num_ifs); }
+		{ printf("jpt_f%u:\n", num_ifs); }
 	  statement_list '}' condition_contd
 	;
 
 condition_contd
 	: K_ELIF '(' expression ')' '{' statement_list '}' condition_contd
-	| K_ELSE '{' { printf("jpt_e%ld:\n", num_ifs); } statement_list '}'
+	| K_ELSE '{' { printf("jpt_e%u:\n", num_ifs); } statement_list '}'
 	| /* None */
 	;
 

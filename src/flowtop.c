@@ -185,8 +185,8 @@ static void signal_handler(int number)
 
 static void help(void)
 {
-	printf("\n%s %s, top-like netfilter TCP/UDP flow tracking\n",
-	       PROGNAME_STRING, VERSION_STRING);
+	printf("\nflowtop %s, top-like netfilter TCP/UDP flow tracking\n",
+	       VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: flowtop [options]\n"
 	     "Options:\n"
@@ -215,8 +215,8 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\n%s %s, top-like netfilter TCP/UDP flow tracking\n",
-	       PROGNAME_STRING, VERSION_STRING);
+	printf("\nflowtop %s, top-like netfilter TCP/UDP flow tracking\n",
+	       VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2011-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"

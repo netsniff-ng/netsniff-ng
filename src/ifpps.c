@@ -784,8 +784,8 @@ out:
 
 static void help(void)
 {
-	printf("\n%s %s, top-like kernel networking and system statistics\n",
-	       PROGNAME_STRING, VERSION_STRING);
+	printf("\nifpps %s, top-like kernel networking and system statistics\n",
+	       VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: ifpps [options] || ifpps <netdev>\n"
 	     "Options:\n"
@@ -812,8 +812,8 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\n%s %s, top-like kernel networking statistics per sec\n",
-	       PROGNAME_STRING, VERSION_STRING);
+	printf("\nifpps %s, top-like kernel networking statistics per sec\n",
+	       VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"

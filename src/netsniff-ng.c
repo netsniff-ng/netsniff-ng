@@ -882,8 +882,7 @@ next:
 
 static void help(void)
 {
-	printf("\n%s %s, the packet sniffing beast\n",
-	       PROGNAME_STRING, VERSION_STRING);
+	printf("\nnetsniff-ng %s, the packet sniffing beast\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: netsniff-ng [options]\n"
 	     "Options:\n"
@@ -951,8 +950,7 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\n%s %s, the packet sniffing beast\n",
-	       PROGNAME_STRING, VERSION_STRING);
+	printf("\nnetsniff-ng %s, the packet sniffing beast\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
@@ -966,8 +964,10 @@ static void version(void)
 
 static void header(void)
 {
-	printf("%s%s%s\n", colorize_start(bold), PROGNAME_STRING " " 
-	       VERSION_STRING, colorize_end());
+	printf("%s%s%s\n",
+	       colorize_start(bold),
+	       "netsniff-ng " VERSION_STRING,
+	       colorize_end());
 }
 
 int main(int argc, char **argv)

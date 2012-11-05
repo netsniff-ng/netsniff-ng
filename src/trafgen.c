@@ -138,8 +138,7 @@ static void header(void)
 
 static void help(void)
 {
-	printf("\n%s %s, zero-copy network packet generator\n",
-	       PROGNAME_STRING, VERSION_STRING);
+	printf("\ntrafgen %s, zero-copy network packet generator\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: trafgen [options]\n"
 	     "Options:\n"
@@ -190,8 +189,7 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\n%s %s, zero-copy network packet generator\n",
-	       PROGNAME_STRING, VERSION_STRING);
+	printf("\ntrafgen %s, zero-copy network packet generator\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
