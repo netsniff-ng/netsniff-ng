@@ -2,22 +2,25 @@
 # Copyright 2012 Daniel Borkmann <borkmann@gnumaniacs.org>
 # Subject to the GNU GPL, version 2.
 
-# TODO:
-#   - target make tarball
-#   - target make test -> libtap(?) this time ...
-#   - target make debug
-
 VERSION = 0
 PATCHLEVEL = 5
 SUBLEVEL = 8
 EXTRAVERSION = -rc0
 
+TOOLS = netsniff-ng trafgen astraceroute flowtop ifpps mausezahn bpfc curvetun
+
+# For packaging purposes, prefix can define a different path.
+PREFIX ?=
+
+# Location of installation paths.
 BINDIR = $(PREFIX)/usr/bin
 SBINDIR = $(PREFIX)/usr/sbin
 INCDIR = $(PREFIX)/usr/include
 ETCDIR = $(PREFIX)/etc
 
-MAKEFLAGS += -rR --no-print-directory
+# Shut up make, helper warnings, parallel compilation!
+MAKEFLAGS += --no-print-directory -rR --warn-undefined-variables \
+	     --jobs=$(shell grep "^processor" /proc/cpuinfo | wc -l)
 
 CFLAGS = -fstack-protector \
 	 --param=ssp-buffer-size=4 \
@@ -46,6 +49,7 @@ WFLAGS = -Wall \
 	 -Wformat=2
 
 CFLAGS += $(WFLAGS) -I.
+CPPFLAGS =
 ifeq ("$(origin CROSS_LD_LIBRARY_PATH)", "command line")
   LDFLAGS = -L$(CROSS_LD_LIBRARY_PATH)
 else
@@ -54,6 +58,7 @@ endif
 
 ALL_CFLAGS = $(CFLAGS)
 ALL_LDFLAGS = $(LDFLAGS)
+TARGET_ARCH =
 LEX_FLAGS =
 YAAC_FLAGS =
 
@@ -89,177 +94,51 @@ clean_showinfo:
 %.o: %.c
 	$(CC) $(ALL_CFLAGS) -o $(BUILD_DIR)/$(shell basename $< .c).o -c $<
 
-netsniff-ng-target = netsniff-ng
-include $(netsniff-ng-target)/Makefile
-netsniff-ng: ALL_CFLAGS += -I$(INCDIR)/libnl3/ -Wstrict-prototypes -Wframe-larger-than=2048 \
-	     -D__WITH_PROTOS #-D__WITH_HARDWARE_TIMESTAMPING
-netsniff-ng netsniff-ng%: BUILD_DIR = $(netsniff-ng-target)
-netsniff-ng_prehook:
-	@echo "$(bold)Building $(netsniff-ng-target):$(normal)"
-netsniff-ng: netsniff-ng_prehook $(netsniff-ng-objs)
-	$(LD) $(ALL_LDFLAGS) -o $@/$@ $(BUILD_DIR)/*.o $(netsniff-ng-libs)
-	$(STRIP) $@/$@
-netsniff-ng_clean:
-	$(RM) -rf $(BUILD_DIR)/*.o $(BUILD_DIR)/$(netsniff-ng-target)
-netsniff-ng_install:
-	@echo "build dir: $(BUILD_DIR)"
-netsniff-ng_distclean:
-	@echo "build dir: $(BUILD_DIR)"
+.PHONY: all
+.DEFAULT_GOAL := all
 
-trafgen-target = trafgen
-include $(trafgen-target)/Makefile
-trafgen: ALL_CFLAGS += -I.. -I$(INCDIR)/libnl3/ -Wstrict-prototypes \
-	 -Wframe-larger-than=2048 -D__WITH_PROTOS #-D__WITH_HARDWARE_TIMESTAMPING
-trafgen trafgen%: BUILD_DIR = $(trafgen-target)
-trafgen_prehook:
-	@echo "$(bold)Building $(trafgen-target):$(normal)"
-trafgen: trafgen_prehook $(trafgen-lex) $(trafgen-yaac) $(trafgen-objs)
-	$(LD) $(ALL_LDFLAGS) -o $@/$@ $(BUILD_DIR)/*.o $(trafgen-libs)
-	$(STRIP) $@/$@
-trafgen_clean:
-	$(RM) -rf $(BUILD_DIR)/*.o $(BUILD_DIR)/*.h $(BUILD_DIR)/*.c \
-		  $(BUILD_DIR)/$(trafgen-target)
-trafgen_install:
-	@echo "build dir: $(BUILD_DIR)"
-trafgen_distclean:
-	@echo "build dir: $(BUILD_DIR)"
+all: build_showinfo toolkit
+toolkit: $(TOOLS)
+clean mostlyclean: $(foreach tool,$(TOOLS),$(tool)_clean)
+realclean distclean clobber: $(foreach tool,$(TOOLS),$(tool)_distclean)
 
-astraceroute-target = astraceroute
-include $(astraceroute-target)/Makefile
+define TOOL_templ
+  include $(1)/Makefile
+  $(1) $(1)%: BUILD_DIR := $(1)
+  $(1)_prehook:
+	@echo "$(bold)Building $(1):$(normal)"
+  $(1): $(1)_prehook $$($(1)-lex) $$($(1)-yaac) $$($(1)-objs) $$($(1)-libs)
+  $(1)_clean: $(1)_clean_custom
+	@rm -rf $$(BUILD_DIR)/*.o $$(BUILD_DIR)/$(1)
+  $(1)_install:
+	@install -D $$(BUILD_DIR)/$(1) $$(SBINDIR)/$(1)
+  $(1)_distclean:
+	@rm $$(SBINDIR)/$(1)
+endef
+
+$(foreach tool,$(TOOLS),$(eval $(call TOOL_templ,$(tool))))
+
+# Target specific additions ... will become less redundant when 
+# mausezahn is cleaned up
+
+netsniff-ng: ALL_CFLAGS += -I$(INCDIR)/libnl3/ \
+			   -Wstrict-prototypes \
+			   -Wframe-larger-than=2048 \
+			   -D__WITH_PROTOS \
+			   #-D__WITH_HARDWARE_TIMESTAMPING
+trafgen: ALL_CFLAGS += -I.. -I$(INCDIR)/libnl3/ \
+		       -Wstrict-prototypes \
+		       -Wframe-larger-than=2048 \
+		       -D__WITH_PROTOS \
+		       #-D__WITH_HARDWARE_TIMESTAMPING
+trafgen_clean_custom:
+	@rm $(BUILD_DIR)/*.h $(BUILD_DIR)/*.c
 astraceroute: ALL_CFLAGS += -Wstrict-prototypes -Wframe-larger-than=2048
-astraceroute astraceroute%: BUILD_DIR = $(astraceroute-target)
-astraceroute_prehook:
-	@echo "$(bold)Building $(astraceroute-target):$(normal)"
-astraceroute: astraceroute_prehook $(astraceroute-objs)
-	$(LD) $(ALL_LDFLAGS) -o $@/$@ $(BUILD_DIR)/*.o $(astraceroute-libs)
-	$(STRIP) $@/$@
-astraceroute_clean:
-	$(RM) -rf $(BUILD_DIR)/*.o $(BUILD_DIR)/$(astraceroute-target)
-astraceroute_install:
-	@echo "build dir: $(BUILD_DIR)"
-astraceroute_distclean:
-	@echo "build dir: $(BUILD_DIR)"
-
-flowtop-target = flowtop
-include $(flowtop-target)/Makefile
 flowtop: ALL_CFLAGS += -Wstrict-prototypes -Wframe-larger-than=2048
-flowtop flowtop%: BUILD_DIR = $(flowtop-target)
-flowtop_prehook:
-	@echo "$(bold)Building $(flowtop-target):$(normal)"
-flowtop: flowtop_prehook $(flowtop-objs)
-	$(LD) $(ALL_LDFLAGS) -o $@/$@ $(BUILD_DIR)/*.o $(flowtop-libs)
-	$(STRIP) $@/$@
-flowtop_clean:
-	$(RM) -rf $(BUILD_DIR)/*.o $(BUILD_DIR)/$(flowtop-target)
-flowtop_install:
-	@echo "build dir: $(BUILD_DIR)"
-flowtop_distclean:
-	@echo "build dir: $(BUILD_DIR)"
-
-ifpps-target = ifpps
-include $(ifpps-target)/Makefile
 ifpps: ALL_CFLAGS += -Wstrict-prototypes -Wframe-larger-than=2048
-ifpps ifpps%: BUILD_DIR = $(ifpps-target)
-ifpps_prehook:
-	@echo "$(bold)Building $(ifpps-target):$(normal)"
-ifpps: ifpps_prehook $(ifpps-objs)
-	$(LD) $(ALL_LDFLAGS) -o $@/$@ $(BUILD_DIR)/*.o $(ifpps-libs)
-	$(STRIP) $@/$@
-ifpps_clean:
-	$(RM) -rf $(BUILD_DIR)/*.o $(BUILD_DIR)/$(ifpps-target)
-ifpps_install:
-	@echo "build dir: $(BUILD_DIR)"
-ifpps_distclean:
-	@echo "build dir: $(BUILD_DIR)"
-
-mausezahn-target = mausezahn
-include $(mausezahn-target)/Makefile
-mausezahn mausezahn%: BUILD_DIR = $(mausezahn-target)
-mausezahn_prehook:
-	@echo "$(bold)Building $(mausezahn-target):$(normal)"
-mausezahn: mausezahn_prehook $(mausezahn-objs)
-	$(LD) $(ALL_LDFLAGS) -o $@/$@ $(BUILD_DIR)/*.o $(mausezahn-libs)
-	$(STRIP) $@/$@
-mausezahn_clean:
-	$(RM) -rf $(BUILD_DIR)/*.o $(BUILD_DIR)/$(mausezahn-target)
-mausezahn_install:
-	@echo "build dir: $(BUILD_DIR)"
-mausezahn_distclean:
-	@echo "build dir: $(BUILD_DIR)"
-
-bpfc-target = bpfc
-include $(bpfc-target)/Makefile
 bpfc: ALL_CFLAGS += -I.. -Wstrict-prototypes -Wframe-larger-than=2048
-bpfc bpfc%: BUILD_DIR = $(bpfc-target)
-bpfc_prehook:
-	@echo "$(bold)Building $(bpfc-target):$(normal)"
-bpfc: bpfc_prehook $(bpfc-lex) $(bpfc-yaac) $(bpfc-objs)
-	$(LD) $(ALL_LDFLAGS) -o $@/$@ $(BUILD_DIR)/*.o $(bpfc-libs)
-	$(STRIP) $@/$@
-bpfc_clean:
-	$(RM) -rf $(BUILD_DIR)/*.o $(BUILD_DIR)/*.h $(BUILD_DIR)/*.c \
-		  $(BUILD_DIR)/$(bpfc-target)
-bpfc_install:
-	@echo "build dir: $(BUILD_DIR)"
-bpfc_distclean:
-	@echo "build dir: $(BUILD_DIR)"
-
-curvetun-target = curvetun
-include $(curvetun-target)/Makefile
 curvetun: ALL_CFLAGS += -Wstrict-prototypes -Wframe-larger-than=2048
-curvetun curvetun%: BUILD_DIR = $(curvetun-target)
-curvetun_prehook:
-	@echo "$(bold)Building $(curvetun-target):$(normal)"
-curvetun: curvetun_prehook $(curvetun-objs)
-	$(LD) $(ALL_LDFLAGS) -o $@/$@ $(BUILD_DIR)/*.o $(curvetun-libs)
+
+$(TOOLS):
+	$(LD) $(ALL_LDFLAGS) -o $@/$@ $@/*.o $($@-libs)
 	$(STRIP) $@/$@
-curvetun_clean:
-	$(RM) -rf $(BUILD_DIR)/*.o $(BUILD_DIR)/$(curvetun-target)
-curvetun_install:
-	@echo "build dir: $(BUILD_DIR)"
-curvetun_distclean:
-	@echo "build dir: $(BUILD_DIR)"
-
-toolkit: build_showinfo \
-	netsniff-ng \
-	trafgen \
-	astraceroute \
-	flowtop \
-	ifpps \
-	mausezahn \
-	bpfc \
-	curvetun
-
-all: toolkit
-
-clean: clean_showinfo \
-	netsniff-ng_clean \
-	trafgen_clean \
-	astraceroute_clean \
-	flowtop_clean \
-	ifpps_clean \
-	mausezahn_clean \
-	bpfc_clean \
-	curvetun_clean
-
-install: toolkit \
-	netsniff-ng_install \
-	trafgen_install \
-	astraceroute_install \
-	flowtop_install \
-	ifpps_install \
-	mausezahn_install \
-	bpfc_install \
-	curvetun_install
-
-distclean: netsniff-ng_distclean \
-	trafgen_distclean \
-	astraceroute_distclean \
-	flowtop_distclean \
-	ifpps_distclean \
-	mausezahn_distclean \
-	bpfc_distclean \
-	curvetun_distclean
-
-.PHONY: build_showinfo clean_showinfo
-.DEFAULT_GOAL := toolkit

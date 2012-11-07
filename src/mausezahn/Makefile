@@ -1,8 +1,8 @@
 mausezahn-libs =	-lcli \
-			-lpthread \
 			-lnet \
 			-lpcap \
 			-lrt \
+			-lpthread \
 			-lm
 
 mausezahn-objs =	layer1.o \
