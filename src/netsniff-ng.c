@@ -20,6 +20,180 @@
  *        Chapter 'Three is Company'.
  */
 
+/*
+
+=head1 NAME
+
+netsniff-ng - the packet sniffing beast
+
+=head1 SYNOPSIS
+
+netsniff-ng -i|-d|--dev|--in <dev|pcap> -o|--out <dev|pcap|dir|txf>
+[-f|--filter <bpf-file>][-t|--type <type>][-F|--interval <uint>]
+[-s|--silent][-J|--jumbo-support][-n|--num <uint>][-r|--rand]
+[-M|--no-promisc][-m|--mmap | -c|--clrw][-S|--ring-size <size>]
+[-k|--kernel-pull <uint>][-b|--bind-cpu <cpu> | -B|--unbind-cpu <cpu>]
+[-H|--prio-high][-Q|--notouch-irq][-q|--less | -X|--hex | -l|--ascii]
+[-v|--version][-h|--help]
+
+=head1 DESCRIPTION
+
+The first sniffer that invoked both, the zero-copy RX_RING as well as
+the zero-copy TX_RING for high-performance network I/O and scatter/gather
+or mmaped PCAP I/O.
+
+=head1 EXAMPLES
+
+=over
+
+=item netsniff-ng --in eth0 --out dump.pcap
+
+Capture traffic from interface 'eth0' and save it pcap file 'dump.pcap'
+
+=item netsniff-ng --in any --filter http.bpf --payload
+
+Capture HTTP traffic from any interface and print its payload on stdout
+
+=item netsniff-ng --in wlan0 --bind-cpu 0,1
+
+Capture all traffic from wlan0 interface.
+Schedule process on CPU 0 and 1.
+
+=back
+
+=head1 OPTIONS
+
+=over
+
+=item -i|-d|--dev|--in <dev|pcap>
+
+Input source. Can be a network device or pcap file.
+
+=item -o|--out <dev|pcap|dir|txf>
+
+Output sink. Can be a network device, pcap file, a trafgen txf file or a
+directory. (There's only pcap to txf translation possible.)
+
+=item -f|--filter <bpf-file>
+
+Use BPF filter file from bpfc.
+
+=item -t|--type <type>
+
+=over
+
+=item Only handle packets of defined type:
+
+=over
+
+=item - broadcast
+
+=item - multicast
+
+=item - others
+
+=item - outgoing
+
+=back
+
+=back
+
+=item -F|--interval <uint>
+
+Dump interval in seconds. if -o is a directory, a new pcap will be created at each interval.
+The older files are left untouched. (default value: 60 seconds)
+
+=item -s|--silent
+
+Do not print captured packets to stdout.
+
+=item -J|--jumbo-support
+
+Support for 64KB Super Jumbo Frames.
+
+=item -n|--num <uint>
+
+When zerp, capture/replay until SIGINT is received (default).
+When non-zero, capture/replay the number of packets.
+
+=item -r|--rand
+
+Randomize packet forwarding order (replay mode only).
+
+=item -M|--no-promisc
+
+Do not place the interface in promiscuous mode.
+
+=item -m|--mmap
+
+Mmap pcap file i.e., for replaying. Default: scatter/gather I/O.
+
+=item -c|--clrw
+
+Instead of using scatter/gather I/O use slower read(2)/write(2) I/O.
+
+=item -S|--ring-size <size>
+
+Manually set ring size in KB/MB/GB, e.g. '10MB'.
+
+=item -k|--kernel-pull <uint>
+
+Kernel pull from user interval in microseconds. Default is 10us. (replay mode only).
+
+=item -b|--bind-cpu <cpu>
+
+Bind to specific CPU (or CPU-range).
+
+=item -B|--unbind-cpu <cpu>
+
+Forbid to use specific CPU (or CPU-range).
+
+=item -H|--prio-high
+
+Run the process in high-priority mode.
+
+=item -Q|--notouch-irq
+
+Do not touch IRQ CPU affinity of NIC.
+
+=item -q|--less
+
+Print less-verbose packet information.
+
+=item -X|--hex
+
+Print packet data in hex format.
+
+=item -l|--ascii
+
+Print human-readable packet data.
+
+=item -v|--version
+
+Print version.
+
+=item -h|--help
+
+Print help text and lists all options.
+
+=back
+
+=head1 AUTHOR
+
+Written by Daniel Borkmann <daniel@netsniff-ng.org> and Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+=head1 DOCUMENTATION
+
+Documentation by Emmanuel Roullit <emmanuel@netsniff-ng.org>
+
+=head1 BUGS
+
+Please report bugs to <bugs@netsniff-ng.org>
+
+=cut
+
+*/
+
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,24 +225,241 @@
 #include "xmalloc.h"
 #include "mtrand.h"
 
-#define DUMP_INTERVAL_DEF	60
-enum dump_mode {
-	DUMP_INTERVAL_TIME,
-	DUMP_INTERVAL_SIZE,
-};
-
-struct mode {
-	char *device_in, *device_out, *device_trans, *filter, *prefix;
 #define CPU_UNKNOWN	-1
 #define CPU_NOTOUCH	-2
-	int cpu, rfraw, dump, print_mode, dump_dir, jumbo_support;
 #define PACKET_ALL	-1
-	int packet_type;
+#define DUMP_INTERVAL	60
+
+#ifdef WIN32
+#include <winsock2.H>
+#include <stdlib.h>
+#include <stdio.h>
+#include <signal.h>
+#include <io.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <process.h>
+#include "platformwin.h"
+#else
+#define _GNU_SOURCE
+#define _FILE_OFFSET_BITS 64
+#include <ctype.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/mount.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/time.h>
+#include <time.h>
+#include <getopt.h>
+#include <string.h>
+#include <errno.h>
+#include <netinet/in.h>
+
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <pthread.h>
+
+/* Unix-specific includes */
+#include <termios.h>
+#include <sys/time.h>
+#include <errno.h>
+#include <unistd.h>
+#include <sched.h>
+#include <sys/mman.h>
+#endif
+
+#include <stdbool.h>
+
+#include <unistd.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>		// For stat, opendir, readdir
+#include <sys/stat.h>		// For stat
+#include <unistd.h>		// For stat
+#include <dirent.h>		// For opendir, readdir
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <regex.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include <err.h>
+
+int num_of_pcaps = 0;
+char *pcaplist[5120] = { "" };
+
+char cmd_file[512];
+int cmd_loops = 1;
+int windowsz = 1;
+int pps_given = 0;
+
+typedef u_int64_t ticks;
+u_int16_t cpu_percentage = 0;
+double gbit_s = 0, td, pps;
+ticks tick_start = 0, tick_delta = 0, ticks_from_beginning;
+ticks hz = 0;
+int num_pkt_good_sent = 0, num_packets = 0;
+int beginning_tv_sec, beginning_tv_usec = 0;
+int send_len = 0;
+int avg_send_len = 0;
+
+static __inline__ ticks getticks(void)
+{
+	u_int32_t a, d;
+	// asm("cpuid"); // serialization
+	asm volatile ("rdtsc":"=a" (a), "=d"(d));
+	return (((ticks) a) | (((ticks) d) << 32));
+}
+
+/* *************************************** */
+/*
+ * The time difference in millisecond
+ */
+double delta_time(struct timeval *now, struct timeval *before)
+{
+	time_t delta_seconds;
+	time_t delta_microseconds;
+
+	/*
+	 * compute delta in second, 1/10's and 1/1000's second units
+	 */
+	delta_seconds = now->tv_sec - before->tv_sec;
+	delta_microseconds = now->tv_usec - before->tv_usec;
+
+	if (delta_microseconds < 0) {
+		/* manually carry a one from the seconds field */
+		delta_microseconds += 1000000;	/* 1e6 */
+		--delta_seconds;
+	}
+	return ((double)(delta_seconds * 1000) +
+		(double)delta_microseconds / 1000);
+}
+
+static int cmpstringp(const void *p1, const void *p2)
+{
+	/* The actual arguments to this function are "pointers to
+	   pointers to char", but strcmp(3) arguments are "pointers
+	   to char", hence the following cast plus dereference */
+
+	return strcmp(*(char *const *)p1, *(char *const *)p2);
+}
+
+enum {
+	WALK_OK = 0,
+	WALK_BADPATTERN,
+	WALK_NAMETOOLONG,
+	WALK_BADIO,
+};
+
+#define WS_NONE		0
+#define WS_RECURSIVE	(1 << 0)
+#define WS_DEFAULT	WS_RECURSIVE
+#define WS_FOLLOWLINK	(1 << 1)	/* follow symlinks */
+#define WS_DOTFILES	(1 << 2)	/* per unix convention, .file is hidden */
+#define WS_MATCHDIRS	(1 << 3)	/* if pattern is used on dir names too */
+
+int walk_recur(char *dname, regex_t * reg, int spec)
+{
+	struct dirent *dent;
+	DIR *dir;
+	struct stat st;
+	char fn[FILENAME_MAX];
+	int res = WALK_OK;
+	int len = strlen(dname);
+	if (len >= FILENAME_MAX - 1)
+		return WALK_NAMETOOLONG;
+
+	strcpy(fn, dname);
+	fn[len++] = '/';
+
+	if (!(dir = opendir(dname))) {
+		warn("can't open %s", dname);
+		return WALK_BADIO;
+	}
+
+	errno = 0;
+	while ((dent = readdir(dir))) {
+		if (!(spec & WS_DOTFILES) && dent->d_name[0] == '.')
+			continue;
+		if (!strcmp(dent->d_name, ".") || !strcmp(dent->d_name, ".."))
+			continue;
+
+		strncpy(fn + len, dent->d_name, FILENAME_MAX - len);
+		if (lstat(fn, &st) == -1) {
+			warn("Can't stat %s", fn);
+			res = WALK_BADIO;
+			continue;
+		}
+
+		/* don't follow symlink unless told so */
+		if (S_ISLNK(st.st_mode) && !(spec & WS_FOLLOWLINK))
+			continue;
+
+		/* will be false for symlinked dirs */
+		if (S_ISDIR(st.st_mode)) {
+			/* recursively follow dirs */
+			if ((spec & WS_RECURSIVE))
+				walk_recur(fn, reg, spec);
+
+			if (!(spec & WS_MATCHDIRS))
+				continue;
+		}
+
+		/* pattern match */
+		if (!regexec(reg, fn, 0, 0, 0)) {
+			pcaplist[num_of_pcaps] = (char *)malloc(256);
+			memcpy(pcaplist[num_of_pcaps], fn, 256);
+			num_of_pcaps++;
+			puts(fn);
+		}
+	}
+
+	if (dir)
+		closedir(dir);
+	return res ? res : errno ? WALK_BADIO : WALK_OK;
+}
+
+int walk_dir(char *dname, char *pattern, int spec)
+{
+	regex_t r;
+	int res;
+	if (regcomp(&r, pattern, REG_EXTENDED | REG_NOSUB))
+		return WALK_BADPATTERN;
+	res = walk_recur(dname, &r, spec);
+	regfree(&r);
+
+	return res;
+}
+
+struct mode {
+	char *device_in;
+	char *device_out;
+	char *device_trans;
+	char *filter;
+	int cpu;
+	int rfraw;
+	int dump;
 	uint32_t link_type;
-	bool randomize, promiscuous;
+	int print_mode;
+	unsigned int reserve_size;
+	int packet_type;
+	bool randomize;
+	bool promiscuous;
 	enum pcap_ops_groups pcap;
-	unsigned long kpull, dump_interval, reserve_size;
-	enum dump_mode dump_mode;
+	unsigned long kpull;
+	int jumbo_support;
+	int dump_dir;
+	unsigned long dump_interval;
 };
 
 struct tx_stats {
@@ -77,42 +468,44 @@ struct tx_stats {
 };
 
 volatile sig_atomic_t sigint = 0;
+
 static int tx_sock;
-static unsigned long frame_cnt_max = 0, interval = TX_KERNEL_PULL_INT;
+static unsigned long frame_cnt_max = 0;
+static unsigned long interval = TX_KERNEL_PULL_INT;
 static struct itimerval itimer;
 static volatile bool next_dump = false;
 
-static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqXlvhF:RgAP:";
-static const struct option long_options[] = {
-	{"dev",			required_argument,	NULL, 'd'},
-	{"in",			required_argument,	NULL, 'i'},
-	{"out",			required_argument,	NULL, 'o'},
-	{"filter",		required_argument,	NULL, 'f'},
-	{"num",			required_argument,	NULL, 'n'},
-	{"type",		required_argument,	NULL, 't'},
-	{"interval",		required_argument,	NULL, 'F'},
-	{"ring-size",		required_argument,	NULL, 'S'},
-	{"kernel-pull",		required_argument,	NULL, 'k'},
-	{"bind-cpu",		required_argument,	NULL, 'b'},
-	{"unbind-cpu",		required_argument,	NULL, 'B'},
-	{"prefix",		required_argument,	NULL, 'P'},
-	{"rand",		no_argument,		NULL, 'r'},
-	{"rfraw",		no_argument,		NULL, 'R'},
-	{"mmap",		no_argument,		NULL, 'm'},
-	{"sg",			no_argument,		NULL, 'g'},
-	{"clrw",		no_argument,		NULL, 'c'},
-	{"jumbo-support",	no_argument,		NULL, 'J'},
-	{"no-promisc",		no_argument,		NULL, 'M'},
-	{"prio-high",		no_argument,		NULL, 'H'},
-	{"notouch-irq",		no_argument,		NULL, 'Q'},
-	{"silent",		no_argument,		NULL, 's'},
-	{"less",		no_argument,		NULL, 'q'},
-	{"hex",			no_argument,		NULL, 'X'},
-	{"ascii",		no_argument,		NULL, 'l'},
-	{"no-sock-mem",		no_argument,		NULL, 'A'},
-	{"version",		no_argument,		NULL, 'v'},
-	{"help",		no_argument,		NULL, 'h'},
-	{NULL, 0, NULL, 0}
+static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqXlvhF:Rg:p:Z";
+
+static struct option long_options[] = {
+	{"dev", required_argument, 0, 'd'},
+	{"in", required_argument, 0, 'i'},
+	{"out", required_argument, 0, 'o'},
+	{"rand", no_argument, 0, 'r'},
+	{"rfraw", no_argument, 0, 'R'},
+	{"mmap", no_argument, 0, 'm'},
+	{"sg", no_argument, 0, 'g'},
+	{"clrw", no_argument, 0, 'c'},
+	{"jumbo-support", no_argument, 0, 'J'},
+	{"filter", required_argument, 0, 'f'},
+	{"no-promisc", no_argument, 0, 'M'},
+	{"num", required_argument, 0, 'n'},
+	{"type", required_argument, 0, 't'},
+	{"interval", required_argument, 0, 'F'},
+	{"ring-size", required_argument, 0, 'S'},
+	{"kernel-pull", required_argument, 0, 'k'},
+	{"bind-cpu", required_argument, 0, 'b'},
+	{"unbind-cpu", required_argument, 0, 'B'},
+	{"prio-high", no_argument, 0, 'H'},
+	{"notouch-irq", no_argument, 0, 'Q'},
+	{"silent", no_argument, 0, 's'},
+	{"less", no_argument, 0, 'q'},
+	{"hex", no_argument, 0, 'X'},
+	{"ascii", no_argument, 0, 'l'},
+	{"version", no_argument, 0, 'v'},
+	{"gbps", no_argument, 0, 'Z'},
+	{"help", no_argument, 0, 'h'},
+	{0, 0, 0, 0}
 };
 
 static void signal_handler(int number)
@@ -161,145 +554,275 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 	uint8_t *out = NULL;
 	unsigned long trunced = 0;
 	struct timeval start, end, diff;
+	int filen = 0;
+	struct pcap_timeval *pcap_time;
 
-	if (!device_up_and_running(mode->device_out) &&
-	    !mode->rfraw)
-		panic("Device not up and running!\n");
-
-	tx_sock = pf_socket();
+	/*
+	   if (!device_up_and_running(mode->device_out))
+	   panic("Device not up and running!\n");
+	 */
 
 	if (!pcap_ops[mode->pcap])
 		panic("pcap group not supported!\n");
-	fd = open_or_die(mode->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);
-	ret = pcap_ops[mode->pcap]->pull_file_header(fd, &mode->link_type);
-	if (ret)
-		panic("error reading pcap header!\n");
-	if (pcap_ops[mode->pcap]->prepare_reading_pcap) {
-		ret = pcap_ops[mode->pcap]->prepare_reading_pcap(fd);
-		if (ret)
-			panic("error prepare reading pcap!\n");
-	}
 
-	fmemset(&tx_ring, 0, sizeof(tx_ring));
-	fmemset(&bpf_ops, 0, sizeof(bpf_ops));
-	fmemset(&stats, 0, sizeof(stats));
+	//Moved here
+	/*
+	   ifindex = device_ifindex(mode->device_out);  //Make n devices out of it. From here
+	   size = ring_size(mode->device_out, mode->reserve_size);
 
-	if (mode->rfraw) {
-		mode->device_trans = xstrdup(mode->device_out);
-		xfree(mode->device_out);
+	   bpf_parse_rules(mode->filter, &bpf_ops);
 
-		enter_rfmon_mac80211(mode->device_trans, &mode->device_out);
-		if (mode->link_type != LINKTYPE_IEEE802_11)
-			panic("Wrong linktype of pcap!\n");
-	}
+	   set_packet_loss_discard(tx_sock);
+	   set_sockopt_hwtimestamp(tx_sock, mode->device_out);
+	   setup_tx_ring_layout(tx_sock, &tx_ring, size, mode->jumbo_support);
+	   create_tx_ring(tx_sock, &tx_ring);
+	   mmap_tx_ring(tx_sock, &tx_ring);
+	   alloc_tx_ring_frames(&tx_ring);
+	   bind_tx_ring(tx_sock, &tx_ring, ifindex);  
 
-	ifindex = device_ifindex(mode->device_out);
-	size = ring_size(mode->device_out, mode->reserve_size);
+	   dissector_init_all(mode->print_mode);
 
-	bpf_parse_rules(mode->filter, &bpf_ops);
+	   if (mode->cpu >= 0 && ifindex > 0) {
+	   irq = device_irq_number(mode->device_out);
+	   device_bind_irq_to_cpu(mode->cpu, irq);
+	   printf("IRQ: %s:%d > CPU%d\n", mode->device_out, irq, 
+	   mode->cpu);
+	   } //Till here. Make n TXRings. One for each NIC.
+	 */
+	//Moved to here end
 
-	set_packet_loss_discard(tx_sock);
-	set_sockopt_hwtimestamp(tx_sock, mode->device_out);
-	setup_tx_ring_layout(tx_sock, &tx_ring, size, mode->jumbo_support);
-	create_tx_ring(tx_sock, &tx_ring);
-	mmap_tx_ring(tx_sock, &tx_ring);
-	alloc_tx_ring_frames(&tx_ring);
-	bind_tx_ring(tx_sock, &tx_ring, ifindex);
+	int x = 0;
 
-	dissector_init_all(mode->print_mode);
 
-	if (mode->cpu >= 0 && ifindex > 0) {
-		irq = device_irq_number(mode->device_out);
-		device_bind_irq_to_cpu(mode->cpu, irq);
-		printf("IRQ: %s:%d > CPU%d\n", mode->device_out, irq, 
-		       mode->cpu);
-	}
+	for (filen = 0; filen < num_of_pcaps; filen++) {
 
-	if (mode->kpull)
-		interval = mode->kpull;
+		tx_sock = pf_socket();
 
-	itimer.it_interval.tv_sec = 0;
-	itimer.it_interval.tv_usec = interval;
-	itimer.it_value.tv_sec = 0;
-	itimer.it_value.tv_usec = interval;
-	setitimer(ITIMER_REAL, &itimer, NULL); 
+		mode->device_in = pcaplist[filen];
+		printf("\n \n File selected is: %s \n", mode->device_in);
 
-	printf("BPF:\n");
-	bpf_dump_all(&bpf_ops);
-	printf("MD: TX %luus %s ", interval, pcap_ops[mode->pcap]->name);
-	if (mode->rfraw)
-		printf("802.11 raw via %s ", mode->device_out);
-#ifdef _LARGEFILE64_SOURCE
-	printf("lf64 ");
-#endif 
-	ioprio_print();
-	printf("\n");
-
-	bug_on(gettimeofday(&start, NULL));
-
-	while (likely(sigint == 0)) {
-		while (user_may_pull_from_tx(tx_ring.frames[it].iov_base)) {
-			struct pcap_pkthdr phdr;
-			hdr = tx_ring.frames[it].iov_base;
-			/* Kernel assumes: data = ph.raw + po->tp_hdrlen -
-			 * sizeof(struct sockaddr_ll); */
-			out = ((uint8_t *) hdr) + TPACKET2_HDRLEN -
-			      sizeof(struct sockaddr_ll);
-
-			do {
-				memset(&phdr, 0, sizeof(phdr));
-				ret = pcap_ops[mode->pcap]->read_pcap_pkt(fd, &phdr,
-						out, ring_frame_size(&tx_ring));
-				if (unlikely(ret <= 0))
-					goto out;
-				if (ring_frame_size(&tx_ring) < phdr.len) {
-					phdr.len = ring_frame_size(&tx_ring);
-					trunced++;
-				}
-			} while (mode->filter && !bpf_run_filter(&bpf_ops, out, phdr.len));
-			pcap_pkthdr_to_tpacket_hdr(&phdr, &hdr->tp_h);
-
-			stats.tx_bytes += hdr->tp_h.tp_len;;
-			stats.tx_packets++;
-
-			show_frame_hdr(hdr, mode->print_mode, RING_MODE_EGRESS);
-			dissector_entry_point(out, hdr->tp_h.tp_snaplen,
-					      mode->link_type, mode->print_mode);
-
-			kernel_may_pull_from_tx(&hdr->tp_h);
-			next_slot_prewr(&it, &tx_ring);
-
-			if (unlikely(sigint == 1))
-				break;
-			if (frame_cnt_max != 0 &&
-			    stats.tx_packets >= frame_cnt_max) {
-				sigint = 1;
-				break;
+		fd = open_or_die(mode->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);	//Need to do for each file
+		ret =
+		    pcap_ops[mode->pcap]->pull_file_header(fd,
+							   &mode->link_type);
+		if (ret) {
+			panic("error reading pcap header!\n");
+			continue;
+		}
+		if (pcap_ops[mode->pcap]->prepare_reading_pcap) {
+			ret = pcap_ops[mode->pcap]->prepare_reading_pcap(fd);
+			if (ret) {
+				panic("error prepare reading pcap!\n");
+				continue;
 			}
 		}
+
+		fmemset(&tx_ring, 0, sizeof(tx_ring));
+		fmemset(&bpf_ops, 0, sizeof(bpf_ops));
+		fmemset(&stats, 0, sizeof(stats));
+
+		if (mode->rfraw) {
+			mode->device_trans = xstrdup(mode->device_out);
+			xfree(mode->device_out);
+
+			enter_rfmon_mac80211(mode->device_trans,
+					     &mode->device_out);
+			if (mode->link_type != LINKTYPE_IEEE802_11)
+				panic("Wrong linktype of pcap!\n");
+			continue;
+		}
+
+		ifindex = device_ifindex(mode->device_out);	//Make n devices out of it. From here
+		size = ring_size(mode->device_out, mode->reserve_size);
+
+		bpf_parse_rules(mode->filter, &bpf_ops);
+
+		set_packet_loss_discard(tx_sock);
+		set_sockopt_hwtimestamp(tx_sock, mode->device_out);
+		setup_tx_ring_layout(tx_sock, &tx_ring, size,
+				     mode->jumbo_support);
+		create_tx_ring(tx_sock, &tx_ring);
+		mmap_tx_ring(tx_sock, &tx_ring);
+		alloc_tx_ring_frames(&tx_ring);
+		bind_tx_ring(tx_sock, &tx_ring, ifindex);	//Till here. Make n TXRings. One for each NIC.
+
+		dissector_init_all(mode->print_mode);
+
+		if (mode->cpu >= 0 && ifindex > 0) {
+			irq = device_irq_number(mode->device_out);
+			device_bind_irq_to_cpu(mode->cpu, irq);
+			printf("IRQ: %s:%d > CPU%d\n", mode->device_out, irq,
+			       mode->cpu);
+		}
+
+		if (mode->kpull)
+			interval = mode->kpull;
+
+		itimer.it_interval.tv_sec = 0;
+		itimer.it_interval.tv_usec = interval;
+		itimer.it_value.tv_sec = 0;
+		itimer.it_value.tv_usec = interval;	//for fixed delay need to SET this
+
+		setitimer(ITIMER_REAL, &itimer, NULL);
+
+		printf("BPF:\n");
+		bpf_dump_all(&bpf_ops);
+		printf("MD: TX %luus %s ", interval,
+		       pcap_ops[mode->pcap]->name);
+		if (mode->rfraw)
+			printf("802.11 raw via %s ", mode->device_out);
+#ifdef _LARGEFILE64_SOURCE
+		printf("lf64 ");
+#endif
+		ioprio_print();
+		printf("\n");
+
+		gettimeofday(&start, NULL);
+
+		sigint = 0;
+
+		while (likely(sigint == 0)) {
+			while (user_may_pull_from_tx
+			       (tx_ring.frames[it].iov_base)) {
+				struct pcap_pkthdr phdr;
+				hdr = tx_ring.frames[it].iov_base;
+				/* Kernel assumes: data = ph.raw + po->tp_hdrlen -
+				 * sizeof(struct sockaddr_ll); */
+				out = ((uint8_t *) hdr) + TPACKET_HDRLEN -
+				    sizeof(struct sockaddr_ll);
+
+				do {
+					memset(&phdr, 0, sizeof(phdr));
+					ret =
+					    pcap_ops[mode->pcap]->
+					    read_pcap_pkt(fd, &phdr, out,
+							  ring_frame_size
+							  (&tx_ring));
+					if (unlikely(ret <= 0))
+						goto out;
+					if (ring_frame_size(&tx_ring) <
+					    phdr.len) {
+						phdr.len =
+						    ring_frame_size(&tx_ring);
+						trunced++;
+					}
+				} while (mode->filter
+					 && !bpf_run_filter(&bpf_ops, out,
+							    phdr.len));
+				pcap_pkthdr_to_tpacket_hdr(&phdr, &hdr->tp_h);
+
+				if (stats.tx_packets == 0) {
+					pcap_time = &phdr.ts;
+					beginning_tv_sec = pcap_time->tv_sec;
+					beginning_tv_usec = pcap_time->tv_usec;
+				}
+
+				/*
+				 * START OF BLOCK
+				 The below routines are only if Speed or PPS is set else they won't execute
+				 *
+				 */
+
+				if (gbit_s > 0) {
+					/* computing max rate */
+					pps =
+					    ((gbit_s * 1000000000) /
+					     8 /*byte */ ) / (8 /*Preamble */  +
+							      avg_send_len +
+							      4 /*CRC*/ +
+							      12 /*IFG*/);
+
+					td = (double)(hz / pps);
+					tick_delta = (ticks) td;
+
+					//printf("Number of %d-byte Packet Per Second at %.2f Gbit/s: %.2f\n", (avg_send_len + 4 /*CRC*/), gbit_s, pps);
+				}
+
+				else if (pps > 0) {
+					td = (double)(hz / pps);
+					tick_delta = (ticks) td;
+				}
+				//END OF BLOCK
+/*
+			show_frame_hdr(hdr, mode->print_mode, RING_MODE_EGRESS);
+			
+dissector_entry_point(out, hdr->tp_h.tp_snaplen,
+					      mode->link_type, mode->print_mode);
+*/
+
+				//x++;
+
+				kernel_may_pull_from_tx(&hdr->tp_h);
+				next_slot_prewr(&it, &tx_ring);
+
+				stats.tx_bytes += hdr->tp_h.tp_len;;
+				stats.tx_packets++;
+				send_len += hdr->tp_h.tp_len;
+				avg_send_len = send_len / stats.tx_packets;
+
+				if (unlikely(sigint == 1))
+					break;
+				if (frame_cnt_max != 0 &&
+				    stats.tx_packets >= frame_cnt_max) {
+
+					//sigint = 1;
+					break;
+				}
+//START OF BLOCK
+				if (gbit_s != 0 || pps > 0)
+					tick_start = getticks();
+
+				if (gbit_s > 0 || pps > 0) {
+					/* rate set */
+					while ((getticks() - tick_start) <
+					       (num_pkt_good_sent *
+						tick_delta)) ;
+				} else if (gbit_s < 0) {
+					/* real pcap rate --FULL SYNC MODE */
+
+					pcap_time = &phdr.ts;
+
+					ticks ticks_from_beginning = (((pcap_time->tv_sec - beginning_tv_sec) * 1000000) + (pcap_time->tv_usec - beginning_tv_usec)) * hz / 1000000;	//delta time of this pkt from beginning of pcap
+					/* h-> is this packet header and beginning is 1st packet's header */
+
+					if (ticks_from_beginning == 0)
+						tick_start = getticks();	/* first packet, resetting time */
+					while ((getticks() - tick_start) <
+					       ticks_from_beginning) ;
+				}
+				//pps routine end
+//END OF BLOCK
+
+			}
+		}
+ out:
+		gettimeofday(&end, NULL);
+		diff = tv_subtract(end, start);
+
+		fflush(stdout);
+		printf("\n");
+		printf("\r%12lu frames outgoing\n", stats.tx_packets);
+		printf("\r%12lu frames truncated (larger than frame)\n",
+		       trunced);
+		printf("\r%12lu bytes outgoing\n", stats.tx_bytes);
+		printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec,
+		       diff.tv_usec);
+
+		bpf_release(&bpf_ops);
+		dissector_cleanup_all();
+		destroy_tx_ring(tx_sock, &tx_ring);
+
+		if (mode->rfraw)
+			leave_rfmon_mac80211(mode->device_trans,
+					     mode->device_out);
+
+		close(tx_sock);
+		if (pcap_ops[mode->pcap]->prepare_close_pcap)
+			pcap_ops[mode->pcap]->prepare_close_pcap(fd,
+								 PCAP_MODE_READ);
+		close(fd);
+
 	}
-out:
-	bug_on(gettimeofday(&end, NULL));
-	diff = tv_subtract(end, start);
-
-	fflush(stdout);
-	printf("\n");
-	printf("\r%12lu frames outgoing\n", stats.tx_packets);
-	printf("\r%12lu frames truncated (larger than frame)\n", trunced);
-	printf("\r%12lu bytes outgoing\n", stats.tx_bytes);
-	printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec, diff.tv_usec);
-
-	bpf_release(&bpf_ops);
-	dissector_cleanup_all();
-	destroy_tx_ring(tx_sock, &tx_ring);
-
-	if (mode->rfraw)
-		leave_rfmon_mac80211(mode->device_trans, mode->device_out);
-
-	close(tx_sock);
-	if (pcap_ops[mode->pcap]->prepare_close_pcap)
-		pcap_ops[mode->pcap]->prepare_close_pcap(fd, PCAP_MODE_READ);
-	close(fd);
 }
 
 static void enter_mode_rx_to_tx(struct mode *mode)
@@ -358,7 +881,7 @@ static void enter_mode_rx_to_tx(struct mode *mode)
 	mt_init_by_seed_time();
 	dissector_init_all(mode->print_mode);
 
-	 if (mode->promiscuous == true) {
+	if (mode->promiscuous == true) {
 		ifflags = enter_promiscuous_mode(mode->device_in);
 		printf("PROMISC\n");
 	}
@@ -383,22 +906,25 @@ static void enter_mode_rx_to_tx(struct mode *mode)
 			in = ((uint8_t *) hdr_in) + hdr_in->tp_h.tp_mac;
 			fcnt++;
 			if (mode->packet_type != PACKET_ALL)
-				if (mode->packet_type != hdr_in->s_ll.sll_pkttype)
+				if (mode->packet_type !=
+				    hdr_in->s_ll.sll_pkttype)
 					goto next;
 
 			hdr_out = tx_ring.frames[it_out].iov_base;
-			out = ((uint8_t *) hdr_out) + TPACKET2_HDRLEN -
-			      sizeof(struct sockaddr_ll);
+			out = ((uint8_t *) hdr_out) + TPACKET_HDRLEN -
+			    sizeof(struct sockaddr_ll);
 
-			for (; !user_may_pull_from_tx(tx_ring.frames[it_out].iov_base) &&
-			       likely(!sigint);) {
+			for (;
+			     !user_may_pull_from_tx(tx_ring.frames[it_out].
+						    iov_base)
+			     && likely(!sigint);) {
 				if (mode->randomize)
 					next_rnd_slot(&it_out, &tx_ring);
 				else
 					next_slot(&it_out, &tx_ring);
 				hdr_out = tx_ring.frames[it_out].iov_base;
-				out = ((uint8_t *) hdr_out) + TPACKET2_HDRLEN -
-				      sizeof(struct sockaddr_ll);
+				out = ((uint8_t *) hdr_out) + TPACKET_HDRLEN -
+				    sizeof(struct sockaddr_ll);
 			}
 
 			tpacket_hdr_clone(&hdr_out->tp_h, &hdr_in->tp_h);
@@ -410,15 +936,17 @@ static void enter_mode_rx_to_tx(struct mode *mode)
 			else
 				next_slot(&it_out, &tx_ring);
 
-			show_frame_hdr(hdr_in, mode->print_mode, RING_MODE_INGRESS);
+			show_frame_hdr(hdr_in, mode->print_mode,
+				       RING_MODE_INGRESS);
 			dissector_entry_point(in, hdr_in->tp_h.tp_snaplen,
-					      mode->link_type, mode->print_mode);
+					      mode->link_type,
+					      mode->print_mode);
 
 			if (frame_cnt_max != 0 && fcnt >= frame_cnt_max) {
 				sigint = 1;
 				break;
 			}
-next:
+ next:
 			kernel_may_pull_from_rx(&hdr_in->tp_h);
 			next_slot(&it_in, &rx_ring);
 
@@ -429,7 +957,7 @@ next:
 		poll(&rx_poll, 1, -1);
 		poll_error_maybe_die(rx_sock, &rx_poll);
 	}
-out:
+ out:
 	sock_print_net_stats(rx_sock, 0);
 
 	bpf_release(&bpf_ops);
@@ -483,7 +1011,7 @@ static void enter_mode_read_pcap(struct mode *mode)
 	printf("MD: RD %s ", pcap_ops[mode->pcap]->name);
 #ifdef _LARGEFILE64_SOURCE
 	printf("lf64 ");
-#endif 
+#endif
 	ioprio_print();
 	printf("\n");
 
@@ -492,13 +1020,13 @@ static void enter_mode_read_pcap(struct mode *mode)
 				    O_TRUNC | O_LARGEFILE, DEFFILEMODE);
 	}
 
-	bug_on(gettimeofday(&start, NULL));
+	gettimeofday(&start, NULL);
 
 	while (likely(sigint == 0)) {
 		do {
 			memset(&phdr, 0, sizeof(phdr));
 			ret = pcap_ops[mode->pcap]->read_pcap_pkt(fd, &phdr,
-					out, out_len);
+								  out, out_len);
 			if (unlikely(ret < 0))
 				goto out;
 			if (unlikely(phdr.len == 0)) {
@@ -528,15 +1056,19 @@ static void enter_mode_read_pcap(struct mode *mode)
 			write_or_die(fdo, bout, strlen(bout));
 
 			while (i < fm.tp_h.tp_snaplen) {
-				slprintf(bout, sizeof(bout), "0x%02x, ", out[i]);
+				slprintf(bout, sizeof(bout), "0x%02x, ",
+					 out[i]);
 				write_or_die(fdo, bout, strlen(bout));
 				i++;
 				if (i % 10 == 0) {
-					slprintf(bout, sizeof(bout), "\n", out[i]);
+					slprintf(bout, sizeof(bout), "\n",
+						 out[i]);
 					write_or_die(fdo, bout, strlen(bout));
 					if (i < fm.tp_h.tp_snaplen) {
-						slprintf(bout, sizeof(bout), "  ", out[i]);
-						write_or_die(fdo, bout, strlen(bout));
+						slprintf(bout, sizeof(bout),
+							 "  ", out[i]);
+						write_or_die(fdo, bout,
+							     strlen(bout));
 					}
 				}
 			}
@@ -548,14 +1080,13 @@ static void enter_mode_read_pcap(struct mode *mode)
 			write_or_die(fdo, bout, strlen(bout));
 		}
 
-		if (frame_cnt_max != 0 &&
-		    stats.tx_packets >= frame_cnt_max) {
+		if (frame_cnt_max != 0 && stats.tx_packets >= frame_cnt_max) {
 			sigint = 1;
 			break;
 		}
 	}
-out:
-	bug_on(gettimeofday(&end, NULL));
+ out:
+	gettimeofday(&end, NULL);
 	diff = tv_subtract(end, start);
 
 	fflush(stdout);
@@ -575,6 +1106,7 @@ out:
 
 	if (mode->device_out)
 		close(fdo);
+
 }
 
 static void finish_multi_pcap_file(struct mode *mode, int fd)
@@ -598,8 +1130,7 @@ static int next_multi_pcap_file(struct mode *mode, int fd)
 		pcap_ops[mode->pcap]->prepare_close_pcap(fd, PCAP_MODE_WRITE);
 	close(fd);
 
-	slprintf(tmp, sizeof(tmp), "%s/%s-%lu.pcap",
-		 mode->device_out, mode->prefix ? : "dump", time(0));
+	slprintf(tmp, sizeof(tmp), "%s/%lu.pcap", mode->device_out, time(0));
 
 	fd = open_or_die_m(tmp, O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE,
 			   DEFFILEMODE);
@@ -625,8 +1156,7 @@ static int begin_multi_pcap_file(struct mode *mode)
 	if (mode->device_out[strlen(mode->device_out) - 1] == '/')
 		mode->device_out[strlen(mode->device_out) - 1] = 0;
 
-	slprintf(tmp, sizeof(tmp), "%s/%s-%lu.pcap",
-		 mode->device_out, mode->prefix ? : "dump", time(0));
+	slprintf(tmp, sizeof(tmp), "%s/%lu.pcap", mode->device_out, time(0));
 
 	fd = open_or_die_m(tmp, O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE,
 			   DEFFILEMODE);
@@ -639,18 +1169,12 @@ static int begin_multi_pcap_file(struct mode *mode)
 			panic("error prepare writing pcap!\n");
 	}
 
-	if (mode->dump_mode == DUMP_INTERVAL_TIME) {
-		interval = mode->dump_interval;
-
-		itimer.it_interval.tv_sec = interval;
-		itimer.it_interval.tv_usec = 0;
-		itimer.it_value.tv_sec = interval;
-		itimer.it_value.tv_usec = 0;
-
-		setitimer(ITIMER_REAL, &itimer, NULL);
-	} else {
-		interval = 0;
-	}
+	interval = mode->dump_interval;
+	itimer.it_interval.tv_sec = interval;
+	itimer.it_interval.tv_usec = 0;
+	itimer.it_value.tv_sec = interval;
+	itimer.it_value.tv_usec = 0;
+	setitimer(ITIMER_REAL, &itimer, NULL);
 
 	return fd;
 }
@@ -697,8 +1221,7 @@ static void enter_mode_rx_only_or_dump(struct mode *mode)
 	struct sock_fprog bpf_ops;
 	struct timeval start, end, diff;
 
-	if (!device_up_and_running(mode->device_in) &&
-	    !mode->rfraw)
+	if (!device_up_and_running(mode->device_in))
 		panic("Device not up and running!\n");
 
 	sock = pf_socket();
@@ -719,11 +1242,11 @@ static void enter_mode_rx_only_or_dump(struct mode *mode)
 			mode->dump_dir = 0;
 			goto try_file;
 		}
-		mode->dump_dir = !!S_ISDIR(tmp.st_mode);
+		mode->dump_dir = ! !S_ISDIR(tmp.st_mode);
 		if (mode->dump_dir) {
 			fd = begin_multi_pcap_file(mode);
 		} else {
-try_file:
+ try_file:
 			fd = begin_single_pcap_file(mode);
 		}
 	}
@@ -752,8 +1275,7 @@ try_file:
 	if (mode->cpu >= 0 && ifindex > 0) {
 		irq = device_irq_number(mode->device_in);
 		device_bind_irq_to_cpu(mode->cpu, irq);
-		printf("IRQ: %s:%d > CPU%d\n", mode->device_in, irq, 
-		       mode->cpu);
+		printf("IRQ: %s:%d > CPU%d\n", mode->device_in, irq, mode->cpu);
 	}
 
 	if (mode->promiscuous == true) {
@@ -768,11 +1290,11 @@ try_file:
 		printf("802.11 raw via %s ", mode->device_in);
 #ifdef _LARGEFILE64_SOURCE
 	printf("lf64 ");
-#endif 
+#endif
 	ioprio_print();
 	printf("\n");
 
-	bug_on(gettimeofday(&start, NULL));
+	gettimeofday(&start, NULL);
 
 	while (likely(sigint == 0)) {
 		while (user_may_pull_from_rx(rx_ring.frames[it].iov_base)) {
@@ -791,55 +1313,47 @@ try_file:
 			if (mode->dump) {
 				struct pcap_pkthdr phdr;
 				tpacket_hdr_to_pcap_pkthdr(&hdr->tp_h, &phdr);
-				ret = pcap_ops[mode->pcap]->write_pcap_pkt(fd, &phdr,
-									   packet, phdr.len);
+				ret =
+				    pcap_ops[mode->pcap]->write_pcap_pkt(fd,
+									 &phdr,
+									 packet,
+									 phdr.
+									 len);
 				if (unlikely(ret != sizeof(phdr) + phdr.len))
 					panic("Write error to pcap!\n");
 			}
 
-			show_frame_hdr(hdr, mode->print_mode, RING_MODE_INGRESS);
+			show_frame_hdr(hdr, mode->print_mode,
+				       RING_MODE_INGRESS);
 			dissector_entry_point(packet, hdr->tp_h.tp_snaplen,
-					      mode->link_type, mode->print_mode);
+					      mode->link_type,
+					      mode->print_mode);
 
 			if (frame_cnt_max != 0 && fcnt >= frame_cnt_max) {
 				sigint = 1;
 				break;
 			}
-next:
+ next:
 			kernel_may_pull_from_rx(&hdr->tp_h);
 			next_slot_prerd(&it, &rx_ring);
 
 			if (unlikely(sigint == 1))
 				break;
-
-			if (mode->dump) {
-				if (mode->dump_mode == DUMP_INTERVAL_SIZE) {
-					interval += hdr->tp_h.tp_snaplen;
-					if (interval > mode->dump_interval) {
-						next_dump = true;
-						interval = 0;
-					}
-				}
-
-				if (next_dump) {
-					struct tpacket_stats kstats;
-					socklen_t slen = sizeof(kstats);
-
-					fmemset(&kstats, 0, sizeof(kstats));
-					getsockopt(sock, SOL_PACKET, PACKET_STATISTICS,
-						   &kstats, &slen);
-	
-					fd = next_multi_pcap_file(mode, fd);
-					next_dump = false;
-
-					if (mode->print_mode == FNTTYPE_PRINT_NONE) {
-						printf(".(+%lu/-%lu)",
-						       1UL * kstats.tp_packets -
-						       kstats.tp_drops -
-						       skipped, 1UL * kstats.tp_drops +
-						       skipped);
-						fflush(stdout);
-					}
+			if (mode->dump && next_dump) {
+				struct tpacket_stats kstats;
+				socklen_t slen = sizeof(kstats);
+				fmemset(&kstats, 0, sizeof(kstats));
+				getsockopt(sock, SOL_PACKET, PACKET_STATISTICS,
+					   &kstats, &slen);
+				fd = next_multi_pcap_file(mode, fd);
+				next_dump = false;
+				if (mode->print_mode == FNTTYPE_PRINT_NONE) {
+					printf(".(+%lu/-%lu)",
+					       1UL * kstats.tp_packets -
+					       kstats.tp_drops -
+					       skipped, 1UL * kstats.tp_drops +
+					       skipped);
+					fflush(stdout);
 				}
 			}
 		}
@@ -848,7 +1362,7 @@ next:
 		poll_error_maybe_die(sock, &rx_poll);
 	}
 
-	bug_on(gettimeofday(&end, NULL));
+	gettimeofday(&end, NULL);
 	diff = tv_subtract(end, start);
 
 	if (!(mode->dump_dir && mode->print_mode == FNTTYPE_PRINT_NONE)) {
@@ -882,103 +1396,146 @@ next:
 
 static void help(void)
 {
-	printf("\nnetsniff-ng %s, the packet sniffing beast\n", VERSION_STRING);
-	puts("http://www.netsniff-ng.org\n\n"
-	     "Usage: netsniff-ng [options]\n"
-	     "Options:\n"
-	     "  -i|-d|--dev|--in <dev|pcap> Input source as netdev or pcap\n"
-	     "  -o|--out <dev|pcap|dir|txf> Output sink as netdev, pcap, directory, txf file\n"
-	     "  -f|--filter <bpf-file>      Use BPF filter file from bpfc\n"
-	     "  -t|--type <type>            Only handle packets of defined type:\n"
-	     "                              host|broadcast|multicast|others|outgoing\n"
-	     "  -F|--interval <size/time>   Dump interval in time or size if -o is a directory\n"
-	     "                              pcap swap spec: <num>KiB/MiB/GiB/s/sec/min/hrs\n"
-	     "  -J|--jumbo-support          Support for 64KB Super Jumbo Frames\n"
-	     "                              Default RX/TX slot: 2048Byte\n"
-	     "  -R|--rfraw                  Capture or inject raw 802.11 frames\n"
-	     "  -n|--num <uint>             Number of packets until exit\n"
-	     "  `--     0                   Loop until interrupted (default)\n"
-	     "   `-     n                   Send n packets and done\n"
-	     "Options for printing:\n"
-	     "  -s|--silent                 Do not print captured packets\n"
-	     "  -q|--less                   Print less-verbose packet information\n"
-	     "  -X|--hex                    Print packet data in hex format\n"
-	     "  -l|--ascii                  Print human-readable packet data\n"
-	     "Options, advanced:\n"
-	     "  -P|--prefix <name>          Prefix for pcaps stored in directory\n"
-	     "  -r|--rand                   Randomize packet forwarding order\n"
-	     "  -M|--no-promisc             No promiscuous mode for netdev\n"
-	     "  -A|--no-sock-mem            Don't tune core socket memory\n"
-	     "  -m|--mmap                   Mmap pcap file i.e., for replaying\n"
-	     "  -g|--sg                     Scatter/gather pcap file I/O\n"
-	     "  -c|--clrw                   Use slower read(2)/write(2) I/O\n"
-	     "  -S|--ring-size <size>       Manually set ring size to <size>:\n"
-	     "                              mmap space in KiB/MiB/GiB, e.g. \'10MiB\'\n"
-	     "  -k|--kernel-pull <uint>     Kernel pull from user interval in us\n"
-	     "                              Default is 10us where the TX_RING\n"
-	     "                              is populated with payload from uspace\n"
-	     "  -b|--bind-cpu <cpu>         Bind to specific CPU (or CPU-range)\n"
-	     "  -B|--unbind-cpu <cpu>       Forbid to use specific CPU (or CPU-range)\n"
-	     "  -H|--prio-high              Make this high priority process\n"
-	     "  -Q|--notouch-irq            Do not touch IRQ CPU affinity of NIC\n"
-	     "  -v|--version                Show version\n"
-	     "  -h|--help                   Guess what?!\n\n"
-	     "Examples:\n"
-	     "  netsniff-ng --in eth0 --out dump.pcap --silent --bind-cpu 0\n"
-	     "  netsniff-ng --in wlan0 --rfraw --out dump.pcap --silent --bind-cpu 0\n"
-	     "  netsniff-ng --in dump.pcap --mmap --out eth0 --silent --bind-cpu 0\n"
-	     "  netsniff-ng --in dump.pcap --out dump.txf --silent --bind-cpu 0\n"
-	     "  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0 --type host\n"
-	     "  netsniff-ng --in eth1 --out /opt/probe/ -s -m -J --interval 100MiB -b 0\n"
-	     "  netsniff-ng --in any --filter http.bpf --jumbo-support --ascii\n\n"
-	     "Note:\n"
-	     "  This tool is targeted for network developers! You should\n"
-	     "  be aware of what you are doing and what these options above\n"
-	     "  mean! Use netsniff-ng's bpfc compiler for generating filter files.\n"
-	     "  Further, netsniff-ng automatically enables the kernel BPF JIT\n"
-	     "  if present. Txf file output is only possible if the input source\n"
-	     "  is a pcap file.\n\n"
-	     "Please report bugs to <bugs@netsniff-ng.org>\n"
-	     "Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
-	     "Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n"
-	     "Copyright (C) 2012      Markus Amend <markus@netsniff-ng.org>\n"
-	     "License: GNU GPL version 2.0\n"
-	     "This is free software: you are free to change and redistribute it.\n"
-	     "There is NO WARRANTY, to the extent permitted by law.\n");
+	printf("\n%s %s, the packet sniffing beast\n", PROGNAME_STRING,
+	       VERSION_STRING);
+	printf("http://www.netsniff-ng.org\n\n");
+	printf("Usage: netsniff-ng [options]\n");
+	printf("Options:\n");
+	printf
+	    ("  -i|-d|--dev|--in <dev|pcap> Input source as netdev or pcap\n");
+	printf
+	    ("  -o|--out <dev|pcap|dir|txf> Output sink as netdev, pcap, directory, txf file\n");
+	printf("  -f|--filter <bpf-file>      Use BPF filter file from bpfc\n");
+	printf
+	    ("  -t|--type <type>            Only handle packets of defined type:\n");
+	printf
+	    ("                              host|broadcast|multicast|others|outgoing\n");
+	printf
+	    ("  -F|--interval <uint>        Dump interval in sec if -o is a directory where\n");
+	printf
+	    ("                              pcap files should be stored (default: 60)\n");
+	printf
+	    ("  -J|--jumbo-support          Support for 64KB Super Jumbo Frames\n");
+	printf("                              Default RX/TX slot: 2048Byte\n");
+	printf
+	    ("  -R|--rfraw                  Capture or inject raw 802.11 frames\n");
+	printf("  -n|--num <uint>             Number of packets until exit\n");
+	printf
+	    ("  `--     0                   Loop until interrupted (default)\n");
+	printf("   `-     n                   Send n packets and done\n");
+	printf("Options for printing:\n");
+	printf("  -s|--silent                 Do not print captured packets\n");
+	printf
+	    ("  -q|--less                   Print less-verbose packet information\n");
+	printf
+	    ("  -X|--hex                    Print packet data in hex format\n");
+	printf
+	    ("  -l|--ascii                  Print human-readable packet data\n");
+	printf("Options, advanced:\n");
+	printf
+	    ("  -r|--rand                   Randomize packet forwarding order\n");
+	printf
+	    ("  -M|--no-promisc             No promiscuous mode for netdev\n");
+	printf
+	    ("  -m|--mmap                   Mmap pcap file i.e., for replaying\n");
+	printf("  -g|--sg                     Scatter/gather pcap file I/O\n");
+	printf
+	    ("  -c|--clrw                   Use slower read(2)/write(2) I/O\n");
+	printf
+	    ("  -S|--ring-size <size>       Manually set ring size to <size>:\n");
+	printf
+	    ("                              mmap space in KB/MB/GB, e.g. \'10MB\'\n");
+	printf
+	    ("  -k|--kernel-pull <uint>     Kernel pull from user interval in us\n");
+	printf
+	    ("                              Default is 10us where the TX_RING\n");
+	printf
+	    ("                              is populated with payload from uspace\n");
+	printf
+	    ("  -b|--bind-cpu <cpu>         Bind to specific CPU (or CPU-range)\n");
+	printf
+	    ("  -B|--unbind-cpu <cpu>       Forbid to use specific CPU (or CPU-range)\n");
+	printf
+	    ("  -H|--prio-high              Make this high priority process\n");
+	printf
+	    ("  -Q|--notouch-irq            Do not touch IRQ CPU affinity of NIC\n");
+	printf
+	    ("  -Z|--gbps					  Force rate @GBPS\n");
+	printf("  -v|--version                Show version\n");
+	printf("  -h|--help                   Guess what?!\n");
+	printf("\n");
+	printf("Examples:\n");
+	printf
+	    ("  netsniff-ng --in eth0 --out dump.pcap --silent --bind-cpu 0\n");
+	printf
+	    ("  netsniff-ng --in wlan0 --rfraw --out dump.pcap --silent --bind-cpu 0\n");
+	printf
+	    ("  netsniff-ng --in dump.pcap --mmap --out eth0 --silent --bind-cpu 0\n");
+	printf
+	    ("  netsniff-ng --in dump.pcap --out dump.txf --silent --bind-cpu 0\n");
+	printf
+	    ("  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0 --type host\n");
+	printf
+	    ("  netsniff-ng --in eth1 --out /opt/probe1/ -s -m -J --interval 30 -b 0\n");
+	printf
+	    ("  netsniff-ng --in any --filter http.bpf --jumbo-support --ascii\n");
+	printf("\n");
+	printf("Note:\n");
+	printf("  This tool is targeted for network developers! You should\n");
+	printf
+	    ("  be aware of what you are doing and what these options above\n");
+	printf
+	    ("  mean! Use netsniff-ng's bpfc compiler for generating filter files.\n");
+	printf
+	    ("  Further, netsniff-ng automatically enables the kernel BPF JIT\n");
+	printf
+	    ("  if present. Txf file output is only possible if the input source\n");
+	printf("  is a pcap file.\n");
+	printf("\n");
+	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
+	printf
+	    ("Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n");
+	printf
+	    ("Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n");
+	printf("License: GNU GPL version 2\n");
+	printf
+	    ("This is free software: you are free to change and redistribute it.\n");
+	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
 	die();
 }
 
 static void version(void)
 {
-	printf("\nnetsniff-ng %s, the packet sniffing beast\n", VERSION_STRING);
-	puts("http://www.netsniff-ng.org\n\n"
-	     "Please report bugs to <bugs@netsniff-ng.org>\n"
-	     "Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
-	     "Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n"
-	     "Copyright (C) 2012      Markus Amend <markus@netsniff-ng.org>\n"
-	     "License: GNU GPL version 2.0\n"
-	     "This is free software: you are free to change and redistribute it.\n"
-	     "There is NO WARRANTY, to the extent permitted by law.\n");
+	printf("\n%s %s, the packet sniffing beast\n", PROGNAME_STRING,
+	       VERSION_STRING);
+	printf("http://www.netsniff-ng.org\n\n");
+	printf("Please report bugs to <bugs@netsniff-ng.org>\n");
+	printf
+	    ("Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n");
+	printf
+	    ("Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n");
+	printf("License: GNU GPL version 2\n");
+	printf
+	    ("This is free software: you are free to change and redistribute it.\n");
+	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
 	die();
 }
 
 static void header(void)
 {
-	printf("%s%s%s\n",
-	       colorize_start(bold),
-	       "netsniff-ng " VERSION_STRING,
-	       colorize_end());
+	printf("%s%s%s\n", colorize_start(bold), PROGNAME_STRING " "
+	       VERSION_STRING, colorize_end());
 }
 
 int main(int argc, char **argv)
 {
 	int c, i, j, opt_index, ops_touched = 0;
-	int vals[4] = {0};
 	char *ptr;
 	bool prio_high = false;
-	bool setsockmem = true;
 	struct mode mode;
-	void (*enter_mode)(struct mode *mode) = NULL;
+	void (*enter_mode) (struct mode * mode) = NULL;
+
+	check_for_root_maybe_die();
 
 	fmemset(&mode, 0, sizeof(mode));
 	mode.link_type = LINKTYPE_EN10MB;
@@ -988,11 +1545,10 @@ int main(int argc, char **argv)
 	mode.promiscuous = true;
 	mode.randomize = false;
 	mode.pcap = PCAP_OPS_SG;
-	mode.dump_interval = DUMP_INTERVAL_DEF;
-	mode.dump_mode = DUMP_INTERVAL_TIME;
+	mode.dump_interval = DUMP_INTERVAL;
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
-	       &opt_index)) != EOF) {
+				&opt_index)) != EOF) {
 		switch (c) {
 		case 'd':
 		case 'i':
@@ -1000,9 +1556,6 @@ int main(int argc, char **argv)
 			break;
 		case 'o':
 			mode.device_out = xstrdup(optarg);
-			break;
-		case 'P':
-			mode.prefix = xstrdup(optarg);
 			break;
 		case 'R':
 			mode.link_type = LINKTYPE_IEEE802_11;
@@ -1020,19 +1573,19 @@ int main(int argc, char **argv)
 		case 'M':
 			mode.promiscuous = false;
 			break;
-		case 'A':
-			setsockmem = false;
-			break;
 		case 't':
 			if (!strncmp(optarg, "host", strlen("host")))
 				mode.packet_type = PACKET_HOST;
-			else if (!strncmp(optarg, "broadcast", strlen("broadcast")))
+			else if (!strncmp
+				 (optarg, "broadcast", strlen("broadcast")))
 				mode.packet_type = PACKET_BROADCAST;
-			else if (!strncmp(optarg, "multicast", strlen("multicast")))
+			else if (!strncmp
+				 (optarg, "multicast", strlen("multicast")))
 				mode.packet_type = PACKET_MULTICAST;
 			else if (!strncmp(optarg, "others", strlen("others")))
 				mode.packet_type = PACKET_OTHERHOST;
-			else if (!strncmp(optarg, "outgoing", strlen("outgoing")))
+			else if (!strncmp
+				 (optarg, "outgoing", strlen("outgoing")))
 				mode.packet_type = PACKET_OUTGOING;
 			else
 				mode.packet_type = PACKET_ALL;
@@ -1047,11 +1600,11 @@ int main(int argc, char **argv)
 				ptr++;
 			}
 
-			if (!strncmp(ptr, "KiB", strlen("KiB")))
+			if (!strncmp(ptr, "KB", strlen("KB")))
 				mode.reserve_size = 1 << 10;
-			else if (!strncmp(ptr, "MiB", strlen("MiB")))
+			else if (!strncmp(ptr, "MB", strlen("MB")))
 				mode.reserve_size = 1 << 20;
-			else if (!strncmp(ptr, "GiB", strlen("GiB")))
+			else if (!strncmp(ptr, "GB", strlen("GB")))
 				mode.reserve_size = 1 << 30;
 			else
 				panic("Syntax error in ring size param!\n");
@@ -1092,56 +1645,28 @@ int main(int argc, char **argv)
 			mode.print_mode = FNTTYPE_PRINT_LESS;
 			break;
 		case 'X':
-			mode.print_mode = (mode.print_mode == FNTTYPE_PRINT_ASCII) ?
-				FNTTYPE_PRINT_HEX_ASCII : FNTTYPE_PRINT_HEX;
+			mode.print_mode =
+			    (mode.print_mode ==
+			     FNTTYPE_PRINT_ASCII) ? FNTTYPE_PRINT_HEX_ASCII :
+			    FNTTYPE_PRINT_HEX;
 			break;
 		case 'l':
-			mode.print_mode = (mode.print_mode == FNTTYPE_PRINT_HEX) ?
-				FNTTYPE_PRINT_HEX_ASCII : FNTTYPE_PRINT_ASCII;
+			mode.print_mode =
+			    (mode.print_mode ==
+			     FNTTYPE_PRINT_HEX) ? FNTTYPE_PRINT_HEX_ASCII :
+			    FNTTYPE_PRINT_ASCII;
 			break;
 		case 'k':
-			mode.kpull = (unsigned long) atol(optarg);
+			mode.kpull = (unsigned long)atol(optarg);
+			break;
+		case 'Z':
+			gbit_s = atol(optarg);
 			break;
 		case 'n':
-			frame_cnt_max = (unsigned long) atol(optarg);
+			frame_cnt_max = (unsigned long)atol(optarg);
 			break;
 		case 'F':
-			ptr = optarg;
-			mode.dump_interval = 0;
-
-			for (j = i = strlen(optarg); i > 0; --i) {
-				if (!isdigit(optarg[j - i]))
-					break;
-				ptr++;
-			}
-
-			if (!strncmp(ptr, "KiB", strlen("KiB"))) {
-				mode.dump_interval = 1 << 10;
-				mode.dump_mode = DUMP_INTERVAL_SIZE;
-			} else if (!strncmp(ptr, "MiB", strlen("MiB"))) {
-				mode.dump_interval = 1 << 20;
-				mode.dump_mode = DUMP_INTERVAL_SIZE;
-			} else if (!strncmp(ptr, "GiB", strlen("GiB"))) {
-				mode.dump_interval = 1 << 30;
-				mode.dump_mode = DUMP_INTERVAL_SIZE;
-			} else if (!strncmp(ptr, "sec", strlen("sec"))) {
-				mode.dump_interval = 1;
-				mode.dump_mode = DUMP_INTERVAL_TIME;
-			} else if (!strncmp(ptr, "min", strlen("min"))) {
-				mode.dump_interval = 60;
-				mode.dump_mode = DUMP_INTERVAL_TIME;
-			} else if (!strncmp(ptr, "hrs", strlen("hrs"))) {
-				mode.dump_interval = 60 * 60;
-				mode.dump_mode = DUMP_INTERVAL_TIME;
-			} else if (!strncmp(ptr, "s", strlen("s"))) {
-				mode.dump_interval = 1;
-				mode.dump_mode = DUMP_INTERVAL_TIME;
-			} else {
-				panic("Syntax error in time/size param!\n");
-			}
-
-			*ptr = 0;
-			mode.dump_interval *= (unsigned long) atoi(optarg);
+			mode.dump_interval = (unsigned long)atol(optarg);
 			break;
 		case 'v':
 			version();
@@ -1156,7 +1681,6 @@ int main(int argc, char **argv)
 			case 'o':
 			case 'f':
 			case 't':
-			case 'P':
 			case 'F':
 			case 'n':
 			case 'S':
@@ -1187,42 +1711,109 @@ int main(int argc, char **argv)
 	tprintf_init();
 	header();
 
+	if (gbit_s != 0) {
+		/* cumputing usleep delay */
+		tick_start = getticks();
+		usleep(1);
+		tick_delta = getticks() - tick_start;
+
+		/* cumputing CPU freq */
+		tick_start = getticks();
+		usleep(1001);
+		hz = (getticks() - tick_start -
+		      tick_delta) * 1000 /*kHz -> Hz */ ;
+		printf("Estimated CPU freq: %lu Hz\n", (long unsigned int)hz);
+	}
+
+	cmd_file=mode->device_in; /* Read a Directory instead of a file. I will add it to command line later */
+
+	int r = walk_dir(cmd_file, ".\\.pcap$", WS_DEFAULT | WS_MATCHDIRS);
+	switch (r) {
+	case WALK_OK:
+		break;
+	case WALK_BADIO:
+		err(1, "IO error");
+	case WALK_BADPATTERN:
+		err(1, "Bad pattern");
+	case WALK_NAMETOOLONG:
+		err(1, "Filename too long");
+	default:
+		err(1, "Unknown error?");
+	}
+
+	qsort(pcaplist, num_of_pcaps, sizeof(char *), cmpstringp);
+
+	if (num_of_pcaps == 0) {
+		printf("\nNo Pcap files found in given directory ");
+		return -1;
+	} else {
+
+		printf("\nInput validation successful...\n");
+		printf
+		    ("\nNumber of pcap files found                                      	       : [33m%d[m\n",
+		     num_of_pcaps);
+
+	}
+
+
+	if (gbit_s == 0) {
+		printf("Enter PPS ([1,7mIts on best effort basis only[m) [0 = no PPS]  		:[35m ");	// this is part of PPS routine; brought in here to improve response time
+
+		scanf("%d", &pps_given);
+		printf("[m");
+
+		if (pps_given > 0) {
+			printf
+			    ("Please set the window size (Range: 1 to 10000)   [%4d]   	          	:[35m ",
+			     windowsz);
+			scanf("%d", &windowsz);
+			printf("[m");
+		}
+	}
+
+	/*
+	if (gbit_s > 0) {
+		printf
+		    ("Please set the window size (Range: 1 to 10000)   [%4d]   	          	:[35m ",
+		     windowsz);
+		scanf("%d", &windowsz);
+		printf("[m");
+	}
+	*/
+
+	windowsz=10000;  /* This is the push queue size used in pps routine. Not used currently */
+
+	if (pps_given > 0)
+		pps = pps_given;
+
+	prio_high = true;
+
 	if (prio_high == true) {
 		set_proc_prio(get_default_proc_prio());
 		set_sched_status(get_default_sched_policy(),
 				 get_default_sched_prio());
 	}
 
-	if (setsockmem == true) {
-		if ((vals[0] = get_system_socket_mem(sock_rmem_max)) < SMEM_SUG_MAX)
-			set_system_socket_mem(sock_rmem_max, SMEM_SUG_MAX);
-		if ((vals[1] = get_system_socket_mem(sock_rmem_def)) < SMEM_SUG_DEF)
-			set_system_socket_mem(sock_rmem_def, SMEM_SUG_DEF);
-		if ((vals[2] = get_system_socket_mem(sock_wmem_max)) < SMEM_SUG_MAX)
-			set_system_socket_mem(sock_wmem_max, SMEM_SUG_MAX);
-		if ((vals[3] = get_system_socket_mem(sock_wmem_def)) < SMEM_SUG_DEF)
-			set_system_socket_mem(sock_wmem_def, SMEM_SUG_DEF);
-	}
-
 	if (mode.device_in && (device_mtu(mode.device_in) ||
-	    !strncmp("any", mode.device_in, strlen(mode.device_in)))) {
+			       !strncmp("any", mode.device_in,
+					strlen(mode.device_in)))) {
 		if (!mode.device_out) {
 			mode.dump = 0;
 			enter_mode = enter_mode_rx_only_or_dump;
 		} else if (device_mtu(mode.device_out)) {
 			register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO);
-			enter_mode = enter_mode_rx_to_tx;
+			enter_mode = enter_mode_rx_to_tx;	//Bridge Mode
 		} else {
 			mode.dump = 1;
 			register_signal_f(SIGALRM, timer_next_dump, SA_SIGINFO);
-			enter_mode = enter_mode_rx_only_or_dump;
+			enter_mode = enter_mode_rx_only_or_dump;	//Capture Mode
 			if (!ops_touched)
 				mode.pcap = PCAP_OPS_SG;
 		}
 	} else {
 		if (mode.device_out && device_mtu(mode.device_out)) {
 			register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO);
-			enter_mode = enter_mode_pcap_to_tx;
+			enter_mode = enter_mode_pcap_to_tx;	//Tx Mode
 			if (!ops_touched)
 				mode.pcap = PCAP_OPS_MMAP;
 		} else {
@@ -1239,17 +1830,12 @@ int main(int argc, char **argv)
 	tprintf_cleanup();
 	cleanup_pcap();
 
-	if (setsockmem == true) {
-		set_system_socket_mem(sock_rmem_max, vals[0]);
-		set_system_socket_mem(sock_rmem_def, vals[1]);
-		set_system_socket_mem(sock_wmem_max, vals[2]);
-		set_system_socket_mem(sock_wmem_def, vals[3]);
-	}
-
-	free(mode.device_in);
-	free(mode.device_out);
-	free(mode.device_trans);
-	free(mode.prefix);
+	if (mode.device_in)
+		xfree(mode.device_in);
+	if (mode.device_out)
+		xfree(mode.device_out);
+	if (mode.device_trans)
+		xfree(mode.device_trans);
 
 	return 0;
 }
