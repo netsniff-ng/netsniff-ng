@@ -46,6 +46,7 @@ if(FLEX_FOUND AND BISON_FOUND AND LIBNL_FOUND)
   target_link_libraries(
     ${PROJECT_NAME}
     ${LIBNL_LIBRARIES}
+    ${LIBNL_GENL_LIBRARY}
   )
 
   pod2man(
