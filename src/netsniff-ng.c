@@ -598,8 +598,8 @@ static int next_multi_pcap_file(struct mode *mode, int fd)
 		pcap_ops[mode->pcap]->prepare_close_pcap(fd, PCAP_MODE_WRITE);
 	close(fd);
 
-	slprintf(tmp, sizeof(tmp), "%s/%s-%lu.pcap",
-		 mode->device_out, mode->prefix ? : "dump", time(0));
+	slprintf(tmp, sizeof(tmp), "%s/%s%lu.pcap",
+		 mode->device_out, mode->prefix ? : "dump-", time(0));
 
 	fd = open_or_die_m(tmp, O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE,
 			   DEFFILEMODE);
