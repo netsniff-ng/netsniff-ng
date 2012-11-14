@@ -81,7 +81,7 @@ adapt paths within the script):
 In order to run the toolkit as a normal user, set the following privilege
 separation after the build/installation:
 
-  $ sudo setcap cap_net_raw,cap_ipc_lock,cap_net_admin=eip {toolname}
+  $ sudo setcap cap_net_raw,cap_ipc_lock,cap_sys_admin,cap_net_admin=eip {toolname}
 
 Man pages are generated out of the files from Documentation/Manpages dir.
 They are written in POD format. For this, you need the tool pod2man which
