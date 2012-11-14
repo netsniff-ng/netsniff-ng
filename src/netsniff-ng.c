@@ -625,8 +625,8 @@ static int begin_multi_pcap_file(struct mode *mode)
 	if (mode->device_out[strlen(mode->device_out) - 1] == '/')
 		mode->device_out[strlen(mode->device_out) - 1] = 0;
 
-	slprintf(tmp, sizeof(tmp), "%s/%s-%lu.pcap",
-		 mode->device_out, mode->prefix ? : "dump", time(0));
+	slprintf(tmp, sizeof(tmp), "%s/%s%lu.pcap",
+		 mode->device_out, mode->prefix ? : "dump-", time(0));
 
 	fd = open_or_die_m(tmp, O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE,
 			   DEFFILEMODE);
