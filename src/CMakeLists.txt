@@ -91,7 +91,6 @@ install(
         ../Documentation/CodingStyle
         ../Documentation/Maintainer
         ../Documentation/VendorWishlist
-        ../Documentation/Motivation
         ../Documentation/Mirrors
         ../Documentation/BigPicture.pdf
         ../Documentation/logo.png
