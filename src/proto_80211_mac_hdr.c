@@ -464,6 +464,58 @@ struct element_tclas_type5 {
 	u8 vid;
 } __packed;
 
+struct element_schedule {
+	u8 len;
+	u16 inf;
+	u32 start;
+	u32 serv_intv;
+	u16 spec_intv;
+} __packed;
+
+struct element_chall_txt {
+	u8 len;
+	u8 chall_txt[0];
+} __packed;
+
+struct element_pwr_constr {
+	u8 len;
+	u8 local_pwr_constr;
+} __packed;
+
+struct element_pwr_cap {
+	u8 len;
+	u8 min_pwr_cap;
+	u8 max_pwr_cap;
+} __packed;
+
+struct element_tpc_req {
+	u8 len;
+} __packed;
+
+struct element_tpc_rep {
+	u8 len;
+	u8 trans_pwr;
+	u8 link_marg;
+} __packed;
+
+struct element_supp_ch {
+	u8 len;
+	u8 first_ch_nr[0];
+	u8 nr_ch[0];
+} __packed;
+
+struct element_supp_ch_tuple {
+	u8 first_ch_nr;
+	u8 nr_ch;
+} __packed;
+
+struct element_ch_sw_ann {
+	u8 len;
+	u8 switch_mode;
+	u8 new_nr;
+	u8 switch_cnt;
+} __packed;
+
 struct element_erp {
 	u8 len;
 	u8 param;
@@ -1060,7 +1112,7 @@ static int8_t inf_tclas(struct pkt_buff *pkt, u8 *id)
 	}
 	else if(frm_class->type == 3) {
 		struct element_tclas_type3 *type3;
-		u8 len;
+		u8 len, i;
 		u8 *val;
 
 		type3 =	(struct element_tclas_type3 *)
@@ -1082,11 +1134,11 @@ static int8_t inf_tclas(struct pkt_buff *pkt, u8 *id)
 				return 0;
 
 			tprintf("Filter Value: 0x");
-			for (u8 i = 0; i < len / 2; i++)
+			for (i = 0; i < len / 2; i++)
 				tprintf("%x ", val[i]);
 			tprintf(", ");
 			tprintf("Filter Mask: 0x");
-			for (u8 i = len / 2; i < len; i++)
+			for (i = len / 2; i < len; i++)
 				tprintf("%x ", val[i]);
 		}
 		
@@ -1173,42 +1225,174 @@ static int8_t inf_tclas(struct pkt_buff *pkt, u8 *id)
 
 static int8_t inf_sched(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_schedule *schedule;
+	u16 info;
+
+	schedule = (struct element_schedule *) pkt_pull(pkt, sizeof(*schedule));
+	if (schedule == NULL)
+		return 0;
+
+	info = le16_to_cpu(schedule->inf);
+
+	tprintf("Schedule (%u, Len(%u)): ", *id, schedule->len);
+	if (len_neq_error(schedule->len, 12))
+		return 0;
+	
+	tprintf("Aggregation: %u, ", info >> 15);
+	tprintf("TSID: %u, ", (info >> 11) & 0xF);
+	tprintf("Direction: %u, ", (info >> 9) & 0x3);
+	tprintf("Res: %u, ", info & 0x1FF);
+	tprintf("Serv Start Time: %uus, ", le32_to_cpu(schedule->start));
+	tprintf("Serv Interval: %uus, ", le32_to_cpu(schedule->serv_intv));
+	tprintf("Spec Interval: %fs", le32_to_cpu(schedule->spec_intv) * TU);
+
+	return 1;
 }
 
 static int8_t inf_chall_txt(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_chall_txt *chall_txt;
+	u8 i;
+	u8 *txt;
+
+	chall_txt = (struct element_chall_txt *)
+			pkt_pull(pkt, sizeof(*chall_txt));
+	if (chall_txt == NULL)
+		return 0;
+
+	tprintf("Challenge Text (%u, Len(%u)): ", *id, chall_txt->len);
+	if ((chall_txt->len - sizeof(*chall_txt) + 1) > 0) {
+		txt = pkt_pull(pkt, (chall_txt->len - sizeof(*chall_txt) + 1));
+		if (txt == NULL)
+			return 0;
+
+		tprintf("0x");
+		for (i = 0; i < (chall_txt->len - sizeof(*chall_txt) + 1); i++)
+			tprintf("%x ", txt[i]);
+	}
+
+	return 1;
 }
 
 static int8_t inf_pwr_constr(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_pwr_constr *pwr_constr;
+
+	pwr_constr = (struct element_pwr_constr *) pkt_pull(pkt, sizeof(*pwr_constr));
+	if (pwr_constr == NULL)
+		return 0;
+
+	tprintf("Power Constraint (%u, Len(%u)): ", *id, pwr_constr->len);
+	if (len_neq_error(pwr_constr->len, 1))
+		return 0;
+
+	tprintf("Local Power Constraint: %udB", pwr_constr->local_pwr_constr);
+
+	return 1;
 }
 
 static int8_t inf_pwr_cap(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_pwr_cap *pwr_cap;
+
+	pwr_cap = (struct element_pwr_cap *) pkt_pull(pkt, sizeof(*pwr_cap));
+	if (pwr_cap == NULL)
+		return 0;
+
+	tprintf("Power Capability (%u, Len(%u)): ", *id, pwr_cap->len);
+	if (len_neq_error(pwr_cap->len, 2))
+		return 0;
+
+	tprintf("Min. Transm. Pwr Cap.: %ddBm, ", (int8_t)pwr_cap->min_pwr_cap);
+	tprintf("Max. Transm. Pwr Cap.: %ddBm", (int8_t)pwr_cap->max_pwr_cap);
+
+	return 1;
 }
 
 static int8_t inf_tpc_req(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_tpc_req *tpc_req;
+
+	tpc_req = (struct element_tpc_req *) pkt_pull(pkt, sizeof(*tpc_req));
+	if (tpc_req == NULL)
+		return 0;
+
+	tprintf("TPC Request (%u, Len(%u))", *id, tpc_req->len);
+	if (len_neq_error(tpc_req->len, 0))
+		return 0;
+
+	return 1;
 }
 
 static int8_t inf_tpc_rep(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_tpc_rep *tpc_rep;
+
+	tpc_rep = (struct element_tpc_rep *) pkt_pull(pkt, sizeof(*tpc_rep));
+	if (tpc_rep == NULL)
+		return 0;
+
+	tprintf("TPC Report (%u, Len(%u)): ", *id, tpc_rep->len);
+	if (len_neq_error(tpc_rep->len, 2))
+		return 0;
+
+	tprintf("Transmit Power: %udBm, ", (int8_t)tpc_rep->trans_pwr);
+	tprintf("Link Margin: %udB", (int8_t)tpc_rep->trans_pwr);
+
+	return 1;
 }
 
 static int8_t inf_supp_ch(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_supp_ch *supp_ch;
+	u8 i;
+
+	supp_ch = (struct element_supp_ch *) pkt_pull(pkt, sizeof(*supp_ch));
+	if (supp_ch == NULL)
+		return 0;
+
+	tprintf("Supp Channels (%u, Len(%u)): ", *id, supp_ch->len);
+	if (len_lt_error(supp_ch->len, 2))
+		return 0;
+
+	if(supp_ch->len & 1) {
+		tprintf("Length should be modulo 2");
+		return 0;
+	}
+  
+	for (i = 0; i < supp_ch->len; i += 2) {
+		struct element_supp_ch_tuple *supp_ch_tuple;
+
+		supp_ch_tuple = (struct element_supp_ch_tuple *)
+				    pkt_pull(pkt, sizeof(*supp_ch_tuple));
+		if (supp_ch_tuple == NULL)
+			return 0;
+
+		tprintf("First Channel Nr: %u, ", supp_ch_tuple->first_ch_nr);
+		tprintf("Nr of Channels: %u, ", supp_ch_tuple->nr_ch);
+	}
+
+	return 1;
 }
 
 static int8_t inf_ch_sw_ann(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_ch_sw_ann *ch_sw_ann;
+
+	ch_sw_ann = (struct element_ch_sw_ann *)
+			pkt_pull(pkt, sizeof(*ch_sw_ann));
+	if (ch_sw_ann == NULL)
+		return 0;
+
+	tprintf("Channel Switch Announc (%u, Len(%u)): ", *id, ch_sw_ann->len);
+	if (len_neq_error(ch_sw_ann->len, 3))
+		return 0;
+
+	tprintf("Switch Mode: %ud, ", ch_sw_ann->switch_mode);
+	tprintf("New Nr: %u, ", ch_sw_ann->new_nr);
+	tprintf("Switch Count: %u", ch_sw_ann->switch_cnt);
+
+	return 1;
 }
 
 static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
