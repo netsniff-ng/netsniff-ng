@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <netinet/in.h>    /* for ntohs() */
 #include <asm/byteorder.h>
+#include <arpa/inet.h>     /* for inet_ntop() */
 
 #include "proto.h"
 #include "protos.h"
@@ -354,7 +355,113 @@ struct element_tspec {
 struct element_tclas {
 	u8 len;
 	u8 user_priority;
-	u8 frame_class[0];
+	u8 frm_class[0];
+} __packed;
+
+struct element_tclas_frm_class {
+	u8 type;
+	u8 mask;
+	u8 param[0];
+} __packed;
+
+struct element_tclas_type0 {
+	u8 sa[6];
+	u8 da[6];
+	u16 type;
+} __packed;
+
+struct element_tclas_type1 {
+	u8 version;
+	u8 subparam[0];
+} __packed;
+
+struct element_tclas_type1_ip4 {
+	u32 sa;
+	u32 da;
+	u16 sp;
+	u16 dp;
+	u8 dscp;
+	u8 proto;
+	u8 reserved;
+} __packed;
+
+struct element_tclas_type1_ip6 {
+	struct in6_addr sa;
+	struct in6_addr da;
+	u16 sp;
+	u16 dp;
+	union {
+		u8 flow_label[3];
+		struct {
+#if defined(__LITTLE_ENDIAN_BITFIELD)
+		__extension__ u8  flow_label3:8;
+		__extension__ u8  flow_label2:8;
+		__extension__ u8  flow_label1:8;
+#elif defined(__BIG_ENDIAN_BITFIELD)
+		__extension__ u8  flow_label1:8;
+		__extension__ u8  flow_label2:8;
+		__extension__ u8  flow_label3:8;
+
+# error  "Adjust your <asm/byteorder.h> defines"
+#endif
+		};
+	};
+} __packed;
+
+struct element_tclas_type2 {
+	u16 vlan_tci;
+} __packed;
+
+struct element_tclas_type3 {
+	u16 offs;
+	u8 value[0];
+	u8 mask[0];
+} __packed;
+
+struct element_tclas_type4 {
+	u8 version;
+	u8 subparam[0];
+} __packed;
+
+struct element_tclas_type4_ip4 {
+	u32 sa;
+	u32 da;
+	u16 sp;
+	u16 dp;
+	u8 dscp;
+	u8 proto;
+	u8 reserved;
+} __packed;
+
+struct element_tclas_type4_ip6 {
+	struct in6_addr sa;
+	struct in6_addr da;
+	u16 sp;
+	u16 dp;
+	u8 dscp;
+	u8 nxt_hdr;
+	union {
+		u8 flow_label[3];
+		struct {
+#if defined(__LITTLE_ENDIAN_BITFIELD)
+		__extension__ u8  flow_label3:8;
+		__extension__ u8  flow_label2:8;
+		__extension__ u8  flow_label1:8;
+#elif defined(__BIG_ENDIAN_BITFIELD)
+		__extension__ u8  flow_label1:8;
+		__extension__ u8  flow_label2:8;
+		__extension__ u8  flow_label3:8;
+
+# error  "Adjust your <asm/byteorder.h> defines"
+#endif
+		};
+	};
+} __packed;
+
+struct element_tclas_type5 {
+	u8 pcp;
+	u8 cfi;
+	u8 vid;
 } __packed;
 
 struct element_erp {
@@ -383,9 +490,9 @@ static int8_t len_neq_error(u8 len, u8 intended)
 	return 0;
 }
 
-static int8_t len_gt_error(u8 len, u8 intended)
+static int8_t len_lt_error(u8 len, u8 intended)
 {
-	if(intended > len) {
+	if(len < intended) {
 		tprintf("Length should be greater %u Bytes", intended);
 		return 1;
 	}
@@ -483,7 +590,7 @@ static int8_t inf_supp_rates(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("Rates (%u, Len (%u)): ", *id, supp_rates->len);
-	if (len_gt_error(supp_rates->len, 1))
+	if (len_lt_error(supp_rates->len, 1))
 		return 0;
 
 	if ((supp_rates->len - sizeof(*supp_rates) + 1) > 0) {
@@ -564,7 +671,7 @@ static int8_t inf_tim(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("TIM (%u, Len(%u)): ", *id, tim->len);
-	if (len_gt_error(tim->len, 3))
+	if (len_lt_error(tim->len, 3))
 		return 0;
 	tprintf("DTIM Count: %u, ", tim->dtim_cnt);
 	tprintf("DTIM Period: %u, ", tim->dtim_period);
@@ -609,7 +716,7 @@ static int8_t inf_country(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("Country (%u, Len(%u)): ", *id, country->len);
-	if (len_gt_error(country->len, 6))
+	if (len_lt_error(country->len, 6))
 		return 0;
 	tprintf("Country String: %c%c%c", country->country_first,
 		country->country_sec, country->country_third);
@@ -671,7 +778,7 @@ static int8_t inf_hop_pt(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("Hopping Pattern Table (%u, Len(%u)): ", *id, hop_pt->len);
-	if (len_gt_error(hop_pt->len, 4))
+	if (len_lt_error(hop_pt->len, 4))
 		return 0;
 	tprintf("Flag: %u, ", hop_pt->flag);
 	tprintf("Nr of Sets: %u, ", hop_pt->nr_sets);
@@ -825,27 +932,243 @@ static int8_t inf_tspec(struct pkt_buff *pkt, u8 *id)
 	tprintf("Minimum PHY Rate: %ub/s, ", le32_to_cpu(tspec->min_phy_rate));
 	tprintf("Surplus Bandwidth: %u.%u, ", surplus_bandw_allow >> 13,
 		surplus_bandw_allow & 0x1FFF);
-	tprintf("Medium Time: %uus, ", le16_to_cpu(tspec->med_time) * 32);
+	tprintf("Medium Time: %uus", le16_to_cpu(tspec->med_time) * 32);
 
 	return 1;
+}
+
+static const char *class_type(u8 type)
+{
+	switch (type) {
+	case   0: return "Ethernet parameters";
+	case   1: return "TCP/UDP IP parameters";
+	case   2: return "IEEE 802.1Q parameters";
+	case   3: return "Filter Offset parameters";
+	case   4: return "IP and higher layer parameters";
+	case   5: return "IEEE 802.1D/Q parameters";
+	default: return "Reserved";
+	}
 }
 
 static int8_t inf_tclas(struct pkt_buff *pkt, u8 *id)
 {
 	struct element_tclas *tclas;
+	struct element_tclas_frm_class *frm_class;
 
 	tclas =	(struct element_tclas *) pkt_pull(pkt, sizeof(*tclas));
 	if (tclas == NULL)
 		return 0;
 
+	frm_class = (struct element_tclas_frm_class *)
+				pkt_pull(pkt, sizeof(*frm_class));
+	if (frm_class == NULL)
+		return 0;
+
 	tprintf("TCLAS (%u, Len(%u)): ", *id, tclas->len);
-	if (len_gt_error(tclas->len, 1))
+	if (len_lt_error(tclas->len, 3))
 		return 0;
 	tprintf("User Priority: %u, ", tclas->user_priority);
+	tprintf("Classifier Type: %s (%u), ", class_type(frm_class->type),
+						  frm_class->type);
+	tprintf("Classifier Mask: 0x%x, ", frm_class->mask);
 
-	/*TODO add Classifier p.574*/
+	if(frm_class->type == 0) {
+		struct element_tclas_type0 *type0;
+		
+		type0 =	(struct element_tclas_type0 *)
+				  pkt_pull(pkt, sizeof(*type0));
+		if (type0 == NULL)
+			return 0;
+		
+		/* I think little endian, like the rest */
+		tprintf("Src Addr: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x, ",
+		type0->sa[5], type0->sa[4], type0->sa[3],
+		type0->sa[2], type0->sa[1], type0->sa[0]);
+		tprintf("Dst Addr: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x, ",
+		type0->da[5], type0->da[4], type0->da[3],
+		type0->da[2], type0->da[1], type0->da[0]);
+		tprintf("Type: 0x%x", le16_to_cpu(type0->type));
+	}
+	else if(frm_class->type == 1) {
+		struct element_tclas_type1 *type1;
+		
+		type1 =	(struct element_tclas_type1 *)
+				  pkt_pull(pkt, sizeof(*type1));
+		if (type1 == NULL)
+			return 0;
+		
+		tprintf("Version: %u, ", type1->version);
+		/* big endian format follows */
+		if(type1->version == 4) {
+			struct element_tclas_type1_ip4 *type1_ip4;
+			char src_ip[INET_ADDRSTRLEN];
+			char dst_ip[INET_ADDRSTRLEN];
+			 
+			type1_ip4 = (struct element_tclas_type1_ip4 *)
+					  pkt_pull(pkt, sizeof(*type1_ip4));
+			if (type1_ip4 == NULL)
+				return 0;
 
-	return 0;
+			inet_ntop(AF_INET, &type1_ip4->sa, src_ip, sizeof(src_ip));
+			inet_ntop(AF_INET, &type1_ip4->da, dst_ip, sizeof(dst_ip));
+			 
+			tprintf("Src IP: %s, ", src_ip);
+			tprintf("Dst IP: %s, ", dst_ip);
+			tprintf("Src Port: %u, ", ntohs(type1_ip4->sp));
+			tprintf("Dst Port: %u, ", ntohs(type1_ip4->dp));
+			tprintf("DSCP: 0x%x, ", type1_ip4->dscp);
+			tprintf("Proto: %u, ", type1_ip4->proto);
+			tprintf("Res: 0x%x", type1_ip4->reserved);
+		}
+		else if(type1->version == 6) {
+			struct element_tclas_type1_ip6 *type1_ip6;
+			char src_ip[INET6_ADDRSTRLEN];
+			char dst_ip[INET6_ADDRSTRLEN];
+
+			type1_ip6 = (struct element_tclas_type1_ip6 *)
+					  pkt_pull(pkt, sizeof(*type1_ip6));
+			if (type1_ip6 == NULL)
+				return 0;
+
+			inet_ntop(AF_INET6, &type1_ip6->sa,
+				  src_ip, sizeof(src_ip));
+			inet_ntop(AF_INET6, &type1_ip6->da,
+				  dst_ip, sizeof(dst_ip));
+
+			tprintf("Src IP: %s, ", src_ip);
+			tprintf("Dst IP: %s, ", dst_ip);
+			tprintf("Src Port: %u, ", ntohs(type1_ip6->sp));
+			tprintf("Dst Port: %u, ", ntohs(type1_ip6->dp));
+			tprintf("Flow Label: 0x%x%x%x", type1_ip6->flow_label1,
+				type1_ip6->flow_label2, type1_ip6->flow_label3);
+		}
+		else {
+			tprintf("Version (%u) not supported", type1->version);
+			return 0;
+		}
+		  
+	}
+	else if(frm_class->type == 2) {
+		struct element_tclas_type2 *type2;
+
+		type2 =	(struct element_tclas_type2 *)
+				  pkt_pull(pkt, sizeof(*type2));
+		if (type2 == NULL)
+			return 0;
+
+		tprintf("802.1Q VLAN TCI: 0x%x", ntohs(type2->vlan_tci));
+	}
+	else if(frm_class->type == 3) {
+		struct element_tclas_type3 *type3;
+		u8 len;
+		u8 *val;
+
+		type3 =	(struct element_tclas_type3 *)
+				  pkt_pull(pkt, sizeof(*type3));
+		if (type3 == NULL)
+			return 0;
+
+		len = (tclas->len - 5) / 2;
+
+		tprintf("Filter Offset: %u, ", type3->offs);
+		
+		if((len & 1) || (len_lt_error(tclas->len, 5))) {
+			tprintf("Length of TCLAS (%u) not correct", tclas->len);
+			return 0;
+		}
+		else {
+			val = pkt_pull(pkt, len);
+			if (val == NULL)
+				return 0;
+
+			tprintf("Filter Value: 0x");
+			for (u8 i = 0; i < len / 2; i++)
+				tprintf("%x ", val[i]);
+			tprintf(", ");
+			tprintf("Filter Mask: 0x");
+			for (u8 i = len / 2; i < len; i++)
+				tprintf("%x ", val[i]);
+		}
+		
+	}
+	else if(frm_class->type == 4) {
+		struct element_tclas_type4 *type4;
+
+		type4 =	(struct element_tclas_type4 *)
+				  pkt_pull(pkt, sizeof(*type4));
+		if (type4 == NULL)
+			return 0;
+
+		tprintf("Version: %u, ", type4->version);
+		/* big endian format follows */
+		if(type4->version == 4) {
+			struct element_tclas_type4_ip4 *type4_ip4;
+			char src_ip[INET_ADDRSTRLEN];
+			char dst_ip[INET_ADDRSTRLEN];
+
+			type4_ip4 = (struct element_tclas_type4_ip4 *)
+					  pkt_pull(pkt, sizeof(*type4_ip4));
+			if (type4_ip4 == NULL)
+				return 0;
+
+			inet_ntop(AF_INET, &type4_ip4->sa, src_ip, sizeof(src_ip));
+			inet_ntop(AF_INET, &type4_ip4->da, dst_ip, sizeof(dst_ip));
+
+			tprintf("Src IP: %s, ", src_ip);
+			tprintf("Dst IP: %s, ", dst_ip);
+			tprintf("Src Port: %u, ", ntohs(type4_ip4->sp));
+			tprintf("Dst Port: %u, ", ntohs(type4_ip4->dp));
+			tprintf("DSCP: 0x%x, ", type4_ip4->dscp);
+			tprintf("Proto: %u, ", type4_ip4->proto);
+			tprintf("Res: 0x%x", type4_ip4->reserved);
+		}
+		else if(type4->version == 6) {
+			struct element_tclas_type4_ip6 *type4_ip6;
+			char src_ip[INET6_ADDRSTRLEN];
+			char dst_ip[INET6_ADDRSTRLEN];
+
+			type4_ip6 = (struct element_tclas_type4_ip6 *)
+					  pkt_pull(pkt, sizeof(*type4_ip6));
+			if (type4_ip6 == NULL)
+				return 0;
+
+			inet_ntop(AF_INET6, &type4_ip6->sa,
+				  src_ip, sizeof(src_ip));
+			inet_ntop(AF_INET6, &type4_ip6->da,
+				  dst_ip, sizeof(dst_ip));
+
+			tprintf("Src IP: %s, ", src_ip);
+			tprintf("Dst IP: %s, ", dst_ip);
+			tprintf("Src Port: %u, ", ntohs(type4_ip6->sp));
+			tprintf("Dst Port: %u, ", ntohs(type4_ip6->dp));
+			tprintf("DSCP: 0x%x, ", type4_ip6->dscp);
+			tprintf("Nxt Hdr: %u, ", type4_ip6->nxt_hdr);
+			tprintf("Flow Label: 0x%x%x%x", type4_ip6->flow_label1,
+				type4_ip6->flow_label2, type4_ip6->flow_label3);
+		}
+		else {
+			tprintf("Version (%u) not supported", type4->version);
+			return 0;
+		}
+	}
+	else if(frm_class->type == 5) {
+		struct element_tclas_type5 *type5;
+
+		type5 =	(struct element_tclas_type5 *)
+				  pkt_pull(pkt, sizeof(*type5));
+		if (type5 == NULL)
+			return 0;
+
+		tprintf("802.1Q PCP: 0x%x, ", type5->pcp);
+		tprintf("802.1Q CFI: 0x%x, ", type5->cfi);
+		tprintf("802.1Q VID: 0x%x", type5->vid);
+	}
+	else {
+		tprintf("Classifier Type (%u) not supported", frm_class->type);
+		return 0;
+	}
+
+	return 1;
 }
 
 static int8_t inf_sched(struct pkt_buff *pkt, u8 *id)
