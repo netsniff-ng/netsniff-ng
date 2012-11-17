@@ -516,6 +516,121 @@ struct element_ch_sw_ann {
 	u8 switch_cnt;
 } __packed;
 
+struct element_meas_req {
+	u8 len;
+	u8 token;
+	u8 req_mode;
+	u8 type;
+	u8 req[0];
+} __packed;
+
+struct element_meas_req_basic {
+	u8 ch_nr;
+	u64 start;
+	u16 dur;
+} __packed;
+
+struct element_meas_req_cca {
+	u8 ch_nr;
+	u64 start;
+	u16 dur;
+} __packed;
+
+struct element_meas_req_rpi {
+	u8 ch_nr;
+	u64 start;
+	u16 dur;
+} __packed;
+
+struct element_meas_req_ch_load {
+	u8 op_class;
+	u8 ch_nr;
+	u16 rand_intv;
+	u16 dur;
+	u8 sub[0];
+} __packed;
+
+struct element_meas_req_noise {
+	u8 op_class;
+	u8 ch_nr;
+	u16 rand_intv;
+	u16 dur;
+	u8 sub[0];
+} __packed;
+
+struct element_meas_req_beacon {
+	u8 op_class;
+	u8 ch_nr;
+	u16 rand_intv;
+	u16 dur;
+	u8 mode;
+	u8 bssid[6];
+	u8 sub[0];
+} __packed;
+
+struct element_meas_req_frame {
+	u8 op_class;
+	u8 ch_nr;
+	u16 rand_intv;
+	u16 dur;
+	u8 frame;
+	u8 mac[6];
+	u8 sub[0];
+} __packed;
+
+struct element_meas_req_sta {
+	u8 peer_mac[6];
+	u16 rand_intv;
+	u16 dur;
+	u8 group_id;
+	u8 sub[0];
+} __packed;
+
+struct element_meas_req_lci {
+	u8 loc_subj;
+	u8 latitude_req_res;
+	u8 longitude_req_res;
+	u8 altitude_req_res;
+	u8 sub[0];
+} __packed;
+
+struct element_meas_req_trans_str_cat {
+	u16 rand_intv;
+	u16 meas_dur;
+	u8 peer_sta_addr[6];
+	u8 traffic_id;
+	u8 bin_0_range;
+	u8 sub[0];
+} __packed;
+
+struct element_meas_req_mcast_diag {
+	u16 rand_intv;
+	u16 dur;
+	u8 group_mac_addr[6];
+	u8 mcast_triggered[0];
+	u8 sub[0];
+} __packed;
+
+struct element_meas_req_loc_civic {
+	u8 loc_subj;
+	u8 civic_loc;
+	u8 loc_srv_intv_unit;
+	u16 loc_srv_intv;
+	u8 sub[0];
+} __packed;
+
+struct element_meas_req_loc_id {
+	u8 loc_subj;
+	u8 loc_srv_intv_unit;
+	u16 loc_srv_intv;
+	u8 sub[0];
+} __packed;
+
+struct element_meas_req_pause {
+	u8 time;
+	u8 sub[0];
+} __packed;
+
 struct element_erp {
 	u8 len;
 	u8 param;
@@ -1388,15 +1503,173 @@ static int8_t inf_ch_sw_ann(struct pkt_buff *pkt, u8 *id)
 	if (len_neq_error(ch_sw_ann->len, 3))
 		return 0;
 
-	tprintf("Switch Mode: %ud, ", ch_sw_ann->switch_mode);
+	tprintf("Switch Mode: %u, ", ch_sw_ann->switch_mode);
 	tprintf("New Nr: %u, ", ch_sw_ann->new_nr);
 	tprintf("Switch Count: %u", ch_sw_ann->switch_cnt);
 
 	return 1;
 }
 
+static const char *meas_type(u8 type)
+{
+	switch (type) {
+	case   0: return "Basic";
+	case   1: return "Clear Channel assesment (CCA)";
+	case   2: return "Receive power indication (RPI) histogram";
+	case   3: return "Channel load";
+	case   4: return "Noise histogram";
+	case   5: return "Beacon";
+	case   6: return "Frame";
+	case   7: return "STA statistics";
+	case   8: return "LCI";
+	case   9: return "Transmit stream/category measurement";
+	case   10: return "Multicast diagnostics";
+	case   11: return "Location Civic";
+	case   12: return "Location Identifier";
+	case   13 ... 255: return "Reserved";
+	}
+}
+
 static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 {
+	struct element_meas_req *meas_req;
+
+	meas_req = (struct element_meas_req *) pkt_pull(pkt, sizeof(*meas_req));
+	if (meas_req == NULL)
+		return 0;
+
+	tprintf("Measurement Req (%u, Len(%u)): ", *id, meas_req->len);
+	if (len_lt_error(meas_req->len, 3))
+		return 0;
+
+	tprintf("Token: %u, ", meas_req->token);
+	tprintf("Req Mode: 0x%x (Parallel (%u), Enable(%u), Request(%u), "
+	"Report(%u), Dur Mand(%u)),  ", meas_req->req_mode,
+		meas_req->req_mode >> 7, (meas_req->req_mode >> 6) & 0x1,
+		(meas_req->req_mode >> 5) & 0x1, (meas_req->req_mode >> 4) & 0x1,
+		(meas_req->req_mode >> 3) & 0x1);
+	tprintf("Type: %s (%u), ", meas_type(meas_req->type), meas_req->type);
+
+	if(meas_req->len > 3) {
+		if(meas_req->type == 0) {
+			struct element_meas_req_basic *basic;
+
+			basic = (struct element_meas_req_basic *)
+				    pkt_pull(pkt, sizeof(*basic));
+			if (basic == NULL)
+				return 0;
+		}
+		else if(meas_req->type == 1) {
+			struct element_meas_req_cca *cca;
+
+			cca = (struct element_meas_req_cca *)
+				    pkt_pull(pkt, sizeof(*cca));
+			if (cca == NULL)
+				return 0;
+		}
+		else if(meas_req->type == 2) {
+			struct element_meas_req_rpi *rpi;
+
+			rpi = (struct element_meas_req_rpi *)
+				    pkt_pull(pkt, sizeof(*rpi));
+			if (rpi == NULL)
+				return 0;
+		}
+		else if(meas_req->type == 3) {
+			struct element_meas_req_ch_load *ch_load;
+
+			ch_load = (struct element_meas_req_ch_load *)
+				    pkt_pull(pkt, sizeof(*ch_load));
+			if (ch_load == NULL)
+				return 0;
+		}
+		else if(meas_req->type == 4) {
+			struct element_meas_req_noise *noise;
+
+			noise = (struct element_meas_req_noise *)
+				    pkt_pull(pkt, sizeof(*noise));
+			if (noise == NULL)
+				return 0;
+		}
+		else if(meas_req->type == 5) {
+			struct element_meas_req_beacon *beacon;
+
+			beacon = (struct element_meas_req_beacon *)
+				    pkt_pull(pkt, sizeof(*beacon));
+			if (beacon == NULL)
+				return 0;
+		}
+		else if(meas_req->type == 6) {
+			struct element_meas_req_frame *frame;
+
+			frame = (struct element_meas_req_frame *)
+				    pkt_pull(pkt, sizeof(*frame));
+			if (frame == NULL)
+				return 0;
+		}
+		else if(meas_req->type == 7) {
+			struct element_meas_req_sta *sta;
+
+			sta = (struct element_meas_req_sta *)
+				    pkt_pull(pkt, sizeof(*sta));
+			if (sta == NULL)
+				return 0;
+		}
+		else if(meas_req->type == 8) {
+			struct element_meas_req_lci *lci;
+
+			lci = (struct element_meas_req_lci *)
+				    pkt_pull(pkt, sizeof(*lci));
+			if (lci == NULL)
+				return 0;
+		}
+		else if(meas_req->type == 9) {
+			struct element_meas_req_trans_str_cat *trans;
+
+			trans = (struct element_meas_req_trans_str_cat *)
+				    pkt_pull(pkt, sizeof(*trans));
+			if (trans == NULL)
+				return 0;
+		}
+		else if(meas_req->type == 10) {
+			struct element_meas_req_mcast_diag *mcast;
+
+			mcast = (struct element_meas_req_mcast_diag *)
+				    pkt_pull(pkt, sizeof(*mcast));
+			if (mcast == NULL)
+				return 0;
+		}
+		else if(meas_req->type == 11) {
+			struct element_meas_req_loc_civic *civic;
+
+			civic = (struct element_meas_req_loc_civic *)
+				    pkt_pull(pkt, sizeof(*civic));
+			if (civic == NULL)
+				return 0;
+		}
+		else if(meas_req->type == 12) {
+			struct element_meas_req_loc_id *id;
+
+			id = (struct element_meas_req_loc_id *)
+				    pkt_pull(pkt, sizeof(*id));
+			if (id == NULL)
+				return 0;
+		}
+		else if(meas_req->type == 255) {
+			struct element_meas_req_pause *pause;
+
+			pause = (struct element_meas_req_pause *)
+				    pkt_pull(pkt, sizeof(*pause));
+			if (pause == NULL)
+				return 0;
+		}
+		else {
+			tprintf("Length field indicates data,"
+			" but could not interpreted");
+			return 0;
+		}
+	}
+
 	return 0;
 }
 
