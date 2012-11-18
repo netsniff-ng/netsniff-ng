@@ -516,33 +516,25 @@ struct element_ch_sw_ann {
 	u8 switch_cnt;
 } __packed;
 
-struct element_meas_req {
-	u8 len;
-	u8 token;
-	u8 req_mode;
-	u8 type;
-	u8 req[0];
-} __packed;
-
-struct element_meas_req_basic {
+struct element_meas_basic {
 	u8 ch_nr;
 	u64 start;
 	u16 dur;
 } __packed;
 
-struct element_meas_req_cca {
+struct element_meas_cca {
 	u8 ch_nr;
 	u64 start;
 	u16 dur;
 } __packed;
 
-struct element_meas_req_rpi {
+struct element_meas_rpi {
 	u8 ch_nr;
 	u64 start;
 	u16 dur;
 } __packed;
 
-struct element_meas_req_ch_load {
+struct element_meas_ch_load {
 	u8 op_class;
 	u8 ch_nr;
 	u16 rand_intv;
@@ -550,7 +542,7 @@ struct element_meas_req_ch_load {
 	u8 sub[0];
 } __packed;
 
-struct element_meas_req_noise {
+struct element_meas_noise {
 	u8 op_class;
 	u8 ch_nr;
 	u16 rand_intv;
@@ -558,7 +550,7 @@ struct element_meas_req_noise {
 	u8 sub[0];
 } __packed;
 
-struct element_meas_req_beacon {
+struct element_meas_beacon {
 	u8 op_class;
 	u8 ch_nr;
 	u16 rand_intv;
@@ -568,7 +560,7 @@ struct element_meas_req_beacon {
 	u8 sub[0];
 } __packed;
 
-struct element_meas_req_frame {
+struct element_meas_frame {
 	u8 op_class;
 	u8 ch_nr;
 	u16 rand_intv;
@@ -578,7 +570,7 @@ struct element_meas_req_frame {
 	u8 sub[0];
 } __packed;
 
-struct element_meas_req_sta {
+struct element_meas_sta {
 	u8 peer_mac[6];
 	u16 rand_intv;
 	u16 dur;
@@ -586,7 +578,7 @@ struct element_meas_req_sta {
 	u8 sub[0];
 } __packed;
 
-struct element_meas_req_lci {
+struct element_meas_lci {
 	u8 loc_subj;
 	u8 latitude_req_res;
 	u8 longitude_req_res;
@@ -594,7 +586,7 @@ struct element_meas_req_lci {
 	u8 sub[0];
 } __packed;
 
-struct element_meas_req_trans_str_cat {
+struct element_meas_trans_str_cat {
 	u16 rand_intv;
 	u16 dur;
 	u8 peer_sta_addr[6];
@@ -603,7 +595,7 @@ struct element_meas_req_trans_str_cat {
 	u8 sub[0];
 } __packed;
 
-struct element_meas_req_mcast_diag {
+struct element_meas_mcast_diag {
 	u16 rand_intv;
 	u16 dur;
 	u8 group_mac[6];
@@ -611,7 +603,7 @@ struct element_meas_req_mcast_diag {
 	u8 sub[0];
 } __packed;
 
-struct element_meas_req_loc_civic {
+struct element_meas_loc_civic {
 	u8 loc_subj;
 	u8 civic_loc;
 	u8 loc_srv_intv_unit;
@@ -619,16 +611,52 @@ struct element_meas_req_loc_civic {
 	u8 sub[0];
 } __packed;
 
-struct element_meas_req_loc_id {
+struct element_meas_loc_id {
 	u8 loc_subj;
 	u8 loc_srv_intv_unit;
 	u16 loc_srv_intv;
 	u8 sub[0];
 } __packed;
 
-struct element_meas_req_pause {
+struct element_meas_pause {
 	u8 time;
 	u8 sub[0];
+} __packed;
+
+struct element_meas_req {
+	u8 len;
+	u8 token;
+	u8 req_mode;
+	u8 type;
+	u8 req[0];
+} __packed;
+
+struct element_meas_rep {
+	u8 len;
+	u8 token;
+	u8 rep_mode;
+	u8 type;
+	u8 rep[0];
+} __packed;
+
+struct element_quiet {
+	u8 len;
+	u8 cnt;
+	u8 period;
+	u16 dur;
+	u16 offs;
+} __packed;
+
+struct element_ibss_dfs {
+	u8 len;
+	u8 owner[6];
+	u8 rec_intv;
+	u8 ch_map[0];
+} __packed;
+
+struct element_ibss_dfs_tuple {
+	u8 ch_nr;
+	u8 map;
 } __packed;
 
 struct element_erp {
@@ -1593,9 +1621,9 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 
 	if(meas_req->len > 3) {
 		if(meas_req->type == 0) {
-			struct element_meas_req_basic *basic;
+			struct element_meas_basic *basic;
 
-			basic = (struct element_meas_req_basic *)
+			basic = (struct element_meas_basic *)
 				    pkt_pull(pkt, sizeof(*basic));
 			if (basic == NULL)
 				return 0;
@@ -1614,9 +1642,9 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 			
 		}
 		else if(meas_req->type == 1) {
-			struct element_meas_req_cca *cca;
+			struct element_meas_cca *cca;
 
-			cca = (struct element_meas_req_cca *)
+			cca = (struct element_meas_cca *)
 				    pkt_pull(pkt, sizeof(*cca));
 			if (cca == NULL)
 				return 0;
@@ -1634,9 +1662,9 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 				    le16_to_cpu(cca->dur) * TU);
 		}
 		else if(meas_req->type == 2) {
-			struct element_meas_req_rpi *rpi;
+			struct element_meas_rpi *rpi;
 
-			rpi = (struct element_meas_req_rpi *)
+			rpi = (struct element_meas_rpi *)
 				    pkt_pull(pkt, sizeof(*rpi));
 			if (rpi == NULL)
 				return 0;
@@ -1654,9 +1682,9 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 				    le16_to_cpu(rpi->dur) * TU);
 		}
 		else if(meas_req->type == 3) {
-			struct element_meas_req_ch_load *ch_load;
+			struct element_meas_ch_load *ch_load;
 
-			ch_load = (struct element_meas_req_ch_load *)
+			ch_load = (struct element_meas_ch_load *)
 				    pkt_pull(pkt, sizeof(*ch_load));
 			if (ch_load == NULL)
 				return 0;
@@ -1679,9 +1707,9 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 				return 0;
 		}
 		else if(meas_req->type == 4) {
-			struct element_meas_req_noise *noise;
+			struct element_meas_noise *noise;
 
-			noise = (struct element_meas_req_noise *)
+			noise = (struct element_meas_noise *)
 				    pkt_pull(pkt, sizeof(*noise));
 			if (noise == NULL)
 				return 0;
@@ -1704,9 +1732,9 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 				return 0;
 		}
 		else if(meas_req->type == 5) {
-			struct element_meas_req_beacon *beacon;
+			struct element_meas_beacon *beacon;
 
-			beacon = (struct element_meas_req_beacon *)
+			beacon = (struct element_meas_beacon *)
 				    pkt_pull(pkt, sizeof(*beacon));
 			if (beacon == NULL)
 				return 0;
@@ -1734,9 +1762,9 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 				return 0;
 		}
 		else if(meas_req->type == 6) {
-			struct element_meas_req_frame *frame;
+			struct element_meas_frame *frame;
 
-			frame = (struct element_meas_req_frame *)
+			frame = (struct element_meas_frame *)
 				    pkt_pull(pkt, sizeof(*frame));
 			if (frame == NULL)
 				return 0;
@@ -1764,9 +1792,9 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 				return 0;
 		}
 		else if(meas_req->type == 7) {
-			struct element_meas_req_sta *sta;
+			struct element_meas_sta *sta;
 
-			sta = (struct element_meas_req_sta *)
+			sta = (struct element_meas_sta *)
 				    pkt_pull(pkt, sizeof(*sta));
 			if (sta == NULL)
 				return 0;
@@ -1792,9 +1820,9 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 				return 0;
 		}
 		else if(meas_req->type == 8) {
-			struct element_meas_req_lci *lci;
+			struct element_meas_lci *lci;
 
-			lci = (struct element_meas_req_lci *)
+			lci = (struct element_meas_lci *)
 				    pkt_pull(pkt, sizeof(*lci));
 			if (lci == NULL)
 				return 0;
@@ -1818,9 +1846,9 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 				return 0;
 		}
 		else if(meas_req->type == 9) {
-			struct element_meas_req_trans_str_cat *trans;
+			struct element_meas_trans_str_cat *trans;
 
-			trans = (struct element_meas_req_trans_str_cat *)
+			trans = (struct element_meas_trans_str_cat *)
 				    pkt_pull(pkt, sizeof(*trans));
 			if (trans == NULL)
 				return 0;
@@ -1847,9 +1875,9 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 				return 0;
 		}
 		else if(meas_req->type == 10) {
-			struct element_meas_req_mcast_diag *mcast;
+			struct element_meas_mcast_diag *mcast;
 
-			mcast = (struct element_meas_req_mcast_diag *)
+			mcast = (struct element_meas_mcast_diag *)
 				    pkt_pull(pkt, sizeof(*mcast));
 			if (mcast == NULL)
 				return 0;
@@ -1874,9 +1902,9 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 				return 0;
 		}
 		else if(meas_req->type == 11) {
-			struct element_meas_req_loc_civic *civic;
+			struct element_meas_loc_civic *civic;
 
-			civic = (struct element_meas_req_loc_civic *)
+			civic = (struct element_meas_loc_civic *)
 				    pkt_pull(pkt, sizeof(*civic));
 			if (civic == NULL)
 				return 0;
@@ -1898,9 +1926,9 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 				return 0;
 		}
 		else if(meas_req->type == 12) {
-			struct element_meas_req_loc_id *id;
+			struct element_meas_loc_id *id;
 
-			id = (struct element_meas_req_loc_id *)
+			id = (struct element_meas_loc_id *)
 				    pkt_pull(pkt, sizeof(*id));
 			if (id == NULL)
 				return 0;
@@ -1921,9 +1949,9 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 				return 0;
 		}
 		else if(meas_req->type == 255) {
-			struct element_meas_req_pause *pause;
+			struct element_meas_pause *pause;
 
-			pause = (struct element_meas_req_pause *)
+			pause = (struct element_meas_pause *)
 				    pkt_pull(pkt, sizeof(*pause));
 			if (pause == NULL)
 				return 0;
@@ -1952,17 +1980,420 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 
 static int8_t inf_meas_rep(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_meas_rep *meas_rep;
+
+	meas_rep = (struct element_meas_rep *) pkt_pull(pkt, sizeof(*meas_rep));
+	if (meas_rep == NULL)
+		return 0;
+
+	tprintf("Measurement Rep (%u, Len(%u)): ", *id, meas_rep->len);
+	if (len_lt_error(meas_rep->len, 3))
+		return 0;
+
+	tprintf("Token: %u, ", meas_rep->token);
+	tprintf("Rep Mode: 0x%x (Late (%u), Incapable(%u), Refused(%u), ",
+		meas_rep->rep_mode, meas_rep->rep_mode >> 7,
+		(meas_rep->rep_mode >> 6) & 0x1,
+		(meas_rep->rep_mode >> 5) & 0x1);
+	tprintf("Type: %s (%u), ", meas_type(meas_rep->type), meas_rep->type);
+
+	if(meas_rep->len > 3) {
+		if(meas_rep->type == 0) {
+			struct element_meas_basic *basic;
+
+			basic = (struct element_meas_basic *)
+				    pkt_pull(pkt, sizeof(*basic));
+			if (basic == NULL)
+				return 0;
+
+			if (!(meas_rep->len - 3 - sizeof(*basic))) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("Ch Nr: %uus, ", basic->ch_nr);
+			tprintf("Meas Start Time: %lu, ",
+				    le64_to_cpu(basic->start));
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(basic->dur) * TU);
+
+		}
+		else if(meas_rep->type == 1) {
+			struct element_meas_cca *cca;
+
+			cca = (struct element_meas_cca *)
+				    pkt_pull(pkt, sizeof(*cca));
+			if (cca == NULL)
+				return 0;
+
+			if (!(meas_rep->len - 3 - sizeof(*cca))) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("Ch Nr: %uus, ", cca->ch_nr);
+			tprintf("Meas Start Time: %lu, ",
+				    le64_to_cpu(cca->start));
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(cca->dur) * TU);
+		}
+		else if(meas_rep->type == 2) {
+			struct element_meas_rpi *rpi;
+
+			rpi = (struct element_meas_rpi *)
+				    pkt_pull(pkt, sizeof(*rpi));
+			if (rpi == NULL)
+				return 0;
+
+			if (!(meas_rep->len - 3 - sizeof(*rpi))) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("Ch Nr: %uus, ", rpi->ch_nr);
+			tprintf("Meas Start Time: %lu, ",
+				    le64_to_cpu(rpi->start));
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(rpi->dur) * TU);
+		}
+		else if(meas_rep->type == 3) {
+			struct element_meas_ch_load *ch_load;
+
+			ch_load = (struct element_meas_ch_load *)
+				    pkt_pull(pkt, sizeof(*ch_load));
+			if (ch_load == NULL)
+				return 0;
+
+			if ((meas_rep->len - 3 - sizeof(*ch_load)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("OP Class: %u, ", ch_load->op_class);
+			tprintf("Ch Nr: %u, ", ch_load->ch_nr);
+			tprintf("Rand Intv: %fs, ",
+				    le16_to_cpu(ch_load->rand_intv) * TU);
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(ch_load->dur) * TU);
+
+			if(!subelements(pkt,
+					  meas_rep->len - 3 - sizeof(*ch_load)))
+				return 0;
+		}
+		else if(meas_rep->type == 4) {
+			struct element_meas_noise *noise;
+
+			noise = (struct element_meas_noise *)
+				    pkt_pull(pkt, sizeof(*noise));
+			if (noise == NULL)
+				return 0;
+
+			if ((meas_rep->len - 3 - sizeof(*noise)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("OP Class: %u, ", noise->op_class);
+			tprintf("Ch Nr: %u, ", noise->ch_nr);
+			tprintf("Rand Intv: %fs, ",
+				    le16_to_cpu(noise->rand_intv) * TU);
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(noise->dur) * TU);
+
+			if(!subelements(pkt,
+					  meas_rep->len - 3 - sizeof(*noise)))
+				return 0;
+		}
+		else if(meas_rep->type == 5) {
+			struct element_meas_beacon *beacon;
+
+			beacon = (struct element_meas_beacon *)
+				    pkt_pull(pkt, sizeof(*beacon));
+			if (beacon == NULL)
+				return 0;
+
+			if ((meas_rep->len - 3 - sizeof(*beacon)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("OP Class: %u, ", beacon->op_class);
+			tprintf("Ch Nr: %u, ", beacon->ch_nr);
+			tprintf("Rand Intv: %fs, ",
+				    le16_to_cpu(beacon->rand_intv) * TU);
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(beacon->dur) * TU);
+			tprintf("Mode: %u, ", beacon->mode);
+			tprintf("BSSID: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x",
+				    beacon->bssid[0], beacon->bssid[1],
+				    beacon->bssid[2], beacon->bssid[3],
+				    beacon->bssid[4], beacon->bssid[5]);
+
+			if(!subelements(pkt,
+					  meas_rep->len - 3 - sizeof(*beacon)))
+				return 0;
+		}
+		else if(meas_rep->type == 6) {
+			struct element_meas_frame *frame;
+
+			frame = (struct element_meas_frame *)
+				    pkt_pull(pkt, sizeof(*frame));
+			if (frame == NULL)
+				return 0;
+
+			if ((meas_rep->len - 3 - sizeof(*frame)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("OP Class: %u, ", frame->op_class);
+			tprintf("Ch Nr: %u, ", frame->ch_nr);
+			tprintf("Rand Intv: %fs, ",
+				    le16_to_cpu(frame->rand_intv) * TU);
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(frame->dur) * TU);
+			tprintf("Request Type: %u, ", frame->frame);
+			tprintf("MAC Addr: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x",
+				    frame->mac[0], frame->mac[1],
+				    frame->mac[2], frame->mac[3],
+				    frame->mac[4], frame->mac[5]);
+
+			if(!subelements(pkt,
+					  meas_rep->len - 3 - sizeof(*frame)))
+				return 0;
+		}
+		else if(meas_rep->type == 7) {
+			struct element_meas_sta *sta;
+
+			sta = (struct element_meas_sta *)
+				    pkt_pull(pkt, sizeof(*sta));
+			if (sta == NULL)
+				return 0;
+
+			if ((meas_rep->len - 3 - sizeof(*sta)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("Peer MAC Addr: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x, ",
+				    sta->peer_mac[0], sta->peer_mac[1],
+				    sta->peer_mac[2], sta->peer_mac[3],
+				    sta->peer_mac[4], sta->peer_mac[5]);
+			tprintf("Rand Intv: %fs, ",
+				    le16_to_cpu(sta->rand_intv) * TU);
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(sta->dur) * TU);
+			tprintf("Group ID: %u, ", sta->group_id);
+
+			if(!subelements(pkt,
+					  meas_rep->len - 3 - sizeof(*sta)))
+				return 0;
+		}
+		else if(meas_rep->type == 8) {
+			struct element_meas_lci *lci;
+
+			lci = (struct element_meas_lci *)
+				    pkt_pull(pkt, sizeof(*lci));
+			if (lci == NULL)
+				return 0;
+
+			if ((meas_rep->len - 3 - sizeof(*lci)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("Location Subj: %u, ", lci->loc_subj);
+			tprintf("Latitude Req Res: %udeg",
+				    lci->latitude_req_res);
+			tprintf("Longitude Req Res: %udeg",
+				    lci->longitude_req_res);
+			tprintf("Altitude Req Res: %udeg",
+				    lci->altitude_req_res);
+
+			if(!subelements(pkt,
+					  meas_rep->len - 3 - sizeof(*lci)))
+				return 0;
+		}
+		else if(meas_rep->type == 9) {
+			struct element_meas_trans_str_cat *trans;
+
+			trans = (struct element_meas_trans_str_cat *)
+				    pkt_pull(pkt, sizeof(*trans));
+			if (trans == NULL)
+				return 0;
+
+			if ((meas_rep->len - 3 - sizeof(*trans)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("Rand Intv: %fs, ",
+				    le16_to_cpu(trans->rand_intv) * TU);
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(trans->dur) * TU);
+			tprintf("MAC Addr: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x, ",
+				trans->peer_sta_addr[0], trans->peer_sta_addr[1],
+				trans->peer_sta_addr[2], trans->peer_sta_addr[3],
+				trans->peer_sta_addr[4], trans->peer_sta_addr[5]);
+			tprintf("Traffic ID: %u, ", trans->traffic_id);
+			tprintf("Bin 0 Range: %u, ", trans->bin_0_range);
+
+			if(!subelements(pkt,
+					  meas_rep->len - 3 - sizeof(*trans)))
+				return 0;
+		}
+		else if(meas_rep->type == 10) {
+			struct element_meas_mcast_diag *mcast;
+
+			mcast = (struct element_meas_mcast_diag *)
+				    pkt_pull(pkt, sizeof(*mcast));
+			if (mcast == NULL)
+				return 0;
+
+			if ((meas_rep->len - 3 - sizeof(*mcast)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("Rand Intv: %fs, ",
+				    le16_to_cpu(mcast->rand_intv) * TU);
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(mcast->dur) * TU);
+			tprintf("Group MAC Addr: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x",
+				mcast->group_mac[0], mcast->group_mac[1],
+				mcast->group_mac[2], mcast->group_mac[3],
+				mcast->group_mac[4], mcast->group_mac[5]);
+
+			if(!subelements(pkt,
+					  meas_rep->len - 3 - sizeof(*mcast)))
+				return 0;
+		}
+		else if(meas_rep->type == 11) {
+			struct element_meas_loc_civic *civic;
+
+			civic = (struct element_meas_loc_civic *)
+				    pkt_pull(pkt, sizeof(*civic));
+			if (civic == NULL)
+				return 0;
+
+			if ((meas_rep->len - 3 - sizeof(*civic)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("Location Subj: %u, ", civic->loc_subj);
+			tprintf("Type: %u, ", civic->civic_loc);
+			tprintf("Srv Intv Units: %u, ",
+				    le16_to_cpu(civic->loc_srv_intv_unit));
+			tprintf("Srv Intv: %u, ", civic->loc_srv_intv);
+
+			if(!subelements(pkt,
+					  meas_rep->len - 3 - sizeof(*civic)))
+				return 0;
+		}
+		else if(meas_rep->type == 12) {
+			struct element_meas_loc_id *id;
+
+			id = (struct element_meas_loc_id *)
+				    pkt_pull(pkt, sizeof(*id));
+			if (id == NULL)
+				return 0;
+
+			if ((meas_rep->len - 3 - sizeof(*id)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("Location Subj: %u, ", id->loc_subj);
+			tprintf("Srv Intv Units: %u, ",
+				    le16_to_cpu(id->loc_srv_intv_unit));
+			tprintf("Srv Intv: %u", id->loc_srv_intv);
+
+			if(!subelements(pkt,
+					  meas_rep->len - 3 - sizeof(*id)))
+				return 0;
+		}
+		else {
+			tprintf("Length field indicates data,"
+			" but could not interpreted");
+			return 0;
+		}
+	}
+
+	return 1;
 }
 
 static int8_t inf_quiet(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_quiet *quiet;
+
+	quiet = (struct element_quiet *) pkt_pull(pkt, sizeof(*quiet));
+	if (quiet == NULL)
+		return 0;
+
+	tprintf("Quit (%u, Len(%u)): ", *id, quiet->len);
+	if (len_neq_error(quiet->len, 6))
+		return 0;
+
+	tprintf("Count: %ud, ", quiet->cnt);
+	tprintf("Period: %u, ", quiet->period);
+	tprintf("Duration: %fs, ", le16_to_cpu(quiet->dur) * TU);
+	tprintf("Offs: %fs", le16_to_cpu(quiet->offs) * TU);
+	
+
+	return 1;
 }
 
 static int8_t inf_ibss_dfs(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_ibss_dfs *ibss_dfs;
+	u8 i;
+
+	ibss_dfs = (struct element_ibss_dfs *) pkt_pull(pkt, sizeof(*ibss_dfs));
+	if (ibss_dfs == NULL)
+		return 0;
+
+	tprintf("IBSS DFS (%u, Len(%u)): ", *id, ibss_dfs->len);
+	if (len_lt_error(ibss_dfs->len, 7))
+		return 0;
+
+	tprintf("Owner: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x, ",
+		    ibss_dfs->owner[0], ibss_dfs->owner[1],
+		    ibss_dfs->owner[2], ibss_dfs->owner[3],
+		    ibss_dfs->owner[4], ibss_dfs->owner[5]);
+	tprintf("Recovery Intv: %u, ", ibss_dfs->rec_intv);
+
+	if((ibss_dfs->len - sizeof(*ibss_dfs) + 1) & 1) {
+		tprintf("Length of Channel Map should be modulo 2");
+		return 0;
+	}
+
+	for (i = 0; i < ibss_dfs->len; i += 2) {
+		struct element_ibss_dfs_tuple *ibss_dfs_tuple;
+
+		ibss_dfs_tuple = (struct element_ibss_dfs_tuple *)
+				    pkt_pull(pkt, sizeof(*ibss_dfs_tuple));
+		if (ibss_dfs_tuple == NULL)
+			return 0;
+
+		tprintf("Channel Nr: %u, ", ibss_dfs_tuple->ch_nr);
+		tprintf("Map: %u, ", ibss_dfs_tuple->map);
+	}
+
+	return 1;
 }
 
 static int8_t inf_erp(struct pkt_buff *pkt, u8 *id)
