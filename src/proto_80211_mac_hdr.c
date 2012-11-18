@@ -664,6 +664,16 @@ struct element_erp {
 	u8 param;
 } __packed;
 
+struct element_ts_del {
+	u8 len;
+	u32 delay;
+} __packed;
+
+struct element_tclas_proc {
+	u8 len;
+	u8 proc;
+} __packed;
+
 struct element_ext_supp_rates {
 	u8 len;
 	u8 rates[0];
@@ -2417,12 +2427,35 @@ static int8_t inf_erp(struct pkt_buff *pkt, u8 *id)
 
 static int8_t inf_ts_del(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_ts_del *ts_del;
+
+	ts_del = (struct element_ts_del *) pkt_pull(pkt, sizeof(*ts_del));
+	if (ts_del == NULL)
+		return 0;
+
+	tprintf("TS Delay (%u, Len(%u)): ", *id, ts_del->len);
+	if (len_neq_error(ts_del->len, 4))
+		return 0;
+	tprintf("Delay (%fs)", le32_to_cpu(ts_del->delay) * TU);
+
+	return 1;
 }
 
 static int8_t inf_tclas_proc(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_tclas_proc *tclas_proc;
+
+	tclas_proc = (struct element_tclas_proc *)
+			  pkt_pull(pkt, sizeof(*tclas_proc));
+	if (tclas_proc == NULL)
+		return 0;
+
+	tprintf("TCLAS Procesing (%u, Len(%u)): ", *id, tclas_proc->len);
+	if (len_neq_error(tclas_proc->len, 1))
+		return 0;
+	tprintf("Processing (%u)", tclas_proc->proc);
+
+	return 1;
 }
 
 static int8_t inf_ht_cap(struct pkt_buff *pkt, u8 *id)
