@@ -22,31 +22,31 @@ ETCDIR = $(PREFIX)/etc
 MAKEFLAGS += --no-print-directory -rR --warn-undefined-variables \
 	     --jobs=$(shell grep "^processor" /proc/cpuinfo | wc -l)
 
-CFLAGS = -fstack-protector \
-	 --param=ssp-buffer-size=4 \
-	 -fpie \
-	 -fno-strict-aliasing \
-	 -fexceptions \
-	 -fasynchronous-unwind-tables \
-	 -fno-delete-null-pointer-checks \
-	 -D_FORTIFY_SOURCE=2 \
-	 -D_REENTRANT \
-	 -D_FILE_OFFSET_BITS=64 \
-	 -D_LARGEFILE_SOURCE \
-	 -D_LARGEFILE64_SOURCE \
-	 -DVERSION_STRING=\"$(VERSION_STRING)\" \
-	 -std=gnu99 \
-	 -march=native \
-	 -mtune=native \
-	 -O3 \
-	 -g
+CFLAGS = -fstack-protector
+CFLAGS += --param=ssp-buffer-size=4
+CFLAGS += -fpie
+CFLAGS += -fno-strict-aliasing
+CFLAGS += -fexceptions
+CFLAGS += -fasynchronous-unwind-tables
+CFLAGS += -fno-delete-null-pointer-checks
+CFLAGS += -D_FORTIFY_SOURCE=2
+CFLAGS += -D_REENTRANT
+CFLAGS += -D_FILE_OFFSET_BITS=64
+CFLAGS += -D_LARGEFILE_SOURCE
+CFLAGS += -D_LARGEFILE64_SOURCE
+CFLAGS += -DVERSION_STRING=\"$(VERSION_STRING)\"
+CFLAGS += -std=gnu99
+CFLAGS += -march=native
+CFLAGS += -mtune=native
+CFLAGS += -O3
+CFLAGS += -g
 
-WFLAGS = -Wall \
-	 -Wmissing-prototypes \
-	 -Wdeclaration-after-statement \
-	 -Werror-implicit-function-declaration \
-	 -Wundef \
-	 -Wformat=2
+WFLAGS  = -Wall
+#WFLAGS += -Wmissing-prototypes
+#WFLAGS += -Wdeclaration-after-statement
+#WFLAGS += -Werror-implicit-function-declaration
+#WFLAGS += -Wundef
+WFLAGS += -Wformat=2
 
 CFLAGS += $(WFLAGS) -I.
 CPPFLAGS =
@@ -123,21 +123,19 @@ $(foreach tool,$(TOOLS),$(eval $(call TOOL_templ,$(tool))))
 
 netsniff-ng: ALL_CFLAGS += -I$(INCDIR)/libnl3/ \
 			   -Wstrict-prototypes \
-			   -Wframe-larger-than=2048 \
 			   -D__WITH_PROTOS \
 			   #-D__WITH_HARDWARE_TIMESTAMPING
 trafgen: ALL_CFLAGS += -I.. -I$(INCDIR)/libnl3/ \
 		       -Wstrict-prototypes \
-		       -Wframe-larger-than=2048 \
 		       -D__WITH_PROTOS \
 		       #-D__WITH_HARDWARE_TIMESTAMPING
 trafgen_clean_custom:
 	@rm $(BUILD_DIR)/*.h $(BUILD_DIR)/*.c
-astraceroute: ALL_CFLAGS += -Wstrict-prototypes -Wframe-larger-than=2048
-flowtop: ALL_CFLAGS += -Wstrict-prototypes -Wframe-larger-than=2048
-ifpps: ALL_CFLAGS += -Wstrict-prototypes -Wframe-larger-than=2048
-bpfc: ALL_CFLAGS += -I.. -Wstrict-prototypes -Wframe-larger-than=2048
-curvetun: ALL_CFLAGS += -Wstrict-prototypes -Wframe-larger-than=2048
+astraceroute: ALL_CFLAGS += -Wstrict-prototypes
+flowtop: ALL_CFLAGS += -Wstrict-prototypes
+ifpps: ALL_CFLAGS += -Wstrict-prototypes
+bpfc: ALL_CFLAGS += -I.. -Wstrict-prototypes
+curvetun: ALL_CFLAGS += -Wstrict-prototypes
 
 $(TOOLS):
 	$(LD) $(ALL_LDFLAGS) -o $@/$@ $@/*.o $($@-libs)
