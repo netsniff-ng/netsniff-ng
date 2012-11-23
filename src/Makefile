@@ -12,6 +12,9 @@ TOOLS = netsniff-ng trafgen astraceroute flowtop ifpps mausezahn bpfc curvetun
 # For packaging purposes, prefix can define a different path.
 PREFIX ?=
 
+# Disable if you don't want it
+CCACHE = ccache
+
 # Location of installation paths.
 BINDIR = $(PREFIX)/usr/bin
 SBINDIR = $(PREFIX)/usr/sbin
@@ -19,9 +22,12 @@ INCDIR = $(PREFIX)/usr/include
 ETCDIR = $(PREFIX)/etc
 
 # Shut up make, helper warnings, parallel compilation!
-MAKEFLAGS += --no-print-directory -rR --warn-undefined-variables \
-	     --jobs=$(shell grep "^processor" /proc/cpuinfo | wc -l)
+MAKEFLAGS += --no-print-directory
+MAKEFLAGS += -rR
+MAKEFLAGS += --warn-undefined-variables
+MAKEFLAGS += --jobs=$(shell grep "^processor" /proc/cpuinfo | wc -l)
 
+# For packaging purposes, you might want to disable O3+arch tuning
 CFLAGS = -fstack-protector
 CFLAGS += --param=ssp-buffer-size=4
 CFLAGS += -fpie
@@ -41,11 +47,15 @@ CFLAGS += -mtune=native
 CFLAGS += -O3
 CFLAGS += -g
 
+# Should be commented in after the mausezahn mess is cleaned
 WFLAGS  = -Wall
 #WFLAGS += -Wmissing-prototypes
 #WFLAGS += -Wdeclaration-after-statement
 #WFLAGS += -Werror-implicit-function-declaration
 #WFLAGS += -Wundef
+#WFLAGS += -Wstrict-prototypes
+#WFLAGS += -Wunused-but-set-variable
+#WFLAGS += -Werror
 WFLAGS += -Wformat=2
 
 CFLAGS += $(WFLAGS) -I.
@@ -62,8 +72,8 @@ TARGET_ARCH =
 LEX_FLAGS =
 YAAC_FLAGS =
 
-LD = @echo -e "  LD\t$@" && $(CROSS_COMPILE)gcc
-CCNQ = $(CROSS_COMPILE)gcc
+LD = @echo -e "  LD\t$@" && $(CCACHE) $(CROSS_COMPILE)gcc
+CCNQ = $(CCACHE) $(CROSS_COMPILE)gcc
 CC = @echo -e "  CC\t$<" && $(CCNQ)
 RM = @echo -e "  EXEC\t$@" && rm
 MKDIR = @echo -e "  MKDIR\t$@" && mkdir
@@ -94,21 +104,24 @@ clean_showinfo:
 %.o: %.c
 	$(CC) $(ALL_CFLAGS) -o $(BUILD_DIR)/$(shell basename $< .c).o -c $<
 
-.PHONY: all
+.PHONY: all $(TOOLS) %.o %.c clean %_prehook %_distclean %_clean %_install
 .DEFAULT_GOAL := all
+.IGNORE: %_clean_custom
+.NOTPARALLEL: $(TOOLS)
 
 all: build_showinfo toolkit
 toolkit: $(TOOLS)
 clean mostlyclean: $(foreach tool,$(TOOLS),$(tool)_clean)
 realclean distclean clobber: $(foreach tool,$(TOOLS),$(tool)_distclean)
 
+# Tool template
 define TOOL_templ
   include $(1)/Makefile
   $(1) $(1)%: BUILD_DIR := $(1)
   $(1)_prehook:
 	@echo "$(bold)Building $(1):$(normal)"
   $(1): $(1)_prehook $$($(1)-lex) $$($(1)-yaac) $$($(1)-objs) $$($(1)-libs)
-  $(1)_clean: $(1)_clean_custom
+  $(1)_clean:
 	@rm -rf $$(BUILD_DIR)/*.o $$(BUILD_DIR)/$(1)
   $(1)_install:
 	@install -D $$(BUILD_DIR)/$(1) $$(SBINDIR)/$(1)
@@ -118,24 +131,16 @@ endef
 
 $(foreach tool,$(TOOLS),$(eval $(call TOOL_templ,$(tool))))
 
-# Target specific additions ... will become less redundant when 
-# mausezahn is cleaned up
-
+# Target specific additions ...
 netsniff-ng: ALL_CFLAGS += -I$(INCDIR)/libnl3/ \
-			   -Wstrict-prototypes \
 			   -D__WITH_PROTOS \
 			   #-D__WITH_HARDWARE_TIMESTAMPING
 trafgen: ALL_CFLAGS += -I.. -I$(INCDIR)/libnl3/ \
-		       -Wstrict-prototypes \
 		       -D__WITH_PROTOS \
 		       #-D__WITH_HARDWARE_TIMESTAMPING
-trafgen_clean_custom:
-	@rm $(BUILD_DIR)/*.h $(BUILD_DIR)/*.c
-astraceroute: ALL_CFLAGS += -Wstrict-prototypes
-flowtop: ALL_CFLAGS += -Wstrict-prototypes
-ifpps: ALL_CFLAGS += -Wstrict-prototypes
-bpfc: ALL_CFLAGS += -I.. -Wstrict-prototypes
-curvetun: ALL_CFLAGS += -Wstrict-prototypes
+#trafgen_clean_custom:
+#	@rm $(BUILD_DIR)/*.h $(BUILD_DIR)/*.c
+bpfc: ALL_CFLAGS += -I..
 
 $(TOOLS):
 	$(LD) $(ALL_LDFLAGS) -o $@/$@ $@/*.o $($@-libs)
