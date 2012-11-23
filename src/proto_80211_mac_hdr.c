@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <netinet/in.h>    /* for ntohs() */
 #include <asm/byteorder.h>
+#include <arpa/inet.h>     /* for inet_ntop() */
 
 #include "proto.h"
 #include "protos.h"
@@ -354,12 +355,323 @@ struct element_tspec {
 struct element_tclas {
 	u8 len;
 	u8 user_priority;
-	u8 frame_class[0];
+	u8 frm_class[0];
+} __packed;
+
+struct element_tclas_frm_class {
+	u8 type;
+	u8 mask;
+	u8 param[0];
+} __packed;
+
+struct element_tclas_type0 {
+	u8 sa[6];
+	u8 da[6];
+	u16 type;
+} __packed;
+
+struct element_tclas_type1 {
+	u8 version;
+	u8 subparam[0];
+} __packed;
+
+struct element_tclas_type1_ip4 {
+	u32 sa;
+	u32 da;
+	u16 sp;
+	u16 dp;
+	u8 dscp;
+	u8 proto;
+	u8 reserved;
+} __packed;
+
+struct element_tclas_type1_ip6 {
+	struct in6_addr sa;
+	struct in6_addr da;
+	u16 sp;
+	u16 dp;
+	union {
+		u8 flow_label[3];
+		struct {
+#if defined(__LITTLE_ENDIAN_BITFIELD)
+		__extension__ u8  flow_label3:8;
+		__extension__ u8  flow_label2:8;
+		__extension__ u8  flow_label1:8;
+#elif defined(__BIG_ENDIAN_BITFIELD)
+		__extension__ u8  flow_label1:8;
+		__extension__ u8  flow_label2:8;
+		__extension__ u8  flow_label3:8;
+
+# error  "Adjust your <asm/byteorder.h> defines"
+#endif
+		};
+	};
+} __packed;
+
+struct element_tclas_type2 {
+	u16 vlan_tci;
+} __packed;
+
+struct element_tclas_type3 {
+	u16 offs;
+	u8 value[0];
+	u8 mask[0];
+} __packed;
+
+struct element_tclas_type4 {
+	u8 version;
+	u8 subparam[0];
+} __packed;
+
+struct element_tclas_type4_ip4 {
+	u32 sa;
+	u32 da;
+	u16 sp;
+	u16 dp;
+	u8 dscp;
+	u8 proto;
+	u8 reserved;
+} __packed;
+
+struct element_tclas_type4_ip6 {
+	struct in6_addr sa;
+	struct in6_addr da;
+	u16 sp;
+	u16 dp;
+	u8 dscp;
+	u8 nxt_hdr;
+	union {
+		u8 flow_label[3];
+		struct {
+#if defined(__LITTLE_ENDIAN_BITFIELD)
+		__extension__ u8  flow_label3:8;
+		__extension__ u8  flow_label2:8;
+		__extension__ u8  flow_label1:8;
+#elif defined(__BIG_ENDIAN_BITFIELD)
+		__extension__ u8  flow_label1:8;
+		__extension__ u8  flow_label2:8;
+		__extension__ u8  flow_label3:8;
+
+# error  "Adjust your <asm/byteorder.h> defines"
+#endif
+		};
+	};
+} __packed;
+
+struct element_tclas_type5 {
+	u8 pcp;
+	u8 cfi;
+	u8 vid;
+} __packed;
+
+struct element_schedule {
+	u8 len;
+	u16 inf;
+	u32 start;
+	u32 serv_intv;
+	u16 spec_intv;
+} __packed;
+
+struct element_chall_txt {
+	u8 len;
+	u8 chall_txt[0];
+} __packed;
+
+struct element_pwr_constr {
+	u8 len;
+	u8 local_pwr_constr;
+} __packed;
+
+struct element_pwr_cap {
+	u8 len;
+	u8 min_pwr_cap;
+	u8 max_pwr_cap;
+} __packed;
+
+struct element_tpc_req {
+	u8 len;
+} __packed;
+
+struct element_tpc_rep {
+	u8 len;
+	u8 trans_pwr;
+	u8 link_marg;
+} __packed;
+
+struct element_supp_ch {
+	u8 len;
+	u8 first_ch_nr[0];
+	u8 nr_ch[0];
+} __packed;
+
+struct element_supp_ch_tuple {
+	u8 first_ch_nr;
+	u8 nr_ch;
+} __packed;
+
+struct element_ch_sw_ann {
+	u8 len;
+	u8 switch_mode;
+	u8 new_nr;
+	u8 switch_cnt;
+} __packed;
+
+struct element_meas_basic {
+	u8 ch_nr;
+	u64 start;
+	u16 dur;
+} __packed;
+
+struct element_meas_cca {
+	u8 ch_nr;
+	u64 start;
+	u16 dur;
+} __packed;
+
+struct element_meas_rpi {
+	u8 ch_nr;
+	u64 start;
+	u16 dur;
+} __packed;
+
+struct element_meas_ch_load {
+	u8 op_class;
+	u8 ch_nr;
+	u16 rand_intv;
+	u16 dur;
+	u8 sub[0];
+} __packed;
+
+struct element_meas_noise {
+	u8 op_class;
+	u8 ch_nr;
+	u16 rand_intv;
+	u16 dur;
+	u8 sub[0];
+} __packed;
+
+struct element_meas_beacon {
+	u8 op_class;
+	u8 ch_nr;
+	u16 rand_intv;
+	u16 dur;
+	u8 mode;
+	u8 bssid[6];
+	u8 sub[0];
+} __packed;
+
+struct element_meas_frame {
+	u8 op_class;
+	u8 ch_nr;
+	u16 rand_intv;
+	u16 dur;
+	u8 frame;
+	u8 mac[6];
+	u8 sub[0];
+} __packed;
+
+struct element_meas_sta {
+	u8 peer_mac[6];
+	u16 rand_intv;
+	u16 dur;
+	u8 group_id;
+	u8 sub[0];
+} __packed;
+
+struct element_meas_lci {
+	u8 loc_subj;
+	u8 latitude_req_res;
+	u8 longitude_req_res;
+	u8 altitude_req_res;
+	u8 sub[0];
+} __packed;
+
+struct element_meas_trans_str_cat {
+	u16 rand_intv;
+	u16 dur;
+	u8 peer_sta_addr[6];
+	u8 traffic_id;
+	u8 bin_0_range;
+	u8 sub[0];
+} __packed;
+
+struct element_meas_mcast_diag {
+	u16 rand_intv;
+	u16 dur;
+	u8 group_mac[6];
+	u8 mcast_triggered[0];
+	u8 sub[0];
+} __packed;
+
+struct element_meas_loc_civic {
+	u8 loc_subj;
+	u8 civic_loc;
+	u8 loc_srv_intv_unit;
+	u16 loc_srv_intv;
+	u8 sub[0];
+} __packed;
+
+struct element_meas_loc_id {
+	u8 loc_subj;
+	u8 loc_srv_intv_unit;
+	u16 loc_srv_intv;
+	u8 sub[0];
+} __packed;
+
+struct element_meas_pause {
+	u8 time;
+	u8 sub[0];
+} __packed;
+
+struct element_meas_req {
+	u8 len;
+	u8 token;
+	u8 req_mode;
+	u8 type;
+	u8 req[0];
+} __packed;
+
+struct element_meas_rep {
+	u8 len;
+	u8 token;
+	u8 rep_mode;
+	u8 type;
+	u8 rep[0];
+} __packed;
+
+struct element_quiet {
+	u8 len;
+	u8 cnt;
+	u8 period;
+	u16 dur;
+	u16 offs;
+} __packed;
+
+struct element_ibss_dfs {
+	u8 len;
+	u8 owner[6];
+	u8 rec_intv;
+	u8 ch_map[0];
+} __packed;
+
+struct element_ibss_dfs_tuple {
+	u8 ch_nr;
+	u8 map;
 } __packed;
 
 struct element_erp {
 	u8 len;
 	u8 param;
+} __packed;
+
+struct element_ts_del {
+	u8 len;
+	u32 delay;
+} __packed;
+
+struct element_tclas_proc {
+	u8 len;
+	u8 proc;
 } __packed;
 
 struct element_ext_supp_rates {
@@ -383,9 +695,9 @@ static int8_t len_neq_error(u8 len, u8 intended)
 	return 0;
 }
 
-static int8_t len_gt_error(u8 len, u8 intended)
+static int8_t len_lt_error(u8 len, u8 intended)
 {
-	if(intended > len) {
+	if(len < intended) {
 		tprintf("Length should be greater %u Bytes", intended);
 		return 1;
 	}
@@ -420,6 +732,47 @@ static float data_rates(u8 id)
 	}
 
 	return 0.f;
+}
+
+struct subelement {
+	u8 id;
+	u8 len;
+	u8 data[0];
+} __packed;
+
+
+static int8_t subelements(struct pkt_buff *pkt, u8 len)
+{
+	u8 i, j;
+	u8 *data;
+	
+	for (i=0; i<len;) {
+		struct subelement *sub;
+
+		sub = (struct subelement *) pkt_pull(pkt, sizeof(*sub));
+		if (sub == NULL)
+			return 0;
+
+		tprintf(", Subelement ID %u, ", sub->id);
+		tprintf("Length %u, ", sub->len);
+
+		data = pkt_pull(pkt, sub->len);
+		if (data == NULL)
+			return 0;
+
+		tprintf("Data: 0x");
+		for(j=0; j < sub->len; j++)
+			tprintf("%.2x ", data[j]);
+
+		i += sub->len + 1;
+	}
+
+	if (i != len) {
+		tprintf("Length error");
+		return 0;
+	}
+
+      return 1;
 }
 
 static int8_t inf_reserved(struct pkt_buff *pkt, u8 *id)
@@ -483,7 +836,7 @@ static int8_t inf_supp_rates(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("Rates (%u, Len (%u)): ", *id, supp_rates->len);
-	if (len_gt_error(supp_rates->len, 1))
+	if (len_lt_error(supp_rates->len, 1))
 		return 0;
 
 	if ((supp_rates->len - sizeof(*supp_rates) + 1) > 0) {
@@ -564,7 +917,7 @@ static int8_t inf_tim(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("TIM (%u, Len(%u)): ", *id, tim->len);
-	if (len_gt_error(tim->len, 3))
+	if (len_lt_error(tim->len, 3))
 		return 0;
 	tprintf("DTIM Count: %u, ", tim->dtim_cnt);
 	tprintf("DTIM Period: %u, ", tim->dtim_period);
@@ -609,7 +962,7 @@ static int8_t inf_country(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("Country (%u, Len(%u)): ", *id, country->len);
-	if (len_gt_error(country->len, 6))
+	if (len_lt_error(country->len, 6))
 		return 0;
 	tprintf("Country String: %c%c%c", country->country_first,
 		country->country_sec, country->country_third);
@@ -671,7 +1024,7 @@ static int8_t inf_hop_pt(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	tprintf("Hopping Pattern Table (%u, Len(%u)): ", *id, hop_pt->len);
-	if (len_gt_error(hop_pt->len, 4))
+	if (len_lt_error(hop_pt->len, 4))
 		return 0;
 	tprintf("Flag: %u, ", hop_pt->flag);
 	tprintf("Nr of Sets: %u, ", hop_pt->nr_sets);
@@ -825,87 +1178,1232 @@ static int8_t inf_tspec(struct pkt_buff *pkt, u8 *id)
 	tprintf("Minimum PHY Rate: %ub/s, ", le32_to_cpu(tspec->min_phy_rate));
 	tprintf("Surplus Bandwidth: %u.%u, ", surplus_bandw_allow >> 13,
 		surplus_bandw_allow & 0x1FFF);
-	tprintf("Medium Time: %uus, ", le16_to_cpu(tspec->med_time) * 32);
+	tprintf("Medium Time: %uus", le16_to_cpu(tspec->med_time) * 32);
 
 	return 1;
+}
+
+static const char *class_type(u8 type)
+{
+	switch (type) {
+	case   0: return "Ethernet parameters";
+	case   1: return "TCP/UDP IP parameters";
+	case   2: return "IEEE 802.1Q parameters";
+	case   3: return "Filter Offset parameters";
+	case   4: return "IP and higher layer parameters";
+	case   5: return "IEEE 802.1D/Q parameters";
+	default: return "Reserved";
+	}
 }
 
 static int8_t inf_tclas(struct pkt_buff *pkt, u8 *id)
 {
 	struct element_tclas *tclas;
+	struct element_tclas_frm_class *frm_class;
 
 	tclas =	(struct element_tclas *) pkt_pull(pkt, sizeof(*tclas));
 	if (tclas == NULL)
 		return 0;
 
+	frm_class = (struct element_tclas_frm_class *)
+				pkt_pull(pkt, sizeof(*frm_class));
+	if (frm_class == NULL)
+		return 0;
+
 	tprintf("TCLAS (%u, Len(%u)): ", *id, tclas->len);
-	if (len_gt_error(tclas->len, 1))
+	if (len_lt_error(tclas->len, 3))
 		return 0;
 	tprintf("User Priority: %u, ", tclas->user_priority);
+	tprintf("Classifier Type: %s (%u), ", class_type(frm_class->type),
+						  frm_class->type);
+	tprintf("Classifier Mask: 0x%x, ", frm_class->mask);
 
-	/*TODO add Classifier p.574*/
+	if(frm_class->type == 0) {
+		struct element_tclas_type0 *type0;
+		
+		type0 =	(struct element_tclas_type0 *)
+				  pkt_pull(pkt, sizeof(*type0));
+		if (type0 == NULL)
+			return 0;
+		
+		/* I think little endian, like the rest */
+		tprintf("Src Addr: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x, ",
+		type0->sa[5], type0->sa[4], type0->sa[3],
+		type0->sa[2], type0->sa[1], type0->sa[0]);
+		tprintf("Dst Addr: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x, ",
+		type0->da[5], type0->da[4], type0->da[3],
+		type0->da[2], type0->da[1], type0->da[0]);
+		tprintf("Type: 0x%x", le16_to_cpu(type0->type));
+	}
+	else if(frm_class->type == 1) {
+		struct element_tclas_type1 *type1;
+		
+		type1 =	(struct element_tclas_type1 *)
+				  pkt_pull(pkt, sizeof(*type1));
+		if (type1 == NULL)
+			return 0;
+		
+		tprintf("Version: %u, ", type1->version);
+		/* big endian format follows */
+		if(type1->version == 4) {
+			struct element_tclas_type1_ip4 *type1_ip4;
+			char src_ip[INET_ADDRSTRLEN];
+			char dst_ip[INET_ADDRSTRLEN];
+			 
+			type1_ip4 = (struct element_tclas_type1_ip4 *)
+					  pkt_pull(pkt, sizeof(*type1_ip4));
+			if (type1_ip4 == NULL)
+				return 0;
 
-	return 0;
+			inet_ntop(AF_INET, &type1_ip4->sa, src_ip, sizeof(src_ip));
+			inet_ntop(AF_INET, &type1_ip4->da, dst_ip, sizeof(dst_ip));
+			 
+			tprintf("Src IP: %s, ", src_ip);
+			tprintf("Dst IP: %s, ", dst_ip);
+			tprintf("Src Port: %u, ", ntohs(type1_ip4->sp));
+			tprintf("Dst Port: %u, ", ntohs(type1_ip4->dp));
+			tprintf("DSCP: 0x%x, ", type1_ip4->dscp);
+			tprintf("Proto: %u, ", type1_ip4->proto);
+			tprintf("Res: 0x%x", type1_ip4->reserved);
+		}
+		else if(type1->version == 6) {
+			struct element_tclas_type1_ip6 *type1_ip6;
+			char src_ip[INET6_ADDRSTRLEN];
+			char dst_ip[INET6_ADDRSTRLEN];
+
+			type1_ip6 = (struct element_tclas_type1_ip6 *)
+					  pkt_pull(pkt, sizeof(*type1_ip6));
+			if (type1_ip6 == NULL)
+				return 0;
+
+			inet_ntop(AF_INET6, &type1_ip6->sa,
+				  src_ip, sizeof(src_ip));
+			inet_ntop(AF_INET6, &type1_ip6->da,
+				  dst_ip, sizeof(dst_ip));
+
+			tprintf("Src IP: %s, ", src_ip);
+			tprintf("Dst IP: %s, ", dst_ip);
+			tprintf("Src Port: %u, ", ntohs(type1_ip6->sp));
+			tprintf("Dst Port: %u, ", ntohs(type1_ip6->dp));
+			tprintf("Flow Label: 0x%x%x%x", type1_ip6->flow_label1,
+				type1_ip6->flow_label2, type1_ip6->flow_label3);
+		}
+		else {
+			tprintf("Version (%u) not supported", type1->version);
+			return 0;
+		}
+		  
+	}
+	else if(frm_class->type == 2) {
+		struct element_tclas_type2 *type2;
+
+		type2 =	(struct element_tclas_type2 *)
+				  pkt_pull(pkt, sizeof(*type2));
+		if (type2 == NULL)
+			return 0;
+
+		tprintf("802.1Q VLAN TCI: 0x%x", ntohs(type2->vlan_tci));
+	}
+	else if(frm_class->type == 3) {
+		struct element_tclas_type3 *type3;
+		u8 len, i;
+		u8 *val;
+
+		type3 =	(struct element_tclas_type3 *)
+				  pkt_pull(pkt, sizeof(*type3));
+		if (type3 == NULL)
+			return 0;
+
+		len = (tclas->len - 5) / 2;
+
+		tprintf("Filter Offset: %u, ", type3->offs);
+		
+		if((len & 1) || (len_lt_error(tclas->len, 5))) {
+			tprintf("Length of TCLAS (%u) not correct", tclas->len);
+			return 0;
+		}
+		else {
+			val = pkt_pull(pkt, len);
+			if (val == NULL)
+				return 0;
+
+			tprintf("Filter Value: 0x");
+			for (i = 0; i < len / 2; i++)
+				tprintf("%x ", val[i]);
+			tprintf(", ");
+			tprintf("Filter Mask: 0x");
+			for (i = len / 2; i < len; i++)
+				tprintf("%x ", val[i]);
+		}
+		
+	}
+	else if(frm_class->type == 4) {
+		struct element_tclas_type4 *type4;
+
+		type4 =	(struct element_tclas_type4 *)
+				  pkt_pull(pkt, sizeof(*type4));
+		if (type4 == NULL)
+			return 0;
+
+		tprintf("Version: %u, ", type4->version);
+		/* big endian format follows */
+		if(type4->version == 4) {
+			struct element_tclas_type4_ip4 *type4_ip4;
+			char src_ip[INET_ADDRSTRLEN];
+			char dst_ip[INET_ADDRSTRLEN];
+
+			type4_ip4 = (struct element_tclas_type4_ip4 *)
+					  pkt_pull(pkt, sizeof(*type4_ip4));
+			if (type4_ip4 == NULL)
+				return 0;
+
+			inet_ntop(AF_INET, &type4_ip4->sa, src_ip, sizeof(src_ip));
+			inet_ntop(AF_INET, &type4_ip4->da, dst_ip, sizeof(dst_ip));
+
+			tprintf("Src IP: %s, ", src_ip);
+			tprintf("Dst IP: %s, ", dst_ip);
+			tprintf("Src Port: %u, ", ntohs(type4_ip4->sp));
+			tprintf("Dst Port: %u, ", ntohs(type4_ip4->dp));
+			tprintf("DSCP: 0x%x, ", type4_ip4->dscp);
+			tprintf("Proto: %u, ", type4_ip4->proto);
+			tprintf("Res: 0x%x", type4_ip4->reserved);
+		}
+		else if(type4->version == 6) {
+			struct element_tclas_type4_ip6 *type4_ip6;
+			char src_ip[INET6_ADDRSTRLEN];
+			char dst_ip[INET6_ADDRSTRLEN];
+
+			type4_ip6 = (struct element_tclas_type4_ip6 *)
+					  pkt_pull(pkt, sizeof(*type4_ip6));
+			if (type4_ip6 == NULL)
+				return 0;
+
+			inet_ntop(AF_INET6, &type4_ip6->sa,
+				  src_ip, sizeof(src_ip));
+			inet_ntop(AF_INET6, &type4_ip6->da,
+				  dst_ip, sizeof(dst_ip));
+
+			tprintf("Src IP: %s, ", src_ip);
+			tprintf("Dst IP: %s, ", dst_ip);
+			tprintf("Src Port: %u, ", ntohs(type4_ip6->sp));
+			tprintf("Dst Port: %u, ", ntohs(type4_ip6->dp));
+			tprintf("DSCP: 0x%x, ", type4_ip6->dscp);
+			tprintf("Nxt Hdr: %u, ", type4_ip6->nxt_hdr);
+			tprintf("Flow Label: 0x%x%x%x", type4_ip6->flow_label1,
+				type4_ip6->flow_label2, type4_ip6->flow_label3);
+		}
+		else {
+			tprintf("Version (%u) not supported", type4->version);
+			return 0;
+		}
+	}
+	else if(frm_class->type == 5) {
+		struct element_tclas_type5 *type5;
+
+		type5 =	(struct element_tclas_type5 *)
+				  pkt_pull(pkt, sizeof(*type5));
+		if (type5 == NULL)
+			return 0;
+
+		tprintf("802.1Q PCP: 0x%x, ", type5->pcp);
+		tprintf("802.1Q CFI: 0x%x, ", type5->cfi);
+		tprintf("802.1Q VID: 0x%x", type5->vid);
+	}
+	else {
+		tprintf("Classifier Type (%u) not supported", frm_class->type);
+		return 0;
+	}
+
+	return 1;
 }
 
 static int8_t inf_sched(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_schedule *schedule;
+	u16 info;
+
+	schedule = (struct element_schedule *) pkt_pull(pkt, sizeof(*schedule));
+	if (schedule == NULL)
+		return 0;
+
+	info = le16_to_cpu(schedule->inf);
+
+	tprintf("Schedule (%u, Len(%u)): ", *id, schedule->len);
+	if (len_neq_error(schedule->len, 12))
+		return 0;
+	
+	tprintf("Aggregation: %u, ", info >> 15);
+	tprintf("TSID: %u, ", (info >> 11) & 0xF);
+	tprintf("Direction: %u, ", (info >> 9) & 0x3);
+	tprintf("Res: %u, ", info & 0x1FF);
+	tprintf("Serv Start Time: %uus, ", le32_to_cpu(schedule->start));
+	tprintf("Serv Interval: %uus, ", le32_to_cpu(schedule->serv_intv));
+	tprintf("Spec Interval: %fs", le32_to_cpu(schedule->spec_intv) * TU);
+
+	return 1;
 }
 
 static int8_t inf_chall_txt(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_chall_txt *chall_txt;
+	u8 i;
+	u8 *txt;
+
+	chall_txt = (struct element_chall_txt *)
+			pkt_pull(pkt, sizeof(*chall_txt));
+	if (chall_txt == NULL)
+		return 0;
+
+	tprintf("Challenge Text (%u, Len(%u)): ", *id, chall_txt->len);
+	if ((chall_txt->len - sizeof(*chall_txt) + 1) > 0) {
+		txt = pkt_pull(pkt, (chall_txt->len - sizeof(*chall_txt) + 1));
+		if (txt == NULL)
+			return 0;
+
+		tprintf("0x");
+		for (i = 0; i < (chall_txt->len - sizeof(*chall_txt) + 1); i++)
+			tprintf("%x ", txt[i]);
+	}
+
+	return 1;
 }
 
 static int8_t inf_pwr_constr(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_pwr_constr *pwr_constr;
+
+	pwr_constr = (struct element_pwr_constr *) pkt_pull(pkt, sizeof(*pwr_constr));
+	if (pwr_constr == NULL)
+		return 0;
+
+	tprintf("Power Constraint (%u, Len(%u)): ", *id, pwr_constr->len);
+	if (len_neq_error(pwr_constr->len, 1))
+		return 0;
+
+	tprintf("Local Power Constraint: %udB", pwr_constr->local_pwr_constr);
+
+	return 1;
 }
 
 static int8_t inf_pwr_cap(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_pwr_cap *pwr_cap;
+
+	pwr_cap = (struct element_pwr_cap *) pkt_pull(pkt, sizeof(*pwr_cap));
+	if (pwr_cap == NULL)
+		return 0;
+
+	tprintf("Power Capability (%u, Len(%u)): ", *id, pwr_cap->len);
+	if (len_neq_error(pwr_cap->len, 2))
+		return 0;
+
+	tprintf("Min. Transm. Pwr Cap.: %ddBm, ", (int8_t)pwr_cap->min_pwr_cap);
+	tprintf("Max. Transm. Pwr Cap.: %ddBm", (int8_t)pwr_cap->max_pwr_cap);
+
+	return 1;
 }
 
 static int8_t inf_tpc_req(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_tpc_req *tpc_req;
+
+	tpc_req = (struct element_tpc_req *) pkt_pull(pkt, sizeof(*tpc_req));
+	if (tpc_req == NULL)
+		return 0;
+
+	tprintf("TPC Request (%u, Len(%u))", *id, tpc_req->len);
+	if (len_neq_error(tpc_req->len, 0))
+		return 0;
+
+	return 1;
 }
 
 static int8_t inf_tpc_rep(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_tpc_rep *tpc_rep;
+
+	tpc_rep = (struct element_tpc_rep *) pkt_pull(pkt, sizeof(*tpc_rep));
+	if (tpc_rep == NULL)
+		return 0;
+
+	tprintf("TPC Report (%u, Len(%u)): ", *id, tpc_rep->len);
+	if (len_neq_error(tpc_rep->len, 2))
+		return 0;
+
+	tprintf("Transmit Power: %udBm, ", (int8_t)tpc_rep->trans_pwr);
+	tprintf("Link Margin: %udB", (int8_t)tpc_rep->trans_pwr);
+
+	return 1;
 }
 
 static int8_t inf_supp_ch(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_supp_ch *supp_ch;
+	u8 i;
+
+	supp_ch = (struct element_supp_ch *) pkt_pull(pkt, sizeof(*supp_ch));
+	if (supp_ch == NULL)
+		return 0;
+
+	tprintf("Supp Channels (%u, Len(%u)): ", *id, supp_ch->len);
+	if (len_lt_error(supp_ch->len, 2))
+		return 0;
+
+	if(supp_ch->len & 1) {
+		tprintf("Length should be modulo 2");
+		return 0;
+	}
+  
+	for (i = 0; i < supp_ch->len; i += 2) {
+		struct element_supp_ch_tuple *supp_ch_tuple;
+
+		supp_ch_tuple = (struct element_supp_ch_tuple *)
+				    pkt_pull(pkt, sizeof(*supp_ch_tuple));
+		if (supp_ch_tuple == NULL)
+			return 0;
+
+		tprintf("First Channel Nr: %u, ", supp_ch_tuple->first_ch_nr);
+		tprintf("Nr of Channels: %u, ", supp_ch_tuple->nr_ch);
+	}
+
+	return 1;
 }
 
 static int8_t inf_ch_sw_ann(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_ch_sw_ann *ch_sw_ann;
+
+	ch_sw_ann = (struct element_ch_sw_ann *)
+			pkt_pull(pkt, sizeof(*ch_sw_ann));
+	if (ch_sw_ann == NULL)
+		return 0;
+
+	tprintf("Channel Switch Announc (%u, Len(%u)): ", *id, ch_sw_ann->len);
+	if (len_neq_error(ch_sw_ann->len, 3))
+		return 0;
+
+	tprintf("Switch Mode: %u, ", ch_sw_ann->switch_mode);
+	tprintf("New Nr: %u, ", ch_sw_ann->new_nr);
+	tprintf("Switch Count: %u", ch_sw_ann->switch_cnt);
+
+	return 1;
+}
+
+static const char *meas_type(u8 type)
+{
+	switch (type) {
+	case   0: return "Basic";
+	case   1: return "Clear Channel assesment (CCA)";
+	case   2: return "Receive power indication (RPI) histogram";
+	case   3: return "Channel load";
+	case   4: return "Noise histogram";
+	case   5: return "Beacon";
+	case   6: return "Frame";
+	case   7: return "STA statistics";
+	case   8: return "LCI";
+	case   9: return "Transmit stream/category measurement";
+	case   10: return "Multicast diagnostics";
+	case   11: return "Location Civic";
+	case   12: return "Location Identifier";
+	case   13 ... 255: return "Reserved";
+	}
 }
 
 static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_meas_req *meas_req;
+
+	meas_req = (struct element_meas_req *) pkt_pull(pkt, sizeof(*meas_req));
+	if (meas_req == NULL)
+		return 0;
+
+	tprintf("Measurement Req (%u, Len(%u)): ", *id, meas_req->len);
+	if (len_lt_error(meas_req->len, 3))
+		return 0;
+
+	tprintf("Token: %u, ", meas_req->token);
+	tprintf("Req Mode: 0x%x (Parallel (%u), Enable(%u), Request(%u), "
+	"Report(%u), Dur Mand(%u)),  ", meas_req->req_mode,
+		meas_req->req_mode >> 7, (meas_req->req_mode >> 6) & 0x1,
+		(meas_req->req_mode >> 5) & 0x1, (meas_req->req_mode >> 4) & 0x1,
+		(meas_req->req_mode >> 3) & 0x1);
+	tprintf("Type: %s (%u), ", meas_type(meas_req->type), meas_req->type);
+
+	if(meas_req->len > 3) {
+		if(meas_req->type == 0) {
+			struct element_meas_basic *basic;
+
+			basic = (struct element_meas_basic *)
+				    pkt_pull(pkt, sizeof(*basic));
+			if (basic == NULL)
+				return 0;
+
+			if (!(meas_req->len - 3 - sizeof(*basic))) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_req->type);
+				return 0;
+			}
+
+			tprintf("Ch Nr: %uus, ", basic->ch_nr);
+			tprintf("Meas Start Time: %lu, ",
+				    le64_to_cpu(basic->start));
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(basic->dur) * TU);
+			
+		}
+		else if(meas_req->type == 1) {
+			struct element_meas_cca *cca;
+
+			cca = (struct element_meas_cca *)
+				    pkt_pull(pkt, sizeof(*cca));
+			if (cca == NULL)
+				return 0;
+
+			if (!(meas_req->len - 3 - sizeof(*cca))) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_req->type);
+				return 0;
+			}
+
+			tprintf("Ch Nr: %uus, ", cca->ch_nr);
+			tprintf("Meas Start Time: %lu, ",
+				    le64_to_cpu(cca->start));
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(cca->dur) * TU);
+		}
+		else if(meas_req->type == 2) {
+			struct element_meas_rpi *rpi;
+
+			rpi = (struct element_meas_rpi *)
+				    pkt_pull(pkt, sizeof(*rpi));
+			if (rpi == NULL)
+				return 0;
+
+			if (!(meas_req->len - 3 - sizeof(*rpi))) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_req->type);
+				return 0;
+			}
+
+			tprintf("Ch Nr: %uus, ", rpi->ch_nr);
+			tprintf("Meas Start Time: %lu, ",
+				    le64_to_cpu(rpi->start));
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(rpi->dur) * TU);
+		}
+		else if(meas_req->type == 3) {
+			struct element_meas_ch_load *ch_load;
+
+			ch_load = (struct element_meas_ch_load *)
+				    pkt_pull(pkt, sizeof(*ch_load));
+			if (ch_load == NULL)
+				return 0;
+
+			if ((meas_req->len - 3 - sizeof(*ch_load)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_req->type);
+				return 0;
+			}
+
+			tprintf("OP Class: %u, ", ch_load->op_class);
+			tprintf("Ch Nr: %u, ", ch_load->ch_nr);
+			tprintf("Rand Intv: %fs, ",
+				    le16_to_cpu(ch_load->rand_intv) * TU);
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(ch_load->dur) * TU);
+
+			if(!subelements(pkt,
+					  meas_req->len - 3 - sizeof(*ch_load)))
+				return 0;
+		}
+		else if(meas_req->type == 4) {
+			struct element_meas_noise *noise;
+
+			noise = (struct element_meas_noise *)
+				    pkt_pull(pkt, sizeof(*noise));
+			if (noise == NULL)
+				return 0;
+
+			if ((meas_req->len - 3 - sizeof(*noise)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_req->type);
+				return 0;
+			}
+
+			tprintf("OP Class: %u, ", noise->op_class);
+			tprintf("Ch Nr: %u, ", noise->ch_nr);
+			tprintf("Rand Intv: %fs, ",
+				    le16_to_cpu(noise->rand_intv) * TU);
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(noise->dur) * TU);
+
+			if(!subelements(pkt,
+					  meas_req->len - 3 - sizeof(*noise)))
+				return 0;
+		}
+		else if(meas_req->type == 5) {
+			struct element_meas_beacon *beacon;
+
+			beacon = (struct element_meas_beacon *)
+				    pkt_pull(pkt, sizeof(*beacon));
+			if (beacon == NULL)
+				return 0;
+
+			if ((meas_req->len - 3 - sizeof(*beacon)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_req->type);
+				return 0;
+			}
+
+			tprintf("OP Class: %u, ", beacon->op_class);
+			tprintf("Ch Nr: %u, ", beacon->ch_nr);
+			tprintf("Rand Intv: %fs, ",
+				    le16_to_cpu(beacon->rand_intv) * TU);
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(beacon->dur) * TU);
+			tprintf("Mode: %u, ", beacon->mode);
+			tprintf("BSSID: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x",
+				    beacon->bssid[0], beacon->bssid[1],
+				    beacon->bssid[2], beacon->bssid[3],
+				    beacon->bssid[4], beacon->bssid[5]);
+
+			if(!subelements(pkt,
+					  meas_req->len - 3 - sizeof(*beacon)))
+				return 0;
+		}
+		else if(meas_req->type == 6) {
+			struct element_meas_frame *frame;
+
+			frame = (struct element_meas_frame *)
+				    pkt_pull(pkt, sizeof(*frame));
+			if (frame == NULL)
+				return 0;
+
+			if ((meas_req->len - 3 - sizeof(*frame)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_req->type);
+				return 0;
+			}
+
+			tprintf("OP Class: %u, ", frame->op_class);
+			tprintf("Ch Nr: %u, ", frame->ch_nr);
+			tprintf("Rand Intv: %fs, ",
+				    le16_to_cpu(frame->rand_intv) * TU);
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(frame->dur) * TU);
+			tprintf("Request Type: %u, ", frame->frame);
+			tprintf("MAC Addr: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x",
+				    frame->mac[0], frame->mac[1],
+				    frame->mac[2], frame->mac[3],
+				    frame->mac[4], frame->mac[5]);
+
+			if(!subelements(pkt,
+					  meas_req->len - 3 - sizeof(*frame)))
+				return 0;
+		}
+		else if(meas_req->type == 7) {
+			struct element_meas_sta *sta;
+
+			sta = (struct element_meas_sta *)
+				    pkt_pull(pkt, sizeof(*sta));
+			if (sta == NULL)
+				return 0;
+
+			if ((meas_req->len - 3 - sizeof(*sta)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_req->type);
+				return 0;
+			}
+
+			tprintf("Peer MAC Addr: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x",
+				    sta->peer_mac[0], sta->peer_mac[1],
+				    sta->peer_mac[2], sta->peer_mac[3],
+				    sta->peer_mac[4], sta->peer_mac[5]);
+			tprintf("Rand Intv: %fs, ",
+				    le16_to_cpu(sta->rand_intv) * TU);
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(sta->dur) * TU);
+			tprintf("Group ID: %u, ", sta->group_id);
+
+			if(!subelements(pkt,
+					  meas_req->len - 3 - sizeof(*sta)))
+				return 0;
+		}
+		else if(meas_req->type == 8) {
+			struct element_meas_lci *lci;
+
+			lci = (struct element_meas_lci *)
+				    pkt_pull(pkt, sizeof(*lci));
+			if (lci == NULL)
+				return 0;
+
+			if ((meas_req->len - 3 - sizeof(*lci)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_req->type);
+				return 0;
+			}
+
+			tprintf("Location Subj: %u, ", lci->loc_subj);
+			tprintf("Latitude Req Res: %udeg",
+				    lci->latitude_req_res);
+			tprintf("Longitude Req Res: %udeg",
+				    lci->longitude_req_res);
+			tprintf("Altitude Req Res: %udeg",
+				    lci->altitude_req_res);
+
+			if(!subelements(pkt,
+					  meas_req->len - 3 - sizeof(*lci)))
+				return 0;
+		}
+		else if(meas_req->type == 9) {
+			struct element_meas_trans_str_cat *trans;
+
+			trans = (struct element_meas_trans_str_cat *)
+				    pkt_pull(pkt, sizeof(*trans));
+			if (trans == NULL)
+				return 0;
+
+			if ((meas_req->len - 3 - sizeof(*trans)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_req->type);
+				return 0;
+			}
+
+			tprintf("Rand Intv: %fs, ",
+				    le16_to_cpu(trans->rand_intv) * TU);
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(trans->dur) * TU);
+			tprintf("MAC Addr: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x",
+				trans->peer_sta_addr[0], trans->peer_sta_addr[1],
+				trans->peer_sta_addr[2], trans->peer_sta_addr[3],
+				trans->peer_sta_addr[4], trans->peer_sta_addr[5]);
+			tprintf("Traffic ID: %u, ", trans->traffic_id);
+			tprintf("Bin 0 Range: %u, ", trans->bin_0_range);
+
+			if(!subelements(pkt,
+					  meas_req->len - 3 - sizeof(*trans)))
+				return 0;
+		}
+		else if(meas_req->type == 10) {
+			struct element_meas_mcast_diag *mcast;
+
+			mcast = (struct element_meas_mcast_diag *)
+				    pkt_pull(pkt, sizeof(*mcast));
+			if (mcast == NULL)
+				return 0;
+
+			if ((meas_req->len - 3 - sizeof(*mcast)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_req->type);
+				return 0;
+			}
+
+			tprintf("Rand Intv: %fs, ",
+				    le16_to_cpu(mcast->rand_intv) * TU);
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(mcast->dur) * TU);
+			tprintf("Group MAC Addr: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x",
+				mcast->group_mac[0], mcast->group_mac[1],
+				mcast->group_mac[2], mcast->group_mac[3],
+				mcast->group_mac[4], mcast->group_mac[5]);
+
+			if(!subelements(pkt,
+					  meas_req->len - 3 - sizeof(*mcast)))
+				return 0;
+		}
+		else if(meas_req->type == 11) {
+			struct element_meas_loc_civic *civic;
+
+			civic = (struct element_meas_loc_civic *)
+				    pkt_pull(pkt, sizeof(*civic));
+			if (civic == NULL)
+				return 0;
+
+			if ((meas_req->len - 3 - sizeof(*civic)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_req->type);
+				return 0;
+			}
+
+			tprintf("Location Subj: %u, ", civic->loc_subj);
+			tprintf("Type: %u, ", civic->civic_loc);
+			tprintf("Srv Intv Units: %u, ",
+				    le16_to_cpu(civic->loc_srv_intv_unit));
+			tprintf("Srv Intv: %u, ", civic->loc_srv_intv);
+
+			if(!subelements(pkt,
+					  meas_req->len - 3 - sizeof(*civic)))
+				return 0;
+		}
+		else if(meas_req->type == 12) {
+			struct element_meas_loc_id *id;
+
+			id = (struct element_meas_loc_id *)
+				    pkt_pull(pkt, sizeof(*id));
+			if (id == NULL)
+				return 0;
+
+			if ((meas_req->len - 3 - sizeof(*id)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_req->type);
+				return 0;
+			}
+
+			tprintf("Location Subj: %u, ", id->loc_subj);
+			tprintf("Srv Intv Units: %u, ",
+				    le16_to_cpu(id->loc_srv_intv_unit));
+			tprintf("Srv Intv: %u", id->loc_srv_intv);
+
+			if(!subelements(pkt,
+					  meas_req->len - 3 - sizeof(*id)))
+				return 0;
+		}
+		else if(meas_req->type == 255) {
+			struct element_meas_pause *pause;
+
+			pause = (struct element_meas_pause *)
+				    pkt_pull(pkt, sizeof(*pause));
+			if (pause == NULL)
+				return 0;
+
+			if ((meas_req->len - 3 - sizeof(*pause)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_req->type);
+				return 0;
+			}
+
+			tprintf("Pause Time: %fs, ", pause->time * 10 * TU);
+
+			if(!subelements(pkt,
+					  meas_req->len - 3 - sizeof(*pause)))
+				return 0;
+		}
+		else {
+			tprintf("Length field indicates data,"
+			" but could not interpreted");
+			return 0;
+		}
+	}
+
+	return 1;
 }
 
 static int8_t inf_meas_rep(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_meas_rep *meas_rep;
+
+	meas_rep = (struct element_meas_rep *) pkt_pull(pkt, sizeof(*meas_rep));
+	if (meas_rep == NULL)
+		return 0;
+
+	tprintf("Measurement Rep (%u, Len(%u)): ", *id, meas_rep->len);
+	if (len_lt_error(meas_rep->len, 3))
+		return 0;
+
+	tprintf("Token: %u, ", meas_rep->token);
+	tprintf("Rep Mode: 0x%x (Late (%u), Incapable(%u), Refused(%u), ",
+		meas_rep->rep_mode, meas_rep->rep_mode >> 7,
+		(meas_rep->rep_mode >> 6) & 0x1,
+		(meas_rep->rep_mode >> 5) & 0x1);
+	tprintf("Type: %s (%u), ", meas_type(meas_rep->type), meas_rep->type);
+
+	if(meas_rep->len > 3) {
+		if(meas_rep->type == 0) {
+			struct element_meas_basic *basic;
+
+			basic = (struct element_meas_basic *)
+				    pkt_pull(pkt, sizeof(*basic));
+			if (basic == NULL)
+				return 0;
+
+			if (!(meas_rep->len - 3 - sizeof(*basic))) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("Ch Nr: %uus, ", basic->ch_nr);
+			tprintf("Meas Start Time: %lu, ",
+				    le64_to_cpu(basic->start));
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(basic->dur) * TU);
+
+		}
+		else if(meas_rep->type == 1) {
+			struct element_meas_cca *cca;
+
+			cca = (struct element_meas_cca *)
+				    pkt_pull(pkt, sizeof(*cca));
+			if (cca == NULL)
+				return 0;
+
+			if (!(meas_rep->len - 3 - sizeof(*cca))) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("Ch Nr: %uus, ", cca->ch_nr);
+			tprintf("Meas Start Time: %lu, ",
+				    le64_to_cpu(cca->start));
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(cca->dur) * TU);
+		}
+		else if(meas_rep->type == 2) {
+			struct element_meas_rpi *rpi;
+
+			rpi = (struct element_meas_rpi *)
+				    pkt_pull(pkt, sizeof(*rpi));
+			if (rpi == NULL)
+				return 0;
+
+			if (!(meas_rep->len - 3 - sizeof(*rpi))) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("Ch Nr: %uus, ", rpi->ch_nr);
+			tprintf("Meas Start Time: %lu, ",
+				    le64_to_cpu(rpi->start));
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(rpi->dur) * TU);
+		}
+		else if(meas_rep->type == 3) {
+			struct element_meas_ch_load *ch_load;
+
+			ch_load = (struct element_meas_ch_load *)
+				    pkt_pull(pkt, sizeof(*ch_load));
+			if (ch_load == NULL)
+				return 0;
+
+			if ((meas_rep->len - 3 - sizeof(*ch_load)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("OP Class: %u, ", ch_load->op_class);
+			tprintf("Ch Nr: %u, ", ch_load->ch_nr);
+			tprintf("Rand Intv: %fs, ",
+				    le16_to_cpu(ch_load->rand_intv) * TU);
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(ch_load->dur) * TU);
+
+			if(!subelements(pkt,
+					  meas_rep->len - 3 - sizeof(*ch_load)))
+				return 0;
+		}
+		else if(meas_rep->type == 4) {
+			struct element_meas_noise *noise;
+
+			noise = (struct element_meas_noise *)
+				    pkt_pull(pkt, sizeof(*noise));
+			if (noise == NULL)
+				return 0;
+
+			if ((meas_rep->len - 3 - sizeof(*noise)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("OP Class: %u, ", noise->op_class);
+			tprintf("Ch Nr: %u, ", noise->ch_nr);
+			tprintf("Rand Intv: %fs, ",
+				    le16_to_cpu(noise->rand_intv) * TU);
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(noise->dur) * TU);
+
+			if(!subelements(pkt,
+					  meas_rep->len - 3 - sizeof(*noise)))
+				return 0;
+		}
+		else if(meas_rep->type == 5) {
+			struct element_meas_beacon *beacon;
+
+			beacon = (struct element_meas_beacon *)
+				    pkt_pull(pkt, sizeof(*beacon));
+			if (beacon == NULL)
+				return 0;
+
+			if ((meas_rep->len - 3 - sizeof(*beacon)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("OP Class: %u, ", beacon->op_class);
+			tprintf("Ch Nr: %u, ", beacon->ch_nr);
+			tprintf("Rand Intv: %fs, ",
+				    le16_to_cpu(beacon->rand_intv) * TU);
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(beacon->dur) * TU);
+			tprintf("Mode: %u, ", beacon->mode);
+			tprintf("BSSID: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x",
+				    beacon->bssid[0], beacon->bssid[1],
+				    beacon->bssid[2], beacon->bssid[3],
+				    beacon->bssid[4], beacon->bssid[5]);
+
+			if(!subelements(pkt,
+					  meas_rep->len - 3 - sizeof(*beacon)))
+				return 0;
+		}
+		else if(meas_rep->type == 6) {
+			struct element_meas_frame *frame;
+
+			frame = (struct element_meas_frame *)
+				    pkt_pull(pkt, sizeof(*frame));
+			if (frame == NULL)
+				return 0;
+
+			if ((meas_rep->len - 3 - sizeof(*frame)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("OP Class: %u, ", frame->op_class);
+			tprintf("Ch Nr: %u, ", frame->ch_nr);
+			tprintf("Rand Intv: %fs, ",
+				    le16_to_cpu(frame->rand_intv) * TU);
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(frame->dur) * TU);
+			tprintf("Request Type: %u, ", frame->frame);
+			tprintf("MAC Addr: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x",
+				    frame->mac[0], frame->mac[1],
+				    frame->mac[2], frame->mac[3],
+				    frame->mac[4], frame->mac[5]);
+
+			if(!subelements(pkt,
+					  meas_rep->len - 3 - sizeof(*frame)))
+				return 0;
+		}
+		else if(meas_rep->type == 7) {
+			struct element_meas_sta *sta;
+
+			sta = (struct element_meas_sta *)
+				    pkt_pull(pkt, sizeof(*sta));
+			if (sta == NULL)
+				return 0;
+
+			if ((meas_rep->len - 3 - sizeof(*sta)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("Peer MAC Addr: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x, ",
+				    sta->peer_mac[0], sta->peer_mac[1],
+				    sta->peer_mac[2], sta->peer_mac[3],
+				    sta->peer_mac[4], sta->peer_mac[5]);
+			tprintf("Rand Intv: %fs, ",
+				    le16_to_cpu(sta->rand_intv) * TU);
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(sta->dur) * TU);
+			tprintf("Group ID: %u, ", sta->group_id);
+
+			if(!subelements(pkt,
+					  meas_rep->len - 3 - sizeof(*sta)))
+				return 0;
+		}
+		else if(meas_rep->type == 8) {
+			struct element_meas_lci *lci;
+
+			lci = (struct element_meas_lci *)
+				    pkt_pull(pkt, sizeof(*lci));
+			if (lci == NULL)
+				return 0;
+
+			if ((meas_rep->len - 3 - sizeof(*lci)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("Location Subj: %u, ", lci->loc_subj);
+			tprintf("Latitude Req Res: %udeg",
+				    lci->latitude_req_res);
+			tprintf("Longitude Req Res: %udeg",
+				    lci->longitude_req_res);
+			tprintf("Altitude Req Res: %udeg",
+				    lci->altitude_req_res);
+
+			if(!subelements(pkt,
+					  meas_rep->len - 3 - sizeof(*lci)))
+				return 0;
+		}
+		else if(meas_rep->type == 9) {
+			struct element_meas_trans_str_cat *trans;
+
+			trans = (struct element_meas_trans_str_cat *)
+				    pkt_pull(pkt, sizeof(*trans));
+			if (trans == NULL)
+				return 0;
+
+			if ((meas_rep->len - 3 - sizeof(*trans)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("Rand Intv: %fs, ",
+				    le16_to_cpu(trans->rand_intv) * TU);
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(trans->dur) * TU);
+			tprintf("MAC Addr: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x, ",
+				trans->peer_sta_addr[0], trans->peer_sta_addr[1],
+				trans->peer_sta_addr[2], trans->peer_sta_addr[3],
+				trans->peer_sta_addr[4], trans->peer_sta_addr[5]);
+			tprintf("Traffic ID: %u, ", trans->traffic_id);
+			tprintf("Bin 0 Range: %u, ", trans->bin_0_range);
+
+			if(!subelements(pkt,
+					  meas_rep->len - 3 - sizeof(*trans)))
+				return 0;
+		}
+		else if(meas_rep->type == 10) {
+			struct element_meas_mcast_diag *mcast;
+
+			mcast = (struct element_meas_mcast_diag *)
+				    pkt_pull(pkt, sizeof(*mcast));
+			if (mcast == NULL)
+				return 0;
+
+			if ((meas_rep->len - 3 - sizeof(*mcast)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("Rand Intv: %fs, ",
+				    le16_to_cpu(mcast->rand_intv) * TU);
+			tprintf("Meas Duration: %fs",
+				    le16_to_cpu(mcast->dur) * TU);
+			tprintf("Group MAC Addr: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x",
+				mcast->group_mac[0], mcast->group_mac[1],
+				mcast->group_mac[2], mcast->group_mac[3],
+				mcast->group_mac[4], mcast->group_mac[5]);
+
+			if(!subelements(pkt,
+					  meas_rep->len - 3 - sizeof(*mcast)))
+				return 0;
+		}
+		else if(meas_rep->type == 11) {
+			struct element_meas_loc_civic *civic;
+
+			civic = (struct element_meas_loc_civic *)
+				    pkt_pull(pkt, sizeof(*civic));
+			if (civic == NULL)
+				return 0;
+
+			if ((meas_rep->len - 3 - sizeof(*civic)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("Location Subj: %u, ", civic->loc_subj);
+			tprintf("Type: %u, ", civic->civic_loc);
+			tprintf("Srv Intv Units: %u, ",
+				    le16_to_cpu(civic->loc_srv_intv_unit));
+			tprintf("Srv Intv: %u, ", civic->loc_srv_intv);
+
+			if(!subelements(pkt,
+					  meas_rep->len - 3 - sizeof(*civic)))
+				return 0;
+		}
+		else if(meas_rep->type == 12) {
+			struct element_meas_loc_id *id;
+
+			id = (struct element_meas_loc_id *)
+				    pkt_pull(pkt, sizeof(*id));
+			if (id == NULL)
+				return 0;
+
+			if ((meas_rep->len - 3 - sizeof(*id)) >= 0) {
+				tprintf("Length of Req matchs not Type %u",
+					    meas_rep->type);
+				return 0;
+			}
+
+			tprintf("Location Subj: %u, ", id->loc_subj);
+			tprintf("Srv Intv Units: %u, ",
+				    le16_to_cpu(id->loc_srv_intv_unit));
+			tprintf("Srv Intv: %u", id->loc_srv_intv);
+
+			if(!subelements(pkt,
+					  meas_rep->len - 3 - sizeof(*id)))
+				return 0;
+		}
+		else {
+			tprintf("Length field indicates data,"
+			" but could not interpreted");
+			return 0;
+		}
+	}
+
+	return 1;
 }
 
 static int8_t inf_quiet(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_quiet *quiet;
+
+	quiet = (struct element_quiet *) pkt_pull(pkt, sizeof(*quiet));
+	if (quiet == NULL)
+		return 0;
+
+	tprintf("Quit (%u, Len(%u)): ", *id, quiet->len);
+	if (len_neq_error(quiet->len, 6))
+		return 0;
+
+	tprintf("Count: %ud, ", quiet->cnt);
+	tprintf("Period: %u, ", quiet->period);
+	tprintf("Duration: %fs, ", le16_to_cpu(quiet->dur) * TU);
+	tprintf("Offs: %fs", le16_to_cpu(quiet->offs) * TU);
+	
+
+	return 1;
 }
 
 static int8_t inf_ibss_dfs(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_ibss_dfs *ibss_dfs;
+	u8 i;
+
+	ibss_dfs = (struct element_ibss_dfs *) pkt_pull(pkt, sizeof(*ibss_dfs));
+	if (ibss_dfs == NULL)
+		return 0;
+
+	tprintf("IBSS DFS (%u, Len(%u)): ", *id, ibss_dfs->len);
+	if (len_lt_error(ibss_dfs->len, 7))
+		return 0;
+
+	tprintf("Owner: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x, ",
+		    ibss_dfs->owner[0], ibss_dfs->owner[1],
+		    ibss_dfs->owner[2], ibss_dfs->owner[3],
+		    ibss_dfs->owner[4], ibss_dfs->owner[5]);
+	tprintf("Recovery Intv: %u, ", ibss_dfs->rec_intv);
+
+	if((ibss_dfs->len - sizeof(*ibss_dfs) + 1) & 1) {
+		tprintf("Length of Channel Map should be modulo 2");
+		return 0;
+	}
+
+	for (i = 0; i < ibss_dfs->len; i += 2) {
+		struct element_ibss_dfs_tuple *ibss_dfs_tuple;
+
+		ibss_dfs_tuple = (struct element_ibss_dfs_tuple *)
+				    pkt_pull(pkt, sizeof(*ibss_dfs_tuple));
+		if (ibss_dfs_tuple == NULL)
+			return 0;
+
+		tprintf("Channel Nr: %u, ", ibss_dfs_tuple->ch_nr);
+		tprintf("Map: %u, ", ibss_dfs_tuple->map);
+	}
+
+	return 1;
 }
 
 static int8_t inf_erp(struct pkt_buff *pkt, u8 *id)
@@ -929,12 +2427,35 @@ static int8_t inf_erp(struct pkt_buff *pkt, u8 *id)
 
 static int8_t inf_ts_del(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_ts_del *ts_del;
+
+	ts_del = (struct element_ts_del *) pkt_pull(pkt, sizeof(*ts_del));
+	if (ts_del == NULL)
+		return 0;
+
+	tprintf("TS Delay (%u, Len(%u)): ", *id, ts_del->len);
+	if (len_neq_error(ts_del->len, 4))
+		return 0;
+	tprintf("Delay (%fs)", le32_to_cpu(ts_del->delay) * TU);
+
+	return 1;
 }
 
 static int8_t inf_tclas_proc(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_tclas_proc *tclas_proc;
+
+	tclas_proc = (struct element_tclas_proc *)
+			  pkt_pull(pkt, sizeof(*tclas_proc));
+	if (tclas_proc == NULL)
+		return 0;
+
+	tprintf("TCLAS Procesing (%u, Len(%u)): ", *id, tclas_proc->len);
+	if (len_neq_error(tclas_proc->len, 1))
+		return 0;
+	tprintf("Processing (%u)", tclas_proc->proc);
+
+	return 1;
 }
 
 static int8_t inf_ht_cap(struct pkt_buff *pkt, u8 *id)
