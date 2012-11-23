@@ -101,10 +101,9 @@ clean_showinfo:
 %.tab.o: %.y
 	$(YAAC) -p $(shell perl -wlne 'print $$1 if /yaac-func-prefix:\s([a-z]+)/' $<) \
 		-o $(BUILD_DIR)/$(shell basename $< .y).tab.c $(YAAC_FLAGS) -d $<
-%.o: %.c
-	$(CC) $(ALL_CFLAGS) -o $(BUILD_DIR)/$(shell basename $< .c).o -c $<
 
-.PHONY: all $(TOOLS) %.o %.c clean %_prehook %_distclean %_clean %_install
+.PHONY: all toolkit $(TOOLS) clean %_prehook %_distclean %_clean %_install
+.FORCE:
 .DEFAULT_GOAL := all
 .IGNORE: %_clean_custom
 .NOTPARALLEL: $(TOOLS)
@@ -120,13 +119,15 @@ define TOOL_templ
   $(1) $(1)%: BUILD_DIR := $(1)
   $(1)_prehook:
 	@echo "$(bold)Building $(1):$(normal)"
-  $(1): $(1)_prehook $$($(1)-lex) $$($(1)-yaac) $$($(1)-objs) $$($(1)-libs)
+  $(1): $(1)_prehook $$($(1)-lex) $$($(1)-yaac) $$(patsubst %.o,$(1)/%.o,$$($(1)-objs)) $$($(1)-libs)
   $(1)_clean:
-	@rm -rf $$(BUILD_DIR)/*.o $$(BUILD_DIR)/$(1)
+	@rm -rf $(1)/*.o $(1)/$(1)
   $(1)_install:
-	@install -D $$(BUILD_DIR)/$(1) $$(SBINDIR)/$(1)
+	@install -D $(1)/$(1) $$(SBINDIR)/$(1)
   $(1)_distclean:
 	@rm $$(SBINDIR)/$(1)
+  $(1)/%.o: %.c
+	$$(CC) $$(ALL_CFLAGS) -o $(1)/$$(shell basename $$< .c).o -c $$<
 endef
 
 $(foreach tool,$(TOOLS),$(eval $(call TOOL_templ,$(tool))))
