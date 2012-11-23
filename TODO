@@ -87,3 +87,10 @@ submit your contributions, items marked with '!' are of high importance):
 46) QoS for curvetun.
 
 47) ifpps show timestamps in CSV file.
+
+48! Hand-include patchset from Sibir Chakraborty:
+	- Replay all files from directory (dir as --in paramter)
+	- Replay with correct timing information
+	- Replay with Gbps / pps rate limit
+
+49! Add Gbps / pps rate limit to trafgen
