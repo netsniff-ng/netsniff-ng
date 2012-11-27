@@ -7,7 +7,9 @@ PATCHLEVEL = 5
 SUBLEVEL = 8
 EXTRAVERSION = -rc0
 
-TOOLS = netsniff-ng trafgen astraceroute flowtop ifpps mausezahn bpfc curvetun
+TOOLS = netsniff-ng trafgen astraceroute flowtop ifpps mausezahn bpfc
+
+#curvetun
 
 # For packaging purposes, prefix can define a different path.
 PREFIX ?=
@@ -20,6 +22,9 @@ BINDIR = $(PREFIX)/usr/bin
 SBINDIR = $(PREFIX)/usr/sbin
 INCDIR = $(PREFIX)/usr/include
 ETCDIR = $(PREFIX)/etc
+ETCDIRE = $(ETCDIR)/netsniff-ng
+DOCDIR = $(PREFIX)/usr/share/doc
+DOCDIRE = $(DOCDIR)/netsniff-ng
 
 # Shut up make, helper warnings, parallel compilation!
 MAKEFLAGS += --no-print-directory
@@ -86,6 +91,7 @@ export VERSION PATCHLEVEL SUBLEVEL EXTRAVERSION
 export CROSS_COMPILE LD CC STRIP
 
 VERSION_STRING = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
+VERSION_SHORT = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)
 
 bold = $(shell tput bold)
 normal = $(shell tput sgr0)
@@ -106,11 +112,22 @@ clean_showinfo:
 .PHONY: all toolkit $(TOOLS) clean %_prehook %_distclean %_clean %_install
 .FORCE:
 .DEFAULT_GOAL := all
-.IGNORE: %_clean_custom
+.IGNORE: %_clean_custom %_install_custom
 .NOTPARALLEL: $(TOOLS)
 
 all: build_showinfo toolkit
 toolkit: $(TOOLS)
+install: $(foreach tool,$(TOOLS),$(tool)_install)
+	install -D ../Documentation/Summary $(DOCDIRE)
+	install -D ../Documentation/RelatedWork $(DOCDIRE)
+	install -D ../Documentation/Performance $(DOCDIRE)
+	install -D ../Documentation/KnownIssues $(DOCDIRE)
+	install -D ../Documentation/IPv6Notes $(DOCDIRE)
+	install -D ../Documentation/Sponsors $(DOCDIRE)
+	install -D ../Documentation/SubmittingPatches $(DOCDIRE)
+	install -D ../Documentation/CodingStyle $(DOCDIRE)
+	install -D ../Documentation/logo.png $(DOCDIRE)
+	install -D ../Documentation/RelNotes/Notes-$(VERSION_SHORT) $(DOCDIRE)
 clean mostlyclean: $(foreach tool,$(TOOLS),$(tool)_clean)
 realclean distclean clobber: $(foreach tool,$(TOOLS),$(tool)_distclean)
 
@@ -121,28 +138,47 @@ define TOOL_templ
   $(1)_prehook:
 	@echo "$(bold)Building $(1):$(normal)"
   $(1): $(1)_prehook $$($(1)-lex) $$($(1)-yaac) $$(patsubst %.o,$(1)/%.o,$$($(1)-objs)) $$($(1)-libs)
-  $(1)_clean:
-	@rm -rf $(1)/*.o $(1)/$(1)
-  $(1)_install:
-	@install -D $(1)/$(1) $$(SBINDIR)/$(1)
+  $(1)_clean: $(1)_clean_custom
+	rm -rf $(1)/*.o $(1)/$(1)
+  $(1)_install: $(1)_install_custom
+	install -D $(1)/$(1) $$(SBINDIR)/$(1)
+	install -D ../Documentation/$$(shell echo $(1) | sed 's/\([a-z]\)\(.*\)/\u\1\2/g') $$(DOCDIRE)
   $(1)_distclean:
-	@rm $$(SBINDIR)/$(1)
+	rm $$(SBINDIR)/$(1)
   $(1)/%.o: %.c
 	$$(CC) $$(ALL_CFLAGS) -o $(1)/$$(shell basename $$< .c).o -c $$<
 endef
 
 $(foreach tool,$(TOOLS),$(eval $(call TOOL_templ,$(tool))))
 
-# Target specific additions ...
-netsniff-ng: ALL_CFLAGS += -I$(INCDIR)/libnl3/ \
-			   -D__WITH_PROTOS \
-			   #-D__WITH_HARDWARE_TIMESTAMPING
-trafgen: ALL_CFLAGS += -I.. -I$(INCDIR)/libnl3/ \
-		       -D__WITH_PROTOS \
-		       #-D__WITH_HARDWARE_TIMESTAMPING
-#trafgen_clean_custom:
-#	@rm $(BUILD_DIR)/*.h $(BUILD_DIR)/*.c
+# Target specific flag additions ...
+netsniff-ng: ALL_CFLAGS += -I$(INCDIR)/libnl3/ -D__WITH_PROTOS
+trafgen: ALL_CFLAGS += -I.. -I$(INCDIR)/libnl3/ -D__WITH_PROTOS
 bpfc: ALL_CFLAGS += -I..
+
+netsniff-ng_clean_custom:
+astraceroute_clean_custom:
+flowtop_clean_custom:
+ifpps_clean_custom:
+mausezahn_clean_custom:
+bpfc_clean_custom:
+	rm $(BUILD_DIR)/*.h $(BUILD_DIR)/*.c
+curvetun_clean_custom:
+trafgen_clean_custom:
+	rm $(BUILD_DIR)/*.h $(BUILD_DIR)/*.c
+
+netsniff-ng_install_custom:
+	install -D conf/ether.conf $(ETCDIRE)
+	install -D conf/tcp.conf $(ETCDIRE)
+	install -D conf/udp.conf $(ETCDIRE)
+	install -D conf/oui.conf $(ETCDIRE)
+astraceroute_install_custom:
+flowtop_install_custom:
+ifpps_install_custom:
+mausezahn_install_custom:
+bpfc_install_custom:
+curvetun_install_custom:
+trafgen_install_custom:
 
 $(TOOLS):
 	$(LD) $(ALL_LDFLAGS) -o $@/$@ $@/*.o $($@-libs)
