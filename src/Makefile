@@ -7,9 +7,7 @@ PATCHLEVEL = 5
 SUBLEVEL = 8
 EXTRAVERSION = -rc0
 
-TOOLS = netsniff-ng trafgen astraceroute flowtop ifpps mausezahn bpfc
-
-#curvetun
+TOOLS = netsniff-ng trafgen astraceroute flowtop ifpps mausezahn bpfc curvetun
 
 # For packaging purposes, prefix can define a different path.
 PREFIX ?=
@@ -78,14 +76,17 @@ TARGET_ARCH =
 LEX_FLAGS =
 YAAC_FLAGS =
 
-LD = @echo -e "  LD\t$@" && $(CCACHE) $(CROSS_COMPILE)gcc
+Q = @
+
+LD = $(Q)echo -e "  LD\t$@" && $(CCACHE) $(CROSS_COMPILE)gcc
 CCNQ = $(CCACHE) $(CROSS_COMPILE)gcc
-CC = @echo -e "  CC\t$<" && $(CCNQ)
-RM = @echo -e "  EXEC\t$@" && rm
-MKDIR = @echo -e "  MKDIR\t$@" && mkdir
-STRIP = @echo -e "  STRIP\t$@" && $(CROSS_COMPILE)strip
-LEX = @echo -e "  LEX\t$<" && flex
-YAAC = @echo -e "  YAAC\t$<" && bison
+CC = $(Q)echo -e "  CC\t$<" && $(CCNQ)
+MKDIR = $(Q)echo -e "  MKDIR\t$@" && mkdir
+STRIP = $(Q)echo -e "  STRIP\t$@" && $(CROSS_COMPILE)strip
+LEX = $(Q)echo -e "  LEX\t$<" && flex
+YAAC = $(Q)echo -e "  YAAC\t$<" && bison
+INST = echo -e "  INST\t$(1)" && install -DC $(1) $(2)
+RM = echo -e "  RM\t$(1)" && rm -rf $(1)
 
 export VERSION PATCHLEVEL SUBLEVEL EXTRAVERSION
 export CROSS_COMPILE LD CC STRIP
@@ -97,10 +98,10 @@ bold = $(shell tput bold)
 normal = $(shell tput sgr0)
 
 build_showinfo:
-	@echo "$(bold)Building netsniff-ng toolkit ($(VERSION_STRING)) for" \
+	$(Q)echo "$(bold)Building netsniff-ng toolkit ($(VERSION_STRING)) for" \
 	      $(shell $(CCNQ) -dumpmachine)":$(normal)"
 clean_showinfo:
-	@echo "$(bold)Cleaning netsniff-ng toolkit ($(VERSION_STRING)):$(normal)"
+	$(Q)echo "$(bold)Cleaning netsniff-ng toolkit ($(VERSION_STRING)):$(normal)"
 
 %.yy.o: %.l
 	$(LEX) -P $(shell perl -wlne 'print $$1 if /lex-func-prefix:\s([a-z]+)/' $<) \
@@ -115,19 +116,13 @@ clean_showinfo:
 .IGNORE: %_clean_custom %_install_custom
 .NOTPARALLEL: $(TOOLS)
 
+DOC_FILES = Summary RelatedWork Performance KnownIssues IPv6Notes Sponsors \
+	    SubmittingPatches CodingStyle logo.png RelNotes/Notes-$(VERSION_SHORT)
+
 all: build_showinfo toolkit
 toolkit: $(TOOLS)
 install: $(foreach tool,$(TOOLS),$(tool)_install)
-	install -D ../Documentation/Summary $(DOCDIRE)
-	install -D ../Documentation/RelatedWork $(DOCDIRE)
-	install -D ../Documentation/Performance $(DOCDIRE)
-	install -D ../Documentation/KnownIssues $(DOCDIRE)
-	install -D ../Documentation/IPv6Notes $(DOCDIRE)
-	install -D ../Documentation/Sponsors $(DOCDIRE)
-	install -D ../Documentation/SubmittingPatches $(DOCDIRE)
-	install -D ../Documentation/CodingStyle $(DOCDIRE)
-	install -D ../Documentation/logo.png $(DOCDIRE)
-	install -D ../Documentation/RelNotes/Notes-$(VERSION_SHORT) $(DOCDIRE)
+	$(Q)$(foreach file,$(DOC_FILES),$(call INST,../Documentation/$(file),$(DOCDIRE));)
 clean mostlyclean: $(foreach tool,$(TOOLS),$(tool)_clean)
 realclean distclean clobber: $(foreach tool,$(TOOLS),$(tool)_distclean)
 
@@ -136,15 +131,15 @@ define TOOL_templ
   include $(1)/Makefile
   $(1) $(1)%: BUILD_DIR := $(1)
   $(1)_prehook:
-	@echo "$(bold)Building $(1):$(normal)"
+	$(Q)echo "$(bold)Building $(1):$(normal)"
   $(1): $(1)_prehook $$($(1)-lex) $$($(1)-yaac) $$(patsubst %.o,$(1)/%.o,$$($(1)-objs)) $$($(1)-libs)
   $(1)_clean: $(1)_clean_custom
-	rm -rf $(1)/*.o $(1)/$(1)
+	$(Q)$$(call RM,$(1)/*.o $(1)/$(1))
   $(1)_install: $(1)_install_custom
-	install -D $(1)/$(1) $$(SBINDIR)/$(1)
-	install -D ../Documentation/$$(shell echo $(1) | sed 's/\([a-z]\)\(.*\)/\u\1\2/g') $$(DOCDIRE)
+	$(Q)$$(call INST,$(1)/$(1),$$(SBINDIR)/$(1))
+	$(Q)$$(call INST,../Documentation/$$(shell echo $(1) | sed 's/\([a-z]\)\(.*\)/\u\1\2/g'),$$(DOCDIRE))
   $(1)_distclean:
-	rm $$(SBINDIR)/$(1)
+	$(Q)$$(call RM $$(SBINDIR)/$(1))
   $(1)/%.o: %.c
 	$$(CC) $$(ALL_CFLAGS) -o $(1)/$$(shell basename $$< .c).o -c $$<
 endef
@@ -156,29 +151,24 @@ netsniff-ng: ALL_CFLAGS += -I$(INCDIR)/libnl3/ -D__WITH_PROTOS
 trafgen: ALL_CFLAGS += -I.. -I$(INCDIR)/libnl3/ -D__WITH_PROTOS
 bpfc: ALL_CFLAGS += -I..
 
-netsniff-ng_clean_custom:
-astraceroute_clean_custom:
-flowtop_clean_custom:
-ifpps_clean_custom:
-mausezahn_clean_custom:
+# Target specific cleaning ...
+netsniff-ng_clean_custom astraceroute_clean_custom flowtop_clean_custom:
+ifpps_clean_custom mausezahn_clean_custom:
 bpfc_clean_custom:
-	rm $(BUILD_DIR)/*.h $(BUILD_DIR)/*.c
+	$(Q)$(call RM,$(BUILD_DIR)/*.h $(BUILD_DIR)/*.c)
 curvetun_clean_custom:
 trafgen_clean_custom:
-	rm $(BUILD_DIR)/*.h $(BUILD_DIR)/*.c
+	$(Q)$(call RM,$(BUILD_DIR)/*.h $(BUILD_DIR)/*.c)
 
-netsniff-ng_install_custom:
-	install -D conf/ether.conf $(ETCDIRE)
-	install -D conf/tcp.conf $(ETCDIRE)
-	install -D conf/udp.conf $(ETCDIRE)
-	install -D conf/oui.conf $(ETCDIRE)
+NCONF_FILES = ether.conf tcp.conf udp.conf oui.conf
+
+# Target specific installs ...
+netsniff-ng_install_custom flowtop_install_custom:
+	$(Q)$(foreach file,$(NCONF_FILES),$(call INST,conf/$(file),$(ETCDIRE));)
 astraceroute_install_custom:
-flowtop_install_custom:
-ifpps_install_custom:
-mausezahn_install_custom:
-bpfc_install_custom:
-curvetun_install_custom:
-trafgen_install_custom:
+	$(Q)$(call INST,conf/whois.conf,$(ETCDIRE))
+ifpps_install_custom mausezahn_install_custom bpfc_install_custom:
+curvetun_install_custom trafgen_install_custom:
 
 $(TOOLS):
 	$(LD) $(ALL_LDFLAGS) -o $@/$@ $@/*.o $($@-libs)
