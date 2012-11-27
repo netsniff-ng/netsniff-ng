@@ -43,7 +43,7 @@ CFLAGS += -D_REENTRANT
 CFLAGS += -D_FILE_OFFSET_BITS=64
 CFLAGS += -D_LARGEFILE_SOURCE
 CFLAGS += -D_LARGEFILE64_SOURCE
-CFLAGS += -D__WITH_HARDWARE_TIMESTAMPING
+#CFLAGS += -D__WITH_HARDWARE_TIMESTAMPING
 CFLAGS += -DVERSION_STRING=\"$(VERSION_STRING)\"
 CFLAGS += -std=gnu99
 CFLAGS += -march=native
@@ -117,7 +117,7 @@ clean_showinfo:
 .FORCE:
 .DEFAULT_GOAL := all
 .IGNORE: %_clean_custom %_install_custom
-.NOTPARALLEL: $(TOOLS) %.y %.l %.tab.o %.yy.o
+.NOTPARALLEL: $(TOOLS)
 
 DOC_FILES = Summary RelatedWork Performance KnownIssues IPv6Notes Sponsors \
 	    SubmittingPatches CodingStyle logo.png RelNotes/Notes-$(VERSION_SHORT)
