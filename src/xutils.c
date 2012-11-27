@@ -653,15 +653,17 @@ void sock_print_net_stats(int sock, unsigned long skipped)
 
 	ret = getsockopt(sock, SOL_PACKET, PACKET_STATISTICS, &kstats, &slen);
 	if (ret > -1) {
-		printf("\r%12ld  frames incoming\n",
-		       1UL * kstats.tp_packets);
-		printf("\r%12ld  frames passed filter\n", 
-		       1UL * kstats.tp_packets - kstats.tp_drops - skipped);
+		uint64_t packets = kstats.tp_packets;
+		uint64_t drops = kstats.tp_drops;
+
+		printf("\r%12ld  frames incoming\n", packets);
+		printf("\r%12ld  frames passed filter\n",
+		       packets - drops - skipped);
 		printf("\r%12ld  frames failed filter (out of space)\n",
-		       1UL * kstats.tp_drops + skipped);
+		       drops + skipped);
 		if (kstats.tp_packets > 0)
-			printf("\r%12.4f%% frame droprate\n", 1.f *
-			       kstats.tp_drops / kstats.tp_packets * 100.f);
+			printf("\r%12.4f%\% frame droprate\n",
+			       1.f * drops / packets * 100.f);
 	}
 }
 
