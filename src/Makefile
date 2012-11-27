@@ -133,14 +133,14 @@ define TOOL_templ
   $(1) $(1)%: BUILD_DIR := $(1)
   $(1)_prehook:
 	$(Q)echo "$(bold)Building $(1):$(normal)"
-  $(1): $(1)_prehook $$($(1)-lex) $$($(1)-yaac) $$(patsubst %.o,$(1)/%.o,$$($(1)-objs)) $$($(1)-libs)
+  $(1): $(1)_prehook $$($(1)-lex) $$($(1)-yaac) $$(patsubst %.o,$(1)/%.o,$$($(1)-objs))
   $(1)_clean: $(1)_clean_custom
 	$(Q)$$(call RM,$(1)/*.o $(1)/$(1))
   $(1)_install: $(1)_install_custom
 	$(Q)$$(call INST,$(1)/$(1),$$(SBINDIR)/$(1))
 	$(Q)$$(call INST,../Documentation/$$(shell echo $(1) | sed 's/\([a-z]\)\(.*\)/\u\1\2/g'),$$(DOCDIRE))
   $(1)_distclean:
-	$(Q)$$(call RM $$(SBINDIR)/$(1))
+	$(Q)$$(call RM,$$(SBINDIR)/$(1))
   $(1)/%.o: %.c
 	$$(CC) $$(ALL_CFLAGS) -o $(1)/$$(shell basename $$< .c).o -c $$<
 endef
@@ -151,6 +151,8 @@ $(foreach tool,$(TOOLS),$(eval $(call TOOL_templ,$(tool))))
 netsniff-ng: ALL_CFLAGS += -I$(INCDIR)/libnl3/ -D__WITH_PROTOS
 trafgen: ALL_CFLAGS += -I.. -I$(INCDIR)/libnl3/ -D__WITH_PROTOS
 bpfc: ALL_CFLAGS += -I..
+curvetun: ALL_CFLAGS += -I$(NACL_INCLUDE_DIR)
+curvetun: ALL_LDFLAGS += -L$(NACL_LIB_DIR)
 
 # Target specific cleaning ...
 netsniff-ng_clean_custom astraceroute_clean_custom flowtop_clean_custom:
@@ -177,23 +179,26 @@ $(TOOLS):
 	$(STRIP) $@/$@
 
 update:
-	$(Q)$(shell ../scripts/geoip-database-update)
+	$(Q)../scripts/geoip-database-update
+nacl:
+	$(Q)cd curvetun/ && ./build_nacl.sh ~/nacl
 help:
 	$(Q)echo "$(bold)Available tools from the toolkit:$(normal)"
 	$(Q)echo " <toolnames>:={$(TOOLS)}"
 	$(Q)echo "$(bold)Targets for building the toolkit:$(normal)"
-	$(Q)echo " all|toolkit			- Build the whole toolkit"
-	$(Q)echo " <toolname>			- Build only one of the tools"
+	$(Q)echo " all|toolkit                  - Build the whole toolkit"
+	$(Q)echo " <toolname>                   - Build only one of the tools"
 	$(Q)echo "$(bold)Targets for cleaning the toolkit's build files:$(normal)"
-	$(Q)echo " clean|mostlyclean		- Remove all build files"
-	$(Q)echo " <toolname>_clean		- Remove only one of the tool's files"
+	$(Q)echo " clean|mostlyclean            - Remove all build files"
+	$(Q)echo " <toolname>_clean             - Remove only one of the tool's files"
 	$(Q)echo "$(bold)Targets for installing the toolkit:$(normal)"
-	$(Q)echo " install			- Install the whole toolkit"
-	$(Q)echo " <toolname>_install		- Install only one of the tools"
+	$(Q)echo " install                      - Install the whole toolkit"
+	$(Q)echo " <toolname>_install           - Install only one of the tools"
 	$(Q)echo "$(bold)Targets for removing the toolkit:$(normal)"
-	$(Q)echo " realclean|distclean|clobber	- Remove the whole toolkit from the system"
-	$(Q)echo " <toolname>_distclean		- Remove only one of the tools"
+	$(Q)echo " realclean|distclean|clobber  - Remove the whole toolkit from the system"
+	$(Q)echo " <toolname>_distclean         - Remove only one of the tools"
 	$(Q)echo "$(bold)Misc targets:$(normal)"
-	$(Q)echo " mrproper			- Remove build and install files"
-	$(Q)echo " update  			- Update to the latest GeoIP database"
-	$(Q)echo " help				- Show this help"
+	$(Q)echo " mrproper                     - Remove build and install files"
+	$(Q)echo " update                       - Update to the latest GeoIP database"
+	$(Q)echo " nacl                         - Execute the build_nacl script"
+	$(Q)echo " help                         - Show this help"

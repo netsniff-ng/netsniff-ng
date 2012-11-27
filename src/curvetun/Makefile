@@ -1,4 +1,4 @@
-curvetun-libs =	-lnacl.a \
+curvetun-libs =	-lnacl \
 		-lpthread
 
 curvetun-objs =	xmalloc.o \

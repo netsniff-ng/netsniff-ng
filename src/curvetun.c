@@ -118,8 +118,8 @@ static void header(void)
 
 static void help(void)
 {
-	printf("\n%s %s, lightweight curve25519-based VPN/IP tunnel\n",
-	       PROGNAME_STRING, VERSION_STRING);
+	printf("\ncurvetun %s, lightweight curve25519-based VPN/IP tunnel\n",
+	       VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: curvetun [options]\n"
 	     "Options, general:\n"
@@ -161,8 +161,8 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\n%s %s, lightweight curve25519-based VPN/IP tunnel\n",
-               PROGNAME_STRING, VERSION_STRING);
+	printf("\ncurvetun %s, lightweight curve25519-based VPN/IP tunnel\n",
+               VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2011-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
