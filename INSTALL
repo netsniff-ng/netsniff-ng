@@ -10,9 +10,9 @@ distribution package maintainers is at the end of this document.
 
 What tools are required to build netsniff-ng?
 
- - gcc, cmake (all)
+ - gcc, make, sed, perl, coreutils (all)
  - flex, bison (bpfc, trafgen)
- - pod2man (all, only for manpages)
+ - asciidoc (man-pages)
 
 What libraries are required?
 
@@ -37,12 +37,9 @@ for an easy installation. We try to keep this as minimal as possible.
 For downloading the latest GeoIP database, you should use the script that
 is located at scripts/geoip-database-update.
 
-The installation process done by cmake is fairly simple:
+The installation process done by make is fairly simple:
 
   $ cd netsniff-ng/src/
-  $ mkdir build
-  $ cd build
-  $ cmake ..
   $ make
   # make install
 
@@ -67,8 +64,8 @@ nacl_path.sh this way:
   $ cd src/curvetun
   $ ./nacl_path.sh ~/nacl/build/include/x86 ~/nacl/build/lib/x86
 
-When done, netsniff-ng build infrastructure will read nacl_path.cmake to get
-the needed paths to NaCl.
+When done, netsniff-ng's build infrastructure will read those evironment
+variables in order to get the needed paths to NaCl.
 
 In case you have to manually install libgeoip in version 1.4.8 or higher, you
 can also use the provided helper script called build_geoip.sh from the
@@ -84,14 +81,15 @@ separation after the build/installation:
   $ sudo setcap cap_net_raw,cap_ipc_lock,cap_sys_admin,cap_net_admin=eip {toolname}
 
 Man pages are generated out of the files from Documentation/Manpages dir.
-They are written in POD format. For this, you need the tool pod2man which
-is distributed with Perl and should therefore be available on most systems.
+They are written in asciidoc format. For this, you need the tool asciidoc which
+is distributed with on most Linux systems.
 
 For bpfc, we also have a Vim syntax highlighting file. Have a look at
 scripts/bpf.vim for installation instructions.
 
-To uninstall, simply remove all files referred in install_manifest.txt, e.g.
-by running 'xargs rm < install_manifest.txt'.
+To uninstall the toolkit from your system, simply execute:
+
+  # make distclean
 
 netsniff-ng has been successfully tested on x86 and x86_64. It should also run
 on most other major architectures. However, since we don't have a possibility
@@ -105,25 +103,9 @@ KERNEL=="tun",NAME="net/%k",GROUP="netdev",MODE="0660",OPTIONS+="ignore_remove"
 
 ... and restart the udev daemon. Add yourself to the "netdev" group.
 
-Add the flag -D__WITH_HARDWARE_TIMESTAMPING=1 into src/CMakeLists.txt for
+Add the flag -D__WITH_HARDWARE_TIMESTAMPING=1 into src/Makefile for
 hardware timestamping support. Note that your kernel must be configured for
-this (e.g. to ship the linux/net_tstamp.h header file). However, it is likely
-that our cmake module will detect this automatically for you.
-
-If you are a developer and would like to add unit tests, forget CMake's
-'make test', it's seriously broken! CMake developers obviously thought that
-the output of a CTest program is something noone should care about. This is
-why they not only print nothing on default, but they also did not think of
-adding an option for lets say 'power-users' to enable output. This is why we
-recommend to leave this brain damage aside and use a small helper script by
-Emmanuel Roullit that is able to show you libtap's output:
-
-#!/bin/sh
-# ctest --verbose prints all output from tests programs, something that CMake's
-# 'make test' heavily fails; 'sed' removes the heading test number ("5:" for
-# instance); 'grep' removes all lines which does not contains TAP output lines
-# starting with 'ok','nok','1..*' and '#' are considered TAP output
-ctest --verbose | sed -e 's/^[0-9]*: //g' | grep -E '^nok|^ok|^#|^[0-9]+\.\.'
+this (e.g. to ship the linux/net_tstamp.h header file).
 
 The following warnings can be seen when compiling bpfc with flex 2.5.35 and
 bison 2.4.1:
