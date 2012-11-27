@@ -151,7 +151,7 @@ define TOOL_templ
 	$(Q)$$(call RM,$$(SBINDIR)/$(1))
 	$(Q)$$(call RM,$$(DOCDIRE)/$$(shell echo $(1) | sed 's/\([a-z]\)\(.*\)/\u\1\2/g'))
   $(1)/%.o: %.c
-	$$(CC) $$(ALL_CFLAGS) -o $(1)/$$(shell basename $$< .c).o -c $$<
+	$$(CC) $$(ALL_CFLAGS) -o $$@ -c $$<
 endef
 
 $(foreach tool,$(TOOLS),$(eval $(call TOOL_templ,$(tool))))
