@@ -199,6 +199,8 @@ update:
 	$(Q)../scripts/geoip-database-update
 nacl:
 	$(Q)cd curvetun/ && ./build_nacl.sh ~/nacl
+geoip:
+	$(Q)cd astraceroute/ && ./build_geoip.sh
 help:
 	$(Q)echo "$(bold)Available tools from the toolkit:$(normal)"
 	$(Q)echo " <toolnames>:={$(TOOLS)}"
@@ -218,4 +220,5 @@ help:
 	$(Q)echo " mrproper                     - Remove build and install files"
 	$(Q)echo " update                       - Update to the latest GeoIP database"
 	$(Q)echo " nacl                         - Execute the build_nacl script"
+	$(Q)echo " geoip                        - Execute the build_geoip script"
 	$(Q)echo " help                         - Show this help"
