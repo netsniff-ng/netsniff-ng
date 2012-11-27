@@ -5,8 +5,15 @@ config option enabled and even the latest kernel versions got rid of this
 option and have this functionality already built-in. However, we recommend a
 kernel >= 2.6.31, because the TX_RING is officially integrated since then. In
 any case, if you have the possibility, consider getting the latest kernel from
-Linus' Git repository, tweak and compile it, and run this one! A note for
-distribution package maintainers is at the end of this document.
+Linus' Git repository, tweak and compile it, and run this one!
+
+A note for distribution package maintainers:
+
+By default, netsniff-ng has some architecture-specific tuning options enabled
+that don't belong into a package binary of a distribution. Hence, you might
+want to adapt some build-related things before starting to package the toolkit.
+All necessary things (e.g., CFLAGS,WFLAGS) can be found in src/Makefile. Hence,
+you need to adapt it there.
 
 What tools are required to build netsniff-ng?
 
