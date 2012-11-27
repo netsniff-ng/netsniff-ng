@@ -125,6 +125,7 @@ install: $(foreach tool,$(TOOLS),$(tool)_install)
 	$(Q)$(foreach file,$(DOC_FILES),$(call INST,../Documentation/$(file),$(DOCDIRE));)
 clean mostlyclean: $(foreach tool,$(TOOLS),$(tool)_clean)
 realclean distclean clobber: $(foreach tool,$(TOOLS),$(tool)_distclean)
+mrproper: clean distclean
 
 # Tool template
 define TOOL_templ
@@ -167,9 +168,32 @@ netsniff-ng_install_custom flowtop_install_custom:
 	$(Q)$(foreach file,$(NCONF_FILES),$(call INST,conf/$(file),$(ETCDIRE));)
 astraceroute_install_custom:
 	$(Q)$(call INST,conf/whois.conf,$(ETCDIRE))
+	$(Q)$(call INST,../scripts/astraceroute6,$(SBINDIR)/astraceroute6)
 ifpps_install_custom mausezahn_install_custom bpfc_install_custom:
 curvetun_install_custom trafgen_install_custom:
 
 $(TOOLS):
 	$(LD) $(ALL_LDFLAGS) -o $@/$@ $@/*.o $($@-libs)
 	$(STRIP) $@/$@
+
+update:
+	$(Q)$(shell ../scripts/geoip-database-update)
+help:
+	$(Q)echo "$(bold)Available tools from the toolkit:$(normal)"
+	$(Q)echo " <toolnames>:={$(TOOLS)}"
+	$(Q)echo "$(bold)Targets for building the toolkit:$(normal)"
+	$(Q)echo " all|toolkit			- Build the whole toolkit"
+	$(Q)echo " <toolname>			- Build only one of the tools"
+	$(Q)echo "$(bold)Targets for cleaning the toolkit's build files:$(normal)"
+	$(Q)echo " clean|mostlyclean		- Remove all build files"
+	$(Q)echo " <toolname>_clean		- Remove only one of the tool's files"
+	$(Q)echo "$(bold)Targets for installing the toolkit:$(normal)"
+	$(Q)echo " install			- Install the whole toolkit"
+	$(Q)echo " <toolname>_install		- Install only one of the tools"
+	$(Q)echo "$(bold)Targets for removing the toolkit:$(normal)"
+	$(Q)echo " realclean|distclean|clobber	- Remove the whole toolkit from the system"
+	$(Q)echo " <toolname>_distclean		- Remove only one of the tools"
+	$(Q)echo "$(bold)Misc targets:$(normal)"
+	$(Q)echo " mrproper			- Remove build and install files"
+	$(Q)echo " update  			- Update to the latest GeoIP database"
+	$(Q)echo " help				- Show this help"
