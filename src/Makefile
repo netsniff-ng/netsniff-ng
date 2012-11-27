@@ -87,7 +87,7 @@ LEX = $(Q)echo -e "  LEX\t$<" && flex
 YAAC = $(Q)echo -e "  YAAC\t$<" && bison
 INST = echo -e "  INST\t$(1)" && install -d $(2) && \
 	install --mode=644 -DC $(1) $(2)/$(shell basename $(1))
-INSTX = echo -e "  INST\t$(1)" && install -DC $(1) $(2)/$(shell basename $(1))
+INSTX = echo -e "  INST\t$(1)" && install -C $(1) $(2)/$(shell basename $(1))
 RM = echo -e "  RM\t$(1)" && rm -rf $(1)
 RMDIR = echo -e "  RM\t$(1)" && rmdir --ignore-fail-on-non-empty $(1) 2> /dev/null || true
 
@@ -145,7 +145,7 @@ define TOOL_templ
   $(1)_clean: $(1)_clean_custom
 	$(Q)$$(call RM,$(1)/*.o $(1)/$(1))
   $(1)_install: $(1)_install_custom
-	$(Q)$$(call INSTX,$(1)/$(1),$$(SBINDIR)/$(1))
+	$(Q)$$(call INSTX,$(1)/$(1),$$(SBINDIR))
 	$(Q)$$(call INST,../Documentation/$$(shell echo $(1) | sed 's/\([a-z]\)\(.*\)/\u\1\2/g'),$$(DOCDIRE))
   $(1)_distclean: $(1)_distclean_custom
 	$(Q)$$(call RM,$$(SBINDIR)/$(1))
@@ -187,7 +187,7 @@ netsniff-ng_install_custom flowtop_install_custom:
 	$(Q)$(foreach file,$(NCONF_FILES),$(call INST,conf/$(file),$(ETCDIRE));)
 astraceroute_install_custom:
 	$(Q)$(call INST,conf/whois.conf,$(ETCDIRE))
-	$(Q)$(call INSTX,../scripts/astraceroute6,$(SBINDIR)/astraceroute6)
+	$(Q)$(call INSTX,../scripts/astraceroute6,$(SBINDIR))
 ifpps_install_custom mausezahn_install_custom bpfc_install_custom:
 curvetun_install_custom trafgen_install_custom:
 
