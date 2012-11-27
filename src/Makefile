@@ -116,6 +116,7 @@ clean_showinfo:
 .PHONY: all toolkit $(TOOLS) clean %_prehook %_distclean %_clean %_install
 .FORCE:
 .DEFAULT_GOAL := all
+.DEFAULT:
 .IGNORE: %_clean_custom %_install_custom
 .NOTPARALLEL: $(TOOLS)
 
@@ -135,7 +136,6 @@ realclean distclean clobber: $(foreach tool,$(TOOLS),$(tool)_distclean)
 	$(Q)$(call RMDIR,$(ETCDIRE))
 mrproper: clean distclean
 
-# Tool template
 define TOOL_templ
   include $(1)/Makefile
   $(1) $(1)%: BUILD_DIR := $(1)
@@ -150,25 +150,26 @@ define TOOL_templ
   $(1)_distclean: $(1)_distclean_custom
 	$(Q)$$(call RM,$$(SBINDIR)/$(1))
 	$(Q)$$(call RM,$$(DOCDIRE)/$$(shell echo $(1) | sed 's/\([a-z]\)\(.*\)/\u\1\2/g'))
+  $(1)/%.yy.o: $(1)/%.yy.c
+	$$(CC) $$(ALL_CFLAGS) -o $$@ -c $$<
+  $(1)/%.tab.o: $(1)/%.tab.c
+	$$(CC) $$(ALL_CFLAGS) -o $$@ -c $$<
   $(1)/%.o: %.c
 	$$(CC) $$(ALL_CFLAGS) -o $$@ -c $$<
 endef
 
 $(foreach tool,$(TOOLS),$(eval $(call TOOL_templ,$(tool))))
 
-# Target specific flag additions ...
+%:: ;
+
 netsniff-ng: ALL_CFLAGS += -I$(INCDIR)/libnl3/ -D__WITH_PROTOS
 trafgen: ALL_CFLAGS += -I.. -I$(INCDIR)/libnl3/ -D__WITH_PROTOS
 bpfc: ALL_CFLAGS += -I..
 curvetun: ALL_CFLAGS += -I$(NACL_INCLUDE_DIR)
 curvetun: ALL_LDFLAGS += -L$(NACL_LIB_DIR)
 
-# Target specific cleaning ...
-netsniff-ng_clean_custom astraceroute_clean_custom flowtop_clean_custom:
-ifpps_clean_custom mausezahn_clean_custom:
 bpfc_clean_custom:
 	$(Q)$(call RM,$(BUILD_DIR)/*.h $(BUILD_DIR)/*.c)
-curvetun_clean_custom:
 trafgen_clean_custom:
 	$(Q)$(call RM,$(BUILD_DIR)/*.h $(BUILD_DIR)/*.c)
 
@@ -179,17 +180,12 @@ astraceroute_distclean_custom:
 	$(Q)$(call RM,$(ETCDIRE)/whois.conf)
 	$(Q)$(call RM,$(SBINDIR)/astraceroute6)
 	$(Q)$(call RMDIR,$(ETCDIRE))
-ifpps_distclean_custom mausezahn_distclean_custom:
-bpfc_distclean_custom curvetun_distclean_custom trafgen_distclean_custom:
 
-# Target specific installs ...
 netsniff-ng_install_custom flowtop_install_custom:
 	$(Q)$(foreach file,$(NCONF_FILES),$(call INST,conf/$(file),$(ETCDIRE));)
 astraceroute_install_custom:
 	$(Q)$(call INST,conf/whois.conf,$(ETCDIRE))
 	$(Q)$(call INSTX,../scripts/astraceroute6,$(SBINDIR))
-ifpps_install_custom mausezahn_install_custom bpfc_install_custom:
-curvetun_install_custom trafgen_install_custom:
 
 $(TOOLS):
 	$(LD) $(ALL_LDFLAGS) -o $@/$@ $@/*.o $($@-libs)
@@ -201,6 +197,7 @@ nacl:
 	$(Q)cd curvetun/ && ./build_nacl.sh ~/nacl
 geoip:
 	$(Q)cd astraceroute/ && ./build_geoip.sh
+
 help:
 	$(Q)echo "$(bold)Available tools from the toolkit:$(normal)"
 	$(Q)echo " <toolnames>:={$(TOOLS)}"
