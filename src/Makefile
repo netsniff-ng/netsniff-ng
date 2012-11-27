@@ -165,8 +165,8 @@ $(foreach tool,$(TOOLS),$(eval $(call TOOL_templ,$(tool))))
 netsniff-ng: ALL_CFLAGS += -I$(INCDIR)/libnl3/ -D__WITH_PROTOS
 trafgen: ALL_CFLAGS += -I.. -I$(INCDIR)/libnl3/ -D__WITH_PROTOS
 bpfc: ALL_CFLAGS += -I..
-curvetun: ALL_CFLAGS += -I$(NACL_INCLUDE_DIR)
-curvetun: ALL_LDFLAGS += -L$(NACL_LIB_DIR)
+curvetun: ALL_CFLAGS += -I$(shell echo $$NACL_INC_DIR)
+curvetun: ALL_LDFLAGS += -L$(shell echo $$NACL_LIB_DIR)
 
 bpfc_clean_custom:
 	$(Q)$(call RM,$(BUILD_DIR)/*.h $(BUILD_DIR)/*.c)
