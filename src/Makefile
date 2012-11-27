@@ -85,8 +85,11 @@ MKDIR = $(Q)echo -e "  MKDIR\t$@" && mkdir
 STRIP = $(Q)echo -e "  STRIP\t$@" && $(CROSS_COMPILE)strip
 LEX = $(Q)echo -e "  LEX\t$<" && flex
 YAAC = $(Q)echo -e "  YAAC\t$<" && bison
-INST = echo -e "  INST\t$(1)" && install -DC $(1) $(2)
+INST = echo -e "  INST\t$(1)" && install -d $(2) && \
+	install --mode=644 -DC $(1) $(2)/$(shell basename $(1))
+INSTX = echo -e "  INST\t$(1)" && install -DC $(1) $(2)/$(shell basename $(1))
 RM = echo -e "  RM\t$(1)" && rm -rf $(1)
+RMDIR = echo -e "  RM\t$(1)" && rmdir --ignore-fail-on-non-empty $(1) 2> /dev/null || true
 
 export VERSION PATCHLEVEL SUBLEVEL EXTRAVERSION
 export CROSS_COMPILE LD CC STRIP
@@ -119,12 +122,17 @@ clean_showinfo:
 DOC_FILES = Summary RelatedWork Performance KnownIssues IPv6Notes Sponsors \
 	    SubmittingPatches CodingStyle logo.png RelNotes/Notes-$(VERSION_SHORT)
 
+NCONF_FILES = ether.conf tcp.conf udp.conf oui.conf
+
 all: build_showinfo toolkit
 toolkit: $(TOOLS)
 install: $(foreach tool,$(TOOLS),$(tool)_install)
 	$(Q)$(foreach file,$(DOC_FILES),$(call INST,../Documentation/$(file),$(DOCDIRE));)
 clean mostlyclean: $(foreach tool,$(TOOLS),$(tool)_clean)
 realclean distclean clobber: $(foreach tool,$(TOOLS),$(tool)_distclean)
+	$(Q)$(foreach file,$(DOC_FILES),$(call RM,$(DOCDIRE)/$(file));)
+	$(Q)$(call RMDIR,$(DOCDIRE))
+	$(Q)$(call RMDIR,$(ETCDIRE))
 mrproper: clean distclean
 
 # Tool template
@@ -137,10 +145,11 @@ define TOOL_templ
   $(1)_clean: $(1)_clean_custom
 	$(Q)$$(call RM,$(1)/*.o $(1)/$(1))
   $(1)_install: $(1)_install_custom
-	$(Q)$$(call INST,$(1)/$(1),$$(SBINDIR)/$(1))
+	$(Q)$$(call INSTX,$(1)/$(1),$$(SBINDIR)/$(1))
 	$(Q)$$(call INST,../Documentation/$$(shell echo $(1) | sed 's/\([a-z]\)\(.*\)/\u\1\2/g'),$$(DOCDIRE))
-  $(1)_distclean:
+  $(1)_distclean: $(1)_distclean_custom
 	$(Q)$$(call RM,$$(SBINDIR)/$(1))
+	$(Q)$$(call RM,$$(DOCDIRE)/$$(shell echo $(1) | sed 's/\([a-z]\)\(.*\)/\u\1\2/g'))
   $(1)/%.o: %.c
 	$$(CC) $$(ALL_CFLAGS) -o $(1)/$$(shell basename $$< .c).o -c $$<
 endef
@@ -163,14 +172,22 @@ curvetun_clean_custom:
 trafgen_clean_custom:
 	$(Q)$(call RM,$(BUILD_DIR)/*.h $(BUILD_DIR)/*.c)
 
-NCONF_FILES = ether.conf tcp.conf udp.conf oui.conf
+netsniff-ng_distclean_custom flowtop_distclean_custom:
+	$(Q)$(foreach file,$(NCONF_FILES),$(call RM,$(ETCDIRE)/$(file));)
+	$(Q)$(call RMDIR,$(ETCDIRE))
+astraceroute_distclean_custom:
+	$(Q)$(call RM,$(ETCDIRE)/whois.conf)
+	$(Q)$(call RM,$(SBINDIR)/astraceroute6)
+	$(Q)$(call RMDIR,$(ETCDIRE))
+ifpps_distclean_custom mausezahn_distclean_custom:
+bpfc_distclean_custom curvetun_distclean_custom trafgen_distclean_custom:
 
 # Target specific installs ...
 netsniff-ng_install_custom flowtop_install_custom:
 	$(Q)$(foreach file,$(NCONF_FILES),$(call INST,conf/$(file),$(ETCDIRE));)
 astraceroute_install_custom:
 	$(Q)$(call INST,conf/whois.conf,$(ETCDIRE))
-	$(Q)$(call INST,../scripts/astraceroute6,$(SBINDIR)/astraceroute6)
+	$(Q)$(call INSTX,../scripts/astraceroute6,$(SBINDIR)/astraceroute6)
 ifpps_install_custom mausezahn_install_custom bpfc_install_custom:
 curvetun_install_custom trafgen_install_custom:
 
