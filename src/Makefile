@@ -117,7 +117,7 @@ clean_showinfo:
 .FORCE:
 .DEFAULT_GOAL := all
 .IGNORE: %_clean_custom %_install_custom
-.NOTPARALLEL: $(TOOLS)
+.NOTPARALLEL: $(TOOLS) %.y %.l %.tab.o %.yy.o
 
 DOC_FILES = Summary RelatedWork Performance KnownIssues IPv6Notes Sponsors \
 	    SubmittingPatches CodingStyle logo.png RelNotes/Notes-$(VERSION_SHORT)

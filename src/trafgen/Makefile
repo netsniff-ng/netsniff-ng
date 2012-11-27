@@ -7,8 +7,8 @@ trafgen-objs =	xmalloc.o \
 		mtrand.o \
 		mac80211.o \
 		ring_tx.o \
-		trafgen/trafgen_lexer.yy.o \
-		trafgen/trafgen_parser.tab.o \
+		trafgen_lexer.yy.o \
+		trafgen_parser.tab.o \
 		trafgen.o
 
 trafgen-lex =	trafgen_lexer.yy.o
