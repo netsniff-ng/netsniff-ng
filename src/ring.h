@@ -37,7 +37,7 @@
 
 struct frame_map {
 	struct tpacket2_hdr tp_h __aligned_tpacket;
-	struct sockaddr_ll s_ll;
+	struct sockaddr_ll s_ll __align_tpacket(sizeof(struct tpacket2_hdr));
 };
 
 struct ring {

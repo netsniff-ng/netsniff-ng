@@ -73,9 +73,6 @@ submit your contributions, items marked with '!' are of high importance):
 
 42) Flowtop: add interesting things from socket diag (e.g. socket states, ...)?
 
-45! fix sll struct / hdr->s_ll.sll_ifindex in TPACKETv2 (provides
-    wrong information in dissector output)
-
 46) QoS for curvetun.
 
 47) ifpps show timestamps in CSV file.
