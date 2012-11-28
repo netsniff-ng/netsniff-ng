@@ -89,7 +89,7 @@ static void handler_udp_net_to_tun(int sfd, int dfd, struct curve25519_proto *p,
 				   size_t len)
 {
 	char *cbuff;
-	ssize_t rlen, err, clen;
+	ssize_t rlen, clen;
 	struct ct_proto *hdr;
 	struct sockaddr_storage naddr;
 
@@ -122,7 +122,7 @@ static void handler_udp_net_to_tun(int sfd, int dfd, struct curve25519_proto *p,
                 cbuff += crypto_box_zerobytes;
                 clen -= crypto_box_zerobytes;
 
-		err = write(dfd, cbuff, clen);
+		if (write(dfd, cbuff, clen));
 	}
 
 	return;
@@ -180,7 +180,7 @@ static void handler_tcp_net_to_tun(int sfd, int dfd, struct curve25519_proto *p,
 				   size_t len)
 {
 	char *cbuff;
-	ssize_t rlen, err, clen;
+	ssize_t rlen, clen;
 	struct ct_proto *hdr;
 
 	if (!buff || !len)
@@ -208,7 +208,7 @@ static void handler_tcp_net_to_tun(int sfd, int dfd, struct curve25519_proto *p,
 		cbuff += crypto_box_zerobytes;
 		clen -= crypto_box_zerobytes;
 
-		err = write(dfd, cbuff, clen);
+		if (write(dfd, cbuff, clen));
 	}
 
 	return;
@@ -304,7 +304,6 @@ int client_main(char *home, char *dev, char *host, char *port, int udp)
 	int fd = -1, tunfd = 0, retry_server = 0;
 	int ret, try = 1, i;
 	struct addrinfo hints, *ahead, *ai;
-	struct sockaddr_in6 *saddr6;
 	struct pollfd fds[2];
 	struct curve25519_proto *p;
 	struct curve25519_struct *c;
@@ -346,8 +345,6 @@ retry:
 	}
 
 	for (ai = ahead; ai != NULL && fd < 0; ai = ai->ai_next) {
-		if (ai->ai_family == PF_INET6)
-			saddr6 = (struct sockaddr_in6 *) ai->ai_addr;
 		fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 		if (fd < 0)
 			continue;

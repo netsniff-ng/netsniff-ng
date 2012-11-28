@@ -218,7 +218,7 @@ static char *fetch_home_dir(void)
 static void write_username(char *home)
 {
 	int fd, ret;
-	char path[PATH_MAX], *eof;
+	char path[PATH_MAX];
 	char user[512];
 
 	memset(path, 0, sizeof(path));
@@ -228,7 +228,8 @@ static void write_username(char *home)
 	fflush(stdout);
 
 	memset(user, 0, sizeof(user));
-	eof = fgets(user, sizeof(user), stdin);
+	if (fgets(user, sizeof(user), stdin) == NULL)
+		panic("Could not read from stdin!\n");
 	user[sizeof(user) - 1] = 0;
 	user[strlen(user) - 1] = 0; /* omit last \n */
 	if (strlen(user) == 0)
@@ -589,7 +590,7 @@ int main(int argc, char **argv)
 	enum working_mode wmode = MODE_UNKNOW;
 
 	if (getuid() != geteuid())
-		seteuid(getuid());
+		if (seteuid(getuid()));
 
 	home = fetch_home_dir();
 

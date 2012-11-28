@@ -67,7 +67,7 @@ submit your contributions, items marked with '!' are of high importance):
 38! netsniff-ng (and others): if interface goes down, properly exit
 	@TODO: Daniel Borkmann
 
-39! Add a pcap indexing utility fo a faster retrival, analysis on huge
+39) Add a pcap indexing utility fo a faster retrival, analysis on huge
     pcap files. Write the index file out for each pcap capture.
 	@TODO: Daniel Borkmann, Francesco Fusco
 
