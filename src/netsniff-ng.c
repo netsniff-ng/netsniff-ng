@@ -152,6 +152,7 @@ static void timer_next_dump(int number)
 
 static void enter_mode_pcap_to_tx(struct mode *mode)
 {
+	__label__ out;
 	int irq, ifindex, fd = 0, ret;
 	unsigned int size, it = 0;
 	struct ring tx_ring;
@@ -278,7 +279,9 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 			}
 		}
 	}
-out:
+
+	out:
+
 	bug_on(gettimeofday(&end, NULL));
 	diff = tv_subtract(end, start);
 
@@ -379,6 +382,7 @@ static void enter_mode_rx_to_tx(struct mode *mode)
 
 	while (likely(sigint == 0)) {
 		while (user_may_pull_from_rx(rx_ring.frames[it_in].iov_base)) {
+			__label__ next;
 			hdr_in = rx_ring.frames[it_in].iov_base;
 			in = ((uint8_t *) hdr_in) + hdr_in->tp_h.tp_mac;
 			fcnt++;
@@ -418,7 +422,9 @@ static void enter_mode_rx_to_tx(struct mode *mode)
 				sigint = 1;
 				break;
 			}
-next:
+
+			next:
+
 			kernel_may_pull_from_rx(&hdr_in->tp_h);
 			next_slot(&it_in, &rx_ring);
 
@@ -429,7 +435,9 @@ next:
 		poll(&rx_poll, 1, -1);
 		poll_error_maybe_die(rx_sock, &rx_poll);
 	}
-out:
+
+	out:
+
 	sock_print_net_stats(rx_sock, 0);
 
 	bpf_release(&bpf_ops);
@@ -446,6 +454,7 @@ out:
 
 static void enter_mode_read_pcap(struct mode *mode)
 {
+	__label__ out;
 	int ret, fd, fdo = 0;
 	struct pcap_pkthdr phdr;
 	struct sock_fprog bpf_ops;
@@ -554,7 +563,9 @@ static void enter_mode_read_pcap(struct mode *mode)
 			break;
 		}
 	}
-out:
+
+	out:
+
 	bug_on(gettimeofday(&end, NULL));
 	diff = tv_subtract(end, start);
 
@@ -712,7 +723,9 @@ static void enter_mode_rx_only_or_dump(struct mode *mode)
 	}
 
 	if (mode->dump) {
+		__label__ try_file;
 		struct stat tmp;
+
 		fmemset(&tmp, 0, sizeof(tmp));
 		ret = stat(mode->device_out, &tmp);
 		if (ret < 0) {
@@ -723,7 +736,7 @@ static void enter_mode_rx_only_or_dump(struct mode *mode)
 		if (mode->dump_dir) {
 			fd = begin_multi_pcap_file(mode);
 		} else {
-try_file:
+			try_file:
 			fd = begin_single_pcap_file(mode);
 		}
 	}
@@ -776,6 +789,8 @@ try_file:
 
 	while (likely(sigint == 0)) {
 		while (user_may_pull_from_rx(rx_ring.frames[it].iov_base)) {
+			__label__ next;
+
 			hdr = rx_ring.frames[it].iov_base;
 			packet = ((uint8_t *) hdr) + hdr->tp_h.tp_mac;
 			fcnt++;
@@ -805,7 +820,9 @@ try_file:
 				sigint = 1;
 				break;
 			}
-next:
+
+			next:
+
 			kernel_may_pull_from_rx(&hdr->tp_h);
 			next_slot(&it, &rx_ring);
 
