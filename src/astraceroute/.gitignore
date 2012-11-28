@@ -1,4 +1,5 @@
 *.*
 
 !.gitignore
-!CMakeLists.txt
+!Makefile
+!build_geoip.sh
