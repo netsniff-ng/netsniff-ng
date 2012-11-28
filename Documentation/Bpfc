@@ -136,6 +136,8 @@ Mode     Description
 #hatype  Network device type2 for ARP protocol hardware identifiers
 #rxhash  The packet hash computed on reception
 #cpu     CPU number the packet was received on
+#vlanp   Loads 1 to the accu if a valid VLAN tag is present
+#vlant   Loads the VLAN Tag ID into the accumulator
 
 The #k argument can be in hex (0xff), decimal (256), binary (0b11111111) or
 octal (0377) format.
@@ -146,7 +148,7 @@ understands:
 
   ldh [12]           ; this is a comment
   jeq #0x806,L1,L2
-  L1: ret #0xfffff
+  L1: ret #-1        ; you can also use signed values here
   L2: ret #0
 
 Here, the Ethernet type field of the received packet is loaded into the
