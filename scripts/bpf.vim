@@ -42,4 +42,3 @@ hi def link bpfNumber Number
 hi def link bpfSpChar Special
 
 let b:current_syntax = "bpf"
-
