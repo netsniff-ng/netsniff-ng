@@ -433,7 +433,7 @@ static void tx_fastpath_or_die(struct mode *mode)
 			}
 
 			kernel_may_pull_from_tx(&hdr->tp_h);
-			next_slot_prewr(&it, &tx_ring);
+			next_slot(&it, &tx_ring);
 
 			if (mode->num > 0)
 				num--;
