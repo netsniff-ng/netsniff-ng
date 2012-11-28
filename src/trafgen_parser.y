@@ -213,9 +213,9 @@ static void set_dincdec(uint8_t start, uint8_t stop, uint8_t stepping, int type)
 
 %token ',' '{' '}' '(' ')' '[' ']'
 
-%token number_hex number_dec number_ascii number_bin number_oct
+%token number
 
-%type <number> number_hex number_dec number_ascii number_bin number_oct number
+%type <number> number
 
 %%
 
@@ -254,14 +254,6 @@ delimiter
 
 elem_delimiter
 	: delimiter elem { }
-	;
-
-number
-	: number_dec { $$ = $1; }
-	| number_hex { $$ = $1; }
-	| number_ascii { $$ = $1; }
-	| number_bin { $$ = $1; }
-	| number_oct { $$ = $1; }
 	;
 
 fill
