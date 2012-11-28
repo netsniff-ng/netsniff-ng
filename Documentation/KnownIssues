@@ -70,7 +70,18 @@ A: Yes and no. The way how VLAN headers are handled in PF_PACKET sockets by the
 	drop:
 	 ret #0
 
-   where '10' is VLAN ID 10 in this example.
+   Where '10' is VLAN ID 10 in this example. Or, more pedantic:
+
+	_main:
+	 ld #vlanp
+	 jgt #0, contd, drop
+	contd:
+	 ld #vlant
+	 jeq #10, keep, drop
+	keep:
+	 ret #-1
+	drop:
+	 ret #0
 
 Q: When I start trafgen, my kernel crashes! What is happening?
 A: We have fixed this ``bug'' in the Linux kernel under commit
