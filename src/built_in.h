@@ -2,6 +2,7 @@
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
  * Copyright 2009-2012 Daniel Borkmann.
+ * Parts taken from the Linux kernel, GPL, version 2.
  * Subject to the GPL, version 2.
  */
 
@@ -152,6 +153,10 @@ typedef uint8_t		u8;
 # define __pure			__attribute__ ((pure))
 #endif
 
+#ifndef __force
+# define __force		/* unimplemented */
+#endif
+
 #ifndef force_cast
 # define force_cast(type, arg)	((type) (arg))
 #endif
@@ -244,6 +249,16 @@ static inline uint64_t ntohll(uint64_t x)
 # error __BYTE_ORDER is neither __LITTLE_ENDIAN nor __BIG_ENDIAN
 #endif
 
+#define ___constant_swab16(x) ((__u16)(				\
+	(((__u16)(x) & (__u16)0x00ffU) << 8) |			\
+	(((__u16)(x) & (__u16)0xff00U) >> 8)))
+
+#define ___constant_swab32(x) ((__u32)(				\
+	(((__u32)(x) & (__u32)0x000000ffUL) << 24) |		\
+	(((__u32)(x) & (__u32)0x0000ff00UL) <<  8) |		\
+	(((__u32)(x) & (__u32)0x00ff0000UL) >>  8) |		\
+	(((__u32)(x) & (__u32)0xff000000UL) >> 24)))
+
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 static inline u16 cpu_to_be16(u16 val)
 {
@@ -274,6 +289,11 @@ static inline u64 cpu_to_le64(u64 val)
 {
 	return val;
 }
+
+# define __constant_htonl(x) ((__force __be32)___constant_swab32((x)))
+# define __constant_ntohl(x) ___constant_swab32((__force __be32)(x))
+# define __constant_htons(x) ((__force __be16)___constant_swab16((x)))
+# define __constant_ntohs(x) ___constant_swab16((__force __be16)(x))
 #elif __BYTE_ORDER == __BIG_ENDIAN
 static inline u16 cpu_to_be16(u16 val)
 {
@@ -304,6 +324,11 @@ static inline u64 cpu_to_le64(u64 val)
 {
 	return bswap_64(val);
 }
+
+# define __constant_htonl(x) ((__force __be32)(__u32)(x))
+# define __constant_ntohl(x) ((__force __u32)(__be32)(x))
+# define __constant_htons(x) ((__force __be16)(__u16)(x))
+# define __constant_ntohs(x) ((__force __u16)(__be16)(x))
 #else
 # error __BYTE_ORDER is neither __LITTLE_ENDIAN nor __BIG_ENDIAN
 #endif
