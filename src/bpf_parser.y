@@ -122,12 +122,13 @@ static int find_intr_offset_or_panic(char *label_to_search)
 %token OP_JSET OP_ADD OP_SUB OP_MUL OP_DIV OP_AND OP_OR OP_XOR OP_LSH OP_RSH
 %token OP_RET OP_TAX OP_TXA OP_LDXB OP_MOD OP_NEG K_PKT_LEN K_PROTO K_TYPE
 %token K_NLATTR K_NLATTR_NEST K_MARK K_QUEUE K_HATYPE K_RXHASH K_CPU K_IFIDX
+%token K_VLANT K_VLANP
 
 %token ':' ',' '[' ']' '(' ')' 'x' 'a' '+' 'M' '*' '&' '#'
 
-%token number_hex number_dec number_oct number_bin label
+%token number label
 
-%type <number> number_hex number_dec number_oct number_bin number
+%type <number> number
 %type <label> label
 
 %%
@@ -174,13 +175,6 @@ instr
 	| do_txa
 	;
 
-number
-	: number_dec { $$ = $1; }
-	| number_hex { $$ = $1; }
-	| number_oct { $$ = $1; }
-	| number_bin { $$ = $1; }
-	;
-
 do_label
 	: label ':' { set_curr_label($1); }
 	;
@@ -220,6 +214,12 @@ do_ldb
 	| OP_LDB '#' K_CPU {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_CPU); }
+	| OP_LDB '#' K_VLANT {
+		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_VLAN_TAG); }
+	| OP_LDB '#' K_VLANP {
+		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_VLAN_TAG_PRESENT); }
 	;
 
 do_ldh
@@ -257,6 +257,12 @@ do_ldh
 	| OP_LDH '#' K_CPU {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_CPU); }
+	| OP_LDH '#' K_VLANT {
+		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_VLAN_TAG); }
+	| OP_LDH '#' K_VLANP {
+		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_VLAN_TAG_PRESENT); }
 	;
 
 do_ld
@@ -294,6 +300,12 @@ do_ld
 	| OP_LD '#' K_CPU {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_CPU); }
+	| OP_LD '#' K_VLANT {
+		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_VLAN_TAG); }
+	| OP_LD '#' K_VLANP {
+		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_VLAN_TAG_PRESENT); }
 	| OP_LD 'M' '[' number ']' {
 		set_curr_instr(BPF_LD | BPF_MEM, 0, 0, $4); }
 	| OP_LD '[' 'x' '+' number ']' {

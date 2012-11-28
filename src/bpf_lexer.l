@@ -31,22 +31,12 @@ extern void yyerror(const char *);
 %option noinput
 %option nodefault
 
-digit		[0-9]
-digit_s		[1-9]
-digit_n		[0]
-bindigit	[0-1]
-bindigit_b	[b]
-hex		[a-fA-F0-9]
-hex_x		[x]
+number_oct	([0][0-9]+)
+number_hex	([0][x][a-fA-F0-9]+)
+number_bin	([0][b][0-1]+)
+number_dec	(([0])|([-+]?[1-9][0-9]*))
 
-number_dec	{digit_n}|{digit_s}{digit}*
-number_oct	{digit_n}{digit}+
-number_hex	{digit_n}{hex_x}{hex}+
-number_bin	{digit_n}{bindigit_b}{bindigit}+
-
-label_s		[a-zA-Z_]
-label_me	[a-zA-Z0-9_]
-label		{label_s}{label_me}+
+label		[a-zA-Z_][a-zA-Z0-9_]+
 
 %%
 
@@ -87,6 +77,8 @@ label		{label_s}{label_me}+
 "hat"|"hatype"	{ return K_HATYPE; }
 "rxh"|"rxhash"	{ return K_RXHASH; }
 "cpu"		{ return K_CPU; }
+"vlant"		{ return K_VLANT; }
+"vlanp"		{ return K_VLANP; }
 
 ":"		{ return ':'; }
 ","		{ return ','; }
@@ -103,16 +95,16 @@ label		{label_s}{label_me}+
 "&"		{ return '&'; }
 
 {number_hex}	{ yylval.number = strtoul(yytext, NULL, 16);
-		  return number_hex; }
+		  return number; }
 
-{number_dec}	{ yylval.number = strtol(yytext, NULL, 10);
-		  return number_dec; }
-
-{number_oct}	{ yylval.number = strtol(yytext, NULL, 8);
-		  return number_oct; }
+{number_oct}	{ yylval.number = strtol(yytext + 1, NULL, 8);
+		  return number; }
 
 {number_bin}	{ yylval.number = strtol(yytext + 2, NULL, 2);
-		  return number_bin; }
+		  return number; }
+
+{number_dec}	{ yylval.number = strtol(yytext, NULL, 10);
+		  return number; }
 
 {label}		{ yylval.label = xstrdup(yytext);
 		  return label; }

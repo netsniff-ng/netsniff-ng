@@ -1,7 +1,7 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
- * Copyright 2009, 2010 Daniel Borkmann.
+ * Copyright 2009 - 2012 Daniel Borkmann.
  * Copyright 2009, 2010 Emmanuel Roullit.
  * Copyright 1990-1996 The Regents of the University of
  * California. All rights reserved. (3-clause BSD license)
@@ -118,6 +118,10 @@ static const char *bpf_dump_linux_k(uint32_t k)
 		return "#rxhash";
 	case (SKF_AD_OFF + SKF_AD_CPU):
 		return "#cpu";
+	case (SKF_AD_OFF + SKF_AD_VLAN_TAG):
+		return "#vlant";
+	case (SKF_AD_OFF + SKF_AD_VLAN_TAG_PRESENT):
+		return "#vlanp";
 	}
 }
 
