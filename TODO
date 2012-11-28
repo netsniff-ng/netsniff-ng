@@ -71,12 +71,7 @@ submit your contributions, items marked with '!' are of high importance):
     pcap files. Write the index file out for each pcap capture.
 	@TODO: Daniel Borkmann, Francesco Fusco
 
-41! Add vlan support for bpfc (http://www.spinics.net/lists/netdev/msg213464.html).
-
 42) Flowtop: add interesting things from socket diag (e.g. socket states, ...)?
-
-44! mac80211: waiting for netlink ack failed with libnl3! Fix compilation on
-    Ubuntu 10.04 and higher.
 
 45! fix sll struct / hdr->s_ll.sll_ifindex in TPACKETv2 (provides
     wrong information in dissector output)

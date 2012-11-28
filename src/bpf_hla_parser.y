@@ -59,12 +59,12 @@ static unsigned int num_ifs = 0;
 %token K_NAME K_DEF K_PKT K_RET K_IF K_ELIF K_ELSE
 %token K_MACRO_IPV4 K_MACRO_IPV6 K_MACRO_IP K_MACRO_UDP K_MACRO_TCP
 
+%token number
+
 %token '(' ')' '{' '}' '=' ';' '+' '-' '&' '|' '^' '!' '<' '>' '*' '/' '%' ','
 
-%token number_hex number_dec number_oct number_bin
-
 %type <idx> K_NAME var
-%type <number> number_hex number_dec number_oct number_bin number
+%type <number> number
 
 %%
 
@@ -187,13 +187,6 @@ var
 			panic("Variable \"%s\" not declared (l%d)\n", 
 			      bpf_symtab_name($1), zzlineno);
 		$$ = $1; }
-	;
-
-number
-	: number_dec { $$ = $1; }
-	| number_hex { $$ = $1; }
-	| number_oct { $$ = $1; }
-	| number_bin { $$ = $1; }
 	;
 
 %%
