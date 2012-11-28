@@ -180,6 +180,9 @@ static inline const char *make_n_a(const char *p)
 	return p ? : "N/A";
 }
 
+static void flow_entry_from_ct(struct flow_entry *n, struct nf_conntrack *ct);
+static void flow_entry_get_extended(struct flow_entry *n);
+
 static void help(void)
 {
 	printf("\nflowtop %s, top-like netfilter TCP/UDP flow tracking\n",
@@ -223,6 +226,130 @@ static void version(void)
 	     "This is free software: you are free to change and redistribute it.\n"
 	     "There is NO WARRANTY, to the extent permitted by law.\n");
 	die();
+}
+
+static inline struct flow_entry *flow_entry_xalloc(void)
+{
+	struct flow_entry *n;
+
+	n = xzmalloc(sizeof(*n));
+	n->first = 1;
+
+	return n;
+}
+
+static inline void flow_entry_xfree(struct flow_entry *n)
+{
+	xfree(n);
+}
+
+static inline void flow_list_init(struct flow_list *fl)
+{
+	fl->head = NULL;
+	spinlock_init(&fl->lock);
+}
+
+static void flow_list_new_entry(struct flow_list *fl, struct nf_conntrack *ct)
+{
+	struct flow_entry *n = flow_entry_xalloc();
+
+	rcu_assign_pointer(n->next, fl->head);
+	rcu_assign_pointer(fl->head, n);
+
+	flow_entry_from_ct(n, ct);
+	flow_entry_get_extended(n);
+}
+
+static struct flow_entry *flow_list_find_id(struct flow_list *fl,
+					    uint32_t id)
+{
+	struct flow_entry *n = rcu_dereference(fl->head);
+
+	while (n != NULL) {
+		if (n->flow_id == id)
+			return n;
+
+		n = rcu_dereference(n->next);
+	}
+
+	return NULL;
+}
+
+static struct flow_entry *flow_list_find_prev_id(struct flow_list *fl,
+						 uint32_t id)
+{
+	struct flow_entry *n = rcu_dereference(fl->head), *tmp;
+
+	if (n->flow_id == id)
+		return NULL;
+
+	while ((tmp = rcu_dereference(n->next)) != NULL) {
+		if (tmp->flow_id == id)
+			return n;
+
+		n = tmp;
+	}
+
+	return NULL;
+}
+
+static void flow_list_update_entry(struct flow_list *fl,
+				   struct nf_conntrack *ct)
+{
+	int do_ext = 0;
+	struct flow_entry *n;
+
+	n = flow_list_find_id(fl, nfct_get_attr_u32(ct, ATTR_ID));
+	if (n == NULL) {
+		n = flow_entry_xalloc();
+
+		rcu_assign_pointer(n->next, fl->head);
+		rcu_assign_pointer(fl->head, n);
+
+		do_ext = 1;
+	}
+
+	flow_entry_from_ct(n, ct);
+	if (do_ext)
+		flow_entry_get_extended(n);
+}
+
+static void flow_list_destroy_entry(struct flow_list *fl,
+				    struct nf_conntrack *ct)
+{
+	struct flow_entry *n1, *n2;
+	uint32_t id = nfct_get_attr_u32(ct, ATTR_ID);
+
+	n1 = flow_list_find_id(fl, id);
+	if (n1) {
+		n2 = flow_list_find_prev_id(fl, id);
+		if (n2) {
+			rcu_assign_pointer(n2->next, n1->next);
+			rcu_assign_pointer(n1->next, NULL);
+
+			flow_entry_xfree(n1);
+		} else {
+			flow_entry_xfree(fl->head);
+
+			rcu_assign_pointer(fl->head, NULL);
+		}
+	}
+}
+
+static void flow_list_destroy(struct flow_list *fl)
+{
+	struct flow_entry *n;
+
+	while (fl->head != NULL) {
+		n = rcu_dereference(fl->head->next);
+		rcu_assign_pointer(fl->head->next, NULL);
+
+		flow_entry_xfree(fl->head);
+		rcu_assign_pointer(fl->head, n);
+	}
+
+	synchronize_rcu();
+	spinlock_destroy(&fl->lock);
 }
 
 static int walk_process(char *process, struct flow_entry *n)
@@ -432,102 +559,7 @@ static void flow_entry_get_extended(struct flow_entry *n)
 	}
 }
 
-static inline void flow_list_init(struct flow_list *fl)
-{
-	fl->head = NULL;
-	spinlock_init(&fl->lock);
-}
-
-static void flow_list_new_entry(struct flow_list *fl, struct nf_conntrack *ct)
-{
-	struct flow_entry *n = xzmalloc(sizeof(*n));
-
-	n->first = 1;
-
-	rcu_assign_pointer(n->next, fl->head);
-	rcu_assign_pointer(fl->head, n);
-
-	flow_entry_from_ct(n, ct);
-	flow_entry_get_extended(n);
-}
-
-static struct flow_entry *__flow_list_find_by_id(struct flow_list *fl, uint32_t id)
-{
-	struct flow_entry *n = rcu_dereference(fl->head);
-	while (n != NULL) {
-		if (n->flow_id == id)
-			return n;
-		n = rcu_dereference(n->next);
-	}
-	return NULL;
-}
-
-static struct flow_entry *__flow_list_find_prev_by_id(struct flow_list *fl, uint32_t id)
-{
-	struct flow_entry *n = rcu_dereference(fl->head);
-	if (n->flow_id == id)
-		return NULL;
-	while (rcu_dereference(n->next) != NULL) {
-		if (rcu_dereference(n->next)->flow_id == id)
-			return n;
-		n = rcu_dereference(n->next);
-	}
-	return NULL;
-}
-
-static void flow_list_update_entry(struct flow_list *fl, struct nf_conntrack *ct)
-{
-	int do_ext = 0;
-	uint32_t id = nfct_get_attr_u32(ct, ATTR_ID);
-	struct flow_entry *n;
-	n = __flow_list_find_by_id(fl, id);
-	if (n == NULL) {
-		n = xzmalloc(sizeof(*n));
-		n->first = 1;
-		rcu_assign_pointer(n->next, fl->head);
-		rcu_assign_pointer(fl->head, n);
-		do_ext = 1;
-	}
-	flow_entry_from_ct(n, ct);
-	if (do_ext)
-		flow_entry_get_extended(n);
-}
-
-static void flow_list_destroy_entry(struct flow_list *fl, struct nf_conntrack *ct)
-{
-	uint32_t id = nfct_get_attr_u32(ct, ATTR_ID);
-	struct flow_entry *n1, *n2;
-
-	n1 = __flow_list_find_by_id(fl, id);
-	if (n1) {
-		n2 = __flow_list_find_prev_by_id(fl, id);
-		if (n2) {
-			rcu_assign_pointer(n2->next, n1->next);
-			rcu_assign_pointer(n1->next, NULL);
-			xfree(n1);
-		} else {
-			xfree(fl->head);
-			rcu_assign_pointer(fl->head, NULL);
-		}
-	}
-}
-
-static void flow_list_destroy(struct flow_list *fl)
-{
-	struct flow_entry *n;
-
-	while (fl->head != NULL) {
-		n = rcu_dereference(fl->head->next);
-		rcu_assign_pointer(fl->head->next, NULL);
-		xfree(fl->head);
-		rcu_assign_pointer(fl->head, n);
-	}
-
-	synchronize_rcu();
-	spinlock_destroy(&fl->lock);
-}
-
-static uint16_t get_port(uint16_t src, uint16_t dst)
+static uint16_t presenter_get_port(uint16_t src, uint16_t dst)
 {
 	char *tmp1, *tmp2;
 
@@ -555,7 +587,7 @@ static uint16_t get_port(uint16_t src, uint16_t dst)
 	}
 }
 
-static void screen_init(WINDOW **screen)
+static void presenter_screen_init(WINDOW **screen)
 {
 	(*screen) = initscr();
 	noecho();
@@ -566,7 +598,8 @@ static void screen_init(WINDOW **screen)
 	wrefresh(*screen);
 }
 
-static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
+static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
+				    int skip_lines)
 {
 	int i, line = 3, maxy;
 	struct flow_entry *n;
@@ -583,13 +616,14 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 	wclear(screen);
 	clear();
 
+	mvwprintw(screen, 1, 2, "Kernel netfilter TCP/UDP "
+		  "flow statistics, [+%d]", skip_lines);
+
 	rcu_read_lock();
 
-	mvwprintw(screen, 1, 2, "Kernel netfilter TCP/UDP flow statistics, [+%d]",
-		  skip_lines);
-
 	if (rcu_dereference(fl->head) == NULL)
-		mvwprintw(screen, line, 2, "(No active sessions! Is netfilter running?)");
+		mvwprintw(screen, line, 2, "(No active sessions! "
+			  "Is netfilter running?)");
 
 	maxy -= 4;
 	/* Yes, that's lame :-P */
@@ -603,7 +637,7 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 			    (i != TCP_CONNTRACK_NONE &&
 			     n->tcp_state == TCP_CONNTRACK_NONE) ||
 			    /* Filter out DNS */
-			    get_port(n->port_src, n->port_dst) == 53) {
+			    presenter_get_port(n->port_src, n->port_dst) == 53) {
 				n = rcu_dereference(n->next);
 				continue;
 			}
@@ -630,10 +664,10 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 			printw("]:");
 			attron(A_BOLD);
 			if (n->tcp_state != TCP_CONNTRACK_NONE) {
-				printw("%s -> ", lookup_port_tcp(get_port(n->port_src,
+				printw("%s -> ", lookup_port_tcp(presenter_get_port(n->port_src,
 									  n->port_dst)));
 			} else {
-				printw("%s -> ", lookup_port_udp(get_port(n->port_src,
+				printw("%s -> ", lookup_port_udp(presenter_get_port(n->port_src,
 									  n->port_dst)));
 			}
 			attroff(A_BOLD);
@@ -672,7 +706,7 @@ static void screen_update(WINDOW *screen, struct flow_list *fl, int skip_lines)
 	refresh();
 }
 
-static inline void screen_end(void)
+static inline void presenter_screen_end(void)
 {
 	endwin();
 }
@@ -683,7 +717,7 @@ static void presenter(void)
 	WINDOW *screen = NULL;
 
 	dissector_init_ethernet(0);
-	screen_init(&screen);
+	presenter_screen_init(&screen);
 
 	rcu_register_thread();
 	while (!sigint) {
@@ -710,12 +744,12 @@ static void presenter(void)
 			break;
 		}
 
-		screen_update(screen, &flow_list, skip_lines);
+		presenter_screen_update(screen, &flow_list, skip_lines);
 		usleep(100000);
 	}
 	rcu_unregister_thread();
 
-	screen_end();
+	presenter_screen_end();
 	dissector_cleanup_ethernet();
 }
 
