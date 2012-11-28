@@ -42,14 +42,26 @@ What additional tools are recommended after the build?
 It is common, that these libraries are shipped as distribution packages
 for an easy installation. We try to keep this as minimal as possible.
 
-For downloading the latest GeoIP database, you should use the script that
-is located at scripts/geoip-database-update.
-
-The installation process done by make is fairly simple:
+After downloading the netsniff-ng toolkit, you should change to 'src':
 
   $ cd netsniff-ng/src/
+
+The installation (deinstallation) process done by make is fairly simple:
+
   $ make
   # make install
+
+  (# make distclean)
+  ($ make clean)
+  (or for both at once: # make mrproper)
+
+You can also build only a particular tool, e.g.:
+  
+  $ make trafgen
+  # make trafgen_install
+
+  (# make trafgen_distclean)
+  ($ make trafgen_clean)
 
 In order to build curvetun, libnacl must be built first. A helper script
 called build_nacl.sh is there to facilitate this process. If you want to
@@ -57,6 +69,10 @@ build NaCl in the directory ~/nacl, the script should be called this way:
 
   $ cd src/curvetun
   $ ./build_nacl.sh ~/nacl
+
+There's also an abbreviation for this by simply typing:
+
+  $ make nacl
 
 This gives an initial output such as "Building NaCl for arch amd64 on host
 fuuubar (grab a coffee, this takes a while) ...". If the automatically
@@ -83,6 +99,17 @@ adapt paths within the script):
   $ cd src/astraceroute
   # ./build_geoip.sh
 
+Again, there's also an abbreviation for this by simply typing:
+
+  # make geoip
+
+For downloading the latest GeoIP database, you should use the script that
+is located at scripts/geoip-database-update, or use:
+
+  # make update
+
+If you're unsure with any make targets, check out: make help
+
 In order to run the toolkit as a normal user, set the following privilege
 separation after the build/installation:
 
@@ -94,10 +121,6 @@ is distributed with on most Linux systems.
 
 For bpfc, we also have a Vim syntax highlighting file. Have a look at
 scripts/bpf.vim for installation instructions.
-
-To uninstall the toolkit from your system, simply execute:
-
-  # make distclean
 
 netsniff-ng has been successfully tested on x86 and x86_64. It should also run
 on most other major architectures. However, since we don't have a possibility
