@@ -175,11 +175,6 @@ static void signal_handler(int number)
 	}
 }
 
-static inline const char *make_n_a(const char *p)
-{
-	return p ? : "N/A";
-}
-
 static void flow_entry_from_ct(struct flow_entry *n, struct nf_conntrack *ct);
 static void flow_entry_get_extended(struct flow_entry *n);
 
@@ -502,6 +497,7 @@ static void flow_entry_get_extended(struct flow_entry *n)
 	struct sockaddr_in sa;
 	struct hostent *hent;
 	GeoIPRecord *gir_src, *gir_dst;
+	inline const char *make_n_a(const char *p) { return p ? : "N/A"; }
 
 	if (n->flow_id == 0)
 		return;
