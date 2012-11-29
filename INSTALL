@@ -32,6 +32,7 @@ What libraries are required?
  - liburcu (flowtop)
  - libnl3 (netsniff-ng, trafgen)
  - libnet (mausezahn)
+ - libpcap (mausezahn)
  - libcli (mausezahn)
 
 What additional tools are recommended after the build?
