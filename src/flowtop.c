@@ -803,7 +803,7 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 		mvwprintw(screen, line, 2, "(No active sessions! "
 			  "Is netfilter running?)");
 
-	maxy -= 4;
+	maxy -= 6;
 	/* Yes, that's lame :-P */
 	for (i = 0; i < sizeof(states); i++) {
 		n = rcu_dereference(fl->head);
@@ -826,7 +826,7 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 			presenter_screen_do_line(screen, n, &line);
 
 			line++;
-			maxy--;
+			maxy -= (2 + 1 * show_src);
 			n = rcu_dereference(n->next);
 		}
 	}
