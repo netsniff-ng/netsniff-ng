@@ -2,32 +2,65 @@ Here's a list of things we need to do (contributions are welcome and highly
 appreciated, please also read Documentation/SubmittingPatches about how to
 submit your contributions, items marked with '!' are of high importance):
 
- 0! Improve manpages, extend the documentation or write useful howtos.
+ 0! Improve manpages, extend the documentation and/or write useful howtos.
 	@TODO: Jon Schipp, Daniel Borkmann
 
- 1! Highest prio: Cleanup and refactor the code and build system to make it
-    more maintainable, stable, and probably faster! mausezahn: clean it up
-    add fork + fanout mode, remove libpcap dependency, let it also store
-    pcap files e.g. on a network filesystem of the mausezahn box.
+ 1! Highest prio: Cleanup and refactor the code!
 	@TODO: Daniel Borkmann
 
- 3! Test IPv6 on curvetun and mausezahn.
+ 3! Test IPv6 on flowtop, curvetun and mausezahn.
+	@TODO: Daniel Borkmann, Jon Schipp
+
+ 3! Implement and test DCCP, SCTP, ICMP(, UDP) on flowtop, plus pkt counter and
+    byte counter from conntrack.
 	@TODO: Daniel Borkmann
+
+ 4! Implement IRQs + Softirqs on wireless in ifpps. (Driver name via ethtool?)
+	@TODO: Daniel Borkmann
+
+10! Add a proper 802.11 dissector for netsniff-ng.
+	@TODO: Markus Amend
+
+13! Easier language (bpf-hla) for /fast/ filtering (e.g. on top of BPF so
+    that it can run in the kernel), include this into bpfc (bpfc-hla).
+	@TODO: Daniel Borkmann, Markus Amend
+
+22! Add different timing models to trafgen, not just a static interpacket gap.
+	@TODO: Daniel Borkmann
+
+38! netsniff-ng (and others): if interface goes down, properly exit
+	@TODO: Daniel Borkmann
+
+48! Hand-include patchset from Sibir Chakraborty:
+	- Replay all files from directory (dir as --in paramter)
+	- Replay with correct timing information
+	- Replay with Gbps / pps rate limit
+	@TODO: Daniel Borkmann
+
+49! Add Gbps / pps rate limit to trafgen
+	@TODO: Daniel Borkmann
+
+47! ifpps show timestamps in CSV file. (Do we already have this?) In general
+    improve CSV output a bit.
+	@TODO: Daniel Borkmann
+
+32! ifpps: add option for --dev eth0,eth1,eth2 and accumulate stats
+	@TODO: Daniel Borkmann
+
+50! mausezahn: clean it up add fork + fanout mode(?), remove libpcap
+    dependency, let it also store pcap files e.g. on a network filesystem
+    of the mausezahn box.
+	@TODO: Daniel Borkmann
+
+---
 
  5) Make trafgen also write to a pcap instead to a device.
 
  6) Let netsniff-ng and trafgen support pcap and pcap-ng!
 
-10! Add a proper 802.11 dissector for netsniff-ng.
-	@TODO: Markus Amend
-
 12) Add new dissectors (e.g. BGP, DNS, DCCP, SCTP, RSVP, IPsec, LISP, RADIUS,
     LLC, fix MPLS?, improve ARP, BPDU, PVST, CDP, LLDP, RTP, Syslog, NTP,
     OpenFlow, ...), add new protocols to mausezahn.
-
-13! Easier language (bpf-hla) for /fast/ filtering (e.g. on top of BPF so
-    that it can run in the kernel), include this into bpfc (bpfc-hla).
-	@TODO: Tobias Kalbitz, Markus Amend, Daniel Borkmann
 
 16) Further micro-optimize netsniff-ng, trafgen, mausezahn's performance. Use
     Oprofile for optimize tools!
@@ -36,47 +69,10 @@ submit your contributions, items marked with '!' are of high importance):
 
 21) Obfuscate curvetun's protocol to make it hard/resource-intensive for DPIs.
 
-22! Add different timing models to trafgen, not just a static interpacket gap.
-	@TODO: Daniel Borkmann
-
-25) Do performance tests with 10 Gigabit cards.
-	@TODO: Sibir Chakraborty
-
-29) Improve the Linux kernel's net/packet/af_packet.c (that we rely on)
-
 31) astraceroute: implement DNS traceroute with AS/Geo information
 
-32) ifpps: add option for --dev eth0,eth1,eth2 and accumulate stats
+34) Are there other interesting (e.g. ethtool) stats for ifpps?
 
-33) flowtop: can we get per socket pps, bytes per sec without sniffing?
+46) QoS for curvetun --> since tundev is qdiscless
 
-34) Are there other interesting (e.g. ethtool) stats for ifpps? E.g. backlog
-    queue statistics in ifpps (discussion with Jon Schipp).
-
-35) Build a generic interface that is somewhat transparant to RX_RING/TX_RING
-    where we can user uio-dma, integrate uio-ixgbe and probably port others.
-    This could be invoked through a special build option. Default should always
-    be RX_RING / TX_RING.
-    [1] http://pub.netsniff-ng.org/misc/uio-dma.tar.bz2
-    [2] http://pub.netsniff-ng.org/misc/uio-ixgbe.tar.bz2
-	@TODO: Sibir Chakraborty
-
-38! netsniff-ng (and others): if interface goes down, properly exit
-	@TODO: Daniel Borkmann
-
-39) Add a pcap indexing utility fo a faster retrival, analysis on huge
-    pcap files. Write the index file out for each pcap capture.
-	@TODO: Daniel Borkmann, Francesco Fusco
-
-42) Flowtop: add interesting things from socket diag (e.g. socket states, ...)?
-
-46) QoS for curvetun.
-
-47) ifpps show timestamps in CSV file.
-
-48! Hand-include patchset from Sibir Chakraborty:
-	- Replay all files from directory (dir as --in paramter)
-	- Replay with correct timing information
-	- Replay with Gbps / pps rate limit
-
-49! Add Gbps / pps rate limit to trafgen
+47) Add geo-ip information to netsniff-ng output?
