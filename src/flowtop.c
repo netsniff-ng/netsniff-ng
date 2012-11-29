@@ -27,6 +27,8 @@
 #include <ctype.h>
 #include <libnetfilter_conntrack/libnetfilter_conntrack.h>
 #include <libnetfilter_conntrack/libnetfilter_conntrack_tcp.h>
+#include <libnetfilter_conntrack/libnetfilter_conntrack_dccp.h>
+#include <libnetfilter_conntrack/libnetfilter_conntrack_sctp.h>
 #include <GeoIP.h>
 #include <GeoIPCity.h>
 #include <netinet/in.h>
@@ -163,6 +165,54 @@ static const uint8_t tcp_states[] = {
 	TCP_CONNTRACK_CLOSE,
 	TCP_CONNTRACK_SYN_SENT2,
 	TCP_CONNTRACK_NONE,
+};
+
+static const char *const dccp_state2str[DCCP_CONNTRACK_MAX] = {
+	[DCCP_CONNTRACK_NONE]		= "NOSTATE",
+	[DCCP_CONNTRACK_REQUEST]	= "REQUEST",
+	[DCCP_CONNTRACK_RESPOND]	= "RESPOND",
+	[DCCP_CONNTRACK_PARTOPEN]	= "PARTOPEN",
+	[DCCP_CONNTRACK_OPEN]		= "OPEN",
+	[DCCP_CONNTRACK_CLOSEREQ]	= "CLOSEREQ",
+	[DCCP_CONNTRACK_CLOSING]	= "CLOSING",
+	[DCCP_CONNTRACK_TIMEWAIT]	= "TIMEWAIT",
+	[DCCP_CONNTRACK_IGNORE]		= "IGNORE",
+	[DCCP_CONNTRACK_INVALID]	= "INVALID",
+};
+
+static const uint8_t dccp_states[] = {
+	DCCP_CONNTRACK_NONE,
+	DCCP_CONNTRACK_REQUEST,
+	DCCP_CONNTRACK_RESPOND,
+	DCCP_CONNTRACK_PARTOPEN,
+	DCCP_CONNTRACK_OPEN,
+	DCCP_CONNTRACK_CLOSEREQ,
+	DCCP_CONNTRACK_CLOSING,
+	DCCP_CONNTRACK_TIMEWAIT,
+	DCCP_CONNTRACK_IGNORE,
+	DCCP_CONNTRACK_INVALID,
+};
+
+static const char *const sctp_state2str[SCTP_CONNTRACK_MAX] = {
+	[SCTP_CONNTRACK_NONE]		= "NOSTATE",
+	[SCTP_CONNTRACK_CLOSED]		= "CLOSED",
+	[SCTP_CONNTRACK_COOKIE_WAIT]	= "COOKIE_WAIT",
+	[SCTP_CONNTRACK_COOKIE_ECHOED]	= "COOKIE_ECHOED",
+	[SCTP_CONNTRACK_ESTABLISHED]	= "ESTABLISHED",
+	[SCTP_CONNTRACK_SHUTDOWN_SENT]	= "SHUTDOWN_SENT",
+	[SCTP_CONNTRACK_SHUTDOWN_RECD]	= "SHUTDOWN_RECD",
+	[SCTP_CONNTRACK_SHUTDOWN_ACK_SENT] = "SHUTDOWN_ACK_SENT",
+};
+
+static const uint8_t sctp_states[] = {
+	SCTP_CONNTRACK_NONE,
+	SCTP_CONNTRACK_CLOSED,
+	SCTP_CONNTRACK_COOKIE_WAIT,
+	SCTP_CONNTRACK_COOKIE_ECHOED,
+	SCTP_CONNTRACK_ESTABLISHED,
+	SCTP_CONNTRACK_SHUTDOWN_SENT,
+	SCTP_CONNTRACK_SHUTDOWN_RECD,
+	SCTP_CONNTRACK_SHUTDOWN_ACK_SENT,
 };
 
 static const struct nfct_filter_ipv4 filter_ipv4 = {
