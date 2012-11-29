@@ -52,6 +52,9 @@ submit your contributions, items marked with '!' are of high importance):
     of the mausezahn box.
 	@TODO: Daniel Borkmann
 
+51! astraceroute: can we remove whois query and do this locally?
+	@TODO: Daniel Borkmann
+
 ---
 
  5) Make trafgen also write to a pcap instead to a device.
