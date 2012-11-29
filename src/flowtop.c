@@ -83,22 +83,26 @@ struct flow_list {
 
 #define SCROLL_MAX 1000
 
-#define INCLUDE_UDP	(1 << 0)
-#define INCLUDE_TCP	(1 << 1)
-#define INCLUDE_DCCP	(1 << 2)
-#define INCLUDE_ICMP	(1 << 3)
-#define INCLUDE_SCTP	(1 << 4)
+#define INCLUDE_IPV4	(1 << 0)
+#define INCLUDE_IPV6	(1 << 1)
+#define INCLUDE_UDP	(1 << 2)
+#define INCLUDE_TCP	(1 << 3)
+#define INCLUDE_DCCP	(1 << 4)
+#define INCLUDE_ICMP	(1 << 5)
+#define INCLUDE_SCTP	(1 << 6)
 
 volatile sig_atomic_t sigint = 0;
 
-static int what = INCLUDE_TCP, show_src = 0;
+static int what = INCLUDE_IPV4 | INCLUDE_IPV6 | INCLUDE_TCP, show_src = 0;
 
 struct geo_ip_db geo_country, geo_city;
 
 static struct flow_list flow_list;
 
-static const char *short_options = "vhTULKsOPDIS";
+static const char *short_options = "vhTULKsOPDIS46";
 static const struct option long_options[] = {
+	{"ipv4",	no_argument,		NULL, '4'},
+	{"ipv6",	no_argument,		NULL, '6'},
 	{"tcp",		no_argument,		NULL, 'T'},
 	{"udp",		no_argument,		NULL, 'U'},
 	{"dccp",	no_argument,		NULL, 'D'},
@@ -247,6 +251,8 @@ static void help(void)
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: flowtop [options]\n"
 	     "Options:\n"
+	     "  -4|--ipv4              Show only IPv4 flows (default)\n"
+	     "  -6|--ipv6              Show only IPv6 flows (default)\n"
 	     "  -T|--tcp               Show only TCP flows (default)\n"
 	     "  -U|--udp               Show only UDP flows\n"
 	     "  -D|--dccp              Show only DCCP flows\n"
@@ -261,7 +267,7 @@ static void help(void)
 	     "  -h|--help              Print this help\n\n"
 	     "Examples:\n"
 	     "  flowtop\n"
-	     "  flowtop -UTDISs\n\n"
+	     "  flowtop -46UTDISs\n\n"
 	     "Note:\n"
 	     "  If netfilter is not running, you can activate it with i.e.:\n"
 	     "   iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT\n"
@@ -1049,16 +1055,20 @@ static void *collector(void *null)
 		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO, IPPROTO_DCCP);
 	if (what & INCLUDE_SCTP)
 		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO, IPPROTO_SCTP);
-	if (what & INCLUDE_ICMP) {
+	if (what & INCLUDE_ICMP && what & INCLUDE_IPV4)
 		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO, IPPROTO_ICMP);
+	if (what & INCLUDE_ICMP && what & INCLUDE_IPV6)
 		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO, IPPROTO_ICMPV6);
+	if (what & INCLUDE_IPV4) {
+		nfct_filter_set_logic(filter, NFCT_FILTER_SRC_IPV4,
+				      NFCT_FILTER_LOGIC_NEGATIVE);
+		nfct_filter_add_attr(filter, NFCT_FILTER_SRC_IPV4, &filter_ipv4);
 	}
-
-	nfct_filter_set_logic(filter, NFCT_FILTER_SRC_IPV4, NFCT_FILTER_LOGIC_NEGATIVE);
-	nfct_filter_add_attr(filter, NFCT_FILTER_SRC_IPV4, &filter_ipv4);
-
-	nfct_filter_set_logic(filter, NFCT_FILTER_SRC_IPV6, NFCT_FILTER_LOGIC_NEGATIVE);
-	nfct_filter_add_attr(filter, NFCT_FILTER_SRC_IPV6, &filter_ipv6);
+	if (what & INCLUDE_IPV6) {
+		nfct_filter_set_logic(filter, NFCT_FILTER_SRC_IPV6,
+				      NFCT_FILTER_LOGIC_NEGATIVE);
+		nfct_filter_add_attr(filter, NFCT_FILTER_SRC_IPV6, &filter_ipv6);
+	}
 
 	ret = nfct_filter_attach(nfct_fd(handle), filter);
 	if (ret < 0)
@@ -1096,6 +1106,12 @@ int main(int argc, char **argv)
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 	       &opt_index)) != EOF) {
 		switch (c) {
+		case '4':
+			what_cmd |= INCLUDE_IPV4;
+			break;
+		case '6':
+			what_cmd |= INCLUDE_IPV6;
+			break;
 		case 'T':
 			what_cmd |= INCLUDE_TCP;
 			break;
