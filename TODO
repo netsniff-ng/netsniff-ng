@@ -11,7 +11,7 @@ submit your contributions, items marked with '!' are of high importance):
     pcap files e.g. on a network filesystem of the mausezahn box.
 	@TODO: Daniel Borkmann
 
- 3! Add full IPv6 support for flowtop, test IPv6 on curvetun and mausezahn.
+ 3! Test IPv6 on curvetun and mausezahn.
 	@TODO: Daniel Borkmann
 
  5) Make trafgen also write to a pcap instead to a device.
@@ -43,9 +43,6 @@ submit your contributions, items marked with '!' are of high importance):
 	@TODO: Sibir Chakraborty
 
 29) Improve the Linux kernel's net/packet/af_packet.c (that we rely on)
-
-30! Fix UDP+TCP tracking in flowtop.
-	@TODO: Daniel Borkmann
 
 31) astraceroute: implement DNS traceroute with AS/Geo information
 
