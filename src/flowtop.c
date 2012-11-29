@@ -202,8 +202,7 @@ static void help(void)
 	     "  -h|--help              Print this help\n\n"
 	     "Examples:\n"
 	     "  flowtop\n"
-	     "  flowtop -UT\n"
-	     "  flowtop -s\n\n"
+	     "  flowtop -UTs\n\n"
 	     "Note:\n"
 	     "  If netfilter is not running, you can activate it with i.e.:\n"
 	     "   iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT\n"
@@ -554,7 +553,7 @@ flow_entry_geo_city_lookup_generic(struct flow_entry *n,
 	struct sockaddr_in sa4;
 	struct sockaddr_in6 sa6;
 	inline const char *make_na(const char *p) { return p ? : "N/A"; }
-	const char *city;
+	const char *city = NULL;
 
 	switch (n->l3_proto) {
 	default:
@@ -572,12 +571,11 @@ flow_entry_geo_city_lookup_generic(struct flow_entry *n,
 		break;
 	}
 
-	if (gir != NULL) {
-		city = make_na(gir->city);
-		bug_on(sizeof(n->city_src) != sizeof(n->city_dst));
-		memcpy(SELFLD(dir, city_src, city_dst), city,
-		       min(sizeof(n->city_src), strlen(city)));
-	}
+	city = make_na(gir != NULL ? gir->city : city);
+
+	bug_on(sizeof(n->city_src) != sizeof(n->city_dst));
+	memcpy(SELFLD(dir, city_src, city_dst), city,
+	       min(sizeof(n->city_src), strlen(city)));
 }
 
 static void
@@ -587,7 +585,7 @@ flow_entry_geo_country_lookup_generic(struct flow_entry *n,
 	struct sockaddr_in sa4;
 	struct sockaddr_in6 sa6;
 	inline const char *make_na(const char *p) { return p ? : "N/A"; }
-	const char *country;
+	const char *country = NULL;
 
 	switch (n->l3_proto) {
 	default:
@@ -607,6 +605,7 @@ flow_entry_geo_country_lookup_generic(struct flow_entry *n,
 	}
 
 	country = make_na(country);
+
 	bug_on(sizeof(n->country_src) != sizeof(n->country_dst));
 	memcpy(SELFLD(dir, country_src, country_dst), country,
 	       min(sizeof(n->country_src), strlen(country)));
@@ -673,15 +672,21 @@ static void flow_entry_get_extended(struct flow_entry *n)
 	flow_entry_get_extended_geo(n, flow_entry_dst);
 }
 
-static uint16_t presenter_get_port(uint16_t src, uint16_t dst)
+static uint16_t presenter_get_port(uint16_t src, uint16_t dst, int tcp)
 {
 	if (src < dst && src < 1024) {
 		return src;
 	} else if (dst < src && dst < 1024) {
 		return dst;
 	} else {
-		const char *tmp1 = lookup_port_tcp(src);
-		const char *tmp2 = lookup_port_tcp(dst);
+		const char *tmp1, *tmp2;
+		if (tcp) {
+			tmp1 = lookup_port_tcp(src);
+			tmp2 = lookup_port_tcp(dst);
+		} else {
+			tmp1 = lookup_port_udp(src);
+			tmp2 = lookup_port_udp(dst);
+		}
 		if (tmp1 && !tmp2) {
 			return src;
 		} else if (!tmp1 && tmp2) {
@@ -706,13 +711,78 @@ static void presenter_screen_init(WINDOW **screen)
 	wrefresh(*screen);
 }
 
+static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
+				     unsigned int *line)
+{
+	char tmp[128];
+	uint16_t port;
+
+	slprintf(tmp, sizeof(tmp), "%u/%s", n->procnum, basename(n->cmdline));
+
+	/* PID, application name */
+	mvwprintw(screen, *line, 2, "[");
+	attron(COLOR_PAIR(3));
+	printw("%s", n->procnum > 0 ? tmp : "N/A");
+	attroff(COLOR_PAIR(3));
+	printw("]");
+
+	/* L3 protocol, L4 protocol, TCP state */
+	printw(":%s:%s", l3proto2str[n->l3_proto], proto2str[n->l4_proto]);
+	printw("[");
+	attron(COLOR_PAIR(3));
+	printw("%s", state2str[n->tcp_state]);
+	attroff(COLOR_PAIR(3));
+	printw("]:");
+
+	/* Guess application port */
+	attron(A_BOLD);
+	if (n->tcp_state != TCP_CONNTRACK_NONE) {
+		port = presenter_get_port(n->port_src, n->port_dst, 1);
+		printw("%s -> ", lookup_port_tcp(port));
+	} else {
+		port = presenter_get_port(n->port_src, n->port_dst, 0);
+		printw("%s -> ", lookup_port_udp(port));
+	}
+	attroff(A_BOLD);
+
+	/* Show source information: reverse DNS, port, country, city */
+	if (show_src) {
+		attron(COLOR_PAIR(1));
+		mvwprintw(screen, ++(*line), 8, "src: %s", n->rev_dns_src);
+		attroff(COLOR_PAIR(1));
+
+		printw(":%u (", n->port_src);
+
+		attron(COLOR_PAIR(4));
+		printw("%s", n->country_src);
+		attroff(COLOR_PAIR(4));
+
+		printw(", %s) => ", n->city_src);
+	}
+
+	/* Show dest information: reverse DNS, port, country, city */
+	attron(COLOR_PAIR(2));
+	mvwprintw(screen, ++(*line), 8, "dst: %s", n->rev_dns_dst);
+	attroff(COLOR_PAIR(2));
+
+	printw(":%u (", n->port_dst);
+
+	attron(COLOR_PAIR(4));
+	printw("%s", n->country_dst);
+	attroff(COLOR_PAIR(4));
+
+	printw(", %s)", n->city_dst);
+}
+
 static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 				    int skip_lines)
 {
-	int i, line = 3, maxy;
+	int i, maxy;
+	unsigned int line = 3;
 	struct flow_entry *n;
 
 	curs_set(0);
+
 	maxy = getmaxy(screen);
 
 	start_color();
@@ -737,70 +807,23 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 	/* Yes, that's lame :-P */
 	for (i = 0; i < sizeof(states); i++) {
 		n = rcu_dereference(fl->head);
-
 		while (n && maxy > 0) {
-			char tmp[128];
-
 			if (n->tcp_state != states[i] ||
 			    (i != TCP_CONNTRACK_NONE &&
 			     n->tcp_state == TCP_CONNTRACK_NONE) ||
 			    /* Filter out DNS */
-			    presenter_get_port(n->port_src, n->port_dst) == 53) {
+			    presenter_get_port(n->port_src,
+					       n->port_dst, 0) == 53) {
 				n = rcu_dereference(n->next);
 				continue;
 			}
-
 			if (skip_lines > 0) {
 				n = rcu_dereference(n->next);
 				skip_lines--;
 				continue;
 			}
 
-			snprintf(tmp, sizeof(tmp), "%u/%s", n->procnum,
-				 basename(n->cmdline));
-			tmp[sizeof(tmp) - 1] = 0;
-
-			mvwprintw(screen, line, 2, "[");
-			attron(COLOR_PAIR(3));
-			printw("%s", n->procnum > 0 ? tmp : "bridged(?)");
-			attroff(COLOR_PAIR(3));
-			printw("]:%s:%s[", l3proto2str[n->l3_proto],
-			       proto2str[n->l4_proto]);
-			attron(COLOR_PAIR(3));
-			printw("%s", state2str[n->tcp_state]);
-			attroff(COLOR_PAIR(3));
-			printw("]:");
-			attron(A_BOLD);
-			if (n->tcp_state != TCP_CONNTRACK_NONE) {
-				printw("%s -> ", lookup_port_tcp(presenter_get_port(n->port_src,
-									  n->port_dst)));
-			} else {
-				printw("%s -> ", lookup_port_udp(presenter_get_port(n->port_src,
-									  n->port_dst)));
-			}
-			attroff(A_BOLD);
-			if (show_src) {
-				attron(COLOR_PAIR(1));
-				mvwprintw(screen, ++line, 8, "src: %s", n->rev_dns_src);
-				attroff(COLOR_PAIR(1));
-				printw(":%u (", n->port_src);
-				attron(COLOR_PAIR(4));
-				printw("%s", (strlen(n->country_src) > 0 ?
-				       n->country_src : "N/A"));
-				attroff(COLOR_PAIR(4));
-				printw(", %s) => ", (strlen(n->city_src) > 0 ?
-				       n->city_src : "N/A"));
-			}
-			attron(COLOR_PAIR(2));
-			mvwprintw(screen, ++line, 8, "dst: %s", n->rev_dns_dst);
-			attroff(COLOR_PAIR(2));
-			printw(":%u (", n->port_dst);
-			attron(COLOR_PAIR(4));
-			printw("%s", strlen(n->country_dst) > 0 ?
-			       n->country_dst : "N/A");
-			attroff(COLOR_PAIR(4));
-			printw(", %s)", strlen(n->city_dst) > 0 ?
-			       n->city_dst : "N/A");
+			presenter_screen_do_line(screen, n, &line);
 
 			line++;
 			maxy--;
