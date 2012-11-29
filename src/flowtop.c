@@ -45,6 +45,11 @@
 #include "dissector_eth.h"
 #include "pkt_buff.h"
 
+struct geo_ip_db {
+	GeoIP *gi4, *gi6;
+	char *path4, *path6;
+};
+
 struct flow_entry {
 	uint32_t flow_id, use, status;
 	uint8_t  l3_proto, l4_proto;
@@ -76,25 +81,26 @@ struct flow_list {
 
 #define SCROLL_MAX 1000
 
-volatile sig_atomic_t sigint = 0;
-
 #define INCLUDE_UDP	(1 << 0)
 #define INCLUDE_TCP	(1 << 1)
 
+volatile sig_atomic_t sigint = 0;
+
 static int what = INCLUDE_TCP, show_src = 0;
 
-static struct flow_list flow_list;
+struct geo_ip_db geo_country, geo_city;
 
-static GeoIP *gi_country = NULL, *gi_city = NULL;
-static char *path_country_db = NULL, *path_city_db = NULL;
+static struct flow_list flow_list;
 
 static const char *short_options = "vhTULKs";
 static const struct option long_options[] = {
 	{"tcp",		no_argument,		NULL, 'T'},
 	{"udp",		no_argument,		NULL, 'U'},
 	{"show-src",	no_argument,		NULL, 's'},
-	{"city-db",	required_argument,	NULL, 'L'},
-	{"country-db",	required_argument,	NULL, 'K'},
+	{"city-db4",	required_argument,	NULL, 'L'},
+	{"country-db4",	required_argument,	NULL, 'K'},
+	{"city-db6",	required_argument,	NULL, 'O'},
+	{"country-db6",	required_argument,	NULL, 'P'},
 	{"version",	no_argument,		NULL, 'v'},
 	{"help",	no_argument,		NULL, 'h'},
 	{NULL, 0, NULL, 0}
@@ -188,8 +194,10 @@ static void help(void)
 	     "  -T|--tcp               Show only TCP flows (default)\n"
 	     "  -U|--udp               Show only UDP flows\n"
 	     "  -s|--show-src          Also show source, not only dest\n"
-	     "  --city-db <path>       Specifiy path for geoip city database\n"
-	     "  --country-db <path>    Specifiy path for geoip country database\n"
+	     "  --city-db4 <path>      Specifiy path for geoip4 city database\n"
+	     "  --country-db4 <path>   Specifiy path for geoip4 country database\n"
+	     "  --city-db6 <path>      Specifiy path for geoip6 city database\n"
+	     "  --country-db6 <path>   Specifiy path for geoip6 country database\n"
 	     "  -v|--version           Print version\n"
 	     "  -h|--help              Print this help\n\n"
 	     "Examples:\n"
@@ -453,7 +461,8 @@ static int get_port_inode(uint16_t port, int proto, int is_ip6)
 	return ret;
 }
 
-#define CP_NFCT(elem, attr, x) do { n->elem = nfct_get_attr_u##x(ct,(attr)); } while (0)
+#define CP_NFCT(elem, attr, x)				\
+	do { n->elem = nfct_get_attr_u##x(ct,(attr)); } while (0)
 #define CP_NFCT_BUFF(elem, attr) do {			\
 	const uint8_t *buff = nfct_get_attr(ct,(attr));	\
 	if (buff != NULL)				\
@@ -481,8 +490,14 @@ static void flow_entry_from_ct(struct flow_entry *n, struct nf_conntrack *ct)
 	CP_NFCT_BUFF(ip6_src_addr, ATTR_ORIG_IPV6_SRC);
 	CP_NFCT_BUFF(ip6_dst_addr, ATTR_ORIG_IPV6_DST);
 
+	n->port_src = ntohs(n->port_src);
+	n->port_dst = ntohs(n->port_dst);
+
+	n->ip4_src_addr = ntohl(n->ip4_src_addr);
+	n->ip4_dst_addr = ntohl(n->ip4_dst_addr);
+
 	if (n->first) {
-		n->inode = get_port_inode(ntohs(n->port_src), n->l4_proto,
+		n->inode = get_port_inode(n->port_src, n->l4_proto,
 					  n->l3_proto == AF_INET6);
 		if (n->inode > 0)
 			walk_processes(n);
@@ -491,85 +506,182 @@ static void flow_entry_from_ct(struct flow_entry *n, struct nf_conntrack *ct)
 	n->first = 0;
 }
 
-/* TODO: IP4 + IP6 */
-static void flow_entry_get_extended(struct flow_entry *n)
+enum flow_entry_direction {
+	flow_entry_src,
+	flow_entry_dst,
+};
+
+static inline int flow_entry_get_extended_is_dns(struct flow_entry *n)
 {
-	struct sockaddr_in sa;
-	struct hostent *hent;
-	GeoIPRecord *gir_src, *gir_dst;
-	inline const char *make_n_a(const char *p) { return p ? : "N/A"; }
+	/* We don't want to analyze / display DNS itself, since we
+	 * use it to resolve reverse dns.
+	 */
+	return n->port_src == 53 || n->port_dst == 53;
+}
 
-	if (n->flow_id == 0)
-		return;
-	if (ntohs(n->port_src) == 53 || ntohs(n->port_dst) == 53)
-		return;
+#define SELFLD(dir,src_member,dst_member)	\
+	(((dir) == flow_entry_src) ? n->src_member : n->dst_member)
 
-	memset(&sa, 0, sizeof(sa));
-	sa.sin_family = PF_INET; //XXX: IPv4
-	sa.sin_addr.s_addr = n->ip4_src_addr;
-	getnameinfo((struct sockaddr *) &sa, sizeof(sa), n->rev_dns_src,
-		    sizeof(n->rev_dns_src), NULL, 0, NI_NUMERICHOST);
+static struct sockaddr_in *
+flow_entry_get_sain4_obj(struct flow_entry *n, enum flow_entry_direction dir,
+			 struct sockaddr_in *sa)
+{
+	memset(sa, 0, sizeof(*sa));
+	sa->sin_family = PF_INET;
+	sa->sin_addr.s_addr = htonl(SELFLD(dir, ip4_src_addr, ip4_dst_addr));
 
-	hent = gethostbyaddr(&sa.sin_addr, sizeof(sa.sin_addr), PF_INET);
-	if (hent) {
-		memset(n->rev_dns_src, 0, sizeof(n->rev_dns_src));
-		memcpy(n->rev_dns_src, hent->h_name,
-		       min(sizeof(n->rev_dns_src), strlen(hent->h_name)));
+	return sa;
+}
+
+static struct sockaddr_in6 *
+flow_entry_get_sain6_obj(struct flow_entry *n, enum flow_entry_direction dir,
+			 struct sockaddr_in6 *sa)
+{
+	memset(sa, 0, sizeof(*sa));
+	sa->sin6_family = PF_INET6;
+
+	memcpy(&sa->sin6_addr, SELFLD(dir, ip6_src_addr, ip6_dst_addr),
+	       sizeof(SELFLD(dir, ip6_src_addr, ip6_dst_addr)));
+
+	return sa;
+}
+
+static void
+flow_entry_geo_city_lookup_generic(struct flow_entry *n,
+				   enum flow_entry_direction dir)
+{
+	GeoIPRecord *gir = NULL;
+	struct sockaddr_in sa4;
+	struct sockaddr_in6 sa6;
+	inline const char *make_na(const char *p) { return p ? : "N/A"; }
+	const char *city;
+
+	switch (n->l3_proto) {
+	default:
+		bug();
+
+	case AF_INET:
+		flow_entry_get_sain4_obj(n, dir, &sa4);
+		gir = GeoIP_record_by_ipnum(geo_city.gi4,
+					    ntohl(sa4.sin_addr.s_addr));
+		break;
+
+	case AF_INET6:
+		flow_entry_get_sain6_obj(n, dir, &sa6);
+		gir = GeoIP_record_by_ipnum_v6(geo_city.gi6, sa6.sin6_addr);
+		break;
 	}
 
-	gir_src = GeoIP_record_by_ipnum(gi_city, ntohl(n->ip4_src_addr));
-	if (gir_src) {
-		const char *country =
-			make_n_a(GeoIP_country_name_by_ipnum(gi_country,
-							     ntohl(n->ip4_src_addr)));
-		const char *city = make_n_a(gir_src->city);
-		memcpy(n->country_src, country,
-		       min(sizeof(n->country_src), strlen(country)));
-		memcpy(n->city_src, city,
+	if (gir != NULL) {
+		city = make_na(gir->city);
+		bug_on(sizeof(n->city_src) != sizeof(n->city_dst));
+		memcpy(SELFLD(dir, city_src, city_dst), city,
 		       min(sizeof(n->city_src), strlen(city)));
 	}
+}
 
-	memset(&sa, 0, sizeof(sa));
-	sa.sin_family = PF_INET; //XXX: IPv4
-	sa.sin_addr.s_addr = n->ip4_dst_addr;
-	getnameinfo((struct sockaddr *) &sa, sizeof(sa), n->rev_dns_dst,
-		    sizeof(n->rev_dns_dst), NULL, 0, NI_NUMERICHOST);
+static void
+flow_entry_geo_country_lookup_generic(struct flow_entry *n,
+				      enum flow_entry_direction dir)
+{
+	struct sockaddr_in sa4;
+	struct sockaddr_in6 sa6;
+	inline const char *make_na(const char *p) { return p ? : "N/A"; }
+	const char *country;
 
-	hent = gethostbyaddr(&sa.sin_addr, sizeof(sa.sin_addr), PF_INET);
+	switch (n->l3_proto) {
+	default:
+		bug();
+
+	case AF_INET:
+		flow_entry_get_sain4_obj(n, dir, &sa4);
+		country = GeoIP_country_name_by_ipnum(geo_country.gi4,
+						ntohl(sa4.sin_addr.s_addr));
+		break;
+
+	case AF_INET6:
+		flow_entry_get_sain6_obj(n, dir, &sa6);
+		country = GeoIP_country_name_by_ipnum_v6(geo_country.gi6,
+							 sa6.sin6_addr);
+		break;
+	}
+
+	country = make_na(country);
+	bug_on(sizeof(n->country_src) != sizeof(n->country_dst));
+	memcpy(SELFLD(dir, country_src, country_dst), country,
+	       min(sizeof(n->country_src), strlen(country)));
+}
+
+static void flow_entry_get_extended_geo(struct flow_entry *n,
+					enum flow_entry_direction dir)
+{
+	flow_entry_geo_city_lookup_generic(n, dir);
+	flow_entry_geo_country_lookup_generic(n, dir);
+}
+
+static void flow_entry_get_extended_revdns(struct flow_entry *n,
+					   enum flow_entry_direction dir)
+{
+	size_t sa_len;
+	struct sockaddr_in sa4;
+	struct sockaddr_in6 sa6;
+	struct sockaddr *sa;
+	struct hostent *hent;
+
+	switch (n->l3_proto) {
+	default:
+		bug();
+
+	case AF_INET:
+		flow_entry_get_sain4_obj(n, dir, &sa4);
+		sa = (struct sockaddr *) &sa4;
+		sa_len = sizeof(sa4);
+		hent = gethostbyaddr(&sa4.sin_addr, sizeof(sa4.sin_addr),
+				     AF_INET);
+		break;
+
+	case AF_INET6:
+		flow_entry_get_sain6_obj(n, dir, &sa6);
+		sa = (struct sockaddr *) &sa6;
+		sa_len = sizeof(sa6);
+		hent = gethostbyaddr(&sa6.sin6_addr, sizeof(sa6.sin6_addr),
+				     AF_INET6);
+		break;
+	}
+
+	bug_on(sizeof(n->rev_dns_src) != sizeof(n->rev_dns_dst));
+	getnameinfo(sa, sa_len, SELFLD(dir, rev_dns_src, rev_dns_dst),
+		    sizeof(n->rev_dns_src), NULL, 0, NI_NUMERICHOST);
+
 	if (hent) {
 		memset(n->rev_dns_dst, 0, sizeof(n->rev_dns_dst));
-		memcpy(n->rev_dns_dst, hent->h_name,
-		       min(sizeof(n->rev_dns_dst), strlen(hent->h_name)));
+		memcpy(SELFLD(dir, rev_dns_src, rev_dns_dst),
+		       hent->h_name, min(sizeof(n->rev_dns_src),
+					 strlen(hent->h_name)));
 	}
+}
 
-	gir_dst = GeoIP_record_by_ipnum(gi_city, ntohl(n->ip4_dst_addr));
-	if (gir_dst) {
-		const char *country =
-			make_n_a(GeoIP_country_name_by_ipnum(gi_country,
-							     ntohl(n->ip4_dst_addr)));
-		const char *city = make_n_a(gir_dst->city);
-		memcpy(n->country_dst, country,
-		       min(sizeof(n->country_dst), strlen(country)));
-		memcpy(n->city_dst, city,
-		       min(sizeof(n->city_dst), strlen(city)));
-	}
+static void flow_entry_get_extended(struct flow_entry *n)
+{
+	if (n->flow_id == 0 || flow_entry_get_extended_is_dns(n))
+		return;
+
+	flow_entry_get_extended_revdns(n, flow_entry_src);
+	flow_entry_get_extended_geo(n, flow_entry_src);
+
+	flow_entry_get_extended_revdns(n, flow_entry_dst);
+	flow_entry_get_extended_geo(n, flow_entry_dst);
 }
 
 static uint16_t presenter_get_port(uint16_t src, uint16_t dst)
 {
-	char *tmp1, *tmp2;
-
-	src = ntohs(src);
-	dst = ntohs(dst);
-
-	/* XXX: Is there a better way to determine? */
 	if (src < dst && src < 1024) {
 		return src;
 	} else if (dst < src && dst < 1024) {
 		return dst;
 	} else {
-		tmp1 = lookup_port_tcp(src);
-		tmp2 = lookup_port_tcp(dst);
+		const char *tmp1 = lookup_port_tcp(src);
+		const char *tmp2 = lookup_port_tcp(dst);
 		if (tmp1 && !tmp2) {
 			return src;
 		} else if (!tmp1 && tmp2) {
@@ -671,7 +783,7 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 				attron(COLOR_PAIR(1));
 				mvwprintw(screen, ++line, 8, "src: %s", n->rev_dns_src);
 				attroff(COLOR_PAIR(1));
-				printw(":%u (", ntohs(n->port_src));
+				printw(":%u (", n->port_src);
 				attron(COLOR_PAIR(4));
 				printw("%s", (strlen(n->country_src) > 0 ?
 				       n->country_src : "N/A"));
@@ -682,7 +794,7 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 			attron(COLOR_PAIR(2));
 			mvwprintw(screen, ++line, 8, "dst: %s", n->rev_dns_dst);
 			attroff(COLOR_PAIR(2));
-			printw(":%u (", ntohs(n->port_dst));
+			printw(":%u (", n->port_dst);
 			attron(COLOR_PAIR(4));
 			printw("%s", strlen(n->country_dst) > 0 ?
 			       n->country_dst : "N/A");
@@ -787,24 +899,40 @@ static inline GeoIP *collector_geoip_open(const char *path, int type)
 
 static void collector_load_geoip(void)
 {
-	gi_country = collector_geoip_open(path_country_db,
-					  GEOIP_COUNTRY_EDITION);
-	if (gi_country == NULL)
-		panic("Cannot open GeoIP country database!\n");
+	geo_country.gi4 = collector_geoip_open(geo_country.path4,
+					       GEOIP_COUNTRY_EDITION);
+	if (geo_country.gi4 == NULL)
+		panic("Cannot open GeoIP4 country database!\n");
 
-	gi_city = collector_geoip_open(path_city_db,
-				       GEOIP_CITY_EDITION_REV1);
-	if (gi_city == NULL)
-		panic("Cannot open GeoIP city database!\n");
+	geo_country.gi6 = collector_geoip_open(geo_country.path6,
+					       GEOIP_COUNTRY_EDITION_V6);
+	if (geo_country.gi6 == NULL)
+		panic("Cannot open GeoIP6 country database!\n");
 
-	GeoIP_set_charset(gi_country, GEOIP_CHARSET_UTF8);
-	GeoIP_set_charset(gi_city, GEOIP_CHARSET_UTF8);
+	geo_city.gi4 = collector_geoip_open(geo_city.path4,
+					    GEOIP_CITY_EDITION_REV1);
+	if (geo_city.gi4 == NULL)
+		panic("Cannot open GeoIP4 city database!\n");
+
+	geo_city.gi6 = collector_geoip_open(geo_city.path6,
+					    GEOIP_CITY_EDITION_REV1_V6);
+	if (geo_city.gi6 == NULL)
+		panic("Cannot open GeoIP6 city database!\n");
+
+	GeoIP_set_charset(geo_country.gi4, GEOIP_CHARSET_UTF8);
+	GeoIP_set_charset(geo_country.gi6, GEOIP_CHARSET_UTF8);
+
+	GeoIP_set_charset(geo_city.gi4, GEOIP_CHARSET_UTF8);
+	GeoIP_set_charset(geo_city.gi6, GEOIP_CHARSET_UTF8);
 }
 
 static void collector_destroy_geoip(void)
 {
-	GeoIP_delete(gi_city);
-	GeoIP_delete(gi_country);
+	GeoIP_delete(geo_country.gi4);
+	GeoIP_delete(geo_country.gi6);
+
+	GeoIP_delete(geo_city.gi4);
+	GeoIP_delete(geo_city.gi6);
 }
 
 static void *collector(void *null)
@@ -868,6 +996,9 @@ int main(int argc, char **argv)
 	pthread_t tid;
 	int ret, c, opt_index, what_cmd = 0;
 
+	memset(&geo_country, 0, sizeof(geo_country));
+	memset(&geo_city, 0, sizeof(geo_city));
+
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 	       &opt_index)) != EOF) {
 		switch (c) {
@@ -881,10 +1012,16 @@ int main(int argc, char **argv)
 			show_src = 1;
 			break;
 		case 'L':
-			path_city_db = xstrdup(optarg);
+			geo_city.path4 = xstrdup(optarg);
 			break;
 		case 'K':
-			path_country_db = xstrdup(optarg);
+			geo_country.path4 = xstrdup(optarg);
+			break;
+		case 'O':
+			geo_city.path6 = xstrdup(optarg);
+			break;
+		case 'P':
+			geo_country.path6 = xstrdup(optarg);
 			break;
 		case 'h':
 			help();
@@ -896,6 +1033,8 @@ int main(int argc, char **argv)
 			switch (optopt) {
 			case 'L':
 			case 'K':
+			case 'O':
+			case 'P':
 				panic("Option -%c requires an argument!\n",
 				      optopt);
 			default:
@@ -923,8 +1062,11 @@ int main(int argc, char **argv)
 
 	presenter();
 
-	free(path_city_db);
-	free(path_country_db);
+	free(geo_country.path4);
+	free(geo_country.path6);
+
+	free(geo_city.path4);
+	free(geo_city.path6);
 
 	return 0;
 }

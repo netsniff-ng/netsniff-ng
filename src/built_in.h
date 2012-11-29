@@ -218,7 +218,7 @@ typedef uint8_t		u8;
 #endif
 
 #ifndef bug
-# define bug			assert(0)
+# define bug()			assert(0)
 #endif
 
 #define PAGE_SIZE		(getpagesize())
