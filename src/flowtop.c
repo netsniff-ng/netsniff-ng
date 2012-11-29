@@ -117,7 +117,7 @@ static const char *const l3proto2str[AF_MAX] = {
 	[AF_INET6]			= "ipv6",
 };
 
-static const char *const proto2str[IPPROTO_MAX] = {
+static const char *const l4proto2str[IPPROTO_MAX] = {
 	[IPPROTO_TCP]			= "tcp",
 	[IPPROTO_UDP]			= "udp",
 	[IPPROTO_UDPLITE]               = "udplite",
@@ -441,7 +441,7 @@ static int get_port_inode(uint16_t port, int proto, int is_ip6)
 
 	memset(path, 0, sizeof(path));
 	snprintf(path, sizeof(path), "/proc/net/%s%s",
-		 proto2str[proto], is_ip6 ? "6" : "");
+		 l4proto2str[proto], is_ip6 ? "6" : "");
 
 	proc = fopen(path, "r");
 	if (!proc)
@@ -741,7 +741,7 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 	}
 
 	/* L3 protocol, L4 protocol, TCP state */
-	printw("%s:%s", l3proto2str[n->l3_proto], proto2str[n->l4_proto]);
+	printw("%s:%s", l3proto2str[n->l3_proto], l4proto2str[n->l4_proto]);
 	printw("[");
 	attron(COLOR_PAIR(3));
 	printw("%s", tcp_state2str[n->tcp_state]);
