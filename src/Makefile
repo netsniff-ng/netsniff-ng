@@ -12,6 +12,9 @@ TOOLS = netsniff-ng trafgen astraceroute flowtop ifpps mausezahn bpfc curvetun
 # For packaging purposes, prefix can define a different path.
 PREFIX ?=
 
+# Debugging option
+DEBUG ?=
+
 # Disable if you don't want it
 CCACHE = ccache
 
@@ -32,8 +35,16 @@ MAKEFLAGS += --jobs=$(shell grep "^processor" /proc/cpuinfo | wc -l)
 
 # For packaging purposes, you might want to disable O3+arch tuning
 CFLAGS = -fstack-protector
+ifeq (DEBUG, 1)
+  CFLAGS += -g
+  CFLAGS += -O2
+else
+  CFLAGS += -march=native
+  CFLAGS += -mtune=native
+  CFLAGS += -O3
+  CFLAGS += -fpie
+endif
 CFLAGS += --param=ssp-buffer-size=4
-CFLAGS += -fpie
 CFLAGS += -fno-strict-aliasing
 CFLAGS += -fexceptions
 CFLAGS += -fasynchronous-unwind-tables
@@ -46,10 +57,6 @@ CFLAGS += -D_LARGEFILE64_SOURCE
 CFLAGS += -D__WITH_HARDWARE_TIMESTAMPING=1
 CFLAGS += -DVERSION_STRING=\"$(VERSION_STRING)\"
 CFLAGS += -std=gnu99
-CFLAGS += -march=native
-CFLAGS += -mtune=native
-CFLAGS += -O3
-CFLAGS += -g
 
 # Should be commented in after the mausezahn mess is cleaned
 WFLAGS  = -Wall
@@ -82,7 +89,11 @@ LD = $(Q)echo -e "  LD\t$@" && $(CCACHE) $(CROSS_COMPILE)gcc
 CCNQ = $(CCACHE) $(CROSS_COMPILE)gcc
 CC = $(Q)echo -e "  CC\t$<" && $(CCNQ)
 MKDIR = $(Q)echo -e "  MKDIR\t$@" && mkdir
-STRIP = $(Q)echo -e "  STRIP\t$@" && $(CROSS_COMPILE)strip
+ifeq (DEBUG, 1)
+  STRIP = $(Q)true || 
+else
+  STRIP = $(Q)echo -e "  STRIP\t$@" && $(CROSS_COMPILE)strip
+endif
 LEX = $(Q)echo -e "  LEX\t$<" && flex
 YAAC = $(Q)echo -e "  YAAC\t$<" && bison
 INST = echo -e "  INST\t$(1)" && install -d $(2) && \
@@ -92,13 +103,21 @@ RM = echo -e "  RM\t$(1)" && rm -rf $(1)
 RMDIR = echo -e "  RM\t$(1)" && rmdir --ignore-fail-on-non-empty $(1) 2> /dev/null || true
 
 export VERSION PATCHLEVEL SUBLEVEL EXTRAVERSION
-export CROSS_COMPILE LD CC STRIP
+export CROSS_COMPILE
 
 VERSION_STRING = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
 VERSION_SHORT = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)
 
 bold = $(shell tput bold)
 normal = $(shell tput sgr0)
+
+# Build NaCl if no environment variables are set!
+ifndef NACL_LIB_DIR
+ifndef NACL_INC_DIR
+   $(info $(bold)NACL_LIB_DIR/NACL_INC_DIR is undefined, building libnacl with curvetun!$(normal))
+   curvetun: nacl
+endif
+endif
 
 build_showinfo:
 	$(Q)echo "$(bold)Building netsniff-ng toolkit ($(VERSION_STRING)) for" \
@@ -127,7 +146,10 @@ NCONF_FILES = ether.conf tcp.conf udp.conf oui.conf
 
 all: build_showinfo toolkit
 toolkit: $(TOOLS)
+allbutcurvetun: $(filter-out curvetun,$(TOOLS))
 install: $(foreach tool,$(TOOLS),$(tool)_install)
+	$(Q)$(foreach file,$(DOC_FILES),$(call INST,../Documentation/$(file),$(DOCDIRE));)
+install_allbutcurvetun: $(foreach tool,$(filter-out curvetun,$(TOOLS)),$(tool)_install)
 	$(Q)$(foreach file,$(DOC_FILES),$(call INST,../Documentation/$(file),$(DOCDIRE));)
 clean mostlyclean: $(foreach tool,$(TOOLS),$(tool)_clean)
 realclean distclean clobber: $(foreach tool,$(TOOLS),$(tool)_distclean)
@@ -165,8 +187,8 @@ $(foreach tool,$(TOOLS),$(eval $(call TOOL_templ,$(tool))))
 netsniff-ng: ALL_CFLAGS += -I$(INCDIR)/libnl3/ -D__WITH_PROTOS
 trafgen: ALL_CFLAGS += -I.. -I$(INCDIR)/libnl3/ -D__WITH_PROTOS
 bpfc: ALL_CFLAGS += -I..
-curvetun: ALL_CFLAGS += -I$(shell echo $$NACL_INC_DIR)
-curvetun: ALL_LDFLAGS += -L$(shell echo $$NACL_LIB_DIR)
+curvetun: ALL_CFLAGS += -I NACL_INC_DIR
+curvetun: ALL_LDFLAGS += -L NACL_LIB_DIR
 
 bpfc_clean_custom:
 	$(Q)$(call RM,$(BUILD_DIR)/*.h $(BUILD_DIR)/*.c)
@@ -194,7 +216,9 @@ $(TOOLS):
 update:
 	$(Q)../scripts/geoip-database-update
 nacl:
+	$(Q)echo "$(bold)Building $@:$(normal)"
 	$(Q)cd curvetun/ && ./build_nacl.sh ~/nacl
+	$(Q)source ~/.bashrc
 geoip:
 	$(Q)cd astraceroute/ && ./build_geoip.sh
 
@@ -203,6 +227,7 @@ help:
 	$(Q)echo " <toolnames>:={$(TOOLS)}"
 	$(Q)echo "$(bold)Targets for building the toolkit:$(normal)"
 	$(Q)echo " all|toolkit                  - Build the whole toolkit"
+	$(Q)echo " allbutcurvetun               - Build all except curvetun"
 	$(Q)echo " <toolname>                   - Build only one of the tools"
 	$(Q)echo "$(bold)Targets for cleaning the toolkit's build files:$(normal)"
 	$(Q)echo " clean|mostlyclean            - Remove all build files"
@@ -219,3 +244,8 @@ help:
 	$(Q)echo " nacl                         - Execute the build_nacl script"
 	$(Q)echo " geoip                        - Execute the build_geoip script"
 	$(Q)echo " help                         - Show this help"
+	$(Q)echo "$(bold)Available parameters:$(normal)"
+	$(Q)echo " PREFIX=/path                 - Install path prefix"
+	$(Q)echo " DEBUG=0 / DEBUG=1            - Disable/enable debugging"
+	$(Q)echo " CROSS_COMPILE=/path-prefix   - Kernel-like cross-compiling prefix"
+	$(Q)echo " CROSS_LD_LIBRARY_PATH=/path  - Library search path for cross-compiling"

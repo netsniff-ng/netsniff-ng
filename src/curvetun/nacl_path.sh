@@ -14,8 +14,7 @@ if test -z $nacl_include_path || test -z $nacl_lib_path; then
 	exit 1
 fi
 
-export NACL_INC_DIR=$nacl_include_path
-export NACL_LIB_DIR=$nacl_lib_path
-
 echo "export NACL_INC_DIR=$nacl_include_path" >> ~/.bashrc
 echo "export NACL_LIB_DIR=$nacl_lib_path" >> ~/.bashrc
+
+source ~/.bashrc

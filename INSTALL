@@ -64,6 +64,14 @@ You can also build only a particular tool, e.g.:
   (# make trafgen_distclean)
   ($ make trafgen_clean)
 
+If you want to build all tools, but curvetun (i.e. because you don't need
+the tunneling software and the NaCl build process lasts quite long):
+
+  $ make allbutcurvetun
+  # make install_allbutcurvetun
+
+  (# make mrproper)
+
 In order to build curvetun, libnacl must be built first. A helper script
 called build_nacl.sh is there to facilitate this process. If you want to
 build NaCl in the directory ~/nacl, the script should be called this way:
