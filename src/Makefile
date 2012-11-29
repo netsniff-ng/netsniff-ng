@@ -13,7 +13,11 @@ TOOLS = netsniff-ng trafgen astraceroute flowtop ifpps mausezahn bpfc curvetun
 PREFIX ?=
 
 # Debugging option
-DEBUG ?=
+ifeq ("$(origin DEBUG)", "command line")
+  DEBUG := 1
+else
+  DEBUG := 0
+endif
 
 # Disable if you don't want it
 CCACHE = ccache
@@ -35,7 +39,7 @@ MAKEFLAGS += --jobs=$(shell grep "^processor" /proc/cpuinfo | wc -l)
 
 # For packaging purposes, you might want to disable O3+arch tuning
 CFLAGS = -fstack-protector
-ifeq (DEBUG, 1)
+ifeq ($(DEBUG), 1)
   CFLAGS += -g
   CFLAGS += -O2
 else
@@ -89,8 +93,8 @@ LD = $(Q)echo -e "  LD\t$@" && $(CCACHE) $(CROSS_COMPILE)gcc
 CCNQ = $(CCACHE) $(CROSS_COMPILE)gcc
 CC = $(Q)echo -e "  CC\t$<" && $(CCNQ)
 MKDIR = $(Q)echo -e "  MKDIR\t$@" && mkdir
-ifeq (DEBUG, 1)
-  STRIP = $(Q)true || 
+ifeq ($(DEBUG), 1)
+  STRIP = $(Q)true
 else
   STRIP = $(Q)echo -e "  STRIP\t$@" && $(CROSS_COMPILE)strip
 endif
@@ -245,7 +249,7 @@ help:
 	$(Q)echo " geoip                        - Execute the build_geoip script"
 	$(Q)echo " help                         - Show this help"
 	$(Q)echo "$(bold)Available parameters:$(normal)"
+	$(Q)echo " DEBUG=1                      - Enable debugging"
 	$(Q)echo " PREFIX=/path                 - Install path prefix"
-	$(Q)echo " DEBUG=0 / DEBUG=1            - Disable/enable debugging"
 	$(Q)echo " CROSS_COMPILE=/path-prefix   - Kernel-like cross-compiling prefix"
 	$(Q)echo " CROSS_LD_LIBRARY_PATH=/path  - Library search path for cross-compiling"
