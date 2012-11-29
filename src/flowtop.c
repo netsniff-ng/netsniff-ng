@@ -83,6 +83,9 @@ struct flow_list {
 
 #define INCLUDE_UDP	(1 << 0)
 #define INCLUDE_TCP	(1 << 1)
+#define INCLUDE_DCCP	(1 << 2)
+#define INCLUDE_ICMP	(1 << 3)
+#define INCLUDE_SCTP	(1 << 4)
 
 volatile sig_atomic_t sigint = 0;
 
@@ -92,10 +95,13 @@ struct geo_ip_db geo_country, geo_city;
 
 static struct flow_list flow_list;
 
-static const char *short_options = "vhTULKs";
+static const char *short_options = "vhTULKsOPDIS";
 static const struct option long_options[] = {
 	{"tcp",		no_argument,		NULL, 'T'},
 	{"udp",		no_argument,		NULL, 'U'},
+	{"dccp",	no_argument,		NULL, 'D'},
+	{"icmp",	no_argument,		NULL, 'I'},
+	{"sctp",	no_argument,		NULL, 'S'},
 	{"show-src",	no_argument,		NULL, 's'},
 	{"city-db4",	required_argument,	NULL, 'L'},
 	{"country-db4",	required_argument,	NULL, 'K'},
@@ -133,7 +139,7 @@ static const char *const proto2str[IPPROTO_MAX] = {
 	[IPPROTO_COMP]			= "comp",
 };
 
-static const char *const state2str[TCP_CONNTRACK_MAX] = {
+static const char *const tcp_state2str[TCP_CONNTRACK_MAX] = {
 	[TCP_CONNTRACK_NONE]		= "NOSTATE",
 	[TCP_CONNTRACK_SYN_SENT]	= "SYN_SENT",
 	[TCP_CONNTRACK_SYN_RECV]	= "SYN_RECV",
@@ -146,7 +152,7 @@ static const char *const state2str[TCP_CONNTRACK_MAX] = {
 	[TCP_CONNTRACK_SYN_SENT2]	= "SYN_SENT2",
 };
 
-static const uint8_t states[] = {
+static const uint8_t tcp_states[] = {
 	TCP_CONNTRACK_SYN_SENT,
 	TCP_CONNTRACK_SYN_RECV,
 	TCP_CONNTRACK_ESTABLISHED,
@@ -193,6 +199,9 @@ static void help(void)
 	     "Options:\n"
 	     "  -T|--tcp               Show only TCP flows (default)\n"
 	     "  -U|--udp               Show only UDP flows\n"
+	     "  -D|--dccp              Show only DCCP flows\n"
+	     "  -I|--icmp              Show only ICMP/ICMPv6 flows\n"
+	     "  -S|--sctp              Show only SCTP flows\n"
 	     "  -s|--show-src          Also show source, not only dest\n"
 	     "  --city-db4 <path>      Specifiy path for geoip4 city database\n"
 	     "  --country-db4 <path>   Specifiy path for geoip4 country database\n"
@@ -202,7 +211,7 @@ static void help(void)
 	     "  -h|--help              Print this help\n\n"
 	     "Examples:\n"
 	     "  flowtop\n"
-	     "  flowtop -UTs\n\n"
+	     "  flowtop -UTDISs\n\n"
 	     "Note:\n"
 	     "  If netfilter is not running, you can activate it with i.e.:\n"
 	     "   iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT\n"
@@ -717,20 +726,25 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 	char tmp[128];
 	uint16_t port;
 
-	slprintf(tmp, sizeof(tmp), "%u/%s", n->procnum, basename(n->cmdline));
+	mvwprintw(screen, *line, 2, "");
 
 	/* PID, application name */
-	mvwprintw(screen, *line, 2, "[");
-	attron(COLOR_PAIR(3));
-	printw("%s", n->procnum > 0 ? tmp : "N/A");
-	attroff(COLOR_PAIR(3));
-	printw("]");
+	if (n->procnum > 0) {
+		slprintf(tmp, sizeof(tmp), "%u/%s", n->procnum,
+			 basename(n->cmdline));
+
+		printw("[");
+		attron(COLOR_PAIR(3));
+		printw("%s", tmp);
+		attroff(COLOR_PAIR(3));
+		printw("]:");
+	}
 
 	/* L3 protocol, L4 protocol, TCP state */
-	printw(":%s:%s", l3proto2str[n->l3_proto], proto2str[n->l4_proto]);
+	printw("%s:%s", l3proto2str[n->l3_proto], proto2str[n->l4_proto]);
 	printw("[");
 	attron(COLOR_PAIR(3));
-	printw("%s", state2str[n->tcp_state]);
+	printw("%s", tcp_state2str[n->tcp_state]);
 	attroff(COLOR_PAIR(3));
 	printw("]:");
 
@@ -738,12 +752,17 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 	attron(A_BOLD);
 	if (n->tcp_state != TCP_CONNTRACK_NONE) {
 		port = presenter_get_port(n->port_src, n->port_dst, 1);
-		printw("%s -> ", lookup_port_tcp(port));
+		printw("%s ->", lookup_port_tcp(port));
 	} else {
 		port = presenter_get_port(n->port_src, n->port_dst, 0);
-		printw("%s -> ", lookup_port_udp(port));
+		printw("%s ->", lookup_port_udp(port));
 	}
 	attroff(A_BOLD);
+
+#if 0
+	/* Number packets, bytes */
+	printw("(%upkts/%ubytes) ->", n->counter_pkts, n->counter_bytes);
+#endif
 
 	/* Show source information: reverse DNS, port, country, city */
 	if (show_src) {
@@ -805,10 +824,10 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 
 	maxy -= 6;
 	/* Yes, that's lame :-P */
-	for (i = 0; i < sizeof(states); i++) {
+	for (i = 0; i < sizeof(tcp_states); i++) {
 		n = rcu_dereference(fl->head);
 		while (n && maxy > 0) {
-			if (n->tcp_state != states[i] ||
+			if (n->tcp_state != tcp_states[i] ||
 			    (i != TCP_CONNTRACK_NONE &&
 			     n->tcp_state == TCP_CONNTRACK_NONE) ||
 			    /* Filter out DNS */
@@ -973,21 +992,23 @@ static void *collector(void *null)
 		panic("Cannot create a nfct filter!\n");
 
 	if (what & INCLUDE_UDP)
-		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO,
-					 IPPROTO_UDP);
+		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO, IPPROTO_UDP);
 	if (what & INCLUDE_TCP)
-		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO,
-					 IPPROTO_TCP);
+		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO, IPPROTO_TCP);
+	if (what & INCLUDE_DCCP)
+		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO, IPPROTO_DCCP);
+	if (what & INCLUDE_SCTP)
+		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO, IPPROTO_SCTP);
+	if (what & INCLUDE_ICMP) {
+		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO, IPPROTO_ICMP);
+		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO, IPPROTO_ICMPV6);
+	}
 
-	nfct_filter_set_logic(filter, NFCT_FILTER_SRC_IPV4,
-			      NFCT_FILTER_LOGIC_NEGATIVE);
-	nfct_filter_add_attr(filter, NFCT_FILTER_SRC_IPV4,
-			     &filter_ipv4);
+	nfct_filter_set_logic(filter, NFCT_FILTER_SRC_IPV4, NFCT_FILTER_LOGIC_NEGATIVE);
+	nfct_filter_add_attr(filter, NFCT_FILTER_SRC_IPV4, &filter_ipv4);
 
-	nfct_filter_set_logic(filter, NFCT_FILTER_SRC_IPV6,
-			      NFCT_FILTER_LOGIC_NEGATIVE);
-	nfct_filter_add_attr(filter, NFCT_FILTER_SRC_IPV6,
-			     &filter_ipv6);
+	nfct_filter_set_logic(filter, NFCT_FILTER_SRC_IPV6, NFCT_FILTER_LOGIC_NEGATIVE);
+	nfct_filter_add_attr(filter, NFCT_FILTER_SRC_IPV6, &filter_ipv6);
 
 	ret = nfct_filter_attach(nfct_fd(handle), filter);
 	if (ret < 0)
@@ -1030,6 +1051,15 @@ int main(int argc, char **argv)
 			break;
 		case 'U':
 			what_cmd |= INCLUDE_UDP;
+			break;
+		case 'D':
+			what_cmd |= INCLUDE_DCCP;
+			break;
+		case 'I':
+			what_cmd |= INCLUDE_ICMP;
+			break;
+		case 'S':
+			what_cmd |= INCLUDE_SCTP;
 			break;
 		case 's':
 			show_src = 1;
