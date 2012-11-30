@@ -128,8 +128,14 @@ ifndef NACL_INC_DIR
 endif
 endif
 
+ifeq ("$(origin CROSS_COMPILE)", "command line")
+  WHAT := Cross compiling
+else
+  WHAT := Building
+endif
+
 build_showinfo:
-	$(Q)echo "$(bold)Building netsniff-ng toolkit ($(VERSION_STRING)) for" \
+	$(Q)echo "$(bold)$(WHAT) netsniff-ng toolkit ($(VERSION_STRING)) for" \
 	      $(shell $(CCNQ) -dumpmachine)":$(normal)"
 clean_showinfo:
 	$(Q)echo "$(bold)Cleaning netsniff-ng toolkit ($(VERSION_STRING)):$(normal)"
@@ -171,7 +177,7 @@ define TOOL_templ
   include $(1)/Makefile
   $(1) $(1)%: BUILD_DIR := $(1)
   $(1)_prehook:
-	$(Q)echo "$(bold)Building $(1):$(normal)"
+	$(Q)echo "$(bold)$(WHAT) $(1):$(normal)"
   $(1): $(1)_prehook $$($(1)-lex) $$($(1)-yaac) $$(patsubst %.o,$(1)/%.o,$$($(1)-objs))
   $(1)_clean: $(1)_clean_custom
 	$(Q)$$(call RM,$(1)/*.o $(1)/$(1))
@@ -225,10 +231,11 @@ $(TOOLS):
 update:
 	$(Q)../scripts/geoip-database-update
 nacl:
-	$(Q)echo "$(bold)Building $@:$(normal)"
+	$(Q)echo "$(bold)$(WHAT) $@:$(normal)"
 	$(Q)cd curvetun/ && ./build_nacl.sh ~/nacl
 	$(Q)source ~/.bashrc
 geoip:
+	$(Q)echo "$(bold)$(WHAT) $@:$(normal)"
 	$(Q)cd astraceroute/ && ./build_geoip.sh
 
 help:
