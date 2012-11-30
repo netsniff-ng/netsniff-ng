@@ -24,9 +24,6 @@ submit your contributions, items marked with '!' are of high importance):
 22! Add different timing models to trafgen, not just a static interpacket gap.
 	@TODO: Daniel Borkmann
 
-38! netsniff-ng (and others): if interface goes down, properly exit
-	@TODO: Daniel Borkmann
-
 48! Hand-include patchset from Sibir Chakraborty:
 	- Replay all files from directory (dir as --in paramter)
 	- Replay with correct timing information
@@ -34,10 +31,6 @@ submit your contributions, items marked with '!' are of high importance):
 	@TODO: Daniel Borkmann
 
 49! Add Gbps / pps rate limit to trafgen
-	@TODO: Daniel Borkmann
-
-47! ifpps show timestamps in CSV file. (Do we already have this?) In general
-    improve CSV output a bit.
 	@TODO: Daniel Borkmann
 
 32! ifpps: add option for --dev eth0,eth1,eth2 and accumulate stats
