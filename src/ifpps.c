@@ -36,15 +36,9 @@
 #include "xio.h"
 #include "built_in.h"
 
-/*
- * TODO: Cleanups, this got quite a hack over time.
- */
-
 #define TERM_MODE_NORMAL  1
 #define TERM_MODE_CSV     2
 #define TERM_MODE_CSV_HDR 4
-
-#define USER_HZ sysconf(_SC_CLK_TCK)
 
 struct ifstat {
 	unsigned long rx_bytes;
