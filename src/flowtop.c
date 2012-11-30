@@ -269,7 +269,7 @@ static void help(void)
 	     "  flowtop\n"
 	     "  flowtop -46UTDISs\n\n"
 	     "Note:\n"
-	     "  If netfilter is not running, you can activate it with i.e.:\n"
+	     "  If netfilter is not running, you can activate it with e.g.:\n"
 	     "   iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT\n"
 	     "   iptables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
