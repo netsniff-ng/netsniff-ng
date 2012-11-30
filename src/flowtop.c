@@ -1058,6 +1058,10 @@ static void *collector(void *null)
 	if (!filter)
 		panic("Cannot create a nfct filter!\n");
 
+	ret = nfct_filter_attach(nfct_fd(handle), filter);
+	if (ret < 0)
+		panic("Cannot attach filter to handle!\n");
+
 	if (what & INCLUDE_UDP)
 		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO, IPPROTO_UDP);
 	if (what & INCLUDE_TCP)
@@ -1087,6 +1091,8 @@ static void *collector(void *null)
 
 	nfct_callback_register(handle, NFCT_T_ALL, collector_cb, NULL);
 
+	nfct_filter_destroy(filter);
+
 	collector_load_geoip();
 
 	flow_list_init(&flow_list);
@@ -1102,7 +1108,6 @@ static void *collector(void *null)
 
 	collector_destroy_geoip();
 
-	nfct_filter_destroy(filter);
 	nfct_close(handle);
 
 	pthread_exit(0);
