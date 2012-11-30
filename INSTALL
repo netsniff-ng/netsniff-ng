@@ -172,6 +172,11 @@ symbols, do:
 
   $ make DEBUG=1
 
+For debugging the build system, full commands are shown if every make target is
+executed with:
+
+  $ make Q=
+
 Concerning packaging the toolkit for a Linux distribution, by default,
 netsniff-ng has some architecture-specific tuning options enabled that don't
 belong into a package binary of a distribution. Hence, you might want to adapt
