@@ -1045,11 +1045,6 @@ static void presenter(void)
 	dissector_cleanup_ethernet();
 }
 
-static inline int cb_test_bit(int nr, const u_int32_t *addr)
-{
-	return ((1UL << (nr & 31)) & (addr[nr >> 5])) != 0;
-}
-
 static int collector_cb(enum nf_conntrack_msg_type type,
 			struct nf_conntrack *ct, void *data)
 {
