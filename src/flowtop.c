@@ -64,7 +64,7 @@ struct flow_entry {
 	char country_src[128], country_dst[128];
 	char city_src[128], city_dst[128];
 	char rev_dns_src[256], rev_dns_dst[256];
-	int first, procnum, inode;
+	int procnum, inode;
 	char cmdline[256];
 	struct flow_entry *next;
 };
@@ -297,12 +297,7 @@ static void version(void)
 
 static inline struct flow_entry *flow_entry_xalloc(void)
 {
-	struct flow_entry *n;
-
-	n = xzmalloc(sizeof(*n));
-	n->first = 1;
-
-	return n;
+	return xzmalloc(sizeof(struct flow_entry));
 }
 
 static inline void flow_entry_xfree(struct flow_entry *n)
@@ -559,15 +554,6 @@ static void flow_entry_from_ct(struct flow_entry *n, struct nf_conntrack *ct)
 
 	n->ip4_src_addr = ntohl(n->ip4_src_addr);
 	n->ip4_dst_addr = ntohl(n->ip4_dst_addr);
-
-	if (n->first) {
-		n->inode = get_port_inode(n->port_src, n->l4_proto,
-					  n->l3_proto == AF_INET6);
-		if (n->inode > 0)
-			walk_processes(n);
-	}
-
-	n->first = 0;
 }
 
 enum flow_entry_direction {
@@ -735,6 +721,11 @@ static void flow_entry_get_extended(struct flow_entry *n)
 
 	flow_entry_get_extended_revdns(n, flow_entry_dst);
 	flow_entry_get_extended_geo(n, flow_entry_dst);
+
+	n->inode = get_port_inode(n->port_src, n->l4_proto,
+				  n->l3_proto == AF_INET6);
+	if (n->inode > 0)
+		walk_processes(n);
 }
 
 static uint16_t presenter_get_port(uint16_t src, uint16_t dst, int tcp)
