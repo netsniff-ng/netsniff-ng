@@ -777,8 +777,8 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 
 	/* PID, application name */
 	if (n->procnum > 0) {
-		slprintf(tmp, sizeof(tmp), "%u/%s", n->procnum,
-			 basename(n->cmdline));
+		slprintf(tmp, sizeof(tmp), "%s(%u)", basename(n->cmdline),
+			 n->procnum);
 
 		printw("[");
 		attron(COLOR_PAIR(3));
