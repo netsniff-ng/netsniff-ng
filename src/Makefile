@@ -102,7 +102,12 @@ LEX = $(Q)echo -e "  LEX\t$<" && flex
 YAAC = $(Q)echo -e "  YAAC\t$<" && bison
 INST = echo -e "  INST\t$(1)" && install -d $(2) && \
 	install --mode=644 -DC $(1) $(2)/$(shell basename $(1))
-INSTX = echo -e "  INST\t$(1)" && install -C $(1) $(2)/$(shell basename $(1))
+ifeq ("$(origin PREFIX)", "command line")
+  INSTX = echo -e "  INST\t$(1)" && install -d $(2) && \
+	install -C $(1) $(2)/$(shell basename $(1))
+else
+  INSTX = echo -e "  INST\t$(1)" && install -C $(1) $(2)/$(shell basename $(1))
+endif
 RM = echo -e "  RM\t$(1)" && rm -rf $(1)
 RMDIR = echo -e "  RM\t$(1)" && rmdir --ignore-fail-on-non-empty $(1) 2> /dev/null || true
 

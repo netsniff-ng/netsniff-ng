@@ -7,13 +7,7 @@ kernel >= 2.6.31, because the TX_RING is officially integrated since then. In
 any case, if you have the possibility, consider getting the latest kernel from
 Linus' Git repository, tweak and compile it, and run this one!
 
-A note for distribution package maintainers:
-
-By default, netsniff-ng has some architecture-specific tuning options enabled
-that don't belong into a package binary of a distribution. Hence, you might
-want to adapt some build-related things before starting to package the toolkit.
-All necessary things (e.g., CFLAGS,WFLAGS) can be found in src/Makefile. Hence,
-you need to adapt it there.
+A note for distribution package maintainers can be found at the end of the file.
 
 What tools are required to build netsniff-ng?
 
@@ -158,3 +152,36 @@ there is no possibility on our side to fix them while staying with both tools.
 Similar to that, gcc will throw a warning on strchr(3) which is a false
 positive (http://gcc.gnu.org/bugzilla/show_bug.cgi?id=36513) from glibc:
  - warning: logical ‘&&’ with non-zero constant will always evaluate as true
+
+For cross-compiling netsniff-ng, the process is faily simple. Assuming you
+want to build netsniff-ng for the Microblaze architecture, update the PATH
+variable first, e.g.:
+
+  $ export PATH=<cc-tools-path>/microblazeel-unknown-linux-gnu/bin:$PATH
+
+And then, build the toolkit like this:
+
+  $ make CROSS_COMPILE=microblazeel-unknown-linux-gnu- \
+	 CROSS_LD_LIBRARY_PATH=<cc-lib-search-path>
+
+Note that some adaptations might be necessary regarding the CFLAGS, since not
+all might be supported by a different architecture.
+
+For doing a debug build of the toolkit with less optimizations and non-stripped
+symbols, do:
+
+  $ make DEBUG=1
+
+Concerning packaging the toolkit for a Linux distribution, by default,
+netsniff-ng has some architecture-specific tuning options enabled that don't
+belong into a package binary of a distribution. Hence, you might want to adapt
+some build-related things before starting to package the toolkit. All
+necessary things (e.g., CFLAGS,WFLAGS) can be found in src/Makefile. Hence,
+you need to adapt it there. You can then build and install the toolkit into
+a prefixed path like:
+
+  $ make PREFIX=<path-prefix-for-package>
+  $ make PREFIX=<path-prefix-for-package> install
+
+Thanks for maintaining netsniff-ng in your distribution. Further questions
+will be answered on the public mainling list.
