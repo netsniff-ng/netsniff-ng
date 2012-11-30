@@ -1024,15 +1024,25 @@ static void collector_destroy_geoip(void)
 	GeoIP_delete(geo_city.gi6);
 }
 
+static void inline collector_flush(struct nfct_handle *handle, uint8_t family)
+{
+	nfct_query(handle, NFCT_Q_FLUSH, &family);
+}
+
 static void *collector(void *null)
 {
 	int ret;
 	struct nfct_handle *handle;
 	struct nfct_filter *filter;
 
-	handle = nfct_open(CONNTRACK, NFCT_ALL_CT_GROUPS);
+	handle = nfct_open(CONNTRACK, NF_NETLINK_CONNTRACK_NEW |
+				      NF_NETLINK_CONNTRACK_UPDATE |
+				      NF_NETLINK_CONNTRACK_DESTROY);
 	if (!handle)
 		panic("Cannot create a nfct handle!\n");
+
+	collector_flush(handle, AF_INET);
+	collector_flush(handle, AF_INET6);
 
 	filter = nfct_filter_create();
 	if (!filter)
