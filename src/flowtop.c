@@ -890,16 +890,75 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 	printw(")");
 }
 
+#if 0
+			if (n->tcp_state != tcp_states[i] ||
+			    (i != TCP_CONNTRACK_NONE &&
+			     n->tcp_state == TCP_CONNTRACK_NONE) ||
+			    /* Filter out DNS */
+			    presenter_get_port(n->port_src,
+					       n->port_dst, 0) == 53) {
+				n = rcu_dereference(n->next);
+				continue;
+			}
+#endif
+
+static inline int presenter_flow_wrong_state(struct flow_entry *n, int state)
+{
+	int ret = 1;
+
+	switch (n->l4_proto) {
+	case IPPROTO_TCP:
+		if (n->tcp_state == state)
+			ret = 0;
+		break;
+	case IPPROTO_SCTP:
+		if (n->sctp_state == state)
+			ret = 0;
+		break;
+	case IPPROTO_DCCP:
+		if (n->dccp_state == state)
+			ret = 0;
+		break;
+	case IPPROTO_UDP:
+	case IPPROTO_UDPLITE:
+	case IPPROTO_ICMP:
+	case IPPROTO_ICMPV6:
+		ret = 0;
+		break;
+	}
+
+	return ret;
+}
+
 static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 				    int skip_lines)
 {
-	int i, maxy;
+	int i, j, maxy;
 	unsigned int line = 3;
 	struct flow_entry *n;
+	uint8_t protocols[] = {
+		IPPROTO_TCP,
+		IPPROTO_DCCP,
+		IPPROTO_SCTP,
+		IPPROTO_UDP,
+		IPPROTO_UDPLITE,
+		IPPROTO_ICMP,
+		IPPROTO_ICMPV6,
+	};
+	size_t protocol_state_size[] = {
+		[IPPROTO_TCP] = array_size(tcp_states),
+		[IPPROTO_DCCP] = array_size(dccp_states),
+		[IPPROTO_SCTP] = array_size(sctp_states),
+		[IPPROTO_UDP] = 1,
+		[IPPROTO_UDPLITE] = 1,
+		[IPPROTO_ICMP] = 1,
+		[IPPROTO_ICMPV6] = 1,
+	};
 
 	curs_set(0);
 
 	maxy = getmaxy(screen);
+	maxy -= 6;
 
 	start_color();
 	init_pair(1, COLOR_RED, COLOR_BLACK);
@@ -919,31 +978,35 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 		mvwprintw(screen, line, 2, "(No active sessions! "
 			  "Is netfilter running?)");
 
-	maxy -= 6;
-	/* Yes, that's lame :-P */
-	for (i = 0; i < sizeof(tcp_states); i++) {
-		n = rcu_dereference(fl->head);
-		while (n && maxy > 0) {
-			if (n->tcp_state != tcp_states[i] ||
-			    (i != TCP_CONNTRACK_NONE &&
-			     n->tcp_state == TCP_CONNTRACK_NONE) ||
-			    /* Filter out DNS */
-			    presenter_get_port(n->port_src,
-					       n->port_dst, 0) == 53) {
-				n = rcu_dereference(n->next);
-				continue;
-			}
-			if (skip_lines > 0) {
-				n = rcu_dereference(n->next);
-				skip_lines--;
-				continue;
-			}
+	for (i = 0; i < array_size(protocols); i++) {
+		for (j = 0; j < protocol_state_size[protocols[i]]; j++) {
+			n = rcu_dereference(fl->head);
+			while (n && maxy > 0) {
+				int skip_entry = 0;
 
-			presenter_screen_do_line(screen, n, &line);
+				if (n->l4_proto != protocols[i])
+					skip_entry = 1;
+				if (presenter_flow_wrong_state(n, j))
+					skip_entry = 1;
+				if (presenter_get_port(n->port_src,
+						       n->port_dst, 0) == 53)
+					skip_entry = 1;
+				if (skip_entry) {
+					n = rcu_dereference(n->next);
+					continue;
+				}
+				if (skip_lines > 0) {
+					n = rcu_dereference(n->next);
+					skip_lines--;
+					continue;
+				}
 
-			line++;
-			maxy -= (2 + 1 * show_src);
-			n = rcu_dereference(n->next);
+				presenter_screen_do_line(screen, n, &line);
+
+				line++;
+				maxy -= (2 + 1 * show_src);
+				n = rcu_dereference(n->next);
+			}
 		}
 	}
 

@@ -11,10 +11,6 @@ submit your contributions, items marked with '!' are of high importance):
  3! Test IPv6 on flowtop, curvetun and mausezahn.
 	@TODO: Daniel Borkmann, Jon Schipp
 
- 3! Implement and test DCCP, SCTP, ICMP(, UDP) on flowtop, plus pkt counter and
-    byte counter from conntrack.
-	@TODO: Daniel Borkmann
-
  4! Implement IRQs + Softirqs on wireless in ifpps. (Driver name via ethtool?)
 	@TODO: Daniel Borkmann
 
