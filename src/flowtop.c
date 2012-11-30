@@ -67,7 +67,6 @@ struct flow_entry {
 	char cmdline[256];
 	struct flow_entry *next;
 	int procnum, inode;
-	unsigned int flags;
 };
 
 struct flow_list {
@@ -91,11 +90,6 @@ struct flow_list {
 #define INCLUDE_DCCP	(1 << 4)
 #define INCLUDE_ICMP	(1 << 5)
 #define INCLUDE_SCTP	(1 << 6)
-
-#define PRES_FLAG_COUNTERS	(1 << 0)
-#define PRES_FLAG_TCP_STATE	(1 << 1)
-#define PRES_FLAG_DCCP_STATE	(1 << 2)
-#define PRES_FLAG_SCTP_STATE	(1 << 3)
 
 volatile sig_atomic_t sigint = 0;
 
@@ -889,18 +883,6 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 		printw(", %s", n->city_dst);
 	printw(")");
 }
-
-#if 0
-			if (n->tcp_state != tcp_states[i] ||
-			    (i != TCP_CONNTRACK_NONE &&
-			     n->tcp_state == TCP_CONNTRACK_NONE) ||
-			    /* Filter out DNS */
-			    presenter_get_port(n->port_src,
-					       n->port_dst, 0) == 53) {
-				n = rcu_dereference(n->next);
-				continue;
-			}
-#endif
 
 static inline int presenter_flow_wrong_state(struct flow_entry *n, int state)
 {
