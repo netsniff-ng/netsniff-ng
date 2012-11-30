@@ -603,7 +603,6 @@ flow_entry_geo_city_lookup_generic(struct flow_entry *n,
 	GeoIPRecord *gir = NULL;
 	struct sockaddr_in sa4;
 	struct sockaddr_in6 sa6;
-	inline const char *make_na(const char *p) { return p ? : "N/A"; }
 	const char *city = NULL;
 
 	switch (n->l3_proto) {
@@ -622,11 +621,18 @@ flow_entry_geo_city_lookup_generic(struct flow_entry *n,
 		break;
 	}
 
-	city = make_na(gir != NULL ? gir->city : city);
+	if (gir != NULL)
+		city = gir->city;
 
 	bug_on(sizeof(n->city_src) != sizeof(n->city_dst));
-	memcpy(SELFLD(dir, city_src, city_dst), city,
-	       min(sizeof(n->city_src), strlen(city)));
+
+	if (city) {
+		memcpy(SELFLD(dir, city_src, city_dst), city,
+		       min(sizeof(n->city_src), strlen(city)));
+	} else {
+		memset(SELFLD(dir, city_src, city_dst), 0,
+		       sizeof(n->city_src));
+	}
 }
 
 static void
@@ -823,7 +829,9 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 		printw("%s", n->country_src);
 		attroff(COLOR_PAIR(4));
 
-		printw(", %s) => ", n->city_src);
+		if (n->city_src[0])
+			printw(", %s", n->city_src);
+		printw(") => ");
 	}
 
 	/* Show dest information: reverse DNS, port, country, city */
@@ -837,7 +845,9 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 	printw("%s", n->country_dst);
 	attroff(COLOR_PAIR(4));
 
-	printw(", %s)", n->city_dst);
+	if (n->city_dst[0])
+		printw(", %s", n->city_dst);
+	printw(")");
 }
 
 static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
@@ -1082,8 +1092,10 @@ static void *collector(void *null)
 	flow_list_init(&flow_list);
 
 	rcu_register_thread();
-	while (!sigint)
-		nfct_catch(handle);
+
+	while (!sigint && ret >= 0)
+		ret = nfct_catch(handle);
+
 	rcu_unregister_thread();
 
 	flow_list_destroy(&flow_list);
