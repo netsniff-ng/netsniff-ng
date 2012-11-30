@@ -58,15 +58,16 @@ struct flow_entry {
 	uint32_t ip4_src_addr, ip4_dst_addr;
 	uint32_t ip6_src_addr[4], ip6_dst_addr[4];
 	uint16_t port_src, port_dst;
-	uint8_t  tcp_state, tcp_flags;
+	uint8_t  tcp_state, tcp_flags, sctp_state, dccp_state;
 	uint64_t counter_pkts, counter_bytes;
 	uint64_t timestamp_start, timestamp_stop;
 	char country_src[128], country_dst[128];
 	char city_src[128], city_dst[128];
 	char rev_dns_src[256], rev_dns_dst[256];
-	int procnum, inode;
 	char cmdline[256];
 	struct flow_entry *next;
+	int procnum, inode;
+	unsigned int flags;
 };
 
 struct flow_list {
@@ -90,6 +91,11 @@ struct flow_list {
 #define INCLUDE_DCCP	(1 << 4)
 #define INCLUDE_ICMP	(1 << 5)
 #define INCLUDE_SCTP	(1 << 6)
+
+#define PRES_FLAG_COUNTERS	(1 << 0)
+#define PRES_FLAG_TCP_STATE	(1 << 1)
+#define PRES_FLAG_DCCP_STATE	(1 << 2)
+#define PRES_FLAG_SCTP_STATE	(1 << 3)
 
 volatile sig_atomic_t sigint = 0;
 
@@ -532,17 +538,26 @@ static void flow_entry_from_ct(struct flow_entry *n, struct nf_conntrack *ct)
 {
 	CP_NFCT(l3_proto, ATTR_ORIG_L3PROTO, 8);
 	CP_NFCT(l4_proto, ATTR_ORIG_L4PROTO, 8);
+
 	CP_NFCT(ip4_src_addr, ATTR_ORIG_IPV4_SRC, 32);
 	CP_NFCT(ip4_dst_addr, ATTR_ORIG_IPV4_DST, 32);
+
 	CP_NFCT(port_src, ATTR_ORIG_PORT_SRC, 16);
 	CP_NFCT(port_dst, ATTR_ORIG_PORT_DST, 16);
+
 	CP_NFCT(status, ATTR_STATUS, 32);
+
 	CP_NFCT(tcp_state, ATTR_TCP_STATE, 8);
 	CP_NFCT(tcp_flags, ATTR_TCP_FLAGS_ORIG, 8);
+	CP_NFCT(sctp_state, ATTR_SCTP_STATE, 8);
+	CP_NFCT(dccp_state, ATTR_DCCP_STATE, 8);
+
 	CP_NFCT(counter_pkts, ATTR_ORIG_COUNTER_PACKETS, 64);
 	CP_NFCT(counter_bytes, ATTR_ORIG_COUNTER_BYTES, 64);
+
 	CP_NFCT(timestamp_start, ATTR_TIMESTAMP_START, 64);
 	CP_NFCT(timestamp_stop, ATTR_TIMESTAMP_STOP, 64);
+
 	CP_NFCT(flow_id, ATTR_ID, 32);
 	CP_NFCT(use, ATTR_USE, 32);
 
@@ -728,6 +743,7 @@ static void flow_entry_get_extended(struct flow_entry *n)
 	flow_entry_get_extended_revdns(n, flow_entry_dst);
 	flow_entry_get_extended_geo(n, flow_entry_dst);
 
+	/* Lookup application */
 	n->inode = get_port_inode(n->port_src, n->l4_proto,
 				  n->l3_proto == AF_INET6);
 	if (n->inode > 0)
@@ -776,7 +792,7 @@ static void presenter_screen_init(WINDOW **screen)
 static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 				     unsigned int *line)
 {
-	char tmp[128];
+	char tmp[128], *pname = NULL;
 	uint16_t port;
 
 	mvwprintw(screen, *line, 2, "");
@@ -793,29 +809,53 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 		printw("]:");
 	}
 
-	/* L3 protocol, L4 protocol, TCP state */
+	/* L3 protocol, L4 protocol, states */
 	printw("%s:%s", l3proto2str[n->l3_proto], l4proto2str[n->l4_proto]);
 	printw("[");
 	attron(COLOR_PAIR(3));
-	printw("%s", tcp_state2str[n->tcp_state]);
+	switch (n->l4_proto) {
+	case IPPROTO_TCP:
+		printw("%s", tcp_state2str[n->tcp_state]);
+		break;
+	case IPPROTO_SCTP:
+		printw("%s", sctp_state2str[n->sctp_state]);
+		break;
+	case IPPROTO_DCCP:
+		printw("%s", dccp_state2str[n->dccp_state]);
+		break;
+	case IPPROTO_UDP:
+	case IPPROTO_UDPLITE:
+	case IPPROTO_ICMP:
+	case IPPROTO_ICMPV6:
+		printw("NOSTATE");
+		break;
+	}
 	attroff(COLOR_PAIR(3));
-	printw("]:");
+	printw("]");
 
 	/* Guess application port */
-	attron(A_BOLD);
-	if (n->tcp_state != TCP_CONNTRACK_NONE) {
+	switch (n->l4_proto) {
+	case IPPROTO_TCP:
 		port = presenter_get_port(n->port_src, n->port_dst, 1);
-		printw("%s ->", lookup_port_tcp(port));
-	} else {
+		pname = lookup_port_tcp(port);
+		break;
+	case IPPROTO_UDP:
+	case IPPROTO_UDPLITE:
 		port = presenter_get_port(n->port_src, n->port_dst, 0);
-		printw("%s ->", lookup_port_udp(port));
+		pname = lookup_port_udp(port);
+		break;
 	}
-	attroff(A_BOLD);
+	if (pname) {
+		attron(A_BOLD);
+		printw(":%s", pname);
+		attroff(A_BOLD);
+	}
+	printw(" ->");
 
-#if 0
 	/* Number packets, bytes */
-	printw("(%upkts/%ubytes) ->", n->counter_pkts, n->counter_bytes);
-#endif
+	if (n->counter_pkts > 0 && n->counter_bytes > 0)
+		printw(" (%llu pkts, %llu bytes) ->",
+		       n->counter_pkts, n->counter_bytes);
 
 	/* Show source information: reverse DNS, port, country, city */
 	if (show_src) {
@@ -960,6 +1000,11 @@ static void presenter(void)
 	dissector_cleanup_ethernet();
 }
 
+static inline int cb_test_bit(int nr, const u_int32_t *addr)
+{
+	return ((1UL << (nr & 31)) & (addr[nr >> 5])) != 0;
+}
+
 static int collector_cb(enum nf_conntrack_msg_type type,
 			struct nf_conntrack *ct, void *data)
 {
@@ -1062,8 +1107,10 @@ static void *collector(void *null)
 	if (ret < 0)
 		panic("Cannot attach filter to handle!\n");
 
-	if (what & INCLUDE_UDP)
+	if (what & INCLUDE_UDP) {
 		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO, IPPROTO_UDP);
+		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO, IPPROTO_UDPLITE);
+	}
 	if (what & INCLUDE_TCP)
 		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO, IPPROTO_TCP);
 	if (what & INCLUDE_DCCP)
