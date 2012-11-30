@@ -320,11 +320,11 @@ static void flow_list_new_entry(struct flow_list *fl, struct nf_conntrack *ct)
 {
 	struct flow_entry *n = flow_entry_xalloc();
 
-	rcu_assign_pointer(n->next, fl->head);
-	rcu_assign_pointer(fl->head, n);
-
 	flow_entry_from_ct(n, ct);
 	flow_entry_get_extended(n);
+
+	rcu_assign_pointer(n->next, fl->head);
+	rcu_assign_pointer(fl->head, n);
 }
 
 static struct flow_entry *flow_list_find_id(struct flow_list *fl,
@@ -369,16 +369,16 @@ static void flow_list_update_entry(struct flow_list *fl,
 	n = flow_list_find_id(fl, nfct_get_attr_u32(ct, ATTR_ID));
 	if (n == NULL) {
 		n = flow_entry_xalloc();
-
-		rcu_assign_pointer(n->next, fl->head);
-		rcu_assign_pointer(fl->head, n);
-
 		do_ext = 1;
 	}
 
 	flow_entry_from_ct(n, ct);
-	if (do_ext)
+	if (do_ext) {
 		flow_entry_get_extended(n);
+
+		rcu_assign_pointer(n->next, fl->head);
+		rcu_assign_pointer(fl->head, n);
+	}
 }
 
 static void flow_list_destroy_entry(struct flow_list *fl,
