@@ -47,6 +47,8 @@ else
   CFLAGS += -mtune=native
   CFLAGS += -O3
   CFLAGS += -fpie
+  CFLAGS += -pipe
+  CFLAGS += -fomit-frame-pointer
 endif
 CFLAGS += --param=ssp-buffer-size=4
 CFLAGS += -fno-strict-aliasing
