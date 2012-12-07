@@ -30,7 +30,6 @@
 #include "mops.h"
 #include "llist.h"
 #include "die.h"
-#include "list.h"
 
 int verbose_level = 0;
 
