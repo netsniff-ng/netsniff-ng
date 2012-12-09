@@ -11,9 +11,6 @@ submit your contributions, items marked with '!' are of high importance):
  3! Test IPv6 on flowtop, curvetun and mausezahn.
 	@TODO: Daniel Borkmann, Jon Schipp
 
- 4! Implement IRQs + Softirqs on wireless in ifpps. (Driver name via ethtool?)
-	@TODO: Daniel Borkmann
-
 10! Add a proper 802.11 dissector for netsniff-ng.
 	@TODO: Markus Amend
 
@@ -44,8 +41,8 @@ submit your contributions, items marked with '!' are of high importance):
 51! astraceroute: can we remove whois query and do this locally?
 	@TODO: Daniel Borkmann
 
-52! all tools: add option to run a tool as -u user -g group resp.
-    --user user --group group so that we can drop to non-root if this
+52! all tools, but ifpps/bpfc: add option to run a tool as -u user -g group
+    resp. --user user --group group so that we can drop to non-root if this
     option is set and the tool was started as root.
 	@TODO: Daniel Borkmann
 
