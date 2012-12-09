@@ -779,12 +779,13 @@ static void term_csv(const char *ifname, const struct ifstat *rel,
 	fflush(stdout);
 }
 
-static void term_csv_header(const char *ifname, const struct ifstat *stats,
-			    const struct ifstat *curr, uint64_t ms_interval)
+static void term_csv_header(const char *ifname, const struct ifstat *abs,
+			    uint64_t ms_interval)
 {
 	int cpus, i, j = 1;
 
 	printf("# gnuplot dump (#col:description)\n");
+	printf("# networking interface: %s\n", ifname);
 	printf("# sampling interval (t): %lu ms\n", ms_interval);
 	printf("# %d:unixtime ", j++);
 
@@ -834,7 +835,7 @@ static void term_csv_header(const char *ifname, const struct ifstat *stats,
 		printf("%d:cpu%i-net-tx-soft-irqs ", j++, i);
 	}
 
-	if (iswireless(curr)) {
+	if (iswireless(abs)) {
 		printf("%d:wifi-link-qual-per-t ", j++);
 		printf("%d:wifi-link-qual ", j++);
 		printf("%d:wifi-link-qual-max ", j++);
@@ -860,8 +861,7 @@ static int term_main(const char *ifname, uint64_t ms_interval)
 
 		if (first) {
 			first = 0;
-			term_csv_header(ifname, &stats_delta, &stats_new,
-					ms_interval);
+			term_csv_header(ifname, &stats_new, ms_interval);
 		}
 
 		term_csv(ifname, &stats_delta, &stats_new, ms_interval);
