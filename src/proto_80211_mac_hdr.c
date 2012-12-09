@@ -756,6 +756,11 @@ struct element_ht_cap {
 	u8 asel_cap;
 } __packed;
 
+struct element_qos_cap {
+	u8 len;
+	u8 info;
+} __packed;
+
 struct element_ext_supp_rates {
 	u8 len;
 	u8 rates[0];
@@ -2623,7 +2628,20 @@ static int8_t inf_ht_cap(struct pkt_buff *pkt, u8 *id)
 
 static int8_t inf_qos_cap(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_qos_cap *qos_cap;
+
+	qos_cap = (struct element_qos_cap *)
+			  pkt_pull(pkt, sizeof(*qos_cap));
+	if (qos_cap == NULL)
+		return 0;
+
+	tprintf("QoS Capabilities (%u, Len(%u)): ", *id, qos_cap->len);
+	if (len_neq_error(qos_cap->len, 1))
+		return 0;
+
+	tprintf("Info (0x%x)", qos_cap->info);
+
+	return 1;
 }
 
 static int8_t inf_rsn(struct pkt_buff *pkt, u8 *id)
