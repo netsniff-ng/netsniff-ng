@@ -506,67 +506,172 @@ static void screen_init(WINDOW **screen)
 	wrefresh((*screen));
 }
 
+static void screen_net_dev_rel(WINDOW *screen, const struct ifstat *rel,
+			       int *voff)
+{
+	(*voff) += 2;
+
+	attron(A_REVERSE);
+
+	mvwprintw(screen, (*voff)++, 0,
+		  "  RX: %16.3lf MiB/t "
+		        "%10lu pkts/t "
+			"%10lu drops/t "
+			"%10lu errors/t  ",
+		  1.0 * rel->rx_bytes / (1 << 20),
+		  rel->rx_packets, rel->rx_drops, rel->rx_errors);
+
+	mvwprintw(screen, (*voff)++, 0,
+		  "  TX: %16.3lf MiB/t "
+			"%10lu pkts/t "
+			"%10lu drops/t "
+			"%10lu errors/t  ",
+		  1.0 * rel->tx_bytes / (1 << 20),
+		  rel->tx_packets, rel->tx_drops, rel->tx_errors);
+
+	attroff(A_REVERSE);
+}
+
+static void screen_net_dev_abs(WINDOW *screen, const struct ifstat *abs,
+			       int *voff)
+{
+	(*voff)++;
+
+	mvwprintw(screen, (*voff)++, 2,
+		  "RX: %16.3lf MiB   "
+		      "%10lu pkts   "
+		      "%10lu drops   "
+		      "%10lu errors",
+		  1.0 * abs->rx_bytes / (1 << 20),
+		  abs->rx_packets, abs->rx_drops, abs->rx_errors);
+
+	mvwprintw(screen, (*voff)++, 2,
+		  "TX: %16.3lf MiB   "
+		      "%10lu pkts   "
+		      "%10lu drops   "
+		      "%10lu errors",
+		  1.0 * abs->tx_bytes / (1 << 20),
+		  abs->tx_packets, abs->tx_drops, abs->tx_errors);
+}
+
+static void screen_sys_mem(WINDOW *screen, const struct ifstat *rel,
+			   const struct ifstat *abs, int *voff)
+{
+	(*voff)++;
+
+	mvwprintw(screen, (*voff)++, 2,
+		  "SYS:  %14ld cs/t "
+			"%10.1lf%% mem "
+			"%13ld running "
+			"%10ld iowait",
+		  rel->cswitch,
+		  100.0 * (abs->mem_total - abs->mem_free) / abs->mem_total,
+		  abs->procs_run, abs->procs_iow);
+}
+
+static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
+				 int cpus, int *voff)
+{
+	int i;
+	uint64_t all;
+
+	(*voff)++;
+
+	for (i = 0; i < cpus; ++i) {
+		all = rel->cpu_user[i] + rel->cpu_nice[i] + rel->cpu_sys[i] +
+		      rel->cpu_idle[i] + rel->cpu_iow[i];
+
+		mvwprintw(screen, (*voff)++, 2,
+			  "CPU%d: %13.1lf%% usr/t "
+				 "%9.1lf%% sys/t "
+				 "%10.1lf%% idl/t "
+				 "%11.1lf%% iow/t  ", i,
+			  100.0 * (rel->cpu_user[i] + rel->cpu_nice[i]) / all,
+			  100.0 * rel->cpu_sys[i] / all,
+			  100.0 * rel->cpu_idle[i] / all,
+			  100.0 * rel->cpu_iow[i] / all);
+	}
+}
+
+static void screen_percpu_irqs_rel(WINDOW *screen, const struct ifstat *rel,
+				   int cpus, int *voff)
+{
+	int i;
+
+	for (i = 0, (*voff)++; i < cpus; ++i) {
+		mvwprintw(screen, (*voff)++, 2,
+			  "CPU%d: %14ld irqs/t   "
+				 "%15ld soirq RX/t   "
+				 "%15ld soirq TX/t      ", i,
+			  rel->irqs[i],
+			  rel->irqs_srx[i],
+			  rel->irqs_stx[i]);
+	}
+}
+
+static void screen_percpu_irqs_abs(WINDOW *screen, const struct ifstat *abs,
+				   int cpus, int *voff)
+{
+	int i;
+
+	for (i = 0, (*voff)++; i < cpus; ++i) {
+		mvwprintw(screen, (*voff)++, 2,
+			  "CPU%d: %14ld irqs", i,
+			  abs->irqs[i]);
+	}
+}
+
+static void screen_wireless(WINDOW *screen, const struct ifstat *rel,
+			    const struct ifstat *abs, int *voff)
+{
+	(*voff)++;
+
+	if (iswireless(abs)) {
+		mvwprintw(screen, (*voff)++, 2,
+			  "LinkQual: %7d/%d (%d/t)          ",
+			  abs->wifi.link_qual,
+			  abs->wifi.link_qual_max,
+			  rel->wifi.link_qual);
+
+		mvwprintw(screen, (*voff)++, 2,
+			  "Signal: %8d dBm (%d dBm/t)       ",
+			  abs->wifi.signal_level,
+			  rel->wifi.signal_level);
+
+		mvwprintw(screen, (*voff)++, 2,
+			  "Noise:  %8d dBm (%d dBm/t)       ",
+			  abs->wifi.noise_level,
+			  rel->wifi.noise_level);
+
+		mvwprintw(screen, (*voff)++, 2,
+			  "SNR:    %8d dBm (%s)             ",
+			  abs->wifi.signal_level - abs->wifi.noise_level,
+			  snr_to_str(abs->wifi.signal_level - abs->wifi.noise_level));
+
+		(*voff)++;
+	}
+}
+
 static void screen_update(WINDOW *screen, const char *ifname, const struct ifstat *rel,
 			  const struct ifstat *abs, int *first, uint64_t ms_interval)
 {
-	int cpus, i, j = 0;
-	uint64_t all;
+	int cpus, voff = 1;
 
 	curs_set(0);
 
 	cpus = get_number_cpus();
 	bug_on(cpus > MAX_CPUS);
 
-	mvwprintw(screen, 1, 2, "Kernel net/sys statistics for %s, t=%lums", ifname, ms_interval);
+	mvwprintw(screen, voff, 2, "Kernel net/sys statistics for %s, t=%lums",
+		  ifname, ms_interval);
 
-	attron(A_REVERSE);
-	mvwprintw(screen, 3, 0, "  RX: %16.3lf MiB/t %10lu pkts/t %10lu drops/t %10lu errors/t  ",
-		  1.0 * rel->rx_bytes / (1 << 20), rel->rx_packets, rel->rx_drops, rel->rx_errors);
-	mvwprintw(screen, 4, 0, "  TX: %16.3lf MiB/t %10lu pkts/t %10lu drops/t %10lu errors/t  ",
-		  1.0 * rel->tx_bytes / (1 << 20), rel->tx_packets, rel->tx_drops, rel->tx_errors);
-	attroff(A_REVERSE);
-
-	mvwprintw(screen, 6, 2, "RX: %16.3lf MiB   %10lu pkts   %10lu drops   %10lu errors",
-		  1.0 * abs->rx_bytes / (1 << 20), abs->rx_packets, abs->rx_drops, abs->rx_errors);
-	mvwprintw(screen, 7, 2, "TX: %16.3lf MiB   %10lu pkts   %10lu drops   %10lu errors",
-		  1.0 * abs->tx_bytes / (1 << 20), abs->tx_packets, abs->tx_drops, abs->tx_errors);
-
-	mvwprintw(screen, 9, 2, "SYS:  %14ld cs/t %10.1lf%% mem %13ld running %10ld iowait",
-		  rel->cswitch, 100.0 * (abs->mem_total - abs->mem_free) / abs->mem_total,
-		  abs->procs_run, abs->procs_iow);
-
-	for(i = 0, j = 11; i < cpus; ++i) {
-		all = rel->cpu_user[i] + rel->cpu_nice[i] + rel->cpu_sys[i] + rel->cpu_idle[i] + rel->cpu_iow[i];
-
-		mvwprintw(screen, j++, 2, "CPU%d: %13.1f%% usr/t %9.1f%% sys/t %10.1f%% idl/t %11.1f%% iow/t  ",
-			  i, 100.f * (rel->cpu_user[i] + rel->cpu_nice[i]) / all, 100.f * rel->cpu_sys[i] / all,
-			  100.f * rel->cpu_idle[i] / all, 100.f * rel->cpu_iow[i] / all);
-	}
-
-	for(i = 0, j++; i < cpus; ++i) {
-		mvwprintw(screen, j++, 2, "CPU%d: %14ld irqs/t   %15ld soirq RX/t   %15ld soirq TX/t      ",
-			  i, rel->irqs[i], rel->irqs_srx[i], rel->irqs_stx[i]);
-	}
-
-	for(i = 0, j++; i < cpus; ++i) {
-		mvwprintw(screen, j++, 2, "CPU%d: %14ld irqs", i, abs->irqs[i]);
-	}
-
-	j++;
-	if (iswireless(abs)) {
-		mvwprintw(screen, j++, 2, "LinkQual: %7d/%d (%d/t)          ",
-			  abs->wifi.link_qual, abs->wifi.link_qual_max, rel->wifi.link_qual);
-
-		mvwprintw(screen, j++, 2, "Signal: %8d dBm (%d dBm/t)       ",
-			  abs->wifi.signal_level, rel->wifi.signal_level);
-
-		mvwprintw(screen, j++, 2, "Noise:  %8d dBm (%d dBm/t)       ",
-			  abs->wifi.noise_level, rel->wifi.noise_level);
-		mvwprintw(screen, j++, 2, "SNR:    %8d dBm (%s)             ",
-			  abs->wifi.signal_level - abs->wifi.noise_level,
-			  snr_to_str(abs->wifi.signal_level - abs->wifi.noise_level));
-		j++;
-	}
+	screen_net_dev_rel(screen, rel, &voff);
+	screen_net_dev_abs(screen, abs, &voff);
+	screen_sys_mem(screen, rel, abs, &voff);
+	screen_percpu_states(screen, rel, cpus, &voff);
+	screen_percpu_irqs_rel(screen, rel, cpus, &voff);
+	screen_percpu_irqs_abs(screen, abs, cpus, &voff);
+	screen_wireless(screen, rel, abs, &voff);
 
 	if (*first) {
 		mvwprintw(screen, 2, 2, "Collecting data ...");
@@ -586,12 +691,13 @@ static void screen_end(void)
 
 static int screen_main(const char *ifname, uint64_t ms_interval)
 {
-	int first = 1;
+	int first = 1, key;
 
 	screen_init(&stats_screen);
 
 	while (!sigint) {
-		if (getch() == 'q')
+		key = getch();
+		if (key == 'q' || key == 0x1b /* esq */)
 			break;
 
 		screen_update(stats_screen, ifname, &stats_delta, &stats_new,
