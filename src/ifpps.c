@@ -40,20 +40,18 @@ struct wifi_stat {
 	uint32_t bitrate;
 	int16_t link_qual, link_qual_max;
 	int signal_level, noise_level;
-	char driver_name[IFNAMSIZ];
 };
 
 struct ifstat {
-	uint32_t irq_nr;
 	uint64_t rx_bytes, rx_packets, rx_drops, rx_errors;
 	uint64_t rx_fifo, rx_frame, rx_multi;
 	uint64_t tx_bytes, tx_packets, tx_drops, tx_errors;
 	uint64_t tx_fifo, tx_colls, tx_carrier;
 	uint64_t irqs[MAX_CPUS], irqs_srx[MAX_CPUS], irqs_stx[MAX_CPUS];
 	int64_t cpu_user[MAX_CPUS], cpu_nice[MAX_CPUS], cpu_sys[MAX_CPUS];
-	int64_t cpu_idle[MAX_CPUS], cpu_iow[MAX_CPUS];
+	int64_t cpu_idle[MAX_CPUS], cpu_iow[MAX_CPUS], mem_free, mem_total;
 	int32_t cswitch, forks, procs_run, procs_iow;
-	int64_t mem_free, mem_total;
+	uint32_t irq_nr;
 	struct wifi_stat wifi;
 };
 
