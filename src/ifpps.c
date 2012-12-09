@@ -507,8 +507,6 @@ static void screen_init(WINDOW **screen)
 static void screen_net_dev_rel(WINDOW *screen, const struct ifstat *rel,
 			       int *voff)
 {
-	(*voff) += 2;
-
 	attron(A_REVERSE);
 
 	mvwprintw(screen, (*voff)++, 0,
@@ -533,8 +531,6 @@ static void screen_net_dev_rel(WINDOW *screen, const struct ifstat *rel,
 static void screen_net_dev_abs(WINDOW *screen, const struct ifstat *abs,
 			       int *voff)
 {
-	(*voff)++;
-
 	mvwprintw(screen, (*voff)++, 2,
 		  "RX: %16.3lf MiB   "
 		      "%10lu pkts   "
@@ -555,8 +551,6 @@ static void screen_net_dev_abs(WINDOW *screen, const struct ifstat *abs,
 static void screen_sys_mem(WINDOW *screen, const struct ifstat *rel,
 			   const struct ifstat *abs, int *voff)
 {
-	(*voff)++;
-
 	mvwprintw(screen, (*voff)++, 2,
 		  "SYS:  %14ld cs/t "
 			"%10.1lf%% mem "
@@ -572,8 +566,6 @@ static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
 {
 	int i;
 	uint64_t all;
-
-	(*voff)++;
 
 	for (i = 0; i < cpus; ++i) {
 		all = rel->cpu_user[i] + rel->cpu_nice[i] + rel->cpu_sys[i] +
@@ -596,7 +588,7 @@ static void screen_percpu_irqs_rel(WINDOW *screen, const struct ifstat *rel,
 {
 	int i;
 
-	for (i = 0, (*voff)++; i < cpus; ++i) {
+	for (i = 0; i < cpus; ++i) {
 		mvwprintw(screen, (*voff)++, 2,
 			  "CPU%d: %14ld irqs/t   "
 				 "%15ld soirq RX/t   "
@@ -612,7 +604,7 @@ static void screen_percpu_irqs_abs(WINDOW *screen, const struct ifstat *abs,
 {
 	int i;
 
-	for (i = 0, (*voff)++; i < cpus; ++i) {
+	for (i = 0; i < cpus; ++i) {
 		mvwprintw(screen, (*voff)++, 2,
 			  "CPU%d: %14ld irqs", i,
 			  abs->irqs[i]);
@@ -622,8 +614,6 @@ static void screen_percpu_irqs_abs(WINDOW *screen, const struct ifstat *abs,
 static void screen_wireless(WINDOW *screen, const struct ifstat *rel,
 			    const struct ifstat *abs, int *voff)
 {
-	(*voff)++;
-
 	if (iswireless(abs)) {
 		mvwprintw(screen, (*voff)++, 2,
 			  "LinkQual: %7d/%d (%d/t)          ",
@@ -645,37 +635,48 @@ static void screen_wireless(WINDOW *screen, const struct ifstat *rel,
 			  "SNR:    %8d dBm (%s)             ",
 			  abs->wifi.signal_level - abs->wifi.noise_level,
 			  snr_to_str(abs->wifi.signal_level - abs->wifi.noise_level));
-
-		(*voff)++;
 	}
 }
 
 static void screen_update(WINDOW *screen, const char *ifname, const struct ifstat *rel,
 			  const struct ifstat *abs, int *first, uint64_t ms_interval)
 {
-	int cpus, voff = 1;
+	int cpus, voff = 1, cvoff = 2;
 
 	curs_set(0);
 
 	cpus = get_number_cpus();
 	bug_on(cpus > MAX_CPUS);
 
-	mvwprintw(screen, voff, 2, "Kernel net/sys statistics for %s, t=%lums",
+	mvwprintw(screen, voff++, 2, "Kernel net/sys statistics for %s, t=%lums",
 		  ifname, ms_interval);
 
+	voff++;
 	screen_net_dev_rel(screen, rel, &voff);
+
+	voff++;
 	screen_net_dev_abs(screen, abs, &voff);
+
+	voff++;
 	screen_sys_mem(screen, rel, abs, &voff);
+
+	voff++;
 	screen_percpu_states(screen, rel, cpus, &voff);
+
+	voff++;
 	screen_percpu_irqs_rel(screen, rel, cpus, &voff);
+
+	voff++;
 	screen_percpu_irqs_abs(screen, abs, cpus, &voff);
+
+	voff++;
 	screen_wireless(screen, rel, abs, &voff);
 
 	if (*first) {
-		mvwprintw(screen, 2, 2, "Collecting data ...");
+		mvwprintw(screen, cvoff, 2, "Collecting data ...");
 		*first = 0;
 	} else {
-		mvwprintw(screen, 2, 2, "                   ");
+		mvwprintw(screen, cvoff, 2, "                   ");
 	}
 
 	wrefresh(screen);
