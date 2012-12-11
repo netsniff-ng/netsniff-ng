@@ -5,6 +5,11 @@
  * Subject to the GPL, version 2.
  */
 
+/* TODO
+ * check all possible frame combinations for their behavior
+ * with respect to endianess (little / big)
+ */
+
 #include <stdio.h>
 #include <stdint.h>
 #include <netinet/in.h>    /* for ntohs() */
@@ -183,12 +188,6 @@ struct ieee80211_data {
 
 /* TODO: Extend */
 /* Data Frame end */
-
-/* http://www.sss-mag.com/pdf/802_11tut.pdf
- * http://www.scribd.com/doc/78443651/111/Management-Frames
- * http://www.wildpackets.com/resources/compendium/wireless_lan/wlan_packets
- * http://www.rhyshaden.com/wireless.htm
-*/
 
 struct element_reserved {
 	u8 len;
@@ -672,6 +671,94 @@ struct element_ts_del {
 struct element_tclas_proc {
 	u8 len;
 	u8 proc;
+} __packed;
+
+struct element_ht_cap {
+	u8 len;
+	union {
+		u16 info;
+		struct {
+#if defined(__LITTLE_ENDIAN_BITFIELD)
+		/* Correct order here ... */
+		__extension__ u16 ldpc:1,
+				  supp_width:1,
+				  sm_pwr:2,
+				  ht_green:1,
+				  gi_20mhz:1,
+				  gi_40mhz:1,
+				  tx_stbc:1,
+				  rx_stbc:2,
+				  ht_ack:1,
+				  max_msdu_length:1,
+				  dsss_ck_mode:1,
+				  res:1,
+				  forty_int:1,
+				  prot_supp:1;
+#elif defined(__BIG_ENDIAN_BITFIELD)
+		__extension__ u16 rx_stbc:2,
+				  ht_ack:1,
+				  max_msdu_length:1,
+				  dsss_ck_mode:1,
+				  res:1,
+				  forty_int:1,
+				  prot_supp:1,
+				  ldpc:1,
+				  supp_width:1,
+				  sm_pwr:2,
+				  ht_green:1,
+				  gi_20mhz:1,
+				  gi_40mhz:1,
+				  tx_stbc:1;
+#else
+# error  "Adjust your <asm/byteorder.h> defines"
+#endif
+		};
+	};
+	u8 param;
+	union {
+		u8 mcs_set[16];
+		struct {
+#if defined(__LITTLE_ENDIAN_BITFIELD)
+		/* Correct order here ... */
+		__extension__ u8  bitmask1:8;
+		__extension__ u8  bitmask2:8;
+		__extension__ u8  bitmask3:8;
+		__extension__ u8  bitmask4:8;
+		__extension__ u8  bitmask5:8;
+		__extension__ u8  bitmask6:8;
+		__extension__ u8  bitmask7:8;
+		__extension__ u8  bitmask8:8;
+		__extension__ u8  bitmask9:8;
+		__extension__ u8  bitmask10_res:8;
+		__extension__ u16 supp_rate_res:16;
+		__extension__ u32 tx_param_res:32;
+		
+#elif defined(__BIG_ENDIAN_BITFIELD)
+		__extension__ u32 tx_param_res:32;
+		__extension__ u16 supp_rate_res:16;
+		__extension__ u8  bitmask10_res:8;
+		__extension__ u8  bitmask9:8;
+		__extension__ u8  bitmask8:8;
+		__extension__ u8  bitmask7:8;
+		__extension__ u8  bitmask6:8;
+		__extension__ u8  bitmask5:8;
+		__extension__ u8  bitmask4:8;
+		__extension__ u8  bitmask3:8;
+		__extension__ u8  bitmask2:8;
+		__extension__ u8  bitmask1:8;
+
+# error  "Adjust your <asm/byteorder.h> defines"
+#endif
+		};
+	};
+	u16 ext_cap;
+	u32 beam_cap;
+	u8 asel_cap;
+} __packed;
+
+struct element_qos_cap {
+	u8 len;
+	u8 info;
 } __packed;
 
 struct element_ext_supp_rates {
@@ -2460,12 +2547,101 @@ static int8_t inf_tclas_proc(struct pkt_buff *pkt, u8 *id)
 
 static int8_t inf_ht_cap(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_ht_cap *ht_cap;
+	u32 tx_param_res, beam_cap;
+	u16 ext_cap;
+
+	ht_cap = (struct element_ht_cap *)
+			  pkt_pull(pkt, sizeof(*ht_cap));
+	if (ht_cap == NULL)
+		return 0;
+
+	tx_param_res = le32_to_cpu(ht_cap->tx_param_res);
+	beam_cap = le32_to_cpu(ht_cap->beam_cap);
+	ext_cap = le16_to_cpu(ht_cap->ext_cap);
+
+	tprintf("HT Capabilities (%u, Len(%u)): ", *id, ht_cap->len);
+	if (len_neq_error(ht_cap->len, 26))
+		return 0;
+	tprintf("Info (LDCP Cod Cap (%u), Supp Ch Width Set (%u),"
+		" SM Pwr Save(%u), HT-Greenfield (%u), Short GI for 20/40 MHz"
+		" (%u/%u), Tx/Rx STBC (%u/%u), HT-Delayed Block Ack (%u),"
+		" Max A-MSDU Len (%u), DSSS/CCK Mode in 40 MHz (%u),"
+		" Res (0x%x), Forty MHz Intol (%u), L-SIG TXOP Protection Supp"
+		" (%u)), ", ht_cap->ldpc, ht_cap->supp_width,
+		ht_cap->sm_pwr, ht_cap->ht_green, ht_cap->gi_20mhz,
+		ht_cap->gi_40mhz, ht_cap->tx_stbc, ht_cap->rx_stbc,
+		ht_cap->ht_ack, ht_cap->max_msdu_length, ht_cap->dsss_ck_mode,
+		ht_cap->res, ht_cap->forty_int, ht_cap->prot_supp);
+	tprintf("A-MPDU Params (Max Len Exp (%u), Min Start Spacing (%u),"
+		" Res (0x%x)), ", ht_cap->param >> 6, (ht_cap->param >> 3) & 0x7,
+		ht_cap->param & 0x07);
+	tprintf("Supp MCS Set (Rx MCS Bitmask (0x%x%x%x%x%x%x%x%x%x%x),"
+		" Res (0x%x), Rx High Supp Data Rate (%u), Res (0x%x),"
+		" Tx MCS Set Def (%u), Tx Rx MCS Set Not Eq (%u),"
+		" Tx Max Number Spat Str Supp (%u),"
+		" Tx Uneq Mod Supp (%u), Res (0x%x)), ",
+		ht_cap->bitmask1, ht_cap->bitmask2, ht_cap->bitmask3,
+		ht_cap->bitmask4, ht_cap->bitmask5, ht_cap->bitmask6,
+		ht_cap->bitmask7, ht_cap->bitmask8, ht_cap->bitmask9,
+		ht_cap->bitmask10_res >> 3, ht_cap->bitmask10_res & 0x7,
+		le16_to_cpu(ht_cap->supp_rate_res) >> 6,
+		le16_to_cpu(ht_cap->supp_rate_res) & 0x3F,
+		tx_param_res >> 31, (tx_param_res >> 30) & 1,
+		(tx_param_res >> 28) & 3, (tx_param_res >> 27) & 1,
+		tx_param_res & 0x7FFFFFF);
+	tprintf("Ext Cap (PCO (%u), PCO Trans Time (%u), Res (0x%x),"
+		" MCS Feedb (%u), +HTC Supp (%u), RD Resp (%u), Res (0x%x)), ",
+		ext_cap >> 15, (ext_cap >> 13) & 3, (ext_cap >> 8) & 0x1F,
+		(ext_cap >> 6) & 3, (ext_cap >> 5) & 1, (ext_cap >> 4) & 1,
+		ext_cap & 0xF);
+	tprintf("Transm Beamf (Impl Transm Beamf Rec Cap (%u),"
+		" Rec/Transm Stagg Sound Cap (%u/%u),"
+		" Rec/Trans NDP Cap (%u/%u), Impl Transm Beamf Cap (%u),"
+		" Cal (%u), Expl CSI Transm Beamf Cap (%u),"
+		" Expl Noncmpr/Compr Steering Cap (%u/%u),"
+		" Expl Trans Beamf CSI Feedb (%u),"
+		" Expl Noncmpr/Cmpr Feedb Cap (%u/%u),"
+		" Min Grpg (%u), CSI Num Beamf Ant Supp (%u),"
+		" Noncmpr/Cmpr Steering Nr Beamf Ant Supp (%u/%u),"
+		" CSI Max Nr Rows Beamf Supp (%u),"
+		" Ch Estim Cap (%u), Res (0x%x)), ",
+		beam_cap >> 31, (beam_cap >> 30) & 1, (beam_cap >> 29) & 1,
+		(beam_cap >> 28) & 1, (beam_cap >> 27) & 1, (beam_cap >> 26) & 1,
+		(beam_cap >> 24) & 3, (beam_cap >> 23) & 1, (beam_cap >> 22) & 1,
+		(beam_cap >> 21) & 1, (beam_cap >> 19) & 3, (beam_cap >> 17) & 3,
+		(beam_cap >> 15) & 3, (beam_cap >> 13) & 3, (beam_cap >> 11) & 3,
+		(beam_cap >> 9) & 3, (beam_cap >> 7) & 3, (beam_cap >> 5) & 3,
+		(beam_cap >> 3) & 3, beam_cap & 7);
+	tprintf("ASEL (Ant Select Cap (%u),"
+		" Expl CSI Feedb Based Transm ASEL Cap (%u),"
+		" Ant Indic Feedb Based Transm ASEL Cap (%u),"
+		" Expl CSI Feedb Cap (%u), Ant Indic Feedb Cap (%u),"
+		" Rec ASEL Cap (%u), Transm Sound PPDUs Cap (%u), Res (0x%x))",
+		ht_cap->asel_cap >> 7, (ht_cap->asel_cap >> 6) & 1,
+		(ht_cap->asel_cap >> 5) & 1, (ht_cap->asel_cap >> 4) & 1,
+		(ht_cap->asel_cap >> 3) & 1, (ht_cap->asel_cap >> 2) & 1,
+		(ht_cap->asel_cap >> 1) & 1, ht_cap->asel_cap & 1);
+
+	return 1;
 }
 
 static int8_t inf_qos_cap(struct pkt_buff *pkt, u8 *id)
 {
-	return 0;
+	struct element_qos_cap *qos_cap;
+
+	qos_cap = (struct element_qos_cap *)
+			  pkt_pull(pkt, sizeof(*qos_cap));
+	if (qos_cap == NULL)
+		return 0;
+
+	tprintf("QoS Capabilities (%u, Len(%u)): ", *id, qos_cap->len);
+	if (len_neq_error(qos_cap->len, 1))
+		return 0;
+
+	tprintf("Info (0x%x)", qos_cap->info);
+
+	return 1;
 }
 
 static int8_t inf_rsn(struct pkt_buff *pkt, u8 *id)
