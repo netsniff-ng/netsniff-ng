@@ -504,6 +504,19 @@ static void screen_init(WINDOW **screen)
 	wrefresh((*screen));
 }
 
+static void screen_header(WINDOW *screen, const char *ifname, int *voff,
+			  uint64_t ms_interval)
+{
+	struct ethtool_drvinfo drvinf;
+
+	memset(&drvinf, 0, sizeof(drvinf));
+	ethtool_drvinf(ifname, &drvinf);
+
+	mvwprintw(screen, (*voff)++, 2,
+		  "Kernel net/sys statistics for %s (%s), t=%lums",
+		  ifname, drvinf.driver, ms_interval);
+}
+
 static void screen_net_dev_rel(WINDOW *screen, const struct ifstat *rel,
 			       int *voff)
 {
@@ -648,8 +661,7 @@ static void screen_update(WINDOW *screen, const char *ifname, const struct ifsta
 	cpus = get_number_cpus();
 	bug_on(cpus > MAX_CPUS);
 
-	mvwprintw(screen, voff++, 2, "Kernel net/sys statistics for %s, t=%lums",
-		  ifname, ms_interval);
+	screen_header(screen, ifname, &voff, ms_interval);
 
 	voff++;
 	screen_net_dev_rel(screen, rel, &voff);
