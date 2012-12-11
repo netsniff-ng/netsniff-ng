@@ -337,7 +337,20 @@ int wireless_rangemax_sigqual(const char *ifname)
 	return sigqual;
 }
 
-int ethtool_bitrate(const char *ifname)
+const char*ethtool_bitrate_str(u32 bitrate)
+{
+	const char * const bitstrs[] = {
+		[SPEED_10]	=	"10Mbit/s",
+		[SPEED_100]	=	"100Mbit/s",
+		[SPEED_1000]	=	"1Gbit/s",
+		[SPEED_2500]	=	"2.5Gbit/s",
+		[SPEED_10000]	=	"10Gbit/s",
+	};
+
+	return bitstrs[bitrate];
+}
+
+u32 ethtool_bitrate(const char *ifname)
 {
 	int ret, sock, bitrate;
 	struct ifreq ifr;
@@ -363,6 +376,7 @@ int ethtool_bitrate(const char *ifname)
 	case SPEED_10:
 	case SPEED_100:
 	case SPEED_1000:
+	case SPEED_2500:
 	case SPEED_10000:
 		bitrate = ecmd.speed;
 		break;

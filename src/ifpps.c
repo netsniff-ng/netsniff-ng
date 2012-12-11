@@ -507,14 +507,20 @@ static void screen_init(WINDOW **screen)
 static void screen_header(WINDOW *screen, const char *ifname, int *voff,
 			  uint64_t ms_interval)
 {
+	char buff[64];
 	struct ethtool_drvinfo drvinf;
+	const char *rate = ethtool_bitrate_str(ethtool_bitrate(ifname));
 
 	memset(&drvinf, 0, sizeof(drvinf));
 	ethtool_drvinf(ifname, &drvinf);
 
+	memset(buff, 0, sizeof(buff));
+	if (rate)
+		slprintf(buff, sizeof(buff), ", %s", rate);
+
 	mvwprintw(screen, (*voff)++, 2,
-		  "Kernel net/sys statistics for %s (%s), t=%lums",
-		  ifname, drvinf.driver, ms_interval);
+		  "Kernel net/sys statistics for %s (%s%s), t=%lums",
+		  ifname, drvinf.driver, buff, ms_interval);
 }
 
 static void screen_net_dev_rel(WINDOW *screen, const struct ifstat *rel,
