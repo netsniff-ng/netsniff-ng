@@ -48,6 +48,7 @@ static inline void bpf_release(struct sock_fprog *bpf)
 #define	BPF_W		0x00
 #define	BPF_H		0x08
 #define	BPF_B		0x10
+
 #define BPF_MODE(code)	((code) & 0xe0)
 #define	BPF_IMM 	0x00
 #define	BPF_ABS		0x20
@@ -75,6 +76,7 @@ static inline void bpf_release(struct sock_fprog *bpf)
 #define	BPF_JGT		0x20
 #define	BPF_JGE		0x30
 #define	BPF_JSET	0x40
+
 #define BPF_SRC(code)	((code) & 0x08)
 #define	BPF_K		0x00
 #define	BPF_X		0x08
