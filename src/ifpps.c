@@ -39,7 +39,7 @@
 struct wifi_stat {
 	uint32_t bitrate;
 	int16_t link_qual, link_qual_max;
-	int signal_level, noise_level;
+	int signal_level /*, noise_level*/;
 };
 
 struct ifstat {
@@ -398,8 +398,6 @@ static int stats_wireless(const char *ifname, struct ifstat *stats)
 
 	stats->wifi.signal_level =
 		adjust_dbm_level(ws.qual.updated & IW_QUAL_DBM, ws.qual.level);
-	stats->wifi.noise_level =
-		adjust_dbm_level(ws.qual.updated & IW_QUAL_DBM, ws.qual.noise);
 
 	stats->wifi.link_qual = ws.qual.qual;
 	stats->wifi.link_qual_max = wireless_rangemax_sigqual(ifname);
@@ -442,8 +440,6 @@ static void stats_diff(struct ifstat *old, struct ifstat *new,
 	DIFF1(procs_iow);
 
 	DIFF1(wifi.signal_level);
-	DIFF1(wifi.noise_level);
-
 	DIFF1(wifi.link_qual);
 
 	DIFF1(cswitch);
@@ -650,16 +646,16 @@ static void screen_wireless(WINDOW *screen, const struct ifstat *rel,
 			  "Signal: %8d dBm (%d dBm/t)       ",
 			  abs->wifi.signal_level,
 			  rel->wifi.signal_level);
-
+#if 0
 		mvwprintw(screen, (*voff)++, 2,
 			  "Noise:  %8d dBm (%d dBm/t)       ",
 			  abs->wifi.noise_level,
 			  rel->wifi.noise_level);
-
 		mvwprintw(screen, (*voff)++, 2,
 			  "SNR:    %8d dBm (%s)             ",
 			  abs->wifi.signal_level - abs->wifi.noise_level,
 			  snr_to_str(abs->wifi.signal_level - abs->wifi.noise_level));
+#endif
 	}
 }
 
@@ -795,9 +791,10 @@ static void term_csv(const char *ifname, const struct ifstat *rel,
 
 		printf("%d ", rel->wifi.signal_level);
 		printf("%d ", abs->wifi.signal_level);
-
+#if 0
 		printf("%d ", rel->wifi.noise_level);
 		printf("%d ", abs->wifi.noise_level);
+#endif
 	}
 
 	puts("");
@@ -867,9 +864,10 @@ static void term_csv_header(const char *ifname, const struct ifstat *abs,
 
 		printf("%d:wifi-signal-dbm-per-t ", j++);
 		printf("%d:wifi-signal-dbm ", j++);
-
+#if 0
 		printf("%d:wifi-noise-dbm-per-t ", j++);
 		printf("%d:wifi-noise-dbm ", j++);
+#endif
 	}
 
 	puts("");
