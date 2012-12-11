@@ -38,14 +38,14 @@ enum {
 
 extern int af_socket(int af);
 extern int pf_socket(void);
-extern int wireless_bitrate(const char *ifname);
 extern int adjust_dbm_level(int in_dbm, int dbm_val);
 extern int wireless_sigqual(const char *ifname, struct iw_statistics *stats);
 extern int wireless_rangemax_sigqual(const char *ifname);
+extern u32 wireless_bitrate(const char *ifname);
 extern u32 ethtool_bitrate(const char *ifname);
-extern const char*ethtool_bitrate_str(u32 bitrate);
+extern u32 device_bitrate(const char *ifname);
 extern int ethtool_drvinf(const char *ifname, struct ethtool_drvinfo *drvinf);
-extern int device_bitrate(const char *ifname);
+extern int ethtool_link(const char *ifname);
 extern int device_mtu(const char *ifname);
 extern int device_address(const char *ifname, int af,
 			  struct sockaddr_storage *ss);

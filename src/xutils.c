@@ -220,7 +220,7 @@ int set_epoll_descriptor2(int fd_epoll, int action, int fd_toadd, int events)
 	return epoll_ctl(fd_epoll, action, fd_toadd, &ev);
 }
 
-int wireless_bitrate(const char *ifname)
+u32 wireless_bitrate(const char *ifname)
 {
 	int sock, ret, rate_in_mbit;
 	struct iwreq iwr;
@@ -337,19 +337,6 @@ int wireless_rangemax_sigqual(const char *ifname)
 	return sigqual;
 }
 
-const char*ethtool_bitrate_str(u32 bitrate)
-{
-	const char * const bitstrs[] = {
-		[SPEED_10]	=	"10Mbit/s",
-		[SPEED_100]	=	"100Mbit/s",
-		[SPEED_1000]	=	"1Gbit/s",
-		[SPEED_2500]	=	"2.5Gbit/s",
-		[SPEED_10000]	=	"10Gbit/s",
-	};
-
-	return bitstrs[bitrate];
-}
-
 u32 ethtool_bitrate(const char *ifname)
 {
 	int ret, sock, bitrate;
@@ -390,6 +377,32 @@ out:
 	return bitrate;
 }
 
+int ethtool_link(const char *ifname)
+{
+	int ret, sock;
+	struct ifreq ifr;
+	struct ethtool_value ecmd;
+
+	sock = af_socket(AF_INET);
+
+	memset(&ecmd, 0, sizeof(ecmd));
+
+	memset(&ifr, 0, sizeof(ifr));
+	strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
+
+	ecmd.cmd = ETHTOOL_GLINK;
+	ifr.ifr_data = (char *) &ecmd;
+
+	ret = ioctl(sock, SIOCETHTOOL, &ifr);
+	if (ret)
+		ret = -EINVAL;
+	else
+		ret = !!ecmd.data;
+
+	close(sock);
+	return ret;
+}
+
 int ethtool_drvinf(const char *ifname, struct ethtool_drvinfo *drvinf)
 {
 	int ret, sock;
@@ -412,9 +425,9 @@ int ethtool_drvinf(const char *ifname, struct ethtool_drvinfo *drvinf)
 	return ret;
 }
 
-int device_bitrate(const char *ifname)
+u32 device_bitrate(const char *ifname)
 {
-	int speed_c, speed_w;
+	u32 speed_c, speed_w;
 
 	speed_c = ethtool_bitrate(ifname);
 	speed_w = wireless_bitrate(ifname);

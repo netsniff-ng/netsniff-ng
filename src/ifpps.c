@@ -507,19 +507,25 @@ static void screen_init(WINDOW **screen)
 static void screen_header(WINDOW *screen, const char *ifname, int *voff,
 			  uint64_t ms_interval)
 {
+	size_t len = 0;
 	char buff[64];
 	struct ethtool_drvinfo drvinf;
-	const char *rate = ethtool_bitrate_str(ethtool_bitrate(ifname));
+	u32 rate = device_bitrate(ifname);
+	int link = ethtool_link(ifname);
 
 	memset(&drvinf, 0, sizeof(drvinf));
 	ethtool_drvinf(ifname, &drvinf);
 
 	memset(buff, 0, sizeof(buff));
 	if (rate)
-		slprintf(buff, sizeof(buff), ", %s", rate);
+		len += snprintf(buff + len, sizeof(buff) - len, " %uMbit/s", rate);
+	if (link >= 0)
+		len += snprintf(buff + len, sizeof(buff) - len, " link:%s",
+				link == 0 ? "no" : "yes");
 
 	mvwprintw(screen, (*voff)++, 2,
-		  "Kernel net/sys statistics for %s (%s%s), t=%lums",
+		  "Kernel net/sys statistics for %s (%s%s), t=%lums"
+		  "               ",
 		  ifname, drvinf.driver, buff, ms_interval);
 }
 
