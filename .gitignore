@@ -31,5 +31,10 @@ src/test/fuzzing/
 *.md
 *.ps
 
+# Compressed archives
+*.tar.bz2
+*.tar.bz
+*.tar.xz
+
 # Excluded from ignorance
 !.gitignore
