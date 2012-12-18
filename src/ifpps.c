@@ -116,7 +116,7 @@ static void help(void)
 	     "Usage: ifpps [options] || ifpps <netdev>\n"
 	     "Options:\n"
 	     "  -d|--dev <netdev>      Device to fetch statistics for e.g., eth0\n"
-	     "  -t|--interval <time>   Refresh time in ms (default 500 ms)\n"
+	     "  -t|--interval <time>   Refresh time in ms (default 1000 ms)\n"
 	     "  -p|--promisc           Promiscuous mode\n"
 	     "  -c|--csv               Output to terminal as CSV\n"
 	     "                         E.g. post-processing with Gnuplot et al.\n"
