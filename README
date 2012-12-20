@@ -36,8 +36,8 @@ Have a look at the Documentation/ folder for further information, also at known
 issues under Documentation/KnownIssues. Carefully read the INSTALL document for
 the next steps in building netsniff-ng. Note that the toolkit is still quite
 young and under heavy development, not yet feature complete and in a quality
-level where we're staisfied with (i.e. for mausezahn). However, we're on a good
-way towards tackling all those goals.
+level where we're satisfied with (i.e. for mausezahn). However, we're on a good
+way towards tackling all these goals.
 
 The netsniff-ng toolkit is an open source project covered by the GNU General 
 Public License, version 2.0. For any questions or feedback about netsniff-ng
