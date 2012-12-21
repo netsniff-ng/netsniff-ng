@@ -11,6 +11,10 @@ submit your contributions, items marked with '!' are of high importance):
  3! Test IPv6 on flowtop, curvetun and mausezahn.
 	@TODO: Daniel Borkmann, Jon Schipp
 
+ 4! trafgen: for send() add ping-probe support so that we can do fuzz
+    testing and check if the machine is still online.
+	@TODO: Daniel Borkmann
+
 10! Add a proper 802.11 dissector for netsniff-ng.
 	@TODO: Markus Amend
 
