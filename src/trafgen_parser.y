@@ -399,10 +399,10 @@ int compile_packets(char *file, int verbose)
 		int i;
 		size_t total_len = 0;
 
-		printf("%u packets to schedule\n", packets_len);
+		printf("%6u packets to schedule\n", packets_len);
 		for (i = 0; i < packets_len; ++i)
 			total_len += packets[i].len;
-		printf("%zu bytes in total\n", total_len);
+		printf("%6zu bytes in total\n", total_len);
 	}
 
 	fclose(yyin);

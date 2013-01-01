@@ -63,7 +63,7 @@ void setup_tx_ring_layout(int sock, struct ring *ring, unsigned int size,
 	bug_on((ring->layout.tp_block_size % getpagesize()) != 0);
 }
 
-void create_tx_ring(int sock, struct ring *ring)
+void create_tx_ring(int sock, struct ring *ring, int verbose)
 {
 	int ret;
 
@@ -84,9 +84,11 @@ retry:
 
 	ring->mm_len = ring->layout.tp_block_size * ring->layout.tp_block_nr;
 
-	printf("TX: %.2Lf MiB, %u Frames, each %u Byte allocated\n",
-	       (long double) ring->mm_len / (1 << 20),
-	       ring->layout.tp_frame_nr, ring->layout.tp_frame_size);
+	if (verbose) {
+		printf("TX: %.2Lf MiB, %u Frames, each %u Byte allocated\n",
+		       (long double) ring->mm_len / (1 << 20),
+		       ring->layout.tp_frame_nr, ring->layout.tp_frame_size);
+	}
 }
 
 void mmap_tx_ring(int sock, struct ring *ring)

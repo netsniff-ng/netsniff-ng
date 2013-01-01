@@ -48,40 +48,20 @@
 #include "mtrand.h"
 #include "ring_tx.h"
 
-struct stats {
-	unsigned long tx_bytes;
-	unsigned long tx_packets;
+struct ctx {
+	char *device, *device_trans;
+	int cpu, rand, rfraw, jumbo_support, verbose;
+	unsigned long kpull, num, gap, reserve_size;
+	unsigned long tx_bytes, tx_packets;
 };
-
-struct mode {
-#define CPU_UNKNOWN  -1
-#define CPU_NOTOUCH  -2
-	struct stats stats;
-	char *device;
-	char *device_trans;
-	int cpu;
-	int rand;
-	int rfraw;
-	unsigned long kpull;
-	/* 0 for automatic, > 0 for manual */
-	unsigned int reserve_size;
-	int jumbo_support;
-	int verbose;
-	unsigned long num; 
-	unsigned long gap;
-};
-
-static int sock;
-static struct itimerval itimer;
-static unsigned long interval = TX_KERNEL_PULL_INT;
 
 sig_atomic_t sigint = 0;
 
 struct packet *packets = NULL;
-unsigned int packets_len = 0;
+size_t packets_len = 0;
 
 struct packet_dynamics *packet_dyns = NULL;
-unsigned int packet_dyn_len = 0;
+size_t packet_dyn_len = 0;
 
 static const char *short_options = "d:c:n:t:vJhS:HQb:B:rk:i:o:VRA";
 static const struct option long_options[] = {
@@ -107,12 +87,37 @@ static const struct option long_options[] = {
 	{NULL, 0, NULL, 0}
 };
 
+static int sock;
+
+static struct itimerval itimer;
+
+static unsigned long interval = TX_KERNEL_PULL_INT;
+
+#define set_system_socket_memory(vals) \
+	do { \
+		if ((vals[0] = get_system_socket_mem(sock_rmem_max)) < SMEM_SUG_MAX) \
+			set_system_socket_mem(sock_rmem_max, SMEM_SUG_MAX); \
+		if ((vals[1] = get_system_socket_mem(sock_rmem_def)) < SMEM_SUG_DEF) \
+			set_system_socket_mem(sock_rmem_def, SMEM_SUG_DEF); \
+		if ((vals[2] = get_system_socket_mem(sock_wmem_max)) < SMEM_SUG_MAX) \
+			set_system_socket_mem(sock_wmem_max, SMEM_SUG_MAX); \
+		if ((vals[3] = get_system_socket_mem(sock_wmem_def)) < SMEM_SUG_DEF) \
+			set_system_socket_mem(sock_wmem_def, SMEM_SUG_DEF); \
+	} while (0)
+
+#define reset_system_socket_memory(vals) \
+	do { \
+		set_system_socket_mem(sock_rmem_max, vals[0]); \
+		set_system_socket_mem(sock_rmem_def, vals[1]); \
+		set_system_socket_mem(sock_wmem_max, vals[2]); \
+		set_system_socket_mem(sock_wmem_def, vals[3]); \
+	} while (0)
+
 static void signal_handler(int number)
 {
 	switch (number) {
 	case SIGINT:
 		sigint = 1;
-		break;
 	case SIGHUP:
 	default:
 		break;
@@ -123,6 +128,7 @@ static void timer_elapsed(int number)
 {
 	itimer.it_interval.tv_sec = 0;
 	itimer.it_interval.tv_usec = interval;
+
 	itimer.it_value.tv_sec = 0;
 	itimer.it_value.tv_usec = interval;
 
@@ -132,8 +138,7 @@ static void timer_elapsed(int number)
 
 static void header(void)
 {
-	printf("%s%s%s\n", colorize_start(bold), "trafgen "
-	       VERSION_STRING, colorize_end());
+	printf("%s%s%s\n", colorize_start(bold), "trafgen " VERSION_STRING, colorize_end());
 }
 
 static void help(void)
@@ -200,58 +205,64 @@ static void version(void)
 	die();
 }
 
-static inline void apply_counter(int i)
+static inline void apply_counter(int counter_id)
 {
 	int j;
+	size_t counter_max = packet_dyns[counter_id].counter_len;
 
-	for (j = 0; j < packet_dyns[i].counter_len; ++j) {
+	for (j = 0; j < counter_max; ++j) {
 		uint8_t val;
-		struct counter *counter = &packet_dyns[i].counter[j];
+		struct counter *counter;
 
-		val = counter->val;
-		val -= counter->min;
+		counter = &packet_dyns[counter_id].counter[j];
+		val = counter->val - counter->min;
 
-		if (counter->type == TYPE_INC)
-			val = (val + counter->inc) %
-			      (counter->max - counter->min + 1);
-		else
-			val = (val - counter->inc) %
-			      (counter->min - counter->max + 1);
+		switch (counter->type) {
+		case TYPE_INC:
+			val = (val + counter->inc) % (counter->max - counter->min + 1);
+			break;
+		case TYPE_DEC:
+			val = (val - counter->inc) % (counter->min - counter->max + 1);
+			break;
+		default:
+			bug();
+		}
 
-		val += counter->min;
-		counter->val = val;
-
-		packets[i].payload[counter->off] = val;
+		counter->val = val + counter->min;
+		packets[counter_id].payload[counter->off] = val;
 	}
 }
 
-static inline void apply_randomizer(int i)
+static inline void apply_randomizer(int rand_id)
 {
 	int j;
+	size_t rand_max = packet_dyns[rand_id].randomizer_len;
 
-	for (j = 0; j < packet_dyns[i].randomizer_len; ++j) {
-		uint8_t val = (uint8_t) mt_rand_int32();
-		struct randomizer *randomizer = &packet_dyns[i].randomizer[j];
+	for (j = 0; j < rand_max; ++j) {
+		uint8_t val;
+		struct randomizer *randomizer;
 
+		val = (uint8_t) mt_rand_int32();
+
+		randomizer = &packet_dyns[rand_id].randomizer[j];
 		randomizer->val = val;
-		packets[i].payload[randomizer->off] = val;
+
+		packets[rand_id].payload[randomizer->off] = val;
 	}
 }
 
-static void tx_precheck(struct mode *mode)
+static void xmit_precheck(const struct ctx *ctx)
 {
-	int i, mtu;
+	int i;
+	size_t mtu;
 
-	if (!mode)
-		panic("Panic over invalid args for TX trigger!\n");
+	if (!ctx)
+		panic("Panic, invalid args for TX trigger!\n");
 	if (packets_len == 0 || packets_len != packet_dyn_len)
-		panic("Panic over invalid args for TX trigger!\n");
-	if (!mode->rfraw && !device_up_and_running(mode->device))
+		panic("Panic, invalid args for TX trigger!\n");
+	if (!ctx->rfraw && !device_up_and_running(ctx->device))
 		panic("Device not up and running!\n");
-
-	mtu = device_mtu(mode->device);
-
-	for (i = 0; i < packets_len; ++i) {
+	for (mtu = device_mtu(ctx->device), i = 0; i < packets_len; ++i) {
 		if (packets[i].len > mtu + 14)
 			panic("Device MTU < than your packet size!\n");
 		if (packets[i].len <= 14)
@@ -259,44 +270,42 @@ static void tx_precheck(struct mode *mode)
 	}
 }
 
-static void tx_slowpath_or_die(struct mode *mode)
+static void xmit_slowpath_or_die(struct ctx *ctx)
 {
-	int ifindex, ret;
-	unsigned int i;
-	struct sockaddr_ll s_addr;
-	unsigned long num = 1;
+	int ret;
+	unsigned long num = 1, i = 0;
 	struct timeval start, end, diff;
+	struct sockaddr_ll saddr = {
+		.sll_family = PF_PACKET,
+		.sll_halen = ETH_ALEN,
+	};
 
-	tx_precheck(mode);
+	xmit_precheck(ctx);
 
 	sock = pf_socket();
 
-	if (mode->rfraw) {
-		mode->device_trans = xstrdup(mode->device);
-		xfree(mode->device);
+	if (ctx->rfraw) {
+		ctx->device_trans = xstrdup(ctx->device);
+		xfree(ctx->device);
 
-		enter_rfmon_mac80211(mode->device_trans, &mode->device);
+		enter_rfmon_mac80211(ctx->device_trans, &ctx->device);
 	}
 
-	ifindex = device_ifindex(mode->device);
+	if (ctx->num > 0)
+		num = ctx->num;
 
-	if (mode->num > 0)
-		num = mode->num;
-	if (mode->rand)
-		printf("Note: randomizes output makes trafgen slower!\n");
-
-	printf("MD: TX slowpath %s %luus", mode->rand ? "RND" : "RR", mode->gap);
-	if (mode->rfraw)
-		printf(" 802.11 raw via %s", mode->device);
-	printf("\n\n");
+	if (ctx->verbose) {
+		if (ctx->rand)
+			printf("Note: randomizes output makes trafgen slower!\n");
+		printf("MD: TX sendto %s %luus", ctx->rand ? "RND" : "RR", ctx->gap);
+		if (ctx->rfraw)
+			printf(" 802.11 raw via %s", ctx->device);
+		printf("\n\n");
+	}
 	printf("Running! Hang up with ^C!\n\n");
+	fflush(stdout);
 
-	fmemset(&s_addr, 0, sizeof(s_addr));
-	s_addr.sll_family = PF_PACKET;
-	s_addr.sll_halen = ETH_ALEN;
-	s_addr.sll_ifindex = ifindex;
-
-	i = 0;
+	saddr.sll_ifindex = device_ifindex(ctx->device);
 
 	bug_on(gettimeofday(&start, NULL));
 
@@ -305,102 +314,109 @@ static void tx_slowpath_or_die(struct mode *mode)
 		apply_randomizer(i);
 
 		ret = sendto(sock, packets[i].payload, packets[i].len, 0,
-			     (struct sockaddr *) &s_addr, sizeof(s_addr));
+			     (struct sockaddr *) &saddr, sizeof(saddr));
 		if (ret < 0)
 			whine("sendto error!\n");
 
-		mode->stats.tx_bytes += packets[i].len;
-		mode->stats.tx_packets++;
+		ctx->tx_bytes += packets[i].len;
+		ctx->tx_packets++;
 
-		if (mode->rand) {
+		if (ctx->rand) {
 			i = mt_rand_int32() % packets_len;
 		} else {
 			i++;
 			atomic_cmp_swp(&i, packets_len, 0);
 		}
 
-		if (mode->num > 0)
+		if (ctx->num > 0)
 			num--;
 
-		usleep(mode->gap);
+		if (ctx->gap > 0)
+			usleep(ctx->gap);
 	}
 
 	bug_on(gettimeofday(&end, NULL));
 	diff = tv_subtract(end, start);
 
-	if (mode->rfraw)
-		leave_rfmon_mac80211(mode->device_trans, mode->device);
-
-	close(sock);
+	if (ctx->rfraw)
+		leave_rfmon_mac80211(ctx->device_trans, ctx->device);
 
 	fflush(stdout);
 	printf("\n");
-	printf("\r%12lu frames outgoing\n", mode->stats.tx_packets);
-	printf("\r%12lu bytes outgoing\n", mode->stats.tx_bytes);
+	printf("\r%12lu frames outgoing\n", ctx->tx_packets);
+	printf("\r%12lu bytes outgoing\n", ctx->tx_bytes);
 	printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec, diff.tv_usec);
+
+	close(sock);
 }
 
-static void tx_fastpath_or_die(struct mode *mode)
+static void xmit_fastpath_or_die(struct ctx *ctx)
 {
 	int irq, ifindex;
-	unsigned int i, size, it = 0;
-	unsigned long num = 1;
 	uint8_t *out = NULL;
+	unsigned int it = 0;
+	unsigned long num = 1, i = 0, size;
 	struct ring tx_ring;
 	struct frame_map *hdr;
 	struct timeval start, end, diff;
 
-	tx_precheck(mode);
+	xmit_precheck(ctx);
 
 	sock = pf_socket();
 
-	fmemset(&tx_ring, 0, sizeof(tx_ring));
+	if (ctx->rfraw) {
+		ctx->device_trans = xstrdup(ctx->device);
+		xfree(ctx->device);
 
-	if (mode->rfraw) {
-		mode->device_trans = xstrdup(mode->device);
-		xfree(mode->device);
-
-		enter_rfmon_mac80211(mode->device_trans, &mode->device);
+		enter_rfmon_mac80211(ctx->device_trans, &ctx->device);
 	}
 
-	ifindex = device_ifindex(mode->device);
-	size = ring_size(mode->device, mode->reserve_size);
+	fmemset(&tx_ring, 0, sizeof(tx_ring));
+
+	ifindex = device_ifindex(ctx->device);
+	size = ring_size(ctx->device, ctx->reserve_size);
 
 	set_sock_prio(sock, 512);
 	set_packet_loss_discard(sock);
-	setup_tx_ring_layout(sock, &tx_ring, size, mode->jumbo_support);
-	create_tx_ring(sock, &tx_ring);
+
+	setup_tx_ring_layout(sock, &tx_ring, size, ctx->jumbo_support);
+	create_tx_ring(sock, &tx_ring, ctx->verbose);
 	mmap_tx_ring(sock, &tx_ring);
 	alloc_tx_ring_frames(&tx_ring);
 	bind_tx_ring(sock, &tx_ring, ifindex);
 
-	if (mode->cpu >= 0 && ifindex > 0) {
-		irq = device_irq_number(mode->device);
-		device_bind_irq_to_cpu(mode->cpu, irq);
-		printf("IRQ: %s:%d > CPU%d\n", mode->device, irq, 
-		       mode->cpu);
+	if (ctx->cpu >= 0 && ifindex > 0) {
+		irq = device_irq_number(ctx->device);
+		device_bind_irq_to_cpu(ctx->cpu, irq);
+
+		if (ctx->verbose)
+			printf("IRQ: %s:%d > CPU%d\n",
+			       ctx->device, irq, ctx->cpu);
 	}
 
-	if (mode->kpull)
-		interval = mode->kpull;
-	if (mode->num > 0)
-		num = mode->num;
-	if (mode->rand)
-		printf("Note: randomizes output makes trafgen slower!\n");
+	if (ctx->kpull)
+		interval = ctx->kpull;
+	if (ctx->num > 0)
+		num = ctx->num;
 
-	printf("MD: TX fastpath %s %luus", mode->rand ? "RND" : "RR", interval);
-	if (mode->rfraw)
-		printf(" 802.11 raw via %s", mode->device);
-	printf("\n\n");
+	if (ctx->verbose) {
+		if (ctx->rand)
+			printf("Note: randomizes output makes trafgen slower!\n");
+		printf("MD: TX fastpath %s %luus", ctx->rand ? "RND" : "RR", interval);
+		if (ctx->rfraw)
+			printf(" 802.11 raw via %s", ctx->device);
+		printf("\n\n");
+	}
 	printf("Running! Hang up with ^C!\n\n");
+	fflush(stdout);
 
 	itimer.it_interval.tv_sec = 0;
 	itimer.it_interval.tv_usec = interval;
+
 	itimer.it_value.tv_sec = 0;
 	itimer.it_value.tv_usec = interval;
-	setitimer(ITIMER_REAL, &itimer, NULL); 
 
-	i = 0;
+	setitimer(ITIMER_REAL, &itimer, NULL); 
 
 	bug_on(gettimeofday(&start, NULL));
 
@@ -411,8 +427,7 @@ static void tx_fastpath_or_die(struct mode *mode)
 
 			/* Kernel assumes: data = ph.raw + po->tp_hdrlen -
 			 *                        sizeof(struct sockaddr_ll); */
-			out = ((uint8_t *) hdr) + TPACKET2_HDRLEN -
-			      sizeof(struct sockaddr_ll);
+			out = ((uint8_t *) hdr) + TPACKET2_HDRLEN - sizeof(struct sockaddr_ll);
 
 			hdr->tp_h.tp_snaplen = packets[i].len;
 			hdr->tp_h.tp_len = packets[i].len;
@@ -422,10 +437,10 @@ static void tx_fastpath_or_die(struct mode *mode)
 
 			fmemcpy(out, packets[i].payload, packets[i].len);
 
-			mode->stats.tx_bytes += packets[i].len;
-			mode->stats.tx_packets++;
+			ctx->tx_bytes += packets[i].len;
+			ctx->tx_packets++;
 
-			if (mode->rand) {
+			if (ctx->rand) {
 				i = mt_rand_int32() % packets_len;
 			} else {
 				i++;
@@ -435,8 +450,9 @@ static void tx_fastpath_or_die(struct mode *mode)
 			kernel_may_pull_from_tx(&hdr->tp_h);
 			next_slot(&it, &tx_ring);
 
-			if (mode->num > 0)
+			if (ctx->num > 0)
 				num--;
+
 			if (unlikely(sigint == 1))
 				break;
 		}
@@ -447,46 +463,42 @@ static void tx_fastpath_or_die(struct mode *mode)
 
 	destroy_tx_ring(sock, &tx_ring);
 
-	if (mode->rfraw)
-		leave_rfmon_mac80211(mode->device_trans, mode->device);
-
-	close(sock);
+	if (ctx->rfraw)
+		leave_rfmon_mac80211(ctx->device_trans, ctx->device);
 
 	fflush(stdout);
 	printf("\n");
-	printf("\r%12lu frames outgoing\n", mode->stats.tx_packets);
-	printf("\r%12lu bytes outgoing\n", mode->stats.tx_bytes);
+	printf("\r%12lu frames outgoing\n", ctx->tx_packets);
+	printf("\r%12lu bytes outgoing\n", ctx->tx_bytes);
 	printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec, diff.tv_usec);
+
+	close(sock);
 }
 
-static void main_loop(struct mode *mode, char *confname)
+static void main_loop(struct ctx *ctx, char *confname, bool slow)
 {
-	compile_packets(confname, mode->verbose);
+	compile_packets(confname, ctx->verbose);
 
-	if (mode->gap > 0)
-		tx_slowpath_or_die(mode);
+	if (slow)
+		xmit_slowpath_or_die(ctx);
 	else
-		tx_fastpath_or_die(mode);
+		xmit_fastpath_or_die(ctx);
 
 	cleanup_packets();
 }
 
 int main(int argc, char **argv)
 {
-	int c, opt_index, i, j;
-	int vals[4] = {0};
+	int c, opt_index, i, j, vals[4] = {0};
 	char *confname = NULL, *ptr;
-	bool prio_high = false;
-	bool setsockmem = true;
-	struct mode mode;
+	bool prio_high = false, setsockmem = true, slow = false;
+	struct ctx ctx;
 
-	fmemset(&mode, 0, sizeof(mode));
-	mode.cpu = CPU_UNKNOWN;
-	mode.gap = 0;
-	mode.num = 0;
+	fmemset(&ctx, 0, sizeof(ctx));
+	ctx.cpu = -1;
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
-	       &opt_index)) != EOF) {
+				&opt_index)) != EOF) {
 		switch (c) {
 		case 'h':
 			help();
@@ -495,40 +507,41 @@ int main(int argc, char **argv)
 			version();
 			break;
 		case 'V':
-			mode.verbose = 1;
+			ctx.verbose = 1;
 			break;
 		case 'd':
 		case 'o':
-			mode.device = xstrndup(optarg, IFNAMSIZ);
+			ctx.device = xstrndup(optarg, IFNAMSIZ);
 			break;
 		case 'r':
-			mode.rand = 1;
+			ctx.rand = 1;
 			break;
 		case 'R':
-			mode.rfraw = 1;
+			ctx.rfraw = 1;
 			break;
 		case 'J':
-			mode.jumbo_support = 1;
+			ctx.jumbo_support = 1;
 			break;
 		case 'c':
 		case 'i':
 			confname = xstrdup(optarg);
 			break;
 		case 'k':
-			mode.kpull = atol(optarg);
+			ctx.kpull = atol(optarg);
 			break;
 		case 'n':
-			mode.num = atol(optarg);
+			ctx.num = atol(optarg);
 			break;
 		case 't':
-			mode.gap = atol(optarg);
+			slow = true;
+			ctx.gap = atol(optarg);
 			break;
 		case 'A':
 			setsockmem = false;
 			break;
 		case 'S':
 			ptr = optarg;
-			mode.reserve_size = 0;
+			ctx.reserve_size = 0;
 
 			for (j = i = strlen(optarg); i > 0; --i) {
 				if (!isdigit(optarg[j - i]))
@@ -537,22 +550,22 @@ int main(int argc, char **argv)
 			}
 
 			if (!strncmp(ptr, "KB", strlen("KB")))
-				mode.reserve_size = 1 << 10;
+				ctx.reserve_size = 1 << 10;
 			else if (!strncmp(ptr, "MB", strlen("MB")))
-				mode.reserve_size = 1 << 20;
+				ctx.reserve_size = 1 << 20;
 			else if (!strncmp(ptr, "GB", strlen("GB")))
-				mode.reserve_size = 1 << 30;
+				ctx.reserve_size = 1 << 30;
 			else
 				panic("Syntax error in ring size param!\n");
 			*ptr = 0;
 
-			mode.reserve_size *= atoi(optarg);
+			ctx.reserve_size *= atoi(optarg);
 			break;
 		case 'b':
 			set_cpu_affinity(optarg, 0);
 			/* Take the first CPU for rebinding the IRQ */
-			if (mode.cpu != CPU_NOTOUCH)
-				mode.cpu = atoi(optarg);
+			if (ctx.cpu != -2)
+				ctx.cpu = atoi(optarg);
 			break;
 		case 'B':
 			set_cpu_affinity(optarg, 1);
@@ -561,7 +574,7 @@ int main(int argc, char **argv)
 			prio_high = true;
 			break;
 		case 'Q':
-			mode.cpu = CPU_NOTOUCH;
+			ctx.cpu = -2;
 			break;
 		case '?':
 			switch (optopt) {
@@ -590,13 +603,13 @@ int main(int argc, char **argv)
 
 	if (argc < 5)
 		help();
-	if (mode.device == NULL)
+	if (ctx.device == NULL)
 		panic("No networking device given!\n");
 	if (confname == NULL)
 		panic("No configuration file given!\n");
-	if (device_mtu(mode.device) == 0)
+	if (device_mtu(ctx.device) == 0)
 		panic("This is no networking device!\n");
-	if (!mode.rfraw && device_up_and_running(mode.device) == 0)
+	if (!ctx.rfraw && device_up_and_running(ctx.device) == 0)
 		panic("Networking device not running!\n");
 
 	register_signal(SIGINT, signal_handler);
@@ -605,34 +618,21 @@ int main(int argc, char **argv)
 
 	header();
 
-	if (prio_high == true) {
+	if (prio_high) {
 		set_proc_prio(get_default_proc_prio());
-		set_sched_status(get_default_sched_policy(),
-				 get_default_sched_prio());
+		set_sched_status(get_default_sched_policy(), get_default_sched_prio());
 	}
 
-	if (setsockmem == true) {
-		if ((vals[0] = get_system_socket_mem(sock_rmem_max)) < SMEM_SUG_MAX)
-			set_system_socket_mem(sock_rmem_max, SMEM_SUG_MAX);
-		if ((vals[1] = get_system_socket_mem(sock_rmem_def)) < SMEM_SUG_DEF)
-			set_system_socket_mem(sock_rmem_def, SMEM_SUG_DEF);
-		if ((vals[2] = get_system_socket_mem(sock_wmem_max)) < SMEM_SUG_MAX)
-			set_system_socket_mem(sock_wmem_max, SMEM_SUG_MAX);
-		if ((vals[3] = get_system_socket_mem(sock_wmem_def)) < SMEM_SUG_DEF)
-			set_system_socket_mem(sock_wmem_def, SMEM_SUG_DEF);
-	}
+	if (setsockmem)
+		set_system_socket_memory(vals);
 
-	main_loop(&mode, confname);
+	main_loop(&ctx, confname, slow);
 
-	if (setsockmem == true) {
-		set_system_socket_mem(sock_rmem_max, vals[0]);
-		set_system_socket_mem(sock_rmem_def, vals[1]);
-		set_system_socket_mem(sock_wmem_max, vals[2]);
-		set_system_socket_mem(sock_wmem_def, vals[3]);
-	}
+	if (setsockmem)
+		reset_system_socket_memory(vals);
 
-	free(mode.device);
-	free(mode.device_trans);
+	free(ctx.device);
+	free(ctx.device_trans);
 	free(confname);
 
 	return 0;

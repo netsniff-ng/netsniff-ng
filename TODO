@@ -37,6 +37,9 @@ submit your contributions, items marked with '!' are of high importance):
 32! ifpps: add option for --dev eth0,eth1,eth2 and accumulate stats
 	@TODO: Daniel Borkmann
 
+33! ifpps: calc current throughput, show percentage of linerate
+	@TODO: Daniel Borkmann
+
 50! mausezahn: clean it up add fork + fanout mode(?), remove libpcap
     dependency, let it also store pcap files e.g. on a network filesystem
     of the mausezahn box.
