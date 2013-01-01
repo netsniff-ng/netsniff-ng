@@ -1,7 +1,7 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
- * Copyright 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,
+ * Copyright 2011 - 2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,
  * Swiss federal institute of technology (ETH Zurich)
  * Subject to the GPL, version 2.
  *
@@ -45,7 +45,6 @@
 #include "built_in.h"
 #include "trafgen_conf.h"
 #include "tprintf.h"
-#include "mtrand.h"
 #include "ring_tx.h"
 
 struct ctx {
@@ -58,10 +57,10 @@ struct ctx {
 sig_atomic_t sigint = 0;
 
 struct packet *packets = NULL;
-size_t packets_len = 0;
+size_t plen = 0;
 
-struct packet_dynamics *packet_dyns = NULL;
-size_t packet_dyn_len = 0;
+struct packet_dyn *packet_dyn = NULL;
+size_t dlen = 0;
 
 static const char *short_options = "d:c:n:t:vJhS:HQb:B:rk:i:o:VRA";
 static const struct option long_options[] = {
@@ -169,12 +168,13 @@ static void help(void)
 	     "  -B|--unbind-cpu <cpu>             Forbid to use specific CPU (or CPU-range)\n"
 	     "  -H|--prio-high                    Make this high priority process\n"
 	     "  -Q|--notouch-irq                  Do not touch IRQ CPU affinity of NIC\n"
+	     "  -V|--verbose                      Be more verbose\n"
 	     "  -v|--version                      Show version\n"
 	     "  -h|--help                         Guess what?!\n\n"
 	     "Examples:\n"
 	     "  See trafgen.txf for configuration file examples.\n"
 	     "  trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0\n"
-	     "  trafgen --dev wlan0 --rfraw --conf beacon-test.txf --bind-cpu 0 -A\n"
+	     "  trafgen --dev wlan0 --rfraw --conf beacon-test.txf --bind-cpu 0 -A -V\n"
 	     "  trafgen --out eth0 --in trafgen.txf --bind-cpu 0\n"
 /*	     "  trafgen --out test.pcap --in trafgen.txf --bind-cpu 0\n" */
 	     "  trafgen --dev eth0 --conf trafgen.txf --rand --gap 1000\n"
@@ -184,7 +184,7 @@ static void help(void)
 	     "  be aware of what you are doing and what these options above\n"
 	     "  mean! Only use this tool in an isolated LAN that you own!\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
-	     "Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
+	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
 	     "Swiss federal institute of technology (ETH Zurich)\n"
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
@@ -197,7 +197,7 @@ static void version(void)
 	printf("\ntrafgen %s, zero-copy network packet generator\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
-	     "Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
+	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
 	     "Swiss federal institute of technology (ETH Zurich)\n"
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
@@ -208,13 +208,13 @@ static void version(void)
 static inline void apply_counter(int counter_id)
 {
 	int j;
-	size_t counter_max = packet_dyns[counter_id].counter_len;
+	size_t counter_max = packet_dyn[counter_id].clen;
 
 	for (j = 0; j < counter_max; ++j) {
 		uint8_t val;
 		struct counter *counter;
 
-		counter = &packet_dyns[counter_id].counter[j];
+		counter = &packet_dyn[counter_id].cnt[j];
 		val = counter->val - counter->min;
 
 		switch (counter->type) {
@@ -236,15 +236,15 @@ static inline void apply_counter(int counter_id)
 static inline void apply_randomizer(int rand_id)
 {
 	int j;
-	size_t rand_max = packet_dyns[rand_id].randomizer_len;
+	size_t rand_max = packet_dyn[rand_id].rlen;
 
 	for (j = 0; j < rand_max; ++j) {
 		uint8_t val;
 		struct randomizer *randomizer;
 
-		val = (uint8_t) mt_rand_int32();
+		val = (uint8_t) rand();
 
-		randomizer = &packet_dyns[rand_id].randomizer[j];
+		randomizer = &packet_dyn[rand_id].rnd[j];
 		randomizer->val = val;
 
 		packets[rand_id].payload[randomizer->off] = val;
@@ -258,11 +258,11 @@ static void xmit_precheck(const struct ctx *ctx)
 
 	if (!ctx)
 		panic("Panic, invalid args for TX trigger!\n");
-	if (packets_len == 0 || packets_len != packet_dyn_len)
+	if (plen == 0 || plen != dlen)
 		panic("Panic, invalid args for TX trigger!\n");
 	if (!ctx->rfraw && !device_up_and_running(ctx->device))
 		panic("Device not up and running!\n");
-	for (mtu = device_mtu(ctx->device), i = 0; i < packets_len; ++i) {
+	for (mtu = device_mtu(ctx->device), i = 0; i < plen; ++i) {
 		if (packets[i].len > mtu + 14)
 			panic("Device MTU < than your packet size!\n");
 		if (packets[i].len <= 14)
@@ -321,11 +321,11 @@ static void xmit_slowpath_or_die(struct ctx *ctx)
 		ctx->tx_bytes += packets[i].len;
 		ctx->tx_packets++;
 
-		if (ctx->rand) {
-			i = mt_rand_int32() % packets_len;
-		} else {
+		if (!ctx->rand) {
 			i++;
-			atomic_cmp_swp(&i, packets_len, 0);
+			atomic_cmp_swp(&i, plen, 0);
+		} else {
+			i = rand() % plen;
 		}
 
 		if (ctx->num > 0)
@@ -440,11 +440,11 @@ static void xmit_fastpath_or_die(struct ctx *ctx)
 			ctx->tx_bytes += packets[i].len;
 			ctx->tx_packets++;
 
-			if (ctx->rand) {
-				i = mt_rand_int32() % packets_len;
-			} else {
+			if (!ctx->rand) {
 				i++;
-				atomic_cmp_swp(&i, packets_len, 0);
+				atomic_cmp_swp(&i, plen, 0);
+			} else {
+				i = rand() % plen;
 			}
 
 			kernel_may_pull_from_tx(&hdr->tp_h);
@@ -493,6 +493,8 @@ int main(int argc, char **argv)
 	char *confname = NULL, *ptr;
 	bool prio_high = false, setsockmem = true, slow = false;
 	struct ctx ctx;
+
+	srand(time(NULL));
 
 	fmemset(&ctx, 0, sizeof(ctx));
 	ctx.cpu = -1;

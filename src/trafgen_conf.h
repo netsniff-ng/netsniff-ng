@@ -15,14 +15,9 @@
 #define TYPE_INC	0
 #define TYPE_DEC	1
 
-struct mode;
-
 struct counter {
 	int type;
-	uint8_t min;
-	uint8_t max;
-	uint8_t inc;
-	uint8_t val;
+	uint8_t min, max, inc, val;
 	off_t off;
 };
 
@@ -36,11 +31,11 @@ struct packet {
 	size_t len;
 };
 
-struct packet_dynamics {
-	struct counter *counter;
-	size_t counter_len;
-	struct randomizer *randomizer;
-	size_t randomizer_len;
+struct packet_dyn {
+	struct counter *cnt;
+	size_t clen;
+	struct randomizer *rnd;
+	size_t rlen;
 };
 
 extern int compile_packets(char *file, int verbose);

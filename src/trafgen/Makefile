@@ -4,7 +4,6 @@ trafgen-libs =	-lnl-genl-3 \
 trafgen-objs =	xmalloc.o \
 		xio.o \
 		xutils.o \
-		mtrand.o \
 		mac80211.o \
 		ring_tx.o \
 		trafgen_lexer.yy.o \
