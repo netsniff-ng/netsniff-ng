@@ -43,7 +43,9 @@ label		[a-zA-Z_][a-zA-Z0-9_]+
 "ldb"		{ return OP_LDB; }
 "ldh"		{ return OP_LDH; }
 "ld"		{ return OP_LD; }
+"ldi"		{ return OP_LDI; }
 "ldx"		{ return OP_LDX; }
+"ldxi"		{ return OP_LDXI; }
 "ldxb"		{ return OP_LDXB; }
 "st"		{ return OP_ST; }
 "stx"		{ return OP_STX; }
@@ -86,6 +88,7 @@ label		[a-zA-Z_][a-zA-Z0-9_]+
 ":"		{ return ':'; }
 ","		{ return ','; }
 "#"		{ return '#'; }
+[#]?		{ return HOPT; }
 "["		{ return '['; }
 "]"		{ return ']'; }
 "("		{ return '('; }
