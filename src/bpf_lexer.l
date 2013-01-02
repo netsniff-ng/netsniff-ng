@@ -49,6 +49,9 @@ label		[a-zA-Z_][a-zA-Z0-9_]+
 "stx"		{ return OP_STX; }
 "jmp"|"ja"	{ return OP_JMP; }
 "jeq"		{ return OP_JEQ; }
+"jneq"|"jne"	{ return OP_JNEQ; }
+"jlt"		{ return OP_JLT; }
+"jle"		{ return OP_JLE; }
 "jgt"		{ return OP_JGT; }
 "jge"		{ return OP_JGE; }
 "jset"		{ return OP_JSET; }
