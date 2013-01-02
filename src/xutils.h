@@ -95,7 +95,7 @@ extern void xusleep2(long usecs);
 extern int xnanosleep(double seconds);
 extern int set_timeout(struct timeval *timeval, unsigned int msec);
 extern size_t strlcpy(char *dest, const char *src, size_t size);
-extern int slprintf(char *dst, size_t size, const char *fmt, ...);
+extern int slprintf(char *dst, size_t size, const char *fmt, ...)  __check_format_printf(3, 4);
 extern noinline void *xmemset(void *s, int c, size_t n);
 extern char *getuint(char *in, uint32_t *out);
 extern char *strtrim_right(register char *p, register char c);

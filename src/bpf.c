@@ -375,7 +375,7 @@ void bpf_detach_from_sock(int sock)
 		panic("Cannot detach filter from socket!\n");
 }
 
-void enable_kernel_bpf_jit_compiler(void)
+int enable_kernel_bpf_jit_compiler(void)
 {
 	int fd;
 	ssize_t ret;
@@ -383,13 +383,12 @@ void enable_kernel_bpf_jit_compiler(void)
 
 	fd = open(file, O_WRONLY);
 	if (fd < 0)
-		return;
+		return -1;
 
 	ret = write(fd, "1", strlen("1"));
-	if (ret > 0)
-		printf("BPF JIT\n");
 
 	close(fd);
+	return ret;
 }
 
 int bpf_validate(const struct sock_fprog *bpf)

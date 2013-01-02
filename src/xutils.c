@@ -575,6 +575,7 @@ void device_set_flags(const char *ifname, const short flags)
 	close(sock);
 }
 
+/* XXX: also probe ethtool driver name if it fails */
 int device_irq_number(const char *ifname)
 {
 	/*
@@ -683,13 +684,13 @@ void sock_print_net_stats(int sock, unsigned long skipped)
 		uint64_t packets = kstats.tp_packets;
 		uint64_t drops = kstats.tp_drops;
 
-		printf("\r%12ld  frames incoming\n", packets);
-		printf("\r%12ld  frames passed filter\n",
+		printf("\r%12ld  packets incoming\n", packets);
+		printf("\r%12ld  packets passed filter\n",
 		       packets - drops - skipped);
-		printf("\r%12ld  frames failed filter (out of space)\n",
+		printf("\r%12ld  packets failed filter (out of space)\n",
 		       drops + skipped);
 		if (kstats.tp_packets > 0)
-			printf("\r%12.4f%\% frame droprate\n",
+			printf("\r%12.4f%\% packet droprate\n",
 			       1.f * drops / packets * 100.f);
 	}
 }

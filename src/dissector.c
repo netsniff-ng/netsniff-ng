@@ -24,16 +24,16 @@ int dissector_set_print_type(void *ptr, int type)
 
 	for (proto = (struct protocol *) ptr; proto; proto = proto->next) {
 		switch (type) {
-		case FNTTYPE_PRINT_NORM:
+		case PRINT_NORM:
 			proto->process = proto->print_full;
 			break;
-		case FNTTYPE_PRINT_LESS:
+		case PRINT_LESS:
 			proto->process = proto->print_less;
 			break;
-		case FNTTYPE_PRINT_HEX:
-		case FNTTYPE_PRINT_ASCII:
-		case FNTTYPE_PRINT_HEX_ASCII:
-		case FNTTYPE_PRINT_NONE:
+		case PRINT_HEX:
+		case PRINT_ASCII:
+		case PRINT_HEX_ASCII:
+		case PRINT_NONE:
 		default:
 			proto->process = NULL;
 			break;
@@ -70,7 +70,7 @@ void dissector_entry_point(uint8_t *packet, size_t len, int linktype, int mode)
 	struct protocol *proto_end = NULL;
 	struct pkt_buff *pkt = NULL;
 
-	if (mode == FNTTYPE_PRINT_NONE)
+	if (mode == PRINT_NONE)
 		return;
 
 	pkt = pkt_alloc(packet, len);
@@ -91,13 +91,13 @@ void dissector_entry_point(uint8_t *packet, size_t len, int linktype, int mode)
 	dissector_main(pkt, proto_start, proto_end);
 
 	switch (mode) {
-	case FNTTYPE_PRINT_HEX:
+	case PRINT_HEX:
 		hex(pkt);
 		break;
-	case FNTTYPE_PRINT_ASCII:
+	case PRINT_ASCII:
 		ascii(pkt);
 		break;
-	case FNTTYPE_PRINT_HEX_ASCII:
+	case PRINT_HEX_ASCII:
 		hex_ascii(pkt);
 		break;
 	}

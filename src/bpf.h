@@ -21,7 +21,7 @@ extern uint32_t bpf_run_filter(const struct sock_fprog *bpf, uint8_t *packet,
 			       size_t plen);
 extern void bpf_attach_to_sock(int sock, struct sock_fprog *bpf);
 extern void bpf_detach_from_sock(int sock);
-extern void enable_kernel_bpf_jit_compiler(void);
+extern int enable_kernel_bpf_jit_compiler(void);
 extern void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf);
 
 static inline void bpf_release(struct sock_fprog *bpf)

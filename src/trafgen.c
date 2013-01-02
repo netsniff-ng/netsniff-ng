@@ -562,13 +562,13 @@ int main(int argc, char **argv)
 				panic("Syntax error in ring size param!\n");
 			*ptr = 0;
 
-			ctx.reserve_size *= atoi(optarg);
+			ctx.reserve_size *= strtol(optarg, NULL, 0);
 			break;
 		case 'b':
 			set_cpu_affinity(optarg, 0);
 			/* Take the first CPU for rebinding the IRQ */
 			if (ctx.cpu != -2)
-				ctx.cpu = atoi(optarg);
+				ctx.cpu = strtol(optarg, NULL, 0);
 			break;
 		case 'B':
 			set_cpu_affinity(optarg, 1);
