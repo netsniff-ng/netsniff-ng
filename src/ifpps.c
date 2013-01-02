@@ -493,9 +493,14 @@ static void stats_sample_generic(const char *ifname, uint64_t ms_interval)
 static void screen_init(WINDOW **screen)
 {
 	(*screen) = initscr();
+
+	raw();
 	noecho();
 	cbreak();
 	nodelay((*screen), TRUE);
+
+	keypad(stdscr, TRUE);
+
 	refresh();
 	wrefresh((*screen));
 }
@@ -716,7 +721,7 @@ static int screen_main(const char *ifname, uint64_t ms_interval)
 
 	while (!sigint) {
 		key = getch();
-		if (key == 'q' || key == 0x1b /* esq */)
+		if (key == 'q' || key == 0x1b /* esq */ || key == KEY_F(10))
 			break;
 
 		screen_update(stats_screen, ifname, &stats_delta, &stats_new,
