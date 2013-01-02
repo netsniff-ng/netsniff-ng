@@ -202,7 +202,7 @@ static void enter_mode_pcap_to_tx(struct mode *mode)
 	set_packet_loss_discard(tx_sock);
 	set_sockopt_hwtimestamp(tx_sock, mode->device_out);
 	setup_tx_ring_layout(tx_sock, &tx_ring, size, mode->jumbo_support);
-	create_tx_ring(tx_sock, &tx_ring);
+	create_tx_ring(tx_sock, &tx_ring, 1);
 	mmap_tx_ring(tx_sock, &tx_ring);
 	alloc_tx_ring_frames(&tx_ring);
 	bind_tx_ring(tx_sock, &tx_ring, ifindex);
@@ -353,7 +353,7 @@ static void enter_mode_rx_to_tx(struct mode *mode)
 
 	set_packet_loss_discard(tx_sock);
 	setup_tx_ring_layout(tx_sock, &tx_ring, size_out, mode->jumbo_support);
-	create_tx_ring(tx_sock, &tx_ring);
+	create_tx_ring(tx_sock, &tx_ring, 1);
 	mmap_tx_ring(tx_sock, &tx_ring);
 	alloc_tx_ring_frames(&tx_ring);
 	bind_tx_ring(tx_sock, &tx_ring, ifindex_out);
