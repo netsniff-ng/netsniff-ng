@@ -178,6 +178,7 @@ static void help(void)
 	     "  trafgen --out eth0 --in trafgen.txf --bind-cpu 0\n"
 /*	     "  trafgen --out test.pcap --in trafgen.txf --bind-cpu 0\n" */
 	     "  trafgen --dev eth0 --conf trafgen.txf --rand --gap 1000\n"
+	     "  trafgen --dev eth0 --conf trafgen.txf --rand --num 1400000 -k1000\n"
 	     "  trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0 --num 10 --rand\n\n"
 	     "Note:\n"
 	     "  This tool is targeted for network developers! You should\n"
