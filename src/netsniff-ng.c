@@ -49,7 +49,6 @@
 #include "tprintf.h"
 #include "dissector.h"
 #include "xmalloc.h"
-#include "mtrand.h"
 
 enum dump_mode {
 	DUMP_INTERVAL_TIME,

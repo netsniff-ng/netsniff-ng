@@ -25,7 +25,6 @@
 
 #include "xutils.h"
 #include "built_in.h"
-#include "mtrand.h"
 #include "die.h"
 
 #ifndef PACKET_FANOUT
@@ -56,7 +55,7 @@ static inline void next_slot(unsigned int *it, struct ring *ring)
 
 static inline void next_rnd_slot(unsigned int *it, struct ring *ring)
 {
-	*it = mt_rand_int32() % ring->layout.tp_frame_nr;
+	*it = rand() % ring->layout.tp_frame_nr;
 }
 
 #define RING_SIZE_FALLBACK (1 << 26)

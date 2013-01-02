@@ -3,7 +3,6 @@ netsniff-ng-libs =	-lnl-genl-3 \
 			-lpthread
 
 netsniff-ng-objs =	hash.o \
-			mac80211.o \
 			dissector.o \
 			dissector_eth.o \
 			dissector_80211.o \
@@ -39,8 +38,8 @@ netsniff-ng-objs =	hash.o \
 			pcap_rw.o \
 			pcap_sg.o \
 			pcap_mmap.o \
+			mac80211.o \
 			ring_rx.o \
 			ring_tx.o \
-			mtrand.o \
 			tprintf.o \
 			netsniff-ng.o
