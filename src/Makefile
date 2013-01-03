@@ -64,16 +64,14 @@ CFLAGS += -D__WITH_HARDWARE_TIMESTAMPING=1
 CFLAGS += -DVERSION_STRING=\"$(VERSION_STRING)\"
 CFLAGS += -std=gnu99
 
-# Should be commented in after the mausezahn mess is cleaned
 WFLAGS  = -Wall
-#WFLAGS += -Wmissing-prototypes
-#WFLAGS += -Wdeclaration-after-statement
-#WFLAGS += -Werror-implicit-function-declaration
-#WFLAGS += -Wundef
-#WFLAGS += -Wstrict-prototypes
-#WFLAGS += -Wunused-but-set-variable
-#WFLAGS += -Werror
 WFLAGS += -Wformat=2
+WFLAGS_EXTRA += -Wmissing-prototypes
+WFLAGS_EXTRA += -Wdeclaration-after-statement
+WFLAGS_EXTRA += -Werror-implicit-function-declaration
+WFLAGS_EXTRA += -Wundef
+WFLAGS_EXTRA += -Wstrict-prototypes
+WFLAGS_EXTRA += -Wunused-but-set-variable
 
 CFLAGS += $(WFLAGS) -I.
 CPPFLAGS =
@@ -122,6 +120,8 @@ export CROSS_COMPILE
 VERSION_STRING = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
 VERSION_SHORT = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)
 
+TOOLS_MOST = $(filter-out mausezahn,$(TOOLS))
+
 bold = $(shell tput bold)
 normal = $(shell tput sgr0)
 
@@ -169,6 +169,7 @@ NCONF_FILES = ether.conf tcp.conf udp.conf oui.conf
 all: build_showinfo toolkit
 toolkit: $(TOOLS)
 allbutcurvetun: $(filter-out curvetun,$(TOOLS))
+allbutmausezahn: $(filter-out mausezahn,$(TOOLS))
 install: $(foreach tool,$(TOOLS),$(tool)_install)
 	$(Q)$(foreach file,$(DOC_FILES),$(call INST,../Documentation/$(file),$(DOCDIRE));)
 install_allbutcurvetun: $(foreach tool,$(filter-out curvetun,$(TOOLS)),$(tool)_install)
@@ -233,6 +234,7 @@ astraceroute_install_custom:
 	$(Q)$(call INST,conf/whois.conf,$(ETCDIRE))
 	$(Q)$(call INSTX,../scripts/astraceroute6,$(SBINDIR))
 
+$(TOOLS_MOST): WFLAGS += $(WFLAGS_EXTRA)
 $(TOOLS):
 	$(LD) $(ALL_LDFLAGS) -o $@/$@ $@/*.o $($@-libs)
 	$(STRIP) $@/$@
@@ -283,3 +285,4 @@ help:
 	$(Q)echo " PREFIX=/path                 - Install path prefix"
 	$(Q)echo " CROSS_COMPILE=/path-prefix   - Kernel-like cross-compiling prefix"
 	$(Q)echo " CROSS_LD_LIBRARY_PATH=/path  - Library search path for cross-compiling"
+	$(Q)echo " Q=                           - Show verbose garbage"
