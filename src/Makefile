@@ -92,7 +92,9 @@ Q = @
 LD = $(Q)echo -e "  LD\t$@" && $(CCACHE) $(CROSS_COMPILE)gcc
 CCNQ = $(CCACHE) $(CROSS_COMPILE)gcc
 CC = $(Q)echo -e "  CC\t$<" && $(CCNQ)
-CCHK = echo -e "  CCHK\t$@" && cppcheck -q --enable=all --std=c99 --includes-file=$(NACL_INC_DIR)
+CCHK = echo -e "  CCHK\t$@" && cppcheck -q --std=c99 \
+	--enable=style,performance,portability,unusedFunction \
+	--includes-file=$(NACL_INC_DIR)
 MKDIR = $(Q)echo -e "  MKDIR\t$@" && mkdir
 ifeq ($(DEBUG), 1)
   STRIP = $(Q)true
@@ -187,10 +189,12 @@ define TOOL_templ
   $(1) $(1)%: BUILD_DIR := $(1)
   $(1)_prehook:
 	$(Q)echo "$(bold)$(WHAT) $(1):$(normal)"
+  $(1)_prehook_check:
+	$(Q)echo "$(bold)Checking $(1):$(normal)"
   $(1): $(1)_prehook $$($(1)-lex) $$($(1)-yaac) $$(patsubst %.o,$(1)/%.o,$$($(1)-objs))
   $(1)_clean: $(1)_clean_custom
 	$(Q)$$(call RM,$(1)/*.o $(1)/$(1))
-  $(1)_check: $$(patsubst %.o,%.x,$$($(1)-objs))
+  $(1)_check: $(1)_prehook_check $$(patsubst %.o,%.x,$$($(1)-objs))
   $(1)_install: $(1)_install_custom
 	$(Q)$$(call INSTX,$(1)/$(1),$$(SBINDIR))
 	$(Q)$$(call INST,../Documentation/$$(shell echo $(1) | sed 's/\([a-z]\)\(.*\)/\u\1\2/g'),$$(DOCDIRE))
