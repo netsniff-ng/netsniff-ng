@@ -94,6 +94,7 @@ Q = @
 LD = $(Q)echo -e "  LD\t$@" && $(CCACHE) $(CROSS_COMPILE)gcc
 CCNQ = $(CCACHE) $(CROSS_COMPILE)gcc
 CC = $(Q)echo -e "  CC\t$<" && $(CCNQ)
+CCHK = echo -e "  CCHK\t$@" && cppcheck -q --enable=all --std=c99 --includes-file=$(NACL_INC_DIR)
 MKDIR = $(Q)echo -e "  MKDIR\t$@" && mkdir
 ifeq ($(DEBUG), 1)
   STRIP = $(Q)true
@@ -150,6 +151,8 @@ clean_showinfo:
 %.tab.o: %.y
 	$(YAAC) -p $(shell perl -wlne 'print $$1 if /yaac-func-prefix:\s([a-z]+)/' $<) \
 		-o $(BUILD_DIR)/$(shell basename $< .y).tab.c $(YAAC_FLAGS) -d $<
+%.x:
+	@if [ -a $(shell basename $@ .x).c ]; then $(CCHK) $(shell basename $@ .x).c || true; fi
 
 .PHONY: all toolkit $(TOOLS) clean %_prehook %_distclean %_clean %_install
 .FORCE:
@@ -176,6 +179,7 @@ realclean distclean clobber: $(foreach tool,$(TOOLS),$(tool)_distclean)
 	$(Q)$(call RMDIR,$(DOCDIRE))
 	$(Q)$(call RMDIR,$(ETCDIRE))
 mrproper: clean distclean
+check: $(foreach tool,$(TOOLS),$(tool)_check)
 
 define TOOL_templ
   include $(1)/Makefile
@@ -185,6 +189,7 @@ define TOOL_templ
   $(1): $(1)_prehook $$($(1)-lex) $$($(1)-yaac) $$(patsubst %.o,$(1)/%.o,$$($(1)-objs))
   $(1)_clean: $(1)_clean_custom
 	$(Q)$$(call RM,$(1)/*.o $(1)/$(1))
+  $(1)_check: $$(patsubst %.o,%.x,$$($(1)-objs))
   $(1)_install: $(1)_install_custom
 	$(Q)$$(call INSTX,$(1)/$(1),$$(SBINDIR))
 	$(Q)$$(call INST,../Documentation/$$(shell echo $(1) | sed 's/\([a-z]\)\(.*\)/\u\1\2/g'),$$(DOCDIRE))
@@ -263,6 +268,9 @@ help:
 	$(Q)echo "$(bold)Targets for removing the toolkit:$(normal)"
 	$(Q)echo " realclean|distclean|clobber  - Remove the whole toolkit from the system"
 	$(Q)echo " <toolname>_distclean         - Remove only one of the tools"
+	$(Q)echo "$(bold)Targets for checking the toolkit:$(normal)"
+	$(Q)echo " check                        - Do a static code analysis"
+	$(Q)echo " <toolname>_check             - Check only one of the tools"
 	$(Q)echo "$(bold)Misc targets:$(normal)"
 	$(Q)echo " tarball                      - Generate tarball of latest version"
 	$(Q)echo " mrproper                     - Remove build and install files"
