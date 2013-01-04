@@ -467,8 +467,8 @@ static void xmit_fastpath_or_die(struct ctx *ctx)
 
 static void main_loop(struct ctx *ctx, char *confname, bool slow)
 {
-	xmit_precheck(ctx);
 	compile_packets(confname, ctx->verbose);
+	xmit_precheck(ctx);
 
 	sock = pf_socket();
 
