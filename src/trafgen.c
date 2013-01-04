@@ -297,7 +297,7 @@ static void xmit_slowpath_or_die(struct ctx *ctx)
 
 	if (ctx->verbose) {
 		if (ctx->rand)
-			printf("Note: randomizes output makes trafgen slower!\n");
+			printf("Note: randomized output makes trafgen slower!\n");
 		printf("MD: TX sendto %s %luus", ctx->rand ? "RND" : "RR", ctx->gap);
 		if (ctx->rfraw)
 			printf(" 802.11 raw via %s", ctx->device);
@@ -402,7 +402,7 @@ static void xmit_fastpath_or_die(struct ctx *ctx)
 
 	if (ctx->verbose) {
 		if (ctx->rand)
-			printf("Note: randomizes output makes trafgen slower!\n");
+			printf("Note: randomized output makes trafgen slower!\n");
 		printf("MD: TX fastpath %s %luus", ctx->rand ? "RND" : "RR", interval);
 		if (ctx->rfraw)
 			printf(" 802.11 raw via %s", ctx->device);
