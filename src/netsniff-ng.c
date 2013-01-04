@@ -234,7 +234,7 @@ static void pcap_to_xmit(struct ctx *ctx)
 
 	if (ctx->cpu >= 0 && ifindex > 0) {
 		irq = device_irq_number(ctx->device_out);
-		device_bind_irq_to_cpu(ctx->cpu, irq);
+		device_bind_irq_to_cpu(irq, ctx->cpu);
 
 		if (ctx->verbose)
 			printf("IRQ: %s:%d > CPU%d\n",
@@ -861,7 +861,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 
 	if (ctx->cpu >= 0 && ifindex > 0) {
 		irq = device_irq_number(ctx->device_in);
-		device_bind_irq_to_cpu(ctx->cpu, irq);
+		device_bind_irq_to_cpu(irq, ctx->cpu);
 
 		if (ctx->verbose)
 			printf("IRQ: %s:%d > CPU%d\n",

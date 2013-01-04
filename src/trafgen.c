@@ -388,7 +388,7 @@ static void xmit_fastpath_or_die(struct ctx *ctx)
 
 	if (ctx->cpu >= 0 && ifindex > 0) {
 		irq = device_irq_number(ctx->device);
-		device_bind_irq_to_cpu(ctx->cpu, irq);
+		device_bind_irq_to_cpu(irq, ctx->cpu);
 
 		if (ctx->verbose)
 			printf("IRQ: %s:%d > CPU%d\n",
