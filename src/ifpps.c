@@ -43,15 +43,14 @@ struct wifi_stat {
 };
 
 struct ifstat {
-	uint64_t rx_bytes, rx_packets, rx_drops, rx_errors;
-	uint64_t rx_fifo, rx_frame, rx_multi;
-	uint64_t tx_bytes, tx_packets, tx_drops, tx_errors;
-	uint64_t tx_fifo, tx_colls, tx_carrier;
-	uint64_t irqs[MAX_CPUS], irqs_srx[MAX_CPUS], irqs_stx[MAX_CPUS];
+	long long unsigned int rx_bytes, rx_packets, rx_drops, rx_errors;
+	long long unsigned int rx_fifo, rx_frame, rx_multi;
+	long long unsigned int tx_bytes, tx_packets, tx_drops, tx_errors;
+	long long unsigned int tx_fifo, tx_colls, tx_carrier;
+	long long unsigned int irqs[MAX_CPUS], irqs_srx[MAX_CPUS], irqs_stx[MAX_CPUS];
 	int64_t cpu_user[MAX_CPUS], cpu_nice[MAX_CPUS], cpu_sys[MAX_CPUS];
 	int64_t cpu_idle[MAX_CPUS], cpu_iow[MAX_CPUS], mem_free, mem_total;
-	int32_t cswitch, forks, procs_run, procs_iow;
-	uint32_t irq_nr;
+	uint32_t irq_nr, procs_run, procs_iow, cswitch, forks;
 	struct wifi_stat wifi;
 };
 
@@ -170,8 +169,8 @@ static int stats_proc_net_dev(const char *ifname, struct ifstat *stats)
 		if (strstr(buff, ifname) == NULL)
 			continue;
 
-		if (sscanf(buff, "%*[a-z0-9 .-]:%lu%lu%lu%lu%lu%lu"
-			   "%lu%*u%lu%lu%lu%lu%lu%lu%lu",
+		if (sscanf(buff, "%*[a-z0-9 .-]:%llu%llu%llu%llu%llu%llu"
+			   "%llu%*u%llu%llu%llu%llu%llu%llu%llu",
 			   &stats->rx_bytes, &stats->rx_packets,
 			   &stats->rx_errors, &stats->rx_drops,
 			   &stats->rx_fifo, &stats->rx_frame,
@@ -364,16 +363,16 @@ static int stats_proc_system(struct ifstat *stats)
 				goto next;
 		} else if ((ptr = strstr(buff, "ctxt"))) {
 			ptr += strlen("ctxt");
-			stats->cswitch = strtol(ptr, &ptr, 10);
+			stats->cswitch = strtoul(ptr, &ptr, 10);
 		} else if ((ptr = strstr(buff, "processes"))) {
 			ptr += strlen("processes");
-			stats->forks = strtol(ptr, &ptr, 10);
+			stats->forks = strtoul(ptr, &ptr, 10);
 		} else if ((ptr = strstr(buff, "procs_running"))) {
 			ptr += strlen("procs_running");
-			stats->procs_run = strtol(ptr, &ptr, 10);
+			stats->procs_run = strtoul(ptr, &ptr, 10);
 		} else if ((ptr = strstr(buff, "procs_blocked"))) {
 			ptr += strlen("procs_blocked");
-			stats->procs_iow = strtol(ptr, &ptr, 10);
+			stats->procs_iow = strtoul(ptr, &ptr, 10);
 		}
 next:
 		memset(buff, 0, sizeof(buff));
@@ -536,19 +535,19 @@ static void screen_net_dev_rel(WINDOW *screen, const struct ifstat *rel,
 	attron(A_REVERSE);
 
 	mvwprintw(screen, (*voff)++, 0,
-		  "  RX: %16.3lf MiB/t "
-		        "%10lu pkts/t "
-			"%10lu drops/t "
-			"%10lu errors/t  ",
-		  1.0 * rel->rx_bytes / (1 << 20),
+		  "  RX: %16.3llf MiB/t "
+		        "%10llu pkts/t "
+			"%10llu drops/t "
+			"%10llu errors/t  ",
+		  ((long double) rel->rx_bytes) / (1LLU << 20),
 		  rel->rx_packets, rel->rx_drops, rel->rx_errors);
 
 	mvwprintw(screen, (*voff)++, 0,
-		  "  TX: %16.3lf MiB/t "
-			"%10lu pkts/t "
-			"%10lu drops/t "
-			"%10lu errors/t  ",
-		  1.0 * rel->tx_bytes / (1 << 20),
+		  "  TX: %16.3llf MiB/t "
+			"%10llu pkts/t "
+			"%10llu drops/t "
+			"%10llu errors/t  ",
+		  ((long double) rel->tx_bytes) / (1LLU << 20),
 		  rel->tx_packets, rel->tx_drops, rel->tx_errors);
 
 	attroff(A_REVERSE);
@@ -558,19 +557,19 @@ static void screen_net_dev_abs(WINDOW *screen, const struct ifstat *abs,
 			       int *voff)
 {
 	mvwprintw(screen, (*voff)++, 2,
-		  "RX: %16.3lf MiB   "
-		      "%10lu pkts   "
-		      "%10lu drops   "
-		      "%10lu errors",
-		  1.0 * abs->rx_bytes / (1 << 20),
+		  "RX: %16.3llf MiB   "
+		      "%10llu pkts   "
+		      "%10llu drops   "
+		      "%10llu errors",
+		  ((long double) abs->rx_bytes) / (1LLU << 20),
 		  abs->rx_packets, abs->rx_drops, abs->rx_errors);
 
 	mvwprintw(screen, (*voff)++, 2,
-		  "TX: %16.3lf MiB   "
-		      "%10lu pkts   "
-		      "%10lu drops   "
-		      "%10lu errors",
-		  1.0 * abs->tx_bytes / (1 << 20),
+		  "TX: %16.3llf MiB   "
+		      "%10llu pkts   "
+		      "%10llu drops   "
+		      "%10llu errors",
+		  ((long double) abs->tx_bytes) / (1LLU << 20),
 		  abs->tx_packets, abs->tx_drops, abs->tx_errors);
 }
 
@@ -578,12 +577,12 @@ static void screen_sys_mem(WINDOW *screen, const struct ifstat *rel,
 			   const struct ifstat *abs, int *voff)
 {
 	mvwprintw(screen, (*voff)++, 2,
-		  "SYS:  %14ld cs/t "
+		  "SYS:  %14u cs/t "
 			"%10.1lf%% mem "
-			"%13ld running "
-			"%10ld iowait",
+			"%13u running "
+			"%10u iowait",
 		  rel->cswitch,
-		  100.0 * (abs->mem_total - abs->mem_free) / abs->mem_total,
+		  (100.0 * (abs->mem_total - abs->mem_free)) / abs->mem_total,
 		  abs->procs_run, abs->procs_iow);
 }
 
@@ -616,9 +615,9 @@ static void screen_percpu_irqs_rel(WINDOW *screen, const struct ifstat *rel,
 
 	for (i = 0; i < cpus; ++i) {
 		mvwprintw(screen, (*voff)++, 2,
-			  "CPU%d: %14ld irqs/t   "
-				 "%15ld soirq RX/t   "
-				 "%15ld soirq TX/t      ", i,
+			  "CPU%d: %14llu irqs/t   "
+				 "%15llu soirq RX/t   "
+				 "%15llu soirq TX/t      ", i,
 			  rel->irqs[i],
 			  rel->irqs_srx[i],
 			  rel->irqs_stx[i]);
@@ -632,7 +631,7 @@ static void screen_percpu_irqs_abs(WINDOW *screen, const struct ifstat *abs,
 
 	for (i = 0; i < cpus; ++i) {
 		mvwprintw(screen, (*voff)++, 2,
-			  "CPU%d: %14ld irqs", i,
+			  "CPU%d: %14llu irqs", i,
 			  abs->irqs[i]);
 	}
 }
@@ -742,25 +741,25 @@ static void term_csv(const char *ifname, const struct ifstat *rel,
 
 	printf("%ld ", time(0));
 
-	printf("%lu ", rel->rx_bytes);
-	printf("%lu ", rel->rx_packets);
-	printf("%lu ", rel->rx_drops);
-	printf("%lu ", rel->rx_errors);
+	printf("%llu ", rel->rx_bytes);
+	printf("%llu ", rel->rx_packets);
+	printf("%llu ", rel->rx_drops);
+	printf("%llu ", rel->rx_errors);
 
-	printf("%lu ", abs->rx_bytes);
-	printf("%lu ", abs->rx_packets);
-	printf("%lu ", abs->rx_drops);
-	printf("%lu ", abs->rx_errors);
+	printf("%llu ", abs->rx_bytes);
+	printf("%llu ", abs->rx_packets);
+	printf("%llu ", abs->rx_drops);
+	printf("%llu ", abs->rx_errors);
 
-	printf("%lu ", rel->tx_bytes);
-	printf("%lu ", rel->tx_packets);
-	printf("%lu ", rel->tx_drops);
-	printf("%lu ", rel->tx_errors);
+	printf("%llu ", rel->tx_bytes);
+	printf("%llu ", rel->tx_packets);
+	printf("%llu ", rel->tx_drops);
+	printf("%llu ", rel->tx_errors);
 
-	printf("%lu ", abs->tx_bytes);
-	printf("%lu ", abs->tx_packets);
-	printf("%lu ", abs->tx_drops);
-	printf("%lu ", abs->tx_errors);
+	printf("%llu ", abs->tx_bytes);
+	printf("%llu ", abs->tx_packets);
+	printf("%llu ", abs->tx_drops);
+	printf("%llu ", abs->tx_errors);
 
 	printf("%u ",  rel->cswitch);
 	printf("%lu ", abs->mem_free);
@@ -779,14 +778,14 @@ static void term_csv(const char *ifname, const struct ifstat *rel,
 		printf("%lu ", rel->cpu_idle[i]);
 		printf("%lu ", rel->cpu_iow[i]);
 
-		printf("%lu ", rel->irqs[i]);
-		printf("%lu ", abs->irqs[i]);
+		printf("%llu ", rel->irqs[i]);
+		printf("%llu ", abs->irqs[i]);
 
-		printf("%lu ", rel->irqs_srx[i]);
-		printf("%lu ", abs->irqs_srx[i]);
+		printf("%llu ", rel->irqs_srx[i]);
+		printf("%llu ", abs->irqs_srx[i]);
 
-		printf("%lu ", rel->irqs_stx[i]);
-		printf("%lu ", abs->irqs_stx[i]);
+		printf("%llu ", rel->irqs_stx[i]);
+		printf("%llu ", abs->irqs_stx[i]);
 	}
 
 	if (iswireless(abs)) {
