@@ -281,10 +281,6 @@ static void xmit_slowpath_or_die(struct ctx *ctx)
 		.sll_halen = ETH_ALEN,
 	};
 
-	xmit_precheck(ctx);
-
-	sock = pf_socket();
-
 	if (ctx->rfraw) {
 		ctx->device_trans = xstrdup(ctx->device);
 		xfree(ctx->device);
@@ -348,7 +344,6 @@ static void xmit_slowpath_or_die(struct ctx *ctx)
 	printf("\r%12lu bytes outgoing\n", ctx->tx_bytes);
 	printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec, diff.tv_usec);
 
-	close(sock);
 }
 
 static void xmit_fastpath_or_die(struct ctx *ctx)
@@ -360,10 +355,6 @@ static void xmit_fastpath_or_die(struct ctx *ctx)
 	struct ring tx_ring;
 	struct frame_map *hdr;
 	struct timeval start, end, diff;
-
-	xmit_precheck(ctx);
-
-	sock = pf_socket();
 
 	if (ctx->rfraw) {
 		ctx->device_trans = xstrdup(ctx->device);
@@ -472,18 +463,21 @@ static void xmit_fastpath_or_die(struct ctx *ctx)
 	printf("\r%12lu frames outgoing\n", ctx->tx_packets);
 	printf("\r%12lu bytes outgoing\n", ctx->tx_bytes);
 	printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec, diff.tv_usec);
-
-	close(sock);
 }
 
 static void main_loop(struct ctx *ctx, char *confname, bool slow)
 {
+	xmit_precheck(ctx);
 	compile_packets(confname, ctx->verbose);
+
+	sock = pf_socket();
 
 	if (slow)
 		xmit_slowpath_or_die(ctx);
 	else
 		xmit_fastpath_or_die(ctx);
+
+	close(sock);
 
 	cleanup_packets();
 }
