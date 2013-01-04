@@ -400,7 +400,7 @@ struct element_tclas_type1_ip6 {
 		__extension__ u8  flow_label1:8;
 		__extension__ u8  flow_label2:8;
 		__extension__ u8  flow_label3:8;
-
+#else
 # error  "Adjust your <asm/byteorder.h> defines"
 #endif
 		};
@@ -450,7 +450,7 @@ struct element_tclas_type4_ip6 {
 		__extension__ u8  flow_label1:8;
 		__extension__ u8  flow_label2:8;
 		__extension__ u8  flow_label3:8;
-
+#else
 # error  "Adjust your <asm/byteorder.h> defines"
 #endif
 		};
@@ -746,7 +746,7 @@ struct element_ht_cap {
 		__extension__ u8  bitmask3:8;
 		__extension__ u8  bitmask2:8;
 		__extension__ u8  bitmask1:8;
-
+#else
 # error  "Adjust your <asm/byteorder.h> defines"
 #endif
 		};
