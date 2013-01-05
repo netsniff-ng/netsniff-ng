@@ -71,7 +71,6 @@ WFLAGS_EXTRA += -Wdeclaration-after-statement
 WFLAGS_EXTRA += -Werror-implicit-function-declaration
 WFLAGS_EXTRA += -Wundef
 WFLAGS_EXTRA += -Wstrict-prototypes
-WFLAGS_EXTRA += -Wunused-but-set-variable
 
 CFLAGS += $(WFLAGS) -I.
 CPPFLAGS =
