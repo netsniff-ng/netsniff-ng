@@ -1096,6 +1096,7 @@ static int8_t inf_hop_pp(struct pkt_buff *pkt, u8 *id)
 	tprintf(" Hopping Pattern Param (%u, Len(%u)): ", *id, hop_pp->len);
 	if (len_neq_error(hop_pp->len, 2))
 		return 0;
+	tprintf("Prime Radix: %u, ", hop_pp->prime_radix);
 	tprintf("Nr of Ch: %u", hop_pp->nr_ch);
 
 	return 1;
@@ -1116,7 +1117,7 @@ static int8_t inf_hop_pt(struct pkt_buff *pkt, u8 *id)
 		return 0;
 	tprintf("Flag: %u, ", hop_pt->flag);
 	tprintf("Nr of Sets: %u, ", hop_pt->nr_sets);
-	tprintf("Modules: %u, ", hop_pt->modules);
+	tprintf("Modulus: %u, ", hop_pt->modules);
 	tprintf("Offs: %u", hop_pt->offs);
 
 	if ((hop_pt->len - sizeof(*hop_pt) + 1) > 0) {
@@ -1126,7 +1127,7 @@ static int8_t inf_hop_pt(struct pkt_buff *pkt, u8 *id)
 
 		tprintf(", Rand table: 0x");
 		for (i = 0; i < (hop_pt->len - sizeof(*hop_pt) + 1); i++)
-			tprintf("%.2x ", rand_tabl[i]);
+			tprintf("%.2x", rand_tabl[i]);
 	}
 
 	return 1;
