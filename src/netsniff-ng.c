@@ -301,7 +301,10 @@ static void pcap_to_xmit(struct ctx *ctx)
 					      ctx->link_type, ctx->print_mode);
 
 			kernel_may_pull_from_tx(&hdr->tp_h);
-			next_slot(&it, &tx_ring);
+
+			it++;
+			if (it >= tx_ring.layout.tp_frame_nr)
+				it = 0;
 
 			if (unlikely(sigint == 1))
 				break;
@@ -439,8 +442,11 @@ static void receive_to_xmit(struct ctx *ctx)
 			       likely(!sigint);) {
 				if (ctx->randomize)
 					next_rnd_slot(&it_out, &tx_ring);
-				else
-					next_slot(&it_out, &tx_ring);
+				else {
+					it_out++;
+					if (it_out >= tx_ring.layout.tp_frame_nr)
+						it_out = 0;
+				}
 
 				hdr_out = tx_ring.frames[it_out].iov_base;
 				out = ((uint8_t *) hdr_out) + TPACKET2_HDRLEN - sizeof(struct sockaddr_ll);
@@ -452,8 +458,11 @@ static void receive_to_xmit(struct ctx *ctx)
 			kernel_may_pull_from_tx(&hdr_out->tp_h);
 			if (ctx->randomize)
 				next_rnd_slot(&it_out, &tx_ring);
-			else
-				next_slot(&it_out, &tx_ring);
+			else {
+				it_out++;
+				if (it_out >= tx_ring.layout.tp_frame_nr)
+					it_out = 0;
+			}
 
 			show_frame_hdr(hdr_in, ctx->print_mode, RING_MODE_INGRESS);
 
@@ -470,7 +479,10 @@ static void receive_to_xmit(struct ctx *ctx)
 			next:
 
 			kernel_may_pull_from_rx(&hdr_in->tp_h);
-			next_slot(&it_in, &rx_ring);
+
+			it_in++;
+			if (it_in >= rx_ring.layout.tp_frame_nr)
+				it_in = 0;
 
 			if (unlikely(sigint == 1))
 				goto out;
@@ -929,7 +941,10 @@ static void recv_only_or_dump(struct ctx *ctx)
 			next:
 
 			kernel_may_pull_from_rx(&hdr->tp_h);
-			next_slot(&it, &rx_ring);
+
+			it++;
+			if (it >= rx_ring.layout.tp_frame_nr)
+				it = 0;
 
 			if (unlikely(sigint == 1))
 				break;

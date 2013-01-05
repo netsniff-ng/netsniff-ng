@@ -47,13 +47,6 @@ struct ring {
 	struct sockaddr_ll s_ll;
 };
 
-static inline void next_slot(unsigned int *it, struct ring *ring)
-{
-	(*it)++;
-	if (*it >= ring->layout.tp_frame_nr)
-		*it = 0;
-}
-
 static inline void next_rnd_slot(unsigned int *it, struct ring *ring)
 {
 	*it = rand() % ring->layout.tp_frame_nr;

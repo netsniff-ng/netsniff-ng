@@ -439,7 +439,10 @@ static void xmit_fastpath_or_die(struct ctx *ctx)
 				i = rand() % plen;
 
 			kernel_may_pull_from_tx(&hdr->tp_h);
-			next_slot(&it, &tx_ring);
+
+			it++;
+			if (it >= tx_ring.layout.tp_frame_nr)
+				it = 0;
 
 			if (ctx->num > 0)
 				num--;
