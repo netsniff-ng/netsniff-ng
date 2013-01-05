@@ -950,7 +950,7 @@ static int8_t inf_fh_ps(struct pkt_buff *pkt, u8 *id)
 	if (fh_ps == NULL)
 		return 0;
 
-	tprintf("FH Param Set (%u, Len(%u)): ", *id, fh_ps->len);
+	tprintf(" FH Param Set (%u, Len(%u)): ", *id, fh_ps->len);
 	if (len_neq_error(fh_ps->len, 5))
 		return 0;
 	tprintf("Dwell Time: %fs, ", le16_to_cpu(fh_ps->dwell_time) * TU);
@@ -969,7 +969,7 @@ static int8_t inf_dsss_ps(struct pkt_buff *pkt, u8 *id)
 	if (dsss_ps == NULL)
 		return 0;
 
-	tprintf("DSSS Param Set (%u, Len(%u)): ", *id, dsss_ps->len);
+	tprintf(" DSSS Param Set (%u, Len(%u)): ", *id, dsss_ps->len);
 	if (len_neq_error(dsss_ps->len, 1))
 		return 0;
 	tprintf("Current Channel: %u", dsss_ps->curr_ch);
@@ -985,7 +985,7 @@ static int8_t inf_cf_ps(struct pkt_buff *pkt, u8 *id)
 	if (cf_ps == NULL)
 		return 0;
 
-	tprintf("CF Param Set (%u, Len(%u)): ", *id, cf_ps->len);
+	tprintf(" CF Param Set (%u, Len(%u)): ", *id, cf_ps->len);
 	if (len_neq_error(cf_ps->len, 6))
 		return 0;
 	tprintf("CFP Count: %u, ", cf_ps->cfp_cnt);
@@ -1004,7 +1004,7 @@ static int8_t inf_tim(struct pkt_buff *pkt, u8 *id)
 	if (tim == NULL)
 		return 0;
 
-	tprintf("TIM (%u, Len(%u)): ", *id, tim->len);
+	tprintf(" TIM (%u, Len(%u)): ", *id, tim->len);
 	if (len_lt_error(tim->len, 3))
 		return 0;
 	tprintf("DTIM Count: %u, ", tim->dtim_cnt);
@@ -1031,7 +1031,7 @@ static int8_t inf_ibss_ps(struct pkt_buff *pkt, u8 *id)
 	if (ibss_ps == NULL)
 		return 0;
 
-	tprintf("IBSS Param Set (%u, Len(%u)): ", *id, ibss_ps->len);
+	tprintf(" IBSS Param Set (%u, Len(%u)): ", *id, ibss_ps->len);
 	if (len_neq_error(ibss_ps->len, 2))
 		return 0;
 	tprintf("ATIM Window: %fs", le16_to_cpu(ibss_ps->atim_win) * TU);
@@ -1049,7 +1049,7 @@ static int8_t inf_country(struct pkt_buff *pkt, u8 *id)
 	if (country == NULL)
 		return 0;
 
-	tprintf("Country (%u, Len(%u)): ", *id, country->len);
+	tprintf(" Country (%u, Len(%u)): ", *id, country->len);
 	if (len_lt_error(country->len, 6))
 		return 0;
 	tprintf("Country String: %c%c%c", country->country_first,
@@ -1093,7 +1093,7 @@ static int8_t inf_hop_pp(struct pkt_buff *pkt, u8 *id)
 	if (hop_pp == NULL)
 		return 0;
 
-	tprintf("Hopping Pattern Param (%u, Len(%u)): ", *id, hop_pp->len);
+	tprintf(" Hopping Pattern Param (%u, Len(%u)): ", *id, hop_pp->len);
 	if (len_neq_error(hop_pp->len, 2))
 		return 0;
 	tprintf("Nr of Ch: %u", hop_pp->nr_ch);
@@ -1111,7 +1111,7 @@ static int8_t inf_hop_pt(struct pkt_buff *pkt, u8 *id)
 	if (hop_pt == NULL)
 		return 0;
 
-	tprintf("Hopping Pattern Table (%u, Len(%u)): ", *id, hop_pt->len);
+	tprintf(" Hopping Pattern Table (%u, Len(%u)): ", *id, hop_pt->len);
 	if (len_lt_error(hop_pt->len, 4))
 		return 0;
 	tprintf("Flag: %u, ", hop_pt->flag);
@@ -1142,7 +1142,7 @@ static int8_t inf_req(struct pkt_buff *pkt, u8 *id)
 	if (req == NULL)
 		return 0;
 
-	tprintf("Request Element (%u, Len(%u)): ", *id, req->len);
+	tprintf(" Request Element (%u, Len(%u)): ", *id, req->len);
 	if ((req->len - sizeof(*req) + 1) > 0) {
 		req_ids = pkt_pull(pkt, (req->len - sizeof(*req) + 1));
 		if (req_ids == NULL)
@@ -1164,7 +1164,7 @@ static int8_t inf_bss_load(struct pkt_buff *pkt, u8 *id)
 	if (bss_load == NULL)
 		return 0;
 
-	tprintf("BSS Load element (%u, Len(%u)): ", *id, bss_load->len);
+	tprintf(" BSS Load element (%u, Len(%u)): ", *id, bss_load->len);
 	if (len_neq_error(bss_load->len, 5))
 		return 0;
 	tprintf("Station Count: %u, ", le16_to_cpu(bss_load->station_cnt));
@@ -1189,7 +1189,7 @@ static int8_t inf_edca_ps(struct pkt_buff *pkt, u8 *id)
 	ac_vi = le32_to_cpu(edca_ps->ac_vi);
 	ac_vo = le32_to_cpu(edca_ps->ac_vo);
 
-	tprintf("EDCA Param Set (%u, Len(%u)): ", *id, edca_ps->len);
+	tprintf(" EDCA Param Set (%u, Len(%u)): ", *id, edca_ps->len);
 	if (len_neq_error(edca_ps->len, 18))
 		return 0;
 	tprintf("QoS Info: 0x%x (-> EDCA Param Set Update Count (%u),"
@@ -1234,7 +1234,7 @@ static int8_t inf_tspec(struct pkt_buff *pkt, u8 *id)
 	nom_msdu_size = le16_to_cpu(tspec->nom_msdu_size);
 	surplus_bandw_allow = le16_to_cpu(tspec->surplus_bandw_allow);
 
-	tprintf("TSPEC (%u, Len(%u)): ", *id, tspec->len);
+	tprintf(" TSPEC (%u, Len(%u)): ", *id, tspec->len);
 	if (len_neq_error(tspec->len, 55))
 		return 0;
 	tprintf("Traffic Type: %u, ", tspec->traffic_type);
@@ -1298,7 +1298,7 @@ static int8_t inf_tclas(struct pkt_buff *pkt, u8 *id)
 	if (frm_class == NULL)
 		return 0;
 
-	tprintf("TCLAS (%u, Len(%u)): ", *id, tclas->len);
+	tprintf(" TCLAS (%u, Len(%u)): ", *id, tclas->len);
 	if (len_lt_error(tclas->len, 3))
 		return 0;
 	tprintf("User Priority: %u, ", tclas->user_priority);
@@ -1516,7 +1516,7 @@ static int8_t inf_sched(struct pkt_buff *pkt, u8 *id)
 
 	info = le16_to_cpu(schedule->inf);
 
-	tprintf("Schedule (%u, Len(%u)): ", *id, schedule->len);
+	tprintf(" Schedule (%u, Len(%u)): ", *id, schedule->len);
 	if (len_neq_error(schedule->len, 12))
 		return 0;
 	
@@ -1542,7 +1542,7 @@ static int8_t inf_chall_txt(struct pkt_buff *pkt, u8 *id)
 	if (chall_txt == NULL)
 		return 0;
 
-	tprintf("Challenge Text (%u, Len(%u)): ", *id, chall_txt->len);
+	tprintf(" Challenge Text (%u, Len(%u)): ", *id, chall_txt->len);
 	if ((chall_txt->len - sizeof(*chall_txt) + 1) > 0) {
 		txt = pkt_pull(pkt, (chall_txt->len - sizeof(*chall_txt) + 1));
 		if (txt == NULL)
@@ -1564,7 +1564,7 @@ static int8_t inf_pwr_constr(struct pkt_buff *pkt, u8 *id)
 	if (pwr_constr == NULL)
 		return 0;
 
-	tprintf("Power Constraint (%u, Len(%u)): ", *id, pwr_constr->len);
+	tprintf(" Power Constraint (%u, Len(%u)): ", *id, pwr_constr->len);
 	if (len_neq_error(pwr_constr->len, 1))
 		return 0;
 
@@ -1581,7 +1581,7 @@ static int8_t inf_pwr_cap(struct pkt_buff *pkt, u8 *id)
 	if (pwr_cap == NULL)
 		return 0;
 
-	tprintf("Power Capability (%u, Len(%u)): ", *id, pwr_cap->len);
+	tprintf(" Power Capability (%u, Len(%u)): ", *id, pwr_cap->len);
 	if (len_neq_error(pwr_cap->len, 2))
 		return 0;
 
@@ -1599,7 +1599,7 @@ static int8_t inf_tpc_req(struct pkt_buff *pkt, u8 *id)
 	if (tpc_req == NULL)
 		return 0;
 
-	tprintf("TPC Request (%u, Len(%u))", *id, tpc_req->len);
+	tprintf(" TPC Request (%u, Len(%u))", *id, tpc_req->len);
 	if (len_neq_error(tpc_req->len, 0))
 		return 0;
 
@@ -1614,7 +1614,7 @@ static int8_t inf_tpc_rep(struct pkt_buff *pkt, u8 *id)
 	if (tpc_rep == NULL)
 		return 0;
 
-	tprintf("TPC Report (%u, Len(%u)): ", *id, tpc_rep->len);
+	tprintf(" TPC Report (%u, Len(%u)): ", *id, tpc_rep->len);
 	if (len_neq_error(tpc_rep->len, 2))
 		return 0;
 
@@ -1633,7 +1633,7 @@ static int8_t inf_supp_ch(struct pkt_buff *pkt, u8 *id)
 	if (supp_ch == NULL)
 		return 0;
 
-	tprintf("Supp Channels (%u, Len(%u)): ", *id, supp_ch->len);
+	tprintf(" Supp Channels (%u, Len(%u)): ", *id, supp_ch->len);
 	if (len_lt_error(supp_ch->len, 2))
 		return 0;
 
@@ -1666,7 +1666,7 @@ static int8_t inf_ch_sw_ann(struct pkt_buff *pkt, u8 *id)
 	if (ch_sw_ann == NULL)
 		return 0;
 
-	tprintf("Channel Switch Announc (%u, Len(%u)): ", *id, ch_sw_ann->len);
+	tprintf(" Channel Switch Announc (%u, Len(%u)): ", *id, ch_sw_ann->len);
 	if (len_neq_error(ch_sw_ann->len, 3))
 		return 0;
 
@@ -1705,7 +1705,7 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 	if (meas_req == NULL)
 		return 0;
 
-	tprintf("Measurement Req (%u, Len(%u)): ", *id, meas_req->len);
+	tprintf(" Measurement Req (%u, Len(%u)): ", *id, meas_req->len);
 	if (len_lt_error(meas_req->len, 3))
 		return 0;
 
@@ -2084,7 +2084,7 @@ static int8_t inf_meas_rep(struct pkt_buff *pkt, u8 *id)
 	if (meas_rep == NULL)
 		return 0;
 
-	tprintf("Measurement Rep (%u, Len(%u)): ", *id, meas_rep->len);
+	tprintf(" Measurement Rep (%u, Len(%u)): ", *id, meas_rep->len);
 	if (len_lt_error(meas_rep->len, 3))
 		return 0;
 
@@ -2442,7 +2442,7 @@ static int8_t inf_quiet(struct pkt_buff *pkt, u8 *id)
 	if (quiet == NULL)
 		return 0;
 
-	tprintf("Quit (%u, Len(%u)): ", *id, quiet->len);
+	tprintf(" Quit (%u, Len(%u)): ", *id, quiet->len);
 	if (len_neq_error(quiet->len, 6))
 		return 0;
 
@@ -2464,7 +2464,7 @@ static int8_t inf_ibss_dfs(struct pkt_buff *pkt, u8 *id)
 	if (ibss_dfs == NULL)
 		return 0;
 
-	tprintf("IBSS DFS (%u, Len(%u)): ", *id, ibss_dfs->len);
+	tprintf(" IBSS DFS (%u, Len(%u)): ", *id, ibss_dfs->len);
 	if (len_lt_error(ibss_dfs->len, 7))
 		return 0;
 
@@ -2502,7 +2502,7 @@ static int8_t inf_erp(struct pkt_buff *pkt, u8 *id)
 	if (erp == NULL)
 		return 0;
 
-	tprintf("ERP (%u, Len(%u)): ", *id, erp->len);
+	tprintf(" ERP (%u, Len(%u)): ", *id, erp->len);
 	if (len_neq_error(erp->len, 1))
 		return 0;
 	tprintf("Non ERP Present (%u), ", erp->param & 0x1);
@@ -2521,7 +2521,7 @@ static int8_t inf_ts_del(struct pkt_buff *pkt, u8 *id)
 	if (ts_del == NULL)
 		return 0;
 
-	tprintf("TS Delay (%u, Len(%u)): ", *id, ts_del->len);
+	tprintf(" TS Delay (%u, Len(%u)): ", *id, ts_del->len);
 	if (len_neq_error(ts_del->len, 4))
 		return 0;
 	tprintf("Delay (%fs)", le32_to_cpu(ts_del->delay) * TU);
@@ -2538,7 +2538,7 @@ static int8_t inf_tclas_proc(struct pkt_buff *pkt, u8 *id)
 	if (tclas_proc == NULL)
 		return 0;
 
-	tprintf("TCLAS Procesing (%u, Len(%u)): ", *id, tclas_proc->len);
+	tprintf(" TCLAS Procesing (%u, Len(%u)): ", *id, tclas_proc->len);
 	if (len_neq_error(tclas_proc->len, 1))
 		return 0;
 	tprintf("Processing (%u)", tclas_proc->proc);
@@ -2561,7 +2561,7 @@ static int8_t inf_ht_cap(struct pkt_buff *pkt, u8 *id)
 	beam_cap = le32_to_cpu(ht_cap->beam_cap);
 	ext_cap = le16_to_cpu(ht_cap->ext_cap);
 
-	tprintf("HT Capabilities (%u, Len(%u)): ", *id, ht_cap->len);
+	tprintf(" HT Capabilities (%u, Len(%u)): ", *id, ht_cap->len);
 	if (len_neq_error(ht_cap->len, 26))
 		return 0;
 	tprintf("Info (LDCP Cod Cap (%u), Supp Ch Width Set (%u),"
@@ -2636,7 +2636,7 @@ static int8_t inf_qos_cap(struct pkt_buff *pkt, u8 *id)
 	if (qos_cap == NULL)
 		return 0;
 
-	tprintf("QoS Capabilities (%u, Len(%u)): ", *id, qos_cap->len);
+	tprintf(" QoS Capabilities (%u, Len(%u)): ", *id, qos_cap->len);
 	if (len_neq_error(qos_cap->len, 1))
 		return 0;
 
@@ -2661,7 +2661,7 @@ static int8_t inf_ext_supp_rates(struct pkt_buff *pkt, u8 *id)
 	if (ext_supp_rates == NULL)
 		return 0;
 
-	tprintf("Ext Support Rates (%u, Len(%u)): ", *id, ext_supp_rates->len);
+	tprintf(" Ext Support Rates (%u, Len(%u)): ", *id, ext_supp_rates->len);
 
 	if ((ext_supp_rates->len - sizeof(*ext_supp_rates) + 1) > 0) {
 		rates = pkt_pull(pkt, ext_supp_rates->len);
@@ -3029,7 +3029,7 @@ static int8_t inf_vend_spec(struct pkt_buff *pkt, u8 *id)
 	if (vend_spec == NULL)
 		return 0;
 
-	tprintf("Vendor Specific (%u, Len (%u)): ", *id, vend_spec->len);
+	tprintf(" Vendor Specific (%u, Len (%u)): ", *id, vend_spec->len);
 
 	data = pkt_pull(pkt, vend_spec->len);
 	if (data == NULL)
