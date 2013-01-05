@@ -17,10 +17,10 @@ Creating own >Information Elements< PCAPs based on a beacon frame:
 2.	append your >Informations Elements< data
 
 	example:
-	00 09 6D 61 72 74 69 6E 65 74 33
+	00 0B 6E 65 74 73 6E 69 66 66 2D 6E 67
 	
-	this adds a SSID Information Element with SSID: martinet3
+	this adds a SSID Information Element with SSID: netsniff-ng
 	
 3.	Go to byte position 0x20 (content 0x24) and add up the number of
-	appendedvbytes (0xB). Do the same at byte position 0x24. This both
+	appended bytes (0xD), this results in 0x31. Do the same at byte position 0x24. This both
 	values describe the frame length and capture length.
