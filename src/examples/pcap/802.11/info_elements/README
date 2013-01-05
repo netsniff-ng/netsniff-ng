@@ -1,4 +1,5 @@
 PCAPs for testing 802.11 >Infomation Elements< based on beacon frames.
+Number in filename presents the element ID.
 
 	general structure >Infomation Elements<
 	      +-----------+--------+-------------+

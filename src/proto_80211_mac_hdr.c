@@ -200,7 +200,7 @@ struct element_ssid {
 
 struct element_supp_rates {
 	u8 len;
-	u8 SSID[0];
+	u8 rates[0];
 } __packed;
 
 struct element_fh_ps {
@@ -922,7 +922,7 @@ static int8_t inf_supp_rates(struct pkt_buff *pkt, u8 *id)
 	if (supp_rates == NULL)
 		return 0;
 
-	tprintf("Rates (%u, Len (%u)): ", *id, supp_rates->len);
+	tprintf(" Supp. Rates (%u, Len (%u)): ", *id, supp_rates->len);
 	if (len_lt_error(supp_rates->len, 1))
 		return 0;
 
@@ -932,9 +932,10 @@ static int8_t inf_supp_rates(struct pkt_buff *pkt, u8 *id)
 			return 0;
 
 		for (i = 0; i < supp_rates->len; i++)
-			tprintf("%g ", (rates[i] & 0x80) ?
-				((rates[i] & 0x3f) * 0.5) :
-				data_rates(rates[i]));
+			tprintf("%g%s ", ((rates[i] & 0x80) >> 7) ?
+					data_rates(rates[i] & 0x3f) :
+					((rates[i] & 0x3f) * 0.5),
+					((rates[i] & 0x80) >> 7) ? "(B)" : "");
 		return 1;
 	}
 
