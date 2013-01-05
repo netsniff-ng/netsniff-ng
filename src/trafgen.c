@@ -413,8 +413,7 @@ static void xmit_fastpath_or_die(struct ctx *ctx)
 	bug_on(gettimeofday(&start, NULL));
 
 	while (likely(sigint == 0) && likely(num > 0)) {
-		while (user_may_pull_from_tx(tx_ring.frames[it].iov_base) &&
-		       likely(num > 0)) {
+		while (user_may_pull_from_tx(tx_ring.frames[it].iov_base) && likely(num > 0)) {
 			hdr = tx_ring.frames[it].iov_base;
 
 			/* Kernel assumes: data = ph.raw + po->tp_hdrlen -
@@ -434,10 +433,10 @@ static void xmit_fastpath_or_die(struct ctx *ctx)
 
 			if (!ctx->rand) {
 				i++;
-				atomic_cmp_swp(&i, plen, 0);
-			} else {
+				if (i >= plen)
+					i = 0;
+			} else
 				i = rand() % plen;
-			}
 
 			kernel_may_pull_from_tx(&hdr->tp_h);
 			next_slot(&it, &tx_ring);
