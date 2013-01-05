@@ -1017,7 +1017,7 @@ static int8_t inf_tim(struct pkt_buff *pkt, u8 *id)
 
 		tprintf("Partial Virtual Bitmap: 0x");
 		for(u8 i=0; i < (tim->len - sizeof(*tim) + 1); i++)
-			tprintf("%.2x ", bmp[i]);
+			tprintf("%.2x", bmp[i]);
 	}
 
 	return 1;
