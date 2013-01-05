@@ -40,7 +40,7 @@ struct frame_map {
 };
 
 struct ring {
-	struct iovec *frames __cacheline_aligned;
+	struct iovec *frames;
 	uint8_t *mm_space;
 	size_t mm_len;
 	struct tpacket_req layout;
