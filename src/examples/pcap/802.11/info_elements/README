@@ -1,0 +1,25 @@
+PCAPs for testing 802.11 >Infomation Elements< based on beacon frames.
+
+	general structure >Infomation Elements<
+	      +-----------+--------+-------------+
+	      |Element ID | Length | Information |
+	      +-----------+--------+-------------+
+	Bits	    8		8	variable
+
+	for further data structure of this elements look at 802.11 spec
+
+
+Creating own >Information Elements< PCAPs based on a beacon frame:
+
+1.	open beacon_sub_template.pcap with a hexeditor
+
+2.	append your >Informations Elements< data
+
+	example:
+	00 09 6D 61 72 74 69 6E 65 74 33
+	
+	this adds a SSID Information Element with SSID: martinet3
+	
+3.	Go to byte position 0x20 (content 0x24) and add up the number of
+	appendedvbytes (0xB). Do the same at byte position 0x24. This both
+	values describe the frame length and capture length.
