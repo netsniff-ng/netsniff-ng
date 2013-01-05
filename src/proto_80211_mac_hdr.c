@@ -1055,7 +1055,7 @@ static int8_t inf_country(struct pkt_buff *pkt, u8 *id)
 	tprintf("Country String: %c%c%c", country->country_first,
 		country->country_sec, country->country_third);
 
-	for (i = 0; i < (country->len - 3); i += 3) {
+	for (i = country->len % 3; i < (country->len - 3); i += 3) {
 		struct element_country_tripled *country_tripled;
 
 		country_tripled = (struct element_country_tripled *)
@@ -1074,7 +1074,7 @@ static int8_t inf_country(struct pkt_buff *pkt, u8 *id)
 		}
 	}
 
-	if(country->len % 2) {
+	if(country->len % 3) {
 		pad = pkt_pull(pkt, 1);
 		if (pad == NULL)
 			return 0;
