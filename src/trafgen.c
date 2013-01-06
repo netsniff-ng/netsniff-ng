@@ -507,6 +507,9 @@ int main(int argc, char **argv)
 		case 't':
 			slow = true;
 			ctx.gap = strtoul(optarg, NULL, 0);
+			if (ctx.gap > 0)
+				/* Fall back to single core to have correct timing */
+				cpus = 1;
 			break;
 		case 'S':
 			ptr = optarg;
