@@ -22,5 +22,6 @@ Creating own >Information Elements< PCAPs based on a beacon frame:
 	this adds a SSID Information Element with SSID: netsniff-ng
 	
 3.	Go to byte position 0x20 (content 0x24) and add up the number of
-	appended bytes (0xD), this results in 0x31. Do the same at byte position 0x24. This both
-	values describe the frame length and capture length.
+	appended bytes (0xD), this results in 0x31. Do the same at byte position
+	0x24. This both values describe the frame length and capture length.
+	Be aware of max frame length.
