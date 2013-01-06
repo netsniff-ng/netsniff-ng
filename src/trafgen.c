@@ -588,6 +588,9 @@ int main(int argc, char **argv)
 	irq = device_irq_number(ctx.device);
 	device_reset_irq_affinity(irq);
 
+	if (num > 0 && num <= cpus)
+		cpus = 1;
+
 	for (i = 0; i < cpus; i++) {
 		pid_t pid = fork();
 
