@@ -38,7 +38,7 @@ struct packet_dyn {
 	size_t rlen;
 };
 
-extern int compile_packets(char *file, int verbose);
+extern int compile_packets(char *file, int verbose, int cpu);
 extern void cleanup_packets(void);
 
 #endif /* TRAFGEN_CONF */

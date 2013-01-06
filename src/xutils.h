@@ -50,6 +50,7 @@ extern int device_mtu(const char *ifname);
 extern int device_address(const char *ifname, int af,
 			  struct sockaddr_storage *ss);
 extern int device_irq_number(const char *ifname);
+extern void device_reset_irq_affinity(int irq);
 extern int device_bind_irq_to_cpu(int irq, int cpu);
 extern void sock_print_net_stats(int sock, unsigned long skipped);
 extern int device_ifindex(const char *ifname);
@@ -84,6 +85,7 @@ extern void set_epoll_descriptor(int fd_epoll, int action,
 				 int fd_toadd, int events);
 extern int set_epoll_descriptor2(int fd_epoll, int action,
 				 int fd_toadd, int events);
+extern void cpu_affinity(int cpu);
 extern int set_cpu_affinity(char *str, int inverted);
 extern int set_proc_prio(int prio);
 extern int set_sched_status(int policy, int priority);

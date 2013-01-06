@@ -639,6 +639,19 @@ int device_irq_number(const char *ifname)
 	return irq;
 }
 
+void device_reset_irq_affinity(int irq)
+{
+	int ret;
+	char cmd[256];
+
+	slprintf(cmd, sizeof(cmd),
+		 "cat /proc/irq/default_smp_affinity >/proc/irq/%d/smp_affinity", irq);
+
+	ret = system(cmd);
+	if (ret < 0)
+		panic("Cannot execute system(2)!\n");
+}
+
 int device_bind_irq_to_cpu(int irq, int cpu)
 {
 	int ret;
@@ -827,6 +840,20 @@ static inline char *next_token(char *q, int sep)
 	if (q)
 		q++;
 	return q;
+}
+
+void cpu_affinity(int cpu)
+{
+	int ret;
+	cpu_set_t cpu_bitmask;
+
+	CPU_ZERO(&cpu_bitmask);
+	CPU_SET(cpu, &cpu_bitmask);
+
+	ret = sched_setaffinity(getpid(), sizeof(cpu_bitmask),
+				&cpu_bitmask);
+	if (ret)
+		panic("Can't set this cpu affinity!\n");
 }
 
 int set_cpu_affinity(char *str, int inverted)

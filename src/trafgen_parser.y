@@ -370,7 +370,7 @@ void cleanup_packets(void)
 	free(packet_dyn);
 }
 
-int compile_packets(char *file, int verbose)
+int compile_packets(char *file, int verbose, int cpu)
 {
 	yyin = fopen(file, "r");
 	if (!yyin)
@@ -380,16 +380,18 @@ int compile_packets(char *file, int verbose)
 	yyparse();
 	finalize_packet();
 
-	if (verbose) {
-		dump_conf();
-	} else {
-		int i;
-		size_t total_len = 0;
+	if (cpu == 0) {
+		if (verbose) {
+			dump_conf();
+		} else {
+			int i;
+			size_t total_len = 0;
 
-		printf("%6zu packets to schedule\n", plen);
-		for (i = 0; i < plen; ++i)
-			total_len += packets[i].len;
-		printf("%6zu bytes in total\n", total_len);
+			printf("%6zu packets to schedule\n", plen);
+			for (i = 0; i < plen; ++i)
+				total_len += packets[i].len;
+			printf("%6zu bytes in total\n", total_len);
+		}
 	}
 
 	fclose(yyin);

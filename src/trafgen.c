@@ -30,12 +30,14 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/wait.h>
+#include <sys/mman.h>
+#include <net/ethernet.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <time.h>
-#include <net/ethernet.h>
 
 #include "xmalloc.h"
 #include "die.h"
@@ -51,7 +53,11 @@ struct ctx {
 	bool rand, rfraw, jumbo_support, verbose;
 	unsigned long kpull, num, gap, reserve_size;
 	char *device, *device_trans;
-	int cpu;
+};
+
+struct cpu_stats {
+	unsigned long long tx_packets, tx_bytes;
+	unsigned long tv_sec, tv_usec;
 };
 
 sig_atomic_t sigint = 0;
@@ -62,7 +68,7 @@ size_t plen = 0;
 struct packet_dyn *packet_dyn = NULL;
 size_t dlen = 0;
 
-static const char *short_options = "d:c:n:t:vJhS:HQb:B:rk:i:o:VRA";
+static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRf";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"out",			required_argument,	NULL, 'o'},
@@ -71,16 +77,11 @@ static const struct option long_options[] = {
 	{"num",			required_argument,	NULL, 'n'},
 	{"gap",			required_argument,	NULL, 't'},
 	{"ring-size",		required_argument,	NULL, 'S'},
-	{"bind-cpu",		required_argument,	NULL, 'b'},
-	{"unbind-cpu",		required_argument,	NULL, 'B'},
 	{"kernel-pull",		required_argument,	NULL, 'k'},
 	{"jumbo-support",	no_argument,		NULL, 'J'},
 	{"rfraw",		no_argument,		NULL, 'R'},
 	{"rand",		no_argument,		NULL, 'r'},
-	{"prio-high",		no_argument,		NULL, 'H'},
-	{"notouch-irq",		no_argument,		NULL, 'Q'},
 	{"verbose",		no_argument,		NULL, 'V'},
-	{"no-sock-mem",		no_argument,		NULL, 'A'},
 	{"version",		no_argument,		NULL, 'v'},
 	{"help",		no_argument,		NULL, 'h'},
 	{NULL, 0, NULL, 0}
@@ -91,6 +92,8 @@ static int sock;
 static struct itimerval itimer;
 
 static unsigned long interval = TX_KERNEL_PULL_INT;
+
+static struct cpu_stats *stats;
 
 #define set_system_socket_memory(vals) \
 	do { \
@@ -142,11 +145,10 @@ static void header(void)
 
 static void help(void)
 {
-	printf("\ntrafgen %s, zero-copy network packet generator\n", VERSION_STRING);
+	printf("\ntrafgen %s, multithreaded zero-copy network packet generator\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: trafgen [options]\n"
 	     "Options:\n"
-/*	     "  -o|-d|--out|--dev <netdev|pcap>   Networking Device i.e., eth0 or pcap\n" */
 	     "  -o|-d|--out|--dev <netdev>        Networking Device i.e., eth0\n"
 	     "  -i|-c|--in|--conf <cfg-file>      Packet configuration file\n"
 	     "  -J|--jumbo-support                Support for 64KB Super Jumbo Frames\n"
@@ -158,28 +160,20 @@ static void help(void)
 	     "  -r|--rand                         Randomize packet selection process\n"
 	     "                                    Instead of a round robin selection\n"
 	     "  -t|--gap <uint>                   Interpacket gap in us (approx)\n"
-	     "  -A|--no-sock-mem                  Don't tune core socket memory\n"
 	     "  -S|--ring-size <size>             Manually set ring size to <size>:\n"
 	     "                                    mmap space in KB/MB/GB, e.g. \'10MB\'\n"
 	     "  -k|--kernel-pull <uint>           Kernel pull from user interval in us\n"
 	     "                                    Default is 10us where the TX_RING\n"
 	     "                                    is populated with payload from uspace\n"
-	     "  -b|--bind-cpu <cpu>               Bind to specific CPU (or CPU-range)\n"
-	     "  -B|--unbind-cpu <cpu>             Forbid to use specific CPU (or CPU-range)\n"
-	     "  -H|--prio-high                    Make this high priority process\n"
-	     "  -Q|--notouch-irq                  Do not touch IRQ CPU affinity of NIC\n"
 	     "  -V|--verbose                      Be more verbose\n"
 	     "  -v|--version                      Show version\n"
 	     "  -h|--help                         Guess what?!\n\n"
 	     "Examples:\n"
 	     "  See trafgen.txf for configuration file examples.\n"
-	     "  trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0\n"
-	     "  trafgen --dev wlan0 --rfraw --conf beacon-test.txf --bind-cpu 0 -A -V\n"
-	     "  trafgen --out eth0 --in trafgen.txf --bind-cpu 0\n"
-/*	     "  trafgen --out test.pcap --in trafgen.txf --bind-cpu 0\n" */
+	     "  trafgen --dev eth0 --conf trafgen.txf\n"
+	     "  trafgen --dev wlan0 --rfraw --conf beacon-test.txf -V\n"
 	     "  trafgen --dev eth0 --conf trafgen.txf --rand --gap 1000\n"
-	     "  trafgen --dev eth0 --conf trafgen.txf --rand --num 1400000 -k1000\n"
-	     "  trafgen --dev eth0 --conf trafgen.txf --bind-cpu 0 --num 10 --rand\n\n"
+	     "  trafgen --dev eth0 --conf trafgen.txf --rand --num 1400000 -k1000\n\n"
 	     "Note:\n"
 	     "  This tool is targeted for network developers! You should\n"
 	     "  be aware of what you are doing and what these options above\n"
@@ -195,7 +189,7 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\ntrafgen %s, zero-copy network packet generator\n", VERSION_STRING);
+	printf("\ntrafgen %s, multithreaded zero-copy network packet generator\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
@@ -252,26 +246,39 @@ static inline void apply_randomizer(int rand_id)
 	}
 }
 
-static void xmit_precheck(const struct ctx *ctx)
+static struct cpu_stats *setup_shared_var(unsigned long cpus)
 {
-	int i;
-	size_t mtu;
+	int fd;
+	char zbuff[cpus * sizeof(struct cpu_stats)];
+	struct cpu_stats *buff;
 
-	if (!ctx)
-		panic("Panic, invalid args for TX trigger!\n");
-	if (plen == 0 || plen != dlen)
-		panic("Panic, invalid args for TX trigger!\n");
-	if (!ctx->rfraw && !device_up_and_running(ctx->device))
-		panic("Device not up and running!\n");
-	for (mtu = device_mtu(ctx->device), i = 0; i < plen; ++i) {
-		if (packets[i].len > mtu + 14)
-			panic("Device MTU < than your packet size!\n");
-		if (packets[i].len <= 14)
-			panic("Device packet size too short!\n");
-	}
+	memset(zbuff, 0, sizeof(zbuff));
+
+	fd = creat(".tmp_mmap", S_IRUSR | S_IWUSR);
+	bug_on(fd < 0);
+	close(fd);
+
+	fd = open_or_die_m(".tmp_mmap", O_RDWR | O_CREAT | O_TRUNC,
+			   S_IRUSR | S_IWUSR);
+	write_or_die(fd, zbuff, sizeof(zbuff));
+
+	buff = (void *) mmap(0, sizeof(zbuff), PROT_READ | PROT_WRITE,
+			     MAP_SHARED, fd, 0);
+	if (buff == (void *) -1)
+		panic("Cannot setup shared variable!\n");
+
+	close(fd);
+	unlink(".tmp_mmap");
+
+	return buff;
 }
 
-static void xmit_slowpath_or_die(struct ctx *ctx)
+static void destroy_shared_var(void *buff, unsigned long cpus)
+{
+	munmap(buff, cpus * sizeof(struct cpu_stats));
+}
+
+static void xmit_slowpath_or_die(struct ctx *ctx, int cpu)
 {
 	int ret;
 	unsigned long num = 1, i = 0;
@@ -280,30 +287,11 @@ static void xmit_slowpath_or_die(struct ctx *ctx)
 	struct sockaddr_ll saddr = {
 		.sll_family = PF_PACKET,
 		.sll_halen = ETH_ALEN,
+		.sll_ifindex = device_ifindex(ctx->device),
 	};
-
-	if (ctx->rfraw) {
-		ctx->device_trans = xstrdup(ctx->device);
-		xfree(ctx->device);
-
-		enter_rfmon_mac80211(ctx->device_trans, &ctx->device);
-	}
 
 	if (ctx->num > 0)
 		num = ctx->num;
-
-	if (ctx->verbose) {
-		if (ctx->rand)
-			printf("Note: randomized output makes trafgen slower!\n");
-		printf("MD: TX sendto %s %luus", ctx->rand ? "RND" : "RR", ctx->gap);
-		if (ctx->rfraw)
-			printf(" 802.11 raw via %s", ctx->device);
-		printf("\n\n");
-	}
-	printf("Running! Hang up with ^C!\n\n");
-	fflush(stdout);
-
-	saddr.sll_ifindex = device_ifindex(ctx->device);
 
 	bug_on(gettimeofday(&start, NULL));
 
@@ -313,8 +301,8 @@ static void xmit_slowpath_or_die(struct ctx *ctx)
 
 		ret = sendto(sock, packets[i].payload, packets[i].len, 0,
 			     (struct sockaddr *) &saddr, sizeof(saddr));
-		if (ret < 0)
-			whine("sendto error!\n");
+		if (unlikely(ret < 0))
+			panic("Sendto error: %s!\n", strerror(errno));
 
 		tx_bytes += packets[i].len;
 		tx_packets++;
@@ -336,20 +324,15 @@ static void xmit_slowpath_or_die(struct ctx *ctx)
 	bug_on(gettimeofday(&end, NULL));
 	diff = tv_subtract(end, start);
 
-	if (ctx->rfraw)
-		leave_rfmon_mac80211(ctx->device_trans, ctx->device);
-
-	fflush(stdout);
-	printf("\n");
-	printf("\r%12llu packets outgoing\n", tx_packets);
-	printf("\r%12llu bytes outgoing\n", tx_bytes);
-	printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec, diff.tv_usec);
-
+	stats[cpu].tx_packets = tx_packets;
+	stats[cpu].tx_bytes = tx_bytes;
+	stats[cpu].tv_sec = diff.tv_sec;
+	stats[cpu].tv_usec = diff.tv_usec;
 }
 
-static void xmit_fastpath_or_die(struct ctx *ctx)
+static void xmit_fastpath_or_die(struct ctx *ctx, int cpu)
 {
-	int irq, ifindex;
+	int ifindex = device_ifindex(ctx->device);
 	uint8_t *out = NULL;
 	unsigned int it = 0;
 	unsigned long num = 1, i = 0, size;
@@ -358,16 +341,8 @@ static void xmit_fastpath_or_die(struct ctx *ctx)
 	struct timeval start, end, diff;
 	unsigned long long tx_bytes = 0, tx_packets = 0;
 
-	if (ctx->rfraw) {
-		ctx->device_trans = xstrdup(ctx->device);
-		xfree(ctx->device);
-
-		enter_rfmon_mac80211(ctx->device_trans, &ctx->device);
-	}
-
 	fmemset(&tx_ring, 0, sizeof(tx_ring));
 
-	ifindex = device_ifindex(ctx->device);
 	size = ring_size(ctx->device, ctx->reserve_size);
 
 	set_sock_prio(sock, 512);
@@ -379,30 +354,10 @@ static void xmit_fastpath_or_die(struct ctx *ctx)
 	alloc_tx_ring_frames(&tx_ring);
 	bind_tx_ring(sock, &tx_ring, ifindex);
 
-	if (ctx->cpu >= 0 && ifindex > 0) {
-		irq = device_irq_number(ctx->device);
-		device_bind_irq_to_cpu(irq, ctx->cpu);
-
-		if (ctx->verbose)
-			printf("IRQ: %s:%d > CPU%d\n",
-			       ctx->device, irq, ctx->cpu);
-	}
-
 	if (ctx->kpull)
 		interval = ctx->kpull;
 	if (ctx->num > 0)
 		num = ctx->num;
-
-	if (ctx->verbose) {
-		if (ctx->rand)
-			printf("Note: randomized output makes trafgen slower!\n");
-		printf("MD: TX fastpath %s %luus", ctx->rand ? "RND" : "RR", interval);
-		if (ctx->rfraw)
-			printf(" 802.11 raw via %s", ctx->device);
-		printf("\n\n");
-	}
-	printf("Running! Hang up with ^C!\n\n");
-	fflush(stdout);
 
 	itimer.it_interval.tv_sec = 0;
 	itimer.it_interval.tv_usec = interval;
@@ -459,27 +414,43 @@ static void xmit_fastpath_or_die(struct ctx *ctx)
 
 	destroy_tx_ring(sock, &tx_ring);
 
-	if (ctx->rfraw)
-		leave_rfmon_mac80211(ctx->device_trans, ctx->device);
-
-	fflush(stdout);
-	printf("\n");
-	printf("\r%12llu packets outgoing\n", tx_packets);
-	printf("\r%12llu bytes outgoing\n", tx_bytes);
-	printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec, diff.tv_usec);
+	stats[cpu].tx_packets = tx_packets;
+	stats[cpu].tx_bytes = tx_bytes;
+	stats[cpu].tv_sec = diff.tv_sec;
+	stats[cpu].tv_usec = diff.tv_usec;
 }
 
-static void main_loop(struct ctx *ctx, char *confname, bool slow)
+static void xmit_packet_precheck(const struct ctx *ctx)
 {
-	compile_packets(confname, ctx->verbose);
-	xmit_precheck(ctx);
+	int i;
+	size_t mtu;
+
+	bug_on(plen == 0 || plen != dlen);
+
+	for (mtu = device_mtu(ctx->device), i = 0; i < plen; ++i) {
+		if (packets[i].len > mtu + 14)
+			panic("Device MTU < than packet%d's size!\n", i);
+		if (packets[i].len <= 14)
+			panic("Packet%d's size too short!\n", i);
+	}
+}
+
+static void main_loop(struct ctx *ctx, char *confname, bool slow, int cpu)
+{
+	compile_packets(confname, ctx->verbose, cpu);
+	xmit_packet_precheck(ctx);
+
+	if (cpu == 0) {
+		printf("Running! Hang up with ^C!\n\n");
+		fflush(stdout);
+	}
 
 	sock = pf_socket();
 
 	if (slow)
-		xmit_slowpath_or_die(ctx);
+		xmit_slowpath_or_die(ctx, cpu);
 	else
-		xmit_fastpath_or_die(ctx);
+		xmit_fastpath_or_die(ctx, cpu);
 
 	close(sock);
 
@@ -488,15 +459,15 @@ static void main_loop(struct ctx *ctx, char *confname, bool slow)
 
 int main(int argc, char **argv)
 {
-	int c, opt_index, i, j, vals[4] = {0};
+	bool slow = false;
+	int c, opt_index, i, j, vals[4] = {0}, irq;
 	char *confname = NULL, *ptr;
-	bool prio_high = false, setsockmem = true, slow = false;
+	unsigned long cpus = get_number_cpus_online(), num = 0;
+	unsigned long long tx_packets, tx_bytes;
 	struct ctx ctx;
 
 	srand(time(NULL));
-
 	fmemset(&ctx, 0, sizeof(ctx));
-	ctx.cpu = -1;
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 				&opt_index)) != EOF) {
@@ -528,17 +499,14 @@ int main(int argc, char **argv)
 			confname = xstrdup(optarg);
 			break;
 		case 'k':
-			ctx.kpull = atol(optarg);
+			ctx.kpull = strtoul(optarg, NULL, 0);
 			break;
 		case 'n':
-			ctx.num = atol(optarg);
+			num = strtoul(optarg, NULL, 0);
 			break;
 		case 't':
 			slow = true;
-			ctx.gap = atol(optarg);
-			break;
-		case 'A':
-			setsockmem = false;
+			ctx.gap = strtoul(optarg, NULL, 0);
 			break;
 		case 'S':
 			ptr = optarg;
@@ -562,32 +530,16 @@ int main(int argc, char **argv)
 
 			ctx.reserve_size *= strtol(optarg, NULL, 0);
 			break;
-		case 'b':
-			set_cpu_affinity(optarg, 0);
-			/* Take the first CPU for rebinding the IRQ */
-			if (ctx.cpu != -2)
-				ctx.cpu = strtol(optarg, NULL, 0);
-			break;
-		case 'B':
-			set_cpu_affinity(optarg, 1);
-			break;
-		case 'H':
-			prio_high = true;
-			break;
-		case 'Q':
-			ctx.cpu = -2;
-			break;
 		case '?':
 			switch (optopt) {
 			case 'd':
 			case 'c':
 			case 'n':
+			case 'f':
 			case 'S':
-			case 'b':
 			case 'o':
 			case 'i':
 			case 'k':
-			case 'B':
 			case 't':
 				panic("Option -%c requires an argument!\n",
 				      optopt);
@@ -619,18 +571,67 @@ int main(int argc, char **argv)
 
 	header();
 
-	if (prio_high) {
-		set_proc_prio(get_default_proc_prio());
-		set_sched_status(get_default_sched_policy(), get_default_sched_prio());
+	stats = setup_shared_var(cpus);
+
+	set_system_socket_memory(vals);
+
+	if (ctx.rfraw) {
+		ctx.device_trans = xstrdup(ctx.device);
+		xfree(ctx.device);
+
+		enter_rfmon_mac80211(ctx.device_trans, &ctx.device);
+		sleep(0);
 	}
 
-	if (setsockmem)
-		set_system_socket_memory(vals);
+	irq = device_irq_number(ctx.device);
+	device_reset_irq_affinity(irq);
 
-	main_loop(&ctx, confname, slow);
+	for (i = 0; i < cpus; i++) {
+		pid_t pid = fork();
 
-	if (setsockmem)
-		reset_system_socket_memory(vals);
+		switch (pid) {
+		case 0:
+			if (num > 0) {
+				ctx.num = num / cpus;
+				if (i == cpus - 1)
+					ctx.num += num % cpus;
+			}
+
+			cpu_affinity(i);
+			main_loop(&ctx, confname, slow, i);
+
+			goto thread_out;
+		case -1:
+			panic("Cannot fork processes!\n");
+		}
+	}
+
+	for (i = 0; i < cpus; i++) {
+		int status;
+
+		wait(&status);
+	}
+
+	if (ctx.rfraw)
+		leave_rfmon_mac80211(ctx.device_trans, ctx.device);
+
+	reset_system_socket_memory(vals);
+
+	for (i = 0, tx_packets = tx_bytes = 0; i < cpus; i++) {
+		tx_packets += stats[i].tx_packets;
+		tx_bytes += stats[i].tx_bytes;
+	}
+
+	fflush(stdout);
+	printf("\n");
+	printf("\r%12llu packets outgoing\n", tx_packets);
+	printf("\r%12llu bytes outgoing\n", tx_bytes);
+	for (i = 0; i < cpus; i++)
+		printf("\r%12lu sec, %lu usec on CPU%d\n",
+		       stats[i].tv_sec, stats[i].tv_usec, i);
+
+thread_out:
+	destroy_shared_var(stats, cpus);
 
 	free(ctx.device);
 	free(ctx.device_trans);
