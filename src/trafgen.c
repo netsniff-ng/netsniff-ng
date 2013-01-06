@@ -68,7 +68,7 @@ size_t plen = 0;
 struct packet_dyn *packet_dyn = NULL;
 size_t dlen = 0;
 
-static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRf";
+static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VR";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"out",			required_argument,	NULL, 'o'},
@@ -535,7 +535,6 @@ int main(int argc, char **argv)
 			case 'd':
 			case 'c':
 			case 'n':
-			case 'f':
 			case 'S':
 			case 'o':
 			case 'i':
