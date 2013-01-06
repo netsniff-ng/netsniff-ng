@@ -48,10 +48,10 @@
 #include "ring_tx.h"
 
 struct ctx {
-	char *device, *device_trans;
-	int cpu, rand, rfraw, jumbo_support, verbose;
+	bool rand, rfraw, jumbo_support, verbose;
 	unsigned long kpull, num, gap, reserve_size;
-	unsigned long tx_bytes, tx_packets;
+	char *device, *device_trans;
+	int cpu;
 };
 
 sig_atomic_t sigint = 0;
@@ -276,6 +276,7 @@ static void xmit_slowpath_or_die(struct ctx *ctx)
 	int ret;
 	unsigned long num = 1, i = 0;
 	struct timeval start, end, diff;
+	unsigned long long tx_bytes = 0, tx_packets = 0;
 	struct sockaddr_ll saddr = {
 		.sll_family = PF_PACKET,
 		.sll_halen = ETH_ALEN,
@@ -315,8 +316,8 @@ static void xmit_slowpath_or_die(struct ctx *ctx)
 		if (ret < 0)
 			whine("sendto error!\n");
 
-		ctx->tx_bytes += packets[i].len;
-		ctx->tx_packets++;
+		tx_bytes += packets[i].len;
+		tx_packets++;
 
 		if (!ctx->rand) {
 			i++;
@@ -340,8 +341,8 @@ static void xmit_slowpath_or_die(struct ctx *ctx)
 
 	fflush(stdout);
 	printf("\n");
-	printf("\r%12lu frames outgoing\n", ctx->tx_packets);
-	printf("\r%12lu bytes outgoing\n", ctx->tx_bytes);
+	printf("\r%12llu packets outgoing\n", tx_packets);
+	printf("\r%12llu bytes outgoing\n", tx_bytes);
 	printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec, diff.tv_usec);
 
 }
@@ -355,6 +356,7 @@ static void xmit_fastpath_or_die(struct ctx *ctx)
 	struct ring tx_ring;
 	struct frame_map *hdr;
 	struct timeval start, end, diff;
+	unsigned long long tx_bytes = 0, tx_packets = 0;
 
 	if (ctx->rfraw) {
 		ctx->device_trans = xstrdup(ctx->device);
@@ -428,8 +430,8 @@ static void xmit_fastpath_or_die(struct ctx *ctx)
 
 			fmemcpy(out, packets[i].payload, packets[i].len);
 
-			ctx->tx_bytes += packets[i].len;
-			ctx->tx_packets++;
+			tx_bytes += packets[i].len;
+			tx_packets++;
 
 			if (!ctx->rand) {
 				i++;
@@ -462,8 +464,8 @@ static void xmit_fastpath_or_die(struct ctx *ctx)
 
 	fflush(stdout);
 	printf("\n");
-	printf("\r%12lu frames outgoing\n", ctx->tx_packets);
-	printf("\r%12lu bytes outgoing\n", ctx->tx_bytes);
+	printf("\r%12llu packets outgoing\n", tx_packets);
+	printf("\r%12llu bytes outgoing\n", tx_bytes);
 	printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec, diff.tv_usec);
 }
 
@@ -506,20 +508,20 @@ int main(int argc, char **argv)
 			version();
 			break;
 		case 'V':
-			ctx.verbose = 1;
+			ctx.verbose = true;
 			break;
 		case 'd':
 		case 'o':
 			ctx.device = xstrndup(optarg, IFNAMSIZ);
 			break;
 		case 'r':
-			ctx.rand = 1;
+			ctx.rand = true;
 			break;
 		case 'R':
-			ctx.rfraw = 1;
+			ctx.rfraw = true;
 			break;
 		case 'J':
-			ctx.jumbo_support = 1;
+			ctx.jumbo_support = true;
 			break;
 		case 'c':
 		case 'i':
