@@ -312,7 +312,7 @@ struct element_tspec {
 				  direction:2,
 				  access_policy:2,
 				  aggr:1,
-				  apsid:1,
+				  apsd:1,
 				  user_prior:3,
 				  tsinfo_ack_pol:2,
 				  schedule:1,
@@ -323,7 +323,7 @@ struct element_tspec {
 				  schedule:1,
 				  tsinfo_ack_pol:2,
 				  user_prior:3,
-				  apsid:1,
+				  apsd:1,
 				  aggr:1,
 				  access_policy:2,
 				  direction:2,
@@ -1243,6 +1243,7 @@ static int8_t inf_tspec(struct pkt_buff *pkt, u8 *id)
 	tprintf("Direction: %u, ", tspec->direction);
 	tprintf("Access Policy: %u, ", tspec->access_policy);
 	tprintf("Aggregation: %u, ", tspec->aggr);
+	tprintf("APSD: %u, ", tspec->apsd);
 	tprintf("User Priority: %u, ", tspec->user_prior);
 	tprintf("TSinfo Ack Policy: %u, ", tspec->tsinfo_ack_pol);
 	tprintf("Schedule: %u, ", tspec->schedule);
@@ -1551,7 +1552,7 @@ static int8_t inf_chall_txt(struct pkt_buff *pkt, u8 *id)
 
 		tprintf("0x");
 		for (i = 0; i < (chall_txt->len - sizeof(*chall_txt) + 1); i++)
-			tprintf("%x ", txt[i]);
+			tprintf("%x", txt[i]);
 	}
 
 	return 1;
@@ -1639,7 +1640,7 @@ static int8_t inf_supp_ch(struct pkt_buff *pkt, u8 *id)
 		return 0;
 
 	if(supp_ch->len & 1) {
-		tprintf("Length should be modulo 2");
+		tprintf("Length should be even");
 		return 0;
 	}
   
