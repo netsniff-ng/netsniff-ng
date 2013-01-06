@@ -321,10 +321,10 @@ static void xmit_slowpath_or_die(struct ctx *ctx)
 
 		if (!ctx->rand) {
 			i++;
-			atomic_cmp_swp(&i, plen, 0);
-		} else {
+			if (i >= plen)
+				i = 0;
+		} else
 			i = rand() % plen;
-		}
 
 		if (ctx->num > 0)
 			num--;
