@@ -22,6 +22,7 @@ netsniff-ng-objs =	hash.o \
 			proto_ipv6_mobility_hdr.o \
 			proto_ipv6_no_nxt_hdr.o \
 			proto_ipv6_routing.o \
+			proto_lldp.o \
 			proto_none.o \
 			proto_tcp.o \
 			proto_udp.o \
