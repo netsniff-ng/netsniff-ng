@@ -33,11 +33,17 @@
 #include <sys/wait.h>
 #include <sys/mman.h>
 #include <net/ethernet.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <linux/icmp.h>
+#include <arpa/inet.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <time.h>
+#include <poll.h>
+#include <netdb.h>
 
 #include "xmalloc.h"
 #include "die.h"
@@ -50,9 +56,10 @@
 #include "ring_tx.h"
 
 struct ctx {
-	bool rand, rfraw, jumbo_support, verbose;
+	bool rand, rfraw, jumbo_support, verbose, smoke_test;
 	unsigned long kpull, num, gap, reserve_size;
-	char *device, *device_trans;
+	struct sockaddr_in dest;
+	char *device, *device_trans, *rhost;
 };
 
 struct cpu_stats {
@@ -68,7 +75,7 @@ size_t plen = 0;
 struct packet_dyn *packet_dyn = NULL;
 size_t dlen = 0;
 
-static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VR";
+static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRs";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"out",			required_argument,	NULL, 'o'},
@@ -78,6 +85,7 @@ static const struct option long_options[] = {
 	{"gap",			required_argument,	NULL, 't'},
 	{"ring-size",		required_argument,	NULL, 'S'},
 	{"kernel-pull",		required_argument,	NULL, 'k'},
+	{"smoke-test",		required_argument,	NULL, 's'},
 	{"jumbo-support",	no_argument,		NULL, 'J'},
 	{"rfraw",		no_argument,		NULL, 'R'},
 	{"rand",		no_argument,		NULL, 'r'},
@@ -115,6 +123,14 @@ static struct cpu_stats *stats;
 		set_system_socket_mem(sock_wmem_def, vals[3]); \
 	} while (0)
 
+#ifndef ICMP_FILTER
+# define ICMP_FILTER	1
+
+struct icmp_filter {
+	__u32	data;
+};
+#endif
+
 static void signal_handler(int number)
 {
 	switch (number) {
@@ -151,30 +167,28 @@ static void help(void)
 	     "Options:\n"
 	     "  -o|-d|--out|--dev <netdev>        Networking Device i.e., eth0\n"
 	     "  -i|-c|--in|--conf <cfg-file>      Packet configuration file\n"
-	     "  -J|--jumbo-support                Support for 64KB Super Jumbo Frames\n"
-	     "                                    Default TX slot: 2048Byte\n"
+	     "  -J|--jumbo-support                Support 64KB Super Jumbo Frames (def: 2048B)\n"
 	     "  -R|--rfraw                        Inject raw 802.11 frames\n"
-	     "  -n|--num <uint>                   Number of packets until exit\n"
-	     "  `--     0                         Loop until interrupt (default)\n"
-	     "   `-     n                         Send n packets and done\n"
-	     "  -r|--rand                         Randomize packet selection process\n"
-	     "                                    Instead of a round robin selection\n"
+	     "  -s|--smoke-test <ipv4-receiver>   Test if machine survived packet\n"
+	     "  -n|--num <uint>                   Number of packets until exit (def: 0)\n"
+	     "  -r|--rand                         Randomize packet selection (def: round robin)\n"
 	     "  -t|--gap <uint>                   Interpacket gap in us (approx)\n"
-	     "  -S|--ring-size <size>             Manually set ring size to <size>:\n"
-	     "                                    mmap space in KB/MB/GB, e.g. \'10MB\'\n"
-	     "  -k|--kernel-pull <uint>           Kernel pull from user interval in us\n"
-	     "                                    Default is 10us where the TX_RING\n"
-	     "                                    is populated with payload from uspace\n"
+	     "  -S|--ring-size <size>             Manually set mmap size (KB/MB/GB): e.g.\'10MB\'\n"
+	     "  -k|--kernel-pull <uint>           Kernel batch interval in us (def: 10us)\n"
 	     "  -V|--verbose                      Be more verbose\n"
 	     "  -v|--version                      Show version\n"
 	     "  -h|--help                         Guess what?!\n\n"
 	     "Examples:\n"
 	     "  See trafgen.txf for configuration file examples.\n"
 	     "  trafgen --dev eth0 --conf trafgen.txf\n"
+	     "  trafgen --dev eth0 --conf trafgen.txf --smoke-test 10.0.0.1\n"
 	     "  trafgen --dev wlan0 --rfraw --conf beacon-test.txf -V\n"
 	     "  trafgen --dev eth0 --conf trafgen.txf --rand --gap 1000\n"
 	     "  trafgen --dev eth0 --conf trafgen.txf --rand --num 1400000 -k1000\n\n"
 	     "Note:\n"
+	     "  Smoke test example: machine A, 10.0.0.2 (trafgen) is directly\n"
+	     "  connected to machine B (test kernel), 10.0.0.1. If ICMP reply fails\n"
+	     "  we assume the kernel crashed, thus we print the packet and quit.\n\n"
 	     "  This tool is targeted for network developers! You should\n"
 	     "  be aware of what you are doing and what these options above\n"
 	     "  mean! Only use this tool in an isolated LAN that you own!\n\n"
@@ -278,9 +292,132 @@ static void destroy_shared_var(void *buff, unsigned long cpus)
 	munmap(buff, cpus * sizeof(struct cpu_stats));
 }
 
+static void dump_trafgen_snippet(uint8_t *payload, size_t len)
+{
+	int i;
+
+	printf("{");
+	for (i = 0; i < len; ++i) {
+		if (i % 15 == 0)
+			printf("\n  ");
+		printf("0x%02x, ", payload[i]);
+	}
+	printf("\n}\n");
+	fflush(stdout);
+}
+
+static inline unsigned short csum(unsigned short *buf, int nwords)
+{
+	unsigned long sum;
+
+	for (sum = 0; nwords > 0; nwords--)
+		sum += *buf++;
+	sum = (sum >> 16) + (sum & 0xffff);
+	sum += (sum >> 16);
+
+	return ~sum;
+}
+
+static int xmit_smoke_setup(struct ctx *ctx)
+{
+	int icmp_sock, ret, ttl = 64;
+	struct icmp_filter filter;
+
+	icmp_sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+	if (icmp_sock < 0)
+		panic("Cannot get a ICMP socket: %s!\n", strerror(errno));
+
+	filter.data = ~(1 << ICMP_ECHOREPLY);
+
+	ret = setsockopt(icmp_sock, SOL_RAW, ICMP_FILTER, &filter, sizeof(filter));
+	if (ret < 0)
+		panic("Cannot install filter!\n");
+
+	ret = setsockopt(icmp_sock, SOL_IP, IP_TTL, &ttl, sizeof(ttl));
+	if (ret < 0)
+		panic("Cannot set TTL!\n");
+
+	memset(&ctx->dest, 0, sizeof(ctx->dest));
+	ctx->dest.sin_family = AF_INET;
+	ctx->dest.sin_port = 0;
+
+	ret = inet_aton(ctx->rhost, &ctx->dest.sin_addr);
+	if (ret < 0)
+		panic("Cannot resolv address!\n");
+
+	return icmp_sock;
+}
+
+static int xmit_smoke_probe(int icmp_sock, struct ctx *ctx)
+{
+	int ret, i, probes = 5;
+	short ident, cnt = 1;
+	uint8_t outpack[512], *data;
+	struct icmphdr *icmp;
+	struct iphdr *ip;
+	size_t len = sizeof(*icmp) + 56;
+	struct sockaddr_in from;
+	socklen_t from_len;
+	struct pollfd fds = {
+		.fd = icmp_sock,
+		.events = POLLIN,
+	};
+
+	while (probes-- > 0) {
+		ident = htons((short) rand());
+
+		memset(outpack, 0, sizeof(outpack));
+		icmp = (void *) outpack;
+		icmp->type = ICMP_ECHO;
+		icmp->code = 0;
+		icmp->checksum = 0;
+		icmp->un.echo.id = ident;
+		icmp->un.echo.sequence = htons(cnt++);
+
+		data = ((uint8_t *) outpack + sizeof(*icmp));
+		for (i = 0; i < 56; ++i)
+			data[i] = (uint8_t) rand();
+
+		icmp->checksum = csum((unsigned short *) outpack,
+				      len / sizeof(unsigned short));
+
+		ret = sendto(icmp_sock, outpack, len, MSG_DONTWAIT,
+			     (struct sockaddr *) &ctx->dest, sizeof(ctx->dest));
+		if (unlikely(ret != len))
+			panic("Cannot send out probe: %s!\n", strerror(errno));
+
+		ret = poll(&fds, 1, 500);
+		if (ret < 0)
+			panic("Poll failed!\n");
+
+		if (fds.revents & POLLIN) {
+			ret = recvfrom(icmp_sock, outpack, sizeof(outpack), 0,
+				       (struct sockaddr *) &from, &from_len);
+			if (unlikely(ret <= 0))
+				panic("Probe receive failed!\n");
+			if (unlikely(from_len != sizeof(ctx->dest)))
+				continue;
+			if (unlikely(memcmp(&from, &ctx->dest, sizeof(ctx->dest))))
+				continue;
+			if (unlikely(ret < sizeof(*ip) + sizeof(*icmp)))
+				continue;
+			ip = (void *) outpack;
+			if (unlikely(ip->ihl * 4 + sizeof(*icmp) > ret))
+				continue;
+			icmp = (void *) outpack + ip->ihl * 4;
+			if (unlikely(icmp->un.echo.id != ident))
+				continue;
+
+			return 0;
+		}
+	}
+
+	return -1;
+}
+
 static void xmit_slowpath_or_die(struct ctx *ctx, int cpu)
 {
-	int ret;
+	int ret, icmp_sock = -1;
 	unsigned long num = 1, i = 0;
 	struct timeval start, end, diff;
 	unsigned long long tx_bytes = 0, tx_packets = 0;
@@ -292,6 +429,9 @@ static void xmit_slowpath_or_die(struct ctx *ctx, int cpu)
 
 	if (ctx->num > 0)
 		num = ctx->num;
+
+	if (ctx->smoke_test)
+		icmp_sock = xmit_smoke_setup(ctx);
 
 	bug_on(gettimeofday(&start, NULL));
 
@@ -306,6 +446,18 @@ static void xmit_slowpath_or_die(struct ctx *ctx, int cpu)
 
 		tx_bytes += packets[i].len;
 		tx_packets++;
+
+		if (ctx->smoke_test) {
+			ret = xmit_smoke_probe(icmp_sock, ctx);
+			if (unlikely(ret < 0)) {
+				printf("%sSmoke test alert:%s\n", colorize_start(bold), colorize_end());
+				printf("  Remote host seems to be unresponsive to ICMP pings!\n");
+				printf("  Last instance was packet%lu, trafgen snippet:\n\n", i);
+
+				dump_trafgen_snippet(packets[i].payload, packets[i].len);
+				break;
+			}
+		}
 
 		if (!ctx->rand) {
 			i++;
@@ -323,6 +475,9 @@ static void xmit_slowpath_or_die(struct ctx *ctx, int cpu)
 
 	bug_on(gettimeofday(&end, NULL));
 	diff = tv_subtract(end, start);
+
+	if (ctx->smoke_test)
+		close(icmp_sock);
 
 	stats[cpu].tx_packets = tx_packets;
 	stats[cpu].tx_bytes = tx_bytes;
@@ -488,6 +643,12 @@ int main(int argc, char **argv)
 		case 'r':
 			ctx.rand = true;
 			break;
+		case 's':
+			slow = true;
+			cpus = 1;
+			ctx.smoke_test = true;
+			ctx.rhost = xstrdup(optarg);
+			break;
 		case 'R':
 			ctx.rfraw = true;
 			break;
@@ -539,6 +700,7 @@ int main(int argc, char **argv)
 			case 'c':
 			case 'n':
 			case 'S':
+			case 's':
 			case 'o':
 			case 'i':
 			case 'k':
@@ -640,6 +802,7 @@ thread_out:
 
 	free(ctx.device);
 	free(ctx.device_trans);
+	free(ctx.rhost);
 	free(confname);
 
 	return 0;
