@@ -15,9 +15,6 @@ submit your contributions, items marked with '!' are of high importance):
  3! Test IPv6 on flowtop, curvetun and mausezahn.
 	@TODO: Daniel Borkmann, Jon Schipp
 
- 5! Make: add option for autodetect hw timestamping, or comment it out
-	@TODO: Daniel Borkmann
-
 10! Add a proper 802.11 dissector for netsniff-ng.
 	@TODO: Markus Amend
 

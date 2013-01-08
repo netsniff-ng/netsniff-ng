@@ -93,7 +93,7 @@ CCNQ = $(CCACHE) $(CROSS_COMPILE)gcc
 CC = $(Q)echo -e "  CC\t$<" && $(CCNQ)
 CCHK = echo -e "  CCHK\t$@" && cppcheck -q --std=c99 \
 	--enable=style,performance,portability,unusedFunction \
-	--includes-file=$(NACL_INC_DIR)
+	--includes-file=${NACL_INC_DIR}
 MKDIR = $(Q)echo -e "  MKDIR\t$@" && mkdir
 ifeq ($(DEBUG), 1)
   STRIP = $(Q)true
@@ -215,8 +215,8 @@ $(foreach tool,$(TOOLS),$(eval $(call TOOL_templ,$(tool))))
 netsniff-ng: ALL_CFLAGS += -I$(INCDIR)/libnl3/ -D__WITH_PROTOS
 trafgen: ALL_CFLAGS += -I.. -I$(INCDIR)/libnl3/ -D__WITH_PROTOS
 bpfc: ALL_CFLAGS += -I..
-curvetun: ALL_CFLAGS += -I NACL_INC_DIR
-curvetun: ALL_LDFLAGS += -L NACL_LIB_DIR
+curvetun: ALL_CFLAGS += -I ${NACL_INC_DIR}
+curvetun: ALL_LDFLAGS += -L ${NACL_LIB_DIR}
 
 bpfc_clean_custom:
 	$(Q)$(call RM,$(BUILD_DIR)/*.h $(BUILD_DIR)/*.c)
