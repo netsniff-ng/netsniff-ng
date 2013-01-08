@@ -134,8 +134,6 @@ static int find_intr_offset_or_panic(char *label_to_search)
 %token K_PKT_LEN K_PROTO K_TYPE K_NLATTR K_NLATTR_NEST K_MARK K_QUEUE K_HATYPE
 %token K_RXHASH K_CPU K_IFIDX K_VLANT K_VLANP
 
-%token HOPT
-
 %token ':' ',' '[' ']' '(' ')' 'x' 'a' '+' 'M' '*' '&' '#'
 
 %token number label
@@ -201,40 +199,40 @@ ldb
 		set_curr_instr(BPF_LD | BPF_B | BPF_IND, 0, 0, $5); }
 	| OP_LDB '[' number ']' {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0, $3); }
-	| OP_LDB HOPT K_PROTO {
+	| OP_LDB '#' K_PROTO {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_PROTOCOL); }
-	| OP_LDB HOPT K_TYPE {
+	| OP_LDB '#' K_TYPE {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_PKTTYPE); }
-	| OP_LDB HOPT K_IFIDX {
+	| OP_LDB '#' K_IFIDX {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_IFINDEX); }
-	| OP_LDB HOPT K_NLATTR {
+	| OP_LDB '#' K_NLATTR {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_NLATTR); }
-	| OP_LDB HOPT K_NLATTR_NEST {
+	| OP_LDB '#' K_NLATTR_NEST {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_NLATTR_NEST); }
-	| OP_LDB HOPT K_MARK {
+	| OP_LDB '#' K_MARK {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_MARK); }
-	| OP_LDB HOPT K_QUEUE {
+	| OP_LDB '#' K_QUEUE {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_QUEUE); }
-	| OP_LDB HOPT K_HATYPE {
+	| OP_LDB '#' K_HATYPE {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_HATYPE); }
-	| OP_LDB HOPT K_RXHASH {
+	| OP_LDB '#' K_RXHASH {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_RXHASH); }
-	| OP_LDB HOPT K_CPU {
+	| OP_LDB '#' K_CPU {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_CPU); }
-	| OP_LDB HOPT K_VLANT {
+	| OP_LDB '#' K_VLANT {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_VLAN_TAG); }
-	| OP_LDB HOPT K_VLANP {
+	| OP_LDB '#' K_VLANP {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_VLAN_TAG_PRESENT); }
 	;
@@ -244,40 +242,40 @@ ldh
 		set_curr_instr(BPF_LD | BPF_H | BPF_IND, 0, 0, $5); }
 	| OP_LDH '[' number ']' {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0, $3); }
-	| OP_LDH HOPT K_PROTO {
+	| OP_LDH '#' K_PROTO {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_PROTOCOL); }
-	| OP_LDH HOPT K_TYPE {
+	| OP_LDH '#' K_TYPE {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_PKTTYPE); }
-	| OP_LDH HOPT K_IFIDX {
+	| OP_LDH '#' K_IFIDX {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_IFINDEX); }
-	| OP_LDH HOPT K_NLATTR {
+	| OP_LDH '#' K_NLATTR {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_NLATTR); }
-	| OP_LDH HOPT K_NLATTR_NEST {
+	| OP_LDH '#' K_NLATTR_NEST {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_NLATTR_NEST); }
-	| OP_LDH HOPT K_MARK {
+	| OP_LDH '#' K_MARK {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_MARK); }
-	| OP_LDH HOPT K_QUEUE {
+	| OP_LDH '#' K_QUEUE {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_QUEUE); }
-	| OP_LDH HOPT K_HATYPE {
+	| OP_LDH '#' K_HATYPE {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_HATYPE); }
-	| OP_LDH HOPT K_RXHASH {
+	| OP_LDH '#' K_RXHASH {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_RXHASH); }
-	| OP_LDH HOPT K_CPU {
+	| OP_LDH '#' K_CPU {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_CPU); }
-	| OP_LDH HOPT K_VLANT {
+	| OP_LDH '#' K_VLANT {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_VLAN_TAG); }
-	| OP_LDH HOPT K_VLANP {
+	| OP_LDH '#' K_VLANP {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_VLAN_TAG_PRESENT); }
 	;
@@ -290,42 +288,42 @@ ldi
 ld
 	: OP_LD '#' number {
 		set_curr_instr(BPF_LD | BPF_IMM, 0, 0, $3); }
-	| OP_LD HOPT K_PKT_LEN {
+	| OP_LD '#' K_PKT_LEN {
 		set_curr_instr(BPF_LD | BPF_W | BPF_LEN, 0, 0, 0); }
-	| OP_LD HOPT K_PROTO {
+	| OP_LD '#' K_PROTO {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_PROTOCOL); }
-	| OP_LD HOPT K_TYPE {
+	| OP_LD '#' K_TYPE {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_PKTTYPE); }
-	| OP_LD HOPT K_IFIDX {
+	| OP_LD '#' K_IFIDX {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_IFINDEX); }
-	| OP_LD HOPT K_NLATTR {
+	| OP_LD '#' K_NLATTR {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_NLATTR); }
-	| OP_LD HOPT K_NLATTR_NEST {
+	| OP_LD '#' K_NLATTR_NEST {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_NLATTR_NEST); }
-	| OP_LD HOPT K_MARK {
+	| OP_LD '#' K_MARK {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_MARK); }
-	| OP_LD HOPT K_QUEUE {
+	| OP_LD '#' K_QUEUE {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_QUEUE); }
-	| OP_LD HOPT K_HATYPE {
+	| OP_LD '#' K_HATYPE {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_HATYPE); }
-	| OP_LD HOPT K_RXHASH {
+	| OP_LD '#' K_RXHASH {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_RXHASH); }
-	| OP_LD HOPT K_CPU {
+	| OP_LD '#' K_CPU {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_CPU); }
-	| OP_LD HOPT K_VLANT {
+	| OP_LD '#' K_VLANT {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_VLAN_TAG); }
-	| OP_LD HOPT K_VLANP {
+	| OP_LD '#' K_VLANP {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_VLAN_TAG_PRESENT); }
 	| OP_LD 'M' '[' number ']' {
