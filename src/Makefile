@@ -168,7 +168,7 @@ DOC_FILES = Summary RelatedWork Performance KnownIssues IPv6Notes Sponsors \
 NCONF_FILES = ether.conf tcp.conf udp.conf oui.conf
 
 all: build_showinfo toolkit
-toolkit: $(TOOLS)
+toolkit: allbutmausezahn
 allbutcurvetun: $(filter-out curvetun,$(TOOLS))
 allbutmausezahn: $(filter-out mausezahn,$(TOOLS))
 install: $(foreach tool,$(TOOLS),$(tool)_install)
