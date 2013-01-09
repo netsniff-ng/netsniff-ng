@@ -1039,16 +1039,35 @@ size_t strlcpy(char *dest, const char *src, size_t size)
 	return ret;
 }
 
+static inline int vslprintf(char *dst, size_t size, const char *fmt, va_list ap)
+{
+	int ret;
+
+	ret = vsnprintf(dst, size, fmt, ap);
+	dst[size - 1] = '\0';
+
+	return ret;
+}
+
 int slprintf(char *dst, size_t size, const char *fmt, ...)
 {
 	int ret;
 	va_list ap;
 
 	va_start(ap, fmt);
+	ret = vslprintf(dst, size, fmt, ap);
+	va_end(ap);
 
-	ret = vsnprintf(dst, size, fmt, ap);
-	dst[size - 1] = '\0';
+	return ret;
+}
 
+int slprintf_nocheck(char *dst, size_t size, const char *fmt, ...)
+{
+	int ret;
+	va_list ap;
+
+	va_start(ap, fmt);
+	ret = vslprintf(dst, size, fmt, ap);
 	va_end(ap);
 
 	return ret;

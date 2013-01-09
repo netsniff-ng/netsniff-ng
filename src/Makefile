@@ -66,11 +66,14 @@ CFLAGS += -std=gnu99
 
 WFLAGS  = -Wall
 WFLAGS += -Wformat=2
-WFLAGS_EXTRA += -Wmissing-prototypes
-WFLAGS_EXTRA += -Wdeclaration-after-statement
-WFLAGS_EXTRA += -Werror-implicit-function-declaration
-WFLAGS_EXTRA += -Wundef
-WFLAGS_EXTRA += -Wstrict-prototypes
+WFLAGS += -Wmissing-prototypes
+WFLAGS += -Wdeclaration-after-statement
+WFLAGS += -Werror-implicit-function-declaration
+WFLAGS += -Wstrict-prototypes
+WFLAGS += -Wundef
+WFLAGS += -Wimplicit-int
+
+WFLAGS_EXTRA =
 
 CFLAGS += $(WFLAGS) -I.
 CPPFLAGS =
