@@ -145,7 +145,11 @@ static char *bpf_dump(const struct sock_filter bpf, int n)
 		break;
 	case BPF_RET | BPF_A:
 		op = op_table[BPF_RET];
-		fmt = "";
+		fmt = "a";
+		break;
+	case BPF_RET | BPF_X:
+		op = op_table[BPF_RET];
+		fmt = "x";
 		break;
 	case BPF_LD_W | BPF_ABS:
 		op = op_table[BPF_LD_W];
@@ -519,7 +523,7 @@ uint32_t bpf_run_filter(const struct sock_fprog * fcode, uint8_t * packet,
 	uint32_t A, X;
 	uint32_t k;
 	struct sock_filter *bpf;
-	int32_t mem[BPF_MEMWORDS];
+	int32_t mem[BPF_MEMWORDS] = { 0, };
 
 	if (fcode == NULL || fcode->filter == NULL || fcode->len == 0)
 		return 0xFFFFFFFF;
