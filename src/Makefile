@@ -172,7 +172,7 @@ NCONF_FILES = ether.conf tcp.conf udp.conf oui.conf
 
 all: build_showinfo toolkit
 toolkit: allbutmausezahn
-allbutcurvetun: $(filter-out curvetun,$(TOOLS))
+allbutcurvetun: $(filter-out mausezahn,$(filter-out curvetun,$(TOOLS)))
 allbutmausezahn: $(filter-out mausezahn,$(TOOLS))
 install: $(foreach tool,$(TOOLS),$(tool)_install)
 	$(Q)$(foreach file,$(DOC_FILES),$(call INST,../Documentation/$(file),$(DOCDIRE));)

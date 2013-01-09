@@ -58,6 +58,11 @@ You can also build only a particular tool, e.g.:
   (# make trafgen_distclean)
   ($ make trafgen_clean)
 
+Currently mausezahn is experimental and not included in the default build.
+This means if you want to use mausezahn, you have to execute 'make mausezahn'
+for a build. This will be changed at the time when we have cleaned up and
+fixed the imported code.
+
 If you want to build all tools, but curvetun (i.e. because you don't need
 the tunneling software and the NaCl build process lasts quite long):
 
