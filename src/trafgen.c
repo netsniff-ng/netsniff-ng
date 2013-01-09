@@ -438,11 +438,17 @@ static void xmit_slowpath_or_die(struct ctx *ctx, int cpu)
 	while (likely(sigint == 0) && likely(num > 0)) {
 		apply_counter(i);
 		apply_randomizer(i);
-
+retry:
 		ret = sendto(sock, packets[i].payload, packets[i].len, 0,
 			     (struct sockaddr *) &saddr, sizeof(saddr));
-		if (unlikely(ret < 0))
+		if (unlikely(ret < 0)) {
+			if (errno == ENOBUFS) {
+				sched_yield();
+				goto retry;
+			}
+
 			panic("Sendto error: %s!\n", strerror(errno));
+		}
 
 		tx_bytes += packets[i].len;
 		tx_packets++;
