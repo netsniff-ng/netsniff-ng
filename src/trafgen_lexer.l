@@ -54,8 +54,8 @@ number_ascii	([a-zA-Z])
 "["		{ return '['; }
 "]"		{ return ']'; }
 ","		{ return ','; }
-"\n"		{ yylineno++; return K_NEWL; }
-[ \t\r]+	{ return K_WHITE; }
+"\n"		{ yylineno++; }
+([ \t\r\n]+)	{ return K_WHITE; }
 
 "/*"([^\*]|\*[^/])*"*/" { return K_COMMENT; }
 
