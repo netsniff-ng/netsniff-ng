@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
+#include <sys/fsuid.h>
 #include <fcntl.h>
 #include <string.h>
 #include <asm/byteorder.h>
@@ -973,6 +974,9 @@ int main(int argc, char **argv)
 	int c, opt_index, ret;
 	struct ash_cfg cfg;
 	char *path_city_db = NULL, *path_country_db = NULL;
+
+	setfsuid(getuid());
+	setfsgid(getgid());
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.init_ttl = 1;

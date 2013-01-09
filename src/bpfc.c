@@ -24,6 +24,7 @@
 #include <getopt.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <sys/fsuid.h>
 
 #include "xmalloc.h"
 #include "xutils.h"
@@ -94,6 +95,9 @@ int main(int argc, char **argv)
 {
 	int ret, verbose = 0, c, opt_index, bypass = 0, hla = 0, debug = 0;
 	char *file = NULL;
+
+	setfsuid(getuid());
+	setfsgid(getgid());
 
 	if (argc == 1)
 		help();

@@ -44,6 +44,7 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/ptrace.h>
+#include <sys/fsuid.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <signal.h>
@@ -589,8 +590,8 @@ int main(int argc, char **argv)
 	char *port = NULL, *stun = NULL, *dev = NULL, *home = NULL, *alias = NULL;
 	enum working_mode wmode = MODE_UNKNOW;
 
-	if (getuid() != geteuid())
-		if (seteuid(getuid())) { ; }
+	setfsuid(getuid());
+	setfsgid(getgid());
 
 	home = fetch_home_dir();
 

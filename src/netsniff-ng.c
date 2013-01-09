@@ -32,6 +32,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/fsuid.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <pthread.h>
@@ -1111,6 +1112,9 @@ int main(int argc, char **argv)
 		.dump_interval = 60,
 		.dump_mode = DUMP_INTERVAL_TIME,
 	};
+
+	setfsuid(getuid());
+	setfsgid(getgid());
 
 	srand(time(NULL));
 

@@ -25,6 +25,7 @@
 #include <getopt.h>
 #include <ctype.h>
 #include <sys/socket.h>
+#include <sys/fsuid.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -157,7 +158,6 @@ static int stats_proc_net_dev(const char *ifname, struct ifstat *stats)
 	if (!fp)
 		panic("Cannot open /proc/net/dev!\n");
 
-	/* Omit table header from procfs file */
 	if (fgets(buff, sizeof(buff), fp)) { ; }
 	if (fgets(buff, sizeof(buff), fp)) { ; }
 
@@ -217,7 +217,7 @@ retry:
 		bug_on(stats->irq_nr == 0);
 
 		if (ptr)
-			ptr++; /* Skip ':' char */
+			ptr++;
 		for (i = 0; i < cpus && ptr; ++i) {
 			stats->irqs[i] = strtol(ptr, &ptr, 10);
 			if (i == cpus - 1) {
@@ -229,11 +229,6 @@ retry:
 		memset(buff, 0, sizeof(buff));
 	}
 
-	/* We could get caught here in case of wireless devices which
-	 * are not necessarily listed under 'wlan0' et al. in
-	 * proc/interrupts. Therefore, we try once again with the
-	 * ethtool driver name.
-	 */
 	if (ret == -EINVAL && try == 0) {
 		memset(&drvinf, 0, sizeof(drvinf));
 		if (ethtool_drvinf(ifname, &drvinf) < 0)
@@ -650,16 +645,6 @@ static void screen_wireless(WINDOW *screen, const struct ifstat *rel,
 			  "Signal: %8d dBm (%d dBm/t)       ",
 			  abs->wifi.signal_level,
 			  rel->wifi.signal_level);
-#if 0
-		mvwprintw(screen, (*voff)++, 2,
-			  "Noise:  %8d dBm (%d dBm/t)       ",
-			  abs->wifi.noise_level,
-			  rel->wifi.noise_level);
-		mvwprintw(screen, (*voff)++, 2,
-			  "SNR:    %8d dBm (%s)             ",
-			  abs->wifi.signal_level - abs->wifi.noise_level,
-			  snr_to_str(abs->wifi.signal_level - abs->wifi.noise_level));
-#endif
 	}
 }
 
@@ -720,7 +705,7 @@ static int screen_main(const char *ifname, uint64_t ms_interval)
 
 	while (!sigint) {
 		key = getch();
-		if (key == 'q' || key == 0x1b /* esq */ || key == KEY_F(10))
+		if (key == 'q' || key == 0x1b || key == KEY_F(10))
 			break;
 
 		screen_update(stats_screen, ifname, &stats_delta, &stats_new,
@@ -795,10 +780,6 @@ static void term_csv(const char *ifname, const struct ifstat *rel,
 
 		printf("%d ", rel->wifi.signal_level);
 		printf("%d ", abs->wifi.signal_level);
-#if 0
-		printf("%d ", rel->wifi.noise_level);
-		printf("%d ", abs->wifi.noise_level);
-#endif
 	}
 
 	puts("");
@@ -868,10 +849,6 @@ static void term_csv_header(const char *ifname, const struct ifstat *abs,
 
 		printf("%d:wifi-signal-dbm-per-t ", j++);
 		printf("%d:wifi-signal-dbm ", j++);
-#if 0
-		printf("%d:wifi-noise-dbm-per-t ", j++);
-		printf("%d:wifi-noise-dbm ", j++);
-#endif
 	}
 
 	puts("");
@@ -904,6 +881,9 @@ int main(int argc, char **argv)
 	uint64_t interval = 1000;
 	char *ifname = NULL;
 	int (*func_main)(const char *ifname, uint64_t ms_interval) = screen_main;
+
+	setfsuid(getuid());
+	setfsgid(getgid());
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 	       &opt_index)) != EOF) {

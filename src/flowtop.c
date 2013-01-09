@@ -35,6 +35,7 @@
 #include <curses.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <sys/fsuid.h>
 #include <urcu.h>
 #include <libgen.h>
 
@@ -1204,6 +1205,9 @@ int main(int argc, char **argv)
 {
 	pthread_t tid;
 	int ret, c, opt_index, what_cmd = 0;
+
+	setfsuid(getuid());
+	setfsgid(getgid());
 
 	memset(&geo_country, 0, sizeof(geo_country));
 	memset(&geo_city, 0, sizeof(geo_city));
