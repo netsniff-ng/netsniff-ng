@@ -29,6 +29,7 @@ struct randomizer {
 struct packet {
 	uint8_t *payload;
 	size_t len;
+	int cpu_specific;
 };
 
 struct packet_dyn {

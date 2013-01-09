@@ -39,6 +39,7 @@ number_ascii	([a-zA-Z])
 
 %%
 
+"cpu"		{ return K_CPU; }
 "fill"		{ return K_FILL; }
 "rnd"		{ return K_RND; }
 "drnd"		{ return K_DRND; }
@@ -54,8 +55,9 @@ number_ascii	([a-zA-Z])
 "["		{ return '['; }
 "]"		{ return ']'; }
 ","		{ return ','; }
+":"		{ return ':'; }
 "\n"		{ yylineno++; }
-([ \t\r\n]+)	{ return K_WHITE; }
+([ \t\r\n]+)?	{ return K_WHITE; }
 
 "/*"([^\*]|\*[^/])*"*/" { return K_COMMENT; }
 

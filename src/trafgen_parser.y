@@ -45,7 +45,17 @@ extern size_t dlen;
 #define packetdc_last		(packet_dyn[packetd_last].clen - 1)
 #define packetdr_last		(packet_dyn[packetd_last].rlen - 1)
 
-static int dfunc_note_flag = 0;
+static int dfunc_note_flag = 0, our_cpu, min_cpu = -1, max_cpu = -1;
+
+static inline int test_ignore(void)
+{
+	if (min_cpu < 0 && max_cpu < 0)
+		return 0;
+	else if (max_cpu >= our_cpu && min_cpu <= our_cpu)
+		return 0;
+	else
+		return 1;
+}
 
 static void give_note_dynamic(void)
 {
@@ -56,39 +66,51 @@ static void give_note_dynamic(void)
 	}
 }
 
-static inline void init_new_packet_slot(struct packet *slot)
+static inline void __init_new_packet_slot(struct packet *slot, int cpu_specific)
 {
 	slot->payload = NULL;
 	slot->len = 0;
+	if (cpu_specific)
+		slot->cpu_specific = our_cpu;
+	else
+		slot->cpu_specific = -1;
 }
 
-static inline void init_new_counter_slot(struct packet_dyn *slot)
+static inline void __init_new_counter_slot(struct packet_dyn *slot)
 {
 	slot->cnt = NULL;
 	slot->clen = 0;
 }
 
-static inline void init_new_randomizer_slot(struct packet_dyn *slot)
+static inline void __init_new_randomizer_slot(struct packet_dyn *slot)
 {
 	slot->rnd = NULL;
 	slot->rlen = 0;
 }
 
-static void realloc_packet(void)
+static void realloc_packet(int cpu_specific)
 {
+	if (test_ignore())
+		return;
+
 	plen++;
 	packets = xrealloc(packets, 1, plen * sizeof(*packets));
-	init_new_packet_slot(&packets[packet_last]);
+
+	__init_new_packet_slot(&packets[packet_last], cpu_specific);
 
 	dlen++;
 	packet_dyn = xrealloc(packet_dyn, 1, dlen * sizeof(*packet_dyn));
-	init_new_counter_slot(&packet_dyn[packetd_last]);
-	init_new_randomizer_slot(&packet_dyn[packetd_last]);
+
+	__init_new_counter_slot(&packet_dyn[packetd_last]);
+	__init_new_randomizer_slot(&packet_dyn[packetd_last]);
 }
 
 static void set_byte(uint8_t val)
 {
 	struct packet *pkt = &packets[packet_last];
+
+	if (test_ignore())
+		return;
 
 	pkt->len++;
 	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
@@ -99,6 +121,9 @@ static void set_fill(uint8_t val, size_t len)
 {
 	int i;
 	struct packet *pkt = &packets[packet_last];
+
+	if (test_ignore())
+		return;
 
 	pkt->len += len;
 	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
@@ -111,6 +136,9 @@ static void set_rnd(size_t len)
 	int i;
 	struct packet *pkt = &packets[packet_last];
 
+	if (test_ignore())
+		return;
+
 	pkt->len += len;
 	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
 	for (i = 0; i < len; ++i)
@@ -121,6 +149,9 @@ static void set_seqinc(uint8_t start, size_t len, uint8_t stepping)
 {
 	int i;
 	struct packet *pkt = &packets[packet_last];
+
+	if (test_ignore())
+		return;
 
 	pkt->len += len;
 	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
@@ -137,6 +168,9 @@ static void set_seqdec(uint8_t start, size_t len, uint8_t stepping)
 	int i;
 	struct packet *pkt = &packets[packet_last];
 
+	if (test_ignore())
+		return;
+
 	pkt->len += len;
 	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
 	for (i = 0; i < len; ++i) {
@@ -147,8 +181,9 @@ static void set_seqdec(uint8_t start, size_t len, uint8_t stepping)
 	}
 }
 
-static inline void setup_new_counter(struct counter *c, uint8_t start, uint8_t stop,
-				     uint8_t stepping, int type)
+static inline void __setup_new_counter(struct counter *c, uint8_t start,
+				       uint8_t stop, uint8_t stepping,
+				       int type)
 {
 	c->min = start;
 	c->max = stop;
@@ -158,7 +193,7 @@ static inline void setup_new_counter(struct counter *c, uint8_t start, uint8_t s
 	c->type = type;
 }
 
-static inline void setup_new_randomizer(struct randomizer *r)
+static inline void __setup_new_randomizer(struct randomizer *r)
 {
 	r->val = (uint8_t) rand();
 	r->off = payload_last;
@@ -169,6 +204,9 @@ static void set_drnd(void)
 	struct packet *pkt = &packets[packet_last];
 	struct packet_dyn *pktd = &packet_dyn[packetd_last];
 
+	if (test_ignore())
+		return;
+
 	give_note_dynamic();
 
 	pkt->len++;
@@ -177,13 +215,16 @@ static void set_drnd(void)
 	pktd->rlen++;
 	pktd->rnd = xrealloc(pktd->rnd, 1, pktd->rlen *	sizeof(struct randomizer));
 
-	setup_new_randomizer(&pktd->rnd[packetdr_last]);
+	__setup_new_randomizer(&pktd->rnd[packetdr_last]);
 }
 
 static void set_dincdec(uint8_t start, uint8_t stop, uint8_t stepping, int type)
 {
 	struct packet *pkt = &packets[packet_last];
 	struct packet_dyn *pktd = &packet_dyn[packetd_last];
+
+	if (test_ignore())
+		return;
 
 	give_note_dynamic();
 
@@ -193,7 +234,7 @@ static void set_dincdec(uint8_t start, uint8_t stop, uint8_t stepping, int type)
 	pktd->clen++;
 	pktd->cnt =xrealloc(pktd->cnt, 1, pktd->clen * sizeof(struct counter));
 
-	setup_new_counter(&pktd->cnt[packetdc_last], start, stop, stepping, type);
+	__setup_new_counter(&pktd->cnt[packetdc_last], start, stop, stepping, type);
 }
 
 %}
@@ -202,9 +243,9 @@ static void set_dincdec(uint8_t start, uint8_t stop, uint8_t stepping, int type)
 	long int number;
 }
 
-%token K_COMMENT K_FILL K_RND K_SEQINC K_SEQDEC K_DRND K_DINC K_DDEC K_WHITE
+%token K_COMMENT K_FILL K_RND K_SEQINC K_SEQDEC K_DRND K_DINC K_DDEC K_WHITE K_CPU
 
-%token ',' '{' '}' '(' ')' '[' ']'
+%token ',' '{' '}' '(' ')' '[' ']' ':'
 
 %token number
 
@@ -224,7 +265,26 @@ inline_comment
 	;
 
 packet
-	: '{' delimiter payload delimiter '}' { realloc_packet(); }
+	: '{' delimiter payload delimiter '}' {
+			min_cpu = max_cpu = -1;
+			realloc_packet(0);
+		}
+	| K_CPU '(' number ':' number ')' ':' K_WHITE '{' delimiter payload delimiter '}' {
+			min_cpu = $3;
+			max_cpu = $5;
+
+			if (min_cpu > max_cpu) {
+				int tmp = min_cpu;
+				min_cpu = max_cpu;
+				max_cpu = tmp;
+			}
+
+			realloc_packet(1);
+		}
+	| K_CPU '(' number ')' ':' K_WHITE '{' delimiter payload delimiter '}' {
+			min_cpu = max_cpu = $3;
+			realloc_packet(1);
+		}
 	;
 
 payload
@@ -364,27 +424,18 @@ void cleanup_packets(void)
 
 int compile_packets(char *file, int verbose, int cpu)
 {
+	our_cpu = cpu;
+
 	yyin = fopen(file, "r");
 	if (!yyin)
 		panic("Cannot open file!\n");
 
-	realloc_packet();
+	realloc_packet(0);
 	yyparse();
 	finalize_packet();
 
-	if (cpu == 0) {
-		if (verbose) {
-			dump_conf();
-		} else {
-			int i;
-			size_t total_len = 0;
-
-			printf("%6zu packets to schedule\n", plen);
-			for (i = 0; i < plen; ++i)
-				total_len += packets[i].len;
-			printf("%6zu bytes in total\n", total_len);
-		}
-	}
+	if (our_cpu == 0 && verbose)
+		dump_conf();
 
 	fclose(yyin);
 	return 0;
@@ -392,5 +443,5 @@ int compile_packets(char *file, int verbose, int cpu)
 
 void yyerror(const char *err)
 {
-	panic("Syntax error at line %d: '%s'! %s!\n", yylineno, yytext, err);
+	panic("Syntax error at line%d, at char '%s'! %s!\n", yylineno, yytext, err);
 }

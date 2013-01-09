@@ -44,6 +44,7 @@
 #include <time.h>
 #include <poll.h>
 #include <netdb.h>
+#include <math.h>
 
 #include "xmalloc.h"
 #include "die.h"
@@ -57,7 +58,7 @@
 
 struct ctx {
 	bool rand, rfraw, jumbo_support, verbose, smoke_test;
-	unsigned long kpull, num, gap, reserve_size;
+	unsigned long kpull, num, gap, reserve_size, cpus;
 	struct sockaddr_in dest;
 	char *device, *device_trans, *rhost;
 };
@@ -65,7 +66,11 @@ struct ctx {
 struct cpu_stats {
 	unsigned long long tx_packets, tx_bytes;
 	unsigned long tv_sec, tv_usec;
+	unsigned int state;
 };
+
+#define CPU_STATS_STATE_CFG	1
+#define CPU_STATS_STATE_RES	2
 
 sig_atomic_t sigint = 0;
 
@@ -187,6 +192,10 @@ static void help(void)
 	     "  trafgen --dev wlan0 --rfraw --conf beacon-test.txf -V --cpus 2\n"
 	     "  trafgen --dev eth0 --conf trafgen.txf --rand --gap 1000\n"
 	     "  trafgen --dev eth0 --conf trafgen.txf --rand --num 1400000 -k1000\n\n"
+	     "Packet config examples:\n"
+	     "  Run packet on all CPUs:               { fill(0xff, 64) }\n"
+	     "  Run packet only on CPU1:    cpu(1):   { fill(0xff, 64) }\n"
+	     "  Run packet only on CPU1-2:  cpu(1:2): { fill(0xff, 64) }\n"
 	     "Note:\n"
 	     "  Smoke test example: machine A, 10.0.0.2 (trafgen) is directly\n"
 	     "  connected to machine B (test kernel), 10.0.0.1. If ICMP reply fails\n"
@@ -285,6 +294,8 @@ static struct cpu_stats *setup_shared_var(unsigned long cpus)
 
 	close(fd);
 	unlink(".tmp_mmap");
+
+	memset(buff, 0, sizeof(zbuff));
 
 	return buff;
 }
@@ -491,6 +502,7 @@ retry:
 	stats[cpu].tx_bytes = tx_bytes;
 	stats[cpu].tv_sec = diff.tv_sec;
 	stats[cpu].tv_usec = diff.tv_usec;
+	stats[cpu].state = CPU_STATS_STATE_RES;
 }
 
 static void xmit_fastpath_or_die(struct ctx *ctx, int cpu)
@@ -581,17 +593,34 @@ static void xmit_fastpath_or_die(struct ctx *ctx, int cpu)
 	stats[cpu].tx_bytes = tx_bytes;
 	stats[cpu].tv_sec = diff.tv_sec;
 	stats[cpu].tv_usec = diff.tv_usec;
+	stats[cpu].state = CPU_STATS_STATE_RES;
 }
 
-static int xmit_packet_precheck(const struct ctx *ctx)
+static int xmit_packet_precheck(struct ctx *ctx, int cpu)
 {
 	int i;
-	size_t mtu;
-
-	if (plen == 0)
-		return -1;
+	unsigned long plen_total;
+	size_t mtu, total_len = 0;
 
 	bug_on(plen != dlen);
+
+	for (i = 0; i < plen; ++i)
+		total_len += packets[i].len;
+
+	stats[cpu].tx_packets = plen;
+	stats[cpu].tx_bytes = total_len;
+	stats[cpu].state = CPU_STATS_STATE_CFG;
+
+	for (i = 0, plen_total = plen; i < ctx->cpus; i++) {
+		if (i == cpu)
+			continue;
+		while (stats[i].state != CPU_STATS_STATE_CFG)
+			sleep(0);
+		plen_total += stats[i].tx_packets;
+	}
+
+	if (ctx->num > 0)
+		ctx->num = (unsigned long) round((1.0 * plen / plen_total) * ctx->num);
 
 	for (mtu = device_mtu(ctx->device), i = 0; i < plen; ++i) {
 		if (packets[i].len > mtu + 14)
@@ -600,16 +629,32 @@ static int xmit_packet_precheck(const struct ctx *ctx)
 			panic("Packet%d's size too short!\n", i);
 	}
 
+	if (plen == 0) {
+		memset(&stats[cpu], 0, sizeof(stats[cpu]));
+		stats[cpu].state = CPU_STATS_STATE_RES;
+		return -1;
+	}
+
 	return 0;
 }
 
 static void main_loop(struct ctx *ctx, char *confname, bool slow, int cpu)
 {
 	compile_packets(confname, ctx->verbose, cpu);
-	if (xmit_packet_precheck(ctx) < 0)
+	if (xmit_packet_precheck(ctx, cpu) < 0)
 		return;
 
 	if (cpu == 0) {
+		int i;
+		size_t total_len = 0, total_pkts = 0;
+
+		for (i = 0; i < ctx->cpus; ++i) {
+			total_len += stats[i].tx_bytes;
+			total_pkts += stats[i].tx_packets;
+		}
+
+		printf("%6zu packets to schedule\n", total_pkts);
+		printf("%6zu bytes in total\n", total_len);
 		printf("Running! Hang up with ^C!\n\n");
 		fflush(stdout);
 	}
@@ -631,12 +676,13 @@ int main(int argc, char **argv)
 	bool slow = false;
 	int c, opt_index, i, j, vals[4] = {0}, irq;
 	char *confname = NULL, *ptr;
-	unsigned long cpus = get_number_cpus_online(), cpus_tmp, num = 0;
+	unsigned long cpus_tmp, num_orig = 0;
 	unsigned long long tx_packets, tx_bytes;
 	struct ctx ctx;
 
 	srand(time(NULL));
 	fmemset(&ctx, 0, sizeof(ctx));
+	ctx.cpus = get_number_cpus_online();
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 				&opt_index)) != EOF) {
@@ -652,8 +698,8 @@ int main(int argc, char **argv)
 			break;
 		case 'P':
 			cpus_tmp = strtoul(optarg, NULL, 0);
-			if (cpus_tmp > 0 && cpus_tmp < cpus)
-				cpus = cpus_tmp;
+			if (cpus_tmp > 0 && cpus_tmp < ctx.cpus)
+				ctx.cpus = cpus_tmp;
 			break;
 		case 'd':
 		case 'o':
@@ -664,7 +710,7 @@ int main(int argc, char **argv)
 			break;
 		case 's':
 			slow = true;
-			cpus = 1;
+			ctx.cpus = 1;
 			ctx.smoke_test = true;
 			ctx.rhost = xstrdup(optarg);
 			break;
@@ -682,14 +728,14 @@ int main(int argc, char **argv)
 			ctx.kpull = strtoul(optarg, NULL, 0);
 			break;
 		case 'n':
-			num = strtoul(optarg, NULL, 0);
+			num_orig = ctx.num = strtoul(optarg, NULL, 0);
 			break;
 		case 't':
 			slow = true;
 			ctx.gap = strtoul(optarg, NULL, 0);
 			if (ctx.gap > 0)
 				/* Fall back to single core to have correct timing */
-				cpus = 1;
+				ctx.cpus = 1;
 			break;
 		case 'S':
 			ptr = optarg;
@@ -755,8 +801,6 @@ int main(int argc, char **argv)
 
 	header();
 
-	stats = setup_shared_var(cpus);
-
 	set_system_socket_memory(vals);
 
 	if (ctx.rfraw) {
@@ -770,20 +814,16 @@ int main(int argc, char **argv)
 	irq = device_irq_number(ctx.device);
 	device_reset_irq_affinity(irq);
 
-	if (num > 0 && num <= cpus)
-		cpus = 1;
+	if (ctx.num > 0 && ctx.num <= ctx.cpus)
+		ctx.cpus = 1;
 
-	for (i = 0; i < cpus; i++) {
+	stats = setup_shared_var(ctx.cpus);
+
+	for (i = 0; i < ctx.cpus; i++) {
 		pid_t pid = fork();
 
 		switch (pid) {
 		case 0:
-			if (num > 0) {
-				ctx.num = num / cpus;
-				if (i == cpus - 1)
-					ctx.num += num % cpus;
-			}
-
 			cpu_affinity(i);
 			main_loop(&ctx, confname, slow, i);
 
@@ -793,7 +833,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	for (i = 0; i < cpus; i++) {
+	for (i = 0; i < ctx.cpus; i++) {
 		int status;
 
 		wait(&status);
@@ -804,21 +844,27 @@ int main(int argc, char **argv)
 
 	reset_system_socket_memory(vals);
 
-	for (i = 0, tx_packets = tx_bytes = 0; i < cpus; i++) {
+	for (i = 0, tx_packets = tx_bytes = 0; i < ctx.cpus; i++) {
+		while (stats[i].state != CPU_STATS_STATE_RES)
+			sleep(0);
 		tx_packets += stats[i].tx_packets;
 		tx_bytes += stats[i].tx_bytes;
 	}
+
+	if (num_orig > 0 && sigint == 0)
+		bug_on(num_orig != tx_packets);
 
 	fflush(stdout);
 	printf("\n");
 	printf("\r%12llu packets outgoing\n", tx_packets);
 	printf("\r%12llu bytes outgoing\n", tx_bytes);
-	for (i = 0; i < cpus; i++)
-		printf("\r%12lu sec, %lu usec on CPU%d\n",
-		       stats[i].tv_sec, stats[i].tv_usec, i);
+	for (i = 0; i < ctx.cpus; i++)
+		printf("\r%12lu sec, %lu usec on CPU%d (%llu packets)\n",
+		       stats[i].tv_sec, stats[i].tv_usec, i,
+		       stats[i].tx_packets);
 
 thread_out:
-	destroy_shared_var(stats, cpus);
+	destroy_shared_var(stats, ctx.cpus);
 
 	free(ctx.device);
 	free(ctx.device_trans);
