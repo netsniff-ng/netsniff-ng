@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # netsniff-ng - the packet sniffing beast
 # By Emmanuel Roullit <emmanuel@netsniff-ng.org>
