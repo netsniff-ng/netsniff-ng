@@ -66,14 +66,10 @@ static void give_note_dynamic(void)
 	}
 }
 
-static inline void __init_new_packet_slot(struct packet *slot, int cpu_specific)
+static inline void __init_new_packet_slot(struct packet *slot)
 {
 	slot->payload = NULL;
 	slot->len = 0;
-	if (cpu_specific)
-		slot->cpu_specific = our_cpu;
-	else
-		slot->cpu_specific = -1;
 }
 
 static inline void __init_new_counter_slot(struct packet_dyn *slot)
@@ -88,7 +84,7 @@ static inline void __init_new_randomizer_slot(struct packet_dyn *slot)
 	slot->rlen = 0;
 }
 
-static void realloc_packet(int cpu_specific)
+static void realloc_packet(void)
 {
 	if (test_ignore())
 		return;
@@ -96,7 +92,7 @@ static void realloc_packet(int cpu_specific)
 	plen++;
 	packets = xrealloc(packets, 1, plen * sizeof(*packets));
 
-	__init_new_packet_slot(&packets[packet_last], cpu_specific);
+	__init_new_packet_slot(&packets[packet_last]);
 
 	dlen++;
 	packet_dyn = xrealloc(packet_dyn, 1, dlen * sizeof(*packet_dyn));
@@ -267,7 +263,7 @@ inline_comment
 packet
 	: '{' delimiter payload delimiter '}' {
 			min_cpu = max_cpu = -1;
-			realloc_packet(0);
+			realloc_packet();
 		}
 	| K_CPU '(' number ':' number ')' ':' K_WHITE '{' delimiter payload delimiter '}' {
 			min_cpu = $3;
@@ -279,11 +275,11 @@ packet
 				max_cpu = tmp;
 			}
 
-			realloc_packet(1);
+			realloc_packet();
 		}
 	| K_CPU '(' number ')' ':' K_WHITE '{' delimiter payload delimiter '}' {
 			min_cpu = max_cpu = $3;
-			realloc_packet(1);
+			realloc_packet();
 		}
 	;
 
@@ -430,7 +426,7 @@ int compile_packets(char *file, int verbose, int cpu)
 	if (!yyin)
 		panic("Cannot open file!\n");
 
-	realloc_packet(0);
+	realloc_packet();
 	yyparse();
 	finalize_packet();
 
