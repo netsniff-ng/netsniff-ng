@@ -71,19 +71,20 @@ label		[a-zA-Z_][a-zA-Z0-9_]+
 "ret"		{ return OP_RET; }
 "tax"		{ return OP_TAX; }
 "txa"		{ return OP_TXA; }
-"len"|"pktlen"	{ return K_PKT_LEN; }
-"pto"|"proto"	{ return K_PROTO; }
-"type"		{ return K_TYPE; }
-"ifx"|"ifidx"	{ return K_IFIDX; }
-"nla"		{ return K_NLATTR; }
-"nlan"		{ return K_NLATTR_NEST; }
-"mark"		{ return K_MARK; }
-"que"|"queue"	{ return K_QUEUE; }
-"hat"|"hatype"	{ return K_HATYPE; }
-"rxh"|"rxhash"	{ return K_RXHASH; }
-"cpu"		{ return K_CPU; }
-"vlant"		{ return K_VLANT; }
-"vlanp"		{ return K_VLANP; }
+
+"#"?("len"|"pktlen")	{ return K_PKT_LEN; }
+"#"?("pto"|"proto")	{ return K_PROTO; }
+"#"?("type")		{ return K_TYPE; }
+"#"?("ifx"|"ifidx")	{ return K_IFIDX; }
+"#"?("nla")		{ return K_NLATTR; }
+"#"?("nlan")		{ return K_NLATTR_NEST; }
+"#"?("mark")		{ return K_MARK; }
+"#"?("que"|"queue"|"Q")	{ return K_QUEUE; }
+"#"?("hat"|"hatype")	{ return K_HATYPE; }
+"#"?("rxh"|"rxhash")	{ return K_RXHASH; }
+"#"?("cpu")		{ return K_CPU; }
+"#"?("vlant"|"vlan_tci")   { return K_VLANT; }
+"#"?("vlanp"|"vlan_avail") { return K_VLANP; }
 
 ":"		{ return ':'; }
 ","		{ return ','; }
