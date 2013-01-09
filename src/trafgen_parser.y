@@ -115,7 +115,7 @@ static void set_byte(uint8_t val)
 
 static void set_fill(uint8_t val, size_t len)
 {
-	int i;
+	size_t i;
 	struct packet *pkt = &packets[packet_last];
 
 	if (test_ignore())
@@ -129,7 +129,7 @@ static void set_fill(uint8_t val, size_t len)
 
 static void set_rnd(size_t len)
 {
-	int i;
+	size_t i;
 	struct packet *pkt = &packets[packet_last];
 
 	if (test_ignore())
@@ -143,7 +143,7 @@ static void set_rnd(size_t len)
 
 static void set_seqinc(uint8_t start, size_t len, uint8_t stepping)
 {
-	int i;
+	size_t i;
 	struct packet *pkt = &packets[packet_last];
 
 	if (test_ignore())
@@ -161,7 +161,7 @@ static void set_seqinc(uint8_t start, size_t len, uint8_t stepping)
 
 static void set_seqdec(uint8_t start, size_t len, uint8_t stepping)
 {
-	int i;
+	size_t i;
 	struct packet *pkt = &packets[packet_last];
 
 	if (test_ignore())
@@ -401,7 +401,7 @@ static void dump_conf(void)
 
 void cleanup_packets(void)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < plen; ++i) {
 		if (packets[i].len > 0)

@@ -81,6 +81,9 @@ int compile_hla_filter(char *file, int verbose, int debug)
 	fpos_t pos;
 	char file_tmp[128];
 
+	/* XXX */
+	verbose = verbose;
+
 	if (!strncmp("-", file, strlen("-")))
 		zzin = stdin;
 	else

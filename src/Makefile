@@ -73,7 +73,17 @@ WFLAGS += -Wstrict-prototypes
 WFLAGS += -Wundef
 WFLAGS += -Wimplicit-int
 
-WFLAGS_EXTRA =
+WFLAGS_EXTRA  = -Wno-unused-result
+WFLAGS_EXTRA += -Wmissing-parameter-type
+WFLAGS_EXTRA += -Wunused-but-set-parameter
+WFLAGS_EXTRA += -Wtype-limits
+WFLAGS_EXTRA += -Wclobbered
+WFLAGS_EXTRA += -Wmissing-field-initializers
+WFLAGS_EXTRA += -Woverride-init
+WFLAGS_EXTRA += -Wold-style-declaration
+WFLAGS_EXTRA += -Wignored-qualifiers
+WFLAGS_EXTRA += -Wempty-body
+WFLAGS_EXTRA += -Wuninitialized
 
 CFLAGS += $(WFLAGS) -I.
 CPPFLAGS =
@@ -240,7 +250,7 @@ astraceroute_install_custom:
 	$(Q)$(call INST,conf/whois.conf,$(ETCDIRE))
 	$(Q)$(call INSTX,../scripts/astraceroute6,$(SBINDIR))
 
-$(TOOLS_MOST): WFLAGS += $(WFLAGS_EXTRA)
+$(TOOLS): WFLAGS += $(WFLAGS_EXTRA)
 $(TOOLS):
 	$(LD) $(ALL_LDFLAGS) -o $@/$@ $@/*.o $($@-libs)
 	$(STRIP) $@/$@

@@ -590,7 +590,7 @@ int main(int argc, char **argv)
 	enum working_mode wmode = MODE_UNKNOW;
 
 	if (getuid() != geteuid())
-		if (seteuid(getuid()));
+		if (seteuid(getuid())) { ; }
 
 	home = fetch_home_dir();
 

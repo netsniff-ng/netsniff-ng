@@ -122,7 +122,7 @@ static void handler_udp_net_to_tun(int sfd, int dfd, struct curve25519_proto *p,
                 cbuff += crypto_box_zerobytes;
                 clen -= crypto_box_zerobytes;
 
-		if (write(dfd, cbuff, clen));
+		if (write(dfd, cbuff, clen)) { ; }
 	}
 
 	return;
@@ -208,7 +208,7 @@ static void handler_tcp_net_to_tun(int sfd, int dfd, struct curve25519_proto *p,
 		cbuff += crypto_box_zerobytes;
 		clen -= crypto_box_zerobytes;
 
-		if (write(dfd, cbuff, clen));
+		if (write(dfd, cbuff, clen)) { ; }
 	}
 
 	return;

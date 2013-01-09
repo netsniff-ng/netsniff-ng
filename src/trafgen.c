@@ -28,6 +28,7 @@
 #include <stdbool.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/fsuid.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/wait.h>
@@ -679,6 +680,9 @@ int main(int argc, char **argv)
 	unsigned long cpus_tmp, num_orig = 0;
 	unsigned long long tx_packets, tx_bytes;
 	struct ctx ctx;
+
+	setfsuid(getuid());
+	setfsgid(getgid());
 
 	srand(time(NULL));
 	fmemset(&ctx, 0, sizeof(ctx));

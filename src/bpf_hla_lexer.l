@@ -44,7 +44,7 @@ static const struct res_keywords keytab[] = {
 
 void bpf_hla_lex_init(void)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < array_size(keytab); ++i)
 		bpf_symtab_insert(keytab[i].key, keytab[i].token);
 }

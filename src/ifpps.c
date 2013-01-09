@@ -158,8 +158,8 @@ static int stats_proc_net_dev(const char *ifname, struct ifstat *stats)
 		panic("Cannot open /proc/net/dev!\n");
 
 	/* Omit table header from procfs file */
-	if (fgets(buff, sizeof(buff), fp));
-	if (fgets(buff, sizeof(buff), fp));
+	if (fgets(buff, sizeof(buff), fp)) { ; }
+	if (fgets(buff, sizeof(buff), fp)) { ; }
 
 	memset(buff, 0, sizeof(buff));
 

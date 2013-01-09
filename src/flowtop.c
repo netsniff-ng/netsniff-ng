@@ -1119,7 +1119,7 @@ static void collector_destroy_geoip(void)
 	GeoIP_delete(geo_city.gi6);
 }
 
-static void inline collector_flush(struct nfct_handle *handle, uint8_t family)
+static inline void collector_flush(struct nfct_handle *handle, uint8_t family)
 {
 	nfct_query(handle, NFCT_Q_FLUSH, &family);
 }

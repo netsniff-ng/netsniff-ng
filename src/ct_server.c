@@ -341,7 +341,7 @@ static void handler_tcp_notify_close(int fd)
 	hdr.flags |= PROTO_FLAG_EXIT;
 	hdr.payload = 0;
 
-	if (write(fd, &hdr, sizeof(hdr)));
+	if (write(fd, &hdr, sizeof(hdr))) { ; }
 }
 
 static int handler_tcp_net_to_tun(int fd, const struct worker_struct *ws,
