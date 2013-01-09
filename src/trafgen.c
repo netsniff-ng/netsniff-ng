@@ -75,7 +75,7 @@ size_t plen = 0;
 struct packet_dyn *packet_dyn = NULL;
 size_t dlen = 0;
 
-static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRs";
+static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRsP:";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"out",			required_argument,	NULL, 'o'},
@@ -83,6 +83,7 @@ static const struct option long_options[] = {
 	{"conf",		required_argument,	NULL, 'c'},
 	{"num",			required_argument,	NULL, 'n'},
 	{"gap",			required_argument,	NULL, 't'},
+	{"cpus",		required_argument,	NULL, 'P'},
 	{"ring-size",		required_argument,	NULL, 'S'},
 	{"kernel-pull",		required_argument,	NULL, 'k'},
 	{"smoke-test",		required_argument,	NULL, 's'},
@@ -172,6 +173,7 @@ static void help(void)
 	     "  -s|--smoke-test <ipv4-receiver>   Test if machine survived packet\n"
 	     "  -n|--num <uint>                   Number of packets until exit (def: 0)\n"
 	     "  -r|--rand                         Randomize packet selection (def: round robin)\n"
+	     "  -P|--cpus <uint>                  Specify number of forks(<= CPUs) (def: #CPUs)\n"
 	     "  -t|--gap <uint>                   Interpacket gap in us (approx)\n"
 	     "  -S|--ring-size <size>             Manually set mmap size (KB/MB/GB): e.g.\'10MB\'\n"
 	     "  -k|--kernel-pull <uint>           Kernel batch interval in us (def: 10us)\n"
@@ -182,7 +184,7 @@ static void help(void)
 	     "  See trafgen.txf for configuration file examples.\n"
 	     "  trafgen --dev eth0 --conf trafgen.txf\n"
 	     "  trafgen --dev eth0 --conf trafgen.txf --smoke-test 10.0.0.1\n"
-	     "  trafgen --dev wlan0 --rfraw --conf beacon-test.txf -V\n"
+	     "  trafgen --dev wlan0 --rfraw --conf beacon-test.txf -V --cpus 2\n"
 	     "  trafgen --dev eth0 --conf trafgen.txf --rand --gap 1000\n"
 	     "  trafgen --dev eth0 --conf trafgen.txf --rand --num 1400000 -k1000\n\n"
 	     "Note:\n"
@@ -623,7 +625,7 @@ int main(int argc, char **argv)
 	bool slow = false;
 	int c, opt_index, i, j, vals[4] = {0}, irq;
 	char *confname = NULL, *ptr;
-	unsigned long cpus = get_number_cpus_online(), num = 0;
+	unsigned long cpus = get_number_cpus_online(), cpus_tmp, num = 0;
 	unsigned long long tx_packets, tx_bytes;
 	struct ctx ctx;
 
@@ -641,6 +643,11 @@ int main(int argc, char **argv)
 			break;
 		case 'V':
 			ctx.verbose = true;
+			break;
+		case 'P':
+			cpus_tmp = strtoul(optarg, NULL, 0);
+			if (cpus_tmp > 0 && cpus_tmp < cpus)
+				cpus = cpus_tmp;
 			break;
 		case 'd':
 		case 'o':
@@ -707,6 +714,7 @@ int main(int argc, char **argv)
 			case 'n':
 			case 'S':
 			case 's':
+			case 'P':
 			case 'o':
 			case 'i':
 			case 'k':
