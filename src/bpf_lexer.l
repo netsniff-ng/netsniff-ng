@@ -83,8 +83,9 @@ label		[a-zA-Z_][a-zA-Z0-9_]+
 "#"?("hat"|"hatype")	{ return K_HATYPE; }
 "#"?("rxh"|"rxhash")	{ return K_RXHASH; }
 "#"?("cpu")		{ return K_CPU; }
-"#"?("vlant"|"vlan_tci")   { return K_VLANT; }
-"#"?("vlanp"|"vlan_avail") { return K_VLANP; }
+"#"?("vlant"|"vlan_tci") { return K_VLANT; }
+"#"?("vlana"|"vlan_acc") { return K_VLANP; }
+"#"?("vlanp") 		 { return K_VLANP; }
 
 ":"		{ return ':'; }
 ","		{ return ','; }
