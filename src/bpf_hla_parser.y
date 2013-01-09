@@ -46,9 +46,6 @@ extern char *zztext;
 
 int compile_hla_filter(char *file, int verbose, int debug);
 
-static unsigned int num_vars = 0;
-static unsigned int num_ifs = 0;
-
 %}
 
 %union {
@@ -63,130 +60,12 @@ static unsigned int num_ifs = 0;
 
 %token '(' ')' '{' '}' '=' ';' '+' '-' '&' '|' '^' '!' '<' '>' '*' '/' '%' ','
 
-%type <idx> K_NAME var
 %type <number> number
 
 %%
 
 program
-	: declaration_list { printf("_entry:\n"); } statement_list
-	| short_ret /* for short filter statements */
-	;
-
-declaration_list
-	: declaration { num_vars++; } declaration_list
-	| /* empty */
-	;
-
-statement_list
-	: statement statement_list
-	| statement
-	;
-
-declaration
-	: K_DEF K_NAME ';' { 
-		if (bpf_symtab_declared($2)) {
-			panic("Variable \"%s\" already declared (l%d)\n",
-			      bpf_symtab_name($2), zzlineno);
-		} else {
-			printf("; @var %s\n", bpf_symtab_name($2));
-			bpf_symtab_declare($2); 
-		}}
-	;
-
-block
-	: condition
-	;
-
-statement
-	: assignment ';'
-	| return ';'
-	| block
-	;
-
-short_ret
-	: expression
-	;
-
-return
-	: K_RET { printf("  ret a\n"); }
-	| K_RET number { printf("  ret #%ld\n", $2); }
-	| K_RET var { printf("  ret a\n"); }
-	| K_RET expression { printf("  ret macro\n"); }
-	;
-
-macro
-	: K_MACRO_IPV4 { printf("ipv4\n"); }
-	| K_MACRO_IPV6 { printf("ipv6\n"); }
-	| K_MACRO_IP { printf("ip\n"); }
-	| K_MACRO_UDP { printf("udp\n"); }
-	| K_MACRO_TCP { printf("tcp\n"); }
-	;
-
-condition
-	: { num_ifs++; } K_IF '(' expression ')' '{'
-		{ printf("jpt_f%u:\n", num_ifs); }
-	  statement_list '}' condition_contd
-	;
-
-condition_contd
-	: K_ELIF '(' expression ')' '{' statement_list '}' condition_contd
-	| K_ELSE '{' { printf("jpt_e%u:\n", num_ifs); } statement_list '}'
-	| /* None */
-	;
-
-assignment
-	: var '=' expression { printf("; @asn %s\n", bpf_symtab_name($1)); }
-	| var '=' K_PKT '(' number ',' number ')' {
-			switch ($7) {
-			case 1:
-				printf("  ldb [%ld]\n", $5);
-				break;
-			case 2:
-				printf("  ldh [%ld]\n", $5);
-				break;
-			case 4:
-				printf("  ld [%ld]\n", $5);
-				break;
-			default:
-				panic("Invalid argument (l%d)\n", zzlineno);
-			}
-		}
-	;
-
-expression
-	: term
-	| '!' term { printf("; @!\n"); }
-	| term '+' term { printf("; @+\n"); }
-	| term '-' term { printf("; @-\n"); }
-	| term '/' term { printf("; @/\n"); }
-	| term '*' term { printf("; @*\n"); }
-	| term '%' term { printf("; @\n"); }
-	| term '&' term { printf("; @&\n"); }
-	| term '|' term { printf("; @|\n"); }
-	| term '^' term { printf("; @^\n"); }
-	| term '<' term { printf("; @<\n"); }
-	| term '>' term { printf("; @>\n"); }
-	| term '=' '=' term { printf("; @==\n"); }
-	| term '&' '&' term { printf("; @&&\n"); }
-	| term '|' '|' term { printf("; @||\n"); }
-	| term '<' '<' term { printf("; @<<\n"); }
-	| term '>' '>' term { printf("; @>>\n"); }
-	;
-
-term
-	: number { printf("; @num %ld\n", $1); }
-	| var { printf("; @var %s\n", bpf_symtab_name($1)); }
-	| macro
-	| '(' expression ')'
-	;
-
-var
-	: K_NAME {
-		if (!bpf_symtab_declared($1))
-			panic("Variable \"%s\" not declared (l%d)\n", 
-			      bpf_symtab_name($1), zzlineno);
-		$$ = $1; }
+	: { printf("Not supported yet!\n"); }
 	;
 
 %%

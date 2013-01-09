@@ -132,7 +132,7 @@ static int find_intr_offset_or_panic(char *label_to_search)
 %token OP_LDXI
 
 %token K_PKT_LEN K_PROTO K_TYPE K_NLATTR K_NLATTR_NEST K_MARK K_QUEUE K_HATYPE
-%token K_RXHASH K_CPU K_IFIDX K_VLANT K_VLANP K_VLAN
+%token K_RXHASH K_CPU K_IFIDX K_VLANT K_VLANP
 
 %token ':' ',' '[' ']' '(' ')' 'x' 'a' '+' 'M' '*' '&' '#'
 
