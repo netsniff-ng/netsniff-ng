@@ -583,12 +583,15 @@ static void xmit_fastpath_or_die(struct ctx *ctx, int cpu)
 	stats[cpu].tv_usec = diff.tv_usec;
 }
 
-static void xmit_packet_precheck(const struct ctx *ctx)
+static int xmit_packet_precheck(const struct ctx *ctx)
 {
 	int i;
 	size_t mtu;
 
-	bug_on(plen == 0 || plen != dlen);
+	if (plen == 0)
+		return -1;
+
+	bug_on(plen != dlen);
 
 	for (mtu = device_mtu(ctx->device), i = 0; i < plen; ++i) {
 		if (packets[i].len > mtu + 14)
@@ -596,12 +599,15 @@ static void xmit_packet_precheck(const struct ctx *ctx)
 		if (packets[i].len <= 14)
 			panic("Packet%d's size too short!\n", i);
 	}
+
+	return 0;
 }
 
 static void main_loop(struct ctx *ctx, char *confname, bool slow, int cpu)
 {
 	compile_packets(confname, ctx->verbose, cpu);
-	xmit_packet_precheck(ctx);
+	if (xmit_packet_precheck(ctx) < 0)
+		return;
 
 	if (cpu == 0) {
 		printf("Running! Hang up with ^C!\n\n");
