@@ -65,13 +65,12 @@ struct ctx {
 };
 
 struct cpu_stats {
-	unsigned long long tx_packets, tx_bytes;
 	unsigned long tv_sec, tv_usec;
-	unsigned int state;
+	unsigned long long tx_packets, tx_bytes;
+	unsigned long long cf_packets, cf_bytes;
+	unsigned long long cd_packets;
+	sig_atomic_t state;
 };
-
-#define CPU_STATS_STATE_CFG	1
-#define CPU_STATS_STATE_RES	2
 
 sig_atomic_t sigint = 0;
 
@@ -109,6 +108,10 @@ static struct itimerval itimer;
 static unsigned long interval = TX_KERNEL_PULL_INT;
 
 static struct cpu_stats *stats;
+
+#define CPU_STATS_STATE_CFG	1
+#define CPU_STATS_STATE_CHK	2
+#define CPU_STATS_STATE_RES	4
 
 #define set_system_socket_memory(vals) \
 	do { \
@@ -188,15 +191,15 @@ static void help(void)
 	     "  -h|--help                         Guess what?!\n\n"
 	     "Examples:\n"
 	     "  See trafgen.txf for configuration file examples.\n"
-	     "  trafgen --dev eth0 --conf trafgen.txf\n"
-	     "  trafgen --dev eth0 --conf trafgen.txf --smoke-test 10.0.0.1\n"
+	     "  trafgen --dev eth0 --conf trafgen.cfg\n"
+	     "  trafgen --dev eth0 --conf trafgen.cfg --smoke-test 10.0.0.1\n"
 	     "  trafgen --dev wlan0 --rfraw --conf beacon-test.txf -V --cpus 2\n"
-	     "  trafgen --dev eth0 --conf trafgen.txf --rand --gap 1000\n"
-	     "  trafgen --dev eth0 --conf trafgen.txf --rand --num 1400000 -k1000\n\n"
-	     "Packet config examples:\n"
-	     "  Run packet on all CPUs:               { fill(0xff, 64) }\n"
-	     "  Run packet only on CPU1:    cpu(1):   { fill(0xff, 64) }\n"
-	     "  Run packet only on CPU1-2:  cpu(1:2): { fill(0xff, 64) }\n"
+	     "  trafgen --dev eth0 --conf trafgen.cfg --rand --gap 1000\n"
+	     "  trafgen --dev eth0 --conf trafgen.cfg --rand --num 1400000 -k1000\n\n"
+	     "Arbitrary packet config examples (trafgen.cfg):\n"
+	     "  Run packet on  all CPUs:              { fill(0xff, 64) csum16(0, 64) }\n"
+	     "  Run packet only on CPU1:    cpu(1):   { rnd(64), 0b11001100, 0xaa }\n"
+	     "  Run packet only on CPU1-2:  cpu(1:2): { drnd(64), 'a', 'b', 42 }\n"
 	     "Note:\n"
 	     "  Smoke test example: machine A, 10.0.0.2 (trafgen) is directly\n"
 	     "  connected to machine B (test kernel), 10.0.0.1. If ICMP reply fails\n"
@@ -275,16 +278,17 @@ static inline void apply_randomizer(int rand_id)
 static struct cpu_stats *setup_shared_var(unsigned long cpus)
 {
 	int fd;
-	char zbuff[cpus * sizeof(struct cpu_stats)];
+	char zbuff[cpus * sizeof(struct cpu_stats)], file[256];
 	struct cpu_stats *buff;
 
 	memset(zbuff, 0, sizeof(zbuff));
+	slprintf(file, sizeof(file), ".tmp_mmap.%u", (unsigned int) rand());
 
-	fd = creat(".tmp_mmap", S_IRUSR | S_IWUSR);
+	fd = creat(file, S_IRUSR | S_IWUSR);
 	bug_on(fd < 0);
 	close(fd);
 
-	fd = open_or_die_m(".tmp_mmap", O_RDWR | O_CREAT | O_TRUNC,
+	fd = open_or_die_m(file, O_RDWR | O_CREAT | O_TRUNC,
 			   S_IRUSR | S_IWUSR);
 	write_or_die(fd, zbuff, sizeof(zbuff));
 
@@ -294,7 +298,7 @@ static struct cpu_stats *setup_shared_var(unsigned long cpus)
 		panic("Cannot setup shared variable!\n");
 
 	close(fd);
-	unlink(".tmp_mmap");
+	unlink(file);
 
 	memset(buff, 0, sizeof(zbuff));
 
@@ -503,7 +507,8 @@ retry:
 	stats[cpu].tx_bytes = tx_bytes;
 	stats[cpu].tv_sec = diff.tv_sec;
 	stats[cpu].tv_usec = diff.tv_usec;
-	stats[cpu].state = CPU_STATS_STATE_RES;
+
+	stats[cpu].state |= CPU_STATS_STATE_RES;
 }
 
 static void xmit_fastpath_or_die(struct ctx *ctx, int cpu)
@@ -594,13 +599,93 @@ static void xmit_fastpath_or_die(struct ctx *ctx, int cpu)
 	stats[cpu].tx_bytes = tx_bytes;
 	stats[cpu].tv_sec = diff.tv_sec;
 	stats[cpu].tv_usec = diff.tv_usec;
-	stats[cpu].state = CPU_STATS_STATE_RES;
+
+	stats[cpu].state |= CPU_STATS_STATE_RES;
+}
+
+static inline void __set_state(int cpu, sig_atomic_t s)
+{
+	stats[cpu].state = s;
+}
+
+static inline sig_atomic_t __get_state(int cpu)
+{
+	return stats[cpu].state;
+}
+
+static unsigned long __wait_and_sum_others(struct ctx *ctx, int cpu)
+{
+	int i;
+	unsigned long total;
+
+	for (i = 0, total = plen; i < ctx->cpus; i++) {
+		if (i == cpu)
+			continue;
+
+		while ((__get_state(i) & CPU_STATS_STATE_CFG) == 0 &&
+		       sigint == 0)
+			sched_yield();
+
+		total += stats[i].cf_packets;
+	}
+
+	return total;
+}
+
+static void __correct_global_delta(struct ctx *ctx, int cpu, unsigned long orig)
+{
+	int i, cpu_sel;
+	unsigned long total;
+	long long delta_correction = 0;
+
+	for (i = 0, total = ctx->num; i < ctx->cpus; i++) {
+		if (i == cpu)
+			continue;
+
+		while ((__get_state(i) & CPU_STATS_STATE_CHK) == 0 &&
+		       sigint == 0)
+			sched_yield();
+
+		total += stats[i].cd_packets;
+	}
+
+	if (total > orig)
+		delta_correction = -1 * ((long long) total - orig);
+	if (total < orig)
+		delta_correction = +1 * ((long long) orig - total);
+
+	for (cpu_sel = -1, i = 0; i < ctx->cpus; i++) {
+		if (stats[i].cd_packets > 0) {
+			if ((long long) stats[i].cd_packets +
+			    delta_correction > 0) {
+				cpu_sel = i;
+				break;
+			}
+		}
+	}
+
+	if (cpu == cpu_sel)
+		ctx->num += delta_correction;
+}
+
+static void __set_state_cf(int cpu, unsigned long p, unsigned long b,
+			   sig_atomic_t s)
+{
+	stats[cpu].cf_packets = p;
+	stats[cpu].cf_bytes = b;
+	stats[cpu].state = s;
+}
+
+static void __set_state_cd(int cpu, unsigned long p, sig_atomic_t s)
+{
+	stats[cpu].cd_packets = p;
+	stats[cpu].state = s;
 }
 
 static int xmit_packet_precheck(struct ctx *ctx, int cpu)
 {
 	int i;
-	unsigned long plen_total;
+	unsigned long plen_total, orig = ctx->num;
 	size_t mtu, total_len = 0;
 
 	bug_on(plen != dlen);
@@ -608,32 +693,27 @@ static int xmit_packet_precheck(struct ctx *ctx, int cpu)
 	for (i = 0; i < plen; ++i)
 		total_len += packets[i].len;
 
-	stats[cpu].tx_packets = plen;
-	stats[cpu].tx_bytes = total_len;
-	stats[cpu].state = CPU_STATS_STATE_CFG;
+	__set_state_cf(cpu, plen, total_len, CPU_STATS_STATE_CFG);
+	plen_total = __wait_and_sum_others(ctx, cpu);
 
-	for (i = 0, plen_total = plen; i < ctx->cpus; i++) {
-		if (i == cpu)
-			continue;
-		while (stats[i].state != CPU_STATS_STATE_CFG)
-			sleep(0);
-		plen_total += stats[i].tx_packets;
+	if (orig > 0) {
+		ctx->num = (unsigned long) nearbyint((1.0 * plen / plen_total) * orig);
+
+		__set_state_cd(cpu, ctx->num, CPU_STATS_STATE_CHK |
+			       CPU_STATS_STATE_CFG);
+		__correct_global_delta(ctx, cpu, orig);
 	}
 
-	if (ctx->num > 0)
-		ctx->num = (unsigned long) round((1.0 * plen / plen_total) * ctx->num);
+	if (plen == 0) {
+		__set_state(cpu, CPU_STATS_STATE_RES);
+		return -1;
+	}
 
 	for (mtu = device_mtu(ctx->device), i = 0; i < plen; ++i) {
 		if (packets[i].len > mtu + 14)
 			panic("Device MTU < than packet%d's size!\n", i);
 		if (packets[i].len <= 14)
 			panic("Packet%d's size too short!\n", i);
-	}
-
-	if (plen == 0) {
-		memset(&stats[cpu], 0, sizeof(stats[cpu]));
-		stats[cpu].state = CPU_STATS_STATE_RES;
-		return -1;
 	}
 
 	return 0;
@@ -650,8 +730,8 @@ static void main_loop(struct ctx *ctx, char *confname, bool slow, int cpu)
 		size_t total_len = 0, total_pkts = 0;
 
 		for (i = 0; i < ctx->cpus; ++i) {
-			total_len += stats[i].tx_bytes;
-			total_pkts += stats[i].tx_packets;
+			total_len  += stats[i].cf_bytes;
+			total_pkts += stats[i].cf_packets;
 		}
 
 		printf("%6zu packets to schedule\n", total_pkts);
@@ -677,7 +757,7 @@ int main(int argc, char **argv)
 	bool slow = false;
 	int c, opt_index, i, j, vals[4] = {0}, irq;
 	char *confname = NULL, *ptr;
-	unsigned long cpus_tmp, num_orig = 0;
+	unsigned long cpus_tmp;
 	unsigned long long tx_packets, tx_bytes;
 	struct ctx ctx;
 
@@ -732,13 +812,16 @@ int main(int argc, char **argv)
 			ctx.kpull = strtoul(optarg, NULL, 0);
 			break;
 		case 'n':
-			num_orig = ctx.num = strtoul(optarg, NULL, 0);
+			ctx.num = strtoul(optarg, NULL, 0);
 			break;
 		case 't':
 			slow = true;
 			ctx.gap = strtoul(optarg, NULL, 0);
 			if (ctx.gap > 0)
-				/* Fall back to single core to have correct timing */
+				/* Fall back to single core to not
+				 * mess up correct timing. We are slow
+				 * anyway!
+				 */
 				ctx.cpus = 1;
 			break;
 		case 'S':
@@ -849,23 +932,22 @@ int main(int argc, char **argv)
 	reset_system_socket_memory(vals);
 
 	for (i = 0, tx_packets = tx_bytes = 0; i < ctx.cpus; i++) {
-		while (stats[i].state != CPU_STATS_STATE_RES)
-			sleep(0);
-		tx_packets += stats[i].tx_packets;
-		tx_bytes += stats[i].tx_bytes;
-	}
+		while ((__get_state(i) & CPU_STATS_STATE_RES) == 0)
+			sched_yield();
 
-	if (num_orig > 0 && sigint == 0)
-		bug_on(num_orig != tx_packets);
+		tx_packets += stats[i].tx_packets;
+		tx_bytes   += stats[i].tx_bytes;
+	}
 
 	fflush(stdout);
 	printf("\n");
 	printf("\r%12llu packets outgoing\n", tx_packets);
 	printf("\r%12llu bytes outgoing\n", tx_bytes);
-	for (i = 0; i < ctx.cpus; i++)
+	for (i = 0; i < ctx.cpus; i++) {
 		printf("\r%12lu sec, %lu usec on CPU%d (%llu packets)\n",
 		       stats[i].tv_sec, stats[i].tv_usec, i,
 		       stats[i].tx_packets);
+	}
 
 thread_out:
 	destroy_shared_var(stats, ctx.cpus);

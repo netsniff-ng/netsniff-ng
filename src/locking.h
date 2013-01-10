@@ -10,6 +10,8 @@
 
 #include <pthread.h>
 
+#include "built_in.h"
+
 struct spinlock {
 	pthread_spinlock_t lock;
 };
@@ -65,6 +67,12 @@ static inline void mutexlock_unlock(struct mutexlock *l)
 static inline int rwlock_init(struct rwlock *l)
 {
 	return -pthread_rwlock_init(&l->lock, 0);
+}
+
+static inline int rwlock_init2(struct rwlock *l,
+			pthread_rwlockattr_t *restrict attr)
+{
+	return -pthread_rwlock_init(&l->lock, attr);
 }
 
 static inline void rwlock_destroy(struct rwlock *l)

@@ -21,6 +21,7 @@
 #include "trafgen_conf.h"
 #include "built_in.h"
 #include "die.h"
+#include "csum.h"
 
 #define YYERROR_VERBOSE		0
 #define YYDEBUG			0
@@ -125,6 +126,34 @@ static void set_fill(uint8_t val, size_t len)
 	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
 	for (i = 0; i < len; ++i)
 		pkt->payload[payload_last - i] = val;
+}
+
+static void set_csum16(size_t from, size_t to)
+{
+	struct packet *pkt = &packets[packet_last];
+	uint16_t sum;
+	uint8_t *psum;
+
+	if (test_ignore())
+		return;
+
+	if (to < from) {
+		size_t tmp = to;
+
+		to = from;
+		from = tmp;
+	}
+
+	bug_on(!(from < to));
+
+	if (to >= pkt->len)
+		to = pkt->len - 1;
+
+	sum = htons(calc_csum(pkt->payload + from, to - from, 0));
+	psum = (uint8_t *) &sum;
+
+	set_byte(psum[0]);
+	set_byte(psum[1]);
 }
 
 static void set_rnd(size_t len)
@@ -239,7 +268,8 @@ static void set_dincdec(uint8_t start, uint8_t stop, uint8_t stepping, int type)
 	long int number;
 }
 
-%token K_COMMENT K_FILL K_RND K_SEQINC K_SEQDEC K_DRND K_DINC K_DDEC K_WHITE K_CPU
+%token K_COMMENT K_FILL K_RND K_SEQINC K_SEQDEC K_DRND K_DINC K_DDEC K_WHITE
+%token K_CPU K_CSUM16
 
 %token ',' '{' '}' '(' ')' '[' ']' ':'
 
@@ -271,6 +301,7 @@ packet
 
 			if (min_cpu > max_cpu) {
 				int tmp = min_cpu;
+
 				min_cpu = max_cpu;
 				max_cpu = tmp;
 			}
@@ -298,6 +329,19 @@ elem_delimiter
 	: delimiter elem { }
 	;
 
+elem
+	: number { set_byte((uint8_t) $1); }
+	| fill { }
+	| rnd { }
+	| drnd { }
+	| seqinc { }
+	| seqdec { }
+	| dinc { }
+	| ddec { }
+	| csum { }
+	| inline_comment { }
+	;
+
 fill
 	: K_FILL '(' number delimiter number ')'
 		{ set_fill($3, $5); }
@@ -306,6 +350,11 @@ fill
 rnd
 	: K_RND '(' number ')'
 		{ set_rnd($3); }
+	;
+
+csum
+	: K_CSUM16 '(' number delimiter number ')'
+		{ set_csum16($3, $5); }
 	;
 
 seqinc
@@ -345,18 +394,6 @@ ddec
 		{ set_dincdec($3, $5, 1, TYPE_DEC); }
 	| K_DDEC '(' number delimiter number delimiter number ')'
 		{ set_dincdec($3, $5, $7, TYPE_DEC); }
-	;
-
-elem
-	: number { set_byte((uint8_t) $1); }
-	| fill { }
-	| rnd { }
-	| drnd { }
-	| seqinc { }
-	| seqdec { }
-	| dinc { }
-	| ddec { }
-	| inline_comment { }
 	;
 
 %%
