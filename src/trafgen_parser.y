@@ -37,16 +37,21 @@ extern char *yytext;
 
 extern struct packet *packets;
 extern size_t plen;
+
 #define packet_last		(plen - 1)
+
 #define payload_last		(packets[packet_last].len - 1)
 
 extern struct packet_dyn *packet_dyn;
 extern size_t dlen;
+
 #define packetd_last		(dlen - 1)
+
 #define packetdc_last		(packet_dyn[packetd_last].clen - 1)
 #define packetdr_last		(packet_dyn[packetd_last].rlen - 1)
+#define packetds_last		(packet_dyn[packetd_last].slen - 1)
 
-static int dfunc_note_flag = 0, our_cpu, min_cpu = -1, max_cpu = -1;
+static int our_cpu, min_cpu = -1, max_cpu = -1;
 
 static inline int test_ignore(void)
 {
@@ -58,13 +63,9 @@ static inline int test_ignore(void)
 		return 1;
 }
 
-static void give_note_dynamic(void)
+static inline int has_dynamic_elems(struct packet_dyn *p)
 {
-	if (!dfunc_note_flag) {
-		printf("Note: dynamic elements like drnd, dinc, ddec and "
-		       "others make trafgen slower!\n");
-		dfunc_note_flag = 1;
-	}
+	return (p->rlen + p->slen + p->clen);
 }
 
 static inline void __init_new_packet_slot(struct packet *slot)
@@ -85,6 +86,36 @@ static inline void __init_new_randomizer_slot(struct packet_dyn *slot)
 	slot->rlen = 0;
 }
 
+static inline void __init_new_csum_slot(struct packet_dyn *slot)
+{
+	slot->csum = NULL;
+	slot->slen = 0;
+}
+
+static inline void __setup_new_counter(struct counter *c, uint8_t start,
+				       uint8_t stop, uint8_t stepping,
+				       int type)
+{
+	c->min = start;
+	c->max = stop;
+	c->inc = stepping;
+	c->val = (type == TYPE_INC) ? start : stop;
+	c->off = payload_last;
+	c->type = type;
+}
+
+static inline void __setup_new_randomizer(struct randomizer *r)
+{
+	r->off = payload_last;
+}
+
+static inline void __setup_new_csum16(struct csum16 *s, off_t from, off_t to)
+{
+	s->off = payload_last;
+	s->from = from;
+	s->to = to;
+}
+
 static void realloc_packet(void)
 {
 	if (test_ignore())
@@ -100,6 +131,7 @@ static void realloc_packet(void)
 
 	__init_new_counter_slot(&packet_dyn[packetd_last]);
 	__init_new_randomizer_slot(&packet_dyn[packetd_last]);
+	__init_new_csum_slot(&packet_dyn[packetd_last]);
 }
 
 static void set_byte(uint8_t val)
@@ -128,11 +160,37 @@ static void set_fill(uint8_t val, size_t len)
 		pkt->payload[payload_last - i] = val;
 }
 
-static void set_csum16(size_t from, size_t to)
+static void __set_csum16_dynamic(size_t from, size_t to)
+{
+	struct packet *pkt = &packets[packet_last];
+	struct packet_dyn *pktd = &packet_dyn[packetd_last];
+
+	pkt->len += 2;
+	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
+
+	pktd->slen++;
+	pktd->csum = xrealloc(pktd->csum, 1, pktd->slen * sizeof(struct csum16));
+
+	__setup_new_csum16(&pktd->csum[packetds_last], from, to);
+}
+
+static void __set_csum16_static(size_t from, size_t to)
 {
 	struct packet *pkt = &packets[packet_last];
 	uint16_t sum;
 	uint8_t *psum;
+
+	sum = htons(calc_csum(pkt->payload + from, to - from, 0));
+	psum = (uint8_t *) &sum;
+
+	set_byte(psum[0]);
+	set_byte(psum[1]);
+}
+
+static void set_csum16(size_t from, size_t to)
+{
+	struct packet *pkt = &packets[packet_last];
+	struct packet_dyn *pktd = &packet_dyn[packetd_last];
 
 	if (test_ignore())
 		return;
@@ -149,11 +207,10 @@ static void set_csum16(size_t from, size_t to)
 	if (to >= pkt->len)
 		to = pkt->len - 1;
 
-	sum = htons(calc_csum(pkt->payload + from, to - from, 0));
-	psum = (uint8_t *) &sum;
-
-	set_byte(psum[0]);
-	set_byte(psum[1]);
+	if (has_dynamic_elems(pktd))
+		__set_csum16_dynamic(from, to);
+	else
+		__set_csum16_static(from, to);
 }
 
 static void set_rnd(size_t len)
@@ -170,7 +227,7 @@ static void set_rnd(size_t len)
 		pkt->payload[payload_last - i] = (uint8_t) rand();
 }
 
-static void set_seqinc(uint8_t start, size_t len, uint8_t stepping)
+static void set_sequential_inc(uint8_t start, size_t len, uint8_t stepping)
 {
 	size_t i;
 	struct packet *pkt = &packets[packet_last];
@@ -188,7 +245,7 @@ static void set_seqinc(uint8_t start, size_t len, uint8_t stepping)
 	}
 }
 
-static void set_seqdec(uint8_t start, size_t len, uint8_t stepping)
+static void set_sequential_dec(uint8_t start, size_t len, uint8_t stepping)
 {
 	size_t i;
 	struct packet *pkt = &packets[packet_last];
@@ -206,33 +263,13 @@ static void set_seqdec(uint8_t start, size_t len, uint8_t stepping)
 	}
 }
 
-static inline void __setup_new_counter(struct counter *c, uint8_t start,
-				       uint8_t stop, uint8_t stepping,
-				       int type)
-{
-	c->min = start;
-	c->max = stop;
-	c->inc = stepping;
-	c->val = (type == TYPE_INC) ? start : stop;
-	c->off = payload_last;
-	c->type = type;
-}
-
-static inline void __setup_new_randomizer(struct randomizer *r)
-{
-	r->val = (uint8_t) rand();
-	r->off = payload_last;
-}
-
-static void set_drnd(void)
+static void set_dynamic_rnd(void)
 {
 	struct packet *pkt = &packets[packet_last];
 	struct packet_dyn *pktd = &packet_dyn[packetd_last];
 
 	if (test_ignore())
 		return;
-
-	give_note_dynamic();
 
 	pkt->len++;
 	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
@@ -243,15 +280,14 @@ static void set_drnd(void)
 	__setup_new_randomizer(&pktd->rnd[packetdr_last]);
 }
 
-static void set_dincdec(uint8_t start, uint8_t stop, uint8_t stepping, int type)
+static void set_dynamic_incdec(uint8_t start, uint8_t stop, uint8_t stepping,
+			       int type)
 {
 	struct packet *pkt = &packets[packet_last];
 	struct packet_dyn *pktd = &packet_dyn[packetd_last];
 
 	if (test_ignore())
 		return;
-
-	give_note_dynamic();
 
 	pkt->len++;
 	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
@@ -359,41 +395,41 @@ csum
 
 seqinc
 	: K_SEQINC '(' number delimiter number ')'
-		{ set_seqinc($3, $5, 1); }
+		{ set_sequential_inc($3, $5, 1); }
 	| K_SEQINC '(' number delimiter number delimiter number ')'
-		{ set_seqinc($3, $5, $7); }
+		{ set_sequential_inc($3, $5, $7); }
 	;
 
 seqdec
 	: K_SEQDEC '(' number delimiter number ')'
-		{ set_seqdec($3, $5, 1); }
+		{ set_sequential_dec($3, $5, 1); }
 	| K_SEQDEC '(' number delimiter number delimiter number ')'
-		{ set_seqdec($3, $5, $7); }
+		{ set_sequential_dec($3, $5, $7); }
 	;
 
 drnd
 	: K_DRND '(' ')'
-		{ set_drnd(); }
+		{ set_dynamic_rnd(); }
 	| K_DRND '(' number ')'
 		{
 			int i, max = $3;
 			for (i = 0; i < max; ++i)
-				set_drnd();
+				set_dynamic_rnd();
 		}
 	;
 
 dinc
 	: K_DINC '(' number delimiter number ')'
-		{ set_dincdec($3, $5, 1, TYPE_INC); }
+		{ set_dynamic_incdec($3, $5, 1, TYPE_INC); }
 	| K_DINC '(' number delimiter number delimiter number ')'
-		{ set_dincdec($3, $5, $7, TYPE_INC); }
+		{ set_dynamic_incdec($3, $5, $7, TYPE_INC); }
 	;
 
 ddec
 	: K_DDEC '(' number delimiter number ')'
-		{ set_dincdec($3, $5, 1, TYPE_DEC); }
+		{ set_dynamic_incdec($3, $5, 1, TYPE_DEC); }
 	| K_DDEC '(' number delimiter number delimiter number ')'
-		{ set_dincdec($3, $5, $7, TYPE_DEC); }
+		{ set_dynamic_incdec($3, $5, $7, TYPE_DEC); }
 	;
 
 %%

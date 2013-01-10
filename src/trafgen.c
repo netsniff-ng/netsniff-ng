@@ -56,6 +56,7 @@
 #include "trafgen_conf.h"
 #include "tprintf.h"
 #include "ring_tx.h"
+#include "csum.h"
 
 struct ctx {
 	bool rand, rfraw, jumbo_support, verbose, smoke_test;
@@ -199,7 +200,7 @@ static void help(void)
 	     "Arbitrary packet config examples (trafgen.cfg):\n"
 	     "  Run packet on  all CPUs:              { fill(0xff, 64) csum16(0, 64) }\n"
 	     "  Run packet only on CPU1:    cpu(1):   { rnd(64), 0b11001100, 0xaa }\n"
-	     "  Run packet only on CPU1-2:  cpu(1:2): { drnd(64), 'a', 'b', 42 }\n"
+	     "  Run packet only on CPU1-2:  cpu(1:2): { drnd(64),'a',csum16(1, 8),'b',42 }\n"
 	     "Note:\n"
 	     "  Smoke test example: machine A, 10.0.0.2 (trafgen) is directly\n"
 	     "  connected to machine B (test kernel), 10.0.0.1. If ICMP reply fails\n"
@@ -229,16 +230,15 @@ static void version(void)
 	die();
 }
 
-static inline void apply_counter(int counter_id)
+static void apply_counter(int counter_id)
 {
-	int j;
-	size_t counter_max = packet_dyn[counter_id].clen;
+	int j, i = counter_id;
+	size_t counter_max = packet_dyn[i].clen;
 
 	for (j = 0; j < counter_max; ++j) {
 		uint8_t val;
-		struct counter *counter;
+		struct counter *counter = &packet_dyn[i].cnt[j];
 
-		counter = &packet_dyn[counter_id].cnt[j];
 		val = counter->val - counter->min;
 
 		switch (counter->type) {
@@ -253,25 +253,38 @@ static inline void apply_counter(int counter_id)
 		}
 
 		counter->val = val + counter->min;
-		packets[counter_id].payload[counter->off] = val;
+		packets[i].payload[counter->off] = val;
 	}
 }
 
-static inline void apply_randomizer(int rand_id)
+static void apply_randomizer(int rand_id)
 {
-	int j;
-	size_t rand_max = packet_dyn[rand_id].rlen;
+	int j, i = rand_id;
+	size_t rand_max = packet_dyn[i].rlen;
 
 	for (j = 0; j < rand_max; ++j) {
-		uint8_t val;
-		struct randomizer *randomizer;
+		uint8_t val = (uint8_t) rand();
+		struct randomizer *randomizer = &packet_dyn[i].rnd[j];
 
-		val = (uint8_t) rand();
+		packets[i].payload[randomizer->off] = val;
+	}
+}
 
-		randomizer = &packet_dyn[rand_id].rnd[j];
-		randomizer->val = val;
+static void apply_csum16(int csum_id)
+{
+	int j, i = csum_id;
+	size_t csum_max = packet_dyn[i].slen;
 
-		packets[rand_id].payload[randomizer->off] = val;
+	for (j = 0; j < csum_max; ++j) {
+		uint16_t sum;
+		uint8_t *psum;
+		struct csum16 *csum = &packet_dyn[i].csum[j];
+
+		sum = htons(calc_csum(packets[i].payload + csum->from, csum->to - csum->from, 0));
+		psum = (uint8_t *) &sum;
+
+		packets[i].payload[csum->off]     = psum[0];
+		packets[i].payload[csum->off + 1] = psum[1];
 	}
 }
 
@@ -439,6 +452,7 @@ static void xmit_slowpath_or_die(struct ctx *ctx, int cpu)
 	unsigned long num = 1, i = 0;
 	struct timeval start, end, diff;
 	unsigned long long tx_bytes = 0, tx_packets = 0;
+	struct packet_dyn *pktd;
 	struct sockaddr_ll saddr = {
 		.sll_family = PF_PACKET,
 		.sll_halen = ETH_ALEN,
@@ -454,8 +468,12 @@ static void xmit_slowpath_or_die(struct ctx *ctx, int cpu)
 	bug_on(gettimeofday(&start, NULL));
 
 	while (likely(sigint == 0) && likely(num > 0)) {
-		apply_counter(i);
-		apply_randomizer(i);
+		pktd = &packet_dyn[i];
+		if (pktd->clen + pktd->rlen + pktd->slen) {
+			apply_counter(i);
+			apply_randomizer(i);
+			apply_csum16(i);
+		}
 retry:
 		ret = sendto(sock, packets[i].payload, packets[i].len, 0,
 			     (struct sockaddr *) &saddr, sizeof(saddr));
@@ -520,6 +538,7 @@ static void xmit_fastpath_or_die(struct ctx *ctx, int cpu)
 	struct ring tx_ring;
 	struct frame_map *hdr;
 	struct timeval start, end, diff;
+	struct packet_dyn *pktd;
 	unsigned long long tx_bytes = 0, tx_packets = 0;
 
 	fmemset(&tx_ring, 0, sizeof(tx_ring));
@@ -561,8 +580,12 @@ static void xmit_fastpath_or_die(struct ctx *ctx, int cpu)
 			hdr->tp_h.tp_snaplen = packets[i].len;
 			hdr->tp_h.tp_len = packets[i].len;
 
-			apply_counter(i);
-			apply_randomizer(i);
+			pktd = &packet_dyn[i];
+			if (pktd->clen + pktd->rlen + pktd->slen) {
+				apply_counter(i);
+				apply_randomizer(i);
+				apply_csum16(i);
+			}
 
 			fmemcpy(out, packets[i].payload, packets[i].len);
 

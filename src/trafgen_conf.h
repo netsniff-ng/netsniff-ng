@@ -22,8 +22,11 @@ struct counter {
 };
 
 struct randomizer {
-	uint8_t val;
 	off_t off;
+};
+
+struct csum16 {
+	off_t off, from, to;
 };
 
 struct packet {
@@ -36,6 +39,8 @@ struct packet_dyn {
 	size_t clen;
 	struct randomizer *rnd;
 	size_t rlen;
+	struct csum16 *csum;
+	size_t slen;
 };
 
 extern int compile_packets(char *file, int verbose, int cpu);
