@@ -308,7 +308,7 @@ static void apply_csum16(int csum_id)
 		struct csum16 *csum = &packet_dyn[i].csum[j];
 
 		packets[i].payload[csum->off]     = 0;
-		packets[i].payload[csum->off + 1] = 0;
+		packets[i].payload[csum->off - 1] = 0;
 
 		if (csum->to >= packets[i].len)
 			csum->to = packets[i].len - 1;
@@ -318,7 +318,7 @@ static void apply_csum16(int csum_id)
 		psum = (uint8_t *) &sum;
 
 		packets[i].payload[csum->off]     = psum[0];
-		packets[i].payload[csum->off + 1] = psum[1];
+		packets[i].payload[csum->off - 1] = psum[1];
 	}
 }
 
