@@ -982,6 +982,8 @@ int main(int argc, char **argv)
 		int status;
 
 		wait(&status);
+		if (WEXITSTATUS(status) == EXIT_FAILURE)
+			die();
 	}
 
 	if (ctx.rfraw)
