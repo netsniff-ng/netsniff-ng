@@ -189,6 +189,7 @@ static void __set_csum16_static(size_t from, size_t to)
 
 static void set_csum16(size_t from, size_t to)
 {
+	int make_it_dynamic = 0;
 	struct packet *pkt = &packets[packet_last];
 	struct packet_dyn *pktd = &packet_dyn[packetd_last];
 
@@ -205,9 +206,9 @@ static void set_csum16(size_t from, size_t to)
 	bug_on(!(from < to));
 
 	if (to >= pkt->len)
-		to = pkt->len - 1;
+		make_it_dynamic = 1;
 
-	if (has_dynamic_elems(pktd))
+	if (has_dynamic_elems(pktd) || make_it_dynamic)
 		__set_csum16_dynamic(from, to);
 	else
 		__set_csum16_static(from, to);

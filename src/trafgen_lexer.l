@@ -43,6 +43,7 @@ number_ascii	([a-zA-Z])
 "fill"		{ return K_FILL; }
 "rnd"		{ return K_RND; }
 "csum16"	{ return K_CSUM16; }
+"csumip"	{ return K_CSUM16; }
 "drnd"		{ return K_DRND; }
 "dinc"		{ return K_DINC; }
 "ddec"		{ return K_DDEC; }
@@ -61,6 +62,7 @@ number_ascii	([a-zA-Z])
 ([ \t\r\n]+)?	{ return K_WHITE; }
 
 "/*"([^\*]|\*[^/])*"*/" { return K_COMMENT; }
+"#"[^\n]*	{ return K_COMMENT; }
 
 {number_hex}	{ yylval.number = strtoul(yytext, NULL, 16);
 		  return number; }
@@ -81,7 +83,6 @@ number_ascii	([a-zA-Z])
 		  return number; }
 
 ";"[^\n]*	{/* NOP */}
-"#"[^\n]*	{/* NOP */}
 .		{ printf("Unknown character '%s'", yytext);
 		  yyerror("lex Unknown character"); }
 

@@ -81,7 +81,7 @@ size_t plen = 0;
 struct packet_dyn *packet_dyn = NULL;
 size_t dlen = 0;
 
-static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRsP:";
+static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRsP:e";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"out",			required_argument,	NULL, 'o'},
@@ -98,6 +98,7 @@ static const struct option long_options[] = {
 	{"rand",		no_argument,		NULL, 'r'},
 	{"verbose",		no_argument,		NULL, 'V'},
 	{"version",		no_argument,		NULL, 'v'},
+	{"example",		no_argument,		NULL, 'e'},
 	{"help",		no_argument,		NULL, 'h'},
 	{NULL, 0, NULL, 0}
 };
@@ -189,6 +190,7 @@ static void help(void)
 	     "  -k|--kernel-pull <uint>           Kernel batch interval in us (def: 10us)\n"
 	     "  -V|--verbose                      Be more verbose\n"
 	     "  -v|--version                      Show version\n"
+	     "  -e|--example                      Show built-in packet config example\n"
 	     "  -h|--help                         Guess what?!\n\n"
 	     "Examples:\n"
 	     "  See trafgen.txf for configuration file examples.\n"
@@ -197,7 +199,7 @@ static void help(void)
 	     "  trafgen --dev wlan0 --rfraw --conf beacon-test.txf -V --cpus 2\n"
 	     "  trafgen --dev eth0 --conf trafgen.cfg --rand --gap 1000\n"
 	     "  trafgen --dev eth0 --conf trafgen.cfg --rand --num 1400000 -k1000\n\n"
-	     "Arbitrary packet config examples (trafgen.cfg):\n"
+	     "Arbitrary packet config examples (e.g. trafgen -e > trafgen.cfg):\n"
 	     "  Run packet on  all CPUs:              { fill(0xff, 64) csum16(0, 64) }\n"
 	     "  Run packet only on CPU1:    cpu(1):   { rnd(64), 0b11001100, 0xaa }\n"
 	     "  Run packet only on CPU1-2:  cpu(1:2): { drnd(64),'a',csum16(1, 8),'b',42 }\n\n"
@@ -214,6 +216,29 @@ static void help(void)
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
 	     "There is NO WARRANTY, to the extent permitted by law.\n");
+	die();
+}
+
+static void example(void)
+{
+	puts("{\n"
+	     "  # MAC Destination\n"
+	     "  drnd(6),\n"
+	     "  # MAC Source\n"
+	     "  drnd(6),\n"
+	     "  # Protocol\n"
+	     "  0x08,0x00,\n"
+             "  # IP header bits'n'pieces\n"
+	     "  0x45,0x00,0x00,0x34,0xaf,0xf1,0x00,0x00,0x37,0x06,\n"
+	     "  # Dynamic IP Checksum\n"
+	     "  csumip(14, 34),\n"
+	     "  # Source IP\n"
+	     "  drnd(4),\n"
+	     "  # Dest IP\n"
+	     "  drnd(4),\n"
+	     "  # TCP Proto\n"
+	     "  drnd(32),\n"
+	     "}");
 	die();
 }
 
@@ -280,7 +305,14 @@ static void apply_csum16(int csum_id)
 		uint8_t *psum;
 		struct csum16 *csum = &packet_dyn[i].csum[j];
 
-		sum = htons(calc_csum(packets[i].payload + csum->from, csum->to - csum->from, 0));
+		packets[i].payload[csum->off]     = 0;
+		packets[i].payload[csum->off + 1] = 0;
+
+		if (csum->to >= packets[i].len)
+			csum->to = packets[i].len - 1;
+
+		sum = htons(calc_csum(packets[i].payload + csum->from,
+				      csum->to - csum->from, 0));
 		psum = (uint8_t *) &sum;
 
 		packets[i].payload[csum->off]     = psum[0];
@@ -799,6 +831,9 @@ int main(int argc, char **argv)
 			break;
 		case 'v':
 			version();
+			break;
+		case 'e':
+			example();
 			break;
 		case 'V':
 			ctx.verbose = true;
