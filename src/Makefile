@@ -76,7 +76,7 @@ WFLAGS += -Wimplicit-int
 WFLAGS_EXTRA  = -Wno-unused-result
 WFLAGS_EXTRA += -Wmissing-parameter-type
 WFLAGS_EXTRA += -Wunused-but-set-parameter
-WFLAGS_EXTRA += -Wtype-limits
+#WFLAGS_EXTRA += -Wtype-limits
 WFLAGS_EXTRA += -Wclobbered
 WFLAGS_EXTRA += -Wmissing-field-initializers
 WFLAGS_EXTRA += -Woverride-init
@@ -181,12 +181,15 @@ DOC_FILES = Summary RelatedWork Performance KnownIssues IPv6Notes Sponsors \
 NCONF_FILES = ether.conf tcp.conf udp.conf oui.conf
 
 all: build_showinfo toolkit
-toolkit: allbutmausezahn
 allbutcurvetun: $(filter-out mausezahn,$(filter-out curvetun,$(TOOLS)))
 allbutmausezahn: $(filter-out mausezahn,$(TOOLS))
-install: $(foreach tool,$(TOOLS),$(tool)_install)
+toolkit: allbutmausezahn
+install: install_allbutmausezahn
+install_all: $(foreach tool,$(TOOLS),$(tool)_install)
 	$(Q)$(foreach file,$(DOC_FILES),$(call INST,../Documentation/$(file),$(DOCDIRE));)
 install_allbutcurvetun: $(foreach tool,$(filter-out curvetun,$(TOOLS)),$(tool)_install)
+	$(Q)$(foreach file,$(DOC_FILES),$(call INST,../Documentation/$(file),$(DOCDIRE));)
+install_allbutmausezahn: $(foreach tool,$(filter-out mausezahn,$(TOOLS)),$(tool)_install)
 	$(Q)$(foreach file,$(DOC_FILES),$(call INST,../Documentation/$(file),$(DOCDIRE));)
 clean mostlyclean: $(foreach tool,$(TOOLS),$(tool)_clean)
 realclean distclean clobber: $(foreach tool,$(TOOLS),$(tool)_distclean)
