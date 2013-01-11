@@ -109,11 +109,13 @@ static inline void __setup_new_randomizer(struct randomizer *r)
 	r->off = payload_last;
 }
 
-static inline void __setup_new_csum16(struct csum16 *s, off_t from, off_t to)
+static inline void __setup_new_csum16(struct csum16 *s, off_t from, off_t to,
+				      enum csum which)
 {
-	s->off = payload_last;
+	s->off = payload_last - 1;
 	s->from = from;
 	s->to = to;
+	s->which = which;
 }
 
 static void realloc_packet(void)
@@ -160,7 +162,7 @@ static void set_fill(uint8_t val, size_t len)
 		pkt->payload[payload_last - i] = val;
 }
 
-static void __set_csum16_dynamic(size_t from, size_t to)
+static void __set_csum16_dynamic(size_t from, size_t to, enum csum which)
 {
 	struct packet *pkt = &packets[packet_last];
 	struct packet_dyn *pktd = &packet_dyn[packetd_last];
@@ -171,10 +173,10 @@ static void __set_csum16_dynamic(size_t from, size_t to)
 	pktd->slen++;
 	pktd->csum = xrealloc(pktd->csum, 1, pktd->slen * sizeof(struct csum16));
 
-	__setup_new_csum16(&pktd->csum[packetds_last], from, to);
+	__setup_new_csum16(&pktd->csum[packetds_last], from, to, which);
 }
 
-static void __set_csum16_static(size_t from, size_t to)
+static void __set_csum16_static(size_t from, size_t to, enum csum which)
 {
 	struct packet *pkt = &packets[packet_last];
 	uint16_t sum;
@@ -187,7 +189,7 @@ static void __set_csum16_static(size_t from, size_t to)
 	set_byte(psum[1]);
 }
 
-static void set_csum16(size_t from, size_t to)
+static void set_csum16(size_t from, size_t to, enum csum which)
 {
 	int make_it_dynamic = 0;
 	struct packet *pkt = &packets[packet_last];
@@ -209,9 +211,9 @@ static void set_csum16(size_t from, size_t to)
 		make_it_dynamic = 1;
 
 	if (has_dynamic_elems(pktd) || make_it_dynamic)
-		__set_csum16_dynamic(from, to);
+		__set_csum16_dynamic(from, to, which);
 	else
-		__set_csum16_static(from, to);
+		__set_csum16_static(from, to, which);
 }
 
 static void set_rnd(size_t len)
@@ -306,7 +308,7 @@ static void set_dynamic_incdec(uint8_t start, uint8_t stop, uint8_t stepping,
 }
 
 %token K_COMMENT K_FILL K_RND K_SEQINC K_SEQDEC K_DRND K_DINC K_DDEC K_WHITE
-%token K_CPU K_CSUM16
+%token K_CPU K_CSUMIP K_CSUMUDP K_CSUMTCP
 
 %token ',' '{' '}' '(' ')' '[' ']' ':'
 
@@ -390,8 +392,12 @@ rnd
 	;
 
 csum
-	: K_CSUM16 '(' number delimiter number ')'
-		{ set_csum16($3, $5); }
+	: K_CSUMIP '(' number delimiter number ')'
+		{ set_csum16($3, $5, CSUM_IP); }
+	| K_CSUMTCP '(' number delimiter number ')'
+		{ set_csum16($3, $5, CSUM_TCP); }
+	| K_CSUMUDP '(' number delimiter number ')'
+		{ set_csum16($3, $5, CSUM_UDP); }
 	;
 
 seqinc

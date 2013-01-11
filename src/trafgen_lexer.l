@@ -42,8 +42,9 @@ number_ascii	([a-zA-Z])
 "cpu"		{ return K_CPU; }
 "fill"		{ return K_FILL; }
 "rnd"		{ return K_RND; }
-"csum16"	{ return K_CSUM16; }
-"csumip"	{ return K_CSUM16; }
+"csumip"	{ return K_CSUMIP; }
+"csumudp"	{ return K_CSUMUDP; }
+"csumtcp"	{ return K_CSUMTCP; }
 "drnd"		{ return K_DRND; }
 "dinc"		{ return K_DINC; }
 "ddec"		{ return K_DDEC; }

@@ -15,6 +15,12 @@
 #define TYPE_INC	0
 #define TYPE_DEC	1
 
+enum csum {
+	CSUM_IP,
+	CSUM_UDP,
+	CSUM_TCP,
+};
+
 struct counter {
 	int type;
 	uint8_t min, max, inc, val;
@@ -27,6 +33,7 @@ struct randomizer {
 
 struct csum16 {
 	off_t off, from, to;
+	enum csum which;
 };
 
 struct packet {

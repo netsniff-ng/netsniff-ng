@@ -303,21 +303,30 @@ static void apply_csum16(int csum_id)
 	size_t csum_max = packet_dyn[i].slen;
 
 	for (j = 0; j < csum_max; ++j) {
-		uint16_t sum;
+		uint16_t sum = 0;
 		uint8_t *psum;
 		struct csum16 *csum = &packet_dyn[i].csum[j];
 
-		packets[i].payload[csum->off - 1] = 0;
 		packets[i].payload[csum->off]     = 0;
+		packets[i].payload[csum->off + 1] = 0;
 
 		if (csum->to >= packets[i].len)
 			csum->to = packets[i].len - 1;
 
-		sum = calc_csum(packets[i].payload + csum->from, csum->to - csum->from, 0);
+		switch (csum->which) {
+		case CSUM_IP:
+			sum = calc_csum(packets[i].payload + csum->from,
+					csum->to - csum->from, 0);
+			break;
+		case CSUM_UDP:
+		case CSUM_TCP:
+			break;
+		}
+		sum = htons(sum);
 		psum = (uint8_t *) &sum;
 
-		packets[i].payload[csum->off - 1] = psum[0];
-		packets[i].payload[csum->off]     = psum[1];
+		packets[i].payload[csum->off]     = psum[0];
+		packets[i].payload[csum->off + 1] = psum[1];
 	}
 }
 
