@@ -1136,7 +1136,7 @@ int main(int argc, char **argv)
 	}
 
 	irq = device_irq_number(ctx.device);
-	device_reset_irq_affinity(irq);
+	device_set_irq_affinity_list(irq, 0, ctx.cpus - 1);
 
 	if (ctx.num > 0 && ctx.num <= ctx.cpus)
 		ctx.cpus = 1;

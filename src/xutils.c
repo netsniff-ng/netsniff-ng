@@ -639,17 +639,24 @@ int device_irq_number(const char *ifname)
 	return irq;
 }
 
-void device_reset_irq_affinity(int irq)
+int device_set_irq_affinity_list(int irq, unsigned long from, unsigned long to)
 {
-	int ret;
-	char cmd[256];
+	int ret, fd;
+	char file[256], list[64];
 
-	slprintf(cmd, sizeof(cmd),
-		 "cat /proc/irq/default_smp_affinity >/proc/irq/%d/smp_affinity", irq);
+	slprintf(file, sizeof(file), "/proc/irq/%d/smp_affinity_list", irq);
+	slprintf(list, sizeof(list), "%lu-%lu\n", from, to);
 
-	ret = system(cmd);
-	if (ret < 0)
-		panic("Cannot execute system(2)!\n");
+	fd = open(file, O_WRONLY);
+	if (fd < 0) {
+		whine("Cannot open file %s!\n", file);
+		return -ENOENT;
+	}
+
+	ret = write(fd, list, strlen(list));
+
+	close(fd);
+	return ret;
 }
 
 int device_bind_irq_to_cpu(int irq, int cpu)
