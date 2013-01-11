@@ -307,18 +307,17 @@ static void apply_csum16(int csum_id)
 		uint8_t *psum;
 		struct csum16 *csum = &packet_dyn[i].csum[j];
 
-		packets[i].payload[csum->off]     = 0;
 		packets[i].payload[csum->off - 1] = 0;
+		packets[i].payload[csum->off]     = 0;
 
 		if (csum->to >= packets[i].len)
 			csum->to = packets[i].len - 1;
 
-		sum = htons(calc_csum(packets[i].payload + csum->from,
-				      csum->to - csum->from, 0));
+		sum = calc_csum(packets[i].payload + csum->from, csum->to - csum->from, 0);
 		psum = (uint8_t *) &sum;
 
-		packets[i].payload[csum->off]     = psum[0];
-		packets[i].payload[csum->off - 1] = psum[1];
+		packets[i].payload[csum->off - 1] = psum[0];
+		packets[i].payload[csum->off]     = psum[1];
 	}
 }
 
