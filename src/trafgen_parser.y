@@ -207,7 +207,7 @@ static void set_csum16(size_t from, size_t to, enum csum which)
 
 	bug_on(!(from < to));
 
-	if (to >= pkt->len)
+	if (to >= pkt->len || which == CSUM_TCP || which == CSUM_UDP)
 		make_it_dynamic = 1;
 
 	if (has_dynamic_elems(pktd) || make_it_dynamic)

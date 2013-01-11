@@ -43,6 +43,7 @@ number_ascii	([a-zA-Z])
 "fill"		{ return K_FILL; }
 "rnd"		{ return K_RND; }
 "csumip"	{ return K_CSUMIP; }
+"csumip4"	{ return K_CSUMIP; }
 "csumudp"	{ return K_CSUMUDP; }
 "csumtcp"	{ return K_CSUMTCP; }
 "drnd"		{ return K_DRND; }
