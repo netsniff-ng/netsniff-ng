@@ -263,7 +263,7 @@ static void example(void)
 	"  drnd(4),\n"
 	"  # TCP Ackn. Number\n"
 	"  0, 0, 0, 0,\n"
-	"  # TCP Header length + TCP SYN Flag\n"
+	"  # TCP Header length + TCP SYN/ECN Flag\n"
 	"  0x80, c8((1 << 1) | (1 << 6)),\n"
 	"  # Window Size\n"
 	"  0x00, 0x10,\n"
