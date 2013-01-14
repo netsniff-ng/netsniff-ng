@@ -191,6 +191,7 @@ static void help(void)
 	     "  -t|--gap <uint>                   Interpacket gap in us (approx)\n"
 	     "  -S|--ring-size <size>             Manually set mmap size (KB/MB/GB): e.g.\'10MB\'\n"
 	     "  -k|--kernel-pull <uint>           Kernel batch interval in us (def: 10us)\n"
+	     "  -E|--seed <uint>                  Manually set srand(3) seed\n"
 	     "  -V|--verbose                      Be more verbose\n"
 	     "  -v|--version                      Show version\n"
 	     "  -e|--example                      Show built-in packet config example\n"
@@ -992,16 +993,16 @@ static void main_loop(struct ctx *ctx, char *confname, bool slow, int cpu)
 
 static unsigned int generate_srand_seed(void)
 {
-        int fd;
-        unsigned int seed;
+	int fd;
+	unsigned int seed;
 
-        fd = open("/dev/random", O_RDONLY);
+	fd = open("/dev/random", O_RDONLY);
 	if (fd < 0)
 		return time(0);
 
-        read_or_die(fd, &seed, sizeof(seed));
+	read_or_die(fd, &seed, sizeof(seed));
 
-        close(fd);
+	close(fd);
 	return seed;
 }
 
