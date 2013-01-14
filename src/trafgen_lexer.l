@@ -56,16 +56,16 @@ number_ascii	([a-zA-Z])
 "const32"|"c32"	{ return K_CONST32; }
 "const64"|"c64"	{ return K_CONST64; }
 
-"-"		{ return '-'; }
-"+"		{ return '+'; }
-"*"		{ return '*'; }
-"/"		{ return '/'; }
-"%"		{ return '%'; }
-"&"		{ return '&'; }
-"|"		{ return '|'; }
-"<"		{ return '<'; }
-">"		{ return '>'; }
-"^"		{ return '^'; }
+[ ]*"-"[ ]*	{ return '-'; }
+[ ]*"+"[ ]*	{ return '+'; }
+[ ]*"*"[ ]*	{ return '*'; }
+[ ]*"/"[ ]*	{ return '/'; }
+[ ]*"%"[ ]*	{ return '%'; }
+[ ]*"&"[ ]*	{ return '&'; }
+[ ]*"|"[ ]*	{ return '|'; }
+[ ]*"<"[ ]*	{ return '<'; }
+[ ]*">"[ ]*	{ return '>'; }
+[ ]*"^"[ ]*	{ return '^'; }
 "{"		{ return '{'; }
 "}"		{ return '}'; }
 "("		{ return '('; }

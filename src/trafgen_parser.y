@@ -15,7 +15,6 @@
 #include <signal.h>
 #include <stdint.h>
 #include <errno.h>
-#include <math.h>
 
 #include "xmalloc.h"
 #include "trafgen_parser.tab.h"
