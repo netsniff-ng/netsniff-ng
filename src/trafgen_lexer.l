@@ -51,7 +51,21 @@ number_ascii	([a-zA-Z])
 "ddec"		{ return K_DDEC; }
 "seqinc"	{ return K_SEQINC; }
 "seqdec"	{ return K_SEQDEC; }
+"const8"|"c8"	{ return K_CONST8; }
+"const16"|"c16"	{ return K_CONST16; }
+"const32"|"c32"	{ return K_CONST32; }
+"const64"|"c64"	{ return K_CONST64; }
 
+"-"		{ return '-'; }
+"+"		{ return '+'; }
+"*"		{ return '*'; }
+"/"		{ return '/'; }
+"%"		{ return '%'; }
+"&"		{ return '&'; }
+"|"		{ return '|'; }
+"<"		{ return '<'; }
+">"		{ return '>'; }
+"^"		{ return '^'; }
 "{"		{ return '{'; }
 "}"		{ return '}'; }
 "("		{ return '('; }

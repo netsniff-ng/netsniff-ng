@@ -15,6 +15,7 @@
 #include <signal.h>
 #include <stdint.h>
 #include <errno.h>
+#include <math.h>
 
 #include "xmalloc.h"
 #include "trafgen_parser.tab.h"
@@ -304,17 +305,19 @@ static void set_dynamic_incdec(uint8_t start, uint8_t stop, uint8_t stepping,
 %}
 
 %union {
-	long int number;
+	long long int number;
 }
 
 %token K_COMMENT K_FILL K_RND K_SEQINC K_SEQDEC K_DRND K_DINC K_DDEC K_WHITE
-%token K_CPU K_CSUMIP K_CSUMUDP K_CSUMTCP
+%token K_CPU K_CSUMIP K_CSUMUDP K_CSUMTCP K_CONST8 K_CONST16 K_CONST32 K_CONST64
 
-%token ',' '{' '}' '(' ')' '[' ']' ':'
+%token ',' '{' '}' '(' ')' '[' ']' ':' '-' '+' '*' '/' '%' '&' '|' '<' '>' '^'
 
 %token number
 
-%type <number> number
+%type <number> number expression
+
+%left '-' '+' '*' '/' '%' '&' '|' '<' '>' '^'
 
 %%
 
@@ -378,12 +381,69 @@ elem
 	| dinc { }
 	| ddec { }
 	| csum { }
+	| const { }
 	| inline_comment { }
+	;
+
+expression
+	: number
+		{ $$ = $1; }
+	| expression '+' expression
+		{ $$ = $1 + $3; }
+	| expression '-' expression
+		{ $$ = $1 - $3; }
+	| expression '*' expression
+		{ $$ = $1 * $3; }
+	| expression '/' expression
+		{ $$ = $1 / $3; }
+	| expression '%' expression
+		{ $$ = $1 % $3; }
+	| expression '&' expression
+		{ $$ = $1 & $3; }
+	| expression '|' expression
+		{ $$ = $1 | $3; }
+	| expression '^' expression
+		{ $$ = $1 ^ $3; }
+	| expression '<' '<' expression
+		{ $$ = $1 << $4; }
+	| expression '>' '>' expression
+		{ $$ = $1 >> $4; }
+	| '(' expression ')'
+		{ $$ = $2;}
 	;
 
 fill
 	: K_FILL '(' number delimiter number ')'
 		{ set_fill($3, $5); }
+	;
+
+const
+	: K_CONST8 '(' expression ')'
+		{ set_byte((uint8_t) $3); }
+	| K_CONST16 '(' expression ')' {
+			int i;
+			uint16_t __c = cpu_to_be16((uint16_t) $3);
+			uint8_t *ptr = (uint8_t *) &__c;
+
+			for (i = 0; i < sizeof(__c); ++i)
+				set_byte(ptr[i]);
+		}
+	| K_CONST32 '(' expression ')' {
+			int i;
+			uint32_t __c = cpu_to_be32((uint32_t) $3);
+			uint8_t *ptr = (uint8_t *) &__c;
+
+			for (i = 0; i < sizeof(__c); ++i)
+				set_byte(ptr[i]);
+		}
+	| K_CONST64 '(' expression ')' {
+			int i;
+			uint64_t __c = cpu_to_be64((uint64_t) $3);
+			uint8_t *ptr = (uint8_t *) &__c;
+
+			for (i = 0; i < sizeof(__c); ++i)
+				set_byte(ptr[i]);
+		}
 	;
 
 rnd

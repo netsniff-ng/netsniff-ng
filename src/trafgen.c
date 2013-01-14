@@ -264,7 +264,7 @@ static void example(void)
 	"  # TCP Ackn. Number\n"
 	"  0, 0, 0, 0,\n"
 	"  # TCP Header length + TCP SYN Flag\n"
-	"  0x80, 0b00000010,\n"
+	"  0x80, c8((1<<1)|(1<<6)),\n"
 	"  # Window Size\n"
 	"  0x00, 0x10,\n"
 	"  # TCP Checksum (offset IP, offset TCP)\n"
