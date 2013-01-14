@@ -74,10 +74,16 @@ number_ascii	([a-zA-Z])
 "]"		{ return ']'; }
 ","		{ return ','; }
 ":"		{ return ':'; }
+
 "\n"		{ yylineno++; }
+
+"\""[^\"]+"\""	{ yylval.str = xstrdup(yytext);
+		  return string; }
+
 ([ \t\r\n]+)?	{ return K_WHITE; }
 
 "/*"([^\*]|\*[^/])*"*/" { return K_COMMENT; }
+
 "#"[^\n]*	{ return K_COMMENT; }
 
 {number_hex}	{ yylval.number = strtoul(yytext, NULL, 16);

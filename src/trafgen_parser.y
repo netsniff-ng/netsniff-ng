@@ -148,6 +148,14 @@ static void set_byte(uint8_t val)
 	pkt->payload[payload_last] = val;
 }
 
+static void set_multi_byte(uint8_t *s, size_t len)
+{
+	int i;
+
+	for (i = 0; i < len; ++i)
+		set_byte(s[i]);
+}
+
 static void set_fill(uint8_t val, size_t len)
 {
 	size_t i;
@@ -305,6 +313,7 @@ static void set_dynamic_incdec(uint8_t start, uint8_t stop, uint8_t stepping,
 
 %union {
 	long long int number;
+	char *str;
 }
 
 %token K_COMMENT K_FILL K_RND K_SEQINC K_SEQDEC K_DRND K_DINC K_DDEC K_WHITE
@@ -312,9 +321,10 @@ static void set_dynamic_incdec(uint8_t start, uint8_t stop, uint8_t stepping,
 
 %token ',' '{' '}' '(' ')' '[' ']' ':' '-' '+' '*' '/' '%' '&' '|' '<' '>' '^'
 
-%token number
+%token number string
 
 %type <number> number expression
+%type <str> string
 
 %left '-' '+' '*' '/' '%' '&' '|' '<' '>' '^'
 
@@ -372,6 +382,7 @@ elem_delimiter
 
 elem
 	: number { set_byte((uint8_t) $1); }
+	| string { set_multi_byte((uint8_t *) $1 + 1, strlen($1) - 2); }
 	| fill { }
 	| rnd { }
 	| drnd { }
@@ -420,28 +431,19 @@ const
 	: K_CONST8 '(' expression ')'
 		{ set_byte((uint8_t) $3); }
 	| K_CONST16 '(' expression ')' {
-			int i;
 			uint16_t __c = cpu_to_be16((uint16_t) $3);
-			uint8_t *ptr = (uint8_t *) &__c;
 
-			for (i = 0; i < sizeof(__c); ++i)
-				set_byte(ptr[i]);
+			set_multi_byte((uint8_t *) &__c, sizeof(__c));
 		}
 	| K_CONST32 '(' expression ')' {
-			int i;
 			uint32_t __c = cpu_to_be32((uint32_t) $3);
-			uint8_t *ptr = (uint8_t *) &__c;
 
-			for (i = 0; i < sizeof(__c); ++i)
-				set_byte(ptr[i]);
+			set_multi_byte((uint8_t *) &__c, sizeof(__c));
 		}
 	| K_CONST64 '(' expression ')' {
-			int i;
 			uint64_t __c = cpu_to_be64((uint64_t) $3);
-			uint8_t *ptr = (uint8_t *) &__c;
 
-			for (i = 0; i < sizeof(__c); ++i)
-				set_byte(ptr[i]);
+			set_multi_byte((uint8_t *) &__c, sizeof(__c));
 		}
 	;
 
