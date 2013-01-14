@@ -50,7 +50,7 @@ struct packet_dyn {
 	size_t slen;
 };
 
-extern int compile_packets(char *file, int verbose, int cpu);
+extern int compile_packets(char *file, int verbose, int cpu, bool invoke_cpp);
 extern void cleanup_packets(void);
 
 #endif /* TRAFGEN_CONF */

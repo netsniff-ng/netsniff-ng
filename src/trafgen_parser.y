@@ -15,6 +15,7 @@
 #include <signal.h>
 #include <stdint.h>
 #include <errno.h>
+#include <stdbool.h>
 
 #include "xmalloc.h"
 #include "trafgen_parser.tab.h"
@@ -22,6 +23,7 @@
 #include "built_in.h"
 #include "die.h"
 #include "csum.h"
+#include "xutils.h"
 
 #define YYERROR_VERBOSE		0
 #define YYDEBUG			0
@@ -559,11 +561,28 @@ void cleanup_packets(void)
 	free(packet_dyn);
 }
 
-int compile_packets(char *file, int verbose, int cpu)
+int compile_packets(char *file, int verbose, int cpu, bool invoke_cpp)
 {
+	char tmp_file[128];
+
+	memset(tmp_file, 0, sizeof(tmp_file));
 	our_cpu = cpu;
 
-	yyin = fopen(file, "r");
+	if (invoke_cpp) {
+		char cmd[256];
+
+		slprintf(tmp_file, sizeof(tmp_file), ".tmp.%s", file);
+		slprintf(cmd, sizeof(cmd), "cpp %s > %s", file, tmp_file);
+		system(cmd);
+
+		xfree(file);
+		file = tmp_file;
+	}
+
+	if (!strncmp("-", file, strlen("-")))
+		yyin = stdin;
+	else
+		yyin = fopen(file, "r");
 	if (!yyin)
 		panic("Cannot open file!\n");
 
@@ -575,6 +594,9 @@ int compile_packets(char *file, int verbose, int cpu)
 		dump_conf();
 
 	fclose(yyin);
+	if (invoke_cpp)
+		unlink(tmp_file);
+
 	return 0;
 }
 

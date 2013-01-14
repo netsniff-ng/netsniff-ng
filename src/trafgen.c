@@ -81,7 +81,7 @@ size_t plen = 0;
 struct packet_dyn *packet_dyn = NULL;
 size_t dlen = 0;
 
-static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRsP:eE:";
+static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRsP:eE:p";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"out",			required_argument,	NULL, 'o'},
@@ -95,6 +95,7 @@ static const struct option long_options[] = {
 	{"smoke-test",		required_argument,	NULL, 's'},
 	{"seed",		required_argument,	NULL, 'E'},
 	{"jumbo-support",	no_argument,		NULL, 'J'},
+	{"cpp",			no_argument,		NULL, 'p'},
 	{"rfraw",		no_argument,		NULL, 'R'},
 	{"rand",		no_argument,		NULL, 'r'},
 	{"verbose",		no_argument,		NULL, 'V'},
@@ -181,7 +182,8 @@ static void help(void)
 	     "Usage: trafgen [options]\n"
 	     "Options:\n"
 	     "  -o|-d|--out|--dev <netdev>        Networking Device i.e., eth0\n"
-	     "  -i|-c|--in|--conf <cfg-file>      Packet configuration file\n"
+	     "  -i|-c|--in|--conf <cfg-file/->    Packet configuration file/stdin\n"
+	     "  -p|--cpp                          Run packet config through preprocessor\n"
 	     "  -J|--jumbo-support                Support 64KB Super Jumbo Frames (def: 2048B)\n"
 	     "  -R|--rfraw                        Inject raw 802.11 frames\n"
 	     "  -s|--smoke-test <ipv4-receiver>   Test if machine survived packet\n"
@@ -199,6 +201,7 @@ static void help(void)
 	     "Examples:\n"
 	     "  See trafgen.txf for configuration file examples.\n"
 	     "  trafgen --dev eth0 --conf trafgen.cfg\n"
+	     "  trafgen -e | trafgen -i - -o eth0 --cpp -n 1\n"
 	     "  trafgen --dev eth0 --conf trafgen.cfg --smoke-test 10.0.0.1\n"
 	     "  trafgen --dev wlan0 --rfraw --conf beacon-test.txf -V --cpus 2\n"
 	     "  trafgen --dev eth0 --conf trafgen.cfg --rand --gap 1000\n"
@@ -228,51 +231,53 @@ static void help(void)
 static void example(void)
 {
 	const char *e =
-	"# Note: dynamic elements make trafgen slower!\n"
-	"\n"
+	"/* Note: dynamic elements make trafgen slower! */\n\n"
+	"#define ETH_P_IP	0x0800\n\n"
+	"#define SYN		(1 << 1)\n"
+	"#define ECN		(1 << 6)\n\n"
 	"{\n"
-	"  # MAC Destination\n"
+	"  /* MAC Destination */\n"
 	"  fill(0xff, 6),\n"
-	"  # MAC Source\n"
+	"  /* MAC Source */\n"
 	"  0x00, 0x02, 0xb3, drnd(3),\n"
-	"  # IPv4 Protocol\n"
-	"  c16(0x0800),\n"
-	"  # IPv4 Version, IHL, TOS\n"
+	"  /* IPv4 Protocol */\n"
+	"  c16(ETH_P_IP),\n"
+	"  /* IPv4 Version, IHL, TOS */\n"
 	"  0b01000101, 0,\n"
-	"  # IPv4 Total Len\n"
+	"  /* IPv4 Total Len */\n"
 	"  c16(59),\n"
-	"  # IPv4 Ident\n"
+	"  /* IPv4 Ident */\n"
 	"  drnd(2),\n"
-	"  # IPv4 Flags, Frag Off\n"
+	"  /* IPv4 Flags, Frag Off */\n"
 	"  0b01000000, 0,\n"
-	"  # IPv4 TTL\n"
+	"  /* IPv4 TTL */\n"
 	"  64,\n"
-	"  # Proto TCP\n"
+	"  /* Proto TCP */\n"
 	"  0x06,\n"
-	"  # IPv4 Checksum (IP header from, to)\n"
+	"  /* IPv4 Checksum (IP header from, to) */\n"
 	"  csumip(14, 33),\n"
-	"  # Source IP\n"
+	"  /* Source IP */\n"
 	"  drnd(4),\n"
-	"  # Dest IP\n"
+	"  /* Dest IP */\n"
 	"  drnd(4),\n"
-	"  # TCP Source Port\n"
+	"  /* TCP Source Port */\n"
 	"  drnd(2),\n"
-	"  # TCP Dest Port\n"
+	"  /* TCP Dest Port */\n"
 	"  c16(80),\n"
-	"  # TCP Sequence Number\n"
+	"  /* TCP Sequence Number */\n"
 	"  drnd(4),\n"
-	"  # TCP Ackn. Number\n"
+	"  /* TCP Ackn. Number */\n"
 	"  c32(0),\n"
-	"  # TCP Header length + TCP SYN/ECN Flag\n"
-	"  c16((0x8 << 12) | (1 << 1) | (1 << 6))\n"
-	"  # Window Size\n"
+	"  /* TCP Header length + TCP SYN/ECN Flag */\n"
+	"  c16((0x8 << 12) | SYN | ECN)\n"
+	"  /* Window Size */\n"
 	"  c16(16),\n"
-	"  # TCP Checksum (offset IP, offset TCP)\n"
+	"  /* TCP Checksum (offset IP, offset TCP) */\n"
 	"  csumtcp(14, 34),\n"
-	"  # TCP Options\n"
+	"  /* TCP Options */\n"
 	"  0x00, 0x00, 0x01, 0x01, 0x08, 0x0a, 0x06,\n"
 	"  0x91, 0x68, 0x7d, 0x06, 0x91, 0x68, 0x6f,\n"
-	"  # Data blob\n"
+	"  /* Data blob */\n"
 	"  \"gotcha!\",\n"
 	"}";
 	puts(e);
@@ -958,9 +963,10 @@ static int xmit_packet_precheck(struct ctx *ctx, int cpu)
 	return 0;
 }
 
-static void main_loop(struct ctx *ctx, char *confname, bool slow, int cpu)
+static void main_loop(struct ctx *ctx, char *confname, bool slow,
+		      int cpu, bool invoke_cpp)
 {
-	compile_packets(confname, ctx->verbose, cpu);
+	compile_packets(confname, ctx->verbose, cpu, invoke_cpp);
 	if (xmit_packet_precheck(ctx, cpu) < 0)
 		return;
 
@@ -1008,7 +1014,7 @@ static unsigned int generate_srand_seed(void)
 
 int main(int argc, char **argv)
 {
-	bool slow = false;
+	bool slow = false, invoke_cpp = false;
 	int c, opt_index, i, j, vals[4] = {0}, irq;
 	char *confname = NULL, *ptr;
 	unsigned long cpus_tmp;
@@ -1034,6 +1040,9 @@ int main(int argc, char **argv)
 			break;
 		case 'e':
 			example();
+			break;
+		case 'p':
+			invoke_cpp = true;
 			break;
 		case 'V':
 			ctx.verbose = true;
@@ -1176,7 +1185,7 @@ int main(int argc, char **argv)
 		switch (pid) {
 		case 0:
 			cpu_affinity(i);
-			main_loop(&ctx, confname, slow, i);
+			main_loop(&ctx, confname, slow, i, invoke_cpp);
 
 			goto thread_out;
 		case -1:
