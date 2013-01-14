@@ -249,7 +249,7 @@ static void example(void)
 	"  64,\n"
 	"  # Proto TCP\n"
 	"  0x06,\n"
-	"  # IPv4 Checksum\n"
+	"  # IPv4 Checksum (IP header from, to)\n"
 	"  csumip(14, 33),\n"
 	"  # Source IP\n"
 	"  drnd(4),\n"
