@@ -81,7 +81,7 @@ size_t plen = 0;
 struct packet_dyn *packet_dyn = NULL;
 size_t dlen = 0;
 
-static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRsP:e";
+static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRsP:eE:";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"out",			required_argument,	NULL, 'o'},
@@ -93,6 +93,7 @@ static const struct option long_options[] = {
 	{"ring-size",		required_argument,	NULL, 'S'},
 	{"kernel-pull",		required_argument,	NULL, 'k'},
 	{"smoke-test",		required_argument,	NULL, 's'},
+	{"seed",		required_argument,	NULL, 'E'},
 	{"jumbo-support",	no_argument,		NULL, 'J'},
 	{"rfraw",		no_argument,		NULL, 'R'},
 	{"rand",		no_argument,		NULL, 'r'},
@@ -110,6 +111,8 @@ static struct itimerval itimer;
 static unsigned long interval = TX_KERNEL_PULL_INT;
 
 static struct cpu_stats *stats;
+
+unsigned int seed;
 
 #define CPU_STATS_STATE_CFG	1
 #define CPU_STATS_STATE_CHK	2
@@ -705,7 +708,8 @@ retry:
 			if (unlikely(ret < 0)) {
 				printf("%sSmoke test alert:%s\n", colorize_start(bold), colorize_end());
 				printf("  Remote host seems to be unresponsive to ICMP pings!\n");
-				printf("  Last instance was packet%lu, trafgen snippet:\n\n", i);
+				printf("  Last instance was packet%lu, seed:%u, trafgen snippet:\n\n",
+				       i, seed);
 
 				dump_trafgen_snippet(packets[i].payload, packets[i].len);
 				break;
@@ -986,6 +990,21 @@ static void main_loop(struct ctx *ctx, char *confname, bool slow, int cpu)
 	cleanup_packets();
 }
 
+static unsigned int generate_srand_seed(void)
+{
+        int fd;
+        unsigned int seed;
+
+        fd = open("/dev/random", O_RDONLY);
+	if (fd < 0)
+		return time(0);
+
+        read_or_die(fd, &seed, sizeof(seed));
+
+        close(fd);
+	return seed;
+}
+
 int main(int argc, char **argv)
 {
 	bool slow = false;
@@ -998,9 +1017,10 @@ int main(int argc, char **argv)
 	setfsuid(getuid());
 	setfsgid(getgid());
 
-	srand(time(NULL));
 	fmemset(&ctx, 0, sizeof(ctx));
 	ctx.cpus = get_number_cpus_online();
+
+	seed = generate_srand_seed();
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 				&opt_index)) != EOF) {
@@ -1048,6 +1068,9 @@ int main(int argc, char **argv)
 		case 'k':
 			ctx.kpull = strtoul(optarg, NULL, 0);
 			break;
+		case 'E':
+			seed = strtoul(optarg, NULL, 0);
+			break;
 		case 'n':
 			ctx.num = strtoul(optarg, NULL, 0);
 			break;
@@ -1092,6 +1115,7 @@ int main(int argc, char **argv)
 			case 's':
 			case 'P':
 			case 'o':
+			case 'E':
 			case 'i':
 			case 'k':
 			case 't':
@@ -1124,6 +1148,8 @@ int main(int argc, char **argv)
 	register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO);
 
 	header();
+
+	srand(seed);
 
 	set_system_socket_memory(vals);
 
