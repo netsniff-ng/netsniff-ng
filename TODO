@@ -2,50 +2,28 @@ Here's a list of things we need to do (contributions are welcome and highly
 appreciated, please also read Documentation/SubmittingPatches about how to
 submit your contributions, items marked with '!' are of high importance):
 
- 0! Improve manpages, extend the documentation and/or write useful howtos.
-	@TODO: Jon Schipp, Daniel Borkmann
+-----------------
+For next release:
+-----------------
 
- 1! Highest prio: Cleanup and refactor the code!
+ 0! Manpages / documentation folder (+ add one-liner in INSTALL for package
+    dependency installation on Fedora, Debian).
 	@TODO: Daniel Borkmann
 
- 2! Add one-liner in INSTALL for package dependency installation on Fedora,
-    and Debian
+ 1! Cleanup and refactor the code!
 	@TODO: Daniel Borkmann
-
- 3! Test IPv6 on flowtop, curvetun and mausezahn.
-	@TODO: Daniel Borkmann, Jon Schipp
-
-10! Add a proper 802.11 dissector for netsniff-ng.
-	@TODO: Markus Amend
 
 13! Easier language (bpf-hla) for /fast/ filtering (e.g. on top of BPF so
     that it can run in the kernel), include this into bpfc (bpfc-hla).
-	@TODO: Daniel Borkmann, Markus Amend
+	@TODO: Daniel Borkmann
 
 22! Add different timing models to trafgen, not just a static interpacket gap.
 	@TODO: Daniel Borkmann
 
-48! Hand-include patchset from Sibir Chakraborty:
-	- Replay all files from directory (dir as --in paramter)
-	- Replay with correct timing information
-	- Replay with Gbps / pps rate limit
+31! astraceroute: implement DNS traceroute with AS/Geo information
 	@TODO: Daniel Borkmann
 
-49! Add Gbps / pps rate limit to trafgen
-	@TODO: Daniel Borkmann
-
-32! ifpps: add option for --dev eth0,eth1,eth2 and accumulate stats
-	@TODO: Daniel Borkmann
-
-33! ifpps: calc current throughput, show percentage of linerate
-	@TODO: Daniel Borkmann
-
-50! mausezahn: clean it up add fork + fanout mode(?), remove libpcap
-    dependency, let it also store pcap files e.g. on a network filesystem
-    of the mausezahn box.
-	@TODO: Daniel Borkmann
-
-51! astraceroute: can we remove whois query and do this locally?
+51! astraceroute: can we remove whois query and do this locally!
 	@TODO: Daniel Borkmann
 
 52! all tools, but ifpps/bpfc: add option to run a tool as -u user -g group
@@ -53,14 +31,35 @@ submit your contributions, items marked with '!' are of high importance):
     option is set and the tool was started as root.
 	@TODO: Daniel Borkmann
 
----
+-------------------
+For later releases:
+-------------------
+
+50) mausezahn: clean it up add fork + fanout mode(?), remove libpcap
+    dependency, let it also store pcap files e.g. on a network filesystem
+    of the mausezahn box. (leave it out of the main build process for now)
+	@TODO: Daniel Borkmann
+
+10) Add a proper 802.11 dissector for netsniff-ng.
+	@TODO: Markus Amend
 
 12) Add new dissectors (e.g. BGP, DNS, DCCP, SCTP, RSVP, IPsec, LISP, RADIUS,
     LLC, fix MPLS?, improve ARP, BPDU, PVST, CDP, LLDP, RTP, Syslog, NTP,
     OpenFlow, ...), add new protocols to mausezahn.
 
-31) astraceroute: implement DNS traceroute with AS/Geo information
-
-46) QoS for curvetun --> since tundev is qdiscless
-
 47) Add geo-ip information to netsniff-ng output?
+
+48) Hand-include patchset from Sibir Chakraborty:
+	- Replay all files from directory (dir as --in paramter)
+	- Replay with correct timing information
+	- Replay with Gbps / pps rate limit
+	@TODO: Daniel Borkmann
+
+49) Add Gbps / pps rate limit to trafgen
+	@TODO: Daniel Borkmann
+
+32) ifpps: add option for --dev eth0,eth1,eth2 and accumulate stats
+	@TODO: Daniel Borkmann
+
+33) ifpps: calc current throughput, show percentage of linerate
+	@TODO: Daniel Borkmann
