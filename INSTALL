@@ -11,7 +11,7 @@ A note for distribution package maintainers can be found at the end of the file.
 
 What tools are required to build netsniff-ng?
 
- - gcc, make, sed, perl, coreutils (all)
+ - gcc, make et al. (all)
  - ccache (optional)
  - flex, bison (bpfc, trafgen)
  - asciidoc (man-pages)
@@ -31,6 +31,7 @@ What libraries are required?
 
 What additional tools are recommended after the build?
 
+ - cpp (trafgen)
  - ntpd (curvetun)
  - setcap (all)
 
