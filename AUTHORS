@@ -1,6 +1,7 @@
 Major contributors (> 30 commits):
 
  * Daniel Borkmann <borkmann@redhat.com> (lead developer, maintainer)
+ * Tobias Klauser <tklauser@distanz.ch> (co-maintainer)
  * Emmanuel Roullit <emmanuel@netsniff-ng.org>
  * Markus Amend <markus@netsniff-ng.org>
  * Christoph Jaeger <christoph@netsniff-ng.org>
@@ -9,7 +10,6 @@ Major contributors (> 30 commits):
 Minor contributors (<= 30 commits):
 
  * Jesper Dangaard Brouer <brouer@redhat.com>
- * Tobias Klauser <tklauser@distanz.ch>
  * Jaroslav Škarvada <jskarvad@redhat.com>
  * Dennis Gilmore <dennis@ausil.us>
  * Dan Horák <dan@danny.cz>
