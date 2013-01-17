@@ -16,5 +16,3 @@ fi
 
 echo "export NACL_INC_DIR=$nacl_include_path" >> ~/.bashrc
 echo "export NACL_LIB_DIR=$nacl_lib_path" >> ~/.bashrc
-
-source ~/.bashrc

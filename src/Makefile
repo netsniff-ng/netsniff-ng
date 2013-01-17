@@ -139,6 +139,7 @@ TOOLS_MOST = $(filter-out mausezahn,$(TOOLS))
 bold = $(shell tput bold)
 normal = $(shell tput sgr0)
 
+$(shell . ~/.bashrc)
 # Build NaCl if no environment variables are set!
 ifndef NACL_LIB_DIR
 ifndef NACL_INC_DIR
