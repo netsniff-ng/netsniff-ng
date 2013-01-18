@@ -1026,7 +1026,7 @@ static unsigned int generate_srand_seed(void)
 
 int main(int argc, char **argv)
 {
-	bool slow = false, invoke_cpp = false;
+	bool slow = false, invoke_cpp = false, reseed = true;
 	int c, opt_index, i, j, vals[4] = {0}, irq;
 	char *confname = NULL, *ptr;
 	unsigned long cpus_tmp;
@@ -1097,6 +1097,7 @@ int main(int argc, char **argv)
 			break;
 		case 'E':
 			seed = strtoul(optarg, NULL, 0);
+			reseed = false;
 			break;
 		case 'n':
 			ctx.num = strtoul(optarg, NULL, 0);
@@ -1201,7 +1202,8 @@ int main(int argc, char **argv)
 
 		switch (pid) {
 		case 0:
-			seed = generate_srand_seed();
+			if (reseed)
+				seed = generate_srand_seed();
 			srand(seed);
 
 			cpu_affinity(i);
