@@ -252,7 +252,7 @@ netsniff-ng_install_custom flowtop_install_custom:
 	$(Q)$(foreach file,$(NCONF_FILES),$(call INST,configs/$(file),$(ETCDIRE));)
 astraceroute_install_custom:
 	$(Q)$(call INST,configs/whois.conf,$(ETCDIRE))
-	$(Q)$(call INSTX,../scripts/astraceroute6,$(SBINDIR))
+	$(Q)$(call INSTX,../contrib/scripts/astraceroute6,$(SBINDIR))
 
 $(TOOLS): WFLAGS += $(WFLAGS_EXTRA)
 $(TOOLS):
@@ -260,7 +260,7 @@ $(TOOLS):
 	$(STRIP) $@/$@
 
 update:
-	$(Q)../scripts/geoip-database-update
+	$(Q)../contrib/scripts/geoip-database-update
 nacl:
 	$(Q)echo "$(bold)$(WHAT) $@:$(normal)"
 	$(Q)cd curvetun/ && ./build_nacl.sh ~/nacl
