@@ -29,7 +29,7 @@ int open_or_die(const char *file, int flags)
 {
 	int ret = open(file, flags);
 	if (ret < 0)
-		panic("Cannot open file!\n");
+		panic("Cannot open file %s!\n", file);
 
 	return ret;
 }
@@ -38,7 +38,7 @@ int open_or_die_m(const char *file, int flags, mode_t mode)
 {
 	int ret = open(file, flags, mode);
 	if (ret < 0)
-		panic("Cannot open or create file!");
+		panic("Cannot open or create file %s!", file);
 	return ret;
 }
 
