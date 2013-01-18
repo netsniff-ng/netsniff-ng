@@ -797,11 +797,11 @@ static int do_trace(const struct ash_cfg *cfg)
 		}
 	}
 
-	if (len >= device_mtu(cfg->dev))
+	len_rcv = device_mtu(cfg->dev);
+	if (len >= len_rcv)
 		panic("Packet len exceeds device MTU!\n");
 
 	packet = xmalloc(len);
-	len_rcv = device_mtu(cfg->dev);
 	packet_rcv = xmalloc(len_rcv);
 
 	hbuff1 = xzmalloc(256);
