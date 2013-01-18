@@ -947,6 +947,7 @@ static void parse_whois_or_die(struct ash_cfg *cfg)
 
 	fd = open_or_die(WHOIS_SERVER_SOURCE, O_RDONLY);
 
+	memset(tmp, 0, sizeof(tmp));
 	while ((ret = read(fd, tmp, sizeof(tmp))) > 0) {
 		tmp[sizeof(tmp) - 1] = 0;
 		ptr = skips(tmp);
