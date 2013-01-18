@@ -1083,6 +1083,8 @@ int main(int argc, char **argv)
 		case 'c':
 		case 'i':
 			confname = xstrdup(optarg);
+			if (!strncmp("-", confname, strlen("-")))
+				ctx.cpus = 1;
 			break;
 		case 'u':
 			ctx.uid = strtoul(optarg, NULL, 0);
