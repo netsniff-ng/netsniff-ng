@@ -7,7 +7,7 @@ PATCHLEVEL = 5
 SUBLEVEL = 8
 EXTRAVERSION = -rc0
 
-TOOLS = netsniff-ng trafgen astraceroute flowtop ifpps mausezahn bpfc curvetun
+TOOLS = netsniff-ng trafgen astraceroute flowtop ifpps bpfc curvetun
 
 # For packaging purposes, prefix can define a different path.
 PREFIX ?=
@@ -134,8 +134,6 @@ export CROSS_COMPILE
 VERSION_STRING = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
 VERSION_SHORT = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)
 
-TOOLS_MOST = $(filter-out mausezahn,$(TOOLS))
-
 bold = $(shell tput bold)
 normal = $(shell tput sgr0)
 
@@ -182,10 +180,10 @@ DOC_FILES = Summary RelatedWork Performance KnownIssues IPv6Notes Sponsors \
 NCONF_FILES = ether.conf tcp.conf udp.conf oui.conf
 
 all: build_showinfo toolkit
-allbutcurvetun: $(filter-out mausezahn,$(filter-out curvetun,$(TOOLS)))
+allbutcurvetun: $(filter-out curvetun,$(TOOLS))
 allbutmausezahn: $(filter-out mausezahn,$(TOOLS))
-toolkit: allbutmausezahn
-install: install_allbutmausezahn
+toolkit: $(TOOLS)
+install: install_all
 install_all: $(foreach tool,$(TOOLS),$(tool)_install)
 	$(Q)$(foreach file,$(DOC_FILES),$(call INST,../Documentation/$(file),$(DOCDIRE));)
 install_allbutcurvetun: $(foreach tool,$(filter-out curvetun,$(TOOLS)),$(tool)_install)
