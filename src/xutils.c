@@ -249,6 +249,20 @@ int adjust_dbm_level(int in_dbm, int dbm_val)
 	return dbm_val - 0x100;
 }
 
+void drop_privileges(bool enforce, uid_t uid, gid_t gid)
+{
+	if (enforce) {
+		if (uid == getuid())
+			panic("Uid cannot be the same as the current user!\n");
+		if (gid == getgid())
+			panic("Gid cannot be the same as the current user!\n");
+	}
+	if (setgid(gid) != 0)
+		panic("Unable to drop group privileges: %s!\n", strerror(errno));
+	if (setuid(uid) != 0)
+		panic("Unable to drop user privileges: %s!\n", strerror(errno));
+}
+
 int get_system_socket_mem(int which)
 {
 	int fd, val = -1;

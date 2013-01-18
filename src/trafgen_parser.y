@@ -571,11 +571,10 @@ int compile_packets(char *file, int verbose, int cpu, bool invoke_cpp)
 	if (invoke_cpp) {
 		char cmd[256];
 
-		slprintf(tmp_file, sizeof(tmp_file), ".tmp.%s", file);
+		slprintf(tmp_file, sizeof(tmp_file), ".tmp-%u-%s", rand(), file);
 		slprintf(cmd, sizeof(cmd), "cpp %s > %s", file, tmp_file);
 		system(cmd);
 
-		xfree(file);
 		file = tmp_file;
 	}
 
@@ -584,7 +583,7 @@ int compile_packets(char *file, int verbose, int cpu, bool invoke_cpp)
 	else
 		yyin = fopen(file, "r");
 	if (!yyin)
-		panic("Cannot open file!\n");
+		panic("Cannot open %s: %s!\n", file, strerror(errno));
 
 	realloc_packet();
 	yyparse();

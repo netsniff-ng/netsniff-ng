@@ -60,9 +60,11 @@
 #include "csum.h"
 
 struct ctx {
-	bool rand, rfraw, jumbo_support, verbose, smoke_test;
+	bool rand, rfraw, jumbo_support, verbose, smoke_test, enforce;
 	unsigned long kpull, num, gap, reserve_size, cpus;
 	struct sockaddr_in dest;
+	uid_t uid;
+	gid_t gid;
 	char *device, *device_trans, *rhost;
 };
 
@@ -691,6 +693,8 @@ static void xmit_slowpath_or_die(struct ctx *ctx, int cpu)
 	if (ctx->smoke_test)
 		icmp_sock = xmit_smoke_setup(ctx);
 
+	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
+
 	bug_on(gettimeofday(&start, NULL));
 
 	while (likely(sigint == 0) && likely(num > 0)) {
@@ -780,6 +784,8 @@ static void xmit_fastpath_or_die(struct ctx *ctx, int cpu)
 	mmap_tx_ring(sock, &tx_ring);
 	alloc_tx_ring_frames(&tx_ring);
 	bind_tx_ring(sock, &tx_ring, ifindex);
+
+	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
 
 	if (ctx->kpull)
 		interval = ctx->kpull;
@@ -1020,19 +1026,17 @@ static unsigned int generate_srand_seed(void)
 
 int main(int argc, char **argv)
 {
-	bool slow = false, invoke_cpp = false, enforce = false;
+	bool slow = false, invoke_cpp = false;
 	int c, opt_index, i, j, vals[4] = {0}, irq;
 	char *confname = NULL, *ptr;
 	unsigned long cpus_tmp;
 	unsigned long long tx_packets, tx_bytes;
 	struct ctx ctx;
-	uid_t uid = getuid();
-	gid_t gid = getgid();
 
 	fmemset(&ctx, 0, sizeof(ctx));
 	ctx.cpus = get_number_cpus_online();
-
-	seed = generate_srand_seed();
+	ctx.uid = getuid();
+	ctx.gid = getgid();
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 				&opt_index)) != EOF) {
@@ -1081,12 +1085,12 @@ int main(int argc, char **argv)
 			confname = xstrdup(optarg);
 			break;
 		case 'u':
-			uid = strtoul(optarg, NULL, 0);
-			enforce = true;
+			ctx.uid = strtoul(optarg, NULL, 0);
+			ctx.enforce = true;
 			break;
 		case 'g':
-			gid = strtoul(optarg, NULL, 0);
-			enforce = true;
+			ctx.gid = strtoul(optarg, NULL, 0);
+			ctx.enforce = true;
 			break;
 		case 'k':
 			ctx.kpull = strtoul(optarg, NULL, 0);
@@ -1157,17 +1161,6 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (enforce) {
-		if (uid == getuid())
-			panic("Uid cannot be the same as the current user!\n");
-		if (gid == getgid())
-			panic("Gid cannot be the same as the current user!\n");
-	}
-	if (setgid(gid) != 0)
-		panic("Unable to drop group privileges: %s!\n", strerror(errno));
-	if (setuid(uid) != 0)
-		panic("Unable to drop user privileges: %s!\n", strerror(errno));
-
 	if (argc < 5)
 		help();
 	if (ctx.device == NULL)
@@ -1184,8 +1177,6 @@ int main(int argc, char **argv)
 	register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO);
 
 	header();
-
-	srand(seed);
 
 	set_system_socket_memory(vals);
 
@@ -1210,6 +1201,9 @@ int main(int argc, char **argv)
 
 		switch (pid) {
 		case 0:
+			seed = generate_srand_seed();
+			srand(seed);
+
 			cpu_affinity(i);
 			main_loop(&ctx, confname, slow, i, invoke_cpp);
 
