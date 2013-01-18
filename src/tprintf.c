@@ -76,6 +76,9 @@ void tprintf_flush(void)
 void tprintf_init(void)
 {
 	spinlock_init(&buffer_lock);
+
+	setvbuf(stdout, NULL, _IONBF, 0);
+	setvbuf(stderr, NULL, _IONBF, 0);
 }
 
 void tprintf_cleanup(void)
