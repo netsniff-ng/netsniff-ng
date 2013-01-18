@@ -1104,7 +1104,7 @@ int main(int argc, char **argv)
 {
 	char *ptr;
 	int c, i, j, opt_index, ops_touched = 0, vals[4] = {0};
-	bool prio_high = false, setsockmem = true;
+	bool prio_high = false, setsockmem = true, enforce = false;
 	void (*main_loop)(struct ctx *ctx) = NULL;
 	uid_t uid = getuid();
 	gid_t gid = getgid();
@@ -1156,9 +1156,11 @@ int main(int argc, char **argv)
 			break;
 		case 'u':
 			uid = strtoul(optarg, NULL, 0);
+			enforce = true;
 			break;
 		case 'g':
 			gid = strtoul(optarg, NULL, 0);
+			enforce = true;
 			break;
 		case 't':
 			if (!strncmp(optarg, "host", strlen("host")))
@@ -1322,6 +1324,12 @@ int main(int argc, char **argv)
 		}
 	}
 
+	if (enforce) {
+		if (uid == getuid())
+			panic("Uid cannot be the same as the current user!\n");
+		if (gid == getgid())
+			panic("Gid cannot be the same as the current user!\n");
+	}
 	if (setgid(gid) != 0)
 		panic("Unable to drop group privileges: %s!\n", strerror(errno));
 	if (setuid(uid) != 0)

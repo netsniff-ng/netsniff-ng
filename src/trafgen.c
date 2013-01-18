@@ -1020,7 +1020,7 @@ static unsigned int generate_srand_seed(void)
 
 int main(int argc, char **argv)
 {
-	bool slow = false, invoke_cpp = false;
+	bool slow = false, invoke_cpp = false, enforce = false;
 	int c, opt_index, i, j, vals[4] = {0}, irq;
 	char *confname = NULL, *ptr;
 	unsigned long cpus_tmp;
@@ -1082,9 +1082,11 @@ int main(int argc, char **argv)
 			break;
 		case 'u':
 			uid = strtoul(optarg, NULL, 0);
+			enforce = true;
 			break;
 		case 'g':
 			gid = strtoul(optarg, NULL, 0);
+			enforce = true;
 			break;
 		case 'k':
 			ctx.kpull = strtoul(optarg, NULL, 0);
@@ -1155,6 +1157,12 @@ int main(int argc, char **argv)
 		}
 	}
 
+	if (enforce) {
+		if (uid == getuid())
+			panic("Uid cannot be the same as the current user!\n");
+		if (gid == getgid())
+			panic("Gid cannot be the same as the current user!\n");
+	}
 	if (setgid(gid) != 0)
 		panic("Unable to drop group privileges: %s!\n", strerror(errno));
 	if (setuid(uid) != 0)
