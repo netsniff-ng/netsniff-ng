@@ -20,6 +20,7 @@
 #include <poll.h>
 #include <sys/poll.h>
 #include <sched.h>
+#include <stdbool.h>
 #include <sys/resource.h>
 #include <sys/time.h>
 

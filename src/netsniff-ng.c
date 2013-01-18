@@ -60,9 +60,11 @@ struct ctx {
 	char *device_in, *device_out, *device_trans, *filter, *prefix;
 	int cpu, rfraw, dump, print_mode, dump_dir, jumbo_support, packet_type, verbose;
 	unsigned long kpull, dump_interval, reserve_size, tx_bytes, tx_packets;
-	bool randomize, promiscuous;
+	bool randomize, promiscuous, enforce;
 	enum pcap_ops_groups pcap;
 	enum dump_mode dump_mode;
+	uid_t uid;
+	gid_t gid;
 	uint32_t link_type;
 };
 
@@ -260,8 +262,6 @@ static void pcap_to_xmit(struct ctx *ctx)
 		ioprio_print();
 		printf("\n");
 	}
-	printf("Running! Hang up with ^C!\n\n");
-	fflush(stdout);
 
 	itimer.it_interval.tv_sec = 0;
 	itimer.it_interval.tv_usec = interval;
@@ -270,6 +270,11 @@ static void pcap_to_xmit(struct ctx *ctx)
 	itimer.it_value.tv_usec = interval;
 
 	setitimer(ITIMER_REAL, &itimer, NULL); 
+
+	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
+
+	printf("Running! Hang up with ^C!\n\n");
+	fflush(stdout);
 
 	bug_on(gettimeofday(&start, NULL));
 
@@ -422,6 +427,9 @@ static void receive_to_xmit(struct ctx *ctx)
 
 		printf("MD: RXTX %luus\n\n", interval);
 	}
+
+	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
+
 	printf("Running! Hang up with ^C!\n\n");
 	fflush(stdout);
 
@@ -593,12 +601,15 @@ static void read_pcap(struct ctx *ctx)
 		ioprio_print();
 		printf("\n");
 	}
-	printf("Running! Hang up with ^C!\n\n");
-	fflush(stdout);
 
 	if (ctx->device_out)
 		fdo = open_or_die_m(ctx->device_out, O_RDWR | O_CREAT |
 				    O_TRUNC | O_LARGEFILE, DEFFILEMODE);
+
+	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
+
+	printf("Running! Hang up with ^C!\n\n");
+	fflush(stdout);
 
 	bug_on(gettimeofday(&start, NULL));
 
@@ -899,6 +910,9 @@ static void recv_only_or_dump(struct ctx *ctx)
 		ioprio_print();
 		printf("\n");
 	}
+
+	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
+
 	printf("Running! Hang up with ^C!\n\n");
 	fflush(stdout);
 
@@ -1104,10 +1118,8 @@ int main(int argc, char **argv)
 {
 	char *ptr;
 	int c, i, j, opt_index, ops_touched = 0, vals[4] = {0};
-	bool prio_high = false, setsockmem = true, enforce = false;
+	bool prio_high = false, setsockmem = true;
 	void (*main_loop)(struct ctx *ctx) = NULL;
-	uid_t uid = getuid();
-	gid_t gid = getgid();
 	struct ctx ctx = {
 		.link_type = LINKTYPE_EN10MB,
 		.print_mode = PRINT_NORM,
@@ -1118,6 +1130,8 @@ int main(int argc, char **argv)
 		.pcap = PCAP_OPS_SG,
 		.dump_interval = 60,
 		.dump_mode = DUMP_INTERVAL_TIME,
+		.uid = getuid(),
+		.gid = getgid()
 	};
 
 	srand(time(NULL));
@@ -1155,12 +1169,12 @@ int main(int argc, char **argv)
 			setsockmem = false;
 			break;
 		case 'u':
-			uid = strtoul(optarg, NULL, 0);
-			enforce = true;
+			ctx.uid = strtoul(optarg, NULL, 0);
+			ctx.enforce = true;
 			break;
 		case 'g':
-			gid = strtoul(optarg, NULL, 0);
-			enforce = true;
+			ctx.gid = strtoul(optarg, NULL, 0);
+			ctx.enforce = true;
 			break;
 		case 't':
 			if (!strncmp(optarg, "host", strlen("host")))
@@ -1323,17 +1337,6 @@ int main(int argc, char **argv)
 			break;
 		}
 	}
-
-	if (enforce) {
-		if (uid == getuid())
-			panic("Uid cannot be the same as the current user!\n");
-		if (gid == getgid())
-			panic("Gid cannot be the same as the current user!\n");
-	}
-	if (setgid(gid) != 0)
-		panic("Unable to drop group privileges: %s!\n", strerror(errno));
-	if (setuid(uid) != 0)
-		panic("Unable to drop user privileges: %s!\n", strerror(errno));
 
 	if (!ctx.device_in)
 		ctx.device_in = xstrdup("any");
