@@ -249,9 +249,9 @@ astraceroute_distclean_custom:
 	$(Q)$(call RMDIR,$(ETCDIRE))
 
 netsniff-ng_install_custom flowtop_install_custom:
-	$(Q)$(foreach file,$(NCONF_FILES),$(call INST,conf/$(file),$(ETCDIRE));)
+	$(Q)$(foreach file,$(NCONF_FILES),$(call INST,configs/$(file),$(ETCDIRE));)
 astraceroute_install_custom:
-	$(Q)$(call INST,conf/whois.conf,$(ETCDIRE))
+	$(Q)$(call INST,configs/whois.conf,$(ETCDIRE))
 	$(Q)$(call INSTX,../scripts/astraceroute6,$(SBINDIR))
 
 $(TOOLS): WFLAGS += $(WFLAGS_EXTRA)
