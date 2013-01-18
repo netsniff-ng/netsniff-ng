@@ -46,6 +46,7 @@
 #include <poll.h>
 #include <netdb.h>
 #include <math.h>
+#include <unistd.h>
 
 #include "xmalloc.h"
 #include "die.h"
@@ -81,7 +82,7 @@ size_t plen = 0;
 struct packet_dyn *packet_dyn = NULL;
 size_t dlen = 0;
 
-static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRsP:eE:p";
+static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRsP:eE:pu:g:";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"out",			required_argument,	NULL, 'o'},
@@ -94,6 +95,8 @@ static const struct option long_options[] = {
 	{"kernel-pull",		required_argument,	NULL, 'k'},
 	{"smoke-test",		required_argument,	NULL, 's'},
 	{"seed",		required_argument,	NULL, 'E'},
+	{"user",		required_argument,	NULL, 'u'},
+	{"group",		required_argument,	NULL, 'g'},
 	{"jumbo-support",	no_argument,		NULL, 'J'},
 	{"cpp",			no_argument,		NULL, 'p'},
 	{"rfraw",		no_argument,		NULL, 'R'},
@@ -194,6 +197,8 @@ static void help(void)
 	     "  -S|--ring-size <size>             Manually set mmap size (KB/MB/GB): e.g.\'10MB\'\n"
 	     "  -k|--kernel-pull <uint>           Kernel batch interval in us (def: 10us)\n"
 	     "  -E|--seed <uint>                  Manually set srand(3) seed\n"
+	     "  -u|--user <userid>                Drop privileges and change to userid\n"
+	     "  -g|--group <groupid>              Drop privileges and change to groupid\n"
 	     "  -V|--verbose                      Be more verbose\n"
 	     "  -v|--version                      Show version\n"
 	     "  -e|--example                      Show built-in packet config example\n"
@@ -205,7 +210,8 @@ static void help(void)
 	     "  trafgen --dev eth0 --conf trafgen.cfg --smoke-test 10.0.0.1\n"
 	     "  trafgen --dev wlan0 --rfraw --conf beacon-test.txf -V --cpus 2\n"
 	     "  trafgen --dev eth0 --conf trafgen.cfg --rand --gap 1000\n"
-	     "  trafgen --dev eth0 --conf trafgen.cfg --rand --num 1400000 -k1000\n\n"
+	     "  trafgen --dev eth0 --conf trafgen.cfg --rand --num 1400000 -k1000\n"
+	     "  trafgen --dev eth0 --conf trafgen.cfg -u `id -u bob` -g `id -g bob`\n\n"
 	     "Arbitrary packet config examples (e.g. trafgen -e > trafgen.cfg):\n"
 	     "  Run packet on  all CPUs:              { fill(0xff, 64) csum16(0, 64) }\n"
 	     "  Run packet only on CPU1:    cpu(1):   { rnd(64), 0b11001100, 0xaa }\n"
@@ -1020,9 +1026,8 @@ int main(int argc, char **argv)
 	unsigned long cpus_tmp;
 	unsigned long long tx_packets, tx_bytes;
 	struct ctx ctx;
-
-	setfsuid(getuid());
-	setfsgid(getgid());
+	uid_t uid = getuid();
+	gid_t gid = getgid();
 
 	fmemset(&ctx, 0, sizeof(ctx));
 	ctx.cpus = get_number_cpus_online();
@@ -1074,6 +1079,12 @@ int main(int argc, char **argv)
 		case 'c':
 		case 'i':
 			confname = xstrdup(optarg);
+			break;
+		case 'u':
+			uid = strtoul(optarg, NULL, 0);
+			break;
+		case 'g':
+			gid = strtoul(optarg, NULL, 0);
 			break;
 		case 'k':
 			ctx.kpull = strtoul(optarg, NULL, 0);
@@ -1128,6 +1139,8 @@ int main(int argc, char **argv)
 			case 'E':
 			case 'i':
 			case 'k':
+			case 'u':
+			case 'g':
 			case 't':
 				panic("Option -%c requires an argument!\n",
 				      optopt);
@@ -1141,6 +1154,11 @@ int main(int argc, char **argv)
 			break;
 		}
 	}
+
+	if (setgid(gid) != 0)
+		panic("Unable to drop group privileges: %s!\n", strerror(errno));
+	if (setuid(uid) != 0)
+		panic("Unable to drop user privileges: %s!\n", strerror(errno));
 
 	if (argc < 5)
 		help();

@@ -70,7 +70,7 @@ volatile sig_atomic_t sigint = 0;
 
 static volatile bool next_dump = false;
 
-static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqXlvhF:RgAP:V";
+static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqXlvhF:RGAP:Vu:g:";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"in",			required_argument,	NULL, 'i'},
@@ -84,10 +84,12 @@ static const struct option long_options[] = {
 	{"bind-cpu",		required_argument,	NULL, 'b'},
 	{"unbind-cpu",		required_argument,	NULL, 'B'},
 	{"prefix",		required_argument,	NULL, 'P'},
+	{"user",		required_argument,	NULL, 'u'},
+	{"group",		required_argument,	NULL, 'g'},
 	{"rand",		no_argument,		NULL, 'r'},
 	{"rfraw",		no_argument,		NULL, 'R'},
 	{"mmap",		no_argument,		NULL, 'm'},
-	{"sg",			no_argument,		NULL, 'g'},
+	{"sg",			no_argument,		NULL, 'G'},
 	{"clrw",		no_argument,		NULL, 'c'},
 	{"jumbo-support",	no_argument,		NULL, 'J'},
 	{"no-promisc",		no_argument,		NULL, 'M'},
@@ -1037,7 +1039,7 @@ static void help(void)
 	     "  -M|--no-promisc             No promiscuous mode for netdev\n"
 	     "  -A|--no-sock-mem            Don't tune core socket memory\n"
 	     "  -m|--mmap                   Mmap pcap file i.e., for replaying\n"
-	     "  -g|--sg                     Scatter/gather pcap file I/O\n"
+	     "  -G|--sg                     Scatter/gather pcap file I/O\n"
 	     "  -c|--clrw                   Use slower read(2)/write(2) I/O\n"
 	     "  -S|--ring-size <size>       Manually set ring size to <size>:\n"
 	     "                              mmap space in KiB/MiB/GiB, e.g. \'10MiB\'\n"
@@ -1046,6 +1048,8 @@ static void help(void)
 	     "                              is populated with payload from uspace\n"
 	     "  -b|--bind-cpu <cpu>         Bind to specific CPU (or CPU-range)\n"
 	     "  -B|--unbind-cpu <cpu>       Forbid to use specific CPU (or CPU-range)\n"
+	     "  -u|--user <userid>          Drop privileges and change to userid\n"
+	     "  -g|--group <groupid>        Drop privileges and change to groupid\n"
 	     "  -H|--prio-high              Make this high priority process\n"
 	     "  -Q|--notouch-irq            Do not touch IRQ CPU affinity of NIC\n"
 	     "  -V|--verbose                Be more verbose\n"
@@ -1058,6 +1062,7 @@ static void help(void)
 	     "  netsniff-ng --in dump.pcap --out dump.txf --silent --bind-cpu 0\n"
 	     "  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0 --type host\n"
 	     "  netsniff-ng --in eth1 --out /opt/probe/ -s -m -J --interval 100MiB -b 0\n"
+	     "  netsniff-ng --in vlan0 --out dump.pcap -c -u `id -u bob` -g `id -g bob`\n"
 	     "  netsniff-ng --in any --filter http.bpf --jumbo-support --ascii -V\n\n"
 	     "Note:\n"
 	     "  This tool is targeted for network developers! You should\n"
@@ -1101,6 +1106,8 @@ int main(int argc, char **argv)
 	int c, i, j, opt_index, ops_touched = 0, vals[4] = {0};
 	bool prio_high = false, setsockmem = true;
 	void (*main_loop)(struct ctx *ctx) = NULL;
+	uid_t uid = getuid();
+	gid_t gid = getgid();
 	struct ctx ctx = {
 		.link_type = LINKTYPE_EN10MB,
 		.print_mode = PRINT_NORM,
@@ -1112,9 +1119,6 @@ int main(int argc, char **argv)
 		.dump_interval = 60,
 		.dump_mode = DUMP_INTERVAL_TIME,
 	};
-
-	setfsuid(getuid());
-	setfsgid(getgid());
 
 	srand(time(NULL));
 
@@ -1149,6 +1153,12 @@ int main(int argc, char **argv)
 			break;
 		case 'A':
 			setsockmem = false;
+			break;
+		case 'u':
+			uid = strtoul(optarg, NULL, 0);
+			break;
+		case 'g':
+			gid = strtoul(optarg, NULL, 0);
 			break;
 		case 't':
 			if (!strncmp(optarg, "host", strlen("host")))
@@ -1206,7 +1216,7 @@ int main(int argc, char **argv)
 			ctx.pcap = PCAP_OPS_MMAP;
 			ops_touched = 1;
 			break;
-		case 'g':
+		case 'G':
 			ctx.pcap = PCAP_OPS_SG;
 			ops_touched = 1;
 			break;
@@ -1295,6 +1305,8 @@ int main(int argc, char **argv)
 			case 'S':
 			case 'b':
 			case 'k':
+			case 'u':
+			case 'g':
 			case 'B':
 			case 'e':
 				panic("Option -%c requires an argument!\n",
@@ -1309,6 +1321,11 @@ int main(int argc, char **argv)
 			break;
 		}
 	}
+
+	if (setgid(gid) != 0)
+		panic("Unable to drop group privileges: %s!\n", strerror(errno));
+	if (setuid(uid) != 0)
+		panic("Unable to drop user privileges: %s!\n", strerror(errno));
 
 	if (!ctx.device_in)
 		ctx.device_in = xstrdup("any");
