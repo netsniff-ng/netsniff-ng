@@ -698,7 +698,7 @@ static int handle_ipv6_icmp(uint8_t *packet, size_t len, int ttl, int id,
 			       rec.prefix, rec.registry,
 			       rec.since, rec.name);
 		} else {
-			printf("%s (%s) in unkown AS",
+			printf("%s (%s) in unknown AS",
 			       (hent ? hent->h_name : hbuff), hbuff);
 		}
 	}
