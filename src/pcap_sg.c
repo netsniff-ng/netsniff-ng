@@ -62,12 +62,6 @@ static int pcap_sg_push_file_header(int fd, uint32_t linktype)
 	return 0;
 }
 
-static int pcap_sg_prepare_writing_pcap(int fd)
-{
-	set_ioprio_rt();
-	return 0;
-}
-
 static ssize_t pcap_sg_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 				      uint8_t *packet, size_t len)
 {
@@ -101,8 +95,6 @@ static ssize_t pcap_sg_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
 
 static int pcap_sg_prepare_reading_pcap(int fd)
 {
-	set_ioprio_rt();
-
 	spinlock_lock(&lock);
 	if (readv(fd, iov, IOVSIZ) <= 0)
 		return -EIO;
@@ -228,7 +220,6 @@ const struct pcap_file_ops pcap_sg_ops = {
 	.push_file_header = pcap_sg_push_file_header,
 	.write_pcap_pkt = pcap_sg_write_pcap_pkt,
 	.prepare_reading_pcap =  pcap_sg_prepare_reading_pcap,
-	.prepare_writing_pcap =  pcap_sg_prepare_writing_pcap,
 	.read_pcap_pkt = pcap_sg_read_pcap_pkt,
 	.fsync_pcap = pcap_sg_fsync_pcap,
 };
@@ -253,6 +244,8 @@ int init_pcap_sg(int jumbo_support)
 	}
 
 	spinlock_init(&lock);
+
+	set_ioprio_rt();
 
 	return pcap_ops_group_register(&pcap_sg_ops, PCAP_OPS_SG);
 }

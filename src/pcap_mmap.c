@@ -72,8 +72,6 @@ static int pcap_mmap_prepare_writing_pcap(int fd)
 	off_t pos;
 	struct stat sb;
 
-	set_ioprio_be();
-
 	spinlock_lock(&lock);
 
 	map_size = get_map_size();
@@ -156,8 +154,6 @@ static int pcap_mmap_prepare_reading_pcap(int fd)
 {
 	int ret;
 	struct stat sb;
-
-	set_ioprio_be();
 
 	spinlock_lock(&lock);
 
@@ -267,6 +263,8 @@ int init_pcap_mmap(int jumbo_support)
 	spinlock_init(&lock);
 
 	jumbo_frames = jumbo_support;
+
+	set_ioprio_be();
 
 	return pcap_ops_group_register(&pcap_mmap_ops, PCAP_OPS_MMAP);
 }

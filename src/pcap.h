@@ -157,11 +157,21 @@ extern void cleanup_pcap_mmap(void);
 extern void cleanup_pcap_rw(void);
 extern void cleanup_pcap_sg(void);
 
-static inline int init_pcap(int jumbo_support)
+static inline int init_pcap(enum pcap_ops_groups ops, int jumbo_support)
 {
-	init_pcap_rw(jumbo_support);
-	init_pcap_sg(jumbo_support);
-	init_pcap_mmap(jumbo_support);
+	switch (ops) {
+	case PCAP_OPS_RW:
+		init_pcap_rw(jumbo_support);
+		break;
+	case PCAP_OPS_SG:
+		init_pcap_sg(jumbo_support);
+		break;
+	case PCAP_OPS_MMAP:
+		init_pcap_mmap(jumbo_support);
+		break;
+	default:
+		bug();
+	}
 
 	return 0;
 }

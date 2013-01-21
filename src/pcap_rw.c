@@ -93,18 +93,6 @@ static void pcap_rw_fsync_pcap(int fd)
 	fdatasync(fd);
 }
 
-static int pcap_rw_prepare_writing_pcap(int fd)
-{
-	set_ioprio_rt();
-	return 0;
-}
-
-static int pcap_rw_prepare_reading_pcap(int fd)
-{
-	set_ioprio_rt();
-	return 0;
-}
-
 const struct pcap_file_ops pcap_rw_ops = {
 	.name = "read-write",
 	.pull_file_header = pcap_rw_pull_file_header,
@@ -112,12 +100,11 @@ const struct pcap_file_ops pcap_rw_ops = {
 	.write_pcap_pkt = pcap_rw_write_pcap_pkt,
 	.read_pcap_pkt = pcap_rw_read_pcap_pkt,
 	.fsync_pcap = pcap_rw_fsync_pcap,
-	.prepare_writing_pcap = pcap_rw_prepare_writing_pcap,
-	.prepare_reading_pcap = pcap_rw_prepare_reading_pcap,
 };
 
 int init_pcap_rw(int jumbo_support)
 {
+	set_ioprio_rt();
 	return pcap_ops_group_register(&pcap_rw_ops, PCAP_OPS_RW);
 }
 

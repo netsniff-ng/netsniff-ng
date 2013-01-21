@@ -841,26 +841,6 @@ static void recv_only_or_dump(struct ctx *ctx)
 		ctx->link_type = LINKTYPE_IEEE802_11;
 	}
 
-	if (dump_to_pcap(ctx)) {
-		__label__ try_file;
-		struct stat stats;
-
-		fmemset(&stats, 0, sizeof(stats));
-		ret = stat(ctx->device_out, &stats);
-		if (ret < 0) {
-			ctx->dump_dir = 0;
-			goto try_file;
-		}
-
-		ctx->dump_dir = S_ISDIR(stats.st_mode);
-		if (ctx->dump_dir) {
-			fd = begin_multi_pcap_file(ctx);
-		} else {
-		try_file:
-			fd = begin_single_pcap_file(ctx);
-		}
-	}
-
 	fmemset(&rx_ring, 0, sizeof(rx_ring));
 	fmemset(&rx_poll, 0, sizeof(rx_poll));
 	fmemset(&bpf_ops, 0, sizeof(bpf_ops));
@@ -912,6 +892,26 @@ static void recv_only_or_dump(struct ctx *ctx)
 	}
 
 	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
+
+	if (dump_to_pcap(ctx)) {
+		__label__ try_file;
+		struct stat stats;
+
+		fmemset(&stats, 0, sizeof(stats));
+		ret = stat(ctx->device_out, &stats);
+		if (ret < 0) {
+			ctx->dump_dir = 0;
+			goto try_file;
+		}
+
+		ctx->dump_dir = S_ISDIR(stats.st_mode);
+		if (ctx->dump_dir) {
+			fd = begin_multi_pcap_file(ctx);
+		} else {
+		try_file:
+			fd = begin_single_pcap_file(ctx);
+		}
+	}
 
 	printf("Running! Hang up with ^C!\n\n");
 	fflush(stdout);
@@ -993,6 +993,13 @@ static void recv_only_or_dump(struct ctx *ctx)
 	bug_on(gettimeofday(&end, NULL));
 	diff = tv_subtract(end, start);
 
+	if (dump_to_pcap(ctx)) {
+		if (ctx->dump_dir)
+			finish_multi_pcap_file(ctx, fd);
+		else
+			finish_single_pcap_file(ctx, fd);
+	}
+
 	if (!(ctx->dump_dir && ctx->print_mode == PRINT_NONE)) {
 		sock_print_net_stats(sock, skipped);
 
@@ -1014,13 +1021,6 @@ static void recv_only_or_dump(struct ctx *ctx)
 		leave_rfmon_mac80211(ctx->device_trans, ctx->device_in);
 
 	close(sock);
-
-	if (dump_to_pcap(ctx)) {
-		if (ctx->dump_dir)
-			finish_multi_pcap_file(ctx, fd);
-		else
-			finish_single_pcap_file(ctx, fd);
-	}
 }
 
 static void help(void)
@@ -1346,7 +1346,6 @@ int main(int argc, char **argv)
 
 	header();
 
-	init_pcap(ctx.jumbo_support);
 	tprintf_init();
 
 	if (prio_high) {
@@ -1383,6 +1382,8 @@ int main(int argc, char **argv)
 	}
 
 	bug_on(!main_loop);
+
+	init_pcap(ctx.pcap, ctx.jumbo_support);
 
 	if (setsockmem)
 		set_system_socket_memory(vals);
