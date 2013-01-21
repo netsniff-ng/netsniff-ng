@@ -1,7 +1,7 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
- * Copyright 2009 - 2012 Daniel Borkmann.
+ * Copyright 2009 - 2013 Daniel Borkmann.
  * Subject to the GPL, version 2.
  *
  * A tiny tool to provide top-like reliable networking statistics.
@@ -127,8 +127,11 @@ static void help(void)
 	     "  ifpps eth0\n"
 	     "  ifpps -pd eth0\n"
 	     "  ifpps -lpcd wlan0 > plot.dat\n\n"
+	     "Note:\n"
+	     "  On 10G cards, RX/TX statistics are usually accumulated in > 1sec.\n"
+	     "  Thus, in those situations, it's could be to use a -t of 10sec.\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
-	     "Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
+	     "Copyright (C) 2009-2013 Daniel Borkmann <daniel@netsniff-ng.org>\n"
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
 	     "There is NO WARRANTY, to the extent permitted by law.\n");
@@ -141,7 +144,7 @@ static void version(void)
 	       VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
-	     "Copyright (C) 2009-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
+	     "Copyright (C) 2009-2013 Daniel Borkmann <daniel@netsniff-ng.org>\n"
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
 	     "There is NO WARRANTY, to the extent permitted by law.\n");
