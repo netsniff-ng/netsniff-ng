@@ -1030,7 +1030,7 @@ void set_ioprio_be(void)
 
 void xlockme(void)
 {
-	if (mlockall(MCL_CURRENT|MCL_FUTURE) != 0)
+	if (mlockall(MCL_CURRENT | MCL_FUTURE) != 0)
 		panic("Cannot lock pages!\n");
 }
 
