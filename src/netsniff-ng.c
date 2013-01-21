@@ -1386,9 +1386,11 @@ int main(int argc, char **argv)
 
 	if (setsockmem)
 		set_system_socket_memory(vals);
+	xlockme();
 
 	main_loop(&ctx);
 
+	xunlockme();
 	if (setsockmem)
 		reset_system_socket_memory(vals);
 
