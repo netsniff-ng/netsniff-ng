@@ -47,15 +47,7 @@ void mt_init_by_seed_rand(unsigned long s)
 
 void mt_init_by_seed_time(void)
 {
-	int i;
-	x[0] = ((unsigned long) time(NULL)) & 0xffffffffUL;
-	for (i = 1; i < N; ++i) {
-		x[i] = (1812433253UL * (x[i - 1] ^ (x[i - 1] >> 30)) + i) &
-		       0xffffffffUL;
-	}
-	p0 = x;
-	p1 = x + 1;
-	pm = x + M;
+	mt_init_by_seed_rand((unsigned long) time(NULL));
 }
 
 void mt_init_by_seed_array(unsigned long key[], int len)
