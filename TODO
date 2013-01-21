@@ -10,14 +10,11 @@ For next release:
     dependency installation on Fedora, Debian).
 	@TODO: Daniel Borkmann
 
- 1! Cleanup and refactor the code!
+ 1! Cleanup and refactor the code (curvetun, astraceroute, netsniff-ng, bpfc)!
 	@TODO: Daniel Borkmann
 
 13! Easier language (bpf-hla) for /fast/ filtering (e.g. on top of BPF so
     that it can run in the kernel), include this into bpfc (bpfc-hla).
-	@TODO: Daniel Borkmann
-
-22! Add different timing models to trafgen, not just a static interpacket gap.
 	@TODO: Daniel Borkmann
 
 31! astraceroute: implement DNS traceroute with AS/Geo information
