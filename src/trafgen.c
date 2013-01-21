@@ -62,10 +62,8 @@
 struct ctx {
 	bool rand, rfraw, jumbo_support, verbose, smoke_test, enforce;
 	unsigned long kpull, num, gap, reserve_size, cpus;
+	uid_t uid; gid_t gid; char *device, *device_trans, *rhost;
 	struct sockaddr_in dest;
-	uid_t uid;
-	gid_t gid;
-	char *device, *device_trans, *rhost;
 };
 
 struct cpu_stats {
