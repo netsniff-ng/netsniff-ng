@@ -28,6 +28,7 @@
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/epoll.h>
 #include <sys/syscall.h>
@@ -1025,6 +1026,17 @@ void set_ioprio_rt(void)
 void set_ioprio_be(void)
 {
 	ioprio_setpid(getpid(), 4, ioprio_class_be);
+}
+
+void xlockme(void)
+{
+	if (mlockall(MCL_CURRENT|MCL_FUTURE) != 0)
+		panic("Cannot lock pages!\n");
+}
+
+void xunlockme(void)
+{
+	munlockall();
 }
 
 int set_timeout(struct timeval *timeval, unsigned int msec)

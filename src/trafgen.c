@@ -1182,6 +1182,7 @@ int main(int argc, char **argv)
 	header();
 
 	set_system_socket_memory(vals);
+	xlockme();
 
 	if (ctx.rfraw) {
 		ctx.device_trans = xstrdup(ctx.device);
@@ -1249,6 +1250,7 @@ int main(int argc, char **argv)
 	}
 
 thread_out:
+	xunlockme();
 	destroy_shared_var(stats, ctx.cpus);
 
 	free(ctx.device);
