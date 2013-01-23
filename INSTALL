@@ -9,22 +9,22 @@ Linus' Git repository, tweak and compile it, and run this one!
 
 A note for distribution package maintainers can be found at the end of the file.
 
-What tools are required to build netsniff-ng?
+What additional tools are required to build netsniff-ng?
 
- - gcc, make et al. (all)
  - ccache (optional)
  - flex, bison (bpfc, trafgen)
- - asciidoc (man-pages)
 
 What libraries are required?
 
- - glibc (all)
  - libncurses (ifpps, flowtop)
  - libGeoIP >=1.4.8 (astraceroute, flowtop)
  - libnacl (curvetun)
  - libnetfilter-conntrack (flowtop)
  - liburcu (flowtop)
  - libnl3 (netsniff-ng, trafgen)
+
+For experimental tools (mausezahn branch):
+
  - libnet (mausezahn)
  - libpcap (mausezahn)
  - libcli (mausezahn)
@@ -37,6 +37,20 @@ What additional tools are recommended after the build?
 
 It is common, that these libraries are shipped as distribution packages
 for an easy installation. We try to keep this as minimal as possible.
+
+One-liner installation for *all* dependencies on Debian:
+
+  $ sudo apt-get install ccache flex bison libnl-3-dev \
+  libnl-genl-3-dev libgeoip-dev libnetfilter-conntrack-dev \
+  libncurses5-dev liburcu-dev libnacl-dev libnet1-dev \
+  libpcap-dev libcli-dev
+
+One-liner installation for *all* dependencies on Fedora:
+ 
+  $ sudo yum install ccache flex bison ccache libnl3-devel \
+  GeoIP-devel libnetfilter_conntrack-devel ncurses-devel \
+  userspace-rcu-devel nacl-devel libnet-devel libpcap-devel \
+  libcli-devel
 
 After downloading the netsniff-ng toolkit, you should change to 'src':
 
