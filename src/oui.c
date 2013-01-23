@@ -21,19 +21,14 @@ struct vendor_id {
 	struct vendor_id *next;
 };
 
-/* Note: this macro only applies to the lookup_* functions here in this file,
- * mainly to remove redundand code. */
-#define __do_lookup_inline(id, struct_name, hash_ptr, struct_member)	      \
-	({								      \
-		struct struct_name *entry = lookup_hash(id, hash_ptr);	      \
-		while (entry && id != entry->id)			      \
-			entry = entry->next;				      \
-		(entry && id == entry->id ? entry->struct_member : NULL);     \
-	})
-
 const char *lookup_vendor(unsigned int id)
 {
-	return __do_lookup_inline(id, vendor_id, &oui, vendor);
+	struct vendor_id *entry = lookup_hash(id, &oui);
+
+	while (entry && id != entry->id)
+		entry = entry->next;
+
+	return (entry && id == entry->id ? entry->vendor : NULL);
 }
 
 void dissector_init_oui(void)
