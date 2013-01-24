@@ -6,8 +6,7 @@ submit your contributions, items marked with '!' are of high importance):
 For next release:
 -----------------
 
- 0! Manpages / documentation folder (+ add one-liner in INSTALL for package
-    dependency installation on Fedora, Debian).
+ 0! Manpages / documentation folder
 	@TODO: Daniel Borkmann
 
  1! Cleanup and refactor the code (curvetun, astraceroute, netsniff-ng, bpfc)!
