@@ -127,6 +127,7 @@ RM = echo -e "  RM\t$(1)" && rm -rf $(1)
 RMDIR = echo -e "  RM\t$(1)" && rmdir --ignore-fail-on-non-empty $(1) 2> /dev/null || true
 GIT_ARCHIVE = cd .. && git archive --prefix=netsniff-ng-$(VERSION_STRING)/ $(VERSION_STRING) | \
 	      $(1) > ../netsniff-ng-$(VERSION_STRING).tar.$(2)
+GIT_TAG = git tag -a $(VERSION_STRING) -m "$(VERSION_STRING) release"
 
 export VERSION PATCHLEVEL SUBLEVEL EXTRAVERSION
 export CROSS_COMPILE
@@ -272,6 +273,9 @@ tarball.bz2: ; $(call GIT_ARCHIVE,bzip2,bz2)
 tarball.xz:  ; $(call GIT_ARCHIVE,xz,xz)
 tarball: tarball.gz tarball.bz2 tarball.xz
 
+tag:
+	$(GIT_TAG)
+
 help:
 	$(Q)echo "$(bold)Available tools from the toolkit:$(normal)"
 	$(Q)echo " <toolnames>:={$(TOOLS)}"
@@ -293,6 +297,7 @@ help:
 	$(Q)echo " <toolname>_check             - Check only one of the tools"
 	$(Q)echo "$(bold)Misc targets:$(normal)"
 	$(Q)echo " tarball                      - Generate tarball of latest version"
+	$(Q)echo " tag                          - Generate Git tag of current version"
 	$(Q)echo " mrproper                     - Remove build and install files"
 	$(Q)echo " update                       - Update to the latest GeoIP database"
 	$(Q)echo " nacl                         - Execute the build_nacl script"
