@@ -10,35 +10,14 @@
 #include <stdint.h>
 #include <netinet/in.h>    /* for ntohs() */
 #include <arpa/inet.h>     /* for inet_ntop() */
-#include <asm/byteorder.h>
 
 #include "proto.h"
 #include "protos.h"
 #include "csum.h"
 #include "dissector_eth.h"
+#include "ipv4.h"
 #include "pkt_buff.h"
 #include "built_in.h"
-
-struct ipv4hdr {
-#if defined(__LITTLE_ENDIAN_BITFIELD)
-	__extension__ uint8_t h_ihl:4,
-			      h_version:4;
-#elif defined (__BIG_ENDIAN_BITFIELD)
-	__extension__ uint8_t h_version:4,
-			      h_ihl:4;
-#else
-# error "Please fix <asm/byteorder.h>"
-#endif
-	uint8_t h_tos;
-	uint16_t h_tot_len;
-	uint16_t h_id;
-	uint16_t h_frag_off;
-	uint8_t h_ttl;
-	uint8_t h_protocol;
-	uint16_t h_check;
-	uint32_t h_saddr;
-	uint32_t h_daddr;
-} __packed;
 
 #define FRAG_OFF_RESERVED_FLAG(x)      ((x) & 0x8000)
 #define FRAG_OFF_NO_FRAGMENT_FLAG(x)   ((x) & 0x4000)
