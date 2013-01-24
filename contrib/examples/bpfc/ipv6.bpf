@@ -1,4 +1,0 @@
-ldh [12]		; Load Ethernet type field
-jeq #0x86dd, Keep, Drop	; Check value against 0x86dd
-Keep: ret #0xffffffff	; Return packet
-Drop: ret #0		; Discard packet

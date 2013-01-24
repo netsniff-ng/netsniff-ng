@@ -6,9 +6,10 @@
 # Subject to the GPL, version 2.
 
 cc="gcc"
-nacl_dir="../../contrib/nacl/"
+nacl_dir="/tmp"
 nacl_version="nacl-20110221"
 nacl_suffix="tar.bz2"
+nacl_base_url="http://hyperelliptic.org/nacl"
 nacl_path="$nacl_dir/$nacl_version.$nacl_suffix"
 nacl_build_dir="$1"
 
@@ -21,6 +22,7 @@ if ! test -d "$nacl_build_dir"; then
 	mkdir "$nacl_build_dir"
 fi
 
+wget -O "$nacl_path" "$nacl_base_url/$nacl_version.$nacl_suffix"
 tar xjf "$nacl_path" -C "$nacl_build_dir"
 
 $cc -Wall -O2 ./abiname.c -o ./abiname

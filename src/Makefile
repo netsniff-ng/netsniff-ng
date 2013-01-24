@@ -258,7 +258,7 @@ $(TOOLS):
 	$(STRIP) $@/$@
 
 update:
-	$(Q)../contrib/scripts/geoip-database-update
+	$(Q)./update-geoip.sh
 nacl:
 	$(Q)echo "$(bold)$(WHAT) $@:$(normal)"
 	$(Q)cd curvetun/ && ./build_nacl.sh ~/nacl
