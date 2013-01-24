@@ -29,6 +29,20 @@ For experimental tools (mausezahn branch):
  - libpcap (mausezahn)
  - libcli (mausezahn)
 
+Single line dependency installation for Ubuntu:
+
+  $ sudo apt-get install git build-essential flex bison 
+  ccache libnl-3-dev libnl-genl-3-dev libgeoip-dev 
+  libnetfilter-conntrack-dev asciidoc libncurses5-dev
+  liburcu-dev libnet1-dev libpcap-dev
+
+Single line dependency installation for Fedora:
+ 
+  $ sudo yum install git gcc flex bison ccache asciidoc 
+  libnl3-devel.x86_64 libnetfilter_conntrack-devel.x86_64
+  libnet-devel.x86_64 libpcap-devel-x86_64 ncurses-devel 
+  userspace-rcu-devel
+
 What additional tools are recommended after the build?
 
  - cpp (trafgen)
