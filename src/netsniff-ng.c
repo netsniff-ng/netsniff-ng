@@ -61,11 +61,8 @@ struct ctx {
 	int cpu, rfraw, dump, print_mode, dump_dir, jumbo_support, packet_type, verbose;
 	unsigned long kpull, dump_interval, reserve_size, tx_bytes, tx_packets;
 	bool randomize, promiscuous, enforce;
-	enum pcap_ops_groups pcap;
-	enum dump_mode dump_mode;
-	uid_t uid;
-	gid_t gid;
-	uint32_t link_type;
+	enum pcap_ops_groups pcap; enum dump_mode dump_mode;
+	uid_t uid; gid_t gid; uint32_t link_type;
 };
 
 volatile sig_atomic_t sigint = 0;
@@ -224,7 +221,7 @@ static void pcap_to_xmit(struct ctx *ctx)
 
 	size = ring_size(ctx->device_out, ctx->reserve_size);
 
-	bpf_parse_rules(ctx->filter, &bpf_ops);
+	bpf_parse_rules(ctx->device_out, ctx->filter, &bpf_ops);
 
 	set_packet_loss_discard(tx_sock);
 	set_sockopt_hwtimestamp(tx_sock, ctx->device_out);
@@ -388,7 +385,7 @@ static void receive_to_xmit(struct ctx *ctx)
 
 	enable_kernel_bpf_jit_compiler();
 
-	bpf_parse_rules(ctx->filter, &bpf_ops);
+	bpf_parse_rules(ctx->device_in, ctx->filter, &bpf_ops);
 	bpf_attach_to_sock(rx_sock, &bpf_ops);
 
 	setup_rx_ring_layout(rx_sock, &rx_ring, size_in, ctx->jumbo_support);
@@ -583,7 +580,7 @@ static void read_pcap(struct ctx *ctx)
 	fmemset(&fm, 0, sizeof(fm));
 	fmemset(&bpf_ops, 0, sizeof(bpf_ops));
 
-	bpf_parse_rules(ctx->filter, &bpf_ops);
+	bpf_parse_rules("any", ctx->filter, &bpf_ops);
 
 	dissector_init_all(ctx->print_mode);
 
@@ -851,7 +848,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 
 	enable_kernel_bpf_jit_compiler();
 
-	bpf_parse_rules(ctx->filter, &bpf_ops);
+	bpf_parse_rules(ctx->device_in, ctx->filter, &bpf_ops);
 	bpf_attach_to_sock(sock, &bpf_ops);
 
 	set_sockopt_hwtimestamp(sock, ctx->device_in);
@@ -1027,11 +1024,11 @@ static void help(void)
 {
 	printf("\nnetsniff-ng %s, the packet sniffing beast\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
-	     "Usage: netsniff-ng [options]\n"
+	     "Usage: netsniff-ng [options] [filter-expression]\n"
 	     "Options:\n"
 	     "  -i|-d|--dev|--in <dev|pcap> Input source as netdev or pcap\n"
 	     "  -o|--out <dev|pcap|dir|cfg> Output sink as netdev, pcap, directory, trafgen file\n"
-	     "  -f|--filter <bpf-file>      Use BPF filter file from bpfc\n"
+	     "  -f|--filter <bpf-file|expr> Use BPF filter file from bpfc or tcpdump-like expression\n"
 	     "  -t|--type <type>            Only handle packets of defined type:\n"
 	     "                              host|broadcast|multicast|others|outgoing\n"
 	     "  -F|--interval <size/time>   Dump interval in time or size if -o is a directory\n"
@@ -1328,6 +1325,23 @@ int main(int argc, char **argv)
 			}
 		default:
 			break;
+		}
+	}
+
+	if (!ctx.filter && optind != argc) {
+		int ret;
+		off_t offset = 0;
+
+		for (i = optind; i < argc; ++i) {
+			size_t alen = strlen(argv[i]) + 2;
+			size_t flen = ctx.filter ? strlen(ctx.filter) : 0;
+
+			ctx.filter = xrealloc(ctx.filter, 1, flen + alen);
+			ret = slprintf(ctx.filter + offset, strlen(argv[i]) + 2, "%s ", argv[i]);
+			if (ret < 0)
+				panic("Cannot concatenate filter string!\n");
+			else
+				offset += ret;
 		}
 	}
 

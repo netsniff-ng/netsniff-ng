@@ -125,7 +125,7 @@ static const char *bpf_dump_linux_k(uint32_t k)
 	}
 }
 
-static char *bpf_dump(const struct sock_filter bpf, int n)
+static char *__bpf_dump(const struct sock_filter bpf, int n)
 {
 	int v;
 	const char *fmt, *op;
@@ -351,7 +351,7 @@ void bpf_dump_all(struct sock_fprog *bpf)
 {
 	int i;
 	for (i = 0; i < bpf->len; ++i)
-		printf("%s\n", bpf_dump(bpf->filter[i], i));
+		printf("%s\n", __bpf_dump(bpf->filter[i], i));
 }
 
 void bpf_attach_to_sock(int sock, struct sock_fprog *bpf)
@@ -394,7 +394,7 @@ int enable_kernel_bpf_jit_compiler(void)
 	return ret;
 }
 
-int bpf_validate(const struct sock_fprog *bpf)
+int __bpf_validate(const struct sock_fprog *bpf)
 {
 	uint32_t i, from;
 	const struct sock_filter *p;
@@ -715,7 +715,11 @@ uint32_t bpf_run_filter(const struct sock_fprog * fcode, uint8_t * packet,
 	}
 }
 
-void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf)
+#ifdef __WITH_TCPDUMP_LIKE_FILTER
+# include <pcap/pcap.h>
+#endif
+
+void bpf_parse_rules(char *dev, char *rulefile, struct sock_fprog *bpf)
 {
 	int ret;
 	char buff[256];
@@ -731,7 +735,11 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf)
 
 	fp = fopen(rulefile, "r");
 	if (!fp)
-		panic("Cannot read BPF rule file!\n");
+#ifdef __WITH_TCPDUMP_LIKE_FILTER
+		goto try_compile_str;
+#else
+		panic("Cannot open file %s!\n", rulefile);
+#endif
 
 	fmemset(buff, 0, sizeof(buff));
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
@@ -761,6 +769,41 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf)
 
 	fclose(fp);
 
-	if (bpf_validate(bpf) == 0)
+	if (__bpf_validate(bpf) == 0)
 		panic("This is not a valid BPF program!\n");
+
+	return;
+#ifdef __WITH_TCPDUMP_LIKE_FILTER
+try_compile_str:
+{
+	int i;
+	struct bpf_program bpfp;
+	struct pcap *fd;
+
+	/* For users, who want to have a tcpdump-sytle filter syntax */
+	fd = pcap_open_live(dev, 60, 0, 1000, NULL);
+	if (!fd)
+		panic("Cannot open any device!\n");
+
+	ret = pcap_compile(fd, &bpfp, rulefile, 1, PCAP_NETMASK_UNKNOWN);
+	if (ret < 0)
+		panic("Cannot compile filter %s: %s\n", rulefile, pcap_geterr(fd));
+
+	pcap_close(fd);
+
+	bpf->len = bpfp.bf_len;
+	bpf->filter = xrealloc(bpf->filter, 1,
+			       bpf->len * sizeof(sf_single));
+
+	for (i = 0; i < bpf->len; ++i) {
+		bpf->filter[i].code = bpfp.bf_insns[i].code;
+		bpf->filter[i].jt = bpfp.bf_insns[i].jt;
+		bpf->filter[i].jf = bpfp.bf_insns[i].jf;
+		bpf->filter[i].k = bpfp.bf_insns[i].k;
+
+		if (bpf->filter[i].code == 0x06 && bpf->filter[i].k > 0)
+			bpf->filter[i].k = 0xFFFFFFFF;
+	}
+}
+#endif
 }

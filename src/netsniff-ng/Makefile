@@ -1,5 +1,6 @@
 netsniff-ng-libs =	-lnl-genl-3 \
 			-lnl-3 \
+			-lpcap \
 			-lpthread
 
 netsniff-ng-objs =	hash.o \

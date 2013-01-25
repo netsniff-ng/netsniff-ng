@@ -228,7 +228,7 @@ $(foreach tool,$(TOOLS),$(eval $(call TOOL_templ,$(tool))))
 
 %:: ;
 
-netsniff-ng: ALL_CFLAGS += -I$(INCDIR)/libnl3/ -D__WITH_PROTOS
+netsniff-ng: ALL_CFLAGS += -I$(INCDIR)/libnl3/ -D__WITH_PROTOS -D__WITH_TCPDUMP_LIKE_FILTER
 trafgen: ALL_CFLAGS += -I.. -I$(INCDIR)/libnl3/ -D__WITH_PROTOS
 bpfc: ALL_CFLAGS += -I..
 curvetun: ALL_CFLAGS += -I ${NACL_INC_DIR}
@@ -251,7 +251,6 @@ netsniff-ng_install_custom flowtop_install_custom:
 	$(Q)$(foreach file,$(NCONF_FILES),$(call INST,configs/$(file),$(ETCDIRE));)
 astraceroute_install_custom:
 	$(Q)$(call INST,configs/whois.conf,$(ETCDIRE))
-	$(Q)$(call INSTX,../contrib/scripts/astraceroute6,$(SBINDIR))
 
 $(TOOLS): WFLAGS += $(WFLAGS_EXTRA)
 $(TOOLS):

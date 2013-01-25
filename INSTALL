@@ -20,6 +20,7 @@ What libraries are required?
  - libGeoIP >=1.4.8 (astraceroute, flowtop)
  - libnacl (curvetun)
  - libnetfilter-conntrack (flowtop)
+ - libpcap (netsniff-ng, for tcpdump-like filters)
  - liburcu (flowtop)
  - libnl3 (netsniff-ng, trafgen)
 
