@@ -24,12 +24,6 @@ What libraries are required?
  - liburcu (flowtop)
  - libnl3 (netsniff-ng, trafgen)
 
-For experimental tools (mausezahn branch):
-
- - libnet (mausezahn)
- - libpcap (mausezahn)
- - libcli (mausezahn)
-
 What additional tools are recommended after the build?
 
  - cpp (trafgen)
@@ -43,15 +37,13 @@ One-liner installation for *all* dependencies on Debian:
 
   $ sudo apt-get install ccache flex bison libnl-3-dev \
   libnl-genl-3-dev libgeoip-dev libnetfilter-conntrack-dev \
-  libncurses5-dev liburcu-dev libnacl-dev libnet1-dev \
-  libpcap-dev libcli-dev
+  libncurses5-dev liburcu-dev libnacl-dev libpcap-dev
 
 One-liner installation for *all* dependencies on Fedora:
  
   $ sudo yum install ccache flex bison ccache libnl3-devel \
   GeoIP-devel libnetfilter_conntrack-devel ncurses-devel \
-  userspace-rcu-devel nacl-devel libnet-devel libpcap-devel \
-  libcli-devel
+  userspace-rcu-devel nacl-devel libpcap-devel
 
 After downloading the netsniff-ng toolkit, you should change to 'src':
 
