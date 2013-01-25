@@ -31,13 +31,10 @@
 #include "die.h"
 #include "bpf.h"
 
-static const char *short_options = "vhi:VdbHLg";
+static const char *short_options = "vhi:Vdb";
 static const struct option long_options[] = {
 	{"input",	required_argument,	NULL, 'i'},
 	{"verbose",	no_argument,		NULL, 'V'},
-	{"hla",		no_argument,		NULL, 'H'},
-	{"lla",		no_argument,		NULL, 'L'},
-	{"hla-debug",	no_argument,		NULL, 'g'},
 	{"bypass",	no_argument,		NULL, 'b'},
 	{"dump",	no_argument,		NULL, 'd'},
 	{"version",	no_argument,		NULL, 'v'},
@@ -46,7 +43,6 @@ static const struct option long_options[] = {
 };
 
 extern int compile_filter(char *file, int verbose, int bypass);
-extern int compile_hla_filter(char *file, int verbose, int debug);
 
 static void help(void)
 {
@@ -54,23 +50,18 @@ static void help(void)
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: bpfc [options] || bpfc <program>\n"
 	     "Options:\n"
-	     "  -i|--input <program/-> Berkeley Packet Filter file/stdin\n"
-	     "  -H|--hla               Compile high-level BPF\n"
-	     "  -L|--lla               Compile low-level BPF\n"
-	     "  -V|--verbose           Be more verbose\n"
-	     "  -b|--bypass            Bypass filter validation (e.g. for bug testing)\n"
-	     "  -g|--hla-debug         Print BPF expressions to stdout\n"
-	     "  -d|--dump              Dump supported instruction table\n"
-	     "  -v|--version           Print version\n"
-	     "  -h|--help              Print this help\n\n"
+	     "  -i|--input <program/->  Berkeley Packet Filter file/stdin\n"
+	     "  -V|--verbose            Be more verbose\n"
+	     "  -b|--bypass             Bypass filter validation (e.g. for bug testing)\n"
+	     "  -d|--dump               Dump supported instruction table\n"
+	     "  -v|--version            Print version\n"
+	     "  -h|--help               Print this help\n\n"
 	     "Examples:\n"
-	     "  bpfc -Hi fubar\n"
-	     "  bpfc -Hgi fubar\n"
-	     "  bpfc -Li fubar\n"
-	     "  bpfc -Lbi fubar\n"
-	     "  bpfc -Li -    (read from stdin)\n\n"
+	     "  bpfc fubar\n"
+	     "  bpfc -bi fubar\n"
+	     "  bpfc -   (read from stdin)\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
-	     "Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
+	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
 	     "Swiss federal institute of technology (ETH Zurich)\n"
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
@@ -83,7 +74,7 @@ static void version(void)
 	printf("\nbpfc %s, a tiny BPF compiler\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
-	     "Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
+	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
 	     "Swiss federal institute of technology (ETH Zurich)\n"
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
@@ -93,7 +84,7 @@ static void version(void)
 
 int main(int argc, char **argv)
 {
-	int ret, verbose = 0, c, opt_index, bypass = 0, hla = 0, debug = 0;
+	int ret, verbose = 0, c, opt_index, bypass = 0;
 	char *file = NULL;
 
 	setfsuid(getuid());
@@ -110,15 +101,6 @@ int main(int argc, char **argv)
 			break;
 		case 'v':
 			version();
-			break;
-		case 'H':
-			hla = 1;
-			break;
-		case 'L':
-			hla = 0;
-			break;
-		case 'g':
-			debug = 1;
 			break;
 		case 'V':
 			verbose = 1;
@@ -147,24 +129,13 @@ int main(int argc, char **argv)
 			break;
 		}
 	}
+
 	if (argc == 2)
 		file = xstrdup(argv[1]);
-
 	if (!file)
 		panic("No Berkeley Packet Filter program specified!\n");
 
-	if (hla) {
-		ret = compile_hla_filter(file, verbose, debug);
-		if (!ret) {
-			char file_tmp[128];
-
-			slprintf(file_tmp, sizeof(file_tmp), ".%s", file);
-			ret = compile_filter(file_tmp, verbose, bypass);
-			unlink(file_tmp);
-		}
-	} else {
-		ret = compile_filter(file, verbose, bypass);
-	}
+	ret = compile_filter(file, verbose, bypass);
 
 	xfree(file);
 	return ret;
