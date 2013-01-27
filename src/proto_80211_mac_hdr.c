@@ -1,6 +1,6 @@
 /*
  * netsniff-ng - the packet sniffing beast
- * Copyright 2012 Markus Amend <markus@netsniff-ng.org>
+ * Copyright 2012, 2013 Markus Amend <markus@netsniff-ng.org>
  * Copyright 2012 Daniel Borkmann <daniel@netsniff-ng.org>
  * Subject to the GPL, version 2.
  */
@@ -1795,7 +1795,7 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 			if (ch_load == NULL)
 				return 0;
 
-			if ((meas_req->len - 3 - sizeof(*ch_load)) < 0) {
+			if ((ssize_t)(meas_req->len - 3 - sizeof(*ch_load)) < 0) {
 				tprintf("Length of Req matchs not Type %u",
 					    meas_req->type);
 				return 0;
@@ -1820,7 +1820,7 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 			if (noise == NULL)
 				return 0;
 
-			if ((meas_req->len - 3 - sizeof(*noise)) < 0) {
+			if ((ssize_t)(meas_req->len - 3 - sizeof(*noise)) < 0) {
 				tprintf("Length of Req matchs not Type %u",
 					    meas_req->type);
 				return 0;
@@ -1845,7 +1845,7 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 			if (beacon == NULL)
 				return 0;
 
-			if ((meas_req->len - 3 - sizeof(*beacon)) < 0) {
+			if ((ssize_t)(meas_req->len - 3 - sizeof(*beacon)) < 0) {
 				tprintf("Length of Req matchs not Type %u",
 					    meas_req->type);
 				return 0;
@@ -1875,7 +1875,7 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 			if (frame == NULL)
 				return 0;
 
-			if ((meas_req->len - 3 - sizeof(*frame)) < 0) {
+			if ((ssize_t)(meas_req->len - 3 - sizeof(*frame)) < 0) {
 				tprintf("Length of Req matchs not Type %u",
 					    meas_req->type);
 				return 0;
@@ -1905,7 +1905,7 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 			if (sta == NULL)
 				return 0;
 
-			if ((meas_req->len - 3 - sizeof(*sta)) < 0) {
+			if ((ssize_t)(meas_req->len - 3 - sizeof(*sta)) < 0) {
 				tprintf("Length of Req matchs not Type %u",
 					    meas_req->type);
 				return 0;
@@ -1933,7 +1933,7 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 			if (lci == NULL)
 				return 0;
 
-			if ((meas_req->len - 3 - sizeof(*lci)) < 0) {
+			if ((ssize_t)(meas_req->len - 3 - sizeof(*lci)) < 0) {
 				tprintf("Length of Req matchs not Type %u",
 					    meas_req->type);
 				return 0;
@@ -1959,7 +1959,7 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 			if (trans == NULL)
 				return 0;
 
-			if ((meas_req->len - 3 - sizeof(*trans)) < 0) {
+			if ((ssize_t)(meas_req->len - 3 - sizeof(*trans)) < 0) {
 				tprintf("Length of Req matchs not Type %u",
 					    meas_req->type);
 				return 0;
@@ -1988,7 +1988,7 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 			if (mcast == NULL)
 				return 0;
 
-			if ((meas_req->len - 3 - sizeof(*mcast)) < 0) {
+			if ((ssize_t)(meas_req->len - 3 - sizeof(*mcast)) < 0) {
 				tprintf("Length of Req matchs not Type %u",
 					    meas_req->type);
 				return 0;
@@ -2015,7 +2015,7 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 			if (civic == NULL)
 				return 0;
 
-			if ((meas_req->len - 3 - sizeof(*civic)) < 0) {
+			if ((ssize_t)(meas_req->len - 3 - sizeof(*civic)) < 0) {
 				tprintf("Length of Req matchs not Type %u",
 					    meas_req->type);
 				return 0;
@@ -2039,7 +2039,7 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 			if (id == NULL)
 				return 0;
 
-			if ((meas_req->len - 3 - sizeof(*id)) < 0) {
+			if ((ssize_t)(meas_req->len - 3 - sizeof(*id)) < 0) {
 				tprintf("Length of Req matchs not Type %u",
 					    meas_req->type);
 				return 0;
@@ -2062,7 +2062,7 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 			if (pause == NULL)
 				return 0;
 
-			if ((meas_req->len - 3 - sizeof(*pause)) < 0) {
+			if ((ssize_t)(meas_req->len - 3 - sizeof(*pause)) < 0) {
 				tprintf("Length of Req matchs not Type %u",
 					    meas_req->type);
 				return 0;
@@ -2173,7 +2173,7 @@ static int8_t inf_meas_rep(struct pkt_buff *pkt, u8 *id)
 			if (ch_load == NULL)
 				return 0;
 
-			if ((meas_rep->len - 3 - sizeof(*ch_load)) < 0) {
+			if ((ssize_t)(meas_rep->len - 3 - sizeof(*ch_load)) < 0) {
 				tprintf("Length of Req matchs not Type %u",
 					    meas_rep->type);
 				return 0;
@@ -2198,7 +2198,7 @@ static int8_t inf_meas_rep(struct pkt_buff *pkt, u8 *id)
 			if (noise == NULL)
 				return 0;
 
-			if ((meas_rep->len - 3 - sizeof(*noise)) < 0) {
+			if ((ssize_t)(meas_rep->len - 3 - sizeof(*noise)) < 0) {
 				tprintf("Length of Req matchs not Type %u",
 					    meas_rep->type);
 				return 0;
@@ -2223,7 +2223,7 @@ static int8_t inf_meas_rep(struct pkt_buff *pkt, u8 *id)
 			if (beacon == NULL)
 				return 0;
 
-			if ((meas_rep->len - 3 - sizeof(*beacon)) < 0) {
+			if ((ssize_t)(meas_rep->len - 3 - sizeof(*beacon)) < 0) {
 				tprintf("Length of Req matchs not Type %u",
 					    meas_rep->type);
 				return 0;
@@ -2253,7 +2253,7 @@ static int8_t inf_meas_rep(struct pkt_buff *pkt, u8 *id)
 			if (frame == NULL)
 				return 0;
 
-			if ((meas_rep->len - 3 - sizeof(*frame)) < 0) {
+			if ((ssize_t)(meas_rep->len - 3 - sizeof(*frame)) < 0) {
 				tprintf("Length of Req matchs not Type %u",
 					    meas_rep->type);
 				return 0;
@@ -2283,7 +2283,7 @@ static int8_t inf_meas_rep(struct pkt_buff *pkt, u8 *id)
 			if (sta == NULL)
 				return 0;
 
-			if ((meas_rep->len - 3 - sizeof(*sta)) < 0) {
+			if ((ssize_t)(meas_rep->len - 3 - sizeof(*sta)) < 0) {
 				tprintf("Length of Req matchs not Type %u",
 					    meas_rep->type);
 				return 0;
@@ -2311,7 +2311,7 @@ static int8_t inf_meas_rep(struct pkt_buff *pkt, u8 *id)
 			if (lci == NULL)
 				return 0;
 
-			if ((meas_rep->len - 3 - sizeof(*lci)) < 0) {
+			if ((ssize_t)(meas_rep->len - 3 - sizeof(*lci)) < 0) {
 				tprintf("Length of Req matchs not Type %u",
 					    meas_rep->type);
 				return 0;
@@ -2337,7 +2337,7 @@ static int8_t inf_meas_rep(struct pkt_buff *pkt, u8 *id)
 			if (trans == NULL)
 				return 0;
 
-			if ((meas_rep->len - 3 - sizeof(*trans)) < 0) {
+			if ((ssize_t)(meas_rep->len - 3 - sizeof(*trans)) < 0) {
 				tprintf("Length of Req matchs not Type %u",
 					    meas_rep->type);
 				return 0;
@@ -2366,7 +2366,7 @@ static int8_t inf_meas_rep(struct pkt_buff *pkt, u8 *id)
 			if (mcast == NULL)
 				return 0;
 
-			if ((meas_rep->len - 3 - sizeof(*mcast)) < 0) {
+			if ((ssize_t)(meas_rep->len - 3 - sizeof(*mcast)) < 0) {
 				tprintf("Length of Req matchs not Type %u",
 					    meas_rep->type);
 				return 0;
@@ -2393,7 +2393,7 @@ static int8_t inf_meas_rep(struct pkt_buff *pkt, u8 *id)
 			if (civic == NULL)
 				return 0;
 
-			if ((meas_rep->len - 3 - sizeof(*civic)) < 0) {
+			if ((ssize_t)(meas_rep->len - 3 - sizeof(*civic)) < 0) {
 				tprintf("Length of Req matchs not Type %u",
 					    meas_rep->type);
 				return 0;
@@ -2417,7 +2417,7 @@ static int8_t inf_meas_rep(struct pkt_buff *pkt, u8 *id)
 			if (id == NULL)
 				return 0;
 
-			if ((meas_rep->len - 3 - sizeof(*id)) < 0) {
+			if ((ssize_t(meas_rep->len - 3 - sizeof(*id)) < 0) {
 				tprintf("Length of Req matchs not Type %u",
 					    meas_rep->type);
 				return 0;
