@@ -2417,7 +2417,7 @@ static int8_t inf_meas_rep(struct pkt_buff *pkt, u8 *id)
 			if (id == NULL)
 				return 0;
 
-			if ((ssize_t(meas_rep->len - 3 - sizeof(*id)) < 0) {
+			if ((ssize_t)(meas_rep->len - 3 - sizeof(*id)) < 0) {
 				tprintf("Length of Req matchs not Type %u",
 					    meas_rep->type);
 				return 0;
