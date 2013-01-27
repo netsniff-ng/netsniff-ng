@@ -98,7 +98,7 @@ Netsniff-ng and trafgen performance analysis: http://bit.ly/pUFJxU
 
 Supported protocols:
 +-------+---------------+-----------------------------------------------+
-| Layer	|  Description	|                Supp. Protocolls		|
+| Layer	|  Description	|                Supp. Protocols		|
 +-------+---------------+-----------------------------------------------+
 |  4    |   Transport	| TCP, UDP					|
 +-------+---------------+-----------------------------------------------+
