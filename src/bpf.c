@@ -785,7 +785,7 @@ try_compile_str:
 	if (!fd)
 		panic("Cannot open any device!\n");
 
-	ret = pcap_compile(fd, &bpfp, rulefile, 1, PCAP_NETMASK_UNKNOWN);
+	ret = pcap_compile(fd, &bpfp, rulefile, 1, 0xffffffff);
 	if (ret < 0)
 		panic("Cannot compile filter %s: %s\n", rulefile, pcap_geterr(fd));
 
