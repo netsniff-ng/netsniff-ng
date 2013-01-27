@@ -75,7 +75,6 @@ WFLAGS += -Wimplicit-int
 
 WFLAGS_EXTRA  = -Wno-unused-result
 WFLAGS_EXTRA += -Wmissing-parameter-type
-#WFLAGS_EXTRA += -Wunused-but-set-parameter
 WFLAGS_EXTRA += -Wtype-limits
 WFLAGS_EXTRA += -Wclobbered
 WFLAGS_EXTRA += -Wmissing-field-initializers
