@@ -1,7 +1,7 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
- * Copyright 2011 Daniel Borkmann.
+ * Copyright 2011 - 2013 Daniel Borkmann.
  * Subject to the GPL, version 2.
  */
 
@@ -11,70 +11,121 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include <sys/mman.h>
 
 #include "pcap.h"
 #include "xio.h"
 #include "xutils.h"
-#include "locking.h"
 #include "built_in.h"
 
-#define DEFAULT_SLOTS     1000
+static size_t map_size = 0;
+static char *ptr_va_start, *ptr_va_curr;
 
-static struct spinlock lock;
-static off_t map_size = 0;
-static char *pstart, *pcurr;
-static int jumbo_frames = 0;
-
-static inline off_t get_map_size(void)
+static void __pcap_mmap_write_need_remap(int fd)
 {
-	int allocsz = jumbo_frames ? 16 : 3;
-	return PAGE_ALIGN(sizeof(struct pcap_filehdr) +
-			  (PAGE_SIZE * allocsz) * DEFAULT_SLOTS);
+	int ret;
+	off_t pos, map_size_old = map_size;
+	off_t offset = ptr_va_curr - ptr_va_start;
+
+	map_size = PAGE_ALIGN(map_size_old * 10 / 8);
+
+	pos = lseek(fd, map_size, SEEK_SET);
+	if (pos < 0)
+		panic("Cannot lseek pcap file!\n");
+
+	ret = write_or_die(fd, "", 1);
+	if (ret != 1)
+		panic("Cannot write file!\n");
+
+	ptr_va_start = mremap(ptr_va_start, map_size_old, map_size, MREMAP_MAYMOVE);
+	if (ptr_va_start == MAP_FAILED)
+		panic("mmap of file failed!");
+
+	ret = madvise(ptr_va_start, map_size, MADV_SEQUENTIAL);
+	if (ret < 0)
+		panic("Failed to give kernel mmap advise!\n");
+
+	ptr_va_curr = ptr_va_start + offset;
 }
 
-static int pcap_mmap_pull_file_header(int fd, uint32_t *linktype)
+static ssize_t pcap_mm_write(int fd, pcap_pkthdr_t *phdr, enum pcap_type type,
+			     const uint8_t *packet, size_t len)
 {
-	ssize_t ret;
-	struct pcap_filehdr hdr;
+	size_t hdrsize = pcap_get_hdr_length(phdr, type);
 
-	ret = read(fd, &hdr, sizeof(hdr));
-	if (unlikely(ret != sizeof(hdr)))
-		return -EIO;
+	if ((off_t) (ptr_va_curr - ptr_va_start) + hdrsize + len > map_size)
+		__pcap_mmap_write_need_remap(fd);
 
-	pcap_validate_header(&hdr);
-
-	*linktype = hdr.linktype;
-
-	return 0;
-}
-
-static int pcap_mmap_push_file_header(int fd, uint32_t linktype)
-{
-	ssize_t ret;
-	struct pcap_filehdr hdr;
-
-	fmemset(&hdr, 0, sizeof(hdr));
-	pcap_prepare_header(&hdr, linktype, 0, PCAP_DEFAULT_SNAPSHOT_LEN);
-
-	ret = write_or_die(fd, &hdr, sizeof(hdr));
-	if (unlikely(ret != sizeof(hdr))) {
-		whine("Failed to write pkt file header!\n");
-		return -EIO;
+	switch (type) {
+#define CASE_HDR_WRITE(what, __member__) \
+	case (what): \
+		fmemcpy(ptr_va_curr, &phdr->__member__, hdrsize); \
+		break
+	CASE_HDR_WRITE(DEFAULT, ppo);
+	CASE_HDR_WRITE(NSEC, ppn);
+	CASE_HDR_WRITE(KUZNETZOV, ppk);
+	CASE_HDR_WRITE(BORKMANN, ppb);
+	default:
+		bug();
 	}
 
-	return 0;
+	ptr_va_curr += hdrsize;
+	fmemcpy(ptr_va_curr, packet, len);
+	ptr_va_curr += len;
+
+	return hdrsize + len;
 }
 
-static int pcap_mmap_prepare_writing_pcap(int fd)
+static ssize_t pcap_mm_read(int fd, pcap_pkthdr_t *phdr, enum pcap_type type,
+			    uint8_t *packet, size_t len)
+{
+	size_t hdrsize = pcap_get_hdr_length(phdr, type), hdrlen;
+
+	if (unlikely((off_t) (ptr_va_curr + hdrsize - ptr_va_start) > map_size))
+		return -EIO;
+
+	switch (type) {
+#define CASE_HDR_READ(what, __member__) \
+	case (what): \
+		fmemcpy(&phdr->__member__, ptr_va_curr, hdrsize); \
+		break
+	CASE_HDR_READ(DEFAULT, ppo);
+	CASE_HDR_READ(NSEC, ppn);
+	CASE_HDR_READ(KUZNETZOV, ppk);
+	CASE_HDR_READ(BORKMANN, ppb);
+	default:
+		bug();
+	}
+
+	ptr_va_curr += hdrsize;
+	hdrlen = pcap_get_length(phdr, type);
+
+	if (unlikely((off_t) (ptr_va_curr + hdrlen - ptr_va_start) > map_size))
+		return -EIO;
+	if (unlikely(hdrlen == 0 || hdrlen > len))
+		return -EINVAL;
+
+	fmemcpy(packet, ptr_va_curr, hdrlen);
+	ptr_va_curr += hdrlen;
+
+	return hdrsize + hdrlen;
+}
+
+static inline off_t ____get_map_size(bool jumbo)
+{
+	int allocsz = jumbo ? 16 : 3;
+
+	return PAGE_ALIGN(sizeof(struct pcap_filehdr) + (PAGE_SIZE * allocsz) * 1024);
+}
+
+static void __pcap_mm_prepare_access_wr(int fd, bool jumbo)
 {
 	int ret;
 	off_t pos;
 	struct stat sb;
 
-	spinlock_lock(&lock);
-
-	map_size = get_map_size();
+	map_size = ____get_map_size(jumbo);
 
 	ret = fstat(fd, &sb);
 	if (ret < 0)
@@ -90,189 +141,82 @@ static int pcap_mmap_prepare_writing_pcap(int fd)
 	if (ret != 1)
 		panic("Cannot write file!\n");
 
-	pstart = mmap(0, map_size, PROT_WRITE, MAP_SHARED
-		      /*| MAP_HUGETLB*/, fd, 0);
-	if (pstart == MAP_FAILED)
+	ptr_va_start = mmap(0, map_size, PROT_WRITE, MAP_SHARED /*| MAP_HUGETLB*/, fd, 0);
+	if (ptr_va_start == MAP_FAILED)
 		panic("mmap of file failed!");
-
-	ret = madvise(pstart, map_size, MADV_SEQUENTIAL);
+	ret = madvise(ptr_va_start, map_size, MADV_SEQUENTIAL);
 	if (ret < 0)
 		panic("Failed to give kernel mmap advise!\n");
 
-	pcurr = pstart + sizeof(struct pcap_filehdr);
-
-	spinlock_unlock(&lock);
-
-	return 0;
+	ptr_va_curr = ptr_va_start + sizeof(struct pcap_filehdr);
 }
 
-static ssize_t pcap_mmap_write_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
-					uint8_t *packet, size_t len)
-{
-	int ret;
-	off_t pos;
-
-	spinlock_lock(&lock);
-
-	if ((off_t) (pcurr - pstart) + sizeof(*hdr) + len > map_size) {
-		off_t map_size_old = map_size;
-		off_t offset = (pcurr - pstart);
-
-		map_size = PAGE_ALIGN(map_size_old * 10 / 8);
-
-		pos = lseek(fd, map_size, SEEK_SET);
-		if (pos < 0)
-			panic("Cannot lseek pcap file!\n");
-
-		ret = write_or_die(fd, "", 1);
-		if (ret != 1)
-			panic("Cannot write file!\n");
-
-		pstart = mremap(pstart, map_size_old, map_size, MREMAP_MAYMOVE);
-		if (pstart == MAP_FAILED)
-			panic("mmap of file failed!");
-
-		ret = madvise(pstart, map_size, MADV_SEQUENTIAL);
-		if (ret < 0)
-			panic("Failed to give kernel mmap advise!\n");
-
-		pcurr = pstart + offset;
-	}
-
-	fmemcpy(pcurr, hdr, sizeof(*hdr));
-	pcurr += sizeof(*hdr);
-
-	fmemcpy(pcurr, packet, len);
-	pcurr += len;
-
-	spinlock_unlock(&lock);
-
-	return sizeof(*hdr) + len;
-}
-
-static int pcap_mmap_prepare_reading_pcap(int fd)
+static void __pcap_mm_prepare_access_rd(int fd)
 {
 	int ret;
 	struct stat sb;
 
-	spinlock_lock(&lock);
-
 	ret = fstat(fd, &sb);
 	if (ret < 0)
 		panic("Cannot fstat pcap file!\n");
-
 	if (!S_ISREG (sb.st_mode))
 		panic("pcap dump file is not a regular file!\n");
 
 	map_size = sb.st_size;
-
-	pstart = mmap(0, map_size, PROT_READ, MAP_SHARED | MAP_LOCKED
-		      /*| MAP_HUGETLB*/, fd, 0);
-	if (pstart == MAP_FAILED)
+	ptr_va_start = mmap(0, map_size, PROT_READ, MAP_SHARED | MAP_LOCKED /*| MAP_HUGETLB*/, fd, 0);
+	if (ptr_va_start == MAP_FAILED)
 		panic("mmap of file failed!");
-
-	ret = madvise(pstart, map_size, MADV_SEQUENTIAL);
+	ret = madvise(ptr_va_start, map_size, MADV_SEQUENTIAL);
 	if (ret < 0)
 		panic("Failed to give kernel mmap advise!\n");
 
-	pcurr = pstart + sizeof(struct pcap_filehdr);
+	ptr_va_curr = ptr_va_start + sizeof(struct pcap_filehdr);
+}
 
-	spinlock_unlock(&lock);
+static int pcap_mm_prepare_access(int fd, enum pcap_mode mode, bool jumbo)
+{
+	set_ioprio_be();
+
+	switch (mode) {
+	case PCAP_MODE_RD:
+		__pcap_mm_prepare_access_rd(fd);
+		break;
+	case PCAP_MODE_WR:
+		__pcap_mm_prepare_access_wr(fd, jumbo);
+		break;
+	default:
+		bug();
+	}
 
 	return 0;
 }
 
-static ssize_t pcap_mmap_read_pcap_pkt(int fd, struct pcap_pkthdr *hdr,
-				       uint8_t *packet, size_t len)
+static void pcap_mm_fsync(int fd)
 {
-	ssize_t ret;
-	spinlock_lock(&lock);
-
-	if (unlikely((off_t) (pcurr + sizeof(*hdr) - pstart) > map_size)) {
-		spinlock_unlock(&lock);
-		return -ENOMEM;
-	}
-
-	fmemcpy(hdr, pcurr, sizeof(*hdr));
-	pcurr += sizeof(*hdr);
-
-	if (unlikely((off_t) (pcurr + hdr->caplen - pstart) > map_size)) {
-		ret = -ENOMEM;
-		goto out_err;
-	}
-
-	if (unlikely(hdr->caplen == 0 || hdr->caplen > len)) {
-		ret = -EINVAL; /* Bogus packet */
-		goto out_err;
-	}
-
-	fmemcpy(packet, pcurr, hdr->caplen);
-	pcurr += hdr->caplen;
-
-	spinlock_unlock(&lock);
-
-	return sizeof(*hdr) + hdr->caplen;
-
-out_err:
-	spinlock_unlock(&lock);
-	return ret;
+	msync(ptr_va_start, (off_t) (ptr_va_curr - ptr_va_start), MS_ASYNC);
 }
 
-static void pcap_mmap_fsync_pcap(int fd)
-{
-	spinlock_lock(&lock);
-
-	msync(pstart, (off_t) (pcurr - pstart), MS_ASYNC);
-
-	spinlock_unlock(&lock);
-}
-
-static void pcap_mmap_prepare_close_pcap(int fd, enum pcap_mode mode)
+static void pcap_mm_prepare_close(int fd, enum pcap_mode mode)
 {
 	int ret;
 
-	spinlock_lock(&lock);
-
-	ret = munmap(pstart, map_size);
+	ret = munmap(ptr_va_start, map_size);
 	if (ret < 0)
 		panic("Cannot unmap the pcap file!\n");
 
-	if (mode == PCAP_MODE_WRITE) {
-		ret = ftruncate(fd, (off_t) (pcurr - pstart));
+	if (mode == PCAP_MODE_WR) {
+		ret = ftruncate(fd, (off_t) (ptr_va_curr - ptr_va_start));
 		if (ret)
 			panic("Cannot truncate the pcap file!\n");
 	}
-
-	spinlock_unlock(&lock);
 }
 
-const struct pcap_file_ops pcap_mmap_ops = {
-	.name = "mmap",
-	.pull_file_header = pcap_mmap_pull_file_header,
-	.push_file_header = pcap_mmap_push_file_header,
-	.prepare_writing_pcap = pcap_mmap_prepare_writing_pcap,
-	.write_pcap_pkt = pcap_mmap_write_pcap_pkt,
-	.prepare_reading_pcap = pcap_mmap_prepare_reading_pcap,
-	.read_pcap_pkt = pcap_mmap_read_pcap_pkt,
-	.fsync_pcap = pcap_mmap_fsync_pcap,
-	.prepare_close_pcap = pcap_mmap_prepare_close_pcap,
+const struct pcap_file_ops pcap_mm_ops = {
+	.pull_fhdr_pcap = pcap_generic_pull_fhdr,
+	.push_fhdr_pcap = pcap_generic_push_fhdr,
+	.prepare_access_pcap = pcap_mm_prepare_access,
+	.prepare_close_pcap = pcap_mm_prepare_close,
+	.read_pcap = pcap_mm_read,
+	.write_pcap = pcap_mm_write,
+	.fsync_pcap = pcap_mm_fsync,
 };
-
-int init_pcap_mmap(int jumbo_support)
-{
-	spinlock_init(&lock);
-
-	jumbo_frames = jumbo_support;
-
-	set_ioprio_be();
-
-	return pcap_ops_group_register(&pcap_mmap_ops, PCAP_OPS_MMAP);
-}
-
-void cleanup_pcap_mmap(void)
-{
-	spinlock_destroy(&lock);
-
-	pcap_ops_group_unregister(PCAP_OPS_MMAP);
-}
-

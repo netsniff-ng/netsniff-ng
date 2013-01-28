@@ -58,18 +58,18 @@ enum dump_mode {
 
 struct ctx {
 	char *device_in, *device_out, *device_trans, *filter, *prefix;
-	int cpu, rfraw, dump, print_mode, dump_dir, jumbo_support, packet_type, verbose;
+	int cpu, rfraw, dump, print_mode, dump_dir, packet_type, verbose;
 	unsigned long kpull, dump_interval, reserve_size, tx_bytes, tx_packets;
-	bool randomize, promiscuous, enforce;
+	bool randomize, promiscuous, enforce, jumbo;
 	enum pcap_ops_groups pcap; enum dump_mode dump_mode;
-	uid_t uid; gid_t gid; uint32_t link_type;
+	uid_t uid; gid_t gid; uint32_t link_type, magic;
 };
 
 volatile sig_atomic_t sigint = 0;
 
 static volatile bool next_dump = false;
 
-static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqXlvhF:RGAP:Vu:g:";
+static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqXlvhF:RGAP:Vu:g:T:D";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"in",			required_argument,	NULL, 'i'},
@@ -85,6 +85,7 @@ static const struct option long_options[] = {
 	{"prefix",		required_argument,	NULL, 'P'},
 	{"user",		required_argument,	NULL, 'u'},
 	{"group",		required_argument,	NULL, 'g'},
+	{"magic",		required_argument,	NULL, 'T'},
 	{"rand",		no_argument,		NULL, 'r'},
 	{"rfraw",		no_argument,		NULL, 'R'},
 	{"mmap",		no_argument,		NULL, 'm'},
@@ -94,6 +95,7 @@ static const struct option long_options[] = {
 	{"no-promisc",		no_argument,		NULL, 'M'},
 	{"prio-high",		no_argument,		NULL, 'H'},
 	{"notouch-irq",		no_argument,		NULL, 'Q'},
+	{"dump-pcap-types",	no_argument,		NULL, 'D'},
 	{"silent",		no_argument,		NULL, 's'},
 	{"less",		no_argument,		NULL, 'q'},
 	{"hex",			no_argument,		NULL, 'X'},
@@ -184,7 +186,7 @@ static void pcap_to_xmit(struct ctx *ctx)
 	struct frame_map *hdr;
 	struct sock_fprog bpf_ops;
 	struct timeval start, end, diff;
-	struct pcap_pkthdr phdr;
+	pcap_pkthdr_t phdr;
 
 	if (!device_up_and_running(ctx->device_out) && !ctx->rfraw)
 		panic("Device not up and running!\n");
@@ -195,12 +197,12 @@ static void pcap_to_xmit(struct ctx *ctx)
 
 	fd = open_or_die(ctx->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);
 
-	ret = __pcap_io->pull_file_header(fd, &ctx->link_type);
+	ret = __pcap_io->pull_fhdr_pcap(fd, &ctx->magic, &ctx->link_type);
 	if (ret)
 		panic("Error reading pcap header!\n");
 
-	if (__pcap_io->prepare_reading_pcap) {
-		ret = __pcap_io->prepare_reading_pcap(fd);
+	if (__pcap_io->prepare_access_pcap) {
+		ret = __pcap_io->prepare_access_pcap(fd, PCAP_MODE_RD, ctx->jumbo);
 		if (ret)
 			panic("Error prepare reading pcap!\n");
 	}
@@ -226,7 +228,7 @@ static void pcap_to_xmit(struct ctx *ctx)
 	set_packet_loss_discard(tx_sock);
 	set_sockopt_hwtimestamp(tx_sock, ctx->device_out);
 
-	setup_tx_ring_layout(tx_sock, &tx_ring, size, ctx->jumbo_support);
+	setup_tx_ring_layout(tx_sock, &tx_ring, size, ctx->jumbo);
 	create_tx_ring(tx_sock, &tx_ring, ctx->verbose);
 	mmap_tx_ring(tx_sock, &tx_ring);
 	alloc_tx_ring_frames(&tx_ring);
@@ -250,7 +252,7 @@ static void pcap_to_xmit(struct ctx *ctx)
 		printf("BPF:\n");
 		bpf_dump_all(&bpf_ops);
 
-		printf("MD: TX %luus %s ", interval, pcap_ops[ctx->pcap]->name);
+		printf("MD: TX %luus %s ", interval, pcap_ops_group_to_str[ctx->pcap]);
 		if (ctx->rfraw)
 			printf("802.11 raw via %s ", ctx->device_out);
 #ifdef _LARGEFILE64_SOURCE
@@ -278,24 +280,25 @@ static void pcap_to_xmit(struct ctx *ctx)
 	while (likely(sigint == 0)) {
 		while (user_may_pull_from_tx(tx_ring.frames[it].iov_base)) {
 			hdr = tx_ring.frames[it].iov_base;
-
-			/* Kernel assumes: data = ph.raw + po->tp_hdrlen -
-			 *                        sizeof(struct sockaddr_ll); */
 			out = ((uint8_t *) hdr) + TPACKET2_HDRLEN - sizeof(struct sockaddr_ll);
 
 			do {
-				ret = __pcap_io->read_pcap_pkt(fd, &phdr, out,
-							       ring_frame_size(&tx_ring));
+				ret = __pcap_io->read_pcap(fd, &phdr, ctx->magic, out,
+							   ring_frame_size(&tx_ring));
 				if (unlikely(ret <= 0))
 					goto out;
 
-				if (ring_frame_size(&tx_ring) < phdr.len) {
-					phdr.len = ring_frame_size(&tx_ring);
+				if (ring_frame_size(&tx_ring) <
+				    pcap_get_length(&phdr, ctx->magic)) {
+					pcap_set_length(&phdr, ctx->magic,
+							ring_frame_size(&tx_ring));
 					trunced++;
 				}
-			} while (ctx->filter && !bpf_run_filter(&bpf_ops, out, phdr.len));
+			} while (ctx->filter &&
+				 !bpf_run_filter(&bpf_ops, out,
+						 pcap_get_length(&phdr, ctx->magic)));
 
-			pcap_pkthdr_to_tpacket_hdr(&phdr, &hdr->tp_h);
+			pcap_pkthdr_to_tpacket_hdr(&phdr, ctx->magic, &hdr->tp_h, &hdr->s_ll);
 
 			ctx->tx_bytes += hdr->tp_h.tp_len;;
 			ctx->tx_packets++;
@@ -337,7 +340,7 @@ static void pcap_to_xmit(struct ctx *ctx)
 		leave_rfmon_mac80211(ctx->device_trans, ctx->device_out);
 
 	if (__pcap_io->prepare_close_pcap)
-		__pcap_io->prepare_close_pcap(fd, PCAP_MODE_READ);
+		__pcap_io->prepare_close_pcap(fd, PCAP_MODE_RD);
 
 	close(fd);
 	close(tx_sock);
@@ -388,7 +391,7 @@ static void receive_to_xmit(struct ctx *ctx)
 	bpf_parse_rules(ctx->device_in, ctx->filter, &bpf_ops);
 	bpf_attach_to_sock(rx_sock, &bpf_ops);
 
-	setup_rx_ring_layout(rx_sock, &rx_ring, size_in, ctx->jumbo_support);
+	setup_rx_ring_layout(rx_sock, &rx_ring, size_in, ctx->jumbo);
 	create_rx_ring(rx_sock, &rx_ring, ctx->verbose);
 	mmap_rx_ring(rx_sock, &rx_ring);
 	alloc_rx_ring_frames(&rx_ring);
@@ -396,7 +399,7 @@ static void receive_to_xmit(struct ctx *ctx)
 	prepare_polling(rx_sock, &rx_poll);
 
 	set_packet_loss_discard(tx_sock);
-	setup_tx_ring_layout(tx_sock, &tx_ring, size_out, ctx->jumbo_support);
+	setup_tx_ring_layout(tx_sock, &tx_ring, size_out, ctx->jumbo);
 	create_tx_ring(tx_sock, &tx_ring, ctx->verbose);
 	mmap_tx_ring(tx_sock, &tx_ring);
 	alloc_tx_ring_frames(&tx_ring);
@@ -558,21 +561,22 @@ static void read_pcap(struct ctx *ctx)
 	int ret, fd, fdo = 0;
 	unsigned long trunced = 0;
 	size_t out_len;
-	struct pcap_pkthdr phdr;
+	pcap_pkthdr_t phdr;
 	struct sock_fprog bpf_ops;
 	struct frame_map fm;
 	struct timeval start, end, diff;
+	struct sockaddr_ll sll;
 
 	bug_on(!__pcap_io);
 
 	fd = open_or_die(ctx->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);
 
-	ret = __pcap_io->pull_file_header(fd, &ctx->link_type);
+	ret = __pcap_io->pull_fhdr_pcap(fd, &ctx->magic, &ctx->link_type);
 	if (ret)
 		panic("Error reading pcap header!\n");
 
-	if (__pcap_io->prepare_reading_pcap) {
-		ret = __pcap_io->prepare_reading_pcap(fd);
+	if (__pcap_io->prepare_access_pcap) {
+		ret = __pcap_io->prepare_access_pcap(fd, PCAP_MODE_RD, ctx->jumbo);
 		if (ret)
 			panic("Error prepare reading pcap!\n");
 	}
@@ -591,7 +595,7 @@ static void read_pcap(struct ctx *ctx)
 		printf("BPF:\n");
 		bpf_dump_all(&bpf_ops);
 
-		printf("MD: RD %s ", __pcap_io->name);
+		printf("MD: RD %s ", pcap_ops_group_to_str[ctx->pcap]);
 #ifdef _LARGEFILE64_SOURCE
 		printf("lf64 ");
 #endif 
@@ -612,22 +616,25 @@ static void read_pcap(struct ctx *ctx)
 
 	while (likely(sigint == 0)) {
 		do {
-			ret = __pcap_io->read_pcap_pkt(fd, &phdr, out, out_len);
+			ret = __pcap_io->read_pcap(fd, &phdr, ctx->magic,
+						   out, out_len);
 			if (unlikely(ret < 0))
 				goto out;
 
-			if (unlikely(phdr.len == 0)) {
+			if (unlikely(pcap_get_length(&phdr, ctx->magic) == 0)) {
 				trunced++;
 				continue;
 			}
 
-			if (unlikely(phdr.len > out_len)) {
-				phdr.len = out_len;
+			if (unlikely(pcap_get_length(&phdr, ctx->magic) > out_len)) {
+				pcap_set_length(&phdr, ctx->magic, out_len);
 				trunced++;
 			}
-		} while (ctx->filter && !bpf_run_filter(&bpf_ops, out, phdr.len));
+		} while (ctx->filter &&
+			 !bpf_run_filter(&bpf_ops, out,
+					 pcap_get_length(&phdr, ctx->magic)));
 
-		pcap_pkthdr_to_tpacket_hdr(&phdr, &fm.tp_h);
+		pcap_pkthdr_to_tpacket_hdr(&phdr, ctx->magic, &fm.tp_h, &sll);
 
 		ctx->tx_bytes += fm.tp_h.tp_len;
 		ctx->tx_packets++;
@@ -658,7 +665,7 @@ static void read_pcap(struct ctx *ctx)
 	dissector_cleanup_all();
 
 	if (__pcap_io->prepare_close_pcap)
-		__pcap_io->prepare_close_pcap(fd, PCAP_MODE_READ);
+		__pcap_io->prepare_close_pcap(fd, PCAP_MODE_RD);
 
 	close(fd);
 	if (ctx->device_out)
@@ -679,7 +686,7 @@ static void finish_multi_pcap_file(struct ctx *ctx, int fd)
 	__pcap_io->fsync_pcap(fd);
 
 	if (__pcap_io->prepare_close_pcap)
-		__pcap_io->prepare_close_pcap(fd, PCAP_MODE_WRITE);
+		__pcap_io->prepare_close_pcap(fd, PCAP_MODE_WR);
 
 	close(fd);
 
@@ -695,7 +702,7 @@ static int next_multi_pcap_file(struct ctx *ctx, int fd)
 	__pcap_io->fsync_pcap(fd);
 
 	if (__pcap_io->prepare_close_pcap)
-		__pcap_io->prepare_close_pcap(fd, PCAP_MODE_WRITE);
+		__pcap_io->prepare_close_pcap(fd, PCAP_MODE_WR);
 
 	close(fd);
 
@@ -705,12 +712,12 @@ static int next_multi_pcap_file(struct ctx *ctx, int fd)
 	fd = open_or_die_m(fname, O_RDWR | O_CREAT | O_TRUNC |
 			   O_LARGEFILE, DEFFILEMODE);
 
-	ret = __pcap_io->push_file_header(fd, ctx->link_type);
+	ret = __pcap_io->push_fhdr_pcap(fd, ctx->magic, ctx->link_type);
 	if (ret)
 		panic("Error writing pcap header!\n");
 
-	if (__pcap_io->prepare_writing_pcap) {
-		ret = __pcap_io->prepare_writing_pcap(fd);
+	if (__pcap_io->prepare_access_pcap) {
+		ret = __pcap_io->prepare_access_pcap(fd, PCAP_MODE_WR, ctx->jumbo);
 		if (ret)
 			panic("Error prepare writing pcap!\n");
 	}
@@ -734,12 +741,12 @@ static int begin_multi_pcap_file(struct ctx *ctx)
 	fd = open_or_die_m(fname, O_RDWR | O_CREAT | O_TRUNC |
 			   O_LARGEFILE, DEFFILEMODE);
 
-	ret = __pcap_io->push_file_header(fd, ctx->link_type);
+	ret = __pcap_io->push_fhdr_pcap(fd, ctx->magic, ctx->link_type);
 	if (ret)
 		panic("Error writing pcap header!\n");
 
-	if (__pcap_io->prepare_writing_pcap) {
-		ret = __pcap_io->prepare_writing_pcap(fd);
+	if (__pcap_io->prepare_access_pcap) {
+		ret = __pcap_io->prepare_access_pcap(fd, PCAP_MODE_WR, ctx->jumbo);
 		if (ret)
 			panic("Error prepare writing pcap!\n");
 	}
@@ -766,7 +773,7 @@ static void finish_single_pcap_file(struct ctx *ctx, int fd)
 	__pcap_io->fsync_pcap(fd);
 
 	if (__pcap_io->prepare_close_pcap)
-		__pcap_io->prepare_close_pcap(fd, PCAP_MODE_WRITE);
+		__pcap_io->prepare_close_pcap(fd, PCAP_MODE_WR);
 
 	close(fd);
 }
@@ -780,12 +787,12 @@ static int begin_single_pcap_file(struct ctx *ctx)
 	fd = open_or_die_m(ctx->device_out, O_RDWR | O_CREAT | O_TRUNC |
 			   O_LARGEFILE, DEFFILEMODE);
 
-	ret = __pcap_io->push_file_header(fd, ctx->link_type);
+	ret = __pcap_io->push_fhdr_pcap(fd, ctx->magic, ctx->link_type);
 	if (ret)
 		panic("Error writing pcap header!\n");
 
-	if (__pcap_io->prepare_writing_pcap) {
-		ret = __pcap_io->prepare_writing_pcap(fd);
+	if (__pcap_io->prepare_access_pcap) {
+		ret = __pcap_io->prepare_access_pcap(fd, PCAP_MODE_WR, ctx->jumbo);
 		if (ret)
 			panic("Error prepare writing pcap!\n");
 	}
@@ -823,7 +830,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 	struct frame_map *hdr;
 	struct sock_fprog bpf_ops;
 	struct timeval start, end, diff;
-	struct pcap_pkthdr phdr;
+	pcap_pkthdr_t phdr;
 
 	if (!device_up_and_running(ctx->device_in) && !ctx->rfraw)
 		panic("Device not up and running!\n");
@@ -853,7 +860,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 
 	set_sockopt_hwtimestamp(sock, ctx->device_in);
 
-	setup_rx_ring_layout(sock, &rx_ring, size, ctx->jumbo_support);
+	setup_rx_ring_layout(sock, &rx_ring, size, ctx->jumbo);
 	create_rx_ring(sock, &rx_ring, ctx->verbose);
 	mmap_rx_ring(sock, &rx_ring);
 	alloc_rx_ring_frames(&rx_ring);
@@ -878,7 +885,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 		printf("BPF:\n");
 		bpf_dump_all(&bpf_ops);
 
-		printf("MD: RX %s ", ctx->dump ? pcap_ops[ctx->pcap]->name : "");
+		printf("MD: RX %s ", ctx->dump ? pcap_ops_group_to_str[ctx->pcap] : "");
 		if (ctx->rfraw)
 			printf("802.11 raw via %s ", ctx->device_in);
 #ifdef _LARGEFILE64_SOURCE
@@ -933,10 +940,11 @@ static void recv_only_or_dump(struct ctx *ctx)
 			}
 
 			if (dump_to_pcap(ctx)) {
-				tpacket_hdr_to_pcap_pkthdr(&hdr->tp_h, &phdr);
+				tpacket_hdr_to_pcap_pkthdr(&hdr->tp_h, &hdr->s_ll, &phdr, ctx->magic);
 
-				ret = __pcap_io->write_pcap_pkt(fd, &phdr, packet, phdr.len);
-				if (unlikely(ret != sizeof(phdr) + phdr.len))
+				ret = __pcap_io->write_pcap(fd, &phdr, ctx->magic, packet,
+							    pcap_get_length(&phdr, ctx->magic));
+				if (unlikely(ret != pcap_get_total_length(&phdr, ctx->magic)))
 					panic("Write error to pcap!\n");
 			}
 
@@ -1046,6 +1054,7 @@ static void help(void)
 	     "  -l|--ascii                  Print human-readable packet data\n"
 	     "Options, advanced:\n"
 	     "  -P|--prefix <name>          Prefix for pcaps stored in directory\n"
+	     "  -T|--magic <pcap-magic>     Pcap magic number/pcap type to process\n"
 	     "  -r|--rand                   Randomize packet forwarding order\n"
 	     "  -M|--no-promisc             No promiscuous mode for netdev\n"
 	     "  -A|--no-sock-mem            Don't tune core socket memory\n"
@@ -1064,10 +1073,11 @@ static void help(void)
 	     "  -H|--prio-high              Make this high priority process\n"
 	     "  -Q|--notouch-irq            Do not touch IRQ CPU affinity of NIC\n"
 	     "  -V|--verbose                Be more verbose\n"
+	     "  -D|--dump-pcap-types        Dump pcap types and magic numbers\n"
 	     "  -v|--version                Show version\n"
 	     "  -h|--help                   Guess what?!\n\n"
 	     "Examples:\n"
-	     "  netsniff-ng --in eth0 --out dump.pcap --silent --bind-cpu 0\n"
+	     "  netsniff-ng --in eth0 --out dump.pcap --silent -T 0xa1b2c3d4 --bind-cpu 0\n"
 	     "  netsniff-ng --in wlan0 --rfraw --out dump.pcap --silent --bind-cpu 0\n"
 	     "  netsniff-ng --in dump.pcap --mmap --out eth0 -k1000 --silent --bind-cpu 0\n"
 	     "  netsniff-ng --in dump.pcap --out dump.cfg --silent --bind-cpu 0\n"
@@ -1121,7 +1131,8 @@ int main(int argc, char **argv)
 		.dump_interval = 60,
 		.dump_mode = DUMP_INTERVAL_TIME,
 		.uid = getuid(),
-		.gid = getgid()
+		.gid = getgid(),
+		.magic = ORIGINAL_TCPDUMP_MAGIC,
 	};
 
 	srand(time(NULL));
@@ -1147,7 +1158,11 @@ int main(int argc, char **argv)
 			ctx.randomize = true;
 			break;
 		case 'J':
-			ctx.jumbo_support = 1;
+			ctx.jumbo = true;
+			break;
+		case 'T':
+			ctx.magic = (uint32_t) strtoul(optarg, NULL, 0);
+			pcap_check_magic(ctx.magic);
 			break;
 		case 'f':
 			ctx.filter = xstrdup(optarg);
@@ -1219,7 +1234,7 @@ int main(int argc, char **argv)
 			ops_touched = 1;
 			break;
 		case 'm':
-			ctx.pcap = PCAP_OPS_MMAP;
+			ctx.pcap = PCAP_OPS_MM;
 			ops_touched = 1;
 			break;
 		case 'G':
@@ -1292,6 +1307,10 @@ int main(int argc, char **argv)
 		case 'V':
 			ctx.verbose = 1;
 			break;
+		case 'D':
+			pcap_dump_type_features();
+			die();
+			break;
 		case 'v':
 			version();
 			break;
@@ -1311,6 +1330,7 @@ int main(int argc, char **argv)
 			case 'S':
 			case 'b':
 			case 'k':
+			case 'T':
 			case 'u':
 			case 'g':
 			case 'B':
@@ -1380,7 +1400,7 @@ int main(int argc, char **argv)
 			register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO);
 			main_loop = pcap_to_xmit;
 			if (!ops_touched)
-				ctx.pcap = PCAP_OPS_MMAP;
+				ctx.pcap = PCAP_OPS_MM;
 		} else {
 			main_loop = read_pcap;
 			if (!ops_touched)
@@ -1389,8 +1409,6 @@ int main(int argc, char **argv)
 	}
 
 	bug_on(!main_loop);
-
-	init_pcap(ctx.pcap, ctx.jumbo_support);
 
 	if (setsockmem)
 		set_system_socket_memory(vals);
@@ -1403,7 +1421,6 @@ int main(int argc, char **argv)
 		reset_system_socket_memory(vals);
 
 	tprintf_cleanup();
-	cleanup_pcap();
 
 	free(ctx.device_in);
 	free(ctx.device_out);

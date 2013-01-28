@@ -129,16 +129,12 @@ typedef uint8_t		u8;
 # define __deprecated		/* unimplemented */
 #endif
 
-#ifndef EXPORT_SYMBOL
-# define EXPORT_SYMBOL(x)	/* empty, just for readability */
-#endif
-
 #ifndef unreachable
 # define unreachable()		do { } while (1)
 #endif
 
-#ifndef __unused
-# define __unused		 __attribute__ ((__unused__))
+#ifndef __maybe_unused
+# define __maybe_unused		__attribute__ ((__unused__))
 #endif
 
 #ifndef noinline
