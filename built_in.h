@@ -105,10 +105,6 @@ typedef uint8_t		u8;
 # define force_cast(type, arg)	((type) (arg))
 #endif
 
-#ifndef access_once
-# define access_once(x)		(*(volatile typeof(x) *) &(x))
-#endif
-
 #ifndef max
 # define max(a, b)							\
 	({								\

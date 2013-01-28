@@ -17,15 +17,19 @@
 
 #define term_trailing_size	5
 #define term_starting_size	3
+
 #define term_curr_size		(get_tty_size() - term_trailing_size)
 
 static char buffer[1024];
+
 static volatile size_t buffer_use = 0;
+
 static struct spinlock buffer_lock;
 
 static inline void __tprintf_flush_newline(void)
 {
 	int i;
+
 	fputc('\n', stdout);
 	for (i = 0; i < term_starting_size; ++i)
 		fputc(' ', stdout);
@@ -34,8 +38,10 @@ static inline void __tprintf_flush_newline(void)
 static inline int __tprintf_flush_skip(char *buffer, int i, size_t max)
 {
 	int val = buffer[i];
+
 	if (val == ' ' || val == ',')
 		return 1;
+
 	return 0;
 }
 
@@ -50,9 +56,11 @@ static void __tprintf_flush(void)
 			term_len = term_curr_size;
 			line_count = -1;
 		}
+
 		if (line_count == term_len) {
 			__tprintf_flush_newline();
 			line_count = term_starting_size;
+
 			while (i < buffer_use &&
 			       __tprintf_flush_skip(buffer, i, buffer_use))
 				i++;
@@ -63,7 +71,7 @@ static void __tprintf_flush(void)
 	}
 
 	fflush(stdout);
-	access_once(buffer_use) = 0;
+	buffer_use = 0;
 }
 
 void tprintf_flush(void)
