@@ -13,17 +13,17 @@
 #include "built_in.h"
 #include "die.h"
 
-extern __hidden void *xmalloc(size_t size);
-extern __hidden void *xzmalloc(size_t size);
-extern __hidden void *xmallocz(size_t size);
-extern __hidden void *xmalloc_aligned(size_t size, size_t alignment);
-extern __hidden void *xzmalloc_aligned(size_t size, size_t alignment);
-extern __hidden void *xmemdupz(const void *data, size_t len);
-extern __hidden void *xrealloc(void *ptr, size_t nmemb, size_t size);
-extern __hidden void xfree_func(void *ptr);
-extern __hidden char *xstrdup(const char *str);
-extern __hidden char *xstrndup(const char *str, size_t size);
-extern __hidden int xdup(int fd);
+extern void *xmalloc(size_t size) __hidden;
+extern void *xzmalloc(size_t size) __hidden;
+extern void *xmallocz(size_t size) __hidden;
+extern void *xmalloc_aligned(size_t size, size_t alignment) __hidden;
+extern void *xzmalloc_aligned(size_t size, size_t alignment) __hidden;
+extern void *xmemdupz(const void *data, size_t len) __hidden;
+extern void *xrealloc(void *ptr, size_t nmemb, size_t size) __hidden;
+extern void xfree_func(void *ptr) __hidden;
+extern char *xstrdup(const char *str) __hidden;
+extern char *xstrndup(const char *str, size_t size) __hidden;
+extern int xdup(int fd) __hidden;
 
 #define xfree(ptr)							\
 do {									\

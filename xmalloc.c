@@ -20,7 +20,7 @@
 #include "built_in.h"
 #include "die.h"
 
-__hidden void *xmalloc(size_t size)
+void *xmalloc(size_t size)
 {
 	void *ptr;
 
@@ -35,14 +35,14 @@ __hidden void *xmalloc(size_t size)
 	return ptr;
 }
 
-__hidden void *xzmalloc(size_t size)
+void *xzmalloc(size_t size)
 {
 	void *ptr = xmalloc(size);
 	memset(ptr, 0, size);
 	return ptr;
 }
 
-__hidden void *xmalloc_aligned(size_t size, size_t alignment)
+void *xmalloc_aligned(size_t size, size_t alignment)
 {
 	int ret;
 	void *ptr;
@@ -58,14 +58,14 @@ __hidden void *xmalloc_aligned(size_t size, size_t alignment)
 	return ptr;
 }
 
-__hidden void *xzmalloc_aligned(size_t size, size_t alignment)
+void *xzmalloc_aligned(size_t size, size_t alignment)
 {
 	void *ptr = xmalloc_aligned(size, alignment);
 	memset(ptr, 0, size);
 	return ptr;
 }
 
-__hidden void *xmallocz(size_t size)
+void *xmallocz(size_t size)
 {
 	void *ptr;
 
@@ -79,12 +79,12 @@ __hidden void *xmallocz(size_t size)
 	return ptr;
 }
 
-__hidden void *xmemdupz(const void *data, size_t len)
+void *xmemdupz(const void *data, size_t len)
 {
 	return memcpy(xmallocz(len), data, len);
 }
 
-__hidden void *xrealloc(void *ptr, size_t nmemb, size_t size)
+void *xrealloc(void *ptr, size_t nmemb, size_t size)
 {
 	void *new_ptr;
 	size_t new_size = nmemb * size;
@@ -106,7 +106,7 @@ __hidden void *xrealloc(void *ptr, size_t nmemb, size_t size)
 	return new_ptr;
 }
 
-__hidden void xfree_func(void *ptr)
+void xfree_func(void *ptr)
 {
 	if (unlikely(ptr == NULL))
 		panic("xfree: NULL pointer given as argument\n");
@@ -114,7 +114,7 @@ __hidden void xfree_func(void *ptr)
 	free(ptr);
 }
 
-__hidden char *xstrdup(const char *str)
+char *xstrdup(const char *str)
 {
 	size_t len;
 	char *cp;
@@ -127,7 +127,7 @@ __hidden char *xstrdup(const char *str)
 	return cp;
 }
 
-__hidden char *xstrndup(const char *str, size_t size)
+char *xstrndup(const char *str, size_t size)
 {
 	size_t len;
 	char *cp;
@@ -143,7 +143,7 @@ __hidden char *xstrndup(const char *str, size_t size)
 	return cp;
 }
 
-__hidden int xdup(int fd)
+int xdup(int fd)
 {
 	int ret = dup(fd);
 	if (unlikely(ret < 0))
