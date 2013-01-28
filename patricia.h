@@ -47,6 +47,4 @@ extern void ptree_get_key_addr(struct sockaddr_storage *addr, size_t alen,
 extern void ptree_display(struct patricia_node *node, int level);
 extern void ptree_free(struct patricia_node *root);
 
-#define ptree_maybe_add_entry ptree_add_entry
-
 #endif /* PATRICIA_H */

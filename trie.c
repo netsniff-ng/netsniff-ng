@@ -38,7 +38,6 @@ void trie_addr_lookup(char *buff, size_t len, int ipv4, int *fd,
 		return;
 	}
 
-	/* Always happens on the dst address */
 	rwlock_rd_lock(&tree_lock);
 	(*fd) = ptree_search_data_exact(data, dlen, addr, alen, tree);
 	rwlock_unlock(&tree_lock);
@@ -60,9 +59,8 @@ int trie_addr_maybe_update(char *buff, size_t len, int ipv4, int fd,
 		     (!ipv4 && ((struct ipv6hdr *) buff)->version  != 6)))
 		return -1;
 
-	/* Always happens on the src address */
 	rwlock_wr_lock(&tree_lock);
-	ret = ptree_maybe_add_entry(data, dlen, fd, addr, alen, &tree);
+	ret = ptree_add_entry(data, dlen, fd, addr, alen, &tree);
 	rwlock_unlock(&tree_lock);
 
 	return ret;
@@ -116,6 +114,5 @@ void trie_cleanup(void)
 	rwlock_wr_lock(&tree_lock);
 	ptree_free(tree);
 	rwlock_unlock(&tree_lock);
-
 	rwlock_destroy(&tree_lock);
 }
