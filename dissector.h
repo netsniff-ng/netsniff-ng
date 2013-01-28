@@ -48,10 +48,6 @@ static inline void show_frame_hdr(struct frame_map *hdr, int mode,
 			if_indextoname(hdr->s_ll.sll_ifindex, tmp) ? : "?",
 			hdr->tp_h.tp_len);
 		break;
-	case PRINT_NORM:
-	case PRINT_HEX:
-	case PRINT_ASCII:
-	case PRINT_HEX_ASCII:
 	default:
 		tprintf("%s %s %u %us.%uns\n",
 			packet_types[hdr->s_ll.sll_pkttype] ? : "?",
