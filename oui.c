@@ -25,14 +25,13 @@ struct vendor_id {
 
 const char *lookup_vendor(unsigned int id)
 {
-	struct vendor_id *entry;
+	struct vendor_id *v;
 
-	entry = lookup_hash(id, &oui);
-	while (entry && id != entry->id)
-		entry = entry->next;
+	v = lookup_hash(id, &oui);
+	while (v && id != v->id)
+		v = v->next;
 
-	return (entry && id == entry->id ?
-		entry->vendor : NULL);
+	return (v && id == v->id ? v->vendor : NULL);
 }
 
 void dissector_init_oui(void)
@@ -102,6 +101,5 @@ void dissector_cleanup_oui(void)
 {
 	for_each_hash(&oui, dissector_cleanup_oui_hash);
 	free_hash(&oui);
-
-	initialized = 0;
+	initialized = false;
 }
