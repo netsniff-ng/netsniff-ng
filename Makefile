@@ -1,11 +1,12 @@
-# netsniff-ng build system, part of netsniff-ng.
-# Copyright 2012 Daniel Borkmann <borkmann@gnumaniacs.org>
+# netsniff-ng build system
+# Copyright 2012 - 2013 Daniel Borkmann <borkmann@gnumaniacs.org>
 # Subject to the GNU GPL, version 2.
 
 VERSION = 0
 PATCHLEVEL = 5
 SUBLEVEL = 8
 EXTRAVERSION = -rc0
+NAME = Ziggomatic
 
 TOOLS = netsniff-ng trafgen astraceroute flowtop ifpps bpfc curvetun
 
