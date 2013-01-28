@@ -60,7 +60,9 @@ CFLAGS += -D_REENTRANT
 CFLAGS += -D_FILE_OFFSET_BITS=64
 CFLAGS += -D_LARGEFILE_SOURCE
 CFLAGS += -D_LARGEFILE64_SOURCE
-#CFLAGS += -D__WITH_HARDWARE_TIMESTAMPING=1
+ifneq ($(wildcard /usr/include/linux/net_tstamp.h),)
+  CFLAGS += -D__WITH_HARDWARE_TIMESTAMPING
+endif
 CFLAGS += -DVERSION_STRING=\"$(VERSION_STRING)\"
 CFLAGS += -std=gnu99
 
@@ -124,7 +126,7 @@ else
 endif
 RM = echo -e "  RM\t$(1)" && rm -rf $(1)
 RMDIR = echo -e "  RM\t$(1)" && rmdir --ignore-fail-on-non-empty $(1) 2> /dev/null || true
-GIT_ARCHIVE = cd .. && git archive --prefix=netsniff-ng-$(VERSION_STRING)/ $(VERSION_STRING) | \
+GIT_ARCHIVE = git archive --prefix=netsniff-ng-$(VERSION_STRING)/ $(VERSION_STRING) | \
 	      $(1) > ../netsniff-ng-$(VERSION_STRING).tar.$(2)
 GIT_TAG = git tag -a $(VERSION_STRING) -m "$(VERSION_STRING) release"
 
@@ -185,11 +187,11 @@ allbutmausezahn: $(filter-out mausezahn,$(TOOLS))
 toolkit: $(TOOLS)
 install: install_all
 install_all: $(foreach tool,$(TOOLS),$(tool)_install)
-	$(Q)$(foreach file,$(DOC_FILES),$(call INST,../Documentation/$(file),$(DOCDIRE));)
+	$(Q)$(foreach file,$(DOC_FILES),$(call INST,Documentation/$(file),$(DOCDIRE));)
 install_allbutcurvetun: $(foreach tool,$(filter-out curvetun,$(TOOLS)),$(tool)_install)
-	$(Q)$(foreach file,$(DOC_FILES),$(call INST,../Documentation/$(file),$(DOCDIRE));)
+	$(Q)$(foreach file,$(DOC_FILES),$(call INST,Documentation/$(file),$(DOCDIRE));)
 install_allbutmausezahn: $(foreach tool,$(filter-out mausezahn,$(TOOLS)),$(tool)_install)
-	$(Q)$(foreach file,$(DOC_FILES),$(call INST,../Documentation/$(file),$(DOCDIRE));)
+	$(Q)$(foreach file,$(DOC_FILES),$(call INST,Documentation/$(file),$(DOCDIRE));)
 clean mostlyclean: $(foreach tool,$(TOOLS),$(tool)_clean)
 realclean distclean clobber: $(foreach tool,$(TOOLS),$(tool)_distclean)
 	$(Q)$(foreach file,$(DOC_FILES),$(call RM,$(DOCDIRE)/$(file));)
@@ -211,7 +213,7 @@ define TOOL_templ
   $(1)_check: $(1)_prehook_check $$(patsubst %.o,%.x,$$($(1)-objs))
   $(1)_install: $(1)_install_custom
 	$(Q)$$(call INSTX,$(1)/$(1),$$(SBINDIR))
-	$(Q)$$(call INST,../Documentation/$$(shell echo $(1) | sed 's/\([a-z]\)\(.*\)/\u\1\2/g'),$$(DOCDIRE))
+	$(Q)$$(call INST,Documentation/$$(shell echo $(1) | sed 's/\([a-z]\)\(.*\)/\u\1\2/g'),$$(DOCDIRE))
   $(1)_distclean: $(1)_distclean_custom
 	$(Q)$$(call RM,$$(SBINDIR)/$(1))
 	$(Q)$$(call RM,$$(DOCDIRE)/$$(shell echo $(1) | sed 's/\([a-z]\)\(.*\)/\u\1\2/g'))

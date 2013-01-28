@@ -137,7 +137,7 @@ static inline void set_sockopt_tpacket(int sock)
 		panic("Cannot set tpacketv2!\n");
 }
 
-#if defined(__WITH_HARDWARE_TIMESTAMPING)
+#ifdef __WITH_HARDWARE_TIMESTAMPING
 # include <linux/net_tstamp.h>
 
 static inline void set_sockopt_hwtimestamp(int sock, const char *dev)
@@ -145,6 +145,9 @@ static inline void set_sockopt_hwtimestamp(int sock, const char *dev)
 	int timesource, ret;
 	struct hwtstamp_config hwconfig;
 	struct ifreq ifr;
+
+	if (!strncmp("any", dev, strlen("any")))
+		return;
 
 	memset(&hwconfig, 0, sizeof(hwconfig));
 	hwconfig.tx_type = HWTSTAMP_TX_ON;
@@ -155,20 +158,23 @@ static inline void set_sockopt_hwtimestamp(int sock, const char *dev)
 	ifr.ifr_data = &hwconfig;
 
 	ret = ioctl(sock, SIOCSHWTSTAMP, &ifr);
-	if (ret < 0)
-		return;
+	if (ret < 0) {
+		if (errno == EOPNOTSUPP)
+			return;
+		panic("Cannot set timestamping: %s\n", strerror(errno));
+	}
 
 	timesource = SOF_TIMESTAMPING_RAW_HARDWARE;
 
 	ret = setsockopt(sock, SOL_PACKET, PACKET_TIMESTAMP, &timesource,
 			 sizeof(timesource));
 	if (ret)
-		panic("Cannot set timestamping!\n");
+		panic("Cannot set timestamping: %s!\n", strerror(errno));
 }
 #else
 static inline void set_sockopt_hwtimestamp(int sock, const char *dev)
 {
 	return;
 }
-#endif /* defined(__WITH_HARDWARE_TIMESTAMPING) */
+#endif
 #endif /* RING_H */
