@@ -270,9 +270,6 @@ static inline void pcap_pkthdr_to_tpacket_hdr(pcap_pkthdr_t *phdr,
 		thdr->tp_nsec = phdr->ppk.ts.tv_usec * 1000;
 		thdr->tp_snaplen = phdr->ppk.caplen;
 		thdr->tp_len = phdr->ppk.len;
-		sll->sll_ifindex = phdr->ppk.ifindex;
-		sll->sll_protocol = phdr->ppk.protocol;
-		sll->sll_pkttype = phdr->ppk.pkttype;
 		break;
 
 	case BORKMANN:
@@ -280,10 +277,6 @@ static inline void pcap_pkthdr_to_tpacket_hdr(pcap_pkthdr_t *phdr,
 		thdr->tp_nsec = phdr->ppb.ts.tv_nsec;
 		thdr->tp_snaplen = phdr->ppb.caplen;
 		thdr->tp_len = phdr->ppb.len;
-		sll->sll_ifindex = (int) phdr->ppb.ifindex;
-		sll->sll_protocol = phdr->ppb.protocol;
-		sll->sll_hatype =  phdr->ppb.hatype;
-		sll->sll_pkttype = phdr->ppb.pkttype;
 		break;
 
 	default:
