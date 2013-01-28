@@ -14,8 +14,7 @@ extern void dissector_cleanup_oui(void);
 
 static inline const char *lookup_vendor_str(unsigned int id)
 {
-	const char *ret = lookup_vendor(id);
-	return (ret ? : "Unknown");
+	return lookup_vendor(id) ? : "Unknown";
 }
 
 #endif /* OUI_H */
