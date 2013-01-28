@@ -309,5 +309,3 @@ struct protocol ipv6_mobility_ops = {
 	.print_full = mobility,
 	.print_less = mobility_less,
 };
-
-EXPORT_SYMBOL(ipv6_mobility_ops);

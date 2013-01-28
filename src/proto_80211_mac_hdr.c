@@ -3624,5 +3624,3 @@ struct protocol ieee80211_ops = {
 	.print_full = ieee80211,
 	.print_less = ieee80211_less,
 };
-
-EXPORT_SYMBOL(ieee80211_ops);

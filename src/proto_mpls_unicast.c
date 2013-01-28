@@ -107,5 +107,3 @@ struct protocol mpls_uc_ops = {
 	.print_full = mpls_uc_full,
 	.print_less = mpls_uc_less,
 };
-
-EXPORT_SYMBOL(mpls_uc_ops);

@@ -121,5 +121,3 @@ struct protocol arp_ops = {
 	.print_full = arp,
 	.print_less = arp_less,
 };
-
-EXPORT_SYMBOL(arp_ops);

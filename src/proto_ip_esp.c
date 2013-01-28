@@ -51,5 +51,3 @@ struct protocol ip_esp_ops = {
 	.print_full = esp,
 	.print_less = esp_less,
 };
-
-EXPORT_SYMBOL(ip_esp_ops);

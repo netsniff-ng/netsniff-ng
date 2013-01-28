@@ -61,5 +61,3 @@ struct protocol icmpv4_ops = {
 	.print_full = icmp,
 	.print_less = icmp_less,
 };
-
-EXPORT_SYMBOL(icmp_ops);

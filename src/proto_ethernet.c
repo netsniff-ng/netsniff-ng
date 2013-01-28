@@ -79,5 +79,3 @@ struct protocol ethernet_ops = {
 	.print_full = ethernet,
 	.print_less = ethernet_less,
 };
-
-EXPORT_SYMBOL(ethernet_ops);

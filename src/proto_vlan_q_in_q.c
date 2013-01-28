@@ -61,5 +61,3 @@ struct protocol QinQ_ops = {
 	.print_full = QinQ_full,
 	.print_less = QinQ_less,
 };
-
-EXPORT_SYMBOL(QinQ_ops);

@@ -76,5 +76,3 @@ struct protocol ipv6_ops = {
 	.print_full = ipv6,
 	.print_less = ipv6_less,
 };
-
-EXPORT_SYMBOL(ipv6_ops);

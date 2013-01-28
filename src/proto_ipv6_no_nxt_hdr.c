@@ -39,5 +39,3 @@ struct protocol ipv6_no_next_header_ops = {
 	.print_full = no_next_header,
 	.print_less = no_next_header_less,
 };
-
-EXPORT_SYMBOL(ipv6_no_next_header_ops);

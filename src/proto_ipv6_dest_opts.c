@@ -99,5 +99,3 @@ struct protocol ipv6_dest_opts_ops = {
 	.print_full = dest_opts,
 	.print_less = dest_opts_less,
 };
-
-EXPORT_SYMBOL(ipv6_dest_opts_ops);

@@ -88,5 +88,3 @@ struct protocol udp_ops = {
 	.print_full = udp,
 	.print_less = udp_less,
 };
-
-EXPORT_SYMBOL(udp_ops);

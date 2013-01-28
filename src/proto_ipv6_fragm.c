@@ -68,5 +68,3 @@ struct protocol ipv6_fragm_ops = {
 	.print_full = fragm,
 	.print_less = fragm_less,
 };
-
-EXPORT_SYMBOL(ipv6_fragm_ops);

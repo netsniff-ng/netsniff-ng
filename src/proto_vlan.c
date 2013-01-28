@@ -60,5 +60,3 @@ struct protocol vlan_ops = {
 	.print_full = vlan,
 	.print_less = vlan_less,
 };
-
-EXPORT_SYMBOL(vlan_ops);

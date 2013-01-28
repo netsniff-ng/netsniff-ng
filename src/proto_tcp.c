@@ -154,5 +154,3 @@ struct protocol tcp_ops = {
 	.print_full = tcp,
 	.print_less = tcp_less,
 };
-
-EXPORT_SYMBOL(tcp_ops);

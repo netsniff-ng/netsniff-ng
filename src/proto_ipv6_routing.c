@@ -161,5 +161,3 @@ struct protocol ipv6_routing_ops = {
 	.print_full = routing,
 	.print_less = routing_less,
 };
-
-EXPORT_SYMBOL(ipv6_routing_ops);

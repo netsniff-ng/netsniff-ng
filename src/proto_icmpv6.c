@@ -1639,5 +1639,3 @@ struct protocol icmpv6_ops = {
 	.print_full = icmpv6,
 	.print_less = icmpv6_less,
 };
-
-EXPORT_SYMBOL(icmpv6_ops);

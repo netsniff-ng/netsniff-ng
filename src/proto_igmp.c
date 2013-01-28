@@ -558,5 +558,3 @@ struct protocol igmp_ops = {
 	.print_full = igmp,
 	.print_less = igmp_less,
 };
-
-EXPORT_SYMBOL(igmp_ops);

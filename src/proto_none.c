@@ -82,5 +82,3 @@ struct protocol none_ops = {
 	.print_full = hex_ascii,
 	.print_less = none_less,
 };
-
-EXPORT_SYMBOL(none_ops);

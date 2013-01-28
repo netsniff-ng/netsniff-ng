@@ -84,5 +84,3 @@ struct protocol ip_auth_ops = {
 	.print_full = auth_hdr,
 	.print_less = auth_hdr_less,
 };
-
-EXPORT_SYMBOL(ip_auth_ops);

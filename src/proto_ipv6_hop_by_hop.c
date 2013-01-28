@@ -98,5 +98,3 @@ struct protocol ipv6_hop_by_hop_ops = {
 	.print_full = hop_by_hop,
 	.print_less = hop_by_hop_less,
 };
-
-EXPORT_SYMBOL(ipv6_hop_by_hop_ops);

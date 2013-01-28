@@ -165,5 +165,3 @@ struct protocol ipv4_ops = {
 	.print_full = ipv4,
 	.print_less = ipv4_less,
 };
-
-EXPORT_SYMBOL(ipv4_ops);
