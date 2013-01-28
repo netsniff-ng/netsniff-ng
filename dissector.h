@@ -39,7 +39,7 @@ extern void dissector_entry_point(uint8_t *packet, size_t len, int linktype, int
 extern void dissector_cleanup_all(void);
 extern int dissector_set_print_type(void *ptr, int type);
 
-static char *packet_types[]={
+static const char * const packet_types[]={
 	"<", /* Incoming */
 	"B", /* Broadcast */
 	"M", /* Multicast */
