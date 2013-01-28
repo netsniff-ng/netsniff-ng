@@ -717,6 +717,7 @@ uint32_t bpf_run_filter(const struct sock_fprog * fcode, uint8_t * packet,
 
 #ifdef __WITH_TCPDUMP_LIKE_FILTER
 # include <pcap/pcap.h>
+# include <pcap/bpf.h>
 #endif
 
 void bpf_parse_rules(char *dev, char *rulefile, struct sock_fprog *bpf)
@@ -785,7 +786,7 @@ try_compile_str:
 	if (!fd)
 		panic("Cannot open any device!\n");
 
-	ret = pcap_compile(fd, &bpfp, rulefile, 1, PCAP_NETMASK_UNKNOWN);
+	ret = pcap_compile(fd, &bpfp, rulefile, 1, 0xffffffff);
 	if (ret < 0)
 		panic("Cannot compile filter %s: %s\n", rulefile, pcap_geterr(fd));
 
