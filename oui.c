@@ -1,11 +1,12 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
- * Copyright 2009, 2010 Daniel Borkmann.
+ * Copyright 2009 - 2013 Daniel Borkmann.
  * Subject to the GPL, version 2.
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "hash.h"
 #include "xmalloc.h"
@@ -13,7 +14,8 @@
 #include "oui.h"
 
 static struct hash_table oui;
-static int initialized = 0;
+
+static bool initialized = false;
 
 struct vendor_id {
 	unsigned int id;
@@ -23,19 +25,21 @@ struct vendor_id {
 
 const char *lookup_vendor(unsigned int id)
 {
-	struct vendor_id *entry = lookup_hash(id, &oui);
+	struct vendor_id *entry;
 
+	entry = lookup_hash(id, &oui);
 	while (entry && id != entry->id)
 		entry = entry->next;
 
-	return (entry && id == entry->id ? entry->vendor : NULL);
+	return (entry && id == entry->id ?
+		entry->vendor : NULL);
 }
 
 void dissector_init_oui(void)
 {
 	FILE *fp;
 	char buff[512], *ptr;
-	struct vendor_id *ven;
+	struct vendor_id *v;
 	void **pos;
 
 	if (initialized)
@@ -43,45 +47,51 @@ void dissector_init_oui(void)
 
 	fp = fopen("/etc/netsniff-ng/oui.conf", "r");
 	if (!fp)
-		panic("No /etc/netsniff-ng/oui.conf found!\n");
+		panic("No oui.conf found!\n");
 
 	memset(buff, 0, sizeof(buff));
+
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
-
-		ven = xmalloc(sizeof(*ven));
 		ptr = buff;
-		ptr = skips(ptr);
-		ptr = getuint(ptr, &ven->id);
-		ptr = skips(ptr);
-		ptr = skipchar(ptr, ',');
-		ptr = skips(ptr);
+
+		v = xmalloc(sizeof(*v));
+		v->id = strtol(ptr, &ptr, 0);
+
+		if ((ptr = strstr(buff, ", ")))
+                        ptr += strlen(", ");
 		ptr = strtrim_right(ptr, '\n');
 		ptr = strtrim_right(ptr, ' ');
-		ven->vendor = xstrdup(ptr);
-		ven->next = NULL;
-		pos = insert_hash(ven->id, ven, &oui);
+
+		v->vendor = xstrdup(ptr);
+		v->next = NULL;
+
+		pos = insert_hash(v->id, v, &oui);
 		if (pos) {
-			ven->next = *pos;
-			*pos = ven;
+			v->next = *pos;
+			*pos = v;
 		}
+
 		memset(buff, 0, sizeof(buff));
 	}
-	fclose(fp);
 
-	initialized = 1;
+	fclose(fp);
+	initialized = true;
 }
 
-static int __dissector_cleanup_oui(void *ptr)
+static int dissector_cleanup_oui_hash(void *ptr)
 {
 	struct vendor_id *tmp, *v = ptr;
+
 	if (!ptr)
 		return 0;
+
 	while ((tmp = v->next)) {
 		xfree(v->vendor);
 		xfree(v);
 		v = tmp;
 	}
+
 	xfree(v->vendor);
 	xfree(v);
 
@@ -90,7 +100,7 @@ static int __dissector_cleanup_oui(void *ptr)
 
 void dissector_cleanup_oui(void)
 {
-	for_each_hash(&oui, __dissector_cleanup_oui);
+	for_each_hash(&oui, dissector_cleanup_oui_hash);
 	free_hash(&oui);
 
 	initialized = 0;
