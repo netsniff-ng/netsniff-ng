@@ -5,7 +5,6 @@ curvetun-objs =	xmalloc.o \
 		xio.o \
 		xutils.o \
 		stun.o \
-		mtrand.o \
 		patricia.o \
 		trie.o \
 		hash.o \

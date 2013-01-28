@@ -32,6 +32,7 @@
 #include <sys/socket.h>
 #include <sys/fsuid.h>
 #include <fcntl.h>
+#include <time.h>
 #include <string.h>
 #include <asm/byteorder.h>
 #include <linux/tcp.h>
@@ -56,7 +57,6 @@
 #include "xio.h"
 #include "aslookup.h"
 #include "xutils.h"
-#include "mtrand.h"
 #include "ring_rx.h"
 #include "built_in.h"
 
@@ -288,13 +288,13 @@ static void assemble_data(uint8_t *packet, size_t len, const char *payload)
 
 	if (payload == NULL) {
 		for (i = 0; i < len; ++i)
-			packet[i] = (uint8_t) mt_rand_int32();
+			packet[i] = (uint8_t) rand();
 	} else {
 		int lmin = min(len, strlen(payload));
 		for (i = 0; i < lmin; ++i)
 			packet[i] = (uint8_t) payload[i];
 		for (i = lmin; i < len; ++i)
-			packet[i] = (uint8_t) mt_rand_int32();
+			packet[i] = (uint8_t) rand();
 	}
 }
 
@@ -327,10 +327,10 @@ static void assemble_tcp(uint8_t *packet, size_t len, int syn, int ack,
 
 	bug_on(len < sizeof(struct tcphdr));
 
-	tcph->source = htons((uint16_t) mt_rand_int32());
+	tcph->source = htons((uint16_t) rand());
 	tcph->dest = htons((uint16_t) dport);
-	tcph->seq = htonl(mt_rand_int32());
-	tcph->ack_seq = (!!ack ? htonl(mt_rand_int32()) : 0);
+	tcph->seq = htonl(rand());
+	tcph->ack_seq = (!!ack ? htonl(rand()) : 0);
 	tcph->doff = 5;
 	tcph->syn = !!syn;
 	tcph->ack = !!ack;
@@ -340,9 +340,9 @@ static void assemble_tcp(uint8_t *packet, size_t len, int syn, int ack,
 	tcph->psh = !!psh;
 	tcph->ece = !!ecn;
 	tcph->cwr = !!ecn;
-	tcph->window = htons((uint16_t) (100 + (mt_rand_int32() % 65435)));
+	tcph->window = htons((uint16_t) (100 + (rand() % 65435)));
 	tcph->check = 0;
-	tcph->urg_ptr = (!!urg ? htons((uint16_t) mt_rand_int32()) :  0);
+	tcph->urg_ptr = (!!urg ? htons((uint16_t) rand()) :  0);
 }
 
 static int assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
@@ -363,7 +363,7 @@ static int assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
 	iph->version = 4;
 	iph->tos = (uint8_t) tos;
 	iph->tot_len = htons((uint16_t) len);
-	iph->id = htons((uint16_t) mt_rand_int32());
+	iph->id = htons((uint16_t) rand());
 	iph->frag_off = nofrag ? IP_DF : 0;
 	iph->ttl = (uint8_t) ttl;
 	iph->protocol = 6; /* TCP */
@@ -397,7 +397,7 @@ static int assemble_ipv6_tcp(uint8_t *packet, size_t len, int ttl,
 	bug_on(src->sa_family != PF_INET6 || dst->sa_family != PF_INET6);
 	bug_on(len < sizeof(*ip6h) + sizeof(struct tcphdr));
 
-	ip6h->ip6_flow = htonl(mt_rand_int32() & 0x000fffff);
+	ip6h->ip6_flow = htonl(rand() & 0x000fffff);
 	ip6h->ip6_vfc = 0x60;
 	ip6h->ip6_plen = htons((uint16_t) len - sizeof(*ip6h));
 	ip6h->ip6_nxt = 6; /* TCP */
@@ -431,7 +431,7 @@ static int assemble_ipv6_icmp6(uint8_t *packet, size_t len, int ttl,
 	bug_on(src->sa_family != PF_INET6 || dst->sa_family != PF_INET6);
 	bug_on(len < sizeof(*ip6h) + sizeof(struct icmp6hdr));
 
-	ip6h->ip6_flow = htonl(mt_rand_int32() & 0x000fffff);
+	ip6h->ip6_flow = htonl(rand() & 0x000fffff);
 	ip6h->ip6_vfc = 0x60;
 	ip6h->ip6_plen = htons((uint16_t) len - sizeof(*ip6h));
 	ip6h->ip6_nxt = 0x3a; /* ICMP6 */
@@ -469,7 +469,7 @@ static int assemble_ipv4_icmp4(uint8_t *packet, size_t len, int ttl,
 	iph->version = 4;
 	iph->tos = 0;
 	iph->tot_len = htons((uint16_t) len);
-	iph->id = htons((uint16_t) mt_rand_int32());
+	iph->id = htons((uint16_t) rand());
 	iph->frag_off = nofrag ? IP_DF : 0;
 	iph->ttl = (uint8_t) ttl;
 	iph->protocol = 1; /* ICMP4 */
@@ -731,7 +731,7 @@ static int do_trace(const struct ash_cfg *cfg)
 	struct ring dummy_ring;
 	struct pollfd pfd;
 
-	mt_init_by_random_device();
+	srand(time(NULL));
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;

@@ -8,6 +8,5 @@ astraceroute-objs =	xmalloc.o \
 			tprintf.o \
 			aslookup.o \
 			bpf.o \
-			mtrand.o \
 			ring_rx.o \
 			astraceroute.o

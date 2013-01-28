@@ -452,9 +452,7 @@ static void *worker(void *self)
 	fds.fd = ws->efd[0];
 	fds.events = POLLIN;
 
-	ret = curve25519_alloc_or_maybe_die(ws->c);
-	if (ret < 0)
-		syslog_panic("Cannot init curve25519!\n");
+	curve25519_alloc_or_maybe_die(ws->c);
 
 	buff = xmalloc_aligned(blen, 64);
 

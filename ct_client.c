@@ -31,7 +31,6 @@
 #include "xio.h"
 #include "xutils.h"
 #include "curve.h"
-#include "mtrand.h"
 #include "xmalloc.h"
 #include "curvetun.h"
 #include "ct_servmgmt.h"
@@ -226,8 +225,6 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 	char username[256], path[PATH_MAX], *us, *cbuff, *msg;
 	unsigned char auth[crypto_auth_hmacsha512256_BYTES], *token;
 
-	mt_init_by_random_device();
-
 	memset(&hdr, 0, sizeof(hdr));
 	hdr.flags |= PROTO_FLAG_INIT;
 
@@ -264,7 +261,7 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 	if (unlikely(err))
 		syslog_panic("Cannot create init hmac message!\n");
 
-	pad = mt_rand_int32() % 200;
+	pad = secrand() % 200;
 	msg_len = clen + sizeof(auth) + pad;
 
 	msg = xzmalloc(msg_len);
@@ -272,7 +269,7 @@ static void notify_init(int fd, int udp, struct curve25519_proto *p,
 	memcpy(msg + sizeof(auth), cbuff, clen);
 
 	for (i = sizeof(auth) + clen; i < msg_len; ++i)
-		msg[i] = (uint8_t) mt_rand_int32();
+		msg[i] = (uint8_t) secrand();
 
 	hdr.payload = htons((uint16_t) msg_len);
 
@@ -318,9 +315,7 @@ retry:
 
 	c = xmalloc(sizeof(struct curve25519_struct));
 
-	ret = curve25519_alloc_or_maybe_die(c);
-	if (ret < 0)
-		syslog_panic("Cannot init curve!\n");
+	curve25519_alloc_or_maybe_die(c);
 
 	p = get_serv_store_entry_proto_inf();
 	if (!p)
