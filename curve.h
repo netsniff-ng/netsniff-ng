@@ -1,7 +1,7 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * By Daniel Borkmann <daniel@netsniff-ng.org>
- * Copyright 2011 Daniel Borkmann.
+ * Copyright 2011 - 2013 Daniel Borkmann.
  * Subject to the GPL, version 2.
  */
 
@@ -12,11 +12,9 @@
 #include <sys/time.h>
 
 #include "locking.h"
-#include "mtrand.h"
 #include "built_in.h"
+#include "xio.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"
-
-/* Some parts derived from public domain code from curveprotect project */
 
 struct tai {
 	uint64_t x;
@@ -24,58 +22,47 @@ struct tai {
 
 struct taia {
 	struct tai sec;
-	uint32_t nano;  /* 0...999999999 */
-	uint32_t atto;  /* 0...999999999 */
+	uint32_t nano;
+	uint32_t atto;
 };
 
-/* Delay tolerance for packets! */
 static struct taia tolerance_taia = {
 	.sec.x = 0,
 	.nano = 700000000ULL,
 	.atto = 0,
 };
 
-#define crypto_box_zerobytes    crypto_box_curve25519xsalsa20poly1305_ZEROBYTES
-#define crypto_box_boxzerobytes crypto_box_curve25519xsalsa20poly1305_BOXZEROBYTES
+#define crypto_box_zerobytes		crypto_box_curve25519xsalsa20poly1305_ZEROBYTES
+#define crypto_box_boxzerobytes		crypto_box_curve25519xsalsa20poly1305_BOXZEROBYTES
 
-#define crypto_box_noncebytes crypto_box_curve25519xsalsa20poly1305_NONCEBYTES
-#define crypto_box_beforenmbytes crypto_box_curve25519xsalsa20poly1305_BEFORENMBYTES
+#define crypto_box_noncebytes		crypto_box_curve25519xsalsa20poly1305_NONCEBYTES
+#define crypto_box_beforenmbytes	crypto_box_curve25519xsalsa20poly1305_BEFORENMBYTES
 
-/* Per connection */
 struct curve25519_proto {
 	unsigned char enonce[crypto_box_noncebytes] __aligned_16;
 	unsigned char dnonce[crypto_box_noncebytes] __aligned_16;
 	unsigned char key[crypto_box_noncebytes] __aligned_16;
 };
 
-/* Per thread */
 struct curve25519_struct {
-	/* Encode buffer */
-	size_t enc_buf_size;
 	unsigned char *enc_buf;
-	struct spinlock enc_lock;
-	/* Decode buffer */
-	size_t dec_buf_size;
 	unsigned char *dec_buf;
+	size_t enc_buf_size;
+	size_t dec_buf_size;
+	struct spinlock enc_lock;
 	struct spinlock dec_lock;
 };
 
 extern void curve25519_selftest(void);
-extern int curve25519_pubkey_hexparse_32(unsigned char *y, size_t ylen,
-					 const char *x, size_t len);
-extern int curve25519_alloc_or_maybe_die(struct curve25519_struct *c);
-extern void curve25519_free(void *vc);
-extern int curve25519_proto_init(struct curve25519_proto *p,
-				 unsigned char *pubkey_remote, size_t len,
+extern void curve25519_alloc_or_maybe_die(struct curve25519_struct *curve);
+extern void curve25519_free(void *curve);
+extern int curve25519_pubkey_hexparse_32(unsigned char *bin, size_t blen, const char *ascii, size_t alen);
+extern int curve25519_proto_init(struct curve25519_proto *proto, unsigned char *pubkey_remote, size_t len,
 				 char *home, int server);
-extern ssize_t curve25519_encode(struct curve25519_struct *c,
-				 struct curve25519_proto *p,
-				 unsigned char *plaintext, size_t size,
-				 unsigned char **chipertext);
-extern ssize_t curve25519_decode(struct curve25519_struct *c,
-				 struct curve25519_proto *p,
-				 unsigned char *chipertext, size_t size,
-				 unsigned char **plaintext,
+extern ssize_t curve25519_encode(struct curve25519_struct *curve, struct curve25519_proto *proto,
+				 unsigned char *plaintext, size_t size, unsigned char **chipertext);
+extern ssize_t curve25519_decode(struct curve25519_struct *curve, struct curve25519_proto *proto,
+				 unsigned char *chipertext, size_t size, unsigned char **plaintext,
 				 struct taia *arrival_taia);
 
 static inline void tai_pack(unsigned char *s, struct tai *t)
@@ -151,17 +138,13 @@ static inline void taia_now(struct taia *t)
 	struct timeval now;
 
 	gettimeofday(&now, NULL);
+
 	tai_unix(&t->sec, now.tv_sec);
 	t->nano = 1000 * now.tv_usec + 500;
-	t->atto = mt_rand_int32();
+	t->atto = secrand();
 }
 
-/* XXX: breaks tai encapsulation */
-
-/* calcs u - v */
-static inline void taia_sub(struct taia *res,
-			    const struct taia *u,
-			    const struct taia *v)
+static inline void taia_sub(struct taia *res, const struct taia *u, const struct taia *v)
 {
 	unsigned long unano = u->nano;
 	unsigned long uatto = u->atto;
@@ -181,12 +164,7 @@ static inline void taia_sub(struct taia *res,
 	}
 }
 
-/* XXX: breaks tai encapsulation */
-
-/* calcs u + v */
-static inline void taia_add(struct taia *res,
-			    const struct taia *u,
-			    const struct taia *v)
+static inline void taia_add(struct taia *res, const struct taia *u, const struct taia *v)
 {
 	res->sec.x = u->sec.x + v->sec.x;
 	res->nano = u->nano + v->nano;
@@ -203,7 +181,6 @@ static inline void taia_add(struct taia *res,
 	}
 }
 
-/* 1 if t is less than u, 0 otherwise */
 static inline int taia_less(const struct taia *t, const struct taia *u)
 {
 	if (t->sec.x < u->sec.x)
@@ -217,8 +194,7 @@ static inline int taia_less(const struct taia *t, const struct taia *u)
 	return t->atto < u->atto;
 }
 
-static inline int is_good_taia(struct taia *arrival_taia,
-			       struct taia *packet_taia)
+static inline int is_good_taia(struct taia *arrival_taia, struct taia *packet_taia)
 {
 	int is_ts_good = 0;
 	struct taia sub_res;
