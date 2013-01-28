@@ -20,46 +20,6 @@ typedef uint32_t	u32;
 typedef uint16_t	u16;
 typedef uint8_t		u8;
 
-/* /sys/devices/system/cpu/cpuX/cache/indexX/coherency_line_size */
-
-#if defined(__amd64__) || defined(__x86_64__) || defined(__AMD64__) || \
-    defined(_M_X64) || defined(__amd64)
-# define CO_IN_CACHE_SHIFT		7
-#elif defined(__i386__) || defined(__x86__) || defined(__X86__) || \
-      defined(_M_IX86) || defined(__i386)
-# define CO_IN_CACHE_SHIFT		7
-#elif defined(__ia64__) || defined(__IA64__) || defined(__M_IA64)
-# define CO_IN_CACHE_SHIFT		6
-#elif defined(__SPU__)
-# define CO_IN_CACHE_SHIFT		7
-#elif defined(__powerpc64__) || defined(__ppc64__) || defined(__PPC64__) || \
-      defined(_ARCH_PPC64)
-# define CO_IN_CACHE_SHIFT		8
-#elif defined(__powerpc__) || defined(__ppc__) || defined(__PPC__) || \
-      defined(_ARCH_PPC)
-# define CO_IN_CACHE_SHIFT		7
-#elif defined(__sparcv9__) || defined(__sparcv9)
-# define CO_IN_CACHE_SHIFT		6
-#elif defined(__sparc_v8__)
-# define CO_IN_CACHE_SHIFT		5
-#elif defined(__sparc__) || defined(__sparc)
-# define CO_IN_CACHE_SHIFT		5
-#elif defined(__ARM_EABI__)
-# define CO_IN_CACHE_SHIFT		5
-#elif defined(__arm__)
-# define CO_IN_CACHE_SHIFT		5
-#elif defined(__mips__) || defined(__mips) || defined(__MIPS__)
-# if defined(_ABIO32)
-# define CO_IN_CACHE_SHIFT		5
-# elif defined(_ABIN32)
-# define CO_IN_CACHE_SHIFT		5
-# else
-# define CO_IN_CACHE_SHIFT		6
-# endif
-#else
-# define CO_IN_CACHE_SHIFT		5
-#endif
-
 #ifndef CO_CACHE_LINE_SIZE
 # define CO_CACHE_LINE_SIZE	(1 << CO_IN_CACHE_SHIFT)
 #endif
@@ -346,5 +306,43 @@ static inline u64 cpu_to_le64(u64 val)
 
 #define memset		fmemset
 #define memcpy		fmemcpy
+
+#if defined(__amd64__) || defined(__x86_64__) || defined(__AMD64__) || \
+    defined(_M_X64) || defined(__amd64)
+# define CO_IN_CACHE_SHIFT		7
+#elif defined(__i386__) || defined(__x86__) || defined(__X86__) || \
+      defined(_M_IX86) || defined(__i386)
+# define CO_IN_CACHE_SHIFT		7
+#elif defined(__ia64__) || defined(__IA64__) || defined(__M_IA64)
+# define CO_IN_CACHE_SHIFT		6
+#elif defined(__SPU__)
+# define CO_IN_CACHE_SHIFT		7
+#elif defined(__powerpc64__) || defined(__ppc64__) || defined(__PPC64__) || \
+      defined(_ARCH_PPC64)
+# define CO_IN_CACHE_SHIFT		8
+#elif defined(__powerpc__) || defined(__ppc__) || defined(__PPC__) || \
+      defined(_ARCH_PPC)
+# define CO_IN_CACHE_SHIFT		7
+#elif defined(__sparcv9__) || defined(__sparcv9)
+# define CO_IN_CACHE_SHIFT		6
+#elif defined(__sparc_v8__)
+# define CO_IN_CACHE_SHIFT		5
+#elif defined(__sparc__) || defined(__sparc)
+# define CO_IN_CACHE_SHIFT		5
+#elif defined(__ARM_EABI__)
+# define CO_IN_CACHE_SHIFT		5
+#elif defined(__arm__)
+# define CO_IN_CACHE_SHIFT		5
+#elif defined(__mips__) || defined(__mips) || defined(__MIPS__)
+# if defined(_ABIO32)
+# define CO_IN_CACHE_SHIFT		5
+# elif defined(_ABIN32)
+# define CO_IN_CACHE_SHIFT		5
+# else
+# define CO_IN_CACHE_SHIFT		6
+# endif
+#else
+# define CO_IN_CACHE_SHIFT		5
+#endif
 
 #endif /* BUILT_IN_H */
