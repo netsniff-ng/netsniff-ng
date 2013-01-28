@@ -61,9 +61,9 @@ static inline void syslog_panic(const char *format, ...)
 	die();
 }
 
-static inline void syslog_maybe(int may, int priority, const char *format, ...)
+static inline void syslog_maybe(int maybe, int priority, const char *format, ...)
 {
-	if (!!may) {	
+	if (!!maybe) {
 		va_list vl;
 
 		va_start(vl, format);

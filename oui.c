@@ -37,7 +37,7 @@ const char *lookup_vendor(unsigned int id)
 void dissector_init_oui(void)
 {
 	FILE *fp;
-	char buff[512], *ptr;
+	char buff[128], *ptr;
 	struct vendor_id *v;
 	void **pos;
 
