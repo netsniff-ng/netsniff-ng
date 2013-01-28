@@ -121,28 +121,12 @@ typedef uint8_t		u8;
 # define fmemcpy		__builtin_memcpy
 #endif
 
-#ifndef atomic_cmp_swp
-# define atomic_cmp_swp		__sync_val_compare_and_swap
-#endif
-
-#ifndef __deprecated
-# define __deprecated		/* unimplemented */
-#endif
-
-#ifndef unreachable
-# define unreachable()		do { } while (1)
-#endif
-
 #ifndef __maybe_unused
 # define __maybe_unused		__attribute__ ((__unused__))
 #endif
 
 #ifndef noinline
 # define noinline		__attribute__((noinline))
-#endif
-
-#ifndef __always_inline
-# define __always_inline	inline
 #endif
 
 #ifndef __hidden
