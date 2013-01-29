@@ -303,7 +303,7 @@ static void pcap_to_xmit(struct ctx *ctx)
 			ctx->tx_bytes += hdr->tp_h.tp_len;;
 			ctx->tx_packets++;
 
-			show_frame_hdr(hdr, ctx->print_mode, RING_MODE_EGRESS);
+			show_frame_hdr(hdr, ctx->print_mode);
 
 			dissector_entry_point(out, hdr->tp_h.tp_snaplen,
 					      ctx->link_type, ctx->print_mode);
@@ -475,7 +475,7 @@ static void receive_to_xmit(struct ctx *ctx)
 					it_out = 0;
 			}
 
-			show_frame_hdr(hdr_in, ctx->print_mode, RING_MODE_INGRESS);
+			show_frame_hdr(hdr_in, ctx->print_mode);
 
 			dissector_entry_point(in, hdr_in->tp_h.tp_snaplen,
 					      ctx->link_type, ctx->print_mode);
@@ -639,7 +639,7 @@ static void read_pcap(struct ctx *ctx)
 		ctx->tx_bytes += fm.tp_h.tp_len;
 		ctx->tx_packets++;
 
-		show_frame_hdr(&fm, ctx->print_mode, RING_MODE_EGRESS);
+		show_frame_hdr(&fm, ctx->print_mode);
 
 		dissector_entry_point(out, fm.tp_h.tp_snaplen,
 				      ctx->link_type, ctx->print_mode);
@@ -948,7 +948,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 					panic("Write error to pcap!\n");
 			}
 
-			show_frame_hdr(hdr, ctx->print_mode, RING_MODE_INGRESS);
+			show_frame_hdr(hdr, ctx->print_mode);
 
 			dissector_entry_point(packet, hdr->tp_h.tp_snaplen,
 					      ctx->link_type, ctx->print_mode);

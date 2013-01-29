@@ -78,11 +78,6 @@ static inline unsigned int ring_size(char *ifname, unsigned int size)
 	return round_up_cacheline(size);
 }
 
-enum ring_mode {
-	RING_MODE_EGRESS,
-	RING_MODE_INGRESS,
-};
-
 static inline unsigned int ring_frame_size(struct ring *ring)
 {
 	return ring->layout.tp_frame_size;
