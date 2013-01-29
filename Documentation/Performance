@@ -261,18 +261,11 @@ Don't use counters or byte randomization in trafgen configuration file, since
 it slows down the packet generation process. Static packet bytes are the fastest
 to go with.
 
-.-=> For large packets, compile the toolkit with MMX/SSE memcpy
+.-=> Generate packets with different txhashes in trafgen
 `--------------------------------------------------------------------------
-If you have a higher portion of large packets rather than small ones, you
-could compile the toolkit with an MMX/SSE optimized memcpy, which is available
-in src/opt_memcpy.c for x86/x86_64 architectures. Have a look at the toolkit's
-install instructions for compiling.
-
-<=== Further things worth experimenting regarding performance ====>
-
-- netsniff-ng/trafgen on Ethernet team devices
-  (http://lingrok.org/xref/linux-linus/drivers/net/team/)
-- netsniff-ng/trafgen on virtual tunnel devices
+For 10Gbit/s multiqueue NICs, it might be good to generate packets that result
+in different txhashes, thus multiple queues are used in the transmission path
+(and therefore high likely also multiple CPUs).
 
 Sources:
 ~~~~~~~~
