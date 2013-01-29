@@ -95,3 +95,17 @@ observations as our conclusions. A benchmark with PF_RING in transparent_mode
 comparable performance numbers. The test was done on a Dell PowerEdge 2850.
 
 Netsniff-ng and trafgen performance analysis: http://bit.ly/pUFJxU
+
+Supported protocols:
++-------+---------------+-----------------------------------------------+
+| Layer	|  Description	|                Supp. Protocols		|
++-------+---------------+-----------------------------------------------+
+|  4    |   Transport	| TCP, UDP					|
++-------+---------------+-----------------------------------------------+
+|  3    |   Network	| ICMPv4, ICMPv6, IGMP, IPv4, IPv6		|
++-------+---------------+-----------------------------------------------+
+|  2    |   Data Link	| 802.3 (Ethernet), 802.11* (WLAN), ARP, MPLS,	|
+|	|		| 802.1Q (VLAN), 802.1QinQ			|
++-------+---------------+-----------------------------------------------+
+*Not fully implemented (capturing possible), work in progress
+

@@ -1,5 +1,0 @@
-ldh [12]
-jeq #0x800, Keep, Test2
-Test2: jeq #0x86dd, Keep, Drop
-Keep: ret #0xffffffff
-Drop: ret #0
