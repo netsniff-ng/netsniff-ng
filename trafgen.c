@@ -998,7 +998,7 @@ static unsigned int generate_srand_seed(void)
 	int fd;
 	unsigned int seed;
 
-	fd = open("/dev/random", O_RDONLY);
+	fd = open("/dev/urandom", O_RDONLY);
 	if (fd < 0)
 		return time(0);
 
