@@ -89,6 +89,7 @@ typedef union {
 	struct pcap_pkthdr_ns	ppn;
 	struct pcap_pkthdr_kuz	ppk;
 	struct pcap_pkthdr_bkm	ppb;
+	uint8_t			raw;
 } pcap_pkthdr_t;
 
 enum pcap_type {
