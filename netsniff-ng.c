@@ -69,7 +69,7 @@ volatile sig_atomic_t sigint = 0;
 
 static volatile bool next_dump = false;
 
-static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqXlvhF:RGAP:Vu:g:T:D";
+static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:HQmcsqXlvhF:RGAP:Vu:g:T:D";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"in",			required_argument,	NULL, 'i'},
@@ -81,7 +81,6 @@ static const struct option long_options[] = {
 	{"ring-size",		required_argument,	NULL, 'S'},
 	{"kernel-pull",		required_argument,	NULL, 'k'},
 	{"bind-cpu",		required_argument,	NULL, 'b'},
-	{"unbind-cpu",		required_argument,	NULL, 'B'},
 	{"prefix",		required_argument,	NULL, 'P'},
 	{"user",		required_argument,	NULL, 'u'},
 	{"group",		required_argument,	NULL, 'g'},
@@ -112,26 +111,6 @@ static int tx_sock;
 static struct itimerval itimer;
 
 static unsigned long frame_count_max = 0, interval = TX_KERNEL_PULL_INT;
-
-#define set_system_socket_memory(vals) \
-	do { \
-		if ((vals[0] = get_system_socket_mem(sock_rmem_max)) < SMEM_SUG_MAX) \
-			set_system_socket_mem(sock_rmem_max, SMEM_SUG_MAX); \
-		if ((vals[1] = get_system_socket_mem(sock_rmem_def)) < SMEM_SUG_DEF) \
-			set_system_socket_mem(sock_rmem_def, SMEM_SUG_DEF); \
-		if ((vals[2] = get_system_socket_mem(sock_wmem_max)) < SMEM_SUG_MAX) \
-			set_system_socket_mem(sock_wmem_max, SMEM_SUG_MAX); \
-		if ((vals[3] = get_system_socket_mem(sock_wmem_def)) < SMEM_SUG_DEF) \
-			set_system_socket_mem(sock_wmem_def, SMEM_SUG_DEF); \
-	} while (0)
-
-#define reset_system_socket_memory(vals) \
-	do { \
-		set_system_socket_mem(sock_rmem_max, vals[0]); \
-		set_system_socket_mem(sock_rmem_def, vals[1]); \
-		set_system_socket_mem(sock_wmem_max, vals[2]); \
-		set_system_socket_mem(sock_wmem_def, vals[3]); \
-	} while (0)
 
 #define __pcap_io		pcap_ops[ctx->pcap]
 
@@ -1117,7 +1096,7 @@ static void header(void)
 int main(int argc, char **argv)
 {
 	char *ptr;
-	int c, i, j, opt_index, ops_touched = 0, vals[4] = {0};
+	int c, i, j, cpu_tmp, opt_index, ops_touched = 0, vals[4] = {0};
 	bool prio_high = false, setsockmem = true;
 	void (*main_loop)(struct ctx *ctx) = NULL;
 	struct ctx ctx = {
@@ -1218,13 +1197,11 @@ int main(int argc, char **argv)
 			ctx.reserve_size *= strtol(optarg, NULL, 0);
 			break;
 		case 'b':
-			set_cpu_affinity(optarg, 0);
-			/* Take the first CPU for rebinding the IRQ */
+			cpu_tmp = strtol(optarg, NULL, 0);
+
+			cpu_affinity(cpu_tmp);
 			if (ctx.cpu != -2)
-				ctx.cpu = strtol(optarg, NULL, 0);
-			break;
-		case 'B':
-			set_cpu_affinity(optarg, 1);
+				ctx.cpu = cpu_tmp;
 			break;
 		case 'H':
 			prio_high = true;
@@ -1333,7 +1310,6 @@ int main(int argc, char **argv)
 			case 'T':
 			case 'u':
 			case 'g':
-			case 'B':
 			case 'e':
 				panic("Option -%c requires an argument!\n",
 				      optopt);
@@ -1411,14 +1387,14 @@ int main(int argc, char **argv)
 	bug_on(!main_loop);
 
 	if (setsockmem)
-		set_system_socket_memory(vals);
+		set_system_socket_memory(vals, array_size(vals));
 	xlockme();
 
 	main_loop(&ctx);
 
 	xunlockme();
 	if (setsockmem)
-		reset_system_socket_memory(vals);
+		reset_system_socket_memory(vals, array_size(vals));
 
 	tprintf_cleanup();
 

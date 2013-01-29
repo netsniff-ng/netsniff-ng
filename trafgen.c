@@ -122,26 +122,6 @@ unsigned int seed;
 #define CPU_STATS_STATE_CHK	2
 #define CPU_STATS_STATE_RES	4
 
-#define set_system_socket_memory(vals) \
-	do { \
-		if ((vals[0] = get_system_socket_mem(sock_rmem_max)) < SMEM_SUG_MAX) \
-			set_system_socket_mem(sock_rmem_max, SMEM_SUG_MAX); \
-		if ((vals[1] = get_system_socket_mem(sock_rmem_def)) < SMEM_SUG_DEF) \
-			set_system_socket_mem(sock_rmem_def, SMEM_SUG_DEF); \
-		if ((vals[2] = get_system_socket_mem(sock_wmem_max)) < SMEM_SUG_MAX) \
-			set_system_socket_mem(sock_wmem_max, SMEM_SUG_MAX); \
-		if ((vals[3] = get_system_socket_mem(sock_wmem_def)) < SMEM_SUG_DEF) \
-			set_system_socket_mem(sock_wmem_def, SMEM_SUG_DEF); \
-	} while (0)
-
-#define reset_system_socket_memory(vals) \
-	do { \
-		set_system_socket_mem(sock_rmem_max, vals[0]); \
-		set_system_socket_mem(sock_rmem_def, vals[1]); \
-		set_system_socket_mem(sock_wmem_max, vals[2]); \
-		set_system_socket_mem(sock_wmem_def, vals[3]); \
-	} while (0)
-
 #ifndef ICMP_FILTER
 # define ICMP_FILTER	1
 
@@ -1185,7 +1165,7 @@ int main(int argc, char **argv)
 
 	header();
 
-	set_system_socket_memory(vals);
+	set_system_socket_memory(vals, array_size(vals));
 	xlockme();
 
 	if (ctx.rfraw) {
@@ -1233,7 +1213,7 @@ int main(int argc, char **argv)
 	if (ctx.rfraw)
 		leave_rfmon_mac80211(ctx.device_trans, ctx.device);
 
-	reset_system_socket_memory(vals);
+	reset_system_socket_memory(vals, array_size(vals));
 
 	for (i = 0, tx_packets = tx_bytes = 0; i < ctx.cpus; i++) {
 		while ((__get_state(i) & CPU_STATS_STATE_RES) == 0)
