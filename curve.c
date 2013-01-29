@@ -33,7 +33,7 @@
 #define crypto_box_afternm		crypto_box_curve25519xsalsa20poly1305_afternm
 #define crypto_box_open_afternm		crypto_box_curve25519xsalsa20poly1305_open_afternm
 
-#define NONCE_LENGTH			16 /* size of taia */
+#define NONCE_LENGTH			(sizeof(struct taia))
 #define NONCE_OFFSET			(crypto_box_curve25519xsalsa20poly1305_NONCEBYTES - NONCE_LENGTH)
 
 void curve25519_selftest(void)
@@ -101,6 +101,8 @@ void curve25519_selftest(void)
 		0x59, 0x9b, 0x1f, 0x65, 0x4c, 0xb4, 0x5a, 0x74,
 		0xe3, 0x55, 0xa5
 	};
+
+	bug_on(NONCE_LENGTH != 16);
 
 	crypto_box_curve25519xsalsa20poly1305(c, m, 163, nonce, bobpk, alicesk);
 
