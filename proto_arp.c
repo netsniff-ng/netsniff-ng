@@ -72,8 +72,8 @@ static void arp(struct pkt_buff *pkt)
 	tprintf(" [ ARP ");
 	tprintf("Format HA (%u), ", ntohs(arp->ar_hrd));
 	tprintf("Format Proto (%u), ", ntohs(arp->ar_pro));
-	tprintf("HA Len (%u), ", ntohs(arp->ar_hln));
-	tprintf("Proto Len (%u), ", ntohs(arp->ar_pln));
+	tprintf("HA Len (%u), ", arp->ar_hln);
+	tprintf("Proto Len (%u), ", arp->ar_pln);
 	tprintf("Opcode (%u => %s)", ntohs(arp->ar_op), opcode);
 	tprintf(" ]\n");
 }
