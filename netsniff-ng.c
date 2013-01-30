@@ -174,7 +174,14 @@ static void pcap_to_xmit(struct ctx *ctx)
 
 	tx_sock = pf_socket();
 
-	fd = open_or_die(ctx->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);
+	if (!strncmp("-", ctx->device_in, strlen("-"))) {
+		fd = dup(fileno(stdin));
+		close(fileno(stdin));
+		if (ctx->pcap == PCAP_OPS_MM)
+			ctx->pcap = PCAP_OPS_SG;
+	} else {
+		fd = open_or_die(ctx->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);
+	}
 
 	ret = __pcap_io->pull_fhdr_pcap(fd, &ctx->magic, &ctx->link_type);
 	if (ret)
@@ -321,7 +328,11 @@ static void pcap_to_xmit(struct ctx *ctx)
 	if (__pcap_io->prepare_close_pcap)
 		__pcap_io->prepare_close_pcap(fd, PCAP_MODE_RD);
 
-	close(fd);
+	if (strncmp("-", ctx->device_in, strlen("-")))
+		close(fd);
+	else
+		dup2(fd, fileno(stdin));
+
 	close(tx_sock);
 
 	fflush(stdout);
@@ -548,7 +559,14 @@ static void read_pcap(struct ctx *ctx)
 
 	bug_on(!__pcap_io);
 
-	fd = open_or_die(ctx->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);
+	if (!strncmp("-", ctx->device_in, strlen("-"))) {
+		fd = dup(fileno(stdin));
+		close(fileno(stdin));
+		if (ctx->pcap == PCAP_OPS_MM)
+			ctx->pcap = PCAP_OPS_SG;
+	} else {
+		fd = open_or_die(ctx->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);
+	}
 
 	ret = __pcap_io->pull_fhdr_pcap(fd, &ctx->magic, &ctx->link_type);
 	if (ret)
@@ -582,9 +600,15 @@ static void read_pcap(struct ctx *ctx)
 		printf("\n");
 	}
 
-	if (ctx->device_out)
-		fdo = open_or_die_m(ctx->device_out, O_RDWR | O_CREAT |
-				    O_TRUNC | O_LARGEFILE, DEFFILEMODE);
+	if (ctx->device_out) {
+		if (!strncmp("-", ctx->device_out, strlen("-"))) {
+			fdo = dup(fileno(stdout));
+			close(fileno(stdout));
+		} else {
+			fdo = open_or_die_m(ctx->device_out, O_RDWR | O_CREAT |
+					    O_TRUNC | O_LARGEFILE, DEFFILEMODE);
+		}
+	}
 
 	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
 
@@ -646,10 +670,6 @@ static void read_pcap(struct ctx *ctx)
 	if (__pcap_io->prepare_close_pcap)
 		__pcap_io->prepare_close_pcap(fd, PCAP_MODE_RD);
 
-	close(fd);
-	if (ctx->device_out)
-		close(fdo);
-
 	xfree(out);
 
 	fflush(stdout);
@@ -658,6 +678,18 @@ static void read_pcap(struct ctx *ctx)
 	printf("\r%12lu packets truncated in file\n", trunced);
 	printf("\r%12lu bytes outgoing\n", ctx->tx_bytes);
 	printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec, diff.tv_usec);
+
+	if (strncmp("-", ctx->device_in, strlen("-")))
+		close(fd);
+	else
+		dup2(fdo, fileno(stdin));
+
+	if (ctx->device_out) {
+		if (strncmp("-", ctx->device_out, strlen("-")))
+			close(fdo);
+		else
+			dup2(fdo, fileno(stdout));
+	}
 }
 
 static void finish_multi_pcap_file(struct ctx *ctx, int fd)
@@ -754,7 +786,10 @@ static void finish_single_pcap_file(struct ctx *ctx, int fd)
 	if (__pcap_io->prepare_close_pcap)
 		__pcap_io->prepare_close_pcap(fd, PCAP_MODE_WR);
 
-	close(fd);
+	if (strncmp("-", ctx->device_out, strlen("-")))
+		close(fd);
+	else
+		dup2(fd, fileno(stdout));
 }
 
 static int begin_single_pcap_file(struct ctx *ctx)
@@ -763,8 +798,16 @@ static int begin_single_pcap_file(struct ctx *ctx)
 
 	bug_on(!__pcap_io);
 
-	fd = open_or_die_m(ctx->device_out, O_RDWR | O_CREAT | O_TRUNC |
-			   O_LARGEFILE, DEFFILEMODE);
+	if (!strncmp("-", ctx->device_out, strlen("-"))) {
+		fd = dup(fileno(stdout));
+		close(fileno(stdout));
+		if (ctx->pcap == PCAP_OPS_MM)
+			ctx->pcap = PCAP_OPS_SG;
+	} else {
+		fd = open_or_die_m(ctx->device_out,
+				   O_RDWR | O_CREAT | O_TRUNC |
+				   O_LARGEFILE, DEFFILEMODE);
+	}
 
 	ret = __pcap_io->push_fhdr_pcap(fd, ctx->magic, ctx->link_type);
 	if (ret)
@@ -977,13 +1020,6 @@ static void recv_only_or_dump(struct ctx *ctx)
 	bug_on(gettimeofday(&end, NULL));
 	diff = tv_subtract(end, start);
 
-	if (dump_to_pcap(ctx)) {
-		if (ctx->dump_dir)
-			finish_multi_pcap_file(ctx, fd);
-		else
-			finish_single_pcap_file(ctx, fd);
-	}
-
 	if (!(ctx->dump_dir && ctx->print_mode == PRINT_NONE)) {
 		sock_print_net_stats(sock, skipped);
 
@@ -1004,6 +1040,13 @@ static void recv_only_or_dump(struct ctx *ctx)
 	if (ctx->rfraw)
 		leave_rfmon_mac80211(ctx->device_trans, ctx->device_in);
 
+	if (dump_to_pcap(ctx)) {
+		if (ctx->dump_dir)
+			finish_multi_pcap_file(ctx, fd);
+		else
+			finish_single_pcap_file(ctx, fd);
+	}
+
 	close(sock);
 }
 
@@ -1013,37 +1056,37 @@ static void help(void)
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: netsniff-ng [options] [filter-expression]\n"
 	     "Options:\n"
-	     "  -i|-d|--dev|--in <dev|pcap>  Input source as netdev or pcap\n"
-	     "  -o|--out <dev|pcap|dir|cfg>  Output sink as netdev, pcap, directory, trafgen file\n"
-	     "  -f|--filter <bpf-file|expr>  Use BPF filter file from bpfc or tcpdump-like expression\n"
-	     "  -t|--type <type>             Filter for: host|broadcast|multicast|others|outgoing\n"
-	     "  -F|--interval <size|time>    Dump interval if -o is a dir: <num>KiB/MiB/GiB/s/sec/min/hrs\n"
-	     "  -J|--jumbo-support           Support for 64KB Super Jumbo Frames (def: 2048B)\n"
-	     "  -R|--rfraw                   Capture or inject raw 802.11 frames\n"
-	     "  -n|--num <0|uint>            Number of packets until exit (def: 0)\n"
-	     "  -P|--prefix <name>           Prefix for pcaps stored in directory\n"
-	     "  -T|--magic <pcap-magic>      Pcap magic number/pcap format to store, see -D\n"
-	     "  -D|--dump-pcap-types         Dump pcap types and magic numbers and quit\n"
-	     "  -r|--rand                    Randomize packet forwarding order (dev->dev)\n"
-	     "  -M|--no-promisc              No promiscuous mode for netdev\n"
-	     "  -A|--no-sock-mem             Don't tune core socket memory\n"
-	     "  -m|--mmap                    Mmap(2) pcap file i.e., for replaying pcaps\n"
-	     "  -G|--sg                      Scatter/gather pcap file I/O\n"
-	     "  -c|--clrw                    Use slower read(2)/write(2) I/O\n"
-	     "  -S|--ring-size <size>        Specify ring size to: <num>KiB/MiB/GiB\n"
-	     "  -k|--kernel-pull <uint>      Kernel pull from user interval in us (def: 10us)\n"
-	     "  -b|--bind-cpu <cpu>          Bind to specific CPU\n"
-	     "  -u|--user <userid>           Drop privileges and change to userid\n"
-	     "  -g|--group <groupid>         Drop privileges and change to groupid\n"
-	     "  -H|--prio-high               Make this high priority process\n"
-	     "  -Q|--notouch-irq             Do not touch IRQ CPU affinity of NIC\n"
-	     "  -s|--silent                  Do not print captured packets\n"
-	     "  -q|--less                    Print less-verbose packet information\n"
-	     "  -X|--hex                     Print packet data in hex format\n"
-	     "  -l|--ascii                   Print human-readable packet data\n"
-	     "  -V|--verbose                 Be more verbose\n"
-	     "  -v|--version                 Show version\n"
-	     "  -h|--help                    Guess what?!\n\n"
+	     "  -i|-d|--dev|--in <dev|pcap|->  Input source as netdev, pcap or pcap stdin\n"
+	     "  -o|--out <dev|pcap|dir|cfg|->  Output sink as netdev, pcap, directory, trafgen, or pcap stdout\n"
+	     "  -f|--filter <bpf-file|expr>    Use BPF filter file from bpfc or tcpdump-like expression\n"
+	     "  -t|--type <type>               Filter for: host|broadcast|multicast|others|outgoing\n"
+	     "  -F|--interval <size|time>      Dump interval if -o is a dir: <num>KiB/MiB/GiB/s/sec/min/hrs\n"
+	     "  -J|--jumbo-support             Support for 64KB Super Jumbo Frames (def: 2048B)\n"
+	     "  -R|--rfraw                     Capture or inject raw 802.11 frames\n"
+	     "  -n|--num <0|uint>              Number of packets until exit (def: 0)\n"
+	     "  -P|--prefix <name>             Prefix for pcaps stored in directory\n"
+	     "  -T|--magic <pcap-magic>        Pcap magic number/pcap format to store, see -D\n"
+	     "  -D|--dump-pcap-types           Dump pcap types and magic numbers and quit\n"
+	     "  -r|--rand                      Randomize packet forwarding order (dev->dev)\n"
+	     "  -M|--no-promisc                No promiscuous mode for netdev\n"
+	     "  -A|--no-sock-mem               Don't tune core socket memory\n"
+	     "  -m|--mmap                      Mmap(2) pcap file i.e., for replaying pcaps\n"
+	     "  -G|--sg                        Scatter/gather pcap file I/O\n"
+	     "  -c|--clrw                      Use slower read(2)/write(2) I/O\n"
+	     "  -S|--ring-size <size>          Specify ring size to: <num>KiB/MiB/GiB\n"
+	     "  -k|--kernel-pull <uint>        Kernel pull from user interval in us (def: 10us)\n"
+	     "  -b|--bind-cpu <cpu>            Bind to specific CPU\n"
+	     "  -u|--user <userid>             Drop privileges and change to userid\n"
+	     "  -g|--group <groupid>           Drop privileges and change to groupid\n"
+	     "  -H|--prio-high                 Make this high priority process\n"
+	     "  -Q|--notouch-irq               Do not touch IRQ CPU affinity of NIC\n"
+	     "  -s|--silent                    Do not print captured packets\n"
+	     "  -q|--less                      Print less-verbose packet information\n"
+	     "  -X|--hex                       Print packet data in hex format\n"
+	     "  -l|--ascii                     Print human-readable packet data\n"
+	     "  -V|--verbose                   Be more verbose\n"
+	     "  -v|--version                   Show version\n"
+	     "  -h|--help                      Guess what?!\n\n"
 	     "Examples:\n"
 	     "  netsniff-ng --in eth0 --out dump.pcap -s -T 0xa1b2c3d4 --b 0 tcp or udp\n"
 	     "  netsniff-ng --in wlan0 --rfraw --out dump.pcap --silent --bind-cpu 0\n"
@@ -1053,6 +1096,9 @@ static void help(void)
 	     "  netsniff-ng --in eth1 --out /opt/probe/ -s -m -J --interval 100MiB -b 0\n"
 	     "  netsniff-ng --in vlan0 --out dump.pcap -c -u `id -u bob` -g `id -g bob`\n"
 	     "  netsniff-ng --in any --filter http.bpf --jumbo-support --ascii -V\n\n"
+	     "Note:\n"
+	     "  For introducing bit errors, delays with random variation and more\n"
+	     "  while replaying pcaps, make use of tc(8) with its disciplines (e.g. netem).\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2009-2013 Daniel Borkmann <daniel@netsniff-ng.org>\n"
 	     "Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n"
@@ -1075,11 +1121,6 @@ static void version(void)
 	     "This is free software: you are free to change and redistribute it.\n"
 	     "There is NO WARRANTY, to the extent permitted by law.\n");
 	die();
-}
-
-static void header(void)
-{
-	printf("%s%s%s\n", colorize_start(bold), "netsniff-ng " VERSION_STRING, colorize_end());
 }
 
 int main(int argc, char **argv)
@@ -1334,8 +1375,6 @@ int main(int argc, char **argv)
 
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
-
-	header();
 
 	tprintf_init();
 
