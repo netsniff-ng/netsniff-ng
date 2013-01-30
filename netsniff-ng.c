@@ -1057,7 +1057,7 @@ static void help(void)
 	     "Usage: netsniff-ng [options] [filter-expression]\n"
 	     "Options:\n"
 	     "  -i|-d|--dev|--in <dev|pcap|->  Input source as netdev, pcap or pcap stdin\n"
-	     "  -o|--out <dev|pcap|dir|cfg|->  Output sink as netdev, pcap, directory, trafgen, or pcap stdout\n"
+	     "  -o|--out <dev|pcap|dir|cfg|->  Output sink as netdev, pcap, directory, trafgen, or stdout\n"
 	     "  -f|--filter <bpf-file|expr>    Use BPF filter file from bpfc or tcpdump-like expression\n"
 	     "  -t|--type <type>               Filter for: host|broadcast|multicast|others|outgoing\n"
 	     "  -F|--interval <size|time>      Dump interval if -o is a dir: <num>KiB/MiB/GiB/s/sec/min/hrs\n"
