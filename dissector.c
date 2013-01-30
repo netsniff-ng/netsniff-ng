@@ -30,10 +30,6 @@ int dissector_set_print_type(void *ptr, int type)
 		case PRINT_LESS:
 			proto->process = proto->print_less;
 			break;
-		case PRINT_HEX:
-		case PRINT_ASCII:
-		case PRINT_HEX_ASCII:
-		case PRINT_NONE:
 		default:
 			proto->process = NULL;
 			break;
