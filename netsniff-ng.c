@@ -60,7 +60,7 @@ struct ctx {
 	char *device_in, *device_out, *device_trans, *filter, *prefix;
 	int cpu, rfraw, dump, print_mode, dump_dir, packet_type, verbose;
 	unsigned long kpull, dump_interval, reserve_size, tx_bytes, tx_packets;
-	bool randomize, promiscuous, enforce, jumbo;
+	bool randomize, promiscuous, enforce, jumbo, dump_bpf;
 	enum pcap_ops_groups pcap; enum dump_mode dump_mode;
 	uid_t uid; gid_t gid; uint32_t link_type, magic;
 };
@@ -69,7 +69,7 @@ volatile sig_atomic_t sigint = 0;
 
 static volatile bool next_dump = false;
 
-static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:HQmcsqXlvhF:RGAP:Vu:g:T:D";
+static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:HQmcsqXlvhF:RGAP:Vu:g:T:DB";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"in",			required_argument,	NULL, 'i'},
@@ -95,6 +95,7 @@ static const struct option long_options[] = {
 	{"prio-high",		no_argument,		NULL, 'H'},
 	{"notouch-irq",		no_argument,		NULL, 'Q'},
 	{"dump-pcap-types",	no_argument,		NULL, 'D'},
+	{"dump-bpf",		no_argument,		NULL, 'B'},
 	{"silent",		no_argument,		NULL, 's'},
 	{"less",		no_argument,		NULL, 'q'},
 	{"hex",			no_argument,		NULL, 'X'},
@@ -210,6 +211,8 @@ static void pcap_to_xmit(struct ctx *ctx)
 	size = ring_size(ctx->device_out, ctx->reserve_size);
 
 	bpf_parse_rules(ctx->device_out, ctx->filter, &bpf_ops);
+	if (ctx->dump_bpf)
+		bpf_dump_all(&bpf_ops);
 
 	set_packet_loss_discard(tx_sock);
 	set_sockopt_hwtimestamp(tx_sock, ctx->device_out);
@@ -233,20 +236,6 @@ static void pcap_to_xmit(struct ctx *ctx)
 
 	if (ctx->kpull)
 		interval = ctx->kpull;
-
-	if (ctx->verbose) {
-		printf("BPF:\n");
-		bpf_dump_all(&bpf_ops);
-
-		printf("MD: TX %luus %s ", interval, pcap_ops_group_to_str[ctx->pcap]);
-		if (ctx->rfraw)
-			printf("802.11 raw via %s ", ctx->device_out);
-#ifdef _LARGEFILE64_SOURCE
-		printf("lf64 ");
-#endif 
-		ioprio_print();
-		printf("\n");
-	}
 
 	itimer.it_interval.tv_sec = 0;
 	itimer.it_interval.tv_usec = interval;
@@ -379,6 +368,8 @@ static void receive_to_xmit(struct ctx *ctx)
 	enable_kernel_bpf_jit_compiler();
 
 	bpf_parse_rules(ctx->device_in, ctx->filter, &bpf_ops);
+	if (ctx->dump_bpf)
+		bpf_dump_all(&bpf_ops);
 	bpf_attach_to_sock(rx_sock, &bpf_ops);
 
 	setup_rx_ring_layout(rx_sock, &rx_ring, size_in, ctx->jumbo);
@@ -410,13 +401,6 @@ static void receive_to_xmit(struct ctx *ctx)
 	itimer.it_value.tv_usec = interval;
 
 	setitimer(ITIMER_REAL, &itimer, NULL);
-
-	if (ctx->verbose) {
-		printf("BPF:\n");
-		bpf_dump_all(&bpf_ops);
-
-		printf("MD: RXTX %luus\n\n", interval);
-	}
 
 	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
 
@@ -582,23 +566,13 @@ static void read_pcap(struct ctx *ctx)
 	fmemset(&bpf_ops, 0, sizeof(bpf_ops));
 
 	bpf_parse_rules("any", ctx->filter, &bpf_ops);
+	if (ctx->dump_bpf)
+		bpf_dump_all(&bpf_ops);
 
 	dissector_init_all(ctx->print_mode);
 
 	out_len = round_up(1024 * 1024, PAGE_SIZE);
 	out = xmalloc_aligned(out_len, CO_CACHE_LINE_SIZE);
-
-	if (ctx->verbose) {
-		printf("BPF:\n");
-		bpf_dump_all(&bpf_ops);
-
-		printf("MD: RD %s ", pcap_ops_group_to_str[ctx->pcap]);
-#ifdef _LARGEFILE64_SOURCE
-		printf("lf64 ");
-#endif 
-		ioprio_print();
-		printf("\n");
-	}
 
 	if (ctx->device_out) {
 		if (!strncmp("-", ctx->device_out, strlen("-"))) {
@@ -878,6 +852,8 @@ static void recv_only_or_dump(struct ctx *ctx)
 	enable_kernel_bpf_jit_compiler();
 
 	bpf_parse_rules(ctx->device_in, ctx->filter, &bpf_ops);
+	if (ctx->dump_bpf)
+		bpf_dump_all(&bpf_ops);
 	bpf_attach_to_sock(sock, &bpf_ops);
 
 	set_sockopt_hwtimestamp(sock, ctx->device_in);
@@ -902,20 +878,6 @@ static void recv_only_or_dump(struct ctx *ctx)
 
 	if (ctx->promiscuous)
 		ifflags = enter_promiscuous_mode(ctx->device_in);
-
-	if (ctx->verbose) {
-		printf("BPF:\n");
-		bpf_dump_all(&bpf_ops);
-
-		printf("MD: RX %s ", ctx->dump ? pcap_ops_group_to_str[ctx->pcap] : "");
-		if (ctx->rfraw)
-			printf("802.11 raw via %s ", ctx->device_in);
-#ifdef _LARGEFILE64_SOURCE
-		printf("lf64 ");
-#endif 
-		ioprio_print();
-		printf("\n");
-	}
 
 	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
 
@@ -1067,6 +1029,7 @@ static void help(void)
 	     "  -P|--prefix <name>             Prefix for pcaps stored in directory\n"
 	     "  -T|--magic <pcap-magic>        Pcap magic number/pcap format to store, see -D\n"
 	     "  -D|--dump-pcap-types           Dump pcap types and magic numbers and quit\n"
+	     "  -B|--dump-bpf                  Dump generated BPF assembly\n"
 	     "  -r|--rand                      Randomize packet forwarding order (dev->dev)\n"
 	     "  -M|--no-promisc                No promiscuous mode for netdev\n"
 	     "  -A|--no-sock-mem               Don't tune core socket memory\n"
@@ -1313,6 +1276,9 @@ int main(int argc, char **argv)
 			break;
 		case 'V':
 			ctx.verbose = 1;
+			break;
+		case 'B':
+			ctx.dump_bpf = true;
 			break;
 		case 'D':
 			pcap_dump_type_features();
