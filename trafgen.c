@@ -164,8 +164,8 @@ static void help(void)
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: trafgen [options]\n"
 	     "Options:\n"
-	     "  -o|-d|--out|--dev <netdev>        Networking device i.e., eth0\n"
 	     "  -i|-c|--in|--conf <cfg-file/->    Packet configuration file/stdin\n"
+	     "  -o|-d|--out|--dev <netdev>        Networking device i.e., eth0\n"
 	     "  -p|--cpp                          Run packet config through C preprocessor\n"
 	     "  -J|--jumbo-support                Support 64KB super jumbo frames (def: 2048B)\n"
 	     "  -R|--rfraw                        Inject raw 802.11 frames\n"
@@ -174,7 +174,7 @@ static void help(void)
 	     "  -r|--rand                         Randomize packet selection (def: round robin)\n"
 	     "  -P|--cpus <uint>                  Specify number of forks(<= CPUs) (def: #CPUs)\n"
 	     "  -t|--gap <uint>                   Interpacket gap in us (approx)\n"
-	     "  -S|--ring-size <size>             Manually set mmap size (KB/MB/GB): e.g.\'10MB\'\n"
+	     "  -S|--ring-size <size>             Manually set mmap size (KiB/MiB/GiB)\n"
 	     "  -k|--kernel-pull <uint>           Kernel batch interval in us (def: 10us)\n"
 	     "  -E|--seed <uint>                  Manually set srand(3) seed\n"
 	     "  -u|--user <userid>                Drop privileges and change to userid\n"
@@ -1108,11 +1108,11 @@ int main(int argc, char **argv)
 				ptr++;
 			}
 
-			if (!strncmp(ptr, "KB", strlen("KB")))
+			if (!strncmp(ptr, "KiB", strlen("KiB")))
 				ctx.reserve_size = 1 << 10;
-			else if (!strncmp(ptr, "MB", strlen("MB")))
+			else if (!strncmp(ptr, "MiB", strlen("MiB")))
 				ctx.reserve_size = 1 << 20;
-			else if (!strncmp(ptr, "GB", strlen("GB")))
+			else if (!strncmp(ptr, "GiB", strlen("GiB")))
 				ctx.reserve_size = 1 << 30;
 			else
 				panic("Syntax error in ring size param!\n");
