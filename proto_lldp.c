@@ -373,13 +373,31 @@ out_invalid:
 
 static void lldp_less(struct pkt_buff *pkt)
 {
-	uint16_t *tmp_tlv = (uint16_t *) pkt_pull(pkt, sizeof(uint16_t));
+	unsigned int len, n_tlv = 0;
+	unsigned int tlv_type, tlv_len;
+	uint16_t tlv_hdr;
 
-	if (tmp_tlv == NULL)
-		return;
+	len = pkt_len(pkt);
 
-	tprintf("LLDP");
-	/* TODO: What is relevant here? */
+	while (len >= sizeof(tlv_hdr)) {
+		tlv_hdr = EXTRACT_16BIT(pkt_pull(pkt, sizeof(tlv_hdr)));
+		tlv_type = LLDP_TLV_TYPE(tlv_hdr);
+		tlv_len = LLDP_TLV_LENGTH(tlv_hdr);
+
+		n_tlv++;
+		len -= sizeof(tlv_hdr);
+
+		if (tlv_type == LLDP_TLV_END || tlv_len == 0)
+			break;
+		if (len < tlv_len)
+			break;
+
+		pkt_pull(pkt, tlv_len);
+
+		len -= tlv_len;
+	}
+
+	tprintf(" %u TLV%s", n_tlv, n_tlv == 1 ? "" : "s");
 }
 
 struct protocol lldp_ops = {
