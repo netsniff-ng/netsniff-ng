@@ -184,12 +184,6 @@ static void signal_handler(int number)
 	}
 }
 
-static void header(void)
-{
-	printf("%s%s%s\n", colorize_start(bold), "astraceroute "
-	       VERSION_STRING, colorize_end());
-}
-
 static void help(void)
 {
 
@@ -1141,8 +1135,6 @@ int main(int argc, char **argv)
 		panic("Packet larger than device MTU!\n");
 
 	register_signal(SIGHUP, signal_handler);
-
-	header();
 
 	tprintf_init();
 
