@@ -62,8 +62,7 @@ static void dissector_main(struct pkt_buff *pkt, struct protocol *start,
 
 void dissector_entry_point(uint8_t *packet, size_t len, int linktype, int mode)
 {
-	struct protocol *proto_start = NULL;
-	struct protocol *proto_end = NULL;
+	struct protocol *proto_start, *proto_end;
 	struct pkt_buff *pkt = NULL;
 
 	if (mode == PRINT_NONE)
