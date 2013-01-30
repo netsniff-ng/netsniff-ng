@@ -634,8 +634,7 @@ int compile_filter(char *file, int verbose, int bypass)
 
 		if (__bpf_validate(&res) == 0) {
 			if (verbose)
-				whine("Semantic error! BPF validation "
-				      "failed!\n");
+				printf("Semantic error! BPF validation failed!\n");
 			else
 				panic("Semantic error! BPF validation failed! "
 				      "Try -V for debugging output!\n");

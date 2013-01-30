@@ -91,10 +91,8 @@ int af_socket(int af)
 {
 	int sock;
 
-	if (unlikely(af != AF_INET && af != AF_INET6)) {
-		whine("Wrong AF socket type! Falling back to AF_INET\n");
-		af = AF_INET;
-	}
+	if (unlikely(af != AF_INET && af != AF_INET6))
+		panic("Wrong AF socket type! Falling back to AF_INET\n");
 
 	sock = socket(af, SOCK_DGRAM, 0);
 	if (unlikely(sock < 0))
@@ -601,7 +599,6 @@ void device_set_flags(const char *ifname, const short flags)
 	close(sock);
 }
 
-/* XXX: also probe ethtool driver name if it fails */
 int device_irq_number(const char *ifname)
 {
 	/*
@@ -618,10 +615,8 @@ int device_irq_number(const char *ifname)
 		return 0;
 
 	fp = fopen("/proc/interrupts", "r");
-	if (!fp) {
-		whine("Cannot open /proc/interrupts!\n");
-		return -ENOENT;
-	}
+	if (!fp)
+		panic("Cannot open /proc/interrupts!\n");
 
 	memset(buff, 0, sizeof(buff));
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
@@ -674,10 +669,8 @@ int device_set_irq_affinity_list(int irq, unsigned long from, unsigned long to)
 	slprintf(list, sizeof(list), "%lu-%lu\n", from, to);
 
 	fd = open(file, O_WRONLY);
-	if (fd < 0) {
-		whine("Cannot open file %s!\n", file);
+	if (fd < 0)
 		return -ENOENT;
-	}
 
 	ret = write(fd, list, strlen(list));
 
@@ -704,10 +697,8 @@ int device_bind_irq_to_cpu(int irq, int cpu)
 	sprintf(file, "/proc/irq/%d/smp_affinity", irq);
 
 	fp = fopen(file, "w");
-	if (!fp) {
-		whine("Cannot open file %s!\n", file);
+	if (!fp)
 		return -ENOENT;
-	}
 
 	sprintf(buff, "%d", cpu);
 	ret = fwrite(buff, sizeof(buff), 1, fp);
@@ -889,7 +880,7 @@ int set_sched_status(int policy, int priority)
 	min_prio = sched_get_priority_min(policy);
 
 	if (max_prio == -1 || min_prio == -1)
-		whine("Cannot determine scheduler prio limits!\n");
+		printf("Cannot determine scheduler prio limits!\n");
 	else if (priority < min_prio)
 		priority = min_prio;
 	else if (priority > max_prio)
@@ -900,13 +891,13 @@ int set_sched_status(int policy, int priority)
 
 	ret = sched_setscheduler(getpid(), policy, &sp);
 	if (ret) {
-		whine("Cannot set scheduler policy!\n");
+		printf("Cannot set scheduler policy!\n");
 		return -EINVAL;
 	}
 
 	ret = sched_setparam(getpid(), &sp);
 	if (ret) {
-		whine("Cannot set scheduler prio!\n");
+		printf("Cannot set scheduler prio!\n");
 		return -EINVAL;
 	}
 

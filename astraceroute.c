@@ -741,7 +741,7 @@ static int do_trace(const struct ash_cfg *cfg)
 
 	ret = getaddrinfo(cfg->host, cfg->port, &hints, &ahead);
 	if (ret < 0) {
-		whine("Cannot get address info!\n");
+		printf("Cannot get address info!\n");
 		return -EIO;
 	}
 
@@ -777,7 +777,7 @@ static int do_trace(const struct ash_cfg *cfg)
 	freeaddrinfo(ahead);
 
 	if (fd < 0) {
-		whine("Cannot create socket! Does remote support IPv%d?!\n",
+		printf("Cannot create socket! Does remote support IPv%d?!\n",
 		      cfg->ip);
 		return -EIO;
 	}
@@ -1118,8 +1118,7 @@ int main(int argc, char **argv)
 				      optopt);
 			default:
 				if (isprint(optopt))
-					whine("Unknown option character "
-					      "`0x%X\'!\n", optopt);
+					printf("Unknown option character `0x%X\'!\n", optopt);
 				die();
 		}
 		default:
