@@ -22,7 +22,7 @@ int dissector_set_print_type(void *ptr, int type)
 {
 	struct protocol *proto;
 
-	for (proto = (struct protocol *) ptr; proto; proto = proto->next) {
+	for (proto = ptr; proto; proto = proto->next) {
 		switch (type) {
 		case PRINT_NORM:
 			proto->process = proto->print_full;
