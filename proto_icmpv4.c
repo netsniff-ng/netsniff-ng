@@ -11,6 +11,7 @@
 
 #include "proto.h"
 #include "protos.h"
+#include "csum.h"
 #include "dissector_eth.h"
 #include "pkt_buff.h"
 #include "built_in.h"
@@ -35,14 +36,19 @@ struct icmphdr {
 static void icmp(struct pkt_buff *pkt)
 {
 	struct icmphdr *icmp = (struct icmphdr *) pkt_pull(pkt, sizeof(*icmp));
+	uint16_t csum;
 
 	if (icmp == NULL)
 		return;
 
+	csum = calc_csum(icmp, pkt_len(pkt) + sizeof(*icmp), 0);
+
 	tprintf(" [ ICMP ");
 	tprintf("Type (%u), ", icmp->type);
 	tprintf("Code (%u), ", icmp->code);
-	tprintf("CSum (0x%.4x)", ntohs(icmp->checksum));
+	tprintf("CSum (0x%.4x) is %s", ntohs(icmp->checksum),
+		csum ? colorize_start_full(black, red) "bogus (!)"
+		       colorize_end() : "ok");
 	tprintf(" ]\n");
 }
 
