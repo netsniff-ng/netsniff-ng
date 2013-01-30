@@ -682,7 +682,7 @@ static void read_pcap(struct ctx *ctx)
 	if (strncmp("-", ctx->device_in, strlen("-")))
 		close(fd);
 	else
-		dup2(fdo, fileno(stdin));
+		dup2(fd, fileno(stdin));
 
 	if (ctx->device_out) {
 		if (strncmp("-", ctx->device_out, strlen("-")))
