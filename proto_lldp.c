@@ -1,6 +1,5 @@
 /*
- * netsniff-ng - the packet sniffing st
- * By Daniel Borkmann <daniel@netsniff-ng.org>
+ * netsniff-ng - the packet sniffing beast
  * Copyright 2012, 2013 Tobias Klauser <tklauser@distanz.ch>
  * Subject to the GPL, version 2.
  */
@@ -69,6 +68,13 @@
 #define LLDP_SYSTEM_CAP_TELEPHONE	(1 << 5)
 #define LLDP_SYSTEM_CAP_DOCSIS		(1 << 6)
 #define LLDP_SYSTEM_CAP_STATION_ONLY	(1 << 7)
+
+/*
+ * Interface number subtypes (for Management addres TLV)
+ */
+#define LLDP_IFACE_NUM_SUBTYPE_UNKNOWN	1
+#define LLDP_IFACE_NUM_SUBTYPE_IF_INDEX	2
+#define LLDP_IFACE_NUM_SUBTYPE_SYS_PORT	3
 
 /*
  * IANA address family numbers (only the ones we actually use)
@@ -142,7 +148,7 @@ static void lldp_print_cap(uint16_t cap)
 static void lldp(struct pkt_buff *pkt)
 {
 	bool seen_chassis_id = false;
-	uint8_t subtype;
+	uint8_t subtype, mgmt_alen, mgmt_oidlen;
 	uint16_t tlv_hdr;
 	unsigned int tlv_type, tlv_len;
 	unsigned int len;
@@ -164,7 +170,7 @@ static void lldp(struct pkt_buff *pkt)
 		len -= sizeof(tlv_hdr);
 
 		if (tlv_type == LLDP_TLV_END || tlv_len == 0)
-			break;	/* TODO: check if any (invalid) TLVs follow? */
+			break;
 		if (len < tlv_len)
 			goto out_invalid;
 		if (!seen_chassis_id && tlv_type != LLDP_TLV_CHASSIS_ID)
@@ -324,14 +330,48 @@ static void lldp(struct pkt_buff *pkt)
 			tprintf(")");
 			break;
 		case LLDP_TLV_MGMT_ADDR:
-			tprintf(", Mgmt Addr");
+			tprintf(", Mgmt Addr (");
 
 			if (tlv_len < 9 || tlv_len > 167)
 				goto out_invalid;
 
-			/* TODO */
+			tlv_info_str = pkt_pull(pkt, tlv_len);
+			if (tlv_info_str == NULL)
+				goto out_invalid;
 
-			pkt_pull(pkt, tlv_len);
+			mgmt_alen = *tlv_info_str;
+			tlv_info_str++;
+			if (tlv_len - 1 < mgmt_alen)
+				goto out_invalid;
+
+			if (lldp_print_net_addr(tlv_info_str, mgmt_alen))
+				goto out_invalid;
+			tlv_info_str += mgmt_alen;
+
+			tprintf(", Iface Subtype %d/", *tlv_info_str);
+			switch (*tlv_info_str) {
+			case LLDP_IFACE_NUM_SUBTYPE_IF_INDEX:
+				tprintf("ifIndex");
+				break;
+			case LLDP_IFACE_NUM_SUBTYPE_SYS_PORT:
+				tprintf("System Port Number");
+				break;
+			default:
+				tprintf("Unknown");
+				break;
+			}
+
+			tlv_info_str++;
+			tprintf(", Iface Number %u", EXTRACT_32BIT(tlv_info_str));
+
+			tlv_info_str += 4;
+			mgmt_oidlen = *tlv_info_str;
+			if (mgmt_oidlen > 0) {
+				tprintf(", OID ");
+				tputs_safe((const char *) tlv_info_str + 1, mgmt_oidlen);
+			}
+
+			tprintf(")");
 			break;
 		case LLDP_TLV_ORG_SPECIFIC:
 			tprintf(", Org specific");
@@ -353,8 +393,8 @@ static void lldp(struct pkt_buff *pkt)
 			pkt_pull(pkt, tlv_len - 4);
 			break;
 		default:
+			tprintf(", Unknown");
 			pkt_pull(pkt, tlv_len);
-			/* TODO: just hexdump? */
 			break;
 		}
 

@@ -1184,7 +1184,7 @@ void tputchar_safe(int c)
 
 void tputs_safe(const char *str, size_t len)
 {
-	while (*str && len--) {
+	while (len--) {
 		tputchar_safe(*str);
 		str++;
 	}
