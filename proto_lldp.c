@@ -147,7 +147,7 @@ static void lldp_print_cap(uint16_t cap)
 
 static void lldp(struct pkt_buff *pkt)
 {
-	bool seen_chassis_id = false;
+	unsigned int n_tlv = 0;
 	uint8_t subtype, mgmt_alen, mgmt_oidlen;
 	uint16_t tlv_hdr;
 	unsigned int tlv_type, tlv_len;
@@ -169,16 +169,23 @@ static void lldp(struct pkt_buff *pkt)
 
 		len -= sizeof(tlv_hdr);
 
-		if (tlv_type == LLDP_TLV_END || tlv_len == 0)
-			break;
+		if (tlv_type == LLDP_TLV_END && tlv_len == 0) {
+			/* Chassis ID, Port ID and TTL are mandatory */
+			if (n_tlv < 3)
+				goto out_invalid;
+			else
+				break;
+		}
 		if (len < tlv_len)
-			goto out_invalid;
-		if (!seen_chassis_id && tlv_type != LLDP_TLV_CHASSIS_ID)
 			goto out_invalid;
 
 		switch (tlv_type) {
 		case LLDP_TLV_CHASSIS_ID:
-			if (seen_chassis_id)
+			/*
+			 * The mandatory chassis ID shall be the first TLV and
+			 * shall appear exactly once.
+			 */
+			if (n_tlv != 0)
 				goto out_invalid;
 
 			tprintf("Chassis ID");
@@ -220,9 +227,15 @@ static void lldp(struct pkt_buff *pkt)
 			}
 
 			tprintf(")");
-			seen_chassis_id = true;
 			break;
 		case LLDP_TLV_PORT_ID:
+			/*
+			 * The mandatory port ID shall be the second TLV and
+			 * shall appear exactly once.
+			 */
+			if (n_tlv != 1)
+				goto out_invalid;
+
 			tprintf(", Port ID");
 
 			if (tlv_len < 2)
@@ -264,6 +277,13 @@ static void lldp(struct pkt_buff *pkt)
 			tprintf(")");
 			break;
 		case LLDP_TLV_TTL:
+			/*
+			 * The mandatory TTL shall be the third TLV and
+			 * shall appear exactly once.
+			 */
+			if (n_tlv != 2)
+				goto out_invalid;
+
 			tprintf(", TTL");
 
 			if (tlv_len != 2)
@@ -319,7 +339,7 @@ static void lldp(struct pkt_buff *pkt)
 				goto out_invalid;
 
 			sys_cap = EXTRACT_16BIT(tlv_info_str);
-			tlv_info_str += 2;
+			tlv_info_str += sizeof(uint32_t);
 			en_cap = EXTRACT_16BIT(tlv_info_str);
 
 			tprintf(" (");
@@ -366,6 +386,8 @@ static void lldp(struct pkt_buff *pkt)
 
 			tlv_info_str += 4;
 			mgmt_oidlen = *tlv_info_str;
+			if (tlv_len - mgmt_alen - sizeof(uint32_t) - 3 < mgmt_oidlen)
+				goto out_invalid;
 			if (mgmt_oidlen > 0) {
 				tprintf(", OID ");
 				tputs_safe((const char *) tlv_info_str + 1, mgmt_oidlen);
@@ -393,16 +415,15 @@ static void lldp(struct pkt_buff *pkt)
 			pkt_pull(pkt, tlv_len - 4);
 			break;
 		default:
-			tprintf(", Unknown");
+			tprintf(", Unknown TLV %u", tlv_type);
 			pkt_pull(pkt, tlv_len);
 			break;
 		}
 
-		len -= tlv_len;
+		n_tlv++;
 	}
 
-	if (!seen_chassis_id)
-		goto out_invalid;
+	len -= tlv_len;
 
 	tprintf(" ]\n");
 	return;
