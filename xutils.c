@@ -4,7 +4,6 @@
  * Copyright 2009, 2010 Daniel Borkmann.
  * Copyright 2009, 2010 Emmanuel Roullit.
  * Copyright 2010 Marek Polacek.
- * Copyright 2013 Tobias Klauser.
  * Subject to the GPL, version 2.
  */
 
@@ -1170,22 +1169,4 @@ char *strtrim_left(register char *p, register char c)
 	}
 
 	return p;
-}
-
-void tputchar_safe(int c)
-{
-	unsigned char ch = (unsigned char)(c & 0xff);
-
-	if (isprint(ch))
-		tprintf("%c", ch);
-	else
-		tprintf("\\0x%02x", ch);
-}
-
-void tputs_safe(const char *str, size_t len)
-{
-	while (len--) {
-		tputchar_safe(*str);
-		str++;
-	}
 }

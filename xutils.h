@@ -108,8 +108,6 @@ extern noinline void *xmemset(void *s, int c, size_t n);
 extern char *getuint(char *in, uint32_t *out);
 extern char *strtrim_right(register char *p, register char c);
 extern char *strtrim_left(register char *p, register char c);
-extern void tputchar_safe(int c);
-extern void tputs_safe(const char *str, size_t len);
 
 static inline int get_default_sched_policy(void)
 {
