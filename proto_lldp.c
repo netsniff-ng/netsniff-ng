@@ -429,7 +429,8 @@ static void lldp(struct pkt_buff *pkt)
 	return;
 
 out_invalid:
-	tprintf(" INVALID ]\n");
+	tprintf(" %sINVALID%s ]\n", colorize_start_full(black, red),
+		colorize_end());
 }
 
 static void lldp_less(struct pkt_buff *pkt)
