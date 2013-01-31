@@ -22,7 +22,7 @@ int dissector_set_print_type(void *ptr, int type)
 {
 	struct protocol *proto;
 
-	for (proto = (struct protocol *) ptr; proto; proto = proto->next) {
+	for (proto = ptr; proto; proto = proto->next) {
 		switch (type) {
 		case PRINT_NORM:
 			proto->process = proto->print_full;
@@ -30,10 +30,6 @@ int dissector_set_print_type(void *ptr, int type)
 		case PRINT_LESS:
 			proto->process = proto->print_less;
 			break;
-		case PRINT_HEX:
-		case PRINT_ASCII:
-		case PRINT_HEX_ASCII:
-		case PRINT_NONE:
 		default:
 			proto->process = NULL;
 			break;
@@ -66,8 +62,7 @@ static void dissector_main(struct pkt_buff *pkt, struct protocol *start,
 
 void dissector_entry_point(uint8_t *packet, size_t len, int linktype, int mode)
 {
-	struct protocol *proto_start = NULL;
-	struct protocol *proto_end = NULL;
+	struct protocol *proto_start, *proto_end;
 	struct pkt_buff *pkt = NULL;
 
 	if (mode == PRINT_NONE)
@@ -77,10 +72,12 @@ void dissector_entry_point(uint8_t *packet, size_t len, int linktype, int mode)
 
 	switch (linktype) {
 	case LINKTYPE_EN10MB:
+	case ___constant_swab32(LINKTYPE_EN10MB):
 		proto_start = dissector_get_ethernet_entry_point();
 		proto_end = dissector_get_ethernet_exit_point();
 		break;
 	case LINKTYPE_IEEE802_11:
+	case ___constant_swab32(LINKTYPE_IEEE802_11):
 		proto_start = dissector_get_ieee80211_entry_point();
 		proto_end = dissector_get_ieee80211_exit_point();
 		break;

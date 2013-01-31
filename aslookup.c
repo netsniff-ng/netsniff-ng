@@ -48,7 +48,7 @@ int aslookup_prepare(const char *server, const char *port)
 
 	ret = getaddrinfo(server, port, &hints, &ahead);
 	if (ret != 0) {
-		whine("Cannot get address info!\n");
+		printf("Cannot get address info!\n");
 		return -EIO;
 	}
 
@@ -59,7 +59,7 @@ int aslookup_prepare(const char *server, const char *port)
 
 		ret = connect(fd, ai->ai_addr, ai->ai_addrlen);
 		if (ret < 0) {
-			whine("Cannot connect to remote, try %d: %s!\n",
+			printf("Cannot connect to remote, try %d: %s!\n",
 			      try++, strerror(errno));
 			close(fd);
 			fd = -1;

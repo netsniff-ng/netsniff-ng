@@ -20,7 +20,7 @@ static void _hex(uint8_t *ptr, size_t len)
 	if (!len)
 		return;
 
-	tprintf(" [ hex ");
+	tprintf(" [ Hex ");
 	for (; ptr && len-- > 0; ptr++)
 		tprintf(" %.2x", *ptr);
 	tprintf(" ]\n");
@@ -42,7 +42,7 @@ static void _ascii(uint8_t *ptr, size_t len)
 	if (!len)
 		return;
 
-	tprintf(" [ chr ");
+	tprintf(" [ Chr ");
 	for (; ptr && len-- > 0; ptr++)
 		tprintf("%c", isprint(*ptr) ? *ptr : '.');
 	tprintf(" ]\n");

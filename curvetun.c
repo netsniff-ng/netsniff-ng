@@ -111,12 +111,6 @@ static void signal_handler(int number)
 	}
 }
 
-static void header(void)
-{
-	printf("%s%s%s\n", colorize_start(bold), "curvetun "
-	       VERSION_STRING, colorize_end());
-}
-
 static void help(void)
 {
 	printf("\ncurvetun %s, lightweight curve25519-based VPN/IP tunnel\n",
@@ -661,8 +655,7 @@ int main(int argc, char **argv)
 				      optopt);
 			default:
 				if (isprint(optopt))
-					whine("Unknown option character "
-					      "`0x%X\'!\n", optopt);
+					printf("Unknown option character `0x%X\'!\n", optopt);
 				die();
 			}
 		default:
@@ -677,8 +670,6 @@ int main(int argc, char **argv)
 	register_signal(SIGHUP, signal_handler);
 	register_signal(SIGTERM, signal_handler);
 	register_signal(SIGPIPE, signal_handler);
-
-	header();
 
 	curve25519_selftest();
 

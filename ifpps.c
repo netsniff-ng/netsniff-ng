@@ -919,8 +919,7 @@ int main(int argc, char **argv)
 				      optopt);
 			default:
 				if (isprint(optopt))
-					whine("Unknown option character "
-					      "`0x%X\'!\n", optopt);
+					printf("Unknown option character `0x%X\'!\n", optopt);
 				die();
 			}
 		default:

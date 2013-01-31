@@ -33,11 +33,9 @@
 #include <sys/epoll.h>
 #include <sys/syscall.h>
 #include <asm/unistd.h>
-/* Kernel < 2.6.26 */
 #include <linux/if.h>
 #include <linux/socket.h>
 #include <linux/types.h>
-/* Kernel < 2.6.26 */
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
 #include <linux/sockios.h>
@@ -65,8 +63,21 @@ enum {
 	ioprio_who_user,
 };
 
+enum {
+	sock_rmem_max = 0,
+	sock_rmem_def,
+	sock_wmem_max,
+	sock_wmem_def,
+};
+
+#define SMEM_SUG_MAX	104857600
+#define SMEM_SUG_DEF	4194304
+
 static const char *const to_prio[] = {
-	"none", "realtime", "best-effort", "idle",
+	"none",
+	"realtime",
+	"best-effort",
+	"idle",
 };
 
 static const char *const sock_mem[] = {
@@ -80,10 +91,8 @@ int af_socket(int af)
 {
 	int sock;
 
-	if (unlikely(af != AF_INET && af != AF_INET6)) {
-		whine("Wrong AF socket type! Falling back to AF_INET\n");
-		af = AF_INET;
-	}
+	if (unlikely(af != AF_INET && af != AF_INET6))
+		panic("Wrong AF socket type! Falling back to AF_INET\n");
 
 	sock = socket(af, SOCK_DGRAM, 0);
 	if (unlikely(sock < 0))
@@ -590,7 +599,6 @@ void device_set_flags(const char *ifname, const short flags)
 	close(sock);
 }
 
-/* XXX: also probe ethtool driver name if it fails */
 int device_irq_number(const char *ifname)
 {
 	/*
@@ -607,10 +615,8 @@ int device_irq_number(const char *ifname)
 		return 0;
 
 	fp = fopen("/proc/interrupts", "r");
-	if (!fp) {
-		whine("Cannot open /proc/interrupts!\n");
-		return -ENOENT;
-	}
+	if (!fp)
+		panic("Cannot open /proc/interrupts!\n");
 
 	memset(buff, 0, sizeof(buff));
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
@@ -663,10 +669,8 @@ int device_set_irq_affinity_list(int irq, unsigned long from, unsigned long to)
 	slprintf(list, sizeof(list), "%lu-%lu\n", from, to);
 
 	fd = open(file, O_WRONLY);
-	if (fd < 0) {
-		whine("Cannot open file %s!\n", file);
+	if (fd < 0)
 		return -ENOENT;
-	}
 
 	ret = write(fd, list, strlen(list));
 
@@ -693,10 +697,8 @@ int device_bind_irq_to_cpu(int irq, int cpu)
 	sprintf(file, "/proc/irq/%d/smp_affinity", irq);
 
 	fp = fopen(file, "w");
-	if (!fp) {
-		whine("Cannot open file %s!\n", file);
+	if (!fp)
 		return -ENOENT;
-	}
 
 	sprintf(buff, "%d", cpu);
 	ret = fwrite(buff, sizeof(buff), 1, fp);
@@ -713,20 +715,16 @@ void sock_print_net_stats(int sock, unsigned long skipped)
 	socklen_t slen = sizeof(kstats);
 
 	memset(&kstats, 0, sizeof(kstats));
-
 	ret = getsockopt(sock, SOL_PACKET, PACKET_STATISTICS, &kstats, &slen);
 	if (ret > -1) {
 		uint64_t packets = kstats.tp_packets;
 		uint64_t drops = kstats.tp_drops;
 
 		printf("\r%12ld  packets incoming\n", packets);
-		printf("\r%12ld  packets passed filter\n",
-		       packets - drops - skipped);
-		printf("\r%12ld  packets failed filter (out of space)\n",
-		       drops + skipped);
+		printf("\r%12ld  packets passed filter\n", packets - drops - skipped);
+		printf("\r%12ld  packets failed filter (out of space)\n", drops + skipped);
 		if (kstats.tp_packets > 0)
-			printf("\r%12.4f%\% packet droprate\n",
-			       1.f * drops / packets * 100.f);
+			printf("\r%12.4lf%\% packet droprate\n", (1.0 * drops / packets) * 100.0);
 	}
 }
 
@@ -740,6 +738,7 @@ void register_signal(int signal, void (*handler)(int))
 	saction.sa_handler = handler;
 	saction.sa_mask = block_mask;
 	saction.sa_flags = SA_RESTART;
+
 	sigaction(signal, &saction, NULL);
 }
 
@@ -753,6 +752,7 @@ void register_signal_f(int signal, void (*handler)(int), int flags)
 	saction.sa_handler = handler;
 	saction.sa_mask = block_mask;
 	saction.sa_flags = flags;
+
 	sigaction(signal, &saction, NULL);
 }
 
@@ -760,12 +760,12 @@ int get_tty_size(void)
 {
 #ifdef TIOCGSIZE
 	struct ttysize ts = {0};
-	return (ioctl(0, TIOCGSIZE, &ts) == 0 ?
-		ts.ts_cols : DEFAULT_TTY_SIZE);
+
+	return (ioctl(0, TIOCGSIZE, &ts) == 0 ?	ts.ts_cols : DEFAULT_TTY_SIZE);
 #elif defined(TIOCGWINSZ)
 	struct winsize ts;
-	return (ioctl(0, TIOCGWINSZ, &ts) == 0 ?
-		ts.ws_col : DEFAULT_TTY_SIZE);
+
+	return (ioctl(0, TIOCGWINSZ, &ts) == 0 ? ts.ws_col : DEFAULT_TTY_SIZE);
 #else
 	return DEFAULT_TTY_SIZE;
 #endif
@@ -819,8 +819,7 @@ int device_up_and_running(char *ifname)
 	if (!strncmp("any", ifname, strlen("any")))
 		return 1;
 
-	return (device_get_flags(ifname) & (IFF_UP | IFF_RUNNING)) ==
-	       (IFF_UP | IFF_RUNNING);
+	return (device_get_flags(ifname) & (IFF_UP | IFF_RUNNING)) == (IFF_UP | IFF_RUNNING);
 }
 
 int poll_error_maybe_die(int sock, struct pollfd *pfd)
@@ -841,27 +840,12 @@ int poll_error_maybe_die(int sock, struct pollfd *pfd)
 		return POLL_MOVE_OUT;
 	}
 	if (pfd->revents & POLLNVAL) {
-		whine("Invalid polling request on socket!\n");
+		printf("Invalid polling request on socket!\n");
 
 		return POLL_MOVE_OUT;
 	}
 
 	return POLL_NEXT_PKT;
-}
-
-static inline char *next_token(char *q, int sep)
-{
-	if (q)
-		q = strchr(q, sep);
-		/*
-		 * glibc defines this as a macro and gcc throws a false
-		 * positive ``logical ‘&&’ with non-zero constant will
-		 * always evaluate as true'' in older versions. See:
-		 * http://gcc.gnu.org/bugzilla/show_bug.cgi?id=36513
-		 */
-	if (q)
-		q++;
-	return q;
 }
 
 void cpu_affinity(int cpu)
@@ -878,73 +862,8 @@ void cpu_affinity(int cpu)
 		panic("Can't set this cpu affinity!\n");
 }
 
-int set_cpu_affinity(char *str, int inverted)
-{
-	int ret, i, cpus;
-	char *p, *q;
-	cpu_set_t cpu_bitmask;
-
-	q = str;
-
-	cpus = get_number_cpus();
-
-	CPU_ZERO(&cpu_bitmask);
-
-	for (i = 0; inverted && i < cpus; ++i)
-		CPU_SET(i, &cpu_bitmask);
-
-	while (p = q, q = next_token(q, ','), p) {
-		unsigned int a;	 /* Beginning of range */
-		unsigned int b;	 /* End of range */
-		unsigned int s;	 /* Stride */
-		char *c1, *c2;
-
-		if (sscanf(p, "%u", &a) < 1)
-			return -EINVAL;
-
-		b = a;
-		s = 1;
-
-		c1 = next_token(p, '-');
-		c2 = next_token(p, ',');
-
-		if (c1 != NULL && (c2 == NULL || c1 < c2)) {
-			if (sscanf(c1, "%u", &b) < 1)
-				return -EINVAL;
-
-			c1 = next_token(c1, ':');
-
-			if (c1 != NULL && (c2 == NULL || c1 < c2))
-				if (sscanf(c1, "%u", &s) < 1)
-					return -EINVAL;
-		}
-
-		if (!(a <= b))
-			return -EINVAL;
-
-		while (a <= b) {
-			if (inverted)
-				CPU_CLR(a, &cpu_bitmask);
-			else
-				CPU_SET(a, &cpu_bitmask);
-			a += s;
-		}
-	}
-
-	ret = sched_setaffinity(getpid(), sizeof(cpu_bitmask),
-				&cpu_bitmask);
-	if (ret)
-		panic("Can't set this cpu affinity!\n");
-
-	return 0;
-}
-
 int set_proc_prio(int priority)
 {
-	/*
-	 * setpriority() is clever, even if you put a nice value which 
-	 * is out of range it corrects it to the closest valid nice value
-	 */
 	int ret = setpriority(PRIO_PROCESS, getpid(), priority);
 	if (ret)
 		panic("Can't set nice val to %i!\n", priority);
@@ -961,7 +880,7 @@ int set_sched_status(int policy, int priority)
 	min_prio = sched_get_priority_min(policy);
 
 	if (max_prio == -1 || min_prio == -1)
-		whine("Cannot determine scheduler prio limits!\n");
+		printf("Cannot determine scheduler prio limits!\n");
 	else if (priority < min_prio)
 		priority = min_prio;
 	else if (priority > max_prio)
@@ -972,13 +891,13 @@ int set_sched_status(int policy, int priority)
 
 	ret = sched_setscheduler(getpid(), policy, &sp);
 	if (ret) {
-		whine("Cannot set scheduler policy!\n");
+		printf("Cannot set scheduler policy!\n");
 		return -EINVAL;
 	}
 
 	ret = sched_setparam(getpid(), &sp);
 	if (ret) {
-		whine("Cannot set scheduler prio!\n");
+		printf("Cannot set scheduler prio!\n");
 		return -EINVAL;
 	}
 
@@ -1117,27 +1036,6 @@ noinline void *xmemset(void *s, int c, size_t n)
 	return ptr;
 }
 
-char *getuint(char *in, uint32_t *out)
-{
-	char *pt = in, tmp;
-	char *endptr = NULL;
-
-	while (*in && (isdigit(*in) || isxdigit(*in) || *in == 'x'))
-		in++;
-	if (!*in)
-		panic("Syntax error!\n");
-	errno = 0;
-	tmp = *in;
-	*in = 0;
-	*out = strtoul(pt, &endptr, 0);
-	if ((endptr != NULL && *endptr != '\0') || errno != 0) {
-		panic("Syntax error!\n");
-	}
-	*in = tmp;
-
-	return in;
-}
-
 char *strtrim_right(register char *p, register char c)
 {
 	register char *end;
@@ -1156,7 +1054,7 @@ char *strtrim_right(register char *p, register char c)
 	return p;
 }
 
-char *strtrim_left(register char *p, register char c)
+static char *strtrim_left(register char *p, register char c)
 {
 	register int len;
 
@@ -1169,4 +1067,79 @@ char *strtrim_left(register char *p, register char c)
 	}
 
 	return p;
+}
+
+char *skips(char *p)
+{
+	return strtrim_left(p, ' ');
+}
+
+int get_default_sched_policy(void)
+{
+	return SCHED_FIFO;
+}
+
+int get_default_sched_prio(void)
+{
+	return sched_get_priority_max(get_default_sched_policy());
+}
+
+int get_number_cpus(void)
+{
+	return sysconf(_SC_NPROCESSORS_CONF);
+}
+
+int get_number_cpus_online(void)
+{
+	return sysconf(_SC_NPROCESSORS_ONLN);
+}
+
+int get_default_proc_prio(void)
+{
+	return -20;
+}
+
+struct timeval tv_subtract(struct timeval time1, struct timeval time2)
+{
+	struct timeval result;
+
+	if ((time1.tv_sec < time2.tv_sec) || ((time1.tv_sec == time2.tv_sec) &&
+	    (time1.tv_usec <= time2.tv_usec))) {
+		result.tv_sec = result.tv_usec = 0;
+	} else {
+		result.tv_sec = time1.tv_sec - time2.tv_sec;
+		if (time1.tv_usec < time2.tv_usec) {
+			result.tv_usec = time1.tv_usec + 1000000L -
+					 time2.tv_usec;
+			result.tv_sec--;
+		} else {
+			result.tv_usec = time1.tv_usec - time2.tv_usec;
+		}
+	}
+
+	return result;
+}
+
+void set_system_socket_memory(int *vals, size_t len)
+{
+	bug_on(len != 4);
+
+	if ((vals[0] = get_system_socket_mem(sock_rmem_max)) < SMEM_SUG_MAX)
+		set_system_socket_mem(sock_rmem_max, SMEM_SUG_MAX);
+	if ((vals[1] = get_system_socket_mem(sock_rmem_def)) < SMEM_SUG_DEF)
+		set_system_socket_mem(sock_rmem_def, SMEM_SUG_DEF);
+	if ((vals[2] = get_system_socket_mem(sock_wmem_max)) < SMEM_SUG_MAX)
+		set_system_socket_mem(sock_wmem_max, SMEM_SUG_MAX);
+	if ((vals[3] = get_system_socket_mem(sock_wmem_def)) < SMEM_SUG_DEF)
+		set_system_socket_mem(sock_wmem_def, SMEM_SUG_DEF);
+}
+
+void reset_system_socket_memory(int *vals, size_t len)
+{
+	bug_on(len != 4);
+
+	set_system_socket_mem(sock_rmem_max, vals[0]);
+	set_system_socket_mem(sock_rmem_def, vals[1]);
+	set_system_socket_mem(sock_wmem_max, vals[2]);
+	set_system_socket_mem(sock_wmem_def, vals[3]);
 }

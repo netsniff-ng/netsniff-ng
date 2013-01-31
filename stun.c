@@ -108,7 +108,7 @@ static int stun_test(const char *server_ip, int server_port,
 	ret = sendto(sock, pkt, len, 0, (struct sockaddr *) &daddr,
 		     sizeof(daddr));
 	if (ret != len) {
-		whine("Error sending request (%s)!\n", strerror(errno));
+		printf("Error sending request (%s)!\n", strerror(errno));
 		return -EIO;
 	}
 
@@ -119,7 +119,7 @@ static int stun_test(const char *server_ip, int server_port,
 
 	ret = select(sock + 1, &fdset, NULL, NULL, &timeout);
 	if (ret <= 0) {
-		whine("STUN server timeout!\n");
+		printf("STUN server timeout!\n");
 		return -EIO;
 	}
 
@@ -129,18 +129,18 @@ static int stun_test(const char *server_ip, int server_port,
 	close(sock);
 
 	if (len < REQUEST_LEN) {
-		whine("Bad STUN response (%s)!\n", strerror(errno));
+		printf("Bad STUN response (%s)!\n", strerror(errno));
 		return -EIO;
 	}
 
 	rhdr = (struct stun_header *) rpkt;
 	if (ntohs(rhdr->type) != BINDING_RESPONSE) {
-		whine("Wrong STUN response type!\n");
+		printf("Wrong STUN response type!\n");
 		return -EIO;
 	}
 
 	if (rhdr->len == 0) {
-		whine("No attributes in STUN response!\n");
+		printf("No attributes in STUN response!\n");
 		return -EIO;
 	}
 
@@ -148,7 +148,7 @@ static int stun_test(const char *server_ip, int server_port,
 	    rhdr->transid[0] != hdr->transid[0] ||
 	    rhdr->transid[1] != hdr->transid[1] ||
 	    rhdr->transid[2] != hdr->transid[2]) {
-		whine("Got wrong STUN transaction id!\n");
+		printf("Got wrong STUN transaction id!\n");
 		return -EIO;
 	}
 

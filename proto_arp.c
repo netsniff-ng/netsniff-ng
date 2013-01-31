@@ -26,6 +26,15 @@ struct arphdr {
 	uint8_t ar_tip[4]; /* target IP address          */
 } __packed;
 
+#define ARPHRD_ETHER	1
+#define ARPHRD_IEEE802	6
+#define ARPHRD_ARCNET	7
+#define ARPHRD_ATM	16
+#define ARPHRD_ATM2	19
+#define ARPHRD_SERIAL	20
+#define ARPHRD_ATM3	21
+#define ARPHRD_IEEE1394	24
+
 #define ARPOP_REQUEST   1  /* ARP request                */
 #define ARPOP_REPLY     2  /* ARP reply                  */
 #define ARPOP_RREQUEST  3  /* RARP request               */
@@ -36,11 +45,43 @@ struct arphdr {
 
 static void arp(struct pkt_buff *pkt)
 {
-	char *opcode = NULL;
+	char *hrd;
+	char *pro;
+	char *opcode;
 	struct arphdr *arp = (struct arphdr *) pkt_pull(pkt, sizeof(*arp));
 
 	if (arp == NULL)
 		return;
+
+	switch (ntohs(arp->ar_hrd)) {
+	case ARPHRD_ETHER:
+		hrd = "Ethernet";
+		break;
+	case ARPHRD_IEEE802:
+		hrd = "IEEE 802";
+		break;
+	case ARPHRD_ARCNET:
+		hrd = "ARCNET";
+		break;
+	case ARPHRD_ATM:
+	case ARPHRD_ATM2:
+	case ARPHRD_ATM3:
+		hrd = "ATM";
+		break;
+	case ARPHRD_SERIAL:
+		hrd = "Serial Line";
+		break;
+	case ARPHRD_IEEE1394:
+		hrd = "IEEE 1394.1995";
+		break;
+	default:
+		hrd = "Unknown";
+		break;
+	}
+
+	pro = lookup_ether_type(ntohs(arp->ar_pro));
+	if (pro == NULL)
+		pro = "Unknown";
 
 	switch (ntohs(arp->ar_op)) {
 	case ARPOP_REQUEST:
@@ -70,10 +111,10 @@ static void arp(struct pkt_buff *pkt)
 	};
 
 	tprintf(" [ ARP ");
-	tprintf("Format HA (%u), ", ntohs(arp->ar_hrd));
-	tprintf("Format Proto (%u), ", ntohs(arp->ar_pro));
-	tprintf("HA Len (%u), ", ntohs(arp->ar_hln));
-	tprintf("Proto Len (%u), ", ntohs(arp->ar_pln));
+	tprintf("Format HA (%u => %s), ", ntohs(arp->ar_hrd), hrd);
+	tprintf("Format Proto (0x%.4x => %s), ", ntohs(arp->ar_pro), pro);
+	tprintf("HA Len (%u), ", arp->ar_hln);
+	tprintf("Proto Len (%u), ", arp->ar_pln);
 	tprintf("Opcode (%u => %s)", ntohs(arp->ar_op), opcode);
 	tprintf(" ]\n");
 }

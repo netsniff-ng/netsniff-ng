@@ -33,8 +33,7 @@ static const char * const packet_types[256]={
 
 extern char *if_indextoname(unsigned ifindex, char *ifname);
 
-static inline void show_frame_hdr(struct frame_map *hdr, int mode,
-				  enum ring_mode rmode)
+static inline void show_frame_hdr(struct frame_map *hdr, int mode)
 {
 	char tmp[IFNAMSIZ];
 

@@ -60,7 +60,7 @@ struct ctx {
 	char *device_in, *device_out, *device_trans, *filter, *prefix;
 	int cpu, rfraw, dump, print_mode, dump_dir, packet_type, verbose;
 	unsigned long kpull, dump_interval, reserve_size, tx_bytes, tx_packets;
-	bool randomize, promiscuous, enforce, jumbo;
+	bool randomize, promiscuous, enforce, jumbo, dump_bpf;
 	enum pcap_ops_groups pcap; enum dump_mode dump_mode;
 	uid_t uid; gid_t gid; uint32_t link_type, magic;
 };
@@ -69,7 +69,7 @@ volatile sig_atomic_t sigint = 0;
 
 static volatile bool next_dump = false;
 
-static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:B:HQmcsqXlvhF:RGAP:Vu:g:T:D";
+static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:HQmcsqXlvhF:RGAP:Vu:g:T:DB";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"in",			required_argument,	NULL, 'i'},
@@ -81,7 +81,6 @@ static const struct option long_options[] = {
 	{"ring-size",		required_argument,	NULL, 'S'},
 	{"kernel-pull",		required_argument,	NULL, 'k'},
 	{"bind-cpu",		required_argument,	NULL, 'b'},
-	{"unbind-cpu",		required_argument,	NULL, 'B'},
 	{"prefix",		required_argument,	NULL, 'P'},
 	{"user",		required_argument,	NULL, 'u'},
 	{"group",		required_argument,	NULL, 'g'},
@@ -96,6 +95,7 @@ static const struct option long_options[] = {
 	{"prio-high",		no_argument,		NULL, 'H'},
 	{"notouch-irq",		no_argument,		NULL, 'Q'},
 	{"dump-pcap-types",	no_argument,		NULL, 'D'},
+	{"dump-bpf",		no_argument,		NULL, 'B'},
 	{"silent",		no_argument,		NULL, 's'},
 	{"less",		no_argument,		NULL, 'q'},
 	{"hex",			no_argument,		NULL, 'X'},
@@ -112,26 +112,6 @@ static int tx_sock;
 static struct itimerval itimer;
 
 static unsigned long frame_count_max = 0, interval = TX_KERNEL_PULL_INT;
-
-#define set_system_socket_memory(vals) \
-	do { \
-		if ((vals[0] = get_system_socket_mem(sock_rmem_max)) < SMEM_SUG_MAX) \
-			set_system_socket_mem(sock_rmem_max, SMEM_SUG_MAX); \
-		if ((vals[1] = get_system_socket_mem(sock_rmem_def)) < SMEM_SUG_DEF) \
-			set_system_socket_mem(sock_rmem_def, SMEM_SUG_DEF); \
-		if ((vals[2] = get_system_socket_mem(sock_wmem_max)) < SMEM_SUG_MAX) \
-			set_system_socket_mem(sock_wmem_max, SMEM_SUG_MAX); \
-		if ((vals[3] = get_system_socket_mem(sock_wmem_def)) < SMEM_SUG_DEF) \
-			set_system_socket_mem(sock_wmem_def, SMEM_SUG_DEF); \
-	} while (0)
-
-#define reset_system_socket_memory(vals) \
-	do { \
-		set_system_socket_mem(sock_rmem_max, vals[0]); \
-		set_system_socket_mem(sock_rmem_def, vals[1]); \
-		set_system_socket_mem(sock_wmem_max, vals[2]); \
-		set_system_socket_mem(sock_wmem_def, vals[3]); \
-	} while (0)
 
 #define __pcap_io		pcap_ops[ctx->pcap]
 
@@ -195,7 +175,14 @@ static void pcap_to_xmit(struct ctx *ctx)
 
 	tx_sock = pf_socket();
 
-	fd = open_or_die(ctx->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);
+	if (!strncmp("-", ctx->device_in, strlen("-"))) {
+		fd = dup(fileno(stdin));
+		close(fileno(stdin));
+		if (ctx->pcap == PCAP_OPS_MM)
+			ctx->pcap = PCAP_OPS_SG;
+	} else {
+		fd = open_or_die(ctx->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);
+	}
 
 	ret = __pcap_io->pull_fhdr_pcap(fd, &ctx->magic, &ctx->link_type);
 	if (ret)
@@ -224,6 +211,8 @@ static void pcap_to_xmit(struct ctx *ctx)
 	size = ring_size(ctx->device_out, ctx->reserve_size);
 
 	bpf_parse_rules(ctx->device_out, ctx->filter, &bpf_ops);
+	if (ctx->dump_bpf)
+		bpf_dump_all(&bpf_ops);
 
 	set_packet_loss_discard(tx_sock);
 	set_sockopt_hwtimestamp(tx_sock, ctx->device_out);
@@ -247,20 +236,6 @@ static void pcap_to_xmit(struct ctx *ctx)
 
 	if (ctx->kpull)
 		interval = ctx->kpull;
-
-	if (ctx->verbose) {
-		printf("BPF:\n");
-		bpf_dump_all(&bpf_ops);
-
-		printf("MD: TX %luus %s ", interval, pcap_ops_group_to_str[ctx->pcap]);
-		if (ctx->rfraw)
-			printf("802.11 raw via %s ", ctx->device_out);
-#ifdef _LARGEFILE64_SOURCE
-		printf("lf64 ");
-#endif 
-		ioprio_print();
-		printf("\n");
-	}
 
 	itimer.it_interval.tv_sec = 0;
 	itimer.it_interval.tv_usec = interval;
@@ -303,7 +278,7 @@ static void pcap_to_xmit(struct ctx *ctx)
 			ctx->tx_bytes += hdr->tp_h.tp_len;;
 			ctx->tx_packets++;
 
-			show_frame_hdr(hdr, ctx->print_mode, RING_MODE_EGRESS);
+			show_frame_hdr(hdr, ctx->print_mode);
 
 			dissector_entry_point(out, hdr->tp_h.tp_snaplen,
 					      ctx->link_type, ctx->print_mode);
@@ -342,7 +317,11 @@ static void pcap_to_xmit(struct ctx *ctx)
 	if (__pcap_io->prepare_close_pcap)
 		__pcap_io->prepare_close_pcap(fd, PCAP_MODE_RD);
 
-	close(fd);
+	if (strncmp("-", ctx->device_in, strlen("-")))
+		close(fd);
+	else
+		dup2(fd, fileno(stdin));
+
 	close(tx_sock);
 
 	fflush(stdout);
@@ -389,6 +368,8 @@ static void receive_to_xmit(struct ctx *ctx)
 	enable_kernel_bpf_jit_compiler();
 
 	bpf_parse_rules(ctx->device_in, ctx->filter, &bpf_ops);
+	if (ctx->dump_bpf)
+		bpf_dump_all(&bpf_ops);
 	bpf_attach_to_sock(rx_sock, &bpf_ops);
 
 	setup_rx_ring_layout(rx_sock, &rx_ring, size_in, ctx->jumbo);
@@ -420,13 +401,6 @@ static void receive_to_xmit(struct ctx *ctx)
 	itimer.it_value.tv_usec = interval;
 
 	setitimer(ITIMER_REAL, &itimer, NULL);
-
-	if (ctx->verbose) {
-		printf("BPF:\n");
-		bpf_dump_all(&bpf_ops);
-
-		printf("MD: RXTX %luus\n\n", interval);
-	}
 
 	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
 
@@ -475,7 +449,7 @@ static void receive_to_xmit(struct ctx *ctx)
 					it_out = 0;
 			}
 
-			show_frame_hdr(hdr_in, ctx->print_mode, RING_MODE_INGRESS);
+			show_frame_hdr(hdr_in, ctx->print_mode);
 
 			dissector_entry_point(in, hdr_in->tp_h.tp_snaplen,
 					      ctx->link_type, ctx->print_mode);
@@ -569,7 +543,14 @@ static void read_pcap(struct ctx *ctx)
 
 	bug_on(!__pcap_io);
 
-	fd = open_or_die(ctx->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);
+	if (!strncmp("-", ctx->device_in, strlen("-"))) {
+		fd = dup(fileno(stdin));
+		close(fileno(stdin));
+		if (ctx->pcap == PCAP_OPS_MM)
+			ctx->pcap = PCAP_OPS_SG;
+	} else {
+		fd = open_or_die(ctx->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);
+	}
 
 	ret = __pcap_io->pull_fhdr_pcap(fd, &ctx->magic, &ctx->link_type);
 	if (ret)
@@ -585,27 +566,23 @@ static void read_pcap(struct ctx *ctx)
 	fmemset(&bpf_ops, 0, sizeof(bpf_ops));
 
 	bpf_parse_rules("any", ctx->filter, &bpf_ops);
+	if (ctx->dump_bpf)
+		bpf_dump_all(&bpf_ops);
 
 	dissector_init_all(ctx->print_mode);
 
 	out_len = round_up(1024 * 1024, PAGE_SIZE);
 	out = xmalloc_aligned(out_len, CO_CACHE_LINE_SIZE);
 
-	if (ctx->verbose) {
-		printf("BPF:\n");
-		bpf_dump_all(&bpf_ops);
-
-		printf("MD: RD %s ", pcap_ops_group_to_str[ctx->pcap]);
-#ifdef _LARGEFILE64_SOURCE
-		printf("lf64 ");
-#endif 
-		ioprio_print();
-		printf("\n");
+	if (ctx->device_out) {
+		if (!strncmp("-", ctx->device_out, strlen("-"))) {
+			fdo = dup(fileno(stdout));
+			close(fileno(stdout));
+		} else {
+			fdo = open_or_die_m(ctx->device_out, O_RDWR | O_CREAT |
+					    O_TRUNC | O_LARGEFILE, DEFFILEMODE);
+		}
 	}
-
-	if (ctx->device_out)
-		fdo = open_or_die_m(ctx->device_out, O_RDWR | O_CREAT |
-				    O_TRUNC | O_LARGEFILE, DEFFILEMODE);
 
 	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
 
@@ -639,7 +616,7 @@ static void read_pcap(struct ctx *ctx)
 		ctx->tx_bytes += fm.tp_h.tp_len;
 		ctx->tx_packets++;
 
-		show_frame_hdr(&fm, ctx->print_mode, RING_MODE_EGRESS);
+		show_frame_hdr(&fm, ctx->print_mode);
 
 		dissector_entry_point(out, fm.tp_h.tp_snaplen,
 				      ctx->link_type, ctx->print_mode);
@@ -667,10 +644,6 @@ static void read_pcap(struct ctx *ctx)
 	if (__pcap_io->prepare_close_pcap)
 		__pcap_io->prepare_close_pcap(fd, PCAP_MODE_RD);
 
-	close(fd);
-	if (ctx->device_out)
-		close(fdo);
-
 	xfree(out);
 
 	fflush(stdout);
@@ -679,6 +652,18 @@ static void read_pcap(struct ctx *ctx)
 	printf("\r%12lu packets truncated in file\n", trunced);
 	printf("\r%12lu bytes outgoing\n", ctx->tx_bytes);
 	printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec, diff.tv_usec);
+
+	if (strncmp("-", ctx->device_in, strlen("-")))
+		close(fd);
+	else
+		dup2(fd, fileno(stdin));
+
+	if (ctx->device_out) {
+		if (strncmp("-", ctx->device_out, strlen("-")))
+			close(fdo);
+		else
+			dup2(fdo, fileno(stdout));
+	}
 }
 
 static void finish_multi_pcap_file(struct ctx *ctx, int fd)
@@ -775,7 +760,10 @@ static void finish_single_pcap_file(struct ctx *ctx, int fd)
 	if (__pcap_io->prepare_close_pcap)
 		__pcap_io->prepare_close_pcap(fd, PCAP_MODE_WR);
 
-	close(fd);
+	if (strncmp("-", ctx->device_out, strlen("-")))
+		close(fd);
+	else
+		dup2(fd, fileno(stdout));
 }
 
 static int begin_single_pcap_file(struct ctx *ctx)
@@ -784,8 +772,16 @@ static int begin_single_pcap_file(struct ctx *ctx)
 
 	bug_on(!__pcap_io);
 
-	fd = open_or_die_m(ctx->device_out, O_RDWR | O_CREAT | O_TRUNC |
-			   O_LARGEFILE, DEFFILEMODE);
+	if (!strncmp("-", ctx->device_out, strlen("-"))) {
+		fd = dup(fileno(stdout));
+		close(fileno(stdout));
+		if (ctx->pcap == PCAP_OPS_MM)
+			ctx->pcap = PCAP_OPS_SG;
+	} else {
+		fd = open_or_die_m(ctx->device_out,
+				   O_RDWR | O_CREAT | O_TRUNC |
+				   O_LARGEFILE, DEFFILEMODE);
+	}
 
 	ret = __pcap_io->push_fhdr_pcap(fd, ctx->magic, ctx->link_type);
 	if (ret)
@@ -856,6 +852,8 @@ static void recv_only_or_dump(struct ctx *ctx)
 	enable_kernel_bpf_jit_compiler();
 
 	bpf_parse_rules(ctx->device_in, ctx->filter, &bpf_ops);
+	if (ctx->dump_bpf)
+		bpf_dump_all(&bpf_ops);
 	bpf_attach_to_sock(sock, &bpf_ops);
 
 	set_sockopt_hwtimestamp(sock, ctx->device_in);
@@ -880,20 +878,6 @@ static void recv_only_or_dump(struct ctx *ctx)
 
 	if (ctx->promiscuous)
 		ifflags = enter_promiscuous_mode(ctx->device_in);
-
-	if (ctx->verbose) {
-		printf("BPF:\n");
-		bpf_dump_all(&bpf_ops);
-
-		printf("MD: RX %s ", ctx->dump ? pcap_ops_group_to_str[ctx->pcap] : "");
-		if (ctx->rfraw)
-			printf("802.11 raw via %s ", ctx->device_in);
-#ifdef _LARGEFILE64_SOURCE
-		printf("lf64 ");
-#endif 
-		ioprio_print();
-		printf("\n");
-	}
 
 	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
 
@@ -948,7 +932,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 					panic("Write error to pcap!\n");
 			}
 
-			show_frame_hdr(hdr, ctx->print_mode, RING_MODE_INGRESS);
+			show_frame_hdr(hdr, ctx->print_mode);
 
 			dissector_entry_point(packet, hdr->tp_h.tp_snaplen,
 					      ctx->link_type, ctx->print_mode);
@@ -998,13 +982,6 @@ static void recv_only_or_dump(struct ctx *ctx)
 	bug_on(gettimeofday(&end, NULL));
 	diff = tv_subtract(end, start);
 
-	if (dump_to_pcap(ctx)) {
-		if (ctx->dump_dir)
-			finish_multi_pcap_file(ctx, fd);
-		else
-			finish_single_pcap_file(ctx, fd);
-	}
-
 	if (!(ctx->dump_dir && ctx->print_mode == PRINT_NONE)) {
 		sock_print_net_stats(sock, skipped);
 
@@ -1025,6 +1002,13 @@ static void recv_only_or_dump(struct ctx *ctx)
 	if (ctx->rfraw)
 		leave_rfmon_mac80211(ctx->device_trans, ctx->device_in);
 
+	if (dump_to_pcap(ctx)) {
+		if (ctx->dump_dir)
+			finish_multi_pcap_file(ctx, fd);
+		else
+			finish_single_pcap_file(ctx, fd);
+	}
+
 	close(sock);
 }
 
@@ -1034,50 +1018,40 @@ static void help(void)
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: netsniff-ng [options] [filter-expression]\n"
 	     "Options:\n"
-	     "  -i|-d|--dev|--in <dev|pcap> Input source as netdev or pcap\n"
-	     "  -o|--out <dev|pcap|dir|cfg> Output sink as netdev, pcap, directory, trafgen file\n"
-	     "  -f|--filter <bpf-file|expr> Use BPF filter file from bpfc or tcpdump-like expression\n"
-	     "  -t|--type <type>            Only handle packets of defined type:\n"
-	     "                              host|broadcast|multicast|others|outgoing\n"
-	     "  -F|--interval <size/time>   Dump interval in time or size if -o is a directory\n"
-	     "                              pcap swap spec: <num>KiB/MiB/GiB/s/sec/min/hrs\n"
-	     "  -J|--jumbo-support          Support for 64KB Super Jumbo Frames\n"
-	     "                              Default RX/TX slot: 2048Byte\n"
-	     "  -R|--rfraw                  Capture or inject raw 802.11 frames\n"
-	     "  -n|--num <uint>             Number of packets until exit\n"
-	     "  `--     0                   Loop until interrupted (default)\n"
-	     "   `-     n                   Send n packets and done\n"
-	     "Options for printing:\n"
-	     "  -s|--silent                 Do not print captured packets\n"
-	     "  -q|--less                   Print less-verbose packet information\n"
-	     "  -X|--hex                    Print packet data in hex format\n"
-	     "  -l|--ascii                  Print human-readable packet data\n"
-	     "Options, advanced:\n"
-	     "  -P|--prefix <name>          Prefix for pcaps stored in directory\n"
-	     "  -T|--magic <pcap-magic>     Pcap magic number/pcap type to process\n"
-	     "  -r|--rand                   Randomize packet forwarding order\n"
-	     "  -M|--no-promisc             No promiscuous mode for netdev\n"
-	     "  -A|--no-sock-mem            Don't tune core socket memory\n"
-	     "  -m|--mmap                   Mmap pcap file i.e., for replaying\n"
-	     "  -G|--sg                     Scatter/gather pcap file I/O\n"
-	     "  -c|--clrw                   Use slower read(2)/write(2) I/O\n"
-	     "  -S|--ring-size <size>       Manually set ring size to <size>:\n"
-	     "                              mmap space in KiB/MiB/GiB, e.g. \'10MiB\'\n"
-	     "  -k|--kernel-pull <uint>     Kernel pull from user interval in us\n"
-	     "                              Default is 10us where the TX_RING\n"
-	     "                              is populated with payload from uspace\n"
-	     "  -b|--bind-cpu <cpu>         Bind to specific CPU (or CPU-range)\n"
-	     "  -B|--unbind-cpu <cpu>       Forbid to use specific CPU (or CPU-range)\n"
-	     "  -u|--user <userid>          Drop privileges and change to userid\n"
-	     "  -g|--group <groupid>        Drop privileges and change to groupid\n"
-	     "  -H|--prio-high              Make this high priority process\n"
-	     "  -Q|--notouch-irq            Do not touch IRQ CPU affinity of NIC\n"
-	     "  -V|--verbose                Be more verbose\n"
-	     "  -D|--dump-pcap-types        Dump pcap types and magic numbers\n"
-	     "  -v|--version                Show version\n"
-	     "  -h|--help                   Guess what?!\n\n"
+	     "  -i|-d|--dev|--in <dev|pcap|->  Input source as netdev, pcap or pcap stdin\n"
+	     "  -o|--out <dev|pcap|dir|cfg|->  Output sink as netdev, pcap, directory, trafgen, or stdout\n"
+	     "  -f|--filter <bpf-file|expr>    Use BPF filter file from bpfc or tcpdump-like expression\n"
+	     "  -t|--type <type>               Filter for: host|broadcast|multicast|others|outgoing\n"
+	     "  -F|--interval <size|time>      Dump interval if -o is a dir: <num>KiB/MiB/GiB/s/sec/min/hrs\n"
+	     "  -J|--jumbo-support             Support for 64KB Super Jumbo Frames (def: 2048B)\n"
+	     "  -R|--rfraw                     Capture or inject raw 802.11 frames\n"
+	     "  -n|--num <0|uint>              Number of packets until exit (def: 0)\n"
+	     "  -P|--prefix <name>             Prefix for pcaps stored in directory\n"
+	     "  -T|--magic <pcap-magic>        Pcap magic number/pcap format to store, see -D\n"
+	     "  -D|--dump-pcap-types           Dump pcap types and magic numbers and quit\n"
+	     "  -B|--dump-bpf                  Dump generated BPF assembly\n"
+	     "  -r|--rand                      Randomize packet forwarding order (dev->dev)\n"
+	     "  -M|--no-promisc                No promiscuous mode for netdev\n"
+	     "  -A|--no-sock-mem               Don't tune core socket memory\n"
+	     "  -m|--mmap                      Mmap(2) pcap file i.e., for replaying pcaps\n"
+	     "  -G|--sg                        Scatter/gather pcap file I/O\n"
+	     "  -c|--clrw                      Use slower read(2)/write(2) I/O\n"
+	     "  -S|--ring-size <size>          Specify ring size to: <num>KiB/MiB/GiB\n"
+	     "  -k|--kernel-pull <uint>        Kernel pull from user interval in us (def: 10us)\n"
+	     "  -b|--bind-cpu <cpu>            Bind to specific CPU\n"
+	     "  -u|--user <userid>             Drop privileges and change to userid\n"
+	     "  -g|--group <groupid>           Drop privileges and change to groupid\n"
+	     "  -H|--prio-high                 Make this high priority process\n"
+	     "  -Q|--notouch-irq               Do not touch IRQ CPU affinity of NIC\n"
+	     "  -s|--silent                    Do not print captured packets\n"
+	     "  -q|--less                      Print less-verbose packet information\n"
+	     "  -X|--hex                       Print packet data in hex format\n"
+	     "  -l|--ascii                     Print human-readable packet data\n"
+	     "  -V|--verbose                   Be more verbose\n"
+	     "  -v|--version                   Show version\n"
+	     "  -h|--help                      Guess what?!\n\n"
 	     "Examples:\n"
-	     "  netsniff-ng --in eth0 --out dump.pcap --silent -T 0xa1b2c3d4 --bind-cpu 0\n"
+	     "  netsniff-ng --in eth0 --out dump.pcap -s -T 0xa1b2c3d4 --b 0 tcp or udp\n"
 	     "  netsniff-ng --in wlan0 --rfraw --out dump.pcap --silent --bind-cpu 0\n"
 	     "  netsniff-ng --in dump.pcap --mmap --out eth0 -k1000 --silent --bind-cpu 0\n"
 	     "  netsniff-ng --in dump.pcap --out dump.cfg --silent --bind-cpu 0\n"
@@ -1085,6 +1059,9 @@ static void help(void)
 	     "  netsniff-ng --in eth1 --out /opt/probe/ -s -m -J --interval 100MiB -b 0\n"
 	     "  netsniff-ng --in vlan0 --out dump.pcap -c -u `id -u bob` -g `id -g bob`\n"
 	     "  netsniff-ng --in any --filter http.bpf --jumbo-support --ascii -V\n\n"
+	     "Note:\n"
+	     "  For introducing bit errors, delays with random variation and more\n"
+	     "  while replaying pcaps, make use of tc(8) with its disciplines (e.g. netem).\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2009-2013 Daniel Borkmann <daniel@netsniff-ng.org>\n"
 	     "Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n"
@@ -1109,15 +1086,10 @@ static void version(void)
 	die();
 }
 
-static void header(void)
-{
-	printf("%s%s%s\n", colorize_start(bold), "netsniff-ng " VERSION_STRING, colorize_end());
-}
-
 int main(int argc, char **argv)
 {
 	char *ptr;
-	int c, i, j, opt_index, ops_touched = 0, vals[4] = {0};
+	int c, i, j, cpu_tmp, opt_index, ops_touched = 0, vals[4] = {0};
 	bool prio_high = false, setsockmem = true;
 	void (*main_loop)(struct ctx *ctx) = NULL;
 	struct ctx ctx = {
@@ -1218,13 +1190,11 @@ int main(int argc, char **argv)
 			ctx.reserve_size *= strtol(optarg, NULL, 0);
 			break;
 		case 'b':
-			set_cpu_affinity(optarg, 0);
-			/* Take the first CPU for rebinding the IRQ */
+			cpu_tmp = strtol(optarg, NULL, 0);
+
+			cpu_affinity(cpu_tmp);
 			if (ctx.cpu != -2)
-				ctx.cpu = strtol(optarg, NULL, 0);
-			break;
-		case 'B':
-			set_cpu_affinity(optarg, 1);
+				ctx.cpu = cpu_tmp;
 			break;
 		case 'H':
 			prio_high = true;
@@ -1307,6 +1277,9 @@ int main(int argc, char **argv)
 		case 'V':
 			ctx.verbose = 1;
 			break;
+		case 'B':
+			ctx.dump_bpf = true;
+			break;
 		case 'D':
 			pcap_dump_type_features();
 			die();
@@ -1333,14 +1306,12 @@ int main(int argc, char **argv)
 			case 'T':
 			case 'u':
 			case 'g':
-			case 'B':
 			case 'e':
 				panic("Option -%c requires an argument!\n",
 				      optopt);
 			default:
 				if (isprint(optopt))
-					whine("Unknown option character "
-					      "`0x%X\'!\n", optopt);
+					printf("Unknown option character `0x%X\'!\n", optopt);
 				die();
 			}
 		default:
@@ -1370,8 +1341,6 @@ int main(int argc, char **argv)
 
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
-
-	header();
 
 	tprintf_init();
 
@@ -1411,14 +1380,14 @@ int main(int argc, char **argv)
 	bug_on(!main_loop);
 
 	if (setsockmem)
-		set_system_socket_memory(vals);
+		set_system_socket_memory(vals, array_size(vals));
 	xlockme();
 
 	main_loop(&ctx);
 
 	xunlockme();
 	if (setsockmem)
-		reset_system_socket_memory(vals);
+		reset_system_socket_memory(vals, array_size(vals));
 
 	tprintf_cleanup();
 

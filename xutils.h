@@ -24,18 +24,7 @@
 #include <sys/resource.h>
 #include <sys/time.h>
 
-#include "die.h"
 #include "built_in.h"
-
-enum {
-	sock_rmem_max = 0,
-	sock_rmem_def,
-	sock_wmem_max,
-	sock_wmem_def,
-};
-
-#define SMEM_SUG_MAX	104857600
-#define SMEM_SUG_DEF	4194304
 
 extern int af_socket(int af);
 extern int pf_socket(void);
@@ -48,11 +37,9 @@ extern u32 device_bitrate(const char *ifname);
 extern int ethtool_drvinf(const char *ifname, struct ethtool_drvinfo *drvinf);
 extern int ethtool_link(const char *ifname);
 extern int device_mtu(const char *ifname);
-extern int device_address(const char *ifname, int af,
-			  struct sockaddr_storage *ss);
+extern int device_address(const char *ifname, int af, struct sockaddr_storage *ss);
 extern int device_irq_number(const char *ifname);
-extern int device_set_irq_affinity_list(int irq, unsigned long from,
-					unsigned long to);
+extern int device_set_irq_affinity_list(int irq, unsigned long from, unsigned long to);
 extern int device_bind_irq_to_cpu(int irq, int cpu);
 extern void sock_print_net_stats(int sock, unsigned long skipped);
 extern int device_ifindex(const char *ifname);
@@ -86,10 +73,8 @@ extern int device_up(char *ifname);
 extern int device_running(char *ifname);
 extern int device_up_and_running(char *ifname);
 extern int poll_error_maybe_die(int sock, struct pollfd *pfd);
-extern void set_epoll_descriptor(int fd_epoll, int action,
-				 int fd_toadd, int events);
-extern int set_epoll_descriptor2(int fd_epoll, int action,
-				 int fd_toadd, int events);
+extern void set_epoll_descriptor(int fd_epoll, int action, int fd_toadd, int events);
+extern int set_epoll_descriptor2(int fd_epoll, int action, int fd_toadd, int events);
 extern void cpu_affinity(int cpu);
 extern int set_cpu_affinity(char *str, int inverted);
 extern int set_proc_prio(int prio);
@@ -105,68 +90,15 @@ extern size_t strlcpy(char *dest, const char *src, size_t size);
 extern int slprintf(char *dst, size_t size, const char *fmt, ...)  __check_format_printf(3, 4);
 extern int slprintf_nocheck(char *dst, size_t size, const char *fmt, ...);
 extern noinline void *xmemset(void *s, int c, size_t n);
-extern char *getuint(char *in, uint32_t *out);
 extern char *strtrim_right(register char *p, register char c);
-extern char *strtrim_left(register char *p, register char c);
-
-static inline int get_default_sched_policy(void)
-{
-	return SCHED_FIFO;
-}
-
-static inline int get_default_sched_prio(void)
-{
-	return sched_get_priority_max(get_default_sched_policy());
-}
-
-static inline int get_number_cpus(void)
-{
-	return sysconf(_SC_NPROCESSORS_CONF);
-}
-
-static inline int get_number_cpus_online(void)
-{
-	return sysconf(_SC_NPROCESSORS_ONLN);
-}
-
-static inline int get_default_proc_prio(void)
-{
-	return -20;
-}
-
-static inline struct timeval tv_subtract(struct timeval time1,
-					 struct timeval time2)
-{
-	/* time1 - time2 */
-	struct timeval result;
-
-	if ((time1.tv_sec < time2.tv_sec) || ((time1.tv_sec == time2.tv_sec) &&
-	    (time1.tv_usec <= time2.tv_usec))) {
-		result.tv_sec = result.tv_usec = 0;
-	} else {
-		result.tv_sec = time1.tv_sec - time2.tv_sec;
-		if (time1.tv_usec < time2.tv_usec) {
-			result.tv_usec = time1.tv_usec + 1000000L -
-					 time2.tv_usec;
-			result.tv_sec--;
-		} else {
-			result.tv_usec = time1.tv_usec - time2.tv_usec;
-		}
-	}
-
-	return result;
-}
-
-static inline char *skips(char *p)
-{
-	return strtrim_left(p, ' ');
-}
-
-static inline char *skipchar(char *in, char c)
-{
-	if (*in != c)
-		panic("Syntax error!\n");
-	return ++in;
-}
+extern char *skips(char *p);
+extern int get_default_sched_policy(void);
+extern int get_default_sched_prio(void);
+extern int get_number_cpus(void);
+extern int get_number_cpus_online(void);
+extern int get_default_proc_prio(void);
+extern void set_system_socket_memory(int *vals, size_t len);
+extern void reset_system_socket_memory(int *vals, size_t len);
+extern struct timeval tv_subtract(struct timeval time1, struct timeval time2);
 
 #endif /* XSYS_H */

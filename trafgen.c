@@ -122,26 +122,6 @@ unsigned int seed;
 #define CPU_STATS_STATE_CHK	2
 #define CPU_STATS_STATE_RES	4
 
-#define set_system_socket_memory(vals) \
-	do { \
-		if ((vals[0] = get_system_socket_mem(sock_rmem_max)) < SMEM_SUG_MAX) \
-			set_system_socket_mem(sock_rmem_max, SMEM_SUG_MAX); \
-		if ((vals[1] = get_system_socket_mem(sock_rmem_def)) < SMEM_SUG_DEF) \
-			set_system_socket_mem(sock_rmem_def, SMEM_SUG_DEF); \
-		if ((vals[2] = get_system_socket_mem(sock_wmem_max)) < SMEM_SUG_MAX) \
-			set_system_socket_mem(sock_wmem_max, SMEM_SUG_MAX); \
-		if ((vals[3] = get_system_socket_mem(sock_wmem_def)) < SMEM_SUG_DEF) \
-			set_system_socket_mem(sock_wmem_def, SMEM_SUG_DEF); \
-	} while (0)
-
-#define reset_system_socket_memory(vals) \
-	do { \
-		set_system_socket_mem(sock_rmem_max, vals[0]); \
-		set_system_socket_mem(sock_rmem_def, vals[1]); \
-		set_system_socket_mem(sock_wmem_max, vals[2]); \
-		set_system_socket_mem(sock_wmem_def, vals[3]); \
-	} while (0)
-
 #ifndef ICMP_FILTER
 # define ICMP_FILTER	1
 
@@ -184,8 +164,8 @@ static void help(void)
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: trafgen [options]\n"
 	     "Options:\n"
-	     "  -o|-d|--out|--dev <netdev>        Networking device i.e., eth0\n"
 	     "  -i|-c|--in|--conf <cfg-file/->    Packet configuration file/stdin\n"
+	     "  -o|-d|--out|--dev <netdev>        Networking device i.e., eth0\n"
 	     "  -p|--cpp                          Run packet config through C preprocessor\n"
 	     "  -J|--jumbo-support                Support 64KB super jumbo frames (def: 2048B)\n"
 	     "  -R|--rfraw                        Inject raw 802.11 frames\n"
@@ -194,7 +174,7 @@ static void help(void)
 	     "  -r|--rand                         Randomize packet selection (def: round robin)\n"
 	     "  -P|--cpus <uint>                  Specify number of forks(<= CPUs) (def: #CPUs)\n"
 	     "  -t|--gap <uint>                   Interpacket gap in us (approx)\n"
-	     "  -S|--ring-size <size>             Manually set mmap size (KB/MB/GB): e.g.\'10MB\'\n"
+	     "  -S|--ring-size <size>             Manually set mmap size (KiB/MiB/GiB)\n"
 	     "  -k|--kernel-pull <uint>           Kernel batch interval in us (def: 10us)\n"
 	     "  -E|--seed <uint>                  Manually set srand(3) seed\n"
 	     "  -u|--user <userid>                Drop privileges and change to userid\n"
@@ -1018,7 +998,7 @@ static unsigned int generate_srand_seed(void)
 	int fd;
 	unsigned int seed;
 
-	fd = open("/dev/random", O_RDONLY);
+	fd = open("/dev/urandom", O_RDONLY);
 	if (fd < 0)
 		return time(0);
 
@@ -1128,11 +1108,11 @@ int main(int argc, char **argv)
 				ptr++;
 			}
 
-			if (!strncmp(ptr, "KB", strlen("KB")))
+			if (!strncmp(ptr, "KiB", strlen("KiB")))
 				ctx.reserve_size = 1 << 10;
-			else if (!strncmp(ptr, "MB", strlen("MB")))
+			else if (!strncmp(ptr, "MiB", strlen("MiB")))
 				ctx.reserve_size = 1 << 20;
-			else if (!strncmp(ptr, "GB", strlen("GB")))
+			else if (!strncmp(ptr, "GiB", strlen("GiB")))
 				ctx.reserve_size = 1 << 30;
 			else
 				panic("Syntax error in ring size param!\n");
@@ -1159,8 +1139,7 @@ int main(int argc, char **argv)
 				      optopt);
 			default:
 				if (isprint(optopt))
-					whine("Unknown option character "
-					      "`0x%X\'!\n", optopt);
+					printf("Unknown option character `0x%X\'!\n", optopt);
 				die();
 			}
 		default:
@@ -1185,7 +1164,7 @@ int main(int argc, char **argv)
 
 	header();
 
-	set_system_socket_memory(vals);
+	set_system_socket_memory(vals, array_size(vals));
 	xlockme();
 
 	if (ctx.rfraw) {
@@ -1233,7 +1212,7 @@ int main(int argc, char **argv)
 	if (ctx.rfraw)
 		leave_rfmon_mac80211(ctx.device_trans, ctx.device);
 
-	reset_system_socket_memory(vals);
+	reset_system_socket_memory(vals, array_size(vals));
 
 	for (i = 0, tx_packets = tx_bytes = 0; i < ctx.cpus; i++) {
 		while ((__get_state(i) & CPU_STATS_STATE_RES) == 0)

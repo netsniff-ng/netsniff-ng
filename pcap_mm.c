@@ -57,19 +57,7 @@ static ssize_t pcap_mm_write(int fd, pcap_pkthdr_t *phdr, enum pcap_type type,
 	if ((off_t) (ptr_va_curr - ptr_va_start) + hdrsize + len > map_size)
 		__pcap_mmap_write_need_remap(fd);
 
-	switch (type) {
-#define CASE_HDR_WRITE(what, __member__) \
-	case (what): \
-		fmemcpy(ptr_va_curr, &phdr->__member__, hdrsize); \
-		break
-	CASE_HDR_WRITE(DEFAULT, ppo);
-	CASE_HDR_WRITE(NSEC, ppn);
-	CASE_HDR_WRITE(KUZNETZOV, ppk);
-	CASE_HDR_WRITE(BORKMANN, ppb);
-	default:
-		bug();
-	}
-
+	fmemcpy(ptr_va_curr, &phdr->raw, hdrsize);
 	ptr_va_curr += hdrsize;
 	fmemcpy(ptr_va_curr, packet, len);
 	ptr_va_curr += len;
@@ -85,19 +73,7 @@ static ssize_t pcap_mm_read(int fd, pcap_pkthdr_t *phdr, enum pcap_type type,
 	if (unlikely((off_t) (ptr_va_curr + hdrsize - ptr_va_start) > map_size))
 		return -EIO;
 
-	switch (type) {
-#define CASE_HDR_READ(what, __member__) \
-	case (what): \
-		fmemcpy(&phdr->__member__, ptr_va_curr, hdrsize); \
-		break
-	CASE_HDR_READ(DEFAULT, ppo);
-	CASE_HDR_READ(NSEC, ppn);
-	CASE_HDR_READ(KUZNETZOV, ppk);
-	CASE_HDR_READ(BORKMANN, ppb);
-	default:
-		bug();
-	}
-
+	fmemcpy(&phdr->raw, ptr_va_curr, hdrsize);
 	ptr_va_curr += hdrsize;
 	hdrlen = pcap_get_length(phdr, type);
 
