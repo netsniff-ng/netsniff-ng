@@ -143,12 +143,7 @@ static void signal_handler(int number)
 
 static void timer_elapsed(int number)
 {
-	itimer.it_interval.tv_sec = 0;
-	itimer.it_interval.tv_usec = interval;
-
-	itimer.it_value.tv_sec = 0;
-	itimer.it_value.tv_usec = interval;
-
+	set_itimer_interval_value(&itimer, 0, interval);
 	pull_and_flush_tx_ring(sock);
 	setitimer(ITIMER_REAL, &itimer, NULL); 
 }
@@ -776,12 +771,7 @@ static void xmit_fastpath_or_die(struct ctx *ctx, int cpu)
 	if (ctx->num > 0)
 		num = ctx->num;
 
-	itimer.it_interval.tv_sec = 0;
-	itimer.it_interval.tv_usec = interval;
-
-	itimer.it_value.tv_sec = 0;
-	itimer.it_value.tv_usec = interval;
-
+	set_itimer_interval_value(&itimer, 0, interval);
 	setitimer(ITIMER_REAL, &itimer, NULL); 
 
 	bug_on(gettimeofday(&start, NULL));

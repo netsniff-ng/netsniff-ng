@@ -128,24 +128,14 @@ static void signal_handler(int number)
 
 static void timer_elapsed(int unused)
 {
-	itimer.it_interval.tv_sec = 0;
-	itimer.it_interval.tv_usec = interval;
-
-	itimer.it_value.tv_sec = 0;
-	itimer.it_value.tv_usec = interval;
-
+	set_itimer_interval_value(&itimer, 0, interval);
 	pull_and_flush_tx_ring(tx_sock);
 	setitimer(ITIMER_REAL, &itimer, NULL);
 }
 
 static void timer_next_dump(int unused)
 {
-	itimer.it_interval.tv_sec = interval;
-	itimer.it_interval.tv_usec = 0;
-
-	itimer.it_value.tv_sec = interval;
-	itimer.it_value.tv_usec = 0;
-
+	set_itimer_interval_value(&itimer, 0, interval);
 	next_dump = true;
 	setitimer(ITIMER_REAL, &itimer, NULL);
 }
@@ -237,12 +227,7 @@ static void pcap_to_xmit(struct ctx *ctx)
 	if (ctx->kpull)
 		interval = ctx->kpull;
 
-	itimer.it_interval.tv_sec = 0;
-	itimer.it_interval.tv_usec = interval;
-
-	itimer.it_value.tv_sec = 0;
-	itimer.it_value.tv_usec = interval;
-
+	set_itimer_interval_value(&itimer, 0, interval);
 	setitimer(ITIMER_REAL, &itimer, NULL); 
 
 	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
@@ -394,12 +379,7 @@ static void receive_to_xmit(struct ctx *ctx)
 	if (ctx->kpull)
 		interval = ctx->kpull;
 
-	itimer.it_interval.tv_sec = 0;
-	itimer.it_interval.tv_usec = interval;
-
-	itimer.it_value.tv_sec = 0;
-	itimer.it_value.tv_usec = interval;
-
+	set_itimer_interval_value(&itimer, 0, interval);
 	setitimer(ITIMER_REAL, &itimer, NULL);
 
 	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
@@ -739,12 +719,7 @@ static int begin_multi_pcap_file(struct ctx *ctx)
 	if (ctx->dump_mode == DUMP_INTERVAL_TIME) {
 		interval = ctx->dump_interval;
 
-		itimer.it_interval.tv_sec = interval;
-		itimer.it_interval.tv_usec = 0;
-
-		itimer.it_value.tv_sec = interval;
-		itimer.it_value.tv_usec = 0;
-
+		set_itimer_interval_value(&itimer, interval, 0);
 		setitimer(ITIMER_REAL, &itimer, NULL);
 	} else {
 		interval = 0;
