@@ -7,6 +7,9 @@
 #define ETH_FRAME_LEN	1514		/* Max. octets in frame sans FCS */
 #define ETH_FCS_LEN	4		/* Octets in the FCS */
 
+#define ETH_SRC_RAND	drnd(ETH_ALEN)
+#define ETH_DST_RAND	drnd(ETH_ALEN)
+
 #define ETH_P_LOOP	0x0060		/* Ethernet Loopback packet */
 #define ETH_P_PUP	0x0200		/* Xerox PUP packet */
 #define ETH_P_PUPAT	0x0201		/* Xerox PUP Addr Trans packet */
@@ -108,6 +111,15 @@
 #define IPPROTO_SCTP	132		/* Stream Control Transport Protocol */
 #define IPPROTO_UDPLITE	136		/* UDP-Lite (RFC 3828) */
 
+#define IP_ALEN			4
+#define IP_VERSION		4
+#define IP_TTL_DEFAULT		64
+#define IP_HDR_OFF_DEFAULT	14
+#define IP_SRC_RAND		drnd(IP_ALEN)
+#define IP_DST_RAND		drnd(IP_ALEN)
+#define IP_ID_RAND		drnd(2)
+#define IP_CSUM_DEFAULT		csumip(IP_HDR_OFF_DEFAULT, 33)	/* IP-hdr offset from, to */
+
 #define ICMP_ECHOREPLY		0	/* Echo Reply */
 #define ICMP_DEST_UNREACH	3	/* Destination Unreachable */
 #define ICMP_SOURCE_QUENCH	4	/* Source Quench */
@@ -151,13 +163,35 @@
 #define ICMP_EXC_TTL		0	/* TTL count exceeded */
 #define ICMP_EXC_FRAGTIME	1	/* Fragment Reass time exceeded	*/
 
-#define TCP_FLAG_CWR		0x00800000
-#define TCP_FLAG_ECE		0x00400000
-#define TCP_FLAG_URG		0x00200000
-#define TCP_FLAG_ACK		0x00100000
-#define TCP_FLAG_PSH		0x00080000
-#define TCP_FLAG_RST		0x00040000
-#define TCP_FLAG_SYN		0x00020000
-#define TCP_FLAG_FIN		0x00010000
-#define TCP_RESERVED_BITS	0x0F000000
-#define TCP_DATA_OFFSET		0xF0000000
+#define TCP_SEQ_RAND		drnd(4)
+#define TCP_ACK_RAND		drnd(4)
+#define TCP_SRC_RAND		drnd(2)
+#define TCP_DST_RAND		drnd(2)
+#define TCP_CSUM_DEFAULT	csumtcp(IP_HDR_OFF_DEFAULT, 34)	/* Offset IP, offset TCP */
+
+#define TCP_FLAG_CWR		(1 << 7)
+#define TCP_FLAG_ECE		(1 << 6)
+#define TCP_FLAG_URG		(1 << 5)
+#define TCP_FLAG_ACK		(1 << 4)
+#define TCP_FLAG_PSH		(1 << 3)
+#define TCP_FLAG_RST		(1 << 2)
+#define TCP_FLAG_SYN		(1 << 1)
+#define TCP_FLAG_FIN		(1 << 0)
+
+#define TCP_RESERVED_BITS	0x0F00
+#define TCP_DATA_OFFSET		0xF000
+
+/* Misc things */
+#define JOIN(x, y)		x ## y
+
+#define IF_0(x)
+#define IF_1(x)			x
+#define IF(bit, x)		JOIN(IF_, bit)(x)
+
+#define IF_ELSE_0(x, y)		y
+#define IF_ELSE_1(x, y)		x
+#define IF_ELSE(bit, x, y)	JOIN(IF_ELSE_, bit)(x, y)
+
+#define be16(x)			c16(x)
+#define be32(x)			c32(x)
+#define be64(x)			c64(x)
