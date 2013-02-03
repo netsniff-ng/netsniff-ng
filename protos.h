@@ -26,6 +26,7 @@ extern struct protocol ipv6_in_ipv4_ops;
 extern struct protocol ipv6_mobility_ops;
 extern struct protocol ipv6_no_next_header_ops;
 extern struct protocol ipv6_routing_ops;
+extern struct protocol lldp_ops;
 extern struct protocol none_ops;
 extern struct protocol tcp_ops;
 extern struct protocol udp_ops;

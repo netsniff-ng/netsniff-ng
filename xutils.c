@@ -1143,3 +1143,13 @@ void reset_system_socket_memory(int *vals, size_t len)
 	set_system_socket_mem(sock_wmem_max, vals[2]);
 	set_system_socket_mem(sock_wmem_def, vals[3]);
 }
+
+void set_itimer_interval_value(struct itimerval *itimer, unsigned long sec,
+			       unsigned long usec)
+{
+	itimer->it_interval.tv_sec = sec;
+	itimer->it_interval.tv_usec = usec;
+
+	itimer->it_value.tv_sec = sec;
+	itimer->it_value.tv_usec = usec;
+}
