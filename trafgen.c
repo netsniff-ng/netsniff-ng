@@ -148,45 +148,40 @@ static void timer_elapsed(int number)
 	setitimer(ITIMER_REAL, &itimer, NULL); 
 }
 
-static void header(void)
-{
-	printf("%s%s%s\n", colorize_start(bold), "trafgen " VERSION_STRING, colorize_end());
-}
-
 static void help(void)
 {
 	printf("\ntrafgen %s, multithreaded zero-copy network packet generator\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: trafgen [options]\n"
 	     "Options:\n"
-	     "  -i|-c|--in|--conf <cfg-file/->    Packet configuration file/stdin\n"
-	     "  -o|-d|--out|--dev <netdev>        Networking device i.e., eth0\n"
-	     "  -p|--cpp                          Run packet config through C preprocessor\n"
-	     "  -J|--jumbo-support                Support 64KB super jumbo frames (def: 2048B)\n"
-	     "  -R|--rfraw                        Inject raw 802.11 frames\n"
-	     "  -s|--smoke-test <ipv4-receiver>   Probe if machine survived fuzz-tested packet\n"
-	     "  -n|--num <uint>                   Number of packets until exit (def: 0)\n"
-	     "  -r|--rand                         Randomize packet selection (def: round robin)\n"
-	     "  -P|--cpus <uint>                  Specify number of forks(<= CPUs) (def: #CPUs)\n"
-	     "  -t|--gap <uint>                   Interpacket gap in us (approx)\n"
-	     "  -S|--ring-size <size>             Manually set mmap size (KiB/MiB/GiB)\n"
-	     "  -k|--kernel-pull <uint>           Kernel batch interval in us (def: 10us)\n"
-	     "  -E|--seed <uint>                  Manually set srand(3) seed\n"
-	     "  -u|--user <userid>                Drop privileges and change to userid\n"
-	     "  -g|--group <groupid>              Drop privileges and change to groupid\n"
-	     "  -V|--verbose                      Be more verbose\n"
-	     "  -v|--version                      Show version\n"
-	     "  -e|--example                      Show built-in packet config example\n"
-	     "  -h|--help                         Guess what?!\n\n"
+	     "  -i|-c|--in|--conf <cfg/->      Packet configuration file/stdin\n"
+	     "  -o|-d|--out|--dev <netdev>     Networking device i.e., eth0\n"
+	     "  -p|--cpp                       Run packet config through C preprocessor\n"
+	     "  -J|--jumbo-support             Support 64KB super jumbo frames (def: 2048B)\n"
+	     "  -R|--rfraw                     Inject raw 802.11 frames\n"
+	     "  -s|--smoke-test <ipv4>         Probe if machine survived fuzz-tested packet\n"
+	     "  -n|--num <uint>                Number of packets until exit (def: 0)\n"
+	     "  -r|--rand                      Randomize packet selection (def: round robin)\n"
+	     "  -P|--cpus <uint>               Specify number of forks(<= CPUs) (def: #CPUs)\n"
+	     "  -t|--gap <uint>                Interpacket gap in us (approx)\n"
+	     "  -S|--ring-size <size>          Manually set mmap size (KiB/MiB/GiB)\n"
+	     "  -k|--kernel-pull <uint>        Kernel batch interval in us (def: 10us)\n"
+	     "  -E|--seed <uint>               Manually set srand(3) seed\n"
+	     "  -u|--user <userid>             Drop privileges and change to userid\n"
+	     "  -g|--group <groupid>           Drop privileges and change to groupid\n"
+	     "  -V|--verbose                   Be more verbose\n"
+	     "  -v|--version                   Show version\n"
+	     "  -e|--example                   Show built-in packet config example\n"
+	     "  -h|--help                      Guess what?!\n\n"
 	     "Examples:\n"
 	     "  See trafgen.txf for configuration file examples.\n"
 	     "  trafgen --dev eth0 --conf trafgen.cfg\n"
 	     "  trafgen -e | trafgen -i - -o eth0 --cpp -n 1\n"
-	     "  trafgen --dev eth0 --conf trafgen.cfg --smoke-test 10.0.0.1\n"
+	     "  trafgen --dev eth0 --conf fuzzing.cfg --smoke-test 10.0.0.1\n"
 	     "  trafgen --dev wlan0 --rfraw --conf beacon-test.txf -V --cpus 2\n"
-	     "  trafgen --dev eth0 --conf trafgen.cfg --rand --gap 1000\n"
-	     "  trafgen --dev eth0 --conf trafgen.cfg --rand --num 1400000 -k1000\n"
-	     "  trafgen --dev eth0 --conf trafgen.cfg -u `id -u bob` -g `id -g bob`\n\n"
+	     "  trafgen --dev eth0 --conf frag_dos.cfg --rand --gap 1000\n"
+	     "  trafgen --dev eth0 --conf icmp.cfg --rand --num 1400000 -k1000\n"
+	     "  trafgen --dev eth0 --conf tcp_syn.cfg -u `id -u bob` -g `id -g bob`\n\n"
 	     "Arbitrary packet config examples (e.g. trafgen -e > trafgen.cfg):\n"
 	     "  Run packet on  all CPUs:              { fill(0xff, 64) csum16(0, 64) }\n"
 	     "  Run packet only on CPU1:    cpu(1):   { rnd(64), 0b11001100, 0xaa }\n"
@@ -198,9 +193,9 @@ static void help(void)
 	     "  In case you find a ping-of-death, please mention trafgen in your\n"
 	     "  commit message of the fix!\n\n"
 	     "  For introducing bit errors, delays with random variation and more,\n"
-	     "  make use of tc(8) with its difference disciplines (e.g. netem).\n\n"
-	     "  For generating different package distributions, you can use some\n"
-	     "  scripting to generate a trafgen config file with packet ratios as:\n\n"
+	     "  make use of tc(8) with its different disciplines, i.e. netem.\n\n"
+	     "  For generating different package distributions, you can use scripting\n"
+	     "  to generate a trafgen config file with packet ratios as:\n\n"
 	     "     IMIX             64:7,  570:4,  1518:1\n"
 	     "     Tolly            64:55,  78:5,   576:17, 1518:23\n"
 	     "     Cisco            64:7,  594:4,  1518:1\n"
@@ -1151,8 +1146,6 @@ int main(int argc, char **argv)
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
 	register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO);
-
-	header();
 
 	set_system_socket_memory(vals, array_size(vals));
 	xlockme();
