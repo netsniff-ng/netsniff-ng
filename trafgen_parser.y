@@ -572,7 +572,7 @@ int compile_packets(char *file, int verbose, int cpu, bool invoke_cpp)
 		char cmd[256];
 
 		slprintf(tmp_file, sizeof(tmp_file), ".tmp-%u-%s", rand(), file);
-		slprintf(cmd, sizeof(cmd), "cpp %s > %s", file, tmp_file);
+		slprintf(cmd, sizeof(cmd), "cpp -I/etc/netsniff-ng/ %s > %s", file, tmp_file);
 		system(cmd);
 
 		file = tmp_file;

@@ -214,12 +214,12 @@ static void example(void)
 {
 	const char *e =
 	"/* Note: dynamic elements make trafgen slower! */\n\n"
-	"#define ETH_P_IP	0x0800\n\n"
+	"#include <stddef.h>\n"
 	"#define SYN		(1 << 1)\n"
 	"#define ECN		(1 << 6)\n\n"
 	"{\n"
 	"  /* MAC Destination */\n"
-	"  fill(0xff, 6),\n"
+	"  fill(0xff, ETH_ALEN),\n"
 	"  /* MAC Source */\n"
 	"  0x00, 0x02, 0xb3, drnd(3),\n"
 	"  /* IPv4 Protocol */\n"

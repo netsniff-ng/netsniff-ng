@@ -244,13 +244,17 @@ trafgen_clean_custom:
 netsniff-ng_distclean_custom flowtop_distclean_custom:
 	$(Q)$(foreach file,$(NCONF_FILES),$(call RM,$(ETCDIRE)/$(file));)
 	$(Q)$(call RMDIR,$(ETCDIRE))
+trafgen_distclean_custom:
+	$(Q)$(call RM,$(ETCDIRE)/stddef.h)
+	$(Q)$(call RMDIR,$(ETCDIRE))
 astraceroute_distclean_custom:
 	$(Q)$(call RM,$(ETCDIRE)/whois.conf)
-	$(Q)$(call RM,$(SBINDIR)/astraceroute6)
 	$(Q)$(call RMDIR,$(ETCDIRE))
 
 netsniff-ng_install_custom flowtop_install_custom:
 	$(Q)$(foreach file,$(NCONF_FILES),$(call INST,configs/$(file),$(ETCDIRE));)
+trafgen_install_custom:
+	$(Q)$(call INST,configs/stddef.h,$(ETCDIRE))
 astraceroute_install_custom:
 	$(Q)$(call INST,configs/whois.conf,$(ETCDIRE))
 
