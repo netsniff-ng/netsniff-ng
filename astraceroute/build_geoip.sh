@@ -9,4 +9,4 @@ cp libGeoIP/GeoIPUpdate.h /usr/include/
 cp libGeoIP/GeoIP.h /usr/include/
 cp libGeoIP/GeoIPCity.h /usr/include/
 cd -
-../../contrib/scripts/geoip-database-update
+../update-geoip.sh
