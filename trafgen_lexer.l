@@ -20,6 +20,44 @@
 
 extern void yyerror(const char *);
 
+static char *try_convert_shellcode(char *sstr)
+{
+	int j = 0;
+	char *bstr, *ostr = sstr, *hay;
+	size_t blen, slen = strlen(sstr), tot = 0;
+	const char *needle = "\\x";
+
+	sstr++;
+	slen -= 2;
+
+	if (slen % 4 != 0)
+		return sstr;
+
+	blen = slen / 4;
+	hay = sstr;
+	while ((hay = strstr(hay, needle)) != NULL ) {
+		hay += strlen(needle) + 2;
+		tot++;
+	}
+
+	if (blen != tot) {
+		printf("Warning: mixed shellcode with strings, "
+		       "using strings!\n");
+		return sstr;
+	}
+
+	blen += 2;
+	bstr = xzmalloc(blen);
+
+	bstr[j++] = '\"';
+	while (j < blen - 1)
+		bstr[j++] = (uint8_t) strtoul(sstr + 2, &sstr, 16);
+	bstr[j++] = '\"';
+
+	xfree(ostr);
+	return bstr;
+}
+
 %}
 
 %option align
@@ -77,7 +115,7 @@ number_ascii	([a-zA-Z])
 
 "\n"		{ yylineno++; }
 
-"\""[^\"]+"\""	{ yylval.str = xstrdup(yytext);
+"\""[^\"]+"\""	{ yylval.str = try_convert_shellcode(xstrdup(yytext));
 		  return string; }
 
 ([ \t\r\n]+)?	{ return K_WHITE; }
@@ -99,6 +137,9 @@ number_ascii	([a-zA-Z])
 		  return number; }
 
 {number_ascii}	{ yylval.number = (uint8_t) (*yytext);
+		  return number; }
+
+"'\\x"[a-fA-F0-9]{2}"'" { yylval.number = strtol(yytext + 3, NULL, 16);
 		  return number; }
 
 "'"."'"		{ yylval.number = (uint8_t) (*(yytext + 1));
