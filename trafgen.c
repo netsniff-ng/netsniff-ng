@@ -695,7 +695,7 @@ retry:
 			ret = xmit_smoke_probe(icmp_sock, ctx);
 			if (unlikely(ret < 0)) {
 				printf("%sSmoke test alert:%s\n", colorize_start(bold), colorize_end());
-				printf("  Remote host seems to be unresponsive to ICMP pings!\n");
+				printf("  Remote host seems to be unresponsive to ICMP probes!\n");
 				printf("  Last instance was packet%lu, seed:%u, trafgen snippet:\n\n",
 				       i, seed);
 
