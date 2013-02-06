@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <libgen.h>
 
 #include "xmalloc.h"
 #include "trafgen_parser.tab.h"
@@ -569,13 +570,18 @@ int compile_packets(char *file, int verbose, int cpu, bool invoke_cpp)
 	our_cpu = cpu;
 
 	if (invoke_cpp) {
-		char cmd[256];
+		char cmd[256], *dir, *base, *a, *b;
 
-		slprintf(tmp_file, sizeof(tmp_file), ".tmp-%u-%s", rand(), file);
+		dir = dirname((a = xstrdup(file)));
+		base = basename((b = xstrdup(file)));
+
+		slprintf(tmp_file, sizeof(tmp_file), "%s/.tmp-%u-%s", dir, rand(), base);
 		slprintf(cmd, sizeof(cmd), "cpp -I/etc/netsniff-ng/ %s > %s", file, tmp_file);
 		system(cmd);
 
 		file = tmp_file;
+		xfree(a);
+		xfree(b);
 	}
 
 	if (!strncmp("-", file, strlen("-")))
