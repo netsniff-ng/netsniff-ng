@@ -213,10 +213,8 @@ static void help(void)
 static void example(void)
 {
 	const char *e =
-	"/* Note: dynamic elements make trafgen slower! */\n\n"
-	"#include <stddef.h>\n"
-	"#define SYN		(1 << 1)\n"
-	"#define ECN		(1 << 6)\n\n"
+	"/* Note: dynamic elements make trafgen slower! */\n"
+	"#include <stddef.h>\n\n"
 	"{\n"
 	"  /* MAC Destination */\n"
 	"  fill(0xff, ETH_ALEN),\n"
@@ -251,7 +249,7 @@ static void example(void)
 	"  /* TCP Ackn. Number */\n"
 	"  c32(0),\n"
 	"  /* TCP Header length + TCP SYN/ECN Flag */\n"
-	"  c16((0x8 << 12) | SYN | ECN)\n"
+	"  c16((0x8 << 12) | TCP_FLAG_SYN | TCP_FLAG_ECE)\n"
 	"  /* Window Size */\n"
 	"  c16(16),\n"
 	"  /* TCP Checksum (offset IP, offset TCP) */\n"
