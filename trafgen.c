@@ -82,7 +82,7 @@ size_t plen = 0;
 struct packet_dyn *packet_dyn = NULL;
 size_t dlen = 0;
 
-static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRsP:eE:pu:g:";
+static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRs:P:eE:pu:g:";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"out",			required_argument,	NULL, 'o'},
