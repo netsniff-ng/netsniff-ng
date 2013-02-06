@@ -581,8 +581,8 @@ static int xmit_smoke_setup(struct ctx *ctx)
 
 static int xmit_smoke_probe(int icmp_sock, struct ctx *ctx)
 {
-	int ret, i, probes = 5;
-	short ident, cnt = 1;
+	int ret, i, j = 0, probes = 10;
+	short ident, cnt = 1, idstore[probes];
 	uint8_t outpack[512], *data;
 	struct icmphdr *icmp;
 	struct iphdr *ip;
@@ -594,8 +594,11 @@ static int xmit_smoke_probe(int icmp_sock, struct ctx *ctx)
 		.events = POLLIN,
 	};
 
+	fmemset(idstore, 0, sizeof(idstore));
 	while (probes-- > 0) {
-		ident = htons((short) rand());
+		while ((ident = htons((short) rand())) == 0)
+			sleep(0);
+		idstore[j++] = ident;
 
 		memset(outpack, 0, sizeof(outpack));
 		icmp = (void *) outpack;
@@ -617,7 +620,7 @@ static int xmit_smoke_probe(int icmp_sock, struct ctx *ctx)
 		if (unlikely(ret != len))
 			panic("Cannot send out probe: %s!\n", strerror(errno));
 
-		ret = poll(&fds, 1, 500);
+		ret = poll(&fds, 1, 5000);
 		if (ret < 0)
 			panic("Poll failed!\n");
 
@@ -636,10 +639,11 @@ static int xmit_smoke_probe(int icmp_sock, struct ctx *ctx)
 			if (unlikely(ip->ihl * 4 + sizeof(*icmp) > ret))
 				continue;
 			icmp = (void *) outpack + ip->ihl * 4;
-			if (unlikely(icmp->un.echo.id != ident))
-				continue;
-
-			return 0;
+			for (i = 0; i < array_size(idstore); ++i) {
+				if (unlikely(icmp->un.echo.id != idstore[i]))
+					continue;
+				return 0;
+			}
 		}
 	}
 
