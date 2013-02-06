@@ -581,7 +581,7 @@ static int xmit_smoke_setup(struct ctx *ctx)
 
 static int xmit_smoke_probe(int icmp_sock, struct ctx *ctx)
 {
-	int ret, i, j = 0, probes = 10;
+	int ret, i, j = 0, probes = 100;
 	short ident, cnt = 1, idstore[probes];
 	uint8_t outpack[512], *data;
 	struct icmphdr *icmp;
@@ -620,7 +620,7 @@ static int xmit_smoke_probe(int icmp_sock, struct ctx *ctx)
 		if (unlikely(ret != len))
 			panic("Cannot send out probe: %s!\n", strerror(errno));
 
-		ret = poll(&fds, 1, 5000);
+		ret = poll(&fds, 1, 50);
 		if (ret < 0)
 			panic("Poll failed!\n");
 
@@ -776,9 +776,6 @@ static void xmit_fastpath_or_die(struct ctx *ctx, int cpu)
 	while (likely(sigint == 0) && likely(num > 0)) {
 		while (user_may_pull_from_tx(tx_ring.frames[it].iov_base) && likely(num > 0)) {
 			hdr = tx_ring.frames[it].iov_base;
-
-			/* Kernel assumes: data = ph.raw + po->tp_hdrlen -
-			 *                        sizeof(struct sockaddr_ll); */
 			out = ((uint8_t *) hdr) + TPACKET2_HDRLEN - sizeof(struct sockaddr_ll);
 
 			hdr->tp_h.tp_snaplen = packets[i].len;
