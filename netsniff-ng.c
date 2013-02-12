@@ -135,7 +135,7 @@ static void timer_elapsed(int unused)
 
 static void timer_next_dump(int unused)
 {
-	set_itimer_interval_value(&itimer, 0, interval);
+	set_itimer_interval_value(&itimer, interval, 0);
 	next_dump = true;
 	setitimer(ITIMER_REAL, &itimer, NULL);
 }
