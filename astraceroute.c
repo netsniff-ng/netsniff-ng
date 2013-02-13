@@ -360,7 +360,7 @@ static int assemble_ipv4_tcp(uint8_t *packet, size_t len, int ttl,
 	iph->id = htons((uint16_t) rand());
 	iph->frag_off = nofrag ? IP_DF : 0;
 	iph->ttl = (uint8_t) ttl;
-	iph->protocol = 6; /* TCP */
+	iph->protocol = IPPROTO_TCP;
 	iph->saddr = ((const struct sockaddr_in *) src)->sin_addr.s_addr;
 	iph->daddr = ((const struct sockaddr_in *) dst)->sin_addr.s_addr;
 
@@ -466,7 +466,7 @@ static int assemble_ipv4_icmp4(uint8_t *packet, size_t len, int ttl,
 	iph->id = htons((uint16_t) rand());
 	iph->frag_off = nofrag ? IP_DF : 0;
 	iph->ttl = (uint8_t) ttl;
-	iph->protocol = 1; /* ICMP4 */
+	iph->protocol = IPPROTO_ICMP;
 	iph->saddr = ((const struct sockaddr_in *) src)->sin_addr.s_addr;
 	iph->daddr = ((const struct sockaddr_in *) dst)->sin_addr.s_addr;
 
