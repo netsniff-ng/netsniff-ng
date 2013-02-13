@@ -792,26 +792,6 @@ void leave_promiscuous_mode(char *ifname, short oldflags)
 	device_set_flags(ifname, oldflags);
 }
 
-int device_up(char *ifname)
-{
-	if (!ifname)
-		return -EINVAL;
-	if (!strncmp("any", ifname, strlen("any")))
-		return 1;
-
-	return (device_get_flags(ifname) & IFF_UP) == IFF_UP;
-}
-
-int device_running(char *ifname)
-{
-	if (!ifname)
-		return -EINVAL;
-	if (!strncmp("any", ifname, strlen("any")))
-		return 1;
-
-	return (device_get_flags(ifname) & IFF_RUNNING) == IFF_RUNNING;
-}
-
 int device_up_and_running(char *ifname)
 {
 	if (!ifname)
