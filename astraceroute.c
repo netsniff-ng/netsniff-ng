@@ -530,7 +530,7 @@ static int handle_ipv4_icmp(uint8_t *packet, size_t len, int ttl, int id,
 	struct asrecord rec;
 	GeoIPRecord *gir;
 
-	if (iph->protocol != 1)
+	if (iph->protocol != IPPROTO_ICMP)
 		return PKT_NOT_FOR_US;
 	if (iph->daddr != ((const struct sockaddr_in *) own)->sin_addr.s_addr)
 		return PKT_NOT_FOR_US;
