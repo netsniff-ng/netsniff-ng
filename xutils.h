@@ -65,7 +65,6 @@ extern int get_system_socket_mem(int which);
 extern void set_system_socket_mem(int which, int val);
 extern void register_signal(int signal, void (*handler)(int));
 extern void register_signal_f(int signal, void (*handler)(int), int flags);
-extern int get_tty_size(void);
 extern short enter_promiscuous_mode(char *ifname);
 extern void leave_promiscuous_mode(char *ifname, short oldflags);
 extern int device_up_and_running(char *ifname);

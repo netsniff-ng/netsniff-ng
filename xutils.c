@@ -45,7 +45,6 @@
 #include "die.h"
 #include "xutils.h"
 #include "ring.h"
-#include "tprintf.h"
 #include "built_in.h"
 
 #define IOPRIO_CLASS_SHIFT      13
@@ -746,21 +745,6 @@ void register_signal_f(int signal, void (*handler)(int), int flags)
 	saction.sa_flags = flags;
 
 	sigaction(signal, &saction, NULL);
-}
-
-int get_tty_size(void)
-{
-#ifdef TIOCGSIZE
-	struct ttysize ts = {0};
-
-	return (ioctl(0, TIOCGSIZE, &ts) == 0 ?	ts.ts_cols : DEFAULT_TTY_SIZE);
-#elif defined(TIOCGWINSZ)
-	struct winsize ts;
-
-	return (ioctl(0, TIOCGWINSZ, &ts) == 0 ? ts.ws_col : DEFAULT_TTY_SIZE);
-#else
-	return DEFAULT_TTY_SIZE;
-#endif
 }
 
 short enter_promiscuous_mode(char *ifname)

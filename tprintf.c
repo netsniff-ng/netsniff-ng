@@ -28,6 +28,21 @@ static volatile size_t buffer_use = 0;
 
 static struct spinlock buffer_lock;
 
+static int get_tty_size(void)
+{
+#ifdef TIOCGSIZE
+	struct ttysize ts = {0};
+
+	return (ioctl(0, TIOCGSIZE, &ts) == 0 ?	ts.ts_cols : DEFAULT_TTY_SIZE);
+#elif defined(TIOCGWINSZ)
+	struct winsize ts;
+
+	return (ioctl(0, TIOCGWINSZ, &ts) == 0 ? ts.ws_col : DEFAULT_TTY_SIZE);
+#else
+	return DEFAULT_TTY_SIZE;
+#endif
+}
+
 static inline void __tprintf_flush_newline(void)
 {
 	int i;
