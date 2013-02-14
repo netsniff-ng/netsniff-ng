@@ -379,6 +379,14 @@ next:
 	return 0;
 }
 
+static int adjust_dbm_level(int in_dbm, int dbm_val)
+{
+	if (!in_dbm)
+		return dbm_val;
+
+	return dbm_val - 0x100;
+}
+
 static int stats_wireless(const char *ifname, struct ifstat *stats)
 {
 	int ret;

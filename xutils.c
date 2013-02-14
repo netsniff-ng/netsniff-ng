@@ -251,14 +251,6 @@ u32 wireless_bitrate(const char *ifname)
 	return rate_in_mbit;
 }
 
-int adjust_dbm_level(int in_dbm, int dbm_val)
-{
-	if (!in_dbm)
-		return dbm_val;
-
-	return dbm_val - 0x100;
-}
-
 void drop_privileges(bool enforce, uid_t uid, gid_t gid)
 {
 	if (enforce) {
