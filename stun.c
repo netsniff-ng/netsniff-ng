@@ -112,7 +112,8 @@ static int stun_test(const char *server_ip, int server_port,
 		return -EIO;
 	}
 
-	set_timeout(&timeout, TIMEOUT);
+	timeout.tv_sec = TIMEOUT / 1000;
+	timeout.tv_usec = (TIMEOUT % 1000) * 1000;
 
 	FD_ZERO(&fdset);
 	FD_SET(sock, &fdset);

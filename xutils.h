@@ -78,7 +78,6 @@ extern int set_sched_status(int policy, int priority);
 extern void ioprio_print(void);
 extern void set_ioprio_rt(void);
 extern void set_ioprio_be(void);
-extern int set_timeout(struct timeval *timeval, unsigned int msec);
 extern size_t strlcpy(char *dest, const char *src, size_t size);
 extern int slprintf(char *dst, size_t size, const char *fmt, ...)  __check_format_printf(3, 4);
 extern int slprintf_nocheck(char *dst, size_t size, const char *fmt, ...);
