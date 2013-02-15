@@ -91,7 +91,7 @@ int af_socket(int af)
 	int sock;
 
 	if (unlikely(af != AF_INET && af != AF_INET6))
-		panic("Wrong AF socket type! Falling back to AF_INET\n");
+		panic("Wrong AF socket type!\n");
 
 	sock = socket(af, SOCK_DGRAM, 0);
 	if (unlikely(sock < 0))
