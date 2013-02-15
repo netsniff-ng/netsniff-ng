@@ -61,7 +61,7 @@ struct stun_mapped_addr {
 static int stun_test(const char *server_ip, int server_port,
 		     int tun_port)
 {
-	int ret, sock, set = 1;
+	int ret, sock;
 	uint8_t pkt[256];
 	uint8_t rpkt[256];
 	size_t len, off, max;
@@ -80,9 +80,7 @@ static int stun_test(const char *server_ip, int server_port,
 	if (sock < 0)
 		panic("Cannot obtain socket!\n");
 
-	ret = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &set, sizeof(set));
-	if (ret)
-		panic("Cannot set socket option!\n");
+	set_reuseaddr(sock);
 
 	saddr.sin_family = PF_INET;
 	saddr.sin_port = htons(tun_port);
