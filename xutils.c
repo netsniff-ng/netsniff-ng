@@ -191,7 +191,7 @@ int set_reuseaddr(int fd)
 {
 	int ret, one = 1;
 
-	ret = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof (one));
+	ret = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
 	if (unlikely(ret < 0))
 		panic("Cannot reuse addr!\n");
 
