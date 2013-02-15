@@ -50,7 +50,7 @@ struct tcphdr {
 	uint16_t window;
 	uint16_t check;
 	uint16_t urg_ptr;
-} __attribute__((packed));
+} __packed;
 
 static void tcp(struct pkt_buff *pkt)
 {

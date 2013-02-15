@@ -19,7 +19,7 @@ struct udphdr {
 	uint16_t dest;
 	uint16_t len;
 	uint16_t check;
-} __attribute__((packed));
+} __packed;
 
 static void udp(struct pkt_buff *pkt)
 {
