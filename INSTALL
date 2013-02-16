@@ -129,6 +129,10 @@ is located at scripts/geoip-database-update, or use:
 
   # make update
 
+As stated in http://www.maxmind.com/en/geolite_city_accuracy, it is recommended
+that you update GeoIP databases regularly, otherwise it will loose about 1.5%
+accuracy each month.
+
 If you're unsure with any make targets, check out: make help
 
 In order to run the toolkit as a normal user, set the following privilege
