@@ -28,8 +28,6 @@
 #include <libnetfilter_conntrack/libnetfilter_conntrack_tcp.h>
 #include <libnetfilter_conntrack/libnetfilter_conntrack_dccp.h>
 #include <libnetfilter_conntrack/libnetfilter_conntrack_sctp.h>
-#include <GeoIP.h>
-#include <GeoIPCity.h>
 #include <netinet/in.h>
 #include <curses.h>
 #include <dirent.h>
@@ -41,16 +39,12 @@
 #include "die.h"
 #include "xmalloc.h"
 #include "xio.h"
+#include "geoip.h"
 #include "xutils.h"
 #include "built_in.h"
 #include "locking.h"
 #include "dissector_eth.h"
 #include "pkt_buff.h"
-
-struct geo_ip_db {
-	GeoIP *gi4, *gi6;
-	char *path4, *path6;
-};
 
 struct flow_entry {
 	uint32_t flow_id, use, status;
@@ -95,11 +89,9 @@ volatile sig_atomic_t sigint = 0;
 
 static int what = INCLUDE_IPV4 | INCLUDE_IPV6 | INCLUDE_TCP, show_src = 0;
 
-struct geo_ip_db geo_country, geo_city;
-
 static struct flow_list flow_list;
 
-static const char *short_options = "vhTULKsOPDIS46";
+static const char *short_options = "vhTUsDIS46";
 static const struct option long_options[] = {
 	{"ipv4",	no_argument,		NULL, '4'},
 	{"ipv6",	no_argument,		NULL, '6'},
@@ -109,10 +101,6 @@ static const struct option long_options[] = {
 	{"icmp",	no_argument,		NULL, 'I'},
 	{"sctp",	no_argument,		NULL, 'S'},
 	{"show-src",	no_argument,		NULL, 's'},
-	{"city-db4",	required_argument,	NULL, 'L'},
-	{"country-db4",	required_argument,	NULL, 'K'},
-	{"city-db6",	required_argument,	NULL, 'O'},
-	{"country-db6",	required_argument,	NULL, 'P'},
 	{"version",	no_argument,		NULL, 'v'},
 	{"help",	no_argument,		NULL, 'h'},
 	{NULL, 0, NULL, 0}
@@ -259,10 +247,6 @@ static void help(void)
 	     "  -I|--icmp              Show only ICMP/ICMPv6 flows\n"
 	     "  -S|--sctp              Show only SCTP flows\n"
 	     "  -s|--show-src          Also show source, not only dest\n"
-	     "  --city-db4 <path>      Specifiy path for geoip4 city database\n"
-	     "  --country-db4 <path>   Specifiy path for geoip4 country database\n"
-	     "  --city-db6 <path>      Specifiy path for geoip6 city database\n"
-	     "  --country-db6 <path>   Specifiy path for geoip6 country database\n"
 	     "  -v|--version           Print version\n"
 	     "  -h|--help              Print this help\n\n"
 	     "Examples:\n"
@@ -609,7 +593,6 @@ static void
 flow_entry_geo_city_lookup_generic(struct flow_entry *n,
 				   enum flow_entry_direction dir)
 {
-	GeoIPRecord *gir = NULL;
 	struct sockaddr_in sa4;
 	struct sockaddr_in6 sa6;
 	const char *city = NULL;
@@ -620,18 +603,14 @@ flow_entry_geo_city_lookup_generic(struct flow_entry *n,
 
 	case AF_INET:
 		flow_entry_get_sain4_obj(n, dir, &sa4);
-		gir = GeoIP_record_by_ipnum(geo_city.gi4,
-					    ntohl(sa4.sin_addr.s_addr));
+		city = geoip4_city_name(sa4);
 		break;
 
 	case AF_INET6:
 		flow_entry_get_sain6_obj(n, dir, &sa6);
-		gir = GeoIP_record_by_ipnum_v6(geo_city.gi6, sa6.sin6_addr);
+		city = geoip6_city_name(sa6);
 		break;
 	}
-
-	if (gir != NULL)
-		city = gir->city;
 
 	bug_on(sizeof(n->city_src) != sizeof(n->city_dst));
 
@@ -659,20 +638,19 @@ flow_entry_geo_country_lookup_generic(struct flow_entry *n,
 
 	case AF_INET:
 		flow_entry_get_sain4_obj(n, dir, &sa4);
-		country = GeoIP_country_name_by_ipnum(geo_country.gi4,
-						ntohl(sa4.sin_addr.s_addr));
+		country = geoip4_country_name(sa4);
 		break;
 
 	case AF_INET6:
 		flow_entry_get_sain6_obj(n, dir, &sa6);
-		country = GeoIP_country_name_by_ipnum_v6(geo_country.gi6,
-							 sa6.sin6_addr);
+		country = geoip6_country_name(sa6);
 		break;
 	}
 
 	country = make_na(country);
 
 	bug_on(sizeof(n->country_src) != sizeof(n->country_dst));
+
 	memcpy(SELFLD(dir, country_src, country_dst), country,
 	       min(sizeof(n->country_src), strlen(country)));
 }
@@ -1073,52 +1051,6 @@ static int collector_cb(enum nf_conntrack_msg_type type,
 	return NFCT_CB_CONTINUE;
 }
 
-static inline GeoIP *collector_geoip_open(const char *path, int type)
-{
-	if (path != NULL)
-		return GeoIP_open(path, GEOIP_MMAP_CACHE);
-	else
-		return GeoIP_open_type(type, GEOIP_MMAP_CACHE);
-}
-
-static void collector_load_geoip(void)
-{
-	geo_country.gi4 = collector_geoip_open(geo_country.path4,
-					       GEOIP_COUNTRY_EDITION);
-	if (geo_country.gi4 == NULL)
-		panic("Cannot open GeoIP4 country database!\n");
-
-	geo_country.gi6 = collector_geoip_open(geo_country.path6,
-					       GEOIP_COUNTRY_EDITION_V6);
-	if (geo_country.gi6 == NULL)
-		panic("Cannot open GeoIP6 country database!\n");
-
-	geo_city.gi4 = collector_geoip_open(geo_city.path4,
-					    GEOIP_CITY_EDITION_REV1);
-	if (geo_city.gi4 == NULL)
-		panic("Cannot open GeoIP4 city database!\n");
-
-	geo_city.gi6 = collector_geoip_open(geo_city.path6,
-					    GEOIP_CITY_EDITION_REV1_V6);
-	if (geo_city.gi6 == NULL)
-		panic("Cannot open GeoIP6 city database!\n");
-
-	GeoIP_set_charset(geo_country.gi4, GEOIP_CHARSET_UTF8);
-	GeoIP_set_charset(geo_country.gi6, GEOIP_CHARSET_UTF8);
-
-	GeoIP_set_charset(geo_city.gi4, GEOIP_CHARSET_UTF8);
-	GeoIP_set_charset(geo_city.gi6, GEOIP_CHARSET_UTF8);
-}
-
-static void collector_destroy_geoip(void)
-{
-	GeoIP_delete(geo_country.gi4);
-	GeoIP_delete(geo_country.gi6);
-
-	GeoIP_delete(geo_city.gi4);
-	GeoIP_delete(geo_city.gi6);
-}
-
 static inline void collector_flush(struct nfct_handle *handle, uint8_t family)
 {
 	nfct_query(handle, NFCT_Q_FLUSH, &family);
@@ -1162,13 +1094,11 @@ static void *collector(void *null)
 	if (what & INCLUDE_ICMP && what & INCLUDE_IPV6)
 		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO, IPPROTO_ICMPV6);
 	if (what & INCLUDE_IPV4) {
-		nfct_filter_set_logic(filter, NFCT_FILTER_SRC_IPV4,
-				      NFCT_FILTER_LOGIC_NEGATIVE);
+		nfct_filter_set_logic(filter, NFCT_FILTER_SRC_IPV4, NFCT_FILTER_LOGIC_NEGATIVE);
 		nfct_filter_add_attr(filter, NFCT_FILTER_SRC_IPV4, &filter_ipv4);
 	}
 	if (what & INCLUDE_IPV6) {
-		nfct_filter_set_logic(filter, NFCT_FILTER_SRC_IPV6,
-				      NFCT_FILTER_LOGIC_NEGATIVE);
+		nfct_filter_set_logic(filter, NFCT_FILTER_SRC_IPV6, NFCT_FILTER_LOGIC_NEGATIVE);
 		nfct_filter_add_attr(filter, NFCT_FILTER_SRC_IPV6, &filter_ipv6);
 	}
 
@@ -1177,11 +1107,7 @@ static void *collector(void *null)
 		panic("Cannot attach filter to handle!\n");
 
 	nfct_callback_register(handle, NFCT_T_ALL, collector_cb, NULL);
-
 	nfct_filter_destroy(filter);
-
-	collector_load_geoip();
-
 	flow_list_init(&flow_list);
 
 	rcu_register_thread();
@@ -1192,9 +1118,6 @@ static void *collector(void *null)
 	rcu_unregister_thread();
 
 	flow_list_destroy(&flow_list);
-
-	collector_destroy_geoip();
-
 	nfct_close(handle);
 
 	pthread_exit(0);
@@ -1207,9 +1130,6 @@ int main(int argc, char **argv)
 
 	setfsuid(getuid());
 	setfsgid(getgid());
-
-	memset(&geo_country, 0, sizeof(geo_country));
-	memset(&geo_city, 0, sizeof(geo_city));
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 	       &opt_index)) != EOF) {
@@ -1238,37 +1158,12 @@ int main(int argc, char **argv)
 		case 's':
 			show_src = 1;
 			break;
-		case 'L':
-			geo_city.path4 = xstrdup(optarg);
-			break;
-		case 'K':
-			geo_country.path4 = xstrdup(optarg);
-			break;
-		case 'O':
-			geo_city.path6 = xstrdup(optarg);
-			break;
-		case 'P':
-			geo_country.path6 = xstrdup(optarg);
-			break;
 		case 'h':
 			help();
 			break;
 		case 'v':
 			version();
 			break;
-		case '?':
-			switch (optopt) {
-			case 'L':
-			case 'K':
-			case 'O':
-			case 'P':
-				panic("Option -%c requires an argument!\n",
-				      optopt);
-			default:
-				if (isprint(optopt))
-					printf("Unknown option character `0x%X\'!\n", optopt);
-				die();
-			}
 		default:
 			break;
 		}
@@ -1282,17 +1177,15 @@ int main(int argc, char **argv)
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
 
+	init_geoip();
+
 	ret = pthread_create(&tid, NULL, collector, NULL);
 	if (ret < 0)
 		panic("Cannot create phthread!\n");
 
 	presenter();
 
-	free(geo_country.path4);
-	free(geo_country.path6);
-
-	free(geo_city.path4);
-	free(geo_city.path6);
+	destroy_geoip();
 
 	return 0;
 }

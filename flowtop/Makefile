@@ -14,4 +14,5 @@ flowtop-objs =	xmalloc.o \
 		dissector.o \
 		proto_none.o \
 		tprintf.o \
+		geoip.o \
 		flowtop.o
