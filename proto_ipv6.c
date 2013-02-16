@@ -16,6 +16,7 @@
 #include "csum.h"
 #include "dissector_eth.h"
 #include "ipv6.h"
+#include "geoip.h"
 #include "pkt_buff.h"
 
 extern void ipv6(struct pkt_buff *pkt);
@@ -28,6 +29,8 @@ void ipv6(struct pkt_buff *pkt)
 	char src_ip[INET6_ADDRSTRLEN];
 	char dst_ip[INET6_ADDRSTRLEN];
 	struct ipv6hdr *ip = (struct ipv6hdr *) pkt_pull(pkt, sizeof(*ip));
+	struct sockaddr_in6 sas, sad;
+	const char *city, *country;
 
 	if (ip == NULL)
 		return;
@@ -49,6 +52,32 @@ void ipv6(struct pkt_buff *pkt)
 	tprintf("NextHdr (%u), ", ip->nexthdr);
 	tprintf("HopLimit (%u)", ip->hop_limit);
 	tprintf(" ]\n");
+
+	memset(&sas, 0, sizeof(sas));
+	sas.sin6_family = PF_INET6;
+	memcpy(&sas.sin6_addr, &ip->saddr, sizeof(ip->saddr));
+
+	memset(&sad, 0, sizeof(sad));
+	sad.sin6_family = PF_INET6;
+	memcpy(&sad.sin6_addr, &ip->daddr, sizeof(ip->daddr));
+
+	tprintf(" [ Geo (");
+	if ((country = geoip6_country_name(sas))) {
+		tprintf("%s", country);
+		if ((city = geoip6_city_name(sas)))
+			tprintf("/%s", city);
+	} else {
+		tprintf("local");
+	}
+	tprintf(" => ");
+	if ((country = geoip6_country_name(sad))) {
+		tprintf("%s", country);
+		if ((city = geoip6_city_name(sad)))
+			tprintf("/%s", city);
+	} else {
+		tprintf("local");
+	}
+	tprintf(") ]\n");
 
 	pkt_set_proto(pkt, &eth_lay3, ip->nexthdr);
 }
