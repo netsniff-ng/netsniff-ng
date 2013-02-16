@@ -17,7 +17,7 @@ What additional tools are required to build netsniff-ng?
 What libraries are required?
 
  - libncurses (ifpps, flowtop)
- - libGeoIP >=1.4.8 (astraceroute, flowtop)
+ - libGeoIP >=1.4.8 (astraceroute, flowtop, netsniff-ng)
  - libnacl (curvetun)
  - libnetfilter-conntrack (flowtop)
  - libpcap (netsniff-ng, for tcpdump-like filters)
