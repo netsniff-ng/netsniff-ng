@@ -34,8 +34,6 @@ For later releases:
     LLC, fix MPLS?, improve ARP, BPDU, PVST, CDP, LLDP, RTP, Syslog, NTP,
     OpenFlow, ...), add new protocols to mausezahn.
 
-47) Add geo-ip information to netsniff-ng output?
-
 48) Hand-include patchset from Sibir Chakraborty:
 	- Replay all files from directory (dir as --in paramter)
 	- Replay with correct timing information
