@@ -1,6 +1,5 @@
 /*
  * netsniff-ng - the packet sniffing beast
- * By Daniel Borkmann <daniel@netsniff-ng.org>
  * Copyright 2011 Daniel Borkmann, rewritten
  * Copyright 1991-2007 Kawahara Lab., Kyoto University
  * Copyright 2000-2005 Shikano Lab., Nara Institute of Science and Technology

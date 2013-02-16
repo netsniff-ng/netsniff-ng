@@ -1,6 +1,5 @@
 /*
  * netsniff-ng - the packet sniffing beast
- * By Daniel Borkmann <daniel@netsniff-ng.org>
  * Copyright 2009 - 2012 Daniel Borkmann.
  * Copyright 2009, 2010 Emmanuel Roullit.
  * Copyright 1990-1996 The Regents of the University of
