@@ -42,7 +42,7 @@ static void ipv4(struct pkt_buff *pkt)
 	unsigned int trailer_len = 0;
 	ssize_t opts_len, opt_len;
 	struct sockaddr_in sas, sad;
-	const char *city, *country;
+	const char *city, *region, *country;
 
 	if (!ip)
 		return;
@@ -97,19 +97,23 @@ static void ipv4(struct pkt_buff *pkt)
 	sad.sin_family = PF_INET;
 	sad.sin_addr.s_addr = ip->h_daddr;
 
-	tprintf(" [ Geo (");
+	tprintf("\t[ Geo (");
 	if ((country = geoip4_country_name(sas))) {
 		tprintf("%s", country);
+		if ((region = geoip4_region_name(sas)))
+			tprintf(" / %s", region);
 		if ((city = geoip4_city_name(sas)))
-			tprintf("/%s", city);
+			tprintf(" / %s", city);
 	} else {
 		tprintf("local");
 	}
 	tprintf(" => ");
 	if ((country = geoip4_country_name(sad))) {
 		tprintf("%s", country);
+		if ((region = geoip4_region_name(sad)))
+			tprintf(" / %s", region);
 		if ((city = geoip4_city_name(sad)))
-			tprintf("/%s", city);
+			tprintf(" / %s", city);
 	} else {
 		tprintf("local");
 	}

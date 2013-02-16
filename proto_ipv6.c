@@ -29,7 +29,7 @@ void ipv6(struct pkt_buff *pkt)
 	char dst_ip[INET6_ADDRSTRLEN];
 	struct ipv6hdr *ip = (struct ipv6hdr *) pkt_pull(pkt, sizeof(*ip));
 	struct sockaddr_in6 sas, sad;
-	const char *city, *country;
+	const char *city, *region, *country;
 
 	if (ip == NULL)
 		return;
@@ -60,19 +60,23 @@ void ipv6(struct pkt_buff *pkt)
 	sad.sin6_family = PF_INET6;
 	memcpy(&sad.sin6_addr, &ip->daddr, sizeof(ip->daddr));
 
-	tprintf(" [ Geo (");
+	tprintf("\t[ Geo (");
 	if ((country = geoip6_country_name(sas))) {
 		tprintf("%s", country);
+		if ((region = geoip6_region_name(sas)))
+			tprintf(" / %s", region);
 		if ((city = geoip6_city_name(sas)))
-			tprintf("/%s", city);
+			tprintf(" / %s", city);
 	} else {
 		tprintf("local");
 	}
 	tprintf(" => ");
 	if ((country = geoip6_country_name(sad))) {
 		tprintf("%s", country);
+		if ((region = geoip6_region_name(sad)))
+			tprintf(" / %s", region);
 		if ((city = geoip6_city_name(sad)))
-			tprintf("/%s", city);
+			tprintf(" / %s", city);
 	} else {
 		tprintf("local");
 	}

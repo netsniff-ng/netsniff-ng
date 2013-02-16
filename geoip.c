@@ -67,6 +67,16 @@ const char *geoip6_city_name(struct sockaddr_in6 sa)
 	return geoip6_get_record(sa)->city;
 }
 
+const char *geoip4_region_name(struct sockaddr_in sa)
+{
+	return geoip4_get_record(sa)->region;
+}
+
+const char *geoip6_region_name(struct sockaddr_in6 sa)
+{
+	return geoip6_get_record(sa)->region;
+}
+
 const char *geoip4_country_name(struct sockaddr_in sa)
 {
 	bug_on(gi4_country == NULL);
