@@ -679,16 +679,14 @@ static void flow_entry_get_extended_revdns(struct flow_entry *n,
 		flow_entry_get_sain4_obj(n, dir, &sa4);
 		sa = (struct sockaddr *) &sa4;
 		sa_len = sizeof(sa4);
-		hent = gethostbyaddr(&sa4.sin_addr, sizeof(sa4.sin_addr),
-				     AF_INET);
+		hent = gethostbyaddr(&sa4.sin_addr, sizeof(sa4.sin_addr), AF_INET);
 		break;
 
 	case AF_INET6:
 		flow_entry_get_sain6_obj(n, dir, &sa6);
 		sa = (struct sockaddr *) &sa6;
 		sa_len = sizeof(sa6);
-		hent = gethostbyaddr(&sa6.sin6_addr, sizeof(sa6.sin6_addr),
-				     AF_INET6);
+		hent = gethostbyaddr(&sa6.sin6_addr, sizeof(sa6.sin6_addr), AF_INET6);
 		break;
 	}
 
