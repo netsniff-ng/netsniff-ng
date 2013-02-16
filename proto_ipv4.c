@@ -16,6 +16,7 @@
 #include "csum.h"
 #include "dissector_eth.h"
 #include "ipv4.h"
+#include "geoip.h"
 #include "pkt_buff.h"
 #include "built_in.h"
 
@@ -41,6 +42,8 @@ static void ipv4(struct pkt_buff *pkt)
 	uint8_t *opt, *trailer;
 	unsigned int trailer_len = 0;
 	ssize_t opts_len, opt_len;
+	struct sockaddr_in sas, sad;
+	const char *city, *country;
 
 	if (!ip)
 		return;
@@ -86,6 +89,32 @@ static void ipv4(struct pkt_buff *pkt)
 		tprintf("%s should be 0x%.4x%s", colorize_start_full(black, red),
 			csum_expected(ip->h_check, csum), colorize_end());
 	tprintf(" ]\n");
+
+	memset(&sas, 0, sizeof(sas));
+	sas.sin_family = PF_INET;
+	sas.sin_addr.s_addr = ip->h_saddr;
+
+	memset(&sad, 0, sizeof(sad));
+	sad.sin_family = PF_INET;
+	sad.sin_addr.s_addr = ip->h_daddr;
+
+	tprintf(" [ Geo (");
+	if ((country = geoip4_country_name(sas))) {
+		tprintf("%s", country);
+		if ((city = geoip4_city_name(sas)))
+			tprintf("/%s", city);
+	} else {
+		tprintf("local");
+	}
+	tprintf(" => ");
+	if ((country = geoip4_country_name(sad))) {
+		tprintf("%s", country);
+		if ((city = geoip4_city_name(sad)))
+			tprintf("/%s", city);
+	} else {
+		tprintf("local");
+	}
+	tprintf(") ]\n");
 
 	opts_len = max((uint8_t) ip->h_ihl, sizeof(*ip) / sizeof(uint32_t)) *
 		   sizeof(uint32_t) - sizeof(*ip);

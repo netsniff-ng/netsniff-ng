@@ -47,6 +47,7 @@
 #include "bpf.h"
 #include "xio.h"
 #include "die.h"
+#include "geoip.h"
 #include "tprintf.h"
 #include "dissector.h"
 #include "xmalloc.h"
@@ -1354,6 +1355,7 @@ int main(int argc, char **argv)
 
 	bug_on(!main_loop);
 
+	init_geoip();
 	if (setsockmem)
 		set_system_socket_memory(vals, array_size(vals));
 	xlockme();
@@ -1363,6 +1365,7 @@ int main(int argc, char **argv)
 	xunlockme();
 	if (setsockmem)
 		reset_system_socket_memory(vals, array_size(vals));
+	destroy_geoip();
 
 	tprintf_cleanup();
 

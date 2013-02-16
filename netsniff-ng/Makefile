@@ -1,4 +1,5 @@
-netsniff-ng-libs =	-lnl-genl-3 \
+netsniff-ng-libs =	-lGeoIP \
+			-lnl-genl-3 \
 			-lnl-3 \
 			-lpcap \
 			-lpthread
@@ -42,5 +43,6 @@ netsniff-ng-objs =	dissector.o \
 			ring_rx.o \
 			ring_tx.o \
 			tprintf.o \
+			geoip.o \
 			mac80211.o \
 			netsniff-ng.o

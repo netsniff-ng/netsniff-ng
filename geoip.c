@@ -15,6 +15,8 @@
 static GeoIP *gi4_country = NULL, *gi6_country = NULL;
 static GeoIP *gi4_city = NULL, *gi6_city = NULL;
 
+static GeoIPRecord empty = { 0 };
+
 #define COUNTRY4_PATH	"/etc/netsniff-ng/country4.dat"
 #define COUNTRY6_PATH	"/etc/netsniff-ng/country6.dat"
 
@@ -25,14 +27,14 @@ static GeoIPRecord *geoip4_get_record(struct sockaddr_in sa)
 {
 	bug_on(gi4_city == NULL);
 
-	return GeoIP_record_by_ipnum(gi4_city, ntohl(sa.sin_addr.s_addr));
+	return GeoIP_record_by_ipnum(gi4_city, ntohl(sa.sin_addr.s_addr)) ? : &empty;
 }
 
 static GeoIPRecord *geoip6_get_record(struct sockaddr_in6 sa)
 {
 	bug_on(gi6_city == NULL);
 
-	return GeoIP_record_by_ipnum_v6(gi6_city, sa.sin6_addr);
+	return GeoIP_record_by_ipnum_v6(gi6_city, sa.sin6_addr) ? : &empty;
 }
 
 float geoip4_longitude(struct sockaddr_in sa)
