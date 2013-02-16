@@ -41,8 +41,14 @@ do
     fi
 done
 
-ln -s /usr/share/GeoIP/GeoLiteCity.dat /usr/share/GeoIP/GeoIPCity.dat
-ln -s /usr/share/GeoIP/GeoLiteCityv6.dat /usr/share/GeoIP/GeoIPCityv6.dat
-ln -s /usr/share/GeoIP/ /usr/local/share/
+ln -fs /usr/share/GeoIP/GeoLiteCity.dat /usr/share/GeoIP/GeoIPCity.dat
+ln -fs /usr/share/GeoIP/GeoLiteCityv6.dat /usr/share/GeoIP/GeoIPCityv6.dat
+ln -fs /usr/share/GeoIP/ /usr/local/share/
+
+ln -fs /usr/share/GeoIP/GeoIP.dat /etc/netsniff-ng/country4.dat
+ln -fs /usr/share/GeoIP/GeoIPv6.dat /etc/netsniff-ng/country6.dat
+
+ln -fs /usr/share/GeoIP/GeoIPCity.dat /etc/netsniff-ng/city4.dat
+ln -fs /usr/share/GeoIP/GeoIPCityv6.dat /etc/netsniff-ng/city6.dat
 
 exit $FAILED
