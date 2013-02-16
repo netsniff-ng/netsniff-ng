@@ -10,6 +10,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <sys/ioctl.h>
 
 #include "xutils.h"
 #include "tprintf.h"
