@@ -45,12 +45,16 @@ static GeoIPRecord *geoip6_get_record(struct sockaddr_in6 sa)
 
 const char *geoip4_as_name(struct sockaddr_in sa)
 {
-	return NULL;
+	bug_on(gi4_asname == NULL);
+
+	return GeoIP_name_by_ipnum(gi4_asname, ntohl(sa.sin_addr.s_addr));
 }
 
 const char *geoip6_as_name(struct sockaddr_in6 sa)
 {
-	return NULL;
+	bug_on(gi6_asname == NULL);
+
+	return GeoIP_name_by_ipnum_v6(gi6_asname, sa.sin6_addr);
 }
 
 float geoip4_longitude(struct sockaddr_in sa)
