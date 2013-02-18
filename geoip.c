@@ -215,7 +215,8 @@ again:
 	do {
 		write_or_die(fd, ptr, len);
 		totlen += len;
-		printf("\r%s [%zd/%zd %s]", files[which].desc, totlen, rtotlen, host);
+		printf("\r%s [%.2f%%, %zd/%zd, %s]", files[which].desc,
+		       100.f * totlen / rtotlen, totlen, rtotlen, host);
 		fflush(stdout);
 
 		memset(raw, 0, sizeof(raw));
