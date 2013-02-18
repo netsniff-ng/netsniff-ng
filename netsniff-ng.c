@@ -42,7 +42,7 @@
 #include "mac80211.h"
 #include "xutils.h"
 #include "built_in.h"
-#include "pcap.h"
+#include "pcap_io.h"
 #include "bpf.h"
 #include "xio.h"
 #include "die.h"
@@ -200,7 +200,7 @@ static void pcap_to_xmit(struct ctx *ctx)
 
 	size = ring_size(ctx->device_out, ctx->reserve_size);
 
-	bpf_parse_rules(ctx->device_out, ctx->filter, &bpf_ops);
+	bpf_parse_rules(ctx->filter, &bpf_ops, ctx->link_type);
 	if (ctx->dump_bpf)
 		bpf_dump_all(&bpf_ops);
 
@@ -352,7 +352,7 @@ static void receive_to_xmit(struct ctx *ctx)
 
 	enable_kernel_bpf_jit_compiler();
 
-	bpf_parse_rules(ctx->device_in, ctx->filter, &bpf_ops);
+	bpf_parse_rules(ctx->filter, &bpf_ops, ctx->link_type);
 	if (ctx->dump_bpf)
 		bpf_dump_all(&bpf_ops);
 	bpf_attach_to_sock(rx_sock, &bpf_ops);
@@ -545,7 +545,7 @@ static void read_pcap(struct ctx *ctx)
 	fmemset(&fm, 0, sizeof(fm));
 	fmemset(&bpf_ops, 0, sizeof(bpf_ops));
 
-	bpf_parse_rules("any", ctx->filter, &bpf_ops);
+	bpf_parse_rules(ctx->filter, &bpf_ops, ctx->link_type);
 	if (ctx->dump_bpf)
 		bpf_dump_all(&bpf_ops);
 
@@ -826,7 +826,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 
 	enable_kernel_bpf_jit_compiler();
 
-	bpf_parse_rules(ctx->device_in, ctx->filter, &bpf_ops);
+	bpf_parse_rules(ctx->filter, &bpf_ops, ctx->link_type);
 	if (ctx->dump_bpf)
 		bpf_dump_all(&bpf_ops);
 	bpf_attach_to_sock(sock, &bpf_ops);
@@ -1309,6 +1309,7 @@ int main(int argc, char **argv)
 			else
 				offset += ret;
 		}
+		ctx.filter[strlen(ctx.filter) - 1] = 0;
 	}
 
 	if (!ctx.device_in)

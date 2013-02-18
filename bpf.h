@@ -4,8 +4,8 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef BPF_H
-#define BPF_H
+#ifndef BPF_I_H
+#define BPF_I_H
 
 #include <linux/filter.h>
 #include <stdint.h>
@@ -21,7 +21,17 @@ extern uint32_t bpf_run_filter(const struct sock_fprog *bpf, uint8_t *packet,
 extern void bpf_attach_to_sock(int sock, struct sock_fprog *bpf);
 extern void bpf_detach_from_sock(int sock);
 extern int enable_kernel_bpf_jit_compiler(void);
-extern void bpf_parse_rules(char *dev, char *rulefile, struct sock_fprog *bpf);
+extern void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf, uint32_t link_type);
+#ifdef __WITH_TCPDUMP_LIKE_FILTER
+extern void bpf_try_compile(const char *rulefile, struct sock_fprog *bpf,
+			    uint32_t link_type);
+#else
+static inline void bpf_try_compile(const char *rulefile, struct sock_fprog *bpf,
+				   uint32_t link_type)
+{
+	panic("Cannot open file %s!\n", rulefile);
+}
+#endif
 
 static inline void bpf_release(struct sock_fprog *bpf)
 {
@@ -137,4 +147,4 @@ static inline void bpf_release(struct sock_fprog *bpf)
 # define SKF_AD_VLAN_TAG_PRESENT 48
 #endif
 
-#endif /* BPF_H */
+#endif /* BPF_I_H */

@@ -11,7 +11,7 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
-#include "pcap.h"
+#include "pcap_io.h"
 #include "xmalloc.h"
 #include "xio.h"
 #include "xutils.h"

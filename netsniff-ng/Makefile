@@ -36,6 +36,7 @@ netsniff-ng-objs =	dissector.o \
 			xmalloc.o \
 			hash.o \
 			bpf.o \
+			bpf_comp.o \
 			oui.o \
 			pcap_rw.o \
 			pcap_sg.o \

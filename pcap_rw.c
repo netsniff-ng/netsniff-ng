@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "pcap.h"
+#include "pcap_io.h"
 #include "built_in.h"
 #include "xutils.h"
 #include "xio.h"

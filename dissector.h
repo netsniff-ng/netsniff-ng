@@ -12,7 +12,7 @@
 
 #include "ring.h"
 #include "tprintf.h"
-#include "pcap.h"
+#include "pcap_io.h"
 
 #define PRINT_NORM		0
 #define PRINT_LESS		1

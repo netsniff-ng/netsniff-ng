@@ -714,12 +714,7 @@ uint32_t bpf_run_filter(const struct sock_fprog * fcode, uint8_t * packet,
 	}
 }
 
-#ifdef __WITH_TCPDUMP_LIKE_FILTER
-# include <pcap/pcap.h>
-# include <pcap/bpf.h>
-#endif
-
-void bpf_parse_rules(char *dev, char *rulefile, struct sock_fprog *bpf)
+void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf, uint32_t link_type)
 {
 	int ret;
 	char buff[256];
@@ -734,12 +729,10 @@ void bpf_parse_rules(char *dev, char *rulefile, struct sock_fprog *bpf)
 	}
 
 	fp = fopen(rulefile, "r");
-	if (!fp)
-#ifdef __WITH_TCPDUMP_LIKE_FILTER
-		goto try_compile_str;
-#else
-		panic("Cannot open file %s!\n", rulefile);
-#endif
+	if (!fp) {
+		bpf_try_compile(rulefile, bpf, link_type);
+		return;
+	}
 
 	fmemset(buff, 0, sizeof(buff));
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
@@ -771,39 +764,4 @@ void bpf_parse_rules(char *dev, char *rulefile, struct sock_fprog *bpf)
 
 	if (__bpf_validate(bpf) == 0)
 		panic("This is not a valid BPF program!\n");
-
-	return;
-#ifdef __WITH_TCPDUMP_LIKE_FILTER
-try_compile_str:
-{
-	int i;
-	struct bpf_program bpfp;
-	struct pcap *fd;
-
-	/* For users, who want to have a tcpdump-sytle filter syntax */
-	fd = pcap_open_live(dev, 60, 0, 1000, NULL);
-	if (!fd)
-		panic("Cannot open any device!\n");
-
-	ret = pcap_compile(fd, &bpfp, rulefile, 1, 0xffffffff);
-	if (ret < 0)
-		panic("Cannot compile filter %s: %s\n", rulefile, pcap_geterr(fd));
-
-	pcap_close(fd);
-
-	bpf->len = bpfp.bf_len;
-	bpf->filter = xrealloc(bpf->filter, 1,
-			       bpf->len * sizeof(sf_single));
-
-	for (i = 0; i < bpf->len; ++i) {
-		bpf->filter[i].code = bpfp.bf_insns[i].code;
-		bpf->filter[i].jt = bpfp.bf_insns[i].jt;
-		bpf->filter[i].jf = bpfp.bf_insns[i].jf;
-		bpf->filter[i].k = bpfp.bf_insns[i].k;
-
-		if (bpf->filter[i].code == 0x06 && bpf->filter[i].k > 0)
-			bpf->filter[i].k = 0xFFFFFFFF;
-	}
-}
-#endif
 }

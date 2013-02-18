@@ -13,7 +13,7 @@
 #include <stdbool.h>
 #include <sys/mman.h>
 
-#include "pcap.h"
+#include "pcap_io.h"
 #include "xio.h"
 #include "xutils.h"
 #include "built_in.h"
