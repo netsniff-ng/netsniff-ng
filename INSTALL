@@ -18,6 +18,7 @@ What libraries are required?
 
  - libncurses (ifpps, flowtop)
  - libGeoIP >=1.4.8 (astraceroute, flowtop, netsniff-ng)
+ - libz (astraceroute, flowtop, netsniff-ng)
  - libnacl (curvetun)
  - libnetfilter-conntrack (flowtop)
  - libpcap (netsniff-ng, for tcpdump-like filters)
@@ -37,13 +38,14 @@ One-liner installation for *all* dependencies on Debian:
 
   $ sudo apt-get install ccache flex bison libnl-3-dev \
   libnl-genl-3-dev libgeoip-dev libnetfilter-conntrack-dev \
-  libncurses5-dev liburcu-dev libnacl-dev libpcap-dev
+  libncurses5-dev liburcu-dev libnacl-dev libpcap-dev \
+  zlib1g-dev
 
 One-liner installation for *all* dependencies on Fedora:
  
   $ sudo yum install ccache flex bison ccache libnl3-devel \
   GeoIP-devel libnetfilter_conntrack-devel ncurses-devel \
-  userspace-rcu-devel nacl-devel libpcap-devel
+  userspace-rcu-devel nacl-devel libpcap-devel zlib-devel
 
 After downloading the netsniff-ng toolkit, you should change to the
 repository root directory:

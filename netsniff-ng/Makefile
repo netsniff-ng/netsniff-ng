@@ -2,7 +2,8 @@ netsniff-ng-libs =	-lGeoIP \
 			-lnl-genl-3 \
 			-lnl-3 \
 			-lpcap \
-			-lpthread
+			-lpthread \
+			-lz
 
 netsniff-ng-objs =	dissector.o \
 			dissector_eth.o \

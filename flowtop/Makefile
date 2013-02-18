@@ -2,7 +2,8 @@ flowtop-libs =	-lGeoIP \
 		-lurcu \
 		-lnetfilter_conntrack \
 		-lncurses \
-		-lpthread
+		-lpthread \
+		-lz
 
 flowtop-objs =	xmalloc.o \
 		xio.o \

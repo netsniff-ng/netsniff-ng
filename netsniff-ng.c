@@ -101,6 +101,7 @@ static const struct option long_options[] = {
 	{"hex",			no_argument,		NULL, 'X'},
 	{"ascii",		no_argument,		NULL, 'l'},
 	{"no-sock-mem",		no_argument,		NULL, 'A'},
+	{"update",		no_argument,		NULL, 'U'},
 	{"verbose",		no_argument,		NULL, 'V'},
 	{"version",		no_argument,		NULL, 'v'},
 	{"help",		no_argument,		NULL, 'h'},
@@ -1259,6 +1260,10 @@ int main(int argc, char **argv)
 			pcap_dump_type_features();
 			die();
 			break;
+		case 'U':
+			update_geoip();
+			die();
+			break;
 		case 'v':
 			version();
 			break;
@@ -1309,7 +1314,6 @@ int main(int argc, char **argv)
 			else
 				offset += ret;
 		}
-		ctx.filter[strlen(ctx.filter) - 1] = 0;
 	}
 
 	if (!ctx.device_in)

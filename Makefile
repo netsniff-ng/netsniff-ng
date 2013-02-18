@@ -180,7 +180,7 @@ clean_showinfo:
 DOC_FILES = Summary RelatedWork Performance KnownIssues IPv6Notes Sponsors \
 	    SubmittingPatches CodingStyle logo.png RelNotes/Notes-$(VERSION_SHORT)
 
-NCONF_FILES = ether.conf tcp.conf udp.conf oui.conf
+NCONF_FILES = ether.conf tcp.conf udp.conf oui.conf geoip.conf
 
 all: build_showinfo toolkit
 allbutcurvetun: $(filter-out curvetun,$(TOOLS))

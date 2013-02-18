@@ -91,7 +91,7 @@ static int what = INCLUDE_IPV4 | INCLUDE_IPV6 | INCLUDE_TCP, show_src = 0;
 
 static struct flow_list flow_list;
 
-static const char *short_options = "vhTUsDIS46";
+static const char *short_options = "vhTUsDIS46u";
 static const struct option long_options[] = {
 	{"ipv4",	no_argument,		NULL, '4'},
 	{"ipv6",	no_argument,		NULL, '6'},
@@ -101,6 +101,7 @@ static const struct option long_options[] = {
 	{"icmp",	no_argument,		NULL, 'I'},
 	{"sctp",	no_argument,		NULL, 'S'},
 	{"show-src",	no_argument,		NULL, 's'},
+	{"update",	no_argument,		NULL, 'u'},
 	{"version",	no_argument,		NULL, 'v'},
 	{"help",	no_argument,		NULL, 'h'},
 	{NULL, 0, NULL, 0}
@@ -1155,6 +1156,10 @@ int main(int argc, char **argv)
 			break;
 		case 's':
 			show_src = 1;
+			break;
+		case 'u':
+			update_geoip();
+			die();
 			break;
 		case 'h':
 			help();
