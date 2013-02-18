@@ -76,6 +76,13 @@ static GeoIPRecord empty = { 0 };
 
 static char *servers[16] = { 0 };
 
+static int geoip_db_present = 0;
+
+int geoip_working(void)
+{
+	return geoip_db_present;
+}
+
 static int geoip_get_remote_fd(const char *server, const char *port)
 {
 	int ret, fd = -1;
@@ -317,34 +324,42 @@ const char *geoip6_country_name(struct sockaddr_in6 sa)
 	return GeoIP_country_name_by_ipnum_v6(gi6_country, sa.sin6_addr);
 }
 
-static void init_geoip_city_open4(void)
+static void init_geoip_city_open4(int enforce)
 {
 	gi4_city = GeoIP_open(files[GEOIP_CITY_EDITION_REV1].local, GEOIP_MMAP_CACHE);
 	if (gi4_city == NULL) {
 		gi4_city = GeoIP_open_type(GEOIP_CITY_EDITION_REV1, GEOIP_MMAP_CACHE);
 		if (gi4_city == NULL)
-			panic("Cannot open GeoIP4 city database, try --update!\n");
+			if (enforce)
+				panic("Cannot open GeoIP4 city database, try --update!\n");
 	}
 
-	GeoIP_set_charset(gi4_city, GEOIP_CHARSET_UTF8);
+	if (gi4_city) {
+		GeoIP_set_charset(gi4_city, GEOIP_CHARSET_UTF8);
+		geoip_db_present = 1;
+	}
 }
 
-static void init_geoip_city_open6(void)
+static void init_geoip_city_open6(int enforce)
 {
 	gi6_city = GeoIP_open(files[GEOIP_CITY_EDITION_REV1_V6].local, GEOIP_MMAP_CACHE);
 	if (gi6_city == NULL) {
 		gi6_city = GeoIP_open_type(GEOIP_CITY_EDITION_REV1_V6, GEOIP_MMAP_CACHE);
 		if (gi6_city == NULL)
-			panic("Cannot open GeoIP6 city database, try --update!\n");
+			if (enforce)
+				panic("Cannot open GeoIP6 city database, try --update!\n");
 	}
 
-	GeoIP_set_charset(gi6_city, GEOIP_CHARSET_UTF8);
+	if (gi6_city) {
+		GeoIP_set_charset(gi6_city, GEOIP_CHARSET_UTF8);
+		geoip_db_present = 1;
+	}
 }
 
-static void init_geoip_city(void)
+static void init_geoip_city(int enforce)
 {
-	init_geoip_city_open4();
-	init_geoip_city_open6();
+	init_geoip_city_open4(enforce);
+	init_geoip_city_open6(enforce);
 }
 
 static void destroy_geoip_city(void)
@@ -353,34 +368,42 @@ static void destroy_geoip_city(void)
 	GeoIP_delete(gi6_city);
 }
 
-static void init_geoip_country_open4(void)
+static void init_geoip_country_open4(int enforce)
 {
 	gi4_country = GeoIP_open(files[GEOIP_COUNTRY_EDITION].local, GEOIP_MMAP_CACHE);
 	if (gi4_country == NULL) {
 		gi4_country = GeoIP_open_type(GEOIP_COUNTRY_EDITION, GEOIP_MMAP_CACHE);
 		if (gi4_country == NULL)
-			panic("Cannot open GeoIP4 country database, try --update!\n");
+			if (enforce)
+				panic("Cannot open GeoIP4 country database, try --update!\n");
 	}
 
-	GeoIP_set_charset(gi4_country, GEOIP_CHARSET_UTF8);
+	if (gi4_country) {
+		GeoIP_set_charset(gi4_country, GEOIP_CHARSET_UTF8);
+		geoip_db_present = 1;
+	}
 }
 
-static void init_geoip_country_open6(void)
+static void init_geoip_country_open6(int enforce)
 {
 	gi6_country = GeoIP_open(files[GEOIP_COUNTRY_EDITION_V6].local, GEOIP_MMAP_CACHE);
 	if (gi6_country == NULL) {
 		gi6_country = GeoIP_open_type(GEOIP_COUNTRY_EDITION_V6, GEOIP_MMAP_CACHE);
 		if (gi6_country == NULL)
-			panic("Cannot open GeoIP6 country database, try --update!\n");
+			if (enforce)
+				panic("Cannot open GeoIP6 country database, try --update!\n");
 	}
 
-	GeoIP_set_charset(gi6_country, GEOIP_CHARSET_UTF8);
+	if (gi6_country) {
+		GeoIP_set_charset(gi6_country, GEOIP_CHARSET_UTF8);
+		geoip_db_present = 1;
+	}
 }
 
-static void init_geoip_country(void)
+static void init_geoip_country(int enforce)
 {
-	init_geoip_country_open4();
-	init_geoip_country_open6();
+	init_geoip_country_open4(enforce);
+	init_geoip_country_open6(enforce);
 }
 
 static void destroy_geoip_country(void)
@@ -389,34 +412,42 @@ static void destroy_geoip_country(void)
 	GeoIP_delete(gi6_country);
 }
 
-static void init_geoip_asname_open4(void)
+static void init_geoip_asname_open4(int enforce)
 {
 	gi4_asname = GeoIP_open(files[GEOIP_ASNUM_EDITION].local, GEOIP_MMAP_CACHE);
 	if (gi4_asname == NULL) {
 		gi4_asname = GeoIP_open_type(GEOIP_ASNUM_EDITION, GEOIP_MMAP_CACHE);
 		if (gi4_asname == NULL)
-			panic("Cannot open GeoIP4 AS database, try --update!\n");
+			if (enforce)
+				panic("Cannot open GeoIP4 AS database, try --update!\n");
 	}
 
-	GeoIP_set_charset(gi4_asname, GEOIP_CHARSET_UTF8);
+	if (gi4_asname) {
+		GeoIP_set_charset(gi4_asname, GEOIP_CHARSET_UTF8);
+		geoip_db_present = 1;
+	}
 }
 
-static void init_geoip_asname_open6(void)
+static void init_geoip_asname_open6(int enforce)
 {
 	gi6_asname = GeoIP_open(files[GEOIP_ASNUM_EDITION_V6].local, GEOIP_MMAP_CACHE);
 	if (gi6_asname == NULL) {
 		gi6_asname = GeoIP_open_type(GEOIP_ASNUM_EDITION_V6, GEOIP_MMAP_CACHE);
 		if (gi6_asname == NULL)
-			panic("Cannot open GeoIP6 AS database, try --update!\n");
+			if (enforce)
+				panic("Cannot open GeoIP6 AS database, try --update!\n");
 	}
 
-	GeoIP_set_charset(gi6_asname, GEOIP_CHARSET_UTF8);
+	if (gi6_asname) {
+		GeoIP_set_charset(gi6_asname, GEOIP_CHARSET_UTF8);
+		geoip_db_present = 1;
+	}
 }
 
-static void init_geoip_asname(void)
+static void init_geoip_asname(int enforce)
 {
-	init_geoip_asname_open4();
-	init_geoip_asname_open6();
+	init_geoip_asname_open4(enforce);
+	init_geoip_asname_open6(enforce);
 }
 
 static void destroy_geoip_asname(void)
@@ -461,11 +492,11 @@ static void destroy_mirrors(void)
 		free(servers[i]);
 }
 
-void init_geoip(void)
+void init_geoip(int enforce)
 {
-	init_geoip_city();
-	init_geoip_country();
-	init_geoip_asname();
+	init_geoip_city(enforce);
+	init_geoip_country(enforce);
+	init_geoip_asname(enforce);
 }
 
 void update_geoip(void)
@@ -502,4 +533,6 @@ void destroy_geoip(void)
 	destroy_geoip_city();
 	destroy_geoip_country();
 	destroy_geoip_asname();
+
+	geoip_db_present = 0;
 }

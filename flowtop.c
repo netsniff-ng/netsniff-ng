@@ -1180,7 +1180,7 @@ int main(int argc, char **argv)
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
 
-	init_geoip();
+	init_geoip(1);
 
 	ret = pthread_create(&tid, NULL, collector, NULL);
 	if (ret < 0)

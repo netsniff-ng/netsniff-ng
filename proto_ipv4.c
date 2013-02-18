@@ -97,27 +97,29 @@ static void ipv4(struct pkt_buff *pkt)
 	sad.sin_family = PF_INET;
 	sad.sin_addr.s_addr = ip->h_daddr;
 
-	tprintf("\t[ Geo (");
-	if ((country = geoip4_country_name(sas))) {
-		tprintf("%s", country);
-		if ((region = geoip4_region_name(sas)))
-			tprintf(" / %s", region);
-		if ((city = geoip4_city_name(sas)))
-			tprintf(" / %s", city);
-	} else {
-		tprintf("local");
+	if (geoip_working()) {
+		tprintf("\t[ Geo (");
+		if ((country = geoip4_country_name(sas))) {
+			tprintf("%s", country);
+			if ((region = geoip4_region_name(sas)))
+				tprintf(" / %s", region);
+			if ((city = geoip4_city_name(sas)))
+				tprintf(" / %s", city);
+		} else {
+			tprintf("local");
+		}
+		tprintf(" => ");
+		if ((country = geoip4_country_name(sad))) {
+			tprintf("%s", country);
+			if ((region = geoip4_region_name(sad)))
+				tprintf(" / %s", region);
+			if ((city = geoip4_city_name(sad)))
+				tprintf(" / %s", city);
+		} else {
+			tprintf("local");
+		}
+		tprintf(") ]\n");
 	}
-	tprintf(" => ");
-	if ((country = geoip4_country_name(sad))) {
-		tprintf("%s", country);
-		if ((region = geoip4_region_name(sad)))
-			tprintf(" / %s", region);
-		if ((city = geoip4_city_name(sad)))
-			tprintf(" / %s", city);
-	} else {
-		tprintf("local");
-	}
-	tprintf(") ]\n");
 
 	opts_len = max((uint8_t) ip->h_ihl, sizeof(*ip) / sizeof(uint32_t)) *
 		   sizeof(uint32_t) - sizeof(*ip);

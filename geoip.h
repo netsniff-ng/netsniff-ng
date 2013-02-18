@@ -9,8 +9,9 @@
 
 #include <netinet/in.h>
 
-extern void init_geoip(void);
+extern void init_geoip(int enforce);
 extern void update_geoip(void);
+extern int geoip_working(void);
 extern const char *geoip4_city_name(struct sockaddr_in sa);
 extern const char *geoip6_city_name(struct sockaddr_in6 sa);
 extern const char *geoip4_region_name(struct sockaddr_in sa);

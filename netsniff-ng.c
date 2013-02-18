@@ -1359,7 +1359,7 @@ int main(int argc, char **argv)
 
 	bug_on(!main_loop);
 
-	init_geoip();
+	init_geoip(0);
 	if (setsockmem)
 		set_system_socket_memory(vals, array_size(vals));
 	xlockme();
