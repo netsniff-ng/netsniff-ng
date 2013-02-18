@@ -1023,6 +1023,7 @@ static void help(void)
 	     "  -q|--less                      Print less-verbose packet information\n"
 	     "  -X|--hex                       Print packet data in hex format\n"
 	     "  -l|--ascii                     Print human-readable packet data\n"
+	     "  -U|--update                    Update GeoIP databases\n"
 	     "  -V|--verbose                   Be more verbose\n"
 	     "  -v|--version                   Show version\n"
 	     "  -h|--help                      Guess what?!\n\n"

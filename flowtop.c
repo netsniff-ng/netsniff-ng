@@ -248,6 +248,7 @@ static void help(void)
 	     "  -I|--icmp              Show only ICMP/ICMPv6 flows\n"
 	     "  -S|--sctp              Show only SCTP flows\n"
 	     "  -s|--show-src          Also show source, not only dest\n"
+	     "  -u|--update            Update GeoIP databases\n"
 	     "  -v|--version           Print version\n"
 	     "  -h|--help              Print this help\n\n"
 	     "Examples:\n"
