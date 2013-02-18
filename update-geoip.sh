@@ -18,6 +18,9 @@ GEOLITE_CITY_IPV6_FILE="GeoLiteCityv6.dat.gz"
 GEOLITE_ASNUM_PATH="asnum/"
 GEOLITE_ASNUM_FILE="GeoIPASNum.dat.gz"
 
+GEOLITE_ASNUMV6_PATH="asnum/"
+GEOLITE_ASNUMV6_FILE="GeoIPASNumv6.dat.gz"
+
 FAILED=0
 
 for url in \
@@ -25,7 +28,8 @@ for url in \
     "$GEOIP_URL$GEOLITE_COUNTRY_IPV6_PATH$GEOLITE_COUNTRY_IPV6_FILE" \
     "$GEOIP_URL$GEOLITE_CITY_PATH$GEOLITE_CITY_FILE" \
     "$GEOIP_URL$GEOLITE_CITY_IPV6_PATH$GEOLITE_CITY_IPV6_FILE" \
-    "$GEOIP_URL$GEOLITE_ASNUM_PATH$GEOLITE_ASNUM_FILE"
+    "$GEOIP_URL$GEOLITE_ASNUM_PATH$GEOLITE_ASNUM_FILE" \
+    "$GEOIP_URL$GEOLITE_ASNUMV6_PATH$GEOLITE_ASNUMV6_FILE"
 do
     echo "Downloading $url"
 
@@ -50,5 +54,8 @@ ln -fs /usr/share/GeoIP/GeoIPv6.dat /etc/netsniff-ng/country6.dat
 
 ln -fs /usr/share/GeoIP/GeoIPCity.dat /etc/netsniff-ng/city4.dat
 ln -fs /usr/share/GeoIP/GeoIPCityv6.dat /etc/netsniff-ng/city6.dat
+
+ln -fs /usr/share/GeoIP/GeoIPASNum.dat /etc/netsniff-ng/asname4.dat
+ln -fs /usr/share/GeoIP/GeoIPASNumv6.dat /etc/netsniff-ng/asname6.dat
 
 exit $FAILED
