@@ -5,8 +5,8 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef PCAP_H
-#define PCAP_H
+#ifndef PCAP_IO_H
+#define PCAP_IO_H
 
 #include <unistd.h>
 #include <stdint.h>
@@ -578,4 +578,4 @@ static int pcap_generic_push_fhdr(int fd, uint32_t magic, uint32_t linktype)
 	return 0;
 }
 
-#endif /* PCAP_H */
+#endif /* PCAP_IO_H */
