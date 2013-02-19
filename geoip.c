@@ -76,11 +76,20 @@ static GeoIPRecord empty = { 0 };
 
 static char *servers[16] = { 0 };
 
+#define CITYV4		(1 << 0)
+#define CITYV6		(1 << 1)
+#define COUNTRYV4	(1 << 2)
+#define COUNTRYV6	(1 << 3)
+#define ASNAMV4		(1 << 4)
+#define ASNAMV6		(1 << 5)
+
+#define HAVEALL		(CITYV4 | CITYV6 | COUNTRYV4 | COUNTRYV6 | ASNAMV4 | ASNAMV6)
+
 static int geoip_db_present = 0;
 
 int geoip_working(void)
 {
-	return geoip_db_present;
+	return geoip_db_present == HAVEALL;
 }
 
 static int geoip_get_remote_fd(const char *server, const char *port)
@@ -387,7 +396,7 @@ static void init_geoip_city_open4(int enforce)
 
 	if (gi4_city) {
 		GeoIP_set_charset(gi4_city, GEOIP_CHARSET_UTF8);
-		geoip_db_present = 1;
+		geoip_db_present |= CITYV4;
 	}
 }
 
@@ -403,7 +412,7 @@ static void init_geoip_city_open6(int enforce)
 
 	if (gi6_city) {
 		GeoIP_set_charset(gi6_city, GEOIP_CHARSET_UTF8);
-		geoip_db_present = 1;
+		geoip_db_present |= CITYV6;
 	}
 }
 
@@ -431,7 +440,7 @@ static void init_geoip_country_open4(int enforce)
 
 	if (gi4_country) {
 		GeoIP_set_charset(gi4_country, GEOIP_CHARSET_UTF8);
-		geoip_db_present = 1;
+		geoip_db_present |= COUNTRYV4;
 	}
 }
 
@@ -447,7 +456,7 @@ static void init_geoip_country_open6(int enforce)
 
 	if (gi6_country) {
 		GeoIP_set_charset(gi6_country, GEOIP_CHARSET_UTF8);
-		geoip_db_present = 1;
+		geoip_db_present |= COUNTRYV6;
 	}
 }
 
@@ -475,7 +484,7 @@ static void init_geoip_asname_open4(int enforce)
 
 	if (gi4_asname) {
 		GeoIP_set_charset(gi4_asname, GEOIP_CHARSET_UTF8);
-		geoip_db_present = 1;
+		geoip_db_present |= ASNAMV4;
 	}
 }
 
@@ -491,7 +500,7 @@ static void init_geoip_asname_open6(int enforce)
 
 	if (gi6_asname) {
 		GeoIP_set_charset(gi6_asname, GEOIP_CHARSET_UTF8);
-		geoip_db_present = 1;
+		geoip_db_present |= ASNAMV6;
 	}
 }
 
