@@ -972,10 +972,10 @@ noinline void *xmemset(void *s, int c, size_t n)
 	return ptr;
 }
 
-char *strtrim_right(register char *p, register char c)
+char *strtrim_right(char *p, char c)
 {
-	register char *end;
-	register size_t len;
+	char *end;
+	size_t len;
 
 	len = strlen(p);
 	while (*p && len) {
@@ -990,9 +990,9 @@ char *strtrim_right(register char *p, register char c)
 	return p;
 }
 
-static char *strtrim_left(register char *p, register char c)
+static char *strtrim_left(char *p, char c)
 {
-	register size_t len;
+	size_t len;
 
 	len = strlen(p);
 	while (*p && len--) {
