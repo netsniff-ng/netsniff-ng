@@ -325,11 +325,61 @@ const char *geoip6_country_name(struct sockaddr_in6 sa)
 	return GeoIP_country_name_by_ipnum_v6(gi6_country, sa.sin6_addr);
 }
 
+static int fdout, fderr;
+
+/* GeoIP people were too stupid to come to the idea that you could set
+ * errno appropriately and return NULL instead of printing stuff from
+ * the library directly that noone can turn off.
+ */
+
+static void geoip_open_prepare(void)
+{
+	fflush(stdout);
+	fdout = dup(1);
+
+	fflush(stderr);
+	fderr = dup(2);
+
+	close(1);
+	close(2);
+}
+
+static void geoip_open_restore(void)
+{
+	dup2(fdout, 1);
+	dup2(fderr, 2);
+
+	close(fdout);
+	close(fderr);
+}
+
+static GeoIP *geoip_open_type(int type, int flags)
+{
+	GeoIP *ret;
+
+	geoip_open_prepare();
+	ret = GeoIP_open_type(type, flags);
+	geoip_open_restore();
+
+	return ret;
+}
+
+static GeoIP *geoip_open(const char *filename, int flags)
+{
+	GeoIP *ret;
+
+	geoip_open_prepare();
+	ret = GeoIP_open(filename, flags);
+	geoip_open_restore();
+
+	return ret;
+}
+
 static void init_geoip_city_open4(int enforce)
 {
-	gi4_city = GeoIP_open(files[GEOIP_CITY_EDITION_REV1].local, GEOIP_MMAP_CACHE);
+	gi4_city = geoip_open(files[GEOIP_CITY_EDITION_REV1].local, GEOIP_MMAP_CACHE);
 	if (gi4_city == NULL) {
-		gi4_city = GeoIP_open_type(GEOIP_CITY_EDITION_REV1, GEOIP_MMAP_CACHE);
+		gi4_city = geoip_open_type(GEOIP_CITY_EDITION_REV1, GEOIP_MMAP_CACHE);
 		if (gi4_city == NULL)
 			if (enforce)
 				panic("Cannot open GeoIP4 city database, try --update!\n");
@@ -343,9 +393,9 @@ static void init_geoip_city_open4(int enforce)
 
 static void init_geoip_city_open6(int enforce)
 {
-	gi6_city = GeoIP_open(files[GEOIP_CITY_EDITION_REV1_V6].local, GEOIP_MMAP_CACHE);
+	gi6_city = geoip_open(files[GEOIP_CITY_EDITION_REV1_V6].local, GEOIP_MMAP_CACHE);
 	if (gi6_city == NULL) {
-		gi6_city = GeoIP_open_type(GEOIP_CITY_EDITION_REV1_V6, GEOIP_MMAP_CACHE);
+		gi6_city = geoip_open_type(GEOIP_CITY_EDITION_REV1_V6, GEOIP_MMAP_CACHE);
 		if (gi6_city == NULL)
 			if (enforce)
 				panic("Cannot open GeoIP6 city database, try --update!\n");
@@ -371,9 +421,9 @@ static void destroy_geoip_city(void)
 
 static void init_geoip_country_open4(int enforce)
 {
-	gi4_country = GeoIP_open(files[GEOIP_COUNTRY_EDITION].local, GEOIP_MMAP_CACHE);
+	gi4_country = geoip_open(files[GEOIP_COUNTRY_EDITION].local, GEOIP_MMAP_CACHE);
 	if (gi4_country == NULL) {
-		gi4_country = GeoIP_open_type(GEOIP_COUNTRY_EDITION, GEOIP_MMAP_CACHE);
+		gi4_country = geoip_open_type(GEOIP_COUNTRY_EDITION, GEOIP_MMAP_CACHE);
 		if (gi4_country == NULL)
 			if (enforce)
 				panic("Cannot open GeoIP4 country database, try --update!\n");
@@ -387,9 +437,9 @@ static void init_geoip_country_open4(int enforce)
 
 static void init_geoip_country_open6(int enforce)
 {
-	gi6_country = GeoIP_open(files[GEOIP_COUNTRY_EDITION_V6].local, GEOIP_MMAP_CACHE);
+	gi6_country = geoip_open(files[GEOIP_COUNTRY_EDITION_V6].local, GEOIP_MMAP_CACHE);
 	if (gi6_country == NULL) {
-		gi6_country = GeoIP_open_type(GEOIP_COUNTRY_EDITION_V6, GEOIP_MMAP_CACHE);
+		gi6_country = geoip_open_type(GEOIP_COUNTRY_EDITION_V6, GEOIP_MMAP_CACHE);
 		if (gi6_country == NULL)
 			if (enforce)
 				panic("Cannot open GeoIP6 country database, try --update!\n");
@@ -415,9 +465,9 @@ static void destroy_geoip_country(void)
 
 static void init_geoip_asname_open4(int enforce)
 {
-	gi4_asname = GeoIP_open(files[GEOIP_ASNUM_EDITION].local, GEOIP_MMAP_CACHE);
+	gi4_asname = geoip_open(files[GEOIP_ASNUM_EDITION].local, GEOIP_MMAP_CACHE);
 	if (gi4_asname == NULL) {
-		gi4_asname = GeoIP_open_type(GEOIP_ASNUM_EDITION, GEOIP_MMAP_CACHE);
+		gi4_asname = geoip_open_type(GEOIP_ASNUM_EDITION, GEOIP_MMAP_CACHE);
 		if (gi4_asname == NULL)
 			if (enforce)
 				panic("Cannot open GeoIP4 AS database, try --update!\n");
@@ -431,9 +481,9 @@ static void init_geoip_asname_open4(int enforce)
 
 static void init_geoip_asname_open6(int enforce)
 {
-	gi6_asname = GeoIP_open(files[GEOIP_ASNUM_EDITION_V6].local, GEOIP_MMAP_CACHE);
+	gi6_asname = geoip_open(files[GEOIP_ASNUM_EDITION_V6].local, GEOIP_MMAP_CACHE);
 	if (gi6_asname == NULL) {
-		gi6_asname = GeoIP_open_type(GEOIP_ASNUM_EDITION_V6, GEOIP_MMAP_CACHE);
+		gi6_asname = geoip_open_type(GEOIP_ASNUM_EDITION_V6, GEOIP_MMAP_CACHE);
 		if (gi6_asname == NULL)
 			if (enforce)
 				panic("Cannot open GeoIP6 AS database, try --update!\n");
