@@ -155,16 +155,15 @@ static void geoip_inflate(int which)
 
 static int geoip_get_database(const char *host, int which)
 {
-	int found, sock, fd, i, xgzip = 0, retry = 0;
+	int found, sock, fd, i, good, retry = 0;
 	ssize_t ret, len, rtotlen = 0, totlen = 0;
 	char raw[4096], *ptr, zfile[128];
 	size_t lenl = strlen("Content-Length: ");
-	size_t lent = strlen("Content-Type: ");
+	size_t lent = strlen("HTTP/1.1 200 OK");
 	size_t lenc = strlen("\r\n\r\n");
-	size_t lenx = strlen("application/x-gzip");
 
 again:
-	found = 0;
+	found = good = 0;
 	ptr = NULL;
 	len = 0;
 
@@ -196,11 +195,8 @@ again:
 			rtotlen = strtoul(ptr, NULL, 10);
 		}
 
-		if (!strncmp(raw + i, "Content-Type: ", min(ret - i, lent))) {
-			ptr = raw + i + lent;
-			xgzip = !strncmp(ptr, "application/x-gzip",
-					 min(ret - i - lent, lenx));
-		}
+		if (!strncmp(raw + i, "HTTP/1.1 200 OK", min(ret - i, lent)))
+			good = 1;
 
 		if (!strncmp(raw + i, "\r\n\r\n", min(ret - i, lenc))) {
 			ptr = raw + i + lenc;
@@ -210,7 +206,7 @@ again:
 		}
 	}
 
-	if (!found || ptr >= raw + ret || len < 0 || rtotlen == 0 || xgzip == 0) {
+	if (!found || ptr >= raw + ret || len < 0 || rtotlen == 0 || good == 0) {
 		if (retry == 0) {
 			retry = 1;
 			close(fd);
