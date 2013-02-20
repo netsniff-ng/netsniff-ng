@@ -337,8 +337,8 @@ struct cksum_vec {
 
 static u16 __in_cksum(const struct cksum_vec *vec, int veclen)
 {
-	register const u16 *w;
-	register int sum = 0, mlen = 0;
+	const u16 *w;
+	int sum = 0, mlen = 0;
 	int byte_swapped = 0;
 	union {
 		u8 c[2];
