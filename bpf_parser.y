@@ -656,14 +656,10 @@ int compile_filter(char *file, int verbose, int bypass, int decimal)
 			       res.filter[i].jf, res.filter[i].k);
 		}
 
-		if (labels[i] != NULL)
-			xfree(labels[i]);
-		if (labels_jt[i] != NULL)
-			xfree(labels_jt[i]);
-		if (labels_jf[i] != NULL)
-			xfree(labels_jf[i]);
-		if (labels_k[i] != NULL)
-			xfree(labels_k[i]);
+		free(labels[i]);
+		free(labels_jt[i]);
+		free(labels_jf[i]);
+		free(labels_k[i]);
 	}
 
 	fclose(yyin);
