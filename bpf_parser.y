@@ -74,9 +74,9 @@ static inline void set_curr_label(char *label)
 	labels[curr_instr] = label;
 }
 
-#define JTL 1
-#define JFL 2
-#define JKL 3
+#define JTL		1
+#define JFL		2
+#define JKL		3
 
 static inline void set_jmp_label(char *label, int which)
 {
@@ -650,7 +650,7 @@ int compile_filter(char *file, int verbose, int bypass, int decimal)
 			printf("%u %u %u %u\n",
 			       res.filter[i].code, res.filter[i].jt,
 			       res.filter[i].jf, res.filter[i].k);
-		}else {
+		} else {
 			printf("{ 0x%x, %u, %u, 0x%08x },\n",
 			       res.filter[i].code, res.filter[i].jt,
 			       res.filter[i].jf, res.filter[i].k);
