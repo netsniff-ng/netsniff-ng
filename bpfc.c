@@ -30,10 +30,11 @@
 #include "die.h"
 #include "bpf.h"
 
-static const char *short_options = "vhi:Vdb";
+static const char *short_options = "vhi:VdbD";
 static const struct option long_options[] = {
 	{"input",	required_argument,	NULL, 'i'},
 	{"verbose",	no_argument,		NULL, 'V'},
+	{"decimal",	no_argument,		NULL, 'D'},
 	{"bypass",	no_argument,		NULL, 'b'},
 	{"dump",	no_argument,		NULL, 'd'},
 	{"version",	no_argument,		NULL, 'v'},
@@ -41,7 +42,7 @@ static const struct option long_options[] = {
 	{NULL, 0, NULL, 0}
 };
 
-extern int compile_filter(char *file, int verbose, int bypass);
+extern int compile_filter(char *file, int verbose, int bypass, int decimal);
 
 static void help(void)
 {
@@ -50,6 +51,7 @@ static void help(void)
 	     "Usage: bpfc [options] || bpfc <program>\n"
 	     "Options:\n"
 	     "  -i|--input <program/->  Berkeley Packet Filter file/stdin\n"
+	     "  -D|--decimal            Decimal output, e.g. for xt_bpf\n"
 	     "  -V|--verbose            Be more verbose\n"
 	     "  -b|--bypass             Bypass filter validation (e.g. for bug testing)\n"
 	     "  -d|--dump               Dump supported instruction table\n"
@@ -57,7 +59,7 @@ static void help(void)
 	     "  -h|--help               Print this help\n\n"
 	     "Examples:\n"
 	     "  bpfc fubar\n"
-	     "  bpfc -bi fubar\n"
+	     "  bpfc -Dbi fubar\n"
 	     "  bpfc -   (read from stdin)\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
@@ -83,7 +85,7 @@ static void version(void)
 
 int main(int argc, char **argv)
 {
-	int ret, verbose = 0, c, opt_index, bypass = 0;
+	int ret, verbose = 0, c, opt_index, bypass = 0, decimal = 0;
 	char *file = NULL;
 
 	setfsuid(getuid());
@@ -103,6 +105,9 @@ int main(int argc, char **argv)
 			break;
 		case 'V':
 			verbose = 1;
+			break;
+		case 'D':
+			decimal = 1;
 			break;
 		case 'b':
 			bypass = 1;
@@ -133,7 +138,7 @@ int main(int argc, char **argv)
 	if (!file)
 		panic("No Berkeley Packet Filter program specified!\n");
 
-	ret = compile_filter(file, verbose, bypass);
+	ret = compile_filter(file, verbose, bypass, decimal);
 
 	xfree(file);
 	return ret;

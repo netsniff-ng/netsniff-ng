@@ -25,7 +25,7 @@
 
 #define MAX_INSTRUCTIONS	4096
 
-int compile_filter(char *file, int verbose, int bypass);
+int compile_filter(char *file, int verbose, int bypass, int decimal);
 
 static int curr_instr = 0;
 
@@ -597,7 +597,7 @@ static void stage_2_label_reduce(void)
 	}
 }
 
-int compile_filter(char *file, int verbose, int bypass)
+int compile_filter(char *file, int verbose, int bypass, int decimal)
 {
 	int i;
 	struct sock_fprog res;
@@ -646,9 +646,16 @@ int compile_filter(char *file, int verbose, int bypass)
 	if (verbose)
 		printf("Result:\n");
 	for (i = 0; i < res.len; ++i) {
-		printf("{ 0x%x, %u, %u, 0x%08x },\n",
-		       res.filter[i].code, res.filter[i].jt,
-		       res.filter[i].jf, res.filter[i].k);
+		if (decimal) {
+			printf("%u %u %u %u\n",
+			       res.filter[i].code, res.filter[i].jt,
+			       res.filter[i].jf, res.filter[i].k);
+		}else {
+			printf("{ 0x%x, %u, %u, 0x%08x },\n",
+			       res.filter[i].code, res.filter[i].jt,
+			       res.filter[i].jf, res.filter[i].k);
+		}
+
 		if (labels[i] != NULL)
 			xfree(labels[i]);
 		if (labels_jt[i] != NULL)
