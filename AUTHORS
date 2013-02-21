@@ -1,9 +1,14 @@
-Major contributors (> 30 commits):
+Maintainer:
 
  * Daniel Borkmann <borkmann@redhat.com> (maintainer)
  * Tobias Klauser <tklauser@distanz.ch> (maintainer)
+
+Major contributors (> 30 commits):
+
+ * Daniel Borkmann <borkmann@redhat.com>
  * Emmanuel Roullit <emmanuel.roullit@gmail.com>
  * Markus Amend <markus@netsniff-ng.org>
+ * Tobias Klauser <tklauser@distanz.ch>
  * Christoph Jaeger <email@christophjaeger.info>
  * Herbert Haas <herbert@perihel.at>*
 
