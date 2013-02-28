@@ -703,6 +703,15 @@ static int __process_node(struct ctx *ctx, int fd, int fd_cap, int ttl,
 	return 0;
 }
 
+static void timerdiv(const unsigned long divisor, const struct timeval *tv,
+		     struct timeval *result)
+{
+	uint64_t x = ((uint64_t) tv->tv_sec * 1000 * 1000 + tv->tv_usec) / divisor;
+
+	result->tv_sec = x / 1000 / 1000;
+	result->tv_usec = x % (1000 * 1000);
+}
+
 static int timevalcmp(const void *t1, const void *t2)
 {
 	if (timercmp((struct timeval *) t1, (struct timeval *) t2, <))
@@ -719,7 +728,7 @@ static int __process_time(struct ctx *ctx, int fd, int fd_cap, int ttl,
 			  const struct sockaddr_storage *sd)
 {
 	int good = 0, i, j = 0, ret = -EIO, idx, ret_good = -EIO;
-	struct timeval probes[9], *tmp, sum;
+	struct timeval probes[9], *tmp, sum, res;
 	uint8_t *trash = xmalloc(ctx->rcvlen);
 
 	memset(probes, 0, sizeof(probes));
@@ -758,11 +767,10 @@ static int __process_time(struct ctx *ctx, int fd, int fd_cap, int ttl,
 	switch (j % 2) {
 	case 0:
 		timeradd(&tmp[idx], &tmp[idx - 1], &sum);
-		sum.tv_sec  /= 2;
-		sum.tv_usec /= 2;
-		if (sum.tv_sec > 0)
-			printf("%lu sec ", sum.tv_sec);
-		printf("%7lu us", sum.tv_usec);
+		timerdiv(2, &sum, &res);
+		if (res.tv_sec > 0)
+			printf("%lu sec ", res.tv_sec);
+		printf("%7lu us", res.tv_usec);
 		break;
 	case 1:
 		if (tmp[idx].tv_sec > 0)
