@@ -29,42 +29,43 @@ struct file {
 	const char *remote, *possible_prefix;
 };
 
+#define PRE	"/download/geoip/database"
 static const struct file files[] = {
 	[GEOIP_CITY_EDITION_REV1] = {
 			.desc = "City IPv4",
 			.local = "/etc/netsniff-ng/city4.dat",
 			.remote = "/GeoLiteCity.dat.gz",
-			.possible_prefix = "/download/geoip/database",
+			.possible_prefix = PRE,
 		},
 	[GEOIP_CITY_EDITION_REV1_V6] = {
 			.desc = "City IPv6",
 			.local = "/etc/netsniff-ng/city6.dat",
 			.remote = "/GeoLiteCityv6.dat.gz",
-			.possible_prefix = "/download/geoip/database/GeoLiteCityv6-beta",
+			.possible_prefix = PRE "/GeoLiteCityv6-beta",
 		},
 	[GEOIP_COUNTRY_EDITION] = {
 			.desc = "Country IPv4",
 			.local = "/etc/netsniff-ng/country4.dat",
 			.remote = "/GeoIP.dat.gz",
-			.possible_prefix = "/download/geoip/database/GeoLiteCountry",
+			.possible_prefix = PRE "/GeoLiteCountry",
 		},
 	[GEOIP_COUNTRY_EDITION_V6] = {
 			.desc = "Country IPv6",
 			.local = "/etc/netsniff-ng/country6.dat",
 			.remote = "/GeoIPv6.dat.gz",
-			.possible_prefix = "/download/geoip/database/",
+			.possible_prefix = PRE,
 		},
 	[GEOIP_ASNUM_EDITION] = {
 			.desc = "AS Numbers IPv4",
 			.local = "/etc/netsniff-ng/asname4.dat",
 			.remote = "/GeoIPASNum.dat.gz",
-			.possible_prefix = "/download/geoip/database/asnum",
+			.possible_prefix = PRE "/asnum",
 		},
 	[GEOIP_ASNUM_EDITION_V6] = {
 			.desc = "AS Numbers IPv6",
 			.local = "/etc/netsniff-ng/asname6.dat",
 			.remote = "/GeoIPASNumv6.dat.gz",
-			.possible_prefix = "/download/geoip/database/asnum",
+			.possible_prefix = PRE "/asnum",
 		},
 };
 
