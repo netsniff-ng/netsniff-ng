@@ -684,7 +684,7 @@ static int __process_node(struct ctx *ctx, int fd, int fd_cap, int ttl,
 	timeout = (ctx->timeout > 0 ? ctx->timeout : 3) * 1000;
 
 	ret = poll(&pfd, 1, timeout);
-	if (ret > 0 && pfd.revents & POLLIN) {
+	if (ret > 0 && pfd.revents & POLLIN && sigint == 0) {
 		bug_on(gettimeofday(&end, NULL));
 		if (diff)
 			timersub(&end, &start, diff);
@@ -723,7 +723,7 @@ static int __process_time(struct ctx *ctx, int fd, int fd_cap, int ttl,
 	uint8_t *trash = xmalloc(ctx->rcvlen);
 
 	memset(probes, 0, sizeof(probes));
-	for (i = 0; i < array_size(probes); ++i) {
+	for (i = 0; i < array_size(probes) && sigint == 0; ++i) {
 		ret = __process_node(ctx, fd, fd_cap, ttl, inner_proto,
 				     pkt_snd, good == 0 ? pkt_rcv : trash,
 				     ss, sd, &probes[i]);
@@ -790,10 +790,12 @@ static int __process_ttl(struct ctx *ctx, int fd, int fd_cap, int ttl,
 	printf("%2d: ", ttl);
 	fflush(stdout);
 
-	for (inner_proto = IPPROTO_TCP; success == 0; inner_proto = IPPROTO_ICMP) {
+	for (inner_proto = IPPROTO_TCP;
+	     success == 0 && sigint == 0;
+	     inner_proto = IPPROTO_ICMP) {
 		tries = ctx->queries;
 
-		while (tries-- > 0) {
+		while (tries-- > 0 && sigint == 0) {
 			ret = __process_time(ctx, fd, fd_cap, ttl, inner_proto,
 					     pkt_snd, pkt_rcv, ss, sd);
 			if (ret < 0) {
@@ -860,7 +862,7 @@ static int main_trace(struct ctx *ctx)
 
 	show_trace_info(ctx, &ss, &sd);
 
-	for (ttl = ctx->init_ttl; ttl <= ctx->max_ttl; ++ttl)
+	for (ttl = ctx->init_ttl; ttl <= ctx->max_ttl && sigint == 0; ++ttl)
 		__process_ttl(ctx, fd, fd_cap, ttl, pkt_snd, pkt_rcv,
 			      &ss, &sd);
 
@@ -1030,6 +1032,7 @@ int main(int argc, char **argv)
 		panic("Packet larger than device MTU!\n");
 
 	register_signal(SIGHUP, signal_handler);
+	register_signal(SIGINT, signal_handler);
 
 	tprintf_init();
 	init_geoip(1);
