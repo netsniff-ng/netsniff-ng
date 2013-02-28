@@ -836,6 +836,8 @@ static int __process_ttl(struct ctx *ctx, int fd, int fd_cap, int ttl,
 
 	if (ctx->show == 0)
 		printf("\n");
+	if (ctx->show && success == 0)
+		printf("\n\n");
 	fflush(stdout);
 	return 0;
 }
