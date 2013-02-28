@@ -737,8 +737,10 @@ static int __process_time(struct ctx *ctx, int fd, int fd_cap, int ttl,
 			break;
 	}
 
-	if (good == 0)
+	if (good == 0) {
+		xfree(trash);
 		return -EIO;
+	}
 
 	tmp = xmalloc(sizeof(struct timeval) * good);
 	for (i = 0; i < array_size(probes); ++i) {
