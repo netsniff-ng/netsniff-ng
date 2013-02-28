@@ -48,14 +48,14 @@ A: Yes and no. The way how VLAN headers are handled in PF_PACKET sockets by the
     [1] http://lkml.indiana.edu/hypermail/linux/kernel/0710.3/3816.html
 
     Update (28.11.2012): the Linux kernel and also bpfc has built-in support
-    for VLAN filtering, even though tags might not be visible in the payload
-    itself as reported here. However, the filtering for VLANs works reliable.
-    bpfc example for filtering for any tags ("VLAN tag is present"):
+    for hardware accelerated VLAN filtering, even though tags might not be
+    visible in the payload itself as reported here. However, the filtering
+    for VLANs works reliable if your NIC supports it. bpfc example for filtering
+    for any tags:
 
 	_main:
 	 ld #vlanp
-	 jgt #0, keep, drop
-	keep:
+	 jeq #0, drop
 	 ret #-1
 	drop:
 	 ret #0
@@ -64,21 +64,18 @@ A: Yes and no. The way how VLAN headers are handled in PF_PACKET sockets by the
 
 	_main:
 	 ld #vlant
-	 jeq #10, keep, drop
-	keep:
+	 jneq #10, drop
 	 ret #-1
 	drop:
 	 ret #0
 
-   Where '10' is VLAN ID 10 in this example. Or, more pedantic:
+   Where 10 is VLAN ID 10 in this example. Or, more pedantic:
 
 	_main:
 	 ld #vlanp
-	 jgt #0, contd, drop
-	contd:
+	 jeq #0, drop
 	 ld #vlant
-	 jeq #10, keep, drop
-	keep:
+	 jneq #10, drop
 	 ret #-1
 	drop:
 	 ret #0
