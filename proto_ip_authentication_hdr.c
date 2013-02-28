@@ -27,6 +27,7 @@ struct auth_hdr {
 static void auth_hdr(struct pkt_buff *pkt)
 {
 	ssize_t hdr_len;
+	size_t i;
 	struct auth_hdr *auth_ops;
 
 	auth_ops = (struct auth_hdr *) pkt_pull(pkt, sizeof(*auth_ops));
@@ -53,7 +54,7 @@ static void auth_hdr(struct pkt_buff *pkt)
 	tprintf("SPI (0x%x), ", ntohl(auth_ops->h_spi));
 	tprintf("SNF (0x%x), ", ntohl(auth_ops->h_snf));
 	tprintf("ICV 0x");
-	for (size_t i = sizeof(struct auth_hdr); i < hdr_len; i++)
+	for (i = sizeof(struct auth_hdr); i < hdr_len; i++)
 		tprintf("%02x", *pkt_pull(pkt, 1));
 	tprintf(" ]\n");
 

@@ -127,7 +127,7 @@ static void help(void)
 	     "  ifpps -lpcd wlan0 > plot.dat\n\n"
 	     "Note:\n"
 	     "  On 10G cards, RX/TX statistics are usually accumulated each > 1sec.\n"
-	     "  Thus, in those situations, it's could be to use a -t of 10sec.\n\n"
+	     "  Thus, in those situations, it's good to use a -t of 10sec.\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2009-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"
 	     "Swiss federal institute of technology (ETH Zurich)\n"
