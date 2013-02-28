@@ -626,7 +626,7 @@ static int get_remote_fd(struct ctx *ctx, struct sockaddr_storage *ss,
 			panic("Kernel does not support IP_HDRINCL!\n");
 
 		if (ai->ai_family == PF_INET6) {
-			struct sockaddr_in6 *sd6 = (struct sockaddr_in6 *) &sd;
+			struct sockaddr_in6 *sd6 = (struct sockaddr_in6 *) sd;
 
 			sd6->sin6_port = 0;
 		}
