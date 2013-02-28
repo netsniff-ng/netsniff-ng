@@ -1,10 +1,8 @@
 /*
  * netsniff-ng - the packet sniffing beast
- * Copyright 2011 - 2012 Daniel Borkmann.
+ * Copyright 2011 - 2013 Daniel Borkmann.
  * Copyright 2011 Emmanuel Roullit.
  * Subject to the GPL, version 2.
- *
- * A tiny tool to provide top-like netfilter connection tracking information.
  *
  *   The Dark Lord has Nine. But we have One, mightier than they: the White
  *   Rider. He has passed through the fire and the abyss, and they shall

@@ -5,20 +5,6 @@
  * Copyright 2011 Emmanuel Roullit.
  * Subject to the GPL, version 2.
  *
- * This is curvetun, a lightweight, high-speed ECDH multiuser IP tunnel for
- * Linux that is based on epoll(2). curvetun uses the Linux TUN/TAP interface
- * and supports {IPv4,IPv6} over {IPv4,IPv6} with UDP or TCP as carrier
- * protocols. It has an integrated packet forwarding trie, thus multiple
- * users with different IPs can be handled via a single tunnel device on the
- * server side and flows are scheduled for processing in a CPU-local manner.
- * For transmission, packets are being compressed and encrypted by both, the
- * client and the server side. As an appropriate key management, public-key
- * cryptography based on elliptic curves are being used and packets are 
- * encrypted by a symmetric stream cipher (Salsa20) and authenticated by a MAC
- * (Poly1305), where keys have previously been computed with the ECDH key 
- * agreement protocol (Curve25519). Cryptography is based on Daniel J.
- * Bernsteins Networking and Cryptography library (NaCl).
- *
  *   He used often to say there was only one Road; that it was like a great
  *   river: it's springs were at every doorstep and every path was it's
  *   tributary. "It's a dangerous business, Frodo, going out of your door,"

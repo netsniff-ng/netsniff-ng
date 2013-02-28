@@ -3,14 +3,6 @@
  * Copyright 2011 - 2013 Daniel Borkmann.
  * Subject to the GPL, version 2.
  *
- * An Autonomous System trace route utility based on TCP instead of ICMP for
- * a better passing of firewalls. Supports IPv4 and IPv6. Based on the idea
- * of tcptraceroute (http://michael.toren.net/code/tcptraceroute/), but hacked
- * for Autonomous Systems tracing, thus you will know an approximate path of
- * your curvetun tunneled packets, for instance. However, astraceroute was
- * written from scratch and does not use any libraries. Special thanks to
- * Team CYMRU!
- *
  *   The road must be trod, but it will be very hard. And neither strength nor
  *   wisdom will carry us far upon it. This quest may be attempted by the weak
  *   with as much hope as the strong. Yet such is oft the course of deeds that

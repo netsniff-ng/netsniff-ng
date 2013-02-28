@@ -4,10 +4,6 @@
  * Copyright 2010 Emmanuel Roullit.
  * Subject to the GPL, version 2.
  *
- * The first sniffer that invoked both, the zero-copy RX_RING as well as
- * the zero-copy TX_RING for high-performance network I/O and scatter/gather
- * or mmaped PCAP I/O.
- *
  *   "I knew that danger lay ahead, of course; but I did not expect to
  *   meet it in our own Shire. Can't a hobbit walk from the Water to the
  *   River in peace?" "But it is not your own Shire," said Gildor. "Others
