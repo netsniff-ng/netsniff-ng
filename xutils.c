@@ -1015,27 +1015,6 @@ int get_default_proc_prio(void)
 	return -20;
 }
 
-struct timeval tv_subtract(struct timeval time1, struct timeval time2)
-{
-	struct timeval result;
-
-	if ((time1.tv_sec < time2.tv_sec) || ((time1.tv_sec == time2.tv_sec) &&
-	    (time1.tv_usec <= time2.tv_usec))) {
-		result.tv_sec = result.tv_usec = 0;
-	} else {
-		result.tv_sec = time1.tv_sec - time2.tv_sec;
-		if (time1.tv_usec < time2.tv_usec) {
-			result.tv_usec = time1.tv_usec + 1000000L -
-					 time2.tv_usec;
-			result.tv_sec--;
-		} else {
-			result.tv_usec = time1.tv_usec - time2.tv_usec;
-		}
-	}
-
-	return result;
-}
-
 void set_system_socket_memory(int *vals, size_t len)
 {
 	bug_on(len != 4);

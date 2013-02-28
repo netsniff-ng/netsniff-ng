@@ -710,7 +710,7 @@ retry:
 	}
 
 	bug_on(gettimeofday(&end, NULL));
-	diff = tv_subtract(end, start);
+	timersub(&end, &start, &diff);
 
 	if (ctx->smoke_test)
 		close(icmp_sock);
@@ -802,7 +802,7 @@ static void xmit_fastpath_or_die(struct ctx *ctx, int cpu)
 	}
 
 	bug_on(gettimeofday(&end, NULL));
-	diff = tv_subtract(end, start);
+	timersub(&end, &start, &diff);
 
 	destroy_tx_ring(sock, &tx_ring);
 

@@ -89,7 +89,6 @@ extern int get_number_cpus_online(void);
 extern int get_default_proc_prio(void);
 extern void set_system_socket_memory(int *vals, size_t len);
 extern void reset_system_socket_memory(int *vals, size_t len);
-extern struct timeval tv_subtract(struct timeval time1, struct timeval time2);
 extern void set_itimer_interval_value(struct itimerval *itimer, unsigned long sec,
 				      unsigned long usec);
 

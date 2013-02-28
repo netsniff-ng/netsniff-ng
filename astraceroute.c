@@ -695,7 +695,7 @@ static int __process_node(struct ctx *ctx, int fd, int fd_cap, int ttl,
 	if (ret > 0 && pfd.revents & POLLIN) {
 		bug_on(gettimeofday(&end, NULL));
 		if (diff)
-			*diff = tv_subtract(end, start);
+			timersub(&end, &start, diff);
 
 		ret = recvfrom(fd_cap, pkt_rcv, ctx->rcvlen, 0, NULL, NULL);
 		if (ret < sizeof(struct ethhdr) + af_ops[ctx->proto].min_len_icmp) {

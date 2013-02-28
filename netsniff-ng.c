@@ -290,7 +290,7 @@ static void pcap_to_xmit(struct ctx *ctx)
 	out:
 
 	bug_on(gettimeofday(&end, NULL));
-	diff = tv_subtract(end, start);
+	timersub(&end, &start, &diff);
 
 	bpf_release(&bpf_ops);
 
@@ -616,7 +616,7 @@ static void read_pcap(struct ctx *ctx)
 	out:
 
 	bug_on(gettimeofday(&end, NULL));
-	diff = tv_subtract(end, start);
+	timersub(&end, &start, &diff);
 
 	bpf_release(&bpf_ops);
 
@@ -956,7 +956,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 	}
 
 	bug_on(gettimeofday(&end, NULL));
-	diff = tv_subtract(end, start);
+	timersub(&end, &start, &diff);
 
 	if (!(ctx->dump_dir && ctx->print_mode == PRINT_NONE)) {
 		sock_print_net_stats(sock, skipped);
