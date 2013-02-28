@@ -11,11 +11,10 @@
 #include <string.h>
 
 #include "locking.h"
-#include "ct_cpusched.h"
+#include "cpusched.h"
 #include "xmalloc.h"
 #include "hash.h"
 
-/* Flow to CPU mapper / scheduler to keep connection CPU-local */
 struct map_entry {
 	int fd;
 	unsigned int cpu;
@@ -23,14 +22,16 @@ struct map_entry {
 };
 
 static struct hash_table mapper;
+
 static unsigned int *cpu_assigned = NULL;
+
 static unsigned int cpu_len = 0;
+
 static struct rwlock map_lock;
 
 void init_cpusched(unsigned int cpus)
 {
 	rwlock_init(&map_lock);
-
 	rwlock_wr_lock(&map_lock);
 
 	cpu_len = cpus;
@@ -155,7 +156,6 @@ static int cleanup_batch(void *ptr)
 
 	if (!e)
 		return 0;
-
 	while ((next = e->next)) {
 		e->next = NULL;
 		xfree(e);
@@ -163,7 +163,6 @@ static int cleanup_batch(void *ptr)
 	}
 
 	xfree(e);
-
 	return 0;
 }
 
@@ -177,6 +176,5 @@ void destroy_cpusched(void)
 	free_hash(&mapper);
 
 	rwlock_unlock(&map_lock);
-
 	rwlock_destroy(&map_lock);
 }

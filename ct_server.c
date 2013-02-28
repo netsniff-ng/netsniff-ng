@@ -36,7 +36,7 @@
 #include "curve.h"
 #include "built_in.h"
 #include "ct_usermgmt.h"
-#include "ct_cpusched.h"
+#include "cpusched.h"
 #include "trie.h"
 
 struct parent_info {
