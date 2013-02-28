@@ -727,7 +727,7 @@ static int __process_time(struct ctx *ctx, int fd, int fd_cap, int ttl,
 			  const struct sockaddr_storage *sd)
 {
 	int good = 0, i, j = 0, ret = -EIO, idx, ret_good = -EIO;
-	struct timeval probes[9], *tmp;
+	struct timeval probes[9], *tmp, sum;
 	uint8_t *trash = xmalloc(ctx->rcvlen);
 
 	memset(probes, 0, sizeof(probes));
@@ -763,9 +763,12 @@ static int __process_time(struct ctx *ctx, int fd, int fd_cap, int ttl,
 	idx = j / 2;
 	switch (j % 2) {
 	case 0:
-		if (tmp[idx].tv_sec > 0 || tmp[idx - 1].tv_sec > 0)
-			printf("%lu sec ", (tmp[idx].tv_sec + tmp[idx - 1].tv_sec) / 2);
-		printf("%7lu us", (tmp[idx].tv_usec + tmp[idx - 2].tv_usec) / 2);
+		timeradd(&tmp[idx], &tmp[idx - 1], &sum);
+		sum.tv_sec  /= 2;
+		sum.tv_usec /= 2;
+		if (sum.tv_sec > 0)
+			printf("%lu sec ", sum.tv_sec);
+		printf("%7lu us", sum.tv_usec);
 		break;
 	case 1:
 		if (tmp[idx].tv_sec > 0)
