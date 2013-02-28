@@ -106,9 +106,6 @@ Q = @
 LD = $(Q)echo -e "  LD\t$@" && $(CCACHE) $(CROSS_COMPILE)gcc
 CCNQ = $(CCACHE) $(CROSS_COMPILE)gcc
 CC = $(Q)echo -e "  CC\t$<" && $(CCNQ)
-CCHK = echo -e "  CCHK\t$@" && cppcheck -q --std=c99 \
-	--enable=style,performance,portability,unusedFunction \
-	--includes-file=${NACL_INC_DIR}
 MKDIR = $(Q)echo -e "  MKDIR\t$@" && mkdir
 ifeq ($(DEBUG), 1)
   STRIP = $(Q)true
@@ -164,10 +161,8 @@ clean_showinfo:
 %.tab.o: %.y
 	$(YAAC) -p $(shell perl -wlne 'print $$1 if /yaac-func-prefix:\s([a-z]+)/' $<) \
 		-o $(BUILD_DIR)/$(shell basename $< .y).tab.c $(YAAC_FLAGS) -d $<
-%.x:
-	@if [ -a $(shell basename $@ .x).c ]; then $(CCHK) $(shell basename $@ .x).c || true; fi
 
-.PHONY: all toolkit $(TOOLS) clean %_prehook %_distclean %_clean %_install
+.PHONY: all toolkit $(TOOLS) clean %_prehook %_distclean %_clean %_install tag tags cscope
 .FORCE:
 .DEFAULT_GOAL := all
 .DEFAULT:
@@ -195,25 +190,19 @@ realclean distclean clobber: $(foreach tool,$(TOOLS),$(tool)_distclean)
 	$(Q)$(call RMDIR,$(DOCDIRE))
 	$(Q)$(call RMDIR,$(ETCDIRE))
 mrproper: clean distclean
-check: $(foreach tool,$(TOOLS),$(tool)_check)
 
 define TOOL_templ
   include $(1)/Makefile
   $(1) $(1)%: BUILD_DIR := $(1)
   $(1)_prehook:
 	$(Q)echo "$(bold)$(WHAT) $(1):$(normal)"
-  $(1)_prehook_check:
-	$(Q)echo "$(bold)Checking $(1):$(normal)"
   $(1): $(1)_prehook $$($(1)-lex) $$($(1)-yaac) $$(patsubst %.o,$(1)/%.o,$$($(1)-objs))
   $(1)_clean: $(1)_clean_custom
 	$(Q)$$(call RM,$(1)/*.o $(1)/$(1))
-  $(1)_check: $(1)_prehook_check $$(patsubst %.o,%.x,$$($(1)-objs))
   $(1)_install: $(1)_install_custom
 	$(Q)$$(call INSTX,$(1)/$(1),$$(SBINDIR))
-#	$(Q)$$(call INST,Documentation/$$(shell echo $(1) | sed 's/\([a-z]\)\(.*\)/\u\1\2/g'),$$(DOCDIRE))
   $(1)_distclean: $(1)_distclean_custom
 	$(Q)$$(call RM,$$(SBINDIR)/$(1))
-#	$(Q)$$(call RM,$$(DOCDIRE)/$$(shell echo $(1) | sed 's/\([a-z]\)\(.*\)/\u\1\2/g'))
   $(1)/%.yy.o: $(1)/%.yy.c
 	$$(CC) $$(ALL_CFLAGS) -o $$@ -c $$<
   $(1)/%.tab.o: $(1)/%.tab.c
@@ -272,6 +261,18 @@ tarball: tarball.gz tarball.bz2 tarball.xz
 tag:
 	$(GIT_TAG)
 
+FIND_SOURCE_FILES = ( git ls-files '*.[hcS]' 2>/dev/null || \
+			find . \( -name .git -type d -prune \) \
+				-o \( -name '*.[hcS]' -type f -print \) )
+
+tags ctags:
+	$(Q)$(call RM,tags)
+	$(FIND_SOURCE_FILES) | xargs ctags -a
+
+cscope:
+	$(Q)$(call RM,cscope*)
+	$(FIND_SOURCE_FILES) | xargs cscope -b
+
 help:
 	$(Q)echo "$(bold)Available tools from the toolkit:$(normal)"
 	$(Q)echo " <toolnames>:={$(TOOLS)}"
@@ -288,13 +289,13 @@ help:
 	$(Q)echo "$(bold)Targets for removing the toolkit:$(normal)"
 	$(Q)echo " realclean|distclean|clobber  - Remove the whole toolkit from the system"
 	$(Q)echo " <toolname>_distclean         - Remove only one of the tools"
-	$(Q)echo "$(bold)Targets for checking the toolkit:$(normal)"
-	$(Q)echo " check                        - Do a static code analysis"
-	$(Q)echo " <toolname>_check             - Check only one of the tools"
-	$(Q)echo "$(bold)Misc targets:$(normal)"
-	$(Q)echo " tarball                      - Generate tarball of latest version"
-	$(Q)echo " tag                          - Generate Git tag of current version"
 	$(Q)echo " mrproper                     - Remove build and install files"
+	$(Q)echo "$(bold)Hacking/development targets:$(normal)"
+	$(Q)echo " tag                          - Generate Git tag of current version"
+	$(Q)echo " tarball                      - Generate tarball of latest version"
+	$(Q)echo " tags                         - Generate sparse ctags"
+	$(Q)echo " cscope                       - Generate cscope files"
+	$(Q)echo "$(bold)Misc targets:$(normal)"
 	$(Q)echo " nacl                         - Execute the build_nacl script"
 	$(Q)echo " help                         - Show this help"
 	$(Q)echo "$(bold)Available parameters:$(normal)"
@@ -302,4 +303,5 @@ help:
 	$(Q)echo " PREFIX=/path                 - Install path prefix"
 	$(Q)echo " CROSS_COMPILE=/path-prefix   - Kernel-like cross-compiling prefix"
 	$(Q)echo " CROSS_LD_LIBRARY_PATH=/path  - Library search path for cross-compiling"
+	$(Q)echo " CC=cgcc                      - Use sparse compiler wrapper"
 	$(Q)echo " Q=                           - Show verbose garbage"
