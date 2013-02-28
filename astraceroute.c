@@ -681,7 +681,7 @@ static int __process_node(struct ctx *ctx, int fd, int fd_cap, int ttl,
 
 	bug_on(gettimeofday(&start, NULL));
 
-	timeout = (ctx->timeout > 0 ? ctx->timeout : 3) * 1000;
+	timeout = (ctx->timeout > 0 ? ctx->timeout : 2) * 1000;
 
 	ret = poll(&pfd, 1, timeout);
 	if (ret > 0 && pfd.revents & POLLIN && sigint == 0) {
@@ -744,6 +744,8 @@ static int __process_time(struct ctx *ctx, int fd, int fd_cap, int ttl,
 
 		if (good == 0 && ctx->queries == i)
 			break;
+
+		usleep(50000);
 	}
 
 	if (good == 0) {
@@ -899,7 +901,7 @@ int main(int argc, char **argv)
 	ctx.init_ttl = 1;
 	ctx.max_ttl = 30;
 	ctx.queries = 2;
-	ctx.timeout = 3;
+	ctx.timeout = 2;
 	ctx.proto = IPPROTO_IP;
 	ctx.payload = NULL;
 	ctx.dev = xstrdup("eth0");
