@@ -698,10 +698,8 @@ static int __process_node(struct ctx *ctx, int fd, int fd_cap, int ttl,
 			timersub(&end, &start, diff);
 
 		ret = recvfrom(fd_cap, pkt_rcv, ctx->rcvlen, 0, NULL, NULL);
-		if (ret < sizeof(struct ethhdr) + af_ops[ctx->proto].min_len_icmp) {
-			printf("foo1\n");
+		if (ret < sizeof(struct ethhdr) + af_ops[ctx->proto].min_len_icmp)
 			return -EIO;
-		}
 
 		return af_ops[ctx->proto].check(pkt_rcv + sizeof(struct ethhdr),
 						ret - sizeof(struct ethhdr), ttl,
@@ -715,7 +713,7 @@ static int __process_node(struct ctx *ctx, int fd, int fd_cap, int ttl,
 
 static int timevalcmp(const void *t1, const void *t2)
 {
-	if (timercmp((struct timeval *) t1, (struct timeval *)t2, <))
+	if (timercmp((struct timeval *) t1, (struct timeval *) t2, <))
 		return -1;
 	if (timercmp((struct timeval *) t1, (struct timeval *) t2, >))
 		return  1;
@@ -738,8 +736,9 @@ static int __process_time(struct ctx *ctx, int fd, int fd_cap, int ttl,
 				     pkt_snd, good == 0 ? pkt_rcv : trash,
 				     ss, sd, &probes[i]);
 		if (ret > 0) {
+			if (good == 0)
+				ret_good = ret;
 			good++;
-			ret_good = ret;
 		}
 
 		if (good == 0 && ctx->queries == i)
