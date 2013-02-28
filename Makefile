@@ -140,12 +140,9 @@ VERSION_SHORT = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)
 bold = $(shell tput bold)
 normal = $(shell tput sgr0)
 
-$(shell . ~/.bashrc)
-# Build NaCl if no environment variables are set!
 ifndef NACL_LIB_DIR
 ifndef NACL_INC_DIR
-   $(info $(bold)NACL_LIB_DIR/NACL_INC_DIR is undefined, building libnacl with curvetun!$(normal))
-   curvetun: nacl
+   $(info $(bold)NACL_LIB_DIR/NACL_INC_DIR is undefined, build libnacl first for curvetun!$(normal))
 endif
 endif
 
@@ -177,8 +174,7 @@ clean_showinfo:
 .IGNORE: %_clean_custom %_install_custom
 .NOTPARALLEL: $(TOOLS)
 
-DOC_FILES = Summary RelatedWork Performance KnownIssues IPv6Notes Sponsors \
-	    SubmittingPatches CodingStyle logo.png RelNotes/Notes-$(VERSION_SHORT)
+DOC_FILES = Summary RelatedWork Performance KnownIssues Sponsors SubmittingPatches CodingStyle
 
 NCONF_FILES = ether.conf tcp.conf udp.conf oui.conf geoip.conf
 
@@ -214,10 +210,10 @@ define TOOL_templ
   $(1)_check: $(1)_prehook_check $$(patsubst %.o,%.x,$$($(1)-objs))
   $(1)_install: $(1)_install_custom
 	$(Q)$$(call INSTX,$(1)/$(1),$$(SBINDIR))
-	$(Q)$$(call INST,Documentation/$$(shell echo $(1) | sed 's/\([a-z]\)\(.*\)/\u\1\2/g'),$$(DOCDIRE))
+#	$(Q)$$(call INST,Documentation/$$(shell echo $(1) | sed 's/\([a-z]\)\(.*\)/\u\1\2/g'),$$(DOCDIRE))
   $(1)_distclean: $(1)_distclean_custom
 	$(Q)$$(call RM,$$(SBINDIR)/$(1))
-	$(Q)$$(call RM,$$(DOCDIRE)/$$(shell echo $(1) | sed 's/\([a-z]\)\(.*\)/\u\1\2/g'))
+#	$(Q)$$(call RM,$$(DOCDIRE)/$$(shell echo $(1) | sed 's/\([a-z]\)\(.*\)/\u\1\2/g'))
   $(1)/%.yy.o: $(1)/%.yy.c
 	$$(CC) $$(ALL_CFLAGS) -o $$@ -c $$<
   $(1)/%.tab.o: $(1)/%.tab.c
@@ -248,7 +244,7 @@ trafgen_distclean_custom:
 	$(Q)$(call RM,$(ETCDIRE)/stddef.h)
 	$(Q)$(call RMDIR,$(ETCDIRE))
 astraceroute_distclean_custom:
-	$(Q)$(call RM,$(ETCDIRE)/whois.conf)
+	$(Q)$(call RM,$(ETCDIRE)/geoip.conf)
 	$(Q)$(call RMDIR,$(ETCDIRE))
 
 netsniff-ng_install_custom flowtop_install_custom:
@@ -256,22 +252,17 @@ netsniff-ng_install_custom flowtop_install_custom:
 trafgen_install_custom:
 	$(Q)$(call INST,configs/stddef.h,$(ETCDIRE))
 astraceroute_install_custom:
-	$(Q)$(call INST,configs/whois.conf,$(ETCDIRE))
+	$(Q)$(call INST,configs/geoip.conf,$(ETCDIRE))
 
 $(TOOLS): WFLAGS += $(WFLAGS_EXTRA)
 $(TOOLS):
 	$(LD) $(ALL_LDFLAGS) -o $@/$@ $@/*.o $($@-libs)
 	$(STRIP) $@/$@
 
-update:
-	$(Q)./update-geoip.sh
 nacl:
 	$(Q)echo "$(bold)$(WHAT) $@:$(normal)"
 	$(Q)cd curvetun/ && ./build_nacl.sh ~/nacl
 	$(Q)source ~/.bashrc
-geoip:
-	$(Q)echo "$(bold)$(WHAT) $@:$(normal)"
-	$(Q)cd astraceroute/ && ./build_geoip.sh
 
 tarball.gz:  ; $(call GIT_ARCHIVE,gzip,gz)
 tarball.bz2: ; $(call GIT_ARCHIVE,bzip2,bz2)
@@ -304,9 +295,7 @@ help:
 	$(Q)echo " tarball                      - Generate tarball of latest version"
 	$(Q)echo " tag                          - Generate Git tag of current version"
 	$(Q)echo " mrproper                     - Remove build and install files"
-	$(Q)echo " update                       - Update to the latest GeoIP database"
 	$(Q)echo " nacl                         - Execute the build_nacl script"
-	$(Q)echo " geoip                        - Execute the build_geoip script"
 	$(Q)echo " help                         - Show this help"
 	$(Q)echo "$(bold)Available parameters:$(normal)"
 	$(Q)echo " DEBUG=1                      - Enable debugging"

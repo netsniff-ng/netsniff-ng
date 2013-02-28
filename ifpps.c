@@ -129,7 +129,8 @@ static void help(void)
 	     "  On 10G cards, RX/TX statistics are usually accumulated each > 1sec.\n"
 	     "  Thus, in those situations, it's could be to use a -t of 10sec.\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
-	     "Copyright (C) 2009-2013 Daniel Borkmann <daniel@netsniff-ng.org>\n"
+	     "Copyright (C) 2009-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"
+	     "Swiss federal institute of technology (ETH Zurich)\n"
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
 	     "There is NO WARRANTY, to the extent permitted by law.\n");
@@ -142,7 +143,8 @@ static void version(void)
 	       VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
-	     "Copyright (C) 2009-2013 Daniel Borkmann <daniel@netsniff-ng.org>\n"
+	     "Copyright (C) 2009-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"
+	     "Swiss federal institute of technology (ETH Zurich)\n"
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
 	     "There is NO WARRANTY, to the extent permitted by law.\n");

@@ -82,7 +82,6 @@ extern int slprintf(char *dst, size_t size, const char *fmt, ...)  __check_forma
 extern int slprintf_nocheck(char *dst, size_t size, const char *fmt, ...);
 extern noinline void *xmemset(void *s, int c, size_t n);
 extern char *strtrim_right(char *p, char c);
-extern char *skips(char *p);
 extern int get_default_sched_policy(void);
 extern int get_default_sched_prio(void);
 extern int get_number_cpus(void);

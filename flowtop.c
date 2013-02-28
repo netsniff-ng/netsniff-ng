@@ -259,8 +259,9 @@ static void help(void)
 	     "   iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT\n"
 	     "   iptables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
-	     "Copyright (C) 2011-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
-	     "Copyright (C) 2011-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n"
+	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"
+	     "Copyright (C) 2011-2012 Emmanuel Roullit <emmanuel.roullit@gmail.com>\n"
+	     "Swiss federal institute of technology (ETH Zurich)\n"
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
 	     "There is NO WARRANTY, to the extent permitted by law.\n");
@@ -273,8 +274,9 @@ static void version(void)
 	       VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
-	     "Copyright (C) 2011-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
-	     "Copyright (C) 2011-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n"
+	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"
+	     "Copyright (C) 2011-2012 Emmanuel Roullit <emmanuel.roullit@gmail.com>\n"
+	     "Swiss federal institute of technology (ETH Zurich)\n"
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
 	     "There is NO WARRANTY, to the extent permitted by law.\n");

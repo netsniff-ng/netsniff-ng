@@ -1,9 +1,0 @@
-Wishlist for NIC vendors:
-/////////////////////////
-
-- BPF filtering in hardware, aka BPF Offload Engine (BOE). A NIC's driver could
-  advertise to ethtool, that the Chip is able to filter packets directly in
-  hardware in the BPF language. So that a filter given by PF_PACKET could forward
-  the opcodes to the driver through a specified interface, and the driver pushes
-  this to a BOE-capable Chipset. This could save a lot of time, since unwanted
-  packets do not need to enter the Linux stack.

@@ -536,18 +536,6 @@ static void dump_trafgen_snippet(uint8_t *payload, size_t len)
 	fflush(stdout);
 }
 
-static inline unsigned short csum(unsigned short *buf, int nwords)
-{
-	unsigned long sum;
-
-	for (sum = 0; nwords > 0; nwords--)
-		sum += *buf++;
-	sum = (sum >> 16) + (sum & 0xffff);
-	sum += (sum >> 16);
-
-	return ~sum;
-}
-
 static int xmit_smoke_setup(struct ctx *ctx)
 {
 	int icmp_sock, ret, ttl = 64;

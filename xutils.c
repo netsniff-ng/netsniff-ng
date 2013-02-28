@@ -990,26 +990,6 @@ char *strtrim_right(char *p, char c)
 	return p;
 }
 
-static char *strtrim_left(char *p, char c)
-{
-	size_t len;
-
-	len = strlen(p);
-	while (*p && len--) {
-		if (c == *p)
-			p++;
-		else
-			break;
-	}
-
-	return p;
-}
-
-char *skips(char *p)
-{
-	return strtrim_left(p, ' ');
-}
-
 int get_default_sched_policy(void)
 {
 	return SCHED_FIFO;

@@ -1040,9 +1040,10 @@ static void help(void)
 	     "  For introducing bit errors, delays with random variation and more\n"
 	     "  while replaying pcaps, make use of tc(8) with its disciplines (e.g. netem).\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
-	     "Copyright (C) 2009-2013 Daniel Borkmann <daniel@netsniff-ng.org>\n"
-	     "Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n"
-	     "Copyright (C) 2012      Markus Amend <markus@netsniff-ng.org>\n"
+	     "Copyright (C) 2009-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"
+	     "Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel.roullit@gmail.com>\n"
+	     "Copyright (C) 2012 Markus Amend <markus@netsniff-ng.org>\n"
+	     "Swiss federal institute of technology (ETH Zurich)\n"
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
 	     "There is NO WARRANTY, to the extent permitted by law.\n");
@@ -1054,9 +1055,10 @@ static void version(void)
 	printf("\nnetsniff-ng %s, the packet sniffing beast\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
-	     "Copyright (C) 2009-2013 Daniel Borkmann <daniel@netsniff-ng.org>\n"
-	     "Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel@netsniff-ng.org>\n"
-	     "Copyright (C) 2012      Markus Amend <markus@netsniff-ng.org>\n"
+	     "Copyright (C) 2009-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"
+	     "Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel.roullit@gmail.com>\n"
+	     "Copyright (C) 2012 Markus Amend <markus@netsniff-ng.org>\n"
+	     "Swiss federal institute of technology (ETH Zurich)\n"
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
 	     "There is NO WARRANTY, to the extent permitted by law.\n");
