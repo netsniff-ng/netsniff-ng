@@ -19,39 +19,38 @@
 #include "xutils.h"
 #include "die.h"
 
-/* This is a bug in libpcap, they actually use 'unsigned long' instead
- * of short! */
 #define EXTRACT_SHORT(packet)						\
 		((unsigned short) ntohs(*(unsigned short *) packet))
 #define EXTRACT_LONG(packet)						\
 		(ntohl(*(unsigned long *) packet))
+
 #ifndef BPF_MEMWORDS
-# define BPF_MEMWORDS 16
+# define BPF_MEMWORDS	16
 #endif
 
-#define BPF_LD_B	(BPF_LD | BPF_B)
-#define BPF_LD_H	(BPF_LD | BPF_H)
-#define BPF_LD_W	(BPF_LD | BPF_W)
-#define BPF_LDX_B	(BPF_LDX | BPF_B)
-#define BPF_LDX_W	(BPF_LDX | BPF_W)
-#define BPF_JMP_JA	(BPF_JMP | BPF_JA)
-#define BPF_JMP_JEQ	(BPF_JMP | BPF_JEQ)
-#define BPF_JMP_JGT	(BPF_JMP | BPF_JGT)
-#define BPF_JMP_JGE	(BPF_JMP | BPF_JGE)
-#define BPF_JMP_JSET	(BPF_JMP | BPF_JSET)
-#define BPF_ALU_ADD	(BPF_ALU | BPF_ADD)
-#define BPF_ALU_SUB	(BPF_ALU | BPF_SUB)
-#define BPF_ALU_MUL	(BPF_ALU | BPF_MUL)
-#define BPF_ALU_DIV	(BPF_ALU | BPF_DIV)
-#define BPF_ALU_MOD	(BPF_ALU | BPF_MOD)
-#define BPF_ALU_NEG	(BPF_ALU | BPF_NEG)
-#define BPF_ALU_AND	(BPF_ALU | BPF_AND)
-#define BPF_ALU_OR	(BPF_ALU | BPF_OR)
-#define BPF_ALU_XOR	(BPF_ALU | BPF_XOR)
-#define BPF_ALU_LSH	(BPF_ALU | BPF_LSH)
-#define BPF_ALU_RSH	(BPF_ALU | BPF_RSH)
-#define BPF_MISC_TAX	(BPF_MISC | BPF_TAX)
-#define BPF_MISC_TXA	(BPF_MISC | BPF_TXA)
+#define BPF_LD_B	(BPF_LD   |    BPF_B)
+#define BPF_LD_H	(BPF_LD   |    BPF_H)
+#define BPF_LD_W	(BPF_LD   |    BPF_W)
+#define BPF_LDX_B	(BPF_LDX  |    BPF_B)
+#define BPF_LDX_W	(BPF_LDX  |    BPF_W)
+#define BPF_JMP_JA	(BPF_JMP  |   BPF_JA)
+#define BPF_JMP_JEQ	(BPF_JMP  |  BPF_JEQ)
+#define BPF_JMP_JGT	(BPF_JMP  |  BPF_JGT)
+#define BPF_JMP_JGE	(BPF_JMP  |  BPF_JGE)
+#define BPF_JMP_JSET	(BPF_JMP  | BPF_JSET)
+#define BPF_ALU_ADD	(BPF_ALU  |  BPF_ADD)
+#define BPF_ALU_SUB	(BPF_ALU  |  BPF_SUB)
+#define BPF_ALU_MUL	(BPF_ALU  |  BPF_MUL)
+#define BPF_ALU_DIV	(BPF_ALU  |  BPF_DIV)
+#define BPF_ALU_MOD	(BPF_ALU  |  BPF_MOD)
+#define BPF_ALU_NEG	(BPF_ALU  |  BPF_NEG)
+#define BPF_ALU_AND	(BPF_ALU  |  BPF_AND)
+#define BPF_ALU_OR	(BPF_ALU  |   BPF_OR)
+#define BPF_ALU_XOR	(BPF_ALU  |  BPF_XOR)
+#define BPF_ALU_LSH	(BPF_ALU  |  BPF_LSH)
+#define BPF_ALU_RSH	(BPF_ALU  |  BPF_RSH)
+#define BPF_MISC_TAX	(BPF_MISC |  BPF_TAX)
+#define BPF_MISC_TXA	(BPF_MISC |  BPF_TXA)
 
 static const char *op_table[] = {
 	[BPF_LD_B]	=	"ldb",
@@ -96,30 +95,29 @@ static const char *bpf_dump_linux_k(uint32_t k)
 	switch (k) {
 	default:
 		return "[%d]";
-	/* Linux specific arguments */
-	case (SKF_AD_OFF + SKF_AD_PROTOCOL):
+	case SKF_AD_OFF + SKF_AD_PROTOCOL:
 		return "#proto";
-	case (SKF_AD_OFF + SKF_AD_PKTTYPE):
+	case SKF_AD_OFF + SKF_AD_PKTTYPE:
 		return "#type";
-	case (SKF_AD_OFF + SKF_AD_IFINDEX):
+	case SKF_AD_OFF + SKF_AD_IFINDEX:
 		return "#ifidx";
-	case (SKF_AD_OFF + SKF_AD_NLATTR):
+	case SKF_AD_OFF + SKF_AD_NLATTR:
 		return "#nla";
-	case (SKF_AD_OFF + SKF_AD_NLATTR_NEST):
+	case SKF_AD_OFF + SKF_AD_NLATTR_NEST:
 		return "#nlan";
-	case (SKF_AD_OFF + SKF_AD_MARK):
+	case SKF_AD_OFF + SKF_AD_MARK:
 		return "#mark";
-	case (SKF_AD_OFF + SKF_AD_QUEUE):
+	case SKF_AD_OFF + SKF_AD_QUEUE:
 		return "#queue";
-	case (SKF_AD_OFF + SKF_AD_HATYPE):
+	case SKF_AD_OFF + SKF_AD_HATYPE:
 		return "#hatype";
-	case (SKF_AD_OFF + SKF_AD_RXHASH):
+	case SKF_AD_OFF + SKF_AD_RXHASH:
 		return "#rxhash";
-	case (SKF_AD_OFF + SKF_AD_CPU):
+	case SKF_AD_OFF + SKF_AD_CPU:
 		return "#cpu";
-	case (SKF_AD_OFF + SKF_AD_VLAN_TAG):
+	case SKF_AD_OFF + SKF_AD_VLAN_TAG:
 		return "#vlant";
-	case (SKF_AD_OFF + SKF_AD_VLAN_TAG_PRESENT):
+	case SKF_AD_OFF + SKF_AD_VLAN_TAG_PRESENT:
 		return "#vlanp";
 	}
 }
