@@ -803,6 +803,16 @@ static int __process_ttl(struct ctx *ctx, int fd, int fd_cap, int ttl,
 			af_ops[ctx->proto].handler(pkt_rcv + sizeof(struct ethhdr),
 						   ret - sizeof(struct ethhdr),
 						   ctx->dns_resolv, ctx->latitude);
+			if (ctx->show) {
+				struct pkt_buff *pkt;
+
+				printf("\n");
+
+				pkt = pkt_alloc(pkt_rcv, ret);
+				hex_ascii(pkt);
+				tprintf_flush();
+				pkt_free(pkt);
+			}
 			success = 1;
 			break;
 		}
@@ -812,7 +822,8 @@ static int __process_ttl(struct ctx *ctx, int fd, int fd_cap, int ttl,
 			break;
 	}
 
-	printf("\n");
+	if (ctx->show == 0)
+		printf("\n");
 	fflush(stdout);
 	return 0;
 }
