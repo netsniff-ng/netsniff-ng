@@ -777,32 +777,6 @@ int device_up_and_running(char *ifname)
 	return (device_get_flags(ifname) & (IFF_UP | IFF_RUNNING)) == (IFF_UP | IFF_RUNNING);
 }
 
-int poll_error_maybe_die(int sock, struct pollfd *pfd)
-{
-	if ((pfd->revents & (POLLHUP | POLLRDHUP | POLLERR | POLLNVAL)) == 0)
-		return POLL_NEXT_PKT;
-	if (pfd->revents & (POLLHUP | POLLRDHUP))
-		panic("Hangup on socket occured!\n");
-	if (pfd->revents & POLLERR) {
-		int tmp;
-
-		errno = 0;
-		if (recv(sock, &tmp, sizeof(tmp), MSG_PEEK) >= 0)
-			return POLL_NEXT_PKT;
-		if (errno == ENETDOWN)
-			panic("Interface went down!\n");
-
-		return POLL_MOVE_OUT;
-	}
-	if (pfd->revents & POLLNVAL) {
-		printf("Invalid polling request on socket!\n");
-
-		return POLL_MOVE_OUT;
-	}
-
-	return POLL_NEXT_PKT;
-}
-
 void cpu_affinity(int cpu)
 {
 	int ret;

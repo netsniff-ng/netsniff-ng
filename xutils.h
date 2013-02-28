@@ -67,7 +67,6 @@ extern void register_signal_f(int signal, void (*handler)(int), int flags);
 extern short enter_promiscuous_mode(char *ifname);
 extern void leave_promiscuous_mode(char *ifname, short oldflags);
 extern int device_up_and_running(char *ifname);
-extern int poll_error_maybe_die(int sock, struct pollfd *pfd);
 extern void set_epoll_descriptor(int fd_epoll, int action, int fd_toadd, int events);
 extern int set_epoll_descriptor2(int fd_epoll, int action, int fd_toadd, int events);
 extern void cpu_affinity(int cpu);

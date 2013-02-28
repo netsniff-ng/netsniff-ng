@@ -455,7 +455,6 @@ static void receive_to_xmit(struct ctx *ctx)
 		}
 
 		poll(&rx_poll, 1, -1);
-		poll_error_maybe_die(rx_sock, &rx_poll);
 	}
 
 	out:
@@ -952,7 +951,6 @@ static void recv_only_or_dump(struct ctx *ctx)
 		}
 
 		poll(&rx_poll, 1, -1);
-		poll_error_maybe_die(sock, &rx_poll);
 	}
 
 	bug_on(gettimeofday(&end, NULL));
