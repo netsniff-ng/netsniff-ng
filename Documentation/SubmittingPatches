@@ -3,6 +3,9 @@ Checklist for Patches:
 
 Submitting patches should follow this guideline (derived from the Git project):
 
+If you are familiar with upstream Linux kernel development, then you do not
+need to read this file, it's basically the same process.
+
 * Commits:
 
 - make sure to comply with the coding guidelines (see CodingStyle)
@@ -39,8 +42,8 @@ Submitting patches should follow this guideline (derived from the Git project):
 - if you change, add, or remove a command line option or make some other user
   interface change, the associated documentation should be updated as well.
 - open a pull request on (https://github.com/gnumaniacs/netsniff-ng) and send
-  a notification to the list (netsniff-ng@googlegroups.com) and the maintainer
-  (bugs@netsniff-ng.org) if (and only if) the patch is ready for inclusion.
+  a notification to the list (netsniff-ng@googlegroups.com) and CC one of the
+  maintainers if (and only if) the patch is ready for inclusion.
 - if your name is not writable in ASCII, make sure that you send off a message
   in the correct encoding.
 - add a short description what the patch or patchset is about
@@ -58,10 +61,9 @@ Submitting patches should follow this guideline (derived from the Git project):
   interface change, the associated documentation should be updated as well.
 - if your name is not writable in ASCII, make sure that you send off a message
   in the correct encoding.
-- send the patch to the list (netsniff-ng@googlegroups.com) and the maintainer
-  (bugs@netsniff-ng.org) if (and only if) the patch is ready for inclusion.
-  If you use git-send-email(1), please test it first by sending email to
-  yourself.
+- send the patch to the list (netsniff-ng@googlegroups.com) and CC one of the
+  maintainers if (and only if) the patch is ready for inclusion. If you use
+  git-send-email(1), please test it first by sending email to yourself.
 
 * What does the 'Signed-off-by' mean?
 
