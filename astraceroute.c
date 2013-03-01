@@ -730,6 +730,12 @@ static int __process_time(struct ctx *ctx, int fd, int fd_cap, int ttl,
 	int good = 0, i, j = 0, ret = -EIO, idx, ret_good = -EIO;
 	struct timeval probes[9], *tmp, sum, res;
 	uint8_t *trash = xmalloc(ctx->rcvlen);
+	char *cwait[] = { "-", "\\", "|", "/" };
+	const char *proto_short[] = {
+		[IPPROTO_TCP]		=	"t",
+		[IPPROTO_ICMP]		=	"i",
+		[IPPROTO_ICMPV6]	=	"i",
+	};
 
 	memset(probes, 0, sizeof(probes));
 	for (i = 0; i < array_size(probes) && sigint == 0; ++i) {
@@ -746,6 +752,11 @@ static int __process_time(struct ctx *ctx, int fd, int fd_cap, int ttl,
 			break;
 
 		usleep(50000);
+
+		printf("\r%2d: %s", ttl, cwait[j++]);
+		fflush(stdout);
+		if (j >= array_size(cwait))
+			j = 0;
 	}
 
 	if (good == 0) {
@@ -754,7 +765,7 @@ static int __process_time(struct ctx *ctx, int fd, int fd_cap, int ttl,
 	}
 
 	tmp = xmalloc(sizeof(struct timeval) * good);
-	for (i = 0; i < array_size(probes); ++i) {
+	for (i = j = 0; i < array_size(probes); ++i) {
 		if (probes[i].tv_sec == 0 && probes[i].tv_usec == 0)
 			continue;
 		tmp[j].tv_sec = probes[i].tv_sec;
@@ -764,7 +775,7 @@ static int __process_time(struct ctx *ctx, int fd, int fd_cap, int ttl,
 
 	qsort(tmp, j, sizeof(struct timeval), timevalcmp);
 
-	printf("[");
+	printf("\r%2d: %s[", ttl, proto_short[inner_proto]);
 	idx = j / 2;
 	switch (j % 2) {
 	case 0:
@@ -790,56 +801,67 @@ static int __process_time(struct ctx *ctx, int fd, int fd_cap, int ttl,
 	return ret_good;
 }
 
+static int __probe_remote(struct ctx *ctx, int fd, int fd_cap, int ttl,
+			  uint8_t *pkt_snd, uint8_t *pkt_rcv,
+			  const struct sockaddr_storage *ss,
+			  const struct sockaddr_storage *sd,
+			  int inner_proto)
+{
+	int ret = -EIO, tries = ctx->queries;
+
+	while (tries-- > 0 && sigint == 0) {
+		ret = __process_time(ctx, fd, fd_cap, ttl, inner_proto,
+				     pkt_snd, pkt_rcv, ss, sd);
+		if (ret < 0)
+			continue;
+
+		af_ops[ctx->proto].handler(pkt_rcv + sizeof(struct ethhdr),
+					   ret - sizeof(struct ethhdr),
+					   ctx->dns_resolv, ctx->latitude);
+		if (ctx->show) {
+			struct pkt_buff *pkt;
+
+			printf("\n");
+			pkt = pkt_alloc(pkt_rcv, ret);
+			hex_ascii(pkt);
+			tprintf_flush();
+			pkt_free(pkt);
+		}
+
+		break;
+	}
+
+	return ret;
+}
+
 static int __process_ttl(struct ctx *ctx, int fd, int fd_cap, int ttl,
 			 uint8_t *pkt_snd, uint8_t *pkt_rcv,
 			 const struct sockaddr_storage *ss,
 			 const struct sockaddr_storage *sd)
 {
-	int ret, tries, inner_proto, success = 0;
+	int ret = -EIO, i;
+	const int inner_protos[] = {
+		IPPROTO_TCP,
+		IPPROTO_ICMP,
+	};
 
 	printf("%2d: ", ttl);
 	fflush(stdout);
 
-	for (inner_proto = IPPROTO_TCP;
-	     success == 0 && sigint == 0;
-	     inner_proto = IPPROTO_ICMP) {
-		tries = ctx->queries;
-
-		while (tries-- > 0 && sigint == 0) {
-			ret = __process_time(ctx, fd, fd_cap, ttl, inner_proto,
-					     pkt_snd, pkt_rcv, ss, sd);
-			if (ret < 0) {
-				printf("* ");
-				fflush(stdout);
-				continue;
-			}
-
-			af_ops[ctx->proto].handler(pkt_rcv + sizeof(struct ethhdr),
-						   ret - sizeof(struct ethhdr),
-						   ctx->dns_resolv, ctx->latitude);
-			if (ctx->show) {
-				struct pkt_buff *pkt;
-
-				printf("\n");
-
-				pkt = pkt_alloc(pkt_rcv, ret);
-				hex_ascii(pkt);
-				tprintf_flush();
-				pkt_free(pkt);
-			}
-			success = 1;
-			break;
-		}
-
-		if (inner_proto == IPPROTO_ICMP &&
-		    success == 0)
+	for (i = 0; i < array_size(inner_protos) && sigint == 0; ++i) {
+		ret = __probe_remote(ctx, fd, fd_cap, ttl, pkt_snd, pkt_rcv, ss, sd,
+				     inner_protos[i]);
+		if (ret > 0)
 			break;
 	}
 
+	if (ret <= 0)
+		printf("\r%2d: ?[ no answer]", ttl);
 	if (ctx->show == 0)
 		printf("\n");
-	if (ctx->show && success == 0)
+	if (ctx->show && ret <= 0)
 		printf("\n\n");
+
 	fflush(stdout);
 	return 0;
 }
