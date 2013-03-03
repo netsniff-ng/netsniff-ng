@@ -496,8 +496,11 @@ static void daemonize(const char *lockfile)
 	if (getppid() == 1)
 		return;
 
-	if (daemon(0, 0))
+	if (daemon(0, 1))
 		panic("Cannot daemonize: %s", strerror(errno));
+
+	to_std_log(&stdout);
+	to_std_log(&stderr);
 
 	umask(lperm);
 	if (lockfile) {
