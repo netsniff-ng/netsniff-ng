@@ -242,7 +242,7 @@ static cookie_io_functions_t cookie_log = {
 	.write		=	cookie_writer,
 };
 
-void to_std_log(FILE **pfp)
+void to_std_log(FILE **fp)
 {
-	setvbuf(*pfp = fopencookie(NULL, "w", cookie_log), NULL, _IOLBF, 0);
+	setvbuf(*fp = fopencookie(NULL, "w", cookie_log), NULL, _IOLBF, 0);
 }
