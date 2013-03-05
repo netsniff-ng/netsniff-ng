@@ -241,7 +241,7 @@ static void example(void)
 	"  /* TCP Ackn. Number */\n"
 	"  c32(0),\n"
 	"  /* TCP Header length + TCP SYN/ECN Flag */\n"
-	"  c16((0x8 << 12) | TCP_FLAG_SYN | TCP_FLAG_ECE)\n"
+	"  c16((8 << 12) | TCP_FLAG_SYN | TCP_FLAG_ECE)\n"
 	"  /* Window Size */\n"
 	"  c16(16),\n"
 	"  /* TCP Checksum (offset IP, offset TCP) */\n"
