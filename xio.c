@@ -166,7 +166,7 @@ static void randombytes(unsigned char *x, unsigned long long xlen)
 	if (fd_rnd < 0) {
 		for (;;) {
 			fd_rnd = open("/dev/urandom", O_RDONLY);
-			if (fd_rnd >= 0)
+			if (fd_rnd != -1)
 				break;
 			sleep(1);
 		}
