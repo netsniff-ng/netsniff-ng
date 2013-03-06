@@ -91,6 +91,9 @@ static void signal_handler(int number)
 	case SIGINT:
 		sigint = 1;
 		break;
+	case SIGTERM:
+		sigint = 1;
+		break;
 	default:
 		break;
 	}
