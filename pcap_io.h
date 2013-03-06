@@ -415,12 +415,12 @@ static inline void pcap_pkthdr_to_tpacket_hdr(pcap_pkthdr_t *phdr,
 #define FEATURE_PKTTYPE		(1 << 7)
 
 struct pcap_magic_type {
-	uint32_t magic;
-	char *desc;
-	uint16_t features;
+	const uint32_t magic;
+	const char *desc;
+	const uint16_t features;
 };
 
-static const struct pcap_magic_type const pcap_magic_types[] __maybe_unused = {
+static const struct pcap_magic_type pcap_magic_types[] __maybe_unused = {
 	{
 		.magic = ORIGINAL_TCPDUMP_MAGIC,
 		.desc = "tcpdump-capable pcap",
@@ -496,7 +496,7 @@ static const char *pcap_ops_group_to_str[] __maybe_unused = {
 	[PCAP_OPS_MM] = "mm",
 };
 
-static const struct pcap_file_ops const *pcap_ops[] __maybe_unused = {
+static const struct pcap_file_ops *pcap_ops[] __maybe_unused = {
 	[PCAP_OPS_RW]		=	&pcap_rw_ops,
 	[PCAP_OPS_SG]		=	&pcap_sg_ops,
 	[PCAP_OPS_MM]		=	&pcap_mm_ops,
