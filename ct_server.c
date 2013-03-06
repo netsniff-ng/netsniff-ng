@@ -714,9 +714,8 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4, int log)
 					    NI_NUMERICHOST | NI_NUMERICSERV);
 
 				syslog_maybe(auth_log, LOG_INFO, "New connection "
-					     "from %s:%s with id %d on CPU%d, %d "
-					     "active!\n", hbuff, sbuff, nfd, ncpu,
-					     curfds);
+					     "from %s:%s (%d active client connections) -  id %d on CPU%d",
+					     hbuff, sbuff, curfds-4, nfd, ncpu);
 
 				set_nonblocking(nfd);
 				set_socket_keepalive(nfd);
@@ -766,8 +765,8 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4, int log)
 				unregister_socket(fd_del);
 
 				syslog_maybe(auth_log, LOG_INFO, "Closed connection "
-					     "with id %d, %d active!\n", fd_del,
-					     curfds);
+					     "with id %d (%d active client connections remain)\n", fd_del,
+					     curfds-4);
 			} else {
 				int cpu, fd_work = events[i].data.fd;
 
