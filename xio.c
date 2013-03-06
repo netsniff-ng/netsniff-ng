@@ -51,8 +51,8 @@ void create_or_die(const char *file, mode_t mode)
 void pipe_or_die(int pipefd[2], int flags)
 {
 	int ret = pipe2(pipefd, flags);
-        if (ret < 0)
-                panic("Cannot create pipe2 event fd! %s.\n", strerror(errno));
+	if (ret < 0)
+		panic("Cannot create pipe2 event fd! %s.\n", strerror(errno));
 }
 
 int tun_open_or_die(char *name, int type)
