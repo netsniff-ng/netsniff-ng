@@ -21,7 +21,7 @@ except ImportError:
 DEFAULT_OUPUT_FILE = "oui.conf"
 DEFAULT_OUI_URL = "http://standards.ieee.org/develop/regauth/oui/oui.txt"
 
-OUI_PATTERN = re.compile(b"^([a-zA-Z0-9]{2})-([a-zA-Z0-9]{2})-([a-zA-Z0-9]{2})\s+\(hex\)\s+(.*)$")
+OUI_PATTERN = re.compile(b"^\s*([a-fA-F0-9]{2})-([a-fA-F0-9]{2})-([a-fA-F0-9]{2})\s+\(hex\)\s+(.*)$")
 
 def usage():
     print("""usage: {0} [OPTION...]
