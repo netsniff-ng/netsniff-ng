@@ -943,8 +943,14 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 	wclear(screen);
 	clear();
 
-	mvwprintw(screen, 1, 2, "Kernel netfilter TCP/UDP "
-		  "flow statistics, [+%d]", skip_lines);
+	mvwprintw(screen, 1, 2, "Kernel netfilter flows for %s%s%s%s%s%s"
+		  "[+%d]", what & INCLUDE_TCP ? "TCP, " : "" ,
+		  what & INCLUDE_UDP ? "UDP, " : "",
+		  what & INCLUDE_SCTP ? "SCTP, " : "",
+		  what & INCLUDE_DCCP ? "DCCP, " : "",
+		  what & INCLUDE_ICMP && what & INCLUDE_IPV4 ? "ICMP, " : "",
+		  what & INCLUDE_ICMP && what & INCLUDE_IPV6 ? "ICMP6, " : "",
+		  skip_lines);
 
 	rcu_read_lock();
 
