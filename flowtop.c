@@ -631,7 +631,6 @@ flow_entry_geo_country_lookup_generic(struct flow_entry *n,
 {
 	struct sockaddr_in sa4;
 	struct sockaddr_in6 sa6;
-	inline const char *make_na(const char *p) { return p ? : "N/A"; }
 	const char *country = NULL;
 
 	switch (n->l3_proto) {
@@ -649,12 +648,15 @@ flow_entry_geo_country_lookup_generic(struct flow_entry *n,
 		break;
 	}
 
-	country = make_na(country);
-
 	bug_on(sizeof(n->country_src) != sizeof(n->country_dst));
 
-	memcpy(SELFLD(dir, country_src, country_dst), country,
-	       min(sizeof(n->country_src), strlen(country)));
+	if (country) {
+		memcpy(SELFLD(dir, country_src, country_dst), country,
+		       min(sizeof(n->country_src), strlen(country)));
+	} else {
+		memset(SELFLD(dir, country_src, country_dst), 0,
+		       sizeof(n->country_src));
+	}
 }
 
 static void flow_entry_get_extended_geo(struct flow_entry *n,
@@ -835,15 +837,22 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 		mvwprintw(screen, ++(*line), 8, "src: %s", n->rev_dns_src);
 		attroff(COLOR_PAIR(1));
 
-		printw(":%u (", n->port_src);
+		printw(":%u", n->port_src);
 
-		attron(COLOR_PAIR(4));
-		printw("%s", n->country_src);
-		attroff(COLOR_PAIR(4));
+		if (n->country_src[0]) {
+			printw(" (");
 
-		if (n->city_src[0])
-			printw(", %s", n->city_src);
-		printw(") => ");
+			attron(COLOR_PAIR(4));
+			printw("%s", n->country_src);
+			attroff(COLOR_PAIR(4));
+
+			if (n->city_src[0])
+				printw(", %s", n->city_src);
+
+			printw(")");
+		}
+
+		printw(" => ");
 	}
 
 	/* Show dest information: reverse DNS, port, country, city */
@@ -851,15 +860,20 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 	mvwprintw(screen, ++(*line), 8, "dst: %s", n->rev_dns_dst);
 	attroff(COLOR_PAIR(2));
 
-	printw(":%u (", n->port_dst);
+	printw(":%u", n->port_dst);
 
-	attron(COLOR_PAIR(4));
-	printw("%s", n->country_dst);
-	attroff(COLOR_PAIR(4));
+	if (n->country_dst[0]) {
+		printw(" (");
 
-	if (n->city_dst[0])
-		printw(", %s", n->city_dst);
-	printw(")");
+		attron(COLOR_PAIR(4));
+		printw("%s", n->country_dst);
+		attroff(COLOR_PAIR(4));
+
+		if (n->city_dst[0])
+			printw(", %s", n->city_dst);
+
+		printw(")");
+	}
 }
 
 static inline int presenter_flow_wrong_state(struct flow_entry *n, int state)
