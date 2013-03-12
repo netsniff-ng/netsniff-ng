@@ -1,20 +1,17 @@
-For reporting bugs, either send a mail to one of the following email addresses
-<bugs@netsniff-ng.org>, <workgroup@netsniff-ng.org>, <netsniff-ng@googlegroups.com>
-or in case you own a Github account, simply visit our project's bug-tracker, which
-is reachable by visiting:
+For reporting bugs send an email to the <netsniff-ng@googlegroups.com> list.
 
-  * http://bugs.netsniff-ng.org/
-
-If you use Fedora or have a RHEL subscription, you can also report bugs (assigned
-or CC'ed for <dborkman@redhat.com>) to:
+If you use Fedora or have a RHEL subscription, you can also report bugs to:
 
   * https://bugzilla.redhat.com/
 
-If you use Debian Linux, we also process / track bugs there:
+If you use Debian Linux, we might also process / track bugs there:
 
   * http://bugs.debian.org/cgi-bin/pkgreport.cgi?src=netsniff-ng
 
-In any way, you'll get a reply from us.
+In any way, you'll get a reply from us. Please do not contact individual
+developers directly in case of netsniff-ng issues or patches, but rather
+always our mailing list. By this, you're not wasting time of a single
+developer and increase your chances of getting a reply from us.
 
 In general, we are also highly interested in how you use the toolkit, what
 problems you are trying to sovle and what kind of things you would like to have

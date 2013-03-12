@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <endian.h>
 #include <byteswap.h>
+#include <asm/byteorder.h>
 #include <stdint.h>
 
 typedef uint64_t	u64;

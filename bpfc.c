@@ -4,13 +4,6 @@
  * Swiss federal institute of technology (ETH Zurich)
  * Subject to the GPL, version 2.
  *
- * This is a tiny Berkeley Packet Filter compiler that understands the
- * Syntax / Semantic from the USENIX paper {"The BSD Packet Filter: A New
- * Architecture for User-level Packet Capture", McCanne, Steven and
- * Jacobson, Van, Lawrence Berkeley Laboratory}. With this, BPFs can be
- * written the good old way and understood by the Linux kernel and *BSD
- * kernels where Berkeley Packet Filters are used.
- *
  *   The one small garden of a free gardener was all his need and due, not
  *   a garden swollen to a realm; his own hands to use, not the hands of
  *   others to command.

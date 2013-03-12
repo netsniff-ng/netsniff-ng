@@ -1002,6 +1002,7 @@ static int8_t inf_cf_ps(struct pkt_buff *pkt, u8 *id)
 static int8_t inf_tim(struct pkt_buff *pkt, u8 *id)
 {
 	struct element_tim *tim;
+	u8 i;
 
 	tim = (struct element_tim *) pkt_pull(pkt, sizeof(*tim));
 	if (tim == NULL)
@@ -1019,7 +1020,7 @@ static int8_t inf_tim(struct pkt_buff *pkt, u8 *id)
 			return 0;
 
 		tprintf("Partial Virtual Bitmap: 0x");
-		for(u8 i=0; i < (tim->len - sizeof(*tim) + 1); i++)
+		for (i = 0; i < (tim->len - sizeof(*tim) + 1); i++)
 			tprintf("%.2x", bmp[i]);
 	}
 

@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <syslog.h>
 
 #include "die.h"
 #include "built_in.h"
@@ -91,8 +92,12 @@ static int parse_line(char *line, char *homedir)
 		case PARSE_CARRIER:
 			if (!strncmp("udp", str, strlen("udp")))
 				elem->udp = 1;
-			else
+			else if (!strncmp("tcp", str, strlen("tcp")))
 				elem->udp = 0;
+			else {
+				syslog(LOG_ERR, "Incorrect carrier type !(udp|tcp) in server spec.\n");
+				return -EIO;
+			}
 			s = PARSE_PUBKEY;
 			break;
 		case PARSE_PUBKEY:

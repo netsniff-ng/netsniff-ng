@@ -4,13 +4,6 @@
  * Swiss federal institute of technology (ETH Zurich)
  * Subject to the GPL, version 2.
  *
- * A high-performance network traffic generator that uses the zero-copy
- * kernelspace TX_RING for network I/O. On comodity Gigabit hardware up
- * to 1,488,095 pps 64 Byte pps have been achieved with 2 trafgen instances
- * bound to different CPUs from the userspace and turned off pause frames,
- * ask Ronald from NST (Network Security Toolkit) for more details. ;-)
- * So, this line-rate result is the very same as pktgen from kernelspace!
- *
  *   Who can now hold the fords when the King of the Nine Riders comes? And
  *   other armies will come. I am too late. All is lost. I tarried on the
  *   way. All is lost. Even if my errand is performed, no one will ever
@@ -248,7 +241,7 @@ static void example_tcp(void)
 	"  /* TCP Ackn. Number */\n"
 	"  c32(0),\n"
 	"  /* TCP Header length + TCP SYN/ECN Flag */\n"
-	"  c16((0x8 << 12) | TCP_FLAG_SYN | TCP_FLAG_ECE)\n"
+	"  c16((8 << 12) | TCP_FLAG_SYN | TCP_FLAG_ECE)\n"
 	"  /* Window Size */\n"
 	"  c16(16),\n"
 	"  /* TCP Checksum (offset IP, offset TCP) */\n"
@@ -404,141 +397,6 @@ static void apply_randomizer(int rand_id)
 	}
 }
 
-/* Taken and modified from tcpdump, Copyright belongs to them! */
-
-struct cksum_vec {
-	const u8 *ptr;
-	int len;
-};
-
-#define ADDCARRY(x)		\
-	do { if ((x) > 65535)	\
-		(x) -= 65535;	\
-	} while (0)
-
-#define REDUCE						\
-	do {						\
-		l_util.l = sum;				\
-		sum = l_util.s[0] + l_util.s[1];	\
-		ADDCARRY(sum);				\
-	} while (0)
-
-static u16 __in_cksum(const struct cksum_vec *vec, int veclen)
-{
-	const u16 *w;
-	int sum = 0, mlen = 0;
-	int byte_swapped = 0;
-	union {
-		u8 c[2];
-		u16 s;
-	} s_util;
-	union {
-		u16 s[2];
-		u32 l;
-	} l_util;
-
-	for (; veclen != 0; vec++, veclen--) {
-		if (vec->len == 0)
-			continue;
-
-		w = (const u16 *) (void *) vec->ptr;
-
-		if (mlen == -1) {
-			s_util.c[1] = *(const u8 *) w;
-			sum += s_util.s;
-			w = (const u16 *) (void *) ((const u8 *) w + 1);
-			mlen = vec->len - 1;
-		} else
-			mlen = vec->len;
-
-		if ((1 & (unsigned long) w) && (mlen > 0)) {
-			REDUCE;
-			sum <<= 8;
-			s_util.c[0] = *(const u8 *) w;
-			w = (const u16 *) (void *) ((const u8 *) w + 1);
-			mlen--;
-			byte_swapped = 1;
-		}
-
-		while ((mlen -= 32) >= 0) {
-			sum +=  w[0]; sum +=  w[1]; sum +=  w[2]; sum +=  w[3];
-			sum +=  w[4]; sum +=  w[5]; sum +=  w[6]; sum +=  w[7];
-			sum +=  w[8]; sum +=  w[9]; sum += w[10]; sum += w[11];
-			sum += w[12]; sum += w[13]; sum += w[14]; sum += w[15];
-			w += 16;
-		}
-
-		mlen += 32;
-
-		while ((mlen -= 8) >= 0) {
-			sum += w[0]; sum += w[1]; sum += w[2]; sum += w[3];
-			w += 4;
-		}
-
-		mlen += 8;
-
-		if (mlen == 0 && byte_swapped == 0)
-			continue;
-
-		REDUCE;
-
-		while ((mlen -= 2) >= 0) {
-			sum += *w++;
-		}
-
-		if (byte_swapped) {
-			REDUCE;
-			sum <<= 8;
-			byte_swapped = 0;
-
-			if (mlen == -1) {
-				s_util.c[1] = *(const u8 *) w;
-				sum += s_util.s;
-				mlen = 0;
-			} else
-				mlen = -1;
-		} else if (mlen == -1)
-			s_util.c[0] = *(const u8 *) w;
-	}
-
-	if (mlen == -1) {
-		s_util.c[1] = 0;
-		sum += s_util.s;
-	}
-
-	REDUCE;
-
-	return (~sum & 0xffff);
-}
-
-static u16 p4_csum(const struct ip *ip, const u8 *data, u16 len,
-		   u8 next_proto)
-{
-	struct cksum_vec vec[2];
-	struct pseudo_hdr {
-		u32 src;
-		u32 dst;
-		u8 mbz;
-		u8 proto;
-		u16 len;
-	} ph;
-
-	memset(&ph, 0, sizeof(ph));
-	ph.len = htons(len);
-	ph.mbz = 0;
-	ph.proto = next_proto;
-	ph.src = ip->ip_src.s_addr;
-	ph.dst = ip->ip_dst.s_addr;
-
-	vec[0].ptr = (const u8 *) (void *) &ph;
-	vec[0].len = sizeof(ph);
-
-	vec[1].ptr = data;
-	vec[1].len = len;
-
-	return __in_cksum(vec, 2);
-}
-
 static void apply_csum16(int csum_id)
 {
 	int j, i = csum_id;
@@ -622,18 +480,6 @@ static void dump_trafgen_snippet(uint8_t *payload, size_t len)
 	}
 	printf("\n}\n");
 	fflush(stdout);
-}
-
-static inline unsigned short csum(unsigned short *buf, int nwords)
-{
-	unsigned long sum;
-
-	for (sum = 0; nwords > 0; nwords--)
-		sum += *buf++;
-	sum = (sum >> 16) + (sum & 0xffff);
-	sum += (sum >> 16);
-
-	return ~sum;
 }
 
 static int xmit_smoke_setup(struct ctx *ctx)
@@ -810,7 +656,7 @@ retry:
 	}
 
 	bug_on(gettimeofday(&end, NULL));
-	diff = tv_subtract(end, start);
+	timersub(&end, &start, &diff);
 
 	if (ctx->smoke_test)
 		close(icmp_sock);
@@ -902,7 +748,7 @@ static void xmit_fastpath_or_die(struct ctx *ctx, int cpu)
 	}
 
 	bug_on(gettimeofday(&end, NULL));
-	diff = tv_subtract(end, start);
+	timersub(&end, &start, &diff);
 
 	destroy_tx_ring(sock, &tx_ring);
 

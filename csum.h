@@ -7,89 +7,31 @@
 #ifndef CSUM_H
 #define	CSUM_H
 
-#include <netinet/in.h>    /* for htons() */
+#include <netinet/in.h>
+#include <netinet/ip.h>
 
-/* Shamelessly taken and adapted from tcpdump */
+#include "built_in.h"
 
-/*
- * Compute an IP header checksum.
- * Don't modifiy the packet.
- */
-static inline uint16_t calc_csum(void *addr, size_t len, int csum)
+static inline unsigned short csum(unsigned short *buf, int nwords)
 {
-	int nleft = len;
-	int sum = csum;
-	uint16_t answer;
-	const uint16_t *w = (const uint16_t *) addr;
+	unsigned long sum;
 
-	/*
-	 * Our algorithm is simple, using a 32 bit accumulator (sum),
-	 * we add sequential 16 bit words to it, and at the end, fold
-	 * back all the carry bits from the top 16 bits into the lower
-	 * 16 bits.
-	 */
-	while (nleft > 1) {
-		sum += *w++;
-		nleft -= 2;
-	}
+	for (sum = 0; nwords > 0; nwords--)
+		sum += *buf++;
+	sum = (sum >> 16) + (sum & 0xffff);
+	sum += (sum >> 16);
 
-	if (nleft == 1)
-		sum += htons(*(const uint8_t *) w << 8);
-
-	/*
-	 * Add back carry outs from top 16 bits to low 16 bits
-	 */
-	sum = (sum >> 16) + (sum & 0xFFFF); /* add hi 16 to low 16 */
-	sum += (sum >> 16);                 /* add carry */
-	answer = ~sum;                      /* truncate to 16 bits */
-
-	return answer;
+	return ~sum;
 }
 
-/*
- * Given the host-byte-order value of the checksum field in a packet
- * header, and the network-byte-order computed checksum of the data
- * that the checksum covers (including the checksum itself), compute
- * what the checksum field *should* have been.
- */
+static inline uint16_t calc_csum(void *addr, size_t len, int ccsum)
+{
+	return csum(addr, len >> 1);
+}
+
 static inline uint16_t csum_expected(uint16_t sum, uint16_t computed_sum)
 {
 	uint32_t shouldbe;
-
-	/*
-	 * The value that should have gone into the checksum field
-	 * is the negative of the value gotten by summing up everything
-	 * *but* the checksum field.
-	 *
-	 * We can compute that by subtracting the value of the checksum
-	 * field from the sum of all the data in the packet, and then
-	 * computing the negative of that value.
-	 *
-	 * "sum" is the value of the checksum field, and "computed_sum"
-	 * is the negative of the sum of all the data in the packets,
-	 * so that's -(-computed_sum - sum), or (sum + computed_sum).
-	 *
-	 * All the arithmetic in question is one's complement, so the
-	 * addition must include an end-around carry; we do this by
-	 * doing the arithmetic in 32 bits (with no sign-extension),
-	 * and then adding the upper 16 bits of the sum, which contain
-	 * the carry, to the lower 16 bits of the sum, and then do it
-	 * again in case *that* sum produced a carry.
-	 *
-	 * As RFC 1071 notes, the checksum can be computed without
-	 * byte-swapping the 16-bit words; summing 16-bit words
-	 * on a big-endian machine gives a big-endian checksum, which
-	 * can be directly stuffed into the big-endian checksum fields
-	 * in protocol headers, and summing words on a little-endian
-	 * machine gives a little-endian checksum, which must be
-	 * byte-swapped before being stuffed into a big-endian checksum
-	 * field.
-	 *
-	 * "computed_sum" is a network-byte-order value, so we must put
-	 * it in host byte order before subtracting it from the
-	 * host-byte-order value from the header; the adjusted checksum
-	 * will be in host byte order, which is what we'll return.
-	 */
 
 	shouldbe = sum;
 	shouldbe += ntohs(computed_sum);
@@ -99,64 +41,139 @@ static inline uint16_t csum_expected(uint16_t sum, uint16_t computed_sum)
 	return shouldbe;
 }
 
-static inline uint16_t tcp_sum_calc(uint16_t len_tcp, uint16_t src_addr[], 
-				    uint16_t dest_addr[], uint8_t padding,
-				    uint16_t buff[])
+/* Taken and modified from tcpdump, Copyright belongs to them! */
+
+struct cksum_vec {
+	const u8 *ptr;
+	int len;
+};
+
+#define ADDCARRY(x)		\
+	do { if ((x) > 65535)	\
+		(x) -= 65535;	\
+	} while (0)
+
+#define REDUCE						\
+	do {						\
+		l_util.l = sum;				\
+		sum = l_util.s[0] + l_util.s[1];	\
+		ADDCARRY(sum);				\
+	} while (0)
+
+static inline u16 __in_cksum(const struct cksum_vec *vec, int veclen)
 {
-	uint32_t i;
-	uint16_t padd = 0;
-	uint16_t word16;
-	uint32_t sum = 0;
-	uint16_t prot_tcp = IPPROTO_TCP;
+	const u16 *w;
+	int sum = 0, mlen = 0;
+	int byte_swapped = 0;
+	union {
+		u8 c[2];
+		u16 s;
+	} s_util;
+	union {
+		u16 s[2];
+		u32 l;
+	} l_util;
 
-	/*
-	 * Find out if the length of data is even or odd number. If odd,
-	 * add a padding byte = 0 at the end of packet.
-	 */
-	if ((padding & 1) == 1) {
-		padd = 1;
-		buff[len_tcp] = 0;
+	for (; veclen != 0; vec++, veclen--) {
+		if (vec->len == 0)
+			continue;
+
+		w = (const u16 *) (void *) vec->ptr;
+
+		if (mlen == -1) {
+			s_util.c[1] = *(const u8 *) w;
+			sum += s_util.s;
+			w = (const u16 *) (void *) ((const u8 *) w + 1);
+			mlen = vec->len - 1;
+		} else
+			mlen = vec->len;
+
+		if ((1 & (unsigned long) w) && (mlen > 0)) {
+			REDUCE;
+			sum <<= 8;
+			s_util.c[0] = *(const u8 *) w;
+			w = (const u16 *) (void *) ((const u8 *) w + 1);
+			mlen--;
+			byte_swapped = 1;
+		}
+
+		while ((mlen -= 32) >= 0) {
+			sum +=  w[0]; sum +=  w[1]; sum +=  w[2]; sum +=  w[3];
+			sum +=  w[4]; sum +=  w[5]; sum +=  w[6]; sum +=  w[7];
+			sum +=  w[8]; sum +=  w[9]; sum += w[10]; sum += w[11];
+			sum += w[12]; sum += w[13]; sum += w[14]; sum += w[15];
+			w += 16;
+		}
+
+		mlen += 32;
+
+		while ((mlen -= 8) >= 0) {
+			sum += w[0]; sum += w[1]; sum += w[2]; sum += w[3];
+			w += 4;
+		}
+
+		mlen += 8;
+
+		if (mlen == 0 && byte_swapped == 0)
+			continue;
+
+		REDUCE;
+
+		while ((mlen -= 2) >= 0) {
+			sum += *w++;
+		}
+
+		if (byte_swapped) {
+			REDUCE;
+			sum <<= 8;
+			byte_swapped = 0;
+
+			if (mlen == -1) {
+				s_util.c[1] = *(const u8 *) w;
+				sum += s_util.s;
+				mlen = 0;
+			} else
+				mlen = -1;
+		} else if (mlen == -1)
+			s_util.c[0] = *(const u8 *) w;
 	}
 
-	/*
-	 * Make 16 bit words out of every two adjacent 8 bit words and 
-	 * calculate the sum of all 16 vit words.
-	 */
-	for (i = 0; i < len_tcp + padd; i = i + 2) {
-		word16 = ((buff[i] << 8) & 0xFF00) + (buff[i + 1] & 0xFF);
-		sum += (unsigned long) word16;
+	if (mlen == -1) {
+		s_util.c[1] = 0;
+		sum += s_util.s;
 	}
 
-	/*
-	 * Add the TCP pseudo header which contains: the IP source and 
-	 * destinationn addresses.
-	 */
-	for (i = 0; i < 4; i = i + 2) {
-		word16 = ((src_addr[i] << 8) & 0xFF00) +
-			 (src_addr[i + 1] & 0xFF);
-		sum += word16;
-	}
+	REDUCE;
 
-	for (i = 0; i < 4; i = i + 2) {
-		word16 = ((dest_addr[i] << 8) & 0xFF00) +
-			 (dest_addr[i + 1] & 0xFF);
-		sum += word16;
-	}
+	return (~sum & 0xffff);
+}
 
-	/* The protocol number and the length of the TCP packet. */
-	sum += (prot_tcp + len_tcp);
+static inline u16 p4_csum(const struct ip *ip, const u8 *data, u16 len,
+			  u8 next_proto)
+{
+	struct cksum_vec vec[2];
+	struct pseudo_hdr {
+		u32 src;
+		u32 dst;
+		u8 mbz;
+		u8 proto;
+		u16 len;
+	} ph;
 
-	/*
-	 * Keep only the last 16 bits of the 32 bit calculated sum and 
-	 * add the carries.
-	 */
-	while (sum >> 16)
-		sum = (sum & 0xFFFF) + (sum >> 16);
+	memset(&ph, 0, sizeof(ph));
+	ph.len = htons(len);
+	ph.mbz = 0;
+	ph.proto = next_proto;
+	ph.src = ip->ip_src.s_addr;
+	ph.dst = ip->ip_dst.s_addr;
 
-	/* Take the one's complement of sum. */
-	sum = ~sum;
+	vec[0].ptr = (const u8 *) (void *) &ph;
+	vec[0].len = sizeof(ph);
 
-	return (uint16_t) sum;
+	vec[1].ptr = data;
+	vec[1].len = len;
+
+	return __in_cksum(vec, 2);
 }
 
 #endif /* CSUM_H */

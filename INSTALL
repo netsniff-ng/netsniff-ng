@@ -113,68 +113,12 @@ nacl_path.sh this way:
 When done, netsniff-ng's build infrastructure will read those evironment
 variables in order to get the needed paths to NaCl.
 
-In case you have to manually install libgeoip in version 1.4.8 or higher, you
-can also use the provided helper script called build_geoip.sh from the
-astraceroute directory (depending on your distribution, you might want to
-adapt paths within the script):
-
-  $ cd astraceroute
-  # ./build_geoip.sh
-
-Again, there's also an abbreviation for this by simply typing:
-
-  # make geoip
-
-For downloading the latest GeoIP database, you should use the script that
-is located at scripts/geoip-database-update, or use:
-
-  # make update
-
-As stated in http://www.maxmind.com/en/geolite_city_accuracy, it is recommended
-that you update GeoIP databases regularly, otherwise it will loose about 1.5%
-accuracy each month.
-
 If you're unsure with any make targets, check out: make help
 
 In order to run the toolkit as a normal user, set the following privilege
 separation after the build/installation:
 
   $ sudo setcap cap_net_raw,cap_ipc_lock,cap_sys_admin,cap_net_admin=eip {toolname}
-
-Man pages are generated out of the files from Documentation/Manpages dir.
-They are written in asciidoc format. For this, you need the tool asciidoc which
-is distributed with on most Linux systems.
-
-For bpfc, we also have a Vim syntax highlighting file. Have a look at
-scripts/bpf.vim for installation instructions.
-
-netsniff-ng has been successfully tested on x86 and x86_64. It should also run
-on most other major architectures. However, since we don't have a possibility
-to test it, please drop us a short mail, if it runs successfully on hardware
-other than x86/x86_64.
-
-For using TUN/TAP devices as a user, e.g. create a file called 50-tuntap.rules
-in /etc/udev/rules.d/ with ...
-
-KERNEL=="tun",NAME="net/%k",GROUP="netdev",MODE="0660",OPTIONS+="ignore_remove"
-
-... and restart the udev daemon. Add yourself to the "netdev" group.
-
-Add the flag -D__WITH_HARDWARE_TIMESTAMPING=1 into Makefile for
-hardware timestamping support. Note that your kernel must be configured for
-this (e.g. to ship the linux/net_tstamp.h header file).
-
-The following warnings can be seen when compiling bpfc with flex 2.5.35 and
-bison 2.4.1:
- - redundant redeclaration of ‘isatty’
- - cannot optimize loop, the loop counter may overflow
-
-Those two warnings occur on generated C code produced by flex and bison and
-there is no possibility on our side to fix them while staying with both tools.
-
-Similar to that, gcc will throw a warning on strchr(3) which is a false
-positive (http://gcc.gnu.org/bugzilla/show_bug.cgi?id=36513) from glibc:
- - warning: logical ‘&&’ with non-zero constant will always evaluate as true
 
 For cross-compiling netsniff-ng, the process is faily simple. Assuming you
 want to build netsniff-ng for the Microblaze architecture, update the PATH

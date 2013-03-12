@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <syslog.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -28,7 +29,7 @@ int open_or_die(const char *file, int flags)
 {
 	int ret = open(file, flags);
 	if (ret < 0)
-		panic("Cannot open file %s!\n", file);
+		panic("Cannot open file %s! %s.\n", file, strerror(errno));
 
 	return ret;
 }
@@ -37,7 +38,7 @@ int open_or_die_m(const char *file, int flags, mode_t mode)
 {
 	int ret = open(file, flags, mode);
 	if (ret < 0)
-		panic("Cannot open or create file %s!", file);
+		panic("Cannot open or create file %s! %s.", file, strerror(errno));
 	return ret;
 }
 
@@ -50,8 +51,8 @@ void create_or_die(const char *file, mode_t mode)
 void pipe_or_die(int pipefd[2], int flags)
 {
 	int ret = pipe2(pipefd, flags);
-        if (ret < 0)
-                panic("Cannot create pipe2 event fd!\n");
+	if (ret < 0)
+		panic("Cannot create pipe2 event fd! %s.\n", strerror(errno));
 }
 
 int tun_open_or_die(char *name, int type)
@@ -71,11 +72,11 @@ int tun_open_or_die(char *name, int type)
 
 	ret = ioctl(fd, TUNSETIFF, &ifr);
 	if (ret < 0)
-		panic("ioctl screwed up!\n");
+		panic("ioctl screwed up! %s.\n", strerror(errno));
 
 	ret = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);
 	if (ret < 0)
-		panic("fctnl screwed up!\n");
+		panic("fctnl screwed up! %s.\n", strerror(errno));
 
 	flags = device_get_flags(name);
 	flags |= IFF_UP | IFF_RUNNING;
@@ -90,7 +91,7 @@ ssize_t read_or_die(int fd, void *buf, size_t len)
 	if (ret < 0) {
 		if (errno == EPIPE)
 			die();
-		panic("Cannot read from descriptor!\n");
+		panic("Cannot read from descriptor! %s.\n", strerror(errno));
 	}
 
 	return ret;
@@ -102,7 +103,7 @@ ssize_t write_or_die(int fd, const void *buf, size_t len)
 	if (ret < 0) {
 		if (errno == EPIPE)
 			die();
-		panic("Cannot write to descriptor!");
+		panic("Cannot write to descriptor! %s.", strerror(errno));
 	}
 
 	return ret;
@@ -162,10 +163,10 @@ static void randombytes(unsigned char *x, unsigned long long xlen)
 {
 	int ret;
 
-	if (fd_rnd < 0) {
+	if (fd_rnd == -1) {
 		for (;;) {
 			fd_rnd = open("/dev/urandom", O_RDONLY);
-			if (fd_rnd < 0)
+			if (fd_rnd != -1)
 				break;
 			sleep(1);
 		}
@@ -199,4 +200,49 @@ int secrand(void)
 	randombytes((void *) &ret, sizeof(ret));
 
 	return ret;
+}
+
+static char const *priov[] = {
+	[LOG_EMERG]	=	"EMERG:",
+	[LOG_ALERT]	=	"ALERT:",
+	[LOG_CRIT]	=	"CRIT:",
+	[LOG_ERR]	=	"ERR:",
+	[LOG_WARNING]	=	"WARNING:",
+	[LOG_NOTICE]	=	"NOTICE:",
+	[LOG_INFO]	=	"INFO:",
+	[LOG_DEBUG]	=	"DEBUG:",
+};
+
+static ssize_t cookie_writer(void *cookie, char const *data, size_t leng)
+{
+	int prio = LOG_DEBUG, len;
+
+	do {
+		len = strlen(priov[prio]);
+	} while (memcmp(data, priov[prio], len) && --prio >= 0);
+
+	if (prio < 0) {
+		prio = LOG_INFO;
+	} else {
+		data += len;
+		leng -= len;
+	}
+
+	while (*data == ' ') {
+		 ++data;
+		--leng;
+	}
+
+	syslog(prio, "%.*s", (int) leng, data);
+
+	return leng;
+}
+
+static cookie_io_functions_t cookie_log = {
+	.write		=	cookie_writer,
+};
+
+void to_std_log(FILE **fp)
+{
+	setvbuf(*fp = fopencookie(NULL, "w", cookie_log), NULL, _IOLBF, 0);
 }

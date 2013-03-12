@@ -5,20 +5,6 @@
  * Copyright 2011 Emmanuel Roullit.
  * Subject to the GPL, version 2.
  *
- * This is curvetun, a lightweight, high-speed ECDH multiuser IP tunnel for
- * Linux that is based on epoll(2). curvetun uses the Linux TUN/TAP interface
- * and supports {IPv4,IPv6} over {IPv4,IPv6} with UDP or TCP as carrier
- * protocols. It has an integrated packet forwarding trie, thus multiple
- * users with different IPs can be handled via a single tunnel device on the
- * server side and flows are scheduled for processing in a CPU-local manner.
- * For transmission, packets are being compressed and encrypted by both, the
- * client and the server side. As an appropriate key management, public-key
- * cryptography based on elliptic curves are being used and packets are 
- * encrypted by a symmetric stream cipher (Salsa20) and authenticated by a MAC
- * (Poly1305), where keys have previously been computed with the ECDH key 
- * agreement protocol (Curve25519). Cryptography is based on Daniel J.
- * Bernsteins Networking and Cryptography library (NaCl).
- *
  *   He used often to say there was only one Road; that it was like a great
  *   river: it's springs were at every doorstep and every path was it's
  *   tributary. "It's a dangerous business, Frodo, going out of your door,"
@@ -103,6 +89,7 @@ static void signal_handler(int number)
 {
 	switch (number) {
 	case SIGINT:
+	case SIGTERM:
 		sigint = 1;
 		break;
 	default:
@@ -112,41 +99,40 @@ static void signal_handler(int number)
 
 static void help(void)
 {
-	printf("\ncurvetun %s, lightweight curve25519-based VPN/IP tunnel\n",
-	       VERSION_STRING);
+	printf("\ncurvetun %s, lightweight curve25519-based VPN/IP tunnel\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: curvetun [options]\n"
 	     "Options, general:\n"
+	     "  -d|--dev <tun>          Networking tunnel device, e.g. tun0\n"
+	     "  -p|--port <num>         Server port number (mandatory)\n"
+	     "  -t|--stun <server>      Show public IP/Port mapping via STUN\n"
+	     "  -c|--client[=alias]     Client mode, server alias optional\n"
 	     "  -k|--keygen             Generate public/private keypair\n"
 	     "  -x|--export             Export your public data for remote servers\n"
 	     "  -C|--dumpc              Dump parsed clients\n"
 	     "  -S|--dumps              Dump parsed servers\n"
 	     "  -D|--nofork             Do not daemonize\n"
-	     "  -d|--dev <tun>          Networking tunnel device, e.g. tun0\n"
-	     "  -v|--version            Print version\n"
-	     "  -h|--help               Print this help\n"
-	     "  -c|--client[=alias]     Client mode, server alias optional\n"
 	     "  -s|--server             Server mode, options follow below\n"
 	     "  -N|--no-logging         Disable server logging (for better anonymity)\n"
-	     "  -p|--port <num>         Server port number (mandatory)\n"
-	     "  -t|--stun <server>      Show public IP/Port mapping via STUN\n"
 	     "  -u|--udp                Use UDP as carrier instead of TCP\n"
 	     "  -4|--ipv4               Tunnel devices are IPv4\n"
 	     "  -6|--ipv6               Tunnel devices are IPv6\n"
-	     "                          (default: same as carrier protocol)\n\n"
+	     "  -v|--version            Print version\n"
+	     "  -h|--help               Print this help\n\n"
 	     "Example:\n"
 	     "  See Documentation/Curvetun for a configuration example.\n"
-	     "  curvetun --keygen\n"
-	     "  curvetun --export\n"
 	     "  curvetun --server -4 -u -N --port 6666 --stun stunserver.org\n"
 	     "  curvetun --client=ethz\n\n"
+	     "  curvetun --keygen\n"
+	     "  curvetun --export\n"
 	     "Note:\n"
 	     "  There is no default port specified, so that you are forced\n"
 	     "  to select your own! For client/server status messages see syslog!\n"
 	     "  This software is an experimental prototype intended for researchers.\n\n"
 	     "Secret ingredient: 7647-14-5\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
-	     "Copyright (C) 2011-2012 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
+	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
+	     "Swiss federal institute of technology (ETH Zurich)\n"
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
 	     "There is NO WARRANTY, to the extent permitted by law.\n");
@@ -155,11 +141,11 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\ncurvetun %s, lightweight curve25519-based VPN/IP tunnel\n",
-               VERSION_STRING);
+	printf("\ncurvetun %s, lightweight curve25519-based VPN/IP tunnel\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
-	     "Copyright (C) 2011-2012 Daniel Borkmann <daniel@netsniff-ng.org>\n"
+	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
+	     "Swiss federal institute of technology (ETH Zurich)\n"
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
 	     "There is NO WARRANTY, to the extent permitted by law.\n");
@@ -511,8 +497,11 @@ static void daemonize(const char *lockfile)
 	if (getppid() == 1)
 		return;
 
-	if (daemon(0, 0))
+	if (daemon(0, 1))
 		panic("Cannot daemonize: %s", strerror(errno));
+
+	to_std_log(&stdout);
+	to_std_log(&stderr);
 
 	umask(lperm);
 	if (lockfile) {

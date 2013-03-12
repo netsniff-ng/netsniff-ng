@@ -38,10 +38,6 @@ static inline void bpf_release(struct sock_fprog *bpf)
 	free(bpf->filter);
 }
 
-/*
- * The instruction encodings.
- */
-/* instruction classes */
 #define BPF_CLASS(code) ((code) & 0x07)
 #define	BPF_LD		0x00
 #define	BPF_LDX		0x01
@@ -52,7 +48,6 @@ static inline void bpf_release(struct sock_fprog *bpf)
 #define	BPF_RET		0x06
 #define	BPF_MISC	0x07
 
-/* ld/ldx fields */
 #define BPF_SIZE(code)	((code) & 0x18)
 #define	BPF_W		0x00
 #define	BPF_H		0x08
@@ -66,7 +61,6 @@ static inline void bpf_release(struct sock_fprog *bpf)
 #define	BPF_LEN		0x80
 #define	BPF_MSH		0xa0
 
-/* alu/jmp fields */
 #define BPF_OP(code)	((code) & 0xf0)
 #define	BPF_ADD		0x00
 #define	BPF_SUB		0x10
@@ -94,57 +88,48 @@ static inline void bpf_release(struct sock_fprog *bpf)
 #define BPF_RVAL(code)	((code) & 0x18)
 #define	BPF_A		0x10
 
-/* misc */
 #define BPF_MISCOP(code) ((code) & 0xf8)
 #define	BPF_TAX		0x00
 #define	BPF_TXA		0x80
 
-/* Hidden Linux kernel BPF extensions */
-/*
- * RATIONALE. Negative offsets are invalid in BPF.
- * We use them to reference ancillary data.
- * Unlike introduction new instructions, it does not break
- * existing compilers/optimizers.
- */
-
 #ifndef SKF_AD_OFF
-# define SKF_AD_OFF (-0x1000)
+# define SKF_AD_OFF			(-0x1000)
 #endif
 #ifndef SKF_AD_PROTOCOL
-# define SKF_AD_PROTOCOL 0
+# define SKF_AD_PROTOCOL		0
 #endif
 #ifndef SKF_AD_PKTTYPE
-# define SKF_AD_PKTTYPE 4
+# define SKF_AD_PKTTYPE			4
 #endif
 #ifndef SKF_AD_IFINDEX
-# define SKF_AD_IFINDEX 8
+# define SKF_AD_IFINDEX			8
 #endif
 #ifndef SKF_AD_NLATTR
-# define SKF_AD_NLATTR 12
+# define SKF_AD_NLATTR			12
 #endif
 #ifndef SKF_AD_NLATTR_NEST
-# define SKF_AD_NLATTR_NEST 16
+# define SKF_AD_NLATTR_NEST		16
 #endif
 #ifndef SKF_AD_MARK
-# define SKF_AD_MARK 20
+# define SKF_AD_MARK			20
 #endif
 #ifndef SKF_AD_QUEUE
-# define SKF_AD_QUEUE 24
+# define SKF_AD_QUEUE			24
 #endif
 #ifndef SKF_AD_HATYPE
-# define SKF_AD_HATYPE 28
+# define SKF_AD_HATYPE			28
 #endif
 #ifndef SKF_AD_RXHASH
-# define SKF_AD_RXHASH 32
+# define SKF_AD_RXHASH			32
 #endif
 #ifndef SKF_AD_CPU
-# define SKF_AD_CPU 36
+# define SKF_AD_CPU			36
 #endif
 #ifndef SKF_AD_VLAN_TAG
-# define SKF_AD_VLAN_TAG 44
+# define SKF_AD_VLAN_TAG		44
 #endif
 #ifndef SKF_AD_VLAN_TAG_PRESENT
-# define SKF_AD_VLAN_TAG_PRESENT 48
+# define SKF_AD_VLAN_TAG_PRESENT	48
 #endif
 
 #endif /* BPF_I_H */

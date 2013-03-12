@@ -67,7 +67,6 @@ extern void register_signal_f(int signal, void (*handler)(int), int flags);
 extern short enter_promiscuous_mode(char *ifname);
 extern void leave_promiscuous_mode(char *ifname, short oldflags);
 extern int device_up_and_running(char *ifname);
-extern int poll_error_maybe_die(int sock, struct pollfd *pfd);
 extern void set_epoll_descriptor(int fd_epoll, int action, int fd_toadd, int events);
 extern int set_epoll_descriptor2(int fd_epoll, int action, int fd_toadd, int events);
 extern void cpu_affinity(int cpu);
@@ -82,7 +81,6 @@ extern int slprintf(char *dst, size_t size, const char *fmt, ...)  __check_forma
 extern int slprintf_nocheck(char *dst, size_t size, const char *fmt, ...);
 extern noinline void *xmemset(void *s, int c, size_t n);
 extern char *strtrim_right(char *p, char c);
-extern char *skips(char *p);
 extern int get_default_sched_policy(void);
 extern int get_default_sched_prio(void);
 extern int get_number_cpus(void);
@@ -90,7 +88,6 @@ extern int get_number_cpus_online(void);
 extern int get_default_proc_prio(void);
 extern void set_system_socket_memory(int *vals, size_t len);
 extern void reset_system_socket_memory(int *vals, size_t len);
-extern struct timeval tv_subtract(struct timeval time1, struct timeval time2);
 extern void set_itimer_interval_value(struct itimerval *itimer, unsigned long sec,
 				      unsigned long usec);
 
