@@ -102,7 +102,7 @@ static const struct option long_options[] = {
 	{"rand",		no_argument,		NULL, 'r'},
 	{"verbose",		no_argument,		NULL, 'V'},
 	{"version",		no_argument,		NULL, 'v'},
-	{"example",		no_argument,		NULL, 'e'},
+	{"example",		required_argument,	NULL, 'e'},
 	{"help",		no_argument,		NULL, 'h'},
 	{NULL, 0, NULL, 0}
 };
@@ -181,7 +181,7 @@ static void help(void)
 	     "  trafgen --dev eth0 --conf frag_dos.cfg --rand --gap 1000\n"
 	     "  trafgen --dev eth0 --conf icmp.cfg --rand --num 1400000 -k1000\n"
 	     "  trafgen --dev eth0 --conf tcp_syn.cfg -u `id -u bob` -g `id -g bob`\n\n"
-	     "Arbitrary packet config examples (e.g. trafgen -e > trafgen.cfg):\n"
+	     "Arbitrary packet config examples (e.g. trafgen -e udp > trafgen.cfg):\n"
 	     "  Run packet on  all CPUs:              { fill(0xff, 64) csum16(0, 64) }\n"
 	     "  Run packet only on CPU1:    cpu(1):   { rnd(64), 0b11001100, 0xaa }\n"
 	     "  Run packet only on CPU1-2:  cpu(1:2): { drnd(64),'a',csum16(1, 8),'b',42 }\n\n"
