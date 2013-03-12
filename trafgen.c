@@ -74,7 +74,7 @@ size_t plen = 0;
 struct packet_dyn *packet_dyn = NULL;
 size_t dlen = 0;
 
-static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRs:P:eE:pu:g:";
+static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRs:P:e:E:pu:g:";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"out",			required_argument,	NULL, 'o'},
@@ -95,7 +95,7 @@ static const struct option long_options[] = {
 	{"rand",		no_argument,		NULL, 'r'},
 	{"verbose",		no_argument,		NULL, 'V'},
 	{"version",		no_argument,		NULL, 'v'},
-	{"example",		no_argument,		NULL, 'e'},
+	{"example",		required_argument,	NULL, 'e'},
 	{"help",		no_argument,		NULL, 'h'},
 	{NULL, 0, NULL, 0}
 };
@@ -163,18 +163,18 @@ static void help(void)
 	     "  -g|--group <groupid>           Drop privileges and change to groupid\n"
 	     "  -V|--verbose                   Be more verbose\n"
 	     "  -v|--version                   Show version\n"
-	     "  -e|--example                   Show built-in packet config example\n"
+	     "  -e|--example <type>            Show built-in packet config example (tcp/udp/icmp)\n"
 	     "  -h|--help                      Guess what?!\n\n"
 	     "Examples:\n"
 	     "  See trafgen.txf for configuration file examples.\n"
 	     "  trafgen --dev eth0 --conf trafgen.cfg\n"
-	     "  trafgen -e | trafgen -i - -o eth0 --cpp -n 1\n"
+	     "  trafgen -e tcp | trafgen -i - -o eth0 --cpp -n 1\n"
 	     "  trafgen --dev eth0 --conf fuzzing.cfg --smoke-test 10.0.0.1\n"
 	     "  trafgen --dev wlan0 --rfraw --conf beacon-test.txf -V --cpus 2\n"
 	     "  trafgen --dev eth0 --conf frag_dos.cfg --rand --gap 1000\n"
 	     "  trafgen --dev eth0 --conf icmp.cfg --rand --num 1400000 -k1000\n"
 	     "  trafgen --dev eth0 --conf tcp_syn.cfg -u `id -u bob` -g `id -g bob`\n\n"
-	     "Arbitrary packet config examples (e.g. trafgen -e > trafgen.cfg):\n"
+	     "Arbitrary packet config examples (e.g. trafgen -e udp > trafgen.cfg):\n"
 	     "  Run packet on  all CPUs:              { fill(0xff, 64) csum16(0, 64) }\n"
 	     "  Run packet only on CPU1:    cpu(1):   { rnd(64), 0b11001100, 0xaa }\n"
 	     "  Run packet only on CPU1-2:  cpu(1:2): { drnd(64),'a',csum16(1, 8),'b',42 }\n\n"
@@ -202,7 +202,7 @@ static void help(void)
 	die();
 }
 
-static void example(void)
+static void example_tcp(void)
 {
 	const char *e =
 	"/* Note: dynamic elements make trafgen slower! */\n"
@@ -217,7 +217,7 @@ static void example(void)
 	"  /* IPv4 Version, IHL, TOS */\n"
 	"  0b01000101, 0,\n"
 	"  /* IPv4 Total Len */\n"
-	"  c16(59),\n"
+	"  c16(58),\n"
 	"  /* IPv4 Ident */\n"
 	"  drnd(2),\n"
 	"  /* IPv4 Flags, Frag Off */\n"
@@ -256,6 +256,94 @@ static void example(void)
 	die();
 }
 
+static void example_udp(void)
+{
+        const char *e =
+	"/* Note: dynamic elements make trafgen slower! */\n\n"
+        "/* Use CPU 0 and 1 */\n"
+        "cpu(0:1): {\n"
+        "  /* Mac Destination */\n"
+        "  fill(0xff, 6),\n" 
+        "  /* Mac Source */\n"
+        "  drnd(6),\n"
+        "  /* IPv4 Protocol */\n"
+        "  c16(0x0800),\n"
+        "  /* IPv4 Version, IHL, TOS */\n"
+        "  0x45, 0\n"
+        "  /* IPv4 Total Len */\n"
+        "  c16(95),\n"
+        "  /* IPv4 Ident */\n"
+        "  drnd(2),\n"
+        "  /* IPv4 Flags, Frag Off */\n"
+        "  0b01000000, 0b00000000,\n"
+        "  /* IPv4 TTL */\n"
+        "  64,\n"
+        "  /* Proto UDP */\n"
+        "  17,\n"
+        "  /* IPv4 Checksum (IP header from, to) */\n"
+        "  csumip(14, 33),\n"
+        "  /* Source IP */\n"
+        "  192, 168, 1, drnd(1),\n"
+        "  /* Destination IP */\n"
+        "  192, 168, 1, 255,\n"
+        "  /* UDP Source Port */\n"
+        "  c16(514),\n"
+        "  /* UDP Destination Port */\n"
+        "  c16(514),\n"
+        "  /* UDP Length */\n"
+        "  const16(76),\n"
+        "  /* UDP checksum (Can be zero) */\n"
+        "  const16(0),\n"
+        "  /* Data blob */\n"
+        "  'Z', \"\\xca\\xfe\\xba\\xbe\", rnd(11), \"kern.crit : Kernel Panic -: EIP Overwrite at (0x\", drnd(4), \")\",\n"
+	"}";
+	puts(e);
+        die();
+}
+
+static void example_icmp(void)
+{
+        const char *e =
+	"/* Note: dynamic elements make trafgen slower! */\n\n"
+        "/* Use CPU 1 */\n"
+        "cpu(0:1): {\n"
+	"  /* MAC Destination */\n"
+	"  255, 255, 255, 255, 255, 255,\n"
+  	"  /* MAC Source */\n"
+  	"  0x00, 0x02, 0xb3, drnd(3),\n"
+  	"  /* IPv4 Protocol */\n"
+  	"  c16(0x800),\n"
+  	"  /* IPv4 Version, IHL, TOS */\n"
+  	"  0b01000101, 0,\n"
+  	"  /* IPv4 Total Len */\n"
+	"  c16(34),\n"
+ 	"  /* IPv4 Ident */\n"
+	"  drnd(2),\n"
+	"  /* IPv4 Flags, Frag Off */\n"
+	"  0b01000000, 0,\n"
+	"  /* IPv4 TTL */\n"
+	"  drnd(1),\n"
+	"  /* Proto ICMP */\n"
+	"  0x01,\n"
+	"  /* IPv4 Checksum (IP header from, to) */\n"
+	"  csumip(14, 33),\n"
+	"  /* Source IP */\n"
+	"  drnd(4),\n"
+	"  /* Dest IP */\n"
+	"  192, 168, 1, 255,\n"
+	"  /* ICMP Type */\n"
+	"  0x08,\n"
+	"  /* ICMP Code */\n"
+	"  0x00,\n"
+	"  /* ICMP Checksum (Same as IP, end includes ICMP bytes) */\n"
+	"  csumip(14, 48),\n"
+	"  /* ICMP Message */\n"
+	"  fill(0x58, 10),\n"
+	"}";
+	puts(e);
+	die();
+
+}
 static void version(void)
 {
 	printf("\ntrafgen %s, multithreaded zero-copy network packet generator\n", VERSION_STRING);
@@ -861,7 +949,14 @@ int main(int argc, char **argv)
 			version();
 			break;
 		case 'e':
-			example();
+			if (!strncmp(optarg, "tcp", strlen("tcp")))
+			example_tcp();
+			else if (!strncmp(optarg, "udp", strlen("udp")))
+			example_udp();
+			else if (!strncmp(optarg, "icmp", strlen("icmp")))
+			example_icmp();
+			else
+			panic("Argument is udp or tcp!\n");
 			break;
 		case 'p':
 			invoke_cpp = true;
@@ -964,6 +1059,7 @@ int main(int argc, char **argv)
 			case 'u':
 			case 'g':
 			case 't':
+			case 'e':
 				panic("Option -%c requires an argument!\n",
 				      optopt);
 			default:
