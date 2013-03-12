@@ -4,6 +4,13 @@
  * Swiss federal institute of technology (ETH Zurich)
  * Subject to the GPL, version 2.
  *
+ * A high-performance network traffic generator that uses the zero-copy
+ * kernelspace TX_RING for network I/O. On comodity Gigabit hardware up
+ * to 1,488,095 pps 64 Byte pps have been achieved with 2 trafgen instances
+ * bound to different CPUs from the userspace and turned off pause frames,
+ * ask Ronald from NST (Network Security Toolkit) for more details. ;-)
+ * So, this line-rate result is the very same as pktgen from kernelspace!
+ *
  *   Who can now hold the fords when the King of the Nine Riders comes? And
  *   other armies will come. I am too late. All is lost. I tarried on the
  *   way. All is lost. Even if my errand is performed, no one will ever
@@ -74,7 +81,7 @@ size_t plen = 0;
 struct packet_dyn *packet_dyn = NULL;
 size_t dlen = 0;
 
-static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRs:P:eE:pu:g:";
+static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRs:P:e:E:pu:g:";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"out",			required_argument,	NULL, 'o'},
@@ -95,7 +102,7 @@ static const struct option long_options[] = {
 	{"rand",		no_argument,		NULL, 'r'},
 	{"verbose",		no_argument,		NULL, 'V'},
 	{"version",		no_argument,		NULL, 'v'},
-	{"example",		no_argument,		NULL, 'e'},
+	{"example",		required_argument,	NULL, 'e'},
 	{"help",		no_argument,		NULL, 'h'},
 	{NULL, 0, NULL, 0}
 };
@@ -163,18 +170,18 @@ static void help(void)
 	     "  -g|--group <groupid>           Drop privileges and change to groupid\n"
 	     "  -V|--verbose                   Be more verbose\n"
 	     "  -v|--version                   Show version\n"
-	     "  -e|--example                   Show built-in packet config example\n"
+	     "  -e|--example <type>            Show built-in packet config example (tcp/udp/icmp)\n"
 	     "  -h|--help                      Guess what?!\n\n"
 	     "Examples:\n"
 	     "  See trafgen.txf for configuration file examples.\n"
 	     "  trafgen --dev eth0 --conf trafgen.cfg\n"
-	     "  trafgen -e | trafgen -i - -o eth0 --cpp -n 1\n"
+	     "  trafgen -e tcp | trafgen -i - -o eth0 --cpp -n 1\n"
 	     "  trafgen --dev eth0 --conf fuzzing.cfg --smoke-test 10.0.0.1\n"
 	     "  trafgen --dev wlan0 --rfraw --conf beacon-test.txf -V --cpus 2\n"
 	     "  trafgen --dev eth0 --conf frag_dos.cfg --rand --gap 1000\n"
 	     "  trafgen --dev eth0 --conf icmp.cfg --rand --num 1400000 -k1000\n"
 	     "  trafgen --dev eth0 --conf tcp_syn.cfg -u `id -u bob` -g `id -g bob`\n\n"
-	     "Arbitrary packet config examples (e.g. trafgen -e > trafgen.cfg):\n"
+	     "Arbitrary packet config examples (e.g. trafgen -e udp > trafgen.cfg):\n"
 	     "  Run packet on  all CPUs:              { fill(0xff, 64) csum16(0, 64) }\n"
 	     "  Run packet only on CPU1:    cpu(1):   { rnd(64), 0b11001100, 0xaa }\n"
 	     "  Run packet only on CPU1-2:  cpu(1:2): { drnd(64),'a',csum16(1, 8),'b',42 }\n\n"
@@ -202,7 +209,7 @@ static void help(void)
 	die();
 }
 
-static void example(void)
+static void example_tcp(void)
 {
 	const char *e =
 	"/* Note: dynamic elements make trafgen slower! */\n"
@@ -217,7 +224,7 @@ static void example(void)
 	"  /* IPv4 Version, IHL, TOS */\n"
 	"  0b01000101, 0,\n"
 	"  /* IPv4 Total Len */\n"
-	"  c16(59),\n"
+	"  c16(58),\n"
 	"  /* IPv4 Ident */\n"
 	"  drnd(2),\n"
 	"  /* IPv4 Flags, Frag Off */\n"
@@ -241,7 +248,7 @@ static void example(void)
 	"  /* TCP Ackn. Number */\n"
 	"  c32(0),\n"
 	"  /* TCP Header length + TCP SYN/ECN Flag */\n"
-	"  c16((8 << 12) | TCP_FLAG_SYN | TCP_FLAG_ECE)\n"
+	"  c16((0x8 << 12) | TCP_FLAG_SYN | TCP_FLAG_ECE)\n"
 	"  /* Window Size */\n"
 	"  c16(16),\n"
 	"  /* TCP Checksum (offset IP, offset TCP) */\n"
@@ -256,6 +263,94 @@ static void example(void)
 	die();
 }
 
+static void example_udp(void)
+{
+        const char *e =
+	"/* Note: dynamic elements make trafgen slower! */\n\n"
+        "/* Use CPU 0 and 1 */\n"
+        "cpu(0:1): {\n"
+        "  /* Mac Destination */\n"
+        "  fill(0xff, 6),\n" 
+        "  /* Mac Source */\n"
+        "  drnd(6),\n"
+        "  /* IPv4 Protocol */\n"
+        "  c16(0x0800),\n"
+        "  /* IPv4 Version, IHL, TOS */\n"
+        "  0x45, 0\n"
+        "  /* IPv4 Total Len */\n"
+        "  c16(95),\n"
+        "  /* IPv4 Ident */\n"
+        "  drnd(2),\n"
+        "  /* IPv4 Flags, Frag Off */\n"
+        "  0b01000000, 0b00000000,\n"
+        "  /* IPv4 TTL */\n"
+        "  64,\n"
+        "  /* Proto UDP */\n"
+        "  17,\n"
+        "  /* IPv4 Checksum (IP header from, to) */\n"
+        "  csumip(14, 33),\n"
+        "  /* Source IP */\n"
+        "  192, 168, 1, drnd(1),\n"
+        "  /* Destination IP */\n"
+        "  192, 168, 1, 255,\n"
+        "  /* UDP Source Port */\n"
+        "  c16(514),\n"
+        "  /* UDP Destination Port */\n"
+        "  c16(514),\n"
+        "  /* UDP Length */\n"
+        "  const16(76),\n"
+        "  /* UDP checksum (Can be zero) */\n"
+        "  const16(0),\n"
+        "  /* Data blob */\n"
+        "  'Z', \"\\xca\\xfe\\xba\\xbe\", rnd(11), \"kern.crit : Kernel Panic -: EIP Overwrite at (0x\", drnd(4), \")\",\n"
+	"}";
+	puts(e);
+        die();
+}
+
+static void example_icmp(void)
+{
+        const char *e =
+	"/* Note: dynamic elements make trafgen slower! */\n\n"
+        "/* Use CPU 1 */\n"
+        "cpu(0:1): {\n"
+	"  /* MAC Destination */\n"
+	"  255, 255, 255, 255, 255, 255,\n"
+  	"  /* MAC Source */\n"
+  	"  0x00, 0x02, 0xb3, drnd(3),\n"
+  	"  /* IPv4 Protocol */\n"
+  	"  c16(0x800),\n"
+  	"  /* IPv4 Version, IHL, TOS */\n"
+  	"  0b01000101, 0,\n"
+  	"  /* IPv4 Total Len */\n"
+	"  c16(34),\n"
+ 	"  /* IPv4 Ident */\n"
+	"  drnd(2),\n"
+	"  /* IPv4 Flags, Frag Off */\n"
+	"  0b01000000, 0,\n"
+	"  /* IPv4 TTL */\n"
+	"  drnd(1),\n"
+	"  /* Proto ICMP */\n"
+	"  0x01,\n"
+	"  /* IPv4 Checksum (IP header from, to) */\n"
+	"  csumip(14, 33),\n"
+	"  /* Source IP */\n"
+	"  drnd(4),\n"
+	"  /* Dest IP */\n"
+	"  192, 168, 1, 255,\n"
+	"  /* ICMP Type */\n"
+	"  0x08,\n"
+	"  /* ICMP Code */\n"
+	"  0x00,\n"
+	"  /* ICMP Checksum (Same as IP, end includes ICMP bytes) */\n"
+	"  csumip(14, 48),\n"
+	"  /* ICMP Message */\n"
+	"  fill(0x58, 10),\n"
+	"}";
+	puts(e);
+	die();
+
+}
 static void version(void)
 {
 	printf("\ntrafgen %s, multithreaded zero-copy network packet generator\n", VERSION_STRING);
@@ -307,6 +402,141 @@ static void apply_randomizer(int rand_id)
 
 		packets[i].payload[randomizer->off] = val;
 	}
+}
+
+/* Taken and modified from tcpdump, Copyright belongs to them! */
+
+struct cksum_vec {
+	const u8 *ptr;
+	int len;
+};
+
+#define ADDCARRY(x)		\
+	do { if ((x) > 65535)	\
+		(x) -= 65535;	\
+	} while (0)
+
+#define REDUCE						\
+	do {						\
+		l_util.l = sum;				\
+		sum = l_util.s[0] + l_util.s[1];	\
+		ADDCARRY(sum);				\
+	} while (0)
+
+static u16 __in_cksum(const struct cksum_vec *vec, int veclen)
+{
+	const u16 *w;
+	int sum = 0, mlen = 0;
+	int byte_swapped = 0;
+	union {
+		u8 c[2];
+		u16 s;
+	} s_util;
+	union {
+		u16 s[2];
+		u32 l;
+	} l_util;
+
+	for (; veclen != 0; vec++, veclen--) {
+		if (vec->len == 0)
+			continue;
+
+		w = (const u16 *) (void *) vec->ptr;
+
+		if (mlen == -1) {
+			s_util.c[1] = *(const u8 *) w;
+			sum += s_util.s;
+			w = (const u16 *) (void *) ((const u8 *) w + 1);
+			mlen = vec->len - 1;
+		} else
+			mlen = vec->len;
+
+		if ((1 & (unsigned long) w) && (mlen > 0)) {
+			REDUCE;
+			sum <<= 8;
+			s_util.c[0] = *(const u8 *) w;
+			w = (const u16 *) (void *) ((const u8 *) w + 1);
+			mlen--;
+			byte_swapped = 1;
+		}
+
+		while ((mlen -= 32) >= 0) {
+			sum +=  w[0]; sum +=  w[1]; sum +=  w[2]; sum +=  w[3];
+			sum +=  w[4]; sum +=  w[5]; sum +=  w[6]; sum +=  w[7];
+			sum +=  w[8]; sum +=  w[9]; sum += w[10]; sum += w[11];
+			sum += w[12]; sum += w[13]; sum += w[14]; sum += w[15];
+			w += 16;
+		}
+
+		mlen += 32;
+
+		while ((mlen -= 8) >= 0) {
+			sum += w[0]; sum += w[1]; sum += w[2]; sum += w[3];
+			w += 4;
+		}
+
+		mlen += 8;
+
+		if (mlen == 0 && byte_swapped == 0)
+			continue;
+
+		REDUCE;
+
+		while ((mlen -= 2) >= 0) {
+			sum += *w++;
+		}
+
+		if (byte_swapped) {
+			REDUCE;
+			sum <<= 8;
+			byte_swapped = 0;
+
+			if (mlen == -1) {
+				s_util.c[1] = *(const u8 *) w;
+				sum += s_util.s;
+				mlen = 0;
+			} else
+				mlen = -1;
+		} else if (mlen == -1)
+			s_util.c[0] = *(const u8 *) w;
+	}
+
+	if (mlen == -1) {
+		s_util.c[1] = 0;
+		sum += s_util.s;
+	}
+
+	REDUCE;
+
+	return (~sum & 0xffff);
+}
+
+static u16 p4_csum(const struct ip *ip, const u8 *data, u16 len,
+		   u8 next_proto)
+{
+	struct cksum_vec vec[2];
+	struct pseudo_hdr {
+		u32 src;
+		u32 dst;
+		u8 mbz;
+		u8 proto;
+		u16 len;
+	} ph;
+
+	memset(&ph, 0, sizeof(ph));
+	ph.len = htons(len);
+	ph.mbz = 0;
+	ph.proto = next_proto;
+	ph.src = ip->ip_src.s_addr;
+	ph.dst = ip->ip_dst.s_addr;
+
+	vec[0].ptr = (const u8 *) (void *) &ph;
+	vec[0].len = sizeof(ph);
+
+	vec[1].ptr = data;
+	vec[1].len = len;
+
+	return __in_cksum(vec, 2);
 }
 
 static void apply_csum16(int csum_id)
@@ -392,6 +622,18 @@ static void dump_trafgen_snippet(uint8_t *payload, size_t len)
 	}
 	printf("\n}\n");
 	fflush(stdout);
+}
+
+static inline unsigned short csum(unsigned short *buf, int nwords)
+{
+	unsigned long sum;
+
+	for (sum = 0; nwords > 0; nwords--)
+		sum += *buf++;
+	sum = (sum >> 16) + (sum & 0xffff);
+	sum += (sum >> 16);
+
+	return ~sum;
 }
 
 static int xmit_smoke_setup(struct ctx *ctx)
@@ -568,7 +810,7 @@ retry:
 	}
 
 	bug_on(gettimeofday(&end, NULL));
-	timersub(&end, &start, &diff);
+	diff = tv_subtract(end, start);
 
 	if (ctx->smoke_test)
 		close(icmp_sock);
@@ -660,7 +902,7 @@ static void xmit_fastpath_or_die(struct ctx *ctx, int cpu)
 	}
 
 	bug_on(gettimeofday(&end, NULL));
-	timersub(&end, &start, &diff);
+	diff = tv_subtract(end, start);
 
 	destroy_tx_ring(sock, &tx_ring);
 
@@ -861,7 +1103,14 @@ int main(int argc, char **argv)
 			version();
 			break;
 		case 'e':
-			example();
+			if (!strncmp(optarg, "tcp", strlen("tcp")))
+			example_tcp();
+			else if (!strncmp(optarg, "udp", strlen("udp")))
+			example_udp();
+			else if (!strncmp(optarg, "icmp", strlen("icmp")))
+			example_icmp();
+			else
+			panic("Argument is udp or tcp!\n");
 			break;
 		case 'p':
 			invoke_cpp = true;
@@ -964,6 +1213,7 @@ int main(int argc, char **argv)
 			case 'u':
 			case 'g':
 			case 't':
+			case 'e':
 				panic("Option -%c requires an argument!\n",
 				      optopt);
 			default:
