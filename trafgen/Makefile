@@ -1,5 +1,5 @@
-trafgen-libs =	-lnl-genl-3 \
-		-lnl-3 \
+trafgen-libs =	$(shell pkg-config --libs libnl-3.0) \
+		$(shell pkg-config --libs libnl-genl-3.0) \
 		-lm
 
 trafgen-objs =	xmalloc.o \

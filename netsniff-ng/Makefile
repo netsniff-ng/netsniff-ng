@@ -1,6 +1,6 @@
 netsniff-ng-libs =	-lGeoIP \
-			-lnl-genl-3 \
-			-lnl-3 \
+			$(shell pkg-config --libs libnl-3.0) \
+			$(shell pkg-config --libs libnl-genl-3.0) \
 			-lpcap \
 			-lpthread \
 			-lz
