@@ -126,7 +126,8 @@ RM = echo -e "  RM\t$(1)" && rm -rf $(1)
 RMDIR = echo -e "  RM\t$(1)" && rmdir --ignore-fail-on-non-empty $(1) 2> /dev/null || true
 GIT_ARCHIVE = git archive --prefix=netsniff-ng-$(VERSION_STRING)/ $(VERSION_STRING) | \
 	      $(1) > ../netsniff-ng-$(VERSION_STRING).tar.$(2)
-GIT_TAG = git tag -a $(VERSION_STRING) -m "$(VERSION_STRING) release"
+GIT_TAG = git tag -a $(VERSION_STRING) -s -m "tools: $(VERSION_STRING) release"
+GIT_LOG = git shortlog -n
 
 export VERSION PATCHLEVEL SUBLEVEL EXTRAVERSION
 export CROSS_COMPILE
@@ -263,6 +264,23 @@ tarball: tarball.gz tarball.bz2 tarball.xz
 tag:
 	$(GIT_TAG)
 
+announcement:
+	$(Q)echo -e "netsniff-ng $(VERSION_STRING) has been released to the public (http://netsniff-ng.org/).\n" > .MAIL_MSG
+	$(Q)echo -e "It can be fetched via Git, through:\n" >> .MAIL_MSG
+	$(Q)echo -e "   git clone git://github.com/borkmann/netsniff-ng.git" >> .MAIL_MSG
+	$(Q)echo -e "   git checkout $(VERSION_STRING)\n" >> .MAIL_MSG
+	$(Q)echo -e "Or via HTTP, through:\n" >> .MAIL_MSG
+	$(Q)echo -e "   wget http://pub.netsniff-ng.org/netsniff-ng/netsniff-ng-$(VERSION_STRING).tar.gz\n" >> .MAIL_MSG
+	$(Q)echo -e "The release be verified via Git, through (see Documentation/Workflow):\n" >> .MAIL_MSG
+	$(Q)echo -e "   git tag -v $(VERSION_STRING)\n" >> .MAIL_MSG
+	$(Q)echo -e "Major high-level changes since the last release are:\n" >> .MAIL_MSG
+	$(Q)echo -e "   *** BLURB HERE ***\n" >> .MAIL_MSG
+	$(Q)echo -e "Git changelog since the last release:\n" >> .MAIL_MSG
+	$(GIT_LOG) >> .MAIL_MSG
+
+release: tag tarball announcement
+	$(Q)echo "Released $(bold)$(VERSION_STRING)$(normal)"
+
 FIND_SOURCE_FILES = ( git ls-files '*.[hcS]' 2>/dev/null || \
 			find . \( -name .git -type d -prune \) \
 				-o \( -name '*.[hcS]' -type f -print \) )
@@ -295,6 +313,7 @@ help:
 	$(Q)echo "$(bold)Hacking/development targets:$(normal)"
 	$(Q)echo " tag                          - Generate Git tag of current version"
 	$(Q)echo " tarball                      - Generate tarball of latest version"
+	$(Q)echo " release                      - Generate a new release"
 	$(Q)echo " tags                         - Generate sparse ctags"
 	$(Q)echo " cscope                       - Generate cscope files"
 	$(Q)echo "$(bold)Misc targets:$(normal)"

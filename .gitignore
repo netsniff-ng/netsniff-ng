@@ -38,5 +38,8 @@ Makefile
 *.tar.bz
 *.tar.xz
 
+# Release related stuff
+.MAIL_MSG
+
 # Excluded from ignorance
 !.gitignore
