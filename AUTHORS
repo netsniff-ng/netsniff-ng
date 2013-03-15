@@ -1,0 +1,52 @@
+Maintainer:
+
+ * Daniel Borkmann <borkmann@redhat.com>
+ * Tobias Klauser <tklauser@distanz.ch>
+
+Major contributors (> 30 commits):
+
+ * Daniel Borkmann <borkmann@redhat.com>
+ * Emmanuel Roullit <emmanuel.roullit@gmail.com>
+ * Markus Amend <markus@netsniff-ng.org>
+ * Tobias Klauser <tklauser@distanz.ch>
+ * Christoph Jaeger <email@christophjaeger.info>
+ * Herbert Haas <herbert@perihel.at>*
+
+Minor contributors (<= 30 commits):
+
+ * Scott Moeller <electronjoe@gmail.com>
+ * Jesper Dangaard Brouer <brouer@redhat.com>
+ * Jaroslav Škarvada <jskarvad@redhat.com>
+ * Dennis Gilmore <dennis@ausil.us>
+ * Dan Horák <dan@danny.cz>
+ * Doug Burks <doug.burks@gmail.com>
+ * Kartik Mistry <kartik@debian.org>
+ * Ulrich Weber <uweber@astaro.com>
+ * Teguh <info@egeektronic.com>
+ * Markus Kötter <nepenthesdev@gmail.com>
+ * Jim Binder <jbinder6342@gmail.com>
+ * Ronald W. Henderson <rwhalb@nycap.rr.com>
+ * Stefan Seering <sseerin@imn.htwk-leipzig.de>
+ * Jon Schipp <jonschipp@gmail.com>
+ * Sibir Chakraborty <sibir.chakraborty@gmail.com>
+
+Notes:
+
+The order of authors with > 30 commits listed here is sorted by contributions
+from high to low through ``git log --no-merges $@ | grep Author: | \
+cut -d: -f2 | cut -d\< -f1 | sort | uniq -c | sort -n -r''. The list of minor
+contributors is currently unsorted and contains people who have contributed
+code ``in some way'' (e.g. on the upstream or maintenance repositories), either
+through Git or email.
+
+Note that we have taken over the maintenance and further development of Herbert
+Haas' mausezahn [ˈmauzəˌtsa:n] utility after he passed away in 2011. There were
+no Git commit statistics available from the import of his project. The project
+is currently in an experimental branch only, but will be fully integrated
+soon. (*)
+
+Want to join the core team? Submit enough great patches over a long time,
+implement what's on the TODO file and show an ongoing, active interest in
+supporting netsniff-ng. What's in for you? If you ever come to Switzerland,
+you get a free beer on Daniel and you can meet some great people involved in
+this project. ;)

@@ -1,0 +1,122 @@
+Checklist for Patches:
+//////////////////////
+
+Submitting patches should follow this guideline (derived from the Git project):
+
+If you are familiar with upstream Linux kernel development, then you do not
+need to read this file, it's basically the same process.
+
+* Commits:
+
+- make sure to comply with the coding guidelines (see CodingStyle)
+- make commits of logical units
+- check for unnecessary whitespace with "git diff --check" before committing
+- do not check in commented out code or unneeded files
+- the first line of the commit message should be a short description (50
+  characters is the soft limit, see DISCUSSION in git-commit(1)), and should
+  skip the full stop
+- the body should provide a meaningful commit message, which:
+  . explains the problem the change tries to solve, iow, what is wrong with
+    the current code without the change.
+  . justifies the way the change solves the problem, iow, why the result with
+    the change is better.
+  . alternate solutions considered but discarded, if any.
+- describe changes in imperative mood, e.g. "make xyzzy do frotz" instead of
+  "[This patch] makes xyzzy do frotz" or "[I] changed xyzzy to do frotz", as
+  if you are giving orders to the codebase to change its behaviour.
+- try to make sure your explanation can be understood without external
+  resources. Instead of giving a URL to a mailing list archive, summarize the
+  relevant points of the discussion.
+- add a "Signed-off-by: Your Name <you@example.com>" line to the commit message
+  (or just use the option "-s" when committing) to confirm that you agree to
+  the Developer's Certificate of Origin (see also
+  http://linux.yyz.us/patch-format.html or below); this is mandatory
+- make sure syntax of man-pages is free of errors: podchecker <tool>.c
+
+* For Patches via GitHub:
+
+- fork the netsniff-ng project on GitHub to your local GitHub account
+  (https://github.com/gnumaniacs/netsniff-ng)
+- make your changes to the latest master branch with respect to the commit
+  section above
+- if you change, add, or remove a command line option or make some other user
+  interface change, the associated documentation should be updated as well.
+- open a pull request on (https://github.com/gnumaniacs/netsniff-ng) and send
+  a notification to the list (netsniff-ng@googlegroups.com) and CC one of the
+  maintainers if (and only if) the patch is ready for inclusion.
+- if your name is not writable in ASCII, make sure that you send off a message
+  in the correct encoding.
+- add a short description what the patch or patchset is about
+
+* For Patches via Mail:
+
+- use "git format-patch -M" to create the patch
+- do not PGP sign your patch
+- do not attach your patch, but read in the mail body, unless you cannot teach
+  your mailer to leave the formatting of the patch alone.
+- be careful doing cut & paste into your mailer, not to corrupt whitespaces.
+- provide additional information (which is unsuitable for the commit message)
+  between the "---" and the diffstat
+- if you change, add, or remove a command line option or make some other user
+  interface change, the associated documentation should be updated as well.
+- if your name is not writable in ASCII, make sure that you send off a message
+  in the correct encoding.
+- send the patch to the list (netsniff-ng@googlegroups.com) and CC one of the
+  maintainers if (and only if) the patch is ready for inclusion. If you use
+  git-send-email(1), please test it first by sending email to yourself.
+
+* What does the 'Signed-off-by' mean?
+
+  It certifies the following (extract from the Linux kernel documentation):
+
+  Developer's Certificate of Origin 1.1
+
+  By making a contribution to this project, I certify that:
+  (a) The contribution was created in whole or in part by me and I
+      have the right to submit it under the open source license
+      indicated in the file; or
+  (b) The contribution is based upon previous work that, to the best
+      of my knowledge, is covered under an appropriate open source
+      license and I have the right under that license to submit that
+      work with modifications, whether created in whole or in part
+      by me, under the same open source license (unless I am
+      permitted to submit under a different license), as indicated
+      in the file; or
+  (c) The contribution was provided directly to me by some other
+      person who certified (a), (b) or (c) and I have not modified it.
+  (d) I understand and agree that this project and the contribution
+      are public and that a record of the contribution (including all
+      personal information I submit with it, including my sign-off) is
+      maintained indefinitely and may be redistributed consistent with
+      this project or the open source license(s) involved.
+
+  then you just add a line saying
+    Signed-off-by: Random J Developer <random@developer.example.org>
+  using your real name (sorry, no pseudonyms or anonymous contributions).
+
+* Example commit:
+
+  Please write good git commit messages. A good commit message looks like this:
+
+	Header line: explaining the commit in one line
+
+	Body of commit message is a few lines of text, explaining things
+	in more detail, possibly giving some background about the issue
+	being fixed, etc etc.
+
+	The body of the commit message can be several paragraphs, and
+	please do proper word-wrap and keep columns shorter than about
+	74 characters or so. That way "git log" will show things
+	nicely even when it's indented.
+
+	Reported-by: whoever-reported-it
+	Signed-off-by: Your Name <youremail@yourhost.com>
+
+  where that header line really should be meaningful, and really should be
+  just one line.  That header line is what is shown by tools like gitk and
+  shortlog, and should summarize the change in one readable line of text,
+  independently of the longer explanation.
+
+Note that future (0.5.7 onwards) changelogs will include a summary that is
+generated by 'git shortlog -n'. Hence, that's why we need you to stick to
+the convention.

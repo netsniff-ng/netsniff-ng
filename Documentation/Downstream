@@ -1,0 +1,140 @@
+Maintainer:
+///////////
+
+netsniff-ng operating system distribution package maintainers are listed here
+with the following attributes: 1 - OS distribution top-level site, 2 - OS
+distribution netsniff-ng site, M - Maintainers name, W - Maintainers website,
+E - Maintainers e-mail, C - Maintainers country.
+
+We'd hereby like to express a huge thanks to our awesome maintainers! Kudos!
+If you are a maintainer for netsniff-ng and not listed here, please contact
+us at <workgroup@netsniff-ng.org>.
+
+Debian
+ * 1: http://www.debian.org/
+ * 2: http://packages.debian.org/search?keywords=netsniff-ng
+ * M: Kartik Mistry
+ * W: http://people.debian.org/~kartik/
+ * E: kartik@debian.org
+ * C: India
+
+Fedora / Fedora Security Lab Spin / Red Hat Enterprise Linux
+ * 1: http://fedoraproject.org/
+ * 2: https://admin.fedoraproject.org/pkgdb/acls/name/netsniff-ng
+ * M: Jaroslav Škarvada
+ * W: https://admin.fedoraproject.org/pkgdb/users/packages/jskarvad
+ * E: jskarvad@redhat.com
+ * C: Czech Republic
+
+Ubuntu
+ * 1: http://www.ubuntu.com/
+ * 2: https://launchpad.net/ubuntu/+source/netsniff-ng/
+ * (pulled from Debian)
+
+Arch Linux
+ * 1: http://archlinux.org/
+ * 2: http://aur.archlinux.org/packages.php?K=netsniff-ng
+ * M: Can Celasun
+ * W: http://durucancelasun.info/
+ * E: dcelasun@gmail.com
+ * C: Turkey
+
+Linux Mint
+ * 1: http://www.linuxmint.com
+ * 2: http://community.linuxmint.com/software/view/netsniff-ng
+ * (pulled from Debian)
+
+Gentoo
+ * 1: http://www.gentoo.org/
+ * 2: http://packages.gentoo.org/package/net-analyzer/netsniff-ng
+ * M: Michael Weber
+ * W: http://cia.vc/stats/author/xmw 
+ * E: xmw@gentoo.org
+ * C: Germany
+
+Sabayon
+ * 1: http://www.sabayon.org/
+ * 2: http://gpo.zugaina.org/net-misc/netsniff-ng
+ * M: Epinephrine
+ * E: epinephrineaddict@gmail.com
+
+Slackware
+ * 1: http://www.slackware.com/
+ * 2: http://www.slackers.it/repository/netsniff-ng/
+ * M: Corrado Franco
+ * W: http://conraid.net/
+ * E: conraid@gmail.com
+ * C: Italy
+
+openSUSE / SUSE Linux Enterprise
+ * 1: http://opensuse.org/
+ * 2: http://software.opensuse.org/search?baseproject=ALL&p=1&q=netsniff-ng
+ * M: Pascal Bleser
+ * W: http://linux01.gwdg.de/~pbleser/
+ * E: pascal.bleser@skynet.be
+ * C: Belgium
+
+Mageia
+ * 1: http://www.mageia.org/
+ * 2: https://bugs.mageia.org/show_bug.cgi?id=7268
+ * M: Matteo Pasotti
+ * E: pasotti.matteo@gmail.com
+ * C: Italy
+
+Mandriva
+ * 1: http://www.mandriva.com/
+ * 2: http://sophie.zarb.org/srpm/Mandriva,cooker,/netsniff-ng
+ * M: Dmitry Mikhirev
+ * E: dmikhirev@mandriva.org
+ * C: Russia
+
+Trisquel
+ * 1: http://trisquel.info/
+ * 2: http://packages.trisquel.info/slaine/net/netsniff-ng
+ * (pulled from Debian)
+
+GRML
+ * 1: http://grml.org/
+ * 2: http://grml.org/changelogs/README-grml-2010.04/
+ * M: Michael Prokop
+ * E: mika@grml.org
+ * C: Austria
+
+Alpine Linux
+ * 1: http://alpinelinux.org/
+ * M: Fabian Affolter
+ * W: http://affolter-engineering.ch
+ * E: fabian@affolter-engineering.ch
+ * C: Switzerland
+
+Network Security Toolkit
+ * 1: http://networksecuritytoolkit.org/
+ * 2: http://networksecuritytoolkit.org/nst/links.html
+ * M: Ronald W. Henderson
+ * W: http://www.networksecuritytoolkit.org/nstpro/help/aboutus.html
+ * E: rwhalb@nycap.rr.com
+ * C: USA
+
+Network Forensic Analysis Tool (NFAT, Xplico)
+ * 1: http://www.xplico.org/
+ * 2: http://www.xplico.org/archives/1184
+ * M: Gianluca Costa
+ * E: g.costa@iserm.com
+ * C: Italy
+
+Backtrack
+ * 1: http://backtrack-linux.org/
+ * 2: http://redmine.backtrack-linux.org:8080/issues/572
+ * E: slyscorpion@gmail.com
+
+Scientific Linux by Fermilab / CERN
+ * 1: http://linux.web.cern.ch/linux/scientific.shtml
+ * E: linux.support@cern.ch
+ * C: Switzerland
+
+Security Onion
+ * 1: http://code.google.com/p/security-onion/
+ * 2: http://code.google.com/p/security-onion/wiki/Beta
+ * M: Doug Burks
+ * E: doug.burks@gmail.com
+ * C: USA

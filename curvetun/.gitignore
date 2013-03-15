@@ -1,0 +1,7 @@
+*.*
+
+!.gitignore
+!Makefile
+!abiname.c
+!build_nacl.sh
+!nacl_path.sh
