@@ -1,0 +1,64 @@
+Repository Workflow:
+////////////////////
+
+Here are some guidelines for users or developers regarding the work with this
+Git repository.
+
+* Users:
+
+- steps to verify a release tag can be done with GPG:
+	git show maint-dborkman-pgp-pub | gpg --import
+	git show maint-tklauser-pgp-pub | gpg --import
+	git tag -v <tag-name>
+
+* Developers:
+
+- steps to submit a patch:
+	we follow in general a similar submission process as in the Linux kernel
+	read https://www.kernel.org/doc/Documentation/SubmittingPatches
+	read Documentation/SubmittingPatches
+	if a commit was acknowledged by someone, add
+		Acked-by: Random J Developer <random@developer.example.org>
+	if a bug was reported by someone, add
+		Reported-by: Random J Developer <random@developer.example.org>
+	if a feature was suggested by someone, add
+		Suggested-by: Random J Developer <random@developer.example.org>
+	if a commit was tested by someone, add
+		Tested-by: Random J Developer <random@developer.example.org>
+	if a commit was reviewed by someone, add
+		Reviewed-by: Random J Developer <random@developer.example.org>
+	if a bug was bisected by someone, add
+		Bisected-by: Random J Developer <random@developer.example.org>
+	in case tagging as mentioned above already happened internally
+	 in your company by different persons, you can add those tags
+	 before submission into the patch commit message
+	in case someone on the mailing list adds his/her *-by tag, it's the
+	 job of the maintainer to keep track of that and to apply this properly
+
+* Maintainer:
+
+- steps to add your public GPG key:
+	gpg --gen-key [...]
+	gpg --list-keys [take the pubkey id you want to add]
+	gpg -a --export <pubid> | git hash-object -w --stdin
+	<git-object-id>
+	git tag -a maint-<short-name>-pgp-pub <git-object-id>
+	<log: Public key of <full name>.>
+	git push --tags
+
+- steps to make a new release:
+	set proper versioning in the Makefile itself
+	make release
+	git push --tags
+	upload tarballs to public dir
+	update website
+	email generated .MAIL_MSG to the mailing list, include
+	 bcc to the maintainers listed in Documentation/Downstream
+
+- apply patches from non-maintainers, basic rules to follow:
+	preferred are patches that have been sent via git send-email
+	never do an automatic Github merge in case the pull request came from there
+	in case of Github we need to do cherry-picking
+	if it's a pull request, make sure it does not contain merges itself
+	always add your Signed-off-by to the commit message in case of an apply
+	patches must be rejected in case the developer's Signed-off-by is missing
