@@ -278,7 +278,7 @@ announcement:
 	$(Q)echo -e "Git changelog since the last release:\n" >> .MAIL_MSG
 	$(GIT_LOG) >> .MAIL_MSG
 
-release: tag tarball announcement
+release: announcement tag tarball
 	$(Q)echo "Released $(bold)$(VERSION_STRING)$(normal)"
 
 FIND_SOURCE_FILES = ( git ls-files '*.[hcS]' 2>/dev/null || \
