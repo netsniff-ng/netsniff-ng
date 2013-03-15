@@ -217,6 +217,8 @@ $(foreach tool,$(TOOLS),$(eval $(call TOOL_templ,$(tool))))
 
 netsniff-ng: ALL_CFLAGS += $(shell pkg-config --cflags libnl-3.0) $(shell pkg-config --cflags libnl-genl-3.0) -D__WITH_PROTOS -D__WITH_TCPDUMP_LIKE_FILTER
 trafgen: ALL_CFLAGS += -I.. $(shell pkg-config --cflags libnl-3.0) $(shell pkg-config --cflags libnl-genl-3.0) -D__WITH_PROTOS
+ifpps: ALL_CFLAGS += $(shell pkg-config --cflags ncurses)
+flowtop: ALL_CFLAGS += $(shell pkg-config --cflags ncurses)
 bpfc: ALL_CFLAGS += -I..
 curvetun: ALL_CFLAGS += -I ${NACL_INC_DIR}
 curvetun: ALL_LDFLAGS += -L ${NACL_LIB_DIR}

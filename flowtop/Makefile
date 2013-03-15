@@ -1,7 +1,7 @@
 flowtop-libs =	-lGeoIP \
 		-lurcu \
 		-lnetfilter_conntrack \
-		-lncurses \
+		$(shell pkg-config --libs ncurses) \
 		-lpthread \
 		-lz
 
