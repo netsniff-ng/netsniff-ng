@@ -767,12 +767,16 @@ static int begin_single_pcap_file(struct ctx *ctx)
 
 static void print_pcap_file_stats(int sock, struct ctx *ctx, unsigned long skipped)
 {
+	int ret;
 	unsigned long good, bad;
 	struct tpacket_stats kstats;
 	socklen_t slen = sizeof(kstats);
 
 	fmemset(&kstats, 0, sizeof(kstats));
-	getsockopt(sock, SOL_PACKET, PACKET_STATISTICS, &kstats, &slen);
+
+	ret = getsockopt(sock, SOL_PACKET, PACKET_STATISTICS, &kstats, &slen);
+	if (unlikely(ret))
+		panic("Cannot get packet statistics!\n");
 	
 	if (ctx->print_mode == PRINT_NONE) {
 		good = kstats.tp_packets - kstats.tp_drops - skipped;
