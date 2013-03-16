@@ -241,8 +241,7 @@ static int stats_proc_softirqs(struct ifstat *stats)
 	enum {
 		softirqs_net_rx,
 		softirqs_net_tx,
-		softirqs_net_none,
-	} net_type = softirqs_net_none;
+	} net_type;
 
 	fp = fopen("/proc/softirqs", "r");
 	if (!fp)
