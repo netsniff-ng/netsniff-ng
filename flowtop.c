@@ -366,13 +366,12 @@ static void flow_list_destroy_entry(struct flow_list *fl,
 		n2 = flow_list_find_prev_id(fl, id);
 		if (n2) {
 			rcu_assign_pointer(n2->next, n1->next);
-			rcu_assign_pointer(n1->next, NULL);
+			n1->next = NULL;
 
 			flow_entry_xfree(n1);
 		} else {
 			flow_entry_xfree(fl->head);
-
-			rcu_assign_pointer(fl->head, NULL);
+			fl->head = NULL;
 		}
 	}
 }
@@ -383,7 +382,7 @@ static void flow_list_destroy(struct flow_list *fl)
 
 	while (fl->head != NULL) {
 		n = rcu_dereference(fl->head->next);
-		rcu_assign_pointer(fl->head->next, NULL);
+		fl->head->next = NULL;
 
 		flow_entry_xfree(fl->head);
 		rcu_assign_pointer(fl->head, n);
