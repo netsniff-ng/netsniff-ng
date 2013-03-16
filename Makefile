@@ -254,7 +254,7 @@ $(TOOLS):
 
 nacl:
 	$(Q)echo "$(bold)$(WHAT) $@:$(normal)"
-	$(Q)cd curvetun/ && ./build_nacl.sh ~/nacl
+	$(Q)cd curvetun/ && ./nacl_build.sh ~/nacl
 	$(Q)source ~/.bashrc
 
 tarball.gz:  ; $(call GIT_ARCHIVE,gzip,gz)

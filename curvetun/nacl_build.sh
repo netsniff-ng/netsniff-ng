@@ -1,9 +1,14 @@
 #!/bin/bash
-
-# netsniff-ng - the packet sniffing beast
-# By Emmanuel Roullit <emmanuel@netsniff-ng.org>
-# Copyright 2009, 2011 Emmanuel Roullit.
-# Subject to the GPL, version 2.
+# -*- coding: utf-8 -*-
+#
+# nacl_build.sh -- NaCl library build script
+#
+# Copyright (C) 2011 Daniel Borkmann <borkmann@redhat.com>
+# Copyright (C) 2009-2011 Emmanuel Roullit <emmanuel@netsniff-ng.org>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation.
 
 cc="gcc"
 nacl_dir="/tmp"
