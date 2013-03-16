@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
-
-# Note: build and _install_ the toolkit first!
+# -*- coding: utf-8 -*-
+#
+# dissector_fuzz.sh -- fuzz test netsniff-ng's dissector and pcap io methods
+#		       with shitty pcap example files from the Wireshark archive
+#
+# Copyright (C) 2012 Daniel Borkmann <borkmann@redhat.com>
+# Copyright (C) 2012 Stefan Seering <sseerin@imn.htwk-leipzig.de>
+#
+# Note: build and *install* the toolkit first before running this script!
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation.
 
 set -u
 
