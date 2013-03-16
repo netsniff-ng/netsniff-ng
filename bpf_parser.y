@@ -25,7 +25,7 @@
 
 #define MAX_INSTRUCTIONS	4096
 
-int compile_filter(char *file, int verbose, int bypass, int decimal);
+int compile_filter(char *file, int verbose, int bypass, int format);
 
 static int curr_instr = 0;
 
@@ -597,7 +597,60 @@ static void stage_2_label_reduce(void)
 	}
 }
 
-int compile_filter(char *file, int verbose, int bypass, int decimal)
+static void pretty_printer_c(const struct sock_fprog *prog)
+{
+	int i;
+
+	for (i = 0; i < prog->len; ++i) {
+		printf("{ 0x%x, %u, %u, 0x%08x },\n",
+		       prog->filter[i].code, prog->filter[i].jt,
+		       prog->filter[i].jf, prog->filter[i].k);
+	}
+}
+
+static void pretty_printer_xt_bpf(const struct sock_fprog *prog)
+{
+	int i;
+
+	printf("%d,", prog->len);
+	for (i = 0; i < prog->len; ++i) {
+		printf("%u %u %u %u,",
+		       prog->filter[i].code, prog->filter[i].jt,
+		       prog->filter[i].jf, prog->filter[i].k);
+	}
+
+	fflush(stdout);
+}
+
+static void pretty_printer_tcpdump(const struct sock_fprog *prog)
+{
+	int i;
+
+	for (i = 0; i < prog->len; ++i) {
+		printf("%u %u %u %u\n",
+		       prog->filter[i].code, prog->filter[i].jt,
+		       prog->filter[i].jf, prog->filter[i].k);
+	}
+}
+
+static void pretty_printer(const struct sock_fprog *prog, int format)
+{
+	switch (format) {
+	case 0:
+		pretty_printer_c(prog);
+		break;
+	case 1:
+		pretty_printer_xt_bpf(prog);
+		break;
+	case 2:
+		pretty_printer_tcpdump(prog);
+		break;
+	default:
+		bug();
+	}
+}
+
+int compile_filter(char *file, int verbose, int bypass, int format)
 {
 	int i;
 	struct sock_fprog res;
@@ -645,17 +698,10 @@ int compile_filter(char *file, int verbose, int bypass, int decimal)
 
 	if (verbose)
 		printf("Result:\n");
-	for (i = 0; i < res.len; ++i) {
-		if (decimal) {
-			printf("%u %u %u %u\n",
-			       res.filter[i].code, res.filter[i].jt,
-			       res.filter[i].jf, res.filter[i].k);
-		} else {
-			printf("{ 0x%x, %u, %u, 0x%08x },\n",
-			       res.filter[i].code, res.filter[i].jt,
-			       res.filter[i].jf, res.filter[i].k);
-		}
 
+	pretty_printer(&res, format);
+
+	for (i = 0; i < res.len; ++i) {
 		free(labels[i]);
 		free(labels_jt[i]);
 		free(labels_jf[i]);

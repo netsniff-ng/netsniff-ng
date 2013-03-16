@@ -17,11 +17,11 @@
 #include "die.h"
 #include "bpf.h"
 
-static const char *short_options = "vhi:VdbD";
+static const char *short_options = "vhi:Vdbf:";
 static const struct option long_options[] = {
 	{"input",	required_argument,	NULL, 'i'},
+	{"format",	required_argument,	NULL, 'f'},
 	{"verbose",	no_argument,		NULL, 'V'},
-	{"decimal",	no_argument,		NULL, 'D'},
 	{"bypass",	no_argument,		NULL, 'b'},
 	{"dump",	no_argument,		NULL, 'd'},
 	{"version",	no_argument,		NULL, 'v'},
@@ -29,7 +29,7 @@ static const struct option long_options[] = {
 	{NULL, 0, NULL, 0}
 };
 
-extern int compile_filter(char *file, int verbose, int bypass, int decimal);
+extern int compile_filter(char *file, int verbose, int bypass, int format);
 
 static void help(void)
 {
@@ -38,15 +38,18 @@ static void help(void)
 	     "Usage: bpfc [options] || bpfc <program>\n"
 	     "Options:\n"
 	     "  -i|--input <program/->  Berkeley Packet Filter file/stdin\n"
-	     "  -D|--decimal            Decimal output, e.g. for xt_bpf\n"
-	     "  -V|--verbose            Be more verbose\n"
+	     "  -f|--format <format>    Output format: C|netsniff-ng|xt_bpf|tcpdump\n"
 	     "  -b|--bypass             Bypass filter validation (e.g. for bug testing)\n"
+	     "  -V|--verbose            Be more verbose\n"
 	     "  -d|--dump               Dump supported instruction table\n"
 	     "  -v|--version            Print version\n"
 	     "  -h|--help               Print this help\n\n"
 	     "Examples:\n"
 	     "  bpfc fubar\n"
-	     "  bpfc -Dbi fubar\n"
+	     "  bpfc fubar > foo (bpfc -f C -i fubar > foo) -->  netsniff-ng -f foo ...\n"
+	     "  bpfc -f tcpdump -i fubar > foo -->  tcpdump -ddd like ...\n"
+	     "  bpfc -f xt_bpf -b -i fubar\n"
+	     "  iptables -A INPUT -m bpf --bytecode \"`./bpfc -f xt_bpf -i fubar`\" -j LOG\n"
 	     "  bpfc -   (read from stdin)\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
@@ -72,7 +75,7 @@ static void version(void)
 
 int main(int argc, char **argv)
 {
-	int ret, verbose = 0, c, opt_index, bypass = 0, decimal = 0;
+	int ret, verbose = 0, c, opt_index, bypass = 0, format = 0;
 	char *file = NULL;
 
 	setfsuid(getuid());
@@ -93,8 +96,16 @@ int main(int argc, char **argv)
 		case 'V':
 			verbose = 1;
 			break;
-		case 'D':
-			decimal = 1;
+		case 'f':
+			if (!strncmp(optarg, "C", 1) ||
+			    !strncmp(optarg, "netsniff-ng", 11))
+				format = 0;
+			else if (!strncmp(optarg, "xt_bpf", 6))
+				format = 1;
+			else if (!strncmp(optarg, "tcpdump", 7))
+				format = 2;
+			else
+				help();
 			break;
 		case 'b':
 			bypass = 1;
@@ -108,6 +119,7 @@ int main(int argc, char **argv)
 		case '?':
 			switch (optopt) {
 			case 'i':
+			case 'f':
 				panic("Option -%c requires an argument!\n",
 				      optopt);
 			default:
@@ -125,7 +137,7 @@ int main(int argc, char **argv)
 	if (!file)
 		panic("No Berkeley Packet Filter program specified!\n");
 
-	ret = compile_filter(file, verbose, bypass, decimal);
+	ret = compile_filter(file, verbose, bypass, format);
 
 	xfree(file);
 	return ret;
