@@ -82,6 +82,8 @@ number_ascii	([a-zA-Z])
 "rnd"		{ return K_RND; }
 "csumip"	{ return K_CSUMIP; }
 "csumip4"	{ return K_CSUMIP; }
+"csumicmp"	{ return K_CSUMIP; }
+"csumicmp4"	{ return K_CSUMIP; }
 "csumudp"	{ return K_CSUMUDP; }
 "csumtcp"	{ return K_CSUMTCP; }
 "drnd"		{ return K_DRND; }
