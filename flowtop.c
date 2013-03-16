@@ -428,6 +428,7 @@ static int walk_process(char *process, struct flow_entry *n)
 				panic("readlink error: %s\n", strerror(errno));
 
 			n->procnum = atoi(process);
+			closedir(dir);
 			return 1;
 		}
 	}
