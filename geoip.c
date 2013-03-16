@@ -190,6 +190,8 @@ again:
 	if (ret <= 0)
 		return -EIO;
 
+	raw[sizeof(raw) - 1] = 0;
+
 	for (i = 0; i < ret; i++) {
 		if (!strncmp(raw + i, "Content-Length: ", min(ret - i, lenl))) {
 			ptr = raw + i + lenl;
