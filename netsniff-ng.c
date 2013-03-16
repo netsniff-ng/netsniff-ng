@@ -289,10 +289,9 @@ static void pcap_to_xmit(struct ctx *ctx)
 	if (__pcap_io->prepare_close_pcap)
 		__pcap_io->prepare_close_pcap(fd, PCAP_MODE_RD);
 
-	if (strncmp("-", ctx->device_in, strlen("-")))
-		close(fd);
-	else
+	if (!strncmp("-", ctx->device_in, strlen("-")))
 		dup2(fd, fileno(stdin));
+	close(fd);
 
 	close(tx_sock);
 
@@ -619,16 +618,14 @@ static void read_pcap(struct ctx *ctx)
 	printf("\r%12lu bytes outgoing\n", ctx->tx_bytes);
 	printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec, diff.tv_usec);
 
-	if (strncmp("-", ctx->device_in, strlen("-")))
-		close(fd);
-	else
+	if (!strncmp("-", ctx->device_in, strlen("-")))
 		dup2(fd, fileno(stdin));
+	close(fd);
 
 	if (ctx->device_out) {
-		if (strncmp("-", ctx->device_out, strlen("-")))
-			close(fdo);
-		else
+		if (!strncmp("-", ctx->device_out, strlen("-")))
 			dup2(fdo, fileno(stdout));
+		close(fdo);
 	}
 }
 
