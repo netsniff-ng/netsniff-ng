@@ -21,9 +21,14 @@
 
 void destroy_rx_ring(int sock, struct ring *ring)
 {
+	int ret;
+
 	fmemset(&ring->layout, 0, sizeof(ring->layout));
-	setsockopt(sock, SOL_PACKET, PACKET_RX_RING, &ring->layout,
-		   sizeof(ring->layout));
+
+	ret = setsockopt(sock, SOL_PACKET, PACKET_RX_RING, &ring->layout,
+			 sizeof(ring->layout));
+	if (unlikely(ret))
+		panic("Cannot destroy the RX_RING!\n");
 
 	munmap(ring->mm_space, ring->mm_len);
 	ring->mm_len = 0;
