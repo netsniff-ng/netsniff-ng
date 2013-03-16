@@ -236,16 +236,15 @@ again:
 
 	printf("\n");
 
+	close(fd);
+	close(sock);
+
 	if (totlen != rtotlen) {
 		unlink(files[which].local);
 		return -EIO;
 	}
 
-	close(fd);
-	close(sock);
-
 	geoip_inflate(which);
-
 	unlink(zfile);
 
 	return 0;
