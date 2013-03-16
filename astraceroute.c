@@ -782,8 +782,6 @@ static int __process_time(struct ctx *ctx, int fd, int fd_cap, int ttl,
 			printf("%lu sec ", tmp[idx].tv_sec);
 		printf("%7lu us", tmp[idx].tv_usec);
 		break;
-	default:
-		bug();
 	}
 	printf("]");
 

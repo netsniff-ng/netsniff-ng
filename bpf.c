@@ -505,8 +505,6 @@ int __bpf_validate(const struct sock_fprog *bpf)
 			break;
 		case BPF_MISC:
 			break;
-		default:
-			return 0;
 		}
 	}
 

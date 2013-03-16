@@ -271,8 +271,6 @@ static int stats_proc_softirqs(struct ifstat *stats)
 			case softirqs_net_rx:
 				stats->irqs_srx[i] = strtol(ptr, &ptr, 10);
 				break;
-			default:
-				bug();
 			}
 		}
 
