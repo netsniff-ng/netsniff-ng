@@ -445,7 +445,7 @@ static int check_ipv4(uint8_t *packet, size_t len, int ttl, int id,
 
 static void handle_ipv4(uint8_t *packet, size_t len, int dns_resolv, int latitude)
 {
-	char hbuff[256];
+	char hbuff[NI_MAXHOST];
 	struct iphdr *iph = (struct iphdr *) packet;
 	struct sockaddr_in sd;
 	struct hostent *hent;
@@ -457,7 +457,7 @@ static void handle_ipv4(uint8_t *packet, size_t len, int dns_resolv, int latitud
 	sd.sin_addr.s_addr = iph->saddr;
 
 	getnameinfo((struct sockaddr *) &sd, sizeof(sd),
-		    hbuff, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+		    hbuff, sizeof(hbuff), NULL, 0, NI_NUMERICHOST);
 
 	as = geoip4_as_name(sd);
 	country = geoip4_country_name(sd);
@@ -511,7 +511,7 @@ static int check_ipv6(uint8_t *packet, size_t len, int ttl, int id,
 
 static void handle_ipv6(uint8_t *packet, size_t len, int dns_resolv, int latitude)
 {
-	char hbuff[256];
+	char hbuff[NI_MAXHOST];
 	struct ip6_hdr *ip6h = (struct ip6_hdr *) packet;
 	struct sockaddr_in6 sd;
 	struct hostent *hent;
@@ -523,7 +523,7 @@ static void handle_ipv6(uint8_t *packet, size_t len, int dns_resolv, int latitud
 	memcpy(&sd.sin6_addr, &ip6h->ip6_src, sizeof(ip6h->ip6_src));
 
 	getnameinfo((struct sockaddr *) &sd, sizeof(sd),
-		    hbuff, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+		    hbuff, sizeof(hbuff), NULL, 0, NI_NUMERICHOST);
 
 	as = geoip6_as_name(sd);
 	country = geoip6_country_name(sd);
