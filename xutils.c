@@ -110,32 +110,47 @@ int pf_socket(void)
 
 void set_sock_prio(int fd, int prio)
 {
-	int val = prio;
-	setsockopt(fd, SOL_SOCKET, SO_PRIORITY, &val, sizeof(val));
+	int ret, val = prio;
+
+	ret = setsockopt(fd, SOL_SOCKET, SO_PRIORITY, &val, sizeof(val));
+	if (unlikely(ret))
+		panic("Cannot set socket priority!\n");
 }
 
 void set_udp_cork(int fd)
 {
-	int state = 1;
-	setsockopt(fd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
+	int ret, state = 1;
+
+	ret = setsockopt(fd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
+	if (unlikely(ret))
+		panic("Cannot cork UDP socket!\n");
 }
 
 void set_udp_uncork(int fd)
 {
-	int state = 0;
-	setsockopt(fd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
+	int ret, state = 0;
+
+	ret = setsockopt(fd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
+	if (unlikely(ret))
+		panic("Cannot uncork UDP socket!\n");
 }
 
 void set_tcp_cork(int fd)
 {
-	int state = 1;
-	setsockopt(fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
+	int ret, state = 1;
+
+	ret = setsockopt(fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
+	if (unlikely(ret))
+		panic("Cannot cork TCP socket!\n");
 }
 
 void set_tcp_uncork(int fd)
 {
-	int state = 0;
-	setsockopt(fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
+	int ret, state = 0;
+
+	ret = setsockopt(fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
+	if (unlikely(ret))
+		panic("Cannot uncork TCP socket!\n");
 }
 
 void set_sock_cork(int fd, int udp)
@@ -170,8 +185,11 @@ int set_nonblocking_sloppy(int fd)
 
 void set_socket_keepalive(int fd)
 {
-	int one = 1;
-	setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &one, sizeof(one));
+	int ret, one = 1;
+
+	ret = setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &one, sizeof(one));
+	if (unlikely(ret))
+		panic("Cannot set TCP keepalive!\n");
 }
 
 void set_tcp_nodelay(int fd)
@@ -199,8 +217,11 @@ int set_reuseaddr(int fd)
 
 void set_mtu_disc_dont(int fd)
 {
-	int mtu = IP_PMTUDISC_DONT;
-	setsockopt(fd, SOL_IP, IP_MTU_DISCOVER, &mtu, sizeof(mtu));
+	int mtu = IP_PMTUDISC_DONT, ret;
+
+	ret = setsockopt(fd, SOL_IP, IP_MTU_DISCOVER, &mtu, sizeof(mtu));
+	if (unlikely(ret))
+		panic("Cannot set MTU discovery options!\n");
 }
 
 void set_epoll_descriptor(int fd_epoll, int action, int fd_toadd, int events)
