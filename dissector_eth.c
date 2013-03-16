@@ -118,15 +118,15 @@ static void dissector_init_ports(enum ports which)
 
 	switch (which) {
 	case PORTS_UDP:
-		file = "/etc/netsniff-ng/udp.conf";
+		file = PREFIX_STRING "/etc/netsniff-ng/udp.conf";
 		table = &eth_ports_udp;
 		break;
 	case PORTS_TCP:
-		file = "/etc/netsniff-ng/tcp.conf";
+		file = PREFIX_STRING "/etc/netsniff-ng/tcp.conf";
 		table = &eth_ports_tcp;
 		break;
 	case PORTS_ETHER:
-		file = "/etc/netsniff-ng/ether.conf";
+		file = PREFIX_STRING "/etc/netsniff-ng/ether.conf";
 		table = &eth_ether_types;
 		break;
 	default:

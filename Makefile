@@ -65,6 +65,7 @@ ifneq ($(wildcard /usr/include/linux/net_tstamp.h),)
   CFLAGS += -D__WITH_HARDWARE_TIMESTAMPING
 endif
 CFLAGS += -DVERSION_STRING=\"$(VERSION_STRING)\"
+CFLAGS += -DPREFIX_STRING=\"$(PREFIX)\"
 CFLAGS += -std=gnu99
 
 WFLAGS  = -Wall

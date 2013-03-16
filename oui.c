@@ -43,7 +43,7 @@ void dissector_init_oui(void)
 	if (initialized)
 		return;
 
-	fp = fopen("/etc/netsniff-ng/oui.conf", "r");
+	fp = fopen(PREFIX_STRING "/etc/netsniff-ng/oui.conf", "r");
 	if (!fp)
 		panic("No oui.conf found!\n");
 
