@@ -127,8 +127,19 @@ static void signal_handler(int number)
 
 static void timer_elapsed(int number)
 {
+	int ret;
+
 	set_itimer_interval_value(&itimer, 0, interval);
-	pull_and_flush_tx_ring(sock);
+
+	ret = pull_and_flush_tx_ring(sock);
+	if (unlikely(ret < 0)) {
+		/* We could hit EBADF if the socket has been closed before
+		 * the timer was triggered.
+		 */
+		if (errno != EBADF && errno != ENOBUFS)
+			panic("Flushing TX_RING failed: %s!\n", strerror(errno));
+	}
+
 	setitimer(ITIMER_REAL, &itimer, NULL); 
 }
 
