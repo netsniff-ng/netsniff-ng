@@ -132,7 +132,7 @@ static int find_intr_offset_or_panic(char *label_to_search)
 %token OP_LDXI
 
 %token K_PKT_LEN K_PROTO K_TYPE K_NLATTR K_NLATTR_NEST K_MARK K_QUEUE K_HATYPE
-%token K_RXHASH K_CPU K_IFIDX K_VLANT K_VLANP
+%token K_RXHASH K_CPU K_IFIDX K_VLANT K_VLANP K_POFF
 
 %token ':' ',' '[' ']' '(' ')' 'x' 'a' '+' 'M' '*' '&' '#'
 
@@ -235,6 +235,9 @@ ldb
 	| OP_LDB K_VLANP {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_VLAN_TAG_PRESENT); }
+	| OP_LDB K_POFF {
+		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_PAY_OFFSET); }
 	;
 
 ldh
@@ -278,6 +281,9 @@ ldh
 	| OP_LDH K_VLANP {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_VLAN_TAG_PRESENT); }
+	| OP_LDH K_POFF {
+		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_PAY_OFFSET); }
 	;
 
 ldi
@@ -326,6 +332,9 @@ ld
 	| OP_LD K_VLANP {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
 			       SKF_AD_OFF + SKF_AD_VLAN_TAG_PRESENT); }
+	| OP_LD K_POFF {
+		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0,
+			       SKF_AD_OFF + SKF_AD_PAY_OFFSET); }
 	| OP_LD 'M' '[' number ']' {
 		set_curr_instr(BPF_LD | BPF_MEM, 0, 0, $4); }
 	| OP_LD '[' 'x' '+' number ']' {

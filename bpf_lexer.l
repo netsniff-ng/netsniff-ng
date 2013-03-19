@@ -75,6 +75,7 @@ label		[a-zA-Z_][a-zA-Z0-9_]+
 "#"?("len"|"pktlen")	{ return K_PKT_LEN; }
 "#"?("pto"|"proto")	{ return K_PROTO; }
 "#"?("type")		{ return K_TYPE; }
+"#"?("poff")		{ return K_POFF; }
 "#"?("ifx"|"ifidx")	{ return K_IFIDX; }
 "#"?("nla")		{ return K_NLATTR; }
 "#"?("nlan")		{ return K_NLATTR_NEST; }

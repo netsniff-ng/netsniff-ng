@@ -131,5 +131,8 @@ static inline void bpf_release(struct sock_fprog *bpf)
 #ifndef SKF_AD_VLAN_TAG_PRESENT
 # define SKF_AD_VLAN_TAG_PRESENT	48
 #endif
+#ifndef SKF_AD_PAY_OFFSET
+# define SKF_AD_PAY_OFFSET		52
+#endif
 
 #endif /* BPF_I_H */
