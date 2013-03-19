@@ -280,7 +280,7 @@ static void create_keypair(char *home)
 	if (fd < 0) {
 		err = EIO;
 		errstr = "Cannot open pubkey file!\n";
-		goto out;
+		goto out_noclose;
 	}
 
 	ret = write(fd, publickey, sizeof(publickey));
@@ -301,7 +301,7 @@ static void create_keypair(char *home)
 	if (fd < 0) {
 		err = EIO;
 		errstr = "Cannot open privkey file!\n";
-		goto out;
+		goto out_noclose;
 	}
 
 	ret = write(fd, secretkey, sizeof(secretkey));
@@ -312,7 +312,7 @@ static void create_keypair(char *home)
 	}
 out:
 	close(fd);
-
+out_noclose:
 	xmemset(publickey, 0, sizeof(publickey));
 	xmemset(secretkey, 0, sizeof(secretkey));
 
