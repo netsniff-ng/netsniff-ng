@@ -560,28 +560,24 @@ static inline int flow_entry_get_extended_is_dns(struct flow_entry *n)
 #define SELFLD(dir,src_member,dst_member)	\
 	(((dir) == flow_entry_src) ? n->src_member : n->dst_member)
 
-static struct sockaddr_in *
-flow_entry_get_sain4_obj(struct flow_entry *n, enum flow_entry_direction dir,
-			 struct sockaddr_in *sa)
+static void flow_entry_get_sain4_obj(struct flow_entry *n,
+				     enum flow_entry_direction dir,
+				     struct sockaddr_in *sa)
 {
 	memset(sa, 0, sizeof(*sa));
 	sa->sin_family = PF_INET;
 	sa->sin_addr.s_addr = htonl(SELFLD(dir, ip4_src_addr, ip4_dst_addr));
-
-	return sa;
 }
 
-static struct sockaddr_in6 *
-flow_entry_get_sain6_obj(struct flow_entry *n, enum flow_entry_direction dir,
-			 struct sockaddr_in6 *sa)
+static void flow_entry_get_sain6_obj(struct flow_entry *n,
+				     enum flow_entry_direction dir,
+				     struct sockaddr_in6 *sa)
 {
 	memset(sa, 0, sizeof(*sa));
 	sa->sin6_family = PF_INET6;
 
 	memcpy(&sa->sin6_addr, SELFLD(dir, ip6_src_addr, ip6_dst_addr),
 	       sizeof(SELFLD(dir, ip6_src_addr, ip6_dst_addr)));
-
-	return sa;
 }
 
 static void
