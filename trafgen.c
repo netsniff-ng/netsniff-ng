@@ -498,7 +498,7 @@ static int xmit_smoke_probe(int icmp_sock, struct ctx *ctx)
 	return -1;
 }
 
-static void xmit_slowpath_or_die(struct ctx *ctx, int cpu)
+static void xmit_slowpath_or_die(struct ctx *ctx, int cpu, unsigned long orig_num)
 {
 	int ret, icmp_sock = -1;
 	unsigned long num = 1, i = 0;
@@ -513,6 +513,8 @@ static void xmit_slowpath_or_die(struct ctx *ctx, int cpu)
 
 	if (ctx->num > 0)
 		num = ctx->num;
+	if (ctx->num == 0 && orig_num > 0)
+		num = 0;
 
 	if (ctx->smoke_test)
 		icmp_sock = xmit_smoke_setup(ctx);
@@ -521,7 +523,7 @@ static void xmit_slowpath_or_die(struct ctx *ctx, int cpu)
 
 	bug_on(gettimeofday(&start, NULL));
 
-	while (likely(sigint == 0) && likely(num > 0)) {
+	while (likely(sigint == 0) && likely(num > 0) && likely(plen > 0)) {
 		pktd = &packet_dyn[i];
 		if (pktd->clen + pktd->rlen + pktd->slen) {
 			apply_counter(i);
@@ -584,7 +586,7 @@ retry:
 	stats[cpu].state |= CPU_STATS_STATE_RES;
 }
 
-static void xmit_fastpath_or_die(struct ctx *ctx, int cpu)
+static void xmit_fastpath_or_die(struct ctx *ctx, int cpu, unsigned long orig_num)
 {
 	int ifindex = device_ifindex(ctx->device);
 	uint8_t *out = NULL;
@@ -615,13 +617,15 @@ static void xmit_fastpath_or_die(struct ctx *ctx, int cpu)
 		interval = ctx->kpull;
 	if (ctx->num > 0)
 		num = ctx->num;
+	if (ctx->num == 0 && orig_num > 0)
+		num = 0;
 
 	set_itimer_interval_value(&itimer, 0, interval);
 	setitimer(ITIMER_REAL, &itimer, NULL); 
 
 	bug_on(gettimeofday(&start, NULL));
 
-	while (likely(sigint == 0) && likely(num > 0)) {
+	while (likely(sigint == 0) && likely(num > 0) && likely(plen > 0)) {
 		while (user_may_pull_from_tx(tx_ring.frames[it].iov_base) && likely(num > 0)) {
 			hdr = tx_ring.frames[it].iov_base;
 			out = ((uint8_t *) hdr) + TPACKET2_HDRLEN - sizeof(struct sockaddr_ll);
@@ -694,7 +698,9 @@ static unsigned long __wait_and_sum_others(struct ctx *ctx, int cpu)
 		if (i == cpu)
 			continue;
 
-		while ((__get_state(i) & CPU_STATS_STATE_CFG) == 0 &&
+		while ((__get_state(i) &
+		       (CPU_STATS_STATE_CFG |
+			CPU_STATS_STATE_RES)) == 0 &&
 		       sigint == 0)
 			sched_yield();
 
@@ -714,7 +720,9 @@ static void __correct_global_delta(struct ctx *ctx, int cpu, unsigned long orig)
 		if (i == cpu)
 			continue;
 
-		while ((__get_state(i) & CPU_STATS_STATE_CHK) == 0 &&
+		while ((__get_state(i) &
+		       (CPU_STATS_STATE_CHK |
+			CPU_STATS_STATE_RES)) == 0 &&
 		       sigint == 0)
 			sched_yield();
 
@@ -778,7 +786,7 @@ static int xmit_packet_precheck(struct ctx *ctx, int cpu)
 
 	if (plen == 0) {
 		__set_state(cpu, CPU_STATS_STATE_RES);
-		return -1;
+		return 0;
 	}
 
 	for (mtu = device_mtu(ctx->device), i = 0; i < plen; ++i) {
@@ -792,7 +800,7 @@ static int xmit_packet_precheck(struct ctx *ctx, int cpu)
 }
 
 static void main_loop(struct ctx *ctx, char *confname, bool slow,
-		      int cpu, bool invoke_cpp)
+		      int cpu, bool invoke_cpp, unsigned long orig_num)
 {
 	compile_packets(confname, ctx->verbose, cpu, invoke_cpp);
 	if (xmit_packet_precheck(ctx, cpu) < 0)
@@ -816,9 +824,9 @@ static void main_loop(struct ctx *ctx, char *confname, bool slow,
 	sock = pf_socket();
 
 	if (slow)
-		xmit_slowpath_or_die(ctx, cpu);
+		xmit_slowpath_or_die(ctx, cpu, orig_num);
 	else
-		xmit_fastpath_or_die(ctx, cpu);
+		xmit_fastpath_or_die(ctx, cpu, orig_num);
 
 	close(sock);
 
@@ -845,7 +853,7 @@ int main(int argc, char **argv)
 	bool slow = false, invoke_cpp = false, reseed = true;
 	int c, opt_index, i, j, vals[4] = {0}, irq;
 	char *confname = NULL, *ptr;
-	unsigned long cpus_tmp;
+	unsigned long cpus_tmp, orig_num = 0;
 	unsigned long long tx_packets, tx_bytes;
 	struct ctx ctx;
 
@@ -918,7 +926,8 @@ int main(int argc, char **argv)
 			reseed = false;
 			break;
 		case 'n':
-			ctx.num = strtoul(optarg, NULL, 0);
+			orig_num = strtoul(optarg, NULL, 0);
+			ctx.num = orig_num;
 			break;
 		case 't':
 			slow = true;
@@ -1008,9 +1017,6 @@ int main(int argc, char **argv)
 	irq = device_irq_number(ctx.device);
 	device_set_irq_affinity_list(irq, 0, ctx.cpus - 1);
 
-	if (ctx.num > 0 && ctx.num <= ctx.cpus)
-		ctx.cpus = 1;
-
 	stats = setup_shared_var(ctx.cpus);
 
 	for (i = 0; i < ctx.cpus; i++) {
@@ -1023,7 +1029,7 @@ int main(int argc, char **argv)
 			srand(seed);
 
 			cpu_affinity(i);
-			main_loop(&ctx, confname, slow, i, invoke_cpp);
+			main_loop(&ctx, confname, slow, i, invoke_cpp, orig_num);
 
 			goto thread_out;
 		case -1:
