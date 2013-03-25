@@ -72,7 +72,7 @@ static char *try_convert_shellcode(char *sstr)
 number_oct	([0][0-9]+)
 number_hex	([0][x][a-fA-F0-9]+)
 number_bin	([0][b][0-1]+)
-number_dec	(([0])|([-+]?[1-9][0-9]*))
+number_dec	(([0])|([1-9][0-9]*))
 number_ascii	([a-zA-Z])
 
 %%
@@ -120,7 +120,7 @@ number_ascii	([a-zA-Z])
 "\""[^\"]+"\""	{ yylval.str = try_convert_shellcode(xstrdup(yytext));
 		  return string; }
 
-([ \t\r\n]+)?	{ return K_WHITE; }
+([ \t\n]+)?	{ return K_WHITE; }
 
 "/*"([^\*]|\*[^/])*"*/" { return K_COMMENT; }
 

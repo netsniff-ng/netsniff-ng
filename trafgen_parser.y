@@ -344,12 +344,22 @@ inline_comment
 	: K_COMMENT { }
 	;
 
+cpu_delim
+	: ':' { }
+	| '-' { }
+	;
+
+noenforce_white
+	: { }
+	| K_WHITE { }
+	;
+
 packet
 	: '{' delimiter payload delimiter '}' {
 			min_cpu = max_cpu = -1;
 			realloc_packet();
 		}
-	| K_CPU '(' number ':' number ')' ':' K_WHITE '{' delimiter payload delimiter '}' {
+	| K_CPU '(' number cpu_delim number ')' ':' noenforce_white '{' delimiter payload delimiter '}' {
 			min_cpu = $3;
 			max_cpu = $5;
 
@@ -362,7 +372,7 @@ packet
 
 			realloc_packet();
 		}
-	| K_CPU '(' number ')' ':' K_WHITE '{' delimiter payload delimiter '}' {
+	| K_CPU '(' number ')' ':' noenforce_white '{' delimiter payload delimiter '}' {
 			min_cpu = max_cpu = $3;
 			realloc_packet();
 		}
