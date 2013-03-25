@@ -431,6 +431,8 @@ expression
 		{ $$ = $1 << $4; }
 	| expression '>' '>' expression
 		{ $$ = $1 >> $4; }
+	| '-' expression
+		{ $$ = -1 * $2; }
 	| '(' expression ')'
 		{ $$ = $2;}
 	;
