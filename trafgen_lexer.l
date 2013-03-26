@@ -80,6 +80,7 @@ number_ascii	([a-zA-Z])
 "cpu"		{ return K_CPU; }
 "fill"		{ return K_FILL; }
 "rnd"		{ return K_RND; }
+"csum16"	{ return K_CSUMIP; }
 "csumip"	{ return K_CSUMIP; }
 "csumip4"	{ return K_CSUMIP; }
 "csumicmp"	{ return K_CSUMIP; }

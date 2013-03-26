@@ -180,7 +180,7 @@ static void help(void)
 	     "Arbitrary packet config examples (e.g. trafgen -e > trafgen.cfg):\n"
 	     "  Run packet on  all CPUs:              { fill(0xff, 64) csum16(0, 64) }\n"
 	     "  Run packet only on CPU1:    cpu(1):   { rnd(64), 0b11001100, 0xaa }\n"
-	     "  Run packet only on CPU1-2:  cpu(1:2): { drnd(64),'a',csum16(1, 8),'b',42 }\n\n"
+	     "  Run packet only on CPU1-2:  cpu(1-2): { drnd(64),'a',csum16(1, 8),'b',42 }\n\n"
 	     "Note:\n"
 	     "  Smoke/fuzz test example: machine A, 10.0.0.2 (trafgen) is directly\n"
 	     "  connected to machine B (test kernel), 10.0.0.1. If ICMP reply fails\n"
