@@ -14,15 +14,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdbool.h>
 
 #include "trafgen_parser.tab.h"
 #include "xmalloc.h"
+#include "built_in.h"
 
 extern void yyerror(const char *);
 
 static char *try_convert_shellcode(char *sstr)
 {
 	int j = 0;
+	bool found_any = false;
 	char *bstr, *ostr = sstr, *hay;
 	size_t blen, slen = strlen(sstr), tot = 0;
 	const char *needle = "\\x";
@@ -37,14 +40,12 @@ static char *try_convert_shellcode(char *sstr)
 	hay = sstr;
 	while ((hay = strstr(hay, needle)) != NULL ) {
 		hay += strlen(needle) + 2;
+		found_any = true;
 		tot++;
 	}
 
-	if (blen != tot) {
-		printf("Warning: mixed shellcode with strings, "
-		       "using strings!\n");
+	if (blen != tot || !found_any)
 		return sstr;
-	}
 
 	blen += 2;
 	bstr = xzmalloc(blen);
