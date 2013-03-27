@@ -355,11 +355,11 @@ noenforce_white
 	;
 
 packet
-	: '{' delimiter payload delimiter '}' {
+	: '{' noenforce_white payload noenforce_white '}' {
 			min_cpu = max_cpu = -1;
 			realloc_packet();
 		}
-	| K_CPU '(' number cpu_delim number ')' ':' noenforce_white '{' delimiter payload delimiter '}' {
+	| K_CPU '(' number cpu_delim number ')' ':' noenforce_white '{' noenforce_white payload noenforce_white '}' {
 			min_cpu = $3;
 			max_cpu = $5;
 
@@ -372,7 +372,7 @@ packet
 
 			realloc_packet();
 		}
-	| K_CPU '(' number ')' ':' noenforce_white '{' delimiter payload delimiter '}' {
+	| K_CPU '(' number ')' ':' noenforce_white '{' noenforce_white payload noenforce_white '}' {
 			min_cpu = max_cpu = $3;
 			realloc_packet();
 		}
