@@ -37,4 +37,9 @@ static inline int pull_and_flush_tx_ring(int sock)
 	return sendto(sock, NULL, 0, MSG_DONTWAIT, NULL, 0);
 }
 
+static inline int pull_and_flush_tx_ring_wait(int sock)
+{
+	return sendto(sock, NULL, 0, 0, NULL, 0);
+}
+
 #endif /* TX_RING_H */

@@ -131,6 +131,21 @@ static void timer_elapsed(int unused)
 	setitimer(ITIMER_REAL, &itimer, NULL);
 }
 
+static void timer_purge(void)
+{
+	int ret;
+
+	ret = pull_and_flush_tx_ring_wait(tx_sock);
+	if (unlikely(ret < 0)) {
+		if (errno != EBADF && errno != ENOBUFS)
+			panic("Flushing TX_RING failed: %s!\n", strerror(errno));
+	}
+
+	set_itimer_interval_value(&itimer, 0, 0);
+	setitimer(ITIMER_REAL, &itimer, NULL);
+}
+
+
 static void timer_next_dump(int unused)
 {
 	set_itimer_interval_value(&itimer, interval, 0);
@@ -288,6 +303,8 @@ static void pcap_to_xmit(struct ctx *ctx)
 
 	bug_on(gettimeofday(&end, NULL));
 	timersub(&end, &start, &diff);
+
+	timer_purge();
 
 	bpf_release(&bpf_ops);
 
@@ -454,6 +471,8 @@ static void receive_to_xmit(struct ctx *ctx)
 	}
 
 	out:
+
+	timer_purge();
 
 	sock_print_net_stats(rx_sock, 0);
 

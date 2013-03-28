@@ -127,11 +127,7 @@ static void signal_handler(int number)
 
 static void timer_elapsed(int number)
 {
-	int ret;
-
-	set_itimer_interval_value(&itimer, 0, interval);
-
-	ret = pull_and_flush_tx_ring(sock);
+	int ret = pull_and_flush_tx_ring(sock);
 	if (unlikely(ret < 0)) {
 		/* We could hit EBADF if the socket has been closed before
 		 * the timer was triggered.
@@ -140,6 +136,24 @@ static void timer_elapsed(int number)
 			panic("Flushing TX_RING failed: %s!\n", strerror(errno));
 	}
 
+	set_itimer_interval_value(&itimer, 0, interval);
+	setitimer(ITIMER_REAL, &itimer, NULL); 
+}
+
+static void timer_purge(void)
+{
+	int ret;
+
+	ret = pull_and_flush_tx_ring_wait(sock);
+	if (unlikely(ret < 0)) {
+		/* We could hit EBADF if the socket has been closed before
+		 * the timer was triggered.
+		 */
+		if (errno != EBADF && errno != ENOBUFS)
+			panic("Flushing TX_RING failed: %s!\n", strerror(errno));
+	}
+
+	set_itimer_interval_value(&itimer, 0, 0);
 	setitimer(ITIMER_REAL, &itimer, NULL); 
 }
 
@@ -668,6 +682,8 @@ static void xmit_fastpath_or_die(struct ctx *ctx, int cpu, unsigned long orig_nu
 
 	bug_on(gettimeofday(&end, NULL));
 	timersub(&end, &start, &diff);
+
+	timer_purge();
 
 	destroy_tx_ring(sock, &tx_ring);
 

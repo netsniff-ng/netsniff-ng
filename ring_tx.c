@@ -40,7 +40,7 @@ void destroy_tx_ring(int sock, struct ring *ring)
 	ret = setsockopt(sock, SOL_PACKET, PACKET_TX_RING, &ring->layout,
 			 sizeof(ring->layout));
 	if (unlikely(ret))
-		panic("Cannot destroy the TX_RING!\n");
+		panic("Cannot destroy the TX_RING: %s!\n", strerror(errno));
 
 	xfree(ring->frames);
 }
