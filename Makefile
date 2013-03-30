@@ -130,6 +130,8 @@ GIT_ARCHIVE = git archive --prefix=netsniff-ng-$(VERSION_STRING)/ $(VERSION_STRI
 GIT_TAG = git tag -a $(VERSION_STRING) -s -m "tools: $(VERSION_STRING) release"
 GIT_LOG = git shortlog -n --not $(shell git describe --abbrev=0 --tags)
 GIT_REM = git ls-files -o | xargs rm -rf
+GIT_PEOPLE = git log --no-merges $(VERSION_STRING)..HEAD | grep Author: | cut -d: -f2 | \
+	     cut -d\< -f1 | sort | uniq -c | sort -nr
 
 export VERSION PATCHLEVEL SUBLEVEL EXTRAVERSION
 export CROSS_COMPILE
@@ -278,6 +280,8 @@ announcement:
 	$(Q)echo -e "   git tag -v $(VERSION_STRING)\n" >> .MAIL_MSG
 	$(Q)echo -e "Major high-level changes since the last release are:\n" >> .MAIL_MSG
 	$(Q)echo -e "   *** BLURB HERE ***\n" >> .MAIL_MSG
+	$(Q)echo -e "Contributors since last release:\n" >> .MAIL_MSG
+	$(GIT_PEOPLE) >> .MAIL_MSG
 	$(Q)echo -e "Git changelog since the last release:\n" >> .MAIL_MSG
 	$(GIT_LOG) >> .MAIL_MSG
 
