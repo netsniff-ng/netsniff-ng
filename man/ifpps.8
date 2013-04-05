@@ -1,0 +1,99 @@
+.\" netsniff-ng - the packet sniffing beast
+.\" Copyright 2013 Daniel Borkmann.
+.\" Subject to the GPL, version 2.
+
+.TH IFPPS 8 "03 March 2013" "Linux" "netsniff-ng toolkit"
+.SH NAME
+ifpps \- top-like networking and system statistics
+
+.SH SYNOPSIS
+
+\fB ifpps\fR { [\fIoptions\fR] | [\fIdevice\fR] }
+
+.SH DESCRIPTION
+
+ifpps is a small utility which periodically provides top-like networking
+and system statistics from the kernel. ifpps gathers its data directly
+from procfs files and does not apply any user space monitoring libraries
+which would falsify statistics on high load.
+
+For instance, consider the following scenario: two directly connected
+Linux machines with Intel Core 2 Quad Q6600 2.40GHz CPUs, 4 GB RAM, and
+an Intel 82566DC-2 Gigabit Ethernet NIC are used for performance evaluation.
+One machine generates 64 byte network packets by using the kernel space
+packet generator pktgen with a maximum possible packet rate. The other
+machine displays statistics about incoming network packets by using i)
+iptraf(8) and ii) ifpps.
+
+iptraf that incorporates pcap(3) shows an average packet rate of
+246,000 pps while on the other hand ifpps shows an average packet rate of
+1,378,000 pps. Hence, due to copying packets and deferring statistics
+creation into user space, measurement error of approx. 460 per cent
+occurs. Tools like iptraf might display much more information such as
+TCP per flow statistics (therefore the use of the pcap library), which
+is not implemented in ifpps, because overall networking statistics are
+in our focus; statistics, which are also fairly reliable under high packet
+load.
+
+.SH OPTIONS
+
+.SS -d <netdev>, --dev <netdev>
+Networking device to fetch statistics from, e.g. eth0, wlan0.
+
+.SS -t <time>, --interval <time>
+Statistics refresh interval in milliseconds, default is 1000 ms.
+
+.SS -p, --promisc
+Turn on promiscuous mode for the given networking device.
+
+.SS -c, --csv
+Output (once) the ncurses data to the terminal as gnuplot(1)-ready data.
+
+.SS -l, --loop
+Continuously output the terminal data after a refresh interval. This option
+only is available, if option ``-c'' is given. For ``-l'' it is usually
+recommended to redirect the output into a file that is later being processed
+with gnuplot(1).
+
+.SS -v, --version
+Show versioning information.
+
+.SS -h, --help
+Show user help.
+
+.SH USAGE EXAMPLE
+
+.SS ifpps eth0
+Default ncurses output for the eth0 device.
+
+.SS ifpps -pd eth0
+Ncurses output for the eth0 device in promiscuous mode.
+
+.SS ifpps -lpcd wlan0 > plot.dat
+Continuous terminal output for the wlan0 device in promiscuous mode.
+
+.SH NOTE
+On 10Gbit/s cards or higher, receive and transmit statistics are usually
+accumulated each > 1sec. Thus, it might be advised to alter the timing
+option to a higher accumulation interval for such cards.
+
+.SH LEGAL
+ifpps is licensed under the GNU GPL version 2.0.
+
+.SH HISTORY
+.B ifpps
+was originally written for the netsniff-ng toolkit by Daniel Borkmann. It
+is currently maintained by Tobias Klauser <tklauser@distanz.ch> and Daniel
+Borkmann <dborkma@tik.ee.ethz.ch>.
+
+.SH SEE ALSO
+.BR netsniff-ng (8),
+.BR trafgen (8),
+.BR mausezahn (8),
+.BR bpfc (8),
+.BR flowtop (8),
+.BR astraceroute (8),
+.BR curvetun (8)
+
+.SH AUTHOR
+Manpage was written by Daniel Borkmann.
