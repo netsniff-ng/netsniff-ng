@@ -347,8 +347,6 @@ static void receive_to_xmit(struct ctx *ctx)
 		panic("Ingress/egress devices must be different!\n");
 	if (!device_up_and_running(ctx->device_out))
 		panic("Egress device not up and running!\n");
-	if (!device_up_and_running(ctx->device_in))
-		panic("Ingress device not up and running!\n");
 
 	rx_sock = pf_socket();
 	tx_sock = pf_socket();
@@ -819,9 +817,6 @@ static void recv_only_or_dump(struct ctx *ctx)
 	struct sock_fprog bpf_ops;
 	struct timeval start, end, diff;
 	pcap_pkthdr_t phdr;
-
-	if (!device_up_and_running(ctx->device_in) && !ctx->rfraw)
-		panic("Device not up and running!\n");
 
 	sock = pf_socket();
 
