@@ -1,0 +1,121 @@
+.\" netsniff-ng - the packet sniffing beast
+.\" Copyright 2013 Daniel Borkmann.
+.\" Subject to the GPL, version 2.
+
+.TH BPFC 8 "03 March 2013" "Linux" "netsniff-ng toolkit"
+.SH NAME
+bpfc \- a Berkeley Packet Filter assembler/compiler
+
+.SH SYNOPSIS
+
+\fB bpfc\fR { [\fIoptions\fR] | [\fIsource-file\fR] }
+
+.SH DESCRIPTION
+
+bpfc is a small Berkeley Packet Filter assembler/compiler which is able to
+translate BPF assembler-like mnemonics into a numerical or C-like format,
+that can be read by tools such as netsniff-ng, iptables (xt_bpf) and many
+others. BPF is the one and only upstream filtering construct that is used
+in combination with packet(7) sockets. The Linux kernel and also BSD kernels
+implement ``virtual machine'' like constructs and JIT compilers that mimic
+a small register-based machine in BPF architecture and execute filter code
+that is e.g. composed by bpfc on a data buffer that is given by network
+packets. The purpose of this is to shift computation in time, so that the
+kernel can drop (or truncate) incoming packets as early as possible without
+having to push them to user space for further analysis first. Meanwhile,
+BPF constructs also find application in other areas like the communication
+between user and kernel space.
+
+By the time of writing this man page, the only available BPF compiler is
+part of the pcap(3) library and accessible through a high-level filter
+language that might be familiar for many people as tcpdump-like filters.
+
+However, quite often, it is useful to bypass that compiler and write
+optimized code that couldn't be produced by the pcap(3) compiler, was
+wrongly optimized, or is defective on purpose in order to debug test kernel
+code. Also, a reason to use bpfc could be to try out some new BPF extensions
+that are not supported by other compilers. Furthermore, bpfc can be of good
+use to verify JIT compiler behaviour or to find possible bugs that need
+to be fixed.
+
+bpfc is implemented with the help of flex(1) and bison(1), tokenizes the
+source file in a first stage and parses it's content into an AST. In two
+code generation stages it emits target opcodes. bpfc furthermore supports
+Linux kernel BPF extensions. More about that can be found in the syntax
+section.
+
+The Linux kernel BPF JIT compiler is automatically turned on if detected
+by netsniff-ng. However, it can also be manually turned on through the
+command ``echo "1" > /proc/sys/net/core/bpf_jit_enable'' (normal working
+mode) or ``echo "2" > /proc/sys/net/core/bpf_jit_enable'' (debug mode
+where emitted opcodes of the image are printed to the kernel log). An
+architecture generic BPF JIT image disassembler can be found in the kernel
+source tree under: tools/net/bpf_jit_disasm.c
+
+.SH OPTIONS
+
+.SS -i <source-file/->, --input <source-file/->
+Read BPF assembly instruction from an input file or from stdin.
+
+.SS -f <format>, --format <format>
+Specify a different output format than the default that is netsniff-ng
+compatible. The <format> specifier can be: C, netsniff-ng, xt_bpf, tcpdump.
+
+.SS -b, --bypass
+Bypass basic filter validation when emitting opcodes. This can be useful
+for explicitly creating malformed BPF expressions that should be injected
+into the kernel, e.g. for bug testing.
+
+.SS -V, --verbose
+Be more verbose and display some bpfc debugging information.
+
+.SS -v, --version
+Show versioning information.
+
+.SS -h, --help
+Show user help.
+
+.SH SYNTAX
+
+.SH SOURCE EXAMPLES
+
+.SH USAGE EXAMPLE
+
+.SS bpfc fubar
+Compile the source file ``fubar'' into BPF opcodes. Opcodes will be
+directed to stdout.
+
+.SS bpfc -f xt_bpf -b -i fubar, resp. iptables -A INPUT -m bpf --bytecode "`bpfc -f xt_bpf -i fubar`" -j LOG
+Compile the source file ``fubar'' into BPF opcodes, bypass basic filter
+validation and emit opcodes in netfilter's xt_bpf readable format.
+
+.SS bpfc -
+Read bpfc instruction from stdin and emit opcodes to stdout.
+
+.SS bpfc foo > bar, resp. netsniff-ng -f bar ...
+Compile filter instructions from file foo and redirect bpfc's output into
+the file bar, that can then be read by netsniff-ng(8) through option -f.
+
+.SS bpfc -f tcpdump -i fubar
+Output opcodes from source file fubar in the same behaviour as ``tcpdump -ddd''.
+
+.SH LEGAL
+bpfc is licensed under the GNU GPL version 2.0.
+
+.SH HISTORY
+.B bpfc
+was originally written for the netsniff-ng toolkit by Daniel Borkmann. It
+is currently maintained by Tobias Klauser <tklauser@distanz.ch> and Daniel
+Borkmann <dborkma@tik.ee.ethz.ch>.
+
+.SH SEE ALSO
+.BR netsniff-ng (8),
+.BR trafgen (8),
+.BR mausezahn (8),
+.BR ifpps (8),
+.BR flowtop (8),
+.BR astraceroute (8),
+.BR curvetun (8)
+
+.SH AUTHOR
+Manpage was written by Daniel Borkmann.
