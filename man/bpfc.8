@@ -69,6 +69,9 @@ into the kernel, e.g. for bug testing.
 .SS -V, --verbose
 Be more verbose and display some bpfc debugging information.
 
+.SS -d, --dump
+Dump all supported instructions to stdout.
+
 .SS -v, --version
 Show versioning information.
 
@@ -77,7 +80,203 @@ Show user help.
 
 .SH SYNTAX
 
+The BPF architecture resp. register machine consists of the following
+elements:
+
+    Element          Description
+
+    A                32 bit wide accumulator
+    X                32 bit wide X register
+    M[]              16 x 32 bit wide misc registers aka ``scratch
+memory store'', addressable from 0 to 15
+
+A program, that is translated by bpfc into ``opcodes'' is an array that
+consists of the following elements:
+
+    o:16, jt:8, jf:8, k:32
+
+The element o is a 16 bit wide opcode that has a particular instruction
+encoded, jt and jf are two 8 bit wide jump targets, one for condition
+``true'', one for condition ``false''. Last but not least the 32 bit wide
+element k contains a miscellaneous argument that can be interpreted in
+different ways depending on the given instruction resp. opcode.
+
+The instruction set consists of load, store, branch, alu, miscellaneous
+and return instructions that are also represented in bpfc syntax. This
+table also includes own bpfc extensions. All operations are based on
+unsigned data structures:
+
+   Instruction      Addressing mode      Description
+
+   ld               1, 2, 3, 4, 10       Load word into A
+   ldi              4                    Load word into A
+   ldh              1, 2                 Load half-word into A
+   ldb              1, 2                 Load byte into A
+   ldx              3, 4, 5, 10          Load word into X
+   ldxi             4                    Load word into X
+   ldxb             5                    Load byte into X
+
+   st               3                    Copy A into M[]
+   stx              3                    Copy X into M[]
+
+   jmp              6                    Jump to label
+   ja               6                    Jump to label
+   jeq              7, 8                 Jump on k == A
+   jneq             8                    Jump on k != A
+   jne              8                    Jump on k != A
+   jlt              8                    Jump on k < A
+   jle              8                    Jump on k <= A
+   jgt              7, 8                 Jump on k > A
+   jge              7, 8                 Jump on k >= A
+   jset             7, 8                 Jump on k & A
+
+   add              0, 4                 A + <x>
+   sub              0, 4                 A - <x>
+   mul              0, 4                 A * <x>
+   div              0, 4                 A / <x>
+   mod              0, 4                 A % <x>
+   neg              0, 4                 !A
+   and              0, 4                 A & <x>
+   or               0, 4                 A | <x>
+   xor              0, 4                 A ^ <x>
+   lsh              0, 4                 A << <x>
+   rsh              0, 4                 A >> <x>
+
+   tax                                   Copy A into X
+   txa                                   Copy X into A
+
+   ret              4, 9                 Return
+
+   Addressing mode  Syntax               Description
+
+    0               x                    Register X
+    1               [k]                  BHW at byte offset k in the packet
+    2               [x + k]              BHW at the offset X + k in the packet
+    3               M[k]                 Word at offset k in M[]
+    4               #k                   Literal value stored in k
+    5               4*([k]&0xf)          Lower nibble * 4 at byte offset k in the packet
+    6               L                    Jump label L
+    7               #k,Lt,Lf             Jump to Lt if true, otherwise jump to Lf
+    8               #k,Lt                Jump to Lt if predicate is true
+    9               a                    Accumulator A
+   10               extension            BPF extension (see next table)
+
+   Extension (and alias)                 Description
+
+   #len, len, #pktlen, pktlen            Length of packet (skb->len)
+   #pto, pto, #proto, proto              Ethernet type field (skb->protocol)
+   #type, type                           Packet type (**) (skb->pkt_type)
+   #poff, poff                           Detected payload start offset
+   #ifx, ifx, #ifidx, ifidx              Interface index (skb->dev->ifindex)
+   #nla, nla                             Netlink attribute of type X with offset A
+   #nlan, nlan                           Nested Netlink attribute of type X with offset A
+   #mark, mark                           Packet mark (skb->mark)
+   #que, que, #queue, queue, #Q, Q       NIC queue index (skb->queue_mapping)
+   #hat, hat, #hatype, hatype            NIC hardware type (**) (skb->dev->type)
+   #rxh, rxh, #rxhash, rxhash            Receive hash (skb->rxhash)
+   #cpu, cpu                             Current CPU (raw_smp_processor_id())
+   #vlant, vlant, #vlan_tci, vlan_tci    VLAN TCI value (vlan_tx_tag_get(skb))
+   #vlanp, vlanp                         VLAN present (vlan_tx_tag_present(skb))
+
+   Further extension details (**)        Value
+
+   #type, type                           0 - to us / host
+                                         1 - to all / broadcast
+                                         2 - to group / multicast
+                                         3 - to others (promiscuous mode)
+                                         4 - outgoing of any type
+
+   #hat, hat, #hatype, hatype            1 - Ethernet 10Mbps
+                                         8 - APPLEtalk
+                                        19 - ATM
+                                        24 - IEEE 1394 IPv4 - RFC 2734
+                                        32 - InfiniBand
+                                       768 - IPIP tunnel
+                                       769 - IP6IP6 tunnel
+                                       772 - Loopback device
+                                       778 - GRE over IP
+                                       783 - Linux-IrDA
+                                       801 - IEEE 802.11
+                                       802 - IEEE 802.11 + Prism2 header
+                                       803 - IEEE 802.11 + radiotap header
+                                       823 - GRE over IP6
+                                       [...] See include/uapi/linux/if_arp.h
+
+Note that the majority of BPF extensions are available on Linux only.
+
+There are two types of comments in bpfc source-files:
+
+  1. Multi-line C-style comments:        /* put comment here */
+  2. Single-line ASM-style comments:     ;  put comment here
+
+Used Abbreviations:
+
+  BHW: byte, half-word, or word
+
 .SH SOURCE EXAMPLES
+
+In this section, we give a couple of examples for bpfc source-files, in other
+words, some small example filter programs:
+
+.SS Only return packet headers (truncate packets):
+
+  ld poff
+  ret a
+
+.SS Only allow ARP packets:
+
+  ldh [12]
+  jne #0x806, drop
+  ret #-1
+  drop: ret #0
+
+.SS Only allow IPv4 TCP packets:
+
+  ldh [12]
+  jne #0x800, drop
+  ldb [23]
+  jneq #6, drop
+  ret #-1
+  drop: ret #0
+
+.SS Only allow IPv4 TCP, SSH traffic:
+
+  ldh [12]
+  jne #0x800, drop
+  ldb [23]
+  jneq #6, drop
+  ldh [20]
+  jset #0x1fff, drop
+  ldxb 4 * ([14] & 0xf)
+  ldh [x + 14]
+  jeq #0x16, pass
+  ldh [x + 16]
+  jne #0x16, drop
+  pass: ret #-1
+  drop: ret #0
+
+.SS Allow any (hardware accelerated) VLAN:
+
+  ld vlanp
+  jeq #0, drop
+  ret #-1
+  drop: ret #0
+
+.SS Only allow traffic for (hardware accelerated) VLAN 10:
+
+  ld vlant
+  jneq #10, drop
+  ret #-1
+  drop: ret #0
+
+.SS More pedantic check for the above VLAN example:
+
+  ld vlanp
+  jeq #0, drop
+  ld vlant
+  jneq #10, drop
+  ret #-1
+  drop: ret #0
 
 .SH USAGE EXAMPLE
 
