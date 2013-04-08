@@ -27,6 +27,11 @@ Show user help.
 
 .SH USAGE EXAMPLE
 
+.SS netsniff-ng
+The most simple command is to just run ``netsniff-ng''. This will start
+listening on all available networking devices in promiscuous mode and dump
+the packet dissector output to the terminal. No files will be recorded.
+
 .SS  netsniff-ng --in eth0 --out dump.pcap -s -T 0xa1e2cb12 -b 0 tcp or udp
 Capture TCP or UDP traffic from the networking device eth0 into the pcap file
 named dump.pcap, which has netsniff-ng specific pcap extensions (see
@@ -47,10 +52,6 @@ content to the terminal and pin the process and NIC IRQ affinity to CPU 0.
 Also trigger the kernel every 1000us to traverse the TX_RING instead of every
 10us. Note that the pcap magic type is detected automatically from the pcap
 file header.
-
-.SS  netsniff-ng --in dump.pcap --out dump.cfg --silent
-Convert the pcap file dump.pcap into a trafgen(8) configuration file dump.cfg.
-Do not print pcap contents to the terminal.
 
 .SS  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0 --type host -r
 Redirect network traffic from the networking device eth0 to eth1 for traffic
@@ -73,14 +74,86 @@ latency). Also, after setting up the RX_RING for capture, drop priviledges
 from root to the user/group ``bob''. Invoke the packet dissector and print
 packet contents to the terminal for further analysis.
 
-.SS  netsniff-ng --in any --filter http.bpf --jumbo-support --ascii -V
+.SS  netsniff-ng --in any --filter http.bpf -B --jumbo-support --ascii -V
 Capture from all available networking interfaces and install a low-level
 filter that was previously compiled by bpfc(8) into http.bpf in order to
 filter HTTP traffic. Enable super jumbo frame support and only print
 human readable packet data to the terminal, be also more verbose during
-setup phase.
+setup phase. Moreover, dump BPF disassembly from http.bpf.
 
-.SS bla
+.SS  netsniff-ng --in dump.pcap --out dump.cfg --silent
+Convert the pcap file dump.pcap into a trafgen(8) configuration file dump.cfg.
+Do not print pcap contents to the terminal.
+
+.SS netsniff-ng -i dump.pcap -f beacon.bpf -o -
+Convert the pcap file dump.pcap into a trafgen(8) configuration file to
+stdout. However, do not dump all of its content, but only the one that
+passes the low-level filter for raw 802.11 from beacon.bpf. The BPF engine
+here is invoked in user space inside of netsniff-ng, so Linux extensions
+are not available.
+
+.SS cat foo.pcap | netsniff-ng -i - -o -
+Read a pcap file from stdin and convert it into a trafgen(8) configuration
+file to stdout.
+
+.SH FILTER EXAMPLE
+
+netsniff-ng supports both, low-level and high-level filters that are
+attached to its packet(7) socket. Low-level filters are described in
+the bpfc(8) man page.
+
+Low-level filters can be used with netsniff-ng in the following way:
+
+    1. bpfc foo > bar
+    2. netsniff-ng -f bar
+
+Here, foo is the bpfc program that will be translated into a netsniff-ng
+readable ``opcodes'' file and passed to netsniff-ng through the -f option.
+
+Similarly, high-level filter can be either passed through the -f option,
+e.g. -f "tcp or udp" or at the end of all options without the ``-f''.
+
+The filter syntax is the same as in tcpdump(8), which is described in
+the man page pcap-filter(7). Just to quote some examples from pcap-filter(7):
+
+.SS host sundown
+To select all packets arriving at or departing from sundown.
+
+.SS host helios and \( hot or ace \)
+To select traffic between helios and either hot or ace.
+
+.SS ip host ace and not helios
+To select all IP packets between ace and any host except helios.
+
+.SS net ucb-ether
+To select all traffic between local hosts and hosts at Berkeley.
+
+.SS gateway snup and (port ftp or ftp-data)
+To select all ftp traffic through internet gateway snup.
+
+.SS ip and not net localnet
+To select traffic neither sourced from nor destined for local hosts (if you
+gateway to one other net, this stuff should never make it onto your local net).
+
+.SS tcp[tcpflags] & (tcp-syn|tcp-fin) != 0 and not src and dst net localnet
+To select the start and end packets (the SYN and FIN packets) of each TCP
+conversation that involve a non-local host.
+
+.SS tcp port 80 and (((ip[2:2] - ((ip[0]&0xf)<<2)) - ((tcp[12]&0xf0)>>2)) != 0)
+To select all IPv4 HTTP packets to and from port 80, i.e. print only packets
+that contain data, not, for example, SYN and FIN packets and ACK-only packets.
+(IPv6 is left as an exercise for the reader.)
+
+.SS gateway snup and ip[2:2] > 576
+To select IP packets longer than 576 bytes sent through gateway snup.
+
+.SS ether[0] & 1 = 0 and ip[16] >= 224
+To select IP broadcast or multicast packets that were not sent via Ethernet
+broadcast or multicast.
+
+.SS icmp[icmptype] != icmp-echo and icmp[icmptype] != icmp-echoreply
+To select all ICMP packets that are not echo requests/replies (i.e., not
+ping packets).
 
 .SH NOTE
 For introducing bit errors, delays with random variation and more
