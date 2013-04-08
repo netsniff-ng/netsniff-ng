@@ -12,12 +12,90 @@ netsniff-ng \- the packet sniffing beast
 
 .SH DESCRIPTION
 
-Blubber.
+netsniff-ng is a fast, minimal tool to i) analyze network packets, ii) capture
+pcap files, iii) replay pcap files or iv) redirect traffic between interfaces
+with the help of zero-copy packet(7) sockets. netsniff-ng uses both, Linux
+specific RX_RING and TX_RING interfaces to perform zero-copy, that is, to avoid
+copies and system call overhead between kernel and user address space. At the
+time, we started hacking on netsniff-ng, the pcap(3) library did not use this
+zero-copy facility.
+
+netsniff-ng is Linux specific only, meaning there is no support for other
+operating systems, thus we can keep the code footprint quite minimal and to
+the point. Linux' packet(7) sockets and its RX_RING and TX_RING interfaces
+bypass the normal packet processing path through the networking stack. Thus,
+this is the fastest one can get out of the box in terms of capturing or
+transmission performance from user space, without having to load unsupported
+or non-mainline third-party kernel modules. We explicitly refuse to build
+netsniff-ng on top of ntop/PF_RING. Not because we do not like it (we do find
+it interesting), but because of the fact that it is not part of the mainline
+kernel. Therefore, the ntop project has to maintain/sync out-of-tree drivers
+to adapt them to their DNA. Eventually, we went for untainted Linux kernel,
+since its code has a higher rate of reviews, maintenance, security and bug
+fixes.
+
+netsniff-ng also supports early packet filtering in the kernel. It has support
+for low-level and high-level packet filters that are translated into Berkeley
+Packet Filter instructions.
+
+netsniff-ng can capture pcap files in several different pcap formats that
+are interoperable with other tools. It has different pcap I/O methods supported
+(scatter-gather, mmap(2), read(2)/write(2)) for efficient to-disc capturing.
+netsniff-ng is also able to rotate pcap files based on data size or time
+intervals, thus, making it a useful backend tool for subsequent traffic
+analysis.
+
+netsniff-ng itself also supports analysis, dumping or replay of raw 802.11
+frames. For online or offline analysis netsniff-ng has a built-in packet
+dissector for currently 802.3 (Ethernet), 802.11* (WLAN), ARP, MPLS, 802.1Q
+(VLAN), 802.1QinQ, LLDP, IPv4, IPv6, ICMPv4, ICMPv6, IGMP, TCP and UDP,
+including GeoIP location analysis. Since netsniff-ng does not establish any
+state or reassembly during packet dissection, its memory footprint is quite
+low, thus, making netsniff-ng quite efficient for offline analysis of large
+pcap files as well.
 
 .SH OPTIONS
 
-.SS -d <netdev>, --dev <netdev>
-Networking device to fetch statistics from, e.g. eth0, wlan0.
+.\"  -i|-d|--dev|--in <dev|pcap|->  Input source as netdev, pcap or pcap stdin
+.\"  -o|--out <dev|pcap|dir|cfg|->  Output sink as netdev, pcap, directory, trafgen, or stdout
+.\"  -f|--filter <bpf-file|expr>    Use BPF filter file from bpfc or tcpdump-like expression
+.\"  -t|--type <type>               Filter for: host|broadcast|multicast|others|outgoing
+.\"  -F|--interval <size|time>      Dump interval if -o is a dir: <num>KiB/MiB/GiB/s/sec/min/hrs
+.\"  -J|--jumbo-support             Support for 64KB Super Jumbo Frames (def: 2048B)
+.\"  -R|--rfraw                     Capture or inject raw 802.11 frames
+.\"  -n|--num <0|uint>              Number of packets until exit (def: 0)
+.\"  -P|--prefix <name>             Prefix for pcaps stored in directory
+.\"  -T|--magic <pcap-magic>        Pcap magic number/pcap format to store, see -D
+.\"  -D|--dump-pcap-types           Dump pcap types and magic numbers and quit
+.\"  -B|--dump-bpf                  Dump generated BPF assembly
+.\"  -r|--rand                      Randomize packet forwarding order (dev->dev)
+.\"  -M|--no-promisc                No promiscuous mode for netdev
+.\"  -A|--no-sock-mem               Don't tune core socket memory
+.\"  -m|--mmap                      Mmap(2) pcap file i.e., for replaying pcaps
+.\"  -G|--sg                        Scatter/gather pcap file I/O
+.\"  -c|--clrw                      Use slower read(2)/write(2) I/O
+.\"  -S|--ring-size <size>          Specify ring size to: <num>KiB/MiB/GiB
+.\"  -k|--kernel-pull <uint>        Kernel pull from user interval in us (def: 10us)
+.\"  -b|--bind-cpu <cpu>            Bind to specific CPU
+.\"  -u|--user <userid>             Drop privileges and change to userid
+.\"  -g|--group <groupid>           Drop privileges and change to groupid
+.\"  -H|--prio-high                 Make this high priority process
+.\"  -Q|--notouch-irq               Do not touch IRQ CPU affinity of NIC
+.\"  -s|--silent                    Do not print captured packets
+.\"  -q|--less                      Print less-verbose packet information
+.\"  -X|--hex                       Print packet data in hex format
+.\"  -l|--ascii                     Print human-readable packet data
+
+.SS -U, --update
+If geographical IP locationing should be used, the built-in database update
+mechanism will be invoked to get Maxmind's latest database. To configure
+search locations for databases, the file /etc/netsniff-ng/geoip.conf contains
+possible addresses. Thus, to save bandwidth or for mirroring Maxmind's
+databases (to bypass their traffic limit policy), different hosts or IP
+addresses can be placed into geoip.conf, separated by a newline.
+
+.SS -V, --verbose
+Be more verbose during startup, i.e. show detailled ring setup information.
 
 .SS -v, --version
 Show versioning information.
@@ -197,6 +275,9 @@ tools, at least tcpdump or Wireshark:
     0xa1b2c3d4 (tcpdump-capable pcap)
     0xa1b23c4d (tcpdump-capable pcap with ns resolution)
     0xa1b2cd34 (Alexey Kuznetzov's pcap)
+
+Pcap files with different meta data endianess are supported by netsniff-ng
+as well.
 
 .SH BUGS
 
