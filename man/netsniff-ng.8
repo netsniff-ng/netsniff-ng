@@ -56,35 +56,146 @@ pcap files as well.
 
 .SH OPTIONS
 
-.\"  -i|-d|--dev|--in <dev|pcap|->  Input source as netdev, pcap or pcap stdin
-.\"  -o|--out <dev|pcap|dir|cfg|->  Output sink as netdev, pcap, directory, trafgen, or stdout
-.\"  -f|--filter <bpf-file|expr>    Use BPF filter file from bpfc or tcpdump-like expression
-.\"  -t|--type <type>               Filter for: host|broadcast|multicast|others|outgoing
-.\"  -F|--interval <size|time>      Dump interval if -o is a dir: <num>KiB/MiB/GiB/s/sec/min/hrs
-.\"  -J|--jumbo-support             Support for 64KB Super Jumbo Frames (def: 2048B)
-.\"  -R|--rfraw                     Capture or inject raw 802.11 frames
-.\"  -n|--num <0|uint>              Number of packets until exit (def: 0)
-.\"  -P|--prefix <name>             Prefix for pcaps stored in directory
-.\"  -T|--magic <pcap-magic>        Pcap magic number/pcap format to store, see -D
-.\"  -D|--dump-pcap-types           Dump pcap types and magic numbers and quit
-.\"  -B|--dump-bpf                  Dump generated BPF assembly
-.\"  -r|--rand                      Randomize packet forwarding order (dev->dev)
-.\"  -M|--no-promisc                No promiscuous mode for netdev
-.\"  -A|--no-sock-mem               Don't tune core socket memory
-.\"  -m|--mmap                      Mmap(2) pcap file i.e., for replaying pcaps
-.\"  -G|--sg                        Scatter/gather pcap file I/O
-.\"  -c|--clrw                      Use slower read(2)/write(2) I/O
-.\"  -S|--ring-size <size>          Specify ring size to: <num>KiB/MiB/GiB
-.\"  -k|--kernel-pull <uint>        Kernel pull from user interval in us (def: 10us)
-.\"  -b|--bind-cpu <cpu>            Bind to specific CPU
-.\"  -u|--user <userid>             Drop privileges and change to userid
-.\"  -g|--group <groupid>           Drop privileges and change to groupid
-.\"  -H|--prio-high                 Make this high priority process
-.\"  -Q|--notouch-irq               Do not touch IRQ CPU affinity of NIC
-.\"  -s|--silent                    Do not print captured packets
-.\"  -q|--less                      Print less-verbose packet information
-.\"  -X|--hex                       Print packet data in hex format
-.\"  -l|--ascii                     Print human-readable packet data
+.SS -i <dev|pcap|->, -d <dev|pcap|->, --in <dev|pcap|->, --dev <dev|pcap|->
+Defines an input device, that can either be a networking device, a pcap file
+or stdin (``-''). In case of a pcap file, the pcap type (``-D'' option) is
+determined automatically by the pcap file magic. In case of stdin, it is
+assumed that the input stream is a pcap file.
+
+.SS -o <dev|pcap|dir|cfg|->, --out <dev|pcap|dir|cfg|->
+Defines the output device, that can either be a networking device, a pcap file,
+a folder, a trafgen(8) configuration file or stdout (``-''). In case of a pcap
+file, that should not have the default pcap type (0xa1b2c3d4), the additional
+option ``-T'' must be provided. If a directory is given, then, instead of a
+single pcap file, multiple pcap files are generated with rotation based on
+maximum file size or a given interval (``-F'' option). A trafgen configuration
+file can currently only be specified if the input device is a pcap file. If
+stdout is given as a device, then a trafgen configuration will be written to
+stdout if the input device is a pcap file, or a pcap file if the input device
+is a networking device.
+
+.SS -f, --filter <bpf-file|expr>
+Specifies to not dump all traffic, but to filter the network packet haystack.
+As a filter, either a bpfc(8) compiled file can be passed as a parameter or
+a tcpdump(1)-like filter expression in quotes. For details regarding the
+bpf-file have a look at bpfc(8), for details regarding a tcpdump(1)-like filter
+have a look at section ``filter example'' or at pcap-filter(7). A filter
+expression may also be passed to netsniff-ng without option ``-f'' in case
+there is no subsequent option following after the command-line filter expression.
+
+.SS -t, --type <type>
+This defines some sort of filtering mechanisms in terms of addressing. Possible
+values for type are ``host'' (to us), ``broadcast'' (to all), ``multicast'' (to
+group), ``others'' (promiscuous mode) or ``outgoing'' (from us).
+
+.SS -F, --interval <size|time>
+If the output device is a folder, with ``-F'' it is possible to define the pcap
+file rotation interval either in terms of size or time. Thus, when the interval
+limit has been reached, a new pcap file will be started. As size parameter, the
+following values are possible ``<num>KiB/MiB/GiB'' while as a time parameter
+it can be ``<num>s/sec/min/hrs''.
+
+.SS -J, --jumbo-support
+On default netsniff-ng's ring buffer frames are of a fixed size of 2048 bytes.
+This means that if you're expecting jumbo frames or even super jumbo frames to
+pass your line, then you need to enable support for that with the help of this
+option. However, this has the disadvantage of a performance regression and a
+bigger memory footprint for the ring buffer.
+
+.SS -R, --rfraw
+In case the input or output networking device is a wireless device, it is
+possible with netsniff-ng to turn this into monitor mode and create a mon<X>
+device that netsniff-ng will be listening on instead of wlan<X>, for instance.
+This enables netsniff-ng to analyze, dump, or even replay raw 802.11 frames.
+
+.SS -n <0|uint>, --num <0|uint>
+Process a number of packets and then exit. If the number of packets is 0, then
+this is equivalent to infinite packets resp. processing until interrupted.
+Otherwise, a number given as an unsigned integer will limit processing.
+
+.SS -P <name>, --prefix <name>
+When dumping pcap files into a folder, a file name prefix can be defined with
+this option. If not otherwise specified, the default prefix is ``dump-'' followed
+by a unix timestamp.
+
+.SS -T <pcap-magic>, --magic <pcap-magic>
+Specify a pcap type for storage. Different pcap types with their various meta
+data capabilities are shown with option ``-D''. If not otherwise specified, the
+pcap-magic 0xa1b2c3d4, also known as a standard tcpdump-capable pcap format, is
+used. Pcap files with swapped endianess are also supported.
+
+.SS -D, --dump-pcap-types
+Dump all available pcap types with their capabilities and magic numbers that
+can be used with option ``-T'' and exit.
+
+.SS -B, --dump-bpf
+If a Berkeley Packet Filter is given, e.g. via option ``-f'', then dump the BPF
+disassembly to stdout during ring setup. This only serves for informative or
+verification purposes.
+
+.SS -r, --rand
+If the input and output device are both networking devices, then this option will
+randomize packet order in the output ring buffer.
+
+.SS -M, --no-promisc
+The networking interface will not be put into promiscuous mode. On default,
+promiscuous mode is turned on.
+
+.SS -A, --no-sock-mem
+On startup (and shutdown), netsniff-ng is trying to increase socket read and
+write buffers if appropriate. This option will prevent netsniff-ng from doing
+that.
+
+.SS -m, --mmap
+Use mmap(2) as pcap file I/O. This is default in case of replaying pcap files.
+
+.SS -G, --sg
+Use scatter-gather as pcap file I/O. This is default in case when capturing
+pcap files.
+
+.SS -c, --clrw
+Use slower read(2)/write(2) I/O. This is not the default case anywhere, but in
+some situations it could be preferred as it has a lower latency on write-back
+to disc.
+
+.SS -S <size>, --ring-size <size>
+Manually define the RX_RING resp. TX_RING size in ``<num>KiB/MiB/GiB''. On
+default the size is being determined based on the network connectivity rate.
+
+.SS -k <uint>, --kernel-pull <uint>
+Manually define 
+
+.SS -b <cpu>, --bind-cpu <cpu>
+Pin netsniff-ng to a specific CPU and also pin resp. migrate the NIC's IRQ
+CPU affinity to this CPU. This option should be preferred in combination with
+``-s'' in case a middle till high packet rate is expected.
+
+.SS -u <uid>, --user <uid> resp. -g <gid>, --group <gid>
+After ring setup drop priviledges to a non-root user/group combination.
+
+.SS -H, --prio-high
+Set this process as a high priority process in order to achieve a higher
+scheduling rate resp. CPU time. This is however not default setting, since
+it could lead to starvation of other processes, e.g. low priority kernel
+threads.
+
+.SS -Q, --notouch-irq
+Do not reassign the NIC's IRQ CPU affinity settings.
+
+.SS -s, --silent
+Do not enter the packet dissector at all and do not print any packet information
+to the terminal. Just shut up and be silent. This option should be preferred in
+combination with pcap recording or replay, since it will not flood your terminal
+which causes a significant performance regression.
+
+.SS -q, --less
+Print a less verbose one-line information for each packet to the terminal.
+
+.SS -X, --hex
+Only dump packets in hex format to the terminal.
+
+.SS -l, --ascii
+Only display ASCII prinable characters.
 
 .SS -U, --update
 If geographical IP locationing should be used, the built-in database update
@@ -174,6 +285,16 @@ are not available.
 Read a pcap file from stdin and convert it into a trafgen(8) configuration
 file to stdout.
 
+.SH CONFIG FILES
+
+Under /etc/netsniff-ng/ there are the following files stored that are used
+by netsniff-ng and can be extended if wished:
+
+    * oui.conf - OUI/MAC vendor database
+    * ether.conf - Ethernet type descriptions
+    * tcp.conf - TCP port/services map
+    * udp.conf - UDP port/services map
+
 .SH FILTER EXAMPLE
 
 netsniff-ng supports both, low-level and high-level filters that are
@@ -260,6 +381,19 @@ Moreover, to get a deeper understanding of netsniff-ng internals
 and how it interacts with the Linux kernel, the kernel documentation
 under Documentation/networking/{packet_mmap.txt, filter.txt,
 multiqueue.txt} might be of interest.
+
+How do you sniff in a switched environment? I rudely refer to dSniff's
+documentation that says:
+
+The easiest route is simply to impersonate the local gateway, stealing
+client traffic en route to some remote destination. Of course, the traffic
+must be forwarded by your attacking machine, either by enabling kernel IP
+forwarding or with a userland program that acccomplishes the same
+(fragrouter -B1).
+
+Several people have reportedly destroyed connectivity on their LAN to the
+outside world by arpspoof'ing the gateway, and forgetting to enable IP
+forwarding on the attacking machine. Don't do this. You have been warned.
 
 If you do not need to dump all possible traffic, you have to consider
 running netsniff-ng with a BPF filter for the ingress path. For that
