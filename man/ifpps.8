@@ -77,6 +77,12 @@ On 10Gbit/s cards or higher, receive and transmit statistics are usually
 accumulated each > 1sec. Thus, it might be advised to alter the timing
 option to a higher accumulation interval for such cards.
 
+.SH BUGS
+Systems with a failry high number of cores (> 32) are currently not
+supported. This should however not be a big deal to fix that. The only
+challenge would be to display the presented information in a sane way,
+probably by selectively hiding uninteresting statistics.
+
 .SH LEGAL
 ifpps is licensed under the GNU GPL version 2.0.
 
