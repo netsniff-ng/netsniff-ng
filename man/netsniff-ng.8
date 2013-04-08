@@ -1,0 +1,157 @@
+.\" netsniff-ng - the packet sniffing beast
+.\" Copyright 2013 Daniel Borkmann.
+.\" Subject to the GPL, version 2.
+
+.TH NETSNIFF-NG 8 "03 March 2013" "Linux" "netsniff-ng toolkit"
+.SH NAME
+netsniff-ng \- the packet sniffing beast
+
+.SH SYNOPSIS
+
+\fB netsniff-ng\fR { [\fIoptions\fR] [\fIfilter-expression\fR] }
+
+.SH DESCRIPTION
+
+Blubber.
+
+.SH OPTIONS
+
+.SS -d <netdev>, --dev <netdev>
+Networking device to fetch statistics from, e.g. eth0, wlan0.
+
+.SS -v, --version
+Show versioning information.
+
+.SS -h, --help
+Show user help.
+
+.SH USAGE EXAMPLE
+
+.SS  netsniff-ng --in eth0 --out dump.pcap -s -T 0xa1e2cb12 -b 0 tcp or udp
+Capture TCP or UDP traffic from the networking device eth0 into the pcap file
+named dump.pcap, which has netsniff-ng specific pcap extensions (see
+``netsniff-ng -D'' for capabilities). Also, do not print the content to the
+terminal and pin the process and NIC IRQ affinity to CPU 0. The pcap write
+method is scatter-gather I/O.
+
+.SS  netsniff-ng --in wlan0 --rfraw --out dump.pcap --silent --bind-cpu 0
+Put the wlan0 device into monitoring mode and capture all raw 802.11 frames
+into the file dump.pcap. Do not dissect and print the content to the terminal
+and pin the process and NIC IRQ affinity to CPU 0. The pcap write method is
+scatter-gather I/O.
+
+.SS  netsniff-ng --in dump.pcap --mmap --out eth0 -k1000 --silent --bind-cpu 0
+Replay the pcap file dump.pcap which is read through mmap(2) I/O and send
+the packets out via the eth0 networking device. Do not dissect and print the
+content to the terminal and pin the process and NIC IRQ affinity to CPU 0.
+Also trigger the kernel every 1000us to traverse the TX_RING instead of every
+10us. Note that the pcap magic type is detected automatically from the pcap
+file header.
+
+.SS  netsniff-ng --in dump.pcap --out dump.cfg --silent
+Convert the pcap file dump.pcap into a trafgen(8) configuration file dump.cfg.
+Do not print pcap contents to the terminal.
+
+.SS  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0 --type host -r
+Redirect network traffic from the networking device eth0 to eth1 for traffic
+that is destined to our host, thus ignore broadcast, multicast and promiscuous
+traffic. Randomize the order of packets for the outgoing device and do not
+print any packet contents to the terminal. Also, pin the process and NIC IRQ
+affinity to CPU 0.
+
+.SS  netsniff-ng --in team0 --out /opt/probe/ -s -m -J --interval 100MiB -b 0
+Capture on an aggregated team0 networkoing device and dump packets into multiple
+pcap files that are split into 100MiB each. Use mmap(2) I/O as a pcap write
+method, enable support for super jumbo frames up to 64KB, and do not print
+the captured data to the terminal. Pin netsniff-ng to and NIC IRQ affinity to
+CPU 0. The default pcap magic type is 0xa1b2c3d4 (tcpdump-capable pcap).
+
+.SS  netsniff-ng --in vlan0 --out dump.pcap -c -u `id -u bob` -g `id -g bob`
+Capture network traffic on device wlan0 into a pcap file called dump.pcap
+by using normal read(2), write(2) I/O for the pcap file (slower but less
+latency). Also, after setting up the RX_RING for capture, drop priviledges
+from root to the user/group ``bob''. Invoke the packet dissector and print
+packet contents to the terminal for further analysis.
+
+.SS  netsniff-ng --in any --filter http.bpf --jumbo-support --ascii -V
+Capture from all available networking interfaces and install a low-level
+filter that was previously compiled by bpfc(8) into http.bpf in order to
+filter HTTP traffic. Enable super jumbo frame support and only print
+human readable packet data to the terminal, be also more verbose during
+setup phase.
+
+.SS bla
+
+.SH NOTE
+For introducing bit errors, delays with random variation and more
+while replaying pcaps, make use of tc(8) with its disciplines such
+as netem.
+
+netsniff-ng does only some basic, architecture generic tuning on
+startup. If you are considering to do high performance capturing,
+you need to carefully tune your machine, hardware and software-wise.
+Simply letting netsniff-ng run without thinking about your underlying
+system might not necessarily give you the desired performance. Note
+that tuning your system is always a tradeoff and fine-grained
+balancing act (e.g. throughput vs. latency). You should know what
+you're doing!
+
+One recommendation for software-based tuning is tuned(8). Besides
+that, there are many other things to consider. Just to throw you
+a few things that you might want to look at: NAPI networking drivers,
+tickless kernel, I/OAT DMA engine, Direct Cache Access, RAM-based
+file systems, multi-queues, and many more things. Also, you might
+want to read the kernel's Documentation/networking/scaling.txt file
+regarding technologies such as RSS, RPS, RFS, aRFS and XPS. Also
+check your ethtool(8) settings, e.g. regarding offloading.
+
+Moreover, to get a deeper understanding of netsniff-ng internals
+and how it interacts with the Linux kernel, the kernel documentation
+under Documentation/networking/{packet_mmap.txt, filter.txt,
+multiqueue.txt} might be of interest.
+
+If you do not need to dump all possible traffic, you have to consider
+running netsniff-ng with a BPF filter for the ingress path. For that
+purpose, read the bpfc(8) man page.
+
+Also, to aggregate multiple NICs that you want to capture on, you
+should consider using team devices, further explained in libteam resp.
+teamd(8).
+
+The following netsniff-ng pcap magic numbers are compatible with other
+tools, at least tcpdump or Wireshark:
+
+    0xa1b2c3d4 (tcpdump-capable pcap)
+    0xa1b23c4d (tcpdump-capable pcap with ns resolution)
+    0xa1b2cd34 (Alexey Kuznetzov's pcap)
+
+.SH BUGS
+
+When replaying pcap files, the timing information from the pcap packet
+header is currently ignored.
+
+Also, when replaying pcap files, demultiplexing traffic among multiple
+networking interfaces does not work. Currently, it is only sent via the
+interface that is given by the --out parameter.
+
+.SH LEGAL
+netsniff-ng is licensed under the GNU GPL version 2.0.
+
+.SH HISTORY
+.B netsniff-ng
+was originally written for the netsniff-ng toolkit by Daniel Borkmann. Bigger
+contributions were made by Emmanuel Roullit, Markus Amend, Tobias Klauser and
+Christoph Jaeger. It is currently maintained by Tobias Klauser
+<tklauser@distanz.ch> and Daniel Borkmann <dborkma@tik.ee.ethz.ch>.
+
+.SH SEE ALSO
+.BR trafgen (8),
+.BR mausezahn (8),
+.BR ifpps (8),
+.BR bpfc (8),
+.BR flowtop (8),
+.BR astraceroute (8),
+.BR curvetun (8)
+
+.SH AUTHOR
+Manpage was written by Daniel Borkmann.
