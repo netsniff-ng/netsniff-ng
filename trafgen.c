@@ -1012,8 +1012,6 @@ int main(int argc, char **argv)
 		panic("No configuration file given!\n");
 	if (device_mtu(ctx.device) == 0)
 		panic("This is no networking device!\n");
-	if (!ctx.rfraw && device_up_and_running(ctx.device) == 0)
-		panic("Networking device not running!\n");
 
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
