@@ -57,11 +57,9 @@ static ssize_t pcap_rw_read(int fd, pcap_pkthdr_t *phdr, enum pcap_type type,
 	return hdrsize + hdrlen;
 }
 
-static int pcap_rw_prepare_access(int fd, enum pcap_mode mode, bool jumbo)
+static void pcap_rw_init_once(void)
 {
 	set_ioprio_rt();
-
-	return 0;
 }
 
 static void pcap_rw_fsync(int fd)
@@ -70,9 +68,9 @@ static void pcap_rw_fsync(int fd)
 }
 
 const struct pcap_file_ops pcap_rw_ops = {
+	.init_once_pcap = pcap_rw_init_once,
 	.pull_fhdr_pcap = pcap_generic_pull_fhdr,
 	.push_fhdr_pcap = pcap_generic_push_fhdr,
-	.prepare_access_pcap = pcap_rw_prepare_access,
 	.read_pcap = pcap_rw_read,
 	.write_pcap = pcap_rw_write,
 	.fsync_pcap = pcap_rw_fsync,

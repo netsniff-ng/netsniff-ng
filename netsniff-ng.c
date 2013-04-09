@@ -187,6 +187,9 @@ static void pcap_to_xmit(struct ctx *ctx)
 		fd = open_or_die(ctx->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);
 	}
 
+	if (__pcap_io->init_once_pcap)
+		__pcap_io->init_once_pcap();
+
 	ret = __pcap_io->pull_fhdr_pcap(fd, &ctx->magic, &ctx->link_type);
 	if (ret)
 		panic("Error reading pcap header!\n");
@@ -545,6 +548,9 @@ static void read_pcap(struct ctx *ctx)
 		fd = open_or_die(ctx->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);
 	}
 
+	if (__pcap_io->init_once_pcap)
+		__pcap_io->init_once_pcap();
+
 	ret = __pcap_io->pull_fhdr_pcap(fd, &ctx->magic, &ctx->link_type);
 	if (ret)
 		panic("Error reading pcap header!\n");
@@ -865,6 +871,9 @@ static void recv_only_or_dump(struct ctx *ctx)
 
 	if (ctx->promiscuous)
 		ifflags = enter_promiscuous_mode(ctx->device_in);
+
+	if (dump_to_pcap(ctx) && __pcap_io->init_once_pcap)
+		__pcap_io->init_once_pcap();
 
 	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
 

@@ -146,6 +146,11 @@ static void pcap_sg_fsync(int fd)
 	fdatasync(fd);
 }
 
+static void pcap_sg_init_once(void)
+{
+	set_ioprio_rt();
+}
+
 static int pcap_sg_prepare_access(int fd, enum pcap_mode mode, bool jumbo)
 {
 	int i, ret;
@@ -159,8 +164,6 @@ static int pcap_sg_prepare_access(int fd, enum pcap_mode mode, bool jumbo)
 		iov[i].iov_base = xzmalloc_aligned(len, 64);
 		iov[i].iov_len = len;
 	}
-
-	set_ioprio_rt();
 
 	if (mode == PCAP_MODE_RD) {
 		ret = readv(fd, iov, array_size(iov));
@@ -183,6 +186,7 @@ static void pcap_sg_prepare_close(int fd, enum pcap_mode mode)
 }
 
 const struct pcap_file_ops pcap_sg_ops = {
+	.init_once_pcap = pcap_sg_init_once,
 	.pull_fhdr_pcap = pcap_generic_pull_fhdr,
 	.push_fhdr_pcap = pcap_generic_push_fhdr,
 	.prepare_access_pcap =  pcap_sg_prepare_access,

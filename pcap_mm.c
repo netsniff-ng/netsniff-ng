@@ -148,10 +148,13 @@ static void __pcap_mm_prepare_access_rd(int fd)
 	ptr_va_curr = ptr_va_start + sizeof(struct pcap_filehdr);
 }
 
-static int pcap_mm_prepare_access(int fd, enum pcap_mode mode, bool jumbo)
+static void pcap_mm_init_once(void)
 {
 	set_ioprio_be();
+}
 
+static int pcap_mm_prepare_access(int fd, enum pcap_mode mode, bool jumbo)
+{
 	switch (mode) {
 	case PCAP_MODE_RD:
 		__pcap_mm_prepare_access_rd(fd);
@@ -187,6 +190,7 @@ static void pcap_mm_prepare_close(int fd, enum pcap_mode mode)
 }
 
 const struct pcap_file_ops pcap_mm_ops = {
+	.init_once_pcap = pcap_mm_init_once,
 	.pull_fhdr_pcap = pcap_generic_pull_fhdr,
 	.push_fhdr_pcap = pcap_generic_push_fhdr,
 	.prepare_access_pcap = pcap_mm_prepare_access,
