@@ -2,4 +2,3 @@
 
 !.gitignore
 !Makefile
-!build_geoip.sh
