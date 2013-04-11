@@ -244,7 +244,7 @@ file header.
 
 .SS  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0 --type host -r
 Redirect network traffic from the networking device eth0 to eth1 for traffic
-that is destined to our host, thus ignore broadcast, multicast and promiscuous
+that is destined for our host, thus ignore broadcast, multicast and promiscuous
 traffic. Randomize the order of packets for the outgoing device and do not
 print any packet contents to the terminal. Also, pin the process and NIC IRQ
 affinity to CPU 0.
@@ -267,16 +267,16 @@ packet contents to the terminal for further analysis.
 Capture from all available networking interfaces and install a low-level
 filter that was previously compiled by bpfc(8) into http.bpf in order to
 filter HTTP traffic. Enable super jumbo frame support and only print
-human readable packet data to the terminal, be also more verbose during
-setup phase. Moreover, dump BPF disassembly from http.bpf.
+human readable packet data to the terminal, and also be more verbose during
+setup phase. Moreover, dump a BPF disassembly of http.bpf.
 
 .SS  netsniff-ng --in dump.pcap --out dump.cfg --silent
 Convert the pcap file dump.pcap into a trafgen(8) configuration file dump.cfg.
 Do not print pcap contents to the terminal.
 
 .SS netsniff-ng -i dump.pcap -f beacon.bpf -o -
-Convert the pcap file dump.pcap into a trafgen(8) configuration file to
-stdout. However, do not dump all of its content, but only the one that
+Convert the pcap file dump.pcap into a trafgen(8) configuration file and write
+it to stdout. However, do not dump all of its content, but only the one that
 passes the low-level filter for raw 802.11 from beacon.bpf. The BPF engine
 here is invoked in user space inside of netsniff-ng, so Linux extensions
 are not available.
