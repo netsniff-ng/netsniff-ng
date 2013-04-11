@@ -174,8 +174,6 @@ clean_showinfo:
 .IGNORE: %_clean_custom %_install_custom
 .NOTPARALLEL: $(TOOLS)
 
-DOC_FILES = Summary RelatedWork Performance KnownIssues Sponsors SubmittingPatches CodingStyle
-
 NCONF_FILES = ether.conf tcp.conf udp.conf oui.conf geoip.conf
 
 all: build_showinfo toolkit
@@ -184,15 +182,10 @@ allbutmausezahn: $(filter-out mausezahn,$(TOOLS))
 toolkit: $(TOOLS)
 install: install_all
 install_all: $(foreach tool,$(TOOLS),$(tool)_install)
-	$(Q)$(foreach file,$(DOC_FILES),$(call INST,Documentation/$(file),$(DOCDIRE));)
 install_allbutcurvetun: $(foreach tool,$(filter-out curvetun,$(TOOLS)),$(tool)_install)
-	$(Q)$(foreach file,$(DOC_FILES),$(call INST,Documentation/$(file),$(DOCDIRE));)
 install_allbutmausezahn: $(foreach tool,$(filter-out mausezahn,$(TOOLS)),$(tool)_install)
-	$(Q)$(foreach file,$(DOC_FILES),$(call INST,Documentation/$(file),$(DOCDIRE));)
 clean mostlyclean: $(foreach tool,$(TOOLS),$(tool)_clean)
 realclean distclean clobber: $(foreach tool,$(TOOLS),$(tool)_distclean)
-	$(Q)$(foreach file,$(DOC_FILES),$(call RM,$(DOCDIRE)/$(file));)
-	$(Q)$(call RMDIR,$(DOCDIRE))
 	$(Q)$(call RMDIR,$(ETCDIRE))
 mrproper: clean distclean
 	$(Q)$(GIT_REM)
