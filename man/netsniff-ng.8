@@ -250,7 +250,7 @@ print any packet contents to the terminal. Also, pin the process and NIC IRQ
 affinity to CPU 0.
 
 .SS  netsniff-ng --in team0 --out /opt/probe/ -s -m -J --interval 100MiB -b 0
-Capture on an aggregated team0 networkoing device and dump packets into multiple
+Capture on an aggregated team0 networking device and dump packets into multiple
 pcap files that are split into 100MiB each. Use mmap(2) I/O as a pcap write
 method, enable support for super jumbo frames up to 64KB, and do not print
 the captured data to the terminal. Pin netsniff-ng to and NIC IRQ affinity to
