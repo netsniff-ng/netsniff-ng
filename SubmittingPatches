@@ -4,18 +4,23 @@ Checklist for Patches:
 Submitting patches should follow this guideline (derived from the Git project):
 
 If you are familiar with upstream Linux kernel development, then you do not
-need to read this file, it's basically the same process.
+need to read this file, it's basically the same process, send your patches
+via git-send-email(1) to <netsniff-ng@googlegroups.com>. Always make sure they
+meet high quality if you want them to be taken serious.
 
 * Commits:
 
 - make sure to comply with the coding guidelines (see CodingStyle)
+- make sure, you are working on the latest repository version
 - make commits of logical units
 - check for unnecessary whitespace with "git diff --check" before committing
 - do not check in commented out code or unneeded files
+- no binary files are allowed
 - the first line of the commit message should be a short description (50
   characters is the soft limit, see DISCUSSION in git-commit(1)), and should
   skip the full stop
-- the body should provide a meaningful commit message, which:
+  . it should have the first line like: "subject: short title"
+- the body should _always_ provide a meaningful commit message, which:
   . explains the problem the change tries to solve, iow, what is wrong with
     the current code without the change.
   . justifies the way the change solves the problem, iow, why the result with
@@ -30,27 +35,20 @@ need to read this file, it's basically the same process.
 - add a "Signed-off-by: Your Name <you@example.com>" line to the commit message
   (or just use the option "-s" when committing) to confirm that you agree to
   the Developer's Certificate of Origin (see also
-  http://linux.yyz.us/patch-format.html or below); this is mandatory
-- make sure syntax of man-pages is free of errors: podchecker <tool>.c
-
-* For Patches via GitHub:
-
-- fork the netsniff-ng project on GitHub to your local GitHub account
-  (https://github.com/gnumaniacs/netsniff-ng)
-- make your changes to the latest master branch with respect to the commit
-  section above
-- if you change, add, or remove a command line option or make some other user
-  interface change, the associated documentation should be updated as well.
-- open a pull request on (https://github.com/gnumaniacs/netsniff-ng) and send
-  a notification to the list (netsniff-ng@googlegroups.com) and CC one of the
-  maintainers if (and only if) the patch is ready for inclusion.
-- if your name is not writable in ASCII, make sure that you send off a message
-  in the correct encoding.
-- add a short description what the patch or patchset is about
+  http://linux.yyz.us/patch-format.html _or_ further below); this is mandatory
+  otherwise we cannot accept your patches!
+- patches via mail resp. mailing list that have been sent via git-send-email(1)
+  are preferred over patches via Github. However, we also accept stuff via
+  Github, in case you do not know how to setup git-send-email(1).
 
 * For Patches via Mail:
 
-- use "git format-patch -M" to create the patch
+- use git-format-patch(1) to create the patch, just to give you a few examples:
+  . git format-patch HEAD~1
+  `- this will create a git-send-email(1)'able patch of your last commit
+  . git format-patch --cover-letter HEAD~<num>
+  `- this will create a git-send-email(1)'able patchset of your last <num> commits
+     including a cover letter, that should be filled out by yourself; <num> > 1
 - do not PGP sign your patch
 - do not attach your patch, but read in the mail body, unless you cannot teach
   your mailer to leave the formatting of the patch alone.
@@ -64,6 +62,19 @@ need to read this file, it's basically the same process.
 - send the patch to the list (netsniff-ng@googlegroups.com) and CC one of the
   maintainers if (and only if) the patch is ready for inclusion. If you use
   git-send-email(1), please test it first by sending email to yourself.
+- if you first want to have comments on your patch before it should be seriously
+  taken into account, add an RFC into the subject like ``[PATCH RFC] ...''
+
+* For Patches via GitHub:
+
+- fork the netsniff-ng project on GitHub to your local GitHub account
+- create a feature branch from the latest up to date master branch
+  . git checkout -b my-fancy-feature
+- only work in this branch, so that you can keep your master always clean/in sync
+- open a pull request and send a notification to the list
+  (netsniff-ng@googlegroups.com) and CC one of the maintainers if (and only if)
+  the patch is ready for inclusion.
+- add a short description what the patch or patchset is about
 
 * What does the 'Signed-off-by' mean?
 
