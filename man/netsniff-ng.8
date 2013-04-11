@@ -422,6 +422,54 @@ Also, when replaying pcap files, demultiplexing traffic among multiple
 networking interfaces does not work. Currently, it is only sent via the
 interface that is given by the --out parameter.
 
+When performing traffic capture on the Ethernet interface, the pcap file
+is created and packets are received but without a 802.1Q header. When one
+uses tshark, all headers are visible, but netsniff-ng removes 802.1Q
+headers. Is that normal behavior?
+
+Yes and no. The way how VLAN headers are handled in PF_PACKET sockets by the
+kernel is somewhat ``problematic'' [1]. The problem in the Linux kernel is that
+some drivers already handle VLAN, others not. Those who handle it can have
+different implementations, i.e. hardware acceleration and so on. So in some
+cases the VLAN tag is even stripped before entering the protocol stack, in
+some cases probably not. Bottom line is that a "hack" was introduced in
+PF_PACKET so that a VLAN ID is visible in some helper data structure that is
+accessible from the RX_RING.
+
+And then it gets really messy in the user space to artificially put the VLAN
+header back into the right place. Not mentioning about the resulting performance
+implications on that of all libpcap(3) tools since parts of the packet need to
+be copied for reassembly via memmove(3).
+
+A user reported the following, just to demonstrate this mess: some tests were
+made with two machines, and it seems that results depends on the driver ...
+    AR8131:
+      ethtool -k eth0 gives "rx-vlan-offload: on"
+      - wireshark gets the vlan header
+      - netsniff-ng doesn't get the vlan header
+      ethtool -K eth0 rxvlan off
+      - wireshark gets a QinQ header even though noone sent QinQ
+      - netsniff-ng gets the vlan header
+    RTL8111/8168B:
+      ethtool -k eth0 gives "rx-vlan-offload: on"
+      - wireshark gets the vlan header
+      - netsniff-ng doesn't get the vlan header
+      ethtool -K eth0 rxvlan off
+      - wireshark gets the vlan header
+      - netsniff-ng doesn't get the vlan header
+Even if we would agree on doing the same workaround as libpcap, we still will
+not be able to see QinQ, for instance, due to the fact that only one VLAN tag
+is stored in the kernel helper data structure. We think that there should be
+a good consensus on the kernel space side about what gets transferred to the
+userland first.
+
+Update (28.11.2012): the Linux kernel and also bpfc(8) has built-in support
+for hardware accelerated VLAN filtering, even though tags might not be visible
+in the payload itself as reported here. However, the filtering for VLANs works
+reliable if your NIC supports it. See bpfc(8) for an example.
+
+   [1] http://lkml.indiana.edu/hypermail/linux/kernel/0710.3/3816.html
+
 .SH LEGAL
 netsniff-ng is licensed under the GNU GPL version 2.0.
 
