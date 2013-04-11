@@ -171,7 +171,7 @@ CPU affinity to this CPU. This option should be preferred in combination with
 ``-s'' in case a middle till high packet rate is expected.
 
 .SS -u <uid>, --user <uid> resp. -g <gid>, --group <gid>
-After ring setup drop priviledges to a non-root user/group combination.
+After ring setup drop privileges to a non-root user/group combination.
 
 .SS -H, --prio-high
 Set this process as a high priority process in order to achieve a higher
@@ -259,7 +259,7 @@ CPU 0. The default pcap magic type is 0xa1b2c3d4 (tcpdump-capable pcap).
 .SS  netsniff-ng --in vlan0 --out dump.pcap -c -u `id -u bob` -g `id -g bob`
 Capture network traffic on device wlan0 into a pcap file called dump.pcap
 by using normal read(2), write(2) I/O for the pcap file (slower but less
-latency). Also, after setting up the RX_RING for capture, drop priviledges
+latency). Also, after setting up the RX_RING for capture, drop privileges
 from root to the user/group ``bob''. Invoke the packet dissector and print
 packet contents to the terminal for further analysis.
 
