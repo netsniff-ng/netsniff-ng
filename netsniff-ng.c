@@ -1384,11 +1384,13 @@ int main(int argc, char **argv)
 	init_geoip(0);
 	if (setsockmem)
 		set_system_socket_memory(vals, array_size(vals));
-	xlockme();
+	if (!ctx.enforce)
+		xlockme();
 
 	main_loop(&ctx);
 
-	xunlockme();
+	if (!ctx.enforce)
+		xunlockme();
 	if (setsockmem)
 		reset_system_socket_memory(vals, array_size(vals));
 	destroy_geoip();
