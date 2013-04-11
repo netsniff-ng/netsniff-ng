@@ -31,12 +31,18 @@ consists of the following fixed set of utilities:
   * flowtop: a top-like netfilter connection tracking tool
   * bpfc: a Berkeley Packet Filter compiler with Linux extensions
 
-Have a look at the Documentation/ folder for further information, also at known
-issues under Documentation/KnownIssues. Carefully read the INSTALL document for
-the next steps in building netsniff-ng. Note that the toolkit is still quite
-young and under heavy development, not yet feature complete and in a quality
-level where we're satisfied with (i.e. for mausezahn). However, we're on a good
-way towards tackling all these goals.
+Each release can be verified with Git and GPG, here are the steps to do so:
+
+ 1) Import the maintainers public keys:
+   git show maint-tklauser-pgp-pub | gpg --import
+   git show maint-dborkman-pgp-pub | gpg --import
+ 2) Verify the Git tag:
+   git tag -v <tag-name>
+
+Carefully read the INSTALL document for the next steps in building netsniff-ng.
+Note that the toolkit is still quite young and under heavy development, not
+yet feature complete and in a quality level where we're satisfied with (i.e.
+for mausezahn). However, we're on a good way towards tackling all these goals.
 
 The netsniff-ng toolkit is an open source project covered by the GNU General 
 Public License, version 2.0. For any questions or feedback about netsniff-ng
@@ -47,12 +53,7 @@ The current project status can be considered as "working". In general, all tools
 have been tested by us to a great extend including their command-line options.
 In fact, many of our tools are used in a lot of production systems. However, we
 give no guarantee that our tools are free of bugs! If you spot some issues,
-contact us as described in REPORTING-BUGS. Also, have a look at our FAQ [2] for
-answering your questions. This project has received support from companies and
-institutions listed in Documentation/Sponsors. Thanks for contributing, we're
-thrilled to provide you with netsniff-ng!
-
-Happy packet hacking!
-
-  [1] http://netsniff-ng.org/
-  [2] http://netsniff-ng.org/faq.html
+contact us as described in REPORTING-BUGS. Also, have a look at our online FAQ
+for answering your questions. This project has received support from companies
+and institutions listed in Sponsors. Thanks for contributing, we're thrilled
+to provide you with netsniff-ng! Happy packet hacking!
