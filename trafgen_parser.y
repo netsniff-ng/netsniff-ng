@@ -349,9 +349,15 @@ cpu_delim
 	| '-' { }
 	;
 
+delimiter_nowhite
+	: ',' { }
+	| ',' K_WHITE { }
+	;
+
 noenforce_white
 	: { }
 	| K_WHITE { }
+	| delimiter_nowhite { }
 	;
 
 packet
@@ -384,9 +390,8 @@ payload
 	;
 
 delimiter
-	: ',' { }
+	: delimiter_nowhite { }
 	| K_WHITE { }
-	| ',' K_WHITE { }
 	;
 
 elem_delimiter
