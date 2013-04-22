@@ -24,7 +24,7 @@ extern void set_packet_loss_discard(int sock);
 
 static inline int user_may_pull_from_tx(struct tpacket2_hdr *hdr)
 {
-	return ((hdr->tp_status & TP_STATUS_AVAILABLE) == TP_STATUS_AVAILABLE);
+	return !(hdr->tp_status & (TP_STATUS_SEND_REQUEST | TP_STATUS_SENDING));
 }
 
 static inline void kernel_may_pull_from_tx(struct tpacket2_hdr *hdr)
