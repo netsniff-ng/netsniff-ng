@@ -221,7 +221,6 @@ static void pcap_to_xmit(struct ctx *ctx)
 		bpf_dump_all(&bpf_ops);
 
 	set_packet_loss_discard(tx_sock);
-	set_sockopt_hwtimestamp(tx_sock, ctx->device_out);
 
 	setup_tx_ring_layout(tx_sock, &tx_ring, size, ctx->jumbo);
 	create_tx_ring(tx_sock, &tx_ring, ctx->verbose);
