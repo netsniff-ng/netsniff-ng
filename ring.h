@@ -144,7 +144,7 @@ static inline int set_sockopt_hwtimestamp(int sock, const char *dev)
 		return -1;
 
 	memset(&hwconfig, 0, sizeof(hwconfig));
-	hwconfig.tx_type = HWTSTAMP_TX_ON;
+	hwconfig.tx_type = HWTSTAMP_TX_OFF;
 	hwconfig.rx_filter = HWTSTAMP_FILTER_ALL;
 
 	memset(&ifr, 0, sizeof(ifr));
