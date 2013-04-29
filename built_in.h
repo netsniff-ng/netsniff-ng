@@ -341,4 +341,16 @@ static inline u64 cpu_to_le64(u64 val)
 # define CO_IN_CACHE_SHIFT		5
 #endif
 
+#ifndef TP_STATUS_TS_SOFTWARE
+# define TP_STATUS_TS_SOFTWARE		(1 << 29)
+#endif
+
+#ifndef TP_STATUS_TS_SYS_HARDWARE
+# define TP_STATUS_TS_SYS_HARDWARE	(1 << 30)
+#endif
+
+#ifndef TP_STATUS_TS_RAW_HARDWARE
+# define TP_STATUS_TS_RAW_HARDWARE	(1 << 31)
+#endif
+
 #endif /* BUILT_IN_H */

@@ -13,6 +13,7 @@
 #include "ring.h"
 #include "tprintf.h"
 #include "pcap_io.h"
+#include "built_in.h"
 
 #define PRINT_NORM		0
 #define PRINT_LESS		1
@@ -32,6 +33,18 @@ static const char * const packet_types[256]={
 
 extern char *if_indextoname(unsigned ifindex, char *ifname);
 
+static inline const char *__show_ts_source(uint32_t status)
+{
+	if (status & TP_STATUS_TS_RAW_HARDWARE)
+		return "(raw hw ts)";
+	else if (status & TP_STATUS_TS_SYS_HARDWARE)
+		return "(sys hw ts)";
+	else if (status & TP_STATUS_TS_SOFTWARE)
+		return "(sw ts)";
+	else
+		return "";
+}
+
 static inline void show_frame_hdr(struct frame_map *hdr, int mode)
 {
 	char tmp[IFNAMSIZ];
@@ -47,11 +60,12 @@ static inline void show_frame_hdr(struct frame_map *hdr, int mode)
 			hdr->tp_h.tp_len);
 		break;
 	default:
-		tprintf("%s %s %u %us.%uns\n",
+		tprintf("%s %s %u %us.%uns %s\n",
 			packet_types[hdr->s_ll.sll_pkttype] ? : "?",
 			if_indextoname(hdr->s_ll.sll_ifindex, tmp) ? : "?",
 			hdr->tp_h.tp_len, hdr->tp_h.tp_sec,
-			hdr->tp_h.tp_nsec);
+			hdr->tp_h.tp_nsec,
+			__show_ts_source(hdr->tp_h.tp_status));
 		break;
 	}
 }
