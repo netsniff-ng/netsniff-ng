@@ -1,0 +1,235 @@
+.\" netsniff-ng - the packet sniffing beast
+.\" Copyright 2013 Daniel Borkmann.
+.\" Subject to the GPL, version 2.
+
+.TH TRAFGEN 8 "03 March 2013" "Linux" "netsniff-ng toolkit"
+.SH NAME
+trafgen \- a fast, multithreaded network packet generator
+
+.SH SYNOPSIS
+
+\fB trafgen\fR [\fIoptions\fR]
+
+.SH DESCRIPTION
+
+trafgen is a fast, zero-copy network traffic generator for debugging,
+performance evaluation and fuzz-testing purposes. trafgen utilizes the packet(7)
+socket interface of Linux which postpones complete control over packet data
+and packet headers into the user space. It has a powerful packet configuration
+language, which is rather low-level and not limited to particular protocols.
+Thus, trafgen can be used for many purposes. Its only limitation is that it
+cannot mimic full streams resp. sessions. However, it is very useful for
+various kinds of load testing in order to analyze and subsequently improve
+systems behaviour under DoS attack scenarios, for instance.
+
+trafgen is Linux specific only, meaning there is no support for other operating
+systems just as in netsniff-ng(8), thus we can keep the code footprint quite
+minimal and to the point. trafgen makes use of packet(7) socket's TX_RING
+interface of the Linux kernel, which is a mmap(2)'ed ring buffer shared between
+user and kernel space.
+
+On default, trafgen starts as many processes as CPUs that are online, pins each
+of them to their respective CPU and sets up the ring buffer each in their own
+process space after having compiled a list of packets to transmit. Thus, this is
+likely the fastest one can get out of the box in terms of transmission performance
+from user space, without having to load unsupported or non-mainline third-party
+kernel modules. On Gigabit Ethernet, trafgen has a comparable performance to
+pktgen, the built-in Linux kernel traffic generator, only that trafgen is more
+flexible in terms of packet configuration possibilities. On 10-Gigabit-per-second
+Ethernet, trafgen might be slower than pktgen due to the user/kernel space
+overhead but still has a fairly high performance for out of the box kernels.
+
+trafgen has a possibility to do fuzz testing, meaning a packet configuration can
+be built with random numbers on all or certain packet offsets that are freshly
+generated each time a packet is sent out. With a built-in IPv4 ping, trafgen can
+send out an ICMP probe after each packet injection to the remote host in order
+to test if it is still responsive/alive. Assuming there is no answer from the
+remote host after a certain threshold of probes, the machine is considered dead
+and the last sent packet is printed together with the random seed that was used
+by trafgen. You might not really get lucky fuzz-testing the Linux kernel, but
+presumably there are buggy closed-source embedded systems or network driver's
+firmware files that are prone to bugs, where trafgen could help in finding them.
+
+trafgen's configuration language is quite powerful, also due to the fact, that
+it supports C preprocessor macros. A stddef.h is being shipped with trafgen for
+this purpose, so that well known defines from Linux kernel or network programming
+can be reused. After a configuration file has passed the C preprocessor stage,
+it is processed by the trafgen packet compiler. The language itself supports a
+couple of features that are useful when assembling packets, such as built-in
+runtime checksum support for IP, UDP and TCP. Also it has an expression evaluator
+where arithmetic (basic operations, bit operations, bit shifting, ...) on constant
+expressions is being reduced to a single constant on compile time. Other features
+are ``fill'' macros, where a packet can be filled with n bytes by a constant, a
+compile-time random number or run-time random number (as mentioned with fuzz
+testing). Also, netsniff-ng(8) is able to convert a pcap file into a trafgen
+configuration file, thus such a configuration can then be further tweaked for a
+given scenario.
+
+.SH OPTIONS
+
+.SS -i <cfg|->, -c <cfg|i>, --in <cfg|->, --conf <cfg|->
+TODO
+
+.SS -o <dev>, -d <dev>, --out <dev>, --dev <dev>
+TODO
+
+.SS -p, --cpp
+Pass the packet configuration to
+
+.SS -J, --jumbo-support
+On default trafgen's ring buffer frames are of a fixed size of 2048 bytes.
+This means that if you're expecting jumbo frames or even super jumbo frames to
+pass your line, then you need to enable support for that with the help of this
+option. However, this has the disadvantage of a performance regression and a
+bigger memory footprint for the ring buffer.
+
+.SS -R, --rfraw
+In case the output networking device is a wireless device, it is possible with
+trafgen to turn this into monitor mode and create a mon<X> device that trafgen
+will be transmitting on instead of wlan<X>, for instance. This enables trafgen
+to inject raw 802.11 frames.
+
+.SS -s <ipv4>, --smoke-test <ipv4>
+TODO
+
+.SS -n <0|uint>, --num <0|uint>
+Process a number of packets and then exit. If the number of packets is 0, then
+this is equivalent to infinite packets resp. processing until interrupted.
+Otherwise, a number given as an unsigned integer will limit processing.
+
+.SS -r, --rand
+Randomize the packet selection of the configuration file. On default, if more
+than one packet is defined in a packet configuration, packets are scheduled for
+transmission in a round robin fashion. With this option, they are selected
+randomly instread.
+
+.SS -P <uint>, --cpus <uint>
+Specify the number of processes trafgen shall fork(2) off. On default trafgen
+will start as many processes as CPUs that are online and pin them to each,
+respectively. Allowed value must be within interval [1,CPUs].
+
+.SS -t <uint>, --gap <uint>
+Specify a static inter-packet timegap in micro-seconds. If this option is given,
+then instead of packet(7)'s TX_RING interface, trafgen will use sendto(2) I/O
+for network packets, even if the <uint> argument is 0. This option is useful for
+a couple of reasons: i) comparison between sendto(2) and TX_RING performance,
+ii) low-traffic packet probing for a given interval, iii) ping-like debugging
+with specific payload patterns. Furthermore, the TX_RING interface does not cope
+with interpacket gaps.
+
+.SS -S <size>, --ring-size <size>
+Manually define the RX_RING resp. TX_RING size in ``<num>KiB/MiB/GiB''. On
+default the size is being determined based on the network connectivity rate.
+
+.SS -k <uint>, --kernel-pull <uint>
+Manually define the interval in micro-seconds where the kernel should be triggered
+to batch process the ring buffer frames. On default, it is every 10us, but it can
+manually be prolonged, for instance..
+
+.SS -E <uint>, --seed <uint>
+Manually set the seed for trafgen. On default, a random seed from /dev/urandom
+is being used to feed glibc's pseudo random number generator. If that fails, it
+falls back to the unix timestamp. It can be useful to set it up manually to be
+able to reproduce a trafgen session, e.g. after fuzz testing.
+
+.SS -u <uid>, --user <uid> resp. -g <gid>, --group <gid>
+After ring setup drop privileges to a non-root user/group combination.
+
+.SS -V, --verbose
+Let trafgen be more talkative and let it print the parsed configuration and
+some ring buffer statistics.
+
+.SS -e, --example
+Show a built-in packet configuration example. This might be a good starting
+point for an initial packet configuration scenario.
+
+.SS -v, --version
+Show versioning information.
+
+.SS -h, --help
+Show user help.
+
+.SH SYNTAX
+TODO
+
+.SH SOURCE EXAMPLES
+TODO
+
+.SH USAGE EXAMPLE
+TODO
+
+.SH NOTE
+trafgen can saturate a Gigabit Ethernet link without problems. As always,
+of course, this depends on your hardware as well. Not everywhere where it
+says Gigabit Ethernet on the box, you'll reach almost physical line rate!
+Please also read the netsniff-ng(8) man page, section NOTE for further
+details about tuning your system e.g. with tuned(8).
+
+If you intend to use trafgen on a 10-Gbit/s Ethernet NIC, make sure you
+are using a multiqueue tc(8) discipline, and make sure that the packets
+you generate with trafgen will have a good distribution among tx_hashes
+so that you'll actually make use of multiqueues.
+
+For introducing bit errors, delays with random variation and more, there
+is no built-in option in trafgen. Rather, one should reuse existing methods
+for that which integrate nicely with trafgen, such as tc(8) with its
+different disciplines, i.e. netem.
+
+For more complex packet configurations, it is recommended to use high-level
+scripting for generating trafgen packet configurations in a more automated
+way, i.e. also to create different traffic distributions that are common for
+industrial benchmarking:
+
+    Traffic model              Distribution
+
+    IMIX                       64:7,  570:4,  1518:1
+    Tolly                      64:55,  78:5,   576:17, 1518:23
+    Cisco                      64:7,  594:4,  1518:1
+    RPR Trimodal               64:60, 512:20, 1518:20
+    RPR Quadrimodal            64:50, 512:15, 1518:15, 9218:20
+
+The low-level nature of trafgen makes trafgen rather protocol independant
+and therefore useful in many scenarios when stress testing is needed, for
+instance. However, if a traffic generator with higher level packet
+descriptions is desired, netsniff-ng's mausezahn(8) can be of good use as
+well.
+
+For smoke/fuzz testing with trafgen, it is recommended to have a direct
+link between the host you want to analyze (``victim'' machine) and the host
+you run trafgen on (``attacker'' machine). If the ICMP reply from the victim
+fails, we assume that probably its kernel crashed, thus we print the last
+sent packet togther with the seed and quit probing. It might be very unlikely
+to find such a ping-of-death on modern Linux systems. However, there might
+be a good chance to find it on some proprietary (e.g. embedded) systems or
+buggy driver firmwares that are in the wild. Also, fuzz testing can be done
+on raw 802.11 frames, of course. In case you find a ping-of-death, please
+mention that you were using trafgen in your commit message of the fix!
+
+.SH BUGS
+When I start trafgen, my kernel crashes: we have fixed this bug in the
+mainline and stable kernels under commit 7f5c3e3a8 (``af_packet: remove
+BUG statement in tpacket_destruct_skb''). Either update your kernel to
+the latest version, e.g. clone and build it from git.kernel.org, to a
+stable kernel, or don't start multiple trafgen instances at once resp.
+start trafgen with flag -A to disable temporary socket memory adaptation!
+
+.SH LEGAL
+trafgen is licensed under the GNU GPL version 2.0.
+
+.SH HISTORY
+.B trafgen
+was originally written for the netsniff-ng toolkit by Daniel Borkmann. It
+is currently maintained by Tobias Klauser <tklauser@distanz.ch> and Daniel
+Borkmann <dborkma@tik.ee.ethz.ch>.
+
+.SH SEE ALSO
+.BR netsniff-ng (8),
+.BR mausezahn (8),
+.BR ifpps (8),
+.BR bpfc (8),
+.BR flowtop (8),
+.BR astraceroute (8),
+.BR curvetun (8)
+
+.SH AUTHOR
+Manpage was written by Daniel Borkmann.
