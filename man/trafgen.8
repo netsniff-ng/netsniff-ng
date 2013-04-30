@@ -68,10 +68,12 @@ given scenario.
 .SH OPTIONS
 
 .SS -i <cfg|->, -c <cfg|i>, --in <cfg|->, --conf <cfg|->
-TODO
+Defines the input configuration file that can either be passed as a normal plain
+text file or via stdin (``-''). Note that currently in case a configuration is
+passed through stdin, only 1 CPU will be used.
 
 .SS -o <dev>, -d <dev>, --out <dev>, --dev <dev>
-TODO
+Defines the outgoing networking device such as eth0, wlan0 and others.
 
 .SS -p, --cpp
 Pass the packet configuration to
@@ -90,7 +92,17 @@ will be transmitting on instead of wlan<X>, for instance. This enables trafgen
 to inject raw 802.11 frames.
 
 .SS -s <ipv4>, --smoke-test <ipv4>
-TODO
+In case this option is enabled, trafgen will perform a smoke test. In other
+words, it will probe the remote end, specified by an <ipv4> address, that is
+being ``attacked'' with trafgen network traffic, if it is still alive and
+responsive. That means, after each transmitted packet that has been configured,
+trafgen sends out ICMP echo requests and waits for an answer before it continues.
+In case the remote end stays unresponsive, trafgen assumes that the machine
+has crashed and will print out the content of the last packet as a trafgen
+packet configuration and the random seed that has been used in order to
+reproduce a possible bug. This might be useful when testing proprietary embedded
+devices. It is recommended to have a direct link between the host running
+trafgen and the host being attacked by trafgen.
 
 .SS -n <0|uint>, --num <0|uint>
 Process a number of packets and then exit. If the number of packets is 0, then
