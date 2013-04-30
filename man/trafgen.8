@@ -327,7 +327,46 @@ Another real-world example by Jesper Dangaard Brouer [1]:
    [1] http://thread.gmane.org/gmane.linux.network/257155
 
 .SH USAGE EXAMPLE
-TODO
+
+.SS trafgen --dev eth0 --conf trafgen.cfg
+This is the most simple and probably also most used command for trafgen. It
+will generate traffic defined in the configuration file ``trafgen.cfg'' and
+transmit this via the ``eth0'' networking device. All online CPUs are used.
+
+.SS trafgen -e | trafgen -i - -o lo --cpp -n 1
+This is an example where we send one packet of the built-in example through
+the loopback device. The example configuration is passed via stdin and also
+through the C preprocessor before trafgen's packet compiler will see it.
+
+.SS trafgen --dev eth0 --conf fuzzing.cfg --smoke-test 10.0.0.1
+Read the ``fuzzing.cfg'' packet configuration file (which contains drnd()
+calls) and send out the generated packets to the ``eth0'' device. After each
+sent packet, ping probe the attacked host with address 10.0.0.1 to check if
+it's still alive. This also means, that we utilize 1 CPU only, and do not
+use the TX_RING, but sendto(2) packet I/O due to ``slow mode''.
+
+.SS trafgen --dev wlan0 --rfraw --conf beacon-test.txf -V --cpus 2
+As an output device ``wlan0'' is used and put into monitoring mode, thus we
+are going to transmit raw 802.11 frames through the air. Use the
+``beacon-test.txf'' configuration file, set trafgen into verbose mode and
+use only 2 CPUs.
+
+.SS trafgen --dev em1 --conf frag_dos.cfg --rand --gap 1000
+Use trafgen in sendto(2) mode instead of TX_RING mode and sleep after each
+sent packet a static timegap for 1000us. Generate packets from ``frag_dos.cfg''
+and select next packets to send randomly instead of a round-robin fashion.
+The output device for packets is ``em1''.
+
+.SS trafgen --dev eth0 --conf icmp.cfg --rand --num 1400000 -k1000
+Send only 1400000 packets using the ``icmp.cfg'' configuration file and then
+exit trafgen. Select packets randomly from that file for transmission and
+send them out via ``eth0''. Also, trigger the kernel every 1000us for batching
+the ring frames from user space (default is 10us).
+
+.SS trafgen --dev eth0 --conf tcp_syn.cfg -u `id -u bob` -g `id -g bob`
+Send out packets generated from the configuration file ``tcp_syn.cfg'' via
+the ``eth0'' networking device. After setting up the ring for transmission,
+drop credentials to the non-root user/group bob/bob.
 
 .SH NOTE
 trafgen can saturate a Gigabit Ethernet link without problems. As always,
