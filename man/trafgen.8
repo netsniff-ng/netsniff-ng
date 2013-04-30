@@ -210,7 +210,10 @@ i) Fill with garbage functions:
    byte fill function:      fill(<content>, <times>): fill(0xca, 128)
    compile-time random:     rnd(<times>): rnd(128), rnd()
    runtime random numbers:  drnd(<times>): drnd(128), drnd()
-   counter:                 TODO
+   compile-time counter:    seqinc(<start-val>, <increment>, <times>)
+                            seqdec(<start-val>, <decrement>, <times>)
+   runtime counter (1byte): dinc(<min-val>, <max-val>, <increment>)
+                            ddec(<min-val>, <max-val>, <decrement>)
 
 ii) Checksum helper functions (packet offsets start with 0):
 
