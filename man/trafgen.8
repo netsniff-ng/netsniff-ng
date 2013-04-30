@@ -162,10 +162,166 @@ Show versioning information.
 Show user help.
 
 .SH SYNTAX
-TODO
+trafgen's packet configuration syntax is fairly simple. The very basic things
+one need to know is that a configuration file is a simple plain text file
+where packets are defined. It can contain one or more packets. Packet are
+enclosed by opening '{' and closing '}' braces, for example:
 
-.SH SOURCE EXAMPLES
-TODO
+   { /* packet 1 content goes here ... */ }
+   { /* packet 2 content goes here ... */ }
+
+When trafgen is started using multiple CPUs (default), then each of those packets
+will be scheduled for transmission on all CPUs on default. However, it is possible
+to tell trafgen to schedule a packet only on a particular CPU:
+
+   cpu(1): { /* packet 1 content goes here ... */ }
+   cpu(2-3): { /* packet 2 content goes here ... */ }
+
+Thus, in case we have a 4 core machine with CPU0-CPU3, packet 1 will be scheduled
+only on CPU1, packet 2 on CPU2 and CPU3. When using trafgen with --num option,
+then these constraints will still be valid and the packet is fairly distributed
+among those CPUs.
+
+Packet content is delimited either by a comma or whitespace, or both:
+
+   { 0xca, 0xfe, 0xba 0xbe }
+
+Packet content can be of the following:
+
+   hex bytes:   0xca
+   decimal:     42
+   binary:      0b11110000
+   octal:       011
+   character:   'a'
+   string:      "hello world"
+   shellcode:   "\\x31\\xdb\\x8d\\x43\\x17\\x99\\xcd\\x80\\x31\\xc9"
+
+Thus, a quite useless packet packet configuration might look like this (one can
+verify this when running this with trafgen in combination with -V):
+
+   { 0xca, 42, 0b11110000, 011, 'a', "hello world",
+     "\\x31\\xdb\\x8d\\x43\\x17\\x99\\xcd\\x80\\x31\\xc9" }
+
+There are a couple of helper functions in trafgen's language to make life easier
+to write configurations:
+
+i) Fill with garbage functions:
+
+   byte fill function:      fill(<content>, <times>): fill(0xca, 128)
+   compile-time random:     rnd(<times>): rnd(128), rnd()
+   runtime random numbers:  drnd(<times>): drnd(128), drnd()
+   counter:                 TODO
+
+ii) Checksum helper functions (packet offsets start with 0):
+
+   IP/ICMP checksum:        csumip/csumicmp(<off-from>, <off-to>)
+   UDP checksum:            csumudp(<off-iphdr>, <off-udpdr>)
+   TCP checksum:            csumtcp(<off-iphdr>, <off-tcphdr>)
+
+iii) Multibyte functions, compile-time expression evaluation:
+
+   const8(<content>), c8(<content>), const16(<content>), c16(<content>),
+   const32(<content>), c32(<content>), const64(<content>), c64(<content>)
+
+   These functions write their result in network byte order into the packet
+configuration, e.g. const16(0xaa) will result in ``00 aa''. Within c*()
+functions, it is possible to do some arithmetics: -,+,*,/,%,&,|,<<,>>,^
+E.g. const16((((1<<8)+0x32)|0b110)*2) will be evaluated to ``02 6c''.
+
+Furthermore, there are two types of comments in trafgen configuration files:
+
+  1. Multi-line C-style comments:        /* put comment here */
+  2. Single-line Shell-style comments:   #  put comment here
+
+Next to all of this, a configuration can be passed through the C preprocessor
+before the trafgen compiler gets to see it with option --cpp. To give you a
+taste of a more advanced example, run ``trafgen -e'', fields are commented:
+
+   /* Note: dynamic elements make trafgen slower! */
+   #include <stddef.h>
+
+   {
+     /* MAC Destination */
+     fill(0xff, ETH_ALEN),
+     /* MAC Source */
+     0x00, 0x02, 0xb3, drnd(3),
+     /* IPv4 Protocol */
+     c16(ETH_P_IP),
+     /* IPv4 Version, IHL, TOS */
+     0b01000101, 0,
+     /* IPv4 Total Len */
+     c16(58),
+     /* IPv4 Ident */
+     drnd(2),
+     /* IPv4 Flags, Frag Off */
+     0b01000000, 0,
+     /* IPv4 TTL */
+     64,
+     /* Proto TCP */
+     0x06,
+     /* IPv4 Checksum (IP header from, to) */
+     csumip(14, 33),
+     /* Source IP */
+     drnd(4),
+     /* Dest IP */
+     drnd(4),
+     /* TCP Source Port */
+     drnd(2),
+     /* TCP Dest Port */
+     c16(80),
+     /* TCP Sequence Number */
+     drnd(4),
+     /* TCP Ackn. Number */
+     c32(0),
+     /* TCP Header length + TCP SYN/ECN Flag */
+     c16((8 << 12) | TCP_FLAG_SYN | TCP_FLAG_ECE)
+     /* Window Size */
+     c16(16),
+     /* TCP Checksum (offset IP, offset TCP) */
+     csumtcp(14, 34),
+     /* TCP Options */
+     0x00, 0x00, 0x01, 0x01, 0x08, 0x0a, 0x06,
+     0x91, 0x68, 0x7d, 0x06, 0x91, 0x68, 0x6f,
+     /* Data blob */
+     "gotcha!",
+   }
+
+Another real-world example by Jesper Dangaard Brouer [1]:
+
+   {
+     # --- ethernet header ---
+     0x00, 0x1b, 0x21, 0x3c, 0x9d, 0xf8,  # mac destination
+     0x90, 0xe2, 0xba, 0x0a, 0x56, 0xb4,  # mac source
+     const16(0x0800), # protocol
+     # --- ip header ---
+     # ipv4 version (4-bit) + ihl (4-bit), tos
+     0b01000101, 0,
+     # ipv4 total len
+     const16(40),
+     # id (note: runtime dynamic random)
+     drnd(2),
+     # ipv4 3-bit flags + 13-bit fragment offset
+     # 001 = more fragments
+     0b00100000, 0,
+     64, # ttl
+     17, # proto udp
+     # dynamic ip checksum (note: offsets are zero indexed)
+     csumip(14, 33),
+     192, 168, 51, 1, # source ip
+     192, 168, 51, 2, # dest ip
+     # --- udp header ---
+     # as this is a fragment the below stuff does not matter too much
+     const16(48054), # src port
+     const16(43514), # dst port
+     const16(20),    # udp length
+     # udp checksum can be dyn calc via csumudp(offset ip, offset tcp)
+     # which is csumudp(14, 34), but for udp its allowed to be zero
+     const16(0),
+     # payload
+     'A',  fill(0x41, 11),
+   }
+
+   [1] http://thread.gmane.org/gmane.linux.network/257155
 
 .SH USAGE EXAMPLE
 TODO
