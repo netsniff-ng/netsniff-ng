@@ -240,7 +240,8 @@ astraceroute_distclean_custom:
 netsniff-ng_install_custom flowtop_install_custom:
 	$(Q)$(foreach file,$(NCONF_FILES),$(call INST,$(file),$(ETCDIRE));)
 trafgen_install_custom:
-	$(Q)$(call INST,stddef.h,$(ETCDIRE))
+	$(Q)$(call INST,trafgen_stddef.h,$(ETCDIRE))
+	$(Q)ln -s $(ETCDIRE)/trafgen_stddef.h $(ETCDIRE)/stddef.h
 astraceroute_install_custom:
 	$(Q)$(call INST,geoip.conf,$(ETCDIRE))
 
