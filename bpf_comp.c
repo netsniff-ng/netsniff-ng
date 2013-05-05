@@ -25,8 +25,8 @@ void bpf_try_compile(const char *rulefile, struct sock_fprog *bpf, uint32_t link
 	bpf->len = _bpf.bf_len;
 	bpf->filter = xrealloc(bpf->filter, 1, bpf->len * sizeof(*out));
 
-	for (i = 0, ins = _bpf.bf_insns, out = bpf->filter; i < bpf->len; ++i, ++ins, ++out) {
-
+	for (i = 0, ins = _bpf.bf_insns, out = bpf->filter; i < bpf->len;
+	     ++i, ++ins, ++out) {
 		out->code = ins->code;
 		out->jt = ins->jt;
 		out->jf = ins->jf;
