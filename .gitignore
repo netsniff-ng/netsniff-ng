@@ -24,7 +24,7 @@
 *.a
 
 # Testing folders
-test/fuzzing/
+fuzzing/
 
 # Ignore if someone adapts Makefile
 Makefile

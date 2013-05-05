@@ -238,11 +238,11 @@ astraceroute_distclean_custom:
 	$(Q)$(call RMDIR,$(ETCDIRE))
 
 netsniff-ng_install_custom flowtop_install_custom:
-	$(Q)$(foreach file,$(NCONF_FILES),$(call INST,configs/$(file),$(ETCDIRE));)
+	$(Q)$(foreach file,$(NCONF_FILES),$(call INST,$(file),$(ETCDIRE));)
 trafgen_install_custom:
-	$(Q)$(call INST,configs/stddef.h,$(ETCDIRE))
+	$(Q)$(call INST,stddef.h,$(ETCDIRE))
 astraceroute_install_custom:
-	$(Q)$(call INST,configs/geoip.conf,$(ETCDIRE))
+	$(Q)$(call INST,geoip.conf,$(ETCDIRE))
 
 $(TOOLS): WFLAGS += $(WFLAGS_EXTRA)
 $(TOOLS):
