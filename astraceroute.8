@@ -1,0 +1,140 @@
+.\" netsniff-ng - the packet sniffing beast
+.\" Copyright 2013 Daniel Borkmann.
+.\" Subject to the GPL, version 2.
+
+.TH ASTRACEROUTE 8 "03 March 2013" "Linux" "netsniff-ng toolkit"
+.SH NAME
+astraceroute \- autonomous system trace route utility
+
+.SH SYNOPSIS
+
+\fB astraceroute\fR [\fIoptions\fR]
+
+.SH DESCRIPTION
+astraceroute is a small utility to retrieve path information in a traceroute
+like way, but with additional geographical location information. It tracks the
+route of a packet from the local host to the remote host by sucessively
+increasing the IP's TTL field in the hope, that the intermediate node sends a
+ICMP TIME_EXCEEDED notification back to us.
+
+astraceroute supports IPv4 and IPv6 queries and will display country and city
+information if available as well as the AS number the hop belongs to and its
+ISP name. astraceroute also displays timing information and reverse DNS data.
+
+Due to astraceroute's configurability it is also possible to gather some more
+useful information about the hop regarding what it passes through and what not.
+I.e. astraceroute also allows some clear text strings for probing some DPIs or
+``great firewalls'' that would filter out blacklisted critical keywords. This
+tool might be a good start for further in-depth analysis of such systems.
+
+.SH OPTIONS
+
+.SS -H <host>, --host <host>
+
+.SS -p <port>, --port <port>
+
+.SS -i <device>, -d <device>, --dev <device>
+
+.SS -f <ttl>, --init-ttl <ttl>
+
+.SS -m <ttl>, --max-ttl <ttl>
+
+.SS -q <num>, --num-probes <num>
+
+.SS -x <sec>, --timeout <sec>
+
+.SS -X <string>, --payload <string>
+
+.SS -l <len>, --totlen <len>
+
+.SS -4, --ipv4
+
+.SS -6, --ipv6
+
+.SS -n, --numeric
+
+.SS -u, --update
+
+.SS -L, --latitude
+
+.SS -N, --dns
+
+.SS -S, --syn
+
+.SS -A, --ack
+
+.SS -F, --fin
+
+.SS -P, --psh
+
+.SS -U, --urg
+
+.SS -R, --rst
+
+.SS -E, --ecn-syn
+
+.SS -t <tos>, --tos <tos>
+
+.SS -G, --nofrag
+
+.SS -Z, --show-packet
+Show and dissect the returned packet.
+
+.SS -v, --version
+Show versioning information.
+
+.SS -h, --help
+Show user help.
+
+.SH USAGE EXAMPLE
+
+.SS astraceroute -i eth0 -N -S -H netsniff-ng.org
+.SS astraceroute -i eth0 -N -E -H netsniff-ng.org
+.SS astraceroute -i eth0 -N -F -H netsniff-ng.org
+.SS astraceroute -i eth0 -N -FPU -H netsniff-ng.org
+.SS astraceroute -i eth0 -N -H netsniff-ng.org -X "censor-me" -Z
+.SS astraceroute -6 -i eth0 -S -E -N -H www.6bone.net
+
+.SH NOTE
+If a TCP-based probe will fail after a number of retries, astraceroute will
+automatically fall back to ICMP-based probes to pass through firewalls resp.
+routers.
+
+To gather more information about astraceroute's displayed AS numbers, see f.e.
+http://bgp.he.net/AS<number>.
+
+.SH BUGS
+The geographical locations are estimated with the help of Maxmind's GeoIP
+database and can or cannot deviate from the actual real physical location.
+What one can do to decrease a possible error rate is to update the database
+regularly e.g. with astraceroute's --update option.
+
+At some point in time, we need a similar approach to gather more reliable path
+information such as in paris-traceroute.
+
+Due to the generic nature of astraceroute it currently does only have a built-in
+mechanism to stop the trace after a static number of hops, since the configurable
+TCP flags can have anything included. It is possible to decrease this number of
+course. In future, if a SYN probe is sent out, there should be a listener thus
+we can stop the trace if we detect a handshake in progress.
+
+.SH LEGAL
+astraceroute is licensed under the GNU GPL version 2.0.
+
+.SH HISTORY
+.B astraceroute
+was originally written for the netsniff-ng toolkit by Daniel Borkmann. It
+is currently maintained by Tobias Klauser <tklauser@distanz.ch> and Daniel
+Borkmann <dborkma@tik.ee.ethz.ch>.
+
+.SH SEE ALSO
+.BR netsniff-ng (8),
+.BR trafgen (8),
+.BR mausezahn (8),
+.BR ifpps (8),
+.BR bpfc (8),
+.BR flowtop (8),
+.BR curvetun (8)
+
+.SH AUTHOR
+Manpage was written by Daniel Borkmann.
