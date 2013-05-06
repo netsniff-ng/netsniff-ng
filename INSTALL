@@ -9,9 +9,9 @@ Linus' Git repository, tweak and compile it, and run this one!
 
 A note for distribution package maintainers can be found at the end of the file.
 
-What additional tools are required to build netsniff-ng?
+What additional tools next to your build-chain are required?
 
- - ccache (optional)
+ - ccache, pkg-config, gpg (optional)
  - flex, bison (bpfc, trafgen)
 
 What libraries are required?
