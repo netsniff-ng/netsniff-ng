@@ -72,7 +72,7 @@ struct pcap_pkthdr_kuz {
 	struct pcap_timeval ts;
 	uint32_t caplen;
 	uint32_t len;
-	int ifindex;
+	uint32_t ifindex;
 	uint16_t protocol;
 	uint8_t pkttype;
 };
@@ -323,7 +323,7 @@ static inline void tpacket_hdr_to_pcap_pkthdr(struct tpacket2_hdr *thdr,
 		phdr->ppk.ts.tv_usec = ___constant_swab32(thdr->tp_nsec / 1000);
 		phdr->ppk.caplen = ___constant_swab32(thdr->tp_snaplen);
 		phdr->ppk.len = ___constant_swab32(thdr->tp_len);
-		phdr->ppk.ifindex = ___constant_swab32((u32) sll->sll_ifindex);
+		phdr->ppk.ifindex = ___constant_swab32(sll->sll_ifindex);
 		phdr->ppk.protocol = ___constant_swab16(sll->sll_protocol);
 		phdr->ppk.pkttype = sll->sll_pkttype;
 		break;
@@ -346,7 +346,7 @@ static inline void tpacket_hdr_to_pcap_pkthdr(struct tpacket2_hdr *thdr,
 		phdr->ppb.caplen = ___constant_swab32(thdr->tp_snaplen);
 		phdr->ppb.len = ___constant_swab32(thdr->tp_len);
 		phdr->ppb.tsource = ___constant_swab16(tp_to_pcap_tsource(thdr->tp_status));
-		phdr->ppb.ifindex = ___constant_swab16((u32) sll->sll_ifindex);
+		phdr->ppb.ifindex = ___constant_swab16((u16) sll->sll_ifindex);
 		phdr->ppb.protocol = ___constant_swab16(sll->sll_protocol);
 		phdr->ppb.hatype = sll->sll_hatype;
 		phdr->ppb.pkttype = sll->sll_pkttype;
