@@ -69,7 +69,7 @@ static inline int rwlock_init(struct rwlock *l)
 }
 
 static inline int rwlock_init2(struct rwlock *l,
-			pthread_rwlockattr_t *restrict attr)
+			       pthread_rwlockattr_t *attr)
 {
 	return -pthread_rwlock_init(&l->lock, attr);
 }

@@ -8,7 +8,7 @@ SUBLEVEL = 8
 EXTRAVERSION = -rc0
 NAME = Ziggomatic
 
-TOOLS = netsniff-ng trafgen astraceroute flowtop ifpps bpfc curvetun
+TOOLS ?= netsniff-ng trafgen astraceroute flowtop ifpps bpfc curvetun
 
 # For packaging purposes, prefix can define a different path.
 PREFIX ?=
@@ -21,7 +21,7 @@ else
 endif
 
 # Disable if you don't want it
-CCACHE = ccache
+CCACHE ?= ccache
 
 # Location of installation paths.
 BINDIR = $(PREFIX)/usr/bin
@@ -39,43 +39,38 @@ MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --jobs=$(shell grep "^processor" /proc/cpuinfo | wc -l)
 
 # For packaging purposes, you might want to disable O3+arch tuning
-CFLAGS = -fstack-protector
+CFLAGS_DEF = -fstack-protector
 ifeq ($(DEBUG), 1)
-  CFLAGS += -g
-  CFLAGS += -O2
+  CFLAGS_DEF += -g
+  CFLAGS_DEF += -O2
 else
-  CFLAGS += -march=native
-  CFLAGS += -mtune=native
-  CFLAGS += -O3
-  CFLAGS += -fpie
-  CFLAGS += -pipe
-  CFLAGS += -fomit-frame-pointer
+  CFLAGS_DEF += -march=native
+  CFLAGS_DEF += -mtune=native
+  CFLAGS_DEF += -O3
+  CFLAGS_DEF += -fpie
+  CFLAGS_DEF += -pipe
+  CFLAGS_DEF += -fomit-frame-pointer
 endif
-CFLAGS += --param=ssp-buffer-size=4
-CFLAGS += -fno-strict-aliasing
-CFLAGS += -fexceptions
-CFLAGS += -fasynchronous-unwind-tables
-CFLAGS += -fno-delete-null-pointer-checks
-CFLAGS += -D_FORTIFY_SOURCE=2
-CFLAGS += -D_REENTRANT
-CFLAGS += -D_FILE_OFFSET_BITS=64
-CFLAGS += -D_LARGEFILE_SOURCE
-CFLAGS += -D_LARGEFILE64_SOURCE
-ifneq ($(wildcard /usr/include/linux/net_tstamp.h),)
-  CFLAGS += -D__WITH_HARDWARE_TIMESTAMPING
-endif
-CFLAGS += -DVERSION_STRING=\"$(VERSION_STRING)\"
-CFLAGS += -DPREFIX_STRING=\"$(PREFIX)\"
-CFLAGS += -std=gnu99
+CFLAGS_DEF += --param=ssp-buffer-size=4
+CFLAGS_DEF += -fno-strict-aliasing
+CFLAGS_DEF += -fexceptions
+CFLAGS_DEF += -fasynchronous-unwind-tables
+CFLAGS_DEF += -fno-delete-null-pointer-checks
+CFLAGS_DEF += -D_FORTIFY_SOURCE=2
+CFLAGS_DEF += -D_REENTRANT
+CFLAGS_DEF += -D_FILE_OFFSET_BITS=64
+CFLAGS_DEF += -D_LARGEFILE_SOURCE
+CFLAGS_DEF += -D_LARGEFILE64_SOURCE
+CFLAGS_DEF += -std=gnu99
 
-WFLAGS  = -Wall
-WFLAGS += -Wformat=2
-WFLAGS += -Wmissing-prototypes
-WFLAGS += -Wdeclaration-after-statement
-WFLAGS += -Werror-implicit-function-declaration
-WFLAGS += -Wstrict-prototypes
-WFLAGS += -Wundef
-WFLAGS += -Wimplicit-int
+WFLAGS_DEF  = -Wall
+WFLAGS_DEF += -Wformat=2
+WFLAGS_DEF += -Wmissing-prototypes
+WFLAGS_DEF += -Wdeclaration-after-statement
+WFLAGS_DEF += -Werror-implicit-function-declaration
+WFLAGS_DEF += -Wstrict-prototypes
+WFLAGS_DEF += -Wundef
+WFLAGS_DEF += -Wimplicit-int
 
 WFLAGS_EXTRA  = -Wno-unused-result
 WFLAGS_EXTRA += -Wmissing-parameter-type
@@ -88,7 +83,10 @@ WFLAGS_EXTRA += -Wignored-qualifiers
 WFLAGS_EXTRA += -Wempty-body
 WFLAGS_EXTRA += -Wuninitialized
 
-CFLAGS += $(WFLAGS) -I.
+WFLAGS_DEF += $(WFLAGS_EXTRA)
+CFLAGS_DEF += $(WFLAGS_DEF)
+
+CFLAGS ?= $(CFLAGS_DEF)
 CPPFLAGS =
 ifeq ("$(origin CROSS_LD_LIBRARY_PATH)", "command line")
   LDFLAGS = -L$(CROSS_LD_LIBRARY_PATH)
@@ -96,7 +94,12 @@ else
   LDFLAGS =
 endif
 
-ALL_CFLAGS = $(CFLAGS)
+ALL_CFLAGS = $(CFLAGS) -I.
+ALL_CFLAGS += -DVERSION_STRING=\"$(VERSION_STRING)\"
+ALL_CFLAGS += -DPREFIX_STRING=\"$(PREFIX)\"
+ifneq ($(wildcard /usr/include/linux/net_tstamp.h),)
+  ALL_CFLAGS += -D__WITH_HARDWARE_TIMESTAMPING
+endif
 ALL_LDFLAGS = $(LDFLAGS)
 TARGET_ARCH =
 LEX_FLAGS =
@@ -245,7 +248,6 @@ trafgen_install_custom:
 astraceroute_install_custom:
 	$(Q)$(call INST,geoip.conf,$(ETCDIRE))
 
-$(TOOLS): WFLAGS += $(WFLAGS_EXTRA)
 $(TOOLS):
 	$(LD) $(ALL_LDFLAGS) -o $@/$@ $@/*.o $($@-libs)
 	$(STRIP) $@/$@
@@ -326,4 +328,6 @@ help:
 	$(Q)echo " CROSS_COMPILE=/path-prefix   - Kernel-like cross-compiling prefix"
 	$(Q)echo " CROSS_LD_LIBRARY_PATH=/path  - Library search path for cross-compiling"
 	$(Q)echo " CC=cgcc                      - Use sparse compiler wrapper"
+	$(Q)echo " CFLAGS="-O2 -Wall"           - Overwrite CFLAGS for compilation"
+	$(Q)echo " CCACHE=                      - Do not use ccache for compilation"
 	$(Q)echo " Q=                           - Show verbose garbage"

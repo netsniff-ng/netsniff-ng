@@ -132,9 +132,9 @@ struct pcap_file_ops {
 	void (*fsync_pcap)(int fd);
 };
 
-extern const struct pcap_file_ops pcap_rw_ops;
-extern const struct pcap_file_ops pcap_sg_ops;
-extern const struct pcap_file_ops pcap_mm_ops;
+extern const struct pcap_file_ops pcap_rw_ops __maybe_unused;
+extern const struct pcap_file_ops pcap_sg_ops __maybe_unused;
+extern const struct pcap_file_ops pcap_mm_ops __maybe_unused;
 
 static inline uint16_t tp_to_pcap_tsource(uint32_t status)
 {
