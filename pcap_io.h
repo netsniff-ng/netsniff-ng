@@ -29,6 +29,10 @@
 #define PCAP_VERSION_MINOR			4
 #define PCAP_DEFAULT_SNAPSHOT_LEN		65535
 
+#define PCAP_TSOURCE_SOFTWARE			1
+#define PCAP_TSOURCE_SYS_HARDWARE		2
+#define PCAP_TSOURCE_RAW_HARDWARE		3
+
 #define LINKTYPE_EN10MB				1   /* Ethernet (10Mb) */
 #define LINKTYPE_IEEE802_11			105 /* IEEE 802.11 wireless */
 
@@ -77,7 +81,8 @@ struct pcap_pkthdr_bkm {
 	struct pcap_timeval_ns ts;
 	uint32_t caplen;
 	uint32_t len;
-	uint32_t ifindex;
+	uint16_t tsource;
+	uint16_t ifindex;
 	uint16_t protocol;
 	uint8_t hatype;
 	uint8_t pkttype;
@@ -130,6 +135,18 @@ struct pcap_file_ops {
 extern const struct pcap_file_ops pcap_rw_ops;
 extern const struct pcap_file_ops pcap_sg_ops;
 extern const struct pcap_file_ops pcap_mm_ops;
+
+static inline uint16_t tp_to_pcap_tsource(uint32_t status)
+{
+	if (status & TP_STATUS_TS_RAW_HARDWARE)
+		return PCAP_TSOURCE_RAW_HARDWARE;
+	else if (status & TP_STATUS_TS_SYS_HARDWARE)
+		return PCAP_TSOURCE_SYS_HARDWARE;
+	else if (status & TP_STATUS_TS_SOFTWARE)
+		return PCAP_TSOURCE_SOFTWARE;
+	else
+		return 0;
+}
 
 static inline void pcap_check_magic(uint32_t magic)
 {
@@ -316,7 +333,8 @@ static inline void tpacket_hdr_to_pcap_pkthdr(struct tpacket2_hdr *thdr,
 		phdr->ppb.ts.tv_nsec = thdr->tp_nsec;
 		phdr->ppb.caplen = thdr->tp_snaplen;
 		phdr->ppb.len = thdr->tp_len;
-		phdr->ppb.ifindex = (u32) sll->sll_ifindex;
+		phdr->ppb.tsource = tp_to_pcap_tsource(thdr->tp_status);
+		phdr->ppb.ifindex = (u16) sll->sll_ifindex;
 		phdr->ppb.protocol = sll->sll_protocol;
 		phdr->ppb.hatype = sll->sll_hatype;
 		phdr->ppb.pkttype = sll->sll_pkttype;
@@ -327,7 +345,8 @@ static inline void tpacket_hdr_to_pcap_pkthdr(struct tpacket2_hdr *thdr,
 		phdr->ppb.ts.tv_nsec = ___constant_swab32(thdr->tp_nsec);
 		phdr->ppb.caplen = ___constant_swab32(thdr->tp_snaplen);
 		phdr->ppb.len = ___constant_swab32(thdr->tp_len);
-		phdr->ppb.ifindex = ___constant_swab32((u32) sll->sll_ifindex);
+		phdr->ppb.tsource = ___constant_swab16(tp_to_pcap_tsource(thdr->tp_status));
+		phdr->ppb.ifindex = ___constant_swab16((u32) sll->sll_ifindex);
 		phdr->ppb.protocol = ___constant_swab16(sll->sll_protocol);
 		phdr->ppb.hatype = sll->sll_hatype;
 		phdr->ppb.pkttype = sll->sll_pkttype;
@@ -414,6 +433,7 @@ static inline void pcap_pkthdr_to_tpacket_hdr(pcap_pkthdr_t *phdr,
 #define FEATURE_PROTO		(1 << 5)
 #define FEATURE_HATYPE		(1 << 6)
 #define FEATURE_PKTTYPE		(1 << 7)
+#define FEATURE_TSOURCE		(1 << 8)
 
 struct pcap_magic_type {
 	const uint32_t magic;
@@ -449,6 +469,7 @@ static const struct pcap_magic_type pcap_magic_types[] __maybe_unused = {
 		.features = FEATURE_TIMEVAL_NS |
 			    FEATURE_LEN |
 			    FEATURE_CAPLEN |
+			    FEATURE_TSOURCE |
 			    FEATURE_IFINDEX |
 			    FEATURE_PROTO |
 			    FEATURE_HATYPE |
@@ -476,6 +497,8 @@ static inline void pcap_dump_type_features(void)
 			printf("    timeval in us\n");
 		if (pcap_magic_types[i].features & FEATURE_TIMEVAL_NS)
 			printf("    timeval in ns\n");
+		if (pcap_magic_types[i].features & FEATURE_TSOURCE)
+			printf("    timestamp source\n");
 		if (pcap_magic_types[i].features & FEATURE_LEN)
 			printf("    packet length\n");
 		if (pcap_magic_types[i].features & FEATURE_CAPLEN)
