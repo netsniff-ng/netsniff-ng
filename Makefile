@@ -270,7 +270,7 @@ announcement:
 	$(Q)echo -e "   git checkout $(VERSION_STRING)\n" >> .MAIL_MSG
 	$(Q)echo -e "Or via HTTP, through:\n" >> .MAIL_MSG
 	$(Q)echo -e "   wget http://pub.netsniff-ng.org/netsniff-ng/netsniff-ng-$(VERSION_STRING).tar.gz\n" >> .MAIL_MSG
-	$(Q)echo -e "The release be verified via Git, through (see Documentation/Workflow):\n" >> .MAIL_MSG
+	$(Q)echo -e "The release be verified via Git, through (see README):\n" >> .MAIL_MSG
 	$(Q)echo -e "   git tag -v $(VERSION_STRING)\n" >> .MAIL_MSG
 	$(Q)echo -e "Major high-level changes since the last release are:\n" >> .MAIL_MSG
 	$(Q)echo -e "   *** BLURB HERE ***\n" >> .MAIL_MSG

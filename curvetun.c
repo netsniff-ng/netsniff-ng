@@ -111,7 +111,7 @@ static void help(void)
 	     "  -v|--version            Print version\n"
 	     "  -h|--help               Print this help\n\n"
 	     "Example:\n"
-	     "  See Documentation/Curvetun for a configuration example.\n"
+	     "  See curvetun's man page for a configuration example.\n"
 	     "  curvetun --server -4 -u -N --port 6666 --stun stunserver.org\n"
 	     "  curvetun --client=ethz\n\n"
 	     "  curvetun --keygen\n"

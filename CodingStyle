@@ -3,7 +3,7 @@
  written by Linus.
 
  In general, keep this in mind: (i) simplicity, (ii) brevity, (iii) elegance.
- You are also obliged to treat files in Documentation/ in same quality as code.
+ You are also obliged to treat documentation files in the same quality as code.
 
 			Daniel Borkmann
 
