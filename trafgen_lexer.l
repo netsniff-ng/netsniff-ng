@@ -71,8 +71,8 @@ static char *try_convert_shellcode(char *sstr)
 %option nodefault
 
 number_oct	([0][0-9]+)
-number_hex	([0][x][a-fA-F0-9]+)
-number_bin	([0][b][0-1]+)
+number_hex	([0]?[x][a-fA-F0-9]+)
+number_bin	([0]?[b][0-1]+)
 number_dec	(([0])|([1-9][0-9]*))
 number_ascii	([a-zA-Z])
 
@@ -128,7 +128,8 @@ number_ascii	([a-zA-Z])
 
 "#"[^\n]*	{ return K_COMMENT; }
 
-{number_hex}	{ yylval.number = strtoul(yytext, NULL, 16);
+{number_hex}	{ yylval.number = strtoul(yytext + (yytext[0] == 'x' ? 1 : 0),
+					  NULL, 16);
 		  return number; }
 
 {number_dec}	{ yylval.number = strtol(yytext, NULL, 10);
@@ -137,7 +138,8 @@ number_ascii	([a-zA-Z])
 {number_oct}	{ yylval.number = strtol(yytext + 1, NULL, 8);
 		  return number; }
 
-{number_bin}	{ yylval.number = strtol(yytext + 2, NULL, 2);
+{number_bin}	{ yylval.number = strtol(yytext + (yytext[0] == 'b' ? 1 : 2),
+					 NULL, 2);
 		  return number; }
 
 {number_ascii}	{ yylval.number = (uint8_t) (*yytext);
