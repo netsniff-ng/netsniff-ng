@@ -357,6 +357,36 @@ broadcast or multicast.
 To select all ICMP packets that are not echo requests/replies (i.e., not
 ping packets).
 
+.SH PCAP FORMATS:
+
+netsniff-ng supports a couple of pcap formats, visible through ``netsniff-ng -D'':
+
+.SS tcpdump-capable pcap (default)
+Pcap magic number is encoded as 0xa1b2c3d4 resp. 0xd4c3b2a1. As packet meta data
+this format contains the timeval in microseconds, the original packet length and
+the captured packet length.
+
+.SS tcpdump-capable pcap with ns resolution
+Pcap magic number is encoded as 0xa1b23c4d resp. 0x4d3cb2a1. As packet meta data
+this format contains the timeval in nanoseconds, the original packet length and
+the captured packet length.
+
+.SS Alexey Kuznetzov's pcap
+Pcap magic number is encoded as 0xa1b2cd34 resp. 0x34cdb2a1. As packet meta data
+this format contains the timeval in microseconds, the original packet length,
+the captured packet length, the interface index (sll_ifindex), the packet's
+protocol (sll_protocol), and the packet type (sll_pkttype).
+
+.SS netsniff-ng pcap
+Pcap magic number is encoded as 0xa1e2cb12 resp. 0x12cbe2a1. As packet meta data
+this format contains the timeval in nanoseconds, the original packet length,
+the captured packet length, the timestamp hw/sw source, the interface index
+(sll_ifindex), the packet's protocol (sll_protocol), the packet type (sll_pkttype)
+and the hardware type (sll_hatype).
+
+For further implementation details or format support in your application,
+have a look at pcap_io.h.
+
 .SH NOTE
 For introducing bit errors, delays with random variation and more
 while replaying pcaps, make use of tc(8) with its disciplines such
