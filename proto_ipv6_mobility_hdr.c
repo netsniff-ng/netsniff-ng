@@ -164,9 +164,11 @@ static void dissect_mobilityhdr_type_6(struct pkt_buff *pkt,
 	struct bind_ack_msg *type_6;
 
 	type_6 = (struct bind_ack_msg *) pkt_pull(pkt, sizeof(*type_6));
+	if (type_6 == NULL)
+		return;
+
 	*message_data_len -= sizeof(*type_6);
-	if (type_6 == NULL || *message_data_len > pkt_len(pkt) ||
-	    *message_data_len < 0)
+	if (*message_data_len > pkt_len(pkt) || *message_data_len < 0)
 		return;
 
 	tprintf("Status (0x%x) ", type_6->status);
@@ -185,10 +187,12 @@ static void dissect_mobilityhdr_type_7(struct pkt_buff *pkt,
 	struct bind_err_msg *type_7;
 
 	type_7 = (struct bind_err_msg *) pkt_pull(pkt, sizeof(*type_7));
+	if (type_7 == NULL)
+		return;
+
 	*message_data_len -= sizeof(*type_7);
 	addr = ntohll(type_7->home_addr);
-	if (type_7 == NULL || *message_data_len > pkt_len(pkt) ||
-	    *message_data_len < 0)
+	if (*message_data_len > pkt_len(pkt) || *message_data_len < 0)
 		return;
 
 	tprintf("Status (0x%x) ", type_7->status);
