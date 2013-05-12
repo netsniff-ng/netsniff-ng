@@ -33,7 +33,7 @@ static void auth_hdr(struct pkt_buff *pkt)
 	auth_ops = (struct auth_hdr *) pkt_pull(pkt, sizeof(*auth_ops));
 	if (auth_ops == NULL)
 		return;
-	
+
 	hdr_len = (auth_ops->h_payload_len * 4) + 8;
 
 	tprintf(" [ Authentication Header ");
@@ -69,7 +69,7 @@ static void auth_hdr_less(struct pkt_buff *pkt)
 	auth_ops = (struct auth_hdr *) pkt_pull(pkt, sizeof(*auth_ops));
 	if (auth_ops == NULL)
 		return;
-	
+
 	hdr_len = (auth_ops->h_payload_len * 4) + 8;
 	if (hdr_len > pkt_len(pkt) || hdr_len < 0)
 		return;
