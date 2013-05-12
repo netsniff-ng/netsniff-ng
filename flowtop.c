@@ -577,7 +577,7 @@ static void flow_entry_get_sain6_obj(struct flow_entry *n,
 	sa->sin6_family = PF_INET6;
 
 	memcpy(&sa->sin6_addr, SELFLD(dir, ip6_src_addr, ip6_dst_addr),
-	       sizeof(SELFLD(dir, ip6_src_addr, ip6_dst_addr)));
+	       sizeof(sa->sin6_addr));
 }
 
 static void
