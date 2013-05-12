@@ -46,7 +46,7 @@ extern void device_set_flags(const char *ifname, const short flags);
 extern void drop_privileges(bool enforce, uid_t uid, gid_t gid);
 extern void xlockme(void);
 extern void xunlockme(void);
-extern int set_nonblocking(int fd);
+extern void set_nonblocking(int fd);
 extern int set_nonblocking_sloppy(int fd);
 extern int set_reuseaddr(int fd);
 extern void set_sock_prio(int fd, int prio);

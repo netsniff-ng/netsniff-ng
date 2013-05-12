@@ -169,13 +169,11 @@ void set_sock_uncork(int fd, int udp)
 		set_tcp_uncork(fd);
 }
 
-int set_nonblocking(int fd)
+void set_nonblocking(int fd)
 {
 	int ret = fcntl(fd, F_SETFL, fcntl(fd, F_GETFD, 0) | O_NONBLOCK);
 	if (unlikely(ret < 0))
 		panic("Cannot fcntl!\n");
-
-	return 0;
 }
 
 int set_nonblocking_sloppy(int fd)
