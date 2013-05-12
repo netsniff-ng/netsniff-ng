@@ -24,12 +24,17 @@ extern char *xstrdup(const char *str) __hidden;
 extern char *xstrndup(const char *str, size_t size) __hidden;
 extern int xdup(int fd) __hidden;
 
-#define xfree(ptr)							\
-do {									\
-        if (unlikely((ptr) == NULL))					\
-                panic("xfree: NULL pointer given as argument\n");	\
-        free((ptr));							\
-	(ptr) = NULL;							\
+static inline void __xfree(void *ptr)
+{
+        if (unlikely((ptr) == NULL))
+                panic("xfree: NULL pointer given as argument\n");
+        free(ptr);
+}
+
+#define xfree(ptr)	\
+do {			\
+	__xfree(ptr);	\
+	(ptr) = NULL;	\
 } while (0)
 
 #endif /* XMALLOC_H */
