@@ -163,7 +163,11 @@ static void lldp(struct pkt_buff *pkt)
 	tprintf(" [ LLDP ");
 
 	while (len >= sizeof(tlv_hdr)) {
-		tlv_hdr = EXTRACT_16BIT(pkt_pull(pkt, sizeof(tlv_hdr)));
+		uint8_t *data = pkt_pull(pkt, sizeof(tlv_hdr));
+		if (data == NULL)
+			goto out_invalid;
+
+		tlv_hdr = EXTRACT_16BIT(data);
 		tlv_type = LLDP_TLV_TYPE(tlv_hdr);
 		tlv_len = LLDP_TLV_LENGTH(tlv_hdr);
 
@@ -442,7 +446,11 @@ static void lldp_less(struct pkt_buff *pkt)
 	len = pkt_len(pkt);
 
 	while (len >= sizeof(tlv_hdr)) {
-		tlv_hdr = EXTRACT_16BIT(pkt_pull(pkt, sizeof(tlv_hdr)));
+		uint8_t *data = pkt_pull(pkt, sizeof(tlv_hdr));
+		if (data == NULL)
+			break;
+
+		tlv_hdr = EXTRACT_16BIT(data);
 		tlv_type = LLDP_TLV_TYPE(tlv_hdr);
 		tlv_len = LLDP_TLV_LENGTH(tlv_hdr);
 
