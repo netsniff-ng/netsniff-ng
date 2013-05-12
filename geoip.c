@@ -177,8 +177,10 @@ again:
 		 files[which].remote, host);
 
 	ret = write(sock, raw, strlen(raw));
-	if (ret <= 0)
+	if (ret <= 0) {
+		close(sock);
 		return -EIO;
+	}
 
 	shutdown(sock, SHUT_WR);
 
@@ -187,8 +189,11 @@ again:
 
 	memset(raw, 0, sizeof(raw));
 	ret = read(sock, raw, sizeof(raw));
-	if (ret <= 0)
+	if (ret <= 0) {
+		close(fd);
+		close(sock);
 		return -EIO;
+	}
 
 	raw[sizeof(raw) - 1] = 0;
 
@@ -210,10 +215,11 @@ again:
 	}
 
 	if (!found || ptr >= raw + ret || len < 0 || rtotlen == 0 || good == 0) {
+		close(fd);
+		close(sock);
+
 		if (retry == 0) {
 			retry = 1;
-			close(fd);
-			close(sock);
 			goto again;
 		}
 
