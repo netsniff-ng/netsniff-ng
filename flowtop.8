@@ -13,20 +13,20 @@ flowtop \- top-like netfilter TCP/UDP/SCTP/DCCP/ICMP(v6) flow tracking
 .SH DESCRIPTION
 
 flowtop is a top-like connection tracking tool that can run on an end host or
-small home router. It is able to present TCP, UDP/UDP-lite, SCTP, DCCP, ICMP(v6)
-flows that have been collected by the kernel's netfilter connection tracking
-framework, thus no packet capturing in user space needs to be done.
+small home router. It is able to present TCP, UDP/UDP-lite, SCTP, DCCP, and
+ICMP(v6) flows that have been collected by the kernel's netfilter connection
+tracking framework, thus no packet capturing in user space needs to be done.
 
 flowtop is able to give you a quick overview of current connections on your
 local system, e.g. for debugging purposes or to answer questions like:
 
     * If you access website X, what other connections are being opened in
-the background that I'm not aware of?
-    * What connections are active that pass ones router?
-    * I have this proprietary binary Y, where does it connect to?
-    * To which countries am I sending my data?
+      the background that I'm not aware of?
+    * What connections are active that pass one's router?
+    * I have this proprietary binary Y, to where does it connect?
+    * To which countries am I sending data?
     * Are there any suspicious background connections on my machine?
-    * How many connections has binary Z currently active?
+    * How many active connections does binary Y have?
 
 The following information will be presented in flowtop's output:
 
@@ -41,7 +41,7 @@ In order for flowtop to work, netfilter/iptables must be active resp. running
 on your machine, thus kernel-side connection tracking is active.
 
 flowtop's intention is just to get a quick look over your active connections.
-If you want to have logging, have a look at netfilter's conntrack(8) tools
+If you want logging support, have a look at netfilter's conntrack(8) tools
 instead.
 
 .SH OPTIONS
@@ -93,22 +93,22 @@ Show user help.
 Default ncurses output for flowtop that tracks IPv4, IPv6 flows for TCP.
 
 .SS flowtop -46UTDISs
-This example enables maximum display options for flowtop.
+This example enables the maximum display options for flowtop.
 
 .SH CONFIG FILES
 
-Under /etc/netsniff-ng/ there are the following files stored that are used
-by flowtop and can be extended if wished:
+Files under /etc/netsniff-ng/ can be modified to extend flowtop's
+service resolution and lookup information.
 
     * tcp.conf - TCP port/services map
     * udp.conf - UDP port/services map
     * geoip.conf - GeoIP database mirrors
 
 .SH BUGS
-During fairly high till high connection tracking updates, flowtop's scrolling
-can become shortly unresponsive. The right fix would be to replace flowtop's
-connection management backend with a better design resp. locking approach.
-Still on todo.
+With a fairly high rate of connection tracking updates, flowtop can become
+unresponsive for short periods of time while scrolling. The right fix would
+be to replace flowtop's connection management backend with a better design
+resp. locking approach. Still on todo.
 
 .SH LEGAL
 flowtop is licensed under the GNU GPL version 2.0.
