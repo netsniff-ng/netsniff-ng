@@ -26,7 +26,7 @@ static char *try_convert_shellcode(char *sstr)
 {
 	int j = 0;
 	bool found_any = false;
-	char *bstr, *ostr = sstr, *hay;
+	char *bstr, *ostr = sstr, *hay, *orig = sstr;
 	size_t blen, slen = strlen(sstr), tot = 0;
 	const char *needle = "\\x";
 
@@ -34,7 +34,7 @@ static char *try_convert_shellcode(char *sstr)
 	slen -= 2;
 
 	if (slen % 4 != 0)
-		return sstr;
+		return orig;
 
 	blen = slen / 4;
 	hay = sstr;
@@ -45,7 +45,7 @@ static char *try_convert_shellcode(char *sstr)
 	}
 
 	if (blen != tot || !found_any)
-		return sstr;
+		return orig;
 
 	blen += 2;
 	bstr = xzmalloc(blen);
