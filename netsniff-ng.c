@@ -37,6 +37,8 @@
 #include "dissector.h"
 #include "xmalloc.h"
 
+extern int set_sockopt_hwtimestamp(int sock, const char *dev);
+
 enum dump_mode {
 	DUMP_INTERVAL_TIME,
 	DUMP_INTERVAL_SIZE,
