@@ -21,9 +21,11 @@ What libraries are required?
  - libz (astraceroute, flowtop, netsniff-ng)
  - libnacl (curvetun)
  - libnetfilter-conntrack (flowtop)
- - libpcap (netsniff-ng, for tcpdump-like filters)
+ - libpcap (netsniff-ng [for tcpdump-like filters], mausezahn)
  - liburcu (flowtop)
  - libnl3 (netsniff-ng, trafgen)
+ - libcli (mausezahn)
+ - libnet (mausezahn)
 
 What additional tools are recommended after the build?
 
@@ -68,15 +70,6 @@ You can also build only a particular tool, e.g.:
 
   (# make trafgen_distclean)
   ($ make trafgen_clean)
-
-Currently mausezahn is experimental and not included in the default repository
-resp. build:
-
-  $ git pull git://repo.or.cz/netsniff-ng-old.git with-mausezahn
-
-This means if you want to use mausezahn, you have to execute 'make mausezahn'
-for a build. This will be changed at the time when we have cleaned up and
-fixed the imported code.
 
 If you want to build all tools, but curvetun (i.e. because you don't need
 the tunneling software and the NaCl build process lasts quite long):

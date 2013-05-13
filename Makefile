@@ -8,7 +8,7 @@ SUBLEVEL = 8
 EXTRAVERSION = -rc0
 NAME = Ziggomatic
 
-TOOLS ?= netsniff-ng trafgen astraceroute flowtop ifpps bpfc curvetun
+TOOLS ?= netsniff-ng trafgen astraceroute flowtop ifpps bpfc curvetun mausezahn
 
 # For packaging purposes, prefix can define a different path.
 PREFIX ?=
@@ -210,7 +210,7 @@ define TOOL_templ
   $(1)/%.tab.o: $(1)/%.tab.c
 	$$(CC) $$(ALL_CFLAGS) -o $$@ -c $$<
   $(1)/%.o: %.c
-	$$(CC) $$(ALL_CFLAGS) -o $$@ -c $$<
+	$$(CC) $$(ALL_CFLAGS) -o $(1)/$$(shell basename $$@) -c $$<
 endef
 
 $(foreach tool,$(TOOLS),$(eval $(call TOOL_templ,$(tool))))
@@ -224,6 +224,8 @@ flowtop: ALL_CFLAGS += $(shell pkg-config --cflags ncurses)
 bpfc: ALL_CFLAGS += -I..
 curvetun: ALL_CFLAGS += -I ${NACL_INC_DIR}
 curvetun: ALL_LDFLAGS += -L ${NACL_LIB_DIR}
+# This gets some extra treatment here until the code looks properly
+mausezahn: ALL_CFLAGS = -O2 -I. -I.. -DVERSION_STRING=\"$(VERSION_STRING)\" -DPREFIX_STRING=\"$(PREFIX)\"
 
 bpfc_clean_custom:
 	$(Q)$(call RM,$(BUILD_DIR)/*.h $(BUILD_DIR)/*.c)
@@ -302,6 +304,7 @@ help:
 	$(Q)echo "$(bold)Targets for building the toolkit:$(normal)"
 	$(Q)echo " all|toolkit                  - Build the whole toolkit"
 	$(Q)echo " allbutcurvetun               - Build all except curvetun"
+	$(Q)echo " allbutmausezahn              - Build all except mausezahn"
 	$(Q)echo " <toolname>                   - Build only one of the tools"
 	$(Q)echo "$(bold)Targets for cleaning the toolkit's build files:$(normal)"
 	$(Q)echo " clean|mostlyclean            - Remove all build files"
