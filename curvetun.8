@@ -26,7 +26,7 @@ Salsa20 and authenticated by the MAC Poly1305, where keys have previously
 been computed with the ECDH key agreement protocol Curve25519.
 .PP
 Cryptography is based on Daniel J. Bernstein's networking and cryptography
-library ``NaCl''. By design, curvetun does not provide any particular pattern
+library \[lq]NaCl\[rq]. By design, curvetun does not provide any particular pattern
 or default port numbers that gives certainty that the connection from a
 particular flow is actually running curvetun.
 .PP
@@ -155,11 +155,11 @@ you. Here, we assume you have entered 'mysrv1' on the server and 'myclient1'
 on the client side.
 .PP
 Now, all necessary files have been created under ~/.curvetun. Files include
-``priv.key'', ``pub.key'', ``username', ``clients'' and ``servers''.
+\[lq]priv.key\[rq], \[lq]pub.key\[rq], \[lq]username\[rq], \[lq]clients\[rq] and \[lq]servers\[rq].
 .PP
-``clients'' and ``servers'' are empty at the beginning and need to be filled.
-The ``clients'' file is meant for the server, so that it knows what clients
-are allowed to connect. The ``servers'' file is for the client, where it can
+\[lq]clients\[rq] and \[lq]servers\[rq] are empty at the beginning and need to be filled.
+The \[lq]clients\[rq] file is meant for the server, so that it knows what clients
+are allowed to connect. The \[lq]servers\[rq] file is for the client, where it can
 select curvetun servers to connect to. Both files are kept very simple, so that
 a single configuration line per client or server is sufficient.
 .PP
