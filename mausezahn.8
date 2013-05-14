@@ -1,0 +1,256 @@
+.\" netsniff-ng - the packet sniffing beast
+.\" Copyright 2013 Herbert Haas, modified by Daniel Borkmann.
+.\" Subject to the GPL, version 2.
+
+.TH MAUSEZAHN 8 "03 March 2013" "Linux" "netsniff-ng toolkit"
+.SH NAME
+mausezahn \- a fast versatile packet generator with Cisco-cli
+
+.SH SYNOPSIS
+
+\fB mausezahn\fR { [\fIoptions\fR] "<arg-string> | <hex-string>" }
+
+.SH DESCRIPTION
+
+mausezahn is a fast traffic generator which allows you to send nearly every
+possible and impossible packet. In contrast to trafgen(8), mausezahn's packet
+configuration is on protocol-level instead of byte-level and mausezahn also
+comes with a built-in Cisco-like command-line interface, making it suitable
+as a network traffic generator box in your network lab.
+
+Next to network labs, it can also be used as a didactical tool and for security
+audits including penetration and DoS testing. As a traffic generator, mausezahn
+is also able to test IP multicast or VoIP networks. Packet rates close to the
+physical limit are reachable, depending on the hardware platform.
+
+mausezahn supports two modes, ``direct mode'' and a multi-threaded ``interactive
+mode''.
+
+The ``direct mode'' allows you to create a packet directly on the command line
+and every packet parameter is specified in the argument list when calling
+mausezahn.
+
+The ``interactive mode'' is an advanced multi-threaded configuration mode with
+its own command line interface (cli). This mode allows you to create an arbitrary
+number of packet types and streams in parallel, each with different parameters.
+
+The interactive mode utilizes a completely redesigned and more flexible protocol
+framework called ``mops'' (mausezahn's own packet system). The look and feel of
+the cli is very close to the Cisco IOS^tm command line.
+
+You can start the interactive mode by executing mausezahn with the ``-x''
+argument (an optional port number may follow, otherwise it is 25542). Then use
+telnet(1) to connect to this mausezahn instance. If not otherwise specified,
+the default login/password combination is mz:mz, enable password is: mops.
+This can be changed in /etc/netsniff-ng/mausezahn.conf.
+
+The direct mode supports two specification schemes: The ``raw-layer-2'' scheme,
+where every single byte to be sent can be specified, and ``higher-layer'' scheme,
+where packet builder interfaces are used (using the ``-t'' option).
+
+To use the ``raw-layer-2'' scheme, simply specify the desired frame as
+hexadecimal sequence (the ``hex-string''), such as:
+
+  mausezahn eth0 "00:ab:cd:ef:00 00:00:00:00:00:01 08:00 ca:fe:ba:be"
+
+In this example, whitespaces within the byte string are optional and separate
+the Ethernet fields (destination and source address, type field, and a short
+payload). The only additional options supported are ``-a'', ``-b'', ``-c'', and
+``-p''. The frame length must be greater or equal 15 bytes.
+
+The ``higher-layer'' scheme is enabled using the ``-t <packet-type>'' option.
+This option activates a packet builder and besides the ``packet-type'' an
+optional ``arg-string'' can be specified. The ``arg-string'' contains
+packet-specific parameters, such as TCP flags, port numbers, etc (see example
+section).
+
+.SH OPTIONS
+mausezahn provides a built-in context-specific help. Thus, simply append the
+keyword ``help'' after the configuration options. The most important options
+are:
+
+.SS -x [<port>]
+Start mausezahn in interactive mode with a Cisco-like cli. Use telnet to log
+into the local mausezahn instance. If no port has been specified, port 25542
+is used as default.
+
+.SS -v
+Verbose mode. Capital -V is even more verbose.
+
+.SS -S
+Simulation mode, i.e. don't put anything on the wire. This is typically combined
+with the verbose mode.
+
+.SS -q
+Quiet mode where only warnings and errors are displayed.
+
+.SS -c <count>
+Send the packet count times (default: 1, infinite: 0).
+
+.SS -d <delay>
+Apply delay between transmissions. The delay value can be specified in usec
+(default, no additional unit needed), or in msec (e.g. 100m or 100msec), or
+in seconds (e.g. 100s or 100sec). Note: mops also supports nanosecond delay
+granulation if you need it (see interactive mode).
+
+.SS -p <lenght>
+Pad the raw frame to specified length using zero bytes. Note that for raw
+layer 2 frames the specified length defines the whole frame length, while for
+higher layer packets the number of additional padding bytes are specified.
+
+.SS -a <src-mac|keyword>
+Use specified source MAC address with hex notation such as 00:00:aa:bb:cc:dd.
+By default the interface MAC address will be used. The keywords ``rand'' and
+``own'' refer to a random MAC address (only unicast addresses are created)
+and the own address, respectively. You can also use the keywords mentioned
+below although broadcast-type source addresses are officially invalid.
+
+.SS -b <dst-mac|keyword>
+Use specified destination MAC address. By default, a broadcast is sent in raw
+layer 2 mode or the destination hosts/gateways interface MAC address in normal
+(IP) mode. You can use the same keywords as mentioned above, as well as
+``bc'' or ``bcast'', ``cisco'', and ``stp''. Please note that for the destination
+MAC address the ``rand'' keyword is supported but creates a random address only
+once, even when you send multiple packets.
+
+.SS -A <src-ip|range|rand>
+Use specified source IP address, default is own interface IP. Optionally, the
+keyword ``rand'' can again be used for a random source IP address or a range
+can be specified, such as ``192.168.1.1-192.168.1.100'' or ``10.1.0.0/16''.
+Also, a DNS name can be specified for which mausezahn tries to determine the
+corresponding IP address automatically.
+
+.SS -B <dst-ip|range>
+Use specified destination IP address (default is broadcast i.e. 255.255.255.255).
+As with the source address (see above) you can also specify a range or a DNS name.
+
+.SS -t <packet-type>
+Create the specified packet type using the built-in packet builder. Currently,
+supported packet types are: ``arp'', ``bpdu'', ``ip'', ``udp'', ``tcp'', ``rtp'',
+and ``dns''. There is currently also a limited support for ``icmp''. Type
+``-t help'' to verify which packet builders your actual mausezahn version
+supports. Also, for any particular packet type, for example ``tcp'' type
+``mausezahn -t tcp help'' to receive a more in-depth context specific help.
+
+.SS -T <packet-type>
+Make this mausezahn instance the receiving station. Currently, only ``rtp'' is
+an option here and provides precise jitter measurements. For this purpose, start
+another mausezahn instance on the sending station and the local receiving station
+will output jitter statistics. See ``mausezahn \-T rtp help'' for a detailed help.
+
+.SS -Q <[CoS:]vlan> [, <[CoS:]vlan>, ...]
+Specify 802.1Q VLAN tag and optional Class of Service. An arbitrary number of
+VLAN tags can be specified (that is you can simulate QinQ or even QinQinQinQ..).
+Multiple tags must be separated via a comma or a period (e.g. "5:10,20,2:30").
+VLAN tags are not supported for ARP and BPDU packets (in which case you could
+specify the whole frame in hex using the raw layer 2 interface of mausezahn).
+
+.SS -M <label[:cos[:ttl]][bos]> [, <label...>] 
+Specify a MPLS label or even a MPLS label stack. Optionally, for each label the
+experimental bits (usually the Class of Service, CoS) and the Time To Live
+(TTL) can be specified. And if you are really crazy you can set/unset the
+Bottom of Stack (BoS) bit at each label using the ``S'' (set) and ``s''
+(unset) option. By default, the BoS is set automatically and correct. Any other
+setting will lead to invalid frames. Enter ``-M help'' for detailed instructions
+and examples.
+
+.SS -P <ascii-payload>
+Specify a cleartext payload. Alternatively, each packet type supports a
+hexadecimal specification of the payload (see for example ``-t udp help'').
+
+.SS -f <filename>
+Read the ascii payload from the specified file.
+
+.SS -F <filename>
+Read the hex payload from the specified file. Actually, this file must be also
+an ascii text file, but must contain hexadecimal digits, e.g. "aa:bb:cc:0f:e6...".
+You can use also spaces as separation characters.
+
+.SH USAGE EXAMPLE
+
+.SS mausezahn eth0 \-c 0 \-d 2s \-t bpdu vlan=5
+Send BPDU frames for VLAN 5 as used with Cisco's PVST+ type of STP. By default
+mausezahn assumes that you want to become the root bridge.
+
+.SS mausezahn eth0 \-c 128000 \-a rand \-p 64
+Perform a CAM table overflow attack.
+
+.SS mausezahn eth0 \-c 0 \-Q 5,100 \-t tcp "flags=syn,dp=1-1023" \-p 20 \-A rand \-B 10.100.100.0/24
+Perform a SYN flood attack to another VLAN using VLAN hopping. This only works
+if you are connected to the same VLAN which is configured as native VLAN on the
+trunk. We assume that the victim VLAN is VLAN 100 and the native VLAN is VLAN 5.
+Lets attack every host in VLAN 100 which use a IP prefix of 10.100.100.0/24, also
+try out all ports between 1 and 1023 and use a random source IP address.
+
+.SS mausezahn eth0 \-c 0 \-d 10msec \-B 230.1.1.1 \-t udp "dp=32000,dscp=46" \-P "Multicast test packet"
+Send IP multicast packets to the multicast group 230.1.1.1 using a UDP header
+with destination port 32000 and set the IP DSCP field to EF (46). Send one
+frame every 10 msec.
+
+.SS mausezahn eth0 \-Q 6:420 \-M 100,200,300:5 \-A 172.30.0.0/16 \-B target.anynetwork.foo \-t udp "sp=666,dp=1-65535" \-p 1000 \-c 10
+Send UDP packets to the destination host target.anynetwork.foo using all
+possible destination ports and send every packet with all possible source
+addresses of the range 172.30.0.0/16; additionally use a source port of 666
+and three MPLS labels, 100, 200, and 300, the outer (300) with QoS field 5.
+Send the frame with a VLAN tag 420 and CoS 6; eventually pad with 1000 bytes
+and repeat the whole thing 10 times.
+
+.SS mausezahn \-t syslog sev=3 \-P "Main reactor reached critical temperature." \-A 192.168.33.42 \-B 10.1.1.9 \-c 6 \-d 10s
+Send six forged syslog messages with severity 3 to a Syslog server 10.1.1.9; use
+a forged source IP address 192.168.33.42 and let mausezahn decide which local
+interface to use. Use an inter-packet delay of 10 seconds.
+
+.SS mausezahn \-t tcp "flags=syn|urg|rst, sp=145, dp=145, win=0, s=0-4294967295, ds=1500, urg=666" \-a bcast \-b bcast \-A bcast \-B 10.1.1.6 \-p 5
+Send an invalid TCP packet with only a 5 byte payload as layer-2 broadcast and
+also use the broadcast MAC address as source address. The target should be
+10.1.1.6 but use a broadcast source address. The source and destination port
+shall be 145 and the window size 0. Set the TCP flags SYN, URG, and RST
+simultaneously and sweep through the whole TCP sequence number space with an
+increment of 1500. Finally set the urgent pointer to 666, i.e. pointing to
+nowhere.
+
+.SH NOTE
+When multiple ranges are specified, e.g. destination port ranges and
+destination address ranges, then all possible combinations of ports and
+addresses are used for packet generation. Furthermore, this can be mixed with
+other ranges e.g. a TCP sequence number range. Note that combining ranges
+can lead to a very huge number of frames to be sent. As a rule of thumb you
+can assume that about 100,000 frames and more are sent in a fraction of one
+second, depending on your network interface.
+
+mausezahn has been designed as fast traffic generator so you might easily
+overwhelm a LAN segment with myriads of packets. And because mausezahn should
+also support security audits it is also possible to create malicious or
+invalid packets, SYN floods, port and address sweeps, DNS and ARP poisoning,
+etc.
+
+Therefore, don't use this tool when you are not aware of possible consequences
+or have only little knowledge about networks and data communication. If you
+abuse mausezahn for 'unallowed' attacks and get caught, or damage something of
+your own, then this is completely your fault. So the safest solution is to try
+it out in a lab environment.
+
+.SH LEGAL
+mausezahn is licensed under the GNU GPL version 2.0.
+
+.SH HISTORY
+.B mausezahn
+was originally written by Herbert Haas. According to his website [1], he
+unfortunately passed away in 2011. Thus, having this tool unmaintained as well.
+It has been adopted and integrated into the netsniff-ng toolkit and is further
+being maintained and developed from there. Maintainers are Tobias Klauser
+<tklauser@distanz.ch> and Daniel Borkmann <dborkma@tik.ee.ethz.ch>.
+
+  [1] http://www.perihel.at/
+
+.SH SEE ALSO
+.BR netsniff-ng (8),
+.BR trafgen (8),
+.BR ifpps (8),
+.BR bpfc (8),
+.BR flowtop (8),
+.BR astraceroute (8),
+.BR curvetun (8)
+
+.SH AUTHOR
+Manpage was written by Herbert Haas and modified by Daniel Borkmann.
