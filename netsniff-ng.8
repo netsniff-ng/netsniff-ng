@@ -63,7 +63,7 @@ determined automatically by the pcap file magic. In case of stdin, it is
 assumed that the input stream is a pcap file.
 
 .SS -o <dev|pcap|dir|cfg|->, --out <dev|pcap|dir|cfg|->
-Defines the output device, that can either be a networking device, a pcap file,
+Defines the output device. This can either be a networking device, a pcap file,
 a folder, a trafgen(8) configuration file or stdout (``-''). In case of a pcap
 file, that should not have the default pcap type (0xa1b2c3d4), the additional
 option ``-T'' must be provided. If a directory is given, then, instead of a
@@ -96,7 +96,7 @@ following values are possible ``<num>KiB/MiB/GiB'' while as a time parameter
 it can be ``<num>s/sec/min/hrs''.
 
 .SS -J, --jumbo-support
-On default netsniff-ng's ring buffer frames are of a fixed size of 2048 bytes.
+By default netsniff-ng's ring buffer frames are of a fixed size of 2048 bytes.
 This means that if you're expecting jumbo frames or even super jumbo frames to
 pass your line, then you need to enable support for that with the help of this
 option. However, this has the disadvantage of a performance regression and a
@@ -115,8 +115,8 @@ Otherwise, a number given as an unsigned integer will limit processing.
 
 .SS -P <name>, --prefix <name>
 When dumping pcap files into a folder, a file name prefix can be defined with
-this option. If not otherwise specified, the default prefix is ``dump-'' followed
-by a unix timestamp.
+this option. If none is specified, the default prefix is ``dump-'' followed by a
+unix timestamp.
 
 .SS -T <pcap-magic>, --magic <pcap-magic>
 Specify a pcap type for storage. Different pcap types with their various meta
@@ -126,7 +126,7 @@ used. Pcap files with swapped endianess are also supported.
 
 .SS -D, --dump-pcap-types
 Dump all available pcap types with their capabilities and magic numbers that
-can be used with option ``-T'' and exit.
+can be used with option ``-T'' to stdout and exit.
 
 .SS -B, --dump-bpf
 If a Berkeley Packet Filter is given, e.g. via option ``-f'', then dump the BPF
@@ -138,7 +138,7 @@ If the input and output device are both networking devices, then this option wil
 randomize packet order in the output ring buffer.
 
 .SS -M, --no-promisc
-The networking interface will not be put into promiscuous mode. On default,
+The networking interface will not be put into promiscuous mode. By default,
 promiscuous mode is turned on.
 
 .SS -A, --no-sock-mem
@@ -164,7 +164,7 @@ default the size is being determined based on the network connectivity rate.
 
 .SS -k <uint>, --kernel-pull <uint>
 Manually define the interval in micro-seconds where the kernel should be triggered
-to batch process the ring buffer frames. On default, it is every 10us, but it can
+to batch process the ring buffer frames. By default, it is every 10us, but it can
 manually be prolonged, for instance.
 
 .SS -b <cpu>, --bind-cpu <cpu>
@@ -211,10 +211,10 @@ addresses can be placed into geoip.conf, separated by a newline.
 Be more verbose during startup, i.e. show detailled ring setup information.
 
 .SS -v, --version
-Show versioning information.
+Show versioning information and exit.
 
 .SS -h, --help
-Show user help.
+Show user help and exit.
 
 .SH USAGE EXAMPLE
 
