@@ -21,6 +21,7 @@ SBINDIR = $(PREFIX)/usr/sbin
 INCDIR = $(PREFIX)/usr/include
 ETCDIR = $(PREFIX)/etc
 ETCDIRE = $(ETCDIR)/netsniff-ng
+MAN8DIR = $(PREFIX)/usr/share/man/man8
 
 # Shut up make, helper warnings, parallel compilation!
 MAKEFLAGS += --no-print-directory
@@ -134,6 +135,7 @@ GIT_LOG = git shortlog -n --not $(shell git describe --abbrev=0 --tags)
 GIT_REM = git ls-files -o | xargs rm -rf
 GIT_PEOPLE = git log --no-merges $(VERSION_STRING)..HEAD | grep Author: | cut -d: -f2 | \
 	     cut -d\< -f1 | sort | uniq -c | sort -nr
+GZIP = gzip --best -c
 
 export VERSION PATCHLEVEL SUBLEVEL EXTRAVERSION
 export CROSS_COMPILE
@@ -199,11 +201,14 @@ define TOOL_templ
 	$(Q)echo "$(bold)$(WHAT) $(1):$(normal)"
   $(1): $(1)_prehook $$($(1)-lex) $$($(1)-yaac) $$(patsubst %.o,$(1)/%.o,$$($(1)-objs))
   $(1)_clean: $(1)_clean_custom
-	$(Q)$$(call RM,$(1)/*.o $(1)/$(1))
+	$(Q)$$(call RM,$(1)/*.o $(1)/$(1) $(1)/*.gz)
   $(1)_install: $(1)_install_custom
 	$(Q)$$(call INSTX,$(1)/$(1),$$(SBINDIR))
+	$(Q)$(GZIP) $(1).8 > $(1)/$(1).8.gz
+	$(Q)$$(call INSTX,$(1)/$(1).8.gz,$$(MAN8DIR))
   $(1)_distclean: $(1)_distclean_custom
 	$(Q)$$(call RM,$$(SBINDIR)/$(1))
+	$(Q)$$(call RM,$$(MAN8DIR)/$(1).8.gz)
   $(1)/%.yy.o: $(1)/%.yy.c
 	$$(CC) $$(ALL_CFLAGS) -o $$@ -c $$<
   $(1)/%.tab.o: $(1)/%.tab.c
