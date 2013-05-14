@@ -1,90 +1,90 @@
 .\" netsniff-ng - the packet sniffing beast
 .\" Copyright 2013 Daniel Borkmann.
 .\" Subject to the GPL, version 2.
-
+.PP
 .TH CURVETUN 8 "03 March 2013" "Linux" "netsniff-ng toolkit"
 .SH NAME
 curvetun \- a lightweight Curve25519 IP tunnel
-
+.PP
 .SH SYNOPSIS
-
+.PP
 \fB curvetun\fR [\fIoptions\fR]
-
+.PP
 .SH DESCRIPTION
 curvetun is a lightweight, high-speed ECDH multiuser IP tunnel for Linux
 that is based on epoll(2). curvetun uses the Linux TUN/TAP interface and
 supports {IPv4, IPv6} over {IPv4, IPv6} with UDP or TCP as carrier protocols.
-
-It has an integrated packet forwarding trie, thus multiple users with
+.PP
+It has an integrated packet forwarding tree, thus multiple users with
 different IPs can be handled via a single tunnel device on the server side
-and flows are scheduled for processing in a CPU affine way, at least in case
-of TCP as a carrier protocol.
-
-As key management, public-key cryptography based on elliptic curves are being
+and flows are scheduled for processing in a CPU efficient way, at least in the
+case of TCP as the carrier protocol.
+.PP
+For key management, public-key cryptography based on elliptic curves are being
 used and packets are encrypted end-to-end by the symmetric stream cipher
 Salsa20 and authenticated by the MAC Poly1305, where keys have previously
 been computed with the ECDH key agreement protocol Curve25519.
-
+.PP
 Cryptography is based on Daniel J. Bernstein's networking and cryptography
 library ``NaCl''. By design, curvetun does not provide any particular pattern
 or default port numbers that gives certainty that the connection from a
 particular flow is actually running curvetun.
-
-However, if you have further needs to bypass censorship, you can try using
+.PP
+However, if you have a further need to bypass censorship, you can try using
 curvetun in combination with Tor's obfsproxy or Telex. Furthermore, curvetun
-also protects you against replay attacks and DH man in the middle.
+also protects you against replay attacks and DH man-in-the-middle attacks.
 Additionally, server-side syslog event logging can also be disabled to not
 reveal any critical user connection data.
-
+.PP
 .IP " 1." 4
 obfsproxy from the TOR project
 .RS 4
 \%https://www.torproject.org/projects/obfsproxy.html.en
 .RE
-
+.PP
 .IP " 2." 4
-Telex, anticensorship in the network infrastructure
+Telex, anti-censorship in the network infrastructure
 .RS 4
 \%https://telex.cc/
 .RE
-
+.PP
 .SH OPTIONS
-
-todo
-
+.PP
+todo FIXME
+.PP
 .SH CRYPTOGRAPHY
-IP tunnels are usually used to create virtual private networks (VPN), where
-parts of the network can only be reached via an unsecure or untrusted underlay
-network like the Internet. Only few software exists to create such tunnels,
+Encrypted IP tunnels are often used to create virtual private networks (VPN),
+where parts of the network can only be reached via an insecure or untrusted medium
+such as the Internet. Only a few software utilities exists to create such tunnels,
 or, VPNs. Two popular representatives of such software are OpenVPN and VTUN.
-
+.PP
 The latter also introduced the TUN/TAP interfaces into the Linux kernel. VTUN
-only has a rather basic encryption module, that doesn't fit into todays
-cryptographic needs. By default MD5 is used to create 128-Bit wide keys for
+only has a rather basic encryption module, that does not fit todays
+cryptographic needs. By default, MD5 is used to create 128-Bit wide keys for
 the symmetric BlowFish cipher in ECB mode [1].
-
-Although OpenSSL is used in both, VTUN and OpenVPN, OpenVPN is much more
+.PP
+Although OpenSSL is used in both VTUN and OpenVPN, OpenVPN is much more
 feature rich regarding ciphers and user authentication. Nevertheless, letting
-people choose ciphers or authentication methods does not necessarily mean a
+people choose ciphers or authentication methods is not necessarily a
 good thing: administrators could either prefer speed over security and
 therefore choose weak ciphers, so that the communication system will be as
 good as without any cipher; they could choose weak passwords for symmetric
 encryption or they could misconfigure the communication system by having too
-much choices of ciphers and too little experience for picking the right one.
-
+much choice of ciphers and too little experience for picking the right one.
+.PP
 Next to the administration issues, there are also software development issues.
 Cryptographic libraries like OpenSSL are a huge mess and too low-level and
-complex to probably fully understand or correctly apply, so that they form a
+complex to properly fully understand or correctly apply, so that they form a
 further ground for vulnerabilities of such software.
-
+.PP
 In 2010, the cryptographers Tanja Lange and Daniel J. Bernstein have therefore
 created and published a cryptography library for networking, which is called
-NaCl (pronounced ``salt''). NaCl challenges such addressed problems as in
+NaCl (pronounced ''salt''). NaCl addresses such problems as mentioned in
 OpenSSL and, in contrast to the rather generic use of OpenSSL, was created
 with a strong focus on public-key authenticated encryption based on elliptic
 curve cryptography, which is used in curvetun. Partially quoting Daniel J.
 Bernstein:
-
+.PP
 RSA is somewhat older than elliptic-curve cryptography: RSA was introduced
 in 1977, while elliptic-curve cryptography was introduced in 1985. However,
 RSA has shown many more weaknesses than elliptic-curve cryptography. RSA's
@@ -95,29 +95,29 @@ developed against some rare elliptic curves having special algebraic
 structures, and the amount of computer power available to attackers has
 predictably increased, but typical elliptic curves require just as much
 computer power to break today as they required twenty years ago.
-
+.PP
 IEEE P1363 standardized elliptic-curve cryptography in the late 1990s,
 including a stringent list of security criteria for elliptic curves. NIST
 used the IEEE P1363 criteria to select fifteen specific elliptic curves at
-five different security levels. In 2005, NSA issued a new ``Suite B''
+five different security levels. In 2005, NSA issued a new ''Suite B''
 standard, recommending the NIST elliptic curves (at two specific security
 levels) for all public-key cryptography and withdrawing previous
 recommendations of RSA.
-
+.PP
 curvetun uses a particular elliptic curve, Curve25519, introduced in the
-following paper: Daniel J. Bernstein, ``Curve25519: new Diffie-Hellman speed
+following paper: Daniel J. Bernstein, ''Curve25519: new Diffie-Hellman speed
 records,'' pages 207-228 in Proceedings of PKC 2006, edited by Moti Yung,
 Yevgeniy Dodis, Aggelos Kiayias, and Tal Malkin, Lecture Notes in Computer
 Science 3958, Springer, 2006, ISBN 3-540-33851-9.
-
+.PP
 This elliptic curve follows all of the standard IEEE P1363 security criteria.
-It also follows new recommendations that achieve ``side-channel immunity''
-and ``twist security'' while improving speed. What this means is that secure
+It also follows new recommendations that achieve ''side-channel immunity''
+and ''twist security'' while improving speed. What this means is that secure
 implementations of Curve25519 are considerably simpler and faster than secure
-implementations of (e.g.) NIST P-256; there are fewer opportunities for
+implementations of, for example, NIST P-256; there are fewer opportunities for
 implementors to make mistakes that compromise security, and mistakes are
 more easily caught by reviewers.
-
+.PP
 An attacker who spends a billion dollars on special-purpose chips to attack
 Curve25519, using the best attacks available today, has about 1 chance in
 1000000000000000000000000000 of breaking Curve25519 after a year of computation.
@@ -125,64 +125,64 @@ One could achieve similar levels of security with 3000-bit RSA, but
 encryption and authentication with 3000-bit RSA are not nearly fast enough
 to handle tunnel traffic and would require much more space in network
 packets.
-
+.PP
 .IP " 1." 4
 Security analysis of VTun
 .RS 4
 \%http://www.off.net/~jme/vtun_secu.html
 .RE
-
+.PP
 .IP " 2." 4
 NaCl: Networking and Cryptography library
 .RS 4
 \%http://nacl.cr.yp.to/
 .RE
-
+.PP
 .SH SETUP EXAMPLE
 If you've never run curvetun before, you need to do an initial setup once.
-
-At first, make sure that the servers and clients clocks are periodically
-synced, for instance, by running a ntp daemon. This is necessary to protect
-against replay attacks. Also, make sure if you have read and write access to
-/dev/net/tun. You should not run curvetun as root! Then, after you assured
-this, the first step is to generate keys and config files. On both, the client
+.PP
+First, make sure that the servers and clients clocks are periodically
+synced, for example, by running an ntp daemon. This is necessary to protect
+against replay attacks. Also, make sure you have read and write access to
+/dev/net/tun. You should not run curvetun as root! Then, after you have assured
+this, the first step is to generate keys and config files. On both the client
 and server do:
-
+.PP
 .B curvetun -k
-
-You are asked for a username. You can use an email address or whatever suits
-you. Here, we assume, you've entered 'mysrv1' on the server and 'myclient1'
+.PP
+You are asked for a user name. You can use an email address or whatever suits
+you. Here, we assume you have entered 'mysrv1' on the server and 'myclient1'
 on the client side.
-
-Now, all necessary file have been created under ~/.curvetun. Files include
+.PP
+Now, all necessary files have been created under ~/.curvetun. Files include
 ``priv.key'', ``pub.key'', ``username', ``clients'' and ``servers''.
-
+.PP
 ``clients'' and ``servers'' are empty at the beginning and need to be filled.
 The ``clients'' file is meant for the server, so that it knows what clients
 are allowed to connect. The ``servers'' file is for the client, where it can
 select curvetun servers to connect to. Both files are kept very simple, so that
 a single configuration line per client or server is sufficient.
-
-The client needs to export it's public key data for the server:
-
+.PP
+The client needs to export its public key data for the server:
+.PP
 .B curvetun -x
-
-todo
-
+.PP
+todo FIXME
+.PP
 .SH NOTE
-This software is an experimental prototype intended for researchers. Likely,
-it will mature over time, but it is currently not advised using this software
+This software is an experimental prototype intended for researchers. It will most
+likely mature over time, but it is currently not advised to use this software
 when life is put at risk.
-
+.PP
 .SH LEGAL
 curvetun is licensed under the GNU GPL version 2.0.
-
+.PP
 .SH HISTORY
 .B curvetun
 was originally written for the netsniff-ng toolkit by Daniel Borkmann. It is
 currently maintained by Tobias Klauser <tklauser@distanz.ch> and Daniel
 Borkmann <dborkma@tik.ee.ethz.ch>.
-
+.PP
 .SH SEE ALSO
 .BR netsniff-ng (8),
 .BR trafgen (8),
@@ -191,6 +191,6 @@ Borkmann <dborkma@tik.ee.ethz.ch>.
 .BR ifpps (8),
 .BR flowtop (8),
 .BR astraceroute (8)
-
+.PP
 .SH AUTHOR
 Manpage was written by Daniel Borkmann.
