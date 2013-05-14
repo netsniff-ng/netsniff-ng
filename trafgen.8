@@ -76,7 +76,9 @@ passed through stdin, only 1 CPU will be used.
 Defines the outgoing networking device such as eth0, wlan0 and others.
 
 .SS -p, --cpp
-Pass the packet configuration to
+Pass the packet configuration to the C preprocessor before reading it into
+trafgen. This allows #define and #include directives (e.g. to include
+definitions from system headers) to be used in the trafgen configuration file.
 
 .SS -J, --jumbo-support
 On default trafgen's ring buffer frames are of a fixed size of 2048 bytes.
