@@ -13,24 +13,14 @@ TOOLS ?= netsniff-ng trafgen astraceroute flowtop ifpps bpfc curvetun mausezahn
 # For packaging purposes, prefix can define a different path.
 PREFIX ?=
 
-# Debugging option
-ifeq ("$(origin DEBUG)", "command line")
-  DEBUG := 1
-else
-  DEBUG := 0
-endif
-
 # Disable if you don't want it
 CCACHE ?= ccache
 
 # Location of installation paths.
-BINDIR = $(PREFIX)/usr/bin
 SBINDIR = $(PREFIX)/usr/sbin
 INCDIR = $(PREFIX)/usr/include
 ETCDIR = $(PREFIX)/etc
 ETCDIRE = $(ETCDIR)/netsniff-ng
-DOCDIR = $(PREFIX)/usr/share/doc
-DOCDIRE = $(DOCDIR)/netsniff-ng
 
 # Shut up make, helper warnings, parallel compilation!
 MAKEFLAGS += --no-print-directory
@@ -38,7 +28,15 @@ MAKEFLAGS += -rR
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --jobs=$(shell grep "^processor" /proc/cpuinfo | wc -l)
 
-# For packaging purposes, you might want to disable O3+arch tuning
+# Debugging option
+ifeq ("$(origin DEBUG)", "command line")
+  DEBUG := 1
+else
+  DEBUG := 0
+endif
+
+# For packaging purposes, you might want to call your own:
+#   make CFLAGS="<flags>"
 CFLAGS_DEF = -fstack-protector
 ifeq ($(DEBUG), 1)
   CFLAGS_DEF += -g
@@ -101,12 +99,13 @@ ifneq ($(wildcard /usr/include/linux/net_tstamp.h),)
   ALL_CFLAGS += -D__WITH_HARDWARE_TIMESTAMPING
 endif
 ALL_LDFLAGS = $(LDFLAGS)
-TARGET_ARCH =
 LEX_FLAGS =
 YAAC_FLAGS =
 
+# Be quite and do not echo the cmd
 Q = @
 
+# Some command definitions
 LD = $(Q)echo -e "  LD\t$@" && $(CCACHE) $(CROSS_COMPILE)gcc
 CCNQ = $(CCACHE) $(CROSS_COMPILE)gcc
 CC = $(Q)echo -e "  CC\t$<" && $(CCNQ)
@@ -231,7 +230,6 @@ bpfc_clean_custom:
 	$(Q)$(call RM,$(BUILD_DIR)/*.h $(BUILD_DIR)/*.c)
 trafgen_clean_custom:
 	$(Q)$(call RM,$(BUILD_DIR)/*.h $(BUILD_DIR)/*.c)
-
 netsniff-ng_distclean_custom flowtop_distclean_custom:
 	$(Q)$(foreach file,$(NCONF_FILES),$(call RM,$(ETCDIRE)/$(file));)
 	$(Q)$(call RMDIR,$(ETCDIRE))
