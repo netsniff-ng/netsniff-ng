@@ -127,7 +127,12 @@ And then, build the toolkit like this:
 	 CROSS_LD_LIBRARY_PATH=<cc-lib-search-path>
 
 Note that some adaptations might be necessary regarding the CFLAGS, since not
-all might be supported by a different architecture.
+all might be supported by a different architecture. Probably the most simple
+way would be to run make CFLAGS="-O2 -Wall".
+
+For power users we have a set of zsh auto completion files, have a look at all
+file with ending *.zsh. There's also a BPF vim syntax highlighting file in the
+tree called bpf.vim.
 
 For doing a debug build of the toolkit with less optimizations and non-stripped
 symbols, do:
