@@ -1,113 +1,113 @@
 .\" netsniff-ng - the packet sniffing beast
 .\" Copyright 2013 Daniel Borkmann.
 .\" Subject to the GPL, version 2.
-
+.PP
 .TH BPFC 8 "03 March 2013" "Linux" "netsniff-ng toolkit"
 .SH NAME
-bpfc \- a Berkeley Packet Filter assembler/compiler
-
+bpfc \- a Berkeley Packet Filter assembler and compiler
+.PP
 .SH SYNOPSIS
-
+.PP
 \fB bpfc\fR { [\fIoptions\fR] | [\fIsource-file\fR] }
-
+.PP
 .SH DESCRIPTION
-
-bpfc is a small Berkeley Packet Filter assembler/compiler which is able to
+.PP
+bpfc is a small Berkeley Packet Filter assembler and compiler which is able to
 translate BPF assembler-like mnemonics into a numerical or C-like format,
 that can be read by tools such as netsniff-ng, iptables (xt_bpf) and many
 others. BPF is the one and only upstream filtering construct that is used
 in combination with packet(7) sockets. The Linux kernel and also BSD kernels
-implement ``virtual machine'' like constructs and JIT compilers that mimic
+implement "virtual machine" like constructs and JIT compilers that mimic
 a small register-based machine in BPF architecture and execute filter code
-that is e.g. composed by bpfc on a data buffer that is given by network
+that is, for example, composed by bpfc on a data buffer that is given by network
 packets. The purpose of this is to shift computation in time, so that the
-kernel can drop (or truncate) incoming packets as early as possible without
+kernel can drop or truncate incoming packets as early as possible without
 having to push them to user space for further analysis first. Meanwhile,
-BPF constructs also find application in other areas like the communication
-between user and kernel space.
-
-By the time of writing this man page, the only available BPF compiler is
+BPF constructs also find application in other areas such as in the
+communication between user and kernel space like system call sand-boxing.
+.PP
+At the time of writing this man page, the only available BPF compiler is
 part of the pcap(3) library and accessible through a high-level filter
-language that might be familiar for many people as tcpdump-like filters.
-
-However, quite often, it is useful to bypass that compiler and write
-optimized code that couldn't be produced by the pcap(3) compiler, was
+language that might be familiar to many people as tcpdump-like filters.
+.PP
+However, it is quite often useful to bypass that compiler and write
+optimized code that cannot be produced by the pcap(3) compiler, or is
 wrongly optimized, or is defective on purpose in order to debug test kernel
 code. Also, a reason to use bpfc could be to try out some new BPF extensions
-that are not supported by other compilers. Furthermore, bpfc can be of good
-use to verify JIT compiler behaviour or to find possible bugs that need
+that are not supported by other compilers. Furthermore, bpfc can be useful
+to verify JIT compiler behavior or to find possible bugs that need
 to be fixed.
-
+.PP
 bpfc is implemented with the help of flex(1) and bison(1), tokenizes the
-source file in a first stage and parses it's content into an AST. In two
+source file in the first stage and parses its content into an AST. In two
 code generation stages it emits target opcodes. bpfc furthermore supports
 Linux kernel BPF extensions. More about that can be found in the syntax
 section.
-
+.PP
 The Linux kernel BPF JIT compiler is automatically turned on if detected
 by netsniff-ng. However, it can also be manually turned on through the
-command ``echo "1" > /proc/sys/net/core/bpf_jit_enable'' (normal working
-mode) or ``echo "2" > /proc/sys/net/core/bpf_jit_enable'' (debug mode
+command ''echo "1" > /proc/sys/net/core/bpf_jit_enable'' (normal working
+mode) or ''echo "2" > /proc/sys/net/core/bpf_jit_enable'' (debug mode
 where emitted opcodes of the image are printed to the kernel log). An
-architecture generic BPF JIT image disassembler can be found in the kernel
+architecture agnostic BPF JIT image disassembler can be found in the kernel
 source tree under: tools/net/bpf_jit_disasm.c
-
+.PP
 .SH OPTIONS
-
+.PP
 .SS -i <source-file/->, --input <source-file/->
 Read BPF assembly instruction from an input file or from stdin.
-
+.PP
 .SS -f <format>, --format <format>
 Specify a different output format than the default that is netsniff-ng
 compatible. The <format> specifier can be: C, netsniff-ng, xt_bpf, tcpdump.
-
+.PP
 .SS -b, --bypass
 Bypass basic filter validation when emitting opcodes. This can be useful
-for explicitly creating malformed BPF expressions that should be injected
-into the kernel, e.g. for bug testing.
-
+for explicitly creating malformed BPF expressions for injecting
+into the kernel, for example, for bug testing.
+.PP
 .SS -V, --verbose
 Be more verbose and display some bpfc debugging information.
-
+.PP
 .SS -d, --dump
 Dump all supported instructions to stdout.
-
+.PP
 .SS -v, --version
-Show versioning information.
-
+Show version information.
+.PP
 .SS -h, --help
 Show user help.
-
+.PP
 .SH SYNTAX
-
+.PP
 The BPF architecture resp. register machine consists of the following
 elements:
-
+.PP
     Element          Description
-
+.PP
     A                32 bit wide accumulator
     X                32 bit wide X register
     M[]              16 x 32 bit wide misc registers aka ``scratch
 memory store'', addressable from 0 to 15
-
-A program, that is translated by bpfc into ``opcodes'' is an array that
+.PP
+A program, that is translated by bpfc into ''opcodes'' is an array that
 consists of the following elements:
-
+.PP
     o:16, jt:8, jf:8, k:32
-
+.PP
 The element o is a 16 bit wide opcode that has a particular instruction
 encoded, jt and jf are two 8 bit wide jump targets, one for condition
-``true'', one for condition ``false''. Last but not least the 32 bit wide
+''true'', one for condition ''false''. Last but not least the 32 bit wide
 element k contains a miscellaneous argument that can be interpreted in
 different ways depending on the given instruction resp. opcode.
-
+.PP
 The instruction set consists of load, store, branch, alu, miscellaneous
 and return instructions that are also represented in bpfc syntax. This
-table also includes own bpfc extensions. All operations are based on
+table also includes bpfc's own extensions. All operations are based on
 unsigned data structures:
-
+.PP
    Instruction      Addressing mode      Description
-
+.PP
    ld               1, 2, 3, 4, 10       Load word into A
    ldi              4                    Load word into A
    ldh              1, 2                 Load half-word into A
@@ -115,10 +115,10 @@ unsigned data structures:
    ldx              3, 4, 5, 10          Load word into X
    ldxi             4                    Load word into X
    ldxb             5                    Load byte into X
-
+.PP
    st               3                    Copy A into M[]
    stx              3                    Copy X into M[]
-
+.PP
    jmp              6                    Jump to label
    ja               6                    Jump to label
    jeq              7, 8                 Jump on k == A
@@ -129,7 +129,7 @@ unsigned data structures:
    jgt              7, 8                 Jump on k > A
    jge              7, 8                 Jump on k >= A
    jset             7, 8                 Jump on k & A
-
+.PP
    add              0, 4                 A + <x>
    sub              0, 4                 A - <x>
    mul              0, 4                 A * <x>
@@ -141,14 +141,14 @@ unsigned data structures:
    xor              0, 4                 A ^ <x>
    lsh              0, 4                 A << <x>
    rsh              0, 4                 A >> <x>
-
+.PP
    tax                                   Copy A into X
    txa                                   Copy X into A
-
+.PP
    ret              4, 9                 Return
-
+.PP
    Addressing mode  Syntax               Description
-
+.PP
     0               x                    Register X
     1               [k]                  BHW at byte offset k in the packet
     2               [x + k]              BHW at the offset X + k in the packet
@@ -160,9 +160,9 @@ unsigned data structures:
     8               #k,Lt                Jump to Lt if predicate is true
     9               a                    Accumulator A
    10               extension            BPF extension (see next table)
-
+.PP
    Extension (and alias)                 Description
-
+.PP
    #len, len, #pktlen, pktlen            Length of packet (skb->len)
    #pto, pto, #proto, proto              Ethernet type field (skb->protocol)
    #type, type                           Packet type (**) (skb->pkt_type)
@@ -177,15 +177,15 @@ unsigned data structures:
    #cpu, cpu                             Current CPU (raw_smp_processor_id())
    #vlant, vlant, #vlan_tci, vlan_tci    VLAN TCI value (vlan_tx_tag_get(skb))
    #vlanp, vlanp                         VLAN present (vlan_tx_tag_present(skb))
-
+.PP
    Further extension details (**)        Value
-
+.PP
    #type, type                           0 - to us / host
                                          1 - to all / broadcast
                                          2 - to group / multicast
                                          3 - to others (promiscuous mode)
                                          4 - outgoing of any type
-
+.PP
    #hat, hat, #hatype, hatype            1 - Ethernet 10Mbps
                                          8 - APPLEtalk
                                         19 - ATM
@@ -201,46 +201,46 @@ unsigned data structures:
                                        803 - IEEE 802.11 + radiotap header
                                        823 - GRE over IP6
                                        [...] See include/uapi/linux/if_arp.h
-
+.PP
 Note that the majority of BPF extensions are available on Linux only.
-
+.PP
 There are two types of comments in bpfc source-files:
-
+.PP
   1. Multi-line C-style comments:        /* put comment here */
   2. Single-line ASM-style comments:     ;  put comment here
-
+.PP
 Used Abbreviations:
-
+.PP
   BHW: byte, half-word, or word
-
+.PP
 .SH SOURCE EXAMPLES
-
-In this section, we give a couple of examples for bpfc source-files, in other
+.PP
+In this section, we give a couple of examples of bpfc source files, in other
 words, some small example filter programs:
-
+.PP
 .SS Only return packet headers (truncate packets):
-
+.PP
   ld poff
   ret a
-
+.PP
 .SS Only allow ARP packets:
-
+.PP
   ldh [12]
   jne #0x806, drop
   ret #-1
   drop: ret #0
-
+.PP
 .SS Only allow IPv4 TCP packets:
-
+.PP
   ldh [12]
   jne #0x800, drop
   ldb [23]
   jneq #6, drop
   ret #-1
   drop: ret #0
-
-.SS Only allow IPv4 TCP, SSH traffic:
-
+.PP
+.SS Only allow IPv4 TCP SSH traffic:
+.PP
   ldh [12]
   jne #0x800, drop
   ldb [23]
@@ -254,59 +254,59 @@ words, some small example filter programs:
   jne #0x16, drop
   pass: ret #-1
   drop: ret #0
-
+.PP
 .SS Allow any (hardware accelerated) VLAN:
-
+.PP
   ld vlanp
   jeq #0, drop
   ret #-1
   drop: ret #0
-
+.PP
 .SS Only allow traffic for (hardware accelerated) VLAN 10:
-
+.PP
   ld vlant
   jneq #10, drop
   ret #-1
   drop: ret #0
-
+.PP
 .SS More pedantic check for the above VLAN example:
-
+.PP
   ld vlanp
   jeq #0, drop
   ld vlant
   jneq #10, drop
   ret #-1
   drop: ret #0
-
+.PP
 .SH USAGE EXAMPLE
-
+.PP
 .SS bpfc fubar
-Compile the source file ``fubar'' into BPF opcodes. Opcodes will be
+Compile the source file ''fubar'' into BPF opcodes. Opcodes will be
 directed to stdout.
-
+.PP
 .SS bpfc -f xt_bpf -b -i fubar, resp. iptables -A INPUT -m bpf --bytecode "`bpfc -f xt_bpf -i fubar`" -j LOG
-Compile the source file ``fubar'' into BPF opcodes, bypass basic filter
+Compile the source file ''fubar'' into BPF opcodes, bypass basic filter
 validation and emit opcodes in netfilter's xt_bpf readable format.
-
+.PP
 .SS bpfc -
 Read bpfc instruction from stdin and emit opcodes to stdout.
-
+.PP
 .SS bpfc foo > bar, resp. netsniff-ng -f bar ...
 Compile filter instructions from file foo and redirect bpfc's output into
 the file bar, that can then be read by netsniff-ng(8) through option -f.
-
+.PP
 .SS bpfc -f tcpdump -i fubar
-Output opcodes from source file fubar in the same behaviour as ``tcpdump -ddd''.
-
+Output opcodes from source file fubar in the same behavior as ''tcpdump -ddd''.
+.PP
 .SH LEGAL
 bpfc is licensed under the GNU GPL version 2.0.
-
+.PP
 .SH HISTORY
 .B bpfc
 was originally written for the netsniff-ng toolkit by Daniel Borkmann. It
 is currently maintained by Tobias Klauser <tklauser@distanz.ch> and Daniel
 Borkmann <dborkma@tik.ee.ethz.ch>.
-
+.PP
 .SH SEE ALSO
 .BR netsniff-ng (8),
 .BR trafgen (8),
@@ -315,6 +315,6 @@ Borkmann <dborkma@tik.ee.ethz.ch>.
 .BR flowtop (8),
 .BR astraceroute (8),
 .BR curvetun (8)
-
+.PP
 .SH AUTHOR
 Manpage was written by Daniel Borkmann.
