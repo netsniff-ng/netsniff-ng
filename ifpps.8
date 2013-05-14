@@ -1,22 +1,22 @@
 .\" netsniff-ng - the packet sniffing beast
 .\" Copyright 2013 Daniel Borkmann.
 .\" Subject to the GPL, version 2.
-
+.PP
 .TH IFPPS 8 "03 March 2013" "Linux" "netsniff-ng toolkit"
 .SH NAME
 ifpps \- top-like networking and system statistics
-
+.PP
 .SH SYNOPSIS
-
+.PP
 \fB ifpps\fR { [\fIoptions\fR] | [\fIdevice\fR] }
-
+.PP
 .SH DESCRIPTION
-
+.PP
 ifpps is a small utility which periodically provides top-like networking
 and system statistics from the kernel. ifpps gathers its data directly
 from procfs files and does not apply any user space monitoring libraries
-which could falsify statistics on high load.
-
+which could falsify statistics under high load.
+.PP
 For instance, consider the following scenario: two directly connected
 Linux machines, each with an Intel Core 2 Quad Q6600 2.40GHz CPUs, 4 GB
 RAM, and an Intel 82566DC-2 Gigabit Ethernet NIC, are used for performance
@@ -24,74 +24,73 @@ evaluation. One machine generates 64 byte network packets by using the
 kernel space packet generator, pktgen, with a maximum possible packet rate.
 The other machine displays statistics about incoming network packets by
 using i) iptraf(8) and ii) ifpps.
-
+.PP
 iptraf which incorporates pcap(3) shows an average packet rate of
 246,000 pps, while on the other hand, ifpps shows an average packet rate
 of 1,378,000 pps. Hence, due to packet copies and deferring statistical
-calculations to user space, a measurement error of approx. 460 per cent
-occurs. Tools like iptraf might display much more information such as
-TCP per flow statistics (therefore the use of the pcap library), which
-is not implemented in ifpps, because overall networking statistics is
-our focus; statistics, which are also fairly reliable under high packet
-load.
-
+calculations into user space, a measurement error of approximately 460 per cent
+occurs. Tools like iptraf might display much more information, such as
+TCP per flow statistics (hence the use of the pcap library), that is not
+possible with ifpps, because overall networking statistics are our focus;
+statistics, which are also reliable under high packet load.
+.PP
 .SH OPTIONS
-
+.PP
 .SS -d <netdev>, --dev <netdev>
-Networking device to fetch statistics from, e.g. eth0, wlan0.
-
+Networking device to fetch statistics from, for example, eth0, wlan0.
+.PP
 .SS -t <time>, --interval <time>
 Statistics refresh interval in milliseconds, default is 1000ms(1 sec).
-
+.PP
 .SS -p, --promisc
 Turn on promiscuous mode for the given networking device.
-
+.PP
 .SS -c, --csv
 Output (once) the ncurses data to the terminal as gnuplot(1)-ready data.
-
+.PP
 .SS -l, --loop
 Continuously output the terminal data after a refresh interval. This option
-is available only if option ``-c'' is given. For ``-l'' it is usually
-recommended to redirect the output into a file that will be processed
-with gnuplot(1).
-
+is only available, if option \[lq]-c\[rq] is given. For \[lq]-l\[rq] it is usually
+recommended to redirect the output into a file that is to be be processed
+later with gnuplot(1).
+.PP
 .SS -v, --version
 Show version information.
-
+.PP
 .SS -h, --help
 Show user help.
-
+.PP
 .SH USAGE EXAMPLE
-
+.PP
 .SS ifpps eth0
 Default ncurses output for the eth0 device.
-
+.PP
 .SS ifpps -pd eth0
 Ncurses output for the eth0 device in promiscuous mode.
-
+.PP
 .SS ifpps -lpcd wlan0 > plot.dat
 Continuous terminal output for the wlan0 device in promiscuous mode.
-
+.PP
 .SH NOTE
 On 10Gbit/s cards or higher, receive and transmit statistics are usually
 accumulated at a higher duration interval than 1 second. Thus, it might
-be advised to alter the timing option to a longer interval for such cards.
-
+be advisable to alter the timing to a longer interval for such cards.
+.PP
 .SH BUGS
-Systems with a fairly high number of cores (> 32) are currently not
-supported. This should, however, not be a big deal to fix. The only
-challenge would be to display the presented information in a sane way,
-probably by selectively hiding uninteresting statistics.
-
+Systems with greater than 32 cores are currently not supported. This
+should, however, not be a big task to fix. The only challenge would
+be to display the presented information in a sane way, probably by
+selectively hiding uninteresting statistics.
+.PP
 .SH LEGAL
 ifpps is licensed under the GNU GPL version 2.0.
-
+.PP
 .SH HISTORY
 .B ifpps
 was originally written for the netsniff-ng toolkit by Daniel Borkmann. It
 is currently maintained by Tobias Klauser <tklauser@distanz.ch> and Daniel
 Borkmann <dborkma@tik.ee.ethz.ch>.
-
+.PP
 .SH SEE ALSO
 .BR netsniff-ng (8),
 .BR trafgen (8),
@@ -100,6 +99,6 @@ Borkmann <dborkma@tik.ee.ethz.ch>.
 .BR flowtop (8),
 .BR astraceroute (8),
 .BR curvetun (8)
-
+.PP
 .SH AUTHOR
 Manpage was written by Daniel Borkmann.
