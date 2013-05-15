@@ -28,7 +28,7 @@ minimal and to the point. trafgen makes use of packet(7) socket's TX_RING
 interface of the Linux kernel, which is a mmap(2)'ed ring buffer shared between
 user and kernel space.
 
-On default, trafgen starts as many processes as CPUs that are online, pins each
+By default, trafgen starts as many processes as CPUs that are online, pins each
 of them to their respective CPU and sets up the ring buffer each in their own
 process space after having compiled a list of packets to transmit. Thus, this is
 likely the fastest one can get out of the box in terms of transmission performance
@@ -81,7 +81,7 @@ trafgen. This allows #define and #include directives (e.g. to include
 definitions from system headers) to be used in the trafgen configuration file.
 
 .SS -J, --jumbo-support
-On default trafgen's ring buffer frames are of a fixed size of 2048 bytes.
+By default trafgen's ring buffer frames are of a fixed size of 2048 bytes.
 This means that if you're expecting jumbo frames or even super jumbo frames to
 pass your line, then you need to enable support for that with the help of this
 option. However, this has the disadvantage of a performance regression and a
@@ -112,13 +112,13 @@ this is equivalent to infinite packets resp. processing until interrupted.
 Otherwise, a number given as an unsigned integer will limit processing.
 
 .SS -r, --rand
-Randomize the packet selection of the configuration file. On default, if more
+Randomize the packet selection of the configuration file. By default, if more
 than one packet is defined in a packet configuration, packets are scheduled for
 transmission in a round robin fashion. With this option, they are selected
 randomly instread.
 
 .SS -P <uint>, --cpus <uint>
-Specify the number of processes trafgen shall fork(2) off. On default trafgen
+Specify the number of processes trafgen shall fork(2) off. By default trafgen
 will start as many processes as CPUs that are online and pin them to each,
 respectively. Allowed value must be within interval [1,CPUs].
 
@@ -137,17 +137,18 @@ default the size is being determined based on the network connectivity rate.
 
 .SS -k <uint>, --kernel-pull <uint>
 Manually define the interval in micro-seconds where the kernel should be triggered
-to batch process the ring buffer frames. On default, it is every 10us, but it can
+to batch process the ring buffer frames. By default, it is every 10us, but it can
 manually be prolonged, for instance..
 
 .SS -E <uint>, --seed <uint>
-Manually set the seed for trafgen. On default, a random seed from /dev/urandom
-is being used to feed glibc's pseudo random number generator. If that fails, it
-falls back to the unix timestamp. It can be useful to set it up manually to be
-able to reproduce a trafgen session, e.g. after fuzz testing.
+Manually set the seed for pseudo random number generator (PRNG) in trafgen. By
+default, a random seed from /dev/urandom is used to feed glibc's PRNG. If that
+fails, it falls back to the unix timestamp. It can be useful to set the seed
+manually in order to be able to reproduce a trafgen session, e.g. after fuzz
+testing.
 
 .SS -u <uid>, --user <uid> resp. -g <gid>, --group <gid>
-After ring setup drop privileges to a non-root user/group combination.
+After ring setup, drop privileges to a non-root user/group combination.
 
 .SS -V, --verbose
 Let trafgen be more talkative and let it print the parsed configuration and
@@ -158,10 +159,10 @@ Show a built-in packet configuration example. This might be a good starting
 point for an initial packet configuration scenario.
 
 .SS -v, --version
-Show versioning information.
+Show version information and exit.
 
 .SS -h, --help
-Show user help.
+Show user help and exit.
 
 .SH SYNTAX
 trafgen's packet configuration syntax is fairly simple. The very basic things
@@ -173,7 +174,7 @@ enclosed by opening '{' and closing '}' braces, for example:
    { /* packet 2 content goes here ... */ }
 
 When trafgen is started using multiple CPUs (default), then each of those packets
-will be scheduled for transmission on all CPUs on default. However, it is possible
+will be scheduled for transmission on all CPUs by default. However, it is possible
 to tell trafgen to schedule a packet only on a particular CPU:
 
    cpu(1): { /* packet 1 content goes here ... */ }
