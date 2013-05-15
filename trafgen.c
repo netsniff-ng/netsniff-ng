@@ -179,7 +179,7 @@ static void help(void)
 	     "  -u|--user <userid>             Drop privileges and change to userid\n"
 	     "  -g|--group <groupid>           Drop privileges and change to groupid\n"
 	     "  -V|--verbose                   Be more verbose\n"
-	     "  -v|--version                   Show version\n"
+	     "  -v|--version                   Show version and exit\n"
 	     "  -e|--example                   Show built-in packet config example\n"
 	     "  -h|--help                      Guess what?!\n\n"
 	     "Examples:\n"

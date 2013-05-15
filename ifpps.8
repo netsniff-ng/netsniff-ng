@@ -15,24 +15,24 @@ ifpps \- top-like networking and system statistics
 ifpps is a small utility which periodically provides top-like networking
 and system statistics from the kernel. ifpps gathers its data directly
 from procfs files and does not apply any user space monitoring libraries
-which could falsify statistics under high load.
+which would falsify statistics under high load.
 .PP
 For instance, consider the following scenario: two directly connected
-Linux machines, each with an Intel Core 2 Quad Q6600 2.40GHz CPUs, 4 GB
-RAM, and an Intel 82566DC-2 Gigabit Ethernet NIC, are used for performance
-evaluation. One machine generates 64 byte network packets by using the
-kernel space packet generator, pktgen, with a maximum possible packet rate.
-The other machine displays statistics about incoming network packets by
-using i) iptraf(8) and ii) ifpps.
+Linux machines with Intel Core 2 Quad Q6600 2.40GHz CPUs, 4 GB RAM, and
+an Intel 82566DC-2 Gigabit Ethernet NIC are used for performance evaluation.
+One machine generates 64 byte network packets by using the kernel space
+packet generator pktgen with a maximum possible packet rate. The other
+machine displays statistics about incoming network packets by using i)
+iptraf(8) and ii) ifpps.
 .PP
 iptraf which incorporates pcap(3) shows an average packet rate of
-246,000 pps, while on the other hand, ifpps shows an average packet rate
-of 1,378,000 pps. Hence, due to packet copies and deferring statistical
-calculations into user space, a measurement error of approximately 460 per cent
-occurs. Tools like iptraf might display much more information, such as
+246,000 pps while on the other hand ifpps shows an average packet rate
+of 1,378,000 pps. Hence, due to packet copies and deferring statistics
+creation into user space, a measurement error of approximately 460 per cent
+occurs. Tools like iptraf might display much more information such as
 TCP per flow statistics (hence the use of the pcap library), that is not
 possible with ifpps, because overall networking statistics are our focus;
-statistics, which are also reliable under high packet load.
+statistics, which are also fairly reliable under high packet load.
 .PP
 .SH OPTIONS
 .PP
@@ -40,7 +40,7 @@ statistics, which are also reliable under high packet load.
 Networking device to fetch statistics from, for example, eth0, wlan0.
 .PP
 .SS -t <time>, --interval <time>
-Statistics refresh interval in milliseconds, default is 1000ms(1 sec).
+Statistics refresh interval in milliseconds, default is 1000ms.
 .PP
 .SS -p, --promisc
 Turn on promiscuous mode for the given networking device.
@@ -74,7 +74,7 @@ Continuous terminal output for the wlan0 device in promiscuous mode.
 .SH NOTE
 On 10Gbit/s cards or higher, receive and transmit statistics are usually
 accumulated at a higher duration interval than 1 second. Thus, it might
-be advisable to alter the timing to a longer interval for such cards.
+be advisable to alter the timing to a higher accumulation interval for such cards.
 .PP
 .SH BUGS
 Systems with greater than 32 cores are currently not supported. This

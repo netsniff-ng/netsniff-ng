@@ -63,7 +63,7 @@ determined automatically by the pcap file magic. In case of stdin, it is
 assumed that the input stream is a pcap file.
 .PP
 .SS -o <dev|pcap|dir|cfg|->, --out <dev|pcap|dir|cfg|->
-Defines the output device, that can either be a networking device, a pcap file,
+Defines the output device. This can either be a networking device, a pcap file,
 a folder, a trafgen(8) configuration file or stdout (\[lq]-\[rq]). In the case of a pcap
 file that should not have the default pcap type (0xa1b2c3d4), the additional
 option \[lq]-T\[rq] must be provided. If a directory is given, then, instead of a
@@ -126,7 +126,7 @@ used. Pcap files with swapped endianess are also supported.
 .PP
 .SS -D, --dump-pcap-types
 Dump all available pcap types with their capabilities and magic numbers that
-can be used with option \[lq]-T\[rq] and exit.
+can be used with option \[lq]-T\[rq] to stdout and exit.
 .PP
 .SS -B, --dump-bpf
 If a Berkeley Packet Filter is given, for example via option \[lq]-f\[rq], then
@@ -164,7 +164,7 @@ default the size is determined based on the network connectivity rate.
 .PP
 .SS -k <uint>, --kernel-pull <uint>
 Manually define the interval in micro-seconds where the kernel should be triggered
-to batch process the ring buffer frames. On default, it is every 10us, but it can
+to batch process the ring buffer frames. By default, it is every 10us, but it can
 manually be prolonged, for instance.
 .PP
 .SS -b <cpu>, --bind-cpu <cpu>
@@ -211,10 +211,10 @@ addresses can be placed into geoip.conf, separated by a newline.
 Be more verbose during startup, that is to say, show detailed ring setup information.
 .PP
 .SS -v, --version
-Show version information.
+Show version information and exit.
 .PP
 .SS -h, --help
-Show user help.
+Show user help and exit.
 .PP
 .SH USAGE EXAMPLE
 .PP

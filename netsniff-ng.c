@@ -1045,7 +1045,7 @@ static void help(void)
 	     "  -l|--ascii                     Print human-readable packet data\n"
 	     "  -U|--update                    Update GeoIP databases\n"
 	     "  -V|--verbose                   Be more verbose\n"
-	     "  -v|--version                   Show version\n"
+	     "  -v|--version                   Show version and exit\n"
 	     "  -h|--help                      Guess what?!\n\n"
 	     "Examples:\n"
 	     "  netsniff-ng --in eth0 --out dump.pcap -s -T 0xa1b2c3d4 --b 0 tcp or udp\n"
