@@ -435,7 +435,7 @@ static void dissect_igmp_v3_membership_report(struct pkt_buff *pkt)
 				while (n--) {
 					src_addr = (uint32_t *)
 						pkt_pull(pkt, sizeof(*src_addr));
-					if (src_addr != NULL)
+					if (src_addr == NULL)
 						break;
 					inet_ntop(AF_INET, src_addr, addr, sizeof(addr));
 					tprintf(", %s", addr);
