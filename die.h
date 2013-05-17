@@ -23,17 +23,17 @@ static inline void syslog_panic(const char *format,
 static inline void syslog_maybe(int may, int priority,
 				const char *format, ...) __check_format_printf(3, 4);
 
-static inline void die(void)
+static inline void __noreturn die(void)
 {
 	exit(EXIT_FAILURE);
 }
 
-static inline void _die(void)
+static inline void __noreturn _die(void)
 {
 	_exit(EXIT_FAILURE);
 }
 
-static inline void panic(const char *format, ...)
+static inline void __noreturn panic(const char *format, ...)
 {
 	va_list vl;
 
@@ -44,7 +44,7 @@ static inline void panic(const char *format, ...)
 	die();
 }
 
-static inline void syslog_panic(const char *format, ...)
+static inline void __noreturn syslog_panic(const char *format, ...)
 {
 	va_list vl;
 
