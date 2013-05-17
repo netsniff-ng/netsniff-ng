@@ -273,7 +273,7 @@ static void __noreturn example(void)
 	die();
 }
 
-static void version(void)
+static void __noreturn version(void)
 {
 	printf("\ntrafgen %s, multithreaded zero-copy network packet generator\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
