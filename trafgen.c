@@ -157,7 +157,7 @@ static void timer_purge(void)
 	setitimer(ITIMER_REAL, &itimer, NULL); 
 }
 
-static void help(void)
+static void __noreturn help(void)
 {
 	printf("\ntrafgen %s, multithreaded zero-copy network packet generator\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
@@ -219,7 +219,7 @@ static void help(void)
 	die();
 }
 
-static void example(void)
+static void __noreturn example(void)
 {
 	const char *e =
 	"/* Note: dynamic elements make trafgen slower! */\n"
