@@ -31,7 +31,7 @@ static const struct option long_options[] = {
 
 extern int compile_filter(char *file, int verbose, int bypass, int format);
 
-static void help(void)
+static void __noreturn help(void)
 {
 	printf("\nbpfc %s, a tiny BPF compiler\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
@@ -60,7 +60,7 @@ static void help(void)
 	die();
 }
 
-static void version(void)
+static void __noreturn version(void)
 {
 	printf("\nbpfc %s, a tiny BPF compiler\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
