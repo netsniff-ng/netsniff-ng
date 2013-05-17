@@ -169,7 +169,7 @@ static void signal_handler(int number)
 	}
 }
 
-static void help(void)
+static void __noreturn help(void)
 {
 	printf("\nastraceroute %s, autonomous system trace route utility\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
@@ -229,7 +229,7 @@ static void help(void)
 	die();
 }
 
-static void version(void)
+static void __noreturn version(void)
 {
 	printf("\nastraceroute %s, autonomous system trace route utility\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
