@@ -89,6 +89,10 @@ typedef uint8_t		u8;
 # define noinline		__attribute__((noinline))
 #endif
 
+#ifndef __noreturn
+# define __noreturn		__attribute__((noreturn))
+#endif
+
 #ifndef __hidden
 # define __hidden		__attribute__((visibility("hidden")))
 #endif
