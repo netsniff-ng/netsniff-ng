@@ -88,7 +88,7 @@ static void signal_handler(int number)
 	}
 }
 
-static void help(void)
+static void __noreturn help(void)
 {
 	printf("\ncurvetun %s, lightweight curve25519-based VPN/IP tunnel\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
@@ -130,7 +130,7 @@ static void help(void)
 	die();
 }
 
-static void version(void)
+static void __noreturn version(void)
 {
 	printf("\ncurvetun %s, lightweight curve25519-based VPN/IP tunnel\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
