@@ -1008,7 +1008,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 	close(sock);
 }
 
-static void help(void)
+static void __noreturn help(void)
 {
 	printf("\nnetsniff-ng %s, the packet sniffing beast\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
@@ -1070,7 +1070,7 @@ static void help(void)
 	die();
 }
 
-static void version(void)
+static void __noreturn version(void)
 {
 	printf("\nnetsniff-ng %s, the packet sniffing beast\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
