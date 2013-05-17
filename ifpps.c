@@ -93,7 +93,7 @@ static inline int iswireless(const struct ifstat *stats)
 	return stats->wifi.bitrate > 0;
 }
 
-static void help(void)
+static void __noreturn help(void)
 {
 	printf("\nifpps %s, top-like kernel networking and system statistics\n",
 	       VERSION_STRING);
@@ -123,7 +123,7 @@ static void help(void)
 	die();
 }
 
-static void version(void)
+static void __noreturn version(void)
 {
 	printf("\nifpps %s, top-like kernel networking and system statistics\n",
 	       VERSION_STRING);
