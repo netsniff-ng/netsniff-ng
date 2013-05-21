@@ -679,14 +679,10 @@ int main(int argc, char **argv)
 		die();
 	}
 
-	if (dev)
-		xfree(dev);
-	if (stun)
-		xfree(stun);
-	if (port)
-		xfree(port);
-	if (alias)
-		xfree(alias);
+	free(dev);
+	free(stun);
+	free(port);
+	free(alias);
 
 	return ret;
 }
