@@ -23,6 +23,10 @@
 *.la
 *.a
 
+# cscope/ctags index files
+cscope*
+tags
+
 # Testing folders
 fuzzing/
 
