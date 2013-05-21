@@ -52,9 +52,9 @@ static inline void __tprintf_flush_newline(void)
 		fputc(' ', stdout);
 }
 
-static inline int __tprintf_flush_skip(char *buffer, int i, size_t max)
+static inline int __tprintf_flush_skip(char *buf, int i, size_t max)
 {
-	int val = buffer[i];
+	int val = buf[i];
 
 	if (val == ' ' || val == ',')
 		return 1;
