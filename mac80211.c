@@ -100,11 +100,29 @@ static void nl80211_cleanup(struct nl80211_state *state)
 	nl_socket_free(state->nl_sock);
 }
 
+static int nl80211_wait_handler(struct nl_msg *msg, void *arg)
+{
+	int *finished = arg;
+
+	*finished = 1;
+
+	return NL_STOP;
+}
+
+static int nl80211_error_handler(struct sockaddr_nl *nla,
+				 struct nlmsgerr *err,
+				 void *arg)
+{
+	panic("nl80211 returned with error %d\n", err->error);
+}
+
 static int nl80211_add_mon_if(struct nl80211_state *state, const char *device,
 			      const char *mondevice)
 {
 	int ifindex, ret;
 	struct nl_msg *msg;
+	struct nl_cb *cb = NULL;
+	int finished = 0;
 
 	ifindex = device_ifindex(device);
 
@@ -127,16 +145,28 @@ static int nl80211_add_mon_if(struct nl80211_state *state, const char *device,
 		panic("Cannot send_auto_complete!\n");
 	}
 
-	ret = nl_wait_for_ack(state->nl_sock);
-	if (ret < 0) {
-		if (ret == -ENFILE) {
-			nlmsg_free(msg);
-			return -EBUSY;
-		}
+	cb = nl_cb_alloc(NL_CB_CUSTOM);
+	if (!cb)
+		panic("Cannot alloc nl_cb!\n");
 
-		panic("Waiting for netlink ack failed!\n");
+	nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, nl80211_wait_handler, &finished);
+	nl_cb_err(cb, NL_CB_CUSTOM, nl80211_error_handler, NULL);
+
+	nl_recvmsgs(state->nl_sock, cb);
+
+	if (!finished) {
+		ret = nl_wait_for_ack(state->nl_sock);
+		if (ret < 0) {
+			if (ret == -ENFILE) {
+				nlmsg_free(msg);
+				return -EBUSY;
+			}
+
+			panic("Waiting for netlink ack failed!\n");
+		}
 	}
 
+	nl_cb_put(cb);
 	nlmsg_free(msg);
 	return 0;
 
