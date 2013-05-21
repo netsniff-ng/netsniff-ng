@@ -670,8 +670,8 @@ text using the -P option:
 
   mausezahn eth0 -t ip -P "Hello World"                           # ASCII payload
   mausezahn eth0 -t ip p=68:65:6c:6c:6f:20:77:6f:72:6c:64         # hex payload
-  mausezahn eth0 -t ip "proto=89,                           \
-                        p=68:65:6c:6c:6f:20:77:6f:72:6c:64, \     # same with other
+  mausezahn eth0 -t ip "proto=89,                           \\
+                        p=68:65:6c:6c:6f:20:77:6f:72:6c:64, \\    # same with other
                         ttl=1"                                    # IP arguments
 
 Note: The raw link access mode only accepts hex payloads (because you specify
@@ -760,7 +760,7 @@ duplicate IP detection):
 
 ARP cache poisoning:
 
-  mausezahn eth0 -t arp "reply, senderip=192.168.0.1, targetmac=00:00:0c:01:02:03, \
+  mausezahn eth0 -t arp "reply, senderip=192.168.0.1, targetmac=00:00:0c:01:02:03, \\
                          targetip=172.16.1.50"
 
  where by default your interface MAC address will be used as sendermac,
@@ -815,7 +815,7 @@ QinQ encapsulations or VLAN hopping: Send a UDP packet with VLAN tags 100
 
 Don't know if this is useful anywhere but at least it is possible:
 
-  mausezahn eth0 -t udp "dp=8888, sp=13442" -P "Mausezahn is great"  \
+  mausezahn eth0 -t udp "dp=8888, sp=13442" -P "Mausezahn is great"  \\
                  -Q 6:5,7:732,5:331,5,6
 
 Mix it with MPLS:
@@ -907,12 +907,12 @@ packets. Here are some examples:
 
 Send test packets to the RTP port range:
 
-  mausezahn eth0 -B 192.168.1.1 -t udp "dp=16384-32767, \
+  mausezahn eth0 -B 192.168.1.1 -t udp "dp=16384-32767, \\
                  p=A1:00:CC:00:00:AB:CD:EE:EE:DD:DD:00"
 
 Send a DNS request as local broadcast (often a local router replies):
 
-  mausezahn eth0 -t udp dp=53,p=c5-2f-01-00-00-01-00-00-00-00-00-00-03-77-77-\
+  mausezahn eth0 -t udp dp=53,p=c5-2f-01-00-00-01-00-00-00-00-00-00-03-77-77-\\
                                 77-03-78-79-7a-03-63-6f-6d-00-00-01-00-01"
 
 Additionally you may specify the lenght and checksum using the len and sum
@@ -940,8 +940,8 @@ you want to specify multiple flags. For example, a SYN-Flood attack against
 host 1.1.1.1 using a random source IP address and periodically using all 1023
 well-known ports could be created via:
 
-  mausezahn eth0 -A rand -B 1.1.1.1 -c 0 -t tcp "dp=1-1023, flags=syn"  \
-                 -P "Good morning! This is a SYN Flood Attack.          \
+  mausezahn eth0 -A rand -B 1.1.1.1 -c 0 -t tcp "dp=1-1023, flags=syn"  \\
+                 -P "Good morning! This is a SYN Flood Attack.          \\
                      We apologize for any inconvenience."
 
 Be careful with such SYN floods and only use them for firewall testing. Check
@@ -951,7 +951,7 @@ sequence number (SQNR). If you want to try a DoS attack by sending a RST-flood
 and you do NOT know the target's initial SQNR (which is normally the case) then
 you may want to sweep through a range of sequence numbers:
 
-  mausezahn eth0 -A legal.host.com -B target.host.com \
+  mausezahn eth0 -A legal.host.com -B target.host.com \\
                  -t tcp "sp=80,dp=80,s=1-4294967295"
 
 Fortunately, the SQNR must match the target host's acknowledgement number plus
@@ -959,7 +959,7 @@ the announced window size. Since the typical window size is something between
 40000 and 65535 you are MUCH quicker when using an increment using the ds
 argument:
 
-  mausezahn eth0 -A legal.host.com -B target.host.com \
+  mausezahn eth0 -A legal.host.com -B target.host.com \\
                  -t tcp "sp=80, dp=80, s=1-4294967295, ds=40000"
 
 In the latter case mausezahn will only send 107375 packets instead of
@@ -978,7 +978,7 @@ Here is an example of a simple query:
 
 You can also create server-type messages:
 
-  mausezahn eth0 -A spoofed.dns-server.com -B target.host.com \
+  mausezahn eth0 -A spoofed.dns-server.com -B target.host.com \\
                  "q=www.topsecret.com, a=172.16.1.1"
 
 The syntax according to the online help (-t dns help) is:
@@ -1100,6 +1100,9 @@ or have only little knowledge about networks and data communication. If you
 abuse mausezahn for 'unallowed' attacks and get caught, or damage something of
 your own, then this is completely your fault. So the safest solution is to try
 it out in a lab environment.
+
+Also have a look at the netsniff-ng(8) note section on how you can properly
+setup and tune your system.
 
 .SH LEGAL
 mausezahn is licensed under the GNU GPL version 2.0.
