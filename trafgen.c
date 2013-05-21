@@ -465,8 +465,6 @@ static int xmit_smoke_probe(int icmp_sock, struct ctx *ctx)
 		memset(outpack, 0, sizeof(outpack));
 		icmp = (void *) outpack;
 		icmp->type = ICMP_ECHO;
-		icmp->code = 0;
-		icmp->checksum = 0;
 		icmp->un.echo.id = ident;
 		icmp->un.echo.sequence = htons(cnt++);
 
