@@ -211,7 +211,7 @@ int cli()
    gcli = cli; 
    
    // Set the hostname (shown in the the prompt)
-   cli_set_hostname(cli, MZ_PROMPT);
+   cli_set_hostname(cli, "mz");
    
    // Set the greeting
    cli_set_banner(cli, "mausezahn " VERSION_STRING);
