@@ -233,24 +233,121 @@ you. Here, we assume you have entered 'mysrv1' on the server and 'myclient1'
 on the client side.
 .PP
 Now, all necessary files have been created under ~/.curvetun. Files include
-\[lq]priv.key\[rq], \[lq]pub.key\[rq], \[lq]username\[rq], \[lq]clients\[rq] and \[lq]servers\[rq].
+\[lq]priv.key\[rq], \[lq]pub.key\[rq], \[lq]username\[rq], \[lq]clients\[rq]
+and \[lq]servers\[rq].
 .PP
-\[lq]clients\[rq] and \[lq]servers\[rq] are empty at the beginning and need to be filled.
-The \[lq]clients\[rq] file is meant for the server, so that it knows what clients
-are allowed to connect. The \[lq]servers\[rq] file is for the client, where it can
-select curvetun servers to connect to. Both files are kept very simple, so that
-a single configuration line per client or server is sufficient.
+\[lq]clients\[rq] and \[lq]servers\[rq] are empty at the beginning and need
+to be filled. The \[lq]clients\[rq] file is meant for the server, so that it
+knows what clients are allowed to connect. The \[lq]servers\[rq] file is for
+the client, where it can select curvetun servers to connect to. Both files are
+kept very simple, so that a single configuration line per client or server
+is sufficient.
 .PP
-The client needs to export its public key data for the server:
+The client needs to export its public key data for the server
 .PP
 .B curvetun -x
 .PP
-todo FIXME
+where it prints sth like:
+.PP
+  myclient1;11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11
+  \\_______/ \\_____________________________________________________________________________________________/
+   username  32 byte public key for 'myclient1'
+.PP
+This line is transferred to the server admin (yes, we assume a manual on-site
+key exchange scenario where f.e. the admin sets up server and clients), where
+the admin then adds this entry into his ``clients'' file like:
+.PP
+  server$ echo "myclient1;11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:" \\
+               "11:11:11:11:11:11:11:11:11:11:11:11:11:11:11" >> ~/.curvetun/clients
+.PP
+The server admin can check, if the server has registered it properly by
+.PP
+  server$ curvetun -C
+.PP
+which prints all parsed clients from ``~/.curvetun/clients''. This process could
+easily be automated/scripted with f.e. Perl and LDAP.
+.PP
+Now, the client ``myclient1'' is known to the server; that's it for the server
+configuration. The next step is to tell the client where he needs to connect to
+the server.
+.PP
+We assume in this example that the tunnel server has an public IP i.e. 1.2.3.4,
+runs on port 6666 and uses UDP as a carrier protocol. In case you are behind
+a NAT, you can use curvetun's ``--stun'' option for starting the server, to
+obtain your mapping. However, in this example we continue with 1.2.3.4 and 6666,
+UDP.
+.PP
+First, the server needs to export its key to the client, as
+.PP
+  server$ curvetun -x
+.PP
+where it prints sth like:
+.PP
+  mysrv1;22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22
+  \\____/ \\_____________________________________________________________________________________________/
+ username  32 byte public key for 'mysrv1'
+           ^-- you need this public key
+.PP
+Thus, you now have the server IP, server port, server transport protocol and the
+server's public key at hand. Thus, on the client side it can be put all together
+in the config like
+.PP
+  client$ echo "myfirstserver;1.2.3.4;6666;udp;22:22:22:22:22:22:22:22:22:22:" \\
+               "22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:"  \\
+               "22:22" >> ~/.curvetun/servers
+.PP
+where the client can check its config via:
+.PP
+  client$ curvetun -S
+.PP
+Okay, assuming we've made it, then we start the server with:
+.PP
+  server$ curvetun -s -p 6666 -u
+  server# ifconfig curves0 up
+  server# ifconfig curves0 10.0.0.1/24
+.PP
+Then, we start the client with:
+.PP
+  client$ curvetun -c=myfirstserver
+  client# ifconfig curvec0 up
+  client# ifconfig curvec0 10.0.0.2/24
+.PP
+Also, client-side information, errors or warnings will appear in syslog! By now
+we should be able to ping the server:
+.PP
+  client$ ping 10.0.0.1
+.PP
+That's it! Routing example:
+.PP
+Server side's public IP on eth0 is i.e. 1.2.3.4:
+.PP
+  server$ ... start curvetun server ...
+  server# ifconfig curves0 up
+  server# ifconfig curves0 10.0.0.1/24
+  server# echo 1 > /proc/sys/net/ipv4/ip_forward
+  server# iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+  server# iptables -A FORWARD -i eth0 -o curves0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+  server# iptables -A FORWARD -i curves0 -o eth0 -j ACCEPT
+.PP
+Client side's IP on eth0 is i.e. 5.6.7.8:
+.PP
+  client$ ... start curvetun client ...
+  client# ... lookup your default gateway (e.g. via route, here: 5.6.7.9) ...
+  client# ifconfig curvec0 up
+  client# ifconfig curvec0 10.0.0.2/24
+  client# route add -net 1.2.3.0 netmask 255.255.255.0 gw 5.6.7.9 dev eth0
+  client# route add default gw 10.0.0.1
+  client# route del default gw 5.6.7.9
+.PP
+That should be it, happy browsing and emailing via curvetun tunnels!
 .PP
 .SH NOTE
 This software is an experimental prototype intended for researchers. It will most
 likely mature over time, but it is currently not advised to use this software
 when life is put at risk.
+.PP
+.SH BUGS
+Blackhole tunneling is currently not supported.
 .PP
 .SH LEGAL
 curvetun is licensed under the GNU GPL version 2.0.
