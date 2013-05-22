@@ -45,8 +45,7 @@ through Git or email.
 Note that we have taken over the maintenance and further development of Herbert
 Haas' mausezahn [ˈmauzəˌtsa:n] utility after he passed away in 2011. There were
 no Git commit statistics available from the import of his project. The project
-is currently in an experimental branch only, but will be fully integrated
-soon. (*)
+is currently in a staging area, but will be fully integrated soon. (*)
 
 Want to join the core team? Submit enough great patches over a long time,
 implement what's on the TODO file and show an ongoing, active interest in
