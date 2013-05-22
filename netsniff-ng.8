@@ -20,7 +20,7 @@ copy and system call overhead between kernel and user address space. When we
 started working on netsniff-ng, the pcap(3) library did not use this
 zero-copy facility.
 .PP
-netsniff-ng is Linux specific only, meaning there is no support for other
+netsniff-ng is Linux specific, meaning there is no support for other
 operating systems, thus we can keep the code footprint quite minimal and to
 the point. Linux packet(7) sockets and its RX_RING and TX_RING interfaces
 bypass the normal packet processing path through the networking stack. Thus,
@@ -45,8 +45,8 @@ netsniff-ng is also able to rotate pcap files based on data size or time
 intervals, thus, making it a useful backend tool for subsequent traffic
 analysis.
 .PP
-netsniff-ng itself also supports analysis, dumping or replay of raw 802.11
-frames. For online or offline analysis netsniff-ng has a built-in packet
+netsniff-ng itself also supports analysis, replaying, and dumping of raw 802.11
+frames. For online or offline analysis, netsniff-ng has a built in packet
 dissector for the current 802.3 (Ethernet), 802.11* (WLAN), ARP, MPLS, 802.1Q
 (VLAN), 802.1QinQ, LLDP, IPv4, IPv6, ICMPv4, ICMPv6, IGMP, TCP and UDP,
 including GeoIP location analysis. Since netsniff-ng does not establish any
@@ -89,10 +89,10 @@ values for type are \[lq]host\[rq] (to us), \[lq]broadcast\[rq] (to all), \[lq]m
 group), \[lq]others\[rq] (promiscuous mode) or \[lq]outgoing\[rq] (from us).
 .PP
 .SS -F, --interval <size|time>
-If the output device is a folder, with \[lq]-F\[rq] it is possible to define the pcap
+If the output device is a folder, with \[lq]-F\[rq], it is possible to define the pcap
 file rotation interval either in terms of size or time. Thus, when the interval
 limit has been reached, a new pcap file will be started. As size parameter, the
-following values are accepted \[lq]<num>KiB/MiB/GiB\[rq] while as a time parameter
+following values are accepted \[lq]<num>KiB/MiB/GiB\[rq]; As time parameter,
 it can be \[lq]<num>s/sec/min/hrs\[rq].
 .PP
 .SS -J, --jumbo-support
@@ -116,7 +116,8 @@ Otherwise, a number given as an unsigned integer will limit processing.
 .SS -P <name>, --prefix <name>
 When dumping pcap files into a folder, a file name prefix can be defined with
 this option. If not otherwise specified, the default prefix is \[lq]dump-\[rq]
-followed by a Unix timestamp.
+followed by a Unix timestamp. Use \[lq]--prefex ""\[rq] to set filename as seconds
+since the Unix Epoch e.g. 1369179203.pcap
 .PP
 .SS -T <pcap-magic>, --magic <pcap-magic>
 Specify a pcap type for storage. Different pcap types with their various meta
@@ -144,7 +145,7 @@ promiscuous mode is turned on.
 .SS -A, --no-sock-mem
 On startup and shutdown, netsniff-ng tries to increase socket read and
 write buffers if appropriate. This option will prevent netsniff-ng from doing
-that.
+so.
 .PP
 .SS -m, --mmap
 Use mmap(2) as pcap file I/O. This is the default when replaying pcap files.
@@ -170,7 +171,7 @@ manually be prolonged, for instance.
 .SS -b <cpu>, --bind-cpu <cpu>
 Pin netsniff-ng to a specific CPU and also pin resp. migrate the NIC's IRQ
 CPU affinity to this CPU. This option should be preferred in combination with
-\[lq]-s\[rq] in case a middle till high packet rate is expected.
+\[lq]-s\[rq] in case a middle to high packet rate is expected.
 .PP
 .SS -u <uid>, --user <uid> resp. -g <gid>, --group <gid>
 After ring setup drop privileges to a non-root user/group combination.
@@ -208,7 +209,7 @@ databases (to bypass their traffic limit policy), different hosts or IP
 addresses can be placed into geoip.conf, separated by a newline.
 .PP
 .SS -V, --verbose
-Be more verbose during startup, that is to say, show detailed ring setup information.
+Be more verbose during startup i.e. show detailed ring setup information.
 .PP
 .SS -v, --version
 Show version information and exit.
@@ -240,7 +241,7 @@ scatter-gather I/O.
 Replay the pcap file dump.pcap which is read through mmap(2) I/O and send
 the packets out via the eth0 networking device. Do not dissect and print the
 content to the terminal and pin the process and NIC IRQ affinity to CPU 0.
-Also trigger the kernel every 1000us to traverse the TX_RING instead of every
+Also, trigger the kernel every 1000us to traverse the TX_RING instead of every
 10us. Note that the pcap magic type is detected automatically from the pcap
 file header.
 .PP
@@ -289,8 +290,8 @@ file to stdout.
 .PP
 .SH CONFIG FILES
 .PP
-Under /etc/netsniff-ng/ there are stored the following files that are used
-by netsniff-ng and can be extended if so wished:
+Files under /etc/netsniff-ng/ can be modified to extend netsniff-ng's
+functionality:
 .PP
     * oui.conf - OUI/MAC vendor database
     * ether.conf - Ethernet type descriptions
@@ -466,13 +467,13 @@ uses tshark, all headers are visible, but netsniff-ng removes 802.1Q
 headers. Is that normal behavior?
 .PP
 Yes and no. The way VLAN headers are handled in PF_PACKET sockets by the
-kernel is somewhat \[lq]problematic\[rq] [1]. The problem in the Linux kernel is that
-some drivers already handle VLANs, others not. Those who handle it can have
-different implementations, such as hardware acceleration and so on. So in some
-cases the VLAN tag is even stripped before entering the protocol stack, in
-some cases probably not. The bottom line is that a "hack" was introduced in
-PF_PACKET so that a VLAN ID is visible in some helper data structure that is
-accessible from the RX_RING.
+kernel is somewhat \[lq]problematic\[rq] [1]. The problem in the Linux kernel
+is that some drivers already handle VLANs, others do not. Those who handle it
+can have different implementations, such as hardware acceleration and so on.
+So in some cases the VLAN tag is even stripped before entering the protocol
+stack, in some cases probably not. The bottom line is that a "hack" was
+introduced in PF_PACKET so that a VLAN ID is visible in some helper data
+structure that is accessible from the RX_RING.
 .PP
 Then it gets really messy in the user space to artificially put the VLAN
 header back into the right place. Not to mention the resulting performance
