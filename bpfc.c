@@ -30,7 +30,8 @@ static const struct option long_options[] = {
 	{NULL, 0, NULL, 0}
 };
 
-extern int compile_filter(char *file, int verbose, int bypass, int format, bool invoke_cpp);
+extern int compile_filter(char *file, int verbose, int bypass, int format,
+			  bool invoke_cpp);
 
 static void __noreturn help(void)
 {
