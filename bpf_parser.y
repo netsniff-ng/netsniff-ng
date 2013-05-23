@@ -16,16 +16,19 @@
 #include <signal.h>
 #include <stdint.h>
 #include <errno.h>
+#include <libgen.h>
 
 #include "bpf.h"
 #include "xmalloc.h"
 #include "bpf_parser.tab.h"
 #include "built_in.h"
 #include "die.h"
+#include "xutils.h"
 
 #define MAX_INSTRUCTIONS	4096
 
-int compile_filter(char *file, int verbose, int bypass, int format);
+int compile_filter(char *file, int verbose, int bypass, int format,
+		   bool invoke_cpp);
 
 static int curr_instr = 0;
 
@@ -659,10 +662,30 @@ static void pretty_printer(const struct sock_fprog *prog, int format)
 	}
 }
 
-int compile_filter(char *file, int verbose, int bypass, int format)
+int compile_filter(char *file, int verbose, int bypass, int format,
+		   bool invoke_cpp)
 {
 	int i;
 	struct sock_fprog res;
+	char tmp_file[128];
+
+	memset(tmp_file, 0, sizeof(tmp_file));
+
+	if (invoke_cpp) {
+		char cmd[256], *dir, *base, *a, *b;
+
+		dir = dirname((a = xstrdup(file)));
+		base = basename((b = xstrdup(file)));
+
+		slprintf(tmp_file, sizeof(tmp_file), "%s/.tmp-%u-%s", dir, rand(), base);
+		slprintf(cmd, sizeof(cmd), "cpp -I" PREFIX_STRING
+			 "/etc/netsniff-ng/ %s > %s", file, tmp_file);
+		system(cmd);
+
+		file = tmp_file;
+		xfree(a);
+		xfree(b);
+	}
 
 	if (!strncmp("-", file, strlen("-")))
 		yyin = stdin;
@@ -718,6 +741,9 @@ int compile_filter(char *file, int verbose, int bypass, int format)
 	}
 
 	fclose(yyin);
+	if (invoke_cpp)
+		unlink(tmp_file);
+
 	return 0;
 }
 

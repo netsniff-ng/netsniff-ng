@@ -119,6 +119,7 @@ label		[a-zA-Z_][a-zA-Z0-9_]+
 
 "/*"([^\*]|\*[^/])*"*/" { /* NOP */ }
 ";"[^\n]*	{/* NOP */}
+^#.*		{/* NOP */}
 "\n"		{ yylineno++; }
 [ \t]+		{/* NOP */ }
 .		{ printf("Unknown character '%s'", yytext);

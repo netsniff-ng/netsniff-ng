@@ -17,10 +17,11 @@
 #include "die.h"
 #include "bpf.h"
 
-static const char *short_options = "vhi:Vdbf:";
+static const char *short_options = "vhi:Vdbf:p";
 static const struct option long_options[] = {
 	{"input",	required_argument,	NULL, 'i'},
 	{"format",	required_argument,	NULL, 'f'},
+	{"cpp",		no_argument,		NULL, 'p'},
 	{"verbose",	no_argument,		NULL, 'V'},
 	{"bypass",	no_argument,		NULL, 'b'},
 	{"dump",	no_argument,		NULL, 'd'},
@@ -29,7 +30,7 @@ static const struct option long_options[] = {
 	{NULL, 0, NULL, 0}
 };
 
-extern int compile_filter(char *file, int verbose, int bypass, int format);
+extern int compile_filter(char *file, int verbose, int bypass, int format, bool invoke_cpp);
 
 static void __noreturn help(void)
 {
@@ -38,6 +39,7 @@ static void __noreturn help(void)
 	     "Usage: bpfc [options] || bpfc <program>\n"
 	     "Options:\n"
 	     "  -i|--input <program/->  Berkeley Packet Filter file/stdin\n"
+	     "  -p|--cpp                Run bpf program through C preprocessor\n"
 	     "  -f|--format <format>    Output format: C|netsniff-ng|xt_bpf|tcpdump\n"
 	     "  -b|--bypass             Bypass filter validation (e.g. for bug testing)\n"
 	     "  -V|--verbose            Be more verbose\n"
@@ -48,7 +50,7 @@ static void __noreturn help(void)
 	     "  bpfc fubar\n"
 	     "  bpfc fubar > foo (bpfc -f C -i fubar > foo) -->  netsniff-ng -f foo ...\n"
 	     "  bpfc -f tcpdump -i fubar > foo -->  tcpdump -ddd like ...\n"
-	     "  bpfc -f xt_bpf -b -i fubar\n"
+	     "  bpfc -f xt_bpf -b -p -i fubar\n"
 	     "  iptables -A INPUT -m bpf --bytecode \"`./bpfc -f xt_bpf -i fubar`\" -j LOG\n"
 	     "  bpfc -   (read from stdin)\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
@@ -76,6 +78,7 @@ static void __noreturn version(void)
 int main(int argc, char **argv)
 {
 	int ret, verbose = 0, c, opt_index, bypass = 0, format = 0;
+	bool invoke_cpp = false;
 	char *file = NULL;
 
 	setfsuid(getuid());
@@ -95,6 +98,9 @@ int main(int argc, char **argv)
 			break;
 		case 'V':
 			verbose = 1;
+			break;
+		case 'p':
+			invoke_cpp = true;
 			break;
 		case 'f':
 			if (!strncmp(optarg, "C", 1) ||
@@ -137,7 +143,7 @@ int main(int argc, char **argv)
 	if (!file)
 		panic("No Berkeley Packet Filter program specified!\n");
 
-	ret = compile_filter(file, verbose, bypass, format);
+	ret = compile_filter(file, verbose, bypass, format, invoke_cpp);
 
 	xfree(file);
 	return ret;

@@ -57,6 +57,11 @@ source tree under: tools/net/bpf_jit_disasm.c
 .SS -i <source-file/->, --input <source-file/->
 Read BPF assembly instruction from an input file or from stdin.
 .PP
+.SS -p, --cpp
+Pass the bpf program through the C preprocessor before reading it in
+bpfc. This allows #define and #include directives (e.g. to include
+definitions from system headers) to be used in the bpf program.
+.PP
 .SS -f <format>, --format <format>
 Specify a different output format than the default that is netsniff-ng
 compatible. The <format> specifier can be: C, netsniff-ng, xt_bpf, tcpdump.
@@ -284,9 +289,11 @@ words, some small example filter programs:
 Compile the source file ''fubar'' into BPF opcodes. Opcodes will be
 directed to stdout.
 .PP
-.SS bpfc -f xt_bpf -b -i fubar, resp. iptables -A INPUT -m bpf --bytecode "`bpfc -f xt_bpf -i fubar`" -j LOG
+.SS bpfc -f xt_bpf -b -p -i fubar, resp. iptables -A INPUT -m bpf --bytecode "`bpfc -f xt_bpf -i fubar`" -j LOG
 Compile the source file ''fubar'' into BPF opcodes, bypass basic filter
-validation and emit opcodes in netfilter's xt_bpf readable format.
+validation and emit opcodes in netfilter's xt_bpf readable format. Note
+that the source file ''fubar'' is first passed to the C preprocessor for
+textual replacments before handing over to the bpfc compiler.
 .PP
 .SS bpfc -
 Read bpfc instruction from stdin and emit opcodes to stdout.
