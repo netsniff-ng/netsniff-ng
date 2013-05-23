@@ -13,7 +13,7 @@ trafgen \- a fast, multithreaded network packet generator
 .SH DESCRIPTION
 
 trafgen is a fast, zero-copy network traffic generator for debugging,
-performance evaluation and fuzz-testing purposes. trafgen utilizes the packet(7)
+performance evaluation, and fuzz-testing. trafgen utilizes the packet(7)
 socket interface of Linux which postpones complete control over packet data
 and packet headers into the user space. It has a powerful packet configuration
 language, which is rather low-level and not limited to particular protocols.
@@ -22,24 +22,24 @@ cannot mimic full streams resp. sessions. However, it is very useful for
 various kinds of load testing in order to analyze and subsequently improve
 systems behaviour under DoS attack scenarios, for instance.
 
-trafgen is Linux specific only, meaning there is no support for other operating
-systems just as in netsniff-ng(8), thus we can keep the code footprint quite
+trafgen is Linux specific, meaning there is no support for other operating
+systems, same as netsniff-ng(8), thus we can keep the code footprint quite
 minimal and to the point. trafgen makes use of packet(7) socket's TX_RING
 interface of the Linux kernel, which is a mmap(2)'ed ring buffer shared between
 user and kernel space.
 
-By default, trafgen starts as many processes as CPUs that are online, pins each
+By default, trafgen starts as many processes as available CPUs, pins each
 of them to their respective CPU and sets up the ring buffer each in their own
 process space after having compiled a list of packets to transmit. Thus, this is
 likely the fastest one can get out of the box in terms of transmission performance
 from user space, without having to load unsupported or non-mainline third-party
 kernel modules. On Gigabit Ethernet, trafgen has a comparable performance to
-pktgen, the built-in Linux kernel traffic generator, only that trafgen is more
+pktgen, the built-in Linux kernel traffic generator, except that trafgen is more
 flexible in terms of packet configuration possibilities. On 10-Gigabit-per-second
 Ethernet, trafgen might be slower than pktgen due to the user/kernel space
 overhead but still has a fairly high performance for out of the box kernels.
 
-trafgen has a possibility to do fuzz testing, meaning a packet configuration can
+trafgen has the potential to do fuzz testing, meaning a packet configuration can
 be built with random numbers on all or certain packet offsets that are freshly
 generated each time a packet is sent out. With a built-in IPv4 ping, trafgen can
 send out an ICMP probe after each packet injection to the remote host in order
@@ -69,7 +69,7 @@ given scenario.
 
 .SS -i <cfg|->, -c <cfg|i>, --in <cfg|->, --conf <cfg|->
 Defines the input configuration file that can either be passed as a normal plain
-text file or via stdin (``-''). Note that currently in case a configuration is
+text file or via stdin (``-''). Note that currently, if a configuration is
 passed through stdin, only 1 CPU will be used.
 
 .SS -o <dev>, -d <dev>, --out <dev>, --dev <dev>
@@ -83,9 +83,9 @@ definitions from system headers) to be used in the trafgen configuration file.
 .SS -J, --jumbo-support
 By default trafgen's ring buffer frames are of a fixed size of 2048 bytes.
 This means that if you're expecting jumbo frames or even super jumbo frames to
-pass your line, then you need to enable support for that with the help of this
-option. However, this has the disadvantage of a performance regression and a
-bigger memory footprint for the ring buffer.
+pass your line, then you will need to enable support for that with the help of
+this option. However, this has the disadvantage of a performance regression and
+a bigger memory footprint for the ring buffer.
 
 .SS -R, --rfraw
 In case the output networking device is a wireless device, it is possible with
@@ -132,7 +132,7 @@ with specific payload patterns. Furthermore, the TX_RING interface does not cope
 with interpacket gaps.
 
 .SS -S <size>, --ring-size <size>
-Manually define the RX_RING resp. TX_RING size in ``<num>KiB/MiB/GiB''. On
+Manually define the TX_RING resp. TX_RING size in ``<num>KiB/MiB/GiB''. On
 default the size is being determined based on the network connectivity rate.
 
 .SS -k <uint>, --kernel-pull <uint>
@@ -166,8 +166,8 @@ Show user help and exit.
 
 .SH SYNTAX
 trafgen's packet configuration syntax is fairly simple. The very basic things
-one need to know is that a configuration file is a simple plain text file
-where packets are defined. It can contain one or more packets. Packet are
+one needs to know is that a configuration file is a simple plain text file
+where packets are defined. It can contain one or more packets. Packets are
 enclosed by opening '{' and closing '}' braces, for example:
 
    { /* packet 1 content goes here ... */ }
@@ -332,7 +332,7 @@ Another real-world example by Jesper Dangaard Brouer [1]:
 .SH USAGE EXAMPLE
 
 .SS trafgen --dev eth0 --conf trafgen.cfg
-This is the most simple and probably also most used command for trafgen. It
+This is the most simple and, probably, the most common use of trafgen. It
 will generate traffic defined in the configuration file ``trafgen.cfg'' and
 transmit this via the ``eth0'' networking device. All online CPUs are used.
 
@@ -374,7 +374,7 @@ drop credentials to the non-root user/group bob/bob.
 .SH NOTE
 trafgen can saturate a Gigabit Ethernet link without problems. As always,
 of course, this depends on your hardware as well. Not everywhere where it
-says Gigabit Ethernet on the box, you'll reach almost physical line rate!
+says Gigabit Ethernet on the box, will you reach almost physical line rate!
 Please also read the netsniff-ng(8) man page, section NOTE for further
 details about tuning your system e.g. with tuned(8).
 
@@ -401,7 +401,7 @@ industrial benchmarking:
     RPR Trimodal               64:60, 512:20, 1518:20
     RPR Quadrimodal            64:50, 512:15, 1518:15, 9218:20
 
-The low-level nature of trafgen makes trafgen rather protocol independant
+The low-level nature of trafgen makes trafgen rather protocol independent
 and therefore useful in many scenarios when stress testing is needed, for
 instance. However, if a traffic generator with higher level packet
 descriptions is desired, netsniff-ng's mausezahn(8) can be of good use as
