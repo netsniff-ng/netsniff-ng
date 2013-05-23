@@ -126,7 +126,7 @@ static void __noreturn help(void)
 static void __noreturn version(void)
 {
 	printf("\nifpps %s, top-like kernel networking and system statistics\n",
-	       VERSION_STRING);
+	       VERSION_LONG);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2009-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"

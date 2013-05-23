@@ -65,7 +65,7 @@ static void __noreturn help(void)
 
 static void __noreturn version(void)
 {
-	printf("\nbpfc %s, a tiny BPF compiler\n", VERSION_STRING);
+	printf("\nbpfc %s, a tiny BPF compiler\n", VERSION_LONG);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"

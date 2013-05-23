@@ -275,7 +275,7 @@ static void __noreturn example(void)
 
 static void __noreturn version(void)
 {
-	printf("\ntrafgen %s, multithreaded zero-copy network packet generator\n", VERSION_STRING);
+	printf("\ntrafgen %s, multithreaded zero-copy network packet generator\n", VERSION_LONG);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"

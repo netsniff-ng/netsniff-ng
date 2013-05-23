@@ -95,6 +95,7 @@ endif
 
 ALL_CFLAGS = $(CFLAGS) -I.
 ALL_CFLAGS += -DVERSION_STRING=\"$(VERSION_STRING)\"
+ALL_CFLAGS += -DVERSION_LONG=\"$(VERSION_LONG)\"
 ALL_CFLAGS += -DPREFIX_STRING=\"$(PREFIX)\"
 ifneq ($(wildcard /usr/include/linux/net_tstamp.h),)
   ALL_CFLAGS += -D__WITH_HARDWARE_TIMESTAMPING
@@ -141,7 +142,7 @@ export VERSION PATCHLEVEL SUBLEVEL EXTRAVERSION
 export CROSS_COMPILE
 
 VERSION_STRING = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
-VERSION_SHORT = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)
+VERSION_LONG = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)~$(NAME)
 
 bold = $(shell tput bold)
 normal = $(shell tput sgr0)
@@ -229,7 +230,7 @@ bpfc: ALL_CFLAGS += -I..
 curvetun: ALL_CFLAGS += -I ${NACL_INC_DIR}
 curvetun: ALL_LDFLAGS += -L ${NACL_LIB_DIR}
 # This gets some extra treatment here until the code looks properly
-mausezahn: ALL_CFLAGS = -O2 -I. -I.. -DVERSION_STRING=\"$(VERSION_STRING)\" -DPREFIX_STRING=\"$(PREFIX)\"
+mausezahn: ALL_CFLAGS = -O2 -I. -I.. -DVERSION_STRING=\"$(VERSION_STRING)\" -DPREFIX_STRING=\"$(PREFIX)\" -DVERSION_LONG=\"$(VERSION_LONG)\"
 
 bpfc_clean_custom:
 	$(Q)$(call RM,$(BUILD_DIR)/*.h $(BUILD_DIR)/*.c)

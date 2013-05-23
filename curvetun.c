@@ -132,7 +132,7 @@ static void __noreturn help(void)
 
 static void __noreturn version(void)
 {
-	printf("\ncurvetun %s, lightweight curve25519-based VPN/IP tunnel\n", VERSION_STRING);
+	printf("\ncurvetun %s, lightweight curve25519-based VPN/IP tunnel\n", VERSION_LONG);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"

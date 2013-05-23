@@ -262,7 +262,7 @@ static void help(void)
 static void version(void)
 {
 	printf("\nflowtop %s, top-like netfilter TCP/UDP flow tracking\n",
-	       VERSION_STRING);
+	       VERSION_LONG);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"

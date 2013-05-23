@@ -170,7 +170,7 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\nmausezahn %s, a fast versatile traffic generator\n", VERSION_STRING);
+	printf("\nmausezahn %s, a fast versatile traffic generator\n", VERSION_LONG);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2008-2010 Herbert Haas <herbert@perihel.at>,\n"

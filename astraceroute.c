@@ -231,7 +231,7 @@ static void __noreturn help(void)
 
 static void __noreturn version(void)
 {
-	printf("\nastraceroute %s, autonomous system trace route utility\n", VERSION_STRING);
+	printf("\nastraceroute %s, autonomous system trace route utility\n", VERSION_LONG);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"
