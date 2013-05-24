@@ -33,8 +33,8 @@ particular flow is actually running curvetun.
 However, if you have a further need to bypass censorship, you can try using
 curvetun in combination with Tor's obfsproxy or Telex. Furthermore, curvetun
 also protects you against replay attacks and DH man-in-the-middle attacks.
-Additionally, server-side syslog event logging can also be disabled to not
-reveal any critical user connection data.
+Additionally, server-side syslog event logging can also be disabled to avoid
+revealing critical user connection data.
 .PP
 .IP " 1." 4
 obfsproxy from the TOR project
@@ -52,12 +52,12 @@ Telex, anti-censorship in the network infrastructure
 .PP
 .SS -d <tundev>, --dev <tundev>
 Defines the name of the tunnel device that is being created. If this option
-is not set, then the default names for curves{0,1,2,..} for a curvetun server
+is not set, then the default names, curves{0,1,2,..} for a curvetun server,
 and curvec{0,1,2,...} for a curvetun client are used.
 .PP
 .SS -p <num>, --port <num>
 Defines the port the curvetun server should listen on. There is no default port
-for curvetun in general, so setting this option for server bootstrap is
+for curvetun, so setting this option for server bootstrap is
 mandatory. This option is for servers only.
 .PP
 .SS -t <server>, --stun <server>
@@ -70,15 +70,13 @@ Starts curvetun in client mode and connects to the given connection alias that i
 defined in the configuration file.
 .PP
 .SS -k, --keygen
-Generate private and public keypair. If not done yet, this must be done
-initially.
+Generate private and public keypair. This must be done initially.
 .PP
 .SS -x, --export
 Export our user and key combination to stdout as a one-liner.
 .PP
 .SS -C, --dumpc
-Dump all known clients that may connect to the local curvetun server
-and exit.
+Dump all known clients that may connect to the local curvetun server and exit.
 .PP
 .SS -S, --dumps
 Dump all known servers we as a client can connect to, and exit.
@@ -87,7 +85,7 @@ Dump all known servers we as a client can connect to, and exit.
 Do not fork off as a client or server on startup.
 .PP
 .SS -s, --server
-Starts curvetun in server mode. Additional parameters are needed, at least
+Start curvetun in server mode. Additional parameters are needed, at least
 the definition of the port clients can connect to.
 .PP
 .SS -N, --no-logging
@@ -128,12 +126,12 @@ that is defined in the curvetun ~/.curvetun/servers configuration.
 Generates initial keypairs and stores them in ~/.curvetun/.
 .PP
 .SS curvetun --export
-Exports your user data to stdout for configuration of a curvetun server.
+Export user data to stdout for configuration of a curvetun server.
 .PP
 .SH CRYPTOGRAPHY
 Encrypted IP tunnels are often used to create virtual private networks (VPN),
 where parts of the network can only be reached via an insecure or untrusted medium
-such as the Internet. Only a few software utilities exists to create such tunnels,
+such as the Internet. Only a few software utilities exist to create such tunnels,
 or, VPNs. Two popular representatives of such software are OpenVPN and VTUN.
 .PP
 The latter also introduced the TUN/TAP interfaces into the Linux kernel. VTUN
@@ -152,8 +150,8 @@ much choice of ciphers and too little experience for picking the right one.
 .PP
 Next to the administration issues, there are also software development issues.
 Cryptographic libraries like OpenSSL are a huge mess and too low-level and
-complex to properly fully understand or correctly apply, so that they form a
-further ground for vulnerabilities of such software.
+complex to fully understand or correctly apply, so that they form further
+ground for vulnerabilities of such software.
 .PP
 In 2010, the cryptographers Tanja Lange and Daniel J. Bernstein have therefore
 created and published a cryptography library for networking, which is called
@@ -163,7 +161,7 @@ with a strong focus on public-key authenticated encryption based on elliptic
 curve cryptography, which is used in curvetun. Partially quoting Daniel J.
 Bernstein:
 .PP
-RSA is somewhat older than elliptic-curve cryptography: RSA was introduced
+"RSA is somewhat older than elliptic-curve cryptography: RSA was introduced
 in 1977, while elliptic-curve cryptography was introduced in 1985. However,
 RSA has shown many more weaknesses than elliptic-curve cryptography. RSA's
 effective security level was dramatically reduced by the linear sieve in the
@@ -180,7 +178,7 @@ used the IEEE P1363 criteria to select fifteen specific elliptic curves at
 five different security levels. In 2005, NSA issued a new ''Suite B''
 standard, recommending the NIST elliptic curves (at two specific security
 levels) for all public-key cryptography and withdrawing previous
-recommendations of RSA.
+recommendations of RSA."
 .PP
 curvetun uses a particular elliptic curve, Curve25519, introduced in the
 following paper: Daniel J. Bernstein, ''Curve25519: new Diffie-Hellman speed
@@ -217,7 +215,7 @@ NaCl: Networking and Cryptography library
 .RE
 .PP
 .SH SETUP HOWTO
-If you've never run curvetun before, you need to do an initial setup once.
+If you haven't run curvetun before, you need to do an initial setup once.
 .PP
 First, make sure that the servers and clients clocks are periodically
 synced, for example, by running an ntp daemon. This is necessary to protect
@@ -271,7 +269,7 @@ Now, the client ``myclient1'' is known to the server; that's it for the server
 configuration. The next step is to tell the client where he needs to connect to
 the server.
 .PP
-We assume in this example that the tunnel server has an public IP i.e. 1.2.3.4,
+We assume in this example that the tunnel server has a public IP i.e. 1.2.3.4,
 runs on port 6666 and uses UDP as a carrier protocol. In case you are behind
 a NAT, you can use curvetun's ``--stun'' option for starting the server, to
 obtain your mapping. However, in this example we continue with 1.2.3.4 and 6666,
