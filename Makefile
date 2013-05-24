@@ -38,7 +38,8 @@ endif
 
 # For packaging purposes, you might want to call your own:
 #   make CFLAGS="<flags>"
-CFLAGS_DEF = -fstack-protector
+CFLAGS_DEF = -fstack-protector-all -Wstack-protector
+CFLAGS_DEF += --param=ssp-buffer-size=4
 ifeq ($(DEBUG), 1)
   CFLAGS_DEF += -g
   CFLAGS_DEF += -O2
@@ -46,13 +47,13 @@ else
   CFLAGS_DEF += -march=native
   CFLAGS_DEF += -mtune=native
   CFLAGS_DEF += -O3
-  CFLAGS_DEF += -fpie
+  CFLAGS_DEF += -fPIE -pie
   CFLAGS_DEF += -pipe
   CFLAGS_DEF += -fomit-frame-pointer
+  CFLAGS_DEF += -Wl,-z,relro,-z,now
 endif
-CFLAGS_DEF += --param=ssp-buffer-size=4
 CFLAGS_DEF += -fno-strict-aliasing
-CFLAGS_DEF += -fexceptions
+CFLAGS_DEF += -fexceptions -ftrapv
 CFLAGS_DEF += -fasynchronous-unwind-tables
 CFLAGS_DEF += -fno-delete-null-pointer-checks
 CFLAGS_DEF += -D_FORTIFY_SOURCE=2
