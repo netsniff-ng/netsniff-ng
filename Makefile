@@ -38,8 +38,8 @@ endif
 
 # For packaging purposes, you might want to call your own:
 #   make CFLAGS="<flags>"
-CFLAGS_DEF = -fstack-protector-all -Wstack-protector
-CFLAGS_DEF += --param=ssp-buffer-size=4
+CFLAGS_DEF = -std=gnu99
+
 ifeq ($(DEBUG), 1)
   CFLAGS_DEF += -g
   CFLAGS_DEF += -O2
@@ -47,21 +47,29 @@ else
   CFLAGS_DEF += -march=native
   CFLAGS_DEF += -mtune=native
   CFLAGS_DEF += -O3
-  CFLAGS_DEF += -fPIE -pie
   CFLAGS_DEF += -pipe
   CFLAGS_DEF += -fomit-frame-pointer
-  CFLAGS_DEF += -Wl,-z,relro,-z,now
 endif
+
+ifeq ($(HARDENING), 1)
+  CFLAGS_DEF += -fPIE -pie
+  CFLAGS_DEF += -Wl,-z,relro,-z,now
+  CFLAGS_DEF += -fstack-protector-all
+  CFLAGS_DEF += -Wstack-protector
+  CFLAGS_DEF += --param=ssp-buffer-size=4
+  CFLAGS_DEF += -ftrapv
+  CFLAGS_DEF += -D_FORTIFY_SOURCE=2
+  CFLAGS_DEF += -fexceptions
+endif
+
 CFLAGS_DEF += -fno-strict-aliasing
-CFLAGS_DEF += -fexceptions -ftrapv
 CFLAGS_DEF += -fasynchronous-unwind-tables
 CFLAGS_DEF += -fno-delete-null-pointer-checks
-CFLAGS_DEF += -D_FORTIFY_SOURCE=2
+
 CFLAGS_DEF += -D_REENTRANT
-CFLAGS_DEF += -D_FILE_OFFSET_BITS=64
 CFLAGS_DEF += -D_LARGEFILE_SOURCE
 CFLAGS_DEF += -D_LARGEFILE64_SOURCE
-CFLAGS_DEF += -std=gnu99
+CFLAGS_DEF += -D_FILE_OFFSET_BITS=64
 
 WFLAGS_DEF  = -Wall
 WFLAGS_DEF += -Wformat=2
@@ -69,8 +77,8 @@ WFLAGS_DEF += -Wmissing-prototypes
 WFLAGS_DEF += -Wdeclaration-after-statement
 WFLAGS_DEF += -Werror-implicit-function-declaration
 WFLAGS_DEF += -Wstrict-prototypes
-WFLAGS_DEF += -Wundef
 WFLAGS_DEF += -Wimplicit-int
+WFLAGS_DEF += -Wundef
 
 WFLAGS_EXTRA  = -Wno-unused-result
 WFLAGS_EXTRA += -Wmissing-parameter-type
@@ -332,6 +340,7 @@ help:
 	$(Q)echo " help                         - Show this help"
 	$(Q)echo "$(bold)Available parameters:$(normal)"
 	$(Q)echo " DEBUG=1                      - Enable debugging"
+	$(Q)echo " HARDENING=1                  - Enable GCC hardening of executables"
 	$(Q)echo " PREFIX=/path                 - Install path prefix"
 	$(Q)echo " CROSS_COMPILE=/path-prefix   - Kernel-like cross-compiling prefix"
 	$(Q)echo " CROSS_LD_LIBRARY_PATH=/path  - Library search path for cross-compiling"
