@@ -24,10 +24,9 @@ extern void yyerror(const char *);
 
 static char *try_convert_shellcode(char *sstr)
 {
-	int j = 0;
 	bool found_any = false;
 	char *bstr, *ostr = sstr, *hay, *orig = sstr;
-	size_t blen, slen = strlen(sstr), tot = 0;
+	size_t j = 0, blen, slen = strlen(sstr), tot = 0;
 	const char *needle = "\\x";
 
 	sstr++;

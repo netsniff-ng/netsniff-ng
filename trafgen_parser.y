@@ -153,7 +153,7 @@ static void set_byte(uint8_t val)
 
 static void set_multi_byte(uint8_t *s, size_t len)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < len; ++i)
 		set_byte(s[i]);
@@ -187,7 +187,7 @@ static void __set_csum16_dynamic(size_t from, size_t to, enum csum which)
 	__setup_new_csum16(&pktd->csum[packetds_last], from, to, which);
 }
 
-static void __set_csum16_static(size_t from, size_t to, enum csum which)
+static void __set_csum16_static(size_t from, size_t to, enum csum which __maybe_unused)
 {
 	struct packet *pkt = &packets[packet_last];
 	uint16_t sum;

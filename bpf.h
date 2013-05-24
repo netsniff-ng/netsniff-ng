@@ -26,8 +26,9 @@ extern void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf, uint32_t lin
 extern void bpf_try_compile(const char *rulefile, struct sock_fprog *bpf,
 			    uint32_t link_type);
 #else
-static inline void bpf_try_compile(const char *rulefile, struct sock_fprog *bpf,
-				   uint32_t link_type)
+static inline void bpf_try_compile(const char *rulefile,
+				   struct sock_fprog *bpf __maybe_unused,
+				   uint32_t link_type __maybe_unused)
 {
 	panic("Cannot open file %s!\n", rulefile);
 }

@@ -24,7 +24,8 @@ static inline unsigned short csum(unsigned short *buf, int nwords)
 	return ~sum;
 }
 
-static inline uint16_t calc_csum(void *addr, size_t len, int ccsum)
+static inline uint16_t calc_csum(void *addr, size_t len,
+				 int ccsum __maybe_unused)
 {
 	return csum(addr, len >> 1);
 }
