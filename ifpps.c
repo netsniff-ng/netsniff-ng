@@ -35,7 +35,8 @@ struct ifstat {
 	long long unsigned int tx_fifo, tx_colls, tx_carrier;
 	long long unsigned int irqs[MAX_CPUS], irqs_srx[MAX_CPUS], irqs_stx[MAX_CPUS];
 	int64_t cpu_user[MAX_CPUS], cpu_nice[MAX_CPUS], cpu_sys[MAX_CPUS];
-	int64_t cpu_idle[MAX_CPUS], cpu_iow[MAX_CPUS], mem_free, mem_total;
+	int64_t cpu_idle[MAX_CPUS], cpu_iow[MAX_CPUS];
+	uint64_t mem_free, mem_total;
 	uint32_t irq_nr, procs_run, procs_iow, cswitch, forks;
 	struct wifi_stat wifi;
 };
@@ -296,10 +297,10 @@ static int stats_proc_memory(struct ifstat *stats)
 
 		if ((ptr = strstr(buff, "MemTotal:"))) {
 			ptr += strlen("MemTotal:");
-			stats->mem_total = strtol(ptr, &ptr, 10);
+			stats->mem_total = strtoul(ptr, &ptr, 10);
 		} else if ((ptr = strstr(buff, "MemFree:"))) {
 			ptr += strlen("MemFree:");
-			stats->mem_free = strtol(ptr, &ptr, 10);
+			stats->mem_free = strtoul(ptr, &ptr, 10);
 		}
 
 		memset(buff, 0, sizeof(buff));
