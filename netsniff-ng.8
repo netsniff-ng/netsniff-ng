@@ -54,6 +54,15 @@ state or perform reassembly during packet dissection, its memory footprint is qu
 low, thus, making netsniff-ng quite efficient for offline analysis of large
 pcap files as well.
 .PP
+Note that netsniff-ng is currently not multithreaded. However, this does not
+prevent you from starting multiple netsniff-ng instances that are pinned to
+different, non-overlapping CPUs and f.e. have different BPF filters attached.
+Likely that at some point in time your harddisc might become a bottleneck
+assuming you do not rotate such pcaps in ram (and from there periodically
+scheduled move to slower medias). You can then use mergecap(1) to transform
+all pcaps into a single large pcap. Thus, netsniff-ng then works multithreaded
+eventually.
+.PP
 .SH OPTIONS
 .PP
 .SS -i <dev|pcap|->, -d <dev|pcap|->, --in <dev|pcap|->, --dev <dev|pcap|->
