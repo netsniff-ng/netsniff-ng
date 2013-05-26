@@ -102,6 +102,9 @@ else
   LDFLAGS =
 endif
 
+VERSION_STRING = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
+VERSION_LONG = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)~$(NAME)
+
 ALL_CFLAGS = $(CFLAGS) -I.
 ALL_CFLAGS += -DVERSION_STRING=\"$(VERSION_STRING)\"
 ALL_CFLAGS += -DVERSION_LONG=\"$(VERSION_LONG)\"
@@ -116,28 +119,37 @@ YAAC_FLAGS =
 # Be quite and do not echo the cmd
 Q = @
 
-# Some command definitions
+# GCC related stuff
 LD = $(Q)echo -e "  LD\t$@" && $(CCACHE) $(CROSS_COMPILE)gcc
 CCNQ = $(CCACHE) $(CROSS_COMPILE)gcc
 CC = $(Q)echo -e "  CC\t$<" && $(CCNQ)
-MKDIR = $(Q)echo -e "  MKDIR\t$@" && mkdir
 ifeq ($(DEBUG), 1)
   STRIP = $(Q)true
 else
   STRIP = $(Q)echo -e "  STRIP\t$@" && $(CROSS_COMPILE)strip
 endif
+
+# Flex/bison related
 LEX = $(Q)echo -e "  LEX\t$<" && flex
 YAAC = $(Q)echo -e "  YAAC\t$<" && bison
+
+# Installation related
 INST = echo -e "  INST\t$(1)" && install -d $(2) && \
 	install --mode=644 -DC $(1) $(2)/$(shell basename $(1))
+
 ifeq ("$(origin PREFIX)", "command line")
   INSTX = echo -e "  INST\t$(1)" && install -d $(2) && \
 	install -C $(1) $(2)/$(shell basename $(1))
 else
   INSTX = echo -e "  INST\t$(1)" && install -C $(1) $(2)/$(shell basename $(1))
 endif
+
 RM = echo -e "  RM\t$(1)" && rm -rf $(1)
 RMDIR = echo -e "  RM\t$(1)" && rmdir --ignore-fail-on-non-empty $(1) 2> /dev/null || true
+
+GZIP = gzip --best -c
+
+# Git related
 GIT_ARCHIVE = git archive --prefix=netsniff-ng-$(VERSION_STRING)/ $(VERSION_STRING) | \
 	      $(1) > ../netsniff-ng-$(VERSION_STRING).tar.$(2)
 GIT_TAG = git tag -a $(VERSION_STRING) -s -m "tools: $(VERSION_STRING) release"
@@ -145,13 +157,9 @@ GIT_LOG = git shortlog -n --not $(shell git describe --abbrev=0 --tags)
 GIT_REM = git ls-files -o | xargs rm -rf
 GIT_PEOPLE = git log --no-merges $(VERSION_STRING)..HEAD | grep Author: | cut -d: -f2 | \
 	     cut -d\< -f1 | sort | uniq -c | sort -nr
-GZIP = gzip --best -c
 
 export VERSION PATCHLEVEL SUBLEVEL EXTRAVERSION
 export CROSS_COMPILE
-
-VERSION_STRING = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
-VERSION_LONG = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)~$(NAME)
 
 bold = $(shell tput bold)
 normal = $(shell tput sgr0)
