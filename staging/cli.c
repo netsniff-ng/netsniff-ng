@@ -214,7 +214,7 @@ int cli()
    cli_set_hostname(cli, "mz");
    
    // Set the greeting
-   cli_set_banner(cli, "mausezahn " VERSION_STRING);
+   cli_set_banner(cli, "mausezahn " VERSION_LONG);
    
    // Enable usernames and passwords
    cli_allow_user(cli, mz_username, mz_password);
