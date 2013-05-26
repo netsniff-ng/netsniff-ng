@@ -21,18 +21,17 @@ started working on netsniff-ng, the pcap(3) library did not use this
 zero-copy facility.
 .PP
 netsniff-ng is Linux specific, meaning there is no support for other
-operating systems, thus we can keep the code footprint quite minimal and to
+operating systems. Therefore we can keep the code footprint quite minimal and to
 the point. Linux packet(7) sockets and its RX_RING and TX_RING interfaces
-bypass the normal packet processing path through the networking stack. Thus,
-this is the fastest one can get out of the box in terms of capturing or
-transmission performance from user space, without having to load unsupported
-or non-mainline third-party kernel modules. We explicitly refuse to build
-netsniff-ng on top of ntop/PF_RING. Not because we do not like it (we do find
-it interesting), but because of the fact that it is not part of the mainline
-kernel. Therefore, the ntop project has to maintain and sync out-of-tree drivers
-to adapt them to their DNA. Eventually, we went for untainted Linux kernel,
-since its code has a higher rate of review, maintenance, security and bug
-fixes.
+bypass the normal packet processing path through the networking stack.
+This is the fastest capturing or transmission performance one can get from user
+space out of the box, without having to load unsupported or non-mainline
+third-party kernel modules. We explicitly refuse to build netsniff-ng on top of
+ntop/PF_RING. Not because we do not like it (we do find it interesting), but
+because of the fact that it is not part of the mainline kernel. Therefore, the
+ntop project has to maintain and sync out-of-tree drivers to adapt them to their
+DNA. Eventually, we went for untainted Linux kernel, since its code has a higher
+rate of review, maintenance, security and bug fixes.
 .PP
 netsniff-ng also supports early packet filtering in the kernel. It has support
 for low-level and high-level packet filters that are translated into Berkeley
@@ -46,7 +45,7 @@ intervals, thus, making it a useful backend tool for subsequent traffic
 analysis.
 .PP
 netsniff-ng itself also supports analysis, replaying, and dumping of raw 802.11
-frames. For online or offline analysis, netsniff-ng has a built in packet
+frames. For online or offline analysis, netsniff-ng has a built-in packet
 dissector for the current 802.3 (Ethernet), 802.11* (WLAN), ARP, MPLS, 802.1Q
 (VLAN), 802.1QinQ, LLDP, IPv4, IPv6, ICMPv4, ICMPv6, IGMP, TCP and UDP,
 including GeoIP location analysis. Since netsniff-ng does not establish any
@@ -66,7 +65,7 @@ eventually.
 .SH OPTIONS
 .PP
 .SS -i <dev|pcap|->, -d <dev|pcap|->, --in <dev|pcap|->, --dev <dev|pcap|->
-Defines an input device, that can either be a networking device, a pcap file
+Defines an input device. This can either be a networking device, a pcap file
 or stdin (\[lq]-\[rq]). In case of a pcap file, the pcap type (\[lq]-D\[rq] option) is
 determined automatically by the pcap file magic. In case of stdin, it is
 assumed that the input stream is a pcap file.
@@ -170,7 +169,7 @@ to disc.
 .PP
 .SS -S <size>, --ring-size <size>
 Manually define the RX_RING resp. TX_RING size in \[lq]<num>KiB/MiB/GiB\[rq]. By
-default the size is determined based on the network connectivity rate.
+default, the size is determined based on the network connectivity rate.
 .PP
 .SS -k <uint>, --kernel-pull <uint>
 Manually define the interval in micro-seconds where the kernel should be triggered
