@@ -24,10 +24,6 @@ typedef uint8_t		u8;
 # define CO_CACHE_LINE_SIZE	(1 << CO_IN_CACHE_SHIFT)
 #endif
 
-#ifndef MAX_CPUS
-# define MAX_CPUS			32
-#endif
-
 #ifndef __aligned_16
 # define __aligned_16		__attribute__((aligned(16)))
 #endif

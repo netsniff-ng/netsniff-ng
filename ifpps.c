@@ -1,6 +1,7 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * Copyright 2009 - 2013 Daniel Borkmann.
+ * Copyright 2013 Tobias Klauser
  * Subject to the GPL, version 2.
  */
 
@@ -22,6 +23,9 @@
 #include "xio.h"
 #include "built_in.h"
 
+/* Number of top hitter CPUs to display */
+#define TOP_CPUS	10
+
 struct wifi_stat {
 	uint32_t bitrate;
 	int16_t link_qual, link_qual_max;
@@ -33,17 +37,28 @@ struct ifstat {
 	long long unsigned int rx_fifo, rx_frame, rx_multi;
 	long long unsigned int tx_bytes, tx_packets, tx_drops, tx_errors;
 	long long unsigned int tx_fifo, tx_colls, tx_carrier;
-	long long unsigned int irqs[MAX_CPUS], irqs_srx[MAX_CPUS], irqs_stx[MAX_CPUS];
-	int64_t cpu_user[MAX_CPUS], cpu_nice[MAX_CPUS], cpu_sys[MAX_CPUS];
-	int64_t cpu_idle[MAX_CPUS], cpu_iow[MAX_CPUS];
 	uint64_t mem_free, mem_total;
 	uint32_t irq_nr, procs_run, procs_iow, cswitch, forks;
 	struct wifi_stat wifi;
+	/*
+	 * Pointer members need to be last in order for stats_zero() to work
+	 * properly.
+	 */
+	long long unsigned int *irqs, *irqs_srx, *irqs_stx;
+	uint64_t *cpu_user, *cpu_sys, *cpu_nice, *cpu_idle, *cpu_iow;
+};
+
+struct cpu_hit {
+	unsigned int idx;
+	uint64_t hit;
+	long long unsigned int irqs_rel, irqs_abs;
 };
 
 volatile sig_atomic_t sigint = 0;
 
 static struct ifstat stats_old, stats_new, stats_delta;
+
+static struct cpu_hit *cpu_hits;
 
 static int stats_loop = 0;
 
@@ -138,6 +153,41 @@ static void __noreturn version(void)
 	die();
 }
 
+#define STATS_ALLOC1(member)	\
+	do { stats->member = xzmalloc(cpus * sizeof(*(stats->member))); } while (0)
+
+static void stats_alloc(struct ifstat *stats, int cpus)
+{
+	STATS_ALLOC1(irqs);
+	STATS_ALLOC1(irqs_srx);
+	STATS_ALLOC1(irqs_stx);
+
+	STATS_ALLOC1(cpu_user);
+	STATS_ALLOC1(cpu_sys);
+	STATS_ALLOC1(cpu_nice);
+	STATS_ALLOC1(cpu_idle);
+	STATS_ALLOC1(cpu_iow);
+}
+
+#define STATS_ZERO1(member)	\
+	do { memset(stats->member, 0, sizeof(*(stats->member))); } while (0)
+
+static void stats_zero(struct ifstat *stats, int cpus)
+{
+	/* Only clear the non-pointer members */
+	memset(stats, 0, offsetof(struct ifstat, irqs));
+
+	STATS_ZERO1(irqs);
+	STATS_ZERO1(irqs_srx);
+	STATS_ZERO1(irqs_stx);
+
+	STATS_ZERO1(cpu_user);
+	STATS_ZERO1(cpu_sys);
+	STATS_ZERO1(cpu_nice);
+	STATS_ZERO1(cpu_idle);
+	STATS_ZERO1(cpu_iow);
+}
+
 static int stats_proc_net_dev(const char *ifname, struct ifstat *stats)
 {
 	int ret = -EINVAL;
@@ -191,7 +241,6 @@ static int stats_proc_interrupts(char *ifname, struct ifstat *stats)
 		panic("Cannot open /proc/interrupts!\n");
 
 	cpus = get_number_cpus();
-	bug_on(cpus > MAX_CPUS);
 retry:
 	fseek(fp, 0, SEEK_SET);
 	memset(buff, 0, sizeof(buff));
@@ -249,7 +298,6 @@ static int stats_proc_softirqs(struct ifstat *stats)
 		panic("Cannot open /proc/softirqs!\n");
 
 	cpus = get_number_cpus();
-	bug_on(cpus > MAX_CPUS);
 
 	memset(buff, 0, sizeof(buff));
 
@@ -321,7 +369,6 @@ static int stats_proc_system(struct ifstat *stats)
 		panic("Cannot open /proc/stat!\n");
 
 	cpus = get_number_cpus();
-	bug_on(cpus > MAX_CPUS);
 
 	memset(buff, 0, sizeof(buff));
 
@@ -435,7 +482,6 @@ static void stats_diff(struct ifstat *old, struct ifstat *new,
 	DIFF1(forks);
 
 	cpus = get_number_cpus();
-	bug_on(cpus > MAX_CPUS);
 
 	for (i = 0; i < cpus; ++i) {
 		DIFF(irqs[i]);
@@ -468,15 +514,78 @@ static void stats_fetch(const char *ifname, struct ifstat *stats)
 
 static void stats_sample_generic(const char *ifname, uint64_t ms_interval)
 {
-	memset(&stats_old, 0, sizeof(stats_old));
-	memset(&stats_new, 0, sizeof(stats_new));
-	memset(&stats_delta, 0, sizeof(stats_delta));
+	int cpus = get_number_cpus();
+
+	stats_zero(&stats_old, cpus);
+	stats_zero(&stats_new, cpus);
+	stats_zero(&stats_delta, cpus);
 
 	stats_fetch(ifname, &stats_old);
 	usleep(ms_interval * 1000);
 	stats_fetch(ifname, &stats_new);
 
 	stats_diff(&stats_old, &stats_new, &stats_delta);
+}
+
+static int cmp_hits(const void *p1, const void *p2)
+{
+	const struct cpu_hit *h1 = p1, *h2 = p2;
+
+	/*
+	 * We want the hits sorted in descending order, thus reverse the return
+	 * values.
+	 */
+	if (h1->hit == h2->hit)
+		return 0;
+	else if (h1->hit < h2->hit)
+		return 1;
+	else
+		return -1;
+}
+
+static int cmp_irqs_rel(const void *p1, const void *p2)
+{
+	const struct cpu_hit *h1 = p1, *h2 = p2;
+
+	/*
+	 * We want the hits sorted in descending order, thus reverse the return
+	 * values.
+	 */
+	if (h1->irqs_rel == h2->irqs_rel)
+		return 0;
+	else if (h1->irqs_rel < h2->irqs_rel)
+		return 1;
+	else
+		return -1;
+}
+
+static int cmp_irqs_abs(const void *p1, const void *p2)
+{
+	const struct cpu_hit *h1 = p1, *h2 = p2;
+
+	/*
+	 * We want the hits sorted in descending order, thus reverse the return
+	 * values.
+	 */
+	if (h1->irqs_abs == h2->irqs_abs)
+		return 0;
+	else if (h1->irqs_abs < h2->irqs_abs)
+		return 1;
+	else
+		return -1;
+}
+
+static void stats_top(const struct ifstat *rel, const struct ifstat *abs,
+		      int cpus)
+{
+	int i;
+
+	for (i = 0; i < cpus; ++i) {
+		cpu_hits[i].idx = i;
+		cpu_hits[i].hit = rel->cpu_user[i] + rel->cpu_nice[i] + rel->cpu_sys[i];
+		cpu_hits[i].irqs_rel = rel->irqs[i];
+		cpu_hits[i].irqs_abs = abs->irqs[i];
+	}
 }
 
 static void screen_init(WINDOW **screen)
@@ -583,18 +692,20 @@ static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
 	uint64_t all;
 
 	for (i = 0; i < cpus; ++i) {
-		all = rel->cpu_user[i] + rel->cpu_nice[i] + rel->cpu_sys[i] +
-		      rel->cpu_idle[i] + rel->cpu_iow[i];
+		unsigned int idx = cpu_hits[i].idx;
+
+		all = rel->cpu_user[idx] + rel->cpu_nice[idx] + rel->cpu_sys[idx] +
+		      rel->cpu_idle[idx] + rel->cpu_iow[idx];
 
 		mvwprintw(screen, (*voff)++, 2,
 			  "CPU%d: %13.1lf%% usr/t "
 				 "%9.1lf%% sys/t "
 				 "%10.1lf%% idl/t "
-				 "%11.1lf%% iow/t  ", i,
-			  100.0 * (rel->cpu_user[i] + rel->cpu_nice[i]) / all,
-			  100.0 * rel->cpu_sys[i] / all,
-			  100.0 * rel->cpu_idle[i] / all,
-			  100.0 * rel->cpu_iow[i] / all);
+				 "%11.1lf%% iow/t  ", idx,
+			  100.0 * (rel->cpu_user[idx] + rel->cpu_nice[idx]) / all,
+			  100.0 * rel->cpu_sys[idx] / all,
+			  100.0 * rel->cpu_idle[idx] / all,
+			  100.0 * rel->cpu_iow[idx] / all);
 	}
 }
 
@@ -604,13 +715,15 @@ static void screen_percpu_irqs_rel(WINDOW *screen, const struct ifstat *rel,
 	int i;
 
 	for (i = 0; i < cpus; ++i) {
+		unsigned int idx = cpu_hits[i].idx;
+
 		mvwprintw(screen, (*voff)++, 2,
 			  "CPU%d: %14llu irqs/t   "
 				 "%15llu soirq RX/t   "
-				 "%15llu soirq TX/t      ", i,
-			  rel->irqs[i],
-			  rel->irqs_srx[i],
-			  rel->irqs_stx[i]);
+				 "%15llu soirq TX/t      ", idx,
+			  rel->irqs[idx],
+			  rel->irqs_srx[idx],
+			  rel->irqs_stx[idx]);
 	}
 }
 
@@ -620,9 +733,11 @@ static void screen_percpu_irqs_abs(WINDOW *screen, const struct ifstat *abs,
 	int i;
 
 	for (i = 0; i < cpus; ++i) {
+		unsigned int idx = cpu_hits[i].idx;
+
 		mvwprintw(screen, (*voff)++, 2,
-			  "CPU%d: %14llu irqs", i,
-			  abs->irqs[i]);
+			  "CPU%d: %14llu irqs", idx,
+			  abs->irqs[idx]);
 	}
 }
 
@@ -646,12 +761,16 @@ static void screen_wireless(WINDOW *screen, const struct ifstat *rel,
 static void screen_update(WINDOW *screen, const char *ifname, const struct ifstat *rel,
 			  const struct ifstat *abs, int *first, uint64_t ms_interval)
 {
-	int cpus, voff = 1, cvoff = 2;
+	int cpus, top, voff = 1, cvoff = 2;
 
 	curs_set(0);
 
 	cpus = get_number_cpus();
-	bug_on(cpus > MAX_CPUS);
+	top = min(cpus, TOP_CPUS);
+
+	stats_top(rel, abs, cpus);
+
+	qsort(cpu_hits, cpus, sizeof(*cpu_hits), cmp_hits);
 
 	screen_header(screen, ifname, &voff, ms_interval);
 
@@ -665,13 +784,17 @@ static void screen_update(WINDOW *screen, const char *ifname, const struct ifsta
 	screen_sys_mem(screen, rel, abs, &voff);
 
 	voff++;
-	screen_percpu_states(screen, rel, cpus, &voff);
+	screen_percpu_states(screen, rel, top, &voff);
+
+	qsort(cpu_hits, cpus, sizeof(*cpu_hits), cmp_irqs_rel);
 
 	voff++;
-	screen_percpu_irqs_rel(screen, rel, cpus, &voff);
+	screen_percpu_irqs_rel(screen, rel, top, &voff);
+
+	qsort(cpu_hits, cpus, sizeof(*cpu_hits), cmp_irqs_abs);
 
 	voff++;
-	screen_percpu_irqs_abs(screen, abs, cpus, &voff);
+	screen_percpu_irqs_abs(screen, abs, top, &voff);
 
 	voff++;
 	screen_wireless(screen, rel, abs, &voff);
@@ -695,6 +818,13 @@ static void screen_end(void)
 static int screen_main(const char *ifname, uint64_t ms_interval)
 {
 	int first = 1, key;
+	int cpus = get_number_cpus();
+
+	stats_alloc(&stats_old, cpus);
+	stats_alloc(&stats_new, cpus);
+	stats_alloc(&stats_delta, cpus);
+
+	cpu_hits = xzmalloc(cpus * sizeof(*cpu_hits));
 
 	screen_init(&stats_screen);
 
@@ -749,7 +879,6 @@ static void term_csv(const char *ifname, const struct ifstat *rel,
 	printf("%u ",  abs->procs_iow);
 
 	cpus = get_number_cpus();
-	bug_on(cpus > MAX_CPUS);
 
 	for (i = 0; i < cpus; ++i) {
 		printf("%lu ", rel->cpu_user[i]);
@@ -819,7 +948,6 @@ static void term_csv_header(const char *ifname, const struct ifstat *abs,
 	printf("%d:procs-in-iow ", j++);
 
 	cpus = get_number_cpus();
-	bug_on(cpus > MAX_CPUS);
 
 	for (i = 0, j = 22; i < cpus; ++i) {
 		printf("%d:cpu%i-usr-per-t ", j++, i);
