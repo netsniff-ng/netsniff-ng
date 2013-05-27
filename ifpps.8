@@ -34,6 +34,11 @@ TCP per flow statistics (hence the use of the pcap library), that is not
 possible with ifpps, because overall networking statistics are our focus;
 statistics, which are also fairly reliable under high packet load.
 .PP
+ifpps also periodically displays CPU load, interrupt, software interrupt
+data per sample interval as well as total interrupts, all per CPU. In case
+the number of CPUs exceed 10, ifpps will then only display the top heavy
+hitters.
+.PP
 .SH OPTIONS
 .PP
 .SS -d <netdev>, --dev <netdev>
