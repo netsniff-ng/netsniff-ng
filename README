@@ -29,7 +29,7 @@ consists of the following fixed set of utilities:
   * curvetun: a lightweight curve25519-based multiuser IP tunnel
   * astraceroute: an autonomous system trace route and DPI testing utility
   * flowtop: a top-like netfilter connection tracking tool
-  * bpfc: a Berkeley Packet Filter compiler with Linux extensions
+  * bpfc: a Berkeley Packet Filter compiler, Linux BPF JIT disassembler
 
 Each release can be verified with Git and GPG, here are the steps to do so:
 
