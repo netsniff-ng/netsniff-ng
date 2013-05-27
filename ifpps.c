@@ -133,6 +133,7 @@ static void __noreturn help(void)
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2009-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"
 	     "Swiss federal institute of technology (ETH Zurich)\n"
+	     "Copyright (C) 2013 Tobias Klauser <tklauser@distanz.ch>\n"
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
 	     "There is NO WARRANTY, to the extent permitted by law.\n");
@@ -147,6 +148,7 @@ static void __noreturn version(void)
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2009-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"
 	     "Swiss federal institute of technology (ETH Zurich)\n"
+	     "Copyright (C) 2013 Tobias Klauser <tklauser@distanz.ch>\n"
 	     "License: GNU GPL version 2.0\n"
 	     "This is free software: you are free to change and redistribute it.\n"
 	     "There is NO WARRANTY, to the extent permitted by law.\n");
