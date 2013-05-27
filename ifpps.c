@@ -155,6 +155,14 @@ static void __noreturn version(void)
 	die();
 }
 
+static inline int padding_from_num(int n)
+{
+	int i = 0;
+	do i++;
+	while ((n /= 10) > 0);
+	return i;
+}
+
 #define STATS_ALLOC1(member)	\
 	do { stats->member = xzmalloc(cpus * sizeof(*(stats->member))); } while (0)
 
@@ -636,7 +644,7 @@ static void screen_net_dev_rel(WINDOW *screen, const struct ifstat *rel,
 	attron(A_REVERSE);
 
 	mvwprintw(screen, (*voff)++, 0,
-		  "  RX: %16.3llf MiB/t "
+		  "  rx: %16.3llf MiB/t "
 		        "%10llu pkts/t "
 			"%10llu drops/t "
 			"%10llu errors/t  ",
@@ -644,7 +652,7 @@ static void screen_net_dev_rel(WINDOW *screen, const struct ifstat *rel,
 		  rel->rx_packets, rel->rx_drops, rel->rx_errors);
 
 	mvwprintw(screen, (*voff)++, 0,
-		  "  TX: %16.3llf MiB/t "
+		  "  tx: %16.3llf MiB/t "
 			"%10llu pkts/t "
 			"%10llu drops/t "
 			"%10llu errors/t  ",
@@ -658,7 +666,7 @@ static void screen_net_dev_abs(WINDOW *screen, const struct ifstat *abs,
 			       int *voff)
 {
 	mvwprintw(screen, (*voff)++, 2,
-		  "RX: %16.3llf MiB   "
+		  "rx: %16.3llf MiB   "
 		      "%10llu pkts   "
 		      "%10llu drops   "
 		      "%10llu errors",
@@ -666,7 +674,7 @@ static void screen_net_dev_abs(WINDOW *screen, const struct ifstat *abs,
 		  abs->rx_packets, abs->rx_drops, abs->rx_errors);
 
 	mvwprintw(screen, (*voff)++, 2,
-		  "TX: %16.3llf MiB   "
+		  "tx: %16.3llf MiB   "
 		      "%10llu pkts   "
 		      "%10llu drops   "
 		      "%10llu errors",
@@ -678,7 +686,7 @@ static void screen_sys_mem(WINDOW *screen, const struct ifstat *rel,
 			   const struct ifstat *abs, int *voff)
 {
 	mvwprintw(screen, (*voff)++, 2,
-		  "SYS:  %14u cs/t "
+		  "sys:  %14u cs/t "
 			"%10.1lf%% mem "
 			"%13u running "
 			"%10u iowait",
@@ -692,6 +700,7 @@ static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
 {
 	int i;
 	uint64_t all;
+	int max_padd = padding_from_num(get_number_cpus());
 
 	for (i = 0; i < cpus; ++i) {
 		unsigned int idx = cpu_hits[i].idx;
@@ -700,10 +709,10 @@ static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
 		      rel->cpu_idle[idx] + rel->cpu_iow[idx];
 
 		mvwprintw(screen, (*voff)++, 2,
-			  "CPU%d: %13.1lf%% usr/t "
-				 "%9.1lf%% sys/t "
-				 "%10.1lf%% idl/t "
-				 "%11.1lf%% iow/t  ", idx,
+			  "cpu%*d: %13.1lf%% usr/t "
+				  "%9.1lf%% sys/t "
+				  "%10.1lf%% idl/t "
+				  "%11.1lf%% iow/t  ", max_padd, idx,
 			  100.0 * (rel->cpu_user[idx] + rel->cpu_nice[idx]) / all,
 			  100.0 * rel->cpu_sys[idx] / all,
 			  100.0 * rel->cpu_idle[idx] / all,
@@ -715,14 +724,15 @@ static void screen_percpu_irqs_rel(WINDOW *screen, const struct ifstat *rel,
 				   int cpus, int *voff)
 {
 	int i;
+	int max_padd = padding_from_num(get_number_cpus());
 
 	for (i = 0; i < cpus; ++i) {
 		unsigned int idx = cpu_hits[i].idx;
 
 		mvwprintw(screen, (*voff)++, 2,
-			  "CPU%d: %14llu irqs/t   "
-				 "%15llu soirq RX/t   "
-				 "%15llu soirq TX/t      ", idx,
+			  "cpu%*d: %14llu irqs/t   "
+				  "%15llu soirq RX/t   "
+				  "%15llu soirq TX/t      ", max_padd, idx,
 			  rel->irqs[idx],
 			  rel->irqs_srx[idx],
 			  rel->irqs_stx[idx]);
@@ -733,12 +743,13 @@ static void screen_percpu_irqs_abs(WINDOW *screen, const struct ifstat *abs,
 				   int cpus, int *voff)
 {
 	int i;
+	int max_padd = padding_from_num(get_number_cpus());
 
 	for (i = 0; i < cpus; ++i) {
 		unsigned int idx = cpu_hits[i].idx;
 
 		mvwprintw(screen, (*voff)++, 2,
-			  "CPU%d: %14llu irqs", idx,
+			  "cpu%*d: %14llu irqs", max_padd, idx,
 			  abs->irqs[idx]);
 	}
 }
@@ -748,13 +759,13 @@ static void screen_wireless(WINDOW *screen, const struct ifstat *rel,
 {
 	if (iswireless(abs)) {
 		mvwprintw(screen, (*voff)++, 2,
-			  "LinkQual: %7d/%d (%d/t)          ",
+			  "linkqual: %7d/%d (%d/t)          ",
 			  abs->wifi.link_qual,
 			  abs->wifi.link_qual_max,
 			  rel->wifi.link_qual);
 
 		mvwprintw(screen, (*voff)++, 2,
-			  "Signal: %8d dBm (%d dBm/t)       ",
+			  "signal: %8d dBm (%d dBm/t)       ",
 			  abs->wifi.signal_level,
 			  rel->wifi.signal_level);
 	}
