@@ -242,7 +242,8 @@ static int stats_proc_net_dev(const char *ifname, struct ifstat *stats)
 static int stats_proc_interrupts(char *ifname, struct ifstat *stats)
 {
 	int ret = -EINVAL, i, cpus, try = 0;
-	char *ptr, buff[256];
+	char *ptr, *buff;
+	size_t buff_len;
 	struct ethtool_drvinfo drvinf;
 	FILE *fp;
 
@@ -251,12 +252,14 @@ static int stats_proc_interrupts(char *ifname, struct ifstat *stats)
 		panic("Cannot open /proc/interrupts!\n");
 
 	cpus = get_number_cpus();
+	buff_len = cpus * 128;
+	buff = xmalloc(buff_len);
 retry:
 	fseek(fp, 0, SEEK_SET);
-	memset(buff, 0, sizeof(buff));
+	memset(buff, 0, buff_len);
 
-	while (fgets(buff, sizeof(buff), fp) != NULL) {
-		buff[sizeof(buff) - 1] = 0;
+	while (fgets(buff, buff_len, fp) != NULL) {
+		buff[buff_len - 1] = 0;
 		ptr = buff;
 
 		if (strstr(buff, ifname) == NULL)
@@ -275,7 +278,7 @@ retry:
 			}
 		}
 
-		memset(buff, 0, sizeof(buff));
+		memset(buff, 0, buff_len);
 	}
 
 	if (ret == -EINVAL && try == 0) {
@@ -289,6 +292,7 @@ retry:
 		goto retry;
 	}
 done:
+	xfree(buff);
 	fclose(fp);
 	return ret;
 }
@@ -296,7 +300,8 @@ done:
 static int stats_proc_softirqs(struct ifstat *stats)
 {
 	int i, cpus;
-	char *ptr, buff[256];
+	char *ptr, *buff;
+	size_t buff_len;
 	FILE *fp;
 	enum {
 		softirqs_net_rx,
@@ -308,11 +313,13 @@ static int stats_proc_softirqs(struct ifstat *stats)
 		panic("Cannot open /proc/softirqs!\n");
 
 	cpus = get_number_cpus();
+	buff_len = cpus * 128;
+	buff = xmalloc(buff_len);
 
-	memset(buff, 0, sizeof(buff));
+	memset(buff, 0, buff_len);
 
-	while (fgets(buff, sizeof(buff), fp) != NULL) {
-		buff[sizeof(buff) - 1] = 0;
+	while (fgets(buff, buff_len, fp) != NULL) {
+		buff[buff_len - 1] = 0;
 
 		if ((ptr = strstr(buff, "NET_TX:")))
 			net_type = softirqs_net_tx;
@@ -332,9 +339,10 @@ static int stats_proc_softirqs(struct ifstat *stats)
 			}
 		}
 
-		memset(buff, 0, sizeof(buff));
+		memset(buff, 0, buff_len);
 	}
 
+	xfree(buff);
 	fclose(fp);
 	return 0;
 }
