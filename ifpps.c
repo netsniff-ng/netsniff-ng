@@ -739,8 +739,8 @@ static void screen_percpu_irqs_rel(WINDOW *screen, const struct ifstat *rel,
 
 		mvwprintw(screen, (*voff)++, 2,
 			  "cpu%*d: %14llu irqs/t   "
-				  "%15llu soirq RX/t   "
-				  "%15llu soirq TX/t      ", max_padd, idx,
+				  "%15llu sirq rx/t   "
+				  "%15llu sirq tx/t      ", max_padd, idx,
 			  rel->irqs[idx],
 			  rel->irqs_srx[idx],
 			  rel->irqs_stx[idx]);
