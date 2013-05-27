@@ -1,25 +1,25 @@
 .\" netsniff-ng - the packet sniffing beast
 .\" Copyright 2013 Daniel Borkmann.
 .\" Subject to the GPL, version 2.
-
+.PP
 .TH FLOWTOP 8 "03 March 2013" "Linux" "netsniff-ng toolkit"
 .SH NAME
 flowtop \- top-like netfilter TCP/UDP/SCTP/DCCP/ICMP(v6) flow tracking
-
+.PP
 .SH SYNOPSIS
-
+.PP
 \fB flowtop\fR { [\fIoptions\fR] }
-
+.PP
 .SH DESCRIPTION
-
+.PP
 flowtop is a top-like connection tracking tool that can run on an end host or
 small home router. It is able to present TCP, UDP/UDP-lite, SCTP, DCCP, and
 ICMP(v6) flows that have been collected by the kernel's netfilter connection
 tracking framework, thus no packet capturing in user space needs to be done.
-
+.PP
 flowtop is able to give you a quick overview of current connections on your
 local system, e.g. for debugging purposes or to answer questions like:
-
+.PP
     * If you access website X, what other connections are being opened in
       the background that I'm not aware of?
     * What connections are active that pass one's router?
@@ -27,52 +27,52 @@ local system, e.g. for debugging purposes or to answer questions like:
     * To which countries am I sending data?
     * Are there any suspicious background connections on my machine?
     * How many active connections does binary Y have?
-
+.PP
 The following information will be presented in flowtop's output:
-
+.PP
     * Application name and PID when run on local machine
     * Reverse DNS for source and destination
     * Geo-location information (country, city)
     * Used protocols (IPv4, IPv6, TCP, UDP, SCTP, ICMP, ...)
     * Flow port's service name heuristic
     * Transport protocol state machine information
-
+.PP
 In order for flowtop to work, netfilter/iptables must be active resp. running
 on your machine, thus kernel-side connection tracking is active.
-
+.PP
 flowtop's intention is just to get a quick look over your active connections.
 If you want logging support, have a look at netfilter's conntrack(8) tools
 instead.
-
+.PP
 .SH OPTIONS
-
+.PP
 .SS -4, --ipv4
 Display IPv4 flows. That's default when flowtop is started without
 any arguments.
-
+.PP
 .SS -6, --ipv6
 Display IPv6 flows. That's default when flowtop is started without
 any arguments.
-
+.PP
 .SS -T, --tcp
 Display TCP flows. That's default when flowtop is started without
 any arguments.
-
+.PP
 .SS -U, --udp
 Display UDP and UDP-lite flows.
-
+.PP
 .SS -D, --dccp
 Display DCCP flows.
-
+.PP
 .SS -I, --icmp
 Display ICMP version 4 and version 6 flows.
-
+.PP
 .SS -S, --sctp
 Display SCTP flows.
-
+.PP
 .SS -s, --show-src
 Also show source information of the flow, not only destination information.
-
+.PP
 .SS -u, --update
 The built-in database update mechanism will be invoked to get Maxmind's
 latest database. To configure search locations for databases, the file
@@ -80,45 +80,45 @@ latest database. To configure search locations for databases, the file
 bandwidth or for mirroring Maxmind's databases (to bypass their traffic
 limit policy), different hosts or IP addresses can be placed into geoip.conf,
 separated by a newline.
-
+.PP
 .SS -v, --version
 Show version information and exit.
-
+.PP
 .SS -h, --help
 Show user help and exit.
-
+.PP
 .SH USAGE EXAMPLE
-
+.PP
 .SS flowtop
 Default ncurses output for flowtop that tracks IPv4, IPv6 flows for TCP.
-
+.PP
 .SS flowtop -46UTDISs
 This example enables the maximum display options for flowtop.
-
+.PP
 .SH CONFIG FILES
-
+.PP
 Files under /etc/netsniff-ng/ can be modified to extend flowtop's
 service resolution and lookup information.
-
+.PP
     * tcp.conf - TCP port/services map
     * udp.conf - UDP port/services map
     * geoip.conf - GeoIP database mirrors
-
+.PP
 .SH BUGS
 With a fairly high rate of connection tracking updates, flowtop can become
 unresponsive for short periods of time while scrolling. The right fix would
 be to replace flowtop's connection management backend with a better design
 resp. locking approach. Still on todo.
-
+.PP
 .SH LEGAL
 flowtop is licensed under the GNU GPL version 2.0.
-
+.PP
 .SH HISTORY
 .B flowtop
 was originally written for the netsniff-ng toolkit by Daniel Borkmann. It
 is currently maintained by Tobias Klauser <tklauser@distanz.ch> and Daniel
 Borkmann <dborkma@tik.ee.ethz.ch>.
-
+.PP
 .SH SEE ALSO
 .BR netsniff-ng (8),
 .BR trafgen (8),
@@ -127,6 +127,6 @@ Borkmann <dborkma@tik.ee.ethz.ch>.
 .BR bpfc (8),
 .BR astraceroute (8),
 .BR curvetun (8)
-
+.PP
 .SH AUTHOR
 Manpage was written by Daniel Borkmann.
