@@ -1042,7 +1042,7 @@ int main(int argc, char **argv)
 			ifname = xstrndup(optarg, IFNAMSIZ);
 			break;
 		case 't':
-			interval = strtol(optarg, NULL, 10);
+			interval = strtoul(optarg, NULL, 10);
 			break;
 		case 'l':
 			stats_loop = 1;
