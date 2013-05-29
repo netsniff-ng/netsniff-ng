@@ -38,19 +38,21 @@ endif
 
 # For packaging purposes, you might want to call your own:
 #   make CFLAGS="<flags>"
-CFLAGS_DEF = -std=gnu99
+CFLAGS_DEF  = -std=gnu99
+CFLAGS_DEF += -pipe
 
 ifeq ($(DEBUG), 1)
-  CFLAGS_DEF += -g
   CFLAGS_DEF += -O2
+  CFLAGS_DEF += -g
 else
+ ifeq ($(DISTRO), 1)
+  CFLAGS_DEF += -O2
+ else
   CFLAGS_DEF += -march=native
   CFLAGS_DEF += -mtune=native
   CFLAGS_DEF += -O3
-  CFLAGS_DEF += -pipe
-  CFLAGS_DEF += -fomit-frame-pointer
+ endif
 endif
-
 ifeq ($(HARDENING), 1)
   CFLAGS_DEF += -fPIE -pie
   CFLAGS_DEF += -Wl,-z,relro,-z,now
@@ -62,6 +64,7 @@ ifeq ($(HARDENING), 1)
   CFLAGS_DEF += -fexceptions
 endif
 
+CFLAGS_DEF += -fomit-frame-pointer
 CFLAGS_DEF += -fno-strict-aliasing
 CFLAGS_DEF += -fasynchronous-unwind-tables
 CFLAGS_DEF += -fno-delete-null-pointer-checks
@@ -340,7 +343,7 @@ help:
 	$(Q)echo " nacl                         - Execute the build_nacl script"
 	$(Q)echo " help                         - Show this help"
 	$(Q)echo "$(bold)Available parameters:$(normal)"
-	$(Q)echo " DEBUG=1                      - Enable debugging"
+	$(Q)echo " DEBUG=1 / DISTRO=1           - Enable debugging / Build for distros"
 	$(Q)echo " HARDENING=1                  - Enable GCC hardening of executables"
 	$(Q)echo " PREFIX=/path                 - Install path prefix"
 	$(Q)echo " CROSS_COMPILE=/path-prefix   - Kernel-like cross-compiling prefix"
