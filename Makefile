@@ -94,27 +94,26 @@ WFLAGS_EXTRA += -Wuninitialized
 WFLAGS_DEF += $(WFLAGS_EXTRA)
 CFLAGS_DEF += $(WFLAGS_DEF)
 
-CFLAGS ?= $(CFLAGS_DEF)
-CPPFLAGS =
+CFLAGS    ?= $(CFLAGS_DEF)
+CPPFLAGS  ?=
+LEX_FLAGS  =
+YAAC_FLAGS =
+LDFLAGS   ?=
 ifeq ("$(origin CROSS_LD_LIBRARY_PATH)", "command line")
-  LDFLAGS = -L$(CROSS_LD_LIBRARY_PATH)
-else
-  LDFLAGS =
+  LDFLAGS += -L$(CROSS_LD_LIBRARY_PATH)
 endif
 
-VERSION_STRING = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
-VERSION_LONG = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)~$(NAME)
-
-ALL_CFLAGS = $(CFLAGS) -I.
+ALL_LDFLAGS = $(LDFLAGS)
+ALL_CFLAGS = $(CFLAGS) $(CPPFLAGS) -I.
 ALL_CFLAGS += -DVERSION_STRING=\"$(VERSION_STRING)\"
 ALL_CFLAGS += -DVERSION_LONG=\"$(VERSION_LONG)\"
 ALL_CFLAGS += -DPREFIX_STRING=\"$(PREFIX)\"
 ifneq ($(wildcard /usr/include/linux/net_tstamp.h),)
   ALL_CFLAGS += -D__WITH_HARDWARE_TIMESTAMPING
 endif
-ALL_LDFLAGS = $(LDFLAGS)
-LEX_FLAGS =
-YAAC_FLAGS =
+
+VERSION_STRING = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
+VERSION_LONG = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)~$(NAME)
 
 # Be quite and do not echo the cmd
 Q = @
@@ -163,12 +162,6 @@ export CROSS_COMPILE
 
 bold = $(shell tput bold)
 normal = $(shell tput sgr0)
-
-ifndef NACL_LIB_DIR
-ifndef NACL_INC_DIR
-   $(info $(bold)NACL_LIB_DIR/NACL_INC_DIR is undefined, build libnacl first for curvetun!$(normal))
-endif
-endif
 
 ifeq ("$(origin CROSS_COMPILE)", "command line")
   WHAT := Cross compiling
@@ -353,6 +346,8 @@ help:
 	$(Q)echo " CROSS_COMPILE=/path-prefix   - Kernel-like cross-compiling prefix"
 	$(Q)echo " CROSS_LD_LIBRARY_PATH=/path  - Library search path for cross-compiling"
 	$(Q)echo " CC=cgcc                      - Use sparse compiler wrapper"
-	$(Q)echo " CFLAGS="-O2 -Wall"           - Overwrite CFLAGS for compilation"
+	$(Q)echo " CFLAGS=\"-O2 -Wall ...\"       - Overwrite CFLAGS for compilation"
+	$(Q)echo " CPPFLAGS=\"-I <path> ...\"     - Additional CFLAGS for compilation"
+	$(Q)echo " LDFLAGS=\"-L <path> ...\"      - Additional LDFLAGS for compilation"
 	$(Q)echo " CCACHE=                      - Do not use ccache for compilation"
 	$(Q)echo " Q=                           - Show verbose garbage"
