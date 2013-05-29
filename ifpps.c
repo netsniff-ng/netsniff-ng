@@ -992,6 +992,13 @@ static void term_csv_header(const char *ifname, const struct ifstat *abs,
 static int term_main(const char *ifname, uint64_t ms_interval)
 {
 	int first = 1;
+	int cpus = get_number_cpus();
+
+	stats_alloc(&stats_old, cpus);
+	stats_alloc(&stats_new, cpus);
+	stats_alloc(&stats_delta, cpus);
+
+	cpu_hits = xzmalloc(cpus * sizeof(*cpu_hits));
 
 	do {
 		stats_sample_generic(ifname, ms_interval);
