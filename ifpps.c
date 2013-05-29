@@ -88,22 +88,6 @@ static void signal_handler(int number)
 	}
 }
 
-static inline char *snr_to_str(int level)
-{
-	if (level > 40)
-		return "very good signal";
-	if (level > 25 && level <= 40)
-		return "good signal";
-	if (level > 15 && level <= 25)
-		return "poor signal";
-	if (level > 10 && level <= 15)
-		return "very poor signal";
-	if (level <= 10)
-		return "no signal";
-
-	return "unknown";
-}
-
 static inline int iswireless(const struct ifstat *stats)
 {
 	return stats->wifi.bitrate > 0;
