@@ -227,6 +227,7 @@ static int stats_proc_interrupts(char *ifname, struct ifstat *stats)
 {
 	int ret = -EINVAL, i, cpus, try = 0;
 	char *ptr, *buff;
+	bool seen = false;
 	size_t buff_len;
 	struct ethtool_drvinfo drvinf;
 	FILE *fp;
@@ -249,16 +250,20 @@ retry:
 		if (strstr(buff, ifname) == NULL)
 			continue;
 
+		/* XXX: remove this one here */
 		stats->irq_nr = strtol(ptr, &ptr, 10);
 		bug_on(stats->irq_nr == 0);
 
 		if (ptr)
 			ptr++;
 		for (i = 0; i < cpus && ptr; ++i) {
-			stats->irqs[i] = strtol(ptr, &ptr, 10);
+			if (seen)
+				stats->irqs[i] += strtol(ptr, &ptr, 10);
+			else
+				stats->irqs[i] = strtol(ptr, &ptr, 10);
 			if (i == cpus - 1) {
 				ret = 0;
-				goto done;
+				seen = true;
 			}
 		}
 
