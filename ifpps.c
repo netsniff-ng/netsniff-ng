@@ -625,9 +625,9 @@ static void screen_header(WINDOW *screen, const char *ifname, int *voff,
 				link == 0 ? "no" : "yes");
 
 	mvwprintw(screen, (*voff)++, 2,
-		  "Kernel net/sys statistics for %s (%s%s), t=%lums"
+		  "Kernel net/sys statistics for %s (%s%s), t=%lums, cpus=%u"
 		  "               ",
-		  ifname, drvinf.driver, buff, ms_interval);
+		  ifname, drvinf.driver, buff, ms_interval, get_number_cpus());
 }
 
 static void screen_net_dev_rel(WINDOW *screen, const struct ifstat *rel,
