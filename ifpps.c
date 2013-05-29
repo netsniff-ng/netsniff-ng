@@ -164,7 +164,7 @@ static void stats_alloc(struct ifstat *stats, int cpus)
 }
 
 #define STATS_ZERO1(member)	\
-	do { memset(stats->member, 0, sizeof(*(stats->member))); } while (0)
+	do { memset(stats->member, 0, cpus * sizeof(*(stats->member))); } while (0)
 
 static void stats_zero(struct ifstat *stats, int cpus)
 {
