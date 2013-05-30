@@ -688,7 +688,7 @@ everything in hex here.)
 .SS Packet count and delay:
 .PP
 Per default only one packet is sent. If you want to send more packets then
-use the count option -c <count>. When count is zero then mausezahn will send
+use the count option \-c <count>. When count is zero then mausezahn will send
 forever. Per default mausezahn sends at maximum speed (and this is really 
 fast ;-)). If you don't want to overwhelm your network devices or have other
 reasons to send at a slower rate then you might want to specify a delay using
@@ -705,11 +705,11 @@ Send infinite frames as fast as possible:
 .PP
 Send 100,000 frames with a 50 msec interval:
 .PP
-  mausezahn \-c 100000  -d 50msec "aa bb cc dd ...."
+  mausezahn \-c 100000 \-d 50msec "aa bb cc dd ...."
 .PP
 Send infinite BPDU frames in a 2 second interval:
 .PP
-  mausezahn \-c 0 -d 2s -t bpdu conf
+  mausezahn \-c 0 \-d 2s \-t bpdu conf
 .PP
 Note: mausezahn does not support fractional numbers. If you want to specify for
 example 2.5 seconds then express this e.g. in milliseconds (2500 msec).
@@ -861,7 +861,7 @@ Use two labels, one with CoS=5 and TTL=1, the other with CoS=7:
 .PP
 Unset the BoS flag (which will result in an invalid frame):
 .PP
-  mausezahn eth0 -M 214:s \-t tcp "dp=80" \-P "HTTP..." \-B myhost.com
+  mausezahn eth0 \-M 214:s \-t tcp "dp=80" \-P "HTTP..." \-B myhost.com
 .PP
 .SS Layer 3-7:
 .PP
@@ -915,8 +915,8 @@ packets. Here are some examples:
 .PP
 Send test packets to the RTP port range:
 .PP
-  mausezahn eth0 -B 192.168.1.1 -t udp "dp=16384-32767, \\
-                 p=A1:00:CC:00:00:AB:CD:EE:EE:DD:DD:00"
+  mausezahn eth0 \-B 192.168.1.1 \-t udp "dp=16384-32767, \\
+                   p=A1:00:CC:00:00:AB:CD:EE:EE:DD:DD:00"
 .PP
 Send a DNS request as local broadcast (often a local router replies):
 .PP
@@ -967,7 +967,7 @@ the announced window size. Since the typical window size is something between
 40000 and 65535 you are MUCH quicker when using an increment using the ds
 argument:
 .PP
-  mausezahn eth0 \-A legal.host.com -B target.host.com \\
+  mausezahn eth0 \-A legal.host.com \-B target.host.com \\
                  \-t tcp "sp=80, dp=80, s=1-4294967295, ds=40000"
 .PP
 In the latter case mausezahn will only send 107375 packets instead of
