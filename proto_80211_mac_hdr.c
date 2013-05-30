@@ -3498,7 +3498,7 @@ static const char *ctrl_sub(u8 subtype, struct pkt_buff *pkt,
 		*get_content = NULL;
 		return "Reserved";
 	default:
-		return "Control SubType unkown";
+		return "Control SubType unknown";
 	}
 }
 
@@ -3535,7 +3535,7 @@ static const char *data_sub(u8 subtype, struct pkt_buff *pkt,
 		return "Reserved";
 	default:
 		*get_content = NULL;
-		return "Data SubType unkown";
+		return "Data SubType unknown";
 	}
 }
 
@@ -3558,7 +3558,7 @@ frame_control_type(u8 type, const char *(**get_subtype)(u8 subtype,
 		return "Reserved";
 	default:
 		*get_subtype = NULL;
-		return "Control Type unkown";
+		return "Control Type unknown";
 	}
 }
 

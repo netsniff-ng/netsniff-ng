@@ -512,7 +512,7 @@ int try_register_user_by_socket(struct curve25519_struct *c,
 		clen -= crypto_box_zerobytes;
 
 		if (log)
-			syslog(LOG_INFO, "Packet decoded sucessfully for id %d!\n", sock);
+			syslog(LOG_INFO, "Packet decoded successfully for id %d!\n", sock);
 
 		err = username_msg_is_user(cbuff, clen, elem->username,
 					   strlen(elem->username) + 1);
@@ -590,7 +590,7 @@ int try_register_user_by_sockaddr(struct curve25519_struct *c,
 		clen -= crypto_box_zerobytes;
 
 		if (log)
-			syslog(LOG_INFO, "Packet decoded sucessfully!\n");
+			syslog(LOG_INFO, "Packet decoded successfully!\n");
 
 		err = username_msg_is_user(cbuff, clen, elem->username,
 					   strlen(elem->username) + 1);
