@@ -23,9 +23,6 @@
 #include "xio.h"
 #include "built_in.h"
 
-/* Number of top hitter CPUs to display */
-#define TOP_CPUS	10
-
 struct wifi_stat {
 	uint32_t bitrate;
 	int16_t link_qual, link_qual_max;
@@ -64,10 +61,11 @@ static int stats_loop = 0;
 
 static WINDOW *stats_screen = NULL;
 
-static const char *short_options = "d:t:vhclp";
+static const char *short_options = "d:t:n:vhclp";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"interval",		required_argument,	NULL, 't'},
+	{"num-cpus",		required_argument,	NULL, 'n'},
 	{"promisc",		no_argument,		NULL, 'p'},
 	{"csv",			no_argument,		NULL, 'c'},
 	{"loop",		no_argument,		NULL, 'l'},
@@ -102,6 +100,8 @@ static void __noreturn help(void)
 	     "Options:\n"
 	     "  -d|--dev <netdev>      Device to fetch statistics for e.g., eth0\n"
 	     "  -t|--interval <time>   Refresh time in ms (default 1000 ms)\n"
+	     "  -n|--num-cpus <num>    Number of top hitter CPUs to display\n"
+	     "                         in ncurses mode (default 10)\n"
 	     "  -p|--promisc           Promiscuous mode\n"
 	     "  -c|--csv               Output to terminal as Gnuplot-ready data\n"
 	     "  -l|--loop              Continuous CSV output\n"
@@ -611,7 +611,7 @@ static void screen_init(WINDOW **screen)
 }
 
 static void screen_header(WINDOW *screen, const char *ifname, int *voff,
-			  uint64_t ms_interval)
+			  uint64_t ms_interval, unsigned int top_cpus)
 {
 	size_t len = 0;
 	char buff[64];
@@ -630,9 +630,9 @@ static void screen_header(WINDOW *screen, const char *ifname, int *voff,
 				link == 0 ? "no" : "yes");
 
 	mvwprintw(screen, (*voff)++, 2,
-		  "Kernel net/sys statistics for %s (%s%s), t=%lums, cpus=%u"
+		  "Kernel net/sys statistics for %s (%s%s), t=%lums, cpus=%u/%u"
 		  "               ",
-		  ifname, drvinf.driver, buff, ms_interval, get_number_cpus());
+		  ifname, drvinf.driver, buff, ms_interval, top_cpus, get_number_cpus());
 }
 
 static void screen_net_dev_rel(WINDOW *screen, const struct ifstat *rel,
@@ -769,20 +769,21 @@ static void screen_wireless(WINDOW *screen, const struct ifstat *rel,
 }
 
 static void screen_update(WINDOW *screen, const char *ifname, const struct ifstat *rel,
-			  const struct ifstat *abs, int *first, uint64_t ms_interval)
+			  const struct ifstat *abs, int *first, uint64_t ms_interval,
+			  unsigned int top_cpus)
 {
 	int cpus, top, voff = 1, cvoff = 2;
 
 	curs_set(0);
 
 	cpus = get_number_cpus();
-	top = min(cpus, TOP_CPUS);
+	top = min(cpus, top_cpus);
 
 	stats_top(rel, abs, cpus);
 
 	qsort(cpu_hits, cpus, sizeof(*cpu_hits), cmp_hits);
 
-	screen_header(screen, ifname, &voff, ms_interval);
+	screen_header(screen, ifname, &voff, ms_interval, top_cpus);
 
 	voff++;
 	screen_net_dev_rel(screen, rel, &voff);
@@ -825,7 +826,8 @@ static void screen_end(void)
 	endwin();
 }
 
-static int screen_main(const char *ifname, uint64_t ms_interval)
+static int screen_main(const char *ifname, uint64_t ms_interval,
+		       unsigned int top_cpus)
 {
 	int first = 1, key;
 
@@ -837,7 +839,7 @@ static int screen_main(const char *ifname, uint64_t ms_interval)
 			break;
 
 		screen_update(stats_screen, ifname, &stats_delta, &stats_new,
-			      &first, ms_interval);
+			      &first, ms_interval, top_cpus);
 
 		stats_sample_generic(ifname, ms_interval);
 	}
@@ -982,7 +984,8 @@ static void term_csv_header(const char *ifname, const struct ifstat *abs,
 	fflush(stdout);
 }
 
-static int term_main(const char *ifname, uint64_t ms_interval)
+static int term_main(const char *ifname, uint64_t ms_interval,
+		     unsigned int top_cpus __maybe_unused)
 {
 	int first = 1;
 
@@ -1004,9 +1007,11 @@ int main(int argc, char **argv)
 {
 	short ifflags = 0;
 	int c, opt_index, ret, cpus, promisc = 0;
+	unsigned int top_cpus = 10;
 	uint64_t interval = 1000;
 	char *ifname = NULL;
-	int (*func_main)(const char *ifname, uint64_t ms_interval) = screen_main;
+	int (*func_main)(const char *ifname, uint64_t ms_interval,
+			 unsigned int top_cpus) = screen_main;
 
 	setfsuid(getuid());
 	setfsgid(getgid());
@@ -1025,6 +1030,9 @@ int main(int argc, char **argv)
 			break;
 		case 't':
 			interval = strtoul(optarg, NULL, 10);
+			break;
+		case 'n':
+			top_cpus = strtoul(optarg, NULL, 10);
 			break;
 		case 'l':
 			stats_loop = 1;
@@ -1068,6 +1076,7 @@ int main(int argc, char **argv)
 	register_signal(SIGHUP, signal_handler);
 
 	cpus = get_number_cpus();
+	top_cpus = min(top_cpus, cpus);
 
 	stats_alloc(&stats_old, cpus);
 	stats_alloc(&stats_new, cpus);
@@ -1077,7 +1086,7 @@ int main(int argc, char **argv)
 
 	if (promisc)
 		ifflags = enter_promiscuous_mode(ifname);
-	ret = func_main(ifname, interval);
+	ret = func_main(ifname, interval, top_cpus);
 	if (promisc)
 		leave_promiscuous_mode(ifname, ifflags);
 
