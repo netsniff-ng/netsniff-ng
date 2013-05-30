@@ -182,7 +182,7 @@ to tell trafgen to schedule a packet only on a particular CPU:
    cpu(2-3): { /* packet 2 content goes here ... */ }
 .PP
 Thus, in case we have a 4 core machine with CPU0-CPU3, packet 1 will be scheduled
-only on CPU1, packet 2 on CPU2 and CPU3. When using trafgen with --num option,
+only on CPU1, packet 2 on CPU2 and CPU3. When using trafgen with \-\-num option,
 then these constraints will still be valid and the packet is fairly distributed
 among those CPUs.
 .PP
@@ -201,7 +201,7 @@ Packet content can be of the following:
    shellcode:   "\\x31\\xdb\\x8d\\x43\\x17\\x99\\xcd\\x80\\x31\\xc9"
 .PP
 Thus, a quite useless packet packet configuration might look like this (one can
-verify this when running this with trafgen in combination with -V):
+verify this when running this with trafgen in combination with \-V):
 .PP
    { 0xca, 42, 0b11110000, 011, 'a', "hello world",
      "\\x31\\xdb\\x8d\\x43\\x17\\x99\\xcd\\x80\\x31\\xc9" }
@@ -241,8 +241,8 @@ Furthermore, there are two types of comments in trafgen configuration files:
   2. Single-line Shell-style comments:   #  put comment here
 .PP
 Next to all of this, a configuration can be passed through the C preprocessor
-before the trafgen compiler gets to see it with option --cpp. To give you a
-taste of a more advanced example, run ``trafgen -e'', fields are commented:
+before the trafgen compiler gets to see it with option \-\-cpp. To give you a
+taste of a more advanced example, run ``trafgen \-e'', fields are commented:
 .PP
    /* Note: dynamic elements make trafgen slower! */
    #include <stddef.h>

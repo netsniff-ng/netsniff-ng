@@ -31,7 +31,7 @@ tool might be a good start for further in-depth analysis of such systems.
 .PP
 .SS -H <host>, --host <host>
 Hostname or IPv4 or IPv6 address of the remote host where the AS route should
-be traced to. In case of an IPv6 address or host, option ``-6'' must be
+be traced to. In case of an IPv6 address or host, option ``\-6'' must be
 used. IPv4 is the default.
 .PP
 .SS -p <port>, --port <port>
@@ -76,7 +76,7 @@ argument.
 .PP
 .SS -n, --numeric
 Tells astraceroute to not perform reverse DNS lookup for hop replies. The
-reverse option is ``-N''.
+reverse option is ``\-N''.
 .PP
 .SS -u, --update
 The built-in geo-database update mechanism will be invoked to get Maxmind's
@@ -91,7 +91,7 @@ Also show latitude and longtitude of hops.
 .PP
 .SS -N, --dns
 Tells astraceroute to perform reverse DNS lookup for hop replies. The
-reverse option is ``-n''.
+reverse option is ``\-n''.
 .PP
 .SS -S, --syn
 Use TCP's SYN flag for the request.
@@ -169,7 +169,7 @@ http://bgp.he.net/AS<number>.
 The geographical locations are estimated with the help of Maxmind's GeoIP
 database and can or cannot deviate from the actual real physical location.
 What one can do to decrease a possible error rate is to update the database
-regularly e.g. with astraceroute's --update option.
+regularly e.g. with astraceroute's \-\-update option.
 .PP
 At some point in time, we need a similar approach to gather more reliable path
 information such as in paris-traceroute.

@@ -66,17 +66,17 @@ eventually.
 .PP
 .SS -i <dev|pcap|->, -d <dev|pcap|->, --in <dev|pcap|->, --dev <dev|pcap|->
 Defines an input device. This can either be a networking device, a pcap file
-or stdin (\[lq]-\[rq]). In case of a pcap file, the pcap type (\[lq]-D\[rq] option) is
-determined automatically by the pcap file magic. In case of stdin, it is
-assumed that the input stream is a pcap file.
+or stdin (\[lq]\-\[rq]). In case of a pcap file, the pcap type (\[lq]\-D\[rq]
+option) is determined automatically by the pcap file magic. In case of stdin,
+it is assumed that the input stream is a pcap file.
 .PP
 .SS -o <dev|pcap|dir|cfg|->, --out <dev|pcap|dir|cfg|->
 Defines the output device. This can either be a networking device, a pcap file,
 a folder, a trafgen(8) configuration file or stdout (\[lq]-\[rq]). In the case of a pcap
 file that should not have the default pcap type (0xa1b2c3d4), the additional
-option \[lq]-T\[rq] must be provided. If a directory is given, then, instead of a
+option \[lq]\-T\[rq] must be provided. If a directory is given, then, instead of a
 single pcap file, multiple pcap files are generated with rotation based on
-maximum file size or a given interval (\[lq]-F\[rq] option). A trafgen configuration
+maximum file size or a given interval (\[lq]\-F\[rq] option). A trafgen configuration
 file can currently only be specified if the input device is a pcap file. If
 stdout is given as a device, then a trafgen configuration will be written to
 stdout if the input device is a pcap file, or a pcap file if the input device
@@ -88,7 +88,7 @@ As a filter, either a bpfc(8) compiled file can be passed as a parameter or
 a tcpdump(1)-like filter expression in quotes. For details regarding the
 bpf-file have a look at bpfc(8), for details regarding a tcpdump(1)-like filter
 have a look at section \[lq]filter example\[rq] or at pcap-filter(7). A filter
-expression may also be passed to netsniff-ng without option \[lq]-f\[rq] in case
+expression may also be passed to netsniff-ng without option \[lq]\-f\[rq] in case
 there is no subsequent option following after the command-line filter expression.
 .PP
 .SS -t, --type <type>
@@ -97,7 +97,7 @@ values for type are \[lq]host\[rq] (to us), \[lq]broadcast\[rq] (to all), \[lq]m
 group), \[lq]others\[rq] (promiscuous mode) or \[lq]outgoing\[rq] (from us).
 .PP
 .SS -F, --interval <size|time>
-If the output device is a folder, with \[lq]-F\[rq], it is possible to define the pcap
+If the output device is a folder, with \[lq]\-F\[rq], it is possible to define the pcap
 file rotation interval either in terms of size or time. Thus, when the interval
 limit has been reached, a new pcap file will be started. As size parameter, the
 following values are accepted \[lq]<num>KiB/MiB/GiB\[rq]; As time parameter,
@@ -123,7 +123,7 @@ Otherwise, a number given as an unsigned integer will limit processing.
 .PP
 .SS -P <name>, --prefix <name>
 When dumping pcap files into a folder, a file name prefix can be defined with
-this option. If not otherwise specified, the default prefix is \[lq]dump-\[rq]
+this option. If not otherwise specified, the default prefix is \[lq]dump\-\[rq]
 followed by a Unix timestamp. Use \[lq]--prefex ""\[rq] to set filename as seconds
 since the Unix Epoch e.g. 1369179203.pcap
 .PP
@@ -131,14 +131,14 @@ since the Unix Epoch e.g. 1369179203.pcap
 Specify a pcap type for storage. Different pcap types with their various meta
 data capabilities are shown with option \[lq]-D\[rq]. If not otherwise specified, the
 pcap-magic 0xa1b2c3d4, also known as a standard tcpdump-capable pcap format, is
-used. Pcap files with swapped endianess are also supported.
+used. Pcap files with swapped endianness are also supported.
 .PP
 .SS -D, --dump-pcap-types
 Dump all available pcap types with their capabilities and magic numbers that
-can be used with option \[lq]-T\[rq] to stdout and exit.
+can be used with option \[lq]\-T\[rq] to stdout and exit.
 .PP
 .SS -B, --dump-bpf
-If a Berkeley Packet Filter is given, for example via option \[lq]-f\[rq], then
+If a Berkeley Packet Filter is given, for example via option \[lq]\-f\[rq], then
 dump the BPF disassembly to stdout during ring setup. This only serves for informative
 or verification purposes.
 .PP
@@ -179,7 +179,7 @@ manually be prolonged, for instance.
 .SS -b <cpu>, --bind-cpu <cpu>
 Pin netsniff-ng to a specific CPU and also pin resp. migrate the NIC's IRQ
 CPU affinity to this CPU. This option should be preferred in combination with
-\[lq]-s\[rq] in case a middle to high packet rate is expected.
+\[lq]\-s\[rq] in case a middle to high packet rate is expected.
 .PP
 .SS -u <uid>, --user <uid> resp. -g <gid>, --group <gid>
 After ring setup drop privileges to a non-root user/group combination.
@@ -457,7 +457,7 @@ tools, at least tcpdump or Wireshark:
     0xa1b23c4d (tcpdump-capable pcap with ns resolution)
     0xa1b2cd34 (Alexey Kuznetzov's pcap)
 .PP
-Pcap files with different meta data endianess are supported by netsniff-ng
+Pcap files with different meta data endianness are supported by netsniff-ng
 as well.
 .PP
 .SH BUGS

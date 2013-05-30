@@ -38,7 +38,7 @@ The interactive mode utilizes a completely redesigned and more flexible protocol
 framework called ``mops'' (mausezahn's own packet system). The look and feel of
 the cli is very close to the Cisco IOS^tm command line.
 .PP
-You can start the interactive mode by executing mausezahn with the ``-x''
+You can start the interactive mode by executing mausezahn with the ``\-x''
 argument (an optional port number may follow, otherwise it is 25542). Then use
 telnet(1) to connect to this mausezahn instance. If not otherwise specified,
 the default login/password combination is mz:mz, enable password is: mops.
@@ -46,7 +46,7 @@ This can be changed in /etc/netsniff-ng/mausezahn.conf.
 .PP
 The direct mode supports two specification schemes: The ``raw-layer-2'' scheme,
 where every single byte to be sent can be specified, and ``higher-layer'' scheme,
-where packet builder interfaces are used (using the ``-t'' option).
+where packet builder interfaces are used (using the ``\-t'' option).
 .PP
 To use the ``raw-layer-2'' scheme, simply specify the desired frame as
 hexadecimal sequence (the ``hex-string''), such as:
@@ -55,10 +55,10 @@ hexadecimal sequence (the ``hex-string''), such as:
 .PP
 In this example, whitespaces within the byte string are optional and separate
 the Ethernet fields (destination and source address, type field, and a short
-payload). The only additional options supported are ``-a'', ``-b'', ``-c'', and
-``-p''. The frame length must be greater or equal 15 bytes.
+payload). The only additional options supported are ``\-a'', ``\-b'', ``\-c'',
+and ``\-p''. The frame length must be greater or equal 15 bytes.
 .PP
-The ``higher-layer'' scheme is enabled using the ``-t <packet-type>'' option.
+The ``higher-layer'' scheme is enabled using the ``\-t <packet-type>'' option.
 This option activates a packet builder and besides the ``packet-type'' an
 optional ``arg-string'' can be specified. The ``arg-string'' contains
 packet-specific parameters, such as TCP flags, port numbers, etc (see example
@@ -76,7 +76,7 @@ into the local mausezahn instance. If no port has been specified, port 25542
 is used as default.
 .PP
 .SS -v
-Verbose mode. Capital -V is even more verbose.
+Verbose mode. Capital \-V is even more verbose.
 .PP
 .SS -S
 Simulation mode, i.e. don't put anything on the wire. This is typically combined
@@ -129,9 +129,9 @@ As with the source address (see above) you can also specify a range or a DNS nam
 Create the specified packet type using the built-in packet builder. Currently,
 supported packet types are: ``arp'', ``bpdu'', ``ip'', ``udp'', ``tcp'', ``rtp'',
 and ``dns''. There is currently also a limited support for ``icmp''. Type
-``-t help'' to verify which packet builders your actual mausezahn version
+``\-t help'' to verify which packet builders your actual mausezahn version
 supports. Also, for any particular packet type, for example ``tcp'' type
-``mausezahn -t tcp help'' to receive a more in-depth context specific help.
+``mausezahn \-t tcp help'' to receive a more in-depth context specific help.
 .PP
 .SS -T <packet-type>
 Make this mausezahn instance the receiving station. Currently, only ``rtp'' is
@@ -152,12 +152,12 @@ experimental bits (usually the Class of Service, CoS) and the Time To Live
 (TTL) can be specified. And if you are really crazy you can set/unset the
 Bottom of Stack (BoS) bit at each label using the ``S'' (set) and ``s''
 (unset) option. By default, the BoS is set automatically and correct. Any other
-setting will lead to invalid frames. Enter ``-M help'' for detailed instructions
+setting will lead to invalid frames. Enter ``\-M help'' for detailed instructions
 and examples.
 .PP
 .SS -P <ascii-payload>
 Specify a cleartext payload. Alternatively, each packet type supports a
-hexadecimal specification of the payload (see for example ``-t udp help'').
+hexadecimal specification of the payload (see for example ``\-t udp help'').
 .PP
 .SS -f <filename>
 Read the ascii payload from the specified file.
@@ -923,7 +923,7 @@ Send a DNS request as local broadcast (often a local router replies):
   mausezahn eth0 -t udp dp=53,p=c5-2f-01-00-00-01-00-00-00-00-00-00-03-77-77-\\
                                 77-03-78-79-7a-03-63-6f-6d-00-00-01-00-01"
 .PP
-Additionally you may specify the lenght and checksum using the len and sum
+Additionally you may specify the length and checksum using the len and sum
 arguments (will be set correctly by default). Note: several protocols have same
 arguments such as len (length) and sum (checksum). If you specified a udp type
 packet (via -t udp) and want to modify the IP length, then use the alternate

@@ -293,17 +293,17 @@ directed to stdout.
 Compile the source file ''fubar'' into BPF opcodes, bypass basic filter
 validation and emit opcodes in netfilter's xt_bpf readable format. Note
 that the source file ''fubar'' is first passed to the C preprocessor for
-textual replacments before handing over to the bpfc compiler.
+textual replacements before handing over to the bpfc compiler.
 .PP
 .SS bpfc -
 Read bpfc instruction from stdin and emit opcodes to stdout.
 .PP
 .SS bpfc foo > bar, resp. netsniff-ng -f bar ...
 Compile filter instructions from file foo and redirect bpfc's output into
-the file bar, that can then be read by netsniff-ng(8) through option -f.
+the file bar, that can then be read by netsniff-ng(8) through option \-f.
 .PP
 .SS bpfc -f tcpdump -i fubar
-Output opcodes from source file fubar in the same behavior as ''tcpdump -ddd''.
+Output opcodes from source file fubar in the same behavior as ''tcpdump \-ddd''.
 .PP
 .SH LEGAL
 bpfc is licensed under the GNU GPL version 2.0.
