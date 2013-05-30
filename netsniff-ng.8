@@ -124,14 +124,14 @@ Otherwise, a number given as an unsigned integer will limit processing.
 .SS -P <name>, --prefix <name>
 When dumping pcap files into a folder, a file name prefix can be defined with
 this option. If not otherwise specified, the default prefix is \[lq]dump\-\[rq]
-followed by a Unix timestamp. Use \[lq]--prefex ""\[rq] to set filename as seconds
-since the Unix Epoch e.g. 1369179203.pcap
+followed by a Unix timestamp. Use \[lq]\-\-prefex ""\[rq] to set filename as
+seconds since the Unix Epoch e.g. 1369179203.pcap
 .PP
 .SS -T <pcap-magic>, --magic <pcap-magic>
 Specify a pcap type for storage. Different pcap types with their various meta
-data capabilities are shown with option \[lq]-D\[rq]. If not otherwise specified, the
-pcap-magic 0xa1b2c3d4, also known as a standard tcpdump-capable pcap format, is
-used. Pcap files with swapped endianness are also supported.
+data capabilities are shown with option \[lq]\-D\[rq]. If not otherwise
+specified, the pcap-magic 0xa1b2c3d4, also known as a standard tcpdump-capable
+pcap format, is used. Pcap files with swapped endianness are also supported.
 .PP
 .SS -D, --dump-pcap-types
 Dump all available pcap types with their capabilities and magic numbers that
@@ -235,8 +235,8 @@ the packet dissector output to the terminal. No files will be recorded.
 .SS  netsniff-ng --in eth0 --out dump.pcap -s -T 0xa1e2cb12 -b 0 tcp or udp
 Capture TCP or UDP traffic from the networking device eth0 into the pcap file
 named dump.pcap, which has netsniff-ng specific pcap extensions (see
-\[lq]netsniff-ng -D\[rq] for capabilities). Also, do not print the content to the
-terminal and pin the process and NIC IRQ affinity to CPU 0. The pcap write
+\[lq]netsniff-ng \-D\[rq] for capabilities). Also, do not print the content to
+the terminal and pin the process and NIC IRQ affinity to CPU 0. The pcap write
 method is scatter-gather I/O.
 .PP
 .SS  netsniff-ng --in wlan0 --rfraw --out dump.pcap --silent --bind-cpu 0
@@ -316,13 +316,14 @@ the bpfc(8) man page.
 Low-level filters can be used with netsniff-ng in the following way:
 .PP
     1. bpfc foo > bar
-    2. netsniff-ng -f bar
+    2. netsniff-ng \-f bar
 .PP
 Here, foo is the bpfc program that will be translated into a netsniff-ng
-readable \[lq]opcodes\[rq] file and passed to netsniff-ng through the -f option.
+readable \[lq]opcodes\[rq] file and passed to netsniff-ng through the \-f
+option.
 .PP
-Similarly, high-level filter can be either passed through the -f option,
-e.g. -f "tcp or udp" or at the end of all options without the \[lq]-f\[rq].
+Similarly, high-level filter can be either passed through the \-f option,
+e.g. \-f "tcp or udp" or at the end of all options without the \[lq]\-f\[rq].
 .PP
 The filter syntax is the same as in tcpdump(8), which is described in
 the man page pcap-filter(7). Just to quote some examples from pcap-filter(7):
@@ -369,7 +370,7 @@ To select all ICMP packets that are not echo requests or replies
 .PP
 .SH PCAP FORMATS:
 .PP
-netsniff-ng supports a couple of pcap formats, visible through ``netsniff-ng -D'':
+netsniff-ng supports a couple of pcap formats, visible through ``netsniff-ng \-D'':
 .PP
 .SS tcpdump-capable pcap (default)
 Pcap magic number is encoded as 0xa1b2c3d4 resp. 0xd4c3b2a1. As packet meta data
@@ -433,7 +434,7 @@ The easiest route is simply to impersonate the local gateway, stealing
 client traffic en route to some remote destination. Of course, the traffic
 must be forwarded by your attacking machine, either by enabling kernel IP
 forwarding or with a userland program that accomplishes the same
-(fragrouter -B1).
+(fragrouter \-B1).
 .PP
 Several people have reportedly destroyed connectivity on their LAN to the
 outside world by ARP spoofing the gateway, and forgetting to enable IP
@@ -467,7 +468,7 @@ header is currently ignored.
 .PP
 Also, when replaying pcap files, demultiplexing traffic among multiple
 networking interfaces does not work. Currently, it is only sent via the
-interface that is given by the --out parameter.
+interface that is given by the \-\-out parameter.
 .PP
 When performing traffic capture on the Ethernet interface, the pcap file
 is created and packets are received but without a 802.1Q header. When one
@@ -492,18 +493,18 @@ A user reported the following, just to demonstrate this mess: some tests were
 made with two machines, and it seems that results depend on the driver ...
 .PP
     AR8131:
-      ethtool -k eth0 gives "rx-vlan-offload: on"
+      ethtool \-k eth0 gives "rx-vlan-offload: on"
       - wireshark gets the vlan header
       - netsniff-ng doesn't get the vlan header
-      ethtool -K eth0 rxvlan off
+      ethtool \-K eth0 rxvlan off
       - wireshark gets a QinQ header even though noone sent QinQ
       - netsniff-ng gets the vlan header
 .PP
     RTL8111/8168B:
-      ethtool -k eth0 gives "rx-vlan-offload: on"
+      ethtool \-k eth0 gives "rx-vlan-offload: on"
       - wireshark gets the vlan header
       - netsniff-ng doesn't get the vlan header
-      ethtool -K eth0 rxvlan off
+      ethtool \-K eth0 rxvlan off
       - wireshark gets the vlan header
       - netsniff-ng doesn't get the vlan header
 .PP

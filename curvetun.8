@@ -333,7 +333,7 @@ Client side's IP on eth0 is i.e. 5.6.7.8:
   client# ... lookup your default gateway (e.g. via route, here: 5.6.7.9) ...
   client# ifconfig curvec0 up
   client# ifconfig curvec0 10.0.0.2/24
-  client# route add -net 1.2.3.0 netmask 255.255.255.0 gw 5.6.7.9 dev eth0
+  client# route add \-net 1.2.3.0 netmask 255.255.255.0 gw 5.6.7.9 dev eth0
   client# route add default gw 10.0.0.1
   client# route del default gw 5.6.7.9
 .PP
