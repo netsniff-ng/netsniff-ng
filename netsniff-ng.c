@@ -115,7 +115,7 @@ static void signal_handler(int number)
 	}
 }
 
-static void timer_elapsed(int unused)
+static void timer_elapsed(int unused __maybe_unused)
 {
 	int ret;
 
@@ -147,8 +147,7 @@ static void timer_purge(void)
 	setitimer(ITIMER_REAL, &itimer, NULL);
 }
 
-
-static void timer_next_dump(int unused)
+static void timer_next_dump(int unused __maybe_unused)
 {
 	set_itimer_interval_value(&itimer, interval, 0);
 	next_dump = true;
