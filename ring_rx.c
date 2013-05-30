@@ -36,7 +36,7 @@ void destroy_rx_ring(int sock, struct ring *ring)
 }
 
 void setup_rx_ring_layout(int sock, struct ring *ring, unsigned int size,
-			  int jumbo_support)
+			  int jumbo_support, bool v3)
 {
 	fmemset(&ring->layout, 0, sizeof(ring->layout));
 
@@ -50,17 +50,25 @@ void setup_rx_ring_layout(int sock, struct ring *ring, unsigned int size,
 	ring->layout.tp_frame_nr = ring->layout.tp_block_size /
 				   ring->layout.tp_frame_size *
 				   ring->layout.tp_block_nr;
+	if (v3) {
+		/* Pass out, if this will ever change and we do crap on it! */
+		build_bug_on(offsetof(struct tpacket_req, tp_frame_nr) !=
+			     offsetof(struct tpacket_req3, tp_frame_nr) &&
+			     sizeof(struct tpacket_req) !=
+			     offsetof(struct tpacket_req3, tp_retire_blk_tov));
 
-	bug_on(ring->layout.tp_block_size < ring->layout.tp_frame_size);
-	bug_on((ring->layout.tp_block_size % ring->layout.tp_frame_size) != 0);
-	bug_on((ring->layout.tp_block_size % getpagesize()) != 0);
+		set_sockopt_tpacket_v3(sock);
+	} else {
+		set_sockopt_tpacket_v2(sock);
+	}
+
+	ring_verify_layout(ring);
 }
 
 void create_rx_ring(int sock, struct ring *ring, int verbose)
 {
 	int ret;
 
-	set_sockopt_tpacket_v2(sock);
 retry:
 	ret = setsockopt(sock, SOL_PACKET, PACKET_RX_RING, &ring->layout,
 			 sizeof(ring->layout));

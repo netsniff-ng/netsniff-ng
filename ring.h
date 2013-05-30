@@ -82,6 +82,13 @@ static inline unsigned int ring_frame_size(struct ring *ring)
 	return ring->layout.tp_frame_size;
 }
 
+static inline void ring_verify_layout(struct ring *ring)
+{
+	bug_on(ring->layout.tp_block_size  < ring->layout.tp_frame_size);
+	bug_on((ring->layout.tp_block_size % ring->layout.tp_frame_size) != 0);
+	bug_on((ring->layout.tp_block_size % getpagesize()) != 0);
+}
+
 static inline void tpacket_hdr_clone(struct tpacket2_hdr *thdrd,
 				     struct tpacket2_hdr *thdrs)
 {

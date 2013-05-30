@@ -61,9 +61,7 @@ void setup_tx_ring_layout(int sock, struct ring *ring, unsigned int size,
 				   ring->layout.tp_frame_size *
 				   ring->layout.tp_block_nr;
 
-	bug_on(ring->layout.tp_block_size < ring->layout.tp_frame_size);
-	bug_on((ring->layout.tp_block_size % ring->layout.tp_frame_size) != 0);
-	bug_on((ring->layout.tp_block_size % getpagesize()) != 0);
+	ring_verify_layout(ring);
 }
 
 void create_tx_ring(int sock, struct ring *ring, int verbose)

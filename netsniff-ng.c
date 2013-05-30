@@ -372,7 +372,7 @@ static void receive_to_xmit(struct ctx *ctx)
 		bpf_dump_all(&bpf_ops);
 	bpf_attach_to_sock(rx_sock, &bpf_ops);
 
-	setup_rx_ring_layout(rx_sock, &rx_ring, size_in, ctx->jumbo);
+	setup_rx_ring_layout(rx_sock, &rx_ring, size_in, ctx->jumbo, false);
 	create_rx_ring(rx_sock, &rx_ring, ctx->verbose);
 	mmap_rx_ring(rx_sock, &rx_ring);
 	alloc_rx_ring_frames(&rx_ring);
@@ -851,7 +851,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 
 	set_sockopt_hwtimestamp(sock, ctx->device_in);
 
-	setup_rx_ring_layout(sock, &rx_ring, size, ctx->jumbo);
+	setup_rx_ring_layout(sock, &rx_ring, size, ctx->jumbo, false);
 	create_rx_ring(sock, &rx_ring, ctx->verbose);
 	mmap_rx_ring(sock, &rx_ring);
 	alloc_rx_ring_frames(&rx_ring);

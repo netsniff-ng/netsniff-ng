@@ -153,6 +153,10 @@ typedef uint8_t		u8;
 # define build_bug_on_zero(e)	(sizeof(char[1 - 2 * !!(e)]) - 1)
 #endif
 
+#ifndef build_bug_on
+# define build_bug_on(e)	((void)sizeof(char[1 - 2*!!(e)]))
+#endif
+
 #ifndef bug_on
 # define bug_on(cond)		assert(!(cond))
 #endif
