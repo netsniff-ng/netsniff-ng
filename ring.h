@@ -26,13 +26,6 @@
 #include "built_in.h"
 #include "die.h"
 
-#ifndef PACKET_FANOUT
-# define PACKET_FANOUT			18
-# define PACKET_FANOUT_POLICY_HASH	0
-# define PACKET_FANOUT_POLICY_LB	1
-# define PACKET_FANOUT_POLICY_DEFAULT	PACKET_FANOUT_HASH
-#endif
-
 struct frame_map {
 	struct tpacket2_hdr tp_h __aligned_tpacket;
 	struct sockaddr_ll s_ll __align_tpacket(sizeof(struct tpacket2_hdr));
@@ -101,25 +94,12 @@ static inline void tpacket_hdr_clone(struct tpacket2_hdr *thdrd,
 # define POLLRDHUP	0x2000
 #endif
 
-#define POLL_NEXT_PKT	0
-#define POLL_MOVE_OUT	1
-
 static inline void prepare_polling(int sock, struct pollfd *pfd)
 {
 	memset(pfd, 0, sizeof(*pfd));
 	pfd->fd = sock;
 	pfd->revents = 0;
 	pfd->events = POLLIN | POLLRDNORM | POLLERR;
-}
-
-static inline void set_sockopt_fanout(int sock, unsigned int fanout_id,
-				      unsigned int fanout_type)
-{
-	unsigned int fanout_arg = (fanout_id | (fanout_type << 16));
-	int ret = setsockopt(sock, SOL_PACKET, PACKET_FANOUT, &fanout_arg,
-			     sizeof(fanout_arg));
-	if (ret)
-		panic("No packet fanout support!\n");
 }
 
 static inline void set_sockopt_tpacket(int sock)
