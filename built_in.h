@@ -353,4 +353,16 @@ static inline u64 cpu_to_le64(u64 val)
 # define TP_STATUS_TS_RAW_HARDWARE	(1 << 31)
 #endif
 
+#ifndef POLLRDNORM
+# define POLLRDNORM			0x0040
+#endif
+
+#ifndef POLLWRNORM
+# define POLLWRNORM			0x0100
+#endif
+
+#ifndef POLLRDHUP
+# define POLLRDHUP			0x2000
+#endif
+
 #endif /* BUILT_IN_H */

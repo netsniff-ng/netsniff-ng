@@ -82,16 +82,6 @@ static inline void tpacket_hdr_clone(struct tpacket2_hdr *thdrd,
         thdrd->tp_len = thdrs->tp_len;
 }
 
-#ifndef POLLRDNORM
-# define POLLRDNORM	0x0040
-#endif
-#ifndef POLLWRNORM
-# define POLLWRNORM	0x0100
-#endif
-#ifndef POLLRDHUP
-# define POLLRDHUP	0x2000
-#endif
-
 static inline void prepare_polling(int sock, struct pollfd *pfd)
 {
 	memset(pfd, 0, sizeof(*pfd));
