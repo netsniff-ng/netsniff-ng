@@ -70,7 +70,7 @@ void create_tx_ring(int sock, struct ring *ring, int verbose)
 {
 	int ret;
 
-	set_sockopt_tpacket(sock);
+	set_sockopt_tpacket_v2(sock);
 retry:
 	ret = setsockopt(sock, SOL_PACKET, PACKET_TX_RING, &ring->layout,
 			 sizeof(ring->layout));

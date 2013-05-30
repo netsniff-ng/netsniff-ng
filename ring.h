@@ -102,7 +102,7 @@ static inline void prepare_polling(int sock, struct pollfd *pfd)
 	pfd->events = POLLIN | POLLRDNORM | POLLERR;
 }
 
-static inline void set_sockopt_tpacket(int sock)
+static inline void set_sockopt_tpacket_v2(int sock)
 {
 	int ret, val = TPACKET_V2;
 
