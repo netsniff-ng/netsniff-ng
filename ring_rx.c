@@ -36,7 +36,7 @@ void destroy_rx_ring(int sock, struct ring *ring)
 }
 
 void setup_rx_ring_layout(int sock, struct ring *ring, unsigned int size,
-			  int jumbo_support, bool v3)
+			  bool jumbo_support, bool v3)
 {
 	fmemset(&ring->layout, 0, sizeof(ring->layout));
 

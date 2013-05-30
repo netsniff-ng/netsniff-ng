@@ -46,7 +46,7 @@ void destroy_tx_ring(int sock, struct ring *ring)
 }
 
 void setup_tx_ring_layout(int sock, struct ring *ring, unsigned int size,
-			  int jumbo_support)
+			  bool jumbo_support)
 {
 	fmemset(&ring->layout, 0, sizeof(ring->layout));
 
