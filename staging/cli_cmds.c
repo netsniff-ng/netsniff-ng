@@ -1025,7 +1025,7 @@ int cmd_run_sequence (struct cli_def *cli, const char *command, char *argv[], in
 	}
 	ret = mops_tx_sequence(cur);
 	switch (ret) {
-	 case 0: cli_print(cli, "Sequence %s is runnning\n", cur->name);
+	 case 0: cli_print(cli, "Sequence %s is running\n", cur->name);
 		break;
 	 case 1: cli_print(cli, "Cannot run sequence: All packets must be in config state!\n");
 		break;
