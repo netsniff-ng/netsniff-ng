@@ -102,13 +102,21 @@ static inline void prepare_polling(int sock, struct pollfd *pfd)
 	pfd->events = POLLIN | POLLRDNORM | POLLERR;
 }
 
-static inline void set_sockopt_tpacket_v2(int sock)
+static inline void __set_sockopt_tpacket(int sock, int val)
 {
-	int ret, val = TPACKET_V2;
-
-	ret = setsockopt(sock, SOL_PACKET, PACKET_VERSION, &val, sizeof(val));
+	int ret = setsockopt(sock, SOL_PACKET, PACKET_VERSION, &val, sizeof(val));
 	if (ret)
 		panic("Cannot set tpacketv2!\n");
+}
+
+static inline void set_sockopt_tpacket_v2(int sock)
+{
+	__set_sockopt_tpacket(sock, TPACKET_V2);
+}
+
+static inline void set_sockopt_tpacket_v3(int sock)
+{
+	__set_sockopt_tpacket(sock, TPACKET_V3);
 }
 
 #endif /* RING_H */
