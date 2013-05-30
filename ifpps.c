@@ -828,13 +828,6 @@ static void screen_end(void)
 static int screen_main(const char *ifname, uint64_t ms_interval)
 {
 	int first = 1, key;
-	int cpus = get_number_cpus();
-
-	stats_alloc(&stats_old, cpus);
-	stats_alloc(&stats_new, cpus);
-	stats_alloc(&stats_delta, cpus);
-
-	cpu_hits = xzmalloc(cpus * sizeof(*cpu_hits));
 
 	screen_init(&stats_screen);
 
@@ -992,13 +985,6 @@ static void term_csv_header(const char *ifname, const struct ifstat *abs,
 static int term_main(const char *ifname, uint64_t ms_interval)
 {
 	int first = 1;
-	int cpus = get_number_cpus();
-
-	stats_alloc(&stats_old, cpus);
-	stats_alloc(&stats_new, cpus);
-	stats_alloc(&stats_delta, cpus);
-
-	cpu_hits = xzmalloc(cpus * sizeof(*cpu_hits));
 
 	do {
 		stats_sample_generic(ifname, ms_interval);
@@ -1017,7 +1003,7 @@ static int term_main(const char *ifname, uint64_t ms_interval)
 int main(int argc, char **argv)
 {
 	short ifflags = 0;
-	int c, opt_index, ret, promisc = 0;
+	int c, opt_index, ret, cpus, promisc = 0;
 	uint64_t interval = 1000;
 	char *ifname = NULL;
 	int (*func_main)(const char *ifname, uint64_t ms_interval) = screen_main;
@@ -1080,6 +1066,14 @@ int main(int argc, char **argv)
 
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGHUP, signal_handler);
+
+	cpus = get_number_cpus();
+
+	stats_alloc(&stats_old, cpus);
+	stats_alloc(&stats_new, cpus);
+	stats_alloc(&stats_delta, cpus);
+
+	cpu_hits = xzmalloc(cpus * sizeof(*cpu_hits));
 
 	if (promisc)
 		ifflags = enter_promiscuous_mode(ifname);
