@@ -44,8 +44,6 @@ static inline void next_rnd_slot(unsigned int *it, struct ring *ring)
 	*it = rand() % ring->layout.tp_frame_nr;
 }
 
-#define RING_SIZE_FALLBACK (1 << 26)
-
 static inline unsigned int ring_size(char *ifname, unsigned int size)
 {
 	if (size > 0)
@@ -65,7 +63,7 @@ static inline unsigned int ring_size(char *ifname, unsigned int size)
 	size = (size * 1000000) / 8;
 	size = size * 2;
 	if (size == 0)
-		size = RING_SIZE_FALLBACK;
+		size = 1 << 26;
 
 	return round_up_cacheline(size);
 }
