@@ -31,12 +31,21 @@ struct frame_map {
 	struct sockaddr_ll s_ll __align_tpacket(sizeof(struct tpacket2_hdr));
 };
 
+struct block_desc {
+	uint32_t version;
+	uint32_t offset_to_priv;
+	struct tpacket_hdr_v1 h1;
+};
+
 struct ring {
 	struct iovec *frames;
 	uint8_t *mm_space;
 	size_t mm_len;
-	struct tpacket_req layout;
 	struct sockaddr_ll s_ll;
+	union {
+		struct tpacket_req layout;
+		struct tpacket_req3 layout3;
+	};
 };
 
 static inline void next_rnd_slot(unsigned int *it, struct ring *ring)

@@ -28,4 +28,9 @@ static inline void kernel_may_pull_from_rx(struct tpacket2_hdr *hdr)
 	hdr->tp_status = TP_STATUS_KERNEL;
 }
 
+static inline void kernel_may_pull_from_rx_block(struct block_desc *pbd)
+{
+	pbd->h1.block_status = TP_STATUS_KERNEL;
+}
+
 #endif /* RX_RING_H */
