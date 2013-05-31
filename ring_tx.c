@@ -100,9 +100,10 @@ void mmap_tx_ring(int sock, struct ring *ring)
 	mmap_ring_generic(sock, ring);
 }
 
-void alloc_tx_ring_frames(struct ring *ring)
+void alloc_tx_ring_frames(int sock __maybe_unused, struct ring *ring)
 {
-	alloc_ring_frames_generic(ring);
+	alloc_ring_frames_generic(ring, ring->layout.tp_frame_nr,
+				  ring->layout.tp_frame_size);
 }
 
 void bind_tx_ring(int sock, struct ring *ring, int ifindex)

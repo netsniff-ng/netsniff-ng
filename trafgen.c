@@ -620,7 +620,7 @@ static void xmit_fastpath_or_die(struct ctx *ctx, int cpu, unsigned long orig_nu
 	setup_tx_ring_layout(sock, &tx_ring, size, ctx->jumbo_support);
 	create_tx_ring(sock, &tx_ring, ctx->verbose);
 	mmap_tx_ring(sock, &tx_ring);
-	alloc_tx_ring_frames(&tx_ring);
+	alloc_tx_ring_frames(sock, &tx_ring);
 	bind_tx_ring(sock, &tx_ring, ifindex);
 
 	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);

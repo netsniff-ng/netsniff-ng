@@ -142,7 +142,7 @@ static inline int get_sockopt_tpacket(int sock)
 }
 
 extern void mmap_ring_generic(int sock, struct ring *ring);
-extern void alloc_ring_frames_generic(struct ring *ring);
+extern void alloc_ring_frames_generic(struct ring *ring, int num, size_t size);
 extern void bind_ring_generic(int sock, struct ring *ring, int ifindex);
 
 #endif /* RING_H */

@@ -27,18 +27,17 @@ void mmap_ring_generic(int sock, struct ring *ring)
 		panic("Cannot mmap {TX,RX}_RING!\n");
 }
 
-void alloc_ring_frames_generic(struct ring *ring)
+void alloc_ring_frames_generic(struct ring *ring, int num, size_t size)
 {
 	int i;
-	size_t len = ring->layout.tp_frame_nr * sizeof(*ring->frames);
+	size_t len = num * sizeof(*ring->frames);
 
 	ring->frames = xmalloc_aligned(len, CO_CACHE_LINE_SIZE);
 	fmemset(ring->frames, 0, len);
 
-	for (i = 0; i < ring->layout.tp_frame_nr; ++i) {
-		ring->frames[i].iov_len = ring->layout.tp_frame_size;
-		ring->frames[i].iov_base = ring->mm_space +
-					   (i * ring->layout.tp_frame_size);
+	for (i = 0; i < num; ++i) {
+		ring->frames[i].iov_len = size;
+		ring->frames[i].iov_base = ring->mm_space + (i * size);
 	}
 }
 

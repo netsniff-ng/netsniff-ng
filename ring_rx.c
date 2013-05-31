@@ -104,9 +104,21 @@ void mmap_rx_ring(int sock, struct ring *ring)
 	mmap_ring_generic(sock, ring);
 }
 
-void alloc_rx_ring_frames(struct ring *ring)
+void alloc_rx_ring_frames(int sock, struct ring *ring)
 {
-	alloc_ring_frames_generic(ring);
+	int num;
+	size_t size;
+	bool v3 = get_sockopt_tpacket(sock) == TPACKET_V3;
+
+	if (v3) {
+		num = ring->layout3.tp_block_nr;
+		size = ring->layout3.tp_block_size;
+	} else {
+		num = ring->layout.tp_frame_nr;
+		size = ring->layout.tp_frame_size;
+	}
+
+	alloc_ring_frames_generic(ring, num, size);
 }
 
 void bind_rx_ring(int sock, struct ring *ring, int ifindex)

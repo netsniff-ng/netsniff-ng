@@ -226,7 +226,7 @@ static void pcap_to_xmit(struct ctx *ctx)
 	setup_tx_ring_layout(tx_sock, &tx_ring, size, ctx->jumbo);
 	create_tx_ring(tx_sock, &tx_ring, ctx->verbose);
 	mmap_tx_ring(tx_sock, &tx_ring);
-	alloc_tx_ring_frames(&tx_ring);
+	alloc_tx_ring_frames(tx_sock, &tx_ring);
 	bind_tx_ring(tx_sock, &tx_ring, ifindex);
 
 	dissector_init_all(ctx->print_mode);
@@ -375,7 +375,7 @@ static void receive_to_xmit(struct ctx *ctx)
 	setup_rx_ring_layout(rx_sock, &rx_ring, size_in, ctx->jumbo, false);
 	create_rx_ring(rx_sock, &rx_ring, ctx->verbose);
 	mmap_rx_ring(rx_sock, &rx_ring);
-	alloc_rx_ring_frames(&rx_ring);
+	alloc_rx_ring_frames(rx_sock, &rx_ring);
 	bind_rx_ring(rx_sock, &rx_ring, ifindex_in);
 	prepare_polling(rx_sock, &rx_poll);
 
@@ -383,7 +383,7 @@ static void receive_to_xmit(struct ctx *ctx)
 	setup_tx_ring_layout(tx_sock, &tx_ring, size_out, ctx->jumbo);
 	create_tx_ring(tx_sock, &tx_ring, ctx->verbose);
 	mmap_tx_ring(tx_sock, &tx_ring);
-	alloc_tx_ring_frames(&tx_ring);
+	alloc_tx_ring_frames(tx_sock, &tx_ring);
 	bind_tx_ring(tx_sock, &tx_ring, ifindex_out);
 
 	dissector_init_all(ctx->print_mode);
@@ -854,7 +854,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 	setup_rx_ring_layout(sock, &rx_ring, size, ctx->jumbo, false);
 	create_rx_ring(sock, &rx_ring, ctx->verbose);
 	mmap_rx_ring(sock, &rx_ring);
-	alloc_rx_ring_frames(&rx_ring);
+	alloc_rx_ring_frames(sock, &rx_ring);
 	bind_rx_ring(sock, &rx_ring, ifindex);
 
 	prepare_polling(sock, &rx_poll);
