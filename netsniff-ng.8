@@ -104,11 +104,13 @@ following values are accepted \[lq]<num>KiB/MiB/GiB\[rq]; As time parameter,
 it can be \[lq]<num>s/sec/min/hrs\[rq].
 .PP
 .SS -J, --jumbo-support
-By default, netsniff-ng's ring buffer frames are a fixed size of 2048 bytes.
-This means that if you are expecting jumbo frames or even super jumbo frames to
-pass through your network, then you need to enable support for that by using
-this option. However, this has the disadvantage of performance degradation
-and a bigger memory footprint for the ring buffer.
+By default, in pcap replay or redirect mode, netsniff-ng's ring buffer frames
+are a fixed size of 2048 bytes. This means that if you are expecting jumbo
+frames or even super jumbo frames to pass through your network, then you need
+to enable support for that by using this option. However, this has the
+disadvantage of performance degradation and a bigger memory footprint for the
+ring buffer. Note that this doesn't affect (pcap) capturing mode, since tpacket
+in version 3 is used!
 .PP
 .SS -R, --rfraw
 In case the input or output networking device is a wireless device, it is
@@ -260,12 +262,13 @@ traffic. Randomize the order of packets for the outgoing device and do not
 print any packet contents to the terminal. Also, pin the process and NIC IRQ
 affinity to CPU 0.
 .PP
-.SS  netsniff-ng --in team0 --out /opt/probe/ -s -m -J --interval 100MiB -b 0
+.SS  netsniff-ng --in team0 --out /opt/probe/ -s -m --interval 100MiB -b 0
 Capture on an aggregated team0 networking device and dump packets into multiple
 pcap files that are split into 100MiB each. Use mmap(2) I/O as a pcap write
-method, enable support for super jumbo frames up to 64KB, and do not print
-the captured data to the terminal. Pin netsniff-ng and NIC IRQ affinity to
-CPU 0. The default pcap magic type is 0xa1b2c3d4 (tcpdump-capable pcap).
+method, support for super jumbo frames is built-in (does not need to be
+configured here), and do not print the captured data to the terminal. Pin
+netsniff-ng and NIC IRQ affinity to CPU 0. The default pcap magic type is
+0xa1b2c3d4 (tcpdump-capable pcap).
 .PP
 .SS  netsniff-ng --in vlan0 --out dump.pcap -c -u `id -u bob` -g `id -g bob`
 Capture network traffic on device wlan0 into a pcap file called dump.pcap
@@ -274,12 +277,12 @@ latency). Also, after setting up the RX_RING for capture, drop privileges
 from root to the user and group \[lq]bob\[rq]. Invoke the packet dissector and print
 packet contents to the terminal for further analysis.
 .PP
-.SS  netsniff-ng --in any --filter http.bpf -B --jumbo-support --ascii -V
+.SS  netsniff-ng --in any --filter http.bpf -B --ascii -V
 Capture from all available networking interfaces and install a low-level
 filter that was previously compiled by bpfc(8) into http.bpf in order to
-filter HTTP traffic. Enable super jumbo frame support and only print
-human readable packet data to the terminal, and also be more verbose during
-setup phase. Moreover, dump a BPF disassembly of http.bpf.
+filter HTTP traffic. Super jumbo frame support is automatically enabled and
+only print human readable packet data to the terminal, and also be more
+verbose during setup phase. Moreover, dump a BPF disassembly of http.bpf.
 .PP
 .SS  netsniff-ng --in dump.pcap --out dump.cfg --silent
 Convert the pcap file dump.pcap into a trafgen(8) configuration file dump.cfg.
