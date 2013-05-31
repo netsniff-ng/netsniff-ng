@@ -53,13 +53,17 @@ void setup_tx_ring_layout(int sock, struct ring *ring, unsigned int size,
 	ring->layout.tp_block_size = (jumbo_support ?
 				      getpagesize() << 4 :
 				      getpagesize() << 2);
+
 	ring->layout.tp_frame_size = (jumbo_support ?
 				      TPACKET_ALIGNMENT << 12 :
 				      TPACKET_ALIGNMENT << 7);
+
 	ring->layout.tp_block_nr = size / ring->layout.tp_block_size;
 	ring->layout.tp_frame_nr = ring->layout.tp_block_size /
 				   ring->layout.tp_frame_size *
 				   ring->layout.tp_block_nr;
+
+	set_sockopt_tpacket_v2(sock);
 
 	ring_verify_layout(ring);
 }
@@ -67,11 +71,10 @@ void setup_tx_ring_layout(int sock, struct ring *ring, unsigned int size,
 void create_tx_ring(int sock, struct ring *ring, int verbose)
 {
 	int ret;
-
-	set_sockopt_tpacket_v2(sock);
 retry:
 	ret = setsockopt(sock, SOL_PACKET, PACKET_TX_RING, &ring->layout,
 			 sizeof(ring->layout));
+
 	if (errno == ENOMEM && ring->layout.tp_block_nr > 1) {
 		ring->layout.tp_block_nr >>= 1;
 		ring->layout.tp_frame_nr = ring->layout.tp_block_size / 
@@ -94,45 +97,15 @@ retry:
 
 void mmap_tx_ring(int sock, struct ring *ring)
 {
-	ring->mm_space = mmap(0, ring->mm_len, PROT_READ | PROT_WRITE,
-			      MAP_SHARED | MAP_LOCKED | MAP_POPULATE, sock, 0);
-	if (ring->mm_space == MAP_FAILED) {
-		destroy_tx_ring(sock, ring);
-		panic("Cannot mmap TX_RING!\n");
-	}
+	mmap_ring_generic(sock, ring);
 }
 
 void alloc_tx_ring_frames(struct ring *ring)
 {
-	int i;
-	size_t len = ring->layout.tp_frame_nr * sizeof(*ring->frames);
-
-	ring->frames = xmalloc_aligned(len, CO_CACHE_LINE_SIZE);
-	fmemset(ring->frames, 0, len);
-
-	for (i = 0; i < ring->layout.tp_frame_nr; ++i) {
-		ring->frames[i].iov_len = ring->layout.tp_frame_size;
-		ring->frames[i].iov_base = ring->mm_space +
-					   (i * ring->layout.tp_frame_size);
-	}
+	alloc_ring_frames_generic(ring);
 }
 
 void bind_tx_ring(int sock, struct ring *ring, int ifindex)
 {
-	int ret;
-
-	fmemset(&ring->s_ll, 0, sizeof(ring->s_ll));
-
-	ring->s_ll.sll_family = AF_PACKET;
-	ring->s_ll.sll_protocol = htons(ETH_P_ALL);
-	ring->s_ll.sll_ifindex = ifindex;
-	ring->s_ll.sll_hatype = 0;
-	ring->s_ll.sll_halen = 0;
-	ring->s_ll.sll_pkttype = 0;
-
-	ret = bind(sock, (struct sockaddr *) &ring->s_ll, sizeof(ring->s_ll));
-	if (ret < 0) {
-		destroy_tx_ring(sock, ring);
-		panic("Cannot bind TX_RING!\n");
-	}
+	bind_ring_generic(sock, ring, ifindex);
 }

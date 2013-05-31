@@ -44,6 +44,7 @@ netsniff-ng-objs =	dissector.o \
 			pcap_mm.o \
 			ring_rx.o \
 			ring_tx.o \
+			ring.o \
 			tprintf.o \
 			tstamping.o \
 			geoip.o \
