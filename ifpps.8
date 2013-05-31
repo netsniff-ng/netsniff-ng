@@ -36,7 +36,8 @@ statistics, which are also fairly reliable under high packet load.
 .PP
 ifpps also periodically displays CPU load, interrupt, software interrupt
 data per sample interval as well as total interrupts, all per CPU. In case
-the number of CPUs exceed 10, ifpps will then only display the top heavy
+the number of CPUs exceeds 10 or the number specified by the user with the
+\[lq]\-n\[rq] command line option, ifpps will only display the top heavy
 hitters.
 .PP
 .SH OPTIONS
@@ -84,12 +85,6 @@ Continuous terminal output for the wlan0 device in promiscuous mode.
 On 10Gbit/s cards or higher, receive and transmit statistics are usually
 accumulated at a higher duration interval than 1 second. Thus, it might
 be advisable to alter the timing to a higher accumulation interval for such cards.
-.PP
-.SH BUGS
-Systems with greater than 32 cores are currently not supported. This
-should, however, not be a big task to fix. The only challenge would
-be to display the presented information in a sane way, probably by
-selectively hiding uninteresting statistics.
 .PP
 .SH LEGAL
 ifpps is licensed under the GNU GPL version 2.0.
