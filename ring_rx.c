@@ -22,17 +22,22 @@
 void destroy_rx_ring(int sock, struct ring *ring)
 {
 	int ret;
+	bool v3 = get_sockopt_tpacket(sock) == TPACKET_V3;
 
 	munmap(ring->mm_space, ring->mm_len);
 	ring->mm_len = 0;
+
+	xfree(ring->frames);
+
+	/* In general, this is freed during close(2) anyway. */
+	if (v3)
+		return;
 
 	fmemset(&ring->layout, 0, sizeof(ring->layout));
 	ret = setsockopt(sock, SOL_PACKET, PACKET_RX_RING, &ring->layout,
 			 sizeof(ring->layout));
 	if (unlikely(ret))
 		panic("Cannot destroy the RX_RING: %s!\n", strerror(errno));
-
-	xfree(ring->frames);
 }
 
 void setup_rx_ring_layout(int sock, struct ring *ring, unsigned int size,
