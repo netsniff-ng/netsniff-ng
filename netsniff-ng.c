@@ -699,7 +699,7 @@ static int next_multi_pcap_file(struct ctx *ctx, int fd)
 		panic("Error writing pcap header!\n");
 
 	if (__pcap_io->prepare_access_pcap) {
-		ret = __pcap_io->prepare_access_pcap(fd, PCAP_MODE_WR, ctx->jumbo);
+		ret = __pcap_io->prepare_access_pcap(fd, PCAP_MODE_WR, true);
 		if (ret)
 			panic("Error prepare writing pcap!\n");
 	}
@@ -728,7 +728,7 @@ static int begin_multi_pcap_file(struct ctx *ctx)
 		panic("Error writing pcap header!\n");
 
 	if (__pcap_io->prepare_access_pcap) {
-		ret = __pcap_io->prepare_access_pcap(fd, PCAP_MODE_WR, ctx->jumbo);
+		ret = __pcap_io->prepare_access_pcap(fd, PCAP_MODE_WR, true);
 		if (ret)
 			panic("Error prepare writing pcap!\n");
 	}
@@ -780,7 +780,7 @@ static int begin_single_pcap_file(struct ctx *ctx)
 		panic("Error writing pcap header!\n");
 
 	if (__pcap_io->prepare_access_pcap) {
-		ret = __pcap_io->prepare_access_pcap(fd, PCAP_MODE_WR, ctx->jumbo);
+		ret = __pcap_io->prepare_access_pcap(fd, PCAP_MODE_WR, true);
 		if (ret)
 			panic("Error prepare writing pcap!\n");
 	}
@@ -912,7 +912,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 
 	set_sockopt_hwtimestamp(sock, ctx->device_in);
 
-	setup_rx_ring_layout(sock, &rx_ring, size, ctx->jumbo, true);
+	setup_rx_ring_layout(sock, &rx_ring, size, true, true);
 	create_rx_ring(sock, &rx_ring, ctx->verbose);
 	mmap_rx_ring(sock, &rx_ring);
 	alloc_rx_ring_frames(sock, &rx_ring);
