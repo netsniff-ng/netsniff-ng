@@ -9,6 +9,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <linux/if_packet.h>
 
 #include "ring.h"
 #include "tprintf.h"
@@ -45,29 +46,39 @@ static inline const char *__show_ts_source(uint32_t status)
 		return "";
 }
 
-static inline void show_frame_hdr(struct frame_map *hdr, int mode)
+static inline void __show_frame_hdr(struct sockaddr_ll *s_ll,
+				    void *raw, int mode, bool v3)
 {
 	char tmp[IFNAMSIZ];
+	union tpacket_uhdr hdr;
 
 	if (mode == PRINT_NONE)
 		return;
 
+	hdr.raw = raw;
+
 	switch (mode) {
 	case PRINT_LESS:
 		tprintf("%s %s %u",
-			packet_types[hdr->s_ll.sll_pkttype] ? : "?",
-			if_indextoname(hdr->s_ll.sll_ifindex, tmp) ? : "?",
-			hdr->tp_h.tp_len);
+			packet_types[s_ll->sll_pkttype] ? : "?",
+			if_indextoname(s_ll->sll_ifindex, tmp) ? : "?",
+			v3 ? hdr.h3->tp_len : hdr.h2->tp_len);
 		break;
 	default:
 		tprintf("%s %s %u %us.%uns %s\n",
-			packet_types[hdr->s_ll.sll_pkttype] ? : "?",
-			if_indextoname(hdr->s_ll.sll_ifindex, tmp) ? : "?",
-			hdr->tp_h.tp_len, hdr->tp_h.tp_sec,
-			hdr->tp_h.tp_nsec,
-			__show_ts_source(hdr->tp_h.tp_status));
+			packet_types[s_ll->sll_pkttype] ? : "?",
+			if_indextoname(s_ll->sll_ifindex, tmp) ? : "?",
+			v3 ? hdr.h3->tp_len : hdr.h2->tp_len,
+			v3 ? hdr.h3->tp_sec : hdr.h2->tp_sec,
+			v3 ? hdr.h3->tp_nsec : hdr.h2->tp_nsec,
+			v3 ? "" : __show_ts_source(hdr.h2->tp_status));
 		break;
 	}
+}
+
+static inline void show_frame_hdr(struct frame_map *hdr, int mode)
+{
+	__show_frame_hdr(&hdr->s_ll, &hdr->tp_h, mode, false);
 }
 
 extern void dissector_init_all(int fnttype);

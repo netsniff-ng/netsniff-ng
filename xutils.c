@@ -716,7 +716,7 @@ int device_bind_irq_to_cpu(int irq, int cpu)
 	return (ret > 0 ? 0 : ret);
 }
 
-void sock_print_net_stats(int sock, unsigned long skipped)
+void sock_print_net_stats(int sock)
 {
 	int ret;
 	struct tpacket_stats kstats;
@@ -730,10 +730,11 @@ void sock_print_net_stats(int sock, unsigned long skipped)
 		uint64_t drops = kstats.tp_drops;
 
 		printf("\r%12ld  packets incoming\n", packets);
-		printf("\r%12ld  packets passed filter\n", packets - drops - skipped);
-		printf("\r%12ld  packets failed filter (out of space)\n", drops + skipped);
+		printf("\r%12ld  packets passed filter\n", packets - drops);
+		printf("\r%12ld  packets failed filter (out of space)\n", drops);
 		if (kstats.tp_packets > 0)
-			printf("\r%12.4lf%\% packet droprate\n", (1.0 * drops / packets) * 100.0);
+			printf("\r%12.4lf%\% packet droprate\n",
+			       (1.0 * drops / packets) * 100.0);
 	}
 }
 

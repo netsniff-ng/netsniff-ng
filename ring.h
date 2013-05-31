@@ -26,6 +26,13 @@
 #include "built_in.h"
 #include "die.h"
 
+union tpacket_uhdr {
+	struct tpacket_hdr  *h1;
+	struct tpacket2_hdr *h2;
+	struct tpacket3_hdr *h3;
+	void *raw;
+};
+
 struct frame_map {
 	struct tpacket2_hdr tp_h __aligned_tpacket;
 	struct sockaddr_ll s_ll __align_tpacket(sizeof(struct tpacket2_hdr));

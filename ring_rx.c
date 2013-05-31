@@ -59,7 +59,7 @@ void setup_rx_ring_layout(int sock, struct ring *ring, unsigned int size,
 			     sizeof(struct tpacket_req) !=
 			     offsetof(struct tpacket_req3, tp_retire_blk_tov));
 
-		ring->layout3.tp_retire_blk_tov = 0;
+		ring->layout3.tp_retire_blk_tov = 100; /* 0: let kernel decide */
 		ring->layout3.tp_sizeof_priv = 0;
 		ring->layout3.tp_feature_req_word = 0;
 

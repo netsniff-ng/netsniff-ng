@@ -39,7 +39,7 @@ extern int device_address(const char *ifname, int af, struct sockaddr_storage *s
 extern int device_irq_number(const char *ifname);
 extern int device_set_irq_affinity_list(int irq, unsigned long from, unsigned long to);
 extern int device_bind_irq_to_cpu(int irq, int cpu);
-extern void sock_print_net_stats(int sock, unsigned long skipped);
+extern void sock_print_net_stats(int sock);
 extern int device_ifindex(const char *ifname);
 extern short device_get_flags(const char *ifname);
 extern void device_set_flags(const char *ifname, const short flags);

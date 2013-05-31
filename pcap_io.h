@@ -274,66 +274,67 @@ static inline u32 pcap_get_total_length(pcap_pkthdr_t *phdr, enum pcap_type type
 	}
 }
 
-static inline void tpacket_hdr_to_pcap_pkthdr(struct tpacket2_hdr *thdr,
-					      struct sockaddr_ll *sll,
-					      pcap_pkthdr_t *phdr,
-					      enum pcap_type type)
+static inline void
+__tpacket_hdr_to_pcap_pkthdr(uint32_t sec, uint32_t nsec, uint32_t snaplen,
+			     uint32_t len, uint32_t status,
+			     struct sockaddr_ll *sll, pcap_pkthdr_t *phdr,
+			     enum pcap_type type)
 {
 	switch (type) {
 	case DEFAULT:
-		phdr->ppo.ts.tv_sec = thdr->tp_sec;
-		phdr->ppo.ts.tv_usec = thdr->tp_nsec / 1000;
-		phdr->ppo.caplen = thdr->tp_snaplen;
-		phdr->ppo.len = thdr->tp_len;
+		phdr->ppo.ts.tv_sec = sec;
+		phdr->ppo.ts.tv_usec = nsec / 1000;
+		phdr->ppo.caplen = snaplen;
+		phdr->ppo.len = len;
 		break;
 
 	case DEFAULT_SWAPPED:
-		phdr->ppo.ts.tv_sec = ___constant_swab32(thdr->tp_sec);
-		phdr->ppo.ts.tv_usec = ___constant_swab32(thdr->tp_nsec / 1000);
-		phdr->ppo.caplen = ___constant_swab32(thdr->tp_snaplen);
-		phdr->ppo.len = ___constant_swab32(thdr->tp_len);
+		phdr->ppo.ts.tv_sec = ___constant_swab32(sec);
+		phdr->ppo.ts.tv_usec = ___constant_swab32(nsec / 1000);
+		phdr->ppo.caplen = ___constant_swab32(snaplen);
+		phdr->ppo.len = ___constant_swab32(len);
 		break;
 
 	case NSEC:
-		phdr->ppn.ts.tv_sec = thdr->tp_sec;
-		phdr->ppn.ts.tv_nsec = thdr->tp_nsec;
-		phdr->ppn.caplen = thdr->tp_snaplen;
-		phdr->ppn.len = thdr->tp_len;
+		phdr->ppn.ts.tv_sec = sec;
+		phdr->ppn.ts.tv_nsec = nsec;
+		phdr->ppn.caplen = snaplen;
+		phdr->ppn.len = len;
 		break;
 
 	case NSEC_SWAPPED:
-		phdr->ppn.ts.tv_sec = ___constant_swab32(thdr->tp_sec);
-		phdr->ppn.ts.tv_nsec = ___constant_swab32(thdr->tp_nsec);
-		phdr->ppn.caplen = ___constant_swab32(thdr->tp_snaplen);
-		phdr->ppn.len = ___constant_swab32(thdr->tp_len);
+		phdr->ppn.ts.tv_sec = ___constant_swab32(sec);
+		phdr->ppn.ts.tv_nsec = ___constant_swab32(nsec);
+		phdr->ppn.caplen = ___constant_swab32(snaplen);
+		phdr->ppn.len = ___constant_swab32(len);
 		break;
 
 	case KUZNETZOV:
-		phdr->ppk.ts.tv_sec = thdr->tp_sec;
-		phdr->ppk.ts.tv_usec = thdr->tp_nsec / 1000;
-		phdr->ppk.caplen = thdr->tp_snaplen;
-		phdr->ppk.len = thdr->tp_len;
+		phdr->ppk.ts.tv_sec = sec;
+		phdr->ppk.ts.tv_usec = nsec / 1000;
+		phdr->ppk.caplen = snaplen;
+		phdr->ppk.len = len;
 		phdr->ppk.ifindex = sll->sll_ifindex;
 		phdr->ppk.protocol = sll->sll_protocol;
 		phdr->ppk.pkttype = sll->sll_pkttype;
 		break;
 
 	case KUZNETZOV_SWAPPED:
-		phdr->ppk.ts.tv_sec = ___constant_swab32(thdr->tp_sec);
-		phdr->ppk.ts.tv_usec = ___constant_swab32(thdr->tp_nsec / 1000);
-		phdr->ppk.caplen = ___constant_swab32(thdr->tp_snaplen);
-		phdr->ppk.len = ___constant_swab32(thdr->tp_len);
+		phdr->ppk.ts.tv_sec = ___constant_swab32(sec);
+		phdr->ppk.ts.tv_usec = ___constant_swab32(nsec / 1000);
+		phdr->ppk.caplen = ___constant_swab32(snaplen);
+		phdr->ppk.len = ___constant_swab32(len);
 		phdr->ppk.ifindex = ___constant_swab32(sll->sll_ifindex);
 		phdr->ppk.protocol = ___constant_swab16(sll->sll_protocol);
 		phdr->ppk.pkttype = sll->sll_pkttype;
 		break;
 
 	case BORKMANN:
-		phdr->ppb.ts.tv_sec = thdr->tp_sec;
-		phdr->ppb.ts.tv_nsec = thdr->tp_nsec;
-		phdr->ppb.caplen = thdr->tp_snaplen;
-		phdr->ppb.len = thdr->tp_len;
-		phdr->ppb.tsource = tp_to_pcap_tsource(thdr->tp_status);
+		phdr->ppb.ts.tv_sec = sec;
+		phdr->ppb.ts.tv_nsec = nsec;
+		phdr->ppb.caplen = snaplen;
+		phdr->ppb.len = len;
+		phdr->ppb.tsource = tp_to_pcap_tsource(status);
 		phdr->ppb.ifindex = (u16) sll->sll_ifindex;
 		phdr->ppb.protocol = sll->sll_protocol;
 		phdr->ppb.hatype = sll->sll_hatype;
@@ -341,11 +342,11 @@ static inline void tpacket_hdr_to_pcap_pkthdr(struct tpacket2_hdr *thdr,
 		break;
 
 	case BORKMANN_SWAPPED:
-		phdr->ppb.ts.tv_sec = ___constant_swab32(thdr->tp_sec);
-		phdr->ppb.ts.tv_nsec = ___constant_swab32(thdr->tp_nsec);
-		phdr->ppb.caplen = ___constant_swab32(thdr->tp_snaplen);
-		phdr->ppb.len = ___constant_swab32(thdr->tp_len);
-		phdr->ppb.tsource = ___constant_swab16(tp_to_pcap_tsource(thdr->tp_status));
+		phdr->ppb.ts.tv_sec = ___constant_swab32(sec);
+		phdr->ppb.ts.tv_nsec = ___constant_swab32(nsec);
+		phdr->ppb.caplen = ___constant_swab32(snaplen);
+		phdr->ppb.len = ___constant_swab32(len);
+		phdr->ppb.tsource = ___constant_swab16(tp_to_pcap_tsource(status));
 		phdr->ppb.ifindex = ___constant_swab16((u16) sll->sll_ifindex);
 		phdr->ppb.protocol = ___constant_swab16(sll->sll_protocol);
 		phdr->ppb.hatype = sll->sll_hatype;
@@ -355,6 +356,30 @@ static inline void tpacket_hdr_to_pcap_pkthdr(struct tpacket2_hdr *thdr,
 	default:
 		bug();
 	}
+}
+
+/* We need to do this crap here since member offsets are not interleaved,
+ * so hopfully the compiler does his job here. ;-)
+ */
+
+static inline void tpacket_hdr_to_pcap_pkthdr(struct tpacket2_hdr *thdr,
+					      struct sockaddr_ll *sll,
+					      pcap_pkthdr_t *phdr,
+					      enum pcap_type type)
+{
+	__tpacket_hdr_to_pcap_pkthdr(thdr->tp_sec, thdr->tp_nsec,
+				     thdr->tp_snaplen, thdr->tp_len,
+				     thdr->tp_status, sll, phdr, type);
+}
+
+static inline void tpacket3_hdr_to_pcap_pkthdr(struct tpacket3_hdr *thdr,
+					       struct sockaddr_ll *sll,
+					       pcap_pkthdr_t *phdr,
+					       enum pcap_type type)
+{
+	__tpacket_hdr_to_pcap_pkthdr(thdr->tp_sec, thdr->tp_nsec,
+				     thdr->tp_snaplen, thdr->tp_len,
+				     0, sll, phdr, type);
 }
 
 static inline void pcap_pkthdr_to_tpacket_hdr(pcap_pkthdr_t *phdr,

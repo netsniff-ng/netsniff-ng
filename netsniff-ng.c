@@ -475,7 +475,7 @@ static void receive_to_xmit(struct ctx *ctx)
 
 	timer_purge();
 
-	sock_print_net_stats(rx_sock, 0);
+	sock_print_net_stats(rx_sock);
 
 	bpf_release(&bpf_ops);
 
@@ -788,10 +788,9 @@ static int begin_single_pcap_file(struct ctx *ctx)
 	return fd;
 }
 
-static void print_pcap_file_stats(int sock, struct ctx *ctx, unsigned long skipped)
+static void print_pcap_file_stats(int sock, struct ctx *ctx)
 {
 	int ret;
-	unsigned long good, bad;
 	struct tpacket_stats kstats;
 	socklen_t slen = sizeof(kstats);
 
@@ -802,27 +801,89 @@ static void print_pcap_file_stats(int sock, struct ctx *ctx, unsigned long skipp
 		panic("Cannot get packet statistics!\n");
 	
 	if (ctx->print_mode == PRINT_NONE) {
-		good = kstats.tp_packets - kstats.tp_drops - skipped;
-		bad = kstats.tp_drops + skipped;
-
-		printf(".(+%lu/-%lu)", good, bad);
+		printf(".(+%u/-%u)", kstats.tp_packets - kstats.tp_drops,
+		       kstats.tp_drops);
 		fflush(stdout);
+	}
+}
+
+static void walk_t3_block(struct block_desc *pbd, struct ctx *ctx,
+			  int sock, int fd)
+{
+	uint8_t *packet;
+	int num_pkts = pbd->h1.num_pkts, i, ret;
+	unsigned long frame_count = 0;
+	struct tpacket3_hdr *hdr;
+	pcap_pkthdr_t phdr;
+	struct sockaddr_ll *sll;
+
+	hdr = (void *) ((uint8_t *) pbd + pbd->h1.offset_to_first_pkt);
+	sll = (void *) ((uint8_t *) hdr + TPACKET_ALIGN(sizeof(*hdr)));
+
+	for (i = 0; i < num_pkts && likely(sigint == 0); ++i) {
+		__label__ next;
+		packet = ((uint8_t *) hdr + hdr->tp_mac);
+		frame_count++;
+
+		if (ctx->packet_type != -1)
+			if (ctx->packet_type != sll->sll_pkttype)
+				goto next;
+
+		if (dump_to_pcap(ctx)) {
+			tpacket3_hdr_to_pcap_pkthdr(hdr, sll, &phdr, ctx->magic);
+
+			ret = __pcap_io->write_pcap(fd, &phdr, ctx->magic, packet,
+						    pcap_get_length(&phdr, ctx->magic));
+			if (unlikely(ret != pcap_get_total_length(&phdr, ctx->magic)))
+				panic("Write error to pcap!\n");
+		}
+
+		__show_frame_hdr(sll, hdr, ctx->print_mode, true);
+
+		dissector_entry_point(packet, hdr->tp_snaplen, ctx->link_type,
+				      ctx->print_mode);
+		next:
+
+                hdr = (void *) ((uint8_t *) hdr + hdr->tp_next_offset);
+		sll = (void *) ((uint8_t *) hdr + TPACKET_ALIGN(sizeof(*hdr)));
+
+		if (frame_count_max != 0) {
+			if (frame_count >= frame_count_max) {
+				sigint = 1;
+				break;
+			}
+		}
+
+		if (dump_to_pcap(ctx)) {
+			if (ctx->dump_mode == DUMP_INTERVAL_SIZE) {
+				interval += hdr->tp_snaplen;
+				if (interval > ctx->dump_interval) {
+					next_dump = true;
+					interval = 0;
+				}
+			}
+
+			if (next_dump) {
+				fd = next_multi_pcap_file(ctx, fd);
+				next_dump = false;
+
+				if (unlikely(ctx->verbose))
+					print_pcap_file_stats(sock, ctx);
+			}
+		}
 	}
 }
 
 static void recv_only_or_dump(struct ctx *ctx)
 {
-	uint8_t *packet;
 	short ifflags = 0;
 	int sock, irq, ifindex, fd = 0, ret;
 	unsigned int size, it = 0;
-	unsigned long frame_count = 0, skipped = 0;
 	struct ring rx_ring;
 	struct pollfd rx_poll;
-	struct frame_map *hdr;
 	struct sock_fprog bpf_ops;
 	struct timeval start, end, diff;
-	pcap_pkthdr_t phdr;
+	struct block_desc *pbd;
 
 	sock = pf_socket();
 
@@ -851,7 +912,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 
 	set_sockopt_hwtimestamp(sock, ctx->device_in);
 
-	setup_rx_ring_layout(sock, &rx_ring, size, ctx->jumbo, false);
+	setup_rx_ring_layout(sock, &rx_ring, size, ctx->jumbo, true);
 	create_rx_ring(sock, &rx_ring, ctx->verbose);
 	mmap_rx_ring(sock, &rx_ring);
 	alloc_rx_ring_frames(sock, &rx_ring);
@@ -903,72 +964,15 @@ static void recv_only_or_dump(struct ctx *ctx)
 	bug_on(gettimeofday(&start, NULL));
 
 	while (likely(sigint == 0)) {
-		while (user_may_pull_from_rx(rx_ring.frames[it].iov_base)) {
-			__label__ next;
+		while (user_may_pull_from_rx_block((pbd = (void *)
+				rx_ring.frames[it].iov_base))) {
+			walk_t3_block(pbd, ctx, sock, fd);
 
-			hdr = rx_ring.frames[it].iov_base;
-			packet = ((uint8_t *) hdr) + hdr->tp_h.tp_mac;
-			frame_count++;
-
-			if (ctx->packet_type != -1)
-				if (ctx->packet_type != hdr->s_ll.sll_pkttype)
-					goto next;
-
-			if (unlikely(ring_frame_size(&rx_ring) < hdr->tp_h.tp_snaplen)) {
-				skipped++;
-				goto next;
-			}
-
-			if (dump_to_pcap(ctx)) {
-				tpacket_hdr_to_pcap_pkthdr(&hdr->tp_h, &hdr->s_ll, &phdr, ctx->magic);
-
-				ret = __pcap_io->write_pcap(fd, &phdr, ctx->magic, packet,
-							    pcap_get_length(&phdr, ctx->magic));
-				if (unlikely(ret != pcap_get_total_length(&phdr, ctx->magic)))
-					panic("Write error to pcap!\n");
-			}
-
-			show_frame_hdr(hdr, ctx->print_mode);
-
-			dissector_entry_point(packet, hdr->tp_h.tp_snaplen,
-					      ctx->link_type, ctx->print_mode);
-
-			if (frame_count_max != 0) {
-				if (frame_count >= frame_count_max) {
-					sigint = 1;
-					break;
-				}
-			}
-
-			next:
-
-			kernel_may_pull_from_rx(&hdr->tp_h);
-
-			it++;
-			if (it >= rx_ring.layout.tp_frame_nr)
-				it = 0;
+			kernel_may_pull_from_rx_block(pbd);
+			it = (it + 1) % rx_ring.layout3.tp_block_nr;
 
 			if (unlikely(sigint == 1))
 				break;
-
-			if (dump_to_pcap(ctx)) {
-				if (ctx->dump_mode == DUMP_INTERVAL_SIZE) {
-					interval += hdr->tp_h.tp_snaplen;
-
-					if (interval > ctx->dump_interval) {
-						next_dump = true;
-						interval = 0;
-					}
-				}
-
-				if (next_dump) {
-					fd = next_multi_pcap_file(ctx, fd);
-					next_dump = false;
-
-					if (ctx->verbose)
-						print_pcap_file_stats(sock, ctx, skipped);
-				}
-			}
 		}
 
 		poll(&rx_poll, 1, -1);
@@ -978,7 +982,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 	timersub(&end, &start, &diff);
 
 	if (!(ctx->dump_dir && ctx->print_mode == PRINT_NONE)) {
-		sock_print_net_stats(sock, skipped);
+		sock_print_net_stats(sock);
 
 		printf("\r%12lu  sec, %lu usec in total\n",
 		       diff.tv_sec, diff.tv_usec);
