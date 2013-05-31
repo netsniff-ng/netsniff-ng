@@ -121,7 +121,7 @@ static inline int __get_sockopt_tpacket(int sock)
 
 	ret = getsockopt(sock, SOL_PACKET, PACKET_VERSION, &val, &len);
 	if (ret)
-		panic("Cannot set tpacketv2!\n");
+		panic("Cannot get tpacket version!\n");
 
 	return val;
 }
