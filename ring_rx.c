@@ -57,6 +57,10 @@ void setup_rx_ring_layout(int sock, struct ring *ring, unsigned int size,
 			     sizeof(struct tpacket_req) !=
 			     offsetof(struct tpacket_req3, tp_retire_blk_tov));
 
+		ring->layout3.tp_retire_blk_tov = 0;
+		ring->layout3.tp_sizeof_priv = 0;
+		ring->layout3.tp_feature_req_word = 0;
+
 		set_sockopt_tpacket_v3(sock);
 	} else {
 		set_sockopt_tpacket_v2(sock);
@@ -68,10 +72,11 @@ void setup_rx_ring_layout(int sock, struct ring *ring, unsigned int size,
 void create_rx_ring(int sock, struct ring *ring, int verbose)
 {
 	int ret;
+	bool v3 = get_sockopt_tpacket(sock) == TPACKET_V3;
 
 retry:
-	ret = setsockopt(sock, SOL_PACKET, PACKET_RX_RING, &ring->layout,
-			 sizeof(ring->layout));
+	ret = setsockopt(sock, SOL_PACKET, PACKET_RX_RING, &ring->raw,
+			 v3 ? sizeof(ring->layout3) : sizeof(ring->layout));
 	if (errno == ENOMEM && ring->layout.tp_block_nr > 1) {
 		ring->layout.tp_block_nr >>= 1;
 		ring->layout.tp_frame_nr = ring->layout.tp_block_size / 
@@ -79,7 +84,6 @@ retry:
 					   ring->layout.tp_block_nr;
 		goto retry;
 	}
-
 	if (ret < 0)
 		panic("Cannot allocate RX_RING!\n");
 
