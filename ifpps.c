@@ -583,11 +583,11 @@ static int cmp_irqs_abs(const void *p1, const void *p2)
 }
 
 static void stats_top(const struct ifstat *rel, const struct ifstat *abs,
-		      int cpus)
+		      int top_cpus)
 {
 	int i;
 
-	for (i = 0; i < cpus; ++i) {
+	for (i = 0; i < top_cpus; ++i) {
 		cpu_hits[i].idx = i;
 		cpu_hits[i].hit = rel->cpu_user[i] + rel->cpu_nice[i] + rel->cpu_sys[i];
 		cpu_hits[i].irqs_rel = rel->irqs[i];
@@ -693,13 +693,13 @@ static void screen_sys_mem(WINDOW *screen, const struct ifstat *rel,
 }
 
 static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
-				 int cpus, int *voff)
+				 int top_cpus, int *voff)
 {
 	int i;
 	uint64_t all;
 	int max_padd = padding_from_num(get_number_cpus());
 
-	for (i = 0; i < cpus; ++i) {
+	for (i = 0; i < top_cpus; ++i) {
 		unsigned int idx = cpu_hits[i].idx;
 
 		all = rel->cpu_user[idx] + rel->cpu_nice[idx] + rel->cpu_sys[idx] +
@@ -718,12 +718,12 @@ static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
 }
 
 static void screen_percpu_irqs_rel(WINDOW *screen, const struct ifstat *rel,
-				   int cpus, int *voff)
+				   int top_cpus, int *voff)
 {
 	int i;
 	int max_padd = padding_from_num(get_number_cpus());
 
-	for (i = 0; i < cpus; ++i) {
+	for (i = 0; i < top_cpus; ++i) {
 		unsigned int idx = cpu_hits[i].idx;
 
 		mvwprintw(screen, (*voff)++, 2,
@@ -737,12 +737,12 @@ static void screen_percpu_irqs_rel(WINDOW *screen, const struct ifstat *rel,
 }
 
 static void screen_percpu_irqs_abs(WINDOW *screen, const struct ifstat *abs,
-				   int cpus, int *voff)
+				   int top_cpus, int *voff)
 {
 	int i;
 	int max_padd = padding_from_num(get_number_cpus());
 
-	for (i = 0; i < cpus; ++i) {
+	for (i = 0; i < top_cpus; ++i) {
 		unsigned int idx = cpu_hits[i].idx;
 
 		mvwprintw(screen, (*voff)++, 2,
