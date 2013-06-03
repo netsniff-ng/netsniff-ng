@@ -1,9 +1,3 @@
-/*
- * netsniff-ng - the packet sniffing beast
- * Copyright 2011 Daniel Borkmann.
- * Subject to the GPL, version 2.
- */
-
 #ifndef TRIE_H
 #define TRIE_H
 
