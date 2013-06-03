@@ -608,28 +608,6 @@ void device_set_flags(const char *ifname, const short flags)
 	close(sock);
 }
 
-void sock_print_net_stats(int sock)
-{
-	int ret;
-	struct tpacket_stats kstats;
-
-	socklen_t slen = sizeof(kstats);
-
-	memset(&kstats, 0, sizeof(kstats));
-	ret = getsockopt(sock, SOL_PACKET, PACKET_STATISTICS, &kstats, &slen);
-	if (ret > -1) {
-		uint64_t packets = kstats.tp_packets;
-		uint64_t drops = kstats.tp_drops;
-
-		printf("\r%12ld  packets incoming\n", packets);
-		printf("\r%12ld  packets passed filter\n", packets - drops);
-		printf("\r%12ld  packets failed filter (out of space)\n", drops);
-		if (kstats.tp_packets > 0)
-			printf("\r%12.4lf%\% packet droprate\n",
-			       (1.0 * drops / packets) * 100.0);
-	}
-}
-
 void register_signal(int signal, void (*handler)(int))
 {
 	sigset_t block_mask;

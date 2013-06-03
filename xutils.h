@@ -36,7 +36,6 @@ extern int ethtool_drvinf(const char *ifname, struct ethtool_drvinfo *drvinf);
 extern int ethtool_link(const char *ifname);
 extern int device_mtu(const char *ifname);
 extern int device_address(const char *ifname, int af, struct sockaddr_storage *ss);
-extern void sock_print_net_stats(int sock);
 extern int device_ifindex(const char *ifname);
 extern short device_get_flags(const char *ifname);
 extern void device_set_flags(const char *ifname, const short flags);

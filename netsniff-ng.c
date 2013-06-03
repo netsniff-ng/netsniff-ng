@@ -476,7 +476,7 @@ static void receive_to_xmit(struct ctx *ctx)
 
 	timer_purge();
 
-	sock_print_net_stats(rx_sock);
+	sock_rx_net_stats(rx_sock);
 
 	bpf_release(&bpf_ops);
 
@@ -809,11 +809,10 @@ static void print_pcap_file_stats(int sock, struct ctx *ctx)
 }
 
 static void walk_t3_block(struct block_desc *pbd, struct ctx *ctx,
-			  int sock, int fd)
+			  int sock, int fd, unsigned long *frame_count)
 {
 	uint8_t *packet;
 	int num_pkts = pbd->h1.num_pkts, i, ret;
-	unsigned long frame_count = 0;
 	struct tpacket3_hdr *hdr;
 	pcap_pkthdr_t phdr;
 	struct sockaddr_ll *sll;
@@ -824,11 +823,12 @@ static void walk_t3_block(struct block_desc *pbd, struct ctx *ctx,
 	for (i = 0; i < num_pkts && likely(sigint == 0); ++i) {
 		__label__ next;
 		packet = ((uint8_t *) hdr + hdr->tp_mac);
-		frame_count++;
 
 		if (ctx->packet_type != -1)
 			if (ctx->packet_type != sll->sll_pkttype)
 				goto next;
+
+		(*frame_count)++;
 
 		if (dump_to_pcap(ctx)) {
 			tpacket3_hdr_to_pcap_pkthdr(hdr, sll, &phdr, ctx->magic);
@@ -849,7 +849,7 @@ static void walk_t3_block(struct block_desc *pbd, struct ctx *ctx,
 		sll = (void *) ((uint8_t *) hdr + TPACKET_ALIGN(sizeof(*hdr)));
 
 		if (frame_count_max != 0) {
-			if (frame_count >= frame_count_max) {
+			if (unlikely(*frame_count >= frame_count_max)) {
 				sigint = 1;
 				break;
 			}
@@ -885,6 +885,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 	struct sock_fprog bpf_ops;
 	struct timeval start, end, diff;
 	struct block_desc *pbd;
+	unsigned long frame_count = 0;
 
 	sock = pf_socket();
 
@@ -967,7 +968,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 	while (likely(sigint == 0)) {
 		while (user_may_pull_from_rx_block((pbd = (void *)
 				rx_ring.frames[it].iov_base))) {
-			walk_t3_block(pbd, ctx, sock, fd);
+			walk_t3_block(pbd, ctx, sock, fd, &frame_count);
 
 			kernel_may_pull_from_rx_block(pbd);
 			it = (it + 1) % rx_ring.layout3.tp_block_nr;
@@ -983,7 +984,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 	timersub(&end, &start, &diff);
 
 	if (!(ctx->dump_dir && ctx->print_mode == PRINT_NONE)) {
-		sock_print_net_stats(sock);
+		sock_rx_net_stats(sock);
 
 		printf("\r%12lu  sec, %lu usec in total\n",
 		       diff.tv_sec, diff.tv_usec);

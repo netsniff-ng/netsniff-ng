@@ -130,3 +130,28 @@ void bind_rx_ring(int sock, struct ring *ring, int ifindex)
 {
 	bind_ring_generic(sock, ring, ifindex);
 }
+
+void sock_rx_net_stats(int sock)
+{
+	int ret;
+	bool v3 = get_sockopt_tpacket(sock) == TPACKET_V3;
+	union {
+		struct tpacket_stats	k2;
+		struct tpacket_stats_v3 k3;
+	} stats;
+	socklen_t slen = v3 ? sizeof(stats.k3) : sizeof(stats.k2);
+
+	memset(&stats, 0, sizeof(stats));
+	ret = getsockopt(sock, SOL_PACKET, PACKET_STATISTICS, &stats, &slen);
+	if (ret > -1) {
+		uint64_t packets = stats.k3.tp_packets;
+		uint64_t drops = stats.k3.tp_drops;
+
+		printf("\r%12ld  packets incoming\n", packets);
+		printf("\r%12ld  packets passed filter\n", packets - drops);
+		printf("\r%12ld  packets failed filter (out of space)\n", drops);
+		if (stats.k3.tp_packets > 0)
+			printf("\r%12.4lf%\% packet droprate\n",
+			       (1.0 * drops / packets) * 100.0);
+	}
+}
