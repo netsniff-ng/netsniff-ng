@@ -64,7 +64,6 @@ extern int device_up_and_running(char *ifname);
 extern void set_epoll_descriptor(int fd_epoll, int action, int fd_toadd, int events);
 extern int set_epoll_descriptor2(int fd_epoll, int action, int fd_toadd, int events);
 extern void cpu_affinity(int cpu);
-extern int set_cpu_affinity(char *str, int inverted);
 extern int set_proc_prio(int prio);
 extern int set_sched_status(int policy, int priority);
 extern int get_default_sched_policy(void);
