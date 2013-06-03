@@ -32,6 +32,7 @@
 #include "xutils.h"
 #include "curve.h"
 #include "xmalloc.h"
+#include "corking.h"
 #include "curvetun.h"
 #include "ct_servmgmt.h"
 #include "ct_usermgmt.h"

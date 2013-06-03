@@ -7,6 +7,7 @@ curvetun-objs =	xmalloc.o \
 		str.o \
 		stun.o \
 		patricia.o \
+		corking.o \
 		trie.o \
 		hash.o \
 		curve.o \

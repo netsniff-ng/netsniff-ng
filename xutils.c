@@ -102,58 +102,6 @@ void set_sock_prio(int fd, int prio)
 		panic("Cannot set socket priority!\n");
 }
 
-void set_udp_cork(int fd)
-{
-	int ret, state = 1;
-
-	ret = setsockopt(fd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
-	if (unlikely(ret))
-		panic("Cannot cork UDP socket!\n");
-}
-
-void set_udp_uncork(int fd)
-{
-	int ret, state = 0;
-
-	ret = setsockopt(fd, IPPROTO_UDP, UDP_CORK, &state, sizeof(state));
-	if (unlikely(ret))
-		panic("Cannot uncork UDP socket!\n");
-}
-
-void set_tcp_cork(int fd)
-{
-	int ret, state = 1;
-
-	ret = setsockopt(fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
-	if (unlikely(ret))
-		panic("Cannot cork TCP socket!\n");
-}
-
-void set_tcp_uncork(int fd)
-{
-	int ret, state = 0;
-
-	ret = setsockopt(fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
-	if (unlikely(ret))
-		panic("Cannot uncork TCP socket!\n");
-}
-
-void set_sock_cork(int fd, int udp)
-{
-	if (!!udp)
-		set_udp_cork(fd);
-	else
-		set_tcp_cork(fd);
-}
-
-void set_sock_uncork(int fd, int udp)
-{
-	if (!!udp)
-		set_udp_uncork(fd);
-	else
-		set_tcp_uncork(fd);
-}
-
 void set_nonblocking(int fd)
 {
 	int ret = fcntl(fd, F_SETFL, fcntl(fd, F_GETFD, 0) | O_NONBLOCK);
