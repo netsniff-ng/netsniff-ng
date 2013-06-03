@@ -23,6 +23,8 @@ _arguments -s -S \
     "(-4 --ipv4)"{-4,--ipv4}"[Use IPv4 requests (default)]" \
     "(-6 --ipv6)"{-6,--ipv6}"[Use IPv6 requests]" \
     "(-n --numeric)"{-n,--nemeric}"[Do not do reverse DNS lookup for hops]" \
+    "(-u --update)"{-u,--update}"[Update GeoIP databases]" \
+    "(-L --latitude)"{-L,--latitude}"[Show latitude and longtitude]" \
     "(-N --dns)"{-N,--dns}"[Do a reverse DNS lookup for hops]" \
     "(-f --init-ttl)"{-f,--init-ttl}"[Set initial TTL]:ttl:_gnu_generic" \
     "(-m --max-ttl)"{-m,--max--ttl}"[Set maximum TTL]:ttl:_gnu_generic" \
@@ -41,10 +43,6 @@ _arguments -s -S \
     "(-X --payload)"{-X,--payload}"[Specify a payload string to test DPIs]:string:_gnu_generic" \
     "(-Z --show-packet)"{-Z,--show-packet}"[Show returned packet on each hop]" \
     "(-l --totlen)"{-l,--totlen}"[Specify total packet len]:lengths:_gnu_generic" \
-    "(-w --whois)"{-w,--whois}"[Use a different AS whois DB server (default: /etc/netsniff-ng/whois.conf)]:file:_files" \
-    "(-W --wport)"{-W,--wport}"[Use a different port to AS whois server (default: /etc/netsniff-ng/whois.conf)]:file:_files" \
-    "--city-db[Specifiy path for geoip city database]:path:_files" \
-    "--country-db[Specifiy path for geoip country database]:path:_files" \
     {-v,--version}"[Print version]:" \
     {-h,--help}"[Print this help]:" \
     "*::args:_gnu_generic"

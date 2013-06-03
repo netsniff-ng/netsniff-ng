@@ -12,6 +12,10 @@ typeset -A opt_args
 
 _arguments -s -S \
     "(-i --input)"{-i,--input}"[Berkeley Packet Filter file]:input:_files" \
+    "(-p --cpp)"{-p,--cpp}"[Run bpf program through C preprocessor]" \
+    "(-f --format)"{-f,--format}"[Output format]:output:(C netsniff-ng xt_bpf tcpdump)" \
+    "(-b --bypass)"{-b,--bypass}"[Bypass filter validation (e.g. for bug testing)]" \
+    "(-d --dump)"{-d,--dump}"[Dump supported instruction table]" \
     "(-V --verbose)"{-V,--verbose}"[Be more verbose]" \
     {-v,--version}"[Print version]:" \
     {-h,--help}"[Print this help]:" \
