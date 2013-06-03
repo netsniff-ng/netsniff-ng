@@ -8,6 +8,7 @@
 
 #include "hash.h"
 #include "oui.h"
+#include "str.h"
 #include "protos.h"
 #include "pkt_buff.h"
 #include "dissector.h"

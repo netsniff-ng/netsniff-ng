@@ -12,6 +12,7 @@
 #include <syslog.h>
 
 #include "die.h"
+#include "str.h"
 #include "built_in.h"
 #include "locking.h"
 #include "xmalloc.h"

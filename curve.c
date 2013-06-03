@@ -22,6 +22,7 @@
 #include "xutils.h"
 #include "xio.h"
 #include "die.h"
+#include "str.h"
 #include "curvetun.h"
 #include "locking.h"
 #include "crypto_verify_32.h"

@@ -14,6 +14,7 @@
 #include <fcntl.h>
 
 #include "irq.h"
+#include "str.h"
 #include "die.h"
 #include "xutils.h"
 

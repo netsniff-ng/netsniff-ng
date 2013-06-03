@@ -20,6 +20,7 @@
 #include "die.h"
 #include "xutils.h"
 #include "xio.h"
+#include "str.h"
 #include "xmalloc.h"
 #include "zlib.h"
 #include "geoip.h"

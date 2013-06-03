@@ -4,6 +4,7 @@ curvetun-libs =	-lnacl \
 curvetun-objs =	xmalloc.o \
 		xio.o \
 		xutils.o \
+		str.o \
 		stun.o \
 		patricia.o \
 		trie.o \

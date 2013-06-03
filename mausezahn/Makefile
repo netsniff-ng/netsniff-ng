@@ -6,6 +6,7 @@ mausezahn-libs =	-lcli \
 			-lm
 
 mausezahn-objs =	xutils.o \
+			str.o \
 			staging/layer1.o \
 			staging/layer2.o \
 			staging/layer3.o \

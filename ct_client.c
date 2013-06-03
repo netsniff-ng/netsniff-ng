@@ -27,6 +27,7 @@
 
 #include "built_in.h"
 #include "die.h"
+#include "str.h"
 #include "xio.h"
 #include "xutils.h"
 #include "curve.h"

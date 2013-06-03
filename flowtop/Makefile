@@ -9,6 +9,7 @@ flowtop-objs =	xmalloc.o \
 		xio.o \
 		xutils.o \
 		oui.o \
+		str.o \
 		hash.o \
 		dissector_eth.o \
 		dissector_80211.o \

@@ -19,6 +19,7 @@
 #include "locking.h"
 #include "xmalloc.h"
 #include "xio.h"
+#include "str.h"
 #include "curvetun.h"
 #include "xutils.h"
 #include "curve.h"

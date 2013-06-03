@@ -19,6 +19,7 @@
 #include <libgen.h>
 
 #include "bpf.h"
+#include "str.h"
 #include "xmalloc.h"
 #include "bpf_parser.tab.h"
 #include "built_in.h"

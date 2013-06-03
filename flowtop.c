@@ -30,6 +30,7 @@
 #include "die.h"
 #include "xmalloc.h"
 #include "xio.h"
+#include "str.h"
 #include "geoip.h"
 #include "xutils.h"
 #include "built_in.h"
