@@ -49,17 +49,17 @@ void set_tcp_uncork(int fd)
 		panic("Cannot uncork TCP socket!\n");
 }
 
-void set_sock_cork(int fd, int udp)
+void set_sock_cork(int fd, bool is_udp)
 {
-	if (!!udp)
+	if (is_udp)
 		set_udp_cork(fd);
 	else
 		set_tcp_cork(fd);
 }
 
-void set_sock_uncork(int fd, int udp)
+void set_sock_uncork(int fd, bool is_udp)
 {
-	if (!!udp)
+	if (is_udp)
 		set_udp_uncork(fd);
 	else
 		set_tcp_uncork(fd);
