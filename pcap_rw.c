@@ -16,6 +16,7 @@
 #include "xutils.h"
 #include "xio.h"
 #include "die.h"
+#include "iosched.h"
 
 static ssize_t pcap_rw_write(int fd, pcap_pkthdr_t *phdr, enum pcap_type type,
 			     const uint8_t *packet, size_t len)

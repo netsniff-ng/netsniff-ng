@@ -17,6 +17,7 @@
 #include "xio.h"
 #include "xutils.h"
 #include "built_in.h"
+#include "iosched.h"
 
 static size_t map_size = 0;
 static char *ptr_va_start, *ptr_va_curr;

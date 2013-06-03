@@ -33,6 +33,7 @@ netsniff-ng-objs =	dissector.o \
 			proto_mpls_unicast.o \
 			proto_80211_mac_hdr.o \
 			irq.o \
+			iosched.o \
 			xio.o \
 			xutils.o \
 			xmalloc.o \
