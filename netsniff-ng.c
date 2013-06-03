@@ -32,6 +32,7 @@
 #include "bpf.h"
 #include "xio.h"
 #include "die.h"
+#include "irq.h"
 #include "geoip.h"
 #include "tprintf.h"
 #include "dissector.h"
@@ -1398,7 +1399,7 @@ int main(int argc, char **argv)
 	if (setsockmem)
 		reset_system_socket_memory(vals, array_size(vals));
 	destroy_geoip();
-
+	device_restore_irq_affinity_list();
 	tprintf_cleanup();
 
 	free(ctx.device_in);

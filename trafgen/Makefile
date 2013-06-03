@@ -5,6 +5,7 @@ trafgen-libs =	$(shell pkg-config --libs libnl-3.0) \
 trafgen-objs =	xmalloc.o \
 		xio.o \
 		xutils.o \
+		irq.o \
 		mac80211.o \
 		ring_tx.o \
 		ring.o \

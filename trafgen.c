@@ -37,6 +37,7 @@
 #include "mac80211.h"
 #include "xutils.h"
 #include "xio.h"
+#include "irq.h"
 #include "built_in.h"
 #include "trafgen_conf.h"
 #include "tprintf.h"
@@ -1083,6 +1084,7 @@ int main(int argc, char **argv)
 thread_out:
 	xunlockme();
 	destroy_shared_var(stats, ctx.cpus);
+	device_restore_irq_affinity_list();
 
 	free(ctx.device);
 	free(ctx.device_trans);
