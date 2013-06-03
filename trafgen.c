@@ -35,6 +35,7 @@
 #include "xmalloc.h"
 #include "die.h"
 #include "str.h"
+#include "cpus.h"
 #include "lockme.h"
 #include "mac80211.h"
 #include "xutils.h"

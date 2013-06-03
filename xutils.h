@@ -69,8 +69,6 @@ extern int set_proc_prio(int prio);
 extern int set_sched_status(int policy, int priority);
 extern int get_default_sched_policy(void);
 extern int get_default_sched_prio(void);
-extern int get_number_cpus(void);
-extern int get_number_cpus_online(void);
 extern int get_default_proc_prio(void);
 extern void set_system_socket_memory(int *vals, size_t len);
 extern void reset_system_socket_memory(int *vals, size_t len);

@@ -718,16 +718,6 @@ int get_default_sched_prio(void)
 	return sched_get_priority_max(get_default_sched_policy());
 }
 
-int get_number_cpus(void)
-{
-	return sysconf(_SC_NPROCESSORS_CONF);
-}
-
-int get_number_cpus_online(void)
-{
-	return sysconf(_SC_NPROCESSORS_ONLN);
-}
-
 int get_default_proc_prio(void)
 {
 	return -20;

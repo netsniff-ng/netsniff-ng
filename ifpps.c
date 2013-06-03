@@ -21,6 +21,7 @@
 #include "xmalloc.h"
 #include "xutils.h"
 #include "xio.h"
+#include "cpus.h"
 #include "built_in.h"
 
 struct wifi_stat {
