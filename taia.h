@@ -2,6 +2,11 @@
 #define TAIA_H
 
 #include <stdint.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <sys/time.h>
+
+#include "rnd.h"
 
 struct tai {
 	uint64_t x;
@@ -155,5 +160,7 @@ static inline int taia_less(const struct taia *t, const struct taia *u)
 		return 0;
 	return t->atto < u->atto;
 }
+
+extern bool taia_looks_good(struct taia *arr_taia, struct taia *pkt_taia);
 
 #endif /* TAIA_H */

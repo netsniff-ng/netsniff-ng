@@ -254,7 +254,7 @@ ssize_t curve25519_decode(struct curve25519_struct *curve, struct curve25519_pro
 	}
 
 	taia_unpack(chipertext + crypto_box_boxzerobytes - NONCE_LENGTH, &packet_taia);
-        if (is_good_taia(arrival_taia, &packet_taia) == 0) {
+        if (taia_looks_good(arrival_taia, &packet_taia) == 0) {
 		syslog(LOG_ERR, "Bad packet time! Dropping connection!\n");
 		done = 0;
 		goto out;
