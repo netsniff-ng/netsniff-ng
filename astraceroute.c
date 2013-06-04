@@ -40,6 +40,7 @@
 #include "xmalloc.h"
 #include "ioops.h"
 #include "csum.h"
+#include "sock.h"
 #include "geoip.h"
 #include "xutils.h"
 #include "ring_rx.h"

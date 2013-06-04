@@ -37,6 +37,7 @@
 #include "ioexact.h"
 #include "corking.h"
 #include "cpus.h"
+#include "sock.h"
 #include "built_in.h"
 #include "ct_usermgmt.h"
 #include "cpusched.h"

@@ -35,6 +35,7 @@
 #include "xmalloc.h"
 #include "die.h"
 #include "str.h"
+#include "sock.h"
 #include "cpus.h"
 #include "lockme.h"
 #include "privs.h"

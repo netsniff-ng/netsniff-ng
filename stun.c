@@ -21,6 +21,7 @@
 #include "xmalloc.h"
 #include "xutils.h"
 #include "die.h"
+#include "sock.h"
 
 extern int print_stun_probe(char *server, int sport, int tport);
 

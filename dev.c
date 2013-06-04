@@ -6,6 +6,7 @@
 
 #include "dev.h"
 #include "str.h"
+#include "sock.h"
 #include "die.h"
 #include "xutils.h"
 

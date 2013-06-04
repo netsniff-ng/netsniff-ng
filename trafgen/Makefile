@@ -10,6 +10,7 @@ trafgen-objs =	xmalloc.o \
 		dev.o \
 		irq.o \
 		str.o \
+		sock.o \
 		mac80211.o \
 		ring_tx.o \
 		ring.o \

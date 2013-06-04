@@ -37,6 +37,7 @@ netsniff-ng-objs =	dissector.o \
 			proc.o \
 			dev.o \
 			str.o \
+			sock.o \
 			irq.o \
 			iosched.o \
 			ioops.o \
