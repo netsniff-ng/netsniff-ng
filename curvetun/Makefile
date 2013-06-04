@@ -12,6 +12,7 @@ curvetun-objs =	xmalloc.o \
 		hash.o \
 		rnd.o \
 		curve.o \
+		cookie.o \
 		cpusched.o \
 		ct_usermgmt.o \
 		ct_servmgmt.o \

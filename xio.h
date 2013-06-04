@@ -16,6 +16,5 @@ extern ssize_t read_or_die(int fd, void *buf, size_t count);
 extern ssize_t write_or_die(int fd, const void *buf, size_t count);
 extern ssize_t read_exact(int fd, void *buf, size_t len, int mayexit);
 extern ssize_t write_exact(int fd, void *buf, size_t len, int mayexit);
-extern void to_std_log(FILE **fp);
 
 #endif /* XIO_H */
