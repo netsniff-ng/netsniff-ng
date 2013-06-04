@@ -124,7 +124,7 @@ int device_set_irq_affinity_list(int irq, unsigned long from, unsigned long to)
 	return ret;
 }
 
-int device_bind_irq_to_cpu(int irq, int cpu)
+int device_set_irq_affinity(int irq, unsigned long cpu)
 {
 	return device_set_irq_affinity_list(irq, cpu, cpu);
 }
