@@ -27,7 +27,5 @@
 
 extern void set_epoll_descriptor(int fd_epoll, int action, int fd_toadd, int events);
 extern int set_epoll_descriptor2(int fd_epoll, int action, int fd_toadd, int events);
-extern void set_itimer_interval_value(struct itimerval *itimer, unsigned long sec,
-				      unsigned long usec);
 
 #endif /* XSYS_H */

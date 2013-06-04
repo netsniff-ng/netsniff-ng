@@ -48,6 +48,7 @@
 #include "built_in.h"
 #include "trafgen_conf.h"
 #include "tprintf.h"
+#include "timer.h"
 #include "ring_tx.h"
 #include "csum.h"
 

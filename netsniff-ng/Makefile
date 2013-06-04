@@ -57,6 +57,7 @@ netsniff-ng-objs =	dissector.o \
 			ring.o \
 			tprintf.o \
 			tstamping.o \
+			timer.o \
 			geoip.o \
 			mac80211.o \
 			netsniff-ng.o

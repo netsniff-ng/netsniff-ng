@@ -42,6 +42,7 @@
 #include "geoip.h"
 #include "lockme.h"
 #include "tprintf.h"
+#include "timer.h"
 #include "dissector.h"
 #include "xmalloc.h"
 

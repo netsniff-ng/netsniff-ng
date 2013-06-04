@@ -71,13 +71,3 @@ int set_epoll_descriptor2(int fd_epoll, int action, int fd_toadd, int events)
 
 	return epoll_ctl(fd_epoll, action, fd_toadd, &ev);
 }
-
-void set_itimer_interval_value(struct itimerval *itimer, unsigned long sec,
-			       unsigned long usec)
-{
-	itimer->it_interval.tv_sec = sec;
-	itimer->it_interval.tv_usec = usec;
-
-	itimer->it_value.tv_sec = sec;
-	itimer->it_value.tv_usec = usec;
-}
