@@ -9,6 +9,7 @@ astraceroute-objs =	xmalloc.o \
 			tprintf.o \
 			bpf.o \
 			str.o \
+			sig.o \
 			sock.o \
 			link.o \
 			dev.o \

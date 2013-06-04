@@ -25,8 +25,6 @@
 
 #include "built_in.h"
 
-extern void register_signal(int signal, void (*handler)(int));
-extern void register_signal_f(int signal, void (*handler)(int), int flags);
 extern void set_epoll_descriptor(int fd_epoll, int action, int fd_toadd, int events);
 extern int set_epoll_descriptor2(int fd_epoll, int action, int fd_toadd, int events);
 extern void set_itimer_interval_value(struct itimerval *itimer, unsigned long sec,

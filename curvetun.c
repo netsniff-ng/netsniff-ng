@@ -28,6 +28,7 @@
 #include "xutils.h"
 #include "die.h"
 #include "str.h"
+#include "sig.h"
 #include "cookie.h"
 #include "ioexact.h"
 #include "xmalloc.h"

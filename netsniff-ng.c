@@ -37,6 +37,7 @@
 #include "die.h"
 #include "irq.h"
 #include "str.h"
+#include "sig.h"
 #include "sock.h"
 #include "geoip.h"
 #include "lockme.h"

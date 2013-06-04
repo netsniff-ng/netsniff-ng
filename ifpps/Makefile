@@ -5,5 +5,7 @@ ifpps-objs =	xmalloc.o \
 		promisc.o \
 		str.o \
 		link.o \
+		sock.o \
 		dev.o \
+		sig.o \
 		ifpps.o

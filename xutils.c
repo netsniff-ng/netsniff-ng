@@ -72,34 +72,6 @@ int set_epoll_descriptor2(int fd_epoll, int action, int fd_toadd, int events)
 	return epoll_ctl(fd_epoll, action, fd_toadd, &ev);
 }
 
-void register_signal(int signal, void (*handler)(int))
-{
-	sigset_t block_mask;
-	struct sigaction saction;
-
-	sigfillset(&block_mask);
-
-	saction.sa_handler = handler;
-	saction.sa_mask = block_mask;
-	saction.sa_flags = SA_RESTART;
-
-	sigaction(signal, &saction, NULL);
-}
-
-void register_signal_f(int signal, void (*handler)(int), int flags)
-{
-	sigset_t block_mask;
-	struct sigaction saction;
-
-	sigfillset(&block_mask);
-
-	saction.sa_handler = handler;
-	saction.sa_mask = block_mask;
-	saction.sa_flags = flags;
-
-	sigaction(signal, &saction, NULL);
-}
-
 void set_itimer_interval_value(struct itimerval *itimer, unsigned long sec,
 			       unsigned long usec)
 {

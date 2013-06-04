@@ -31,6 +31,7 @@
 #include "xmalloc.h"
 #include "ioops.h"
 #include "str.h"
+#include "sig.h"
 #include "geoip.h"
 #include "xutils.h"
 #include "built_in.h"

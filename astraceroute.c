@@ -34,6 +34,7 @@
 #include "bpf.h"
 #include "die.h"
 #include "dev.h"
+#include "sig.h"
 #include "tprintf.h"
 #include "pkt_buff.h"
 #include "proto.h"

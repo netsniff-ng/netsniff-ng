@@ -10,6 +10,7 @@ flowtop-objs =	xmalloc.o \
 		xutils.o \
 		oui.o \
 		str.o \
+		sig.o \
 		sock.o \
 		dev.o \
 		link.o \
