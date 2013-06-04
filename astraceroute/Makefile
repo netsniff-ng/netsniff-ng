@@ -4,7 +4,6 @@ astraceroute-libs =	-lGeoIP \
 
 astraceroute-objs =	xmalloc.o \
 			ioops.o \
-			xutils.o \
 			proto_none.o \
 			tprintf.o \
 			bpf.o \

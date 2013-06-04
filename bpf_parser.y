@@ -24,7 +24,6 @@
 #include "bpf_parser.tab.h"
 #include "built_in.h"
 #include "die.h"
-#include "xutils.h"
 
 #define MAX_INSTRUCTIONS	4096
 

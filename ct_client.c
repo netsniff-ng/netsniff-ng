@@ -30,7 +30,6 @@
 #include "str.h"
 #include "sock.h"
 #include "ioops.h"
-#include "xutils.h"
 #include "curve.h"
 #include "xmalloc.h"
 #include "corking.h"

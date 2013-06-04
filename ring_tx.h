@@ -7,6 +7,8 @@
 #ifndef TX_RING_H
 #define TX_RING_H
 
+#include <stdbool.h>
+
 #include "ring.h"
 #include "built_in.h"
 

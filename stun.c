@@ -19,7 +19,6 @@
 #include <sys/select.h>
 
 #include "xmalloc.h"
-#include "xutils.h"
 #include "die.h"
 #include "sock.h"
 

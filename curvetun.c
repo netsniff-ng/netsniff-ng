@@ -25,7 +25,6 @@
 #include <unistd.h>
 #include <signal.h>
 
-#include "xutils.h"
 #include "die.h"
 #include "str.h"
 #include "sig.h"

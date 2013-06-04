@@ -15,6 +15,8 @@
 #include <errno.h>
 #include <string.h>
 #include <limits.h>
+#include <sys/socket.h>
+#include <linux/if.h>
 #include <linux/nl80211.h>
 #include <libnl3/netlink/genl/genl.h>
 #include <libnl3/netlink/genl/family.h>
@@ -25,7 +27,6 @@
 #include "die.h"
 #include "str.h"
 #include "dev.h"
-#include "xutils.h"
 #include "mac80211.h"
 #include "xmalloc.h"
 #include "built_in.h"

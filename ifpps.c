@@ -22,7 +22,6 @@
 #include "sig.h"
 #include "link.h"
 #include "xmalloc.h"
-#include "xutils.h"
 #include "ioops.h"
 #include "promisc.h"
 #include "cpus.h"

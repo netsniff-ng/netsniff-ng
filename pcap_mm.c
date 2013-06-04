@@ -14,9 +14,8 @@
 #include <sys/mman.h>
 
 #include "pcap_io.h"
-#include "ioops.h"
-#include "xutils.h"
 #include "built_in.h"
+#include "ioops.h"
 #include "iosched.h"
 
 static size_t map_size = 0;

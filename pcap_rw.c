@@ -13,7 +13,6 @@
 
 #include "pcap_io.h"
 #include "built_in.h"
-#include "xutils.h"
 #include "die.h"
 #include "iosched.h"
 #include "ioops.h"

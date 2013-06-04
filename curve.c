@@ -19,7 +19,6 @@
 #include "built_in.h"
 #include "xmalloc.h"
 #include "curve.h"
-#include "xutils.h"
 #include "ioops.h"
 #include "rnd.h"
 #include "die.h"

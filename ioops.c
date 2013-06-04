@@ -12,7 +12,6 @@
 #include "dev.h"
 #include "ioops.h"
 #include "str.h"
-#include "xutils.h"
 
 int open_or_die(const char *file, int flags)
 {

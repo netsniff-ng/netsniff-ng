@@ -5,9 +5,7 @@ mausezahn-libs =	-lcli \
 			-lpthread \
 			-lm
 
-mausezahn-objs =	xutils.o \
-			str.o \
-			sock.o \
+mausezahn-objs =	str.o \
 			staging/layer1.o \
 			staging/layer2.o \
 			staging/layer3.o \

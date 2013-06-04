@@ -33,7 +33,6 @@
 #include "str.h"
 #include "sig.h"
 #include "geoip.h"
-#include "xutils.h"
 #include "built_in.h"
 #include "locking.h"
 #include "dissector_eth.h"

@@ -7,6 +7,8 @@
 #ifndef RX_RING_H
 #define RX_RING_H
 
+#include <stdbool.h>
+
 #include "ring.h"
 #include "built_in.h"
 

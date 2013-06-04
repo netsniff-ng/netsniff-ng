@@ -9,7 +9,9 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <sys/socket.h>
 #include <linux/if_packet.h>
+#include <linux/if.h>
 
 #include "ring.h"
 #include "tprintf.h"

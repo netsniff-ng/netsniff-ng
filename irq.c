@@ -1,13 +1,7 @@
-/*
- * netsniff-ng - the packet sniffing beast
- * Copyright 2009 - 2013 Daniel Borkmann.
- * Copyright 2009, 2010 Emmanuel Roullit.
- * Subject to the GPL, version 2.
- */
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -16,7 +10,6 @@
 #include "irq.h"
 #include "str.h"
 #include "die.h"
-#include "xutils.h"
 
 int device_irq_number(const char *ifname)
 {

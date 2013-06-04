@@ -22,7 +22,6 @@
 #include <poll.h>
 #include <sys/poll.h>
 
-#include "xutils.h"
 #include "built_in.h"
 #include "die.h"
 #include "dev.h"

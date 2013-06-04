@@ -43,7 +43,6 @@
 #include "csum.h"
 #include "sock.h"
 #include "geoip.h"
-#include "xutils.h"
 #include "ring_rx.h"
 #include "built_in.h"
 

@@ -29,7 +29,7 @@
 #include <linux/if_tun.h>
 
 #include "die.h"
-#include "xutils.h"
+#include "epoll2.h"
 #include "ioops.h"
 #include "xmalloc.h"
 #include "curvetun.h"

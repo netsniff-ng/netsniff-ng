@@ -9,7 +9,6 @@
 
 #include "hash.h"
 #include "xmalloc.h"
-#include "xutils.h"
 #include "oui.h"
 #include "str.h"
 

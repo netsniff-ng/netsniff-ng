@@ -2,7 +2,7 @@ curvetun-libs =	-lnacl \
 		-lpthread
 
 curvetun-objs =	xmalloc.o \
-		xutils.o \
+		epoll2.o \
 		str.o \
 		dev.o \
 		stun.o \

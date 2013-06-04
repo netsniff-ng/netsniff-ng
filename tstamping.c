@@ -17,7 +17,6 @@ extern int set_sockopt_hwtimestamp(int sock, const char *dev);
 #include <linux/if_packet.h>
 #include <linux/if.h>
 
-#include "xutils.h"
 #include "str.h"
 
 int set_sockopt_hwtimestamp(int sock, const char *dev)

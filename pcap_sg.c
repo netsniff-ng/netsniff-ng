@@ -13,7 +13,6 @@
 
 #include "pcap_io.h"
 #include "xmalloc.h"
-#include "xutils.h"
 #include "built_in.h"
 #include "iosched.h"
 #include "ioops.h"

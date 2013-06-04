@@ -22,7 +22,6 @@
 #include "ioops.h"
 #include "str.h"
 #include "curvetun.h"
-#include "xutils.h"
 #include "curve.h"
 #include "hash.h"
 #include "crypto_verify_32.h"

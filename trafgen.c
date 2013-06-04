@@ -10,6 +10,7 @@
 #include <getopt.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <sched.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/fsuid.h>
@@ -21,6 +22,7 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <linux/icmp.h>
+#include <linux/if.h>
 #include <arpa/inet.h>
 #include <signal.h>
 #include <stdint.h>
@@ -42,7 +44,6 @@
 #include "privs.h"
 #include "proc.h"
 #include "mac80211.h"
-#include "xutils.h"
 #include "ioops.h"
 #include "irq.h"
 #include "built_in.h"

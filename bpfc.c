@@ -7,13 +7,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <getopt.h>
 #include <ctype.h>
 #include <unistd.h>
 #include <sys/fsuid.h>
 
 #include "xmalloc.h"
-#include "xutils.h"
 #include "die.h"
 #include "bpf.h"
 

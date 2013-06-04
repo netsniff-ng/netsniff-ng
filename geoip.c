@@ -18,7 +18,6 @@
 
 #include "built_in.h"
 #include "die.h"
-#include "xutils.h"
 #include "ioops.h"
 #include "str.h"
 #include "xmalloc.h"
