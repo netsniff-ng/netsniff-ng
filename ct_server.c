@@ -30,7 +30,7 @@
 
 #include "die.h"
 #include "xutils.h"
-#include "xio.h"
+#include "ioops.h"
 #include "xmalloc.h"
 #include "curvetun.h"
 #include "curve.h"

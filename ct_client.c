@@ -28,7 +28,7 @@
 #include "built_in.h"
 #include "die.h"
 #include "str.h"
-#include "xio.h"
+#include "ioops.h"
 #include "xutils.h"
 #include "curve.h"
 #include "xmalloc.h"

@@ -30,7 +30,7 @@
 #include "built_in.h"
 #include "pcap_io.h"
 #include "bpf.h"
-#include "xio.h"
+#include "ioops.h"
 #include "die.h"
 #include "irq.h"
 #include "str.h"

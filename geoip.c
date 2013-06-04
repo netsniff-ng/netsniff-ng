@@ -19,7 +19,7 @@
 #include "built_in.h"
 #include "die.h"
 #include "xutils.h"
-#include "xio.h"
+#include "ioops.h"
 #include "str.h"
 #include "xmalloc.h"
 #include "zlib.h"

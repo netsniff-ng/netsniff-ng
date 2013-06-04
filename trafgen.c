@@ -39,7 +39,7 @@
 #include "lockme.h"
 #include "mac80211.h"
 #include "xutils.h"
-#include "xio.h"
+#include "ioops.h"
 #include "irq.h"
 #include "built_in.h"
 #include "trafgen_conf.h"

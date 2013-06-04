@@ -6,7 +6,7 @@ flowtop-libs =	-lGeoIP \
 		-lz
 
 flowtop-objs =	xmalloc.o \
-		xio.o \
+		ioops.o \
 		xutils.o \
 		oui.o \
 		str.o \

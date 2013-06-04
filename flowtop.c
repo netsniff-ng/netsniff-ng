@@ -29,7 +29,7 @@
 
 #include "die.h"
 #include "xmalloc.h"
-#include "xio.h"
+#include "ioops.h"
 #include "str.h"
 #include "geoip.h"
 #include "xutils.h"

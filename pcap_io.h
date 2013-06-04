@@ -17,7 +17,7 @@
 
 #include "built_in.h"
 #include "die.h"
-#include "xio.h"
+#include "ioops.h"
 
 #define TCPDUMP_MAGIC				0xa1b2c3d4
 #define ORIGINAL_TCPDUMP_MAGIC			TCPDUMP_MAGIC

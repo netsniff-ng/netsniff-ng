@@ -2,7 +2,6 @@ curvetun-libs =	-lnacl \
 		-lpthread
 
 curvetun-objs =	xmalloc.o \
-		xio.o \
 		xutils.o \
 		str.o \
 		stun.o \
@@ -14,6 +13,7 @@ curvetun-objs =	xmalloc.o \
 		curve.o \
 		cookie.o \
 		ioexact.o \
+		ioops.o \
 		cpusched.o \
 		ct_usermgmt.o \
 		ct_servmgmt.o \

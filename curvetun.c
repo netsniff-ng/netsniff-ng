@@ -35,7 +35,7 @@
 #include "curve.h"
 #include "ct_usermgmt.h"
 #include "ct_servmgmt.h"
-#include "xio.h"
+#include "ioops.h"
 #include "tprintf.h"
 #include "crypto_verify_32.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"

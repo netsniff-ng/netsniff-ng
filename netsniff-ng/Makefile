@@ -35,7 +35,7 @@ netsniff-ng-objs =	dissector.o \
 			str.o \
 			irq.o \
 			iosched.o \
-			xio.o \
+			ioops.o \
 			xutils.o \
 			xmalloc.o \
 			hash.o \

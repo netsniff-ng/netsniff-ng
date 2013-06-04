@@ -20,7 +20,7 @@
 #include "die.h"
 #include "xmalloc.h"
 #include "xutils.h"
-#include "xio.h"
+#include "ioops.h"
 #include "cpus.h"
 #include "built_in.h"
 

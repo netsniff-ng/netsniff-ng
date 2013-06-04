@@ -20,7 +20,7 @@
 #include "xmalloc.h"
 #include "curve.h"
 #include "xutils.h"
-#include "xio.h"
+#include "ioops.h"
 #include "rnd.h"
 #include "die.h"
 #include "str.h"

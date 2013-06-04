@@ -13,10 +13,10 @@
 
 #include "pcap_io.h"
 #include "xmalloc.h"
-#include "xio.h"
 #include "xutils.h"
 #include "built_in.h"
 #include "iosched.h"
+#include "ioops.h"
 
 static struct iovec iov[1024] __cacheline_aligned;
 static off_t iov_off_rd = 0, iov_slot = 0;

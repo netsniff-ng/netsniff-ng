@@ -14,7 +14,7 @@
 #include <sys/mman.h>
 
 #include "pcap_io.h"
-#include "xio.h"
+#include "ioops.h"
 #include "xutils.h"
 #include "built_in.h"
 #include "iosched.h"
