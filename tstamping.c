@@ -1,12 +1,3 @@
-/*
- * netsniff-ng - the packet sniffing beast
- * Copyright 2009, 2010 Daniel Borkmann.
- * Subject to the GPL, version 2.
- */
-
-extern int set_sockopt_hwtimestamp(int sock, const char *dev);
-
-#ifdef __WITH_HARDWARE_TIMESTAMPING
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
@@ -18,7 +9,9 @@ extern int set_sockopt_hwtimestamp(int sock, const char *dev);
 #include <linux/if.h>
 
 #include "str.h"
+#include "tstamping.h"
 
+#ifdef __WITH_HARDWARE_TIMESTAMPING
 int set_sockopt_hwtimestamp(int sock, const char *dev)
 {
 	int timesource, ret;
