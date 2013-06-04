@@ -28,6 +28,7 @@
 #include "die.h"
 #include "str.h"
 #include "sig.h"
+#include "stun.h"
 #include "cookie.h"
 #include "ioexact.h"
 #include "xmalloc.h"
@@ -43,8 +44,6 @@
 #include "crypto_auth_hmacsha512256.h"
 
 #define CURVETUN_ENTROPY_SOURCE	"/dev/random"
-
-extern void print_stun_probe(char *server, uint16_t sport, uint16_t tunport);
 
 enum working_mode {
 	MODE_UNKNOW,

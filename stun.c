@@ -1,9 +1,3 @@
-/*
- * netsniff-ng - the packet sniffing beast
- * Copyright 2011 Daniel Borkmann.
- * Subject to the GPL, version 2.
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -21,8 +15,7 @@
 #include "xmalloc.h"
 #include "die.h"
 #include "sock.h"
-
-extern int print_stun_probe(char *server, int sport, int tport);
+#include "stun.h"
 
 #define BINDING_REQUEST               0x0001
 #define BINDING_RESPONSE              0x0101
