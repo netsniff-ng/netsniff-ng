@@ -4,17 +4,20 @@
 #include <unistd.h>
 
 #include "rnd.h"
+#include "die.h"
+#include "ioexact.h"
+#include "ioops.h"
 
-static int fd_rnd = -1;
+static int fdw = -1;
 
-static void randombytes(unsigned char *x, unsigned long long xlen)
+static void randombytes_weak(unsigned char *x, unsigned long long xlen)
 {
 	int ret;
 
-	if (fd_rnd == -1) {
+	if (fdw == -1) {
 		for (;;) {
-			fd_rnd = open(LOW_ENTROPY_SOURCE, O_RDONLY);
-			if (fd_rnd != -1)
+			fdw = open(LOW_ENTROPY_SOURCE, O_RDONLY);
+			if (fdw != -1)
 				break;
 			sleep(1);
 		}
@@ -26,7 +29,7 @@ static void randombytes(unsigned char *x, unsigned long long xlen)
 		else
 			ret = 1048576;
 
-		ret = read(fd_rnd, x, ret);
+		ret = read(fdw, x, ret);
 		if (ret < 1) {
 			sleep(1);
 			continue;
@@ -37,9 +40,29 @@ static void randombytes(unsigned char *x, unsigned long long xlen)
 	}
 }
 
+static void randombytes_strong(unsigned char *x, unsigned long long xlen)
+{
+	int fds, ret;
+
+	fds = open_or_die(HIG_ENTROPY_SOURCE, O_RDONLY);
+
+	ret = read_exact(fds, x, xlen, 0);
+	if (ret != xlen)
+		panic("Error reading from entropy source!\n");
+
+	close(fds);
+}
+
 int secrand(void)
 {
 	int ret;
-	randombytes((void *) &ret, sizeof(ret));
+
+	randombytes_weak((void *) &ret, sizeof(ret));
+
 	return ret;
+}
+
+void gen_key_bytes(unsigned char *area, size_t len)
+{
+	randombytes_strong(area, len);
 }

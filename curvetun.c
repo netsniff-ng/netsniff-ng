@@ -257,17 +257,7 @@ static void create_keypair(char *home)
 
 	printf("Reading from %s (this may take a while) ...\n", HIG_ENTROPY_SOURCE);
 
-	fd = open_or_die(HIG_ENTROPY_SOURCE, O_RDONLY);
-
-	ret = read_exact(fd, secretkey, sizeof(secretkey), 0);
-	if (ret != sizeof(secretkey)) {
-		err = EIO;
-		errstr = "Cannot read from "HIG_ENTROPY_SOURCE"!\n";
-		goto out;
-	}
-
-	close(fd);
-
+	gen_key_bytes(secretkey, sizeof(secretkey));
 	crypto_scalarmult_curve25519_base(publickey, secretkey);
 
 	memset(path, 0, sizeof(path));
