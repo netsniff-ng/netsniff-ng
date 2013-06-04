@@ -33,7 +33,6 @@ extern u32 wireless_bitrate(const char *ifname);
 extern u32 ethtool_bitrate(const char *ifname);
 extern int ethtool_drvinf(const char *ifname, struct ethtool_drvinfo *drvinf);
 extern int ethtool_link(const char *ifname);
-extern void drop_privileges(bool enforce, uid_t uid, gid_t gid);
 extern void set_nonblocking(int fd);
 extern int set_nonblocking_sloppy(int fd);
 extern int set_reuseaddr(int fd);

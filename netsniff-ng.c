@@ -30,6 +30,7 @@
 #include "promisc.h"
 #include "built_in.h"
 #include "pcap_io.h"
+#include "privs.h"
 #include "bpf.h"
 #include "ioops.h"
 #include "die.h"
