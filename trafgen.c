@@ -38,6 +38,7 @@
 #include "cpus.h"
 #include "lockme.h"
 #include "privs.h"
+#include "proc.h"
 #include "mac80211.h"
 #include "xutils.h"
 #include "ioops.h"

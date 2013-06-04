@@ -31,6 +31,7 @@
 #include "built_in.h"
 #include "pcap_io.h"
 #include "privs.h"
+#include "proc.h"
 #include "bpf.h"
 #include "ioops.h"
 #include "die.h"
@@ -1354,8 +1355,8 @@ int main(int argc, char **argv)
 	tprintf_init();
 
 	if (prio_high) {
-		set_proc_prio(get_default_proc_prio());
-		set_sched_status(get_default_sched_policy(), get_default_sched_prio());
+		set_proc_prio(-20);
+		set_sched_status(SCHED_FIFO, sched_get_priority_max(SCHED_FIFO));
 	}
 
 	if (ctx.device_in && (device_mtu(ctx.device_in) ||

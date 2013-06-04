@@ -47,12 +47,6 @@ extern void register_signal(int signal, void (*handler)(int));
 extern void register_signal_f(int signal, void (*handler)(int), int flags);
 extern void set_epoll_descriptor(int fd_epoll, int action, int fd_toadd, int events);
 extern int set_epoll_descriptor2(int fd_epoll, int action, int fd_toadd, int events);
-extern void cpu_affinity(int cpu);
-extern int set_proc_prio(int prio);
-extern int set_sched_status(int policy, int priority);
-extern int get_default_sched_policy(void);
-extern int get_default_sched_prio(void);
-extern int get_default_proc_prio(void);
 extern void set_system_socket_memory(int *vals, size_t len);
 extern void reset_system_socket_memory(int *vals, size_t len);
 extern void set_itimer_interval_value(struct itimerval *itimer, unsigned long sec,

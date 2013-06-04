@@ -6,6 +6,7 @@ trafgen-objs =	xmalloc.o \
 		ioops.o \
 		xutils.o \
 		privs.o \
+		proc.o \
 		dev.o \
 		irq.o \
 		str.o \

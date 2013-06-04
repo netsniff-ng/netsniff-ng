@@ -34,6 +34,7 @@ netsniff-ng-objs =	dissector.o \
 			proto_80211_mac_hdr.o \
 			promisc.o \
 			privs.o \
+			proc.o \
 			dev.o \
 			str.o \
 			irq.o \
