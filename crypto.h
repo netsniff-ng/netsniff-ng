@@ -15,5 +15,6 @@
 #define crypto_box_afternm		crypto_box_curve25519xsalsa20poly1305_afternm
 #define crypto_box_open_afternm		crypto_box_curve25519xsalsa20poly1305_open_afternm
 #define crypto_box_pub_key_size		crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES
+#define crypto_box_sec_key_size		crypto_box_curve25519xsalsa20poly1305_SECRETKEYBYTES
 
 #endif /* CRYPTO_H */
