@@ -1,9 +1,3 @@
-/*
- * netsniff-ng - the packet sniffing beast
- * Copyright 2009, 2010 Daniel Borkmann.
- * Subject to the GPL, version 2.
- */
-
 #ifndef HASH_H
 #define HASH_H
 
@@ -83,4 +77,4 @@ static inline unsigned int hash_name(const char *name, int namelen)
 	return hash;
 }
 
-#endif
+#endif /* HASH_H */

@@ -1,9 +1,3 @@
-/*
- * netsniff-ng - the packet sniffing beast
- * Copyright 2010 Emmanuel Roullit.
- * Subject to the GPL, version 2.
- */
-
 #ifndef CSUM_H
 #define	CSUM_H
 

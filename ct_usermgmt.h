@@ -1,9 +1,3 @@
-/*
- * netsniff-ng - the packet sniffing beast
- * Copyright 2011 Daniel Borkmann.
- * Subject to the GPL, version 2.
- */
-
 #ifndef CT_USERMGMT_H
 #define CT_USERMGMT_H
 

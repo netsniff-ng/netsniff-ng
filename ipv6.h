@@ -1,10 +1,3 @@
-/*
- * netsniff-ng - the packet sniffing beast
- * Copyright (C) 2009, 2010 Daniel Borkmann
- * Copyright (C) 2012 Christoph Jaeger <christoph@netsniff-ng.org>
- * Subject to the GPL, version 2.
- */
-
 #ifndef IPV6_H
 #define IPV6_H
 

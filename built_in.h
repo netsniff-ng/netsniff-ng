@@ -1,12 +1,7 @@
-/*
- * netsniff-ng - the packet sniffing beast
- * Copyright 2009-2012 Daniel Borkmann.
- * Parts taken from the Linux kernel, GPL, version 2.
- * Subject to the GPL, version 2.
- */
-
 #ifndef BUILT_IN_H
 #define BUILT_IN_H
+
+/* Parts taken from the Linux kernel, GPL, version 2. */
 
 #include <linux/if_packet.h>
 #include <assert.h>

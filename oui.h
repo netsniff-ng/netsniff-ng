@@ -1,9 +1,3 @@
-/*
- * netsniff-ng - the packet sniffing beast
- * Copyright 2012 Daniel Borkmann.
- * Subject to the GPL, version 2.
- */
-
 #ifndef OUI_H
 #define OUI_H
 

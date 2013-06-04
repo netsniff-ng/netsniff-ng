@@ -1,9 +1,3 @@
-/*
- * netsniff-ng - the packet sniffing beast
- * Copyright 2009, 2010 Daniel Borkmann.
- * Subject to the GPL, version 2.
- */
-
 #ifndef PROTOS_H
 #define PROTOS_H
 

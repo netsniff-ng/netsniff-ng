@@ -1,9 +1,3 @@
-/*
- * netsniff-ng - the packet sniffing beast
- * Copyright 2013 Daniel Borkmann.
- * Subject to the GPL, version 2.
- */
-
 #ifndef GEOIPH_H
 #define GEOIPH_H
 
