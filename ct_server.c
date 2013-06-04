@@ -34,6 +34,7 @@
 #include "xmalloc.h"
 #include "curvetun.h"
 #include "curve.h"
+#include "ioexact.h"
 #include "corking.h"
 #include "cpus.h"
 #include "built_in.h"

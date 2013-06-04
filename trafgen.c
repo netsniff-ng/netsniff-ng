@@ -62,7 +62,7 @@ struct cpu_stats {
 	sig_atomic_t state;
 };
 
-sig_atomic_t sigint = 0;
+static sig_atomic_t sigint = 0;
 
 struct packet *packets = NULL;
 size_t plen = 0;
@@ -97,13 +97,9 @@ static const struct option long_options[] = {
 };
 
 static int sock;
-
 static struct itimerval itimer;
-
 static unsigned long interval = TX_KERNEL_PULL_INT;
-
 static struct cpu_stats *stats;
-
 unsigned int seed;
 
 #define CPU_STATS_STATE_CFG	1

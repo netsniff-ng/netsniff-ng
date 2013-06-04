@@ -1,9 +1,3 @@
-/*
- * netsniff-ng - the packet sniffing beast
- * Copyright 2009, 2010 Daniel Borkmann.
- * Subject to the GPL, version 2.
- */
-
 #ifndef XIO_H
 #define XIO_H
 
@@ -14,7 +8,5 @@ extern int tun_open_or_die(char *name, int type);
 extern void pipe_or_die(int pipefd[2], int flags);
 extern ssize_t read_or_die(int fd, void *buf, size_t count);
 extern ssize_t write_or_die(int fd, const void *buf, size_t count);
-extern ssize_t read_exact(int fd, void *buf, size_t len, int mayexit);
-extern ssize_t write_exact(int fd, void *buf, size_t len, int mayexit);
 
 #endif /* XIO_H */

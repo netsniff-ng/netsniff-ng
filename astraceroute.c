@@ -64,7 +64,7 @@ struct proto_ops {
 			int latitude);
 };
 
-sig_atomic_t sigint = 0;
+static sig_atomic_t sigint = 0;
 
 static int assemble_ipv4(uint8_t *packet, size_t len, int ttl, int proto,
 			 const struct ctx *ctx, const struct sockaddr *dst,

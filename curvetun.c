@@ -29,6 +29,7 @@
 #include "die.h"
 #include "str.h"
 #include "cookie.h"
+#include "ioexact.h"
 #include "xmalloc.h"
 #include "curvetun.h"
 #include "curve.h"

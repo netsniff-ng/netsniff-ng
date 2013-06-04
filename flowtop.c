@@ -77,10 +77,8 @@ struct flow_list {
 #define INCLUDE_ICMP	(1 << 5)
 #define INCLUDE_SCTP	(1 << 6)
 
-volatile sig_atomic_t sigint = 0;
-
+static volatile sig_atomic_t sigint = 0;
 static int what = INCLUDE_IPV4 | INCLUDE_IPV6 | INCLUDE_TCP, show_src = 0;
-
 static struct flow_list flow_list;
 
 static const char *short_options = "vhTUsDIS46u";

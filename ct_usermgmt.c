@@ -18,6 +18,7 @@
 #include "ct_usermgmt.h"
 #include "locking.h"
 #include "xmalloc.h"
+#include "ioexact.h"
 #include "xio.h"
 #include "str.h"
 #include "curvetun.h"

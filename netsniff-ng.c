@@ -56,8 +56,7 @@ struct ctx {
 	uid_t uid; gid_t gid; uint32_t link_type, magic;
 };
 
-volatile sig_atomic_t sigint = 0;
-
+static volatile sig_atomic_t sigint = 0;
 static volatile bool next_dump = false;
 
 static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:HQmcsqXlvhF:RGAP:Vu:g:T:DB";
@@ -100,9 +99,7 @@ static const struct option long_options[] = {
 };
 
 static int tx_sock;
-
 static struct itimerval itimer;
-
 static unsigned long frame_count_max = 0, interval = TX_KERNEL_PULL_INT;
 
 #define __pcap_io		pcap_ops[ctx->pcap]

@@ -52,14 +52,10 @@ struct cpu_hit {
 	long long unsigned int irqs_rel, irqs_abs;
 };
 
-volatile sig_atomic_t sigint = 0;
-
+static volatile sig_atomic_t sigint = 0;
 static struct ifstat stats_old, stats_new, stats_delta;
-
 static struct cpu_hit *cpu_hits;
-
 static int stats_loop = 0;
-
 static WINDOW *stats_screen = NULL;
 
 static const char *short_options = "d:t:n:vhclp";
