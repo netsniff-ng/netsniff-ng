@@ -13,6 +13,7 @@
 #include "locking.h"
 #include "built_in.h"
 #include "xio.h"
+#include "rnd.h"
 #include "crypto_box_curve25519xsalsa20poly1305.h"
 
 struct tai {

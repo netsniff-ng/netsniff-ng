@@ -21,6 +21,7 @@
 #include "curve.h"
 #include "xutils.h"
 #include "xio.h"
+#include "rnd.h"
 #include "die.h"
 #include "str.h"
 #include "curvetun.h"
