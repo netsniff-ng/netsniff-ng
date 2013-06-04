@@ -13,7 +13,7 @@ static void randombytes(unsigned char *x, unsigned long long xlen)
 
 	if (fd_rnd == -1) {
 		for (;;) {
-			fd_rnd = open("/dev/urandom", O_RDONLY);
+			fd_rnd = open(LOW_ENTROPY_SOURCE, O_RDONLY);
 			if (fd_rnd != -1)
 				break;
 			sleep(1);
@@ -37,10 +37,6 @@ static void randombytes(unsigned char *x, unsigned long long xlen)
 	}
 }
 
-/* Note: it's not really secure, but the name only suggests it's better to use
- * than rand(3) when transferring bytes over the network in non-security
- * critical structure members. secrand() is only used to fill up salts actually.
- */
 int secrand(void)
 {
 	int ret;

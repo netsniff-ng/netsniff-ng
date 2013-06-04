@@ -43,8 +43,6 @@
 #include "crypto_scalarmult_curve25519.h"
 #include "crypto_auth_hmacsha512256.h"
 
-#define CURVETUN_ENTROPY_SOURCE	"/dev/random"
-
 enum working_mode {
 	MODE_UNKNOW,
 	MODE_KEYGEN,
@@ -260,14 +258,14 @@ static void create_keypair(char *home)
 	char path[PATH_MAX];
 	const char * errstr = NULL;
 
-	printf("Reading from %s (this may take a while) ...\n", CURVETUN_ENTROPY_SOURCE);
+	printf("Reading from %s (this may take a while) ...\n", HIG_ENTROPY_SOURCE);
 
-	fd = open_or_die(CURVETUN_ENTROPY_SOURCE, O_RDONLY);
+	fd = open_or_die(HIG_ENTROPY_SOURCE, O_RDONLY);
 
 	ret = read_exact(fd, secretkey, sizeof(secretkey), 0);
 	if (ret != sizeof(secretkey)) {
 		err = EIO;
-		errstr = "Cannot read from "CURVETUN_ENTROPY_SOURCE"!\n";
+		errstr = "Cannot read from "HIG_ENTROPY_SOURCE"!\n";
 		goto out;
 	}
 
