@@ -52,8 +52,6 @@ extern int get_system_socket_mem(int which);
 extern void set_system_socket_mem(int which, int val);
 extern void register_signal(int signal, void (*handler)(int));
 extern void register_signal_f(int signal, void (*handler)(int), int flags);
-extern short enter_promiscuous_mode(char *ifname);
-extern void leave_promiscuous_mode(char *ifname, short oldflags);
 extern int device_up_and_running(char *ifname);
 extern void set_epoll_descriptor(int fd_epoll, int action, int fd_toadd, int events);
 extern int set_epoll_descriptor2(int fd_epoll, int action, int fd_toadd, int events);

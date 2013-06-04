@@ -27,6 +27,7 @@
 #include "ring_tx.h"
 #include "mac80211.h"
 #include "xutils.h"
+#include "promisc.h"
 #include "built_in.h"
 #include "pcap_io.h"
 #include "bpf.h"

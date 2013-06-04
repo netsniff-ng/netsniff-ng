@@ -21,6 +21,7 @@
 #include "xmalloc.h"
 #include "xutils.h"
 #include "ioops.h"
+#include "promisc.h"
 #include "cpus.h"
 #include "built_in.h"
 
