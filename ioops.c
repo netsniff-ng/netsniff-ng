@@ -96,3 +96,26 @@ ssize_t write_or_die(int fd, const void *buf, size_t len)
 
 	return ret;
 }
+
+int read_blob_or_die(const char *file, void *blob, size_t count)
+{
+	int fd, ret;
+
+	fd = open_or_die(file, O_RDONLY);
+	ret = read_or_die(fd, blob, len);
+	close(fd);
+
+	return ret;
+}
+
+int write_blob_or_die(const char *file, const void *blob, size_t count)
+{
+	int fd, ret;
+
+	fd = open_or_die_m(file, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+	ret = write_or_die(fd, blob, len);
+	fdatasync(fd);
+	close(fd);
+
+	return ret;
+}
