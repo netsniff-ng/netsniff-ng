@@ -14,7 +14,7 @@
 #include "built_in.h"
 #include "ioops.h"
 #include "rnd.h"
-#include "crypto_box_curve25519xsalsa20poly1305.h"
+#include "crypto.h"
 
 struct tai {
 	uint64_t x;
@@ -31,12 +31,6 @@ static struct taia tolerance_taia = {
 	.nano = 700000000ULL,
 	.atto = 0,
 };
-
-#define crypto_box_zerobytes		crypto_box_curve25519xsalsa20poly1305_ZEROBYTES
-#define crypto_box_boxzerobytes		crypto_box_curve25519xsalsa20poly1305_BOXZEROBYTES
-
-#define crypto_box_noncebytes		crypto_box_curve25519xsalsa20poly1305_NONCEBYTES
-#define crypto_box_beforenmbytes	crypto_box_curve25519xsalsa20poly1305_BEFORENMBYTES
 
 struct curve25519_proto {
 	unsigned char enonce[crypto_box_noncebytes] __aligned_16;

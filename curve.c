@@ -25,16 +25,10 @@
 #include "str.h"
 #include "curvetun.h"
 #include "locking.h"
-#include "crypto_verify_32.h"
-#include "crypto_box_curve25519xsalsa20poly1305.h"
-#include "crypto_scalarmult_curve25519.h"
+#include "crypto.h"
 
-#define crypto_box_beforenm		crypto_box_curve25519xsalsa20poly1305_beforenm
-#define crypto_box_afternm		crypto_box_curve25519xsalsa20poly1305_afternm
-#define crypto_box_open_afternm		crypto_box_curve25519xsalsa20poly1305_open_afternm
-
-#define NONCE_LENGTH			(sizeof(struct taia))
-#define NONCE_OFFSET			(crypto_box_curve25519xsalsa20poly1305_NONCEBYTES - NONCE_LENGTH)
+#define NONCE_LENGTH	(sizeof(struct taia))
+#define NONCE_OFFSET	(crypto_box_noncebytes - NONCE_LENGTH)
 
 void curve25519_selftest(void)
 {

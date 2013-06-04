@@ -38,10 +38,7 @@
 #include "ct_servmgmt.h"
 #include "ioops.h"
 #include "tprintf.h"
-#include "crypto_verify_32.h"
-#include "crypto_box_curve25519xsalsa20poly1305.h"
-#include "crypto_scalarmult_curve25519.h"
-#include "crypto_auth_hmacsha512256.h"
+#include "crypto.h"
 
 enum working_mode {
 	MODE_UNKNOW,
