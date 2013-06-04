@@ -24,6 +24,7 @@
 
 #include "die.h"
 #include "str.h"
+#include "dev.h"
 #include "xutils.h"
 #include "mac80211.h"
 #include "xmalloc.h"

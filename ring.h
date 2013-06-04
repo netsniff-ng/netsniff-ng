@@ -25,6 +25,7 @@
 #include "xutils.h"
 #include "built_in.h"
 #include "die.h"
+#include "dev.h"
 
 union tpacket_uhdr {
 	struct tpacket_hdr  *h1;

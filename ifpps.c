@@ -18,6 +18,7 @@
 #include <time.h>
 
 #include "die.h"
+#include "dev.h"
 #include "xmalloc.h"
 #include "xutils.h"
 #include "ioops.h"

@@ -1,7 +1,9 @@
 #include <string.h>
+#include <sys/socket.h>
+#include <linux/if.h>
 
 #include "promisc.h"
-#include "xutils.h"
+#include "dev.h"
 
 short enter_promiscuous_mode(char *ifname)
 {

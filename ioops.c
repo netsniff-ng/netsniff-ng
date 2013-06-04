@@ -9,6 +9,7 @@
 #include <linux/if_tun.h>
 
 #include "die.h"
+#include "dev.h"
 #include "ioops.h"
 #include "str.h"
 #include "xutils.h"
