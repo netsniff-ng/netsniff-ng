@@ -2,9 +2,8 @@ ifpps-libs =	$(shell pkg-config --libs ncurses)
 
 ifpps-objs =	xmalloc.o \
 		ioops.o \
-		xutils.o \
 		promisc.o \
 		str.o \
-		sock.o \
+		link.o \
 		dev.o \
 		ifpps.o

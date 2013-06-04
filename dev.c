@@ -8,6 +8,7 @@
 #include "str.h"
 #include "sock.h"
 #include "die.h"
+#include "link.h"
 #include "xutils.h"
 
 int device_ifindex(const char *ifname)

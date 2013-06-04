@@ -10,6 +10,7 @@ astraceroute-objs =	xmalloc.o \
 			bpf.o \
 			str.o \
 			sock.o \
+			link.o \
 			dev.o \
 			geoip.o \
 			ring_rx.o \

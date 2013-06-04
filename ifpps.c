@@ -19,6 +19,7 @@
 
 #include "die.h"
 #include "dev.h"
+#include "link.h"
 #include "xmalloc.h"
 #include "xutils.h"
 #include "ioops.h"
