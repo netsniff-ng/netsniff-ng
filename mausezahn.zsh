@@ -1,6 +1,6 @@
 #compdef mausezahn
 #
-# mausezahn.zsh -- zsh completion function for ifpps
+# mausezahn.zsh -- zsh completion function for mausezahn
 #
 # Copyright (C) 2013 Hideo Hattori <hhatto.jp@gmail.com>
 #
