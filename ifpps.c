@@ -729,49 +729,74 @@ static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
 	if (top_cpus == cpus)
 		top_cpus--;
 
-	for (i = 1; i < top_cpus; ++i) {
-		unsigned int idx = cpu_hits[i].idx;
-
-		screen_percpu_states_one(screen, rel, voff, idx, "");
-	}
+	for (i = 1; i < top_cpus; ++i)
+		screen_percpu_states_one(screen, rel, voff, cpu_hits[i].idx, "");
 
 	/* Display minimum hitter */
 	if (cpus != 1)
 		screen_percpu_states_one(screen, rel, voff, cpu_hits[cpus - 1].idx, "-");
 }
 
+static void screen_percpu_irqs_rel_one(WINDOW *screen, const struct ifstat *rel,
+				       int *voff, unsigned int idx, char *tag)
+{
+	int max_padd = padding_from_num(get_number_cpus());
+
+	mvwprintw(screen, (*voff)++, 2,
+		  "cpu%*d%s:%s %14llu irqs/t   "
+			  "%15llu sirq rx/t   "
+			  "%15llu sirq tx/t      ", max_padd, idx,
+		  tag, strlen(tag) == 0 ? " " : "",
+		  rel->irqs[idx],
+		  rel->irqs_srx[idx],
+		  rel->irqs_stx[idx]);
+}
+
 static void screen_percpu_irqs_rel(WINDOW *screen, const struct ifstat *rel,
 				   int top_cpus, int *voff)
 {
 	int i;
+	int cpus = get_number_cpus();
+
+	screen_percpu_irqs_rel_one(screen, rel, voff, cpu_hits[0].idx, "+");
+
+	if (top_cpus == cpus)
+		top_cpus--;
+
+	for (i = 1; i < top_cpus; ++i)
+		screen_percpu_irqs_rel_one(screen, rel, voff, cpu_hits[i].idx, "");
+
+	if (cpus != 1)
+		screen_percpu_irqs_rel_one(screen, rel, voff, cpu_hits[cpus - 1].idx, "-");
+}
+
+static void screen_percpu_irqs_abs_one(WINDOW *screen, const struct ifstat *abs,
+				       int *voff, unsigned int idx, char *tag)
+{
 	int max_padd = padding_from_num(get_number_cpus());
 
-	for (i = 0; i < top_cpus; ++i) {
-		unsigned int idx = cpu_hits[i].idx;
-
-		mvwprintw(screen, (*voff)++, 2,
-			  "cpu%*d: %14llu irqs/t   "
-				  "%15llu sirq rx/t   "
-				  "%15llu sirq tx/t      ", max_padd, idx,
-			  rel->irqs[idx],
-			  rel->irqs_srx[idx],
-			  rel->irqs_stx[idx]);
-	}
+	mvwprintw(screen, (*voff)++, 2,
+		  "cpu%*d%s:%s %14llu irqs", max_padd, idx,
+		  tag, strlen(tag) == 0 ? " " : "",
+		  abs->irqs[idx]);
 }
 
 static void screen_percpu_irqs_abs(WINDOW *screen, const struct ifstat *abs,
 				   int top_cpus, int *voff)
 {
 	int i;
-	int max_padd = padding_from_num(get_number_cpus());
+	int cpus = get_number_cpus();
 
-	for (i = 0; i < top_cpus; ++i) {
-		unsigned int idx = cpu_hits[i].idx;
+	screen_percpu_irqs_abs_one(screen, abs, voff, cpu_hits[0].idx, "+");
 
-		mvwprintw(screen, (*voff)++, 2,
-			  "cpu%*d: %14llu irqs", max_padd, idx,
-			  abs->irqs[idx]);
-	}
+	if (top_cpus == cpus)
+		top_cpus--;
+
+	for (i = 1; i < top_cpus; ++i)
+		screen_percpu_irqs_abs_one(screen, abs, voff, cpu_hits[i].idx, "");
+
+	if (cpus != 1)
+		screen_percpu_irqs_abs_one(screen, abs, voff, cpu_hits[cpus - 1].idx, "-");
 }
 
 static void screen_wireless(WINDOW *screen, const struct ifstat *rel,
@@ -1056,6 +1081,8 @@ int main(int argc, char **argv)
 			break;
 		case 'n':
 			top_cpus = strtoul(optarg, NULL, 10);
+			if (top_cpus < 1)
+				panic("Number of top hitter CPUs must be greater than 0");
 			break;
 		case 'l':
 			stats_loop = 1;
