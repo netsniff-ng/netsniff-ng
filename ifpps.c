@@ -618,6 +618,7 @@ static void screen_header(WINDOW *screen, const char *ifname, int *voff,
 	struct ethtool_drvinfo drvinf;
 	u32 rate = device_bitrate(ifname);
 	int link = ethtool_link(ifname);
+	unsigned int cpus = get_number_cpus();
 
 	memset(&drvinf, 0, sizeof(drvinf));
 	ethtool_drvinf(ifname, &drvinf);
@@ -630,9 +631,10 @@ static void screen_header(WINDOW *screen, const char *ifname, int *voff,
 				link == 0 ? "no" : "yes");
 
 	mvwprintw(screen, (*voff)++, 2,
-		  "Kernel net/sys statistics for %s (%s%s), t=%lums, cpus=%u/%u"
+		  "Kernel net/sys statistics for %s (%s%s), t=%lums, cpus=%u%s/%u"
 		  "               ",
-		  ifname, drvinf.driver, buff, ms_interval, top_cpus, get_number_cpus());
+		  ifname, drvinf.driver, buff, ms_interval, top_cpus,
+		  top_cpus > 0 && top_cpus < cpus ? "+1" : "", cpus);
 }
 
 static void screen_net_dev_rel(WINDOW *screen, const struct ifstat *rel,
@@ -692,29 +694,50 @@ static void screen_sys_mem(WINDOW *screen, const struct ifstat *rel,
 		  abs->procs_run, abs->procs_iow);
 }
 
+static void screen_percpu_states_one(WINDOW *screen, const struct ifstat *rel,
+				     int *voff, unsigned int idx, char *tag)
+{
+	int max_padd = padding_from_num(get_number_cpus());
+	uint64_t all = rel->cpu_user[idx] + rel->cpu_nice[idx] + rel->cpu_sys[idx] +
+		       rel->cpu_idle[idx] + rel->cpu_iow[idx];
+
+	mvwprintw(screen, (*voff)++, 2,
+		  "cpu%*d%s:%s %13.1lf%% usr/t "
+			  "%9.1lf%% sys/t "
+			  "%10.1lf%% idl/t "
+			  "%11.1lf%% iow/t  ", max_padd, idx,
+		  tag, strlen(tag) == 0 ? " " : "",
+		  100.0 * (rel->cpu_user[idx] + rel->cpu_nice[idx]) / all,
+		  100.0 * rel->cpu_sys[idx] / all,
+		  100.0 * rel->cpu_idle[idx] / all,
+		  100.0 * rel->cpu_iow[idx] / all);
+}
+
 static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
 				 int top_cpus, int *voff)
 {
 	int i;
-	uint64_t all;
-	int max_padd = padding_from_num(get_number_cpus());
+	int cpus = get_number_cpus();
 
-	for (i = 0; i < top_cpus; ++i) {
+	if (top_cpus == 0)
+		return;
+
+	/* Display top hitter */
+	screen_percpu_states_one(screen, rel, voff, cpu_hits[0].idx, "+");
+
+	/* Make sure we don't display the min. hitter twice */
+	if (top_cpus == cpus)
+		top_cpus--;
+
+	for (i = 1; i < top_cpus; ++i) {
 		unsigned int idx = cpu_hits[i].idx;
 
-		all = rel->cpu_user[idx] + rel->cpu_nice[idx] + rel->cpu_sys[idx] +
-		      rel->cpu_idle[idx] + rel->cpu_iow[idx];
-
-		mvwprintw(screen, (*voff)++, 2,
-			  "cpu%*d: %13.1lf%% usr/t "
-				  "%9.1lf%% sys/t "
-				  "%10.1lf%% idl/t "
-				  "%11.1lf%% iow/t  ", max_padd, idx,
-			  100.0 * (rel->cpu_user[idx] + rel->cpu_nice[idx]) / all,
-			  100.0 * rel->cpu_sys[idx] / all,
-			  100.0 * rel->cpu_idle[idx] / all,
-			  100.0 * rel->cpu_iow[idx] / all);
+		screen_percpu_states_one(screen, rel, voff, idx, "");
 	}
+
+	/* Display minimum hitter */
+	if (cpus != 1)
+		screen_percpu_states_one(screen, rel, voff, cpu_hits[cpus - 1].idx, "-");
 }
 
 static void screen_percpu_irqs_rel(WINDOW *screen, const struct ifstat *rel,
