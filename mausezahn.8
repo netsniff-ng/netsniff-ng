@@ -41,14 +41,14 @@ the cli is very close to the Cisco IOS^tm command line.
 You can start the interactive mode by executing mausezahn with the ``\-x''
 argument (an optional port number may follow, otherwise it is 25542). Then use
 telnet(1) to connect to this mausezahn instance. If not otherwise specified,
-the default login/password combination is mz:mz, enable password is: mops.
+the default login/password combination is mz:mz and the enable password is: mops.
 This can be changed in /etc/netsniff-ng/mausezahn.conf.
 .PP
 The direct mode supports two specification schemes: The ``raw-layer-2'' scheme,
 where every single byte to be sent can be specified, and ``higher-layer'' scheme,
 where packet builder interfaces are used (using the ``\-t'' option).
 .PP
-To use the ``raw-layer-2'' scheme, simply specify the desired frame as
+To use the ``raw-layer-2'' scheme, simply specify the desired frame as a
 hexadecimal sequence (the ``hex-string''), such as:
 .PP
   mausezahn eth0 "00:ab:cd:ef:00 00:00:00:00:00:01 08:00 ca:fe:ba:be"
@@ -56,13 +56,12 @@ hexadecimal sequence (the ``hex-string''), such as:
 In this example, whitespaces within the byte string are optional and separate
 the Ethernet fields (destination and source address, type field, and a short
 payload). The only additional options supported are ``\-a'', ``\-b'', ``\-c'',
-and ``\-p''. The frame length must be greater or equal 15 bytes.
+and ``\-p''. The frame length must be greater than or equal to 15 bytes.
 .PP
 The ``higher-layer'' scheme is enabled using the ``\-t <packet-type>'' option.
-This option activates a packet builder and besides the ``packet-type'' an
-optional ``arg-string'' can be specified. The ``arg-string'' contains
-packet-specific parameters, such as TCP flags, port numbers, etc (see example
-section).
+This option activates a packet builder, and besides the ``packet-type'', an
+optional ``arg-string'' can be specified. The ``arg-string'' contains packet-
+specific parameters, such as TCP flags, port numbers, etc (see example section).
 .PP
 .SH OPTIONS
 .PP
@@ -94,7 +93,7 @@ Apply delay between transmissions. The delay value can be specified in usec
 in seconds (e.g. 100s or 100sec). Note: mops also supports nanosecond delay
 granulation if you need it (see interactive mode).
 .PP
-.SS -p <lenght>
+.SS -p <length>
 Pad the raw frame to specified length using zero bytes. Note that for raw
 layer 2 frames the specified length defines the whole frame length, while for
 higher layer packets the number of additional padding bytes are specified.
@@ -128,7 +127,7 @@ As with the source address (see above) you can also specify a range or a DNS nam
 .SS -t <packet-type>
 Create the specified packet type using the built-in packet builder. Currently,
 supported packet types are: ``arp'', ``bpdu'', ``ip'', ``udp'', ``tcp'', ``rtp'',
-and ``dns''. There is currently also a limited support for ``icmp''. Type
+and ``dns''. Currently, there is also limited support for ``icmp''. Type
 ``\-t help'' to verify which packet builders your actual mausezahn version
 supports. Also, for any particular packet type, for example ``tcp'' type
 ``mausezahn \-t tcp help'' to receive a more in-depth context specific help.
@@ -216,7 +215,7 @@ nowhere.
 .PP
 .SS Telnet:
 .PP
-Using the interactive mode requires to start mausezahn as server:
+Using the interactive mode requires starting mausezahn as a server:
 .PP
   mausezahn \-x
 .PP
@@ -254,7 +253,7 @@ It is recommended to configure your own login credentials in
 .PP
 .SS Basics:
 .PP
-Since you reached the mausezahn prompt, lets try some first commands. You can
+Since you reached the mausezahn prompt, lets try some common commands. You can
 use the '?' character at any time for a content-sensitive help.
 .PP
 First try out the show command:
@@ -301,7 +300,7 @@ Currently, its state is config which means that the process is sleeping.
 .PP
 .SS General packet options:
 .PP
-Now let's create our own packet process and therefore switch into the global
+Now let's create our own packet process and switch into the global
 configuration mode:
 .PP
   mz# configure term
@@ -549,7 +548,7 @@ is indicated with the additional flag 'i' when inactive or 'I' when active:
 Note that the flag 'I' indicates that an interval has been specified for
 packet 2. The process is not active at the moment (only packet 5 is active
 here) but it will become active in a regular interval. You can verify the
-actual interval when viewing the packet details via the show packet 2 command.
+actual interval when viewing the packet details via the 'show packet 2' command.
 .PP
 .SS Load prepared configurations:
 .PP
