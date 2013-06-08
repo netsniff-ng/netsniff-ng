@@ -354,6 +354,8 @@ ldxi
 ldx
 	: OP_LDX '#' number {
 		set_curr_instr(BPF_LDX | BPF_IMM, 0, 0, $3); }
+	| OP_LDX K_PKT_LEN {
+		set_curr_instr(BPF_LDX | BPF_W | BPF_LEN, 0, 0, 0); }
 	| OP_LDX 'M' '[' number ']' {
 		set_curr_instr(BPF_LDX | BPF_MEM, 0, 0, $4); }
 	| OP_LDXB number '*' '(' '[' number ']' '&' number ')' {
