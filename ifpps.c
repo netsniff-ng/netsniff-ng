@@ -1002,7 +1002,7 @@ static void term_csv_header(const char *ifname, const struct ifstat *abs,
 
 	cpus = get_number_cpus();
 
-	for (i = 0, j = 22; i < cpus; ++i) {
+	for (i = 0; i < cpus; ++i) {
 		printf("%d:cpu%i-usr-per-t ", j++, i);
 		printf("%d:cpu%i-nice-per-t ", j++, i);
 		printf("%d:cpu%i-sys-per-t ", j++, i);
