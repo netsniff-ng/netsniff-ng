@@ -14,8 +14,8 @@ ifpps \- top-like networking and system statistics
 .PP
 ifpps is a small utility which periodically provides top-like networking
 and system statistics from the kernel. ifpps gathers its data directly
-from procfs files and does not apply any user space monitoring libraries
-which would falsify statistics under high load.
+from procfs files and does not make use of any user space monitoring
+libraries which would falsify statistics under high load.
 .PP
 For instance, consider the following scenario: two directly connected
 Linux machines with Intel Core 2 Quad Q6600 2.40GHz CPUs, 4 GB RAM, and
@@ -28,10 +28,10 @@ iptraf(8) and ii) ifpps.
 iptraf which incorporates pcap(3) shows an average packet rate of
 246,000 pps while on the other hand ifpps shows an average packet rate
 of 1,378,000 pps. Hence, due to packet copies and deferring statistics
-creation into user space, a measurement error of approximately 460 per cent
+creation into user space, a measurement error of approximately 460 percent
 occurs. Tools like iptraf might display much more information such as
-TCP per flow statistics (hence the use of the pcap library), that is not
-possible with ifpps, because overall networking statistics are our focus;
+TCP per flow statistics (hence the use of the pcap library). This is not
+possible with ifpps, because overall networking statistics are its focus;
 statistics, which are also fairly reliable under high packet load.
 .PP
 ifpps also periodically displays CPU load, interrupt, software interrupt
@@ -45,7 +45,7 @@ The least heavy hitter will always be displayed and is marked with
 .SH OPTIONS
 .PP
 .SS -d <netdev>, --dev <netdev>
-Networking device to fetch statistics from, for example, eth0, wlan0.
+Networking device to fetch statistics from, for example eth0, wlan0.
 .PP
 .SS -t <time>, --interval <time>
 Statistics refresh interval in milliseconds, default is 1000ms.
