@@ -12,10 +12,12 @@
 #include <ctype.h>
 #include <sys/socket.h>
 #include <sys/fsuid.h>
+#include <sys/types.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
+#include <dirent.h>
 
 #include "die.h"
 #include "dev.h"
@@ -38,8 +40,9 @@ struct ifstat {
 	long long unsigned int rx_fifo, rx_frame, rx_multi;
 	long long unsigned int tx_bytes, tx_packets, tx_drops, tx_errors;
 	long long unsigned int tx_fifo, tx_colls, tx_carrier;
-	uint64_t mem_free, mem_total;
-	uint32_t irq_nr, procs_run, procs_iow, cswitch, forks;
+	uint64_t mem_free, mem_total, mem_active, mem_inactive;
+	uint64_t swap_total, swap_free, swap_cached;
+	uint32_t irq_nr, procs_total, procs_run, procs_iow, cswitch, forks;
 	struct wifi_stat wifi;
 	/*
 	 * Pointer members need to be last in order for stats_zero() to work
@@ -356,6 +359,21 @@ static int stats_proc_memory(struct ifstat *stats)
 		} else if ((ptr = strstr(buff, "MemFree:"))) {
 			ptr += strlen("MemFree:");
 			stats->mem_free = strtoul(ptr, &ptr, 10);
+		} else if ((ptr = strstr(buff, "Active:"))) {
+			ptr += strlen("Active:");
+			stats->mem_active = strtoul(ptr, &ptr, 10);
+		} else if ((ptr = strstr(buff, "Inactive:"))) {
+			ptr += strlen("Inactive:");
+			stats->mem_inactive = strtoul(ptr, &ptr, 10);
+		} else if ((ptr = strstr(buff, "SwapTotal:"))) {
+			ptr += strlen("SwapTotal:");
+			stats->swap_total = strtoul(ptr, &ptr, 10);
+		} else if ((ptr = strstr(buff, "SwapFree:"))) {
+			ptr += strlen("SwapFree:");
+			stats->swap_free = strtoul(ptr, &ptr, 10);
+		} else if ((ptr = strstr(buff, "SwapCached:"))) {
+			ptr += strlen("SwapCached:");
+			stats->swap_cached = strtoul(ptr, &ptr, 10);
 		}
 
 		memset(buff, 0, sizeof(buff));
@@ -415,6 +433,34 @@ next:
 	}
 
 	fclose(fp);
+	return 0;
+}
+
+static int stats_proc_procs(struct ifstat *stats)
+{
+	DIR *dir;
+	struct dirent *e;
+
+	dir = opendir("/proc");
+	if (!dir)
+		panic("Cannot open /proc\n");
+
+	stats->procs_total = 0;
+
+	while ((e = readdir(dir)) != NULL) {
+		const char *name = e->d_name;
+		char *end;
+		unsigned int pid = strtoul(name, &end, 10);
+
+		/* not a number */
+		if (pid == 0 && end == name)
+			continue;
+
+		stats->procs_total++;
+	}
+
+	closedir(dir);
+
 	return 0;
 }
 
@@ -508,6 +554,8 @@ static void stats_fetch(const char *ifname, struct ifstat *stats)
 		panic("Cannot fetch memory stats!\n");
 	if (stats_proc_system(stats) < 0)
 		panic("Cannot fetch system stats!\n");
+	if (stats_proc_procs(stats) < 0)
+		panic("Cannot fetch process stats!\n");
 
 	stats_proc_interrupts((char *) ifname, stats);
 
@@ -676,17 +724,36 @@ static void screen_net_dev_abs(WINDOW *screen, const struct ifstat *abs,
 		  abs->tx_packets, abs->tx_drops, abs->tx_errors);
 }
 
-static void screen_sys_mem(WINDOW *screen, const struct ifstat *rel,
-			   const struct ifstat *abs, int *voff)
+static void screen_sys(WINDOW *screen, const struct ifstat *rel,
+		       const struct ifstat *abs, int *voff)
 {
 	mvwprintw(screen, (*voff)++, 2,
 		  "sys:  %14u cs/t "
-			"%10.1lf%% mem "
-			"%13u running "
+			"%11u procs "
+			"%11u running "
 			"%10u iowait",
-		  rel->cswitch,
-		  (100.0 * (abs->mem_total - abs->mem_free)) / abs->mem_total,
-		  abs->procs_run, abs->procs_iow);
+		  rel->cswitch, abs->procs_total, abs->procs_run, abs->procs_iow);
+}
+
+static void screen_mem_swap(WINDOW *screen, const struct ifstat *abs, int *voff)
+{
+	mvwprintw(screen, (*voff)++, 2,
+		  "mem:  %13uM total "
+		        "%9uM used "
+			"%11uM active "
+			"%10uM inactive",
+			abs->mem_total / 1024,
+			(abs->mem_total - abs->mem_free) / 1024,
+			abs->mem_active / 1024,
+			abs->mem_inactive / 1024);
+
+	mvwprintw(screen, (*voff)++, 2,
+		  "swap:  %12uM total "
+		         "%9uM used "
+			 "%11uM cached",
+		  abs->swap_total / 1024,
+		  (abs->swap_total - abs->swap_free) / 1024,
+		  abs->swap_cached / 1024);
 }
 
 static void screen_percpu_states_one(WINDOW *screen, const struct ifstat *rel,
@@ -835,7 +902,10 @@ static void screen_update(WINDOW *screen, const char *ifname, const struct ifsta
 	screen_net_dev_abs(screen, abs, &voff);
 
 	voff++;
-	screen_sys_mem(screen, rel, abs, &voff);
+	screen_sys(screen, rel, abs, &voff);
+
+	voff++;
+	screen_mem_swap(screen, abs, &voff);
 
 	voff++;
 	screen_percpu_states(screen, rel, top, &voff);
@@ -923,6 +993,10 @@ static void term_csv(const char *ifname, const struct ifstat *rel,
 	printf("%lu ", abs->mem_free);
 	printf("%lu ", abs->mem_total - abs->mem_free);
 	printf("%lu ", abs->mem_total);
+	printf("%lu ", abs->swap_free);
+	printf("%lu ", abs->swap_total - abs->swap_free);
+	printf("%lu ", abs->swap_total);
+	printf("%u ",  abs->procs_total);
 	printf("%u ",  abs->procs_run);
 	printf("%u ",  abs->procs_iow);
 
@@ -992,6 +1066,10 @@ static void term_csv_header(const char *ifname, const struct ifstat *abs,
 	printf("%d:mem-free ", j++);
 	printf("%d:mem-used ", j++);
 	printf("%d:mem-total ", j++);
+	printf("%d:swap-free ", j++);
+	printf("%d:swap-used ", j++);
+	printf("%d:swap-total ", j++);
+	printf("%d:procs-total ", j++);
 	printf("%d:procs-in-run ", j++);
 	printf("%d:procs-in-iow ", j++);
 
