@@ -478,14 +478,10 @@ static void stats_diff(struct ifstat *old, struct ifstat *new,
 	DIFF(tx_colls);
 	DIFF(tx_carrier);
 
-	DIFF1(procs_run);
-	DIFF1(procs_iow);
-
 	DIFF1(wifi.signal_level);
 	DIFF1(wifi.link_qual);
 
 	DIFF1(cswitch);
-	DIFF1(forks);
 
 	cpus = get_number_cpus();
 
