@@ -471,7 +471,6 @@ static void stats_diff(struct ifstat *old, struct ifstat *new,
 	DIFF(rx_multi);
 
 	DIFF(tx_bytes);
-	DIFF(tx_bytes);
 	DIFF(tx_packets);
 	DIFF(tx_drops);
 	DIFF(tx_errors);
