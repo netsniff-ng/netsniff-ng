@@ -764,7 +764,7 @@ static void screen_percpu_states_one(WINDOW *screen, const struct ifstat *rel,
 		       rel->cpu_idle[idx] + rel->cpu_iow[idx];
 
 	mvwprintw(screen, (*voff)++, 2,
-		  "cpu%*d%s:%s %13.1lf%% usr/t "
+		  "cpu%*d%s:%s %12.1lf%% usr/t "
 			  "%9.1lf%% sys/t "
 			  "%10.1lf%% idl/t "
 			  "%11.1lf%% iow/t  ", max_padd, idx,
@@ -805,7 +805,7 @@ static void screen_percpu_irqs_rel_one(WINDOW *screen, const struct ifstat *rel,
 	int max_padd = padding_from_num(get_number_cpus());
 
 	mvwprintw(screen, (*voff)++, 2,
-		  "cpu%*d%s:%s %14llu irqs/t   "
+		  "cpu%*d%s:%s %13llu irqs/t   "
 			  "%15llu sirq rx/t   "
 			  "%15llu sirq tx/t      ", max_padd, idx,
 		  tag, strlen(tag) == 0 ? " " : "",
@@ -838,7 +838,7 @@ static void screen_percpu_irqs_abs_one(WINDOW *screen, const struct ifstat *abs,
 	int max_padd = padding_from_num(get_number_cpus());
 
 	mvwprintw(screen, (*voff)++, 2,
-		  "cpu%*d%s:%s %14llu irqs", max_padd, idx,
+		  "cpu%*d%s:%s %13llu irqs", max_padd, idx,
 		  tag, strlen(tag) == 0 ? " " : "",
 		  abs->irqs[idx]);
 }
