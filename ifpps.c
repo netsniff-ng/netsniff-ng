@@ -626,11 +626,11 @@ static int cmp_irqs_abs(const void *p1, const void *p2)
 }
 
 static void stats_top(const struct ifstat *rel, const struct ifstat *abs,
-		      int top_cpus)
+		      int cpus)
 {
 	int i;
 
-	for (i = 0; i < top_cpus; ++i) {
+	for (i = 0; i < cpus; ++i) {
 		cpu_hits[i].idx = i;
 		cpu_hits[i].hit = rel->cpu_user[i] + rel->cpu_nice[i] + rel->cpu_sys[i];
 		cpu_hits[i].irqs_rel = rel->irqs[i];
