@@ -96,7 +96,9 @@ static inline void taia_unpack(unsigned char *s, struct taia *t)
 	t->nano = x;
 }
 
-#define tai_unix(t, u) ((void) ((t)->x = 4611686018427387914ULL + (uint64_t) (u)))
+#define tai_unix(t, u) \
+		((void) ((t)->x = 4611686018427387914ULL + \
+				  (uint64_t) (u)))
 
 static inline void taia_now(struct taia *t)
 {
@@ -106,6 +108,7 @@ static inline void taia_now(struct taia *t)
 
 	tai_unix(&t->sec, now.tv_sec);
 	t->nano = 1000 * now.tv_usec + 500;
+	/* We don't really have it, but bring some noise in. */
 	t->atto = secrand();
 }
 
