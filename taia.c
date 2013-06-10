@@ -4,7 +4,7 @@
 
 static const struct taia tolerance_taia = {
 	.sec.x = 0,
-	.nano = 700000000ULL,
+	.nano = 700000000ULL,	/* 700ms acceptance window */
 	.atto = 0,
 };
 
