@@ -1,6 +1,8 @@
 #ifndef IOOPS_H
 #define IOOPS_H
 
+#include <sys/types.h>
+
 extern int open_or_die(const char *file, int flags);
 extern int open_or_die_m(const char *file, int flags, mode_t mode);
 extern void create_or_die(const char *file, mode_t mode);

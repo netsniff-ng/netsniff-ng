@@ -16,6 +16,7 @@ curvetun-objs =	xmalloc.o \
 		hash.o \
 		rnd.o \
 		curve.o \
+		curve_test.o \
 		cookie.o \
 		keypair.o \
 		ioexact.o \
