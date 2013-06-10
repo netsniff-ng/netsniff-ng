@@ -99,6 +99,8 @@ int device_set_irq_affinity_list(int irq, unsigned long from, unsigned long to)
 	int ret, fd;
 	char file[128], list[64];
 
+	if (unlikely(irq == 0))
+		return 0;
 	if (!nic_irq_stored) {
 		nic_irq = irq;
 		device_save_irq_affinity_list();
