@@ -22,6 +22,8 @@ void generate_keypair(void)
 	xmemset(publickey, 0, sizeof(publickey));
 	xmemset(secretkey, 0, sizeof(secretkey));
 
+	curve25519_selftest();
+
 	printf("Reading from %s (this may take a while) ...\n",
 	       HIG_ENTROPY_SOURCE);
 
@@ -48,6 +50,8 @@ void verify_keypair(void)
 	unsigned char publicres[crypto_box_pub_key_size];
 	unsigned char secretkey[crypto_box_sec_key_size];
 	char file[128];
+
+	curve25519_selftest();
 
 	xmemset(publickey, 0, sizeof(publickey));
 	xmemset(publicres, 0, sizeof(publicres));
