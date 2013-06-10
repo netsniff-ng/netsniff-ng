@@ -42,7 +42,7 @@ struct ifstat {
 	long long unsigned int tx_fifo, tx_colls, tx_carrier;
 	uint64_t mem_free, mem_total, mem_active, mem_inactive;
 	uint64_t swap_total, swap_free, swap_cached;
-	uint32_t irq_nr, procs_total, procs_run, procs_iow, cswitch, forks;
+	uint32_t irq_nr, procs_total, procs_run, procs_iow, cswitch;
 	struct wifi_stat wifi;
 	/*
 	 * Pointer members need to be last in order for stats_zero() to work
@@ -418,9 +418,6 @@ static int stats_proc_system(struct ifstat *stats)
 		} else if ((ptr = strstr(buff, "ctxt"))) {
 			ptr += strlen("ctxt");
 			stats->cswitch = strtoul(ptr, &ptr, 10);
-		} else if ((ptr = strstr(buff, "processes"))) {
-			ptr += strlen("processes");
-			stats->forks = strtoul(ptr, &ptr, 10);
 		} else if ((ptr = strstr(buff, "procs_running"))) {
 			ptr += strlen("procs_running");
 			stats->procs_run = strtoul(ptr, &ptr, 10);
