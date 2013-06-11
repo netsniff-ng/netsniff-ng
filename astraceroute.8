@@ -25,7 +25,7 @@ ISP name. astraceroute also displays timing information and reverse DNS data.
 Due to astraceroute's configurability, it is also possible to gather some more
 useful information about the hop regarding what it does and does not allow to pass
 through. This is done by using clear text strings for probing DPIs or
-``great firewalls'' to determine if they will filter out blacklisted critical 
+''great firewalls'' to determine if they will filter out blacklisted critical 
 keywords. This tool might be a good start for further in-depth analysis of such
 systems.
 .PP
@@ -33,7 +33,7 @@ systems.
 .PP
 .SS -H <host>, --host <host>
 Hostname or IPv4 or IPv6 address of the remote host where the AS route should
-be traced to. In the case of an IPv6 address or host, option ``\-6'' must be
+be traced to. In the case of an IPv6 address or host, option ''\-6'' must be
 used. IPv4 is the default.
 .PP
 .SS -p <port>, --port <port>
@@ -78,7 +78,7 @@ argument.
 .PP
 .SS -n, --numeric
 Tells astraceroute to not perform reverse DNS lookup for hop replies. The
-reverse option is ``\-N''.
+reverse option is ''\-N''.
 .PP
 .SS -u, --update
 The built-in geo-database update mechanism will be invoked to get Maxmind's
@@ -93,7 +93,7 @@ Also show latitude and longitude of hops.
 .PP
 .SS -N, --dns
 Tells astraceroute to perform reverse DNS lookup for hop replies. The
-reverse option is ``\-n''.
+reverse option is ''\-n''.
 .PP
 .SS -S, --syn
 Use TCP's SYN flag for the request.
@@ -134,19 +134,19 @@ Show user help and exit.
 .SH USAGE EXAMPLE
 .PP
 .SS astraceroute -i eth0 -N -S -H netsniff-ng.org
-This sends out a TCP SYN probe via the ``eth0'' networking device to the
+This sends out a TCP SYN probe via the ''eth0'' networking device to the
 remote IPv4 host netsniff-ng.org. This request is most likely to pass. Also,
 tell astraceroute to perform reverse DNS lookups for each hop.
 .PP
 .SS astraceroute -6 -i eth0 -S -E -N -H www.6bone.net
 In this example, a TCP SYN/ECN probe for the IPv6 host www.6bone.net is being
-performed. Also in this case, the ``eth0'' device is being used as well as a
+performed. Also in this case, the ''eth0'' device is being used as well as a
 reverse DNS lookup for each hop.
 .PP
 .SS astraceroute -i eth0 -N -F -H netsniff-ng.org
 Here, we send out a TCP FIN probe to the remote host netsniff-ng.org. Again,
 on each hop a reverse DNS lookup is being done and the queries are transmitted
-from ``eth0''. IPv4 is used.
+from ''eth0''. IPv4 is used.
 .PP
 .SS astraceroute -i eth0 -N -FPU -H netsniff-ng.org
 As in most other examples, we perform a trace route to IPv4 host netsniff-ng.org
