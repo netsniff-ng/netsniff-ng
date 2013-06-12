@@ -831,7 +831,8 @@ Mix it with MPLS:
 .PP
 Only in raw Layer 2 mode you must create the VLAN tag completely by yourself.
 For example if you want to send a frame in VLAN 5 using CoS 0 simply specify
-81:00 as type field and for the next two bytes the CoS, CFI, and VLAN values:
+81:00 as type field and for the next two bytes the CoS (PCP), DEI (CFI), and
+VLAN ID values (all together known as TCI):
 .PP
   mausezahn eth0 \-b bc \-a rand "81:00 00:05 08:00 aa-aa-aa-aa-aa-aa-aa-aa-aa"
 .PP
