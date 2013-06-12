@@ -33,7 +33,7 @@
 struct stun_header {
 	uint16_t type;
 	uint16_t len;
-	uint32_t magic_cookie; 
+	uint32_t magic_cookie;
 	uint32_t transid[3];
 };
 
@@ -74,6 +74,7 @@ static int stun_test(const char *server_ip, int server_port,
 
 	set_reuseaddr(sock);
 
+	memset(&saddr, 0, sizeof(saddr));
 	saddr.sin_family = PF_INET;
 	saddr.sin_port = htons(tun_port);
 	saddr.sin_addr.s_addr = INADDR_ANY;
