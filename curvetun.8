@@ -16,19 +16,19 @@ that is based on epoll(2). curvetun uses the Linux TUN/TAP interface and
 supports {IPv4, IPv6} over {IPv4, IPv6} with UDP or TCP as carrier protocols.
 .PP
 It has an integrated packet forwarding tree, thus multiple users with
-different IPs can be handled via a single tunnel device on the server side
+different IPs can be handled via a single tunnel device on the server side,
 and flows are scheduled for processing in a CPU efficient way, at least in the
 case of TCP as the carrier protocol.
 .PP
-For key management, public-key cryptography based on elliptic curves are being
+For key management, public-key cryptography based on elliptic curves are
 used and packets are encrypted end-to-end by the symmetric stream cipher
 Salsa20 and authenticated by the MAC Poly1305, where keys have previously
 been computed with the ECDH key agreement protocol Curve25519.
 .PP
 Cryptography is based on Daniel J. Bernstein's networking and cryptography
-library \[lq]NaCl\[rq]. By design, curvetun does not provide any particular pattern
-or default port numbers that gives certainty that the connection from a
-particular flow is actually running curvetun.
+library \[lq]NaCl\[rq]. By design, curvetun does not provide any particular
+pattern or default port numbers that gives certainty that the connection from
+a particular flow is actually running curvetun.
 .PP
 However, if you have a further need to bypass censorship, you can try using
 curvetun in combination with Tor's obfsproxy or Telex. Furthermore, curvetun
@@ -57,11 +57,11 @@ and curvec{0,1,2,...} for a curvetun client are used.
 .PP
 .SS -p <num>, --port <num>
 Defines the port the curvetun server should listen on. There is no default port
-for curvetun, so setting this option for server bootstrap is
-mandatory. This option is for servers only.
+for curvetun, so setting this option for server bootstrap is mandatory. This
+option is for servers only.
 .PP
 .SS -t <server>, --stun <server>
-If needed, this options enables an STUN lookup in order to show public IP/port
+If needed, this options enables an STUN lookup in order to show public IP to port
 mapping and to punch a hole into the firewall. In case you are unsure what STUN
 server to use, simply use ``\-\-stun stunserver.org''.
 .PP
@@ -73,33 +73,33 @@ defined in the configuration file.
 Generate private and public keypair. This must be done initially.
 .PP
 .SS -x, --export
-Export our user and key combination to stdout as a one-liner.
+Export user and key combination to stdout as a one-liner.
 .PP
 .SS -C, --dumpc
 Dump all known clients that may connect to the local curvetun server and exit.
 .PP
 .SS -S, --dumps
-Dump all known servers we as a client can connect to, and exit.
+Dump all known servers curvetun as a client can connect to, and exit.
 .PP
 .SS -D, --nofork
 Do not fork off as a client or server on startup.
 .PP
 .SS -s, --server
 Start curvetun in server mode. Additional parameters are needed, at least
-the definition of the port clients can connect to.
+the definition of the port that clients can connect to is required.
 .PP
 .SS -N, --no-logging
-Disable all curvetun logging of possible user information. This can
-be used for having curvetun users connect more anonymously. This option
-is for servers only.
+Disable all curvetun logging of user information. This option can be used to
+enable curvetun users to connect more anonymously. This option is for servers
+only.
 .PP
 .SS -u, --udp
-Use UDP as a carrier protocol instead of TCP. By default TCP is the
+Use UDP as a carrier protocol instead of TCP. By default, TCP is the
 carrier protocol. This option is for servers only.
 .PP
 .SS -4, --ipv4
 Defines IPv4 as the underlying network protocol to be used on the tunnel
-device. IPv4 is default. This option is for servers only.
+device. IPv4 is the default. This option is for servers only.
 .PP
 .SS -6, --ipv6
 Defines IPv6 as the underlying network protocol to be used on the tunnel
@@ -120,10 +120,10 @@ and performs an STUN lookup on startup to stunserver.org.
 .PP
 .SS curvetun --client=ethz
 Starts curvetun in client mode and connects to the defined connection alias ``ethz''
-that is defined in the curvetun ~/.curvetun/servers configuration.
+that is defined in the curvetun ~/.curvetun/servers configuration file.
 .PP
 .SS curvetun --keygen
-Generates initial keypairs and stores them in ~/.curvetun/.
+Generates initial keypairs and stores them in the ~/.curvetun/ directory.
 .PP
 .SS curvetun --export
 Export user data to stdout for configuration of a curvetun server.
@@ -154,7 +154,7 @@ complex to fully understand or correctly apply, so that they form further
 ground for vulnerabilities of such software.
 .PP
 In 2010, the cryptographers Tanja Lange and Daniel J. Bernstein have therefore
-created and published a cryptography library for networking, which is called
+created and published a cryptographic library for networking, which is named
 NaCl (pronounced ''salt''). NaCl addresses such problems as mentioned in
 OpenSSL and, in contrast to the rather generic use of OpenSSL, was created
 with a strong focus on public-key authenticated encryption based on elliptic
@@ -215,10 +215,10 @@ NaCl: Networking and Cryptography library
 .RE
 .PP
 .SH SETUP HOWTO
-If you haven't run curvetun before, you need to do an initial setup once.
+If you have not run curvetun before, you need to do an initial setup once.
 .PP
 First, make sure that the servers and clients clocks are periodically
-synced, for example, by running an ntp daemon. This is necessary to protect
+synced, for example, by running an NTP daemon. This is necessary to protect
 against replay attacks. Also, make sure you have read and write access to
 /dev/net/tun. You should not run curvetun as root! Then, after you have assured
 this, the first step is to generate keys and config files. On both the client
@@ -245,60 +245,60 @@ The client needs to export its public key data for the server
 .PP
 .B curvetun -x
 .PP
-where it prints sth like:
+where it prints a string in the following format:
 .PP
   myclient1;11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11
   \\_______/ \\_____________________________________________________________________________________________/
    username  32 byte public key for 'myclient1'
 .PP
 This line is transferred to the server admin (yes, we assume a manual on-site
-key exchange scenario where f.e. the admin sets up server and clients), where
+key exchange scenario where, for example, the admin sets up server and clients), where
 the admin then adds this entry into his ``clients'' file like:
 .PP
   server$ echo "myclient1;11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:" \\
                "11:11:11:11:11:11:11:11:11:11:11:11:11:11:11" >> ~/.curvetun/clients
 .PP
-The server admin can check, if the server has registered it properly by
+The server admin can check if the server has registered it properly as follows:
 .PP
   server$ curvetun \-C
 .PP
 which prints all parsed clients from ``~/.curvetun/clients''. This process could
-easily be automated/scripted with f.e. Perl and LDAP.
+easily be automated or scripted with, for example, Perl and LDAP.
 .PP
-Now, the client ``myclient1'' is known to the server; that's it for the server
-configuration. The next step is to tell the client where he needs to connect to
+Now, the client ``myclient1'' is known to the server; that completes the server
+configuration. The next step is to tell the client where it needs to connect to
 the server.
 .PP
-We assume in this example that the tunnel server has a public IP i.e. 1.2.3.4,
+We assume in this example that the tunnel server has a public IP adress, e.g. 1.2.3.4,
 runs on port 6666 and uses UDP as a carrier protocol. In case you are behind
-a NAT, you can use curvetun's ``\-\-stun'' option for starting the server, to
+NAT, you can use curvetun's ``\-\-stun'' option for starting the server, to
 obtain your mapping. However, in this example we continue with 1.2.3.4 and 6666,
 UDP.
 .PP
-First, the server needs to export its key to the client, as
+First, the server needs to export its key to the client, as follows:
 .PP
   server$ curvetun \-x
 .PP
-where it prints sth like:
+where it prints a string in the following format:
 .PP
   mysrv1;22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22
   \\____/ \\_____________________________________________________________________________________________/
  username  32 byte public key for 'mysrv1'
            ^-- you need this public key
 .PP
-Thus, you now have the server IP, server port, server transport protocol and the
-server's public key at hand. Thus, on the client side it can be put all together
-in the config like
+Thus, you now have the server IP address, server port, server transport protocol and the
+server's public key at hand. On the client side it can be put all together
+in the config as follows:
 .PP
   client$ echo "myfirstserver;1.2.3.4;6666;udp;22:22:22:22:22:22:22:22:22:22:" \\
                "22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:"  \\
                "22:22" >> ~/.curvetun/servers
 .PP
-where the client can check its config via:
+The client can check its config using:
 .PP
   client$ curvetun \-S
 .PP
-Okay, assuming we've made it, then we start the server with:
+Then we start the server with:
 .PP
   server$ curvetun \-s \-p 6666 \-u
   server# ifconfig curves0 up
@@ -310,14 +310,14 @@ Then, we start the client with:
   client# ifconfig curvec0 up
   client# ifconfig curvec0 10.0.0.2/24
 .PP
-Also, client-side information, errors or warnings will appear in syslog! By now
+Also, client-side information, errors, or warnings will appear in syslog! By now
 we should be able to ping the server:
 .PP
   client$ ping 10.0.0.1
 .PP
 That's it! Routing example:
 .PP
-Server side's public IP on eth0 is i.e. 1.2.3.4:
+Server side's public IP on eth0 is, for example, 1.2.3.4:
 .PP
   server$ ... start curvetun server ...
   server# ifconfig curves0 up
@@ -327,7 +327,7 @@ Server side's public IP on eth0 is i.e. 1.2.3.4:
   server# iptables \-A FORWARD \-i eth0 \-o curves0 \-m state \-\-state RELATED,ESTABLISHED \-j ACCEPT
   server# iptables \-A FORWARD \-i curves0 \-o eth0 \-j ACCEPT
 .PP
-Client side's IP on eth0 is i.e. 5.6.7.8:
+Client side's IP on eth0 is, for example, 5.6.7.8:
 .PP
   client$ ... start curvetun client ...
   client# ... lookup your default gateway (e.g. via route, here: 5.6.7.9) ...
