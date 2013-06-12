@@ -348,10 +348,10 @@ static int fdout, fderr;
 static void geoip_open_prepare(void)
 {
 	fflush(stdout);
-	fdout = dup(1);
+	fdout = dup_or_die(1);
 
 	fflush(stderr);
-	fderr = dup(2);
+	fderr = dup_or_die(2);
 
 	close(1);
 	close(2);
@@ -359,8 +359,8 @@ static void geoip_open_prepare(void)
 
 static void geoip_open_restore(void)
 {
-	dup2(fdout, 1);
-	dup2(fderr, 2);
+	dup2_or_die(fdout, 1);
+	dup2_or_die(fderr, 2);
 
 	close(fdout);
 	close(fderr);

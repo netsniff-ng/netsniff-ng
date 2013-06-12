@@ -12,6 +12,7 @@
 #include "dev.h"
 #include "ioops.h"
 #include "str.h"
+#include "built_in.h"
 
 int open_or_die(const char *file, int flags)
 {
@@ -28,6 +29,21 @@ int open_or_die_m(const char *file, int flags, mode_t mode)
 	if (ret < 0)
 		panic("Cannot open or create file %s! %s.", file, strerror(errno));
 	return ret;
+}
+
+int dup_or_die(int oldfd)
+{
+	int newfd = dup(oldfd);
+	if (unlikely(newfd < 0))
+		panic("Cannot dup old file descriptor!\n");
+	return newfd;
+}
+
+void dup2_or_die(int oldfd, int newfd)
+{
+	int ret = dup2(oldfd, newfd);
+	if (unlikely(ret < 0))
+		panic("Cannot dup2 old/new file descriptor!\n");
 }
 
 void create_or_die(const char *file, mode_t mode)

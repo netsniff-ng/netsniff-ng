@@ -184,7 +184,7 @@ static void pcap_to_xmit(struct ctx *ctx)
 	tx_sock = pf_socket();
 
 	if (!strncmp("-", ctx->device_in, strlen("-"))) {
-		fd = dup(fileno(stdin));
+		fd = dup_or_die(fileno(stdin));
 		close(fileno(stdin));
 		if (ctx->pcap == PCAP_OPS_MM)
 			ctx->pcap = PCAP_OPS_SG;
@@ -544,7 +544,7 @@ static void read_pcap(struct ctx *ctx)
 	bug_on(!__pcap_io);
 
 	if (!strncmp("-", ctx->device_in, strlen("-"))) {
-		fd = dup(fileno(stdin));
+		fd = dup_or_die(fileno(stdin));
 		close(fileno(stdin));
 		if (ctx->pcap == PCAP_OPS_MM)
 			ctx->pcap = PCAP_OPS_SG;
@@ -579,7 +579,7 @@ static void read_pcap(struct ctx *ctx)
 
 	if (ctx->device_out) {
 		if (!strncmp("-", ctx->device_out, strlen("-"))) {
-			fdo = dup(fileno(stdout));
+			fdo = dup_or_die(fileno(stdout));
 			close(fileno(stdout));
 		} else {
 			fdo = open_or_die_m(ctx->device_out, O_RDWR | O_CREAT |
@@ -769,7 +769,7 @@ static int begin_single_pcap_file(struct ctx *ctx)
 	bug_on(!__pcap_io);
 
 	if (!strncmp("-", ctx->device_out, strlen("-"))) {
-		fd = dup(fileno(stdout));
+		fd = dup_or_die(fileno(stdout));
 		close(fileno(stdout));
 		if (ctx->pcap == PCAP_OPS_MM)
 			ctx->pcap = PCAP_OPS_SG;

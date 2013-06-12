@@ -141,11 +141,3 @@ char *xstrndup(const char *str, size_t size)
 
 	return cp;
 }
-
-int xdup(int fd)
-{
-	int ret = dup(fd);
-	if (unlikely(ret < 0))
-		panic("xdup: dup failed\n");
-	return ret;
-}
