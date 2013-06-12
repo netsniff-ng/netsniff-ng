@@ -63,7 +63,7 @@ option is for servers only.
 .SS -t <server>, --stun <server>
 If needed, this options enables an STUN lookup in order to show public IP to port
 mapping and to punch a hole into the firewall. In case you are unsure what STUN
-server to use, simply use ``\-\-stun stunserver.org''.
+server to use, simply use ''\-\-stun stunserver.org''.
 .PP
 .SS -c[=alias], --client[=alias]
 Starts curvetun in client mode and connects to the given connection alias that is
@@ -119,7 +119,7 @@ carrier protocol. The curvetun server listens for incoming connections on port 6
 and performs an STUN lookup on startup to stunserver.org.
 .PP
 .SS curvetun --client=ethz
-Starts curvetun in client mode and connects to the defined connection alias ``ethz''
+Starts curvetun in client mode and connects to the defined connection alias ''ethz''
 that is defined in the curvetun ~/.curvetun/servers configuration file.
 .PP
 .SS curvetun --keygen
@@ -253,7 +253,7 @@ where it prints a string in the following format:
 .PP
 This line is transferred to the server admin (yes, we assume a manual on-site
 key exchange scenario where, for example, the admin sets up server and clients), where
-the admin then adds this entry into his ``clients'' file like:
+the admin then adds this entry into his ''clients'' file like:
 .PP
   server$ echo "myclient1;11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:" \\
                "11:11:11:11:11:11:11:11:11:11:11:11:11:11:11" >> ~/.curvetun/clients
@@ -262,16 +262,16 @@ The server admin can check if the server has registered it properly as follows:
 .PP
   server$ curvetun \-C
 .PP
-which prints all parsed clients from ``~/.curvetun/clients''. This process could
+which prints all parsed clients from ''~/.curvetun/clients''. This process could
 easily be automated or scripted with, for example, Perl and LDAP.
 .PP
-Now, the client ``myclient1'' is known to the server; that completes the server
+Now, the client ''myclient1'' is known to the server; that completes the server
 configuration. The next step is to tell the client where it needs to connect to
 the server.
 .PP
 We assume in this example that the tunnel server has a public IP adress, e.g. 1.2.3.4,
 runs on port 6666 and uses UDP as a carrier protocol. In case you are behind
-NAT, you can use curvetun's ``\-\-stun'' option for starting the server, to
+NAT, you can use curvetun's ''\-\-stun'' option for starting the server, to
 obtain your mapping. However, in this example we continue with 1.2.3.4 and 6666,
 UDP.
 .PP
