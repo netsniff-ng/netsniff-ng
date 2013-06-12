@@ -37,7 +37,7 @@ The following information will be presented in flowtop's output:
     * Flow port's service name heuristic
     * Transport protocol state machine information
 .PP
-In order for flowtop to work, netfilter/iptables must be active resp. running
+In order for flowtop to work, netfilter must be active and running
 on your machine, thus kernel-side connection tracking is active.
 .PP
 flowtop's intention is just to get a quick look over your active connections.
@@ -47,15 +47,15 @@ instead.
 .SH OPTIONS
 .PP
 .SS -4, --ipv4
-Display IPv4 flows. That's default when flowtop is started without
+Display IPv4 flows. That is the default when flowtop is started without
 any arguments.
 .PP
 .SS -6, --ipv6
-Display IPv6 flows. That's default when flowtop is started without
+Display IPv6 flows. That is the default when flowtop is started without
 any arguments.
 .PP
 .SS -T, --tcp
-Display TCP flows. That's default when flowtop is started without
+Display TCP flows. That is the default when flowtop is started without
 any arguments.
 .PP
 .SS -U, --udp
@@ -108,7 +108,7 @@ service resolution and lookup information.
 With a fairly high rate of connection tracking updates, flowtop can become
 unresponsive for short periods of time while scrolling. The right fix would
 be to replace flowtop's connection management backend with a better design
-resp. locking approach. Still on todo.
+with respect to the locking approach. This is still on the "todo" list.
 .PP
 .SH LEGAL
 flowtop is licensed under the GNU GPL version 2.0.
