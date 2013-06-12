@@ -812,7 +812,7 @@ static void print_pcap_file_stats(int sock, struct ctx *ctx)
 }
 
 static void walk_t3_block(struct block_desc *pbd, struct ctx *ctx,
-			  int sock, int fd, unsigned long *frame_count)
+			  int sock, int *fd, unsigned long *frame_count)
 {
 	uint8_t *packet;
 	int num_pkts = pbd->h1.num_pkts, i, ret;
@@ -836,7 +836,7 @@ static void walk_t3_block(struct block_desc *pbd, struct ctx *ctx,
 		if (dump_to_pcap(ctx)) {
 			tpacket3_hdr_to_pcap_pkthdr(hdr, sll, &phdr, ctx->magic);
 
-			ret = __pcap_io->write_pcap(fd, &phdr, ctx->magic, packet,
+			ret = __pcap_io->write_pcap(*fd, &phdr, ctx->magic, packet,
 						    pcap_get_length(&phdr, ctx->magic));
 			if (unlikely(ret != pcap_get_total_length(&phdr, ctx->magic)))
 				panic("Write error to pcap!\n");
@@ -868,7 +868,7 @@ static void walk_t3_block(struct block_desc *pbd, struct ctx *ctx,
 			}
 
 			if (next_dump) {
-				fd = next_multi_pcap_file(ctx, fd);
+				*fd = next_multi_pcap_file(ctx, *fd);
 				next_dump = false;
 
 				if (unlikely(ctx->verbose))
@@ -971,7 +971,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 	while (likely(sigint == 0)) {
 		while (user_may_pull_from_rx_block((pbd = (void *)
 				rx_ring.frames[it].iov_base))) {
-			walk_t3_block(pbd, ctx, sock, fd, &frame_count);
+			walk_t3_block(pbd, ctx, sock, &fd, &frame_count);
 
 			kernel_may_pull_from_rx_block(pbd);
 			it = (it + 1) % rx_ring.layout3.tp_block_nr;
