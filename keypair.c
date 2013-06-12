@@ -8,6 +8,7 @@
 #include "die.h"
 #include "str.h"
 #include "crypto.h"
+#include "curve.h"
 #include "ioops.h"
 #include "config.h"
 #include "keypair.h"
