@@ -917,6 +917,8 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 		[IPPROTO_ICMPV6] = 1,
 	};
 
+	bug_on(screen == NULL);
+
 	curs_set(0);
 
 	maxy = getmaxy(screen);
