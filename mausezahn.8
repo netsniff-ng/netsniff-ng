@@ -23,50 +23,50 @@ audits including penetration and DoS testing. As a traffic generator, mausezahn
 is also able to test IP multicast or VoIP networks. Packet rates close to the
 physical limit are reachable, depending on the hardware platform.
 .PP
-mausezahn supports two modes, ``direct mode'' and a multi-threaded ``interactive
+mausezahn supports two modes, ''direct mode'' and a multi-threaded ''interactive
 mode''.
 .PP
-The ``direct mode'' allows you to create a packet directly on the command line
+The ''direct mode'' allows you to create a packet directly on the command line
 and every packet parameter is specified in the argument list when calling
 mausezahn.
 .PP
-The ``interactive mode'' is an advanced multi-threaded configuration mode with
+The ''interactive mode'' is an advanced multi-threaded configuration mode with
 its own command line interface (CLI). This mode allows you to create an arbitrary
 number of packet types and streams in parallel, each with different parameters.
 .PP
 The interactive mode utilizes a completely redesigned and more flexible protocol
-framework called ``mops'' (mausezahn's own packet system). The look and feel of
+framework called ''mops'' (mausezahn's own packet system). The look and feel of
 the CLI is very close to the Cisco IOS^tm command line interface.
 .PP
-You can start the interactive mode by executing mausezahn with the ``\-x''
+You can start the interactive mode by executing mausezahn with the ''\-x''
 argument (an optional port number may follow, otherwise it is 25542). Then use
 telnet(1) to connect to this mausezahn instance. If not otherwise specified,
 the default login and password combination is mz:mz and the enable password is: mops.
 This can be changed in /etc/netsniff-ng/mausezahn.conf.
 .PP
-The direct mode supports two specification schemes: The ``raw-layer-2'' scheme,
-where every single byte to be sent can be specified, and ``higher-layer'' scheme,
-where packet builder interfaces are used (using the ``\-t'' option).
+The direct mode supports two specification schemes: The ''raw-layer-2'' scheme,
+where every single byte to be sent can be specified, and ''higher-layer'' scheme,
+where packet builder interfaces are used (using the ''\-t'' option).
 .PP
-To use the ``raw-layer-2'' scheme, simply specify the desired frame as a
-hexadecimal sequence (the ``hex-string''), such as:
+To use the ''raw-layer-2'' scheme, simply specify the desired frame as a
+hexadecimal sequence (the ''hex-string''), such as:
 .PP
   mausezahn eth0 "00:ab:cd:ef:00 00:00:00:00:00:01 08:00 ca:fe:ba:be"
 .PP
 In this example, whitespaces within the byte string are optional and separate
 the Ethernet fields (destination and source address, type field, and a short
-payload). The only additional options supported are ``\-a'', ``\-b'', ``\-c'',
-and ``\-p''. The frame length must be greater than or equal to 15 bytes.
+payload). The only additional options supported are ''\-a'', ''\-b'', ''\-c'',
+and ''\-p''. The frame length must be greater than or equal to 15 bytes.
 .PP
-The ``higher-layer'' scheme is enabled using the ``\-t <packet-type>'' option.
-This option activates a packet builder, and besides the ``packet-type'', an
-optional ``arg-string'' can be specified. The ``arg-string'' contains packet-
+The ''higher-layer'' scheme is enabled using the ''\-t <packet-type>'' option.
+This option activates a packet builder, and besides the ''packet-type'', an
+optional ''arg-string'' can be specified. The ''arg-string'' contains packet-
 specific parameters, such as TCP flags, port numbers, etc. (see example section).
 .PP
 .SH OPTIONS
 .PP
 mausezahn provides a built-in context-specific help. Append the keyword
-``help'' after the configuration options. The most important options
+''help'' after the configuration options. The most important options
 are:
 .PP
 .SS -x [<port>]
@@ -100,8 +100,8 @@ higher layer packets the number of additional padding bytes are specified.
 .PP
 .SS -a <src-mac|keyword>
 Use specified source MAC address with hexadecimal notation such as 00:00:aa:bb:cc:dd.
-By default the interface MAC address will be used. The keywords ``rand'' and
-``own'' refer to a random MAC address (only unicast addresses are created)
+By default the interface MAC address will be used. The keywords ''rand'' and
+''own'' refer to a random MAC address (only unicast addresses are created)
 and the own address, respectively. You can also use the keywords mentioned
 below although broadcast-type source addresses are officially invalid.
 .PP
@@ -109,14 +109,14 @@ below although broadcast-type source addresses are officially invalid.
 Use specified destination MAC address. By default, a broadcast is sent in raw
 layer 2 mode or to the destination hosts or gateway interface MAC address in normal
 (IP) mode. You can use the same keywords as mentioned above, as well as
-``bc'' or ``bcast'', ``cisco'', and ``stp''. Please note that for the destination
-MAC address the ``rand'' keyword is supported but creates a random address only
+''bc'' or ''bcast'', ''cisco'', and ''stp''. Please note that for the destination
+MAC address the ''rand'' keyword is supported but creates a random address only
 once, even when you send multiple packets.
 .PP
 .SS -A <src-ip|range|rand>
 Use specified source IP address, default is own interface address. Optionally, the
-keyword ``rand'' can again be used for a random source IP address or a range
-can be specified, such as ``192.168.1.1-192.168.1.100'' or ``10.1.0.0/16''.
+keyword ''rand'' can again be used for a random source IP address or a range
+can be specified, such as ''192.168.1.1-192.168.1.100'' or ''10.1.0.0/16''.
 Also, a DNS name can be specified for which mausezahn tries to determine the
 corresponding IP address automatically.
 .PP
@@ -126,17 +126,17 @@ As with the source address (see above) you can also specify a range or a DNS nam
 .PP
 .SS -t <packet-type>
 Create the specified packet type using the built-in packet builder. Currently,
-supported packet types are: ``arp'', ``bpdu'', ``ip'', ``udp'', ``tcp'', ``rtp'',
-and ``dns''. Currently, there is also limited support for ``icmp''. Type
-``\-t help'' to verify which packet builders your actual mausezahn version
-supports. Also, for any particular packet type, for example ``tcp'' type
-``mausezahn \-t tcp help'' to receive a more in-depth context specific help.
+supported packet types are: ''arp'', ''bpdu'', ''ip'', ''udp'', ''tcp'', ''rtp'',
+and ''dns''. Currently, there is also limited support for ''icmp''. Type
+''\-t help'' to verify which packet builders your actual mausezahn version
+supports. Also, for any particular packet type, for example ''tcp'' type
+''mausezahn \-t tcp help'' to receive a more in-depth context specific help.
 .PP
 .SS -T <packet-type>
-Make this mausezahn instance the receiving station. Currently, only ``rtp'' is
+Make this mausezahn instance the receiving station. Currently, only ''rtp'' is
 an option here and provides precise jitter measurements. For this purpose, start
 another mausezahn instance on the sending station and the local receiving station
-will output jitter statistics. See ``mausezahn \-T rtp help'' for a detailed help.
+will output jitter statistics. See ''mausezahn \-T rtp help'' for a detailed help.
 .PP
 .SS -Q <[CoS:]vlan> [, <[CoS:]vlan>, ...]
 Specify 802.1Q VLAN tag and optional Class of Service. An arbitrary number of
@@ -149,14 +149,14 @@ specify the whole frame in hexadecimal using the raw layer 2 interface of mausez
 Specify a MPLS label or even a MPLS label stack. Optionally, for each label the
 experimental bits (usually the Class of Service, CoS) and the Time To Live
 (TTL) can be specified. If you are really crazy you can set and unset the
-Bottom of Stack (BoS) bit for each label using the ``S'' (set) and ``s''
+Bottom of Stack (BoS) bit for each label using the ''S'' (set) and ''s''
 (unset) option. By default, the BoS is set automatically and correctly. Any other
-setting will lead to invalid frames. Enter ``\-M help'' for detailed instructions
+setting will lead to invalid frames. Enter ''\-M help'' for detailed instructions
 and examples.
 .PP
 .SS -P <ascii-payload>
 Specify a cleartext payload. Alternatively, each packet type supports a
-hexadecimal specification of the payload (see for example ``\-t udp help'').
+hexadecimal specification of the payload (see for example ''\-t udp help'').
 .PP
 .SS -f <filename>
 Read the ASCII payload from the specified file.
