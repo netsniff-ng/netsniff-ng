@@ -2,15 +2,27 @@
 #define CPUS_H
 
 #include <unistd.h>
+#include "built_in.h"
+#include "die.h"
 
-static inline int get_number_cpus(void)
+static inline unsigned int get_number_cpus(void)
 {
-	return sysconf(_SC_NPROCESSORS_CONF);
+	int ret = sysconf(_SC_NPROCESSORS_CONF);
+
+	if (unlikely(ret <= 0))
+		panic("get_number_cpus error!\n");
+
+	return ret;
 }
 
-static inline int get_number_cpus_online(void)
+static inline unsigned int get_number_cpus_online(void)
 {
-	return sysconf(_SC_NPROCESSORS_ONLN);
+	int ret = sysconf(_SC_NPROCESSORS_ONLN);
+
+	if (unlikely(ret <= 0))
+		panic("get_number_cpus_online error!\n");
+
+	return ret;
 }
 
 #endif /* CPUS_H */
