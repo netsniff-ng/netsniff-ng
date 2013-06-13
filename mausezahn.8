@@ -520,7 +520,7 @@ Sometimes you may want to send a burst of packets at a greater interval:
   mz(config-pkt-2)# delay 15 usec
   Inter-packet delay set to 0 sec and 15000 nsec
 .PP
-Now this packet is sent ten times with an inter-packet delay of 15 microsecond
+Now this packet is sent ten times with an inter-packet delay of 15 microseconds
 and this is repeated every hour. When you look at the packet list, an interval
 is indicated with the additional flag 'i' when inactive or 'I' when active:
 .PP
@@ -547,7 +547,7 @@ is indicated with the additional flag 'i' when inactive or 'I' when active:
 .PP
 Note that the flag 'I' indicates that an interval has been specified for
 packet 2. The process is not active at the moment (only packet 5 is active
-here) but it will become active in a regular interval. You can verify the
+here) but it will become active at a regular interval. You can verify the
 actual interval when viewing the packet details via the 'show packet 2' command.
 .PP
 .SS Load prepared configurations:
@@ -598,12 +598,12 @@ You can even load other files from within a central config file.
 .PP
 Many arguments allow direct byte input. Bytes are represented as two
 hexadecimal digits. Multiple bytes must be separated either by spaces, colons,
-or dashes - whatever you prefer. The following byte strings are equivalent:
+or dashes - whichever you prefer. The following byte strings are equivalent:
 .PP
   "aa:bb cc-dd-ee ff 01 02 03-04 05"
   "aa bb cc dd ee ff:01:02:03:04 05"
 .PP
-As first example, you may want to send an arbitrary fancy (possibly invalid)
+To begin with, you may want to send an arbitrary fancy (possibly invalid)
 frame right through your network card:
 .PP
   mausezahn ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:08:00:ca:fe:ba:be
@@ -615,7 +615,7 @@ frame right through your network card:
 .SS Basic operations:
 .PP
 All major command line options are listed when you execute mausezahn without
-arguments. For practical usage keep the following special (not so widely
+arguments. For practical usage, keep the following special (not so widely
 known) options in mind:
 .PP
   \-r                    Multiplies the specified delay with a random value.
@@ -639,7 +639,7 @@ examples:
 Note: Don't forget that on the CLI the Linux shell (usually the Bash)
 interprets spaces as a delimiter character. That is, if you are specifying
 an argument that consists of multiple words with spaces in between, you MUST
-group this with quotes. For example, instead of
+group these within quotes. For example, instead of
 .PP
   mausezahn eth0 \-t udp sp=1,dp=80,p=00:11:22:33
 .PP
@@ -660,12 +660,12 @@ is used outside the quotes!
 .PP
 .SS The automatic packet builder:
 .PP
-An important argument is "\-t" which invokes a packet builder. Currently there
+An important argument is \-t which invokes a packet builder. Currently there
 are packet builders for ARP, BPDU, CDP, IP, partly ICMP, UDP, TCP, RTP, DNS,
 and SYSLOG. (Additionally you can insert a VLAN tag or a MPLS label stack but
 this works independent of the packet builder.)
 .PP
-You get context specific help of every packet builder using the help keyword,
+You get context specific help of each packet builder using the help keyword,
 such as:
 .PP
   mausezahn \-t bpdu help
@@ -686,17 +686,17 @@ everything in hex here.)
 .PP
 .SS Packet count and delay:
 .PP
-Per default only one packet is sent. If you want to send more packets then
+By default only one packet is sent. If you want to send more packets then
 use the count option \-c <count>. When count is zero then mausezahn will send
-forever. Per default mausezahn sends at maximum speed (and this is really 
+forever. By default mausezahn sends at maximum speed (and this is really
 fast ;-)). If you don't want to overwhelm your network devices or have other
 reasons to send at a slower rate then you might want to specify a delay using
 the \-d <delay> option.
 .PP
 If you only specify a numeric value it is interpreted in microsecond units.
-Alternatively, for easier use, you might specify units such as seconds sec or
-milliseconds msec. (You can also abbreviate this with s or m.) Note: Don't use
-spaces between the value and the unit! Here are typical examples:
+Alternatively, for easier use, you might specify units such as seconds, sec,
+milliseconds, or msec. (You can also abbreviate this with s or m.)
+Note: Don't use spaces between the value and the unit! Here are typical examples:
 .PP
 Send infinite frames as fast as possible:
 .PP
@@ -711,19 +711,19 @@ Send infinite BPDU frames in a 2 second interval:
   mausezahn \-c 0 \-d 2s \-t bpdu conf
 .PP
 Note: mausezahn does not support fractional numbers. If you want to specify for
-example 2.5 seconds then express this e.g. in milliseconds (2500 msec).
+example 2.5 seconds then express this in milliseconds (2500 msec).
 .PP
 .SS Source and destination addresses:
 .PP
-As mnemonic trick keep in mind that all packets run from "A" to "B". You can
+A mnemonic trick to keep in mind is that all packets run from "A" to "B". You can
 always specify source and/or destination MAC addresses using the \-a and \-b
 options, respectively. These options also allow keywords such as rand, own,
 bpdu, cisco, and others.
 .PP
 Similarly, you can specify source and destination IP addresses using the \-A
 and \-B options, respectively. These options also support FQDNs (i.e. domain
-names) and ranges such as 192.168.0.0/24 or 10.0.0.11-10.0.3.22. Additionally
-(only) the source address supports the rand keyword (ideal for "attacks").
+names) and ranges such as 192.168.0.0/24 or 10.0.0.11-10.0.3.22. Additionally,
+the source address supports the rand keyword (ideal for "attacks").
 .PP
 Note: When you use the packet builder for IP-based packets (e.g. UDP or TCP)
 then mausezahn automatically cares about correct MAC and IP addresses (i.e.
@@ -741,27 +741,27 @@ interface:
 .PP
   mausezahn eth0 "ff:ff:ff:ff:ff:ff ff:ff:ff:ff:ff:ff 00:00 ca:fe:ba:be"
 .PP
-This way you can craft every packet you want but you must do it by hand. Note:
-On WiFi interfaces the header is much more complicated and automatically
-created by the WiFi-driver. As example to introduce some interesting options,
-lets continuously send frames at max speed with random source MAC address and
-broadcast destination address, additionally pad the frame to 1000 bytes:
+This way you can craft every packet you want but by hand. Note: On WiFi
+interfaces the header is much more complicated and automatically created
+by the WiFi-driver. An example to introduce some interesting options, say,
+let's continuously send frames at max speed with a random source MAC address
+and a broadcast destination address, additionally pad the frame to 1000 bytes:
 .PP
   mausezahn eth0 \-c 0 \-a rand \-b bcast \-p 1000 "08 00 aa bb cc dd"
 .PP
 The direct link access supports automatic padding using the \-p <total frame
 length> option. This allows you to pad a raw L2 frame to the desired length.
-You must specify the total length and the total frame length must have at
-least 15 bytes for technical reasons. Zero bytes are used for this padding.
+You must specify the total length, and the total frame length must have at
+least 15 bytes for technical reasons. Zero bytes are used for padding.
 .PP
 .SS `-- ARP:
 .PP
 mausezahn provides a simple interface to the ARP packet. You can specify the
 ARP method (request|reply) and up to four arguments: sendermac, targetmac,
-senderip, targetip, or short smac, tmac, sip, tip. By default an ARP reply is
-sent with your own interface addresses as source MAC and IP address, and a
-broadcast destination MAC/IP address. Send a gratitious ARP (as used for
-duplicate IP detection):
+senderip, and targetip, or, short smac, tmac, sip, and tip. By default an ARP
+reply is sent with your own interface's source MAC and IP address, and a broadcast
+destination MAC/IP address. The following example sends a gratitious ARP (as
+used for duplicate IP detection):
 .PP
   mausezahn eth0 \-t arp
 .PP
@@ -773,7 +773,7 @@ ARP cache poisoning:
  where by default your interface MAC address will be used as sendermac,
 senderip denotes the spoofed IP, targetmac and targetip identifies the
 receiver. By default the Ethernet source address is your interface MAC and the
-destination address is broadcast. Of course you can change this using again the
+destination address is broadcast. Of course you can change this using the
 flags \-a and \-b.
 .PP
 .SS `-- BPDU:
@@ -784,8 +784,8 @@ create the Spanning Tree in bridged networks). By default standard IEEE 802.1d
 root bridge (rid=bid). Optionally the 802.3 destination address can be a
 specified MAC address, broadcast, own MAC, or Cisco's PVST+ MAC address. The
 destination MAC can be specified using the \-b command which (besides MAC
-addresses) accepts keywords such as bcast, own, pvst, or stp (default). Since
-version 0.16 PVST+ is supported. Simply specify the VLAN for which you want
+addresses) accepts keywords such as bcast, own, pvst, or stp (default).
+Version 0.16 PVST+ is supported. Simply specify the VLAN for which you want
 to send a BPDU:
 .PP
   mausezahn eth0 \-t bpdu "vlan=123, rid=2000"
@@ -829,7 +829,7 @@ Mix it with MPLS:
 .PP
   mausezahn eth0 \-t udp "dp=8888, sp=13442" \-P "Mausezahn is great" \-Q 100,651 \-M 314
 .PP
-Only in raw Layer 2 mode you must create the VLAN tag completely by yourself.
+When in raw Layer 2 mode you must create the VLAN tag completely by yourself.
 For example if you want to send a frame in VLAN 5 using CoS 0 simply specify
 81:00 as type field and for the next two bytes the CoS (, CFI) and VLAN values:
 .PP
@@ -840,7 +840,7 @@ For example if you want to send a frame in VLAN 5 using CoS 0 simply specify
 mausezahn allows you to insert one or more MPLS headers. Simply use the option
 \-M <label:CoS:TTL:BoS> where only the label is mandatory. If you specify a
 second number it is interpreted as the experimental bits (the CoS usually). If
-you specify a third number it is interpreted as TTL. Per default the TTL is
+you specify a third number it is interpreted as TTL. By default the TTL is
 set to 255. The Bottom of Stack flag is set automatically (otherwise the frame
 would be invalid) but if you want you can also set or unset it using the
 S (set) and s (unset) argument. Note that the BoS must be the last argument in
@@ -935,7 +935,7 @@ kernel would not allow to modify the IP checksum and the IP length).
 mausezahn currently only supports the following ICMP methods: PING (echo
 request), Redirect (various types), Unreachable (various types). Additional
 ICMP types will be supported in future. Currently you would need to tailor them
-by your own, e.g. using the IP packet builder (setting proto=1). Use the
+by yourself, e.g. using the IP packet builder (setting proto=1). Use the
 mausezahn \-t icmp help for help on actually implemented options.
 .PP
 .SS `-- TCP:
@@ -963,8 +963,7 @@ you may want to sweep through a range of sequence numbers:
 .PP
 Fortunately, the SQNR must match the target host's acknowledgement number plus
 the announced window size. Since the typical window size is something between
-40000 and 65535 you are MUCH quicker when using an increment using the ds
-argument:
+40000 and 65535 you are MUCH quicker when using an increment via the ds argument:
 .PP
   mausezahn eth0 \-A legal.host.com \-B target.host.com \\
                  \-t tcp "sp=80, dp=80, s=1-4294967295, ds=40000"
@@ -978,7 +977,7 @@ every field in the IP packet (also in the Ethernet frame).
 .SS `-- DNS:
 .PP
 mausezahn supports UDP-based DNS requests or responses. Typically you may want
-to send a query or an answer. As usual you can modify every flag in the header.
+to send a query or an answer. As usual, you can modify every flag in the header.
 Here is an example of a simple query:
 .PP
   mausezahn eth0 \-B mydns-server.com \-t dns "q=www.ibm.com"
@@ -1008,7 +1007,7 @@ line options.
 .PP
 .SS `-- RTP and VoIP path measurements:
 .PP
-mausezahn can send arbitrary Real Time Protocol (RTP) packets. Per default a
+mausezahn can send arbitrary Real Time Protocol (RTP) packets. By default a
 classical G.711 codec (20 ms segment size, 160 bytes) is assumed. You can
 measure jitter, packet loss and reordering along a path between two hosts
 running mausezahn. The jitter measurement is either done following the variance
@@ -1098,10 +1097,9 @@ can assume that about 100,000 frames and more are sent in a fraction of one
 second, depending on your network interface.
 .PP
 mausezahn has been designed as fast traffic generator so you might easily
-overwhelm a LAN segment with myriads of packets. And because mausezahn should
-also support security audits it is also possible to create malicious or
-invalid packets, SYN floods, port and address sweeps, DNS and ARP poisoning,
-etc.
+overwhelm a LAN segment with myriads of packets. And because mausezahn could
+also support security audits it is possible to create malicious or invalid
+packets, SYN floods, port and address sweeps, DNS and ARP poisoning, etc.
 .PP
 Therefore, don't use this tool when you are not aware of possible consequences
 or have only little knowledge about networks and data communication. If you
