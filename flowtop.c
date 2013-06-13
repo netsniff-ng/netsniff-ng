@@ -740,15 +740,18 @@ static uint16_t presenter_get_port(uint16_t src, uint16_t dst, int tcp)
 	}
 }
 
-static void presenter_screen_init(WINDOW **screen)
+static WINDOW *presenter_screen_init(void)
 {
-	(*screen) = initscr();
+	WINDOW *screen = initscr();
+
 	noecho();
 	cbreak();
 	keypad(stdscr, TRUE);
-	nodelay(*screen, TRUE);
+	nodelay(screen, TRUE);
 	refresh();
-	wrefresh(*screen);
+	wrefresh(screen);
+
+	return screen;
 }
 
 static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
@@ -917,8 +920,6 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 		[IPPROTO_ICMPV6] = 1,
 	};
 
-	bug_on(screen == NULL);
-
 	curs_set(0);
 
 	maxy = getmaxy(screen);
@@ -994,10 +995,10 @@ static inline void presenter_screen_end(void)
 static void presenter(void)
 {
 	int skip_lines = 0;
-	WINDOW *screen = NULL;
+	WINDOW *screen;
 
 	dissector_init_ethernet(0);
-	presenter_screen_init(&screen);
+	screen = presenter_screen_init();
 
 	rcu_register_thread();
 	while (!sigint) {
