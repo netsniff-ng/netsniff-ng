@@ -112,7 +112,7 @@ enum ports {
 static void dissector_init_ports(enum ports which)
 {
 	FILE *fp;
-	char buff[128], *ptr, *file;
+	char buff[128], *ptr, *file, *end;
 	struct hash_table *table;
 	struct port *p;
 	void **pos;
@@ -145,10 +145,17 @@ static void dissector_init_ports(enum ports which)
 		ptr = buff;
 
 		p = xmalloc(sizeof(*p));
-		p->id = strtol(ptr, &ptr, 0);
+		p->id = strtol(ptr, &end, 0);
+		/* not a valid line, skip */
+		if (p->id == 0 && end == ptr)
+			continue;
 
-		if ((ptr = strstr(buff, ", ")))
-			ptr += strlen(", ");
+		ptr = strstr(buff, ", ");
+		/* likewise */
+		if (!ptr)
+			continue;
+
+		ptr += strlen(", ");
 		ptr = strtrim_right(ptr, '\n');
 		ptr = strtrim_right(ptr, ' ');
 
