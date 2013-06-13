@@ -147,13 +147,17 @@ static void dissector_init_ports(enum ports which)
 		p = xmalloc(sizeof(*p));
 		p->id = strtol(ptr, &end, 0);
 		/* not a valid line, skip */
-		if (p->id == 0 && end == ptr)
+		if (p->id == 0 && end == ptr) {
+			xfree(p);
 			continue;
+		}
 
 		ptr = strstr(buff, ", ");
 		/* likewise */
-		if (!ptr)
+		if (!ptr) {
+			xfree(p);
 			continue;
+		}
 
 		ptr += strlen(", ");
 		ptr = strtrim_right(ptr, '\n');
