@@ -354,7 +354,15 @@ static int8_t dissect_icmpv6_mcast_rec(struct pkt_buff *pkt,
 		
 		tprintf(", Aux Data: ");
 		while (aux_data_len_bytes--) {
-			  tprintf("%x", *pkt_pull(pkt,1));
+			uint8_t *data = pkt_pull(pkt, 1);
+
+			if (data == NULL) {
+				tprintf("%sINVALID%s", colorize_start_full(black, red),
+					colorize_end());
+				return 0;
+			}
+
+			tprintf("%x", *data);
 		}
 	}
 
@@ -376,8 +384,16 @@ static int8_t dissect_neighb_disc_ops_1(struct pkt_buff *pkt,
 
 	tprintf("Address 0x");
 
-	while(len--){
-		    tprintf("%x", *pkt_pull(pkt,1));
+	while (len--) {
+		uint8_t *data = pkt_pull(pkt, 1);
+
+		if (data == NULL) {
+			tprintf("%sINVALID%s", colorize_start_full(black, red),
+				colorize_end());
+			return 0;
+		}
+
+		tprintf("%x", *data);
 	}
 
 	return 1;
@@ -438,7 +454,15 @@ static int8_t dissect_neighb_disc_ops_4(struct pkt_buff *pkt,
 	tprintf("IP header + data ");
 
 	while (len--) {
-		    tprintf("%x", *pkt_pull(pkt,1));
+		uint8_t *data = pkt_pull(pkt, 1);
+
+		if (data == NULL) {
+			tprintf("%sINVALID%s", colorize_start_full(black, red),
+				colorize_end());
+			return 0;
+		}
+
+		tprintf("%x", *data);
 	}
 
 	return 1;
@@ -570,7 +594,15 @@ static int8_t dissect_neighb_disc_ops_16(struct pkt_buff *pkt,
 
 	tprintf("Certificate + Padding (");
 	while (len--) {
-		    tprintf("%x", *pkt_pull(pkt,1));
+		uint8_t *data = pkt_pull(pkt, 1);
+
+		if (data == NULL) {
+			tprintf("%sINVALID%s", colorize_start_full(black, red),
+				colorize_end());
+			break;
+		}
+
+		tprintf("%x", *data);
 	}
 	tprintf(") ");
 
@@ -645,7 +677,15 @@ static int8_t dissect_neighb_disc_ops_17(struct pkt_buff *pkt,
 		    tprintf("%s (", colorize_start_full(black, red)
 			      "Error Wrong Length. Skip Option" colorize_end());
 		    while (len--) {
-				tprintf("%x", *pkt_pull(pkt,1));
+			uint8_t *data = pkt_pull(pkt, 1);
+
+			if (data == NULL) {
+				tprintf("%sINVALID%s", colorize_start_full(black, red),
+					colorize_end());
+				break;
+			}
+
+			tprintf("%x", *data);
 		    }
 		    tprintf(") ");
 	}
@@ -689,8 +729,16 @@ static int8_t dissect_neighb_disc_ops_19(struct pkt_buff *pkt,
 		icmp_neighb_disc_19->opt_code);
 
 	tprintf("LLA (");
-	while(len--){
-		    tprintf("%x", *pkt_pull(pkt,1));
+	while(len--) {
+		uint8_t *data = pkt_pull(pkt, 1);
+
+		if (data == NULL) {
+			tprintf("%sINVALID%s", colorize_start_full(black, red),
+				colorize_end());
+			return 0;
+		}
+
+		tprintf("%x", *data);
 	}
 	tprintf(") ");
 
