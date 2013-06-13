@@ -55,11 +55,12 @@ void dissector_init_oui(void)
 
 		v = xmalloc(sizeof(*v));
 		v->id = strtol(ptr, &end, 0);
-		/* No valid line, skip */
+		/* not a valid line, skip */
 		if (v->id == 0 && end == ptr)
 			continue;
 
 		ptr = strstr(buff, ", ");
+		/* likewise */
 		if (!ptr)
 			continue;
 
