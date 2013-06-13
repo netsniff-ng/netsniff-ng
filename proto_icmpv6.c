@@ -560,7 +560,15 @@ static int8_t dissect_neighb_disc_ops_15(struct pkt_buff *pkt,
 	tprintf("Padding (");
 
 	while (pad_len--) {
-		    tprintf("%x", *pkt_pull(pkt,1));
+		uint8_t *data = pkt_pull(pkt, 1);
+
+		if (data == NULL) {
+			tprintf("%sINVALID%s", colorize_start_full(black, red),
+				colorize_end());
+			break;
+		}
+
+		tprintf("%x", *data);
 	}
 	tprintf(")");
 
