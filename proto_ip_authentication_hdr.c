@@ -54,8 +54,17 @@ static void auth_hdr(struct pkt_buff *pkt)
 	tprintf("SPI (0x%x), ", ntohl(auth_ops->h_spi));
 	tprintf("SNF (0x%x), ", ntohl(auth_ops->h_snf));
 	tprintf("ICV 0x");
-	for (i = sizeof(struct auth_hdr); i < hdr_len; i++)
-		tprintf("%02x", *pkt_pull(pkt, 1));
+	for (i = sizeof(struct auth_hdr); i < hdr_len; i++) {
+		uint8_t *data = pkt_pull(pkt, 1);
+
+		if (data == NULL) {
+			tprintf("%sinvalid%s", colorize_start_full(black, red),
+				colorize_end());
+			break;
+		}
+
+		tprintf("%02x", *data);
+	}
 	tprintf(" ]\n");
 
 	pkt_set_proto(pkt, &eth_lay3, auth_ops->h_next_header);
