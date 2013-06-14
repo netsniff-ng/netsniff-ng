@@ -122,26 +122,32 @@ static int lldp_print_net_addr(const uint8_t *addr, size_t addrlen)
 	return 0;
 }
 
+static inline void lldp_print_cap_one(const char *cap, unsigned int *prev)
+{
+	tprintf("%s%s", *prev ? ", " : "", cap);
+	(*prev)++;
+}
+
 static void lldp_print_cap(uint16_t cap)
 {
 	unsigned int prev = 0;
 
 	if (cap & LLDP_SYSTEM_CAP_OTHER)
-		tprintf("%sOther", prev++ ? ", " : "");
+		lldp_print_cap_one("Other", &prev);
 	if (cap & LLDP_SYSTEM_CAP_REPEATER)
-		tprintf("%sRepeater", prev++ ? ", " : "");
+		lldp_print_cap_one("Repeater", &prev);
 	if (cap & LLDP_SYSTEM_CAP_BRIDGE)
-		tprintf("%sBridge", prev++ ? ", " : "");
+		lldp_print_cap_one("Bridge", &prev);
 	if (cap & LLDP_SYSTEM_CAP_WLAN_AP)
-		tprintf("%sWLAN AP", prev++ ? ", " : "");
+		lldp_print_cap_one("WLAN AP", &prev);
 	if (cap & LLDP_SYSTEM_CAP_ROUTER)
-		tprintf("%sRouter", prev++ ? ", " : "");
+		lldp_print_cap_one("Router", &prev);
 	if (cap & LLDP_SYSTEM_CAP_TELEPHONE)
-		tprintf("%sTelephone", prev++ ? ", " : "");
+		lldp_print_cap_one("Telephone", &prev);
 	if (cap & LLDP_SYSTEM_CAP_DOCSIS)
-		tprintf("%sDOCSIS", prev++ ? ", " : "");
+		lldp_print_cap_one("DOCSIS", &prev);
 	if (cap & LLDP_SYSTEM_CAP_STATION_ONLY)
-		tprintf("%sStation only", prev++ ? ", " : "");
+		lldp_print_cap_one("Station only", &prev);
 }
 
 static void lldp(struct pkt_buff *pkt)
