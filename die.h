@@ -4,7 +4,7 @@
  * Subject to the GPL, version 2.
  */
 
-#ifndef DIE_H 
+#ifndef DIE_H
 #define DIE_H
 
 #include <stdio.h>
