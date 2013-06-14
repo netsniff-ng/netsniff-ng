@@ -65,8 +65,11 @@ void set_socket_keepalive(int fd)
 
 void set_tcp_nodelay(int fd)
 {
-	int one = 1;
-	setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
+	int ret, one = 1;
+
+	ret = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
+	if (unlikely(ret))
+		panic("Cannot set TCP nodelay!\n");
 }
 
 int set_ipv6_only(int fd)
