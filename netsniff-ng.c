@@ -915,7 +915,9 @@ static void recv_only_or_dump(struct ctx *ctx)
 		bpf_dump_all(&bpf_ops);
 	bpf_attach_to_sock(sock, &bpf_ops);
 
-	set_sockopt_hwtimestamp(sock, ctx->device_in);
+	ret = set_sockopt_hwtimestamp(sock, ctx->device_in);
+	if (ret == 0 && ctx->verbose)
+		printf("HW timestamping enabled\n");
 
 	setup_rx_ring_layout(sock, &rx_ring, size, true, true);
 	create_rx_ring(sock, &rx_ring, ctx->verbose);
