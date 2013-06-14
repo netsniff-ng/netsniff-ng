@@ -550,13 +550,21 @@ static int8_t dissect_neighb_disc_ops_15(struct pkt_buff *pkt,
 		tprintf("Pad Len (%zu) ", pad_len);
 
 	name_len = len - pad_len;
-	
+
 	tprintf("Name (");
 	while (name_len--) {
-		    tprintf("%c", *pkt_pull(pkt,1));
+		uint8_t *data = pkt_pull(pkt, 1);
+
+		if (data == NULL) {
+			tprintf("%sINVALID%s", colorize_start_full(black, red),
+				colorize_end());
+			return 0;
+		}
+
+		tprintf("%c", *data);
 	}
 	tprintf(") ");
-	
+
 	tprintf("Padding (");
 
 	while (pad_len--) {
