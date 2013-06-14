@@ -59,7 +59,7 @@ couple of features that are useful when assembling packets, such as built-in
 runtime checksum support for IP, UDP and TCP. Also it has an expression evaluator
 where arithmetic (basic operations, bit operations, bit shifting, ...) on constant
 expressions is being reduced to a single constant on compile time. Other features
-are ``fill'' macros, where a packet can be filled with n bytes by a constant, a
+are ''fill'' macros, where a packet can be filled with n bytes by a constant, a
 compile-time random number or run-time random number (as mentioned with fuzz
 testing). Also, netsniff-ng(8) is able to convert a pcap file into a trafgen
 configuration file, thus such a configuration can then be further tweaked for a
@@ -69,7 +69,7 @@ given scenario.
 .PP
 .SS -i <cfg|->, -c <cfg|i>, --in <cfg|->, --conf <cfg|->
 Defines the input configuration file that can either be passed as a normal plain
-text file or via stdin (``-''). Note that currently, if a configuration is
+text file or via stdin (''-''). Note that currently, if a configuration is
 passed through stdin, only 1 CPU will be used.
 .PP
 .SS -o <dev>, -d <dev>, --out <dev>, --dev <dev>
@@ -96,7 +96,7 @@ to inject raw 802.11 frames.
 .SS -s <ipv4>, --smoke-test <ipv4>
 In case this option is enabled, trafgen will perform a smoke test. In other
 words, it will probe the remote end, specified by an <ipv4> address, that is
-being ``attacked'' with trafgen network traffic, if it is still alive and
+being ''attacked'' with trafgen network traffic, if it is still alive and
 responsive. That means, after each transmitted packet that has been configured,
 trafgen sends out ICMP echo requests and waits for an answer before it continues.
 In case the remote end stays unresponsive, trafgen assumes that the machine
@@ -132,7 +132,7 @@ with specific payload patterns. Furthermore, the TX_RING interface does not cope
 with interpacket gaps.
 .PP
 .SS -S <size>, --ring-size <size>
-Manually define the TX_RING resp. TX_RING size in ``<num>KiB/MiB/GiB''. On
+Manually define the TX_RING resp. TX_RING size in ''<num>KiB/MiB/GiB''. On
 default the size is being determined based on the network connectivity rate.
 .PP
 .SS -k <uint>, --kernel-pull <uint>
@@ -231,9 +231,9 @@ iii) Multibyte functions, compile-time expression evaluation:
    const32(<content>), c32(<content>), const64(<content>), c64(<content>)
 .PP
    These functions write their result in network byte order into the packet
-configuration, e.g. const16(0xaa) will result in ``00 aa''. Within c*()
+configuration, e.g. const16(0xaa) will result in ''00 aa''. Within c*()
 functions, it is possible to do some arithmetics: -,+,*,/,%,&,|,<<,>>,^
-E.g. const16((((1<<8)+0x32)|0b110)*2) will be evaluated to ``02 6c''.
+E.g. const16((((1<<8)+0x32)|0b110)*2) will be evaluated to ''02 6c''.
 .PP
 Furthermore, there are two types of comments in trafgen configuration files:
 .PP
@@ -242,7 +242,7 @@ Furthermore, there are two types of comments in trafgen configuration files:
 .PP
 Next to all of this, a configuration can be passed through the C preprocessor
 before the trafgen compiler gets to see it with option \-\-cpp. To give you a
-taste of a more advanced example, run ``trafgen \-e'', fields are commented:
+taste of a more advanced example, run ''trafgen \-e'', fields are commented:
 .PP
    /* Note: dynamic elements make trafgen slower! */
    #include <stddef.h>
@@ -334,8 +334,8 @@ Another real-world example by Jesper Dangaard Brouer [1]:
 .PP
 .SS trafgen --dev eth0 --conf trafgen.cfg
 This is the most simple and, probably, the most common use of trafgen. It
-will generate traffic defined in the configuration file ``trafgen.cfg'' and
-transmit this via the ``eth0'' networking device. All online CPUs are used.
+will generate traffic defined in the configuration file ''trafgen.cfg'' and
+transmit this via the ''eth0'' networking device. All online CPUs are used.
 .PP
 .SS trafgen -e | trafgen -i - -o lo --cpp -n 1
 This is an example where we send one packet of the built-in example through
@@ -343,33 +343,33 @@ the loopback device. The example configuration is passed via stdin and also
 through the C preprocessor before trafgen's packet compiler will see it.
 .PP
 .SS trafgen --dev eth0 --conf fuzzing.cfg --smoke-test 10.0.0.1
-Read the ``fuzzing.cfg'' packet configuration file (which contains drnd()
-calls) and send out the generated packets to the ``eth0'' device. After each
+Read the ''fuzzing.cfg'' packet configuration file (which contains drnd()
+calls) and send out the generated packets to the ''eth0'' device. After each
 sent packet, ping probe the attacked host with address 10.0.0.1 to check if
 it's still alive. This also means, that we utilize 1 CPU only, and do not
-use the TX_RING, but sendto(2) packet I/O due to ``slow mode''.
+use the TX_RING, but sendto(2) packet I/O due to ''slow mode''.
 .PP
 .SS trafgen --dev wlan0 --rfraw --conf beacon-test.txf -V --cpus 2
-As an output device ``wlan0'' is used and put into monitoring mode, thus we
+As an output device ''wlan0'' is used and put into monitoring mode, thus we
 are going to transmit raw 802.11 frames through the air. Use the
-``beacon-test.txf'' configuration file, set trafgen into verbose mode and
+''beacon-test.txf'' configuration file, set trafgen into verbose mode and
 use only 2 CPUs.
 .PP
 .SS trafgen --dev em1 --conf frag_dos.cfg --rand --gap 1000
 Use trafgen in sendto(2) mode instead of TX_RING mode and sleep after each
-sent packet a static timegap for 1000us. Generate packets from ``frag_dos.cfg''
+sent packet a static timegap for 1000us. Generate packets from ''frag_dos.cfg''
 and select next packets to send randomly instead of a round-robin fashion.
-The output device for packets is ``em1''.
+The output device for packets is ''em1''.
 .PP
 .SS trafgen --dev eth0 --conf icmp.cfg --rand --num 1400000 -k1000
-Send only 1400000 packets using the ``icmp.cfg'' configuration file and then
+Send only 1400000 packets using the ''icmp.cfg'' configuration file and then
 exit trafgen. Select packets randomly from that file for transmission and
-send them out via ``eth0''. Also, trigger the kernel every 1000us for batching
+send them out via ''eth0''. Also, trigger the kernel every 1000us for batching
 the ring frames from user space (default is 10us).
 .PP
 .SS trafgen --dev eth0 --conf tcp_syn.cfg -u `id -u bob` -g `id -g bob`
-Send out packets generated from the configuration file ``tcp_syn.cfg'' via
-the ``eth0'' networking device. After setting up the ring for transmission,
+Send out packets generated from the configuration file ''tcp_syn.cfg'' via
+the ''eth0'' networking device. After setting up the ring for transmission,
 drop credentials to the non-root user/group bob/bob.
 .PP
 .SH NOTE
@@ -410,8 +410,8 @@ descriptions is desired, netsniff-ng's mausezahn(8) can be of good use as
 well.
 .PP
 For smoke/fuzz testing with trafgen, it is recommended to have a direct
-link between the host you want to analyze (``victim'' machine) and the host
-you run trafgen on (``attacker'' machine). If the ICMP reply from the victim
+link between the host you want to analyze (''victim'' machine) and the host
+you run trafgen on (''attacker'' machine). If the ICMP reply from the victim
 fails, we assume that probably its kernel crashed, thus we print the last
 sent packet togther with the seed and quit probing. It might be very unlikely
 to find such a ping-of-death on modern Linux systems. However, there might
@@ -422,7 +422,7 @@ mention that you were using trafgen in your commit message of the fix!
 .PP
 .SH BUGS
 For old trafgen versions only, there could occur kernel crashes: we have fixed
-this bug in the mainline and stable kernels under commit 7f5c3e3a8 (``af_packet:
+this bug in the mainline and stable kernels under commit 7f5c3e3a8 (''af_packet:
 remove BUG statement in tpacket_destruct_skb'') and also in trafgen.
 .PP
 Probably the best is if you upgrade trafgen to the latest version.
