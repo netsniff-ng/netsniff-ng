@@ -24,6 +24,12 @@ static inline void __xfree(void *ptr)
         free(ptr);
 }
 
+#define xzfree(ptr, size)	\
+do {				\
+	xmemset(ptr, 0, size);	\
+	xfree(ptr);		\
+} while (0)
+
 #define xfree(ptr)	\
 do {			\
 	__xfree(ptr);	\

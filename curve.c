@@ -12,6 +12,7 @@
 #include <syslog.h>
 #include <limits.h>
 #include <string.h>
+#include <pwd.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/stat.h>
@@ -60,59 +61,44 @@ void curve25519_free(void *curvep)
 {
 	struct curve25519_struct *curve = curvep;
 
-	memset(curve->enc, 0, curve->enc_size);
-	memset(curve->dec, 0, curve->dec_size);
-
-        xfree(curve->enc);
-        xfree(curve->dec);
+	xzfree(curve->enc, curve->enc_size);
+	xzfree(curve->dec, curve->dec_size);
 
         spinlock_destroy(&curve->enc_lock);
         spinlock_destroy(&curve->dec_lock);
 }
 
-int curve25519_proto_init(struct curve25519_proto *proto, unsigned char *pubkey_remote,
-			  size_t len, char *home, int server)
+void curve25519_proto_init(struct curve25519_proto *proto,
+			   unsigned char *pubkey_remote, size_t len)
 {
-	int fd;
-	ssize_t ret;
-	char path[PATH_MAX];
-	unsigned char secretkey_own[crypto_box_curve25519xsalsa20poly1305_SECRETKEYBYTES];
-	unsigned char publickey_own[crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES];
+	int result;
+	char file[128];
+	struct passwd *pw = getpwuid(getuid());
+	unsigned char secretkey_own[crypto_box_sec_key_size];
+	unsigned char publickey_own[crypto_box_pub_key_size];
 
 	fmemset(secretkey_own, 0, sizeof(secretkey_own));
 	fmemset(publickey_own, 0, sizeof(publickey_own));
 
-	if (!pubkey_remote || len != sizeof(publickey_own))
-		return -EINVAL;
+	if (unlikely(!pubkey_remote || len != sizeof(publickey_own)))
+		panic("Invalid argument on curve25519_proto_init!\n");
 
-	slprintf(path, sizeof(path), "%s/%s", home, FILE_PRIVKEY);
-	fd = open_or_die(path, O_RDONLY);
-
-	ret = read(fd, secretkey_own, sizeof(secretkey_own));
-	if (ret != sizeof(secretkey_own)) {
-		xmemset(secretkey_own, 0, sizeof(secretkey_own));
-		panic("Cannot read private key!\n");
-	}
-
-	close(fd);
+	slprintf(file, sizeof(file), "%s/%s", pw->pw_dir, FILE_PRIVKEY);
+	read_blob_or_die(file, secretkey_own, sizeof(secretkey_own));
 
 	crypto_scalarmult_curve25519_base(publickey_own, secretkey_own);
+	result = crypto_verify_32(publickey_own, pubkey_remote);
 
-	if (!crypto_verify_32(publickey_own, pubkey_remote)) {
-		xmemset(secretkey_own, 0, sizeof(secretkey_own));
-		xmemset(publickey_own, 0, sizeof(publickey_own));
-		panic("PANIC: remote end has same public key as you have!!!\n");
-	}
+	if (result == 0)
+		panic("Remote end has same public key as you have!\n");
 
 	crypto_box_beforenm(proto->key, pubkey_remote, secretkey_own);
 
-	xmemset(proto->enonce, 0, sizeof(proto->enonce));
-	xmemset(proto->dnonce, 0, sizeof(proto->dnonce));
+	fmemset(proto->enonce, 0, sizeof(proto->enonce));
+	fmemset(proto->dnonce, 0, sizeof(proto->dnonce));
 
 	xmemset(secretkey_own, 0, sizeof(secretkey_own));
 	xmemset(publickey_own, 0, sizeof(publickey_own));
-
-	return 0;
 }
 
 ssize_t curve25519_encode(struct curve25519_struct *curve, struct curve25519_proto *proto,
