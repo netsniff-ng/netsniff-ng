@@ -11,7 +11,7 @@
 struct curve25519_proto {
 	unsigned char enonce[crypto_box_noncebytes] __aligned_16;
 	unsigned char dnonce[crypto_box_noncebytes] __aligned_16;
-	unsigned char key[crypto_box_noncebytes] __aligned_16;
+	unsigned char key[crypto_box_beforenmbytes] __aligned_16;
 };
 
 struct curve25519_struct {
