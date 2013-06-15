@@ -101,34 +101,35 @@ void curve25519_proto_init(struct curve25519_proto *proto,
 	xmemset(publickey_own, 0, sizeof(publickey_own));
 }
 
-ssize_t curve25519_encode(struct curve25519_struct *curve, struct curve25519_proto *proto,
-			  unsigned char *plaintext, size_t size, unsigned char **chipertext)
+ssize_t curve25519_encode(struct curve25519_struct *curve,
+			  struct curve25519_proto *proto,
+			  unsigned char *plaintext, size_t size,
+			  unsigned char **chipertext)
 {
 	int ret, i;
 	ssize_t done = size;
 	struct taia packet_taia;
 
 	spinlock_lock(&curve->enc_lock);
-
 	if (unlikely(size > curve->enc_size)) {
 		done = -ENOMEM;
 		goto out;
 	}
 
 	taia_now(&packet_taia);
-	taia_pack(proto->enonce + NONCE_OFFSET, &packet_taia);
+	taia_pack(NONCE_EDN_OFFSET(proto->enonce), &packet_taia);
 
-	memset(curve->enc, 0, curve->enc_size);
-	ret = crypto_box_afternm(curve->enc, plaintext, size, proto->enonce, proto->key);
+	fmemset(curve->enc, 0, curve->enc_size);
+	ret = crypto_box_afternm(curve->enc, plaintext, size,
+				 proto->enonce, proto->key);
 	if (unlikely(ret)) {
 		done = -EIO;
 		goto out;
 	}
 
-	fmemcpy(curve->enc + crypto_box_boxzerobytes - NONCE_LENGTH,
-	       proto->enonce + NONCE_OFFSET, NONCE_LENGTH);
-
-	for (i = 0; i < crypto_box_boxzerobytes - NONCE_LENGTH; ++i)
+	fmemcpy(NONCE_PKT_OFFSET(curve->enc),
+		NONCE_EDN_OFFSET(proto->enonce), NONCE_LENGTH);
+	for (i = 0; i < NONCE_RND_LENGTH; ++i)
 		curve->enc[i] = (uint8_t) secrand();
 
 	(*chipertext) = curve->enc;
@@ -137,40 +138,39 @@ out:
 	return done;
 }
 
-ssize_t curve25519_decode(struct curve25519_struct *curve, struct curve25519_proto *proto,
-			  unsigned char *chipertext, size_t size, unsigned char **plaintext,
+ssize_t curve25519_decode(struct curve25519_struct *curve,
+			  struct curve25519_proto *proto,
+			  unsigned char *chipertext, size_t size,
+			  unsigned char **plaintext,
 			  struct taia *arrival_taia)
 {
 	int ret;
 	ssize_t done = size;
-	struct taia packet_taia, arrival_taia2;
+	struct taia packet_taia, tmp_taia;
 
 	spinlock_lock(&curve->dec_lock);
+	if (unlikely(size > curve->dec_size || size < NONCE_ALL_LENGTH)) {
+		done = size < NONCE_ALL_LENGTH ? 0 : -ENOMEM;
+		goto out;
+	}
 
-	if (unlikely(size > curve->dec_size)) {
-		done = -ENOMEM;
-		goto out;
-	}
-	if (unlikely(size < crypto_box_boxzerobytes + NONCE_LENGTH)) {
-		done = 0;
-		goto out;
-	}
 	if (arrival_taia == NULL) {
-		taia_now(&arrival_taia2);
-		arrival_taia = &arrival_taia2;
+		taia_now(&tmp_taia);
+		arrival_taia = &tmp_taia;
 	}
 
-	taia_unpack(chipertext + crypto_box_boxzerobytes - NONCE_LENGTH, &packet_taia);
+	taia_unpack(NONCE_PKT_OFFSET(chipertext), &packet_taia);
         if (taia_looks_good(arrival_taia, &packet_taia) == 0) {
-		syslog(LOG_ERR, "Bad packet time! Dropping connection!\n");
 		done = 0;
 		goto out;
 	}
 
-	memcpy(proto->dnonce + NONCE_OFFSET, chipertext + crypto_box_boxzerobytes - NONCE_LENGTH, NONCE_LENGTH);
-	memset(curve->dec, 0, curve->dec_size);
+	fmemcpy(NONCE_EDN_OFFSET(proto->dnonce),
+		NONCE_PKT_OFFSET(chipertext), NONCE_LENGTH);
+	fmemset(curve->dec, 0, curve->dec_size);
 
-	ret = crypto_box_open_afternm(curve->dec, chipertext, size, proto->dnonce, proto->key);
+	ret = crypto_box_open_afternm(curve->dec, chipertext, size,
+				      proto->dnonce, proto->key);
 	if (unlikely(ret)) {
 		done = -EIO;
 		goto out;
