@@ -27,6 +27,7 @@
 #include "curvetun.h"
 #include "locking.h"
 #include "crypto.h"
+#include "config.h"
 
 int curve25519_pubkey_hexparse_32(unsigned char *bin, size_t blen,
 				  const char *ascii, size_t alen)
