@@ -21,8 +21,11 @@ struct curve25519_struct {
 };
 
 extern void curve25519_selftest(void);
-extern void curve25519_alloc_or_maybe_die(struct curve25519_struct *curve);
-extern void curve25519_free(void *curve);
+
+extern struct curve25519_struct *curve25519_tfm_alloc(void);
+extern void curve25519_tfm_free(struct curve25519_struct *tfm);
+extern void curve25519_tfm_free_void(void *tfm);
+
 extern void curve25519_proto_init(struct curve25519_proto *proto,
 				  unsigned char *pubkey_remote, size_t len);
 extern int curve25519_pubkey_hexparse_32(unsigned char *bin, size_t blen,

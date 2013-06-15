@@ -448,21 +448,19 @@ static void *worker(void *self)
 	int fd, old_state;
 	ssize_t ret;
 	size_t blen = TUNBUFF_SIZ; //FIXME
-	const struct worker_struct *ws = self;
+	struct worker_struct *ws = self;
 	struct pollfd fds;
 	char *buff;
 
 	fds.fd = ws->efd[0];
 	fds.events = POLLIN;
 
-	curve25519_alloc_or_maybe_die(ws->c);
-
+	ws->c = curve25519_tfm_alloc();
 	buff = xmalloc_aligned(blen, 64);
 
 	syslog(LOG_INFO, "curvetun thread on CPU%u up!\n", ws->cpu);
 
-	pthread_cleanup_push(xfree_func, ws->c);
-	pthread_cleanup_push(curve25519_free, ws->c);
+	pthread_cleanup_push(curve25519_tfm_free_void, ws->c);
 	pthread_cleanup_push(xfree_func, buff);
 
 	while (likely(!sigint)) {
@@ -488,7 +486,6 @@ static void *worker(void *self)
 
 	syslog(LOG_INFO, "curvetun thread on CPU%u down!\n", ws->cpu);
 
-	pthread_cleanup_pop(1);
 	pthread_cleanup_pop(1);
 	pthread_cleanup_pop(1);
 

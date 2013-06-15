@@ -29,25 +29,7 @@
 #include "crypto.h"
 #include "config.h"
 
-int curve25519_pubkey_hexparse_32(unsigned char *bin, size_t blen,
-				  const char *ascii, size_t alen)
-{
-	int ret = sscanf(ascii,
-		     "%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:"
-		     "%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:"
-		     "%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:"
-		     "%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx",
-		      &bin[0],  &bin[1],  &bin[2],  &bin[3],  &bin[4],
-		      &bin[5],  &bin[6],  &bin[7],  &bin[8],  &bin[9],
-		     &bin[10], &bin[11], &bin[12], &bin[13], &bin[14],
-		     &bin[15], &bin[16], &bin[17], &bin[18], &bin[19],
-		     &bin[20], &bin[21], &bin[22], &bin[23], &bin[24],
-		     &bin[25], &bin[26], &bin[27], &bin[28], &bin[29],
-		     &bin[30], &bin[31]);
-	return ret == 32;
-}
-
-void curve25519_alloc_or_maybe_die(struct curve25519_struct *curve)
+static void curve25519_init(struct curve25519_struct *curve)
 {
 	curve->enc_size = curve->dec_size = TUNBUFF_SIZ;
 
@@ -58,15 +40,34 @@ void curve25519_alloc_or_maybe_die(struct curve25519_struct *curve)
 	spinlock_init(&curve->dec_lock);
 }
 
-void curve25519_free(void *curvep)
+static void curve25519_destroy(struct curve25519_struct *curve)
 {
-	struct curve25519_struct *curve = curvep;
-
 	xzfree(curve->enc, curve->enc_size);
 	xzfree(curve->dec, curve->dec_size);
 
         spinlock_destroy(&curve->enc_lock);
         spinlock_destroy(&curve->dec_lock);
+}
+
+struct curve25519_struct *curve25519_tfm_alloc(void)
+{
+	struct curve25519_struct *tfm;
+
+	tfm = xzmalloc_aligned(sizeof(*tfm), 16);
+	curve25519_init(tfm);
+
+	return tfm;
+}
+
+void curve25519_tfm_free(struct curve25519_struct *tfm)
+{
+	curve25519_destroy(tfm);
+	xzfree(tfm, sizeof(*tfm));
+}
+
+void curve25519_tfm_free_void(void *tfm)
+{
+	curve25519_tfm_free(tfm);
 }
 
 void curve25519_proto_init(struct curve25519_proto *proto,
@@ -181,4 +182,22 @@ ssize_t curve25519_decode(struct curve25519_struct *curve,
 out:
 	spinlock_unlock(&curve->dec_lock);
 	return done;
+}
+
+int curve25519_pubkey_hexparse_32(unsigned char *bin, size_t blen,
+				  const char *ascii, size_t alen)
+{
+	int ret = sscanf(ascii,
+		     "%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:"
+		     "%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:"
+		     "%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:"
+		     "%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx",
+		      &bin[0],  &bin[1],  &bin[2],  &bin[3],  &bin[4],
+		      &bin[5],  &bin[6],  &bin[7],  &bin[8],  &bin[9],
+		     &bin[10], &bin[11], &bin[12], &bin[13], &bin[14],
+		     &bin[15], &bin[16], &bin[17], &bin[18], &bin[19],
+		     &bin[20], &bin[21], &bin[22], &bin[23], &bin[24],
+		     &bin[25], &bin[26], &bin[27], &bin[28], &bin[29],
+		     &bin[30], &bin[31]);
+	return ret == 32;
 }
