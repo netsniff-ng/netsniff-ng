@@ -42,11 +42,11 @@ static void curve25519_init(struct curve25519_struct *curve)
 
 static void curve25519_destroy(struct curve25519_struct *curve)
 {
-	xzfree(curve->enc, curve->enc_size);
-	xzfree(curve->dec, curve->dec_size);
-
         spinlock_destroy(&curve->enc_lock);
         spinlock_destroy(&curve->dec_lock);
+
+	xzfree(curve->enc, curve->enc_size);
+	xzfree(curve->dec, curve->dec_size);
 }
 
 struct curve25519_struct *curve25519_tfm_alloc(void)
