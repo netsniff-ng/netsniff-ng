@@ -1,9 +1,3 @@
-/*
- * netsniff-ng - the packet sniffing beast
- * Copyright 2011 Daniel Borkmann.
- * Subject to the GPL, version 2.
- */
-
 #define _GNU_SOURCE
 #include <search.h>
 #include <limits.h>

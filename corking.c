@@ -1,9 +1,3 @@
-/*
- * netsniff-ng - the packet sniffing beast
- * Copyright 2009, 2010 Daniel Borkmann.
- * Subject to the GPL, version 2.
- */
-
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <linux/udp.h>
