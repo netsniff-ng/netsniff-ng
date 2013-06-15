@@ -1,6 +1,10 @@
 #ifndef BPF_INSNS_H
 #define BPF_INSNS_H
 
+#ifndef BPF_MAXINSNS
+# define BPF_MAXINSNS	4096
+#endif
+
 #define BPF_CLASS(code) ((code) & 0x07)
 #define	BPF_LD		0x00
 #define	BPF_LDX		0x01

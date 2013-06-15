@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <errno.h>
 #include <libgen.h>
+#include <linux/filter.h>
 
 #include "bpf.h"
 #include "str.h"
@@ -25,20 +26,17 @@
 #include "built_in.h"
 #include "die.h"
 
-#define MAX_INSTRUCTIONS	4096
-
 int compile_filter(char *file, int verbose, int bypass, int format,
 		   bool invoke_cpp);
 
 static int curr_instr = 0;
 
-static struct sock_filter out[MAX_INSTRUCTIONS];
+static struct sock_filter out[BPF_MAXINSNS];
 
-static char *labels[MAX_INSTRUCTIONS];
-
-static char *labels_jt[MAX_INSTRUCTIONS];
-static char *labels_jf[MAX_INSTRUCTIONS];
-static char *labels_k[MAX_INSTRUCTIONS];
+static char *labels[BPF_MAXINSNS];
+static char *labels_jt[BPF_MAXINSNS];
+static char *labels_jf[BPF_MAXINSNS];
+static char *labels_k[BPF_MAXINSNS];
 
 #define YYERROR_VERBOSE		0
 #define YYDEBUG			0
@@ -54,7 +52,7 @@ extern char *yytext;
 
 static inline void check_max_instr(void)
 {
-	if (curr_instr >= MAX_INSTRUCTIONS)
+	if (curr_instr >= BPF_MAXINSNS)
 		panic("Exceeded maximal number of instructions!\n");
 }
 
