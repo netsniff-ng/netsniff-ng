@@ -23,13 +23,19 @@ struct curve25519_struct {
 extern void curve25519_selftest(void);
 extern void curve25519_alloc_or_maybe_die(struct curve25519_struct *curve);
 extern void curve25519_free(void *curve);
-extern void curve25519_proto_init(struct curve25519_proto *proto, unsigned char *pubkey_remote, size_t len);
-extern int curve25519_pubkey_hexparse_32(unsigned char *bin, size_t blen, const char *ascii, size_t alen);
+extern void curve25519_proto_init(struct curve25519_proto *proto,
+				  unsigned char *pubkey_remote, size_t len);
+extern int curve25519_pubkey_hexparse_32(unsigned char *bin, size_t blen,
+					 const char *ascii, size_t alen);
 
-extern ssize_t curve25519_encode(struct curve25519_struct *curve, struct curve25519_proto *proto,
-				 unsigned char *plaintext, size_t size, unsigned char **chipertext);
-extern ssize_t curve25519_decode(struct curve25519_struct *curve, struct curve25519_proto *proto,
-				 unsigned char *chipertext, size_t size, unsigned char **plaintext,
+extern ssize_t curve25519_encode(struct curve25519_struct *curve,
+				 struct curve25519_proto *proto,
+				 unsigned char *plaintext, size_t size,
+				 unsigned char **chipertext);
+extern ssize_t curve25519_decode(struct curve25519_struct *curve,
+				 struct curve25519_proto *proto,
+				 unsigned char *chipertext, size_t size,
+				 unsigned char **plaintext,
 				 struct taia *arrival_taia);
 
 #endif /* CURVE_H */
