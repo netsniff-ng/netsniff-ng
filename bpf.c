@@ -96,29 +96,31 @@ static const char *bpf_dump_linux_k(uint32_t k)
 	default:
 		return "[%d]";
 	case SKF_AD_OFF + SKF_AD_PROTOCOL:
-		return "#proto";
+		return "proto";
 	case SKF_AD_OFF + SKF_AD_PKTTYPE:
-		return "#type";
+		return "type";
 	case SKF_AD_OFF + SKF_AD_IFINDEX:
-		return "#ifidx";
+		return "ifidx";
 	case SKF_AD_OFF + SKF_AD_NLATTR:
-		return "#nla";
+		return "nla";
 	case SKF_AD_OFF + SKF_AD_NLATTR_NEST:
-		return "#nlan";
+		return "nlan";
 	case SKF_AD_OFF + SKF_AD_MARK:
-		return "#mark";
+		return "mark";
 	case SKF_AD_OFF + SKF_AD_QUEUE:
-		return "#queue";
+		return "queue";
 	case SKF_AD_OFF + SKF_AD_HATYPE:
-		return "#hatype";
+		return "hatype";
 	case SKF_AD_OFF + SKF_AD_RXHASH:
-		return "#rxhash";
+		return "rxhash";
 	case SKF_AD_OFF + SKF_AD_CPU:
-		return "#cpu";
+		return "cpu";
 	case SKF_AD_OFF + SKF_AD_VLAN_TAG:
-		return "#vlant";
+		return "vlant";
 	case SKF_AD_OFF + SKF_AD_VLAN_TAG_PRESENT:
-		return "#vlanp";
+		return "vlanp";
+	case SKF_AD_OFF + SKF_AD_PAY_OFFSET:
+		return "poff";
 	}
 }
 
