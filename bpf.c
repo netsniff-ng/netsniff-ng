@@ -349,6 +349,7 @@ static char *__bpf_dump(const struct sock_filter bpf, int n)
 void bpf_dump_all(struct sock_fprog *bpf)
 {
 	int i;
+
 	for (i = 0; i < bpf->len; ++i)
 		printf("%s\n", __bpf_dump(bpf->filter[i], i));
 }
@@ -363,7 +364,7 @@ void bpf_attach_to_sock(int sock, struct sock_fprog *bpf)
 
 	ret = setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER,
 			 bpf, sizeof(*bpf));
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		panic("Cannot attach filter to socket!\n");
 }
 
@@ -373,7 +374,7 @@ void bpf_detach_from_sock(int sock)
 
 	ret = setsockopt(sock, SOL_SOCKET, SO_DETACH_FILTER,
 			 &empty, sizeof(empty));
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		panic("Cannot detach filter from socket!\n");
 }
 
@@ -384,7 +385,7 @@ int enable_kernel_bpf_jit_compiler(void)
 	char *file = "/proc/sys/net/core/bpf_jit_enable";
 
 	fd = open(file, O_WRONLY);
-	if (fd < 0)
+	if (unlikely(fd < 0))
 		return -1;
 
 	ret = write(fd, "1", strlen("1"));
@@ -722,6 +723,7 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf, uint32_t link_type)
 	if (rulefile == NULL) {
 		bpf->len = 1;
 		bpf->filter = xmalloc(sizeof(sf_single));
+
 		fmemcpy(&bpf->filter[0], &sf_single, sizeof(sf_single));
 		return;
 	}
@@ -735,6 +737,7 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf, uint32_t link_type)
 	fmemset(buff, 0, sizeof(buff));
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
+
 		if (buff[0] != '{') {
 			fmemset(buff, 0, sizeof(buff));
 			continue;
@@ -746,7 +749,7 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf, uint32_t link_type)
 			     (unsigned int *) &sf_single.jt,
 			     (unsigned int *) &sf_single.jf,
 			     (unsigned int *) &sf_single.k);
-		if (ret != 4)
+		if (unlikely(ret != 4))
 			panic("BPF syntax error!\n");
 
 		bpf->len++;
@@ -754,12 +757,12 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf, uint32_t link_type)
 				       bpf->len * sizeof(sf_single));
 
 		fmemcpy(&bpf->filter[bpf->len - 1], &sf_single,
-		       sizeof(sf_single));
+			sizeof(sf_single));
 		fmemset(buff, 0, sizeof(buff));
 	}
 
 	fclose(fp);
 
-	if (__bpf_validate(bpf) == 0)
+	if (unlikely(__bpf_validate(bpf) == 0))
 		panic("This is not a valid BPF program!\n");
 }
