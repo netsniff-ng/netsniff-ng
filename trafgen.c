@@ -240,7 +240,7 @@ static void __noreturn example(void)
 	"  /* IPv4 Version, IHL, TOS */\n"
 	"  0b01000101, 0,\n"
 	"  /* IPv4 Total Len */\n"
-	"  c16(58),\n"
+	"  c16(59),\n"
 	"  /* IPv4 Ident */\n"
 	"  drnd(2),\n"
 	"  /* IPv4 Flags, Frag Off */\n"
