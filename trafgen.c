@@ -342,11 +342,11 @@ static void apply_csum16(int csum_id)
 		struct csum16 *csum = &packet_dyn[i].csum[j];
 
 		fmemset(&packets[i].payload[csum->off], 0, sizeof(sum));
+		if (unlikely(csum->to >= packets[i].len))
+			csum->to = packets[i].len - 1;
 
 		switch (csum->which) {
 		case CSUM_IP:
-			if (csum->to >= packets[i].len)
-				csum->to = packets[i].len - 1;
 			sum = calc_csum(packets[i].payload + csum->from,
 					csum->to - csum->from + 1, 0);
 			break;
@@ -361,6 +361,9 @@ static void apply_csum16(int csum_id)
 				      packets[i].payload + csum->to,
 				      (packets[i].len - csum->to),
 				      IPPROTO_TCP);
+			break;
+		default:
+			bug();
 			break;
 		}
 
