@@ -31,10 +31,10 @@ extern int curve25519_pubkey_hexparse_32(unsigned char *bin, size_t blen,
 extern ssize_t curve25519_encode(struct curve25519_struct *curve,
 				 struct curve25519_proto *proto,
 				 unsigned char *plaintext, size_t size,
-				 unsigned char **chipertext);
+				 unsigned char **ciphertext);
 extern ssize_t curve25519_decode(struct curve25519_struct *curve,
 				 struct curve25519_proto *proto,
-				 unsigned char *chipertext, size_t size,
+				 unsigned char *ciphertext, size_t size,
 				 unsigned char **plaintext,
 				 struct taia *arrival_taia);
 

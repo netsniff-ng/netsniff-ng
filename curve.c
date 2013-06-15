@@ -104,7 +104,7 @@ void curve25519_proto_init(struct curve25519_proto *proto,
 ssize_t curve25519_encode(struct curve25519_struct *curve,
 			  struct curve25519_proto *proto,
 			  unsigned char *plaintext, size_t size,
-			  unsigned char **chipertext)
+			  unsigned char **ciphertext)
 {
 	int ret, i;
 	ssize_t done = size;
@@ -132,7 +132,7 @@ ssize_t curve25519_encode(struct curve25519_struct *curve,
 	for (i = 0; i < NONCE_RND_LENGTH; ++i)
 		curve->enc[i] = (uint8_t) secrand();
 
-	(*chipertext) = curve->enc;
+	(*ciphertext) = curve->enc;
 out:
 	spinlock_unlock(&curve->enc_lock);
 	return done;
@@ -140,7 +140,7 @@ out:
 
 ssize_t curve25519_decode(struct curve25519_struct *curve,
 			  struct curve25519_proto *proto,
-			  unsigned char *chipertext, size_t size,
+			  unsigned char *ciphertext, size_t size,
 			  unsigned char **plaintext,
 			  struct taia *arrival_taia)
 {
@@ -159,17 +159,17 @@ ssize_t curve25519_decode(struct curve25519_struct *curve,
 		arrival_taia = &tmp_taia;
 	}
 
-	taia_unpack(NONCE_PKT_OFFSET(chipertext), &packet_taia);
+	taia_unpack(NONCE_PKT_OFFSET(ciphertext), &packet_taia);
         if (taia_looks_good(arrival_taia, &packet_taia) == 0) {
 		done = 0;
 		goto out;
 	}
 
 	fmemcpy(NONCE_EDN_OFFSET(proto->dnonce),
-		NONCE_PKT_OFFSET(chipertext), NONCE_LENGTH);
+		NONCE_PKT_OFFSET(ciphertext), NONCE_LENGTH);
 	fmemset(curve->dec, 0, curve->dec_size);
 
-	ret = crypto_box_open_afternm(curve->dec, chipertext, size,
+	ret = crypto_box_open_afternm(curve->dec, ciphertext, size,
 				      proto->dnonce, proto->key);
 	if (unlikely(ret)) {
 		done = -EIO;
