@@ -16,15 +16,18 @@ bpfc is a small Berkeley Packet Filter assembler and compiler which is able to
 translate BPF assembler-like mnemonics into a numerical or C-like format,
 that can be read by tools such as netsniff-ng, iptables (xt_bpf) and many
 others. BPF is the one and only upstream filtering construct that is used
-in combination with packet(7) sockets. The Linux kernel and also BSD kernels
-implement "virtual machine" like constructs and JIT compilers that mimic
-a small register-based machine in BPF architecture and execute filter code
-that is, for example, composed by bpfc on a data buffer that is given by network
-packets. The purpose of this is to shift computation in time, so that the
-kernel can drop or truncate incoming packets as early as possible without
-having to push them to user space for further analysis first. Meanwhile,
-BPF constructs also find application in other areas such as in the
-communication between user and kernel space like system call sand-boxing.
+in combination with packet(7) sockets, but also seccomp-BPF for system call
+sandboxing.
+.PP
+The Linux kernel and also BSD kernels implement "virtual machine" like
+constructs and JIT compilers that mimic a small register-based machine in
+BPF architecture and execute filter code that is, for example, composed by
+bpfc on a data buffer that is given by network packets. The purpose of this
+is to shift computation in time, so that the kernel can drop or truncate
+incoming packets as early as possible without having to push them to user
+space for further analysis first. Meanwhile, BPF constructs also find
+application in other areas such as in the communication between user and
+kernel space like system call sand-boxing.
 .PP
 At the time of writing this man page, the only available BPF compiler is
 part of the pcap(3) library and accessible through a high-level filter
@@ -50,7 +53,8 @@ command ''echo "1" > /proc/sys/net/core/bpf_jit_enable'' (normal working
 mode) or ''echo "2" > /proc/sys/net/core/bpf_jit_enable'' (debug mode
 where emitted opcodes of the image are printed to the kernel log). An
 architecture agnostic BPF JIT image disassembler can be found in the kernel
-source tree under: tools/net/bpf_jit_disasm.c
+source tree under ''tools/net/bpf_jit_disasm.c'' or within the netsniff-ng
+Git repository.
 .PP
 .SH OPTIONS
 .PP
