@@ -47,10 +47,10 @@ int curve25519_pubkey_hexparse_32(unsigned char *bin, size_t blen,
 
 void curve25519_alloc_or_maybe_die(struct curve25519_struct *curve)
 {
-	curve->enc_buf_size = curve->dec_buf_size = TUNBUFF_SIZ;
+	curve->enc_size = curve->dec_size = TUNBUFF_SIZ;
 
-	curve->enc_buf = xmalloc_aligned(curve->enc_buf_size, 16);
-	curve->dec_buf = xmalloc_aligned(curve->dec_buf_size, 16);
+	curve->enc = xmalloc_aligned(curve->enc_size, 16);
+	curve->dec = xmalloc_aligned(curve->dec_size, 16);
 
 	spinlock_init(&curve->enc_lock);
 	spinlock_init(&curve->dec_lock);
@@ -60,11 +60,11 @@ void curve25519_free(void *curvep)
 {
 	struct curve25519_struct *curve = curvep;
 
-	memset(curve->enc_buf, 0, curve->enc_buf_size);
-	memset(curve->dec_buf, 0, curve->dec_buf_size);
+	memset(curve->enc, 0, curve->enc_size);
+	memset(curve->dec, 0, curve->dec_size);
 
-        xfree(curve->enc_buf);
-        xfree(curve->dec_buf);
+        xfree(curve->enc);
+        xfree(curve->dec);
 
         spinlock_destroy(&curve->enc_lock);
         spinlock_destroy(&curve->dec_lock);
@@ -124,7 +124,7 @@ ssize_t curve25519_encode(struct curve25519_struct *curve, struct curve25519_pro
 
 	spinlock_lock(&curve->enc_lock);
 
-	if (unlikely(size > curve->enc_buf_size)) {
+	if (unlikely(size > curve->enc_size)) {
 		done = -ENOMEM;
 		goto out;
 	}
@@ -132,20 +132,20 @@ ssize_t curve25519_encode(struct curve25519_struct *curve, struct curve25519_pro
 	taia_now(&packet_taia);
 	taia_pack(proto->enonce + NONCE_OFFSET, &packet_taia);
 
-	memset(curve->enc_buf, 0, curve->enc_buf_size);
-	ret = crypto_box_afternm(curve->enc_buf, plaintext, size, proto->enonce, proto->key);
+	memset(curve->enc, 0, curve->enc_size);
+	ret = crypto_box_afternm(curve->enc, plaintext, size, proto->enonce, proto->key);
 	if (unlikely(ret)) {
 		done = -EIO;
 		goto out;
 	}
 
-	fmemcpy(curve->enc_buf + crypto_box_boxzerobytes - NONCE_LENGTH,
+	fmemcpy(curve->enc + crypto_box_boxzerobytes - NONCE_LENGTH,
 	       proto->enonce + NONCE_OFFSET, NONCE_LENGTH);
 
 	for (i = 0; i < crypto_box_boxzerobytes - NONCE_LENGTH; ++i)
-		curve->enc_buf[i] = (uint8_t) secrand();
+		curve->enc[i] = (uint8_t) secrand();
 
-	(*chipertext) = curve->enc_buf;
+	(*chipertext) = curve->enc;
 out:
 	spinlock_unlock(&curve->enc_lock);
 	return done;
@@ -161,7 +161,7 @@ ssize_t curve25519_decode(struct curve25519_struct *curve, struct curve25519_pro
 
 	spinlock_lock(&curve->dec_lock);
 
-	if (unlikely(size > curve->dec_buf_size)) {
+	if (unlikely(size > curve->dec_size)) {
 		done = -ENOMEM;
 		goto out;
 	}
@@ -182,15 +182,15 @@ ssize_t curve25519_decode(struct curve25519_struct *curve, struct curve25519_pro
 	}
 
 	memcpy(proto->dnonce + NONCE_OFFSET, chipertext + crypto_box_boxzerobytes - NONCE_LENGTH, NONCE_LENGTH);
-	memset(curve->dec_buf, 0, curve->dec_buf_size);
+	memset(curve->dec, 0, curve->dec_size);
 
-	ret = crypto_box_open_afternm(curve->dec_buf, chipertext, size, proto->dnonce, proto->key);
+	ret = crypto_box_open_afternm(curve->dec, chipertext, size, proto->dnonce, proto->key);
 	if (unlikely(ret)) {
 		done = -EIO;
 		goto out;
 	}
 
-	(*plaintext) = curve->dec_buf;
+	(*plaintext) = curve->dec;
 out:
 	spinlock_unlock(&curve->dec_lock);
 	return done;

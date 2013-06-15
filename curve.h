@@ -15,8 +15,8 @@ struct curve25519_proto {
 };
 
 struct curve25519_struct {
-	unsigned char *enc_buf, *dec_buf;
-	size_t enc_buf_size, dec_buf_size;
+	unsigned char *enc, *dec;
+	size_t enc_size, dec_size;
 	struct spinlock enc_lock, dec_lock;
 };
 
