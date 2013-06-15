@@ -757,7 +757,7 @@ static void __correct_global_delta(struct ctx *ctx, int cpu, unsigned long orig)
 	for (cpu_sel = -1, i = 0; i < ctx->cpus; i++) {
 		if (stats[i].cd_packets > 0) {
 			if ((long long) stats[i].cd_packets +
-			    delta_correction > 0) {
+			    delta_correction >= 0) {
 				cpu_sel = i;
 				break;
 			}
@@ -797,7 +797,7 @@ static int xmit_packet_precheck(struct ctx *ctx, int cpu)
 	plen_total = __wait_and_sum_others(ctx, cpu);
 
 	if (orig > 0) {
-		ctx->num = (unsigned long) nearbyint((1.0 * plen / plen_total) * orig);
+		ctx->num = (unsigned long) round((1.0 * plen / plen_total) * orig);
 
 		__set_state_cd(cpu, ctx->num, CPU_STATS_STATE_CHK |
 			       CPU_STATS_STATE_CFG);
