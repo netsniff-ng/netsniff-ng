@@ -40,7 +40,7 @@ static int __device_address6(const char *ifname, struct sockaddr_storage *ss)
 	struct ifaddrs *ifaddr, *ifa;
 
 	ret = getifaddrs(&ifaddr);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		panic("Cannot get device addresses for IPv6!\n");
 
 	for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
@@ -64,7 +64,7 @@ int device_address(const char *ifname, int af, struct sockaddr_storage *ss)
 	int ret, sock;
 	struct ifreq ifr;
 
-	if (!ss)
+	if (unlikely(!ss))
 		return -EINVAL;
 	if (!strncmp("any", ifname, strlen("any")))
 		return -EINVAL;
@@ -83,13 +83,12 @@ int device_address(const char *ifname, int af, struct sockaddr_storage *ss)
 		memcpy(ss, &ifr.ifr_addr, sizeof(ifr.ifr_addr));
 
 	close(sock);
-
 	return ret;
 }
 
 int device_mtu(const char *ifname)
 {
-	int ret, sock, mtu;
+	int ret, sock, mtu = 0;
 	struct ifreq ifr;
 
 	sock = af_socket(AF_INET);
@@ -100,17 +99,14 @@ int device_mtu(const char *ifname)
 	ret = ioctl(sock, SIOCGIFMTU, &ifr);
 	if (!ret)
 		mtu = ifr.ifr_mtu;
-	else
-		mtu = 0;
 
 	close(sock);
-
 	return mtu;
 }
 
 short device_get_flags(const char *ifname)
 {
-	short flags;
+	short flags = 0;
 	int ret, sock;
 	struct ifreq ifr;
 
@@ -122,11 +118,8 @@ short device_get_flags(const char *ifname)
 	ret = ioctl(sock, SIOCGIFFLAGS, &ifr);
 	if (!ret)
 		flags = ifr.ifr_flags;
-	else
-		flags = 0;
 
 	close(sock);
-
 	return flags;
 }
 
@@ -139,7 +132,6 @@ void device_set_flags(const char *ifname, const short flags)
 
 	memset(&ifr, 0, sizeof(ifr));
 	strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
-
 	ifr.ifr_flags = flags;
 
 	ret = ioctl(sock, SIOCSIFFLAGS, &ifr);
@@ -156,15 +148,17 @@ int device_up_and_running(char *ifname)
 	if (!strncmp("any", ifname, strlen("any")))
 		return 1;
 
-	return (device_get_flags(ifname) & (IFF_UP | IFF_RUNNING)) == (IFF_UP | IFF_RUNNING);
+	return (device_get_flags(ifname) &
+		(IFF_UP | IFF_RUNNING)) ==
+		(IFF_UP | IFF_RUNNING);
 }
 
 u32 device_bitrate(const char *ifname)
 {
-	u32 speed_c, speed_w;
+	u32 scopper, swireless;
 
-	speed_c = ethtool_bitrate(ifname);
-	speed_w = wireless_bitrate(ifname);
+	scopper   = ethtool_bitrate(ifname);
+	swireless = wireless_bitrate(ifname);
 
-	return (speed_c == 0 ? speed_w : speed_c);
+	return scopper ? : swireless;
 }
