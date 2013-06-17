@@ -25,16 +25,16 @@
 #define PRINT_HEX_ASCII		4
 #define PRINT_NONE		5
 
-static const char * const packet_types[256]={
-	"<", /* Incoming */
-	"B", /* Broadcast */
-	"M", /* Multicast */
-	"P", /* Promisc */
-	">", /* Outgoing */
-	"?", /* Unknown */
-};
-
 extern char *if_indextoname(unsigned ifindex, char *ifname);
+
+static const char * const packet_types[256] = {
+	[PACKET_HOST]		=	"<", /* Incoming */
+	[PACKET_BROADCAST]	=	"B", /* Broadcast */
+	[PACKET_MULTICAST]	=	"M", /* Multicast */
+	[PACKET_OTHERHOST]	=	"P", /* Promisc */
+	[PACKET_OUTGOING]	=	">", /* Outgoing */
+					"?", /* Unknown */
+};
 
 static inline const char *__show_ts_source(uint32_t status)
 {
@@ -58,7 +58,6 @@ static inline void __show_frame_hdr(struct sockaddr_ll *s_ll,
 		return;
 
 	hdr.raw = raw;
-
 	switch (mode) {
 	case PRINT_LESS:
 		tprintf("%s %s %u",
