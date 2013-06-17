@@ -9,6 +9,7 @@
 #include "sock.h"
 #include "die.h"
 #include "link.h"
+#include "built_in.h"
 
 int device_ifindex(const char *ifname)
 {
@@ -24,11 +25,10 @@ int device_ifindex(const char *ifname)
 	strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
 
 	ret = ioctl(sock, SIOCGIFINDEX, &ifr);
-	if (!ret)
-		index = ifr.ifr_ifindex;
-	else
-		index = -1;
+	if (unlikely(ret))
+		panic("Cannot get ifindex from device!\n");
 
+	index = ifr.ifr_ifindex;
 	close(sock);
 
 	return index;
