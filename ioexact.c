@@ -1,12 +1,13 @@
 #include <errno.h>
 #include <unistd.h>
 #include <signal.h>
+#include <stdbool.h>
 
 #include "ioexact.h"
 
 extern volatile sig_atomic_t sigint;
 
-ssize_t read_exact(int fd, void *buf, size_t len, int mayexit)
+ssize_t read_exact(int fd, void *buf, size_t len, bool mayexit)
 {
 	ssize_t num = 0, written;
 
@@ -21,6 +22,7 @@ ssize_t read_exact(int fd, void *buf, size_t len, int mayexit)
 		}
 		if (!written)
 			return 0;
+
 		len -= written;
 		buf += written;
 		num += written;
@@ -29,7 +31,7 @@ ssize_t read_exact(int fd, void *buf, size_t len, int mayexit)
 	return num;
 }
 
-ssize_t write_exact(int fd, void *buf, size_t len, int mayexit)
+ssize_t write_exact(int fd, void *buf, size_t len, bool mayexit)
 {
 	ssize_t num = 0, written;
 
@@ -44,6 +46,7 @@ ssize_t write_exact(int fd, void *buf, size_t len, int mayexit)
 		}
 		if (!written)
 			return 0;
+
 		len -= written;
 		buf += written;
 		num += written;
