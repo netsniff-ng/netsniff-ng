@@ -79,7 +79,7 @@ int device_address(const char *ifname, int af, struct sockaddr_storage *ss)
 	ifr.ifr_addr.sa_family = af;
 
 	ret = ioctl(sock, SIOCGIFADDR, &ifr);
-	if (!ret)
+	if (likely(!ret))
 		memcpy(ss, &ifr.ifr_addr, sizeof(ifr.ifr_addr));
 
 	close(sock);
@@ -97,7 +97,7 @@ int device_mtu(const char *ifname)
 	strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
 
 	ret = ioctl(sock, SIOCGIFMTU, &ifr);
-	if (!ret)
+	if (likely(!ret))
 		mtu = ifr.ifr_mtu;
 
 	close(sock);
@@ -116,7 +116,7 @@ short device_get_flags(const char *ifname)
 	strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
 
 	ret = ioctl(sock, SIOCGIFFLAGS, &ifr);
-	if (!ret)
+	if (likely(!ret))
 		flags = ifr.ifr_flags;
 
 	close(sock);
@@ -135,7 +135,7 @@ void device_set_flags(const char *ifname, const short flags)
 	ifr.ifr_flags = flags;
 
 	ret = ioctl(sock, SIOCSIFFLAGS, &ifr);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		panic("Cannot set NIC flags!\n");
 
 	close(sock);
