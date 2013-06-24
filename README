@@ -12,7 +12,7 @@ packets.                                > `'  '` <  /
                                         ) ,.==., (  |
 Web: http://netsniff-ng.org          .-(|/--~~--\|)-'
                                     (      ___
-The gain of performance is           \__.=|___E 
+The gain of performance is           \__.=|___E
 reached by built-in zero-copy
 mechanisms, so that on packet reception and transmission the kernel does not
 need to copy packets from kernel space to user space, and vice versa.
@@ -44,7 +44,7 @@ Note that the toolkit is still quite young and under heavy development, not
 yet feature complete and in a quality level where we're satisfied with (i.e.
 for mausezahn). However, we're on a good way towards tackling all these goals.
 
-The netsniff-ng toolkit is an open source project covered by the GNU General 
+The netsniff-ng toolkit is an open source project covered by the GNU General
 Public License, version 2.0. For any questions or feedback about netsniff-ng
 you are welcome to leave us a message at <netsniff-ng@googlegroups.com>.
 

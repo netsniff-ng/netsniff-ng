@@ -44,7 +44,7 @@ One-liner installation for *all* dependencies on Debian:
   zlib1g-dev libcli-dev libnet1-dev
 
 One-liner installation for *all* dependencies on Fedora:
- 
+
   $ sudo yum install ccache flex bison ccache libnl3-devel \
   GeoIP-devel libnetfilter_conntrack-devel ncurses-devel \
   userspace-rcu-devel nacl-devel libpcap-devel zlib-devel \
@@ -65,7 +65,7 @@ The installation (deinstallation) process done by make is fairly simple:
   (or for both at once: # make mrproper)
 
 You can also build only a particular tool, e.g.:
-  
+
   $ make trafgen
   # make trafgen_install
 
