@@ -20,4 +20,5 @@ flowtop-objs =	xmalloc.o \
 		proto_none.o \
 		tprintf.o \
 		geoip.o \
+		screen.o \
 		flowtop.o

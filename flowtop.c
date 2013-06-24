@@ -37,6 +37,7 @@
 #include "locking.h"
 #include "dissector_eth.h"
 #include "pkt_buff.h"
+#include "screen.h"
 
 struct flow_entry {
 	uint32_t flow_id, use, status;
@@ -740,20 +741,6 @@ static uint16_t presenter_get_port(uint16_t src, uint16_t dst, int tcp)
 	}
 }
 
-static WINDOW *presenter_screen_init(void)
-{
-	WINDOW *screen = initscr();
-
-	noecho();
-	cbreak();
-	keypad(stdscr, TRUE);
-	nodelay(screen, TRUE);
-	refresh();
-	wrefresh(screen);
-
-	return screen;
-}
-
 static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 				     unsigned int *line)
 {
@@ -987,18 +974,13 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 	refresh();
 }
 
-static inline void presenter_screen_end(void)
-{
-	endwin();
-}
-
 static void presenter(void)
 {
 	int skip_lines = 0;
 	WINDOW *screen;
 
 	dissector_init_ethernet(0);
-	screen = presenter_screen_init();
+	screen = screen_init(false);
 
 	rcu_register_thread();
 	while (!sigint) {
@@ -1030,7 +1012,7 @@ static void presenter(void)
 	}
 	rcu_unregister_thread();
 
-	presenter_screen_end();
+	screen_end();
 	dissector_cleanup_ethernet();
 }
 

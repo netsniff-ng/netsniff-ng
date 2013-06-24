@@ -28,6 +28,7 @@
 #include "promisc.h"
 #include "cpus.h"
 #include "built_in.h"
+#include "screen.h"
 
 struct wifi_stat {
 	uint32_t bitrate;
@@ -635,21 +636,6 @@ static void stats_top(const struct ifstat *rel, const struct ifstat *abs,
 	}
 }
 
-static void screen_init(WINDOW **screen)
-{
-	(*screen) = initscr();
-
-	raw();
-	noecho();
-	cbreak();
-	nodelay((*screen), TRUE);
-
-	keypad(stdscr, TRUE);
-
-	refresh();
-	wrefresh((*screen));
-}
-
 static void screen_header(WINDOW *screen, const char *ifname, int *voff,
 			  uint64_t ms_interval, unsigned int top_cpus)
 {
@@ -931,17 +917,12 @@ static void screen_update(WINDOW *screen, const char *ifname, const struct ifsta
 	refresh();
 }
 
-static void screen_end(void)
-{
-	endwin();
-}
-
 static int screen_main(const char *ifname, uint64_t ms_interval,
 		       unsigned int top_cpus)
 {
 	int first = 1, key;
 
-	screen_init(&stats_screen);
+	stats_screen = screen_init(true);
 
 	while (!sigint) {
 		key = getch();

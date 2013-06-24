@@ -8,4 +8,5 @@ ifpps-objs =	xmalloc.o \
 		sock.o \
 		dev.o \
 		sig.o \
+		screen.o \
 		ifpps.o
