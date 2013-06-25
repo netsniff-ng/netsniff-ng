@@ -479,7 +479,7 @@ static void receive_to_xmit(struct ctx *ctx)
 
 	timer_purge();
 
-	sock_rx_net_stats(rx_sock);
+	sock_rx_net_stats(rx_sock, 0);
 
 	bpf_release(&bpf_ops);
 
@@ -989,7 +989,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 	timersub(&end, &start, &diff);
 
 	if (!(ctx->dump_dir && ctx->print_mode == PRINT_NONE)) {
-		sock_rx_net_stats(sock);
+		sock_rx_net_stats(sock, frame_count);
 
 		printf("\r%12lu  sec, %lu usec in total\n",
 		       diff.tv_sec, diff.tv_usec);
