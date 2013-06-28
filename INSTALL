@@ -55,8 +55,9 @@ repository root directory:
 
   $ cd netsniff-ng/
 
-The installation (deinstallation) process done by make is fairly simple:
+The installation (deinstallation) process is fairly simple:
 
+  $ ./configure
   $ make
   # make install
 

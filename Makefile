@@ -2,6 +2,8 @@
 # Copyright 2012 - 2013 Daniel Borkmann <borkmann@gnumaniacs.org>
 # Subject to the GNU GPL, version 2.
 
+include Config
+
 VERSION = 0
 PATCHLEVEL = 5
 SUBLEVEL = 8
@@ -14,7 +16,7 @@ TOOLS ?= netsniff-ng trafgen astraceroute flowtop ifpps bpfc curvetun mausezahn
 PREFIX ?=
 
 # Disable if you don't want it
-CCACHE ?= ccache
+CCACHE ?= $(CONFIG_CCACHE)
 
 # Location of installation paths.
 SBINDIR = $(PREFIX)/usr/sbin
@@ -203,6 +205,7 @@ install_all: $(foreach tool,$(TOOLS),$(tool)_install)
 install_allbutcurvetun: $(foreach tool,$(filter-out curvetun,$(TOOLS)),$(tool)_install)
 install_allbutmausezahn: $(foreach tool,$(filter-out mausezahn,$(TOOLS)),$(tool)_install)
 clean mostlyclean: $(foreach tool,$(TOOLS),$(tool)_clean)
+	$(Q)$(call RM,Config)
 realclean distclean clobber: $(foreach tool,$(TOOLS),$(tool)_distclean)
 	$(Q)$(call RMDIR,$(ETCDIRE))
 mrproper: clean distclean
