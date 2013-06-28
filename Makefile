@@ -16,7 +16,7 @@ TOOLS ?= netsniff-ng trafgen astraceroute flowtop ifpps bpfc curvetun mausezahn
 PREFIX ?=
 
 # Disable if you don't want it
-CCACHE ?= ccache
+CCACHE ?= $(CONFIG_CCACHE)
 
 # Location of installation paths.
 SBINDIR = $(PREFIX)/usr/sbin
