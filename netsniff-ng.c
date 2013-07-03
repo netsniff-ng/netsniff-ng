@@ -1018,6 +1018,35 @@ static void recv_only_or_dump(struct ctx *ctx)
 	close(sock);
 }
 
+static void init_ctx(struct ctx *ctx)
+{
+	memset(ctx, 0, sizeof(*ctx));
+	ctx->uid = getuid();
+	ctx->uid = getgid();
+
+	ctx->cpu = -1;
+	ctx->packet_type = -1;
+
+	ctx->magic = ORIGINAL_TCPDUMP_MAGIC;
+	ctx->print_mode = PRINT_NORM;
+	ctx->pcap = PCAP_OPS_SG;
+
+	ctx->dump_mode = DUMP_INTERVAL_TIME;
+	ctx->dump_interval = 60;
+
+	ctx->promiscuous = true;
+	ctx->randomize = false;
+}
+
+static void destroy_ctx(struct ctx *ctx)
+{
+	free(ctx->device_in);
+	free(ctx->device_out);
+	free(ctx->device_trans);
+
+	free(ctx->prefix);
+}
+
 static void __noreturn help(void)
 {
 	printf("\nnetsniff-ng %s, the packet sniffing beast\n", VERSION_STRING);
@@ -1101,20 +1130,9 @@ int main(int argc, char **argv)
 	int c, i, j, cpu_tmp, opt_index, ops_touched = 0, vals[4] = {0};
 	bool prio_high = false, setsockmem = true;
 	void (*main_loop)(struct ctx *ctx) = NULL;
-	struct ctx ctx = {
-		.print_mode = PRINT_NORM,
-		.cpu = -1,
-		.packet_type = -1,
-		.promiscuous = true,
-		.randomize = false,
-		.pcap = PCAP_OPS_SG,
-		.dump_interval = 60,
-		.dump_mode = DUMP_INTERVAL_TIME,
-		.uid = getuid(),
-		.gid = getgid(),
-		.magic = ORIGINAL_TCPDUMP_MAGIC,
-	};
+	struct ctx ctx;
 
+	init_ctx(&ctx);
 	srand(time(NULL));
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
@@ -1406,13 +1424,10 @@ int main(int argc, char **argv)
 	if (setsockmem)
 		reset_system_socket_memory(vals, array_size(vals));
 	destroy_geoip();
+
 	device_restore_irq_affinity_list();
 	tprintf_cleanup();
 
-	free(ctx.device_in);
-	free(ctx.device_out);
-	free(ctx.device_trans);
-	free(ctx.prefix);
-
+	destroy_ctx(&ctx);
 	return 0;
 }
