@@ -663,17 +663,17 @@ static inline void pcap_validate_header(const struct pcap_filehdr *hdr)
 	pcap_check_magic(hdr->magic);
 
 	if (hdr->linktype < LINKTYPE_MAX) {
-		if (!pcap_supported_linktypes[hdr->linktype])
+		if (pcap_supported_linktypes[hdr->linktype])
 			good = true;
 	}
 
 	if (linktype_swab < LINKTYPE_MAX) {
-		if (!pcap_supported_linktypes[linktype_swab])
+		if (pcap_supported_linktypes[linktype_swab])
 			good = true;
 	}
 
 	if (!good)
-		panic("This file has an unsupported pcap header!\n");
+		panic("This file has an unsupported pcap link type (%d)!\n", hdr->linktype);
 	if (unlikely(hdr->version_major != PCAP_VERSION_MAJOR) &&
 		     ___constant_swab16(hdr->version_major) != PCAP_VERSION_MAJOR)
 		panic("This file has not a valid pcap header\n");

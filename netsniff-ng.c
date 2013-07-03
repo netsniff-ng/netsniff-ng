@@ -1102,7 +1102,6 @@ int main(int argc, char **argv)
 	bool prio_high = false, setsockmem = true;
 	void (*main_loop)(struct ctx *ctx) = NULL;
 	struct ctx ctx = {
-		.link_type = LINKTYPE_EN10MB,
 		.print_mode = PRINT_NORM,
 		.cpu = -1,
 		.packet_type = -1,
@@ -1364,6 +1363,8 @@ int main(int argc, char **argv)
 
 	if (ctx.device_in && (device_mtu(ctx.device_in) ||
 	    !strncmp("any", ctx.device_in, strlen(ctx.device_in)))) {
+		if (!ctx.rfraw)
+			ctx.link_type = pcap_devtype_to_linktype(ctx.device_in);
 		if (!ctx.device_out) {
 			ctx.dump = 0;
 			main_loop = recv_only_or_dump;
