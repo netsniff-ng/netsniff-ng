@@ -35,6 +35,7 @@
 
 #define LINKTYPE_EN10MB				1   /* Ethernet (10Mb) */
 #define LINKTYPE_IEEE802_11			105 /* IEEE 802.11 wireless */
+#define LINKTYPE_NETLINK			253 /* Netlink messages */
 
 struct pcap_filehdr {
 	uint32_t magic;
@@ -573,8 +574,10 @@ static inline void pcap_validate_header(const struct pcap_filehdr *hdr)
 	switch (hdr->linktype) {
 	case LINKTYPE_EN10MB:
 	case LINKTYPE_IEEE802_11:
+	case LINKTYPE_NETLINK:
 	case ___constant_swab32(LINKTYPE_EN10MB):
 	case ___constant_swab32(LINKTYPE_IEEE802_11):
+	case ___constant_swab32(LINKTYPE_NETLINK):
 		break;
 	default:
 		panic("This file has not a valid pcap header\n");
