@@ -61,6 +61,7 @@ static void dissector_main(struct pkt_buff *pkt, struct protocol *start,
 
 void dissector_entry_point(uint8_t *packet, size_t len, int linktype, int mode)
 {
+	bool skip_dissecting = false;
 	struct protocol *proto_start, *proto_end;
 	struct pkt_buff *pkt = NULL;
 
@@ -81,10 +82,12 @@ void dissector_entry_point(uint8_t *packet, size_t len, int linktype, int mode)
 		proto_end = dissector_get_ieee80211_exit_point();
 		break;
 	default:
-		panic("Linktype not supported!\n");
+		skip_dissecting = true;
+		break;
 	};
 
-	dissector_main(pkt, proto_start, proto_end);
+	if (!skip_dissecting)
+		dissector_main(pkt, proto_start, proto_end);
 
 	switch (mode) {
 	case PRINT_HEX:
