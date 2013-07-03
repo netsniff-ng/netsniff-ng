@@ -62,9 +62,7 @@ scheduled move to slower medias). You can then use mergecap(1) to transform
 all pcaps into a single large pcap. Thus, netsniff-ng then works multithreaded
 eventually.
 .PP
-netsniff-ng can also be used to debug netlink traffic. On newer kernels one
-needs to modprobe nlmon so that a ''netlink'' networking device appears that
-can be used as an input device for netsniff-ng.
+netsniff-ng can also be used to debug netlink traffic.
 .PP
 .SH OPTIONS
 .PP
@@ -302,6 +300,20 @@ are not available.
 .SS cat foo.pcap | netsniff-ng -i - -o -
 Read a pcap file from stdin and convert it into a trafgen(8) configuration
 file to stdout.
+.PP
+.SS modprobe nlmon
+.SS ip link add type nlmon
+.SS ip link set nlmon0 up
+.SS netsniff-ng -i nlmon0 -o dump.pcap -s
+.SS ip link set nlmon0 down
+.SS ip link del dev nlmon0
+.SS rmmod nlmon
+In this example, netlink traffic is being captured. If not already done, a
+netlink monitoring device needs to be set up before it can be used to capture
+netlink socket buffers (iproute2's ip(1) commands are given for nlmon device
+setup and teardown). netsniff-ng can then make use of the nlmon device as
+an input device. In this example a pcap file with netlink traffic is being
+recorded.
 .PP
 .SH CONFIG FILES
 .PP
