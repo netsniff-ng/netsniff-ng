@@ -17,6 +17,7 @@
 
 #include "built_in.h"
 #include "die.h"
+#include "dev.h"
 #include "ioops.h"
 
 #define TCPDUMP_MAGIC				0xa1b2c3d4
@@ -33,9 +34,28 @@
 #define PCAP_TSOURCE_SYS_HARDWARE		2
 #define PCAP_TSOURCE_RAW_HARDWARE		3
 
-#define LINKTYPE_EN10MB				1   /* Ethernet (10Mb) */
-#define LINKTYPE_IEEE802_11			105 /* IEEE 802.11 wireless */
-#define LINKTYPE_NETLINK			253 /* Netlink messages */
+#define LINKTYPE_NULL				0
+#define LINKTYPE_EN10MB				1
+#define LINKTYPE_EN3MB				2
+#define LINKTYPE_AX25				3
+#define LINKTYPE_PRONET				4
+#define LINKTYPE_CHAOS				5
+#define LINKTYPE_IEEE802			6
+#define LINKTYPE_SLIP				8
+#define LINKTYPE_PPP				9
+#define LINKTYPE_FDDI				10
+#define LINKTYPE_ATM_CLIP			19
+#define LINKTYPE_C_HDLC				104
+#define LINKTYPE_IEEE802_11			105
+#define LINKTYPE_FRELAY				107
+#define LINKTYPE_ECONET				115
+#define LINKTYPE_ARCNET_LINUX			129
+#define LINKTYPE_LINUX_IRDA			144
+#define LINKTYPE_CAN20B				190
+#define LINKTYPE_IEEE802_15_4_LINUX		191
+#define LINKTYPE_INFINIBAND			247
+#define LINKTYPE_NETLINK			253
+#define LINKTYPE_MAX				254
 
 struct pcap_filehdr {
 	uint32_t magic;
@@ -147,6 +167,51 @@ static inline uint16_t tp_to_pcap_tsource(uint32_t status)
 		return PCAP_TSOURCE_SOFTWARE;
 	else
 		return 0;
+}
+
+static inline int pcap_devtype_to_linktype(const char *ifname)
+{
+	int type = device_type(ifname);
+
+	case (type) {
+	case ARPHRD_TUNNEL:
+	case ARPHRD_TUNNEL6:
+	case ARPHRD_LOOPBACK:
+	case ARPHRD_SIT:
+	case ARPHRD_IPDDP:
+	case ARPHRD_IPGRE:
+	case ARPHRD_IP6GRE:
+	case ARPHRD_ETHER:	return LINKTYPE_EN10MB;
+	case ARPHRD_IEEE80211_PRISM:
+	case ARPHRD_IEEE80211_RADIOTAP:
+	case ARPHRD_IEEE80211:	return LINKTYPE_IEEE802_11;
+	case ARPHRD_NETLINK:	return LINKTYPE_NETLINK;
+	case ARPHRD_EETHER:	return LINKTYPE_EN3MB;
+	case ARPHRD_AX25:	return LINKTYPE_AX25;
+	case ARPHRD_CHAOS:	return LINKTYPE_CHAOS;
+	case ARPHRD_PRONET:	return LINKTYPE_PRONET;
+	case ARPHRD_IEEE802_TR:
+	case ARPHRD_IEEE802:	return LINKTYPE_IEEE802;
+	case ARPHRD_INFINIBAND:	return LINKTYPE_INFINIBAND;
+	case ARPHRD_ATM:	return LINKTYPE_ATM_CLIP;
+	case ARPHRD_DLCI:	return LINKTYPE_FRELAY;
+	case ARPHRD_ARCNET:	return LINKTYPE_ARCNET_LINUX;
+	case ARPHRD_CSLIP:
+	case ARPHRD_CSLIP6:
+	case ARPHRD_SLIP6:
+	case ARPHRD_SLIP:	return LINKTYPE_SLIP;
+	case ARPHRD_PPP:	return LINKTYPE_PPP;
+	case ARPHRD_CAN:	return LINKTYPE_CAN20B;
+	case ARPHRD_ECONET:	return LINKTYPE_ECONET;
+	case ARPHRD_HDLC:
+	case ARPHRD_RAWHDLC:
+	case ARPHRD_CISCO:	return LINKTYPE_C_HDLC;
+	case ARPHRD_FDDI:	return LINKTYPE_FDDI;
+	case ARPHRD_IEEE802154_MONITOR:
+	case ARPHRD_IEEE802154:	return LINKTYPE_IEEE802_15_4_LINUX;
+	case ARPHRD_IRDA:	return LINKTYPE_LINUX_IRDA;
+	default:		return LINKTYPE_NULL;
+	}
 }
 
 static inline void pcap_check_magic(uint32_t magic)
@@ -567,22 +632,48 @@ static inline void pcap_prepare_header(struct pcap_filehdr *hdr, uint32_t magic,
 	hdr->linktype = swapped ? ___constant_swab32(linktype) : linktype;
 }
 
+static const bool pcap_supported_linktypes[LINKTYPE_MAX] __maybe_unused = {
+	[LINKTYPE_NULL] = true,
+	[LINKTYPE_EN10MB] = true,
+	[LINKTYPE_EN3MB] = true,
+	[LINKTYPE_AX25] = true,
+	[LINKTYPE_PRONET] = true,
+	[LINKTYPE_CHAOS] = true,
+	[LINKTYPE_IEEE802] = true,
+	[LINKTYPE_SLIP] = true,
+	[LINKTYPE_PPP] = true,
+	[LINKTYPE_FDDI] = true,
+	[LINKTYPE_ATM_CLIP] = true,
+	[LINKTYPE_C_HDLC] = true,
+	[LINKTYPE_IEEE802_11] = true,
+	[LINKTYPE_FRELAY] = true,
+	[LINKTYPE_ECONET] = true,
+	[LINKTYPE_ARCNET_LINUX] = true,
+	[LINKTYPE_LINUX_IRDA] = true,
+	[LINKTYPE_CAN20B] = true,
+	[LINKTYPE_IEEE802_15_4_LINUX] = true,
+	[LINKTYPE_INFINIBAND] = true,
+	[LINKTYPE_NETLINK] = true,
+};
+
 static inline void pcap_validate_header(const struct pcap_filehdr *hdr)
 {
+	bool good = false;
+	uint32_t linktype_swab = bswap_32(hdr->linktype);
 	pcap_check_magic(hdr->magic);
 
-	switch (hdr->linktype) {
-	case LINKTYPE_EN10MB:
-	case LINKTYPE_IEEE802_11:
-	case LINKTYPE_NETLINK:
-	case ___constant_swab32(LINKTYPE_EN10MB):
-	case ___constant_swab32(LINKTYPE_IEEE802_11):
-	case ___constant_swab32(LINKTYPE_NETLINK):
-		break;
-	default:
-		panic("This file has not a valid pcap header\n");
+	if (hdr->linktype < LINKTYPE_MAX) {
+		if (!pcap_supported_linktypes[hdr->linktype])
+			good = true;
 	}
 
+	if (linktype_swab < LINKTYPE_MAX) {
+		if (!pcap_supported_linktypes[linktype_swab])
+			good = true;
+	}
+
+	if (!good)
+		panic("This file has an unsupported pcap header!\n");
 	if (unlikely(hdr->version_major != PCAP_VERSION_MAJOR) &&
 		     ___constant_swab16(hdr->version_major) != PCAP_VERSION_MAJOR)
 		panic("This file has not a valid pcap header\n");

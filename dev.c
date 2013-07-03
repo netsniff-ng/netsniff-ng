@@ -34,6 +34,30 @@ int device_ifindex(const char *ifname)
 	return index;
 }
 
+int device_type(const char *ifname)
+{
+	int ret, sock, type;
+	struct ifreq ifr;
+
+	if (!strncmp("any", ifname, strlen("any")))
+		return 0;
+
+	sock = af_socket(AF_INET);
+
+	memset(&ifr, 0, sizeof(ifr));
+	strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
+
+	ret = ioctl(sock, SIOCGIFHWADDR, &ifr);
+	if (unlikely(ret))
+		panic("Cannot get iftype from device!\n");
+
+	/* dev->type */
+	type = ifr.ifr_hwaddr.sa_family;
+	close(sock);
+
+	return type;
+}
+
 static int __device_address6(const char *ifname, struct sockaddr_storage *ss)
 {
 	int ret, family, found = -EINVAL;
