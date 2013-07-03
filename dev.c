@@ -2,6 +2,8 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
+#include <sys/socket.h>
+#include <linux/if_arp.h>
 #include <ifaddrs.h>
 
 #include "dev.h"
@@ -40,7 +42,7 @@ int device_type(const char *ifname)
 	struct ifreq ifr;
 
 	if (!strncmp("any", ifname, strlen("any")))
-		return 0;
+		return ARPHRD_ETHER;
 
 	sock = af_socket(AF_INET);
 
