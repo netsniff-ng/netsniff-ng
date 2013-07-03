@@ -13,7 +13,10 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <sys/time.h>
+#include <sys/socket.h>
+#include <linux/if.h>
 #include <linux/if_packet.h>
+#include <linux/if_arp.h>
 
 #include "built_in.h"
 #include "die.h"
@@ -171,9 +174,7 @@ static inline uint16_t tp_to_pcap_tsource(uint32_t status)
 
 static inline int pcap_devtype_to_linktype(const char *ifname)
 {
-	int type = device_type(ifname);
-
-	case (type) {
+	switch (device_type(ifname)) {
 	case ARPHRD_TUNNEL:
 	case ARPHRD_TUNNEL6:
 	case ARPHRD_LOOPBACK:
@@ -203,7 +204,6 @@ static inline int pcap_devtype_to_linktype(const char *ifname)
 	case ARPHRD_PPP:	return LINKTYPE_PPP;
 	case ARPHRD_CAN:	return LINKTYPE_CAN20B;
 	case ARPHRD_ECONET:	return LINKTYPE_ECONET;
-	case ARPHRD_HDLC:
 	case ARPHRD_RAWHDLC:
 	case ARPHRD_CISCO:	return LINKTYPE_C_HDLC;
 	case ARPHRD_FDDI:	return LINKTYPE_FDDI;

@@ -364,4 +364,12 @@ static inline u64 cpu_to_le64(u64 val)
 # define POLLRDHUP			0x2000
 #endif
 
+#ifndef ARPHRD_IP6GRE
+# define ARPHRD_IP6GRE			823
+#endif
+
+#ifndef ARPHRD_NETLINK
+# define ARPHRD_NETLINK			824
+#endif
+
 #endif /* BUILT_IN_H */
