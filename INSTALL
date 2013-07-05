@@ -157,4 +157,4 @@ a prefixed path like:
   $ make PREFIX=<path-prefix-for-package> install
 
 Thanks for maintaining netsniff-ng in your distribution. Further questions
-will be answered on the public mainling list.
+will be answered on the public mailing list.
