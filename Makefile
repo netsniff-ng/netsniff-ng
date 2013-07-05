@@ -2,7 +2,10 @@
 # Copyright 2012 - 2013 Daniel Borkmann <borkmann@gnumaniacs.org>
 # Subject to the GNU GPL, version 2.
 
-include Config
+-include Config
+ifndef CONFIG_OK
+  $(error "Please run `./configure' before `make'")
+endif
 
 VERSION = 0
 PATCHLEVEL = 5

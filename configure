@@ -246,4 +246,6 @@ if [ "$MISSING_NACL" == "1" ] ; then
 	exit 1
 fi
 
+echo "CONFIG_OK=1" >> Config
+
 exit 0
