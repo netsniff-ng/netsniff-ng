@@ -61,17 +61,25 @@ The installation (deinstallation) process is fairly simple:
   $ make
   # make install
 
-  (# make distclean)
-  ($ make clean)
-  (or for both at once: # make mrproper)
+  (# make uninstall)
 
-You can also build only a particular tool, e.g.:
+In order to remove all build files from the source tree:
+
+  $ make clean
+
+To bring the source tree into a pristine state, there are two options.
+The first one will remove all build and build config file, the latter
+will also remove any manually added files:
+
+  $ make distclean
+  ($ make mrproper)
+
+You can also build/install/uninstall only a particular tool, e.g.:
 
   $ make trafgen
   # make trafgen_install
 
-  (# make trafgen_distclean)
-  ($ make trafgen_clean)
+  (# make trafgen_uninstall)
 
 If you want to build all tools, but {curvetun,mausezahn} (i.e. because you
 don't need the tunneling software and the NaCl build process lasts quite long):
@@ -79,7 +87,7 @@ don't need the tunneling software and the NaCl build process lasts quite long):
   $ make allbutcurvetun               (allbutmausezahn)
   # make install_allbutcurvetun       (install_allbutmausezahn)
 
-  (# make mrproper)
+  (# make uninstall)
 
 In order to build curvetun, libnacl must be built first. A helper script
 called nacl_build.sh is there to facilitate this process. If you want to

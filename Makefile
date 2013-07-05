@@ -190,7 +190,7 @@ clean_showinfo:
 	$(YAAC) -p $(shell perl -wlne 'print $$1 if /yaac-func-prefix:\s([a-z]+)/' $<) \
 		-o $(BUILD_DIR)/$(shell basename $< .y).tab.c $(YAAC_FLAGS) -d $<
 
-.PHONY: all toolkit $(TOOLS) clean %_prehook %_distclean %_clean %_install tag tags cscope
+.PHONY: all toolkit $(TOOLS) clean %_prehook %_clean %_install %_uninstall tag tags cscope
 .FORCE:
 .DEFAULT_GOAL := all
 .DEFAULT:
@@ -203,16 +203,18 @@ all: build_showinfo toolkit
 allbutcurvetun: $(filter-out curvetun,$(TOOLS))
 allbutmausezahn: $(filter-out mausezahn,$(TOOLS))
 toolkit: $(TOOLS)
+clean: $(foreach tool,$(TOOLS),$(tool)_clean)
+distclean: clean
+	$(Q)$(call RM,Config)
+mrproper: distclean
+	$(Q)$(GIT_REM)
+
 install: install_all
 install_all: $(foreach tool,$(TOOLS),$(tool)_install)
 install_allbutcurvetun: $(foreach tool,$(filter-out curvetun,$(TOOLS)),$(tool)_install)
 install_allbutmausezahn: $(foreach tool,$(filter-out mausezahn,$(TOOLS)),$(tool)_install)
-clean mostlyclean: $(foreach tool,$(TOOLS),$(tool)_clean)
-	$(Q)$(call RM,Config)
-realclean distclean clobber: $(foreach tool,$(TOOLS),$(tool)_distclean)
+uninstall: $(foreach tool,$(TOOLS),$(tool)_uninstall)
 	$(Q)$(call RMDIR,$(ETCDIRE))
-mrproper: clean distclean
-	$(Q)$(GIT_REM)
 
 define TOOL_templ
   include $(1)/Makefile
@@ -226,7 +228,7 @@ define TOOL_templ
 	$(Q)$$(call INSTX,$(1)/$(1),$$(SBINDIR))
 	$(Q)$(GZIP) $(1).8 > $(1)/$(1).8.gz
 	$(Q)$$(call INSTX,$(1)/$(1).8.gz,$$(MAN8DIR))
-  $(1)_distclean: $(1)_distclean_custom
+  $(1)_uninstall: $(1)_uninstall_custom
 	$(Q)$$(call RM,$$(SBINDIR)/$(1))
 	$(Q)$$(call RM,$$(MAN8DIR)/$(1).8.gz)
   $(1)/%.yy.o: $(1)/%.yy.c
@@ -255,15 +257,6 @@ bpfc_clean_custom:
 	$(Q)$(call RM,$(BUILD_DIR)/*.h $(BUILD_DIR)/*.c)
 trafgen_clean_custom:
 	$(Q)$(call RM,$(BUILD_DIR)/*.h $(BUILD_DIR)/*.c)
-netsniff-ng_distclean_custom flowtop_distclean_custom:
-	$(Q)$(foreach file,$(NCONF_FILES),$(call RM,$(ETCDIRE)/$(file));)
-	$(Q)$(call RMDIR,$(ETCDIRE))
-trafgen_distclean_custom:
-	$(Q)$(call RM,$(ETCDIRE)/stddef.h)
-	$(Q)$(call RMDIR,$(ETCDIRE))
-astraceroute_distclean_custom:
-	$(Q)$(call RM,$(ETCDIRE)/geoip.conf)
-	$(Q)$(call RMDIR,$(ETCDIRE))
 
 netsniff-ng_install_custom flowtop_install_custom:
 	$(Q)$(foreach file,$(NCONF_FILES),$(call INST,$(file),$(ETCDIRE));)
@@ -272,6 +265,15 @@ trafgen_install_custom:
 	$(Q)ln -fs $(ETCDIRE)/trafgen_stddef.h $(ETCDIRE)/stddef.h
 astraceroute_install_custom:
 	$(Q)$(call INST,geoip.conf,$(ETCDIRE))
+netsniff-ng_uninstall_custom flowtop_uninstall_custom:
+	$(Q)$(foreach file,$(NCONF_FILES),$(call RM,$(ETCDIRE)/$(file));)
+	$(Q)$(call RMDIR,$(ETCDIRE))
+trafgen_uninstall_custom:
+	$(Q)$(call RM,$(ETCDIRE)/stddef.h)
+	$(Q)$(call RMDIR,$(ETCDIRE))
+astraceroute_uninstall_custom:
+	$(Q)$(call RM,$(ETCDIRE)/geoip.conf)
+	$(Q)$(call RMDIR,$(ETCDIRE))
 
 $(TOOLS):
 	$(LD) $(ALL_LDFLAGS) -o $@/$@ $@/*.o $($@-libs)
@@ -330,15 +332,16 @@ help:
 	$(Q)echo " allbutmausezahn              - Build all except mausezahn"
 	$(Q)echo " <toolname>                   - Build only one of the tools"
 	$(Q)echo "$(bold)Targets for cleaning the toolkit's build files:$(normal)"
-	$(Q)echo " clean|mostlyclean            - Remove all build files"
+	$(Q)echo " clean                        - Remove all build files"
 	$(Q)echo " <toolname>_clean             - Remove only one of the tool's files"
+	$(Q)echo " distclean                    - Remove all build and build config files"
+	$(Q)echo " mrproper                     - Remove all files not in source distribution"
 	$(Q)echo "$(bold)Targets for installing the toolkit:$(normal)"
 	$(Q)echo " install                      - Install the whole toolkit"
 	$(Q)echo " <toolname>_install           - Install only one of the tools"
 	$(Q)echo "$(bold)Targets for removing the toolkit:$(normal)"
-	$(Q)echo " realclean|distclean|clobber  - Remove the whole toolkit from the system"
-	$(Q)echo " <toolname>_distclean         - Remove only one of the tools"
-	$(Q)echo " mrproper                     - Remove build and install files"
+	$(Q)echo " uninstall                    - Remove the whole toolkit from the system"
+	$(Q)echo " <toolname>_uninstall         - Remove only one of the tools"
 	$(Q)echo "$(bold)Hacking/development targets:$(normal)"
 	$(Q)echo " tag                          - Generate Git tag of current version"
 	$(Q)echo " tarball                      - Generate tarball of latest version"
