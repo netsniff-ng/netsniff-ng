@@ -100,12 +100,12 @@ void main(void)
 EOF
 
 	$CC -W -Wall \
-		$(pkg-config --cflags libnl-3.0) \
-		$(pkg-config --cflags libnl-genl-3.0) \
+		$(pkg-config --cflags libnl-3.0 2>&1 > /dev/null) \
+		$(pkg-config --cflags libnl-genl-3.0 2>&1 > /dev/null) \
 		-o $TMPDIR/libnltest \
 		$TMPDIR/libnltest.c \
-		$(pkg-config --libs libnl-3.0) \
-		$(pkg-config --libs libnl-genl-3.0) \
+		$(pkg-config --libs libnl-3.0 2>&1 > /dev/null) \
+		$(pkg-config --libs libnl-genl-3.0 2>&1 > /dev/null) \
 			>> $TMPDIR/config.log 2>&1
 	if [ ! -x $TMPDIR/libnltest ] ; then
 		echo "[NO]"
@@ -153,7 +153,11 @@ void main(void)
 }
 EOF
 
-	$CC $(pkg-config --cflags ncurses) -o $TMPDIR/ncursestest $TMPDIR/ncursestest.c $(pkg-config --libs ncurses) >> $TMPDIR/config.log 2>&1
+	$CC -W -Wall \
+		$(pkg-config --cflags ncurses 2>&1 > /dev/null) \
+		-o $TMPDIR/ncursestest $TMPDIR/ncursestest.c \
+		$(pkg-config --libs ncurses 2>&1 > /dev/null) \
+			>> $TMPDIR/config.log 2>&1
 	if [ ! -x $TMPDIR/ncursestest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
