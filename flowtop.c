@@ -15,10 +15,6 @@
 #include <signal.h>
 #include <netdb.h>
 #include <ctype.h>
-#include <libnetfilter_conntrack/libnetfilter_conntrack.h>
-#include <libnetfilter_conntrack/libnetfilter_conntrack_tcp.h>
-#include <libnetfilter_conntrack/libnetfilter_conntrack_dccp.h>
-#include <libnetfilter_conntrack/libnetfilter_conntrack_sctp.h>
 #include <netinet/in.h>
 #include <curses.h>
 #include <dirent.h>
@@ -29,6 +25,7 @@
 
 #include "die.h"
 #include "xmalloc.h"
+#include "conntrack.h"
 #include "ioops.h"
 #include "str.h"
 #include "sig.h"
