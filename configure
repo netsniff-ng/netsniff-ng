@@ -184,10 +184,12 @@ void main(void)
 		GEOIP_ASNUM_EDITION,
 		GEOIP_ASNUM_EDITION_V6,
 	};
+
+	geoip = GeoIP_new(0);
 }
 EOF
 
-	$CC -o $TMPDIR/geoiptest $TMPDIR/geoiptest.c >> $TMPDIR/config.log 2>&1
+	$CC -o $TMPDIR/geoiptest $TMPDIR/geoiptest.c -lGeoIP >> $TMPDIR/config.log 2>&1
 	if [ ! -x $TMPDIR/geoiptest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
