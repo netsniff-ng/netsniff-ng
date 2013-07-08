@@ -5,10 +5,33 @@ MISSING_PKG_CONFIG=0
 MISSING_DEFS=0
 MISSING_NACL=0
 
+TOOLS="netsniff-ng trafgen astraceroute flowtop ifpps bpfc curvetun mausezahn"
+TOOLS_NOBUILD=""
+
 [ -z $CC ] && CC=cc
 
 TMPDIR=$(mktemp -d config.XXXXXX)
 trap 'status=$?; rm -rf $TMPDIR; exit $status' EXIT HUP INT QUIT TERM
+
+tools_remove()
+{
+	local _tools=$TOOLS
+	TOOLS=""
+	for tool in $_tools ; do
+		case "$tool" in
+		$1)
+			m=`expr match \"$TOOLS_NOBUILD\" '$1'`
+			if [ "$m" == "0" ] ; then
+				TOOLS_NOBUILD="$TOOLS_NOBUILD $tool"
+			fi
+			;;
+		*) TOOLS="$TOOLS $tool" ;;
+		esac
+	done
+
+	TOOLS=${TOOLS# }
+	TOOLS_NOBUILD=${TOOLS_NOBUILD# }
+}
 
 check_pkg_config()
 {
@@ -65,6 +88,7 @@ EOF
 	if [ ! -x $TMPDIR/nacltest ] ; then
 		echo "[NO]"
 		MISSING_NACL=1
+		tools_remove "curvetun"
 	else
 		echo "[YES]"
 		echo "CONFIG_NACL_INC_DIR:=$NACL_INC_DIR" >> Config
@@ -109,6 +133,7 @@ EOF
 	if [ ! -x $TMPDIR/libnltest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
+		tools_remove "trafgen"
 	else
 		echo "[YES]"
 	fi
@@ -134,6 +159,8 @@ EOF
 	if [ ! -x $TMPDIR/tpackettest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
+		tools_remove "netsniff-ng"
+		tools_remove "trafgen"
 	else
 		echo "[YES]"
 	fi
@@ -160,6 +187,8 @@ EOF
 	if [ ! -x $TMPDIR/ncursestest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
+		tools_remove "flowtop"
+		tools_remove "ifpps"
 	else
 		echo "[YES]"
 	fi
@@ -175,7 +204,6 @@ check_libgeoip()
 
 void main(void)
 {
-	GeoIP *geoip;
 	int dbs[] = {
 		GEOIP_CITY_EDITION_REV1,
 		GEOIP_CITY_EDITION_REV1_V6,
@@ -184,8 +212,7 @@ void main(void)
 		GEOIP_ASNUM_EDITION,
 		GEOIP_ASNUM_EDITION_V6,
 	};
-
-	geoip = GeoIP_new(0);
+	GeoIP *geoip = GeoIP_new(0);
 }
 EOF
 
@@ -193,6 +220,9 @@ EOF
 	if [ ! -x $TMPDIR/geoiptest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
+		tools_remove "netsniff-ng"
+		tools_remove "astraceroute"
+		tools_remove "flowtop"
 	else
 		echo "[YES]"
 	fi
@@ -211,7 +241,6 @@ check_libnf_ct()
 void main(void)
 {
 	struct nf_conntrack *ct;
-
 	const uint32_t id = nfct_get_attr_u32(ct, ATTR_ID);
 }
 EOF
@@ -220,6 +249,7 @@ EOF
 	if [ ! -x $TMPDIR/nfcttest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
+		tools_remove "libnetfilter-conntrack"
 	else
 		echo "[YES]"
 	fi
@@ -234,9 +264,7 @@ check_zlib()
 
 void main(void)
 {
-	gzFile fp;
-
-	fp = gzopen("foo.gz", "rb");
+	gzFile fp = gzopen("foo.gz", "rb");
 }
 EOF
 
@@ -244,6 +272,9 @@ EOF
 	if [ ! -x $TMPDIR/ztest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
+		tools_remove "netsniff-ng"
+		tools_remove "astraceroute"
+		tools_remove "flowtop"
 	else
 		echo "[YES]"
 	fi
@@ -267,6 +298,7 @@ EOF
 	if [ ! -x $TMPDIR/urcutest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
+		tools_remove "flowtop"
 	else
 		echo "[YES]"
 	fi
@@ -290,6 +322,55 @@ EOF
 	if [ ! -x $TMPDIR/pcaptest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
+		tools_remove "netsniff-ng"
+		tools_remove "mausezahn"
+	else
+		echo "[YES]"
+	fi
+}
+
+check_libcli()
+{
+	echo -n "[*] Checking libcli ... "
+
+	cat > $TMPDIR/clitest.c << EOF
+#include <libcli.h>
+
+void main(void)
+{
+	struct cli_def *cli = cli_init();
+}
+EOF
+
+	$CC -o $TMPDIR/clitest $TMPDIR/clitest.c -lcli >> $TMPDIR/config.log 2>&1
+	if [ ! -x $TMPDIR/clitest ] ; then
+		echo "[NO]"
+		MISSING_DEFS=1
+		tools_remove "mausezahn"
+	else
+		echo "[YES]"
+	fi
+}
+
+check_libnet()
+{
+	echo -n "[*] Checking libnet ... "
+
+	cat > $TMPDIR/nettest.c << EOF
+#include <libnet.h>
+
+void main(void)
+{
+	char err_buf[LIBNET_ERRBUF_SIZE];
+	libnet_t *l = libnet_init(LIBNET_LINK_ADV, "ethX", err_buf);
+}
+EOF
+
+	$CC -o $TMPDIR/nettest $TMPDIR/nettest.c -lnet >> $TMPDIR/config.log 2>&1
+	if [ ! -x $TMPDIR/nettest ] ; then
+		echo "[NO]"
+		MISSING_DEFS=1
+		tools_remove "mausezahn"
 	else
 		echo "[YES]"
 	fi
@@ -313,12 +394,15 @@ check_libgeoip
 check_zlib
 check_urcu
 check_libpcap
+# mausezahn dependencies
+check_libcli
+check_libnet
 
 if [ "$MISSING_DEFS" == "1" ] ; then
 	echo "[!] Some libraries or header definitions are missing or too old."
-	echo "    Please refer to the INSTALL file for the libraries needed to"
-	echo "    build netsniff-ng."
-	exit 1
+	echo "    Thus certain tools will not be built (see below). Please"
+	echo "    refer to the INSTALL file for the libraries needed to build"
+	echo "    the complete netsniff-ng toolkit."
 fi
 
 if [ "$MISSING_NACL" == "1" ] ; then
@@ -327,9 +411,15 @@ if [ "$MISSING_NACL" == "1" ] ; then
 	echo "    distro or build it manually using 'make nacl' and make sure"
 	echo "    that the NACL_INC_DIR and NACL_LIB_DIR variables are set"
 	echo "    appropriately."
-	exit 1
 fi
 
+if [ "x$TOOLS_NOBUILD" != "x" ] ; then
+	echo "[!] The following tools will *not* be built: $TOOLS_NOBUILD"
+fi
+
+echo "[*] The following tools will be built: $TOOLS"
+
+echo "CONFIG_TOOLS=$TOOLS" >> Config
 echo "CONFIG_OK=1" >> Config
 
 exit 0

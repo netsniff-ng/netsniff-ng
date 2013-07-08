@@ -13,6 +13,7 @@ SUBLEVEL = 8
 EXTRAVERSION = -rc0
 NAME = Ziggomatic
 
+TOOLS ?= $(CONFIG_TOOLS)
 TOOLS ?= netsniff-ng trafgen astraceroute flowtop ifpps bpfc curvetun mausezahn
 
 # For packaging purposes, prefix can define a different path.
