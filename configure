@@ -177,6 +177,14 @@ check_libgeoip()
 void main(void)
 {
 	GeoIP *geoip;
+	int dbs[] = {
+		GEOIP_CITY_EDITION_REV1,
+		GEOIP_CITY_EDITION_REV1_V6,
+		GEOIP_COUNTRY_EDITION,
+		GEOIP_COUNTRY_EDITION_V6,
+		GEOIP_ASNUM_EDITION,
+		GEOIP_ASNUM_EDITION_V6,
+	};
 }
 EOF
 
