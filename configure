@@ -158,6 +158,8 @@ void main(void)
 	int foo[] = {
 		TP_STATUS_BLK_TMO,
 	};
+
+	printf("%d\n", hdr->tp_status);
 }
 EOF
 
@@ -189,6 +191,8 @@ void main(void)
 		TP_STATUS_KERNEL,
 		TP_STATUS_USER,
 	};
+
+	printf("%d\n", hdr->tp_status);
 }
 EOF
 
@@ -455,9 +459,10 @@ fi
 
 if [ "x$TOOLS_NOBUILD" != "x" ] ; then
 	echo "[!] The following tools will *not* be built: $TOOLS_NOBUILD"
+	echo "[*] The following tools will be built: $TOOLS"
+else
+	echo "[*] Looks good! All tools will be built!"
 fi
-
-echo "[*] The following tools will be built: $TOOLS"
 
 echo "CONFIG_TOOLS=$TOOLS" >> Config
 echo "CONFIG_OK=1" >> Config
