@@ -235,6 +235,7 @@ check_ccache
 check_nacl
 check_libnl
 check_tpacket
+check_libnf_ct
 check_ncurses
 check_libgeoip
 
