@@ -134,16 +134,17 @@ EOF
 		echo "[NO]"
 		MISSING_DEFS=1
 		tools_remove "trafgen"
+		tools_remove "netsniff-ng"
 	else
 		echo "[YES]"
 	fi
 }
 
-check_tpacket()
+check_tpacket_v3()
 {
-	echo -n "[*] Checking tpacket ... "
+	echo -n "[*] Checking tpacket_v3 ... "
 
-	cat > $TMPDIR/tpackettest.c << EOF
+	cat > $TMPDIR/tpacketv3test.c << EOF
 #include <stdio.h>
 #include <linux/if_packet.h>
 
@@ -155,8 +156,34 @@ void main(void)
 }
 EOF
 
-	$CC -o $TMPDIR/tpackettest $TMPDIR/tpackettest.c >> $TMPDIR/config.log 2>&1
-	if [ ! -x $TMPDIR/tpackettest ] ; then
+	$CC -o $TMPDIR/tpacketv3test $TMPDIR/tpacketv3test.c >> $TMPDIR/config.log 2>&1
+	if [ ! -x $TMPDIR/tpacketv3test ] ; then
+		echo "[NO]"
+		MISSING_DEFS=1
+		tools_remove "netsniff-ng"
+	else
+		echo "[YES]"
+	fi
+}
+
+check_tpacket_v2()
+{
+	echo -n "[*] Checking tpacket_v2 ... "
+
+	cat > $TMPDIR/tpacketv2test.c << EOF
+#include <stdio.h>
+#include <linux/if_packet.h>
+
+struct tpacket2_hdr *hdr;
+
+void main(void)
+{
+	printf("%d\n", hdr->tp_status);
+}
+EOF
+
+	$CC -o $TMPDIR/tpacketv2test $TMPDIR/tpacketv2test.c >> $TMPDIR/config.log 2>&1
+	if [ ! -x $TMPDIR/tpacketv2test ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
 		tools_remove "netsniff-ng"
@@ -165,6 +192,7 @@ EOF
 		echo "[YES]"
 	fi
 }
+
 
 check_ncurses()
 {
@@ -387,7 +415,8 @@ fi
 check_ccache
 check_nacl
 check_libnl
-check_tpacket
+check_tpacket_v2
+check_tpacket_v3
 check_libnf_ct
 check_ncurses
 check_libgeoip
