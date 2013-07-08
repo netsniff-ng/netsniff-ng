@@ -208,11 +208,13 @@ check_libnf_ct()
 
 void main(void)
 {
-	struct nfconntrack *ct;
+	struct nf_conntrack *ct;
+
+	const uint32_t id = nfct_get_attr_u32(ct, ATTR_ID);
 }
 EOF
 
-	$CC -o $TMPDIR/nfcttest $TMPDIR/nfcttest.c >> $TMPDIR/config.log 2>&1
+	$CC -o $TMPDIR/nfcttest $TMPDIR/nfcttest.c -lnetfilter_conntrack >> $TMPDIR/config.log 2>&1
 	if [ ! -x $TMPDIR/nfcttest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
