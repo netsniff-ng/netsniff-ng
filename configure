@@ -233,10 +233,12 @@ check_zlib()
 void main(void)
 {
 	gzFile fp;
+
+	fp = gzopen("foo.gz", "rb");
 }
 EOF
 
-	$CC -o $TMPDIR/ztest $TMPDIR/ztest.c >> $TMPDIR/config.log 2>&1
+	$CC -o $TMPDIR/ztest $TMPDIR/ztest.c -lz >> $TMPDIR/config.log 2>&1
 	if [ ! -x $TMPDIR/ztest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
