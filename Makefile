@@ -1,5 +1,6 @@
 # netsniff-ng build system
 # Copyright 2012 - 2013 Daniel Borkmann <borkmann@gnumaniacs.org>
+# Copyright 2013 Tobias Klauser <tklauser@distanz.ch>
 # Subject to the GNU GPL, version 2.
 
 -include Config
