@@ -359,11 +359,12 @@ EOF
 	$CC -o $TMPDIR/pcaptest $TMPDIR/pcaptest.c -lpcap >> $TMPDIR/config.log 2>&1
 	if [ ! -x $TMPDIR/pcaptest ] ; then
 		echo "[NO]"
+		echo "CONFIG_LIBPCAP=0" >> Config
 		MISSING_DEFS=1
-		tools_remove "netsniff-ng"
 		tools_remove "mausezahn"
 	else
 		echo "[YES]"
+		echo "CONFIG_LIBPCAP=1" >> Config
 	fi
 }
 

@@ -1,9 +1,12 @@
 netsniff-ng-libs =	-lGeoIP \
 			$(shell pkg-config --libs libnl-3.0) \
 			$(shell pkg-config --libs libnl-genl-3.0) \
-			-lpcap \
 			-lpthread \
 			-lz
+
+ifeq ($(CONFIG_LIBPCAP), 1)
+netsniff-ng-libs +=	-lpcap
+endif
 
 netsniff-ng-objs =	dissector.o \
 			dissector_eth.o \
@@ -46,7 +49,6 @@ netsniff-ng-objs =	dissector.o \
 			xmalloc.o \
 			hash.o \
 			bpf.o \
-			bpf_comp.o \
 			oui.o \
 			pcap_rw.o \
 			pcap_sg.o \
@@ -60,3 +62,7 @@ netsniff-ng-objs =	dissector.o \
 			geoip.o \
 			mac80211.o \
 			netsniff-ng.o
+
+ifeq ($(CONFIG_LIBPCAP), 1)
+netsniff-ng-objs +=	bpf_comp.o
+endif
