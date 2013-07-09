@@ -12,6 +12,9 @@ MISSING_NACL=0
 TOOLS="netsniff-ng trafgen astraceroute flowtop ifpps bpfc curvetun mausezahn"
 TOOLS_NOBUILD=""
 
+HAVE_LIBPCAP=0
+HAVE_HWTSTAMP=0
+
 [ -z $CC ] && CC=cc
 
 TMPDIR=$(mktemp -d config.XXXXXX)
@@ -369,6 +372,55 @@ EOF
 	else
 		echo "[YES]"
 		echo "CONFIG_LIBPCAP=1" >> Config
+		HAVE_LIBPCAP=1
+	fi
+}
+
+check_hwtstamp()
+{
+	echo -n "[*] Checking hw timestamping ... "
+
+	cat > $TMPDIR/hwtstest.c << EOF
+#include <string.h>
+#include <arpa/inet.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <linux/sockios.h>
+#include <linux/net_tstamp.h>
+#include <linux/if_packet.h>
+#include <linux/if_ether.h>
+#include <linux/if.h>
+
+void main(void)
+{
+	int timesource = SOF_TIMESTAMPING_RAW_HARDWARE, ret;
+	int sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+	struct hwtstamp_config hwconfig;
+	struct ifreq ifr;
+
+	memset(&hwconfig, 0, sizeof(hwconfig));
+	hwconfig.tx_type = HWTSTAMP_TX_OFF;
+	hwconfig.rx_filter = HWTSTAMP_FILTER_ALL;
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, "lo", sizeof(ifr.ifr_name));
+	ifr.ifr_data = &hwconfig;
+
+	ioctl(sock, SIOCSHWTSTAMP, &ifr);
+	setsockopt(sock, SOL_PACKET, PACKET_TIMESTAMP, &timesource,
+		   sizeof(timesource));
+}
+EOF
+
+	$CC -o $TMPDIR/hwtstest $TMPDIR/hwtstest.c >> $TMPDIR/config.log 2>&1
+	if [ ! -x $TMPDIR/hwtstest ] ; then
+		echo "[NO]"
+		echo "CONFIG_HWTSTAMP=0" >> Config
+	else
+		echo "[YES]"
+		echo "CONFIG_HWTSTAMP=1" >> Config
+		HAVE_HWTSTAMP=1
 	fi
 }
 
@@ -422,7 +474,18 @@ EOF
 gen_config_hdr()
 {
 	local _version="`git describe --always`"
+	local _have_libpcap=""
+	local _have_hwts=""
+
 	echo "[*] Generating config.h ... "
+
+	if [ "$HAVE_LIBPCAP" == "1" ] ; then
+		_have_libpcap="#define HAVE_TCPDUMP_LIKE_FILTER 1"
+	fi
+
+	if [ "$HAVE_HWTSTAMP" == "1" ] ; then
+		_have_hwts="#define HAVE_HARDWARE_TIMESTAMPING 1"
+	fi
 
 	cat > config.h << EOF
 #ifndef CONFIG_H
@@ -433,6 +496,8 @@ gen_config_hdr()
 #define FILE_PUBKEY ".curvetun/pub.key"
 #define FILE_USERNAM ".curvetun/username"
 #define GITVERSION "$_version"
+$_have_libpcap
+$_have_hwts
 #endif /* CONFIG_H */
 EOF
 }
@@ -456,7 +521,7 @@ check_libgeoip
 check_zlib
 check_urcu
 check_libpcap
-# mausezahn dependencies
+check_hwtstamp
 check_libcli
 check_libnet
 

@@ -4,10 +4,13 @@
  * Subject to the GPL, version 2.
  */
 
+#define NEED_TCPDUMP_LIKE_FILTER
+
 #include <pcap.h>
 #include <linux/filter.h>
 
 #include "xmalloc.h"
+#include "config.h"
 #include "bpf.h"
 #include "die.h"
 

@@ -57,7 +57,6 @@ netsniff-ng-objs =	dissector.o \
 			ring_tx.o \
 			ring.o \
 			tprintf.o \
-			tstamping.o \
 			timer.o \
 			geoip.o \
 			mac80211.o \
@@ -65,4 +64,7 @@ netsniff-ng-objs =	dissector.o \
 
 ifeq ($(CONFIG_LIBPCAP), 1)
 netsniff-ng-objs +=	bpf_comp.o
+endif
+ifeq ($(CONFIG_HWTSTAMP), 1)
+netsniff-ng-objs +=	tstamping.o
 endif

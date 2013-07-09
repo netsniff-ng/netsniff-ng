@@ -4,14 +4,12 @@
 #include <sys/socket.h>
 #include <linux/sockios.h>
 #include <linux/net_tstamp.h>
-#include <linux/net_tstamp.h>
 #include <linux/if_packet.h>
 #include <linux/if.h>
 
 #include "str.h"
 #include "tstamping.h"
 
-#ifdef __WITH_HARDWARE_TIMESTAMPING
 int set_sockopt_hwtimestamp(int sock, const char *dev)
 {
 	int timesource, ret;
@@ -38,9 +36,3 @@ int set_sockopt_hwtimestamp(int sock, const char *dev)
 	return setsockopt(sock, SOL_PACKET, PACKET_TIMESTAMP, &timesource,
 			  sizeof(timesource));
 }
-#else
-int set_sockopt_hwtimestamp(int sock, const char *dev)
-{
-	return -1;
-}
-#endif

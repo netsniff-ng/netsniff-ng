@@ -8,6 +8,7 @@
 #include "xmalloc.h"
 #include "bpf_insns.h"
 #include "bpf_ext.h"
+#include "config.h"
 
 extern void bpf_dump_op_table(void);
 extern void bpf_dump_all(struct sock_fprog *bpf);
@@ -18,7 +19,7 @@ extern void bpf_attach_to_sock(int sock, struct sock_fprog *bpf);
 extern void bpf_detach_from_sock(int sock);
 extern int enable_kernel_bpf_jit_compiler(void);
 extern void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf, uint32_t link_type);
-#ifdef __WITH_TCPDUMP_LIKE_FILTER
+#if defined(HAVE_TCPDUMP_LIKE_FILTER) && defined(NEED_TCPDUMP_LIKE_FILTER)
 extern void bpf_try_compile(const char *rulefile, struct sock_fprog *bpf,
 			    uint32_t link_type);
 #else

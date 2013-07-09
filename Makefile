@@ -81,12 +81,6 @@ CFLAGS_DEF += -D_LARGEFILE_SOURCE
 CFLAGS_DEF += -D_LARGEFILE64_SOURCE
 CFLAGS_DEF += -D_FILE_OFFSET_BITS=64
 
-ifeq ($(CONFIG_LIBPCAP), 1)
-  CFLAGS_PCAP = -D__WITH_TCPDUMP_LIKE_FILTER
-else
-  CFLAGS_PCAP =
-endif
-
 WFLAGS_DEF  = -Wall
 WFLAGS_DEF += -Wformat=2
 WFLAGS_DEF += -Wmissing-prototypes
@@ -124,9 +118,6 @@ ALL_CFLAGS = $(CFLAGS) $(CPPFLAGS) -I.
 ALL_CFLAGS += -DVERSION_STRING=\"$(VERSION_STRING)\"
 ALL_CFLAGS += -DVERSION_LONG=\"$(VERSION_LONG)\"
 ALL_CFLAGS += -DPREFIX_STRING=\"$(PREFIX)\"
-ifneq ($(wildcard /usr/include/linux/net_tstamp.h),)
-  ALL_CFLAGS += -D__WITH_HARDWARE_TIMESTAMPING
-endif
 
 VERSION_STRING = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
 VERSION_LONG = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)~$(NAME)
@@ -252,7 +243,7 @@ $(foreach tool,$(TOOLS),$(eval $(call TOOL_templ,$(tool))))
 
 %:: ;
 
-netsniff-ng: ALL_CFLAGS += $(shell pkg-config --cflags libnl-3.0) $(shell pkg-config --cflags libnl-genl-3.0) $(CFLAGS_PCAP) -D__WITH_PROTOS
+netsniff-ng: ALL_CFLAGS += $(shell pkg-config --cflags libnl-3.0) $(shell pkg-config --cflags libnl-genl-3.0) -D__WITH_PROTOS
 trafgen: ALL_CFLAGS += -I.. $(shell pkg-config --cflags libnl-3.0) $(shell pkg-config --cflags libnl-genl-3.0) -D__WITH_PROTOS
 ifpps: ALL_CFLAGS += $(shell pkg-config --cflags ncurses)
 flowtop: ALL_CFLAGS += $(shell pkg-config --cflags ncurses)
