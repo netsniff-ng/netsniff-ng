@@ -214,6 +214,7 @@ toolkit: $(TOOLS)
 clean: $(foreach tool,$(TOOLS),$(tool)_clean)
 distclean: clean
 	$(Q)$(call RM,Config)
+	$(Q)$(call RM,config.h)
 mrproper: distclean
 	$(Q)$(GIT_REM)
 
