@@ -35,6 +35,7 @@
 #include "die.h"
 #include "dev.h"
 #include "sig.h"
+#include "config.h"
 #include "tprintf.h"
 #include "pkt_buff.h"
 #include "proto.h"
@@ -233,8 +234,9 @@ static void __noreturn help(void)
 
 static void __noreturn version(void)
 {
-	printf("\nastraceroute %s, autonomous system trace route utility\n", VERSION_LONG);
-	puts("http://www.netsniff-ng.org\n\n"
+	printf("\nastraceroute %s, Git id: %s\n", VERSION_LONG, GITVERSION);
+	puts("autonomous system trace route utility\n"
+	     "http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"
 	     "Swiss federal institute of technology (ETH Zurich)\n"

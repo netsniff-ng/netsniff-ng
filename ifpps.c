@@ -27,6 +27,7 @@
 #include "ioops.h"
 #include "promisc.h"
 #include "cpus.h"
+#include "config.h"
 #include "built_in.h"
 #include "screen.h"
 
@@ -130,9 +131,9 @@ static void __noreturn help(void)
 
 static void __noreturn version(void)
 {
-	printf("\nifpps %s, top-like kernel networking and system statistics\n",
-	       VERSION_LONG);
-	puts("http://www.netsniff-ng.org\n\n"
+	printf("\nifpps %s, Git id: %s\n", VERSION_LONG, GITVERSION);
+	puts("top-like kernel networking and system statistics\n"
+	     "http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2009-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"
 	     "Swiss federal institute of technology (ETH Zurich)\n"

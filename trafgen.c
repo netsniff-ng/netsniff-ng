@@ -46,6 +46,7 @@
 #include "mac80211.h"
 #include "ioops.h"
 #include "irq.h"
+#include "config.h"
 #include "built_in.h"
 #include "trafgen_conf.h"
 #include "tprintf.h"
@@ -281,8 +282,9 @@ static void __noreturn example(void)
 
 static void __noreturn version(void)
 {
-	printf("\ntrafgen %s, multithreaded zero-copy network packet generator\n", VERSION_LONG);
-	puts("http://www.netsniff-ng.org\n\n"
+	printf("\ntrafgen %s, Git id: %s\n", VERSION_LONG, GITVERSION);
+	puts("multithreaded zero-copy network packet generator\n"
+	     "http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
 	     "Swiss federal institute of technology (ETH Zurich)\n"

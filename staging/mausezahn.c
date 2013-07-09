@@ -27,6 +27,7 @@
 #include "mz.h"
 #include "cli.h"
 #include "mops.h"
+#include "config.h"
 #include "llist.h"
 #include "die.h"
 
@@ -170,8 +171,9 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\nmausezahn %s, a fast versatile traffic generator\n", VERSION_LONG);
-	puts("http://www.netsniff-ng.org\n\n"
+	printf("\nmausezahn %s, Git id: %s\n", VERSION_LONG, GITVERSION);
+	puts("a fast versatile traffic generator\n"
+	     "http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2008-2010 Herbert Haas <herbert@perihel.at>,\n"
 	     "Copyright (C) 2011 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"

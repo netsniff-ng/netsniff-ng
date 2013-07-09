@@ -27,6 +27,7 @@
 #include "xmalloc.h"
 #include "conntrack.h"
 #include "ioops.h"
+#include "config.h"
 #include "str.h"
 #include "sig.h"
 #include "geoip.h"
@@ -223,7 +224,7 @@ static void flow_entry_get_extended(struct flow_entry *n);
 
 static void help(void)
 {
-	printf("\nflowtop %s, top-like netfilter TCP/UDP flow tracking\n",
+	printf("\nflowtop %s, top-like netfilter TCP/UDP/SCTP/.. flow tracking\n",
 	       VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: flowtop [options]\n"
@@ -258,9 +259,9 @@ static void help(void)
 
 static void version(void)
 {
-	printf("\nflowtop %s, top-like netfilter TCP/UDP flow tracking\n",
-	       VERSION_LONG);
-	puts("http://www.netsniff-ng.org\n\n"
+	printf("\nflowtop %s, Git id: %s\n", VERSION_LONG, GITVERSION);
+	puts("top-like netfilter TCP/UDP/SCTP/.. flow tracking\n"
+	     "http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"
 	     "Copyright (C) 2011-2012 Emmanuel Roullit <emmanuel.roullit@gmail.com>\n"

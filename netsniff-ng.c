@@ -37,6 +37,7 @@
 #include "irq.h"
 #include "str.h"
 #include "sig.h"
+#include "config.h"
 #include "sock.h"
 #include "geoip.h"
 #include "lockme.h"
@@ -1111,8 +1112,9 @@ static void __noreturn help(void)
 
 static void __noreturn version(void)
 {
-	printf("\nnetsniff-ng %s, the packet sniffing beast\n", VERSION_LONG);
-	puts("http://www.netsniff-ng.org\n\n"
+	printf("\nnetsniff-ng %s, Git id: %s\n", VERSION_LONG, GITVERSION);
+	puts("the packet sniffing beast\n"
+	     "http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2009-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"
 	     "Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel.roullit@gmail.com>\n"

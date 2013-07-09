@@ -34,6 +34,7 @@
 #include "xmalloc.h"
 #include "curvetun.h"
 #include "curve.h"
+#include "config.h"
 #include "ct_usermgmt.h"
 #include "ct_servmgmt.h"
 #include "ioops.h"
@@ -87,7 +88,7 @@ static void signal_handler(int number)
 
 static void __noreturn help(void)
 {
-	printf("\ncurvetun %s, lightweight curve25519-based VPN/IP tunnel\n", VERSION_STRING);
+	printf("\ncurvetun %s, lightweight curve25519-based IP tunnel\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: curvetun [options]\n"
 	     "Options, general:\n"
@@ -129,8 +130,9 @@ static void __noreturn help(void)
 
 static void __noreturn version(void)
 {
-	printf("\ncurvetun %s, lightweight curve25519-based VPN/IP tunnel\n", VERSION_LONG);
-	puts("http://www.netsniff-ng.org\n\n"
+	printf("\ncurvetun %s, Git id: %s\n", VERSION_LONG, GITVERSION);
+	puts("lightweight curve25519-based IP tunnel\n"
+	     "http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
 	     "Swiss federal institute of technology (ETH Zurich)\n"
