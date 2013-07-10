@@ -780,7 +780,7 @@ static void screen_percpu_states_one(WINDOW *screen, const struct ifstat *rel,
 		  "cpu%*d%s:%s %12.1lf%% usr/t "
 			  "%9.1lf%% sys/t "
 			  "%10.1lf%% idl/t "
-			  "%11.1lf%% iow/t  ", max_padd, idx,
+			  "%11.1lf%% iow/t", max_padd, idx,
 		  tag, strlen(tag) == 0 ? " " : "",
 		  100.0 * (rel->cpu_user[idx] + rel->cpu_nice[idx]) / all,
 		  100.0 * rel->cpu_sys[idx] / all,
@@ -818,7 +818,7 @@ static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
 		  "avg: %14.1lf%% usr/t "
 			  "%9.1lf%% sys/t "
 			  "%10.1lf%% idl/t "
-			  "%11.1lf%% iow/t  ",
+			  "%11.1lf%% iow/t",
 		 100.0 * (avg->cpu_user + avg->cpu_nice) / all,
 		 100.0 * avg->cpu_sys / all,
 		 100.0 * avg->cpu_idle /all,
@@ -831,9 +831,9 @@ static void screen_percpu_irqs_rel_one(WINDOW *screen, const struct ifstat *rel,
 	int max_padd = padding_from_num(get_number_cpus());
 
 	mvwprintw(screen, (*voff)++, 2,
-		  "cpu%*d%s:%s %13llu irqs/t   "
-			  "%15llu sirq rx/t   "
-			  "%15llu sirq tx/t      ", max_padd, idx,
+		  "cpu%*d%s:%s %13llu irqs/t "
+			  "%17llu sirq rx/t "
+			  "%17llu sirq tx/t", max_padd, idx,
 		  tag, strlen(tag) == 0 ? " " : "",
 		  rel->irqs[idx],
 		  rel->irqs_srx[idx],
@@ -859,9 +859,9 @@ static void screen_percpu_irqs_rel(WINDOW *screen, const struct ifstat *rel,
 		screen_percpu_irqs_rel_one(screen, rel, voff, cpu_hits[cpus - 1].idx, "-");
 
 	mvwprintw(screen, (*voff)++, 2,
-		 "avg: %15.2Lf irqs/t  "
-			  "%16.2Lf sirq rx/t   "
-			  "%15.2Lf sirq tx/t      ",
+		 "avg: %15.2Lf irqs/t "
+			  "%17.2Lf sirq rx/t "
+			  "%17.2Lf sirq tx/t",
 		 avg->irqs_rel, avg->irqs_srx_rel, avg->irqs_stx_rel);
 }
 
