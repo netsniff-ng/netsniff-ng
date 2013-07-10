@@ -65,6 +65,34 @@ check_ccache()
 	fi
 }
 
+check_flex()
+{
+	echo -n "[*] Checking flex ... "
+
+	if [ "x$(which flex)" == "x" ] ; then
+		echo "[NO]"
+		MISSING_DEFS=1
+		tools_remove "trafgen"
+		tools_remove "bpfc"
+	else
+		echo "[YES]"
+	fi
+}
+
+check_bison()
+{
+	echo -n "[*] Checking bison ... "
+
+	if [ "x$(which bison)" == "x" ] ; then
+		echo "[NO]"
+		MISSING_DEFS=1
+		tools_remove "trafgen"
+		tools_remove "bpfc"
+	else
+		echo "[YES]"
+	fi
+}
+
 check_nacl()
 {
 	echo -n "[*] Checking nacl ... "
@@ -511,6 +539,8 @@ if [ "$MISSING_PKG_CONFIG" == "1" ] ; then
 fi
 
 check_ccache
+check_flex
+check_bison
 check_nacl
 check_libnl
 check_tpacket_v2
