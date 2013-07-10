@@ -55,5 +55,6 @@ In fact, many of our tools are used in a lot of production systems. However, we
 give no guarantee that our tools are free of bugs! If you spot some issues,
 contact us as described in REPORTING-BUGS. Also, have a look at our online FAQ
 for answering your questions. This project has received support from companies
-and institutions listed in Sponsors. Thanks for contributing, we're thrilled
-to provide you with netsniff-ng! Happy packet hacking!
+and institutions listed in the according section in the AUTHORS file. Thanks for
+contributing, we're thrilled to provide you with netsniff-ng! Happy packet
+hacking!
