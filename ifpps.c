@@ -112,7 +112,7 @@ static void __noreturn help(void)
 	     "  -d|--dev <netdev>      Device to fetch statistics for e.g., eth0\n"
 	     "  -t|--interval <time>   Refresh time in ms (default 1000 ms)\n"
 	     "  -n|--num-cpus <num>    Number of top hitter CPUs to display\n"
-	     "                         in ncurses mode (default 10)\n"
+	     "                         in ncurses mode (default 5)\n"
 	     "  -p|--promisc           Promiscuous mode\n"
 	     "  -c|--csv               Output to terminal as Gnuplot-ready data\n"
 	     "  -l|--loop              Continuous CSV output\n"
@@ -1160,7 +1160,7 @@ int main(int argc, char **argv)
 {
 	short ifflags = 0;
 	int c, opt_index, ret, cpus, promisc = 0;
-	unsigned int top_cpus = 10;
+	unsigned int top_cpus = 5;
 	uint64_t interval = 1000;
 	char *ifname = NULL;
 	int (*func_main)(const char *ifname, uint64_t ms_interval,
