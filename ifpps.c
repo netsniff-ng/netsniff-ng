@@ -60,9 +60,15 @@ struct cpu_hit {
 	long long unsigned int irqs_rel, irqs_abs;
 };
 
+struct avg_stat {
+	uint64_t cpu_user, cpu_sys, cpu_nice, cpu_idle, cpu_iow;
+	long double irqs_abs, irqs_rel, irqs_srx_rel, irqs_stx_rel;
+};
+
 static volatile sig_atomic_t sigint = 0;
 static struct ifstat stats_old, stats_new, stats_delta;
 static struct cpu_hit *cpu_hits;
+static struct avg_stat stats_avg;
 static int stats_loop = 0;
 static WINDOW *stats_screen = NULL;
 
@@ -629,12 +635,35 @@ static void stats_top(const struct ifstat *rel, const struct ifstat *abs,
 {
 	int i;
 
+	memset(&stats_avg, 0, sizeof(stats_avg));
+
 	for (i = 0; i < cpus; ++i) {
 		cpu_hits[i].idx = i;
 		cpu_hits[i].hit = rel->cpu_user[i] + rel->cpu_nice[i] + rel->cpu_sys[i];
 		cpu_hits[i].irqs_rel = rel->irqs[i];
 		cpu_hits[i].irqs_abs = abs->irqs[i];
+
+		stats_avg.cpu_user += rel->cpu_user[i];
+		stats_avg.cpu_sys += rel->cpu_sys[i];
+		stats_avg.cpu_nice += rel->cpu_nice[i];
+		stats_avg.cpu_idle += rel->cpu_idle[i];
+		stats_avg.cpu_iow += rel->cpu_iow[i];
+
+		stats_avg.irqs_abs += abs->irqs[i];
+		stats_avg.irqs_rel += rel->irqs[i];
+		stats_avg.irqs_srx_rel += rel->irqs_srx[i];
+		stats_avg.irqs_stx_rel += rel->irqs_stx[i];
 	}
+
+	stats_avg.cpu_user /= cpus;
+	stats_avg.cpu_sys /= cpus;
+	stats_avg.cpu_nice /= cpus;
+	stats_avg.cpu_idle /= cpus;
+	stats_avg.cpu_iow /= cpus;
+	stats_avg.irqs_abs /= cpus;
+	stats_avg.irqs_rel /= cpus;
+	stats_avg.irqs_srx_rel /= cpus;
+	stats_avg.irqs_stx_rel /= cpus;
 }
 
 static void screen_header(WINDOW *screen, const char *ifname, int *voff,
@@ -760,10 +789,12 @@ static void screen_percpu_states_one(WINDOW *screen, const struct ifstat *rel,
 }
 
 static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
-				 int top_cpus, int *voff)
+				 const struct avg_stat *avg, int top_cpus,
+				 int *voff)
 {
 	int i;
 	int cpus = get_number_cpus();
+	uint64_t all;
 
 	if (top_cpus == 0)
 		return;
@@ -781,6 +812,17 @@ static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
 	/* Display minimum hitter */
 	if (cpus != 1)
 		screen_percpu_states_one(screen, rel, voff, cpu_hits[cpus - 1].idx, "-");
+
+	all = avg->cpu_user + avg->cpu_sys + avg->cpu_nice + avg->cpu_idle + avg->cpu_iow;
+	mvwprintw(screen, (*voff)++, 2,
+		  "avg: %14.1lf%% usr/t "
+			  "%9.1lf%% sys/t "
+			  "%10.1lf%% idl/t "
+			  "%11.1lf%% iow/t  ",
+		 100.0 * (avg->cpu_user + avg->cpu_nice) / all,
+		 100.0 * avg->cpu_sys / all,
+		 100.0 * avg->cpu_idle /all,
+		 100.0 * avg->cpu_iow / all);
 }
 
 static void screen_percpu_irqs_rel_one(WINDOW *screen, const struct ifstat *rel,
@@ -799,7 +841,8 @@ static void screen_percpu_irqs_rel_one(WINDOW *screen, const struct ifstat *rel,
 }
 
 static void screen_percpu_irqs_rel(WINDOW *screen, const struct ifstat *rel,
-				   int top_cpus, int *voff)
+				   const struct avg_stat *avg, int top_cpus,
+				   int *voff)
 {
 	int i;
 	int cpus = get_number_cpus();
@@ -814,6 +857,12 @@ static void screen_percpu_irqs_rel(WINDOW *screen, const struct ifstat *rel,
 
 	if (cpus != 1)
 		screen_percpu_irqs_rel_one(screen, rel, voff, cpu_hits[cpus - 1].idx, "-");
+
+	mvwprintw(screen, (*voff)++, 2,
+		 "avg: %15.2Lf irqs/t  "
+			  "%16.2Lf sirq rx/t   "
+			  "%15.2Lf sirq tx/t      ",
+		 avg->irqs_rel, avg->irqs_srx_rel, avg->irqs_stx_rel);
 }
 
 static void screen_percpu_irqs_abs_one(WINDOW *screen, const struct ifstat *abs,
@@ -828,7 +877,8 @@ static void screen_percpu_irqs_abs_one(WINDOW *screen, const struct ifstat *abs,
 }
 
 static void screen_percpu_irqs_abs(WINDOW *screen, const struct ifstat *abs,
-				   int top_cpus, int *voff)
+				   const struct avg_stat *avg, int top_cpus,
+				   int *voff)
 {
 	int i;
 	int cpus = get_number_cpus();
@@ -843,6 +893,9 @@ static void screen_percpu_irqs_abs(WINDOW *screen, const struct ifstat *abs,
 
 	if (cpus != 1)
 		screen_percpu_irqs_abs_one(screen, abs, voff, cpu_hits[cpus - 1].idx, "-");
+
+	mvwprintw(screen, (*voff)++, 2,
+		 "avg: %15.2Lf irqs", avg->irqs_abs);
 }
 
 static void screen_wireless(WINDOW *screen, const struct ifstat *rel,
@@ -863,8 +916,8 @@ static void screen_wireless(WINDOW *screen, const struct ifstat *rel,
 }
 
 static void screen_update(WINDOW *screen, const char *ifname, const struct ifstat *rel,
-			  const struct ifstat *abs, int *first, uint64_t ms_interval,
-			  unsigned int top_cpus)
+			  const struct ifstat *abs, const struct avg_stat *avg,
+			  int *first, uint64_t ms_interval, unsigned int top_cpus)
 {
 	int cpus, top, voff = 1, cvoff = 2;
 
@@ -892,17 +945,17 @@ static void screen_update(WINDOW *screen, const char *ifname, const struct ifsta
 	screen_mem_swap(screen, abs, &voff);
 
 	voff++;
-	screen_percpu_states(screen, rel, top, &voff);
+	screen_percpu_states(screen, rel, avg, top, &voff);
 
 	qsort(cpu_hits, cpus, sizeof(*cpu_hits), cmp_irqs_rel);
 
 	voff++;
-	screen_percpu_irqs_rel(screen, rel, top, &voff);
+	screen_percpu_irqs_rel(screen, rel, avg, top, &voff);
 
 	qsort(cpu_hits, cpus, sizeof(*cpu_hits), cmp_irqs_abs);
 
 	voff++;
-	screen_percpu_irqs_abs(screen, abs, top, &voff);
+	screen_percpu_irqs_abs(screen, abs, avg, top, &voff);
 
 	voff++;
 	screen_wireless(screen, rel, abs, &voff);
@@ -930,7 +983,7 @@ static int screen_main(const char *ifname, uint64_t ms_interval,
 		if (key == 'q' || key == 0x1b || key == KEY_F(10))
 			break;
 
-		screen_update(stats_screen, ifname, &stats_delta, &stats_new,
+		screen_update(stats_screen, ifname, &stats_delta, &stats_new, &stats_avg,
 			      &first, ms_interval, top_cpus);
 
 		stats_sample_generic(ifname, ms_interval);
@@ -1185,6 +1238,7 @@ int main(int argc, char **argv)
 	stats_alloc(&stats_delta, cpus);
 
 	cpu_hits = xzmalloc(cpus * sizeof(*cpu_hits));
+	memset(&stats_avg, 0, sizeof(stats_avg));
 
 	if (promisc)
 		ifflags = enter_promiscuous_mode(ifname);
