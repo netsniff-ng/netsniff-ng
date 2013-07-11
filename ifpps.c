@@ -75,7 +75,7 @@ static int stats_loop = 0;
 static WINDOW *stats_screen = NULL;
 static struct utsname uts;
 
-static const char *short_options = "d:t:n:vhclp";
+static const char *short_options = "d:t:n:vhclpW";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"interval",		required_argument,	NULL, 't'},
@@ -83,6 +83,7 @@ static const struct option long_options[] = {
 	{"promisc",		no_argument,		NULL, 'p'},
 	{"csv",			no_argument,		NULL, 'c'},
 	{"loop",		no_argument,		NULL, 'l'},
+	{"no-warn",		no_argument,		NULL, 'W'},
 	{"version",		no_argument,		NULL, 'v'},
 	{"help",		no_argument,		NULL, 'h'},
 	{NULL, 0, NULL, 0}
@@ -119,6 +120,7 @@ static void __noreturn help(void)
 	     "  -p|--promisc           Promiscuous mode\n"
 	     "  -c|--csv               Output to terminal as Gnuplot-ready data\n"
 	     "  -l|--loop              Continuous CSV output\n"
+	     "  -W|--no-warn           Suppress warnings\n"
 	     "  -v|--version           Print version and exit\n"
 	     "  -h|--help              Print this help and exit\n\n"
 	     "Examples:\n"
@@ -924,7 +926,8 @@ static void screen_wireless(WINDOW *screen, const struct ifstat *rel,
 
 static void screen_update(WINDOW *screen, const char *ifname, const struct ifstat *rel,
 			  const struct ifstat *abs, const struct avg_stat *avg,
-			  int *first, uint64_t ms_interval, unsigned int top_cpus)
+			  int *first, uint64_t ms_interval, unsigned int top_cpus,
+			  bool need_info)
 {
 	int cpus, top, voff = 1, cvoff = 2;
 
@@ -971,7 +974,12 @@ static void screen_update(WINDOW *screen, const char *ifname, const struct ifsta
 		mvwprintw(screen, cvoff, 2, "Collecting data ...");
 		*first = 0;
 	} else {
-		mvwprintw(screen, cvoff, 2, "                   ");
+		if (need_info)
+			mvwprintw(screen, cvoff, 2, "(consider to increase "
+				  "your sampling interval, e.g. -t 10000)");
+		else
+			mvwprintw(screen, cvoff, 2, "                      "
+				  "                                      ");
 	}
 
 	wrefresh(screen);
@@ -979,11 +987,16 @@ static void screen_update(WINDOW *screen, const char *ifname, const struct ifsta
 }
 
 static int screen_main(const char *ifname, uint64_t ms_interval,
-		       unsigned int top_cpus)
+		       unsigned int top_cpus, bool suppress_warnings)
 {
 	int first = 1, key;
+	u32 rate = device_bitrate(ifname);
+	bool need_info = false;
 
 	stats_screen = screen_init(true);
+
+	if (rate > SPEED_1000 && ms_interval <= 1000 && !suppress_warnings)
+		need_info = true;
 
 	while (!sigint) {
 		key = getch();
@@ -991,7 +1004,7 @@ static int screen_main(const char *ifname, uint64_t ms_interval,
 			break;
 
 		screen_update(stats_screen, ifname, &stats_delta, &stats_new, &stats_avg,
-			      &first, ms_interval, top_cpus);
+			      &first, ms_interval, top_cpus, need_info);
 
 		stats_sample_generic(ifname, ms_interval);
 	}
@@ -1145,7 +1158,8 @@ static void term_csv_header(const char *ifname, const struct ifstat *abs,
 }
 
 static int term_main(const char *ifname, uint64_t ms_interval,
-		     unsigned int top_cpus __maybe_unused)
+		     unsigned int top_cpus __maybe_unused,
+		     bool suppress_warnings __maybe_unused)
 {
 	int first = 1;
 
@@ -1170,8 +1184,11 @@ int main(int argc, char **argv)
 	unsigned int top_cpus = 5;
 	uint64_t interval = 1000;
 	char *ifname = NULL;
+	bool suppress_warnings = false;
 	int (*func_main)(const char *ifname, uint64_t ms_interval,
-			 unsigned int top_cpus) = screen_main;
+			 unsigned int top_cpus, bool suppress_warnings);
+
+	func_main = screen_main;
 
 	setfsuid(getuid());
 	setfsgid(getgid());
@@ -1184,6 +1201,9 @@ int main(int argc, char **argv)
 			break;
 		case 'v':
 			version();
+			break;
+		case 'W':
+			suppress_warnings = true;
 			break;
 		case 'd':
 			ifname = xstrndup(optarg, IFNAMSIZ);
@@ -1250,7 +1270,7 @@ int main(int argc, char **argv)
 
 	if (promisc)
 		ifflags = enter_promiscuous_mode(ifname);
-	ret = func_main(ifname, interval, top_cpus);
+	ret = func_main(ifname, interval, top_cpus, suppress_warnings);
 	if (promisc)
 		leave_promiscuous_mode(ifname, ifflags);
 
