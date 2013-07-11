@@ -99,18 +99,9 @@ u32 ethtool_bitrate(const char *ifname)
 		goto out;
 	}
 
-	switch (ecmd.speed) {
-	case SPEED_10:
-	case SPEED_100:
-	case SPEED_1000:
-	case SPEED_2500:
-	case SPEED_10000:
-		bitrate = ecmd.speed;
-		break;
-	default:
+	bitrate = ethtool_cmd_speed(&ecmd);
+	if (bitrate == SPEED_UNKNOWN)
 		bitrate = 0;
-		break;
-	};
 out:
 	close(sock);
 
