@@ -198,7 +198,11 @@ clean_showinfo:
 
 NCONF_FILES = ether.conf tcp.conf udp.conf oui.conf geoip.conf
 
-all: build_showinfo toolkit
+#XXX: for an -rcX release ship it without curvetun as this needs
+#     to be fixed until a non-rc release though, therefore do not
+#     apply ''all: toolkit'' for now. However, we still let people
+#     build it by hand if they need to for some reasons.
+all: build_showinfo allbutcurvetun
 allbutcurvetun: $(filter-out curvetun,$(TOOLS))
 allbutmausezahn: $(filter-out mausezahn,$(TOOLS))
 toolkit: $(TOOLS)
@@ -209,7 +213,9 @@ distclean: clean
 mrproper: distclean
 	$(Q)$(GIT_REM)
 
-install: install_all
+#XXX: same here, instead of "install: install_all" we ignore curvetun
+#     for the moment
+install: install_allbutcurvetun
 install_all: $(foreach tool,$(TOOLS),$(tool)_install)
 install_allbutcurvetun: $(foreach tool,$(filter-out curvetun,$(TOOLS)),$(tool)_install)
 install_allbutmausezahn: $(foreach tool,$(filter-out mausezahn,$(TOOLS)),$(tool)_install)
