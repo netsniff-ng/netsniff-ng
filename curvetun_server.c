@@ -39,7 +39,7 @@
 #include "cpus.h"
 #include "sock.h"
 #include "built_in.h"
-#include "ct_usermgmt.h"
+#include "curvetun_mgmt_users.h"
 #include "cpusched.h"
 #include "trie.h"
 

@@ -18,8 +18,8 @@
 #include "xmalloc.h"
 #include "curvetun.h"
 #include "curve.h"
+#include "curvetun_mgmt_servers.h"
 #include "crypto.h"
-#include "ct_servmgmt.h"
 
 struct server_store {
 	int udp;

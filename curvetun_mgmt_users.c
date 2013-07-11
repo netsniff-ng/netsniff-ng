@@ -15,7 +15,6 @@
 #include <arpa/inet.h>
 
 #include "die.h"
-#include "ct_usermgmt.h"
 #include "locking.h"
 #include "xmalloc.h"
 #include "ioexact.h"
@@ -24,6 +23,7 @@
 #include "curvetun.h"
 #include "curve.h"
 #include "crypto.h"
+#include "curvetun_mgmt_users.h"
 #include "hash.h"
 
 struct user_store {

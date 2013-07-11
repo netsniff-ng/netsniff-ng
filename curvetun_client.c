@@ -35,8 +35,8 @@
 #include "corking.h"
 #include "ioexact.h"
 #include "curvetun.h"
-#include "ct_servmgmt.h"
-#include "ct_usermgmt.h"
+#include "curvetun_mgmt_servers.h"
+#include "curvetun_mgmt_users.h"
 #include "crypto_auth_hmacsha512256.h"
 
 extern volatile sig_atomic_t sigint;
