@@ -16,3 +16,5 @@ astraceroute-objs =	xmalloc.o \
 			ring_rx.o \
 			ring.o \
 			astraceroute.o
+
+astraceroute-eflags =

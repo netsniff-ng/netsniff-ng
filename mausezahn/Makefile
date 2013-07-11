@@ -64,3 +64,8 @@ mausezahn-objs =	str.o \
 			staging/llist.o \
 			staging/directmops.o \
 			staging/mausezahn.o
+
+mausezahn-eflags = -O2 -I. -I.. \
+		   -DVERSION_STRING=\"$(VERSION_STRING)\" \
+		   -DPREFIX_STRING=\"$(PREFIX)\" \
+		   -DVERSION_LONG=\"$(VERSION_LONG)\"

@@ -27,3 +27,5 @@ curvetun-objs =	xmalloc.o \
 		curvetun_server.o \
 		curvetun_client.o \
 		curvetun.o
+
+curvetun-eflags = -I ${NACL_INC_DIR}

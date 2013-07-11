@@ -22,3 +22,5 @@ flowtop-objs =	xmalloc.o \
 		geoip.o \
 		screen.o \
 		flowtop.o
+
+flowtop-eflags = $(shell pkg-config --cflags ncurses)

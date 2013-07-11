@@ -190,8 +190,8 @@ clean_showinfo:
 		-o $(BUILD_DIR)/$(shell basename $< .y).tab.c $(YAAC_FLAGS) -d $<
 
 .PHONY: all toolkit $(TOOLS) clean %_prehook %_clean %_install %_uninstall tag tags cscope
-.FORCE:
 .DEFAULT_GOAL := all
+.FORCE:
 .DEFAULT:
 .IGNORE: %_clean_custom %_install_custom
 .NOTPARALLEL: $(TOOLS)
@@ -225,6 +225,7 @@ uninstall: $(foreach tool,$(TOOLS),$(tool)_uninstall)
 define TOOL_templ
   include $(1)/Makefile
   $(1) $(1)%: BUILD_DIR := $(1)
+  $(1) $(1)%: ALL_CFLAGS += $$($(1)-eflags)
   $(1)_prehook:
 	$(Q)echo "$(bold)$(WHAT) $(1):$(normal)"
   $(1): $(1)_prehook $$($(1)-lex) $$($(1)-yaac) $$(patsubst %.o,$(1)/%.o,$$($(1)-objs))
@@ -249,15 +250,9 @@ $(foreach tool,$(TOOLS),$(eval $(call TOOL_templ,$(tool))))
 
 %:: ;
 
-netsniff-ng: ALL_CFLAGS += $(shell pkg-config --cflags libnl-3.0) $(shell pkg-config --cflags libnl-genl-3.0) -D__WITH_PROTOS
-trafgen: ALL_CFLAGS += -I.. $(shell pkg-config --cflags libnl-3.0) $(shell pkg-config --cflags libnl-genl-3.0) -D__WITH_PROTOS
-ifpps: ALL_CFLAGS += $(shell pkg-config --cflags ncurses)
-flowtop: ALL_CFLAGS += $(shell pkg-config --cflags ncurses)
-bpfc: ALL_CFLAGS += -I..
-curvetun: ALL_CFLAGS += -I ${NACL_INC_DIR}
+# Here are two special treatments for now
 curvetun: ALL_LDFLAGS += -L ${NACL_LIB_DIR}
-# This gets some extra treatment here until the code looks properly
-mausezahn: ALL_CFLAGS = -O2 -I. -I.. -DVERSION_STRING=\"$(VERSION_STRING)\" -DPREFIX_STRING=\"$(PREFIX)\" -DVERSION_LONG=\"$(VERSION_LONG)\"
+mausezahn: ALL_CFLAGS = $(mausezahn-eflags)
 
 bpfc_clean_custom:
 	$(Q)$(call RM,$(BUILD_DIR)/*.h $(BUILD_DIR)/*.c)

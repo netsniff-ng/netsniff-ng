@@ -10,3 +10,5 @@ ifpps-objs =	xmalloc.o \
 		sig.o \
 		screen.o \
 		ifpps.o
+
+ifpps-eflags = $(shell pkg-config --cflags ncurses)

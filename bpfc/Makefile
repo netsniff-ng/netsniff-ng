@@ -10,3 +10,5 @@ bpfc-objs =	xmalloc.o \
 bpfc-lex =	bpf_lexer.yy.o
 
 bpfc-yaac =	bpf_parser.tab.o
+
+bpfc-eflags =	-I..

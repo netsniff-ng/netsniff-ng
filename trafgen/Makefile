@@ -23,3 +23,8 @@ trafgen-objs =	xmalloc.o \
 trafgen-lex =	trafgen_lexer.yy.o
 
 trafgen-yaac =	trafgen_parser.tab.o
+
+trafgen-eflags = $(shell pkg-config --cflags libnl-3.0) \
+		 $(shell pkg-config --cflags libnl-genl-3.0) \
+		 -I.. \
+		 -D__WITH_PROTOS

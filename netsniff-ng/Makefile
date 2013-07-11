@@ -72,3 +72,7 @@ endif
 ifeq ($(CONFIG_HWTSTAMP), 1)
 netsniff-ng-objs +=	tstamping.o
 endif
+
+netsniff-ng-eflags = $(shell pkg-config --cflags libnl-3.0) \
+		     $(shell pkg-config --cflags libnl-genl-3.0) \
+		     -D__WITH_PROTOS
