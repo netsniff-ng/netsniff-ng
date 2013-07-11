@@ -34,6 +34,7 @@ What additional tools are recommended, but not mandatory after the build?
 
  - cpp:			   trafgen
  - ntpd:		   curvetun
+ - gnuplot:		   ifpps
  - setcap:		   all
 
 It is common, that these libraries are shipped as distribution packages
