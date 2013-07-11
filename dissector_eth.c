@@ -53,7 +53,7 @@ char *lookup_ether_type(unsigned int id)
 	return __do_lookup_inline(id, port, &eth_ether_types, port);
 }
 
-#ifdef __WITH_PROTOS
+#ifdef HAVE_DISSECTOR_PROTOS
 static inline void dissector_init_entry(int type)
 {
 	dissector_set_print_type(&ethernet_ops, type);
@@ -101,7 +101,7 @@ static inline void dissector_init_entry(int type) {}
 static inline void dissector_init_exit(int type) {}
 static void dissector_init_layer_2(int type) {}
 static void dissector_init_layer_3(int type) {}
-#endif /* __WITH_PROTOS */
+#endif
 
 enum ports {
 	PORTS_UDP,

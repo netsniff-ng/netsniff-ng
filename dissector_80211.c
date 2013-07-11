@@ -16,7 +16,7 @@
 
 struct hash_table ieee80211_lay2;
 
-#ifdef __WITH_PROTOS
+#ifdef HAVE_DISSECTOR_PROTOS
 static inline void dissector_init_entry(int type)
 {
 	dissector_set_print_type(&ieee80211_ops, type);
@@ -37,7 +37,7 @@ static void dissector_init_layer_2(int type)
 static inline void dissector_init_entry(int type) {}
 static inline void dissector_init_exit(int type) {}
 static void dissector_init_layer_2(int type) {}
-#endif /* __WITH_PROTOS */
+#endif
 
 void dissector_init_ieee80211(int fnttype)
 {

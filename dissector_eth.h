@@ -23,7 +23,7 @@ extern char *lookup_port_udp(unsigned int id);
 extern char *lookup_port_tcp(unsigned int id);
 extern char *lookup_ether_type(unsigned int id);
 
-#ifdef __WITH_PROTOS
+#ifdef HAVE_DISSECTOR_PROTOS
 static inline struct protocol *dissector_get_ethernet_entry_point(void)
 {
 	return &ethernet_ops;
@@ -43,5 +43,5 @@ static inline struct protocol *dissector_get_ethernet_exit_point(void)
 {
 	return NULL;
 }
-#endif /* __WITH_PROTOS */
+#endif
 #endif /* DISSECTOR_ETH_H */
