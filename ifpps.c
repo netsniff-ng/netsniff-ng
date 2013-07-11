@@ -13,6 +13,7 @@
 #include <sys/socket.h>
 #include <sys/fsuid.h>
 #include <sys/types.h>
+#include <sys/utsname.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -71,6 +72,7 @@ static struct cpu_hit *cpu_hits;
 static struct avg_stat stats_avg;
 static int stats_loop = 0;
 static WINDOW *stats_screen = NULL;
+static struct utsname uts;
 
 static const char *short_options = "d:t:n:vhclp";
 static const struct option long_options[] = {
@@ -687,8 +689,8 @@ static void screen_header(WINDOW *screen, const char *ifname, int *voff,
 				link == 0 ? "no" : "yes");
 
 	mvwprintw(screen, (*voff)++, 2,
-		  "Kernel net/sys statistics for %s (%s%s), t=%lums, cpus=%u%s/%u"
-		  "               ",
+		  "%s, %s, %s (%s%s), t=%lums, cpus=%u%s/%u"
+		  "               ", uts.release, uts.machine,
 		  ifname, drvinf.driver, buff, ms_interval, top_cpus,
 		  top_cpus > 0 && top_cpus < cpus ? "+1" : "", cpus);
 }
@@ -1231,6 +1233,8 @@ int main(int argc, char **argv)
 
 	cpus = get_number_cpus();
 	top_cpus = min(top_cpus, cpus);
+	if (uname(&uts) < 0)
+		panic("Cannot execute uname!\n");
 
 	stats_alloc(&stats_old, cpus);
 	stats_alloc(&stats_new, cpus);
