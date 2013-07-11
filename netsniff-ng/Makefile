@@ -1,11 +1,13 @@
-netsniff-ng-libs =	-lGeoIP \
-			$(shell pkg-config --libs libnl-3.0) \
+netsniff-ng-libs =	$(shell pkg-config --libs libnl-3.0) \
 			$(shell pkg-config --libs libnl-genl-3.0) \
 			-lpthread \
 			-lz
 
 ifeq ($(CONFIG_LIBPCAP), 1)
 netsniff-ng-libs +=	-lpcap
+endif
+ifeq ($(CONFIG_LIBGEOIP), 1)
+netsniff-ng-libs +=	-lGeoIP
 endif
 
 netsniff-ng-objs =	dissector.o \
@@ -58,12 +60,14 @@ netsniff-ng-objs =	dissector.o \
 			ring.o \
 			tprintf.o \
 			timer.o \
-			geoip.o \
 			mac80211.o \
 			netsniff-ng.o
 
 ifeq ($(CONFIG_LIBPCAP), 1)
 netsniff-ng-objs +=	bpf_comp.o
+endif
+ifeq ($(CONFIG_LIBGEOIP), 1)
+netsniff-ng-objs +=	geoip.o
 endif
 ifeq ($(CONFIG_HWTSTAMP), 1)
 netsniff-ng-objs +=	tstamping.o
