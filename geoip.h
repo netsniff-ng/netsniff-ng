@@ -7,7 +7,7 @@
 #include "config.h"
 #include "die.h"
 
-#ifdef HAVE_GEOIP
+#if defined(HAVE_GEOIP) && defined(HAVE_LIBZ)
 extern void init_geoip(int enforce);
 extern void update_geoip(void);
 extern int geoip_working(void);

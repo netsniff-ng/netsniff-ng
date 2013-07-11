@@ -15,6 +15,7 @@ TOOLS_NOBUILD=""
 HAVE_LIBPCAP=0
 HAVE_HWTSTAMP=0
 HAVE_LIBGEOIP=0
+HAVE_LIBZ=0
 
 [ -z $CC ] && CC=cc
 
@@ -347,12 +348,14 @@ EOF
 	$CC -o $TMPDIR/ztest $TMPDIR/ztest.c -lz >> $TMPDIR/config.log 2>&1
 	if [ ! -x $TMPDIR/ztest ] ; then
 		echo "[NO]"
+		echo "CONFIG_LIBZ=0" >> Config
 		MISSING_DEFS=1
-		tools_remove "netsniff-ng"
 		tools_remove "astraceroute"
 		tools_remove "flowtop"
 	else
 		echo "[YES]"
+		echo "CONFIG_LIBZ=1" >> Config
+		HAVE_LIBZ=1
 	fi
 }
 
@@ -507,6 +510,7 @@ gen_config_hdr()
 	local _version="`git describe --always`"
 	local _have_libpcap=""
 	local _have_libgeoip=""
+	local _have_libz=""
 	local _have_hwts=""
 
 	echo "[*] Generating config.h ... "
@@ -523,6 +527,10 @@ gen_config_hdr()
 		_have_libgeoip="#define HAVE_GEOIP 1"
 	fi
 
+	if [ "$HAVE_LIBZ" == "1" ] ; then
+		_have_libz="#define HAVE_LIBZ 1"
+	fi
+
 	cat > config.h << EOF
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -534,6 +542,7 @@ gen_config_hdr()
 #define GITVERSION "$_version"
 $_have_libpcap
 $_have_libgeoip
+$_have_libz
 $_have_hwts
 #endif /* CONFIG_H */
 EOF
@@ -586,6 +595,12 @@ if [ "x$TOOLS_NOBUILD" != "x" ] ; then
 	echo "[*] The following tools will be built: $TOOLS"
 else
 	echo "[*] Looks good! All tools will be built!"
+fi
+
+if [ "$HAVE_LIBGEOIP" == "1" -a "$HAVE_LIBZ" == "1"  ] ; then
+	echo "CONFIG_GEOIP=1" >> Config
+else
+	echo "CONFIG_GEOIP=0" >> Config
 fi
 
 echo "CONFIG_TOOLS=$TOOLS" >> Config
