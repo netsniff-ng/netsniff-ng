@@ -131,6 +131,7 @@ static void __noreturn version(void)
 {
 	printf("\ncurvetun %s, Git id: %s\n", VERSION_LONG, GITVERSION);
 	puts("lightweight curve25519-based IP tunnel\n"
+	     "Note: Einstein-Rosen bridge not yet supported\n"
 	     "http://www.netsniff-ng.org\n\n"
 	     "Please report bugs to <bugs@netsniff-ng.org>\n"
 	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
