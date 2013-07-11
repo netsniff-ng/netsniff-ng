@@ -815,10 +815,10 @@ static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
 
 	all = avg->cpu_user + avg->cpu_sys + avg->cpu_nice + avg->cpu_idle + avg->cpu_iow;
 	mvwprintw(screen, (*voff)++, 2,
-		  "avg: %14.1lf%% usr/t "
-			"%9.1lf%% sys/t "
-		       "%10.1lf%% idl/t "
-		       "%11.1lf%% iow/t",
+		  "avg: %14.1lf%%       "
+			"%9.1lf%%       "
+		       "%10.1lf%%       "
+		       "%11.1lf%%",
 		 100.0 * (avg->cpu_user + avg->cpu_nice) / all,
 		 100.0 * avg->cpu_sys / all,
 		 100.0 * avg->cpu_idle /all,
@@ -859,9 +859,9 @@ static void screen_percpu_irqs_rel(WINDOW *screen, const struct ifstat *rel,
 		screen_percpu_irqs_rel_one(screen, rel, voff, cpu_hits[cpus - 1].idx, "-");
 
 	mvwprintw(screen, (*voff)++, 2,
-		 "avg: %15.2Lf irqs/t "
-		      "%17.2Lf sirq rx/t "
-		      "%17.2Lf sirq tx/t",
+		 "avg: %17.1Lf        "
+		      "%17.1Lf           "
+		      "%17.1Lf",
 		 avg->irqs_rel, avg->irqs_srx_rel, avg->irqs_stx_rel);
 }
 
@@ -895,7 +895,7 @@ static void screen_percpu_irqs_abs(WINDOW *screen, const struct ifstat *abs,
 		screen_percpu_irqs_abs_one(screen, abs, voff, cpu_hits[cpus - 1].idx, "-");
 
 	mvwprintw(screen, (*voff)++, 2,
-		 "avg: %15.2Lf irqs", avg->irqs_abs);
+		 "avg: %17.1Lf", avg->irqs_abs);
 }
 
 static void screen_wireless(WINDOW *screen, const struct ifstat *rel,
