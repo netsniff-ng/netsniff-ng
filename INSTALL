@@ -169,3 +169,14 @@ a prefixed path like:
 
 Thanks for maintaining netsniff-ng in your distribution. Further questions
 will be answered on the public mailing list.
+
+Last but not least, there is one small utility for advanced users that we have
+not integrated into the main build process. This is a minimal BPF JIT image
+disassembler for the Linux kernel. You can also find this tool in the Linux
+kernel Git tree under 'tools/net/bpf_jit_disasm.c' or within the netsniff-ng
+Git tree simply under 'bpf_jit_disasm.c'. To build it, execute:
+
+    $ gcc -Wall -O2 bpf_jit_disasm.c -o bpf_jit_disasm -lopcodes -lbfd -ldl
+
+The rest is described in the file header comment itself, i.e. how to get to the
+BPF JIT code.
