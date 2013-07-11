@@ -1238,7 +1238,6 @@ int main(int argc, char **argv)
 	stats_alloc(&stats_delta, cpus);
 
 	cpu_hits = xzmalloc(cpus * sizeof(*cpu_hits));
-	memset(&stats_avg, 0, sizeof(stats_avg));
 
 	if (promisc)
 		ifflags = enter_promiscuous_mode(ifname);
