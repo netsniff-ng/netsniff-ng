@@ -37,7 +37,7 @@
 #include "curvetun.h"
 #include "curvetun_mgmt_servers.h"
 #include "curvetun_mgmt_users.h"
-#include "crypto_auth_hmacsha512256.h"
+#include "crypto.h"
 
 extern volatile sig_atomic_t sigint;
 static volatile sig_atomic_t closed_by_server = 0;
