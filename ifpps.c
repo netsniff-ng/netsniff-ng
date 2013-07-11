@@ -777,11 +777,11 @@ static void screen_percpu_states_one(WINDOW *screen, const struct ifstat *rel,
 		       rel->cpu_idle[idx] + rel->cpu_iow[idx];
 
 	mvwprintw(screen, (*voff)++, 2,
-		  "cpu%*d%s:%s %12.1lf%% usr/t "
-			       "%9.1lf%% sys/t "
-			      "%10.1lf%% idl/t "
-			      "%11.1lf%% iow/t", max_padd, idx,
-		  tag, strlen(tag) == 0 ? " " : "",
+		  "cpu%*d %s: %11.1lf%% usr/t "
+			      "%9.1lf%% sys/t "
+			     "%10.1lf%% idl/t "
+			     "%11.1lf%% iow/t",
+		  max_padd, idx, tag,
 		  100.0 * (rel->cpu_user[idx] + rel->cpu_nice[idx]) / all,
 		  100.0 * rel->cpu_sys[idx] / all,
 		  100.0 * rel->cpu_idle[idx] / all,
@@ -807,7 +807,7 @@ static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
 		top_cpus--;
 
 	for (i = 1; i < top_cpus; ++i)
-		screen_percpu_states_one(screen, rel, voff, cpu_hits[i].idx, "");
+		screen_percpu_states_one(screen, rel, voff, cpu_hits[i].idx, "|");
 
 	/* Display minimum hitter */
 	if (cpus != 1)
@@ -831,10 +831,10 @@ static void screen_percpu_irqs_rel_one(WINDOW *screen, const struct ifstat *rel,
 	int max_padd = padding_from_num(get_number_cpus());
 
 	mvwprintw(screen, (*voff)++, 2,
-		  "cpu%*d%s:%s %13llu irqs/t "
-			      "%17llu sirq rx/t "
-			      "%17llu sirq tx/t", max_padd, idx,
-		  tag, strlen(tag) == 0 ? " " : "",
+		  "cpu%*d %s: %12llu irqs/t "
+			     "%17llu sirq rx/t "
+			     "%17llu sirq tx/t",
+		  max_padd, idx, tag,
 		  rel->irqs[idx],
 		  rel->irqs_srx[idx],
 		  rel->irqs_stx[idx]);
@@ -853,7 +853,7 @@ static void screen_percpu_irqs_rel(WINDOW *screen, const struct ifstat *rel,
 		top_cpus--;
 
 	for (i = 1; i < top_cpus; ++i)
-		screen_percpu_irqs_rel_one(screen, rel, voff, cpu_hits[i].idx, "");
+		screen_percpu_irqs_rel_one(screen, rel, voff, cpu_hits[i].idx, "|");
 
 	if (cpus != 1)
 		screen_percpu_irqs_rel_one(screen, rel, voff, cpu_hits[cpus - 1].idx, "-");
@@ -871,9 +871,8 @@ static void screen_percpu_irqs_abs_one(WINDOW *screen, const struct ifstat *abs,
 	int max_padd = padding_from_num(get_number_cpus());
 
 	mvwprintw(screen, (*voff)++, 2,
-		  "cpu%*d%s:%s %13llu irqs", max_padd, idx,
-		  tag, strlen(tag) == 0 ? " " : "",
-		  abs->irqs[idx]);
+		  "cpu%*d %s: %12llu irqs",
+		  max_padd, idx, tag, abs->irqs[idx]);
 }
 
 static void screen_percpu_irqs_abs(WINDOW *screen, const struct ifstat *abs,
@@ -889,7 +888,7 @@ static void screen_percpu_irqs_abs(WINDOW *screen, const struct ifstat *abs,
 		top_cpus--;
 
 	for (i = 1; i < top_cpus; ++i)
-		screen_percpu_irqs_abs_one(screen, abs, voff, cpu_hits[i].idx, "");
+		screen_percpu_irqs_abs_one(screen, abs, voff, cpu_hits[i].idx, "|");
 
 	if (cpus != 1)
 		screen_percpu_irqs_abs_one(screen, abs, voff, cpu_hits[cpus - 1].idx, "-");
