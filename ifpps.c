@@ -752,7 +752,7 @@ static void screen_mem_swap(WINDOW *screen, const struct ifstat *abs, int *voff)
 {
 	mvwprintw(screen, (*voff)++, 2,
 		  "mem:  %13uM total "
-		        "%9uM used "
+			 "%9uM used "
 			"%11uM active "
 			"%10uM inactive",
 			abs->mem_total / 1024,
@@ -762,7 +762,7 @@ static void screen_mem_swap(WINDOW *screen, const struct ifstat *abs, int *voff)
 
 	mvwprintw(screen, (*voff)++, 2,
 		  "swap:  %12uM total "
-		         "%9uM used "
+			  "%9uM used "
 			 "%11uM cached",
 		  abs->swap_total / 1024,
 		  (abs->swap_total - abs->swap_free) / 1024,
@@ -778,9 +778,9 @@ static void screen_percpu_states_one(WINDOW *screen, const struct ifstat *rel,
 
 	mvwprintw(screen, (*voff)++, 2,
 		  "cpu%*d%s:%s %12.1lf%% usr/t "
-			  "%9.1lf%% sys/t "
-			  "%10.1lf%% idl/t "
-			  "%11.1lf%% iow/t", max_padd, idx,
+			       "%9.1lf%% sys/t "
+			      "%10.1lf%% idl/t "
+			      "%11.1lf%% iow/t", max_padd, idx,
 		  tag, strlen(tag) == 0 ? " " : "",
 		  100.0 * (rel->cpu_user[idx] + rel->cpu_nice[idx]) / all,
 		  100.0 * rel->cpu_sys[idx] / all,
@@ -816,9 +816,9 @@ static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
 	all = avg->cpu_user + avg->cpu_sys + avg->cpu_nice + avg->cpu_idle + avg->cpu_iow;
 	mvwprintw(screen, (*voff)++, 2,
 		  "avg: %14.1lf%% usr/t "
-			  "%9.1lf%% sys/t "
-			  "%10.1lf%% idl/t "
-			  "%11.1lf%% iow/t",
+			"%9.1lf%% sys/t "
+		       "%10.1lf%% idl/t "
+		       "%11.1lf%% iow/t",
 		 100.0 * (avg->cpu_user + avg->cpu_nice) / all,
 		 100.0 * avg->cpu_sys / all,
 		 100.0 * avg->cpu_idle /all,
@@ -832,8 +832,8 @@ static void screen_percpu_irqs_rel_one(WINDOW *screen, const struct ifstat *rel,
 
 	mvwprintw(screen, (*voff)++, 2,
 		  "cpu%*d%s:%s %13llu irqs/t "
-			  "%17llu sirq rx/t "
-			  "%17llu sirq tx/t", max_padd, idx,
+			      "%17llu sirq rx/t "
+			      "%17llu sirq tx/t", max_padd, idx,
 		  tag, strlen(tag) == 0 ? " " : "",
 		  rel->irqs[idx],
 		  rel->irqs_srx[idx],
@@ -860,8 +860,8 @@ static void screen_percpu_irqs_rel(WINDOW *screen, const struct ifstat *rel,
 
 	mvwprintw(screen, (*voff)++, 2,
 		 "avg: %15.2Lf irqs/t "
-			  "%17.2Lf sirq rx/t "
-			  "%17.2Lf sirq tx/t",
+		      "%17.2Lf sirq rx/t "
+		      "%17.2Lf sirq tx/t",
 		 avg->irqs_rel, avg->irqs_srx_rel, avg->irqs_stx_rel);
 }
 
