@@ -70,9 +70,10 @@ In order to remove all build files from the source tree:
 
   $ make clean
 
+In any case "make help" will give you some pointers of what can be done.
 To bring the source tree into a pristine state, there are two options.
-The first one will remove all build and build config file, the latter
-will also remove any manually added files:
+The first one will remove all build and build config file, the latter will
+also remove any manually added files:
 
   $ make distclean
   ($ make mrproper)
@@ -151,24 +152,26 @@ symbols, do:
 
   $ make DEBUG=1
 
-For debugging the build system, full commands are shown if every make target is
-executed with:
+For debugging the build system, actual commands are verbosly shown if every
+make target is executed with:
 
   $ make Q=
 
 Concerning packaging the toolkit for a Linux distribution, by default,
 netsniff-ng has some architecture-specific tuning options enabled that don't
-belong into a package binary of a distribution. Hence, you might want to adapt
-some build-related things before starting to package the toolkit. All
-necessary things (e.g., CFLAGS,WFLAGS) can be found in Makefile. Hence,
-you need to adapt it there. You can then build and install the toolkit into
-a prefixed path like:
+belong into a package binary of a distribution. Hence, you might want to build
+the toolkit with:
+
+  $ make DISTRO=1
+
+A hardening option is also available via HARDENING=1 if needed. You can then
+build and install the toolkit into prefixed path like:
 
   $ make PREFIX=<path-prefix-for-package>
   $ make PREFIX=<path-prefix-for-package> install
 
-Thanks for maintaining netsniff-ng in your distribution. Further questions
-will be answered on the public mailing list.
+Thanks for maintaining netsniff-ng in your distribution. Further questions will
+be answered on the public mailing list.
 
 Last but not least, there is one small utility for advanced users that we have
 not integrated into the main build process. This is a minimal BPF JIT image
