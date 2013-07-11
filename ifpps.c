@@ -23,6 +23,7 @@
 #include "die.h"
 #include "dev.h"
 #include "sig.h"
+#include "str.h"
 #include "link.h"
 #include "xmalloc.h"
 #include "ioops.h"
@@ -672,7 +673,7 @@ static void screen_header(WINDOW *screen, const char *ifname, int *voff,
 			  uint64_t ms_interval, unsigned int top_cpus)
 {
 	size_t len = 0;
-	char buff[64];
+	char buff[64], machine[64];
 	struct ethtool_drvinfo drvinf;
 	u32 rate = device_bitrate(ifname);
 	int link = ethtool_link(ifname);
@@ -682,15 +683,20 @@ static void screen_header(WINDOW *screen, const char *ifname, int *voff,
 	ethtool_drvinf(ifname, &drvinf);
 
 	memset(buff, 0, sizeof(buff));
+	memset(machine, 0, sizeof(machine));
+
 	if (rate)
 		len += snprintf(buff + len, sizeof(buff) - len, " %uMbit/s", rate);
 	if (link >= 0)
 		len += snprintf(buff + len, sizeof(buff) - len, " link:%s",
 				link == 0 ? "no" : "yes");
 
+	if (!strstr(uts.release, uts.machine))
+		slprintf(machine, sizeof(machine), " %s,", uts.machine);
+
 	mvwprintw(screen, (*voff)++, 2,
-		  "%s, %s, %s (%s%s), t=%lums, cpus=%u%s/%u"
-		  "               ", uts.release, uts.machine,
+		  "%s,%s %s (%s%s), t=%lums, cpus=%u%s/%u"
+		  "               ", uts.release, machine,
 		  ifname, drvinf.driver, buff, ms_interval, top_cpus,
 		  top_cpus > 0 && top_cpus < cpus ? "+1" : "", cpus);
 }
