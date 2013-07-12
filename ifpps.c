@@ -870,10 +870,10 @@ static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
 
 		all = m_cpu_user + m_cpu_sys + m_cpu_nice + m_cpu_idle + m_cpu_iow;
 		mvwprintw(screen, (*voff)++, 2,
-			  "med: %14.1lf%%       "
+			  "med:%*s%14.1lf%%       "
 				"%9.1lf%%       "
 			       "%10.1lf%%       "
-			       "%11.1lf%%",
+			       "%11.1lf%%", max_padd, "",
 			 100.0 * (m_cpu_user + m_cpu_nice) / all,
 			 100.0 * m_cpu_sys / all,
 			 100.0 * m_cpu_idle /all,
