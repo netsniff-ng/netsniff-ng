@@ -75,4 +75,4 @@ endif
 
 netsniff-ng-eflags = $(shell pkg-config --cflags libnl-3.0) \
 		     $(shell pkg-config --cflags libnl-genl-3.0) \
-		     -DHAVE_DISSECTOR_PROTOS
+		     -DHAVE_DISSECTOR_PROTOS -DNEED_TCPDUMP_LIKE_FILTER

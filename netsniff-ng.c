@@ -6,8 +6,6 @@
  */
 
 #define _GNU_SOURCE
-#define NEED_TCPDUMP_LIKE_FILTER
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>

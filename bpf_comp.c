@@ -4,8 +4,6 @@
  * Subject to the GPL, version 2.
  */
 
-#define NEED_TCPDUMP_LIKE_FILTER
-
 #include <pcap.h>
 #include <linux/filter.h>
 
