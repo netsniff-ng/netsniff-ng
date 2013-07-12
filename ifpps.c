@@ -76,15 +76,15 @@ static int show_median = 0;
 static WINDOW *stats_screen = NULL;
 static struct utsname uts;
 
-static const char *short_options = "d:t:n:vhclpmW";
+static const char *short_options = "d:n:t:clmpWvh";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
-	{"interval",		required_argument,	NULL, 't'},
 	{"num-cpus",		required_argument,	NULL, 'n'},
-	{"promisc",		no_argument,		NULL, 'p'},
+	{"interval",		required_argument,	NULL, 't'},
 	{"csv",			no_argument,		NULL, 'c'},
 	{"loop",		no_argument,		NULL, 'l'},
 	{"median",		no_argument,		NULL, 'm'},
+	{"promisc",		no_argument,		NULL, 'p'},
 	{"no-warn",		no_argument,		NULL, 'W'},
 	{"version",		no_argument,		NULL, 'v'},
 	{"help",		no_argument,		NULL, 'h'},
@@ -116,13 +116,13 @@ static void __noreturn help(void)
 	     "Usage: ifpps [options] || ifpps <netdev>\n"
 	     "Options:\n"
 	     "  -d|--dev <netdev>      Device to fetch statistics for e.g., eth0\n"
-	     "  -t|--interval <time>   Refresh time in ms (default 1000 ms)\n"
 	     "  -n|--num-cpus <num>    Number of top hitter CPUs to display\n"
 	     "                         in ncurses mode (default 5)\n"
-	     "  -p|--promisc           Promiscuous mode\n"
+	     "  -t|--interval <time>   Refresh time in ms (default 1000 ms)\n"
 	     "  -c|--csv               Output to terminal as Gnuplot-ready data\n"
 	     "  -l|--loop              Continuous CSV output\n"
 	     "  -m|--median            Display median values\n"
+	     "  -p|--promisc           Promiscuous mode\n"
 	     "  -W|--no-warn           Suppress warnings\n"
 	     "  -v|--version           Print version and exit\n"
 	     "  -h|--help              Print this help and exit\n\n"

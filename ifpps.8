@@ -52,15 +52,12 @@ facilitates creation of gnuplot figures from ifpps time series.
 .SS -d <netdev>, --dev <netdev>
 Networking device to fetch statistics from, for example eth0, wlan0.
 .PP
-.SS -t <time>, --interval <time>
-Statistics refresh interval in milliseconds, default is 1000ms.
-.PP
 .SS -n, --num-cpus
 Set maximum number of top hitter CPUs (in terms of time spent in system/user
 mode) to display in ncurses mode, default is 10.
 .PP
-.SS -p, --promisc
-Turn on promiscuous mode for the given networking device.
+.SS -t <time>, --interval <time>
+Statistics refresh interval in milliseconds, default is 1000ms.
 .PP
 .SS -c, --csv
 Output (once) the ncurses data to the terminal as gnuplot(1)-ready data.
@@ -74,6 +71,9 @@ processed later with gnuplot(1).
 .SS -m, --median
 Show median values across all CPUs for CPU load, interrupts (per interval and
 absolute) and software interrupts.
+.PP
+.SS -p, --promisc
+Turn on promiscuous mode for the given networking device.
 .PP
 .SS -W, --no-warn
 Suppress possible warnings in the ncurses output, e.g. about a too low sampling
