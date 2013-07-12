@@ -46,8 +46,8 @@ check_pkg_config()
 {
 	echo -n "[*] Checking pkg-config ... "
 
-	if [ "x$(which pkg-config)" == "x" ] ; then
-		echo "[NO]"
+		if [ "x$(which pkg-config 2>> config.log)" == "x" ] ; then
+			echo "[NO]"
 		MISSING_PKG_CONFIG=1
 	else
 		echo "[YES]"
@@ -58,7 +58,7 @@ check_ccache()
 {
 	echo -n "[*] Checking ccache ... "
 
-	if [ "x$(which ccache)" == "x" ] ; then
+	if [ "x$(which ccache 2>> config.log)" == "x" ] ; then
 		echo "[NO]"
 		echo "CONFIG_CCACHE=" >> Config
 	else
@@ -71,7 +71,7 @@ check_flex()
 {
 	echo -n "[*] Checking flex ... "
 
-	if [ "x$(which flex)" == "x" ] ; then
+	if [ "x$(which flex 2>> config.log)" == "x" ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
 		tools_remove "trafgen"
@@ -85,7 +85,7 @@ check_bison()
 {
 	echo -n "[*] Checking bison ... "
 
-	if [ "x$(which bison)" == "x" ] ; then
+	if [ "x$(which bison 2>> config.log)" == "x" ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
 		tools_remove "trafgen"
@@ -121,7 +121,7 @@ EOF
 	LDFLAGS="-L $NACL_LIB_DIR"
 	CFLAGS="-I $NACL_INC_DIR"
 
-	$CC $CFLAGS $LDFLAGS -o $TMPDIR/nacltest $TMPDIR/nacltest.c >> $TMPDIR/config.log 2>&1
+	$CC $CFLAGS $LDFLAGS -o $TMPDIR/nacltest $TMPDIR/nacltest.c >> config.log 2>&1
 	if [ ! -x $TMPDIR/nacltest ] ; then
 		echo "[NO]"
 		MISSING_NACL=1
@@ -160,13 +160,13 @@ void main(void)
 EOF
 
 	$CC \
-		$(pkg-config --cflags libnl-3.0 2>>config.log) \
-		$(pkg-config --cflags libnl-genl-3.0 2>>config.log) \
+		$(pkg-config --cflags libnl-3.0 2>> config.log) \
+		$(pkg-config --cflags libnl-genl-3.0 2>> config.log) \
 		-o $TMPDIR/libnltest \
 		$TMPDIR/libnltest.c \
-		$(pkg-config --libs libnl-3.0 2>>config.log) \
-		$(pkg-config --libs libnl-genl-3.0 2>>config.log) \
-			>> $TMPDIR/config.log 2>&1
+		$(pkg-config --libs libnl-3.0 2>> config.log) \
+		$(pkg-config --libs libnl-genl-3.0 2>> config.log) \
+			>> config.log 2>&1
 	if [ ! -x $TMPDIR/libnltest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
@@ -196,7 +196,7 @@ void main(void)
 }
 EOF
 
-	$CC -o $TMPDIR/tpacketv3test $TMPDIR/tpacketv3test.c >> $TMPDIR/config.log 2>&1
+	$CC -o $TMPDIR/tpacketv3test $TMPDIR/tpacketv3test.c >> config.log 2>&1
 	if [ ! -x $TMPDIR/tpacketv3test ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
@@ -229,7 +229,7 @@ void main(void)
 }
 EOF
 
-	$CC -o $TMPDIR/tpacketv2test $TMPDIR/tpacketv2test.c >> $TMPDIR/config.log 2>&1
+	$CC -o $TMPDIR/tpacketv2test $TMPDIR/tpacketv2test.c >> config.log 2>&1
 	if [ ! -x $TMPDIR/tpacketv2test ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
@@ -255,10 +255,10 @@ void main(void)
 EOF
 
 	$CC \
-		$(pkg-config --cflags ncurses 2>>config.log) \
+		$(pkg-config --cflags ncurses 2>> config.log) \
 		-o $TMPDIR/ncursestest $TMPDIR/ncursestest.c \
-		$(pkg-config --libs ncurses 2>>config.log) \
-			>> $TMPDIR/config.log 2>&1
+		$(pkg-config --libs ncurses 2>> config.log) \
+			>> config.log 2>&1
 	if [ ! -x $TMPDIR/ncursestest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
@@ -291,7 +291,7 @@ void main(void)
 }
 EOF
 
-	$CC -o $TMPDIR/geoiptest $TMPDIR/geoiptest.c -lGeoIP >> $TMPDIR/config.log 2>&1
+	$CC -o $TMPDIR/geoiptest $TMPDIR/geoiptest.c -lGeoIP >> config.log 2>&1
 	if [ ! -x $TMPDIR/geoiptest ] ; then
 		echo "[NO]"
 		echo "CONFIG_LIBGEOIP=0" >> Config
@@ -322,7 +322,7 @@ void main(void)
 }
 EOF
 
-	$CC -o $TMPDIR/nfcttest $TMPDIR/nfcttest.c -lnetfilter_conntrack >> $TMPDIR/config.log 2>&1
+	$CC -o $TMPDIR/nfcttest $TMPDIR/nfcttest.c -lnetfilter_conntrack >> config.log 2>&1
 	if [ ! -x $TMPDIR/nfcttest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
@@ -345,7 +345,7 @@ void main(void)
 }
 EOF
 
-	$CC -o $TMPDIR/ztest $TMPDIR/ztest.c -lz >> $TMPDIR/config.log 2>&1
+	$CC -o $TMPDIR/ztest $TMPDIR/ztest.c -lz >> config.log 2>&1
 	if [ ! -x $TMPDIR/ztest ] ; then
 		echo "[NO]"
 		echo "CONFIG_LIBZ=0" >> Config
@@ -373,7 +373,7 @@ void main(void)
 }
 EOF
 
-	$CC -o $TMPDIR/urcutest $TMPDIR/urcutest.c -lurcu >> $TMPDIR/config.log 2>&1
+	$CC -o $TMPDIR/urcutest $TMPDIR/urcutest.c -lurcu >> config.log 2>&1
 	if [ ! -x $TMPDIR/urcutest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
@@ -397,7 +397,7 @@ void main(void)
 }
 EOF
 
-	$CC -o $TMPDIR/pcaptest $TMPDIR/pcaptest.c -lpcap >> $TMPDIR/config.log 2>&1
+	$CC -o $TMPDIR/pcaptest $TMPDIR/pcaptest.c -lpcap >> config.log 2>&1
 	if [ ! -x $TMPDIR/pcaptest ] ; then
 		echo "[NO]"
 		echo "CONFIG_LIBPCAP=0" >> Config
@@ -447,7 +447,7 @@ void main(void)
 }
 EOF
 
-	$CC -o $TMPDIR/hwtstest $TMPDIR/hwtstest.c >> $TMPDIR/config.log 2>&1
+	$CC -o $TMPDIR/hwtstest $TMPDIR/hwtstest.c >> config.log 2>&1
 	if [ ! -x $TMPDIR/hwtstest ] ; then
 		echo "[NO]"
 		echo "CONFIG_HWTSTAMP=0" >> Config
@@ -471,7 +471,7 @@ void main(void)
 }
 EOF
 
-	$CC -o $TMPDIR/clitest $TMPDIR/clitest.c -lcli >> $TMPDIR/config.log 2>&1
+	$CC -o $TMPDIR/clitest $TMPDIR/clitest.c -lcli >> config.log 2>&1
 	if [ ! -x $TMPDIR/clitest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
@@ -495,7 +495,7 @@ void main(void)
 }
 EOF
 
-	$CC -o $TMPDIR/nettest $TMPDIR/nettest.c -lnet >> $TMPDIR/config.log 2>&1
+	$CC -o $TMPDIR/nettest $TMPDIR/nettest.c -lnet >> config.log 2>&1
 	if [ ! -x $TMPDIR/nettest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
