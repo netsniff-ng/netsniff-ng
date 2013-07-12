@@ -122,6 +122,7 @@ static void __noreturn help(void)
 	     "  -p|--promisc           Promiscuous mode\n"
 	     "  -c|--csv               Output to terminal as Gnuplot-ready data\n"
 	     "  -l|--loop              Continuous CSV output\n"
+	     "  -m|--median            Display median values\n"
 	     "  -W|--no-warn           Suppress warnings\n"
 	     "  -v|--version           Print version and exit\n"
 	     "  -h|--help              Print this help and exit\n\n"
