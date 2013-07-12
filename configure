@@ -46,8 +46,8 @@ check_pkg_config()
 {
 	echo -n "[*] Checking pkg-config ... "
 
-		if [ "x$(which pkg-config 2>> config.log)" == "x" ] ; then
-			echo "[NO]"
+	if [ "x$(which pkg-config 2>> config.log)" == "x" ] ; then
+		echo "[NO]"
 		MISSING_PKG_CONFIG=1
 	else
 		echo "[YES]"
