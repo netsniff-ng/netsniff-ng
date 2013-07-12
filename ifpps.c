@@ -72,10 +72,11 @@ static struct ifstat stats_old, stats_new, stats_delta;
 static struct cpu_hit *cpu_hits;
 static struct avg_stat stats_avg;
 static int stats_loop = 0;
+static int show_median = 0;
 static WINDOW *stats_screen = NULL;
 static struct utsname uts;
 
-static const char *short_options = "d:t:n:vhclpW";
+static const char *short_options = "d:t:n:vhclpmW";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"interval",		required_argument,	NULL, 't'},
@@ -83,6 +84,7 @@ static const struct option long_options[] = {
 	{"promisc",		no_argument,		NULL, 'p'},
 	{"csv",			no_argument,		NULL, 'c'},
 	{"loop",		no_argument,		NULL, 'l'},
+	{"median",		no_argument,		NULL, 'm'},
 	{"no-warn",		no_argument,		NULL, 'W'},
 	{"version",		no_argument,		NULL, 'v'},
 	{"help",		no_argument,		NULL, 'h'},
@@ -798,6 +800,14 @@ static void screen_percpu_states_one(WINDOW *screen, const struct ifstat *rel,
 		  100.0 * rel->cpu_iow[idx] / all);
 }
 
+#define MEDIAN_EVEN(member)	do { \
+	m_##member = (rel->member[i] + rel->member[j]) / 2; \
+} while (0)
+
+#define MEDIAN_ODD(member)	do { \
+	m_##member = rel->member[i]; \
+} while (0)
+
 static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
 				 const struct avg_stat *avg, int top_cpus,
 				 int *voff)
@@ -834,6 +844,40 @@ static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
 		 100.0 * avg->cpu_sys / all,
 		 100.0 * avg->cpu_idle /all,
 		 100.0 * avg->cpu_iow / all);
+
+	if (show_median) {
+		long double m_cpu_user, m_cpu_nice, m_cpu_sys, m_cpu_idle, m_cpu_iow;
+
+		i = cpu_hits[cpus / 2].idx;
+		if (cpus % 2 == 0) {
+			/* take the mean of the 2 middle entries */
+			int j = cpu_hits[(cpus / 2) - 1].idx;
+
+			MEDIAN_EVEN(cpu_user);
+			MEDIAN_EVEN(cpu_nice);
+			MEDIAN_EVEN(cpu_sys);
+			MEDIAN_EVEN(cpu_idle);
+			MEDIAN_EVEN(cpu_iow);
+		} else {
+			/* take the middle entry as is */
+			MEDIAN_ODD(cpu_user);
+			MEDIAN_ODD(cpu_nice);
+			MEDIAN_ODD(cpu_sys);
+			MEDIAN_ODD(cpu_idle);
+			MEDIAN_ODD(cpu_iow);
+		}
+
+		all = m_cpu_user + m_cpu_sys + m_cpu_nice + m_cpu_idle + m_cpu_iow;
+		mvwprintw(screen, (*voff)++, 2,
+			  "med: %14.1lf%%       "
+				"%9.1lf%%       "
+			       "%10.1lf%%       "
+			       "%11.1lf%%",
+			 100.0 * (m_cpu_user + m_cpu_nice) / all,
+			 100.0 * m_cpu_sys / all,
+			 100.0 * m_cpu_idle /all,
+			 100.0 * m_cpu_iow / all);
+	}
 }
 
 static void screen_percpu_irqs_rel_one(WINDOW *screen, const struct ifstat *rel,
@@ -875,6 +919,31 @@ static void screen_percpu_irqs_rel(WINDOW *screen, const struct ifstat *rel,
 		      "%17.1Lf           "
 		      "%17.1Lf", max_padd, "",
 		 avg->irqs_rel, avg->irqs_srx_rel, avg->irqs_stx_rel);
+
+	if (show_median) {
+		long double m_irqs, m_irqs_srx, m_irqs_stx;
+
+		i = cpu_hits[cpus / 2].idx;
+		if (cpus % 2 == 0) {
+			/* take the mean of the 2 middle entries */
+			int j = cpu_hits[(cpus / 2) - 1].idx;
+
+			MEDIAN_EVEN(irqs);
+			MEDIAN_EVEN(irqs_srx);
+			MEDIAN_EVEN(irqs_stx);
+		} else {
+			/* take the middle entry as is */
+			MEDIAN_ODD(irqs);
+			MEDIAN_ODD(irqs_srx);
+			MEDIAN_ODD(irqs_stx);
+		}
+
+		mvwprintw(screen, (*voff)++, 2,
+			 "med:%*s%17.1Lf        "
+			      "%17.1Lf           "
+			      "%17.1Lf", max_padd, "",
+			 m_irqs, m_irqs_srx, m_irqs_stx);
+	}
 }
 
 static void screen_percpu_irqs_abs_one(WINDOW *screen, const struct ifstat *abs,
@@ -908,6 +977,24 @@ static void screen_percpu_irqs_abs(WINDOW *screen, const struct ifstat *abs,
 
 	mvwprintw(screen, (*voff)++, 2,
 		 "avg:%*s%17.1Lf", max_padd, "", avg->irqs_abs);
+
+	if (show_median) {
+		long double m_irqs;
+
+		i = cpu_hits[cpus / 2].idx;
+		if (cpus % 2 == 0) {
+			/* take the mean of the 2 middle entries */
+			int j = cpu_hits[(cpus / 2) - 1].idx;
+
+			m_irqs = (abs->irqs[i] + abs->irqs[j]) / 2;
+		} else {
+			/* take the middle entry as is */
+			m_irqs = abs->irqs[i];
+		}
+
+		mvwprintw(screen, (*voff)++, 2,
+			  "med:%*s%17.1Lf", max_padd, "", m_irqs);
+	}
 }
 
 static void screen_wireless(WINDOW *screen, const struct ifstat *rel,
@@ -1224,6 +1311,9 @@ int main(int argc, char **argv)
 			break;
 		case 'p':
 			promisc = 1;
+			break;
+		case 'm':
+			show_median = 1;
 			break;
 		case 'c':
 			func_main = term_main;

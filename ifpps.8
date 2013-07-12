@@ -41,7 +41,8 @@ the number of CPUs exceeds 5 or the number specified by the user with the
 heavy hitters. The topmost heavy hitter CPU will be marked with \[lq]+\[rq].
 The least heavy hitter will always be displayed and is marked with
 \[lq]-\[rq]. In addition, the average for all the above per-CPU data is
-shown.
+shown. Optionally the median values can be displayed using the \[lq]\-m\[rq]
+command line option.
 .PP
 ifpps also supports directly the gnuplot(1) data sample format. This
 facilitates creation of gnuplot figures from ifpps time series.
@@ -69,6 +70,10 @@ Continuously output the terminal data after a refresh interval. This option
 is only available, if option \[lq]\-c\[rq] is given. For \[lq]\-l\[rq] it is
 usually recommended to redirect the output into a file that is to be be
 processed later with gnuplot(1).
+.PP
+.SS -m, --median
+Show median values across all CPUs for CPU load, interrupts (per interval and
+absolute) and software interrupts.
 .PP
 .SS -W, --no-warn
 Suppress possible warnings in the ncurses output, e.g. about a too low sampling
