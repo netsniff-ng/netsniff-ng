@@ -326,7 +326,7 @@ EOF
 	if [ ! -x $TMPDIR/nfcttest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
-		tools_remove "libnetfilter-conntrack"
+		tools_remove "flowtop"
 	else
 		echo "[YES]"
 	fi
