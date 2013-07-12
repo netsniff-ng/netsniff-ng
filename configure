@@ -25,15 +25,15 @@ trap 'status=$?; rm -rf $TMPDIR; exit $status' EXIT HUP INT QUIT TERM
 tools_remove()
 {
 	local _tools=$TOOLS
+	local _todel=$1
 	TOOLS=""
 	for tool in $_tools ; do
 		case "$tool" in
-		$1)
-			m=`expr match \"$TOOLS_NOBUILD\" '$1'`
-			if [ "$m" == "0" ] ; then
-				TOOLS_NOBUILD="$TOOLS_NOBUILD $tool"
-			fi
-			;;
+		$_todel)
+			case $_todel in
+			$TOOLS_NOBUILD) ;;
+			*) TOOLS_NOBUILD="$TOOLS_NOBUILD $tool" ;;
+			esac ;;
 		*) TOOLS="$TOOLS $tool" ;;
 		esac
 	done
