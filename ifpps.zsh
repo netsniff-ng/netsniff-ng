@@ -23,6 +23,8 @@ _arguments -s -S \
     "(-n --num-cpus)"{-n,--num-cpus}"[Number of top hitter CPUs to display in ncurses mode (default 10)]" \
     "(-C --csv)"{-C,--csv}"[Output to terminal as CSV  E.g. post-processing with Gnuplot et al.]" \
     "(-l --loop)"{-l,--loop}"[Loop terminal output]" \
+    "(-m --median)"{-m,--median}"[Display median values]" \
+    "(-W --no-warn)"{-W,--no-warn}"[Suppress warnings]" \
     {-v,--version}"[Print version]:" \
     {-h,--help}"[Print this help]:" \
     "*::args:_gnu_generic"
