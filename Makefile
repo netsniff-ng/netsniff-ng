@@ -159,7 +159,7 @@ GZIP = gzip --best -c
 GIT_ARCHIVE = git archive --prefix=netsniff-ng-$(VERSION_STRING)/ $(VERSION_STRING) | \
 	      $(1) > ../netsniff-ng-$(VERSION_STRING).tar.$(2)
 GIT_TAG = git tag -a $(VERSION_STRING) -s -m "tools: $(VERSION_STRING) release"
-GIT_LOG = git shortlog -n --not $(shell git describe --abbrev=0 --tags)
+GIT_LOG = git shortlog -n --not $(shell git describe --always --abbrev=0 --tags)
 GIT_REM = git ls-files -o | xargs rm -rf
 GIT_PEOPLE = git log --no-merges $(VERSION_STRING)..HEAD | grep Author: | cut -d: -f2 | \
 	     cut -d\< -f1 | sort | uniq -c | sort -nr
