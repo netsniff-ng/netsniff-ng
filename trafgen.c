@@ -376,10 +376,11 @@ static void apply_csum16(int csum_id)
 static struct cpu_stats *setup_shared_var(unsigned long cpus)
 {
 	int fd;
-	char zbuff[cpus * sizeof(struct cpu_stats)], file[256];
+	size_t len = cpus * sizeof(struct cpu_stats);
+	char zbuff[len], file[256];
 	struct cpu_stats *buff;
 
-	fmemset(zbuff, 0, sizeof(zbuff));
+	fmemset(zbuff, 0, len);
 	slprintf(file, sizeof(file), ".tmp_mmap.%u", (unsigned int) rand());
 
 	fd = creat(file, S_IRUSR | S_IWUSR);
@@ -390,9 +391,9 @@ static struct cpu_stats *setup_shared_var(unsigned long cpus)
 			   S_IRUSR | S_IWUSR);
 	write_or_die(fd, zbuff, sizeof(zbuff));
 
-	buff = (void *) mmap(0, sizeof(zbuff), PROT_READ | PROT_WRITE,
-			     MAP_SHARED, fd, 0);
-	if (buff == (void *) -1)
+	buff = mmap(NULL, sizeof(zbuff), PROT_READ | PROT_WRITE,
+		    MAP_SHARED, fd, 0);
+	if (buff == MAP_FAILED)
 		panic("Cannot setup shared variable!\n");
 
 	close(fd);
