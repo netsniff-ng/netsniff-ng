@@ -51,7 +51,7 @@ static inline void __tprintf_flush_newline(void)
 		fputc(' ', stdout);
 }
 
-static inline int __tprintf_flush_skip(char *buf, int i, size_t max)
+static inline int __tprintf_flush_skip(char *buf, int i)
 {
 	int val = buf[i];
 
@@ -63,9 +63,9 @@ static inline int __tprintf_flush_skip(char *buf, int i, size_t max)
 
 static void __tprintf_flush(void)
 {
-	int i;
+	size_t i;
 	static ssize_t line_count = 0;
-	size_t term_len = term_curr_size;
+	ssize_t term_len = term_curr_size;
 
 	for (i = 0; i < buffer_use; ++i) {
 		if (buffer[i] == '\n') {
@@ -78,7 +78,7 @@ static void __tprintf_flush(void)
 			line_count = term_starting_size;
 
 			while (i < buffer_use &&
-			       __tprintf_flush_skip(buffer, i, buffer_use))
+			       __tprintf_flush_skip(buffer, i))
 				i++;
 		}
 
@@ -128,7 +128,7 @@ void tprintf(char *msg, ...)
 
 	if (ret < 0)
 		panic("vsnprintf screwed up in tprintf!\n");
-	if (ret > sizeof(buffer))
+	if ((size_t) ret > sizeof(buffer))
 		panic("No mem in tprintf left!\n");
 	if (ret >= avail) {
 		__tprintf_flush();
