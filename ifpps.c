@@ -1130,7 +1130,7 @@ static void term_csv(const char *ifname, const struct ifstat *rel,
 {
 	int cpus, i;
 
-	printf("%ld ", time(0));
+	printf("%ld ", time(NULL));
 
 	printf("%llu ", rel->rx_bytes);
 	printf("%llu ", rel->rx_packets);

@@ -1111,7 +1111,7 @@ static void *collector(void *null)
 	flow_list_destroy(&flow_list);
 	nfct_close(handle);
 
-	pthread_exit(0);
+	pthread_exit(NULL);
 }
 
 int main(int argc, char **argv)

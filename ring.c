@@ -21,7 +21,7 @@
 
 void mmap_ring_generic(int sock, struct ring *ring)
 {
-	ring->mm_space = mmap(0, ring->mm_len, PROT_READ | PROT_WRITE,
+	ring->mm_space = mmap(NULL, ring->mm_len, PROT_READ | PROT_WRITE,
 			      MAP_SHARED | MAP_LOCKED | MAP_POPULATE, sock, 0);
 	if (ring->mm_space == MAP_FAILED)
 		panic("Cannot mmap {TX,RX}_RING!\n");

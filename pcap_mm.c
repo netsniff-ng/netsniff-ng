@@ -116,7 +116,7 @@ static void __pcap_mm_prepare_access_wr(int fd, bool jumbo)
 	if (ret != 1)
 		panic("Cannot write file!\n");
 
-	ptr_va_start = mmap(0, map_size, PROT_WRITE, MAP_SHARED, fd, 0);
+	ptr_va_start = mmap(NULL, map_size, PROT_WRITE, MAP_SHARED, fd, 0);
 	if (ptr_va_start == MAP_FAILED)
 		panic("mmap of file failed!");
 	ret = madvise(ptr_va_start, map_size, MADV_SEQUENTIAL);
@@ -138,7 +138,7 @@ static void __pcap_mm_prepare_access_rd(int fd)
 		panic("pcap dump file is not a regular file!\n");
 
 	map_size = sb.st_size;
-	ptr_va_start = mmap(0, map_size, PROT_READ, MAP_SHARED | MAP_LOCKED, fd, 0);
+	ptr_va_start = mmap(NULL, map_size, PROT_READ, MAP_SHARED | MAP_LOCKED, fd, 0);
 	if (ptr_va_start == MAP_FAILED)
 		panic("mmap of file failed!");
 	ret = madvise(ptr_va_start, map_size, MADV_SEQUENTIAL);
