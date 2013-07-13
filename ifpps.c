@@ -1126,8 +1126,7 @@ static int screen_main(const char *ifname, uint64_t ms_interval,
 	return 0;
 }
 
-static void term_csv(const char *ifname, const struct ifstat *rel,
-		     const struct ifstat *abs, uint64_t ms_interval)
+static void term_csv(const struct ifstat *rel, const struct ifstat *abs)
 {
 	int cpus, i;
 
@@ -1283,7 +1282,7 @@ static int term_main(const char *ifname, uint64_t ms_interval,
 			term_csv_header(ifname, &stats_new, ms_interval);
 		}
 
-		term_csv(ifname, &stats_delta, &stats_new, ms_interval);
+		term_csv(&stats_delta, &stats_new);
 	} while (stats_loop && !sigint);
 
 	return 0;
