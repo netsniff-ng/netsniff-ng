@@ -50,6 +50,7 @@ _arguments -s -S \
     "(-g --group)"{-g,--group}"[Drop privileges and change to groupid]:group:_group_info" \
     "(-e --example)"{-e,--example}"[Show built-in packet config example]:" \
     "(-V --verbose)"{-V,--verbose}"[Be more verbose]" \
+    "(-C --no-cpu-stats)"{-C,--no-cpu-stats}"[Do not print CPU time statistics on exit]" \
     {-v,--version}"[Show version]:" \
     {-h,--help}"[Guess what?!]:" \
     "*::args:_gnu_generic"
