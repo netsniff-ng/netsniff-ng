@@ -307,7 +307,7 @@ announcement:
 	$(Q)echo -e "   *** BLURB HERE ***\n" >> .MAIL_MSG
 	$(Q)echo -e "Contributors since last release:\n" >> .MAIL_MSG
 	$(GIT_PEOPLE) >> .MAIL_MSG
-	$(Q)echo -e "Git changelog since the last release:\n" >> .MAIL_MSG
+	$(Q)echo -e "\nGit changelog since the last release:\n" >> .MAIL_MSG
 	$(GIT_LOG) >> .MAIL_MSG
 
 release: announcement tag tarball
