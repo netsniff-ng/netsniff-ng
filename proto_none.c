@@ -12,7 +12,7 @@
 #include "protos.h"
 #include "pkt_buff.h"
 
-void empty(struct pkt_buff *pkt) {}
+void empty(struct pkt_buff *pkt __maybe_unused) {}
 
 static void _hex(uint8_t *ptr, size_t len)
 {
@@ -71,7 +71,7 @@ void hex_ascii(struct pkt_buff *pkt)
 	tprintf("\n");
 }
 
-static void none_less(struct pkt_buff *pkt)
+static void none_less(struct pkt_buff *pkt __maybe_unused)
 {
 	tprintf("\n");
 }
