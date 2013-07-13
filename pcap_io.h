@@ -570,7 +570,7 @@ static const struct pcap_magic_type pcap_magic_types[] __maybe_unused = {
 
 static inline void pcap_dump_type_features(void)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < array_size(pcap_magic_types); ++i) {
 		printf("%s:\n", pcap_magic_types[i].desc);
