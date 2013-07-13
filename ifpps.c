@@ -1022,6 +1022,7 @@ static void screen_update(WINDOW *screen, const char *ifname, const struct ifsta
 			  bool need_info)
 {
 	int cpus, top, voff = 1, cvoff = 2;
+	u32 rate = device_bitrate(ifname);
 
 	curs_set(0);
 
@@ -1068,7 +1069,8 @@ static void screen_update(WINDOW *screen, const char *ifname, const struct ifsta
 	} else {
 		if (need_info)
 			mvwprintw(screen, cvoff, 2, "(consider to increase "
-				  "your sampling interval, e.g. -t 10000)");
+				  "your sampling interval, e.g. -t %d)",
+			rate > SPEED_1000 ? 10000 : 1000);
 		else
 			mvwprintw(screen, cvoff, 2, "                      "
 				  "                                      ");
@@ -1087,7 +1089,9 @@ static int screen_main(const char *ifname, uint64_t ms_interval,
 
 	stats_screen = screen_init(true);
 
-	if (rate > SPEED_1000 && ms_interval <= 1000 && !suppress_warnings)
+	if (((rate > SPEED_1000 && ms_interval <= 1000) ||
+	     (rate = SPEED_1000 && ms_interval <  1000)) &&
+	     !suppress_warnings)
 		need_info = true;
 
 	while (!sigint) {
