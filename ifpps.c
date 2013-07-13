@@ -802,7 +802,7 @@ static void screen_percpu_states_one(WINDOW *screen, const struct ifstat *rel,
 }
 
 #define MEDIAN_EVEN(member)	do { \
-	m_##member = (rel->member[i] + rel->member[j]) / 2; \
+	m_##member = (rel->member[i] + rel->member[j]) / 2.0; \
 } while (0)
 
 #define MEDIAN_ODD(member)	do { \
@@ -848,6 +848,7 @@ static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
 
 	if (show_median) {
 		long double m_cpu_user, m_cpu_nice, m_cpu_sys, m_cpu_idle, m_cpu_iow;
+		long double m_all;
 
 		i = cpu_hits[cpus / 2].idx;
 		if (cpus % 2 == 0) {
@@ -868,16 +869,16 @@ static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
 			MEDIAN_ODD(cpu_iow);
 		}
 
-		all = m_cpu_user + m_cpu_sys + m_cpu_nice + m_cpu_idle + m_cpu_iow;
+		m_all = m_cpu_user + m_cpu_sys + m_cpu_nice + m_cpu_idle + m_cpu_iow;
 		mvwprintw(screen, (*voff)++, 2,
-			  "med:%*s%14.1lf%%       "
-				"%9.1lf%%       "
-			       "%10.1lf%%       "
-			       "%11.1lf%%", max_padd, "",
-			 100.0 * (m_cpu_user + m_cpu_nice) / all,
-			 100.0 * m_cpu_sys / all,
-			 100.0 * m_cpu_idle /all,
-			 100.0 * m_cpu_iow / all);
+			  "med:%*s%14.1Lf%%       "
+				"%9.1Lf%%       "
+			       "%10.1Lf%%       "
+			       "%11.1Lf%%", max_padd, "",
+			 100.0 * (m_cpu_user + m_cpu_nice) / m_all,
+			 100.0 * m_cpu_sys / m_all,
+			 100.0 * m_cpu_idle /m_all,
+			 100.0 * m_cpu_iow / m_all);
 	}
 }
 
