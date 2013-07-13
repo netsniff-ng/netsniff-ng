@@ -64,8 +64,8 @@ static ssize_t pcap_mm_write(int fd, pcap_pkthdr_t *phdr, enum pcap_type type,
 	return hdrsize + len;
 }
 
-static ssize_t pcap_mm_read(int fd, pcap_pkthdr_t *phdr, enum pcap_type type,
-			    uint8_t *packet, size_t len)
+static ssize_t pcap_mm_read(int fd __maybe_unused, pcap_pkthdr_t *phdr,
+			    enum pcap_type type, uint8_t *packet, size_t len)
 {
 	size_t hdrsize = pcap_get_hdr_length(phdr, type), hdrlen;
 
@@ -169,7 +169,7 @@ static int pcap_mm_prepare_access(int fd, enum pcap_mode mode, bool jumbo)
 	return 0;
 }
 
-static void pcap_mm_fsync(int fd)
+static void pcap_mm_fsync(int fd __maybe_unused)
 {
 	msync(ptr_va_start, (off_t) (ptr_va_curr - ptr_va_start), MS_ASYNC);
 }
