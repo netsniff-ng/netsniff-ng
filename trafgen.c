@@ -389,9 +389,9 @@ static struct cpu_stats *setup_shared_var(unsigned long cpus)
 
 	fd = open_or_die_m(file, O_RDWR | O_CREAT | O_TRUNC,
 			   S_IRUSR | S_IWUSR);
-	write_or_die(fd, zbuff, sizeof(zbuff));
+	write_or_die(fd, zbuff, len);
 
-	buff = mmap(NULL, sizeof(zbuff), PROT_READ | PROT_WRITE,
+	buff = mmap(NULL, len, PROT_READ | PROT_WRITE,
 		    MAP_SHARED, fd, 0);
 	if (buff == MAP_FAILED)
 		panic("Cannot setup shared variable!\n");
@@ -399,8 +399,7 @@ static struct cpu_stats *setup_shared_var(unsigned long cpus)
 	close(fd);
 	unlink(file);
 
-	memset(buff, 0, sizeof(zbuff));
-
+	memset(buff, 0, len);
 	return buff;
 }
 
