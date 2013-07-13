@@ -201,6 +201,22 @@ static void stats_zero(struct ifstat *stats, int cpus)
 	STATS_ZERO1(cpu_iow);
 }
 
+#define STATS_RELEASE(member)	\
+	do { xfree(stats->member); } while (0)
+
+static void stats_release(struct ifstat *stats)
+{
+	STATS_RELEASE(irqs);
+	STATS_RELEASE(irqs_srx);
+	STATS_RELEASE(irqs_stx);
+
+	STATS_RELEASE(cpu_user);
+	STATS_RELEASE(cpu_sys);
+	STATS_RELEASE(cpu_nice);
+	STATS_RELEASE(cpu_idle);
+	STATS_RELEASE(cpu_iow);
+}
+
 static int stats_proc_net_dev(const char *ifname, struct ifstat *stats)
 {
 	int ret = -EINVAL;
@@ -1372,6 +1388,10 @@ int main(int argc, char **argv)
 	ret = func_main(ifname, interval, top_cpus, suppress_warnings);
 	if (promisc)
 		leave_promiscuous_mode(ifname, ifflags);
+
+	stats_release(&stats_old);
+	stats_release(&stats_new);
+	stats_release(&stats_delta);
 
 	xfree(ifname);
 	return ret;
