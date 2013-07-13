@@ -107,7 +107,7 @@ static int sock;
 static struct itimerval itimer;
 static unsigned long interval = TX_KERNEL_PULL_INT;
 static struct cpu_stats *stats;
-unsigned int seed;
+static unsigned int seed;
 
 #define CPU_STATS_STATE_CFG	1
 #define CPU_STATS_STATE_CHK	2
@@ -862,16 +862,16 @@ static void main_loop(struct ctx *ctx, char *confname, bool slow,
 static unsigned int generate_srand_seed(void)
 {
 	int fd;
-	unsigned int seed;
+	unsigned int _seed;
 
 	fd = open("/dev/urandom", O_RDONLY);
 	if (fd < 0)
 		return time(0);
 
-	read_or_die(fd, &seed, sizeof(seed));
+	read_or_die(fd, &_seed, sizeof(_seed));
 
 	close(fd);
-	return seed;
+	return _seed;
 }
 
 int main(int argc, char **argv)
