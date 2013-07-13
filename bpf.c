@@ -83,7 +83,7 @@ static const char *op_table[] = {
 
 void bpf_dump_op_table(void)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < array_size(op_table); ++i) {
 		if (op_table[i])
 			printf("%s\n", op_table[i]);
