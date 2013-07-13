@@ -3385,8 +3385,8 @@ static const char *mgt_sub(u8 subtype, struct pkt_buff *pkt,
 	const char *dst, *src, *bssid;
 
 	mgmt = (struct ieee80211_mgmt *) pkt_pull(pkt, sizeof(*mgmt));
-	if (mgmt == NULL)
-		return 0;
+	if (!mgmt)
+		return NULL;
 
 	dst = lookup_vendor((mgmt->da[0] << 16) |
 			    (mgmt->da[1] <<  8) |
