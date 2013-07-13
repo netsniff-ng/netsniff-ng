@@ -450,8 +450,7 @@ static inline void tpacket3_hdr_to_pcap_pkthdr(struct tpacket3_hdr *thdr,
 
 static inline void pcap_pkthdr_to_tpacket_hdr(pcap_pkthdr_t *phdr,
 					      enum pcap_type type,
-					      struct tpacket2_hdr *thdr,
-					      struct sockaddr_ll *sll)
+					      struct tpacket2_hdr *thdr)
 {
 	switch (type) {
 	case DEFAULT:

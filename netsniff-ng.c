@@ -279,7 +279,7 @@ static void pcap_to_xmit(struct ctx *ctx)
 				 !bpf_run_filter(&bpf_ops, out,
 						 pcap_get_length(&phdr, ctx->magic)));
 
-			pcap_pkthdr_to_tpacket_hdr(&phdr, ctx->magic, &hdr->tp_h, &hdr->s_ll);
+			pcap_pkthdr_to_tpacket_hdr(&phdr, ctx->magic, &hdr->tp_h);
 
 			ctx->tx_bytes += hdr->tp_h.tp_len;;
 			ctx->tx_packets++;
@@ -540,7 +540,6 @@ static void read_pcap(struct ctx *ctx)
 	struct sock_fprog bpf_ops;
 	struct frame_map fm;
 	struct timeval start, end, diff;
-	struct sockaddr_ll sll;
 
 	bug_on(!__pcap_io);
 
@@ -615,7 +614,7 @@ static void read_pcap(struct ctx *ctx)
 			 !bpf_run_filter(&bpf_ops, out,
 					 pcap_get_length(&phdr, ctx->magic)));
 
-		pcap_pkthdr_to_tpacket_hdr(&phdr, ctx->magic, &fm.tp_h, &sll);
+		pcap_pkthdr_to_tpacket_hdr(&phdr, ctx->magic, &fm.tp_h);
 
 		ctx->tx_bytes += fm.tp_h.tp_len;
 		ctx->tx_packets++;
