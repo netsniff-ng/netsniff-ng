@@ -694,7 +694,7 @@ static int next_multi_pcap_file(struct ctx *ctx, int fd)
 	close(fd);
 
 	slprintf(fname, sizeof(fname), "%s/%s%lu.pcap", ctx->device_out,
-		 ctx->prefix ? : "dump-", time(0));
+		 ctx->prefix ? : "dump-", time(NULL));
 
 	fd = open_or_die_m(fname, O_RDWR | O_CREAT | O_TRUNC |
 			   O_LARGEFILE, DEFFILEMODE);
@@ -723,7 +723,7 @@ static int begin_multi_pcap_file(struct ctx *ctx)
 		ctx->device_out[strlen(ctx->device_out) - 1] = 0;
 
 	slprintf(fname, sizeof(fname), "%s/%s%lu.pcap", ctx->device_out,
-		 ctx->prefix ? : "dump-", time(0));
+		 ctx->prefix ? : "dump-", time(NULL));
 
 	fd = open_or_die_m(fname, O_RDWR | O_CREAT | O_TRUNC |
 			   O_LARGEFILE, DEFFILEMODE);

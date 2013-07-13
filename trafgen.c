@@ -865,7 +865,7 @@ static unsigned int generate_srand_seed(void)
 
 	fd = open("/dev/urandom", O_RDONLY);
 	if (fd < 0)
-		return time(0);
+		return time(NULL);
 
 	read_or_die(fd, &_seed, sizeof(_seed));
 
