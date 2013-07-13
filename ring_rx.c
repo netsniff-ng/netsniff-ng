@@ -152,7 +152,7 @@ void sock_rx_net_stats(int sock, unsigned long seen)
 		printf("\r%12ld  packets passed filter\n", packets - drops);
 		printf("\r%12ld  packets failed filter (out of space)\n", drops);
 		if (stats.k3.tp_packets > 0)
-			printf("\r%12.4lf%\% packet droprate\n",
+			printf("\r%12.4lf%% packet droprate\n",
 			       (1.0 * drops / packets) * 100.0);
 	}
 }
