@@ -77,7 +77,7 @@ size_t plen = 0;
 struct packet_dyn *packet_dyn = NULL;
 size_t dlen = 0;
 
-static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRs:P:eE:pu:g:";
+static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRs:P:eE:pu:g:C";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"out",			required_argument,	NULL, 'o'},
@@ -93,6 +93,7 @@ static const struct option long_options[] = {
 	{"user",		required_argument,	NULL, 'u'},
 	{"group",		required_argument,	NULL, 'g'},
 	{"jumbo-support",	no_argument,		NULL, 'J'},
+	{"no-cpu-stats",	no_argument,		NULL, 'C'},
 	{"cpp",			no_argument,		NULL, 'p'},
 	{"rfraw",		no_argument,		NULL, 'R'},
 	{"rand",		no_argument,		NULL, 'r'},
@@ -186,6 +187,7 @@ static void __noreturn help(void)
 	     "  -u|--user <userid>             Drop privileges and change to userid\n"
 	     "  -g|--group <groupid>           Drop privileges and change to groupid\n"
 	     "  -V|--verbose                   Be more verbose\n"
+	     "  -C|--no-cpu-stats              Do not print CPU time statistics on exit\n"
 	     "  -v|--version                   Show version and exit\n"
 	     "  -e|--example                   Show built-in packet config example\n"
 	     "  -h|--help                      Guess what?!\n\n"
@@ -875,7 +877,7 @@ static unsigned int generate_srand_seed(void)
 
 int main(int argc, char **argv)
 {
-	bool slow = false, invoke_cpp = false, reseed = true;
+	bool slow = false, invoke_cpp = false, reseed = true, cpustats = true;
 	int c, opt_index, i, j, vals[4] = {0}, irq;
 	char *confname = NULL, *ptr;
 	unsigned long cpus_tmp, orig_num = 0;
@@ -895,6 +897,9 @@ int main(int argc, char **argv)
 			break;
 		case 'v':
 			version();
+			break;
+		case 'C':
+			cpustats = false;
 			break;
 		case 'e':
 			example();
@@ -1085,7 +1090,7 @@ int main(int argc, char **argv)
 	printf("\n");
 	printf("\r%12llu packets outgoing\n", tx_packets);
 	printf("\r%12llu bytes outgoing\n", tx_bytes);
-	for (i = 0; i < ctx.cpus; i++) {
+	for (i = 0; cpustats && i < ctx.cpus; i++) {
 		printf("\r%12lu sec, %lu usec on CPU%d (%llu packets)\n",
 		       stats[i].tv_sec, stats[i].tv_usec, i,
 		       stats[i].tx_packets);
