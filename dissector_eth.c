@@ -35,7 +35,7 @@ struct port {
 		while (entry && id != entry->id)			\
 			entry = entry->next;				\
 									\
-		(entry && id == entry->id ? entry->struct_member : 0);	\
+		(entry && id == entry->id ? entry->struct_member : NULL); \
 	})
 
 char *lookup_port_udp(unsigned int id)
