@@ -1036,7 +1036,8 @@ static void screen_update(WINDOW *screen, const char *ifname, const struct ifsta
 			  int *first, uint64_t ms_interval, unsigned int top_cpus,
 			  bool need_info)
 {
-	int cpus, top, voff = 1, cvoff = 2;
+	unsigned int cpus, top;
+	int voff = 1, cvoff = 2;
 	u32 rate = device_bitrate(ifname);
 
 	curs_set(0);
@@ -1291,8 +1292,8 @@ static int term_main(const char *ifname, uint64_t ms_interval,
 int main(int argc, char **argv)
 {
 	short ifflags = 0;
-	int c, opt_index, ret, cpus, promisc = 0;
-	unsigned int top_cpus = 5;
+	int c, opt_index, ret, promisc = 0;
+	unsigned int cpus, top_cpus = 5;
 	uint64_t interval = 1000;
 	char *ifname = NULL;
 	bool suppress_warnings = false;
