@@ -1015,7 +1015,7 @@ static void presenter(void)
 }
 
 static int collector_cb(enum nf_conntrack_msg_type type,
-			struct nf_conntrack *ct, void *data)
+			struct nf_conntrack *ct, void *data __maybe_unused)
 {
 	if (sigint)
 		return NFCT_CB_STOP;
@@ -1047,7 +1047,7 @@ static inline void collector_flush(struct nfct_handle *handle, uint8_t family)
 	nfct_query(handle, NFCT_Q_FLUSH, &family);
 }
 
-static void *collector(void *null)
+static void *collector(void *null __maybe_unused)
 {
 	int ret;
 	struct nfct_handle *handle;
