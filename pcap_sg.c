@@ -43,8 +43,8 @@ static ssize_t pcap_sg_write(int fd, pcap_pkthdr_t *phdr, enum pcap_type type,
 	return ret;
 }
 
-static ssize_t __pcap_sg_inter_iov_hdr_read(int fd, pcap_pkthdr_t *phdr, enum pcap_type type,
-					    uint8_t *packet, size_t len, size_t hdrsize)
+static ssize_t __pcap_sg_inter_iov_hdr_read(int fd, pcap_pkthdr_t *phdr,
+					    size_t hdrsize)
 {
 	int ret;
 	size_t offset = 0;
@@ -74,7 +74,7 @@ static ssize_t __pcap_sg_inter_iov_hdr_read(int fd, pcap_pkthdr_t *phdr, enum pc
 	return hdrsize;
 }
 
-static ssize_t __pcap_sg_inter_iov_data_read(int fd, uint8_t *packet, size_t len, size_t hdrlen)
+static ssize_t __pcap_sg_inter_iov_data_read(int fd, uint8_t *packet, size_t hdrlen)
 {
 	int ret;
 	size_t offset = 0;
@@ -114,8 +114,7 @@ static ssize_t pcap_sg_read(int fd, pcap_pkthdr_t *phdr, enum pcap_type type,
 		fmemcpy(&phdr->raw, iov[iov_slot].iov_base + iov_off_rd, hdrsize);
 		iov_off_rd += hdrsize;
 	} else {
-		ret = __pcap_sg_inter_iov_hdr_read(fd, phdr, type, packet,
-						   len, hdrsize);
+		ret = __pcap_sg_inter_iov_hdr_read(fd, phdr, hdrsize);
 		if (unlikely(ret < 0))
 			return ret;
 	}
@@ -128,7 +127,7 @@ static ssize_t pcap_sg_read(int fd, pcap_pkthdr_t *phdr, enum pcap_type type,
 		fmemcpy(packet, iov[iov_slot].iov_base + iov_off_rd, hdrlen);
 		iov_off_rd += hdrlen;
 	} else {
-		ret = __pcap_sg_inter_iov_data_read(fd, packet, len, hdrlen);
+		ret = __pcap_sg_inter_iov_data_read(fd, packet, hdrlen);
 		if (unlikely(ret < 0))
 			return ret;
 	}
@@ -153,8 +152,8 @@ static void pcap_sg_init_once(void)
 
 static int pcap_sg_prepare_access(int fd, enum pcap_mode mode, bool jumbo)
 {
-	int i, ret;
-	size_t len = 0;
+	int ret;
+	size_t i, len = 0;
 
 	iov_slot = 0;
 	len = jumbo ? (PAGE_SIZE * 16) /* 64k max */ :
@@ -177,9 +176,10 @@ static int pcap_sg_prepare_access(int fd, enum pcap_mode mode, bool jumbo)
 	return 0;
 }
 
-static void pcap_sg_prepare_close(int fd, enum pcap_mode mode)
+static void pcap_sg_prepare_close(int fd __maybe_unused,
+				  enum pcap_mode mode __maybe_unused)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < array_size(iov); ++i)
 		xfree(iov[i].iov_base);
