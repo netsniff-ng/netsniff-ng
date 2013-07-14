@@ -198,15 +198,15 @@ again:
 	raw[sizeof(raw) - 1] = 0;
 
 	for (i = 0; i < ret; i++) {
-		if (!strncmp(raw + i, "Content-Length: ", min(ret - i, lenl))) {
+		if (!strncmp(raw + i, "Content-Length: ", min((size_t)(ret - i), lenl))) {
 			ptr = raw + i + lenl;
 			rtotlen = strtoul(ptr, NULL, 10);
 		}
 
-		if (!strncmp(raw + i, "HTTP/1.1 200 OK", min(ret - i, lent)))
+		if (!strncmp(raw + i, "HTTP/1.1 200 OK", min((size_t)(ret - i), lent)))
 			good = 1;
 
-		if (!strncmp(raw + i, "\r\n\r\n", min(ret - i, lenc))) {
+		if (!strncmp(raw + i, "\r\n\r\n", min((size_t)(ret - i), lenc))) {
 			ptr = raw + i + lenc;
 			len = ret - i - lenc;
 			found = 1;
@@ -522,7 +522,7 @@ static void destroy_geoip_asname(void)
 
 static void init_mirrors(void)
 {
-	int i = 0;
+	size_t i = 0;
 	FILE *fp;
 	char buff[256];
 
@@ -550,7 +550,7 @@ static void init_mirrors(void)
 
 static void destroy_mirrors(void)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < array_size(servers); ++i)
 		free(servers[i]);
@@ -565,7 +565,8 @@ void init_geoip(int enforce)
 
 void update_geoip(void)
 {
-	int i, j, ret, good = 0;
+	size_t i, j;
+	int ret, good = 0;
 
 	init_mirrors();
 
