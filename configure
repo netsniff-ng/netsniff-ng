@@ -507,13 +507,20 @@ EOF
 
 gen_config_hdr()
 {
-	local _version="`git describe --always`"
+	local _version=""
 	local _have_libpcap=""
 	local _have_libgeoip=""
 	local _have_libz=""
 	local _have_hwts=""
 
 	echo "[*] Generating config.h ... "
+
+	git rev-parse > /dev/null 2>&1
+	if [ "$?" == "0" ] ; then
+		_version="`git describe --always`"
+	else
+		_version="(none)"
+	fi
 
 	if [ "$HAVE_LIBPCAP" == "1" ] ; then
 		_have_libpcap="#define HAVE_TCPDUMP_LIKE_FILTER 1"
