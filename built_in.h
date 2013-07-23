@@ -364,6 +364,10 @@ static inline u64 cpu_to_le64(u64 val)
 # define POLLRDHUP			0x2000
 #endif
 
+#ifndef ARPHRD_IEEE802154_MONITOR
+# define ARPHRD_IEEE802154_MONITOR	805
+#endif
+
 #ifndef ARPHRD_IP6GRE
 # define ARPHRD_IP6GRE			823
 #endif
