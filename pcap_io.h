@@ -632,6 +632,8 @@ static inline void pcap_prepare_header(struct pcap_filehdr *hdr, uint32_t magic,
 }
 
 static const bool pcap_supported_linktypes[LINKTYPE_MAX] __maybe_unused = {
+	/* tunX captures from wireshark/tcpdump, non-portable */
+	[101] = true, [102] = true, [103] = true,
 	[LINKTYPE_NULL] = true,
 	[LINKTYPE_EN10MB] = true,
 	[LINKTYPE_EN3MB] = true,
