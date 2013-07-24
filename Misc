@@ -1,0 +1,84 @@
+nacl:
+	$(Q)echo "$(bold)$(WHAT) $@:$(normal)"
+	$(Q)cd curvetun/ && ./nacl_build.sh ~/nacl
+	$(Q)source ~/.bashrc
+
+tarball.gz:  ; $(call GIT_ARCHIVE,gzip,gz)
+tarball.bz2: ; $(call GIT_ARCHIVE,bzip2,bz2)
+tarball.xz:  ; $(call GIT_ARCHIVE,xz,xz)
+tarball: tarball.gz tarball.bz2 tarball.xz
+
+tag:
+	$(GIT_TAG)
+
+announcement:
+	$(Q)echo -e "netsniff-ng $(VERSION_STRING) has been released to the public (http://netsniff-ng.org/).\n" > .MAIL_MSG
+	$(Q)echo -e "It can be fetched via Git, through:\n" >> .MAIL_MSG
+	$(Q)echo -e "   git clone git://github.com/borkmann/netsniff-ng.git" >> .MAIL_MSG
+	$(Q)echo -e "   git checkout $(VERSION_STRING)\n" >> .MAIL_MSG
+	$(Q)echo -e "Or via HTTP, through:\n" >> .MAIL_MSG
+	$(Q)echo -e "   wget http://pub.netsniff-ng.org/netsniff-ng/netsniff-ng-$(VERSION_STRING).tar.gz\n" >> .MAIL_MSG
+	$(Q)echo -e "The release be verified via Git, through (see README):\n" >> .MAIL_MSG
+	$(Q)echo -e "   git tag -v $(VERSION_STRING)\n" >> .MAIL_MSG
+	$(Q)echo -e "Major high-level changes since the last release are:\n" >> .MAIL_MSG
+	$(Q)echo -e "   *** BLURB HERE ***\n" >> .MAIL_MSG
+	$(Q)echo -e "Contributors since last release:\n" >> .MAIL_MSG
+	$(GIT_PEOPLE) >> .MAIL_MSG
+	$(Q)echo -e "\nGit changelog since the last release:\n" >> .MAIL_MSG
+	$(GIT_LOG) >> .MAIL_MSG
+
+release: announcement tag tarball
+	$(Q)echo "Released $(bold)$(VERSION_STRING)$(normal)"
+
+FIND_SOURCE_FILES = ( git ls-files '*.[hcS]' 2>/dev/null || \
+			find . \( -name .git -type d -prune \) \
+				-o \( -name '*.[hcS]' -type f -print \) )
+
+tags ctags:
+	$(Q)$(call RM,tags)
+	$(FIND_SOURCE_FILES) | xargs ctags -a
+
+cscope:
+	$(Q)$(call RM,cscope*)
+	$(FIND_SOURCE_FILES) | xargs cscope -b
+
+help:
+	$(Q)echo "$(bold)Available tools from the toolkit:$(normal)"
+	$(Q)echo " <tool>:={$(TOOLS)}"
+	$(Q)echo "$(bold)Targets for building the toolkit:$(normal)"
+	$(Q)echo " all|toolkit                  - Build the whole toolkit"
+	$(Q)echo " allbutcurvetun               - Build all except curvetun"
+	$(Q)echo " allbutmausezahn              - Build all except mausezahn"
+	$(Q)echo " <tool>                       - Build only one of the tools"
+	$(Q)echo "$(bold)Targets for cleaning the toolkit's build files:$(normal)"
+	$(Q)echo " clean                        - Remove all build files"
+	$(Q)echo " <tool>_clean                 - Remove only one of the tool's files"
+	$(Q)echo " distclean                    - Remove all build and build config files"
+	$(Q)echo " mrproper                     - Remove all files not in source distribution"
+	$(Q)echo "$(bold)Targets for installing the toolkit:$(normal)"
+	$(Q)echo " install                      - Install the whole toolkit"
+	$(Q)echo " <tool>_install               - Install only one of the tools"
+	$(Q)echo "$(bold)Targets for removing the toolkit:$(normal)"
+	$(Q)echo " uninstall                    - Remove the whole toolkit from the system"
+	$(Q)echo " <toolname>_uninstall         - Remove only one of the tools"
+	$(Q)echo "$(bold)Hacking/development targets:$(normal)"
+	$(Q)echo " tag                          - Generate Git tag of current version"
+	$(Q)echo " tarball                      - Generate tarball of latest version"
+	$(Q)echo " release                      - Generate a new release"
+	$(Q)echo " tags                         - Generate sparse ctags"
+	$(Q)echo " cscope                       - Generate cscope files"
+	$(Q)echo "$(bold)Misc targets:$(normal)"
+	$(Q)echo " nacl                         - Execute the build_nacl script"
+	$(Q)echo " help                         - Show this help"
+	$(Q)echo "$(bold)Available parameters:$(normal)"
+	$(Q)echo " DEBUG=1 / DISTRO=1           - Enable debugging / Build for distros"
+	$(Q)echo " HARDENING=1                  - Enable GCC hardening of executables"
+	$(Q)echo " PREFIX=/path                 - Install path prefix"
+	$(Q)echo " CROSS_COMPILE=/path-prefix   - Kernel-like cross-compiling prefix"
+	$(Q)echo " CROSS_LD_LIBRARY_PATH=/path  - Library search path for cross-compiling"
+	$(Q)echo " CC=cgcc                      - Use sparse compiler wrapper"
+	$(Q)echo " CFLAGS=\"-O2 -Wall ...\"       - Overwrite CFLAGS for compilation"
+	$(Q)echo " CPPFLAGS=\"-I <path> ...\"     - Additional CFLAGS for compilation"
+	$(Q)echo " LDFLAGS=\"-L <path> ...\"      - Additional LDFLAGS for compilation"
+	$(Q)echo " CCACHE=                      - Do not use ccache for compilation"
+	$(Q)echo " Q=                           - Show verbose garbage"

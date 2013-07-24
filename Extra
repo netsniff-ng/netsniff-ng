@@ -1,0 +1,32 @@
+# Targets that need extra treatment for now
+
+curvetun: LDFLAGS += -L ${NACL_LIB_DIR}
+mausezahn: CFLAGS = $(mausezahn-eflags)
+
+bpfc_clean_custom:
+	$(Q)$(call RM,$(BUILD_DIR)/*.h $(BUILD_DIR)/*.c)
+
+trafgen_clean_custom:
+	$(Q)$(call RM,$(BUILD_DIR)/*.h $(BUILD_DIR)/*.c)
+
+netsniff-ng_install_custom flowtop_install_custom:
+	$(Q)$(foreach file,$(NCONF_FILES),$(call INST,$(file),$(ETCDIRE));)
+
+trafgen_install_custom:
+	$(Q)$(call INST,trafgen_stddef.h,$(ETCDIRE))
+	$(Q)mv $(ETCDIRE)/trafgen_stddef.h $(ETCDIRE)/stddef.h
+
+astraceroute_install_custom:
+	$(Q)$(call INST,geoip.conf,$(ETCDIRE))
+
+netsniff-ng_uninstall_custom flowtop_uninstall_custom:
+	$(Q)$(foreach file,$(NCONF_FILES),$(call RM,$(ETCDIRE)/$(file));)
+	$(Q)$(call RMDIR,$(ETCDIRE))
+
+trafgen_uninstall_custom:
+	$(Q)$(call RM,$(ETCDIRE)/stddef.h)
+	$(Q)$(call RMDIR,$(ETCDIRE))
+
+astraceroute_uninstall_custom:
+	$(Q)$(call RM,$(ETCDIRE)/geoip.conf)
+	$(Q)$(call RMDIR,$(ETCDIRE))
