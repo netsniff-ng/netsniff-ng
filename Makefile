@@ -108,7 +108,7 @@ VERSION_LONG   = "$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)$(CONFIG_RC
 export VERSION PATCHLEVEL SUBLEVEL EXTRAVERSION
 export CROSS_COMPILE
 
-bold = $(shell tput bold)
+bold   = $(shell tput bold)
 normal = $(shell tput sgr0)
 
 ifeq ("$(origin CROSS_COMPILE)", "command line")
