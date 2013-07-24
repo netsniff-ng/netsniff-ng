@@ -505,6 +505,21 @@ EOF
 	fi
 }
 
+gen_version_appendix()
+{
+	local _appendix=""
+
+	git rev-parse > /dev/null 2>&1
+	if [ "$?" == "0" ] ; then
+		if [ ! "`git describe --always`" == \
+		       "`git describe --abbrev=0 --tags`" ] ; then
+			_appendix="+"
+		fi
+	fi
+
+	echo "CONFIG_RC=\"$_appendix\"" >> Config
+}
+
 gen_config_hdr()
 {
 	local _version=""
@@ -583,6 +598,7 @@ check_libcli
 check_libnet
 
 gen_config_hdr
+gen_version_appendix
 
 if [ "$MISSING_DEFS" == "1" ] ; then
 	echo "[!] Some libraries or header definitions are missing or too old."
