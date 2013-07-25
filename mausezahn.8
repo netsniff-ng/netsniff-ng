@@ -263,7 +263,7 @@ First try out the show command:
 mausezahn maintains its own ARP table and observes anomalies. There is an entry
 for every physical interface (however this host has only one):
 .PP
-  mz# sh arp
+  mz# show arp
   Intf    Index     IP address     MAC address       last       Ch  UCast BCast Info
   ----------------------------------------------------------------------------------
   eth0    [1] D     192.168.0.1  00:09:5b:9a:15:84  23:44:41     1     1     0  0000
@@ -288,7 +288,7 @@ Let's check our interfaces:
 .PP
 Let's check the current packet list:
 .PP
-  mz# sh packet
+  mz# show packet
   Packet layer flags: E=Ethernet, S=SNAP, Q=802.1Q, M=MPLS, I/i=IP/delivery_off, U=UDP, T=TCP
   PktID  PktName           Layers  Proto    Size  State      Device      Delay       Count/CntX
       1  sysARP_servic...  E-----  ARP        60  config     lo          100 msec        1/0 (100%)
@@ -303,7 +303,7 @@ Currently, its state is config which means that the process is sleeping.
 Now let's create our own packet process and switch into the global
 configuration mode:
 .PP
-  mz# configure term
+  mz# configure terminal
   mz(config)# packet
   Allocated new packet PKT0002 at slot 2
   mz(config-pkt-2)# ?
@@ -330,13 +330,13 @@ configure lots of different packets you might assign a reasonable name and
 description for them:
 .PP
   mz(config-pkt-2)# name Test
-  mz(config-pkt-2)# desc This is just a test
+  mz(config-pkt-2)# description This is just a test
 .PP
 You can, for example, change the default settings for the source and destination MAC or IP
 addresses using the mac and ip commands:
 .PP
-  mz(config-pkt-2)# ip address dest 10.1.1.0 /24
-  mz(config-pkt-2)# ip addr source random
+  mz(config-pkt-2)# ip address destination 10.1.1.0 /24
+  mz(config-pkt-2)# ip address source random
 .PP
 In the example above, we configured a range of addresses (all hosts in the
 network 10.1.1.0 should be addressed). Additionally we spoof our source IP
@@ -408,14 +408,14 @@ the legacy direct mode):
   mz(config-pkt-2-tcp)# flags syn fin rst
   Current setting is: --------------------RST-SYN-FIN
   mz(config-pkt-2-tcp)# end
-  mz(config-pkt-2)# paylo ascii This is a dummy payload for my first packet
+  mz(config-pkt-2)# payload ascii This is a dummy payload for my first packet
   mz(config-pkt-2)# end
 .PP
 Now configure another packet, for example let's assume we want an LLDP process:
 .PP
   mz(config)# packet
   Allocated new packet PKT0003 at slot 3
-  mz(config-pkt-3)# ty lldp
+  mz(config-pkt-3)# type lldp
   mz(config-pkt-3-lldp)# exit
   mz(config)# exit
 .PP
@@ -423,7 +423,7 @@ In the above example we only use the default LLDP settings and don't configure
 further LLDP options or TLVs. Back in the top level of the CLI let's verify
 what we had done:
 .PP
-  mz# sh pa
+  mz# show packet
   Packet layer flags: E=Ethernet, S=SNAP, Q=802.1Q, M=MPLS, I/i=IP/delivery_off, U=UDP, T=TCP
   PktID  PktName            Layers  Proto    Size  State      Device   Delay      Count/CntX
      1   sysARP_servic...   E-----  ARP        60  config     lo       100 msec       1/0 (100%)
@@ -438,7 +438,7 @@ start one of these packet processes:
 .PP
   mz# start slot 3
   Activate [3]
-  mz# sh pac
+  mz# show packet
   Packet layer flags: E=Ethernet, S=SNAP, Q=802.1Q, M=MPLS, I/i=IP/delivery_off, U=UDP, T=TCP
   PktID  PktName            Layers  Proto    Size  State      Device   Delay      Count/CntX
      1   sysARP_servic...   E-----  ARP        60  config     lo       100 msec       1/0 (100%)
@@ -448,7 +448,7 @@ start one of these packet processes:
 .PP
 Let's have a more detailed look at a specific packet process:
 .PP
-  mz# sh pac 2
+  mz# show packet 2
   Packet [2] Test
   Description: This is just a test
   State: config, Count=1000, delay=1000 usec (0 s 1000000 nsec), interval= (undefined)
@@ -487,9 +487,9 @@ The launch command provides a shortcut for commonly used packet processes. For
 example to behave like a STP-capable bridge we want to start an BPDU process
 with typical parameters:
 .PP
-  mz# laun bpdu
+  mz# launch bpdu
   Allocated new packet sysBPDU at slot 5
-  mz# sh pac
+  mz# show packet
   Packet layer flags: E=Ethernet, S=SNAP, Q=802.1Q, M=MPLS, I/i=IP/delivery_off, U=UDP, T=TCP
   PktID  PktName           Layers  Proto    Size  State      Device      Delay       Count/CntX
       1  sysARP_servic...  E-----  ARP        60  config     lo          100 msec        1/0 (100%)
@@ -509,13 +509,13 @@ anything at the moment).
 .PP
 Sometimes you may want to send a burst of packets at a greater interval:
 .PP
-  mz(config)# pac 2
+  mz(config)# packet 2
   Modify packet parameters for packet Test [2]
-  mz(config-pkt-2)# interv
+  mz(config-pkt-2)# interval
   Configure a greater packet interval in days, hours, minutes, or seconds
   Arguments: <value>  <days | hours | minutes | seconds>
   Use a zero value to disable an interval.
-  mz(config-pkt-2)# interv 1 h
+  mz(config-pkt-2)# interval 1 hour
   mz(config-pkt-2)# count 10
   mz(config-pkt-2)# delay 15 usec
   Inter-packet delay set to 0 sec and 15000 nsec
@@ -524,7 +524,7 @@ Now this packet is sent ten times with an inter-packet delay of 15 microseconds
 and this is repeated every hour. When you look at the packet list, an interval
 is indicated with the additional flag 'i' when inactive or 'I' when active:
 .PP
-  mz# sh pa
+  mz# show packet
   Packet layer flags: E=Ethernet, S=SNAP, Q=802.1Q, M=MPLS, I/i=IP/delivery_off, U=UDP, T=TCP
   PktID  PktName           Layers  Proto    Size  State      Device      Delay       Count/CntX
       1  sysARP_servic...  E-----  ARP        60  config     lo          100 msec        1/0 (100%)
@@ -533,9 +533,9 @@ is indicated with the additional flag 'i' when inactive or 'I' when active:
       4  PKT0004           E---I-  IGMP       46  config     eth0        100 msec        0/0 (0%)
       5  sysBPDU           ES----  BPDU       29  active     eth0           2 sec        0/251 (0%)
   5 packets defined, 1 active.
-  mz# start sl 2
+  mz# start slot 2
   Activate [2]
-  mz# sh pa
+  mz# show packet
   Packet layer flags: E=Ethernet, S=SNAP, Q=802.1Q, M=MPLS, I/i=IP/delivery_off, U=UDP, T=TCP
   PktID  PktName           Layers  Proto    Size  State      Device      Delay       Count/CntX
       1  sysARP_servic...  E-----  ARP        60  config     lo          100 msec        1/0 (100%)
@@ -568,7 +568,7 @@ command:
   mz# load test.mops
   Read commands from test.mops...
   Allocated new packet PKT0002 at slot 2
-  mz# sh pa
+  mz# show packet
   Packet layer flags: E=Ethernet, S=SNAP, Q=802.1Q, M=MPLS, I/i=IP/delivery_off, U=UDP, T=TCP
   PktID  PktName           Layers  Proto    Size  State      Device      Delay       Count/CntX
       1  sysARP_servic...  E-----  ARP        60  config     lo          100 msec        1/0 (100%)
