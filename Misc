@@ -11,6 +11,12 @@ tarball: tarball.gz tarball.bz2 tarball.xz
 tag:
 	$(GIT_TAG)
 
+people:
+	$(GIT_PEOPLE)
+
+log:
+	$(GIT_LOG)
+
 announcement:
 	$(Q)echo -e "netsniff-ng $(VERSION_SHORT) has been released to the public (http://netsniff-ng.org/).\n" > .MAIL_MSG
 	$(Q)echo -e "It can be fetched via Git, through:\n" >> .MAIL_MSG
