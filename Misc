@@ -12,14 +12,14 @@ tag:
 	$(GIT_TAG)
 
 announcement:
-	$(Q)echo -e "netsniff-ng $(VERSION_STRING) has been released to the public (http://netsniff-ng.org/).\n" > .MAIL_MSG
+	$(Q)echo -e "netsniff-ng $(VERSION_SHORT) has been released to the public (http://netsniff-ng.org/).\n" > .MAIL_MSG
 	$(Q)echo -e "It can be fetched via Git, through:\n" >> .MAIL_MSG
 	$(Q)echo -e "   git clone git://github.com/borkmann/netsniff-ng.git" >> .MAIL_MSG
-	$(Q)echo -e "   git checkout $(VERSION_STRING)\n" >> .MAIL_MSG
+	$(Q)echo -e "   git checkout $(VERSION_SHORT)\n" >> .MAIL_MSG
 	$(Q)echo -e "Or via HTTP, through:\n" >> .MAIL_MSG
-	$(Q)echo -e "   wget http://pub.netsniff-ng.org/netsniff-ng/netsniff-ng-$(VERSION_STRING).tar.gz\n" >> .MAIL_MSG
+	$(Q)echo -e "   wget http://pub.netsniff-ng.org/netsniff-ng/netsniff-ng-$(VERSION_SHORT).tar.gz\n" >> .MAIL_MSG
 	$(Q)echo -e "The release be verified via Git, through (see README):\n" >> .MAIL_MSG
-	$(Q)echo -e "   git tag -v $(VERSION_STRING)\n" >> .MAIL_MSG
+	$(Q)echo -e "   git tag -v $(VERSION_SHORT)\n" >> .MAIL_MSG
 	$(Q)echo -e "Major high-level changes since the last release are:\n" >> .MAIL_MSG
 	$(Q)echo -e "   *** BLURB HERE ***\n" >> .MAIL_MSG
 	$(Q)echo -e "Contributors since last release:\n" >> .MAIL_MSG
@@ -27,8 +27,8 @@ announcement:
 	$(Q)echo -e "\nGit changelog since the last release:\n" >> .MAIL_MSG
 	$(GIT_LOG) >> .MAIL_MSG
 
-release: announcement tag tarball
-	$(Q)echo "Released $(bold)$(VERSION_STRING)$(normal)"
+release: tag announcement tarball
+	$(Q)echo "Released $(bold)$(VERSION_SHORT)$(normal)"
 
 FIND_SOURCE_FILES = ( git ls-files '*.[hcS]' 2>/dev/null || \
 			find . \( -name .git -type d -prune \) \
