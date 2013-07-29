@@ -1,6 +1,6 @@
 # Targets that need extra treatment for now
 
-curvetun: LDFLAGS += -L ${NACL_LIB_DIR}
+curvetun: LDFLAGS += -L ${CONFIG_NACL_LIB_DIR}
 mausezahn: CFLAGS = $(mausezahn-eflags)
 
 bpfc_clean_custom:
