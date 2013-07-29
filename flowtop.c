@@ -414,7 +414,7 @@ static int walk_process(char *process, struct flow_entry *n)
 		if (stat(path, &statbuf) < 0)
 			continue;
 
-		if (S_ISSOCK(statbuf.st_mode) && n->inode == statbuf.st_ino) {
+		if (S_ISSOCK(statbuf.st_mode) && (ino_t) n->inode == statbuf.st_ino) {
 			memset(n->cmdline, 0, sizeof(n->cmdline));
 
             		snprintf(path, sizeof(path), "/proc/%s/exe", process);
@@ -883,7 +883,8 @@ static inline int presenter_flow_wrong_state(struct flow_entry *n, int state)
 static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 				    int skip_lines)
 {
-	int i, j, maxy;
+	int maxy;
+	size_t i, j;
 	unsigned int line = 3;
 	struct flow_entry *n;
 	uint8_t protocols[] = {
