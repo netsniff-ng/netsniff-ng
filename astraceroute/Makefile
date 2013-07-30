@@ -18,3 +18,5 @@ astraceroute-objs =	xmalloc.o \
 			astraceroute.o
 
 astraceroute-eflags =
+
+astraceroute-confs =	geoip.conf

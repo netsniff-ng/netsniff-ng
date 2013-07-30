@@ -131,8 +131,6 @@ clean_showinfo:
 .DEFAULT:
 .FORCE:
 
-NCONF_FILES = ether.conf tcp.conf udp.conf oui.conf geoip.conf
-
 all: build_showinfo toolkit
 allbutcurvetun: $(filter-out curvetun,$(TOOLS))
 allbutmausezahn: $(filter-out mausezahn,$(TOOLS))

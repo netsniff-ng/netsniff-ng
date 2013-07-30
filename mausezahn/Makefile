@@ -69,3 +69,5 @@ mausezahn-eflags = -O2 -I. -I.. \
 		   -DVERSION_STRING=\"$(VERSION_STRING)\" \
 		   -DPREFIX_STRING=\"$(PREFIX)\" \
 		   -DVERSION_LONG=\"$(VERSION_LONG)\"
+
+mausezahn-confs =

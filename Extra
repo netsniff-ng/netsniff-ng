@@ -2,19 +2,3 @@
 
 curvetun: LDFLAGS += -L ${CONFIG_NACL_LIB_DIR}
 mausezahn: CFLAGS = $(mausezahn-eflags)
-
-bpfc_clean_custom:
-	$(Q)$(call RM,$(BUILD_DIR)/*.h $(BUILD_DIR)/*.c)
-
-trafgen_clean_custom:
-	$(Q)$(call RM,$(BUILD_DIR)/*.h $(BUILD_DIR)/*.c)
-
-netsniff-ng_install_custom flowtop_install_custom:
-	$(Q)$(foreach file,$(NCONF_FILES),$(call INST,$(file),$(ETCDIRE));)
-
-trafgen_install_custom:
-	$(Q)$(call INST,trafgen_stddef.h,$(ETCDIRE))
-	$(Q)mv $(ETCDIRE)/trafgen_stddef.h $(ETCDIRE)/stddef.h
-
-astraceroute_install_custom:
-	$(Q)$(call INST,geoip.conf,$(ETCDIRE))

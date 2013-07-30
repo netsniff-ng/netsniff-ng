@@ -27,3 +27,11 @@ trafgen-yaac =	trafgen_parser.tab.o
 trafgen-eflags = $(shell pkg-config --cflags libnl-3.0) \
 		 $(shell pkg-config --cflags libnl-genl-3.0) \
 		 -DHAVE_DISSECTOR_PROTOS -I..
+
+trafgen-confs =	trafgen_stddef.h
+
+trafgen_post_install:
+	$(Q)mv $(ETCDIRE)/trafgen_stddef.h $(ETCDIRE)/stddef.h
+
+trafgen_clean_custom:
+	$(Q)$(call RM,$(BUILD_DIR)/*.h $(BUILD_DIR)/*.c)

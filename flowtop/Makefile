@@ -24,3 +24,7 @@ flowtop-objs =	xmalloc.o \
 		flowtop.o
 
 flowtop-eflags = $(shell pkg-config --cflags ncurses)
+
+flowtop-confs =	tcp.conf \
+		udp.conf \
+		geoip.conf
