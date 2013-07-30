@@ -150,7 +150,6 @@ install_all: $(foreach tool,$(TOOLS),$(tool)_install)
 install_allbutcurvetun: $(foreach tool,$(filter-out curvetun,$(TOOLS)),$(tool)_install)
 install_allbutmausezahn: $(foreach tool,$(filter-out mausezahn,$(TOOLS)),$(tool)_install)
 uninstall: $(foreach tool,$(TOOLS),$(tool)_uninstall)
-	$(Q)$(call RMDIR,$(ETCDIRE))
 
 %.yy.o: %.l
 	$(LEX) -P $(shell perl -wlne 'print $$1 if /lex-func-prefix:\s([a-z]+)/' $<) \

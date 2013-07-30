@@ -18,15 +18,3 @@ trafgen_install_custom:
 
 astraceroute_install_custom:
 	$(Q)$(call INST,geoip.conf,$(ETCDIRE))
-
-netsniff-ng_uninstall_custom flowtop_uninstall_custom:
-	$(Q)$(foreach file,$(NCONF_FILES),$(call RM,$(ETCDIRE)/$(file));)
-	$(Q)$(call RMDIR,$(ETCDIRE))
-
-trafgen_uninstall_custom:
-	$(Q)$(call RM,$(ETCDIRE)/stddef.h)
-	$(Q)$(call RMDIR,$(ETCDIRE))
-
-astraceroute_uninstall_custom:
-	$(Q)$(call RM,$(ETCDIRE)/geoip.conf)
-	$(Q)$(call RMDIR,$(ETCDIRE))
