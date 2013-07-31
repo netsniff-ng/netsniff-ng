@@ -167,7 +167,7 @@ void device_set_flags(const char *ifname, const short flags)
 	close(sock);
 }
 
-int device_up_and_running(char *ifname)
+int device_up_and_running(const char *ifname)
 {
 	if (!ifname)
 		return -EINVAL;

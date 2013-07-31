@@ -10,7 +10,7 @@ extern int device_ifindex(const char *ifname);
 extern int device_type(const char *ifname);
 extern short device_get_flags(const char *ifname);
 extern void device_set_flags(const char *ifname, const short flags);
-extern int device_up_and_running(char *ifname);
+extern int device_up_and_running(const char *ifname);
 extern u32 device_bitrate(const char *ifname);
 
 #endif /* DEV_H */
