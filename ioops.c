@@ -58,7 +58,7 @@ void pipe_or_die(int pipefd[2], int flags)
 		panic("Cannot create pipe2 event fd! %s.\n", strerror(errno));
 }
 
-int tun_open_or_die(char *name, int type)
+int tun_open_or_die(const char *name, int type)
 {
 	int fd, ret;
 	short flags;
