@@ -296,14 +296,13 @@ static void __noreturn version(void)
 	die();
 }
 
-static void apply_counter(int counter_id)
+static void apply_counter(int id)
 {
-	int j, i = counter_id;
-	size_t counter_max = packet_dyn[i].clen;
+	size_t j, counter_max = packet_dyn[id].clen;
 
 	for (j = 0; j < counter_max; ++j) {
 		uint8_t val;
-		struct counter *counter = &packet_dyn[i].cnt[j];
+		struct counter *counter = &packet_dyn[id].cnt[j];
 
 		val = counter->val - counter->min;
 
@@ -319,51 +318,49 @@ static void apply_counter(int counter_id)
 		}
 
 		counter->val = val + counter->min;
-		packets[i].payload[counter->off] = val;
+		packets[id].payload[counter->off] = val;
 	}
 }
 
-static void apply_randomizer(int rand_id)
+static void apply_randomizer(int id)
 {
-	int j, i = rand_id;
-	size_t rand_max = packet_dyn[i].rlen;
+	size_t j, rand_max = packet_dyn[id].rlen;
 
 	for (j = 0; j < rand_max; ++j) {
 		uint8_t val = (uint8_t) rand();
-		struct randomizer *randomizer = &packet_dyn[i].rnd[j];
+		struct randomizer *randomizer = &packet_dyn[id].rnd[j];
 
-		packets[i].payload[randomizer->off] = val;
+		packets[id].payload[randomizer->off] = val;
 	}
 }
 
-static void apply_csum16(int csum_id)
+static void apply_csum16(int id)
 {
-	int j, i = csum_id;
-	size_t csum_max = packet_dyn[i].slen;
+	size_t j, csum_max = packet_dyn[id].slen;
 
 	for (j = 0; j < csum_max; ++j) {
 		uint16_t sum = 0;
-		struct csum16 *csum = &packet_dyn[i].csum[j];
+		struct csum16 *csum = &packet_dyn[id].csum[j];
 
-		fmemset(&packets[i].payload[csum->off], 0, sizeof(sum));
-		if (unlikely(csum->to >= packets[i].len))
-			csum->to = packets[i].len - 1;
+		fmemset(&packets[id].payload[csum->off], 0, sizeof(sum));
+		if (unlikely(csum->to >= packets[id].len))
+			csum->to = packets[id].len - 1;
 
 		switch (csum->which) {
 		case CSUM_IP:
-			sum = calc_csum(packets[i].payload + csum->from,
+			sum = calc_csum(packets[id].payload + csum->from,
 					csum->to - csum->from + 1, 0);
 			break;
 		case CSUM_UDP:
-			sum = p4_csum((void *) packets[i].payload + csum->from,
-				      packets[i].payload + csum->to,
-				      (packets[i].len - csum->to),
+			sum = p4_csum((void *) packets[id].payload + csum->from,
+				      packets[id].payload + csum->to,
+				      (packets[id].len - csum->to),
 				      IPPROTO_UDP);
 			break;
 		case CSUM_TCP:
-			sum = p4_csum((void *) packets[i].payload + csum->from,
-				      packets[i].payload + csum->to,
-				      (packets[i].len - csum->to),
+			sum = p4_csum((void *) packets[id].payload + csum->from,
+				      packets[id].payload + csum->to,
+				      (packets[id].len - csum->to),
 				      IPPROTO_TCP);
 			break;
 		default:
@@ -371,7 +368,7 @@ static void apply_csum16(int csum_id)
 			break;
 		}
 
-		fmemcpy(&packets[i].payload[csum->off], &sum, sizeof(sum));
+		fmemcpy(&packets[id].payload[csum->off], &sum, sizeof(sum));
 	}
 }
 
