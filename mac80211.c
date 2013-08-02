@@ -56,7 +56,7 @@ static void get_mac80211_phydev(const char *device, char *phydev_path,
 	}
 
 	xfree(pathstr);
-	phydev_path[min(num, phydev_len - 1)] = 0;
+	phydev_path[min_t(size_t, num, phydev_len - 1)] = 0;
 }
 
 static inline struct nl_msg *nl80211_nlmsg_xalloc(void)

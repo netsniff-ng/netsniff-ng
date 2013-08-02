@@ -198,15 +198,15 @@ again:
 	raw[sizeof(raw) - 1] = 0;
 
 	for (i = 0; i < ret; i++) {
-		if (!strncmp(raw + i, "Content-Length: ", min((size_t)(ret - i), lenl))) {
+		if (!strncmp(raw + i, "Content-Length: ", min_t(size_t, ret - i, lenl))) {
 			ptr = raw + i + lenl;
 			rtotlen = strtoul(ptr, NULL, 10);
 		}
 
-		if (!strncmp(raw + i, "HTTP/1.1 200 OK", min((size_t)(ret - i), lent)))
+		if (!strncmp(raw + i, "HTTP/1.1 200 OK", min_t(size_t, ret - i, lent)))
 			good = 1;
 
-		if (!strncmp(raw + i, "\r\n\r\n", min((size_t)(ret - i), lenc))) {
+		if (!strncmp(raw + i, "\r\n\r\n", min_t(size_t, ret - i, lenc))) {
 			ptr = raw + i + lenc;
 			len = ret - i - lenc;
 			found = 1;

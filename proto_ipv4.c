@@ -121,7 +121,7 @@ static void ipv4(struct pkt_buff *pkt)
 		tprintf(") ]\n");
 	}
 
-	opts_len = max((uint8_t) ip->h_ihl, sizeof(*ip) / sizeof(uint32_t)) *
+	opts_len = max_t(uint8_t, ip->h_ihl, sizeof(*ip) / sizeof(uint32_t)) *
 		   sizeof(uint32_t) - sizeof(*ip);
 
 	for (opt = pkt_pull(pkt, opts_len); opt && opts_len > 0; opt++) {
@@ -184,7 +184,7 @@ static void ipv4_less(struct pkt_buff *pkt)
 		ntohs(ip->h_tot_len));
 
 	/* cut off IP options and everything that is not part of IPv4 payload */
-	pkt_pull(pkt, max((uint8_t) ip->h_ihl, sizeof(*ip) / sizeof(uint32_t))
+	pkt_pull(pkt, max_t(uint8_t, ip->h_ihl, sizeof(*ip) / sizeof(uint32_t))
 		* sizeof(uint32_t) - sizeof(*ip));
 	/* XXX there coul still be an Ethernet trailer included or others */
 #if 0
