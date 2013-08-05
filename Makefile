@@ -72,7 +72,7 @@ ifeq ($(HARDENING), 1)
   CFLAGS_DEF += -Wstack-protector
   CFLAGS_DEF += --param=ssp-buffer-size=4
   CFLAGS_DEF += -ftrapv
-  CFLAGS_DEF += -D_FORTIFY_SOURCE=2
+  CFLAGS_DEF += -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
   CFLAGS_DEF += -fexceptions
 endif
 
