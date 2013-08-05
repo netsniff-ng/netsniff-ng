@@ -463,6 +463,7 @@ check_libcli()
 	echo -n "[*] Checking libcli ... "
 
 	cat > $TMPDIR/clitest.c << EOF
+#include <sys/time.h>
 #include <libcli.h>
 
 void main(void)

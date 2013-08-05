@@ -21,6 +21,7 @@
 #ifndef __MAUSEZAHN_CLI__
 #define __MAUSEZAHN_CLI__
 
+#include <sys/time.h>
 #include <libcli.h>
 #include "mops.h"
 
