@@ -4,7 +4,7 @@
 #include <sys/socket.h>
 #include "built_in.h"
 
-extern int device_mtu(const char *ifname);
+extern size_t device_mtu(const char *ifname);
 extern int device_address(const char *ifname, int af, struct sockaddr_storage *ss);
 extern int device_ifindex(const char *ifname);
 extern int device_type(const char *ifname);

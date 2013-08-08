@@ -112,9 +112,10 @@ int device_address(const char *ifname, int af, struct sockaddr_storage *ss)
 	return ret;
 }
 
-int device_mtu(const char *ifname)
+size_t device_mtu(const char *ifname)
 {
-	int ret, sock, mtu = 0;
+	size_t mtu = 0;
+	int ret, sock;
 	struct ifreq ifr;
 
 	sock = af_socket(AF_INET);
