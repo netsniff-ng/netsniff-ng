@@ -249,13 +249,13 @@ static void __noreturn version(void)
 
 static void __assemble_data(uint8_t *packet, size_t len, const char *payload)
 {
-	int i;
+	size_t i;
 
 	if (payload == NULL) {
 		for (i = 0; i < len; ++i)
 			packet[i] = (uint8_t) rand();
 	} else {
-		int lmin = min(len, strlen(payload));
+		size_t lmin = min(len, strlen(payload));
 
 		for (i = 0; i < lmin; ++i)
 			packet[i] = (uint8_t) payload[i];
@@ -422,8 +422,8 @@ static int assemble_ipv6(uint8_t *packet, size_t len, int ttl, int proto,
 	return ntohl(ip6h->ip6_flow) & 0x000fffff;
 }
 
-static int check_ipv4(uint8_t *packet, size_t len, int ttl, int id,
-		      const struct sockaddr *ss)
+static int check_ipv4(uint8_t *packet, size_t len, int ttl __maybe_unused,
+		      int id, const struct sockaddr *ss)
 {
 	struct iphdr *iph = (struct iphdr *) packet;
 	struct iphdr *iph_inner;
@@ -448,7 +448,8 @@ static int check_ipv4(uint8_t *packet, size_t len, int ttl, int id,
 	return len;
 }
 
-static void handle_ipv4(uint8_t *packet, size_t len, int dns_resolv, int latitude)
+static void handle_ipv4(uint8_t *packet, size_t len __maybe_unused,
+			int dns_resolv, int latitude)
 {
 	char hbuff[NI_MAXHOST];
 	struct iphdr *iph = (struct iphdr *) packet;
@@ -488,8 +489,8 @@ static void handle_ipv4(uint8_t *packet, size_t len, int dns_resolv, int latitud
 		printf(" (%f/%f)", geoip4_latitude(sd), geoip4_longitude(sd));
 }
 
-static int check_ipv6(uint8_t *packet, size_t len, int ttl, int id,
-		      const struct sockaddr *ss)
+static int check_ipv6(uint8_t *packet, size_t len, int ttl __maybe_unused,
+		      int id, const struct sockaddr *ss)
 {
 	struct ip6_hdr *ip6h = (struct ip6_hdr *) packet;
 	struct ip6_hdr *ip6h_inner;
@@ -508,13 +509,14 @@ static int check_ipv6(uint8_t *packet, size_t len, int ttl, int id,
 		return -EINVAL;
 
 	ip6h_inner = (struct ip6_hdr *) (packet + sizeof(*ip6h) + sizeof(*icmp6h));
-	if ((ntohl(ip6h_inner->ip6_flow) & 0x000fffff) != id)
+	if ((ntohl(ip6h_inner->ip6_flow) & 0x000fffff) != (uint32_t) id)
 		return -EINVAL;
 
 	return len;
 }
 
-static void handle_ipv6(uint8_t *packet, size_t len, int dns_resolv, int latitude)
+static void handle_ipv6(uint8_t *packet, size_t len __maybe_unused,
+			int dns_resolv, int latitude)
 {
 	char hbuff[NI_MAXHOST];
 	struct ip6_hdr *ip6h = (struct ip6_hdr *) packet;
@@ -687,7 +689,7 @@ static int __process_node(struct ctx *ctx, int fd, int fd_cap, int ttl,
 			timersub(&end, &start, diff);
 
 		ret = recvfrom(fd_cap, pkt_rcv, ctx->rcvlen, 0, NULL, NULL);
-		if (ret < sizeof(struct ethhdr) + af_ops[ctx->proto].min_len_icmp)
+		if (ret < (int) (sizeof(struct ethhdr) + af_ops[ctx->proto].min_len_icmp))
 			return -EIO;
 
 		return af_ops[ctx->proto].check(pkt_rcv + sizeof(struct ethhdr),
@@ -724,7 +726,8 @@ static int __process_time(struct ctx *ctx, int fd, int fd_cap, int ttl,
 			  const struct sockaddr_storage *ss,
 			  const struct sockaddr_storage *sd)
 {
-	int good = 0, i, j = 0, ret = -EIO, idx, ret_good = -EIO;
+	size_t i, j = 0;
+	int good = 0, ret = -EIO, idx, ret_good = -EIO;
 	struct timeval probes[9], *tmp, sum, res;
 	uint8_t *trash = xmalloc(ctx->rcvlen);
 	char *cwait[] = { "-", "\\", "|", "/" };
@@ -745,7 +748,7 @@ static int __process_time(struct ctx *ctx, int fd, int fd_cap, int ttl,
 			good++;
 		}
 
-		if (good == 0 && ctx->queries == i)
+		if (good == 0 && ctx->queries == (int) i)
 			break;
 
 		usleep(50000);
@@ -834,7 +837,8 @@ static int __process_ttl(struct ctx *ctx, int fd, int fd_cap, int ttl,
 			 const struct sockaddr_storage *ss,
 			 const struct sockaddr_storage *sd)
 {
-	int ret = -EIO, i;
+	int ret = -EIO;
+	size_t i;
 	const int inner_protos[] = {
 		IPPROTO_TCP,
 		IPPROTO_ICMP,
