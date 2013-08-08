@@ -49,7 +49,8 @@
 
 struct ctx {
 	char *host, *port, *dev, *payload;
-	int init_ttl, max_ttl, dns_resolv, queries, timeout, totlen, rcvlen;
+	size_t totlen, rcvlen;
+	int init_ttl, max_ttl, dns_resolv, queries, timeout;
 	int syn, ack, ecn, fin, psh, rst, urg, tos, nofrag, proto, show;
 	int sd_len, dport, latitude;
 };
@@ -60,7 +61,7 @@ struct proto_ops {
 			 const struct sockaddr *src);
 	const struct sock_filter *filter;
 	unsigned int flen;
-	unsigned int min_len_tcp, min_len_icmp;
+	size_t min_len_tcp, min_len_icmp;
 	int (*check)(uint8_t *packet, size_t len, int ttl, int id,
 		     const struct sockaddr *src);
 	void (*handler)(uint8_t *packet, size_t len, int dns_resolv,
@@ -566,7 +567,7 @@ static void show_trace_info(struct ctx *ctx, const struct sockaddr_storage *ss,
 	getnameinfo((struct sockaddr *) ss, sizeof(*ss),
 		    hbuffs, sizeof(hbuffs), NULL, 0, NI_NUMERICHOST);
 
-	printf("AS path IPv%d TCP trace from %s to %s:%s (%s) with len %d "
+	printf("AS path IPv%d TCP trace from %s to %s:%s (%s) with len %zu "
 	       "Bytes, %u max hops\n", ctx->proto == IPPROTO_IP ? 4 : 6,
 	       hbuffs, hbuffd, ctx->port, ctx->host, ctx->totlen, ctx->max_ttl);
 
@@ -1021,8 +1022,8 @@ int main(int argc, char **argv)
 			ctx.payload = xstrdup(optarg);
 			break;
 		case 'l':
-			ctx.totlen = atoi(optarg);
-			if (ctx.totlen <= 0)
+			ctx.totlen = strtoul(optarg, NULL, 10);
+			if (ctx.totlen == 0)
 				help();
 			break;
 		case '?':
