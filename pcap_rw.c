@@ -27,7 +27,7 @@ static ssize_t pcap_rw_write(int fd, pcap_pkthdr_t *phdr, enum pcap_type type,
 		panic("Failed to write pkt header!\n");
 
 	hdrlen = pcap_get_length(phdr, type);
-	if (unlikely(hdrlen != len))
+	if (unlikely(hdrlen != (ssize_t) len))
 		return -EINVAL;
 
 	ret = write_or_die(fd, packet, hdrlen);
@@ -47,7 +47,7 @@ static ssize_t pcap_rw_read(int fd, pcap_pkthdr_t *phdr, enum pcap_type type,
 		return -EIO;
 
 	hdrlen = pcap_get_length(phdr, type);
-	if (unlikely(hdrlen == 0 || hdrlen > len))
+	if (unlikely(hdrlen == 0 || hdrlen > (ssize_t) len))
                 return -EINVAL;
 
 	ret = read(fd, packet, hdrlen);
