@@ -26,8 +26,7 @@ struct auth_hdr {
 
 static void auth_hdr(struct pkt_buff *pkt)
 {
-	ssize_t hdr_len;
-	size_t i;
+	size_t i, hdr_len;
 	struct auth_hdr *auth_ops;
 
 	auth_ops = (struct auth_hdr *) pkt_pull(pkt, sizeof(*auth_ops));
@@ -38,7 +37,7 @@ static void auth_hdr(struct pkt_buff *pkt)
 
 	tprintf(" [ Authentication Header ");
 	tprintf("NextHdr (%u), ", auth_ops->h_next_header);
-	if (hdr_len > pkt_len(pkt) || hdr_len < 0){
+	if (hdr_len > pkt_len(pkt)) {
 		tprintf("HdrLen (%u, %zd Bytes %s), ",
 		      auth_ops->h_payload_len, hdr_len,
 		      colorize_start_full(black, red)
