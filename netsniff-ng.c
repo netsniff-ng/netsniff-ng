@@ -838,7 +838,7 @@ static void walk_t3_block(struct block_desc *pbd, struct ctx *ctx,
 
 			ret = __pcap_io->write_pcap(*fd, &phdr, ctx->magic, packet,
 						    pcap_get_length(&phdr, ctx->magic));
-			if (unlikely(ret != pcap_get_total_length(&phdr, ctx->magic)))
+			if (unlikely(ret != (int) pcap_get_total_length(&phdr, ctx->magic)))
 				panic("Write error to pcap!\n");
 		}
 
