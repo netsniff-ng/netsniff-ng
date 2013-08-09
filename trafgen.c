@@ -1071,7 +1071,7 @@ int main(int argc, char **argv)
 	}
 
 	if (ctx.rfraw)
-		leave_rfmon_mac80211(ctx.device_trans, ctx.device);
+		leave_rfmon_mac80211(ctx.device);
 
 	reset_system_socket_memory(vals, array_size(vals));
 

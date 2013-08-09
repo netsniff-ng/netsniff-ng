@@ -320,7 +320,7 @@ static void pcap_to_xmit(struct ctx *ctx)
 	destroy_tx_ring(tx_sock, &tx_ring);
 
 	if (ctx->rfraw)
-		leave_rfmon_mac80211(ctx->device_trans, ctx->device_out);
+		leave_rfmon_mac80211(ctx->device_out);
 
 	if (__pcap_io->prepare_close_pcap)
 		__pcap_io->prepare_close_pcap(fd, PCAP_MODE_RD);
@@ -1006,7 +1006,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 		leave_promiscuous_mode(ctx->device_in, ifflags);
 
 	if (ctx->rfraw)
-		leave_rfmon_mac80211(ctx->device_trans, ctx->device_in);
+		leave_rfmon_mac80211(ctx->device_in);
 
 	if (dump_to_pcap(ctx)) {
 		if (ctx->dump_dir)

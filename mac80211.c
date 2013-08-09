@@ -75,7 +75,7 @@ static inline struct nl_sock *nl80211_nl_socket_xalloc(void)
 	return ret;
 }
 
-static void nl80211_init(struct nl80211_state *state, const char *device)
+static void nl80211_init(struct nl80211_state *state)
 {
 	int ret;
 
@@ -103,7 +103,7 @@ static void nl80211_cleanup(struct nl80211_state *state)
 	nl_socket_free(state->nl_sock);
 }
 
-static int nl80211_wait_handler(struct nl_msg *msg, void *arg)
+static int nl80211_wait_handler(struct nl_msg *msg __maybe_unused, void *arg)
 {
 	int *finished = arg;
 
@@ -112,9 +112,9 @@ static int nl80211_wait_handler(struct nl_msg *msg, void *arg)
 	return NL_STOP;
 }
 
-static int nl80211_error_handler(struct sockaddr_nl *nla,
+static int nl80211_error_handler(struct sockaddr_nl *nla __maybe_unused,
 				 struct nlmsgerr *err,
-				 void *arg)
+				 void *arg __maybe_unused)
 {
 	panic("nl80211 returned with error %d\n", err->error);
 }
@@ -178,7 +178,7 @@ nla_put_failure:
 	return -EIO; /* dummy */
 }
 
-static int nl80211_del_mon_if(struct nl80211_state *state, const char *device,
+static int nl80211_del_mon_if(struct nl80211_state *state,
 			      const char *mondevice)
 {
 	int ifindex, ret;
@@ -219,7 +219,7 @@ void enter_rfmon_mac80211(const char *device, char **mondev)
 
 	/* XXX: is this already a monN device? */
 	get_mac80211_phydev(device, phydev_path, sizeof(phydev_path));
-	nl80211_init(&nlstate, device);
+	nl80211_init(&nlstate);
 
 	for (n = 0; n < UINT_MAX; n++) {
 		char mondevice[32];
@@ -241,7 +241,7 @@ void enter_rfmon_mac80211(const char *device, char **mondev)
 	panic("No free monN interfaces!\n");
 }
 
-void leave_rfmon_mac80211(const char *device, const char *mondev)
+void leave_rfmon_mac80211(const char *mondev)
 {
 	short flags;
 	struct nl80211_state nlstate;
@@ -250,7 +250,7 @@ void leave_rfmon_mac80211(const char *device, const char *mondev)
 	flags &= ~(IFF_UP | IFF_RUNNING);
 	device_set_flags(mondev, flags);
 
-	nl80211_init(&nlstate, device);
-	nl80211_del_mon_if(&nlstate, device, mondev);
+	nl80211_init(&nlstate);
+	nl80211_del_mon_if(&nlstate, mondev);
 	nl80211_cleanup(&nlstate);
 }
