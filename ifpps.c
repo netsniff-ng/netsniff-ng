@@ -27,7 +27,6 @@
 #include "link.h"
 #include "xmalloc.h"
 #include "ioops.h"
-#include "promisc.h"
 #include "cpus.h"
 #include "config.h"
 #include "built_in.h"
@@ -1383,10 +1382,10 @@ int main(int argc, char **argv)
 	cpu_hits = xzmalloc(cpus * sizeof(*cpu_hits));
 
 	if (promisc)
-		ifflags = enter_promiscuous_mode(ifname);
+		ifflags = device_enter_promiscuous_mode(ifname);
 	ret = func_main(ifname, interval, top_cpus, suppress_warnings);
 	if (promisc)
-		leave_promiscuous_mode(ifname, ifflags);
+		device_leave_promiscuous_mode(ifname, ifflags);
 
 	stats_release(&stats_old);
 	stats_release(&stats_new);

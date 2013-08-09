@@ -26,7 +26,7 @@
 #include "ring_rx.h"
 #include "ring_tx.h"
 #include "mac80211.h"
-#include "promisc.h"
+#include "dev.h"
 #include "built_in.h"
 #include "pcap_io.h"
 #include "privs.h"
@@ -394,7 +394,7 @@ static void receive_to_xmit(struct ctx *ctx)
 	dissector_init_all(ctx->print_mode);
 
 	 if (ctx->promiscuous)
-		ifflags = enter_promiscuous_mode(ctx->device_in);
+		ifflags = device_enter_promiscuous_mode(ctx->device_in);
 
 	if (ctx->kpull)
 		interval = ctx->kpull;
@@ -490,7 +490,7 @@ static void receive_to_xmit(struct ctx *ctx)
 	destroy_rx_ring(rx_sock, &rx_ring);
 
 	if (ctx->promiscuous)
-		leave_promiscuous_mode(ctx->device_in, ifflags);
+		device_leave_promiscuous_mode(ctx->device_in, ifflags);
 
 	close(tx_sock);
 	close(rx_sock);
@@ -938,7 +938,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 	}
 
 	if (ctx->promiscuous)
-		ifflags = enter_promiscuous_mode(ctx->device_in);
+		ifflags = device_enter_promiscuous_mode(ctx->device_in);
 
 	if (dump_to_pcap(ctx) && __pcap_io->init_once_pcap)
 		__pcap_io->init_once_pcap();
@@ -1003,7 +1003,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 	destroy_rx_ring(sock, &rx_ring);
 
 	if (ctx->promiscuous)
-		leave_promiscuous_mode(ctx->device_in, ifflags);
+		device_leave_promiscuous_mode(ctx->device_in, ifflags);
 
 	if (ctx->rfraw)
 		leave_rfmon_mac80211(ctx->device_in);
