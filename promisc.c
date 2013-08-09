@@ -5,7 +5,7 @@
 #include "promisc.h"
 #include "dev.h"
 
-short enter_promiscuous_mode(char *ifname)
+short enter_promiscuous_mode(const char *ifname)
 {
 	short ifflags;
 
@@ -18,7 +18,7 @@ short enter_promiscuous_mode(char *ifname)
 	return ifflags;
 }
 
-void leave_promiscuous_mode(char *ifname, short oldflags)
+void leave_promiscuous_mode(const char *ifname, short oldflags)
 {
 	if (!strncmp("any", ifname, strlen("any")))
 		return;
