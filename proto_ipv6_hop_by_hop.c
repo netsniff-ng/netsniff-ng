@@ -21,7 +21,8 @@ struct hop_by_hophdr {
 	uint8_t hdr_len;
 } __packed;
 
-static void dissect_opt_hop (struct pkt_buff *pkt, ssize_t *opt_len)
+static void dissect_opt_hop(struct pkt_buff *pkt __maybe_unused,
+			    ssize_t *opt_len)
 {
 	/* Have to been upgraded.
 	 * http://tools.ietf.org/html/rfc2460#section-4.2

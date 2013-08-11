@@ -15,7 +15,7 @@
 #include "dissector_eth.h"
 #include "built_in.h"
 
-static void no_next_header(struct pkt_buff *pkt)
+static void no_next_header(struct pkt_buff *pkt __maybe_unused)
 {
 	/*
 	 * The value 59 in the Next Header field of an IPv6 header or any
@@ -29,7 +29,7 @@ static void no_next_header(struct pkt_buff *pkt)
 	tprintf(" ]\n");
 }
 
-static void no_next_header_less(struct pkt_buff *pkt)
+static void no_next_header_less(struct pkt_buff *pkt __maybe_unused)
 {
 	tprintf(" No Next Header");
 }

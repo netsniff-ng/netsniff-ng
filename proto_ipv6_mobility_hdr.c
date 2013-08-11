@@ -78,7 +78,7 @@ struct bind_err_msg {
 } __packed;
 
 
-static void dissect_mobility_options(struct pkt_buff *pkt,
+static void dissect_mobility_options(struct pkt_buff *pkt __maybe_unused,
 				     ssize_t *message_data_len)
 {
 	/* Have to been upgraded.
