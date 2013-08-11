@@ -47,7 +47,7 @@ static void randombytes_strong(unsigned char *x, size_t xlen)
 	fds = open_or_die(HIG_ENTROPY_SOURCE, O_RDONLY);
 
 	ret = read_exact(fds, x, xlen, 0);
-	if (ret != xlen)
+	if (ret != (int) xlen)
 		panic("Error reading from entropy source!\n");
 
 	close(fds);
