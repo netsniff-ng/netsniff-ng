@@ -20,10 +20,10 @@ static unsigned int *cpu_work_map = NULL;
 static unsigned int cpu_len = 0;
 static struct rwlock map_lock;
 
-static int get_appropriate_cpu(void)
+static unsigned int get_appropriate_cpu(void)
 {
-	int i, cpu = 0;
-	int work = INT_MAX;
+	unsigned int i, cpu = 0;
+	unsigned int work = UINT_MAX;
 
 	for (i = 0; i < cpu_len; ++i) {
 		if (cpu_work_map[i] < work) {
