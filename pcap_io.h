@@ -625,7 +625,7 @@ static inline void pcap_prepare_header(struct pcap_filehdr *hdr, uint32_t magic,
 	hdr->magic = magic;
 	hdr->version_major = swapped ? ___constant_swab16(PCAP_VERSION_MAJOR) : PCAP_VERSION_MAJOR;
 	hdr->version_minor = swapped ? ___constant_swab16(PCAP_VERSION_MINOR) : PCAP_VERSION_MINOR;
-	hdr->thiszone = swapped ? ___constant_swab32(thiszone)  : thiszone;
+	hdr->thiszone = swapped ? (int32_t) ___constant_swab32(thiszone)  : thiszone;
 	hdr->sigfigs = 0;
 	hdr->snaplen = swapped ? ___constant_swab32(snaplen) : snaplen;
 	hdr->linktype = swapped ? ___constant_swab32(linktype) : linktype;
