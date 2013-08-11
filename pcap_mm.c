@@ -69,14 +69,14 @@ static ssize_t pcap_mm_read(int fd __maybe_unused, pcap_pkthdr_t *phdr,
 {
 	size_t hdrsize = pcap_get_hdr_length(phdr, type), hdrlen;
 
-	if (unlikely((off_t) (ptr_va_curr + hdrsize - ptr_va_start) > map_size))
+	if (unlikely((off_t) (ptr_va_curr + hdrsize - ptr_va_start) > (off_t) map_size))
 		return -EIO;
 
 	fmemcpy(&phdr->raw, ptr_va_curr, hdrsize);
 	ptr_va_curr += hdrsize;
 	hdrlen = pcap_get_length(phdr, type);
 
-	if (unlikely((off_t) (ptr_va_curr + hdrlen - ptr_va_start) > map_size))
+	if (unlikely((off_t) (ptr_va_curr + hdrlen - ptr_va_start) > (off_t) map_size))
 		return -EIO;
 	if (unlikely(hdrlen == 0 || hdrlen > len))
 		return -EINVAL;
