@@ -1108,7 +1108,7 @@ static int8_t inf_hop_pp(struct pkt_buff *pkt, u8 *id)
 
 static int8_t inf_hop_pt(struct pkt_buff *pkt, u8 *id)
 {
-	int i;
+	size_t i;
 	u8 *rand_tabl;
 	struct element_hop_pt *hop_pt;
 
@@ -1139,7 +1139,7 @@ static int8_t inf_hop_pt(struct pkt_buff *pkt, u8 *id)
 
 static int8_t inf_req(struct pkt_buff *pkt, u8 *id)
 {
-	int i;
+	size_t i;
 	struct element_req *req;
 	u8 *req_ids;
 
@@ -2654,11 +2654,6 @@ static int8_t inf_qos_cap(struct pkt_buff *pkt, u8 *id)
 	return 1;
 }
 
-static int8_t inf_rsn(struct pkt_buff *pkt, u8 *id)
-{
-	return 0;
-}
-
 static int8_t inf_ext_supp_rates(struct pkt_buff *pkt, u8 *id)
 {
 	u8 i;
@@ -2687,346 +2682,6 @@ static int8_t inf_ext_supp_rates(struct pkt_buff *pkt, u8 *id)
 	return 0;
 }
 
-static int8_t inf_ap_ch_exp(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_neighb_rep(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_rcpi(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_mde(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_fte(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_time_out_int(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_rde(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_dse_reg_loc(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_supp_op_class(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_ext_ch_sw_ann(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_ht_op(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_sec_ch_offs(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_bss_avg_acc_del(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_ant(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_rsni(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_meas_pilot_trans(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_bss_avl_adm_cap(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_bss_ac_acc_del(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_time_adv(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_rm_ena_cap(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_mult_bssid(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_20_40_bss_coex(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_20_40_bss_int_ch_rep(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_overl_bss_scan_para(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_ric_desc(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_mgmt_mic(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_ev_req(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_ev_rep(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_diagn_req(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_diagn_rep(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_loc_para(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_nontr_bssid_cap(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_ssid_list(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_mult_bssid_index(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_fms_desc(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_fms_req(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_fms_resp(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_qos_tfc_cap(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_bss_max_idle_per(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_tfs_req(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_tfs_resp(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_wnm_sleep_mod(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_tim_bcst_req(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_tim_bcst_resp(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_coll_interf_rep(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_ch_usage(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_time_zone(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_dms_req(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_dms_resp(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_link_id(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_wakeup_sched(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_ch_sw_timing(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_pti_ctrl(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_tpu_buff_status(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_interw(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_adv_proto(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_exp_bandw_req(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_qos_map_set(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_roam_cons(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_emer_alert_id(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_mesh_conf(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_mesh_id(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_mesh_link_metr_rep(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_cong_notif(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_mesh_peer_mgmt(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_mesh_ch_sw_para(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_mesh_awake_win(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_beacon_timing(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_mccaop_setup_req(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_mccaop_setup_rep(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_mccaop_adv(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_mccaop_teardwn(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_gann(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_rann(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_ext_cap(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_preq(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_prep(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_perr(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_pxu(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_pxuc(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_auth_mesh_peer_exch(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_mic(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_dest_uri(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_u_apsd_coex(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
-static int8_t inf_mccaop_adv_overv(struct pkt_buff *pkt, u8 *id) {
-	return 0;
-}
-
 static int8_t inf_vend_spec(struct pkt_buff *pkt, u8 *id)
 {
 	u8 i;
@@ -3051,12 +2706,18 @@ static int8_t inf_vend_spec(struct pkt_buff *pkt, u8 *id)
 	return 1;
 }
 
+static int8_t inf_unimplemented(struct pkt_buff *pkt __maybe_unused,
+				u8 *id __maybe_unused)
+{
+	return 0;
+}
+
 static int8_t inf_elements(struct pkt_buff *pkt)
 {
 	u8 *id = pkt_pull(pkt, 1);
 	if (id == NULL)
 		return 0;
-	
+
 	switch (*id) {
 	case   0: return inf_ssid(pkt, id);
 	case   1: return inf_supp_rates(pkt, id);
@@ -3092,101 +2753,101 @@ static int8_t inf_elements(struct pkt_buff *pkt)
 	case  45: return inf_ht_cap(pkt, id);
 	case  46: return inf_qos_cap(pkt, id);
 	case  47: return inf_reserved(pkt, id);
-	case  48: return inf_rsn(pkt, id);
-	case  49: return inf_rsn(pkt, id);
+	case  48: return inf_unimplemented(pkt, id);
+	case  49: return inf_unimplemented(pkt, id);
 	case  50: return inf_ext_supp_rates(pkt, id);
-	case  51: return inf_ap_ch_exp(pkt, id);
-	case  52: return inf_neighb_rep(pkt, id);
-	case  53: return inf_rcpi(pkt, id);
-	case  54: return inf_mde(pkt, id);
-	case  55: return inf_fte(pkt, id);
-	case  56: return inf_time_out_int(pkt, id);
-	case  57: return inf_rde(pkt, id);
-	case  58: return inf_dse_reg_loc(pkt, id);
-	case  59: return inf_supp_op_class(pkt, id);
-	case  60: return inf_ext_ch_sw_ann(pkt, id);
-	case  61: return inf_ht_op(pkt, id);
-	case  62: return inf_sec_ch_offs(pkt, id);
-	case  63: return inf_bss_avg_acc_del(pkt, id);
-	case  64: return inf_ant(pkt, id);
-	case  65: return inf_rsni(pkt, id);
-	case  66: return inf_meas_pilot_trans(pkt, id);
-	case  67: return inf_bss_avl_adm_cap(pkt, id);
-	case  68: return inf_bss_ac_acc_del(pkt, id);
-	case  69: return inf_time_adv(pkt, id);
-	case  70: return inf_rm_ena_cap(pkt, id);
-	case  71: return inf_mult_bssid(pkt, id);
-	case  72: return inf_20_40_bss_coex(pkt, id);
-	case  73: return inf_20_40_bss_int_ch_rep(pkt, id);
-	case  74: return inf_overl_bss_scan_para(pkt, id);
-	case  75: return inf_ric_desc(pkt, id);
-	case  76: return inf_mgmt_mic(pkt, id);
-	case  78: return inf_ev_req(pkt, id);
-	case  79: return inf_ev_rep(pkt, id);
-	case  80: return inf_diagn_req(pkt, id);
-	case  81: return inf_diagn_rep(pkt, id);
-	case  82: return inf_loc_para(pkt, id);
-	case  83: return inf_nontr_bssid_cap(pkt, id);
-	case  84: return inf_ssid_list(pkt, id);
-	case  85: return inf_mult_bssid_index(pkt, id);
-	case  86: return inf_fms_desc(pkt, id);
-	case  87: return inf_fms_req(pkt, id);
-	case  88: return inf_fms_resp(pkt, id);
-	case  89: return inf_qos_tfc_cap(pkt, id);
-	case  90: return inf_bss_max_idle_per(pkt, id);
-	case  91: return inf_tfs_req(pkt, id);
-	case  92: return inf_tfs_resp(pkt, id);
-	case  93: return inf_wnm_sleep_mod(pkt, id);
-	case  94: return inf_tim_bcst_req(pkt, id);
-	case  95: return inf_tim_bcst_resp(pkt, id);
-	case  96: return inf_coll_interf_rep(pkt, id);
-	case  97: return inf_ch_usage(pkt, id);
-	case  98: return inf_time_zone(pkt, id);
-	case  99: return inf_dms_req(pkt, id);
-	case 100: return inf_dms_resp(pkt, id);
-	case 101: return inf_link_id(pkt, id);
-	case 102: return inf_wakeup_sched(pkt, id);
-	case 104: return inf_ch_sw_timing(pkt, id);
-	case 105: return inf_pti_ctrl(pkt, id);
-	case 106: return inf_tpu_buff_status(pkt, id);
-	case 107: return inf_interw(pkt, id);
-	case 108: return inf_adv_proto(pkt, id);
-	case 109: return inf_exp_bandw_req(pkt, id);
-	case 110: return inf_qos_map_set(pkt, id);
-	case 111: return inf_roam_cons(pkt, id);
-	case 112: return inf_emer_alert_id(pkt, id);
-	case 113: return inf_mesh_conf(pkt, id);
-	case 114: return inf_mesh_id(pkt, id);
-	case 115: return inf_mesh_link_metr_rep(pkt, id);
-	case 116: return inf_cong_notif(pkt, id);
-	case 117: return inf_mesh_peer_mgmt(pkt, id);
-	case 118: return inf_mesh_ch_sw_para(pkt, id);
-	case 119: return inf_mesh_awake_win(pkt, id);
-	case 120: return inf_beacon_timing(pkt, id);
-	case 121: return inf_mccaop_setup_req(pkt, id);
-	case 122: return inf_mccaop_setup_rep(pkt, id);
-	case 123: return inf_mccaop_adv(pkt, id);
-	case 124: return inf_mccaop_teardwn(pkt, id);
-	case 125: return inf_gann(pkt, id);
-	case 126: return inf_rann(pkt, id);
-	case 127: return inf_ext_cap(pkt, id);
+	case  51: return inf_unimplemented(pkt, id);
+	case  52: return inf_unimplemented(pkt, id);
+	case  53: return inf_unimplemented(pkt, id);
+	case  54: return inf_unimplemented(pkt, id);
+	case  55: return inf_unimplemented(pkt, id);
+	case  56: return inf_unimplemented(pkt, id);
+	case  57: return inf_unimplemented(pkt, id);
+	case  58: return inf_unimplemented(pkt, id);
+	case  59: return inf_unimplemented(pkt, id);
+	case  60: return inf_unimplemented(pkt, id);
+	case  61: return inf_unimplemented(pkt, id);
+	case  62: return inf_unimplemented(pkt, id);
+	case  63: return inf_unimplemented(pkt, id);
+	case  64: return inf_unimplemented(pkt, id);
+	case  65: return inf_unimplemented(pkt, id);
+	case  66: return inf_unimplemented(pkt, id);
+	case  67: return inf_unimplemented(pkt, id);
+	case  68: return inf_unimplemented(pkt, id);
+	case  69: return inf_unimplemented(pkt, id);
+	case  70: return inf_unimplemented(pkt, id);
+	case  71: return inf_unimplemented(pkt, id);
+	case  72: return inf_unimplemented(pkt, id);
+	case  73: return inf_unimplemented(pkt, id);
+	case  74: return inf_unimplemented(pkt, id);
+	case  75: return inf_unimplemented(pkt, id);
+	case  76: return inf_unimplemented(pkt, id);
+	case  78: return inf_unimplemented(pkt, id);
+	case  79: return inf_unimplemented(pkt, id);
+	case  80: return inf_unimplemented(pkt, id);
+	case  81: return inf_unimplemented(pkt, id);
+	case  82: return inf_unimplemented(pkt, id);
+	case  83: return inf_unimplemented(pkt, id);
+	case  84: return inf_unimplemented(pkt, id);
+	case  85: return inf_unimplemented(pkt, id);
+	case  86: return inf_unimplemented(pkt, id);
+	case  87: return inf_unimplemented(pkt, id);
+	case  88: return inf_unimplemented(pkt, id);
+	case  89: return inf_unimplemented(pkt, id);
+	case  90: return inf_unimplemented(pkt, id);
+	case  91: return inf_unimplemented(pkt, id);
+	case  92: return inf_unimplemented(pkt, id);
+	case  93: return inf_unimplemented(pkt, id);
+	case  94: return inf_unimplemented(pkt, id);
+	case  95: return inf_unimplemented(pkt, id);
+	case  96: return inf_unimplemented(pkt, id);
+	case  97: return inf_unimplemented(pkt, id);
+	case  98: return inf_unimplemented(pkt, id);
+	case  99: return inf_unimplemented(pkt, id);
+	case 100: return inf_unimplemented(pkt, id);
+	case 101: return inf_unimplemented(pkt, id);
+	case 102: return inf_unimplemented(pkt, id);
+	case 104: return inf_unimplemented(pkt, id);
+	case 105: return inf_unimplemented(pkt, id);
+	case 106: return inf_unimplemented(pkt, id);
+	case 107: return inf_unimplemented(pkt, id);
+	case 108: return inf_unimplemented(pkt, id);
+	case 109: return inf_unimplemented(pkt, id);
+	case 110: return inf_unimplemented(pkt, id);
+	case 111: return inf_unimplemented(pkt, id);
+	case 112: return inf_unimplemented(pkt, id);
+	case 113: return inf_unimplemented(pkt, id);
+	case 114: return inf_unimplemented(pkt, id);
+	case 115: return inf_unimplemented(pkt, id);
+	case 116: return inf_unimplemented(pkt, id);
+	case 117: return inf_unimplemented(pkt, id);
+	case 118: return inf_unimplemented(pkt, id);
+	case 119: return inf_unimplemented(pkt, id);
+	case 120: return inf_unimplemented(pkt, id);
+	case 121: return inf_unimplemented(pkt, id);
+	case 122: return inf_unimplemented(pkt, id);
+	case 123: return inf_unimplemented(pkt, id);
+	case 124: return inf_unimplemented(pkt, id);
+	case 125: return inf_unimplemented(pkt, id);
+	case 126: return inf_unimplemented(pkt, id);
+	case 127: return inf_unimplemented(pkt, id);
 	case 128: return inf_reserved(pkt, id);
 	case 129: return inf_reserved(pkt, id);
-	case 130: return inf_preq(pkt, id);
-	case 131: return inf_prep(pkt, id);
-	case 132: return inf_perr(pkt, id);
+	case 130: return inf_unimplemented(pkt, id);
+	case 131: return inf_unimplemented(pkt, id);
+	case 132: return inf_unimplemented(pkt, id);
 	case 133: return inf_reserved(pkt, id);
 	case 134: return inf_reserved(pkt, id);
 	case 135: return inf_reserved(pkt, id);
 	case 136: return inf_reserved(pkt, id);
-	case 137: return inf_pxu(pkt, id);
-	case 138: return inf_pxuc(pkt, id);
-	case 139: return inf_auth_mesh_peer_exch(pkt, id);
-	case 140: return inf_mic(pkt, id);
-	case 141: return inf_dest_uri(pkt, id);
-	case 142: return inf_u_apsd_coex(pkt, id);
+	case 137: return inf_unimplemented(pkt, id);
+	case 138: return inf_unimplemented(pkt, id);
+	case 139: return inf_unimplemented(pkt, id);
+	case 140: return inf_unimplemented(pkt, id);
+	case 141: return inf_unimplemented(pkt, id);
+	case 142: return inf_unimplemented(pkt, id);
 	case 143 ... 173: return inf_reserved(pkt, id);
-	case 174: return inf_mccaop_adv_overv(pkt, id);
+	case 174: return inf_unimplemented(pkt, id);
 	case 221: return inf_vend_spec(pkt, id);
 	}
 
@@ -3249,30 +2910,6 @@ static int8_t cap_field(u16 cap_inf)
 }
 
 /* Management Dissectors */
-static int8_t assoc_req(struct pkt_buff *pkt) {
-	return 0;
-}
-
-static int8_t assoc_resp(struct pkt_buff *pkt) {
-	return 0;
-}
-
-static int8_t reassoc_req(struct pkt_buff *pkt) {
-	return 0;
-}
-
-static int8_t reassoc_resp(struct pkt_buff *pkt) {
-	return 0;
-}
-
-static int8_t probe_req(struct pkt_buff *pkt) {
-	return 0;
-}
-
-static int8_t probe_resp(struct pkt_buff *pkt) {
-	return 0;
-}
-
 static int8_t beacon(struct pkt_buff *pkt)
 {
 	struct ieee80211_mgmt_beacon *beacon;
@@ -3300,79 +2937,22 @@ static int8_t beacon(struct pkt_buff *pkt)
 	return 1;
 }
 
-static int8_t atim(struct pkt_buff *pkt) {
-	return 0;
-}
-
-static int8_t disassoc(struct pkt_buff *pkt) {
-	return 0;
-}
-
-static int8_t auth(struct pkt_buff *pkt) {
-	return 0;
-}
-
-static int8_t deauth(struct pkt_buff *pkt) {
+static int8_t mgmt_unimplemented(struct pkt_buff *pkt __maybe_unused)
+{
 	return 0;
 }
 /* End Management Dissectors */
 
 /* Control Dissectors */
-static int8_t ps_poll(struct pkt_buff *pkt) {
-	return 0;
-}
-
-static int8_t rts(struct pkt_buff *pkt) {
-	return 0;
-}
-
-static int8_t cts(struct pkt_buff *pkt) {
-	return 0;
-}
-
-static int8_t ack(struct pkt_buff *pkt) {
-	return 0;
-}
-
-static int8_t cf_end(struct pkt_buff *pkt) {
-	return 0;
-}
-
-static int8_t cf_end_ack(struct pkt_buff *pkt) {
+static int8_t ctrl_unimplemented(struct pkt_buff *pkt __maybe_unused)
+{
 	return 0;
 }
 /* End Control Dissectors */
 
 /* Data Dissectors */
-static int8_t data(struct pkt_buff *pkt) {
-	return 0;
-}
-
-static int8_t data_cf_ack(struct pkt_buff *pkt) {
-	return 0;
-}
-
-static int8_t data_cf_poll(struct pkt_buff *pkt) {
-	return 0;
-}
-
-static int8_t data_cf_ack_poll(struct pkt_buff *pkt) {
-	return 0;
-}
-
-static int8_t null(struct pkt_buff *pkt) {
-	return 0;
-}
-
-static int8_t cf_ack(struct pkt_buff *pkt) {
-	return 0;
-}
-
-static int8_t cf_poll(struct pkt_buff *pkt) {
-	return 0;
-}
-
-static int8_t cf_ack_poll(struct pkt_buff *pkt) {
+static int8_t data_unimplemented(struct pkt_buff *pkt __maybe_unused)
+{
 	return 0;
 }
 /* End Data Dissectors */
@@ -3427,40 +3007,40 @@ static const char *mgt_sub(u8 subtype, struct pkt_buff *pkt,
 
 	tprintf("\n\tFragmentnr. (%u), Seqnr. (%u). ",
 		seq_ctrl & 0xf, seq_ctrl >> 4);
-  
+
 	switch (subtype) {
 	case 0b0000:
-		*get_content = assoc_req;
+		*get_content = mgmt_unimplemented;
 		return "Association Request";
 	case 0b0001:
-		*get_content = assoc_resp;
+		*get_content = mgmt_unimplemented;
 		return "Association Response";
 	case 0b0010:
-		*get_content = reassoc_req;
+		*get_content = mgmt_unimplemented;
 		return "Reassociation Request";
 	case 0b0011:
-		*get_content = reassoc_resp;
+		*get_content = mgmt_unimplemented;
 		return "Reassociation Response";
 	case 0b0100:
-		*get_content = probe_req;
+		*get_content = mgmt_unimplemented;
 		return "Probe Request";
 	case 0b0101:
-		*get_content = probe_resp;
+		*get_content = mgmt_unimplemented;
 		return "Probe Response";
 	case 0b1000:
 		*get_content = beacon;
 		return "Beacon";
 	case 0b1001:
-		*get_content = atim;
+		*get_content = mgmt_unimplemented;
 		return "ATIM";
 	case 0b1010:
-		*get_content = disassoc;
+		*get_content = mgmt_unimplemented;
 		return "Disassociation";
 	case 0b1011:
-		*get_content = auth;
+		*get_content = mgmt_unimplemented;
 		return "Authentication";
 	case 0b1100:
-		*get_content = deauth;
+		*get_content = mgmt_unimplemented;
 		return "Deauthentication";
 	case 0b0110 ... 0b0111:
 	case 0b1101 ... 0b1111:
@@ -3472,27 +3052,27 @@ static const char *mgt_sub(u8 subtype, struct pkt_buff *pkt,
 	}
 }
 
-static const char *ctrl_sub(u8 subtype, struct pkt_buff *pkt,
+static const char *ctrl_sub(u8 subtype, struct pkt_buff *pkt __maybe_unused,
 			    int8_t (**get_content)(struct pkt_buff *pkt))
 {
 	switch (subtype) {
 	case 0b1010:
-		*get_content = ps_poll;
+		*get_content = ctrl_unimplemented;
 		return "PS-Poll";
 	case 0b1011:
-		*get_content = rts;
+		*get_content = ctrl_unimplemented;
 		return "RTS";
 	case 0b1100:
-		*get_content = cts;
+		*get_content = ctrl_unimplemented;
 		return "CTS";
 	case 0b1101:
-		*get_content = ack;
+		*get_content = ctrl_unimplemented;
 		return "ACK";
 	case 0b1110:
-		*get_content = cf_end;
+		*get_content = ctrl_unimplemented;
 		return "CF End";
 	case 0b1111:
-		*get_content = cf_end_ack;
+		*get_content = ctrl_unimplemented;
 		return "CF End + CF-ACK";
 	case 0b0000 ... 0b1001:
 		*get_content = NULL;
@@ -3502,33 +3082,33 @@ static const char *ctrl_sub(u8 subtype, struct pkt_buff *pkt,
 	}
 }
 
-static const char *data_sub(u8 subtype, struct pkt_buff *pkt,
+static const char *data_sub(u8 subtype, struct pkt_buff *pkt __maybe_unused,
 		 	    int8_t (**get_content)(struct pkt_buff *pkt))
 {
 	switch (subtype) {
 	case 0b0000:
-		*get_content = data;
+		*get_content = data_unimplemented;
 		return "Data";
 	case 0b0001:
-		*get_content = data_cf_ack;
+		*get_content = data_unimplemented;
 		return "Data + CF-ACK";
 	case 0b0010:
-		*get_content = data_cf_poll;
+		*get_content = data_unimplemented;
 		return "Data + CF-Poll";
 	case 0b0011:
-		*get_content = data_cf_ack_poll;
+		*get_content = data_unimplemented;
 		return "Data + CF-ACK + CF-Poll";
 	case 0b0100:
-		*get_content = null;
+		*get_content = data_unimplemented;
 		return "Null";
 	case 0b0101:
-		*get_content = cf_ack;
+		*get_content = data_unimplemented;
 		return "CF-ACK";
 	case 0b0110:
-		*get_content = cf_poll;
+		*get_content = data_unimplemented;
 		return "CF-Poll";
 	case 0b0111:
-		*get_content = cf_ack_poll;
+		*get_content = data_unimplemented;
 		return "CF-ACK + CF-Poll";
 	case 0b1000 ... 0b1111:
 		*get_content = NULL;
@@ -3615,7 +3195,7 @@ static void ieee80211(struct pkt_buff *pkt)
 //	pkt_set_proto(pkt, &ieee802_lay2, ntohs(eth->h_proto));
 }
 
-static void ieee80211_less(struct pkt_buff *pkt)
+static void ieee80211_less(struct pkt_buff *pkt __maybe_unused)
 {
 	tprintf("802.11 frame (more on todo)");
 }
