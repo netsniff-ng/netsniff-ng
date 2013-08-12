@@ -22,7 +22,7 @@
 #include "pkt_buff.h"
 #include "built_in.h"
 
-#define icmpv6_code_range_valid(code, sarr)	((code) < array_size((sarr)))
+#define icmpv6_code_range_valid(code, sarr)	((size_t) (code) < array_size((sarr)))
 
 struct icmpv6_general_hdr {
 	uint8_t h_type;
@@ -539,7 +539,7 @@ static int8_t dissect_neighb_disc_ops_15(struct pkt_buff *pkt,
 		icmpv6_neighb_disc_ops_15_name[
 		icmp_neighb_disc_15->name_type - 1] : "Unknown",
 		icmp_neighb_disc_15->name_type);
-	if (pad_len > len) {
+	if (pad_len > (size_t) len) {
 		tprintf("Pad Len (%zu, invalid)\n%s", pad_len,
 			colorize_start_full(black, red)
 			"Skip Option" colorize_end());
