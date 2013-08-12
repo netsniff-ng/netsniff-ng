@@ -343,7 +343,7 @@ static void receive_to_xmit(struct ctx *ctx)
 {
 	short ifflags = 0;
 	uint8_t *in, *out;
-	int rx_sock, ifindex_in, ifindex_out;
+	int rx_sock, ifindex_in, ifindex_out, ret;
 	unsigned int size_in, size_out, it_in = 0, it_out = 0;
 	unsigned long frame_count = 0;
 	struct frame_map *hdr_in, *hdr_out;
@@ -473,7 +473,9 @@ static void receive_to_xmit(struct ctx *ctx)
 				goto out;
 		}
 
-		poll(&rx_poll, 1, -1);
+		ret = poll(&rx_poll, 1, -1);
+		if (unlikely(ret < 0))
+			panic("Poll failed!\n");
 	}
 
 	out:
@@ -982,7 +984,9 @@ static void recv_only_or_dump(struct ctx *ctx)
 				break;
 		}
 
-		poll(&rx_poll, 1, -1);
+		ret = poll(&rx_poll, 1, -1);
+		if (unlikely(ret < 0))
+			panic("Poll failed!\n");
 	}
 
 	bug_on(gettimeofday(&end, NULL));
