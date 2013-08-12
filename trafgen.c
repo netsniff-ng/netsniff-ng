@@ -56,7 +56,8 @@
 
 struct ctx {
 	bool rand, rfraw, jumbo_support, verbose, smoke_test, enforce;
-	unsigned long kpull, num, gap, reserve_size, cpus;
+	unsigned long kpull, num, gap, reserve_size;
+	unsigned int cpus;
 	uid_t uid; gid_t gid; char *device, *device_trans, *rhost;
 	struct sockaddr_in dest;
 };
@@ -133,7 +134,7 @@ static void signal_handler(int number)
 	}
 }
 
-static void timer_elapsed(int number)
+static void timer_elapsed(int unused __maybe_unused)
 {
 	int ret = pull_and_flush_tx_ring(sock);
 	if (unlikely(ret < 0)) {
@@ -343,7 +344,7 @@ static void apply_csum16(int id)
 		struct csum16 *csum = &packet_dyn[id].csum[j];
 
 		fmemset(&packets[id].payload[csum->off], 0, sizeof(sum));
-		if (unlikely(csum->to >= packets[id].len))
+		if (unlikely((size_t) csum->to >= packets[id].len))
 			csum->to = packets[id].len - 1;
 
 		switch (csum->which) {
@@ -409,7 +410,7 @@ static void destroy_shared_var(void *buff, unsigned long cpus)
 
 static void dump_trafgen_snippet(uint8_t *payload, size_t len)
 {
-	int i;
+	size_t i;
 
 	printf("{");
 	for (i = 0; i < len; ++i) {
@@ -453,7 +454,8 @@ static int xmit_smoke_setup(struct ctx *ctx)
 
 static int xmit_smoke_probe(int icmp_sock, struct ctx *ctx)
 {
-	int ret, i, j = 0, probes = 100;
+	int ret;
+	unsigned int i, j = 0, probes = 100;
 	short ident, cnt = 1, idstore[probes];
 	uint8_t outpack[512], *data;
 	struct icmphdr *icmp;
@@ -487,7 +489,7 @@ static int xmit_smoke_probe(int icmp_sock, struct ctx *ctx)
 
 		ret = sendto(icmp_sock, outpack, len, MSG_DONTWAIT,
 			     (struct sockaddr *) &ctx->dest, sizeof(ctx->dest));
-		if (unlikely(ret != len))
+		if (unlikely(ret != (int) len))
 			panic("Cannot send out probe: %s!\n", strerror(errno));
 
 		ret = poll(&fds, 1, 50);
@@ -503,10 +505,10 @@ static int xmit_smoke_probe(int icmp_sock, struct ctx *ctx)
 				continue;
 			if (unlikely(memcmp(&from, &ctx->dest, sizeof(ctx->dest))))
 				continue;
-			if (unlikely(ret < sizeof(*ip) + sizeof(*icmp)))
+			if (unlikely((size_t) ret < sizeof(*ip) + sizeof(*icmp)))
 				continue;
 			ip = (void *) outpack;
-			if (unlikely(ip->ihl * 4 + sizeof(*icmp) > ret))
+			if (unlikely(ip->ihl * 4 + sizeof(*icmp) > (size_t) ret))
 				continue;
 			icmp = (void *) outpack + ip->ihl * 4;
 			for (i = 0; i < array_size(idstore); ++i) {
@@ -713,9 +715,9 @@ static inline sig_atomic_t __get_state(int cpu)
 	return stats[cpu].state;
 }
 
-static unsigned long __wait_and_sum_others(struct ctx *ctx, int cpu)
+static unsigned long __wait_and_sum_others(struct ctx *ctx, unsigned int cpu)
 {
-	int i;
+	unsigned int i;
 	unsigned long total;
 
 	for (i = 0, total = plen; i < ctx->cpus; i++) {
@@ -734,10 +736,11 @@ static unsigned long __wait_and_sum_others(struct ctx *ctx, int cpu)
 	return total;
 }
 
-static void __correct_global_delta(struct ctx *ctx, int cpu, unsigned long orig)
+static void __correct_global_delta(struct ctx *ctx, unsigned int cpu, unsigned long orig)
 {
-	int i, cpu_sel;
+	unsigned int i;
 	unsigned long total;
+	int cpu_sel;
 	long long delta_correction = 0;
 
 	for (i = 0, total = ctx->num; i < ctx->cpus; i++) {
@@ -768,7 +771,7 @@ static void __correct_global_delta(struct ctx *ctx, int cpu, unsigned long orig)
 		}
 	}
 
-	if (cpu == cpu_sel)
+	if ((int) cpu == cpu_sel)
 		ctx->num += delta_correction;
 }
 
@@ -788,7 +791,7 @@ static void __set_state_cd(int cpu, unsigned long p, sig_atomic_t s)
 
 static int xmit_packet_precheck(struct ctx *ctx, int cpu)
 {
-	int i;
+	unsigned int i;
 	unsigned long plen_total, orig = ctx->num;
 	size_t mtu, total_len = 0;
 
@@ -824,14 +827,14 @@ static int xmit_packet_precheck(struct ctx *ctx, int cpu)
 }
 
 static void main_loop(struct ctx *ctx, char *confname, bool slow,
-		      int cpu, bool invoke_cpp, unsigned long orig_num)
+		      unsigned int cpu, bool invoke_cpp, unsigned long orig_num)
 {
 	compile_packets(confname, ctx->verbose, cpu, invoke_cpp);
 	if (xmit_packet_precheck(ctx, cpu) < 0)
 		return;
 
 	if (cpu == 0) {
-		int i;
+		unsigned int i;
 		size_t total_len = 0, total_pkts = 0;
 
 		for (i = 0; i < ctx->cpus; ++i) {
@@ -875,7 +878,8 @@ static unsigned int generate_srand_seed(void)
 int main(int argc, char **argv)
 {
 	bool slow = false, invoke_cpp = false, reseed = true, cpustats = true;
-	int c, opt_index, i, j, vals[4] = {0}, irq;
+	int c, opt_index, vals[4] = {0}, irq;
+	unsigned int i, j;
 	char *confname = NULL, *ptr;
 	unsigned long cpus_tmp, orig_num = 0;
 	unsigned long long tx_packets, tx_bytes;
