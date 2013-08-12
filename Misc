@@ -49,6 +49,24 @@ cscope:
 	$(Q)$(call RM,cscope*)
 	$(FIND_SOURCE_FILES) | xargs cscope -b
 
+# these need to be specified on the command line
+COV_EMAIL =
+COV_PASSWD =
+
+coverity:
+	$(Q)test -n "$(COV_EMAIL)" || (echo "COV_EMAIL not set" && false)
+	$(Q)test -n "$(COV_PASSWD)" || (echo "COV_PASSWD not set" && false)
+	$(Q)$(MAKE) distclean
+	$(Q)$(call RM,cov-int)
+	$(Q)$(call MKDIR,cov-int)
+	$(Q)./configure
+	$(Q)cov-build --dir cov-int $(MAKE) CCACHE=
+	$(Q)tar czvf netsniff-ng-coverity.tgz cov-int
+	$(Q)echo "Uploading snapshot to Coverity scanner"
+	$(Q)curl --form file=@netsniff-ng-coverity.tgz --form project=netsniff-ng \
+		--form password=$(COV_PASSWD) --form email=$(COV_EMAIL) \
+		--form version=`$(GIT_VERSION)` http://scan5.coverity.com/cgi-bin/upload.py
+
 help:
 	$(Q)echo "$(bold)Available tools from the toolkit:$(normal)"
 	$(Q)echo " <tool>:={$(TOOLS)}"

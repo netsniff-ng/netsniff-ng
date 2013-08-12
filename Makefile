@@ -109,6 +109,7 @@ VERSION_LONG   = "$(VERSION_SHORT)$(CONFIG_RC) ($(NAME))"
 
 export VERSION PATCHLEVEL SUBLEVEL EXTRAVERSION
 export CROSS_COMPILE
+export DEBUG DISTRO HARDENING
 
 bold   = $(shell tput bold)
 normal = $(shell tput sgr0)
@@ -141,6 +142,8 @@ distclean: clean
 	$(Q)$(call RM,Config)
 	$(Q)$(call RM,config.h)
 	$(Q)$(call RM,config.log)
+	$(Q)$(call RM,cov-int)
+	$(Q)$(call RM,netsniff-ng-coverity.tgz)
 mrproper: distclean
 	$(Q)$(GIT_REM)
 
