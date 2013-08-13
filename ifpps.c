@@ -159,8 +159,9 @@ static void __noreturn version(void)
 static inline int padding_from_num(int n)
 {
 	int i = 0;
-	do i++;
-	while ((n /= 10) > 0);
+	do {
+		i++;
+	} while ((n /= 10) > 0);
 	return i;
 }
 
