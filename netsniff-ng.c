@@ -474,8 +474,10 @@ static void receive_to_xmit(struct ctx *ctx)
 		}
 
 		ret = poll(&rx_poll, 1, -1);
-		if (unlikely(ret < 0))
-			panic("Poll failed!\n");
+		if (unlikely(ret < 0)) {
+			if (errno != EINTR)
+				panic("Poll failed!\n");
+		}
 	}
 
 	out:
@@ -985,8 +987,10 @@ static void recv_only_or_dump(struct ctx *ctx)
 		}
 
 		ret = poll(&rx_poll, 1, -1);
-		if (unlikely(ret < 0))
-			panic("Poll failed!\n");
+		if (unlikely(ret < 0)) {
+			if (errno != EINTR)
+				panic("Poll failed!\n");
+		}
 	}
 
 	bug_on(gettimeofday(&end, NULL));
