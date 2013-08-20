@@ -16,6 +16,7 @@ HAVE_LIBPCAP=0
 HAVE_HWTSTAMP=0
 HAVE_LIBGEOIP=0
 HAVE_LIBZ=0
+HAVE_TPACKET3=0
 
 [ -z $CC ] && CC=cc
 
@@ -203,6 +204,7 @@ EOF
 		tools_remove "netsniff-ng"
 	else
 		echo "[YES]"
+		HAVE_TPACKET3=1
 	fi
 }
 
@@ -528,6 +530,7 @@ gen_config_hdr()
 	local _have_libgeoip=""
 	local _have_libz=""
 	local _have_hwts=""
+	local _have_tp3=""
 
 	echo "[*] Generating config.h ... "
 
@@ -554,6 +557,10 @@ gen_config_hdr()
 		_have_libz="#define HAVE_LIBZ 1"
 	fi
 
+	if [ "$HAVE_TPACKET3" == "1" ] ; then
+		_have_tp3="#define HAVE_TPACKET3 1"
+	fi
+
 	cat > config.h << EOF
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -567,6 +574,7 @@ $_have_libpcap
 $_have_libgeoip
 $_have_libz
 $_have_hwts
+$_have_tp3
 #endif /* CONFIG_H */
 EOF
 }

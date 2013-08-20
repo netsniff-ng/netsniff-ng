@@ -25,11 +25,14 @@
 #include "built_in.h"
 #include "die.h"
 #include "dev.h"
+#include "config.h"
 
 union tpacket_uhdr {
 	struct tpacket_hdr  *h1;
 	struct tpacket2_hdr *h2;
+#ifdef HAVE_TPACKET3
 	struct tpacket3_hdr *h3;
+#endif
 	void *raw;
 };
 
@@ -38,11 +41,13 @@ struct frame_map {
 	struct sockaddr_ll s_ll __align_tpacket(sizeof(struct tpacket2_hdr));
 };
 
+#ifdef HAVE_TPACKET3
 struct block_desc {
 	uint32_t version;
 	uint32_t offset_to_priv;
 	struct tpacket_hdr_v1 h1;
 };
+#endif
 
 struct ring {
 	struct iovec *frames;
@@ -51,7 +56,9 @@ struct ring {
 	struct sockaddr_ll s_ll;
 	union {
 		struct tpacket_req layout;
+#ifdef HAVE_TPACKET3
 		struct tpacket_req3 layout3;
+#endif
 		uint8_t raw;
 	};
 };
@@ -140,7 +147,9 @@ static inline void set_sockopt_tpacket_v2(int sock)
 
 static inline void set_sockopt_tpacket_v3(int sock)
 {
+#ifdef HAVE_TPACKET3
 	__set_sockopt_tpacket(sock, TPACKET_V3);
+#endif
 }
 
 static inline int get_sockopt_tpacket(int sock)
