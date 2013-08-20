@@ -48,7 +48,7 @@
 #include "built_in.h"
 
 struct ctx {
-	char *host, *port, *dev, *payload;
+	char *host, *port, *dev, *payload, *bind_addr;
 	size_t totlen, rcvlen;
 	int init_ttl, max_ttl, dns_resolv, queries, timeout;
 	int syn, ack, ecn, fin, psh, rst, urg, tos, nofrag, proto, show;
@@ -85,12 +85,13 @@ static int check_ipv6(uint8_t *packet, size_t len, int ttl, int id,
 static void handle_ipv6(uint8_t *packet, size_t len, int dns_resolv,
 		        int latitude);
 
-static const char *short_options = "H:p:nNf:m:i:d:q:x:SAEFPURt:Gl:hv46X:ZuL";
+static const char *short_options = "H:p:nNf:m:b:i:d:q:x:SAEFPURt:Gl:hv46X:ZuL";
 static const struct option long_options[] = {
 	{"host",	required_argument,	NULL, 'H'},
 	{"port",	required_argument,	NULL, 'p'},
 	{"init-ttl",	required_argument,	NULL, 'f'},
 	{"max-ttl",	required_argument,	NULL, 'm'},
+	{"bind",	required_argument,	NULL, 'b'},
 	{"dev",		required_argument,	NULL, 'd'},
 	{"num-probes",	required_argument,	NULL, 'q'},
 	{"timeout",	required_argument,	NULL, 'x'},
@@ -182,6 +183,7 @@ static void __noreturn help(void)
 	     " -H|--host <host>        Host/IPv4/IPv6 to lookup AS route to\n"
 	     " -p|--port <port>        Hosts port to lookup AS route to\n"
 	     " -i|-d|--dev <device>    Networking device, e.g. eth0\n"
+	     " -b|--bind <IP>          IP address to bind to, Must specify -6 for an IPv6 address\n"
 	     " -f|--init-ttl <ttl>     Set initial TTL\n"
 	     " -m|--max-ttl <ttl>      Set maximum TTL (def: 30)\n"
 	     " -q|--num-probes <num>   Number of max probes for each hop (def: 2)\n"
@@ -583,8 +585,9 @@ static void show_trace_info(struct ctx *ctx, const struct sockaddr_storage *ss,
 static int get_remote_fd(struct ctx *ctx, struct sockaddr_storage *ss,
 			 struct sockaddr_storage *sd)
 {
-	int fd = -1, ret, one = 1;
+	int fd = -1, ret, one = 1, af = AF_INET;
 	struct addrinfo hints, *ahead, *ai;
+	unsigned char bind_ip[sizeof(struct in6_addr)];
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;
@@ -607,8 +610,24 @@ static int get_remote_fd(struct ctx *ctx, struct sockaddr_storage *ss,
 
 		memset(ss, 0, sizeof(*ss));
 		ret = device_address(ctx->dev, ai->ai_family, ss);
-		if (ret < 0)
+		if (ret < 0 && !ctx->bind_addr)
 			panic("Cannot get own device address!\n");
+
+		if (ctx->bind_addr) {
+			if (ctx->proto == IPPROTO_IPV6)
+				af = AF_INET6;
+
+			if (inet_pton(af, ctx->bind_addr, &bind_ip) != 1)
+				panic("Address is invalid!\n");
+
+			if (af == AF_INET6) {
+				struct sockaddr_in6 *ss6 = (struct sockaddr_in6 *) ss;
+				memcpy(&ss6->sin6_addr.s6_addr, &bind_ip, sizeof(struct in6_addr));
+			} else {
+				struct sockaddr_in *ss4 = (struct sockaddr_in *) ss;
+				memcpy(&ss4->sin_addr.s_addr, &bind_ip, sizeof(struct in_addr));
+			}
+		}
 
 		ret = bind(fd, (struct sockaddr *) ss, sizeof(*ss));
 		if (ret < 0)
@@ -927,6 +946,7 @@ int main(int argc, char **argv)
 	ctx.payload = NULL;
 	ctx.dev = xstrdup("eth0");
 	ctx.port = xstrdup("80");
+	ctx.bind_addr = NULL;
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 		&opt_index)) != EOF) {
@@ -973,6 +993,9 @@ int main(int argc, char **argv)
 			ctx.max_ttl = atoi(optarg);
 			if (ctx.max_ttl <= 0)
 				help();
+			break;
+		case 'b':
+			ctx.bind_addr = xstrdup(optarg);
 			break;
 		case 'i':
 		case 'd':
@@ -1078,6 +1101,7 @@ int main(int argc, char **argv)
 	free(ctx.dev);
 	free(ctx.host);
 	free(ctx.port);
+	free(ctx.bind_addr);
 	free(ctx.payload);
 
 	return ret;

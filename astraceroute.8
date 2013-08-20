@@ -43,6 +43,10 @@ port used is 80.
 .SS -i <device>, -d <device>, --dev <device>
 Networking device to start the trace route from, e.g. eth0, wlan0.
 .PP
+.SS -b <IP>, --bind <IP>
+IP address to bind to other than the network device's address. You must specify
+''\-6'' for an IPv6 address.
+.PP
 .SS -f <ttl>, --init-ttl <ttl>
 Initial TTL value to be used. This option might be useful if you are not
 interested in the first n hops, but only the following ones. The default
