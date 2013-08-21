@@ -532,7 +532,7 @@ gen_config_hdr()
 	local _have_hwts=""
 	local _have_tp3=""
 
-	echo "[*] Generating config.h ... "
+	echo "[*] Generating config.h ..."
 
 	git rev-parse > /dev/null 2>&1
 	if [ "$?" == "0" ] ; then
@@ -610,18 +610,17 @@ gen_config_hdr
 gen_version_appendix
 
 if [ "$MISSING_DEFS" == "1" ] ; then
-	echo "[!] Some libraries or header definitions are missing or too old."
-	echo "    Thus certain tools will not be built (see below). Please"
-	echo "    refer to the INSTALL file for the libraries needed to build"
-	echo "    the complete netsniff-ng toolkit."
+	echo "[!] Some libraries or header definitions are missing or too old. Thus"
+	echo "    certain tools will not be built (see below). Please refer to the"
+	echo "    INSTALL file for the libraries needed to build the complete"
+	echo "    netsniff-ng toolkit."
 fi
 
 if [ "$MISSING_NACL" == "1" ] ; then
-	echo "[!] The NaCl crypto library is currently not present on your"
-	echo "    system or could not be found. Either install it from your"
-	echo "    distro or build it manually using 'make nacl' and make sure"
-	echo "    that the NACL_INC_DIR and NACL_LIB_DIR variables are set"
-	echo "    appropriately."
+	echo "[!] The NaCl crypto library is currently not present on your system or"
+	echo "    could not be found. Either install it from your distro or build it"
+	echo "    manually using 'make nacl' and make sure that the NACL_INC_DIR and"
+	echo "    NACL_LIB_DIR environment variables are set appropriately."
 fi
 
 if [ "x$TOOLS_NOBUILD" != "x" ] ; then
@@ -632,8 +631,8 @@ else
 fi
 
 if [ -s config.log ] ; then
-	echo "[!] There were errors in the configure script. Please see"
-	echo "    the file config.log for details."
+	echo "[!] There were errors in the configure script. Please check the file"
+	echo "    config.log for details."
 fi
 
 if [ "$HAVE_LIBGEOIP" == "1" -a "$HAVE_LIBZ" == "1"  ] ; then
