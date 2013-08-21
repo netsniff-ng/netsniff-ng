@@ -89,7 +89,7 @@ retry:
 	ring->mm_len = ring->layout.tp_block_size * ring->layout.tp_block_nr;
 
 	if (verbose) {
-		printf("TX: %.2Lf MiB, %u Frames, each %u Byte allocated\n",
+		printf("TX,V2: %.2Lf MiB, %u Frames, each %u Byte allocated\n",
 		       (long double) ring->mm_len / (1 << 20),
 		       ring->layout.tp_frame_nr, ring->layout.tp_frame_size);
 	}
