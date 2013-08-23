@@ -57,7 +57,7 @@ def main():
             assert False, "unhandled option"
 
     if not overwrite and os.path.exists(output_file):
-        print("Eror: output file {} already exists".format(output_file))
+        print("Error: output file {} already exists".format(output_file))
         sys.exit(-1)
 
     print("Updating OUI information in {} from {}... ".format(output_file, oui_url))
