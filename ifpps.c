@@ -168,7 +168,7 @@ static inline int padding_from_num(int n)
 #define STATS_ALLOC1(member)	\
 	do { stats->member = xzmalloc(cpus * sizeof(*(stats->member))); } while (0)
 
-static void stats_alloc(struct ifstat *stats, int cpus)
+static void stats_alloc(struct ifstat *stats, unsigned int cpus)
 {
 	STATS_ALLOC1(irqs);
 	STATS_ALLOC1(irqs_srx);
@@ -184,7 +184,7 @@ static void stats_alloc(struct ifstat *stats, int cpus)
 #define STATS_ZERO1(member)	\
 	do { memset(stats->member, 0, cpus * sizeof(*(stats->member))); } while (0)
 
-static void stats_zero(struct ifstat *stats, int cpus)
+static void stats_zero(struct ifstat *stats, unsigned int cpus)
 {
 	/* Only clear the non-pointer members */
 	memset(stats, 0, offsetof(struct ifstat, irqs));
@@ -259,7 +259,8 @@ static int stats_proc_net_dev(const char *ifname, struct ifstat *stats)
 
 static int stats_proc_interrupts(char *ifname, struct ifstat *stats)
 {
-	int ret = -EINVAL, i, cpus, try = 0;
+	int ret = -EINVAL, try = 0;
+	unsigned int i, cpus;
 	char *ptr, *buff;
 	bool seen = false;
 	size_t buff_len;
@@ -322,7 +323,7 @@ done:
 
 static int stats_proc_softirqs(struct ifstat *stats)
 {
-	int i, cpus;
+	unsigned int i, cpus;
 	char *ptr, *buff;
 	size_t buff_len;
 	FILE *fp;
@@ -416,7 +417,7 @@ static int stats_proc_memory(struct ifstat *stats)
 
 static int stats_proc_system(struct ifstat *stats)
 {
-	int cpu, cpus;
+	unsigned int cpu, cpus;
 	char *ptr, buff[256];
 	FILE *fp;
 
@@ -534,7 +535,7 @@ static int stats_wireless(const char *ifname, struct ifstat *stats)
 static void stats_diff(struct ifstat *old, struct ifstat *new,
 		       struct ifstat *diff)
 {
-	int cpus, i;
+	unsigned int cpus, i;
 
 	DIFF(rx_bytes);
 	DIFF(rx_packets);
@@ -592,7 +593,7 @@ static void stats_fetch(const char *ifname, struct ifstat *stats)
 
 static void stats_sample_generic(const char *ifname, uint64_t ms_interval)
 {
-	int cpus = get_number_cpus();
+	unsigned int cpus = get_number_cpus();
 
 	stats_zero(&stats_old, cpus);
 	stats_zero(&stats_new, cpus);
@@ -654,9 +655,9 @@ static int cmp_irqs_abs(const void *p1, const void *p2)
 }
 
 static void stats_top(const struct ifstat *rel, const struct ifstat *abs,
-		      int cpus)
+		      unsigned int cpus)
 {
-	int i;
+	unsigned int i;
 
 	memset(&stats_avg, 0, sizeof(stats_avg));
 
@@ -825,11 +826,11 @@ static void screen_percpu_states_one(WINDOW *screen, const struct ifstat *rel,
 } while (0)
 
 static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
-				 const struct avg_stat *avg, int top_cpus,
-				 int *voff)
+				 const struct avg_stat *avg,
+				 unsigned int top_cpus, int *voff)
 {
-	int i;
-	int cpus = get_number_cpus();
+	unsigned int i;
+	unsigned int cpus = get_number_cpus();
 	int max_padd = padding_from_num(cpus);
 	uint64_t all;
 
@@ -913,11 +914,11 @@ static void screen_percpu_irqs_rel_one(WINDOW *screen, const struct ifstat *rel,
 }
 
 static void screen_percpu_irqs_rel(WINDOW *screen, const struct ifstat *rel,
-				   const struct avg_stat *avg, int top_cpus,
-				   int *voff)
+				   const struct avg_stat *avg,
+				   unsigned int top_cpus, int *voff)
 {
-	int i;
-	int cpus = get_number_cpus();
+	unsigned int i;
+	unsigned int cpus = get_number_cpus();
 	int max_padd = padding_from_num(cpus);
 
 	screen_percpu_irqs_rel_one(screen, rel, voff, cpu_hits[0].idx, "+");
@@ -974,11 +975,11 @@ static void screen_percpu_irqs_abs_one(WINDOW *screen, const struct ifstat *abs,
 }
 
 static void screen_percpu_irqs_abs(WINDOW *screen, const struct ifstat *abs,
-				   const struct avg_stat *avg, int top_cpus,
-				   int *voff)
+				   const struct avg_stat *avg,
+				   unsigned int top_cpus, int *voff)
 {
-	int i;
-	int cpus = get_number_cpus();
+	unsigned int i;
+	unsigned int cpus = get_number_cpus();
 	int max_padd = padding_from_num(cpus);
 
 	screen_percpu_irqs_abs_one(screen, abs, voff, cpu_hits[0].idx, "+");
@@ -1128,7 +1129,7 @@ static int screen_main(const char *ifname, uint64_t ms_interval,
 
 static void term_csv(const struct ifstat *rel, const struct ifstat *abs)
 {
-	int cpus, i;
+	unsigned int cpus, i;
 
 	printf("%ld ", time(NULL));
 
@@ -1198,7 +1199,7 @@ static void term_csv(const struct ifstat *rel, const struct ifstat *abs)
 static void term_csv_header(const char *ifname, const struct ifstat *abs,
 			    uint64_t ms_interval)
 {
-	int cpus, i, j = 1;
+	unsigned int cpus, i, j = 1;
 
 	printf("# gnuplot dump (#col:description)\n");
 	printf("# networking interface: %s\n", ifname);
