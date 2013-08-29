@@ -528,8 +528,11 @@ static int stats_wireless(const char *ifname, struct ifstat *stats)
 		if (sizeof(diff->member) != sizeof(new->member) || \
 		    sizeof(diff->member) != sizeof(old->member)) \
 			bug(); \
-		bug_on((new->member - old->member) > (new->member)); \
-		DIFF1(member); \
+		if ((new->member - old->member) > (new->member)) { \
+			diff->member = 0; \
+		} else { \
+			DIFF1(member); \
+		} \
 	} while (0)
 
 static void stats_diff(struct ifstat *old, struct ifstat *new,
