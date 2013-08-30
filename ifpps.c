@@ -45,7 +45,7 @@ struct ifstat {
 	long long unsigned int tx_fifo, tx_colls, tx_carrier;
 	uint64_t mem_free, mem_total, mem_active, mem_inactive;
 	uint64_t swap_total, swap_free, swap_cached;
-	uint32_t irq_nr, procs_total, procs_run, procs_iow, cswitch;
+	uint32_t procs_total, procs_run, procs_iow, cswitch;
 	struct wifi_stat wifi;
 	/*
 	 * Pointer members need to be last in order for stats_zero() to work
@@ -280,17 +280,15 @@ retry:
 
 	while (fgets(buff, buff_len, fp) != NULL) {
 		buff[buff_len - 1] = 0;
-		ptr = buff;
 
 		if (strstr(buff, ifname) == NULL)
 			continue;
 
-		/* XXX: remove this one here */
-		stats->irq_nr = strtol(ptr, &ptr, 10);
-		bug_on(stats->irq_nr == 0);
+		ptr = strchr(buff, ':');
+		if (!ptr)
+			continue;
+		ptr++;
 
-		if (ptr)
-			ptr++;
 		for (i = 0; i < cpus && ptr; ++i) {
 			if (seen)
 				stats->irqs[i] += strtol(ptr, &ptr, 10);
