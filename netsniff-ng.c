@@ -950,23 +950,19 @@ static void recv_only_or_dump(struct ctx *ctx)
 	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
 
 	if (dump_to_pcap(ctx)) {
-		__label__ try_file;
 		struct stat stats;
 
 		fmemset(&stats, 0, sizeof(stats));
 		ret = stat(ctx->device_out, &stats);
-		if (ret < 0) {
+		if (ret < 0)
 			ctx->dump_dir = 0;
-			goto try_file;
-		}
+		else
+			ctx->dump_dir = S_ISDIR(stats.st_mode);
 
-		ctx->dump_dir = S_ISDIR(stats.st_mode);
-		if (ctx->dump_dir) {
+		if (ctx->dump_dir)
 			fd = begin_multi_pcap_file(ctx);
-		} else {
-		try_file:
+		else
 			fd = begin_single_pcap_file(ctx);
-		}
 	}
 
 	printf("Running! Hang up with ^C!\n\n");
