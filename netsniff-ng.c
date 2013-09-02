@@ -952,7 +952,6 @@ static void recv_only_or_dump(struct ctx *ctx)
 	if (dump_to_pcap(ctx)) {
 		struct stat stats;
 
-		fmemset(&stats, 0, sizeof(stats));
 		ret = stat(ctx->device_out, &stats);
 		if (ret < 0)
 			ctx->dump_dir = 0;
