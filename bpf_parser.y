@@ -288,7 +288,9 @@ ldh
 	;
 
 ldi
-	: OP_LDI number {
+	: OP_LDI '#' number {
+		set_curr_instr(BPF_LD | BPF_IMM, 0, 0, $3); }
+	| OP_LDI number {
 		set_curr_instr(BPF_LD | BPF_IMM, 0, 0, $2); }
 	;
 
@@ -345,7 +347,9 @@ ld
 	;
 
 ldxi
-	: OP_LDXI number {
+	: OP_LDXI '#' number {
+		set_curr_instr(BPF_LDX | BPF_IMM, 0, 0, $3); }
+	| OP_LDXI number {
 		set_curr_instr(BPF_LDX | BPF_IMM, 0, 0, $2); }
 	;
 
