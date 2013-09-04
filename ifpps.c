@@ -746,6 +746,20 @@ static void screen_net_dev_rel(WINDOW *screen, const struct ifstat *rel,
 	attroff(A_REVERSE);
 }
 
+static void screen_net_dev_percentage(WINDOW *screen, const struct ifstat *rel,
+				      int *voff, u32 rate)
+{
+	mvwprintw(screen, (*voff)++, 0,
+		  "  rx: %15.2llf%% of line rate  "
+		  "                                                  ",
+		  rate ? ((((long double) rel->rx_bytes) / (1LLU << 20)) / rate) * 100.0 : 0.0);
+
+	mvwprintw(screen, (*voff)++, 0,
+		  "  tx: %15.2llf%% of line rate  "
+		  "                                                  ",
+		  rate ? ((((long double) rel->tx_bytes) / (1LLU << 20)) / rate) * 100.0 : 0.0);
+}
+
 static void screen_net_dev_abs(WINDOW *screen, const struct ifstat *abs,
 			       int *voff)
 {
@@ -1054,6 +1068,9 @@ static void screen_update(WINDOW *screen, const char *ifname, const struct ifsta
 
 	voff++;
 	screen_net_dev_rel(screen, rel, &voff);
+
+	voff++;
+	screen_net_dev_percentage(screen, rel, &voff, rate);
 
 	voff++;
 	screen_net_dev_abs(screen, abs, &voff);
