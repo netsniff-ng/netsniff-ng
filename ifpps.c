@@ -692,12 +692,11 @@ static void stats_top(const struct ifstat *rel, const struct ifstat *abs,
 }
 
 static void screen_header(WINDOW *screen, const char *ifname, int *voff,
-			  uint64_t ms_interval, unsigned int top_cpus)
+			  u32 rate, uint64_t ms_interval, unsigned int top_cpus)
 {
 	size_t len = 0;
 	char buff[64], machine[64];
 	struct ethtool_drvinfo drvinf;
-	u32 rate = device_bitrate(ifname);
 	int link = ethtool_link(ifname);
 	unsigned int cpus = get_number_cpus();
 
@@ -1051,7 +1050,7 @@ static void screen_update(WINDOW *screen, const char *ifname, const struct ifsta
 
 	qsort(cpu_hits, cpus, sizeof(*cpu_hits), cmp_hits);
 
-	screen_header(screen, ifname, &voff, ms_interval, top_cpus);
+	screen_header(screen, ifname, &voff, rate, ms_interval, top_cpus);
 
 	voff++;
 	screen_net_dev_rel(screen, rel, &voff);
