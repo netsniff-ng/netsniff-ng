@@ -71,11 +71,11 @@ static struct ifstat stats_old, stats_new, stats_delta;
 static struct cpu_hit *cpu_hits;
 static struct avg_stat stats_avg;
 static int stats_loop = 0;
-static int show_median = 0;
+static int show_median = 0, show_percentage = 0;
 static WINDOW *stats_screen = NULL;
 static struct utsname uts;
 
-static const char *short_options = "d:n:t:clmpWvh";
+static const char *short_options = "d:n:t:clmpPWvh";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"num-cpus",		required_argument,	NULL, 'n'},
@@ -84,6 +84,7 @@ static const struct option long_options[] = {
 	{"loop",		no_argument,		NULL, 'l'},
 	{"median",		no_argument,		NULL, 'm'},
 	{"promisc",		no_argument,		NULL, 'p'},
+	{"percentage",		no_argument,		NULL, 'P'},
 	{"no-warn",		no_argument,		NULL, 'W'},
 	{"version",		no_argument,		NULL, 'v'},
 	{"help",		no_argument,		NULL, 'h'},
@@ -121,6 +122,7 @@ static void __noreturn help(void)
 	     "  -l|--loop              Continuous CSV output\n"
 	     "  -m|--median            Display median values\n"
 	     "  -p|--promisc           Promiscuous mode\n"
+	     "  -P|--percentage        Show percentage of theoretical line rate\n"
 	     "  -W|--no-warn           Suppress warnings\n"
 	     "  -v|--version           Print version and exit\n"
 	     "  -h|--help              Print this help and exit\n\n"
@@ -1069,8 +1071,10 @@ static void screen_update(WINDOW *screen, const char *ifname, const struct ifsta
 	voff++;
 	screen_net_dev_rel(screen, rel, &voff);
 
-	voff++;
-	screen_net_dev_percentage(screen, rel, &voff, rate);
+	if (show_percentage) {
+		voff++;
+		screen_net_dev_percentage(screen, rel, &voff, rate);
+	}
 
 	voff++;
 	screen_net_dev_abs(screen, abs, &voff);
@@ -1350,6 +1354,9 @@ int main(int argc, char **argv)
 			break;
 		case 'p':
 			promisc = 1;
+			break;
+		case 'P':
+			show_percentage = 1;
 			break;
 		case 'm':
 			show_median = 1;
