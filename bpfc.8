@@ -158,7 +158,7 @@ unsigned data structures:
 .PP
    Addressing mode  Syntax               Description
 .PP
-    0               x                    Register X
+    0               x/%x                 Register X
     1               [k]                  BHW at byte offset k in the packet
     2               [x + k]              BHW at the offset X + k in the packet
     3               M[k]                 Word at offset k in M[]
@@ -167,7 +167,7 @@ unsigned data structures:
     6               L                    Jump label L
     7               #k,Lt,Lf             Jump to Lt if true, otherwise jump to Lf
     8               #k,Lt                Jump to Lt if predicate is true
-    9               a                    Accumulator A
+    9               a/%a                 Accumulator A
    10               extension            BPF extension (see next table)
 .PP
    Extension (and alias)                 Description

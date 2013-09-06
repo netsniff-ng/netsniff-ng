@@ -135,7 +135,7 @@ static int find_intr_offset_or_panic(char *label_to_search)
 %token K_PKT_LEN K_PROTO K_TYPE K_NLATTR K_NLATTR_NEST K_MARK K_QUEUE K_HATYPE
 %token K_RXHASH K_CPU K_IFIDX K_VLANT K_VLANP K_POFF
 
-%token ':' ',' '[' ']' '(' ')' 'x' 'a' '+' 'M' '*' '&' '#'
+%token ':' ',' '[' ']' '(' ')' 'x' 'a' '+' 'M' '*' '&' '#' '%'
 
 %token number label
 
@@ -198,6 +198,8 @@ labelled
 ldb
 	: OP_LDB '[' 'x' '+' number ']' {
 		set_curr_instr(BPF_LD | BPF_B | BPF_IND, 0, 0, $5); }
+	| OP_LDB '[' '%' 'x' '+' number ']' {
+		set_curr_instr(BPF_LD | BPF_B | BPF_IND, 0, 0, $6); }
 	| OP_LDB '[' number ']' {
 		set_curr_instr(BPF_LD | BPF_B | BPF_ABS, 0, 0, $3); }
 	| OP_LDB K_PROTO {
@@ -244,6 +246,8 @@ ldb
 ldh
 	: OP_LDH '[' 'x' '+' number ']' {
 		set_curr_instr(BPF_LD | BPF_H | BPF_IND, 0, 0, $5); }
+	| OP_LDH '[' '%' 'x' '+' number ']' {
+		set_curr_instr(BPF_LD | BPF_H | BPF_IND, 0, 0, $6); }
 	| OP_LDH '[' number ']' {
 		set_curr_instr(BPF_LD | BPF_H | BPF_ABS, 0, 0, $3); }
 	| OP_LDH K_PROTO {
@@ -342,6 +346,8 @@ ld
 		set_curr_instr(BPF_LD | BPF_MEM, 0, 0, $4); }
 	| OP_LD '[' 'x' '+' number ']' {
 		set_curr_instr(BPF_LD | BPF_W | BPF_IND, 0, 0, $5); }
+	| OP_LD '[' '%' 'x' '+' number ']' {
+		set_curr_instr(BPF_LD | BPF_W | BPF_IND, 0, 0, $6); }
 	| OP_LD '[' number ']' {
 		set_curr_instr(BPF_LD | BPF_W | BPF_ABS, 0, 0, $3); }
 	;
@@ -397,11 +403,18 @@ jeq
 		set_jmp_label($4, JTL);
 		set_jmp_label($6, JFL);
 		set_curr_instr(BPF_JMP | BPF_JEQ | BPF_X, 0, 0, 0); }
+	| OP_JEQ '%' 'x' ',' label ',' label {
+		set_jmp_label($5, JTL);
+		set_jmp_label($7, JFL);
+		set_curr_instr(BPF_JMP | BPF_JEQ | BPF_X, 0, 0, 0); }
 	| OP_JEQ '#' number ',' label {
 		set_jmp_label($5, JTL);
 		set_curr_instr(BPF_JMP | BPF_JEQ | BPF_K, 0, 0, $3); }
 	| OP_JEQ 'x' ',' label {
 		set_jmp_label($4, JTL);
+		set_curr_instr(BPF_JMP | BPF_JEQ | BPF_X, 0, 0, 0); }
+	| OP_JEQ '%' 'x' ',' label {
+		set_jmp_label($5, JTL);
 		set_curr_instr(BPF_JMP | BPF_JEQ | BPF_X, 0, 0, 0); }
 	;
 
@@ -412,6 +425,9 @@ jneq
 	| OP_JNEQ 'x' ',' label {
 		set_jmp_label($4, JFL);
 		set_curr_instr(BPF_JMP | BPF_JEQ | BPF_X, 0, 0, 0); }
+	| OP_JNEQ '%' 'x' ',' label {
+		set_jmp_label($5, JFL);
+		set_curr_instr(BPF_JMP | BPF_JEQ | BPF_X, 0, 0, 0); }
 	;
 
 jlt
@@ -421,6 +437,9 @@ jlt
 	| OP_JLT 'x' ',' label {
 		set_jmp_label($4, JFL);
 		set_curr_instr(BPF_JMP | BPF_JGE | BPF_X, 0, 0, 0); }
+	| OP_JLT '%' 'x' ',' label {
+		set_jmp_label($5, JFL);
+		set_curr_instr(BPF_JMP | BPF_JGE | BPF_X, 0, 0, 0); }
 	;
 
 jle
@@ -429,6 +448,9 @@ jle
 		set_curr_instr(BPF_JMP | BPF_JGT | BPF_K, 0, 0, $3); }  
 	| OP_JLE 'x' ',' label {
 		set_jmp_label($4, JFL);
+		set_curr_instr(BPF_JMP | BPF_JGT | BPF_X, 0, 0, 0); }
+	| OP_JLE '%' 'x' ',' label {
+		set_jmp_label($5, JFL);
 		set_curr_instr(BPF_JMP | BPF_JGT | BPF_X, 0, 0, 0); }
 	;
 
@@ -441,11 +463,18 @@ jgt
 		set_jmp_label($4, JTL);
 		set_jmp_label($6, JFL);
 		set_curr_instr(BPF_JMP | BPF_JGT | BPF_X, 0, 0, 0); }
+	| OP_JGT '%' 'x' ',' label ',' label {
+		set_jmp_label($5, JTL);
+		set_jmp_label($7, JFL);
+		set_curr_instr(BPF_JMP | BPF_JGT | BPF_X, 0, 0, 0); }
 	| OP_JGT '#' number ',' label {
 		set_jmp_label($5, JTL);
 		set_curr_instr(BPF_JMP | BPF_JGT | BPF_K, 0, 0, $3); }  
 	| OP_JGT 'x' ',' label {
 		set_jmp_label($4, JTL);
+		set_curr_instr(BPF_JMP | BPF_JGT | BPF_X, 0, 0, 0); }
+	| OP_JGT '%' 'x' ',' label {
+		set_jmp_label($5, JTL);
 		set_curr_instr(BPF_JMP | BPF_JGT | BPF_X, 0, 0, 0); }
 	;
 
@@ -458,11 +487,18 @@ jge
 		set_jmp_label($4, JTL);
 		set_jmp_label($6, JFL);
 		set_curr_instr(BPF_JMP | BPF_JGE | BPF_X, 0, 0, 0); }
+	| OP_JGE '%' 'x' ',' label ',' label {
+		set_jmp_label($5, JTL);
+		set_jmp_label($7, JFL);
+		set_curr_instr(BPF_JMP | BPF_JGE | BPF_X, 0, 0, 0); }
 	| OP_JGE '#' number ',' label {
 		set_jmp_label($5, JTL);
 		set_curr_instr(BPF_JMP | BPF_JGE | BPF_K, 0, 0, $3); }
 	| OP_JGE 'x' ',' label {
 		set_jmp_label($4, JTL);
+		set_curr_instr(BPF_JMP | BPF_JGE | BPF_X, 0, 0, 0); }
+	| OP_JGE '%' 'x' ',' label {
+		set_jmp_label($5, JTL);
 		set_curr_instr(BPF_JMP | BPF_JGE | BPF_X, 0, 0, 0); }
 	;
 
@@ -475,11 +511,18 @@ jset
 		set_jmp_label($4, JTL);
 		set_jmp_label($6, JFL);
 		set_curr_instr(BPF_JMP | BPF_JSET | BPF_X, 0, 0, 0); }
+	| OP_JSET '%' 'x' ',' label ',' label {
+		set_jmp_label($5, JTL);
+		set_jmp_label($7, JFL);
+		set_curr_instr(BPF_JMP | BPF_JSET | BPF_X, 0, 0, 0); }
 	| OP_JSET '#' number ',' label {
 		set_jmp_label($5, JTL);
 		set_curr_instr(BPF_JMP | BPF_JSET | BPF_K, 0, 0, $3); }
 	| OP_JSET 'x' ',' label {
 		set_jmp_label($4, JTL);
+		set_curr_instr(BPF_JMP | BPF_JSET | BPF_X, 0, 0, 0); }
+	| OP_JSET '%' 'x' ',' label {
+		set_jmp_label($5, JTL);
 		set_curr_instr(BPF_JMP | BPF_JSET | BPF_X, 0, 0, 0); }
 	;
 
@@ -488,12 +531,16 @@ add
 		set_curr_instr(BPF_ALU | BPF_ADD | BPF_K, 0, 0, $3); }
 	| OP_ADD 'x' {
 		set_curr_instr(BPF_ALU | BPF_ADD | BPF_X, 0, 0, 0); }
+	| OP_ADD '%' 'x' {
+		set_curr_instr(BPF_ALU | BPF_ADD | BPF_X, 0, 0, 0); }
 	;
 
 sub
 	: OP_SUB '#' number {
 		set_curr_instr(BPF_ALU | BPF_SUB | BPF_K, 0, 0, $3); }
 	| OP_SUB 'x' {
+		set_curr_instr(BPF_ALU | BPF_SUB | BPF_X, 0, 0, 0); }
+	| OP_SUB '%' 'x' {
 		set_curr_instr(BPF_ALU | BPF_SUB | BPF_X, 0, 0, 0); }
 	;
 
@@ -502,6 +549,8 @@ mul
 		set_curr_instr(BPF_ALU | BPF_MUL | BPF_K, 0, 0, $3); }
 	| OP_MUL 'x' {
 		set_curr_instr(BPF_ALU | BPF_MUL | BPF_X, 0, 0, 0); }
+	| OP_MUL '%' 'x' {
+		set_curr_instr(BPF_ALU | BPF_MUL | BPF_X, 0, 0, 0); }
 	;
 
 div
@@ -509,12 +558,16 @@ div
 		set_curr_instr(BPF_ALU | BPF_DIV | BPF_K, 0, 0, $3); }
 	| OP_DIV 'x' {
 		set_curr_instr(BPF_ALU | BPF_DIV | BPF_X, 0, 0, 0); }
+	| OP_DIV '%' 'x' {
+		set_curr_instr(BPF_ALU | BPF_DIV | BPF_X, 0, 0, 0); }
 	;
 
 mod
 	: OP_MOD '#' number {
 		set_curr_instr(BPF_ALU | BPF_MOD | BPF_K, 0, 0, $3); }
 	| OP_MOD 'x' {
+		set_curr_instr(BPF_ALU | BPF_MOD | BPF_X, 0, 0, 0); }
+	| OP_MOD '%' 'x' {
 		set_curr_instr(BPF_ALU | BPF_MOD | BPF_X, 0, 0, 0); }
 	;
 
@@ -528,12 +581,16 @@ and
 		set_curr_instr(BPF_ALU | BPF_AND | BPF_K, 0, 0, $3); }
 	| OP_AND 'x' {
 		set_curr_instr(BPF_ALU | BPF_AND | BPF_X, 0, 0, 0); }
+	| OP_AND '%' 'x' {
+		set_curr_instr(BPF_ALU | BPF_AND | BPF_X, 0, 0, 0); }
 	;
 
 or
 	: OP_OR '#' number {
 		set_curr_instr(BPF_ALU | BPF_OR | BPF_K, 0, 0, $3); }
 	| OP_OR 'x' {
+		set_curr_instr(BPF_ALU | BPF_OR | BPF_X, 0, 0, 0); }
+	| OP_OR '%' 'x' {
 		set_curr_instr(BPF_ALU | BPF_OR | BPF_X, 0, 0, 0); }
 	;
 
@@ -542,12 +599,16 @@ xor
 		set_curr_instr(BPF_ALU | BPF_XOR | BPF_K, 0, 0, $3); }
 	| OP_XOR 'x' {
 		set_curr_instr(BPF_ALU | BPF_XOR | BPF_X, 0, 0, 0); }
+	| OP_XOR '%' 'x' {
+		set_curr_instr(BPF_ALU | BPF_XOR | BPF_X, 0, 0, 0); }
 	;
 
 lsh
 	: OP_LSH '#' number {
 		set_curr_instr(BPF_ALU | BPF_LSH | BPF_K, 0, 0, $3); }
 	| OP_LSH 'x' {
+		set_curr_instr(BPF_ALU | BPF_LSH | BPF_X, 0, 0, 0); }
+	| OP_LSH '%' 'x' {
 		set_curr_instr(BPF_ALU | BPF_LSH | BPF_X, 0, 0, 0); }
 	;
 
@@ -556,12 +617,18 @@ rsh
 		set_curr_instr(BPF_ALU | BPF_RSH | BPF_K, 0, 0, $3); }
 	| OP_RSH 'x' {
 		set_curr_instr(BPF_ALU | BPF_RSH | BPF_X, 0, 0, 0); }
+	| OP_RSH '%' 'x' {
+		set_curr_instr(BPF_ALU | BPF_RSH | BPF_X, 0, 0, 0); }
 	;
 
 ret
 	: OP_RET 'a' {
 		set_curr_instr(BPF_RET | BPF_A, 0, 0, 0); }
+	| OP_RET '%' 'a' {
+		set_curr_instr(BPF_RET | BPF_A, 0, 0, 0); }
 	| OP_RET 'x' {
+		set_curr_instr(BPF_RET | BPF_X, 0, 0, 0); }
+	| OP_RET '%' 'x' {
 		set_curr_instr(BPF_RET | BPF_X, 0, 0, 0); }
 	| OP_RET '#' number {
 		set_curr_instr(BPF_RET | BPF_K, 0, 0, $3); }

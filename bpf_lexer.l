@@ -91,6 +91,7 @@ label		[a-zA-Z_][a-zA-Z0-9_]+
 ":"		{ return ':'; }
 ","		{ return ','; }
 "#"		{ return '#'; }
+"%"		{ return '%'; }
 "["		{ return '['; }
 "]"		{ return ']'; }
 "("		{ return '('; }
