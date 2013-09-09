@@ -754,12 +754,12 @@ static void screen_net_dev_percentage(WINDOW *screen, const struct ifstat *rel,
 	mvwprintw(screen, (*voff)++, 0,
 		  "  rx: %15.2llf%% of line rate  "
 		  "                                                  ",
-		  rate ? ((((long double) rel->rx_bytes) / (1LLU << 20)) / rate) * 100.0 : 0.0);
+		  rate ? ((((long double) rel->rx_bytes) / 125000) / rate) * 100.0 : 0.0);
 
 	mvwprintw(screen, (*voff)++, 0,
 		  "  tx: %15.2llf%% of line rate  "
 		  "                                                  ",
-		  rate ? ((((long double) rel->tx_bytes) / (1LLU << 20)) / rate) * 100.0 : 0.0);
+		  rate ? ((((long double) rel->tx_bytes) / 125000) / rate) * 100.0 : 0.0);
 }
 
 static void screen_net_dev_abs(WINDOW *screen, const struct ifstat *abs,
