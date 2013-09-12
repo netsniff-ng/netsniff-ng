@@ -650,44 +650,44 @@ static void xmit_fastpath_or_die(struct ctx *ctx, int cpu, unsigned long orig_nu
 	bug_on(gettimeofday(&start, NULL));
 
 	while (likely(sigint == 0 && num > 0 && plen > 0)) {
-		while (user_may_pull_from_tx(tx_ring.frames[it].iov_base) && likely(num > 0)) {
-			hdr = tx_ring.frames[it].iov_base;
-			out = ((uint8_t *) hdr) + TPACKET2_HDRLEN - sizeof(struct sockaddr_ll);
-
-			hdr->tp_h.tp_snaplen = packets[i].len;
-			hdr->tp_h.tp_len = packets[i].len;
-
-			pktd = &packet_dyn[i];
-			if (pktd->clen + pktd->rlen + pktd->slen) {
-				apply_counter(i);
-				apply_randomizer(i);
-				apply_csum16(i);
-			}
-
-			fmemcpy(out, packets[i].payload, packets[i].len);
-
-			tx_bytes += packets[i].len;
-			tx_packets++;
-
-			if (!ctx->rand) {
-				i++;
-				if (i >= plen)
-					i = 0;
-			} else
-				i = rand() % plen;
-
-			kernel_may_pull_from_tx(&hdr->tp_h);
-
-			it++;
-			if (it >= tx_ring.layout.tp_frame_nr)
-				it = 0;
-
-			if (ctx->num > 0)
-				num--;
-
-			if (unlikely(sigint == 1))
-				break;
+		if (!user_may_pull_from_tx(tx_ring.frames[it].iov_base)) {
+			sched_yield();
+			continue;
 		}
+
+		hdr = tx_ring.frames[it].iov_base;
+		out = ((uint8_t *) hdr) + TPACKET2_HDRLEN - sizeof(struct sockaddr_ll);
+
+		hdr->tp_h.tp_snaplen = packets[i].len;
+		hdr->tp_h.tp_len = packets[i].len;
+
+		pktd = &packet_dyn[i];
+		if (pktd->clen + pktd->rlen + pktd->slen) {
+			apply_counter(i);
+			apply_randomizer(i);
+			apply_csum16(i);
+		}
+
+		fmemcpy(out, packets[i].payload, packets[i].len);
+
+		tx_bytes += packets[i].len;
+		tx_packets++;
+
+		if (!ctx->rand) {
+			i++;
+			if (i >= plen)
+				i = 0;
+		} else
+			i = rand() % plen;
+
+		kernel_may_pull_from_tx(&hdr->tp_h);
+
+		it++;
+		if (it >= tx_ring.layout.tp_frame_nr)
+			it = 0;
+
+		if (ctx->num > 0)
+			num--;
 	}
 
 	bug_on(gettimeofday(&end, NULL));
