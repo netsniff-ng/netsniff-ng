@@ -547,7 +547,7 @@ static void xmit_slowpath_or_die(struct ctx *ctx, int cpu, unsigned long orig_nu
 
 	bug_on(gettimeofday(&start, NULL));
 
-	while (likely(sigint == 0) && likely(num > 0) && likely(plen > 0)) {
+	while (likely(sigint == 0 && num > 0 && plen > 0)) {
 		pktd = &packet_dyn[i];
 		if (pktd->clen + pktd->rlen + pktd->slen) {
 			apply_counter(i);
@@ -649,7 +649,7 @@ static void xmit_fastpath_or_die(struct ctx *ctx, int cpu, unsigned long orig_nu
 
 	bug_on(gettimeofday(&start, NULL));
 
-	while (likely(sigint == 0) && likely(num > 0) && likely(plen > 0)) {
+	while (likely(sigint == 0 && num > 0 && plen > 0)) {
 		while (user_may_pull_from_tx(tx_ring.frames[it].iov_base) && likely(num > 0)) {
 			hdr = tx_ring.frames[it].iov_base;
 			out = ((uint8_t *) hdr) + TPACKET2_HDRLEN - sizeof(struct sockaddr_ll);
