@@ -1421,6 +1421,9 @@ int main(int argc, char **argv)
 	if (!ctx.enforce)
 		xlockme();
 
+	if (ctx.verbose)
+		printf("pcap file I/O method: %s\n", pcap_ops_group_to_str[ctx.pcap]);
+
 	main_loop(&ctx);
 
 	if (!ctx.enforce)

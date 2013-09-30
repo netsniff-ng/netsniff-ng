@@ -605,9 +605,9 @@ static inline void pcap_dump_type_features(void)
 }
 
 static const char *pcap_ops_group_to_str[] __maybe_unused = {
-	[PCAP_OPS_RW] = "rw",
-	[PCAP_OPS_SG] = "sg",
-	[PCAP_OPS_MM] = "mm",
+	[PCAP_OPS_RW] = "read/write",
+	[PCAP_OPS_SG] = "scatter-gather",
+	[PCAP_OPS_MM] = "mmap",
 };
 
 static const struct pcap_file_ops *pcap_ops[] __maybe_unused = {
