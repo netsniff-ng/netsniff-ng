@@ -75,12 +75,13 @@ static int show_median = 0, show_percentage = 0;
 static WINDOW *stats_screen = NULL;
 static struct utsname uts;
 
-static const char *short_options = "d:n:t:clmpPWvh";
+static const char *short_options = "d:n:t:colmpPWvh";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"num-cpus",		required_argument,	NULL, 'n'},
 	{"interval",		required_argument,	NULL, 't'},
 	{"csv",			no_argument,		NULL, 'c'},
+	{"omit-header",		no_argument,		NULL, 'o'},
 	{"loop",		no_argument,		NULL, 'l'},
 	{"median",		no_argument,		NULL, 'm'},
 	{"promisc",		no_argument,		NULL, 'p'},
@@ -119,6 +120,7 @@ static void __noreturn help(void)
 	     "  -n|--num-cpus <num>    Number of top hitter CPUs in ncurses mode (def: 5)\n"
 	     "  -t|--interval <time>   Refresh time in ms (default 1000 ms)\n"
 	     "  -c|--csv               Output to terminal as Gnuplot-ready data\n"
+	     "  -o|--omit-header       Do not print the CSV header\n"
 	     "  -l|--loop              Continuous CSV output\n"
 	     "  -m|--median            Display median values\n"
 	     "  -p|--promisc           Promiscuous mode\n"
@@ -1119,7 +1121,8 @@ static void screen_update(WINDOW *screen, const char *ifname, const struct ifsta
 }
 
 static int screen_main(const char *ifname, uint64_t ms_interval,
-		       unsigned int top_cpus, bool suppress_warnings)
+		       unsigned int top_cpus, bool suppress_warnings,
+		       bool omit_header)
 {
 	int first = 1, key;
 	u32 rate = device_bitrate(ifname);
@@ -1292,7 +1295,8 @@ static void term_csv_header(const char *ifname, const struct ifstat *abs,
 
 static int term_main(const char *ifname, uint64_t ms_interval,
 		     unsigned int top_cpus __maybe_unused,
-		     bool suppress_warnings __maybe_unused)
+		     bool suppress_warnings __maybe_unused,
+		     bool omit_header)
 {
 	int first = 1;
 
@@ -1301,7 +1305,8 @@ static int term_main(const char *ifname, uint64_t ms_interval,
 
 		if (first) {
 			first = 0;
-			term_csv_header(ifname, &stats_new, ms_interval);
+			if (!omit_header)
+				term_csv_header(ifname, &stats_new, ms_interval);
 		}
 
 		term_csv(&stats_delta, &stats_new);
@@ -1318,8 +1323,10 @@ int main(int argc, char **argv)
 	uint64_t interval = 1000;
 	char *ifname = NULL;
 	bool suppress_warnings = false;
+	bool omit_header = false;
 	int (*func_main)(const char *ifname, uint64_t ms_interval,
-			 unsigned int top_cpus, bool suppress_warnings);
+			 unsigned int top_cpus, bool suppress_warnings,
+			 bool omit_header);
 
 	func_main = screen_main;
 
@@ -1363,6 +1370,9 @@ int main(int argc, char **argv)
 			break;
 		case 'c':
 			func_main = term_main;
+			break;
+		case 'o':
+			omit_header = true;
 			break;
 		case '?':
 			switch (optopt) {
@@ -1409,7 +1419,7 @@ int main(int argc, char **argv)
 
 	if (promisc)
 		ifflags = device_enter_promiscuous_mode(ifname);
-	ret = func_main(ifname, interval, top_cpus, suppress_warnings);
+	ret = func_main(ifname, interval, top_cpus, suppress_warnings, omit_header);
 	if (promisc)
 		device_leave_promiscuous_mode(ifname, ifflags);
 
