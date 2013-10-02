@@ -1298,15 +1298,12 @@ static int term_main(const char *ifname, uint64_t ms_interval,
 		     bool suppress_warnings __maybe_unused,
 		     bool omit_header)
 {
-	int first = 1;
-
 	do {
 		stats_sample_generic(ifname, ms_interval);
 
-		if (first) {
-			first = 0;
-			if (!omit_header)
-				term_csv_header(ifname, &stats_new, ms_interval);
+		if (!omit_header) {
+			omit_header = true;
+			term_csv_header(ifname, &stats_new, ms_interval);
 		}
 
 		term_csv(&stats_delta, &stats_new);
