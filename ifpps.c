@@ -1122,7 +1122,7 @@ static void screen_update(WINDOW *screen, const char *ifname, const struct ifsta
 
 static int screen_main(const char *ifname, uint64_t ms_interval,
 		       unsigned int top_cpus, bool suppress_warnings,
-		       bool omit_header)
+		       bool omit_header __maybe_unused)
 {
 	int first = 1, key;
 	u32 rate = device_bitrate(ifname);
