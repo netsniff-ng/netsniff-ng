@@ -75,15 +75,15 @@ static int show_median = 0, show_percentage = 0;
 static WINDOW *stats_screen = NULL;
 static struct utsname uts;
 
-static const char *short_options = "d:n:t:colmpPWvh";
+static const char *short_options = "d:n:t:clmopPWvh";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"num-cpus",		required_argument,	NULL, 'n'},
 	{"interval",		required_argument,	NULL, 't'},
 	{"csv",			no_argument,		NULL, 'c'},
-	{"omit-header",		no_argument,		NULL, 'o'},
 	{"loop",		no_argument,		NULL, 'l'},
 	{"median",		no_argument,		NULL, 'm'},
+	{"omit-header",		no_argument,		NULL, 'o'},
 	{"promisc",		no_argument,		NULL, 'p'},
 	{"percentage",		no_argument,		NULL, 'P'},
 	{"no-warn",		no_argument,		NULL, 'W'},
@@ -120,9 +120,9 @@ static void __noreturn help(void)
 	     "  -n|--num-cpus <num>    Number of top hitter CPUs in ncurses mode (def: 5)\n"
 	     "  -t|--interval <time>   Refresh time in ms (default 1000 ms)\n"
 	     "  -c|--csv               Output to terminal as Gnuplot-ready data\n"
-	     "  -o|--omit-header       Do not print the CSV header\n"
 	     "  -l|--loop              Continuous CSV output\n"
 	     "  -m|--median            Display median values\n"
+	     "  -o|--omit-header       Do not print the CSV header\n"
 	     "  -p|--promisc           Promiscuous mode\n"
 	     "  -P|--percentage        Show percentage of theoretical line rate\n"
 	     "  -W|--no-warn           Suppress warnings\n"

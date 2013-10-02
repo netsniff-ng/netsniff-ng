@@ -62,9 +62,6 @@ Statistics refresh interval in milliseconds, default is 1000ms.
 .SS -c, --csv
 Output (once) the ncurses data to the terminal as gnuplot(1)-ready data.
 .PP
-.SS -o, --omit-header
-Omit printing the CSV header. This option is only available if \[lq]\-c\[rq] is given.
-.PP
 .SS -l, --loop
 Continuously output the terminal data after a refresh interval. This option
 is only available if option \[lq]\-c\[rq] is given. For \[lq]\-l\[rq] it is
@@ -74,6 +71,9 @@ later with gnuplot(1).
 .SS -m, --median
 Show median values across all CPUs for CPU load, interrupts (per interval and
 absolute) and software interrupts.
+.PP
+.SS -o, --omit-header
+Omit printing the CSV header. This option is only available if \[lq]\-c\[rq] is given.
 .PP
 .SS -p, --promisc
 Turn on promiscuous mode for the given networking device.
