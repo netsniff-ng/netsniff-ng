@@ -1070,7 +1070,7 @@ static void __noreturn help(void)
 	     "  -r|--rand                      Randomize packet forwarding order (dev->dev)\n"
 	     "  -M|--no-promisc                No promiscuous mode for netdev\n"
 	     "  -A|--no-sock-mem               Don't tune core socket memory\n"
-	     "  -m|--mmap                      Mmap(2) pcap file i.e., for replaying pcaps\n"
+	     "  -m|--mmap                      Mmap(2) pcap file I/O, e.g. for replaying pcaps\n"
 	     "  -G|--sg                        Scatter/gather pcap file I/O\n"
 	     "  -c|--clrw                      Use slower read(2)/write(2) I/O\n"
 	     "  -S|--ring-size <size>          Specify ring size to: <num>KiB/MiB/GiB\n"
