@@ -42,3 +42,7 @@ GIT_REM = git ls-files -o | xargs rm -rf
 GIT_PEOPLE = git log --no-merges $(shell git tag | tail -n2 | head -n1)..HEAD | grep Author: | cut -d: -f2 | \
 	     cut -d\< -f1 | sort | uniq -c | sort -nr
 GIT_VERSION = git describe --always
+
+# GPG related
+GPG_SIGN = gpg -a --output ../netsniff-ng-$(VERSION_SHORT).tar.$(1).sign --detach-sig \
+		../netsniff-ng-$(VERSION_SHORT).tar.$(1)

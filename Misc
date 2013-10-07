@@ -34,7 +34,12 @@ announcement:
 	$(Q)echo -e "\nGit changelog since last release:\n" >> .MAIL_MSG
 	$(GIT_LOG) >> .MAIL_MSG
 
-release: tag announcement tarball
+sign:
+	$(call GPG_SIGN,gz)
+	$(call GPG_SIGN,bz2)
+	$(call GPG_SIGN,xz)
+
+release: tag announcement tarball sign
 	$(Q)echo "Released $(bold)$(VERSION_SHORT)$(normal)"
 
 FIND_SOURCE_FILES = ( git ls-files '*.[hcS]' 2>/dev/null || \
