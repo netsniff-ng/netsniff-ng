@@ -1217,7 +1217,7 @@ int main(int argc, char **argv)
 				panic("Syntax error in ring size param!\n");
 			*ptr = 0;
 
-			ctx.reserve_size *= strtol(optarg, NULL, 0);
+			ctx.reserve_size *= strtoul(optarg, NULL, 0);
 			break;
 		case 'b':
 			cpu_tmp = strtol(optarg, NULL, 0);
@@ -1261,10 +1261,10 @@ int main(int argc, char **argv)
 				 PRINT_HEX_ASCII : PRINT_ASCII;
 			break;
 		case 'k':
-			ctx.kpull = strtol(optarg, NULL, 0);
+			ctx.kpull = strtoul(optarg, NULL, 0);
 			break;
 		case 'n':
-			frame_count_max = strtol(optarg, NULL, 0);
+			frame_count_max = strtoul(optarg, NULL, 0);
 			break;
 		case 'F':
 			ptr = optarg;
@@ -1302,7 +1302,7 @@ int main(int argc, char **argv)
 			}
 
 			*ptr = 0;
-			ctx.dump_interval *= strtol(optarg, NULL, 0);
+			ctx.dump_interval *= strtoul(optarg, NULL, 0);
 			break;
 		case 'V':
 			ctx.verbose = 1;
