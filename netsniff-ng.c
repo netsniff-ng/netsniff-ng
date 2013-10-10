@@ -1215,7 +1215,6 @@ int main(int argc, char **argv)
 				ctx.reserve_size = 1 << 30;
 			else
 				panic("Syntax error in ring size param!\n");
-			*ptr = 0;
 
 			ctx.reserve_size *= strtoul(optarg, NULL, 0);
 			break;
@@ -1301,7 +1300,6 @@ int main(int argc, char **argv)
 				panic("Syntax error in time/size param!\n");
 			}
 
-			*ptr = 0;
 			ctx.dump_interval *= strtoul(optarg, NULL, 0);
 			break;
 		case 'V':
