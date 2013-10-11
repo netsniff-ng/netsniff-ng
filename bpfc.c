@@ -111,10 +111,11 @@ int main(int argc, char **argv)
 			if (!strncmp(optarg, "C", 1) ||
 			    !strncmp(optarg, "netsniff-ng", 11))
 				format = 0;
-			else if (!strncmp(optarg, "xt_bpf", 6))
-				format = 1;
 			else if (!strncmp(optarg, "tcpdump", 7))
 				format = 2;
+			else if (!strncmp(optarg, "xt_bpf", 6) ||
+				 !strncmp(optarg, "tc", 2))
+				format = 1;
 			else
 				help();
 			break;
