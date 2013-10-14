@@ -56,9 +56,11 @@
 
 struct ctx {
 	bool rand, rfraw, jumbo_support, verbose, smoke_test, enforce;
-	unsigned long kpull, num, gap, reserve_size;
+	unsigned long kpull, num, reserve_size;
 	unsigned int cpus;
-	uid_t uid; gid_t gid; char *device, *device_trans, *rhost;
+	uid_t uid; gid_t gid;
+	char *device, *device_trans, *rhost;
+	struct timespec gap;
 	struct sockaddr_in dest;
 };
 
@@ -181,7 +183,7 @@ static void __noreturn help(void)
 	     "  -n|--num <uint>                Number of packets until exit (def: 0)\n"
 	     "  -r|--rand                      Randomize packet selection (def: round robin)\n"
 	     "  -P|--cpus <uint>               Specify number of forks(<= CPUs) (def: #CPUs)\n"
-	     "  -t|--gap <uint>                Interpacket gap in us (approx)\n"
+	     "  -t|--gap <time>                Set approx. interpacket gap (s/ms/us/ns, def: us)\n"
 	     "  -S|--ring-size <size>          Manually set mmap size (KiB/MiB/GiB)\n"
 	     "  -k|--kernel-pull <uint>        Kernel batch interval in us (def: 10us)\n"
 	     "  -E|--seed <uint>               Manually set srand(3) seed\n"
@@ -198,7 +200,7 @@ static void __noreturn help(void)
 	     "  trafgen -e | trafgen -i - -o eth0 --cpp -n 1\n"
 	     "  trafgen --dev eth0 --conf fuzzing.cfg --smoke-test 10.0.0.1\n"
 	     "  trafgen --dev wlan0 --rfraw --conf beacon-test.txf -V --cpus 2\n"
-	     "  trafgen --dev eth0 --conf frag_dos.cfg --rand --gap 1000\n"
+	     "  trafgen --dev eth0 --conf frag_dos.cfg --rand --gap 1000us\n"
 	     "  trafgen --dev eth0 --conf icmp.cfg --rand --num 1400000 -k1000\n"
 	     "  trafgen --dev eth0 --conf tcp_syn.cfg -u `id -u bob` -g `id -g bob`\n\n"
 	     "Arbitrary packet config examples (e.g. trafgen -e > trafgen.cfg):\n"
@@ -592,8 +594,8 @@ retry:
 		if (ctx->num > 0)
 			num--;
 
-		if (ctx->gap > 0)
-			usleep(ctx->gap);
+		if ((ctx->gap.tv_sec | ctx->gap.tv_nsec) > 0)
+			nanosleep(&ctx->gap, NULL);
 	}
 
 	bug_on(gettimeofday(&end, NULL));
@@ -879,6 +881,7 @@ int main(int argc, char **argv)
 {
 	bool slow = false, invoke_cpp = false, reseed = true, cpustats = true;
 	int c, opt_index, vals[4] = {0}, irq;
+	uint64_t gap = 0;
 	unsigned int i, j;
 	char *confname = NULL, *ptr;
 	unsigned long cpus_tmp, orig_num = 0;
@@ -962,11 +965,36 @@ int main(int argc, char **argv)
 			break;
 		case 't':
 			slow = true;
-			ctx.gap = strtoul(optarg, NULL, 0);
-			if (ctx.gap > 0)
-				/* Fall back to single core to not
-				 * mess up correct timing. We are slow
-				 * anyway!
+			ptr = optarg;
+			gap = strtoul(optarg, NULL, 0);
+
+			for (j = i = strlen(optarg); i > 0; --i) {
+				if (!isdigit(optarg[j - i]))
+					break;
+				ptr++;
+			}
+
+			if (!strncmp(ptr, "ns", strlen("ns"))) {
+				ctx.gap.tv_sec = gap / 1000000000;
+				ctx.gap.tv_nsec = gap % 1000000000;
+			} else if (*ptr == '\0' || !strncmp(ptr, "us", strlen("us"))) {
+				/*  Default to microseconds for backwards
+				 *  compatibility if no postfix is given.
+				 */
+				ctx.gap.tv_sec = gap / 1000000;
+				ctx.gap.tv_nsec = (gap % 1000000) * 1000;
+			} else if (!strncmp(ptr, "ms", strlen("ms"))) {
+				ctx.gap.tv_sec = gap / 1000;
+				ctx.gap.tv_nsec = (gap % 1000) * 1000000;
+			} else if (!strncmp(ptr, "s", strlen("s"))) {
+				ctx.gap.tv_sec = gap;
+				ctx.gap.tv_nsec = 0;
+			} else
+				panic("Syntax error in time param!\n");
+
+			if (gap > 0)
+				/* Fall back to single core to not mess up
+				 * correct timing. We are slow anyway!
 				 */
 				ctx.cpus = 1;
 			break;

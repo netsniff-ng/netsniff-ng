@@ -42,7 +42,7 @@ _arguments -s -S \
     "(-n --num)"{-n,--num}"[Number of packets until exit (def: 0)]" \
     "(-r --rand)"{-r,--rand}"[Randomize packet selection (def: round robin)]" \
     "(-P --cpus)"{-P,--cpus}"[Specify number of forks(<= CPUs) (def: #CPUs)]:cpunum:_cpu" \
-    "(-t --gap)"{-t,--gap}"[Interpacket gap in us (approx)]" \
+    "(-t --gap)"{-t,--gap}"[Set approx. interpacket gap (s/ms/us/ns, def: us)]:gap:"
     "(-S --ring-size)"{-S,--ring-size}"[Manually set mmap size (KiB/MiB/GiB)]:ringsize:" \
     "(-k --kernel-pull)"{-k,--kernel-pull}"[Kernel pull from user interval in us (def: 10us)]:kernelpull:_gnu_generic" \
     "(-E --seed)"{-E,--seed}"[Manually set srand(3) seed]" \

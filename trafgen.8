@@ -122,14 +122,16 @@ Specify the number of processes trafgen shall fork(2) off. By default trafgen
 will start as many processes as CPUs that are online and pin them to each,
 respectively. Allowed value must be within interval [1,CPUs].
 .PP
-.SS -t <uint>, --gap <uint>
-Specify a static inter-packet timegap in micro-seconds. If this option is given,
-then instead of packet(7)'s TX_RING interface, trafgen will use sendto(2) I/O
-for network packets, even if the <uint> argument is 0. This option is useful for
-a couple of reasons: i) comparison between sendto(2) and TX_RING performance,
-ii) low-traffic packet probing for a given interval, iii) ping-like debugging
-with specific payload patterns. Furthermore, the TX_RING interface does not cope
-with interpacket gaps.
+.SS -t <time>, --gap <time>
+Specify a static inter-packet timegap in seconds, milliseconds, microseconds,
+or nanoseconds: ''<num>s/ms/us/ns''. If no postfix is given default to
+microseconds. If this option is given, then instead of packet(7)'s TX_RING
+interface, trafgen will use sendto(2) I/O for network packets, even if the
+<time> argument is 0. This option is useful for a couple of reasons: i)
+comparison between sendto(2) and TX_RING performance, ii) low-traffic packet
+probing for a given interval, iii) ping-like debugging with specific payload
+patterns. Furthermore, the TX_RING interface does not cope with interpacket
+gaps.
 .PP
 .SS -S <size>, --ring-size <size>
 Manually define the TX_RING resp. TX_RING size in ''<num>KiB/MiB/GiB''. On
@@ -358,7 +360,7 @@ are going to transmit raw 802.11 frames through the air. Use the
 ''beacon-test.txf'' configuration file, set trafgen into verbose mode and
 use only 2 CPUs.
 .PP
-.SS trafgen --dev em1 --conf frag_dos.cfg --rand --gap 1000
+.SS trafgen --dev em1 --conf frag_dos.cfg --rand --gap 1000us
 Use trafgen in sendto(2) mode instead of TX_RING mode and sleep after each
 sent packet a static timegap for 1000us. Generate packets from ''frag_dos.cfg''
 and select next packets to send randomly instead of a round-robin fashion.
