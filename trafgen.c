@@ -564,8 +564,8 @@ retry:
 				sched_yield();
 				goto retry;
 			}
-
-			panic("Sendto error: %s!\n", strerror(errno));
+			if (ctx->smoke_test)
+				panic("Sendto error: %s!\n", strerror(errno));
 		}
 
 		tx_bytes += packets[i].len;
