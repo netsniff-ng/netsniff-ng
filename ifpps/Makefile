@@ -1,4 +1,5 @@
-ifpps-libs =	$(shell pkg-config --libs ncurses)
+ifpps-libs =	$(shell pkg-config --libs ncurses) \
+		$(shell pkg-config --libs tinfo)
 
 ifpps-objs =	xmalloc.o \
 		ioops.o \
