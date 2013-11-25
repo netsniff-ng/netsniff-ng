@@ -80,7 +80,7 @@ size_t plen = 0;
 struct packet_dyn *packet_dyn = NULL;
 size_t dlen = 0;
 
-static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRs:P:eE:pu:g:C";
+static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRs:P:eE:pu:g:CHQ";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"out",			required_argument,	NULL, 'o'},
@@ -95,6 +95,8 @@ static const struct option long_options[] = {
 	{"seed",		required_argument,	NULL, 'E'},
 	{"user",		required_argument,	NULL, 'u'},
 	{"group",		required_argument,	NULL, 'g'},
+	{"prio-high",		no_argument,		NULL, 'H'},
+	{"notouch-irq",		no_argument,		NULL, 'Q'},
 	{"jumbo-support",	no_argument,		NULL, 'J'},
 	{"no-cpu-stats",	no_argument,		NULL, 'C'},
 	{"cpp",			no_argument,		NULL, 'p'},
@@ -189,6 +191,8 @@ static void __noreturn help(void)
 	     "  -E|--seed <uint>               Manually set srand(3) seed\n"
 	     "  -u|--user <userid>             Drop privileges and change to userid\n"
 	     "  -g|--group <groupid>           Drop privileges and change to groupid\n"
+	     "  -H|--prio-high                 Make this high priority process\n"
+	     "  -Q|--notouch-irq               Do not touch IRQ CPU affinity of NIC\n"
 	     "  -V|--verbose                   Be more verbose\n"
 	     "  -C|--no-cpu-stats              Do not print CPU time statistics on exit\n"
 	     "  -v|--version                   Show version and exit\n"
@@ -880,6 +884,7 @@ static unsigned int generate_srand_seed(void)
 int main(int argc, char **argv)
 {
 	bool slow = false, invoke_cpp = false, reseed = true, cpustats = true;
+	bool prio_high = false, set_irq_aff = true;
 	int c, opt_index, vals[4] = {0}, irq;
 	uint64_t gap = 0;
 	unsigned int i, j;
@@ -922,6 +927,12 @@ int main(int argc, char **argv)
 		case 'd':
 		case 'o':
 			ctx.device = xstrndup(optarg, IFNAMSIZ);
+			break;
+		case 'H':
+			prio_high = true;
+			break;
+		case 'Q':
+			set_irq_aff = false;
 			break;
 		case 'r':
 			ctx.rand = true;
@@ -1060,6 +1071,11 @@ int main(int argc, char **argv)
 	register_signal(SIGHUP, signal_handler);
 	register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO);
 
+	if (prio_high) {
+		set_proc_prio(-20);
+		set_sched_status(SCHED_FIFO, sched_get_priority_max(SCHED_FIFO));
+	}
+
 	set_system_socket_memory(vals, array_size(vals));
 	xlockme();
 
@@ -1072,7 +1088,8 @@ int main(int argc, char **argv)
 	}
 
 	irq = device_irq_number(ctx.device);
-	device_set_irq_affinity_list(irq, 0, ctx.cpus - 1);
+	if (set_irq_aff)
+		device_set_irq_affinity_list(irq, 0, ctx.cpus - 1);
 
 	stats = setup_shared_var(ctx.cpus);
 
@@ -1128,7 +1145,8 @@ int main(int argc, char **argv)
 thread_out:
 	xunlockme();
 	destroy_shared_var(stats, ctx.cpus);
-	device_restore_irq_affinity_list();
+	if (set_irq_aff)
+		device_restore_irq_affinity_list();
 
 	free(ctx.device);
 	free(ctx.device_trans);

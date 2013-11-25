@@ -48,6 +48,8 @@ _arguments -s -S \
     "(-E --seed)"{-E,--seed}"[Manually set srand(3) seed]" \
     "(-u --user)"{-u,--user}"[Drop privileges and change to userid]:user:_user_info" \
     "(-g --group)"{-g,--group}"[Drop privileges and change to groupid]:group:_group_info" \
+    "(-H --prio-high)"{-H,--prio-high}"[Make this high priority process]" \
+    "(-Q --notouch-irq)"{-Q,--notouch-irq}"[Do not touch IRQ CPU affinity of NIC]" \
     "(-e --example)"{-e,--example}"[Show built-in packet config example]:" \
     "(-V --verbose)"{-V,--verbose}"[Be more verbose]" \
     "(-C --no-cpu-stats)"{-C,--no-cpu-stats}"[Do not print CPU time statistics on exit]" \

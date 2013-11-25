@@ -152,6 +152,15 @@ testing.
 .SS -u <uid>, --user <uid> resp. -g <gid>, --group <gid>
 After ring setup, drop privileges to a non-root user/group combination.
 .PP
+.SS -H, --prio-high
+Set this process as a high priority process in order to achieve a higher
+scheduling rate resp. CPU time. This is however not the default setting, since
+it could lead to starvation of other processes, for example low priority kernel
+threads.
+.PP
+.SS -Q, --notouch-irq
+Do not reassign the NIC's IRQ CPU affinity settings.
+.PP
 .SS -V, --verbose
 Let trafgen be more talkative and let it print the parsed configuration and
 some ring buffer statistics.
