@@ -595,7 +595,8 @@ int compile_packets(char *file, int verbose, int cpu, bool invoke_cpp)
 		slprintf(tmp_file, sizeof(tmp_file), "%s/.tmp-%u-%s", dir, rand(), base);
 		slprintf(cmd, sizeof(cmd), "cpp -I" PREFIX_STRING
 			 "/etc/netsniff-ng/ %s > %s", file, tmp_file);
-		system(cmd);
+		if (system(cmd) != 0)
+			panic("Failed to invoke C preprocessor!\n");
 
 		file = tmp_file;
 		xfree(a);
