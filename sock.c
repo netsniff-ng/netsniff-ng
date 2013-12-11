@@ -33,6 +33,16 @@ int pf_socket(void)
 	return sock;
 }
 
+int pf_tx_socket(void)
+{
+	int sock = socket(PF_PACKET, SOCK_RAW, 0);
+	if (unlikely(sock < 0))
+		panic("Creation of PF TX socket failed!\n");
+
+	return sock;
+}
+
+
 void set_sock_prio(int fd, int prio)
 {
 	int ret, val = prio;

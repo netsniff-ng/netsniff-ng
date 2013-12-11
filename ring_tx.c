@@ -108,5 +108,5 @@ void alloc_tx_ring_frames(int sock __maybe_unused, struct ring *ring)
 
 void bind_tx_ring(int sock, struct ring *ring, int ifindex)
 {
-	bind_ring_generic(sock, ring, ifindex);
+	bind_ring_generic(sock, ring, ifindex, true);
 }

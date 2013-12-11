@@ -41,7 +41,7 @@ void alloc_ring_frames_generic(struct ring *ring, int num, size_t size)
 	}
 }
 
-void bind_ring_generic(int sock, struct ring *ring, int ifindex)
+void bind_ring_generic(int sock, struct ring *ring, int ifindex, bool tx_only)
 {
 	int ret;
 	/* The {TX,RX}_RING registers itself to the networking stack with
@@ -51,7 +51,10 @@ void bind_ring_generic(int sock, struct ring *ring, int ifindex)
 	fmemset(&ring->s_ll, 0, sizeof(ring->s_ll));
 
 	ring->s_ll.sll_family = AF_PACKET;
-	ring->s_ll.sll_protocol = htons(ETH_P_ALL);
+	if (tx_only)
+		ring->s_ll.sll_protocol = 0;
+	else
+		ring->s_ll.sll_protocol = htons(ETH_P_ALL);
 	ring->s_ll.sll_ifindex = ifindex;
 	ring->s_ll.sll_hatype = 0;
 	ring->s_ll.sll_halen = 0;

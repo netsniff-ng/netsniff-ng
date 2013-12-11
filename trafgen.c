@@ -854,7 +854,7 @@ static void main_loop(struct ctx *ctx, char *confname, bool slow,
 		fflush(stdout);
 	}
 
-	sock = pf_socket();
+	sock = pf_tx_socket();
 
 	if (slow)
 		xmit_slowpath_or_die(ctx, cpu, orig_num);

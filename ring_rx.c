@@ -134,7 +134,7 @@ void alloc_rx_ring_frames(int sock, struct ring *ring)
 
 void bind_rx_ring(int sock, struct ring *ring, int ifindex)
 {
-	bind_ring_generic(sock, ring, ifindex);
+	bind_ring_generic(sock, ring, ifindex, false);
 }
 
 void sock_rx_net_stats(int sock, unsigned long seen)
