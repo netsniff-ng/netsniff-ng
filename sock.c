@@ -42,6 +42,24 @@ int pf_tx_socket(void)
 	return sock;
 }
 
+/* Avail in kernel >= 3.14
+ * in commit d346a3fae3 (packet: introduce PACKET_QDISC_BYPASS socket option)
+ */
+void set_sock_qdisc_bypass(int fd, int verbose)
+{
+	int ret, val = 1;
+
+	ret = setsockopt(fd, SOL_PACKET, PACKET_QDISC_BYPASS, &val, sizeof(val));
+	if (ret < 0) {
+		if (errno == ENOPROTOOPT) {
+			if (verbose)
+				printf("No kernel support for PACKET_QDISC_BYPASS"
+				       " (kernel < 3.14?)\n");
+		} else
+			perror("Cannot set PACKET_QDISC_BYPASS");
+	} else
+		if (verbose) printf("Enabled kernel qdisc bypass\n");
+}
 
 void set_sock_prio(int fd, int prio)
 {

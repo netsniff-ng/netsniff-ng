@@ -7,6 +7,7 @@ extern int pf_tx_socket(void);
 extern void set_nonblocking(int fd);
 extern int set_nonblocking_sloppy(int fd);
 extern int set_reuseaddr(int fd);
+extern void set_sock_qdisc_bypass(int fd, int verbose);
 extern void set_sock_prio(int fd, int prio);
 extern void set_tcp_nodelay(int fd);
 extern void set_socket_keepalive(int fd);

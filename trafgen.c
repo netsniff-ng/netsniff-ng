@@ -55,7 +55,7 @@
 #include "csum.h"
 
 struct ctx {
-	bool rand, rfraw, jumbo_support, verbose, smoke_test, enforce;
+	bool rand, rfraw, jumbo_support, verbose, smoke_test, enforce, qdisc_path;
 	unsigned long kpull, num, reserve_size;
 	unsigned int cpus;
 	uid_t uid; gid_t gid;
@@ -80,7 +80,7 @@ size_t plen = 0;
 struct packet_dyn *packet_dyn = NULL;
 size_t dlen = 0;
 
-static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRs:P:eE:pu:g:CHQ";
+static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRs:P:eE:pu:g:CHQq";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"out",			required_argument,	NULL, 'o'},
@@ -97,6 +97,7 @@ static const struct option long_options[] = {
 	{"group",		required_argument,	NULL, 'g'},
 	{"prio-high",		no_argument,		NULL, 'H'},
 	{"notouch-irq",		no_argument,		NULL, 'Q'},
+	{"qdisc-path",		no_argument,		NULL, 'q'},
 	{"jumbo-support",	no_argument,		NULL, 'J'},
 	{"no-cpu-stats",	no_argument,		NULL, 'C'},
 	{"cpp",			no_argument,		NULL, 'p'},
@@ -193,6 +194,7 @@ static void __noreturn help(void)
 	     "  -g|--group <groupid>           Drop privileges and change to groupid\n"
 	     "  -H|--prio-high                 Make this high priority process\n"
 	     "  -Q|--notouch-irq               Do not touch IRQ CPU affinity of NIC\n"
+	     "  -q|--qdisc-path                Enabled qdisc kernel path (default off since 3.14)\n"
 	     "  -V|--verbose                   Be more verbose\n"
 	     "  -C|--no-cpu-stats              Do not print CPU time statistics on exit\n"
 	     "  -v|--version                   Show version and exit\n"
@@ -856,6 +858,9 @@ static void main_loop(struct ctx *ctx, char *confname, bool slow,
 
 	sock = pf_tx_socket();
 
+	if (ctx->qdisc_path == false)
+		set_sock_qdisc_bypass(sock, ctx->verbose);
+
 	if (slow)
 		xmit_slowpath_or_die(ctx, cpu, orig_num);
 	else
@@ -897,6 +902,7 @@ int main(int argc, char **argv)
 	ctx.cpus = get_number_cpus_online();
 	ctx.uid = getuid();
 	ctx.gid = getgid();
+	ctx.qdisc_path = false;
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 				&opt_index)) != EOF) {
@@ -933,6 +939,9 @@ int main(int argc, char **argv)
 			break;
 		case 'Q':
 			set_irq_aff = false;
+			break;
+		case 'q':
+			ctx.qdisc_path = true;
 			break;
 		case 'r':
 			ctx.rand = true;

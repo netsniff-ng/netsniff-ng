@@ -161,6 +161,12 @@ threads.
 .SS -Q, --notouch-irq
 Do not reassign the NIC's IRQ CPU affinity settings.
 .PP
+.SS -q, --qdisc-path
+Since Linux 3.14, the kernel supports a socket option PACKET_QDISC_BYPASS,
+which trafgen enables by default.  This options disables the qdisc bypass,
+and uses the normal send path through the kernel's qdisc (traffic control)
+layer, which can be usefully for testing the qdisc path.
+.PP
 .SS -V, --verbose
 Let trafgen be more talkative and let it print the parsed configuration and
 some ring buffer statistics.

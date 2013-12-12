@@ -370,6 +370,10 @@ static inline u64 cpu_to_le64(u64 val)
 # define TP_STATUS_TS_RAW_HARDWARE	(1 << 31)
 #endif
 
+#ifndef PACKET_QDISC_BYPASS
+# define PACKET_QDISC_BYPASS 20
+#endif
+
 #ifndef POLLRDNORM
 # define POLLRDNORM			0x0040
 #endif
