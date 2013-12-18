@@ -6,6 +6,10 @@
 #include <linux/ethtool.h>
 #include <linux/wireless.h>
 
+#ifndef SPEED_UNKNOWN
+#define SPEED_UNKNOWN           -1
+#endif
+
 #include "built_in.h"
 
 extern int wireless_sigqual(const char *ifname, struct iw_statistics *stats);
