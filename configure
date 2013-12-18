@@ -259,7 +259,8 @@ EOF
 	$CC \
 		$(pkg-config --cflags ncurses 2>> config.log) \
 		-o $TMPDIR/ncursestest $TMPDIR/ncursestest.c \
-		$(pkg-config --libs ncurses 2>> config.log) \
+		$(pkg-config --libs ncurses 2>> config.log \
+	          || echo '-lncurses' ) \
 			>> config.log 2>&1
 	if [ ! -x $TMPDIR/ncursestest ] ; then
 		echo "[NO]"
