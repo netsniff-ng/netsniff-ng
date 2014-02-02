@@ -1036,7 +1036,6 @@ int main(int argc, char **argv)
 				ctx.reserve_size = 1 << 30;
 			else
 				panic("Syntax error in ring size param!\n");
-			*ptr = 0;
 
 			ctx.reserve_size *= strtol(optarg, NULL, 0);
 			break;
