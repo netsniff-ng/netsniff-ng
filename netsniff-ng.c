@@ -113,6 +113,8 @@ static void signal_handler(int number)
 {
 	switch (number) {
 	case SIGINT:
+	case SIGQUIT:
+	case SIGTERM:
 		sigint = 1;
 	case SIGHUP:
 	default:
@@ -1372,6 +1374,8 @@ int main(int argc, char **argv)
 		ctx.device_in = xstrdup("any");
 
 	register_signal(SIGINT, signal_handler);
+	register_signal(SIGQUIT, signal_handler);
+	register_signal(SIGTERM, signal_handler);
 	register_signal(SIGHUP, signal_handler);
 
 	tprintf_init();
