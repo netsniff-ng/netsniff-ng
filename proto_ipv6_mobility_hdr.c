@@ -12,7 +12,6 @@
 #include <arpa/inet.h>
 
 #include "proto.h"
-#include "protos.h"
 #include "dissector_eth.h"
 #include "built_in.h"
 #include "pkt_buff.h"

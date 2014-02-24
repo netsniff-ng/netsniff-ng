@@ -9,7 +9,6 @@
 #include <netinet/in.h>
 
 #include "proto.h"
-#include "protos.h"
 #include "csum.h"
 #include "dissector_eth.h"
 #include "built_in.h"

@@ -9,7 +9,6 @@
 #include <ctype.h>
 
 #include "proto.h"
-#include "protos.h"
 #include "pkt_buff.h"
 
 void empty(struct pkt_buff *pkt __maybe_unused) {}

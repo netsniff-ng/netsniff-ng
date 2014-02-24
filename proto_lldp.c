@@ -12,7 +12,6 @@
 #include "oui.h"
 #include "pkt_buff.h"
 #include "proto.h"
-#include "protos.h"
 
 #define EXTRACT_16BIT(x)	ntohs(*((uint16_t *) (x)))
 #define EXTRACT_32BIT(x)	ntohl(*((uint32_t *) (x)))

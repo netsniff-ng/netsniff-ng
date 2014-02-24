@@ -11,7 +11,6 @@
 #include <arpa/inet.h>     /* for inet_ntop() */
 
 #include "proto.h"
-#include "protos.h"
 #include "csum.h"
 #include "dissector_eth.h"
 #include "ipv6.h"

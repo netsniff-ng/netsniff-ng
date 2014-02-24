@@ -8,7 +8,6 @@
 
 #include "hash.h"
 #include "protos.h"
-#include "pkt_buff.h"
 #include "dissector.h"
 #include "dissector_80211.h"
 #include "xmalloc.h"

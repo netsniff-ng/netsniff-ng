@@ -12,7 +12,6 @@
 #include "tprintf.h"
 #include "pkt_buff.h"
 #include "proto.h"
-#include "protos.h"
 #include "dissector.h"
 #include "dissector_eth.h"
 #include "dissector_80211.h"
