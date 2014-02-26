@@ -273,13 +273,13 @@ static int stats_proc_interrupts(char *ifname, struct ifstat *stats)
 	struct ethtool_drvinfo drvinf;
 	FILE *fp;
 
-	fp = fopen("/proc/interrupts", "r");
-	if (!fp)
-		panic("Cannot open /proc/interrupts!\n");
-
 	cpus = get_number_cpus();
 	buff_len = cpus * 128;
 	buff = xmalloc(buff_len);
+
+	fp = fopen("/proc/interrupts", "r");
+	if (!fp)
+		panic("Cannot open /proc/interrupts!\n");
 retry:
 	fseek(fp, 0, SEEK_SET);
 	memset(buff, 0, buff_len);
