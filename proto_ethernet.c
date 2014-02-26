@@ -1,6 +1,7 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * Copyright 2009, 2010 Daniel Borkmann.
+ * Copyright 2014 Tobias Klauser
  * Subject to the GPL, version 2.
  */
 
@@ -13,6 +14,29 @@
 #include "dissector_eth.h"
 #include "pkt_buff.h"
 #include "oui.h"
+
+static inline bool is_multicast_ether_addr(const uint8_t *mac)
+{
+	return mac[0] & 0x01;
+}
+
+static inline bool is_broadcast_ether_addr(const uint8_t *mac)
+{
+	return (mac[0] & mac[1] & mac[2] & mac[3] & mac[4] & mac[5]) == 0xff;
+}
+
+static const char *ether_lookup_addr(uint8_t *mac)
+{
+	if (is_multicast_ether_addr(mac)) {
+		if (is_broadcast_ether_addr(mac))
+			return "Broadcast";
+		else
+			return "Multicast";
+	}
+
+	/* found no matching address, so look up the vendor from OUI */
+	return lookup_vendor_str((mac[0] << 16) | (mac[1] << 8) | mac[2]);
+}
 
 static void ethernet(struct pkt_buff *pkt)
 {
@@ -41,11 +65,7 @@ static void ethernet(struct pkt_buff *pkt)
 
 	tprintf(") ]\n");
 	tprintf(" [ Vendor ");
-	tprintf("(%s => %s)",
-		lookup_vendor_str((src_mac[0] << 16) | (src_mac[1] << 8) |
-			      src_mac[2]),
-		lookup_vendor_str((dst_mac[0] << 16) | (dst_mac[1] << 8) |
-			      dst_mac[2]));
+	tprintf("(%s => %s)", ether_lookup_addr(src_mac), ether_lookup_addr(dst_mac));
 	tprintf(" ]\n");
 
 	pkt_set_proto(pkt, &eth_lay2, ntohs(eth->h_proto));
