@@ -2,7 +2,7 @@
 Q = @
 
 # Try to use bash as shell for make
-SHELL := $(shell if [ -x /bin/bash ]; then echo /bin/bash; else echo /bin/sh; fi ; fi)
+SHELL := $(shell if [ -x /bin/bash ]; then echo /bin/bash; else echo /bin/sh; fi)
 
 # GCC related stuff
 LD = $(Q)echo -e "  LD\t$@" && $(CCACHE) $(CROSS_COMPILE)gcc
