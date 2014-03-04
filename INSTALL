@@ -129,7 +129,7 @@ separation after the build/installation:
 
   $ sudo setcap cap_net_raw,cap_ipc_lock,cap_sys_admin,cap_net_admin=eip {toolname}
 
-For cross-compiling netsniff-ng, the process is faily simple. Assuming you
+For cross-compiling netsniff-ng, the process is fairly simple. Assuming you
 want to build netsniff-ng for the Microblaze architecture, update the PATH
 variable first, e.g.:
 
