@@ -1,7 +1,6 @@
 .\" netsniff-ng - the packet sniffing beast
 .\" Copyright 2013 Daniel Borkmann.
 .\" Subject to the GPL, version 2.
-.PP
 .TH ASTRACEROUTE 8 "03 March 2013" "Linux" "netsniff-ng toolkit"
 .SH NAME
 astraceroute \- autonomous system trace route utility
@@ -25,7 +24,7 @@ ISP name. astraceroute also displays timing information and reverse DNS data.
 Due to astraceroute's configurability, it is also possible to gather some more
 useful information about the hop regarding what it does and does not allow to pass
 through. This is done by using clear text strings for probing DPIs or
-''great firewalls'' to determine if they will filter out blacklisted critical
+``great firewalls`` to determine if they will filter out blacklisted critical
 keywords. This tool might be a good start for further in-depth analysis of such
 systems.
 .PP
@@ -45,7 +44,7 @@ Networking device to start the trace route from, e.g. eth0, wlan0.
 .PP
 .SS -b <IP>, --bind <IP>
 IP address to bind to other than the network device's address. You must specify
-''\-6'' for an IPv6 address.
+\-6 for an IPv6 address.
 .PP
 .SS -f <ttl>, --init-ttl <ttl>
 Initial TTL value to be used. This option might be useful if you are not

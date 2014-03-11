@@ -1,7 +1,6 @@
 .\" netsniff-ng - the packet sniffing beast
 .\" Copyright 2013 Daniel Borkmann.
 .\" Subject to the GPL, version 2.
-.PP
 .TH TRAFGEN 8 "03 March 2013" "Linux" "netsniff-ng toolkit"
 .SH NAME
 trafgen \- a fast, multithreaded network packet generator
@@ -372,7 +371,7 @@ use the TX_RING, but sendto(2) packet I/O due to ''slow mode''.
 .SS trafgen --dev wlan0 --rfraw --conf beacon-test.txf -V --cpus 2
 As an output device ''wlan0'' is used and put into monitoring mode, thus we
 are going to transmit raw 802.11 frames through the air. Use the
-''beacon-test.txf'' configuration file, set trafgen into verbose mode and
+ ''beacon-test.txf'' configuration file, set trafgen into verbose mode and
 use only 2 CPUs.
 .PP
 .SS trafgen --dev em1 --conf frag_dos.cfg --rand --gap 1000us
