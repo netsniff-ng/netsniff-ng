@@ -660,27 +660,22 @@ static const bool pcap_supported_linktypes[LINKTYPE_MAX] __maybe_unused = {
 static inline void pcap_validate_header(const struct pcap_filehdr *hdr)
 {
 	bool good = false;
-	uint32_t linktype_swab = bswap_32(hdr->linktype);
+	uint32_t linktype;
+
 	pcap_check_magic(hdr->magic);
 
-	if (hdr->linktype < LINKTYPE_MAX) {
-		if (pcap_supported_linktypes[hdr->linktype])
-			good = true;
-	}
-
-	if (linktype_swab < LINKTYPE_MAX) {
-		if (pcap_supported_linktypes[linktype_swab])
-			good = true;
-	}
+	linktype = pcap_magic_is_swapped(hdr->magic) ? bswap_32(hdr->linktype) : hdr->linktype;
+	if (linktype < LINKTYPE_MAX)
+		good = pcap_supported_linktypes[linktype];
 
 	if (!good)
-		panic("This file has an unsupported pcap link type (%d)!\n", hdr->linktype);
+		panic("This file has an unsupported pcap link type (%d)!\n", linktype);
 	if (unlikely(hdr->version_major != PCAP_VERSION_MAJOR) &&
 		     ___constant_swab16(hdr->version_major) != PCAP_VERSION_MAJOR)
-		panic("This file has not a valid pcap header\n");
+		panic("This file has an invalid pcap major version (must be %d)\n", PCAP_VERSION_MAJOR);
 	if (unlikely(hdr->version_minor != PCAP_VERSION_MINOR) &&
 		     ___constant_swab16(hdr->version_minor) != PCAP_VERSION_MINOR)
-		panic("This file has not a valid pcap header\n");
+		panic("This file has an invalid pcap minor version (must be %d)\n", PCAP_VERSION_MINOR);
 }
 
 static int pcap_generic_pull_fhdr(int fd, uint32_t *magic,
