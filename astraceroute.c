@@ -196,7 +196,7 @@ static void __noreturn help(void)
 	     " -6|--ipv6               Use IPv6-only requests\n"
 	     " -n|--numeric            Do not do reverse DNS lookup for hops\n"
 	     " -u|--update             Update GeoIP databases\n"
-	     " -L|--latitude           Show latitude and longtitude\n"
+	     " -L|--latitude           Show latitude and longitude\n"
 	     " -N|--dns                Do a reverse DNS lookup for hops\n"
 	     " -S|--syn                Set TCP SYN flag\n"
 	     " -A|--ack                Set TCP ACK flag\n"

@@ -25,7 +25,7 @@ _arguments -s -S \
     "(-6 --ipv6)"{-6,--ipv6}"[Use IPv6 requests]" \
     "(-n --numeric)"{-n,--numeric}"[Do not do reverse DNS lookup for hops]" \
     "(-u --update)"{-u,--update}"[Update GeoIP databases]" \
-    "(-L --latitude)"{-L,--latitude}"[Show latitude and longtitude]" \
+    "(-L --latitude)"{-L,--latitude}"[Show latitude and longitude]" \
     "(-N --dns)"{-N,--dns}"[Do a reverse DNS lookup for hops]" \
     "(-f --init-ttl)"{-f,--init-ttl}"[Set initial TTL]:ttl:_gnu_generic" \
     "(-m --max-ttl)"{-m,--max--ttl}"[Set maximum TTL]:ttl:_gnu_generic" \
