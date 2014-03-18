@@ -29,7 +29,6 @@ _arguments -s -S \
     "(-N --dns)"{-N,--dns}"[Do a reverse DNS lookup for hops]" \
     "(-f --init-ttl)"{-f,--init-ttl}"[Set initial TTL]:ttl:_gnu_generic" \
     "(-m --max-ttl)"{-m,--max--ttl}"[Set maximum TTL]:ttl:_gnu_generic" \
-    "(-q --num-probes)"{-q,--num-probes}"[Set maximum TTL (default: 30)]:ttl:_gnu_generic" \
     "(-q --num-probes)"{-q,--num-probes}"[Number of max probes for each hop (default: 3)]:num:_gnu_generic" \
     "(-x --timeout)"{-x,--timeout}"[Probe response timeout in sec (default: 3)]:timeout:_gnu_generic" \
     "(-S --syn)"{-S,--syn}"[Set TCP SYN flag in packets]" \
