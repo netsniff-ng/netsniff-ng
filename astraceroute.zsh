@@ -43,6 +43,6 @@ _arguments -s -S \
     "(-X --payload)"{-X,--payload}"[Specify a payload string to test DPIs]:string:_gnu_generic" \
     "(-Z --show-packet)"{-Z,--show-packet}"[Show returned packet on each hop]" \
     "(-l --totlen)"{-l,--totlen}"[Specify total packet len]:lengths:_gnu_generic" \
-    {-v,--version}"[Print version]:" \
-    {-h,--help}"[Print this help]:" \
+    {-v,--version}"[Print version and exit]:" \
+    {-h,--help}"[Print help and exit]:" \
     "*::args:_gnu_generic"

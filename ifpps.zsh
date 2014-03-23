@@ -27,6 +27,6 @@ _arguments -s -S \
     "(-o --omit-header)"{-o,--omit-header}"[Do not print the CSV header]" \
     "(-m --median)"{-m,--median}"[Display median values]" \
     "(-W --no-warn)"{-W,--no-warn}"[Suppress warnings]" \
-    {-v,--version}"[Print version]:" \
-    {-h,--help}"[Print this help]:" \
+    {-v,--version}"[Print version and exit]:" \
+    {-h,--help}"[Print help and exit]:" \
     "*::args:_gnu_generic"

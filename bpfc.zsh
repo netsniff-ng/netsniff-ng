@@ -17,6 +17,6 @@ _arguments -s -S \
     "(-b --bypass)"{-b,--bypass}"[Bypass filter validation (e.g. for bug testing)]" \
     "(-d --dump)"{-d,--dump}"[Dump supported instruction table]" \
     "(-V --verbose)"{-V,--verbose}"[Be more verbose]" \
-    {-v,--version}"[Print version]:" \
-    {-h,--help}"[Print this help]:" \
+    {-v,--version}"[Print version and exit]:" \
+    {-h,--help}"[Print help and exit]:" \
     "*::args:_gnu_generic"

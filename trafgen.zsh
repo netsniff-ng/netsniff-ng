@@ -53,6 +53,6 @@ _arguments -s -S \
     "(-e --example)"{-e,--example}"[Show built-in packet config example]:" \
     "(-V --verbose)"{-V,--verbose}"[Be more verbose]" \
     "(-C --no-cpu-stats)"{-C,--no-cpu-stats}"[Do not print CPU time statistics on exit]" \
-    {-v,--version}"[Show version]:" \
+    {-v,--version}"[Show version and exit]:" \
     {-h,--help}"[Guess what?!]:" \
     "*::args:_gnu_generic"

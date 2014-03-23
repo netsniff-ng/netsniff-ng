@@ -64,6 +64,6 @@ _arguments -s -S \
     "(-l --ascii)"{-l,--ascii}"[Print human-readable packet data]" \
     "(-U --update)"{-U,--update}"[Update GeoIP databases]" \
     "(-V --verbose)"{-V,--verbose}"[Be more verbose]" \
-    {-v,--version}"[Show version]:" \
+    {-v,--version}"[Show version and exit]:" \
     {-h,--help}"[Guess what?!]:" \
     "*::args:_gnu_generic"

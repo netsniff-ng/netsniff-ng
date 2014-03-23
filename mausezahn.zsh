@@ -62,6 +62,6 @@ _arguments -s -S \
     "(-V -VV -VVV)"{-V,-VV,-VVV}"[Verbose and more verbose mode]" \
     "-q[Quiet mode, even omit 'important' standard short messages]" \
     "-S[Simulation mode: DOES NOT put anything on the wire, this is typically combined with one of the verbose modes (v or V)]" \
-    "-v[Show version]:" \
-    "-h[Print this help]:" \
+    "-v[Show version and exit]:" \
+    "-h[Print help and exit]:" \
     "*::args:_gnu_generic"

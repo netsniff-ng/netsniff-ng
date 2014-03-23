@@ -20,6 +20,6 @@ _arguments -s -S \
     "(-S --sctp)"{-S,--sctp}"[Show only SCTP flows]" \
     "(-s --show-src)"{-s,--show-src}"[Also show source, not only dest]" \
     "(-u --update)"{-u,--update}"[Update GeoIP databases]" \
-    {-v,--version}"[Print version]:" \
-    {-h,--help}"[Print this help]:" \
+    {-v,--version}"[Print version and exit]:" \
+    {-h,--help}"[Print help and exit]:" \
     "*::args:_gnu_generic"
