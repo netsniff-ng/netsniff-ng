@@ -111,8 +111,6 @@ static const struct option long_options[] = {
 };
 
 static int sock;
-static struct itimerval itimer;
-static unsigned long interval = TX_KERNEL_PULL_INT;
 static struct cpu_stats *stats;
 static unsigned int seed;
 
@@ -139,38 +137,6 @@ static void signal_handler(int number)
 	default:
 		break;
 	}
-}
-
-static void timer_elapsed(int unused __maybe_unused)
-{
-	int ret = pull_and_flush_tx_ring(sock);
-	if (unlikely(ret < 0)) {
-		/* We could hit EBADF if the socket has been closed before
-		 * the timer was triggered.
-		 */
-		if (errno != EBADF && errno != ENOBUFS)
-			panic("Flushing TX_RING failed: %s!\n", strerror(errno));
-	}
-
-	set_itimer_interval_value(&itimer, 0, interval);
-	setitimer(ITIMER_REAL, &itimer, NULL); 
-}
-
-static void timer_purge(void)
-{
-	int ret;
-
-	ret = pull_and_flush_tx_ring_wait(sock);
-	if (unlikely(ret < 0)) {
-		/* We could hit EBADF if the socket has been closed before
-		 * the timer was triggered.
-		 */
-		if (errno != EBADF && errno != ENOBUFS)
-			panic("Flushing TX_RING failed: %s!\n", strerror(errno));
-	}
-
-	set_itimer_interval_value(&itimer, 0, 0);
-	setitimer(ITIMER_REAL, &itimer, NULL); 
 }
 
 static void __noreturn help(void)
@@ -647,21 +613,24 @@ static void xmit_fastpath_or_die(struct ctx *ctx, int cpu, unsigned long orig_nu
 
 	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
 
-	if (ctx->kpull)
-		interval = ctx->kpull;
 	if (ctx->num > 0)
 		num = ctx->num;
 	if (ctx->num == 0 && orig_num > 0)
 		num = 0;
 
-	set_itimer_interval_value(&itimer, 0, interval);
-	setitimer(ITIMER_REAL, &itimer, NULL); 
-
 	bug_on(gettimeofday(&start, NULL));
 
 	while (likely(sigint == 0 && num > 0 && plen > 0)) {
 		if (!user_may_pull_from_tx(tx_ring.frames[it].iov_base)) {
-			sched_yield();
+			int ret = pull_and_flush_tx_ring(sock);
+			if (unlikely(ret < 0)) {
+				/* We could hit EBADF if the socket has been closed before
+				 * the timer was triggered.
+				 */
+				if (errno != EBADF && errno != ENOBUFS)
+					panic("Flushing TX_RING failed: %s!\n", strerror(errno));
+			}
+
 			continue;
 		}
 
@@ -703,8 +672,7 @@ static void xmit_fastpath_or_die(struct ctx *ctx, int cpu, unsigned long orig_nu
 	bug_on(gettimeofday(&end, NULL));
 	timersub(&end, &start, &diff);
 
-	timer_purge();
-
+	pull_and_flush_tx_ring_wait(sock);
 	destroy_tx_ring(sock, &tx_ring);
 
 	stats[cpu].tx_packets = tx_packets;
@@ -1081,7 +1049,6 @@ int main(int argc, char **argv)
 	register_signal(SIGQUIT, signal_handler);
 	register_signal(SIGTERM, signal_handler);
 	register_signal(SIGHUP, signal_handler);
-	register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO);
 
 	if (prio_high) {
 		set_proc_prio(-20);
