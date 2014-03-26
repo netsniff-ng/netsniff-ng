@@ -874,6 +874,9 @@ int main(int argc, char **argv)
 	ctx.gid = getgid();
 	ctx.qdisc_path = false;
 
+	/* Keep an initial small default size to reduce cache-misses. */
+	ctx.reserve_size = 196 * (1 << 10);
+
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 				&opt_index)) != EOF) {
 		switch (c) {
