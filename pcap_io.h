@@ -450,7 +450,8 @@ static inline void tpacket3_hdr_to_pcap_pkthdr(struct tpacket3_hdr *thdr,
 
 static inline void pcap_pkthdr_to_tpacket_hdr(pcap_pkthdr_t *phdr,
 					      enum pcap_type type,
-					      struct tpacket2_hdr *thdr)
+					      struct tpacket2_hdr *thdr,
+					      struct sockaddr_ll *sll)
 {
 	switch (type) {
 	case DEFAULT:
@@ -486,6 +487,11 @@ static inline void pcap_pkthdr_to_tpacket_hdr(pcap_pkthdr_t *phdr,
 		thdr->tp_nsec = phdr->ppk.ts.tv_usec * 1000;
 		thdr->tp_snaplen = phdr->ppk.caplen;
 		thdr->tp_len = phdr->ppk.len;
+		if (sll) {
+			sll->sll_ifindex = phdr->ppk.ifindex;
+			sll->sll_protocol = phdr->ppk.protocol;
+			sll->sll_pkttype = phdr->ppk.pkttype;
+		}
 		break;
 
 	case KUZNETZOV_SWAPPED:
@@ -493,6 +499,11 @@ static inline void pcap_pkthdr_to_tpacket_hdr(pcap_pkthdr_t *phdr,
 		thdr->tp_nsec = ___constant_swab32(phdr->ppk.ts.tv_usec) * 1000;
 		thdr->tp_snaplen = ___constant_swab32(phdr->ppk.caplen);
 		thdr->tp_len = ___constant_swab32(phdr->ppk.len);
+		if (sll) {
+			sll->sll_ifindex = ___constant_swab32(phdr->ppk.ifindex);
+			sll->sll_protocol = ___constant_swab16(phdr->ppk.protocol);
+			sll->sll_pkttype = phdr->ppk.pkttype;
+		}
 		break;
 
 	case BORKMANN:
@@ -500,6 +511,12 @@ static inline void pcap_pkthdr_to_tpacket_hdr(pcap_pkthdr_t *phdr,
 		thdr->tp_nsec = phdr->ppb.ts.tv_nsec;
 		thdr->tp_snaplen = phdr->ppb.caplen;
 		thdr->tp_len = phdr->ppb.len;
+		if (sll) {
+			sll->sll_ifindex = phdr->ppb.ifindex;
+			sll->sll_protocol = phdr->ppb.protocol;
+			sll->sll_hatype = phdr->ppb.hatype;
+			sll->sll_pkttype = phdr->ppb.pkttype;
+		}
 		break;
 
 	case BORKMANN_SWAPPED:
@@ -507,6 +524,12 @@ static inline void pcap_pkthdr_to_tpacket_hdr(pcap_pkthdr_t *phdr,
 		thdr->tp_nsec = ___constant_swab32(phdr->ppb.ts.tv_nsec);
 		thdr->tp_snaplen = ___constant_swab32(phdr->ppb.caplen);
 		thdr->tp_len = ___constant_swab32(phdr->ppb.len);
+		if (sll) {
+			sll->sll_ifindex = ___constant_swab16(phdr->ppb.ifindex);
+			sll->sll_protocol = ___constant_swab16(phdr->ppb.protocol);
+			sll->sll_hatype = phdr->ppb.hatype;
+			sll->sll_pkttype = phdr->ppb.pkttype;
+		}
 		break;
 
 	default:

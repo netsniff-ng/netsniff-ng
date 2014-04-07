@@ -281,7 +281,7 @@ static void pcap_to_xmit(struct ctx *ctx)
 				 !bpf_run_filter(&bpf_ops, out,
 						 pcap_get_length(&phdr, ctx->magic)));
 
-			pcap_pkthdr_to_tpacket_hdr(&phdr, ctx->magic, &hdr->tp_h);
+			pcap_pkthdr_to_tpacket_hdr(&phdr, ctx->magic, &hdr->tp_h, NULL);
 
 			ctx->tx_bytes += hdr->tp_h.tp_len;;
 			ctx->tx_packets++;
@@ -620,7 +620,7 @@ static void read_pcap(struct ctx *ctx)
 			 !bpf_run_filter(&bpf_ops, out,
 					 pcap_get_length(&phdr, ctx->magic)));
 
-		pcap_pkthdr_to_tpacket_hdr(&phdr, ctx->magic, &fm.tp_h);
+		pcap_pkthdr_to_tpacket_hdr(&phdr, ctx->magic, &fm.tp_h, &fm.s_ll);
 
 		ctx->tx_bytes += fm.tp_h.tp_len;
 		ctx->tx_packets++;
