@@ -398,4 +398,12 @@ static inline u64 cpu_to_le64(u64 val)
 # define ARPHRD_NETLINK			824
 #endif
 
+#ifndef PACKET_USER
+# define PACKET_USER			6
+#endif
+
+#ifndef PACKET_KERNEL
+# define PACKET_KERNEL			7
+#endif
+
 #endif /* BUILT_IN_H */

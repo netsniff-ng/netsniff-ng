@@ -28,12 +28,14 @@
 extern char *if_indextoname(unsigned ifindex, char *ifname);
 
 static const char * const packet_types[256] = {
-	[PACKET_HOST]		=	"<", /* Incoming */
-	[PACKET_BROADCAST]	=	"B", /* Broadcast */
-	[PACKET_MULTICAST]	=	"M", /* Multicast */
-	[PACKET_OTHERHOST]	=	"P", /* Promisc */
-	[PACKET_OUTGOING]	=	">", /* Outgoing */
-					"?", /* Unknown */
+	[0 ... 255]		=	"?",  /* Unknown */
+	[PACKET_HOST]		=	"<",  /* Incoming */
+	[PACKET_BROADCAST]	=	"B",  /* Broadcast */
+	[PACKET_MULTICAST]	=	"M",  /* Multicast */
+	[PACKET_OTHERHOST]	=	"P",  /* Promisc */
+	[PACKET_OUTGOING]	=	">",  /* Outgoing */
+	[PACKET_USER]		=	">U", /* To Userspace */
+	[PACKET_KERNEL]		=	">K", /* To Kernelspace */
 };
 
 static inline const char *__show_ts_source(uint32_t status)
