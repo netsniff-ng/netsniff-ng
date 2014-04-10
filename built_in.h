@@ -406,4 +406,8 @@ static inline u64 cpu_to_le64(u64 val)
 # define PACKET_KERNEL			7
 #endif
 
+#ifndef DEFFILEMODE
+# define DEFFILEMODE (S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH) /* 0666 */
+#endif
+
 #endif /* BUILT_IN_H */
