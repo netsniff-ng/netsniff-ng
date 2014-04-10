@@ -20,7 +20,7 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
-#include <sys/poll.h>
+#include <poll.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 #include <linux/if_tun.h>
