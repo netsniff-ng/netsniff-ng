@@ -31,7 +31,7 @@ trafgen-eflags = $(shell pkg-config --cflags libnl-3.0) \
 trafgen-confs =	trafgen_stddef.h
 
 trafgen_post_install:
-	$(Q)mv $(ETCDIRE)/trafgen_stddef.h $(ETCDIRE)/stddef.h
+	$(Q)mv $(DESTDIR)$(ETCDIRE)/trafgen_stddef.h $(DESTDIR)$(ETCDIRE)/stddef.h
 
 trafgen_clean_custom:
 	$(Q)$(call RM,$(BUILD_DIR)/*.h $(BUILD_DIR)/*.c)
