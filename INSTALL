@@ -171,6 +171,14 @@ build and install the toolkit into prefixed path like:
   $ make PREFIX=<path-prefix-for-package>
   $ make PREFIX=<path-prefix-for-package> install
 
+Additionally to setting the PREFIX you can set DESTDIR if you want to install
+the toolkit outside of your current root filesystem but into an alternative
+path. This is particularly useful when cross-compiling because most likely
+you want to install into a dedicated sandbox or into a mounted root filesystem
+for the target architecture and not into the build hosts root filesystem.
+
+  $ make PREFIX=<path-prefix-for-package> DESTDIR=<alternative-rootfs> install
+
 Thanks for maintaining netsniff-ng in your distribution. Further questions will
 be answered on the public mailing list.
 
