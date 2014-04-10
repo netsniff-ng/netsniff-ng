@@ -8,14 +8,14 @@ define TOOL_templ
   $(1)_clean: $(1)_clean_custom
 	$(Q)$$(call RM,$(1)/*.o $(1)/$(1) $(1)/*.gz)
   $(1)_do_install:
-	$(Q)$$(call INSTX,$(1)/$(1),$$(SBINDIR))
+	$(Q)$$(call INSTX,$(1)/$(1),$$(DESTDIR)$$(SBINDIR))
 	$(Q)$(GZIP) $(1).8 > $(1)/$(1).8.gz
-	$(Q)$$(call INSTX,$(1)/$(1).8.gz,$$(MAN8DIR))
-	$(Q)$$(foreach file,$$($(1)-confs),$$(call INST,$$(file),$$(ETCDIRE));)
+	$(Q)$$(call INSTX,$(1)/$(1).8.gz,$$(DESTDIR)$$(MAN8DIR))
+	$(Q)$$(foreach file,$$($(1)-confs),$$(call INST,$$(file),$$(DESTDIR)$$(ETCDIRE));)
   $(1)_install: $(1)_do_install $(1)_post_install
   $(1)_uninstall: $(1)_uninstall_custom
-	$(Q)$$(call RM,$$(SBINDIR)/$(1))
-	$(Q)$$(call RM,$$(MAN8DIR)/$(1).8.gz)
+	$(Q)$$(call RM,$$(DESTDIR)$$(SBINDIR)/$(1))
+	$(Q)$$(call RM,$$(DESTDIR)$$(MAN8DIR)/$(1).8.gz)
   $(1)/%.yy.o: $(1)/%.yy.c
 	$$(CC) $$(CFLAGS) -o $$@ -c $$<
   $(1)/%.tab.o: $(1)/%.tab.c

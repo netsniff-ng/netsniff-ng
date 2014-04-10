@@ -28,6 +28,10 @@ PREFIX ?=
 # Disable if you don't want it
 CCACHE ?= $(CONFIG_CCACHE)
 
+# Location of an alternative destination directory for installation
+# Useful when cross-compiling and installing in a dedicated target directory
+DESTDIR=
+
 # Location of installation paths.
 SBINDIR = $(PREFIX)/usr/sbin
 INCDIR = $(PREFIX)/usr/include
