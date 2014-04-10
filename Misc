@@ -104,6 +104,7 @@ help:
 	$(Q)echo " DEBUG=1 / DISTRO=1           - Enable debugging / Build for distros"
 	$(Q)echo " HARDENING=1                  - Enable GCC hardening of executables"
 	$(Q)echo " PREFIX=/path                 - Install path prefix"
+	$(Q)echo " DESTDIR=/path                - Alternative install destination path"
 	$(Q)echo " CROSS_COMPILE=/path-prefix   - Kernel-like cross-compiling prefix"
 	$(Q)echo " CROSS_LD_LIBRARY_PATH=/path  - Library search path for cross-compiling"
 	$(Q)echo " CC=cgcc                      - Use sparse compiler wrapper"
