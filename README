@@ -24,15 +24,16 @@ consists of the following fixed set of utilities:
 
   * netsniff-ng: a zero-copy packet analyzer, pcap capturing/replaying tool
   * trafgen: a multithreaded low-level zero-copy network packet generator
-  * mausezahn: high-level packet generator for HW/SW appliances with Cisco-CLI [*]
+  * mausezahn [*]: high-level packet generator for appliances with Cisco-CLI
   * ifpps: a top-like kernel networking and system statistics tool
-  * curvetun: a lightweight curve25519-based multiuser IP tunnel [*]
+  * curvetun [*]: a lightweight curve25519-based multiuser IP tunnel
   * astraceroute: an autonomous system trace route and DPI testing utility
   * flowtop: a top-like netfilter connection tracking tool
-  * bpfc: a [seccomp-]BPF (Berkeley packet filter) compiler, BPF-JIT disassembler
+  * bpfc: a [seccomp-]BPF (Berkeley packet filter) compiler, JIT disassembler
 
-Note that tools marked with [*] should be considered as experimental for now
-and still need more work to be fully in line with the others.
+Note that tools marked with [*] should be considered as experimental for now,
+and not used in production environments as they still need more work to be
+fully stable and in line with others. You have been warned!
 
 Each release can be verified with Git and GPG, here are the steps to do so:
 
