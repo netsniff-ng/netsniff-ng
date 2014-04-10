@@ -20,7 +20,6 @@
 #include <sys/ioctl.h>
 #include <string.h>
 #include <poll.h>
-#include <sys/poll.h>
 
 #include "built_in.h"
 #include "die.h"
