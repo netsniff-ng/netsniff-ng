@@ -178,11 +178,9 @@ typedef uint8_t		u8;
 # define bug()			assert(0)
 #endif
 
-#ifndef PAGE_SIZE
-# define PAGE_SIZE		(getpagesize())
-#endif
-#define PAGE_MASK		(~(PAGE_SIZE - 1))
-#define PAGE_ALIGN(addr)	(((addr) + PAGE_SIZE - 1) & PAGE_MASK)
+#define RUNTIME_PAGE_SIZE	(getpagesize())
+#define PAGE_MASK		(~(RUNTIME_PAGE_SIZE - 1))
+#define PAGE_ALIGN(addr)	(((addr) + RUNTIME_PAGE_SIZE - 1) & PAGE_MASK)
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 static inline uint64_t htonll(uint64_t x)

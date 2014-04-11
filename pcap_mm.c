@@ -91,7 +91,7 @@ static inline off_t ____get_map_size(bool jumbo)
 {
 	int allocsz = jumbo ? 16 : 3;
 
-	return PAGE_ALIGN(sizeof(struct pcap_filehdr) + (PAGE_SIZE * allocsz) * 1024);
+	return PAGE_ALIGN(sizeof(struct pcap_filehdr) + (RUNTIME_PAGE_SIZE * allocsz) * 1024);
 }
 
 static void __pcap_mm_prepare_access_wr(int fd, bool jumbo)

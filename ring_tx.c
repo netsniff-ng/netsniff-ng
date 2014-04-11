@@ -51,8 +51,8 @@ void setup_tx_ring_layout(int sock, struct ring *ring, unsigned int size,
 	fmemset(&ring->layout, 0, sizeof(ring->layout));
 
 	ring->layout.tp_block_size = (jumbo_support ?
-				      getpagesize() << 4 :
-				      getpagesize() << 2);
+				      RUNTIME_PAGE_SIZE << 4 :
+				      RUNTIME_PAGE_SIZE << 2);
 
 	ring->layout.tp_frame_size = (jumbo_support ?
 				      TPACKET_ALIGNMENT << 12 :

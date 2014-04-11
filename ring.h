@@ -100,7 +100,7 @@ static inline void ring_verify_layout(struct ring *ring)
 {
 	bug_on(ring->layout.tp_block_size  < ring->layout.tp_frame_size);
 	bug_on((ring->layout.tp_block_size % ring->layout.tp_frame_size) != 0);
-	bug_on((ring->layout.tp_block_size % getpagesize()) != 0);
+	bug_on((ring->layout.tp_block_size % RUNTIME_PAGE_SIZE) != 0);
 }
 
 static inline void tpacket_hdr_clone(struct tpacket2_hdr *thdrd,
