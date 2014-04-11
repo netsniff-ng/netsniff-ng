@@ -580,7 +580,7 @@ static void read_pcap(struct ctx *ctx)
 
 	dissector_init_all(ctx->print_mode);
 
-	out_len = round_up(1024 * 1024, PAGE_SIZE);
+	out_len = round_up(1024 * 1024, RUNTIME_PAGE_SIZE);
 	out = xmalloc_aligned(out_len, CO_CACHE_LINE_SIZE);
 
 	if (ctx->device_out) {

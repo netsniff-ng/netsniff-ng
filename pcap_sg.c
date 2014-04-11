@@ -156,8 +156,8 @@ static int pcap_sg_prepare_access(int fd, enum pcap_mode mode, bool jumbo)
 	size_t i, len = 0;
 
 	iov_slot = 0;
-	len = jumbo ? (PAGE_SIZE * 16) /* 64k max */ :
-		      (PAGE_SIZE *  3) /* 12k max */;
+	len = jumbo ? (RUNTIME_PAGE_SIZE * 16) /* 64k max */ :
+		      (RUNTIME_PAGE_SIZE *  3) /* 12k max */;
 
 	for (i = 0; i < array_size(iov); ++i) {
 		iov[i].iov_base = xzmalloc_aligned(len, 64);
