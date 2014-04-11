@@ -119,6 +119,10 @@ EOF
 		NACL_LIB_DIR="/usr/lib"
 	fi
 
+	if [ -z $NACL_LIB ] ; then
+		NACL_LIB="nacl"
+	fi
+
 	LDFLAGS="-L $NACL_LIB_DIR"
 	CFLAGS="-I $NACL_INC_DIR"
 
@@ -131,6 +135,7 @@ EOF
 		echo "[YES]"
 		echo "CONFIG_NACL_INC_DIR:=$NACL_INC_DIR" >> Config
 		echo "CONFIG_NACL_LIB_DIR:=$NACL_LIB_DIR" >> Config
+		echo "CONFIG_NACL_LIB:=$NACL_LIB" >> Config
 	fi
 }
 
