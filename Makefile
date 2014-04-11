@@ -23,7 +23,7 @@ TOOLS ?= $(CONFIG_TOOLS)
 TOOLS ?= netsniff-ng trafgen astraceroute flowtop ifpps bpfc curvetun mausezahn
 
 # For packaging purposes, prefix can define a different path.
-PREFIX ?=
+PREFIX ?= /usr/local
 
 # Disable if you don't want it
 CCACHE ?= $(CONFIG_CCACHE)
@@ -33,11 +33,11 @@ CCACHE ?= $(CONFIG_CCACHE)
 DESTDIR=
 
 # Location of installation paths.
-SBINDIR = $(PREFIX)/usr/sbin
-INCDIR = $(PREFIX)/usr/include
+SBINDIR = $(PREFIX)/sbin
+INCDIR = $(PREFIX)/include
 ETCDIR = $(PREFIX)/etc
 ETCDIRE = $(ETCDIR)/netsniff-ng
-MAN8DIR = $(PREFIX)/usr/share/man/man8
+MAN8DIR = $(PREFIX)/share/man/man8
 
 # Shut up make, helper warnings, parallel compilation!
 MAKEFLAGS += --no-print-directory
