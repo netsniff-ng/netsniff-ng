@@ -22,7 +22,7 @@ What libraries are required?
  - libncurses:		   ifpps, flowtop
  - libGeoIP >=1.4.8:	   astraceroute, flowtop, netsniff-ng
  - libz:		   astraceroute, flowtop, netsniff-ng
- - libnacl:		   curvetun
+ - libnacl or libsodium:   curvetun
  - libnetfilter-conntrack: flowtop
  - libpcap:		   mausezahn, netsniff-ng (tcpdump-like filters)
  - liburcu:		   flowtop
@@ -118,6 +118,24 @@ nacl_path.sh this way:
 
   $ cd curvetun
   $ ./nacl_path.sh ~/nacl/build/include/x86 ~/nacl/build/lib/x86
+
+Instead of libnacl you can also use libsodium which itself is a portable,
+cross-compilable, API compatible drop-in replacement for libnacl.
+
+In order to use libsodium you need to provide some little help when running
+the configure script, so it will be able to detect the needed header files.
+Additionally you need to configure the build to not link against libnacl
+but against libsodium.
+
+In the case libsodium was installed into /usr/local you run the netsniff-ng
+configure script this way:
+
+  $ NACL_INC_DIR=/usr/local/include/sodium NACL_LIB=sodium ./configure
+
+Alternatively you can use pkg-config for determining the include dir by
+setting the NACL_INC_DIR variable for the configure script like this:
+
+  $ NACL_INC_DIR=$(pkg-config --variable=includedir libsodium )/sodium
 
 When done, netsniff-ng's build infrastructure will read those evironment
 variables in order to get the needed paths to NaCl.
