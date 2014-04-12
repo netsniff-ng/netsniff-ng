@@ -178,7 +178,7 @@ typedef uint8_t		u8;
 # define bug()			assert(0)
 #endif
 
-#define RUNTIME_PAGE_SIZE	(getpagesize())
+#define RUNTIME_PAGE_SIZE	(sysconf(_SC_PAGE_SIZE))
 #define PAGE_MASK		(~(RUNTIME_PAGE_SIZE - 1))
 #define PAGE_ALIGN(addr)	(((addr) + RUNTIME_PAGE_SIZE - 1) & PAGE_MASK)
 
