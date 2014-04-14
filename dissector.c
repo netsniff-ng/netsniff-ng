@@ -15,6 +15,7 @@
 #include "dissector.h"
 #include "dissector_eth.h"
 #include "dissector_80211.h"
+#include "linktype.h"
 
 int dissector_set_print_type(void *ptr, int type)
 {

@@ -15,7 +15,6 @@
 
 #include "ring.h"
 #include "tprintf.h"
-#include "pcap_io.h"
 #include "built_in.h"
 
 #define PRINT_NORM		0
