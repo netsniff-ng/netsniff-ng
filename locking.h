@@ -3,8 +3,6 @@
 
 #include <pthread.h>
 
-#include "built_in.h"
-
 struct spinlock {
 	pthread_spinlock_t lock;
 };

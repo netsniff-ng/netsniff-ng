@@ -10,7 +10,6 @@
 #include <stdbool.h>
 
 #include "ring.h"
-#include "built_in.h"
 
 extern void destroy_rx_ring(int sock, struct ring *ring);
 extern void create_rx_ring(int sock, struct ring *ring, int verbose);

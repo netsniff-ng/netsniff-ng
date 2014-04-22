@@ -10,7 +10,6 @@
 #include <stdbool.h>
 
 #include "ring.h"
-#include "built_in.h"
 
 /* Give userland 10 us time to push packets to the ring */
 #define TX_KERNEL_PULL_INT	10

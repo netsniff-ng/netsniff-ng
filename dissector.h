@@ -15,7 +15,6 @@
 
 #include "ring.h"
 #include "tprintf.h"
-#include "built_in.h"
 
 #define PRINT_NORM		0
 #define PRINT_LESS		1
