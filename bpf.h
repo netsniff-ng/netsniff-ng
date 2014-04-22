@@ -5,10 +5,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "xmalloc.h"
 #include "bpf_insns.h"
 #include "bpf_ext.h"
 #include "config.h"
+#include "die.h"
 
 extern void bpf_dump_op_table(void);
 extern void bpf_dump_all(struct sock_fprog *bpf);
