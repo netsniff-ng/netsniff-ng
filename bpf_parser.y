@@ -749,8 +749,8 @@ int compile_filter(char *file, int verbose, int bypass, int format,
 		base = basename((b = xstrdup(file)));
 
 		slprintf(tmp_file, sizeof(tmp_file), "%s/.tmp-%u-%s", dir, rand(), base);
-		slprintf(cmd, sizeof(cmd), "cpp -I" PREFIX_STRING
-			 "/etc/netsniff-ng/ %s > %s", file, tmp_file);
+		slprintf(cmd, sizeof(cmd), "cpp -I" ETCDIRE_STRING " %s > %s",
+			 file, tmp_file);
 		if (system(cmd) != 0)
 			panic("Failed to invoke C preprocessor!\n");
 
