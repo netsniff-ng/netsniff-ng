@@ -226,11 +226,16 @@ static int stats_proc_net_dev(const char *ifname, struct ifstat *stats)
 {
 	int ret = -EINVAL;
 	char buff[256];
+	char *ifname_colon;
 	FILE *fp;
 
 	fp = fopen("/proc/net/dev", "r");
 	if (!fp)
 		panic("Cannot open /proc/net/dev!\n");
+
+	ifname_colon = xstrndup(ifname, strlen(ifname)+2);
+	ifname_colon[strlen(ifname)]   = ':';
+	ifname_colon[strlen(ifname)+1] = '\0';
 
 	if (fgets(buff, sizeof(buff), fp)) { ; }
 	if (fgets(buff, sizeof(buff), fp)) { ; }
@@ -240,7 +245,7 @@ static int stats_proc_net_dev(const char *ifname, struct ifstat *stats)
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) -1] = 0;
 
-		if (strstr(buff, ifname) == NULL)
+		if (strstr(buff, ifname_colon) == NULL)
 			continue;
 
 		if (sscanf(buff, "%*[a-z0-9 .-]:%llu%llu%llu%llu%llu%llu"
@@ -259,6 +264,7 @@ static int stats_proc_net_dev(const char *ifname, struct ifstat *stats)
 		memset(buff, 0, sizeof(buff));
 	}
 
+	xfree(ifname_colon);
 	fclose(fp);
 	return ret;
 }
