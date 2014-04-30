@@ -12,7 +12,7 @@
 #include "ring.h"
 
 extern void destroy_rx_ring(int sock, struct ring *ring);
-extern void create_rx_ring(int sock, struct ring *ring, int verbose);
+extern void create_rx_ring(int sock, struct ring *ring, bool verbose);
 extern void mmap_rx_ring(int sock, struct ring *ring);
 extern void alloc_rx_ring_frames(int sock, struct ring *ring);
 extern void bind_rx_ring(int sock, struct ring *ring, int ifindex);

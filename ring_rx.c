@@ -76,7 +76,7 @@ void setup_rx_ring_layout(int sock, struct ring *ring, size_t size,
 	ring_verify_layout(ring);
 }
 
-void create_rx_ring(int sock, struct ring *ring, int verbose)
+void create_rx_ring(int sock, struct ring *ring, bool verbose)
 {
 	int ret;
 	bool v3 = get_sockopt_tpacket(sock) == TPACKET_V3;

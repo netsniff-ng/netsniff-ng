@@ -54,10 +54,10 @@ enum dump_mode {
 
 struct ctx {
 	char *device_in, *device_out, *device_trans, *filter, *prefix;
-	int cpu, rfraw, dump, print_mode, dump_dir, packet_type, verbose;
+	int cpu, rfraw, dump, print_mode, dump_dir, packet_type;
 	unsigned long kpull, dump_interval, tx_bytes, tx_packets;
 	size_t reserve_size;
-	bool randomize, promiscuous, enforce, jumbo, dump_bpf;
+	bool randomize, promiscuous, enforce, jumbo, dump_bpf, verbose;
 	enum pcap_ops_groups pcap; enum dump_mode dump_mode;
 	uid_t uid; gid_t gid; uint32_t link_type, magic;
 };
@@ -1300,7 +1300,7 @@ int main(int argc, char **argv)
 			ctx.dump_interval *= strtoul(optarg, NULL, 0);
 			break;
 		case 'V':
-			ctx.verbose = 1;
+			ctx.verbose = true;
 			break;
 		case 'B':
 			ctx.dump_bpf = true;

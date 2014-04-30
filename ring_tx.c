@@ -68,7 +68,7 @@ void setup_tx_ring_layout(int sock, struct ring *ring, size_t size,
 	ring_verify_layout(ring);
 }
 
-void create_tx_ring(int sock, struct ring *ring, int verbose)
+void create_tx_ring(int sock, struct ring *ring, bool verbose)
 {
 	int ret;
 retry:
