@@ -56,7 +56,8 @@
 
 struct ctx {
 	bool rand, rfraw, jumbo_support, verbose, smoke_test, enforce, qdisc_path;
-	unsigned long num, reserve_size;
+	size_t reserve_size;
+	unsigned long num;
 	unsigned int cpus;
 	uid_t uid; gid_t gid;
 	char *device, *device_trans, *rhost;
@@ -590,7 +591,8 @@ static void xmit_fastpath_or_die(struct ctx *ctx, int cpu, unsigned long orig_nu
 	int ifindex = device_ifindex(ctx->device);
 	uint8_t *out = NULL;
 	unsigned int it = 0;
-	unsigned long num = 1, i = 0, size;
+	unsigned long num = 1, i = 0;
+	size_t size;
 	struct ring tx_ring;
 	struct frame_map *hdr;
 	struct timeval start, end, diff;

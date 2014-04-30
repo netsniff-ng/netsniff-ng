@@ -55,7 +55,8 @@ enum dump_mode {
 struct ctx {
 	char *device_in, *device_out, *device_trans, *filter, *prefix;
 	int cpu, rfraw, dump, print_mode, dump_dir, packet_type, verbose;
-	unsigned long kpull, dump_interval, reserve_size, tx_bytes, tx_packets;
+	unsigned long kpull, dump_interval, tx_bytes, tx_packets;
+	size_t reserve_size;
 	bool randomize, promiscuous, enforce, jumbo, dump_bpf;
 	enum pcap_ops_groups pcap; enum dump_mode dump_mode;
 	uid_t uid; gid_t gid; uint32_t link_type, magic;
@@ -170,7 +171,8 @@ static void pcap_to_xmit(struct ctx *ctx)
 {
 	uint8_t *out = NULL;
 	int irq, ifindex, fd = 0, ret;
-	unsigned int size, it = 0;
+	size_t size;
+	unsigned int it = 0;
 	unsigned long trunced = 0;
 	struct ring tx_ring;
 	struct frame_map *hdr;
@@ -344,7 +346,8 @@ static void receive_to_xmit(struct ctx *ctx)
 	short ifflags = 0;
 	uint8_t *in, *out;
 	int rx_sock, ifindex_in, ifindex_out, ret;
-	unsigned int size_in, size_out, it_in = 0, it_out = 0;
+	size_t size_in, size_out;
+	unsigned int it_in = 0, it_out = 0;
 	unsigned long frame_count = 0;
 	struct frame_map *hdr_in, *hdr_out;
 	struct ring tx_ring, rx_ring;
@@ -879,7 +882,8 @@ static void recv_only_or_dump(struct ctx *ctx)
 {
 	short ifflags = 0;
 	int sock, irq, ifindex, fd = 0, ret;
-	unsigned int size, it = 0;
+	size_t size;
+	unsigned int it = 0;
 	struct ring rx_ring;
 	struct pollfd rx_poll;
 	struct sock_fprog bpf_ops;

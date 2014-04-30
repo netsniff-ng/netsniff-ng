@@ -16,8 +16,8 @@ extern void create_rx_ring(int sock, struct ring *ring, int verbose);
 extern void mmap_rx_ring(int sock, struct ring *ring);
 extern void alloc_rx_ring_frames(int sock, struct ring *ring);
 extern void bind_rx_ring(int sock, struct ring *ring, int ifindex);
-extern void setup_rx_ring_layout(int sock, struct ring *ring,
-				 unsigned int size, bool jumbo_support, bool v3);
+extern void setup_rx_ring_layout(int sock, struct ring *ring, size_t size,
+				 bool jumbo_support, bool v3);
 extern void sock_rx_net_stats(int sock, unsigned long seen);
 
 static inline int user_may_pull_from_rx(struct tpacket2_hdr *hdr)

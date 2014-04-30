@@ -40,7 +40,7 @@ void destroy_rx_ring(int sock, struct ring *ring)
 		panic("Cannot destroy the RX_RING: %s!\n", strerror(errno));
 }
 
-void setup_rx_ring_layout(int sock, struct ring *ring, unsigned int size,
+void setup_rx_ring_layout(int sock, struct ring *ring, size_t size,
 			  bool jumbo_support, bool v3)
 {
 	fmemset(&ring->layout, 0, sizeof(ring->layout));
@@ -95,7 +95,7 @@ retry:
 	if (ret < 0)
 		panic("Cannot allocate RX_RING!\n");
 
-	ring->mm_len = ring->layout.tp_block_size * ring->layout.tp_block_nr;
+	ring->mm_len = (size_t) ring->layout.tp_block_size * ring->layout.tp_block_nr;
 
 	if (verbose) {
 		if (!v3) {
