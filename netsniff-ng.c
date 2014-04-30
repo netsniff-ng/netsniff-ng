@@ -250,7 +250,7 @@ static void pcap_to_xmit(struct ctx *ctx)
 		interval = ctx->kpull;
 
 	set_itimer_interval_value(&itimer, 0, interval);
-	setitimer(ITIMER_REAL, &itimer, NULL); 
+	setitimer(ITIMER_REAL, &itimer, NULL);
 
 	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
 
@@ -393,7 +393,7 @@ static void receive_to_xmit(struct ctx *ctx)
 
 	dissector_init_all(ctx->print_mode);
 
-	 if (ctx->promiscuous)
+	if (ctx->promiscuous)
 		ifflags = device_enter_promiscuous_mode(ctx->device_in);
 
 	if (ctx->kpull)
@@ -802,7 +802,7 @@ static void print_pcap_file_stats(int sock, struct ctx *ctx)
 	ret = getsockopt(sock, SOL_PACKET, PACKET_STATISTICS, &kstats, &slen);
 	if (unlikely(ret))
 		panic("Cannot get packet statistics!\n");
-	
+
 	if (ctx->print_mode == PRINT_NONE) {
 		printf(".(+%u/-%u)", kstats.tp_packets - kstats.tp_drops,
 		       kstats.tp_drops);
