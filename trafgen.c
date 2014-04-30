@@ -1010,7 +1010,7 @@ int main(int argc, char **argv)
 			else
 				panic("Syntax error in ring size param!\n");
 
-			ctx.reserve_size *= strtol(optarg, NULL, 0);
+			ctx.reserve_size *= strtoul(optarg, NULL, 0);
 			break;
 		case '?':
 			switch (optopt) {
