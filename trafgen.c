@@ -56,7 +56,7 @@
 
 struct ctx {
 	bool rand, rfraw, jumbo_support, verbose, smoke_test, enforce, qdisc_path;
-	unsigned long kpull, num, reserve_size;
+	unsigned long num, reserve_size;
 	unsigned int cpus;
 	uid_t uid; gid_t gid;
 	char *device, *device_trans, *rhost;
@@ -156,7 +156,6 @@ static void __noreturn help(void)
 	     "  -P|--cpus <uint>               Specify number of forks(<= CPUs) (def: #CPUs)\n"
 	     "  -t|--gap <time>                Set approx. interpacket gap (s/ms/us/ns, def: us)\n"
 	     "  -S|--ring-size <size>          Manually set mmap size (KiB/MiB/GiB)\n"
-	     "  -k|--kernel-pull <uint>        Kernel batch interval in us (def: 10us)\n"
 	     "  -E|--seed <uint>               Manually set srand(3) seed\n"
 	     "  -u|--user <userid>             Drop privileges and change to userid\n"
 	     "  -g|--group <groupid>           Drop privileges and change to groupid\n"
@@ -946,7 +945,8 @@ int main(int argc, char **argv)
 			ctx.enforce = true;
 			break;
 		case 'k':
-			ctx.kpull = strtoul(optarg, NULL, 0);
+			printf("Option -k/--kernel-pull is no longer used and "
+			       "will be removed in a future release!\n");
 			break;
 		case 'E':
 			seed = strtoul(optarg, NULL, 0);

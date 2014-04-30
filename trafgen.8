@@ -136,11 +136,6 @@ gaps.
 Manually define the TX_RING resp. TX_RING size in ''<num>KiB/MiB/GiB''. On
 default the size is being determined based on the network connectivity rate.
 .PP
-.SS -k <uint>, --kernel-pull <uint>
-Manually define the interval in micro-seconds where the kernel should be triggered
-to batch process the ring buffer frames. By default, it is every 10us, but it can
-manually be prolonged, for instance..
-.PP
 .SS -E <uint>, --seed <uint>
 Manually set the seed for pseudo random number generator (PRNG) in trafgen. By
 default, a random seed from /dev/urandom is used to feed glibc's PRNG. If that
