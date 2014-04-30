@@ -424,8 +424,8 @@ static void receive_to_xmit(struct ctx *ctx)
 			hdr_out = tx_ring.frames[it_out].iov_base;
 			out = ((uint8_t *) hdr_out) + TPACKET2_HDRLEN - sizeof(struct sockaddr_ll);
 
-			for (; !user_may_pull_from_tx(tx_ring.frames[it_out].iov_base) &&
-			       likely(!sigint);) {
+			while (!user_may_pull_from_tx(tx_ring.frames[it_out].iov_base) &&
+			       likely(!sigint)) {
 				if (ctx->randomize)
 					next_rnd_slot(&it_out, &tx_ring);
 				else {
