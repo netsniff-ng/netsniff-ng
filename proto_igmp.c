@@ -4,6 +4,7 @@
  * Subject to the GPL, version 2.
  */
 
+#include <inttypes.h>
 #include <arpa/inet.h>
 #include <asm/byteorder.h>
 #include <netinet/in.h>
@@ -266,7 +267,7 @@ static void dissect_igmp_v0(struct pkt_buff *pkt)
 	tprintf(", Id (%u)", ntohs(msg->identifier));
 	inet_ntop(AF_INET, &msg->group_address, addr, sizeof(addr));
 	tprintf(", Group Addr (%s)", addr);
-	tprintf(", Access Key (0x%.16lx)", msg->access_key);
+	tprintf(", Access Key (0x%.16"PRIx64")", msg->access_key);
 	tprintf(" ]\n");
 }
 

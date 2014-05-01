@@ -4,6 +4,7 @@
  * Subject to the GPL, version 2.
  */
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -153,10 +154,10 @@ void sock_rx_net_stats(int sock, unsigned long seen)
 		uint64_t packets = stats.k3.tp_packets;
 		uint64_t drops = stats.k3.tp_drops;
 
-		printf("\r%12ld  packets incoming (%ld unread on exit)\n",
-		       v3 ? seen : packets, v3 ? packets - seen : 0);
-		printf("\r%12ld  packets passed filter\n", packets - drops);
-		printf("\r%12ld  packets failed filter (out of space)\n", drops);
+		printf("\r%12"PRIu64"  packets incoming (%"PRIu64" unread on exit)\n",
+		       v3 ? (uint64_t)seen : packets, v3 ? packets - seen : 0);
+		printf("\r%12"PRIu64"  packets passed filter\n", packets - drops);
+		printf("\r%12"PRIu64"  packets failed filter (out of space)\n", drops);
 		if (stats.k3.tp_packets > 0)
 			printf("\r%12.4lf%% packet droprate\n",
 			       (1.0 * drops / packets) * 100.0);

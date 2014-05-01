@@ -6,6 +6,7 @@
  * IPv6 Mobility Header described in RFC6275
  */
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <netinet/in.h>    /* for ntohs() */
@@ -116,7 +117,7 @@ static void dissect_mobilityhdr_type_1_2(struct pkt_buff *pkt,
 	    *message_data_len < 0)
 		return;
 
-	tprintf("Init Cookie (0x%lx)", ntohll(type_1_2->init_cookie));
+	tprintf("Init Cookie (0x%"PRIx64")", ntohll(type_1_2->init_cookie));
 
 	dissect_mobility_options(pkt, message_data_len);
 }
@@ -133,8 +134,8 @@ static void dissect_mobilityhdr_type_3_4(struct pkt_buff *pkt,
 		return;
 
 	tprintf("HN Index (%u) ", ntohs(type_3_4->nonce_index));
-	tprintf("Init Cookie (0x%lx) ", ntohll(type_3_4->init_cookie));
-	tprintf("Keygen Token (0x%lx)", ntohll(type_3_4->keygen_token));
+	tprintf("Init Cookie (0x%"PRIx64") ", ntohll(type_3_4->init_cookie));
+	tprintf("Keygen Token (0x%"PRIx64")", ntohll(type_3_4->keygen_token));
 
 	dissect_mobility_options(pkt, message_data_len);
 }

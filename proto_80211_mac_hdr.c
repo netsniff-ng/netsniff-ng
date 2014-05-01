@@ -10,6 +10,7 @@
  * with respect to endianess (little / big)
  */
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <netinet/in.h>    /* for ntohs() */
@@ -1741,7 +1742,7 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 			}
 
 			tprintf("Ch Nr: %uus, ", basic->ch_nr);
-			tprintf("Meas Start Time: %lu, ",
+			tprintf("Meas Start Time: %"PRIu64", ",
 				    le64_to_cpu(basic->start));
 			tprintf("Meas Duration: %fs",
 				    le16_to_cpu(basic->dur) * TU);
@@ -1762,7 +1763,7 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 			}
 
 			tprintf("Ch Nr: %uus, ", cca->ch_nr);
-			tprintf("Meas Start Time: %lu, ",
+			tprintf("Meas Start Time: %"PRIu64", ",
 				    le64_to_cpu(cca->start));
 			tprintf("Meas Duration: %fs",
 				    le16_to_cpu(cca->dur) * TU);
@@ -1782,7 +1783,7 @@ static int8_t inf_meas_req(struct pkt_buff *pkt, u8 *id)
 			}
 
 			tprintf("Ch Nr: %uus, ", rpi->ch_nr);
-			tprintf("Meas Start Time: %lu, ",
+			tprintf("Meas Start Time: %"PRIu64", ",
 				    le64_to_cpu(rpi->start));
 			tprintf("Meas Duration: %fs",
 				    le16_to_cpu(rpi->dur) * TU);
@@ -2119,7 +2120,7 @@ static int8_t inf_meas_rep(struct pkt_buff *pkt, u8 *id)
 			}
 
 			tprintf("Ch Nr: %uus, ", basic->ch_nr);
-			tprintf("Meas Start Time: %lu, ",
+			tprintf("Meas Start Time: %"PRIu64", ",
 				    le64_to_cpu(basic->start));
 			tprintf("Meas Duration: %fs",
 				    le16_to_cpu(basic->dur) * TU);
@@ -2140,7 +2141,7 @@ static int8_t inf_meas_rep(struct pkt_buff *pkt, u8 *id)
 			}
 
 			tprintf("Ch Nr: %uus, ", cca->ch_nr);
-			tprintf("Meas Start Time: %lu, ",
+			tprintf("Meas Start Time: %"PRIu64", ",
 				    le64_to_cpu(cca->start));
 			tprintf("Meas Duration: %fs",
 				    le16_to_cpu(cca->dur) * TU);
@@ -2160,7 +2161,7 @@ static int8_t inf_meas_rep(struct pkt_buff *pkt, u8 *id)
 			}
 
 			tprintf("Ch Nr: %uus, ", rpi->ch_nr);
-			tprintf("Meas Start Time: %lu, ",
+			tprintf("Meas Start Time: %"PRIu64", ",
 				    le64_to_cpu(rpi->start));
 			tprintf("Meas Duration: %fs",
 				    le16_to_cpu(rpi->dur) * TU);
@@ -2918,7 +2919,7 @@ static int8_t beacon(struct pkt_buff *pkt)
 	if (beacon == NULL)
 		return 0;
 
-	tprintf("Timestamp 0x%.16lx, ", le64_to_cpu(beacon->timestamp));
+	tprintf("Timestamp 0x%.16"PRIx64", ", le64_to_cpu(beacon->timestamp));
 	tprintf("Beacon Interval (%fs), ", le16_to_cpu(beacon->beacon_int)*TU);
 	tprintf("Capabilities (0x%x <->", le16_to_cpu(beacon->capab_info));
 	cap_field(le16_to_cpu(beacon->capab_info));
