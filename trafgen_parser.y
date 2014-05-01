@@ -546,17 +546,17 @@ static void dump_conf(void)
 		printf("\n");
 
 		for (j = 0; j < packet_dyn[i].clen; ++j)
-			printf(" cnt%zu [%u,%u], inc %u, off %ld type %s\n", j,
+			printf(" cnt%zu [%u,%u], inc %u, off %jd type %s\n", j,
 			       packet_dyn[i].cnt[j].min,
 			       packet_dyn[i].cnt[j].max,
 			       packet_dyn[i].cnt[j].inc,
-			       packet_dyn[i].cnt[j].off,
+			       (intmax_t)packet_dyn[i].cnt[j].off,
 			       packet_dyn[i].cnt[j].type == TYPE_INC ?
 			       "inc" : "dec");
 
 		for (j = 0; j < packet_dyn[i].rlen; ++j)
-			printf(" rnd%zu off %ld\n", j,
-			       packet_dyn[i].rnd[j].off);
+			printf(" rnd%zu off %jd\n", j,
+			       (intmax_t)packet_dyn[i].rnd[j].off);
 	}
 }
 

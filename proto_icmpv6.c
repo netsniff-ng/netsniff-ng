@@ -10,6 +10,7 @@
  * http://www.iana.org/assignments/icmpv6-parameters
  */
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <netinet/in.h>
@@ -1270,7 +1271,7 @@ static int8_t dissect_icmpv6_type139(struct pkt_buff *pkt)
 
 	tprintf(", Qtype %s (%u)", qtype_name, qtype_nr);
 	tprintf(", Flags (0x%x)", ntohs(icmp_139->flags));
-	tprintf(", Nonce (0x%lx)", ntohll(icmp_139->nonce));
+	tprintf(", Nonce (0x%"PRIx64")", ntohll(icmp_139->nonce));
 
 	dissect_icmpv6_node_inf_data(pkt);
 

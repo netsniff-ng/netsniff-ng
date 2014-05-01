@@ -22,6 +22,7 @@
 #include <sys/fsuid.h>
 #include <urcu.h>
 #include <libgen.h>
+#include <inttypes.h>
 
 #include "die.h"
 #include "xmalloc.h"
@@ -751,7 +752,7 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 
 	/* PID, application name */
 	if (n->procnum > 0) {
-		slprintf(tmp, sizeof(tmp), "%s(%u)", basename(n->cmdline),
+		slprintf(tmp, sizeof(tmp), "%s(%d)", basename(n->cmdline),
 			 n->procnum);
 
 		printw("[");
@@ -806,7 +807,7 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 
 	/* Number packets, bytes */
 	if (n->counter_pkts > 0 && n->counter_bytes > 0)
-		printw(" (%llu pkts, %llu bytes) ->",
+		printw(" (%"PRIu64" pkts, %"PRIu64" bytes) ->",
 		       n->counter_pkts, n->counter_bytes);
 
 	/* Show source information: reverse DNS, port, country, city */
@@ -815,7 +816,7 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 		mvwprintw(screen, ++(*line), 8, "src: %s", n->rev_dns_src);
 		attroff(COLOR_PAIR(1));
 
-		printw(":%u", n->port_src);
+		printw(":%"PRIu16, n->port_src);
 
 		if (n->country_src[0]) {
 			printw(" (");
@@ -838,7 +839,7 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 	mvwprintw(screen, ++(*line), 8, "dst: %s", n->rev_dns_dst);
 	attroff(COLOR_PAIR(2));
 
-	printw(":%u", n->port_dst);
+	printw(":%"PRIu16, n->port_dst);
 
 	if (n->country_dst[0]) {
 		printw(" (");
