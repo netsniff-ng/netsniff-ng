@@ -427,7 +427,7 @@ For smoke/fuzz testing with trafgen, it is recommended to have a direct
 link between the host you want to analyze (''victim'' machine) and the host
 you run trafgen on (''attacker'' machine). If the ICMP reply from the victim
 fails, we assume that probably its kernel crashed, thus we print the last
-sent packet togther with the seed and quit probing. It might be very unlikely
+sent packet together with the seed and quit probing. It might be very unlikely
 to find such a ping-of-death on modern Linux systems. However, there might
 be a good chance to find it on some proprietary (e.g. embedded) systems or
 buggy driver firmwares that are in the wild. Also, fuzz testing can be done
