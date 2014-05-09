@@ -170,7 +170,7 @@ static inline bool dump_to_pcap(struct ctx *ctx)
 static void pcap_to_xmit(struct ctx *ctx)
 {
 	uint8_t *out = NULL;
-	int irq, ifindex, fd = 0, ret;
+	int ifindex, fd = 0, ret;
 	size_t size;
 	unsigned int it = 0;
 	unsigned long trunced = 0;
@@ -240,7 +240,7 @@ static void pcap_to_xmit(struct ctx *ctx)
 	dissector_init_all(ctx->print_mode);
 
 	if (ctx->cpu >= 0 && ifindex > 0) {
-		irq = device_irq_number(ctx->device_out);
+		int irq = device_irq_number(ctx->device_out);
 		device_set_irq_affinity(irq, ctx->cpu);
 
 		if (ctx->verbose)
@@ -815,17 +815,16 @@ static void print_pcap_file_stats(int sock, struct ctx *ctx)
 static void walk_t3_block(struct block_desc *pbd, struct ctx *ctx,
 			  int sock, int *fd, unsigned long *frame_count)
 {
-	uint8_t *packet;
-	int num_pkts = pbd->h1.num_pkts, i, ret;
+	int num_pkts = pbd->h1.num_pkts, i;
 	struct tpacket3_hdr *hdr;
-	pcap_pkthdr_t phdr;
 	struct sockaddr_ll *sll;
 
 	hdr = (void *) ((uint8_t *) pbd + pbd->h1.offset_to_first_pkt);
 	sll = (void *) ((uint8_t *) hdr + TPACKET_ALIGN(sizeof(*hdr)));
 
 	for (i = 0; i < num_pkts && likely(sigint == 0); ++i) {
-		packet = ((uint8_t *) hdr + hdr->tp_mac);
+		uint8_t *packet = ((uint8_t *) hdr + hdr->tp_mac);
+		pcap_pkthdr_t phdr;
 
 		if (ctx->packet_type != -1)
 			if (ctx->packet_type != sll->sll_pkttype)
@@ -834,6 +833,8 @@ static void walk_t3_block(struct block_desc *pbd, struct ctx *ctx,
 		(*frame_count)++;
 
 		if (dump_to_pcap(ctx)) {
+			int ret;
+
 			tpacket3_hdr_to_pcap_pkthdr(hdr, sll, &phdr, ctx->magic);
 
 			ret = __pcap_io->write_pcap(*fd, &phdr, ctx->magic, packet,
@@ -880,7 +881,7 @@ next:
 static void recv_only_or_dump(struct ctx *ctx)
 {
 	short ifflags = 0;
-	int sock, irq, ifindex, fd = 0, ret;
+	int sock, ifindex, fd = 0, ret;
 	size_t size;
 	unsigned int it = 0;
 	struct ring rx_ring;
@@ -928,7 +929,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 	dissector_init_all(ctx->print_mode);
 
 	if (ctx->cpu >= 0 && ifindex > 0) {
-		irq = device_irq_number(ctx->device_in);
+		int irq = device_irq_number(ctx->device_in);
 		device_set_irq_affinity(irq, ctx->cpu);
 
 		if (ctx->verbose)
