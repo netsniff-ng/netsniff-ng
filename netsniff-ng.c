@@ -364,7 +364,6 @@ static void receive_to_xmit(struct ctx *ctx)
 
 	fmemset(&tx_ring, 0, sizeof(tx_ring));
 	fmemset(&rx_ring, 0, sizeof(rx_ring));
-	fmemset(&rx_poll, 0, sizeof(rx_poll));
 	fmemset(&bpf_ops, 0, sizeof(bpf_ops));
 
 	ifindex_in = device_ifindex(ctx->device_in);
@@ -902,7 +901,6 @@ static void recv_only_or_dump(struct ctx *ctx)
 	}
 
 	fmemset(&rx_ring, 0, sizeof(rx_ring));
-	fmemset(&rx_poll, 0, sizeof(rx_poll));
 	fmemset(&bpf_ops, 0, sizeof(bpf_ops));
 
 	ifindex = device_ifindex(ctx->device_in);
