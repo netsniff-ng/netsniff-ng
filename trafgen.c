@@ -592,25 +592,16 @@ static void xmit_fastpath_or_die(struct ctx *ctx, int cpu, unsigned long orig_nu
 	uint8_t *out = NULL;
 	unsigned int it = 0;
 	unsigned long num = 1, i = 0;
-	size_t size;
+	size_t size = ring_size(ctx->device, ctx->reserve_size);
 	struct ring tx_ring;
 	struct frame_map *hdr;
 	struct timeval start, end, diff;
 	struct packet_dyn *pktd;
 	unsigned long long tx_bytes = 0, tx_packets = 0;
 
-	fmemset(&tx_ring, 0, sizeof(tx_ring));
-
-	size = ring_size(ctx->device, ctx->reserve_size);
-
 	set_sock_prio(sock, 512);
-	set_packet_loss_discard(sock);
 
-	setup_tx_ring_layout(sock, &tx_ring, size, ctx->jumbo_support);
-	create_tx_ring(sock, &tx_ring, ctx->verbose);
-	mmap_tx_ring(sock, &tx_ring);
-	alloc_tx_ring_frames(sock, &tx_ring);
-	bind_tx_ring(sock, &tx_ring, ifindex);
+	ring_tx_setup(&tx_ring, sock, size, ifindex, ctx->jumbo_support, ctx->verbose);
 
 	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
 

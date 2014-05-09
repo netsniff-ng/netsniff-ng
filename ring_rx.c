@@ -41,8 +41,8 @@ void destroy_rx_ring(int sock, struct ring *ring)
 		panic("Cannot destroy the RX_RING: %s!\n", strerror(errno));
 }
 
-void setup_rx_ring_layout(int sock, struct ring *ring, size_t size,
-			  bool jumbo_support, bool v3)
+static void setup_rx_ring_layout(int sock, struct ring *ring, size_t size,
+				 bool jumbo_support, bool v3)
 {
 	fmemset(&ring->layout, 0, sizeof(ring->layout));
 
@@ -77,7 +77,7 @@ void setup_rx_ring_layout(int sock, struct ring *ring, size_t size,
 	ring_verify_layout(ring);
 }
 
-void create_rx_ring(int sock, struct ring *ring, bool verbose)
+static void create_rx_ring(int sock, struct ring *ring, bool verbose)
 {
 	int ret;
 	bool v3 = get_sockopt_tpacket(sock) == TPACKET_V3;
@@ -111,12 +111,7 @@ retry:
 	}
 }
 
-void mmap_rx_ring(int sock, struct ring *ring)
-{
-	mmap_ring_generic(sock, ring);
-}
-
-void alloc_rx_ring_frames(int sock, struct ring *ring)
+static void alloc_rx_ring_frames(int sock, struct ring *ring)
 {
 	int num;
 	size_t size;
@@ -133,9 +128,17 @@ void alloc_rx_ring_frames(int sock, struct ring *ring)
 	alloc_ring_frames_generic(ring, num, size);
 }
 
-void bind_rx_ring(int sock, struct ring *ring, int ifindex)
+void ring_rx_setup(struct ring *ring, int sock, size_t size, int ifindex,
+		   struct pollfd *poll, bool v3, bool jumbo_support,
+		   bool verbose)
 {
+	fmemset(ring, 0, sizeof(*ring));
+	setup_rx_ring_layout(sock, ring, size, jumbo_support, v3);
+	create_rx_ring(sock, ring, verbose);
+	mmap_ring_generic(sock, ring);
+	alloc_rx_ring_frames(sock, ring);
 	bind_ring_generic(sock, ring, ifindex, false);
+	prepare_polling(sock, poll);
 }
 
 void sock_rx_net_stats(int sock, unsigned long seen)

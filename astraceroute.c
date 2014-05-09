@@ -44,7 +44,7 @@
 #include "csum.h"
 #include "sock.h"
 #include "geoip.h"
-#include "ring_rx.h"
+#include "ring.h"
 #include "built_in.h"
 
 struct ctx {
@@ -899,7 +899,7 @@ static int main_trace(struct ctx *ctx)
 	inject_filter(ctx, fd_cap);
 
 	ifindex = device_ifindex(ctx->dev);
-	bind_rx_ring(fd_cap, &dummy_ring, ifindex);
+	bind_ring_generic(fd_cap, &dummy_ring, ifindex, false);
 
 	if (ctx->totlen < af_ops[ctx->proto].min_len_tcp) {
 		ctx->totlen = af_ops[ctx->proto].min_len_tcp;

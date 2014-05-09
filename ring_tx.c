@@ -20,7 +20,7 @@
 #include "ring_tx.h"
 #include "built_in.h"
 
-void set_packet_loss_discard(int sock)
+static void set_packet_loss_discard(int sock)
 {
 	int ret, discard = 1;
 	ret = setsockopt(sock, SOL_PACKET, PACKET_LOSS, (void *) &discard,
@@ -45,8 +45,8 @@ void destroy_tx_ring(int sock, struct ring *ring)
 	xfree(ring->frames);
 }
 
-void setup_tx_ring_layout(int sock, struct ring *ring, size_t size,
-			  bool jumbo_support)
+static void setup_tx_ring_layout(int sock, struct ring *ring, size_t size,
+				 bool jumbo_support)
 {
 	fmemset(&ring->layout, 0, sizeof(ring->layout));
 
@@ -68,7 +68,7 @@ void setup_tx_ring_layout(int sock, struct ring *ring, size_t size,
 	ring_verify_layout(ring);
 }
 
-void create_tx_ring(int sock, struct ring *ring, bool verbose)
+static void create_tx_ring(int sock, struct ring *ring, bool verbose)
 {
 	int ret;
 retry:
@@ -95,18 +95,20 @@ retry:
 	}
 }
 
-void mmap_tx_ring(int sock, struct ring *ring)
-{
-	mmap_ring_generic(sock, ring);
-}
-
-void alloc_tx_ring_frames(int sock __maybe_unused, struct ring *ring)
+static void alloc_tx_ring_frames(int sock __maybe_unused, struct ring *ring)
 {
 	alloc_ring_frames_generic(ring, ring->layout.tp_frame_nr,
 				  ring->layout.tp_frame_size);
 }
 
-void bind_tx_ring(int sock, struct ring *ring, int ifindex)
+void ring_tx_setup(struct ring *ring, int sock, size_t size, int ifindex,
+		   bool jumbo_support, bool verbose)
 {
+	fmemset(ring, 0, sizeof(*ring));
+	set_packet_loss_discard(sock);
+	setup_tx_ring_layout(sock, ring, size, jumbo_support);
+	create_tx_ring(sock, ring, verbose);
+	mmap_ring_generic(sock, ring);
+	alloc_tx_ring_frames(sock, ring);
 	bind_ring_generic(sock, ring, ifindex, true);
 }

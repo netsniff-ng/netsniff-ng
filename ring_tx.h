@@ -14,14 +14,9 @@
 /* Give userland 10 us time to push packets to the ring */
 #define TX_KERNEL_PULL_INT	10
 
+void ring_tx_setup(struct ring *ring, int sock, size_t size, int ifindex,
+		   bool jumbo_support, bool verbose);
 extern void destroy_tx_ring(int sock, struct ring *ring);
-extern void create_tx_ring(int sock, struct ring *ring, bool verbose);
-extern void mmap_tx_ring(int sock, struct ring *ring);
-extern void alloc_tx_ring_frames(int sock, struct ring *ring);
-extern void bind_tx_ring(int sock, struct ring *ring, int ifindex);
-extern void setup_tx_ring_layout(int sock, struct ring *ring, size_t size,
-				 bool jumbo_support);
-extern void set_packet_loss_discard(int sock);
 
 static inline int user_may_pull_from_tx(struct tpacket2_hdr *hdr)
 {

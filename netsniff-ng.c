@@ -209,7 +209,6 @@ static void pcap_to_xmit(struct ctx *ctx)
 			panic("Error prepare reading pcap!\n");
 	}
 
-	fmemset(&tx_ring, 0, sizeof(tx_ring));
 	fmemset(&bpf_ops, 0, sizeof(bpf_ops));
 
 	if (ctx->rfraw) {
@@ -222,20 +221,13 @@ static void pcap_to_xmit(struct ctx *ctx)
 	}
 
 	ifindex = device_ifindex(ctx->device_out);
-
 	size = ring_size(ctx->device_out, ctx->reserve_size);
 
 	bpf_parse_rules(ctx->filter, &bpf_ops, ctx->link_type);
 	if (ctx->dump_bpf)
 		bpf_dump_all(&bpf_ops);
 
-	set_packet_loss_discard(tx_sock);
-
-	setup_tx_ring_layout(tx_sock, &tx_ring, size, ctx->jumbo);
-	create_tx_ring(tx_sock, &tx_ring, ctx->verbose);
-	mmap_tx_ring(tx_sock, &tx_ring);
-	alloc_tx_ring_frames(tx_sock, &tx_ring);
-	bind_tx_ring(tx_sock, &tx_ring, ifindex);
+	ring_tx_setup(&tx_ring, tx_sock, size, ifindex, ctx->jumbo, ctx->verbose);
 
 	dissector_init_all(ctx->print_mode);
 
@@ -362,8 +354,6 @@ static void receive_to_xmit(struct ctx *ctx)
 	rx_sock = pf_socket();
 	tx_sock = pf_socket();
 
-	fmemset(&tx_ring, 0, sizeof(tx_ring));
-	fmemset(&rx_ring, 0, sizeof(rx_ring));
 	fmemset(&bpf_ops, 0, sizeof(bpf_ops));
 
 	ifindex_in = device_ifindex(ctx->device_in);
@@ -379,19 +369,8 @@ static void receive_to_xmit(struct ctx *ctx)
 		bpf_dump_all(&bpf_ops);
 	bpf_attach_to_sock(rx_sock, &bpf_ops);
 
-	setup_rx_ring_layout(rx_sock, &rx_ring, size_in, ctx->jumbo, false);
-	create_rx_ring(rx_sock, &rx_ring, ctx->verbose);
-	mmap_rx_ring(rx_sock, &rx_ring);
-	alloc_rx_ring_frames(rx_sock, &rx_ring);
-	bind_rx_ring(rx_sock, &rx_ring, ifindex_in);
-	prepare_polling(rx_sock, &rx_poll);
-
-	set_packet_loss_discard(tx_sock);
-	setup_tx_ring_layout(tx_sock, &tx_ring, size_out, ctx->jumbo);
-	create_tx_ring(tx_sock, &tx_ring, ctx->verbose);
-	mmap_tx_ring(tx_sock, &tx_ring);
-	alloc_tx_ring_frames(tx_sock, &tx_ring);
-	bind_tx_ring(tx_sock, &tx_ring, ifindex_out);
+	ring_rx_setup(&rx_ring, rx_sock, size_in, ifindex_in, &rx_poll, false, ctx->jumbo, ctx->verbose);
+	ring_tx_setup(&tx_ring, tx_sock, size_out, ifindex_out, ctx->jumbo, ctx->verbose);
 
 	dissector_init_all(ctx->print_mode);
 
@@ -901,7 +880,6 @@ static void recv_only_or_dump(struct ctx *ctx)
 		ctx->link_type = LINKTYPE_IEEE802_11;
 	}
 
-	fmemset(&rx_ring, 0, sizeof(rx_ring));
 	fmemset(&bpf_ops, 0, sizeof(bpf_ops));
 
 	ifindex = device_ifindex(ctx->device_in);
@@ -919,13 +897,8 @@ static void recv_only_or_dump(struct ctx *ctx)
 	if (ret == 0 && ctx->verbose)
 		printf("HW timestamping enabled\n");
 
-	setup_rx_ring_layout(sock, &rx_ring, size, true, true);
-	create_rx_ring(sock, &rx_ring, ctx->verbose);
-	mmap_rx_ring(sock, &rx_ring);
-	alloc_rx_ring_frames(sock, &rx_ring);
-	bind_rx_ring(sock, &rx_ring, ifindex);
+	ring_rx_setup(&rx_ring, sock, size, ifindex, &rx_poll, true, true, ctx->verbose);
 
-	prepare_polling(sock, &rx_poll);
 	dissector_init_all(ctx->print_mode);
 
 	if (ctx->cpu >= 0 && ifindex > 0) {
