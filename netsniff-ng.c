@@ -1196,8 +1196,6 @@ int main(int argc, char **argv)
 			break;
 		case 'S':
 			ptr = optarg;
-			ctx.reserve_size = 0;
-
 			for (j = i = strlen(optarg); i > 0; --i) {
 				if (!isdigit(optarg[j - i]))
 					break;
@@ -1264,8 +1262,6 @@ int main(int argc, char **argv)
 			break;
 		case 'F':
 			ptr = optarg;
-			ctx.dump_interval = 0;
-
 			for (j = i = strlen(optarg); i > 0; --i) {
 				if (!isdigit(optarg[j - i]))
 					break;
