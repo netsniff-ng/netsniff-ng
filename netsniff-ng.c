@@ -209,8 +209,6 @@ static void pcap_to_xmit(struct ctx *ctx)
 			panic("Error prepare reading pcap!\n");
 	}
 
-	fmemset(&bpf_ops, 0, sizeof(bpf_ops));
-
 	if (ctx->rfraw) {
 		ctx->device_trans = xstrdup(ctx->device_out);
 		xfree(ctx->device_out);
@@ -353,8 +351,6 @@ static void receive_to_xmit(struct ctx *ctx)
 
 	rx_sock = pf_socket();
 	tx_sock = pf_socket();
-
-	fmemset(&bpf_ops, 0, sizeof(bpf_ops));
 
 	ifindex_in = device_ifindex(ctx->device_in);
 	ifindex_out = device_ifindex(ctx->device_out);
@@ -546,7 +542,6 @@ static void read_pcap(struct ctx *ctx)
 	}
 
 	fmemset(&fm, 0, sizeof(fm));
-	fmemset(&bpf_ops, 0, sizeof(bpf_ops));
 
 	bpf_parse_rules(ctx->filter, &bpf_ops, ctx->link_type);
 	if (ctx->dump_bpf)
@@ -879,8 +874,6 @@ static void recv_only_or_dump(struct ctx *ctx)
 		enter_rfmon_mac80211(ctx->device_trans, &ctx->device_in);
 		ctx->link_type = LINKTYPE_IEEE802_11;
 	}
-
-	fmemset(&bpf_ops, 0, sizeof(bpf_ops));
 
 	ifindex = device_ifindex(ctx->device_in);
 

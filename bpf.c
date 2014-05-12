@@ -720,6 +720,8 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf, uint32_t link_type)
 	struct sock_filter sf_single = { 0x06, 0, 0, 0xFFFFFFFF };
 	FILE *fp;
 
+	fmemset(bpf, 0, sizeof(*bpf));
+
 	if (rulefile == NULL) {
 		bpf->len = 1;
 		bpf->filter = xmalloc(sizeof(sf_single));
