@@ -58,6 +58,8 @@ static void setup_rx_ring_layout(int sock, struct ring *ring, size_t size,
 	ring->layout.tp_frame_nr = ring->layout.tp_block_size /
 				   ring->layout.tp_frame_size *
 				   ring->layout.tp_block_nr;
+
+#ifdef HAVE_TPACKET3
 	if (v3) {
 		/* Pass out, if this will ever change and we do crap on it! */
 		build_bug_on(offsetof(struct tpacket_req, tp_frame_nr) !=
@@ -70,6 +72,9 @@ static void setup_rx_ring_layout(int sock, struct ring *ring, size_t size,
 		ring->layout3.tp_feature_req_word = 0;
 
 		set_sockopt_tpacket_v3(sock);
+#else
+	if (0) {
+#endif /* HAVE_TPACKET3 */
 	} else {
 		set_sockopt_tpacket_v2(sock);
 	}
@@ -80,11 +85,17 @@ static void setup_rx_ring_layout(int sock, struct ring *ring, size_t size,
 static void create_rx_ring(int sock, struct ring *ring, bool verbose)
 {
 	int ret;
+#ifdef HAVE_TPACKET3
 	bool v3 = get_sockopt_tpacket(sock) == TPACKET_V3;
+	size_t layout_size = v3 ? sizeof(ring->layout3) : sizeof(ring->layout);
+#else
+	bool v3 = false;
+	size_t layout_size = sizeof(ring->layout);
+#endif /* HAVE_TPACKET3 */
 
 retry:
 	ret = setsockopt(sock, SOL_PACKET, PACKET_RX_RING, &ring->raw,
-			 v3 ? sizeof(ring->layout3) : sizeof(ring->layout));
+			 layout_size);
 
 	if (errno == ENOMEM && ring->layout.tp_block_nr > 1) {
 		ring->layout.tp_block_nr >>= 1;
@@ -115,11 +126,15 @@ static void alloc_rx_ring_frames(int sock, struct ring *ring)
 {
 	int num;
 	size_t size;
+#if HAVE_TPACKET3
 	bool v3 = get_sockopt_tpacket(sock) == TPACKET_V3;
 
 	if (v3) {
 		num = ring->layout3.tp_block_nr;
 		size = ring->layout3.tp_block_size;
+#else
+	if (0) {
+#endif /* HAVE_TPACKET3 */
 	} else {
 		num = ring->layout.tp_frame_nr;
 		size = ring->layout.tp_frame_size;

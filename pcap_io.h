@@ -416,6 +416,7 @@ static inline void tpacket_hdr_to_pcap_pkthdr(struct tpacket2_hdr *thdr,
 				     thdr->tp_status, sll, phdr, type);
 }
 
+#ifdef HAVE_TPACKET3
 static inline void tpacket3_hdr_to_pcap_pkthdr(struct tpacket3_hdr *thdr,
 					       struct sockaddr_ll *sll,
 					       pcap_pkthdr_t *phdr,
@@ -425,6 +426,7 @@ static inline void tpacket3_hdr_to_pcap_pkthdr(struct tpacket3_hdr *thdr,
 				     thdr->tp_snaplen, thdr->tp_len,
 				     0, sll, phdr, type);
 }
+#endif
 
 static inline void pcap_pkthdr_to_tpacket_hdr(pcap_pkthdr_t *phdr,
 					      enum pcap_type type,

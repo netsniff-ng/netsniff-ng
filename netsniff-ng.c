@@ -790,6 +790,7 @@ static void print_pcap_file_stats(int sock, struct ctx *ctx)
 	}
 }
 
+#ifdef HAVE_TPACKET3
 static void walk_t3_block(struct block_desc *pbd, struct ctx *ctx,
 			  int sock, int *fd, unsigned long *frame_count)
 {
@@ -856,6 +857,7 @@ next:
 		}
 	}
 }
+#endif /* HAVE_TPACKET3 */
 
 static void recv_only_or_dump(struct ctx *ctx)
 {
@@ -867,8 +869,10 @@ static void recv_only_or_dump(struct ctx *ctx)
 	struct pollfd rx_poll;
 	struct sock_fprog bpf_ops;
 	struct timeval start, end, diff;
-	struct block_desc *pbd;
 	unsigned long frame_count = 0;
+#ifdef HAVE_TPACKET3
+	struct block_desc *pbd;
+#endif
 
 	sock = pf_socket();
 
@@ -939,6 +943,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 	bug_on(gettimeofday(&start, NULL));
 
 	while (likely(sigint == 0)) {
+#ifdef HAVE_TPACKET3
 		while (user_may_pull_from_rx_block((pbd = (void *)
 				rx_ring.frames[it].iov_base))) {
 			walk_t3_block(pbd, ctx, sock, &fd, &frame_count);
@@ -949,6 +954,71 @@ static void recv_only_or_dump(struct ctx *ctx)
 			if (unlikely(sigint == 1))
 				break;
 		}
+#else
+		while (user_may_pull_from_rx(rx_ring.frames[it].iov_base)) {
+			struct frame_map *hdr = rx_ring.frames[it].iov_base;
+			uint8_t *packet = ((uint8_t *) hdr) + hdr->tp_h.tp_mac;
+			pcap_pkthdr_t phdr;
+
+			if (ctx->packet_type != -1)
+				if (ctx->packet_type != hdr->s_ll.sll_pkttype)
+					goto next;
+
+			frame_count++;
+
+			if (unlikely(ring_frame_size(&rx_ring) < hdr->tp_h.tp_snaplen)) {
+				/* XXX: silently ignore for now. We used to
+				 * report them with sock_rx_net_stats()  */
+				goto next;
+			}
+
+			if (dump_to_pcap(ctx)) {
+				tpacket_hdr_to_pcap_pkthdr(&hdr->tp_h, &hdr->s_ll, &phdr, ctx->magic);
+
+				ret = __pcap_io->write_pcap(fd, &phdr, ctx->magic, packet,
+							    pcap_get_length(&phdr, ctx->magic));
+				if (unlikely(ret != (int) pcap_get_total_length(&phdr, ctx->magic)))
+					panic("Write error to pcap!\n");
+			}
+
+			show_frame_hdr(hdr, ctx->print_mode);
+
+			dissector_entry_point(packet, hdr->tp_h.tp_snaplen,
+					      ctx->link_type, ctx->print_mode);
+
+			if (frame_count_max != 0) {
+				if (unlikely(frame_count >= frame_count_max)) {
+					sigint = 1;
+					break;
+				}
+			}
+
+next:
+			kernel_may_pull_from_rx(&hdr->tp_h);
+			it = (it + 1) % rx_ring.layout.tp_frame_nr;
+
+			if (unlikely(sigint == 1))
+				break;
+
+			if (dump_to_pcap(ctx)) {
+				if (ctx->dump_mode == DUMP_INTERVAL_SIZE) {
+					interval += hdr->tp_h.tp_snaplen;
+					if (interval > ctx->dump_interval) {
+						next_dump = true;
+						interval = 0;
+					}
+				}
+
+				if (next_dump) {
+					fd = next_multi_pcap_file(ctx, fd);
+					next_dump = false;
+
+					if (unlikely(ctx->verbose))
+						print_pcap_file_stats(sock, ctx);
+				}
+			}
+		}
+#endif /* HAVE_TPACKET3 */
 
 		ret = poll(&rx_poll, 1, -1);
 		if (unlikely(ret < 0)) {

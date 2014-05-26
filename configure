@@ -206,7 +206,6 @@ EOF
 	if [ ! -x $TMPDIR/tpacketv3test ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
-		tools_remove "netsniff-ng"
 	else
 		echo "[YES]"
 		HAVE_TPACKET3=1

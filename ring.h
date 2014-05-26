@@ -35,6 +35,14 @@ union tpacket_uhdr {
 	void *raw;
 };
 
+#ifdef HAVE_TPACKET3
+#define tpacket_uhdr(hdr, member, v3)	\
+	((v3) ? ((hdr).h3)->member : ((hdr).h2)->member)
+#else
+#define tpacket_uhdr(hdr, member, v3)	\
+	(((hdr).h2)->member)
+#endif /* HAVE_TPACKET3 */
+
 struct frame_map {
 	struct tpacket2_hdr tp_h __aligned_tpacket;
 	struct sockaddr_ll s_ll __align_tpacket(sizeof(struct tpacket2_hdr));
@@ -132,12 +140,12 @@ static inline void set_sockopt_tpacket_v2(int sock)
 	__set_sockopt_tpacket(sock, TPACKET_V2);
 }
 
+#ifdef HAVE_TPACKET3
 static inline void set_sockopt_tpacket_v3(int sock)
 {
-#ifdef HAVE_TPACKET3
 	__set_sockopt_tpacket(sock, TPACKET_V3);
-#endif
 }
+#endif
 
 static inline int get_sockopt_tpacket(int sock)
 {
