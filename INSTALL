@@ -20,8 +20,6 @@ What additional tools next to your build-chain are required?
 What libraries are required?
 
  - libncurses:		   ifpps, flowtop
- - libGeoIP >=1.4.8:	   astraceroute, flowtop, netsniff-ng
- - libz:		   astraceroute, flowtop, netsniff-ng
  - libnacl or libsodium:   curvetun
  - libnetfilter-conntrack: flowtop
  - libpcap:		   mausezahn, netsniff-ng (tcpdump-like filters)
@@ -29,6 +27,12 @@ What libraries are required?
  - libnl3:		   netsniff-ng, trafgen
  - libcli:		   mausezahn
  - libnet:		   mausezahn
+
+The following libraries can optionally be used to provide additional
+functionality for certain tools:
+
+ - libGeoIP >=1.4.8:	   astraceroute, flowtop, netsniff-ng
+ - libz:		   astraceroute, flowtop, netsniff-ng
 
 What additional tools are recommended, but not mandatory after the build?
 

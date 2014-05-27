@@ -303,8 +303,6 @@ EOF
 	if [ ! -x $TMPDIR/geoiptest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
-		tools_remove "astraceroute"
-		tools_remove "flowtop"
 	else
 		echo "[YES]"
 		HAVE_LIBGEOIP=1
