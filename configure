@@ -302,13 +302,11 @@ EOF
 	$CC -o $TMPDIR/geoiptest $TMPDIR/geoiptest.c -lGeoIP >> config.log 2>&1
 	if [ ! -x $TMPDIR/geoiptest ] ; then
 		echo "[NO]"
-		echo "CONFIG_LIBGEOIP=0" >> Config
 		MISSING_DEFS=1
 		tools_remove "astraceroute"
 		tools_remove "flowtop"
 	else
 		echo "[YES]"
-		echo "CONFIG_LIBGEOIP=1" >> Config
 		HAVE_LIBGEOIP=1
 	fi
 }
