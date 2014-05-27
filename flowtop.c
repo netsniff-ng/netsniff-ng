@@ -595,12 +595,12 @@ flow_entry_geo_city_lookup_generic(struct flow_entry *n,
 
 	case AF_INET:
 		flow_entry_get_sain4_obj(n, dir, &sa4);
-		city = geoip4_city_name(sa4);
+		city = geoip4_city_name(&sa4);
 		break;
 
 	case AF_INET6:
 		flow_entry_get_sain6_obj(n, dir, &sa6);
-		city = geoip6_city_name(sa6);
+		city = geoip6_city_name(&sa6);
 		break;
 	}
 
@@ -629,12 +629,12 @@ flow_entry_geo_country_lookup_generic(struct flow_entry *n,
 
 	case AF_INET:
 		flow_entry_get_sain4_obj(n, dir, &sa4);
-		country = geoip4_country_name(sa4);
+		country = geoip4_country_name(&sa4);
 		break;
 
 	case AF_INET6:
 		flow_entry_get_sain6_obj(n, dir, &sa6);
-		country = geoip6_country_name(sa6);
+		country = geoip6_country_name(&sa6);
 		break;
 	}
 

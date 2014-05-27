@@ -98,21 +98,21 @@ static void ipv4(struct pkt_buff *pkt)
 
 	if (geoip_working()) {
 		tprintf("\t[ Geo (");
-		if ((country = geoip4_country_name(sas))) {
+		if ((country = geoip4_country_name(&sas))) {
 			tprintf("%s", country);
-			if ((region = geoip4_region_name(sas)))
+			if ((region = geoip4_region_name(&sas)))
 				tprintf(" / %s", region);
-			if ((city = geoip4_city_name(sas)))
+			if ((city = geoip4_city_name(&sas)))
 				tprintf(" / %s", city);
 		} else {
 			tprintf("local");
 		}
 		tprintf(" => ");
-		if ((country = geoip4_country_name(sad))) {
+		if ((country = geoip4_country_name(&sad))) {
 			tprintf("%s", country);
-			if ((region = geoip4_region_name(sad)))
+			if ((region = geoip4_region_name(&sad)))
 				tprintf(" / %s", region);
-			if ((city = geoip4_city_name(sad)))
+			if ((city = geoip4_city_name(&sad)))
 				tprintf(" / %s", city);
 		} else {
 			tprintf("local");

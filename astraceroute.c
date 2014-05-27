@@ -469,9 +469,9 @@ static void handle_ipv4(uint8_t *packet, size_t len __maybe_unused,
 	getnameinfo((struct sockaddr *) &sd, sizeof(sd),
 		    hbuff, sizeof(hbuff), NULL, 0, NI_NUMERICHOST);
 
-	as = geoip4_as_name(sd);
-	country = geoip4_country_name(sd);
-	city = geoip4_city_name(sd);
+	as = geoip4_as_name(&sd);
+	country = geoip4_country_name(&sd);
+	city = geoip4_city_name(&sd);
 
 	if (dns_resolv) {
 		hent = gethostbyaddr(&sd.sin_addr, sizeof(sd.sin_addr), PF_INET);
@@ -490,7 +490,7 @@ static void handle_ipv4(uint8_t *packet, size_t len __maybe_unused,
 			printf(", %s", city);
 	}
 	if (latitude)
-		printf(" (%f/%f)", geoip4_latitude(sd), geoip4_longitude(sd));
+		printf(" (%f/%f)", geoip4_latitude(&sd), geoip4_longitude(&sd));
 }
 
 static int check_ipv6(uint8_t *packet, size_t len, int ttl __maybe_unused,
@@ -536,9 +536,9 @@ static void handle_ipv6(uint8_t *packet, size_t len __maybe_unused,
 	getnameinfo((struct sockaddr *) &sd, sizeof(sd),
 		    hbuff, sizeof(hbuff), NULL, 0, NI_NUMERICHOST);
 
-	as = geoip6_as_name(sd);
-	country = geoip6_country_name(sd);
-	city = geoip6_city_name(sd);
+	as = geoip6_as_name(&sd);
+	country = geoip6_country_name(&sd);
+	city = geoip6_city_name(&sd);
 
 	if (dns_resolv) {
 		hent = gethostbyaddr(&sd.sin6_addr, sizeof(sd.sin6_addr), PF_INET6);
@@ -557,7 +557,7 @@ static void handle_ipv6(uint8_t *packet, size_t len __maybe_unused,
 			printf(", %s", city);
 	}
 	if (latitude)
-		printf(" (%f/%f)", geoip6_latitude(sd), geoip6_longitude(sd));
+		printf(" (%f/%f)", geoip6_latitude(&sd), geoip6_longitude(&sd));
 }
 
 static void show_trace_info(struct ctx *ctx, const struct sockaddr_storage *ss,
