@@ -393,7 +393,7 @@ static void flow_list_destroy(struct flow_list *fl)
 	spinlock_destroy(&fl->lock);
 }
 
-static int walk_process(char *process, struct flow_entry *n)
+static int walk_process(const char *process, struct flow_entry *n)
 {
 	int ret;
 	DIR *dir;
