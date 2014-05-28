@@ -13,6 +13,7 @@ endif
 netsniff-ng-objs =	dissector.o \
 			dissector_eth.o \
 			dissector_80211.o \
+			dissector_netlink.o \
 			proto_arp.o \
 			proto_ethernet.o \
 			proto_icmpv4.o \
@@ -30,6 +31,7 @@ netsniff-ng-objs =	dissector.o \
 			proto_ipv6_no_nxt_hdr.o \
 			proto_ipv6_routing.o \
 			proto_lldp.o \
+			proto_nlmsg.o \
 			proto_none.o \
 			proto_tcp.o \
 			proto_udp.o \
