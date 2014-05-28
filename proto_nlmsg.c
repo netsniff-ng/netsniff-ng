@@ -4,7 +4,10 @@
  * Subject to the GPL, version 2.
  */
 
+#include <stdio.h>
+#include <unistd.h>
 #include <libnl3/netlink/msg.h>
+#include <libgen.h>
 
 #include "pkt_buff.h"
 #include "proto.h"
@@ -14,9 +17,22 @@ static void nlmsg(struct pkt_buff *pkt)
 	struct nlmsghdr *hdr = (struct nlmsghdr *) pkt_pull(pkt, sizeof(*hdr));
 	char type[32];
 	char flags[128];
+	char procname[1024];
 
 	if (hdr == NULL)
 		return;
+
+	/* Look up the process name if message is not coming from the kernel */
+	if (hdr->nlmsg_pid != 0) {
+		char path[1024];
+		int ret;
+
+		snprintf(path, sizeof(path), "/proc/%u/exe", hdr->nlmsg_pid);
+		ret = readlink(path, procname, sizeof(procname) - 1);
+		if (ret < 0)
+			procname[0] = '\0';
+	} else
+		snprintf(procname, sizeof(procname), "kernel");
 
 	tprintf(" [ NLMSG ");
 	tprintf("Len %u, ", hdr->nlmsg_len);
@@ -30,6 +46,9 @@ static void nlmsg(struct pkt_buff *pkt)
 		colorize_end());
 	tprintf("Seq-Nr %u, ", hdr->nlmsg_seq);
 	tprintf("PID %u", hdr->nlmsg_pid);
+	if (procname[0])
+		tprintf(" (%s%s%s)", colorize_start(bold), basename(procname),
+			colorize_end());
 	tprintf(" ]\n");
 }
 
