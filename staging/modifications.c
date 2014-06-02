@@ -638,7 +638,11 @@ int print_frame_details()
    
    dum1 =  (unsigned char*) &tx.ip_src_h;
    dum2 = (unsigned char*) &tx.ip_dst_h;
-   (mode==IP) ? (void) bs2str(tx.ip_payload, pld, tx.ip_payload_s) : strcpy(pld, "[see next layer]");
+   if (mode==IP) {
+     (void) bs2str(tx.ip_payload, pld, tx.ip_payload_s);
+   } else {
+     strcpy(pld, "[see next layer]");
+   }
 
    if (ipv6_mode) {
      char src6[64]; char dst6[64];
