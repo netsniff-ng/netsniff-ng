@@ -12,6 +12,7 @@
 #include <sys/socket.h>
 #include <linux/if_packet.h>
 #include <linux/if.h>
+#include <libnl3/netlink/msg.h>
 
 #include "ring.h"
 #include "tprintf.h"
@@ -48,26 +49,39 @@ static inline const char *__show_ts_source(uint32_t status)
 		return "";
 }
 
-static inline void __show_frame_hdr(struct sockaddr_ll *s_ll,
-				    void *raw, int mode, bool v3)
+static inline void __show_frame_hdr(uint8_t *packet, size_t len, int linktype,
+				    struct sockaddr_ll *s_ll, void *raw_hdr,
+				    int mode, bool v3)
 {
 	char tmp[IFNAMSIZ];
 	union tpacket_uhdr hdr;
+	uint8_t pkttype = s_ll->sll_pkttype;
 
 	if (mode == PRINT_NONE)
 		return;
 
-	hdr.raw = raw;
+	/*
+	 * If we're capturing on nlmon0, all packets will have sll_pkttype set
+	 * to PACKET_OUTGOING, but we actually want PACKET_USER/PACKET_KERNEL as
+	 * it originally was set in the kernel. Thus, use nlmsghdr->nlmsg_pid to
+	 * restore the type.
+	 */
+	if (linktype == AF_NETLINK && len >= sizeof(struct nlmsghdr)) {
+		struct nlmsghdr *hdr = (struct nlmsghdr *) packet;
+		pkttype = hdr->nlmsg_pid == 0 ? PACKET_KERNEL : PACKET_USER;
+	}
+
+	hdr.raw = raw_hdr;
 	switch (mode) {
 	case PRINT_LESS:
 		tprintf("%s %s %u",
-			packet_types[s_ll->sll_pkttype] ? : "?",
+			packet_types[pkttype] ? : "?",
 			if_indextoname(s_ll->sll_ifindex, tmp) ? : "?",
 			v3 ? hdr.h3->tp_len : hdr.h2->tp_len);
 		break;
 	default:
 		tprintf("%s %s %u %us.%uns %s\n",
-			packet_types[s_ll->sll_pkttype] ? : "?",
+			packet_types[pkttype] ? : "?",
 			if_indextoname(s_ll->sll_ifindex, tmp) ? : "?",
 			v3 ? hdr.h3->tp_len : hdr.h2->tp_len,
 			v3 ? hdr.h3->tp_sec : hdr.h2->tp_sec,
@@ -77,9 +91,10 @@ static inline void __show_frame_hdr(struct sockaddr_ll *s_ll,
 	}
 }
 
-static inline void show_frame_hdr(struct frame_map *hdr, int mode)
+static inline void show_frame_hdr(uint8_t *packet, size_t len, int linktype,
+				  struct frame_map *hdr, int mode)
 {
-	__show_frame_hdr(&hdr->s_ll, &hdr->tp_h, mode, false);
+	__show_frame_hdr(packet, len, linktype, &hdr->s_ll, &hdr->tp_h, mode, false);
 }
 
 extern void dissector_init_all(int fnttype);

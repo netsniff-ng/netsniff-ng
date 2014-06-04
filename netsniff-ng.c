@@ -277,7 +277,8 @@ static void pcap_to_xmit(struct ctx *ctx)
 			ctx->tx_bytes += hdr->tp_h.tp_len;;
 			ctx->tx_packets++;
 
-			show_frame_hdr(hdr, ctx->print_mode);
+			show_frame_hdr(out, hdr->tp_h.tp_snaplen,
+				       ctx->link_type, hdr, ctx->print_mode);
 
 			dissector_entry_point(out, hdr->tp_h.tp_snaplen,
 					      ctx->link_type, ctx->print_mode);
@@ -424,7 +425,8 @@ static void receive_to_xmit(struct ctx *ctx)
 					it_out = 0;
 			}
 
-			show_frame_hdr(hdr_in, ctx->print_mode);
+			show_frame_hdr(in, hdr_in->tp_h.tp_snaplen,
+				       ctx->link_type, hdr_in, ctx->print_mode);
 
 			dissector_entry_point(in, hdr_in->tp_h.tp_snaplen,
 					      ctx->link_type, ctx->print_mode);
@@ -594,7 +596,8 @@ static void read_pcap(struct ctx *ctx)
 		ctx->tx_bytes += fm.tp_h.tp_len;
 		ctx->tx_packets++;
 
-		show_frame_hdr(&fm, ctx->print_mode);
+		show_frame_hdr(out, fm.tp_h.tp_snaplen, ctx->link_type, &fm,
+			       ctx->print_mode);
 
 		dissector_entry_point(out, fm.tp_h.tp_snaplen,
 				      ctx->link_type, ctx->print_mode);
@@ -817,7 +820,8 @@ static void walk_t3_block(struct block_desc *pbd, struct ctx *ctx,
 				panic("Write error to pcap!\n");
 		}
 
-		__show_frame_hdr(sll, hdr, ctx->print_mode, true);
+		__show_frame_hdr(packet, hdr->tp_snaplen, ctx->link_type, sll,
+				 hdr, ctx->print_mode, true);
 
 		dissector_entry_point(packet, hdr->tp_snaplen, ctx->link_type,
 				      ctx->print_mode);
