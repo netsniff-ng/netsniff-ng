@@ -22,7 +22,13 @@ static void nlmsg(struct pkt_buff *pkt)
 	if (hdr == NULL)
 		return;
 
-	/* Look up the process name if message is not coming from the kernel */
+	/* Look up the process name if message is not coming from the kernel.
+	 *
+	 * Note that the port id is not necessarily equal to the PID of the
+	 * receiving process (e.g. if the application is multithreaded or using
+	 * multiple sockets). In these cases we're not able to find a matching
+	 * PID and the information will not be printed.
+	 */
 	if (hdr->nlmsg_pid != 0) {
 		char path[1024];
 		int ret;
