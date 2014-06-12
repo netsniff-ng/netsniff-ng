@@ -15,9 +15,9 @@ endif
 
 VERSION = 0
 PATCHLEVEL = 5
-SUBLEVEL = 8
-EXTRAVERSION =
-NAME = Ziggomatic
+SUBLEVEL = 9
+EXTRAVERSION = -rc1
+NAME = Cilonen
 
 TOOLS ?= $(CONFIG_TOOLS)
 TOOLS ?= netsniff-ng trafgen astraceroute flowtop ifpps bpfc curvetun mausezahn
