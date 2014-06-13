@@ -178,6 +178,7 @@ EOF
 		MISSING_DEFS=1
 		tools_remove "trafgen"
 		tools_remove "netsniff-ng"
+		tools_remove "flowtop"
 	else
 		echo "[YES]"
 	fi
