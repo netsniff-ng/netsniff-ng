@@ -19,11 +19,7 @@ flowtop-objs =	xmalloc.o \
 		dev.o \
 		link.o \
 		hash.o \
-		dissector_eth.o \
-		dissector_80211.o \
-		dissector_netlink.o \
-		dissector.o \
-		proto_none.o \
+		lookup.o \
 		tprintf.o \
 		screen.o \
 		flowtop.o
@@ -32,8 +28,7 @@ ifeq ($(CONFIG_GEOIP), 1)
 flowtop-objs +=	geoip.o
 endif
 
-flowtop-eflags = $(shell pkg-config --cflags ncurses) \
-		 $(shell pkg-config --cflags libnl-3.0)
+flowtop-eflags = $(shell pkg-config --cflags ncurses)
 
 flowtop-confs =	tcp.conf \
 		udp.conf \

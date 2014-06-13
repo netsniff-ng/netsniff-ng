@@ -14,6 +14,7 @@ netsniff-ng-objs =	dissector.o \
 			dissector_eth.o \
 			dissector_80211.o \
 			dissector_netlink.o \
+			lookup.o \
 			proto_arp.o \
 			proto_ethernet.o \
 			proto_icmpv4.o \

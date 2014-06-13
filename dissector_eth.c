@@ -8,50 +8,15 @@
 
 #include "hash.h"
 #include "oui.h"
-#include "str.h"
 #include "proto.h"
 #include "protos.h"
 #include "dissector.h"
 #include "dissector_eth.h"
+#include "lookup.h"
 #include "xmalloc.h"
 
 struct hash_table eth_lay2;
 struct hash_table eth_lay3;
-
-static struct hash_table eth_ether_types;
-static struct hash_table eth_ports_udp;
-static struct hash_table eth_ports_tcp;
-
-struct port {
-	unsigned int id;
-	char *port;
-	struct port *next;
-};
-
-#define __do_lookup_inline(id, struct_name, hash_ptr, struct_member)	\
-	({								\
-		struct struct_name *entry = lookup_hash(id, hash_ptr);	\
-									\
-		while (entry && id != entry->id)			\
-			entry = entry->next;				\
-									\
-		(entry && id == entry->id ? entry->struct_member : NULL); \
-	})
-
-char *lookup_port_udp(unsigned int id)
-{
-	return __do_lookup_inline(id, port, &eth_ports_udp, port);
-}
-
-char *lookup_port_tcp(unsigned int id)
-{
-	return __do_lookup_inline(id, port, &eth_ports_tcp, port);
-}
-
-char *lookup_ether_type(unsigned int id)
-{
-	return __do_lookup_inline(id, port, &eth_ether_types, port);
-}
 
 #ifdef HAVE_DISSECTOR_PROTOS
 static inline void dissector_init_entry(int type)
@@ -103,99 +68,6 @@ static void dissector_init_layer_2(int type __maybe_unused) {}
 static void dissector_init_layer_3(int type __maybe_unused) {}
 #endif
 
-enum ports {
-	PORTS_UDP,
-	PORTS_TCP,
-	PORTS_ETHER,
-};
-
-static void dissector_init_ports(enum ports which)
-{
-	FILE *fp;
-	char buff[128], *ptr, *file, *end;
-	struct hash_table *table;
-	struct port *p;
-	void **pos;
-
-	switch (which) {
-	case PORTS_UDP:
-		file = ETCDIRE_STRING "/udp.conf";
-		table = &eth_ports_udp;
-		break;
-	case PORTS_TCP:
-		file = ETCDIRE_STRING "/tcp.conf";
-		table = &eth_ports_tcp;
-		break;
-	case PORTS_ETHER:
-		file = ETCDIRE_STRING "/ether.conf";
-		table = &eth_ether_types;
-		break;
-	default:
-		bug();
-	}
-
-	fp = fopen(file, "r");
-	if (!fp)
-		panic("No %s found!\n", file);
-
-	memset(buff, 0, sizeof(buff));
-
-	while (fgets(buff, sizeof(buff), fp) != NULL) {
-		buff[sizeof(buff) - 1] = 0;
-		ptr = buff;
-
-		p = xmalloc(sizeof(*p));
-		p->id = strtol(ptr, &end, 0);
-		/* not a valid line, skip */
-		if (p->id == 0 && end == ptr) {
-			xfree(p);
-			continue;
-		}
-
-		ptr = strstr(buff, ", ");
-		/* likewise */
-		if (!ptr) {
-			xfree(p);
-			continue;
-		}
-
-		ptr += strlen(", ");
-		ptr = strtrim_right(ptr, '\n');
-		ptr = strtrim_right(ptr, ' ');
-
-		p->port = xstrdup(ptr);
-		p->next = NULL;
-
-		pos = insert_hash(p->id, p, table);
-		if (pos) {
-			p->next = *pos;
-			*pos = p;
-		}
-
-		memset(buff, 0, sizeof(buff));
-	}
-
-	fclose(fp);
-}
-
-static int dissector_cleanup_ports(void *ptr)
-{
-	struct port *tmp, *p = ptr;
-
-	if (!ptr)
-		return 0;
-
-	while ((tmp = p->next)) {
-		xfree(p->port);
-		xfree(p);
-		p = tmp;
-	}
-
-	xfree(p->port);
-	xfree(p);
-
-	return 0;
-}
 
 void dissector_init_ethernet(int fnttype)
 {
@@ -207,9 +79,9 @@ void dissector_init_ethernet(int fnttype)
 #ifdef __WITH_PROTOS
 	dissector_init_oui();
 #endif
-	dissector_init_ports(PORTS_UDP);
-	dissector_init_ports(PORTS_TCP);
-	dissector_init_ports(PORTS_ETHER);
+	lookup_init_ports(PORTS_UDP);
+	lookup_init_ports(PORTS_TCP);
+	lookup_init_ports(PORTS_ETHER);
 }
 
 void dissector_cleanup_ethernet(void)
@@ -217,13 +89,9 @@ void dissector_cleanup_ethernet(void)
 	free_hash(&eth_lay2);
 	free_hash(&eth_lay3);
 
-	for_each_hash(&eth_ether_types, dissector_cleanup_ports);
-	for_each_hash(&eth_ports_udp, dissector_cleanup_ports);
-	for_each_hash(&eth_ports_tcp, dissector_cleanup_ports);
-
-	free_hash(&eth_ether_types);
-	free_hash(&eth_ports_udp);
-	free_hash(&eth_ports_tcp);
+	lookup_cleanup_ports(PORTS_ETHER);
+	lookup_cleanup_ports(PORTS_TCP);
+	lookup_cleanup_ports(PORTS_UDP);
 
 #ifdef __WITH_PROTOS
 	dissector_cleanup_oui();

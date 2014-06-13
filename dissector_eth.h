@@ -16,10 +16,6 @@ extern struct hash_table eth_lay3;
 extern void dissector_init_ethernet(int fnttype);
 extern void dissector_cleanup_ethernet(void);
 
-extern char *lookup_port_udp(unsigned int id);
-extern char *lookup_port_tcp(unsigned int id);
-extern char *lookup_ether_type(unsigned int id);
-
 #ifdef HAVE_DISSECTOR_PROTOS
 static inline struct protocol *dissector_get_ethernet_entry_point(void)
 {

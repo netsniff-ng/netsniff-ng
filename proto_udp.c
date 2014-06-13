@@ -10,6 +10,7 @@
 
 #include "proto.h"
 #include "dissector_eth.h"
+#include "lookup.h"
 #include "pkt_buff.h"
 
 struct udphdr {
