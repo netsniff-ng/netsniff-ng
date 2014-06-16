@@ -104,7 +104,7 @@ static inline void pkt_set_proto(struct pkt_buff *pkt, struct hash_table *table,
 {
 	bug_on(!pkt || !table);
 
-	pkt->proto = (struct protocol *) lookup_hash(key, table);
+	pkt->proto = lookup_hash(key, table);
 	while (pkt->proto && key != pkt->proto->key)
 		pkt->proto = pkt->proto->next;
 }
