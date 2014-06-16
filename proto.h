@@ -11,7 +11,6 @@
 #include <ctype.h>
 #include <stdint.h>
 
-#include "hash.h"
 #include "tprintf.h"
 
 struct pkt_buff;
