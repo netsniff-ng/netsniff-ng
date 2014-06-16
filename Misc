@@ -24,9 +24,9 @@ announcement:
 	$(Q)echo -e "   git clone git://github.com/netsniff-ng/netsniff-ng.git" >> .MAIL_MSG
 	$(Q)echo -e "   git checkout v$(VERSION_SHORT)\n" >> .MAIL_MSG
 	$(Q)echo -e "Or via HTTP from one of our mirrors:\n" >> .MAIL_MSG
-	$(Q)echo -e "   http://pub.netsniff-ng.org/netsniff-ng/netsniff-ng-$(VERSION_SHORT).tar.gz\n" >> .MAIL_MSG
-	$(Q)echo -e "   http://mirror.distanz.ch/netsniff-ng/netsniff-ng-$(VERSION_SHORT).tar.gz\n" >> .MAIL_MSG
-	$(Q)echo -e "   http://github.com/netsniff-ng/netsniff-ng/archive/$(VERSION_SHORT).tar.gz\n" >> .MAIL_MSG
+	$(Q)echo -e "   http://pub.netsniff-ng.org/netsniff-ng/netsniff-ng-$(VERSION_SHORT).tar.gz" >> .MAIL_MSG
+	$(Q)echo -e "   http://mirror.distanz.ch/netsniff-ng/netsniff-ng-$(VERSION_SHORT).tar.gz" >> .MAIL_MSG
+	$(Q)echo -e "   http://github.com/netsniff-ng/netsniff-ng/archive/v$(VERSION_SHORT).tar.gz\n" >> .MAIL_MSG
 	$(Q)echo -e "The release can be verified via Git (see README):\n" >> .MAIL_MSG
 	$(Q)echo -e "   git tag -v v$(VERSION_SHORT)\n" >> .MAIL_MSG
 	$(Q)echo -e "Major high-level changes since the last release are:\n" >> .MAIL_MSG
