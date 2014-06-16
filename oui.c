@@ -109,6 +109,9 @@ static int dissector_cleanup_oui_hash(void *ptr)
 
 void dissector_cleanup_oui(void)
 {
+	if (!initialized)
+		return;
+
 	for_each_hash(&oui, dissector_cleanup_oui_hash);
 	free_hash(&oui);
 	initialized = false;

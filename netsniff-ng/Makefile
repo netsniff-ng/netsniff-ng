@@ -77,7 +77,7 @@ endif
 
 netsniff-ng-eflags = $(shell pkg-config --cflags libnl-3.0) \
 		     $(shell pkg-config --cflags libnl-genl-3.0) \
-		     -DHAVE_DISSECTOR_PROTOS -DNEED_TCPDUMP_LIKE_FILTER
+		     -DNEED_TCPDUMP_LIKE_FILTER
 
 netsniff-ng-confs =	ether.conf \
 			tcp.conf \

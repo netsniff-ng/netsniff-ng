@@ -12,7 +12,6 @@
 extern void dissector_init_netlink(int fnttype);
 extern void dissector_cleanup_netlink(void);
 
-#ifdef HAVE_DISSECTOR_PROTOS
 static inline struct protocol *dissector_get_netlink_entry_point(void)
 {
 	return &nlmsg_ops;
@@ -22,16 +21,5 @@ static inline struct protocol *dissector_get_netlink_exit_point(void)
 {
 	return &none_ops;
 }
-#else
-static inline struct protocol *dissector_get_netlink_entry_point(void)
-{
-	return NULL;
-}
-
-static inline struct protocol *dissector_get_netlink_exit_point(void)
-{
-	return NULL;
-}
-#endif /* HAVE_DISSECTOR_PROTOS */
 
 #endif /* DISSECTOR_NETLINK_H */

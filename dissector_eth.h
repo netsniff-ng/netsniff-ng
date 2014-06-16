@@ -16,7 +16,6 @@ extern struct hash_table eth_lay3;
 extern void dissector_init_ethernet(int fnttype);
 extern void dissector_cleanup_ethernet(void);
 
-#ifdef HAVE_DISSECTOR_PROTOS
 static inline struct protocol *dissector_get_ethernet_entry_point(void)
 {
 	return &ethernet_ops;
@@ -26,15 +25,5 @@ static inline struct protocol *dissector_get_ethernet_exit_point(void)
 {
 	return &none_ops;
 }
-#else
-static inline struct protocol *dissector_get_ethernet_entry_point(void)
-{
-	return NULL;
-}
 
-static inline struct protocol *dissector_get_ethernet_exit_point(void)
-{
-	return NULL;
-}
-#endif
 #endif /* DISSECTOR_ETH_H */

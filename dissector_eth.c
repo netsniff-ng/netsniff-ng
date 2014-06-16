@@ -18,7 +18,6 @@
 struct hash_table eth_lay2;
 struct hash_table eth_lay3;
 
-#ifdef HAVE_DISSECTOR_PROTOS
 static inline void dissector_init_entry(int type)
 {
 	dissector_set_print_type(&ethernet_ops, type);
@@ -61,13 +60,6 @@ static void dissector_init_layer_3(int type)
 	INSERT_HASH_PROTOS(udp_ops, eth_lay3);
 	for_each_hash_int(&eth_lay3, dissector_set_print_type, type);
 }
-#else
-static inline void dissector_init_entry(int type __maybe_unused) {}
-static inline void dissector_init_exit(int type __maybe_unused) {}
-static void dissector_init_layer_2(int type __maybe_unused) {}
-static void dissector_init_layer_3(int type __maybe_unused) {}
-#endif
-
 
 void dissector_init_ethernet(int fnttype)
 {
@@ -76,9 +68,8 @@ void dissector_init_ethernet(int fnttype)
 	dissector_init_layer_3(fnttype);
 	dissector_init_exit(fnttype);
 
-#ifdef __WITH_PROTOS
 	dissector_init_oui();
-#endif
+
 	lookup_init_ports(PORTS_UDP);
 	lookup_init_ports(PORTS_TCP);
 	lookup_init_ports(PORTS_ETHER);
@@ -93,7 +84,5 @@ void dissector_cleanup_ethernet(void)
 	lookup_cleanup_ports(PORTS_TCP);
 	lookup_cleanup_ports(PORTS_UDP);
 
-#ifdef __WITH_PROTOS
 	dissector_cleanup_oui();
-#endif
 }
