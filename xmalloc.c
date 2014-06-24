@@ -34,6 +34,21 @@ void *xmalloc(size_t size)
 	return ptr;
 }
 
+void *xcalloc(size_t nmemb, size_t size)
+{
+	void *ptr;
+
+	if (unlikely(nmemb == 0 || size == 0))
+		panic("xcalloc: zero size\n");
+
+	ptr = calloc(nmemb, size);
+	if (unlikely(ptr == NULL))
+		panic("xcalloc: out of memory (allocating %zu members of "
+		      "%zu bytes)\n", nmemb, size);
+
+	return ptr;
+}
+
 void *xzmalloc(size_t size)
 {
 	void *ptr = xmalloc(size);

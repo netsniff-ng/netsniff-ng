@@ -785,7 +785,7 @@ static int __process_time(struct ctx *ctx, int fd, int fd_cap, int ttl,
 		return -EIO;
 	}
 
-	tmp = xmalloc(sizeof(struct timeval) * good);
+	tmp = xcalloc(good, sizeof(struct timeval));
 	for (i = j = 0; i < array_size(probes); ++i) {
 		if (probes[i].tv_sec == 0 && probes[i].tv_usec == 0)
 			continue;

@@ -140,7 +140,8 @@ static int cleanup_cpusched_batch(void *ptr)
 void init_cpusched(unsigned int cpus)
 {
 	rwlock_init(&map_lock);
-	cpu_work_map = xzmalloc((cpu_len = cpus) * sizeof(*cpu_work_map));
+	cpu_len = cpus;
+	cpu_work_map = xcalloc(cpu_len, sizeof(*cpu_work_map));
 	init_hash(&mapper);
 }
 

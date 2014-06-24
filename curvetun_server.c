@@ -638,7 +638,7 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4, int log)
 
 	set_nonblocking(lfd);
 
-	events = xzmalloc(MAX_EPOLL_SIZE * sizeof(*events));
+	events = xcalloc(MAX_EPOLL_SIZE, sizeof(*events));
 	for (i = 0; i < MAX_EPOLL_SIZE; ++i)
 		events[i].data.fd = -1;
 
@@ -661,7 +661,7 @@ int server_main(char *home, char *dev, char *port, int udp, int ipv4, int log)
 	if (!ispow2(threads))
 		syslog_panic("Thread number not power of two!\n");
 
-	threadpool = xzmalloc(sizeof(*threadpool) * threads);
+	threadpool = xcalloc(threads, sizeof(*threadpool));
 	thread_spawn_or_panic(cpus, efd[1], refd[1], tunfd, ipv4, udp);
 
 	init_cpusched(threads);

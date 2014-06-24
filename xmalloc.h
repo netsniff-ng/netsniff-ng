@@ -7,6 +7,7 @@
 #include "die.h"
 
 extern void *xmalloc(size_t size) __hidden;
+extern void *xcalloc(size_t nmemb, size_t size) __hidden;
 extern void *xzmalloc(size_t size) __hidden;
 extern void *xmallocz(size_t size) __hidden;
 extern void *xmalloc_aligned(size_t size, size_t alignment) __hidden;

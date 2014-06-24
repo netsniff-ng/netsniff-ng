@@ -94,7 +94,7 @@ static void grow_hash_table(struct hash_table *table)
 	struct hash_table_entry *old_array = table->array, *new_array;
 
 	new_size = alloc_nr(old_size);
-	new_array = xzmalloc(sizeof(struct hash_table_entry) * new_size);
+	new_array = xcalloc(new_size, sizeof(struct hash_table_entry));
 
 	table->size = new_size;
 	table->array = new_array;

@@ -173,7 +173,7 @@ static inline int padding_from_num(int n)
 }
 
 #define STATS_ALLOC1(member)	\
-	do { stats->member = xzmalloc(cpus * sizeof(*(stats->member))); } while (0)
+	do { stats->member = xcalloc(cpus, sizeof(*(stats->member))); } while (0)
 
 static void stats_alloc(struct ifstat *stats, unsigned int cpus)
 {
@@ -1425,7 +1425,7 @@ int main(int argc, char **argv)
 	stats_alloc(&stats_new, cpus);
 	stats_alloc(&stats_delta, cpus);
 
-	cpu_hits = xzmalloc(cpus * sizeof(*cpu_hits));
+	cpu_hits = xcalloc(cpus, sizeof(*cpu_hits));
 
 	if (promisc)
 		ifflags = device_enter_promiscuous_mode(ifname);
