@@ -38,7 +38,7 @@ echo "Building NaCl for arch $arch on host $shorthostname (grab a coffee, this t
 
 cd "$nacl_build_dir"/"$nacl_version"
 ./do
-cd - > /dev/null
+cd $OLDPWD > /dev/null
 
 nacl_lib_path="$nacl_build_dir/$nacl_version/build/$shorthostname/lib/$arch"
 nacl_include_path="$nacl_build_dir/$nacl_version/build/$shorthostname/include/$arch"
