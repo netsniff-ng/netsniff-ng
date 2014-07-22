@@ -27,13 +27,13 @@ void mz_cli_init()
 {
 	amp_head = automops_init();
 	
-	// Initialize default credentials (will be overwritten by mz.cfg)
+	// Initialize default credentials (will be overwritten by mausezahn.cfg)
 	strcpy(mz_username, MZ_DEFAULT_USERNAME);
 	strcpy(mz_password, MZ_DEFAULT_PASSWORD);
 	strcpy(mz_enable, MZ_DEFAULT_ENABLE_PASSWORD);
 	
 	// read login credentials from config file
-	if (cli_read_cfg("mz.cfg")) {
+	if (cli_read_cfg("mausezahn.cfg")) {
 		fprintf(stderr, "mz: Problems opening config file. Will use defaults\n");
 	}
 

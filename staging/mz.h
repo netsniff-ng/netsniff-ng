@@ -79,7 +79,7 @@ static inline void verbose_l2(const char *format, ...)
 
 // "Dies ist ein schrecklicher Ort."
 
-#define MZ_DEFAULT_CONFIG_PATH "/etc/mausezahn/"   // see also mz_default_config_path below
+#define MZ_DEFAULT_CONFIG_PATH "/etc/netsniff-ng/"   // see also mz_default_config_path below
 #define MZ_DEFAULT_LOG_PATH "/var/log/mausezahn/"  // see also mz_default_log_path below
 
 #define SLEEP usleep               // The sleep function to use. Consider 'nanosleep' in future.
