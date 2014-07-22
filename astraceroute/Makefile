@@ -16,7 +16,6 @@ astraceroute-objs =	xmalloc.o \
 			sock.o \
 			link.o \
 			dev.o \
-			ring_rx.o \
 			ring.o \
 			astraceroute.o
 
