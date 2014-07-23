@@ -7,7 +7,6 @@ endif
 
 
 astraceroute-objs =	xmalloc.o \
-			ioops.o \
 			proto_none.o \
 			tprintf.o \
 			bpf.o \
@@ -20,7 +19,8 @@ astraceroute-objs =	xmalloc.o \
 			astraceroute.o
 
 ifeq ($(CONFIG_GEOIP), 1)
-astraceroute-objs +=	geoip.o
+astraceroute-objs +=	geoip.o \
+			ioops.o
 endif
 
 astraceroute-eflags =

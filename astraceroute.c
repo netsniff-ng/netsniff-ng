@@ -40,7 +40,6 @@
 #include "pkt_buff.h"
 #include "proto.h"
 #include "xmalloc.h"
-#include "ioops.h"
 #include "csum.h"
 #include "sock.h"
 #include "geoip.h"
