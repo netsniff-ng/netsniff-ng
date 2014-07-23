@@ -27,7 +27,6 @@
 #include "die.h"
 #include "xmalloc.h"
 #include "conntrack.h"
-#include "ioops.h"
 #include "config.h"
 #include "str.h"
 #include "sig.h"

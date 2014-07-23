@@ -11,7 +11,6 @@ flowtop-libs +=	-lGeoIP \
 endif
 
 flowtop-objs =	xmalloc.o \
-		ioops.o \
 		oui.o \
 		str.o \
 		sig.o \
@@ -25,7 +24,8 @@ flowtop-objs =	xmalloc.o \
 		flowtop.o
 
 ifeq ($(CONFIG_GEOIP), 1)
-flowtop-objs +=	geoip.o
+flowtop-objs +=	geoip.o \
+		ioops.o
 endif
 
 flowtop-eflags = $(shell pkg-config --cflags ncurses)
