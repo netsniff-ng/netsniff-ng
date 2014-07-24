@@ -42,6 +42,7 @@ _interfaces () {
 
 _arguments -s -S \
     "-x[Interactive mode with telnet CLI, default port: 25542]" \
+    "-l[Listen address in interactive mode, default: 0.0.0.0]" \
     "(-6)-4[IPv4 mode (default)]" \
     "(-4)-6[IPv6 mode]" \
     "-c[Send packet count times, default:1, infinite:0]" \

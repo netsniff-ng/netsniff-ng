@@ -33,7 +33,7 @@
 
 int verbose_level = 0;
 
-static const char *short_options = "46hqvVSxra:A:b:B:c:d:E:f:F:p:P:t:T:M:Q:X:";
+static const char *short_options = "46hqvVSxra:A:b:B:c:d:E:f:F:l:p:P:t:T:M:Q:X:";
 
 static void signal_handler(int number)
 {
@@ -109,6 +109,7 @@ static void help(void)
 	     "Usage: mausezahn [options] [interface] <keyword>|<arg-string>|<hex-string>\n"
 	     "Options:\n"
 	     "  -x <port>            Interactive mode with telnet CLI, default port: 25542\n"
+	     "  -l <ip>              Listen address to bind to when in interactive mode, default: 0.0.0.0\n"
 	     "  -4                   IPv4 mode (default)\n"
 	     "  -6                   IPv6 mode\n"
 	     "  -c <count>           Send packet count times, default:1, infinite:0\n"
@@ -208,8 +209,9 @@ int reset()
    fp2 = NULL;
    mz_port = 0;
    mz_rand = 0;
+   char mz_listen_addr[15] = "0.0.0.0";
    mp_head = NULL;
-   
+
    for (i=0;i<TIME_COUNT_MAX;i++) jitter[i] = 0;      
 
    time0_flag = 0; // If set then time0 has valid data
@@ -394,6 +396,9 @@ int getopts (int argc, char *argv[])
 			break;
 		 case 'x':
 			mz_port = MZ_DEFAULT_PORT;
+			break;
+		 case 'l':
+			strncpy (mz_listen_addr, optarg, sizeof(mz_listen_addr));
 			break;
 		 case 'a':
 			strncpy (tx.eth_src_txt, optarg, 32);

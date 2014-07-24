@@ -532,7 +532,7 @@ int cli()
    // Listen on port mz_port (default: 25542, towel day)
    memset(&servaddr, 0, sizeof(servaddr));
    servaddr.sin_family = AF_INET;
-   servaddr.sin_addr.s_addr = htonl(INADDR_ANY);  // TODO: specified interface
+   inet_aton(mz_listen_addr, &servaddr.sin_addr);
    servaddr.sin_port = htons(mz_port); 
    bind(s, (struct sockaddr *)&servaddr, sizeof(servaddr));
 
