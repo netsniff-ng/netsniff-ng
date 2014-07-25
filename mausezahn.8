@@ -213,6 +213,32 @@ simultaneously and sweep through the whole TCP sequence number space with an
 increment of 1500. Finally set the urgent pointer to 666, i.e. pointing to
 nowhere.
 .PP
+.SH CONFIGURATION FILE
+.PP
+When mausezahn is run in interactive mode it automatically looks for and reads
+a configuration file located at /etc/netsniff-ng/mausezahn.conf for custom options
+if the file is available, otherwise it uses defaults set at compile time.
+.SS Config file: /etc/netsniff-ng/mausezahn.conf
+.PP
+The configuration file contains lines of the form:
+
+	option = value
+
+Options supported in the configuration file are:
+   Option: 	 	Description:
+
+   user			Username for authentication (default: mz)
+   password		Password for authentication (default: mz)
+   enable		     Password to enter privilege mode (default: mops)
+   cli-device		Interface to bind to (default: all) *not fully implemented*
+
+.SS Example:
+.PP
+ $ cat /etc/netsniff-ng/mausezahn.conf
+ user = mzadmin
+ password = mzpasswd
+ enable = privilege-mode-passwd
+.PP
 .SH INTERACTIVE MODE HOWTO
 .PP
 .SS Telnet:
@@ -246,12 +272,7 @@ mausezahn server:
   mz#
 .PP
 It is recommended to configure your own login credentials in
-/etc/netsniff-ng/mausezahn.conf, such as:
-.PP
-  user = foo
-  password = bar
-  enable = bla
-.PP
+/etc/netsniff-ng/mausezahn.conf, (see configuration file section)
 .SS Basics:
 .PP
 Since you reached the mausezahn prompt, lets try some common commands. You can
