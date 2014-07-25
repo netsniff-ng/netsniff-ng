@@ -47,6 +47,7 @@ _arguments -s -S \
     "(-B --dump-bpf)"{-B,--dump-bpf}"[Dump generated BPF assembly]" \
     "(-r --rand)"{-r,--rand}"[Randomize packet forwarding order (dev->dev)]" \
     "(-M --no-promisc)"{-M,--no-promisc}"[No promiscuous mode for netdev]" \
+    "(-N --no-hwtimestamp)"{-N,--no-hwtimestamp}"[Disable hardware timestamping]" \
     "(-A --no-sock-mem)"{-A,--no-sock-mem}"[Don\'t tune core socket memory]" \
     "(-m --mmap)"{-m,--mmap}"[Mmap(2) pcap file i.e., for replaying pcaps]" \
     "(-G --sg)"{-G,--sg}"[Scatter/gather pcap file I/O]" \

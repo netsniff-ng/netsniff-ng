@@ -57,7 +57,7 @@ struct ctx {
 	int cpu, rfraw, dump, print_mode, dump_dir, packet_type;
 	unsigned long kpull, dump_interval, tx_bytes, tx_packets;
 	size_t reserve_size;
-	bool randomize, promiscuous, enforce, jumbo, dump_bpf, verbose;
+	bool randomize, promiscuous, enforce, jumbo, dump_bpf, hwtimestamp, verbose;
 	enum pcap_ops_groups pcap; enum dump_mode dump_mode;
 	uid_t uid; gid_t gid; uint32_t link_type, magic;
 };
@@ -65,7 +65,7 @@ struct ctx {
 static volatile sig_atomic_t sigint = 0;
 static volatile bool next_dump = false;
 
-static const char *short_options = "d:i:o:rf:MJt:S:k:n:b:HQmcsqXlvhF:RGAP:Vu:g:T:DBU";
+static const char *short_options = "d:i:o:rf:MNJt:S:k:n:b:HQmcsqXlvhF:RGAP:Vu:g:T:DBU";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"in",			required_argument,	NULL, 'i'},
@@ -88,6 +88,7 @@ static const struct option long_options[] = {
 	{"clrw",		no_argument,		NULL, 'c'},
 	{"jumbo-support",	no_argument,		NULL, 'J'},
 	{"no-promisc",		no_argument,		NULL, 'M'},
+	{"no-hwtimestamp",	no_argument,		NULL, 'N'},
 	{"prio-high",		no_argument,		NULL, 'H'},
 	{"notouch-irq",		no_argument,		NULL, 'Q'},
 	{"dump-pcap-types",	no_argument,		NULL, 'D'},
@@ -890,9 +891,11 @@ static void recv_only_or_dump(struct ctx *ctx)
 		bpf_dump_all(&bpf_ops);
 	bpf_attach_to_sock(sock, &bpf_ops);
 
-	ret = set_sockopt_hwtimestamp(sock, ctx->device_in);
-	if (ret == 0 && ctx->verbose)
-		printf("HW timestamping enabled\n");
+	if (ctx->hwtimestamp) {
+		ret = set_sockopt_hwtimestamp(sock, ctx->device_in);
+		if (ret == 0 && ctx->verbose)
+			printf("HW timestamping enabled\n");
+	}
 
 	ring_rx_setup(&rx_ring, sock, size, ifindex, &rx_poll, true, true, ctx->verbose);
 
@@ -1005,6 +1008,7 @@ static void init_ctx(struct ctx *ctx)
 
 	ctx->promiscuous = true;
 	ctx->randomize = false;
+	ctx->hwtimestamp = true;
 }
 
 static void destroy_ctx(struct ctx *ctx)
@@ -1036,6 +1040,7 @@ static void __noreturn help(void)
 	     "  -r|--rand                      Randomize packet forwarding order (dev->dev)\n"
 	     "  -M|--no-promisc                No promiscuous mode for netdev\n"
 	     "  -A|--no-sock-mem               Don't tune core socket memory\n"
+	     "  -N|--no-hwtimestamp            Disable hardware time stamping\n"
 	     "  -m|--mmap                      Mmap(2) pcap file I/O, e.g. for replaying pcaps\n"
 	     "  -G|--sg                        Scatter/gather pcap file I/O\n"
 	     "  -c|--clrw                      Use slower read(2)/write(2) I/O\n"
@@ -1137,6 +1142,9 @@ int main(int argc, char **argv)
 			break;
 		case 'M':
 			ctx.promiscuous = false;
+			break;
+		case 'N':
+			ctx.hwtimestamp = false;
 			break;
 		case 'A':
 			setsockmem = false;

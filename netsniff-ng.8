@@ -153,6 +153,13 @@ randomize packet order in the output ring buffer.
 The networking interface will not be put into promiscuous mode. By default,
 promiscuous mode is turned on.
 .PP
+.SS -N, --no-hwtimestamp
+Disable taking hardware time stamps for RX packets. By default, if the network
+device supports hardware time stamping, the hardware time stamps will be used
+when writing packets to pcap files. This option disables this behavior and
+forces (kernel based) software time stamps to be used, even if hardware time
+stamps are available.
+.PP
 .SS -A, --no-sock-mem
 On startup and shutdown, netsniff-ng tries to increase socket read and
 write buffers if appropriate. This option will prevent netsniff-ng from doing
