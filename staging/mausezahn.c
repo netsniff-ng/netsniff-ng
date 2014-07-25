@@ -209,7 +209,7 @@ int reset()
    fp2 = NULL;
    mz_port = 0;
    mz_rand = 0;
-   char mz_listen_addr[15] = "0.0.0.0";
+   char mz_listen_addr[16] = "0.0.0.0";
    mp_head = NULL;
 
    for (i=0;i<TIME_COUNT_MAX;i++) jitter[i] = 0;      
