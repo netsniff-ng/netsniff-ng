@@ -59,7 +59,7 @@ struct cli_def *gcli;
 char mz_username[32];
 char mz_password[32];
 char mz_enable[32];
-char mz_listen_addr[15];
+char mz_listen_addr[16];
 int mz_port;
 struct mops *clipkt; // actual packet used by CLI thread
 	
