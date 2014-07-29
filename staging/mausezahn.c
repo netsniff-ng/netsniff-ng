@@ -727,10 +727,6 @@ int getopts (int argc, char *argv[])
 			mz_port = (int) str2int (tx.arg_string);
 		}
 
-		if (!quiet) {
-			fprintf(stderr, "Mausezahn accepts incoming Telnet connections on port %i.\n", mz_port);
-		}
-
 		mz_cli_init();
 		cli();
 	}
