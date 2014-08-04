@@ -56,7 +56,7 @@ int cli_read_cfg(char *str)
 	char dev[256];
 	FILE *fd;
 	int i, j=0, len, found=0, nonspc=0;
-	int user=0, pass=0, ena=0, amp=0, mgmt_only=0, cli=0, port=0;
+	int user=0, pass=0, ena=0, amp=0, mgmt_only=0, cli=0, port=0, addr=0;
 	
 	strncpy(filename, str, 255);
 	 
@@ -78,9 +78,10 @@ int cli_read_cfg(char *str)
 		if (nonspc==0) continue; else nonspc=0;
 		if (!user) user = sscanf(line, " user = %s ", mz_username);
 		if (!pass) pass = sscanf(line, " password = %s ", mz_password);
-		if (!ena) ena  = sscanf(line, " enable = %s ", mz_enable);
+		if (!ena)  ena  = sscanf(line, " enable = %s ", mz_enable);
 		if (!port) port = sscanf(line, " port = %i ", &mz_port);
-		if (!cli) cli  = sscanf(line, " cli-device = %s ", dev);
+		if (!addr) addr = sscanf(line, " listen-addr = %s ", mz_listen_addr);
+		if (!cli)  cli  = sscanf(line, " cli-device = %s ", dev);
 		if (cli==1) {
 			for (i=0; i<device_list_entries; i++) {
 				if (strncmp(device_list[i].dev, dev, 16)==0) {
@@ -145,6 +146,9 @@ int cli_read_cfg(char *str)
 
 		if (port!=1)
 			fprintf(stderr, "%s: No port specified - will use default.\n", filename);
+
+		if (addr!=1)
+			fprintf(stderr, "%s: No listen address specified - will use default.\n", filename);
 	}
 	
 	cli_debug = 0;

@@ -563,8 +563,6 @@ int getopts (int argc, char *argv[])
 			if (verbose) fprintf(stderr, " mz: no active interfaces found!\n");
 			strcpy(tx.device, "lo");
 		}
-		if (verbose) // device found
-			fprintf(stderr," mz: device not given, will use %s\n",tx.device);
 		break;
 	 case 1: // arg_string OR device given => find out!
 		if ( (strncmp(argv[optind],"eth",3)==0) 
