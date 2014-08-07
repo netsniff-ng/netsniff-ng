@@ -16,7 +16,7 @@
 struct vlanhdr {
 	uint16_t h_vlan_TCI;
 	uint16_t h_vlan_encapsulated_proto;
-} __attribute__((packed));
+} __packed;
 
 static void vlan(struct pkt_buff *pkt)
 {
