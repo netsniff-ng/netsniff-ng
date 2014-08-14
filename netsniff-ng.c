@@ -981,7 +981,8 @@ static void recv_only_or_dump(struct ctx *ctx)
 					panic("Write error to pcap!\n");
 			}
 
-			show_frame_hdr(hdr, ctx->print_mode);
+			show_frame_hdr(packet, hdr->tp_h.tp_snaplen,
+				       ctx->link_type, hdr, ctx->print_mode);
 
 			dissector_entry_point(packet, hdr->tp_h.tp_snaplen,
 					      ctx->link_type, ctx->print_mode);
