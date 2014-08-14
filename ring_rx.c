@@ -20,10 +20,22 @@
 #include "ring_rx.h"
 #include "built_in.h"
 
+#ifdef HAVE_TPACKET3
+static inline bool is_tpacket_v3(int sock)
+{
+	return get_sockopt_tpacket(sock) == TPACKET_V3;
+}
+#else
+static inline bool is_tpacket_v3(int sock __maybe_unused)
+{
+	return false;
+}
+#endif
+
 void destroy_rx_ring(int sock, struct ring *ring)
 {
 	int ret;
-	bool v3 = get_sockopt_tpacket(sock) == TPACKET_V3;
+	bool v3 = is_tpacket_v3(sock);
 
 	munmap(ring->mm_space, ring->mm_len);
 	ring->mm_len = 0;
@@ -85,11 +97,10 @@ static void setup_rx_ring_layout(int sock, struct ring *ring, size_t size,
 static void create_rx_ring(int sock, struct ring *ring, bool verbose)
 {
 	int ret;
+	bool v3 = is_tpacket_v3(sock);
 #ifdef HAVE_TPACKET3
-	bool v3 = get_sockopt_tpacket(sock) == TPACKET_V3;
 	size_t layout_size = v3 ? sizeof(ring->layout3) : sizeof(ring->layout);
 #else
-	bool v3 = false;
 	size_t layout_size = sizeof(ring->layout);
 #endif /* HAVE_TPACKET3 */
 
@@ -126,15 +137,11 @@ static void alloc_rx_ring_frames(int sock, struct ring *ring)
 {
 	int num;
 	size_t size;
-#if HAVE_TPACKET3
-	bool v3 = get_sockopt_tpacket(sock) == TPACKET_V3;
+	bool v3 = is_tpacket_v3(sock);
 
 	if (v3) {
 		num = ring->layout3.tp_block_nr;
 		size = ring->layout3.tp_block_size;
-#else
-	if (0) {
-#endif /* HAVE_TPACKET3 */
 	} else {
 		num = ring->layout.tp_frame_nr;
 		size = ring->layout.tp_frame_size;
@@ -159,7 +166,7 @@ void ring_rx_setup(struct ring *ring, int sock, size_t size, int ifindex,
 void sock_rx_net_stats(int sock, unsigned long seen)
 {
 	int ret;
-	bool v3 = get_sockopt_tpacket(sock) == TPACKET_V3;
+	bool v3 = is_tpacket_v3(sock);
 	union {
 		struct tpacket_stats	k2;
 		struct tpacket_stats_v3 k3;
