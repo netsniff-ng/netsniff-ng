@@ -21,6 +21,10 @@
 #include "ring_rx.h"
 #include "built_in.h"
 
+/*
+ * tpacket v3 data structures and constants are not available for older kernel
+ * versions which only support tpacket v2, thus we need protect access to them.
+ */
 #ifdef HAVE_TPACKET3
 static inline bool is_tpacket_v3(int sock)
 {
@@ -54,6 +58,24 @@ static inline size_t rx_ring_get_size(struct ring *ring, bool v3)
 {
 	return v3 ? ring->layout3.tp_block_size : ring->layout.tp_frame_size;
 }
+
+static int get_rx_net_stats(int sock, uint64_t *packets, uint64_t *drops, bool v3)
+{
+	int ret;
+	union {
+		struct tpacket_stats	k2;
+		struct tpacket_stats_v3 k3;
+	} stats;
+	socklen_t slen = v3 ? sizeof(stats.k3) : sizeof(stats.k2);
+
+	memset(&stats, 0, sizeof(stats));
+	ret = getsockopt(sock, SOL_PACKET, PACKET_STATISTICS, &stats, &slen);
+	if (ret == 0) {
+		*packets = stats.k3.tp_packets;
+		*drops = stats.k3.tp_drops;
+	}
+	return ret;
+}
 #else
 static inline bool is_tpacket_v3(int sock __maybe_unused)
 {
@@ -77,6 +99,21 @@ static inline int rx_ring_get_num(struct ring *ring, bool v3 __maybe_unused)
 static inline size_t rx_ring_get_size(struct ring *ring, bool v3 __maybe_unused)
 {
 	return ring->layout.tp_frame_size;
+}
+
+static int get_rx_net_stats(int sock, uint64_t *packets, uint64_t *drops, bool v3 __maybe_unused)
+{
+	int ret;
+	struct tpacket_stats stats;
+	socklen_t slen = sizeof(stats);
+
+	memset(&stats, 0, sizeof(stats));
+	ret = getsockopt(sock, SOL_PACKET, PACKET_STATISTICS, &stats, &slen);
+	if (ret == 0) {
+		*packets = stats.tp_packets;
+		*drops = stats.tp_drops;
+	}
+	return ret;
 }
 #endif /* HAVE_TPACKET3 */
 
@@ -188,24 +225,16 @@ void ring_rx_setup(struct ring *ring, int sock, size_t size, int ifindex,
 void sock_rx_net_stats(int sock, unsigned long seen)
 {
 	int ret;
+	uint64_t packets, drops;
 	bool v3 = is_tpacket_v3(sock);
-	union {
-		struct tpacket_stats	k2;
-		struct tpacket_stats_v3 k3;
-	} stats;
-	socklen_t slen = v3 ? sizeof(stats.k3) : sizeof(stats.k2);
 
-	memset(&stats, 0, sizeof(stats));
-	ret = getsockopt(sock, SOL_PACKET, PACKET_STATISTICS, &stats, &slen);
-	if (ret > -1) {
-		uint64_t packets = stats.k3.tp_packets;
-		uint64_t drops = stats.k3.tp_drops;
-
+	ret = get_rx_net_stats(sock, &packets, &drops, v3);
+	if (ret == 0) {
 		printf("\r%12"PRIu64"  packets incoming (%"PRIu64" unread on exit)\n",
 		       v3 ? (uint64_t)seen : packets, v3 ? packets - seen : 0);
 		printf("\r%12"PRIu64"  packets passed filter\n", packets - drops);
 		printf("\r%12"PRIu64"  packets failed filter (out of space)\n", drops);
-		if (stats.k3.tp_packets > 0)
+		if (packets > 0)
 			printf("\r%12.4lf%% packet droprate\n",
 			       (1.0 * drops / packets) * 100.0);
 	}

@@ -145,6 +145,10 @@ static inline void set_sockopt_tpacket_v3(int sock)
 {
 	__set_sockopt_tpacket(sock, TPACKET_V3);
 }
+#else
+static inline void set_sockopt_tpacket_v3(int sock __maybe_unused)
+{
+}
 #endif
 
 static inline int get_sockopt_tpacket(int sock)
