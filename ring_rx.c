@@ -31,6 +31,29 @@ static inline size_t get_ring_layout_size(struct ring *ring, bool v3)
 {
 	return v3 ? sizeof(ring->layout3) : sizeof(ring->layout);
 }
+
+static inline void setup_rx_ring_layout_v3(struct ring *ring)
+{
+	/* Pass out, if this will ever change and we do crap on it! */
+	build_bug_on(offsetof(struct tpacket_req, tp_frame_nr) !=
+		     offsetof(struct tpacket_req3, tp_frame_nr) &&
+		     sizeof(struct tpacket_req) !=
+		     offsetof(struct tpacket_req3, tp_retire_blk_tov));
+
+	ring->layout3.tp_retire_blk_tov = 100; /* 0: let kernel decide */
+	ring->layout3.tp_sizeof_priv = 0;
+	ring->layout3.tp_feature_req_word = 0;
+}
+
+static inline int rx_ring_get_num(struct ring *ring, bool v3)
+{
+	return v3 ? ring->layout3.tp_block_nr : ring->layout.tp_frame_nr;
+}
+
+static inline size_t rx_ring_get_size(struct ring *ring, bool v3)
+{
+	return v3 ? ring->layout3.tp_block_size : ring->layout.tp_frame_size;
+}
 #else
 static inline bool is_tpacket_v3(int sock __maybe_unused)
 {
@@ -40,6 +63,20 @@ static inline bool is_tpacket_v3(int sock __maybe_unused)
 static inline size_t get_ring_layout_size(struct ring *ring, bool v3 __maybe_unused)
 {
 	return sizeof(ring->layout);
+}
+
+static inline void setup_rx_ring_layout_v3(struct ring *ring __maybe_unused)
+{
+}
+
+static inline int rx_ring_get_num(struct ring *ring, bool v3 __maybe_unused)
+{
+	return ring->layout.tp_frame_nr;
+}
+
+static inline size_t rx_ring_get_size(struct ring *ring, bool v3 __maybe_unused)
+{
+	return ring->layout.tp_frame_size;
 }
 #endif /* HAVE_TPACKET3 */
 
@@ -83,16 +120,7 @@ static void setup_rx_ring_layout(int sock, struct ring *ring, size_t size,
 				   ring->layout.tp_block_nr;
 
 	if (v3) {
-		/* Pass out, if this will ever change and we do crap on it! */
-		build_bug_on(offsetof(struct tpacket_req, tp_frame_nr) !=
-			     offsetof(struct tpacket_req3, tp_frame_nr) &&
-			     sizeof(struct tpacket_req) !=
-			     offsetof(struct tpacket_req3, tp_retire_blk_tov));
-
-		ring->layout3.tp_retire_blk_tov = 100; /* 0: let kernel decide */
-		ring->layout3.tp_sizeof_priv = 0;
-		ring->layout3.tp_feature_req_word = 0;
-
+		setup_rx_ring_layout_v3(ring);
 		set_sockopt_tpacket_v3(sock);
 	} else {
 		set_sockopt_tpacket_v2(sock);
@@ -138,19 +166,10 @@ retry:
 
 static void alloc_rx_ring_frames(int sock, struct ring *ring)
 {
-	int num;
-	size_t size;
 	bool v3 = is_tpacket_v3(sock);
 
-	if (v3) {
-		num = ring->layout3.tp_block_nr;
-		size = ring->layout3.tp_block_size;
-	} else {
-		num = ring->layout.tp_frame_nr;
-		size = ring->layout.tp_frame_size;
-	}
-
-	alloc_ring_frames_generic(ring, num, size);
+	alloc_ring_frames_generic(ring, rx_ring_get_num(ring, v3),
+				  rx_ring_get_size(ring, v3));
 }
 
 void ring_rx_setup(struct ring *ring, int sock, size_t size, int ifindex,
