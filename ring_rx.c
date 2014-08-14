@@ -1,6 +1,7 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * Copyright 2009, 2010 Daniel Borkmann.
+ * Copyright 2014 Tobias Klauser.
  * Subject to the GPL, version 2.
  */
 
@@ -25,12 +26,22 @@ static inline bool is_tpacket_v3(int sock)
 {
 	return get_sockopt_tpacket(sock) == TPACKET_V3;
 }
+
+static inline size_t get_ring_layout_size(struct ring *ring, bool v3)
+{
+	return v3 ? sizeof(ring->layout3) : sizeof(ring->layout);
+}
 #else
 static inline bool is_tpacket_v3(int sock __maybe_unused)
 {
 	return false;
 }
-#endif
+
+static inline size_t get_ring_layout_size(struct ring *ring, bool v3 __maybe_unused)
+{
+	return sizeof(ring->layout);
+}
+#endif /* HAVE_TPACKET3 */
 
 void destroy_rx_ring(int sock, struct ring *ring)
 {
@@ -71,7 +82,6 @@ static void setup_rx_ring_layout(int sock, struct ring *ring, size_t size,
 				   ring->layout.tp_frame_size *
 				   ring->layout.tp_block_nr;
 
-#ifdef HAVE_TPACKET3
 	if (v3) {
 		/* Pass out, if this will ever change and we do crap on it! */
 		build_bug_on(offsetof(struct tpacket_req, tp_frame_nr) !=
@@ -84,9 +94,6 @@ static void setup_rx_ring_layout(int sock, struct ring *ring, size_t size,
 		ring->layout3.tp_feature_req_word = 0;
 
 		set_sockopt_tpacket_v3(sock);
-#else
-	if (0) {
-#endif /* HAVE_TPACKET3 */
 	} else {
 		set_sockopt_tpacket_v2(sock);
 	}
@@ -98,11 +105,7 @@ static void create_rx_ring(int sock, struct ring *ring, bool verbose)
 {
 	int ret;
 	bool v3 = is_tpacket_v3(sock);
-#ifdef HAVE_TPACKET3
-	size_t layout_size = v3 ? sizeof(ring->layout3) : sizeof(ring->layout);
-#else
-	size_t layout_size = sizeof(ring->layout);
-#endif /* HAVE_TPACKET3 */
+	size_t layout_size = get_ring_layout_size(ring, v3);
 
 retry:
 	ret = setsockopt(sock, SOL_PACKET, PACKET_RX_RING, &ring->raw,
