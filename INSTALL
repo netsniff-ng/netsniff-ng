@@ -13,6 +13,7 @@ What additional tools next to your build-chain are required?
 
  - ccache (optional)
  - gpg (optional)
+ - sparse (optional)
 
  - pkg-config:		   all
  - flex, bison:		   bpfc, trafgen

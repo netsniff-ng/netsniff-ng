@@ -21,5 +21,6 @@ define TOOL_templ
   $(1)/%.tab.o: $(1)/%.tab.c
 	$$(CC) $$(CFLAGS) -o $$@ -c $$<
   $(1)/%.o: %.c
+	$$(CHECK) $$(CFLAGS) $$(CHECKFLAGS) $$<
 	$$(CC) $$(CFLAGS) -o $(1)/$$(shell basename $$@) -c $$<
 endef

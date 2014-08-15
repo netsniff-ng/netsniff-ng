@@ -107,6 +107,9 @@ ifeq ("$(origin CROSS_LD_LIBRARY_PATH)", "command line")
   LDFLAGS += -L$(CROSS_LD_LIBRARY_PATH)
 endif
 
+CHECKFLAGS = -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix \
+	     -Wbitwise -Wnoreturn-void
+
 VERSION_SHORT  =  $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
 VERSION_STRING = "$(VERSION_SHORT)$(CONFIG_RC)"
 VERSION_LONG   = "$(VERSION_SHORT)$(CONFIG_RC) ($(NAME))"
