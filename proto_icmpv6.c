@@ -18,6 +18,7 @@
 #include <asm/byteorder.h>
 
 #include "proto.h"
+#include "protos.h"
 #include "pkt_buff.h"
 #include "built_in.h"
 

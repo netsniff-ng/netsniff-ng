@@ -11,6 +11,7 @@
 
 #include "pkt_buff.h"
 #include "proto.h"
+#include "protos.h"
 
 static void nlmsg(struct pkt_buff *pkt)
 {
