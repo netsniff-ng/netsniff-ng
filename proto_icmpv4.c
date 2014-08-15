@@ -10,7 +10,6 @@
 
 #include "proto.h"
 #include "csum.h"
-#include "dissector_eth.h"
 #include "pkt_buff.h"
 #include "built_in.h"
 
