@@ -73,9 +73,9 @@ static GeoIP *gi4_asname = NULL, *gi6_asname = NULL;
 static GeoIP *gi4_country = NULL, *gi6_country = NULL;
 static GeoIP *gi4_city = NULL, *gi6_city = NULL;
 
-static GeoIPRecord empty = { 0 };
+static GeoIPRecord empty = { NULL };
 
-static char *servers[16] = { 0 };
+static char *servers[16] = { NULL };
 
 #define CITYV4		(1 << 0)
 #define CITYV6		(1 << 1)
