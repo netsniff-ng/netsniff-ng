@@ -26,6 +26,10 @@
 #include "dev.h"
 #include "config.h"
 
+#ifndef POLLRDNORM
+# define POLLRDNORM	0x0040
+#endif
+
 union tpacket_uhdr {
 	struct tpacket_hdr  *h1;
 	struct tpacket2_hdr *h2;

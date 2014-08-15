@@ -374,18 +374,6 @@ static inline u64 cpu_to_le64(u64 val)
 # define PACKET_QDISC_BYPASS 20
 #endif
 
-#ifndef POLLRDNORM
-# define POLLRDNORM			0x0040
-#endif
-
-#ifndef POLLWRNORM
-# define POLLWRNORM			0x0100
-#endif
-
-#ifndef POLLRDHUP
-# define POLLRDHUP			0x2000
-#endif
-
 #ifndef ARPHRD_IEEE802154_MONITOR
 # define ARPHRD_IEEE802154_MONITOR	805
 #endif
