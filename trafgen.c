@@ -162,7 +162,7 @@ static void __noreturn help(void)
 	     "  -u|--user <userid>             Drop privileges and change to userid\n"
 	     "  -g|--group <groupid>           Drop privileges and change to groupid\n"
 	     "  -H|--prio-high                 Make this high priority process\n"
-	     "  -m|--no-sock-mem               Don't tune core socket memory\n"
+	     "  -A|--no-sock-mem               Don't tune core socket memory\n"
 	     "  -Q|--notouch-irq               Do not touch IRQ CPU affinity of NIC\n"
 	     "  -q|--qdisc-path                Enabled qdisc kernel path (default off since 3.14)\n"
 	     "  -V|--verbose                   Be more verbose\n"
