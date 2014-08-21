@@ -98,6 +98,7 @@ static const struct option long_options[] = {
 	{"group",		required_argument,	NULL, 'g'},
 	{"prio-high",		no_argument,		NULL, 'H'},
 	{"notouch-irq",		no_argument,		NULL, 'Q'},
+	{"no-sock-mem", 	no_argument,		NULL, 'A'},
 	{"qdisc-path",		no_argument,		NULL, 'q'},
 	{"jumbo-support",	no_argument,		NULL, 'J'},
 	{"no-cpu-stats",	no_argument,		NULL, 'C'},
@@ -161,6 +162,7 @@ static void __noreturn help(void)
 	     "  -u|--user <userid>             Drop privileges and change to userid\n"
 	     "  -g|--group <groupid>           Drop privileges and change to groupid\n"
 	     "  -H|--prio-high                 Make this high priority process\n"
+	     "  -m|--no-sock-mem               Don't tune core socket memory\n"
 	     "  -Q|--notouch-irq               Do not touch IRQ CPU affinity of NIC\n"
 	     "  -q|--qdisc-path                Enabled qdisc kernel path (default off since 3.14)\n"
 	     "  -V|--verbose                   Be more verbose\n"
@@ -851,7 +853,7 @@ static unsigned int generate_srand_seed(void)
 int main(int argc, char **argv)
 {
 	bool slow = false, invoke_cpp = false, reseed = true, cpustats = true;
-	bool prio_high = false, set_irq_aff = true;
+	bool prio_high = false, set_irq_aff = true, set_sock_mem = true;
 	int c, opt_index, vals[4] = {0}, irq;
 	uint64_t gap = 0;
 	unsigned int i, j;
@@ -901,6 +903,9 @@ int main(int argc, char **argv)
 			break;
 		case 'H':
 			prio_high = true;
+			break;
+		case 'A':
+			set_sock_mem = false;
 			break;
 		case 'Q':
 			set_irq_aff = false;
@@ -1050,7 +1055,8 @@ int main(int argc, char **argv)
 		set_sched_status(SCHED_FIFO, sched_get_priority_max(SCHED_FIFO));
 	}
 
-	set_system_socket_memory(vals, array_size(vals));
+	if (set_sock_mem)
+		set_system_socket_memory(vals, array_size(vals));
 	xlockme();
 
 	if (ctx.rfraw) {
@@ -1096,7 +1102,8 @@ int main(int argc, char **argv)
 	if (ctx.rfraw)
 		leave_rfmon_mac80211(ctx.device);
 
-	reset_system_socket_memory(vals, array_size(vals));
+	if (set_sock_mem)
+		reset_system_socket_memory(vals, array_size(vals));
 
 	for (i = 0, tx_packets = tx_bytes = 0; i < ctx.cpus; i++) {
 		while ((__get_state(i) & CPU_STATS_STATE_RES) == 0)

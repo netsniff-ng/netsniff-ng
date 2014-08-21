@@ -152,6 +152,15 @@ scheduling rate resp. CPU time. This is however not the default setting, since
 it could lead to starvation of other processes, for example low priority kernel
 threads.
 .PP
+.SS -A, --no-sock-mem
+Do not change systems default socket memory setting during testrun.
+Default is to boost socket buffer memory during the test to:
+.PP
+   /proc/sys/net/core/rmem_default:4194304
+   /proc/sys/net/core/wmem_default:4194304
+   /proc/sys/net/core/rmem_max:104857600
+   /proc/sys/net/core/wmem_max:104857600
+.PP
 .SS -Q, --notouch-irq
 Do not reassign the NIC's IRQ CPU affinity settings.
 .PP
