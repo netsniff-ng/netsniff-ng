@@ -48,6 +48,7 @@ _arguments -s -S \
     "(-u --user)"{-u,--user}"[Drop privileges and change to userid]:user:_user_info" \
     "(-g --group)"{-g,--group}"[Drop privileges and change to groupid]:group:_group_info" \
     "(-H --prio-high)"{-H,--prio-high}"[Make this high priority process]" \
+    "(-A --no-sock-mem)"{-A,--no-sock-mem}"[Do not change default socket memory setting]" \
     "(-Q --notouch-irq)"{-Q,--notouch-irq}"[Do not touch IRQ CPU affinity of NIC]" \
     "(-e --example)"{-e,--example}"[Show built-in packet config example]:" \
     "(-V --verbose)"{-V,--verbose}"[Be more verbose]" \
