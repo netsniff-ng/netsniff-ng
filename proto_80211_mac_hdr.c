@@ -2854,22 +2854,22 @@ static int8_t inf_elements(struct pkt_buff *pkt)
 	return 0;
 }
 
-#define	ESS		0b0000000000000001
-#define	IBSS		0b0000000000000010
-#define	CF_Pollable	0b0000000000000100
-#define	CF_Poll_Req	0b0000000000001000
-#define	Privacy		0b0000000000010000
-#define	Short_Pre	0b0000000000100000
-#define	PBCC		0b0000000001000000
-#define	Ch_Agility	0b0000000010000000
-#define	Spec_Mgmt	0b0000000100000000
-#define	QoS		0b0000001000000000
-#define	Short_Slot_t	0b0000010000000000
-#define	APSD		0b0000100000000000
-#define	Radio_Meas	0b0001000000000000
-#define	DSSS_OFDM	0b0010000000000000
-#define	Del_Block_ACK	0b0100000000000000
-#define	Imm_Block_ACK	0b1000000000000000
+#define	ESS		0x0001
+#define	IBSS		0x0002
+#define	CF_Pollable	0x0004
+#define	CF_Poll_Req	0x0008
+#define	Privacy		0x0010
+#define	Short_Pre	0x0020
+#define	PBCC		0x0040
+#define	Ch_Agility	0x0080
+#define	Spec_Mgmt	0x0100
+#define	QoS		0x0200
+#define	Short_Slot_t	0x0400
+#define	APSD		0x0800
+#define	Radio_Meas	0x1000
+#define	DSSS_OFDM	0x2000
+#define	Del_Block_ACK	0x4000
+#define	Imm_Block_ACK	0x8000
 
 static int8_t cap_field(u16 cap_inf)
 {
