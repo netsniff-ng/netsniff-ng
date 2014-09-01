@@ -128,6 +128,8 @@ struct icmp_filter {
 };
 #endif
 
+#define SMOKE_N_PROBES	100
+
 static void signal_handler(int number)
 {
 	switch (number) {
@@ -355,10 +357,10 @@ static struct cpu_stats *setup_shared_var(unsigned long cpus)
 {
 	int fd;
 	size_t len = cpus * sizeof(struct cpu_stats);
-	char zbuff[len], file[256];
+	char *zbuff, file[256];
 	struct cpu_stats *buff;
 
-	fmemset(zbuff, 0, len);
+	zbuff = xzmalloc(len);
 	slprintf(file, sizeof(file), ".tmp_mmap.%u", (unsigned int) rand());
 
 	fd = creat(file, S_IRUSR | S_IWUSR);
@@ -368,6 +370,7 @@ static struct cpu_stats *setup_shared_var(unsigned long cpus)
 	fd = open_or_die_m(file, O_RDWR | O_CREAT | O_TRUNC,
 			   S_IRUSR | S_IWUSR);
 	write_or_die(fd, zbuff, len);
+	xfree(zbuff);
 
 	buff = mmap(NULL, len, PROT_READ | PROT_WRITE,
 		    MAP_SHARED, fd, 0);
@@ -433,8 +436,8 @@ static int xmit_smoke_setup(struct ctx *ctx)
 static int xmit_smoke_probe(int icmp_sock, struct ctx *ctx)
 {
 	int ret;
-	unsigned int i, j = 0, probes = 100;
-	short ident, cnt = 1, idstore[probes];
+	unsigned int i, j;
+	short ident, cnt = 1, idstore[SMOKE_N_PROBES];
 	uint8_t outpack[512], *data;
 	struct icmphdr *icmp;
 	struct iphdr *ip;
@@ -447,10 +450,10 @@ static int xmit_smoke_probe(int icmp_sock, struct ctx *ctx)
 	};
 
 	fmemset(idstore, 0, sizeof(idstore));
-	while (probes-- > 0) {
+	for (j = 0; j < SMOKE_N_PROBES; j++) {
 		while ((ident = htons((short) rand())) == 0)
 			sleep(0);
-		idstore[j++] = ident;
+		idstore[j] = ident;
 
 		memset(outpack, 0, sizeof(outpack));
 		icmp = (void *) outpack;
