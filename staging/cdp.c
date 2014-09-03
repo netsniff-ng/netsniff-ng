@@ -159,7 +159,7 @@ unsigned int create_tlv (u_int16_t        type,       // The 16-bit TYPE number
 
 
 
-int send_cdp ()
+int send_cdp(void)
 {
    libnet_t             *l;
    libnet_ptag_t         t;

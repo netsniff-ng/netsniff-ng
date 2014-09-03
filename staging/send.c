@@ -37,7 +37,7 @@
 // Calculates the number of frames to be sent.
 // Should be used as standard output except the
 // 'quiet' option (-q) has been specified.
-int complexity()
+int complexity(void)
 {
    unsigned long int 
      nr_sqnr = 1, 

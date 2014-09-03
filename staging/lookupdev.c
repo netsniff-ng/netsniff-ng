@@ -38,7 +38,7 @@
 //  0 if usable device found (device_list[] and tx.device set)
 //  1 if no usable device found
 //  
-int lookupdev()
+int lookupdev(void)
 {
    // char *tx.device is global, see as.h
 

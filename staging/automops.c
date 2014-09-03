@@ -23,7 +23,7 @@
 // Creates first element, aka "head" element
 // This element can also be used! See automops_alloc_protocol!
 // 
-struct automops * automops_init()
+struct automops * automops_init(void)
 {
 	// Create initial automops element:
 	struct automops *new_automops = (struct automops*) malloc(sizeof(struct automops));

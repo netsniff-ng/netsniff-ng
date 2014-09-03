@@ -719,7 +719,7 @@ void mops_flags (u_int8_t *target, u_int8_t *flag, int shift);
 
 u_int16_t mops_sum16 (u_int16_t len, u_int8_t buff[]);
 
-struct mops * mops_init ();
+struct mops * mops_init(void);
 struct mops * mops_alloc_packet (struct mops *cur);
 struct mops * mops_delete_packet (struct mops *cur);
 int mops_reset_packet(struct mops *cur);
@@ -927,7 +927,7 @@ int mops_lldp_opt_tlv_end (struct mops *mp) ;
 // ARP Service: Resolves MAC address of given IP address and interface
 int service_arp(char *dev, u_int8_t *ip, u_int8_t *mac);
 
-int mops_rx_arp ();
+int mops_rx_arp(void);
 void *rx_arp (void *arg);
 void got_arp_packet (u_char *args, const struct pcap_pkthdr *header, const u_char *packet);
 
@@ -939,7 +939,7 @@ int mops_direct(char* dev, int mops_type, char* argstring);
 //////////////////// automops prototypes: //////////////////////////////////
 
 
-struct automops * automops_init();
+struct automops * automops_init(void);
 struct automops * automops_alloc_protocol();
 struct automops * automops_delete_protocol();
 struct automops * automops_search_protocol();

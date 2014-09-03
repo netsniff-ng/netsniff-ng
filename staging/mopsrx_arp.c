@@ -26,7 +26,7 @@
 // RETURN VALUE: 0 upon success,
 //               1 upon error.
 // 
-int mops_rx_arp ()
+int mops_rx_arp(void)
 {
 	int i;
 	

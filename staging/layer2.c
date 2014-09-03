@@ -109,7 +109,7 @@
 //     senderip is the spoofed IP, 
 //     targetmac and targetip identifies the receiver. 
 // 
-int send_arp ()
+int send_arp(void)
 {
    libnet_t             *l;
    libnet_ptag_t         t;
@@ -410,9 +410,7 @@ int send_arp ()
 // 
 // defaults:
 //     mz assumes you want to become root bridge! (rid=bid)
-//     
-int send_bpdu ()
-{
+int send_bpdu(void) {
 
    // BPDU parameters:
    u_int16_t 

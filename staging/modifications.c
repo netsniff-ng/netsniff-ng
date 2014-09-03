@@ -610,7 +610,7 @@ int update_TCP_SQNR(libnet_t *l, libnet_ptag_t t)
 //
 //
 
-int print_frame_details()
+int print_frame_details(void)
 {
    unsigned char *dum1, *dum2;
    char pld[65535];

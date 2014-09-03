@@ -30,7 +30,7 @@
 #include "mz.h"
 #include "cli.h"
 
-int send_eth()
+int send_eth(void)
 {
    // Tasks:
    // 1. Check 'eth_src_txt' and 'eth_dst_txt' which contain either a MAC address or a keyword

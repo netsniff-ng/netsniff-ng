@@ -286,7 +286,7 @@ int stop_sequence (char *name)
 //          
 // RETURN VALUE: Number of stopped sequences.
 // 
-int stop_all_sequences ()
+int stop_all_sequences(void)
 {
 	struct mz_ll *cur=packet_sequences->next;
 	int i=0;

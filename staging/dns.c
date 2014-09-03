@@ -96,7 +96,7 @@ int dns_get_answer (char* argval);
 
 
 // Note: I do NOT use libnet here (had problems with bugs there...)
-int create_dns_packet ()
+int create_dns_packet(void)
 {
    
    char  *token, *tokenptr, argval[MAX_PAYLOAD_SIZE];

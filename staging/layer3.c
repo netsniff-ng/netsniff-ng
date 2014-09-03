@@ -104,7 +104,7 @@
 
 // Only used to simplify initialization of libnet
 // Return pointer to context
-libnet_t* get_link_context()
+libnet_t* get_link_context(void)
 {
    libnet_t * l;
    char errbuf[LIBNET_ERRBUF_SIZE];

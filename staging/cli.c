@@ -23,7 +23,7 @@
 #include "mops.h"
 #include "llist.h"
 
-void mz_cli_init()
+void mz_cli_init(void)
 {
 	amp_head = automops_init();
 	
@@ -183,7 +183,7 @@ int cli_read_cfg(char *str)
 // ************************************************************************
 
 
-int cli()
+int cli(void)
 {
    struct sockaddr_in servaddr;
    struct cli_command  

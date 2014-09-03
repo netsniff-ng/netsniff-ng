@@ -71,7 +71,7 @@
 //                  
 
 
-int create_syslog_packet()
+int create_syslog_packet(void)
 {
 	unsigned int pri, sev, fac, day, curday, mon, curmon;
 	char  lt[8], host[314];

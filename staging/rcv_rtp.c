@@ -40,7 +40,7 @@
 #include "mops.h"
 
 // Initialize the rcv_rtp process: Read user parameters and initialize globals
-int rcv_rtp_init()
+int rcv_rtp_init(void)
 {
 	char argval[MAX_PAYLOAD_SIZE];
 	char dummy[512];
@@ -281,7 +281,7 @@ int rcv_rtp_init()
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Defines the pcap handler and the callback function
-int rcv_rtp()
+int rcv_rtp(void)
 {
    char   errbuf[PCAP_ERRBUF_SIZE];
    

@@ -24,7 +24,7 @@
 // Additionally, measure the precision.
 // This function should be called upon program start.
 // 
-int check_timer()
+int check_timer(void)
 {
 	struct timespec res;
 	int r;

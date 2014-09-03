@@ -52,7 +52,7 @@
 // Creates first element, aka "head" element
 // This element can also be used! See mops_alloc_packet!
 // 
-struct mops * mops_init()
+struct mops * mops_init(void)
 {
 	// these defaults can be changed by the user:
 	min_frame_s = MIN_MOPS_FRAME_SIZE; // important global; depends on used packet tx subsystem such as libnet

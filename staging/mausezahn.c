@@ -185,7 +185,7 @@ static void version(void)
 	die();
 }
 
-int reset()
+int reset(void)
 {
    int i;
    time_t t;

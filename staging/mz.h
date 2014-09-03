@@ -521,7 +521,7 @@ int char2bits (char c, char *str);
 int mz_strcmp(char* usr, char* str, int min);
 int mz_tok(char * str, char * delim, int anz, ...);
 int delay_parse (struct timespec *t, char *a, char *b);
-int reset();
+int reset(void);
 
 // ************************************
 // 
