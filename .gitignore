@@ -52,3 +52,4 @@ config.log
 
 # Excluded from ignorance
 !.gitignore
+!.travis.yml
