@@ -353,7 +353,7 @@ static void apply_csum16(int id)
 	}
 }
 
-static struct cpu_stats *setup_shared_var(unsigned long cpus)
+static struct cpu_stats *setup_shared_var(unsigned int cpus)
 {
 	int fd;
 	size_t len = cpus * sizeof(struct cpu_stats);
@@ -384,7 +384,7 @@ static struct cpu_stats *setup_shared_var(unsigned long cpus)
 	return buff;
 }
 
-static void destroy_shared_var(void *buff, unsigned long cpus)
+static void destroy_shared_var(void *buff, unsigned int cpus)
 {
 	munmap(buff, cpus * sizeof(struct cpu_stats));
 }
@@ -503,7 +503,7 @@ static int xmit_smoke_probe(int icmp_sock, struct ctx *ctx)
 	return -1;
 }
 
-static void xmit_slowpath_or_die(struct ctx *ctx, int cpu, unsigned long orig_num)
+static void xmit_slowpath_or_die(struct ctx *ctx, unsigned int cpu, unsigned long orig_num)
 {
 	int ret, icmp_sock = -1;
 	unsigned long num = 1, i = 0;
@@ -591,7 +591,7 @@ retry:
 	stats[cpu].state |= CPU_STATS_STATE_RES;
 }
 
-static void xmit_fastpath_or_die(struct ctx *ctx, int cpu, unsigned long orig_num)
+static void xmit_fastpath_or_die(struct ctx *ctx, unsigned int cpu, unsigned long orig_num)
 {
 	int ifindex = device_ifindex(ctx->device);
 	uint8_t *out = NULL;
@@ -680,12 +680,12 @@ static void xmit_fastpath_or_die(struct ctx *ctx, int cpu, unsigned long orig_nu
 	stats[cpu].state |= CPU_STATS_STATE_RES;
 }
 
-static inline void __set_state(int cpu, sig_atomic_t s)
+static inline void __set_state(unsigned int cpu, sig_atomic_t s)
 {
 	stats[cpu].state = s;
 }
 
-static inline sig_atomic_t __get_state(int cpu)
+static inline sig_atomic_t __get_state(unsigned int cpu)
 {
 	return stats[cpu].state;
 }
@@ -750,7 +750,7 @@ static void __correct_global_delta(struct ctx *ctx, unsigned int cpu, unsigned l
 		ctx->num += delta_correction;
 }
 
-static void __set_state_cf(int cpu, unsigned long p, unsigned long b,
+static void __set_state_cf(unsigned int cpu, unsigned long p, unsigned long b,
 			   sig_atomic_t s)
 {
 	stats[cpu].cf_packets = p;
@@ -758,13 +758,13 @@ static void __set_state_cf(int cpu, unsigned long p, unsigned long b,
 	stats[cpu].state = s;
 }
 
-static void __set_state_cd(int cpu, unsigned long p, sig_atomic_t s)
+static void __set_state_cd(unsigned int cpu, unsigned long p, sig_atomic_t s)
 {
 	stats[cpu].cd_packets = p;
 	stats[cpu].state = s;
 }
 
-static int xmit_packet_precheck(struct ctx *ctx, int cpu)
+static int xmit_packet_precheck(struct ctx *ctx, unsigned int cpu)
 {
 	unsigned int i;
 	unsigned long plen_total, orig = ctx->num;
