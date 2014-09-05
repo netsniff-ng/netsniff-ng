@@ -112,6 +112,13 @@ static const struct option long_options[] = {
 	{NULL, 0, NULL, 0}
 };
 
+static const char *copyright = "Please report bugs to <bugs@netsniff-ng.org>\n"
+	"Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
+	"Swiss federal institute of technology (ETH Zurich)\n"
+	"License: GNU GPL version 2.0\n"
+	"This is free software: you are free to change and redistribute it.\n"
+	"There is NO WARRANTY, to the extent permitted by law.\n";
+
 static int sock;
 static struct cpu_stats *stats;
 static unsigned int seed;
@@ -199,13 +206,8 @@ static void __noreturn help(void)
 	     "     Tolly            64:55,  78:5,   576:17, 1518:23\n"
 	     "     Cisco            64:7,  594:4,  1518:1\n"
 	     "     RPR Trimodal     64:60, 512:20, 1518:20\n"
-	     "     RPR Quadrimodal  64:50, 512:15, 1518:15, 9218:20\n\n"
-	     "Please report bugs to <bugs@netsniff-ng.org>\n"
-	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
-	     "Swiss federal institute of technology (ETH Zurich)\n"
-	     "License: GNU GPL version 2.0\n"
-	     "This is free software: you are free to change and redistribute it.\n"
-	     "There is NO WARRANTY, to the extent permitted by law.\n");
+	     "     RPR Quadrimodal  64:50, 512:15, 1518:15, 9218:20\n\n");
+	puts(copyright);
 	die();
 }
 
@@ -267,13 +269,8 @@ static void __noreturn version(void)
 {
 	printf("\ntrafgen %s, Git id: %s\n", VERSION_LONG, GITVERSION);
 	puts("multithreaded zero-copy network packet generator\n"
-	     "http://www.netsniff-ng.org\n\n"
-	     "Please report bugs to <bugs@netsniff-ng.org>\n"
-	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
-	     "Swiss federal institute of technology (ETH Zurich)\n"
-	     "License: GNU GPL version 2.0\n"
-	     "This is free software: you are free to change and redistribute it.\n"
-	     "There is NO WARRANTY, to the extent permitted by law.\n");
+	     "http://www.netsniff-ng.org\n\n");
+	puts(copyright);
 	die();
 }
 
