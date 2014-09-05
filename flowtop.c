@@ -96,6 +96,14 @@ static const struct option long_options[] = {
 	{NULL, 0, NULL, 0}
 };
 
+static const char *copyright = "Please report bugs to <bugs@netsniff-ng.org>\n"
+	"Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"
+	"Copyright (C) 2011-2012 Emmanuel Roullit <emmanuel.roullit@gmail.com>\n"
+	"Swiss federal institute of technology (ETH Zurich)\n"
+	"License: GNU GPL version 2.0\n"
+	"This is free software: you are free to change and redistribute it.\n"
+	"There is NO WARRANTY, to the extent permitted by law.\n";
+
 static const char *const l3proto2str[AF_MAX] = {
 	[AF_INET]			= "ipv4",
 	[AF_INET6]			= "ipv6",
@@ -248,14 +256,8 @@ static void help(void)
 	     "Note:\n"
 	     "  If netfilter is not running, you can activate it with e.g.:\n"
 	     "   iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT\n"
-	     "   iptables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT\n\n"
-	     "Please report bugs to <bugs@netsniff-ng.org>\n"
-	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"
-	     "Copyright (C) 2011-2012 Emmanuel Roullit <emmanuel.roullit@gmail.com>\n"
-	     "Swiss federal institute of technology (ETH Zurich)\n"
-	     "License: GNU GPL version 2.0\n"
-	     "This is free software: you are free to change and redistribute it.\n"
-	     "There is NO WARRANTY, to the extent permitted by law.\n");
+	     "   iptables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT\n\n");
+	puts(copyright);
 	die();
 }
 
@@ -263,14 +265,8 @@ static void version(void)
 {
 	printf("\nflowtop %s, Git id: %s\n", VERSION_LONG, GITVERSION);
 	puts("top-like netfilter TCP/UDP/SCTP/.. flow tracking\n"
-	     "http://www.netsniff-ng.org\n\n"
-	     "Please report bugs to <bugs@netsniff-ng.org>\n"
-	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"
-	     "Copyright (C) 2011-2012 Emmanuel Roullit <emmanuel.roullit@gmail.com>\n"
-	     "Swiss federal institute of technology (ETH Zurich)\n"
-	     "License: GNU GPL version 2.0\n"
-	     "This is free software: you are free to change and redistribute it.\n"
-	     "There is NO WARRANTY, to the extent permitted by law.\n");
+	     "http://www.netsniff-ng.org\n\n");
+	puts(copyright);
 	die();
 }
 
