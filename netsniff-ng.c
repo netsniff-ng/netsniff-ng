@@ -105,6 +105,15 @@ static const struct option long_options[] = {
 	{NULL, 0, NULL, 0}
 };
 
+static const char *copyright = "Please report bugs to <bugs@netsniff-ng.org>\n"
+	"Copyright (C) 2009-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"
+	"Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel.roullit@gmail.com>\n"
+	"Copyright (C) 2012 Markus Amend <markus@netsniff-ng.org>\n"
+	"Swiss federal institute of technology (ETH Zurich)\n"
+	"License: GNU GPL version 2.0\n"
+	"This is free software: you are free to change and redistribute it.\n"
+	"There is NO WARRANTY, to the extent permitted by law.\n";
+
 static int tx_sock;
 static struct itimerval itimer;
 static unsigned long frame_count_max = 0, interval = TX_KERNEL_PULL_INT;
@@ -1142,15 +1151,8 @@ static void __noreturn help(void)
 	     "  netsniff-ng --in any --filter http.bpf --jumbo-support --ascii -V\n\n"
 	     "Note:\n"
 	     "  For introducing bit errors, delays with random variation and more\n"
-	     "  while replaying pcaps, make use of tc(8) with its disciplines (e.g. netem).\n\n"
-	     "Please report bugs to <bugs@netsniff-ng.org>\n"
-	     "Copyright (C) 2009-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"
-	     "Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel.roullit@gmail.com>\n"
-	     "Copyright (C) 2012 Markus Amend <markus@netsniff-ng.org>\n"
-	     "Swiss federal institute of technology (ETH Zurich)\n"
-	     "License: GNU GPL version 2.0\n"
-	     "This is free software: you are free to change and redistribute it.\n"
-	     "There is NO WARRANTY, to the extent permitted by law.\n");
+	     "  while replaying pcaps, make use of tc(8) with its disciplines (e.g. netem).\n\n");
+	puts(copyright);
 	die();
 }
 
@@ -1158,15 +1160,8 @@ static void __noreturn version(void)
 {
 	printf("\nnetsniff-ng %s, Git id: %s\n", VERSION_LONG, GITVERSION);
 	puts("the packet sniffing beast\n"
-	     "http://www.netsniff-ng.org\n\n"
-	     "Please report bugs to <bugs@netsniff-ng.org>\n"
-	     "Copyright (C) 2009-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"
-	     "Copyright (C) 2009-2012 Emmanuel Roullit <emmanuel.roullit@gmail.com>\n"
-	     "Copyright (C) 2012 Markus Amend <markus@netsniff-ng.org>\n"
-	     "Swiss federal institute of technology (ETH Zurich)\n"
-	     "License: GNU GPL version 2.0\n"
-	     "This is free software: you are free to change and redistribute it.\n"
-	     "There is NO WARRANTY, to the extent permitted by law.\n");
+	     "http://www.netsniff-ng.org\n\n");
+	puts(copyright);
 	die();
 }
 
