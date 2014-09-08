@@ -52,6 +52,16 @@ else
   DEBUG := 0
 endif
 
+# Compiler detection
+ifneq ($(CC),)
+ifeq ($(shell $(CC) -v 2>&1 | grep -c "clang version"), 1)
+COMPILER := clang
+else
+COMPILER := gcc
+endif
+export COMPILER
+endif
+
 # For packaging purposes, you might want to call your own:
 #   make CFLAGS="<flags>"
 CFLAGS_DEF  = -std=gnu99
@@ -83,7 +93,9 @@ endif
 CFLAGS_DEF += -fomit-frame-pointer
 CFLAGS_DEF += -fno-strict-aliasing
 CFLAGS_DEF += -fasynchronous-unwind-tables
+ifneq ($(COMPILER), clang)
 CFLAGS_DEF += -fno-delete-null-pointer-checks
+endif
 
 CFLAGS_MIN  = -D_REENTRANT
 CFLAGS_MIN += -D_LARGEFILE_SOURCE
