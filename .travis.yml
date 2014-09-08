@@ -1,9 +1,10 @@
 language: c
 compiler:
   - gcc
+  - clang
 
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libnl-3-dev libnl-genl-3-dev libnetfilter-conntrack-dev libgeoip-dev liburcu-dev libpcap-dev libnet1-dev libcli-dev
 
-script: ./configure && make CC=$CC
+script: CC=$CC ./configure && make CC=$CC
