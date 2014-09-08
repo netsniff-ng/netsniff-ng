@@ -937,16 +937,11 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 		for (j = 0; j < protocol_state_size[protocols[i]]; j++) {
 			n = rcu_dereference(fl->head);
 			while (n && maxy > 0) {
-				int skip_entry = 0;
-
-				if (n->l4_proto != protocols[i])
-					skip_entry = 1;
-				if (presenter_flow_wrong_state(n, j))
-					skip_entry = 1;
-				if (presenter_get_port(n->port_src,
-						       n->port_dst, 0) == 53)
-					skip_entry = 1;
-				if (skip_entry) {
+				if (n->l4_proto != protocols[i] ||
+				    presenter_flow_wrong_state(n, j) ||
+				    presenter_get_port(n->port_src,
+						       n->port_dst, 0) == 53) {
+					/* skip entry */
 					n = rcu_dereference(n->next);
 					continue;
 				}
