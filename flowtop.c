@@ -51,7 +51,8 @@ struct flow_entry {
 	char rev_dns_src[256], rev_dns_dst[256];
 	char cmdline[256];
 	struct flow_entry *next;
-	int procnum, inode;
+	int inode;
+	unsigned int procnum;
 };
 
 struct flow_list {
@@ -388,15 +389,15 @@ static void flow_list_destroy(struct flow_list *fl)
 	spinlock_destroy(&fl->lock);
 }
 
-static int walk_process(const char *process, struct flow_entry *n)
+static int walk_process(unsigned int pid, struct flow_entry *n)
 {
 	int ret;
 	DIR *dir;
 	struct dirent *ent;
 	char path[1024];
 
-	if (snprintf(path, sizeof(path), "/proc/%s/fd", process) == -1)
-		panic("giant process name! %s\n", process);
+	if (snprintf(path, sizeof(path), "/proc/%u/fd", pid) == -1)
+		panic("giant process name! %u\n", pid);
 
 	dir = opendir(path);
 	if (!dir)
@@ -405,8 +406,8 @@ static int walk_process(const char *process, struct flow_entry *n)
 	while ((ent = readdir(dir))) {
 		struct stat statbuf;
 
-		if (snprintf(path, sizeof(path), "/proc/%s/fd/%s",
-			     process, ent->d_name) < 0)
+		if (snprintf(path, sizeof(path), "/proc/%u/fd/%s",
+			     pid, ent->d_name) < 0)
 			continue;
 
 		if (stat(path, &statbuf) < 0)
@@ -415,14 +416,14 @@ static int walk_process(const char *process, struct flow_entry *n)
 		if (S_ISSOCK(statbuf.st_mode) && (ino_t) n->inode == statbuf.st_ino) {
 			memset(n->cmdline, 0, sizeof(n->cmdline));
 
-            		snprintf(path, sizeof(path), "/proc/%s/exe", process);
+			snprintf(path, sizeof(path), "/proc/%u/exe", pid);
 
 			ret = readlink(path, n->cmdline,
 				       sizeof(n->cmdline) - 1);
 			if (ret < 0)
 				panic("readlink error: %s\n", strerror(errno));
 
-			n->procnum = atoi(process);
+			n->procnum = pid;
 			closedir(dir);
 			return 1;
 		}
@@ -449,11 +450,17 @@ static void walk_processes(struct flow_entry *n)
 		panic("Cannot open /proc!\n");
 
 	while ((ent = readdir(dir))) {
-		if (strspn(ent->d_name, "0123456789") == strlen(ent->d_name)) {
-			ret = walk_process(ent->d_name, n);
-			if (ret > 0)
-				break;
-		}
+		const char *name = ent->d_name;
+		char *end;
+		unsigned int pid = strtoul(name, &end, 10);
+
+		/* not a PID */
+		if (pid == 0 && end == name)
+			continue;
+
+		ret = walk_process(pid, n);
+		if (ret > 0)
+			break;
 	}
 
 	closedir(dir);
