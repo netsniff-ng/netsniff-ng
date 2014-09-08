@@ -155,7 +155,7 @@ check_libnl()
 # error incompatible libnl version
 #endif
 
-void main(void)
+int main(void)
 {
 	struct nl_sock *sock = nl_socket_alloc();
 	struct nl_cache *nl_cache;
@@ -191,7 +191,7 @@ check_tpacket_v3()
 #include <stdio.h>
 #include <linux/if_packet.h>
 
-void main(void)
+int main(void)
 {
 	struct tpacket3_hdr *hdr;
 	int foo[] = {
@@ -220,7 +220,7 @@ check_tpacket_v2()
 #include <stdio.h>
 #include <linux/if_packet.h>
 
-void main(void)
+int main(void)
 {
 	struct tpacket2_hdr *hdr;
 	int foo[] = {
@@ -254,7 +254,7 @@ check_ncurses()
 	cat > $TMPDIR/ncursestest.c << EOF
 #include <curses.h>
 
-void main(void)
+int main(void)
 {
 	WINDOW *screen = initscr();
 }
@@ -284,7 +284,7 @@ check_libgeoip()
 #include <GeoIP.h>
 #include <GeoIPCity.h>
 
-void main(void)
+int main(void)
 {
 	int dbs[] = {
 		GEOIP_CITY_EDITION_REV1,
@@ -318,7 +318,7 @@ check_libnf_ct()
 #include <libnetfilter_conntrack/libnetfilter_conntrack_dccp.h>
 #include <libnetfilter_conntrack/libnetfilter_conntrack_sctp.h>
 
-void main(void)
+int main(void)
 {
 	struct nf_conntrack *ct;
 	const uint32_t id = nfct_get_attr_u32(ct, ATTR_ID);
@@ -342,7 +342,7 @@ check_zlib()
 	cat > $TMPDIR/ztest.c << EOF
 #include "zlib.h"
 
-void main(void)
+int main(void)
 {
 	gzFile fp = gzopen("foo.gz", "rb");
 }
@@ -369,7 +369,7 @@ check_urcu()
 	cat > $TMPDIR/urcutest.c << EOF
 #include <urcu.h>
 
-void main(void)
+int main(void)
 {
 	rcu_init();
 	synchronize_rcu();
@@ -393,7 +393,7 @@ check_libpcap()
 	cat > $TMPDIR/pcaptest.c << EOF
 #include <pcap.h>
 
-void main(void)
+int main(void)
 {
 	struct bpf_program bpf;
 	int ret = pcap_compile_nopcap(65535, 1, &bpf, "foo.bpf", 1, 0xffffffff);
@@ -429,7 +429,7 @@ check_hwtstamp()
 #include <linux/if_ether.h>
 #include <linux/if.h>
 
-void main(void)
+int main(void)
 {
 	int timesource = SOF_TIMESTAMPING_RAW_HARDWARE, ret;
 	int sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
@@ -469,7 +469,7 @@ check_libcli()
 #include <sys/time.h>
 #include <libcli.h>
 
-void main(void)
+int main(void)
 {
 	struct cli_def *cli = cli_init();
 }
@@ -492,7 +492,7 @@ check_libnet()
 	cat > $TMPDIR/nettest.c << EOF
 #include <libnet.h>
 
-void main(void)
+int main(void)
 {
 	char err_buf[LIBNET_ERRBUF_SIZE];
 	libnet_t *l = libnet_init(LIBNET_LINK_ADV, "ethX", err_buf);
