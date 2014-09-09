@@ -1,13 +1,14 @@
-# Be quite and do not echo the cmd
+# Be quiet and do not echo the cmd
 Q = @
 
 # Try to use bash as shell for make
 SHELL := $(shell if [ -x /bin/bash ]; then echo /bin/bash; else echo /bin/sh; fi)
 
-# GCC related stuff
-LD = $(Q)echo -e "  LD\t$@" && $(CCACHE) $(CROSS_COMPILE)gcc
-CCNQ = $(CCACHE) $(CROSS_COMPILE)gcc
-CC = $(Q)echo -e "  CC\t$<" && $(CCNQ)
+# Compiler related stuff
+CC = gcc
+LD = $(Q)echo -e "  LD\t$@" && $(CCACHE) $(CROSS_COMPILE)$(CC)
+CCNQ = $(CCACHE) $(CROSS_COMPILE)$(CC)
+CCQ = $(Q)echo -e "  CC\t$<" && $(CCNQ)
 ifeq ($(DEBUG), 1)
   STRIP = $(Q)true
 else
