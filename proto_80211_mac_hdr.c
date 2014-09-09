@@ -1686,20 +1686,20 @@ static int8_t inf_ch_sw_ann(struct pkt_buff *pkt, u8 *id)
 static const char *meas_type(u8 type)
 {
 	switch (type) {
-	case   0: return "Basic";
-	case   1: return "Clear Channel assesment (CCA)";
-	case   2: return "Receive power indication (RPI) histogram";
-	case   3: return "Channel load";
-	case   4: return "Noise histogram";
-	case   5: return "Beacon";
-	case   6: return "Frame";
-	case   7: return "STA statistics";
-	case   8: return "LCI";
-	case   9: return "Transmit stream/category measurement";
-	case   10: return "Multicast diagnostics";
-	case   11: return "Location Civic";
-	case   12: return "Location Identifier";
-	case   13 ... 255: return "Reserved";
+	case 0:  return "Basic";
+	case 1:  return "Clear Channel assesment (CCA)";
+	case 2:  return "Receive power indication (RPI) histogram";
+	case 3:  return "Channel load";
+	case 4:  return "Noise histogram";
+	case 5:  return "Beacon";
+	case 6:  return "Frame";
+	case 7:  return "STA statistics";
+	case 8:  return "LCI";
+	case 9:  return "Transmit stream/category measurement";
+	case 10: return "Multicast diagnostics";
+	case 11: return "Location Civic";
+	case 12: return "Location Identifier";
+	default: return "Reserved";
 	}
 }
 
