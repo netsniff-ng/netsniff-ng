@@ -1419,8 +1419,7 @@ int main(int argc, char **argv)
 		set_sched_status(SCHED_FIFO, sched_get_priority_max(SCHED_FIFO));
 	}
 
-	if (ctx.device_in && (device_mtu(ctx.device_in) ||
-	    !strncmp("any", ctx.device_in, strlen(ctx.device_in)))) {
+	if (device_mtu(ctx.device_in) || !strncmp("any", ctx.device_in, strlen(ctx.device_in))) {
 		if (!ctx.rfraw)
 			ctx.link_type = pcap_devtype_to_linktype(ctx.device_in);
 		if (!ctx.device_out) {
