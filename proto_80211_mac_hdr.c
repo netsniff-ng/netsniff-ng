@@ -3009,46 +3009,42 @@ static const char *mgt_sub(u8 subtype, struct pkt_buff *pkt,
 		seq_ctrl & 0xf, seq_ctrl >> 4);
 
 	switch (subtype) {
-	case 0b0000:
+	case 0x0:
 		*get_content = mgmt_unimplemented;
 		return "Association Request";
-	case 0b0001:
+	case 0x1:
 		*get_content = mgmt_unimplemented;
 		return "Association Response";
-	case 0b0010:
+	case 0x2:
 		*get_content = mgmt_unimplemented;
 		return "Reassociation Request";
-	case 0b0011:
+	case 0x3:
 		*get_content = mgmt_unimplemented;
 		return "Reassociation Response";
-	case 0b0100:
+	case 0x4:
 		*get_content = mgmt_unimplemented;
 		return "Probe Request";
-	case 0b0101:
+	case 0x5:
 		*get_content = mgmt_unimplemented;
 		return "Probe Response";
-	case 0b1000:
+	case 0x8:
 		*get_content = beacon;
 		return "Beacon";
-	case 0b1001:
+	case 0x9:
 		*get_content = mgmt_unimplemented;
 		return "ATIM";
-	case 0b1010:
+	case 0xA:
 		*get_content = mgmt_unimplemented;
 		return "Disassociation";
-	case 0b1011:
+	case 0xB:
 		*get_content = mgmt_unimplemented;
 		return "Authentication";
-	case 0b1100:
+	case 0xC:
 		*get_content = mgmt_unimplemented;
 		return "Deauthentication";
-	case 0b0110 ... 0b0111:
-	case 0b1101 ... 0b1111:
-		*get_content = NULL;
-		return "Reserved";
 	default:
 		*get_content = NULL;
-		return "Management SubType unknown";
+		return "Reserved";
 	}
 }
 
@@ -3056,29 +3052,27 @@ static const char *ctrl_sub(u8 subtype, struct pkt_buff *pkt __maybe_unused,
 			    int8_t (**get_content)(struct pkt_buff *pkt))
 {
 	switch (subtype) {
-	case 0b1010:
+	case 0xA:
 		*get_content = ctrl_unimplemented;
 		return "PS-Poll";
-	case 0b1011:
+	case 0xB:
 		*get_content = ctrl_unimplemented;
 		return "RTS";
-	case 0b1100:
+	case 0xC:
 		*get_content = ctrl_unimplemented;
 		return "CTS";
-	case 0b1101:
+	case 0xD:
 		*get_content = ctrl_unimplemented;
 		return "ACK";
-	case 0b1110:
+	case 0xE:
 		*get_content = ctrl_unimplemented;
 		return "CF End";
-	case 0b1111:
+	case 0xF:
 		*get_content = ctrl_unimplemented;
 		return "CF End + CF-ACK";
-	case 0b0000 ... 0b1001:
+	default:
 		*get_content = NULL;
 		return "Reserved";
-	default:
-		return "Control SubType unknown";
 	}
 }
 
@@ -3086,36 +3080,33 @@ static const char *data_sub(u8 subtype, struct pkt_buff *pkt __maybe_unused,
 		 	    int8_t (**get_content)(struct pkt_buff *pkt))
 {
 	switch (subtype) {
-	case 0b0000:
+	case 0x0:
 		*get_content = data_unimplemented;
 		return "Data";
-	case 0b0001:
+	case 0x1:
 		*get_content = data_unimplemented;
 		return "Data + CF-ACK";
-	case 0b0010:
+	case 0x2:
 		*get_content = data_unimplemented;
 		return "Data + CF-Poll";
-	case 0b0011:
+	case 0x3:
 		*get_content = data_unimplemented;
 		return "Data + CF-ACK + CF-Poll";
-	case 0b0100:
+	case 0x4:
 		*get_content = data_unimplemented;
 		return "Null";
-	case 0b0101:
+	case 0x5:
 		*get_content = data_unimplemented;
 		return "CF-ACK";
-	case 0b0110:
+	case 0x6:
 		*get_content = data_unimplemented;
 		return "CF-Poll";
-	case 0b0111:
+	case 0x7:
 		*get_content = data_unimplemented;
 		return "CF-ACK + CF-Poll";
-	case 0b1000 ... 0b1111:
-		*get_content = NULL;
-		return "Reserved";
 	default:
 		*get_content = NULL;
-		return "Data SubType unknown";
+		return "Reserved";
 	}
 }
 
@@ -3124,16 +3115,16 @@ frame_control_type(u8 type, const char *(**get_subtype)(u8 subtype,
 		   struct pkt_buff *pkt, int8_t (**get_content)(struct pkt_buff *pkt)))
 {
 	switch (type) {
-	case 0b00:
+	case 0x0:
 		*get_subtype = mgt_sub;
 		return "Management";
-	case 0b01:
+	case 0x1:
 		*get_subtype = ctrl_sub;
 		return "Control";
-	case 0b10:
+	case 0x2:
 		*get_subtype = data_sub;
 		return "Data";
-	case 0b11:
+	case 0x3:
 		*get_subtype = NULL;
 		return "Reserved";
 	default:
