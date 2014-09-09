@@ -177,7 +177,8 @@ static void set_system_socket_mem(int which, int val)
 	slprintf(buff, sizeof(buff), "%d", val);
 
 	ret = write(fd, buff, strlen(buff));
-	ret = ret;
+	if (ret < 0)
+		panic("Cannot set system socket memory!\n");
 
 	close(fd);
 }
