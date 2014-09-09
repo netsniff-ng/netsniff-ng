@@ -28,7 +28,6 @@
 extern char *if_indextoname(unsigned ifindex, char *ifname);
 
 static const char * const packet_types[256] = {
-	[0 ... 255]		=	"?",  /* Unknown */
 	[PACKET_HOST]		=	"<",  /* Incoming */
 	[PACKET_BROADCAST]	=	"B",  /* Broadcast */
 	[PACKET_MULTICAST]	=	"M",  /* Multicast */
