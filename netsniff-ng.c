@@ -952,8 +952,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 
 	while (likely(sigint == 0)) {
 #ifdef HAVE_TPACKET3
-		while (user_may_pull_from_rx_block((pbd = (void *)
-				rx_ring.frames[it].iov_base))) {
+		while (user_may_pull_from_rx_block((pbd = rx_ring.frames[it].iov_base))) {
 			walk_t3_block(pbd, ctx, sock, &fd, &frame_count);
 
 			kernel_may_pull_from_rx_block(pbd);
