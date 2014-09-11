@@ -623,8 +623,7 @@ static void read_pcap(struct ctx *ctx)
 		}
 	}
 
-	out:
-
+out:
 	bug_on(gettimeofday(&end, NULL));
 	timersub(&end, &start, &diff);
 
