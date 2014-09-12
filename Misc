@@ -1,6 +1,6 @@
 nacl:
 	$(Q)echo "$(bold)$(WHAT) $@:$(normal)"
-	$(Q)cd curvetun/ && ./nacl_build.sh ~/nacl
+	$(Q)cd curvetun/ && source ./nacl_build.sh ~/nacl
 	$(Q)source ~/.bashrc
 
 tarball.gz:  ; $(call GIT_ARCHIVE,gzip,gz)
