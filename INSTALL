@@ -11,38 +11,38 @@ A note for distribution package maintainers can be found at the end of the file.
 
 What additional tools next to your build-chain are required?
 
+ - pkg-config:             all
+ - flex, bison:            bpfc, trafgen
+
  - ccache (optional)
  - gpg (optional)
  - sparse (optional)
 
- - pkg-config:		   all
- - flex, bison:		   bpfc, trafgen
-
 What libraries are required?
 
- - libncurses:		   ifpps, flowtop
+ - libncurses:             ifpps, flowtop
  - libnacl or libsodium:   curvetun
  - libnetfilter-conntrack: flowtop
- - libpcap:		   mausezahn, netsniff-ng (tcpdump-like filters)
- - liburcu:		   flowtop
- - libnl3:		   netsniff-ng, trafgen
- - libcli:		   mausezahn
- - libnet:		   mausezahn
+ - libnl3:                 netsniff-ng, trafgen
+ - libpcap:                mausezahn, netsniff-ng (tcpdump-like filters)
+ - liburcu:                flowtop
+ - libcli:                 mausezahn
+ - libnet:                 mausezahn
 
 The following libraries can optionally be used to provide additional
 functionality for certain tools:
 
- - libGeoIP >=1.4.8:	   astraceroute, flowtop, netsniff-ng
- - libz:		   astraceroute, flowtop, netsniff-ng
+ - libGeoIP >=1.4.8:       astraceroute, flowtop, netsniff-ng
+ - libz:                   astraceroute, flowtop, netsniff-ng
 
 What additional tools are recommended, but not mandatory after the build?
 
- - cpp:			   trafgen
- - ntpd:		   curvetun
- - gnuplot:		   ifpps
- - setcap:		   all
+ - cpp:                    trafgen
+ - ntpd:                   curvetun
+ - gnuplot:                ifpps
+ - setcap:                 all
 
-It is common, that these libraries are shipped as distribution packages
+It is common that these libraries are shipped as distribution packages
 for an easy installation. We try to keep this as minimal as possible.
 
 One-liner installation for *all* dependencies on Debian:
