@@ -906,7 +906,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 			printf("HW timestamping enabled\n");
 	}
 
-	ring_rx_setup(&rx_ring, sock, size, ifindex, &rx_poll, true, true, ctx->verbose);
+	ring_rx_setup(&rx_ring, sock, size, ifindex, &rx_poll, is_defined(HAVE_TPACKET3), true, ctx->verbose);
 
 	dissector_init_all(ctx->print_mode);
 

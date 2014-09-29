@@ -96,6 +96,13 @@ typedef uint8_t		u8;
 # define __force		/* unimplemented */
 #endif
 
+/* see config_enabled et al. in linux/kconfig.h for details. */
+#define __ARG_PLACEHOLDER_1 			0,
+#define is_defined(cfg)				_is_defined(cfg)
+#define _is_defined(value)			__is_defined(__ARG_PLACEHOLDER_##value)
+#define __is_defined(arg1_or_junk)		___is_defined(arg1_or_junk 1, 0)
+#define ___is_defined(__ignored, val, ...)	val
+
 #ifndef force_cast
 # define force_cast(type, arg)	((type) (arg))
 #endif
