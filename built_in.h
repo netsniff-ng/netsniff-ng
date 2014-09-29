@@ -103,10 +103,6 @@ typedef uint8_t		u8;
 #define __is_defined(arg1_or_junk)		___is_defined(arg1_or_junk 1, 0)
 #define ___is_defined(__ignored, val, ...)	val
 
-#ifndef force_cast
-# define force_cast(type, arg)	((type) (arg))
-#endif
-
 #ifndef max
 # define max(a, b)							\
 	({								\
