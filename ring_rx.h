@@ -37,6 +37,6 @@ static inline void kernel_may_pull_from_rx_block(struct block_desc *pbd)
 {
 	pbd->h1.block_status = TP_STATUS_KERNEL;
 }
-#endif /* HAVE_TPACKETV3 */
+#endif /* HAVE_TPACKET3 */
 
 #endif /* RX_RING_H */
