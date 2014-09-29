@@ -878,9 +878,6 @@ static void recv_only_or_dump(struct ctx *ctx)
 	struct sock_fprog bpf_ops;
 	struct timeval start, end, diff;
 	unsigned long frame_count = 0;
-#ifdef HAVE_TPACKET3
-	struct block_desc *pbd;
-#endif
 
 	sock = pf_socket();
 
@@ -952,6 +949,8 @@ static void recv_only_or_dump(struct ctx *ctx)
 
 	while (likely(sigint == 0)) {
 #ifdef HAVE_TPACKET3
+		struct block_desc *pbd;
+
 		while (user_may_pull_from_rx_block((pbd = rx_ring.frames[it].iov_base))) {
 			walk_t3_block(pbd, ctx, sock, &fd, &frame_count);
 
