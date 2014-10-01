@@ -798,6 +798,28 @@ static void print_pcap_file_stats(int sock, struct ctx *ctx)
 	}
 }
 
+static void update_pcap_next_dump(struct ctx *ctx, unsigned long snaplen, int *fd, int sock)
+{
+	if (!dump_to_pcap(ctx))
+		return;
+
+	if (ctx->dump_mode == DUMP_INTERVAL_SIZE) {
+		interval += snaplen;
+		if (interval > ctx->dump_interval) {
+			next_dump = true;
+			interval = 0;
+		}
+	}
+
+	if (next_dump) {
+		*fd = next_multi_pcap_file(ctx, *fd);
+		next_dump = false;
+
+		if (ctx->verbose)
+			print_pcap_file_stats(sock, ctx);
+	}
+}
+
 #ifdef HAVE_TPACKET3
 static void walk_t3_block(struct block_desc *pbd, struct ctx *ctx,
 			  int sock, int *fd, unsigned long *frame_count)
@@ -846,23 +868,7 @@ next:
 			}
 		}
 
-		if (dump_to_pcap(ctx)) {
-			if (ctx->dump_mode == DUMP_INTERVAL_SIZE) {
-				interval += hdr->tp_snaplen;
-				if (interval > ctx->dump_interval) {
-					next_dump = true;
-					interval = 0;
-				}
-			}
-
-			if (next_dump) {
-				*fd = next_multi_pcap_file(ctx, *fd);
-				next_dump = false;
-
-				if (unlikely(ctx->verbose))
-					print_pcap_file_stats(sock, ctx);
-			}
-		}
+		update_pcap_next_dump(ctx, hdr->tp_snaplen, fd, sock);
 	}
 }
 #endif /* HAVE_TPACKET3 */
@@ -1007,23 +1013,7 @@ next:
 			if (unlikely(sigint == 1))
 				break;
 
-			if (dump_to_pcap(ctx)) {
-				if (ctx->dump_mode == DUMP_INTERVAL_SIZE) {
-					interval += hdr->tp_h.tp_snaplen;
-					if (interval > ctx->dump_interval) {
-						next_dump = true;
-						interval = 0;
-					}
-				}
-
-				if (next_dump) {
-					fd = next_multi_pcap_file(ctx, fd);
-					next_dump = false;
-
-					if (unlikely(ctx->verbose))
-						print_pcap_file_stats(sock, ctx);
-				}
-			}
+			update_pcap_next_dump(ctx, hdr->tp_h.tp_snaplen, &fd, sock);
 		}
 #endif /* HAVE_TPACKET3 */
 
