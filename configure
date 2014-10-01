@@ -55,19 +55,6 @@ check_pkg_config()
 	fi
 }
 
-check_ccache()
-{
-	echo -n "[*] Checking ccache ... "
-
-	if [ "x$(which ccache 2>> config.log)" == "x" ] ; then
-		echo "[NO]"
-		echo "CONFIG_CCACHE=" >> Config
-	else
-		echo "[YES]"
-		echo "CONFIG_CCACHE=ccache" >> Config
-	fi
-}
-
 check_flex()
 {
 	echo -n "[*] Checking flex ... "
@@ -590,7 +577,6 @@ if [ "$MISSING_PKG_CONFIG" == "1" ] ; then
 	exit 1
 fi
 
-check_ccache
 check_flex
 check_bison
 check_nacl

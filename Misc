@@ -67,7 +67,7 @@ coverity:
 	$(Q)$(call RM,cov-int)
 	$(Q)$(call MKDIR,cov-int)
 	$(Q)./configure
-	$(Q)cov-build --dir cov-int $(MAKE) CCACHE=
+	$(Q)cov-build --dir cov-int $(MAKE)
 	$(Q)tar czvf netsniff-ng-coverity.tgz cov-int
 	$(Q)echo "Uploading snapshot to Coverity scanner"
 	$(Q)curl --form file=@netsniff-ng-coverity.tgz --form project=netsniff-ng \
@@ -113,6 +113,6 @@ help:
 	$(Q)echo " CFLAGS=\"-O2 -Wall ...\"       - Overwrite CFLAGS for compilation"
 	$(Q)echo " CPPFLAGS=\"-I <path> ...\"     - Additional CFLAGS for compilation"
 	$(Q)echo " LDFLAGS=\"-L <path> ...\"      - Additional LDFLAGS for compilation"
-	$(Q)echo " CCACHE=                      - Do not use ccache for compilation"
+	$(Q)echo " CCACHE=ccache                - Use ccache for compilation"
 	$(Q)echo " C=1                          - Check all C source files with sparse"
 	$(Q)echo " Q=                           - Show verbose garbage"

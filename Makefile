@@ -25,8 +25,8 @@ TOOLS ?= netsniff-ng trafgen astraceroute flowtop ifpps bpfc curvetun mausezahn
 # For packaging purposes, prefix can define a different path.
 PREFIX ?= /usr/local
 
-# Disable if you don't want it
-CCACHE ?= $(CONFIG_CCACHE)
+# Set to use ccache for compilation
+CCACHE ?=
 
 # Location of an alternative destination directory for installation
 # Useful when cross-compiling and installing in a dedicated target directory
