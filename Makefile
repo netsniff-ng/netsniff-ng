@@ -35,7 +35,7 @@ DESTDIR=
 # Location of installation paths.
 SBINDIR = $(PREFIX)/sbin
 INCDIR = $(PREFIX)/include
-ETCDIR = /etc
+ETCDIR ?= /etc
 ETCDIRE = $(ETCDIR)/netsniff-ng
 MAN8DIR = $(PREFIX)/share/man/man8
 
