@@ -99,7 +99,7 @@ static const char *copyright = "Please report bugs to <bugs@netsniff-ng.org>\n"
 	"Copyright (C) 2013 Tobias Klauser <tklauser@distanz.ch>\n"
 	"License: GNU GPL version 2.0\n"
 	"This is free software: you are free to change and redistribute it.\n"
-	"There is NO WARRANTY, to the extent permitted by law.\n";
+	"There is NO WARRANTY, to the extent permitted by law.";
 
 static void signal_handler(int number)
 {
@@ -122,7 +122,7 @@ static inline int iswireless(const struct ifstat *stats)
 
 static void __noreturn help(void)
 {
-	printf("\nifpps %s, top-like kernel networking and system statistics\n",
+	printf("ifpps %s, top-like kernel networking and system statistics\n",
 	       VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: ifpps [options] || ifpps <netdev>\n"
@@ -145,16 +145,16 @@ static void __noreturn help(void)
 	     "  ifpps -lpcd wlan0 > plot.dat\n\n"
 	     "Note:\n"
 	     "  On 10G cards, RX/TX statistics are usually accumulated each > 1sec.\n"
-	     "  Thus, in those situations, it's good to use a -t of 10sec.\n\n");
+	     "  Thus, in those situations, it's good to use a -t of 10sec.\n");
 	puts(copyright);
 	die();
 }
 
 static void __noreturn version(void)
 {
-	printf("\nifpps %s, Git id: %s\n", VERSION_LONG, GITVERSION);
+	printf("ifpps %s, Git id: %s\n", VERSION_LONG, GITVERSION);
 	puts("top-like kernel networking and system statistics\n"
-	     "http://www.netsniff-ng.org\n\n");
+	     "http://www.netsniff-ng.org\n");
 	puts(copyright);
 	die();
 }

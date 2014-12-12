@@ -112,7 +112,7 @@ static const char *copyright = "Please report bugs to <bugs@netsniff-ng.org>\n"
 	"Swiss federal institute of technology (ETH Zurich)\n"
 	"License: GNU GPL version 2.0\n"
 	"This is free software: you are free to change and redistribute it.\n"
-	"There is NO WARRANTY, to the extent permitted by law.\n";
+	"There is NO WARRANTY, to the extent permitted by law.";
 
 static int tx_sock;
 static struct itimerval itimer;
@@ -1089,7 +1089,7 @@ static void destroy_ctx(struct ctx *ctx)
 
 static void __noreturn help(void)
 {
-	printf("\nnetsniff-ng %s, the packet sniffing beast\n", VERSION_STRING);
+	printf("netsniff-ng %s, the packet sniffing beast\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: netsniff-ng [options] [filter-expression]\n"
 	     "Options:\n"
@@ -1138,16 +1138,16 @@ static void __noreturn help(void)
 	     "  netsniff-ng --in any --filter http.bpf --jumbo-support --ascii -V\n\n"
 	     "Note:\n"
 	     "  For introducing bit errors, delays with random variation and more\n"
-	     "  while replaying pcaps, make use of tc(8) with its disciplines (e.g. netem).\n\n");
+	     "  while replaying pcaps, make use of tc(8) with its disciplines (e.g. netem).\n");
 	puts(copyright);
 	die();
 }
 
 static void __noreturn version(void)
 {
-	printf("\nnetsniff-ng %s, Git id: %s\n", VERSION_LONG, GITVERSION);
+	printf("netsniff-ng %s, Git id: %s\n", VERSION_LONG, GITVERSION);
 	puts("the packet sniffing beast\n"
-	     "http://www.netsniff-ng.org\n\n");
+	     "http://www.netsniff-ng.org\n");
 	puts(copyright);
 	die();
 }

@@ -117,7 +117,7 @@ static const char *copyright = "Please report bugs to <bugs@netsniff-ng.org>\n"
 	"Swiss federal institute of technology (ETH Zurich)\n"
 	"License: GNU GPL version 2.0\n"
 	"This is free software: you are free to change and redistribute it.\n"
-	"There is NO WARRANTY, to the extent permitted by law.\n";
+	"There is NO WARRANTY, to the extent permitted by law.";
 
 static int sock;
 static struct cpu_stats *stats;
@@ -152,7 +152,7 @@ static void signal_handler(int number)
 
 static void __noreturn help(void)
 {
-	printf("\ntrafgen %s, multithreaded zero-copy network packet generator\n", VERSION_STRING);
+	printf("trafgen %s, multithreaded zero-copy network packet generator\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: trafgen [options]\n"
 	     "Options:\n"
@@ -206,7 +206,7 @@ static void __noreturn help(void)
 	     "     Tolly            64:55,  78:5,   576:17, 1518:23\n"
 	     "     Cisco            64:7,  594:4,  1518:1\n"
 	     "     RPR Trimodal     64:60, 512:20, 1518:20\n"
-	     "     RPR Quadrimodal  64:50, 512:15, 1518:15, 9218:20\n\n");
+	     "     RPR Quadrimodal  64:50, 512:15, 1518:15, 9218:20\n");
 	puts(copyright);
 	die();
 }
@@ -267,9 +267,9 @@ static void __noreturn example(void)
 
 static void __noreturn version(void)
 {
-	printf("\ntrafgen %s, Git id: %s\n", VERSION_LONG, GITVERSION);
+	printf("trafgen %s, Git id: %s\n", VERSION_LONG, GITVERSION);
 	puts("multithreaded zero-copy network packet generator\n"
-	     "http://www.netsniff-ng.org\n\n");
+	     "http://www.netsniff-ng.org\n");
 	puts(copyright);
 	die();
 }

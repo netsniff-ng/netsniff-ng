@@ -87,7 +87,7 @@ static void signal_handler(int number)
 
 static void __noreturn help(void)
 {
-	printf("\ncurvetun %s, lightweight curve25519-based IP tunnel\n", VERSION_STRING);
+	printf("curvetun %s, lightweight curve25519-based IP tunnel\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: curvetun [options]\n"
 	     "Options, general:\n"
@@ -129,7 +129,7 @@ static void __noreturn help(void)
 
 static void __noreturn version(void)
 {
-	printf("\ncurvetun %s, Git id: %s\n", VERSION_LONG, GITVERSION);
+	printf("curvetun %s, Git id: %s\n", VERSION_LONG, GITVERSION);
 	puts("lightweight curve25519-based IP tunnel\n"
 	     "Note: Einstein-Rosen bridge not yet supported\n"
 	     "http://www.netsniff-ng.org\n\n"

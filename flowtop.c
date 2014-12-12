@@ -103,7 +103,7 @@ static const char *copyright = "Please report bugs to <bugs@netsniff-ng.org>\n"
 	"Swiss federal institute of technology (ETH Zurich)\n"
 	"License: GNU GPL version 2.0\n"
 	"This is free software: you are free to change and redistribute it.\n"
-	"There is NO WARRANTY, to the extent permitted by law.\n";
+	"There is NO WARRANTY, to the extent permitted by law.";
 
 static const char *const l3proto2str[AF_MAX] = {
 	[AF_INET]			= "ipv4",
@@ -235,7 +235,7 @@ static void flow_entry_get_extended(struct flow_entry *n);
 
 static void help(void)
 {
-	printf("\nflowtop %s, top-like netfilter TCP/UDP/SCTP/.. flow tracking\n",
+	printf("flowtop %s, top-like netfilter TCP/UDP/SCTP/.. flow tracking\n",
 	       VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: flowtop [options]\n"
@@ -257,16 +257,16 @@ static void help(void)
 	     "Note:\n"
 	     "  If netfilter is not running, you can activate it with e.g.:\n"
 	     "   iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT\n"
-	     "   iptables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT\n\n");
+	     "   iptables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT\n");
 	puts(copyright);
 	die();
 }
 
 static void version(void)
 {
-	printf("\nflowtop %s, Git id: %s\n", VERSION_LONG, GITVERSION);
+	printf("flowtop %s, Git id: %s\n", VERSION_LONG, GITVERSION);
 	puts("top-like netfilter TCP/UDP/SCTP/.. flow tracking\n"
-	     "http://www.netsniff-ng.org\n\n");
+	     "http://www.netsniff-ng.org\n");
 	puts(copyright);
 	die();
 }

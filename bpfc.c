@@ -36,14 +36,14 @@ static const char *copyright = "Please report bugs to <bugs@netsniff-ng.org>\n"
 	"Swiss federal institute of technology (ETH Zurich)\n"
 	"License: GNU GPL version 2.0\n"
 	"This is free software: you are free to change and redistribute it.\n"
-	"There is NO WARRANTY, to the extent permitted by law.\n";
+	"There is NO WARRANTY, to the extent permitted by law.";
 
 extern int compile_filter(char *file, int verbose, int bypass, int format,
 			  bool invoke_cpp);
 
 static void __noreturn help(void)
 {
-	printf("\nbpfc %s, a tiny BPF compiler\n", VERSION_STRING);
+	printf("bpfc %s, a tiny BPF compiler\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: bpfc [options] || bpfc <program>\n"
 	     "Options:\n"
@@ -63,16 +63,16 @@ static void __noreturn help(void)
 	     "  iptables -A INPUT -m bpf --bytecode \"`./bpfc -f xt_bpf -i fubar`\" -j LOG\n"
 	     "  bpfc -   (read from stdin)\n"
 	     "Note:\n"
-	     "  Generation of seccomp-BPF filters are fully supported as well.\n\n");
+	     "  Generation of seccomp-BPF filters are fully supported as well.\n");
 	puts(copyright);
 	die();
 }
 
 static void __noreturn version(void)
 {
-	printf("\nbpfc %s, Git id: %s\n", VERSION_LONG, GITVERSION);
+	printf("bpfc %s, Git id: %s\n", VERSION_LONG, GITVERSION);
 	puts("a tiny BPF compiler\n"
-	     "http://www.netsniff-ng.org\n\n");
+	     "http://www.netsniff-ng.org\n");
 	puts(copyright);
 	die();
 }
