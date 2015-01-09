@@ -19,7 +19,7 @@ int af_socket(int af)
 
 	sock = socket(af, SOCK_DGRAM, 0);
 	if (unlikely(sock < 0))
-		panic("Creation AF socket failed!\n");
+		panic("Creation AF socket failed: %s\n", strerror(errno));
 
 	return sock;
 }
@@ -28,7 +28,7 @@ int pf_socket(void)
 {
 	int sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	if (unlikely(sock < 0))
-		panic("Creation of PF socket failed!\n");
+		panic("Creation of PF socket failed: %s\n", strerror(errno));
 
 	return sock;
 }
@@ -37,7 +37,7 @@ int pf_tx_socket(void)
 {
 	int sock = socket(PF_PACKET, SOCK_RAW, 0);
 	if (unlikely(sock < 0))
-		panic("Creation of PF TX socket failed!\n");
+		panic("Creation of PF TX socket failed: %s\n", strerror(errno));
 
 	return sock;
 }
@@ -67,14 +67,14 @@ void set_sock_prio(int fd, int prio)
 
 	ret = setsockopt(fd, SOL_SOCKET, SO_PRIORITY, &val, sizeof(val));
 	if (unlikely(ret))
-		panic("Cannot set socket priority!\n");
+		panic("Cannot set socket priority: %s\n", strerror(errno));
 }
 
 void set_nonblocking(int fd)
 {
 	int ret = fcntl(fd, F_SETFL, fcntl(fd, F_GETFD, 0) | O_NONBLOCK);
 	if (unlikely(ret < 0))
-		panic("Cannot fcntl!\n");
+		panic("Cannot fcntl: %s\n", strerror(errno));
 }
 
 int set_nonblocking_sloppy(int fd)
@@ -88,7 +88,7 @@ void set_socket_keepalive(int fd)
 
 	ret = setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &one, sizeof(one));
 	if (unlikely(ret))
-		panic("Cannot set TCP keepalive!\n");
+		panic("Cannot set TCP keepalive: %s\n", strerror(errno));
 }
 
 void set_tcp_nodelay(int fd)
@@ -97,7 +97,7 @@ void set_tcp_nodelay(int fd)
 
 	ret = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
 	if (unlikely(ret))
-		panic("Cannot set TCP nodelay!\n");
+		panic("Cannot set TCP nodelay: %s\n", strerror(errno));
 }
 
 int set_ipv6_only(int fd)
@@ -112,7 +112,7 @@ int set_reuseaddr(int fd)
 
 	ret = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
 	if (unlikely(ret < 0))
-		panic("Cannot reuse addr!\n");
+		panic("Cannot reuse addr: %s\n", strerror(errno));
 
 	return 0;
 }
@@ -123,7 +123,7 @@ void set_mtu_disc_dont(int fd)
 
 	ret = setsockopt(fd, SOL_IP, IP_MTU_DISCOVER, &mtu, sizeof(mtu));
 	if (unlikely(ret))
-		panic("Cannot set MTU discovery options!\n");
+		panic("Cannot set MTU discovery options: %s\n", strerror(errno));
 }
 
 enum {
