@@ -146,7 +146,8 @@ libnet_ptag_t  create_udp_packet (libnet_t *l)
    char argval[MAX_PAYLOAD_SIZE];
    int T; // only an abbreviation for tx.packet_mode 
    int i;
-   
+   int udp_sum_set = 0;
+
    /////////////////////////////
    // Default UDP header fields
    // Already reset in init.c
@@ -216,6 +217,7 @@ libnet_ptag_t  create_udp_packet (libnet_t *l)
    if (getarg(tx.arg_string,"udp_sum", argval)==1)
      {
         tx.udp_sum = (u_int16_t) str2int(argval);
+	udp_sum_set = 1;
      }
 
    
@@ -277,7 +279,7 @@ libnet_ptag_t  create_udp_packet (libnet_t *l)
 			0);
    
    // Checksum overwrite? Libnet IPv6 checksum calculation can't deal with extension headers, we have to do it ourself...
-   libnet_toggle_checksum(l, t, (tx.udp_sum || ipv6_mode) ? LIBNET_OFF : LIBNET_ON);
+   libnet_toggle_checksum(l, t, (udp_sum_set || ipv6_mode) ? LIBNET_OFF : LIBNET_ON);
    
    if (t == -1)
      {
