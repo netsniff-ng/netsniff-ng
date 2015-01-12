@@ -23,6 +23,17 @@
 *.la
 *.a
 
+# Compiled executables
+astraceroute/astraceroute
+bpfc/bpfc
+curvetun/curvetun
+curvetun/abiname
+flowtop/flowtop
+ifpps/ifpps
+mausezahn/mausezahn
+netsniff-ng/netsniff-ng
+trafgen/trafgen
+
 # cscope/ctags index files
 cscope*
 tags
