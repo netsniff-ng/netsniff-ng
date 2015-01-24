@@ -78,10 +78,11 @@ file that should not have the default pcap type (0xa1b2c3d4), the additional
 option \[lq]\-T\[rq] must be provided. If a directory is given, then, instead of a
 single pcap file, multiple pcap files are generated with rotation based on
 maximum file size or a given interval (\[lq]\-F\[rq] option). A trafgen configuration
-file can currently only be specified if the input device is a pcap file. If
-stdout is given as a device, then a trafgen configuration will be written to
-stdout if the input device is a pcap file, or a pcap file if the input device
-is a networking device.
+file can currently only be specified if the input device is a pcap file. To
+specify a  pcap file as the output device, the file name must have
+\[lq].pcap\[rq] as its extension. If stdout is given as a device, then a trafgen
+configuration will be written to stdout if the input device is a pcap file, or a
+pcap file if the input device is a networking device.
 .PP
 .SS -f, --filter <bpf-file|expr>
 Specifies to not dump all traffic, but to filter the network packet haystack.

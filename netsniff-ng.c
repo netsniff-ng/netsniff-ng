@@ -528,6 +528,8 @@ static void read_pcap(struct ctx *ctx)
 	struct sock_fprog bpf_ops;
 	struct frame_map fm;
 	struct timeval start, end, diff;
+	bool is_out_pcap = ctx->device_out && strstr(ctx->device_out, ".pcap");
+	const struct pcap_file_ops *pcap_out_ops = pcap_ops[PCAP_OPS_RW];
 
 	bug_on(!__pcap_io);
 
@@ -574,6 +576,13 @@ static void read_pcap(struct ctx *ctx)
 		}
 	}
 
+	if (is_out_pcap) {
+		ret = pcap_out_ops->push_fhdr_pcap(fdo, ctx->magic,
+						   ctx->link_type);
+		if (ret)
+			panic("Error writing pcap header!\n");
+	}
+
 	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
 
 	printf("Running! Hang up with ^C!\n\n");
@@ -612,8 +621,16 @@ static void read_pcap(struct ctx *ctx)
 		dissector_entry_point(out, fm.tp_h.tp_snaplen,
 				      ctx->link_type, ctx->print_mode);
 
-		if (ctx->device_out)
+		if (is_out_pcap) {
+			size_t pcap_len = pcap_get_length(&phdr, ctx->magic);
+			int wlen = pcap_out_ops->write_pcap(fdo, &phdr,
+							    ctx->magic, out,
+							    pcap_len);
+			if (unlikely(wlen != (int)pcap_get_total_length(&phdr, ctx->magic)))
+				panic("Error writing to pcap!\n");
+		} else if (ctx->device_out) {
 			translate_pcap_to_txf(fdo, out, fm.tp_h.tp_snaplen);
+		}
 
 		if (frame_count_max != 0) {
 			if (ctx->tx_packets >= frame_count_max) {
@@ -1132,6 +1149,7 @@ static void __noreturn help(void)
 	     "  netsniff-ng --in wlan0 --rfraw --out dump.pcap --silent --bind-cpu 0\n"
 	     "  netsniff-ng --in dump.pcap --mmap --out eth0 -k1000 --silent --bind-cpu 0\n"
 	     "  netsniff-ng --in dump.pcap --out dump.cfg --silent --bind-cpu 0\n"
+	     "  netsniff-ng --in dump.pcap --out dump2.pcap --silent tcp\n"
 	     "  netsniff-ng --in eth0 --out eth1 --silent --bind-cpu 0 -J --type host\n"
 	     "  netsniff-ng --in eth1 --out /opt/probe/ -s -m --interval 100MiB -b 0\n"
 	     "  netsniff-ng --in vlan0 --out dump.pcap -c -u `id -u bob` -g `id -g bob`\n"
