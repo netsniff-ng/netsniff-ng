@@ -162,7 +162,9 @@ static int geoip_get_database(const char *host, int which)
 	size_t lenl = strlen("Content-Length: ");
 	size_t lent = strlen("HTTP/1.1 200 OK");
 	size_t lenc = strlen("\r\n\r\n");
-
+	const char *http_req_fmt = "GET %s%s HTTP/1.1\n"
+				   "Connection: close\n"
+				   "Host: %s\r\n\r\n";
 again:
 	found = good = 0;
 	ptr = NULL;
@@ -172,7 +174,7 @@ again:
 	if (sock < 0)
 		return -EIO;
 
-	slprintf(raw, sizeof(raw), "GET %s%s HTTP/1.1\nHost: %s\r\n\r\n",
+	slprintf(raw, sizeof(raw), http_req_fmt,
 		 retry ? files[which].possible_prefix : "",
 		 files[which].remote, host);
 
@@ -181,8 +183,6 @@ again:
 		close(sock);
 		return -EIO;
 	}
-
-	shutdown(sock, SHUT_WR);
 
 	slprintf(zfile, sizeof(zfile), "%s.gz", files[which].local);
 	fd = open_or_die_m(zfile, O_WRONLY | O_CREAT | O_TRUNC, DEFFILEMODE);
@@ -238,7 +238,7 @@ again:
 
 		ptr = raw;
 		len = ret;
-	} while(ret > 0);
+	} while (ret > 0);
 
 	printf("\n");
 
