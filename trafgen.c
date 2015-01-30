@@ -14,6 +14,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/fsuid.h>
+#include <sys/prctl.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/wait.h>
@@ -957,6 +958,7 @@ int main(int argc, char **argv)
 		case 't':
 			slow = true;
 			ptr = optarg;
+			prctl(PR_SET_TIMERSLACK, 1UL);
 			gap = strtoul(optarg, NULL, 0);
 
 			for (j = i = strlen(optarg); i > 0; --i) {
