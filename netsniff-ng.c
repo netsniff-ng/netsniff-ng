@@ -1400,7 +1400,7 @@ int main(int argc, char **argv)
 			size_t alen = strlen(argv[i]) + 2;
 			size_t flen = ctx.filter ? strlen(ctx.filter) : 0;
 
-			ctx.filter = xrealloc(ctx.filter, 1, flen + alen);
+			ctx.filter = xrealloc(ctx.filter, flen + alen);
 			ret = slprintf(ctx.filter + offset, strlen(argv[i]) + 2, "%s ", argv[i]);
 			if (ret < 0)
 				panic("Cannot concatenate filter string!\n");

@@ -755,7 +755,7 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf, uint32_t link_type)
 			panic("BPF syntax error!\n");
 
 		bpf->len++;
-		bpf->filter = xrealloc(bpf->filter, 1,
+		bpf->filter = xrealloc(bpf->filter,
 				       bpf->len * sizeof(sf_single));
 
 		fmemcpy(&bpf->filter[bpf->len - 1], &sf_single,

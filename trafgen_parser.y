@@ -127,12 +127,12 @@ static void realloc_packet(void)
 		return;
 
 	plen++;
-	packets = xrealloc(packets, 1, plen * sizeof(*packets));
+	packets = xrealloc(packets, plen * sizeof(*packets));
 
 	__init_new_packet_slot(&packets[packet_last]);
 
 	dlen++;
-	packet_dyn = xrealloc(packet_dyn, 1, dlen * sizeof(*packet_dyn));
+	packet_dyn = xrealloc(packet_dyn, dlen * sizeof(*packet_dyn));
 
 	__init_new_counter_slot(&packet_dyn[packetd_last]);
 	__init_new_randomizer_slot(&packet_dyn[packetd_last]);
@@ -147,7 +147,7 @@ static void set_byte(uint8_t val)
 		return;
 
 	pkt->len++;
-	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
+	pkt->payload = xrealloc(pkt->payload, pkt->len);
 	pkt->payload[payload_last] = val;
 }
 
@@ -168,7 +168,7 @@ static void set_fill(uint8_t val, size_t len)
 		return;
 
 	pkt->len += len;
-	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
+	pkt->payload = xrealloc(pkt->payload, pkt->len);
 	for (i = 0; i < len; ++i)
 		pkt->payload[payload_last - i] = val;
 }
@@ -179,10 +179,10 @@ static void __set_csum16_dynamic(size_t from, size_t to, enum csum which)
 	struct packet_dyn *pktd = &packet_dyn[packetd_last];
 
 	pkt->len += 2;
-	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
+	pkt->payload = xrealloc(pkt->payload, pkt->len);
 
 	pktd->slen++;
-	pktd->csum = xrealloc(pktd->csum, 1, pktd->slen * sizeof(struct csum16));
+	pktd->csum = xrealloc(pktd->csum, pktd->slen * sizeof(struct csum16));
 
 	__setup_new_csum16(&pktd->csum[packetds_last], from, to, which);
 }
@@ -236,7 +236,7 @@ static void set_rnd(size_t len)
 		return;
 
 	pkt->len += len;
-	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
+	pkt->payload = xrealloc(pkt->payload, pkt->len);
 	for (i = 0; i < len; ++i)
 		pkt->payload[payload_last - i] = (uint8_t) rand();
 }
@@ -250,7 +250,7 @@ static void set_sequential_inc(uint8_t start, size_t len, uint8_t stepping)
 		return;
 
 	pkt->len += len;
-	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
+	pkt->payload = xrealloc(pkt->payload, pkt->len);
 	for (i = 0; i < len; ++i) {
 		off_t off = len - 1 - i;
 
@@ -268,7 +268,7 @@ static void set_sequential_dec(uint8_t start, size_t len, uint8_t stepping)
 		return;
 
 	pkt->len += len;
-	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
+	pkt->payload = xrealloc(pkt->payload, pkt->len);
 	for (i = 0; i < len; ++i) {
 		int off = len - 1 - i;
 
@@ -286,10 +286,10 @@ static void set_dynamic_rnd(void)
 		return;
 
 	pkt->len++;
-	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
+	pkt->payload = xrealloc(pkt->payload, pkt->len);
 
 	pktd->rlen++;
-	pktd->rnd = xrealloc(pktd->rnd, 1, pktd->rlen *	sizeof(struct randomizer));
+	pktd->rnd = xrealloc(pktd->rnd, pktd->rlen * sizeof(struct randomizer));
 
 	__setup_new_randomizer(&pktd->rnd[packetdr_last]);
 }
@@ -304,10 +304,10 @@ static void set_dynamic_incdec(uint8_t start, uint8_t stop, uint8_t stepping,
 		return;
 
 	pkt->len++;
-	pkt->payload = xrealloc(pkt->payload, 1, pkt->len);
+	pkt->payload = xrealloc(pkt->payload, pkt->len);
 
 	pktd->clen++;
-	pktd->cnt =xrealloc(pktd->cnt, 1, pktd->clen * sizeof(struct counter));
+	pktd->cnt = xrealloc(pktd->cnt, pktd->clen * sizeof(struct counter));
 
 	__setup_new_counter(&pktd->cnt[packetdc_last], start, stop, stepping, type);
 }

@@ -13,7 +13,7 @@ extern void *xmallocz(size_t size) __hidden;
 extern void *xmalloc_aligned(size_t size, size_t alignment) __hidden;
 extern void *xzmalloc_aligned(size_t size, size_t alignment) __hidden;
 extern void *xmemdupz(const void *data, size_t len) __hidden;
-extern void *xrealloc(void *ptr, size_t nmemb, size_t size) __hidden;
+extern void *xrealloc(void *ptr, size_t size) __hidden;
 extern void xfree_func(void *ptr) __hidden;
 extern char *xstrdup(const char *str) __hidden;
 extern char *xstrndup(const char *str, size_t size) __hidden;
