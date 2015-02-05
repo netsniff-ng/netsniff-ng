@@ -108,11 +108,7 @@ void *xrealloc(void *ptr, size_t nmemb, size_t size)
 	if (unlikely(((size_t) ~0) / nmemb < size))
 		panic("xrealloc: nmemb * size > SIZE_T_MAX\n");
 
-	if (ptr == NULL)
-		new_ptr = malloc(new_size);
-	else
-		new_ptr = realloc(ptr, new_size);
-
+	new_ptr = realloc(ptr, new_size);
 	if (unlikely(new_ptr == NULL))
 		panic("xrealloc: out of memory (new_size %zu bytes)\n",
 		      new_size);
