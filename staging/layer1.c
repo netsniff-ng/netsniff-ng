@@ -58,7 +58,8 @@ int send_eth(void)
      j=0;
    char 
      err_buf[LIBNET_ERRBUF_SIZE],
-     message[MAX_PAYLOAD_SIZE*3];
+     message[MAX_PAYLOAD_SIZE*3],
+     argval[MAX_PAYLOAD_SIZE*2];
      
    u_int8_t       bytestring[MAX_PAYLOAD_SIZE];
    libnet_ptag_t  t;
@@ -100,7 +101,10 @@ int send_eth(void)
    // Create a temporal, local bytestring:
    //
    for (i=0; i<MAX_PAYLOAD_SIZE; i++) bytestring[i]=0x00;
-   bytestring_s = str2hex (tx.arg_string, bytestring, MAX_PAYLOAD_SIZE);
+   if ( (getarg(tx.arg_string,"payload", argval)==1) || (getarg(tx.arg_string,"p", argval)==1))
+     {
+	bytestring_s = str2hex (argval, bytestring, MAX_PAYLOAD_SIZE);
+     }
    
    // Set the flags to shorten subsequent decisions:
    src = strlen(tx.eth_src_txt);
