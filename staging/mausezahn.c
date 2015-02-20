@@ -357,6 +357,7 @@ int getopts (int argc, char *argv[])
 	char *packet_type=NULL, *mops_type=NULL;
 	char *dum;
 	unsigned char *dum1, *dum2;
+	bool do_help = false;
 
 	libnet_t       *l;
 	char err_buf[LIBNET_ERRBUF_SIZE];
@@ -575,12 +576,17 @@ int getopts (int argc, char *argv[])
 		}
 		else { /// arg_string given => no device has been specified -- let's find one!
 			strncpy (tx.arg_string, argv[optind], MAX_PAYLOAD_SIZE);
-			if (lookupdev()) { // no device found
-				if (verbose) fprintf(stderr, " mz: no active interfaces found!\n");
-				strcpy(tx.device, "lo");
+			do_help = !!getarg(tx.arg_string,"help", NULL);
+			if (!do_help) {
+				if (lookupdev()) {
+					/* no device found */
+					if (verbose)
+						fprintf(stderr, " mz: no active interfaces found!\n");
+					strcpy(tx.device, "lo");
+				}
+				if (verbose)
+					fprintf(stderr," mz: device not given, will use %s\n",tx.device);
 			}
-			if (verbose)
-				fprintf(stderr," mz: device not given, will use %s\n",tx.device);
 		}
 		break;
 	 case 2: // both device and arg_string given
@@ -610,7 +616,7 @@ int getopts (int argc, char *argv[])
    
 	// Get own device MAC address:
 	// Don't open context if only a help text is requested
-	if  (getarg(tx.arg_string,"help", NULL)!=1) {
+	if  (!do_help && getarg(tx.arg_string,"help", NULL) !=1) {
 		l = libnet_init (LIBNET_LINK_ADV, tx.device, err_buf );
 		if (l == NULL) {
 			fprintf(stderr, " mz/getopts: libnet_init() failed (%s)", err_buf);
