@@ -108,48 +108,48 @@ static void help(void)
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: mausezahn [options] [interface] <keyword>|<arg-string>|<hex-string>\n"
 	     "Options:\n"
-	     "  -x <port>            Interactive mode with telnet CLI, default port: 25542\n"
-	     "  -l <ip>              Listen address to bind to when in interactive mode, default: 0.0.0.0\n"
-	     "  -4                   IPv4 mode (default)\n"
-	     "  -6                   IPv6 mode\n"
-	     "  -c <count>           Send packet count times, default:1, infinite:0\n"
-	     "  -d <delay>           Apply delay between transmissions. The delay value can be\n"
-	     "                       specified in usec (default, no additional unit needed), or in\n"
-	     "                       msec (e.g. 100m or 100msec), or in seconds (e.g. 100s or 100sec)\n"
-	     "  -r                   Multiplies the specified delay with a random value\n"
-	     "  -p <length>          Pad the raw frame to specified length (using random bytes)\n"
-	     "  -a <srcmac|keyword>  Use specified source mac address, no matter what has\n"
-	     "                       been specified with other arguments; keywords see below,\n"
-	     "                       Default is own interface\n"
-	     "  -b <dstmac|keyword>  Same with destination mac address; keywords:\n"
-	     "     rand              Use a random MAC address\n"
-	     "     bc                Use a broadcast MAC address\n"
-	     "     own               Use own interface MAC address (default for source MAC)\n"
-	     "     stp               Use IEEE 802.1d STP multicast address\n"
-	     "     cisco             Use Cisco multicast address as used for CDP, VTP, or PVST+\n"
-	     "  -A <srcip>           Use specified source IP address (default is own interface IP)\n"
-	     "  -B <dstip|dnsname>   Send packet to specified destination IP or domain name\n"
-	     "  -P <ascii payload>   Use the specified ASCII payload\n"
-	     "  -f <filename>        Read the ASCII payload from a file\n"
-	     "  -F <filename>        Read the hexadecimal payload from a file\n" 
-	     "  -Q <[CoS:]vlan>      Specify 802.1Q VLAN tag and optional Class of Service, you can\n"
-	     "                       specify multiple 802.1Q VLAN tags (QinQ...) by separating them\n"
-	     "                       via a comma or a period (e.g. '5:10,20,2:30')\n"
-	     "  -t <packet-type>     Specify packet type for autobuild (you don't need to care for\n"
-	     "                       encapsulations in lower layers, most packet types allow/require\n"
-	     "                       additional packet-specific arguments in an <arg-string>;\n"
-	     "                       Currently supported types: arp, bpdu, cdp, ip, icmp, udp, tcp,\n"
-	     "                       dns, rtp, syslog, lldp and more;\n"
-	     "                       For context-help use 'help' as <arg-string>!\n"
-	     "  -T <packet-type>     Specify packet type for server mode, currently only rtp is supported;\n"
-	     "                       Enter -T help or -T rtp help for further information\n"
-	     "  -M <MPLS-label>      Insert a MPLS label, enter '-M help' for a syntax description\n"
- 	     "  -V|VV|...            Verbose and more verbose mode\n"
-	     "  -q                   Quiet mode, even omit 'important' standard short messages\n"
-	     "  -S                   Simulation mode: DOES NOT put anything on the wire, this is\n"
-	     "                       typically combined with one of the verbose modes (v or V)\n"
-	     "  -v                   Show version\n"
-	     "  -h                   Print this help\n\n"
+	     "  -x <port>             Interactive mode with telnet CLI, default port: 25542\n"
+	     "  -l <ip>               Listen address to bind to when in interactive mode, default: 0.0.0.0\n"
+	     "  -4                    IPv4 mode (default)\n"
+	     "  -6                    IPv6 mode\n"
+	     "  -c <count>            Send packet count times, default:1, infinite:0\n"
+	     "  -d <delay>            Apply delay between transmissions. The delay value can be\n"
+	     "                        specified in usec (default, no additional unit needed), or in\n"
+	     "                        msec (e.g. 100m or 100msec), or in seconds (e.g. 100s or 100sec)\n"
+	     "  -r                    Multiplies the specified delay with a random value\n"
+	     "  -p <length>           Pad the raw frame to specified length (using random bytes)\n"
+	     "  -a <srcmac|keyword>   Use specified source mac address, no matter what has\n"
+	     "                        been specified with other arguments; keywords see below,\n"
+	     "                        Default is own interface\n"
+	     "  -b <dstmac|keyword>   Same with destination mac address; keywords:\n"
+	     "     rand               Use a random MAC address\n"
+	     "     bc                 Use a broadcast MAC address\n"
+	     "     own                Use own interface MAC address (default for source MAC)\n"
+	     "     stp                Use IEEE 802.1d STP multicast address\n"
+	     "     cisco              Use Cisco multicast address as used for CDP, VTP, or PVST+\n"
+	     "  -A <srcip>            Use specified source IP address (default is own interface IP)\n"
+	     "  -B <dstip|dnsname>    Send packet to specified destination IP or domain name\n"
+	     "  -P <ascii payload>    Use the specified ASCII payload\n"
+	     "  -f <filename>         Read the ASCII payload from a file\n"
+	     "  -F <filename>         Read the hexadecimal payload from a file\n"
+	     "  -Q <[CoS:]vlan>       Specify 802.1Q VLAN tag and optional Class of Service, you can\n"
+	     "                        specify multiple 802.1Q VLAN tags (QinQ...) by separating them\n"
+	     "                        via a comma or a period (e.g. '5:10,20,2:30')\n"
+	     "  -t <packet-type|help> Specify packet type for autobuild (you don't need to care for\n"
+	     "                        encapsulations in lower layers, most packet types allow/require\n"
+	     "                        additional packet-specific arguments in an <arg-string>;\n"
+	     "                        Currently supported types: arp, bpdu, cdp, ip, icmp, udp, tcp,\n"
+	     "                        dns, rtp, syslog, lldp and more;\n"
+	     "                        For context-help use 'help' as <arg-string>!\n"
+	     "  -T <packet-type>      Specify packet type for server mode, currently only rtp is supported;\n"
+	     "                        Enter -T help or -T rtp help for further information\n"
+	     "  -M <MPLS-label>       Insert a MPLS label, enter '-M help' for a syntax description\n"
+	     "  -V|VV|...             Verbose and more verbose mode\n"
+	     "  -q                    Quiet mode, even omit 'important' standard short messages\n"
+	     "  -S                    Simulation mode: DOES NOT put anything on the wire, this is\n"
+	     "                        typically combined with one of the verbose modes (v or V)\n"
+	     "  -v                    Show version\n"
+	     "  -h                    Print this help\n\n"
 	     "Examples:\n"
 	     "  mausezahn -x 99\n"
 	     "  mausezahn -c 0 -d 2s -t bpdu conf\n"
@@ -347,7 +347,30 @@ int reset(void)
    return 0;
 }
 
+static void print_packet_types(void)
+{
+	fprintf(stderr, "\n"
+	    MAUSEZAHN_VERSION
+	    "\n"
+	    "|  The following packet types are currently implemented:\n"
+	    "|\n"
+	    "|  arp            ... sends ARP packets\n"
+	    "|  bpdu           ... sends BPDU packets (STP or PVST+)\n"
+	    "|  cdp            ... sends CDP messages\n"
+	    "|  ip             ... sends IPv4 packets\n"
+	    "|  udp            ... sends UDP datagrams\n"
+	    "|  tcp            ... sends TCP segments\n"
+	    "|  icmp           ... sends ICMP messages\n"
+	    "|  dns            ... sends DNS messages\n"
+	    "|  rtp            ... sends RTP datagrams\n"
+	    "|  syslog         ... sends Syslog messages\n"
+	    "|\n"
+	    "| Of course you can build any other packet type 'manually' using the direct layer 2 mode.\n"
+	    "| FYI: The interactive mode supports additional protocols. (Try mz -x <port>)\n"
+	    "\n");
 
+	die();
+}
 
 // Purpose: Properly handle arguments and configure global structs (tx)
 int getopts (int argc, char *argv[])
@@ -458,6 +481,8 @@ int getopts (int argc, char *argv[])
 			break;
 		 case 't':
 			packet_type = optarg; // analyzed below
+			if (strcmp(packet_type,"help") == 0)
+				print_packet_types();
 			break;
 		 case 'X':
 			mops_type = optarg; // MOPS TRANSITION STRATEGY -- analyzed below
@@ -756,9 +781,9 @@ int getopts (int argc, char *argv[])
 	}
 
 
-   if (packet_type == NULL) { // raw hex string given
-	   mode = BYTE_STREAM;
-   }
+	if (packet_type == NULL) { // raw hex string given
+		mode = BYTE_STREAM;
+	}
 	else if (strcmp(packet_type,"arp")==0) {
 		mode = ARP;
 	}
@@ -802,29 +827,6 @@ int getopts (int argc, char *argv[])
 			if (!count_set) tx.count = 0;  
 			if (!delay_set) tx.delay = 20000; // 20 msec inter-packet delay for RTP
 		}
-	}
-	else if (strcmp(packet_type,"help")==0) {
-		fprintf(stderr, "\n"
-			MAUSEZAHN_VERSION
-			"\n"
-			"|  The following packet types are currently implemented:\n"
-			"|\n"
-			"|  arp            ... sends ARP packets\n"
-			"|  bpdu           ... sends BPDU packets (STP or PVST+)\n"
-			"|  cdp            ... sends CDP messages\n"
-			"|  ip             ... sends IPv4 packets\n"
-			"|  udp            ... sends UDP datagrams\n"
-			"|  tcp            ... sends TCP segments\n"
-			"|  icmp           ... sends ICMP messages\n"
-			"|  dns            ... sends DNS messages\n"
-			"|  rtp            ... sends RTP datagrams\n"
-			"|  syslog         ... sends Syslog messages\n"
-			"|\n"
-			"| Of course you can build any other packet type 'manually' using the direct layer 2 mode.\n"
-			"| FYI: The interactive mode supports additional protocols. (Try mz -x <port>)\n"
-			"\n"
-			);
-		exit(1);
 	}
 	else {
 		fprintf(stderr, " mz: you must specify a valid packet type!\n");
