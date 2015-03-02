@@ -136,7 +136,32 @@
 		"| Of course all Ethernet fields can also be accessed.\n"\
 		"|\n"
 
+#define MZ_IGMP_HELP \
+		"| IGMP type: Send raw IGMP packets.\n" \
+		"|\n" \
+		"| Parameters  Values                               Explanation \n"  \
+		"| ----------  ------------------------------------ -------------------\n" \
+		"|  v,ver      1-2                                  version\n" \
+		"|  t,type                                          packet type:\n" \
+		"|             q,qry,query                            - memberhsip query\n" \
+		"|             j,join                                 - join group\n" \
+		"|             l,lv,leave                             - leave group\n" \
+		"|  resp_time                                       max response time (v2 only)\n" \
+		"|  igmp_sum                                        checksum (optional)\n" \
+		"|  g,group                                         group ipv4 address\n" \
+		"\n"
 
+int print_packet_help(char *help)
+{
+	if (mz_port) {
+		cli_print(gcli, "%s", help);
+	} else {
+		fprintf(stderr,"\n" MAUSEZAHN_VERSION "\n%s", help);
+		exit(0);
+	}
+
+	return -1;
+}
 
 // Note: If another function specified tx.udp_payload then it must also
 // set tx.udp_payload_s AND tx.udp_len = tx.udp_payload_s + 8
@@ -883,4 +908,80 @@ libnet_ptag_t  create_tcp_packet (libnet_t *l)
 
    
    return t;
+}
+
+libnet_ptag_t  create_igmp_packet(libnet_t *l)
+{
+	libnet_ptag_t  t;
+	char argval[MAX_PAYLOAD_SIZE];
+	int ver = 2;
+	uint8_t type = IGMP_MEMBERSHIP_QUERY;
+	uint8_t resp_time = 10;
+	uint16_t sum = 0;
+	uint32_t group = 0;
+
+	if ((getarg(tx.arg_string, "help", NULL) == 1) && (mode == IGMP))
+		return print_packet_help(MZ_IGMP_HELP);
+
+	if (getarg(tx.arg_string, "ver", argval) == 1 ||
+			getarg(tx.arg_string, "v", argval) == 1) {
+
+		ver = str2int(argval);
+		if (ver == 1)
+			resp_time = 0;
+	}
+
+	if (getarg(tx.arg_string, "type", argval) == 1 ||
+			getarg(tx.arg_string, "t", argval) == 1) {
+
+		if (strcmp("j", argval) == 0 || strcmp("join", argval) == 0) {
+
+			if (ver == 1)
+				type = IGMP_V1_MEMBERSHIP_REPORT;
+			else if (ver == 2)
+				type = IGMP_V2_MEMBERSHIP_REPORT;
+
+		} else if (strcmp("l", argval) == 0 || strcmp("lv", argval) == 0 ||
+				strcmp("leave", argval) == 0) {
+
+			type = IGMP_LEAVE_GROUP;
+		}
+	}
+
+	if (getarg(tx.arg_string, "resp_time", argval) == 1)
+		resp_time = (uint8_t)str2int(argval);
+
+	if (getarg(tx.arg_string, "igmp_sum", argval) == 1)
+		sum = (uint16_t)str2int(argval);
+
+	if (getarg(tx.arg_string, "group", argval) == 1 ||
+			getarg(tx.arg_string, "g", argval) == 1) {
+
+		group = str2ip32_rev(argval);
+	}
+
+	if (type == IGMP_LEAVE_GROUP) {
+		tx.ip_dst = str2ip32_rev("224.0.0.2");
+	} else if (type == IGMP_MEMBERSHIP_QUERY) {
+		if (ver == 1 || group == 0)
+			tx.ip_dst = str2ip32_rev("224.0.0.1");
+		else if (ver == 2 && group != 0)
+			tx.ip_dst = group;
+	} else if (type == IGMP_V1_MEMBERSHIP_REPORT ||
+			type == IGMP_V2_MEMBERSHIP_REPORT) {
+
+		tx.ip_dst = group;
+	}
+
+	if (getarg(tx.arg_string, "ttl", argval) == 0)
+		tx.ip_ttl = 1;
+
+	t = libnet_build_igmp(type, resp_time, sum, group, NULL, 0, l, 0);
+	if (t == -1) {
+		fprintf(stderr, " mz/create_igmp_packet: Can't build IGMP header: %s\n",
+				libnet_geterror(l));
+		exit (0);
+	}
+
+	return t;
 }

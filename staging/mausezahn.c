@@ -281,6 +281,7 @@ int reset(void)
    tx.ip_dst_stop = 0;   
    tx.ip_dst_isrange = 0;
 
+   tx.ip_ttl = 0;
    tx.ip_len = 0;
    tx.ip_payload[0]= '\0';
    tx.ip_payload_s = 0;
@@ -361,6 +362,7 @@ static void print_packet_types(void)
 	    "|  udp            ... sends UDP datagrams\n"
 	    "|  tcp            ... sends TCP segments\n"
 	    "|  icmp           ... sends ICMP messages\n"
+	    "|  igmp           ... sends IGMP messages\n"
 	    "|  dns            ... sends DNS messages\n"
 	    "|  rtp            ... sends RTP datagrams\n"
 	    "|  syslog         ... sends Syslog messages\n"
@@ -814,6 +816,9 @@ int getopts (int argc, char *argv[])
 	else if (strcmp(packet_type,"syslog")==0) {
 		mode = SYSLOG;
 	}
+	else if (strcmp(packet_type, "igmp") == 0) {
+		mode = IGMP;
+	}
 	else if (strcmp(packet_type,"lldp")==0) {
 		mode = LLDP;
 		tx.packet_mode=0; // create whole frame by ourself
@@ -928,9 +933,9 @@ int main(int argc, char **argv)
 	else
 	  send_frame (l, t3, t4); // NOTE: send_frame also destroys context finaly
 	break;
-	
+
       case TCP:
-	tx.ip_proto = 6;    
+	tx.ip_proto = 6;
 	l = get_link_context();
 	t4 = create_tcp_packet(l);     // t4 can be used for later header changes
 	t3 = create_ip_packet(l);      // t3 can be used for later header changes
@@ -942,7 +947,24 @@ int main(int argc, char **argv)
 	else
 	  send_frame (l, t3, t4); // NOTE: send_frame also destroys context finaly
 	break;
-	
+
+      case IGMP:
+	tx.ip_proto = 2;
+	l = get_link_context();
+	t4 = create_igmp_packet(l);
+	/* t3 can be used for later header changes */
+	t3 = create_ip_packet(l);
+	if (!quiet)
+		complexity();
+
+	/* Ethernet manipulation features does NOT use ARP to determine eth_dst
+	 * */
+	if (tx.packet_mode == 0)
+		t2 = create_eth_frame(l, t3, t4); // t2 can be used for later header changes
+	else
+		send_frame(l, t3, t4); // NOTE: send_frame also destroys context finaly
+	break;
+
       case DNS:
 	tx.ip_proto = 17;
 	l = get_link_context();

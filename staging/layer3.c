@@ -154,17 +154,14 @@ libnet_ptag_t  create_ip_packet (libnet_t *l)
    tx.ip_frag  = 0;              // Flags and Offset !!!
    tx.ip_sum   = 0;              // default: automatically calculate checksum
    tx.ip_tos   = 0;
-   tx.ip_ttl   = 255;
 
-   
    // temporary variables
    unsigned int dummy;
    size_t len;
    char *s;
 
-   
    T = tx.packet_mode; // >0 means automatic L2 creation
-   
+
    if ( (getarg(tx.arg_string,"help", NULL)==1) && (mode==IP) )
      {
 	if (mz_port)
@@ -284,13 +281,12 @@ libnet_ptag_t  create_ip_packet (libnet_t *l)
      {
 	tx.ip_frag |= 0x8000; 
      }
-   
-   
-   if (getarg(tx.arg_string,"ttl", argval)==1)
-     {
-	tx.ip_ttl = (u_int8_t) str2int(argval);
-     }
-   
+
+   if (getarg(tx.arg_string, "ttl", argval) == 1)
+	tx.ip_ttl = (u_int8_t)str2int(argval);
+   else if (tx.ip_ttl == 0)
+	tx.ip_ttl = 255;
+
    if (getarg(tx.arg_string,"proto", argval)==1)
      {
 	tx.ip_proto = (u_int8_t) str2int(argval);
