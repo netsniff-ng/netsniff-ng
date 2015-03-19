@@ -15,6 +15,11 @@ struct rwlock {
 	pthread_rwlock_t lock;
 };
 
+struct condlock {
+	pthread_mutex_t lock;
+	pthread_cond_t cond;
+};
+
 static inline int spinlock_init(struct spinlock *l)
 {
 	return -pthread_spin_init(&l->lock, 0);
@@ -84,6 +89,32 @@ static inline void rwlock_wr_lock(struct rwlock *l)
 static inline void rwlock_unlock(struct rwlock *l)
 {
 	pthread_rwlock_unlock(&l->lock);
+}
+
+static inline void condlock_init(struct condlock *c)
+{
+	pthread_mutex_init(&c->lock, NULL);
+	pthread_cond_init(&c->cond, NULL);
+}
+
+static inline void condlock_signal(struct condlock *c)
+{
+	pthread_mutex_lock(&c->lock);
+	pthread_cond_signal(&c->cond);
+	pthread_mutex_unlock(&c->lock);
+}
+
+static inline void condlock_wait(struct condlock *c)
+{
+	pthread_mutex_lock(&c->lock);
+	pthread_cond_wait(&c->cond, &c->lock);
+	pthread_mutex_unlock(&c->lock);
+}
+
+static inline void condlock_destroy(struct condlock *c)
+{
+	pthread_mutex_destroy(&c->lock);
+	pthread_cond_destroy(&c->cond);
 }
 
 #endif /* LOCKING_H */
