@@ -448,7 +448,7 @@ static void walk_processes(struct flow_entry *n)
 
 	dir = opendir("/proc");
 	if (!dir)
-		panic("Cannot open /proc!\n");
+		panic("Cannot open /proc: %s\n", strerror(errno));
 
 	while ((ent = readdir(dir))) {
 		const char *name = ent->d_name;
@@ -1063,18 +1063,18 @@ static void *collector(void *null __maybe_unused)
 				      NF_NETLINK_CONNTRACK_UPDATE |
 				      NF_NETLINK_CONNTRACK_DESTROY);
 	if (!handle)
-		panic("Cannot create a nfct handle!\n");
+		panic("Cannot create a nfct handle: %s\n", strerror(errno));
 
 	collector_flush(handle, AF_INET);
 	collector_flush(handle, AF_INET6);
 
 	filter = nfct_filter_create();
 	if (!filter)
-		panic("Cannot create a nfct filter!\n");
+		panic("Cannot create a nfct filter: %s\n", strerror(errno));
 
 	ret = nfct_filter_attach(nfct_fd(handle), filter);
 	if (ret < 0)
-		panic("Cannot attach filter to handle!\n");
+		panic("Cannot attach filter to handle: %s\n", strerror(errno));
 
 	if (what & INCLUDE_UDP) {
 		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO, IPPROTO_UDP);
@@ -1101,7 +1101,7 @@ static void *collector(void *null __maybe_unused)
 
 	ret = nfct_filter_attach(nfct_fd(handle), filter);
 	if (ret < 0)
-		panic("Cannot attach filter to handle!\n");
+		panic("Cannot attach filter to handle: %s\n", strerror(errno));
 
 	nfct_callback_register(handle, NFCT_T_ALL, collector_cb, NULL);
 	nfct_filter_destroy(filter);
