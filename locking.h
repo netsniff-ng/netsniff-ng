@@ -11,6 +11,8 @@ struct mutexlock {
 	pthread_mutex_t lock;
 };
 
+#define MUTEXLOCK_INITIALIZER { .lock = PTHREAD_MUTEX_INITIALIZER }
+
 struct rwlock {
 	pthread_rwlock_t lock;
 };

@@ -19,6 +19,9 @@
 #include "mz.h"
 #include "mops.h"
 #include "cli.h"
+#include "locking.h"
+
+static struct mutexlock pcap_init_lock = MUTEXLOCK_INITIALIZER;
 
 // Starts an ARP RX thread for *every* device in the device_list.
 // (Except for the loopback interface)
@@ -67,6 +70,8 @@ void *rx_arp (void *arg)
 	// FYI, possible filter string is also:
 	// "eth.dst==00:05:4e:51:01:b5 and arp and arp.opcode==2";
 	
+	mutexlock_lock(&pcap_init_lock);
+
 	p_arp = pcap_open_live (dev->dev, 
 			    100,         // max num of bytes to read
 			    1,           // 1 if promiscuous mode
@@ -75,7 +80,7 @@ void *rx_arp (void *arg)
 
 	if (p_arp == NULL) {
 		fprintf(stderr," rx_arp: [ERROR] %s\n",errbuf);
-		return NULL; // TODO: Should return pointer to error message or something similar
+		goto exit_unlock;
 	}
    
 	dev->p_arp = p_arp; // also assign pointer to a global which is needed for clean_up
@@ -87,20 +92,22 @@ void *rx_arp (void *arg)
 			  0)              // netmask
 	     == -1) {
 		fprintf(stderr," rx_arp: [ERROR] Error calling pcap_compile\n"); 
-		return NULL;
+		goto exit_unlock;
 	}
 
 	if ( pcap_setfilter(p_arp, &filter) == -1)	{
 		fprintf(stderr," rx_arp: [ERROR] Error setting pcap filter\n");
 		pcap_perror(p_arp, " rx_arp: ");
-		return NULL;
+		goto exit_unlock;
 	}
    
 	if (pcap_setdirection(p_arp, PCAP_D_IN) == -1) {
 		pcap_perror(p_arp, " rx_arp: ");
-		return NULL;
+		goto exit_unlock;
 	}
    
+	mutexlock_unlock(&pcap_init_lock);
+
 	again:
 	pcap_loop (p_arp, 
 		   1,               // number of packets to wait
@@ -109,7 +116,11 @@ void *rx_arp (void *arg)
 	goto again;
 	
 	pthread_exit(NULL); // destroy thread
-   return NULL;
+	return NULL;
+
+exit_unlock:
+	mutexlock_unlock(&pcap_init_lock);
+	return NULL;
 }
 
 
