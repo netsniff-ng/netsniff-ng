@@ -16,6 +16,7 @@ else
 endif
 
 # sparse related
+C =
 ifeq ($(C), 1)
   CHECK = $(Q)echo -e "  CHECK\t$<" && sparse
 else
