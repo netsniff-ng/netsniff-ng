@@ -1070,6 +1070,14 @@ int main(int argc, char **argv)
 		sleep(0);
 	}
 
+	/*
+	 * If number of packets is smaller than number of CPUs use only as
+	 * many CPUs as there are packets. Otherwise we end up sending more
+	 * packets than intended or none at all.
+	 */
+	if (ctx.num)
+		ctx.cpus = min_t(unsigned int, ctx.num, ctx.cpus);
+
 	irq = device_irq_number(ctx.device);
 	if (set_irq_aff)
 		device_set_irq_affinity_list(irq, 0, ctx.cpus - 1);
