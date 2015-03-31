@@ -494,7 +494,7 @@ static void translate_pcap_to_txf(int fdo, uint8_t *out, size_t len)
 	write_or_die(fdo, bout, strlen(bout));
 
 	while (bytes_done < len) {
-		slprintf(bout, sizeof(bout), "0x%02x, ", out[bytes_done]);
+		slprintf(bout, sizeof(bout), "0x%02x,", out[bytes_done]);
 		write_or_die(fdo, bout, strlen(bout));
 
 		bytes_done++;
@@ -507,6 +507,9 @@ static void translate_pcap_to_txf(int fdo, uint8_t *out, size_t len)
 				slprintf(bout, sizeof(bout), "  ");
 				write_or_die(fdo, bout, strlen(bout));
 			}
+		} else if (bytes_done < len) {
+			slprintf(bout, sizeof(bout), " ");
+			write_or_die(fdo, bout, strlen(bout));
 		}
 	}
 	if (bytes_done % 10 != 0) {
