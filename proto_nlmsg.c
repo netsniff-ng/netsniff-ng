@@ -18,7 +18,7 @@ static void nlmsg(struct pkt_buff *pkt)
 	struct nlmsghdr *hdr = (struct nlmsghdr *) pkt_pull(pkt, sizeof(*hdr));
 	char type[32];
 	char flags[128];
-	char procname[1024];
+	char procname[1024] = {};
 
 	if (hdr == NULL)
 		return;
