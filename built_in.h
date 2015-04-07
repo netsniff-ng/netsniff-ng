@@ -73,7 +73,11 @@ typedef uint8_t		u8;
 #endif
 
 #ifndef __maybe_unused
-# define __maybe_unused		__attribute__ ((__unused__))
+# define __maybe_unused		__attribute__((__unused__))
+#endif
+
+#ifndef __warn_unused_result
+# define __warn_unused_result	__attribute__((warn_unused_result))
 #endif
 
 #ifndef noinline
