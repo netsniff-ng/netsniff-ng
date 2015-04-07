@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <limits.h>
 #include <libnl3/netlink/msg.h>
 #include <libgen.h>
 
@@ -18,7 +19,7 @@ static void nlmsg(struct pkt_buff *pkt)
 	struct nlmsghdr *hdr = (struct nlmsghdr *) pkt_pull(pkt, sizeof(*hdr));
 	char type[32];
 	char flags[128];
-	char procname[1024] = {};
+	char procname[PATH_MAX];
 
 	if (hdr == NULL)
 		return;
@@ -37,7 +38,8 @@ static void nlmsg(struct pkt_buff *pkt)
 		snprintf(path, sizeof(path), "/proc/%u/exe", hdr->nlmsg_pid);
 		ret = readlink(path, procname, sizeof(procname) - 1);
 		if (ret < 0)
-			procname[0] = '\0';
+			ret = 0;
+		procname[ret] = '\0';
 	} else
 		snprintf(procname, sizeof(procname), "kernel");
 
