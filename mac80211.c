@@ -116,7 +116,8 @@ static int nl80211_error_handler(struct sockaddr_nl *nla __maybe_unused,
 				 struct nlmsgerr *err,
 				 void *arg __maybe_unused)
 {
-	panic("nl80211 returned with error %d\n", err->error);
+	panic("nl80211 returned with error (%d): %s\n", err->error,
+	      nl_geterror(err->error));
 }
 
 static int nl80211_add_mon_if(struct nl80211_state *state, const char *device,
