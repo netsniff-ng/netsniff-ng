@@ -20,6 +20,7 @@ struct pkt_buff {
 	unsigned int  size;
 
 	struct protocol *proto;
+	int link_type;
 };
 
 static inline struct pkt_buff *pkt_alloc(uint8_t *packet, unsigned int len)

@@ -224,7 +224,8 @@ static void pcap_to_xmit(struct ctx *ctx)
 		xfree(ctx->device_out);
 
 		enter_rfmon_mac80211(ctx->device_trans, &ctx->device_out);
-		if (ctx->link_type != LINKTYPE_IEEE802_11)
+		if (ctx->link_type != LINKTYPE_IEEE802_11 &&
+				ctx->link_type != LINKTYPE_IEEE802_11_RADIOTAP)
 			panic("Wrong linktype of pcap!\n");
 	}
 
@@ -907,14 +908,6 @@ static void recv_only_or_dump(struct ctx *ctx)
 
 	sock = pf_socket();
 
-	if (ctx->rfraw) {
-		ctx->device_trans = xstrdup(ctx->device_in);
-		xfree(ctx->device_in);
-
-		enter_rfmon_mac80211(ctx->device_trans, &ctx->device_in);
-		ctx->link_type = LINKTYPE_IEEE802_11;
-	}
-
 	ifindex = device_ifindex(ctx->device_in);
 
 	size = ring_size(ctx->device_in, ctx->reserve_size);
@@ -1198,7 +1191,6 @@ int main(int argc, char **argv)
 			ctx.prefix = xstrdup(optarg);
 			break;
 		case 'R':
-			ctx.link_type = LINKTYPE_IEEE802_11;
 			ctx.rfraw = 1;
 			break;
 		case 'r':
@@ -1428,8 +1420,15 @@ int main(int argc, char **argv)
 	}
 
 	if (device_mtu(ctx.device_in) || !strncmp("any", ctx.device_in, strlen(ctx.device_in))) {
-		if (!ctx.rfraw)
-			ctx.link_type = pcap_devtype_to_linktype(ctx.device_in);
+		if (ctx.rfraw) {
+			ctx.device_trans = xstrdup(ctx.device_in);
+			xfree(ctx.device_in);
+
+			enter_rfmon_mac80211(ctx.device_trans, &ctx.device_in);
+		}
+
+		ctx.link_type = pcap_devtype_to_linktype(ctx.device_in);
+
 		if (!ctx.device_out) {
 			ctx.dump = 0;
 			main_loop = recv_only_or_dump;

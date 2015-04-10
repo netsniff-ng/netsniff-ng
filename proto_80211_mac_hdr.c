@@ -22,6 +22,7 @@
 #include "built_in.h"
 #include "pkt_buff.h"
 #include "oui.h"
+#include "linktype.h"
 
 #define	TU		0.001024
 
@@ -770,6 +771,13 @@ struct element_vend_spec {
 	u8 len;
 	u8 oui[0];
 	u8 specific[0];
+} __packed;
+
+struct ieee80211_radiotap_header {
+	u8 version;	/* set to 0 */
+	u8 pad;
+	u16 len;	/* entire length */
+	u32 present;	/* fields present */
 } __packed;
 
 static int8_t len_neq_error(u8 len, u8 intended)
@@ -3141,8 +3149,16 @@ static void ieee80211(struct pkt_buff *pkt)
 	const char *subtype = NULL;
 	struct ieee80211_frm_ctrl *frm_ctrl;
 
-	frm_ctrl = (struct ieee80211_frm_ctrl *)
-			pkt_pull(pkt, sizeof(*frm_ctrl));
+	if (pkt->link_type == LINKTYPE_IEEE802_11_RADIOTAP) {
+		struct ieee80211_radiotap_header *rtap;
+
+		rtap = (struct ieee80211_radiotap_header *)pkt_pull(pkt,
+				sizeof(*rtap));
+
+		pkt_pull(pkt, le16_to_cpu(rtap->len) - sizeof(*rtap));
+	}
+
+	frm_ctrl = (struct ieee80211_frm_ctrl *)pkt_pull(pkt, sizeof(*frm_ctrl));
 	if (frm_ctrl == NULL)
 		return;
 
