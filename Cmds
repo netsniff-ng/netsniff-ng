@@ -6,7 +6,7 @@ SHELL := $(shell if [ -x /bin/bash ]; then echo /bin/bash; else echo /bin/sh; fi
 
 # Compiler related stuff
 CC = gcc
-LD = $(Q)echo -e "  LD\t$@" && $(CCACHE) $(CROSS_COMPILE)$(CC)
+LDQ = $(Q)echo -e "  LD\t$@" && $(CCACHE) $(CROSS_COMPILE)$(CC)
 CCNQ = $(CCACHE) $(CROSS_COMPILE)$(CC)
 CCQ = $(Q)echo -e "  CC\t$<" && $(CCNQ)
 ifeq ($(DEBUG), 1)

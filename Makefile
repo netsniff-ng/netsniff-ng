@@ -177,5 +177,5 @@ $(foreach tool,$(TOOLS),$(eval $(call TOOL_templ,$(tool))))
 %:: ;
 
 $(TOOLS):
-	$(LD) $(LDFLAGS) -o $@/$@ $@/*.o $($@-libs)
+	$(LDQ) $(LDFLAGS) -o $@/$@ $@/*.o $($@-libs)
 	$(STRIP) $@/$@
