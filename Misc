@@ -103,7 +103,7 @@ help:
 	$(Q)echo " nacl                         - Execute the build_nacl script"
 	$(Q)echo " help                         - Show this help"
 	$(Q)echo "$(bold)Available parameters:$(normal)"
-	$(Q)echo " DEBUG=1 / DISTRO=1           - Enable debugging / Build for distros"
+	$(Q)echo " DEBUG=1                      - Enable debugging"
 	$(Q)echo " HARDENING=1                  - Enable GCC hardening of executables"
 	$(Q)echo " PREFIX=/path                 - Install path prefix"
 	$(Q)echo " DESTDIR=/path                - Alternative install destination path"

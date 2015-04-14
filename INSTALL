@@ -181,13 +181,6 @@ make target is executed with:
 
   $ make Q=
 
-Concerning packaging the toolkit for a Linux distribution, by default,
-netsniff-ng has some architecture-specific tuning options enabled that don't
-belong into a package binary of a distribution. Hence, you might want to build
-the toolkit with:
-
-  $ make DISTRO=1
-
 A hardening option is also available via HARDENING=1 if needed. You can then
 build and install the toolkit into prefixed path like:
 
