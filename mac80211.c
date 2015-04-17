@@ -226,6 +226,10 @@ void enter_rfmon_mac80211(const char *device, char **mondev)
 		char mondevice[32];
 
 		slprintf(mondevice, sizeof(mondevice), "mon%u", n);
+
+		if (device_ifindex_get(mondevice) > 0)
+			continue;
+
 		ret = nl80211_add_mon_if(&nlstate, device, mondevice);
 		if (ret == 0) {
 			*mondev = xstrdup(mondevice);

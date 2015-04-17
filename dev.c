@@ -13,7 +13,7 @@
 #include "link.h"
 #include "built_in.h"
 
-int device_ifindex(const char *ifname)
+int device_ifindex_get(const char *ifname)
 {
 	int ret, sock, index;
 	struct ifreq ifr;
@@ -27,11 +27,20 @@ int device_ifindex(const char *ifname)
 	strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
 
 	ret = ioctl(sock, SIOCGIFINDEX, &ifr);
-	if (unlikely(ret))
-		panic("Cannot get ifindex from device!\n");
+	if (ret)
+		return -1;
 
 	index = ifr.ifr_ifindex;
 	close(sock);
+
+	return index;
+}
+
+int device_ifindex(const char *ifname)
+{
+	int index = device_ifindex_get(ifname);
+	if (unlikely(index <= 0))
+		panic("Cannot get ifindex from device!\n");
 
 	return index;
 }
