@@ -3155,6 +3155,11 @@ static void ieee80211(struct pkt_buff *pkt)
 		rtap = (struct ieee80211_radiotap_header *)pkt_pull(pkt,
 				sizeof(*rtap));
 
+		tprintf(" [ Radiotap ");
+		tprintf("Version (%u), ", rtap->version);
+		tprintf("Length (%u), ", le16_to_cpu(rtap->len));
+		tprintf("Flags (0x%08x) ]\n", le32_to_cpu(rtap->present));
+
 		pkt_pull(pkt, le16_to_cpu(rtap->len) - sizeof(*rtap));
 	}
 
