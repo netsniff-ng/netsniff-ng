@@ -184,6 +184,20 @@ static inline bool dump_to_pcap(struct ctx *ctx)
 	return ctx->dump;
 }
 
+static void on_panic_del_rfmon(void *arg)
+{
+	leave_rfmon_mac80211(arg);
+}
+
+static inline void setup_rfmon_mac80211_dev(struct ctx *ctx, char **rfmon_dev)
+{
+	ctx->device_trans = xstrdup(*rfmon_dev);
+	xfree(*rfmon_dev);
+
+	enter_rfmon_mac80211(ctx->device_trans, rfmon_dev);
+	panic_func_add(on_panic_del_rfmon, *rfmon_dev);
+}
+
 static void pcap_to_xmit(struct ctx *ctx)
 {
 	uint8_t *out = NULL;
@@ -227,10 +241,8 @@ static void pcap_to_xmit(struct ctx *ctx)
 	}
 
 	if (ctx->rfraw) {
-		ctx->device_trans = xstrdup(ctx->device_out);
-		xfree(ctx->device_out);
+		setup_rfmon_mac80211_dev(ctx, &ctx->device_out);
 
-		enter_rfmon_mac80211(ctx->device_trans, &ctx->device_out);
 		if (ctx->link_type != LINKTYPE_IEEE802_11 &&
 				ctx->link_type != LINKTYPE_IEEE802_11_RADIOTAP)
 			panic("Wrong linktype of pcap!\n");
@@ -1464,12 +1476,8 @@ int main(int argc, char **argv)
 	}
 
 	if (device_mtu(ctx.device_in) || !strncmp("any", ctx.device_in, strlen(ctx.device_in))) {
-		if (ctx.rfraw) {
-			ctx.device_trans = xstrdup(ctx.device_in);
-			xfree(ctx.device_in);
-
-			enter_rfmon_mac80211(ctx.device_trans, &ctx.device_in);
-		}
+		if (ctx.rfraw)
+			setup_rfmon_mac80211_dev(&ctx, &ctx.device_in);
 
 		ctx.link_type = pcap_devtype_to_linktype(ctx.device_in);
 

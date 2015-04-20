@@ -22,6 +22,7 @@ curvetun-objs =	xmalloc.o \
 		ioexact.o \
 		ioops.o \
 		cpusched.o \
+		die.o \
 		curvetun_mgmt_servers.o \
 		curvetun_mgmt_users.o \
 		curvetun_server.o \

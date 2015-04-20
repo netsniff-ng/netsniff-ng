@@ -12,6 +12,9 @@
 
 #include "built_in.h"
 
+extern void panic_func_add(void (*on_panic)(void *arg), void *arg);
+extern void call_on_panic_funcs(void);
+
 static inline void panic(const char *format, ...)  __check_format_printf(1, 2);
 static inline void syslog_panic(const char *format,
 				...) __check_format_printf(1, 2);
@@ -20,11 +23,13 @@ static inline void syslog_maybe(bool cond, int priority,
 
 static inline void __noreturn __die_hard(void)
 {
+	call_on_panic_funcs();
 	exit(EXIT_FAILURE);
 }
 
 static inline void __noreturn __die_harder(void)
 {
+	call_on_panic_funcs();
 	_exit(EXIT_FAILURE);
 }
 

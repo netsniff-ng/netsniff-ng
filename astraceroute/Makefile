@@ -16,6 +16,7 @@ astraceroute-objs =	xmalloc.o \
 			link.o \
 			dev.o \
 			ring.o \
+			die.o \
 			astraceroute.o
 
 ifeq ($(CONFIG_GEOIP), 1)

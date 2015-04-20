@@ -3,6 +3,7 @@ trafgen-libs =	$(shell pkg-config --libs libnl-3.0) \
 		-lm
 
 trafgen-objs =	xmalloc.o \
+		die.o \
 		ioops.o \
 		privs.o \
 		proc.o \
