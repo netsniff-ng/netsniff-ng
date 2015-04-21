@@ -209,9 +209,25 @@ static void alloc_rx_ring_frames(int sock, struct ring *ring)
 				  rx_ring_get_size(ring, v3));
 }
 
+void join_fanout_group(int sock, uint32_t fanout_group, uint32_t fanout_type)
+{
+	uint32_t fanout_opt = 0;
+	int ret;
+
+	if (fanout_group == 0)
+		return;
+
+	fanout_opt = (fanout_group & 0xffff) | (fanout_type << 16);
+
+	ret = setsockopt(sock, SOL_PACKET, PACKET_FANOUT, &fanout_opt,
+			 sizeof(fanout_opt));
+	if (ret < 0)
+		panic("Cannot set fanout ring mode!\n");
+}
+
 void ring_rx_setup(struct ring *ring, int sock, size_t size, int ifindex,
 		   struct pollfd *poll, bool v3, bool jumbo_support,
-		   bool verbose)
+		   bool verbose, uint32_t fanout_group, uint32_t fanout_type)
 {
 	fmemset(ring, 0, sizeof(*ring));
 	setup_rx_ring_layout(sock, ring, size, jumbo_support, v3);
@@ -219,6 +235,7 @@ void ring_rx_setup(struct ring *ring, int sock, size_t size, int ifindex,
 	mmap_ring_generic(sock, ring);
 	alloc_rx_ring_frames(sock, ring);
 	bind_ring_generic(sock, ring, ifindex, false);
+	join_fanout_group(sock, fanout_group, fanout_type);
 	prepare_polling(sock, poll);
 }
 

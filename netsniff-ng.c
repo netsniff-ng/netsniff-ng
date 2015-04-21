@@ -58,14 +58,18 @@ struct ctx {
 	unsigned long kpull, dump_interval, tx_bytes, tx_packets;
 	size_t reserve_size;
 	bool randomize, promiscuous, enforce, jumbo, dump_bpf, hwtimestamp, verbose;
-	enum pcap_ops_groups pcap; enum dump_mode dump_mode;
-	uid_t uid; gid_t gid; uint32_t link_type, magic;
+	enum pcap_ops_groups pcap;
+	enum dump_mode dump_mode;
+	uid_t uid;
+	gid_t gid;
+	uint32_t link_type, magic;
+	uint32_t fanout_group, fanout_type;
 };
 
 static volatile sig_atomic_t sigint = 0;
 static volatile bool next_dump = false;
 
-static const char *short_options = "d:i:o:rf:MNJt:S:k:n:b:HQmcsqXlvhF:RGAP:Vu:g:T:DBU";
+static const char *short_options = "d:i:o:rf:MNJt:S:k:n:b:HQmcsqXlvhF:RGAP:Vu:g:T:DBUC:K:L:";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"in",			required_argument,	NULL, 'i'},
@@ -81,6 +85,9 @@ static const struct option long_options[] = {
 	{"user",		required_argument,	NULL, 'u'},
 	{"group",		required_argument,	NULL, 'g'},
 	{"magic",		required_argument,	NULL, 'T'},
+	{"fanout-group",	required_argument,	NULL, 'C'},
+	{"fanout-type",		required_argument,	NULL, 'K'},
+	{"fanout-opts",		required_argument,	NULL, 'L'},
 	{"rand",		no_argument,		NULL, 'r'},
 	{"rfraw",		no_argument,		NULL, 'R'},
 	{"mmap",		no_argument,		NULL, 'm'},
@@ -377,7 +384,8 @@ static void receive_to_xmit(struct ctx *ctx)
 		bpf_dump_all(&bpf_ops);
 	bpf_attach_to_sock(rx_sock, &bpf_ops);
 
-	ring_rx_setup(&rx_ring, rx_sock, size_in, ifindex_in, &rx_poll, false, ctx->jumbo, ctx->verbose);
+	ring_rx_setup(&rx_ring, rx_sock, size_in, ifindex_in, &rx_poll, false, ctx->jumbo,
+		      ctx->verbose, ctx->fanout_group, ctx->fanout_type);
 	ring_tx_setup(&tx_ring, tx_sock, size_out, ifindex_out, ctx->jumbo, ctx->verbose);
 
 	dissector_init_all(ctx->print_mode);
@@ -925,7 +933,8 @@ static void recv_only_or_dump(struct ctx *ctx)
 			printf("HW timestamping enabled\n");
 	}
 
-	ring_rx_setup(&rx_ring, sock, size, ifindex, &rx_poll, is_defined(HAVE_TPACKET3), true, ctx->verbose);
+	ring_rx_setup(&rx_ring, sock, size, ifindex, &rx_poll, is_defined(HAVE_TPACKET3), true,
+		      ctx->verbose, ctx->fanout_group, ctx->fanout_type);
 
 	dissector_init_all(ctx->print_mode);
 
@@ -1073,11 +1082,14 @@ next:
 static void init_ctx(struct ctx *ctx)
 {
 	memset(ctx, 0, sizeof(*ctx));
+
 	ctx->uid = getuid();
 	ctx->uid = getgid();
 
 	ctx->cpu = -1;
 	ctx->packet_type = -1;
+
+	ctx->fanout_type = PACKET_FANOUT_ROLLOVER;
 
 	ctx->magic = ORIGINAL_TCPDUMP_MAGIC;
 	ctx->print_mode = PRINT_NORM;
@@ -1108,6 +1120,9 @@ static void __noreturn help(void)
 	     "Options:\n"
 	     "  -i|-d|--dev|--in <dev|pcap|->  Input source as netdev, pcap or pcap stdin\n"
 	     "  -o|--out <dev|pcap|dir|cfg|->  Output sink as netdev, pcap, directory, trafgen, or stdout\n"
+	     "  -C|--fanout-group <id>         Join packet fanout group\n"
+	     "  -K|--fanout-type <type>        Apply fanout discipline: hash|lb|cpu|rnd|roll|qm\n"
+	     "  -L|--fanout-opts <opts>        Additional fanout options: defrag|roll\n"
 	     "  -f|--filter <bpf-file|expr>    Use BPF filter file from bpfc or tcpdump-like expression\n"
 	     "  -t|--type <type>               Filter for: host|broadcast|multicast|others|outgoing\n"
 	     "  -F|--interval <size|time>      Dump interval if -o is a dir: <num>KiB/MiB/GiB/s/sec/min/hrs\n"
@@ -1222,6 +1237,35 @@ int main(int argc, char **argv)
 		case 'g':
 			ctx.gid = strtoul(optarg, NULL, 0);
 			ctx.enforce = true;
+			break;
+		case 'C':
+			ctx.fanout_group = strtoul(optarg, NULL, 0);
+			if (ctx.fanout_group == 0)
+				panic("Non-zero fanout group id required!\n");
+			break;
+		case 'K':
+			if (!strncmp(optarg, "hash", strlen("hash")))
+				ctx.fanout_type = PACKET_FANOUT_HASH;
+			else if (!strncmp(optarg, "lb", strlen("lb")))
+				ctx.fanout_type = PACKET_FANOUT_LB;
+			else if (!strncmp(optarg, "cpu", strlen("cpu")))
+				ctx.fanout_type = PACKET_FANOUT_CPU;
+			else if (!strncmp(optarg, "rnd", strlen("rnd")))
+				ctx.fanout_type = PACKET_FANOUT_RND;
+			else if (!strncmp(optarg, "roll", strlen("roll")))
+				ctx.fanout_type = PACKET_FANOUT_ROLLOVER;
+			else if (!strncmp(optarg, "qm", strlen("qm")))
+				ctx.fanout_type = PACKET_FANOUT_QM;
+			else
+				panic("Unkown fanout type!\n");
+			break;
+		case 'L':
+			if (!strncmp(optarg, "defrag", strlen("defrag")))
+				ctx.fanout_type |= PACKET_FANOUT_FLAG_DEFRAG;
+			else if (!strncmp(optarg, "roll", strlen("roll")))
+				ctx.fanout_type |= PACKET_FANOUT_FLAG_ROLLOVER;
+			else
+				panic("Unkown fanout option!\n");
 			break;
 		case 't':
 			if (!strncmp(optarg, "host", strlen("host")))
