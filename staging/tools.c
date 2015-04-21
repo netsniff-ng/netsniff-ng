@@ -684,9 +684,10 @@ int get_mpls_params(char *p)
 
    tx.mpls_exp = 0;
    tx.mpls_ttl = 255;
-   
+
    strncpy(params, p, 256);
-   
+   params[255] = '\0';
+
    if (strncmp(params,"help",4)==0)
      {
 	fprintf(stderr,"\n"
