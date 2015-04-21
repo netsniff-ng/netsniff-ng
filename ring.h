@@ -79,7 +79,7 @@ static inline void next_rnd_slot(unsigned int *it, struct ring *ring)
 	*it = rand() % ring->layout.tp_frame_nr;
 }
 
-static inline size_t ring_size(char *ifname, size_t size)
+static inline size_t ring_size(const char *ifname, size_t size)
 {
 	if (size > 0)
 		return size;
