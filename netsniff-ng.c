@@ -1096,7 +1096,7 @@ static void init_ctx(struct ctx *ctx)
 	memset(ctx, 0, sizeof(*ctx));
 
 	ctx->uid = getuid();
-	ctx->uid = getgid();
+	ctx->gid = getgid();
 
 	ctx->cpu = -1;
 	ctx->packet_type = -1;
