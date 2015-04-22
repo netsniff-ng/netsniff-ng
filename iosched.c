@@ -47,7 +47,7 @@ static void ioprio_setpid(pid_t pid, int ioprio, int ioclass)
 	int ret = ioprio_set(ioprio_who_process, pid,
 			     ioprio | ioclass << IOPRIO_CLASS_SHIFT);
 	if (ret < 0)
-		panic("Failed to set io prio for pid!\n");
+		panic("Failed to set io prio for pid: %s\n", strerror(errno));
 }
 
 void ioprio_print(void)
