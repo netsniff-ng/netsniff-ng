@@ -84,6 +84,31 @@ specify a  pcap file as the output device, the file name must have
 configuration will be written to stdout if the input device is a pcap file, or a
 pcap file if the input device is a networking device.
 .PP
+.SS -C <id>, --fanout-group <id>
+If multiple netsniff-ng instances are being started that all have the same packet
+fanout group id, then the ingress network traffic being captured is being
+distributed/load-balanced among these group participants. This gives a much better
+scaling than running multiple netsniff-ng processes without a fanout group parameter
+in parallel, but only with a BPF filter attached as a packet would otherwise need
+to be delivered to all such capturing processes, instead of only once to such a
+fanout member. Naturally, each fanout member can have its own BPF filters attached.
+.PP
+.SS -K <hash|lb|cpu|rnd|roll|qm>, --fanout-type <hash|lb|cpu|rnd|roll|qm>
+This parameter specifies the fanout discipline, in other words, how the captured
+network traffic is dispatched to the fanout group members. Options are to distribute
+traffic by the packet hash (\[lq]hash\[rq]), in a round-robin manner (\[lq]lb\[rq]),
+by CPU the packet arrived on (\[lq]cpu\[rq]), by random (\[lq]rnd\[rq]), by rolling
+over sockets (\[lq]roll\[rq]) which means if one socket's queue is full, we move on
+to the next one, or by NIC hardware queue mapping (\[lq]qm\[rq]).
+.PP
+.SS -L <defrag|roll>, --fanout-opts <defrag|roll>
+Defines some auxillary fanout options to be used in addition to a given fanout type.
+These options apply to any fanout type. In case of \[lq]defrag\[rq], the kernel is
+being told to defragment packets before delivering to user space, and \[lq]roll\[rq]
+provides the same roll-over option as the \[lq]roll\[rq] fanout type, so that on any
+different fanout type being used (e.g. \[lq]qm\[rq]) the socket may temporarily roll
+over to the next fanout group member in case the original one's queue is full.
+.PP
 .SS -f, --filter <bpf-file|expr>
 Specifies to not dump all traffic, but to filter the network packet haystack.
 As a filter, either a bpfc(8) compiled file can be passed as a parameter or
