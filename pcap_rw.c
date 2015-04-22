@@ -57,9 +57,10 @@ static ssize_t pcap_rw_read(int fd, pcap_pkthdr_t *phdr, enum pcap_type type,
 	return hdrsize + hdrlen;
 }
 
-static void pcap_rw_init_once(void)
+static void pcap_rw_init_once(bool enforce_prio)
 {
-	set_ioprio_rt();
+	if (enforce_prio)
+		set_ioprio_rt();
 }
 
 static void pcap_rw_fsync(int fd)

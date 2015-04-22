@@ -148,9 +148,10 @@ static void __pcap_mm_prepare_access_rd(int fd)
 	ptr_va_curr = ptr_va_start + sizeof(struct pcap_filehdr);
 }
 
-static void pcap_mm_init_once(void)
+static void pcap_mm_init_once(bool enforce_prio)
 {
-	set_ioprio_be();
+	if (enforce_prio)
+		set_ioprio_be();
 }
 
 static int pcap_mm_prepare_access(int fd, enum pcap_mode mode, bool jumbo)

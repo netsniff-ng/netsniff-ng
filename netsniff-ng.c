@@ -228,7 +228,7 @@ static void pcap_to_xmit(struct ctx *ctx)
 	}
 
 	if (__pcap_io->init_once_pcap)
-		__pcap_io->init_once_pcap();
+		__pcap_io->init_once_pcap(true);
 
 	ret = __pcap_io->pull_fhdr_pcap(fd, &ctx->magic, &ctx->link_type);
 	if (ret)
@@ -567,7 +567,7 @@ static void read_pcap(struct ctx *ctx)
 	}
 
 	if (__pcap_io->init_once_pcap)
-		__pcap_io->init_once_pcap();
+		__pcap_io->init_once_pcap(false);
 
 	ret = __pcap_io->pull_fhdr_pcap(fd, &ctx->magic, &ctx->link_type);
 	if (ret)
@@ -963,7 +963,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 		ifflags = device_enter_promiscuous_mode(ctx->device_in);
 
 	if (dump_to_pcap(ctx) && __pcap_io->init_once_pcap)
-		__pcap_io->init_once_pcap();
+		__pcap_io->init_once_pcap(true);
 
 	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
 

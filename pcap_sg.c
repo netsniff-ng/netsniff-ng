@@ -145,9 +145,10 @@ static void pcap_sg_fsync(int fd)
 	fdatasync(fd);
 }
 
-static void pcap_sg_init_once(void)
+static void pcap_sg_init_once(bool enforce_prio)
 {
-	set_ioprio_rt();
+	if (enforce_prio)
+		set_ioprio_rt();
 }
 
 static int pcap_sg_prepare_access(int fd, enum pcap_mode mode, bool jumbo)

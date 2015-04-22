@@ -122,7 +122,7 @@ enum pcap_mode {
 };
 
 struct pcap_file_ops {
-	void (*init_once_pcap)(void);
+	void (*init_once_pcap)(bool enforce_prio);
 	int (*pull_fhdr_pcap)(int fd, uint32_t *magic, uint32_t *linktype);
 	int (*push_fhdr_pcap)(int fd, uint32_t magic, uint32_t linktype);
 	int (*prepare_access_pcap)(int fd, enum pcap_mode mode, bool jumbo);
