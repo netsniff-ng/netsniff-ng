@@ -18,11 +18,11 @@
 #include <sys/socket.h>
 #include <linux/if.h>
 #include <linux/nl80211.h>
-#include <libnl3/netlink/genl/genl.h>
-#include <libnl3/netlink/genl/family.h>
-#include <libnl3/netlink/genl/ctrl.h>
-#include <libnl3/netlink/msg.h>
-#include <libnl3/netlink/attr.h>
+#include <netlink/genl/genl.h>
+#include <netlink/genl/family.h>
+#include <netlink/genl/ctrl.h>
+#include <netlink/msg.h>
+#include <netlink/attr.h>
 
 #include "die.h"
 #include "str.h"

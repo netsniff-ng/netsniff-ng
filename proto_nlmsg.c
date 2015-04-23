@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <limits.h>
-#include <libnl3/netlink/msg.h>
 #include <libgen.h>
+#include <netlink/msg.h>
 
 #include "pkt_buff.h"
 #include "proto.h"
