@@ -160,8 +160,13 @@ variable first, e.g.:
 
 And then, build the toolkit like this:
 
-  $ make CROSS_COMPILE=microblazeel-unknown-linux-gnu- \
-	 CROSS_LD_LIBRARY_PATH=<cc-lib-search-path>
+  $ CROSS_COMPILE=microblazeel-unknown-linux-gnu- \
+    SYSROOT=<sysroot-path> ./configure
+  $ make
+
+SYSROOT should be set to the path where your cross-compiled libraries are
+stored, i.e. the path you specify as prefix when configuring the library using
+`./configure --prefix=<prefix>'.
 
 Note that some adaptations might be necessary regarding the CFLAGS, since not
 all might be supported by a different architecture. Probably the most simple

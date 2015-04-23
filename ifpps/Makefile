@@ -1,6 +1,6 @@
-ifpps-libs =	$(shell pkg-config --libs ncurses 2> /dev/null \
+ifpps-libs =	$(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --libs ncurses 2> /dev/null \
 			|| echo '-lncurses') \
-		$(shell pkg-config --libs tinfo 2> /dev/null )
+		$(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --libs tinfo 2> /dev/null )
 
 ifpps-objs =	xmalloc.o \
 		ioops.o \
@@ -13,6 +13,6 @@ ifpps-objs =	xmalloc.o \
 		die.o \
 		ifpps.o
 
-ifpps-eflags = $(shell pkg-config --cflags ncurses 2> /dev/null)
+ifpps-eflags = $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --cflags ncurses 2> /dev/null)
 
 ifpps-confs =

@@ -107,8 +107,6 @@ help:
 	$(Q)echo " HARDENING=1                  - Enable GCC hardening of executables"
 	$(Q)echo " PREFIX=/path                 - Install path prefix"
 	$(Q)echo " DESTDIR=/path                - Alternative install destination path"
-	$(Q)echo " CROSS_COMPILE=arch-prefix    - Kernel-like cross-compiling architecture prefix"
-	$(Q)echo " CROSS_LD_LIBRARY_PATH=/path  - Library search path for cross-compiling"
 	$(Q)echo " CC=cgcc                      - Use sparse compiler wrapper"
 	$(Q)echo " CFLAGS=\"-O2 -Wall ...\"       - Overwrite CFLAGS for compilation"
 	$(Q)echo " CPPFLAGS=\"-I <path> ...\"     - Additional CFLAGS for compilation"

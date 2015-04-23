@@ -5,14 +5,13 @@ Q = @
 SHELL := $(shell if [ -x /bin/bash ]; then echo /bin/bash; else echo /bin/sh; fi)
 
 # Compiler related stuff
-CC = gcc
-LDQ = $(Q)echo -e "  LD\t$@" && $(CCACHE) $(CROSS_COMPILE)$(CC)
-CCNQ = $(CCACHE) $(CROSS_COMPILE)$(CC)
+LDQ = $(Q)echo -e "  LD\t$@" && $(CCACHE) $(CC)
+CCNQ = $(CCACHE) $(CC)
 CCQ = $(Q)echo -e "  CC\t$<" && $(CCNQ)
 ifeq ($(DEBUG), 1)
-  STRIP = $(Q)true
+  STRIPQ = $(Q)true
 else
-  STRIP = $(Q)echo -e "  STRIP\t$@" && $(CROSS_COMPILE)strip
+  STRIPQ = $(Q)echo -e "  STRIP\t$@" && $(STRIP)
 endif
 
 # sparse related

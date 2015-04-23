@@ -1,6 +1,6 @@
 # netsniff-ng build system
 # Copyright 2012 - 2013 Daniel Borkmann <borkmann@gnumaniacs.org>
-# Copyright 2013 - 2014 Tobias Klauser <tklauser@distanz.ch>
+# Copyright 2013 - 2015 Tobias Klauser <tklauser@distanz.ch>
 # Subject to the GNU GPL, version 2.
 
 -include Config
@@ -120,14 +120,13 @@ VERSION_STRING = "$(VERSION_SHORT)$(CONFIG_RC)"
 VERSION_LONG   = "$(VERSION_SHORT)$(CONFIG_RC) ($(NAME))"
 
 export VERSION PATCHLEVEL SUBLEVEL EXTRAVERSION
-export CROSS_COMPILE
 export DEBUG HARDENING
 
 bold   = $(shell tput bold)
 normal = $(shell tput sgr0)
 
-ifeq ("$(origin CROSS_COMPILE)", "command line")
-  WHAT := Cross compiling
+ifneq ("$(CROSS_COMPILE)", "")
+  WHAT := Cross-compiling
 else
   WHAT := Building
 endif
@@ -178,4 +177,4 @@ $(foreach tool,$(TOOLS),$(eval $(call TOOL_templ,$(tool))))
 
 $(TOOLS):
 	$(LDQ) $(LDFLAGS) -o $@/$@ $@/*.o $($@-libs)
-	$(STRIP) $@/$@
+	$(STRIPQ) $@/$@
