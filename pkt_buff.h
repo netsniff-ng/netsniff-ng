@@ -19,8 +19,9 @@ struct pkt_buff {
 	uint8_t      *tail;
 	unsigned int  size;
 
-	struct protocol *proto;
+	struct protocol *handler;
 	int link_type;
+	uint16_t proto;
 };
 
 static inline struct pkt_buff *pkt_alloc(uint8_t *packet, unsigned int len)
@@ -31,7 +32,7 @@ static inline struct pkt_buff *pkt_alloc(uint8_t *packet, unsigned int len)
 	pkt->data = packet;
 	pkt->tail = packet + len;
 	pkt->size = len;
-	pkt->proto = NULL;
+	pkt->handler = NULL;
 
 	return pkt;
 }
@@ -105,9 +106,9 @@ static inline void pkt_set_proto(struct pkt_buff *pkt, struct hash_table *table,
 {
 	bug_on(!pkt || !table);
 
-	pkt->proto = lookup_hash(key, table);
-	while (pkt->proto && key != pkt->proto->key)
-		pkt->proto = pkt->proto->next;
+	pkt->handler = lookup_hash(key, table);
+	while (pkt->handler && key != pkt->handler->key)
+		pkt->handler = pkt->handler->next;
 }
 
 #endif /* PKT_BUFF_H */

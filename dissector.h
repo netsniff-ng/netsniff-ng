@@ -100,7 +100,8 @@ static inline void show_frame_hdr(uint8_t *packet, size_t len, int linktype,
 }
 
 extern void dissector_init_all(int fnttype);
-extern void dissector_entry_point(uint8_t *packet, size_t len, int linktype, int mode);
+extern void dissector_entry_point(uint8_t *packet, size_t len, int linktype,
+				  int mode, uint16_t proto);
 extern void dissector_cleanup_all(void);
 extern int dissector_set_print_type(void *ptr, int type);
 
