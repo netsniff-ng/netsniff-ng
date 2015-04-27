@@ -2961,7 +2961,7 @@ static void print_inf_elements(struct pkt_buff *pkt)
 }
 
 /* Management Dissectors */
-static int8_t beacon(struct pkt_buff *pkt)
+static int8_t mgmt_beacon_dissect(struct pkt_buff *pkt)
 {
 	struct ieee80211_mgmt_beacon *beacon;
 
@@ -2976,6 +2976,16 @@ static int8_t beacon(struct pkt_buff *pkt)
 	cap_field(le16_to_cpu(beacon->capab_info));
 	tprintf(")");
 
+	print_inf_elements(pkt);
+
+	if (pkt_len(pkt))
+		return 0;
+
+	return 1;
+}
+
+static int8_t mgmt_probe_request_dissect(struct pkt_buff *pkt)
+{
 	print_inf_elements(pkt);
 
 	if (pkt_len(pkt))
@@ -3069,13 +3079,13 @@ static const char *mgt_sub(u8 subtype, struct pkt_buff *pkt,
 		*get_content = mgmt_unimplemented;
 		return "Reassociation Response";
 	case 0x4:
-		*get_content = mgmt_unimplemented;
+		*get_content = mgmt_probe_request_dissect;
 		return "Probe Request";
 	case 0x5:
 		*get_content = mgmt_unimplemented;
 		return "Probe Response";
 	case 0x8:
-		*get_content = beacon;
+		*get_content = mgmt_beacon_dissect;
 		return "Beacon";
 	case 0x9:
 		*get_content = mgmt_unimplemented;
