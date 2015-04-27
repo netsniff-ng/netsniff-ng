@@ -66,7 +66,7 @@ struct ctx {
 	uint32_t fanout_group, fanout_type;
 };
 
-static volatile sig_atomic_t sigint = 0;
+static volatile sig_atomic_t sigint = 0, sighup = 0;
 static volatile bool next_dump = false;
 
 static const char *short_options = "d:i:o:rf:MNJt:S:k:n:b:HQmcsqXlvhF:RGAP:Vu:g:T:DBUC:K:L:";
@@ -134,7 +134,10 @@ static void signal_handler(int number)
 	case SIGQUIT:
 	case SIGTERM:
 		sigint = 1;
+		break;
 	case SIGHUP:
+		sighup = 1;
+		break;
 	default:
 		break;
 	}
@@ -739,6 +742,18 @@ static int next_multi_pcap_file(struct ctx *ctx, int fd)
 	return fd;
 }
 
+static void reset_interval(struct ctx *ctx)
+{
+	if (ctx->dump_mode == DUMP_INTERVAL_TIME) {
+		interval = ctx->dump_interval;
+
+		set_itimer_interval_value(&itimer, interval, 0);
+		setitimer(ITIMER_REAL, &itimer, NULL);
+	} else {
+		interval = 0;
+	}
+}
+
 static int begin_multi_pcap_file(struct ctx *ctx)
 {
 	int fd, ret;
@@ -765,14 +780,7 @@ static int begin_multi_pcap_file(struct ctx *ctx)
 			panic("Error prepare writing pcap!\n");
 	}
 
-	if (ctx->dump_mode == DUMP_INTERVAL_TIME) {
-		interval = ctx->dump_interval;
-
-		set_itimer_interval_value(&itimer, interval, 0);
-		setitimer(ITIMER_REAL, &itimer, NULL);
-	} else {
-		interval = 0;
-	}
+	reset_interval(ctx);
 
 	return fd;
 }
@@ -850,6 +858,14 @@ static void update_pcap_next_dump(struct ctx *ctx, unsigned long snaplen, int *f
 			next_dump = true;
 			interval = 0;
 		}
+	}
+
+	if (sighup) {
+		if (ctx->verbose)
+			printf("SIGHUP received, prematurely rotating pcap\n");
+		sighup = 0;
+		next_dump = true;
+		reset_interval(ctx);
 	}
 
 	if (next_dump) {
