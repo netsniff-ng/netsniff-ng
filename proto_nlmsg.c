@@ -14,7 +14,7 @@
 #include "proto.h"
 #include "protos.h"
 
-static const char *nl_proto2str(uint16_t proto)
+static const char *nlmsg_family2str(uint16_t proto)
 {
 	switch (proto) {
 	case NETLINK_ROUTE:		return "RTNETLINK";
@@ -77,8 +77,8 @@ static void nlmsg(struct pkt_buff *pkt)
 		snprintf(procname, sizeof(procname), "kernel");
 
 	tprintf(" [ NLMSG ");
-	tprintf("Proto %d (%s%s%s), ", ntohs(pkt->proto), colorize_start(bold),
-			nl_proto2str(ntohs(pkt->proto)), colorize_end());
+	tprintf("Family %d (%s%s%s), ", ntohs(pkt->proto), colorize_start(bold),
+		nlmsg_family2str(ntohs(pkt->proto)), colorize_end());
 	tprintf("Len %u, ", hdr->nlmsg_len);
 	tprintf("Type 0x%.4x (%s%s%s), ", hdr->nlmsg_type,
 		colorize_start(bold),
