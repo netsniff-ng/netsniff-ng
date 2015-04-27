@@ -20,7 +20,7 @@ struct pkt_buff {
 	unsigned int  size;
 
 	struct protocol *handler;
-	int link_type;
+	uint32_t link_type;
 	uint16_t proto;
 };
 
