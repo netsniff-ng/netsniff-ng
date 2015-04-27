@@ -51,7 +51,7 @@ static inline const char *__show_ts_source(uint32_t status)
 
 static inline void __show_frame_hdr(uint8_t *packet, size_t len, int linktype,
 				    struct sockaddr_ll *s_ll, void *raw_hdr,
-				    int mode, bool v3)
+				    int mode, bool v3, unsigned long count)
 {
 	char tmp[IFNAMSIZ];
 	union tpacket_uhdr hdr;
@@ -76,27 +76,31 @@ static inline void __show_frame_hdr(uint8_t *packet, size_t len, int linktype,
 	hdr.raw = raw_hdr;
 	switch (mode) {
 	case PRINT_LESS:
-		tprintf("%s %s %u",
+		tprintf("%s %s %u (#%lu) ",
 			packet_types[pkttype] ? : "?",
 			if_indextoname(s_ll->sll_ifindex, tmp) ? : "?",
-			tpacket_uhdr(hdr, tp_len, v3));
+			tpacket_uhdr(hdr, tp_len, v3),
+			count);
 		break;
 	default:
-		tprintf("%s %s %u %us.%uns %s\n",
+		tprintf("%s %s %u %us.%uns %s (#%lu)\n",
 			packet_types[pkttype] ? : "?",
 			if_indextoname(s_ll->sll_ifindex, tmp) ? : "?",
 			tpacket_uhdr(hdr, tp_len, v3),
 			tpacket_uhdr(hdr, tp_sec, v3),
 			tpacket_uhdr(hdr, tp_nsec, v3),
-			v3 ? "" : __show_ts_source(hdr.h2->tp_status));
+			v3 ? "" : __show_ts_source(hdr.h2->tp_status),
+			count);
 		break;
 	}
 }
 
 static inline void show_frame_hdr(uint8_t *packet, size_t len, int linktype,
-				  struct frame_map *hdr, int mode)
+				  struct frame_map *hdr, int mode,
+				  unsigned long count)
 {
-	__show_frame_hdr(packet, len, linktype, &hdr->s_ll, &hdr->tp_h, mode, false);
+	__show_frame_hdr(packet, len, linktype, &hdr->s_ll, &hdr->tp_h, mode,
+			 false, count);
 }
 
 extern void dissector_init_all(int fnttype);

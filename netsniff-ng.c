@@ -311,7 +311,8 @@ static void pcap_to_xmit(struct ctx *ctx)
 			ctx->tx_packets++;
 
 			show_frame_hdr(out, hdr->tp_h.tp_snaplen,
-				       ctx->link_type, hdr, ctx->print_mode);
+				       ctx->link_type, hdr, ctx->print_mode,
+				       ctx->tx_packets);
 
 			dissector_entry_point(out, hdr->tp_h.tp_snaplen,
 					      ctx->link_type, ctx->print_mode,
@@ -461,7 +462,8 @@ static void receive_to_xmit(struct ctx *ctx)
 			}
 
 			show_frame_hdr(in, hdr_in->tp_h.tp_snaplen,
-				       ctx->link_type, hdr_in, ctx->print_mode);
+				       ctx->link_type, hdr_in, ctx->print_mode,
+				       frame_count);
 
 			dissector_entry_point(in, hdr_in->tp_h.tp_snaplen,
 					      ctx->link_type, ctx->print_mode,
@@ -645,7 +647,7 @@ static void read_pcap(struct ctx *ctx)
 		ctx->tx_packets++;
 
 		show_frame_hdr(out, fm.tp_h.tp_snaplen, ctx->link_type, &fm,
-			       ctx->print_mode);
+			       ctx->print_mode, ctx->tx_packets);
 
 		dissector_entry_point(out, fm.tp_h.tp_snaplen,
 				      ctx->link_type, ctx->print_mode,
@@ -913,7 +915,7 @@ static void walk_t3_block(struct block_desc *pbd, struct ctx *ctx,
 		}
 
 		__show_frame_hdr(packet, hdr->tp_snaplen, ctx->link_type, sll,
-				 hdr, ctx->print_mode, true);
+				 hdr, ctx->print_mode, true, *frame_count);
 
 		dissector_entry_point(packet, hdr->tp_snaplen, ctx->link_type,
 				      ctx->print_mode, sll->sll_protocol);
@@ -1047,7 +1049,8 @@ static void recv_only_or_dump(struct ctx *ctx)
 			}
 
 			show_frame_hdr(packet, hdr->tp_h.tp_snaplen,
-				       ctx->link_type, hdr, ctx->print_mode);
+				       ctx->link_type, hdr, ctx->print_mode,
+				       frame_count);
 
 			dissector_entry_point(packet, hdr->tp_h.tp_snaplen,
 					      ctx->link_type, ctx->print_mode,
