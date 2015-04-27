@@ -14,35 +14,35 @@
 #include "proto.h"
 #include "protos.h"
 
-static const char *nlmsg_family2str(uint16_t proto)
+static const char *nlmsg_family2str(uint16_t family)
 {
-	switch (proto) {
-	case NETLINK_ROUTE:		return "RTNETLINK";
-	case NETLINK_UNUSED:		return "UNUSED";
-	case NETLINK_USERSOCK:		return "USERSOCK";
-	case NETLINK_FIREWALL:		return "FIREWALL";
+	switch (family) {
+	case NETLINK_ROUTE:		return "routing";
+	case NETLINK_UNUSED:		return "unused";
+	case NETLINK_USERSOCK:		return "user-mode socket";
+	case NETLINK_FIREWALL:		return "unused, formerly ip_queue";
 /* NETLINK_INET_DIAG was renamed to NETLINK_SOCK_DIAG in Linux kernel 3.10 */
 #if defined(NETLINK_SOCK_DIAG)
-	case NETLINK_SOCK_DIAG:		return "SOCK_DIAG";
+	case NETLINK_SOCK_DIAG:		return "socket monitoring";
 #elif defined(NETLINK_INET_DIAG)
-	case NETLINK_INET_DIAG:		return "INET_DIAG";
+	case NETLINK_INET_DIAG:		return "INET socket monitoring";
 #endif
-	case NETLINK_NFLOG:		return "NFLOG";
-	case NETLINK_XFRM:		return "XFRM";
-	case NETLINK_SELINUX:		return "SELINUX";
-	case NETLINK_ISCSI:		return "ISCSI";
-	case NETLINK_AUDIT:		return "AUDIT";
-	case NETLINK_FIB_LOOKUP:	return "FIB_LOOKUP";
-	case NETLINK_CONNECTOR:		return "CONNECTOR";
-	case NETLINK_NETFILTER:		return "NETFILTER";
-	case NETLINK_IP6_FW:		return "IP6_FW";
-	case NETLINK_DNRTMSG:		return "DNRTMSG";
-	case NETLINK_KOBJECT_UEVENT:	return "UEVENT";
-	case NETLINK_GENERIC:		return "GENERIC";
-	case NETLINK_SCSITRANSPORT:	return "SCSI";
-	case NETLINK_ECRYPTFS:		return "ECRYPTFS";
+	case NETLINK_NFLOG:		return "netfilter ULOG";
+	case NETLINK_XFRM:		return "IPsec";
+	case NETLINK_SELINUX:		return "SELinux event notification";
+	case NETLINK_ISCSI:		return "Open-iSCSI";
+	case NETLINK_AUDIT:		return "auditing";
+	case NETLINK_FIB_LOOKUP:	return "FIB lookup";
+	case NETLINK_CONNECTOR:		return "Kernel connector";
+	case NETLINK_NETFILTER:		return "Netfilter";
+	case NETLINK_IP6_FW:		return "unused, formerly ip6_queue";
+	case NETLINK_DNRTMSG:		return "DECnet routing";
+	case NETLINK_KOBJECT_UEVENT:	return "Kernel messages";
+	case NETLINK_GENERIC:		return "Generic";
+	case NETLINK_SCSITRANSPORT:	return "SCSI transports";
+	case NETLINK_ECRYPTFS:		return "ecryptfs";
 	case NETLINK_RDMA:		return "RDMA";
-	case NETLINK_CRYPTO:		return "CRYPTO";
+	case NETLINK_CRYPTO:		return "Crypto layer";
 	default:			return "Unknown";
 	}
 }
