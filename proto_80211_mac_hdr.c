@@ -2582,97 +2582,97 @@ static int8_t inf_ht_cap(struct pkt_buff *pkt, u8 *id)
 	if (len_neq_error(ht_cap->len, 26))
 		return 0;
 
-	tprintf("\t\t\t Info:\n");
-	tprintf("\t\t\t\t LDCP Cod Cap (%u)\n", ht_cap->ldpc);
-	tprintf("\t\t\t\t Supp Ch Width Set (%u)\n", ht_cap->supp_width);
-	tprintf("\t\t\t\t SM Pwr Save(%u)\n", ht_cap->sm_pwr);
-	tprintf("\t\t\t\t HT-Greenfield (%u)\n", ht_cap->ht_green);
-	tprintf("\t\t\t\t Short GI for 20/40 MHz (%u/%u)\n", ht_cap->gi_20mhz,
+	tprintf("\t\t Info:\n");
+	tprintf("\t\t\t LDCP Cod Cap (%u)\n", ht_cap->ldpc);
+	tprintf("\t\t\t Supp Ch Width Set (%u)\n", ht_cap->supp_width);
+	tprintf("\t\t\t SM Pwr Save(%u)\n", ht_cap->sm_pwr);
+	tprintf("\t\t\t HT-Greenfield (%u)\n", ht_cap->ht_green);
+	tprintf("\t\t\t Short GI for 20/40 MHz (%u/%u)\n", ht_cap->gi_20mhz,
 			ht_cap->gi_40mhz);
-	tprintf("\t\t\t\t Tx/Rx STBC (%u/%u)\n", ht_cap->tx_stbc,
+	tprintf("\t\t\t Tx/Rx STBC (%u/%u)\n", ht_cap->tx_stbc,
 			ht_cap->rx_stbc);
-	tprintf("\t\t\t\t HT-Delayed Block Ack (%u)\n", ht_cap->ht_ack);
-	tprintf("\t\t\t\t Max A-MSDU Len (%u)\n", ht_cap->max_msdu_length);
-	tprintf("\t\t\t\t DSSS/CCK Mode in 40 MHz (%u)\n",
+	tprintf("\t\t\t HT-Delayed Block Ack (%u)\n", ht_cap->ht_ack);
+	tprintf("\t\t\t Max A-MSDU Len (%u)\n", ht_cap->max_msdu_length);
+	tprintf("\t\t\t DSSS/CCK Mode in 40 MHz (%u)\n",
 			ht_cap->dsss_ck_mode);
-	tprintf("\t\t\t\t Res (0x%x)\n", ht_cap->res);
-	tprintf("\t\t\t\t Forty MHz Intol (%u)\n", ht_cap->forty_int);
-	tprintf("\t\t\t\t L-SIG TXOP Protection Supp (%u)\n",
+	tprintf("\t\t\t Res (0x%x)\n", ht_cap->res);
+	tprintf("\t\t\t Forty MHz Intol (%u)\n", ht_cap->forty_int);
+	tprintf("\t\t\t L-SIG TXOP Protection Supp (%u)\n",
 			ht_cap->prot_supp);
 
-	tprintf("\t\t\t A-MPDU Params:\n");
-	tprintf("\t\t\t\t Max Len Exp (%u)\n", ht_cap->param >> 6);
-	tprintf("\t\t\t\t Min Start Spacing (%u)\n",
+	tprintf("\t\t A-MPDU Params:\n");
+	tprintf("\t\t\t Max Len Exp (%u)\n", ht_cap->param >> 6);
+	tprintf("\t\t\t Min Start Spacing (%u)\n",
 			(ht_cap->param >> 3) & 0x7);
-	tprintf("\t\t\t\t Res (0x%x)\n", ht_cap->param & 0x07);
+	tprintf("\t\t\t Res (0x%x)\n", ht_cap->param & 0x07);
 
-	tprintf("\t\t\t Supp MCS Set:\n");
-	tprintf("\t\t\t\t Rx MCS Bitmask (0x%x%x%x%x%x%x%x%x%x%x)\n",
+	tprintf("\t\t Supp MCS Set:\n");
+	tprintf("\t\t\t Rx MCS Bitmask (0x%x%x%x%x%x%x%x%x%x%x)\n",
 			ht_cap->bitmask1, ht_cap->bitmask2, ht_cap->bitmask3,
 			ht_cap->bitmask4, ht_cap->bitmask5, ht_cap->bitmask6,
 			ht_cap->bitmask7, ht_cap->bitmask8, ht_cap->bitmask9,
 			ht_cap->bitmask10_res >> 3);
-	tprintf("\t\t\t\t Res (0x%x)\n", ht_cap->bitmask10_res & 0x7);
-	tprintf("\t\t\t\t Rx High Supp Data Rate (%u)\n",
+	tprintf("\t\t\t Res (0x%x)\n", ht_cap->bitmask10_res & 0x7);
+	tprintf("\t\t\t Rx High Supp Data Rate (%u)\n",
 			le16_to_cpu(ht_cap->supp_rate_res) >> 6);
-	tprintf("\t\t\t\t Res (0x%x)\n",
+	tprintf("\t\t\t Res (0x%x)\n",
 			le16_to_cpu(ht_cap->supp_rate_res) & 0x3F);
-	tprintf("\t\t\t\t Tx MCS Set Def (%u)\n", tx_param_res >> 31);
-	tprintf("\t\t\t\t Tx Rx MCS Set Not Eq (%u)\n",
+	tprintf("\t\t\t Tx MCS Set Def (%u)\n", tx_param_res >> 31);
+	tprintf("\t\t\t Tx Rx MCS Set Not Eq (%u)\n",
 			(tx_param_res >> 30) & 1);
-	tprintf("\t\t\t\t Tx Max Number Spat Str Supp (%u)\n",
+	tprintf("\t\t\t Tx Max Number Spat Str Supp (%u)\n",
 			(tx_param_res >> 28) & 3);
-	tprintf("\t\t\t\t Tx Uneq Mod Supp (%u)\n", (tx_param_res >> 27) & 1);
-	tprintf("\t\t\t\t Res (0x%x)\n", tx_param_res & 0x7FFFFFF);
+	tprintf("\t\t\t Tx Uneq Mod Supp (%u)\n", (tx_param_res >> 27) & 1);
+	tprintf("\t\t\t Res (0x%x)\n", tx_param_res & 0x7FFFFFF);
 
-	tprintf("\t\t\t Ext Cap:\n");
-	tprintf("\t\t\t\t PCO (%u)\n", ext_cap >> 15);
-	tprintf("\t\t\t\t PCO Trans Time (%u)\n", (ext_cap >> 13) & 3);
-	tprintf("\t\t\t\t Res (0x%x)\n", (ext_cap >> 8) & 0x1F);
-	tprintf("\t\t\t\t MCS Feedb (%u)\n", (ext_cap >> 6) & 3);
-	tprintf("\t\t\t\t +HTC Supp (%u)\n", (ext_cap >> 5) & 1);
-	tprintf("\t\t\t\t RD Resp (%u)\n", (ext_cap >> 4) & 1);
-	tprintf("\t\t\t\t Res (0x%x)\n", ext_cap & 0xF);
+	tprintf("\t\t Ext Cap:\n");
+	tprintf("\t\t\t PCO (%u)\n", ext_cap >> 15);
+	tprintf("\t\t\t PCO Trans Time (%u)\n", (ext_cap >> 13) & 3);
+	tprintf("\t\t\t Res (0x%x)\n", (ext_cap >> 8) & 0x1F);
+	tprintf("\t\t\t MCS Feedb (%u)\n", (ext_cap >> 6) & 3);
+	tprintf("\t\t\t +HTC Supp (%u)\n", (ext_cap >> 5) & 1);
+	tprintf("\t\t\t RD Resp (%u)\n", (ext_cap >> 4) & 1);
+	tprintf("\t\t\t Res (0x%x)\n", ext_cap & 0xF);
 
-	tprintf("\t\t\t Transm Beamf:\n");
-	tprintf("\t\t\t\t Impl Transm Beamf Rec Cap (%u)\n", beam_cap >> 31);
-	tprintf("\t\t\t\t Rec/Transm Stagg Sound Cap (%u/%u)\n",
+	tprintf("\t\t Transm Beamf:\n");
+	tprintf("\t\t\t Impl Transm Beamf Rec Cap (%u)\n", beam_cap >> 31);
+	tprintf("\t\t\t Rec/Transm Stagg Sound Cap (%u/%u)\n",
 			(beam_cap >> 30) & 1, (beam_cap >> 29) & 1);
-	tprintf("\t\t\t\t Rec/Trans NDP Cap (%u/%u)\n",
+	tprintf("\t\t\t Rec/Trans NDP Cap (%u/%u)\n",
 			(beam_cap >> 28) & 1, (beam_cap >> 27) & 1);
-	tprintf("\t\t\t\t Impl Transm Beamf Cap (%u)\n", (beam_cap >> 26) & 1);
-	tprintf("\t\t\t\t Cal (%u)\n", (beam_cap >> 24) & 3);
-	tprintf("\t\t\t\t Expl CSI Transm Beamf Cap (%u)\n",
+	tprintf("\t\t\t Impl Transm Beamf Cap (%u)\n", (beam_cap >> 26) & 1);
+	tprintf("\t\t\t Cal (%u)\n", (beam_cap >> 24) & 3);
+	tprintf("\t\t\t Expl CSI Transm Beamf Cap (%u)\n",
 			(beam_cap >> 23) & 1);
-	tprintf("\t\t\t\t Expl Noncmpr/Compr Steering Cap (%u/%u)\n",
+	tprintf("\t\t\t Expl Noncmpr/Compr Steering Cap (%u/%u)\n",
 			(beam_cap >> 22) & 1, (beam_cap >> 21) & 1);
-	tprintf("\t\t\t\t Expl Trans Beamf CSI Feedb (%u)\n",
+	tprintf("\t\t\t Expl Trans Beamf CSI Feedb (%u)\n",
 			(beam_cap >> 19) & 3);
-	tprintf("\t\t\t\t Expl Noncmpr/Cmpr Feedb Cap (%u/%u)\n",
+	tprintf("\t\t\t Expl Noncmpr/Cmpr Feedb Cap (%u/%u)\n",
 			(beam_cap >> 17) & 3, (beam_cap >> 15) & 3);
-	tprintf("\t\t\t\t Min Grpg (%u)\n", (beam_cap >> 13) & 3);
-	tprintf("\t\t\t\t CSI Num Beamf Ant Supp (%u)\n", (beam_cap >> 11) & 3);
-	tprintf("\t\t\t\t Noncmpr/Cmpr Steering Nr Beamf Ant Supp (%u/%u)\n",
+	tprintf("\t\t\t Min Grpg (%u)\n", (beam_cap >> 13) & 3);
+	tprintf("\t\t\t CSI Num Beamf Ant Supp (%u)\n", (beam_cap >> 11) & 3);
+	tprintf("\t\t\t Noncmpr/Cmpr Steering Nr Beamf Ant Supp (%u/%u)\n",
 			(beam_cap >> 9) & 3, (beam_cap >> 7) & 3);
-	tprintf("\t\t\t\t CSI Max Nr Rows Beamf Supp (%u)\n",
+	tprintf("\t\t\t CSI Max Nr Rows Beamf Supp (%u)\n",
 			(beam_cap >> 5) & 3);
-	tprintf("\t\t\t\t Ch Estim Cap (%u)\n", (beam_cap >> 3) & 3);
-	tprintf("\t\t\t\t Res (0x%x)\n", beam_cap & 7);
+	tprintf("\t\t\t Ch Estim Cap (%u)\n", (beam_cap >> 3) & 3);
+	tprintf("\t\t\t Res (0x%x)\n", beam_cap & 7);
 
-	tprintf("\t\t\t ASEL:\n");
-	tprintf("\t\t\t\t Ant Select Cap (%u)\n", ht_cap->asel_cap >> 7);
-	tprintf("\t\t\t\t Expl CSI Feedb Based Transm ASEL Cap (%u)\n",
+	tprintf("\t\t ASEL:\n");
+	tprintf("\t\t\t Ant Select Cap (%u)\n", ht_cap->asel_cap >> 7);
+	tprintf("\t\t\t Expl CSI Feedb Based Transm ASEL Cap (%u)\n",
 			(ht_cap->asel_cap >> 6) & 1);
-	tprintf("\t\t\t\t Ant Indic Feedb Based Transm ASEL Cap (%u)\n",
+	tprintf("\t\t\t Ant Indic Feedb Based Transm ASEL Cap (%u)\n",
 			(ht_cap->asel_cap >> 5) & 1);
-	tprintf("\t\t\t\t Expl CSI Feedb Cap (%u)\n",
+	tprintf("\t\t\t Expl CSI Feedb Cap (%u)\n",
 			(ht_cap->asel_cap >> 4) & 1);
-	tprintf("\t\t\t\t Ant Indic Feedb Cap (%u)\n",
+	tprintf("\t\t\t Ant Indic Feedb Cap (%u)\n",
 			(ht_cap->asel_cap >> 3) & 1);
-	tprintf("\t\t\t\t Rec ASEL Cap (%u)\n", (ht_cap->asel_cap >> 2) & 1);
-	tprintf("\t\t\t\t Transm Sound PPDUs Cap (%u)\n",
+	tprintf("\t\t\t Rec ASEL Cap (%u)\n", (ht_cap->asel_cap >> 2) & 1);
+	tprintf("\t\t\t Transm Sound PPDUs Cap (%u)\n",
 			(ht_cap->asel_cap >> 1) & 1);
-	tprintf("\t\t\t\t Res (0x%x)", ht_cap->asel_cap & 1);
+	tprintf("\t\t\t Res (0x%x)", ht_cap->asel_cap & 1);
 
 	return 1;
 }
@@ -2953,10 +2953,11 @@ static int8_t cap_field(u16 cap_inf)
 static void print_inf_elements(struct pkt_buff *pkt)
 {
 	if (pkt_len(pkt)) {
-		tprintf("\n\tParameters:\n\t\t");
-		while (inf_elements(pkt)) {
-			tprintf("\n\t\t");
-		}
+		do {
+			if (pkt_len(pkt))
+				tprintf("\n\tIE:");
+
+		} while (inf_elements(pkt));
 	}
 }
 
