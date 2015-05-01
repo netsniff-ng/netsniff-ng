@@ -1278,7 +1278,8 @@ int main(int argc, char **argv)
 		case 'K':
 			if (!strncmp(optarg, "hash", strlen("hash")))
 				ctx.fanout_type = PACKET_FANOUT_HASH;
-			else if (!strncmp(optarg, "lb", strlen("lb")))
+			else if (!strncmp(optarg, "lb", strlen("lb")) ||
+				 !strncmp(optarg, "rr", strlen("rr")))
 				ctx.fanout_type = PACKET_FANOUT_LB;
 			else if (!strncmp(optarg, "cpu", strlen("cpu")))
 				ctx.fanout_type = PACKET_FANOUT_CPU;
