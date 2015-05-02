@@ -20,6 +20,9 @@ define TOOL_templ
 	$$(CCQ) $$(CFLAGS) -o $$@ -c $$<
   $(1)/%.tab.o: $(1)/%.tab.c
 	$$(CCQ) $$(CFLAGS) -o $$@ -c $$<
+  $(1)/%.o: %.c %.h
+	$$(CHECK) $$(CFLAGS) $$(CHECKFLAGS) $$<
+	$$(CCQ) $$(CFLAGS) -o $(1)/$$(shell basename $$@) -c $$<
   $(1)/%.o: %.c
 	$$(CHECK) $$(CFLAGS) $$(CHECKFLAGS) $$<
 	$$(CCQ) $$(CFLAGS) -o $(1)/$$(shell basename $$@) -c $$<
