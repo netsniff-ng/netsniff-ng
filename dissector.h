@@ -76,21 +76,21 @@ static inline void __show_frame_hdr(uint8_t *packet, size_t len, int linktype,
 	hdr.raw = raw_hdr;
 	switch (mode) {
 	case PRINT_LESS:
-		tprintf("%s %s %u (#%lu) ",
+		tprintf("%s %s %u #%lu",
 			packet_types[pkttype] ? : "?",
 			if_indextoname(s_ll->sll_ifindex, tmp) ? : "?",
 			tpacket_uhdr(hdr, tp_len, v3),
 			count);
 		break;
 	default:
-		tprintf("%s %s %u %us.%uns %s (#%lu)\n",
+		tprintf("%s %s %u %us.%uns #%lu %s\n",
 			packet_types[pkttype] ? : "?",
 			if_indextoname(s_ll->sll_ifindex, tmp) ? : "?",
 			tpacket_uhdr(hdr, tp_len, v3),
 			tpacket_uhdr(hdr, tp_sec, v3),
 			tpacket_uhdr(hdr, tp_nsec, v3),
-			v3 ? "" : __show_ts_source(hdr.h2->tp_status),
-			count);
+			count,
+			v3 ? "" : __show_ts_source(hdr.h2->tp_status));
 		break;
 	}
 }
