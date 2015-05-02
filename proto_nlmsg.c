@@ -47,6 +47,92 @@ static const char *nlmsg_family2str(uint16_t family)
 	}
 }
 
+static const char *nlmsg_rtnl_type2str(uint16_t type)
+{
+	switch (type) {
+	case RTM_NEWLINK:	return "new link";
+	case RTM_DELLINK:	return "del link";
+	case RTM_GETLINK:	return "get link";
+	case RTM_SETLINK:	return "set link";
+
+	case RTM_NEWADDR:	return "new addr";
+	case RTM_DELADDR:	return "del addr";
+	case RTM_GETADDR:	return "get addr";
+
+	case RTM_NEWROUTE:	return "new route";
+	case RTM_DELROUTE:	return "del route";
+	case RTM_GETROUTE:	return "get route";
+
+	case RTM_NEWNEIGH:	return "new neigh";
+	case RTM_DELNEIGH:	return "del neigh";
+	case RTM_GETNEIGH:	return "get neigh";
+
+	case RTM_NEWRULE:	return "new rule";
+	case RTM_DELRULE:	return "del rule";
+	case RTM_GETRULE:	return "get rule";
+
+	case RTM_NEWQDISC:	return "new tc qdisc";
+	case RTM_DELQDISC:	return "del tc qdisc";
+	case RTM_GETQDISC:	return "get tc qdisc";
+
+	case RTM_NEWTCLASS:	return "new tc class";
+	case RTM_DELTCLASS:	return "del tc class";
+	case RTM_GETTCLASS:	return "get tc class";
+
+	case RTM_NEWTFILTER:	return "new tc filter";
+	case RTM_DELTFILTER:	return "del tc filter";
+	case RTM_GETTFILTER:	return "get tc filter";
+
+	case RTM_NEWACTION:	return "new tc action";
+	case RTM_DELACTION:	return "del tc action";
+	case RTM_GETACTION:	return "get tc action";
+
+	case RTM_NEWPREFIX:	return "new prefix";
+
+	case RTM_GETMULTICAST:	return "get mcast addr";
+
+	case RTM_GETANYCAST:	return "get anycast addr";
+
+	case RTM_NEWNEIGHTBL:	return "new neigh table";
+	case RTM_GETNEIGHTBL:	return "get neigh table";
+	case RTM_SETNEIGHTBL:	return "set neigh table";
+
+	case RTM_NEWNDUSEROPT:	return "new ndisc user option";
+
+	case RTM_NEWADDRLABEL:	return "new addr label";
+	case RTM_DELADDRLABEL:	return "del addr label";
+	case RTM_GETADDRLABEL:	return "get addr label";
+
+	case RTM_GETDCB:	return "get data-center-bridge";
+	case RTM_SETDCB:	return "set data-center-bridge";
+
+#if defined(RTM_NEWNETCONF)
+	case RTM_NEWNETCONF:	return "new netconf";
+	case RTM_GETNETCONF:	return "get netconf";
+#endif
+
+#if defined(RTM_NEWMDB)
+	case RTM_NEWMDB:	return "new bridge mdb";
+	case RTM_DELMDB: 	return "del bridge mdb";
+	case RTM_GETMDB: 	return "get bridge mdb";
+#endif
+	default:		return NULL;
+	}
+}
+
+static char *nlmsg_type2str(uint16_t proto, uint16_t type, char *buf, int len)
+{
+	if (proto == NETLINK_ROUTE && type < RTM_MAX) {
+		const char *name = nlmsg_rtnl_type2str(type);
+		if (name) {
+			strncpy(buf, name, len);
+			return buf;
+		}
+	}
+
+	return nl_nlmsgtype2str(type, buf, len);
+}
+
 static void nlmsg(struct pkt_buff *pkt)
 {
 	struct nlmsghdr *hdr = (struct nlmsghdr *) pkt_pull(pkt, sizeof(*hdr));
@@ -82,8 +168,8 @@ static void nlmsg(struct pkt_buff *pkt)
 	tprintf("Len %u, ", hdr->nlmsg_len);
 	tprintf("Type 0x%.4x (%s%s%s), ", hdr->nlmsg_type,
 		colorize_start(bold),
-		nl_nlmsgtype2str(hdr->nlmsg_type, type, sizeof(type)),
-		colorize_end());
+		nlmsg_type2str(ntohs(pkt->proto), hdr->nlmsg_type, type,
+			sizeof(type)), colorize_end());
 	tprintf("Flags 0x%.4x (%s%s%s), ", hdr->nlmsg_flags,
 		colorize_start(bold),
 		nl_nlmsg_flags2str(hdr->nlmsg_flags, flags, sizeof(flags)),
