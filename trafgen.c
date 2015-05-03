@@ -852,6 +852,11 @@ static unsigned int generate_srand_seed(void)
 	return _seed;
 }
 
+static void on_panic_del_rfmon(void *arg)
+{
+	leave_rfmon_mac80211(arg);
+}
+
 int main(int argc, char **argv)
 {
 	bool slow = false, invoke_cpp = false, reseed = true, cpustats = true;
@@ -1067,6 +1072,7 @@ int main(int argc, char **argv)
 		xfree(ctx.device);
 
 		enter_rfmon_mac80211(ctx.device_trans, &ctx.device);
+		panic_func_add(on_panic_del_rfmon, ctx.device);
 		sleep(0);
 	}
 

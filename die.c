@@ -4,28 +4,37 @@
 
 #include "xmalloc.h"
 
-struct panic_func {
+struct panic_handler {
 	void *arg;
+	pid_t pid;
+	bool is_enabled;
 	void (*on_panic)(void *arg);
-	struct panic_func *next;
+	struct panic_handler *next;
 };
 
-static struct panic_func *panic_funcs;
+static struct panic_handler *panic_handlers;
 
 void panic_func_add(void (*on_panic)(void *arg), void *arg)
 {
-	struct panic_func *handler = xmallocz(sizeof(*handler));
+	struct panic_handler *handler = xmallocz(sizeof(*handler));
 
 	handler->arg		= arg;
+	handler->pid		= getpid();
+	handler->is_enabled	= true;
 	handler->on_panic	= on_panic;
-	handler->next		= panic_funcs;
-	panic_funcs		= handler;
+	handler->next		= panic_handlers;
+	panic_handlers		= handler;
 };
 
 void call_on_panic_funcs(void)
 {
-	struct panic_func *it;
+	struct panic_handler *it;
+	pid_t pid = getpid();
 
-	for (it = panic_funcs; it; it = it->next)
-		it->on_panic(it->arg);
+	for (it = panic_handlers; it; it = it->next) {
+		if (it->pid == pid && it->is_enabled) {
+			it->is_enabled = false;
+			it->on_panic(it->arg);
+		}
+	}
 }
