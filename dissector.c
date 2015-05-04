@@ -42,18 +42,18 @@ int dissector_set_print_type(void *ptr, int type)
 static void dissector_main(struct pkt_buff *pkt, struct protocol *start,
 			   struct protocol *end)
 {
-	struct protocol *handler;
+	struct protocol *dissector;
 
 	if (!start)
 		return;
 
-	for (pkt->handler = start; pkt->handler; ) {
-		if (unlikely(!pkt->handler->process))
+	for (pkt->dissector = start; pkt->dissector; ) {
+		if (unlikely(!pkt->dissector->process))
 			break;
 
-		handler	= pkt->handler;
-		pkt->handler = NULL;
-		handler->process(pkt);
+		dissector = pkt->dissector;
+		pkt->dissector = NULL;
+		dissector->process(pkt);
 	}
 
 	if (end && likely(end->process))

@@ -3257,7 +3257,7 @@ static void ieee80211(struct pkt_buff *pkt)
 
 	tprintf("\n");
 
-//	pkt_set_proto(pkt, &ieee802_lay2, ntohs(eth->h_proto));
+//	pkt_set_dissector(pkt, &ieee802_lay2, ntohs(eth->h_proto));
 }
 
 static void ieee80211_less(struct pkt_buff *pkt __maybe_unused)

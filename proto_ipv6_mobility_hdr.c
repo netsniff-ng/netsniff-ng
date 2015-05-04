@@ -282,7 +282,7 @@ static void mobility(struct pkt_buff *pkt)
 		return;
 
 	pkt_pull(pkt, message_data_len);
-	pkt_set_proto(pkt, &eth_lay3, mobility->payload_proto);
+	pkt_set_dissector(pkt, &eth_lay3, mobility->payload_proto);
 }
 
 static void mobility_less(struct pkt_buff *pkt)
@@ -305,7 +305,7 @@ static void mobility_less(struct pkt_buff *pkt)
 	tprintf(" Mobility Type (%u), ", mobility->MH_type);
 
 	pkt_pull(pkt, message_data_len);
-	pkt_set_proto(pkt, &eth_lay3, mobility->payload_proto);
+	pkt_set_dissector(pkt, &eth_lay3, mobility->payload_proto);
 }
 
 struct protocol ipv6_mobility_ops = {

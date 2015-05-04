@@ -69,7 +69,7 @@ static void ethernet(struct pkt_buff *pkt)
 	tprintf("(%s => %s)", ether_lookup_addr(src_mac), ether_lookup_addr(dst_mac));
 	tprintf(" ]\n");
 
-	pkt_set_proto(pkt, &eth_lay2, ntohs(eth->h_proto));
+	pkt_set_dissector(pkt, &eth_lay2, ntohs(eth->h_proto));
 }
 
 static void ethernet_less(struct pkt_buff *pkt)
@@ -90,7 +90,7 @@ static void ethernet_less(struct pkt_buff *pkt)
 	tprintf("%s%s%s", colorize_start(bold), 
 		lookup_ether_type(ntohs(eth->h_proto)), colorize_end());
 
-	pkt_set_proto(pkt, &eth_lay2, ntohs(eth->h_proto));
+	pkt_set_dissector(pkt, &eth_lay2, ntohs(eth->h_proto));
 }
 
 struct protocol ethernet_ops = {

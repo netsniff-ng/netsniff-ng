@@ -65,7 +65,7 @@ static void auth_hdr(struct pkt_buff *pkt)
 	}
 	tprintf(" ]\n");
 
-	pkt_set_proto(pkt, &eth_lay3, auth_ops->h_next_header);
+	pkt_set_dissector(pkt, &eth_lay3, auth_ops->h_next_header);
 }
 
 static void auth_hdr_less(struct pkt_buff *pkt)
@@ -84,7 +84,7 @@ static void auth_hdr_less(struct pkt_buff *pkt)
 	tprintf(" AH");
 
 	pkt_pull(pkt, hdr_len - sizeof(*auth_ops));
-	pkt_set_proto(pkt, &eth_lay3, auth_ops->h_next_header);
+	pkt_set_dissector(pkt, &eth_lay3, auth_ops->h_next_header);
 }
 
 struct protocol ip_auth_ops = {

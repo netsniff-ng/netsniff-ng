@@ -67,7 +67,7 @@ static void hop_by_hop(struct pkt_buff *pkt)
 	tprintf(" ]\n");
 
 	pkt_pull(pkt, opt_len);
-	pkt_set_proto(pkt, &eth_lay3, hop_ops->h_next_header);
+	pkt_set_dissector(pkt, &eth_lay3, hop_ops->h_next_header);
 }
 
 static void hop_by_hop_less(struct pkt_buff *pkt)
@@ -90,7 +90,7 @@ static void hop_by_hop_less(struct pkt_buff *pkt)
 	tprintf(" Hop Ops");
 
 	pkt_pull(pkt, opt_len);
-	pkt_set_proto(pkt, &eth_lay3, hop_ops->h_next_header);
+	pkt_set_dissector(pkt, &eth_lay3, hop_ops->h_next_header);
 }
 
 struct protocol ipv6_hop_by_hop_ops = {

@@ -68,7 +68,7 @@ static void dest_opts(struct pkt_buff *pkt)
 	tprintf(" ]\n");
 
 	pkt_pull(pkt, opt_len);
-	pkt_set_proto(pkt, &eth_lay3, dest_ops->h_next_header);
+	pkt_set_dissector(pkt, &eth_lay3, dest_ops->h_next_header);
 }
 
 static void dest_opts_less(struct pkt_buff *pkt)
@@ -91,7 +91,7 @@ static void dest_opts_less(struct pkt_buff *pkt)
 	tprintf(" Dest Ops");
 
 	pkt_pull(pkt, opt_len);
-	pkt_set_proto(pkt, &eth_lay3, dest_ops->h_next_header);
+	pkt_set_dissector(pkt, &eth_lay3, dest_ops->h_next_header);
 }
 
 struct protocol ipv6_dest_opts_ops = {

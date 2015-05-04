@@ -43,7 +43,7 @@ static void fragm(struct pkt_buff *pkt)
 		ntohl(fragm_ops->h_fragm_identification));
 	tprintf(" ]\n");
 
-	pkt_set_proto(pkt, &eth_lay3, fragm_ops->h_fragm_next_header);
+	pkt_set_dissector(pkt, &eth_lay3, fragm_ops->h_fragm_next_header);
 }
 
 static void fragm_less(struct pkt_buff *pkt)
@@ -59,7 +59,7 @@ static void fragm_less(struct pkt_buff *pkt)
 
 	tprintf(" FragmOffs %u", off_res_M >> 3);
 
-	pkt_set_proto(pkt, &eth_lay3, fragm_ops->h_fragm_next_header);
+	pkt_set_dissector(pkt, &eth_lay3, fragm_ops->h_fragm_next_header);
 }
 
 struct protocol ipv6_fragm_ops = {

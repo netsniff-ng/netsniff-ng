@@ -19,7 +19,7 @@ struct pkt_buff {
 	uint8_t      *tail;
 	unsigned int  size;
 
-	struct protocol *handler;
+	struct protocol *dissector;
 	uint32_t link_type;
 	uint16_t proto;
 };
@@ -32,7 +32,7 @@ static inline struct pkt_buff *pkt_alloc(uint8_t *packet, unsigned int len)
 	pkt->data = packet;
 	pkt->tail = packet + len;
 	pkt->size = len;
-	pkt->handler = NULL;
+	pkt->dissector = NULL;
 
 	return pkt;
 }
@@ -101,14 +101,14 @@ static inline uint8_t *pkt_pull_tail(struct pkt_buff *pkt, unsigned int len)
 	return tail;
 }
 
-static inline void pkt_set_proto(struct pkt_buff *pkt, struct hash_table *table,
-				 unsigned int key)
+static inline void pkt_set_dissector(struct pkt_buff *pkt, struct hash_table *table,
+				     unsigned int key)
 {
 	bug_on(!pkt || !table);
 
-	pkt->handler = lookup_hash(key, table);
-	while (pkt->handler && key != pkt->handler->key)
-		pkt->handler = pkt->handler->next;
+	pkt->dissector = lookup_hash(key, table);
+	while (pkt->dissector && key != pkt->dissector->key)
+		pkt->dissector = pkt->dissector->next;
 }
 
 #endif /* PKT_BUFF_H */

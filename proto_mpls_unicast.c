@@ -73,7 +73,7 @@ static void mpls_uc_full(struct pkt_buff *pkt)
 	if (next < 0)
 		return;
 
-	pkt_set_proto(pkt, &eth_lay2, (uint16_t) next);
+	pkt_set_dissector(pkt, &eth_lay2, (uint16_t) next);
 }
 
 static void mpls_uc_less(struct pkt_buff *pkt)
@@ -98,7 +98,7 @@ static void mpls_uc_less(struct pkt_buff *pkt)
 	if (next < 0)
 		return;
 
-	pkt_set_proto(pkt, &eth_lay2, (uint16_t) next);
+	pkt_set_dissector(pkt, &eth_lay2, (uint16_t) next);
 }
 
 struct protocol mpls_uc_ops = {

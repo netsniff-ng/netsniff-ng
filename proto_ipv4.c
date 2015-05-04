@@ -164,7 +164,7 @@ out:
 	pkt_trim(pkt, pkt_len(pkt) - min(pkt_len(pkt),
 		 (ntohs(ip->h_tot_len) - ip->h_ihl * sizeof(uint32_t))));
 
-	pkt_set_proto(pkt, &eth_lay3, ip->h_protocol);
+	pkt_set_dissector(pkt, &eth_lay3, ip->h_protocol);
 }
 
 static void ipv4_less(struct pkt_buff *pkt)
@@ -190,7 +190,7 @@ static void ipv4_less(struct pkt_buff *pkt)
 	pkt_trim(pkt, pkt_len(pkt) - min(pkt_len(pkt),
 		 (ntohs(ip->h_tot_len) - ip->h_ihl * sizeof(uint32_t))));
 #endif
-	pkt_set_proto(pkt, &eth_lay3, ip->h_protocol);
+	pkt_set_dissector(pkt, &eth_lay3, ip->h_protocol);
 }
 
 struct protocol ipv4_ops = {

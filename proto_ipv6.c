@@ -82,7 +82,7 @@ void ipv6(struct pkt_buff *pkt)
 		tprintf(") ]\n");
 	}
 
-	pkt_set_proto(pkt, &eth_lay3, ip->nexthdr);
+	pkt_set_dissector(pkt, &eth_lay3, ip->nexthdr);
 }
 
 void ipv6_less(struct pkt_buff *pkt)
@@ -100,7 +100,7 @@ void ipv6_less(struct pkt_buff *pkt)
 	tprintf(" %s/%s Len %u", src_ip, dst_ip,
 		ntohs(ip->payload_len));
 
-	pkt_set_proto(pkt, &eth_lay3, ip->nexthdr);
+	pkt_set_dissector(pkt, &eth_lay3, ip->nexthdr);
 }
 
 struct protocol ipv6_ops = {

@@ -37,7 +37,7 @@ static void QinQ_full(struct pkt_buff *pkt)
 	tprintf("Proto (0x%.4x)", ntohs(QinQ->TPID));
 	tprintf(" ]\n");
 
-	pkt_set_proto(pkt, &eth_lay2, ntohs(QinQ->TPID));
+	pkt_set_dissector(pkt, &eth_lay2, ntohs(QinQ->TPID));
 }
 
 static void QinQ_less(struct pkt_buff *pkt)
@@ -52,7 +52,7 @@ static void QinQ_less(struct pkt_buff *pkt)
 
 	tprintf(" VLAN%d", (tci & 0x0FFF));
 
-	pkt_set_proto(pkt, &eth_lay2, ntohs(QinQ->TPID));
+	pkt_set_dissector(pkt, &eth_lay2, ntohs(QinQ->TPID));
 }
 
 struct protocol QinQ_ops = {
