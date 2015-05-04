@@ -14,7 +14,7 @@ struct panic_handler {
 
 static struct panic_handler *panic_handlers;
 
-void panic_func_add(void (*on_panic)(void *arg), void *arg)
+void panic_handler_add(void (*on_panic)(void *arg), void *arg)
 {
 	struct panic_handler *handler = xmallocz(sizeof(*handler));
 
@@ -26,7 +26,7 @@ void panic_func_add(void (*on_panic)(void *arg), void *arg)
 	panic_handlers		= handler;
 };
 
-void call_on_panic_funcs(void)
+void call_panic_handlers(void)
 {
 	struct panic_handler *it;
 	pid_t pid = getpid();

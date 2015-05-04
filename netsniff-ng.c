@@ -198,7 +198,7 @@ static inline void setup_rfmon_mac80211_dev(struct ctx *ctx, char **rfmon_dev)
 	xfree(*rfmon_dev);
 
 	enter_rfmon_mac80211(ctx->device_trans, rfmon_dev);
-	panic_func_add(on_panic_del_rfmon, *rfmon_dev);
+	panic_handler_add(on_panic_del_rfmon, *rfmon_dev);
 }
 
 static void pcap_to_xmit(struct ctx *ctx)

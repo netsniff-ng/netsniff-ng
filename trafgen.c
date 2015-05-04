@@ -1072,7 +1072,7 @@ int main(int argc, char **argv)
 		xfree(ctx.device);
 
 		enter_rfmon_mac80211(ctx.device_trans, &ctx.device);
-		panic_func_add(on_panic_del_rfmon, ctx.device);
+		panic_handler_add(on_panic_del_rfmon, ctx.device);
 		sleep(0);
 	}
 
