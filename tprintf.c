@@ -66,6 +66,7 @@ static void __tprintf_flush(void)
 	size_t i;
 	static ssize_t line_count = 0;
 	ssize_t term_len = term_curr_size;
+	size_t color_open = 0;
 
 	for (i = 0; i < buffer_use; ++i) {
 		if (buffer[i] == '\n') {
@@ -73,7 +74,13 @@ static void __tprintf_flush(void)
 			line_count = -1;
 		}
 
-		if (line_count == term_len) {
+		/* Start of an color escape sequence? */
+		if (buffer[i] == 033) {
+			if ((i + 1) < buffer_use && buffer[i + 1] == '[')
+				color_open++;
+		}
+
+		if (color_open == 0 && line_count >= term_len) {
 			__tprintf_flush_newline();
 			line_count = term_starting_size;
 
@@ -81,6 +88,10 @@ static void __tprintf_flush(void)
 			       __tprintf_flush_skip(buffer, i))
 				i++;
 		}
+
+		/* End of the color escape sequence? */
+		if (color_open > 0 && buffer[i] == 'm')
+			color_open--;
 
 		fputc(buffer[i], stdout);
 		line_count++;
