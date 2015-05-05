@@ -822,7 +822,7 @@ static void main_loop(struct ctx *ctx, char *confname, bool slow,
 		fflush(stdout);
 	}
 
-	sock = pf_tx_socket();
+	sock = pf_socket();
 
 	if (ctx->qdisc_path == false)
 		set_sock_qdisc_bypass(sock, ctx->verbose);

@@ -26,18 +26,9 @@ int af_socket(int af)
 
 int pf_socket(void)
 {
-	int sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-	if (unlikely(sock < 0))
-		panic("Creation of PF socket failed: %s\n", strerror(errno));
-
-	return sock;
-}
-
-int pf_tx_socket(void)
-{
 	int sock = socket(PF_PACKET, SOCK_RAW, 0);
 	if (unlikely(sock < 0))
-		panic("Creation of PF TX socket failed: %s\n", strerror(errno));
+		panic("Creation of PF socket failed: %s\n", strerror(errno));
 
 	return sock;
 }
