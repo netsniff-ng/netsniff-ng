@@ -190,9 +190,11 @@ static void nlmsg_less(struct pkt_buff *pkt)
 	if (hdr == NULL)
 		return;
 
-	tprintf(" NLMSG %u (%s%s%s)", hdr->nlmsg_type, colorize_start(bold),
-		nl_nlmsgtype2str(hdr->nlmsg_type, type, sizeof(type)),
-		colorize_end());
+	tprintf(" NLMSG Family %d (%s%s%s), ", ntohs(pkt->proto), colorize_start(bold),
+		nlmsg_family2str(ntohs(pkt->proto)), colorize_end());
+	tprintf("Type %u (%s%s%s)", hdr->nlmsg_type, colorize_start(bold),
+		nlmsg_type2str(ntohs(pkt->proto), hdr->nlmsg_type, type,
+			       sizeof(type)), colorize_end());
 }
 
 struct protocol nlmsg_ops = {
