@@ -570,7 +570,12 @@ static void read_pcap(struct ctx *ctx)
 		if (ctx->pcap == PCAP_OPS_MM)
 			ctx->pcap = PCAP_OPS_SG;
 	} else {
-		fd = open_or_die(ctx->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);
+		fd = open(ctx->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);
+		if (fd < 0 && errno == EPERM)
+			fd = open_or_die(ctx->device_in, O_RDONLY | O_LARGEFILE);
+		if (fd < 0)
+			panic("Cannot open file %s! %s.\n", ctx->device_in,
+					strerror(errno));
 	}
 
 	if (__pcap_io->init_once_pcap)
