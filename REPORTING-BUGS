@@ -1,5 +1,9 @@
 For reporting bugs send an email to the <netsniff-ng@googlegroups.com> list.
 
+Alternatively, you can create an issue on our Github project:
+
+  * https://github.com/netsniff-ng/netsniff-ng/issues
+
 If you use Fedora or have a RHEL subscription, you can also report bugs to:
 
   * https://bugzilla.redhat.com/
@@ -14,5 +18,5 @@ always our mailing list. By this, you're not wasting time of a single
 developer and increase your chances of getting a reply from us.
 
 In general, we are also highly interested in how you use the toolkit, what
-problems you are trying to sovle and what kind of things you would like to have
+problems you are trying to solve and what kind of things you would like to have
 improved. So feel free to drop us some feature requests as well.
