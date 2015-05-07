@@ -570,12 +570,16 @@ static void read_pcap(struct ctx *ctx)
 		if (ctx->pcap == PCAP_OPS_MM)
 			ctx->pcap = PCAP_OPS_SG;
 	} else {
+		/* O_NOATIME requires privileges, in case we don't have
+		 * them, retry without them at a minor cost of updating
+		 * atime in case the fs has been mounted as such.
+		 */
 		fd = open(ctx->device_in, O_RDONLY | O_LARGEFILE | O_NOATIME);
 		if (fd < 0 && errno == EPERM)
 			fd = open_or_die(ctx->device_in, O_RDONLY | O_LARGEFILE);
 		if (fd < 0)
 			panic("Cannot open file %s! %s.\n", ctx->device_in,
-					strerror(errno));
+			      strerror(errno));
 	}
 
 	if (__pcap_io->init_once_pcap)
