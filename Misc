@@ -29,7 +29,7 @@ announcement:
 	$(Q)echo -e "   http://github.com/netsniff-ng/netsniff-ng/archive/v$(VERSION_SHORT).tar.gz\n" >> .MAIL_MSG
 	$(Q)echo -e "The release can be verified via Git (see README):\n" >> .MAIL_MSG
 	$(Q)echo -e "   git tag -v v$(VERSION_SHORT)\n" >> .MAIL_MSG
-	$(Q)echo -e "Major high-level changes since the last release are:\n" >> .MAIL_MSG
+	$(Q)echo -e "Major high-level changes since the last release ($(shell $(GIT_LAST_TAG))) are:\n" >> .MAIL_MSG
 	$(Q)echo -e "   *** BLURB HERE (specific bits) ***\n" >> .MAIL_MSG
 	$(Q)echo -e "Contributions since last release:\n" >> .MAIL_MSG
 	$(GIT_PEOPLE) >> .MAIL_MSG
