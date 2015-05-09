@@ -1302,7 +1302,7 @@ int main(int argc, char **argv)
 			else if (!strncmp(optarg, "qm", strlen("qm")))
 				ctx.fanout_type = PACKET_FANOUT_QM;
 			else
-				panic("Unkown fanout type!\n");
+				panic("Unknown fanout type!\n");
 			break;
 		case 'L':
 			if (!strncmp(optarg, "defrag", strlen("defrag")))
@@ -1310,7 +1310,7 @@ int main(int argc, char **argv)
 			else if (!strncmp(optarg, "roll", strlen("roll")))
 				ctx.fanout_type |= PACKET_FANOUT_FLAG_ROLLOVER;
 			else
-				panic("Unkown fanout option!\n");
+				panic("Unknown fanout option!\n");
 			break;
 		case 't':
 			if (!strncmp(optarg, "host", strlen("host")))
