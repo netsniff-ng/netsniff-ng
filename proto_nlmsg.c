@@ -133,15 +133,11 @@ static char *nlmsg_type2str(uint16_t proto, uint16_t type, char *buf, int len)
 	return nl_nlmsgtype2str(type, buf, len);
 }
 
-static void nlmsg(struct pkt_buff *pkt)
+static void nlmsg_print(uint16_t family, struct nlmsghdr *hdr)
 {
-	struct nlmsghdr *hdr = (struct nlmsghdr *) pkt_pull(pkt, sizeof(*hdr));
 	char type[32];
 	char flags[128];
 	char procname[PATH_MAX];
-
-	if (hdr == NULL)
-		return;
 
 	/* Look up the process name if message is not coming from the kernel.
 	 *
@@ -163,13 +159,15 @@ static void nlmsg(struct pkt_buff *pkt)
 		snprintf(procname, sizeof(procname), "kernel");
 
 	tprintf(" [ NLMSG ");
-	tprintf("Family %d (%s%s%s), ", ntohs(pkt->proto), colorize_start(bold),
-		nlmsg_family2str(ntohs(pkt->proto)), colorize_end());
+	tprintf("Family %d (%s%s%s), ", family,
+		colorize_start(bold),
+		nlmsg_family2str(family),
+		colorize_end());
 	tprintf("Len %u, ", hdr->nlmsg_len);
 	tprintf("Type 0x%.4x (%s%s%s), ", hdr->nlmsg_type,
 		colorize_start(bold),
-		nlmsg_type2str(ntohs(pkt->proto), hdr->nlmsg_type, type,
-			sizeof(type)), colorize_end());
+		nlmsg_type2str(family, hdr->nlmsg_type, type, sizeof(type)),
+		colorize_end());
 	tprintf("Flags 0x%.4x (%s%s%s), ", hdr->nlmsg_flags,
 		colorize_start(bold),
 		nl_nlmsg_flags2str(hdr->nlmsg_flags, flags, sizeof(flags)),
@@ -182,19 +180,37 @@ static void nlmsg(struct pkt_buff *pkt)
 	tprintf(" ]\n");
 }
 
+static void nlmsg(struct pkt_buff *pkt)
+{
+	struct nlmsghdr *hdr = (struct nlmsghdr *) pkt_pull(pkt, sizeof(*hdr));
+
+	while (hdr) {
+		nlmsg_print(ntohs(pkt->proto), hdr);
+
+		if (!pkt_pull(pkt, NLMSG_PAYLOAD(hdr, 0)))
+			break;
+
+		hdr = (struct nlmsghdr *) pkt_pull(pkt, sizeof(*hdr));
+	}
+}
+
 static void nlmsg_less(struct pkt_buff *pkt)
 {
 	struct nlmsghdr *hdr = (struct nlmsghdr *) pkt_pull(pkt, sizeof(*hdr));
+	uint16_t family = ntohs(pkt->proto);
 	char type[32];
 
 	if (hdr == NULL)
 		return;
 
-	tprintf(" NLMSG Family %d (%s%s%s), ", ntohs(pkt->proto), colorize_start(bold),
-		nlmsg_family2str(ntohs(pkt->proto)), colorize_end());
-	tprintf("Type %u (%s%s%s)", hdr->nlmsg_type, colorize_start(bold),
-		nlmsg_type2str(ntohs(pkt->proto), hdr->nlmsg_type, type,
-			       sizeof(type)), colorize_end());
+	tprintf(" NLMSG Family %d (%s%s%s), ", family,
+		colorize_start(bold),
+		nlmsg_family2str(family),
+		colorize_end());
+	tprintf("Type %u (%s%s%s)", hdr->nlmsg_type,
+		colorize_start(bold),
+		nlmsg_type2str(family, hdr->nlmsg_type, type, sizeof(type)),
+		colorize_end());
 }
 
 struct protocol nlmsg_ops = {
