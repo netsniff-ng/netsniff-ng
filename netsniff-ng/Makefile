@@ -1,5 +1,6 @@
 netsniff-ng-libs =	$(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --libs libnl-3.0) \
 			$(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --libs libnl-genl-3.0) \
+			$(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --libs libnl-route-3.0) \
 			-lpthread
 
 ifeq ($(CONFIG_LIBPCAP), 1)
@@ -78,6 +79,7 @@ endif
 
 netsniff-ng-eflags = $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --cflags libnl-3.0) \
 		     $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --cflags libnl-genl-3.0) \
+		     $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --cflags libnl-route-3.0) \
 		     -DNEED_TCPDUMP_LIKE_FILTER
 
 netsniff-ng-confs =	ether.conf \
