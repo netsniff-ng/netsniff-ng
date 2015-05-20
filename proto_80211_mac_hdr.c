@@ -1075,6 +1075,7 @@ static int8_t inf_country(struct pkt_buff *pkt, u8 *id)
 		if (country_tripled == NULL)
 			return 0;
 
+		tprintf("\n\t\t");
 		if(country_tripled->frst_ch >= 201) {
 			tprintf("Oper Ext ID: %u, ", country_tripled->frst_ch);
 			tprintf("Operating Class: %u, ", country_tripled->nr_ch);
