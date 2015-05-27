@@ -320,7 +320,7 @@ filter HTTP traffic. Super jumbo frame support is automatically enabled and
 only print human readable packet data to the terminal, and also be more
 verbose during setup phase. Moreover, dump a BPF disassembly of http.bpf.
 .PP
-.SS  netsniff-ng --in dump.pcap --out dump.cfg --silent
+.SS netsniff-ng --in dump.pcap --out dump.cfg --silent
 Convert the pcap file dump.pcap into a trafgen(8) configuration file dump.cfg.
 Do not print pcap contents to the terminal.
 .PP
@@ -348,6 +348,17 @@ netlink socket buffers (iproute2's ip(1) commands are given for nlmon device
 setup and teardown). netsniff-ng can then make use of the nlmon device as
 an input device. In this example a pcap file with netlink traffic is being
 recorded.
+.PP
+.SS netsniff-ng --fanout-group 1 --fanout-type cpu --fanout-opts defrag --bind-cpu 0 --notouch-irq --silent --in em1 --out /var/cap/cpu0/ --interval 120sec
+.SS netsniff-ng --fanout-group 1 --fanout-type cpu --fanout-opts defrag --bind-cpu 1 --notouch-irq --silent --in em1 --out /var/cap/cpu1/ --interval 120sec
+Starts two netsniff-ng fanout instances. Both are assigned into the same fanout
+group membership and traffic is splitted among them by incoming cpu. Furthermore,
+the kernel is supposed to defragment possible incoming fragments. First instance
+is assigned to CPU 0 and the second one to CPU 1, IRQ bindings are not altered as
+they might have been adapted to this scenario by the user a-priori, and traffic
+is captured on interface em1, and written out in 120 second intervals as pcap
+files into /var/cap/cpu0/. Tools like mergecap(1) will be able to merge the cpu0/1
+split back together if needed.
 .PP
 .SH CONFIG FILES
 .PP
