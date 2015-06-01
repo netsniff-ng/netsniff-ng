@@ -10,12 +10,24 @@
 #include <libgen.h>
 #include <netlink/msg.h>
 #include <netlink/route/link.h>
+#include <netlink/route/addr.h>
 #include <linux/if_arp.h>
 #include <arpa/inet.h>
 
 #include "pkt_buff.h"
 #include "proto.h"
 #include "protos.h"
+
+#define INFINITY 0xFFFFFFFFU
+
+#define RTA_LEN(attr) RTA_PAYLOAD(attr)
+#define RTA_INT(attr) (*(int *)RTA_DATA(attr))
+#define RTA_UINT8(attr) (*(uint8_t *)RTA_DATA(attr))
+#define RTA_STR(attr) ((char *)RTA_DATA(attr))
+
+#define attr_fmt(attr, fmt, ...) \
+	tprintf("\tA: "fmt, ##__VA_ARGS__); \
+	tprintf(", Len %u\n", RTA_LEN(attr));
 
 static const char *nlmsg_family2str(uint16_t family)
 {
@@ -245,6 +257,25 @@ static char *nlmsg_type2str(uint16_t proto, uint16_t type, char *buf, int len)
 	return nl_nlmsgtype2str(type, buf, len);
 }
 
+static const char *addr_family2str(uint16_t family)
+{
+	switch (family) {
+	case AF_INET:	return "ipv4";
+	case AF_INET6:	return "ipv6";
+	case AF_DECnet:	return "decnet";
+	case AF_IPX:	return "ipx";
+	default:	return "Unknown";
+	}
+}
+
+static const char *addr2str(uint16_t af, const void *addr, char *buf, int blen)
+{
+	if (af == AF_INET || af == AF_INET6)
+		return inet_ntop(af, addr, buf, blen);
+
+	return "???";
+}
+
 static void rtnl_print_ifinfo(struct nlmsghdr *hdr)
 {
 	struct ifinfomsg *ifi = NLMSG_DATA(hdr);
@@ -280,40 +311,37 @@ static void rtnl_print_ifinfo(struct nlmsghdr *hdr)
 	for (; RTA_OK(attr, attrs_len); attr = RTA_NEXT(attr, attrs_len)) {
 		switch (attr->rta_type) {
 		case IFLA_ADDRESS:
-			tprintf("\tA: Address %s\n",
+			attr_fmt(attr, "Address %s",
 					ll_addr_n2a(RTA_DATA(attr),
-						RTA_PAYLOAD(attr),
-						ifi->ifi_type, if_addr,
-						sizeof(if_addr)));
+						RTA_LEN(attr), ifi->ifi_type,
+						if_addr, sizeof(if_addr)));
 			break;
 		case IFLA_BROADCAST:
-			tprintf("\tA: Broadcast %s\n",
+			attr_fmt(attr, "Broadcast %s",
 					ll_addr_n2a(RTA_DATA(attr),
-						RTA_PAYLOAD(attr),
-						ifi->ifi_type, if_addr,
-						sizeof(if_addr)));
+						RTA_LEN(attr), ifi->ifi_type,
+						if_addr, sizeof(if_addr)));
 			break;
 		case IFLA_IFNAME:
-			tprintf("\tA: Name %s%s%s\n",
-					colorize_start(bold),
-					(char *)(RTA_DATA(attr)),
+			attr_fmt(attr, "Name %s%s%s",
+					colorize_start(bold), RTA_STR(attr),
 					colorize_end());
 			break;
 		case IFLA_MTU:
-			tprintf("\tA: MTU %d\n", *(int *)(RTA_DATA(attr)));
+			attr_fmt(attr, "MTU %d", RTA_INT(attr));
 			break;
 		case IFLA_LINK:
-			tprintf("\tA: Link %d\n", *(int *)(RTA_DATA(attr)));
+			attr_fmt(attr, "Link %d", RTA_INT(attr));
 			break;
 		case IFLA_QDISC:
-			tprintf("\tA: QDisc %s\n", (char *)(RTA_DATA(attr)));
+			attr_fmt(attr, "QDisc %s", RTA_STR(attr));
 			break;
 		case IFLA_OPERSTATE:
 			{
-				uint8_t st = *(uint8_t *)(RTA_DATA(attr));
+				uint8_t st = RTA_UINT8(attr);
 				char states[256];
 
-				tprintf("\tA: Operation state 0x%x (%s%s%s)\n",
+				attr_fmt(attr, "Operation state 0x%x (%s%s%s)",
 						st,
 						colorize_start(bold),
 						rtnl_link_operstate2str(st,
@@ -323,10 +351,10 @@ static void rtnl_print_ifinfo(struct nlmsghdr *hdr)
 			break;
 		case IFLA_LINKMODE:
 			{
-				uint8_t mode = *(uint8_t *)(RTA_DATA(attr));
+				uint8_t mode = RTA_UINT8(attr);
 				char str[32];
 
-				tprintf("\tA: Mode 0x%x (%s%s%s)\n", mode,
+				attr_fmt(attr, "Mode 0x%x (%s%s%s)", mode,
 						colorize_start(bold),
 						rtnl_link_mode2str(mode, str,
 							sizeof(str)),
@@ -334,19 +362,109 @@ static void rtnl_print_ifinfo(struct nlmsghdr *hdr)
 			}
 			break;
 		case IFLA_GROUP:
-			tprintf("\tA: Group %d\n", *(int *)(RTA_DATA(attr)));
+			attr_fmt(attr, "Group %d", RTA_INT(attr));
 			break;
 		case IFLA_TXQLEN:
-			tprintf("\tA: Tx queue len %d\n",
-					*(int *)(RTA_DATA(attr)));
+			attr_fmt(attr, "Tx queue len %d", RTA_INT(attr));
 			break;
 		case IFLA_NET_NS_PID:
-			tprintf("\tA: Network namespace pid %d\n",
-					*(int *)(RTA_DATA(attr)));
+			attr_fmt(attr, "Network namespace pid %d",
+					RTA_INT(attr));
 			break;
 		case IFLA_NET_NS_FD:
-			tprintf("\tA: Network namespace fd %d\n",
-					*(int *)(RTA_DATA(attr)));
+			attr_fmt(attr, "Network namespace fd %d",
+					RTA_INT(attr));
+			break;
+		}
+	}
+}
+
+static void rtnl_print_ifaddr(struct nlmsghdr *hdr)
+{
+	struct ifaddrmsg *ifa = NLMSG_DATA(hdr);
+	uint32_t attrs_len = IFA_PAYLOAD(hdr);
+	struct rtattr *attr = IFA_RTA(ifa);
+	struct ifa_cacheinfo *ci;
+	char *scope = "Unknown";
+	char addr_str[256];
+	char flags[256];
+
+	if (ifa->ifa_scope == RT_SCOPE_UNIVERSE)
+		scope = "global";
+	else if (ifa->ifa_scope == RT_SCOPE_LINK)
+		scope = "link";
+	else if (ifa->ifa_scope == RT_SCOPE_HOST)
+		scope = "host";
+	else if (ifa->ifa_scope == RT_SCOPE_NOWHERE)
+		scope = "nowhere";
+
+	tprintf(" [ Address Family %d (%s%s%s)", ifa->ifa_family,
+			colorize_start(bold),
+			addr_family2str(ifa->ifa_family),
+			colorize_end());
+	tprintf(", Prefix Len %d", ifa->ifa_prefixlen);
+	tprintf(", Flags %d (%s%s%s)", ifa->ifa_flags,
+			colorize_start(bold),
+			rtnl_addr_flags2str(ifa->ifa_flags, flags,
+				sizeof(flags)),
+			colorize_end());
+	tprintf(", Scope %d (%s%s%s)", ifa->ifa_scope,
+			colorize_start(bold), scope, colorize_end());
+	tprintf(", Link Index %d ]\n", ifa->ifa_index);
+
+	for (; RTA_OK(attr, attrs_len); attr = RTA_NEXT(attr, attrs_len)) {
+		switch (attr->rta_type) {
+		case IFA_LOCAL:
+			attr_fmt(attr, "Local %s", addr2str(ifa->ifa_family,
+				RTA_DATA(attr), addr_str, sizeof(addr_str)));
+			break;
+		case IFA_ADDRESS:
+			attr_fmt(attr, "Address %s", addr2str(ifa->ifa_family,
+				RTA_DATA(attr), addr_str, sizeof(addr_str)));
+			break;
+		case IFA_BROADCAST:
+			attr_fmt(attr, "Broadcast %s",
+					addr2str(ifa->ifa_family,
+						RTA_DATA(attr), addr_str,
+						sizeof(addr_str)));
+			break;
+		case IFA_MULTICAST:
+			attr_fmt(attr, "Multicast %s",
+					addr2str(ifa->ifa_family,
+						RTA_DATA(attr), addr_str,
+						sizeof(addr_str)));
+			break;
+		case IFA_ANYCAST:
+			attr_fmt(attr, "Anycast %s", addr2str(ifa->ifa_family,
+				RTA_DATA(attr), addr_str, sizeof(addr_str)));
+			break;
+		case IFA_FLAGS:
+			attr_fmt(attr, "Flags %d (%s%s%s)", RTA_INT(attr),
+				colorize_start(bold),
+				rtnl_addr_flags2str(RTA_INT(attr),
+					flags, sizeof(flags)),
+				colorize_end());
+			break;
+		case IFA_LABEL:
+			attr_fmt(attr, "Label %s", RTA_STR(attr));
+			break;
+		case IFA_CACHEINFO:
+			ci = RTA_DATA(attr);
+			tprintf("\tA: Cache (");
+
+			if (ci->ifa_valid == INFINITY)
+				tprintf("valid lft(forever)");
+			else
+				tprintf("valid lft(%us)", ci->ifa_valid);
+
+			if (ci->ifa_prefered == INFINITY)
+				tprintf(", prefrd lft(forever)");
+			else
+				tprintf(", prefrd lft(%us)", ci->ifa_prefered);
+
+			tprintf(", created on(%.2fs)", (double)ci->cstamp / 100);
+			tprintf(", updated on(%.2fs))", (double)ci->cstamp / 100);
+			tprintf(", Len %u\n", RTA_LEN(attr));
 			break;
 		}
 	}
@@ -360,6 +478,12 @@ static void rtnl_msg_print(struct nlmsghdr *hdr)
 	case RTM_GETLINK:
 	case RTM_SETLINK:
 		rtnl_print_ifinfo(hdr);
+		break;
+	case RTM_NEWADDR:
+	case RTM_DELADDR:
+	case RTM_GETADDR:
+		rtnl_print_ifaddr(hdr);
+		break;
 	}
 }
 
@@ -424,6 +548,9 @@ static void nlmsg(struct pkt_buff *pkt)
 			break;
 
 		hdr = (struct nlmsghdr *) pkt_pull(pkt, sizeof(*hdr));
+		if (hdr && hdr->nlmsg_type != NLMSG_DONE &&
+				(hdr->nlmsg_flags & NLM_F_MULTI))
+			tprintf("\n");
 	}
 }
 
