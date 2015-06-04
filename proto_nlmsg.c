@@ -5,6 +5,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <limits.h>
 #include <libgen.h>
@@ -17,17 +18,46 @@
 #include "pkt_buff.h"
 #include "proto.h"
 #include "protos.h"
+#include "timer.h"
 
 #define INFINITY 0xFFFFFFFFU
 
 #define RTA_LEN(attr) RTA_PAYLOAD(attr)
 #define RTA_INT(attr) (*(int *)RTA_DATA(attr))
+#define RTA_UINT(attr) (*(unsigned int *)RTA_DATA(attr))
 #define RTA_UINT8(attr) (*(uint8_t *)RTA_DATA(attr))
+#define RTA_UINT32(attr) (*(uint32_t *)RTA_DATA(attr))
 #define RTA_STR(attr) ((char *)RTA_DATA(attr))
 
 #define attr_fmt(attr, fmt, ...) \
 	tprintf("\tA: "fmt, ##__VA_ARGS__); \
-	tprintf(", Len %u\n", RTA_LEN(attr));
+	tprintf(", Len %lu\n", RTA_LEN(attr));
+
+struct flag_name {
+	const char *name;
+	unsigned int flag;
+};
+
+static const char *flags2str(struct flag_name *tbl, unsigned int flags,
+		char *buf, int len)
+{
+	int bits_stay = flags;
+
+	memset(buf, 0, len);
+
+	for (; tbl && tbl->name; tbl++) {
+		if (!(tbl->flag & flags))
+			continue;
+
+		bits_stay &= ~tbl->flag;
+		strncat(buf, tbl->name, len - strlen(buf) - 1);
+
+		if (bits_stay & flags)
+			strncat(buf, ",", len - strlen(buf) - 1);
+	}
+
+	return buf;
+}
 
 static const char *nlmsg_family2str(uint16_t family)
 {
@@ -276,6 +306,18 @@ static const char *addr2str(uint16_t af, const void *addr, char *buf, int blen)
 	return "???";
 }
 
+static const char *scope2str(uint8_t scope)
+{
+	switch (scope) {
+	case RT_SCOPE_UNIVERSE: return "global";
+	case RT_SCOPE_LINK: return "link";
+	case RT_SCOPE_HOST: return "host";
+	case RT_SCOPE_NOWHERE: return "nowhere";
+
+	default: return "Unknown";
+	}
+}
+
 static void rtnl_print_ifinfo(struct nlmsghdr *hdr)
 {
 	struct ifinfomsg *ifi = NLMSG_DATA(hdr);
@@ -385,18 +427,8 @@ static void rtnl_print_ifaddr(struct nlmsghdr *hdr)
 	uint32_t attrs_len = IFA_PAYLOAD(hdr);
 	struct rtattr *attr = IFA_RTA(ifa);
 	struct ifa_cacheinfo *ci;
-	char *scope = "Unknown";
 	char addr_str[256];
 	char flags[256];
-
-	if (ifa->ifa_scope == RT_SCOPE_UNIVERSE)
-		scope = "global";
-	else if (ifa->ifa_scope == RT_SCOPE_LINK)
-		scope = "link";
-	else if (ifa->ifa_scope == RT_SCOPE_HOST)
-		scope = "host";
-	else if (ifa->ifa_scope == RT_SCOPE_NOWHERE)
-		scope = "nowhere";
 
 	tprintf(" [ Address Family %d (%s%s%s)", ifa->ifa_family,
 			colorize_start(bold),
@@ -409,7 +441,9 @@ static void rtnl_print_ifaddr(struct nlmsghdr *hdr)
 				sizeof(flags)),
 			colorize_end());
 	tprintf(", Scope %d (%s%s%s)", ifa->ifa_scope,
-			colorize_start(bold), scope, colorize_end());
+			colorize_start(bold),
+			scope2str(ifa->ifa_scope),
+			colorize_end());
 	tprintf(", Link Index %d ]\n", ifa->ifa_index);
 
 	for (; RTA_OK(attr, attrs_len); attr = RTA_NEXT(attr, attrs_len)) {
@@ -464,7 +498,169 @@ static void rtnl_print_ifaddr(struct nlmsghdr *hdr)
 
 			tprintf(", created on(%.2fs)", (double)ci->cstamp / 100);
 			tprintf(", updated on(%.2fs))", (double)ci->cstamp / 100);
-			tprintf(", Len %u\n", RTA_LEN(attr));
+			tprintf(", Len %lu\n", RTA_LEN(attr));
+			break;
+		}
+	}
+}
+
+static const char *route_table2str(uint8_t table)
+{
+	switch (table) {
+	case RT_TABLE_UNSPEC: return "unspec";
+	case RT_TABLE_COMPAT: return "compat";
+	case RT_TABLE_DEFAULT: return "default";
+	case RT_TABLE_MAIN: return "main";
+	case RT_TABLE_LOCAL: return "local";
+
+	default: return "Unknown";
+	}
+}
+
+static const char *route_proto2str(uint8_t proto)
+{
+	switch (proto) {
+	case RTPROT_UNSPEC: return "unspec";
+	case RTPROT_REDIRECT: return "redirect";
+	case RTPROT_KERNEL: return "kernel";
+	case RTPROT_BOOT: return "boot";
+	case RTPROT_STATIC: return "static";
+	case RTPROT_GATED: return "gated";
+	case RTPROT_RA: return "ra";
+	case RTPROT_MRT: return "mrt";
+	case RTPROT_ZEBRA: return "zebra";
+	case RTPROT_BIRD: return "bird";
+	case RTPROT_DNROUTED: return "DECnet";
+	case RTPROT_XORP: return "xorp";
+	case RTPROT_NTK: return "netsukuku";
+	case RTPROT_DHCP: return "dhcpc";
+	case RTPROT_MROUTED: return "mrouted";
+
+	default: return "Unknown";
+	}
+}
+
+static const char *route_type2str(uint8_t type)
+{
+	switch (type) {
+	case RTN_UNSPEC: return "unspec";
+	case RTN_UNICAST: return "unicast";
+	case RTN_LOCAL: return "local";
+	case RTN_BROADCAST: return "broadcast";
+	case RTN_ANYCAST: return "anycast";
+	case RTN_MULTICAST: return "multicast";
+	case RTN_BLACKHOLE: return "blackhole";
+	case RTN_UNREACHABLE: return "unreach";
+	case RTN_PROHIBIT: return "prohibit";
+	case RTN_THROW: return "throw";
+	case RTN_NAT: return "nat";
+	case RTN_XRESOLVE: return "xresolve";
+
+	default: return "Unknown";
+	}
+}
+
+static struct flag_name route_flags[] = {
+	{ "notify", RTM_F_NOTIFY },
+	{ "cloned", RTM_F_CLONED },
+	{ "equalize", RTM_F_EQUALIZE },
+	{ "prefix", RTM_F_PREFIX },
+	{ "dead", RTNH_F_DEAD },
+	{ "pervasive", RTNH_F_PERVASIVE },
+	{ "onlink", RTNH_F_ONLINK },
+	{ NULL, 0 },
+};
+
+static void rtnl_print_route(struct nlmsghdr *hdr)
+{
+	struct rtmsg *rtm = NLMSG_DATA(hdr);
+	uint32_t attrs_len = RTM_PAYLOAD(hdr);
+	struct rtattr *attr = RTM_RTA(rtm);
+	struct rta_cacheinfo *ci;
+	int hz = get_user_hz();
+	char addr_str[256];
+	char flags[256];
+
+	tprintf(" [ Route Family %d (%s%s%s)", rtm->rtm_family,
+			colorize_start(bold),
+			addr_family2str(rtm->rtm_family),
+			colorize_end());
+	tprintf(", Dst Len %d", rtm->rtm_dst_len);
+	tprintf(", Src Len %d", rtm->rtm_src_len);
+	tprintf(", ToS %d", rtm->rtm_tos);
+	tprintf(", Table %d (%s%s%s)", rtm->rtm_table,
+			colorize_start(bold),
+			route_table2str(rtm->rtm_table),
+			colorize_end());
+	tprintf(", Proto %d (%s%s%s)", rtm->rtm_protocol,
+			colorize_start(bold),
+			route_proto2str(rtm->rtm_protocol),
+			colorize_end());
+	tprintf(", Scope %d (%s%s%s)", rtm->rtm_scope,
+			colorize_start(bold),
+			scope2str(rtm->rtm_scope),
+			colorize_end());
+	tprintf(", Type %d (%s%s%s)", rtm->rtm_type,
+			colorize_start(bold),
+			route_type2str(rtm->rtm_type),
+			colorize_end());
+	tprintf(", Flags 0x%x (%s%s%s) ]\n", rtm->rtm_flags,
+			colorize_start(bold),
+			flags2str(route_flags, rtm->rtm_flags, flags,
+				sizeof(flags)),
+			colorize_end());
+
+	for (; RTA_OK(attr, attrs_len); attr = RTA_NEXT(attr, attrs_len)) {
+		switch (attr->rta_type) {
+		case RTA_DST:
+			attr_fmt(attr, "Dst %s", addr2str(rtm->rtm_family,
+				RTA_DATA(attr), addr_str, sizeof(addr_str)));
+			break;
+		case RTA_SRC:
+			attr_fmt(attr, "Src %s", addr2str(rtm->rtm_family,
+				RTA_DATA(attr), addr_str, sizeof(addr_str)));
+			break;
+		case RTA_IIF:
+			attr_fmt(attr, "Iif %d", RTA_INT(attr));
+			break;
+		case RTA_OIF:
+			attr_fmt(attr, "Oif %d", RTA_INT(attr));
+			break;
+		case RTA_GATEWAY:
+			attr_fmt(attr, "Gateway %s", addr2str(rtm->rtm_family,
+				RTA_DATA(attr), addr_str, sizeof(addr_str)));
+			break;
+		case RTA_PRIORITY:
+			attr_fmt(attr, "Priority %u", RTA_UINT32(attr));
+			break;
+		case RTA_PREFSRC:
+			attr_fmt(attr, "Pref Src %s", addr2str(rtm->rtm_family,
+				RTA_DATA(attr), addr_str, sizeof(addr_str)));
+			break;
+		case RTA_MARK:
+			attr_fmt(attr, "Mark 0x%x", RTA_UINT(attr));
+			break;
+		case RTA_FLOW:
+			attr_fmt(attr, "Flow 0x%x", RTA_UINT(attr));
+			break;
+		case RTA_TABLE:
+			attr_fmt(attr, "Table %d (%s%s%s)", RTA_UINT32(attr),
+				colorize_start(bold),
+				route_table2str(RTA_UINT32(attr)),
+				colorize_end());
+			break;
+		case RTA_CACHEINFO:
+			ci = RTA_DATA(attr);
+			tprintf("\tA: Cache (");
+			tprintf("expires(%ds)", ci->rta_expires / hz);
+			tprintf(", error(%d)", ci->rta_error);
+			tprintf(", users(%d)", ci->rta_clntref);
+			tprintf(", used(%d)", ci->rta_used);
+			tprintf(", last use(%ds)", ci->rta_lastuse / hz);
+			tprintf(", id(%d)", ci->rta_id);
+			tprintf(", ts(%d)", ci->rta_ts);
+			tprintf(", ts age(%ds))", ci->rta_tsage);
+			tprintf(", Len %lu\n", RTA_LEN(attr));
 			break;
 		}
 	}
@@ -483,6 +679,11 @@ static void rtnl_msg_print(struct nlmsghdr *hdr)
 	case RTM_DELADDR:
 	case RTM_GETADDR:
 		rtnl_print_ifaddr(hdr);
+		break;
+	case RTM_NEWROUTE:
+	case RTM_DELROUTE:
+	case RTM_GETROUTE:
+		rtnl_print_route(hdr);
 		break;
 	}
 }
