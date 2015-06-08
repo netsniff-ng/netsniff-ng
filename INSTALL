@@ -48,9 +48,9 @@ for an easy installation. We try to keep this as minimal as possible.
 One-liner installation for *all* dependencies on Debian:
 
   $ sudo apt-get install ccache flex bison libnl-3-dev \
-  libnl-genl-3-dev libgeoip-dev libnetfilter-conntrack-dev \
-  libncurses5-dev liburcu-dev libnacl-dev libpcap-dev \
-  zlib1g-dev libcli-dev libnet1-dev
+  libnl-genl-3-dev libnl-route-3-dev libgeoip-dev \
+  libnetfilter-conntrack-dev libncurses5-dev liburcu-dev \
+  libnacl-dev libpcap-dev zlib1g-dev libcli-dev libnet1-dev
 
 One-liner installation for *all* dependencies on Fedora:
 
