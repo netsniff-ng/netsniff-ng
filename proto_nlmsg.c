@@ -472,6 +472,7 @@ static void rtnl_print_ifaddr(struct nlmsghdr *hdr)
 			attr_fmt(attr, "Anycast %s", addr2str(ifa->ifa_family,
 				RTA_DATA(attr), addr_str, sizeof(addr_str)));
 			break;
+#ifdef IFA_FLAGS
 		case IFA_FLAGS:
 			attr_fmt(attr, "Flags %d (%s%s%s)", RTA_INT(attr),
 				colorize_start(bold),
@@ -479,6 +480,7 @@ static void rtnl_print_ifaddr(struct nlmsghdr *hdr)
 					flags, sizeof(flags)),
 				colorize_end());
 			break;
+#endif
 		case IFA_LABEL:
 			attr_fmt(attr, "Label %s", RTA_STR(attr));
 			break;
@@ -534,7 +536,9 @@ static const char *route_proto2str(uint8_t proto)
 	case RTPROT_XORP: return "xorp";
 	case RTPROT_NTK: return "netsukuku";
 	case RTPROT_DHCP: return "dhcpc";
+#ifdef RTPROT_MROUTED
 	case RTPROT_MROUTED: return "mrouted";
+#endif
 
 	default: return "Unknown";
 	}
