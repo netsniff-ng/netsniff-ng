@@ -15,6 +15,7 @@
 #include <linux/if_arp.h>
 #include <arpa/inet.h>
 
+#include "dev.h"
 #include "pkt_buff.h"
 #include "proto.h"
 #include "protos.h"
@@ -165,115 +166,6 @@ static const char *nlmsg_rtnl_type2str(uint16_t type)
 	}
 }
 
-static char *if_type2str(uint16_t type)
-{
-	switch (type) {
-	case ARPHRD_ETHER: return "ether";
-	case ARPHRD_EETHER: return "eether";
-	case ARPHRD_AX25: return "ax25";
-	case ARPHRD_PRONET: return "pronet";
-	case ARPHRD_CHAOS: return "chaos";
-	case ARPHRD_IEEE802: return "ieee802";
-	case ARPHRD_ARCNET: return "arcnet";
-	case ARPHRD_APPLETLK: return "appletlk";
-	case ARPHRD_DLCI: return "dlci";
-	case ARPHRD_ATM: return "atm";
-	case ARPHRD_METRICOM: return "metricom";
-	case ARPHRD_IEEE1394: return "ieee1394";
-	case ARPHRD_INFINIBAND: return "infiniband";
-	case ARPHRD_SLIP: return "slip";
-	case ARPHRD_CSLIP: return "cslip";
-	case ARPHRD_SLIP6: return "slip6";
-	case ARPHRD_CSLIP6: return "cslip6";
-	case ARPHRD_RSRVD: return "RSRVD";
-	case ARPHRD_ADAPT: return "adapt";
-	case ARPHRD_ROSE: return "rose";
-	case ARPHRD_X25: return "x25";
-	case ARPHRD_HWX25: return "hwx25";
-	case ARPHRD_CAN: return "can";
-	case ARPHRD_PPP: return "ppp";
-	case ARPHRD_HDLC: return "hdlc";
-	case ARPHRD_LAPB: return "lapb";
-	case ARPHRD_DDCMP: return "ddcmp";
-	case ARPHRD_RAWHDLC: return "rawhdlc";
-	case ARPHRD_TUNNEL: return "tunnel";
-	case ARPHRD_TUNNEL6: return "tunnel6";
-	case ARPHRD_FRAD: return "frad";
-	case ARPHRD_SKIP: return "skip";
-	case ARPHRD_LOOPBACK: return "loopback";
-	case ARPHRD_LOCALTLK: return "localtlk";
-	case ARPHRD_FDDI: return "fddi";
-	case ARPHRD_BIF: return "bif";
-	case ARPHRD_SIT: return "sit";
-	case ARPHRD_IPDDP: return "ipddp";
-	case ARPHRD_IPGRE: return "ipgre";
-	case ARPHRD_PIMREG: return "pimreg";
-	case ARPHRD_HIPPI: return "hippi";
-	case ARPHRD_ASH: return "ash";
-	case ARPHRD_ECONET: return "econet";
-	case ARPHRD_IRDA: return "irda";
-	case ARPHRD_FCPP: return "fcpp";
-	case ARPHRD_FCAL: return "fcal";
-	case ARPHRD_FCPL: return "fcpl";
-	case ARPHRD_FCFABRIC: return "fcfb0";
-	case ARPHRD_FCFABRIC + 1: return "fcfb1";
-	case ARPHRD_FCFABRIC + 2: return "fcfb2";
-	case ARPHRD_FCFABRIC + 3: return "fcfb3";
-	case ARPHRD_FCFABRIC + 4: return "fcfb4";
-	case ARPHRD_FCFABRIC + 5: return "fcfb5";
-	case ARPHRD_FCFABRIC + 6: return "fcfb6";
-	case ARPHRD_FCFABRIC + 7: return "fcfb7";
-	case ARPHRD_FCFABRIC + 8: return "fcfb8";
-	case ARPHRD_FCFABRIC + 9: return "fcfb9";
-	case ARPHRD_FCFABRIC + 10: return "fcfb10";
-	case ARPHRD_FCFABRIC + 11: return "fcfb11";
-	case ARPHRD_FCFABRIC + 12: return "fcfb12";
-	case ARPHRD_IEEE802_TR: return "ieee802_tr";
-	case ARPHRD_IEEE80211: return "ieee80211";
-	case ARPHRD_IEEE80211_PRISM: return "ieee80211_prism";
-	case ARPHRD_IEEE80211_RADIOTAP: return "ieee80211_radiotap";
-	case ARPHRD_IEEE802154: return "ieee802154";
-	case ARPHRD_PHONET: return "phonet";
-	case ARPHRD_PHONET_PIPE: return "phonet_pipe";
-	case ARPHRD_CAIF: return "caif";
-	case ARPHRD_IP6GRE: return "ip6gre";
-	case ARPHRD_NETLINK: return "netlink";
-	case ARPHRD_NONE: return "none";
-	case ARPHRD_VOID: return "void";
-
-	default: return "Unknown";
-	}
-}
-
-/* Taken from iproute2 */
-static const char *ll_addr_n2a(const unsigned char *addr, int alen, int type,
-		char *buf, int blen)
-{
-	int i;
-	int l;
-
-	if (alen == 4 &&
-	    (type == ARPHRD_TUNNEL || type == ARPHRD_SIT || type == ARPHRD_IPGRE)) {
-		return inet_ntop(AF_INET, addr, buf, blen);
-	}
-	if (alen == 16 && type == ARPHRD_TUNNEL6) {
-		return inet_ntop(AF_INET6, addr, buf, blen);
-	}
-	l = 0;
-	for (i=0; i<alen; i++) {
-		if (i==0) {
-			snprintf(buf+l, blen, "%02x", addr[i]);
-			blen -= 2;
-			l += 2;
-		} else {
-			snprintf(buf+l, blen, ":%02x", addr[i]);
-			blen -= 3;
-			l += 3;
-		}
-	}
-	return buf;
-}
-
 static char *nlmsg_type2str(uint16_t proto, uint16_t type, char *buf, int len)
 {
 	if (proto == NETLINK_ROUTE && type < RTM_MAX) {
@@ -336,7 +228,7 @@ static void rtnl_print_ifinfo(struct nlmsghdr *hdr)
 			colorize_start(bold), af_link, colorize_end());
 	tprintf(", Type %d (%s%s%s)", ifi->ifi_type,
 			colorize_start(bold),
-			if_type2str(ifi->ifi_type),
+			device_type2str(ifi->ifi_type),
 			colorize_end());
 	tprintf(", Index %d", ifi->ifi_index);
 	tprintf(", Flags 0x%x (%s%s%s)", ifi->ifi_flags,
@@ -354,13 +246,13 @@ static void rtnl_print_ifinfo(struct nlmsghdr *hdr)
 		switch (attr->rta_type) {
 		case IFLA_ADDRESS:
 			attr_fmt(attr, "Address %s",
-					ll_addr_n2a(RTA_DATA(attr),
+					device_addr2str(RTA_DATA(attr),
 						RTA_LEN(attr), ifi->ifi_type,
 						if_addr, sizeof(if_addr)));
 			break;
 		case IFLA_BROADCAST:
 			attr_fmt(attr, "Broadcast %s",
-					ll_addr_n2a(RTA_DATA(attr),
+					device_addr2str(RTA_DATA(attr),
 						RTA_LEN(attr), ifi->ifi_type,
 						if_addr, sizeof(if_addr)));
 			break;

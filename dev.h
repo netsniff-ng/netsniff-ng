@@ -15,5 +15,7 @@ extern int device_up_and_running(const char *ifname);
 extern u32 device_bitrate(const char *ifname);
 extern short device_enter_promiscuous_mode(const char *ifname);
 extern void device_leave_promiscuous_mode(const char *ifname, short oldflags);
-
+extern const char *device_type2str(uint16_t type);
+extern const char *device_addr2str(const char *addr, int alen, int type,
+				   char *buf, int blen);
 #endif /* DEV_H */
