@@ -69,12 +69,14 @@ netsniff-ng can also be used to debug netlink traffic.
 Defines an input device. This can either be a networking device, a pcap file
 or stdin (\[lq]\-\[rq]). In case of a pcap file, the pcap type (\[lq]\-D\[rq]
 option) is determined automatically by the pcap file magic. In case of stdin,
-it is assumed that the input stream is a pcap file.
+it is assumed that the input stream is a pcap file. If the pcap link type is
+Netlink and pcap type is default format (usec or nsec), then each packet will
+be wrapped with pcap cooked header [2].
 .PP
 .SS -o <dev|pcap|dir|cfg|->, --out <dev|pcap|dir|cfg|->
 Defines the output device. This can either be a networking device, a pcap file,
-a folder, a trafgen(8) configuration file or stdout (\[lq]-\[rq]). In the case of a pcap
-file that should not have the default pcap type (0xa1b2c3d4), the additional
+a folder, a trafgen(8) configuration file or stdout (\[lq]-\[rq]). In the case of a
+pcap file that should not have the default pcap type (0xa1b2c3d4), the additional
 option \[lq]\-T\[rq] must be provided. If a directory is given, then, instead of a
 single pcap file, multiple pcap files are generated with rotation based on
 maximum file size or a given interval (\[lq]\-F\[rq] option). Optionally,
@@ -84,7 +86,10 @@ input device is a pcap file. To specify a  pcap file as the output device, the
 file name must have \[lq].pcap\[rq] as its extension. If stdout is given as a
 device, then a trafgen configuration will be written to stdout if the input
 device is a pcap file, or a pcap file if the input device is a networking
-device.
+device. In case if the input device is a Netlink monitor device and pcap type
+is default (usec or nsec) then each packet will be wrapped with pcap cooked
+header [2] to keep Netlink family number (Kuznetzov's and netsniff-ng pcap types
+already contain family number in protocol number field).
 .PP
 .SS -C <id>, --fanout-group <id>
 If multiple netsniff-ng instances are being started that all have the same packet
@@ -253,6 +258,11 @@ search locations for databases, the file /etc/netsniff-ng/geoip.conf contains
 possible addresses. Thus, to save bandwidth or for mirroring of Maxmind's
 databases (to bypass their traffic limit policy), different hosts or IP
 addresses can be placed into geoip.conf, separated by a newline.
+.PP
+.SS -w, --cooked
+Replace each frame link header with Linux "cooked" header [3] which keeps info
+about link type and protocol. It allows to dump and dissect frames captured
+from different link types when -i "any" was specified, for example.
 .PP
 .SS -V, --verbose
 Be more verbose during startup i.e. show detailed ring setup information.
@@ -588,6 +598,8 @@ in the payload itself as reported here. However, the filtering for VLANs works
 reliable if your NIC supports it. See bpfc(8) for an example.
 .PP
    [1] http://lkml.indiana.edu/hypermail/linux/kernel/0710.3/3816.html
+   [2] http://www.tcpdump.org/linktypes/LINKTYPE_NETLINK.html
+   [3] http://www.tcpdump.org/linktypes/LINKTYPE_LINUX_SLL.html
 .PP
 .SH LEGAL
 netsniff-ng is licensed under the GNU GPL version 2.0.

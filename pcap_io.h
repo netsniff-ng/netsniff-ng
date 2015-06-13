@@ -150,9 +150,9 @@ static inline uint16_t tp_to_pcap_tsource(uint32_t status)
 		return 0;
 }
 
-static inline int pcap_devtype_to_linktype(const char *ifname)
+static inline int pcap_devtype_to_linktype(int dev_type)
 {
-	switch (device_type(ifname)) {
+	switch (dev_type) {
 	case ARPHRD_TUNNEL:
 	case ARPHRD_TUNNEL6:
 	case ARPHRD_LOOPBACK:
@@ -160,36 +160,63 @@ static inline int pcap_devtype_to_linktype(const char *ifname)
 	case ARPHRD_IPDDP:
 	case ARPHRD_IPGRE:
 	case ARPHRD_IP6GRE:
-	case ARPHRD_ETHER:	return LINKTYPE_EN10MB;
-	case ARPHRD_IEEE80211_RADIOTAP: return LINKTYPE_IEEE802_11_RADIOTAP;
+	case ARPHRD_ETHER:
+		return LINKTYPE_EN10MB;
+	case ARPHRD_IEEE80211_RADIOTAP:
+		return LINKTYPE_IEEE802_11_RADIOTAP;
 	case ARPHRD_IEEE80211_PRISM:
-	case ARPHRD_IEEE80211:	return LINKTYPE_IEEE802_11;
-	case ARPHRD_NETLINK:	return LINKTYPE_NETLINK;
-	case ARPHRD_EETHER:	return LINKTYPE_EN3MB;
-	case ARPHRD_AX25:	return LINKTYPE_AX25;
-	case ARPHRD_CHAOS:	return LINKTYPE_CHAOS;
-	case ARPHRD_PRONET:	return LINKTYPE_PRONET;
+	case ARPHRD_IEEE80211:
+		return LINKTYPE_IEEE802_11;
+	case ARPHRD_NETLINK:
+		return LINKTYPE_NETLINK;
+	case ARPHRD_EETHER:
+		return LINKTYPE_EN3MB;
+	case ARPHRD_AX25:
+		return LINKTYPE_AX25;
+	case ARPHRD_CHAOS:
+		return LINKTYPE_CHAOS;
+	case ARPHRD_PRONET:
+		return LINKTYPE_PRONET;
 	case ARPHRD_IEEE802_TR:
-	case ARPHRD_IEEE802:	return LINKTYPE_IEEE802;
-	case ARPHRD_INFINIBAND:	return LINKTYPE_INFINIBAND;
-	case ARPHRD_ATM:	return LINKTYPE_ATM_CLIP;
-	case ARPHRD_DLCI:	return LINKTYPE_FRELAY;
-	case ARPHRD_ARCNET:	return LINKTYPE_ARCNET_LINUX;
+	case ARPHRD_IEEE802:
+		return LINKTYPE_IEEE802;
+	case ARPHRD_INFINIBAND:
+		return LINKTYPE_INFINIBAND;
+	case ARPHRD_ATM:
+		return LINKTYPE_ATM_CLIP;
+	case ARPHRD_DLCI:
+		return LINKTYPE_FRELAY;
+	case ARPHRD_ARCNET:
+		return LINKTYPE_ARCNET_LINUX;
 	case ARPHRD_CSLIP:
 	case ARPHRD_CSLIP6:
 	case ARPHRD_SLIP6:
-	case ARPHRD_SLIP:	return LINKTYPE_SLIP;
-	case ARPHRD_PPP:	return LINKTYPE_PPP;
-	case ARPHRD_CAN:	return LINKTYPE_CAN20B;
-	case ARPHRD_ECONET:	return LINKTYPE_ECONET;
+	case ARPHRD_SLIP:
+		return LINKTYPE_SLIP;
+	case ARPHRD_PPP:
+		return LINKTYPE_PPP;
+	case ARPHRD_CAN:
+		return LINKTYPE_CAN20B;
+	case ARPHRD_ECONET:
+		return LINKTYPE_ECONET;
 	case ARPHRD_RAWHDLC:
-	case ARPHRD_CISCO:	return LINKTYPE_C_HDLC;
-	case ARPHRD_FDDI:	return LINKTYPE_FDDI;
+	case ARPHRD_CISCO:
+		return LINKTYPE_C_HDLC;
+	case ARPHRD_FDDI:
+		return LINKTYPE_FDDI;
 	case ARPHRD_IEEE802154_MONITOR:
-	case ARPHRD_IEEE802154:	return LINKTYPE_IEEE802_15_4_LINUX;
-	case ARPHRD_IRDA:	return LINKTYPE_LINUX_IRDA;
-	default:		return LINKTYPE_NULL;
+	case ARPHRD_IEEE802154:
+		return LINKTYPE_IEEE802_15_4_LINUX;
+	case ARPHRD_IRDA:
+		return LINKTYPE_LINUX_IRDA;
+	default:
+		return LINKTYPE_NULL;
 	}
+}
+
+static inline int pcap_dev_to_linktype(const char *ifname)
+{
+	return pcap_devtype_to_linktype(device_type(ifname));
 }
 
 static inline void pcap_check_magic(uint32_t magic)

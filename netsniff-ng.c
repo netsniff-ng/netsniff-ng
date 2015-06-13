@@ -69,7 +69,8 @@ struct ctx {
 static volatile sig_atomic_t sigint = 0, sighup = 0;
 static volatile bool next_dump = false;
 
-static const char *short_options = "d:i:o:rf:MNJt:S:k:n:b:HQmcsqXlvhF:RGAP:Vu:g:T:DBUC:K:L:";
+static const char *short_options =
+	"d:i:o:rf:MNJt:S:k:n:b:HQmcsqXlvhF:RGAP:Vu:g:T:DBUC:K:L:w";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"in",			required_argument,	NULL, 'i'},
@@ -106,6 +107,7 @@ static const struct option long_options[] = {
 	{"ascii",		no_argument,		NULL, 'l'},
 	{"no-sock-mem",		no_argument,		NULL, 'A'},
 	{"update",		no_argument,		NULL, 'U'},
+	{"cooked",		no_argument,		NULL, 'w'},
 	{"verbose",		no_argument,		NULL, 'V'},
 	{"version",		no_argument,		NULL, 'v'},
 	{"help",		no_argument,		NULL, 'h'},
@@ -956,10 +958,9 @@ static void recv_only_or_dump(struct ctx *ctx)
 	struct timeval start, end, diff;
 	unsigned long frame_count = 0;
 
-	sock = pf_socket();
+	sock = pf_socket_type(ctx->link_type);
 
 	ifindex = device_ifindex(ctx->device_in);
-
 	size = ring_size(ctx->device_in, ctx->reserve_size);
 
 	enable_kernel_bpf_jit_compiler();
@@ -1174,6 +1175,7 @@ static void __noreturn help(void)
 	     "  -n|--num <0|uint>              Number of packets until exit (def: 0)\n"
 	     "  -P|--prefix <name>             Prefix for pcaps stored in directory\n"
 	     "  -T|--magic <pcap-magic>        Pcap magic number/pcap format to store, see -D\n"
+	     "  -w|--cooked                    Use Linux \"cooked\" header instead of link header\n"
 	     "  -D|--dump-pcap-types           Dump pcap types and magic numbers and quit\n"
 	     "  -B|--dump-bpf                  Dump generated BPF assembly\n"
 	     "  -r|--rand                      Randomize packet forwarding order (dev->dev)\n"
@@ -1441,6 +1443,9 @@ int main(int argc, char **argv)
 			update_geoip();
 			die();
 			break;
+		case 'w':
+			ctx.link_type = LINKTYPE_LINUX_SLL;
+			break;
 		case 'v':
 			version();
 			break;
@@ -1512,7 +1517,8 @@ int main(int argc, char **argv)
 		if (ctx.rfraw)
 			setup_rfmon_mac80211_dev(&ctx, &ctx.device_in);
 
-		ctx.link_type = pcap_devtype_to_linktype(ctx.device_in);
+		if (!ctx.link_type)
+			ctx.link_type = pcap_dev_to_linktype(ctx.device_in);
 
 		if (!ctx.device_out) {
 			ctx.dump = 0;
