@@ -30,6 +30,15 @@
 #define RTA_UINT32(attr) (*(uint32_t *)RTA_DATA(attr))
 #define RTA_STR(attr) ((char *)RTA_DATA(attr))
 
+#ifndef NDA_RTA
+#define NDA_RTA(r) \
+	((struct rtattr*)(((char*)(r)) + NLMSG_ALIGN(sizeof(struct ndmsg))))
+#endif
+
+#ifndef NDA_PAYLOAD
+#define NDA_PAYLOAD(n)	NLMSG_PAYLOAD(n,sizeof(struct ndmsg))
+#endif
+
 #define attr_fmt(attr, fmt, ...) \
 	tprintf("\tA: "fmt, ##__VA_ARGS__); \
 	tprintf(", Len %lu\n", RTA_LEN(attr));
@@ -562,6 +571,93 @@ static void rtnl_print_route(struct nlmsghdr *hdr)
 	}
 }
 
+static struct flag_name neigh_states[] = {
+	{ "incomplete", NUD_INCOMPLETE },
+	{ "reachable", NUD_REACHABLE },
+	{ "stale", NUD_STALE },
+	{ "delay", NUD_DELAY },
+	{ "probe", NUD_PROBE },
+	{ "failed", NUD_FAILED },
+	{ "noarp", NUD_NOARP },
+	{ "permanent", NUD_PERMANENT },
+	{ "none", NUD_NONE },
+	{ NULL, 0 },
+};
+
+static struct flag_name neigh_flags[] = {
+	{ "use", NTF_USE },
+	{ "self", NTF_SELF },
+	{ "master", NTF_MASTER },
+	{ "proxy", NTF_PROXY },
+#ifdef NTF_EXT_LEARNED
+	{ "ext learned", NTF_EXT_LEARNED },
+#endif
+	{ "router", NTF_ROUTER },
+	{ NULL, 0 },
+};
+
+static void rtnl_print_neigh(struct nlmsghdr *hdr)
+{
+	struct ndmsg *ndm = NLMSG_DATA(hdr);
+	uint32_t attrs_len = NDA_PAYLOAD(hdr);
+	struct rtattr *attr = NDA_RTA(ndm);
+	struct nda_cacheinfo *ci;
+	int hz = get_user_hz();
+	char addr_str[256];
+	char hw_addr[30];
+	char states[256];
+	char flags[256];
+
+	tprintf(" [ Neigh Family %d (%s%s%s)", ndm->ndm_family,
+			colorize_start(bold),
+			addr_family2str(ndm->ndm_family),
+			colorize_end());
+	tprintf(", Link Index %d", ndm->ndm_ifindex);
+	tprintf(", State %d (%s%s%s)", ndm->ndm_state,
+			colorize_start(bold),
+			flags2str(neigh_states, ndm->ndm_state, states,
+				sizeof(states)),
+			colorize_end());
+	tprintf(", Flags %d (%s%s%s)", ndm->ndm_flags,
+			colorize_start(bold),
+			flags2str(neigh_flags, ndm->ndm_flags, flags,
+				sizeof(flags)),
+			colorize_end());
+	tprintf(", Type %d (%s%s%s)", ndm->ndm_type,
+			colorize_start(bold),
+			route_type2str(ndm->ndm_type),
+			colorize_end());
+	tprintf(" ]\n");
+
+	for (; RTA_OK(attr, attrs_len); attr = RTA_NEXT(attr, attrs_len)) {
+		switch (attr->rta_type) {
+		case NDA_DST:
+			attr_fmt(attr, "Address %s", addr2str(ndm->ndm_family,
+						RTA_DATA(attr), addr_str,
+						sizeof(addr_str)));
+			break;
+		case NDA_LLADDR:
+			attr_fmt(attr, "HW Address %s",
+					device_addr2str(RTA_DATA(attr),
+						RTA_LEN(attr), 0, hw_addr,
+						sizeof(hw_addr)));
+			break;
+		case NDA_PROBES:
+			attr_fmt(attr, "Probes %d", RTA_UINT32(attr));
+			break;
+		case NDA_CACHEINFO:
+			ci = RTA_DATA(attr);
+			tprintf("\tA: Cache (");
+			tprintf("confirmed(%ds)", ci->ndm_confirmed / hz);
+			tprintf(", used(%ds)", ci->ndm_used / hz);
+			tprintf(", updated(%ds)", ci->ndm_updated / hz);
+			tprintf(", refcnt(%d))", ci->ndm_refcnt);
+			tprintf(", Len %lu\n", RTA_LEN(attr));
+			break;
+		}
+	}
+}
+
 static void rtnl_msg_print(struct nlmsghdr *hdr)
 {
 	switch (hdr->nlmsg_type) {
@@ -580,6 +676,11 @@ static void rtnl_msg_print(struct nlmsghdr *hdr)
 	case RTM_DELROUTE:
 	case RTM_GETROUTE:
 		rtnl_print_route(hdr);
+		break;
+	case RTM_NEWNEIGH:
+	case RTM_DELNEIGH:
+	case RTM_GETNEIGH:
+		rtnl_print_neigh(hdr);
 		break;
 	}
 }
