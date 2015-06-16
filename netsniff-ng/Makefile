@@ -12,6 +12,7 @@ netsniff-ng-libs +=	-lGeoIP \
 endif
 
 netsniff-ng-objs =	dissector.o \
+			dissector_sll.o \
 			dissector_eth.o \
 			dissector_80211.o \
 			dissector_netlink.o \

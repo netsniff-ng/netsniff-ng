@@ -318,7 +318,7 @@ static void pcap_to_xmit(struct ctx *ctx)
 
 			dissector_entry_point(out, hdr->tp_h.tp_snaplen,
 					      ctx->link_type, ctx->print_mode,
-					      hdr->s_ll.sll_protocol);
+					      &hdr->s_ll);
 
 			kernel_may_pull_from_tx(&hdr->tp_h);
 
@@ -469,7 +469,7 @@ static void receive_to_xmit(struct ctx *ctx)
 
 			dissector_entry_point(in, hdr_in->tp_h.tp_snaplen,
 					      ctx->link_type, ctx->print_mode,
-					      hdr_in->s_ll.sll_protocol);
+					      &hdr_in->s_ll);
 
 			if (frame_count_max != 0) {
 				if (frame_count >= frame_count_max) {
@@ -662,7 +662,7 @@ static void read_pcap(struct ctx *ctx)
 
 		dissector_entry_point(out, fm.tp_h.tp_snaplen,
 				      ctx->link_type, ctx->print_mode,
-				      fm.s_ll.sll_protocol);
+				      &fm.s_ll);
 
 		if (is_out_pcap) {
 			size_t pcap_len = pcap_get_length(&phdr, ctx->magic);
@@ -929,7 +929,7 @@ static void walk_t3_block(struct block_desc *pbd, struct ctx *ctx,
 				 hdr, ctx->print_mode, true, *frame_count);
 
 		dissector_entry_point(packet, hdr->tp_snaplen, ctx->link_type,
-				      ctx->print_mode, sll->sll_protocol);
+				      ctx->print_mode, sll);
 next:
                 hdr = (void *) ((uint8_t *) hdr + hdr->tp_next_offset);
 		sll = (void *) ((uint8_t *) hdr + TPACKET_ALIGN(sizeof(*hdr)));
@@ -1064,7 +1064,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 
 			dissector_entry_point(packet, hdr->tp_h.tp_snaplen,
 					      ctx->link_type, ctx->print_mode,
-					      hdr->s_ll.sll_protocol);
+					      &hdr->s_ll);
 
 			if (frame_count_max != 0) {
 				if (unlikely(frame_count >= frame_count_max)) {

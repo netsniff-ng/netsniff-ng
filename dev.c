@@ -376,7 +376,7 @@ const char *device_type2str(uint16_t type)
 }
 
 /* Taken from iproute2 ll_addr_n2a func */
-const char *device_addr2str(const char *addr, int alen, int type,
+const char *device_addr2str(const unsigned char *addr, int alen, int type,
 			    char *buf, int blen)
 {
 	int i, l;

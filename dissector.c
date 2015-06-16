@@ -14,6 +14,7 @@
 #include "proto.h"
 #include "dissector.h"
 #include "dissector_eth.h"
+#include "dissector_sll.h"
 #include "dissector_80211.h"
 #include "dissector_netlink.h"
 #include "linktype.h"
@@ -61,7 +62,7 @@ static void dissector_main(struct pkt_buff *pkt, struct protocol *start,
 }
 
 void dissector_entry_point(uint8_t *packet, size_t len, int linktype, int mode,
-			   uint16_t proto)
+			   struct sockaddr_ll *sll)
 {
 	struct protocol *proto_start, *proto_end;
 	struct pkt_buff *pkt;
@@ -71,7 +72,7 @@ void dissector_entry_point(uint8_t *packet, size_t len, int linktype, int mode,
 
 	pkt = pkt_alloc(packet, len);
 	pkt->link_type = linktype;
-	pkt->proto = proto;
+	pkt->sll = sll;
 
 	switch (linktype) {
 	case LINKTYPE_EN10MB:
@@ -90,6 +91,11 @@ void dissector_entry_point(uint8_t *packet, size_t len, int linktype, int mode,
 	case ___constant_swab32(LINKTYPE_NETLINK):
 		proto_start = dissector_get_netlink_entry_point();
 		proto_end = dissector_get_netlink_exit_point();
+		break;
+	case LINKTYPE_LINUX_SLL:
+	case ___constant_swab32(LINKTYPE_LINUX_SLL):
+		proto_start = dissector_get_sll_entry_point();
+		proto_end = dissector_get_sll_exit_point();
 		break;
 	default:
 		proto_start = &none_ops;
@@ -120,6 +126,7 @@ void dissector_init_all(int fnttype)
 	dissector_init_ethernet(fnttype);
 	dissector_init_ieee80211(fnttype);
 	dissector_init_netlink(fnttype);
+	dissector_init_sll(fnttype);
 }
 
 void dissector_cleanup_all(void)
@@ -127,4 +134,5 @@ void dissector_cleanup_all(void)
 	dissector_cleanup_ethernet();
 	dissector_cleanup_ieee80211();
 	dissector_cleanup_netlink();
+	dissector_cleanup_sll();
 }

@@ -21,7 +21,7 @@ struct pkt_buff {
 
 	struct protocol *dissector;
 	uint32_t link_type;
-	uint16_t proto;
+	struct sockaddr_ll *sll;
 };
 
 static inline struct pkt_buff *pkt_alloc(uint8_t *packet, unsigned int len)

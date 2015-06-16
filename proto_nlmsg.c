@@ -740,7 +740,7 @@ static void nlmsg(struct pkt_buff *pkt)
 	struct nlmsghdr *hdr = (struct nlmsghdr *) pkt_pull(pkt, sizeof(*hdr));
 
 	while (hdr) {
-		nlmsg_print(ntohs(pkt->proto), hdr);
+		nlmsg_print(ntohs(pkt->sll->sll_protocol), hdr);
 
 		if (!pkt_pull(pkt, NLMSG_PAYLOAD(hdr, 0)))
 			break;
@@ -755,7 +755,7 @@ static void nlmsg(struct pkt_buff *pkt)
 static void nlmsg_less(struct pkt_buff *pkt)
 {
 	struct nlmsghdr *hdr = (struct nlmsghdr *) pkt_pull(pkt, sizeof(*hdr));
-	uint16_t family = ntohs(pkt->proto);
+	uint16_t family = ntohs(pkt->sll->sll_protocol);
 	char type[32];
 
 	if (hdr == NULL)
