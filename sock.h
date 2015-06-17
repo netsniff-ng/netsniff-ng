@@ -3,6 +3,7 @@
 
 extern int af_socket(int af);
 extern int pf_socket(void);
+extern int pf_socket_type(uint32_t type);
 extern void set_nonblocking(int fd);
 extern int set_nonblocking_sloppy(int fd);
 extern int set_reuseaddr(int fd);

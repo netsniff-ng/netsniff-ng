@@ -8,6 +8,7 @@
 #include "sock.h"
 #include "die.h"
 #include "str.h"
+#include "linktype.h"
 #include "built_in.h"
 
 int af_socket(int af)
@@ -31,6 +32,26 @@ int pf_socket(void)
 		panic("Creation of PF socket failed: %s\n", strerror(errno));
 
 	return sock;
+}
+
+static int pf_socket_dgram(void)
+{
+	int sock = socket(PF_PACKET, SOCK_DGRAM, 0);
+	if (unlikely(sock < 0))
+		panic("Creation of PF dgram socket failed: %s\n",
+		      strerror(errno));
+
+	return sock;
+}
+
+int pf_socket_type(uint32_t type)
+{
+	switch (type) {
+	case LINKTYPE_LINUX_SLL:
+		return pf_socket_dgram();
+	default:
+		return pf_socket();
+	}
 }
 
 /* Avail in kernel >= 3.14
