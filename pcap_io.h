@@ -58,6 +58,14 @@ struct pcap_timeval_ns {
 	int32_t tv_nsec;
 };
 
+struct pcap_ll {
+	uint16_t pkttype;
+	uint16_t hatype;
+	uint16_t len;
+	uint8_t addr[8];
+	uint16_t protocol;
+};
+
 struct pcap_pkthdr {
 	struct pcap_timeval ts;
 	uint32_t caplen;
@@ -137,6 +145,28 @@ struct pcap_file_ops {
 extern const struct pcap_file_ops pcap_rw_ops __maybe_unused;
 extern const struct pcap_file_ops pcap_sg_ops __maybe_unused;
 extern const struct pcap_file_ops pcap_mm_ops __maybe_unused;
+
+static inline void sockaddr_to_ll(const struct sockaddr_ll *sll,
+				  struct pcap_ll *ll)
+{
+	ll->pkttype = cpu_to_be16(sll->sll_pkttype);
+	ll->hatype = cpu_to_be16(sll->sll_hatype);
+	ll->len = cpu_to_be16(sll->sll_halen);
+	ll->protocol = sll->sll_protocol; /* already be16 */
+
+	memcpy(ll->addr, sll->sll_addr, sizeof(ll->addr));
+}
+
+static inline void ll_to_sockaddr(const struct pcap_ll *ll,
+				  struct sockaddr_ll *sll)
+{
+	sll->sll_pkttype = be16_to_cpu(ll->pkttype);
+	sll->sll_hatype = be16_to_cpu(ll->hatype);
+	sll->sll_halen = be16_to_cpu(ll->len);
+	sll->sll_protocol = ll->protocol; /* stays be16 */
+
+	memcpy(sll->sll_addr, ll->addr, sizeof(ll->addr));
+}
 
 static inline uint16_t tp_to_pcap_tsource(uint32_t status)
 {
