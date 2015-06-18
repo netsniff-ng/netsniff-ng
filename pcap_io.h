@@ -27,6 +27,8 @@
 #define TCPDUMP_MAGIC				0xa1b2c3d4
 #define ORIGINAL_TCPDUMP_MAGIC			TCPDUMP_MAGIC
 #define NSEC_TCPDUMP_MAGIC			0xa1b23c4d
+#define ORIGINAL_TCPDUMP_MAGIC_LL		0xb1b2c3d4	/* Internal dummy just for mapping */
+#define NSEC_TCPDUMP_MAGIC_LL			0xb1b23c4d	/* Internal dummy just for mapping */
 #define KUZNETZOV_TCPDUMP_MAGIC			0xa1b2cd34
 #define BORKMANN_TCPDUMP_MAGIC			0xa1e2cb12
 
@@ -78,6 +80,20 @@ struct pcap_pkthdr_ns {
 	uint32_t len;
 };
 
+struct pcap_pkthdr_ll {
+	struct pcap_timeval ts;
+	uint32_t caplen;
+	uint32_t len;
+	struct pcap_ll ll;
+};
+
+struct pcap_pkthdr_ns_ll {
+	struct pcap_timeval_ns ts;
+	uint32_t caplen;
+	uint32_t len;
+	struct pcap_ll ll;
+};
+
 struct pcap_pkthdr_kuz {
 	struct pcap_timeval ts;
 	uint32_t caplen;
@@ -99,21 +115,27 @@ struct pcap_pkthdr_bkm {
 };
 
 typedef union {
-	struct pcap_pkthdr	ppo;
-	struct pcap_pkthdr_ns	ppn;
-	struct pcap_pkthdr_kuz	ppk;
-	struct pcap_pkthdr_bkm	ppb;
-	uint8_t			raw;
+	struct pcap_pkthdr		ppo;
+	struct pcap_pkthdr_ns		ppn;
+	struct pcap_pkthdr_ll		ppo_ll;
+	struct pcap_pkthdr_ns_ll	ppn_ll;
+	struct pcap_pkthdr_kuz		ppk;
+	struct pcap_pkthdr_bkm		ppb;
+	uint8_t				raw;
 } pcap_pkthdr_t;
 
 enum pcap_type {
 	DEFAULT		  =	ORIGINAL_TCPDUMP_MAGIC,
 	NSEC		  =	NSEC_TCPDUMP_MAGIC,
+	DEFAULT_LL	  =	ORIGINAL_TCPDUMP_MAGIC_LL,
+	NSEC_LL		  =	NSEC_TCPDUMP_MAGIC_LL,
 	KUZNETZOV	  =	KUZNETZOV_TCPDUMP_MAGIC,
 	BORKMANN	  =	BORKMANN_TCPDUMP_MAGIC,
 
 	DEFAULT_SWAPPED	  =	___constant_swab32(ORIGINAL_TCPDUMP_MAGIC),
 	NSEC_SWAPPED	  =	___constant_swab32(NSEC_TCPDUMP_MAGIC),
+	DEFAULT_LL_SWAPPED =	___constant_swab32(ORIGINAL_TCPDUMP_MAGIC_LL),
+	NSEC_LL_SWAPPED	  =	___constant_swab32(NSEC_TCPDUMP_MAGIC_LL),
 	KUZNETZOV_SWAPPED =	___constant_swab32(KUZNETZOV_TCPDUMP_MAGIC),
 	BORKMANN_SWAPPED  =	___constant_swab32(BORKMANN_TCPDUMP_MAGIC),
 };
@@ -244,6 +266,19 @@ static inline int pcap_devtype_to_linktype(int dev_type)
 	}
 }
 
+static inline bool link_has_sll_hdr(uint32_t link_type)
+{
+	switch (link_type) {
+	case LINKTYPE_NETLINK:
+	case LINKTYPE_LINUX_SLL:
+	case ___constant_swab32(LINKTYPE_NETLINK):
+	case ___constant_swab32(LINKTYPE_LINUX_SLL):
+		return true;
+	default:
+		return false;
+	}
+}
+
 static inline int pcap_dev_to_linktype(const char *ifname)
 {
 	return pcap_devtype_to_linktype(device_type(ifname));
@@ -287,20 +322,24 @@ static inline bool pcap_magic_is_swapped(uint32_t magic)
 static inline u32 pcap_get_length(pcap_pkthdr_t *phdr, enum pcap_type type)
 {
 	switch (type) {
-#define CASE_RET_CAPLEN(what, member, swap) \
+#define CASE_RET_CAPLEN(what, member, swap, extra) \
 	case (what): \
 		return (swap ? ___constant_swab32(phdr->member.caplen) : \
-		        phdr->member.caplen)
+		        phdr->member.caplen) - extra
 
-	CASE_RET_CAPLEN(DEFAULT, ppo, 0);
-	CASE_RET_CAPLEN(NSEC, ppn, 0);
-	CASE_RET_CAPLEN(KUZNETZOV, ppk, 0);
-	CASE_RET_CAPLEN(BORKMANN, ppb, 0);
+	CASE_RET_CAPLEN(DEFAULT, ppo, 0, 0);
+	CASE_RET_CAPLEN(NSEC, ppn, 0, 0);
+	CASE_RET_CAPLEN(DEFAULT_LL, ppo_ll, 0, sizeof(struct pcap_ll));
+	CASE_RET_CAPLEN(NSEC_LL, ppn_ll, 0, sizeof(struct pcap_ll));
+	CASE_RET_CAPLEN(KUZNETZOV, ppk, 0, 0);
+	CASE_RET_CAPLEN(BORKMANN, ppb, 0, 0);
 
-	CASE_RET_CAPLEN(DEFAULT_SWAPPED, ppo, 1);
-	CASE_RET_CAPLEN(NSEC_SWAPPED, ppn, 1);
-	CASE_RET_CAPLEN(KUZNETZOV_SWAPPED, ppk, 1);
-	CASE_RET_CAPLEN(BORKMANN_SWAPPED, ppb, 1);
+	CASE_RET_CAPLEN(DEFAULT_SWAPPED, ppo, 1, 0);
+	CASE_RET_CAPLEN(NSEC_SWAPPED, ppn, 1, 0);
+	CASE_RET_CAPLEN(DEFAULT_LL_SWAPPED, ppo_ll, 1, sizeof(struct pcap_ll));
+	CASE_RET_CAPLEN(NSEC_LL_SWAPPED, ppn_ll, 1, sizeof(struct pcap_ll));
+	CASE_RET_CAPLEN(KUZNETZOV_SWAPPED, ppk, 1, 0);
+	CASE_RET_CAPLEN(BORKMANN_SWAPPED, ppb, 1, 0);
 
 	default:
 		bug();
@@ -317,11 +356,15 @@ static inline void pcap_set_length(pcap_pkthdr_t *phdr, enum pcap_type type, u32
 
 	CASE_SET_CAPLEN(DEFAULT, ppo, 0);
 	CASE_SET_CAPLEN(NSEC, ppn, 0);
+	CASE_SET_CAPLEN(DEFAULT_LL, ppo_ll, 0);
+	CASE_SET_CAPLEN(NSEC_LL, ppn_ll, 0);
 	CASE_SET_CAPLEN(KUZNETZOV, ppk, 0);
 	CASE_SET_CAPLEN(BORKMANN, ppb, 0);
 
 	CASE_SET_CAPLEN(DEFAULT_SWAPPED, ppo, 1);
 	CASE_SET_CAPLEN(NSEC_SWAPPED, ppn, 1);
+	CASE_SET_CAPLEN(DEFAULT_LL_SWAPPED, ppo_ll, 1);
+	CASE_SET_CAPLEN(NSEC_LL_SWAPPED, ppn_ll, 1);
 	CASE_SET_CAPLEN(KUZNETZOV_SWAPPED, ppk, 1);
 	CASE_SET_CAPLEN(BORKMANN_SWAPPED, ppb, 1);
 
@@ -339,11 +382,15 @@ static inline u32 pcap_get_hdr_length(pcap_pkthdr_t *phdr, enum pcap_type type)
 
 	CASE_RET_HDRLEN(DEFAULT, ppo);
 	CASE_RET_HDRLEN(NSEC, ppn);
+	CASE_RET_HDRLEN(DEFAULT_LL, ppo_ll);
+	CASE_RET_HDRLEN(NSEC_LL, ppn_ll);
 	CASE_RET_HDRLEN(KUZNETZOV, ppk);
 	CASE_RET_HDRLEN(BORKMANN, ppb);
 
 	CASE_RET_HDRLEN(DEFAULT_SWAPPED, ppo);
 	CASE_RET_HDRLEN(NSEC_SWAPPED, ppn);
+	CASE_RET_HDRLEN(DEFAULT_LL_SWAPPED, ppo_ll);
+	CASE_RET_HDRLEN(NSEC_LL_SWAPPED, ppn_ll);
 	CASE_RET_HDRLEN(KUZNETZOV_SWAPPED, ppk);
 	CASE_RET_HDRLEN(BORKMANN_SWAPPED, ppb);
 
@@ -354,25 +401,7 @@ static inline u32 pcap_get_hdr_length(pcap_pkthdr_t *phdr, enum pcap_type type)
 
 static inline u32 pcap_get_total_length(pcap_pkthdr_t *phdr, enum pcap_type type)
 {
-	switch (type) {
-#define CASE_RET_TOTLEN(what, member, swap) \
-	case (what): \
-		return ((swap ? ___constant_swab32(phdr->member.caplen) : \
-			 phdr->member.caplen) + sizeof(phdr->member))
-
-	CASE_RET_TOTLEN(DEFAULT, ppo, 0);
-	CASE_RET_TOTLEN(NSEC, ppn, 0);
-	CASE_RET_TOTLEN(KUZNETZOV, ppk, 0);
-	CASE_RET_TOTLEN(BORKMANN, ppb, 0);
-
-	CASE_RET_TOTLEN(DEFAULT_SWAPPED, ppo, 1);
-	CASE_RET_TOTLEN(NSEC_SWAPPED, ppn, 1);
-	CASE_RET_TOTLEN(KUZNETZOV_SWAPPED, ppk, 1);
-	CASE_RET_TOTLEN(BORKMANN_SWAPPED, ppb, 1);
-
-	default:
-		bug();
-	}
+	return pcap_get_hdr_length(phdr, type) + pcap_get_length(phdr, type);
 }
 
 static inline void
@@ -383,31 +412,55 @@ __tpacket_hdr_to_pcap_pkthdr(uint32_t sec, uint32_t nsec, uint32_t snaplen,
 {
 	switch (type) {
 	case DEFAULT:
+	case DEFAULT_LL:
 		phdr->ppo.ts.tv_sec = sec;
 		phdr->ppo.ts.tv_usec = nsec / 1000;
 		phdr->ppo.caplen = snaplen;
 		phdr->ppo.len = len;
+		if (type == DEFAULT_LL) {
+			phdr->ppo.caplen += sizeof(struct pcap_ll);
+			phdr->ppo.len += sizeof(struct pcap_ll);
+			sockaddr_to_ll(sll, &phdr->ppo_ll.ll);
+		}
 		break;
 
 	case DEFAULT_SWAPPED:
+	case DEFAULT_LL_SWAPPED:
 		phdr->ppo.ts.tv_sec = ___constant_swab32(sec);
 		phdr->ppo.ts.tv_usec = ___constant_swab32(nsec / 1000);
 		phdr->ppo.caplen = ___constant_swab32(snaplen);
 		phdr->ppo.len = ___constant_swab32(len);
+		if (type == DEFAULT_LL_SWAPPED) {
+			phdr->ppo.caplen = ___constant_swab32(snaplen + sizeof(struct pcap_ll));
+			phdr->ppo.len = ___constant_swab32(len + sizeof(struct pcap_ll));
+			sockaddr_to_ll(sll, &phdr->ppo_ll.ll);
+		}
 		break;
 
 	case NSEC:
+	case NSEC_LL:
 		phdr->ppn.ts.tv_sec = sec;
 		phdr->ppn.ts.tv_nsec = nsec;
 		phdr->ppn.caplen = snaplen;
 		phdr->ppn.len = len;
+		if (type == NSEC_LL) {
+			phdr->ppn.caplen += sizeof(struct pcap_ll);
+			phdr->ppn.len += sizeof(struct pcap_ll);
+			sockaddr_to_ll(sll, &phdr->ppn_ll.ll);
+		}
 		break;
 
 	case NSEC_SWAPPED:
+	case NSEC_LL_SWAPPED:
 		phdr->ppn.ts.tv_sec = ___constant_swab32(sec);
 		phdr->ppn.ts.tv_nsec = ___constant_swab32(nsec);
 		phdr->ppn.caplen = ___constant_swab32(snaplen);
 		phdr->ppn.len = ___constant_swab32(len);
+		if (type == NSEC_LL_SWAPPED) {
+			phdr->ppn.caplen = ___constant_swab32(snaplen + sizeof(struct pcap_ll));
+			phdr->ppn.len = ___constant_swab32(len + sizeof(struct pcap_ll));
+			sockaddr_to_ll(sll, &phdr->ppn_ll.ll);
+		}
 		break;
 
 	case KUZNETZOV:
@@ -492,31 +545,59 @@ static inline void pcap_pkthdr_to_tpacket_hdr(pcap_pkthdr_t *phdr,
 {
 	switch (type) {
 	case DEFAULT:
+	case DEFAULT_LL:
 		thdr->tp_sec = phdr->ppo.ts.tv_sec;
 		thdr->tp_nsec = phdr->ppo.ts.tv_usec * 1000;
 		thdr->tp_snaplen = phdr->ppo.caplen;
 		thdr->tp_len = phdr->ppo.len;
+		if (type == DEFAULT_LL) {
+			thdr->tp_snaplen -= sizeof(struct pcap_ll);
+			thdr->tp_len -= sizeof(struct pcap_ll);
+			if (sll)
+				ll_to_sockaddr(&phdr->ppo_ll.ll, sll);
+		}
 		break;
 
 	case DEFAULT_SWAPPED:
+	case DEFAULT_LL_SWAPPED:
 		thdr->tp_sec = ___constant_swab32(phdr->ppo.ts.tv_sec);
 		thdr->tp_nsec = ___constant_swab32(phdr->ppo.ts.tv_usec) * 1000;
 		thdr->tp_snaplen = ___constant_swab32(phdr->ppo.caplen);
 		thdr->tp_len = ___constant_swab32(phdr->ppo.len);
+		if (type == DEFAULT_LL_SWAPPED) {
+			thdr->tp_snaplen -= sizeof(struct pcap_ll);
+			thdr->tp_len -= sizeof(struct pcap_ll);
+			if (sll)
+				ll_to_sockaddr(&phdr->ppo_ll.ll, sll);
+		}
 		break;
 
 	case NSEC:
+	case NSEC_LL:
 		thdr->tp_sec = phdr->ppn.ts.tv_sec;
 		thdr->tp_nsec = phdr->ppn.ts.tv_nsec;
 		thdr->tp_snaplen = phdr->ppn.caplen;
 		thdr->tp_len = phdr->ppn.len;
+		if (type == NSEC_LL) {
+			thdr->tp_snaplen -= sizeof(struct pcap_ll);
+			thdr->tp_len -= sizeof(struct pcap_ll);
+			if (sll)
+				ll_to_sockaddr(&phdr->ppn_ll.ll, sll);
+		}
 		break;
 
 	case NSEC_SWAPPED:
+	case NSEC_LL_SWAPPED:
 		thdr->tp_sec = ___constant_swab32(phdr->ppn.ts.tv_sec);
 		thdr->tp_nsec = ___constant_swab32(phdr->ppn.ts.tv_nsec);
 		thdr->tp_snaplen = ___constant_swab32(phdr->ppn.caplen);
 		thdr->tp_len = ___constant_swab32(phdr->ppn.len);
+		if (type == NSEC_LL_SWAPPED) {
+			thdr->tp_snaplen -= sizeof(struct pcap_ll);
+			thdr->tp_len -= sizeof(struct pcap_ll);
+			if (sll)
+				ll_to_sockaddr(&phdr->ppn_ll.ll, sll);
+		}
 		break;
 
 	case KUZNETZOV:
@@ -682,6 +763,24 @@ static inline void pcap_prepare_header(struct pcap_filehdr *hdr, uint32_t magic,
 {
 	bool swapped = pcap_magic_is_swapped(magic);
 
+	/* As *_LL types are just internal, we need to remap pcap
+	 * magics to actually valid types.
+	 */
+	switch (magic) {
+	case ORIGINAL_TCPDUMP_MAGIC_LL:
+		magic = ORIGINAL_TCPDUMP_MAGIC;
+		break;
+	case NSEC_TCPDUMP_MAGIC_LL:
+		magic = NSEC_TCPDUMP_MAGIC;
+		break;
+	case ___constant_swab32(ORIGINAL_TCPDUMP_MAGIC_LL):
+		magic = ___constant_swab32(ORIGINAL_TCPDUMP_MAGIC);
+		break;
+	case ___constant_swab32(NSEC_TCPDUMP_MAGIC_LL):
+		magic = ___constant_swab32(NSEC_TCPDUMP_MAGIC);
+		break;
+	}
+
 	hdr->magic = magic;
 	hdr->version_major = swapped ? ___constant_swab16(PCAP_VERSION_MAJOR) : PCAP_VERSION_MAJOR;
 	hdr->version_minor = swapped ? ___constant_swab16(PCAP_VERSION_MINOR) : PCAP_VERSION_MINOR;
@@ -716,9 +815,10 @@ static const bool pcap_supported_linktypes[LINKTYPE_MAX] __maybe_unused = {
 	[LINKTYPE_IEEE802_15_4_LINUX] = true,
 	[LINKTYPE_INFINIBAND] = true,
 	[LINKTYPE_NETLINK] = true,
+	[LINKTYPE_LINUX_SLL] = true,
 };
 
-static inline void pcap_validate_header(const struct pcap_filehdr *hdr)
+static inline void pcap_validate_header(struct pcap_filehdr *hdr)
 {
 	bool good = false;
 	uint32_t linktype;
@@ -737,6 +837,24 @@ static inline void pcap_validate_header(const struct pcap_filehdr *hdr)
 	if (unlikely(hdr->version_minor != PCAP_VERSION_MINOR) &&
 		     ___constant_swab16(hdr->version_minor) != PCAP_VERSION_MINOR)
 		panic("This file has an invalid pcap minor version (must be %d)\n", PCAP_VERSION_MINOR);
+
+	/* Remap to internal *_LL types in case of LINKTYPE_LINUX_SLL. */
+	if (linktype == LINKTYPE_LINUX_SLL || linktype == LINKTYPE_NETLINK) {
+		switch (hdr->magic) {
+		case ORIGINAL_TCPDUMP_MAGIC:
+			hdr->magic = ORIGINAL_TCPDUMP_MAGIC_LL;
+			break;
+		case NSEC_TCPDUMP_MAGIC:
+			hdr->magic = NSEC_TCPDUMP_MAGIC_LL;
+			break;
+		case ___constant_swab32(ORIGINAL_TCPDUMP_MAGIC):
+			hdr->magic = ___constant_swab32(ORIGINAL_TCPDUMP_MAGIC_LL);
+			break;
+		case ___constant_swab32(NSEC_TCPDUMP_MAGIC):
+			hdr->magic = ___constant_swab32(NSEC_TCPDUMP_MAGIC_LL);
+			break;
+		}
+	}
 }
 
 static int pcap_generic_pull_fhdr(int fd, uint32_t *magic,

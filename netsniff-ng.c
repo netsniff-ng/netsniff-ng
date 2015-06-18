@@ -1519,6 +1519,23 @@ int main(int argc, char **argv)
 
 		if (!ctx.link_type)
 			ctx.link_type = pcap_dev_to_linktype(ctx.device_in);
+		if (link_has_sll_hdr(ctx.link_type)) {
+			switch (ctx.magic) {
+			case ORIGINAL_TCPDUMP_MAGIC:
+				ctx.magic = ORIGINAL_TCPDUMP_MAGIC_LL;
+				break;
+			case NSEC_TCPDUMP_MAGIC:
+				ctx.magic = NSEC_TCPDUMP_MAGIC_LL;
+				break;
+			case ___constant_swab32(ORIGINAL_TCPDUMP_MAGIC):
+				ctx.magic = ___constant_swab32(ORIGINAL_TCPDUMP_MAGIC_LL);
+				break;
+			case ___constant_swab32(NSEC_TCPDUMP_MAGIC):
+				ctx.magic = ___constant_swab32(NSEC_TCPDUMP_MAGIC_LL);
+				break;
+			}
+		}
+
 
 		if (!ctx.device_out) {
 			ctx.dump = 0;
