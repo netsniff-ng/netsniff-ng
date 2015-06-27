@@ -138,6 +138,8 @@ struct icmp_filter {
 
 #define SMOKE_N_PROBES	100
 
+#define PKT_MIN_LEN 14
+
 static void signal_handler(int number)
 {
 	switch (number) {
@@ -791,10 +793,11 @@ static int xmit_packet_precheck(struct ctx *ctx, unsigned int cpu)
 	}
 
 	for (mtu = device_mtu(ctx->device), i = 0; i < plen; ++i) {
-		if (packets[i].len > mtu + 14)
+		if (packets[i].len > mtu + PKT_MIN_LEN)
 			panic("Device MTU < than packet%d's size!\n", i);
-		if (packets[i].len <= 14)
-			panic("Packet%d's size too short!\n", i);
+		if (packets[i].len <= PKT_MIN_LEN)
+			panic("Packet%d's size must be > %d bytes!\n",
+					i, PKT_MIN_LEN);
 	}
 
 	return 0;
