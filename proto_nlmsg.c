@@ -584,14 +584,32 @@ static struct flag_name neigh_states[] = {
 	{ NULL, 0 },
 };
 
+/* Copied from linux/neighbour.h */
+#ifndef NTF_USE
+# define NTF_USE		0x01
+#endif
+#ifndef NTF_SELF
+# define NTF_SELF		0x02
+#endif
+#ifndef NTF_MASTER
+# define NTF_MASTER		0x04
+#endif
+#ifndef NTF_PROXY
+# define NTF_PROXY		0x08
+#endif
+#ifndef NTF_EXT_LEARNED
+# define NTF_EXT_LEARNED	0x10
+#endif
+#ifndef NTF_ROUTER
+# define NTF_ROUTER		0x80
+#endif
+
 static struct flag_name neigh_flags[] = {
 	{ "use", NTF_USE },
 	{ "self", NTF_SELF },
 	{ "master", NTF_MASTER },
 	{ "proxy", NTF_PROXY },
-#ifdef NTF_EXT_LEARNED
 	{ "ext learned", NTF_EXT_LEARNED },
-#endif
 	{ "router", NTF_ROUTER },
 	{ NULL, 0 },
 };
