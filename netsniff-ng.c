@@ -249,7 +249,7 @@ static void pcap_to_xmit(struct ctx *ctx)
 		setup_rfmon_mac80211_dev(ctx, &ctx->device_out);
 
 		if (ctx->link_type != LINKTYPE_IEEE802_11 &&
-				ctx->link_type != LINKTYPE_IEEE802_11_RADIOTAP)
+		    ctx->link_type != LINKTYPE_IEEE802_11_RADIOTAP)
 			panic("Wrong linktype of pcap!\n");
 	}
 
