@@ -227,7 +227,7 @@ void enter_rfmon_mac80211(const char *device, char **mondev)
 
 		slprintf(mondevice, sizeof(mondevice), "mon%u", n);
 
-		if (device_ifindex_get(mondevice) > 0)
+		if (__device_ifindex(mondevice) > 0)
 			continue;
 
 		ret = nl80211_add_mon_if(&nlstate, device, mondevice);
