@@ -37,7 +37,15 @@ The following information will be presented in flowtop's output:
     * Transport protocol state machine information
 .PP
 In order for flowtop to work, netfilter must be active and running
-on your machine, thus kernel-side connection tracking is active.
+on your machine, thus kernel-side connection tracking is active. If netfilter
+is not running, you can activate it with iptables(8):
+.in +4
+.sp
+iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT
+.sp
+iptables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT
+.in -4
+
 .PP
 flowtop's intention is just to get a quick look over your active connections.
 If you want logging support, have a look at netfilter's conntrack(8) tools
@@ -125,7 +133,8 @@ Borkmann <dborkma@tik.ee.ethz.ch>.
 .BR ifpps (8),
 .BR bpfc (8),
 .BR astraceroute (8),
-.BR curvetun (8)
+.BR curvetun (8),
+.BR iptables (8)
 .PP
 .SH AUTHOR
 Manpage was written by Daniel Borkmann.
