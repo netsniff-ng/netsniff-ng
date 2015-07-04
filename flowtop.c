@@ -368,8 +368,10 @@ static void flow_list_destroy_entry(struct flow_list *fl,
 
 			flow_entry_xfree(n1);
 		} else {
+			struct flow_entry *next = fl->head->next;
+
 			flow_entry_xfree(fl->head);
-			fl->head = NULL;
+			fl->head = next;
 		}
 	}
 }
