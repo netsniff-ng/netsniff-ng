@@ -97,6 +97,7 @@ static inline void condlock_init(struct condlock *c)
 {
 	pthread_mutex_init(&c->lock, NULL);
 	pthread_cond_init(&c->cond, NULL);
+	pthread_mutex_lock(&c->lock);
 }
 
 static inline void condlock_signal(struct condlock *c)
@@ -108,7 +109,6 @@ static inline void condlock_signal(struct condlock *c)
 
 static inline void condlock_wait(struct condlock *c)
 {
-	pthread_mutex_lock(&c->lock);
 	pthread_cond_wait(&c->cond, &c->lock);
 	pthread_mutex_unlock(&c->lock);
 }
