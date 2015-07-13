@@ -806,6 +806,20 @@ static uint16_t presenter_get_port(uint16_t src, uint16_t dst, int tcp)
 	}
 }
 
+static char *bandw2str(double bytes, char *buf, size_t len)
+{
+	if (bytes > 1000000000.)
+		snprintf(buf, len, "%.1fG", bytes / 1000000000.);
+	if (bytes > 1000000.)
+		snprintf(buf, len, "%.1fM", bytes / 1000000.);
+	else if (bytes > 1000.)
+		snprintf(buf, len, "%.1fK", bytes / 1000.);
+	else
+		snprintf(buf, len, "%g", bytes);
+
+	return buf;
+}
+
 static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 				     unsigned int *line)
 {
@@ -870,9 +884,13 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 	printw(" ->");
 
 	/* Number packets, bytes */
-	if (n->counter_pkts > 0 && n->counter_bytes > 0)
-		printw(" (%"PRIu64" pkts, %"PRIu64" bytes) ->",
-		       n->counter_pkts, n->counter_bytes);
+	if (n->counter_pkts > 0 && n->counter_bytes > 0) {
+		char bytes_str[64];
+
+		printw(" (%"PRIu64" pkts, %s bytes) ->", n->counter_pkts,
+		       bandw2str(n->counter_bytes, bytes_str,
+				 sizeof(bytes_str) - 1));
+	}
 
 	/* Show source information: reverse DNS, port, country, city */
 	if (show_src) {
