@@ -146,17 +146,17 @@ static const char *const tcp_state2str[TCP_CONNTRACK_MAX] = {
 	[TCP_CONNTRACK_SYN_SENT2]	= "SYN_SENT2",
 };
 
-static const uint8_t tcp_states[] = {
-	TCP_CONNTRACK_SYN_SENT,
-	TCP_CONNTRACK_SYN_RECV,
-	TCP_CONNTRACK_ESTABLISHED,
-	TCP_CONNTRACK_FIN_WAIT,
-	TCP_CONNTRACK_CLOSE_WAIT,
-	TCP_CONNTRACK_LAST_ACK,
-	TCP_CONNTRACK_TIME_WAIT,
-	TCP_CONNTRACK_CLOSE,
-	TCP_CONNTRACK_SYN_SENT2,
-	TCP_CONNTRACK_NONE,
+static const bool tcp_states_show[TCP_CONNTRACK_MAX] = {
+	[TCP_CONNTRACK_SYN_SENT] = true,
+	[TCP_CONNTRACK_SYN_RECV] = true,
+	[TCP_CONNTRACK_ESTABLISHED] = true,
+	[TCP_CONNTRACK_FIN_WAIT] = true,
+	[TCP_CONNTRACK_CLOSE_WAIT] = true,
+	[TCP_CONNTRACK_LAST_ACK] = true,
+	[TCP_CONNTRACK_TIME_WAIT] = true,
+	[TCP_CONNTRACK_CLOSE] = true,
+	[TCP_CONNTRACK_SYN_SENT2] = true,
+	[TCP_CONNTRACK_NONE] = true,
 };
 
 static const char *const dccp_state2str[DCCP_CONNTRACK_MAX] = {
@@ -172,17 +172,17 @@ static const char *const dccp_state2str[DCCP_CONNTRACK_MAX] = {
 	[DCCP_CONNTRACK_INVALID]	= "INVALID",
 };
 
-static const uint8_t dccp_states[] = {
-	DCCP_CONNTRACK_NONE,
-	DCCP_CONNTRACK_REQUEST,
-	DCCP_CONNTRACK_RESPOND,
-	DCCP_CONNTRACK_PARTOPEN,
-	DCCP_CONNTRACK_OPEN,
-	DCCP_CONNTRACK_CLOSEREQ,
-	DCCP_CONNTRACK_CLOSING,
-	DCCP_CONNTRACK_TIMEWAIT,
-	DCCP_CONNTRACK_IGNORE,
-	DCCP_CONNTRACK_INVALID,
+static const uint8_t dccp_states_show[DCCP_CONNTRACK_MAX] = {
+	[DCCP_CONNTRACK_NONE] = true,
+	[DCCP_CONNTRACK_REQUEST] = true,
+	[DCCP_CONNTRACK_RESPOND] = true,
+	[DCCP_CONNTRACK_PARTOPEN] = true,
+	[DCCP_CONNTRACK_OPEN] = true,
+	[DCCP_CONNTRACK_CLOSEREQ] = true,
+	[DCCP_CONNTRACK_CLOSING] = true,
+	[DCCP_CONNTRACK_TIMEWAIT] = true,
+	[DCCP_CONNTRACK_IGNORE] = true,
+	[DCCP_CONNTRACK_INVALID] = true,
 };
 
 static const char *const sctp_state2str[SCTP_CONNTRACK_MAX] = {
@@ -196,15 +196,15 @@ static const char *const sctp_state2str[SCTP_CONNTRACK_MAX] = {
 	[SCTP_CONNTRACK_SHUTDOWN_ACK_SENT] = "SHUTDOWN_ACK_SENT",
 };
 
-static const uint8_t sctp_states[] = {
-	SCTP_CONNTRACK_NONE,
-	SCTP_CONNTRACK_CLOSED,
-	SCTP_CONNTRACK_COOKIE_WAIT,
-	SCTP_CONNTRACK_COOKIE_ECHOED,
-	SCTP_CONNTRACK_ESTABLISHED,
-	SCTP_CONNTRACK_SHUTDOWN_SENT,
-	SCTP_CONNTRACK_SHUTDOWN_RECD,
-	SCTP_CONNTRACK_SHUTDOWN_ACK_SENT,
+static const uint8_t sctp_states_show[SCTP_CONNTRACK_MAX] = {
+	[SCTP_CONNTRACK_NONE] = true,
+	[SCTP_CONNTRACK_CLOSED] = true,
+	[SCTP_CONNTRACK_COOKIE_WAIT] = true,
+	[SCTP_CONNTRACK_COOKIE_ECHOED] = true,
+	[SCTP_CONNTRACK_ESTABLISHED] = true,
+	[SCTP_CONNTRACK_SHUTDOWN_SENT] = true,
+	[SCTP_CONNTRACK_SHUTDOWN_RECD] = true,
+	[SCTP_CONNTRACK_SHUTDOWN_ACK_SENT] = true,
 };
 
 static const struct nfct_filter_ipv4 filter_ipv4 = {
@@ -860,21 +860,21 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 	}
 }
 
-static inline int presenter_flow_wrong_state(struct flow_entry *n, int state)
+static inline int presenter_flow_wrong_state(struct flow_entry *n)
 {
 	int ret = 1;
 
 	switch (n->l4_proto) {
 	case IPPROTO_TCP:
-		if (n->tcp_state == state)
+		if (tcp_states_show[n->tcp_state])
 			ret = 0;
 		break;
 	case IPPROTO_SCTP:
-		if (n->sctp_state == state)
+		if (sctp_states_show[n->sctp_state])
 			ret = 0;
 		break;
 	case IPPROTO_DCCP:
-		if (n->dccp_state == state)
+		if (dccp_states_show[n->dccp_state])
 			ret = 0;
 		break;
 	case IPPROTO_UDP:
@@ -892,27 +892,8 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 				    int skip_lines)
 {
 	int maxy;
-	size_t i, j;
 	unsigned int line = 3;
 	struct flow_entry *n;
-	uint8_t protocols[] = {
-		IPPROTO_TCP,
-		IPPROTO_DCCP,
-		IPPROTO_SCTP,
-		IPPROTO_UDP,
-		IPPROTO_UDPLITE,
-		IPPROTO_ICMP,
-		IPPROTO_ICMPV6,
-	};
-	size_t protocol_state_size[] = {
-		[IPPROTO_TCP] = array_size(tcp_states),
-		[IPPROTO_DCCP] = array_size(dccp_states),
-		[IPPROTO_SCTP] = array_size(sctp_states),
-		[IPPROTO_UDP] = 1,
-		[IPPROTO_UDPLITE] = 1,
-		[IPPROTO_ICMP] = 1,
-		[IPPROTO_ICMPV6] = 1,
-	};
 
 	curs_set(0);
 
@@ -939,35 +920,27 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 
 	rcu_read_lock();
 
-	if (rcu_dereference(fl->head) == NULL)
+	n = rcu_dereference(fl->head);
+	if (!n)
 		mvwprintw(screen, line, 2, "(No active sessions! "
 			  "Is netfilter running?)");
 
-	for (i = 0; i < array_size(protocols); i++) {
-		for (j = 0; j < protocol_state_size[protocols[i]]; j++) {
-			n = rcu_dereference(fl->head);
-			while (n && maxy > 0) {
-				if (n->l4_proto != protocols[i] ||
-				    presenter_flow_wrong_state(n, j) ||
-				    presenter_get_port(n->port_src,
-						       n->port_dst, 0) == 53) {
-					/* skip entry */
-					n = rcu_dereference(n->next);
-					continue;
-				}
-				if (skip_lines > 0) {
-					n = rcu_dereference(n->next);
-					skip_lines--;
-					continue;
-				}
+	for (; n && maxy > 0; n = rcu_dereference(n->next)) {
+		if (presenter_get_port(n->port_src, n->port_dst, 0) == 53)
+			continue;
 
-				presenter_screen_do_line(screen, n, &line);
+		if (presenter_flow_wrong_state(n))
+			continue;
 
-				line++;
-				maxy -= (2 + 1 * show_src);
-				n = rcu_dereference(n->next);
-			}
+		if (skip_lines > 0) {
+			skip_lines--;
+			continue;
 		}
+
+		presenter_screen_do_line(screen, n, &line);
+
+		line++;
+		maxy -= (2 + 1 * show_src);
 	}
 
 	rcu_read_unlock();
