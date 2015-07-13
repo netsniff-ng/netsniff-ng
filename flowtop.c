@@ -951,6 +951,8 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 				    int skip_lines)
 {
 	int maxy;
+	int skip_left = skip_lines;
+	unsigned int flows = 0;
 	unsigned int line = 3;
 	struct flow_entry *n;
 
@@ -968,15 +970,6 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 	wclear(screen);
 	clear();
 
-	mvwprintw(screen, 1, 2, "Kernel netfilter flows for %s%s%s%s%s%s"
-		  "[+%d]", what & INCLUDE_TCP ? "TCP, " : "" ,
-		  what & INCLUDE_UDP ? "UDP, " : "",
-		  what & INCLUDE_SCTP ? "SCTP, " : "",
-		  what & INCLUDE_DCCP ? "DCCP, " : "",
-		  what & INCLUDE_ICMP && what & INCLUDE_IPV4 ? "ICMP, " : "",
-		  what & INCLUDE_ICMP && what & INCLUDE_IPV6 ? "ICMP6, " : "",
-		  skip_lines);
-
 	rcu_read_lock();
 
 	n = rcu_dereference(fl->head);
@@ -985,17 +978,20 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 			  "Is netfilter running?)");
 
 	for (; n; n = rcu_dereference(n->next)) {
-		if (maxy <= 0)
-			goto skip;
-
 		if (presenter_get_port(n->port_src, n->port_dst, 0) == 53)
 			goto skip;
 
 		if (presenter_flow_wrong_state(n))
 			goto skip;
 
-		if (skip_lines > 0) {
-			skip_lines--;
+		/* count only flows which might be showed */
+		flows++;
+
+		if (maxy <= 0)
+			goto skip;
+
+		if (skip_left > 0) {
+			skip_left--;
 			goto skip;
 		}
 
@@ -1009,6 +1005,15 @@ skip:
 		n->is_visible = false;
 		continue;
 	}
+
+	mvwprintw(screen, 1, 2, "Kernel netfilter flows(%u) for %s%s%s%s%s%s"
+		  "[+%d]", flows, what & INCLUDE_TCP ? "TCP, " : "" ,
+		  what & INCLUDE_UDP ? "UDP, " : "",
+		  what & INCLUDE_SCTP ? "SCTP, " : "",
+		  what & INCLUDE_DCCP ? "DCCP, " : "",
+		  what & INCLUDE_ICMP && what & INCLUDE_IPV4 ? "ICMP, " : "",
+		  what & INCLUDE_ICMP && what & INCLUDE_IPV6 ? "ICMP6, " : "",
+		  skip_lines);
 
 	rcu_read_unlock();
 
