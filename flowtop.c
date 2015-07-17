@@ -38,6 +38,7 @@
 #include "locking.h"
 #include "pkt_buff.h"
 #include "screen.h"
+#include "proc.h"
 
 struct flow_entry {
 	uint32_t flow_id, use, status;
@@ -474,14 +475,9 @@ static int walk_process(unsigned int pid, struct flow_entry *n)
 			continue;
 
 		if (S_ISSOCK(statbuf.st_mode) && (ino_t) n->inode == statbuf.st_ino) {
-			memset(n->cmdline, 0, sizeof(n->cmdline));
-
-			snprintf(path, sizeof(path), "/proc/%u/exe", pid);
-
-			ret = readlink(path, n->cmdline,
-				       sizeof(n->cmdline) - 1);
+			ret = proc_get_cmdline(pid, n->cmdline, sizeof(n->cmdline));
 			if (ret < 0)
-				panic("readlink error: %s\n", strerror(errno));
+				panic("Failed to get process cmdline: %s\n", strerror(errno));
 
 			n->procnum = pid;
 			closedir(dir);
@@ -501,7 +497,7 @@ static void walk_processes(struct flow_entry *n)
 
 	/* n->inode must be set */
 	if (n->inode <= 0) {
-		memset(n->cmdline, 0, sizeof(n->cmdline));
+		n->cmdline[0] = '\0';
 		return;
 	}
 

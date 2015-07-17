@@ -17,6 +17,7 @@
 
 #include "dev.h"
 #include "pkt_buff.h"
+#include "proc.h"
 #include "proto.h"
 #include "protos.h"
 #include "timer.h"
@@ -226,7 +227,7 @@ static void rtnl_print_ifinfo(struct nlmsghdr *hdr)
 	uint32_t attrs_len = IFLA_PAYLOAD(hdr);
 	char flags[256];
 	char if_addr[64] = {};
-	char *af_link = "Unknown";
+	char *af_link = "unknown";
 
 	if (ifi->ifi_family == AF_UNSPEC)
 		af_link = "unspec";
@@ -717,14 +718,8 @@ static void nlmsg_print(uint16_t family, struct nlmsghdr *hdr)
 	 * PID and the information will not be printed.
 	 */
 	if (hdr->nlmsg_pid != 0) {
-		char path[1024];
-		int ret;
-
-		snprintf(path, sizeof(path), "/proc/%u/exe", hdr->nlmsg_pid);
-		ret = readlink(path, procname, sizeof(procname) - 1);
-		if (ret < 0)
-			ret = 0;
-		procname[ret] = '\0';
+		if (proc_get_cmdline(hdr->nlmsg_pid, procname, sizeof(procname)) < 0)
+			snprintf(procname, sizeof(procname), "unknown process");
 	} else
 		snprintf(procname, sizeof(procname), "kernel");
 

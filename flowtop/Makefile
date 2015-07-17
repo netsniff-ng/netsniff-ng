@@ -15,6 +15,7 @@ flowtop-objs =	xmalloc.o \
 		str.o \
 		sig.o \
 		sock.o \
+		proc.o \
 		dev.o \
 		link.o \
 		hash.o \

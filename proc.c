@@ -64,3 +64,18 @@ int set_sched_status(int policy, int priority)
 
 	return 0;
 }
+
+ssize_t proc_get_cmdline(unsigned int pid, char *cmdline, size_t len)
+{
+	ssize_t ret;
+	char path[1024];
+
+	snprintf(path, sizeof(path), "/proc/%u/exe", pid);
+	ret = readlink(path, cmdline, len - 1);
+	if (ret < 0)
+		cmdline[0] = '\0';
+	else
+		cmdline[ret] = '\0';
+
+	return ret;
+}
