@@ -231,8 +231,7 @@ static int sysctl_set_int(char *file, int value)
 	ssize_t ret;
 	int fd;
 
-	path[0] = '\0';
-	strcat(path, SYS_PATH);
+	strncpy(path, SYS_PATH, PATH_MAX);
 	strncat(path, file, PATH_MAX - sizeof(SYS_PATH) - 1);
 
 	fd = open(path, O_WRONLY);
@@ -258,8 +257,7 @@ static int sysctl_get_int(char *file, int *value)
 	ssize_t ret;
 	int fd;
 
-	path[0] = '\0';
-	strcat(path, SYS_PATH);
+	strncpy(path, SYS_PATH, PATH_MAX);
 	strncat(path, file, PATH_MAX - sizeof(SYS_PATH) - 1);
 
 	fd = open(path, O_RDONLY);
