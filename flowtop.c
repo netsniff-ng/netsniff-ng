@@ -1131,7 +1131,7 @@ static void conntrack_acct_enable(void)
 	/* We can still work w/o traffic accounting so just warn about error */
 	if (sysctl_get_int("net/netfilter/nf_conntrack_acct", &nfct_acct_val)) {
 		fprintf(stderr, "Can't read net/netfilter/nf_conntrack_acct: %s\n",
-				strerror(errno));
+			strerror(errno));
 	}
 
 	if (nfct_acct_val == 1)
@@ -1139,12 +1139,12 @@ static void conntrack_acct_enable(void)
 
 	if (sysctl_set_int("net/netfilter/nf_conntrack_acct", 1)) {
 		fprintf(stderr, "Can't write net/netfilter/nf_conntrack_acct: %s\n",
-				strerror(errno));
+			strerror(errno));
 	}
 }
 
 static int dump_cb(enum nf_conntrack_msg_type type,
-			struct nf_conntrack *ct, void *data __maybe_unused)
+		   struct nf_conntrack *ct, void *data __maybe_unused)
 {
 	struct flow_entry *n;
 
