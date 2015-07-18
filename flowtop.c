@@ -85,7 +85,6 @@ struct flow_list {
 static volatile sig_atomic_t sigint = 0;
 static int what = INCLUDE_IPV4 | INCLUDE_IPV6 | INCLUDE_TCP, show_src = 0;
 static struct flow_list flow_list;
-static struct condlock collector_ready;
 static int nfct_acct_val = -1;
 
 static const char *short_options = "vhTUsDIS46u";
@@ -1038,8 +1037,6 @@ static void presenter(void)
 	int skip_lines = 0;
 	WINDOW *screen;
 
-	condlock_wait(&collector_ready);
-
 	lookup_init_ports(PORTS_TCP);
 	lookup_init_ports(PORTS_UDP);
 	screen = screen_init(false);
@@ -1250,8 +1247,6 @@ static void *collector(void *null __maybe_unused)
 		panic("Cannot set non-blocking socket: fcntl(): %s\n",
 		      strerror(errno));
 
-	condlock_signal(&collector_ready);
-
 	rcu_register_thread();
 
 	while (!sigint && ret >= 0) {
@@ -1350,15 +1345,11 @@ int main(int argc, char **argv)
 
 	init_geoip(1);
 
-	condlock_init(&collector_ready);
-
 	ret = pthread_create(&tid, NULL, collector, NULL);
 	if (ret < 0)
 		panic("Cannot create phthread!\n");
 
 	presenter();
-
-	condlock_destroy(&collector_ready);
 
 	destroy_geoip();
 
