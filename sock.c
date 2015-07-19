@@ -10,6 +10,7 @@
 #include "str.h"
 #include "linktype.h"
 #include "built_in.h"
+#include "sysctl.h"
 
 int af_socket(int af)
 {
@@ -149,50 +150,26 @@ enum {
 #define SMEM_SUG_DEF	4194304
 
 static const char *const sock_mem[] = {
-	[sock_rmem_max] = "/proc/sys/net/core/rmem_max",
-	[sock_rmem_def] = "/proc/sys/net/core/rmem_default",
-	[sock_wmem_max] = "/proc/sys/net/core/wmem_max",
-	[sock_wmem_def] = "/proc/sys/net/core/wmem_default",
+	[sock_rmem_max] = "net/core/rmem_max",
+	[sock_rmem_def] = "net/core/rmem_default",
+	[sock_wmem_max] = "net/core/wmem_max",
+	[sock_wmem_def] = "net/core/wmem_default",
 };
 
 static int get_system_socket_mem(int which)
 {
-	int fd, val = -1;
-	ssize_t ret;
-	const char *file = sock_mem[which];
-	char buff[64];
+	int val;
 
-	fd = open(file, O_RDONLY);
-	if (fd < 0)
-		return val;
+	if (sysctl_get_int(sock_mem[which], &val))
+		return -1;
 
-	ret = read(fd, buff, sizeof(buff));
-	if (ret > 0)
-		val = atoi(buff);
-
-	close(fd);
 	return val;
 }
 
 static void set_system_socket_mem(int which, int val)
 {
-	int fd;
-	const char *file = sock_mem[which];
-	ssize_t ret;
-	char buff[64];
-
-	fd = open(file, O_WRONLY);
-	if (fd < 0)
-		return;
-
-	memset(buff, 0, sizeof(buff));
-	slprintf(buff, sizeof(buff), "%d", val);
-
-	ret = write(fd, buff, strlen(buff));
-	if (ret < 0)
+	if (sysctl_set_int(sock_mem[which], val))
 		panic("Cannot set system socket memory!\n");
-
-	close(fd);
 }
 
 void set_system_socket_memory(int *vals, size_t len)

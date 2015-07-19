@@ -11,6 +11,7 @@ ifpps-objs =	xmalloc.o \
 		sig.o \
 		screen.o \
 		die.o \
+		sysctl.o \
 		ifpps.o
 
 ifpps-eflags = $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --cflags ncurses 2> /dev/null)

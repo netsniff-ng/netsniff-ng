@@ -17,6 +17,7 @@ trafgen-objs =	xmalloc.o \
 		ring_tx.o \
 		ring.o \
 		timer.o \
+		sysctl.o \
 		trafgen_lexer.yy.o \
 		trafgen_parser.tab.o \
 		trafgen.o
