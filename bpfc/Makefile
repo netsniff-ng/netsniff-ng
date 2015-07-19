@@ -6,6 +6,7 @@ bpfc-objs =	xmalloc.o \
 		bpf_lexer.yy.o \
 		bpf_parser.tab.o \
 		die.o \
+		sysctl.o \
 		bpfc.o
 
 bpfc-lex =	bpf_lexer.yy.o

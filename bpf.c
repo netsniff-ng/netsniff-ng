@@ -18,6 +18,7 @@
 #include "xmalloc.h"
 #include "die.h"
 #include "str.h"
+#include "sysctl.h"
 
 #define EXTRACT_SHORT(packet)						\
 		((unsigned short) ntohs(*(unsigned short *) packet))
@@ -380,18 +381,7 @@ void bpf_detach_from_sock(int sock)
 
 int enable_kernel_bpf_jit_compiler(void)
 {
-	int fd;
-	ssize_t ret;
-	char *file = "/proc/sys/net/core/bpf_jit_enable";
-
-	fd = open(file, O_WRONLY);
-	if (unlikely(fd < 0))
-		return -1;
-
-	ret = write(fd, "1", strlen("1"));
-
-	close(fd);
-	return ret;
+	return sysctl_set_int("net/core/bpf_jit_enable", 1);
 }
 
 int __bpf_validate(const struct sock_fprog *bpf)

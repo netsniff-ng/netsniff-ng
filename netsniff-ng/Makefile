@@ -66,6 +66,7 @@ netsniff-ng-objs =	dissector.o \
 			timer.o \
 			mac80211.o \
 			die.o \
+			sysctl.o \
 			netsniff-ng.o
 
 ifeq ($(CONFIG_LIBPCAP), 1)
