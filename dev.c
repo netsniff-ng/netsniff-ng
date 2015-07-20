@@ -175,7 +175,7 @@ void device_set_flags(const char *ifname, const short flags)
 
 	ret = ioctl(sock, SIOCSIFFLAGS, &ifr);
 	if (unlikely(ret < 0))
-		panic("Cannot set NIC flags!\n");
+		panic("Cannot set NIC flags (%s)!\n", strerror(errno));
 
 	close(sock);
 }
