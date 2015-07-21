@@ -936,32 +936,30 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 			  "Is netfilter running?)");
 
 	for (; n; n = rcu_dereference(n->next)) {
+		n->is_visible = false;
 		if (presenter_get_port(n->port_src, n->port_dst, 0) == 53)
-			goto skip;
+			continue;
 
 		if (presenter_flow_wrong_state(n))
-			goto skip;
+			continue;
 
 		/* count only flows which might be showed */
 		flows++;
 
 		if (maxy <= 0)
-			goto skip;
+			continue;
 
 		if (skip_left > 0) {
 			skip_left--;
-			goto skip;
+			continue;
 		}
+
+		n->is_visible = true;
 
 		presenter_screen_do_line(screen, n, &line);
 
 		line++;
 		maxy -= (2 + 1 * show_src);
-		n->is_visible = true;
-		continue;
-skip:
-		n->is_visible = false;
-		continue;
 	}
 
 	mvwprintw(screen, 1, 2, "Kernel netfilter flows(%u) for %s%s%s%s%s%s"
