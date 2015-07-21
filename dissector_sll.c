@@ -35,12 +35,13 @@ static char *pkt_type2str(uint8_t pkttype)
 
 static void sll_print_full(struct pkt_buff *pkt)
 {
-	struct sockaddr_ll *sll = pkt->sll;
+	struct sockaddr_ll *sll;
 	char addr_str[40] = {};
 
-	if (!pkt || !sll)
+	if (!pkt || !pkt->sll)
 		return;
 
+	sll = pkt->sll;
 	tprintf(" [ Linux \"cooked\"");
 	tprintf(" Pkt Type %d (%s)", sll->sll_pkttype,
 			pkt_type2str(sll->sll_pkttype));
@@ -68,12 +69,13 @@ static void sll_print_full(struct pkt_buff *pkt)
 
 static void sll_print_less(struct pkt_buff *pkt)
 {
-	struct sockaddr_ll *sll = pkt->sll;
+	struct sockaddr_ll *sll;
 	char addr_str[40] = {};
 
-	if (!pkt || !sll)
+	if (!pkt || !pkt->sll)
 		return;
 
+	sll = pkt->sll;
 	tprintf(" Pkt Type %d (%s)", sll->sll_pkttype,
 			pkt_type2str(sll->sll_pkttype));
 	tprintf(", If Type %d (%s)", sll->sll_hatype,
