@@ -152,19 +152,6 @@ static const char *const tcp_state2str[TCP_CONNTRACK_MAX] = {
 	[TCP_CONNTRACK_SYN_SENT2]	= "SYN_SENT2",
 };
 
-static const bool tcp_states_show[TCP_CONNTRACK_MAX] = {
-	[TCP_CONNTRACK_SYN_SENT] = true,
-	[TCP_CONNTRACK_SYN_RECV] = true,
-	[TCP_CONNTRACK_ESTABLISHED] = true,
-	[TCP_CONNTRACK_FIN_WAIT] = true,
-	[TCP_CONNTRACK_CLOSE_WAIT] = true,
-	[TCP_CONNTRACK_LAST_ACK] = true,
-	[TCP_CONNTRACK_TIME_WAIT] = true,
-	[TCP_CONNTRACK_CLOSE] = true,
-	[TCP_CONNTRACK_SYN_SENT2] = true,
-	[TCP_CONNTRACK_NONE] = true,
-};
-
 static const char *const dccp_state2str[DCCP_CONNTRACK_MAX] = {
 	[DCCP_CONNTRACK_NONE]		= "NOSTATE",
 	[DCCP_CONNTRACK_REQUEST]	= "REQUEST",
@@ -178,19 +165,6 @@ static const char *const dccp_state2str[DCCP_CONNTRACK_MAX] = {
 	[DCCP_CONNTRACK_INVALID]	= "INVALID",
 };
 
-static const uint8_t dccp_states_show[DCCP_CONNTRACK_MAX] = {
-	[DCCP_CONNTRACK_NONE] = true,
-	[DCCP_CONNTRACK_REQUEST] = true,
-	[DCCP_CONNTRACK_RESPOND] = true,
-	[DCCP_CONNTRACK_PARTOPEN] = true,
-	[DCCP_CONNTRACK_OPEN] = true,
-	[DCCP_CONNTRACK_CLOSEREQ] = true,
-	[DCCP_CONNTRACK_CLOSING] = true,
-	[DCCP_CONNTRACK_TIMEWAIT] = true,
-	[DCCP_CONNTRACK_IGNORE] = true,
-	[DCCP_CONNTRACK_INVALID] = true,
-};
-
 static const char *const sctp_state2str[SCTP_CONNTRACK_MAX] = {
 	[SCTP_CONNTRACK_NONE]		= "NOSTATE",
 	[SCTP_CONNTRACK_CLOSED]		= "CLOSED",
@@ -200,17 +174,6 @@ static const char *const sctp_state2str[SCTP_CONNTRACK_MAX] = {
 	[SCTP_CONNTRACK_SHUTDOWN_SENT]	= "SHUTDOWN_SENT",
 	[SCTP_CONNTRACK_SHUTDOWN_RECD]	= "SHUTDOWN_RECD",
 	[SCTP_CONNTRACK_SHUTDOWN_ACK_SENT] = "SHUTDOWN_ACK_SENT",
-};
-
-static const uint8_t sctp_states_show[SCTP_CONNTRACK_MAX] = {
-	[SCTP_CONNTRACK_NONE] = true,
-	[SCTP_CONNTRACK_CLOSED] = true,
-	[SCTP_CONNTRACK_COOKIE_WAIT] = true,
-	[SCTP_CONNTRACK_COOKIE_ECHOED] = true,
-	[SCTP_CONNTRACK_ESTABLISHED] = true,
-	[SCTP_CONNTRACK_SHUTDOWN_SENT] = true,
-	[SCTP_CONNTRACK_SHUTDOWN_RECD] = true,
-	[SCTP_CONNTRACK_SHUTDOWN_ACK_SENT] = true,
 };
 
 static const struct nfct_filter_ipv4 filter_ipv4 = {
@@ -883,16 +846,50 @@ static inline int presenter_flow_wrong_state(struct flow_entry *n)
 
 	switch (n->l4_proto) {
 	case IPPROTO_TCP:
-		if (tcp_states_show[n->tcp_state])
+		switch (n->tcp_state) {
+		case TCP_CONNTRACK_SYN_SENT:
+		case TCP_CONNTRACK_SYN_RECV:
+		case TCP_CONNTRACK_ESTABLISHED:
+		case TCP_CONNTRACK_FIN_WAIT:
+		case TCP_CONNTRACK_CLOSE_WAIT:
+		case TCP_CONNTRACK_LAST_ACK:
+		case TCP_CONNTRACK_TIME_WAIT:
+		case TCP_CONNTRACK_CLOSE:
+		case TCP_CONNTRACK_SYN_SENT2:
+		case TCP_CONNTRACK_NONE:
 			ret = 0;
+			break;
+		}
 		break;
 	case IPPROTO_SCTP:
-		if (sctp_states_show[n->sctp_state])
+		switch (n->sctp_state) {
+		case SCTP_CONNTRACK_NONE:
+		case SCTP_CONNTRACK_CLOSED:
+		case SCTP_CONNTRACK_COOKIE_WAIT:
+		case SCTP_CONNTRACK_COOKIE_ECHOED:
+		case SCTP_CONNTRACK_ESTABLISHED:
+		case SCTP_CONNTRACK_SHUTDOWN_SENT:
+		case SCTP_CONNTRACK_SHUTDOWN_RECD:
+		case SCTP_CONNTRACK_SHUTDOWN_ACK_SENT:
 			ret = 0;
+			break;
+		}
 		break;
 	case IPPROTO_DCCP:
-		if (dccp_states_show[n->dccp_state])
+		switch (n->dccp_state) {
+		case DCCP_CONNTRACK_NONE:
+		case DCCP_CONNTRACK_REQUEST:
+		case DCCP_CONNTRACK_RESPOND:
+		case DCCP_CONNTRACK_PARTOPEN:
+		case DCCP_CONNTRACK_OPEN:
+		case DCCP_CONNTRACK_CLOSEREQ:
+		case DCCP_CONNTRACK_CLOSING:
+		case DCCP_CONNTRACK_TIMEWAIT:
+		case DCCP_CONNTRACK_IGNORE:
+		case DCCP_CONNTRACK_INVALID:
 			ret = 0;
+			break;
+		}
 		break;
 	case IPPROTO_UDP:
 	case IPPROTO_UDPLITE:
