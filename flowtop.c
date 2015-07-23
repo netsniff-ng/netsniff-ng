@@ -840,10 +840,8 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 	}
 }
 
-static inline int presenter_flow_wrong_state(struct flow_entry *n)
+static inline bool presenter_flow_wrong_state(struct flow_entry *n)
 {
-	int ret = 1;
-
 	switch (n->l4_proto) {
 	case IPPROTO_TCP:
 		switch (n->tcp_state) {
@@ -857,7 +855,7 @@ static inline int presenter_flow_wrong_state(struct flow_entry *n)
 		case TCP_CONNTRACK_CLOSE:
 		case TCP_CONNTRACK_SYN_SENT2:
 		case TCP_CONNTRACK_NONE:
-			ret = 0;
+			return false;
 			break;
 		}
 		break;
@@ -871,7 +869,7 @@ static inline int presenter_flow_wrong_state(struct flow_entry *n)
 		case SCTP_CONNTRACK_SHUTDOWN_SENT:
 		case SCTP_CONNTRACK_SHUTDOWN_RECD:
 		case SCTP_CONNTRACK_SHUTDOWN_ACK_SENT:
-			ret = 0;
+			return false;
 			break;
 		}
 		break;
@@ -887,7 +885,7 @@ static inline int presenter_flow_wrong_state(struct flow_entry *n)
 		case DCCP_CONNTRACK_TIMEWAIT:
 		case DCCP_CONNTRACK_IGNORE:
 		case DCCP_CONNTRACK_INVALID:
-			ret = 0;
+			return false;
 			break;
 		}
 		break;
@@ -895,11 +893,11 @@ static inline int presenter_flow_wrong_state(struct flow_entry *n)
 	case IPPROTO_UDPLITE:
 	case IPPROTO_ICMP:
 	case IPPROTO_ICMPV6:
-		ret = 0;
+		return false;
 		break;
 	}
 
-	return ret;
+	return true;
 }
 
 static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
