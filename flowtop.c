@@ -517,7 +517,7 @@ enum flow_entry_direction {
 	flow_entry_dst,
 };
 
-static inline int flow_entry_get_extended_is_dns(struct flow_entry *n)
+static inline bool flow_entry_get_extended_is_dns(struct flow_entry *n)
 {
 	/* We don't want to analyze / display DNS itself, since we
 	 * use it to resolve reverse dns.
