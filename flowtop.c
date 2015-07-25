@@ -431,7 +431,7 @@ static void walk_processes(struct flow_entry *n)
 	closedir(dir);
 }
 
-static int get_port_inode(uint16_t port, int proto, int is_ip6)
+static int get_port_inode(uint16_t port, int proto, bool is_ip6)
 {
 	int ret = -ENOENT;
 	char path[128], buff[1024];
