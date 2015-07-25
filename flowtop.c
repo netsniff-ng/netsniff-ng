@@ -1044,9 +1044,22 @@ static int collector_cb(enum nf_conntrack_msg_type type,
 	return NFCT_CB_CONTINUE;
 }
 
-static inline void collector_flush(struct nfct_handle *handle, uint8_t family)
+static inline void collector_flush(void)
 {
-	nfct_query(handle, NFCT_Q_FLUSH, &family);
+	struct nfct_handle *nfct = nfct_open(CONNTRACK, 0);
+	uint8_t family;
+
+	if (!nfct)
+		panic("Cannot create a nfct to flush connections: %s\n",
+			strerror(errno));
+
+	family = AF_INET;
+	nfct_query(nfct, NFCT_Q_FLUSH, &family);
+
+	family = AF_INET6;
+	nfct_query(nfct, NFCT_Q_FLUSH, &family);
+
+	nfct_close(nfct);
 }
 
 static void restore_sysctl(void *value)
@@ -1121,14 +1134,13 @@ static void *collector(void *null __maybe_unused)
 	struct pollfd poll_fd[1];
 	int ret;
 
+	collector_flush();
+
 	ct_event = nfct_open(CONNTRACK, NF_NETLINK_CONNTRACK_NEW |
 				      NF_NETLINK_CONNTRACK_UPDATE |
 				      NF_NETLINK_CONNTRACK_DESTROY);
 	if (!ct_event)
 		panic("Cannot create a nfct handle: %s\n", strerror(errno));
-
-	collector_flush(ct_event, AF_INET);
-	collector_flush(ct_event, AF_INET6);
 
 	filter = nfct_filter_create();
 	if (!filter)
