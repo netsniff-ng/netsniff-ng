@@ -291,16 +291,16 @@ static struct flow_entry *flow_list_find_id(struct flow_list *fl,
 static struct flow_entry *flow_list_find_prev_id(struct flow_list *fl,
 						 uint32_t id)
 {
-	struct flow_entry *n = rcu_dereference(fl->head), *tmp;
+	struct flow_entry *prev = rcu_dereference(fl->head), *next;
 
-	if (n->flow_id == id)
+	if (prev->flow_id == id)
 		return NULL;
 
-	while ((tmp = rcu_dereference(n->next)) != NULL) {
-		if (tmp->flow_id == id)
-			return n;
+	while ((next = rcu_dereference(prev->next)) != NULL) {
+		if (next->flow_id == id)
+			return prev;
 
-		n = tmp;
+		prev = next;
 	}
 
 	return NULL;
