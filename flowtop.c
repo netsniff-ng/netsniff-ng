@@ -681,7 +681,7 @@ static void flow_entry_get_extended(struct flow_entry *n)
 		walk_processes(n);
 }
 
-static uint16_t presenter_get_port(uint16_t src, uint16_t dst, int tcp)
+static uint16_t presenter_get_port(uint16_t src, uint16_t dst, bool is_tcp)
 {
 	if (src < dst && src < 1024) {
 		return src;
@@ -689,7 +689,7 @@ static uint16_t presenter_get_port(uint16_t src, uint16_t dst, int tcp)
 		return dst;
 	} else {
 		const char *tmp1, *tmp2;
-		if (tcp) {
+		if (is_tcp) {
 			tmp1 = lookup_port_tcp(src);
 			tmp2 = lookup_port_tcp(dst);
 		} else {
@@ -770,12 +770,12 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 	/* Guess application port */
 	switch (n->l4_proto) {
 	case IPPROTO_TCP:
-		port = presenter_get_port(n->port_src, n->port_dst, 1);
+		port = presenter_get_port(n->port_src, n->port_dst, true);
 		pname = lookup_port_tcp(port);
 		break;
 	case IPPROTO_UDP:
 	case IPPROTO_UDPLITE:
-		port = presenter_get_port(n->port_src, n->port_dst, 0);
+		port = presenter_get_port(n->port_src, n->port_dst, false);
 		pname = lookup_port_udp(port);
 		break;
 	}
@@ -932,7 +932,7 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 
 	for (; n; n = rcu_dereference(n->next)) {
 		n->is_visible = false;
-		if (presenter_get_port(n->port_src, n->port_dst, 0) == 53)
+		if (presenter_get_port(n->port_src, n->port_dst, false) == 53)
 			continue;
 
 		if (presenter_flow_wrong_state(n))
