@@ -713,7 +713,7 @@ static char *bandw2str(double bytes, char *buf, size_t len)
 {
 	if (bytes > 1000000000.)
 		snprintf(buf, len, "%.1fG", bytes / 1000000000.);
-	if (bytes > 1000000.)
+	else if (bytes > 1000000.)
 		snprintf(buf, len, "%.1fM", bytes / 1000000.);
 	else if (bytes > 1000.)
 		snprintf(buf, len, "%.1fK", bytes / 1000.);
