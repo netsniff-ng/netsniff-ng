@@ -245,7 +245,7 @@ static int stats_proc_net_dev(const char *ifname, struct ifstat *stats)
 		if (strstr(buff, ifname_colon) == NULL)
 			continue;
 
-		if (sscanf(buff, "%*[a-z0-9 .-]:%llu%llu%llu%llu%llu%llu"
+		if (sscanf(buff, "%*[a-z0-9_ .-]:%llu%llu%llu%llu%llu%llu"
 			   "%llu%*u%llu%llu%llu%llu%llu%llu%llu",
 			   &stats->rx_bytes, &stats->rx_packets,
 			   &stats->rx_errors, &stats->rx_drops,
