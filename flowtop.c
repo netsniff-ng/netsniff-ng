@@ -1134,8 +1134,6 @@ static void *collector(void *null __maybe_unused)
 	struct pollfd poll_fd[1];
 	int ret;
 
-	collector_flush();
-
 	ct_event = nfct_open(CONNTRACK, NF_NETLINK_CONNTRACK_NEW |
 				      NF_NETLINK_CONNTRACK_UPDATE |
 				      NF_NETLINK_CONNTRACK_DESTROY);
@@ -1198,6 +1196,8 @@ static void *collector(void *null __maybe_unused)
 	if (fcntl(nfct_fd(ct_dump), F_SETFL, O_NONBLOCK) == -1)
 		panic("Cannot set non-blocking socket: fcntl(): %s\n",
 		      strerror(errno));
+
+	collector_flush();
 
 	rcu_register_thread();
 
