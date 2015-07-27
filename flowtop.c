@@ -571,7 +571,7 @@ flow_entry_geo_city_lookup_generic(struct flow_entry *n,
 		break;
 	}
 
-	bug_on(sizeof(n->city_src) != sizeof(n->city_dst));
+	build_bug_on(sizeof(n->city_src) != sizeof(n->city_dst));
 
 	if (city) {
 		memcpy(SELFLD(dir, city_src, city_dst), city,
@@ -605,7 +605,7 @@ flow_entry_geo_country_lookup_generic(struct flow_entry *n,
 		break;
 	}
 
-	bug_on(sizeof(n->country_src) != sizeof(n->country_dst));
+	build_bug_on(sizeof(n->country_src) != sizeof(n->country_dst));
 
 	if (country) {
 		memcpy(SELFLD(dir, country_src, country_dst), country,
@@ -651,7 +651,7 @@ static void flow_entry_get_extended_revdns(struct flow_entry *n,
 		break;
 	}
 
-	bug_on(sizeof(n->rev_dns_src) != sizeof(n->rev_dns_dst));
+	build_bug_on(sizeof(n->rev_dns_src) != sizeof(n->rev_dns_dst));
 	getnameinfo(sa, sa_len, SELFLD(dir, rev_dns_src, rev_dns_dst),
 		    sizeof(n->rev_dns_src), NULL, 0, NI_NUMERICHOST);
 
