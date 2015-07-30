@@ -169,7 +169,8 @@ static int get_system_socket_mem(int which)
 static void set_system_socket_mem(int which, int val)
 {
 	if (sysctl_set_int(sock_mem[which], val))
-		panic("Cannot set system socket memory!\n");
+		printf("Cannot set system socket memory in %s%s: %s\n",
+		       SYSCTL_PROC_PATH, sock_mem[which], strerror(errno));
 }
 
 void set_system_socket_memory(int *vals, size_t len)
