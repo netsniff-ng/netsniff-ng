@@ -11,8 +11,7 @@
 #include <limits.h>
 
 #include "built_in.h"
-
-#define SYS_PATH "/proc/sys/"
+#include "sysctl.h"
 
 int sysctl_set_int(const char *file, int value)
 {
@@ -21,8 +20,8 @@ int sysctl_set_int(const char *file, int value)
 	ssize_t ret;
 	int fd;
 
-	strncpy(path, SYS_PATH, PATH_MAX);
-	strncat(path, file, PATH_MAX - sizeof(SYS_PATH) - 1);
+	strncpy(path, SYSCTL_PROC_PATH, PATH_MAX);
+	strncat(path, file, PATH_MAX - sizeof(SYSCTL_PROC_PATH) - 1);
 
 	fd = open(path, O_WRONLY);
 	if (unlikely(fd < 0))
@@ -47,8 +46,8 @@ int sysctl_get_int(const char *file, int *value)
 	ssize_t ret;
 	int fd;
 
-	strncpy(path, SYS_PATH, PATH_MAX);
-	strncat(path, file, PATH_MAX - sizeof(SYS_PATH) - 1);
+	strncpy(path, SYSCTL_PROC_PATH, PATH_MAX);
+	strncat(path, file, PATH_MAX - sizeof(SYSCTL_PROC_PATH) - 1);
 
 	fd = open(path, O_RDONLY);
 	if (fd < 0)
