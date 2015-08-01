@@ -1126,27 +1126,14 @@ static void collector_refresh_flows(struct nfct_handle *handle)
 	}
 }
 
-static void *collector(void *null __maybe_unused)
+static void collector_create_filter(struct nfct_handle *nfct)
 {
-	struct nfct_handle *ct_event;
-	struct nfct_handle *ct_dump;
 	struct nfct_filter *filter;
-	struct pollfd poll_fd[1];
 	int ret;
-
-	ct_event = nfct_open(CONNTRACK, NF_NETLINK_CONNTRACK_NEW |
-				      NF_NETLINK_CONNTRACK_UPDATE |
-				      NF_NETLINK_CONNTRACK_DESTROY);
-	if (!ct_event)
-		panic("Cannot create a nfct handle: %s\n", strerror(errno));
 
 	filter = nfct_filter_create();
 	if (!filter)
 		panic("Cannot create a nfct filter: %s\n", strerror(errno));
-
-	ret = nfct_filter_attach(nfct_fd(ct_event), filter);
-	if (ret < 0)
-		panic("Cannot attach filter to handle: %s\n", strerror(errno));
 
 	if (what & INCLUDE_UDP) {
 		nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO, IPPROTO_UDP);
@@ -1171,11 +1158,26 @@ static void *collector(void *null __maybe_unused)
 		nfct_filter_add_attr(filter, NFCT_FILTER_SRC_IPV6, &filter_ipv6);
 	}
 
-	ret = nfct_filter_attach(nfct_fd(ct_event), filter);
+	ret = nfct_filter_attach(nfct_fd(nfct), filter);
 	if (ret < 0)
 		panic("Cannot attach filter to handle: %s\n", strerror(errno));
 
 	nfct_filter_destroy(filter);
+}
+
+static void *collector(void *null __maybe_unused)
+{
+	struct nfct_handle *ct_event;
+	struct nfct_handle *ct_dump;
+	struct pollfd poll_fd[1];
+
+	ct_event = nfct_open(CONNTRACK, NF_NETLINK_CONNTRACK_NEW |
+				      NF_NETLINK_CONNTRACK_UPDATE |
+				      NF_NETLINK_CONNTRACK_DESTROY);
+	if (!ct_event)
+		panic("Cannot create a nfct handle: %s\n", strerror(errno));
+
+	collector_create_filter(ct_event);
 
 	nfct_callback_register(ct_event, NFCT_T_ALL, collector_cb, NULL);
 	flow_list_init(&flow_list);
@@ -1201,7 +1203,7 @@ static void *collector(void *null __maybe_unused)
 
 	rcu_register_thread();
 
-	while (!sigint && ret >= 0) {
+	while (!sigint) {
 		int status;
 
 		usleep(300000);
