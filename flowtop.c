@@ -48,7 +48,8 @@ struct flow_entry {
 	uint32_t ip6_src_addr[4], ip6_dst_addr[4];
 	uint16_t port_src, port_dst;
 	uint8_t  tcp_state, tcp_flags, sctp_state, dccp_state;
-	uint64_t counter_pkts, counter_bytes;
+	uint64_t src_pkts, src_bytes;
+	uint64_t dst_pkts, dst_bytes;
 	uint64_t timestamp_start, timestamp_stop;
 	char country_src[128], country_dst[128];
 	char city_src[128], city_dst[128];
@@ -494,8 +495,11 @@ static void flow_entry_from_ct(struct flow_entry *n, struct nf_conntrack *ct)
 	CP_NFCT(sctp_state, ATTR_SCTP_STATE, 8);
 	CP_NFCT(dccp_state, ATTR_DCCP_STATE, 8);
 
-	CP_NFCT(counter_pkts, ATTR_ORIG_COUNTER_PACKETS, 64);
-	CP_NFCT(counter_bytes, ATTR_ORIG_COUNTER_BYTES, 64);
+	CP_NFCT(src_pkts, ATTR_ORIG_COUNTER_PACKETS, 64);
+	CP_NFCT(src_bytes, ATTR_ORIG_COUNTER_BYTES, 64);
+
+	CP_NFCT(dst_pkts, ATTR_REPL_COUNTER_PACKETS, 64);
+	CP_NFCT(dst_bytes, ATTR_REPL_COUNTER_BYTES, 64);
 
 	CP_NFCT(timestamp_start, ATTR_TIMESTAMP_START, 64);
 	CP_NFCT(timestamp_stop, ATTR_TIMESTAMP_STOP, 64);
@@ -785,18 +789,8 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 		printw(":%s", pname);
 		attroff(A_BOLD);
 	}
-	printw(" ->");
 
-	/* Number packets, bytes */
-	if (n->counter_pkts > 0 && n->counter_bytes > 0) {
-		char bytes_str[64];
-
-		printw(" (%"PRIu64" pkts, %s bytes) ->", n->counter_pkts,
-		       bandw2str(n->counter_bytes, bytes_str,
-				 sizeof(bytes_str) - 1));
-	}
-
-	/* Show source information: reverse DNS, port, country, city */
+	/* Show source information: reverse DNS, port, country, city, counters */
 	if (show_src) {
 		attron(COLOR_PAIR(1));
 		mvwprintw(screen, ++(*line), 8, "src: %s", n->rev_dns_src);
@@ -817,10 +811,18 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 			printw(")");
 		}
 
+		if (n->src_pkts > 0 && n->src_bytes > 0) {
+			char bytes_str[64];
+
+			printw(" -> (%"PRIu64" pkts, %s bytes)", n->src_pkts,
+				bandw2str(n->src_bytes, bytes_str,
+					sizeof(bytes_str) - 1));
+		}
+
 		printw(" => ");
 	}
 
-	/* Show dest information: reverse DNS, port, country, city */
+	/* Show dest information: reverse DNS, port, country, city, counters */
 	attron(COLOR_PAIR(2));
 	mvwprintw(screen, ++(*line), 8, "dst: %s", n->rev_dns_dst);
 	attroff(COLOR_PAIR(2));
@@ -838,6 +840,14 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 			printw(", %s", n->city_dst);
 
 		printw(")");
+	}
+
+	if (n->dst_pkts > 0 && n->dst_bytes > 0) {
+		char bytes_str[64];
+
+		printw(" -> (%"PRIu64" pkts, %s bytes)", n->dst_pkts,
+			bandw2str(n->dst_bytes, bytes_str,
+				sizeof(bytes_str) - 1));
 	}
 }
 
