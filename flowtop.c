@@ -1016,8 +1016,8 @@ static void presenter(void)
 	lookup_cleanup_ports(PORTS_TCP);
 }
 
-static int collector_cb(enum nf_conntrack_msg_type type,
-			struct nf_conntrack *ct, void *data __maybe_unused)
+static int flow_event_cb(enum nf_conntrack_msg_type type,
+			 struct nf_conntrack *ct, void *data __maybe_unused)
 {
 	if (sigint)
 		return NFCT_CB_STOP;
@@ -1179,7 +1179,7 @@ static void *collector(void *null __maybe_unused)
 
 	collector_create_filter(ct_event);
 
-	nfct_callback_register(ct_event, NFCT_T_ALL, collector_cb, NULL);
+	nfct_callback_register(ct_event, NFCT_T_ALL, flow_event_cb, NULL);
 	flow_list_init(&flow_list);
 
 	ct_update = nfct_open(CONNTRACK, NF_NETLINK_CONNTRACK_UPDATE);
