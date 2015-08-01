@@ -35,6 +35,7 @@ The following information will be presented in flowtop's output:
     * Used protocols (IPv4, IPv6, TCP, UDP, SCTP, ICMP, ...)
     * Flow port's service name heuristic
     * Transport protocol state machine information
+    * Byte/packet counters (if they are enabled)
 .PP
 In order for flowtop to work, netfilter must be active and running
 on your machine, thus kernel-side connection tracking is active. If netfilter
@@ -45,7 +46,19 @@ iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT
 .sp
 iptables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT
 .in -4
-
+.PP
+To dump byte/packet counters flowtop enables the sysctl(8) parameter
+\[lq]net.netfilter.nf_conntrack_acct\[rq] via:
+.in +4
+.sp
+echo 1 > /proc/sys/net/netfilter/nf_conntrack_acct
+.sp
+.in -4
+and resets it to the previously set value on exit. These counters will only be
+active on connections which were created after accounting was enabled. Thus, to
+have these counters be active all the time the parameter should be enabled after
+the system is up. To automatically enable it, sysctl.conf(8) or sysctl.d(8)
+might be used.
 .PP
 flowtop's intention is just to get a quick look over your active connections.
 If you want logging support, have a look at netfilter's conntrack(8) tools
@@ -134,7 +147,10 @@ Borkmann <dborkma@tik.ee.ethz.ch>.
 .BR bpfc (8),
 .BR astraceroute (8),
 .BR curvetun (8),
-.BR iptables (8)
+.BR iptables (8),
+.BR sysctl (8),
+.BR sysctl.conf (8),
+.BR sysctl.d (8)
 .PP
 .SH AUTHOR
 Manpage was written by Daniel Borkmann.
