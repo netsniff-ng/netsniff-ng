@@ -1093,7 +1093,7 @@ static void conntrack_acct_enable(void)
 	}
 }
 
-static int dump_cb(enum nf_conntrack_msg_type type,
+static int flow_update_cb(enum nf_conntrack_msg_type type,
 		   struct nf_conntrack *ct, void *data __maybe_unused)
 {
 	struct flow_entry *n;
@@ -1167,8 +1167,8 @@ static void collector_create_filter(struct nfct_handle *nfct)
 
 static void *collector(void *null __maybe_unused)
 {
+	struct nfct_handle *ct_update;
 	struct nfct_handle *ct_event;
-	struct nfct_handle *ct_dump;
 	struct pollfd poll_fd[1];
 
 	ct_event = nfct_open(CONNTRACK, NF_NETLINK_CONNTRACK_NEW |
@@ -1182,11 +1182,11 @@ static void *collector(void *null __maybe_unused)
 	nfct_callback_register(ct_event, NFCT_T_ALL, collector_cb, NULL);
 	flow_list_init(&flow_list);
 
-	ct_dump = nfct_open(CONNTRACK, NF_NETLINK_CONNTRACK_UPDATE);
-	if (!ct_dump)
+	ct_update = nfct_open(CONNTRACK, NF_NETLINK_CONNTRACK_UPDATE);
+	if (!ct_update)
 		panic("Cannot create a nfct handle: %s\n", strerror(errno));
 
-	nfct_callback_register(ct_dump, NFCT_T_ALL, dump_cb, NULL);
+	nfct_callback_register(ct_update, NFCT_T_ALL, flow_update_cb, NULL);
 
 	poll_fd[0].fd = nfct_fd(ct_event);
 	poll_fd[0].events = POLLIN;
@@ -1195,7 +1195,7 @@ static void *collector(void *null __maybe_unused)
 		panic("Cannot set non-blocking socket: fcntl(): %s\n",
 		      strerror(errno));
 
-	if (fcntl(nfct_fd(ct_dump), F_SETFL, O_NONBLOCK) == -1)
+	if (fcntl(nfct_fd(ct_update), F_SETFL, O_NONBLOCK) == -1)
 		panic("Cannot set non-blocking socket: fcntl(): %s\n",
 		      strerror(errno));
 
@@ -1208,7 +1208,7 @@ static void *collector(void *null __maybe_unused)
 
 		usleep(300000);
 
-		collector_refresh_flows(ct_dump);
+		collector_refresh_flows(ct_update);
 
 		status = poll(poll_fd, 1, 0);
 		if (status < 0) {
@@ -1228,7 +1228,7 @@ static void *collector(void *null __maybe_unused)
 
 	flow_list_destroy(&flow_list);
 	nfct_close(ct_event);
-	nfct_close(ct_dump);
+	nfct_close(ct_update);
 
 	pthread_exit(NULL);
 }
