@@ -1557,6 +1557,7 @@ int main(int argc, char **argv)
 			if (!ops_touched)
 				ctx.pcap = PCAP_OPS_MM;
 		} else {
+			setsockmem = false;
 			main_loop = read_pcap;
 			if (!ops_touched)
 				ctx.pcap = PCAP_OPS_SG;
