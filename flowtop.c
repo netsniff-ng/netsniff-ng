@@ -673,8 +673,10 @@ static void flow_entry_get_extended(struct flow_entry *n)
 	if (n->flow_id == 0 || flow_entry_get_extended_is_dns(n))
 		return;
 
-	flow_entry_get_extended_revdns(n, flow_entry_src);
-	flow_entry_get_extended_geo(n, flow_entry_src);
+	if (show_src) {
+		flow_entry_get_extended_revdns(n, flow_entry_src);
+		flow_entry_get_extended_geo(n, flow_entry_src);
+	}
 
 	flow_entry_get_extended_revdns(n, flow_entry_dst);
 	flow_entry_get_extended_geo(n, flow_entry_dst);
