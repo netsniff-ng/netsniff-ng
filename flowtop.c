@@ -968,21 +968,18 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 		maxy -= (2 + 1 * show_src);
 	}
 
-	if (is_flow_collecting) {
-		mvwprintw(screen, 1, 2, "Collecting flows ...");
-	} else {
-		mvwprintw(screen, 1, 2,
-			"Kernel netfilter flows(%u) for %s%s%s%s%s%s"
-			"[+%d]", flows, what & INCLUDE_TCP ? "TCP, " : "",
-			what & INCLUDE_UDP ? "UDP, " : "",
-			what & INCLUDE_SCTP ? "SCTP, " : "",
-			what & INCLUDE_DCCP ? "DCCP, " : "",
-			what & INCLUDE_ICMP && what & INCLUDE_IPV4 ?
-				"ICMP, " : "",
-			what & INCLUDE_ICMP && what & INCLUDE_IPV6 ?
-				"ICMP6, " : "",
-			skip_lines);
-	}
+	mvwprintw(screen, 1, 2,
+		"Kernel netfilter flows(%u) for %s%s%s%s%s%s"
+		"[+%d]", flows, what & INCLUDE_TCP ? "TCP, " : "",
+		what & INCLUDE_UDP  ? "UDP, "  : "",
+		what & INCLUDE_SCTP ? "SCTP, " : "",
+		what & INCLUDE_DCCP ? "DCCP, " : "",
+		what & INCLUDE_ICMP && what & INCLUDE_IPV4 ? "ICMP, " : "",
+		what & INCLUDE_ICMP && what & INCLUDE_IPV6 ? "ICMP6, " : "",
+		skip_lines);
+
+	if (is_flow_collecting)
+		printw(" [Collecting flows ...]");
 
 	rcu_read_unlock();
 
