@@ -2,9 +2,19 @@ language: c
 compiler:
   - gcc
   - clang
+sudo: false
 
-before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq libnl-3-dev libnl-genl-3-dev libnl-route-3-dev libnetfilter-conntrack-dev libgeoip-dev liburcu-dev libpcap-dev libnet1-dev libcli-dev
+addons:
+  apt:
+    packages:
+    - libnl-3-dev
+    - libnl-genl-3-dev
+    - libnl-route-3-dev
+    - libnetfilter-conntrack-dev
+    - libgeoip-dev
+    - liburcu-dev
+    - libpcap-dev
+    - libnet1-dev
+    - libcli-dev
 
 script: CC=$CC ./configure && make CC=$CC
