@@ -46,6 +46,7 @@ _arguments -s -S \
     "(-n --num)"{-n,--num}"[Number of packets until exit (def: 0)]" \
     "(-P --prefix)"{-P,--prefix}"[Prefix for pcaps stored in directory]" \
     "(-T --magic)"{-T,--magic}"[Pcap magic number/pcap format to store, see -D]" \
+    "(-w --cooked)"{-w,--cooked}"[Use Linux \"cooked\" header instead of link header]" \
     "(-D --dump-pcap-types)"{-D,--dump-pcap-types}"[Dump pcap types and magic numbers and quit]" \
     "(-B --dump-bpf)"{-B,--dump-bpf}"[Dump generated BPF assembly]" \
     "(-r --rand)"{-r,--rand}"[Randomize packet forwarding order (dev->dev)]" \
