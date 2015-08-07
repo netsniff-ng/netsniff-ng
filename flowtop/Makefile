@@ -20,7 +20,6 @@ flowtop-objs =	xmalloc.o \
 		link.o \
 		hash.o \
 		lookup.o \
-		tprintf.o \
 		screen.o \
 		die.o \
 		sysctl.o \
