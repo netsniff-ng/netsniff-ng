@@ -15,32 +15,37 @@ Major contributors (> 30 commits):
  * Markus Amend <markus@netsniff-ng.org>
  * Christoph Jaeger <email@christophjaeger.info>
  * Herbert Haas <herbert@perihel.at>*
- * Jon Schipp <jonschipp@gmail.com>
  * Vadim Kochan <vadim4j@gmail.com>
+ * Jon Schipp <jonschipp@gmail.com>
 
-Minor contributors (<= 30 commits):
+Minor contributors (<= 30 commits, sorted alphabetically):
 
- * Stephen Wadeley <swadeley@redhat.com>
- * Hideo Hattori <hhatto.jp@gmail.com>
- * Peter Stuge <peter@stuge.se>
- * Scott Moeller <electronjoe@gmail.com>
- * Jesper Dangaard Brouer <brouer@redhat.com>
- * Jaroslav Škarvada <jskarvad@redhat.com>
- * Dennis Gilmore <dennis@ausil.us>
- * Dan Horák <dan@danny.cz>
- * Doug Burks <doug.burks@gmail.com>
- * Kartik Mistry <kartik@debian.org>
- * Ulrich Weber <uweber@astaro.com>
- * Teguh <info@egeektronic.com>
- * Markus Kötter <nepenthesdev@gmail.com>
- * Jim Binder <jbinder6342@gmail.com>
- * Ronald W. Henderson <rwhalb@nycap.rr.com>
- * Stefan Seering <sseerin@imn.htwk-leipzig.de>
- * Sibir Chakraborty <sibir.chakraborty@gmail.com>
  * Christian Wiese <chris@opensde.org>
- * Oliver Smith <oliver@zerolag.com>
+ * Dan Horák <dan@danny.cz>
+ * Dennis Gilmore <dennis@ausil.us>
+ * Doug Burks <doug.burks@gmail.com>
  * Eric Dumazet <edumazet@google.com>
+ * Hideo Hattori <hhatto.jp@gmail.com>
+ * James McCoy <vega.james@gmail.com>
+ * Jaroslav Škarvada <jskarvad@redhat.com>
+ * Jesper Dangaard Brouer <brouer@redhat.com>
+ * Jim Binder <jbinder6342@gmail.com>
+ * Kartik Mistry <kartik@debian.org>
+ * Mark Latimer <mark.latimer@gmail.com>
+ * Markus Kötter <nepenthesdev@gmail.com>
  * Michał Purzyński <michalpurzynski1@gmail.com>
+ * Oliver Smith <oliver@zerolag.com>
+ * Peter Stuge <peter@stuge.se>
+ * Ronald W. Henderson <rwhalb@nycap.rr.com>
+ * Scott Moeller <electronjoe@gmail.com>
+ * Sibir Chakraborty <sibir.chakraborty@gmail.com>
+ * Stefan Seering <sseerin@imn.htwk-leipzig.de>
+ * Stephen Wadeley <swadeley@redhat.com>
+ * Teguh <info@egeektronic.com>
+ * Tillmann Karras <tilkax@gmail.com>
+ * Tobias Geerinckx-Rice <tobias.geerinckx.rice@gmail.com>
+ * Ulrich Weber <uweber@astaro.com>
+ * wilson <wilson.wen.chn@gmail.com>
 
 Special thanks to some of our sponsors:
 
