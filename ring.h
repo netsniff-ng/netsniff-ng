@@ -47,6 +47,30 @@ union tpacket_uhdr {
 	(((hdr).h2)->member)
 #endif /* HAVE_TPACKET3 */
 
+static inline uint16_t tpacket_uhdr_vlan_tci(union tpacket_uhdr *hdr, bool v3)
+{
+#ifdef HAVE_TPACKET3
+	if (v3)
+		return hdr->h3->hv1.tp_vlan_tci;
+#endif
+	return 0;
+}
+
+static inline uint16_t tpacket_uhdr_vlan_proto(union tpacket_uhdr *hdr, bool v3)
+{
+#ifdef HAVE_TPACKET3
+	if (v3)
+		return hdr->h3->hv1.tp_vlan_tpid;
+#endif
+	return 0;
+}
+
+static inline bool tpacket_has_vlan_info(union tpacket_uhdr *hdr)
+{
+	return tpacket_uhdr(*hdr, tp_status, true) &
+		(TP_STATUS_VLAN_VALID | TP_STATUS_VLAN_TPID_VALID);
+}
+
 struct frame_map {
 	struct tpacket2_hdr tp_h __aligned_tpacket;
 	struct sockaddr_ll s_ll __align_tpacket(sizeof(struct tpacket2_hdr));

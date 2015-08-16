@@ -17,6 +17,7 @@
 #include "ring.h"
 #include "tprintf.h"
 #include "linktype.h"
+#include "proto_vlan.h"
 
 #define PRINT_NORM		0
 #define PRINT_LESS		1
@@ -91,6 +92,17 @@ static inline void __show_frame_hdr(uint8_t *packet, size_t len, int linktype,
 			tpacket_uhdr(hdr, tp_nsec, v3),
 			count,
 			v3 ? "" : __show_ts_source(hdr.h2->tp_status));
+
+		if (tpacket_has_vlan_info(&hdr)) {
+			uint16_t tci = tpacket_uhdr_vlan_tci(&hdr, v3);
+
+			tprintf(" [ tpacketv3 VLAN ");
+			tprintf("Prio (%u), ", vlan_tci2prio(tci));
+			tprintf("CFI (%u), ", vlan_tci2cfi(tci));
+			tprintf("ID (%u), ", vlan_tci2vid(tci));
+			tprintf("Proto (0x%.4x)", tpacket_uhdr_vlan_proto(&hdr, v3));
+			tprintf(" ]\n");
+		}
 		break;
 	}
 }
