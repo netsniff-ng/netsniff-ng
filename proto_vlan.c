@@ -10,6 +10,7 @@
 #include <netinet/in.h>    /* for ntohs() */
 
 #include "proto.h"
+#include "proto_vlan.h"
 #include "dissector_eth.h"
 #include "pkt_buff.h"
 
@@ -29,9 +30,9 @@ static void vlan(struct pkt_buff *pkt)
 	tci = ntohs(vlan->h_vlan_TCI);
 
 	tprintf(" [ VLAN ");
-	tprintf("Prio (%d), ", (tci & 0xE000) >> 13);
-	tprintf("CFI (%d), ", (tci & 0x1000) >> 12);
-	tprintf("ID (%d), ", (tci & 0x0FFF));
+	tprintf("Prio (%d), ", vlan_tci2prio(tci));
+	tprintf("CFI (%d), ", vlan_tci2cfi(tci));
+	tprintf("ID (%d), ", vlan_tci2vid(tci));
 	tprintf("Proto (0x%.4x)", ntohs(vlan->h_vlan_encapsulated_proto));
 	tprintf(" ]\n");
 
