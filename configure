@@ -20,9 +20,9 @@ HAVE_TPACKET3=0
 
 # use "CROSS_COMPILE=<prefix> SYSROOT=<path> ./configure && make" for cross compilation
 
-[ -z $CC ] && CC="${CROSS_COMPILE}gcc"
-[ -z $LD ] && LD="${CROSS_COMPILE}gcc"
-[ -z $STRIP ] && STRIP="${CROSS_COMPILE}strip"
+[ -z "$CC" ] && CC="${CROSS_COMPILE}gcc"
+[ -z "$LD" ] && LD="${CROSS_COMPILE}gcc"
+[ -z "$STRIP" ] && STRIP="${CROSS_COMPILE}strip"
 if [ "x$SYSROOT" != "x" ] ; then
 	PKG_CONFIG_PATH="$SYSROOT/usr/lib/pkgconfig:$PKG_CONFIG_PATH"
 fi
