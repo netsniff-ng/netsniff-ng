@@ -141,11 +141,11 @@ int main(void) { }
 EOF
 
 	if [ -z $NACL_INC_DIR ] ; then
-		NACL_INC_DIR="/usr/include/nacl"
+		NACL_INC_DIR="$SYSROOT/usr/include/nacl"
 	fi
 
 	if [ -z $NACL_LIB_DIR ] ; then
-		NACL_LIB_DIR="/usr/lib"
+		NACL_LIB_DIR="$SYSROOT/usr/lib"
 	fi
 
 	if [ -z $NACL_LIB ] ; then
