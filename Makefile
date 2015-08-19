@@ -122,8 +122,13 @@ VERSION_LONG   = "$(VERSION_SHORT)$(CONFIG_RC) ($(NAME))"
 export VERSION PATCHLEVEL SUBLEVEL EXTRAVERSION
 export DEBUG HARDENING
 
-bold   = $(shell tput bold)
-normal = $(shell tput sgr0)
+ifneq ("$(TERM)", "")
+  bold   = $(shell tput bold)
+  normal = $(shell tput sgr0)
+else
+  bold   =
+  normal =
+endif
 
 ifneq ("$(CROSS_COMPILE)", "")
   WHAT := Cross-compiling
