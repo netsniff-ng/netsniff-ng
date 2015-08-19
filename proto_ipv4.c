@@ -185,7 +185,7 @@ static void ipv4_less(struct pkt_buff *pkt)
 	/* cut off IP options and everything that is not part of IPv4 payload */
 	pkt_pull(pkt, max_t(uint8_t, ip->h_ihl, sizeof(*ip) / sizeof(uint32_t))
 		* sizeof(uint32_t) - sizeof(*ip));
-	/* XXX there coul still be an Ethernet trailer included or others */
+	/* XXX there could still be an Ethernet trailer included or others */
 #if 0
 	pkt_trim(pkt, pkt_len(pkt) - min(pkt_len(pkt),
 		 (ntohs(ip->h_tot_len) - ip->h_ihl * sizeof(uint32_t))));
