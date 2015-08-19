@@ -8,11 +8,6 @@ SHELL := $(shell if [ -x /bin/bash ]; then echo /bin/bash; else echo /bin/sh; fi
 LDQ = $(Q)echo -e "  LD\t$@" && $(CCACHE) $(CC)
 CCNQ = $(CCACHE) $(CC)
 CCQ = $(Q)echo -e "  CC\t$<" && $(CCNQ)
-ifeq ($(DEBUG), 1)
-  STRIPQ = $(Q)true
-else
-  STRIPQ = $(Q)echo -e "  STRIP\t$@" && $(STRIP)
-endif
 
 # sparse related
 C =

@@ -22,7 +22,6 @@ HAVE_TPACKET3=0
 
 [ -z "$CC" ] && CC="${CROSS_COMPILE}gcc"
 [ -z "$LD" ] && LD="${CROSS_COMPILE}gcc"
-[ -z "$STRIP" ] && STRIP="${CROSS_COMPILE}strip"
 if [ "x$SYSROOT" != "x" ] ; then
 	PKG_CONFIG_PATH="$SYSROOT/usr/lib/pkgconfig:$PKG_CONFIG_PATH"
 fi
@@ -85,16 +84,6 @@ check_toolchain()
 		echo "PKG_CONFIG=$PKG_CONFIG" >> Config
 		echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> Config
 	fi
-
-	echo -n "[*] Checking $STRIP ... "
-	if [ "x$(which $STRIP 2>> config.log)" == "x" ] ; then
-		echo "[NO]"
-		MISSING_TOOLCHAIN=1
-	else
-		echo "[YES]"
-		echo "STRIP=$STRIP" >> Config
-	fi
-
 }
 
 check_flex()

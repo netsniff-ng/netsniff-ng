@@ -177,4 +177,3 @@ $(foreach tool,$(TOOLS),$(eval $(call TOOL_templ,$(tool))))
 
 $(TOOLS):
 	$(LDQ) $(LDFLAGS) -o $@/$@ $@/*.o $($@-libs)
-	$(STRIPQ) $@/$@
