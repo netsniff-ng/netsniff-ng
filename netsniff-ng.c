@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <fcntl.h>
+#include <inttypes.h>
 
 #include "ring_rx.h"
 #include "ring_tx.h"
@@ -64,6 +65,8 @@ struct ctx {
 	gid_t gid;
 	uint32_t link_type, magic;
 	uint32_t fanout_group, fanout_type;
+	uint64_t pkts_seen, pkts_recvd, pkts_drops;
+	uint64_t pkts_recvd_last, pkts_drops_last;
 };
 
 static volatile sig_atomic_t sigint = 0, sighup = 0;
@@ -201,6 +204,41 @@ static inline void setup_rfmon_mac80211_dev(struct ctx *ctx, char **rfmon_dev)
 
 	enter_rfmon_mac80211(ctx->device_trans, rfmon_dev);
 	panic_handler_add(on_panic_del_rfmon, *rfmon_dev);
+}
+
+static int update_rx_stats(struct ctx *ctx, int sock, bool is_v3)
+{
+	uint64_t packets, drops;
+	int ret;
+
+	ret = get_rx_net_stats(sock, &packets, &drops, is_v3);
+	if (ret)
+		return ret;
+
+	ctx->pkts_recvd += packets;
+	ctx->pkts_drops += drops;
+	ctx->pkts_recvd_last = packets;
+	ctx->pkts_drops_last = drops;
+
+	return 0;
+}
+
+static void dump_rx_stats(struct ctx *ctx, int sock, bool is_v3)
+{
+	if (update_rx_stats(ctx, sock, is_v3))
+		return;
+
+	printf("\r%12"PRIu64"  packets incoming (%"PRIu64" unread on exit)\n",
+	       is_v3 ? ctx->pkts_seen : ctx->pkts_recvd,
+	       is_v3 ? ctx->pkts_recvd - ctx->pkts_seen : 0);
+	printf("\r%12"PRIu64"  packets passed filter\n",
+	       ctx->pkts_recvd - ctx->pkts_drops);
+	printf("\r%12"PRIu64"  packets failed filter (out of space)\n",
+	       ctx->pkts_drops);
+
+	if (ctx->pkts_recvd  > 0)
+		printf("\r%12.4lf%% packet droprate\n",
+		       (1.0 * ctx->pkts_drops / ctx->pkts_recvd) * 100.0);
 }
 
 static void pcap_to_xmit(struct ctx *ctx)
@@ -376,7 +414,6 @@ static void receive_to_xmit(struct ctx *ctx)
 	int rx_sock, ifindex_in, ifindex_out, ret;
 	size_t size_in, size_out;
 	unsigned int it_in = 0, it_out = 0;
-	unsigned long frame_count = 0;
 	struct frame_map *hdr_in, *hdr_out;
 	struct ring tx_ring, rx_ring;
 	struct pollfd rx_poll;
@@ -428,7 +465,7 @@ static void receive_to_xmit(struct ctx *ctx)
 			hdr_in = rx_ring.frames[it_in].iov_base;
 			in = ((uint8_t *) hdr_in) + hdr_in->tp_h.tp_mac;
 
-			frame_count++;
+			ctx->pkts_seen++;
 
 			if (ctx->packet_type != -1)
 				if (ctx->packet_type != hdr_in->s_ll.sll_pkttype)
@@ -465,14 +502,14 @@ static void receive_to_xmit(struct ctx *ctx)
 
 			show_frame_hdr(in, hdr_in->tp_h.tp_snaplen,
 				       ctx->link_type, hdr_in, ctx->print_mode,
-				       frame_count);
+				       ctx->pkts_seen);
 
 			dissector_entry_point(in, hdr_in->tp_h.tp_snaplen,
 					      ctx->link_type, ctx->print_mode,
 					      &hdr_in->s_ll);
 
 			if (frame_count_max != 0) {
-				if (frame_count >= frame_count_max) {
+				if (ctx->pkts_seen >= frame_count_max) {
 					sigint = 1;
 					break;
 				}
@@ -499,7 +536,7 @@ next:
 out:
 	timer_purge();
 
-	sock_rx_net_stats(rx_sock, 0);
+	dump_rx_stats(ctx, rx_sock, false);
 
 	bpf_release(&bpf_ops);
 
@@ -844,26 +881,8 @@ static int begin_single_pcap_file(struct ctx *ctx)
 	return fd;
 }
 
-static void print_pcap_file_stats(int sock, struct ctx *ctx)
-{
-	int ret;
-	struct tpacket_stats kstats;
-	socklen_t slen = sizeof(kstats);
-
-	fmemset(&kstats, 0, sizeof(kstats));
-
-	ret = getsockopt(sock, SOL_PACKET, PACKET_STATISTICS, &kstats, &slen);
-	if (unlikely(ret))
-		panic("Cannot get packet statistics!\n");
-
-	if (ctx->print_mode == PRINT_NONE) {
-		printf(".(+%u/-%u)", kstats.tp_packets - kstats.tp_drops,
-		       kstats.tp_drops);
-		fflush(stdout);
-	}
-}
-
-static void update_pcap_next_dump(struct ctx *ctx, unsigned long snaplen, int *fd, int sock)
+static void update_pcap_next_dump(struct ctx *ctx, unsigned long snaplen,
+				  int *fd, int sock, bool is_v3)
 {
 	if (!dump_to_pcap(ctx))
 		return;
@@ -888,14 +907,19 @@ static void update_pcap_next_dump(struct ctx *ctx, unsigned long snaplen, int *f
 		*fd = next_multi_pcap_file(ctx, *fd);
 		next_dump = false;
 
-		if (ctx->verbose)
-			print_pcap_file_stats(sock, ctx);
+		if (update_rx_stats(ctx, sock, is_v3))
+			return;
+
+		if (ctx->verbose && ctx->print_mode == PRINT_NONE)
+			printf(".(+%lu/-%lu)",
+			       ctx->pkts_recvd_last - ctx->pkts_drops_last,
+			       ctx->pkts_drops_last);
 	}
 }
 
 #ifdef HAVE_TPACKET3
 static void walk_t3_block(struct block_desc *pbd, struct ctx *ctx,
-			  int sock, int *fd, unsigned long *frame_count)
+			  int sock, int *fd)
 {
 	int num_pkts = pbd->h1.num_pkts, i;
 	struct tpacket3_hdr *hdr;
@@ -912,7 +936,7 @@ static void walk_t3_block(struct block_desc *pbd, struct ctx *ctx,
 			if (ctx->packet_type != sll->sll_pkttype)
 				goto next;
 
-		(*frame_count)++;
+		ctx->pkts_seen++;
 
 		if (dump_to_pcap(ctx)) {
 			int ret;
@@ -926,7 +950,7 @@ static void walk_t3_block(struct block_desc *pbd, struct ctx *ctx,
 		}
 
 		__show_frame_hdr(packet, hdr->tp_snaplen, ctx->link_type, sll,
-				 hdr, ctx->print_mode, true, *frame_count);
+				 hdr, ctx->print_mode, true, ctx->pkts_seen);
 
 		dissector_entry_point(packet, hdr->tp_snaplen, ctx->link_type,
 				      ctx->print_mode, sll);
@@ -935,13 +959,13 @@ next:
 		sll = (void *) ((uint8_t *) hdr + TPACKET_ALIGN(sizeof(*hdr)));
 
 		if (frame_count_max != 0) {
-			if (unlikely(*frame_count >= frame_count_max)) {
+			if (unlikely(ctx->pkts_seen >= frame_count_max)) {
 				sigint = 1;
 				break;
 			}
 		}
 
-		update_pcap_next_dump(ctx, hdr->tp_snaplen, fd, sock);
+		update_pcap_next_dump(ctx, hdr->tp_snaplen, fd, sock, true);
 	}
 }
 #endif /* HAVE_TPACKET3 */
@@ -956,7 +980,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 	struct pollfd rx_poll;
 	struct sock_fprog bpf_ops;
 	struct timeval start, end, diff;
-	unsigned long frame_count = 0;
+	bool is_v3 = is_defined(HAVE_TPACKET3);
 
 	sock = pf_socket_type(ctx->link_type);
 
@@ -976,7 +1000,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 			printf("HW timestamping enabled\n");
 	}
 
-	ring_rx_setup(&rx_ring, sock, size, ifindex, &rx_poll, is_defined(HAVE_TPACKET3), true,
+	ring_rx_setup(&rx_ring, sock, size, ifindex, &rx_poll, is_v3, true,
 		      ctx->verbose, ctx->fanout_group, ctx->fanout_type);
 
 	dissector_init_all(ctx->print_mode);
@@ -1023,7 +1047,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 		struct block_desc *pbd;
 
 		while (user_may_pull_from_rx_block((pbd = rx_ring.frames[it].iov_base))) {
-			walk_t3_block(pbd, ctx, sock, &fd, &frame_count);
+			walk_t3_block(pbd, ctx, sock, &fd);
 
 			kernel_may_pull_from_rx_block(pbd);
 			it = (it + 1) % rx_ring.layout3.tp_block_nr;
@@ -1041,11 +1065,11 @@ static void recv_only_or_dump(struct ctx *ctx)
 				if (ctx->packet_type != hdr->s_ll.sll_pkttype)
 					goto next;
 
-			frame_count++;
+			ctx->pkts_seen++;
 
 			if (unlikely(ring_frame_size(&rx_ring) < hdr->tp_h.tp_snaplen)) {
 				/* XXX: silently ignore for now. We used to
-				 * report them with sock_rx_net_stats()  */
+				 * report them with dump_rx_stats()  */
 				goto next;
 			}
 
@@ -1060,14 +1084,14 @@ static void recv_only_or_dump(struct ctx *ctx)
 
 			show_frame_hdr(packet, hdr->tp_h.tp_snaplen,
 				       ctx->link_type, hdr, ctx->print_mode,
-				       frame_count);
+				       ctx->pkts_seen);
 
 			dissector_entry_point(packet, hdr->tp_h.tp_snaplen,
 					      ctx->link_type, ctx->print_mode,
 					      &hdr->s_ll);
 
 			if (frame_count_max != 0) {
-				if (unlikely(frame_count >= frame_count_max)) {
+				if (unlikely(ctx->pkts_seen >= frame_count_max)) {
 					sigint = 1;
 					break;
 				}
@@ -1080,7 +1104,8 @@ next:
 			if (unlikely(sigint == 1))
 				break;
 
-			update_pcap_next_dump(ctx, hdr->tp_h.tp_snaplen, &fd, sock);
+			update_pcap_next_dump(ctx, hdr->tp_h.tp_snaplen, &fd,
+					      sock, is_v3);
 		}
 #endif /* HAVE_TPACKET3 */
 
@@ -1094,14 +1119,11 @@ next:
 	bug_on(gettimeofday(&end, NULL));
 	timersub(&end, &start, &diff);
 
-	if (!(ctx->dump_dir && ctx->print_mode == PRINT_NONE)) {
-		sock_rx_net_stats(sock, frame_count);
+	if (ctx->print_mode != PRINT_NONE) {
+		dump_rx_stats(ctx, sock, is_v3);
 
 		printf("\r%12lu  sec, %lu usec in total\n",
 		       diff.tv_sec, diff.tv_usec);
-	} else {
-		printf("\n\n");
-		fflush(stdout);
 	}
 
 	bpf_release(&bpf_ops);
@@ -1146,6 +1168,12 @@ static void init_ctx(struct ctx *ctx)
 	ctx->promiscuous = true;
 	ctx->randomize = false;
 	ctx->hwtimestamp = true;
+
+	ctx->pkts_recvd = 0;
+	ctx->pkts_seen = 0;
+	ctx->pkts_drops = 0;
+	ctx->pkts_recvd_last = 0;
+	ctx->pkts_drops_last = 0;
 }
 
 static void destroy_ctx(struct ctx *ctx)

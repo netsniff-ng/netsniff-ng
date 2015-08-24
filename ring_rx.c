@@ -59,7 +59,7 @@ static inline size_t rx_ring_get_size(struct ring *ring, bool v3)
 	return v3 ? ring->layout3.tp_block_size : ring->layout.tp_frame_size;
 }
 
-static int get_rx_net_stats(int sock, uint64_t *packets, uint64_t *drops, bool v3)
+int get_rx_net_stats(int sock, uint64_t *packets, uint64_t *drops, bool v3)
 {
 	int ret;
 	union {
@@ -101,7 +101,8 @@ static inline size_t rx_ring_get_size(struct ring *ring, bool v3 __maybe_unused)
 	return ring->layout.tp_frame_size;
 }
 
-static int get_rx_net_stats(int sock, uint64_t *packets, uint64_t *drops, bool v3 __maybe_unused)
+int get_rx_net_stats(int sock, uint64_t *packets, uint64_t *drops,
+		     bool v3 __maybe_unused)
 {
 	int ret;
 	struct tpacket_stats stats;
@@ -237,22 +238,4 @@ void ring_rx_setup(struct ring *ring, int sock, size_t size, int ifindex,
 	bind_ring_generic(sock, ring, ifindex, false);
 	join_fanout_group(sock, fanout_group, fanout_type);
 	prepare_polling(sock, poll);
-}
-
-void sock_rx_net_stats(int sock, unsigned long seen)
-{
-	int ret;
-	uint64_t packets, drops;
-	bool v3 = is_tpacket_v3(sock);
-
-	ret = get_rx_net_stats(sock, &packets, &drops, v3);
-	if (ret == 0) {
-		printf("\r%12"PRIu64"  packets incoming (%"PRIu64" unread on exit)\n",
-		       v3 ? (uint64_t)seen : packets, v3 ? packets - seen : 0);
-		printf("\r%12"PRIu64"  packets passed filter\n", packets - drops);
-		printf("\r%12"PRIu64"  packets failed filter (out of space)\n", drops);
-		if (packets > 0)
-			printf("\r%12.4lf%% packet droprate\n",
-			       (1.0 * drops / packets) * 100.0);
-	}
 }

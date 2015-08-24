@@ -15,7 +15,7 @@ extern void ring_rx_setup(struct ring *ring, int sock, size_t size, int ifindex,
 			  struct pollfd *poll, bool v3, bool jumbo_support,
 			  bool verbose, uint32_t fanout_group, uint32_t fanout_type);
 extern void destroy_rx_ring(int sock, struct ring *ring);
-extern void sock_rx_net_stats(int sock, unsigned long seen);
+extern int get_rx_net_stats(int sock, uint64_t *packets, uint64_t *drops, bool v3);
 
 static inline int user_may_pull_from_rx(struct tpacket2_hdr *hdr)
 {
