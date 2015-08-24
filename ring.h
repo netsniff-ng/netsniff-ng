@@ -67,14 +67,13 @@ static inline uint16_t tpacket_uhdr_vlan_proto(union tpacket_uhdr *hdr, bool v3)
 
 static inline bool tpacket_has_vlan_info(union tpacket_uhdr *hdr)
 {
-	uint32_t valid = 0;
+	uint32_t valid = TP_STATUS_VLAN_VALID;
 
 #ifdef TP_STATUS_VLAN_TPID_VALID
-	valid = TP_STATUS_VLAN_VALID;
+	valid |= TP_STATUS_VLAN_TPID_VALID;
 #endif
 
-	return tpacket_uhdr(*hdr, tp_status, true) &
-		(TP_STATUS_VLAN_VALID | valid);
+	return tpacket_uhdr(*hdr, tp_status, true) & valid;
 }
 
 struct frame_map {
