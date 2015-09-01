@@ -26,6 +26,7 @@ local system, e.g. for debugging purposes or to answer questions like:
     * To which countries am I sending data?
     * Are there any suspicious background connections on my machine?
     * How many active connections does binary Y have?
+    * How long are connections active already?
 .PP
 The following information will be presented in flowtop's output:
 .PP
@@ -36,6 +37,7 @@ The following information will be presented in flowtop's output:
     * Flow port's service name heuristic
     * Transport protocol state machine information
     * Byte/packet counters (if they are enabled)
+    * Connection duration (if timestampinf is enabled)
 .PP
 In order for flowtop to work, netfilter must be active and running
 on your machine, thus kernel-side connection tracking is active. If netfilter
@@ -59,6 +61,15 @@ active on connections which were created after accounting was enabled. Thus, to
 have these counters be active all the time the parameter should be enabled after
 the system is up. To automatically enable it, sysctl.conf(8) or sysctl.d(8)
 might be used.
+.PP
+To calculate the connection duration flowtop enables the sysctl(8) parameter
+\[lq]net.netfilter.nf_conntrack_timestamp\[rq] via:
+.in +4
+.sp
+echo 1 > /proc/sys/net/netfilter/nf_conntrack_timestamp
+.sp
+.in -4
+and resets it to the previously set value on exit.
 .PP
 flowtop's intention is just to get a quick look over your active connections.
 If you want logging support, have a look at netfilter's conntrack(8) tools
