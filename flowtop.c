@@ -88,11 +88,16 @@ struct flow_list {
 #define INCLUDE_ICMP	(1 << 5)
 #define INCLUDE_SCTP	(1 << 6)
 
+struct sysctl_params_ctx {
+	int nfct_acct;
+	int nfct_tstamp;
+};
+
 static volatile bool is_flow_collecting;
 static volatile sig_atomic_t sigint = 0;
 static int what = INCLUDE_IPV4 | INCLUDE_IPV6 | INCLUDE_TCP, show_src = 0;
 static struct flow_list flow_list;
-static int nfct_acct_val = -1;
+static struct sysctl_params_ctx sysctl = { -1, -1 };
 
 static const char *short_options = "vhTUsDIS46u";
 static const struct option long_options[] = {
@@ -1102,12 +1107,17 @@ static int flow_event_cb(enum nf_conntrack_msg_type type,
 	return NFCT_CB_CONTINUE;
 }
 
-static void restore_sysctl(void *value)
+static void restore_sysctl(void *obj)
 {
-	int int_val = *(int *)value;
+	struct sysctl_params_ctx *sysctl_ctx = obj;
 
-	if (int_val == 0)
-		sysctl_set_int("net/netfilter/nf_conntrack_acct", int_val);
+	if (sysctl_ctx->nfct_acct == 0)
+		sysctl_set_int("net/netfilter/nf_conntrack_acct",
+				sysctl_ctx->nfct_acct);
+
+	if (sysctl_ctx->nfct_tstamp == 0)
+		sysctl_set_int("net/netfilter/nf_conntrack_timestamp",
+				sysctl_ctx->nfct_tstamp);
 }
 
 static void on_panic_handler(void *arg)
@@ -1119,16 +1129,32 @@ static void on_panic_handler(void *arg)
 static void conntrack_acct_enable(void)
 {
 	/* We can still work w/o traffic accounting so just warn about error */
-	if (sysctl_get_int("net/netfilter/nf_conntrack_acct", &nfct_acct_val)) {
+	if (sysctl_get_int("net/netfilter/nf_conntrack_acct", &sysctl.nfct_acct)) {
 		fprintf(stderr, "Can't read net/netfilter/nf_conntrack_acct: %s\n",
 			strerror(errno));
 	}
 
-	if (nfct_acct_val == 1)
+	if (sysctl.nfct_acct == 1)
 		return;
 
 	if (sysctl_set_int("net/netfilter/nf_conntrack_acct", 1)) {
 		fprintf(stderr, "Can't write net/netfilter/nf_conntrack_acct: %s\n",
+			strerror(errno));
+	}
+}
+
+static void conntrack_tstamp_enable(void)
+{
+	if (sysctl_get_int("net/netfilter/nf_conntrack_timestamp", &sysctl.nfct_tstamp)) {
+		fprintf(stderr, "Can't read net/netfilter/nf_conntrack_timestamp: %s\n",
+			strerror(errno));
+	}
+
+	if (sysctl.nfct_tstamp == 1)
+		return;
+
+	if (sysctl_set_int("net/netfilter/nf_conntrack_timestamp", 1)) {
+		fprintf(stderr, "Can't write net/netfilter/nf_conntrack_timestamp: %s\n",
 			strerror(errno));
 	}
 }
@@ -1435,9 +1461,10 @@ int main(int argc, char **argv)
 	register_signal(SIGTERM, signal_handler);
 	register_signal(SIGHUP, signal_handler);
 
-	panic_handler_add(on_panic_handler, &nfct_acct_val);
+	panic_handler_add(on_panic_handler, &sysctl);
 
 	conntrack_acct_enable();
+	conntrack_tstamp_enable();
 
 	init_geoip(1);
 
@@ -1449,7 +1476,7 @@ int main(int argc, char **argv)
 
 	destroy_geoip();
 
-	restore_sysctl(&nfct_acct_val);
+	restore_sysctl(&sysctl);
 
 	return 0;
 }
