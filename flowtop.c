@@ -41,6 +41,10 @@
 #include "proc.h"
 #include "sysctl.h"
 
+#ifndef NSEC_PER_SEC
+#define NSEC_PER_SEC 1000000000L
+#endif
+
 struct flow_entry {
 	uint32_t flow_id, use, status;
 	uint8_t  l3_proto, l4_proto;
@@ -750,6 +754,32 @@ static void presenter_print_counters(uint64_t bytes, uint64_t pkts, int color)
 	printw(")");
 }
 
+static void presenter_print_flow_entry_time(struct flow_entry *n)
+{
+	int h, m, s;
+	time_t now;
+
+	time(&now);
+
+	s = now - (n->timestamp_start / NSEC_PER_SEC);
+	if (s <= 0)
+		return;
+
+	h = s / 3600;
+	s -= h * 3600;
+	m = s / 60;
+	s -= m * 60;
+
+	printw(" [ time");
+	if (h > 0)
+		printw(" %dh", h);
+	if (m > 0)
+		printw(" %dm", m);
+	if (s > 0)
+		printw(" %ds", s);
+	printw(" ]");
+}
+
 static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 				     unsigned int *line)
 {
@@ -811,6 +841,9 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 		printw(":%s", pname);
 		attroff(A_BOLD);
 	}
+
+	if (n->timestamp_start > 0)
+		presenter_print_flow_entry_time(n);
 
 	/* Show source information: reverse DNS, port, country, city, counters */
 	if (show_src) {
