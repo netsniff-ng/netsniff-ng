@@ -347,7 +347,7 @@ static void check_config_keypair_or_die(char *home)
 	if (fd < 0) {
 		err = EIO;
 		errstr = "Cannot open pubkey file!\n";
-		goto out;
+		goto out_noclose;
 	}
 
 	ret = read(fd, publickey, sizeof(publickey));
