@@ -328,7 +328,7 @@ static void check_config_keypair_or_die(char *home)
 	if (fd < 0) {
 		err = EIO;
 		errstr = "Cannot open privkey file!\n";
-		goto out;
+		goto out_noclose;
 	}
 
 	ret = read(fd, secretkey, sizeof(secretkey));
@@ -368,7 +368,7 @@ static void check_config_keypair_or_die(char *home)
 	}
 out:
 	close(fd);
-
+out_noclose:
 	xmemset(publickey, 0, sizeof(publickey));
 	xmemset(publicres, 0, sizeof(publicres));
 	xmemset(secretkey, 0, sizeof(secretkey));

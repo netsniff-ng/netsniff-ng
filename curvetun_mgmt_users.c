@@ -206,17 +206,23 @@ static int parse_line(char *line, char *homedir)
 	for (; str != NULL;) {
 		switch (s) {
 		case PARSE_USERNAME:
-			if (__check_duplicate_username(str, strlen(str) + 1))
+			if (__check_duplicate_username(str, strlen(str) + 1)) {
+				user_store_free(elem);
 				return -EINVAL;
+			}
 			strlcpy(elem->username, str, sizeof(elem->username));
 			s = PARSE_PUBKEY;
 			break;
 		case PARSE_PUBKEY:
 			if (!curve25519_pubkey_hexparse_32(pkey, sizeof(pkey),
-							   str, strlen(str)))
+							   str, strlen(str))) {
+				user_store_free(elem);
 				return -EINVAL;
-			if (__check_duplicate_pubkey(pkey, sizeof(pkey)))
+			}
+			if (__check_duplicate_pubkey(pkey, sizeof(pkey))) {
+				user_store_free(elem);
 				return -EINVAL;
+			}
 			memcpy(elem->publickey, pkey, sizeof(elem->publickey));
 			curve25519_proto_init(&elem->proto_inf, elem->publickey, sizeof(elem->publickey));
 			s = PARSE_DONE;
@@ -224,6 +230,7 @@ static int parse_line(char *line, char *homedir)
 		case PARSE_DONE:
 			break;
 		default:
+			user_store_free(elem);
 			return -EIO;
 		}
 
