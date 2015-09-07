@@ -1132,6 +1132,7 @@ static void conntrack_acct_enable(void)
 	if (sysctl_get_int("net/netfilter/nf_conntrack_acct", &sysctl.nfct_acct)) {
 		fprintf(stderr, "Can't read net/netfilter/nf_conntrack_acct: %s\n",
 			strerror(errno));
+		return;
 	}
 
 	if (sysctl.nfct_acct == 1)
@@ -1148,6 +1149,7 @@ static void conntrack_tstamp_enable(void)
 	if (sysctl_get_int("net/netfilter/nf_conntrack_timestamp", &sysctl.nfct_tstamp)) {
 		fprintf(stderr, "Can't read net/netfilter/nf_conntrack_timestamp: %s\n",
 			strerror(errno));
+		return;
 	}
 
 	if (sysctl.nfct_tstamp == 1)
