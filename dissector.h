@@ -34,8 +34,8 @@ static const char * const packet_types[256] = {
 	[PACKET_MULTICAST]	=	"M",  /* Multicast */
 	[PACKET_OTHERHOST]	=	"P",  /* Promisc */
 	[PACKET_OUTGOING]	=	">",  /* Outgoing */
-	[PACKET_USER]		=	">U", /* To Userspace */
-	[PACKET_KERNEL]		=	">K", /* To Kernelspace */
+	[PACKET_USER]		=	"K->U", /* To Userspace */
+	[PACKET_KERNEL]		=	"U->K", /* To Kernelspace */
 };
 
 static inline const char *__show_ts_source(uint32_t status)
