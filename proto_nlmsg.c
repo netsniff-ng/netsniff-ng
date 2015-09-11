@@ -751,18 +751,29 @@ static void nlmsg_print(uint16_t family, struct nlmsghdr *hdr)
 static void nlmsg(struct pkt_buff *pkt)
 {
 	struct nlmsghdr *hdr = (struct nlmsghdr *) pkt_pull(pkt, NLMSG_HDRLEN);
+	unsigned int trim_len = pkt_len(pkt);
 
 	while (hdr) {
+		trim_len -= hdr->nlmsg_len;
 		nlmsg_print(ntohs(pkt->sll->sll_protocol), hdr);
 
 		if (!pkt_pull(pkt, NLMSG_ALIGN(hdr->nlmsg_len) - NLMSG_HDRLEN))
 			break;
 
 		hdr = (struct nlmsghdr *) pkt_pull(pkt, NLMSG_HDRLEN);
-		if (hdr && hdr->nlmsg_type != NLMSG_DONE &&
-				(hdr->nlmsg_flags & NLM_F_MULTI))
+		if (hdr == NULL)
+			break;
+		if (hdr->nlmsg_len == 0)
+			break;
+
+		if (hdr->nlmsg_type != NLMSG_DONE &&
+		    (hdr->nlmsg_flags & NLM_F_MULTI))
 			tprintf("\n");
 	}
+
+	/* mmaped packet? */
+	if (hdr && hdr->nlmsg_len == 0)
+		pkt_trim(pkt, trim_len);
 }
 
 static void nlmsg_less(struct pkt_buff *pkt)
