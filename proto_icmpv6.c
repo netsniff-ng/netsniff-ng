@@ -1279,7 +1279,7 @@ static int8_t dissect_icmpv6_type139(struct pkt_buff *pkt)
 }
 
 static char *icmpv6_type_140_codes[] = {
-	"Successfull reply",
+	"Successful reply",
 	"Responder refuses answer",
 	"Qtype is unknown to the Responder",
 };

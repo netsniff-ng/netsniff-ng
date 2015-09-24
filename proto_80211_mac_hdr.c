@@ -7,7 +7,7 @@
 
 /* TODO
  * check all possible frame combinations for their behavior
- * with respect to endianess (little / big)
+ * with respect to endianness (little / big)
  */
 
 #include <inttypes.h>

@@ -69,7 +69,7 @@
 #define LLDP_SYSTEM_CAP_STATION_ONLY	(1 << 7)
 
 /*
- * Interface number subtypes (for Management addres TLV)
+ * Interface number subtypes (for Management address TLV)
  */
 #define LLDP_IFACE_NUM_SUBTYPE_UNKNOWN	1
 #define LLDP_IFACE_NUM_SUBTYPE_IF_INDEX	2

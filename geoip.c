@@ -342,7 +342,7 @@ static int fdout, fderr;
 
 /* GeoIP people were too stupid to come to the idea that you could set
  * errno appropriately and return NULL instead of printing stuff from
- * the library directly that noone can turn off.
+ * the library directly that no one can turn off.
  */
 
 static void geoip_open_prepare(void)
