@@ -109,7 +109,7 @@ over sockets (\[lq]roll\[rq]) which means if one socket's queue is full, we move
 to the next one, or by NIC hardware queue mapping (\[lq]qm\[rq]).
 .PP
 .SS -L <defrag|roll>, --fanout-opts <defrag|roll>
-Defines some auxillary fanout options to be used in addition to a given fanout type.
+Defines some auxiliary fanout options to be used in addition to a given fanout type.
 These options apply to any fanout type. In case of \[lq]defrag\[rq], the kernel is
 being told to defragment packets before delivering to user space, and \[lq]roll\[rq]
 provides the same roll-over option as the \[lq]roll\[rq] fanout type, so that on any
@@ -575,7 +575,7 @@ made with two machines, and it seems that results depend on the driver ...
       - wireshark gets the vlan header
       - netsniff-ng doesn't get the vlan header
       ethtool \-K eth0 rxvlan off
-      - wireshark gets a QinQ header even though noone sent QinQ
+      - wireshark gets a QinQ header even though no one sent QinQ
       - netsniff-ng gets the vlan header
 .PP
     RTL8111/8168B:
