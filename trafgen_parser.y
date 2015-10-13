@@ -592,7 +592,7 @@ void cleanup_packets(void)
 	free(packet_dyn);
 }
 
-void compile_packets(char *file, int verbose, int cpu, bool invoke_cpp)
+void compile_packets(char *file, bool verbose, unsigned int cpu, bool invoke_cpp)
 {
 	char tmp_file[128];
 	int ret = -1;
