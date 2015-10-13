@@ -777,7 +777,7 @@ static void __set_state_cd(unsigned int cpu, unsigned long p, sig_atomic_t s)
 	stats[cpu].state = s;
 }
 
-static int xmit_packet_precheck(struct ctx *ctx, unsigned int cpu)
+static void xmit_packet_precheck(struct ctx *ctx, unsigned int cpu)
 {
 	unsigned int i;
 	unsigned long plen_total, orig = ctx->num;
@@ -801,7 +801,7 @@ static int xmit_packet_precheck(struct ctx *ctx, unsigned int cpu)
 
 	if (plen == 0) {
 		__set_state(cpu, CPU_STATS_STATE_RES);
-		return 0;
+		return;
 	}
 
 	for (mtu = device_mtu(ctx->device), i = 0; i < plen; ++i) {
@@ -811,16 +811,13 @@ static int xmit_packet_precheck(struct ctx *ctx, unsigned int cpu)
 			panic("Packet%d's size must be > %d bytes!\n",
 					i, PKT_MIN_LEN);
 	}
-
-	return 0;
 }
 
 static void main_loop(struct ctx *ctx, char *confname, bool slow,
 		      unsigned int cpu, bool invoke_cpp, unsigned long orig_num)
 {
 	compile_packets(confname, ctx->verbose, cpu, invoke_cpp);
-	if (xmit_packet_precheck(ctx, cpu) < 0)
-		return;
+	xmit_packet_precheck(ctx, cpu);
 
 	if (cpu == 0) {
 		unsigned int i;
