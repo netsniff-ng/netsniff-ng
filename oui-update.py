@@ -62,20 +62,24 @@ def main():
 
     print("Updating OUI information in {} from {}... ".format(output_file, oui_url))
 
-    fh_file = open(output_file, 'w')
     fh_url = urlopen(oui_url)
 
-    n = 0
+    ouis = []
     for line in fh_url:
         m = OUI_PATTERN.match(line)
         if m:
-            fh_file.write("0x{}{}{}, {}\n".format(m.group(1), m.group(2), m.group(3), m.group(4)))
-            n += 1
+            oui = "0x{}{}{}".format(m.group(1), m.group(2), m.group(3))
+            vendor = m.group(4).rstrip()
+            ouis.append((oui, vendor))
 
-    print("{} OUIs written to {}".format(n, output_file))
+    fh_file = open(output_file, 'w')
+    for oui, vendor in sorted(ouis):
+        fh_file.write("{}, {}\n".format(oui, vendor))
 
     fh_url.close()
     fh_file.close()
+
+    print("{} OUIs written to {}".format(len(ouis), output_file))
 
 if __name__ == '__main__':
     main()
