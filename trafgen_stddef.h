@@ -120,6 +120,12 @@
 #define IP_ID_RAND		drnd(2)
 #define IP_CSUM_DEFAULT		csumip(IP_HDR_OFF_DEFAULT, 33)	/* IP-hdr offset from, to */
 
+#define IPV6_ALEN		16
+#define IPV6_VERSION		6
+#define IPV6_HDR_OFF_DEFAULT	14
+#define IPV6_SRC_RAND		drnd(IPV6_ALEN)
+#define IPV6_DST_RAND		drnd(IPV6_ALEN)
+
 #define ICMP_ECHOREPLY		0	/* Echo Reply */
 #define ICMP_DEST_UNREACH	3	/* Destination Unreachable */
 #define ICMP_SOURCE_QUENCH	4	/* Source Quench */

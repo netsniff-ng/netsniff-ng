@@ -345,6 +345,18 @@ static void apply_csum16(int id)
 				      (packets[id].len - csum->to),
 				      IPPROTO_TCP);
 			break;
+		case CSUM_UDP6:
+			sum = p6_csum((void *) packets[id].payload + csum->from,
+				      packets[id].payload + csum->to,
+				      (packets[id].len - csum->to),
+				      IPPROTO_UDP);
+			break;
+		case CSUM_TCP6:
+			sum = p6_csum((void *) packets[id].payload + csum->from,
+				      packets[id].payload + csum->to,
+				      (packets[id].len - csum->to),
+				      IPPROTO_TCP);
+			break;
 		default:
 			bug();
 			break;

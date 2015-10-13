@@ -3,6 +3,7 @@
 
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#include <netinet/ip6.h>
 
 #include "built_in.h"
 
@@ -161,6 +162,33 @@ static inline uint16_t p4_csum(const struct ip *ip, const uint8_t *data,
 	ph.proto = next_proto;
 	ph.src = ip->ip_src.s_addr;
 	ph.dst = ip->ip_dst.s_addr;
+
+	vec[0].ptr = (const uint8_t *) (void *) &ph;
+	vec[0].len = sizeof(ph);
+
+	vec[1].ptr = data;
+	vec[1].len = len;
+
+	return __in_cksum(vec, 2);
+}
+
+static inline uint16_t p6_csum(const struct ip6_hdr *ip6, const uint8_t *data,
+			       uint32_t len, uint8_t next_proto)
+{
+	struct cksum_vec vec[2];
+	struct pseudo_hdr {
+		uint8_t src[16];
+		uint8_t dst[16];
+		uint32_t len;
+		uint8_t mbz[3];
+		uint8_t proto;
+	} __packed ph;
+
+	memcpy(&ph.src, ip6->ip6_src.s6_addr, sizeof(ph.src));
+	memcpy(&ph.dst, ip6->ip6_dst.s6_addr, sizeof(ph.dst));
+	ph.len = htons(len);
+	memset(&ph.mbz, 0, sizeof(ph.mbz));
+	ph.proto = next_proto;
 
 	vec[0].ptr = (const uint8_t *) (void *) &ph;
 	vec[0].len = sizeof(ph);

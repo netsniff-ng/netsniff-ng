@@ -200,9 +200,21 @@ static void __set_csum16_static(size_t from, size_t to, enum csum which __maybe_
 	set_byte(psum[1]);
 }
 
+static inline bool is_dynamic_csum(enum csum which)
+{
+	switch (which) {
+	case CSUM_UDP:
+	case CSUM_TCP:
+	case CSUM_UDP6:
+	case CSUM_TCP6:
+		return true;
+	default:
+		return false;
+	}
+}
+
 static void set_csum16(size_t from, size_t to, enum csum which)
 {
-	int make_it_dynamic = 0;
 	struct packet *pkt = &packets[packet_last];
 	struct packet_dyn *pktd = &packet_dyn[packetd_last];
 
@@ -218,10 +230,7 @@ static void set_csum16(size_t from, size_t to, enum csum which)
 
 	bug_on(!(from < to));
 
-	if (to >= pkt->len || which == CSUM_TCP || which == CSUM_UDP)
-		make_it_dynamic = 1;
-
-	if (has_dynamic_elems(pktd) || make_it_dynamic)
+	if (has_dynamic_elems(pktd) || to >= pkt->len || is_dynamic_csum(which))
 		__set_csum16_dynamic(from, to, which);
 	else
 		__set_csum16_static(from, to, which);
@@ -320,7 +329,7 @@ static void set_dynamic_incdec(uint8_t start, uint8_t stop, uint8_t stepping,
 }
 
 %token K_COMMENT K_FILL K_RND K_SEQINC K_SEQDEC K_DRND K_DINC K_DDEC K_WHITE
-%token K_CPU K_CSUMIP K_CSUMUDP K_CSUMTCP K_CONST8 K_CONST16 K_CONST32 K_CONST64
+%token K_CPU K_CSUMIP K_CSUMUDP K_CSUMTCP K_CSUMUDP6 K_CSUMTCP6 K_CONST8 K_CONST16 K_CONST32 K_CONST64
 
 %token ',' '{' '}' '(' ')' '[' ']' ':' '-' '+' '*' '/' '%' '&' '|' '<' '>' '^'
 
@@ -479,6 +488,10 @@ csum
 		{ set_csum16($3, $5, CSUM_TCP); }
 	| K_CSUMUDP '(' number delimiter number ')'
 		{ set_csum16($3, $5, CSUM_UDP); }
+	| K_CSUMTCP6 '(' number delimiter number ')'
+		{ set_csum16($3, $5, CSUM_TCP6); }
+	| K_CSUMUDP6 '(' number delimiter number ')'
+		{ set_csum16($3, $5, CSUM_UDP6); }
 	;
 
 seqinc

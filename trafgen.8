@@ -247,6 +247,8 @@ ii) Checksum helper functions (packet offsets start with 0):
    IP/ICMP checksum:        csumip/csumicmp(<off-from>, <off-to>)
    UDP checksum:            csumudp(<off-iphdr>, <off-udpdr>)
    TCP checksum:            csumtcp(<off-iphdr>, <off-tcphdr>)
+   UDP checksum (IPv6):     csumudp6(<off-ip6hdr>, <off-udpdr>)
+   TCP checksum (IPv6):     csumtcp6(<off-ip6hdr>, <off-tcphdr>)
 .PP
 iii) Multibyte functions, compile-time expression evaluation:
 .PP

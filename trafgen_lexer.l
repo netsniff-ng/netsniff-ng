@@ -87,6 +87,8 @@ number_ascii	([a-zA-Z])
 "csumicmp4"	{ return K_CSUMIP; }
 "csumudp"	{ return K_CSUMUDP; }
 "csumtcp"	{ return K_CSUMTCP; }
+"csumudp6"	{ return K_CSUMUDP6; }
+"csumtcp6"	{ return K_CSUMTCP6; }
 "drnd"		{ return K_DRND; }
 "dinc"		{ return K_DINC; }
 "ddec"		{ return K_DDEC; }
