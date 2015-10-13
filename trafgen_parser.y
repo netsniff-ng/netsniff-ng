@@ -626,5 +626,5 @@ int compile_packets(char *file, int verbose, int cpu, bool invoke_cpp)
 
 void yyerror(const char *err)
 {
-	panic("Syntax error at line%d, at char '%s'! %s!\n", yylineno, yytext, err);
+	panic("Syntax error at line %d, char '%s': %s\n", yylineno, yytext, err);
 }
