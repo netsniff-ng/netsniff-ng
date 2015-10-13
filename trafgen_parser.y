@@ -592,9 +592,10 @@ void cleanup_packets(void)
 	free(packet_dyn);
 }
 
-int compile_packets(char *file, int verbose, int cpu, bool invoke_cpp)
+void compile_packets(char *file, int verbose, int cpu, bool invoke_cpp)
 {
 	char tmp_file[128];
+	int ret = -1;
 
 	memset(tmp_file, 0, sizeof(tmp_file));
 	our_cpu = cpu;
@@ -608,8 +609,10 @@ int compile_packets(char *file, int verbose, int cpu, bool invoke_cpp)
 		slprintf(tmp_file, sizeof(tmp_file), "%s/.tmp-%u-%s", dir, rand(), base);
 		slprintf(cmd, sizeof(cmd), "cpp -I" ETCDIRE_STRING " %s > %s",
 			 file, tmp_file);
-		if (system(cmd) != 0)
-			panic("Failed to invoke C preprocessor!\n");
+		if (system(cmd) != 0) {
+			fprintf(stderr, "Failed to invoke C preprocessor!\n");
+			goto err;
+		}
 
 		file = tmp_file;
 		xfree(a);
@@ -620,24 +623,30 @@ int compile_packets(char *file, int verbose, int cpu, bool invoke_cpp)
 		yyin = stdin;
 	else
 		yyin = fopen(file, "r");
-	if (!yyin)
-		panic("Cannot open %s: %s!\n", file, strerror(errno));
+	if (!yyin) {
+		fprintf(stderr, "Cannot open %s: %s!\n", file, strerror(errno));
+		goto err;
+	}
 
 	realloc_packet();
-	yyparse();
+	if (yyparse() != 0)
+		goto err;
 	finalize_packet();
 
 	if (our_cpu == 0 && verbose)
 		dump_conf();
 
+	ret = 0;
+err:
 	fclose(yyin);
+
 	if (invoke_cpp)
 		unlink(tmp_file);
-
-	return 0;
+	if (ret)
+		die();
 }
 
 void yyerror(const char *err)
 {
-	panic("Syntax error at line %d, char '%s': %s\n", yylineno, yytext, err);
+	fprintf(stderr, "Syntax error at line %d, char '%s': %s\n", yylineno, yytext, err);
 }
