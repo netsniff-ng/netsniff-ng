@@ -156,12 +156,11 @@ static inline uint16_t p4_csum(const struct ip *ip, const uint8_t *data,
 		uint16_t len;
 	} ph;
 
-	memset(&ph, 0, sizeof(ph));
-	ph.len = htons(len);
-	ph.mbz = 0;
-	ph.proto = next_proto;
 	ph.src = ip->ip_src.s_addr;
 	ph.dst = ip->ip_dst.s_addr;
+	ph.mbz = 0;
+	ph.proto = next_proto;
+	ph.len = htons(len);
 
 	vec[0].ptr = (const uint8_t *) (void *) &ph;
 	vec[0].len = sizeof(ph);
