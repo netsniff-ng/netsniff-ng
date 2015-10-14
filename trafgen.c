@@ -543,7 +543,7 @@ static void xmit_slowpath_or_die(struct ctx *ctx, unsigned int cpu, unsigned lon
 
 	while (likely(sigint == 0 && num > 0 && plen > 0)) {
 		pktd = &packet_dyn[i];
-		if (pktd->clen + pktd->rlen + pktd->slen) {
+		if (packet_dyn_has_elems(pktd)) {
 			apply_counter(i);
 			apply_randomizer(i);
 			apply_csum16(i);
@@ -651,7 +651,7 @@ static void xmit_fastpath_or_die(struct ctx *ctx, unsigned int cpu, unsigned lon
 		hdr->tp_h.tp_len = packets[i].len;
 
 		pktd = &packet_dyn[i];
-		if (pktd->clen + pktd->rlen + pktd->slen) {
+		if (packet_dyn_has_elems(pktd)) {
 			apply_counter(i);
 			apply_randomizer(i);
 			apply_csum16(i);

@@ -66,11 +66,6 @@ static inline int test_ignore(void)
 		return 1;
 }
 
-static inline int has_dynamic_elems(struct packet_dyn *p)
-{
-	return (p->rlen + p->slen + p->clen);
-}
-
 static inline void __init_new_packet_slot(struct packet *slot)
 {
 	slot->payload = NULL;
@@ -230,7 +225,7 @@ static void set_csum16(size_t from, size_t to, enum csum which)
 
 	bug_on(!(from < to));
 
-	if (has_dynamic_elems(pktd) || to >= pkt->len || is_dynamic_csum(which))
+	if (packet_dyn_has_elems(pktd) || to >= pkt->len || is_dynamic_csum(which))
 		__set_csum16_dynamic(from, to, which);
 	else
 		__set_csum16_static(from, to, which);

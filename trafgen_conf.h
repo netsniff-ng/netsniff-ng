@@ -45,6 +45,11 @@ struct packet_dyn {
 	size_t slen;
 };
 
+static inline bool packet_dyn_has_elems(struct packet_dyn *p)
+{
+	return (p->rlen || p->slen || p->clen);
+}
+
 extern void compile_packets(char *file, bool verbose, unsigned int cpu, bool invoke_cpp);
 extern void cleanup_packets(void);
 
