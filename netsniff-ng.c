@@ -1119,12 +1119,9 @@ next:
 	bug_on(gettimeofday(&end, NULL));
 	timersub(&end, &start, &diff);
 
-	if (ctx->print_mode != PRINT_NONE) {
-		dump_rx_stats(ctx, sock, is_v3);
-
-		printf("\r%12lu  sec, %lu usec in total\n",
-		       diff.tv_sec, diff.tv_usec);
-	}
+	dump_rx_stats(ctx, sock, is_v3);
+	printf("\r%12lu  sec, %lu usec in total\n",
+			diff.tv_sec, diff.tv_usec);
 
 	bpf_release(&bpf_ops);
 	dissector_cleanup_all();
