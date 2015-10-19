@@ -704,6 +704,16 @@ static void rtnl_msg_print(struct nlmsghdr *hdr)
 	}
 }
 
+static void nlmsg_print_raw(struct nlmsghdr *hdr)
+{
+	u32 len = hdr->nlmsg_len;
+
+	if (len) {
+		_ascii((uint8_t *) hdr + NLMSG_HDRLEN, len - NLMSG_HDRLEN);
+		_hex((uint8_t *) hdr + NLMSG_HDRLEN, len - NLMSG_HDRLEN);
+	}
+}
+
 static void nlmsg_print(uint16_t family, struct nlmsghdr *hdr)
 {
 	u16 nlmsg_flags = hdr->nlmsg_flags;
@@ -747,6 +757,8 @@ static void nlmsg_print(uint16_t family, struct nlmsghdr *hdr)
 
 	if (family == NETLINK_ROUTE)
 		rtnl_msg_print(hdr);
+	else
+		nlmsg_print_raw(hdr);
 }
 
 static void nlmsg(struct pkt_buff *pkt)
