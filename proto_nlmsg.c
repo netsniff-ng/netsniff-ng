@@ -706,6 +706,7 @@ static void rtnl_msg_print(struct nlmsghdr *hdr)
 
 static void nlmsg_print(uint16_t family, struct nlmsghdr *hdr)
 {
+	u16 nlmsg_flags = hdr->nlmsg_flags;
 	char type[32];
 	char flags[128];
 	char procname[PATH_MAX];
@@ -733,9 +734,9 @@ static void nlmsg_print(uint16_t family, struct nlmsghdr *hdr)
 		colorize_start(bold),
 		nlmsg_type2str(family, hdr->nlmsg_type, type, sizeof(type)),
 		colorize_end());
-	tprintf("Flags 0x%.4x (%s%s%s), ", hdr->nlmsg_flags,
+	tprintf("Flags 0x%.4x (%s%s%s), ", nlmsg_flags,
 		colorize_start(bold),
-		nl_nlmsg_flags2str(hdr->nlmsg_flags, flags, sizeof(flags)),
+		nlmsg_flags ? nl_nlmsg_flags2str(nlmsg_flags, flags, sizeof(flags)) : "none",
 		colorize_end());
 	tprintf("Seq-Nr %u, ", hdr->nlmsg_seq);
 	tprintf("PID %u", hdr->nlmsg_pid);
