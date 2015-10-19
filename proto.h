@@ -26,7 +26,9 @@ struct protocol {
 };
 
 extern void empty(struct pkt_buff *pkt);
+extern void _hex(uint8_t *ptr, size_t len);
 extern void hex(struct pkt_buff *pkt);
+extern void _ascii(uint8_t *ptr, size_t len);
 extern void ascii(struct pkt_buff *pkt);
 extern void hex_ascii(struct pkt_buff *pkt);
 

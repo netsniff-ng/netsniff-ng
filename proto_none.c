@@ -14,7 +14,7 @@
 
 void empty(struct pkt_buff *pkt __maybe_unused) {}
 
-static void _hex(uint8_t *ptr, size_t len)
+void _hex(uint8_t *ptr, size_t len)
 {
 	if (!len)
 		return;
@@ -36,7 +36,7 @@ void hex(struct pkt_buff *pkt)
 	tprintf("\n");
 }
 
-static void _ascii(uint8_t *ptr, size_t len)
+void _ascii(uint8_t *ptr, size_t len)
 {
 	if (!len)
 		return;
