@@ -14,10 +14,9 @@
 
 struct pkt_buff {
 	/* invariant: head <= data <= tail */
-	uint8_t      *head;
-	uint8_t      *data;
-	uint8_t      *tail;
-	unsigned int  size;
+	uint8_t *head;
+	uint8_t *data;
+	uint8_t *tail;
 
 	struct protocol *dissector;
 	uint32_t link_type;
@@ -31,7 +30,6 @@ static inline struct pkt_buff *pkt_alloc(uint8_t *packet, unsigned int len)
 	pkt->head = packet;
 	pkt->data = packet;
 	pkt->tail = packet + len;
-	pkt->size = len;
 	pkt->dissector = NULL;
 
 	return pkt;
