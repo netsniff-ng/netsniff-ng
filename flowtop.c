@@ -19,6 +19,7 @@
 #include <curses.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/fsuid.h>
 #include <urcu.h>
 #include <libgen.h>
@@ -64,6 +65,11 @@ struct flow_entry {
 	unsigned int procnum;
 	bool is_visible;
 	struct nf_conntrack *ct;
+	struct timeval last_update;
+	double rate_bytes_src;
+	double rate_bytes_dst;
+	double rate_pkts_src;
+	double rate_pkts_dst;
 };
 
 struct flow_list {
@@ -197,6 +203,18 @@ static const struct nfct_filter_ipv6 filter_ipv6 = {
 	.mask = { 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff },
 };
 
+static int64_t time_after_us(struct timeval *tv)
+{
+	struct timeval now;
+
+	gettimeofday(&now, NULL);
+
+	now.tv_sec  -= tv->tv_sec;
+	now.tv_usec -= tv->tv_usec;
+
+	return now.tv_sec * 1000000 + now.tv_usec;
+}
+
 static void signal_handler(int number)
 {
 	switch (number) {
@@ -252,6 +270,28 @@ static void version(void)
 	die();
 }
 
+static void flow_entry_update_time(struct flow_entry *n)
+{
+	gettimeofday(&n->last_update, NULL);
+}
+
+static void flow_entry_calc_rate(struct flow_entry *n, const struct nf_conntrack *ct)
+{
+	uint64_t bytes_src = nfct_get_attr_u64(ct, ATTR_ORIG_COUNTER_BYTES);
+	uint64_t bytes_dst = nfct_get_attr_u64(ct, ATTR_REPL_COUNTER_BYTES);
+	uint64_t pkts_src  = nfct_get_attr_u64(ct, ATTR_ORIG_COUNTER_PACKETS);
+	uint64_t pkts_dst  = nfct_get_attr_u64(ct, ATTR_REPL_COUNTER_PACKETS);
+	double sec = time_after_us(&n->last_update) / 1000000.0;
+
+	if (sec <= 0)
+		return;
+
+	n->rate_bytes_src = (bytes_src - n->bytes_src) / sec;
+	n->rate_bytes_dst = (bytes_dst - n->bytes_dst) / sec;
+	n->rate_pkts_src = (pkts_src - n->pkts_src) / sec;
+	n->rate_pkts_dst = (pkts_dst - n->pkts_dst) / sec;
+}
+
 static inline struct flow_entry *flow_entry_xalloc(void)
 {
 	return xzmalloc(sizeof(struct flow_entry));
@@ -293,6 +333,7 @@ static void flow_list_new_entry(struct flow_list *fl, struct nf_conntrack *ct)
 
 	n->ct = nfct_clone(ct);
 
+	flow_entry_update_time(n);
 	flow_entry_from_ct(n, ct);
 	flow_entry_get_extended(n);
 
@@ -747,14 +788,36 @@ static char *bandw2str(double bytes, char *buf, size_t len)
 	return buf;
 }
 
-static void presenter_print_counters(uint64_t bytes, uint64_t pkts, int color)
+static char *rate2str(double rate, char *buf, size_t len)
+{
+	if (rate > 1000000000.)
+		snprintf(buf, len, "%.1fGb/s", rate / 1000000000.);
+	else if (rate > 1000000.)
+		snprintf(buf, len, "%.1fMb/s", rate / 1000000.);
+	else if (rate > 1000.)
+		snprintf(buf, len, "%.1fKb/s", rate / 1000.);
+	else
+		snprintf(buf, len, "%gB/s", rate);
+
+	return buf;
+}
+
+static void presenter_print_counters(uint64_t bytes, uint64_t pkts,
+				     double rate_bytes, double rate_pkts,
+				     int color)
 {
 	char bytes_str[64];
 
 	printw(" -> (");
 	attron(COLOR_PAIR(color));
-	printw("%"PRIu64" pkts, ", pkts);
-	printw("%s bytes", bandw2str(bytes, bytes_str, sizeof(bytes_str) - 1));
+	printw("%"PRIu64" pkts", pkts);
+	if (rate_pkts)
+		printw("(%.1fpps)", rate_pkts);
+
+	printw(", %s bytes", bandw2str(bytes, bytes_str, sizeof(bytes_str) - 1));
+	if (rate_bytes)
+		printw("(%s)", rate2str(rate_bytes, bytes_str,
+			sizeof(bytes_str) - 1));
 	attroff(COLOR_PAIR(color));
 	printw(")");
 }
@@ -872,7 +935,9 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 		}
 
 		if (n->pkts_src > 0 && n->bytes_src > 0)
-			presenter_print_counters(n->bytes_src, n->pkts_src, 1);
+			presenter_print_counters(n->bytes_src, n->pkts_src,
+						 n->rate_bytes_src,
+						 n->rate_pkts_src, 1);
 
 		printw(" => ");
 	}
@@ -898,7 +963,9 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 	}
 
 	if (n->pkts_dst > 0 && n->bytes_dst > 0)
-		presenter_print_counters(n->bytes_dst, n->pkts_dst, 2);
+		presenter_print_counters(n->bytes_dst, n->pkts_dst,
+					 n->rate_bytes_dst,
+					 n->rate_pkts_dst, 2);
 }
 
 static inline bool presenter_flow_wrong_state(struct flow_entry *n)
@@ -1176,6 +1243,8 @@ static int flow_update_cb(enum nf_conntrack_msg_type type,
 	if (!n)
 		return NFCT_CB_CONTINUE;
 
+	flow_entry_calc_rate(n, ct);
+	flow_entry_update_time(n);
 	flow_entry_from_ct(n, ct);
 
 	return NFCT_CB_CONTINUE;
@@ -1372,7 +1441,7 @@ static void *collector(void *null __maybe_unused)
 	while (!sigint) {
 		int status;
 
-		usleep(300000);
+		usleep(1000000);
 
 		collector_refresh_flows(ct_update);
 
