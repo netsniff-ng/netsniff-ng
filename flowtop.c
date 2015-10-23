@@ -59,7 +59,7 @@ struct flow_entry {
 	char country_src[128], country_dst[128];
 	char city_src[128], city_dst[128];
 	char rev_dns_src[256], rev_dns_dst[256];
-	char cmdline[256];
+	char procname[256];
 	struct flow_entry *next;
 	int inode;
 	unsigned int procnum;
@@ -452,10 +452,14 @@ static int walk_process(unsigned int pid, struct flow_entry *n)
 			continue;
 
 		if (S_ISSOCK(statbuf.st_mode) && (ino_t) n->inode == statbuf.st_ino) {
-			ret = proc_get_cmdline(pid, n->cmdline, sizeof(n->cmdline));
+			char cmdline[256];
+
+			ret = proc_get_cmdline(pid, cmdline, sizeof(cmdline));
 			if (ret < 0)
 				panic("Failed to get process cmdline: %s\n", strerror(errno));
 
+			if (snprintf(n->procname, sizeof(n->procname), "%s", basename(cmdline)) < 0)
+				n->procname[0] = '\0';
 			n->procnum = pid;
 			closedir(dir);
 			return 1;
@@ -474,7 +478,7 @@ static void walk_processes(struct flow_entry *n)
 
 	/* n->inode must be set */
 	if (n->inode <= 0) {
-		n->cmdline[0] = '\0';
+		n->procname[0] = '\0';
 		return;
 	}
 
@@ -858,8 +862,7 @@ static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
 
 	/* PID, application name */
 	if (n->procnum > 0) {
-		slprintf(tmp, sizeof(tmp), "%s(%d)", basename(n->cmdline),
-			 n->procnum);
+		slprintf(tmp, sizeof(tmp), "%s(%d)", n->procname, n->procnum);
 
 		printw("[");
 		attron(COLOR_PAIR(3));
