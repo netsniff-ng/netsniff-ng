@@ -229,7 +229,7 @@ static void signal_handler(int number)
 	}
 }
 
-static void flow_entry_from_ct(struct flow_entry *n, struct nf_conntrack *ct);
+static void flow_entry_from_ct(struct flow_entry *n, const struct nf_conntrack *ct);
 static void flow_entry_get_extended(struct flow_entry *n);
 
 static void help(void)
@@ -311,7 +311,7 @@ static inline void flow_list_init(struct flow_list *fl)
 	spinlock_init(&fl->lock);
 }
 
-static inline bool nfct_is_dns(struct nf_conntrack *ct)
+static inline bool nfct_is_dns(const struct nf_conntrack *ct)
 {
 	uint16_t port_src = nfct_get_attr_u16(ct, ATTR_ORIG_PORT_SRC);
 	uint16_t port_dst = nfct_get_attr_u16(ct, ATTR_ORIG_PORT_DST);
@@ -319,7 +319,7 @@ static inline bool nfct_is_dns(struct nf_conntrack *ct)
 	return ntohs(port_src) == 53 || ntohs(port_dst) == 53;
 }
 
-static void flow_list_new_entry(struct flow_list *fl, struct nf_conntrack *ct)
+static void flow_list_new_entry(struct flow_list *fl, const struct nf_conntrack *ct)
 {
 	struct flow_entry *n;
 
@@ -356,7 +356,7 @@ static struct flow_entry *flow_list_find_id(struct flow_list *fl,
 	return NULL;
 }
 
-static struct flow_entry *flow_list_find_prev_id(struct flow_list *fl,
+static struct flow_entry *flow_list_find_prev_id(const struct flow_list *fl,
 						 uint32_t id)
 {
 	struct flow_entry *prev = rcu_dereference(fl->head), *next;
@@ -375,7 +375,7 @@ static struct flow_entry *flow_list_find_prev_id(struct flow_list *fl,
 }
 
 static void flow_list_update_entry(struct flow_list *fl,
-				   struct nf_conntrack *ct)
+				   const struct nf_conntrack *ct)
 {
 	struct flow_entry *n;
 
@@ -389,7 +389,7 @@ static void flow_list_update_entry(struct flow_list *fl,
 }
 
 static void flow_list_destroy_entry(struct flow_list *fl,
-				    struct nf_conntrack *ct)
+				    const struct nf_conntrack *ct)
 {
 	struct flow_entry *n1, *n2;
 	uint32_t id = nfct_get_attr_u32(ct, ATTR_ID);
@@ -547,7 +547,7 @@ static int get_port_inode(uint16_t port, int proto, bool is_ip6)
 		memcpy(n->elem, buff, sizeof(n->elem));	\
 } while (0)
 
-static void flow_entry_from_ct(struct flow_entry *n, struct nf_conntrack *ct)
+static void flow_entry_from_ct(struct flow_entry *n, const struct nf_conntrack *ct)
 {
 	CP_NFCT(l3_proto, ATTR_ORIG_L3PROTO, 8);
 	CP_NFCT(l4_proto, ATTR_ORIG_L4PROTO, 8);
@@ -595,7 +595,7 @@ enum flow_entry_direction {
 #define SELFLD(dir,src_member,dst_member)	\
 	(((dir) == flow_entry_src) ? n->src_member : n->dst_member)
 
-static void flow_entry_get_sain4_obj(struct flow_entry *n,
+static void flow_entry_get_sain4_obj(const struct flow_entry *n,
 				     enum flow_entry_direction dir,
 				     struct sockaddr_in *sa)
 {
@@ -604,7 +604,7 @@ static void flow_entry_get_sain4_obj(struct flow_entry *n,
 	sa->sin_addr.s_addr = htonl(SELFLD(dir, ip4_src_addr, ip4_dst_addr));
 }
 
-static void flow_entry_get_sain6_obj(struct flow_entry *n,
+static void flow_entry_get_sain6_obj(const struct flow_entry *n,
 				     enum flow_entry_direction dir,
 				     struct sockaddr_in6 *sa)
 {
@@ -826,7 +826,7 @@ static void presenter_print_counters(uint64_t bytes, uint64_t pkts,
 	printw(")");
 }
 
-static void presenter_print_flow_entry_time(struct flow_entry *n)
+static void presenter_print_flow_entry_time(const struct flow_entry *n)
 {
 	int h, m, s;
 	time_t now;
@@ -852,7 +852,7 @@ static void presenter_print_flow_entry_time(struct flow_entry *n)
 	printw(" ]");
 }
 
-static void presenter_screen_do_line(WINDOW *screen, struct flow_entry *n,
+static void presenter_screen_do_line(WINDOW *screen, const struct flow_entry *n,
 				     unsigned int *line)
 {
 	char tmp[128], *pname = NULL;
@@ -1232,7 +1232,7 @@ static void conntrack_tstamp_enable(void)
 }
 
 static int flow_update_cb(enum nf_conntrack_msg_type type,
-		   struct nf_conntrack *ct, void *data __maybe_unused)
+			  struct nf_conntrack *ct, void *data __maybe_unused)
 {
 	struct flow_entry *n;
 
