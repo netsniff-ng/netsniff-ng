@@ -27,6 +27,7 @@ local system, e.g. for debugging purposes or to answer questions like:
     * Are there any suspicious background connections on my machine?
     * How many active connections does binary Y have?
     * How long are connections active already?
+    * At which rate am I sending/receiving data?
 .PP
 The following information will be presented in flowtop's output:
 .PP
@@ -38,6 +39,7 @@ The following information will be presented in flowtop's output:
     * Transport protocol state machine information
     * Byte/packet counters (if they are enabled)
     * Connection duration (if timestamping is enabled)
+    * Flow send/receive rate (if byte/packet counters are enabled)
 .PP
 In order for flowtop to work, netfilter must be active and running
 on your machine, thus kernel-side connection tracking is active. If netfilter
