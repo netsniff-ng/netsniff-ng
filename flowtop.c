@@ -46,6 +46,10 @@
 #define NSEC_PER_SEC 1000000000L
 #endif
 
+#ifndef USEC_PER_SEC
+#define USEC_PER_SEC 1000000L
+#endif
+
 struct flow_entry {
 	uint32_t flow_id, use, status;
 	uint8_t  l3_proto, l4_proto;
@@ -105,7 +109,9 @@ static int what = INCLUDE_IPV4 | INCLUDE_IPV6 | INCLUDE_TCP, show_src = 0;
 static struct flow_list flow_list;
 static struct sysctl_params_ctx sysctl = { -1, -1 };
 
-static const char *short_options = "vhTUsDIS46u";
+static unsigned int interval = 1;
+
+static const char *short_options = "vhTUsDIS46ut:";
 static const struct option long_options[] = {
 	{"ipv4",	no_argument,		NULL, '4'},
 	{"ipv6",	no_argument,		NULL, '6'},
@@ -116,6 +122,7 @@ static const struct option long_options[] = {
 	{"sctp",	no_argument,		NULL, 'S'},
 	{"show-src",	no_argument,		NULL, 's'},
 	{"update",	no_argument,		NULL, 'u'},
+	{"interval",    required_argument,	NULL, 't'},
 	{"version",	no_argument,		NULL, 'v'},
 	{"help",	no_argument,		NULL, 'h'},
 	{NULL, 0, NULL, 0}
@@ -212,7 +219,7 @@ static int64_t time_after_us(struct timeval *tv)
 	now.tv_sec  -= tv->tv_sec;
 	now.tv_usec -= tv->tv_usec;
 
-	return now.tv_sec * 1000000 + now.tv_usec;
+	return now.tv_sec * USEC_PER_SEC + now.tv_usec;
 }
 
 static void signal_handler(int number)
@@ -248,6 +255,7 @@ static void help(void)
 	     "  -S|--sctp              Show only SCTP flows\n"
 	     "  -s|--show-src          Also show source, not only dest\n"
 	     "  -u|--update            Update GeoIP databases\n"
+	     "  -t|--interval <time>   Refresh time in seconds (default 1s)\n"
 	     "  -v|--version           Print version and exit\n"
 	     "  -h|--help              Print this help and exit\n\n"
 	     "Examples:\n"
@@ -281,7 +289,7 @@ static void flow_entry_calc_rate(struct flow_entry *n, const struct nf_conntrack
 	uint64_t bytes_dst = nfct_get_attr_u64(ct, ATTR_REPL_COUNTER_BYTES);
 	uint64_t pkts_src  = nfct_get_attr_u64(ct, ATTR_ORIG_COUNTER_PACKETS);
 	uint64_t pkts_dst  = nfct_get_attr_u64(ct, ATTR_REPL_COUNTER_PACKETS);
-	double sec = time_after_us(&n->last_update) / 1000000.0;
+	double sec = (double)time_after_us(&n->last_update) / USEC_PER_SEC;
 
 	if (sec <= 0)
 		return;
@@ -1444,7 +1452,7 @@ static void *collector(void *null __maybe_unused)
 	while (!sigint) {
 		int status;
 
-		usleep(1000000);
+		usleep(USEC_PER_SEC * interval);
 
 		collector_refresh_flows(ct_update);
 
@@ -1509,6 +1517,9 @@ int main(int argc, char **argv)
 		case 'u':
 			update_geoip();
 			die();
+			break;
+		case 't':
+			interval = strtoul(optarg, NULL, 10);
 			break;
 		case 'h':
 			help();
