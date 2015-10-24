@@ -781,13 +781,13 @@ static uint16_t presenter_get_port(uint16_t src, uint16_t dst, bool is_tcp)
 static char *bandw2str(double bytes, char *buf, size_t len)
 {
 	if (bytes > 1000000000.)
-		snprintf(buf, len, "%.1fG", bytes / 1000000000.);
+		snprintf(buf, len, "%.1fGB", bytes / 1000000000.);
 	else if (bytes > 1000000.)
-		snprintf(buf, len, "%.1fM", bytes / 1000000.);
+		snprintf(buf, len, "%.1fMB", bytes / 1000000.);
 	else if (bytes > 1000.)
-		snprintf(buf, len, "%.1fK", bytes / 1000.);
+		snprintf(buf, len, "%.1fKB", bytes / 1000.);
 	else
-		snprintf(buf, len, "%g", bytes);
+		snprintf(buf, len, "%g bytes", bytes);
 
 	return buf;
 }
@@ -795,11 +795,11 @@ static char *bandw2str(double bytes, char *buf, size_t len)
 static char *rate2str(double rate, char *buf, size_t len)
 {
 	if (rate > 1000000000.)
-		snprintf(buf, len, "%.1fGb/s", rate / 1000000000.);
+		snprintf(buf, len, "%.1fGB/s", rate / 1000000000.);
 	else if (rate > 1000000.)
-		snprintf(buf, len, "%.1fMb/s", rate / 1000000.);
+		snprintf(buf, len, "%.1fMB/s", rate / 1000000.);
 	else if (rate > 1000.)
-		snprintf(buf, len, "%.1fKb/s", rate / 1000.);
+		snprintf(buf, len, "%.1fKB/s", rate / 1000.);
 	else
 		snprintf(buf, len, "%gB/s", rate);
 
@@ -818,7 +818,7 @@ static void presenter_print_counters(uint64_t bytes, uint64_t pkts,
 	if (rate_pkts)
 		printw("(%.1fpps)", rate_pkts);
 
-	printw(", %s bytes", bandw2str(bytes, bytes_str, sizeof(bytes_str) - 1));
+	printw(", %s", bandw2str(bytes, bytes_str, sizeof(bytes_str) - 1));
 	if (rate_bytes)
 		printw("(%s)", rate2str(rate_bytes, bytes_str,
 			sizeof(bytes_str) - 1));
