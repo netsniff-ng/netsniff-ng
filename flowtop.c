@@ -793,7 +793,7 @@ static char *bandw2str(double bytes, char *buf, size_t len)
 	else if (bytes > 1000000.)
 		snprintf(buf, len, "%.1fMB", bytes / 1000000.);
 	else if (bytes > 1000.)
-		snprintf(buf, len, "%.1fKB", bytes / 1000.);
+		snprintf(buf, len, "%.1fkB", bytes / 1000.);
 	else
 		snprintf(buf, len, "%g bytes", bytes);
 
@@ -807,7 +807,7 @@ static char *rate2str(double rate, char *buf, size_t len)
 	else if (rate > 1000000.)
 		snprintf(buf, len, "%.1fMB/s", rate / 1000000.);
 	else if (rate > 1000.)
-		snprintf(buf, len, "%.1fKB/s", rate / 1000.);
+		snprintf(buf, len, "%.1fkB/s", rate / 1000.);
 	else
 		snprintf(buf, len, "%gB/s", rate);
 
