@@ -655,13 +655,11 @@ flow_entry_geo_city_lookup_generic(struct flow_entry *n,
 
 	build_bug_on(sizeof(n->city_src) != sizeof(n->city_dst));
 
-	if (city) {
-		memcpy(SELFLD(dir, city_src, city_dst), city,
-		       min(sizeof(n->city_src), strlen(city)));
-	} else {
-		memset(SELFLD(dir, city_src, city_dst), 0,
-		       sizeof(n->city_src));
-	}
+	if (city)
+		strlcpy(SELFLD(dir, city_src, city_dst), city,
+		        sizeof(n->city_src));
+	else
+		SELFLD(dir, city_src, city_dst)[0] = '\0';
 }
 
 static void
@@ -689,13 +687,11 @@ flow_entry_geo_country_lookup_generic(struct flow_entry *n,
 
 	build_bug_on(sizeof(n->country_src) != sizeof(n->country_dst));
 
-	if (country) {
-		memcpy(SELFLD(dir, country_src, country_dst), country,
-		       min(sizeof(n->country_src), strlen(country)));
-	} else {
-		memset(SELFLD(dir, country_src, country_dst), 0,
-		       sizeof(n->country_src));
-	}
+	if (country)
+		strlcpy(SELFLD(dir, country_src, country_dst), country,
+		        sizeof(n->country_src));
+	else
+		SELFLD(dir, country_src, country_dst)[0] = '\0';
 }
 
 static void flow_entry_get_extended_geo(struct flow_entry *n,
