@@ -26,6 +26,7 @@
 #include <inttypes.h>
 #include <poll.h>
 #include <fcntl.h>
+#include <arpa/inet.h>
 
 #include "die.h"
 #include "xmalloc.h"
@@ -110,8 +111,9 @@ static struct flow_list flow_list;
 static struct sysctl_params_ctx sysctl = { -1, -1 };
 
 static unsigned int interval = 1;
+static bool resolve_dns = true;
 
-static const char *short_options = "vhTUsDIS46ut:";
+static const char *short_options = "vhTUsDIS46ut:n";
 static const struct option long_options[] = {
 	{"ipv4",	no_argument,		NULL, '4'},
 	{"ipv6",	no_argument,		NULL, '6'},
@@ -120,6 +122,7 @@ static const struct option long_options[] = {
 	{"dccp",	no_argument,		NULL, 'D'},
 	{"icmp",	no_argument,		NULL, 'I'},
 	{"sctp",	no_argument,		NULL, 'S'},
+	{"no-dns",      no_argument,		NULL, 'n'},
 	{"show-src",	no_argument,		NULL, 's'},
 	{"update",	no_argument,		NULL, 'u'},
 	{"interval",    required_argument,	NULL, 't'},
@@ -253,6 +256,7 @@ static void help(void)
 	     "  -D|--dccp              Show only DCCP flows\n"
 	     "  -I|--icmp              Show only ICMP/ICMPv6 flows\n"
 	     "  -S|--sctp              Show only SCTP flows\n"
+	     "  -n|--no-dns            Don't perform hostname lookup\n"
 	     "  -s|--show-src          Also show source, not only dest\n"
 	     "  -u|--update            Update GeoIP databases\n"
 	     "  -t|--interval <time>   Refresh time in seconds (default 1s)\n"
@@ -707,12 +711,22 @@ static void flow_entry_get_extended_revdns(struct flow_entry *n,
 	struct sockaddr *sa;
 	struct hostent *hent;
 
+	build_bug_on(sizeof(n->rev_dns_src) != sizeof(n->rev_dns_dst));
+
 	switch (n->l3_proto) {
 	default:
 		bug();
 
 	case AF_INET:
 		flow_entry_get_sain4_obj(n, dir, &sa4);
+
+		if (!resolve_dns) {
+			inet_ntop(AF_INET, &sa4.sin_addr,
+				  SELFLD(dir, rev_dns_src, rev_dns_dst),
+				  sizeof(n->rev_dns_src));
+			return;
+		}
+
 		sa = (struct sockaddr *) &sa4;
 		sa_len = sizeof(sa4);
 		hent = gethostbyaddr(&sa4.sin_addr, sizeof(sa4.sin_addr), AF_INET);
@@ -720,13 +734,20 @@ static void flow_entry_get_extended_revdns(struct flow_entry *n,
 
 	case AF_INET6:
 		flow_entry_get_sain6_obj(n, dir, &sa6);
+
+		if (!resolve_dns) {
+			inet_ntop(AF_INET6, &sa6.sin6_addr,
+				  SELFLD(dir, rev_dns_src, rev_dns_dst),
+				  sizeof(n->rev_dns_src));
+			return;
+		}
+
 		sa = (struct sockaddr *) &sa6;
 		sa_len = sizeof(sa6);
 		hent = gethostbyaddr(&sa6.sin6_addr, sizeof(sa6.sin6_addr), AF_INET6);
 		break;
 	}
 
-	build_bug_on(sizeof(n->rev_dns_src) != sizeof(n->rev_dns_dst));
 	getnameinfo(sa, sa_len, SELFLD(dir, rev_dns_src, rev_dns_dst),
 		    sizeof(n->rev_dns_src), NULL, 0, NI_NUMERICHOST);
 
@@ -1517,6 +1538,9 @@ int main(int argc, char **argv)
 			break;
 		case 't':
 			interval = strtoul(optarg, NULL, 10);
+			break;
+		case 'n':
+			resolve_dns = false;
 			break;
 		case 'h':
 			help();
