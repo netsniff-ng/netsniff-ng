@@ -106,11 +106,12 @@ struct sysctl_params_ctx {
 
 static volatile bool is_flow_collecting;
 static volatile sig_atomic_t sigint = 0;
-static int what = INCLUDE_IPV4 | INCLUDE_IPV6 | INCLUDE_TCP, show_src = 0;
+static int what = INCLUDE_IPV4 | INCLUDE_IPV6 | INCLUDE_TCP;
 static struct flow_list flow_list;
 static struct sysctl_params_ctx sysctl = { -1, -1 };
 
 static unsigned int interval = 1;
+static bool show_src = false;
 static bool resolve_dns = true;
 static bool resolve_geoip = true;
 
@@ -1113,7 +1114,7 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 		presenter_screen_do_line(screen, n, &line);
 
 		line++;
-		maxy -= (2 + 1 * show_src);
+		maxy -= (2 + (show_src ? 1 : 0));
 	}
 
 	mvwprintw(screen, 1, 2,
@@ -1534,7 +1535,7 @@ int main(int argc, char **argv)
 			what_cmd |= INCLUDE_SCTP;
 			break;
 		case 's':
-			show_src = 1;
+			show_src = true;
 			break;
 		case 'u':
 			update_geoip();
