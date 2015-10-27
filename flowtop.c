@@ -112,8 +112,9 @@ static struct sysctl_params_ctx sysctl = { -1, -1 };
 
 static unsigned int interval = 1;
 static bool resolve_dns = true;
+static bool resolve_geoip = true;
 
-static const char *short_options = "vhTUsDIS46ut:n";
+static const char *short_options = "vhTUsDIS46ut:nG";
 static const struct option long_options[] = {
 	{"ipv4",	no_argument,		NULL, '4'},
 	{"ipv6",	no_argument,		NULL, '6'},
@@ -123,6 +124,7 @@ static const struct option long_options[] = {
 	{"icmp",	no_argument,		NULL, 'I'},
 	{"sctp",	no_argument,		NULL, 'S'},
 	{"no-dns",      no_argument,		NULL, 'n'},
+	{"no-geoip",    no_argument,		NULL, 'G'},
 	{"show-src",	no_argument,		NULL, 's'},
 	{"update",	no_argument,		NULL, 'u'},
 	{"interval",    required_argument,	NULL, 't'},
@@ -698,8 +700,10 @@ flow_entry_geo_country_lookup_generic(struct flow_entry *n,
 static void flow_entry_get_extended_geo(struct flow_entry *n,
 					enum flow_entry_direction dir)
 {
-	flow_entry_geo_city_lookup_generic(n, dir);
-	flow_entry_geo_country_lookup_generic(n, dir);
+	if (resolve_geoip) {
+		flow_entry_geo_city_lookup_generic(n, dir);
+		flow_entry_geo_country_lookup_generic(n, dir);
+	}
 }
 
 static void flow_entry_get_extended_revdns(struct flow_entry *n,
@@ -1542,6 +1546,9 @@ int main(int argc, char **argv)
 		case 'n':
 			resolve_dns = false;
 			break;
+		case 'G':
+			resolve_geoip = false;
+			break;
 		case 'h':
 			help();
 			break;
@@ -1572,7 +1579,8 @@ int main(int argc, char **argv)
 	conntrack_acct_enable();
 	conntrack_tstamp_enable();
 
-	init_geoip(1);
+	if (resolve_geoip)
+		init_geoip(1);
 
 	ret = pthread_create(&tid, NULL, collector, NULL);
 	if (ret < 0)
@@ -1580,7 +1588,8 @@ int main(int argc, char **argv)
 
 	presenter();
 
-	destroy_geoip();
+	if (resolve_geoip)
+		destroy_geoip();
 
 	restore_sysctl(&sysctl);
 
