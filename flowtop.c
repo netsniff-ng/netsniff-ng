@@ -730,12 +730,9 @@ static void flow_entry_get_extended_revdns(struct flow_entry *n,
 	getnameinfo(sa, sa_len, SELFLD(dir, rev_dns_src, rev_dns_dst),
 		    sizeof(n->rev_dns_src), NULL, 0, NI_NUMERICHOST);
 
-	if (hent) {
-		memset(n->rev_dns_dst, 0, sizeof(n->rev_dns_dst));
-		memcpy(SELFLD(dir, rev_dns_src, rev_dns_dst),
-		       hent->h_name, min(sizeof(n->rev_dns_src),
-					 strlen(hent->h_name)));
-	}
+	if (hent)
+		strlcpy(SELFLD(dir, rev_dns_src, rev_dns_dst), hent->h_name,
+			sizeof(n->rev_dns_src));
 }
 
 static void flow_entry_get_extended(struct flow_entry *n)
