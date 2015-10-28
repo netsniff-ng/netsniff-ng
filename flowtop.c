@@ -141,7 +141,7 @@ static const struct option long_options[] = {
 	{NULL, 0, NULL, 0}
 };
 
-static const char *copyright = "Please report bugs to <bugs@netsniff-ng.org>\n"
+static const char *copyright = "Please report bugs to <netsniff-ng@googlegroups.com>\n"
 	"Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>\n"
 	"Copyright (C) 2011-2012 Emmanuel Roullit <emmanuel.roullit@gmail.com>\n"
 	"Swiss federal institute of technology (ETH Zurich)\n"
