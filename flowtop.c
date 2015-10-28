@@ -104,6 +104,11 @@ struct sysctl_params_ctx {
 	int nfct_tstamp;
 };
 
+enum rate_units {
+	RATE_BITS,
+	RATE_BYTES
+};
+
 static volatile bool is_flow_collecting;
 static volatile sig_atomic_t sigint = 0;
 static int what = INCLUDE_IPV4 | INCLUDE_IPV6 | INCLUDE_TCP;
@@ -114,8 +119,9 @@ static unsigned int interval = 1;
 static bool show_src = false;
 static bool resolve_dns = true;
 static bool resolve_geoip = true;
+static enum rate_units rate_type = RATE_BYTES;
 
-static const char *short_options = "vhTUsDIS46ut:nG";
+static const char *short_options = "vhTUsDIS46ut:nGb";
 static const struct option long_options[] = {
 	{"ipv4",	no_argument,		NULL, '4'},
 	{"ipv6",	no_argument,		NULL, '6'},
@@ -127,6 +133,7 @@ static const struct option long_options[] = {
 	{"no-dns",      no_argument,		NULL, 'n'},
 	{"no-geoip",    no_argument,		NULL, 'G'},
 	{"show-src",	no_argument,		NULL, 's'},
+	{"bits",        no_argument,		NULL, 'b'},
 	{"update",	no_argument,		NULL, 'u'},
 	{"interval",    required_argument,	NULL, 't'},
 	{"version",	no_argument,		NULL, 'v'},
@@ -261,6 +268,7 @@ static void help(void)
 	     "  -S|--sctp              Show only SCTP flows\n"
 	     "  -n|--no-dns            Don't perform hostname lookup\n"
 	     "  -s|--show-src          Also show source, not only dest\n"
+	     "  -b|--bits              Show rates in bits/s instead of bytes/s\n"
 	     "  -u|--update            Update GeoIP databases\n"
 	     "  -t|--interval <time>   Refresh time in seconds (default 1s)\n"
 	     "  -v|--version           Print version and exit\n"
@@ -821,14 +829,22 @@ static char *bandw2str(double bytes, char *buf, size_t len)
 
 static char *rate2str(double rate, char *buf, size_t len)
 {
+	const char * const unit_fmt[2][4] = {
+		{ "%.1fGbit/s", "%.1fMbit/s", "%.1fkbit/s", "%gbit/s" },
+		{ "%.1fGB/s",   "%.1fMB/s",   "%.1fkB/s",   "%gB/s"   }
+	};
+
+	if (rate_type == RATE_BITS)
+		rate *= 8;
+
 	if (rate > 1000000000.)
-		snprintf(buf, len, "%.1fGB/s", rate / 1000000000.);
+		snprintf(buf, len, unit_fmt[rate_type][0], rate / 1000000000.);
 	else if (rate > 1000000.)
-		snprintf(buf, len, "%.1fMB/s", rate / 1000000.);
+		snprintf(buf, len, unit_fmt[rate_type][1], rate / 1000000.);
 	else if (rate > 1000.)
-		snprintf(buf, len, "%.1fkB/s", rate / 1000.);
+		snprintf(buf, len, unit_fmt[rate_type][2], rate / 1000.);
 	else
-		snprintf(buf, len, "%gB/s", rate);
+		snprintf(buf, len, unit_fmt[rate_type][3], rate);
 
 	return buf;
 }
@@ -1532,6 +1548,9 @@ int main(int argc, char **argv)
 			break;
 		case 's':
 			show_src = true;
+			break;
+		case 'b':
+			rate_type = RATE_BITS;
 			break;
 		case 'u':
 			update_geoip();
