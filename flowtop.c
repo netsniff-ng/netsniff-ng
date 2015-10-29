@@ -267,6 +267,7 @@ static void help(void)
 	     "  -I|--icmp              Show only ICMP/ICMPv6 flows\n"
 	     "  -S|--sctp              Show only SCTP flows\n"
 	     "  -n|--no-dns            Don't perform hostname lookup\n"
+	     "  -G|--no-geoip          Don't perform GeoIP lookup\n"
 	     "  -s|--show-src          Also show source, not only dest\n"
 	     "  -b|--bits              Show rates in bits/s instead of bytes/s\n"
 	     "  -u|--update            Update GeoIP databases\n"
