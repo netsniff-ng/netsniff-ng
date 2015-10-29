@@ -45,10 +45,9 @@ void mmap_ring_generic(int sock, struct ring *ring)
 		panic("Cannot mmap {TX,RX}_RING!\n");
 }
 
-void alloc_ring_frames_generic(struct ring *ring, int num, size_t size)
+void alloc_ring_frames_generic(struct ring *ring, size_t num, size_t size)
 {
-	int i;
-	size_t len = num * sizeof(*ring->frames);
+	size_t i, len = num * sizeof(*ring->frames);
 
 	ring->frames = xmalloc_aligned(len, CO_CACHE_LINE_SIZE);
 	fmemset(ring->frames, 0, len);

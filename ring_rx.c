@@ -91,7 +91,7 @@ static inline void setup_rx_ring_layout_v3(struct ring *ring __maybe_unused)
 {
 }
 
-static inline int rx_ring_get_num(struct ring *ring, bool v3 __maybe_unused)
+static inline size_t rx_ring_get_num(struct ring *ring, bool v3 __maybe_unused)
 {
 	return ring->layout.tp_frame_nr;
 }
