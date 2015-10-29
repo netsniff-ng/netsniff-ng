@@ -1,6 +1,7 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * Copyright 2009, 2010 Daniel Borkmann.
+ * Copyright 2014, 2015 Tobias Klauser.
  * Subject to the GPL, version 2.
  */
 
@@ -196,6 +197,8 @@ static inline int get_sockopt_tpacket(int sock)
 	return val;
 }
 
+extern void setup_ring_layout_generic(int sock, struct ring *ring, size_t size,
+				      bool jumbo_support);
 extern void mmap_ring_generic(int sock, struct ring *ring);
 extern void alloc_ring_frames_generic(struct ring *ring, int num, size_t size);
 extern void bind_ring_generic(int sock, struct ring *ring, int ifindex, bool tx_only);

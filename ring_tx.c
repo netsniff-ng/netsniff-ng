@@ -2,6 +2,7 @@
  * netsniff-ng - the packet sniffing beast
  * Copyright 2009, 2010 Daniel Borkmann.
  * Copyright 2009, 2010 Emmanuel Roullit.
+ * Copyright 2014, 2015 Tobias Klauser.
  * Subject to the GPL, version 2.
  */
 
@@ -48,20 +49,7 @@ void destroy_tx_ring(int sock, struct ring *ring)
 static void setup_tx_ring_layout(int sock, struct ring *ring, size_t size,
 				 bool jumbo_support)
 {
-	fmemset(&ring->layout, 0, sizeof(ring->layout));
-
-	ring->layout.tp_block_size = (jumbo_support ?
-				      RUNTIME_PAGE_SIZE << 4 :
-				      RUNTIME_PAGE_SIZE << 2);
-
-	ring->layout.tp_frame_size = (jumbo_support ?
-				      TPACKET_ALIGNMENT << 12 :
-				      TPACKET_ALIGNMENT << 7);
-
-	ring->layout.tp_block_nr = size / ring->layout.tp_block_size;
-	ring->layout.tp_frame_nr = ring->layout.tp_block_size /
-				   ring->layout.tp_frame_size *
-				   ring->layout.tp_block_nr;
+	setup_ring_layout_generic(sock, ring, size, jumbo_support);
 
 	set_sockopt_tpacket_v2(sock);
 

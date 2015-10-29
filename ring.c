@@ -1,6 +1,7 @@
 /*
  * netsniff-ng - the packet sniffing beast
  * Copyright 2009, 2010 Daniel Borkmann.
+ * Copyright 2014, 2015 Tobias Klauser
  * Subject to the GPL, version 2.
  */
 
@@ -18,6 +19,26 @@
 #include "die.h"
 #include "ring.h"
 #include "built_in.h"
+
+void setup_ring_layout_generic(int sock, struct ring *ring, size_t size,
+			       bool jumbo_support)
+{
+	fmemset(&ring->layout, 0, sizeof(ring->layout));
+
+	ring->layout.tp_block_size = (jumbo_support ?
+				      RUNTIME_PAGE_SIZE << 4 :
+				      RUNTIME_PAGE_SIZE << 2);
+
+	ring->layout.tp_frame_size = (jumbo_support ?
+				      TPACKET_ALIGNMENT << 12 :
+				      TPACKET_ALIGNMENT << 7);
+
+	ring->layout.tp_block_nr = size / ring->layout.tp_block_size;
+	ring->layout.tp_frame_nr = ring->layout.tp_block_size /
+				   ring->layout.tp_frame_size *
+				   ring->layout.tp_block_nr;
+
+}
 
 void mmap_ring_generic(int sock, struct ring *ring)
 {
