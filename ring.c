@@ -61,6 +61,7 @@ void alloc_ring_frames_generic(struct ring *ring, size_t num, size_t size)
 void bind_ring_generic(int sock, struct ring *ring, int ifindex, bool tx_only)
 {
 	int ret;
+
 	/* The {TX,RX}_RING registers itself to the networking stack with
 	 * dev_add_pack(), so we have one single RX_RING for all devs
 	 * otherwise you'll get the packet twice.
@@ -68,14 +69,8 @@ void bind_ring_generic(int sock, struct ring *ring, int ifindex, bool tx_only)
 	fmemset(&ring->s_ll, 0, sizeof(ring->s_ll));
 
 	ring->s_ll.sll_family = AF_PACKET;
-	if (tx_only)
-		ring->s_ll.sll_protocol = 0;
-	else
-		ring->s_ll.sll_protocol = htons(ETH_P_ALL);
 	ring->s_ll.sll_ifindex = ifindex;
-	ring->s_ll.sll_hatype = 0;
-	ring->s_ll.sll_halen = 0;
-	ring->s_ll.sll_pkttype = 0;
+	ring->s_ll.sll_protocol = tx_only ? 0 : htons(ETH_P_ALL);
 
 	ret = bind(sock, (struct sockaddr *) &ring->s_ll, sizeof(ring->s_ll));
 	if (ret < 0)
