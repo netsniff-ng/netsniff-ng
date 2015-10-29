@@ -34,10 +34,7 @@ void setup_ring_layout_generic(int sock, struct ring *ring, size_t size,
 				      TPACKET_ALIGNMENT << 7);
 
 	ring->layout.tp_block_nr = size / ring->layout.tp_block_size;
-	ring->layout.tp_frame_nr = ring->layout.tp_block_size /
-				   ring->layout.tp_frame_size *
-				   ring->layout.tp_block_nr;
-
+	ring->layout.tp_frame_nr = size / ring->layout.tp_frame_size;
 }
 
 void mmap_ring_generic(int sock, struct ring *ring)
