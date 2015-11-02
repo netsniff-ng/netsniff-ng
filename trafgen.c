@@ -366,6 +366,21 @@ static void apply_csum16(int id)
 	}
 }
 
+static void preprocess_packets(void)
+{
+	size_t i;
+
+	for (i = 0; i < plen; i++) {
+		struct packet_dyn *pktd = &packet_dyn[i];
+
+		if (packet_dyn_has_only_csums(pktd)) {
+			apply_csum16(i);
+			pktd->slen = 0;
+			xfree(pktd->csum);
+		}
+	}
+}
+
 static struct cpu_stats *setup_shared_var(unsigned int cpus)
 {
 	int fd;
@@ -539,6 +554,8 @@ static void xmit_slowpath_or_die(struct ctx *ctx, unsigned int cpu, unsigned lon
 
 	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
 
+	preprocess_packets();
+
 	bug_on(gettimeofday(&start, NULL));
 
 	while (likely(sigint == 0 && num > 0 && plen > 0)) {
@@ -627,6 +644,8 @@ static void xmit_fastpath_or_die(struct ctx *ctx, unsigned int cpu, unsigned lon
 		num = ctx->num;
 	if (ctx->num == 0 && orig_num > 0)
 		num = 0;
+
+	preprocess_packets();
 
 	bug_on(gettimeofday(&start, NULL));
 
