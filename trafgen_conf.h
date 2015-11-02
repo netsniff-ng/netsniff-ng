@@ -47,7 +47,12 @@ struct packet_dyn {
 
 static inline bool packet_dyn_has_elems(struct packet_dyn *p)
 {
-	return (p->rlen || p->slen || p->clen);
+	return (p->clen || p->rlen || p->slen);
+}
+
+static inline bool packet_dyn_has_only_csums(struct packet_dyn *p)
+{
+	return (p->clen == 0 && p->rlen == 0 && p->slen);
 }
 
 extern void compile_packets(char *file, bool verbose, unsigned int cpu, bool invoke_cpp);
