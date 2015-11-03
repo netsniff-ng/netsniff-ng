@@ -82,6 +82,11 @@ struct flow_list {
 	struct spinlock lock;
 };
 
+enum flow_direction {
+	FLOW_DIR_SRC,
+	FLOW_DIR_DST,
+};
+
 #ifndef ATTR_TIMESTAMP_START
 # define ATTR_TIMESTAMP_START 63
 #endif
@@ -611,16 +616,11 @@ static void flow_entry_from_ct(struct flow_entry *n, const struct nf_conntrack *
 	n->ip4_dst_addr = ntohl(n->ip4_dst_addr);
 }
 
-enum flow_entry_direction {
-	flow_entry_src,
-	flow_entry_dst,
-};
-
 #define SELFLD(dir,src_member,dst_member)	\
-	(((dir) == flow_entry_src) ? n->src_member : n->dst_member)
+	(((dir) == FLOW_DIR_SRC) ? n->src_member : n->dst_member)
 
 static void flow_entry_get_sain4_obj(const struct flow_entry *n,
-				     enum flow_entry_direction dir,
+				     enum flow_direction dir,
 				     struct sockaddr_in *sa)
 {
 	memset(sa, 0, sizeof(*sa));
@@ -629,7 +629,7 @@ static void flow_entry_get_sain4_obj(const struct flow_entry *n,
 }
 
 static void flow_entry_get_sain6_obj(const struct flow_entry *n,
-				     enum flow_entry_direction dir,
+				     enum flow_direction dir,
 				     struct sockaddr_in6 *sa)
 {
 	memset(sa, 0, sizeof(*sa));
@@ -641,7 +641,7 @@ static void flow_entry_get_sain6_obj(const struct flow_entry *n,
 
 static void
 flow_entry_geo_city_lookup_generic(struct flow_entry *n,
-				   enum flow_entry_direction dir)
+				   enum flow_direction dir)
 {
 	struct sockaddr_in sa4;
 	struct sockaddr_in6 sa6;
@@ -673,7 +673,7 @@ flow_entry_geo_city_lookup_generic(struct flow_entry *n,
 
 static void
 flow_entry_geo_country_lookup_generic(struct flow_entry *n,
-				      enum flow_entry_direction dir)
+				      enum flow_direction dir)
 {
 	struct sockaddr_in sa4;
 	struct sockaddr_in6 sa6;
@@ -704,7 +704,7 @@ flow_entry_geo_country_lookup_generic(struct flow_entry *n,
 }
 
 static void flow_entry_get_extended_geo(struct flow_entry *n,
-					enum flow_entry_direction dir)
+					enum flow_direction dir)
 {
 	if (resolve_geoip) {
 		flow_entry_geo_city_lookup_generic(n, dir);
@@ -713,7 +713,7 @@ static void flow_entry_get_extended_geo(struct flow_entry *n,
 }
 
 static void flow_entry_get_extended_revdns(struct flow_entry *n,
-					   enum flow_entry_direction dir)
+					   enum flow_direction dir)
 {
 	size_t sa_len;
 	struct sockaddr_in sa4;
@@ -772,12 +772,12 @@ static void flow_entry_get_extended(struct flow_entry *n)
 		return;
 
 	if (show_src) {
-		flow_entry_get_extended_revdns(n, flow_entry_src);
-		flow_entry_get_extended_geo(n, flow_entry_src);
+		flow_entry_get_extended_revdns(n, FLOW_DIR_SRC);
+		flow_entry_get_extended_geo(n, FLOW_DIR_SRC);
 	}
 
-	flow_entry_get_extended_revdns(n, flow_entry_dst);
-	flow_entry_get_extended_geo(n, flow_entry_dst);
+	flow_entry_get_extended_revdns(n, FLOW_DIR_DST);
+	flow_entry_get_extended_geo(n, FLOW_DIR_DST);
 
 	/* Lookup application */
 	n->inode = get_port_inode(n->port_src, n->l4_proto,
