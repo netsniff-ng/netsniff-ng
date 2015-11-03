@@ -859,13 +859,19 @@ static void presenter_print_counters(uint64_t bytes, uint64_t pkts,
 	printw(" -> (");
 	attron(COLOR_PAIR(color));
 	printw("%"PRIu64" pkts", pkts);
-	if (rate_pkts)
+	if (rate_pkts) {
+		attron(COLOR_PAIR(3));
 		printw("(%.1fpps)", rate_pkts);
+		attron(COLOR_PAIR(color));
+	}
 
 	printw(", %s", bandw2str(bytes, bytes_str, sizeof(bytes_str) - 1));
-	if (rate_bytes)
+	if (rate_bytes) {
+		attron(COLOR_PAIR(3));
 		printw("(%s)", rate2str(rate_bytes, bytes_str,
 			sizeof(bytes_str) - 1));
+		attron(COLOR_PAIR(color));
+	}
 	attroff(COLOR_PAIR(color));
 	printw(")");
 }
