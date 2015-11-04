@@ -304,6 +304,10 @@ static void flow_entry_update_time(struct flow_entry *n)
 	bug_on(gettimeofday(&n->last_update, NULL));
 }
 
+#define CALC_RATE(fld) do {							\
+	n->rate_##fld = (((fld) > n->fld) ? (((fld) - n->fld) / sec) : 0);	\
+} while (0)
+
 static void flow_entry_calc_rate(struct flow_entry *n, const struct nf_conntrack *ct)
 {
 	uint64_t bytes_src = nfct_get_attr_u64(ct, ATTR_ORIG_COUNTER_BYTES);
@@ -312,13 +316,13 @@ static void flow_entry_calc_rate(struct flow_entry *n, const struct nf_conntrack
 	uint64_t pkts_dst  = nfct_get_attr_u64(ct, ATTR_REPL_COUNTER_PACKETS);
 	double sec = (double)time_after_us(&n->last_update) / USEC_PER_SEC;
 
-	if (sec <= 0)
+	if (sec < 1)
 		return;
 
-	n->rate_bytes_src = (bytes_src - n->bytes_src) / sec;
-	n->rate_bytes_dst = (bytes_dst - n->bytes_dst) / sec;
-	n->rate_pkts_src = (pkts_src - n->pkts_src) / sec;
-	n->rate_pkts_dst = (pkts_dst - n->pkts_dst) / sec;
+	CALC_RATE(bytes_src);
+	CALC_RATE(bytes_dst);
+	CALC_RATE(pkts_src);
+	CALC_RATE(pkts_dst);
 }
 
 static inline struct flow_entry *flow_entry_xalloc(void)
