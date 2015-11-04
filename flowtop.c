@@ -227,7 +227,7 @@ static int64_t time_after_us(struct timeval *tv)
 {
 	struct timeval now;
 
-	gettimeofday(&now, NULL);
+	bug_on(gettimeofday(&now, NULL));
 
 	now.tv_sec  -= tv->tv_sec;
 	now.tv_usec -= tv->tv_usec;
@@ -296,7 +296,7 @@ static void version(void)
 
 static void flow_entry_update_time(struct flow_entry *n)
 {
-	gettimeofday(&n->last_update, NULL);
+	bug_on(gettimeofday(&n->last_update, NULL));
 }
 
 static void flow_entry_calc_rate(struct flow_entry *n, const struct nf_conntrack *ct)
