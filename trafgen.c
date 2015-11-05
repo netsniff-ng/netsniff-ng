@@ -456,7 +456,7 @@ static int xmit_smoke_setup(struct ctx *ctx)
 
 	ret = inet_aton(ctx->rhost, &ctx->dest.sin_addr);
 	if (ret < 0)
-		panic("Cannot resolv address!\n");
+		panic("Cannot resolve address!\n");
 
 	return icmp_sock;
 }
