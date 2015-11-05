@@ -73,6 +73,14 @@ static const struct option long_options[] = {
 	{NULL, 0, NULL, 0}
 };
 
+static const char *copyright =
+	"Please report bugs to <netsniff-ng@googlegroups.com>\n"
+	"Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
+	"Swiss federal institute of technology (ETH Zurich)\n"
+	"License: GNU GPL version 2.0\n"
+	"This is free software: you are free to change and redistribute it.\n"
+	"There is NO WARRANTY, to the extent permitted by law.";
+
 static void signal_handler(int number)
 {
 	switch (number) {
@@ -117,13 +125,8 @@ static void __noreturn help(void)
 	     "  There is no default port specified, so that you are forced\n"
 	     "  to select your own! For client/server status messages see syslog!\n"
 	     "  This software is an experimental prototype intended for researchers.\n\n"
-	     "Secret ingredient: 7647-14-5\n\n"
-	     "Please report bugs to <netsniff-ng@googlegroups.com>\n"
-	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
-	     "Swiss federal institute of technology (ETH Zurich)\n"
-	     "License: GNU GPL version 2.0\n"
-	     "This is free software: you are free to change and redistribute it.\n"
-	     "There is NO WARRANTY, to the extent permitted by law.\n");
+	     "Secret ingredient: 7647-14-5\n\n");
+	puts(copyright);
 	die();
 }
 
@@ -132,13 +135,8 @@ static void __noreturn version(void)
 	printf("curvetun %s, Git id: %s\n", VERSION_LONG, GITVERSION);
 	puts("lightweight curve25519-based IP tunnel\n"
 	     "Note: Einstein-Rosen bridge not yet supported\n"
-	     "http://www.netsniff-ng.org\n\n"
-	     "Please report bugs to <netsniff-ng@googlegroups.com>\n"
-	     "Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
-	     "Swiss federal institute of technology (ETH Zurich)\n"
-	     "License: GNU GPL version 2.0\n"
-	     "This is free software: you are free to change and redistribute it.\n"
-	     "There is NO WARRANTY, to the extent permitted by law.\n");
+	     "http://www.netsniff-ng.org\n\n");
+	puts(copyright);
 	die();
 }
 
