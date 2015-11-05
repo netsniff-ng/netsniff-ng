@@ -1161,6 +1161,8 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 
 static void presenter(void)
 {
+	int time_sleep_us = 200000;
+	int time_passed_us = 0;
 	int skip_lines = 0;
 	WINDOW *screen;
 
@@ -1170,6 +1172,8 @@ static void presenter(void)
 
 	rcu_register_thread();
 	while (!sigint) {
+		bool do_redraw = true;
+
 		switch (getch()) {
 		case 'q':
 			sigint = 1;
@@ -1190,11 +1194,21 @@ static void presenter(void)
 			break;
 		default:
 			fflush(stdin);
+			do_redraw = false;
 			break;
 		}
 
-		presenter_screen_update(screen, &flow_list, skip_lines);
-		usleep(200000);
+		if (!do_redraw)
+			do_redraw = time_passed_us >= 1 * USEC_PER_SEC;
+
+		if (do_redraw) {
+			presenter_screen_update(screen, &flow_list, skip_lines);
+			time_passed_us = 0;
+		} else {
+			time_passed_us += time_sleep_us;
+		}
+
+		usleep(time_sleep_us);
 	}
 	rcu_unregister_thread();
 
