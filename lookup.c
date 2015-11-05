@@ -39,8 +39,10 @@ void lookup_init_ports(enum ports which)
 	file = lookup_port_files[which];
 
 	fp = fopen(file, "r");
-	if (!fp)
-		panic("No %s found!\n", file);
+	if (!fp) {
+		fprintf(stderr, "No %s found for ports resolving!\n", file);
+		return;
+	}
 
 	memset(buff, 0, sizeof(buff));
 
