@@ -343,7 +343,7 @@ int main(void)
 }
 EOF
 
-	$CC -o $TMPDIR/nfcttest $TMPDIR/nfcttest.c -lnetfilter_conntrack >> config.log 2>&1
+	$CC -o $TMPDIR/nfcttest $TMPDIR/nfcttest.c $(pkg-config libnetfilter_conntrack --cflags) -lnetfilter_conntrack >> config.log 2>&1
 	if [ ! -x $TMPDIR/nfcttest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1

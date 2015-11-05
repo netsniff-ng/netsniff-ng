@@ -30,7 +30,8 @@ flowtop-objs +=	geoip.o \
 		ioops.o
 endif
 
-flowtop-eflags = $(shell $(PKG_CONFIG) --cflags ncurses)
+flowtop-eflags = $(shell $(PKG_CONFIG) --cflags ncurses) \
+                 $(shell $(PKG_CONFIG) --cflags libnetfilter_conntrack)
 
 flowtop-confs =	tcp.conf \
 		udp.conf \
