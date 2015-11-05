@@ -798,9 +798,9 @@ static void __set_state_cd(unsigned int cpu, unsigned long p, sig_atomic_t s)
 
 static void xmit_packet_precheck(struct ctx *ctx, unsigned int cpu)
 {
-	unsigned int i;
 	unsigned long plen_total, orig = ctx->num;
-	size_t mtu, total_len = 0;
+	size_t total_len = 0;
+	unsigned int i;
 
 	bug_on(plen != dlen);
 
@@ -821,14 +821,6 @@ static void xmit_packet_precheck(struct ctx *ctx, unsigned int cpu)
 	if (plen == 0) {
 		__set_state(cpu, CPU_STATS_STATE_RES);
 		return;
-	}
-
-	for (mtu = device_mtu(ctx->device), i = 0; i < plen; ++i) {
-		if (packets[i].len > mtu + PKT_MIN_LEN)
-			panic("Device MTU < than packet%d's size!\n", i);
-		if (packets[i].len <= PKT_MIN_LEN)
-			panic("Packet%d's size must be > %d bytes!\n",
-					i, PKT_MIN_LEN);
 	}
 }
 
