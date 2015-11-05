@@ -313,7 +313,6 @@ retry:
 	}
 
 	if (ret == -EINVAL && try == 0) {
-		memset(&drvinf, 0, sizeof(drvinf));
 		if (ethtool_drvinf(ifname, &drvinf) < 0)
 			goto done;
 
@@ -711,7 +710,6 @@ static void screen_header(WINDOW *screen, const char *ifname, int *voff,
 	int link = ethtool_link(ifname);
 	unsigned int cpus = get_number_cpus();
 
-	memset(&drvinf, 0, sizeof(drvinf));
 	ethtool_drvinf(ifname, &drvinf);
 
 	memset(buff, 0, sizeof(buff));
