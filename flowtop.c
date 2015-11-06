@@ -127,6 +127,7 @@ static bool show_src = false;
 static bool resolve_dns = true;
 static bool resolve_geoip = true;
 static enum rate_units rate_type = RATE_BYTES;
+static bool show_active_only = false;
 
 static const char *short_options = "vhTUsDIS46ut:nGb";
 static const struct option long_options[] = {
@@ -374,6 +375,8 @@ static void flow_list_new_entry(struct flow_list *fl, const struct nf_conntrack 
 
 	rcu_assign_pointer(n->next, fl->head);
 	rcu_assign_pointer(fl->head, n);
+
+	n->is_visible = true;
 }
 
 static struct flow_entry *flow_list_find_id(struct flow_list *fl,
@@ -1103,11 +1106,12 @@ static void draw_flows(WINDOW *screen, struct flow_list *fl,
 
 	n = rcu_dereference(fl->head);
 	if (!n)
-		mvwprintw(screen, line, 2, "(No active sessions! "
+		mvwprintw(screen, line, 2, "(No sessions! "
 			  "Is netfilter running?)");
 
 	for (; n; n = rcu_dereference(n->next)) {
-		n->is_visible = false;
+		if (!n->is_visible)
+			continue;
 
 		if (presenter_flow_wrong_state(n))
 			continue;
@@ -1122,8 +1126,6 @@ static void draw_flows(WINDOW *screen, struct flow_list *fl,
 			skip_left--;
 			continue;
 		}
-
-		n->is_visible = true;
 
 		draw_flow_entry(screen, n, &line);
 
@@ -1185,6 +1187,7 @@ static void draw_help(WINDOW *screen)
 	attroff(A_BOLD | A_UNDERLINE);
 
 	mvaddnstr(row + 11, col + 3, "b             Toggle rate units (bits/bytes)", -1);
+	mvaddnstr(row + 12, col + 3, "a             Toggle display of active flows (rate > 0) only", -1);
 }
 
 static void draw_footer(WINDOW *screen)
@@ -1249,6 +1252,9 @@ static void presenter(void)
 				rate_type = RATE_BITS;
 			else
 				rate_type = RATE_BYTES;
+			break;
+		case 'a':
+			show_active_only = !show_active_only;
 			break;
 		case '?':
 			if (show_help)
@@ -1376,6 +1382,14 @@ static void conntrack_tstamp_enable(void)
 	}
 }
 
+static void flow_entry_filter(struct flow_entry *n)
+{
+	if (show_active_only && !n->rate_bytes_src && !n->rate_bytes_dst)
+		n->is_visible = false;
+	else
+		n->is_visible = true;
+}
+
 static int flow_update_cb(enum nf_conntrack_msg_type type,
 			  struct nf_conntrack *ct, void *data __maybe_unused)
 {
@@ -1394,6 +1408,7 @@ static int flow_update_cb(enum nf_conntrack_msg_type type,
 	flow_entry_calc_rate(n, ct);
 	flow_entry_update_time(n);
 	flow_entry_from_ct(n, ct);
+	flow_entry_filter(n);
 
 	return NFCT_CB_CONTINUE;
 }
@@ -1403,12 +1418,8 @@ static void collector_refresh_flows(struct nfct_handle *handle)
 	struct flow_entry *n;
 
 	n = rcu_dereference(flow_list.head);
-	for (; n; n = rcu_dereference(n->next)) {
-		if (!n->is_visible)
-			continue;
-
+	for (; n; n = rcu_dereference(n->next))
 		nfct_query(handle, NFCT_Q_GET, n->ct);
-	}
 }
 
 static void collector_create_filter(struct nfct_handle *nfct)
