@@ -1179,6 +1179,12 @@ static void draw_help(WINDOW *screen)
 	mvaddnstr(row + 5, col + 3, "Down, d, j    Move down", -1);
 	mvaddnstr(row + 6, col + 3, "?             Toggle help window", -1);
 	mvaddnstr(row + 7, col + 3, "q, Ctrl+C     Quit", -1);
+
+	attron(A_BOLD | A_UNDERLINE);
+	mvaddnstr(row + 9, col + 2, "Display Settings", -1);
+	attroff(A_BOLD | A_UNDERLINE);
+
+	mvaddnstr(row + 11, col + 3, "b             Toggle rate units (bits/bytes)", -1);
 }
 
 static void draw_footer(WINDOW *screen)
@@ -1237,6 +1243,12 @@ static void presenter(void)
 			skip_lines++;
 			if (skip_lines > SCROLL_MAX)
 				skip_lines = SCROLL_MAX;
+			break;
+		case 'b':
+			if (rate_type == RATE_BYTES)
+				rate_type = RATE_BITS;
+			else
+				rate_type = RATE_BYTES;
 			break;
 		case '?':
 			if (show_help)
