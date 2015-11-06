@@ -195,7 +195,7 @@ static void __noreturn help(void)
 	     "  Run packet only on CPU1:    cpu(1):   { rnd(64), 0b11001100, 0xaa }\n"
 	     "  Run packet only on CPU1-2:  cpu(1-2): { drnd(64),'a',csum16(1, 8),'b',42 }\n\n"
 	     "Generate config files from existing pcap using netsniff-ng:\n"
-	     "  netsniff-ng --in dump.pcap --out dump.cfg\n"
+	     "  netsniff-ng --in dump.pcap --out dump.cfg\n\n"
 	     "Note:\n"
 	     "  Smoke/fuzz test example: machine A, 10.0.0.2 (trafgen) is directly\n"
 	     "  connected to machine B (test kernel), 10.0.0.1. If ICMP reply fails\n"
