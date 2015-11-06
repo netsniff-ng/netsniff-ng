@@ -201,6 +201,41 @@ EOF
 	fi
 }
 
+check_libnl_route()
+{
+	echo -n "[*] Checking libnl-route ... "
+
+	cat > $TMPDIR/libnlroutetest.c << EOF
+#include <netlink/route/link.h>
+#include <netlink/route/addr.h>
+
+int main(void)
+{
+	char str[100];
+
+	rtnl_addr_flags2str(1, str, sizeof(str));
+	rtnl_link_flags2str(1, str, sizeof(str));
+	rtnl_link_operstate2str(1, str, sizeof(str));
+
+	return 0;
+}
+EOF
+
+	$CC \
+		$($PKG_CONFIG --cflags libnl-route-3.0 2>> config.log) \
+		-o $TMPDIR/libnlroutetest \
+		$TMPDIR/libnlroutetest.c \
+		$($PKG_CONFIG --libs libnl-route-3.0 2>> config.log) \
+			>> config.log 2>&1
+	if [ ! -x $TMPDIR/libnlroutetest ] ; then
+		echo "[NO]"
+		MISSING_DEFS=1
+		tools_remove "netsniff-ng"
+	else
+		echo "[YES]"
+	fi
+}
+
 check_tpacket_v3()
 {
 	echo -n "[*] Checking tpacket_v3 ... "
@@ -613,6 +648,7 @@ check_flex
 check_bison
 check_nacl
 check_libnl
+check_libnl_route
 check_tpacket_v2
 check_tpacket_v3
 check_libnf_ct
