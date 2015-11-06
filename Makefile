@@ -14,10 +14,10 @@ ifndef CONFIG_OK
 endif
 
 VERSION = 0
-PATCHLEVEL = 5
-SUBLEVEL = 9
+PATCHLEVEL = 6
+SUBLEVEL = 0
 EXTRAVERSION =
-NAME = Cilonen
+NAME = avril altdelay
 
 TOOLS ?= $(CONFIG_TOOLS)
 TOOLS ?= netsniff-ng trafgen astraceroute flowtop ifpps bpfc curvetun mausezahn
