@@ -165,10 +165,7 @@ retry:
 			 layout_size);
 
 	if (errno == ENOMEM && ring->layout.tp_block_nr > 1) {
-		ring->layout.tp_block_nr >>= 1;
-		ring->layout.tp_frame_nr = ring->layout.tp_block_size / 
-					   ring->layout.tp_frame_size * 
-					   ring->layout.tp_block_nr;
+		shrink_ring_layout_generic(ring);
 		goto retry;
 	}
 	if (ret < 0)

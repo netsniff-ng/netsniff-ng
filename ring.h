@@ -145,6 +145,14 @@ static inline void ring_verify_layout(struct ring *ring)
 	bug_on((ring->layout.tp_block_size % RUNTIME_PAGE_SIZE) != 0);
 }
 
+static inline void shrink_ring_layout_generic(struct ring *ring)
+{
+	ring->layout.tp_block_nr >>= 1;
+	ring->layout.tp_frame_nr = ring->layout.tp_block_size /
+				   ring->layout.tp_frame_size *
+				   ring->layout.tp_block_nr;
+}
+
 static inline void tpacket_hdr_clone(struct tpacket2_hdr *thdrd,
 				     struct tpacket2_hdr *thdrs)
 {
