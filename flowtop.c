@@ -120,6 +120,8 @@ static int what = INCLUDE_IPV4 | INCLUDE_IPV6 | INCLUDE_TCP;
 static struct flow_list flow_list;
 static struct sysctl_params_ctx sysctl = { -1, -1 };
 
+static unsigned int cols, rows;
+
 static unsigned int interval = 1;
 static bool show_src = false;
 static bool resolve_dns = true;
@@ -906,8 +908,8 @@ static void presenter_print_flow_entry_time(const struct flow_entry *n)
 	printw(" ]");
 }
 
-static void presenter_screen_do_line(WINDOW *screen, const struct flow_entry *n,
-				     unsigned int *line)
+static void draw_flow_entry(WINDOW *screen, const struct flow_entry *n,
+			    unsigned int *line)
 {
 	char tmp[128], *pname = NULL;
 	uint16_t port;
@@ -1085,25 +1087,14 @@ static inline bool presenter_flow_wrong_state(struct flow_entry *n)
 	return true;
 }
 
-static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
-				    int skip_lines)
+static void draw_flows(WINDOW *screen, struct flow_list *fl,
+		       int skip_lines)
 {
-	int maxy;
 	int skip_left = skip_lines;
 	unsigned int flows = 0;
 	unsigned int line = 3;
 	struct flow_entry *n;
-
-	curs_set(0);
-
-	maxy = getmaxy(screen);
-	maxy -= 6;
-
-	start_color();
-	init_pair(1, COLOR_RED, COLOR_BLACK);
-	init_pair(2, COLOR_BLUE, COLOR_BLACK);
-	init_pair(3, COLOR_YELLOW, COLOR_BLACK);
-	init_pair(4, COLOR_GREEN, COLOR_BLACK);
+	int maxy = rows - 6;
 
 	wclear(screen);
 	clear();
@@ -1134,7 +1125,7 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 
 		n->is_visible = true;
 
-		presenter_screen_do_line(screen, n, &line);
+		draw_flow_entry(screen, n, &line);
 
 		line++;
 		maxy -= (2 + (show_src ? 1 : 0));
@@ -1154,15 +1145,61 @@ static void presenter_screen_update(WINDOW *screen, struct flow_list *fl,
 		printw(" [Collecting flows ...]");
 
 	rcu_read_unlock();
+}
 
-	wrefresh(screen);
-	refresh();
+static void draw_help(WINDOW *screen)
+{
+	int col = 0;
+	int row = 0;
+	int i;
+
+	mvaddch(row, col, ACS_ULCORNER);
+	mvaddch(rows - row - 2, col, ACS_LLCORNER);
+
+	mvaddch(row, cols - 1, ACS_URCORNER);
+	mvaddch(rows - row - 2, cols - col - 1, ACS_LRCORNER);
+
+	for (i = 1; i < rows - row - 2; i++) {
+		mvaddch(row + i, 0, ACS_VLINE);
+		mvaddch(row + i, cols - col - 1, ACS_VLINE);
+	}
+	for (i = 1; i < cols - col - 1; i++) {
+		mvaddch(0, col + i, ACS_HLINE);
+		mvaddch(rows - row - 2, col + i, ACS_HLINE);
+	}
+
+	attron(A_BOLD);
+	mvaddnstr(row, cols / 2 - 2, "| Help |", -1);
+
+	attron(A_UNDERLINE);
+	mvaddnstr(row + 2, col + 2, "Navigation", -1);
+	attroff(A_BOLD | A_UNDERLINE);
+
+	mvaddnstr(row + 4, col + 3, "Up, u, k      Move up", -1);
+	mvaddnstr(row + 5, col + 3, "Down, d, j    Move down", -1);
+	mvaddnstr(row + 6, col + 3, "?             Toggle help window", -1);
+	mvaddnstr(row + 7, col + 3, "q, Ctrl+C     Quit", -1);
+}
+
+static void draw_footer(WINDOW *screen)
+{
+	int i;
+
+	attron(A_STANDOUT);
+
+	for (i = 0; i < cols; i++)
+		mvaddch(rows - 1, i, ' ');
+
+	mvaddnstr(rows - 1, 1, "Press '?' for help", -1);
+	addch(ACS_VLINE);
+	attroff(A_STANDOUT);
 }
 
 static void presenter(void)
 {
 	int time_sleep_us = 200000;
 	int time_passed_us = 0;
+	bool show_help = false;
 	int skip_lines = 0;
 	WINDOW *screen;
 
@@ -1170,9 +1207,18 @@ static void presenter(void)
 	lookup_init_ports(PORTS_UDP);
 	screen = screen_init(false);
 
+	start_color();
+	init_pair(1, COLOR_RED, COLOR_BLACK);
+	init_pair(2, COLOR_BLUE, COLOR_BLACK);
+	init_pair(3, COLOR_YELLOW, COLOR_BLACK);
+	init_pair(4, COLOR_GREEN, COLOR_BLACK);
+
 	rcu_register_thread();
 	while (!sigint) {
-		bool do_redraw = true;
+		bool redraw_flows = true;
+
+		curs_set(0);
+		getmaxyx(screen, rows, cols);
 
 		switch (getch()) {
 		case 'q':
@@ -1192,22 +1238,41 @@ static void presenter(void)
 			if (skip_lines > SCROLL_MAX)
 				skip_lines = SCROLL_MAX;
 			break;
+		case '?':
+			if (show_help)
+				show_help = false;
+			else
+				show_help = true;
+
+			wclear(screen);
+			clear();
+			break;
 		default:
 			fflush(stdin);
-			do_redraw = false;
+			redraw_flows = false;
 			break;
 		}
 
-		if (!do_redraw)
-			do_redraw = time_passed_us >= 1 * USEC_PER_SEC;
+		if (!redraw_flows)
+			redraw_flows = time_passed_us >= 1 * USEC_PER_SEC;
 
-		if (do_redraw) {
-			presenter_screen_update(screen, &flow_list, skip_lines);
+		if (show_help)
+			redraw_flows = false;
+
+		if (redraw_flows) {
+			draw_flows(screen, &flow_list, skip_lines);
 			time_passed_us = 0;
 		} else {
 			time_passed_us += time_sleep_us;
 		}
 
+		if (show_help)
+			draw_help(screen);
+
+		draw_footer(screen);
+
+		wrefresh(screen);
+		refresh();
 		usleep(time_sleep_us);
 	}
 	rcu_unregister_thread();
