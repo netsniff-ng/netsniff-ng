@@ -5,6 +5,7 @@
  * Subject to the GPL, version 2.
  */
 
+#include <errno.h>
 #include <string.h>
 
 #include "hash.h"
@@ -40,7 +41,9 @@ void lookup_init_ports(enum ports which)
 
 	fp = fopen(file, "r");
 	if (!fp) {
-		fprintf(stderr, "No %s found for ports resolving!\n", file);
+		fprintf(stderr, "Cannot open %s: %s."
+				"Port name resolution won't be available.\n",
+				file, strerror(errno));
 		return;
 	}
 
