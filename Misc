@@ -19,7 +19,7 @@ log:
 
 announcement:
 	$(Q)echo -e "   *** BLURB HERE (general bits, optional) ***\n\n---\n" > .MAIL_MSG
-	$(Q)echo -e "netsniff-ng $(VERSION_SHORT) has been released to the public (http://netsniff-ng.org/).\n" >> .MAIL_MSG
+	$(Q)echo -e "netsniff-ng $(VERSION_SHORT) ($(NAME)) has been released to the public.\n" >> .MAIL_MSG
 	$(Q)echo -e "It can be fetched via Git:\n" >> .MAIL_MSG
 	$(Q)echo -e "   git clone git://github.com/netsniff-ng/netsniff-ng.git" >> .MAIL_MSG
 	$(Q)echo -e "   git checkout v$(VERSION_SHORT)\n" >> .MAIL_MSG
