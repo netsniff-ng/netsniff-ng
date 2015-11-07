@@ -9,6 +9,8 @@
 #include <stdarg.h>
 
 #include "str.h"
+#include "die.h"
+#include "xmalloc.h"
 
 size_t strlcpy(char *dest, const char *src, size_t size)
 {
@@ -85,4 +87,25 @@ char *strtrim_right(char *p, char c)
 	}
 
 	return p;
+}
+
+char *argv2str(int startind, int argc, char **argv)
+{
+	off_t offset = 0;
+	char *str = NULL;
+	int ret, i;
+
+	for (i = startind; i < argc; ++i) {
+		size_t alen = strlen(argv[i]) + 2;
+		size_t slen = str ? strlen(str) : 0;
+
+		str = xrealloc(str, slen + alen);
+		ret = slprintf(str + offset, strlen(argv[i]) + 2, "%s ", argv[i]);
+		if (ret < 0)
+			panic("Cannot concatenate string!\n");
+		else
+			offset += ret;
+	}
+
+	return str;
 }

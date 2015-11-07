@@ -8,5 +8,6 @@ extern int slprintf(char *dst, size_t size, const char *fmt, ...)  __check_forma
 extern int slprintf_nocheck(char *dst, size_t size, const char *fmt, ...);
 extern char *strtrim_right(char *p, char c);
 extern noinline void *xmemset(void *s, int c, size_t n);
+extern char *argv2str(int startind, int argc, char **argv);
 
 #endif /* STR_H */

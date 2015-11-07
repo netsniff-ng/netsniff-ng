@@ -1506,22 +1506,8 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (!ctx.filter && optind != argc) {
-		int ret;
-		off_t offset = 0;
-
-		for (i = optind; i < argc; ++i) {
-			size_t alen = strlen(argv[i]) + 2;
-			size_t flen = ctx.filter ? strlen(ctx.filter) : 0;
-
-			ctx.filter = xrealloc(ctx.filter, flen + alen);
-			ret = slprintf(ctx.filter + offset, strlen(argv[i]) + 2, "%s ", argv[i]);
-			if (ret < 0)
-				panic("Cannot concatenate filter string!\n");
-			else
-				offset += ret;
-		}
-	}
+	if (!ctx.filter && optind != argc)
+		ctx.filter = argv2str(optind, argc, argv);
 
 	if (!ctx.device_in)
 		ctx.device_in = xstrdup("any");
