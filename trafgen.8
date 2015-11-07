@@ -7,7 +7,7 @@ trafgen \- a fast, multithreaded network packet generator
 .PP
 .SH SYNOPSIS
 .PP
-\fBtrafgen\fR [\fIoptions\fR]
+\fBtrafgen\fR [\fIoptions\fR] [\fIpacket\fR]
 .PP
 .SH DESCRIPTION
 .PP
@@ -196,6 +196,9 @@ enclosed by opening '{' and closing '}' braces, for example:
 .PP
    { /* packet 1 content goes here ... */ }
    { /* packet 2 content goes here ... */ }
+.PP
+Alternatively, packets can also be specified directly on the command line, using
+the same syntax as used in the configuration files.
 .PP
 When trafgen is started using multiple CPUs (default), then each of those packets
 will be scheduled for transmission on all CPUs by default. However, it is possible
@@ -396,6 +399,9 @@ the ring frames from user space (default is 10us).
 Send out packets generated from the configuration file ''tcp_syn.cfg'' via
 the ''eth0'' networking device. After setting up the ring for transmission,
 drop credentials to the non-root user/group bob/bob.
+.PP
+.SS trafgen --dev eth0 '{ fill(0xff, 6), 0x00, 0x02, 0xb3, rnd(3), c16(0x0800), fill(0xca, 64) }' -n 1
+Send out 1 invaid IPv4 packet built from command line to all hosts.
 .PP
 .SH NOTE
 .PP

@@ -55,6 +55,7 @@ static inline bool packet_dyn_has_only_csums(struct packet_dyn *p)
 	return (p->clen == 0 && p->rlen == 0 && p->slen);
 }
 
+extern void compile_packets_str(char *str, bool verbose, unsigned int cpu);
 extern void compile_packets(char *file, bool verbose, unsigned int cpu, bool invoke_cpp);
 extern void cleanup_packets(void);
 

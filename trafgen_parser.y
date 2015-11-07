@@ -34,6 +34,8 @@
 
 extern FILE *yyin;
 extern int yylex(void);
+extern void yy_scan_string(char *);
+extern void yylex_destroy();
 extern void yyerror(const char *);
 extern int yylineno;
 extern char *yytext;
@@ -637,6 +639,29 @@ err:
 
 	if (invoke_cpp)
 		unlink(tmp_file);
+	if (ret)
+		die();
+}
+
+void compile_packets_str(char *str, bool verbose, unsigned int cpu)
+{
+	int ret = 1;
+
+	our_cpu = cpu;
+	realloc_packet();
+
+	yy_scan_string(str);
+	if (yyparse() != 0)
+		goto err;
+
+	finalize_packet();
+	if (our_cpu == 0 && verbose)
+		dump_conf();
+
+	ret = 0;
+err:
+	yylex_destroy();
+
 	if (ret)
 		die();
 }

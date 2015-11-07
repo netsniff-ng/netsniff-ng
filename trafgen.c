@@ -64,6 +64,7 @@ struct ctx {
 	char *device, *device_trans, *rhost;
 	struct timespec gap;
 	struct sockaddr_in dest;
+	char *packet_str;
 };
 
 struct cpu_stats {
@@ -157,7 +158,7 @@ static void __noreturn help(void)
 {
 	printf("trafgen %s, multithreaded zero-copy network packet generator\n", VERSION_STRING);
 	puts("http://www.netsniff-ng.org\n\n"
-	     "Usage: trafgen [options]\n"
+	     "Usage: trafgen [options] [packet]\n"
 	     "Options:\n"
 	     "  -i|-c|--in|--conf <cfg/->      Packet configuration file/stdin\n"
 	     "  -o|-d|--out|--dev <netdev>     Networking device i.e., eth0\n"
@@ -189,7 +190,8 @@ static void __noreturn help(void)
 	     "  trafgen --dev wlan0 --rfraw --conf beacon-test.txf -V --cpus 2\n"
 	     "  trafgen --dev eth0 --conf frag_dos.cfg --rand --gap 1000us\n"
 	     "  trafgen --dev eth0 --conf icmp.cfg --rand --num 1400000 -k1000\n"
-	     "  trafgen --dev eth0 --conf tcp_syn.cfg -u `id -u bob` -g `id -g bob`\n\n"
+	     "  trafgen --dev eth0 --conf tcp_syn.cfg -u `id -u bob` -g `id -g bob`\n"
+	     "  trafgen --dev eth0 '{ fill(0xff, 6), 0x00, 0x02, 0xb3, rnd(3), c16(0x0800), fill(0xca, 64) }'\n\n"
 	     "Arbitrary packet config examples (e.g. trafgen -e > trafgen.cfg):\n"
 	     "  Run packet on  all CPUs:              { fill(0xff, 64) csum16(0, 64) }\n"
 	     "  Run packet only on CPU1:    cpu(1):   { rnd(64), 0b11001100, 0xaa }\n"
@@ -827,7 +829,11 @@ static void xmit_packet_precheck(struct ctx *ctx, unsigned int cpu)
 static void main_loop(struct ctx *ctx, char *confname, bool slow,
 		      unsigned int cpu, bool invoke_cpp, unsigned long orig_num)
 {
-	compile_packets(confname, ctx->verbose, cpu, invoke_cpp);
+	if (ctx->packet_str)
+		compile_packets_str(ctx->packet_str, ctx->verbose, cpu);
+	else
+		compile_packets(confname, ctx->verbose, cpu, invoke_cpp);
+
 	xmit_packet_precheck(ctx, cpu);
 
 	if (cpu == 0) {
@@ -891,6 +897,7 @@ int main(int argc, char **argv)
 	unsigned long cpus_tmp, orig_num = 0;
 	unsigned long long tx_packets, tx_bytes;
 	struct ctx ctx;
+	int min_opts = 5;
 
 	fmemset(&ctx, 0, sizeof(ctx));
 	ctx.cpus = get_number_cpus_online();
@@ -1067,11 +1074,16 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (argc < 5)
+	if (argc >= optind) {
+		min_opts = 4;
+		ctx.packet_str = argv2str(optind, argc, argv);
+	}
+
+	if (argc < min_opts)
 		help();
 	if (ctx.device == NULL)
 		panic("No networking device given!\n");
-	if (confname == NULL)
+	if (confname == NULL && !ctx.packet_str)
 		panic("No configuration file given!\n");
 	if (device_mtu(ctx.device) == 0)
 		panic("This is no networking device!\n");
@@ -1173,6 +1185,7 @@ thread_out:
 	free(ctx.device_trans);
 	free(ctx.rhost);
 	free(confname);
+	free(ctx.packet_str);
 
 	return 0;
 }
