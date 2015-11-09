@@ -1257,11 +1257,7 @@ static void presenter(void)
 			show_active_only = !show_active_only;
 			break;
 		case '?':
-			if (show_help)
-				show_help = false;
-			else
-				show_help = true;
-
+			show_help = !show_help;
 			wclear(screen);
 			clear();
 			break;
