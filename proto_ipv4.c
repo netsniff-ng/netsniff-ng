@@ -48,7 +48,7 @@ static void ipv4(struct pkt_buff *pkt)
 
 	frag_off = ntohs(ip->h_frag_off);
 	h_tot_len = ntohs(ip->h_tot_len);
-	csum = calc_csum(ip, ip->h_ihl * 4, 0);
+	csum = calc_csum(ip, ip->h_ihl * 4);
 
 	inet_ntop(AF_INET, &ip->h_saddr, src_ip, sizeof(src_ip));
 	inet_ntop(AF_INET, &ip->h_daddr, dst_ip, sizeof(dst_ip));

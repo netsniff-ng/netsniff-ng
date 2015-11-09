@@ -190,7 +190,7 @@ static void __set_csum16_static(size_t from, size_t to, enum csum which __maybe_
 	uint16_t sum;
 	uint8_t *psum;
 
-	sum = htons(calc_csum(pkt->payload + from, to - from, 0));
+	sum = htons(calc_csum(pkt->payload + from, to - from));
 	psum = (uint8_t *) &sum;
 
 	set_byte(psum[0]);

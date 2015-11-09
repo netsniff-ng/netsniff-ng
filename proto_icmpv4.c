@@ -39,7 +39,7 @@ static void icmp(struct pkt_buff *pkt)
 	if (icmp == NULL)
 		return;
 
-	csum = calc_csum(icmp, pkt_len(pkt) + sizeof(*icmp), 0);
+	csum = calc_csum(icmp, pkt_len(pkt) + sizeof(*icmp));
 
 	tprintf(" [ ICMP ");
 	tprintf("Type (%u), ", icmp->type);

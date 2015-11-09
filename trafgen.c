@@ -333,7 +333,7 @@ static void apply_csum16(int id)
 		switch (csum->which) {
 		case CSUM_IP:
 			sum = calc_csum(packets[id].payload + csum->from,
-					csum->to - csum->from + 1, 0);
+					csum->to - csum->from + 1);
 			break;
 		case CSUM_UDP:
 			sum = p4_csum((void *) packets[id].payload + csum->from,
