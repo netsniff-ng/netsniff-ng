@@ -258,7 +258,7 @@ static void dissect_igmp_v0(struct pkt_buff *pkt)
 		tprintf(", Code (%u)", msg->code);
 	}
 
-	csum = calc_csum(msg, sizeof(*msg) + pkt_len(pkt), 0);
+	csum = calc_csum(msg, sizeof(*msg) + pkt_len(pkt));
 	tprintf(", CSum (0x%.4x) is %s", ntohs(msg->checksum), csum ?
 		colorize_start_full(black, red) "bogus (!)" colorize_end() : "ok");
 	if (csum)
@@ -284,7 +284,7 @@ static void dissect_igmp_v1(struct pkt_buff *pkt)
 
 	tprintf(" [ IGMPv1");
 	PRINT_FRIENDLY_NAMED_MSG_TYPE(msg->version__type);
-	csum = calc_csum(msg, sizeof(*msg) + pkt_len(pkt), 0);
+	csum = calc_csum(msg, sizeof(*msg) + pkt_len(pkt));
 	tprintf(", CSum (0x%.4x) is %s", ntohs(msg->checksum), csum ?
 		colorize_start_full(black, red) "bogus (!)" colorize_end() : "ok");
 	if (csum)
@@ -320,7 +320,7 @@ static void dissect_igmp_v2(struct pkt_buff *pkt)
 
 	PRINT_FRIENDLY_NAMED_MSG_TYPE(msg->type);
 	tprintf(", Max Resp Time (%u)", msg->max_resp_time);
-	csum = calc_csum(msg, sizeof(*msg) + pkt_len(pkt), 0);
+	csum = calc_csum(msg, sizeof(*msg) + pkt_len(pkt));
 	tprintf(", CSum (0x%.4x) is %s", ntohs(msg->checksum), csum ?
 		colorize_start_full(black, red) "bogus (!)" colorize_end() : "ok");
 	if (csum)
@@ -348,7 +348,7 @@ static void dissect_igmp_v3_membership_query(struct pkt_buff *pkt)
 	PRINT_FRIENDLY_NAMED_MSG_TYPE(msg->type);
 	tprintf(", Max Resp Code (0x%.2x => %u)", msg->max_resp_code,
 		DECODE_MAX_RESP_CODE(msg->max_resp_code));
-	csum = calc_csum(msg, sizeof(*msg) + pkt_len(pkt), 0);
+	csum = calc_csum(msg, sizeof(*msg) + pkt_len(pkt));
 	tprintf(", CSum (0x%.4x) is %s", ntohs(msg->checksum), csum ?
 		colorize_start_full(black, red) "bogus (!)" colorize_end() : "ok");
 	if (csum)
@@ -400,7 +400,7 @@ static void dissect_igmp_v3_membership_report(struct pkt_buff *pkt)
 
 	tprintf(" [ IGMPv3");
 	PRINT_FRIENDLY_NAMED_MSG_TYPE(msg->type);
-	csum = calc_csum(msg, sizeof(*msg) + pkt_len(pkt), 0);
+	csum = calc_csum(msg, sizeof(*msg) + pkt_len(pkt));
 	tprintf(", CSum (0x%.4x) is %s", ntohs(msg->checksum), csum ?
 		colorize_start_full(black, red) "bogus (!)" colorize_end() : "ok");
 	if (csum)
