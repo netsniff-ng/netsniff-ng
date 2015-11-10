@@ -720,7 +720,11 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf, uint32_t link_type)
 		return;
 	}
 
-	fp = fopen(rulefile, "r");
+	if (!strcmp(rulefile, "-"))
+		fp = stdin;
+	else
+		fp = fopen(rulefile, "r");
+
 	if (!fp) {
 		bpf_try_compile(rulefile, bpf, link_type);
 		return;
@@ -753,7 +757,8 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf, uint32_t link_type)
 		fmemset(buff, 0, sizeof(buff));
 	}
 
-	fclose(fp);
+	if (fp != stdin)
+		fclose(fp);
 
 	if (unlikely(__bpf_validate(bpf) == 0))
 		panic("This is not a valid BPF program!\n");

@@ -1193,7 +1193,7 @@ static void __noreturn help(void)
 	     "  -C|--fanout-group <id>         Join packet fanout group\n"
 	     "  -K|--fanout-type <type>        Apply fanout discipline: hash|lb|cpu|rnd|roll|qm\n"
 	     "  -L|--fanout-opts <opts>        Additional fanout options: defrag|roll\n"
-	     "  -f|--filter <bpf-file|expr>    Use BPF filter file from bpfc or tcpdump-like expression\n"
+	     "  -f|--filter <bpf-file|-|expr>  Use BPF filter from bpfc file/stdin or tcpdump-like expression\n"
 	     "  -t|--type <type>               Filter for: host|broadcast|multicast|others|outgoing\n"
 	     "  -F|--interval <size|time>      Dump interval if -o is a dir: <num>KiB/MiB/GiB/s/sec/min/hrs\n"
 	     "  -R|--rfraw                     Capture or inject raw 802.11 frames\n"

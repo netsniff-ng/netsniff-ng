@@ -116,9 +116,9 @@ provides the same roll-over option as the \[lq]roll\[rq] fanout type, so that on
 different fanout type being used (e.g. \[lq]qm\[rq]) the socket may temporarily roll
 over to the next fanout group member in case the original one's queue is full.
 .PP
-.SS -f, --filter <bpf-file|expr>
+.SS -f, --filter <bpf-file|-|expr>
 Specifies to not dump all traffic, but to filter the network packet haystack.
-As a filter, either a bpfc(8) compiled file can be passed as a parameter or
+As a filter, either a bpfc(8) compiled file/stdin can be passed as a parameter or
 a tcpdump(1)-like filter expression in quotes. For details regarding the
 bpf-file have a look at bpfc(8), for details regarding a tcpdump(1)-like filter
 have a look at section \[lq]filter example\[rq] or at pcap-filter(7). A filter
@@ -391,6 +391,7 @@ Low-level filters can be used with netsniff-ng in the following way:
 .PP
     1. bpfc foo > bar
     2. netsniff-ng \-f bar
+    3. bpfc foo | netsniff-ng -i nlmon0 -f -
 .PP
 Here, foo is the bpfc program that will be translated into a netsniff-ng
 readable \[lq]opcodes\[rq] file and passed to netsniff-ng through the \-f
