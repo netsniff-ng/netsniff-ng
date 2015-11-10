@@ -42,7 +42,7 @@
 
 #define attr_fmt(attr, fmt, ...) \
 	tprintf("\tA: "fmt, ##__VA_ARGS__); \
-	tprintf(", Len %lu\n", RTA_LEN(attr));
+	tprintf(", Len %d\n", RTA_LEN(attr));
 
 struct flag_name {
 	const char *name;
