@@ -51,11 +51,21 @@ struct tcphdr {
 	uint16_t urg_ptr;
 } __packed;
 
+#define tprintf_flag(flag, str, prev)	({		\
+	bool __r = false;					\
+	if (flag) {					\
+		tprintf("%s%s", (prev) ? " " : "", str);	\
+		__r = true;					\
+	}							\
+	__r;							\
+})
+
 static void tcp(struct pkt_buff *pkt)
 {
 	struct tcphdr *tcp = (struct tcphdr *) pkt_pull(pkt, sizeof(*tcp));
 	uint16_t src, dest;
 	char *src_name, *dest_name;
+	bool v = false;
 
 	if (tcp == NULL)
 		return;
@@ -81,22 +91,14 @@ static void tcp(struct pkt_buff *pkt)
 	tprintf("DataOff (%u), ", tcp->doff);
 	tprintf("Res (%u), ", tcp->res1);
 	tprintf("Flags (");
-	if (tcp->fin)
-		tprintf("FIN ");
-	if (tcp->syn)
-		tprintf("SYN ");
-	if (tcp->rst)
-		tprintf("RST ");
-	if (tcp->psh)
-		tprintf("PSH ");
-	if (tcp->ack)
-		tprintf("ACK ");
-	if (tcp->urg)
-		tprintf("URG ");
-	if (tcp->ece)
-		tprintf("ECE ");
-	if (tcp->cwr)
-		tprintf("CWR ");
+	v = tprintf_flag(tcp->fin, "FIN", v);
+	v = tprintf_flag(tcp->syn, "SYN", v);
+	v = tprintf_flag(tcp->rst, "RST", v);
+	v = tprintf_flag(tcp->psh, "PSH", v);
+	v = tprintf_flag(tcp->ack, "ACK", v);
+	v = tprintf_flag(tcp->urg, "URG", v);
+	v = tprintf_flag(tcp->ece, "ECE", v);
+	v = tprintf_flag(tcp->cwr, "CWR", v);
 	tprintf("), ");
 	tprintf("Window (%u), ", ntohs(tcp->window));
 	tprintf("CSum (0x%.4x), ", ntohs(tcp->check));
