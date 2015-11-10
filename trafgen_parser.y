@@ -635,7 +635,8 @@ void compile_packets(char *file, bool verbose, unsigned int cpu, bool invoke_cpp
 
 	ret = 0;
 err:
-	fclose(yyin);
+	if (yyin != stdin)
+		fclose(yyin);
 
 	if (invoke_cpp)
 		unlink(tmp_file);

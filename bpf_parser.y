@@ -812,7 +812,9 @@ int compile_filter(char *file, int verbose, int bypass, int format,
 		free(labels_k[i]);
 	}
 
-	fclose(yyin);
+	if (yyin != stdin)
+		fclose(yyin);
+
 	if (invoke_cpp)
 		unlink(tmp_file);
 
