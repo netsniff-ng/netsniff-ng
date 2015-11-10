@@ -911,7 +911,7 @@ static void update_pcap_next_dump(struct ctx *ctx, unsigned long snaplen,
 			return;
 
 		if (ctx->verbose && ctx->print_mode == PRINT_NONE)
-			printf(".(+%lu/-%lu)",
+			printf(".(+%"PRIu64"/-%"PRIu64")",
 			       ctx->pkts_recvd_last - ctx->pkts_drops_last,
 			       ctx->pkts_drops_last);
 	}
