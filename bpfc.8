@@ -305,6 +305,30 @@ words, some small example filter programs:
   ret #-1
   drop: ret #0
 .PP
+.SS Filter rtnetlink messages
+.PP
+  ldh #proto       /* A = skb->protocol */
+
+  jneq #0, skip    /* check for NETLINK_ROUTE */
+  ldb [4]          /* A = nlmsg_type */
+
+  jneq #0x10, skip /* check type == RTNL_NEWLINK */
+  ldx #16          /* X = offset(ifinfomsg) */
+
+  ldb [x + 4]      /* offset(ifi_index) */
+  jneq #0x3, skip  /* check ifindex == 3 */
+
+  ld #32           /* A = len(nlmsghdr) + len(ifinfomsg), payload offset */
+  ldx #16          /* X = IFLA_OPERSTATE */
+  ld #nla          /* A = offset(IFLA_OPERSTATE) */
+  jeq #0, skip
+  tax
+  ldb [x + 4]      /* A = value(IFLA_OPERSTATE) */
+  jneq #0x6, skip  /* check oper state is UP */
+
+  ret #-1
+  skip: ret #0
+.PP
 .SH USAGE EXAMPLE
 .PP
 .SS bpfc fubar
