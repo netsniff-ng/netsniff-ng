@@ -24,7 +24,7 @@
 
 #define INFINITY 0xFFFFFFFFU
 
-#define RTA_LEN(attr) RTA_PAYLOAD(attr)
+#define RTA_LEN(attr) ((int)RTA_PAYLOAD(attr))
 #define RTA_INT(attr) (*(int *)RTA_DATA(attr))
 #define RTA_UINT(attr) (*(unsigned int *)RTA_DATA(attr))
 #define RTA_UINT8(attr) (*(uint8_t *)RTA_DATA(attr))
@@ -402,7 +402,7 @@ static void rtnl_print_ifaddr(struct nlmsghdr *hdr)
 
 			tprintf(", created on(%.2fs)", (double)ci->cstamp / 100);
 			tprintf(", updated on(%.2fs))", (double)ci->cstamp / 100);
-			tprintf(", Len %lu\n", RTA_LEN(attr));
+			tprintf(", Len %d\n", RTA_LEN(attr));
 			break;
 		}
 	}
@@ -566,7 +566,7 @@ static void rtnl_print_route(struct nlmsghdr *hdr)
 			tprintf(", id(%d)", ci->rta_id);
 			tprintf(", ts(%d)", ci->rta_ts);
 			tprintf(", ts age(%ds))", ci->rta_tsage);
-			tprintf(", Len %lu\n", RTA_LEN(attr));
+			tprintf(", Len %d\n", RTA_LEN(attr));
 			break;
 		}
 	}
@@ -671,7 +671,7 @@ static void rtnl_print_neigh(struct nlmsghdr *hdr)
 			tprintf(", used(%ds)", ci->ndm_used / hz);
 			tprintf(", updated(%ds)", ci->ndm_updated / hz);
 			tprintf(", refcnt(%d))", ci->ndm_refcnt);
-			tprintf(", Len %lu\n", RTA_LEN(attr));
+			tprintf(", Len %d\n", RTA_LEN(attr));
 			break;
 		}
 	}
