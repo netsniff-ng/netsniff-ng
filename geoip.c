@@ -150,6 +150,9 @@ static void geoip_inflate(int which)
 	while ((ret = gzread(fpi, raw, sizeof(raw))) && ret2)
 		ret2 = fwrite(raw, ret, 1, fpo);
 
+	if (!gzeof(fpi))
+		panic("Error in gzread: %s\n", gzerror(fpi, &ret));
+
 	gzclose(fpi);
 	fclose(fpo);
 }
