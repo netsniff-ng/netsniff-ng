@@ -165,8 +165,8 @@ static int geoip_get_database(const char *host, int which)
 	size_t lenl = strlen("Content-Length: ");
 	size_t lent = strlen("HTTP/1.1 200 OK");
 	size_t lenc = strlen("\r\n\r\n");
-	const char *http_req_fmt = "GET %s%s HTTP/1.1\n"
-				   "Connection: close\n"
+	const char *http_req_fmt = "GET %s%s HTTP/1.1\r\n"
+				   "Connection: close\r\n"
 				   "Host: %s\r\n\r\n";
 again:
 	found = good = 0;
