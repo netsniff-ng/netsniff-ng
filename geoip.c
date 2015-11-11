@@ -198,8 +198,6 @@ again:
 		return -EIO;
 	}
 
-	raw[sizeof(raw) - 1] = 0;
-
 	for (i = 0; i < ret; i++) {
 		if (!strncmp(raw + i, "Content-Length: ", min_t(size_t, ret - i, lenl))) {
 			ptr = raw + i + lenl;
