@@ -1153,22 +1153,22 @@ static void draw_flows(WINDOW *screen, struct flow_list *fl,
 static void draw_help(WINDOW *screen)
 {
 	int col = 0;
-	int row = 0;
+	int row = 1;
 	int i;
 
 	mvaddch(row, col, ACS_ULCORNER);
-	mvaddch(rows - row - 2, col, ACS_LLCORNER);
+	mvaddch(rows - row - 1, col, ACS_LLCORNER);
 
 	mvaddch(row, cols - 1, ACS_URCORNER);
-	mvaddch(rows - row - 2, cols - col - 1, ACS_LRCORNER);
+	mvaddch(rows - row - 1, cols - 1, ACS_LRCORNER);
 
 	for (i = 1; i < rows - row - 2; i++) {
 		mvaddch(row + i, 0, ACS_VLINE);
-		mvaddch(row + i, cols - col - 1, ACS_VLINE);
+		mvaddch(row + i, cols - 1, ACS_VLINE);
 	}
 	for (i = 1; i < cols - col - 1; i++) {
-		mvaddch(0, col + i, ACS_HLINE);
-		mvaddch(rows - row - 2, col + i, ACS_HLINE);
+		mvaddch(row, col + i, ACS_HLINE);
+		mvaddch(rows - row - 1, col + i, ACS_HLINE);
 	}
 
 	attron(A_BOLD);
@@ -1189,6 +1189,19 @@ static void draw_help(WINDOW *screen)
 
 	mvaddnstr(row + 11, col + 3, "b             Toggle rate units (bits/bytes)", -1);
 	mvaddnstr(row + 12, col + 3, "a             Toggle display of active flows (rate > 0) only", -1);
+}
+
+static void draw_header(WINDOW *screen)
+{
+	int i;
+
+	attron(A_STANDOUT);
+
+	for (i = 0; i < cols; i++)
+		mvaddch(0, i, ' ');
+
+	mvwprintw(screen, 0, 2, "flowtop %s", VERSION_LONG);
+	attroff(A_STANDOUT);
 }
 
 static void draw_footer(WINDOW *screen)
@@ -1280,6 +1293,8 @@ static void presenter(void)
 		} else {
 			time_passed_us += time_sleep_us;
 		}
+
+		draw_header(screen);
 
 		if (show_help)
 			draw_help(screen);
