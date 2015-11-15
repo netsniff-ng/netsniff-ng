@@ -1212,8 +1212,8 @@ static void presenter(void)
 	int skip_lines = 0;
 	WINDOW *screen;
 
-	lookup_init_ports(PORTS_TCP);
-	lookup_init_ports(PORTS_UDP);
+	lookup_init(LT_PORTS_TCP);
+	lookup_init(LT_PORTS_UDP);
 	screen = screen_init(false);
 
 	start_color();
@@ -1292,8 +1292,8 @@ static void presenter(void)
 	rcu_unregister_thread();
 
 	screen_end();
-	lookup_cleanup_ports(PORTS_UDP);
-	lookup_cleanup_ports(PORTS_TCP);
+	lookup_cleanup(LT_PORTS_UDP);
+	lookup_cleanup(LT_PORTS_TCP);
 }
 
 static int flow_event_cb(enum nf_conntrack_msg_type type,

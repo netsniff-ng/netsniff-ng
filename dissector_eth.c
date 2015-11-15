@@ -70,9 +70,9 @@ void dissector_init_ethernet(int fnttype)
 
 	dissector_init_oui();
 
-	lookup_init_ports(PORTS_UDP);
-	lookup_init_ports(PORTS_TCP);
-	lookup_init_ports(PORTS_ETHER);
+	lookup_init(LT_PORTS_UDP);
+	lookup_init(LT_PORTS_TCP);
+	lookup_init(LT_ETHERTYPES);
 }
 
 void dissector_cleanup_ethernet(void)
@@ -80,9 +80,9 @@ void dissector_cleanup_ethernet(void)
 	free_hash(&eth_lay2);
 	free_hash(&eth_lay3);
 
-	lookup_cleanup_ports(PORTS_ETHER);
-	lookup_cleanup_ports(PORTS_TCP);
-	lookup_cleanup_ports(PORTS_UDP);
+	lookup_cleanup(LT_ETHERTYPES);
+	lookup_cleanup(LT_PORTS_TCP);
+	lookup_cleanup(LT_PORTS_UDP);
 
 	dissector_cleanup_oui();
 }
