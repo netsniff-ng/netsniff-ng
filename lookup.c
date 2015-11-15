@@ -15,8 +15,9 @@
 #include "lookup.h"
 #include "xmalloc.h"
 
-static struct hash_table lookup_port_tables[LT_MAX];
-static const char * const lookup_port_files[] = {
+static bool lookup_initialized[LT_MAX];
+static struct hash_table lookup_tables[LT_MAX];
+static const char * const lookup_files[] = {
 	[LT_PORTS_UDP]	= ETCDIRE_STRING "/udp.conf",
 	[LT_PORTS_TCP]	= ETCDIRE_STRING "/tcp.conf",
 	[LT_ETHERTYPES]	= ETCDIRE_STRING "/ether.conf",
@@ -38,8 +39,10 @@ void lookup_init(enum lookup_type which)
 	void **pos;
 
 	bug_on(which >= LT_MAX);
-	table = &lookup_port_tables[which];
-	file = lookup_port_files[which];
+	if (lookup_initialized[which])
+		return;
+	table = &lookup_tables[which];
+	file = lookup_files[which];
 
 	fp = fopen(file, "r");
 	if (!fp) {
@@ -87,6 +90,7 @@ void lookup_init(enum lookup_type which)
 	}
 
 	fclose(fp);
+	lookup_initialized[which] = true;
 }
 
 static int __lookup_cleanup_single(void *ptr)
@@ -113,10 +117,13 @@ void lookup_cleanup(enum lookup_type which)
 	struct hash_table *table;
 
 	bug_on(which >= LT_MAX);
-	table = &lookup_port_tables[which];
+	if (!lookup_initialized[which])
+		return;
+	table = &lookup_tables[which];
 
 	for_each_hash(table, __lookup_cleanup_single);
 	free_hash(table);
+	lookup_initialized[which] = false;
 }
 
 #define __do_lookup_inline(id, hash_ptr)	\
@@ -131,15 +138,15 @@ void lookup_cleanup(enum lookup_type which)
 
 char *lookup_ether_type(unsigned int id)
 {
-	return __do_lookup_inline(id, &lookup_port_tables[LT_ETHERTYPES]);
+	return __do_lookup_inline(id, &lookup_tables[LT_ETHERTYPES]);
 }
 
 char *lookup_port_udp(unsigned int id)
 {
-	return __do_lookup_inline(id, &lookup_port_tables[LT_PORTS_UDP]);
+	return __do_lookup_inline(id, &lookup_tables[LT_PORTS_UDP]);
 }
 
 char *lookup_port_tcp(unsigned int id)
 {
-	return __do_lookup_inline(id, &lookup_port_tables[LT_PORTS_TCP]);
+	return __do_lookup_inline(id, &lookup_tables[LT_PORTS_TCP]);
 }
