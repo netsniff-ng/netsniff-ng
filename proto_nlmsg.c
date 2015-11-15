@@ -293,6 +293,9 @@ static void rtnl_print_ifinfo(struct nlmsghdr *hdr)
 	char if_addr[64] = {};
 	char *af_link = "unknown";
 
+	if (hdr->nlmsg_len < NLMSG_LENGTH(sizeof(*ifi)))
+		return;
+
 	if (ifi->ifi_family == AF_UNSPEC)
 		af_link = "unspec";
 	else if (ifi->ifi_family == AF_BRIDGE)
@@ -397,6 +400,9 @@ static void rtnl_print_ifaddr(struct nlmsghdr *hdr)
 	struct ifa_cacheinfo *ci;
 	char addr_str[256];
 	char flags[256];
+
+	if (hdr->nlmsg_len < NLMSG_LENGTH(sizeof(*ifa)))
+		return;
 
 	tprintf(" [ Address Family %d (%s%s%s)", ifa->ifa_family,
 			colorize_start(bold),
@@ -555,6 +561,9 @@ static void rtnl_print_route(struct nlmsghdr *hdr)
 	char addr_str[256];
 	char flags[256];
 
+	if (hdr->nlmsg_len < NLMSG_LENGTH(sizeof(*rtm)))
+		return;
+
 	tprintf(" [ Route Family %d (%s%s%s)", rtm->rtm_family,
 			colorize_start(bold),
 			addr_family2str(rtm->rtm_family),
@@ -697,6 +706,9 @@ static void rtnl_print_neigh(struct nlmsghdr *hdr)
 	char hw_addr[30];
 	char states[256];
 	char flags[256];
+
+	if (hdr->nlmsg_len < NLMSG_LENGTH(sizeof(*ndm)))
+		return;
 
 	tprintf(" [ Neigh Family %d (%s%s%s)", ndm->ndm_family,
 			colorize_start(bold),
