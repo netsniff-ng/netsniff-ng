@@ -739,6 +739,7 @@ int compile_filter(char *file, int verbose, int bypass, int format,
 	int i;
 	struct sock_fprog res;
 	char tmp_file[128];
+	int ret = 0;
 
 	memset(tmp_file, 0, sizeof(tmp_file));
 
@@ -792,9 +793,12 @@ int compile_filter(char *file, int verbose, int bypass, int format,
 		if (__bpf_validate(&res) == 0) {
 			if (verbose)
 				printf("Semantic error! BPF validation failed!\n");
-			else
-				panic("Semantic error! BPF validation failed! "
-				      "Try -V for debugging output!\n");
+			else {
+				printf("Semantic error! BPF validation failed! "
+				       "Try -V for debugging output!\n");
+				ret = 1;
+				goto exit;
+			}
 		} else if (verbose) {
 			printf("is runnable!\n");
 		}
@@ -815,10 +819,11 @@ int compile_filter(char *file, int verbose, int bypass, int format,
 	if (yyin != stdin)
 		fclose(yyin);
 
+exit:
 	if (invoke_cpp)
 		unlink(tmp_file);
 
-	return 0;
+	return ret;
 }
 
 void yyerror(const char *err)
