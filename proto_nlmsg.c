@@ -319,6 +319,9 @@ static void rtnl_print_ifinfo(struct nlmsghdr *hdr)
 			attr_fmt(attr, "Network namespace fd %d",
 					RTA_INT(attr));
 			break;
+		default:
+			attr_fmt(attr, "0x%x", attr->rta_type);
+			break;
 		}
 	}
 }
@@ -404,6 +407,9 @@ static void rtnl_print_ifaddr(struct nlmsghdr *hdr)
 			tprintf(", updated on(%.2fs))", (double)ci->cstamp / 100);
 			tprintf(", Len %d\n", RTA_LEN(attr));
 			break;
+		default:
+			attr_fmt(attr, "0x%x", attr->rta_type);
+			break;
 		}
 	}
 }
@@ -461,7 +467,6 @@ static const char *route_type2str(uint8_t type)
 	case RTN_THROW: return "throw";
 	case RTN_NAT: return "nat";
 	case RTN_XRESOLVE: return "xresolve";
-
 	default: return "Unknown";
 	}
 }
@@ -568,6 +573,9 @@ static void rtnl_print_route(struct nlmsghdr *hdr)
 			tprintf(", ts age(%ds))", ci->rta_tsage);
 			tprintf(", Len %d\n", RTA_LEN(attr));
 			break;
+		default:
+			attr_fmt(attr, "0x%x", attr->rta_type);
+			break;
 		}
 	}
 }
@@ -672,6 +680,9 @@ static void rtnl_print_neigh(struct nlmsghdr *hdr)
 			tprintf(", updated(%ds)", ci->ndm_updated / hz);
 			tprintf(", refcnt(%d))", ci->ndm_refcnt);
 			tprintf(", Len %d\n", RTA_LEN(attr));
+			break;
+		default:
+			attr_fmt(attr, "0x%x", attr->rta_type);
 			break;
 		}
 	}
