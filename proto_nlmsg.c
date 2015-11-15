@@ -40,9 +40,50 @@
 #define NDA_PAYLOAD(n)	NLMSG_PAYLOAD(n,sizeof(struct ndmsg))
 #endif
 
+#ifndef NLA_LENGTH
+#define NLA_LENGTH(len)	(NLA_ALIGN(sizeof(struct nlattr)) + (len))
+#endif
+
+#ifndef NLA_DATA
+#define NLA_DATA(nla)   ((void*)(((char*)(nla)) + NLA_LENGTH(0)))
+#endif
+
+#ifndef NLA_PAYLOAD
+#define NLA_PAYLOAD(nla) ((int)((nla)->nla_len) - NLA_LENGTH(0))
+#endif
+
+#define NLA_LEN(attr) ((int)NLA_PAYLOAD(attr))
+#define NLA_INT(attr) (*(int *)NLA_DATA(attr))
+#define NLA_UINT(attr) (*(unsigned int *)NLA_DATA(attr))
+#define NLA_UINT8(attr) (*(uint8_t *)NLA_DATA(attr))
+#define NLA_UINT16(attr) (*(uint16_t *)NLA_DATA(attr))
+#define NLA_UINT32(attr) (*(uint32_t *)NLA_DATA(attr))
+#define NLA_STR(attr) ((char *)NLA_DATA(attr))
+
+#ifndef GEN_NLA
+#define GEN_NLA(n) ((struct nlattr*)(((char*)(n)) + GENL_HDRLEN))
+#endif
+
+#ifndef NLA_OK
+#define NLA_OK(nla,len)                            \
+	((len) >= (int)sizeof(struct nlattr) &&    \
+	(nla)->nla_len >= sizeof(struct nlattr) && \
+	(nla)->nla_len <= (len))
+#endif
+
+#ifndef NLA_NEXT
+#define NLA_NEXT(nla,attrlen)                    \
+	((attrlen) -= NLA_ALIGN((nla)->nla_len), \
+	(struct nlattr*)(((char*)(nla)) + NLA_ALIGN((nla)->nla_len)))
+#endif
+
 #define attr_fmt(attr, fmt, ...) \
 	tprintf("\tA: "fmt, ##__VA_ARGS__); \
 	tprintf(", Len %d\n", RTA_LEN(attr));
+
+#define nla_fmt(attr, fmt, ...) \
+	tprintf("\tA: "fmt, ##__VA_ARGS__); \
+	tprintf(", Len %d\n", NLA_LEN(attr));
 
 struct flag_name {
 	const char *name;
@@ -68,6 +109,16 @@ static const char *flags2str(struct flag_name *tbl, unsigned int flags,
 	}
 
 	return buf;
+}
+
+static void nlmsg_print_raw(struct nlmsghdr *hdr)
+{
+	u32 len = hdr->nlmsg_len;
+
+	if (len) {
+		_ascii((uint8_t *) hdr + NLMSG_HDRLEN, len - NLMSG_HDRLEN);
+		_hex((uint8_t *) hdr + NLMSG_HDRLEN, len - NLMSG_HDRLEN);
+	}
 }
 
 static const char *nlmsg_family2str(uint16_t family)
@@ -176,14 +227,27 @@ static const char *nlmsg_rtnl_type2str(uint16_t type)
 	}
 }
 
+static const char *nlmsg_genl_type2str(uint16_t type)
+{
+	switch (type) {
+	case GENL_ID_GENERATE:	return "id gen";
+	case GENL_ID_CTRL:	return "id ctrl";
+	default:		return NULL;
+	}
+}
+
 static char *nlmsg_type2str(uint16_t proto, uint16_t type, char *buf, int len)
 {
-	if (proto == NETLINK_ROUTE && type < RTM_MAX) {
-		const char *name = nlmsg_rtnl_type2str(type);
-		if (name) {
-			strncpy(buf, name, len);
-			return buf;
-		}
+	const char *name = NULL;
+
+	if (proto == NETLINK_ROUTE && type < RTM_MAX)
+		name = nlmsg_rtnl_type2str(type);
+	else if (proto == NETLINK_GENERIC)
+		name = nlmsg_genl_type2str(type);
+
+	if (name) {
+		strncpy(buf, name, len);
+		return buf;
 	}
 
 	return nl_nlmsgtype2str(type, buf, len);
@@ -715,14 +779,89 @@ static void rtnl_msg_print(struct nlmsghdr *hdr)
 	}
 }
 
-static void nlmsg_print_raw(struct nlmsghdr *hdr)
+static const char *genl_cmd2str(uint8_t table)
 {
-	u32 len = hdr->nlmsg_len;
+	switch (table) {
+	case CTRL_CMD_UNSPEC: return "unspec";
+	case CTRL_CMD_NEWFAMILY: return "new family";
+	case CTRL_CMD_DELFAMILY: return "del family";
+	case CTRL_CMD_GETFAMILY: return "get family";
+	case CTRL_CMD_NEWOPS: return "new ops";
+	case CTRL_CMD_DELOPS: return "del ops";
+	case CTRL_CMD_GETOPS: return "get ops";
+	case CTRL_CMD_NEWMCAST_GRP: return "new mcast group";
+	case CTRL_CMD_DELMCAST_GRP: return "del mcast group";
+	case CTRL_CMD_GETMCAST_GRP: return "get mcast group";
 
-	if (len) {
-		_ascii((uint8_t *) hdr + NLMSG_HDRLEN, len - NLMSG_HDRLEN);
-		_hex((uint8_t *) hdr + NLMSG_HDRLEN, len - NLMSG_HDRLEN);
+	default: return "Unknown";
 	}
+}
+
+static void genl_print_ctrl_family(struct nlmsghdr *hdr)
+{
+	struct genlmsghdr *genl = NLMSG_DATA(hdr);
+	struct nlattr *attr = GEN_NLA(genl);
+	uint32_t attrs_len = NLMSG_PAYLOAD(hdr, sizeof(struct genlmsghdr));
+
+	for (; NLA_OK(attr, attrs_len); attr = NLA_NEXT(attr, attrs_len)) {
+		switch (attr->nla_type) {
+		case CTRL_ATTR_FAMILY_ID:
+			nla_fmt(attr, "Family Id 0x%x", NLA_UINT16(attr));
+			break;
+
+		case CTRL_ATTR_FAMILY_NAME:
+			nla_fmt(attr, "Family Name %s", NLA_STR(attr));
+			break;
+
+		case CTRL_ATTR_VERSION:
+			nla_fmt(attr, "Version %u", NLA_UINT32(attr));
+			break;
+
+		case CTRL_ATTR_HDRSIZE:
+			nla_fmt(attr, "Header size %u", NLA_UINT32(attr));
+			break;
+
+		case CTRL_ATTR_MAXATTR:
+			nla_fmt(attr, "Max attr value 0x%x", NLA_UINT32(attr));
+			break;
+
+		default:
+			nla_fmt(attr, "0x%x", attr->nla_type);
+			break;
+		}
+	}
+}
+
+static void genl_print_ctrl(struct nlmsghdr *hdr)
+{
+	struct genlmsghdr *genl = NLMSG_DATA(hdr);
+
+	switch (genl->cmd) {
+	case CTRL_CMD_NEWFAMILY:
+	case CTRL_CMD_DELFAMILY:
+	case CTRL_CMD_GETFAMILY:
+		genl_print_ctrl_family(hdr);
+	}
+}
+
+static void genl_msg_print(struct nlmsghdr *hdr)
+{
+	struct genlmsghdr *genl;
+
+	if (hdr->nlmsg_type != GENL_ID_CTRL) {
+		nlmsg_print_raw(hdr);
+		return;
+	}
+
+	genl = NLMSG_DATA(hdr);
+
+	tprintf(" [ Cmd %u (%s%s%s)", genl->cmd,
+		colorize_start(bold), genl_cmd2str(genl->cmd), colorize_end());
+	tprintf(", Version %u", genl->version);
+	tprintf(", Reserved %u", genl->reserved);
+	tprintf(" ]\n");
+
+	genl_print_ctrl(hdr);
 }
 
 static void nlmsg_print(uint16_t family, struct nlmsghdr *hdr)
@@ -766,10 +905,16 @@ static void nlmsg_print(uint16_t family, struct nlmsghdr *hdr)
 			colorize_end());
 	tprintf(" ]\n");
 
-	if (family == NETLINK_ROUTE)
+	switch (family) {
+	case NETLINK_ROUTE:
 		rtnl_msg_print(hdr);
-	else
+		break;
+	case NETLINK_GENERIC:
+		genl_msg_print(hdr);
+		break;
+	default:
 		nlmsg_print_raw(hdr);
+	}
 }
 
 static void nlmsg(struct pkt_buff *pkt)
