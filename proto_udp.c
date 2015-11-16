@@ -25,7 +25,7 @@ static void udp(struct pkt_buff *pkt)
 	struct udphdr *udp = (struct udphdr *) pkt_pull(pkt, sizeof(*udp));
 	ssize_t len;
 	uint16_t src, dest;
-	char *src_name, *dest_name;
+	const char *src_name, *dest_name;
 
 	if (udp == NULL)
 		return;
@@ -61,7 +61,7 @@ static void udp_less(struct pkt_buff *pkt)
 {
 	struct udphdr *udp = (struct udphdr *) pkt_pull(pkt, sizeof(*udp));
 	uint16_t src, dest;
-	char *src_name, *dest_name;
+	const char *src_name, *dest_name;
 
 	if (udp == NULL)
 		return;

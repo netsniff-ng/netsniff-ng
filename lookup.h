@@ -19,10 +19,10 @@ enum lookup_type {
 extern void lookup_init(enum lookup_type which);
 extern void lookup_cleanup(enum lookup_type which);
 
-extern char *lookup_port_udp(unsigned int id);
-extern char *lookup_port_tcp(unsigned int id);
-extern char *lookup_ether_type(unsigned int id);
-extern char *lookup_vendor(unsigned int id);
+extern const char *lookup_port_udp(unsigned int id);
+extern const char *lookup_port_tcp(unsigned int id);
+extern const char *lookup_ether_type(unsigned int id);
+extern const char *lookup_vendor(unsigned int id);
 
 static inline const char *lookup_vendor_str(unsigned int id)
 {

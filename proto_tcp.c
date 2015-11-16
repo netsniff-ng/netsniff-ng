@@ -64,7 +64,7 @@ static void tcp(struct pkt_buff *pkt)
 {
 	struct tcphdr *tcp = (struct tcphdr *) pkt_pull(pkt, sizeof(*tcp));
 	uint16_t src, dest;
-	char *src_name, *dest_name;
+	const char *src_name, *dest_name;
 	bool v = false;
 
 	if (tcp == NULL)
@@ -110,7 +110,7 @@ static void tcp_less(struct pkt_buff *pkt)
 {
 	struct tcphdr *tcp = (struct tcphdr *) pkt_pull(pkt, sizeof(*tcp));
 	uint16_t src, dest;
-	char *src_name, *dest_name;
+	const char *src_name, *dest_name;
 
 	if (tcp == NULL)
 		return;

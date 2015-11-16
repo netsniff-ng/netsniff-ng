@@ -45,7 +45,7 @@ struct arphdr {
 static void arp(struct pkt_buff *pkt)
 {
 	char *hrd;
-	char *pro;
+	const char *pro;
 	char *opcode;
 	struct arphdr *arp = (struct arphdr *) pkt_pull(pkt, sizeof(*arp));
 

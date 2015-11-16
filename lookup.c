@@ -127,7 +127,7 @@ void lookup_cleanup(enum lookup_type which)
 	lookup_initialized[which] = false;
 }
 
-static inline char *__lookup_inline(unsigned int id, struct hash_table *tbl)
+static inline const char *__lookup_inline(unsigned int id, struct hash_table *tbl)
 {
 	struct lookup_entry *entry = lookup_hash(id, tbl);
 
@@ -137,22 +137,22 @@ static inline char *__lookup_inline(unsigned int id, struct hash_table *tbl)
 	return (entry && id == entry->id ? entry->str : NULL);
 }
 
-char *lookup_ether_type(unsigned int id)
+const char *lookup_ether_type(unsigned int id)
 {
 	return __lookup_inline(id, &lookup_tables[LT_ETHERTYPES]);
 }
 
-char *lookup_port_udp(unsigned int id)
+const char *lookup_port_udp(unsigned int id)
 {
 	return __lookup_inline(id, &lookup_tables[LT_PORTS_UDP]);
 }
 
-char *lookup_port_tcp(unsigned int id)
+const char *lookup_port_tcp(unsigned int id)
 {
 	return __lookup_inline(id, &lookup_tables[LT_PORTS_TCP]);
 }
 
-char *lookup_vendor(unsigned int id)
+const char *lookup_vendor(unsigned int id)
 {
 	return __lookup_inline(id, &lookup_tables[LT_OUI]);
 }

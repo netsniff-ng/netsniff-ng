@@ -914,7 +914,8 @@ static void presenter_print_flow_entry_time(const struct flow_entry *n)
 static void draw_flow_entry(WINDOW *screen, const struct flow_entry *n,
 			    unsigned int *line)
 {
-	char tmp[128], *pname = NULL;
+	char tmp[128];
+	const char *pname = NULL;
 	uint16_t port;
 
 	mvwprintw(screen, *line, 2, "");
