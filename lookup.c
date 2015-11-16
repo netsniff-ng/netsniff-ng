@@ -127,32 +127,32 @@ void lookup_cleanup(enum lookup_type which)
 	lookup_initialized[which] = false;
 }
 
-#define __do_lookup_inline(id, hash_ptr)	\
-	({								\
-		struct lookup_entry *entry = lookup_hash(id, hash_ptr);	\
-									\
-		while (entry && id != entry->id)			\
-			entry = entry->next;				\
-									\
-		(entry && id == entry->id ? entry->str : NULL); \
-	})
+static inline char *__lookup_inline(unsigned int id, struct hash_table *tbl)
+{
+	struct lookup_entry *entry = lookup_hash(id, tbl);
+
+	while (entry && id != entry->id)
+		entry = entry->next;
+
+	return (entry && id == entry->id ? entry->str : NULL);
+}
 
 char *lookup_ether_type(unsigned int id)
 {
-	return __do_lookup_inline(id, &lookup_tables[LT_ETHERTYPES]);
+	return __lookup_inline(id, &lookup_tables[LT_ETHERTYPES]);
 }
 
 char *lookup_port_udp(unsigned int id)
 {
-	return __do_lookup_inline(id, &lookup_tables[LT_PORTS_UDP]);
+	return __lookup_inline(id, &lookup_tables[LT_PORTS_UDP]);
 }
 
 char *lookup_port_tcp(unsigned int id)
 {
-	return __do_lookup_inline(id, &lookup_tables[LT_PORTS_TCP]);
+	return __lookup_inline(id, &lookup_tables[LT_PORTS_TCP]);
 }
 
 char *lookup_vendor(unsigned int id)
 {
-	return __do_lookup_inline(id, &lookup_tables[LT_OUI]);
+	return __lookup_inline(id, &lookup_tables[LT_OUI]);
 }
