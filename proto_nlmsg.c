@@ -77,7 +77,7 @@
 	(struct nlattr*)(((char*)(nla)) + NLA_ALIGN((nla)->nla_len)))
 #endif
 
-#define attr_fmt(attr, fmt, ...) \
+#define rta_fmt(attr, fmt, ...) \
 	tprintf("\tA: "fmt, ##__VA_ARGS__); \
 	tprintf(", Len %d\n", RTA_LEN(attr));
 
@@ -319,37 +319,37 @@ static void rtnl_print_ifinfo(struct nlmsghdr *hdr)
 	for (; RTA_OK(attr, attrs_len); attr = RTA_NEXT(attr, attrs_len)) {
 		switch (attr->rta_type) {
 		case IFLA_ADDRESS:
-			attr_fmt(attr, "Address %s",
+			rta_fmt(attr, "Address %s",
 					device_addr2str(RTA_DATA(attr),
 						RTA_LEN(attr), ifi->ifi_type,
 						if_addr, sizeof(if_addr)));
 			break;
 		case IFLA_BROADCAST:
-			attr_fmt(attr, "Broadcast %s",
+			rta_fmt(attr, "Broadcast %s",
 					device_addr2str(RTA_DATA(attr),
 						RTA_LEN(attr), ifi->ifi_type,
 						if_addr, sizeof(if_addr)));
 			break;
 		case IFLA_IFNAME:
-			attr_fmt(attr, "Name %s%s%s",
+			rta_fmt(attr, "Name %s%s%s",
 					colorize_start(bold), RTA_STR(attr),
 					colorize_end());
 			break;
 		case IFLA_MTU:
-			attr_fmt(attr, "MTU %d", RTA_INT(attr));
+			rta_fmt(attr, "MTU %d", RTA_INT(attr));
 			break;
 		case IFLA_LINK:
-			attr_fmt(attr, "Link %d", RTA_INT(attr));
+			rta_fmt(attr, "Link %d", RTA_INT(attr));
 			break;
 		case IFLA_QDISC:
-			attr_fmt(attr, "QDisc %s", RTA_STR(attr));
+			rta_fmt(attr, "QDisc %s", RTA_STR(attr));
 			break;
 		case IFLA_OPERSTATE:
 			{
 				uint8_t st = RTA_UINT8(attr);
 				char states[256];
 
-				attr_fmt(attr, "Operation state 0x%x (%s%s%s)",
+				rta_fmt(attr, "Operation state 0x%x (%s%s%s)",
 						st,
 						colorize_start(bold),
 						rtnl_link_operstate2str(st,
@@ -362,7 +362,7 @@ static void rtnl_print_ifinfo(struct nlmsghdr *hdr)
 				uint8_t mode = RTA_UINT8(attr);
 				char str[32];
 
-				attr_fmt(attr, "Mode 0x%x (%s%s%s)", mode,
+				rta_fmt(attr, "Mode 0x%x (%s%s%s)", mode,
 						colorize_start(bold),
 						rtnl_link_mode2str(mode, str,
 							sizeof(str)),
@@ -370,21 +370,20 @@ static void rtnl_print_ifinfo(struct nlmsghdr *hdr)
 			}
 			break;
 		case IFLA_GROUP:
-			attr_fmt(attr, "Group %d", RTA_INT(attr));
+			rta_fmt(attr, "Group %d", RTA_INT(attr));
 			break;
 		case IFLA_TXQLEN:
-			attr_fmt(attr, "Tx queue len %d", RTA_INT(attr));
+			rta_fmt(attr, "Tx queue len %d", RTA_INT(attr));
 			break;
 		case IFLA_NET_NS_PID:
-			attr_fmt(attr, "Network namespace pid %d",
+			rta_fmt(attr, "Network namespace pid %d",
 					RTA_INT(attr));
 			break;
 		case IFLA_NET_NS_FD:
-			attr_fmt(attr, "Network namespace fd %d",
-					RTA_INT(attr));
+			rta_fmt(attr, "Network namespace fd %d", RTA_INT(attr));
 			break;
 		default:
-			attr_fmt(attr, "0x%x", attr->rta_type);
+			rta_fmt(attr, "0x%x", attr->rta_type);
 			break;
 		}
 	}
@@ -418,32 +417,32 @@ static void rtnl_print_ifaddr(struct nlmsghdr *hdr)
 	for (; RTA_OK(attr, attrs_len); attr = RTA_NEXT(attr, attrs_len)) {
 		switch (attr->rta_type) {
 		case IFA_LOCAL:
-			attr_fmt(attr, "Local %s", addr2str(ifa->ifa_family,
+			rta_fmt(attr, "Local %s", addr2str(ifa->ifa_family,
 				RTA_DATA(attr), addr_str, sizeof(addr_str)));
 			break;
 		case IFA_ADDRESS:
-			attr_fmt(attr, "Address %s", addr2str(ifa->ifa_family,
+			rta_fmt(attr, "Address %s", addr2str(ifa->ifa_family,
 				RTA_DATA(attr), addr_str, sizeof(addr_str)));
 			break;
 		case IFA_BROADCAST:
-			attr_fmt(attr, "Broadcast %s",
+			rta_fmt(attr, "Broadcast %s",
 					addr2str(ifa->ifa_family,
 						RTA_DATA(attr), addr_str,
 						sizeof(addr_str)));
 			break;
 		case IFA_MULTICAST:
-			attr_fmt(attr, "Multicast %s",
+			rta_fmt(attr, "Multicast %s",
 					addr2str(ifa->ifa_family,
 						RTA_DATA(attr), addr_str,
 						sizeof(addr_str)));
 			break;
 		case IFA_ANYCAST:
-			attr_fmt(attr, "Anycast %s", addr2str(ifa->ifa_family,
+			rta_fmt(attr, "Anycast %s", addr2str(ifa->ifa_family,
 				RTA_DATA(attr), addr_str, sizeof(addr_str)));
 			break;
 #ifdef IFA_FLAGS
 		case IFA_FLAGS:
-			attr_fmt(attr, "Flags %d (%s%s%s)", RTA_INT(attr),
+			rta_fmt(attr, "Flags %d (%s%s%s)", RTA_INT(attr),
 				colorize_start(bold),
 				rtnl_addr_flags2str(RTA_INT(attr),
 					flags, sizeof(flags)),
@@ -451,7 +450,7 @@ static void rtnl_print_ifaddr(struct nlmsghdr *hdr)
 			break;
 #endif
 		case IFA_LABEL:
-			attr_fmt(attr, "Label %s", RTA_STR(attr));
+			rta_fmt(attr, "Label %s", RTA_STR(attr));
 			break;
 		case IFA_CACHEINFO:
 			ci = RTA_DATA(attr);
@@ -472,7 +471,7 @@ static void rtnl_print_ifaddr(struct nlmsghdr *hdr)
 			tprintf(", Len %d\n", RTA_LEN(attr));
 			break;
 		default:
-			attr_fmt(attr, "0x%x", attr->rta_type);
+			rta_fmt(attr, "0x%x", attr->rta_type);
 			break;
 		}
 	}
@@ -588,38 +587,38 @@ static void rtnl_print_route(struct nlmsghdr *hdr)
 	for (; RTA_OK(attr, attrs_len); attr = RTA_NEXT(attr, attrs_len)) {
 		switch (attr->rta_type) {
 		case RTA_DST:
-			attr_fmt(attr, "Dst %s", addr2str(rtm->rtm_family,
+			rta_fmt(attr, "Dst %s", addr2str(rtm->rtm_family,
 				RTA_DATA(attr), addr_str, sizeof(addr_str)));
 			break;
 		case RTA_SRC:
-			attr_fmt(attr, "Src %s", addr2str(rtm->rtm_family,
+			rta_fmt(attr, "Src %s", addr2str(rtm->rtm_family,
 				RTA_DATA(attr), addr_str, sizeof(addr_str)));
 			break;
 		case RTA_IIF:
-			attr_fmt(attr, "Iif %d", RTA_INT(attr));
+			rta_fmt(attr, "Iif %d", RTA_INT(attr));
 			break;
 		case RTA_OIF:
-			attr_fmt(attr, "Oif %d", RTA_INT(attr));
+			rta_fmt(attr, "Oif %d", RTA_INT(attr));
 			break;
 		case RTA_GATEWAY:
-			attr_fmt(attr, "Gateway %s", addr2str(rtm->rtm_family,
+			rta_fmt(attr, "Gateway %s", addr2str(rtm->rtm_family,
 				RTA_DATA(attr), addr_str, sizeof(addr_str)));
 			break;
 		case RTA_PRIORITY:
-			attr_fmt(attr, "Priority %u", RTA_UINT32(attr));
+			rta_fmt(attr, "Priority %u", RTA_UINT32(attr));
 			break;
 		case RTA_PREFSRC:
-			attr_fmt(attr, "Pref Src %s", addr2str(rtm->rtm_family,
+			rta_fmt(attr, "Pref Src %s", addr2str(rtm->rtm_family,
 				RTA_DATA(attr), addr_str, sizeof(addr_str)));
 			break;
 		case RTA_MARK:
-			attr_fmt(attr, "Mark 0x%x", RTA_UINT(attr));
+			rta_fmt(attr, "Mark 0x%x", RTA_UINT(attr));
 			break;
 		case RTA_FLOW:
-			attr_fmt(attr, "Flow 0x%x", RTA_UINT(attr));
+			rta_fmt(attr, "Flow 0x%x", RTA_UINT(attr));
 			break;
 		case RTA_TABLE:
-			attr_fmt(attr, "Table %d (%s%s%s)", RTA_UINT32(attr),
+			rta_fmt(attr, "Table %d (%s%s%s)", RTA_UINT32(attr),
 				colorize_start(bold),
 				route_table2str(RTA_UINT32(attr)),
 				colorize_end());
@@ -638,7 +637,7 @@ static void rtnl_print_route(struct nlmsghdr *hdr)
 			tprintf(", Len %d\n", RTA_LEN(attr));
 			break;
 		default:
-			attr_fmt(attr, "0x%x", attr->rta_type);
+			rta_fmt(attr, "0x%x", attr->rta_type);
 			break;
 		}
 	}
@@ -723,18 +722,18 @@ static void rtnl_print_neigh(struct nlmsghdr *hdr)
 	for (; RTA_OK(attr, attrs_len); attr = RTA_NEXT(attr, attrs_len)) {
 		switch (attr->rta_type) {
 		case NDA_DST:
-			attr_fmt(attr, "Address %s", addr2str(ndm->ndm_family,
+			rta_fmt(attr, "Address %s", addr2str(ndm->ndm_family,
 						RTA_DATA(attr), addr_str,
 						sizeof(addr_str)));
 			break;
 		case NDA_LLADDR:
-			attr_fmt(attr, "HW Address %s",
+			rta_fmt(attr, "HW Address %s",
 					device_addr2str(RTA_DATA(attr),
 						RTA_LEN(attr), 0, hw_addr,
 						sizeof(hw_addr)));
 			break;
 		case NDA_PROBES:
-			attr_fmt(attr, "Probes %d", RTA_UINT32(attr));
+			rta_fmt(attr, "Probes %d", RTA_UINT32(attr));
 			break;
 		case NDA_CACHEINFO:
 			ci = RTA_DATA(attr);
@@ -746,7 +745,7 @@ static void rtnl_print_neigh(struct nlmsghdr *hdr)
 			tprintf(", Len %d\n", RTA_LEN(attr));
 			break;
 		default:
-			attr_fmt(attr, "0x%x", attr->rta_type);
+			rta_fmt(attr, "0x%x", attr->rta_type);
 			break;
 		}
 	}
