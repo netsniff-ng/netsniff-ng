@@ -3,13 +3,13 @@
  * Subject to the GPL, version 2.
  */
 
-#include "oui.h"
 #include "protos.h"
 #include "pcap_io.h"
 #include "pkt_buff.h"
 #include "dissector.h"
 #include "dissector_sll.h"
 #include "dissector_eth.h"
+#include "lookup.h"
 
 static char *pkt_type2str(uint8_t pkttype)
 {
@@ -98,10 +98,10 @@ void dissector_init_sll(int fnttype)
 {
 	dissector_set_print_type(&sll_ops, fnttype);
 	dissector_set_print_type(&none_ops, fnttype);
-	dissector_init_oui();
+	lookup_init(LT_OUI);
 }
 
 void dissector_cleanup_sll(void)
 {
-	dissector_cleanup_oui();
+	lookup_cleanup(LT_OUI);
 }

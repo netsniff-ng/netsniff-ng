@@ -10,8 +10,7 @@
 #include "protos.h"
 #include "dissector.h"
 #include "dissector_80211.h"
-#include "xmalloc.h"
-#include "oui.h"
+#include "lookup.h"
 
 struct hash_table ieee80211_lay2;
 
@@ -37,11 +36,11 @@ void dissector_init_ieee80211(int fnttype)
 	dissector_init_entry(fnttype);
 	dissector_init_layer_2(fnttype);
 	dissector_init_exit(fnttype);
-	dissector_init_oui();
+	lookup_init(LT_OUI);
 }
 
 void dissector_cleanup_ieee80211(void)
 {
 	free_hash(&ieee80211_lay2);
-	dissector_cleanup_oui();
+	lookup_cleanup(LT_OUI);
 }

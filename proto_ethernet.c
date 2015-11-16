@@ -14,7 +14,6 @@
 #include "dissector_eth.h"
 #include "lookup.h"
 #include "pkt_buff.h"
-#include "oui.h"
 
 static inline bool is_multicast_ether_addr(const uint8_t *mac)
 {

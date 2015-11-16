@@ -7,7 +7,6 @@
 #include <stdint.h>
 
 #include "hash.h"
-#include "oui.h"
 #include "proto.h"
 #include "protos.h"
 #include "dissector.h"
@@ -68,11 +67,10 @@ void dissector_init_ethernet(int fnttype)
 	dissector_init_layer_3(fnttype);
 	dissector_init_exit(fnttype);
 
-	dissector_init_oui();
-
 	lookup_init(LT_PORTS_UDP);
 	lookup_init(LT_PORTS_TCP);
 	lookup_init(LT_ETHERTYPES);
+	lookup_init(LT_OUI);
 }
 
 void dissector_cleanup_ethernet(void)
@@ -80,9 +78,8 @@ void dissector_cleanup_ethernet(void)
 	free_hash(&eth_lay2);
 	free_hash(&eth_lay3);
 
+	lookup_cleanup(LT_OUI);
 	lookup_cleanup(LT_ETHERTYPES);
 	lookup_cleanup(LT_PORTS_TCP);
 	lookup_cleanup(LT_PORTS_UDP);
-
-	dissector_cleanup_oui();
 }

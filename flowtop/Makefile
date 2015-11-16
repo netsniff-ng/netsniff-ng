@@ -11,7 +11,6 @@ flowtop-libs +=	-lGeoIP \
 endif
 
 flowtop-objs =	xmalloc.o \
-		oui.o \
 		str.o \
 		sig.o \
 		sock.o \

@@ -21,8 +21,8 @@
 #include "dissector_80211.h"
 #include "built_in.h"
 #include "pkt_buff.h"
-#include "oui.h"
 #include "linktype.h"
+#include "lookup.h"
 
 #define	TU		0.001024
 

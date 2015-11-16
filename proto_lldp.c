@@ -9,7 +9,7 @@
 #include <netinet/in.h>		/* for ntohs()/ntohl() */
 
 #include "built_in.h"
-#include "oui.h"
+#include "lookup.h"
 #include "pkt_buff.h"
 #include "proto.h"
 #include "protos.h"

@@ -21,6 +21,7 @@ static const char * const lookup_files[] = {
 	[LT_PORTS_UDP]	= ETCDIRE_STRING "/udp.conf",
 	[LT_PORTS_TCP]	= ETCDIRE_STRING "/tcp.conf",
 	[LT_ETHERTYPES]	= ETCDIRE_STRING "/ether.conf",
+	[LT_OUI]	= ETCDIRE_STRING "/oui.conf",
 };
 
 struct lookup_entry {
@@ -149,4 +150,9 @@ char *lookup_port_udp(unsigned int id)
 char *lookup_port_tcp(unsigned int id)
 {
 	return __do_lookup_inline(id, &lookup_tables[LT_PORTS_TCP]);
+}
+
+char *lookup_vendor(unsigned int id)
+{
+	return __do_lookup_inline(id, &lookup_tables[LT_OUI]);
 }

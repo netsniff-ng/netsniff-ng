@@ -12,6 +12,7 @@ enum lookup_type {
 	LT_PORTS_UDP,
 	LT_PORTS_TCP,
 	LT_ETHERTYPES,
+	LT_OUI,
 	LT_MAX,
 };
 
@@ -21,5 +22,11 @@ extern void lookup_cleanup(enum lookup_type which);
 extern char *lookup_port_udp(unsigned int id);
 extern char *lookup_port_tcp(unsigned int id);
 extern char *lookup_ether_type(unsigned int id);
+extern char *lookup_vendor(unsigned int id);
+
+static inline const char *lookup_vendor_str(unsigned int id)
+{
+	return lookup_vendor(id) ? : "Unknown";
+}
 
 #endif /* LOOKUP_H */
