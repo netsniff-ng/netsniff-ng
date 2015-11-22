@@ -104,6 +104,14 @@ enum flow_direction {
 #define INCLUDE_ICMP	(1 << 5)
 #define INCLUDE_SCTP	(1 << 6)
 
+#define TOGGLE_FLAG(what, flag) \
+do { 				\
+	if (what & flag) 	\
+		what &= ~flag; 	\
+	else 			\
+		what |= flag;	\
+} while (0)
+
 struct sysctl_params_ctx {
 	int nfct_acct;
 	int nfct_tstamp;
@@ -114,6 +122,7 @@ enum rate_units {
 	RATE_BYTES
 };
 
+static volatile bool do_reload_flows;
 static volatile bool is_flow_collecting;
 static volatile sig_atomic_t sigint = 0;
 static int what = INCLUDE_IPV4 | INCLUDE_IPV6 | INCLUDE_TCP;
@@ -453,6 +462,9 @@ static void flow_list_destroy(struct flow_list *fl)
 {
 	struct flow_entry *n;
 
+	synchronize_rcu();
+	spinlock_lock(&flow_list.lock);
+
 	while (fl->head != NULL) {
 		n = rcu_dereference(fl->head->next);
 		fl->head->next = NULL;
@@ -461,8 +473,7 @@ static void flow_list_destroy(struct flow_list *fl)
 		rcu_assign_pointer(fl->head, n);
 	}
 
-	synchronize_rcu();
-	spinlock_destroy(&fl->lock);
+	spinlock_unlock(&flow_list.lock);
 }
 
 static int walk_process(unsigned int pid, struct flow_entry *n)
@@ -1187,8 +1198,14 @@ static void draw_help(WINDOW *screen)
 	mvaddnstr(row + 9, col + 2, "Display Settings", -1);
 	attroff(A_BOLD | A_UNDERLINE);
 
-	mvaddnstr(row + 11, col + 3, "b             Toggle rate units (bits/bytes)", -1);
-	mvaddnstr(row + 12, col + 3, "a             Toggle display of active flows (rate > 0) only", -1);
+	mvaddnstr(row + 11, col + 3, "b     Toggle rate units (bits/bytes)", -1);
+	mvaddnstr(row + 12, col + 3, "a     Toggle display of active flows (rate > 0) only", -1);
+
+	mvaddnstr(row + 14, col + 3, "T     Toggle display TCP flows", -1);
+	mvaddnstr(row + 15, col + 3, "U     Toggle display UDP flows", -1);
+	mvaddnstr(row + 16, col + 3, "D     Toggle display DCCP flows", -1);
+	mvaddnstr(row + 17, col + 3, "I     Toggle display ICMP flows", -1);
+	mvaddnstr(row + 18, col + 3, "S     Toggle display SCTP flows", -1);
 }
 
 static void draw_header(WINDOW *screen)
@@ -1218,6 +1235,27 @@ static void draw_footer(WINDOW *screen)
 	attroff(A_STANDOUT);
 }
 
+static void show_option_toggle(int opt)
+{
+	switch (opt) {
+	case 'T':
+		TOGGLE_FLAG(what, INCLUDE_TCP);
+		break;
+	case 'U':
+		TOGGLE_FLAG(what, INCLUDE_UDP);
+		break;
+	case 'D':
+		TOGGLE_FLAG(what, INCLUDE_DCCP);
+		break;
+	case 'I':
+		TOGGLE_FLAG(what, INCLUDE_ICMP);
+		break;
+	case 'S':
+		TOGGLE_FLAG(what, INCLUDE_SCTP);
+		break;
+	}
+}
+
 static void presenter(void)
 {
 	int time_sleep_us = 200000;
@@ -1239,11 +1277,13 @@ static void presenter(void)
 	rcu_register_thread();
 	while (!sigint) {
 		bool redraw_flows = true;
+		int ch;
 
 		curs_set(0);
 		getmaxyx(screen, rows, cols);
 
-		switch (getch()) {
+		ch = getch();
+		switch (ch) {
 		case 'q':
 			sigint = 1;
 			break;
@@ -1274,6 +1314,14 @@ static void presenter(void)
 			show_help = !show_help;
 			wclear(screen);
 			clear();
+			break;
+		case 'T':
+		case 'U':
+		case 'D':
+		case 'I':
+		case 'S':
+			show_option_toggle(ch);
+			do_reload_flows = true;
 			break;
 		default:
 			fflush(stdin);
@@ -1612,7 +1660,16 @@ static void *collector(void *null __maybe_unused)
 	while (!sigint) {
 		int status;
 
-		usleep(USEC_PER_SEC * interval);
+		if (!do_reload_flows) {
+			usleep(USEC_PER_SEC * interval);
+		} else {
+			flow_list_destroy(&flow_list);
+
+			collector_create_filter(ct_event);
+			collector_dump_flows();
+
+			do_reload_flows = false;
+		}
 
 		collector_refresh_flows(ct_update);
 
@@ -1633,6 +1690,8 @@ static void *collector(void *null __maybe_unused)
 	rcu_unregister_thread();
 
 	flow_list_destroy(&flow_list);
+	spinlock_destroy(&flow_list.lock);
+
 	nfct_close(ct_event);
 	nfct_close(ct_update);
 
