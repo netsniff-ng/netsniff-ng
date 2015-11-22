@@ -25,6 +25,7 @@
 #include "die.h"
 #include "str.h"
 #include "csum.h"
+#include "cpp.h"
 
 #define YYERROR_VERBOSE		0
 #define YYDEBUG			0
@@ -598,22 +599,11 @@ void compile_packets(char *file, bool verbose, unsigned int cpu, bool invoke_cpp
 	our_cpu = cpu;
 
 	if (invoke_cpp) {
-		char cmd[256], *dir, *base, *a, *b;
-
-		dir = dirname((a = xstrdup(file)));
-		base = basename((b = xstrdup(file)));
-
-		slprintf(tmp_file, sizeof(tmp_file), "%s/.tmp-%u-%s", dir, rand(), base);
-		slprintf(cmd, sizeof(cmd), "cpp -I" ETCDIRE_STRING " %s > %s",
-			 file, tmp_file);
-		if (system(cmd) != 0) {
+		if (cpp_exec(file, tmp_file, sizeof(tmp_file))) {
 			fprintf(stderr, "Failed to invoke C preprocessor!\n");
 			goto err;
 		}
-
 		file = tmp_file;
-		xfree(a);
-		xfree(b);
 	}
 
 	if (!strncmp("-", file, strlen("-")))
