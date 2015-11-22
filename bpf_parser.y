@@ -25,6 +25,7 @@
 #include "bpf_parser.tab.h"
 #include "built_in.h"
 #include "die.h"
+#include "cpp.h"
 
 int compile_filter(char *file, int verbose, int bypass, int format,
 		   bool invoke_cpp);
@@ -744,20 +745,13 @@ int compile_filter(char *file, int verbose, int bypass, int format,
 	memset(tmp_file, 0, sizeof(tmp_file));
 
 	if (invoke_cpp) {
-		char cmd[256], *dir, *base, *a, *b;
-
-		dir = dirname((a = xstrdup(file)));
-		base = basename((b = xstrdup(file)));
-
-		slprintf(tmp_file, sizeof(tmp_file), "%s/.tmp-%u-%s", dir, rand(), base);
-		slprintf(cmd, sizeof(cmd), "cpp -I" ETCDIRE_STRING " %s > %s",
-			 file, tmp_file);
-		if (system(cmd) != 0)
-			panic("Failed to invoke C preprocessor!\n");
+		ret = cpp_exec(file, tmp_file, sizeof(tmp_file));
+		if (ret) {
+			fprintf(stderr, "Failed to invoke C preprocessor!\n");
+			goto exit;
+		}
 
 		file = tmp_file;
-		xfree(a);
-		xfree(b);
 	}
 
 	if (!strncmp("-", file, strlen("-")))
