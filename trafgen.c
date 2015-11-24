@@ -556,8 +556,6 @@ static void xmit_slowpath_or_die(struct ctx *ctx, unsigned int cpu, unsigned lon
 
 	drop_privileges(ctx->enforce, ctx->uid, ctx->gid);
 
-	preprocess_packets();
-
 	bug_on(gettimeofday(&start, NULL));
 
 	while (likely(sigint == 0 && num > 0 && plen > 0)) {
@@ -646,8 +644,6 @@ static void xmit_fastpath_or_die(struct ctx *ctx, unsigned int cpu, unsigned lon
 		num = ctx->num;
 	if (ctx->num == 0 && orig_num > 0)
 		num = 0;
-
-	preprocess_packets();
 
 	bug_on(gettimeofday(&start, NULL));
 
@@ -833,6 +829,8 @@ static void main_loop(struct ctx *ctx, char *confname, bool slow,
 		compile_packets_str(ctx->packet_str, ctx->verbose, cpu);
 	else
 		compile_packets(confname, ctx->verbose, cpu, invoke_cpp);
+
+	preprocess_packets();
 
 	xmit_packet_precheck(ctx, cpu);
 
