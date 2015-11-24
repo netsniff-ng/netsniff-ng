@@ -625,7 +625,7 @@ void compile_packets(char *file, bool verbose, unsigned int cpu, bool invoke_cpp
 
 	ret = 0;
 err:
-	if (yyin != stdin)
+	if (yyin && yyin != stdin)
 		fclose(yyin);
 
 	if (invoke_cpp)
