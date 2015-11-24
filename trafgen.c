@@ -1084,7 +1084,7 @@ int main(int argc, char **argv)
 	if (ctx.device == NULL)
 		panic("No networking device given!\n");
 	if (confname == NULL && !ctx.packet_str)
-		panic("No configuration file given!\n");
+		panic("No configuration file or packet string given!\n");
 	if (device_mtu(ctx.device) == 0)
 		panic("This is no networking device!\n");
 
