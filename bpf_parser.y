@@ -810,7 +810,7 @@ int compile_filter(char *file, int verbose, int bypass, int format,
 		free(labels_k[i]);
 	}
 
-	if (yyin != stdin)
+	if (yyin && yyin != stdin)
 		fclose(yyin);
 
 exit:
