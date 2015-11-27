@@ -85,6 +85,16 @@
 	tprintf("\tA: "fmt, ##__VA_ARGS__); \
 	tprintf(", Len %d\n", NLA_LEN(attr));
 
+#define nla_fmt_nested(attr, fmt, ...) \
+	tprintf("[ "fmt, ##__VA_ARGS__); \
+	tprintf(", Len %d] ", NLA_LEN(attr));
+
+#define nla_fmt_nested_start(attr, fmt, ...)    \
+	tprintf("\t    A: "fmt, ##__VA_ARGS__); \
+	tprintf(", Len %d ", NLA_LEN(attr));
+
+#define nla_fmt_nested_end() tprintf("\n")
+
 struct flag_name {
 	const char *name;
 	unsigned int flag;
@@ -808,7 +818,77 @@ static const char *genl_cmd2str(uint8_t table)
 	}
 }
 
-static void genl_print_ctrl_family(struct nlmsghdr *hdr)
+static struct flag_name genl_ops_flags[] = {
+	{ "admin", GENL_ADMIN_PERM },
+	{ "doit", GENL_CMD_CAP_DO },
+	{ "dumpit", GENL_CMD_CAP_DUMP },
+	{ "policy", GENL_CMD_CAP_HASPOL },
+	{ NULL, 0 },
+};
+
+static void genl_print_ops_attr(struct nlattr *attr, uint32_t attr_len)
+{
+	char str[256];
+	uint32_t flags;
+
+	for (; NLA_OK(attr, attr_len); attr = NLA_NEXT(attr, attr_len)) {
+		switch (attr->nla_type) {
+		case CTRL_ATTR_OP_ID:
+			nla_fmt_nested(attr, "Id 0x%x", NLA_UINT32(attr));
+			break;
+
+		case CTRL_ATTR_OP_FLAGS:
+			flags = NLA_UINT32(attr);
+
+			nla_fmt_nested(attr, "Flags 0x%x (%s%s%s)", flags,
+			colorize_start(bold),
+			flags2str(genl_ops_flags, flags, str, sizeof(str)),
+			colorize_end());
+			break;
+		default:
+			nla_fmt_nested(attr, "0x%x", attr->nla_type);
+			break;
+		}
+	}
+}
+
+static void genl_print_ops_list(struct nlattr *attr, uint32_t attr_len)
+{
+	for (; NLA_OK(attr, attr_len); attr = NLA_NEXT(attr, attr_len)) {
+		nla_fmt_nested_start(attr, "0x%x", attr->nla_type);
+		genl_print_ops_attr(NLA_DATA(attr), NLA_LEN(attr));
+		nla_fmt_nested_end();
+	}
+}
+
+static void genl_print_mcast_group(struct nlattr *attr, uint32_t attr_len)
+{
+	for (; NLA_OK(attr, attr_len); attr = NLA_NEXT(attr, attr_len)) {
+		switch (attr->nla_type) {
+		case CTRL_ATTR_MCAST_GRP_ID:
+			nla_fmt_nested(attr, "Id 0x%x", NLA_UINT32(attr));
+			break;
+
+		case CTRL_ATTR_MCAST_GRP_NAME:
+			nla_fmt_nested(attr, "Name %s", NLA_STR(attr));
+			break;
+		default:
+			nla_fmt_nested(attr, "0x%x", attr->nla_type);
+			break;
+		}
+	}
+}
+
+static void genl_print_mc_groups(struct nlattr *attr, uint32_t attr_len)
+{
+	for (; NLA_OK(attr, attr_len); attr = NLA_NEXT(attr, attr_len)) {
+		nla_fmt_nested_start(attr, "0x%x", attr->nla_type);
+		genl_print_mcast_group(NLA_DATA(attr), NLA_LEN(attr));
+		nla_fmt_nested_end();
+	}
+}
+
+static void genl_print_ctrl_attrs(struct nlmsghdr *hdr)
 {
 	struct genlmsghdr *genl = NLMSG_DATA(hdr);
 	struct nlattr *attr = GEN_NLA(genl);
@@ -836,22 +916,20 @@ static void genl_print_ctrl_family(struct nlmsghdr *hdr)
 			nla_fmt(attr, "Max attr value 0x%x", NLA_UINT32(attr));
 			break;
 
+		case CTRL_ATTR_OPS:
+			nla_fmt(attr, "Ops list");
+			genl_print_ops_list(NLA_DATA(attr), NLA_LEN(attr));
+			break;
+
+		case CTRL_ATTR_MCAST_GROUPS:
+			nla_fmt(attr, "Mcast groups");
+			genl_print_mc_groups(NLA_DATA(attr), NLA_LEN(attr));
+			break;
+
 		default:
 			nla_fmt(attr, "0x%x", attr->nla_type);
 			break;
 		}
-	}
-}
-
-static void genl_print_ctrl(struct nlmsghdr *hdr)
-{
-	struct genlmsghdr *genl = NLMSG_DATA(hdr);
-
-	switch (genl->cmd) {
-	case CTRL_CMD_NEWFAMILY:
-	case CTRL_CMD_DELFAMILY:
-	case CTRL_CMD_GETFAMILY:
-		genl_print_ctrl_family(hdr);
 	}
 }
 
@@ -872,7 +950,7 @@ static void genl_msg_print(struct nlmsghdr *hdr)
 	tprintf(", Reserved %u", genl->reserved);
 	tprintf(" ]\n");
 
-	genl_print_ctrl(hdr);
+	genl_print_ctrl_attrs(hdr);
 }
 
 static void nlmsg_print(uint16_t family, struct nlmsghdr *hdr)
