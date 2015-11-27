@@ -899,33 +899,26 @@ static void genl_print_ctrl_attrs(struct nlmsghdr *hdr)
 		case CTRL_ATTR_FAMILY_ID:
 			nla_fmt(attr, "Family Id 0x%x", NLA_UINT16(attr));
 			break;
-
 		case CTRL_ATTR_FAMILY_NAME:
 			nla_fmt(attr, "Family Name %s", NLA_STR(attr));
 			break;
-
 		case CTRL_ATTR_VERSION:
 			nla_fmt(attr, "Version %u", NLA_UINT32(attr));
 			break;
-
 		case CTRL_ATTR_HDRSIZE:
 			nla_fmt(attr, "Header size %u", NLA_UINT32(attr));
 			break;
-
 		case CTRL_ATTR_MAXATTR:
 			nla_fmt(attr, "Max attr value 0x%x", NLA_UINT32(attr));
 			break;
-
 		case CTRL_ATTR_OPS:
 			nla_fmt(attr, "Ops list");
 			genl_print_ops_list(NLA_DATA(attr), NLA_LEN(attr));
 			break;
-
 		case CTRL_ATTR_MCAST_GROUPS:
 			nla_fmt(attr, "Mcast groups");
 			genl_print_mc_groups(NLA_DATA(attr), NLA_LEN(attr));
 			break;
-
 		default:
 			nla_fmt(attr, "0x%x", attr->nla_type);
 			break;
