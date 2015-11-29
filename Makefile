@@ -181,4 +181,4 @@ $(foreach tool,$(TOOLS),$(eval $(call TOOL_templ,$(tool))))
 %:: ;
 
 $(TOOLS):
-	$(LDQ) $(LDFLAGS) -o $@/$@ $@/*.o $($@-libs)
+	$(LDQ) $(LDFLAGS) -o $@/$@ $(shell LC_ALL=C ls $@/*.o) $($@-libs)
