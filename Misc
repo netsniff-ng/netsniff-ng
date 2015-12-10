@@ -56,6 +56,7 @@ cscope:
 	$(Q)$(call RM,cscope*)
 	$(FIND_SOURCE_FILES) | xargs cscope -b
 
+COV_URL = "https://scan.coverity.com/builds?project=netsniff-ng"
 # these need to be specified on the command line
 COV_EMAIL =
 COV_PASSWD =
@@ -69,10 +70,13 @@ coverity:
 	$(Q)./configure
 	$(Q)cov-build --dir cov-int $(MAKE)
 	$(Q)tar czvf netsniff-ng-coverity.tgz cov-int
-	$(Q)echo "Uploading snapshot to Coverity scanner"
-	$(Q)curl --form file=@netsniff-ng-coverity.tgz --form project=netsniff-ng \
-		--form password=$(COV_PASSWD) --form email=$(COV_EMAIL) \
-		--form version=`$(GIT_VERSION)` http://scan5.coverity.com/cgi-bin/upload.py
+	$(Q)echo "Uploading snapshot to Coverity scanner at $(COV_URL)"
+	$(Q)curl --form project=netsniff-ng \
+		--form file=@netsniff-ng-coverity.tgz \
+		--form token=$(COV_PASSWD) \
+		--form email=$(COV_EMAIL) \
+		--form version=`$(GIT_VERSION)` \
+		--form description="netsniff-ng snapshot" $(COV_URL)
 
 help:
 	$(Q)echo "$(bold)Available tools from the toolkit:$(normal)"
