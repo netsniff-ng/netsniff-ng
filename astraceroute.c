@@ -49,9 +49,10 @@
 struct ctx {
 	char *host, *port, *dev, *payload, *bind_addr;
 	size_t totlen, rcvlen;
+	socklen_t sd_len;
 	int init_ttl, max_ttl, dns_resolv, queries, timeout;
 	int syn, ack, ecn, fin, psh, rst, urg, tos, nofrag, proto, show;
-	int sd_len, dport, latitude;
+	int dport, latitude;
 };
 
 struct proto_ops {
