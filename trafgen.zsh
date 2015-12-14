@@ -42,7 +42,7 @@ _arguments -s -S \
     "(-n --num)"{-n,--num}"[Number of packets until exit (def: 0)]" \
     "(-r --rand)"{-r,--rand}"[Randomize packet selection (def: round robin)]" \
     "(-P --cpus)"{-P,--cpus}"[Specify number of forks(<= CPUs) (def: #CPUs)]:cpunum:_cpu" \
-    "(-t --gap)"{-t,--gap}"[Set approx. interpacket gap (s/ms/us/ns, def: us)]:gap:"
+    "(-t --gap)"{-t,--gap}"[Set approx. interpacket gap (s/ms/us/ns, def: us)]:gap:" \
     "(-S --ring-size)"{-S,--ring-size}"[Manually set mmap size (KiB/MiB/GiB)]:ringsize:" \
     "(-E --seed)"{-E,--seed}"[Manually set srand(3) seed]" \
     "(-u --user)"{-u,--user}"[Drop privileges and change to userid]:user:_user_info" \
