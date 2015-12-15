@@ -9,5 +9,7 @@ extern int slprintf_nocheck(char *dst, size_t size, const char *fmt, ...);
 extern char *strtrim_right(char *p, char c);
 extern noinline void *xmemset(void *s, int c, size_t n);
 extern char *argv2str(int startind, int argc, char **argv);
+extern char **argv_insert(char **argv, size_t *count, const char *str);
+extern void argv_free(char **argv);
 
 #endif /* STR_H */

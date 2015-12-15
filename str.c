@@ -109,3 +109,23 @@ char *argv2str(int startind, int argc, char **argv)
 
 	return str;
 }
+
+char **argv_insert(char **argv, size_t *count, const char *str)
+{
+	argv = xrealloc(argv, (*count + 2) * sizeof(char *));
+	argv[*count] = str ? xstrdup(str) : xstrdup("");
+	argv[*count + 1] = NULL;
+
+	*count += 1;
+	return argv;
+}
+
+void argv_free(char **argv)
+{
+	char **tmp = argv;
+
+	for (; argv && *argv; argv++)
+		free(*argv);
+
+	free(tmp);
+}
