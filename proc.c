@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include <sched.h>
+#include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/resource.h>
 #include <unistd.h>
@@ -78,4 +79,30 @@ ssize_t proc_get_cmdline(unsigned int pid, char *cmdline, size_t len)
 		cmdline[ret] = '\0';
 
 	return ret;
+}
+
+int proc_exec(const char *proc, char *const argv[])
+{
+	int status;
+	pid_t pid;
+
+	pid = fork();
+	if (pid < 0) {
+		perror("fork");
+		return -1;
+	} else if (pid == 0) {
+		if (execvp(proc, argv) < 0)
+			fprintf(stderr, "Failed to exec: %s\n", proc);
+		_exit(1);
+	}
+
+	if (waitpid(pid, &status, 0) < 0) {
+		perror("waitpid");
+		return -2;
+	}
+
+	if (!WIFEXITED(status))
+		return -WEXITSTATUS(status);
+
+	return 0;
 }
