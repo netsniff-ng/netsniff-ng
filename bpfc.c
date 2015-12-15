@@ -17,12 +17,14 @@
 #include "die.h"
 #include "bpf.h"
 #include "config.h"
+#include "str.h"
 
-static const char *short_options = "vhi:Vdbf:p";
+static const char *short_options = "vhi:Vdbf:pD:";
 static const struct option long_options[] = {
 	{"input",	required_argument,	NULL, 'i'},
 	{"format",	required_argument,	NULL, 'f'},
 	{"cpp",		no_argument,		NULL, 'p'},
+	{"define",	required_argument,	NULL, 'D'},
 	{"verbose",	no_argument,		NULL, 'V'},
 	{"bypass",	no_argument,		NULL, 'b'},
 	{"dump",	no_argument,		NULL, 'd'},
@@ -39,7 +41,7 @@ static const char *copyright = "Please report bugs to <netsniff-ng@googlegroups.
 	"There is NO WARRANTY, to the extent permitted by law.";
 
 extern int compile_filter(char *file, int verbose, int bypass, int format,
-			  bool invoke_cpp);
+			  bool invoke_cpp, char **cpp_argv);
 
 static void __noreturn help(void)
 {
@@ -49,6 +51,7 @@ static void __noreturn help(void)
 	     "Options:\n"
 	     "  -i|--input <program/->  Berkeley Packet Filter file/stdin\n"
 	     "  -p|--cpp                Run bpf program through C preprocessor\n"
+	     "  -D|--define             Add macro/define for C preprocessor\n"
 	     "  -f|--format <format>    Output format: C|netsniff-ng|xt_bpf|tcpdump\n"
 	     "  -b|--bypass             Bypass filter validation (e.g. for bug testing)\n"
 	     "  -V|--verbose            Be more verbose\n"
@@ -81,6 +84,8 @@ int main(int argc, char **argv)
 {
 	int ret, verbose = 0, c, opt_index, bypass = 0, format = 0;
 	bool invoke_cpp = false;
+	char **cpp_argv = NULL;
+	size_t cpp_argc = 0;
 	char *file = NULL;
 
 	setfsuid(getuid());
@@ -103,6 +108,10 @@ int main(int argc, char **argv)
 			break;
 		case 'p':
 			invoke_cpp = true;
+			break;
+		case 'D':
+			cpp_argv = argv_insert(cpp_argv, &cpp_argc, "-D");
+			cpp_argv = argv_insert(cpp_argv, &cpp_argc, optarg);
 			break;
 		case 'f':
 			if (!strncmp(optarg, "C", 1) ||
@@ -146,8 +155,9 @@ int main(int argc, char **argv)
 	if (!file)
 		panic("No Berkeley Packet Filter program specified!\n");
 
-	ret = compile_filter(file, verbose, bypass, format, invoke_cpp);
+	ret = compile_filter(file, verbose, bypass, format, invoke_cpp, cpp_argv);
 
+	argv_free(cpp_argv);
 	xfree(file);
 	return ret;
 }

@@ -28,7 +28,7 @@
 #include "cpp.h"
 
 int compile_filter(char *file, int verbose, int bypass, int format,
-		   bool invoke_cpp);
+		   bool invoke_cpp, char **cpp_argv);
 
 static int curr_instr = 0;
 
@@ -735,7 +735,7 @@ static void pretty_printer(const struct sock_fprog *prog, int format)
 }
 
 int compile_filter(char *file, int verbose, int bypass, int format,
-		   bool invoke_cpp)
+		   bool invoke_cpp, char **cpp_argv)
 {
 	int i;
 	struct sock_fprog res;
@@ -745,7 +745,7 @@ int compile_filter(char *file, int verbose, int bypass, int format,
 	memset(tmp_file, 0, sizeof(tmp_file));
 
 	if (invoke_cpp) {
-		ret = cpp_exec(file, tmp_file, sizeof(tmp_file), NULL);
+		ret = cpp_exec(file, tmp_file, sizeof(tmp_file), cpp_argv);
 		if (ret) {
 			fprintf(stderr, "Failed to invoke C preprocessor!\n");
 			goto exit;

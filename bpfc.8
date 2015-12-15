@@ -65,6 +65,10 @@ Pass the bpf program through the C preprocessor before reading it in
 bpfc. This allows #define and #include directives (e.g. to include
 definitions from system headers) to be used in the bpf program.
 .PP
+.SS -D <name>=<definition>, --define <name>=<definition>
+Add macro definition for the C preprocessor to use it within bpf file. This
+option is used in combination with the -p,--cpp option.
+.PP
 .SS -f <format>, --format <format>
 Specify a different output format than the default that is netsniff-ng
 compatible. The <format> specifier can be: C, netsniff-ng, xt_bpf, tcpdump.
