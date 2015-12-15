@@ -590,7 +590,8 @@ void cleanup_packets(void)
 	free(packet_dyn);
 }
 
-void compile_packets(char *file, bool verbose, unsigned int cpu, bool invoke_cpp)
+void compile_packets(char *file, bool verbose, unsigned int cpu, bool invoke_cpp,
+		     char **cpp_argv)
 {
 	char tmp_file[128];
 	int ret = -1;
@@ -599,7 +600,7 @@ void compile_packets(char *file, bool verbose, unsigned int cpu, bool invoke_cpp
 	our_cpu = cpu;
 
 	if (invoke_cpp) {
-		if (cpp_exec(file, tmp_file, sizeof(tmp_file), NULL)) {
+		if (cpp_exec(file, tmp_file, sizeof(tmp_file), cpp_argv)) {
 			fprintf(stderr, "Failed to invoke C preprocessor!\n");
 			goto err;
 		}

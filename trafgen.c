@@ -83,7 +83,7 @@ size_t plen = 0;
 struct packet_dyn *packet_dyn = NULL;
 size_t dlen = 0;
 
-static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRs:P:eE:pu:g:CHQq";
+static const char *short_options = "d:c:n:t:vJhS:rk:i:o:VRs:P:eE:pu:g:CHQqD:";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"out",			required_argument,	NULL, 'o'},
@@ -105,6 +105,7 @@ static const struct option long_options[] = {
 	{"jumbo-support",	no_argument,		NULL, 'J'},
 	{"no-cpu-stats",	no_argument,		NULL, 'C'},
 	{"cpp",			no_argument,		NULL, 'p'},
+	{"define",		required_argument,	NULL, 'D'},
 	{"rfraw",		no_argument,		NULL, 'R'},
 	{"rand",		no_argument,		NULL, 'r'},
 	{"verbose",		no_argument,		NULL, 'V'},
@@ -163,6 +164,7 @@ static void __noreturn help(void)
 	     "  -i|-c|--in|--conf <cfg/->      Packet configuration file/stdin\n"
 	     "  -o|-d|--out|--dev <netdev>     Networking device i.e., eth0\n"
 	     "  -p|--cpp                       Run packet config through C preprocessor\n"
+	     "  -D|--define                    Add macro/define for C preprocessor\n"
 	     "  -J|--jumbo-support             Support 64KB super jumbo frames (def: 2048B)\n"
 	     "  -R|--rfraw                     Inject raw 802.11 frames\n"
 	     "  -s|--smoke-test <ipv4>         Probe if machine survived fuzz-tested packet\n"
@@ -823,12 +825,13 @@ static void xmit_packet_precheck(struct ctx *ctx, unsigned int cpu)
 }
 
 static void main_loop(struct ctx *ctx, char *confname, bool slow,
-		      unsigned int cpu, bool invoke_cpp, unsigned long orig_num)
+		      unsigned int cpu, bool invoke_cpp, char **cpp_argv,
+		      unsigned long orig_num)
 {
 	if (ctx->packet_str)
 		compile_packets_str(ctx->packet_str, ctx->verbose, cpu);
 	else
-		compile_packets(confname, ctx->verbose, cpu, invoke_cpp);
+		compile_packets(confname, ctx->verbose, cpu, invoke_cpp, cpp_argv);
 
 	preprocess_packets();
 
@@ -896,6 +899,8 @@ int main(int argc, char **argv)
 	unsigned long long tx_packets, tx_bytes;
 	struct ctx ctx;
 	int min_opts = 5;
+	char **cpp_argv = NULL;
+	size_t cpp_argc = 0;
 
 	fmemset(&ctx, 0, sizeof(ctx));
 	ctx.cpus = get_number_cpus_online();
@@ -923,6 +928,10 @@ int main(int argc, char **argv)
 			break;
 		case 'p':
 			invoke_cpp = true;
+			break;
+		case 'D':
+			cpp_argv = argv_insert(cpp_argv, &cpp_argc, "-D");
+			cpp_argv = argv_insert(cpp_argv, &cpp_argc, optarg);
 			break;
 		case 'V':
 			ctx.verbose = true;
@@ -1133,7 +1142,8 @@ int main(int argc, char **argv)
 			srand(seed);
 
 			cpu_affinity(i);
-			main_loop(&ctx, confname, slow, i, invoke_cpp, orig_num);
+			main_loop(&ctx, confname, slow, i, invoke_cpp,
+				  cpp_argv, orig_num);
 
 			goto thread_out;
 		case -1:
@@ -1179,6 +1189,7 @@ thread_out:
 	if (set_irq_aff)
 		device_restore_irq_affinity_list();
 
+	argv_free(cpp_argv);
 	free(ctx.device);
 	free(ctx.device_trans);
 	free(ctx.rhost);

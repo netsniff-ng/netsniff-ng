@@ -79,6 +79,10 @@ Pass the packet configuration to the C preprocessor before reading it into
 trafgen. This allows #define and #include directives (e.g. to include
 definitions from system headers) to be used in the trafgen configuration file.
 .PP
+.SS -D <name>=<definition>, --define <name>=<definition>
+Add macro definition for the C preprocessor to use it within trafgen file. This
+option is used in combination with the -p,--cpp option.
+.PP
 .SS -J, --jumbo-support
 By default trafgen's ring buffer frames are of a fixed size of 2048 bytes.
 This means that if you're expecting jumbo frames or even super jumbo frames to

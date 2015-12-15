@@ -56,7 +56,8 @@ static inline bool packet_dyn_has_only_csums(struct packet_dyn *p)
 }
 
 extern void compile_packets_str(char *str, bool verbose, unsigned int cpu);
-extern void compile_packets(char *file, bool verbose, unsigned int cpu, bool invoke_cpp);
+extern void compile_packets(char *file, bool verbose, unsigned int cpu,
+			    bool invoke_cpp, char **cpp_argv);
 extern void cleanup_packets(void);
 
 #endif /* TRAFGEN_CONF */
