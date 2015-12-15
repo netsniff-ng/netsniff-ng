@@ -7,6 +7,7 @@ bpfc-objs =	xmalloc.o \
 		bpf_parser.tab.o \
 		die.o \
 		sysctl.o \
+		proc.o \
 		cpp.o \
 		bpfc.o
 
