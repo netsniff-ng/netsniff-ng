@@ -599,7 +599,7 @@ void compile_packets(char *file, bool verbose, unsigned int cpu, bool invoke_cpp
 	our_cpu = cpu;
 
 	if (invoke_cpp) {
-		if (cpp_exec(file, tmp_file, sizeof(tmp_file))) {
+		if (cpp_exec(file, tmp_file, sizeof(tmp_file), NULL)) {
 			fprintf(stderr, "Failed to invoke C preprocessor!\n");
 			goto err;
 		}

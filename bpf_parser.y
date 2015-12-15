@@ -745,7 +745,7 @@ int compile_filter(char *file, int verbose, int bypass, int format,
 	memset(tmp_file, 0, sizeof(tmp_file));
 
 	if (invoke_cpp) {
-		ret = cpp_exec(file, tmp_file, sizeof(tmp_file));
+		ret = cpp_exec(file, tmp_file, sizeof(tmp_file), NULL);
 		if (ret) {
 			fprintf(stderr, "Failed to invoke C preprocessor!\n");
 			goto exit;
