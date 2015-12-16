@@ -1676,12 +1676,12 @@ static void *collector(void *null __maybe_unused)
 		if (!do_reload_flows) {
 			usleep(USEC_PER_SEC * interval);
 		} else {
+			do_reload_flows = false;
+
 			flow_list_destroy(&flow_list);
 
 			collector_create_filter(ct_event);
 			collector_dump_flows();
-
-			do_reload_flows = false;
 		}
 
 		collector_refresh_flows(ct_update);
