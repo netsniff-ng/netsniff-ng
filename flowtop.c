@@ -1146,6 +1146,7 @@ static void draw_flows(WINDOW *screen, struct flow_list *fl,
 	}
 
 	mvwprintw(screen, 1, 2, "Kernel netfilter flows(%u) for ", flows);
+
 	if (what & INCLUDE_IPV4)
 		printw("IPv4,");
 	if (what & INCLUDE_IPV6)
@@ -1162,6 +1163,9 @@ static void draw_flows(WINDOW *screen, struct flow_list *fl,
 		printw("ICMP,");
 	if (what & INCLUDE_ICMP && what & INCLUDE_IPV6)
 		printw("ICMP6,");
+	if (show_active_only)
+		printw("Active,");
+
 	printw(" [+%d]", skip_lines);
 
 	if (is_flow_collecting)
