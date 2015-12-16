@@ -1145,15 +1145,24 @@ static void draw_flows(WINDOW *screen, struct flow_list *fl,
 		maxy -= (2 + (show_src ? 1 : 0));
 	}
 
-	mvwprintw(screen, 1, 2,
-		"Kernel netfilter flows(%u) for %s%s%s%s%s%s"
-		"[+%d]", flows, what & INCLUDE_TCP ? "TCP, " : "",
-		what & INCLUDE_UDP  ? "UDP, "  : "",
-		what & INCLUDE_SCTP ? "SCTP, " : "",
-		what & INCLUDE_DCCP ? "DCCP, " : "",
-		what & INCLUDE_ICMP && what & INCLUDE_IPV4 ? "ICMP, " : "",
-		what & INCLUDE_ICMP && what & INCLUDE_IPV6 ? "ICMP6, " : "",
-		skip_lines);
+	mvwprintw(screen, 1, 2, "Kernel netfilter flows(%u) for ", flows);
+	if (what & INCLUDE_IPV4)
+		printw("IPv4,");
+	if (what & INCLUDE_IPV6)
+		printw("IPv6,");
+	if (what & INCLUDE_TCP)
+		printw("TCP,");
+	if (what & INCLUDE_UDP)
+		printw("UDP,");
+	if (what & INCLUDE_SCTP)
+		printw("SCTP,");
+	if (what & INCLUDE_DCCP)
+		printw("DCCP,");
+	if (what & INCLUDE_ICMP && what & INCLUDE_IPV4)
+		printw("ICMP,");
+	if (what & INCLUDE_ICMP && what & INCLUDE_IPV6)
+		printw("ICMP6,");
+	printw(" [+%d]", skip_lines);
 
 	if (is_flow_collecting)
 		printw(" [Collecting flows ...]");
