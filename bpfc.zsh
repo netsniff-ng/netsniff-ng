@@ -13,6 +13,7 @@ typeset -A opt_args
 _arguments -s -S \
     "(-i --input)"{-i,--input}"[Berkeley Packet Filter file]:input:_files" \
     "(-p --cpp)"{-p,--cpp}"[Run bpf program through C preprocessor]" \
+    "(-D --define)"{-D,--define}"[Add macro definition for the C preprocessor]::" \
     "(-f --format)"{-f,--format}"[Output format]:output:(C netsniff-ng xt_bpf tcpdump)" \
     "(-b --bypass)"{-b,--bypass}"[Bypass filter validation (e.g. for bug testing)]" \
     "(-d --dump)"{-d,--dump}"[Dump supported instruction table]" \
