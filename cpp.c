@@ -5,7 +5,7 @@
 #include "proc.h"
 #include "xmalloc.h"
 
-static size_t argv_len(char **argv)
+static size_t argv_len(char *const argv[])
 {
 	size_t len = 0;
 
@@ -15,7 +15,7 @@ static size_t argv_len(char **argv)
 	return len;
 }
 
-int cpp_exec(char *in_file, char *out_file, size_t out_len, char **argv)
+int cpp_exec(char *in_file, char *out_file, size_t out_len, char *const argv[])
 {
 	size_t argc = 7 + argv_len(argv);
 	char *tmp = xstrdup(in_file);
