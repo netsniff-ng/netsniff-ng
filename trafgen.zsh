@@ -36,6 +36,7 @@ _arguments -s -S \
     "(-i -c --in --conf)"{-i,-c,--in,--conf}"[Packet configuration file/stdin]:input:_files" \
     "(-o -d --out --dev)"{-o,-d,--out,--dev}"[Networking device i.e., eth0]:device:_interfaces" \
     "(-p --cpp)"{-p,--cpp}"[Run packet config through C preprocessor]" \
+    "(-D --define)"{-D,--define}"[Add macro definition for the C preprocessor]::" \
     "(-J --jumbo-support)"{-J,--jumbo-support}"[Support 64KB super jumbo frames (def: 2048B)]" \
     "(-R --rfraw)"{-R,--rfraw}"[Inject raw 802.11 frames]" \
     "(-s --smoke-test)"{-s,--smoke-test}"[Probe if machine survived fuzz-tested packet]" \
