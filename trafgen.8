@@ -136,6 +136,10 @@ probing for a given interval, iii) ping-like debugging with specific payload
 patterns. Furthermore, the TX_RING interface does not cope with interpacket
 gaps.
 .PP
+.SS -b <rate>, --rate <rate>
+Specify the packet send rate <num>pps/B/kB/MB/GB/kBit/Mbit/Gbit/KiB/MiB/GiB units.
+Like with the -t,--gap option, the packets are sent in slow mode.
+.PP
 .SS -S <size>, --ring-size <size>
 Manually define the TX_RING resp. TX_RING size in ''<num>KiB/MiB/GiB''. On
 default the size is being determined based on the network connectivity rate.
