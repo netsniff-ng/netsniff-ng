@@ -37,7 +37,7 @@ MKDIR = echo -e  "  MKDIR\t$(1)" && mkdir -p $(1)
 RM = echo -e "  RM\t$(1)" && rm -rf $(1)
 RMDIR = echo -e "  RM\t$(1)" && rmdir --ignore-fail-on-non-empty $(1) 2> /dev/null || true
 
-GZIP = gzip --best -c
+GZIP = gzip -9 -c
 
 # Git related
 GIT_LAST_TAG = git describe --abbrev=0 v$(VERSION_SHORT)^
