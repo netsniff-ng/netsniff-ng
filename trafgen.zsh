@@ -44,6 +44,7 @@ _arguments -s -S \
     "(-r --rand)"{-r,--rand}"[Randomize packet selection (def: round robin)]" \
     "(-P --cpus)"{-P,--cpus}"[Specify number of forks(<= CPUs) (def: #CPUs)]:cpunum:_cpu" \
     "(-t --gap)"{-t,--gap}"[Set approx. interpacket gap (s/ms/us/ns, def: us)]:gap:" \
+    "(-b --rate)"(-b,--rate)"[Send traffic at specified rate (pps/B/kB/MB/GB/kbit/Mbit/Gbit/KiB/MiB/GiB):rate:" \
     "(-S --ring-size)"{-S,--ring-size}"[Manually set mmap size (KiB/MiB/GiB)]:ringsize:" \
     "(-E --seed)"{-E,--seed}"[Manually set srand(3) seed]" \
     "(-u --user)"{-u,--user}"[Drop privileges and change to userid]:user:_user_info" \
