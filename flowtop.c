@@ -1615,7 +1615,6 @@ static void collector_dump_flows(void)
 
 static void *collector(void *null __maybe_unused)
 {
-	struct nfct_handle *ct_update;
 	struct nfct_handle *ct_event;
 	struct pollfd poll_fd[1];
 
@@ -1631,20 +1630,10 @@ static void *collector(void *null __maybe_unused)
 
 	nfct_callback_register(ct_event, NFCT_T_ALL, flow_event_cb, NULL);
 
-	ct_update = nfct_open(CONNTRACK, NF_NETLINK_CONNTRACK_UPDATE);
-	if (!ct_update)
-		panic("Cannot create a nfct handle: %s\n", strerror(errno));
-
-	nfct_callback_register(ct_update, NFCT_T_ALL, flow_event_cb, NULL);
-
 	poll_fd[0].fd = nfct_fd(ct_event);
 	poll_fd[0].events = POLLIN;
 
 	if (fcntl(nfct_fd(ct_event), F_SETFL, O_NONBLOCK) == -1)
-		panic("Cannot set non-blocking socket: fcntl(): %s\n",
-		      strerror(errno));
-
-	if (fcntl(nfct_fd(ct_update), F_SETFL, O_NONBLOCK) == -1)
 		panic("Cannot set non-blocking socket: fcntl(): %s\n",
 		      strerror(errno));
 
@@ -1666,7 +1655,7 @@ static void *collector(void *null __maybe_unused)
 			collector_dump_flows();
 		}
 
-		collector_refresh_flows(ct_update);
+		collector_refresh_flows(ct_event);
 
 		status = poll(poll_fd, 1, 0);
 		if (status < 0) {
@@ -1688,7 +1677,6 @@ static void *collector(void *null __maybe_unused)
 	spinlock_destroy(&flow_list.lock);
 
 	nfct_close(ct_event);
-	nfct_close(ct_update);
 
 	pthread_exit(NULL);
 }
