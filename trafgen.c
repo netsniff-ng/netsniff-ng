@@ -74,6 +74,7 @@ struct shaper {
 	unsigned long long rate;
 	struct timeval start;
 	struct timeval end;
+	struct timespec delay;
 };
 
 struct ctx {
@@ -83,7 +84,6 @@ struct ctx {
 	unsigned int cpus;
 	uid_t uid; gid_t gid;
 	char *device, *device_trans, *rhost;
-	struct timespec gap;
 	struct sockaddr_in dest;
 	struct shaper sh;
 	char *packet_str;
@@ -561,16 +561,30 @@ static int xmit_smoke_probe(int icmp_sock, struct ctx *ctx)
 
 static bool shaper_is_set(struct shaper *sh)
 {
+	if ((sh->delay.tv_sec | sh->delay.tv_nsec) > 0)
+		return true;
+
 	return sh->type != SHAPER_NONE;
 }
 
-static void shaper_start(struct shaper *sh)
+static void shaper_init(struct shaper *sh)
 {
+	if (sh->type == SHAPER_NONE)
+		return;
+
+	memset(&sh->delay, 0, sizeof(struct timespec));
 	bug_on(gettimeofday(&sh->start, NULL));
 	sh->sent = 0;
 }
 
-static void shaper_init(struct shaper *sh, unsigned long long rate, enum shaper_type type)
+static void shaper_set_delay(struct shaper *sh, time_t sec, long int ns)
+{
+	sh->delay.tv_sec = sec;
+	sh->delay.tv_nsec = ns;
+}
+
+static void shaper_set_rate(struct shaper *sh, unsigned long long rate,
+			    enum shaper_type type)
 {
 	memset(sh, 0, sizeof(struct shaper));
 	sh->rate = rate;
@@ -579,14 +593,11 @@ static void shaper_init(struct shaper *sh, unsigned long long rate, enum shaper_
 
 static void shaper_delay(struct shaper *sh, unsigned long pkt_len)
 {
-	if ((sh->start.tv_sec | sh->start.tv_usec) <= 0)
-		return;
+	if (sh->type != SHAPER_NONE)
+		sh->sent += sh->type == SHAPER_BYTES ? pkt_len : 1;
 
-	sh->sent += sh->type == SHAPER_BYTES ? pkt_len : 1;
-
-	if (sh->sent >= sh->rate) {
+	if (sh->sent >= sh->rate && sh->rate > 0) {
 		struct timeval delay_us;
-		struct timespec delay_ns;
 		struct timeval time_sent;
 		struct timeval time_1s = { .tv_sec = 1 };
 
@@ -595,13 +606,14 @@ static void shaper_delay(struct shaper *sh, unsigned long pkt_len)
 
 		if (timercmp(&time_1s, &time_sent, > )) {
 			timersub(&time_1s, &time_sent, &delay_us);
-			timeval_to_timespec(&delay_us, &delay_ns);
-
-			if ((delay_ns.tv_sec | delay_ns.tv_nsec) > 0)
-				nanosleep(&delay_ns, NULL);
+			timeval_to_timespec(&delay_us, &sh->delay);
 		}
+	}
 
-		shaper_start(sh);
+	if ((sh->delay.tv_sec | sh->delay.tv_nsec) > 0) {
+		nanosleep(&sh->delay, NULL);
+
+		shaper_init(sh);
 	}
 }
 
@@ -631,7 +643,7 @@ static void xmit_slowpath_or_die(struct ctx *ctx, unsigned int cpu, unsigned lon
 	bug_on(gettimeofday(&start, NULL));
 
 	if (shaper_is_set(&ctx->sh))
-		shaper_start(&ctx->sh);
+		shaper_init(&ctx->sh);
 
 	while (likely(sigint == 0 && num > 0 && plen > 0)) {
 		pktd = &packet_dyn[i];
@@ -680,9 +692,6 @@ retry:
 
 		if (shaper_is_set(&ctx->sh))
 			shaper_delay(&ctx->sh, packets[i].len);
-
-		if ((ctx->gap.tv_sec | ctx->gap.tv_nsec) > 0)
-			nanosleep(&ctx->gap, NULL);
 	}
 
 	bug_on(gettimeofday(&end, NULL));
@@ -979,6 +988,7 @@ int main(int argc, char **argv)
 	size_t cpp_argc = 0;
 	unsigned long long rate;
 	enum shaper_type shape_type;
+	struct timespec delay;
 
 	fmemset(&ctx, 0, sizeof(ctx));
 	ctx.cpus = get_number_cpus_online();
@@ -1087,23 +1097,25 @@ int main(int argc, char **argv)
 			}
 
 			if (!strncmp(ptr, "ns", strlen("ns"))) {
-				ctx.gap.tv_sec = gap / 1000000000;
-				ctx.gap.tv_nsec = gap % 1000000000;
+				delay.tv_sec = gap / 1000000000;
+				delay.tv_nsec = gap % 1000000000;
 			} else if (*ptr == '\0' || !strncmp(ptr, "us", strlen("us"))) {
 				/*  Default to microseconds for backwards
 				 *  compatibility if no postfix is given.
 				 */
-				ctx.gap.tv_sec = gap / 1000000;
-				ctx.gap.tv_nsec = (gap % 1000000) * 1000;
+				delay.tv_sec = gap / 1000000;
+				delay.tv_nsec = (gap % 1000000) * 1000;
 			} else if (!strncmp(ptr, "ms", strlen("ms"))) {
-				ctx.gap.tv_sec = gap / 1000;
-				ctx.gap.tv_nsec = (gap % 1000) * 1000000;
+				delay.tv_sec = gap / 1000;
+				delay.tv_nsec = (gap % 1000) * 1000000;
 			} else if (!strncmp(ptr, "s", strlen("s"))) {
-				ctx.gap.tv_sec = gap;
-				ctx.gap.tv_nsec = 0;
+				delay.tv_sec = gap;
+				delay.tv_nsec = 0;
 			} else {
 				panic("Syntax error in time param!\n");
 			}
+
+			shaper_set_delay(&ctx.sh, delay.tv_sec, delay.tv_nsec);
 			break;
 		case 'b':
 			rate = strtoul(optarg, &ptr, 0);
@@ -1145,7 +1157,7 @@ int main(int argc, char **argv)
 				panic("Invalid unit type for rate\n");
 			}
 
-			shaper_init(&ctx.sh, rate, shape_type);
+			shaper_set_rate(&ctx.sh, rate, shape_type);
 			break;
 		case 'S':
 			ptr = optarg;
@@ -1231,7 +1243,7 @@ int main(int argc, char **argv)
 		sleep(0);
 	}
 
-	if (shaper_is_set(&ctx.sh) || (ctx.gap.tv_sec | ctx.gap.tv_nsec) > 0) {
+	if (shaper_is_set(&ctx.sh)) {
 		prctl(PR_SET_TIMERSLACK, 1UL);
 		/* Fall back to single core to not mess up correct timing.
 		 * We are slow anyway!
