@@ -1087,14 +1087,9 @@ int main(int argc, char **argv)
 			ctx.num = orig_num;
 			break;
 		case 't':
-			ptr = optarg;
-			gap = strtoul(optarg, NULL, 0);
-
-			for (j = i = strlen(optarg); i > 0; --i) {
-				if (!isdigit(optarg[j - i]))
-					break;
-				ptr++;
-			}
+			gap = strtoul(optarg, &ptr, 0);
+			if (!gap && optarg == ptr)
+				panic("Invalid gap param\n");
 
 			if (!strncmp(ptr, "ns", strlen("ns"))) {
 				delay.tv_sec = gap / 1000000000;
