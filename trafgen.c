@@ -978,7 +978,7 @@ int main(int argc, char **argv)
 	bool prio_high = false, set_irq_aff = true, set_sock_mem = true;
 	int c, opt_index, vals[4] = {0}, irq;
 	uint64_t gap = 0;
-	unsigned int i, j;
+	unsigned int i;
 	char *confname = NULL, *ptr;
 	unsigned long cpus_tmp, orig_num = 0;
 	unsigned long long tx_packets, tx_bytes;
@@ -1155,24 +1155,19 @@ int main(int argc, char **argv)
 			shaper_set_rate(&ctx.sh, rate, shape_type);
 			break;
 		case 'S':
-			ptr = optarg;
-
-			for (j = i = strlen(optarg); i > 0; --i) {
-				if (!isdigit(optarg[j - i]))
-					break;
-				ptr++;
-			}
+			ctx.reserve_size = strtoul(optarg, &ptr, 0);
+			if (ctx.reserve_size == 0 && ptr == optarg)
+				panic("Invalid ring size param\n");
 
 			if (!strncmp(ptr, "KiB", strlen("KiB")))
-				ctx.reserve_size = 1 << 10;
+				ctx.reserve_size *= 1 << 10;
 			else if (!strncmp(ptr, "MiB", strlen("MiB")))
 				ctx.reserve_size = 1 << 20;
 			else if (!strncmp(ptr, "GiB", strlen("GiB")))
-				ctx.reserve_size = 1 << 30;
+				ctx.reserve_size *= 1 << 30;
 			else
-				panic("Syntax error in ring size param!\n");
+				panic("Invalid ring size unit type\n");
 
-			ctx.reserve_size *= strtoul(optarg, NULL, 0);
 			break;
 		case '?':
 			switch (optopt) {
