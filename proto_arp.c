@@ -5,7 +5,9 @@
  */
 
 #include <stdint.h>
+#include <arpa/inet.h>
 #include <netinet/in.h>    /* for ntohs() */
+#include <linux/if_ether.h>
 
 #include "proto.h"
 #include "protos.h"
@@ -41,6 +43,44 @@ struct arphdr {
 #define ARPOP_InREQUEST 8  /* InARP request              */
 #define ARPOP_InREPLY   9  /* InARP reply                */
 #define ARPOP_NAK       10 /* (ATM)ARP NAK               */
+
+enum addr_direct {
+	ADDR_SENDER,
+	ADDR_TARGET,
+};
+
+static void arp_print_addrs(struct arphdr *arp, enum addr_direct addr_dir)
+{
+	char *dir = addr_dir == ADDR_SENDER ? "Sender" : "Target";
+	bool has_eth;
+	bool has_ip4;
+
+	has_eth = ntohs(arp->ar_hrd) == ARPHRD_ETHER;
+	has_ip4 = ntohs(arp->ar_pro) == ETH_P_IP;
+
+	if (has_eth) {
+		uint8_t *mac;
+
+		mac = addr_dir == ADDR_SENDER ? &arp->ar_sha[0] : &arp->ar_tha[0];
+
+		tprintf(", %s MAC (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x)",
+			 dir, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	}
+
+	if (has_ip4) {
+		char ip_str[INET_ADDRSTRLEN];
+		uint32_t ip;
+
+		if (addr_dir == ADDR_SENDER)
+			ip = *(uint32_t *)&arp->ar_sip[0];
+		else
+			ip = *(uint32_t *)&arp->ar_tip[0];
+
+		inet_ntop(AF_INET, &ip, ip_str, sizeof(ip_str));
+
+		tprintf(", %s IP (%s)", dir, ip_str);
+	}
+}
 
 static void arp(struct pkt_buff *pkt)
 {
@@ -115,6 +155,10 @@ static void arp(struct pkt_buff *pkt)
 	tprintf("HA Len (%u), ", arp->ar_hln);
 	tprintf("Proto Len (%u), ", arp->ar_pln);
 	tprintf("Opcode (%u => %s)", ntohs(arp->ar_op), opcode);
+
+	arp_print_addrs(arp, ADDR_SENDER);
+	arp_print_addrs(arp, ADDR_TARGET);
+
 	tprintf(" ]\n");
 }
 
