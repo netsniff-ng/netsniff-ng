@@ -51,14 +51,9 @@ enum addr_direct {
 
 static void arp_print_addrs(struct arphdr *arp, enum addr_direct addr_dir)
 {
-	char *dir = addr_dir == ADDR_SENDER ? "Sender" : "Target";
-	bool has_eth;
-	bool has_ip4;
+	const char *dir = addr_dir == ADDR_SENDER ? "Sender" : "Target";
 
-	has_eth = ntohs(arp->ar_hrd) == ARPHRD_ETHER;
-	has_ip4 = ntohs(arp->ar_pro) == ETH_P_IP;
-
-	if (has_eth) {
+	if (ntohs(arp->ar_hrd) == ARPHRD_ETHER) {
 		uint8_t *mac;
 
 		mac = addr_dir == ADDR_SENDER ? &arp->ar_sha[0] : &arp->ar_tha[0];
@@ -67,7 +62,7 @@ static void arp_print_addrs(struct arphdr *arp, enum addr_direct addr_dir)
 			 dir, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 	}
 
-	if (has_ip4) {
+	if (ntohs(arp->ar_pro) == ETH_P_IP) {
 		char ip_str[INET_ADDRSTRLEN];
 		uint32_t ip;
 
