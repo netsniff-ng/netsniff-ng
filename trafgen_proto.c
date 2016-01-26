@@ -5,6 +5,7 @@
 
 #include <stddef.h>
 #include <string.h>
+#include <netinet/in.h>
 #include <linux/if_ether.h>
 
 #include "dev.h"
@@ -319,6 +320,37 @@ void proto_field_set_dev_mac(struct proto_hdr *hdr, uint32_t fid)
 void proto_field_set_default_dev_mac(struct proto_hdr *hdr, uint32_t fid)
 {
 	__proto_field_set_dev_mac(hdr, fid, true);
+}
+
+static void __proto_field_set_dev_ipv4(struct proto_hdr *hdr, uint32_t fid,
+				       bool is_default)
+{
+	struct sockaddr_storage ss = { };
+	struct sockaddr_in *ss4;
+	uint32_t ip_addr;
+	int ret;
+
+	if (proto_field_is_set(hdr, fid))
+		return;
+
+	ret = device_address(hdr->ctx->dev, AF_INET, &ss);
+	if (ret < 0)
+		panic("Could not get device IPv4 address\n");
+
+	ss4 = (struct sockaddr_in *) &ss;
+	ip_addr = ss4->sin_addr.s_addr;
+
+	__proto_field_set_bytes(hdr, fid, (uint8_t *)&ip_addr, is_default, false);
+}
+
+void proto_field_set_dev_ipv4(struct proto_hdr *hdr, uint32_t fid)
+{
+	__proto_field_set_dev_ipv4(hdr, fid, false);
+}
+
+void proto_field_set_default_dev_ipv4(struct proto_hdr *hdr, uint32_t fid)
+{
+	__proto_field_set_dev_ipv4(hdr, fid, true);
 }
 
 void protos_init(const char *dev)
