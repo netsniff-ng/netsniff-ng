@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include <arpa/inet.h>
 
 #include "str.h"
 #include "die.h"
@@ -128,4 +129,32 @@ void argv_free(char **argv)
 		free(*argv);
 
 	free(tmp);
+}
+
+int str2mac(const char *str, uint8_t *mac, size_t len)
+{
+	int i, count;
+	unsigned int tmp[6];
+
+	if (!str)
+	       return -EINVAL;
+	if (len < 6)
+		return -ENOSPC;
+
+	count = sscanf(str, "%02X:%02X:%02X:%02X:%02X:%02X",
+			&tmp[0], &tmp[1], &tmp[2], &tmp[3], &tmp[4], &tmp[5]);
+
+	if (errno || count != 6)
+		count = sscanf(str, "%02x:%02x:%02x:%02x:%02x:%02x",
+			&tmp[0], &tmp[1], &tmp[2], &tmp[3], &tmp[4], &tmp[5]);
+
+	if (count != 6)
+		return -EINVAL;
+	if (errno)
+		return -errno;
+
+	for (i = 0; i < 6; i++)
+		mac[i] = (uint8_t)tmp[i];
+
+	return 0;
 }
