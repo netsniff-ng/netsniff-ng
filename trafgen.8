@@ -271,6 +271,174 @@ configuration, e.g. const16(0xaa) will result in ''00 aa''. Within c*()
 functions, it is possible to do some arithmetics: -,+,*,/,%,&,|,<<,>>,^
 E.g. const16((((1<<8)+0x32)|0b110)*2) will be evaluated to ''02 6c''.
 .PP
+iv) Protocol header functions:
+The protocol header functions allow to fill protocol header fields by
+using following generic syntax:
+.in +8
+.sp
+<proto>(<field>=<value>,<field2>=<value2>,...,<field3>,...)
+.sp
+.in -8
+.in +4
+If a field is not specified, then a default value will be used (usually 0).
+Protocol fields might be set in any order. However, the offset of the fields in
+the resulting packet is according to the respective protocol.
+.sp
+All required lower layer headers will be filled automatically if they were not
+specified by the user. The headers will be filled in the order they were
+specified. Each header will be filled with some mimimum required set of fields.
+.in -4
+.sp
+.in +4
+Supported protocol headers:
+.sp
+.I Ethernet
+:
+.B eth(da=<mac>, sa=<mac>, prot=<number>)
+.sp
+.in +4
+.B da|daddr
+- Destination MAC address (default: 00:00:00:00:00:00)
+.sp
+.B sa|saddr
+- Source MAC address (default: device MAC address)
+.sp
+.B prot|proto
+- Ethernet type (default: 0)
+.in -4
+
+.I ARP
+:
+.B arp(htype=<number>, ptype=<number>, op=<request|reply|number>, request,
+.B reply, smac=<mac>, sip=<ip4_addr>, tmac=<mac>, tip=<ip4_addr>)
+.sp
+.in +4
+.B htype
+- ARP hardware type (default: 1 [Ethernet])
+.sp
+.B ptype
+- ARP protocol type (default: 0x0800 [IPv4])
+.sp
+.B op
+- ARP operation type (request/reply) (default: request)
+.sp
+.B req|request
+- ARP Request operation type
+.sp
+.B reply
+- ARP Reply operation type
+.sp
+.B smac|sha
+- Sender hardware (MAC) address (default: device MAC address)
+.sp
+.B sip|spa
+- Sender protocol (IPv4) address (default: device IPv4 address)
+.sp
+.B tmac|tha
+- Target hardware (MAC) address (default: 00:00:00:00:00:00)
+.sp
+.B tip|tpa
+- Target protocol (IPv4) address (default: device IPv4 address)
+.in -4
+.sp
+By default, the ARP operation field is set to request and the Ethernet
+destination MAC address is set to the broadcast address (ff:ff:ff:ff:ff:ff).
+
+.I IPv4
+:
+.B ip4|ipv4(ihl=<number>, ver=<number>, len=<number>, csum=<number>,
+.B ttl=<number>, tos=<number>, dscp=<number>, ecn=<number>,
+.in +16
+.B id=<number>, flags=<number>, frag=<number>, df, mf, da=<ip4_addr>, sa=<ip4_addr>,
+.B prot[o]=<number>)
+.in -16
+.sp
+.in +4
+.B ver|version
+- Version field (default: 4)
+.sp
+.B ihl
+- Header length in number of 32-bit words (default: 5)
+.sp
+.B tos
+- Type of Service (ToS) field (default: 0)
+.sp
+.B dscp
+- Differentiated Services Code Point (DSCP, DiffServ) field (default: 0)
+.sp
+.B ecn
+- Explicit Congestion Notification (ECN) field (default: 0)
+.sp
+.B len|length
+- Total length of header and data (calculated by default)
+.sp
+.B id
+- IPv4 datagram identification (default: 0)
+.sp
+.B flags
+- IPv4 flags value (DF, MF) (default: 0)
+.sp
+.B df
+- Don't fragment (DF) flag (default: 0)
+.sp
+.B mf
+- More fragments (MF) flag (default: 0)
+.sp
+.B frag
+- Fragment offset field in number of 8 byte blocks (default: 0)
+.sp
+.B ttl
+- Time to live (TTL) field (default: 0)
+.sp
+.B csum
+- Header checksum (calculated by default)
+.sp
+.B sa|saddr
+- Source IPv4 address (default: device IPv4 address)
+.sp
+.B da|daddr
+- Destination IPv4 address (default: 0.0.0.0)
+.sp
+.B prot|proto
+- IPv4 protocol number (default: 0)
+.in -4
+.sp
+By default, if the lower level header is Ethernet, its EtherType field is set to
+0x0800 (IPv4). If the lower level header is IPv4, its protocol field is set to
+0x4 (IP-in-IP).
+
+.I UDP
+:
+.B udp(sp=<number>, dp=<number>, len=<number>, csum=<number>)
+.sp
+.in +4
+.B sp|sport
+- Source port (default: 0)
+.sp
+.B dp|dport
+- Destination port (default: 0)
+.sp
+.B len|length
+- Length of UDP header and data (calculated by default)
+.sp
+.B csum
+- Checksum field over IPv4 pseudo header (calculated by default)
+.sp
+.in -4
+By default, if the lower level header is IPv4, its protocol field is set to
+0x11 (UDP).
+
+Simple example of a UDP Echo packet:
+.PP
+.in +5
+   {
+     eth(da=11:22:33:44:55:66),
+     ip(daddr=1.2.3.4)
+     udp(dp=7),
+     "Hello world"
+   }
+.in -5
+.PP
 Furthermore, there are two types of comments in trafgen configuration files:
 .PP
   1. Multi-line C-style comments:        /* put comment here */
