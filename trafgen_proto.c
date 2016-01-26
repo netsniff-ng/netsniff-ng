@@ -5,7 +5,9 @@
 
 #include <stddef.h>
 #include <string.h>
+#include <linux/if_ether.h>
 
+#include "dev.h"
 #include "xmalloc.h"
 #include "trafgen_conf.h"
 #include "trafgen_proto.h"
@@ -287,6 +289,35 @@ void proto_field_set_default_be16(struct proto_hdr *hdr, uint32_t fid, uint16_t 
 void proto_field_set_default_be32(struct proto_hdr *hdr, uint32_t fid, uint32_t val)
 {
 	__proto_field_set_bytes(hdr, fid, (uint8_t *)&val, true, true);
+}
+
+static void __proto_field_set_dev_mac(struct proto_hdr *hdr, uint32_t fid,
+				      bool is_default)
+{
+	uint8_t mac[ETH_ALEN];
+	int ret;
+
+	if (proto_field_is_set(hdr, fid))
+		return;
+
+	if (!hdr->ctx->dev)
+		panic("Device is not specified\n");
+
+	ret = device_hw_address(hdr->ctx->dev, mac, sizeof(mac));
+	if (ret < 0)
+		panic("Could not get device hw adress\n");
+
+	__proto_field_set_bytes(hdr, fid, mac, is_default, false);
+}
+
+void proto_field_set_dev_mac(struct proto_hdr *hdr, uint32_t fid)
+{
+	__proto_field_set_dev_mac(hdr, fid, false);
+}
+
+void proto_field_set_default_dev_mac(struct proto_hdr *hdr, uint32_t fid)
+{
+	__proto_field_set_dev_mac(hdr, fid, true);
 }
 
 void protos_init(const char *dev)

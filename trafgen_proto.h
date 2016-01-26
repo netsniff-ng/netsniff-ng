@@ -94,4 +94,7 @@ extern void proto_field_set_default_be16(struct proto_hdr *hdr, uint32_t fid,
 extern void proto_field_set_default_be32(struct proto_hdr *hdr, uint32_t fid,
 					 uint32_t val);
 
+extern void proto_field_set_dev_mac(struct proto_hdr *hdr, uint32_t fid);
+extern void proto_field_set_default_dev_mac(struct proto_hdr *hdr, uint32_t fid);
+
 #endif /* TRAFGEN_PROTO_I_H */
