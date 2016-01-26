@@ -137,6 +137,11 @@ static void realloc_packet(void)
 	__init_new_csum_slot(&packet_dyn[packetd_last]);
 }
 
+struct packet *current_packet(void)
+{
+	return &packets[packet_last];
+}
+
 static void set_byte(uint8_t val)
 {
 	struct packet *pkt = &packets[packet_last];
