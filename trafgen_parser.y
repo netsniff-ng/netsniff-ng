@@ -21,6 +21,8 @@
 #include "xmalloc.h"
 #include "trafgen_parser.tab.h"
 #include "trafgen_conf.h"
+#include "trafgen_proto.h"
+#include "trafgen_l2.h"
 #include "built_in.h"
 #include "die.h"
 #include "str.h"
@@ -58,6 +60,8 @@ extern size_t dlen;
 #define packetds_last		(packet_dyn[packetd_last].slen - 1)
 
 static int our_cpu, min_cpu = -1, max_cpu = -1;
+
+static struct proto_hdr *hdr;
 
 static inline int test_ignore(void)
 {
@@ -324,22 +328,33 @@ static void set_dynamic_incdec(uint8_t start, uint8_t stop, uint8_t stepping,
 	__setup_new_counter(&pktd->cnt[packetdc_last], start, stop, stepping, type);
 }
 
+static void proto_add(enum proto_id pid)
+{
+	proto_header_init(pid);
+	hdr = proto_current_header();
+}
+
 %}
 
 %union {
 	long long int number;
+	uint8_t bytes[256];
 	char *str;
 }
 
 %token K_COMMENT K_FILL K_RND K_SEQINC K_SEQDEC K_DRND K_DINC K_DDEC K_WHITE
 %token K_CPU K_CSUMIP K_CSUMUDP K_CSUMTCP K_CSUMUDP6 K_CSUMTCP6 K_CONST8 K_CONST16 K_CONST32 K_CONST64
 
+%token K_DADDR K_SADDR K_PROT
+%token K_ETH
+
 %token ',' '{' '}' '(' ')' '[' ']' ':' '-' '+' '*' '/' '%' '&' '|' '<' '>' '^'
 
-%token number string
+%token number string mac
 
 %type <number> number expression
 %type <str> string
+%type <bytes> mac
 
 %left '-' '+' '*' '/' '%' '&' '|' '<' '>' '^'
 
@@ -372,9 +387,16 @@ noenforce_white
 	| delimiter_nowhite { }
 	;
 
+skip_white
+	: { }
+	| K_WHITE { }
+	;
 packet
 	: '{' noenforce_white payload noenforce_white '}' {
 			min_cpu = max_cpu = -1;
+
+			proto_packet_finish();
+
 			realloc_packet();
 		}
 	| K_CPU '(' number cpu_delim number ')' ':' noenforce_white '{' noenforce_white payload noenforce_white '}' {
@@ -388,10 +410,15 @@ packet
 				max_cpu = tmp;
 			}
 
+			proto_packet_finish();
+
 			realloc_packet();
 		}
 	| K_CPU '(' number ')' ':' noenforce_white '{' noenforce_white payload noenforce_white '}' {
 			min_cpu = max_cpu = $3;
+
+			proto_packet_finish();
+
 			realloc_packet();
 		}
 	;
@@ -422,6 +449,7 @@ elem
 	| ddec { }
 	| csum { }
 	| const { }
+	| proto { proto_header_finish(hdr); }
 	| inline_comment { }
 	;
 
@@ -534,6 +562,33 @@ ddec
 		{ set_dynamic_incdec($3, $5, 1, TYPE_DEC); }
 	| K_DDEC '(' number delimiter number delimiter number ')'
 		{ set_dynamic_incdec($3, $5, $7, TYPE_DEC); }
+	;
+
+proto
+	: eth_proto { }
+	;
+
+eth_proto
+	: eth '(' eth_param_list ')' { }
+	;
+
+eth
+	: K_ETH	{ proto_add(PROTO_ETH); }
+	;
+
+eth_param_list
+	: { }
+	| eth_field { }
+	| eth_field delimiter eth_param_list { }
+	;
+
+eth_field
+	: K_DADDR  skip_white '=' skip_white mac
+		{ proto_field_set_bytes(hdr, ETH_DST_ADDR, $5); }
+	| K_SADDR  skip_white '=' skip_white mac
+		{ proto_field_set_bytes(hdr, ETH_SRC_ADDR, $5); }
+	| K_PROT skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, ETH_PROTO_ID, $5); }
 	;
 
 %%

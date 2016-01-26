@@ -19,6 +19,7 @@
 #include "trafgen_parser.tab.h"
 #include "xmalloc.h"
 #include "built_in.h"
+#include "str.h"
 
 extern void yyerror(const char *);
 
@@ -75,6 +76,9 @@ number_bin	([0]?[b][0-1]+)
 number_dec	(([0])|([1-9][0-9]*))
 number_ascii	([a-zA-Z])
 
+mac_hex		([a-fA-F0-9]+)
+mac		({mac_hex}:{mac_hex}:{mac_hex}:{mac_hex}:{mac_hex}:{mac_hex})
+
 %%
 
 "cpu"		{ return K_CPU; }
@@ -99,6 +103,12 @@ number_ascii	([a-zA-Z])
 "const32"|"c32"	{ return K_CONST32; }
 "const64"|"c64"	{ return K_CONST64; }
 
+"daddr"|"da"	{ return K_DADDR; }
+"saddr"|"sa"	{ return K_SADDR; }
+"prot"[o]?	{ return K_PROT; }
+
+"eth"		{ return K_ETH; }
+
 [ ]*"-"[ ]*	{ return '-'; }
 [ ]*"+"[ ]*	{ return '+'; }
 [ ]*"*"[ ]*	{ return '*'; }
@@ -117,6 +127,7 @@ number_ascii	([a-zA-Z])
 "]"		{ return ']'; }
 ","		{ return ','; }
 ":"		{ return ':'; }
+"="		{ return '='; }
 
 "\n"		{ yylineno++; }
 
@@ -145,6 +156,10 @@ number_ascii	([a-zA-Z])
 
 {number_ascii}	{ yylval.number = (uint8_t) (*yytext);
 		  return number; }
+
+{mac}	        { if (str2mac(yytext, yylval.bytes, 256))
+			panic("Failed to parse MAC address %s\n", yytext);
+		  return mac; }
 
 "'\\x"[a-fA-F0-9]{2}"'" { yylval.number = strtol(yytext + 3, NULL, 16);
 		  return number; }
