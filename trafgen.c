@@ -54,6 +54,7 @@
 #include "timer.h"
 #include "ring_tx.h"
 #include "csum.h"
+#include "trafgen_proto.h"
 
 #ifndef timeval_to_timespec
 #define timeval_to_timespec(tv, ts) {         \
@@ -1214,6 +1215,8 @@ int main(int argc, char **argv)
 	register_signal(SIGQUIT, signal_handler);
 	register_signal(SIGTERM, signal_handler);
 	register_signal(SIGHUP, signal_handler);
+
+	protos_init(ctx.device);
 
 	if (prio_high) {
 		set_proc_prio(-20);
