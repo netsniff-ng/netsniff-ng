@@ -7,6 +7,7 @@
 extern size_t device_mtu(const char *ifname);
 extern int device_address(const char *ifname, int af, struct sockaddr_storage *ss);
 extern int __device_ifindex(const char *ifname);
+extern int device_hw_address(const char *ifname, uint8_t *addr, size_t len);
 extern int device_ifindex(const char *ifname);
 extern int device_type(const char *ifname);
 extern short device_get_flags(const char *ifname);

@@ -124,6 +124,31 @@ int device_address(const char *ifname, int af, struct sockaddr_storage *ss)
 	return ret;
 }
 
+int device_hw_address(const char *ifname, uint8_t *addr, size_t len)
+{
+	int ret, sock;
+	struct ifreq ifr;
+
+	if (!addr)
+		return -EINVAL;
+	if (len < IFHWADDRLEN)
+		return -ENOSPC;
+	if (!strncmp("any", ifname, strlen("any")))
+		return -EINVAL;
+
+	sock = af_socket(AF_INET);
+
+	memset(&ifr, 0, sizeof(ifr));
+	strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
+
+	ret = ioctl(sock, SIOCGIFHWADDR, &ifr);
+	if (!ret)
+		memcpy(addr, &ifr.ifr_hwaddr.sa_data[0], IFHWADDRLEN);
+
+	close(sock);
+	return ret;
+}
+
 size_t device_mtu(const char *ifname)
 {
 	size_t mtu = 0;
