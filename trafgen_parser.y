@@ -17,6 +17,8 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <libgen.h>
+#include <net/if_arp.h>
+#include <netinet/in.h>
 
 #include "xmalloc.h"
 #include "trafgen_parser.tab.h"
@@ -337,6 +339,7 @@ static void proto_add(enum proto_id pid)
 %}
 
 %union {
+	struct in_addr ip_addr;
 	long long int number;
 	uint8_t bytes[256];
 	char *str;
@@ -346,15 +349,19 @@ static void proto_add(enum proto_id pid)
 %token K_CPU K_CSUMIP K_CSUMUDP K_CSUMTCP K_CSUMUDP6 K_CSUMTCP6 K_CONST8 K_CONST16 K_CONST32 K_CONST64
 
 %token K_DADDR K_SADDR K_PROT
+%token K_OPER K_SHA K_SPA K_THA K_TPA K_REQUEST K_REPLY K_PTYPE K_HTYPE
+
 %token K_ETH
+%token K_ARP
 
 %token ',' '{' '}' '(' ')' '[' ']' ':' '-' '+' '*' '/' '%' '&' '|' '<' '>' '^'
 
-%token number string mac
+%token number string mac ip_addr
 
 %type <number> number expression
 %type <str> string
 %type <bytes> mac
+%type <ip_addr> ip_addr
 
 %left '-' '+' '*' '/' '%' '&' '|' '<' '>' '^'
 
@@ -566,6 +573,7 @@ ddec
 
 proto
 	: eth_proto { }
+	| arp_proto { }
 	;
 
 eth_proto
@@ -589,6 +597,44 @@ eth_field
 		{ proto_field_set_bytes(hdr, ETH_SRC_ADDR, $5); }
 	| K_PROT skip_white '=' skip_white number
 		{ proto_field_set_be16(hdr, ETH_PROTO_ID, $5); }
+	;
+
+arp_proto
+	: arp '(' arp_param_list ')' { }
+	;
+
+arp_param_list
+	: { }
+	| arp_field { }
+	| arp_field delimiter arp_param_list { }
+	;
+
+arp_field
+	: K_OPER  skip_white '=' skip_white K_REQUEST
+		{ proto_field_set_be16(hdr, ARP_OPER, ARPOP_REQUEST); }
+	| K_OPER  skip_white '=' skip_white K_REPLY
+		{ proto_field_set_be16(hdr, ARP_OPER, ARPOP_REPLY); }
+	| K_OPER skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, ARP_OPER, $5); }
+	| K_REQUEST
+		{ proto_field_set_be16(hdr, ARP_OPER, ARPOP_REQUEST); }
+	| K_REPLY
+		{ proto_field_set_be16(hdr, ARP_OPER, ARPOP_REPLY); }
+	| K_HTYPE skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, ARP_HTYPE, $5); }
+	| K_PTYPE skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, ARP_PTYPE, $5); }
+	| K_SHA skip_white '=' skip_white mac
+		{ proto_field_set_bytes(hdr, ARP_SHA, $5); }
+	| K_THA skip_white '=' skip_white mac
+		{ proto_field_set_bytes(hdr, ARP_THA, $5); }
+	| K_SPA skip_white '=' skip_white ip_addr
+		{ proto_field_set_u32(hdr, ARP_SPA, $5.s_addr); }
+	| K_TPA skip_white '=' skip_white ip_addr
+		{ proto_field_set_u32(hdr, ARP_TPA, $5.s_addr); }
+	;
+arp
+	: K_ARP	{ proto_add(PROTO_ARP); }
 	;
 
 %%

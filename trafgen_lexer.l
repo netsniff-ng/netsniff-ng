@@ -15,6 +15,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <arpa/inet.h>
 
 #include "trafgen_parser.tab.h"
 #include "xmalloc.h"
@@ -78,6 +79,7 @@ number_ascii	([a-zA-Z])
 
 mac_hex		([a-fA-F0-9]+)
 mac		({mac_hex}:{mac_hex}:{mac_hex}:{mac_hex}:{mac_hex}:{mac_hex})
+ip_addr		([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)
 
 %%
 
@@ -107,7 +109,18 @@ mac		({mac_hex}:{mac_hex}:{mac_hex}:{mac_hex}:{mac_hex}:{mac_hex})
 "saddr"|"sa"	{ return K_SADDR; }
 "prot"[o]?	{ return K_PROT; }
 
+"sha"|"smac"	{ return K_SHA; }
+"spa"|"sip"	{ return K_SPA; }
+"tha"|"tmac"	{ return K_THA; }
+"tpa"|"tip"	{ return K_TPA; }
+"req"|"request"	{ return K_REQUEST; }
+"reply"		{ return K_REPLY; }
+"op"|"oper"	{ return K_OPER; }
+"htype"		{ return K_HTYPE; }
+"ptype"		{ return K_PTYPE; }
+
 "eth"		{ return K_ETH; }
+"arp"		{ return K_ARP; }
 
 [ ]*"-"[ ]*	{ return '-'; }
 [ ]*"+"[ ]*	{ return '+'; }
@@ -160,6 +173,10 @@ mac		({mac_hex}:{mac_hex}:{mac_hex}:{mac_hex}:{mac_hex}:{mac_hex})
 {mac}	        { if (str2mac(yytext, yylval.bytes, 256))
 			panic("Failed to parse MAC address %s\n", yytext);
 		  return mac; }
+
+{ip_addr}	{ if (inet_pton(AF_INET, yytext, &yylval.ip_addr) != 1)
+			panic("Failed to parse IPv4 address %s\n", yytext);
+		  return ip_addr; };
 
 "'\\x"[a-fA-F0-9]{2}"'" { yylval.number = strtol(yytext + 3, NULL, 16);
 		  return number; }
