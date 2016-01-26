@@ -10,6 +10,7 @@
 #include "dev.h"
 #include "xmalloc.h"
 #include "trafgen_conf.h"
+#include "trafgen_l2.h"
 #include "trafgen_proto.h"
 
 #define field_shift_and_mask(f, v) (((v) << (f)->shift) & \
@@ -305,7 +306,7 @@ static void __proto_field_set_dev_mac(struct proto_hdr *hdr, uint32_t fid,
 
 	ret = device_hw_address(hdr->ctx->dev, mac, sizeof(mac));
 	if (ret < 0)
-		panic("Could not get device hw adress\n");
+		panic("Could not get device hw address\n");
 
 	__proto_field_set_bytes(hdr, fid, mac, is_default, false);
 }
@@ -325,6 +326,8 @@ void protos_init(const char *dev)
 	struct proto_hdr *p;
 
 	ctx.dev = dev;
+
+	protos_l2_init();
 
 	for (p = registered; p; p = p->next)
 		p->ctx = &ctx;
