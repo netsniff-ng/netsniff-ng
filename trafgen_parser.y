@@ -157,7 +157,7 @@ static void set_multi_byte(uint8_t *s, size_t len)
 		set_byte(s[i]);
 }
 
-static void set_fill(uint8_t val, size_t len)
+void set_fill(uint8_t val, size_t len)
 {
 	size_t i;
 	struct packet *pkt = &packets[packet_last];
