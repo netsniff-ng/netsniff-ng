@@ -1,10 +1,5 @@
-/*
- * proto_vlan.h - VLAN proto helpers & declarations
- * Subject to the GPL, version 2.
- */
-
-#ifndef PROTO_VLAN_H
-#define PROTO_VLAN_H
+#ifndef VLAN_H
+#define VLAN_H
 
 #include <stdbool.h>
 #include <inttypes.h>

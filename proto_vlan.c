@@ -10,7 +10,7 @@
 #include <netinet/in.h>    /* for ntohs() */
 
 #include "proto.h"
-#include "proto_vlan.h"
+#include "vlan.h"
 #include "dissector_eth.h"
 #include "pkt_buff.h"
 

@@ -17,7 +17,7 @@
 #include "ring.h"
 #include "tprintf.h"
 #include "linktype.h"
-#include "proto_vlan.h"
+#include "vlan.h"
 
 #define PRINT_NORM		0
 #define PRINT_LESS		1
