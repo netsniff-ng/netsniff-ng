@@ -194,7 +194,7 @@ static void alloc_rx_ring_frames(int sock, struct ring *ring)
 				  rx_ring_get_size(ring, v3));
 }
 
-void join_fanout_group(int sock, uint32_t fanout_group, uint32_t fanout_type)
+static void join_fanout_group(int sock, uint32_t fanout_group, uint32_t fanout_type)
 {
 	uint32_t fanout_opt = 0;
 	int ret;
