@@ -21,6 +21,7 @@ trafgen-objs =	xmalloc.o \
 		cpp.o \
 		trafgen_proto.o \
 		trafgen_l2.o \
+		trafgen_l3.o \
 		trafgen_lexer.yy.o \
 		trafgen_parser.tab.o \
 		trafgen.o
