@@ -133,9 +133,13 @@ ip_addr		([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)
 "df"		{ return K_DF; }
 "mf"		{ return K_MF; }
 
+"sp"|"sport"	{ return K_SPORT; }
+"dp"|"dport"	{ return K_DPORT; }
+
 "eth"		{ return K_ETH; }
 "arp"		{ return K_ARP; }
 "ip4"|"ipv4"	{ return K_IP4; }
+"udp"		{ return K_UDP; }
 
 [ ]*"-"[ ]*	{ return '-'; }
 [ ]*"+"[ ]*	{ return '+'; }

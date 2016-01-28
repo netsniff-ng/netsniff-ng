@@ -26,6 +26,7 @@
 #include "trafgen_proto.h"
 #include "trafgen_l2.h"
 #include "trafgen_l3.h"
+#include "trafgen_l4.h"
 #include "built_in.h"
 #include "die.h"
 #include "str.h"
@@ -352,10 +353,12 @@ static void proto_add(enum proto_id pid)
 %token K_DADDR K_SADDR K_PROT
 %token K_OPER K_SHA K_SPA K_THA K_TPA K_REQUEST K_REPLY K_PTYPE K_HTYPE
 %token K_TTL K_DSCP K_ECN K_TOS K_LEN K_ID K_FLAGS K_FRAG K_IHL K_VER K_CSUM K_DF K_MF
+%token K_SPORT K_DPORT
 
 %token K_ETH
 %token K_ARP
 %token K_IP4
+%token K_UDP
 
 %token ',' '{' '}' '(' ')' '[' ']' ':' '-' '+' '*' '/' '%' '&' '|' '<' '>' '^'
 
@@ -578,6 +581,7 @@ proto
 	: eth_proto { }
 	| arp_proto { }
 	| ip4_proto { }
+	| udp_proto { }
 	;
 
 eth_proto
@@ -686,6 +690,31 @@ ip4_field
 
 ip4
 	: K_IP4	{ proto_add(PROTO_IP4); }
+	;
+
+udp_proto
+	: udp '(' udp_param_list ')' { }
+	;
+
+udp_param_list
+	: { }
+	| udp_field { }
+	| udp_field delimiter udp_param_list { }
+	;
+
+udp_field
+	: K_SPORT  skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, UDP_SPORT, $5); }
+	| K_DPORT  skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, UDP_DPORT, $5); }
+	| K_LEN skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, UDP_LEN, $5); }
+	| K_CSUM skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, UDP_CSUM, $5); }
+	;
+
+udp
+	: K_UDP	{ proto_add(PROTO_UDP); }
 	;
 
 %%
