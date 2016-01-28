@@ -13,6 +13,7 @@
 #include "trafgen_conf.h"
 #include "trafgen_l2.h"
 #include "trafgen_l3.h"
+#include "trafgen_l4.h"
 #include "trafgen_proto.h"
 
 #define field_shift_and_mask(f, v) (((v) << (f)->shift) & \
@@ -362,6 +363,7 @@ void protos_init(const char *dev)
 
 	protos_l2_init();
 	protos_l3_init();
+	protos_l4_init();
 
 	for (p = registered; p; p = p->next)
 		p->ctx = &ctx;
