@@ -119,8 +119,23 @@ ip_addr		([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)
 "htype"		{ return K_HTYPE; }
 "ptype"		{ return K_PTYPE; }
 
+"ihl"		{ return K_IHL; }
+"ver"|"version"	{ return K_VER; }
+"ttl"		{ return K_TTL; }
+"dscp"		{ return K_DSCP; }
+"ecn"		{ return K_ECN; }
+"tos"		{ return K_TOS; }
+"len"|"length"	{ return K_LEN; }
+"id"		{ return K_ID; }
+"flags"		{ return K_FLAGS; }
+"frag"		{ return K_FRAG; }
+"csum"		{ return K_CSUM; }
+"df"		{ return K_DF; }
+"mf"		{ return K_MF; }
+
 "eth"		{ return K_ETH; }
 "arp"		{ return K_ARP; }
+"ip4"|"ipv4"	{ return K_IP4; }
 
 [ ]*"-"[ ]*	{ return '-'; }
 [ ]*"+"[ ]*	{ return '+'; }
