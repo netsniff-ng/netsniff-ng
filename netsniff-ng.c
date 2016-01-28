@@ -71,6 +71,7 @@ struct ctx {
 
 static volatile sig_atomic_t sigint = 0, sighup = 0;
 static volatile bool next_dump = false;
+static volatile sig_atomic_t sighup_time = 0;
 
 static const char *short_options =
 	"d:i:o:rf:MNJt:S:k:n:b:HQmcsqXlvhF:RGAP:Vu:g:T:DBUC:K:L:w";
@@ -129,6 +130,7 @@ static const char *copyright = "Please report bugs to <netsniff-ng@googlegroups.
 static int tx_sock;
 static struct itimerval itimer;
 static unsigned long frame_count_max = 0, interval = TX_KERNEL_PULL_INT;
+static time_t start_time;
 
 #define __pcap_io		pcap_ops[ctx->pcap]
 
@@ -142,6 +144,7 @@ static void signal_handler(int number)
 		break;
 	case SIGHUP:
 		sighup = 1;
+		sighup_time = (sig_atomic_t)(time(NULL) - start_time);
 		break;
 	default:
 		break;
@@ -768,6 +771,7 @@ static int next_multi_pcap_file(struct ctx *ctx, int fd)
 {
 	int ret;
 	char fname[512];
+	time_t ftime;
 
 	__pcap_io->fsync_pcap(fd);
 
@@ -776,8 +780,14 @@ static int next_multi_pcap_file(struct ctx *ctx, int fd)
 
 	close(fd);
 
+	if (sighup_time > 0) {
+		ftime = (time_t)(start_time + sighup_time);
+		sighup_time = 0;
+	} else
+		ftime = = time(NULL);
+
 	slprintf(fname, sizeof(fname), "%s/%s%lu.pcap", ctx->device_out,
-		 ctx->prefix ? : "dump-", time(NULL));
+		 ctx->prefix ? : "dump-", ftime);
 
 	fd = open_or_die_m(fname, O_RDWR | O_CREAT | O_TRUNC |
 			   O_LARGEFILE, DEFFILEMODE);
@@ -1261,7 +1271,8 @@ int main(int argc, char **argv)
 	struct ctx ctx;
 
 	init_ctx(&ctx);
-	srand(time(NULL));
+	start_time = time(NULL);
+	srand(start_time);
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 				&opt_index)) != EOF) {
