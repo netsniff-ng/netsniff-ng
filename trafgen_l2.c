@@ -13,7 +13,7 @@
 struct proto_field eth_fields[] = {
 	{ .id = ETH_DST_ADDR, .len = 6, },
 	{ .id = ETH_SRC_ADDR, .len = 6, .offset = 6 },
-	{ .id = ETH_PROTO_ID, .len = 2, .offset = 12 },
+	{ .id = ETH_TYPE,     .len = 2, .offset = 12 },
 };
 
 static void eth_header_init(struct proto_hdr *hdr)
@@ -53,7 +53,7 @@ static void arp_header_init(struct proto_hdr *hdr)
 		uint8_t bcast[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
 		proto_field_set_default_bytes(lower, ETH_DST_ADDR, bcast);
-		proto_field_set_default_be16(lower, ETH_PROTO_ID, ETH_P_ARP);
+		proto_field_set_default_be16(lower, ETH_TYPE, ETH_P_ARP);
 	}
 
 	proto_header_fields_add(hdr, arp_fields, array_size(arp_fields));

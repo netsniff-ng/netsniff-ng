@@ -4,7 +4,7 @@
 enum eth_field {
 	ETH_DST_ADDR,
 	ETH_SRC_ADDR,
-	ETH_PROTO_ID,
+	ETH_TYPE,
 };
 
 enum arp_field {

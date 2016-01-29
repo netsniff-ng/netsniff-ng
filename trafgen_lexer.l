@@ -105,10 +105,15 @@ ip_addr		([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)
 "const32"|"c32"	{ return K_CONST32; }
 "const64"|"c64"	{ return K_CONST64; }
 
-"daddr"|"da"	{ return K_DADDR; }
-"saddr"|"sa"	{ return K_SADDR; }
+	/* IPv4 proto field (must be before more specific rule for K_ETYPE) */
 "prot"[o]?	{ return K_PROT; }
 
+	/* Ethernet */
+"daddr"|"da"	{ return K_DADDR; }
+"saddr"|"sa"	{ return K_SADDR; }
+[e]?"type"|"prot"[o]?	{ return K_ETYPE; }
+
+	/* ARP */
 "sha"|"smac"	{ return K_SHA; }
 "spa"|"sip"	{ return K_SPA; }
 "tha"|"tmac"	{ return K_THA; }
@@ -119,6 +124,7 @@ ip_addr		([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)
 "htype"		{ return K_HTYPE; }
 "ptype"		{ return K_PTYPE; }
 
+	/* IPv4 */
 "ihl"		{ return K_IHL; }
 "ver"|"version"	{ return K_VER; }
 "ttl"		{ return K_TTL; }
@@ -133,6 +139,7 @@ ip_addr		([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)
 "df"		{ return K_DF; }
 "mf"		{ return K_MF; }
 
+	/* UDP */
 "sp"|"sport"	{ return K_SPORT; }
 "dp"|"dport"	{ return K_DPORT; }
 
