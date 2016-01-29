@@ -10,7 +10,7 @@
 #include "trafgen_l2.h"
 #include "trafgen_proto.h"
 
-struct proto_field eth_fields[] = {
+static struct proto_field eth_fields[] = {
 	{ .id = ETH_DST_ADDR, .len = 6, },
 	{ .id = ETH_SRC_ADDR, .len = 6, .offset = 6 },
 	{ .id = ETH_TYPE,     .len = 2, .offset = 12 },
