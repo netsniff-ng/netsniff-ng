@@ -784,7 +784,7 @@ static int next_multi_pcap_file(struct ctx *ctx, int fd)
 		ftime = (time_t)(start_time + sighup_time);
 		sighup_time = 0;
 	} else
-		ftime = = time(NULL);
+		ftime = time(NULL);
 
 	slprintf(fname, sizeof(fname), "%s/%s%lu.pcap", ctx->device_out,
 		 ctx->prefix ? : "dump-", ftime);
