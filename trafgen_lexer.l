@@ -79,7 +79,7 @@ number_ascii	([a-zA-Z])
 
 mac_hex		([a-fA-F0-9]+)
 mac		({mac_hex}:{mac_hex}:{mac_hex}:{mac_hex}:{mac_hex}:{mac_hex})
-ip_addr		([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)
+ip4_addr	([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)
 
 %%
 
@@ -200,9 +200,9 @@ ip_addr		([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)
 			panic("Failed to parse MAC address %s\n", yytext);
 		  return mac; }
 
-{ip_addr}	{ if (inet_pton(AF_INET, yytext, &yylval.ip_addr) != 1)
+{ip4_addr}	{ if (inet_pton(AF_INET, yytext, &yylval.ip4_addr) != 1)
 			panic("Failed to parse IPv4 address %s\n", yytext);
-		  return ip_addr; };
+		  return ip4_addr; };
 
 "'\\x"[a-fA-F0-9]{2}"'" { yylval.number = strtol(yytext + 3, NULL, 16);
 		  return number; }

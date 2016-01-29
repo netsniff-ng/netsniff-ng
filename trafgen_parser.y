@@ -341,7 +341,7 @@ static void proto_add(enum proto_id pid)
 %}
 
 %union {
-	struct in_addr ip_addr;
+	struct in_addr ip4_addr;
 	long long int number;
 	uint8_t bytes[256];
 	char *str;
@@ -362,12 +362,12 @@ static void proto_add(enum proto_id pid)
 
 %token ',' '{' '}' '(' ')' '[' ']' ':' '-' '+' '*' '/' '%' '&' '|' '<' '>' '^'
 
-%token number string mac ip_addr
+%token number string mac ip4_addr
 
 %type <number> number expression
 %type <str> string
 %type <bytes> mac
-%type <ip_addr> ip_addr
+%type <ip4_addr> ip4_addr
 
 %left '-' '+' '*' '/' '%' '&' '|' '<' '>' '^'
 
@@ -636,9 +636,9 @@ arp_field
 		{ proto_field_set_bytes(hdr, ARP_SHA, $5); }
 	| K_THA skip_white '=' skip_white mac
 		{ proto_field_set_bytes(hdr, ARP_THA, $5); }
-	| K_SPA skip_white '=' skip_white ip_addr
+	| K_SPA skip_white '=' skip_white ip4_addr
 		{ proto_field_set_u32(hdr, ARP_SPA, $5.s_addr); }
-	| K_TPA skip_white '=' skip_white ip_addr
+	| K_TPA skip_white '=' skip_white ip4_addr
 		{ proto_field_set_u32(hdr, ARP_TPA, $5.s_addr); }
 	;
 arp
@@ -660,9 +660,9 @@ ip4_field
 		{ proto_field_set_u8(hdr, IP4_VER, $5); }
 	| K_IHL skip_white '=' skip_white number
 		{ proto_field_set_u8(hdr, IP4_IHL, $5); }
-	| K_DADDR  skip_white '=' skip_white ip_addr
+	| K_DADDR  skip_white '=' skip_white ip4_addr
 		{ proto_field_set_u32(hdr, IP4_DADDR, $5.s_addr); }
-	| K_SADDR  skip_white '=' skip_white ip_addr
+	| K_SADDR  skip_white '=' skip_white ip4_addr
 		{ proto_field_set_u32(hdr, IP4_SADDR, $5.s_addr); }
 	| K_PROT skip_white '=' skip_white number
 		{ proto_field_set_u8(hdr, IP4_PROTO, $5); }
