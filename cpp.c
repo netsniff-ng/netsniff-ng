@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <libgen.h>
 
+#include "cpp.h"
 #include "str.h"
 #include "proc.h"
 #include "xmalloc.h"
