@@ -105,13 +105,12 @@ ip4_addr	([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)
 "const32"|"c32"	{ return K_CONST32; }
 "const64"|"c64"	{ return K_CONST64; }
 
-	/* IPv4 proto field (must be before more specific rule for K_ETYPE) */
 "prot"[o]?	{ return K_PROT; }
 
 	/* Ethernet */
 "daddr"|"da"	{ return K_DADDR; }
 "saddr"|"sa"	{ return K_SADDR; }
-[e]?"type"|"prot"[o]?	{ return K_ETYPE; }
+[e]?"type"	{ return K_ETYPE; }
 
 	/* ARP */
 "sha"|"smac"	{ return K_SHA; }

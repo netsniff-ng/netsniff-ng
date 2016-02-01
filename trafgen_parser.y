@@ -600,12 +600,17 @@ eth_param_list
 	| eth_field delimiter eth_param_list { }
 	;
 
+eth_type
+	: K_ETYPE { }
+	| K_PROT {}
+	;
+
 eth_field
 	: K_DADDR  skip_white '=' skip_white mac
 		{ proto_field_set_bytes(hdr, ETH_DST_ADDR, $5); }
 	| K_SADDR  skip_white '=' skip_white mac
 		{ proto_field_set_bytes(hdr, ETH_SRC_ADDR, $5); }
-	| K_ETYPE skip_white '=' skip_white number
+	| eth_type skip_white '=' skip_white number
 		{ proto_field_set_be16(hdr, ETH_TYPE, $5); }
 	;
 
