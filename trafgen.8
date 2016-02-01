@@ -428,6 +428,65 @@ By default, if the lower level header is Ethernet, its EtherType field is set to
 By default, if the lower level header is IPv4, its protocol field is set to
 0x11 (UDP).
 
+.I TCP
+:
+.B tcp(sp=<number>, dp=<number>, seq=<number>, aseq|ackseq=<number>, doff|hlen=<number>,
+.B cwr, ece|ecn, urg, ack, psh, rst, syn, fin, win|window=<number>, csum=<number>,
+.B urgptr=<number>)
+.sp
+.in +4
+.B sp|sport
+- Source port (default: 0)
+.sp
+.B dp|dport
+- Destination port (default: 0)
+.sp
+.B seq
+- Sequence number (default: 0)
+.sp
+.B aseq|ackseq
+- Acknowledgement number (default: 0)
+.sp
+.B doff|hlen
+- Header size (data offset) in number of 32-bit words (default: 5)
+.sp
+.B cwr
+- Congestion Window Reduced (CWR) flag (default: 0)
+.sp
+.B ece|ecn
+- ECN-Echo (ECE) flag (default: 0)
+.sp
+.B urg
+- Urgent flag (default: 0)
+.sp
+.B ack
+- Acknowledgement flag (default: 0)
+.sp
+.B psh
+- Push flag (default: 0)
+.sp
+.B rst
+- Reset flag (default: 0)
+.sp
+.B syn
+- Synchronize flag (default: 0)
+.sp
+.B fin
+- Finish flag (default: 0)
+.sp
+.B win|window
+- Receive window size (default: 0)
+.sp
+.B csum
+- Checksum field over IPv4 pseudo header (calculated by default)
+.sp
+.B urgptr
+- Urgent pointer (default: 0)
+.sp
+.in -4
+By default, if the lower level header is IPv4, its protocol field is set to
+0x6 (TCP).
+
 Simple example of a UDP Echo packet:
 .PP
 .in +5

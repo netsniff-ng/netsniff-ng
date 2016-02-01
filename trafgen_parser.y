@@ -354,11 +354,12 @@ static void proto_add(enum proto_id pid)
 %token K_OPER K_SHA K_SPA K_THA K_TPA K_REQUEST K_REPLY K_PTYPE K_HTYPE
 %token K_PROT K_TTL K_DSCP K_ECN K_TOS K_LEN K_ID K_FLAGS K_FRAG K_IHL K_VER K_CSUM K_DF K_MF
 %token K_SPORT K_DPORT
+%token K_SEQ K_ACK_SEQ K_DOFF K_CWR K_ECE K_URG K_ACK K_PSH K_RST K_SYN K_FIN K_WINDOW K_URG_PTR
 
 %token K_ETH
 %token K_ARP
 %token K_IP4
-%token K_UDP
+%token K_UDP K_TCP
 
 %token ',' '{' '}' '(' ')' '[' ']' ':' '-' '+' '*' '/' '%' '&' '|' '<' '>' '^'
 
@@ -582,6 +583,7 @@ proto
 	| arp_proto { }
 	| ip4_proto { }
 	| udp_proto { }
+	| tcp_proto { }
 	;
 
 eth_proto
@@ -715,6 +717,47 @@ udp_field
 
 udp
 	: K_UDP	{ proto_add(PROTO_UDP); }
+	;
+
+tcp_proto
+	: tcp '(' tcp_param_list ')' { }
+	;
+
+tcp_param_list
+	: { }
+	| tcp_field { }
+	| tcp_field delimiter tcp_param_list { }
+	;
+
+tcp_field
+	: K_SPORT  skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, TCP_SPORT, $5); }
+	| K_DPORT  skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, TCP_DPORT, $5); }
+	| K_SEQ skip_white '=' skip_white number
+		{ proto_field_set_be32(hdr, TCP_SEQ, $5); }
+	| K_ACK_SEQ skip_white '=' skip_white number
+		{ proto_field_set_be32(hdr, TCP_ACK_SEQ, $5); }
+	| K_DOFF skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, TCP_DOFF, $5); }
+	| K_CWR { proto_field_set_be16(hdr, TCP_CWR, 1); }
+	| K_ECE { proto_field_set_be16(hdr, TCP_ECE, 1); }
+	| K_URG { proto_field_set_be16(hdr, TCP_URG, 1); }
+	| K_ACK { proto_field_set_be16(hdr, TCP_ACK, 1); }
+	| K_PSH { proto_field_set_be16(hdr, TCP_PSH, 1); }
+	| K_RST { proto_field_set_be16(hdr, TCP_RST, 1); }
+	| K_SYN { proto_field_set_be16(hdr, TCP_SYN, 1); }
+	| K_FIN { proto_field_set_be16(hdr, TCP_FIN, 1); }
+	| K_WINDOW skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, TCP_WINDOW, $5); }
+	| K_CSUM skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, TCP_CSUM, $5); }
+	| K_URG_PTR skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, TCP_URG_PTR, $5); }
+	;
+
+tcp
+	: K_TCP	{ proto_add(PROTO_TCP); }
 	;
 
 %%

@@ -143,10 +143,26 @@ ip4_addr	([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)
 "sp"|"sport"	{ return K_SPORT; }
 "dp"|"dport"	{ return K_DPORT; }
 
+	/* TCP */
+"seq"		{ return K_SEQ; }
+"ackseq"|"aseq"	{ return K_ACK_SEQ; }
+"doff"|hlen	{ return K_DOFF; }
+"cwr"		{ return K_CWR; }
+"ece"|"ecn"	{ return K_ECE; }
+"urg"		{ return K_URG; }
+"ack"		{ return K_ACK; }
+"psh"		{ return K_PSH; }
+"rst"		{ return K_RST; }
+"syn"		{ return K_SYN; }
+"fin"		{ return K_FIN; }
+"win"|"window"	{ return K_WINDOW; }
+"urgptr"	{ return K_URG_PTR; }
+
 "eth"		{ return K_ETH; }
 "arp"		{ return K_ARP; }
 "ip4"|"ipv4"	{ return K_IP4; }
 "udp"		{ return K_UDP; }
+"tcp"		{ return K_TCP; }
 
 [ ]*"-"[ ]*	{ return '-'; }
 [ ]*"+"[ ]*	{ return '+'; }
