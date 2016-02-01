@@ -155,18 +155,27 @@ void proto_header_finish(struct proto_hdr *hdr)
 		hdr->header_finish(hdr);
 }
 
-struct proto_hdr *proto_lower_default_add(enum proto_id pid)
+struct proto_hdr *proto_lower_default_add(struct proto_hdr *hdr,
+					  enum proto_id pid)
 {
+	struct proto_hdr *current;
+
 	if (headers_count > 0) {
-		struct proto_hdr *current = proto_current_header();
+		current = proto_current_header();
 
 		if (current->layer >= proto_header_by_id(pid)->layer)
-			return current;
+			goto set_proto;
 		if (current->id == pid)
-			return current;
+			goto set_proto;
 	}
 
-	return proto_header_init(pid);
+	current = proto_header_init(pid);
+
+set_proto:
+	if (current->set_next_proto)
+		current->set_next_proto(current, hdr->id);
+
+	return current;
 }
 
 static void __proto_field_set_bytes(struct proto_hdr *hdr, uint32_t fid,

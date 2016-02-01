@@ -50,6 +50,7 @@ struct proto_hdr {
 	void (*header_init)(struct proto_hdr *hdr);
 	void (*header_finish)(struct proto_hdr *hdr);
 	void (*packet_finish)(struct proto_hdr *hdr);
+	void (*set_next_proto)(struct proto_hdr *hdr, enum proto_id pid);
 };
 
 extern void protos_init(const char *dev);
@@ -58,7 +59,8 @@ extern void proto_header_register(struct proto_hdr *hdr);
 extern struct proto_hdr *proto_header_init(enum proto_id pid);
 extern void proto_header_finish(struct proto_hdr *hdr);
 extern void proto_packet_finish(void);
-extern struct proto_hdr *proto_lower_default_add(enum proto_id pid);
+extern struct proto_hdr *proto_lower_default_add(struct proto_hdr *hdr,
+						 enum proto_id pid);
 
 extern struct proto_hdr *proto_current_header(void);
 extern struct proto_hdr *proto_lower_header(struct proto_hdr *hdr);

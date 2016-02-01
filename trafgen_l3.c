@@ -35,7 +35,7 @@ static void ipv4_header_init(struct proto_hdr *hdr)
 {
 	struct proto_hdr *lower;
 
-	lower = proto_lower_default_add(PROTO_ETH);
+	lower = proto_lower_default_add(hdr, PROTO_ETH);
 
 	if (lower->id == PROTO_ETH)
 		proto_field_set_default_be16(lower, ETH_TYPE, ETH_P_IP);
