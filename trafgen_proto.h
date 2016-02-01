@@ -55,10 +55,10 @@ struct proto_hdr {
 extern void protos_init(const char *dev);
 extern void proto_header_register(struct proto_hdr *hdr);
 
-extern void proto_header_init(enum proto_id pid);
+extern struct proto_hdr *proto_header_init(enum proto_id pid);
 extern void proto_header_finish(struct proto_hdr *hdr);
 extern void proto_packet_finish(void);
-extern void proto_lower_default_add(enum proto_id pid);
+extern struct proto_hdr *proto_lower_default_add(enum proto_id pid);
 
 extern struct proto_hdr *proto_current_header(void);
 extern struct proto_hdr *proto_lower_header(struct proto_hdr *hdr);

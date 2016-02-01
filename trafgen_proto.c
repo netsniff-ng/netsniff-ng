@@ -131,7 +131,7 @@ bool proto_field_is_set(struct proto_hdr *hdr, uint32_t fid)
 	return field ? field->is_set : false;
 }
 
-void proto_header_init(enum proto_id pid)
+struct proto_hdr *proto_header_init(enum proto_id pid)
 {
 	struct proto_hdr *hdr = proto_header_by_id(pid);
 	struct proto_hdr *new_hdr;
@@ -146,6 +146,7 @@ void proto_header_init(enum proto_id pid)
 		new_hdr->header_init(new_hdr);
 
 	headers[headers_count++] = new_hdr;
+	return new_hdr;
 }
 
 void proto_header_finish(struct proto_hdr *hdr)
@@ -154,16 +155,18 @@ void proto_header_finish(struct proto_hdr *hdr)
 		hdr->header_finish(hdr);
 }
 
-void proto_lower_default_add(enum proto_id pid)
+struct proto_hdr *proto_lower_default_add(enum proto_id pid)
 {
 	if (headers_count > 0) {
-		if (proto_current_header()->layer >= proto_header_by_id(pid)->layer)
-			return;
-		if (proto_current_header()->id == pid)
-			return;
+		struct proto_hdr *current = proto_current_header();
+
+		if (current->layer >= proto_header_by_id(pid)->layer)
+			return current;
+		if (current->id == pid)
+			return current;
 	}
 
-	proto_header_init(pid);
+	return proto_header_init(pid);
 }
 
 static void __proto_field_set_bytes(struct proto_hdr *hdr, uint32_t fid,

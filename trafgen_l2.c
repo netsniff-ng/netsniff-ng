@@ -45,9 +45,7 @@ static void arp_header_init(struct proto_hdr *hdr)
 {
 	struct proto_hdr *lower;
 
-	proto_lower_default_add(PROTO_ETH);
-
-	lower = proto_current_header();
+	lower = proto_lower_default_add(PROTO_ETH);
 
 	if (lower->id == PROTO_ETH) {
 		uint8_t bcast[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };

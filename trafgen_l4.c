@@ -45,9 +45,7 @@ static void udp_header_init(struct proto_hdr *hdr)
 {
 	struct proto_hdr *lower;
 
-	proto_lower_default_add(PROTO_IP4);
-
-	lower = proto_current_header();
+	lower = proto_lower_default_add(PROTO_IP4);
 
 	if (lower->id == PROTO_IP4)
 		proto_field_set_default_u8(lower, IP4_PROTO, IPPROTO_UDP);
