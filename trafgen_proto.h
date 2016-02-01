@@ -1,5 +1,5 @@
-#ifndef TRAFGEN_PROTO_I_H
-#define TRAFGEN_PROTO_I_H
+#ifndef TRAFGEN_PROTO_H
+#define TRAFGEN_PROTO_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -65,7 +65,8 @@ extern struct proto_hdr *proto_lower_header(struct proto_hdr *hdr);
 extern uint8_t *proto_header_ptr(struct proto_hdr *hdr);
 
 extern void proto_header_fields_add(struct proto_hdr *hdr,
-				    struct proto_field *fields, size_t count);
+				    const struct proto_field *fields,
+				    size_t count);
 
 extern bool proto_field_is_set(struct proto_hdr *hdr, uint32_t fid);
 extern void proto_field_set_bytes(struct proto_hdr *hdr, uint32_t fid,
@@ -100,4 +101,4 @@ extern void proto_field_set_default_dev_mac(struct proto_hdr *hdr, uint32_t fid)
 extern void proto_field_set_dev_ipv4(struct proto_hdr *hdr, uint32_t fid);
 extern void proto_field_set_default_dev_ipv4(struct proto_hdr *hdr, uint32_t fid);
 
-#endif /* TRAFGEN_PROTO_I_H */
+#endif /* TRAFGEN_PROTO_H */

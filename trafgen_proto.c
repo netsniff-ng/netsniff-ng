@@ -86,8 +86,8 @@ static void proto_fields_realloc(struct proto_hdr *hdr, size_t count)
 	hdr->fields_count = count;
 }
 
-void proto_header_fields_add(struct proto_hdr *hdr, struct proto_field *fields,
-			     size_t count)
+void proto_header_fields_add(struct proto_hdr *hdr,
+			     const struct proto_field *fields, size_t count)
 {
 	struct packet *pkt = current_packet();
 	struct proto_field *f;
