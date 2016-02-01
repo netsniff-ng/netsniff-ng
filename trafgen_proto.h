@@ -12,6 +12,7 @@ struct proto_ctx {
 enum proto_id {
 	PROTO_NONE,
 	PROTO_ETH,
+	PROTO_VLAN,
 	PROTO_ARP,
 	PROTO_IP4,
 	PROTO_IP6,
@@ -31,7 +32,8 @@ struct proto_field {
 	size_t len;
 	uint32_t shift;
 	uint32_t mask;
-	uint16_t offset;
+	/* might be negative (e.g. VLAN TPID field) */
+	int16_t offset;
 
 	bool is_set;
 	uint16_t pkt_offset;

@@ -19,6 +19,15 @@ enum arp_field {
 	ARP_TPA,
 };
 
+enum vlan_field {
+	VLAN_TPID,
+	VLAN_TCI,
+	VLAN_PCP,
+	VLAN_DEI,
+	VLAN_VID,
+	VLAN_ETYPE,
+};
+
 extern void protos_l2_init(void);
 
 #endif /* TRAFGEN_L2_H */
