@@ -43,12 +43,7 @@ static struct proto_field tcp_fields[] = {
 
 static void udp_header_init(struct proto_hdr *hdr)
 {
-	struct proto_hdr *lower;
-
-	lower = proto_lower_default_add(hdr, PROTO_IP4);
-
-	if (lower->id == PROTO_IP4)
-		proto_field_set_default_u8(lower, IP4_PROTO, IPPROTO_UDP);
+	proto_lower_default_add(hdr, PROTO_IP4);
 
 	proto_header_fields_add(hdr, udp_fields, array_size(udp_fields));
 }
@@ -85,14 +80,7 @@ static struct proto_hdr udp_hdr = {
 
 static void tcp_header_init(struct proto_hdr *hdr)
 {
-	struct proto_hdr *lower;
-
-	proto_lower_default_add(PROTO_IP4);
-
-	lower = proto_current_header();
-
-	if (lower->id == PROTO_IP4)
-		proto_field_set_default_u8(lower, IP4_PROTO, IPPROTO_TCP);
+	proto_lower_default_add(hdr, PROTO_IP4);
 
 	proto_header_fields_add(hdr, tcp_fields, array_size(tcp_fields));
 

@@ -5,6 +5,7 @@
 
 #include <linux/if_ether.h>
 
+#include "die.h"
 #include "csum.h"
 #include "built_in.h"
 #include "trafgen_l2.h"
@@ -33,12 +34,7 @@ static struct proto_field ipv4_fields[] = {
 
 static void ipv4_header_init(struct proto_hdr *hdr)
 {
-	struct proto_hdr *lower;
-
-	lower = proto_lower_default_add(hdr, PROTO_ETH);
-
-	if (lower->id == PROTO_IP4)
-		proto_field_set_default_u8(lower, IP4_PROTO, IPPROTO_IPIP);
+	proto_lower_default_add(hdr, PROTO_ETH);
 
 	proto_header_fields_add(hdr, ipv4_fields, array_size(ipv4_fields));
 
@@ -65,11 +61,33 @@ static void ipv4_packet_finish(struct proto_hdr *hdr)
 	}
 }
 
+static void ipv4_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
+{
+	uint8_t ip_proto;
+
+	switch(pid) {
+	case PROTO_IP4:
+		ip_proto = IPPROTO_IPIP;
+		break;
+	case PROTO_UDP:
+		ip_proto = IPPROTO_UDP;
+		break;
+	case PROTO_TCP:
+		ip_proto = IPPROTO_TCP;
+		break;
+	default:
+		panic("ipv4: Not supported protocol id %u\n", pid);
+	}
+
+	proto_field_set_default_u8(hdr, IP4_PROTO, ip_proto);
+}
+
 static struct proto_hdr ipv4_hdr = {
 	.id		= PROTO_IP4,
 	.layer		= PROTO_L3,
 	.header_init	= ipv4_header_init,
 	.packet_finish  = ipv4_packet_finish,
+	.set_next_proto = ipv4_set_next_proto,
 };
 
 void protos_l3_init(void)
