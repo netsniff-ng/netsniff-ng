@@ -6,6 +6,7 @@
 #include <net/if_arp.h>
 #include <linux/if_ether.h>
 
+#include "die.h"
 #include "built_in.h"
 #include "trafgen_l2.h"
 #include "trafgen_proto.h"
@@ -15,6 +16,27 @@ static struct proto_field eth_fields[] = {
 	{ .id = ETH_SRC_ADDR, .len = 6, .offset = 6 },
 	{ .id = ETH_TYPE,     .len = 2, .offset = 12 },
 };
+
+static void eth_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
+{
+	uint16_t eth_type;
+
+	switch(pid) {
+	case PROTO_ARP:
+		eth_type = ETH_P_ARP;
+		break;
+	case PROTO_IP4:
+		eth_type = ETH_P_IP;
+		break;
+	case PROTO_IP6:
+		eth_type = ETH_P_IPV6;
+		break;
+	default:
+		panic("eth: Not supported protocol id %u\n", pid);
+	}
+
+	proto_field_set_default_be16(hdr, ETH_TYPE, eth_type);
+}
 
 static void eth_header_init(struct proto_hdr *hdr)
 {
@@ -27,6 +49,7 @@ static struct proto_hdr eth_hdr = {
 	.id		= PROTO_ETH,
 	.layer		= PROTO_L2,
 	.header_init	= eth_header_init,
+	.set_next_proto = eth_set_next_proto,
 };
 
 static struct proto_field arp_fields[] = {
@@ -51,7 +74,6 @@ static void arp_header_init(struct proto_hdr *hdr)
 		uint8_t bcast[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
 		proto_field_set_default_bytes(lower, ETH_DST_ADDR, bcast);
-		proto_field_set_default_be16(lower, ETH_TYPE, ETH_P_ARP);
 	}
 
 	proto_header_fields_add(hdr, arp_fields, array_size(arp_fields));
