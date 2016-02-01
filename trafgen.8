@@ -307,6 +307,35 @@ Supported protocol headers:
 - Ethernet type (default: 0)
 .in -4
 
+.I VLAN
+:
+.B vlan(tpid=<number>, id=<number>, dei=<number>, tci=<number>, pcp=<number>, 1q, 1ad)
+.sp
+.in +4
+.B tpid|prot|proto
+- Tag Protocol Identifier (TPID) (default: 0x8100)
+.sp
+.B tci
+- Tag Control Information (TCI) field (VLAN Id + PCP + DEI) (default: 0)
+.sp
+.B dei|cfi
+- Drop Eligible Indicator (DEI), formerly Canonical Format Indicator (CFI) (default: 0)
+.sp
+.B pcp
+- Priority code point (PCP) (default: 0)
+.sp
+.B id
+- VLAN Identifier (default: 0)
+.sp
+.B 1q
+- Set 802.1q header (TPID: 0x8100)
+.sp
+.B 1ad
+- Set 802.1ad header (TPID: 0x88a8)
+.sp
+.in -4
+By default, if the lower level header is Ethernet, its Ethertype is set to
+0x8100 (802.1q).
 .I ARP
 :
 .B arp(htype=<number>, ptype=<number>, op=<request|reply|number>, request,
