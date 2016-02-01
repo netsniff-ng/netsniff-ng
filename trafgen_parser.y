@@ -19,6 +19,7 @@
 #include <libgen.h>
 #include <net/if_arp.h>
 #include <netinet/in.h>
+#include <linux/if_ether.h>
 
 #include "xmalloc.h"
 #include "trafgen_parser.tab.h"
@@ -354,8 +355,10 @@ static void proto_add(enum proto_id pid)
 %token K_PROT K_TTL K_DSCP K_ECN K_TOS K_LEN K_ID K_FLAGS K_FRAG K_IHL K_VER K_CSUM K_DF K_MF
 %token K_SPORT K_DPORT
 %token K_SEQ K_ACK_SEQ K_DOFF K_CWR K_ECE K_URG K_ACK K_PSH K_RST K_SYN K_FIN K_WINDOW K_URG_PTR
+%token K_TPID K_TCI K_PCP K_DEI K_1Q K_1AD
 
 %token K_ETH
+%token K_VLAN
 %token K_ARP
 %token K_IP4
 %token K_UDP K_TCP
@@ -579,6 +582,7 @@ ddec
 
 proto
 	: eth_proto { }
+	| vlan_proto { }
 	| arp_proto { }
 	| ip4_proto { }
 	| udp_proto { }
@@ -611,6 +615,42 @@ eth_field
 		{ proto_field_set_bytes(hdr, ETH_SRC_ADDR, $5); }
 	| eth_type skip_white '=' skip_white number
 		{ proto_field_set_be16(hdr, ETH_TYPE, $5); }
+	;
+
+vlan_proto
+	: vlan '(' vlan_param_list ')' { }
+	;
+
+vlan
+	: K_VLAN { proto_add(PROTO_VLAN); }
+	;
+
+vlan_param_list
+	: { }
+	| vlan_field { }
+	| vlan_field delimiter vlan_param_list { }
+	;
+
+vlan_type
+	: K_TPID { }
+	| K_PROT
+	;
+
+vlan_field
+	: vlan_type skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, VLAN_TPID, $5); }
+	| K_1Q
+		{ proto_field_set_be16(hdr, VLAN_TPID, ETH_P_8021Q); }
+	| K_1AD
+		{ proto_field_set_be16(hdr, VLAN_TPID, ETH_P_8021AD); }
+	| K_TCI skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, VLAN_TCI, $5); }
+	| K_PCP skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, VLAN_PCP, $5); }
+	| K_DEI skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, VLAN_DEI, $5); }
+	| K_ID skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, VLAN_VID, $5); }
 	;
 
 arp_proto

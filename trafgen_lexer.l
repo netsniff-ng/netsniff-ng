@@ -112,6 +112,14 @@ ip4_addr	([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)
 "saddr"|"sa"	{ return K_SADDR; }
 [e]?"type"	{ return K_ETYPE; }
 
+	/* VLAN (802.1Q & 802.1ad) */
+"tpid"		{ return K_TPID; }
+"tci"		{ return K_TCI; }
+"pcp"		{ return K_PCP; }
+"dei"|"cfi"	{ return K_DEI; }
+"1ad"		{ return K_1AD; }
+"1q"		{ return K_1Q; }
+
 	/* ARP */
 "sha"|"smac"	{ return K_SHA; }
 "spa"|"sip"	{ return K_SPA; }
@@ -158,6 +166,7 @@ ip4_addr	([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)
 "urgptr"	{ return K_URG_PTR; }
 
 "eth"		{ return K_ETH; }
+"vlan"		{ return K_VLAN; }
 "arp"		{ return K_ARP; }
 "ip4"|"ipv4"	{ return K_IP4; }
 "udp"		{ return K_UDP; }
