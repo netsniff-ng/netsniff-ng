@@ -602,13 +602,13 @@ eth_param_list
 
 eth_type
 	: K_ETYPE { }
-	| K_PROT {}
+	| K_PROT { }
 	;
 
 eth_field
-	: K_DADDR  skip_white '=' skip_white mac
+	: K_DADDR skip_white '=' skip_white mac
 		{ proto_field_set_bytes(hdr, ETH_DST_ADDR, $5); }
-	| K_SADDR  skip_white '=' skip_white mac
+	| K_SADDR skip_white '=' skip_white mac
 		{ proto_field_set_bytes(hdr, ETH_SRC_ADDR, $5); }
 	| eth_type skip_white '=' skip_white number
 		{ proto_field_set_be16(hdr, ETH_TYPE, $5); }
@@ -625,9 +625,9 @@ arp_param_list
 	;
 
 arp_field
-	: K_OPER  skip_white '=' skip_white K_REQUEST
+	: K_OPER skip_white '=' skip_white K_REQUEST
 		{ proto_field_set_be16(hdr, ARP_OPER, ARPOP_REQUEST); }
-	| K_OPER  skip_white '=' skip_white K_REPLY
+	| K_OPER skip_white '=' skip_white K_REPLY
 		{ proto_field_set_be16(hdr, ARP_OPER, ARPOP_REPLY); }
 	| K_OPER skip_white '=' skip_white number
 		{ proto_field_set_be16(hdr, ARP_OPER, $5); }
@@ -667,9 +667,9 @@ ip4_field
 		{ proto_field_set_u8(hdr, IP4_VER, $5); }
 	| K_IHL skip_white '=' skip_white number
 		{ proto_field_set_u8(hdr, IP4_IHL, $5); }
-	| K_DADDR  skip_white '=' skip_white ip4_addr
+	| K_DADDR skip_white '=' skip_white ip4_addr
 		{ proto_field_set_u32(hdr, IP4_DADDR, $5.s_addr); }
-	| K_SADDR  skip_white '=' skip_white ip4_addr
+	| K_SADDR skip_white '=' skip_white ip4_addr
 		{ proto_field_set_u32(hdr, IP4_SADDR, $5.s_addr); }
 	| K_PROT skip_white '=' skip_white number
 		{ proto_field_set_u8(hdr, IP4_PROTO, $5); }
@@ -710,9 +710,9 @@ udp_param_list
 	;
 
 udp_field
-	: K_SPORT  skip_white '=' skip_white number
+	: K_SPORT skip_white '=' skip_white number
 		{ proto_field_set_be16(hdr, UDP_SPORT, $5); }
-	| K_DPORT  skip_white '=' skip_white number
+	| K_DPORT skip_white '=' skip_white number
 		{ proto_field_set_be16(hdr, UDP_DPORT, $5); }
 	| K_LEN skip_white '=' skip_white number
 		{ proto_field_set_be16(hdr, UDP_LEN, $5); }
@@ -735,9 +735,9 @@ tcp_param_list
 	;
 
 tcp_field
-	: K_SPORT  skip_white '=' skip_white number
+	: K_SPORT skip_white '=' skip_white number
 		{ proto_field_set_be16(hdr, TCP_SPORT, $5); }
-	| K_DPORT  skip_white '=' skip_white number
+	| K_DPORT skip_white '=' skip_white number
 		{ proto_field_set_be16(hdr, TCP_DPORT, $5); }
 	| K_SEQ skip_white '=' skip_white number
 		{ proto_field_set_be32(hdr, TCP_SEQ, $5); }
