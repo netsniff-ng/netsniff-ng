@@ -3,12 +3,13 @@
 
 /* Parts taken from the Linux kernel, GPL, version 2. */
 
+#include <stddef.h>
+#include <stdint.h>
 #include <linux/if_packet.h>
 #include <assert.h>
 #include <endian.h>
 #include <byteswap.h>
 #include <asm/byteorder.h>
-#include <stdint.h>
 
 typedef uint64_t	u64;
 typedef uint32_t	u32;
