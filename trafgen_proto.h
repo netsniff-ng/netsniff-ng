@@ -64,7 +64,6 @@ extern void proto_packet_finish(void);
 extern struct proto_hdr *proto_lower_default_add(struct proto_hdr *hdr,
 						 enum proto_id pid);
 
-extern struct proto_hdr *proto_current_header(void);
 extern struct proto_hdr *proto_lower_header(struct proto_hdr *hdr);
 extern uint8_t *proto_header_ptr(struct proto_hdr *hdr);
 

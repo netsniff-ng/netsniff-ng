@@ -31,7 +31,7 @@ static size_t headers_count;
 
 static struct proto_hdr *registered;
 
-struct proto_hdr *proto_current_header(void)
+static inline struct proto_hdr *proto_current_header(void)
 {
 	if (headers_count > 0)
 		return headers[headers_count - 1];
