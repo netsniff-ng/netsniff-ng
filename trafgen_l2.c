@@ -26,6 +26,8 @@ static uint16_t pid_to_eth(enum proto_id pid)
 		return ETH_P_IP;
 	case PROTO_IP6:
 		return ETH_P_IPV6;
+	case PROTO_MPLS:
+		return ETH_P_MPLS_UC;
 	case PROTO_VLAN:
 		return ETH_P_8021Q;
 	default:
@@ -137,9 +139,39 @@ static struct proto_hdr arp_hdr = {
 	.header_init	= arp_header_init,
 };
 
+static struct proto_field mpls_fields[] = {
+	{ .id = MPLS_LABEL, .len = 4, .shift = 12, .mask = 0xfffff000 },
+	{ .id = MPLS_TC,    .len = 4, .shift = 9,  .mask = 0xe00 },
+	{ .id = MPLS_LAST,  .len = 4, .shift = 8,  .mask = 0x100 },
+	{ .id = MPLS_TTL,   .len = 4, .shift = 0,  .mask = 0xff },
+};
+
+static void mpls_header_init(struct proto_hdr *hdr)
+{
+	proto_lower_default_add(hdr, PROTO_ETH);
+
+	proto_header_fields_add(hdr, mpls_fields, array_size(mpls_fields));
+
+	proto_field_set_default_be32(hdr, MPLS_LAST, 1);
+}
+
+static void mpls_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
+{
+	if (pid == PROTO_MPLS)
+		proto_field_set_default_be32(hdr, MPLS_LAST, 0);
+}
+
+static struct proto_hdr mpls_hdr = {
+	.id		= PROTO_MPLS,
+	.layer		= PROTO_L2,
+	.header_init	= mpls_header_init,
+	.set_next_proto = mpls_set_next_proto,
+};
+
 void protos_l2_init(void)
 {
 	proto_header_register(&eth_hdr);
 	proto_header_register(&vlan_hdr);
 	proto_header_register(&arp_hdr);
+	proto_header_register(&mpls_hdr);
 }

@@ -28,6 +28,13 @@ enum vlan_field {
 	VLAN_ETYPE,
 };
 
+enum mpls_field {
+	MPLS_LABEL,
+	MPLS_TC,
+	MPLS_LAST,
+	MPLS_TTL,
+};
+
 extern void protos_l2_init(void);
 
 #endif /* TRAFGEN_L2_H */
