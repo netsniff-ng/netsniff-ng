@@ -182,7 +182,9 @@ static void __proto_field_set_bytes(struct proto_hdr *hdr, uint32_t fid,
 				    uint8_t *bytes, bool is_default, bool is_be)
 {
 	struct proto_field *field;
-	uint8_t *payload;
+	uint8_t *payload, *p8;
+	uint16_t *p16;
+	uint32_t *p32;
 	uint32_t v32;
 	uint16_t v16;
 	uint8_t v8;
@@ -195,18 +197,32 @@ static void __proto_field_set_bytes(struct proto_hdr *hdr, uint32_t fid,
 	payload = &current_packet()->payload[field->pkt_offset];
 
 	if (field->len == 1) {
+		p8 = payload;
+		*p8 = field->mask ? *p8 & ~field->mask : *p8;
+
 		v8 = field_shift_and_mask(field, *bytes);
-		v8 = field->mask ? (v8 | *payload) : v8;
+		v8 = field->mask ? (v8 | *p8) : v8;
+
 		bytes = &v8;
 	} else if (field->len == 2) {
+		p16 = (uint16_t *)payload;
+		*p16 = be16_to_cpu(*p16);
+		*p16 = cpu_to_be16(field->mask ? *p16 & ~field->mask : *p16);
+
 		v16 = field_shift_and_mask(field, *(uint16_t *)bytes);
 		v16 = is_be ? cpu_to_be16(v16) : v16;
-		v16 = field->mask ? (v16 | *(uint16_t *)payload) : v16;
+		v16 = field->mask ? (v16 | *p16) : v16;
+
 		bytes = (uint8_t *)&v16;
 	} else if (field->len == 4) {
+		p32 = (uint32_t *)payload;
+		*p32 = be32_to_cpu(*p32);
+		*p32 = cpu_to_be32(field->mask ? *p32 & ~field->mask : *p32);
+
 		v32 = field_shift_and_mask(field, *(uint32_t *)bytes);
 		v32 = is_be ? cpu_to_be32(v32) : v32;
-		v32 = field->mask ? (v32 | *(uint32_t *)payload) : v32;
+		v32 = field->mask ? (v32 | *p32) : v32;
+
 		bytes = (uint8_t *)&v32;
 	}
 
