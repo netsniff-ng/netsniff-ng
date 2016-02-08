@@ -356,9 +356,10 @@ static void proto_add(enum proto_id pid)
 %token K_SPORT K_DPORT
 %token K_SEQ K_ACK_SEQ K_DOFF K_CWR K_ECE K_URG K_ACK K_PSH K_RST K_SYN K_FIN K_WINDOW K_URG_PTR
 %token K_TPID K_TCI K_PCP K_DEI K_1Q K_1AD
+%token K_LABEL K_TC K_LAST K_EXP
 
 %token K_ETH
-%token K_VLAN
+%token K_VLAN K_MPLS
 %token K_ARP
 %token K_IP4
 %token K_UDP K_TCP
@@ -583,6 +584,7 @@ ddec
 proto
 	: eth_proto { }
 	| vlan_proto { }
+	| mpls_proto { }
 	| arp_proto { }
 	| ip4_proto { }
 	| udp_proto { }
@@ -651,6 +653,36 @@ vlan_field
 		{ proto_field_set_be16(hdr, VLAN_DEI, $5); }
 	| K_ID skip_white '=' skip_white number
 		{ proto_field_set_be16(hdr, VLAN_VID, $5); }
+	;
+
+mpls_proto
+	: mpls '(' mpls_param_list ')' { }
+	;
+
+mpls
+	: K_MPLS { proto_add(PROTO_MPLS); }
+	;
+
+mpls_param_list
+	: { }
+	| mpls_field { }
+	| mpls_field delimiter mpls_param_list { }
+	;
+
+mpls_tc
+	: K_TC { }
+	| K_EXP { }
+	;
+
+mpls_field
+	: K_LABEL skip_white '=' skip_white number
+		{ proto_field_set_be32(hdr, MPLS_LABEL, $5); }
+	| mpls_tc skip_white '=' skip_white number
+		{ proto_field_set_be32(hdr, MPLS_TC, $5); }
+	| K_LAST skip_white '=' skip_white number
+		{ proto_field_set_be32(hdr, MPLS_LAST, $5); }
+	| K_TTL skip_white '=' skip_white number
+		{ proto_field_set_be32(hdr, MPLS_TTL, $5); }
 	;
 
 arp_proto
