@@ -334,8 +334,33 @@ Supported protocol headers:
 - Set 802.1ad header (TPID: 0x88a8)
 .sp
 .in -4
-By default, if the lower level header is Ethernet, its Ethertype is set to
+By default, if the lower level header is Ethernet, its EtherType is set to
 0x8100 (802.1q).
+.sp
+
+.I MPLS
+:
+.B mpls(label=<number>, tc|exp=<number>, last=<number>, ttl=<number>)
+.sp
+.in +4
+.B label|lbl
+- MPLS label value (default: 0)
+.sp
+.B tclass|tc|exp
+- Traffic Class for QoS field (default: 0)
+.sp
+.B last
+- Bottom of stack S-flag (default: 1 for most last label)
+.sp
+.B ttl
+- Time To Live (TTL) (default: 0)
+.sp
+.in -4
+By default, if the lower level header is Ethernet, its EtherType is set to
+0x8847 (MPLS Unicast). S-flag is set automatically to 1 for the last label and
+resets to 0 if the lower MPLS label was added after.
+.sp
+
 .I ARP
 :
 .B arp(htype=<number>, ptype=<number>, op=<request|reply|number>, request,
@@ -521,7 +546,7 @@ Simple example of a UDP Echo packet:
 .in +5
    {
      eth(da=11:22:33:44:55:66),
-     ip(daddr=1.2.3.4)
+     ipv4(daddr=1.2.3.4)
      udp(dp=7),
      "Hello world"
    }
