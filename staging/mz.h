@@ -402,6 +402,8 @@ struct tx_struct
    u_int32_t ip_src_h;        // mirror of ip_src (NOT network byte order => easy to count)
    u_int32_t ip_src_start;    // start of range (NOT network byte order => easy to count)
    u_int32_t ip_src_stop;     // stop of range  (NOT network byte order => easy to count)
+   struct libnet_in6_addr ip6_src_start;    // start of IPv6 range
+   struct libnet_in6_addr ip6_src_stop;     // stop of IPv6 range
    int       ip_src_isrange;  // if set to 1 then the start/stop values above are valid.
    u_int32_t ip_dst;          // has always network byte order(!)
    struct libnet_in6_addr ip6_dst;
@@ -409,6 +411,8 @@ struct tx_struct
    u_int32_t ip_dst_h;        // mirror of ip_dst (NOT network byte order => easy to count)
    u_int32_t ip_dst_start;    // start of range (NOT network byte order => easy to count)
    u_int32_t ip_dst_stop;     // stop of range  (NOT network byte order => easy to count)
+   struct libnet_in6_addr ip6_dst_start;    // start of IPv6 range
+   struct libnet_in6_addr ip6_dst_stop;     // stop of IPv6 range
    int       ip_dst_isrange;  // if set to 1 then the start/stop values above are valid.
    u_int16_t 
      ip_len,
@@ -653,6 +657,8 @@ int type2str(u_int16_t type, char *str);
 // 
 int get_ip_range_dst (char *arg);
 int get_ip_range_src (char *arg);
+int get_ip6_range_src (char *arg, libnet_t *l);
+int get_ip6_range_dst (char *arg, libnet_t *l);
 
 // Sets a random SA for a given IP packet.
 // Return value: 0 upon success, 1 upon failure
@@ -740,6 +746,7 @@ int update_RTP(libnet_t *l, libnet_ptag_t t);
 // 
 // RETURNS '1' if tx.ip_src restarts
 int update_IP_SA (libnet_t *l, libnet_ptag_t t);
+int update_IP6_SA (libnet_t *l, libnet_ptag_t t);
 
 
 // Applies another DESTINATION IP address from a specified range (tx.ip_dst_isrange==1) 
@@ -750,6 +757,7 @@ int update_IP_SA (libnet_t *l, libnet_ptag_t t);
 // 
 // RETURN VALUE: '1' if tx.ip_dst restarts
 int update_IP_DA(libnet_t *l, libnet_ptag_t t);
+int update_IP6_DA (libnet_t *l, libnet_ptag_t t);
 
 
 // Applies another DESTINATION PORT from a specified range to a given UDP- or TCP-PTAG.
@@ -784,6 +792,9 @@ int update_TSUM(libnet_t *l, libnet_ptag_t t);
 //
 int print_frame_details(void);
 
+int in6_addr_cmp(struct libnet_in6_addr addr1, struct libnet_in6_addr addr2);
+int incr_in6_addr(struct libnet_in6_addr src, struct libnet_in6_addr *dst);
+uint64_t get_ip6_range_count(struct libnet_in6_addr start, struct libnet_in6_addr stop);
 
 // Calculates the number of frames to be sent.
 // Should be used as standard output except the

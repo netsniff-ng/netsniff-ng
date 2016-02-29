@@ -276,9 +276,13 @@ int reset(void)
    tx.ip_src_isrange = 0;
    tx.ip_src_start = 0;
    tx.ip_src_stop = 0;
+   memset(&tx.ip6_src_start, 0, sizeof(tx.ip6_src_start));
+   memset(&tx.ip6_src_stop, 0, sizeof(tx.ip6_src_stop));
    
    tx.ip_dst_start = 0;
    tx.ip_dst_stop = 0;   
+   memset(&tx.ip6_dst_start, 0, sizeof(tx.ip6_dst_start));
+   memset(&tx.ip6_dst_stop, 0, sizeof(tx.ip6_dst_stop));
    tx.ip_dst_isrange = 0;
 
    tx.ip_ttl = 0;
@@ -658,12 +662,24 @@ int getopts (int argc, char *argv[])
 		// Set source IP address:
 		if (strlen(tx.ip_src_txt)) { // option -A has been specified
 			if (mz_strcmp(tx.ip_src_txt, "bcast", 2)==0) {
+				if (ipv6_mode) {
+					fprintf(stderr, "Option -A does not support 'bcast' when in IPv6 mode.\n");
+					return 1;
+				}
 				tx.ip_src = libnet_name2addr4 (l, "255.255.255.255", LIBNET_DONT_RESOLVE);
 			} else if (strcmp(tx.ip_src_txt, "rand") == 0) {
+				if (ipv6_mode) {
+					fprintf(stderr, "Option -A does not support 'rand' when in IPv6 mode.\n");
+					return 1;
+				}
 				tx.ip_src_rand = 1;
 				tx.ip_src_h  = (u_int32_t) ( ((float) rand()/RAND_MAX)*0xE0000000); //this is 224.0.0.0
 			}
-			else if (get_ip_range_src(tx.ip_src_txt)) { // returns 1 when no range has been specified
+			else if (
+				(ipv6_mode && get_ip6_range_src(tx.ip_src_txt, l)) || // returns 1 when no range has been specified
+				(!ipv6_mode && get_ip_range_src(tx.ip_src_txt))
+				)
+			{
 				// name2addr4 accepts a DOTTED DECIMAL ADDRESS or a FQDN:
 				if (ipv6_mode)
 					tx.ip6_src = libnet_name2addr6 (l, tx.ip_src_txt, LIBNET_RESOLVE);
@@ -689,8 +705,15 @@ int getopts (int argc, char *argv[])
 			}
 
 			if (mz_strcmp(tx.ip_dst_txt, "bcast", 2)==0) {
-				tx.ip_dst = libnet_name2addr4 (l, "255.255.255.255", LIBNET_DONT_RESOLVE);	
-			} else if (get_ip_range_dst(tx.ip_dst_txt)) { // returns 1 when no range has been specified
+				if (ipv6_mode) {
+					fprintf(stderr, "Option -B does not support 'bcast' when in IPv6 mode.\n");
+					return 1;
+				}
+				tx.ip_dst = libnet_name2addr4 (l, "255.255.255.255", LIBNET_DONT_RESOLVE);
+			} else if (
+				(ipv6_mode && get_ip6_range_dst(tx.ip_dst_txt, l)) || // returns 1 when no range has been specified
+				(!ipv6_mode && get_ip_range_dst(tx.ip_dst_txt)))
+			{
 				// name2addr4 accepts a DOTTED DECIMAL ADDRESS or a FQDN:
 				if (ipv6_mode)
 					tx.ip6_dst = libnet_name2addr6 (l, tx.ip_dst_txt, LIBNET_RESOLVE);
@@ -699,7 +722,13 @@ int getopts (int argc, char *argv[])
 			}
 		}
 		else { // no destination IP specified: by default use broadcast
-			tx.ip_dst = libnet_name2addr4 (l, "255.255.255.255", LIBNET_DONT_RESOLVE);	
+			if (ipv6_mode) {
+				// XXX I think we want to use a link-local
+				// broadcast address instead.
+				tx.ip6_dst = libnet_name2addr6 (l, "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff", LIBNET_DONT_RESOLVE);
+			} else {
+				tx.ip_dst = libnet_name2addr4 (l, "255.255.255.255", LIBNET_DONT_RESOLVE);
+			}
 		}
 
 		// Initialize tx.ip_src_h and tx.ip_dst_h which are used by 'print_frame_details()' 
@@ -710,28 +739,40 @@ int getopts (int argc, char *argv[])
 			dum2 = (unsigned char*) &tx.ip_src;
 		}
 		else { // ip_src already given, convert to ip_src_h
-			dum1 = (unsigned char*) &tx.ip_src;
-			dum2 = (unsigned char*) &tx.ip_src_h;
+			if (ipv6_mode) {
+				if (tx.ip_src_isrange) {
+					tx.ip6_src = tx.ip6_src_start;
+				}
+			} else {
+				dum1 = (unsigned char*) &tx.ip_src;
+				dum2 = (unsigned char*) &tx.ip_src_h;
+			}
 		}
 
-		*dum2 = *(dum1+3);
-		dum2++;
-		*dum2 = *(dum1+2);
-		dum2++;
-		*dum2 = *(dum1+1);
-		dum2++;
-		*dum2 = *dum1;
+		if (ipv6_mode) {
+			if (tx.ip_dst_isrange) {
+				tx.ip6_dst = tx.ip6_dst_start;
+			}
+		} else {
+			*dum2 = *(dum1+3);
+			dum2++;
+			*dum2 = *(dum1+2);
+			dum2++;
+			*dum2 = *(dum1+1);
+			dum2++;
+			*dum2 = *dum1;
 
-		dum1 = (unsigned char*) &tx.ip_dst;
-		dum2 = (unsigned char*) &tx.ip_dst_h;
+			dum1 = (unsigned char*) &tx.ip_dst;
+			dum2 = (unsigned char*) &tx.ip_dst_h;
 
-		*dum2 = *(dum1+3);
-		dum2++;
-		*dum2 = *(dum1+2);
-		dum2++;
-		*dum2 = *(dum1+1);
-		dum2++;
-		*dum2 = *dum1;
+			*dum2 = *(dum1+3);
+			dum2++;
+			*dum2 = *(dum1+2);
+			dum2++;
+			*dum2 = *(dum1+1);
+			dum2++;
+			*dum2 = *dum1;
+		}
 
 		libnet_destroy(l);
 	}
@@ -911,8 +952,6 @@ int main(int argc, char **argv)
 	l = get_link_context();
 	t4 = create_icmp6_packet(l);	// t4 can be used for later header changes
 	t3 = create_ip_packet(l);	// t3 can be used for later header changes
-	if (ipv6_mode)
-	  update_ISUM(l, t4);
 	if (!quiet) complexity();
 	if (tx.packet_mode==0)		// Ethernet manipulation features does NOT use ARP to determine eth_dst
 	  t2 = create_eth_frame(l, t3, t4);	// t2 can be used for later header changes
@@ -925,8 +964,6 @@ int main(int argc, char **argv)
 	l = get_link_context();
 	t4 = create_udp_packet(l);     // t4 can be used for later header changes
 	t3 = create_ip_packet(l);      // t3 can be used for later header changes
-	if (ipv6_mode)
-	  update_USUM(l, t4);
 	if (!quiet) complexity();
 	if (tx.packet_mode==0)         // Ethernet manipulation features does NOT use ARP to determine eth_dst  
 	  t2 = create_eth_frame(l, t3, t4);    // t2 can be used for later header changes
@@ -939,8 +976,6 @@ int main(int argc, char **argv)
 	l = get_link_context();
 	t4 = create_tcp_packet(l);     // t4 can be used for later header changes
 	t3 = create_ip_packet(l);      // t3 can be used for later header changes
-	if (ipv6_mode)
-	  update_TSUM(l, t4);
 	if (!quiet) complexity();
 	if (tx.packet_mode==0)         // Ethernet manipulation features does NOT use ARP to determine eth_dst  
 	  t2 = create_eth_frame(l, t3, t4);    // t2 can be used for later header changes
