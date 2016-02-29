@@ -27,6 +27,8 @@
 //      int update_Eth_SA       (libnet_t *l, libnet_ptag_t t)
 //      int update_IP_SA        (libnet_t *l, libnet_ptag_t t)
 //      int update_IP_DA        (libnet_t *l, libnet_ptag_t t)
+//      int update_IP6_SA       (libnet_t *l, libnet_ptag_t t)
+//      int update_IP6_DA       (libnet_t *l, libnet_ptag_t t)
 //      int update_DPORT        (libnet_t *l, libnet_ptag_t t)
 //      int update_SPORT        (libnet_t *l, libnet_ptag_t t)
 //      int update_TCP_SQNR     (libnet_t *l, libnet_ptag_t t)
@@ -135,6 +137,10 @@ int update_IP_SA (libnet_t *l, libnet_ptag_t t)
    u_int8_t *x, *y;  
    int i=0;
    
+   if (ipv6_mode) {
+	   return update_IP6_SA(l, t);
+   }
+
    if (tx.ip_src_rand)
      {
 	tx.ip_src_h  = (u_int32_t) ( ((float) rand()/RAND_MAX)*0xE0000000); //this is 224.0.0.0
@@ -190,6 +196,41 @@ int update_IP_SA (libnet_t *l, libnet_ptag_t t)
 }
 
 
+int
+update_IP6_SA(libnet_t *l, libnet_ptag_t t)
+{
+	int i = 0;
+	if (tx.ip_src_rand) {
+		fprintf(stderr, "Random source addresses are not supported in IPv6 mode.\n");
+		exit(1);
+	} else if (tx.ip_src_isrange) {
+		if (incr_in6_addr(tx.ip6_src, &tx.ip6_src)
+		     || (in6_addr_cmp(tx.ip6_src, tx.ip6_src_stop) > 0))
+		{
+			tx.ip6_src = tx.ip6_src_start;
+			i = 1;
+		}
+	}
+
+	t = libnet_build_ipv6(tx.ip_tos,
+			      tx.ip_flow,
+			      tx.ip_len,
+			      tx.ip_proto,
+			      tx.ip_ttl,
+			      tx.ip6_src,
+			      tx.ip6_dst,
+			      (mode==IP) ? (tx.ip_payload_s) ? tx.ip_payload : NULL : NULL,
+			      (mode==IP) ? tx.ip_payload_s : 0,
+			      l,
+			      t);
+
+	if (t == -1) {
+		fprintf(stderr," mz/update_IP6_SA: IP address manipulation failed!\n");
+		exit (1);
+	}
+
+	return i;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -208,6 +249,9 @@ int update_IP_DA(libnet_t *l, libnet_ptag_t t)
    u_int8_t *x, *y;  
    int i=0;
 
+   if (ipv6_mode) {
+	   return update_IP6_DA(l, t);
+   }
 
    if (tx.ip_dst_isrange)
      {
@@ -261,6 +305,39 @@ int update_IP_DA(libnet_t *l, libnet_ptag_t t)
    return i;
 }
 
+
+int
+update_IP6_DA(libnet_t *l, libnet_ptag_t t)
+{
+	int i = 0;
+	if (tx.ip_dst_isrange) {
+		if (incr_in6_addr(tx.ip6_dst, &tx.ip6_dst)
+		     || (in6_addr_cmp(tx.ip6_dst, tx.ip6_dst_stop) > 0))
+		{
+			tx.ip6_dst = tx.ip6_dst_start;
+			i = 1;
+		}
+	}
+
+	t = libnet_build_ipv6(tx.ip_tos,
+			      tx.ip_flow,
+			      tx.ip_len,
+			      tx.ip_proto,
+			      tx.ip_ttl,
+			      tx.ip6_src,
+			      tx.ip6_dst,
+			      (mode==IP) ? (tx.ip_payload_s) ? tx.ip_payload : NULL : NULL,
+			      (mode==IP) ? tx.ip_payload_s : 0,
+			      l,
+			      t);
+
+	if (t == -1) {
+		fprintf(stderr," mz/update_IP6_DA: IP address manipulation failed!\n");
+		exit (1);
+	}
+
+	return i;
+}
 
 
 
@@ -399,7 +476,7 @@ int update_SPORT(libnet_t *l, libnet_ptag_t t)
 		  
 	if (t == -1)
 	  {
-	     fprintf(stderr, " mz/update_DPORT: Can't build TCP header: %s\n", libnet_geterror(l));
+	     fprintf(stderr, " mz/update_SPORT: Can't build TCP header: %s\n", libnet_geterror(l));
 	     exit (0);
 	  }  
      }
@@ -448,6 +525,7 @@ int update_USUM(libnet_t *l, libnet_ptag_t t)
 			  tx.udp_payload_s,
 			  l,
 			  t);
+     tx.udp_sum = 0;
      return t;
 }
 
@@ -504,6 +582,7 @@ int update_TSUM(libnet_t *l, libnet_ptag_t t)
 	                   tx.tcp_payload_s,
 	                   l,
 	                   t);
+     tx.tcp_sum = 0;
 
    return t;
 }
@@ -544,6 +623,7 @@ int update_ISUM(libnet_t *l, libnet_ptag_t t)
 				   tx.icmp_payload_s,
 				   l,
 				   t);
+     tx.icmp_chksum = 0;
 
    return t;
 }
