@@ -15,9 +15,9 @@ endif
 
 VERSION = 0
 PATCHLEVEL = 6
-SUBLEVEL = 0
+SUBLEVEL = 1
 EXTRAVERSION =
-NAME = avril altdelay
+NAME = aisatsana
 
 TOOLS ?= $(CONFIG_TOOLS)
 TOOLS ?= netsniff-ng trafgen astraceroute flowtop ifpps bpfc curvetun mausezahn
