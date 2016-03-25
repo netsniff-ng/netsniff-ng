@@ -90,13 +90,27 @@ int complexity(void)
    
    if (tx.ip_dst_isrange)
      {
-	nr_da = tx.ip_dst_stop - tx.ip_dst_start + 1;
-	//fprintf(stderr,"DA Range = %lu\n",nr_da);
+        if (ipv6_mode)
+	  {
+            nr_da = get_ip6_range_count(tx.ip6_dst_start, tx.ip6_dst_stop);
+	  }
+	  else
+	  {
+	    nr_da = tx.ip_dst_stop - tx.ip_dst_start + 1;
+	  }
+        //fprintf(stderr,"DA Range = %lu\n",nr_da);
      }
    
    if (tx.ip_src_isrange)
      {
-	nr_sa = tx.ip_src_stop - tx.ip_src_start + 1;
+        if (ipv6_mode)
+	  {
+            nr_sa = get_ip6_range_count(tx.ip6_src_start, tx.ip6_src_stop);
+	  }
+        else
+	  {
+	    nr_sa = tx.ip_src_stop - tx.ip_src_start + 1;
+	  }
 	//fprintf(stderr,"SA Range = %lu\n",nr_sa);
      }
    
@@ -195,6 +209,22 @@ int send_frame (libnet_t *l, libnet_ptag_t  t3, libnet_ptag_t  t4)
      {
 
 	AGAIN:
+	if (ipv6_mode) {
+		switch (mode) {
+		case ICMP6:
+			update_ISUM(l, t4);
+			break;
+		case UDP:
+		case DNS:
+		case RTP:
+		case SYSLOG:
+			update_USUM(l, t4);
+			break;
+		case TCP:
+			update_TSUM(l, t4);
+			break;
+		}
+	}
 
 	if (verbose) (void) print_frame_details();
 	libnet_write(l);

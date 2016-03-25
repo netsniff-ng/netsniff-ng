@@ -29,6 +29,8 @@
 //  xstr2lint ........... Same as above but returns an unsigned long long int
 //  get_ip_range_dst .... Parses string for an IP range and sets start/stop addresses
 //  get_ip_range_src .... Same for source addresses
+//  get_ip6_range_dst ... Parses string for an IPv6 range and sets start/stop addresses
+//  get_ip6_range_src ... Same for source addresses
 //  check_eth_mac_txt ... Scans tx.eth_dst|src_txt and sets tx.eth_dst|src appropriately
 //  get_port_range ...... Parses string for a dst|src-port range and sets start/stop values
 //  get_tcp_flags ....... Parses string for TCP arguments and sets tx.tcp_control
@@ -54,7 +56,11 @@
 
 #include "mz.h"
 
+#define CMP_INT(a, b) ((a) < (b) ? -1 : (a) > (b))
+#define IPV6_MAX_RANGE_LEN strlen("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff-ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128")
+#define IPV6_MIN_RANGE_LEN strlen("::/0")
 
+static int in6_range_too_big(struct libnet_in6_addr start, struct libnet_in6_addr stop);
 
 // Scan 'str' for an argument 'arg_name' and returns its value in arg_value
 // Return value: number of occurences of arg_name
@@ -188,6 +194,91 @@ unsigned long long int xstr2lint(char *str)
 }
 
 
+/*
+ * Return the IPv6 broadcast address for the given network/mask.
+ */
+struct libnet_in6_addr
+in6_addr_bcast(struct libnet_in6_addr addr, unsigned int masklen)
+{
+	struct libnet_in6_addr bcast;
+	uint32_t mask = 0;
+	int i = 3;
+	if (masklen > 128) {
+		fprintf(stderr, "Invalid IPv6 masklen: %u\n", masklen);
+		exit(1);
+	}
+	masklen = 128 - masklen;
+
+	bcast = addr;
+
+	for (i = 3; i >= 0; i--, masklen -= 32) {
+		if (masklen <= 32) {
+			bcast.__u6_addr.__u6_addr32[i] = htonl(ntohl(bcast.__u6_addr.__u6_addr32[i]) | ((uint32_t) (~0) >> (32 - masklen)));
+			break;
+		}
+		bcast.__u6_addr.__u6_addr32[i] = (uint32_t) (~0);
+	}
+	return bcast;
+}
+
+/*
+ * Returns 0 if the given IPv6 addresses are equal,
+ * -1 if addr1 is lower than addr2,
+ * 1 if addr2 is lower than addr1.
+ */
+int in6_addr_cmp(struct libnet_in6_addr addr1,
+                 struct libnet_in6_addr addr2)
+{
+	uint32_t *p1 = addr1.__u6_addr.__u6_addr32,
+	       *p2 = addr2.__u6_addr.__u6_addr32;
+	int i, val = 0;
+
+	for (i = 0; i < 4; i++) {
+		val = CMP_INT(ntohl(*p1++), ntohl(*p2++));
+		if (val) {
+			break;
+		}
+	}
+	return val;
+}
+
+/*
+ * Calculate the address that comes immediately after the one given.
+ * Store the result in *dst.
+ * Returns 1 if an overflow occurred.  Otherwise, returns 0.
+ */
+int
+incr_in6_addr(struct libnet_in6_addr src, struct libnet_in6_addr *dst)
+{
+	uint32_t i = 16, carry = 1;
+	uint8_t *addr;
+	*dst = src;
+	addr = dst->__u6_addr.__u6_addr8;
+	while (carry && i) {
+		addr[i - 1] += carry;
+		if (addr[i - 1] > 0xff || !addr[i - 1]) {
+			addr[i - 1] &= 0xff;
+		} else {
+			carry = 0;
+		}
+		i--;
+	}
+	return (int)carry;
+}
+
+
+/*
+ * Return 1 if the number of addresses that are in the range from start to stop
+ * is greater than what can be stored in a uint64_t.  Otherwise, return 0.
+ */
+static int
+in6_range_too_big(struct libnet_in6_addr start, struct libnet_in6_addr stop)
+{
+	return (
+		(start.__u6_addr.__u6_addr32[0] != stop.__u6_addr.__u6_addr32[0])
+		|| (start.__u6_addr.__u6_addr32[1] != stop.__u6_addr.__u6_addr32[1])
+	);
+}
 
 
 // Parses string 'arg' for an IP range and finds start and stop IP addresses.
@@ -383,6 +474,169 @@ int get_ip_range_src (char *arg)
    
 }
 
+/*
+ * Return the number of IPv6 addresses in the range from start to stop or
+ * UINT64_MAX, whichever is smaller.
+ */
+uint64_t get_ip6_range_count(struct libnet_in6_addr start, struct libnet_in6_addr stop)
+{
+	uint64_t retval = 0;
+	if (in6_range_too_big(start, stop)) {
+		return UINT64_MAX;
+	}
+	retval = ((uint64_t)(ntohl(stop.__u6_addr.__u6_addr32[2]) - ntohl(start.__u6_addr.__u6_addr32[2])) << 32)
+		+ (ntohl(stop.__u6_addr.__u6_addr32[3]) - ntohl(start.__u6_addr.__u6_addr32[3]));
+	if (retval < UINT64_MAX) {
+		retval++;
+	}
+	return retval;
+}
+
+int get_ip6_range_src (char *arg, libnet_t *l)
+{
+
+   int
+     i, len,
+     found_slash=0, found_dash=0;
+
+   unsigned int q;
+   struct libnet_in6_addr tmp_in6_addr;
+   uint32_t mask, invmask;
+   char *start_str, *stop_str;
+
+   len = strnlen(arg, IPV6_MAX_RANGE_LEN);
+
+   if ( (len > IPV6_MAX_RANGE_LEN) || (len < IPV6_MIN_RANGE_LEN) )
+     return 1; // ERROR: no range
+
+   // Find "-" or "/"
+   for (i=0; i<len; i++)
+     {
+	if  (arg[i]=='/')  found_slash=1;
+	if  (arg[i]=='-')  found_dash=1;
+     }
+
+   if ((found_slash) && (found_dash))
+     exit (1); // ERROR: Wrong range string syntax (cannot use both "/" and "-" !!!
+
+   if (found_dash)
+     {
+	start_str = strtok (arg, "-");
+	stop_str = strtok (NULL, "-");
+
+	// These are the start and stop IP addresses of the range:
+	tx.ip6_src_start = libnet_name2addr6 (l, start_str, LIBNET_DONT_RESOLVE);
+	tx.ip6_src_stop = libnet_name2addr6 (l, stop_str, LIBNET_DONT_RESOLVE);
+	//XXX Not sure if this needs to be modified
+	//tx.ip_src_h = tx.ip_src_start;
+	//tx.ip_src = str2ip32_rev (start_str);
+
+	if (in6_addr_cmp(tx.ip6_src_start, tx.ip6_src_stop) < 0)
+	  {
+	     // Set range flag:
+	     tx.ip_src_isrange = 1;
+	     if (in6_range_too_big(tx.ip6_src_start, tx.ip6_src_stop)) {
+		fprintf(stderr, "The IPv6 range is too big.  It must be smaller than a /64.\n");
+		exit (1);
+	     }
+	     return 0;
+	  }
+	else
+	  {
+	     tx.ip_src_isrange = 0;
+	     return 1; // ERROR: stop value must be greater than start value !!!
+	  }
+     }
+   else if (found_slash)
+     {
+	start_str = strtok (arg, "/");
+	stop_str = strtok (NULL, "/"); // Actually contains the prefix length, e. g. "24"
+
+	q = (unsigned int) str2int (stop_str);
+
+	tmp_in6_addr = libnet_name2addr6 (l, start_str, LIBNET_DONT_RESOLVE);
+	tx.ip6_src_stop = in6_addr_bcast(tmp_in6_addr, q);
+	incr_in6_addr(tmp_in6_addr, &tx.ip6_src_start), // ensure that we do not start with the net-id
+	// TODO decrement the bcast address so it's not included in the range.
+	tx.ip_src_isrange = 1;
+	if (in6_range_too_big(tx.ip6_src_start, tx.ip6_src_stop)) {
+		fprintf(stderr, "The IPv6 range is too big.  It must be smaller than a /64.\n");
+		exit (1);
+	}
+	return 0;
+     }
+
+   return 1; // ERROR: The specified argument string is not a range!
+}
+
+int get_ip6_range_dst (char *arg, libnet_t *l)
+{
+
+   int
+     i, len,
+     found_slash=0, found_dash=0;
+
+   unsigned int q;
+   uint32_t mask, invmask;
+   struct libnet_in6_addr tmp_in6_addr;
+   char *start_str, *stop_str;
+
+   len = strnlen(arg,IPV6_MAX_RANGE_LEN);
+
+   if ( (len > IPV6_MAX_RANGE_LEN) || (len < IPV6_MIN_RANGE_LEN) )
+     return 1; // ERROR: no range
+
+   // Find "-" or "/"
+   for (i=0; i<len; i++)
+     {
+	if  (arg[i]=='/')  found_slash=1;
+	if  (arg[i]=='-')  found_dash=1;
+     }
+
+   if ((found_slash) && (found_dash))
+     exit (1); // ERROR: Wrong range string syntax (cannot use both "/" and "-" !!!
+
+   if (found_dash)
+     {
+	start_str = strtok (arg, "-");
+	stop_str = strtok (NULL, "-");
+
+	// These are the start and stop IP addresses of the range:
+	tx.ip6_dst_start = libnet_name2addr6 (l, start_str, LIBNET_DONT_RESOLVE);
+	tx.ip6_dst_stop = libnet_name2addr6 (l, stop_str, LIBNET_DONT_RESOLVE);
+	//XXX Not sure if this needs to be modified
+	//tx.ip_dst_h = tx.ip_dst_start;
+	//tx.ip_dst = str2ip32_rev (start_str);
+
+	if (in6_addr_cmp(tx.ip6_dst_start, tx.ip6_dst_stop) < 0)
+	  {
+	     // Set range flag:
+	     tx.ip_dst_isrange = 1;
+	     return 0;
+	  }
+	else
+	  {
+	     tx.ip_dst_isrange = 0;
+	     return 1; // ERROR: stop value must be greater than start value !!!
+	  }
+     }
+   else if (found_slash)
+     {
+	start_str = strtok (arg, "/");
+	stop_str = strtok (NULL, "/"); // Actually contains the prefix length, e. g. "24"
+
+	q = (unsigned int) str2int (stop_str);
+
+	tmp_in6_addr = libnet_name2addr6 (l, start_str, LIBNET_DONT_RESOLVE);
+	tx.ip6_dst_stop = in6_addr_bcast(tmp_in6_addr, q);
+	incr_in6_addr(tmp_in6_addr, &tx.ip6_dst_start), // ensure that we do not start with the net-id
+	// TODO decrement the bcast address so it's not included in the range.
+	tx.ip_dst_isrange = 1;
+	return 0;
+     }
+
+   return 1; // ERROR: The specified argument string is not a range!
+}
 
 // Scans tx.eth_dst_txt or tx.eth_src_txt and sets the corresponding
 // MAC addresses (tx.eth_dst or tx.eth_src) accordingly.
