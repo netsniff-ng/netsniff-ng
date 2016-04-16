@@ -4,8 +4,9 @@
  * Copyright 2014, 2015 Tobias Klauser
  * Subject to the GPL, version 2.
  */
-
-#define _GNU_SOURCE
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE
+#endif
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
