@@ -4,9 +4,8 @@
  * Subject to the GPL, version 2.
  */
 
-#ifdef _BSD_SOURCE
-# define _DEFAULT_SOURCE
-#endif
+#define _BSD_SOURCE
+#define _DEFAULT_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
