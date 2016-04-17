@@ -339,6 +339,20 @@ const char *geoip6_country_name(struct sockaddr_in6 *sa)
 	return GeoIP_country_name_by_ipnum_v6(gi6_country, sa->sin6_addr);
 }
 
+const char *geoip4_country_code3_name(struct sockaddr_in *sa)
+{
+	bug_on(gi4_country == NULL);
+
+	return GeoIP_country_code3_by_ipnum(gi4_country, ntohl(sa->sin_addr.s_addr));
+}
+
+const char *geoip6_country_code3_name(struct sockaddr_in6 *sa)
+{
+	bug_on(gi6_country == NULL);
+
+	return GeoIP_country_code3_by_ipnum_v6(gi6_country, sa->sin6_addr);
+}
+
 static int fdout, fderr;
 
 /* GeoIP people were too stupid to come to the idea that you could set
