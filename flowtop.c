@@ -784,10 +784,8 @@ static void flow_entry_get_extended(struct flow_entry *n)
 	if (n->flow_id == 0)
 		return;
 
-	if (show_src) {
-		flow_entry_get_extended_revdns(n, FLOW_DIR_SRC);
-		flow_entry_get_extended_geo(n, FLOW_DIR_SRC);
-	}
+	flow_entry_get_extended_revdns(n, FLOW_DIR_SRC);
+	flow_entry_get_extended_geo(n, FLOW_DIR_SRC);
 
 	flow_entry_get_extended_revdns(n, FLOW_DIR_DST);
 	flow_entry_get_extended_geo(n, FLOW_DIR_DST);
@@ -1189,12 +1187,13 @@ static void draw_help(WINDOW *screen)
 
 	mvaddnstr(row + 11, col + 3, "b     Toggle rate units (bits/bytes)", -1);
 	mvaddnstr(row + 12, col + 3, "a     Toggle display of active flows (rate > 0) only", -1);
+	mvaddnstr(row + 13, col + 3, "s     Toggle show source peer info", -1);
 
-	mvaddnstr(row + 14, col + 3, "T     Toggle display TCP flows", -1);
-	mvaddnstr(row + 15, col + 3, "U     Toggle display UDP flows", -1);
-	mvaddnstr(row + 16, col + 3, "D     Toggle display DCCP flows", -1);
-	mvaddnstr(row + 17, col + 3, "I     Toggle display ICMP flows", -1);
-	mvaddnstr(row + 18, col + 3, "S     Toggle display SCTP flows", -1);
+	mvaddnstr(row + 15, col + 3, "T     Toggle display TCP flows", -1);
+	mvaddnstr(row + 16, col + 3, "U     Toggle display UDP flows", -1);
+	mvaddnstr(row + 17, col + 3, "D     Toggle display DCCP flows", -1);
+	mvaddnstr(row + 18, col + 3, "I     Toggle display ICMP flows", -1);
+	mvaddnstr(row + 19, col + 3, "S     Toggle display SCTP flows", -1);
 }
 
 static void draw_header(WINDOW *screen)
@@ -1299,6 +1298,9 @@ static void presenter(void)
 			break;
 		case 'a':
 			show_active_only = !show_active_only;
+			break;
+		case 's':
+			show_src = !show_src;
 			break;
 		case '?':
 			show_help = !show_help;
