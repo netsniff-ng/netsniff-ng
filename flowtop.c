@@ -881,29 +881,29 @@ static char *time2str(uint64_t tstamp, char *str, size_t len)
 static void print_flow_peer_info(const struct flow_entry *n, int y, int x,
 				 enum flow_direction dir)
 {
-	int counters_color = COLOR_PAIR(3);
-	int country_color = COLOR_PAIR(4);
+	int counters_color = COLOR(YELLOW, BLACK);
+	int src_color = COLOR(RED, BLACK);
+	int dst_color = COLOR(BLUE, BLACK);
+	int country_color = COLOR(GREEN, BLACK);
 	int port_color = A_BOLD;
 	const char *str = NULL;
 	uint16_t port = 0;
 	char tmp[128];
 
 	if (show_src && dir == FLOW_DIR_SRC) {
-		counters_color = COLOR_PAIR(1);
-		country_color = COLOR_PAIR(1);
-		port_color |= COLOR_PAIR(1);
+		country_color = counters_color = src_color;
+		port_color |= src_color;
 	} else if (show_src && FLOW_DIR_DST) {
-		counters_color = COLOR_PAIR(2);
-		country_color = COLOR_PAIR(2);
-		port_color |= COLOR_PAIR(2);
+		country_color = counters_color = dst_color;
+		port_color |= dst_color;
 	}
 
 	mvprintw(y, x, "");
 
 	/* Reverse DNS/IP */
-	attron(COLOR_PAIR(dir == FLOW_DIR_SRC ? 1 : 2));
+	attron(dir == FLOW_DIR_SRC ? src_color : dst_color);
 	printw(" %-*.*s", 50, 50, SELFLD(dir, rev_dns_src, rev_dns_dst));
-	attroff(COLOR_PAIR(dir == FLOW_DIR_SRC ? 1 : 2));
+	attroff(dir == FLOW_DIR_SRC ? src_color : dst_color);
 
 	/* Application port */
 	port = SELFLD(dir, port_src, port_dst);
@@ -956,9 +956,9 @@ static void draw_flow_entry(WINDOW *scr, const struct flow_entry *n, int line)
 	mvwprintw(scr, line, 0, "");
 
 	/* Application */
-	attron(COLOR_PAIR(3));
+	COLOR_ON(YELLOW, BLACK);
 	printw("%-*.*s", 10, 10, n->procname);
-	attroff(COLOR_PAIR(3));
+	COLOR_OFF(YELLOW, BLACK);
 
 	/* PID */
 	slprintf(tmp, sizeof(tmp), "%.d", n->procnum);
@@ -970,7 +970,7 @@ static void draw_flow_entry(WINDOW *scr, const struct flow_entry *n, int line)
 	printw(" %-*.*s", 6, 6, l4proto2str[n->l4_proto]);
 
 	/* L4 protocol state */
-	attron(COLOR_PAIR(3));
+	COLOR_ON(YELLOW, BLACK);
 	switch (n->l4_proto) {
 	case IPPROTO_TCP:
 		str = tcp_state2str[n->tcp_state];
@@ -988,8 +988,10 @@ static void draw_flow_entry(WINDOW *scr, const struct flow_entry *n, int line)
 		str = "";
 		break;
 	}
+	COLOR_OFF(YELLOW, BLACK);
 	printw(" %-*.*s", 11, 11, str);
 	attroff(COLOR_PAIR(3));
+	COLOR_OFF(YELLOW, BLACK);
 
 	/* Time */
 	printw(" %*.*s", 4, 4, time2str(n->timestamp_start, tmp, sizeof(tmp)));
@@ -1061,7 +1063,7 @@ static inline bool presenter_flow_wrong_state(struct flow_entry *n)
 
 static void draw_flows_header(WINDOW *scr, int line)
 {
-	attron(COLOR_PAIR(5));
+	COLOR_ON(BLACK, GREEN);
 
 	mvwprintw(scr, line, 0, "%-*.*s", cols, cols, "");
 	mvwprintw(scr, line, 0, "");
@@ -1077,7 +1079,7 @@ static void draw_flows_header(WINDOW *scr, int line)
 	wprintw(scr, " %*.*s", 10, 10, "BYTES");
 	wprintw(scr, " %*.*s", 10, 10, "RATE");
 
-	attroff(COLOR_PAIR(5));
+	COLOR_OFF(BLACK, GREEN);
 }
 
 static void draw_flows(WINDOW *screen, struct flow_list *fl,
@@ -1257,11 +1259,11 @@ static void presenter(void)
 	screen = screen_init(false);
 
 	start_color();
-	init_pair(1, COLOR_RED, COLOR_BLACK);
-	init_pair(2, COLOR_BLUE, COLOR_BLACK);
-	init_pair(3, COLOR_YELLOW, COLOR_BLACK);
-	init_pair(4, COLOR_GREEN, COLOR_BLACK);
-	init_pair(5, COLOR_BLACK, COLOR_GREEN);
+	INIT_COLOR(RED, BLACK);
+	INIT_COLOR(BLUE, BLACK);
+	INIT_COLOR(YELLOW, BLACK);
+	INIT_COLOR(GREEN, BLACK);
+	INIT_COLOR(BLACK, GREEN);
 
 	rcu_register_thread();
 	while (!sigint) {
