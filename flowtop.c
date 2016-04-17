@@ -62,6 +62,7 @@ struct flow_entry {
 	uint64_t pkts_dst, bytes_dst;
 	uint64_t timestamp_start, timestamp_stop;
 	char country_src[128], country_dst[128];
+	char country_code_src[4], country_code_dst[4];
 	char city_src[128], city_dst[128];
 	char rev_dns_src[256], rev_dns_dst[256];
 	char procname[256];
@@ -166,11 +167,6 @@ static const char *copyright = "Please report bugs to <netsniff-ng@googlegroups.
 	"This is free software: you are free to change and redistribute it.\n"
 	"There is NO WARRANTY, to the extent permitted by law.";
 
-static const char *const l3proto2str[AF_MAX] = {
-	[AF_INET]			= "ipv4",
-	[AF_INET6]			= "ipv6",
-};
-
 static const char *const l4proto2str[IPPROTO_MAX] = {
 	[IPPROTO_TCP]			= "tcp",
 	[IPPROTO_UDP]			= "udp",
@@ -194,40 +190,40 @@ static const char *const l4proto2str[IPPROTO_MAX] = {
 };
 
 static const char *const tcp_state2str[TCP_CONNTRACK_MAX] = {
-	[TCP_CONNTRACK_NONE]		= "NOSTATE",
-	[TCP_CONNTRACK_SYN_SENT]	= "SYN_SENT",
-	[TCP_CONNTRACK_SYN_RECV]	= "SYN_RECV",
+	[TCP_CONNTRACK_NONE]		= "NONE",
+	[TCP_CONNTRACK_SYN_SENT]	= "SYN-SENT",
+	[TCP_CONNTRACK_SYN_RECV]	= "SYN-RECV",
 	[TCP_CONNTRACK_ESTABLISHED]	= "ESTABLISHED",
-	[TCP_CONNTRACK_FIN_WAIT]	= "FIN_WAIT",
-	[TCP_CONNTRACK_CLOSE_WAIT]	= "CLOSE_WAIT",
-	[TCP_CONNTRACK_LAST_ACK]	= "LAST_ACK",
-	[TCP_CONNTRACK_TIME_WAIT]	= "TIME_WAIT",
+	[TCP_CONNTRACK_FIN_WAIT]	= "FIN-WAIT",
+	[TCP_CONNTRACK_CLOSE_WAIT]	= "CLOSE-WAIT",
+	[TCP_CONNTRACK_LAST_ACK]	= "LAST-ACK",
+	[TCP_CONNTRACK_TIME_WAIT]	= "TIME-WAIT",
 	[TCP_CONNTRACK_CLOSE]		= "CLOSE",
-	[TCP_CONNTRACK_SYN_SENT2]	= "SYN_SENT2",
+	[TCP_CONNTRACK_SYN_SENT2]	= "SYN-SENT2",
 };
 
 static const char *const dccp_state2str[DCCP_CONNTRACK_MAX] = {
-	[DCCP_CONNTRACK_NONE]		= "NOSTATE",
+	[DCCP_CONNTRACK_NONE]		= "NONE",
 	[DCCP_CONNTRACK_REQUEST]	= "REQUEST",
 	[DCCP_CONNTRACK_RESPOND]	= "RESPOND",
 	[DCCP_CONNTRACK_PARTOPEN]	= "PARTOPEN",
 	[DCCP_CONNTRACK_OPEN]		= "OPEN",
-	[DCCP_CONNTRACK_CLOSEREQ]	= "CLOSEREQ",
+	[DCCP_CONNTRACK_CLOSEREQ]	= "CLOSE-REQ",
 	[DCCP_CONNTRACK_CLOSING]	= "CLOSING",
-	[DCCP_CONNTRACK_TIMEWAIT]	= "TIMEWAIT",
+	[DCCP_CONNTRACK_TIMEWAIT]	= "TIME-WAIT",
 	[DCCP_CONNTRACK_IGNORE]		= "IGNORE",
 	[DCCP_CONNTRACK_INVALID]	= "INVALID",
 };
 
 static const char *const sctp_state2str[SCTP_CONNTRACK_MAX] = {
-	[SCTP_CONNTRACK_NONE]		= "NOSTATE",
+	[SCTP_CONNTRACK_NONE]		= "NONE",
 	[SCTP_CONNTRACK_CLOSED]		= "CLOSED",
-	[SCTP_CONNTRACK_COOKIE_WAIT]	= "COOKIE_WAIT",
-	[SCTP_CONNTRACK_COOKIE_ECHOED]	= "COOKIE_ECHOED",
+	[SCTP_CONNTRACK_COOKIE_WAIT]	= "COOKIE-WAIT",
+	[SCTP_CONNTRACK_COOKIE_ECHOED]	= "COOKIE-ECHO",
 	[SCTP_CONNTRACK_ESTABLISHED]	= "ESTABLISHED",
-	[SCTP_CONNTRACK_SHUTDOWN_SENT]	= "SHUTDOWN_SENT",
-	[SCTP_CONNTRACK_SHUTDOWN_RECD]	= "SHUTDOWN_RECD",
-	[SCTP_CONNTRACK_SHUTDOWN_ACK_SENT] = "SHUTDOWN_ACK_SENT",
+	[SCTP_CONNTRACK_SHUTDOWN_SENT]	= "SHUTD-SENT",
+	[SCTP_CONNTRACK_SHUTDOWN_RECD]	= "SHUTD-RCVD",
+	[SCTP_CONNTRACK_SHUTDOWN_ACK_SENT] = "SHUTD-ACK",
 };
 
 static const struct nfct_filter_ipv4 filter_ipv4 = {
@@ -684,6 +680,7 @@ flow_entry_geo_country_lookup_generic(struct flow_entry *n,
 	struct sockaddr_in sa4;
 	struct sockaddr_in6 sa6;
 	const char *country = NULL;
+	const char *country_code = NULL;
 
 	switch (n->l3_proto) {
 	default:
@@ -692,11 +689,13 @@ flow_entry_geo_country_lookup_generic(struct flow_entry *n,
 	case AF_INET:
 		flow_entry_get_sain4_obj(n, dir, &sa4);
 		country = geoip4_country_name(&sa4);
+		country_code = geoip4_country_code3_name(&sa4);
 		break;
 
 	case AF_INET6:
 		flow_entry_get_sain6_obj(n, dir, &sa6);
 		country = geoip6_country_name(&sa6);
+		country_code = geoip6_country_code3_name(&sa6);
 		break;
 	}
 
@@ -707,6 +706,14 @@ flow_entry_geo_country_lookup_generic(struct flow_entry *n,
 		        sizeof(n->country_src));
 	else
 		SELFLD(dir, country_src, country_dst)[0] = '\0';
+
+	build_bug_on(sizeof(n->country_code_src) != sizeof(n->country_code_dst));
+
+	if (country_code)
+		strlcpy(SELFLD(dir, country_code_src, country_code_dst),
+			country_code, sizeof(n->country_code_src));
+	else
+		SELFLD(dir, country_code_src, country_code_dst)[0] = '\0';
 }
 
 static void flow_entry_get_extended_geo(struct flow_entry *n,
@@ -792,36 +799,13 @@ static void flow_entry_get_extended(struct flow_entry *n)
 		walk_processes(n);
 }
 
-static uint16_t presenter_get_port(uint16_t src, uint16_t dst, bool is_tcp)
-{
-	if (src < dst && src < 1024) {
-		return src;
-	} else if (dst < src && dst < 1024) {
-		return dst;
-	} else {
-		const char *tmp1, *tmp2;
-		if (is_tcp) {
-			tmp1 = lookup_port_tcp(src);
-			tmp2 = lookup_port_tcp(dst);
-		} else {
-			tmp1 = lookup_port_udp(src);
-			tmp2 = lookup_port_udp(dst);
-		}
-		if (tmp1 && !tmp2) {
-			return src;
-		} else if (!tmp1 && tmp2) {
-			return dst;
-		} else {
-			if (src < dst)
-				return src;
-			else
-				return dst;
-		}
-	}
-}
-
 static char *bandw2str(double bytes, char *buf, size_t len)
 {
+	if (bytes <= 0) {
+		buf[0] = '\0';
+		return buf;
+	}
+
 	if (bytes > 1000000000.)
 		snprintf(buf, len, "%.1fGB", bytes / 1000000000.);
 	else if (bytes > 1000000.)
@@ -829,7 +813,7 @@ static char *bandw2str(double bytes, char *buf, size_t len)
 	else if (bytes > 1000.)
 		snprintf(buf, len, "%.1fkB", bytes / 1000.);
 	else
-		snprintf(buf, len, "%g bytes", bytes);
+		snprintf(buf, len, "%.0f", bytes);
 
 	return buf;
 }
@@ -837,9 +821,14 @@ static char *bandw2str(double bytes, char *buf, size_t len)
 static char *rate2str(double rate, char *buf, size_t len)
 {
 	const char * const unit_fmt[2][4] = {
-		{ "%.1fGbit/s", "%.1fMbit/s", "%.1fkbit/s", "%gbit/s" },
-		{ "%.1fGB/s",   "%.1fMB/s",   "%.1fkB/s",   "%gB/s"   }
+		{ "%.1fGbit/s", "%.1fMbit/s", "%.1fkbit/s", "%.0fbit/s" },
+		{ "%.1fGB/s",   "%.1fMB/s",   "%.1fkB/s",   "%.0fB/s"   }
 	};
+
+	if (rate <= 0) {
+		buf[0] = '\0';
+		return buf;
+	}
 
 	if (rate_type == RATE_BITS)
 		rate *= 8;
@@ -856,176 +845,160 @@ static char *rate2str(double rate, char *buf, size_t len)
 	return buf;
 }
 
-static void presenter_print_counters(uint64_t bytes, uint64_t pkts,
-				     double rate_bytes, double rate_pkts,
-				     int color)
+static char *time2str(uint64_t tstamp, char *str, size_t len)
 {
-	char bytes_str[64];
-
-	printw(" -> (");
-	attron(COLOR_PAIR(color));
-	printw("%"PRIu64" pkts", pkts);
-	if (rate_pkts) {
-		attron(COLOR_PAIR(3));
-		printw("(%.1fpps)", rate_pkts);
-		attron(COLOR_PAIR(color));
-	}
-
-	printw(", %s", bandw2str(bytes, bytes_str, sizeof(bytes_str) - 1));
-	if (rate_bytes) {
-		attron(COLOR_PAIR(3));
-		printw("(%s)", rate2str(rate_bytes, bytes_str,
-			sizeof(bytes_str) - 1));
-		attron(COLOR_PAIR(color));
-	}
-	attroff(COLOR_PAIR(color));
-	printw(")");
-}
-
-static void presenter_print_flow_entry_time(const struct flow_entry *n)
-{
-	int h, m, s;
 	time_t now;
+	int v, s;
 
 	time(&now);
 
-	s = now - (n->timestamp_start / NSEC_PER_SEC);
-	if (s <= 0)
-		return;
-
-	h = s / 3600;
-	s -= h * 3600;
-	m = s / 60;
-	s -= m * 60;
-
-	printw(" [ time");
-	if (h > 0)
-		printw(" %dh", h);
-	if (m > 0)
-		printw(" %dm", m);
-	if (s > 0)
-		printw(" %ds", s);
-	printw(" ]");
-}
-
-static void draw_flow_entry(WINDOW *screen, const struct flow_entry *n,
-			    unsigned int *line)
-{
-	char tmp[128];
-	const char *pname = NULL;
-	uint16_t port;
-
-	mvwprintw(screen, *line, 2, "");
-
-	/* PID, application name */
-	if (n->procnum > 0) {
-		slprintf(tmp, sizeof(tmp), "%s(%d)", n->procname, n->procnum);
-
-		printw("[");
-		attron(COLOR_PAIR(3));
-		printw("%s", tmp);
-		attroff(COLOR_PAIR(3));
-		printw("]:");
+	s = now - (tstamp ? (tstamp / NSEC_PER_SEC) : now);
+	if (s <= 0) {
+		str[0] = '\0';
+		return str;
 	}
 
-	/* L3 protocol, L4 protocol, states */
-	printw("%s:%s", l3proto2str[n->l3_proto], l4proto2str[n->l4_proto]);
-	printw("[");
+	v = s / (3600 * 24);
+	if (v > 0) {
+		slprintf(str, len, "%dd", v);
+		return str;
+	}
+
+	v = s / 3600;
+	if (v > 0) {
+		slprintf(str, len, "%dh", v);
+		return str;
+	}
+
+	v = s / 60;
+	if (v > 0) {
+		slprintf(str, len, "%dm", v);
+		return str;
+	}
+
+	slprintf(str, len, "%ds", s);
+	return str;
+}
+
+static void print_flow_peer_info(const struct flow_entry *n, int y, int x,
+				 enum flow_direction dir)
+{
+	int counters_color = COLOR_PAIR(3);
+	int country_color = COLOR_PAIR(4);
+	int port_color = A_BOLD;
+	const char *str = NULL;
+	uint16_t port = 0;
+	char tmp[128];
+
+	if (show_src && dir == FLOW_DIR_SRC) {
+		counters_color = COLOR_PAIR(1);
+		country_color = COLOR_PAIR(1);
+		port_color |= COLOR_PAIR(1);
+	} else if (show_src && FLOW_DIR_DST) {
+		counters_color = COLOR_PAIR(2);
+		country_color = COLOR_PAIR(2);
+		port_color |= COLOR_PAIR(2);
+	}
+
+	mvprintw(y, x, "");
+
+	/* Reverse DNS/IP */
+	attron(COLOR_PAIR(dir == FLOW_DIR_SRC ? 1 : 2));
+	printw(" %-*.*s", 50, 50, SELFLD(dir, rev_dns_src, rev_dns_dst));
+	attroff(COLOR_PAIR(dir == FLOW_DIR_SRC ? 1 : 2));
+
+	/* Application port */
+	port = SELFLD(dir, port_src, port_dst);
+	str = NULL;
+
+	switch (n->l4_proto) {
+	case IPPROTO_TCP:
+		str = lookup_port_tcp(port);
+		break;
+	case IPPROTO_UDP:
+	case IPPROTO_UDPLITE:
+		str = lookup_port_udp(port);
+		break;
+	}
+
+	if (!str && port)
+		slprintf(tmp, sizeof(tmp), "%d", port);
+	else
+		slprintf(tmp, sizeof(tmp), "%s", str ? str : "");
+
+	attron(port_color);
+	printw(" %-*.*s", 8, 8, tmp);
+	attroff(port_color);
+
+	/* Country code */
+	attron(country_color);
+	printw(" %-*.*s", 3, 3, SELFLD(dir, country_code_src, country_code_dst));
+	attroff(country_color);
+
+	/* Bytes */
+	attron(counters_color);
+	printw(" %*.*s", 10, 10,
+		bandw2str(SELFLD(dir, bytes_src, bytes_dst),
+			  tmp, sizeof(tmp) - 1));
+	attroff(counters_color);
+
+	/* Rate */
+	attron(counters_color);
+	printw(" %*.*s", 10, 10,
+		rate2str(SELFLD(dir, rate_bytes_src, rate_bytes_dst),
+			 tmp, sizeof(tmp) - 1));
+	attroff(counters_color);
+}
+
+static void draw_flow_entry(WINDOW *scr, const struct flow_entry *n, int line)
+{
+	const char *str = NULL;
+	char tmp[128];
+
+	mvwprintw(scr, line, 0, "");
+
+	/* Application */
+	attron(COLOR_PAIR(3));
+	printw("%-*.*s", 10, 10, n->procname);
+	attroff(COLOR_PAIR(3));
+
+	/* PID */
+	slprintf(tmp, sizeof(tmp), "%.d", n->procnum);
+	attron(A_BOLD);
+	printw("%-*.*s", 7, 7, tmp);
+	attroff(A_BOLD);
+
+	/* L4 protocol */
+	printw(" %-*.*s", 6, 6, l4proto2str[n->l4_proto]);
+
+	/* L4 protocol state */
 	attron(COLOR_PAIR(3));
 	switch (n->l4_proto) {
 	case IPPROTO_TCP:
-		printw("%s", tcp_state2str[n->tcp_state]);
+		str = tcp_state2str[n->tcp_state];
 		break;
 	case IPPROTO_SCTP:
-		printw("%s", sctp_state2str[n->sctp_state]);
+		str = sctp_state2str[n->sctp_state];
 		break;
 	case IPPROTO_DCCP:
-		printw("%s", dccp_state2str[n->dccp_state]);
+		str = dccp_state2str[n->dccp_state];
 		break;
 	case IPPROTO_UDP:
 	case IPPROTO_UDPLITE:
 	case IPPROTO_ICMP:
 	case IPPROTO_ICMPV6:
-		printw("NOSTATE");
+		str = "";
 		break;
 	}
+	printw(" %-*.*s", 11, 11, str);
 	attroff(COLOR_PAIR(3));
-	printw("]");
 
-	/* Guess application port */
-	switch (n->l4_proto) {
-	case IPPROTO_TCP:
-		port = presenter_get_port(n->port_src, n->port_dst, true);
-		pname = lookup_port_tcp(port);
-		break;
-	case IPPROTO_UDP:
-	case IPPROTO_UDPLITE:
-		port = presenter_get_port(n->port_src, n->port_dst, false);
-		pname = lookup_port_udp(port);
-		break;
-	}
-	if (pname) {
-		attron(A_BOLD);
-		printw(":%s", pname);
-		attroff(A_BOLD);
-	}
+	/* Time */
+	printw(" %*.*s", 4, 4, time2str(n->timestamp_start, tmp, sizeof(tmp)));
 
-	if (n->timestamp_start > 0)
-		presenter_print_flow_entry_time(n);
-
-	/* Show source information: reverse DNS, port, country, city, counters */
-	if (show_src) {
-		attron(COLOR_PAIR(1));
-		mvwprintw(screen, ++(*line), 8, "src: %s", n->rev_dns_src);
-		attroff(COLOR_PAIR(1));
-
-		printw(":%"PRIu16, n->port_src);
-
-		if (n->country_src[0]) {
-			printw(" (");
-
-			attron(COLOR_PAIR(4));
-			printw("%s", n->country_src);
-			attroff(COLOR_PAIR(4));
-
-			if (n->city_src[0])
-				printw(", %s", n->city_src);
-
-			printw(")");
-		}
-
-		if (n->pkts_src > 0 && n->bytes_src > 0)
-			presenter_print_counters(n->bytes_src, n->pkts_src,
-						 n->rate_bytes_src,
-						 n->rate_pkts_src, 1);
-
-		printw(" => ");
-	}
-
-	/* Show dest information: reverse DNS, port, country, city, counters */
-	attron(COLOR_PAIR(2));
-	mvwprintw(screen, ++(*line), 8, "dst: %s", n->rev_dns_dst);
-	attroff(COLOR_PAIR(2));
-
-	printw(":%"PRIu16, n->port_dst);
-
-	if (n->country_dst[0]) {
-		printw(" (");
-
-		attron(COLOR_PAIR(4));
-		printw("%s", n->country_dst);
-		attroff(COLOR_PAIR(4));
-
-		if (n->city_dst[0])
-			printw(", %s", n->city_dst);
-
-		printw(")");
-	}
-
-	if (n->pkts_dst > 0 && n->bytes_dst > 0)
-		presenter_print_counters(n->bytes_dst, n->pkts_dst,
-					 n->rate_bytes_dst,
-					 n->rate_pkts_dst, 2);
+	print_flow_peer_info(n, line, 41, show_src ? FLOW_DIR_SRC : FLOW_DIR_DST);
+	if (show_src)
+		print_flow_peer_info(n, line + 1, 41, FLOW_DIR_DST);
 }
 
 static inline bool presenter_flow_wrong_state(struct flow_entry *n)
@@ -1088,14 +1061,35 @@ static inline bool presenter_flow_wrong_state(struct flow_entry *n)
 	return true;
 }
 
+static void draw_flows_header(WINDOW *scr, int line)
+{
+	attron(COLOR_PAIR(5));
+
+	mvwprintw(scr, line, 0, "%-*.*s", cols, cols, "");
+	mvwprintw(scr, line, 0, "");
+
+	wprintw(scr, "%-*.*s", 10, 10, "PROCESS");
+	wprintw(scr, "%-*.*s", 7, 7, "PID");
+	wprintw(scr, " %-*.*s", 6, 6, "PROTO");
+	wprintw(scr, " %-*.*s", 11, 11, "STATE");
+	wprintw(scr, " %*.*s", 4, 4, "TIME");
+	wprintw(scr, "  %-*.*s", 50, 50, "ADDRESS");
+	wprintw(scr, " %-*.*s", 8, 8, "PORT");
+	wprintw(scr, " %-*.*s", 3, 3, "GEO");
+	wprintw(scr, " %*.*s", 10, 10, "BYTES");
+	wprintw(scr, " %*.*s", 10, 10, "RATE");
+
+	attroff(COLOR_PAIR(5));
+}
+
 static void draw_flows(WINDOW *screen, struct flow_list *fl,
 		       int skip_lines)
 {
-	int skip_left = skip_lines;
+	int row_width = show_src ? 2 : 1;
 	unsigned int flows = 0;
-	unsigned int line = 3;
+	unsigned int line = 4;
+	int skip = skip_lines;
 	struct flow_entry *n;
-	int maxy = rows - 6;
 
 	wclear(screen);
 	clear();
@@ -1107,28 +1101,24 @@ static void draw_flows(WINDOW *screen, struct flow_list *fl,
 		mvwprintw(screen, line, 2, "(No sessions! "
 			  "Is netfilter running?)");
 
+	draw_flows_header(screen, line - 1);
+
 	for (; n; n = rcu_dereference(n->next)) {
 		if (!n->is_visible)
 			continue;
-
 		if (presenter_flow_wrong_state(n))
 			continue;
 
 		/* count only flows which might be showed */
 		flows++;
 
-		if (maxy <= 0)
+		if (line + row_width >= rows)
+			continue;
+		if (--skip >= 0)
 			continue;
 
-		if (skip_left > 0) {
-			skip_left--;
-			continue;
-		}
-
-		draw_flow_entry(screen, n, &line);
-
-		line++;
-		maxy -= (2 + (show_src ? 1 : 0));
+		draw_flow_entry(screen, n, line);
+		line += row_width;
 	}
 
 	mvwprintw(screen, 1, 2, "Kernel netfilter flows(%u) for ", flows);
@@ -1272,6 +1262,7 @@ static void presenter(void)
 	init_pair(2, COLOR_BLUE, COLOR_BLACK);
 	init_pair(3, COLOR_YELLOW, COLOR_BLACK);
 	init_pair(4, COLOR_GREEN, COLOR_BLACK);
+	init_pair(5, COLOR_BLACK, COLOR_GREEN);
 
 	rcu_register_thread();
 	while (!sigint) {
