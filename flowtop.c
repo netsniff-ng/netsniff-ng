@@ -1278,8 +1278,6 @@ static void flows_table_init(struct ui_table *tbl)
 
 static void presenter(void)
 {
-	int time_sleep_us = 200000;
-	int time_passed_us = 0;
 	bool show_help = false;
 	int skip_lines = 0;
 	WINDOW *screen;
@@ -1301,7 +1299,6 @@ static void presenter(void)
 
 	rcu_register_thread();
 	while (!sigint) {
-		bool redraw_flows = true;
 		int ch;
 
 		curs_set(0);
@@ -1353,31 +1350,19 @@ static void presenter(void)
 			break;
 		default:
 			fflush(stdin);
-			redraw_flows = false;
 			break;
 		}
 
 		draw_header(screen);
 
-		if (!redraw_flows)
-			redraw_flows = time_passed_us >= 1 * USEC_PER_SEC;
-
-		if (show_help)
-			redraw_flows = false;
-
-		if (redraw_flows) {
-			draw_flows(screen, &flow_list, skip_lines);
-			time_passed_us = 0;
-		} else {
-			time_passed_us += time_sleep_us;
-		}
-
 		if (show_help)
 			draw_help(screen);
+		else
+			draw_flows(screen, &flow_list, skip_lines);
 
 		draw_footer(screen);
 
-		usleep(time_sleep_us);
+		usleep(80000);
 	}
 	rcu_unregister_thread();
 
