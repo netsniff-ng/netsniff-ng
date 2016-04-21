@@ -22,6 +22,7 @@ flowtop-objs =	xmalloc.o \
 		screen.o \
 		die.o \
 		sysctl.o \
+		ui.o \
 		flowtop.o
 
 ifeq ($(CONFIG_GEOIP), 1)

@@ -28,6 +28,7 @@
 #include <fcntl.h>
 #include <arpa/inet.h>
 
+#include "ui.h"
 #include "die.h"
 #include "xmalloc.h"
 #include "conntrack.h"
@@ -138,6 +139,21 @@ static bool resolve_dns = true;
 static bool resolve_geoip = true;
 static enum rate_units rate_type = RATE_BYTES;
 static bool show_active_only = false;
+
+enum tbl_flow_col {
+	TBL_FLOW_PROCESS,
+	TBL_FLOW_PID,
+	TBL_FLOW_PROTO,
+	TBL_FLOW_STATE,
+	TBL_FLOW_TIME,
+	TBL_FLOW_ADDRESS,
+	TBL_FLOW_PORT,
+	TBL_FLOW_GEO,
+	TBL_FLOW_BYTES,
+	TBL_FLOW_RATE,
+};
+
+static struct ui_table flows_tbl;
 
 static const char *short_options = "vhTUsDIS46ut:nGb";
 static const struct option long_options[] = {
@@ -878,127 +894,134 @@ static char *time2str(uint64_t tstamp, char *str, size_t len)
 	return str;
 }
 
-static void print_flow_peer_info(const struct flow_entry *n, int y, int x,
-				 enum flow_direction dir)
+
+static const char *flow_state2str(const struct flow_entry *n)
+{
+	switch (n->l4_proto) {
+	case IPPROTO_TCP:
+		return tcp_state2str[n->tcp_state];
+	case IPPROTO_SCTP:
+		return sctp_state2str[n->sctp_state];
+	case IPPROTO_DCCP:
+		return dccp_state2str[n->dccp_state];
+
+	case IPPROTO_UDP:
+	case IPPROTO_UDPLITE:
+	case IPPROTO_ICMP:
+	case IPPROTO_ICMPV6:
+	default:
+		return "";
+	}
+}
+
+static char *flow_port2str(const struct flow_entry *n, char *str, size_t len,
+		           enum flow_direction dir)
+{
+	const char *tmp = NULL;
+	uint16_t port = 0;
+
+	port = SELFLD(dir, port_src, port_dst);
+	tmp = NULL;
+
+	switch (n->l4_proto) {
+	case IPPROTO_TCP:
+		tmp = lookup_port_tcp(port);
+		break;
+	case IPPROTO_UDP:
+	case IPPROTO_UDPLITE:
+		tmp = lookup_port_udp(port);
+		break;
+	}
+
+	if (!tmp && port)
+		slprintf(str, len, "%d", port);
+	else
+		slprintf(str, len, "%s", tmp ? tmp : "");
+
+	return str;
+}
+
+static void print_flow_peer_info(const struct flow_entry *n, enum flow_direction dir)
 {
 	int counters_color = COLOR(YELLOW, BLACK);
 	int src_color = COLOR(RED, BLACK);
 	int dst_color = COLOR(BLUE, BLACK);
 	int country_color = COLOR(GREEN, BLACK);
+	int addr_color = dst_color;
 	int port_color = A_BOLD;
-	const char *str = NULL;
-	uint16_t port = 0;
 	char tmp[128];
 
 	if (show_src && dir == FLOW_DIR_SRC) {
-		country_color = counters_color = src_color;
-		port_color |= src_color;
+		country_color  = src_color;
+		counters_color = src_color;
+		port_color    |= src_color;
+		addr_color     = src_color;
 	} else if (show_src && FLOW_DIR_DST) {
-		country_color = counters_color = dst_color;
-		port_color |= dst_color;
+		country_color  = dst_color;
+		counters_color = dst_color;
+		port_color    |= dst_color;
+		addr_color     = dst_color;
 	}
 
-	mvprintw(y, x, "");
+	ui_table_col_color_set(&flows_tbl, TBL_FLOW_ADDRESS, addr_color);
+	ui_table_col_color_set(&flows_tbl, TBL_FLOW_PORT, port_color);
+	ui_table_col_color_set(&flows_tbl, TBL_FLOW_GEO, country_color);
+	ui_table_col_color_set(&flows_tbl, TBL_FLOW_BYTES, counters_color);
+	ui_table_col_color_set(&flows_tbl, TBL_FLOW_RATE, counters_color);
 
 	/* Reverse DNS/IP */
-	attron(dir == FLOW_DIR_SRC ? src_color : dst_color);
-	printw(" %-*.*s", 50, 50, SELFLD(dir, rev_dns_src, rev_dns_dst));
-	attroff(dir == FLOW_DIR_SRC ? src_color : dst_color);
+	ui_table_row_print(&flows_tbl, TBL_FLOW_ADDRESS,
+			    SELFLD(dir, rev_dns_src, rev_dns_dst));
 
 	/* Application port */
-	port = SELFLD(dir, port_src, port_dst);
-	str = NULL;
+	ui_table_row_print(&flows_tbl, TBL_FLOW_PORT,
+			    flow_port2str(n, tmp, sizeof(tmp), dir));
 
-	switch (n->l4_proto) {
-	case IPPROTO_TCP:
-		str = lookup_port_tcp(port);
-		break;
-	case IPPROTO_UDP:
-	case IPPROTO_UDPLITE:
-		str = lookup_port_udp(port);
-		break;
-	}
-
-	if (!str && port)
-		slprintf(tmp, sizeof(tmp), "%d", port);
-	else
-		slprintf(tmp, sizeof(tmp), "%s", str ? str : "");
-
-	attron(port_color);
-	printw(" %-*.*s", 8, 8, tmp);
-	attroff(port_color);
-
-	/* Country code */
-	attron(country_color);
-	printw(" %-*.*s", 3, 3, SELFLD(dir, country_code_src, country_code_dst));
-	attroff(country_color);
+	/* GEO */
+	ui_table_row_print(&flows_tbl, TBL_FLOW_GEO,
+			    SELFLD(dir, country_code_src, country_code_dst));
 
 	/* Bytes */
-	attron(counters_color);
-	printw(" %*.*s", 10, 10,
-		bandw2str(SELFLD(dir, bytes_src, bytes_dst),
-			  tmp, sizeof(tmp) - 1));
-	attroff(counters_color);
+	ui_table_row_print(&flows_tbl, TBL_FLOW_BYTES,
+			    bandw2str(SELFLD(dir, bytes_src, bytes_dst),
+			              tmp, sizeof(tmp) - 1));
 
-	/* Rate */
-	attron(counters_color);
-	printw(" %*.*s", 10, 10,
-		rate2str(SELFLD(dir, rate_bytes_src, rate_bytes_dst),
-			 tmp, sizeof(tmp) - 1));
-	attroff(counters_color);
+	/* Rate bytes */
+	ui_table_row_print(&flows_tbl, TBL_FLOW_RATE,
+			    rate2str(SELFLD(dir, rate_bytes_src, rate_bytes_dst),
+			              tmp, sizeof(tmp) - 1));
 }
 
 static void draw_flow_entry(WINDOW *scr, const struct flow_entry *n, int line)
 {
-	const char *str = NULL;
 	char tmp[128];
 
-	mvwprintw(scr, line, 0, "");
+	ui_table_row_add(&flows_tbl);
 
 	/* Application */
-	COLOR_ON(YELLOW, BLACK);
-	printw("%-*.*s", 10, 10, n->procname);
-	COLOR_OFF(YELLOW, BLACK);
+	ui_table_row_print(&flows_tbl, TBL_FLOW_PROCESS, n->procname);
 
 	/* PID */
 	slprintf(tmp, sizeof(tmp), "%.d", n->procnum);
-	attron(A_BOLD);
-	printw("%-*.*s", 7, 7, tmp);
-	attroff(A_BOLD);
+	ui_table_row_print(&flows_tbl, TBL_FLOW_PID, tmp);
 
 	/* L4 protocol */
-	printw(" %-*.*s", 6, 6, l4proto2str[n->l4_proto]);
+	ui_table_row_print(&flows_tbl, TBL_FLOW_PROTO, l4proto2str[n->l4_proto]);
 
 	/* L4 protocol state */
-	COLOR_ON(YELLOW, BLACK);
-	switch (n->l4_proto) {
-	case IPPROTO_TCP:
-		str = tcp_state2str[n->tcp_state];
-		break;
-	case IPPROTO_SCTP:
-		str = sctp_state2str[n->sctp_state];
-		break;
-	case IPPROTO_DCCP:
-		str = dccp_state2str[n->dccp_state];
-		break;
-	case IPPROTO_UDP:
-	case IPPROTO_UDPLITE:
-	case IPPROTO_ICMP:
-	case IPPROTO_ICMPV6:
-		str = "";
-		break;
-	}
-	COLOR_OFF(YELLOW, BLACK);
-	printw(" %-*.*s", 11, 11, str);
-	attroff(COLOR_PAIR(3));
-	COLOR_OFF(YELLOW, BLACK);
+	ui_table_row_print(&flows_tbl, TBL_FLOW_STATE, flow_state2str(n));
 
 	/* Time */
-	printw(" %*.*s", 4, 4, time2str(n->timestamp_start, tmp, sizeof(tmp)));
+	time2str(n->timestamp_start, tmp, sizeof(tmp));
+	ui_table_row_print(&flows_tbl, TBL_FLOW_TIME, tmp);
 
-	print_flow_peer_info(n, line, 41, show_src ? FLOW_DIR_SRC : FLOW_DIR_DST);
-	if (show_src)
-		print_flow_peer_info(n, line + 1, 41, FLOW_DIR_DST);
+	print_flow_peer_info(n, show_src ? FLOW_DIR_SRC : FLOW_DIR_DST);
+
+	if (show_src) {
+		ui_table_row_add(&flows_tbl);
+
+		print_flow_peer_info(n, FLOW_DIR_DST);
+	}
 }
 
 static inline bool presenter_flow_wrong_state(struct flow_entry *n)
@@ -1061,27 +1084,6 @@ static inline bool presenter_flow_wrong_state(struct flow_entry *n)
 	return true;
 }
 
-static void draw_flows_header(WINDOW *scr, int line)
-{
-	COLOR_ON(BLACK, GREEN);
-
-	mvwprintw(scr, line, 0, "%-*.*s", cols, cols, "");
-	mvwprintw(scr, line, 0, "");
-
-	wprintw(scr, "%-*.*s", 10, 10, "PROCESS");
-	wprintw(scr, "%-*.*s", 7, 7, "PID");
-	wprintw(scr, " %-*.*s", 6, 6, "PROTO");
-	wprintw(scr, " %-*.*s", 11, 11, "STATE");
-	wprintw(scr, " %*.*s", 4, 4, "TIME");
-	wprintw(scr, "  %-*.*s", 50, 50, "ADDRESS");
-	wprintw(scr, " %-*.*s", 8, 8, "PORT");
-	wprintw(scr, " %-*.*s", 3, 3, "GEO");
-	wprintw(scr, " %*.*s", 10, 10, "BYTES");
-	wprintw(scr, " %*.*s", 10, 10, "RATE");
-
-	COLOR_OFF(BLACK, GREEN);
-}
-
 static void draw_flows(WINDOW *screen, struct flow_list *fl,
 		       int skip_lines)
 {
@@ -1101,7 +1103,8 @@ static void draw_flows(WINDOW *screen, struct flow_list *fl,
 		mvwprintw(screen, line, 2, "(No sessions! "
 			  "Is netfilter running?)");
 
-	draw_flows_header(screen, line - 1);
+	ui_table_clear(&flows_tbl);
+	ui_table_header_print(&flows_tbl);
 
 	for (; n; n = rcu_dereference(n->next)) {
 		if (!n->is_visible)
@@ -1246,6 +1249,34 @@ static void show_option_toggle(int opt)
 	}
 }
 
+static void flows_table_init(struct ui_table *tbl)
+{
+	ui_table_init(tbl);
+
+	ui_table_pos_set(tbl, 3, 0);
+
+	ui_table_col_add(tbl, TBL_FLOW_PROCESS, "PROCESS", 13);
+	ui_table_col_add(tbl, TBL_FLOW_PID, "PID", 7);
+	ui_table_col_add(tbl, TBL_FLOW_PROTO, "PROTO", 6);
+	ui_table_col_add(tbl, TBL_FLOW_STATE, "STATE", 11);
+	ui_table_col_add(tbl, TBL_FLOW_TIME, "TIME", 4);
+	ui_table_col_add(tbl, TBL_FLOW_ADDRESS, "ADDRESS", 50);
+	ui_table_col_add(tbl, TBL_FLOW_PORT, "PORT", 8);
+	ui_table_col_add(tbl, TBL_FLOW_GEO, "GEO", 3);
+	ui_table_col_add(tbl, TBL_FLOW_BYTES, "BYTES", 10);
+	ui_table_col_add(tbl, TBL_FLOW_RATE, "RATE", 10);
+
+	ui_table_col_align_set(tbl, TBL_FLOW_TIME, UI_ALIGN_RIGHT);
+	ui_table_col_align_set(tbl, TBL_FLOW_BYTES, UI_ALIGN_RIGHT);
+	ui_table_col_align_set(tbl, TBL_FLOW_RATE, UI_ALIGN_RIGHT);
+
+	ui_table_col_color_set(tbl, TBL_FLOW_PROCESS, COLOR(YELLOW, BLACK));
+	ui_table_col_color_set(tbl, TBL_FLOW_PID, A_BOLD);
+	ui_table_col_color_set(tbl, TBL_FLOW_STATE, COLOR(YELLOW, BLACK));
+
+	ui_table_header_color_set(&flows_tbl, COLOR(BLACK, GREEN));
+}
+
 static void presenter(void)
 {
 	int time_sleep_us = 200000;
@@ -1264,6 +1295,8 @@ static void presenter(void)
 	INIT_COLOR(YELLOW, BLACK);
 	INIT_COLOR(GREEN, BLACK);
 	INIT_COLOR(BLACK, GREEN);
+
+        flows_table_init(&flows_tbl);
 
 	rcu_register_thread();
 	while (!sigint) {
@@ -1348,6 +1381,8 @@ static void presenter(void)
 		usleep(time_sleep_us);
 	}
 	rcu_unregister_thread();
+
+	ui_table_uninit(&flows_tbl);
 
 	screen_end();
 	lookup_cleanup(LT_PORTS_UDP);
