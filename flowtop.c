@@ -1093,9 +1093,6 @@ static void draw_flows(WINDOW *screen, struct flow_list *fl,
 	int skip = skip_lines;
 	struct flow_entry *n;
 
-	wclear(screen);
-	clear();
-
 	rcu_read_lock();
 
 	n = rcu_dereference(fl->head);
@@ -1124,6 +1121,7 @@ static void draw_flows(WINDOW *screen, struct flow_list *fl,
 		line += row_width;
 	}
 
+	mvwprintw(screen, 1, 0, "%*s", COLS - 1, " ");
 	mvwprintw(screen, 1, 2, "Kernel netfilter flows(%u) for ", flows);
 
 	if (what & INCLUDE_IPV4)
@@ -1254,6 +1252,7 @@ static void flows_table_init(struct ui_table *tbl)
 	ui_table_init(tbl);
 
 	ui_table_pos_set(tbl, 3, 0);
+	ui_table_height_set(tbl, LINES - 3);
 
 	ui_table_col_add(tbl, TBL_FLOW_PROCESS, "PROCESS", 13);
 	ui_table_col_add(tbl, TBL_FLOW_PID, "PID", 7);
@@ -1287,7 +1286,9 @@ static void presenter(void)
 
 	lookup_init(LT_PORTS_TCP);
 	lookup_init(LT_PORTS_UDP);
+
 	screen = screen_init(false);
+	wclear(screen);
 
 	start_color();
 	INIT_COLOR(RED, BLACK);
@@ -1356,6 +1357,8 @@ static void presenter(void)
 			break;
 		}
 
+		draw_header(screen);
+
 		if (!redraw_flows)
 			redraw_flows = time_passed_us >= 1 * USEC_PER_SEC;
 
@@ -1369,15 +1372,11 @@ static void presenter(void)
 			time_passed_us += time_sleep_us;
 		}
 
-		draw_header(screen);
-
 		if (show_help)
 			draw_help(screen);
 
 		draw_footer(screen);
 
-		wrefresh(screen);
-		refresh();
 		usleep(time_sleep_us);
 	}
 	rcu_unregister_thread();
