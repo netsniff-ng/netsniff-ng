@@ -128,8 +128,7 @@ struct proto_hdr *proto_header_init(enum proto_id pid)
 	struct proto_hdr *hdr = proto_header_by_id(pid);
 	struct proto_hdr *new_hdr;
 
-	if (headers_count >= PROTO_MAX_LAYERS)
-		panic("Too many proto headers\n");
+	bug_on(headers_count >= PROTO_MAX_LAYERS);
 
 	new_hdr = xmalloc(sizeof(*new_hdr));
 	memcpy(new_hdr, hdr, sizeof(*new_hdr));

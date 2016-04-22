@@ -31,7 +31,7 @@ static uint16_t pid_to_eth(enum proto_id pid)
 	case PROTO_VLAN:
 		return ETH_P_8021Q;
 	default:
-		panic("eth: Not supported protocol id %u\n", pid);
+		bug();
 	}
 }
 

@@ -76,7 +76,7 @@ static void ipv4_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
 		ip_proto = IPPROTO_TCP;
 		break;
 	default:
-		panic("ipv4: Not supported protocol id %u\n", pid);
+		bug();
 	}
 
 	proto_field_set_default_u8(hdr, IP4_PROTO, ip_proto);
