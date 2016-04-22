@@ -342,6 +342,7 @@ static void proto_add(enum proto_id pid)
 
 %union {
 	struct in_addr ip4_addr;
+	struct in6_addr ip6_addr;
 	long long int number;
 	uint8_t bytes[256];
 	char *str;
@@ -353,6 +354,7 @@ static void proto_add(enum proto_id pid)
 %token K_DADDR K_SADDR K_ETYPE
 %token K_OPER K_SHA K_SPA K_THA K_TPA K_REQUEST K_REPLY K_PTYPE K_HTYPE
 %token K_PROT K_TTL K_DSCP K_ECN K_TOS K_LEN K_ID K_FLAGS K_FRAG K_IHL K_VER K_CSUM K_DF K_MF
+%token K_FLOW K_NEXT_HDR K_HOP_LIMIT
 %token K_SPORT K_DPORT
 %token K_SEQ K_ACK_SEQ K_DOFF K_CWR K_ECE K_URG K_ACK K_PSH K_RST K_SYN K_FIN K_WINDOW K_URG_PTR
 %token K_TPID K_TCI K_PCP K_DEI K_1Q K_1AD
@@ -361,17 +363,18 @@ static void proto_add(enum proto_id pid)
 %token K_ETH
 %token K_VLAN K_MPLS
 %token K_ARP
-%token K_IP4
+%token K_IP4 K_IP6
 %token K_UDP K_TCP
 
 %token ',' '{' '}' '(' ')' '[' ']' ':' '-' '+' '*' '/' '%' '&' '|' '<' '>' '^'
 
-%token number string mac ip4_addr
+%token number string mac ip4_addr ip6_addr
 
 %type <number> number expression
 %type <str> string
 %type <bytes> mac
 %type <ip4_addr> ip4_addr
+%type <ip6_addr> ip6_addr
 
 %left '-' '+' '*' '/' '%' '&' '|' '<' '>' '^'
 
@@ -587,6 +590,7 @@ proto
 	| mpls_proto { }
 	| arp_proto { }
 	| ip4_proto { }
+	| ip6_proto { }
 	| udp_proto { }
 	| tcp_proto { }
 	;
@@ -768,6 +772,44 @@ ip4_field
 
 ip4
 	: K_IP4	{ proto_add(PROTO_IP4); }
+	;
+
+ip6_proto
+	: ip6 '(' ip6_param_list ')' { }
+	;
+
+ip6_param_list
+	: { }
+	| ip6_field { }
+	| ip6_field delimiter ip6_param_list { }
+	;
+
+ip6_hop_limit
+	: K_HOP_LIMIT { }
+	| K_TTL { }
+	;
+
+ip6_field
+	: K_VER skip_white '=' skip_white number
+		{ proto_field_set_be32(hdr, IP6_VER, $5); }
+	| K_TC skip_white '=' skip_white number
+		{ proto_field_set_be32(hdr, IP6_CLASS, $5); }
+	| K_FLOW skip_white '=' skip_white number
+		{ proto_field_set_be32(hdr, IP6_FLOW_LBL, $5); }
+	| K_LEN skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, IP6_LEN, $5); }
+	| K_NEXT_HDR skip_white '=' skip_white number
+		{ proto_field_set_u8(hdr, IP6_NEXT_HDR, $5); }
+	| ip6_hop_limit skip_white '=' skip_white number
+		{ proto_field_set_u8(hdr, IP6_HOP_LIMIT, $5); }
+	| K_SADDR skip_white '=' skip_white ip6_addr
+		{ proto_field_set_bytes(hdr, IP6_SADDR, (uint8_t *)&($5.s6_addr)); }
+	| K_DADDR skip_white '=' skip_white ip6_addr
+		{ proto_field_set_bytes(hdr, IP6_DADDR, (uint8_t *)&($5.s6_addr)); }
+	;
+
+ip6
+	: K_IP6	{ proto_add(PROTO_IP6); }
 	;
 
 udp_proto

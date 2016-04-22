@@ -77,9 +77,13 @@ number_bin	([0]?[b][0-1]+)
 number_dec	(([0])|([1-9][0-9]*))
 number_ascii	([a-zA-Z])
 
-mac_hex		([a-fA-F0-9]+)
-mac		({mac_hex}:{mac_hex}:{mac_hex}:{mac_hex}:{mac_hex}:{mac_hex})
+a_hex		([a-fA-F0-9]+)
+mac		({a_hex}:{a_hex}:{a_hex}:{a_hex}:{a_hex}:{a_hex})
 ip4_addr	([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)
+	/* We're very permissive about IPv6 addresses the grammar accepts, as
+	 * they can come in various different formats. In any case,
+	 * inet_pton(AF_INET6, ...) will reject the invalid ones later on. */
+ip6_addr	(({a_hex}?:)?({a_hex}?:)?({a_hex}?:)?({a_hex}?:)?({a_hex}?:)?({a_hex}?:)?({a_hex}?:)?({a_hex})?)
 
 %%
 
@@ -106,6 +110,7 @@ ip4_addr	([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)
 "const64"|"c64"	{ return K_CONST64; }
 
 "prot"[o]?	{ return K_PROT; }
+"tc"|"tclass"	{ return K_TC; }
 
 	/* Ethernet */
 "daddr"|"da"	{ return K_DADDR; }
@@ -123,7 +128,6 @@ ip4_addr	([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)
 	/* MPLS (Multi Protocol Label Switching) */
 "lbl"|"label"	{ return K_LABEL; }
 "last"		{ return K_LAST; }
-"tc"|"tclass"	{ return K_TC; }
 "exp"		{ return K_EXP; }
 
 	/* ARP */
@@ -152,6 +156,11 @@ ip4_addr	([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)
 "df"		{ return K_DF; }
 "mf"		{ return K_MF; }
 
+	/* IPv6 */
+"fl"|"flow"	{ return K_FLOW; }
+"nh"|"nexthdr"	{ return K_NEXT_HDR; }
+"hl"|"hoplimit"	{ return K_HOP_LIMIT; }
+
 	/* UDP */
 "sp"|"sport"	{ return K_SPORT; }
 "dp"|"dport"	{ return K_DPORT; }
@@ -176,6 +185,7 @@ ip4_addr	([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)
 "mpls"		{ return K_MPLS; }
 "arp"		{ return K_ARP; }
 "ip4"|"ipv4"	{ return K_IP4; }
+"ip6"|"ipv6"	{ return K_IP6; }
 "udp"		{ return K_UDP; }
 "tcp"		{ return K_TCP; }
 
@@ -234,6 +244,10 @@ ip4_addr	([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)
 {ip4_addr}	{ if (inet_pton(AF_INET, yytext, &yylval.ip4_addr) != 1)
 			panic("Failed to parse IPv4 address %s\n", yytext);
 		  return ip4_addr; };
+
+{ip6_addr}	{ if (inet_pton(AF_INET6, yytext, &yylval.ip6_addr) != 1)
+			panic("Failed to parse IPv6 address %s\n", yytext);
+		  return ip6_addr; };
 
 "'\\x"[a-fA-F0-9]{2}"'" { yylval.number = strtol(yytext + 3, NULL, 16);
 		  return number; }

@@ -348,7 +348,6 @@ static void __proto_field_set_dev_ipv4(struct proto_hdr *hdr, uint32_t fid,
 {
 	struct sockaddr_storage ss = { };
 	struct sockaddr_in *ss4;
-	uint32_t ip_addr;
 	int ret;
 
 	if (proto_field_is_set(hdr, fid))
@@ -359,9 +358,7 @@ static void __proto_field_set_dev_ipv4(struct proto_hdr *hdr, uint32_t fid,
 		panic("Could not get device IPv4 address\n");
 
 	ss4 = (struct sockaddr_in *) &ss;
-	ip_addr = ss4->sin_addr.s_addr;
-
-	__proto_field_set_bytes(hdr, fid, (uint8_t *)&ip_addr, is_default, false);
+	__proto_field_set_bytes(hdr, fid, (uint8_t *)&ss4->sin_addr.s_addr, is_default, false);
 }
 
 void proto_field_set_dev_ipv4(struct proto_hdr *hdr, uint32_t fid)
@@ -372,6 +369,34 @@ void proto_field_set_dev_ipv4(struct proto_hdr *hdr, uint32_t fid)
 void proto_field_set_default_dev_ipv4(struct proto_hdr *hdr, uint32_t fid)
 {
 	__proto_field_set_dev_ipv4(hdr, fid, true);
+}
+
+static void __proto_field_set_dev_ipv6(struct proto_hdr *hdr, uint32_t fid,
+				       bool is_default)
+{
+	struct sockaddr_storage ss = { };
+	struct sockaddr_in6 *ss6;
+	int ret;
+
+	if (proto_field_is_set(hdr, fid))
+		return;
+
+	ret = device_address(hdr->ctx->dev, AF_INET6, &ss);
+	if (ret < 0)
+		panic("Could not get device IPv6 address\n");
+
+	ss6 = (struct sockaddr_in6 *) &ss;
+	__proto_field_set_bytes(hdr, fid, (uint8_t *)&ss6->sin6_addr.s6_addr, is_default, false);
+}
+
+void proto_field_set_dev_ipv6(struct proto_hdr *hdr, uint32_t fid)
+{
+	__proto_field_set_dev_ipv6(hdr, fid, false);
+}
+
+void proto_field_set_default_dev_ipv6(struct proto_hdr *hdr, uint32_t fid)
+{
+	__proto_field_set_dev_ipv6(hdr, fid, true);
 }
 
 void protos_init(const char *dev)

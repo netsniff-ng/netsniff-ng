@@ -90,7 +90,65 @@ static struct proto_hdr ipv4_hdr = {
 	.set_next_proto = ipv4_set_next_proto,
 };
 
+static struct proto_field ipv6_fields[] = {
+	{ .id = IP6_VER,       .len = 4,  .offset = 0, .shift = 28, .mask = 0xf0000000 },
+	{ .id = IP6_CLASS,     .len = 4,  .offset = 0, .shift = 20, .mask = 0x0ff00000 },
+	{ .id = IP6_FLOW_LBL,  .len = 4,  .offset = 0, .shift = 0,  .mask = 0x000fffff },
+	{ .id = IP6_LEN,       .len = 2,  .offset = 4 },
+	{ .id = IP6_NEXT_HDR,  .len = 1,  .offset = 6 },
+	{ .id = IP6_HOP_LIMIT, .len = 1,  .offset = 7 },
+	{ .id = IP6_SADDR,     .len = 16, .offset = 8 },
+	{ .id = IP6_DADDR,     .len = 16, .offset = 24 },
+};
+
+static void ipv6_header_init(struct proto_hdr *hdr)
+{
+	proto_lower_default_add(hdr, PROTO_ETH);
+
+	proto_header_fields_add(hdr, ipv6_fields, array_size(ipv6_fields));
+
+	proto_field_set_default_be32(hdr, IP6_VER, 6);
+	proto_field_set_default_dev_ipv6(hdr, IP6_SADDR);
+}
+
+#define IPV6_HDR_LEN 40
+
+static void ipv6_packet_finish(struct proto_hdr *hdr)
+{
+	struct packet *pkt = current_packet();
+	uint16_t total_len = pkt->len - hdr->pkt_offset - IPV6_HDR_LEN;
+
+	proto_field_set_default_be16(hdr, IP6_LEN, total_len);
+}
+
+static void ipv6_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
+{
+	uint8_t ip_proto;
+
+	switch(pid) {
+	case PROTO_UDP:
+		ip_proto = IPPROTO_UDP;
+		break;
+	case PROTO_TCP:
+		ip_proto = IPPROTO_TCP;
+		break;
+	default:
+		bug();
+	}
+
+	proto_field_set_default_u8(hdr, IP6_NEXT_HDR, ip_proto);
+}
+
+static struct proto_hdr ipv6_hdr = {
+	.id             = PROTO_IP6,
+	.layer          = PROTO_L3,
+	.header_init    = ipv6_header_init,
+	.packet_finish  = ipv6_packet_finish,
+	.set_next_proto = ipv6_set_next_proto,
+};
+
 void protos_l3_init(void)
 {
 	proto_header_register(&ipv4_hdr);
+	proto_header_register(&ipv6_hdr);
 }

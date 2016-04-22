@@ -424,7 +424,7 @@ destination MAC address is set to the broadcast address (ff:ff:ff:ff:ff:ff).
 - Explicit Congestion Notification (ECN) field (default: 0)
 .sp
 .B len|length
-- Total length of header and data (calculated by default)
+- Total length of header and payload (calculated by default)
 .sp
 .B id
 - IPv4 datagram identification (default: 0)
@@ -460,6 +460,43 @@ destination MAC address is set to the broadcast address (ff:ff:ff:ff:ff:ff).
 By default, if the lower level header is Ethernet, its EtherType field is set to
 0x0800 (IPv4). If the lower level header is IPv4, its protocol field is set to
 0x4 (IP-in-IP).
+
+.I IPv6
+:
+.B ip6|ipv6(ver=<number>, class=<number>, flow=<number> len=<number>,
+.B nexthdr=<number>, hoplimit=<number>,
+.in +16
+.B da=<ip6_addr>, sa=<ip6_addr>)
+.in -16
+.sp
+.in +4
+.B ver|version
+- Version field (default: 6)
+.sp
+.B tc|tclass
+- Traffic class (default: 0)
+.sp
+.B fl|flow
+- Flow label (default: 0)
+.sp
+.B len|length
+- Payload length (calculated by default)
+.sp
+.B nh|nexthdr
+- Type of next header, i.e. transport layer protocol number (default: 0)
+.sp
+.B hl|hoplimit|ttl
+- Hop limit, i.e. time to live (default: 0)
+.sp
+.B sa|saddr
+- Source IPv6 address (default: device IPv6 address)
+.sp
+.B da|daddr
+- Destination IPv6 address (default: 0:0:0:0:0:0:0:0)
+.in -4
+.sp
+By default, if the lower level header is Ethernet, its EtherType field is set to
+0x86DD (IPv6).
 
 .I UDP
 :

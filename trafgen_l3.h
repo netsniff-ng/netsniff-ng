@@ -20,6 +20,17 @@ enum ip4_field {
 	IP4_MF,
 };
 
+enum ip6_field {
+	IP6_VER,
+	IP6_CLASS,
+	IP6_FLOW_LBL,
+	IP6_LEN,
+	IP6_NEXT_HDR,
+	IP6_HOP_LIMIT,
+	IP6_SADDR,
+	IP6_DADDR,
+};
+
 extern void protos_l3_init(void);
 
 #endif /* TRAFGEN_L2_H */
