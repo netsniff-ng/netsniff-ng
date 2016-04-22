@@ -647,6 +647,19 @@ Another real-world example by Jesper Dangaard Brouer [1]:
 .PP
    [1] http://thread.gmane.org/gmane.linux.network/257155
 .PP
+The above example rewritten using the header generation functions:
+.PP
+   {
+     # --- ethernet header ---
+     eth(da=00:1b:21:3c:9d:f8, da=90:e2:ba:0a:56:b4, proto=0x0800)
+     # --- ip header ---
+     ipv4(len=40, id=drnd(2), mf, ttl=64, proto=17, sa=192.168.51.1, da=192.168.51.2)
+     # --- udp header ---
+     udp(sport=48054, dport=43514, len=20, csum=0)
+     # payload
+     'A',  fill(0x41, 11),
+   }
+.PP
 .SH USAGE EXAMPLE
 .PP
 .SS trafgen --dev eth0 --conf trafgen.cfg
