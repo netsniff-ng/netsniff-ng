@@ -50,6 +50,14 @@ iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT
 .sp
 iptables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT
 .in -4
+.sp
+or by loading the following kernel modules:
+.sp
+.in +4
+modprobe nf_conntrack_ipv4
+.sp
+modprobe nf_conntrack_ipv6
+.in -4
 .PP
 To dump byte/packet counters flowtop enables the sysctl(8) parameter
 \[lq]net.netfilter.nf_conntrack_acct\[rq] via:
