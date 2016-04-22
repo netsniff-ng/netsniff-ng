@@ -104,6 +104,16 @@ static inline const char *geoip6_as_name(struct sockaddr_in6 *sa)
 {
 	return NULL;
 }
+
+static inline const char *geoip4_country_code3_name(struct sockaddr_in *sa)
+{
+	return NULL;
+}
+
+static inline const char *geoip6_country_code3_name(struct sockaddr_in6 *sa)
+{
+	return NULL;
+}
 #endif
 
 #endif /* GEOIPH_H */
