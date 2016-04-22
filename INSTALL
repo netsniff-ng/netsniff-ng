@@ -72,11 +72,22 @@ The installation (deinstallation) process is fairly simple:
 
   (# make uninstall)
 
+The configure script can be influenced by setting certain environment
+variables, e.g. CC or CROSS_COMPILE.
+
+The use of the optional libGeoIP and libz libraries can be explicitely
+disabled by setting the corresponding variables for the configure
+script:
+
+  $ DISABLE_GEOIP=1 ./configure
+  $ DISABLE_ZLIB=1 ./configure
+
 In order to remove all build files from the source tree:
 
   $ make clean
 
 In any case "make help" will give you some pointers of what can be done.
+
 To bring the source tree into a pristine state, there are two options.
 The first one will remove all build and build config file, the latter will
 also remove any manually added files:

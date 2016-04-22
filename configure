@@ -333,6 +333,11 @@ check_libgeoip()
 {
 	echo -n "[*] Checking libGeoIP ... "
 
+	if [ "$DISABLE_GEOIP" == "1" ] ; then
+		echo "[DISABLED]"
+		return
+	fi
+
 	cat > $TMPDIR/geoiptest.c << EOF
 #include <GeoIP.h>
 #include <GeoIPCity.h>
@@ -396,6 +401,11 @@ EOF
 check_zlib()
 {
 	echo -n "[*] Checking libz ... "
+
+	if [ "$DISABLE_ZLIB" == "1" ] ; then
+		echo "[DISABLED]"
+		return
+	fi
 
 	cat > $TMPDIR/ztest.c << EOF
 #include "zlib.h"
