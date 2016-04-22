@@ -14,7 +14,7 @@ C =
 ifeq ($(C), 1)
   CHECK = $(Q)echo -e "  CHECK\t$<" && sparse
 else
-  CHECK = $(Q)true
+  CHECK = @true
 endif
 
 # Flex/bison related
