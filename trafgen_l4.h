@@ -27,6 +27,12 @@ enum tcp_field {
 	TCP_URG_PTR,
 };
 
+enum icmpv6_field {
+	ICMPV6_TYPE,
+	ICMPV6_CODE,
+	ICMPV6_CSUM,
+};
+
 extern void protos_l4_init(void);
 
 #endif /* TRAFGEN_L4_H */

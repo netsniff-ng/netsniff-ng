@@ -17,6 +17,7 @@ enum proto_id {
 	PROTO_MPLS,
 	PROTO_IP4,
 	PROTO_IP6,
+	PROTO_ICMP6,
 	PROTO_UDP,
 	PROTO_TCP,
 };

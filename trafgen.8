@@ -498,6 +498,31 @@ By default, if the lower level header is Ethernet, its EtherType field is set to
 By default, if the lower level header is Ethernet, its EtherType field is set to
 0x86DD (IPv6).
 
+.I ICMPv6
+:
+.B icmp6|icmpv6(mtype=<number>, echorequest, echoreply, code=<number>,
+.B csum=<number>)
+.sp
+.in +4
+.B mtype
+- Message type (default: 0)
+.sp
+.B code
+- Code (default: 0)
+.sp
+.B echorequest
+- ICMPv6 echo (ping) request
+.sp
+.B echoreply
+- ICMPv6 echo (ping) reply
+.sp
+.B csum
+- Message checksum (calculated by default)
+.in -4
+.sp
+By default, if the lower level header is IPv6, its Next Header field is set to
+58 (ICMPv6).
+
 .I UDP
 :
 .B udp(sp=<number>, dp=<number>, len=<number>, csum=<number>)

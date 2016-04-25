@@ -138,8 +138,57 @@ static struct proto_hdr tcp_hdr = {
 	.packet_finish  = tcp_packet_finish,
 };
 
+static struct proto_field icmpv6_fields[] = {
+	{ .id = ICMPV6_TYPE, .len = 1, .offset = 0 },
+	{ .id = ICMPV6_CODE, .len = 1, .offset = 1 },
+	{ .id = ICMPV6_CSUM, .len = 2, .offset = 2 }
+};
+
+static void icmpv6_header_init(struct proto_hdr *hdr)
+{
+	proto_lower_default_add(hdr, PROTO_IP6);
+
+	proto_header_fields_add(hdr, icmpv6_fields, array_size(icmpv6_fields));
+}
+
+static void icmpv6_packet_finish(struct proto_hdr *hdr)
+{
+	struct proto_hdr *lower = proto_lower_header(hdr);
+	struct packet *pkt = current_packet();
+	uint16_t total_len;
+	uint16_t csum;
+
+	if (proto_field_is_set(hdr, ICMPV6_CSUM))
+		return;
+
+	if (!lower)
+		return;
+
+	total_len = pkt->len - hdr->pkt_offset;
+
+	switch (lower->id) {
+	case PROTO_IP6:
+		csum = p6_csum((void *) proto_header_ptr(lower), proto_header_ptr(hdr),
+				total_len, IPPROTO_ICMPV6);
+		break;
+	default:
+		csum = 0;
+		break;
+	}
+
+	proto_field_set_be16(hdr, ICMPV6_CSUM, bswap_16(csum));
+}
+
+static struct proto_hdr icmpv6_hdr = {
+	.id		= PROTO_ICMP6,
+	.layer		= PROTO_L4,
+	.header_init	= icmpv6_header_init,
+	.packet_finish  = icmpv6_packet_finish,
+};
+
 void protos_l4_init(void)
 {
 	proto_header_register(&udp_hdr);
 	proto_header_register(&tcp_hdr);
+	proto_header_register(&icmpv6_hdr);
 }

@@ -20,6 +20,7 @@
 #include <net/if_arp.h>
 #include <netinet/in.h>
 #include <linux/if_ether.h>
+#include <linux/icmpv6.h>
 
 #include "xmalloc.h"
 #include "trafgen_parser.tab.h"
@@ -355,6 +356,7 @@ static void proto_add(enum proto_id pid)
 %token K_OPER K_SHA K_SPA K_THA K_TPA K_REQUEST K_REPLY K_PTYPE K_HTYPE
 %token K_PROT K_TTL K_DSCP K_ECN K_TOS K_LEN K_ID K_FLAGS K_FRAG K_IHL K_VER K_CSUM K_DF K_MF
 %token K_FLOW K_NEXT_HDR K_HOP_LIMIT
+%token K_MTYPE K_CODE K_ECHO_REQUEST K_ECHO_REPLY
 %token K_SPORT K_DPORT
 %token K_SEQ K_ACK_SEQ K_DOFF K_CWR K_ECE K_URG K_ACK K_PSH K_RST K_SYN K_FIN K_WINDOW K_URG_PTR
 %token K_TPID K_TCI K_PCP K_DEI K_1Q K_1AD
@@ -364,6 +366,7 @@ static void proto_add(enum proto_id pid)
 %token K_VLAN K_MPLS
 %token K_ARP
 %token K_IP4 K_IP6
+%token K_ICMP6
 %token K_UDP K_TCP
 
 %token ',' '{' '}' '(' ')' '[' ']' ':' '-' '+' '*' '/' '%' '&' '|' '<' '>' '^'
@@ -591,6 +594,7 @@ proto
 	| arp_proto { }
 	| ip4_proto { }
 	| ip6_proto { }
+	| icmpv6_proto { }
 	| udp_proto { }
 	| tcp_proto { }
 	;
@@ -810,6 +814,36 @@ ip6_field
 
 ip6
 	: K_IP6	{ proto_add(PROTO_IP6); }
+	;
+
+icmpv6_proto
+	: icmp6 '(' icmp6_param_list ')' { }
+
+icmp6_param_list
+	: { }
+	| icmp6_field { }
+	| icmp6_field delimiter icmp6_param_list { }
+	;
+
+icmp6_field
+	: K_MTYPE skip_white '=' skip_white number
+		{ proto_field_set_u8(hdr, ICMPV6_TYPE, $5); }
+	| K_MTYPE skip_white '=' K_ECHO_REQUEST
+		{ proto_field_set_u8(hdr, ICMPV6_TYPE, ICMPV6_ECHO_REQUEST); }
+	| K_ECHO_REQUEST
+		{ proto_field_set_u8(hdr, ICMPV6_TYPE, ICMPV6_ECHO_REQUEST); }
+	| K_MTYPE skip_white '=' K_ECHO_REPLY
+		{ proto_field_set_u8(hdr, ICMPV6_TYPE, ICMPV6_ECHO_REPLY); }
+	| K_ECHO_REPLY
+		{ proto_field_set_u8(hdr, ICMPV6_TYPE, ICMPV6_ECHO_REPLY); }
+	| K_CODE skip_white '=' skip_white number
+		{ proto_field_set_u8(hdr, ICMPV6_CODE, $5); }
+	| K_CSUM skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, ICMPV6_CSUM, $5); }
+	;
+
+icmp6
+	: K_ICMP6 { proto_add(PROTO_ICMP6); }
 	;
 
 udp_proto

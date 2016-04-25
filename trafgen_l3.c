@@ -126,6 +126,9 @@ static void ipv6_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
 	uint8_t ip_proto;
 
 	switch(pid) {
+	case PROTO_ICMP6:
+		ip_proto = IPPROTO_ICMPV6;
+		break;
 	case PROTO_UDP:
 		ip_proto = IPPROTO_UDP;
 		break;
