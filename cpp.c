@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <libgen.h>
 
 #include "cpp.h"
@@ -21,12 +22,15 @@ int cpp_exec(char *in_file, char *out_file, size_t out_len, char *const argv[])
 	size_t argc = 7 + argv_len(argv);
 	char *tmp = xstrdup(in_file);
 	char **cpp_argv;
-	int ret = 0;
+	int fd, ret = -1;
 	char *base;
 	unsigned int i = 0;
 
 	base = basename(tmp);
-	slprintf(out_file, out_len, "/tmp/.tmp-%u-%s", rand(), base);
+	slprintf(out_file, out_len, "/tmp/.tmp-XXXXXX-%s", base);
+	fd = mkstemps(out_file, strlen(base) + 1);
+	if (fd < 0)
+		goto err;
 
 	cpp_argv = xmalloc(argc * sizeof(char *));
 
@@ -42,10 +46,11 @@ int cpp_exec(char *in_file, char *out_file, size_t out_len, char *const argv[])
 	cpp_argv[i++] = in_file;
 	cpp_argv[i++] = NULL;
 
-	if (proc_exec("cpp", cpp_argv))
-		ret = -1;
+	ret = proc_exec("cpp", cpp_argv);
+	close(fd);
 
 	xfree(cpp_argv);
+err:
 	xfree(tmp);
 	return ret;
 }
