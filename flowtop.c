@@ -992,7 +992,7 @@ static void print_flow_peer_info(const struct flow_entry *n, enum flow_direction
 			              tmp, sizeof(tmp) - 1));
 }
 
-static void draw_flow_entry(WINDOW *scr, const struct flow_entry *n, int line)
+static void draw_flow_entry(const struct flow_entry *n)
 {
 	char tmp[128];
 
@@ -1117,7 +1117,7 @@ static void draw_flows(WINDOW *screen, struct flow_list *fl,
 		if (--skip >= 0)
 			continue;
 
-		draw_flow_entry(screen, n, line);
+		draw_flow_entry(n);
 		line += row_width;
 	}
 
