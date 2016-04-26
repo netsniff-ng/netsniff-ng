@@ -1125,7 +1125,7 @@ static void screen_update(WINDOW *screen, const char *ifname, const struct ifsta
 	refresh();
 }
 
-static void on_panic_handler(void *arg)
+static void on_panic_handler(void *arg __maybe_unused)
 {
 	screen_end();
 	fprintf(stderr, "Please check <stderr> for error message\n");
