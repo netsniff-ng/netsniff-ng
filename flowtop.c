@@ -1439,7 +1439,7 @@ static int flow_list_update_entry(struct flow_list *fl, struct nf_conntrack *ct)
 {
 	struct flow_entry *n;
 
-	n = flow_list_find_id(&flow_list, nfct_get_attr_u32(ct, ATTR_ID));
+	n = flow_list_find_id(fl, nfct_get_attr_u32(ct, ATTR_ID));
 	if (!n)
 		return NFCT_CB_CONTINUE;
 
