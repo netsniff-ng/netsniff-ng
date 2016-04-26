@@ -1,6 +1,7 @@
 #ifndef _GNU_SOURCE
 # define _GNU_SOURCE
 #endif
+#include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -51,6 +52,15 @@ void create_or_die(const char *file, mode_t mode)
 {
 	int fd = open_or_die_m(file, O_WRONLY | O_CREAT, mode);
 	close(fd);
+}
+
+int mkostemp_or_die(char *templ, int flags)
+{
+	/* mode is 0600 (S_IRUSR | S_IWUSR) by default */
+	int fd = mkostemp(templ, flags);
+	if (unlikely(fd < 0))
+		panic("Cannot create unique temporary file! %s\n", strerror(errno));
+	return fd;
 }
 
 void pipe_or_die(int pipefd[2], int flags)
