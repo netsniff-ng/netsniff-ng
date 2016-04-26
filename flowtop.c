@@ -1151,7 +1151,7 @@ static void draw_flows(WINDOW *screen, struct flow_list *fl,
 	rcu_read_unlock();
 }
 
-static void draw_help(WINDOW *screen)
+static void draw_help(void)
 {
 	int col = 0;
 	int row = 1;
@@ -1212,7 +1212,7 @@ static void draw_header(WINDOW *screen)
 	attroff(A_STANDOUT);
 }
 
-static void draw_footer(WINDOW *screen)
+static void draw_footer(void)
 {
 	int i;
 
@@ -1356,11 +1356,11 @@ static void presenter(void)
 		draw_header(screen);
 
 		if (show_help)
-			draw_help(screen);
+			draw_help();
 		else
 			draw_flows(screen, &flow_list, skip_lines);
 
-		draw_footer(screen);
+		draw_footer();
 
 		usleep(80000);
 	}
