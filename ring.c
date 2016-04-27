@@ -20,7 +20,7 @@
 #include "ring.h"
 #include "built_in.h"
 
-void setup_ring_layout_generic(int sock, struct ring *ring, size_t size,
+void setup_ring_layout_generic(struct ring *ring, size_t size,
 			       bool jumbo_support)
 {
 	fmemset(&ring->layout, 0, sizeof(ring->layout));

@@ -49,7 +49,7 @@ void destroy_tx_ring(int sock, struct ring *ring)
 static void setup_tx_ring_layout(int sock, struct ring *ring, size_t size,
 				 bool jumbo_support)
 {
-	setup_ring_layout_generic(sock, ring, size, jumbo_support);
+	setup_ring_layout_generic(ring, size, jumbo_support);
 
 	set_sockopt_tpacket_v2(sock);
 

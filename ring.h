@@ -205,7 +205,7 @@ static inline int get_sockopt_tpacket(int sock)
 	return val;
 }
 
-extern void setup_ring_layout_generic(int sock, struct ring *ring, size_t size,
+extern void setup_ring_layout_generic(struct ring *ring, size_t size,
 				      bool jumbo_support);
 extern void mmap_ring_generic(int sock, struct ring *ring);
 extern void alloc_ring_frames_generic(struct ring *ring, size_t num, size_t size);

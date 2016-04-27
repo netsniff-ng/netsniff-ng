@@ -142,7 +142,7 @@ void destroy_rx_ring(int sock, struct ring *ring)
 static void setup_rx_ring_layout(int sock, struct ring *ring, size_t size,
 				 bool jumbo_support, bool v3)
 {
-	setup_ring_layout_generic(sock, ring, size, jumbo_support);
+	setup_ring_layout_generic(ring, size, jumbo_support);
 
 	if (v3) {
 		setup_rx_ring_layout_v3(ring);
