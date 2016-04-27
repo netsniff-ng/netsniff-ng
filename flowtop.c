@@ -1533,7 +1533,7 @@ static void collector_create_filter(struct nfct_handle *nfct)
 /* This hand-crafted filter looks ugly but it allows to do not
  * flush nfct connections & filter them by user specified filter.
  * May be it is better to replace this one by nfct_cmp. */
-static int flow_dump_cb(enum nf_conntrack_msg_type type,
+static int flow_dump_cb(enum nf_conntrack_msg_type type __maybe_unused,
 			struct nf_conntrack *ct, void *data __maybe_unused)
 {
 	struct flow_entry fl;
