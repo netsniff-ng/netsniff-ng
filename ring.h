@@ -48,7 +48,8 @@ union tpacket_uhdr {
 	(((hdr).h2)->member)
 #endif /* HAVE_TPACKET3 */
 
-static inline uint16_t tpacket_uhdr_vlan_tci(union tpacket_uhdr *hdr, bool v3)
+static inline uint16_t tpacket_uhdr_vlan_tci(union tpacket_uhdr *hdr __maybe_unused,
+					     bool v3 __maybe_unused)
 {
 #ifdef HAVE_TPACKET3
 	if (v3)
@@ -57,7 +58,8 @@ static inline uint16_t tpacket_uhdr_vlan_tci(union tpacket_uhdr *hdr, bool v3)
 	return 0;
 }
 
-static inline uint16_t tpacket_uhdr_vlan_proto(union tpacket_uhdr *hdr, bool v3)
+static inline uint16_t tpacket_uhdr_vlan_proto(union tpacket_uhdr *hdr __maybe_unused,
+					       bool v3 __maybe_unused)
 {
 #if defined(HAVE_TPACKET3) && defined(TP_STATUS_VLAN_TPID_VALID)
 	if (v3)
