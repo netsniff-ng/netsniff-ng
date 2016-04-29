@@ -8,5 +8,10 @@ netsniff-ng. The corresponding scan reports can be found here:
 
   https://scan.coverity.com/projects/329
 
-Use the command `make COV_EMAIL=<email> COV_PASSWD=<passwd> coverity' to trigger
-a new scan yourself, if you are a project admin.
+If you are a project admin, use the command
+
+  `make COV_EMAIL=<email> COV_PASSWD=<passwd> coverity'
+
+to trigger a new scan yourself. Alternatively, the Coverity integration of
+Travis CI can be used by pushing to the branch 'coverity_scan' to trigger a new
+analysis.
