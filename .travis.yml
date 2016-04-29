@@ -22,3 +22,17 @@ script:
   - CC=$CC DISABLE_GEOIP=1 ./configure && make clean && make CC=$CC
   - CC=$CC DISABLE_ZLIB=1 ./configure && make clean && make CC=$CC
   - CC=$CC DISABLE_GEOIP=1 DISABLE_ZLIB=1 ./configure && make clean && make CC=$CC
+
+env:
+  global:
+    - secure: "fTrjH4X1FJaCMAZXVW+sQBuKPr2C+w/pEkIl8FVQZvGxsgpw3OQR28stWnT7VhSuRExUqxEmKcIZgJmU9OAlF/K5ZQkNnUdyQgeiNdhPEMhTCQ3eZv8Ar60UVtmvuzWUN4BP1TUHoBCjq4Wxt1t4QN49P1T7RdjEawCfh+OFZ9s="
+
+addons:
+  coverity_scan:
+    project:
+      name: "netsniff-ng/netsniff-ng"
+      description: "Build submitted via Travis CI"
+    notification_email: tklauser@distanz.ch
+    build_command_prepend: "./configure && make clean"
+    build_command: "make"
+    branch_pattern: coverity_scan
