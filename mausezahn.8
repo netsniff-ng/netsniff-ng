@@ -103,7 +103,7 @@ higher layer packets the number of additional padding bytes are specified.
 .SS -a <src-mac|keyword>
 Use specified source MAC address with hexadecimal notation such as 00:00:aa:bb:cc:dd.
 By default the interface MAC address will be used. The keywords ''rand'' and
-''own'' refer to a random MAC address (only unicast addresses are created)
+ ''own'' refer to a random MAC address (only unicast addresses are created)
 and the own address, respectively. You can also use the keywords mentioned
 below although broadcast-type source addresses are officially invalid.
 .PP
@@ -111,7 +111,7 @@ below although broadcast-type source addresses are officially invalid.
 Use specified destination MAC address. By default, a broadcast is sent in raw
 layer 2 mode or to the destination hosts or gateway interface MAC address in normal
 (IP) mode. You can use the same keywords as mentioned above, as well as
-''bc'' or ''bcast'', ''cisco'', and ''stp''. Please note that for the destination
+ ''bc'' or ''bcast'', ''cisco'', and ''stp''. Please note that for the destination
 MAC address the ''rand'' keyword is supported but creates a random address only
 once, even when you send multiple packets.
 .PP
@@ -130,7 +130,7 @@ As with the source address (see above) you can also specify a range or a DNS nam
 Create the specified packet type using the built-in packet builder. Currently,
 supported packet types are: ''arp'', ''bpdu'', ''ip'', ''udp'', ''tcp'', ''rtp'',
 and ''dns''. Currently, there is also limited support for ''icmp''. Type
-''\-t help'' to verify which packet builders your actual mausezahn version
+ ''\-t help'' to verify which packet builders your actual mausezahn version
 supports. Also, for any particular packet type, for example ''tcp'' type
  ''mausezahn \-t tcp help'' to receive a more in-depth context specific help.
 .PP
