@@ -115,7 +115,8 @@ ip6_addr	(({a_hex}?:)?({a_hex}?:)?({a_hex}?:)?({a_hex}?:)?({a_hex}?:)?({a_hex}?:
 	/* Ethernet */
 "daddr"|"da"	{ return K_DADDR; }
 "saddr"|"sa"	{ return K_SADDR; }
-[e]?"type"	{ return K_ETYPE; }
+"etype"	        { return K_ETYPE; }
+"type"	        { return K_TYPE; }
 
 	/* VLAN (802.1Q & 802.1ad) */
 "tpid"		{ return K_TPID; }
