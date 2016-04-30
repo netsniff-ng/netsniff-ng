@@ -356,7 +356,7 @@ static void proto_add(enum proto_id pid)
 %token K_OPER K_SHA K_SPA K_THA K_TPA K_REQUEST K_REPLY K_PTYPE K_HTYPE
 %token K_PROT K_TTL K_DSCP K_ECN K_TOS K_LEN K_ID K_FLAGS K_FRAG K_IHL K_VER K_CSUM K_DF K_MF
 %token K_FLOW K_NEXT_HDR K_HOP_LIMIT
-%token K_MTYPE K_CODE K_ECHO_REQUEST K_ECHO_REPLY
+%token K_CODE K_ECHO_REQUEST K_ECHO_REPLY
 %token K_SPORT K_DPORT
 %token K_SEQ K_ACK_SEQ K_DOFF K_CWR K_ECE K_URG K_ACK K_PSH K_RST K_SYN K_FIN K_WINDOW K_URG_PTR
 %token K_TPID K_TCI K_PCP K_DEI K_1Q K_1AD
@@ -827,13 +827,13 @@ icmp6_param_list
 	;
 
 icmp6_field
-	: K_MTYPE skip_white '=' skip_white number
+	: K_TYPE skip_white '=' skip_white number
 		{ proto_field_set_u8(hdr, ICMPV6_TYPE, $5); }
-	| K_MTYPE skip_white '=' K_ECHO_REQUEST
+	| K_TYPE skip_white '=' K_ECHO_REQUEST
 		{ proto_field_set_u8(hdr, ICMPV6_TYPE, ICMPV6_ECHO_REQUEST); }
 	| K_ECHO_REQUEST
 		{ proto_field_set_u8(hdr, ICMPV6_TYPE, ICMPV6_ECHO_REQUEST); }
-	| K_MTYPE skip_white '=' K_ECHO_REPLY
+	| K_TYPE skip_white '=' K_ECHO_REPLY
 		{ proto_field_set_u8(hdr, ICMPV6_TYPE, ICMPV6_ECHO_REPLY); }
 	| K_ECHO_REPLY
 		{ proto_field_set_u8(hdr, ICMPV6_TYPE, ICMPV6_ECHO_REPLY); }
