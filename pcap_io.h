@@ -300,7 +300,7 @@ static inline void pcap_check_magic(uint32_t magic)
 		break;
 
 	default:
-		panic("This file has not a valid pcap header\n");
+		panic("This file has an unsupported pcap magic number(0x%x)\n", magic);
 	}
 }
 
