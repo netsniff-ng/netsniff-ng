@@ -317,7 +317,7 @@ netsniff-ng and NIC IRQ affinity to CPU 0. The default pcap magic type is
 0xa1b2c3d4 (tcpdump-capable pcap).
 .PP
 .SS  netsniff-ng --in vlan0 --out dump.pcap -c -u `id -u bob` -g `id -g bob`
-Capture network traffic on device wlan0 into a pcap file called dump.pcap
+Capture network traffic on device vlan0 into a pcap file called dump.pcap
 by using normal read(2), write(2) I/O for the pcap file (slower but less
 latency). Also, after setting up the RX_RING for capture, drop privileges
 from root to the user and group \[lq]bob\[rq]. Invoke the packet dissector and print
