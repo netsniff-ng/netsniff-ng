@@ -19,6 +19,7 @@
 #include <libgen.h>
 #include <net/if_arp.h>
 #include <netinet/in.h>
+#include <linux/icmp.h>
 #include <linux/if_ether.h>
 #include <linux/icmpv6.h>
 
@@ -362,11 +363,13 @@ static void proto_add(enum proto_id pid)
 %token K_TPID K_TCI K_PCP K_DEI K_1Q K_1AD
 %token K_LABEL K_TC K_LAST K_EXP
 
+%token K_ADDR K_MTU
+
 %token K_ETH
 %token K_VLAN K_MPLS
 %token K_ARP
 %token K_IP4 K_IP6
-%token K_ICMP6
+%token K_ICMP4 K_ICMP6
 %token K_UDP K_TCP
 
 %token ',' '{' '}' '(' ')' '[' ']' ':' '-' '+' '*' '/' '%' '&' '|' '<' '>' '^'
@@ -594,6 +597,7 @@ proto
 	| arp_proto { }
 	| ip4_proto { }
 	| ip6_proto { }
+	| icmp4_proto { }
 	| icmpv6_proto { }
 	| udp_proto { }
 	| tcp_proto { }
@@ -815,6 +819,41 @@ ip6_field
 
 ip6
 	: K_IP6	{ proto_add(PROTO_IP6); }
+	;
+
+icmp4_proto
+	: icmp4 '(' icmp4_param_list ')' { }
+	;
+
+icmp4_param_list
+	: { }
+	| icmp4_field { }
+	| icmp4_field delimiter icmp4_param_list { }
+	;
+
+icmp4_field
+	: K_TYPE skip_white '=' skip_white number
+		{ proto_field_set_u8(hdr, ICMPV4_TYPE, $5); }
+	| K_CODE skip_white '=' skip_white number
+		{ proto_field_set_u8(hdr, ICMPV4_CODE, $5); }
+	| K_ID skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, ICMPV4_ID, $5); }
+	| K_SEQ skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, ICMPV4_SEQ, $5); }
+	| K_MTU skip_white '=' skip_white number
+		{ proto_field_set_be16(hdr, ICMPV4_MTU, $5); }
+	| K_ADDR skip_white '=' skip_white ip4_addr
+		{ proto_field_set_u32(hdr, ICMPV4_REDIR_ADDR, $5.s_addr); }
+	| K_ECHO_REQUEST
+		{ proto_field_set_u8(hdr, ICMPV4_TYPE, ICMP_ECHO);
+		  proto_field_set_u8(hdr, ICMPV4_CODE, 0); }
+	| K_ECHO_REPLY
+		{ proto_field_set_u8(hdr, ICMPV4_TYPE, ICMP_ECHOREPLY);
+		  proto_field_set_u8(hdr, ICMPV4_CODE, 0); }
+	;
+
+icmp4
+	: K_ICMP4	{ proto_add(PROTO_ICMP4); }
 	;
 
 icmpv6_proto

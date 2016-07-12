@@ -498,6 +498,46 @@ By default, if the lower level header is Ethernet, its EtherType field is set to
 By default, if the lower level header is Ethernet, its EtherType field is set to
 0x86DD (IPv6).
 
+.I ICMPv4
+:
+.B icmp4|icmpv4(type=<number>, code=<number>, echorequest, echoreply,
+.B csum=<number>, mtu=<number>, seq=<number>, id=<number>, addr=<ip4_addr>)
+.sp
+.in +4
+.B type
+- Message type (default: 0 - Echo reply)
+.sp
+.B code
+- Message code (default: 0)
+.sp
+.B echorequest
+- ICMPv4 echo (ping) request (type: 8, code: 0)
+.sp
+.B echoreply
+- ICMPv4 echo (ping) reply (type: 0, code: 0)
+.sp
+.B csum
+- Checksum of ICMPv4 header and payload (calculated by default)
+.sp
+.B mtu
+- Next-hop MTU field used in 'Datagram is too big' message type (default; 0)
+.sp
+.B seq
+- Sequence number used in Echo/Timestamp/Address mask messages (default: 0)
+.sp
+.B id
+- Identifier used in Echo/Timestamp/Address mask messages (default: 0)
+.sp
+.B addr
+- IPv4 address used in Redirect messages (default: 0.0.0.0)
+.sp
+.in -4
+Example ICMP echo request (ping):
+.in +4
+.sp
+{ icmpv4(echorequest, seq=1, id=1326) }
+.in -4
+
 .I ICMPv6
 :
 .B icmp6|icmpv6(type=<number>, echorequest, echoreply, code=<number>,

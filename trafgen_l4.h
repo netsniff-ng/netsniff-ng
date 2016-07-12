@@ -27,6 +27,16 @@ enum tcp_field {
 	TCP_URG_PTR,
 };
 
+enum icmpv4_field {
+	ICMPV4_TYPE,
+	ICMPV4_CODE,
+	ICMPV4_CSUM,
+	ICMPV4_ID,
+	ICMPV4_SEQ,
+	ICMPV4_REDIR_ADDR,
+	ICMPV4_MTU,
+};
+
 enum icmpv6_field {
 	ICMPV6_TYPE,
 	ICMPV6_CODE,

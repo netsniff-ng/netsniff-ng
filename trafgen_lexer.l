@@ -162,6 +162,11 @@ ip6_addr	(({a_hex}?:)?({a_hex}?:)?({a_hex}?:)?({a_hex}?:)?({a_hex}?:)?({a_hex}?:
 "nh"|"nexthdr"	{ return K_NEXT_HDR; }
 "hl"|"hoplimit"	{ return K_HOP_LIMIT; }
 
+
+	/* ICMPv4 */
+"addr"		{ return K_ADDR; }
+"mtu"		{ return K_MTU; }
+
 	/* ICMPv6 */
 "code"		{ return K_CODE; }
 "echorequest"	{ return K_ECHO_REQUEST; }
@@ -192,6 +197,7 @@ ip6_addr	(({a_hex}?:)?({a_hex}?:)?({a_hex}?:)?({a_hex}?:)?({a_hex}?:)?({a_hex}?:
 "arp"		{ return K_ARP; }
 "ip4"|"ipv4"	{ return K_IP4; }
 "ip6"|"ipv6"	{ return K_IP6; }
+"icmp4"|"icmpv4" { return K_ICMP4; }
 "icmp6"|"icmpv6"	{ return K_ICMP6; }
 "udp"		{ return K_UDP; }
 "tcp"		{ return K_TCP; }
