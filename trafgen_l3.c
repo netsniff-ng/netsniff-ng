@@ -69,6 +69,9 @@ static void ipv4_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
 	case PROTO_IP4:
 		ip_proto = IPPROTO_IPIP;
 		break;
+	case PROTO_IP6:
+		ip_proto = IPPROTO_IPV6;
+		break;
 	case PROTO_ICMP4:
 		ip_proto = IPPROTO_ICMP;
 		break;
