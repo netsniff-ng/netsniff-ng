@@ -100,8 +100,10 @@ void proto_header_fields_add(struct proto_hdr *hdr,
 		f->mask = fields[i].mask;
 		f->pkt_offset = hdr->pkt_offset + fields[i].offset;
 
-		if (f->pkt_offset + f->len > pkt->len)
+		if (f->pkt_offset + f->len > pkt->len) {
+			hdr->len += f->len;
 			set_fill(0, (f->pkt_offset + f->len) - pkt->len);
+		}
 	}
 }
 

@@ -51,6 +51,7 @@ struct proto_hdr {
 	uint16_t pkt_offset;
 	struct proto_field *fields;
 	size_t fields_count;
+	size_t len;
 
 	void (*header_init)(struct proto_hdr *hdr);
 	void (*header_finish)(struct proto_hdr *hdr);
