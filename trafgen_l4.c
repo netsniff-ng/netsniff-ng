@@ -44,8 +44,6 @@ static void udp_packet_finish(struct proto_hdr *hdr)
 	if (!lower)
 		return;
 
-	total_len = proto_field_get_u16(hdr, UDP_LEN);
-
 	switch (lower->id) {
 	case PROTO_IP4:
 		csum = p4_csum((void *) proto_header_ptr(lower), proto_header_ptr(hdr),
