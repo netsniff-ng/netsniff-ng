@@ -55,7 +55,7 @@ enum dump_mode {
 
 struct ctx {
 	char *device_in, *device_out, *device_trans, *filter, *prefix;
-	int cpu, rfraw, dump, print_mode, dump_dir, packet_type;
+	int cpu, rfraw, dump, print_mode, dump_dir, packet_type, lo_ifindex;
 	unsigned long kpull, dump_interval, tx_bytes, tx_packets;
 	size_t reserve_size;
 	bool randomize, promiscuous, enforce, jumbo, dump_bpf, hwtimestamp, verbose;
@@ -410,6 +410,18 @@ out:
 	printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec, diff.tv_usec);
 }
 
+static inline bool skip_packet(struct ctx *ctx, struct sockaddr_ll *sll)
+{
+	if (ctx->packet_type != -1)
+		return ctx->packet_type != sll->sll_pkttype;
+
+	/* when receving from the loopback device, each packet is seen twice,
+	 * so drop the outgoing ones to avoid duplicates
+	 */
+	return (sll->sll_ifindex == ctx->lo_ifindex) &&
+	       (sll->sll_pkttype == PACKET_OUTGOING);
+}
+
 static void receive_to_xmit(struct ctx *ctx)
 {
 	short ifflags = 0;
@@ -470,9 +482,8 @@ static void receive_to_xmit(struct ctx *ctx)
 
 			ctx->pkts_seen++;
 
-			if (ctx->packet_type != -1)
-				if (ctx->packet_type != hdr_in->s_ll.sll_pkttype)
-					goto next;
+			if (skip_packet(ctx, &hdr_in->s_ll))
+				goto next;
 
 			hdr_out = tx_ring.frames[it_out].iov_base;
 			out = ((uint8_t *) hdr_out) + TPACKET2_HDRLEN - sizeof(struct sockaddr_ll);
@@ -942,9 +953,8 @@ static void walk_t3_block(struct block_desc *pbd, struct ctx *ctx,
 		uint8_t *packet = ((uint8_t *) hdr + hdr->tp_mac);
 		pcap_pkthdr_t phdr;
 
-		if (ctx->packet_type != -1)
-			if (ctx->packet_type != sll->sll_pkttype)
-				goto next;
+		if (skip_packet(ctx, sll))
+			goto next;
 
 		ctx->pkts_seen++;
 
@@ -1071,9 +1081,8 @@ static void recv_only_or_dump(struct ctx *ctx)
 			uint8_t *packet = ((uint8_t *) hdr) + hdr->tp_h.tp_mac;
 			pcap_pkthdr_t phdr;
 
-			if (ctx->packet_type != -1)
-				if (ctx->packet_type != hdr->s_ll.sll_pkttype)
-					goto next;
+			if (skip_packet(ctx, &hdr->s_ll))
+				goto next;
 
 			ctx->pkts_seen++;
 
@@ -1522,6 +1531,9 @@ int main(int argc, char **argv)
 
 	if (!ctx.device_in)
 		ctx.device_in = xstrdup("any");
+
+	if (!strcmp(ctx.device_in, "any") || !strcmp(ctx.device_in, "lo"))
+		ctx.lo_ifindex = device_ifindex("lo");
 
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGQUIT, signal_handler);
