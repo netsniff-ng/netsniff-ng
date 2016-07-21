@@ -480,10 +480,10 @@ static void receive_to_xmit(struct ctx *ctx)
 			hdr_in = rx_ring.frames[it_in].iov_base;
 			in = ((uint8_t *) hdr_in) + hdr_in->tp_h.tp_mac;
 
-			ctx->pkts_seen++;
-
 			if (skip_packet(ctx, &hdr_in->s_ll))
 				goto next;
+
+			ctx->pkts_seen++;
 
 			hdr_out = tx_ring.frames[it_out].iov_base;
 			out = ((uint8_t *) hdr_out) + TPACKET2_HDRLEN - sizeof(struct sockaddr_ll);
