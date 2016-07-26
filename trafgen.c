@@ -612,13 +612,21 @@ static void shaper_delay(struct shaper *sh, unsigned long pkt_len)
 	}
 }
 
+static inline void packet_apply_dyn_elements(int idx)
+{
+	if (packet_dyn_has_elems(&packet_dyn[idx])) {
+		apply_counter(idx);
+		apply_randomizer(idx);
+		apply_csum16(idx);
+	}
+}
+
 static void xmit_slowpath_or_die(struct ctx *ctx, unsigned int cpu, unsigned long orig_num)
 {
 	int ret, icmp_sock = -1;
 	unsigned long num = 1, i = 0;
 	struct timeval start, end, diff;
 	unsigned long long tx_bytes = 0, tx_packets = 0;
-	struct packet_dyn *pktd;
 	struct sockaddr_ll saddr = {
 		.sll_family = PF_PACKET,
 		.sll_halen = ETH_ALEN,
@@ -641,12 +649,7 @@ static void xmit_slowpath_or_die(struct ctx *ctx, unsigned int cpu, unsigned lon
 		shaper_init(&ctx->sh);
 
 	while (likely(sigint == 0 && num > 0 && plen > 0)) {
-		pktd = &packet_dyn[i];
-		if (packet_dyn_has_elems(pktd)) {
-			apply_counter(i);
-			apply_randomizer(i);
-			apply_csum16(i);
-		}
+		packet_apply_dyn_elements(i);
 retry:
 		ret = sendto(sock, packets[i].payload, packets[i].len, 0,
 			     (struct sockaddr *) &saddr, sizeof(saddr));
@@ -713,7 +716,6 @@ static void xmit_fastpath_or_die(struct ctx *ctx, unsigned int cpu, unsigned lon
 	struct ring tx_ring;
 	struct frame_map *hdr;
 	struct timeval start, end, diff;
-	struct packet_dyn *pktd;
 	unsigned long long tx_bytes = 0, tx_packets = 0;
 
 	set_sock_prio(sock, 512);
@@ -749,12 +751,7 @@ static void xmit_fastpath_or_die(struct ctx *ctx, unsigned int cpu, unsigned lon
 		hdr->tp_h.tp_snaplen = packets[i].len;
 		hdr->tp_h.tp_len = packets[i].len;
 
-		pktd = &packet_dyn[i];
-		if (packet_dyn_has_elems(pktd)) {
-			apply_counter(i);
-			apply_randomizer(i);
-			apply_csum16(i);
-		}
+		packet_apply_dyn_elements(i);
 
 		fmemcpy(out, packets[i].payload, packets[i].len);
 
