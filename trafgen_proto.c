@@ -49,7 +49,7 @@ struct proto_hdr *proto_lower_header(struct proto_hdr *hdr)
 
 uint8_t *proto_header_ptr(struct proto_hdr *hdr)
 {
-	return &current_packet()->payload[hdr->pkt_offset];
+	return &packet_get(hdr->pkt_id)->payload[hdr->pkt_offset];
 }
 
 static struct proto_hdr *proto_header_by_id(enum proto_id id)
@@ -81,7 +81,7 @@ static void proto_fields_realloc(struct proto_hdr *hdr, size_t count)
 void proto_header_fields_add(struct proto_hdr *hdr,
 			     const struct proto_field *fields, size_t count)
 {
-	struct packet *pkt = current_packet();
+	struct packet *pkt = packet_get(hdr->pkt_id);
 	struct proto_field *f;
 	int i;
 
@@ -99,6 +99,7 @@ void proto_header_fields_add(struct proto_hdr *hdr,
 		f->shift = fields[i].shift;
 		f->mask = fields[i].mask;
 		f->pkt_offset = hdr->pkt_offset + fields[i].offset;
+		f->hdr = hdr;
 
 		if (f->pkt_offset + f->len > pkt->len) {
 			hdr->len += f->len;
@@ -134,6 +135,8 @@ struct proto_hdr *proto_header_init(enum proto_id pid)
 
 	new_hdr = xmalloc(sizeof(*new_hdr));
 	memcpy(new_hdr, hdr, sizeof(*new_hdr));
+
+	new_hdr->pkt_id = current_packet_id();
 
 	if (new_hdr->header_init)
 		new_hdr->header_init(new_hdr);
@@ -187,7 +190,7 @@ static void __proto_field_set_bytes(struct proto_hdr *hdr, uint32_t fid,
 	if (is_default && field->is_set)
 		return;
 
-	payload = &current_packet()->payload[field->pkt_offset];
+	payload = &packet_get(hdr->pkt_id)->payload[field->pkt_offset];
 
 	if (field->len == 1) {
 		p8 = payload;
@@ -232,9 +235,7 @@ void proto_field_set_bytes(struct proto_hdr *hdr, uint32_t fid, uint8_t *bytes)
 
 static uint8_t *__proto_field_get_bytes(struct proto_field *field)
 {
-	struct packet *pkt = current_packet();
-
-	return &pkt->payload[field->pkt_offset];
+	return &packet_get(field->hdr->pkt_id)->payload[field->pkt_offset];
 }
 
 void proto_field_set_u8(struct proto_hdr *hdr, uint32_t fid, uint8_t val)

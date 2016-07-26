@@ -153,6 +153,16 @@ struct packet *current_packet(void)
 	return &packets[packet_last];
 }
 
+uint32_t current_packet_id(void)
+{
+	return packet_last;
+}
+
+struct packet *packet_get(uint32_t id)
+{
+	return &packets[id];
+}
+
 static void set_byte(uint8_t val)
 {
 	struct packet *pkt = &packets[packet_last];

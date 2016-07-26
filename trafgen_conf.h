@@ -63,5 +63,7 @@ extern void cleanup_packets(void);
 extern void set_fill(uint8_t val, size_t len);
 
 extern struct packet *current_packet(void);
+extern uint32_t current_packet_id(void);
+extern struct packet *packet_get(uint32_t id);
 
 #endif /* TRAFGEN_CONF */

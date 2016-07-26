@@ -30,6 +30,8 @@ enum proto_layer {
 	PROTO_L4,
 };
 
+struct proto_hdr;
+
 struct proto_field {
 	uint32_t id;
 	size_t len;
@@ -40,6 +42,7 @@ struct proto_field {
 
 	bool is_set;
 	uint16_t pkt_offset;
+	struct proto_hdr *hdr;
 };
 
 struct proto_hdr {
@@ -49,6 +52,7 @@ struct proto_hdr {
 	struct proto_hdr *next;
 	struct proto_ctx *ctx;
 	uint16_t pkt_offset;
+	uint32_t pkt_id;
 	struct proto_field *fields;
 	size_t fields_count;
 	size_t len;
