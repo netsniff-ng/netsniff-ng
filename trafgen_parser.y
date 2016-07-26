@@ -1004,11 +1004,21 @@ static void dump_conf(void)
 
 void cleanup_packets(void)
 {
-	size_t i;
+	size_t i, j;
 
 	for (i = 0; i < plen; ++i) {
-		if (packets[i].len > 0)
-			xfree(packets[i].payload);
+		struct packet *pkt = &packets[i];
+
+		if (pkt->len > 0)
+			xfree(pkt->payload);
+
+		for (j = 0; j < pkt->headers_count; j++) {
+			struct proto_hdr *hdr = pkt->headers[j];
+
+			if (hdr->fields)
+				xfree(hdr->fields);
+			xfree(hdr);
+		}
 	}
 
 	free(packets);

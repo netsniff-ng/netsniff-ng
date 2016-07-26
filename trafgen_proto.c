@@ -24,15 +24,12 @@
 
 static struct proto_ctx ctx;
 
-#define PROTO_MAX_LAYERS	16
-
-static struct proto_hdr *headers[PROTO_MAX_LAYERS];
-static size_t headers_count;
-
 static struct proto_hdr *registered;
 
 struct proto_hdr *proto_lower_header(struct proto_hdr *hdr)
 {
+	struct proto_hdr **headers = current_packet()->headers;
+	size_t headers_count = current_packet()->headers_count;
 	struct proto_hdr *lower = NULL;
 	size_t i;
 
@@ -128,10 +125,11 @@ bool proto_field_is_set(struct proto_hdr *hdr, uint32_t fid)
 
 struct proto_hdr *proto_header_init(enum proto_id pid)
 {
+	struct proto_hdr **headers = current_packet()->headers;
 	struct proto_hdr *hdr = proto_header_by_id(pid);
 	struct proto_hdr *new_hdr;
 
-	bug_on(headers_count >= PROTO_MAX_LAYERS);
+	bug_on(current_packet()->headers_count >= PROTO_MAX_LAYERS);
 
 	new_hdr = xmalloc(sizeof(*new_hdr));
 	memcpy(new_hdr, hdr, sizeof(*new_hdr));
@@ -141,7 +139,7 @@ struct proto_hdr *proto_header_init(enum proto_id pid)
 	if (new_hdr->header_init)
 		new_hdr->header_init(new_hdr);
 
-	headers[headers_count++] = new_hdr;
+	headers[current_packet()->headers_count++] = new_hdr;
 	return new_hdr;
 }
 
@@ -155,9 +153,10 @@ struct proto_hdr *proto_lower_default_add(struct proto_hdr *hdr,
 					  enum proto_id pid)
 {
 	struct proto_hdr *current;
+	size_t headers_count = current_packet()->headers_count;
 
 	if (headers_count > 0) {
-		current = headers[headers_count - 1];
+		current = current_packet()->headers[headers_count - 1];
 
 		if (current->layer >= proto_header_by_id(pid)->layer)
 			goto set_proto;
@@ -418,6 +417,8 @@ void protos_init(const char *dev)
 
 void proto_packet_finish(void)
 {
+	struct proto_hdr **headers = current_packet()->headers;
+	size_t headers_count = current_packet()->headers_count;
 	ssize_t i;
 
 	/* Go down from upper layers to do last calculations (checksum) */
@@ -427,17 +428,4 @@ void proto_packet_finish(void)
 		if (p->packet_finish)
 			p->packet_finish(p);
 	}
-
-	for (i = 0; i < headers_count; i++) {
-		struct proto_hdr *p = headers[i];
-
-		if (p->fields) {
-			xfree(p->fields);
-			p->fields_count = 0;
-		}
-
-		xfree(headers[i]);
-	}
-
-	headers_count = 0;
 }

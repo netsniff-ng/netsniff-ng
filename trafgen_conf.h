@@ -5,6 +5,10 @@
 #include <stdio.h>
 #include <sys/types.h>
 
+#include "trafgen_proto.h"
+
+#define PROTO_MAX_LAYERS	16
+
 #define TYPE_INC	0
 #define TYPE_DEC	1
 
@@ -34,6 +38,8 @@ struct csum16 {
 struct packet {
 	uint8_t *payload;
 	size_t len;
+	struct proto_hdr *headers[PROTO_MAX_LAYERS];
+	size_t headers_count;
 };
 
 struct packet_dyn {
