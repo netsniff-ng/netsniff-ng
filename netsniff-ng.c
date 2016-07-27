@@ -66,7 +66,7 @@ struct ctx {
 	uint32_t link_type, magic;
 	uint32_t fanout_group, fanout_type;
 	uint64_t pkts_seen, pkts_recvd, pkts_drops;
-	uint64_t pkts_recvd_last, pkts_drops_last;
+	uint64_t pkts_recvd_last, pkts_drops_last, pkts_skipd_last;
 };
 
 static volatile sig_atomic_t sigint = 0, sighup = 0;
@@ -218,10 +218,13 @@ static int update_rx_stats(struct ctx *ctx, int sock, bool is_v3)
 	if (ret)
 		return ret;
 
+	drops += ctx->pkts_skipd_last;
+	ctx->pkts_seen += ctx->pkts_skipd_last;
 	ctx->pkts_recvd += packets;
 	ctx->pkts_drops += drops;
 	ctx->pkts_recvd_last = packets;
 	ctx->pkts_drops_last = drops;
+	ctx->pkts_skipd_last = 0;
 
 	return 0;
 }
@@ -410,7 +413,7 @@ out:
 	printf("\r%12lu sec, %lu usec in total\n", diff.tv_sec, diff.tv_usec);
 }
 
-static inline bool skip_packet(struct ctx *ctx, struct sockaddr_ll *sll)
+static inline bool __skip_packet(struct ctx *ctx, struct sockaddr_ll *sll)
 {
 	if (ctx->packet_type != -1)
 		return ctx->packet_type != sll->sll_pkttype;
@@ -420,6 +423,15 @@ static inline bool skip_packet(struct ctx *ctx, struct sockaddr_ll *sll)
 	 */
 	return (sll->sll_ifindex == ctx->lo_ifindex) &&
 	       (sll->sll_pkttype == PACKET_OUTGOING);
+}
+
+static inline bool skip_packet(struct ctx *ctx, struct sockaddr_ll *sll)
+{
+	bool skip = __skip_packet(ctx, sll);
+
+	if (skip)
+		ctx->pkts_skipd_last++;
+	return skip;
 }
 
 static void receive_to_xmit(struct ctx *ctx)
