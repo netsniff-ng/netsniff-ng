@@ -72,15 +72,18 @@ The installation (deinstallation) process is fairly simple:
 
   (# make uninstall)
 
-The configure script can be influenced by setting certain environment
-variables, e.g. CC or CROSS_COMPILE.
+The configure script can be influenced by setting certain command line
+options and environment variables (e.g. CC or CROSS_COMPILE). To get a list
+of all supported options and variables use:
+
+  $ ./configure --help
 
 The use of the optional libGeoIP and libz libraries can be explicitely
-disabled by setting the corresponding variables for the configure
+disabled by using the corresponding command line option for the configure
 script:
 
-  $ DISABLE_GEOIP=1 ./configure
-  $ DISABLE_ZLIB=1 ./configure
+  $ ./configure --disable-geoip
+  $ ./configure --disable-zlib
 
 In order to remove all build files from the source tree:
 

@@ -31,6 +31,6 @@ addons:
 
 script:
   - CC=$CC ./configure && make CC=$CC
-  - CC=$CC DISABLE_GEOIP=1 ./configure && make clean && make CC=$CC
-  - CC=$CC DISABLE_ZLIB=1 ./configure && make clean && make CC=$CC
-  - CC=$CC DISABLE_GEOIP=1 DISABLE_ZLIB=1 ./configure && make clean && make CC=$CC
+  - CC=$CC ./configure --disable-geoip && make clean && make CC=$CC
+  - CC=$CC ./configure --disable-zlib && make clean && make CC=$CC
+  - CC=$CC ./configure --disable-geoip --disable-zlib && make clean && make CC=$CC
