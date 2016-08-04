@@ -1,7 +1,4 @@
-netsniff-ng-libs =	$(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --libs libnl-3.0) \
-			$(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --libs libnl-genl-3.0) \
-			$(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --libs libnl-route-3.0) \
-			-lpthread
+netsniff-ng-libs =	-lpthread
 
 ifeq ($(CONFIG_LIBPCAP), 1)
 netsniff-ng-libs +=	-lpcap
@@ -9,6 +6,11 @@ endif
 ifeq ($(CONFIG_GEOIP), 1)
 netsniff-ng-libs +=	-lGeoIP \
 			-lz
+endif
+ifeq ($(CONFIG_LIBNL), 1)
+netsniff-ng-libs +=	$(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --libs libnl-3.0) \
+			$(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --libs libnl-genl-3.0) \
+			$(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --libs libnl-route-3.0)
 endif
 
 netsniff-ng-objs =	dissector.o \
@@ -34,7 +36,6 @@ netsniff-ng-objs =	dissector.o \
 			proto_ipv6_no_nxt_hdr.o \
 			proto_ipv6_routing.o \
 			proto_lldp.o \
-			proto_nlmsg.o \
 			proto_none.o \
 			proto_tcp.o \
 			proto_udp.o \
@@ -63,7 +64,6 @@ netsniff-ng-objs =	dissector.o \
 			ring.o \
 			tprintf.o \
 			timer.o \
-			mac80211.o \
 			die.o \
 			sysctl.o \
 			netsniff-ng.o
@@ -77,11 +77,18 @@ endif
 ifeq ($(CONFIG_HWTSTAMP), 1)
 netsniff-ng-objs +=	tstamping.o
 endif
+ifeq ($(CONFIG_LIBNL), 1)
+netsniff-ng-objs +=	mac80211.o \
+			proto_nlmsg.o
+endif
 
-netsniff-ng-eflags = $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --cflags libnl-3.0) \
-		     $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --cflags libnl-genl-3.0) \
-		     $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --cflags libnl-route-3.0) \
-		     -DNEED_TCPDUMP_LIKE_FILTER
+netsniff-ng-eflags = -DNEED_TCPDUMP_LIKE_FILTER
+
+ifeq ($(CONFIG_LIBNL), 1)
+netsniff-ng-eflags += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --cflags libnl-3.0) \
+		      $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --cflags libnl-genl-3.0) \
+		      $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --cflags libnl-route-3.0)
+endif
 
 netsniff-ng-confs =	ether.conf \
 			tcp.conf \

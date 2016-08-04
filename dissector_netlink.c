@@ -9,7 +9,7 @@
 
 static inline void dissector_init_entry(int type)
 {
-	dissector_set_print_type(&nlmsg_ops, type);
+	dissector_set_print_type(dissector_get_netlink_entry_point(), type);
 }
 
 static inline void dissector_init_exit(int type)

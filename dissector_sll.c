@@ -3,12 +3,15 @@
  * Subject to the GPL, version 2.
  */
 
+#include <arpa/inet.h>
+
 #include "protos.h"
 #include "pcap_io.h"
 #include "pkt_buff.h"
 #include "dissector.h"
 #include "dissector_sll.h"
 #include "dissector_eth.h"
+#include "dissector_netlink.h"
 #include "lookup.h"
 
 static char *pkt_type2str(uint8_t pkttype)
@@ -56,7 +59,7 @@ static void sll_print_full(struct pkt_buff *pkt)
 		break;
 	case LINKTYPE_NETLINK:
 	case ___constant_swab32(LINKTYPE_NETLINK):
-		pkt->dissector = &nlmsg_ops;
+		pkt->dissector = dissector_get_netlink_entry_point();
 		break;
 	default:
 		tprintf(" [ Unknown protocol ]\n");
