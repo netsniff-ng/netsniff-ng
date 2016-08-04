@@ -1,6 +1,9 @@
-trafgen-libs =	$(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --libs libnl-3.0) \
-		$(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --libs libnl-genl-3.0) \
-		-lm
+trafgen-libs =	-lm
+
+ifeq ($(CONFIG_LIBNL), 1)
+trafgen-libs +=	$(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --libs libnl-3.0) \
+		$(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --libs libnl-genl-3.0)
+endif
 
 trafgen-objs =	xmalloc.o \
 		die.o \
@@ -13,7 +16,6 @@ trafgen-objs =	xmalloc.o \
 		str.o \
 		sig.o \
 		sock.o \
-		mac80211.o \
 		ring_tx.o \
 		ring.o \
 		timer.o \
@@ -27,13 +29,20 @@ trafgen-objs =	xmalloc.o \
 		trafgen_parser.tab.o \
 		trafgen.o
 
+ifeq ($(CONFIG_LIBNL), 1)
+trafgen-objs += mac80211.o
+endif
+
 trafgen-lex =	trafgen_lexer.yy.o
 
 trafgen-yaac =	trafgen_parser.tab.o
 
+trafgen-eflags = -I..
+
+ifeq ($(CONFIG_LIBNL), 1)
 trafgen-eflags = $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --cflags libnl-3.0) \
-		 $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --cflags libnl-genl-3.0) \
-		 -I..
+		 $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --cflags libnl-genl-3.0)
+endif
 
 trafgen-confs =	trafgen_stddef.h
 

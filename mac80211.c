@@ -24,7 +24,6 @@
 #include <netlink/msg.h>
 #include <netlink/attr.h>
 
-#include "die.h"
 #include "str.h"
 #include "dev.h"
 #include "mac80211.h"
