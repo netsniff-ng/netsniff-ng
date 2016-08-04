@@ -12,12 +12,14 @@ MISSING_NACL=0
 TOOLS="netsniff-ng trafgen astraceroute flowtop ifpps bpfc curvetun mausezahn"
 TOOLS_NOBUILD=""
 
+HAVE_LIBNL=0
 HAVE_LIBPCAP=0
 HAVE_HWTSTAMP=0
 HAVE_LIBGEOIP=0
 HAVE_LIBZ=0
 HAVE_TPACKET3=0
 
+DISABLE_LIBNL=0
 DISABLE_GEOIP=0
 DISABLE_ZLIB=0
 
@@ -28,6 +30,7 @@ usage()
 	echo "  -h, --help       Display this help and exit"
 	echo ""
 	echo "Optional Features:"
+	echo "  --disable-libnl  Disable libnl support"
 	echo "  --disable-geoip  Disable geoip support"
 	echo "  --disable-zlib   Disable zlib support"
 	echo ""
@@ -42,6 +45,9 @@ while [ $# -gt 0 ] ; do
 	case "$1" in
 	-h|--help)
 		usage
+		;;
+	--disable-libnl)
+		DISABLE_LIBNL=1
 		;;
 	--disable-geoip)
 		DISABLE_GEOIP=1
@@ -198,6 +204,11 @@ check_libnl()
 {
 	echo -n "[*] Checking libnl ... "
 
+	if [ "$DISABLE_LIBNL" == "1" ] ; then
+		echo "[DISABLED]"
+		return
+	fi
+
 	cat > $TMPDIR/libnltest.c << EOF
 #include <netlink/genl/genl.h>
 #include <netlink/genl/family.h>
@@ -231,16 +242,25 @@ EOF
 	if [ ! -x $TMPDIR/libnltest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
-		tools_remove "trafgen"
-		tools_remove "netsniff-ng"
 	else
 		echo "[YES]"
+		HAVE_LIBNL=1
 	fi
 }
 
 check_libnl_route()
 {
 	echo -n "[*] Checking libnl-route ... "
+
+	if [ "$DISABLE_LIBNL" == "1" ] ; then
+		echo "[DISABLED]"
+		return
+	fi
+
+	if [ "$HAVE_LIBNL" == "0" ] ; then
+		echo "[SKIPPED]"
+		return
+	fi
 
 	cat > $TMPDIR/libnlroutetest.c << EOF
 #include <netlink/route/link.h>
@@ -267,9 +287,10 @@ EOF
 	if [ ! -x $TMPDIR/libnlroutetest ] ; then
 		echo "[NO]"
 		MISSING_DEFS=1
-		tools_remove "netsniff-ng"
+		HAVE_LIBNL=0
 	else
 		echo "[YES]"
+		# HAVE_LIBNL already set by check_libnl()
 	fi
 }
 
@@ -634,6 +655,7 @@ gen_config_hdr()
 	local _version=""
 	local _have_libpcap=""
 	local _have_libgeoip=""
+	local _have_libnl=""
 	local _have_libz=""
 	local _have_hwts=""
 	local _have_tp3=""
@@ -645,6 +667,12 @@ gen_config_hdr()
 		_version="`git describe --always`"
 	else
 		_version="(none)"
+	fi
+
+	if [ "$HAVE_LIBNL" == "1" ] ; then
+		_have_libnl="#define HAVE_LIBNL 1"
+	else
+		_have_libnl="/* HAVE_LIBNL is not defined */"
 	fi
 
 	if [ "$HAVE_LIBPCAP" == "1" ] ; then
@@ -686,6 +714,7 @@ gen_config_hdr()
 #define FILE_PUBKEY ".curvetun/pub.key"
 #define FILE_USERNAM ".curvetun/username"
 #define GITVERSION "$_version"
+$_have_libnl
 $_have_libpcap
 $_have_libgeoip
 $_have_libz
@@ -751,6 +780,8 @@ if [ -s config.log ] ; then
 	echo "[!] There were errors in the configure script. Please check the file"
 	echo "    config.log for details."
 fi
+
+echo "CONFIG_LIBNL=$HAVE_LIBNL" >> Config
 
 if [ "$HAVE_LIBGEOIP" == "1" -a "$HAVE_LIBZ" == "1"  ] ; then
 	echo "CONFIG_GEOIP=1" >> Config

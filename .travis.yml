@@ -34,3 +34,4 @@ script:
   - CC=$CC ./configure --disable-geoip && make clean && make CC=$CC
   - CC=$CC ./configure --disable-zlib && make clean && make CC=$CC
   - CC=$CC ./configure --disable-geoip --disable-zlib && make clean && make CC=$CC
+  - CC=$CC ./configure --disable-libnl && make clean && make CC=$CC
