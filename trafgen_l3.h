@@ -10,14 +10,14 @@ enum ip4_field {
 	IP4_LEN,
 	IP4_ID,
 	IP4_FLAGS,
+	IP4_MF,
+	IP4_DF,
 	IP4_FRAG_OFFS,
 	IP4_TTL,
 	IP4_PROTO,
 	IP4_CSUM,
 	IP4_SADDR,
 	IP4_DADDR,
-	IP4_DF,
-	IP4_MF,
 };
 
 enum ip6_field {

@@ -107,13 +107,12 @@ void proto_header_fields_add(struct proto_hdr *hdr,
 
 static struct proto_field *proto_field_by_id(struct proto_hdr *hdr, uint32_t fid)
 {
-	int i;
+	/* Assume the fields are stored in the same order as the respective
+	 * enum, so the index can be used for faster lookup here.
+	 */
+	bug_on(hdr->fields[fid].id != fid);
 
-	for (i = 0; i < hdr->fields_count; i++)
-		if (hdr->fields[i].id == fid)
-			return &hdr->fields[i];
-
-	panic("Failed lookup field id %u for proto id %u\n", fid, hdr->id);
+	return &hdr->fields[fid];
 }
 
 bool proto_field_is_set(struct proto_hdr *hdr, uint32_t fid)
