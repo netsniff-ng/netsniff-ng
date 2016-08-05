@@ -5,10 +5,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-struct proto_ctx {
-	const char *dev;
-};
-
 enum proto_id {
 	PROTO_NONE,
 	PROTO_ETH,
@@ -50,7 +46,6 @@ struct proto_hdr {
 	enum proto_layer layer;
 
 	struct proto_hdr *next;
-	struct proto_ctx *ctx;
 	uint16_t pkt_offset;
 	uint32_t pkt_id;
 	struct proto_field *fields;

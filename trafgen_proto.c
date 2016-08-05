@@ -22,7 +22,10 @@
 #define field_unmask_and_unshift(f, v) (((v) & \
 		((f)->mask ? (f)->mask : (0xffffffff))) >> (f)->shift)
 
-static struct proto_ctx ctx;
+struct ctx {
+	const char *dev;
+};
+static struct ctx ctx;
 
 static struct proto_hdr *registered;
 
@@ -324,10 +327,7 @@ static void __proto_field_set_dev_mac(struct proto_hdr *hdr, uint32_t fid,
 	if (proto_field_is_set(hdr, fid))
 		return;
 
-	if (!hdr->ctx->dev)
-		panic("Device is not specified\n");
-
-	ret = device_hw_address(hdr->ctx->dev, mac, sizeof(mac));
+	ret = device_hw_address(ctx.dev, mac, sizeof(mac));
 	if (ret < 0)
 		panic("Could not get device hw address\n");
 
@@ -354,7 +354,7 @@ static void __proto_field_set_dev_ipv4(struct proto_hdr *hdr, uint32_t fid,
 	if (proto_field_is_set(hdr, fid))
 		return;
 
-	ret = device_address(hdr->ctx->dev, AF_INET, &ss);
+	ret = device_address(ctx.dev, AF_INET, &ss);
 	if (ret < 0)
 		panic("Could not get device IPv4 address\n");
 
@@ -382,7 +382,7 @@ static void __proto_field_set_dev_ipv6(struct proto_hdr *hdr, uint32_t fid,
 	if (proto_field_is_set(hdr, fid))
 		return;
 
-	ret = device_address(hdr->ctx->dev, AF_INET6, &ss);
+	ret = device_address(ctx.dev, AF_INET6, &ss);
 	if (ret < 0)
 		panic("Could not get device IPv6 address\n");
 
@@ -402,16 +402,11 @@ void proto_field_set_default_dev_ipv6(struct proto_hdr *hdr, uint32_t fid)
 
 void protos_init(const char *dev)
 {
-	struct proto_hdr *p;
-
 	ctx.dev = dev;
 
 	protos_l2_init();
 	protos_l3_init();
 	protos_l4_init();
-
-	for (p = registered; p; p = p->next)
-		p->ctx = &ctx;
 }
 
 void proto_packet_finish(void)
