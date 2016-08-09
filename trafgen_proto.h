@@ -77,7 +77,7 @@ extern void proto_header_fields_add(struct proto_hdr *hdr,
 
 extern bool proto_field_is_set(struct proto_hdr *hdr, uint32_t fid);
 extern void proto_field_set_bytes(struct proto_hdr *hdr, uint32_t fid,
-				  uint8_t *bytes);
+				  const uint8_t *bytes);
 extern void proto_field_set_u8(struct proto_hdr *hdr, uint32_t fid, uint8_t val);
 extern uint8_t proto_field_get_u8(struct proto_hdr *hdr, uint32_t fid);
 extern void proto_field_set_u16(struct proto_hdr *hdr, uint32_t fid, uint16_t val);
@@ -86,7 +86,7 @@ extern void proto_field_set_u32(struct proto_hdr *hdr, uint32_t fid, uint32_t va
 extern uint32_t proto_field_get_u32(struct proto_hdr *hdr, uint32_t fid);
 
 extern void proto_field_set_default_bytes(struct proto_hdr *hdr, uint32_t fid,
-					  uint8_t *bytes);
+					  const uint8_t *bytes);
 extern void proto_field_set_default_u8(struct proto_hdr *hdr, uint32_t fid,
 				       uint8_t val);
 extern void proto_field_set_default_u16(struct proto_hdr *hdr, uint32_t fid,

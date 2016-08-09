@@ -115,7 +115,7 @@ static void arp_header_init(struct proto_hdr *hdr)
 	lower = proto_lower_default_add(hdr, PROTO_ETH);
 
 	if (lower->id == PROTO_ETH) {
-		uint8_t bcast[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+		const uint8_t bcast[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
 		proto_field_set_default_bytes(lower, ETH_DST_ADDR, bcast);
 	}

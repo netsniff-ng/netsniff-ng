@@ -171,7 +171,8 @@ set_proto:
 }
 
 static void __proto_field_set_bytes(struct proto_hdr *hdr, uint32_t fid,
-				    uint8_t *bytes, bool is_default, bool is_be)
+				    const uint8_t *bytes, bool is_default,
+				    bool is_be)
 {
 	struct proto_field *field;
 	uint8_t *payload, *p8;
@@ -224,7 +225,8 @@ static void __proto_field_set_bytes(struct proto_hdr *hdr, uint32_t fid,
 		field->is_set = true;
 }
 
-void proto_field_set_bytes(struct proto_hdr *hdr, uint32_t fid, uint8_t *bytes)
+void proto_field_set_bytes(struct proto_hdr *hdr, uint32_t fid,
+			   const uint8_t *bytes)
 {
 	__proto_field_set_bytes(hdr, fid, bytes, false, false);
 }
@@ -273,7 +275,8 @@ uint32_t proto_field_get_u32(struct proto_hdr *hdr, uint32_t fid)
 	return field_unmask_and_unshift(field, be32_to_cpu(val));
 }
 
-void proto_field_set_default_bytes(struct proto_hdr *hdr, uint32_t fid, uint8_t *bytes)
+void proto_field_set_default_bytes(struct proto_hdr *hdr, uint32_t fid,
+				   const uint8_t *bytes)
 {
 	__proto_field_set_bytes(hdr, fid, bytes, true, false);
 }
