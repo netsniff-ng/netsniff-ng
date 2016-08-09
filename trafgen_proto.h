@@ -6,7 +6,7 @@
 #include <stdbool.h>
 
 enum proto_id {
-	PROTO_NONE,
+	PROTO_NONE = 0,
 	PROTO_ETH,
 	PROTO_VLAN,
 	PROTO_ARP,
@@ -17,6 +17,7 @@ enum proto_id {
 	PROTO_ICMP6,
 	PROTO_UDP,
 	PROTO_TCP,
+	__PROTO_MAX,
 };
 
 enum proto_layer {

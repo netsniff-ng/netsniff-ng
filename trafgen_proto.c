@@ -27,7 +27,7 @@ struct ctx {
 };
 static struct ctx ctx;
 
-static struct proto_hdr *registered;
+static const struct proto_hdr *registered[__PROTO_MAX];
 
 struct proto_hdr *proto_lower_header(struct proto_hdr *hdr)
 {
@@ -52,21 +52,16 @@ uint8_t *proto_header_ptr(struct proto_hdr *hdr)
 	return &packet_get(hdr->pkt_id)->payload[hdr->pkt_offset];
 }
 
-static struct proto_hdr *proto_header_by_id(enum proto_id id)
+static const struct proto_hdr *proto_header_by_id(enum proto_id id)
 {
-	struct proto_hdr *p = registered;
-
-	for (; p; p = p->next)
-		if (p->id == id)
-			return p;
-
-	panic("Can't lookup proto by id %u\n", id);
+	bug_on(id >= __PROTO_MAX);
+	return registered[id];
 }
 
 void proto_header_register(struct proto_hdr *hdr)
 {
-	hdr->next = registered;
-	registered = hdr;
+	bug_on(hdr->id >= __PROTO_MAX);
+	registered[hdr->id] = hdr;
 
 	hdr->fields = NULL;
 	hdr->fields_count = 0;
@@ -128,7 +123,7 @@ bool proto_field_is_set(struct proto_hdr *hdr, uint32_t fid)
 struct proto_hdr *proto_header_init(enum proto_id pid)
 {
 	struct proto_hdr **headers = current_packet()->headers;
-	struct proto_hdr *hdr = proto_header_by_id(pid);
+	const struct proto_hdr *hdr = proto_header_by_id(pid);
 	struct proto_hdr *new_hdr;
 
 	bug_on(current_packet()->headers_count >= PROTO_MAX_LAYERS);
