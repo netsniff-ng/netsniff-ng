@@ -12,11 +12,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
 #include <stdint.h>
-#include <errno.h>
 #include <stdbool.h>
+#include <errno.h>
 #include <libgen.h>
+#include <signal.h>
+#include <unistd.h>
 #include <net/if_arp.h>
 #include <netinet/in.h>
 #include <linux/icmp.h>
@@ -1036,6 +1037,11 @@ void compile_packets(char *file, bool verbose, unsigned int cpu,
 {
 	char tmp_file[128];
 	int ret = -1;
+
+	if (access(file, R_OK)) {
+		fprintf(stderr, "Cannot access %s: %s!\n", file, strerror(errno));
+		die();
+	}
 
 	memset(tmp_file, 0, sizeof(tmp_file));
 	our_cpu = cpu;
