@@ -63,7 +63,7 @@ static void ipv4_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
 {
 	uint8_t ip_proto;
 
-	switch(pid) {
+	switch (pid) {
 	case PROTO_IP4:
 		ip_proto = IPPROTO_IPIP;
 		break;
@@ -129,7 +129,7 @@ static void ipv6_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
 {
 	uint8_t ip_proto;
 
-	switch(pid) {
+	switch (pid) {
 	case PROTO_ICMP6:
 		ip_proto = IPPROTO_ICMPV6;
 		break;

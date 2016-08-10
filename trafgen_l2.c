@@ -19,7 +19,7 @@ static struct proto_field eth_fields[] = {
 
 static uint16_t pid_to_eth(enum proto_id pid)
 {
-	switch(pid) {
+	switch (pid) {
 	case PROTO_ARP:
 		return ETH_P_ARP;
 	case PROTO_IP4:
