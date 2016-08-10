@@ -66,10 +66,19 @@ endif
 #   make CFLAGS="<flags>"
 CFLAGS_DEF  = -std=gnu99
 CFLAGS_DEF += -pipe
-CFLAGS_DEF += -O2
 
 ifeq ($(DEBUG), 1)
   CFLAGS_DEF += -g
+  CFLAGS_DEF += -O0
+  CFLAGS_DEF += -fno-omit-frame-pointer
+else
+  CFLAGS_DEF += -O2
+  CFLAGS_DEF += -fomit-frame-pointer
+  CFLAGS_DEF += -fno-strict-aliasing
+  CFLAGS_DEF += -fasynchronous-unwind-tables
+  ifneq ($(COMPILER), clang)
+    CFLAGS_DEF += -fno-delete-null-pointer-checks
+  endif
 endif
 
 ifeq ($(HARDENING), 1)
@@ -81,13 +90,6 @@ ifeq ($(HARDENING), 1)
   CFLAGS_DEF += -ftrapv
   CFLAGS_DEF += -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
   CFLAGS_DEF += -fexceptions
-endif
-
-CFLAGS_DEF += -fomit-frame-pointer
-CFLAGS_DEF += -fno-strict-aliasing
-CFLAGS_DEF += -fasynchronous-unwind-tables
-ifneq ($(COMPILER), clang)
-CFLAGS_DEF += -fno-delete-null-pointer-checks
 endif
 
 CFLAGS_MIN  = -D_REENTRANT
