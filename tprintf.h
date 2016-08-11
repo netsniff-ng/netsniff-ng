@@ -3,7 +3,6 @@
 
 #include "built_in.h"
 #include "colors.h"
-#include "colorize.h"
 
 extern void tprintf_init(void);
 extern void tprintf(char *msg, ...) __check_format_printf(1, 2);
