@@ -44,7 +44,7 @@ static void udp_packet_finish(struct proto_hdr *hdr)
 	if (!lower)
 		return;
 
-	switch (lower->id) {
+	switch (lower->ops->id) {
 	case PROTO_IP4:
 		csum = p4_csum((void *) proto_header_ptr(lower), proto_header_ptr(hdr),
 				total_len, IPPROTO_UDP);
@@ -61,7 +61,7 @@ static void udp_packet_finish(struct proto_hdr *hdr)
 	proto_field_set_be16(hdr, UDP_CSUM, bswap_16(csum));
 }
 
-static struct proto_hdr udp_hdr = {
+static const struct proto_ops udp_proto_ops = {
 	.id		= PROTO_UDP,
 	.layer		= PROTO_L4,
 	.header_init	= udp_header_init,
@@ -112,7 +112,7 @@ static void tcp_packet_finish(struct proto_hdr *hdr)
 
 	total_len = pkt->len - hdr->pkt_offset;
 
-	switch (lower->id) {
+	switch (lower->ops->id) {
 	case PROTO_IP4:
 		csum = p4_csum((void *) proto_header_ptr(lower), proto_header_ptr(hdr),
 				total_len, IPPROTO_TCP);
@@ -129,7 +129,7 @@ static void tcp_packet_finish(struct proto_hdr *hdr)
 	proto_field_set_be16(hdr, TCP_CSUM, bswap_16(csum));
 }
 
-static struct proto_hdr tcp_hdr = {
+static const struct proto_ops tcp_proto_ops = {
 	.id		= PROTO_TCP,
 	.layer		= PROTO_L4,
 	.header_init	= tcp_header_init,
@@ -170,7 +170,7 @@ static void icmpv4_packet_finish(struct proto_hdr *hdr)
 	proto_field_set_u16(hdr, ICMPV4_CSUM, bswap_16(csum));
 }
 
-static struct proto_hdr icmpv4_hdr = {
+static const struct proto_ops icmpv4_proto_ops = {
 	.id		= PROTO_ICMP4,
 	.layer		= PROTO_L4,
 	.header_init	= icmpv4_header_init,
@@ -205,7 +205,7 @@ static void icmpv6_packet_finish(struct proto_hdr *hdr)
 
 	total_len = pkt->len - hdr->pkt_offset;
 
-	switch (lower->id) {
+	switch (lower->ops->id) {
 	case PROTO_IP6:
 		csum = p6_csum((void *) proto_header_ptr(lower), proto_header_ptr(hdr),
 				total_len, IPPROTO_ICMPV6);
@@ -218,7 +218,7 @@ static void icmpv6_packet_finish(struct proto_hdr *hdr)
 	proto_field_set_be16(hdr, ICMPV6_CSUM, bswap_16(csum));
 }
 
-static struct proto_hdr icmpv6_hdr = {
+static struct proto_ops icmpv6_proto_ops = {
 	.id		= PROTO_ICMP6,
 	.layer		= PROTO_L4,
 	.header_init	= icmpv6_header_init,
@@ -227,8 +227,8 @@ static struct proto_hdr icmpv6_hdr = {
 
 void protos_l4_init(void)
 {
-	proto_header_register(&udp_hdr);
-	proto_header_register(&tcp_hdr);
-	proto_header_register(&icmpv4_hdr);
-	proto_header_register(&icmpv6_hdr);
+	proto_ops_register(&udp_proto_ops);
+	proto_ops_register(&tcp_proto_ops);
+	proto_ops_register(&icmpv4_proto_ops);
+	proto_ops_register(&icmpv6_proto_ops);
 }

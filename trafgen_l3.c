@@ -86,7 +86,7 @@ static void ipv4_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
 	proto_field_set_default_u8(hdr, IP4_PROTO, ip_proto);
 }
 
-static struct proto_hdr ipv4_hdr = {
+static const struct proto_ops ipv4_proto_ops = {
 	.id		= PROTO_IP4,
 	.layer		= PROTO_L3,
 	.header_init	= ipv4_header_init,
@@ -146,7 +146,7 @@ static void ipv6_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
 	proto_field_set_default_u8(hdr, IP6_NEXT_HDR, ip_proto);
 }
 
-static struct proto_hdr ipv6_hdr = {
+static const struct proto_ops ipv6_proto_ops = {
 	.id             = PROTO_IP6,
 	.layer          = PROTO_L3,
 	.header_init    = ipv6_header_init,
@@ -156,6 +156,6 @@ static struct proto_hdr ipv6_hdr = {
 
 void protos_l3_init(void)
 {
-	proto_header_register(&ipv4_hdr);
-	proto_header_register(&ipv6_hdr);
+	proto_ops_register(&ipv4_proto_ops);
+	proto_ops_register(&ipv6_proto_ops);
 }

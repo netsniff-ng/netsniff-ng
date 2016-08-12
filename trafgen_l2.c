@@ -47,7 +47,7 @@ static void eth_header_init(struct proto_hdr *hdr)
 	proto_field_set_default_dev_mac(hdr, ETH_SRC_ADDR);
 }
 
-static struct proto_hdr eth_hdr = {
+static const struct proto_ops eth_proto_ops = {
 	.id		= PROTO_ETH,
 	.layer		= PROTO_L2,
 	.header_init	= eth_header_init,
@@ -74,13 +74,13 @@ static void vlan_header_init(struct proto_hdr *hdr)
 
 	proto_header_fields_add(hdr, vlan_fields, array_size(vlan_fields));
 
-	if (lower->id == PROTO_ETH)
+	if (lower->ops->id == PROTO_ETH)
 		lower_etype = proto_field_get_u16(lower, ETH_TYPE);
-	else if (lower->id == PROTO_VLAN)
+	else if (lower->ops->id == PROTO_VLAN)
 		lower_etype = proto_field_get_u16(lower, VLAN_ETYPE);
 
 	proto_field_set_be16(hdr, VLAN_ETYPE, lower_etype);
-	proto_field_set_default_be16(hdr, VLAN_TPID, pid_to_eth(hdr->id));
+	proto_field_set_default_be16(hdr, VLAN_TPID, pid_to_eth(hdr->ops->id));
 }
 
 static void vlan_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
@@ -89,7 +89,7 @@ static void vlan_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
 		proto_field_set_be16(hdr, VLAN_ETYPE, pid_to_eth(pid));
 }
 
-static struct proto_hdr vlan_hdr = {
+static const struct proto_ops vlan_proto_ops = {
 	.id		= PROTO_VLAN,
 	.layer		= PROTO_L2,
 	.header_init	= vlan_header_init,
@@ -114,7 +114,7 @@ static void arp_header_init(struct proto_hdr *hdr)
 
 	lower = proto_lower_default_add(hdr, PROTO_ETH);
 
-	if (lower->id == PROTO_ETH) {
+	if (lower->ops->id == PROTO_ETH) {
 		const uint8_t bcast[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
 		proto_field_set_default_bytes(lower, ETH_DST_ADDR, bcast);
@@ -133,7 +133,7 @@ static void arp_header_init(struct proto_hdr *hdr)
 	proto_field_set_default_dev_ipv4(hdr, ARP_TPA);
 }
 
-static struct proto_hdr arp_hdr = {
+static const struct proto_ops arp_proto_ops = {
 	.id		= PROTO_ARP,
 	.layer		= PROTO_L2,
 	.header_init	= arp_header_init,
@@ -161,7 +161,7 @@ static void mpls_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
 		proto_field_set_default_be32(hdr, MPLS_LAST, 0);
 }
 
-static struct proto_hdr mpls_hdr = {
+static const struct proto_ops mpls_proto_ops = {
 	.id		= PROTO_MPLS,
 	.layer		= PROTO_L2,
 	.header_init	= mpls_header_init,
@@ -170,8 +170,8 @@ static struct proto_hdr mpls_hdr = {
 
 void protos_l2_init(void)
 {
-	proto_header_register(&eth_hdr);
-	proto_header_register(&vlan_hdr);
-	proto_header_register(&arp_hdr);
-	proto_header_register(&mpls_hdr);
+	proto_ops_register(&eth_proto_ops);
+	proto_ops_register(&vlan_proto_ops);
+	proto_ops_register(&arp_proto_ops);
+	proto_ops_register(&mpls_proto_ops);
 }

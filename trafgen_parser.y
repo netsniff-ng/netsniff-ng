@@ -348,7 +348,7 @@ static void set_dynamic_incdec(uint8_t start, uint8_t stop, uint8_t stepping,
 
 static void proto_add(enum proto_id pid)
 {
-	hdr = proto_header_init(pid);
+	hdr = proto_header_push(pid);
 }
 
 %}

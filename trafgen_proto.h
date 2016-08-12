@@ -29,6 +29,25 @@ enum proto_layer {
 
 struct proto_hdr;
 
+struct proto_ops {
+	enum proto_id id;
+	enum proto_layer layer;
+
+	void (*header_init)(struct proto_hdr *hdr);
+	void (*header_finish)(struct proto_hdr *hdr);
+	void (*packet_finish)(struct proto_hdr *hdr);
+	void (*set_next_proto)(struct proto_hdr *hdr, enum proto_id pid);
+};
+
+struct proto_hdr {
+	const struct proto_ops *ops;
+	uint16_t pkt_offset;
+	uint32_t pkt_id;
+	struct proto_field *fields;
+	size_t fields_count;
+	size_t len;
+};
+
 struct proto_field {
 	uint32_t id;
 	size_t len;
@@ -42,27 +61,10 @@ struct proto_field {
 	struct proto_hdr *hdr;
 };
 
-struct proto_hdr {
-	enum proto_id id;
-	enum proto_layer layer;
-
-	struct proto_hdr *next;
-	uint16_t pkt_offset;
-	uint32_t pkt_id;
-	struct proto_field *fields;
-	size_t fields_count;
-	size_t len;
-
-	void (*header_init)(struct proto_hdr *hdr);
-	void (*header_finish)(struct proto_hdr *hdr);
-	void (*packet_finish)(struct proto_hdr *hdr);
-	void (*set_next_proto)(struct proto_hdr *hdr, enum proto_id pid);
-};
-
 extern void protos_init(const char *dev);
-extern void proto_header_register(struct proto_hdr *hdr);
+extern void proto_ops_register(const struct proto_ops *ops);
 
-extern struct proto_hdr *proto_header_init(enum proto_id pid);
+extern struct proto_hdr *proto_header_push(enum proto_id pid);
 extern void proto_header_finish(struct proto_hdr *hdr);
 extern void proto_packet_finish(void);
 extern struct proto_hdr *proto_lower_default_add(struct proto_hdr *hdr,

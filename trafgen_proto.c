@@ -27,7 +27,7 @@ struct ctx {
 };
 static struct ctx ctx;
 
-static const struct proto_hdr *registered[__PROTO_MAX];
+static const struct proto_ops *registered_ops[__PROTO_MAX];
 
 struct proto_hdr *proto_lower_header(struct proto_hdr *hdr)
 {
@@ -52,19 +52,18 @@ uint8_t *proto_header_ptr(struct proto_hdr *hdr)
 	return &packet_get(hdr->pkt_id)->payload[hdr->pkt_offset];
 }
 
-static const struct proto_hdr *proto_header_by_id(enum proto_id id)
+static const struct proto_ops *proto_ops_by_id(enum proto_id id)
 {
-	bug_on(id >= __PROTO_MAX);
-	return registered[id];
+	const struct proto_ops *ops = registered_ops[id];
+
+	bug_on(ops->id != id);
+	return ops;
 }
 
-void proto_header_register(struct proto_hdr *hdr)
+void proto_ops_register(const struct proto_ops *ops)
 {
-	bug_on(hdr->id >= __PROTO_MAX);
-	registered[hdr->id] = hdr;
-
-	hdr->fields = NULL;
-	hdr->fields_count = 0;
+	bug_on(ops->id >= __PROTO_MAX);
+	registered_ops[ops->id] = ops;
 }
 
 static void proto_fields_realloc(struct proto_hdr *hdr, size_t count)
@@ -120,52 +119,55 @@ bool proto_field_is_set(struct proto_hdr *hdr, uint32_t fid)
 	return field ? field->is_set : false;
 }
 
-struct proto_hdr *proto_header_init(enum proto_id pid)
+struct proto_hdr *proto_header_push(enum proto_id pid)
 {
 	struct proto_hdr **headers = current_packet()->headers;
-	const struct proto_hdr *hdr = proto_header_by_id(pid);
-	struct proto_hdr *new_hdr;
+	const struct proto_ops *ops = proto_ops_by_id(pid);
+	struct proto_hdr *hdr;
 
 	bug_on(current_packet()->headers_count >= PROTO_MAX_LAYERS);
 
-	new_hdr = xmalloc(sizeof(*new_hdr));
-	memcpy(new_hdr, hdr, sizeof(*new_hdr));
+	hdr = xzmalloc(sizeof(*hdr));
+	hdr->ops = ops;
+	hdr->pkt_id = current_packet_id();
 
-	new_hdr->pkt_id = current_packet_id();
+	if (ops && ops->header_init)
+		ops->header_init(hdr);
 
-	if (new_hdr->header_init)
-		new_hdr->header_init(new_hdr);
+	headers[current_packet()->headers_count++] = hdr;
 
-	headers[current_packet()->headers_count++] = new_hdr;
-	return new_hdr;
+	return hdr;
 }
 
 void proto_header_finish(struct proto_hdr *hdr)
 {
-	if (hdr && hdr->header_finish)
-		hdr->header_finish(hdr);
+	if (hdr && hdr->ops && hdr->ops->header_finish)
+		hdr->ops->header_finish(hdr);
 }
 
-struct proto_hdr *proto_lower_default_add(struct proto_hdr *hdr,
+struct proto_hdr *proto_lower_default_add(struct proto_hdr *upper,
 					  enum proto_id pid)
 {
 	struct proto_hdr *current;
 	size_t headers_count = current_packet()->headers_count;
+	const struct proto_ops *ops;
 
 	if (headers_count > 0) {
 		current = current_packet()->headers[headers_count - 1];
+		ops = current->ops;
 
-		if (current->layer >= proto_header_by_id(pid)->layer)
+		if (ops->layer >= proto_ops_by_id(pid)->layer)
 			goto set_proto;
-		if (current->id == pid)
+		if (ops->id == pid)
 			goto set_proto;
 	}
 
-	current = proto_header_init(pid);
+	current = proto_header_push(pid);
+	ops = current->ops;
 
 set_proto:
-	if (current->set_next_proto)
-		current->set_next_proto(current, hdr->id);
+	if (ops && ops->set_next_proto)
+		ops->set_next_proto(current, upper->ops->id);
 
 	return current;
 }
@@ -415,9 +417,10 @@ void proto_packet_finish(void)
 
 	/* Go down from upper layers to do last calculations (checksum) */
 	for (i = headers_count - 1; i >= 0; i--) {
-		struct proto_hdr *p = headers[i];
+		struct proto_hdr *hdr = headers[i];
+		const struct proto_ops *ops = hdr->ops;
 
-		if (p->packet_finish)
-			p->packet_finish(p);
+		if (ops && ops->packet_finish)
+			ops->packet_finish(hdr);
 	}
 }
