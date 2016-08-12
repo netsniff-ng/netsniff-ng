@@ -46,6 +46,7 @@ struct proto_hdr {
 	const struct proto_ops *ops;
 	uint16_t pkt_offset;
 	uint32_t pkt_id;
+	uint32_t index;
 	struct proto_field *fields;
 	size_t fields_count;
 	bool is_csum_valid;

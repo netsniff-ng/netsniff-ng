@@ -31,20 +31,13 @@ static const struct proto_ops *registered_ops[__PROTO_MAX];
 
 struct proto_hdr *proto_lower_header(struct proto_hdr *hdr)
 {
-	struct proto_hdr **headers = current_packet()->headers;
-	size_t headers_count = current_packet()->headers_count;
-	struct proto_hdr *lower = NULL;
-	size_t i;
+	struct packet *pkt = packet_get(hdr->pkt_id);
+	struct proto_hdr **headers = &pkt->headers[0];
 
-	if (headers_count == 0)
+	if (hdr->index == 0)
 		return NULL;
 
-	for (i = 1, lower = headers[0]; i < headers_count; i++) {
-		if (headers[i] == hdr)
-			return headers[i - 1];
-	}
-
-	return lower;
+	return headers[hdr->index - 1];
 }
 
 uint8_t *proto_header_ptr(struct proto_hdr *hdr)
@@ -121,11 +114,12 @@ bool proto_field_is_set(struct proto_hdr *hdr, uint32_t fid)
 
 struct proto_hdr *proto_header_push(enum proto_id pid)
 {
-	struct proto_hdr **headers = current_packet()->headers;
+	struct packet *pkt = current_packet();
+	struct proto_hdr **headers = &pkt->headers[0];
 	const struct proto_ops *ops = proto_ops_by_id(pid);
 	struct proto_hdr *hdr;
 
-	bug_on(current_packet()->headers_count >= PROTO_MAX_LAYERS);
+	bug_on(pkt->headers_count >= PROTO_MAX_LAYERS);
 
 	hdr = xzmalloc(sizeof(*hdr));
 	hdr->ops = ops;
@@ -134,8 +128,11 @@ struct proto_hdr *proto_header_push(enum proto_id pid)
 	if (ops && ops->header_init)
 		ops->header_init(hdr);
 
-	headers[current_packet()->headers_count++] = hdr;
+	/* This is very important to have it after header_init as
+	 * pkt->headers_count might be changed by adding default lower headers */
+	hdr->index = pkt->headers_count;
 
+	headers[pkt->headers_count++] = hdr;
 	return hdr;
 }
 
