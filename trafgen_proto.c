@@ -438,6 +438,37 @@ void proto_packet_finish(void)
 	}
 }
 
+static inline uint32_t field_inc(struct proto_field *field)
+{
+	uint32_t min = field->func.min;
+	uint32_t max = field->func.max;
+	uint32_t val = field->func.val;
+	uint32_t inc = field->func.inc;
+	uint32_t next;
+
+	next = (val + inc) % (max + 1);
+	field->func.val = max(next, min);
+
+	return val;
+}
+
+static void field_inc_func(struct proto_field *field)
+{
+	if (field->len == 1) {
+		proto_field_set_u8(field->hdr, field->id, field_inc(field));
+	} else if (field->len == 2) {
+		proto_field_set_be16(field->hdr, field->id, field_inc(field));
+	} else if (field->len == 4) {
+		proto_field_set_be32(field->hdr, field->id, field_inc(field));
+	} else if (field->len > 4) {
+		uint8_t *bytes = __proto_field_get_bytes(field);
+
+		bytes += field->len - 4;
+
+		*(uint32_t *)bytes = bswap_32(field_inc(field));
+	}
+}
+
 void proto_field_func_add(struct proto_hdr *hdr, uint32_t fid,
 			  struct proto_field_func *func)
 {
@@ -446,6 +477,29 @@ void proto_field_func_add(struct proto_hdr *hdr, uint32_t fid,
 	bug_on(!func);
 
 	field->func.update_field = func->update_field;
+	field->func.type = func->type;
+	field->func.max = func->max ?: UINT32_MAX - 1;
+	field->func.min = func->min;
+	field->func.inc = func->inc;
+
+	if (func->type & PROTO_FIELD_FUNC_INC) {
+		if (func->type & PROTO_FIELD_FUNC_MIN)
+			field->func.val = func->min;
+		else if (field->len == 1)
+			field->func.val = proto_field_get_u8(hdr, fid);
+		else if (field->len == 2)
+			field->func.val = proto_field_get_u16(hdr, fid);
+		else if (field->len == 4)
+			field->func.val = proto_field_get_u32(hdr, fid);
+		else if (field->len > 4) {
+			uint8_t *bytes = __proto_field_get_bytes(field);
+
+			bytes += field->len - 4;
+			field->func.val = bswap_32(*(uint32_t *)bytes);
+		}
+
+		field->func.update_field = field_inc_func;
+	}
 }
 
 void proto_field_dyn_apply(struct proto_field *field)

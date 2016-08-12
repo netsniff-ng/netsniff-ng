@@ -51,7 +51,18 @@ struct proto_hdr {
 	size_t len;
 };
 
+enum proto_field_func_t {
+	PROTO_FIELD_FUNC_INC = 1 << 0,
+	PROTO_FIELD_FUNC_MIN = 1 << 1,
+};
+
 struct proto_field_func {
+	enum proto_field_func_t type;
+	uint32_t min;
+	uint32_t max;
+	int32_t inc;
+	uint32_t val;
+
 	void (*update_field)(struct proto_field *field);
 };
 
