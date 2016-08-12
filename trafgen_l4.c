@@ -28,21 +28,28 @@ static void udp_header_init(struct proto_hdr *hdr)
 	proto_header_fields_add(hdr, udp_fields, array_size(udp_fields));
 }
 
-static void udp_packet_finish(struct proto_hdr *hdr)
+static void udp_field_changed(struct proto_field *field)
 {
-	struct proto_hdr *lower = proto_lower_header(hdr);
-	struct packet *pkt = current_packet();
+	field->hdr->is_csum_valid = false;
+}
+
+static void udp_csum_update(struct proto_hdr *hdr)
+{
+	struct proto_hdr *lower;
 	uint16_t total_len;
 	uint16_t csum;
 
-	total_len = pkt->len - hdr->pkt_offset;
-	proto_field_set_default_be16(hdr, UDP_LEN, total_len);
-
+	if (hdr->is_csum_valid)
+		return;
 	if (proto_field_is_set(hdr, UDP_CSUM))
 		return;
-
+	lower = proto_lower_header(hdr);
 	if (!lower)
 		return;
+
+	total_len = packet_get(hdr->pkt_id)->len - hdr->pkt_offset;
+
+	proto_field_set_default_be16(hdr, UDP_CSUM, 0);
 
 	switch (lower->ops->id) {
 	case PROTO_IP4:
@@ -58,14 +65,28 @@ static void udp_packet_finish(struct proto_hdr *hdr)
 		break;
 	}
 
-	proto_field_set_be16(hdr, UDP_CSUM, bswap_16(csum));
+	proto_field_set_default_be16(hdr, UDP_CSUM, bswap_16(csum));
+	hdr->is_csum_valid = true;
+}
+
+static void udp_packet_finish(struct proto_hdr *hdr)
+{
+	struct packet *pkt = current_packet();
+	uint16_t total_len;
+
+	total_len = pkt->len - hdr->pkt_offset;
+	proto_field_set_default_be16(hdr, UDP_LEN, total_len);
+
+	udp_csum_update(hdr);
 }
 
 static const struct proto_ops udp_proto_ops = {
 	.id		= PROTO_UDP,
 	.layer		= PROTO_L4,
 	.header_init	= udp_header_init,
+	.packet_update  = udp_csum_update,
 	.packet_finish  = udp_packet_finish,
+	.field_changed  = udp_field_changed,
 };
 
 static struct proto_field tcp_fields[] = {

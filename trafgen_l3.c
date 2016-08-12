@@ -46,6 +46,13 @@ static void ipv4_header_init(struct proto_hdr *hdr)
 static void ipv4_field_changed(struct proto_field *field)
 {
 	field->hdr->is_csum_valid = false;
+
+	if (field->id == IP4_SADDR || field->id == IP4_DADDR) {
+		struct proto_hdr *upper = proto_upper_header(field->hdr);
+
+		if (upper && upper->ops->id == PROTO_UDP)
+			upper->is_csum_valid = false;
+	}
 }
 
 static void ipv4_csum_update(struct proto_hdr *hdr)
@@ -136,6 +143,16 @@ static void ipv6_header_init(struct proto_hdr *hdr)
 	proto_field_set_default_dev_ipv6(hdr, IP6_SADDR);
 }
 
+static void ipv6_field_changed(struct proto_field *field)
+{
+	if (field->id == IP6_SADDR || field->id == IP6_DADDR) {
+		struct proto_hdr *upper = proto_upper_header(field->hdr);
+
+		if (upper && upper->ops->id == PROTO_UDP)
+			upper->is_csum_valid = false;
+	}
+}
+
 #define IPV6_HDR_LEN 40
 
 static void ipv6_packet_finish(struct proto_hdr *hdr)
@@ -171,6 +188,7 @@ static const struct proto_ops ipv6_proto_ops = {
 	.id             = PROTO_IP6,
 	.layer          = PROTO_L3,
 	.header_init    = ipv6_header_init,
+	.field_changed  = ipv6_field_changed,
 	.packet_finish  = ipv6_packet_finish,
 	.set_next_proto = ipv6_set_next_proto,
 };
