@@ -76,6 +76,7 @@ enum field_expr_type_t {
 	FIELD_EXPR_IP4_ADDR,
 	FIELD_EXPR_IP6_ADDR,
 	FIELD_EXPR_INC,
+	FIELD_EXPR_RND,
 };
 
 struct proto_field_expr {
@@ -429,6 +430,7 @@ static void proto_field_expr_eval(void)
 		break;
 
 	case FIELD_EXPR_INC:
+	case FIELD_EXPR_RND:
 		if (field_expr.val.func.min
 			&& field_expr.val.func.min >= field_expr.val.func.max)
 			panic("dinc(): min(%u) can't be >= max(%u)\n",
@@ -738,6 +740,13 @@ field_expr
 			  field_expr.val.func.min = $3;
 			  field_expr.val.func.max = $5;
 			  field_expr.val.func.inc = $7; }
+	| K_DRND '(' ')' { field_expr.type = FIELD_EXPR_RND;
+			  field_expr.val.func.type = PROTO_FIELD_FUNC_RND; }
+	| K_DRND '(' number delimiter number ')'
+			{ field_expr.type = FIELD_EXPR_RND;
+			  field_expr.val.func.type = PROTO_FIELD_FUNC_RND;
+			  field_expr.val.func.min = $3;
+			  field_expr.val.func.max = $5; }
 	;
 
 eth_proto
