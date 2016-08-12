@@ -40,6 +40,18 @@ struct proto_hdr *proto_lower_header(struct proto_hdr *hdr)
 	return headers[hdr->index - 1];
 }
 
+struct proto_hdr *proto_upper_header(struct proto_hdr *hdr)
+{
+	struct packet *pkt = packet_get(hdr->pkt_id);
+	struct proto_hdr **headers = &pkt->headers[0];
+	size_t headers_count = pkt->headers_count;
+
+	if (hdr->index == headers_count - 1)
+		return NULL;
+
+	return headers[hdr->index + 1];
+}
+
 uint8_t *proto_header_ptr(struct proto_hdr *hdr)
 {
 	return &packet_get(hdr->pkt_id)->payload[hdr->pkt_offset];

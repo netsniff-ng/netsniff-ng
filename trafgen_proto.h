@@ -95,6 +95,7 @@ extern struct proto_hdr *proto_lower_default_add(struct proto_hdr *hdr,
 						 enum proto_id pid);
 
 extern struct proto_hdr *proto_lower_header(struct proto_hdr *hdr);
+extern struct proto_hdr *proto_upper_header(struct proto_hdr *hdr);
 extern uint8_t *proto_header_ptr(struct proto_hdr *hdr);
 
 extern void proto_header_fields_add(struct proto_hdr *hdr,
