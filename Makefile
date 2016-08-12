@@ -49,7 +49,11 @@ MAKEFLAGS += --jobs=$(shell grep "^processor" /proc/cpuinfo | wc -l)
 ifeq ("$(origin DEBUG)", "command line")
   DEBUG := 1
 else
-  DEBUG := 0
+  ifeq ($(CONFIG_DEBUG), 1)
+    DEBUG := 1
+  else
+    DEBUG := 0
+  endif
 endif
 
 # Compiler detection

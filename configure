@@ -22,6 +22,7 @@ HAVE_TPACKET3=0
 DISABLE_LIBNL=0
 DISABLE_GEOIP=0
 DISABLE_ZLIB=0
+ENABLE_DEBUG=0
 
 usage()
 {
@@ -33,6 +34,7 @@ usage()
 	echo "  --disable-libnl  Disable libnl support"
 	echo "  --disable-geoip  Disable geoip support"
 	echo "  --disable-zlib   Disable zlib support"
+	echo "  --enable-debug   Enable debug mode (default disabled)"
 	echo ""
 	echo "Some influential environment variables:"
 	echo "  CC               C compiler command"
@@ -54,6 +56,9 @@ while [ $# -gt 0 ] ; do
 		;;
 	--disable-zlib)
 		DISABLE_ZLIB=1
+		;;
+	--enable-debug)
+		ENABLE_DEBUG=1
 		;;
 	*)
 		echo "[!] Unrecognized option: '$1'. Try './configure --help' for more information"
@@ -789,6 +794,7 @@ else
 	echo "CONFIG_GEOIP=0" >> Config
 fi
 
+echo "CONFIG_DEBUG=$ENABLE_DEBUG" >> Config
 echo "CONFIG_TOOLS=$TOOLS" >> Config
 echo "CONFIG_OK=1" >> Config
 
