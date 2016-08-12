@@ -118,13 +118,20 @@ static void tcp_header_init(struct proto_hdr *hdr)
 	proto_field_set_default_be16(hdr, TCP_DOFF, 5);
 }
 
-static void tcp_packet_finish(struct proto_hdr *hdr)
+static void tcp_field_changed(struct proto_field *field)
+{
+	field->hdr->is_csum_valid = false;
+}
+
+static void tcp_csum_update(struct proto_hdr *hdr)
 {
 	struct proto_hdr *lower = proto_lower_header(hdr);
 	struct packet *pkt = current_packet();
 	uint16_t total_len;
 	uint16_t csum;
 
+	if (hdr->is_csum_valid)
+		return;
 	if (proto_field_is_set(hdr, TCP_CSUM))
 		return;
 
@@ -132,6 +139,8 @@ static void tcp_packet_finish(struct proto_hdr *hdr)
 		return;
 
 	total_len = pkt->len - hdr->pkt_offset;
+
+	proto_field_set_default_be16(hdr, TCP_CSUM, 0);
 
 	switch (lower->ops->id) {
 	case PROTO_IP4:
@@ -147,14 +156,17 @@ static void tcp_packet_finish(struct proto_hdr *hdr)
 		break;
 	}
 
-	proto_field_set_be16(hdr, TCP_CSUM, bswap_16(csum));
+	proto_field_set_default_be16(hdr, TCP_CSUM, bswap_16(csum));
+	hdr->is_csum_valid = true;
 }
 
 static const struct proto_ops tcp_proto_ops = {
 	.id		= PROTO_TCP,
 	.layer		= PROTO_L4,
 	.header_init	= tcp_header_init,
-	.packet_finish  = tcp_packet_finish,
+	.packet_update  = tcp_csum_update,
+	.packet_finish  = tcp_csum_update,
+	.field_changed  = tcp_field_changed,
 };
 
 static struct proto_field icmpv4_fields[] = {

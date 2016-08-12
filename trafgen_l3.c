@@ -50,7 +50,7 @@ static void ipv4_field_changed(struct proto_field *field)
 	if (field->id == IP4_SADDR || field->id == IP4_DADDR) {
 		struct proto_hdr *upper = proto_upper_header(field->hdr);
 
-		if (upper && upper->ops->id == PROTO_UDP)
+		if (upper && (upper->ops->id == PROTO_UDP || upper->ops->id == PROTO_TCP))
 			upper->is_csum_valid = false;
 	}
 }
@@ -148,7 +148,7 @@ static void ipv6_field_changed(struct proto_field *field)
 	if (field->id == IP6_SADDR || field->id == IP6_DADDR) {
 		struct proto_hdr *upper = proto_upper_header(field->hdr);
 
-		if (upper && upper->ops->id == PROTO_UDP)
+		if (upper && (upper->ops->id == PROTO_UDP || upper->ops->id == PROTO_TCP))
 			upper->is_csum_valid = false;
 	}
 }
