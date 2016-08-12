@@ -48,6 +48,7 @@ struct proto_hdr {
 	uint32_t pkt_id;
 	struct proto_field *fields;
 	size_t fields_count;
+	bool is_csum_valid;
 	size_t len;
 };
 

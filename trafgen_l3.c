@@ -43,6 +43,30 @@ static void ipv4_header_init(struct proto_hdr *hdr)
 	proto_field_set_default_dev_ipv4(hdr, IP4_SADDR);
 }
 
+static void ipv4_field_changed(struct proto_field *field)
+{
+	field->hdr->is_csum_valid = false;
+}
+
+static void ipv4_csum_update(struct proto_hdr *hdr)
+{
+	struct packet *pkt;
+	uint16_t csum;
+
+	if (hdr->is_csum_valid)
+		return;
+	if (proto_field_is_set(hdr, IP4_CSUM))
+		return;
+
+	pkt = packet_get(hdr->pkt_id);
+
+	proto_field_set_default_u16(hdr, IP4_CSUM, 0);
+	csum = htons(calc_csum(&pkt->payload[hdr->pkt_offset], hdr->len));
+	proto_field_set_default_u16(hdr, IP4_CSUM, bswap_16(csum));
+
+	hdr->is_csum_valid = true;
+}
+
 static void ipv4_packet_finish(struct proto_hdr *hdr)
 {
 	struct packet *pkt = current_packet();
@@ -51,12 +75,7 @@ static void ipv4_packet_finish(struct proto_hdr *hdr)
 	total_len = pkt->len - hdr->pkt_offset;
 	proto_field_set_default_be16(hdr, IP4_LEN, total_len);
 
-	if (!proto_field_is_set(hdr, IP4_CSUM)) {
-		uint16_t csum;
-
-		csum = htons(calc_csum(&pkt->payload[hdr->pkt_offset], hdr->len));
-		proto_field_set_u16(hdr, IP4_CSUM, bswap_16(csum));
-	}
+	ipv4_csum_update(hdr);
 }
 
 static void ipv4_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
@@ -90,6 +109,8 @@ static const struct proto_ops ipv4_proto_ops = {
 	.id		= PROTO_IP4,
 	.layer		= PROTO_L3,
 	.header_init	= ipv4_header_init,
+	.packet_update  = ipv4_csum_update,
+	.field_changed  = ipv4_field_changed,
 	.packet_finish  = ipv4_packet_finish,
 	.set_next_proto = ipv4_set_next_proto,
 };
