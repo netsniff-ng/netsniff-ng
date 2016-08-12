@@ -75,6 +75,7 @@ enum field_expr_type_t {
 	FIELD_EXPR_MAC,
 	FIELD_EXPR_IP4_ADDR,
 	FIELD_EXPR_IP6_ADDR,
+	FIELD_EXPR_INC,
 };
 
 struct proto_field_expr {
@@ -86,6 +87,7 @@ struct proto_field_expr {
 		struct in6_addr ip6_addr;
 		long long int number;
 		uint8_t bytes[256];
+		struct proto_field_func func;
 	} val;
 };
 
@@ -124,6 +126,12 @@ static inline void __init_new_csum_slot(struct packet_dyn *slot)
 {
 	slot->csum = NULL;
 	slot->slen = 0;
+}
+
+static inline void __init_new_fields_slot(struct packet_dyn *slot)
+{
+	slot->fields = NULL;
+	slot->flen = 0;
 }
 
 static inline void __setup_new_counter(struct counter *c, uint8_t start,
@@ -168,6 +176,7 @@ static void realloc_packet(void)
 	__init_new_counter_slot(&packet_dyn[packetd_last]);
 	__init_new_randomizer_slot(&packet_dyn[packetd_last]);
 	__init_new_csum_slot(&packet_dyn[packetd_last]);
+	__init_new_fields_slot(&packet_dyn[packetd_last]);
 }
 
 struct packet *current_packet(void)
@@ -377,6 +386,19 @@ static void proto_field_set(uint32_t fid)
 	field_expr.field = proto_field_by_id(hdr, fid);
 }
 
+static void proto_field_func_setup(struct proto_field *field, struct proto_field_func *func)
+{
+	struct packet_dyn *pkt_dyn;
+
+	proto_field_func_add(field->hdr, field->id, func);
+
+	pkt_dyn = &packet_dyn[packetd_last];
+	pkt_dyn->flen++;
+	pkt_dyn->fields = xrealloc(pkt_dyn->fields, pkt_dyn->flen *
+				   sizeof(struct proto_field *));
+	pkt_dyn->fields[pkt_dyn->flen - 1] = field;
+}
+
 static void proto_field_expr_eval(void)
 {
 	struct proto_field *field = field_expr.field;
@@ -404,6 +426,15 @@ static void proto_field_expr_eval(void)
 	case FIELD_EXPR_IP6_ADDR:
 		proto_field_set_bytes(hdr, field->id,
 			(uint8_t *)&field_expr.val.ip6_addr.s6_addr);
+		break;
+
+	case FIELD_EXPR_INC:
+		if (field_expr.val.func.min
+			&& field_expr.val.func.min >= field_expr.val.func.max)
+			panic("dinc(): min(%u) can't be >= max(%u)\n",
+				field_expr.val.func.min, field_expr.val.func.max);
+
+		proto_field_func_setup(field, &field_expr.val.func);
 		break;
 
 	case FIELD_EXPR_UNKNOWN:
@@ -686,6 +717,27 @@ field_expr
 		     field_expr.val.ip4_addr = $1; }
 	| ip6_addr { field_expr.type = FIELD_EXPR_IP6_ADDR;
 		     field_expr.val.ip6_addr = $1; }
+	| K_DINC '(' ')' { field_expr.type = FIELD_EXPR_INC;
+			   field_expr.val.func.type = PROTO_FIELD_FUNC_INC;
+			   field_expr.val.func.inc = 1; }
+	| K_DINC '(' number ')'
+			{ field_expr.type = FIELD_EXPR_INC;
+			  field_expr.val.func.type = PROTO_FIELD_FUNC_INC;
+			  field_expr.val.func.inc = $3; }
+	| K_DINC '(' number delimiter number ')'
+			{ field_expr.type = FIELD_EXPR_INC;
+			  field_expr.val.func.type  = PROTO_FIELD_FUNC_INC;
+			  field_expr.val.func.type |= PROTO_FIELD_FUNC_MIN;
+			  field_expr.val.func.min = $3;
+			  field_expr.val.func.max = $5;
+			  field_expr.val.func.inc = 1; }
+	| K_DINC '(' number delimiter number delimiter number ')'
+			{ field_expr.type = FIELD_EXPR_INC;
+			  field_expr.val.func.type  = PROTO_FIELD_FUNC_INC;
+			  field_expr.val.func.type |= PROTO_FIELD_FUNC_MIN;
+			  field_expr.val.func.min = $3;
+			  field_expr.val.func.max = $5;
+			  field_expr.val.func.inc = $7; }
 	;
 
 eth_proto
@@ -1096,6 +1148,7 @@ void cleanup_packets(void)
 	for (i = 0; i < dlen; ++i) {
 		free(packet_dyn[i].cnt);
 		free(packet_dyn[i].rnd);
+		free(packet_dyn[i].fields);
 	}
 
 	free(packet_dyn);
