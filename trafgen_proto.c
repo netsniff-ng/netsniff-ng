@@ -469,6 +469,31 @@ static void field_inc_func(struct proto_field *field)
 	}
 }
 
+static inline uint32_t field_rand(struct proto_field *field)
+{
+	return field->func.min + (rand() % ((field->func.max - field->func.min) + 1));
+}
+
+static void field_rnd_func(struct proto_field *field)
+{
+	if (field->len == 1) {
+		proto_field_set_u8(field->hdr, field->id,
+				    (uint8_t) field_rand(field));
+	} else if (field->len == 2) {
+		proto_field_set_be16(field->hdr, field->id,
+				    (uint16_t) field_rand(field));
+	} else if (field->len == 4) {
+		proto_field_set_be32(field->hdr, field->id,
+				    (uint32_t) field_rand(field));
+	} else if (field->len > 4) {
+		uint8_t *bytes = __proto_field_get_bytes(field);
+		uint32_t i;
+
+		for (i = 0; i < field->len; i++)
+			bytes[i] = (uint8_t) field_rand(field);
+	}
+}
+
 void proto_field_func_add(struct proto_hdr *hdr, uint32_t fid,
 			  struct proto_field_func *func)
 {
@@ -499,6 +524,8 @@ void proto_field_func_add(struct proto_hdr *hdr, uint32_t fid,
 		}
 
 		field->func.update_field = field_inc_func;
+	} else if (func->type & PROTO_FIELD_FUNC_RND) {
+		field->func.update_field = field_rnd_func;
 	}
 }
 
