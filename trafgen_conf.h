@@ -49,6 +49,8 @@ struct packet_dyn {
 	size_t rlen;
 	struct csum16 *csum;
 	size_t slen;
+	struct proto_field **fields;
+	size_t flen;
 };
 
 static inline bool packet_dyn_has_elems(struct packet_dyn *p)
@@ -59,6 +61,11 @@ static inline bool packet_dyn_has_elems(struct packet_dyn *p)
 static inline bool packet_dyn_has_only_csums(struct packet_dyn *p)
 {
 	return (p->clen == 0 && p->rlen == 0 && p->slen);
+}
+
+static inline bool packet_dyn_has_fields(struct packet_dyn *p)
+{
+	return p->flen;
 }
 
 extern void compile_packets_str(char *str, bool verbose, unsigned int cpu);

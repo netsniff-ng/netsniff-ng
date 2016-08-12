@@ -409,6 +409,19 @@ void protos_init(const char *dev)
 	protos_l4_init();
 }
 
+void proto_packet_update(uint32_t idx)
+{
+	struct packet *pkt = packet_get(idx);
+	ssize_t i;
+
+	for (i = pkt->headers_count - 1; i >= 0; i--) {
+		struct proto_hdr *hdr = pkt->headers[i];
+
+		if (hdr->ops->packet_update)
+			hdr->ops->packet_update(hdr);
+	}
+}
+
 void proto_packet_finish(void)
 {
 	struct proto_hdr **headers = current_packet()->headers;
@@ -423,4 +436,23 @@ void proto_packet_finish(void)
 		if (ops && ops->packet_finish)
 			ops->packet_finish(hdr);
 	}
+}
+
+void proto_field_func_add(struct proto_hdr *hdr, uint32_t fid,
+			  struct proto_field_func *func)
+{
+	struct proto_field *field = proto_field_by_id(hdr, fid);
+
+	bug_on(!func);
+
+	field->func.update_field = func->update_field;
+}
+
+void proto_field_dyn_apply(struct proto_field *field)
+{
+	if (field->func.update_field)
+		field->func.update_field(field);
+
+	if (field->hdr->ops->field_changed)
+		field->hdr->ops->field_changed(field);
 }

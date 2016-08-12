@@ -619,6 +619,15 @@ static inline void packet_apply_dyn_elements(int idx)
 		apply_randomizer(idx);
 		apply_csum16(idx);
 	}
+
+	if (packet_dyn_has_fields(&packet_dyn[idx])) {
+		uint32_t i;
+
+		for (i = 0; i < packet_dyn[idx].flen; i++)
+			proto_field_dyn_apply(packet_dyn[idx].fields[i]);
+
+		proto_packet_update(idx);
+	}
 }
 
 static void xmit_slowpath_or_die(struct ctx *ctx, unsigned int cpu, unsigned long orig_num)
