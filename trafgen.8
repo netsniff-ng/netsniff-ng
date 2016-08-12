@@ -284,6 +284,49 @@ If a field is not specified, then a default value will be used (usually 0).
 Protocol fields might be set in any order. However, the offset of the fields in
 the resulting packet is according to the respective protocol.
 .sp
+Each field might be set with a function which generates field value at runtime by
+increment or randomize it. For L3/L4 protocols the checksum is calculated automatically
+if the field was changed dynamically by specified function.  The following field
+functions are supported:
+.in +4
+.sp
+.B dinc
+- increment field value at runtime. By default increment step is '1'.
+.B min
+and
+.B max
+parameters are used to increment field only in the specified range, by default original
+field value is used. If the field length is greater than 4 then last 4 bytes are
+incremented only (useful for MAC and IPv6 addresses):
+.in +4
+.sp
+<field> = dinc() | dinc(min, max) | dinc(min, max, step)
+.in -4
+.sp
+.B drnd
+- randomize field value at runtime.
+.B min
+and
+.B max
+parameters are used to randomize field only in the specified range:
+.in +4
+.sp
+<field> = drnd() | drnd(min, max)
+.in -4
+.sp
+Example of using dynamic functions:
+.sp
+{
+.in +2
+    eth(saddr=aa:bb:cc:dd:ee:ff, saddr=dinc()),
+    ipv4(saddr=dinc()),
+    udp(sport=dinc(1, 13, 2), dport=drnd(80, 100))
+.in -2
+}
+
+.in -4
+
+.sp
 All required lower layer headers will be filled automatically if they were not
 specified by the user. The headers will be filled in the order they were
 specified. Each header will be filled with some mimimum required set of fields.
