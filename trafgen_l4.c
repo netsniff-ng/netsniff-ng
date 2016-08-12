@@ -156,25 +156,37 @@ static void icmpv4_header_init(struct proto_hdr *hdr)
 	proto_header_fields_add(hdr, icmpv4_fields, array_size(icmpv4_fields));
 }
 
-static void icmpv4_packet_finish(struct proto_hdr *hdr)
+static void icmpv4_csum_update(struct proto_hdr *hdr)
 {
 	struct packet *pkt;
 	uint16_t csum;
 
+	if (hdr->is_csum_valid)
+		return;
 	if (proto_field_is_set(hdr, ICMPV4_CSUM))
 		return;
 
-	pkt = current_packet();
+	pkt = packet_get(hdr->pkt_id);
 
+	proto_field_set_default_u16(hdr, ICMPV4_CSUM, 0);
 	csum = htons(calc_csum(proto_header_ptr(hdr), pkt->len - hdr->pkt_offset));
-	proto_field_set_u16(hdr, ICMPV4_CSUM, bswap_16(csum));
+	proto_field_set_default_u16(hdr, ICMPV4_CSUM, bswap_16(csum));
+
+	hdr->is_csum_valid = true;
+}
+
+static void icmpv4_field_changed(struct proto_field *field)
+{
+	field->hdr->is_csum_valid = false;
 }
 
 static const struct proto_ops icmpv4_proto_ops = {
 	.id		= PROTO_ICMP4,
 	.layer		= PROTO_L4,
 	.header_init	= icmpv4_header_init,
-	.packet_finish  = icmpv4_packet_finish,
+	.packet_update  = icmpv4_csum_update,
+	.packet_finish  = icmpv4_csum_update,
+	.field_changed  = icmpv4_field_changed,
 };
 
 static struct proto_field icmpv6_fields[] = {
