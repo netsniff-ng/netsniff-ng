@@ -202,39 +202,45 @@ static void icmpv6_header_init(struct proto_hdr *hdr)
 	proto_header_fields_add(hdr, icmpv6_fields, array_size(icmpv6_fields));
 }
 
-static void icmpv6_packet_finish(struct proto_hdr *hdr)
+static void icmpv6_csum_update(struct proto_hdr *hdr)
 {
 	struct proto_hdr *lower = proto_lower_header(hdr);
-	struct packet *pkt = current_packet();
+	struct packet *pkt = packet_get(hdr->pkt_id);
 	uint16_t total_len;
 	uint16_t csum;
 
-	if (proto_field_is_set(hdr, ICMPV6_CSUM))
+	if (unlikely(!lower))
 		return;
-
-	if (!lower)
+	if (hdr->is_csum_valid)
+		return;
+	if (proto_field_is_set(hdr, ICMPV6_CSUM))
 		return;
 
 	total_len = pkt->len - hdr->pkt_offset;
 
-	switch (lower->ops->id) {
-	case PROTO_IP6:
+	proto_field_set_be16(hdr, ICMPV6_CSUM, 0);
+
+	if (likely(lower->ops->id == PROTO_IP6)) {
 		csum = p6_csum((void *) proto_header_ptr(lower), proto_header_ptr(hdr),
 				total_len, IPPROTO_ICMPV6);
-		break;
-	default:
-		csum = 0;
-		break;
-	}
 
-	proto_field_set_be16(hdr, ICMPV6_CSUM, bswap_16(csum));
+		proto_field_set_be16(hdr, ICMPV6_CSUM, bswap_16(csum));
+		hdr->is_csum_valid = true;
+	}
+}
+
+static void icmpv6_field_changed(struct proto_field *field)
+{
+	field->hdr->is_csum_valid = false;
 }
 
 static struct proto_ops icmpv6_proto_ops = {
 	.id		= PROTO_ICMP6,
 	.layer		= PROTO_L4,
 	.header_init	= icmpv6_header_init,
-	.packet_finish  = icmpv6_packet_finish,
+	.packet_finish  = icmpv6_csum_update,
+	.packet_update  = icmpv6_csum_update,
+	.field_changed  = icmpv6_field_changed,
 };
 
 void protos_l4_init(void)
