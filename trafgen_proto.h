@@ -143,4 +143,6 @@ extern void proto_field_dyn_apply(struct proto_field *field);
 extern void proto_field_func_add(struct proto_hdr *hdr, uint32_t fid,
 				 struct proto_field_func *func);
 
+extern struct proto_field *proto_field_by_id(struct proto_hdr *hdr, uint32_t fid);
+
 #endif /* TRAFGEN_PROTO_H */

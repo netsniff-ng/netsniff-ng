@@ -107,7 +107,7 @@ void proto_header_fields_add(struct proto_hdr *hdr,
 	}
 }
 
-static struct proto_field *proto_field_by_id(struct proto_hdr *hdr, uint32_t fid)
+struct proto_field *proto_field_by_id(struct proto_hdr *hdr, uint32_t fid)
 {
 	/* Assume the fields are stored in the same order as the respective
 	 * enum, so the index can be used for faster lookup here.

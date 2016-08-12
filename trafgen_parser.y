@@ -69,6 +69,27 @@ extern size_t dlen;
 
 static int our_cpu, min_cpu = -1, max_cpu = -1;
 
+enum field_expr_type_t {
+	FIELD_EXPR_UNKNOWN,
+	FIELD_EXPR_NUMB,
+	FIELD_EXPR_MAC,
+	FIELD_EXPR_IP4_ADDR,
+	FIELD_EXPR_IP6_ADDR,
+};
+
+struct proto_field_expr {
+	enum field_expr_type_t type;
+	struct proto_field *field;
+
+	union {
+		struct in_addr ip4_addr;
+		struct in6_addr ip6_addr;
+		long long int number;
+		uint8_t bytes[256];
+	} val;
+};
+
+static struct proto_field_expr field_expr;
 static struct proto_hdr *hdr;
 
 static inline int test_ignore(void)
@@ -351,6 +372,48 @@ static void proto_add(enum proto_id pid)
 	hdr = proto_header_push(pid);
 }
 
+static void proto_field_set(uint32_t fid)
+{
+	field_expr.field = proto_field_by_id(hdr, fid);
+}
+
+static void proto_field_expr_eval(void)
+{
+	struct proto_field *field = field_expr.field;
+
+	switch (field_expr.type) {
+	case FIELD_EXPR_NUMB:
+		if (field->len == 1)
+			proto_field_set_u8(hdr, field->id, field_expr.val.number);
+		else if (field->len == 2)
+			proto_field_set_be16(hdr, field->id, field_expr.val.number);
+		else if (field->len == 4)
+			proto_field_set_be32(hdr, field->id, field_expr.val.number);
+		else
+			bug();
+		break;
+
+	case FIELD_EXPR_MAC:
+		proto_field_set_bytes(hdr, field->id, field_expr.val.bytes);
+		break;
+
+	case FIELD_EXPR_IP4_ADDR:
+		proto_field_set_u32(hdr, field->id, field_expr.val.ip4_addr.s_addr);
+		break;
+
+	case FIELD_EXPR_IP6_ADDR:
+		proto_field_set_bytes(hdr, field->id,
+			(uint8_t *)&field_expr.val.ip6_addr.s6_addr);
+		break;
+
+	case FIELD_EXPR_UNKNOWN:
+	default:
+		bug();
+	}
+
+	memset(&field_expr, 0, sizeof(field_expr));
+}
+
 %}
 
 %union {
@@ -614,6 +677,17 @@ proto
 	| tcp_proto { }
 	;
 
+field_expr
+	: number { field_expr.type = FIELD_EXPR_NUMB;
+		   field_expr.val.number = $1; }
+	| mac { field_expr.type = FIELD_EXPR_MAC;
+		memcpy(field_expr.val.bytes, $1, sizeof(field_expr.val.bytes)); }
+	| ip4_addr { field_expr.type = FIELD_EXPR_IP4_ADDR;
+		     field_expr.val.ip4_addr = $1; }
+	| ip6_addr { field_expr.type = FIELD_EXPR_IP6_ADDR;
+		     field_expr.val.ip6_addr = $1; }
+	;
+
 eth_proto
 	: eth '(' eth_param_list ')' { }
 	;
@@ -624,8 +698,8 @@ eth
 
 eth_param_list
 	: { }
-	| eth_field { }
-	| eth_field delimiter eth_param_list { }
+	| eth_expr { }
+	| eth_expr delimiter eth_param_list { }
 	;
 
 eth_type
@@ -635,12 +709,13 @@ eth_type
 	;
 
 eth_field
-	: K_DADDR skip_white '=' skip_white mac
-		{ proto_field_set_bytes(hdr, ETH_DST_ADDR, $5); }
-	| K_SADDR skip_white '=' skip_white mac
-		{ proto_field_set_bytes(hdr, ETH_SRC_ADDR, $5); }
-	| eth_type skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, ETH_TYPE, $5); }
+	: K_DADDR { proto_field_set(ETH_DST_ADDR); }
+	| K_SADDR { proto_field_set(ETH_SRC_ADDR); }
+	| eth_type { proto_field_set(ETH_TYPE); }
+
+eth_expr
+	: eth_field skip_white '=' skip_white field_expr
+		{ proto_field_expr_eval(); }
 	;
 
 vlan_proto
@@ -653,8 +728,8 @@ vlan
 
 vlan_param_list
 	: { }
-	| vlan_field { }
-	| vlan_field delimiter vlan_param_list { }
+	| vlan_expr { }
+	| vlan_expr delimiter vlan_param_list { }
 	;
 
 vlan_type
@@ -663,20 +738,20 @@ vlan_type
 	;
 
 vlan_field
-	: vlan_type skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, VLAN_TPID, $5); }
+	: vlan_type { proto_field_set(VLAN_TPID); }
+	| K_TCI { proto_field_set(VLAN_TCI); }
+	| K_PCP { proto_field_set(VLAN_PCP); }
+	| K_DEI { proto_field_set(VLAN_DEI); }
+	| K_ID { proto_field_set(VLAN_VID); }
+	;
+
+vlan_expr
+	: vlan_field skip_white '=' skip_white field_expr
+		{ proto_field_expr_eval(); }
 	| K_1Q
 		{ proto_field_set_be16(hdr, VLAN_TPID, ETH_P_8021Q); }
 	| K_1AD
 		{ proto_field_set_be16(hdr, VLAN_TPID, ETH_P_8021AD); }
-	| K_TCI skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, VLAN_TCI, $5); }
-	| K_PCP skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, VLAN_PCP, $5); }
-	| K_DEI skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, VLAN_DEI, $5); }
-	| K_ID skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, VLAN_VID, $5); }
 	;
 
 mpls_proto
@@ -689,8 +764,8 @@ mpls
 
 mpls_param_list
 	: { }
-	| mpls_field { }
-	| mpls_field delimiter mpls_param_list { }
+	| mpls_expr { }
+	| mpls_expr delimiter mpls_param_list { }
 	;
 
 mpls_tc
@@ -699,15 +774,15 @@ mpls_tc
 	;
 
 mpls_field
-	: K_LABEL skip_white '=' skip_white number
-		{ proto_field_set_be32(hdr, MPLS_LABEL, $5); }
-	| mpls_tc skip_white '=' skip_white number
-		{ proto_field_set_be32(hdr, MPLS_TC, $5); }
-	| K_LAST skip_white '=' skip_white number
-		{ proto_field_set_be32(hdr, MPLS_LAST, $5); }
-	| K_TTL skip_white '=' skip_white number
-		{ proto_field_set_be32(hdr, MPLS_TTL, $5); }
+	: K_LABEL { proto_field_set(MPLS_LABEL); }
+	| mpls_tc { proto_field_set(MPLS_TC); }
+	| K_LAST { proto_field_set(MPLS_LAST); }
+	| K_TTL { proto_field_set(MPLS_TTL); }
 	;
+
+mpls_expr
+	: mpls_field skip_white '=' skip_white field_expr
+		{ proto_field_expr_eval(); }
 
 arp_proto
 	: arp '(' arp_param_list ')' { }
@@ -715,33 +790,39 @@ arp_proto
 
 arp_param_list
 	: { }
-	| arp_field { }
-	| arp_field delimiter arp_param_list { }
+	| arp_expr { }
+	| arp_expr delimiter arp_param_list { }
 	;
 
 arp_field
-	: K_OPER skip_white '=' skip_white K_REQUEST
+	: K_HTYPE
+		{ proto_field_set(ARP_HTYPE); }
+	| K_PTYPE
+		{ proto_field_set(ARP_PTYPE); }
+	| K_SHA
+		{ proto_field_set(ARP_SHA); }
+	| K_THA
+		{ proto_field_set(ARP_THA); }
+	| K_SPA
+		{ proto_field_set(ARP_SPA); }
+	| K_TPA
+		{ proto_field_set(ARP_TPA); }
+	;
+
+arp_expr
+	: arp_field skip_white '=' skip_white field_expr
+		{ proto_field_expr_eval(); }
+	| K_OPER skip_white '=' skip_white field_expr
+		{ proto_field_set(ARP_OPER);
+		  proto_field_expr_eval(); }
+	| K_OPER skip_white '=' skip_white K_REQUEST
 		{ proto_field_set_be16(hdr, ARP_OPER, ARPOP_REQUEST); }
 	| K_OPER skip_white '=' skip_white K_REPLY
 		{ proto_field_set_be16(hdr, ARP_OPER, ARPOP_REPLY); }
-	| K_OPER skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, ARP_OPER, $5); }
 	| K_REQUEST
 		{ proto_field_set_be16(hdr, ARP_OPER, ARPOP_REQUEST); }
 	| K_REPLY
 		{ proto_field_set_be16(hdr, ARP_OPER, ARPOP_REPLY); }
-	| K_HTYPE skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, ARP_HTYPE, $5); }
-	| K_PTYPE skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, ARP_PTYPE, $5); }
-	| K_SHA skip_white '=' skip_white mac
-		{ proto_field_set_bytes(hdr, ARP_SHA, $5); }
-	| K_THA skip_white '=' skip_white mac
-		{ proto_field_set_bytes(hdr, ARP_THA, $5); }
-	| K_SPA skip_white '=' skip_white ip4_addr
-		{ proto_field_set_u32(hdr, ARP_SPA, $5.s_addr); }
-	| K_TPA skip_white '=' skip_white ip4_addr
-		{ proto_field_set_u32(hdr, ARP_TPA, $5.s_addr); }
 	;
 arp
 	: K_ARP	{ proto_add(PROTO_ARP); }
@@ -753,41 +834,32 @@ ip4_proto
 
 ip4_param_list
 	: { }
-	| ip4_field { }
-	| ip4_field delimiter ip4_param_list { }
+	| ip4_expr { }
+	| ip4_expr delimiter ip4_param_list { }
 	;
 
 ip4_field
-	: K_VER skip_white '=' skip_white number
-		{ proto_field_set_u8(hdr, IP4_VER, $5); }
-	| K_IHL skip_white '=' skip_white number
-		{ proto_field_set_u8(hdr, IP4_IHL, $5); }
-	| K_DADDR skip_white '=' skip_white ip4_addr
-		{ proto_field_set_u32(hdr, IP4_DADDR, $5.s_addr); }
-	| K_SADDR skip_white '=' skip_white ip4_addr
-		{ proto_field_set_u32(hdr, IP4_SADDR, $5.s_addr); }
-	| K_PROT skip_white '=' skip_white number
-		{ proto_field_set_u8(hdr, IP4_PROTO, $5); }
-	| K_TTL skip_white '=' skip_white number
-		{ proto_field_set_u8(hdr, IP4_TTL, $5); }
-	| K_DSCP skip_white '=' skip_white number
-		{ proto_field_set_u8(hdr, IP4_DSCP, $5); }
-	| K_ECN skip_white '=' skip_white number
-		{ proto_field_set_u8(hdr, IP4_ECN, $5); }
-	| K_TOS skip_white '=' skip_white number
-		{ proto_field_set_u8(hdr, IP4_TOS, $5); }
-	| K_LEN skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, IP4_LEN, $5); }
-	| K_ID skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, IP4_ID, $5); }
-	| K_FLAGS skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, IP4_FLAGS, $5); }
+	: K_VER { proto_field_set(IP4_VER); }
+	| K_IHL { proto_field_set(IP4_IHL); }
+	| K_DADDR { proto_field_set(IP4_DADDR); }
+	| K_SADDR { proto_field_set(IP4_SADDR); }
+	| K_PROT { proto_field_set(IP4_PROTO); }
+	| K_TTL { proto_field_set(IP4_TTL); }
+	| K_DSCP { proto_field_set(IP4_DSCP); }
+	| K_ECN { proto_field_set(IP4_ECN); }
+	| K_TOS { proto_field_set(IP4_TOS); }
+	| K_LEN { proto_field_set(IP4_LEN); }
+	| K_ID { proto_field_set(IP4_ID); }
+	| K_FLAGS { proto_field_set(IP4_FLAGS); }
+	| K_FRAG { proto_field_set(IP4_FRAG_OFFS); }
+	| K_CSUM { proto_field_set(IP4_CSUM); }
+	;
+
+ip4_expr
+	: ip4_field skip_white '=' skip_white field_expr
+		{ proto_field_expr_eval(); }
 	| K_DF  { proto_field_set_be16(hdr, IP4_DF, 1); }
 	| K_MF  { proto_field_set_be16(hdr, IP4_MF, 1); }
-	| K_FRAG skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, IP4_FRAG_OFFS, $5); }
-	| K_CSUM skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, IP4_CSUM, $5); }
 	;
 
 ip4
@@ -800,8 +872,8 @@ ip6_proto
 
 ip6_param_list
 	: { }
-	| ip6_field { }
-	| ip6_field delimiter ip6_param_list { }
+	| ip6_expr { }
+	| ip6_expr delimiter ip6_param_list { }
 	;
 
 ip6_hop_limit
@@ -810,22 +882,19 @@ ip6_hop_limit
 	;
 
 ip6_field
-	: K_VER skip_white '=' skip_white number
-		{ proto_field_set_be32(hdr, IP6_VER, $5); }
-	| K_TC skip_white '=' skip_white number
-		{ proto_field_set_be32(hdr, IP6_CLASS, $5); }
-	| K_FLOW skip_white '=' skip_white number
-		{ proto_field_set_be32(hdr, IP6_FLOW_LBL, $5); }
-	| K_LEN skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, IP6_LEN, $5); }
-	| K_NEXT_HDR skip_white '=' skip_white number
-		{ proto_field_set_u8(hdr, IP6_NEXT_HDR, $5); }
-	| ip6_hop_limit skip_white '=' skip_white number
-		{ proto_field_set_u8(hdr, IP6_HOP_LIMIT, $5); }
-	| K_SADDR skip_white '=' skip_white ip6_addr
-		{ proto_field_set_bytes(hdr, IP6_SADDR, (uint8_t *)&($5.s6_addr)); }
-	| K_DADDR skip_white '=' skip_white ip6_addr
-		{ proto_field_set_bytes(hdr, IP6_DADDR, (uint8_t *)&($5.s6_addr)); }
+	: K_VER { proto_field_set(IP6_VER); }
+	| K_TC { proto_field_set(IP6_CLASS); }
+	| K_FLOW { proto_field_set(IP6_FLOW_LBL); }
+	| K_LEN { proto_field_set(IP6_LEN); }
+	| K_NEXT_HDR { proto_field_set(IP6_NEXT_HDR); }
+	| ip6_hop_limit { proto_field_set(IP6_HOP_LIMIT); }
+	| K_SADDR { proto_field_set(IP6_SADDR); }
+	| K_DADDR { proto_field_set(IP6_DADDR) ; }
+	;
+
+ip6_expr
+	: ip6_field skip_white '=' skip_white field_expr
+		{ proto_field_expr_eval(); }
 	;
 
 ip6
@@ -838,23 +907,22 @@ icmp4_proto
 
 icmp4_param_list
 	: { }
-	| icmp4_field { }
-	| icmp4_field delimiter icmp4_param_list { }
+	| icmp4_expr { }
+	| icmp4_expr delimiter icmp4_param_list { }
 	;
 
 icmp4_field
-	: K_TYPE skip_white '=' skip_white number
-		{ proto_field_set_u8(hdr, ICMPV4_TYPE, $5); }
-	| K_CODE skip_white '=' skip_white number
-		{ proto_field_set_u8(hdr, ICMPV4_CODE, $5); }
-	| K_ID skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, ICMPV4_ID, $5); }
-	| K_SEQ skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, ICMPV4_SEQ, $5); }
-	| K_MTU skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, ICMPV4_MTU, $5); }
-	| K_ADDR skip_white '=' skip_white ip4_addr
-		{ proto_field_set_u32(hdr, ICMPV4_REDIR_ADDR, $5.s_addr); }
+	: K_TYPE { proto_field_set(ICMPV4_TYPE); }
+	| K_CODE { proto_field_set(ICMPV4_CODE); }
+	| K_ID { proto_field_set(ICMPV4_ID); }
+	| K_SEQ { proto_field_set(ICMPV4_SEQ); }
+	| K_MTU { proto_field_set(ICMPV4_MTU); }
+	| K_ADDR { proto_field_set(ICMPV4_REDIR_ADDR); }
+	;
+
+icmp4_expr
+	: icmp4_field skip_white '=' skip_white field_expr
+		{ proto_field_expr_eval(); }
 	| K_ECHO_REQUEST
 		{ proto_field_set_u8(hdr, ICMPV4_TYPE, ICMP_ECHO);
 		  proto_field_set_u8(hdr, ICMPV4_CODE, 0); }
@@ -872,13 +940,21 @@ icmpv6_proto
 
 icmp6_param_list
 	: { }
-	| icmp6_field { }
-	| icmp6_field delimiter icmp6_param_list { }
+	| icmp6_expr { }
+	| icmp6_expr delimiter icmp6_param_list { }
 	;
 
 icmp6_field
-	: K_TYPE skip_white '=' skip_white number
-		{ proto_field_set_u8(hdr, ICMPV6_TYPE, $5); }
+	: K_CODE { proto_field_set(ICMPV6_CODE); }
+	| K_CSUM { proto_field_set(ICMPV6_CSUM); }
+	;
+
+icmp6_expr
+	: icmp6_field skip_white '=' skip_white field_expr
+		{ proto_field_expr_eval(); }
+	| K_TYPE skip_white '=' skip_white field_expr
+		{ proto_field_set(ICMPV6_TYPE);
+		  proto_field_expr_eval(); }
 	| K_TYPE skip_white '=' K_ECHO_REQUEST
 		{ proto_field_set_u8(hdr, ICMPV6_TYPE, ICMPV6_ECHO_REQUEST); }
 	| K_ECHO_REQUEST
@@ -887,12 +963,7 @@ icmp6_field
 		{ proto_field_set_u8(hdr, ICMPV6_TYPE, ICMPV6_ECHO_REPLY); }
 	| K_ECHO_REPLY
 		{ proto_field_set_u8(hdr, ICMPV6_TYPE, ICMPV6_ECHO_REPLY); }
-	| K_CODE skip_white '=' skip_white number
-		{ proto_field_set_u8(hdr, ICMPV6_CODE, $5); }
-	| K_CSUM skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, ICMPV6_CSUM, $5); }
 	;
-
 icmp6
 	: K_ICMP6 { proto_add(PROTO_ICMP6); }
 	;
@@ -903,19 +974,20 @@ udp_proto
 
 udp_param_list
 	: { }
-	| udp_field { }
-	| udp_field delimiter udp_param_list { }
+	| udp_expr { }
+	| udp_expr delimiter udp_param_list { }
 	;
 
 udp_field
-	: K_SPORT skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, UDP_SPORT, $5); }
-	| K_DPORT skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, UDP_DPORT, $5); }
-	| K_LEN skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, UDP_LEN, $5); }
-	| K_CSUM skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, UDP_CSUM, $5); }
+	: K_SPORT { proto_field_set(UDP_SPORT); }
+	| K_DPORT { proto_field_set(UDP_DPORT); }
+	| K_LEN { proto_field_set(UDP_LEN); }
+	| K_CSUM { proto_field_set(UDP_CSUM); }
+	;
+
+udp_expr
+	: udp_field skip_white '=' skip_white field_expr
+		{ proto_field_expr_eval(); }
 	;
 
 udp
@@ -928,21 +1000,24 @@ tcp_proto
 
 tcp_param_list
 	: { }
-	| tcp_field { }
-	| tcp_field delimiter tcp_param_list { }
+	| tcp_expr { }
+	| tcp_expr delimiter tcp_param_list { }
 	;
 
 tcp_field
-	: K_SPORT skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, TCP_SPORT, $5); }
-	| K_DPORT skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, TCP_DPORT, $5); }
-	| K_SEQ skip_white '=' skip_white number
-		{ proto_field_set_be32(hdr, TCP_SEQ, $5); }
-	| K_ACK_SEQ skip_white '=' skip_white number
-		{ proto_field_set_be32(hdr, TCP_ACK_SEQ, $5); }
-	| K_DOFF skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, TCP_DOFF, $5); }
+	: K_SPORT { proto_field_set(TCP_SPORT); }
+	| K_DPORT { proto_field_set(TCP_DPORT); }
+	| K_SEQ { proto_field_set(TCP_SEQ); }
+	| K_ACK_SEQ { proto_field_set(TCP_ACK_SEQ); }
+	| K_DOFF { proto_field_set(TCP_DOFF); }
+	| K_WINDOW { proto_field_set(TCP_WINDOW); }
+	| K_CSUM { proto_field_set(TCP_CSUM); }
+	| K_URG_PTR { proto_field_set(TCP_URG_PTR); }
+	;
+
+tcp_expr
+	: tcp_field skip_white '=' skip_white field_expr
+		{ proto_field_expr_eval(); }
 	| K_CWR { proto_field_set_be16(hdr, TCP_CWR, 1); }
 	| K_ECE { proto_field_set_be16(hdr, TCP_ECE, 1); }
 	| K_URG { proto_field_set_be16(hdr, TCP_URG, 1); }
@@ -951,12 +1026,6 @@ tcp_field
 	| K_RST { proto_field_set_be16(hdr, TCP_RST, 1); }
 	| K_SYN { proto_field_set_be16(hdr, TCP_SYN, 1); }
 	| K_FIN { proto_field_set_be16(hdr, TCP_FIN, 1); }
-	| K_WINDOW skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, TCP_WINDOW, $5); }
-	| K_CSUM skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, TCP_CSUM, $5); }
-	| K_URG_PTR skip_white '=' skip_white number
-		{ proto_field_set_be16(hdr, TCP_URG_PTR, $5); }
 	;
 
 tcp
