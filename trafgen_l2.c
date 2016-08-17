@@ -67,10 +67,8 @@ static struct proto_field vlan_fields[] = {
 
 static void vlan_header_init(struct proto_hdr *hdr)
 {
-	struct proto_hdr *lower;
+	struct proto_hdr *lower = proto_lower_default_add(hdr, PROTO_ETH);
 	uint16_t lower_etype = 0;
-
-	lower = proto_lower_default_add(hdr, PROTO_ETH);
 
 	proto_header_fields_add(hdr, vlan_fields, array_size(vlan_fields));
 
@@ -110,9 +108,7 @@ static struct proto_field arp_fields[] = {
 
 static void arp_header_init(struct proto_hdr *hdr)
 {
-	struct proto_hdr *lower;
-
-	lower = proto_lower_default_add(hdr, PROTO_ETH);
+	struct proto_hdr *lower = proto_lower_default_add(hdr, PROTO_ETH);
 
 	if (lower->ops->id == PROTO_ETH) {
 		const uint8_t bcast[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
