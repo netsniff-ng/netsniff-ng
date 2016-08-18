@@ -825,19 +825,23 @@ static void screen_percpu_states_one(WINDOW *screen, const struct ifstat *rel,
 				     int *voff, unsigned int idx, char *tag)
 {
 	int max_padd = padding_from_num(get_number_cpus());
+	double usr = 0.0, sys = 0.0, idl = 0.0, iow = 0.0;
 	uint64_t all = rel->cpu_user[idx] + rel->cpu_nice[idx] + rel->cpu_sys[idx] +
 		       rel->cpu_idle[idx] + rel->cpu_iow[idx];
+
+	if (all > 0) {
+		usr = 100.0 * (rel->cpu_user[idx] + rel->cpu_nice[idx]) / all;
+		sys = 100.0 * rel->cpu_sys[idx] / all;
+		idl = 100.0 * rel->cpu_idle[idx] / all;
+		iow = 100.0 * rel->cpu_iow[idx] / all;
+	}
 
 	mvwprintw(screen, (*voff)++, 2,
 		  "cpu%*d %s: %11.1lf%% usr/t "
 			      "%9.1lf%% sys/t "
 			     "%10.1lf%% idl/t "
 			     "%11.1lf%% iow/t",
-		  max_padd, idx, tag,
-		  100.0 * (rel->cpu_user[idx] + rel->cpu_nice[idx]) / all,
-		  100.0 * rel->cpu_sys[idx] / all,
-		  100.0 * rel->cpu_idle[idx] / all,
-		  100.0 * rel->cpu_iow[idx] / all);
+		  max_padd, idx, tag, usr, sys, idl, iow);
 }
 
 #define MEDIAN_EVEN(member)	do { \
@@ -856,6 +860,7 @@ static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
 	unsigned int cpus = get_number_cpus();
 	int max_padd = padding_from_num(cpus);
 	uint64_t all;
+	double usr = 0.0, sys = 0.0, idl = 0.0, iow = 0.0;
 
 	if (top_cpus == 0)
 		return;
@@ -875,19 +880,22 @@ static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
 		screen_percpu_states_one(screen, rel, voff, cpu_hits[cpus - 1].idx, "-");
 
 	all = avg->cpu_user + avg->cpu_sys + avg->cpu_nice + avg->cpu_idle + avg->cpu_iow;
+	if (all > 0) {
+		usr = 100.0 * (avg->cpu_user + avg->cpu_nice) / all;
+		sys = 100.0 * avg->cpu_sys / all;
+		idl = 100.0 * avg->cpu_idle /all;
+		iow = 100.0 * avg->cpu_iow / all;
+	}
 	mvwprintw(screen, (*voff)++, 2,
 		  "avg:%*s%14.1lf%%       "
 			"%9.1lf%%       "
 		       "%10.1lf%%       "
-		       "%11.1lf%%", max_padd, "",
-		 100.0 * (avg->cpu_user + avg->cpu_nice) / all,
-		 100.0 * avg->cpu_sys / all,
-		 100.0 * avg->cpu_idle /all,
-		 100.0 * avg->cpu_iow / all);
+		       "%11.1lf%%", max_padd, "", usr, sys, idl, iow);
 
 	if (show_median) {
 		long double m_cpu_user, m_cpu_nice, m_cpu_sys, m_cpu_idle, m_cpu_iow;
 		long double m_all;
+		long double m_usr = 0.0, m_sys = 0.0, m_idl = 0.0, m_iow = 0.0;
 
 		i = cpu_hits[cpus / 2].idx;
 		if (cpus % 2 == 0) {
@@ -909,15 +917,17 @@ static void screen_percpu_states(WINDOW *screen, const struct ifstat *rel,
 		}
 
 		m_all = m_cpu_user + m_cpu_sys + m_cpu_nice + m_cpu_idle + m_cpu_iow;
+		if (m_all > 0.0) {
+			m_usr = 100.0 * (m_cpu_user + m_cpu_nice) / m_all;
+			m_sys = 100.0 * m_cpu_sys / m_all;
+			m_idl = 100.0 * m_cpu_idle /m_all;
+			m_iow = 100.0 * m_cpu_iow / m_all;
+		}
 		mvwprintw(screen, (*voff)++, 2,
 			  "med:%*s%14.1Lf%%       "
 				"%9.1Lf%%       "
 			       "%10.1Lf%%       "
-			       "%11.1Lf%%", max_padd, "",
-			 100.0 * (m_cpu_user + m_cpu_nice) / m_all,
-			 100.0 * m_cpu_sys / m_all,
-			 100.0 * m_cpu_idle /m_all,
-			 100.0 * m_cpu_iow / m_all);
+			       "%11.1Lf%%", max_padd, "", m_usr, m_sys, m_idl, m_iow);
 	}
 }
 
