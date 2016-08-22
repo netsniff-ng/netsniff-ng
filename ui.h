@@ -58,8 +58,8 @@ extern void ui_table_col_align_set(struct ui_table *tbl, int col_id, enum ui_ali
 
 extern void ui_table_row_add(struct ui_table *tbl);
 extern void ui_table_row_show(struct ui_table *tbl);
-extern void ui_table_row_print(struct ui_table *tbl, uint32_t col_id,
-			       const char *str);
+extern void ui_table_row_col_set(struct ui_table *tbl, uint32_t col_id,
+				 const char *str);
 
 extern void ui_table_header_color_set(struct ui_table *tbl, int color);
 extern void ui_table_header_print(struct ui_table *tbl);

@@ -170,7 +170,7 @@ static void __ui_table_row_print(struct ui_table *tbl, struct ui_col *col,
 	ui_text_attr_insert(tbl->row, col->pos + col->len, color, tmp);
 }
 
-void ui_table_row_print(struct ui_table *tbl, uint32_t col_id, const char *str)
+void ui_table_row_col_set(struct ui_table *tbl, uint32_t col_id, const char *str)
 {
 	struct ui_col *col = ui_table_col_get(tbl, col_id);
 
