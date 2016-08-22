@@ -1190,22 +1190,24 @@ static void draw_help(void)
 
 	mvaddnstr(row + 4, col + 3, "Up, u, k      Move up", -1);
 	mvaddnstr(row + 5, col + 3, "Down, d, j    Move down", -1);
-	mvaddnstr(row + 6, col + 3, "?             Toggle help window", -1);
-	mvaddnstr(row + 7, col + 3, "q, Ctrl+C     Quit", -1);
+	mvaddnstr(row + 6, col + 3, "Left,l        Scroll left", -1);
+	mvaddnstr(row + 7, col + 3, "Right,h       Scroll right", -1);
+	mvaddnstr(row + 8, col + 3, "?             Toggle help window", -1);
+	mvaddnstr(row + 9, col + 3, "q, Ctrl+C     Quit", -1);
 
 	attron(A_BOLD | A_UNDERLINE);
-	mvaddnstr(row + 9, col + 2, "Display Settings", -1);
+	mvaddnstr(row + 11, col + 2, "Display Settings", -1);
 	attroff(A_BOLD | A_UNDERLINE);
 
-	mvaddnstr(row + 11, col + 3, "b     Toggle rate units (bits/bytes)", -1);
-	mvaddnstr(row + 12, col + 3, "a     Toggle display of active flows (rate > 0) only", -1);
-	mvaddnstr(row + 13, col + 3, "s     Toggle show source peer info", -1);
+	mvaddnstr(row + 13, col + 3, "b     Toggle rate units (bits/bytes)", -1);
+	mvaddnstr(row + 14, col + 3, "a     Toggle display of active flows (rate > 0) only", -1);
+	mvaddnstr(row + 15, col + 3, "s     Toggle show source peer info", -1);
 
-	mvaddnstr(row + 15, col + 3, "T     Toggle display TCP flows", -1);
-	mvaddnstr(row + 16, col + 3, "U     Toggle display UDP flows", -1);
-	mvaddnstr(row + 17, col + 3, "D     Toggle display DCCP flows", -1);
-	mvaddnstr(row + 18, col + 3, "I     Toggle display ICMP flows", -1);
-	mvaddnstr(row + 19, col + 3, "S     Toggle display SCTP flows", -1);
+	mvaddnstr(row + 17, col + 3, "T     Toggle display TCP flows", -1);
+	mvaddnstr(row + 18, col + 3, "U     Toggle display UDP flows", -1);
+	mvaddnstr(row + 19, col + 3, "D     Toggle display DCCP flows", -1);
+	mvaddnstr(row + 20, col + 3, "I     Toggle display ICMP flows", -1);
+	mvaddnstr(row + 21, col + 3, "S     Toggle display SCTP flows", -1);
 }
 
 static void draw_header(WINDOW *screen)
@@ -1331,6 +1333,14 @@ static void presenter(void)
 			skip_lines++;
 			if (skip_lines > SCROLL_MAX)
 				skip_lines = SCROLL_MAX;
+			break;
+		case KEY_LEFT:
+		case 'h':
+			ui_table_event_send(&flows_tbl, UI_EVT_SCROLL_LEFT);
+			break;
+		case KEY_RIGHT:
+		case 'l':
+			ui_table_event_send(&flows_tbl, UI_EVT_SCROLL_RIGHT);
 			break;
 		case 'b':
 			if (rate_type == RATE_BYTES)

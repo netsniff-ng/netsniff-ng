@@ -154,7 +154,7 @@ void ui_table_clear(struct ui_table *tbl)
 
 void ui_table_row_show(struct ui_table *tbl)
 {
-	mvaddchstr(tbl->rows_y, tbl->x, tbl->row->str);
+	mvaddchstr(tbl->rows_y, tbl->x, tbl->row->str + tbl->scroll_x);
 	ui_text_len_set(tbl->row, 0);
 }
 
@@ -190,19 +190,28 @@ void ui_table_height_set(struct ui_table *tbl, int height)
 void ui_table_header_print(struct ui_table *tbl)
 {
 	struct ui_col *col;
-	int max_width = tbl->width;
-	int width = 0;
+
+	attron(tbl->hdr_color);
+	mvprintw(tbl->y, tbl->x, "%*s", tbl->width, " ");
+	attroff(tbl->hdr_color);
 
 	list_for_each_entry(col, &tbl->cols, entry) {
 		__ui_table_row_print(tbl, col, tbl->hdr_color, col->name);
 
-		if (width + col->len + tbl->col_pad < max_width)
-			width += col->len + tbl->col_pad;
 	}
 
 	ui_table_row_show(tbl);
+}
 
-	attron(tbl->hdr_color);
-	mvprintw(tbl->y, width, "%*s", max_width - width, " ");
-	attroff(tbl->hdr_color);
+#define SCROLL_X_STEP 10
+
+void ui_table_event_send(struct ui_table *tbl, enum ui_event_id evt_id)
+{
+	if (evt_id == UI_EVT_SCROLL_RIGHT) {
+		tbl->scroll_x += SCROLL_X_STEP;
+	} else if (evt_id == UI_EVT_SCROLL_LEFT) {
+		tbl->scroll_x -= SCROLL_X_STEP;
+		if (tbl->scroll_x < 0)
+			tbl->scroll_x = 0;
+	}
 }

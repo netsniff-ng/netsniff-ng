@@ -6,6 +6,11 @@
 
 #include "list.h"
 
+enum ui_event_id {
+	UI_EVT_SCROLL_LEFT,
+	UI_EVT_SCROLL_RIGHT,
+};
+
 enum ui_align {
 	UI_ALIGN_LEFT,
 	UI_ALIGN_RIGHT,
@@ -37,6 +42,7 @@ struct ui_table {
 	int col_pad;
 	int width;
 	int height;
+	int scroll_x;
 };
 
 extern void ui_table_init(struct ui_table *tbl);
@@ -57,5 +63,7 @@ extern void ui_table_row_print(struct ui_table *tbl, uint32_t col_id,
 
 extern void ui_table_header_color_set(struct ui_table *tbl, int color);
 extern void ui_table_header_print(struct ui_table *tbl);
+
+extern void ui_table_event_send(struct ui_table *tbl, enum ui_event_id id);
 
 #endif /* UI_H */
