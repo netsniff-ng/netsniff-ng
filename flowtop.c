@@ -1017,10 +1017,19 @@ static void draw_flow_entry(const struct flow_entry *n)
 
 	print_flow_peer_info(n, show_src ? FLOW_DIR_SRC : FLOW_DIR_DST);
 
+	ui_table_row_show(&flows_tbl);
+
 	if (show_src) {
 		ui_table_row_add(&flows_tbl);
 
+		ui_table_row_print(&flows_tbl, TBL_FLOW_PROCESS, "");
+		ui_table_row_print(&flows_tbl, TBL_FLOW_PID, "");
+		ui_table_row_print(&flows_tbl, TBL_FLOW_PROTO, "");
+		ui_table_row_print(&flows_tbl, TBL_FLOW_STATE, "");
+		ui_table_row_print(&flows_tbl, TBL_FLOW_TIME, "");
+
 		print_flow_peer_info(n, FLOW_DIR_DST);
+		ui_table_row_show(&flows_tbl);
 	}
 }
 

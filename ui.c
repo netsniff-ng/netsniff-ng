@@ -6,7 +6,50 @@
 #include <curses.h>
 
 #include "ui.h"
+#include "str.h"
 #include "xmalloc.h"
+
+static struct ui_text *ui_text_alloc(size_t len)
+{
+	struct ui_text *text = xzmalloc(sizeof(*text));
+
+	text->str = xzmalloc(sizeof(chtype) * len + 1);
+	text->len = len;
+
+	return text;
+}
+
+static void ui_text_len_set(struct ui_text *text, size_t len)
+{
+	if (text->len == len)
+		return;
+
+	if (text->slen + len > text->len) {
+		text->str = xrealloc(text->str, sizeof(chtype) * len + 1);
+		text->len = len;
+	}
+
+	text->slen = min(len, text->slen);
+	text->str[text->slen] = 0;
+}
+
+static void ui_text_attr_insert(struct ui_text *text, int idx, int attr, const char *str)
+{
+	size_t slen = strlen(str);
+	uint32_t i, j;
+
+	if (idx + slen > text->len)
+		ui_text_len_set(text, idx + slen);
+
+	for (j = 0, i = idx; i < idx + slen; i++, j++)
+		text->str[i] = str[j] | attr;
+}
+
+static void ui_text_free(struct ui_text *text)
+{
+	xfree(text->str);
+	xfree(text);
+}
 
 void ui_table_init(struct ui_table *tbl)
 {
@@ -18,6 +61,7 @@ void ui_table_init(struct ui_table *tbl)
 	tbl->width   = COLS;
 	tbl->height  = LINES - 2;
 	tbl->col_pad = 1;
+	tbl->row     = ui_text_alloc(tbl->width);
 
 	INIT_LIST_HEAD(&tbl->cols);
 }
@@ -28,6 +72,8 @@ void ui_table_uninit(struct ui_table *tbl)
 
 	list_for_each_entry_safe(col, tmp, &tbl->cols, entry)
 		xfree(col);
+
+	ui_text_free(tbl->row);
 }
 
 void ui_table_pos_set(struct ui_table *tbl, int y, int x)
@@ -52,7 +98,7 @@ static struct ui_col *ui_table_col_get(struct ui_table *tbl, uint32_t id)
 static void __ui_table_pos_update(struct ui_table *tbl)
 {
 	struct ui_col *col;
-	uint32_t pos = tbl->x;
+	uint32_t pos = 0;
 
 	list_for_each_entry(col, &tbl->cols, entry) {
 		col->pos  = pos;
@@ -106,20 +152,29 @@ void ui_table_clear(struct ui_table *tbl)
 
 #define UI_ALIGN_COL(col) (((col)->align == UI_ALIGN_LEFT) ? "%-*.*s" : "%*.*s")
 
-static void __ui_table_row_print(struct ui_table *tbl, struct ui_col *col,
-				 const char *str)
+void ui_table_row_show(struct ui_table *tbl)
 {
-	mvprintw(tbl->rows_y, col->pos, UI_ALIGN_COL(col), col->len, col->len, str);
-	mvprintw(tbl->rows_y, col->pos + col->len, "%*s", tbl->col_pad, " ");
+	mvaddchstr(tbl->rows_y, tbl->x, tbl->row->str);
+	ui_text_len_set(tbl->row, 0);
+}
+
+static void __ui_table_row_print(struct ui_table *tbl, struct ui_col *col,
+				 int color, const char *str)
+{
+	char tmp[128];
+
+	slprintf(tmp, sizeof(tmp), UI_ALIGN_COL(col), col->len, col->len, str);
+	ui_text_attr_insert(tbl->row, col->pos, color, tmp);
+
+	slprintf(tmp, sizeof(tmp), "%*s", tbl->col_pad, " ");
+	ui_text_attr_insert(tbl->row, col->pos + col->len, color, tmp);
 }
 
 void ui_table_row_print(struct ui_table *tbl, uint32_t col_id, const char *str)
 {
 	struct ui_col *col = ui_table_col_get(tbl, col_id);
 
-	attron(col->color);
-	__ui_table_row_print(tbl, col, str);
-	attroff(col->color);
+	__ui_table_row_print(tbl, col, col->color, str);
 }
 
 void ui_table_header_color_set(struct ui_table *tbl, int color)
@@ -138,16 +193,16 @@ void ui_table_header_print(struct ui_table *tbl)
 	int max_width = tbl->width;
 	int width = 0;
 
-	attron(tbl->hdr_color);
-
-	mvprintw(tbl->y, tbl->x, "%-*.*s", max_width - tbl->x, max_width - tbl->x, "");
-	mvprintw(tbl->y, tbl->x, "");
-
 	list_for_each_entry(col, &tbl->cols, entry) {
-		__ui_table_row_print(tbl, col, col->name);
-		width += col->len + tbl->col_pad;
+		__ui_table_row_print(tbl, col, tbl->hdr_color, col->name);
+
+		if (width + col->len + tbl->col_pad < max_width)
+			width += col->len + tbl->col_pad;
 	}
 
+	ui_table_row_show(tbl);
+
+	attron(tbl->hdr_color);
 	mvprintw(tbl->y, width, "%*s", max_width - width, " ");
 	attroff(tbl->hdr_color);
 }
