@@ -24,11 +24,23 @@ DISABLE_GEOIP=0
 DISABLE_ZLIB=0
 ENABLE_DEBUG=0
 
+PREFIX="/usr/local"
+HAVE_PREFIX=0
+
 usage()
 {
 	echo "Usage: ./configure [OPTION]... [VAR=VALUE]..."
 	echo ""
 	echo "  -h, --help       Display this help and exit"
+	echo ""
+	echo "Installation directories:"
+	echo "  --prefix=PREFIX  install architecture-independent files in PREFIX"
+	echo "                   [$PREFIX]"
+	echo ""
+	echo "By default, \`make install' will install all the files in"
+	echo "\`$PREFIX/bin', \`$PREFIX/lib' etc.  You can specify"
+	echo "an installation prefix other than \`$PREFIX' using \`--prefix',"
+	echo "for instance \`--prefix=\$HOME'."
 	echo ""
 	echo "Optional Features:"
 	echo "  --disable-libnl  Disable libnl support"
@@ -47,6 +59,10 @@ while [ $# -gt 0 ] ; do
 	case "$1" in
 	-h|--help)
 		usage
+		;;
+	--prefix=*)
+		PREFIX="${1#*=}"
+		HAVE_PREFIX=1
 		;;
 	--disable-libnl)
 		DISABLE_LIBNL=1
@@ -792,6 +808,10 @@ if [ "$HAVE_LIBGEOIP" == "1" -a "$HAVE_LIBZ" == "1"  ] ; then
 	echo "CONFIG_GEOIP=1" >> Config
 else
 	echo "CONFIG_GEOIP=0" >> Config
+fi
+
+if [ "$HAVE_PREFIX" == "1" ] ; then
+	echo "PREFIX=$PREFIX" >> Config
 fi
 
 echo "CONFIG_DEBUG=$ENABLE_DEBUG" >> Config

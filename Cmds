@@ -29,7 +29,12 @@ ifeq ("$(origin PREFIX)", "command line")
   INSTX = echo -e "  INST\t$(1)" && install -d $(2) && \
 	install -C $(1) $(2)/$(shell basename $(1))
 else
-  INSTX = echo -e "  INST\t$(1)" && install -C $(1) $(2)/$(shell basename $(1))
+  ifeq ("$(origin PREFIX)", "file")
+    INSTX = echo -e "  INST\t$(1)" && install -d $(2) && \
+	  install -C $(1) $(2)/$(shell basename $(1))
+  else
+    INSTX = echo -e "  INST\t$(1)" && install -C $(1) $(2)/$(shell basename $(1))
+  endif
 endif
 
 MKDIR = echo -e  "  MKDIR\t$(1)" && mkdir -p $(1)
