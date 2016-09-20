@@ -30,6 +30,7 @@
 #include "config.h"
 #include "llist.h"
 #include "die.h"
+#include "dev.h"
 
 int verbose_level = 0;
 
@@ -597,13 +598,8 @@ int getopts (int argc, char *argv[])
 		}
 		break;
 	 case 1: // arg_string OR device given => find out!
-		if ( (strncmp(argv[optind],"eth",3)==0) 
-		     || (strncmp(argv[optind],"ath",3)==0)
-		     || ((strncmp(argv[optind],"lo",2)==0)&&(strncmp(argv[optind],"log",3)!=0))
-		     || (strncmp(argv[optind],"vmnet",5)==0)
-		     || (strncmp(argv[optind],"wifi",4)==0) ) {
-			// device has been specified!
-			strncpy (tx.device, argv[optind], 16);
+		if (__device_ifindex(argv[optind]) > 0) {
+			strncpy(tx.device, argv[optind], 16);
 		}
 		else { /// arg_string given => no device has been specified -- let's find one!
 			strncpy (tx.arg_string, argv[optind], MAX_PAYLOAD_SIZE);

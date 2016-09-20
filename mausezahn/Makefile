@@ -7,6 +7,10 @@ mausezahn-libs =	-lcli \
 
 mausezahn-objs =	str.o \
 			die.o \
+			dev.o \
+			sock.o \
+			link.o \
+			sysctl.o \
 			xmalloc.o \
 			staging/layer1.o \
 			staging/layer2.o \
