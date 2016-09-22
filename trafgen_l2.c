@@ -30,6 +30,8 @@ static uint16_t pid_to_eth(enum proto_id pid)
 		return ETH_P_MPLS_UC;
 	case PROTO_VLAN:
 		return ETH_P_8021Q;
+	case PROTO_PAUSE:
+		return ETH_P_PAUSE;
 	default:
 		bug();
 	}
@@ -52,6 +54,30 @@ static const struct proto_ops eth_proto_ops = {
 	.layer		= PROTO_L2,
 	.header_init	= eth_header_init,
 	.set_next_proto = eth_set_next_proto,
+};
+
+static struct proto_field pause_fields[] = {
+	{ .id = PAUSE_OPCODE,   .len = 2, .offset = 0 },
+	{ .id = PAUSE_TIME,     .len = 2, .offset = 2 },
+};
+
+static void pause_header_init(struct proto_hdr *hdr)
+{
+	uint8_t eth_dst[6] = { 0x01, 0x80, 0xC2, 0x00, 0x00, 0x01 };
+
+	struct proto_hdr *lower;
+
+	lower = proto_lower_default_add(hdr, PROTO_ETH);
+	proto_field_set_default_bytes(lower, ETH_DST_ADDR, eth_dst);
+
+	proto_header_fields_add(hdr, pause_fields, array_size(pause_fields));
+	proto_field_set_default_be16(hdr, PAUSE_OPCODE, 0x1);
+}
+
+static struct proto_ops pause_proto_ops = {
+	.id		= PROTO_PAUSE,
+	.layer		= PROTO_L2,
+	.header_init	= pause_header_init,
 };
 
 static struct proto_field vlan_fields[] = {
@@ -167,6 +193,7 @@ static const struct proto_ops mpls_proto_ops = {
 void protos_l2_init(void)
 {
 	proto_ops_register(&eth_proto_ops);
+	proto_ops_register(&pause_proto_ops);
 	proto_ops_register(&vlan_proto_ops);
 	proto_ops_register(&arp_proto_ops);
 	proto_ops_register(&mpls_proto_ops);

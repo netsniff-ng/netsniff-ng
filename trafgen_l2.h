@@ -7,6 +7,11 @@ enum eth_field {
 	ETH_TYPE,
 };
 
+enum pause_field {
+	PAUSE_OPCODE,
+	PAUSE_TIME,
+};
+
 enum arp_field {
 	ARP_HTYPE,
 	ARP_PTYPE,
