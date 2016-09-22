@@ -118,6 +118,9 @@ ip6_addr	(({a_hex}?:)?({a_hex}?:)?({a_hex}?:)?({a_hex}?:)?({a_hex}?:)?({a_hex}?:
 "etype"	        { return K_ETYPE; }
 "type"	        { return K_TYPE; }
 
+	/* IEEE 802.3X PAUSE */
+"time"		{ return K_TIME; }
+
 	/* VLAN (802.1Q & 802.1ad) */
 "tpid"		{ return K_TPID; }
 "tci"		{ return K_TCI; }
@@ -192,6 +195,7 @@ ip6_addr	(({a_hex}?:)?({a_hex}?:)?({a_hex}?:)?({a_hex}?:)?({a_hex}?:)?({a_hex}?:
 "urgptr"	{ return K_URG_PTR; }
 
 "eth"		{ return K_ETH; }
+"pause"         { return K_PAUSE; }
 "vlan"		{ return K_VLAN; }
 "mpls"		{ return K_MPLS; }
 "arp"		{ return K_ARP; }
