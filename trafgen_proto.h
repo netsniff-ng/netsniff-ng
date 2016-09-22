@@ -9,6 +9,7 @@ enum proto_id {
 	PROTO_NONE = 0,
 	PROTO_ETH,
 	PROTO_PAUSE,
+	PROTO_PFC,
 	PROTO_VLAN,
 	PROTO_ARP,
 	PROTO_MPLS,

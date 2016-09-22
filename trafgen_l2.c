@@ -31,6 +31,7 @@ static uint16_t pid_to_eth(enum proto_id pid)
 	case PROTO_VLAN:
 		return ETH_P_8021Q;
 	case PROTO_PAUSE:
+	case PROTO_PFC:
 		return ETH_P_PAUSE;
 	default:
 		bug();
@@ -78,6 +79,46 @@ static struct proto_ops pause_proto_ops = {
 	.id		= PROTO_PAUSE,
 	.layer		= PROTO_L2,
 	.header_init	= pause_header_init,
+};
+
+static struct proto_field pfc_fields[] = {
+	{ .id = PFC_OPCODE,  .len = 2, .offset = 0 },
+	{ .id = PFC_PRIO,    .len = 2, .offset = 2 },
+	{ .id = PFC_PRIO_0,  .len = 2, .offset = 2, .mask = 0x0001 },
+	{ .id = PFC_PRIO_1,  .len = 2, .offset = 2, .mask = 0x0002, .shift = 1 },
+	{ .id = PFC_PRIO_2,  .len = 2, .offset = 2, .mask = 0x0004, .shift = 2 },
+	{ .id = PFC_PRIO_3,  .len = 2, .offset = 2, .mask = 0x0008, .shift = 3 },
+	{ .id = PFC_PRIO_4,  .len = 2, .offset = 2, .mask = 0x0010, .shift = 4 },
+	{ .id = PFC_PRIO_5,  .len = 2, .offset = 2, .mask = 0x0020, .shift = 5 },
+	{ .id = PFC_PRIO_6,  .len = 2, .offset = 2, .mask = 0x0040, .shift = 6 },
+	{ .id = PFC_PRIO_7,  .len = 2, .offset = 2, .mask = 0x0080, .shift = 7 },
+	{ .id = PFC_TIME_0,  .len = 2, .offset = 4,  },
+	{ .id = PFC_TIME_1,  .len = 2, .offset = 6,  },
+	{ .id = PFC_TIME_2,  .len = 2, .offset = 8,  },
+	{ .id = PFC_TIME_3,  .len = 2, .offset = 10, },
+	{ .id = PFC_TIME_4,  .len = 2, .offset = 12, },
+	{ .id = PFC_TIME_5,  .len = 2, .offset = 14, },
+	{ .id = PFC_TIME_6,  .len = 2, .offset = 16, },
+	{ .id = PFC_TIME_7,  .len = 2, .offset = 18, },
+};
+
+static void pfc_header_init(struct proto_hdr *hdr)
+{
+	uint8_t eth_dst[6] = { 0x01, 0x80, 0xC2, 0x00, 0x00, 0x01 };
+
+	struct proto_hdr *lower;
+
+	lower = proto_lower_default_add(hdr, PROTO_ETH);
+	proto_field_set_default_bytes(lower, ETH_DST_ADDR, eth_dst);
+
+	proto_header_fields_add(hdr, pfc_fields, array_size(pfc_fields));
+	proto_field_set_default_be16(hdr, PFC_OPCODE, 0x0101);
+}
+
+static struct proto_ops pfc_proto_ops = {
+	.id		= PROTO_PFC,
+	.layer		= PROTO_L2,
+	.header_init	= pfc_header_init,
 };
 
 static struct proto_field vlan_fields[] = {
@@ -194,6 +235,7 @@ void protos_l2_init(void)
 {
 	proto_ops_register(&eth_proto_ops);
 	proto_ops_register(&pause_proto_ops);
+	proto_ops_register(&pfc_proto_ops);
 	proto_ops_register(&vlan_proto_ops);
 	proto_ops_register(&arp_proto_ops);
 	proto_ops_register(&mpls_proto_ops);
