@@ -372,6 +372,33 @@ Destination MAC address - 01:80:C2:00:00:01
 
 .in -4
 
+.sp
+.I PFC
+:
+.B pfc(pri|prio(<number>)=<number>, time(<number>)=<number>)
+.sp
+.in +4
+.B code
+- MAC Control opcode (default: 0x0101)
+.sp
+.B pri|prio
+- Priority enable vector (default: 0)
+.sp
+.B pri|prio(<number>)
+- Enable/disable (0 - disable, 1 - enable) pause for priority <number> (default: 0)
+.sp
+.B time(<number>)
+- Set pause time for priority <number> (default: 0)
+.sp
+By default Ethernet header is added with a fields:
+.in +4
+.sp
+Ethernet type - 0x8808
+.sp
+Destination MAC address - 01:80:C2:00:00:01
+.in -4
+
+.in -4
 .I VLAN
 :
 .B vlan(tpid=<number>, id=<number>, dei=<number>, tci=<number>, pcp=<number>, 1q, 1ad)
