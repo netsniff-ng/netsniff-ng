@@ -70,7 +70,11 @@ static inline uint16_t tpacket_uhdr_vlan_proto(union tpacket_uhdr *hdr __maybe_u
 
 static inline bool tpacket_has_vlan_info(union tpacket_uhdr *hdr)
 {
-	uint32_t valid = TP_STATUS_VLAN_VALID;
+	uint32_t valid = 0;
+
+#ifdef TP_STATUS_VLAN_VALID
+	valid |= TP_STATUS_VLAN_VALID;
+#endif
 
 #ifdef TP_STATUS_VLAN_TPID_VALID
 	valid |= TP_STATUS_VLAN_TPID_VALID;

@@ -202,12 +202,16 @@ static void join_fanout_group(int sock, uint32_t fanout_group, uint32_t fanout_t
 	if (fanout_group == 0)
 		return;
 
+#if defined(PACKET_FANOUT)
 	fanout_opt = (fanout_group & 0xffff) | (fanout_type << 16);
 
 	ret = setsockopt(sock, SOL_PACKET, PACKET_FANOUT, &fanout_opt,
 			 sizeof(fanout_opt));
 	if (ret < 0)
 		panic("Cannot set fanout ring mode!\n");
+#else
+	panic("fanout ring mode is not available!\n");
+#endif
 }
 
 void ring_rx_setup(struct ring *ring, int sock, size_t size, int ifindex,
