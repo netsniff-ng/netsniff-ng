@@ -159,7 +159,9 @@ static const char *nlmsg_family2str(uint16_t family)
 	case NETLINK_SCSITRANSPORT:	return "SCSI transports";
 	case NETLINK_ECRYPTFS:		return "ecryptfs";
 	case NETLINK_RDMA:		return "RDMA";
+#if defined(NETLINK_CRYPTO)
 	case NETLINK_CRYPTO:		return "Crypto layer";
+#endif
 	default:			return "Unknown";
 	}
 }
@@ -630,9 +632,11 @@ static void rtnl_print_route(struct nlmsghdr *hdr)
 			rta_fmt(attr, "Pref Src %s", addr2str(rtm->rtm_family,
 				RTA_DATA(attr), addr_str, sizeof(addr_str)));
 			break;
+#if defined(RTA_MARK)
 		case RTA_MARK:
 			rta_fmt(attr, "Mark 0x%x", RTA_UINT(attr));
 			break;
+#endif
 		case RTA_FLOW:
 			rta_fmt(attr, "Flow 0x%x", RTA_UINT(attr));
 			break;
