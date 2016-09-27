@@ -120,6 +120,13 @@ tools_remove()
 	TOOLS_NOBUILD=${TOOLS_NOBUILD# }
 }
 
+check_command()
+{
+	local cmd="$1"
+
+	[ "x$(which "$cmd" 2>> config.log)" == "x" ]
+}
+
 check_toolchain()
 {
 	if [ "x$CROSS_COMPILE" != "x" ] ; then
@@ -128,7 +135,7 @@ check_toolchain()
 	fi
 
 	echo -n "[*] Checking compiler $CC ... "
-	if [ "x$(which $CC 2>> config.log)" == "x" ] ; then
+	if check_command $CC ; then
 		echo "[NO]"
 		MISSING_TOOLCHAIN=1
 	else
@@ -137,7 +144,7 @@ check_toolchain()
 	fi
 
 	echo -n "[*] Checking linker $LD ... "
-	if [ "x$(which $LD 2>> config.log)" == "x" ] ; then
+	if check_command $LD ; then
 		echo "[NO]"
 		MISSING_TOOLCHAIN=1
 	else
@@ -146,7 +153,7 @@ check_toolchain()
 	fi
 
 	echo -n "[*] Checking $PKG_CONFIG ... "
-	if [ "x$(which $PKG_CONFIG 2>> config.log)" == "x" ] ; then
+	if check_command $PKG_CONFIG ; then
 		echo "[NO]"
 		MISSING_TOOLCHAIN=1
 	else
@@ -160,7 +167,7 @@ check_flex()
 {
 	echo -n "[*] Checking flex ... "
 
-	if [ "x$(which flex 2>> config.log)" == "x" ] ; then
+	if check_command flex ; then
 		echo "[NO]"
 		MISSING_DEFS=1
 		tools_remove "trafgen"
@@ -174,7 +181,7 @@ check_bison()
 {
 	echo -n "[*] Checking bison ... "
 
-	if [ "x$(which bison 2>> config.log)" == "x" ] ; then
+	if check_command bison ; then
 		echo "[NO]"
 		MISSING_DEFS=1
 		tools_remove "trafgen"
