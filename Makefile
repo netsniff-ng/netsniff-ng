@@ -20,10 +20,9 @@ EXTRAVERSION =
 NAME = aisatsana
 
 TOOLS ?= $(CONFIG_TOOLS)
-TOOLS ?= netsniff-ng trafgen astraceroute flowtop ifpps bpfc curvetun mausezahn
 
 # For packaging purposes, prefix can define a different path.
-PREFIX ?= /usr/local
+PREFIX ?= $(CONFIG_PREFIX)
 
 # Set to use ccache for compilation
 CCACHE ?=
@@ -35,7 +34,7 @@ DESTDIR=
 # Location of installation paths.
 SBINDIR = $(PREFIX)/sbin
 INCDIR = $(PREFIX)/include
-ETCDIR ?= /etc
+ETCDIR ?= $(CONFIG_ETCDIR)
 ETCDIRE = $(ETCDIR)/netsniff-ng
 MAN8DIR = $(PREFIX)/share/man/man8
 
