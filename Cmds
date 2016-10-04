@@ -25,16 +25,12 @@ YAAC = $(Q)echo -e "  YAAC\t$<" && bison
 INST = echo -e "  INST\t$(1)" && install -d $(2) && \
 	install --mode=644 -DC $(1) $(2)/$(shell basename $(1))
 
-ifeq ("$(origin PREFIX)", "command line")
+# Determine wheter origin of PREFIX is "file" or "command line"
+ifeq ("$(origin PREFIX)", "$(filter $(origin PREFIX), file command line)")
   INSTX = echo -e "  INST\t$(1)" && install -d $(2) && \
 	install -C $(1) $(2)/$(shell basename $(1))
 else
-  ifeq ("$(origin PREFIX)", "file")
-    INSTX = echo -e "  INST\t$(1)" && install -d $(2) && \
-	  install -C $(1) $(2)/$(shell basename $(1))
-  else
-    INSTX = echo -e "  INST\t$(1)" && install -C $(1) $(2)/$(shell basename $(1))
-  endif
+  INSTX = echo -e "  INST\t$(1)" && install -C $(1) $(2)/$(shell basename $(1))
 endif
 
 MKDIR = echo -e  "  MKDIR\t$(1)" && mkdir -p $(1)
