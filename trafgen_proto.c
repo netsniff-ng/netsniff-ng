@@ -213,7 +213,7 @@ static void __proto_field_set_bytes(struct proto_hdr *hdr, uint32_t fid,
 		*p16 = be16_to_cpu(*p16);
 		*p16 = cpu_to_be16(field->mask ? *p16 & ~field->mask : *p16);
 
-		v16 = field_shift_and_mask(field, *(uint16_t *)bytes);
+		v16 = field_shift_and_mask(field, *(const uint16_t *)bytes);
 		v16 = is_be ? cpu_to_be16(v16) : v16;
 		v16 = field->mask ? (v16 | *p16) : v16;
 
@@ -223,7 +223,7 @@ static void __proto_field_set_bytes(struct proto_hdr *hdr, uint32_t fid,
 		*p32 = be32_to_cpu(*p32);
 		*p32 = cpu_to_be32(field->mask ? *p32 & ~field->mask : *p32);
 
-		v32 = field_shift_and_mask(field, *(uint32_t *)bytes);
+		v32 = field_shift_and_mask(field, *(const uint32_t *)bytes);
 		v32 = is_be ? cpu_to_be32(v32) : v32;
 		v32 = field->mask ? (v32 | *p32) : v32;
 
