@@ -73,12 +73,12 @@ static inline uint16_t __in_cksum(const struct cksum_vec *vec, int veclen)
 		if (vec->len == 0)
 			continue;
 
-		w = (const uint16_t *) (void *) vec->ptr;
+		w = (const uint16_t *) (const void *) vec->ptr;
 
 		if (mlen == -1) {
 			s_util.c[1] = *(const uint8_t *) w;
 			sum += s_util.s;
-			w = (const uint16_t *) (void *) ((const uint8_t *) w + 1);
+			w = (const uint16_t *) (const void *) ((const uint8_t *) w + 1);
 			mlen = vec->len - 1;
 		} else
 			mlen = vec->len;
@@ -87,7 +87,7 @@ static inline uint16_t __in_cksum(const struct cksum_vec *vec, int veclen)
 			REDUCE;
 			sum <<= 8;
 			s_util.c[0] = *(const uint8_t *) w;
-			w = (const uint16_t *) (void *) ((const uint8_t *) w + 1);
+			w = (const uint16_t *) (const void *) ((const uint8_t *) w + 1);
 			mlen--;
 			byte_swapped = 1;
 		}
