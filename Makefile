@@ -15,9 +15,9 @@ endif
 
 VERSION = 0
 PATCHLEVEL = 6
-SUBLEVEL = 1
+SUBLEVEL = 2
 EXTRAVERSION =
-NAME = aisatsana
+NAME = Circlon
 
 TOOLS ?= $(CONFIG_TOOLS)
 
