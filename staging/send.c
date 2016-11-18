@@ -134,11 +134,11 @@ int complexity(void)
      }
    else if (total_d>0xffffffff)
      {
-	fprintf(stderr, "Do you REALLY know what you do?\n");
+	fprintf(stderr, "Do you REALLY know what you are doing?\n");
      }
    else if (total_d>0xffffff)
      {
-	fprintf(stderr, "Do you know what you do?\n");
+	fprintf(stderr, "Do you know what you are doing?\n");
      }
 
    if (mz_port)
@@ -163,11 +163,11 @@ int complexity(void)
      {
 	if (mz_port)
 	  {
-	     cli_print(gcli, "Mausezahn will send frames infinitly...\n");
+	     cli_print(gcli, "Mausezahn will send frames infinitely...\n");
 	  }
 	else
 	  {
-	     fprintf(stderr, "Mausezahn will send frames infinitly...\n");
+	     fprintf(stderr, "Mausezahn will send frames infinitely...\n");
 	  }
      }
    
