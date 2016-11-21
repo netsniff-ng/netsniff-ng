@@ -37,6 +37,10 @@
 #include "csum.h"
 #include "cpp.h"
 
+#ifndef ETH_P_8021AD
+#define ETH_P_8021AD	0x88A8
+#endif
+
 #define YYERROR_VERBOSE		0
 #define YYDEBUG			0
 #define YYENABLE_NLS		1
