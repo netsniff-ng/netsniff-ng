@@ -719,9 +719,7 @@ int getopts (int argc, char *argv[])
 		}
 		else { // no destination IP specified: by default use broadcast
 			if (ipv6_mode) {
-				// XXX I think we want to use a link-local
-				// broadcast address instead.
-				tx.ip6_dst = libnet_name2addr6 (l, "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff", LIBNET_DONT_RESOLVE);
+				tx.ip6_dst = libnet_name2addr6 (l, "ff02::1", LIBNET_DONT_RESOLVE);
 			} else {
 				tx.ip_dst = libnet_name2addr4 (l, "255.255.255.255", LIBNET_DONT_RESOLVE);
 			}
