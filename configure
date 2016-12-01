@@ -788,9 +788,9 @@ gen_version_appendix
 
 if [ "$MISSING_DEFS" == "1" ] ; then
 	echo "[!] Some libraries or header definitions are missing or too old. Thus"
-	echo "    certain tools will not be built (see below). Please refer to the"
-	echo "    INSTALL file for the libraries needed to build the complete"
-	echo "    netsniff-ng toolkit."
+	echo "    certain tools will not be built (see below) or they will be built"
+	echo "    with reduced functionality. Please refer to the INSTALL file"
+	echo "    for the libraries needed to build the complete netsniff-ng toolkit"
 fi
 
 if [ "$MISSING_NACL" == "1" ] ; then
