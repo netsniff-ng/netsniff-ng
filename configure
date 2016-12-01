@@ -789,8 +789,8 @@ gen_version_appendix
 if [ "$MISSING_DEFS" == "1" ] ; then
 	echo "[!] Some libraries or header definitions are missing or too old. Thus"
 	echo "    certain tools will not be built (see below) or they will be built"
-	echo "    with reduced functionality. Please refer to the INSTALL file"
-	echo "    for the libraries needed to build the complete netsniff-ng toolkit"
+	echo "    with reduced functionality. Please refer to the INSTALL file for"
+	echo "    the libraries needed to build the complete netsniff-ng toolkit"
 fi
 
 if [ "$MISSING_NACL" == "1" ] ; then
@@ -814,7 +814,7 @@ fi
 
 echo "CONFIG_LIBNL=$HAVE_LIBNL" >> Config
 
-if [ "$HAVE_LIBGEOIP" == "1" -a "$HAVE_LIBZ" == "1"  ] ; then
+if [ "$HAVE_LIBGEOIP" == "1" -a "$HAVE_LIBZ" == "1" ] ; then
 	echo "CONFIG_GEOIP=1" >> Config
 else
 	echo "CONFIG_GEOIP=0" >> Config
