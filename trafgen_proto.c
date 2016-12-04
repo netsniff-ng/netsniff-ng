@@ -364,8 +364,10 @@ static void __proto_field_set_dev_ipv4(struct proto_hdr *hdr, uint32_t fid,
 		return;
 
 	ret = device_address(ctx.dev, AF_INET, &ss);
-	if (ret < 0)
-		panic("Could not get device IPv4 address\n");
+	if (ret < 0) {
+		fprintf(stderr, "Warning: Could not get device IPv4 address for %s\n", ctx.dev);
+		return;
+	}
 
 	ss4 = (struct sockaddr_in *) &ss;
 	__proto_field_set_bytes(hdr, fid, (uint8_t *)&ss4->sin_addr.s_addr, is_default, false);
@@ -392,8 +394,10 @@ static void __proto_field_set_dev_ipv6(struct proto_hdr *hdr, uint32_t fid,
 		return;
 
 	ret = device_address(ctx.dev, AF_INET6, &ss);
-	if (ret < 0)
-		panic("Could not get device IPv6 address\n");
+	if (ret < 0) {
+		fprintf(stderr, "Warning: Could not get device IPv6 address for %s\n", ctx.dev);
+		return;
+	}
 
 	ss6 = (struct sockaddr_in6 *) &ss;
 	__proto_field_set_bytes(hdr, fid, (uint8_t *)&ss6->sin6_addr.s6_addr, is_default, false);

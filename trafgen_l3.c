@@ -40,7 +40,6 @@ static void ipv4_header_init(struct proto_hdr *hdr)
 
 	proto_field_set_default_u8(hdr, IP4_VER, 4);
 	proto_field_set_default_u8(hdr, IP4_IHL, 5);
-	proto_field_set_default_dev_ipv4(hdr, IP4_SADDR);
 }
 
 static void ipv4_field_changed(struct proto_field *field)
@@ -81,6 +80,7 @@ static void ipv4_packet_finish(struct proto_hdr *hdr)
 
 	total_len = pkt->len - hdr->pkt_offset;
 	proto_field_set_default_be16(hdr, IP4_LEN, total_len);
+	proto_field_set_default_dev_ipv4(hdr, IP4_SADDR);
 
 	ipv4_csum_update(hdr);
 }
@@ -140,7 +140,6 @@ static void ipv6_header_init(struct proto_hdr *hdr)
 	proto_header_fields_add(hdr, ipv6_fields, array_size(ipv6_fields));
 
 	proto_field_set_default_be32(hdr, IP6_VER, 6);
-	proto_field_set_default_dev_ipv6(hdr, IP6_SADDR);
 }
 
 static void ipv6_field_changed(struct proto_field *field)
@@ -161,6 +160,7 @@ static void ipv6_packet_finish(struct proto_hdr *hdr)
 	uint16_t total_len = pkt->len - hdr->pkt_offset - IPV6_HDR_LEN;
 
 	proto_field_set_default_be16(hdr, IP6_LEN, total_len);
+	proto_field_set_default_dev_ipv6(hdr, IP6_SADDR);
 }
 
 static void ipv6_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
