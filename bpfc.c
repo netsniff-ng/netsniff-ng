@@ -82,7 +82,7 @@ static void __noreturn version(void)
 
 int main(int argc, char **argv)
 {
-	int ret, verbose = 0, c, opt_index, bypass = 0, format = 0;
+	int ret, verbose = 0, c, bypass = 0, format = 0;
 	bool invoke_cpp = false;
 	char **cpp_argv = NULL;
 	size_t cpp_argc = 0;
@@ -94,8 +94,8 @@ int main(int argc, char **argv)
 	if (argc == 1)
 		help();
 
-	while ((c = getopt_long(argc, argv, short_options,
-			        long_options, &opt_index)) != EOF) {
+	while ((c = getopt_long(argc, argv, short_options, long_options,
+				NULL)) != EOF) {
 		switch (c) {
 		case 'h':
 			help();

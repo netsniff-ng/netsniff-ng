@@ -1717,13 +1717,13 @@ static void *collector(void *null __maybe_unused)
 int main(int argc, char **argv)
 {
 	pthread_t tid;
-	int ret, c, opt_index, what_cmd = 0;
+	int ret, c, what_cmd = 0;
 
 	setfsuid(getuid());
 	setfsgid(getgid());
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
-	       &opt_index)) != EOF) {
+				NULL)) != EOF) {
 		switch (c) {
 		case '4':
 			what_cmd |= INCLUDE_IPV4;

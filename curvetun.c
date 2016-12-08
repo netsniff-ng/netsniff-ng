@@ -546,7 +546,7 @@ static int main_server(char *home, char *dev, char *port, int udp,
 
 int main(int argc, char **argv)
 {
-	int ret = 0, c, opt_index, udp = 0, ipv4 = -1, daemon = 1, log = 1;
+	int ret = 0, c, udp = 0, ipv4 = -1, daemon = 1, log = 1;
 	char *port = NULL, *stun = NULL, *dev = NULL, *home = NULL, *alias = NULL;
 	enum working_mode wmode = MODE_UNKNOW;
 
@@ -556,7 +556,7 @@ int main(int argc, char **argv)
 	home = fetch_home_dir();
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
-	       &opt_index)) != EOF) {
+				NULL)) != EOF) {
 		switch (c) {
 		case 'h':
 			help();

@@ -977,7 +977,7 @@ int main(int argc, char **argv)
 {
 	bool slow = false, invoke_cpp = false, reseed = true, cpustats = true;
 	bool prio_high = false, set_irq_aff = true, set_sock_mem = true;
-	int c, opt_index, vals[4] = {0}, irq;
+	int c, vals[4] = {0}, irq;
 	uint64_t gap = 0;
 	unsigned int i;
 	char *confname = NULL, *ptr;
@@ -1001,7 +1001,7 @@ int main(int argc, char **argv)
 	ctx.reserve_size = 512 * (1 << 10);
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
-				&opt_index)) != EOF) {
+				NULL)) != EOF) {
 		switch (c) {
 		case 'h':
 			help();

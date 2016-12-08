@@ -1286,7 +1286,7 @@ static void __noreturn version(void)
 int main(int argc, char **argv)
 {
 	char *ptr;
-	int c, i, j, cpu_tmp, opt_index, ops_touched = 0, vals[4] = {0};
+	int c, i, j, cpu_tmp, ops_touched = 0, vals[4] = {0};
 	bool prio_high = false, setsockmem = true;
 	void (*main_loop)(struct ctx *ctx) = NULL;
 	struct ctx ctx;
@@ -1296,7 +1296,7 @@ int main(int argc, char **argv)
 	srand(start_time);
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
-				&opt_index)) != EOF) {
+				NULL)) != EOF) {
 		switch (c) {
 		case 'd':
 		case 'i':

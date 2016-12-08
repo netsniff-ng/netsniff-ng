@@ -929,7 +929,7 @@ static int main_trace(struct ctx *ctx)
 
 int main(int argc, char **argv)
 {
-	int c, opt_index, ret;
+	int c, ret;
 	struct ctx ctx;
 
 	setfsuid(getuid());
@@ -949,7 +949,7 @@ int main(int argc, char **argv)
 	ctx.bind_addr = NULL;
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
-		&opt_index)) != EOF) {
+				NULL)) != EOF) {
 		switch (c) {
 		case 'h':
 			help();
