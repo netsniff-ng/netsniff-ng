@@ -671,10 +671,6 @@ int getopts (int argc, char *argv[])
 				tx.ip_src_rand = 1;
 				tx.ip_src_h  = (u_int32_t) ( ((float) rand()/RAND_MAX)*0xE0000000); //this is 224.0.0.0
 			}
-			else if (ipv6_mode && (strstr(tx.ip_src_txt, ".") || strstr(tx.ip_dst_txt, "."))) {
-			       fprintf(stderr, "You are using IPv6 mode but are providing IPv4 src/dst addresses.\n");
-			       return 1;
-			}
 			else if (!ipv6_mode && (strstr(tx.ip_src_txt, ":") || strstr(tx.ip_dst_txt, ":"))) {
 			       fprintf(stderr, "You are using IPv4 mode (the default) but are providing IPv6 src/dst addresses.\n");
 			       fprintf(stderr, "Please use the -6 option for IPv6 mode.\n");
