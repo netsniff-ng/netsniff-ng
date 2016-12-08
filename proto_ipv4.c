@@ -40,7 +40,6 @@ static void ipv4(struct pkt_buff *pkt)
 	uint8_t *opt, *trailer;
 	unsigned int trailer_len = 0;
 	ssize_t opts_len, opt_len;
-	struct sockaddr_in sas, sad;
 	const char *city, *region, *country;
 
 	if (!ip)
@@ -88,15 +87,17 @@ static void ipv4(struct pkt_buff *pkt)
 			csum_expected(ip->h_check, csum), colorize_end());
 	tprintf(" ]\n");
 
-	memset(&sas, 0, sizeof(sas));
-	sas.sin_family = PF_INET;
-	sas.sin_addr.s_addr = ip->h_saddr;
-
-	memset(&sad, 0, sizeof(sad));
-	sad.sin_family = PF_INET;
-	sad.sin_addr.s_addr = ip->h_daddr;
-
 	if (geoip_working()) {
+		struct sockaddr_in sas, sad;
+
+		memset(&sas, 0, sizeof(sas));
+		sas.sin_family = PF_INET;
+		sas.sin_addr.s_addr = ip->h_saddr;
+
+		memset(&sad, 0, sizeof(sad));
+		sad.sin_family = PF_INET;
+		sad.sin_addr.s_addr = ip->h_daddr;
+
 		tprintf("\t[ Geo (");
 		if ((country = geoip4_country_name(&sas))) {
 			tprintf("%s", country);
