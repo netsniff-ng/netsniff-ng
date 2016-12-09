@@ -671,15 +671,6 @@ int getopts (int argc, char *argv[])
 				tx.ip_src_rand = 1;
 				tx.ip_src_h  = (u_int32_t) ( ((float) rand()/RAND_MAX)*0xE0000000); //this is 224.0.0.0
 			}
-			else if (ipv6_mode && (strstr(tx.ip_src_txt, ".") || strstr(tx.ip_dst_txt, "."))) {
-			       fprintf(stderr, "You are using IPv6 mode but are providing IPv4 src/dst addresses.\n");
-			       return 1;
-			}
-			else if (!ipv6_mode && (strstr(tx.ip_src_txt, ":") || strstr(tx.ip_dst_txt, ":"))) {
-			       fprintf(stderr, "You are using IPv4 mode (the default) but are providing IPv6 src/dst addresses.\n");
-			       fprintf(stderr, "Please use the -6 option for IPv6 mode.\n");
-			       return 1;
-			}
 			else if (
 				(ipv6_mode && get_ip6_range_src(tx.ip_src_txt, l)) || // returns 1 when no range has been specified
 				(!ipv6_mode && get_ip_range_src(tx.ip_src_txt))
@@ -901,7 +892,7 @@ int main(int argc, char **argv)
    
    if ( getopts(argc, argv) ) 
      {
-	(void) fprintf(stderr, "Invalid command line parameters!\n");
+	(void) fprintf(stderr, " Invalid command line parameters!\n");
 	help();
      }
 
