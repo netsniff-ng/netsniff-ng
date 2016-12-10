@@ -55,10 +55,10 @@ int pf_socket_type(uint32_t type)
 	}
 }
 
-/* Avail in kernel >= 3.14
+/* Available in kernel >= 3.14
  * in commit d346a3fae3 (packet: introduce PACKET_QDISC_BYPASS socket option)
  */
-void set_sock_qdisc_bypass(int fd, int verbose)
+void set_sock_qdisc_bypass(int fd, bool verbose)
 {
 	int ret, val = 1;
 
