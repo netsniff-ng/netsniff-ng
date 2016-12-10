@@ -27,7 +27,7 @@
 #include "die.h"
 #include "cpp.h"
 
-int compile_filter(char *file, int verbose, int bypass, int format,
+int compile_filter(char *file, bool verbose, int bypass, int format,
 		   bool invoke_cpp, char *const cpp_argv[]);
 
 static int curr_instr = 0;
@@ -734,7 +734,7 @@ static void pretty_printer(const struct sock_fprog *prog, int format)
 	}
 }
 
-int compile_filter(char *file, int verbose, int bypass, int format,
+int compile_filter(char *file, bool verbose, int bypass, int format,
 		   bool invoke_cpp, char *const cpp_argv[])
 {
 	int i;

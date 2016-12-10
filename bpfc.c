@@ -40,7 +40,7 @@ static const char *copyright = "Please report bugs to <netsniff-ng@googlegroups.
 	"This is free software: you are free to change and redistribute it.\n"
 	"There is NO WARRANTY, to the extent permitted by law.";
 
-extern int compile_filter(char *file, int verbose, int bypass, int format,
+extern int compile_filter(char *file, bool verbose, int bypass, int format,
 			  bool invoke_cpp, char **cpp_argv);
 
 static void __noreturn help(void)
@@ -82,8 +82,8 @@ static void __noreturn version(void)
 
 int main(int argc, char **argv)
 {
-	int ret, verbose = 0, c, bypass = 0, format = 0;
-	bool invoke_cpp = false;
+	int ret, c, bypass = 0, format = 0;
+	bool verbose = false, invoke_cpp = false;
 	char **cpp_argv = NULL;
 	size_t cpp_argc = 0;
 	char *file = NULL;
@@ -104,7 +104,7 @@ int main(int argc, char **argv)
 			version();
 			break;
 		case 'V':
-			verbose = 1;
+			verbose = true;
 			break;
 		case 'p':
 			invoke_cpp = true;
