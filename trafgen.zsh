@@ -52,6 +52,7 @@ _arguments -s -S \
     "(-H --prio-high)"{-H,--prio-high}"[Make this high priority process]" \
     "(-A --no-sock-mem)"{-A,--no-sock-mem}"[Do not change default socket memory setting]" \
     "(-Q --notouch-irq)"{-Q,--notouch-irq}"[Do not touch IRQ CPU affinity of NIC]" \
+    "(-q --qdisc-path)"{-q,--qdisc-path}"[Enable qdisc kernel path (default off since 3.14)]" \
     "(-e --example)"{-e,--example}"[Show built-in packet config example]:" \
     "(-V --verbose)"{-V,--verbose}"[Be more verbose]" \
     "(-C --no-cpu-stats)"{-C,--no-cpu-stats}"[Do not print CPU time statistics on exit]" \

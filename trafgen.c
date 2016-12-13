@@ -204,7 +204,7 @@ static void __noreturn help(void)
 	     "  -H|--prio-high                 Make this high priority process\n"
 	     "  -A|--no-sock-mem               Don't tune core socket memory\n"
 	     "  -Q|--notouch-irq               Do not touch IRQ CPU affinity of NIC\n"
-	     "  -q|--qdisc-path                Enabled qdisc kernel path (default off since 3.14)\n"
+	     "  -q|--qdisc-path                Enable qdisc kernel path (default off since 3.14)\n"
 	     "  -V|--verbose                   Be more verbose\n"
 	     "  -C|--no-cpu-stats              Do not print CPU time statistics on exit\n"
 	     "  -v|--version                   Show version and exit\n"
