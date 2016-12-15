@@ -117,8 +117,7 @@ static inline void __init_new_packet_slot(struct packet *slot)
 
 static inline void __init_new_counter_slot(struct packet_dyn *slot)
 {
-	slot->cnt = NULL;
-	slot->clen = 0;
+	memset(slot, 0, sizeof(*slot);
 }
 
 static inline void __init_new_randomizer_slot(struct packet_dyn *slot)
