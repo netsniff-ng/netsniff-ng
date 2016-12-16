@@ -21,7 +21,7 @@ void bpf_try_compile(const char *rulefile, struct sock_fprog *bpf, uint32_t link
 
 	ret = pcap_compile_nopcap(65535, link_type, &_bpf, rulefile, 1, 0xffffffff);
 	if (ret < 0)
-		panic("Cannot compile filter %s\n", rulefile);
+		panic("Cannot compile filter: %s\n", rulefile);
 
 	bpf->len = _bpf.bf_len;
 	bpf->filter = xrealloc(bpf->filter, bpf->len * sizeof(*out));

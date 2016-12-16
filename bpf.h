@@ -27,7 +27,7 @@ static inline void bpf_try_compile(const char *rulefile,
 				   struct sock_fprog *bpf __maybe_unused,
 				   uint32_t link_type __maybe_unused)
 {
-	panic("Cannot open file %s!\n", rulefile);
+	panic("No libpcap support, cannot compile filter: %s\n", rulefile);
 }
 #endif
 static inline void bpf_release(struct sock_fprog *bpf)
