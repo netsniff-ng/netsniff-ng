@@ -111,13 +111,13 @@ static inline int test_ignore(void)
 
 static inline void __init_new_packet_slot(struct packet *slot)
 {
-	slot->payload = NULL;
-	slot->len = 0;
+	memset(slot, 0, sizeof(*slot));
 }
 
 static inline void __init_new_counter_slot(struct packet_dyn *slot)
 {
-	memset(slot, 0, sizeof(*slot));
+	slot->cnt = NULL;
+	slot->clen = 0;
 }
 
 static inline void __init_new_randomizer_slot(struct packet_dyn *slot)
