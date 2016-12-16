@@ -27,9 +27,6 @@
 #include "die.h"
 #include "cpp.h"
 
-int compile_filter(char *file, bool verbose, int bypass, int format,
-		   bool invoke_cpp, char *const cpp_argv[]);
-
 static int curr_instr = 0;
 
 static struct sock_filter out[BPF_MAXINSNS];
