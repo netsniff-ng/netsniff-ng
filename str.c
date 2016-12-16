@@ -97,11 +97,13 @@ char *argv2str(int startind, int argc, char **argv)
 	int ret, i;
 
 	for (i = startind; i < argc; ++i) {
-		size_t alen = strlen(argv[i]) + 2;
+		size_t tlen = (i < argc - 1) ? 2 : 1;
+		size_t alen = strlen(argv[i]) + tlen;
 		size_t slen = str ? strlen(str) : 0;
 
 		str = xrealloc(str, slen + alen);
-		ret = slprintf(str + offset, strlen(argv[i]) + 2, "%s ", argv[i]);
+		ret = slprintf(str + offset, strlen(argv[i]) + tlen, "%s%s",
+				argv[i], tlen == 2 ? " " : "");
 		if (ret < 0)
 			panic("Cannot concatenate string!\n");
 		else
