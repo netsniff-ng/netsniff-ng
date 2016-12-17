@@ -17,8 +17,6 @@
 #include <ctype.h>
 #include <netinet/in.h>
 #include <curses.h>
-#include <dirent.h>
-#include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/fsuid.h>
 #include <urcu.h>
@@ -474,80 +472,22 @@ static void flow_list_destroy(struct flow_list *fl)
 	spinlock_unlock(&flow_list.lock);
 }
 
-static int walk_process(unsigned int pid, struct flow_entry *n)
+static void flow_entry_find_process(struct flow_entry *n)
 {
+	char cmdline[512];
+	pid_t pid;
 	int ret;
-	DIR *dir;
-	struct dirent *ent;
-	char path[1024];
 
-	if (snprintf(path, sizeof(path), "/proc/%u/fd", pid) == -1)
-		panic("giant process name! %u\n", pid);
-
-	dir = opendir(path);
-	if (!dir)
-        	return 0;
-
-	while ((ent = readdir(dir))) {
-		struct stat statbuf;
-
-		if (snprintf(path, sizeof(path), "/proc/%u/fd/%s",
-			     pid, ent->d_name) < 0)
-			continue;
-
-		if (stat(path, &statbuf) < 0)
-			continue;
-
-		if (S_ISSOCK(statbuf.st_mode) && (ino_t) n->inode == statbuf.st_ino) {
-			char cmdline[256];
-
-			ret = proc_get_cmdline(pid, cmdline, sizeof(cmdline));
-			if (ret < 0)
-				panic("Failed to get process cmdline: %s\n", strerror(errno));
-
-			if (snprintf(n->procname, sizeof(n->procname), "%s", basename(cmdline)) < 0)
-				n->procname[0] = '\0';
-			n->procnum = pid;
-			closedir(dir);
-			return 1;
-		}
-	}
-
-	closedir(dir);
-	return 0;
-}
-
-static void walk_processes(struct flow_entry *n)
-{
-	int ret;
-	DIR *dir;
-	struct dirent *ent;
-
-	/* n->inode must be set */
-	if (n->inode <= 0) {
+	ret = proc_find_by_inode(n->inode, cmdline, sizeof(cmdline), &pid);
+	if (ret <= 0) {
 		n->procname[0] = '\0';
 		return;
 	}
 
-	dir = opendir("/proc");
-	if (!dir)
-		panic("Cannot open /proc: %s\n", strerror(errno));
+	if (snprintf(n->procname, sizeof(n->procname), "%s", basename(cmdline)) < 0)
+		n->procname[0] = '\0';
 
-	while ((ent = readdir(dir))) {
-		const char *name = ent->d_name;
-		char *end;
-		unsigned int pid = strtoul(name, &end, 10);
-
-		/* not a PID */
-		if (pid == 0 && end == name)
-			continue;
-
-		ret = walk_process(pid, n);
-		if (ret > 0)
-			break;
-	}
-
-	closedir(dir);
+	n->procnum = pid;
 }
 
 static int get_port_inode(uint16_t port, int proto, bool is_ip6)
@@ -810,7 +750,7 @@ static void flow_entry_get_extended(struct flow_entry *n)
 	n->inode = get_port_inode(n->port_src, n->l4_proto,
 				  n->l3_proto == AF_INET6);
 	if (n->inode > 0)
-		walk_processes(n);
+		flow_entry_find_process(n);
 }
 
 static char *bandw2str(double bytes, char *buf, size_t len)

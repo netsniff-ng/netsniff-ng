@@ -3,11 +3,13 @@
 #endif
 #include <sched.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/resource.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <dirent.h>
 
 #include "proc.h"
 #include "die.h"
@@ -81,6 +83,79 @@ ssize_t proc_get_cmdline(unsigned int pid, char *cmdline, size_t len)
 		cmdline[ret] = '\0';
 
 	return ret;
+}
+
+static int match_pid_by_inode(pid_t pid, ino_t ino)
+{
+	struct dirent *ent;
+	char path[1024];
+	DIR *dir;
+
+	if (snprintf(path, sizeof(path), "/proc/%u/fd", pid) == -1)
+		panic("giant process name! %u\n", pid);
+
+	dir = opendir(path);
+	if (!dir)
+		return -1;
+
+	while ((ent = readdir(dir))) {
+		struct stat statbuf;
+
+		if (snprintf(path, sizeof(path), "/proc/%u/fd/%s",
+			     pid, ent->d_name) < 0)
+			continue;
+
+		if (stat(path, &statbuf) < 0)
+			continue;
+
+		if (S_ISSOCK(statbuf.st_mode) && ino == statbuf.st_ino) {
+			closedir(dir);
+			return 0;
+		}
+	}
+
+	closedir(dir);
+	return -1;
+}
+
+int proc_find_by_inode(ino_t ino, char *cmdline, size_t len, pid_t *pid)
+{
+	struct dirent *ent;
+	DIR *dir;
+
+	if (ino <= 0) {
+		cmdline[0] = '\0';
+		return 0;
+	}
+
+	dir = opendir("/proc");
+	if (!dir)
+		panic("Cannot open /proc: %s\n", strerror(errno));
+
+	while ((ent = readdir(dir))) {
+		int ret;
+		char *end;
+		const char *name = ent->d_name;
+		pid_t cur_pid = strtoul(name, &end, 10);
+
+		/* not a PID */
+		if (cur_pid == 0 && end == name)
+			continue;
+
+		ret = match_pid_by_inode(cur_pid, ino);
+		if (!ret) {
+			ret = proc_get_cmdline(cur_pid, cmdline, len);
+			if (ret < 0)
+				panic("Failed to get process cmdline: %s\n", strerror(errno));
+
+			closedir(dir);
+			*pid = cur_pid;
+			return ret;
+		}
+	}
+
+	closedir(dir);
+	return -1;
 }
 
 int proc_exec(const char *proc, char *const argv[])
