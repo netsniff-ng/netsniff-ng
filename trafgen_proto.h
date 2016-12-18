@@ -147,4 +147,14 @@ extern void proto_hdr_field_func_add(struct proto_hdr *hdr, uint32_t fid,
 
 extern struct proto_field *proto_hdr_field_by_id(struct proto_hdr *hdr, uint32_t fid);
 
+
+extern void proto_field_set_u8(struct proto_field *field, uint8_t val);
+extern uint8_t proto_field_get_u8(struct proto_field *field);
+extern void proto_field_set_u16(struct proto_field *field, uint16_t val);
+extern uint16_t proto_field_get_u16(struct proto_field *field);
+extern void proto_field_set_u32(struct proto_field *field, uint32_t val);
+extern uint32_t proto_field_get_u32(struct proto_field *field);
+extern void proto_field_set_be16(struct proto_field *field, uint16_t val);
+extern void proto_field_set_be32(struct proto_field *field, uint32_t val);
+
 #endif /* TRAFGEN_PROTO_H */

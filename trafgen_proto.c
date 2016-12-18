@@ -431,6 +431,52 @@ void proto_hdr_field_set_default_dev_ipv6(struct proto_hdr *hdr, uint32_t fid)
 	__proto_hdr_field_set_dev_ipv6(hdr, fid, true);
 }
 
+void proto_field_set_u8(struct proto_field *field, uint8_t val)
+{
+	__proto_field_set_bytes(field, &val, false, false);
+}
+
+uint8_t proto_field_get_u8(struct proto_field *field)
+{
+	uint8_t val = *__proto_field_get_bytes(field);
+
+	return field_unmask_and_unshift(field, val);
+}
+
+void proto_field_set_u16(struct proto_field *field, uint16_t val)
+{
+	__proto_field_set_bytes(field, (uint8_t *)&val, false, false);
+}
+
+uint16_t proto_field_get_u16(struct proto_field *field)
+{
+	uint16_t val = *(uint16_t *)__proto_field_get_bytes(field);
+
+	return field_unmask_and_unshift(field, be16_to_cpu(val));
+}
+
+void proto_field_set_u32(struct proto_field *field, uint32_t val)
+{
+	__proto_field_set_bytes(field, (uint8_t *)&val, false, false);
+}
+
+uint32_t proto_field_get_u32(struct proto_field *field)
+{
+	uint32_t val = *(uint32_t *)__proto_field_get_bytes(field);
+
+	return field_unmask_and_unshift(field, be32_to_cpu(val));
+}
+
+void proto_field_set_be16(struct proto_field *field, uint16_t val)
+{
+	__proto_field_set_bytes(field, (uint8_t *)&val, false, true);
+}
+
+void proto_field_set_be32(struct proto_field *field, uint32_t val)
+{
+	__proto_field_set_bytes(field, (uint8_t *)&val, false, true);
+}
+
 void protos_init(const char *dev)
 {
 	ctx.dev = dev;
