@@ -416,7 +416,7 @@ static void proto_field_expr_eval(void)
 		else if (field->len == 4)
 			proto_hdr_field_set_be32(hdr, field->id, field_expr.val.number);
 		else
-			bug();
+			proto_hdr_field_set_bytes(hdr, field->id, field_expr.val.bytes);
 		break;
 
 	case FIELD_EXPR_MAC:
