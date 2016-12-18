@@ -41,7 +41,7 @@ static void udp_csum_update(struct proto_hdr *hdr)
 
 	if (hdr->is_csum_valid)
 		return;
-	if (proto_field_is_set(hdr, UDP_CSUM))
+	if (proto_hdr_field_is_set(hdr, UDP_CSUM))
 		return;
 	lower = proto_lower_header(hdr);
 	if (!lower)
@@ -49,7 +49,7 @@ static void udp_csum_update(struct proto_hdr *hdr)
 
 	total_len = packet_get(hdr->pkt_id)->len - hdr->pkt_offset;
 
-	proto_field_set_default_be16(hdr, UDP_CSUM, 0);
+	proto_hdr_field_set_default_be16(hdr, UDP_CSUM, 0);
 
 	switch (lower->ops->id) {
 	case PROTO_IP4:
@@ -65,7 +65,7 @@ static void udp_csum_update(struct proto_hdr *hdr)
 		break;
 	}
 
-	proto_field_set_default_be16(hdr, UDP_CSUM, bswap_16(csum));
+	proto_hdr_field_set_default_be16(hdr, UDP_CSUM, bswap_16(csum));
 	hdr->is_csum_valid = true;
 }
 
@@ -75,7 +75,7 @@ static void udp_packet_finish(struct proto_hdr *hdr)
 	uint16_t total_len;
 
 	total_len = pkt->len - hdr->pkt_offset;
-	proto_field_set_default_be16(hdr, UDP_LEN, total_len);
+	proto_hdr_field_set_default_be16(hdr, UDP_LEN, total_len);
 
 	udp_csum_update(hdr);
 }
@@ -115,7 +115,7 @@ static void tcp_header_init(struct proto_hdr *hdr)
 
 	proto_header_fields_add(hdr, tcp_fields, array_size(tcp_fields));
 
-	proto_field_set_default_be16(hdr, TCP_DOFF, 5);
+	proto_hdr_field_set_default_be16(hdr, TCP_DOFF, 5);
 }
 
 static void tcp_field_changed(struct proto_field *field)
@@ -132,7 +132,7 @@ static void tcp_csum_update(struct proto_hdr *hdr)
 
 	if (hdr->is_csum_valid)
 		return;
-	if (proto_field_is_set(hdr, TCP_CSUM))
+	if (proto_hdr_field_is_set(hdr, TCP_CSUM))
 		return;
 
 	if (!lower)
@@ -140,7 +140,7 @@ static void tcp_csum_update(struct proto_hdr *hdr)
 
 	total_len = pkt->len - hdr->pkt_offset;
 
-	proto_field_set_default_be16(hdr, TCP_CSUM, 0);
+	proto_hdr_field_set_default_be16(hdr, TCP_CSUM, 0);
 
 	switch (lower->ops->id) {
 	case PROTO_IP4:
@@ -156,7 +156,7 @@ static void tcp_csum_update(struct proto_hdr *hdr)
 		break;
 	}
 
-	proto_field_set_default_be16(hdr, TCP_CSUM, bswap_16(csum));
+	proto_hdr_field_set_default_be16(hdr, TCP_CSUM, bswap_16(csum));
 	hdr->is_csum_valid = true;
 }
 
@@ -196,14 +196,14 @@ static void icmpv4_csum_update(struct proto_hdr *hdr)
 
 	if (hdr->is_csum_valid)
 		return;
-	if (proto_field_is_set(hdr, ICMPV4_CSUM))
+	if (proto_hdr_field_is_set(hdr, ICMPV4_CSUM))
 		return;
 
 	pkt = packet_get(hdr->pkt_id);
 
-	proto_field_set_default_u16(hdr, ICMPV4_CSUM, 0);
+	proto_hdr_field_set_default_u16(hdr, ICMPV4_CSUM, 0);
 	csum = htons(calc_csum(proto_header_ptr(hdr), pkt->len - hdr->pkt_offset));
-	proto_field_set_default_u16(hdr, ICMPV4_CSUM, bswap_16(csum));
+	proto_hdr_field_set_default_u16(hdr, ICMPV4_CSUM, bswap_16(csum));
 
 	hdr->is_csum_valid = true;
 }
@@ -246,18 +246,18 @@ static void icmpv6_csum_update(struct proto_hdr *hdr)
 		return;
 	if (hdr->is_csum_valid)
 		return;
-	if (proto_field_is_set(hdr, ICMPV6_CSUM))
+	if (proto_hdr_field_is_set(hdr, ICMPV6_CSUM))
 		return;
 
 	total_len = pkt->len - hdr->pkt_offset;
 
-	proto_field_set_be16(hdr, ICMPV6_CSUM, 0);
+	proto_hdr_field_set_be16(hdr, ICMPV6_CSUM, 0);
 
 	if (likely(lower->ops->id == PROTO_IP6)) {
 		csum = p6_csum((void *) proto_header_ptr(lower), proto_header_ptr(hdr),
 				total_len, IPPROTO_ICMPV6);
 
-		proto_field_set_be16(hdr, ICMPV6_CSUM, bswap_16(csum));
+		proto_hdr_field_set_be16(hdr, ICMPV6_CSUM, bswap_16(csum));
 		hdr->is_csum_valid = true;
 	}
 }

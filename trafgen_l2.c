@@ -40,14 +40,14 @@ static uint16_t pid_to_eth(enum proto_id pid)
 
 static void eth_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
 {
-	proto_field_set_default_be16(hdr, ETH_TYPE, pid_to_eth(pid));
+	proto_hdr_field_set_default_be16(hdr, ETH_TYPE, pid_to_eth(pid));
 }
 
 static void eth_header_init(struct proto_hdr *hdr)
 {
 	proto_header_fields_add(hdr, eth_fields, array_size(eth_fields));
 
-	proto_field_set_default_dev_mac(hdr, ETH_SRC_ADDR);
+	proto_hdr_field_set_default_dev_mac(hdr, ETH_SRC_ADDR);
 }
 
 static const struct proto_ops eth_proto_ops = {
@@ -69,10 +69,10 @@ static void pause_header_init(struct proto_hdr *hdr)
 	struct proto_hdr *lower;
 
 	lower = proto_lower_default_add(hdr, PROTO_ETH);
-	proto_field_set_default_bytes(lower, ETH_DST_ADDR, eth_dst);
+	proto_hdr_field_set_default_bytes(lower, ETH_DST_ADDR, eth_dst);
 
 	proto_header_fields_add(hdr, pause_fields, array_size(pause_fields));
-	proto_field_set_default_be16(hdr, PAUSE_OPCODE, 0x1);
+	proto_hdr_field_set_default_be16(hdr, PAUSE_OPCODE, 0x1);
 }
 
 static struct proto_ops pause_proto_ops = {
@@ -109,10 +109,10 @@ static void pfc_header_init(struct proto_hdr *hdr)
 	struct proto_hdr *lower;
 
 	lower = proto_lower_default_add(hdr, PROTO_ETH);
-	proto_field_set_default_bytes(lower, ETH_DST_ADDR, eth_dst);
+	proto_hdr_field_set_default_bytes(lower, ETH_DST_ADDR, eth_dst);
 
 	proto_header_fields_add(hdr, pfc_fields, array_size(pfc_fields));
-	proto_field_set_default_be16(hdr, PFC_OPCODE, 0x0101);
+	proto_hdr_field_set_default_be16(hdr, PFC_OPCODE, 0x0101);
 }
 
 static struct proto_ops pfc_proto_ops = {
@@ -140,18 +140,18 @@ static void vlan_header_init(struct proto_hdr *hdr)
 	proto_header_fields_add(hdr, vlan_fields, array_size(vlan_fields));
 
 	if (lower->ops->id == PROTO_ETH)
-		lower_etype = proto_field_get_u16(lower, ETH_TYPE);
+		lower_etype = proto_hdr_field_get_u16(lower, ETH_TYPE);
 	else if (lower->ops->id == PROTO_VLAN)
-		lower_etype = proto_field_get_u16(lower, VLAN_ETYPE);
+		lower_etype = proto_hdr_field_get_u16(lower, VLAN_ETYPE);
 
-	proto_field_set_be16(hdr, VLAN_ETYPE, lower_etype);
-	proto_field_set_default_be16(hdr, VLAN_TPID, pid_to_eth(hdr->ops->id));
+	proto_hdr_field_set_be16(hdr, VLAN_ETYPE, lower_etype);
+	proto_hdr_field_set_default_be16(hdr, VLAN_TPID, pid_to_eth(hdr->ops->id));
 }
 
 static void vlan_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
 {
 	if (pid != PROTO_VLAN)
-		proto_field_set_be16(hdr, VLAN_ETYPE, pid_to_eth(pid));
+		proto_hdr_field_set_be16(hdr, VLAN_ETYPE, pid_to_eth(pid));
 }
 
 static const struct proto_ops vlan_proto_ops = {
@@ -180,20 +180,20 @@ static void arp_header_init(struct proto_hdr *hdr)
 	if (lower->ops->id == PROTO_ETH) {
 		const uint8_t bcast[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
-		proto_field_set_default_bytes(lower, ETH_DST_ADDR, bcast);
+		proto_hdr_field_set_default_bytes(lower, ETH_DST_ADDR, bcast);
 	}
 
 	proto_header_fields_add(hdr, arp_fields, array_size(arp_fields));
 
 	/* Generate Announce request by default */
-	proto_field_set_default_be16(hdr, ARP_HTYPE, ARPHRD_ETHER);
-	proto_field_set_default_be16(hdr, ARP_PTYPE, ETH_P_IP);
-	proto_field_set_default_u8(hdr, ARP_HLEN, 6);
-	proto_field_set_default_u8(hdr, ARP_PLEN, 4);
-	proto_field_set_default_be16(hdr, ARP_OPER, ARPOP_REQUEST);
-	proto_field_set_default_dev_mac(hdr, ARP_SHA);
-	proto_field_set_default_dev_ipv4(hdr, ARP_SPA);
-	proto_field_set_default_dev_ipv4(hdr, ARP_TPA);
+	proto_hdr_field_set_default_be16(hdr, ARP_HTYPE, ARPHRD_ETHER);
+	proto_hdr_field_set_default_be16(hdr, ARP_PTYPE, ETH_P_IP);
+	proto_hdr_field_set_default_u8(hdr, ARP_HLEN, 6);
+	proto_hdr_field_set_default_u8(hdr, ARP_PLEN, 4);
+	proto_hdr_field_set_default_be16(hdr, ARP_OPER, ARPOP_REQUEST);
+	proto_hdr_field_set_default_dev_mac(hdr, ARP_SHA);
+	proto_hdr_field_set_default_dev_ipv4(hdr, ARP_SPA);
+	proto_hdr_field_set_default_dev_ipv4(hdr, ARP_TPA);
 }
 
 static const struct proto_ops arp_proto_ops = {
@@ -215,13 +215,13 @@ static void mpls_header_init(struct proto_hdr *hdr)
 
 	proto_header_fields_add(hdr, mpls_fields, array_size(mpls_fields));
 
-	proto_field_set_default_be32(hdr, MPLS_LAST, 1);
+	proto_hdr_field_set_default_be32(hdr, MPLS_LAST, 1);
 }
 
 static void mpls_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
 {
 	if (pid == PROTO_MPLS)
-		proto_field_set_default_be32(hdr, MPLS_LAST, 0);
+		proto_hdr_field_set_default_be32(hdr, MPLS_LAST, 0);
 }
 
 static const struct proto_ops mpls_proto_ops = {

@@ -104,47 +104,47 @@ extern void proto_header_fields_add(struct proto_hdr *hdr,
 				    const struct proto_field *fields,
 				    size_t count);
 
-extern bool proto_field_is_set(struct proto_hdr *hdr, uint32_t fid);
-extern void proto_field_set_bytes(struct proto_hdr *hdr, uint32_t fid,
+extern bool proto_hdr_field_is_set(struct proto_hdr *hdr, uint32_t fid);
+extern void proto_hdr_field_set_bytes(struct proto_hdr *hdr, uint32_t fid,
 				  const uint8_t *bytes);
-extern void proto_field_set_u8(struct proto_hdr *hdr, uint32_t fid, uint8_t val);
-extern uint8_t proto_field_get_u8(struct proto_hdr *hdr, uint32_t fid);
-extern void proto_field_set_u16(struct proto_hdr *hdr, uint32_t fid, uint16_t val);
-extern uint16_t proto_field_get_u16(struct proto_hdr *hdr, uint32_t fid);
-extern void proto_field_set_u32(struct proto_hdr *hdr, uint32_t fid, uint32_t val);
-extern uint32_t proto_field_get_u32(struct proto_hdr *hdr, uint32_t fid);
+extern void proto_hdr_field_set_u8(struct proto_hdr *hdr, uint32_t fid, uint8_t val);
+extern uint8_t proto_hdr_field_get_u8(struct proto_hdr *hdr, uint32_t fid);
+extern void proto_hdr_field_set_u16(struct proto_hdr *hdr, uint32_t fid, uint16_t val);
+extern uint16_t proto_hdr_field_get_u16(struct proto_hdr *hdr, uint32_t fid);
+extern void proto_hdr_field_set_u32(struct proto_hdr *hdr, uint32_t fid, uint32_t val);
+extern uint32_t proto_hdr_field_get_u32(struct proto_hdr *hdr, uint32_t fid);
 
-extern void proto_field_set_default_bytes(struct proto_hdr *hdr, uint32_t fid,
+extern void proto_hdr_field_set_default_bytes(struct proto_hdr *hdr, uint32_t fid,
 					  const uint8_t *bytes);
-extern void proto_field_set_default_u8(struct proto_hdr *hdr, uint32_t fid,
+extern void proto_hdr_field_set_default_u8(struct proto_hdr *hdr, uint32_t fid,
 				       uint8_t val);
-extern void proto_field_set_default_u16(struct proto_hdr *hdr, uint32_t fid,
+extern void proto_hdr_field_set_default_u16(struct proto_hdr *hdr, uint32_t fid,
 				        uint16_t val);
-extern void proto_field_set_default_u32(struct proto_hdr *hdr, uint32_t fid,
+extern void proto_hdr_field_set_default_u32(struct proto_hdr *hdr, uint32_t fid,
 				        uint32_t val);
 
-extern void proto_field_set_be16(struct proto_hdr *hdr, uint32_t fid, uint16_t val);
-extern void proto_field_set_be32(struct proto_hdr *hdr, uint32_t fid, uint32_t val);
+extern void proto_hdr_field_set_be16(struct proto_hdr *hdr, uint32_t fid, uint16_t val);
+extern void proto_hdr_field_set_be32(struct proto_hdr *hdr, uint32_t fid, uint32_t val);
 
-extern void proto_field_set_default_be16(struct proto_hdr *hdr, uint32_t fid,
+extern void proto_hdr_field_set_default_be16(struct proto_hdr *hdr, uint32_t fid,
 					 uint16_t val);
-extern void proto_field_set_default_be32(struct proto_hdr *hdr, uint32_t fid,
+extern void proto_hdr_field_set_default_be32(struct proto_hdr *hdr, uint32_t fid,
 					 uint32_t val);
 
-extern void proto_field_set_dev_mac(struct proto_hdr *hdr, uint32_t fid);
-extern void proto_field_set_default_dev_mac(struct proto_hdr *hdr, uint32_t fid);
+extern void proto_hdr_field_set_dev_mac(struct proto_hdr *hdr, uint32_t fid);
+extern void proto_hdr_field_set_default_dev_mac(struct proto_hdr *hdr, uint32_t fid);
 
-extern void proto_field_set_dev_ipv4(struct proto_hdr *hdr, uint32_t fid);
-extern void proto_field_set_default_dev_ipv4(struct proto_hdr *hdr, uint32_t fid);
+extern void proto_hdr_field_set_dev_ipv4(struct proto_hdr *hdr, uint32_t fid);
+extern void proto_hdr_field_set_default_dev_ipv4(struct proto_hdr *hdr, uint32_t fid);
 
-extern void proto_field_set_dev_ipv6(struct proto_hdr *hdr, uint32_t fid);
-extern void proto_field_set_default_dev_ipv6(struct proto_hdr *hdr, uint32_t fid);
+extern void proto_hdr_field_set_dev_ipv6(struct proto_hdr *hdr, uint32_t fid);
+extern void proto_hdr_field_set_default_dev_ipv6(struct proto_hdr *hdr, uint32_t fid);
 
 extern void proto_field_dyn_apply(struct proto_field *field);
 
-extern void proto_field_func_add(struct proto_hdr *hdr, uint32_t fid,
-				 struct proto_field_func *func);
+extern void proto_hdr_field_func_add(struct proto_hdr *hdr, uint32_t fid,
+				     struct proto_field_func *func);
 
-extern struct proto_field *proto_field_by_id(struct proto_hdr *hdr, uint32_t fid);
+extern struct proto_field *proto_hdr_field_by_id(struct proto_hdr *hdr, uint32_t fid);
 
 #endif /* TRAFGEN_PROTO_H */

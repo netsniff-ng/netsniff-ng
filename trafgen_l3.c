@@ -38,8 +38,8 @@ static void ipv4_header_init(struct proto_hdr *hdr)
 
 	proto_header_fields_add(hdr, ipv4_fields, array_size(ipv4_fields));
 
-	proto_field_set_default_u8(hdr, IP4_VER, 4);
-	proto_field_set_default_u8(hdr, IP4_IHL, 5);
+	proto_hdr_field_set_default_u8(hdr, IP4_VER, 4);
+	proto_hdr_field_set_default_u8(hdr, IP4_IHL, 5);
 }
 
 static void ipv4_field_changed(struct proto_field *field)
@@ -61,14 +61,14 @@ static void ipv4_csum_update(struct proto_hdr *hdr)
 
 	if (hdr->is_csum_valid)
 		return;
-	if (proto_field_is_set(hdr, IP4_CSUM))
+	if (proto_hdr_field_is_set(hdr, IP4_CSUM))
 		return;
 
 	pkt = packet_get(hdr->pkt_id);
 
-	proto_field_set_default_u16(hdr, IP4_CSUM, 0);
+	proto_hdr_field_set_default_u16(hdr, IP4_CSUM, 0);
 	csum = htons(calc_csum(&pkt->payload[hdr->pkt_offset], hdr->len));
-	proto_field_set_default_u16(hdr, IP4_CSUM, bswap_16(csum));
+	proto_hdr_field_set_default_u16(hdr, IP4_CSUM, bswap_16(csum));
 
 	hdr->is_csum_valid = true;
 }
@@ -79,8 +79,8 @@ static void ipv4_packet_finish(struct proto_hdr *hdr)
 	uint16_t total_len;
 
 	total_len = pkt->len - hdr->pkt_offset;
-	proto_field_set_default_be16(hdr, IP4_LEN, total_len);
-	proto_field_set_default_dev_ipv4(hdr, IP4_SADDR);
+	proto_hdr_field_set_default_be16(hdr, IP4_LEN, total_len);
+	proto_hdr_field_set_default_dev_ipv4(hdr, IP4_SADDR);
 
 	ipv4_csum_update(hdr);
 }
@@ -109,7 +109,7 @@ static void ipv4_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
 		bug();
 	}
 
-	proto_field_set_default_u8(hdr, IP4_PROTO, ip_proto);
+	proto_hdr_field_set_default_u8(hdr, IP4_PROTO, ip_proto);
 }
 
 static const struct proto_ops ipv4_proto_ops = {
@@ -139,7 +139,7 @@ static void ipv6_header_init(struct proto_hdr *hdr)
 
 	proto_header_fields_add(hdr, ipv6_fields, array_size(ipv6_fields));
 
-	proto_field_set_default_be32(hdr, IP6_VER, 6);
+	proto_hdr_field_set_default_be32(hdr, IP6_VER, 6);
 }
 
 static void ipv6_field_changed(struct proto_field *field)
@@ -159,8 +159,8 @@ static void ipv6_packet_finish(struct proto_hdr *hdr)
 	struct packet *pkt = current_packet();
 	uint16_t total_len = pkt->len - hdr->pkt_offset - IPV6_HDR_LEN;
 
-	proto_field_set_default_be16(hdr, IP6_LEN, total_len);
-	proto_field_set_default_dev_ipv6(hdr, IP6_SADDR);
+	proto_hdr_field_set_default_be16(hdr, IP6_LEN, total_len);
+	proto_hdr_field_set_default_dev_ipv6(hdr, IP6_SADDR);
 }
 
 static void ipv6_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
@@ -181,7 +181,7 @@ static void ipv6_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
 		bug();
 	}
 
-	proto_field_set_default_u8(hdr, IP6_NEXT_HDR, ip_proto);
+	proto_hdr_field_set_default_u8(hdr, IP6_NEXT_HDR, ip_proto);
 }
 
 static const struct proto_ops ipv6_proto_ops = {

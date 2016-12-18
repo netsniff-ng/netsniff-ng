@@ -107,7 +107,7 @@ void proto_header_fields_add(struct proto_hdr *hdr,
 	}
 }
 
-struct proto_field *proto_field_by_id(struct proto_hdr *hdr, uint32_t fid)
+struct proto_field *proto_hdr_field_by_id(struct proto_hdr *hdr, uint32_t fid)
 {
 	/* Assume the fields are stored in the same order as the respective
 	 * enum, so the index can be used for faster lookup here.
@@ -117,9 +117,9 @@ struct proto_field *proto_field_by_id(struct proto_hdr *hdr, uint32_t fid)
 	return &hdr->fields[fid];
 }
 
-bool proto_field_is_set(struct proto_hdr *hdr, uint32_t fid)
+bool proto_hdr_field_is_set(struct proto_hdr *hdr, uint32_t fid)
 {
-	struct proto_field *field = proto_field_by_id(hdr, fid);
+	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 
 	return field ? field->is_set : false;
 }
@@ -233,10 +233,12 @@ static void __proto_field_set_bytes(struct proto_field *field,
 		field->is_set = true;
 }
 
-void proto_field_set_bytes(struct proto_hdr *hdr, uint32_t fid,
-			   const uint8_t *bytes)
+void proto_hdr_field_set_bytes(struct proto_hdr *hdr, uint32_t fid,
+			       const uint8_t *bytes)
 {
-	__proto_field_set_bytes(proto_field_by_id(hdr, fid), bytes, false, false);
+	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
+
+	__proto_field_set_bytes(field, bytes, false, false);
 }
 
 static uint8_t *__proto_field_get_bytes(struct proto_field *field)
@@ -244,110 +246,110 @@ static uint8_t *__proto_field_get_bytes(struct proto_field *field)
 	return &packet_get(field->hdr->pkt_id)->payload[field->pkt_offset];
 }
 
-void proto_field_set_u8(struct proto_hdr *hdr, uint32_t fid, uint8_t val)
+void proto_hdr_field_set_u8(struct proto_hdr *hdr, uint32_t fid, uint8_t val)
 {
-	proto_field_set_bytes(hdr, fid, (uint8_t *)&val);
+	proto_hdr_field_set_bytes(hdr, fid, (uint8_t *)&val);
 }
 
-uint8_t proto_field_get_u8(struct proto_hdr *hdr, uint32_t fid)
+uint8_t proto_hdr_field_get_u8(struct proto_hdr *hdr, uint32_t fid)
 {
-	struct proto_field *field = proto_field_by_id(hdr, fid);
+	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 	uint8_t val = *__proto_field_get_bytes(field);
 
 	return field_unmask_and_unshift(field, val);
 }
 
-void proto_field_set_u16(struct proto_hdr *hdr, uint32_t fid, uint16_t val)
+void proto_hdr_field_set_u16(struct proto_hdr *hdr, uint32_t fid, uint16_t val)
 {
-	proto_field_set_bytes(hdr, fid, (uint8_t *)&val);
+	proto_hdr_field_set_bytes(hdr, fid, (uint8_t *)&val);
 }
 
-uint16_t proto_field_get_u16(struct proto_hdr *hdr, uint32_t fid)
+uint16_t proto_hdr_field_get_u16(struct proto_hdr *hdr, uint32_t fid)
 {
-	struct proto_field *field = proto_field_by_id(hdr, fid);
+	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 	uint16_t val = *(uint16_t *)__proto_field_get_bytes(field);
 
 	return field_unmask_and_unshift(field, be16_to_cpu(val));
 }
 
-void proto_field_set_u32(struct proto_hdr *hdr, uint32_t fid, uint32_t val)
+void proto_hdr_field_set_u32(struct proto_hdr *hdr, uint32_t fid, uint32_t val)
 {
-	proto_field_set_bytes(hdr, fid, (uint8_t *)&val);
+	proto_hdr_field_set_bytes(hdr, fid, (uint8_t *)&val);
 }
 
-uint32_t proto_field_get_u32(struct proto_hdr *hdr, uint32_t fid)
+uint32_t proto_hdr_field_get_u32(struct proto_hdr *hdr, uint32_t fid)
 {
-	struct proto_field *field = proto_field_by_id(hdr, fid);
+	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 	uint32_t val = *(uint32_t *)__proto_field_get_bytes(field);
 
 	return field_unmask_and_unshift(field, be32_to_cpu(val));
 }
 
-void proto_field_set_default_bytes(struct proto_hdr *hdr, uint32_t fid,
-				   const uint8_t *bytes)
+void proto_hdr_field_set_default_bytes(struct proto_hdr *hdr, uint32_t fid,
+				       const uint8_t *bytes)
 {
-	struct proto_field *field = proto_field_by_id(hdr, fid);
+	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 
 	__proto_field_set_bytes(field, bytes, true, false);
 }
 
-void proto_field_set_default_u8(struct proto_hdr *hdr, uint32_t fid, uint8_t val)
+void proto_hdr_field_set_default_u8(struct proto_hdr *hdr, uint32_t fid, uint8_t val)
 {
-	struct proto_field *field = proto_field_by_id(hdr, fid);
+	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 
 	__proto_field_set_bytes(field, (uint8_t *)&val, true, false);
 }
 
-void proto_field_set_default_u16(struct proto_hdr *hdr, uint32_t fid, uint16_t val)
+void proto_hdr_field_set_default_u16(struct proto_hdr *hdr, uint32_t fid, uint16_t val)
 {
-	struct proto_field *field = proto_field_by_id(hdr, fid);
+	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 
 	__proto_field_set_bytes(field, (uint8_t *)&val, true, false);
 }
 
-void proto_field_set_default_u32(struct proto_hdr *hdr, uint32_t fid, uint32_t val)
+void proto_hdr_field_set_default_u32(struct proto_hdr *hdr, uint32_t fid, uint32_t val)
 {
-	struct proto_field *field = proto_field_by_id(hdr, fid);
+	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 
 	__proto_field_set_bytes(field, (uint8_t *)&val, true, false);
 }
 
-void proto_field_set_be16(struct proto_hdr *hdr, uint32_t fid, uint16_t val)
+void proto_hdr_field_set_be16(struct proto_hdr *hdr, uint32_t fid, uint16_t val)
 {
-	struct proto_field *field = proto_field_by_id(hdr, fid);
+	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 
 	__proto_field_set_bytes(field, (uint8_t *)&val, false, true);
 }
 
-void proto_field_set_be32(struct proto_hdr *hdr, uint32_t fid, uint32_t val)
+void proto_hdr_field_set_be32(struct proto_hdr *hdr, uint32_t fid, uint32_t val)
 {
-	struct proto_field *field = proto_field_by_id(hdr, fid);
+	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 
 	__proto_field_set_bytes(field, (uint8_t *)&val, false, true);
 }
 
-void proto_field_set_default_be16(struct proto_hdr *hdr, uint32_t fid, uint16_t val)
+void proto_hdr_field_set_default_be16(struct proto_hdr *hdr, uint32_t fid, uint16_t val)
 {
-	struct proto_field *field = proto_field_by_id(hdr, fid);
+	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 
 	__proto_field_set_bytes(field, (uint8_t *)&val, true, true);
 }
 
-void proto_field_set_default_be32(struct proto_hdr *hdr, uint32_t fid, uint32_t val)
+void proto_hdr_field_set_default_be32(struct proto_hdr *hdr, uint32_t fid, uint32_t val)
 {
-	struct proto_field *field = proto_field_by_id(hdr, fid);
+	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 
 	__proto_field_set_bytes(field, (uint8_t *)&val, true, true);
 }
 
-static void __proto_field_set_dev_mac(struct proto_hdr *hdr, uint32_t fid,
-				      bool is_default)
+static void __proto_hdr_field_set_dev_mac(struct proto_hdr *hdr, uint32_t fid,
+					  bool is_default)
 {
-	struct proto_field *field = proto_field_by_id(hdr, fid);
+	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 	uint8_t mac[ETH_ALEN];
 	int ret;
 
-	if (proto_field_is_set(hdr, fid))
+	if (proto_hdr_field_is_set(hdr, fid))
 		return;
 
 	ret = device_hw_address(ctx.dev, mac, sizeof(mac));
@@ -357,25 +359,25 @@ static void __proto_field_set_dev_mac(struct proto_hdr *hdr, uint32_t fid,
 	__proto_field_set_bytes(field, mac, is_default, false);
 }
 
-void proto_field_set_dev_mac(struct proto_hdr *hdr, uint32_t fid)
+void proto_hdr_field_set_dev_mac(struct proto_hdr *hdr, uint32_t fid)
 {
-	__proto_field_set_dev_mac(hdr, fid, false);
+	__proto_hdr_field_set_dev_mac(hdr, fid, false);
 }
 
-void proto_field_set_default_dev_mac(struct proto_hdr *hdr, uint32_t fid)
+void proto_hdr_field_set_default_dev_mac(struct proto_hdr *hdr, uint32_t fid)
 {
-	__proto_field_set_dev_mac(hdr, fid, true);
+	__proto_hdr_field_set_dev_mac(hdr, fid, true);
 }
 
-static void __proto_field_set_dev_ipv4(struct proto_hdr *hdr, uint32_t fid,
-				       bool is_default)
+static void __proto_hdr_field_set_dev_ipv4(struct proto_hdr *hdr, uint32_t fid,
+					   bool is_default)
 {
-	struct proto_field *field = proto_field_by_id(hdr, fid);
+	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 	struct sockaddr_storage ss = { };
 	struct sockaddr_in *ss4;
 	int ret;
 
-	if (proto_field_is_set(hdr, fid))
+	if (proto_hdr_field_is_set(hdr, fid))
 		return;
 
 	ret = device_address(ctx.dev, AF_INET, &ss);
@@ -388,25 +390,25 @@ static void __proto_field_set_dev_ipv4(struct proto_hdr *hdr, uint32_t fid,
 	__proto_field_set_bytes(field, (uint8_t *)&ss4->sin_addr.s_addr, is_default, false);
 }
 
-void proto_field_set_dev_ipv4(struct proto_hdr *hdr, uint32_t fid)
+void proto_hdr_field_set_dev_ipv4(struct proto_hdr *hdr, uint32_t fid)
 {
-	__proto_field_set_dev_ipv4(hdr, fid, false);
+	__proto_hdr_field_set_dev_ipv4(hdr, fid, false);
 }
 
-void proto_field_set_default_dev_ipv4(struct proto_hdr *hdr, uint32_t fid)
+void proto_hdr_field_set_default_dev_ipv4(struct proto_hdr *hdr, uint32_t fid)
 {
-	__proto_field_set_dev_ipv4(hdr, fid, true);
+	__proto_hdr_field_set_dev_ipv4(hdr, fid, true);
 }
 
-static void __proto_field_set_dev_ipv6(struct proto_hdr *hdr, uint32_t fid,
-				       bool is_default)
+static void __proto_hdr_field_set_dev_ipv6(struct proto_hdr *hdr, uint32_t fid,
+					   bool is_default)
 {
-	struct proto_field *field = proto_field_by_id(hdr, fid);
+	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 	struct sockaddr_storage ss = { };
 	struct sockaddr_in6 *ss6;
 	int ret;
 
-	if (proto_field_is_set(hdr, fid))
+	if (proto_hdr_field_is_set(hdr, fid))
 		return;
 
 	ret = device_address(ctx.dev, AF_INET6, &ss);
@@ -419,14 +421,14 @@ static void __proto_field_set_dev_ipv6(struct proto_hdr *hdr, uint32_t fid,
 	__proto_field_set_bytes(field, (uint8_t *)&ss6->sin6_addr.s6_addr, is_default, false);
 }
 
-void proto_field_set_dev_ipv6(struct proto_hdr *hdr, uint32_t fid)
+void proto_hdr_field_set_dev_ipv6(struct proto_hdr *hdr, uint32_t fid)
 {
-	__proto_field_set_dev_ipv6(hdr, fid, false);
+	__proto_hdr_field_set_dev_ipv6(hdr, fid, false);
 }
 
-void proto_field_set_default_dev_ipv6(struct proto_hdr *hdr, uint32_t fid)
+void proto_hdr_field_set_default_dev_ipv6(struct proto_hdr *hdr, uint32_t fid)
 {
-	__proto_field_set_dev_ipv6(hdr, fid, true);
+	__proto_hdr_field_set_dev_ipv6(hdr, fid, true);
 }
 
 void protos_init(const char *dev)
@@ -484,11 +486,11 @@ static inline uint32_t field_inc(struct proto_field *field)
 static void field_inc_func(struct proto_field *field)
 {
 	if (field->len == 1) {
-		proto_field_set_u8(field->hdr, field->id, field_inc(field));
+		proto_hdr_field_set_u8(field->hdr, field->id, field_inc(field));
 	} else if (field->len == 2) {
-		proto_field_set_be16(field->hdr, field->id, field_inc(field));
+		proto_hdr_field_set_be16(field->hdr, field->id, field_inc(field));
 	} else if (field->len == 4) {
-		proto_field_set_be32(field->hdr, field->id, field_inc(field));
+		proto_hdr_field_set_be32(field->hdr, field->id, field_inc(field));
 	} else if (field->len > 4) {
 		uint8_t *bytes = __proto_field_get_bytes(field);
 
@@ -506,13 +508,13 @@ static inline uint32_t field_rand(struct proto_field *field)
 static void field_rnd_func(struct proto_field *field)
 {
 	if (field->len == 1) {
-		proto_field_set_u8(field->hdr, field->id,
+		proto_hdr_field_set_u8(field->hdr, field->id,
 				    (uint8_t) field_rand(field));
 	} else if (field->len == 2) {
-		proto_field_set_be16(field->hdr, field->id,
+		proto_hdr_field_set_be16(field->hdr, field->id,
 				    (uint16_t) field_rand(field));
 	} else if (field->len == 4) {
-		proto_field_set_be32(field->hdr, field->id,
+		proto_hdr_field_set_be32(field->hdr, field->id,
 				    (uint32_t) field_rand(field));
 	} else if (field->len > 4) {
 		uint8_t *bytes = __proto_field_get_bytes(field);
@@ -523,10 +525,10 @@ static void field_rnd_func(struct proto_field *field)
 	}
 }
 
-void proto_field_func_add(struct proto_hdr *hdr, uint32_t fid,
-			  struct proto_field_func *func)
+void proto_hdr_field_func_add(struct proto_hdr *hdr, uint32_t fid,
+			      struct proto_field_func *func)
 {
-	struct proto_field *field = proto_field_by_id(hdr, fid);
+	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 
 	bug_on(!func);
 
@@ -540,11 +542,11 @@ void proto_field_func_add(struct proto_hdr *hdr, uint32_t fid,
 		if (func->type & PROTO_FIELD_FUNC_MIN)
 			field->func.val = func->min;
 		else if (field->len == 1)
-			field->func.val = proto_field_get_u8(hdr, fid);
+			field->func.val = proto_hdr_field_get_u8(hdr, fid);
 		else if (field->len == 2)
-			field->func.val = proto_field_get_u16(hdr, fid);
+			field->func.val = proto_hdr_field_get_u16(hdr, fid);
 		else if (field->len == 4)
-			field->func.val = proto_field_get_u32(hdr, fid);
+			field->func.val = proto_hdr_field_get_u32(hdr, fid);
 		else if (field->len > 4) {
 			uint8_t *bytes = __proto_field_get_bytes(field);
 
