@@ -66,7 +66,9 @@ struct proto_field_func {
 	uint32_t min;
 	uint32_t max;
 	int32_t inc;
+	uint16_t offset;
 	uint32_t val;
+	size_t len;
 
 	void (*update_field)(struct proto_field *field);
 };
@@ -142,9 +144,6 @@ extern void proto_hdr_field_set_default_dev_ipv6(struct proto_hdr *hdr, uint32_t
 
 extern void proto_field_dyn_apply(struct proto_field *field);
 
-extern void proto_hdr_field_func_add(struct proto_hdr *hdr, uint32_t fid,
-				     struct proto_field_func *func);
-
 extern struct proto_field *proto_hdr_field_by_id(struct proto_hdr *hdr, uint32_t fid);
 
 
@@ -156,5 +155,8 @@ extern void proto_field_set_u32(struct proto_field *field, uint32_t val);
 extern uint32_t proto_field_get_u32(struct proto_field *field);
 extern void proto_field_set_be16(struct proto_field *field, uint16_t val);
 extern void proto_field_set_be32(struct proto_field *field, uint32_t val);
+
+extern void proto_field_func_add(struct proto_field *field,
+				 struct proto_field_func *func);
 
 #endif /* TRAFGEN_PROTO_H */

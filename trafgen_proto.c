@@ -532,11 +532,11 @@ static inline uint32_t field_inc(struct proto_field *field)
 static void field_inc_func(struct proto_field *field)
 {
 	if (field->len == 1) {
-		proto_hdr_field_set_u8(field->hdr, field->id, field_inc(field));
+		proto_field_set_u8(field, field_inc(field));
 	} else if (field->len == 2) {
-		proto_hdr_field_set_be16(field->hdr, field->id, field_inc(field));
+		proto_field_set_be16(field, field_inc(field));
 	} else if (field->len == 4) {
-		proto_hdr_field_set_be32(field->hdr, field->id, field_inc(field));
+		proto_field_set_be32(field, field_inc(field));
 	} else if (field->len > 4) {
 		uint8_t *bytes = __proto_field_get_bytes(field);
 
@@ -554,14 +554,11 @@ static inline uint32_t field_rand(struct proto_field *field)
 static void field_rnd_func(struct proto_field *field)
 {
 	if (field->len == 1) {
-		proto_hdr_field_set_u8(field->hdr, field->id,
-				    (uint8_t) field_rand(field));
+		proto_field_set_u8(field, (uint8_t) field_rand(field));
 	} else if (field->len == 2) {
-		proto_hdr_field_set_be16(field->hdr, field->id,
-				    (uint16_t) field_rand(field));
+		proto_field_set_be16(field, (uint16_t) field_rand(field));
 	} else if (field->len == 4) {
-		proto_hdr_field_set_be32(field->hdr, field->id,
-				    (uint32_t) field_rand(field));
+		proto_field_set_be32(field, (uint32_t) field_rand(field));
 	} else if (field->len > 4) {
 		uint8_t *bytes = __proto_field_get_bytes(field);
 		uint32_t i;
@@ -571,11 +568,9 @@ static void field_rnd_func(struct proto_field *field)
 	}
 }
 
-void proto_hdr_field_func_add(struct proto_hdr *hdr, uint32_t fid,
-			      struct proto_field_func *func)
+void proto_field_func_add(struct proto_field *field,
+			  struct proto_field_func *func)
 {
-	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
-
 	bug_on(!func);
 
 	field->func.update_field = func->update_field;
@@ -588,11 +583,11 @@ void proto_hdr_field_func_add(struct proto_hdr *hdr, uint32_t fid,
 		if (func->type & PROTO_FIELD_FUNC_MIN)
 			field->func.val = func->min;
 		else if (field->len == 1)
-			field->func.val = proto_hdr_field_get_u8(hdr, fid);
+			field->func.val = proto_field_get_u8(field);
 		else if (field->len == 2)
-			field->func.val = proto_hdr_field_get_u16(hdr, fid);
+			field->func.val = proto_field_get_u16(field);
 		else if (field->len == 4)
-			field->func.val = proto_hdr_field_get_u32(hdr, fid);
+			field->func.val = proto_field_get_u32(field);
 		else if (field->len > 4) {
 			uint8_t *bytes = __proto_field_get_bytes(field);
 
