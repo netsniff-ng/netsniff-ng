@@ -718,7 +718,7 @@ proto
 	| tcp_proto { }
 	;
 
-field_expr
+field_value_expr
 	: number { field_expr.type = FIELD_EXPR_NUMB;
 		   field_expr.val.number = $1; }
 	| mac { field_expr.type = FIELD_EXPR_MAC;
@@ -783,7 +783,7 @@ eth_field
 	| eth_type { proto_field_set(ETH_TYPE); }
 
 eth_expr
-	: eth_field skip_white '=' skip_white field_expr
+	: eth_field skip_white '=' skip_white field_value_expr
 		{ proto_field_expr_eval(); }
 	;
 
@@ -807,7 +807,7 @@ pause_field
 	;
 
 pause_expr
-	: pause_field skip_white '=' skip_white field_expr
+	: pause_field skip_white '=' skip_white field_value_expr
 		{ proto_field_expr_eval(); }
 	;
 
@@ -843,7 +843,7 @@ pfc_field
 	;
 
 pfc_expr
-	: pfc_field skip_white '=' skip_white field_expr
+	: pfc_field skip_white '=' skip_white field_value_expr
 		{ proto_field_expr_eval(); }
 	;
 
@@ -875,7 +875,7 @@ vlan_field
 	;
 
 vlan_expr
-	: vlan_field skip_white '=' skip_white field_expr
+	: vlan_field skip_white '=' skip_white field_value_expr
 		{ proto_field_expr_eval(); }
 	| K_1Q
 		{ proto_field_set_be16(hdr, VLAN_TPID, ETH_P_8021Q); }
@@ -910,7 +910,7 @@ mpls_field
 	;
 
 mpls_expr
-	: mpls_field skip_white '=' skip_white field_expr
+	: mpls_field skip_white '=' skip_white field_value_expr
 		{ proto_field_expr_eval(); }
 
 arp_proto
@@ -939,9 +939,9 @@ arp_field
 	;
 
 arp_expr
-	: arp_field skip_white '=' skip_white field_expr
+	: arp_field skip_white '=' skip_white field_value_expr
 		{ proto_field_expr_eval(); }
-	| K_OPER skip_white '=' skip_white field_expr
+	| K_OPER skip_white '=' skip_white field_value_expr
 		{ proto_field_set(ARP_OPER);
 		  proto_field_expr_eval(); }
 	| K_OPER skip_white '=' skip_white K_REQUEST
@@ -985,7 +985,7 @@ ip4_field
 	;
 
 ip4_expr
-	: ip4_field skip_white '=' skip_white field_expr
+	: ip4_field skip_white '=' skip_white field_value_expr
 		{ proto_field_expr_eval(); }
 	| K_DF  { proto_field_set_be16(hdr, IP4_DF, 1); }
 	| K_MF  { proto_field_set_be16(hdr, IP4_MF, 1); }
@@ -1022,7 +1022,7 @@ ip6_field
 	;
 
 ip6_expr
-	: ip6_field skip_white '=' skip_white field_expr
+	: ip6_field skip_white '=' skip_white field_value_expr
 		{ proto_field_expr_eval(); }
 	;
 
@@ -1050,7 +1050,7 @@ icmp4_field
 	;
 
 icmp4_expr
-	: icmp4_field skip_white '=' skip_white field_expr
+	: icmp4_field skip_white '=' skip_white field_value_expr
 		{ proto_field_expr_eval(); }
 	| K_ECHO_REQUEST
 		{ proto_field_set_u8(hdr, ICMPV4_TYPE, ICMP_ECHO);
@@ -1079,9 +1079,9 @@ icmp6_field
 	;
 
 icmp6_expr
-	: icmp6_field skip_white '=' skip_white field_expr
+	: icmp6_field skip_white '=' skip_white field_value_expr
 		{ proto_field_expr_eval(); }
-	| K_TYPE skip_white '=' skip_white field_expr
+	| K_TYPE skip_white '=' skip_white field_value_expr
 		{ proto_field_set(ICMPV6_TYPE);
 		  proto_field_expr_eval(); }
 	| K_TYPE skip_white '=' K_ECHO_REQUEST
@@ -1115,7 +1115,7 @@ udp_field
 	;
 
 udp_expr
-	: udp_field skip_white '=' skip_white field_expr
+	: udp_field skip_white '=' skip_white field_value_expr
 		{ proto_field_expr_eval(); }
 	;
 
@@ -1145,7 +1145,7 @@ tcp_field
 	;
 
 tcp_expr
-	: tcp_field skip_white '=' skip_white field_expr
+	: tcp_field skip_white '=' skip_white field_value_expr
 		{ proto_field_expr_eval(); }
 	| K_CWR { proto_field_set_be16(hdr, TCP_CWR, 1); }
 	| K_ECE { proto_field_set_be16(hdr, TCP_ECE, 1); }
