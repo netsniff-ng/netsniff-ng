@@ -329,6 +329,50 @@ Example of using dynamic functions:
 .in -4
 
 .sp
+Fields might be further manipulated with a function at a specific offset:
+.sp
+.in +4
+<field>[<index>] | <field>[<index>:<length>]
+.sp
+.in +4
+<index> - relative field offset with range 0..<field.len> - 1
+.sp
+<length> - length/size of the value which will be set; either 1, 2 or 4 bytes (default: 1)
+.in -4
+.sp
+The <index> starts from the field's first byte in network order.
+.sp
+The syntax is similar to the one used in pcap filters (man pcap-filter) for
+matching header field at a specified offset.
+.sp
+Examples of using field offset (showing the effect in a shortenet output from
+netsniff-ng):
+.sp
+.in +4
+1) trafgen -o lo --cpus 1 -n 3 '{ eth(da=11:22:33:44:55:66, da[0]=dinc()), tcp() }'
+
+.in +4
+[ Eth MAC (00:00:00:00:00:00 => 11:22:33:44:55:66)
+
+[ Eth MAC (00:00:00:00:00:00 => 12:22:33:44:55:66)
+
+[ Eth MAC (00:00:00:00:00:00 => 13:22:33:44:55:66)
+.in -4
+
+2) trafgen -o lo --cpus 1 -n 3 '{ ipv4(da=1.2.3.4, da[0]=dinc()), tcp() }'
+
+.in +4
+[ IPv4 Addr (127.0.0.1 => 1.2.3.4)
+
+[ IPv4 Addr (127.0.0.1 => 2.2.3.4)
+
+[ IPv4 Addr (127.0.0.1 => 3.2.3.4)
+.in -4
+
+.in -4
+.in -4
+
+.sp
 All required lower layer headers will be filled automatically if they were not
 specified by the user. The headers will be filled in the order they were
 specified. Each header will be filled with some mimimum required set of fields.
