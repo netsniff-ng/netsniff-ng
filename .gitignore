@@ -62,5 +62,6 @@ config.log
 .MAIL_MSG
 
 # Excluded from ignorance
+!.gitattributes
 !.gitignore
 !.travis.yml
