@@ -1238,6 +1238,7 @@ static void presenter(void)
 
 	screen = screen_init(false);
 	wclear(screen);
+	halfdelay(1);
 
 	start_color();
 	INIT_COLOR(RED, BLACK);
@@ -1320,8 +1321,6 @@ static void presenter(void)
 			draw_flows(screen, &flow_list, skip_lines);
 
 		draw_footer();
-
-		usleep(80000);
 	}
 	rcu_unregister_thread();
 
