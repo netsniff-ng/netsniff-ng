@@ -960,6 +960,7 @@ mpls_expr
 		{ proto_field_expr_eval(); }
 	| mpls_field skip_white '=' skip_white field_value_expr
 		{ proto_field_expr_eval(); }
+	;
 
 arp_proto
 	: arp '(' arp_param_list ')' { }
@@ -1006,6 +1007,7 @@ arp_expr
 	| K_REPLY
 		{ proto_hdr_field_set_be16(hdr, ARP_OPER, ARPOP_REPLY); }
 	;
+
 arp
 	: K_ARP	{ proto_add(PROTO_ARP); }
 	;
@@ -1125,6 +1127,7 @@ icmp4
 
 icmpv6_proto
 	: icmp6 '(' icmp6_param_list ')' { }
+	;
 
 icmp6_param_list
 	: { }
