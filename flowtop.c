@@ -19,12 +19,15 @@
 #include <curses.h>
 #include <sys/time.h>
 #include <sys/fsuid.h>
-#include <urcu.h>
 #include <libgen.h>
 #include <inttypes.h>
 #include <poll.h>
 #include <fcntl.h>
 #include <arpa/inet.h>
+
+#include <urcu.h>
+#include <urcu/list.h>
+#include <urcu/rculist.h>
 
 #include "ui.h"
 #include "die.h"
@@ -50,7 +53,7 @@
 #endif
 
 struct flow_entry {
-	struct list_head entry;
+	struct cds_list_head entry;
 	struct rcu_head rcu;
 
 	uint32_t flow_id, use, status;
@@ -79,7 +82,7 @@ struct flow_entry {
 };
 
 struct flow_list {
-	struct list_head head;
+	struct cds_list_head head;
 };
 
 enum flow_direction {
@@ -369,7 +372,7 @@ static void flow_entry_xfree_rcu(struct rcu_head *head)
 
 static inline void flow_list_init(struct flow_list *fl)
 {
-	INIT_LIST_HEAD(&fl->head);
+	CDS_INIT_LIST_HEAD(&fl->head);
 }
 
 static inline bool nfct_is_dns(const struct nf_conntrack *ct)
@@ -398,7 +401,7 @@ static int flow_list_new_entry(struct flow_list *fl, struct nf_conntrack *ct)
 	flow_entry_from_ct(n, ct);
 	flow_entry_get_extended(n);
 
-	list_add_rcu(&n->entry, &fl->head);
+	cds_list_add_rcu(&n->entry, &fl->head);
 
 	n->is_visible = true;
 
@@ -409,7 +412,7 @@ static struct flow_entry *flow_list_find_id(struct flow_list *fl, uint32_t id)
 {
 	struct flow_entry *n;
 
-	list_for_each_entry_rcu(n, &fl->head, entry) {
+	cds_list_for_each_entry_rcu(n, &fl->head, entry) {
 		if (n->flow_id == id)
 			return n;
 	}
@@ -423,7 +426,7 @@ static int flow_list_del_entry(struct flow_list *fl, const struct nf_conntrack *
 
 	n = flow_list_find_id(fl, nfct_get_attr_u32(ct, ATTR_ID));
 	if (n) {
-		list_del_rcu(&n->entry);
+		cds_list_del_rcu(&n->entry);
 		call_rcu(&n->rcu, flow_entry_xfree_rcu);
 	}
 
@@ -434,8 +437,8 @@ static void flow_list_destroy(struct flow_list *fl)
 {
 	struct flow_entry *n, *tmp;
 
-	list_for_each_entry_safe(n, tmp, &fl->head, entry) {
-		list_del_rcu(&n->entry);
+	cds_list_for_each_entry_safe(n, tmp, &fl->head, entry) {
+		cds_list_del_rcu(&n->entry);
 		call_rcu(&n->rcu, flow_entry_xfree_rcu);
 	}
 }
@@ -1012,14 +1015,14 @@ static void draw_flows(WINDOW *screen, struct flow_list *fl,
 
 	rcu_read_lock();
 
-	if (list_empty(&fl->head))
+	if (cds_list_empty(&fl->head))
 		mvwprintw(screen, line, 2, "(No sessions! "
 			  "Is netfilter running?)");
 
 	ui_table_clear(&flows_tbl);
 	ui_table_header_print(&flows_tbl);
 
-	list_for_each_entry_rcu(n, &fl->head, entry) {
+	cds_list_for_each_entry_rcu(n, &fl->head, entry) {
 		if (!n->is_visible)
 			continue;
 		if (presenter_flow_wrong_state(n))
@@ -1398,8 +1401,9 @@ static void collector_refresh_flows(struct nfct_handle *handle)
 {
 	struct flow_entry *n;
 
-	list_for_each_entry_rcu(n, &flow_list.head, entry)
+	cds_list_for_each_entry_rcu(n, &flow_list.head, entry) {
 		nfct_query(handle, NFCT_Q_GET, n->ct);
+	}
 }
 
 static void collector_create_filter(struct nfct_handle *nfct)

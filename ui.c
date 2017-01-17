@@ -63,14 +63,14 @@ void ui_table_init(struct ui_table *tbl)
 	tbl->col_pad = 1;
 	tbl->row     = ui_text_alloc(tbl->width);
 
-	INIT_LIST_HEAD(&tbl->cols);
+	CDS_INIT_LIST_HEAD(&tbl->cols);
 }
 
 void ui_table_uninit(struct ui_table *tbl)
 {
 	struct ui_col *col, *tmp;
 
-	list_for_each_entry_safe(col, tmp, &tbl->cols, entry)
+	cds_list_for_each_entry_safe(col, tmp, &tbl->cols, entry)
 		xfree(col);
 
 	ui_text_free(tbl->row);
@@ -87,7 +87,7 @@ static struct ui_col *ui_table_col_get(struct ui_table *tbl, uint32_t id)
 {
 	struct ui_col *col;
 
-	list_for_each_entry(col, &tbl->cols, entry) {
+	cds_list_for_each_entry(col, &tbl->cols, entry) {
 		if (col->id == id)
 			return col;
 	}
@@ -100,7 +100,7 @@ static void __ui_table_pos_update(struct ui_table *tbl)
 	struct ui_col *col;
 	uint32_t pos = 0;
 
-	list_for_each_entry(col, &tbl->cols, entry) {
+	cds_list_for_each_entry(col, &tbl->cols, entry) {
 		col->pos  = pos;
 		pos      += col->len + tbl->col_pad;
 	}
@@ -115,7 +115,7 @@ void ui_table_col_add(struct ui_table *tbl, uint32_t id, char *name, uint32_t le
 	col->len   = len;
 	col->align = UI_ALIGN_LEFT;
 
-	list_add_tail(&col->entry, &tbl->cols);
+	cds_list_add_tail(&col->entry, &tbl->cols);
 
 	__ui_table_pos_update(tbl);
 }
@@ -195,9 +195,8 @@ void ui_table_header_print(struct ui_table *tbl)
 	mvprintw(tbl->y, tbl->x, "%*s", tbl->width, " ");
 	attroff(tbl->hdr_color);
 
-	list_for_each_entry(col, &tbl->cols, entry) {
+	cds_list_for_each_entry(col, &tbl->cols, entry) {
 		__ui_table_row_print(tbl, col, tbl->hdr_color, col->name);
-
 	}
 
 	ui_table_row_show(tbl);

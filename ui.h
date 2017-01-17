@@ -1,10 +1,10 @@
 #ifndef UI_H
 #define UI_H
 
+#define _LGPL_SOURCE
 #include <stdbool.h>
 #include <inttypes.h>
-
-#include "list.h"
+#include <urcu/list.h>
 
 enum ui_event_id {
 	UI_EVT_SCROLL_LEFT,
@@ -23,7 +23,7 @@ struct ui_text {
 };
 
 struct ui_col {
-	struct list_head entry;
+	struct cds_list_head entry;
 	uint32_t id;
 	char *name;
 	uint32_t len;
@@ -36,7 +36,7 @@ struct ui_table {
 	int y;
 	int x;
 	int rows_y;
-	struct list_head cols;
+	struct cds_list_head cols;
 	struct ui_text *row;
 	int hdr_color;
 	int col_pad;
