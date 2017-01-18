@@ -183,3 +183,14 @@ int proc_exec(const char *proc, char *const argv[])
 
 	return 0;
 }
+
+bool proc_exists(pid_t pid)
+{
+	struct stat statbuf;
+	char path[1024];
+
+	if (snprintf(path, sizeof(path), "/proc/%u", pid) < 0)
+		return false;
+
+	return stat(path, &statbuf) == 0;
+}
