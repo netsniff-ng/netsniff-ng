@@ -133,6 +133,8 @@ static struct flow_list flow_list;
 static struct sysctl_params_ctx sysctl = { -1, -1 };
 
 static unsigned int cols, rows;
+static WINDOW *screen;
+static int skip_lines;
 
 static unsigned int interval = 1;
 static bool show_src = false;
@@ -155,6 +157,10 @@ enum tbl_flow_col {
 };
 
 static struct ui_table flows_tbl;
+
+enum tab_entry {
+	TAB_FLOWS,
+};
 
 static const char *short_options = "vhTUsDIS46ut:nGb";
 static const struct option long_options[] = {
@@ -1197,11 +1203,15 @@ static void flows_table_init(struct ui_table *tbl)
 	ui_table_header_color_set(&flows_tbl, COLOR(BLACK, GREEN));
 }
 
+static void tab_main_on_open(struct ui_tab *tab, enum ui_tab_event_t evt, uint32_t id)
+{
+	draw_flows(screen, &flow_list, skip_lines);
+}
+
 static void presenter(void)
 {
 	bool show_help = false;
-	int skip_lines = 0;
-	WINDOW *screen;
+	struct ui_tab *tab_main;
 
 	lookup_init(LT_PORTS_TCP);
 	lookup_init(LT_PORTS_UDP);
@@ -1218,6 +1228,12 @@ static void presenter(void)
 	INIT_COLOR(BLACK, GREEN);
 
         flows_table_init(&flows_tbl);
+
+	tab_main = ui_tab_create();
+	ui_tab_event_cb_set(tab_main, tab_main_on_open);
+	ui_tab_pos_set(tab_main, 2, 0);
+	ui_tab_active_color_set(tab_main, COLOR(BLACK, GREEN));
+	ui_tab_entry_add(tab_main, TAB_FLOWS, "Flows");
 
 	rcu_register_thread();
 	while (!sigint) {
@@ -1278,6 +1294,9 @@ static void presenter(void)
 			show_option_toggle(ch);
 			do_reload_flows = true;
 			break;
+		case '\t':
+			ui_tab_event_send(tab_main, UI_EVT_SELECT_NEXT);
+			break;
 		default:
 			fflush(stdin);
 			break;
@@ -1288,13 +1307,14 @@ static void presenter(void)
 		if (show_help)
 			draw_help();
 		else
-			draw_flows(screen, &flow_list, skip_lines);
+			ui_tab_show(tab_main);
 
 		draw_footer();
 	}
 	rcu_unregister_thread();
 
 	ui_table_uninit(&flows_tbl);
+	ui_tab_destroy(tab_main);
 
 	screen_end();
 	lookup_cleanup(LT_PORTS_UDP);

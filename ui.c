@@ -7,7 +7,9 @@
 
 #include "ui.h"
 #include "str.h"
+#include "screen.h"
 #include "xmalloc.h"
+#include "urcu-list-compat.h"
 
 static struct ui_text *ui_text_alloc(size_t len)
 {
@@ -62,6 +64,7 @@ void ui_table_init(struct ui_table *tbl)
 	tbl->height  = LINES - 2;
 	tbl->col_pad = 1;
 	tbl->row     = ui_text_alloc(tbl->width);
+	tbl->delim   = " ";
 
 	CDS_INIT_LIST_HEAD(&tbl->cols);
 }
@@ -106,7 +109,7 @@ static void __ui_table_pos_update(struct ui_table *tbl)
 	}
 }
 
-void ui_table_col_add(struct ui_table *tbl, uint32_t id, char *name, uint32_t len)
+void ui_table_col_add(struct ui_table *tbl, uint32_t id, const char *name, uint32_t len)
 {
 	struct ui_col *col = xzmalloc(sizeof(*col));
 
@@ -132,6 +135,11 @@ void ui_table_col_align_set(struct ui_table *tbl, int col_id, enum ui_align alig
 	struct ui_col *col = ui_table_col_get(tbl, col_id);
 
 	col->align = align;
+}
+
+void ui_table_col_delim_set(struct ui_table *tbl, const char *delim)
+{
+	tbl->delim = delim;
 }
 
 void ui_table_row_add(struct ui_table *tbl)
@@ -166,7 +174,7 @@ static void __ui_table_row_print(struct ui_table *tbl, struct ui_col *col,
 	slprintf(tmp, sizeof(tmp), UI_ALIGN_COL(col), col->len, col->len, str);
 	ui_text_attr_insert(tbl->row, col->pos, color, tmp);
 
-	slprintf(tmp, sizeof(tmp), "%*s", tbl->col_pad, " ");
+	slprintf(tmp, sizeof(tmp), "%*s", tbl->col_pad, tbl->delim);
 	ui_text_attr_insert(tbl->row, col->pos + col->len, color, tmp);
 }
 
@@ -213,4 +221,89 @@ void ui_table_event_send(struct ui_table *tbl, enum ui_event_id evt_id)
 		if (tbl->scroll_x < 0)
 			tbl->scroll_x = 0;
 	}
+}
+
+struct ui_tab *ui_tab_create(void)
+{
+	struct ui_tab *tab;
+
+	tab = xzmalloc(sizeof(*tab));
+
+	ui_table_init(&tab->tbl);
+	ui_table_col_delim_set(&tab->tbl, "|");
+	tab->tbl.width = 0;
+
+	return tab;
+}
+
+void ui_tab_destroy(struct ui_tab *tab)
+{
+	ui_table_uninit(&tab->tbl);
+	xfree(tab);
+}
+
+void ui_tab_pos_set(struct ui_tab *tab, int y, int x)
+{
+	ui_table_pos_set(&tab->tbl, y, x);
+}
+
+void ui_tab_event_cb_set(struct ui_tab *tab, ui_tab_event_cb cb)
+{
+	tab->on_tab_event = cb;
+}
+
+void ui_tab_active_color_set(struct ui_tab *tab, int color)
+{
+	ui_table_header_color_set(&tab->tbl, color);
+	tab->color = color;
+}
+
+void ui_tab_show(struct ui_tab *tab)
+{
+	struct ui_col *col;
+
+	if (tab->on_tab_event)
+		tab->on_tab_event(tab, UI_TAB_EVT_OPEN, tab->active->id);
+
+	cds_list_for_each_entry(col, &tab->tbl.cols, entry)
+		__ui_table_row_print(&tab->tbl, col, col->color, col->name);
+
+	ui_table_row_show(&tab->tbl);
+}
+
+void ui_tab_entry_add(struct ui_tab *tab, uint32_t id, const char *name)
+{
+	struct ui_col *col;
+
+	ui_table_col_add(&tab->tbl, id, name, strlen(name) + 1);
+
+	col = ui_table_col_get(&tab->tbl, id);
+
+	if (!tab->active)
+		tab->active = col;
+
+	if (tab->active == col)
+		ui_table_col_color_set(&tab->tbl, id, tab->color);
+	else
+		ui_table_col_color_set(&tab->tbl, id, tab->color | A_REVERSE);
+}
+
+void ui_tab_event_send(struct ui_tab *tab, uint32_t id)
+{
+	struct ui_col *curr, *next;
+
+	if (id != UI_EVT_SELECT_NEXT)
+		return;
+
+	curr = tab->active;
+
+	if (curr == cds_list_last_entry(&tab->tbl.cols, struct ui_col, entry))
+		next = cds_list_first_entry(&tab->tbl.cols, struct ui_col, entry);
+	else
+		next = cds_list_next_entry(curr, entry);
+
+	curr->color = tab->color | A_REVERSE;
+	next->color = tab->color;
+
+	tab->active = next;
 }
