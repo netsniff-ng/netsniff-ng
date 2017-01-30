@@ -92,7 +92,7 @@ struct proto_field_expr {
 		struct in_addr ip4_addr;
 		struct in6_addr ip6_addr;
 		long long int number;
-		uint8_t bytes[256];
+		uint8_t mac[256];
 		struct proto_field_func func;
 	} val;
 };
@@ -433,9 +433,9 @@ static void proto_field_expr_eval(void)
 		else if (field->len == 4)
 			proto_hdr_field_set_be32(hdr, field->id, field_expr.val.number);
 		else
-			proto_hdr_field_set_bytes(hdr, field->id, field_expr.val.bytes);
+			panic("Invalid value length %zu, can be 1,2 or 4\n", field->len);
 	} else if (field_expr.type & FIELD_EXPR_MAC) {
-		proto_hdr_field_set_bytes(hdr, field->id, field_expr.val.bytes);
+		proto_hdr_field_set_bytes(hdr, field->id, field_expr.val.mac);
 	} else if (field_expr.type & FIELD_EXPR_IP4_ADDR) {
 		proto_hdr_field_set_u32(hdr, field->id, field_expr.val.ip4_addr.s_addr);
 	} else if (field_expr.type & FIELD_EXPR_IP6_ADDR) {
@@ -481,7 +481,7 @@ static void field_index_validate(struct proto_field *field, uint16_t index, size
 	struct in_addr ip4_addr;
 	struct in6_addr ip6_addr;
 	long long int number;
-	uint8_t bytes[256];
+	uint8_t mac[6];
 	char *str;
 }
 
@@ -516,7 +516,7 @@ static void field_index_validate(struct proto_field *field, uint16_t index, size
 
 %type <number> number expression
 %type <str> string
-%type <bytes> mac
+%type <mac> mac
 %type <ip4_addr> ip4_addr
 %type <ip6_addr> ip6_addr
 
@@ -760,7 +760,7 @@ field_value_expr
 	: number { field_expr.type |= FIELD_EXPR_NUMB;
 		   field_expr.val.number = $1; }
 	| mac { field_expr.type |= FIELD_EXPR_MAC;
-		memcpy(field_expr.val.bytes, $1, sizeof(field_expr.val.bytes)); }
+		memcpy(field_expr.val.mac, $1, sizeof(field_expr.val.mac)); }
 	| ip4_addr { field_expr.type |= FIELD_EXPR_IP4_ADDR;
 		     field_expr.val.ip4_addr = $1; }
 	| ip6_addr { field_expr.type |= FIELD_EXPR_IP6_ADDR;

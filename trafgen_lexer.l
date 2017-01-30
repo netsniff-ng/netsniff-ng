@@ -300,7 +300,7 @@ ip6_addr	({v680}|{v67}|{v66}|{v65}|{v64}|{v63}|{v62}|{v61}|{v60})
 {number_ascii}	{ yylval.number = (uint8_t) (*yytext);
 		  return number; }
 
-{mac}	        { if (str2mac(yytext, yylval.bytes, 256))
+{mac}	        { if (str2mac(yytext, yylval.mac, 6))
 			panic("Failed to parse MAC address %s\n", yytext);
 		  return mac; }
 
