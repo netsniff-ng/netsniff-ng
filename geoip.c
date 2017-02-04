@@ -73,8 +73,6 @@ static GeoIP *gi4_asname = NULL, *gi6_asname = NULL;
 static GeoIP *gi4_country = NULL, *gi6_country = NULL;
 static GeoIP *gi4_city = NULL, *gi6_city = NULL;
 
-static GeoIPRecord empty = { NULL };
-
 static char *servers[16] = { NULL };
 
 #define CITYV4		(1 << 0)
@@ -261,14 +259,14 @@ static GeoIPRecord *geoip4_get_record(struct sockaddr_in *sa)
 {
 	bug_on(gi4_city == NULL);
 
-	return GeoIP_record_by_ipnum(gi4_city, ntohl(sa->sin_addr.s_addr)) ? : &empty;
+	return GeoIP_record_by_ipnum(gi4_city, ntohl(sa->sin_addr.s_addr));
 }
 
 static GeoIPRecord *geoip6_get_record(struct sockaddr_in6 *sa)
 {
 	bug_on(gi6_city == NULL);
 
-	return GeoIP_record_by_ipnum_v6(gi6_city, sa->sin6_addr) ? : &empty;
+	return GeoIP_record_by_ipnum_v6(gi6_city, sa->sin6_addr);
 }
 
 const char *geoip4_as_name(struct sockaddr_in *sa)
@@ -287,42 +285,126 @@ const char *geoip6_as_name(struct sockaddr_in6 *sa)
 
 float geoip4_longitude(struct sockaddr_in *sa)
 {
-	return geoip4_get_record(sa)->longitude;
+	GeoIPRecord *record;
+	float longitude;
+
+	record = geoip4_get_record(sa);
+	if (!record)
+		return 0;
+
+	longitude = record->longitude;
+
+	GeoIPRecord_delete(record);
+	return longitude;
 }
 
 float geoip4_latitude(struct sockaddr_in *sa)
 {
-	return geoip4_get_record(sa)->latitude;
+	GeoIPRecord *record;
+	float latitude;
+
+	record = geoip4_get_record(sa);
+	if (!record)
+		return 0;
+
+	latitude = record->latitude;
+
+	GeoIPRecord_delete(record);
+	return latitude;
 }
 
 float geoip6_longitude(struct sockaddr_in6 *sa)
 {
-	return geoip6_get_record(sa)->longitude;
+	GeoIPRecord *record;
+	float longitude;
+
+	record = geoip6_get_record(sa);
+	if (!record)
+		return 0;
+
+	longitude = record->longitude;
+
+	GeoIPRecord_delete(record);
+	return longitude;
 }
 
 float geoip6_latitude(struct sockaddr_in6 *sa)
 {
-	return geoip6_get_record(sa)->latitude;
+	GeoIPRecord *record;
+	float latitude;
+
+	record = geoip6_get_record(sa);
+	if (!record)
+		return 0;
+
+	latitude = record->latitude;
+
+	GeoIPRecord_delete(record);
+	return latitude;
 }
 
-const char *geoip4_city_name(struct sockaddr_in *sa)
+char *geoip4_city_name(struct sockaddr_in *sa)
 {
-	return geoip4_get_record(sa)->city;
+	GeoIPRecord *record;
+	char *city = NULL;
+
+	record = geoip4_get_record(sa);
+	if (!record)
+		return NULL;
+
+	if (record->city)
+		city = xstrdup(record->city);
+
+	GeoIPRecord_delete(record);
+	return city;
 }
 
-const char *geoip6_city_name(struct sockaddr_in6 *sa)
+char *geoip6_city_name(struct sockaddr_in6 *sa)
 {
-	return geoip6_get_record(sa)->city;
+	GeoIPRecord *record;
+	char *city = NULL;
+
+	record = geoip6_get_record(sa);
+	if (!record)
+		return NULL;
+
+	if (record->city)
+		city = xstrdup(record->city);
+
+	GeoIPRecord_delete(record);
+	return city;
 }
 
-const char *geoip4_region_name(struct sockaddr_in *sa)
+char *geoip4_region_name(struct sockaddr_in *sa)
 {
-	return geoip4_get_record(sa)->region;
+	GeoIPRecord *record;
+	char *region = NULL;
+
+	record = geoip4_get_record(sa);
+	if (!record)
+		return NULL;
+
+	if (record->region)
+		region = xstrdup(record->region);
+
+	GeoIPRecord_delete(record);
+	return region;
 }
 
-const char *geoip6_region_name(struct sockaddr_in6 *sa)
+char *geoip6_region_name(struct sockaddr_in6 *sa)
 {
-	return geoip6_get_record(sa)->region;
+	GeoIPRecord *record;
+	char *region = NULL;
+
+	record = geoip6_get_record(sa);
+	if (!record)
+		return NULL;
+
+	if (record->region)
+		region = xstrdup(record->region);
+
+	GeoIPRecord_delete(record);
+	return region;
 }
 
 const char *geoip4_country_name(struct sockaddr_in *sa)

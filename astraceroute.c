@@ -457,7 +457,8 @@ static void handle_ipv4(uint8_t *packet, size_t len __maybe_unused,
 	struct iphdr *iph = (struct iphdr *) packet;
 	struct sockaddr_in sd;
 	struct hostent *hent;
-	const char *as, *country, *city;
+	const char *as, *country;
+	char *city;
 
 	memset(hbuff, 0, sizeof(hbuff));
 	memset(&sd, 0, sizeof(sd));
@@ -489,6 +490,8 @@ static void handle_ipv4(uint8_t *packet, size_t len __maybe_unused,
 	}
 	if (latitude)
 		printf(" (%f/%f)", geoip4_latitude(&sd), geoip4_longitude(&sd));
+
+	free(city);
 }
 
 static int check_ipv6(uint8_t *packet, size_t len, int ttl __maybe_unused,
@@ -524,7 +527,8 @@ static void handle_ipv6(uint8_t *packet, size_t len __maybe_unused,
 	struct ip6_hdr *ip6h = (struct ip6_hdr *) packet;
 	struct sockaddr_in6 sd;
 	struct hostent *hent;
-	const char *as, *country, *city;
+	const char *as, *country;
+	char *city;
 
 	memset(hbuff, 0, sizeof(hbuff));
 	memset(&sd, 0, sizeof(sd));
@@ -556,6 +560,8 @@ static void handle_ipv6(uint8_t *packet, size_t len __maybe_unused,
 	}
 	if (latitude)
 		printf(" (%f/%f)", geoip6_latitude(&sd), geoip6_longitude(&sd));
+
+	free(city);
 }
 
 static void show_trace_info(struct ctx *ctx, const struct sockaddr_storage *ss,

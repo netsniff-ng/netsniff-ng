@@ -40,7 +40,8 @@ static void ipv4(struct pkt_buff *pkt)
 	uint8_t *opt, *trailer;
 	unsigned int trailer_len = 0;
 	ssize_t opts_len, opt_len;
-	const char *city, *region, *country;
+	const char *country;
+	char *city, *region;
 
 	if (!ip)
 		return;
@@ -101,20 +102,28 @@ static void ipv4(struct pkt_buff *pkt)
 		tprintf("\t[ Geo (");
 		if ((country = geoip4_country_name(&sas))) {
 			tprintf("%s", country);
-			if ((region = geoip4_region_name(&sas)))
+			if ((region = geoip4_region_name(&sas))) {
 				tprintf(" / %s", region);
-			if ((city = geoip4_city_name(&sas)))
+				xfree(region);
+			}
+			if ((city = geoip4_city_name(&sas))) {
 				tprintf(" / %s", city);
+				xfree(city);
+			}
 		} else {
 			tprintf("local");
 		}
 		tprintf(" => ");
 		if ((country = geoip4_country_name(&sad))) {
 			tprintf("%s", country);
-			if ((region = geoip4_region_name(&sad)))
+			if ((region = geoip4_region_name(&sad))) {
 				tprintf(" / %s", region);
-			if ((city = geoip4_city_name(&sad)))
+				xfree(region);
+			}
+			if ((city = geoip4_city_name(&sad))) {
 				tprintf(" / %s", city);
+				xfree(city);
+			}
 		} else {
 			tprintf("local");
 		}

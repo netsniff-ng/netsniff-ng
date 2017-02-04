@@ -682,7 +682,7 @@ flow_entry_geo_city_lookup_generic(struct flow_entry *n,
 {
 	struct sockaddr_in sa4;
 	struct sockaddr_in6 sa6;
-	const char *city = NULL;
+	char *city = NULL;
 
 	switch (n->l3_proto) {
 	default:
@@ -706,6 +706,8 @@ flow_entry_geo_city_lookup_generic(struct flow_entry *n,
 		        sizeof(n->city_src));
 	else
 		SELFLD(dir, city_src, city_dst)[0] = '\0';
+
+	free(city);
 }
 
 static void
