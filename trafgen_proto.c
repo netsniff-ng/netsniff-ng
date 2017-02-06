@@ -609,3 +609,8 @@ void proto_field_dyn_apply(struct proto_field *field)
 	if (field->hdr->ops->field_changed)
 		field->hdr->ops->field_changed(field);
 }
+
+const char *proto_dev_get(void)
+{
+	return ctx.dev;
+}

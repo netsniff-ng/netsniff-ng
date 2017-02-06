@@ -159,4 +159,6 @@ extern void proto_field_set_be32(struct proto_field *field, uint32_t val);
 extern void proto_field_func_add(struct proto_field *field,
 				 struct proto_field_func *func);
 
+extern const char *proto_dev_get(void);
+
 #endif /* TRAFGEN_PROTO_H */
