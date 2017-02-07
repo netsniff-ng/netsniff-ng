@@ -165,7 +165,7 @@ static inline void __setup_new_csum16(struct csum16 *s, off_t from, off_t to,
 	s->which = which;
 }
 
-static void realloc_packet(void)
+void realloc_packet(void)
 {
 	if (test_ignore())
 		return;

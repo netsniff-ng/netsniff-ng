@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <sys/time.h>
 #include <sys/types.h>
 
 #include "trafgen_proto.h"
@@ -40,6 +41,7 @@ struct packet {
 	size_t len;
 	struct proto_hdr *headers[PROTO_MAX_LAYERS];
 	size_t headers_count;
+	struct timespec tstamp;
 };
 
 struct packet_dyn {
@@ -78,5 +80,6 @@ extern void set_fill(uint8_t val, size_t len);
 extern struct packet *current_packet(void);
 extern uint32_t current_packet_id(void);
 extern struct packet *packet_get(uint32_t id);
+extern void realloc_packet(void);
 
 #endif /* TRAFGEN_CONF */
