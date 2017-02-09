@@ -5,9 +5,14 @@ Q = @
 SHELL := $(shell if [ -x /bin/bash ]; then echo /bin/bash; else echo /bin/sh; fi)
 
 # Compiler related stuff
-LDQ = $(Q)echo -e "  LD\t$@" && $(CCACHE) $(CC)
 CCNQ = $(CCACHE) $(CC)
-CCQ = $(Q)echo -e "  CC\t$<" && $(CCNQ)
+ifeq ($(Q),)
+  LDQ = $(CCACHE) $(CC)
+  CCQ = $(CCNQ)
+else
+  LDQ = $(Q)echo -e "  LD\t$@" && $(CCACHE) $(CC)
+  CCQ = $(Q)echo -e "  CC\t$<" && $(CCNQ)
+endif
 
 # sparse related
 C =
@@ -18,8 +23,15 @@ else
 endif
 
 # Flex/bison related
-LEX = $(Q)echo -e "  LEX\t$<" && flex
-YACC = $(Q)echo -e "  YACC\t$<" && bison
+LEX = flex
+YACC = bison
+ifeq ($(Q),)
+  LEXQ = $(LEX)
+  YACCQ = $(YACC)
+else
+  LEXQ = $(Q)echo -e "  LEX\t$<" && $(LEX)
+  YACCQ = $(Q)echo -e "  YAAC\t$<" && $(YACC)
+endif
 
 # Installation related
 INST = echo -e "  INST\t$(1)" && install -d $(2) && \
