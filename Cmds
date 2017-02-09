@@ -19,7 +19,7 @@ endif
 
 # Flex/bison related
 LEX = $(Q)echo -e "  LEX\t$<" && flex
-YAAC = $(Q)echo -e "  YAAC\t$<" && bison
+YACC = $(Q)echo -e "  YACC\t$<" && bison
 
 # Installation related
 INST = echo -e "  INST\t$(1)" && install -d $(2) && \

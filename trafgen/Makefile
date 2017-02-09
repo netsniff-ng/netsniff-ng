@@ -39,7 +39,7 @@ endif
 
 trafgen-lex =	trafgen_lexer.yy.o
 
-trafgen-yaac =	trafgen_parser.tab.o
+trafgen-yacc =	trafgen_parser.tab.o
 
 trafgen-eflags = -I..
 

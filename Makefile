@@ -178,7 +178,7 @@ uninstall: $(foreach tool,$(TOOLS),$(tool)_uninstall)
 	$(LEX) -P $(shell perl -wlne 'print $$1 if /lex-func-prefix:\s([a-z]+)/' $<) \
 	       -o $(BUILD_DIR)/$(shell basename $< .l).yy.c $(LEX_FLAGS) $<
 %.tab.o: %.y
-	$(YAAC) -p $(shell perl -wlne 'print $$1 if /yaac-func-prefix:\s([a-z]+)/' $<) \
+	$(YACC) -p $(shell perl -wlne 'print $$1 if /yacc-func-prefix:\s([a-z]+)/' $<) \
 		-o $(BUILD_DIR)/$(shell basename $< .y).tab.c $(YAAC_FLAGS) -d $<
 
 $(foreach tool,$(TOOLS),$(eval $(call TOOL_templ,$(tool))))
