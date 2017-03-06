@@ -242,9 +242,15 @@ static const char *nlmsg_rtnl_type2str(uint16_t type)
 static const char *nlmsg_genl_type2str(uint16_t type)
 {
 	switch (type) {
-	case GENL_ID_GENERATE:	return "id gen";
-	case GENL_ID_CTRL:	return "id ctrl";
-	default:		return NULL;
+	case GENL_ID_CTRL:	return "nlctrl";
+#if defined(GENL_ID_PCMRAID)
+	case GENL_ID_PCMRAID:	return "pcmraid";
+#endif
+#if defined(GENL_ID_VFS_DQUOT)
+	case GENL_ID_VFS_DQUOT:	return "vfs dquot";
+#endif
+	/* only dynamic family IDs should be used starting with Linux 4.10 */
+	default:		return "dynamic";
 	}
 }
 
