@@ -1196,12 +1196,6 @@ static void init_ctx(struct ctx *ctx)
 	ctx->promiscuous = true;
 	ctx->randomize = false;
 	ctx->hwtimestamp = true;
-
-	ctx->pkts_recvd = 0;
-	ctx->pkts_seen = 0;
-	ctx->pkts_drops = 0;
-	ctx->pkts_recvd_last = 0;
-	ctx->pkts_drops_last = 0;
 }
 
 static void destroy_ctx(struct ctx *ctx)
