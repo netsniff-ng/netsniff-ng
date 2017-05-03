@@ -175,10 +175,10 @@ install_allbutmausezahn: $(foreach tool,$(filter-out mausezahn,$(TOOLS)),$(tool)
 uninstall: $(foreach tool,$(TOOLS),$(tool)_uninstall)
 
 %.yy.o: %.l
-	$(LEXQ) -P $(shell perl -wlne 'print $$1 if /lex-func-prefix:\s([a-z]+)/' $<) \
+	$(LEXQ) -P $(shell sed -rn 's/.*lex-func-prefix:\s([a-z]+).*/\1/gp' $<) \
 	        -o $(BUILD_DIR)/$(shell basename $< .l).yy.c $(LEX_FLAGS) $<
 %.tab.o: %.y
-	$(YACCQ) -p $(shell perl -wlne 'print $$1 if /yacc-func-prefix:\s([a-z]+)/' $<) \
+	$(YACCQ) -p $(shell sed -rn 's/.*yacc-func-prefix:\s([a-z]+).*/\1/gp' $<) \
 		 -o $(BUILD_DIR)/$(shell basename $< .y).tab.c $(YAAC_FLAGS) -d $<
 
 $(foreach tool,$(TOOLS),$(eval $(call TOOL_templ,$(tool))))
