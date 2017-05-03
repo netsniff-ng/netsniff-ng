@@ -2,6 +2,8 @@
 #define PROC_H
 
 #include <stdbool.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 extern void cpu_affinity(int cpu);
 extern int set_proc_prio(int prio);
