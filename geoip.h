@@ -45,22 +45,22 @@ static inline int geoip_working(void)
 	return 0;
 }
 
-static inline const char *geoip4_city_name(struct sockaddr_in *sa)
+static inline char *geoip4_city_name(struct sockaddr_in *sa)
 {
 	return NULL;
 }
 
-static inline const char *geoip6_city_name(struct sockaddr_in6 *sa)
+static inline char *geoip6_city_name(struct sockaddr_in6 *sa)
 {
 	return NULL;
 }
 
-static inline const char *geoip4_region_name(struct sockaddr_in *sa)
+static inline char *geoip4_region_name(struct sockaddr_in *sa)
 {
 	return NULL;
 }
 
-static inline const char *geoip6_region_name(struct sockaddr_in6 *sa)
+static inline char *geoip6_region_name(struct sockaddr_in6 *sa)
 {
 	return NULL;
 }
