@@ -3,7 +3,7 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <linux/if_arp.h>
+#include <net/if_arp.h>
 #include <ifaddrs.h>
 #include <arpa/inet.h>
 
@@ -385,10 +385,8 @@ const char *device_type2str(uint16_t type)
 		return "phonet";
 	case ARPHRD_PHONET_PIPE:
 		return "phonet_pipe";
-#if defined(ARPHRD_CAIF)
 	case ARPHRD_CAIF:
 		return "caif";
-#endif
 	case ARPHRD_IP6GRE:
 		return "ip6gre";
 	case ARPHRD_NETLINK:

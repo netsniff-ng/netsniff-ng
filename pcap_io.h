@@ -14,9 +14,9 @@
 #include <errno.h>
 #include <sys/time.h>
 #include <sys/socket.h>
+#include <net/if_arp.h>
 #include <linux/if.h>
 #include <linux/if_packet.h>
-#include <linux/if_arp.h>
 
 #include "built_in.h"
 #include "die.h"

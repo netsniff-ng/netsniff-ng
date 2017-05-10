@@ -21,6 +21,7 @@
 #include <string.h>
 #include <asm/byteorder.h>
 #include <linux/tcp.h>
+#include <netinet/if_ether.h>
 #include <netinet/ip.h>
 #include <netinet/ip6.h>
 #include <netinet/in.h>
@@ -28,7 +29,6 @@
 #include <netdb.h>
 #include <sys/time.h>
 #include <arpa/inet.h>
-#include <linux/if_ether.h>
 #include <linux/icmp.h>
 #include <linux/icmpv6.h>
 

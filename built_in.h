@@ -382,8 +382,24 @@ static inline u64 cpu_to_le64(u64 val)
 # define PACKET_QDISC_BYPASS 20
 #endif
 
+#ifndef ARPHRD_CAN
+# define ARPHRD_CAN			280
+#endif
+
 #ifndef ARPHRD_IEEE802154_MONITOR
 # define ARPHRD_IEEE802154_MONITOR	805
+#endif
+
+#ifndef ARPHRD_PHONET
+# define ARPHRD_PHONET			820
+#endif
+
+#ifndef ARPHRD_PHONET_PIPE
+# define ARPHRD_PHONET_PIPE		821
+#endif
+
+#ifndef ARPHRD_CAIF
+# define ARPHRD_CAIF			822
 #endif
 
 #ifndef ARPHRD_IP6GRE

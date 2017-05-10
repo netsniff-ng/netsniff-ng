@@ -12,7 +12,6 @@
 #include <netlink/msg.h>
 #include <netlink/route/link.h>
 #include <netlink/route/addr.h>
-#include <linux/if_arp.h>
 #include <arpa/inet.h>
 
 #include "dev.h"
