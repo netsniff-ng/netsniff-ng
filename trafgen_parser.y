@@ -43,9 +43,7 @@
 
 #define YYERROR_VERBOSE		0
 #define YYDEBUG			0
-#define YYENABLE_NLS		1
 #define YYLTYPE_IS_TRIVIAL	1
-#define ENABLE_NLS		1
 
 extern FILE *yyin;
 extern int yylex(void);
