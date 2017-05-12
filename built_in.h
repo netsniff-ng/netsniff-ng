@@ -322,12 +322,6 @@ static inline u64 cpu_to_le64(u64 val)
 #define be32_to_cpu	cpu_to_be32
 #define be16_to_cpu	cpu_to_be16
 
-#undef memset
-#undef memcpy
-
-#define memset		fmemset
-#define memcpy		fmemcpy
-
 #if defined(__amd64__) || defined(__x86_64__) || defined(__AMD64__) || \
     defined(_M_X64) || defined(__amd64)
 # define CO_IN_CACHE_SHIFT		7

@@ -1,6 +1,7 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <linux/sockios.h>
+#include <string.h>
 #include <unistd.h>
 #include <errno.h>
 
