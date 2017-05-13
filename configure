@@ -218,7 +218,7 @@ EOF
 	LDFLAGS="-L $NACL_LIB_DIR"
 	CFLAGS="-I $NACL_INC_DIR"
 
-	$CC $CFLAGS $LDFLAGS -o $TMPDIR/nacltest $TMPDIR/nacltest.c >> config.log 2>&1
+	$CC $CFLAGS $LDFLAGS -o $TMPDIR/nacltest $TMPDIR/nacltest.c -lz >> config.log 2>&1
 	if [ ! -x $TMPDIR/nacltest ] ; then
 		echo "[NO]"
 		MISSING_NACL=1
