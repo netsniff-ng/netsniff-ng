@@ -425,20 +425,19 @@ static void proto_field_expr_eval(void)
 
 	if (field_expr.type & FIELD_EXPR_NUMB) {
 		if (field->len == 1)
-			proto_hdr_field_set_u8(hdr, field->id, field_expr.val.number);
+			proto_field_set_u8(field, field_expr.val.number);
 		else if (field->len == 2)
-			proto_hdr_field_set_be16(hdr, field->id, field_expr.val.number);
+			proto_field_set_be16(field, field_expr.val.number);
 		else if (field->len == 4)
-			proto_hdr_field_set_be32(hdr, field->id, field_expr.val.number);
+			proto_field_set_be32(field, field_expr.val.number);
 		else
 			panic("Invalid value length %zu, can be 1,2 or 4\n", field->len);
 	} else if (field_expr.type & FIELD_EXPR_MAC) {
-		proto_hdr_field_set_bytes(hdr, field->id, field_expr.val.mac);
+		proto_field_set_bytes(field, field_expr.val.mac);
 	} else if (field_expr.type & FIELD_EXPR_IP4_ADDR) {
-		proto_hdr_field_set_u32(hdr, field->id, field_expr.val.ip4_addr.s_addr);
+		proto_field_set_u32(field, field_expr.val.ip4_addr.s_addr);
 	} else if (field_expr.type & FIELD_EXPR_IP6_ADDR) {
-		proto_hdr_field_set_bytes(hdr, field->id,
-			(uint8_t *)&field_expr.val.ip6_addr.s6_addr);
+		proto_field_set_bytes(field, (uint8_t *)&field_expr.val.ip6_addr.s6_addr);
 	} else if ((field_expr.type & FIELD_EXPR_INC) ||
 			(field_expr.type & FIELD_EXPR_RND)) {
 

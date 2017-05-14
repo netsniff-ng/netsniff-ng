@@ -155,6 +155,7 @@ extern void proto_field_set_u32(struct proto_field *field, uint32_t val);
 extern uint32_t proto_field_get_u32(struct proto_field *field);
 extern void proto_field_set_be16(struct proto_field *field, uint16_t val);
 extern void proto_field_set_be32(struct proto_field *field, uint32_t val);
+extern void proto_field_set_bytes(struct proto_field *field, const uint8_t *bytes);
 
 extern void proto_field_func_add(struct proto_field *field,
 				 struct proto_field_func *func);
