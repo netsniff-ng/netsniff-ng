@@ -2,6 +2,7 @@
 #define PROC_H
 
 #include <stdbool.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
