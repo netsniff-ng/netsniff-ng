@@ -9,6 +9,8 @@
 enum ui_event_id {
 	UI_EVT_SCROLL_LEFT,
 	UI_EVT_SCROLL_RIGHT,
+	UI_EVT_SCROLL_UP,
+	UI_EVT_SCROLL_DOWN,
 	UI_EVT_SELECT_NEXT,
 };
 
@@ -44,7 +46,12 @@ struct ui_table {
 	int width;
 	int height;
 	int scroll_x;
+	int scroll_y;
 	const char *delim;
+	int data_count;
+
+	void * (* data_iter)(void *data);
+	void (* data_bind)(struct ui_table *tbl, const void *data);
 };
 
 struct ui_tab;
@@ -86,6 +93,12 @@ extern void ui_table_header_color_set(struct ui_table *tbl, int color);
 extern void ui_table_header_print(struct ui_table *tbl);
 
 extern void ui_table_event_send(struct ui_table *tbl, enum ui_event_id id);
+extern void ui_table_data_iter_set(struct ui_table *tbl, void * (* iter)(void *data));
+extern void ui_table_data_bind_set(struct ui_table *tbl,
+				   void (* bind)(struct ui_table *tbl, const void *data));
+extern void ui_table_data_bind(struct ui_table *tbl);
+extern int ui_table_data_count(struct ui_table *tbl);
+extern int ui_table_scroll_height(struct ui_table *tbl);
 
 extern struct ui_tab *ui_tab_create(void);
 extern void ui_tab_destroy(struct ui_tab *tab);

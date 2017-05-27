@@ -214,13 +214,79 @@ void ui_table_header_print(struct ui_table *tbl)
 
 void ui_table_event_send(struct ui_table *tbl, enum ui_event_id evt_id)
 {
-	if (evt_id == UI_EVT_SCROLL_RIGHT) {
+	switch (evt_id) {
+	case UI_EVT_SCROLL_RIGHT:
 		tbl->scroll_x += SCROLL_X_STEP;
-	} else if (evt_id == UI_EVT_SCROLL_LEFT) {
+		break;
+
+	case UI_EVT_SCROLL_LEFT:
 		tbl->scroll_x -= SCROLL_X_STEP;
 		if (tbl->scroll_x < 0)
 			tbl->scroll_x = 0;
+		break;
+
+	case UI_EVT_SCROLL_UP:
+		tbl->scroll_y--;
+		if (tbl->scroll_y < 0)
+			tbl->scroll_y = 0;
+		break;
+
+	case UI_EVT_SCROLL_DOWN:
+		tbl->scroll_y++;
+		break;
+
+	default: /* pass the rest events */
+		return;
 	}
+}
+
+void ui_table_data_iter_set(struct ui_table *tbl, void * (* iter)(void *data))
+{
+	tbl->data_iter = iter;
+}
+
+void ui_table_data_bind_set(struct ui_table *tbl,
+			    void (* bind)(struct ui_table *tbl, const void *data))
+{
+	tbl->data_bind = bind;
+}
+
+void ui_table_data_bind(struct ui_table *tbl)
+{
+	void *data;
+	int i = 0;
+
+	bug_on(!tbl);
+	bug_on(!tbl->data_iter);
+	bug_on(!tbl->data_bind);
+
+	ui_table_clear(tbl);
+	ui_table_header_print(tbl);
+
+	tbl->data_count = 0;
+
+	data = tbl->data_iter(NULL);
+	for (; data; data = tbl->data_iter(data)) {
+		tbl->data_count++;
+
+		if (i++ < tbl->scroll_y)
+			continue;
+
+		tbl->data_bind(tbl, data);
+	}
+
+	if (tbl->scroll_y > i)
+		tbl->scroll_y = i;
+}
+
+int ui_table_data_count(struct ui_table *tbl)
+{
+	return tbl->data_count;
+}
+
+int ui_table_scroll_height(struct ui_table *tbl)
+{
+	return tbl->scroll_y;
 }
 
 struct ui_tab *ui_tab_create(void)

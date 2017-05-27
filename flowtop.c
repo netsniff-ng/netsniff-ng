@@ -118,8 +118,6 @@ enum flow_direction {
 # define ATTR_TIMESTAMP_STOP 64
 #endif
 
-#define SCROLL_MAX 1000
-
 #define INCLUDE_IPV4	(1 << 0)
 #define INCLUDE_IPV6	(1 << 1)
 #define INCLUDE_UDP	(1 << 2)
@@ -156,7 +154,6 @@ static struct sysctl_params_ctx sysctl = { -1, -1 };
 
 static unsigned int cols, rows;
 static WINDOW *screen;
-static int skip_lines;
 
 static unsigned int interval = 1;
 static bool show_src = false;
@@ -190,11 +187,24 @@ enum tbl_proc_col {
 
 static struct ui_table flows_tbl;
 static struct ui_table procs_tbl;
+static struct ui_table *curr_tbl;
 
 enum tab_entry {
 	TAB_FLOWS,
 	TAB_PROCS,
 };
+
+#define list_first_or_next(__ptr, __head, __entry) \
+({ \
+	struct cds_list_head *h; \
+	if (!__ptr) \
+		h = rcu_dereference((__head)->next); \
+	else if (rcu_dereference(__ptr->__entry.next) == (__head)) \
+		return NULL; \
+	else \
+		h = rcu_dereference(__ptr->__entry.next); \
+	cds_list_entry(h, __typeof(* (__ptr)), __entry); \
+})
 
 static const char *short_options = "vhTUsDIS46ut:nGb";
 static const struct option long_options[] = {
@@ -1013,45 +1023,45 @@ static void print_flow_peer_info(const struct flow_entry *n, enum flow_direction
 				       tmp, sizeof(tmp) - 1));
 }
 
-static void draw_flow_entry(const struct flow_entry *n)
+static void draw_flow_entry(struct ui_table *tbl, const void *data)
 {
+	const struct flow_entry *n = data;
 	char tmp[128];
 
-	ui_table_row_add(&flows_tbl);
+	ui_table_row_add(tbl);
 
 	/* Application */
-	ui_table_row_col_set(&flows_tbl, TBL_FLOW_PROCESS,
-			      n->proc ?  n->proc->name : "");
+	ui_table_row_col_set(tbl, TBL_FLOW_PROCESS, n->proc ? n->proc->name : "");
 
 	/* PID */
 	slprintf(tmp, sizeof(tmp), "%.d", n->proc ? n->proc->pid : 0);
-	ui_table_row_col_set(&flows_tbl, TBL_FLOW_PID, tmp);
+	ui_table_row_col_set(tbl, TBL_FLOW_PID, tmp);
 
 	/* L4 protocol */
-	ui_table_row_col_set(&flows_tbl, TBL_FLOW_PROTO, l4proto2str[n->l4_proto]);
+	ui_table_row_col_set(tbl, TBL_FLOW_PROTO, l4proto2str[n->l4_proto]);
 
 	/* L4 protocol state */
-	ui_table_row_col_set(&flows_tbl, TBL_FLOW_STATE, flow_state2str(n));
+	ui_table_row_col_set(tbl, TBL_FLOW_STATE, flow_state2str(n));
 
 	/* Time */
 	time2str(n->timestamp_start, tmp, sizeof(tmp));
-	ui_table_row_col_set(&flows_tbl, TBL_FLOW_TIME, tmp);
+	ui_table_row_col_set(tbl, TBL_FLOW_TIME, tmp);
 
 	print_flow_peer_info(n, show_src ? FLOW_DIR_SRC : FLOW_DIR_DST);
 
-	ui_table_row_show(&flows_tbl);
+	ui_table_row_show(tbl);
 
 	if (show_src) {
-		ui_table_row_add(&flows_tbl);
+		ui_table_row_add(tbl);
 
-		ui_table_row_col_set(&flows_tbl, TBL_FLOW_PROCESS, "");
-		ui_table_row_col_set(&flows_tbl, TBL_FLOW_PID, "");
-		ui_table_row_col_set(&flows_tbl, TBL_FLOW_PROTO, "");
-		ui_table_row_col_set(&flows_tbl, TBL_FLOW_STATE, "");
-		ui_table_row_col_set(&flows_tbl, TBL_FLOW_TIME, "");
+		ui_table_row_col_set(tbl, TBL_FLOW_PROCESS, "");
+		ui_table_row_col_set(tbl, TBL_FLOW_PID, "");
+		ui_table_row_col_set(tbl, TBL_FLOW_PROTO, "");
+		ui_table_row_col_set(tbl, TBL_FLOW_STATE, "");
+		ui_table_row_col_set(tbl, TBL_FLOW_TIME, "");
 
 		print_flow_peer_info(n, FLOW_DIR_DST);
-		ui_table_row_show(&flows_tbl);
+		ui_table_row_show(tbl);
 	}
 }
 
@@ -1115,10 +1125,10 @@ static inline bool presenter_flow_wrong_state(struct flow_entry *n)
 	return true;
 }
 
-static void draw_filter_status(char *title, int count, int skip_lines)
+static void draw_filter_status(struct ui_table *tbl, char *title)
 {
 	mvwprintw(screen, 1, 0, "%*s", COLS - 1, " ");
-	mvwprintw(screen, 1, 2, "%s(%u) for ", title, count);
+	mvwprintw(screen, 1, 2, "%s(%u) for ", title, ui_table_data_count(tbl));
 
 	if (what & INCLUDE_IPV4)
 		printw("IPv4,");
@@ -1139,60 +1149,31 @@ static void draw_filter_status(char *title, int count, int skip_lines)
 	if (show_active_only)
 		printw("Active,");
 
-	printw(" [+%d]", skip_lines);
+	printw(" [+%d]", ui_table_scroll_height(tbl));
 
 	if (is_flow_collecting)
 		printw(" [Collecting flows ...]");
 
 }
 
-static void draw_flows(WINDOW *screen, struct flow_list *fl,
-		       int skip_lines)
+static void draw_flows(WINDOW *screen, struct flow_list *fl)
 {
-	int row_width = show_src ? 2 : 1;
-	unsigned int flows = 0;
-	unsigned int line = 4;
-	int skip = skip_lines;
-	struct flow_entry *n;
-
 	rcu_read_lock();
 
 	if (cds_list_empty(&fl->head))
-		mvwprintw(screen, line, 2, "(No sessions! "
+		mvwprintw(screen, 4, 2, "(No sessions! "
 			  "Is netfilter running?)");
 
-	ui_table_clear(&flows_tbl);
-	ui_table_header_print(&flows_tbl);
-
-	cds_list_for_each_entry_rcu(n, &fl->head, entry) {
-		if (!n->is_visible)
-			continue;
-		if (presenter_flow_wrong_state(n))
-			continue;
-
-		/* count only flows which might be showed */
-		flows++;
-
-		if (line + row_width >= rows)
-			continue;
-		if (--skip >= 0)
-			continue;
-
-		draw_flow_entry(n);
-		line += row_width;
-	}
+	ui_table_data_bind(&flows_tbl);
 
 	rcu_read_unlock();
 
-	mvwprintw(screen, 1, 0, "%*s", COLS - 1, " ");
-	mvwprintw(screen, 1, 2, "Kernel netfilter flows(%u) for ", flows);
-
-	draw_filter_status("Kernel netfilter flows", flows, skip_lines);
+	draw_filter_status(&flows_tbl, "Kernel netfilter flows");
 }
 
-static void draw_proc_entry(struct proc_entry *p)
+static void draw_proc_entry(struct ui_table *tbl, const void *data)
 {
-	struct ui_table *tbl = &procs_tbl;;
+	const struct proc_entry *p = data;
 	char tmp[128];
 
 	ui_table_row_add(tbl);
@@ -1227,33 +1208,15 @@ static void draw_proc_entry(struct proc_entry *p)
 	ui_table_row_show(tbl);
 }
 
-static void draw_procs(WINDOW *screen, struct flow_list *fl,
-		       int skip_lines)
+static void draw_procs(WINDOW *screen, struct flow_list *fl)
 {
-	struct proc_entry *proc, *tmp;
-	unsigned int line = 4;
-	int skip = skip_lines;
-	int procs = 0;
-
 	rcu_read_lock();
 
-	ui_table_clear(&procs_tbl);
-	ui_table_header_print(&procs_tbl);
-
-	cds_list_for_each_entry_safe(proc, tmp, &proc_list.head, entry) {
-		if (line + 1 >= rows)
-			continue;
-		if (--skip >= 0)
-			continue;
-
-		draw_proc_entry(proc);
-		procs++;
-		line++;
-	}
+	ui_table_data_bind(&procs_tbl);
 
 	rcu_read_unlock();
 
-	draw_filter_status("Processes", procs, skip_lines);
+	draw_filter_status(&procs_tbl, "Processes");
 }
 
 static void draw_help(void)
@@ -1355,6 +1318,17 @@ static void show_option_toggle(int opt)
 	}
 }
 
+void * flows_iter(void *data)
+{
+	struct flow_entry *n = data;
+
+	do {
+		n = list_first_or_next(n, &flow_list.head, entry);
+	} while (n && (!n->is_visible || presenter_flow_wrong_state(n)));
+
+	return n;
+}
+
 static void flows_table_init(struct ui_table *tbl)
 {
 	ui_table_init(tbl);
@@ -1382,6 +1356,16 @@ static void flows_table_init(struct ui_table *tbl)
 	ui_table_col_color_set(tbl, TBL_FLOW_STATE, COLOR(YELLOW, BLACK));
 
 	ui_table_header_color_set(&flows_tbl, COLOR(BLACK, GREEN));
+
+	ui_table_data_bind_set(tbl, draw_flow_entry);
+	ui_table_data_iter_set(tbl, flows_iter);
+}
+
+void * procs_iter(void *data)
+{
+	struct proc_entry *p = data;
+
+	return list_first_or_next(p, &proc_list.head, entry);
 }
 
 static void procs_table_init(struct ui_table *tbl)
@@ -1413,6 +1397,9 @@ static void procs_table_init(struct ui_table *tbl)
 	ui_table_col_color_set(tbl, TBL_PROC_RATE_DST, COLOR(BLUE, BLACK));
 
 	ui_table_header_color_set(tbl, COLOR(BLACK, GREEN));
+
+	ui_table_data_bind_set(tbl, draw_proc_entry);
+	ui_table_data_iter_set(tbl, procs_iter);
 }
 
 static void tab_main_on_open(struct ui_tab *tab, enum ui_tab_event_t evt, uint32_t id)
@@ -1420,10 +1407,13 @@ static void tab_main_on_open(struct ui_tab *tab, enum ui_tab_event_t evt, uint32
 	if (evt != UI_TAB_EVT_OPEN)
 		return;
 
-	if (id == TAB_FLOWS)
-		draw_flows(screen, &flow_list, skip_lines);
-	else if (id == TAB_PROCS)
-		draw_procs(screen, &flow_list, skip_lines);
+	if (id == TAB_FLOWS) {
+		draw_flows(screen, &flow_list);
+		curr_tbl = &flows_tbl;
+	} else if (id == TAB_PROCS) {
+		draw_procs(screen, &flow_list);
+		curr_tbl = &procs_tbl;
+	}
 }
 
 static void presenter(void)
@@ -1470,24 +1460,20 @@ static void presenter(void)
 		case KEY_UP:
 		case 'u':
 		case 'k':
-			skip_lines--;
-			if (skip_lines < 0)
-				skip_lines = 0;
+			ui_table_event_send(curr_tbl, UI_EVT_SCROLL_UP);
 			break;
 		case KEY_DOWN:
 		case 'd':
 		case 'j':
-			skip_lines++;
-			if (skip_lines > SCROLL_MAX)
-				skip_lines = SCROLL_MAX;
+			ui_table_event_send(curr_tbl, UI_EVT_SCROLL_DOWN);
 			break;
 		case KEY_LEFT:
 		case 'h':
-			ui_table_event_send(&flows_tbl, UI_EVT_SCROLL_LEFT);
+			ui_table_event_send(curr_tbl, UI_EVT_SCROLL_LEFT);
 			break;
 		case KEY_RIGHT:
 		case 'l':
-			ui_table_event_send(&flows_tbl, UI_EVT_SCROLL_RIGHT);
+			ui_table_event_send(curr_tbl, UI_EVT_SCROLL_RIGHT);
 			break;
 		case 'b':
 			if (rate_type == RATE_BYTES)
