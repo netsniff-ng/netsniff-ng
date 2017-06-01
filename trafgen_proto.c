@@ -14,6 +14,7 @@
 #include "trafgen_l2.h"
 #include "trafgen_l3.h"
 #include "trafgen_l4.h"
+#include "trafgen_l7.h"
 #include "trafgen_proto.h"
 
 #define field_shift_and_mask(f, v) (((v) << (f)->shift) & \
@@ -155,6 +156,111 @@ void proto_header_finish(struct proto_hdr *hdr)
 {
 	if (hdr && hdr->ops && hdr->ops->header_finish)
 		hdr->ops->header_finish(hdr);
+}
+
+struct proto_hdr *proto_hdr_push_sub_header(struct proto_hdr *hdr, int id)
+{
+	struct proto_hdr *sub_hdr;
+
+	sub_hdr = xzmalloc(sizeof(struct proto_hdr));
+	sub_hdr->index = hdr->sub_headers_count;
+	sub_hdr->parent = hdr;
+	sub_hdr->id = id;
+
+	hdr->sub_headers_count++;
+	hdr->sub_headers = xrealloc(hdr->sub_headers,
+				    hdr->sub_headers_count * sizeof(struct proto_hdr *));
+
+	hdr->sub_headers[hdr->sub_headers_count - 1] = sub_hdr;
+
+	if (hdr->ops->push_sub_header)
+		hdr->ops->push_sub_header(hdr, sub_hdr);
+
+	if (sub_hdr->ops->header_init)
+		sub_hdr->ops->header_init(sub_hdr);
+
+	return sub_hdr;
+}
+
+static void __proto_hdr_set_offset(struct proto_hdr *hdr, uint16_t pkt_offset)
+{
+	size_t i;
+
+	hdr->pkt_offset = pkt_offset;
+
+	for (i = 0; i < hdr->fields_count; i++) {
+		struct proto_field *f = &hdr->fields[i];
+
+		f->pkt_offset = pkt_offset + f->offset;
+	}
+}
+
+void proto_hdr_move_sub_header(struct proto_hdr *hdr, struct proto_hdr *from,
+			       struct proto_hdr *to)
+{
+	struct proto_hdr *src_hdr, *dst_hdr, *tmp;
+	uint8_t *src_ptr, *dst_ptr;
+	uint16_t to_pkt_offset;
+	uint16_t to_index;
+	uint16_t pkt_offset;
+	int idx_shift;
+	size_t len = 0;
+	uint8_t *buf;
+	int i;
+
+	if (hdr->sub_headers_count < 2)
+		return;
+	if (from->index == to->index)
+		return;
+
+	buf = xmemdupz(proto_header_ptr(from), from->len);
+
+	to_pkt_offset = to->pkt_offset;
+	to_index = to->index;
+
+	if (from->index < to->index) {
+		src_hdr = hdr->sub_headers[from->index + 1];
+		dst_hdr = to;
+
+		src_ptr = proto_header_ptr(src_hdr);
+		dst_ptr = proto_header_ptr(from);
+		len = (to->pkt_offset + to->len) - src_hdr->pkt_offset;
+
+		pkt_offset = from->pkt_offset;
+		idx_shift = 1;
+	} else {
+		src_hdr = to;
+		dst_hdr = hdr->sub_headers[from->index - 1];
+
+		src_ptr = proto_header_ptr(src_hdr);
+		dst_ptr = src_ptr + from->len;
+		len = from->pkt_offset - to->pkt_offset;
+
+		pkt_offset = to->pkt_offset + from->len;
+		idx_shift = -1;
+	}
+
+	hdr->sub_headers[from->index] = to;
+	hdr->sub_headers[to->index] = from;
+
+	for (i = src_hdr->index; i <= dst_hdr->index; i++) {
+		tmp = hdr->sub_headers[i];
+
+		__proto_hdr_set_offset(tmp, pkt_offset);
+		pkt_offset += tmp->len;
+	}
+
+	for (i = src_hdr->index; i <= dst_hdr->index; i++)
+		hdr->sub_headers[i]->index = i + idx_shift;
+
+	memmove(dst_ptr, src_ptr, len);
+
+	from->pkt_offset = to_pkt_offset;
+	from->index = to_index;
+
+	memcpy(proto_header_ptr(from), buf, from->len);
+
+	xfree(buf);
 }
 
 struct proto_hdr *proto_lower_default_add(struct proto_hdr *upper,
@@ -481,6 +587,16 @@ void proto_hdr_field_set_default_dev_ipv6(struct proto_hdr *hdr, uint32_t fid)
 	__proto_hdr_field_set_dev_ipv6(hdr, fid, true);
 }
 
+void proto_hdr_field_set_string(struct proto_hdr *hdr, uint32_t fid, const char *str)
+{
+	proto_hdr_field_set_bytes(hdr, fid, (uint8_t *)str, strlen(str) + 1);
+}
+
+void proto_hdr_field_set_default_string(struct proto_hdr *hdr, uint32_t fid, const char *str)
+{
+	proto_hdr_field_set_default_bytes(hdr, fid, (uint8_t *)str, strlen(str) + 1);
+}
+
 void proto_field_set_u8(struct proto_field *field, uint8_t val)
 {
 	__proto_field_set_bytes(field, &val, 1, false, false);
@@ -532,6 +648,16 @@ void proto_field_set_bytes(struct proto_field *field, const uint8_t *bytes, size
 	__proto_field_set_bytes(field, bytes, len, false, false);
 }
 
+void proto_field_set_string(struct proto_field *field, const char *str)
+{
+	proto_field_set_bytes(field, (uint8_t *)str, strlen(str) + 1);
+}
+
+void proto_field_set_default_string(struct proto_field *field, const char *str)
+{
+	__proto_field_set_bytes(field, (uint8_t *)str, strlen(str) + 1, true, false);
+}
+
 void protos_init(const char *dev)
 {
 	ctx.dev = dev;
@@ -539,6 +665,7 @@ void protos_init(const char *dev)
 	protos_l2_init();
 	protos_l3_init();
 	protos_l4_init();
+	protos_l7_init();
 }
 
 void proto_packet_update(uint32_t idx)

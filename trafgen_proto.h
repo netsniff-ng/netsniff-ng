@@ -19,6 +19,7 @@ enum proto_id {
 	PROTO_ICMP6,
 	PROTO_UDP,
 	PROTO_TCP,
+	PROTO_DNS,
 	__PROTO_MAX,
 };
 
@@ -27,6 +28,7 @@ enum proto_layer {
 	PROTO_L2,
 	PROTO_L3,
 	PROTO_L4,
+	PROTO_L7,
 };
 
 struct proto_field;
@@ -38,6 +40,7 @@ struct proto_ops {
 
 	void (*header_init)(struct proto_hdr *hdr);
 	void (*header_finish)(struct proto_hdr *hdr);
+	void (*push_sub_header)(struct proto_hdr *hdr, struct proto_hdr *sub_hdr);
 	void (*field_changed)(struct proto_field *field);
 	void (*packet_finish)(struct proto_hdr *hdr);
 	void (*packet_update)(struct proto_hdr *hdr);
@@ -46,12 +49,16 @@ struct proto_ops {
 
 struct proto_hdr {
 	const struct proto_ops *ops;
+	struct proto_hdr *parent;
+	struct proto_hdr **sub_headers;
+	uint32_t sub_headers_count;
 	uint16_t pkt_offset;
 	uint32_t pkt_id;
 	uint32_t index;
 	struct proto_field *fields;
 	size_t fields_count;
 	bool is_csum_valid;
+	uint32_t id;
 	size_t len;
 };
 
@@ -94,6 +101,10 @@ extern struct proto_hdr *proto_header_push(enum proto_id pid);
 extern void proto_header_finish(struct proto_hdr *hdr);
 extern void proto_packet_finish(void);
 extern void proto_packet_update(uint32_t idx);
+
+extern struct proto_hdr *proto_hdr_push_sub_header(struct proto_hdr *hdr, int id);
+extern void proto_hdr_move_sub_header(struct proto_hdr *hdr, struct proto_hdr *from,
+				      struct proto_hdr *to);
 
 extern struct proto_hdr *proto_lower_default_add(struct proto_hdr *hdr,
 						 enum proto_id pid);
@@ -142,6 +153,9 @@ extern void proto_hdr_field_set_default_dev_ipv4(struct proto_hdr *hdr, uint32_t
 extern void proto_hdr_field_set_dev_ipv6(struct proto_hdr *hdr, uint32_t fid);
 extern void proto_hdr_field_set_default_dev_ipv6(struct proto_hdr *hdr, uint32_t fid);
 
+extern void proto_hdr_field_set_string(struct proto_hdr *hdr, uint32_t fid, const char *str);
+extern void proto_hdr_field_set_default_string(struct proto_hdr *hdr, uint32_t fid, const char *str);
+
 extern void proto_field_dyn_apply(struct proto_field *field);
 
 extern struct proto_field *proto_hdr_field_by_id(struct proto_hdr *hdr, uint32_t fid);
@@ -155,8 +169,9 @@ extern void proto_field_set_u32(struct proto_field *field, uint32_t val);
 extern uint32_t proto_field_get_u32(struct proto_field *field);
 extern void proto_field_set_be16(struct proto_field *field, uint16_t val);
 extern void proto_field_set_be32(struct proto_field *field, uint32_t val);
-extern void proto_field_set_bytes(struct proto_field *field, const uint8_t *bytes,
-				  size_t len);
+extern void proto_field_set_bytes(struct proto_field *field, const uint8_t *bytes, size_t len);
+extern void proto_field_set_string(struct proto_field *field, const char *str);
+extern void proto_field_set_default_string(struct proto_field *field, const char *str);
 
 extern void proto_field_func_add(struct proto_field *field,
 				 struct proto_field_func *func);

@@ -80,6 +80,21 @@ static void udp_packet_finish(struct proto_hdr *hdr)
 	udp_csum_update(hdr);
 }
 
+static void udp_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
+{
+	uint16_t dport;
+
+	switch (pid) {
+	case PROTO_DNS:
+		dport = 53;
+		break;
+	default:
+		bug();
+	}
+
+	proto_hdr_field_set_default_be16(hdr, UDP_DPORT, dport);
+}
+
 static const struct proto_ops udp_proto_ops = {
 	.id		= PROTO_UDP,
 	.layer		= PROTO_L4,
@@ -87,6 +102,7 @@ static const struct proto_ops udp_proto_ops = {
 	.packet_update  = udp_csum_update,
 	.packet_finish  = udp_packet_finish,
 	.field_changed  = udp_field_changed,
+	.set_next_proto = udp_set_next_proto,
 };
 
 static struct proto_field tcp_fields[] = {
@@ -160,6 +176,21 @@ static void tcp_csum_update(struct proto_hdr *hdr)
 	hdr->is_csum_valid = true;
 }
 
+static void tcp_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
+{
+	uint16_t dport;
+
+	switch (pid) {
+	case PROTO_DNS:
+		dport = 53;
+		break;
+	default:
+		bug();
+	}
+
+	proto_hdr_field_set_default_be16(hdr, TCP_DPORT, dport);
+}
+
 static const struct proto_ops tcp_proto_ops = {
 	.id		= PROTO_TCP,
 	.layer		= PROTO_L4,
@@ -167,6 +198,7 @@ static const struct proto_ops tcp_proto_ops = {
 	.packet_update  = tcp_csum_update,
 	.packet_finish  = tcp_csum_update,
 	.field_changed  = tcp_field_changed,
+	.set_next_proto = tcp_set_next_proto,
 };
 
 static struct proto_field icmpv4_fields[] = {
