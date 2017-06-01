@@ -52,20 +52,24 @@
 #define USEC_PER_SEC 1000000L
 #endif
 
-struct proc_entry {
-	struct cds_list_head entry;
-	struct cds_list_head flows;
-	struct rcu_head rcu;
-
-	struct timeval last_update;
-	unsigned int pid;
-	char name[256];
+struct flow_stat {
 	uint64_t pkts_src, bytes_src;
 	uint64_t pkts_dst, bytes_dst;
 	double rate_bytes_src;
 	double rate_bytes_dst;
 	double rate_pkts_src;
 	double rate_pkts_dst;
+};
+
+struct proc_entry {
+	struct cds_list_head entry;
+	struct cds_list_head flows;
+	struct rcu_head rcu;
+
+	struct timeval last_update;
+	struct flow_stat stat;
+	unsigned int pid;
+	char name[256];
 	int flows_count;
 };
 
@@ -80,8 +84,6 @@ struct flow_entry {
 	uint32_t ip6_src_addr[4], ip6_dst_addr[4];
 	uint16_t port_src, port_dst;
 	uint8_t  tcp_state, tcp_flags, sctp_state, dccp_state;
-	uint64_t pkts_src, bytes_src;
-	uint64_t pkts_dst, bytes_dst;
 	uint64_t timestamp_start, timestamp_stop;
 	char country_src[128], country_dst[128];
 	char country_code_src[4], country_code_dst[4];
@@ -92,10 +94,7 @@ struct flow_entry {
 	bool is_visible;
 	struct nf_conntrack *ct;
 	struct timeval last_update;
-	double rate_bytes_src;
-	double rate_bytes_dst;
-	double rate_pkts_src;
-	double rate_pkts_dst;
+	struct flow_stat stat;
 };
 
 struct flow_list {
@@ -379,8 +378,9 @@ static void flow_entry_update_time(struct flow_entry *n)
 	bug_on(gettimeofday(&n->last_update, NULL));
 }
 
-#define CALC_RATE(fld) do {							\
-	n->rate_##fld = (((fld) > n->fld) ? (((fld) - n->fld) / sec) : 0);	\
+#define CALC_RATE(fld) do {					\
+	n->stat.rate_##fld = (((fld) > n->stat.fld) ?		\
+			(((fld) - n->stat.fld) / sec) : 0);	\
 } while (0)
 
 static void flow_entry_calc_rate(struct flow_entry *n, const struct nf_conntrack *ct)
@@ -556,10 +556,10 @@ static void flow_entry_find_process(struct flow_entry *n)
 	if (snprintf(p->name, sizeof(p->name), "%s", basename(cmdline)) < 0)
 		p->name[0] = '\0';
 
-	p->pkts_src += n->pkts_src;
-	p->pkts_dst += n->pkts_dst;
-	p->bytes_src += n->bytes_src;
-	p->bytes_dst += n->bytes_dst;
+	p->stat.pkts_src += n->stat.pkts_src;
+	p->stat.pkts_dst += n->stat.pkts_dst;
+	p->stat.bytes_src += n->stat.bytes_src;
+	p->stat.bytes_dst += n->stat.bytes_dst;
 	p->flows_count++;
 
 	cds_list_add(&n->proc_head, &p->flows);
@@ -619,10 +619,10 @@ static void flow_entry_from_ct(struct flow_entry *n, const struct nf_conntrack *
 
 	/* Update stats diff to the related process entry */
 	if (n->proc) {
-		n->proc->pkts_src += pkts_src - n->pkts_src;
-		n->proc->pkts_dst += pkts_dst - n->pkts_dst;
-		n->proc->bytes_src += bytes_src - n->bytes_src;
-		n->proc->bytes_dst += bytes_dst - n->bytes_dst;
+		n->proc->stat.pkts_src += pkts_src - n->stat.pkts_src;
+		n->proc->stat.pkts_dst += pkts_dst - n->stat.pkts_dst;
+		n->proc->stat.bytes_src += bytes_src - n->stat.bytes_src;
+		n->proc->stat.bytes_dst += bytes_dst - n->stat.bytes_dst;
 	}
 
 	CP_NFCT(l3_proto, ATTR_ORIG_L3PROTO, 8);
@@ -641,11 +641,11 @@ static void flow_entry_from_ct(struct flow_entry *n, const struct nf_conntrack *
 	CP_NFCT(sctp_state, ATTR_SCTP_STATE, 8);
 	CP_NFCT(dccp_state, ATTR_DCCP_STATE, 8);
 
-	CP_NFCT(pkts_src, ATTR_ORIG_COUNTER_PACKETS, 64);
-	CP_NFCT(bytes_src, ATTR_ORIG_COUNTER_BYTES, 64);
+	CP_NFCT(stat.pkts_src, ATTR_ORIG_COUNTER_PACKETS, 64);
+	CP_NFCT(stat.bytes_src, ATTR_ORIG_COUNTER_BYTES, 64);
 
-	CP_NFCT(pkts_dst, ATTR_REPL_COUNTER_PACKETS, 64);
-	CP_NFCT(bytes_dst, ATTR_REPL_COUNTER_BYTES, 64);
+	CP_NFCT(stat.pkts_dst, ATTR_REPL_COUNTER_PACKETS, 64);
+	CP_NFCT(stat.bytes_dst, ATTR_REPL_COUNTER_BYTES, 64);
 
 	CP_NFCT(timestamp_start, ATTR_TIMESTAMP_START, 64);
 	CP_NFCT(timestamp_stop, ATTR_TIMESTAMP_STOP, 64);
@@ -1014,12 +1014,12 @@ static void print_flow_peer_info(const struct flow_entry *n, enum flow_direction
 
 	/* Bytes */
 	ui_table_row_col_set(&flows_tbl, TBL_FLOW_BYTES,
-			      bandw2str(SELFLD(dir, bytes_src, bytes_dst),
+			      bandw2str(SELFLD(dir, stat.bytes_src, stat.bytes_dst),
 					tmp, sizeof(tmp) - 1));
 
 	/* Rate bytes */
 	ui_table_row_col_set(&flows_tbl, TBL_FLOW_RATE,
-			      rate2str(SELFLD(dir, rate_bytes_src, rate_bytes_dst),
+			      rate2str(SELFLD(dir, stat.rate_bytes_src, stat.rate_bytes_dst),
 				       tmp, sizeof(tmp) - 1));
 }
 
@@ -1190,19 +1190,19 @@ static void draw_proc_entry(struct ui_table *tbl, const void *data)
 	ui_table_row_col_set(tbl, TBL_PROC_FLOWS, tmp);
 
 	/* Bytes Src */
-	bandw2str(p->bytes_src, tmp, sizeof(tmp) - 1);
+	bandw2str(p->stat.bytes_src, tmp, sizeof(tmp) - 1);
 	ui_table_row_col_set(tbl, TBL_PROC_BYTES_SRC, tmp);
 
 	/* Rate Src */
-	rate2str(p->rate_bytes_src, tmp, sizeof(tmp) - 1);
+	rate2str(p->stat.rate_bytes_src, tmp, sizeof(tmp) - 1);
 	ui_table_row_col_set(tbl, TBL_PROC_RATE_SRC, tmp);
 
 	/* Bytes Dest */
-	bandw2str(p->bytes_dst, tmp, sizeof(tmp) - 1);
+	bandw2str(p->stat.bytes_dst, tmp, sizeof(tmp) - 1);
 	ui_table_row_col_set(tbl, TBL_PROC_BYTES_DST, tmp);
 
 	/* Rate Dest */
-	rate2str(p->rate_bytes_dst, tmp, sizeof(tmp) - 1);
+	rate2str(p->stat.rate_bytes_dst, tmp, sizeof(tmp) - 1);
 	ui_table_row_col_set(tbl, TBL_PROC_RATE_DST, tmp);
 
 	ui_table_row_show(tbl);
@@ -1584,7 +1584,7 @@ static void conntrack_tstamp_enable(void)
 
 static void flow_entry_filter(struct flow_entry *n)
 {
-	if (show_active_only && !n->rate_bytes_src && !n->rate_bytes_dst)
+	if (show_active_only && !n->stat.rate_bytes_src && !n->stat.rate_bytes_dst)
 		n->is_visible = false;
 	else
 		n->is_visible = true;
@@ -1643,16 +1643,16 @@ static void collector_refresh_procs(void)
 			continue;
 		}
 
-		p->rate_bytes_src = 0;
-		p->rate_bytes_dst = 0;
-		p->rate_pkts_src = 0;
-		p->rate_pkts_dst = 0;
+		p->stat.rate_bytes_src = 0;
+		p->stat.rate_bytes_dst = 0;
+		p->stat.rate_pkts_src = 0;
+		p->stat.rate_pkts_dst = 0;
 
 		cds_list_for_each_entry_rcu(n, &p->flows, proc_head) {
-			p->rate_bytes_src += n->rate_bytes_src;
-			p->rate_bytes_dst += n->rate_bytes_dst;
-			p->rate_pkts_src += n->rate_pkts_src;
-			p->rate_pkts_dst += n->rate_pkts_dst;
+			p->stat.rate_bytes_src += n->stat.rate_bytes_src;
+			p->stat.rate_bytes_dst += n->stat.rate_bytes_dst;
+			p->stat.rate_pkts_src += n->stat.rate_pkts_src;
+			p->stat.rate_pkts_dst += n->stat.rate_pkts_dst;
 		}
 	}
 }
