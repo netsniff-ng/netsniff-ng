@@ -160,3 +160,40 @@ int str2mac(const char *str, uint8_t *mac, size_t len)
 
 	return 0;
 }
+
+char *str2fqdn(const char *str)
+{
+	size_t slen = strlen(str);
+	size_t flen = 0;
+	char *fqdn;
+	char *tmp;
+	char *dup;
+	int i = 0;
+	int c = 0;
+
+	dup = xstrdup(str);
+	tmp = dup;
+
+	fqdn = xzmalloc(slen + 2);
+
+	while (tmp <= dup + slen && c++ <= slen) {
+		if (tmp[i] == '.' || tmp[i] == '\0') {
+			size_t dlen;
+
+			tmp[i] = '\0';
+			dlen = strlen(tmp);
+			fqdn[flen] = dlen;
+			memcpy(&fqdn[flen + 1], tmp, dlen);
+			flen += dlen + 1;
+			tmp += dlen + 1;
+			i = 0;
+
+			continue;
+		}
+
+		i++;
+	}
+
+	xfree(dup);
+	return fqdn;
+}

@@ -14,5 +14,6 @@ extern char *argv2str(int startind, int argc, char **argv);
 extern char **argv_insert(char **argv, size_t *count, const char *str);
 extern void argv_free(char **argv);
 extern int str2mac(const char *str, uint8_t *mac, size_t len);
+extern char *str2fqdn(const char *str);
 
 #endif /* STR_H */
