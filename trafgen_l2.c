@@ -69,7 +69,7 @@ static void pause_header_init(struct proto_hdr *hdr)
 	struct proto_hdr *lower;
 
 	lower = proto_lower_default_add(hdr, PROTO_ETH);
-	proto_hdr_field_set_default_bytes(lower, ETH_DST_ADDR, eth_dst);
+	proto_hdr_field_set_default_bytes(lower, ETH_DST_ADDR, eth_dst, 6);
 
 	proto_header_fields_add(hdr, pause_fields, array_size(pause_fields));
 	proto_hdr_field_set_default_be16(hdr, PAUSE_OPCODE, 0x1);
@@ -109,7 +109,7 @@ static void pfc_header_init(struct proto_hdr *hdr)
 	struct proto_hdr *lower;
 
 	lower = proto_lower_default_add(hdr, PROTO_ETH);
-	proto_hdr_field_set_default_bytes(lower, ETH_DST_ADDR, eth_dst);
+	proto_hdr_field_set_default_bytes(lower, ETH_DST_ADDR, eth_dst, 6);
 
 	proto_header_fields_add(hdr, pfc_fields, array_size(pfc_fields));
 	proto_hdr_field_set_default_be16(hdr, PFC_OPCODE, 0x0101);
@@ -180,7 +180,7 @@ static void arp_header_init(struct proto_hdr *hdr)
 	if (lower->ops->id == PROTO_ETH) {
 		const uint8_t bcast[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
-		proto_hdr_field_set_default_bytes(lower, ETH_DST_ADDR, bcast);
+		proto_hdr_field_set_default_bytes(lower, ETH_DST_ADDR, bcast, 6);
 	}
 
 	proto_header_fields_add(hdr, arp_fields, array_size(arp_fields));

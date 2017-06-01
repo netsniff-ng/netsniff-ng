@@ -100,6 +100,9 @@ void proto_header_fields_add(struct proto_hdr *hdr,
 		f->pkt_offset = hdr->pkt_offset + fields[i].offset;
 		f->hdr = hdr;
 
+		if (!f->len)
+			continue;
+
 		if (f->pkt_offset + f->len > pkt->len) {
 			hdr->len += f->len;
 			set_fill(0, (f->pkt_offset + f->len) - pkt->len);
@@ -181,9 +184,48 @@ set_proto:
 	return current;
 }
 
+static void __proto_field_relocate(struct proto_field *field)
+{
+	struct proto_hdr *hdr = field->hdr;
+	struct packet *pkt = packet_get(hdr->pkt_id);
+	uint8_t *from, *to;
+	int i;
+
+	/* If this is a last field then just calculate 'pkt_offset' */
+	if (field->id == hdr->fields_count - 1) {
+		field->pkt_offset = hdr->pkt_offset + hdr->len - field->len;
+		return;
+	}
+
+	/* Use 'pkt_offset' from the 1st real (len > 0) field after the
+	 * 'target' one */
+	for (i = field->id + 1; i < hdr->fields_count; i++) {
+		if (hdr->fields[i].len == 0)
+			continue;
+
+		field->pkt_offset = hdr->fields[i].pkt_offset;
+		break;
+	}
+
+	/* Move payload of overlapped fields (each after the 'target' field) */
+	from = &pkt->payload[field->pkt_offset];
+	to = &pkt->payload[field->pkt_offset + field->len];
+	memcpy(to, from, hdr->len - field->len);
+
+	/* Recalculate 'pkt_offset' of the rest fields */
+	for (; i < hdr->fields_count; i++) {
+		struct proto_field *tmp = &hdr->fields[i];
+
+		if (tmp->len == 0)
+			continue;
+
+		tmp->pkt_offset += field->len;
+	}
+}
+
 static void __proto_field_set_bytes(struct proto_field *field,
-				    const uint8_t *bytes, bool is_default,
-				    bool is_be)
+				    const uint8_t *bytes, size_t len,
+				    bool is_default, bool is_be)
 {
 	uint8_t *payload, *p8;
 	uint16_t *p16;
@@ -194,6 +236,14 @@ static void __proto_field_set_bytes(struct proto_field *field,
 
 	if (is_default && field->is_set)
 		return;
+
+	if (field->len == 0) {
+		field->hdr->len += len;
+		field->len = len;
+		set_fill(0, len);
+
+		__proto_field_relocate(field);
+	}
 
 	payload = &packet_get(field->hdr->pkt_id)->payload[field->pkt_offset];
 
@@ -234,11 +284,11 @@ static void __proto_field_set_bytes(struct proto_field *field,
 }
 
 void proto_hdr_field_set_bytes(struct proto_hdr *hdr, uint32_t fid,
-			       const uint8_t *bytes)
+			       const uint8_t *bytes, size_t len)
 {
 	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 
-	__proto_field_set_bytes(field, bytes, false, false);
+	__proto_field_set_bytes(field, bytes, len, false, false);
 }
 
 static uint8_t *__proto_field_get_bytes(struct proto_field *field)
@@ -248,7 +298,7 @@ static uint8_t *__proto_field_get_bytes(struct proto_field *field)
 
 void proto_hdr_field_set_u8(struct proto_hdr *hdr, uint32_t fid, uint8_t val)
 {
-	proto_hdr_field_set_bytes(hdr, fid, (uint8_t *)&val);
+	proto_hdr_field_set_bytes(hdr, fid, (uint8_t *)&val, 1);
 }
 
 uint8_t proto_hdr_field_get_u8(struct proto_hdr *hdr, uint32_t fid)
@@ -261,7 +311,7 @@ uint8_t proto_hdr_field_get_u8(struct proto_hdr *hdr, uint32_t fid)
 
 void proto_hdr_field_set_u16(struct proto_hdr *hdr, uint32_t fid, uint16_t val)
 {
-	proto_hdr_field_set_bytes(hdr, fid, (uint8_t *)&val);
+	proto_hdr_field_set_bytes(hdr, fid, (uint8_t *)&val, 2);
 }
 
 uint16_t proto_hdr_field_get_u16(struct proto_hdr *hdr, uint32_t fid)
@@ -274,7 +324,7 @@ uint16_t proto_hdr_field_get_u16(struct proto_hdr *hdr, uint32_t fid)
 
 void proto_hdr_field_set_u32(struct proto_hdr *hdr, uint32_t fid, uint32_t val)
 {
-	proto_hdr_field_set_bytes(hdr, fid, (uint8_t *)&val);
+	proto_hdr_field_set_bytes(hdr, fid, (uint8_t *)&val, 4);
 }
 
 uint32_t proto_hdr_field_get_u32(struct proto_hdr *hdr, uint32_t fid)
@@ -286,60 +336,60 @@ uint32_t proto_hdr_field_get_u32(struct proto_hdr *hdr, uint32_t fid)
 }
 
 void proto_hdr_field_set_default_bytes(struct proto_hdr *hdr, uint32_t fid,
-				       const uint8_t *bytes)
+				       const uint8_t *bytes, size_t len)
 {
 	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 
-	__proto_field_set_bytes(field, bytes, true, false);
+	__proto_field_set_bytes(field, bytes, len, true, false);
 }
 
 void proto_hdr_field_set_default_u8(struct proto_hdr *hdr, uint32_t fid, uint8_t val)
 {
 	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 
-	__proto_field_set_bytes(field, (uint8_t *)&val, true, false);
+	__proto_field_set_bytes(field, (uint8_t *)&val, 1, true, false);
 }
 
 void proto_hdr_field_set_default_u16(struct proto_hdr *hdr, uint32_t fid, uint16_t val)
 {
 	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 
-	__proto_field_set_bytes(field, (uint8_t *)&val, true, false);
+	__proto_field_set_bytes(field, (uint8_t *)&val, 2, true, false);
 }
 
 void proto_hdr_field_set_default_u32(struct proto_hdr *hdr, uint32_t fid, uint32_t val)
 {
 	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 
-	__proto_field_set_bytes(field, (uint8_t *)&val, true, false);
+	__proto_field_set_bytes(field, (uint8_t *)&val, 4, true, false);
 }
 
 void proto_hdr_field_set_be16(struct proto_hdr *hdr, uint32_t fid, uint16_t val)
 {
 	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 
-	__proto_field_set_bytes(field, (uint8_t *)&val, false, true);
+	__proto_field_set_bytes(field, (uint8_t *)&val, 2, false, true);
 }
 
 void proto_hdr_field_set_be32(struct proto_hdr *hdr, uint32_t fid, uint32_t val)
 {
 	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 
-	__proto_field_set_bytes(field, (uint8_t *)&val, false, true);
+	__proto_field_set_bytes(field, (uint8_t *)&val, 4, false, true);
 }
 
 void proto_hdr_field_set_default_be16(struct proto_hdr *hdr, uint32_t fid, uint16_t val)
 {
 	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 
-	__proto_field_set_bytes(field, (uint8_t *)&val, true, true);
+	__proto_field_set_bytes(field, (uint8_t *)&val, 2, true, true);
 }
 
 void proto_hdr_field_set_default_be32(struct proto_hdr *hdr, uint32_t fid, uint32_t val)
 {
 	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
 
-	__proto_field_set_bytes(field, (uint8_t *)&val, true, true);
+	__proto_field_set_bytes(field, (uint8_t *)&val, 4, true, true);
 }
 
 static void __proto_hdr_field_set_dev_mac(struct proto_hdr *hdr, uint32_t fid,
@@ -356,7 +406,7 @@ static void __proto_hdr_field_set_dev_mac(struct proto_hdr *hdr, uint32_t fid,
 	if (ret < 0)
 		panic("Could not get device hw address\n");
 
-	__proto_field_set_bytes(field, mac, is_default, false);
+	__proto_field_set_bytes(field, mac, 6, is_default, false);
 }
 
 void proto_hdr_field_set_dev_mac(struct proto_hdr *hdr, uint32_t fid)
@@ -387,7 +437,7 @@ static void __proto_hdr_field_set_dev_ipv4(struct proto_hdr *hdr, uint32_t fid,
 	}
 
 	ss4 = (struct sockaddr_in *) &ss;
-	__proto_field_set_bytes(field, (uint8_t *)&ss4->sin_addr.s_addr, is_default, false);
+	__proto_field_set_bytes(field, (uint8_t *)&ss4->sin_addr.s_addr, 4, is_default, false);
 }
 
 void proto_hdr_field_set_dev_ipv4(struct proto_hdr *hdr, uint32_t fid)
@@ -418,7 +468,7 @@ static void __proto_hdr_field_set_dev_ipv6(struct proto_hdr *hdr, uint32_t fid,
 	}
 
 	ss6 = (struct sockaddr_in6 *) &ss;
-	__proto_field_set_bytes(field, (uint8_t *)&ss6->sin6_addr.s6_addr, is_default, false);
+	__proto_field_set_bytes(field, (uint8_t *)&ss6->sin6_addr.s6_addr, 16, is_default, false);
 }
 
 void proto_hdr_field_set_dev_ipv6(struct proto_hdr *hdr, uint32_t fid)
@@ -433,7 +483,7 @@ void proto_hdr_field_set_default_dev_ipv6(struct proto_hdr *hdr, uint32_t fid)
 
 void proto_field_set_u8(struct proto_field *field, uint8_t val)
 {
-	__proto_field_set_bytes(field, &val, false, false);
+	__proto_field_set_bytes(field, &val, 1, false, false);
 }
 
 uint8_t proto_field_get_u8(struct proto_field *field)
@@ -445,7 +495,7 @@ uint8_t proto_field_get_u8(struct proto_field *field)
 
 void proto_field_set_u16(struct proto_field *field, uint16_t val)
 {
-	__proto_field_set_bytes(field, (uint8_t *)&val, false, false);
+	__proto_field_set_bytes(field, (uint8_t *)&val, 2, false, false);
 }
 
 uint16_t proto_field_get_u16(struct proto_field *field)
@@ -457,7 +507,7 @@ uint16_t proto_field_get_u16(struct proto_field *field)
 
 void proto_field_set_u32(struct proto_field *field, uint32_t val)
 {
-	__proto_field_set_bytes(field, (uint8_t *)&val, false, false);
+	__proto_field_set_bytes(field, (uint8_t *)&val, 4, false, false);
 }
 
 uint32_t proto_field_get_u32(struct proto_field *field)
@@ -469,17 +519,17 @@ uint32_t proto_field_get_u32(struct proto_field *field)
 
 void proto_field_set_be16(struct proto_field *field, uint16_t val)
 {
-	__proto_field_set_bytes(field, (uint8_t *)&val, false, true);
+	__proto_field_set_bytes(field, (uint8_t *)&val, 2, false, true);
 }
 
 void proto_field_set_be32(struct proto_field *field, uint32_t val)
 {
-	__proto_field_set_bytes(field, (uint8_t *)&val, false, true);
+	__proto_field_set_bytes(field, (uint8_t *)&val, 4, false, true);
 }
 
-void proto_field_set_bytes(struct proto_field *field, const uint8_t *bytes)
+void proto_field_set_bytes(struct proto_field *field, const uint8_t *bytes, size_t len)
 {
-	__proto_field_set_bytes(field, bytes, false, false);
+	__proto_field_set_bytes(field, bytes, len, false, false);
 }
 
 void protos_init(const char *dev)

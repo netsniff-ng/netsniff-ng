@@ -433,11 +433,11 @@ static void proto_field_expr_eval(void)
 		else
 			panic("Invalid value length %zu, can be 1,2 or 4\n", field->len);
 	} else if (field_expr.type & FIELD_EXPR_MAC) {
-		proto_field_set_bytes(field, field_expr.val.mac);
+		proto_field_set_bytes(field, field_expr.val.mac, 6);
 	} else if (field_expr.type & FIELD_EXPR_IP4_ADDR) {
 		proto_field_set_u32(field, field_expr.val.ip4_addr.s_addr);
 	} else if (field_expr.type & FIELD_EXPR_IP6_ADDR) {
-		proto_field_set_bytes(field, (uint8_t *)&field_expr.val.ip6_addr.s6_addr);
+		proto_field_set_bytes(field, (uint8_t *)&field_expr.val.ip6_addr.s6_addr, 16);
 	} else if ((field_expr.type & FIELD_EXPR_INC) ||
 			(field_expr.type & FIELD_EXPR_RND)) {
 
