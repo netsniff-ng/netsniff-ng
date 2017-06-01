@@ -31,6 +31,7 @@
 #include "trafgen_l2.h"
 #include "trafgen_l3.h"
 #include "trafgen_l4.h"
+#include "trafgen_l7.h"
 #include "built_in.h"
 #include "die.h"
 #include "str.h"
@@ -80,6 +81,8 @@ enum field_expr_type_t {
 	FIELD_EXPR_INC		= 1 << 4,
 	FIELD_EXPR_RND		= 1 << 5,
 	FIELD_EXPR_OFFSET	= 1 << 6,
+	FIELD_EXPR_STRING	= 1 << 7,
+	FIELD_EXPR_FQDN		= 1 << 8,
 };
 
 struct proto_field_expr {
@@ -91,6 +94,7 @@ struct proto_field_expr {
 		struct in6_addr ip6_addr;
 		long long int number;
 		uint8_t mac[256];
+		char *str;
 		struct proto_field_func func;
 	} val;
 };
@@ -434,6 +438,14 @@ static void proto_field_expr_eval(void)
 			panic("Invalid value length %zu, can be 1,2 or 4\n", field->len);
 	} else if (field_expr.type & FIELD_EXPR_MAC) {
 		proto_field_set_bytes(field, field_expr.val.mac, 6);
+	} else if (field_expr.type & FIELD_EXPR_FQDN) {
+		char *fqdn = str2fqdn(field_expr.val.str);
+		proto_field_set_bytes(field, (uint8_t *) fqdn, strlen(fqdn) + 1);
+		xfree(field_expr.val.str);
+		xfree(fqdn);
+	} else if (field_expr.type & FIELD_EXPR_STRING) {
+		proto_field_set_string(field, field_expr.val.str);
+		xfree(field_expr.val.str);
 	} else if (field_expr.type & FIELD_EXPR_IP4_ADDR) {
 		proto_field_set_u32(field, field_expr.val.ip4_addr.s_addr);
 	} else if (field_expr.type & FIELD_EXPR_IP6_ADDR) {
@@ -472,6 +484,19 @@ static void field_index_validate(struct proto_field *field, uint16_t index, size
 	}
 }
 
+static void proto_push_sub_hdr(uint32_t id)
+{
+	hdr = proto_hdr_push_sub_header(hdr, id);
+}
+
+static void proto_pop_sub_hdr(void)
+{
+	if (hdr->ops->header_finish)
+		hdr->ops->header_finish(hdr);
+
+	hdr = hdr->parent;
+}
+
 %}
 
 %union {
@@ -498,6 +523,10 @@ static void field_index_validate(struct proto_field *field, uint16_t index, size
 
 %token K_ADDR K_MTU
 
+%token K_QR K_AANSWER K_TRUNC K_RAVAIL K_RDESIRED K_ZERO K_RCODE K_QDCOUNT K_ANCOUNT K_NSCOUNT K_ARCOUNT
+%token K_QUERY K_ANSWER K_AUTH K_ADD
+%token K_NAME K_CLASS K_DATA K_NS K_CNAME K_PTR
+
 %token K_ETH
 %token K_PAUSE
 %token K_PFC
@@ -506,6 +535,7 @@ static void field_index_validate(struct proto_field *field, uint16_t index, size
 %token K_IP4 K_IP6
 %token K_ICMP4 K_ICMP6
 %token K_UDP K_TCP
+%token K_DNS
 
 %token ',' '{' '}' '(' ')' '[' ']' ':' '-' '+' '*' '/' '%' '&' '|' '<' '>' '^'
 
@@ -738,6 +768,7 @@ proto
 	| icmpv6_proto { }
 	| udp_proto { }
 	| tcp_proto { }
+	| dns_proto { }
 	;
 
 field_expr
@@ -758,6 +789,9 @@ field_value_expr
 		   field_expr.val.number = $1; }
 	| mac { field_expr.type |= FIELD_EXPR_MAC;
 		memcpy(field_expr.val.mac, $1, sizeof(field_expr.val.mac)); }
+	| string { field_expr.type |= FIELD_EXPR_STRING;
+		   field_expr.val.str = xstrdup($1 + 1);
+		   field_expr.val.str[strlen($1 + 1) - 1] = '\0'; }
 	| ip4_addr { field_expr.type |= FIELD_EXPR_IP4_ADDR;
 		     field_expr.val.ip4_addr = $1; }
 	| ip6_addr { field_expr.type |= FIELD_EXPR_IP6_ADDR;
@@ -1229,6 +1263,157 @@ tcp
 	: K_TCP	{ proto_add(PROTO_TCP); }
 	;
 
+dns_proto
+	: dns '(' dns_param_list ')' { }
+	;
+
+dns_param_list
+	: { }
+	| dns_expr { }
+	| dns_expr delimiter dns_param_list { }
+	;
+
+dns_field
+	: K_ID { proto_field_set(DNS_ID); }
+	| K_QR { proto_field_set(DNS_QR); }
+	| K_OPER { proto_field_set(DNS_OPCODE); }
+	| K_AANSWER { proto_field_set(DNS_AA); }
+	| K_TRUNC { proto_field_set(DNS_TC); }
+	| K_RDESIRED { proto_field_set(DNS_RD); }
+	| K_RAVAIL { proto_field_set(DNS_RA); }
+	| K_ZERO { proto_field_set(DNS_ZERO); }
+	| K_RCODE { proto_field_set(DNS_RCODE); }
+	| K_QDCOUNT { proto_field_set(DNS_QD_COUNT); }
+	| K_ANCOUNT { proto_field_set(DNS_AN_COUNT); }
+	| K_NSCOUNT { proto_field_set(DNS_NS_COUNT); }
+	| K_ARCOUNT { proto_field_set(DNS_AR_COUNT); }
+	;
+
+dns_query
+	: K_QUERY { proto_push_sub_hdr(DNS_QUERY_HDR); }
+	;
+
+dns_query_name
+	: K_NAME { proto_field_set(DNS_QUERY_NAME); }
+	;
+
+dns_query_field
+	: K_TYPE { proto_field_set(DNS_QUERY_TYPE); }
+	| K_CLASS { proto_field_set(DNS_QUERY_CLASS); }
+	;
+
+dns_query_expr
+	: dns_query_field field_expr skip_white '=' skip_white field_value_expr
+		{ proto_field_expr_eval(); }
+	| dns_query_field skip_white '=' skip_white field_value_expr
+		{ proto_field_expr_eval(); }
+	| dns_query_name field_expr skip_white '=' skip_white field_value_expr
+		{ if (field_expr.type & FIELD_EXPR_STRING)
+			field_expr.type = FIELD_EXPR_FQDN;
+		  proto_field_expr_eval(); }
+	| dns_query_name skip_white '=' skip_white field_value_expr
+		{ if (field_expr.type & FIELD_EXPR_STRING)
+			field_expr.type = FIELD_EXPR_FQDN;
+		  proto_field_expr_eval(); }
+	;
+
+dns_query_param_list
+	: { }
+	| dns_query_expr { }
+	| dns_query_expr delimiter dns_query_param_list { }
+	;
+
+dns_query_hdr
+	: dns_query '(' dns_query_param_list ')' { }
+	;
+
+dns_rrecord
+	: K_ANSWER { proto_push_sub_hdr(DNS_ANSWER_HDR); }
+	| K_AUTH { proto_push_sub_hdr(DNS_AUTH_HDR); }
+	| K_ADD { proto_push_sub_hdr(DNS_ADD_HDR); }
+	;
+
+dns_rrecord_name
+	: K_NAME { proto_field_set(DNS_RRECORD_NAME); }
+	;
+
+dns_rrecord_data_addr
+	: ip4_addr
+		{ proto_hdr_field_set_u32(hdr, DNS_RRECORD_DATA, $1.s_addr);
+		  proto_hdr_field_set_be16(hdr, DNS_RRECORD_TYPE, 1); }
+	| ip6_addr
+		{ proto_hdr_field_set_bytes(hdr, DNS_RRECORD_DATA, (uint8_t *)&$1.s6_addr, 16);
+		  proto_hdr_field_set_be16(hdr, DNS_RRECORD_TYPE, 28); }
+	;
+
+dns_rrecord_data_fqdn
+	: string
+		{ char *str = xstrdup($1 + 1);
+		  char *fqdn;
+		  str[strlen($1 + 1) - 1] = '\0';
+		  fqdn = str2fqdn(str);
+		  proto_hdr_field_set_bytes(hdr, DNS_RRECORD_DATA, (uint8_t *) fqdn, strlen(fqdn) + 1);
+		  xfree(fqdn); }
+	;
+
+dns_rrecord_data_expr
+	: K_ADDR '(' skip_white dns_rrecord_data_addr skip_white ')'
+		{ }
+	| K_NS '(' skip_white dns_rrecord_data_fqdn skip_white ')'
+		{ proto_hdr_field_set_be16(hdr, DNS_RRECORD_TYPE, 2); }
+	| K_CNAME '(' skip_white dns_rrecord_data_fqdn skip_white ')'
+		{ proto_hdr_field_set_be16(hdr, DNS_RRECORD_TYPE, 5); }
+	| K_PTR '(' skip_white dns_rrecord_data_fqdn skip_white ')'
+		{ proto_hdr_field_set_be16(hdr, DNS_RRECORD_TYPE, 12); }
+	;
+
+dns_rrecord_field
+	: K_TYPE { proto_field_set(DNS_RRECORD_TYPE); }
+	| K_CLASS { proto_field_set(DNS_RRECORD_CLASS); }
+	| K_TTL { proto_field_set(DNS_RRECORD_TTL); }
+	| K_LEN { proto_field_set(DNS_RRECORD_LEN); }
+	| K_DATA { proto_field_set(DNS_RRECORD_DATA); }
+	;
+
+dns_rrecord_expr
+	: dns_rrecord_field field_expr skip_white '=' skip_white field_value_expr
+		{ proto_field_expr_eval(); }
+	| dns_rrecord_field skip_white '=' skip_white field_value_expr
+		{ proto_field_expr_eval(); }
+	| dns_rrecord_name field_expr skip_white '=' skip_white field_value_expr
+		{ if (field_expr.type & FIELD_EXPR_STRING)
+			field_expr.type = FIELD_EXPR_FQDN;
+		  proto_field_expr_eval(); }
+	| dns_rrecord_name skip_white '=' skip_white field_value_expr
+		{ if (field_expr.type & FIELD_EXPR_STRING)
+			field_expr.type = FIELD_EXPR_FQDN;
+		  proto_field_expr_eval(); }
+	| dns_rrecord_data_expr
+		{ }
+	;
+
+dns_rrecord_param_list
+	: { }
+	| dns_rrecord_expr { }
+	| dns_rrecord_expr delimiter dns_rrecord_param_list { }
+	;
+
+dns_rrecord_hdr
+	: dns_rrecord '(' dns_rrecord_param_list ')' { }
+	;
+
+dns_expr
+	: dns_field field_expr skip_white '=' skip_white field_value_expr
+		{ proto_field_expr_eval(); }
+	| dns_field skip_white '=' skip_white field_value_expr
+		{ proto_field_expr_eval(); }
+	| dns_query_hdr { proto_pop_sub_hdr(); }
+	| dns_rrecord_hdr { proto_pop_sub_hdr(); }
+	;
+
+dns
+	: K_DNS	{ proto_add(PROTO_DNS); }
+	;
 %%
 
 static void finalize_packet(void)
@@ -1281,9 +1466,17 @@ void cleanup_packets(void)
 
 		for (j = 0; j < pkt->headers_count; j++) {
 			struct proto_hdr *hdr = pkt->headers[j];
+			int k;
+
+			for (k = 0; k < hdr->sub_headers_count; k++)
+				xfree(hdr->sub_headers[k]);
+
+			if (hdr->sub_headers)
+				xfree(hdr->sub_headers);
 
 			if (hdr->fields)
 				xfree(hdr->fields);
+
 			xfree(hdr);
 		}
 	}

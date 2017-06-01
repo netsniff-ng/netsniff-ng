@@ -239,6 +239,29 @@ ip6_addr	({v680}|{v67}|{v66}|{v65}|{v64}|{v63}|{v62}|{v61}|{v60})
 "win"|"window"	{ return K_WINDOW; }
 "urgptr"	{ return K_URG_PTR; }
 
+	/* DNS */
+"qr"		{ return K_QR; }
+"aa"|"aanswer"	{ return K_AANSWER; }
+"trunc"		{ return K_TRUNC; }
+"ravail"	{ return K_RAVAIL; }
+"rdesired"	{ return K_RDESIRED; }
+"zero"		{ return K_ZERO; }
+"rc"|"rcode"	{ return K_RCODE; }
+"qdcount"	{ return K_QDCOUNT; }
+"ancount"	{ return K_ANCOUNT; }
+"nscount"	{ return K_NSCOUNT; }
+"arcount"	{ return K_ARCOUNT; }
+"name"		{ return K_NAME; }
+"class"		{ return K_CLASS; }
+"data"		{ return K_DATA; }
+"qry"|"query"	{ return K_QUERY; }
+"ans"|"answer"	{ return K_ANSWER; }
+"auth"		{ return K_AUTH; }
+"add"		{ return K_ADD; }
+"ns"		{ return K_NS; }
+"cname"		{ return K_CNAME; }
+"ptr"		{ return K_PTR; }
+
 "eth"		{ return K_ETH; }
 "pause"         { return K_PAUSE; }
 "pfc"		{ return K_PFC; }
@@ -251,6 +274,7 @@ ip6_addr	({v680}|{v67}|{v66}|{v65}|{v64}|{v63}|{v62}|{v61}|{v60})
 "icmp6"|"icmpv6"	{ return K_ICMP6; }
 "udp"		{ return K_UDP; }
 "tcp"		{ return K_TCP; }
+"dns"		{ return K_DNS; }
 
 [ ]*"-"[ ]*	{ return '-'; }
 [ ]*"+"[ ]*	{ return '+'; }
