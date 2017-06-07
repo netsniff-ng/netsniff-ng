@@ -24,7 +24,7 @@
 		((f)->mask ? (f)->mask : (0xffffffff))) >> (f)->shift)
 
 struct ctx {
-	const char *dev;
+	struct dev_io *dev;
 };
 static struct ctx ctx;
 
@@ -508,11 +508,13 @@ static void __proto_hdr_field_set_dev_mac(struct proto_hdr *hdr, uint32_t fid,
 	if (proto_hdr_field_is_set(hdr, fid))
 		return;
 
-	ret = device_hw_address(ctx.dev, mac, sizeof(mac));
-	if (ret < 0)
-		panic("Could not get device hw address\n");
+	if (dev_io_is_netdev(ctx.dev)) {
+		ret = device_hw_address(dev_io_name_get(ctx.dev), mac, sizeof(mac));
+		if (ret < 0)
+			panic("Could not get device hw address\n");
 
-	__proto_field_set_bytes(field, mac, 6, is_default, false);
+		__proto_field_set_bytes(field, mac, 6, is_default, false);
+	}
 }
 
 void proto_hdr_field_set_dev_mac(struct proto_hdr *hdr, uint32_t fid)
@@ -536,14 +538,17 @@ static void __proto_hdr_field_set_dev_ipv4(struct proto_hdr *hdr, uint32_t fid,
 	if (proto_hdr_field_is_set(hdr, fid))
 		return;
 
-	ret = device_address(ctx.dev, AF_INET, &ss);
-	if (ret < 0) {
-		fprintf(stderr, "Warning: Could not get device IPv4 address for %s\n", ctx.dev);
-		return;
-	}
+	if (dev_io_is_netdev(ctx.dev)) {
+		ret = device_address(dev_io_name_get(ctx.dev), AF_INET, &ss);
+		if (ret < 0) {
+			fprintf(stderr, "Warning: Could not get device IPv4 address for %s\n",
+				dev_io_name_get(ctx.dev));
+			return;
+		}
 
-	ss4 = (struct sockaddr_in *) &ss;
-	__proto_field_set_bytes(field, (uint8_t *)&ss4->sin_addr.s_addr, 4, is_default, false);
+		ss4 = (struct sockaddr_in *) &ss;
+		__proto_field_set_bytes(field, (uint8_t *)&ss4->sin_addr.s_addr, 4, is_default, false);
+	}
 }
 
 void proto_hdr_field_set_dev_ipv4(struct proto_hdr *hdr, uint32_t fid)
@@ -567,14 +572,17 @@ static void __proto_hdr_field_set_dev_ipv6(struct proto_hdr *hdr, uint32_t fid,
 	if (proto_hdr_field_is_set(hdr, fid))
 		return;
 
-	ret = device_address(ctx.dev, AF_INET6, &ss);
-	if (ret < 0) {
-		fprintf(stderr, "Warning: Could not get device IPv6 address for %s\n", ctx.dev);
-		return;
-	}
+	if (dev_io_is_netdev(ctx.dev)) {
+		ret = device_address(dev_io_name_get(ctx.dev), AF_INET6, &ss);
+		if (ret < 0) {
+			fprintf(stderr, "Warning: Could not get device IPv6 address for %s\n",
+				dev_io_name_get(ctx.dev));
+			return;
+		}
 
-	ss6 = (struct sockaddr_in6 *) &ss;
-	__proto_field_set_bytes(field, (uint8_t *)&ss6->sin6_addr.s6_addr, 16, is_default, false);
+		ss6 = (struct sockaddr_in6 *) &ss;
+		__proto_field_set_bytes(field, (uint8_t *)&ss6->sin6_addr.s6_addr, 16, is_default, false);
+	}
 }
 
 void proto_hdr_field_set_dev_ipv6(struct proto_hdr *hdr, uint32_t fid)
@@ -658,7 +666,7 @@ void proto_field_set_default_string(struct proto_field *field, const char *str)
 	__proto_field_set_bytes(field, (uint8_t *)str, strlen(str) + 1, true, false);
 }
 
-void protos_init(const char *dev)
+void protos_init(struct dev_io *dev)
 {
 	ctx.dev = dev;
 
@@ -792,7 +800,7 @@ void proto_field_dyn_apply(struct proto_field *field)
 		field->hdr->ops->field_changed(field);
 }
 
-const char *proto_dev_get(void)
+struct dev_io *proto_dev_get(void)
 {
 	return ctx.dev;
 }

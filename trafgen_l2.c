@@ -8,7 +8,9 @@
 
 #include "die.h"
 #include "built_in.h"
+#include "linktype.h"
 #include "trafgen_l2.h"
+#include "trafgen_dev.h"
 #include "trafgen_proto.h"
 
 static struct proto_field eth_fields[] = {
@@ -48,6 +50,8 @@ static void eth_header_init(struct proto_hdr *hdr)
 	proto_header_fields_add(hdr, eth_fields, array_size(eth_fields));
 
 	proto_hdr_field_set_default_dev_mac(hdr, ETH_SRC_ADDR);
+
+	dev_io_link_type_set(proto_dev_get(), LINKTYPE_EN10MB);
 }
 
 static const struct proto_ops eth_proto_ops = {

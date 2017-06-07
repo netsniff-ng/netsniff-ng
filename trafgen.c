@@ -57,6 +57,7 @@
 #include "csum.h"
 #include "trafgen_proto.h"
 #include "pcap_io.h"
+#include "trafgen_dev.h"
 
 enum shaper_type {
 	SHAPER_NONE,
@@ -79,6 +80,8 @@ struct shaper {
 struct ctx {
 	bool rand, rfraw, jumbo_support, verbose, smoke_test, enforce, qdisc_path;
 	size_t reserve_size;
+	struct dev_io *dev_out;
+	struct dev_io *dev_in;
 	unsigned long num;
 	unsigned int cpus;
 	uid_t uid; gid_t gid;
@@ -145,7 +148,6 @@ static const char *copyright = "Please report bugs to <netsniff-ng@googlegroups.
 	"This is free software: you are free to change and redistribute it.\n"
 	"There is NO WARRANTY, to the extent permitted by law.";
 
-static int sock;
 static struct cpu_stats *stats;
 static unsigned int seed;
 
@@ -664,11 +666,6 @@ static void xmit_slowpath_or_die(struct ctx *ctx, unsigned int cpu, unsigned lon
 	unsigned long num = 1, i = 0;
 	struct timeval start, end, diff;
 	unsigned long long tx_bytes = 0, tx_packets = 0;
-	struct sockaddr_ll saddr = {
-		.sll_family = PF_PACKET,
-		.sll_halen = ETH_ALEN,
-		.sll_ifindex = device_ifindex(ctx->device),
-	};
 
 	if (ctx->num > 0)
 		num = ctx->num;
@@ -688,8 +685,7 @@ static void xmit_slowpath_or_die(struct ctx *ctx, unsigned int cpu, unsigned lon
 	while (likely(sigint == 0 && num > 0 && plen > 0)) {
 		packet_apply_dyn_elements(i);
 retry:
-		ret = sendto(sock, packets[i].payload, packets[i].len, 0,
-			     (struct sockaddr *) &saddr, sizeof(saddr));
+		ret = dev_io_write(ctx->dev_out, packets[i].payload, packets[i].len);
 		if (unlikely(ret < 0)) {
 			if (errno == ENOBUFS) {
 				sched_yield();
@@ -745,15 +741,16 @@ retry:
 
 static void xmit_fastpath_or_die(struct ctx *ctx, unsigned int cpu, unsigned long orig_num)
 {
-	int ifindex = device_ifindex(ctx->device);
+	int ifindex = dev_io_ifindex_get(ctx->dev_out);
 	uint8_t *out = NULL;
 	unsigned int it = 0;
 	unsigned long num = 1, i = 0;
-	size_t size = ring_size(ctx->device, ctx->reserve_size);
+	size_t size = ring_size(dev_io_name_get(ctx->dev_out), ctx->reserve_size);
 	struct ring tx_ring;
 	struct frame_map *hdr;
 	struct timeval start, end, diff;
 	unsigned long long tx_bytes = 0, tx_packets = 0;
+	int sock = dev_io_fd_get(ctx->dev_out);
 
 	set_sock_prio(sock, 512);
 
@@ -938,69 +935,37 @@ static void xmit_packet_precheck(struct ctx *ctx, unsigned int cpu)
 	}
 }
 
-static void pcap_load_packets(const char *path)
+static void pcap_load_packets(struct dev_io *dev)
 {
-	const struct pcap_file_ops *pcap_io = pcap_ops[PCAP_OPS_SG];
-	uint32_t link_type, magic;
-	pcap_pkthdr_t phdr;
+	struct timespec tstamp;
 	size_t buf_len;
 	uint8_t *buf;
-	int ret;
-	int fd;
-
-	fd = open(path, O_RDONLY | O_LARGEFILE | O_NOATIME);
-	if (fd < 0 && errno == EPERM)
-		fd = open_or_die(path, O_RDONLY | O_LARGEFILE);
-	if (fd < 0)
-		panic("Cannot open file %s! %s.\n", path, strerror(errno));
-
-	if (pcap_io->init_once_pcap)
-		pcap_io->init_once_pcap(false);
-
-	ret = pcap_io->pull_fhdr_pcap(fd, &magic, &link_type);
-	if (ret)
-		panic("Error reading pcap header!\n");
-
-	if (pcap_io->prepare_access_pcap) {
-		ret = pcap_io->prepare_access_pcap(fd, PCAP_MODE_RD, false);
-		if (ret)
-			panic("Error prepare reading pcap!\n");
-	}
+	int pkt_len;
 
 	buf_len = round_up(1024 * 1024, RUNTIME_PAGE_SIZE);
 	buf = xmalloc_aligned(buf_len, CO_CACHE_LINE_SIZE);
 
-	while (pcap_io->read_pcap(fd, &phdr, magic, buf, buf_len) > 0) {
+	while ((pkt_len = dev_io_read(dev, buf, buf_len, &tstamp)) > 0) {
 		struct packet *pkt;
-		size_t pkt_len;
-
-		pkt_len = pcap_get_length(&phdr, magic);
-		if (!pkt_len)
-			continue;
 
 		realloc_packet();
 
 		pkt = current_packet();
-
 		pkt->len = pkt_len;
 		pkt->payload = xzmalloc(pkt_len);
 		memcpy(pkt->payload, buf, pkt_len);
-		pcap_get_tstamp(&phdr, magic, &pkt->tstamp);
+		memcpy(&pkt->tstamp, &tstamp, sizeof(tstamp));
 	}
 
-	if (pcap_io->prepare_close_pcap)
-		pcap_io->prepare_close_pcap(fd, PCAP_MODE_RD);
-
 	free(buf);
-	close(fd);
 }
 
 static void main_loop(struct ctx *ctx, char *confname, bool slow,
 		      unsigned int cpu, bool invoke_cpp, char **cpp_argv,
 		      unsigned long orig_num)
 {
-	if (ctx->pcap_in) {
-		pcap_load_packets(ctx->pcap_in);
+	if (ctx->dev_in && dev_io_is_pcap(ctx->dev_in)) {
+		pcap_load_packets(ctx->dev_in);
 		shaper_set_tstamp(&ctx->sh, &packets[0].tstamp);
 		ctx->num = plen;
 	} else {
@@ -1029,17 +994,13 @@ static void main_loop(struct ctx *ctx, char *confname, bool slow,
 		fflush(stdout);
 	}
 
-	sock = pf_socket();
-
-	if (ctx->qdisc_path == false)
-		set_sock_qdisc_bypass(sock, ctx->verbose);
+	if (dev_io_is_netdev(ctx->dev_out) && ctx->qdisc_path == false)
+		set_sock_qdisc_bypass(dev_io_fd_get(ctx->dev_out), ctx->verbose);
 
 	if (slow)
 		xmit_slowpath_or_die(ctx, cpu, orig_num);
 	else
 		xmit_fastpath_or_die(ctx, cpu, orig_num);
-
-	close(sock);
 
 	cleanup_packets();
 }
@@ -1306,15 +1267,11 @@ int main(int argc, char **argv)
 		panic("No networking device given!\n");
 	if (confname == NULL && !ctx.packet_str)
 		panic("No configuration file or packet string given!\n");
-	if (device_mtu(ctx.device) == 0)
-		panic("This is no networking device!\n");
 
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGQUIT, signal_handler);
 	register_signal(SIGTERM, signal_handler);
 	register_signal(SIGHUP, signal_handler);
-
-	protos_init(ctx.device);
 
 	if (prio_high) {
 		set_proc_prio(-20);
@@ -1334,7 +1291,21 @@ int main(int argc, char **argv)
 		sleep(0);
 	}
 
-	if (shaper_is_set(&ctx.sh) || (ctx.pcap_in)) {
+	if (ctx.pcap_in) {
+		ctx.dev_in = dev_io_open(ctx.pcap_in, DEV_IO_IN);
+		if (!ctx.dev_in)
+			panic("Failed to open input device\n");
+	}
+
+	ctx.dev_out = dev_io_open(ctx.device, DEV_IO_OUT);
+	if (!ctx.dev_out)
+		panic("Failed to open output device\n");
+
+	protos_init(ctx.dev_out);
+
+	if (shaper_is_set(&ctx.sh) || (ctx.dev_in && dev_io_is_pcap(ctx.dev_in))
+	    || dev_io_is_pcap(ctx.dev_out)) {
+
 		prctl(PR_SET_TIMERSLACK, 1UL);
 		/* Fall back to single core to not mess up correct timing.
 		 * We are slow anyway!
@@ -1351,9 +1322,10 @@ int main(int argc, char **argv)
 	if (ctx.num)
 		ctx.cpus = min_t(unsigned int, ctx.num, ctx.cpus);
 
-	irq = device_irq_number(ctx.device);
-	if (set_irq_aff)
+	if (set_irq_aff && dev_io_is_netdev(ctx.dev_out)) {
+		irq = device_irq_number(ctx.device);
 		device_set_irq_affinity_list(irq, 0, ctx.cpus - 1);
+	}
 
 	stats = setup_shared_var(ctx.cpus);
 
@@ -1411,8 +1383,12 @@ int main(int argc, char **argv)
 thread_out:
 	xunlockme();
 	destroy_shared_var(stats, ctx.cpus);
-	if (set_irq_aff)
+	if (dev_io_is_netdev(ctx.dev_out) && set_irq_aff)
 		device_restore_irq_affinity_list();
+
+	dev_io_close(ctx.dev_out);
+	if (ctx.dev_in)
+		dev_io_close(ctx.dev_in);
 
 	argv_free(cpp_argv);
 	free(ctx.device);

@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "trafgen_dev.h"
+
 enum proto_id {
 	PROTO_NONE = 0,
 	PROTO_ETH,
@@ -94,7 +96,7 @@ struct proto_field {
 	struct proto_hdr *hdr;
 };
 
-extern void protos_init(const char *dev);
+extern void protos_init(struct dev_io *dev);
 extern void proto_ops_register(const struct proto_ops *ops);
 
 extern struct proto_hdr *proto_header_push(enum proto_id pid);
@@ -176,6 +178,6 @@ extern void proto_field_set_default_string(struct proto_field *field, const char
 extern void proto_field_func_add(struct proto_field *field,
 				 struct proto_field_func *func);
 
-extern const char *proto_dev_get(void);
+extern struct dev_io *proto_dev_get(void);
 
 #endif /* TRAFGEN_PROTO_H */
