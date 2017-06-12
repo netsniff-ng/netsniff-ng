@@ -1084,7 +1084,7 @@ int main(int argc, char **argv)
 			break;
 		case 'd':
 		case 'o':
-			ctx.device = xstrndup(optarg, IFNAMSIZ);
+			ctx.device = xstrdup(optarg);
 			break;
 		case 'H':
 			prio_high = true;

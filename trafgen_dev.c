@@ -174,8 +174,10 @@ struct dev_io *dev_io_open(const char *name, enum dev_io_mode_t mode)
 	struct dev_io *dev = xzmalloc(sizeof(struct dev_io));
 
 	if (strstr(name, ".pcap")) {
+		dev->name = xstrdup(name);
 		dev->ops = &dev_pcap_ops;
 	} else if (device_mtu(name) > 0) {
+		dev->name = xstrndup(name, IFNAMSIZ);
 		dev->ops = &dev_net_ops;
 	} else {
 		fprintf(stderr, "No networking device or pcap file: %s\n", name);
@@ -189,7 +191,6 @@ struct dev_io *dev_io_open(const char *name, enum dev_io_mode_t mode)
 		}
 	}
 
-	dev->name = xstrdup(name);
 	return dev;
 };
 
