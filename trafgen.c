@@ -743,7 +743,7 @@ static void xmit_fastpath_or_die(struct ctx *ctx, unsigned int cpu, unsigned lon
 {
 	int ifindex = dev_io_ifindex_get(ctx->dev_out);
 	uint8_t *out = NULL;
-	unsigned int it = 0;
+	unsigned int it = 0, retry = 100;
 	unsigned long num = 1, i = 0;
 	size_t size = ring_size(dev_io_name_get(ctx->dev_out), ctx->reserve_size);
 	struct ring tx_ring;
@@ -812,7 +812,8 @@ static void xmit_fastpath_or_die(struct ctx *ctx, unsigned int cpu, unsigned lon
 	bug_on(gettimeofday(&end, NULL));
 	timersub(&end, &start, &diff);
 
-	pull_and_flush_tx_ring_wait(sock);
+	while (pull_and_flush_tx_ring_wait(sock) < 0 && errno == ENOBUFS && retry-- > 0)
+		usleep(10000);
 	destroy_tx_ring(sock, &tx_ring);
 
 	stats[cpu].tx_packets = tx_packets;
