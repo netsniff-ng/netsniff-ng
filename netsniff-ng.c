@@ -48,6 +48,11 @@
 #include "dissector.h"
 #include "xmalloc.h"
 
+#ifdef HAVE_PF_RING
+#include <netinet/if_ether.h>
+#include "pfring.h"
+#endif
+
 enum dump_mode {
 	DUMP_INTERVAL_TIME,
 	DUMP_INTERVAL_SIZE,
@@ -67,6 +72,9 @@ struct ctx {
 	uint32_t fanout_group, fanout_type;
 	uint64_t pkts_seen, pkts_recvd, pkts_drops;
 	uint64_t pkts_recvd_last, pkts_drops_last, pkts_skipd_last;
+#ifdef HAVE_PF_RING
+	pfring *pfring_sock;
+#endif
 };
 
 static volatile sig_atomic_t sigint = 0, sighup = 0;
@@ -214,6 +222,16 @@ static int update_rx_stats(struct ctx *ctx, int sock, bool is_v3)
 	uint64_t packets, drops;
 	int ret;
 
+#ifdef HAVE_PF_RING
+	if (ctx->pfring_sock) {
+		pfring_stat stats = { 0 };
+		ret = pfring_stats(ctx->pfring_sock, &stats);
+		if (ret == 0) {
+			packets = stats.recv;
+			drops = stats.drop;
+		}
+	} else
+#endif
 	ret = get_rx_net_stats(sock, &packets, &drops, is_v3);
 	if (ret)
 		return ret;
@@ -1002,6 +1020,83 @@ next:
 }
 #endif /* HAVE_TPACKET3 */
 
+#ifdef HAVE_PF_RING
+static void recv_pfring(struct ctx *ctx, int *fd)
+{
+	u_char *buffer_p = NULL;
+	struct pfring_pkthdr hdr = { 0 };
+	struct sockaddr_ll sll = { 0 };
+	uint8_t *packet;
+	pcap_pkthdr_t phdr;
+	int ret;
+
+	while (likely(sigint == 0)) {
+		buffer_p = NULL;
+		ret = pfring_recv(ctx->pfring_sock, &buffer_p, 0, &hdr, 1);
+
+		if (ret <= 0) 
+			continue;
+
+		packet = ((uint8_t *) buffer_p);
+
+		/* Note: pf_ring is not used with link_type == LINKTYPE_LINUX_SLL
+		pfring_parse_pkt(buffer_p, &hdr, 3, 0, 0);
+		sll.sll_protocol = hdr.extended_hdr.parsed_pkt.eth_type;
+		sll.sll_hatype
+		sll.sll_halen
+		sll.sll_addr[8]
+		*/
+
+		sll.sll_ifindex = hdr.extended_hdr.if_index;
+		if (hdr.extended_hdr.rx_direction)
+			sll.sll_pkttype = PACKET_OTHERHOST; /* FIXX PACKET_HOST PACKET_BROADCAST PACKET_MULTICAST PACKET_USER PACKET_KERNEL */
+		else
+			sll.sll_pkttype = PACKET_OUTGOING;
+
+		if (skip_packet(ctx, &sll))
+			goto next;
+
+		ctx->pkts_seen++;
+
+		if (dump_to_pcap(ctx)) {
+			uint32_t sec, nsec;
+			int ret;
+
+			if (hdr.extended_hdr.timestamp_ns) {
+				sec = hdr.extended_hdr.timestamp_ns / 1000000000;
+				nsec = hdr.extended_hdr.timestamp_ns % 1000000000;
+			} else {
+				sec = hdr.ts.tv_sec;
+				nsec = hdr.ts.tv_usec * 1000;
+			}
+
+			__tpacket_hdr_to_pcap_pkthdr(sec, nsec, hdr.caplen, hdr.len, 0, &sll, &phdr, ctx->magic);
+
+			ret = __pcap_io->write_pcap(*fd, &phdr, ctx->magic, packet,
+						    pcap_get_length(&phdr, ctx->magic));
+			if (unlikely(ret != (int) pcap_get_total_length(&phdr, ctx->magic)))
+				panic("Write error to pcap!\n");
+		}
+
+		show_frame_hdr_pfring(packet, hdr.caplen, ctx->link_type,
+			              &sll, &hdr, ctx->print_mode, ctx->pkts_seen);
+
+		dissector_entry_point(packet, hdr.caplen, ctx->link_type,
+				      ctx->print_mode, &sll);
+next:
+		if (frame_count_max != 0) {
+			if (unlikely(ctx->pkts_seen >= frame_count_max)) {
+				sigint = 1;
+				break;
+			}
+		}
+
+		update_pcap_next_dump(ctx, hdr.caplen, fd, -1, false);
+	}
+}
+#endif /* HAVE_TPACKET3 */
+
+
 static void recv_only_or_dump(struct ctx *ctx)
 {
 	short ifflags = 0;
@@ -1014,9 +1109,33 @@ static void recv_only_or_dump(struct ctx *ctx)
 	struct timeval start, end, diff;
 	bool is_v3 = is_defined(HAVE_TPACKET3);
 
+	ifindex = device_ifindex(ctx->device_in);
+#ifdef HAVE_PF_RING
+	if (ctx->link_type != LINKTYPE_LINUX_SLL) {
+		u_int32_t flags = PF_RING_LONG_HEADER | PF_RING_HW_TIMESTAMP;
+		if (ctx->promiscuous)
+			flags |= PF_RING_PROMISC;
+		ctx->pfring_sock = pfring_open(ctx->device_in, 
+		  device_mtu(ctx->device_in) + sizeof(struct ether_header) + sizeof(struct eth_vlan_hdr), 
+		  flags);
+	}
+	if (ctx->pfring_sock) {
+		uint32_t v;
+		pfring_version(ctx->pfring_sock, &v);
+		printf("Using PF_RING v.%d.%d.%d\n",
+		  (v & 0xFFFF0000) >> 16,
+		  (v & 0x0000FF00) >>  8,
+		  (v & 0x000000FF) >>  0);
+		pfring_set_application_name(ctx->pfring_sock, "netsniff-ng");
+		pfring_set_direction(ctx->pfring_sock, rx_and_tx_direction);
+		pfring_set_socket_mode(ctx->pfring_sock, recv_only_mode);
+		if (ctx->filter)
+			pfring_set_bpf_filter(ctx->pfring_sock, ctx->filter);
+		sock = -1;
+	} else {
+#endif
 	sock = pf_socket_type(ctx->link_type);
 
-	ifindex = device_ifindex(ctx->device_in);
 	size = ring_size(ctx->device_in, ctx->reserve_size);
 
 	enable_kernel_bpf_jit_compiler();
@@ -1034,6 +1153,9 @@ static void recv_only_or_dump(struct ctx *ctx)
 
 	ring_rx_setup(&rx_ring, sock, size, ifindex, &rx_poll, is_v3, true,
 		      ctx->verbose, ctx->fanout_group, ctx->fanout_type);
+#ifdef HAVE_PF_RING
+	}
+#endif
 
 	dissector_init_all(ctx->print_mode);
 
@@ -1046,6 +1168,11 @@ static void recv_only_or_dump(struct ctx *ctx)
 			       ctx->device_in, irq, ctx->cpu);
 	}
 
+#ifdef HAVE_PF_RING
+	if (ctx->pfring_sock)
+		pfring_enable_ring(ctx->pfring_sock);
+	else
+#endif
 	if (ctx->promiscuous)
 		ifflags = device_enter_promiscuous_mode(ctx->device_in);
 
@@ -1074,6 +1201,11 @@ static void recv_only_or_dump(struct ctx *ctx)
 
 	bug_on(gettimeofday(&start, NULL));
 
+#ifdef HAVE_PF_RING
+	if (ctx->pfring_sock)
+		recv_pfring(ctx, &fd);
+	else
+#endif
 	while (likely(sigint == 0)) {
 #ifdef HAVE_TPACKET3
 		struct block_desc *pbd;
@@ -1154,12 +1286,18 @@ next:
 	printf("\r%12lu  sec, %lu usec in total\n",
 			diff.tv_sec, diff.tv_usec);
 
+#ifdef HAVE_PF_RING
+	if (!ctx->pfring_sock) {
+#endif
 	bpf_release(&bpf_ops);
-	dissector_cleanup_all();
 	destroy_rx_ring(sock, &rx_ring);
 
 	if (ctx->promiscuous)
 		device_leave_promiscuous_mode(ctx->device_in, ifflags);
+#ifdef HAVE_PF_RING
+	}
+#endif
+	dissector_cleanup_all();
 
 	if (ctx->rfraw)
 		leave_rfmon_mac80211(ctx->device_in);
@@ -1171,6 +1309,11 @@ next:
 			finish_single_pcap_file(ctx, fd);
 	}
 
+#ifdef HAVE_PF_RING
+	if (ctx->pfring_sock)
+		pfring_close(ctx->pfring_sock);
+	else
+#endif
 	close(sock);
 }
 

@@ -18,6 +18,7 @@ HAVE_HWTSTAMP=0
 HAVE_LIBGEOIP=0
 HAVE_LIBZ=0
 HAVE_TPACKET3=0
+HAVE_PF_RING=0
 
 DISABLE_LIBNL=0
 DISABLE_GEOIP=0
@@ -388,7 +389,6 @@ EOF
 	fi
 }
 
-
 check_ncurses()
 {
 	echo -n "[*] Checking ncurses ... "
@@ -570,6 +570,44 @@ EOF
 	fi
 }
 
+check_pf_ring()
+{
+	echo -n "[*] Checking PF_RING ... "
+
+	cat > $TMPDIR/pfringtest.c << EOF
+#include <stdio.h>
+#include "pfring.h"
+
+int main(void)
+{
+	u_int32_t version;
+	pfring_version_noring(&version);
+
+	printf("%08X\n", version);
+}
+EOF
+
+	if [ -d "${HOME}/PF_RING/" ] && [ "$HAVE_LIBPCAP" == "1" ] ; then
+		PF_RING_INC="-I ${HOME}/PF_RING/userland/lib -I ${HOME}/PF_RING/kernel"
+		PF_RING_LIB="-L${HOME}/PF_RING/userland/lib `${HOME}/PF_RING/userland/lib/pfring_config --libs`"
+		$CC $PF_RING_INC -o $TMPDIR/pfringtest $TMPDIR/pfringtest.c -lpfring $PF_RING_LIB -lpcap -lpthread >> config.log 2>&1
+		if [ ! -x $TMPDIR/pfringtest ] ; then
+			echo "[NO]"
+			echo "CONFIG_PF_RING=0" >> Config
+		else
+			echo "[YES]"
+			echo "CONFIG_PF_RING=1" >> Config
+			echo "CONFIG_PF_RING_INC:=$PF_RING_INC" >> Config
+			echo "CONFIG_PF_RING_LIB:=$PF_RING_LIB" >> Config
+			HAVE_PF_RING=1
+		fi
+
+	else
+		echo "[NO]"
+		echo "CONFIG_PF_RING=0" >> Config
+	fi
+}
+
 check_hwtstamp()
 {
 	echo -n "[*] Checking hw timestamping ... "
@@ -690,6 +728,7 @@ gen_config_hdr()
 	local _have_libz=""
 	local _have_hwts=""
 	local _have_tp3=""
+	local _have_pf_ring=""
 
 	echo "[*] Generating config.h ..."
 
@@ -736,6 +775,12 @@ gen_config_hdr()
 		_have_tp3="/* HAVE_TPACKET3 is not defined */"
 	fi
 
+	if [ "$HAVE_PF_RING" == "1" ] ; then
+		_have_pf_ring="#define HAVE_PF_RING 1"
+	else
+		_have_pf_ring="/* HAVE_PF_RING is not defined */"
+	fi
+
 	cat > config.h << EOF
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -751,6 +796,7 @@ $_have_libgeoip
 $_have_libz
 $_have_hwts
 $_have_tp3
+$_have_pf_ring
 #endif /* CONFIG_H */
 EOF
 }
@@ -779,6 +825,7 @@ check_libgeoip
 check_zlib
 check_urcu
 check_libpcap
+check_pf_ring
 check_hwtstamp
 check_libcli
 check_libnet

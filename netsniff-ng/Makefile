@@ -3,6 +3,9 @@ netsniff-ng-libs =	-lpthread
 ifeq ($(CONFIG_LIBPCAP), 1)
 netsniff-ng-libs +=	-lpcap
 endif
+ifeq ($(CONFIG_PF_RING), 1)
+netsniff-ng-libs +=	-lpfring $(CONFIG_PF_RING_LIB)
+endif
 ifeq ($(CONFIG_GEOIP), 1)
 netsniff-ng-libs +=	-lGeoIP \
 			-lz
