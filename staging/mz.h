@@ -40,6 +40,7 @@
 #include <netinet/in.h>
 #include <stdarg.h>
 #include <math.h>
+#include <stdint.h>
 
 extern int verbose_level;
 
