@@ -45,7 +45,6 @@
 #include "lockme.h"
 #include "privs.h"
 #include "proc.h"
-#include "mac80211.h"
 #include "ioops.h"
 #include "irq.h"
 #include "config.h"
@@ -85,7 +84,7 @@ struct ctx {
 	unsigned long num;
 	unsigned int cpus;
 	uid_t uid; gid_t gid;
-	char *device, *device_trans, *rhost;
+	char *device, *rhost;
 	struct sockaddr_in dest;
 	struct shaper sh;
 	char *packet_str;
@@ -1023,7 +1022,7 @@ static unsigned int generate_srand_seed(void)
 
 static void on_panic_del_rfmon(void *arg)
 {
-	leave_rfmon_mac80211(arg);
+	dev_io_close(arg);
 }
 
 int main(int argc, char **argv)
@@ -1283,15 +1282,6 @@ int main(int argc, char **argv)
 		set_system_socket_memory(vals, array_size(vals));
 	xlockme();
 
-	if (ctx.rfraw) {
-		ctx.device_trans = xstrdup(ctx.device);
-		xfree(ctx.device);
-
-		enter_rfmon_mac80211(ctx.device_trans, &ctx.device);
-		panic_handler_add(on_panic_del_rfmon, ctx.device);
-		sleep(0);
-	}
-
 	if (ctx.pcap_in) {
 		ctx.dev_in = dev_io_open(ctx.pcap_in, DEV_IO_IN);
 		if (!ctx.dev_in)
@@ -1301,6 +1291,13 @@ int main(int argc, char **argv)
 	ctx.dev_out = dev_io_open(ctx.device, DEV_IO_OUT);
 	if (!ctx.dev_out)
 		panic("Failed to open output device\n");
+
+	if (ctx.rfraw) {
+		if (dev_io_link_type_set(ctx.dev_out, LINKTYPE_IEEE802_11_RADIOTAP))
+			panic("Failed to setup rfraw device\n");
+
+		panic_handler_add(on_panic_del_rfmon, ctx.dev_out);
+	}
 
 	protos_init(ctx.dev_out);
 
@@ -1357,9 +1354,6 @@ int main(int argc, char **argv)
 			die();
 	}
 
-	if (ctx.rfraw)
-		leave_rfmon_mac80211(ctx.device);
-
 	if (set_sock_mem)
 		reset_system_socket_memory(vals, array_size(vals));
 
@@ -1393,7 +1387,6 @@ thread_out:
 
 	argv_free(cpp_argv);
 	free(ctx.device);
-	free(ctx.device_trans);
 	free(ctx.rhost);
 	free(confname);
 	free(ctx.packet_str);

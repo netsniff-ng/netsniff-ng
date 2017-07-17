@@ -98,7 +98,8 @@ a bigger memory footprint for the ring buffer.
 In case the output networking device is a wireless device, it is possible with
 trafgen to turn this into monitor mode and create a mon<X> device that trafgen
 will be transmitting on instead of wlan<X>, for instance. This enables trafgen
-to inject raw 802.11 frames.
+to inject raw 802.11 frames. In case if the output is a pcap file the link type
+is set to 127 (ieee80211 radio tap).
 .PP
 .SS -s <ipv4>, --smoke-test <ipv4>
 In case this option is enabled, trafgen will perform a smoke test. In other

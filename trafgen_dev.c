@@ -16,6 +16,8 @@
 #include "xmalloc.h"
 #include "pcap_io.h"
 #include "built_in.h"
+#include "mac80211.h"
+#include "linktype.h"
 #include "trafgen_dev.h"
 
 static int dev_pcap_open(struct dev_io *dev, const char *name, enum dev_io_mode_t mode)
@@ -164,9 +166,34 @@ static int dev_net_write(struct dev_io *dev, const uint8_t *buf, size_t len)
 	return sendto(dev->fd, buf, len, 0, (struct sockaddr *) &saddr, sizeof(saddr));
 }
 
+static int dev_net_set_link_type(struct dev_io *dev, int link_type)
+{
+	if (link_type != LINKTYPE_IEEE802_11 && link_type != LINKTYPE_IEEE802_11_RADIOTAP)
+		return 0;
+
+	dev->trans = xstrdup(dev->name);
+	xfree(dev->name);
+
+	enter_rfmon_mac80211(dev->trans, &dev->name);
+	dev->ifindex = __device_ifindex(dev->name);
+	dev->dev_type = device_type(dev->name);
+
+	return 0;
+}
+
+static void dev_net_close(struct dev_io *dev)
+{
+	if (dev->link_type == LINKTYPE_IEEE802_11 || dev->link_type == LINKTYPE_IEEE802_11_RADIOTAP)
+		leave_rfmon_mac80211(dev->name);
+
+	free(dev->trans);
+}
+
 static const struct dev_io_ops dev_net_ops = {
 	.open = dev_net_open,
 	.write = dev_net_write,
+	.set_link_type = dev_net_set_link_type,
+	.close = dev_net_close,
 };
 
 struct dev_io *dev_io_open(const char *name, enum dev_io_mode_t mode)
@@ -232,9 +259,15 @@ bool dev_io_is_pcap(struct dev_io *dev)
 	return dev->ops == &dev_pcap_ops;
 }
 
-void dev_io_link_type_set(struct dev_io *dev, int link_type)
+int dev_io_link_type_set(struct dev_io *dev, int link_type)
 {
+	if (dev->ops->set_link_type) {
+		if (dev->ops->set_link_type(dev, link_type))
+			return -1;
+	}
+
 	dev->link_type = link_type;
+	return 0;
 }
 
 int dev_io_ifindex_get(struct dev_io *dev)
