@@ -518,6 +518,10 @@ int getopts (int argc, char *argv[])
 			break;
 		 case 'f': // ASCII payload in FILE
 			afp = fopen(optarg, "r");
+			if (!afp) {
+				fprintf(stderr, " mz/getopts: Can not open file %s. %s!\n", optarg, strerror(errno));
+				return -1;
+			}
 			if (fgets((char*)tx.ascii_payload, MAX_PAYLOAD_SIZE, afp) == NULL)
 				fprintf(stderr, " mz/getopts: File empty?\n");
 			fclose(afp);
@@ -525,6 +529,10 @@ int getopts (int argc, char *argv[])
 			break;
 		 case 'F': // HEX payload in FILE
 			afp = fopen(optarg, "r");
+			if (!afp) {
+				fprintf(stderr, " mz/getopts: Can not open file %s. %s!\n", optarg, strerror(errno));
+				return -1;
+			}
 			i=0;
 			while ( (hexpld[i]=fgetc(afp))!=EOF ) {
 				if (isspace(hexpld[i])) {
