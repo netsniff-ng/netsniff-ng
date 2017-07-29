@@ -80,6 +80,6 @@ extern void set_fill(uint8_t val, size_t len);
 extern struct packet *current_packet(void);
 extern uint32_t current_packet_id(void);
 extern struct packet *packet_get(uint32_t id);
-extern void realloc_packet(void);
+extern struct packet *realloc_packet(void);
 
 #endif /* TRAFGEN_CONF */

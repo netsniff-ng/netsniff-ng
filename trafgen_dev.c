@@ -19,6 +19,7 @@
 #include "mac80211.h"
 #include "linktype.h"
 #include "trafgen_dev.h"
+#include "trafgen_conf.h"
 
 static int dev_pcap_open(struct dev_io *dev, const char *name, enum dev_io_mode_t mode)
 {
@@ -36,6 +37,8 @@ static int dev_pcap_open(struct dev_io *dev, const char *name, enum dev_io_mode_
 		}
 
 		dev->pcap_mode = PCAP_MODE_RD;
+		dev->buf_len = round_up(1024 * 1024, RUNTIME_PAGE_SIZE);
+		dev->buf = xmalloc_aligned(dev->buf_len, CO_CACHE_LINE_SIZE);
 	} else if (mode & DEV_IO_OUT) {
 		if (!strncmp("-", name, strlen("-"))) {
 			dev->fd = dup_or_die(fileno(stdout));
@@ -69,26 +72,35 @@ static int dev_pcap_open(struct dev_io *dev, const char *name, enum dev_io_mode_
 	return 0;
 }
 
-static int dev_pcap_read(struct dev_io *dev, uint8_t *buf, size_t len,
-			 struct timespec *tstamp)
+static struct packet *dev_pcap_read(struct dev_io *dev)
 {
+	size_t len = dev->buf_len;
+	uint8_t *buf = dev->buf;
 	pcap_pkthdr_t phdr;
+	struct packet *pkt;
 	size_t pkt_len;
 
 	if (dev->pcap_ops->read_pcap(dev->fd, &phdr, dev->pcap_magic, buf, len) <= 0)
-		return -1;
+		return NULL;
 
 	pkt_len = pcap_get_length(&phdr, dev->pcap_magic);
 	if (!pkt_len)
-		return -1;
+		return NULL;
 
-	pcap_get_tstamp(&phdr, dev->pcap_magic, tstamp);
+	pkt = realloc_packet();
 
-	return pkt_len;
+	pkt->len = pkt_len;
+	pkt->payload = xzmalloc(pkt_len);
+	memcpy(pkt->payload, buf, pkt_len);
+	pcap_get_tstamp(&phdr, dev->pcap_magic, &pkt->tstamp);
+
+	return pkt;
 }
 
-static int dev_pcap_write(struct dev_io *dev, const uint8_t *buf, size_t len)
+static int dev_pcap_write(struct dev_io *dev, const struct packet *pkt)
 {
+	uint8_t *buf = pkt->payload;
+	size_t len = pkt->len;
 	struct timeval time;
 	pcap_pkthdr_t phdr;
 	int ret;
@@ -130,8 +142,13 @@ static int dev_pcap_write(struct dev_io *dev, const uint8_t *buf, size_t len)
 
 static void dev_pcap_close(struct dev_io *dev)
 {
-	if (dev->pcap_mode == PCAP_MODE_WR)
+	if (dev->pcap_mode == PCAP_MODE_WR) {
 		dev->pcap_ops->fsync_pcap(dev->fd);
+	} else if (dev->pcap_mode == PCAP_MODE_RD) {
+		free(dev->buf);
+		dev->buf_len = 0;
+		dev->buf = NULL;
+	}
 
 	if (dev->pcap_ops->prepare_close_pcap)
 		dev->pcap_ops->prepare_close_pcap(dev->fd, dev->pcap_mode);
@@ -155,13 +172,15 @@ static int dev_net_open(struct dev_io *dev, const char *name, enum dev_io_mode_t
 	return 0;
 }
 
-static int dev_net_write(struct dev_io *dev, const uint8_t *buf, size_t len)
+static int dev_net_write(struct dev_io *dev, const struct packet *pkt)
 {
 	struct sockaddr_ll saddr = {
 		.sll_family = PF_PACKET,
 		.sll_halen = ETH_ALEN,
 		.sll_ifindex = dev->ifindex,
 	};
+	uint8_t *buf = pkt->payload;
+	size_t len = pkt->len;
 
 	return sendto(dev->fd, buf, len, 0, (struct sockaddr *) &saddr, sizeof(saddr));
 }
@@ -221,27 +240,26 @@ struct dev_io *dev_io_open(const char *name, enum dev_io_mode_t mode)
 	return dev;
 };
 
-int dev_io_write(struct dev_io *dev, const uint8_t *buf, size_t len)
+int dev_io_write(struct dev_io *dev, const struct packet *pkt)
 {
 	bug_on(!dev);
 	bug_on(!dev->ops);
 
 	if (dev->ops->write)
-		return dev->ops->write(dev, buf, len);
+		return dev->ops->write(dev, pkt);
 
 	return 0;
 }
 
-int dev_io_read(struct dev_io *dev, uint8_t *buf, size_t len,
-		struct timespec *tstamp)
+struct packet *dev_io_read(struct dev_io *dev)
 {
 	bug_on(!dev);
 	bug_on(!dev->ops);
 
 	if (dev->ops->read)
-		return dev->ops->read(dev, buf, len, tstamp);
+		return dev->ops->read(dev);
 
-	return 0;
+	return NULL;
 }
 
 const char *dev_io_name_get(struct dev_io *dev)

@@ -684,7 +684,7 @@ static void xmit_slowpath_or_die(struct ctx *ctx, unsigned int cpu, unsigned lon
 	while (likely(sigint == 0 && num > 0 && plen > 0)) {
 		packet_apply_dyn_elements(i);
 retry:
-		ret = dev_io_write(ctx->dev_out, packets[i].payload, packets[i].len);
+		ret = dev_io_write(ctx->dev_out, &packets[i]);
 		if (unlikely(ret < 0)) {
 			if (errno == ENOBUFS) {
 				sched_yield();
@@ -937,27 +937,10 @@ static void xmit_packet_precheck(struct ctx *ctx, unsigned int cpu)
 
 static void pcap_load_packets(struct dev_io *dev)
 {
-	struct timespec tstamp;
-	size_t buf_len;
-	uint8_t *buf;
-	int pkt_len;
+	struct packet *pkt;
 
-	buf_len = round_up(1024 * 1024, RUNTIME_PAGE_SIZE);
-	buf = xmalloc_aligned(buf_len, CO_CACHE_LINE_SIZE);
-
-	while ((pkt_len = dev_io_read(dev, buf, buf_len, &tstamp)) > 0) {
-		struct packet *pkt;
-
-		realloc_packet();
-
-		pkt = current_packet();
-		pkt->len = pkt_len;
-		pkt->payload = xzmalloc(pkt_len);
-		memcpy(pkt->payload, buf, pkt_len);
-		memcpy(&pkt->tstamp, &tstamp, sizeof(tstamp));
-	}
-
-	free(buf);
+	while ((pkt = dev_io_read(dev)) != 0)
+		/* nothing to do */;
 }
 
 static void main_loop(struct ctx *ctx, char *confname, bool slow,

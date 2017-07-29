@@ -12,6 +12,7 @@ enum dev_io_mode_t {
 };
 
 struct dev_io_ops;
+struct packet;
 
 struct dev_io {
 	int fd;
@@ -23,6 +24,8 @@ struct dev_io {
 	uint32_t pcap_magic;
 	bool is_initialized;
 	enum pcap_mode pcap_mode;
+	size_t buf_len;
+	uint8_t *buf;
 
 	const struct pcap_file_ops *pcap_ops;
 	const struct dev_io_ops *ops;
@@ -30,16 +33,15 @@ struct dev_io {
 
 struct dev_io_ops {
 	int(*open) (struct dev_io *dev, const char *name, enum dev_io_mode_t mode);
-	int(*write) (struct dev_io *dev, const uint8_t *buf, size_t len);
-	int(*read) (struct dev_io *dev, uint8_t *buf, size_t len, struct timespec *tstamp);
+	int(*write) (struct dev_io *dev, const struct packet *pkt);
+	struct packet *(*read) (struct dev_io *dev);
 	int(*set_link_type) (struct dev_io *dev, int link_type);
 	void(*close) (struct dev_io *dev);
 };
 
 extern struct dev_io *dev_io_open(const char *name, enum dev_io_mode_t mode);
-extern int dev_io_write(struct dev_io *dev, const uint8_t *buf, size_t len);
-extern int dev_io_read(struct dev_io *dev, uint8_t *buf, size_t len,
-		       struct timespec *tstamp);
+extern int dev_io_write(struct dev_io *dev, const struct packet *pkt);
+extern struct packet *dev_io_read(struct dev_io *dev);
 extern int dev_io_ifindex_get(struct dev_io *dev);
 extern int dev_io_fd_get(struct dev_io *dev);
 extern const char *dev_io_name_get(struct dev_io *dev);
