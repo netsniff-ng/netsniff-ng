@@ -35,6 +35,16 @@ struct packet *proto_hdr_packet(struct proto_hdr *hdr)
 	return packet_get(hdr->pkt_id);
 }
 
+struct proto_hdr *packet_last_header(struct packet *pkt)
+{
+	struct proto_hdr **headers = &pkt->headers[0];
+
+	if (pkt->headers_count == 0)
+		return NULL;
+
+	return headers[pkt->headers_count - 1];
+}
+
 struct proto_hdr *proto_lower_header(struct proto_hdr *hdr)
 {
 	struct packet *pkt = packet_get(hdr->pkt_id);
@@ -90,12 +100,18 @@ void proto_header_fields_add(struct proto_hdr *hdr,
 	struct proto_field *f;
 	int i;
 
-	if (!hdr->fields)
-		hdr->pkt_offset = pkt->len;
+	if (pkt->headers_count > 0) {
+		struct proto_hdr *last = packet_last_header(pkt);
+		bug_on(!last);
+
+		hdr->pkt_offset = last->pkt_offset + last->len;
+	}
 
 	proto_fields_realloc(hdr, hdr->fields_count + count);
 
 	for (i = 0; count >= 1; count--, i++) {
+		int fill_len;
+
 		f = &hdr->fields[hdr->fields_count - count];
 
 		f->id = fields[i].id;
@@ -109,9 +125,12 @@ void proto_header_fields_add(struct proto_hdr *hdr,
 		if (!f->len)
 			continue;
 
-		if (f->pkt_offset + f->len > pkt->len) {
+		fill_len = (f->pkt_offset + f->len) - (hdr->pkt_offset + hdr->len);
+		if (fill_len > 0) {
+			if (!pkt->is_created)
+				set_fill(0, (f->pkt_offset + f->len) - pkt->len);
+
 			hdr->len += f->len;
-			set_fill(0, (f->pkt_offset + f->len) - pkt->len);
 		}
 	}
 }
@@ -133,9 +152,8 @@ bool proto_hdr_field_is_set(struct proto_hdr *hdr, uint32_t fid)
 	return field ? field->is_set : false;
 }
 
-struct proto_hdr *proto_header_push(enum proto_id pid)
+struct proto_hdr *proto_packet_apply(enum proto_id pid, struct packet *pkt)
 {
-	struct packet *pkt = current_packet();
 	struct proto_hdr **headers = &pkt->headers[0];
 	const struct proto_ops *ops = proto_ops_by_id(pid);
 	struct proto_hdr *hdr;
@@ -144,7 +162,7 @@ struct proto_hdr *proto_header_push(enum proto_id pid)
 
 	hdr = xzmalloc(sizeof(*hdr));
 	hdr->ops = ops;
-	hdr->pkt_id = current_packet_id();
+	hdr->pkt_id = pkt->id;
 
 	if (ops && ops->header_init)
 		ops->header_init(hdr);
@@ -157,10 +175,23 @@ struct proto_hdr *proto_header_push(enum proto_id pid)
 	return hdr;
 }
 
+struct proto_hdr *proto_header_push(enum proto_id pid)
+{
+	return proto_packet_apply(pid, current_packet());
+}
+
 void proto_header_finish(struct proto_hdr *hdr)
 {
 	if (hdr && hdr->ops && hdr->ops->header_finish)
 		hdr->ops->header_finish(hdr);
+}
+
+enum proto_id proto_hdr_get_next_proto(struct proto_hdr *hdr)
+{
+	if (hdr->ops && hdr->ops->get_next_proto)
+		return hdr->ops->get_next_proto(hdr);
+
+	return __PROTO_MAX;
 }
 
 struct proto_hdr *proto_hdr_push_sub_header(struct proto_hdr *hdr, int id)
@@ -408,6 +439,13 @@ static uint8_t *__proto_field_get_bytes(struct proto_field *field)
 	return &packet_get(field->hdr->pkt_id)->payload[field->pkt_offset];
 }
 
+uint8_t *proto_hdr_field_get_bytes(struct proto_hdr *hdr, uint32_t fid)
+{
+	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
+
+	return __proto_field_get_bytes(field);
+}
+
 void proto_hdr_field_set_u8(struct proto_hdr *hdr, uint32_t fid, uint8_t val)
 {
 	proto_hdr_field_set_bytes(hdr, fid, (uint8_t *)&val, 1);
@@ -445,6 +483,14 @@ uint32_t proto_hdr_field_get_u32(struct proto_hdr *hdr, uint32_t fid)
 	uint32_t val = *(uint32_t *)__proto_field_get_bytes(field);
 
 	return field_unmask_and_unshift(field, be32_to_cpu(val));
+}
+
+uint32_t proto_hdr_field_get_be32(struct proto_hdr *hdr, uint32_t fid)
+{
+	struct proto_field *field = proto_hdr_field_by_id(hdr, fid);
+	uint32_t val = *(uint32_t *)__proto_field_get_bytes(field);
+
+	return field_unmask_and_unshift(field, val);
 }
 
 void proto_hdr_field_set_default_bytes(struct proto_hdr *hdr, uint32_t fid,
@@ -647,6 +693,13 @@ uint32_t proto_field_get_u32(struct proto_field *field)
 	return field_unmask_and_unshift(field, be32_to_cpu(val));
 }
 
+uint32_t proto_field_get_be32(struct proto_field *field)
+{
+	uint32_t val = *(uint32_t *)__proto_field_get_bytes(field);
+
+	return field_unmask_and_unshift(field, val);
+}
+
 void proto_field_set_be16(struct proto_field *field, uint16_t val)
 {
 	__proto_field_set_bytes(field, (uint8_t *)&val, 2, false, true);
@@ -709,6 +762,8 @@ void proto_packet_finish(void)
 		if (ops && ops->packet_finish)
 			ops->packet_finish(hdr);
 	}
+
+	current_packet()->is_created = true;
 }
 
 static inline uint32_t field_inc(struct proto_field *field)

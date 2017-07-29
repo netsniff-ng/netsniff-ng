@@ -40,9 +40,35 @@ static uint16_t pid_to_eth(enum proto_id pid)
 	}
 }
 
+static uint16_t eth_to_pid(uint16_t etype)
+{
+	switch (etype) {
+	case ETH_P_ARP:
+		return PROTO_ARP;
+	case ETH_P_IP:
+		return PROTO_IP4;
+	case ETH_P_IPV6:
+		return PROTO_IP6;
+	case ETH_P_MPLS_UC:
+		return PROTO_MPLS;
+	case ETH_P_8021Q:
+	case ETH_P_8021AD:
+		return PROTO_VLAN;
+	case ETH_P_PAUSE:
+		return PROTO_PAUSE;
+	default:
+		return __PROTO_MAX;
+	}
+}
+
 static void eth_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
 {
 	proto_hdr_field_set_default_be16(hdr, ETH_TYPE, pid_to_eth(pid));
+}
+
+static enum proto_id eth_get_next_proto(struct proto_hdr *hdr)
+{
+	return eth_to_pid(proto_hdr_field_get_u16(hdr, ETH_TYPE));
 }
 
 static void eth_header_init(struct proto_hdr *hdr)
@@ -59,6 +85,7 @@ static const struct proto_ops eth_proto_ops = {
 	.layer		= PROTO_L2,
 	.header_init	= eth_header_init,
 	.set_next_proto = eth_set_next_proto,
+	.get_next_proto = eth_get_next_proto,
 };
 
 static struct proto_field pause_fields[] = {
@@ -158,11 +185,17 @@ static void vlan_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
 		proto_hdr_field_set_be16(hdr, VLAN_ETYPE, pid_to_eth(pid));
 }
 
+static enum proto_id vlan_get_next_proto(struct proto_hdr *hdr)
+{
+	return eth_to_pid(proto_hdr_field_get_u16(hdr, VLAN_ETYPE));
+}
+
 static const struct proto_ops vlan_proto_ops = {
 	.id		= PROTO_VLAN,
 	.layer		= PROTO_L2,
 	.header_init	= vlan_header_init,
 	.set_next_proto = vlan_set_next_proto,
+	.get_next_proto = vlan_get_next_proto,
 };
 
 static struct proto_field arp_fields[] = {

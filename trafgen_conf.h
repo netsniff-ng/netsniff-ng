@@ -37,11 +37,13 @@ struct csum16 {
 };
 
 struct packet {
+	uint32_t id;
 	uint8_t *payload;
 	size_t len;
 	struct proto_hdr *headers[PROTO_MAX_LAYERS];
 	size_t headers_count;
 	struct timespec tstamp;
+	bool is_created;
 };
 
 struct packet_dyn {

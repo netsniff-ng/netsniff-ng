@@ -74,9 +74,9 @@ It is also possible to specify PCAP file with .pcap extension via -i,--in option
 by default packets will be sent at rate considering timestamp from PCAP file which
 might be reset via -b/-t options.
 .PP
-.SS -o <dev|pcap>, -d <dev|pcap>, --out <dev|pcap>, --dev <dev|pcap>
+.SS -o <dev|.pcap|.cfg>, -d <dev|.pcap|.cfg>, --out <dev|.pcap|.cfg>, --dev <dev|.pcap|.cfg>
 Defines the outgoing networking device such as eth0, wlan0 and others or
-a pcap file.
+a *.pcap or *.cfg file. Pcap and configuration files are identified by extension.
 .PP
 .SS -p, --cpp
 Pass the packet configuration to the C preprocessor before reading it into

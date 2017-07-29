@@ -20,6 +20,7 @@
 #include "linktype.h"
 #include "trafgen_dev.h"
 #include "trafgen_conf.h"
+#include "trafgen_dump.h"
 
 static int dev_pcap_open(struct dev_io *dev, const char *name, enum dev_io_mode_t mode)
 {
@@ -90,6 +91,7 @@ static struct packet *dev_pcap_read(struct dev_io *dev)
 	pkt = realloc_packet();
 
 	pkt->len = pkt_len;
+	pkt->is_created = true;
 	pkt->payload = xzmalloc(pkt_len);
 	memcpy(pkt->payload, buf, pkt_len);
 	pcap_get_tstamp(&phdr, dev->pcap_magic, &pkt->tstamp);
@@ -97,7 +99,7 @@ static struct packet *dev_pcap_read(struct dev_io *dev)
 	return pkt;
 }
 
-static int dev_pcap_write(struct dev_io *dev, const struct packet *pkt)
+static int dev_pcap_write(struct dev_io *dev, struct packet *pkt)
 {
 	uint8_t *buf = pkt->payload;
 	size_t len = pkt->len;
@@ -172,7 +174,7 @@ static int dev_net_open(struct dev_io *dev, const char *name, enum dev_io_mode_t
 	return 0;
 }
 
-static int dev_net_write(struct dev_io *dev, const struct packet *pkt)
+static int dev_net_write(struct dev_io *dev, struct packet *pkt)
 {
 	struct sockaddr_ll saddr = {
 		.sll_family = PF_PACKET,
@@ -215,6 +217,31 @@ static const struct dev_io_ops dev_net_ops = {
 	.close = dev_net_close,
 };
 
+static int dev_cfg_open(struct dev_io *dev, const char *name, enum dev_io_mode_t mode)
+{
+	dev->fd = open_or_die_m(name, O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE, DEFFILEMODE);
+	return 0;
+}
+
+static int dev_cfg_write(struct dev_io *dev, struct packet *pkt)
+{
+	if (packet_dump_fd(pkt, dev->fd))
+		return -1;
+
+	return pkt->len;
+}
+
+static void dev_cfg_close(struct dev_io *dev)
+{
+	close(dev->fd);
+}
+
+static const struct dev_io_ops dev_cfg_ops = {
+	.open = dev_cfg_open,
+	.write = dev_cfg_write,
+	.close = dev_cfg_close,
+};
+
 struct dev_io *dev_io_open(const char *name, enum dev_io_mode_t mode)
 {
 	struct dev_io *dev = xzmalloc(sizeof(struct dev_io));
@@ -222,6 +249,9 @@ struct dev_io *dev_io_open(const char *name, enum dev_io_mode_t mode)
 	if (strstr(name, ".pcap")) {
 		dev->name = xstrdup(name);
 		dev->ops = &dev_pcap_ops;
+	} else if (strstr(name, ".cfg")) {
+		dev->name = xstrdup(name);
+		dev->ops = &dev_cfg_ops;
 	} else if (device_mtu(name) > 0) {
 		dev->name = xstrndup(name, IFNAMSIZ);
 		dev->ops = &dev_net_ops;
@@ -240,7 +270,7 @@ struct dev_io *dev_io_open(const char *name, enum dev_io_mode_t mode)
 	return dev;
 };
 
-int dev_io_write(struct dev_io *dev, const struct packet *pkt)
+int dev_io_write(struct dev_io *dev, struct packet *pkt)
 {
 	bug_on(!dev);
 	bug_on(!dev->ops);

@@ -38,7 +38,7 @@ static void ipv4_header_init(struct proto_hdr *hdr)
 	struct dev_io *dev = proto_dev_get();
 
 	/* In case of tun interface we do not need to create Ethernet header */
-	if (dev_io_is_pcap(dev) || device_type(dev_io_name_get(dev)) != ARPHRD_NONE)
+	if (!dev_io_is_netdev(dev) || device_type(dev_io_name_get(dev)) != ARPHRD_NONE)
 		proto_lower_default_add(hdr, PROTO_ETH);
 
 	proto_header_fields_add(hdr, ipv4_fields, array_size(ipv4_fields));
@@ -117,6 +117,24 @@ static void ipv4_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
 	proto_hdr_field_set_default_u8(hdr, IP4_PROTO, ip_proto);
 }
 
+static enum proto_id ipv4_get_next_proto(struct proto_hdr *hdr)
+{
+	switch (proto_hdr_field_get_u8(hdr, IP4_PROTO)) {
+	case IPPROTO_IPIP:
+		return PROTO_IP4;
+	case IPPROTO_IPV6:
+		return PROTO_IP6;
+	case IPPROTO_ICMP:
+		return PROTO_ICMP4;
+	case IPPROTO_UDP:
+		return PROTO_UDP;
+	case IPPROTO_TCP:
+		return PROTO_TCP;
+	default:
+		return __PROTO_MAX;
+	}
+}
+
 static const struct proto_ops ipv4_proto_ops = {
 	.id		= PROTO_IP4,
 	.layer		= PROTO_L3,
@@ -125,6 +143,7 @@ static const struct proto_ops ipv4_proto_ops = {
 	.field_changed  = ipv4_field_changed,
 	.packet_finish  = ipv4_packet_finish,
 	.set_next_proto = ipv4_set_next_proto,
+	.get_next_proto = ipv4_get_next_proto,
 };
 
 static struct proto_field ipv6_fields[] = {

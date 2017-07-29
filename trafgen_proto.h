@@ -49,6 +49,7 @@ struct proto_ops {
 	void (*packet_finish)(struct proto_hdr *hdr);
 	void (*packet_update)(struct proto_hdr *hdr);
 	void (*set_next_proto)(struct proto_hdr *hdr, enum proto_id pid);
+	enum proto_id (*get_next_proto)(struct proto_hdr *hdr);
 };
 
 struct proto_hdr {
@@ -101,11 +102,13 @@ struct proto_field {
 extern void protos_init(struct dev_io *dev);
 extern void proto_ops_register(const struct proto_ops *ops);
 
+struct proto_hdr *proto_packet_apply(enum proto_id pid, struct packet *pkt);
 extern struct proto_hdr *proto_header_push(enum proto_id pid);
 extern void proto_header_finish(struct proto_hdr *hdr);
 extern void proto_packet_finish(void);
 extern void proto_packet_update(uint32_t idx);
 
+extern enum proto_id proto_hdr_get_next_proto(struct proto_hdr *hdr);
 extern struct packet *proto_hdr_packet(struct proto_hdr *hdr);
 extern struct proto_hdr *proto_hdr_push_sub_header(struct proto_hdr *hdr, int id);
 extern void proto_hdr_move_sub_header(struct proto_hdr *hdr, struct proto_hdr *from,
@@ -114,6 +117,7 @@ extern void proto_hdr_move_sub_header(struct proto_hdr *hdr, struct proto_hdr *f
 extern struct proto_hdr *proto_lower_default_add(struct proto_hdr *hdr,
 						 enum proto_id pid);
 
+extern struct proto_hdr *packet_last_header(struct packet *pkt);
 extern struct proto_hdr *proto_lower_header(struct proto_hdr *hdr);
 extern struct proto_hdr *proto_upper_header(struct proto_hdr *hdr);
 extern uint8_t *proto_header_ptr(struct proto_hdr *hdr);
@@ -123,6 +127,7 @@ extern void proto_header_fields_add(struct proto_hdr *hdr,
 				    size_t count);
 
 extern bool proto_hdr_field_is_set(struct proto_hdr *hdr, uint32_t fid);
+extern uint8_t *proto_hdr_field_get_bytes(struct proto_hdr *hdr, uint32_t fid);
 extern void proto_hdr_field_set_bytes(struct proto_hdr *hdr, uint32_t fid,
 				  const uint8_t *bytes, size_t len);
 extern void proto_hdr_field_set_u8(struct proto_hdr *hdr, uint32_t fid, uint8_t val);
@@ -131,6 +136,7 @@ extern void proto_hdr_field_set_u16(struct proto_hdr *hdr, uint32_t fid, uint16_
 extern uint16_t proto_hdr_field_get_u16(struct proto_hdr *hdr, uint32_t fid);
 extern void proto_hdr_field_set_u32(struct proto_hdr *hdr, uint32_t fid, uint32_t val);
 extern uint32_t proto_hdr_field_get_u32(struct proto_hdr *hdr, uint32_t fid);
+extern uint32_t proto_hdr_field_get_be32(struct proto_hdr *hdr, uint32_t fid);
 
 extern void proto_hdr_field_set_default_bytes(struct proto_hdr *hdr, uint32_t fid,
 					  const uint8_t *bytes, size_t len);
@@ -172,6 +178,7 @@ extern void proto_field_set_u16(struct proto_field *field, uint16_t val);
 extern uint16_t proto_field_get_u16(struct proto_field *field);
 extern void proto_field_set_u32(struct proto_field *field, uint32_t val);
 extern uint32_t proto_field_get_u32(struct proto_field *field);
+extern uint32_t proto_field_get_be32(struct proto_field *field);
 extern void proto_field_set_be16(struct proto_field *field, uint16_t val);
 extern void proto_field_set_be32(struct proto_field *field, uint32_t val);
 extern void proto_field_set_bytes(struct proto_field *field, const uint8_t *bytes, size_t len);
