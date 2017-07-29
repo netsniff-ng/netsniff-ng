@@ -71,7 +71,7 @@ static void udp_csum_update(struct proto_hdr *hdr)
 
 static void udp_packet_finish(struct proto_hdr *hdr)
 {
-	struct packet *pkt = current_packet();
+	struct packet *pkt = proto_hdr_packet(hdr);
 	uint16_t total_len;
 
 	total_len = pkt->len - hdr->pkt_offset;
@@ -142,7 +142,7 @@ static void tcp_field_changed(struct proto_field *field)
 static void tcp_csum_update(struct proto_hdr *hdr)
 {
 	struct proto_hdr *lower = proto_lower_header(hdr);
-	struct packet *pkt = current_packet();
+	struct packet *pkt = proto_hdr_packet(hdr);
 	uint16_t total_len;
 	uint16_t csum;
 

@@ -81,7 +81,7 @@ static void ipv4_csum_update(struct proto_hdr *hdr)
 
 static void ipv4_packet_finish(struct proto_hdr *hdr)
 {
-	struct packet *pkt = current_packet();
+	struct packet *pkt = proto_hdr_packet(hdr);
 	uint16_t total_len;
 
 	total_len = pkt->len - hdr->pkt_offset;
@@ -166,7 +166,7 @@ static void ipv6_field_changed(struct proto_field *field)
 
 static void ipv6_packet_finish(struct proto_hdr *hdr)
 {
-	struct packet *pkt = current_packet();
+	struct packet *pkt = proto_hdr_packet(hdr);
 	uint16_t total_len = pkt->len - hdr->pkt_offset - IPV6_HDR_LEN;
 
 	proto_hdr_field_set_default_be16(hdr, IP6_LEN, total_len);

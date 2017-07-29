@@ -7,6 +7,8 @@
 
 #include "trafgen_dev.h"
 
+struct packet;
+
 enum proto_id {
 	PROTO_NONE = 0,
 	PROTO_ETH,
@@ -104,6 +106,7 @@ extern void proto_header_finish(struct proto_hdr *hdr);
 extern void proto_packet_finish(void);
 extern void proto_packet_update(uint32_t idx);
 
+extern struct packet *proto_hdr_packet(struct proto_hdr *hdr);
 extern struct proto_hdr *proto_hdr_push_sub_header(struct proto_hdr *hdr, int id);
 extern void proto_hdr_move_sub_header(struct proto_hdr *hdr, struct proto_hdr *from,
 				      struct proto_hdr *to);

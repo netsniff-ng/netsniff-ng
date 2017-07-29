@@ -30,6 +30,11 @@ static struct ctx ctx;
 
 static const struct proto_ops *registered_ops[__PROTO_MAX];
 
+struct packet *proto_hdr_packet(struct proto_hdr *hdr)
+{
+	return packet_get(hdr->pkt_id);
+}
+
 struct proto_hdr *proto_lower_header(struct proto_hdr *hdr)
 {
 	struct packet *pkt = packet_get(hdr->pkt_id);
@@ -266,12 +271,13 @@ void proto_hdr_move_sub_header(struct proto_hdr *hdr, struct proto_hdr *from,
 struct proto_hdr *proto_lower_default_add(struct proto_hdr *upper,
 					  enum proto_id pid)
 {
+	struct packet *pkt = proto_hdr_packet(upper);
+	size_t headers_count = pkt->headers_count;
 	struct proto_hdr *current;
-	size_t headers_count = current_packet()->headers_count;
 	const struct proto_ops *ops;
 
 	if (headers_count > 0) {
-		current = current_packet()->headers[headers_count - 1];
+		current = pkt->headers[headers_count - 1];
 		ops = current->ops;
 
 		if (ops->layer >= proto_ops_by_id(pid)->layer)
