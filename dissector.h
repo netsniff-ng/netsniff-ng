@@ -19,6 +19,10 @@
 #include "linktype.h"
 #include "vlan.h"
 
+#ifdef HAVE_PF_RING
+#include "pfring.h"
+#endif
+
 #define PRINT_NORM		0
 #define PRINT_LESS		1
 #define PRINT_HEX		2
@@ -114,6 +118,46 @@ static inline void show_frame_hdr(uint8_t *packet, size_t len, int linktype,
 	__show_frame_hdr(packet, len, linktype, &hdr->s_ll, &hdr->tp_h, mode,
 			 false, count);
 }
+
+#ifdef HAVE_PF_RING
+static inline void show_frame_hdr_pfring(uint8_t *packet, size_t len, int linktype,
+				         struct sockaddr_ll *s_ll, struct pfring_pkthdr *hdr,
+				         int mode, unsigned long count)
+{
+	char tmp[IFNAMSIZ];
+	uint8_t pkttype = s_ll->sll_pkttype;
+	uint32_t sec, nsec;
+
+	if (mode == PRINT_NONE)
+		return;
+
+	switch (mode) {
+	case PRINT_LESS:
+		tprintf("%s %s %u #%lu",
+			packet_types[pkttype] ? : "?",
+			if_indextoname(s_ll->sll_ifindex, tmp) ? : "?",
+			hdr->len,
+			count);
+		break;
+	default:
+		if (hdr->extended_hdr.timestamp_ns) {
+			sec = hdr->extended_hdr.timestamp_ns / 1000000000;
+			nsec = hdr->extended_hdr.timestamp_ns % 1000000000;
+		} else {
+			sec = hdr->ts.tv_sec;
+			nsec = hdr->ts.tv_usec*1000;
+		}
+		tprintf("%s %s %u %us.%uns #%lu %s\n",
+			packet_types[pkttype] ? : "?",
+			if_indextoname(s_ll->sll_ifindex, tmp) ? : "?",
+			hdr->len,
+			sec, nsec,
+			count,
+			"");
+		break;
+	}
+}
+#endif
 
 extern void dissector_init_all(int fnttype);
 extern void dissector_entry_point(uint8_t *packet, size_t len, int linktype,

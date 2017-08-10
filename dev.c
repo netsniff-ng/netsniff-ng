@@ -13,6 +13,7 @@
 #include "die.h"
 #include "link.h"
 #include "built_in.h"
+#include "config.h"
 
 int __device_ifindex(const char *ifname)
 {
@@ -40,7 +41,16 @@ int __device_ifindex(const char *ifname)
 
 int device_ifindex(const char *ifname)
 {
-	int index = __device_ifindex(ifname);
+	int index;
+#ifdef HAVE_PF_RING
+	const char *col;
+
+	col = strchr(ifname, ':');
+	if (col != NULL)
+		ifname = ++col;
+#endif
+
+	index = __device_ifindex(ifname);
 
 	if (unlikely(index < 0))
 		panic("Cannot get ifindex from device!\n");
@@ -52,6 +62,13 @@ int device_type(const char *ifname)
 {
 	int ret, sock, type;
 	struct ifreq ifr;
+#ifdef HAVE_PF_RING
+	const char *col;
+
+	col = strchr(ifname, ':');
+	if (col != NULL)
+		ifname = ++col;
+#endif
 
 	if (!strncmp("any", ifname, strlen("any")))
 		return ARPHRD_ETHER;
@@ -101,6 +118,13 @@ int device_address(const char *ifname, int af, struct sockaddr_storage *ss)
 {
 	int ret, sock;
 	struct ifreq ifr;
+#ifdef HAVE_PF_RING
+	const char *col;
+
+	col = strchr(ifname, ':');
+	if (col != NULL)
+		ifname = ++col;
+#endif
 
 	if (unlikely(!ss))
 		return -EINVAL;
@@ -128,6 +152,13 @@ int device_hw_address(const char *ifname, uint8_t *addr, size_t len)
 {
 	int ret, sock;
 	struct ifreq ifr;
+#ifdef HAVE_PF_RING
+	const char *col;
+
+	col = strchr(ifname, ':');
+	if (col != NULL)
+		ifname = ++col;
+#endif
 
 	if (!addr)
 		return -EINVAL;
@@ -154,6 +185,13 @@ size_t device_mtu(const char *ifname)
 	size_t mtu = 0;
 	int ret, sock;
 	struct ifreq ifr;
+#ifdef HAVE_PF_RING
+	const char *col;
+
+	col = strchr(ifname, ':');
+	if (col != NULL)
+		ifname = ++col;
+#endif
 
 	sock = af_socket(AF_INET);
 
@@ -173,6 +211,13 @@ short device_get_flags(const char *ifname)
 	short flags = 0;
 	int ret, sock;
 	struct ifreq ifr;
+#ifdef HAVE_PF_RING
+	const char *col;
+
+	col = strchr(ifname, ':');
+	if (col != NULL)
+		ifname = ++col;
+#endif
 
 	sock = af_socket(AF_INET);
 
@@ -191,6 +236,13 @@ void device_set_flags(const char *ifname, const short flags)
 {
 	int ret, sock;
 	struct ifreq ifr;
+#ifdef HAVE_PF_RING
+	const char *col;
+
+	col = strchr(ifname, ':');
+	if (col != NULL)
+		ifname = ++col;
+#endif
 
 	sock = af_socket(AF_INET);
 
@@ -207,6 +259,14 @@ void device_set_flags(const char *ifname, const short flags)
 
 int device_up_and_running(const char *ifname)
 {
+#ifdef HAVE_PF_RING
+	const char *col;
+
+	col = strchr(ifname, ':');
+	if (col != NULL)
+		ifname = ++col;
+#endif
+
 	if (!ifname)
 		return -EINVAL;
 	if (!strncmp("any", ifname, strlen("any")))
@@ -220,6 +280,13 @@ int device_up_and_running(const char *ifname)
 u32 device_bitrate(const char *ifname)
 {
 	u32 scopper, swireless;
+#ifdef HAVE_PF_RING
+	const char *col;
+
+	col = strchr(ifname, ':');
+	if (col != NULL)
+		ifname = ++col;
+#endif
 
 	scopper   = ethtool_bitrate(ifname);
 	swireless = wireless_bitrate(ifname);
@@ -230,6 +297,13 @@ u32 device_bitrate(const char *ifname)
 short device_enter_promiscuous_mode(const char *ifname)
 {
 	short ifflags;
+#ifdef HAVE_PF_RING
+	const char *col;
+
+	col = strchr(ifname, ':');
+	if (col != NULL)
+		ifname = ++col;
+#endif
 
 	if (!strncmp("any", ifname, strlen("any")))
 		return 0;
@@ -242,6 +316,14 @@ short device_enter_promiscuous_mode(const char *ifname)
 
 void device_leave_promiscuous_mode(const char *ifname, short oldflags)
 {
+#ifdef HAVE_PF_RING
+	const char *col;
+
+	col = strchr(ifname, ':');
+	if (col != NULL)
+		ifname = ++col;
+#endif
+
 	if (!strncmp("any", ifname, strlen("any")))
 		return;
 
