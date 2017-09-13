@@ -217,14 +217,13 @@ int device_up_and_running(const char *ifname)
 		(IFF_UP | IFF_RUNNING);
 }
 
-u32 device_bitrate(const char *ifname)
+uint32_t device_bitrate(const char *ifname)
 {
-	u32 scopper, swireless;
+	uint32_t scopper;
 
-	scopper   = ethtool_bitrate(ifname);
-	swireless = wireless_bitrate(ifname);
+	scopper = ethtool_bitrate(ifname);
 
-	return scopper ? : swireless;
+	return scopper ? : wireless_bitrate(ifname);
 }
 
 short device_enter_promiscuous_mode(const char *ifname)
