@@ -242,10 +242,11 @@ static const struct dev_io_ops dev_cfg_ops = {
 	.close = dev_cfg_close,
 };
 
-struct dev_io *dev_io_open(const char *name, enum dev_io_mode_t mode)
+struct dev_io *dev_io_create(const char *name, enum dev_io_mode_t mode)
 {
 	struct dev_io *dev = xzmalloc(sizeof(struct dev_io));
 
+	dev->mode = mode;
 	if (strstr(name, ".pcap")) {
 		dev->name = xstrdup(name);
 		dev->ops = &dev_pcap_ops;
@@ -260,15 +261,19 @@ struct dev_io *dev_io_open(const char *name, enum dev_io_mode_t mode)
 		return NULL;
 	}
 
-	if (dev->ops->open) {
-		if (dev->ops->open(dev, name, mode)) {
-			xfree(dev);
-			return NULL;
-		}
-	}
-
 	return dev;
 };
+
+extern void dev_io_open(struct dev_io *dev)
+{
+	bug_on(!dev);
+	bug_on(!dev->ops);
+
+	if (dev->ops->open)
+		if (dev->ops->open(dev, dev->name, dev->mode))
+			panic("Cannot open io %s mode %d\n", dev->name,
+			      dev->mode);
+}
 
 int dev_io_write(struct dev_io *dev, struct packet *pkt)
 {

@@ -24,6 +24,7 @@ struct dev_io {
 	uint32_t pcap_magic;
 	bool is_initialized;
 	enum pcap_mode pcap_mode;
+	enum dev_io_mode_t mode;
 	size_t buf_len;
 	uint8_t *buf;
 
@@ -39,7 +40,8 @@ struct dev_io_ops {
 	void(*close) (struct dev_io *dev);
 };
 
-extern struct dev_io *dev_io_open(const char *name, enum dev_io_mode_t mode);
+extern struct dev_io *dev_io_create(const char *name, enum dev_io_mode_t mode);
+extern void dev_io_open(struct dev_io *dev);
 extern int dev_io_write(struct dev_io *dev, struct packet *pkt);
 extern struct packet *dev_io_read(struct dev_io *dev);
 extern int dev_io_ifindex_get(struct dev_io *dev);

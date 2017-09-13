@@ -977,6 +977,7 @@ static void main_loop(struct ctx *ctx, char *confname, bool slow,
 		fflush(stdout);
 	}
 
+	dev_io_open(ctx->dev_out);
 	if (dev_io_is_netdev(ctx->dev_out) && ctx->qdisc_path == false)
 		set_sock_qdisc_bypass(dev_io_fd_get(ctx->dev_out), ctx->verbose);
 
@@ -1266,12 +1267,13 @@ int main(int argc, char **argv)
 	xlockme();
 
 	if (ctx.pcap_in) {
-		ctx.dev_in = dev_io_open(ctx.pcap_in, DEV_IO_IN);
+		ctx.dev_in = dev_io_create(ctx.pcap_in, DEV_IO_IN);
 		if (!ctx.dev_in)
 			panic("Failed to open input device\n");
+		dev_io_open(ctx.dev_in);
 	}
 
-	ctx.dev_out = dev_io_open(ctx.device, DEV_IO_OUT);
+	ctx.dev_out = dev_io_create(ctx.device, DEV_IO_OUT);
 	if (!ctx.dev_out)
 		panic("Failed to open output device\n");
 
