@@ -1153,8 +1153,8 @@ static int screen_main(const char *ifname, uint64_t ms_interval,
 
 	panic_handler_add(on_panic_handler, NULL);
 
-	if (((rate > SPEED_1000 && ms_interval <= 1000) ||
-	     (rate = SPEED_1000 && ms_interval <  1000)) &&
+	if (((rate > SPEED_1000 && ms_interval <= 10000) ||
+	     (rate == SPEED_1000 && ms_interval < 1000)) &&
 	     !suppress_warnings)
 		need_info = true;
 
