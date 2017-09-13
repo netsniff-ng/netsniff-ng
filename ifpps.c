@@ -702,7 +702,7 @@ static void stats_top(const struct ifstat *rel, const struct ifstat *abs,
 }
 
 static void screen_header(WINDOW *screen, const char *ifname, int *voff,
-			  u32 rate, uint64_t ms_interval, unsigned int top_cpus)
+			  uint32_t rate, uint64_t ms_interval, unsigned int top_cpus)
 {
 	size_t len = 0;
 	char buff[64], machine[64];
@@ -756,7 +756,7 @@ static void screen_net_dev_rel(WINDOW *screen, const struct ifstat *rel,
 }
 
 static void screen_net_dev_percentage(WINDOW *screen, const struct ifstat *rel,
-				      int *voff, u32 rate)
+				      int *voff, uint32_t rate)
 {
 	mvwprintw(screen, (*voff)++, 0,
 		  "  rx: %15.2llf%% of line rate  "
@@ -1072,7 +1072,7 @@ static void screen_update(WINDOW *screen, const char *ifname, const struct ifsta
 {
 	unsigned int cpus, top;
 	int voff = 1, cvoff = 2;
-	u32 rate = device_bitrate(ifname);
+	uint32_t rate = device_bitrate(ifname);
 
 	curs_set(0);
 
@@ -1146,7 +1146,7 @@ static int screen_main(const char *ifname, uint64_t ms_interval,
 		       bool omit_header __maybe_unused)
 {
 	int first = 1, key;
-	u32 rate = device_bitrate(ifname);
+	uint32_t rate = device_bitrate(ifname);
 	bool need_info = false;
 
 	stats_screen = screen_init(true);
