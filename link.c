@@ -9,9 +9,10 @@
 #include "sock.h"
 #include "str.h"
 
-u32 wireless_bitrate(const char *ifname)
+uint32_t wireless_bitrate(const char *ifname)
 {
-	int sock, ret, rate_in_mbit;
+	int sock, ret;
+	uint32_t rate_in_mbit;
 	struct iwreq iwr;
 
 	sock = af_socket(AF_INET);
@@ -79,9 +80,10 @@ int wireless_rangemax_sigqual(const char *ifname)
 	return sigqual;
 }
 
-u32 ethtool_bitrate(const char *ifname)
+uint32_t ethtool_bitrate(const char *ifname)
 {
-	int ret, sock, bitrate;
+	int ret, sock;
+	uint32_t bitrate;
 	struct ifreq ifr;
 	struct ethtool_cmd ecmd;
 
