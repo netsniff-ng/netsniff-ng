@@ -1360,6 +1360,7 @@ dns_rrecord_data_fqdn
 		  str[strlen($1 + 1) - 1] = '\0';
 		  fqdn = str2fqdn(str);
 		  proto_hdr_field_set_bytes(hdr, DNS_RRECORD_DATA, (uint8_t *) fqdn, strlen(fqdn) + 1);
+		  xfree(str);
 		  xfree(fqdn); }
 	;
 

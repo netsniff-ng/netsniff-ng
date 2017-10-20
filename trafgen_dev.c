@@ -257,6 +257,7 @@ struct dev_io *dev_io_create(const char *name, enum dev_io_mode_t mode)
 		dev->name = xstrndup(name, IFNAMSIZ);
 		dev->ops = &dev_net_ops;
 	} else {
+		free(dev);
 		fprintf(stderr, "No networking device or pcap file: %s\n", name);
 		return NULL;
 	}
