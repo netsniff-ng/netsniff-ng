@@ -388,6 +388,31 @@ EOF
 	fi
 }
 
+check_fopencookie()
+{
+	echo -n "[*] Checking fopencookie ... "
+
+	cat > $TMPDIR/fopencookietest.c << EOF
+#define _GNU_SOURCE
+#include <stdio.h>
+
+static cookie_io_functions_t cookie_fns;
+
+int main(void)
+{
+	FILE *f = fopencookie(NULL, "w", cookie_fns);
+}
+EOF
+
+	$CC -o $TMPDIR/fopencookietest $TMPDIR/fopencookietest.c >> config.log 2>&1
+	if [ ! -x $TMPDIR/fopencookietest ] ; then
+		echo "[NO]"
+		MISSING_DEFS=1
+		tools_remove "curvetun"
+	else
+		echo "[YES]"
+	fi
+}
 
 check_ncurses()
 {
@@ -766,22 +791,30 @@ if [ "$MISSING_TOOLCHAIN" == "1" ] ; then
 	exit 1
 fi
 
+# external tools
 check_flex
 check_bison
-check_nacl
-check_libnl
-check_libnl_route
+
+# kernel features
 check_tpacket_v2
 check_tpacket_v3
-check_libnf_ct
-check_ncurses
-check_libgeoip
-check_zlib
-check_urcu
-check_libpcap
 check_hwtstamp
+
+# libc features
+check_fopencookie
+
+# libraries
 check_libcli
+check_libgeoip
 check_libnet
+check_libnf_ct
+check_libnl
+check_libnl_route
+check_libpcap
+check_nacl
+check_ncurses
+check_urcu
+check_zlib
 
 gen_config_hdr
 gen_version_appendix
