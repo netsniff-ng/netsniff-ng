@@ -1097,15 +1097,13 @@ int main(int argc, char **argv)
 		case 'J':
 			ctx.jumbo_support = true;
 			break;
+		case 'c':
 		case 'i':
 			confname = xstrdup(optarg);
-			if (strstr(confname, ".pcap")) {
+			if (c == 'i' && strstr(confname, ".pcap")) {
 				ctx.sh.type = SHAPER_TSTAMP;
 				ctx.pcap_in = confname;
-				break;
-			}
-		case 'c':
-			if (!strncmp("-", confname, strlen("-")))
+			} else if (!strncmp("-", confname, strlen("-")))
 				ctx.cpus = 1;
 			break;
 		case 'u':
