@@ -746,6 +746,19 @@ static int timevalcmp(const void *t1, const void *t2)
 	return 0;
 }
 
+static const char *proto_short(int proto)
+{
+	switch (proto) {
+	case IPPROTO_TCP:
+		return "t";
+	case IPPROTO_ICMP:
+	case IPPROTO_ICMPV6:
+		return "i";
+	default:
+		return "?";
+	}
+}
+
 static int __process_time(struct ctx *ctx, int fd, int fd_cap, int ttl,
 			  int inner_proto, uint8_t *pkt_snd, uint8_t *pkt_rcv,
 			  const struct sockaddr_storage *ss,
@@ -756,11 +769,6 @@ static int __process_time(struct ctx *ctx, int fd, int fd_cap, int ttl,
 	struct timeval probes[9], *tmp, sum, res;
 	uint8_t *trash = xmalloc(ctx->rcvlen);
 	char *cwait[] = { "-", "\\", "|", "/" };
-	const char *proto_short[] = {
-		[IPPROTO_TCP]		=	"t",
-		[IPPROTO_ICMP]		=	"i",
-		[IPPROTO_ICMPV6]	=	"i",
-	};
 
 	memset(probes, 0, sizeof(probes));
 	for (i = 0; i < array_size(probes) && sigint == 0; ++i) {
@@ -800,7 +808,7 @@ static int __process_time(struct ctx *ctx, int fd, int fd_cap, int ttl,
 
 	qsort(tmp, j, sizeof(struct timeval), timevalcmp);
 
-	printf("\r%2d: %s[", ttl, proto_short[inner_proto]);
+	printf("\r%2d: %s[", ttl, proto_short(inner_proto));
 	idx = j / 2;
 	switch (j % 2) {
 	case 0:
