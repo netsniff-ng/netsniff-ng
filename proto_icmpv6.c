@@ -664,7 +664,7 @@ static int8_t dissect_neighb_disc_ops_17(struct pkt_buff *pkt,
 		    if (icmp_neighb_disc_17_1 == NULL)
 				  return 0;
 		    len -= sizeof(*icmp_neighb_disc_17_1);
-		    if (len < 0)
+		    if ((int)len < 0)
 			  return 0;
 
 		    tprintf("Res (0x%x) ",icmp_neighb_disc_17_1->res);
@@ -682,7 +682,7 @@ static int8_t dissect_neighb_disc_ops_17(struct pkt_buff *pkt,
 		    if (icmp_neighb_disc_17_2 == NULL)
 				  return 0;
 		    len -= sizeof(*icmp_neighb_disc_17_2);
-		    if (len < 0)
+		    if ((int)len < 0)
 			  return 0;
 
 		    tprintf("Addr: %s ",
