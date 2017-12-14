@@ -22,8 +22,8 @@ enum csum {
 };
 
 struct counter {
-	int type;
-	uint8_t min, max, inc, val;
+	int type, inc;
+	uint8_t min, max, val;
 	off_t off;
 };
 

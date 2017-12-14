@@ -147,7 +147,7 @@ static inline void __setup_new_counter(struct counter *c, uint8_t start,
 {
 	c->min = start;
 	c->max = stop;
-	c->inc = stepping;
+	c->inc = (type == TYPE_INC) ? stepping : -stepping;
 	c->val = (type == TYPE_INC) ? start : stop;
 	c->off = payload_last;
 	c->type = type;

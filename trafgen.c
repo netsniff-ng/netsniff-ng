@@ -316,20 +316,10 @@ static void apply_counter(int id)
 		struct counter *counter = &packet_dyn[id].cnt[j];
 
 		val = counter->val - counter->min;
-
-		switch (counter->type) {
-		case TYPE_INC:
-			val = (val + counter->inc) % (counter->max - counter->min + 1);
-			break;
-		case TYPE_DEC:
-			val = (val - counter->inc) % (counter->min - counter->max + 1);
-			break;
-		default:
-			bug();
-		}
+		val = (val + counter->inc) % (counter->max - counter->min + 1);
 
 		counter->val = val + counter->min;
-		packets[id].payload[counter->off] = val;
+		packets[id].payload[counter->off] = counter->val;
 	}
 }
 
