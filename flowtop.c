@@ -477,7 +477,7 @@ static int flow_list_del_entry(struct flow_list *fl, const struct nf_conntrack *
 	n = flow_list_find_id(fl, nfct_get_attr_u32(ct, ATTR_ID));
 	if (n) {
 		if (n->proc) {
-			cds_list_del(&n->proc_head);
+			cds_list_del_rcu(&n->proc_head);
 			n->proc->flows_count--;
 		}
 
