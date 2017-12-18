@@ -470,20 +470,24 @@ static struct flow_entry *flow_list_find_id(struct flow_list *fl, uint32_t id)
 	return NULL;
 }
 
+static void __flow_list_del_entry(struct flow_list *fl, struct flow_entry *n)
+{
+	if (n->proc) {
+		cds_list_del_rcu(&n->proc_head);
+		n->proc->flows_count--;
+	}
+
+	cds_list_del_rcu(&n->entry);
+	call_rcu(&n->rcu, flow_entry_xfree_rcu);
+}
+
 static int flow_list_del_entry(struct flow_list *fl, const struct nf_conntrack *ct)
 {
 	struct flow_entry *n;
 
 	n = flow_list_find_id(fl, nfct_get_attr_u32(ct, ATTR_ID));
-	if (n) {
-		if (n->proc) {
-			cds_list_del_rcu(&n->proc_head);
-			n->proc->flows_count--;
-		}
-
-		cds_list_del_rcu(&n->entry);
-		call_rcu(&n->rcu, flow_entry_xfree_rcu);
-	}
+	if (n)
+		__flow_list_del_entry(fl, n);
 
 	return NFCT_CB_CONTINUE;
 }
@@ -492,10 +496,8 @@ static void flow_list_destroy(struct flow_list *fl)
 {
 	struct flow_entry *n, *tmp;
 
-	cds_list_for_each_entry_safe(n, tmp, &fl->head, entry) {
-		cds_list_del_rcu(&n->entry);
-		call_rcu(&n->rcu, flow_entry_xfree_rcu);
-	}
+	cds_list_for_each_entry_safe(n, tmp, &fl->head, entry)
+		__flow_list_del_entry(fl, n);
 }
 
 static void proc_list_init(struct proc_list *proc_list)
@@ -562,7 +564,7 @@ static void flow_entry_find_process(struct flow_entry *n)
 	p->stat.bytes_dst += n->stat.bytes_dst;
 	p->flows_count++;
 
-	cds_list_add(&n->proc_head, &p->flows);
+	cds_list_add_rcu(&n->proc_head, &p->flows);
 	n->proc = p;
 }
 
