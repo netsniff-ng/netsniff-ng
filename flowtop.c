@@ -1443,7 +1443,7 @@ static void presenter(void)
 	ui_tab_pos_set(tab_main, 2, 0);
 	ui_tab_active_color_set(tab_main, COLOR(BLACK, GREEN));
 	ui_tab_entry_add(tab_main, TAB_FLOWS, "Flows");
-	ui_tab_entry_add(tab_main, TAB_PROCS, "Process");
+	ui_tab_entry_add(tab_main, TAB_PROCS, "Processes");
 
 	rcu_register_thread();
 	while (!sigint) {
