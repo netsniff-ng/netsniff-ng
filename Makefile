@@ -15,9 +15,9 @@ endif
 
 VERSION = 0
 PATCHLEVEL = 6
-SUBLEVEL = 3
+SUBLEVEL = 4
 EXTRAVERSION =
-NAME = Mookid
+NAME = Spiral Staircase
 
 TOOLS ?= $(CONFIG_TOOLS)
 
