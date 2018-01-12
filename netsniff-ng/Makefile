@@ -39,6 +39,7 @@ netsniff-ng-objs =	dissector.o \
 			proto_none.o \
 			proto_tcp.o \
 			proto_udp.o \
+			proto_dccp.o \
 			proto_vlan.o \
 			proto_vlan_q_in_q.o \
 			proto_mpls_unicast.o \
