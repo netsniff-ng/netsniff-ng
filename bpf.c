@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -710,13 +711,13 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf, uint32_t link_type)
 	struct sock_filter sf_single = { 0x06, 0, 0, 0xFFFFFFFF };
 	FILE *fp;
 
-	fmemset(bpf, 0, sizeof(*bpf));
+	memset(bpf, 0, sizeof(*bpf));
 
 	if (rulefile == NULL) {
 		bpf->len = 1;
 		bpf->filter = xmalloc(sizeof(sf_single));
 
-		fmemcpy(&bpf->filter[0], &sf_single, sizeof(sf_single));
+		memcpy(&bpf->filter[0], &sf_single, sizeof(sf_single));
 		return;
 	}
 
@@ -730,16 +731,16 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf, uint32_t link_type)
 		return;
 	}
 
-	fmemset(buff, 0, sizeof(buff));
+	memset(buff, 0, sizeof(buff));
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		buff[sizeof(buff) - 1] = 0;
 
 		if (buff[0] != '{') {
-			fmemset(buff, 0, sizeof(buff));
+			memset(buff, 0, sizeof(buff));
 			continue;
 		}
 
-		fmemset(&sf_single, 0, sizeof(sf_single));
+		memset(&sf_single, 0, sizeof(sf_single));
 		ret = sscanf(buff, "{ 0x%x, %u, %u, 0x%08x },",
 			     (unsigned int *) &sf_single.code,
 			     (unsigned int *) &sf_single.jt,
@@ -752,9 +753,9 @@ void bpf_parse_rules(char *rulefile, struct sock_fprog *bpf, uint32_t link_type)
 		bpf->filter = xrealloc(bpf->filter,
 				       bpf->len * sizeof(sf_single));
 
-		fmemcpy(&bpf->filter[bpf->len - 1], &sf_single,
+		memcpy(&bpf->filter[bpf->len - 1], &sf_single,
 			sizeof(sf_single));
-		fmemset(buff, 0, sizeof(buff));
+		memset(buff, 0, sizeof(buff));
 	}
 
 	if (fp != stdin)
