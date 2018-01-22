@@ -49,8 +49,7 @@ void alloc_ring_frames_generic(struct ring *ring, size_t num, size_t size)
 {
 	size_t i, len = num * sizeof(*ring->frames);
 
-	ring->frames = xmalloc_aligned(len, CO_CACHE_LINE_SIZE);
-	fmemset(ring->frames, 0, len);
+	ring->frames = xzmalloc_aligned(len, CO_CACHE_LINE_SIZE);
 
 	for (i = 0; i < num; ++i) {
 		ring->frames[i].iov_len = size;
