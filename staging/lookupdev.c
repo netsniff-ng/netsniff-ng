@@ -228,7 +228,11 @@ int get_dev_params (char *name)
 	
 	// 2. find network, gateway, and mask
 	
-	fd = fopen("/proc/net/route", "r");	
+	fd = fopen("/proc/net/route", "r");
+	if (fd==NULL) {
+		perror("fopen");
+		return 1;
+	}
 	while (fgets(line, 255, fd)!=NULL) {
 		sscanf(line, "  %s %s %s %s %s %s %s %s %s %s", f[0], f[1], f[2], f[3], f[4], f[5], f[6], f[7], f[8], f[9]);
 		if (!flag) { // find columns (we do NOT assume that the order of columns is the same everywhere)
