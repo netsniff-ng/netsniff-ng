@@ -311,7 +311,11 @@ int get_dev_params (char *name)
 		psock.sll_hatype   = 0;           // unsigned short - Header type //ARPHRD_ETHER
 		psock.sll_pkttype  = 0;           // unsigned char - Packet type 
 		psock.sll_halen    = 6;           // unsigned char - Length of address
-		bind(ps, (const struct sockaddr *) &psock, sizeof(psock)); // <= !!!
+		if (bind(ps, (const struct sockaddr *) &psock, sizeof(psock))==-1) { // <= !!!
+			perror("bind");
+			close(ps);
+			return 1;
+		}
 		device_list[devind].ps = ps; // Note that close(ps) must be done upon termination
 	}
 	
