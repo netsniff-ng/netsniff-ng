@@ -1474,7 +1474,7 @@ void cleanup_packets(void)
 
 		for (j = 0; j < pkt->headers_count; j++) {
 			struct proto_hdr *hdr = pkt->headers[j];
-			int k;
+			uint32_t k;
 
 			for (k = 0; k < hdr->sub_headers_count; k++)
 				xfree(hdr->sub_headers[k]);
