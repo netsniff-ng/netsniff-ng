@@ -976,6 +976,10 @@ static void main_loop(struct ctx *ctx, char *confname, bool slow,
 	else
 		xmit_fastpath_or_die(ctx, cpu, orig_num);
 
+	dev_io_close(ctx->dev_out);
+	if (ctx->dev_in)
+		dev_io_close(ctx->dev_in);
+
 	cleanup_packets();
 }
 
@@ -1353,10 +1357,6 @@ thread_out:
 	destroy_shared_var(stats, ctx.cpus);
 	if (dev_io_is_netdev(ctx.dev_out) && set_irq_aff)
 		device_restore_irq_affinity_list();
-
-	dev_io_close(ctx.dev_out);
-	if (ctx.dev_in)
-		dev_io_close(ctx.dev_in);
 
 	argv_free(cpp_argv);
 	free(ctx.device);
