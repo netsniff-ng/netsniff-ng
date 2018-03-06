@@ -33,37 +33,37 @@ struct file {
 static const struct file files[] = {
 	[GEOIP_CITY_EDITION_REV1] = {
 			.desc = "City IPv4",
-			.local = ETCDIRE_STRING "/city4.dat",
+			.local = DATDIR_STRING "/city4.dat",
 			.remote = "/GeoLiteCity.dat.gz",
 			.possible_prefix = PRE,
 		},
 	[GEOIP_CITY_EDITION_REV1_V6] = {
 			.desc = "City IPv6",
-			.local = ETCDIRE_STRING "/city6.dat",
+			.local = DATDIR_STRING "/city6.dat",
 			.remote = "/GeoLiteCityv6.dat.gz",
 			.possible_prefix = PRE "/GeoLiteCityv6-beta",
 		},
 	[GEOIP_COUNTRY_EDITION] = {
 			.desc = "Country IPv4",
-			.local = ETCDIRE_STRING "/country4.dat",
+			.local = DATDIR_STRING "/country4.dat",
 			.remote = "/GeoIP.dat.gz",
 			.possible_prefix = PRE "/GeoLiteCountry",
 		},
 	[GEOIP_COUNTRY_EDITION_V6] = {
 			.desc = "Country IPv6",
-			.local = ETCDIRE_STRING "/country6.dat",
+			.local = DATDIR_STRING "/country6.dat",
 			.remote = "/GeoIPv6.dat.gz",
 			.possible_prefix = PRE,
 		},
 	[GEOIP_ASNUM_EDITION] = {
 			.desc = "AS Numbers IPv4",
-			.local = ETCDIRE_STRING "/asname4.dat",
+			.local = DATDIR_STRING "/asname4.dat",
 			.remote = "/GeoIPASNum.dat.gz",
 			.possible_prefix = PRE "/asnum",
 		},
 	[GEOIP_ASNUM_EDITION_V6] = {
 			.desc = "AS Numbers IPv6",
-			.local = ETCDIRE_STRING "/asname6.dat",
+			.local = DATDIR_STRING "/asname6.dat",
 			.remote = "/GeoIPASNumv6.dat.gz",
 			.possible_prefix = PRE "/asnum",
 		},
@@ -627,19 +627,19 @@ static void init_mirrors(void)
 	if (!fp)
 		panic("Cannot open geoip.conf!\n");
 
-	fmemset(buff, 0, sizeof(buff));
+	memset(buff, 0, sizeof(buff));
 	while (fgets(buff, sizeof(buff), fp) != NULL &&
 	       i < array_size(servers)) {
 		buff[sizeof(buff) - 1] = 0;
 		buff[strlen(buff) - 1] = 0;
 
 		if (buff[0] == '#') {
-			fmemset(buff, 0, sizeof(buff));
+			memset(buff, 0, sizeof(buff));
 			continue;
 		}
 
 		servers[i++] = xstrdup(buff);
-		fmemset(buff, 0, sizeof(buff));
+		memset(buff, 0, sizeof(buff));
 	}
 
 	fclose(fp);

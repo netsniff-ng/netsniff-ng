@@ -36,6 +36,7 @@ SBINDIR = $(PREFIX)/sbin
 INCDIR = $(PREFIX)/include
 ETCDIR ?= $(CONFIG_ETCDIR)
 ETCDIRE = $(ETCDIR)/netsniff-ng
+DATDIR = $(PREFIX)/share/netsniff-ng
 MAN8DIR = $(PREFIX)/share/man/man8
 
 # Shut up make, helper warnings, parallel compilation!
@@ -102,6 +103,7 @@ CFLAGS_MIN += -D_FILE_OFFSET_BITS=64
 CFLAGS_MIN += -DVERSION_STRING=\"$(VERSION_STRING)\"
 CFLAGS_MIN += -DVERSION_LONG=\"$(VERSION_LONG)\"
 CFLAGS_MIN += -DETCDIRE_STRING=\"$(ETCDIRE)\"
+CFLAGS_MIN += -DDATDIR_STRING=\"$(DATDIR)\"
 
 WFLAGS_DEF  = -Wall
 
@@ -170,6 +172,7 @@ mrproper: distclean
 
 install: install_all
 install_all: $(foreach tool,$(TOOLS),$(tool)_install)
+	$(Q)$(call INSTD,$(DATDIR))
 install_allbutcurvetun: $(foreach tool,$(filter-out curvetun,$(TOOLS)),$(tool)_install)
 install_allbutmausezahn: $(foreach tool,$(filter-out mausezahn,$(TOOLS)),$(tool)_install)
 uninstall: $(foreach tool,$(TOOLS),$(tool)_uninstall)
