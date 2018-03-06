@@ -33,10 +33,10 @@ static ssize_t pcap_sg_write(int fd, pcap_pkthdr_t *phdr, enum pcap_type type,
 		iov_slot = 0;
 	}
 
-	fmemcpy(iov[iov_slot].iov_base, &phdr->raw, hdrsize);
+	memcpy(iov[iov_slot].iov_base, &phdr->raw, hdrsize);
 	iov[iov_slot].iov_len = hdrsize;
 
-	fmemcpy(iov[iov_slot].iov_base + iov[iov_slot].iov_len, packet, len);
+	memcpy(iov[iov_slot].iov_base + iov[iov_slot].iov_len, packet, len);
 	ret = (iov[iov_slot].iov_len += len);
 
 	iov_slot++;
@@ -57,7 +57,7 @@ static ssize_t __pcap_sg_inter_iov_hdr_read(int fd, pcap_pkthdr_t *phdr,
 
 	bug_on(offset + remainder != hdrsize);
 
-	fmemcpy(&phdr->raw, iov[iov_slot].iov_base + iov_off_rd, offset);
+	memcpy(&phdr->raw, iov[iov_slot].iov_base + iov_off_rd, offset);
 	iov_off_rd = 0;
 	iov_slot++;
 
@@ -68,7 +68,7 @@ static ssize_t __pcap_sg_inter_iov_hdr_read(int fd, pcap_pkthdr_t *phdr,
 			return -EIO;
 	}
 
-	fmemcpy(&phdr->raw + offset, iov[iov_slot].iov_base + iov_off_rd, remainder);
+	memcpy(&phdr->raw + offset, iov[iov_slot].iov_base + iov_off_rd, remainder);
 	iov_off_rd += remainder;
 
 	return hdrsize;
@@ -87,7 +87,7 @@ static ssize_t __pcap_sg_inter_iov_data_read(int fd, uint8_t *packet, size_t hdr
 
 	bug_on(offset + remainder != hdrlen);
 
-	fmemcpy(packet, iov[iov_slot].iov_base + iov_off_rd, offset);
+	memcpy(packet, iov[iov_slot].iov_base + iov_off_rd, offset);
 	iov_off_rd = 0;
 	iov_slot++;
 
@@ -98,7 +98,7 @@ static ssize_t __pcap_sg_inter_iov_data_read(int fd, uint8_t *packet, size_t hdr
 			return -EIO;
 	}
 
-	fmemcpy(packet + offset, iov[iov_slot].iov_base + iov_off_rd, remainder);
+	memcpy(packet + offset, iov[iov_slot].iov_base + iov_off_rd, remainder);
 	iov_off_rd += remainder;
 
 	return hdrlen;
@@ -111,7 +111,7 @@ static ssize_t pcap_sg_read(int fd, pcap_pkthdr_t *phdr, enum pcap_type type,
 	size_t hdrsize = pcap_get_hdr_length(phdr, type), hdrlen;
 
 	if (likely(iov[iov_slot].iov_len - iov_off_rd >= hdrsize)) {
-		fmemcpy(&phdr->raw, iov[iov_slot].iov_base + iov_off_rd, hdrsize);
+		memcpy(&phdr->raw, iov[iov_slot].iov_base + iov_off_rd, hdrsize);
 		iov_off_rd += hdrsize;
 	} else {
 		ret = __pcap_sg_inter_iov_hdr_read(fd, phdr, hdrsize);
@@ -124,7 +124,7 @@ static ssize_t pcap_sg_read(int fd, pcap_pkthdr_t *phdr, enum pcap_type type,
 		return -EINVAL;
 
 	if (likely(iov[iov_slot].iov_len - iov_off_rd >= hdrlen)) {
-		fmemcpy(packet, iov[iov_slot].iov_base + iov_off_rd, hdrlen);
+		memcpy(packet, iov[iov_slot].iov_base + iov_off_rd, hdrlen);
 		iov_off_rd += hdrlen;
 	} else {
 		ret = __pcap_sg_inter_iov_data_read(fd, packet, hdrlen);

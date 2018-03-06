@@ -23,7 +23,7 @@
 void setup_ring_layout_generic(struct ring *ring, size_t size,
 			       bool jumbo_support)
 {
-	fmemset(&ring->layout, 0, sizeof(ring->layout));
+	memset(&ring->layout, 0, sizeof(ring->layout));
 
 	ring->layout.tp_block_size = (jumbo_support ?
 				      RUNTIME_PAGE_SIZE << 4 :
@@ -65,7 +65,7 @@ void bind_ring_generic(int sock, struct ring *ring, int ifindex, bool tx_only)
 	 * dev_add_pack(), so we have one single RX_RING for all devs
 	 * otherwise you'll get the packet twice.
 	 */
-	fmemset(&ring->s_ll, 0, sizeof(ring->s_ll));
+	memset(&ring->s_ll, 0, sizeof(ring->s_ll));
 
 	ring->s_ll.sll_family = AF_PACKET;
 	ring->s_ll.sll_ifindex = ifindex;

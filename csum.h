@@ -1,6 +1,8 @@
 #ifndef CSUM_H
 #define	CSUM_H
 
+#include <string.h>
+
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/ip6.h>
@@ -182,10 +184,10 @@ static inline uint16_t p6_csum(const struct ip6_hdr *ip6, const uint8_t *data,
 		uint8_t proto;
 	} __packed ph;
 
-	fmemcpy(&ph.src, ip6->ip6_src.s6_addr, sizeof(ph.src));
-	fmemcpy(&ph.dst, ip6->ip6_dst.s6_addr, sizeof(ph.dst));
+	memcpy(&ph.src, ip6->ip6_src.s6_addr, sizeof(ph.src));
+	memcpy(&ph.dst, ip6->ip6_dst.s6_addr, sizeof(ph.dst));
 	ph.len = htons(len);
-	fmemset(&ph.mbz, 0, sizeof(ph.mbz));
+	memset(&ph.mbz, 0, sizeof(ph.mbz));
 	ph.proto = next_proto;
 
 	vec[0].ptr = (const uint8_t *) (void *) &ph;

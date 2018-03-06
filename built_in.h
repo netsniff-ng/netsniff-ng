@@ -65,14 +65,6 @@ typedef uint8_t		u8;
 # define constant(x)		__builtin_constant_p(x)
 #endif
 
-#ifndef fmemset
-# define fmemset		__builtin_memset
-#endif
-
-#ifndef fmemcpy
-# define fmemcpy		__builtin_memcpy
-#endif
-
 #ifndef __maybe_unused
 # define __maybe_unused		__attribute__((__unused__))
 #endif

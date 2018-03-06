@@ -132,7 +132,7 @@ void destroy_rx_ring(int sock, struct ring *ring)
 	if (v3)
 		return;
 
-	fmemset(&ring->layout, 0, sizeof(ring->layout));
+	memset(&ring->layout, 0, sizeof(ring->layout));
 	ret = setsockopt(sock, SOL_PACKET, PACKET_RX_RING, &ring->layout,
 			 sizeof(ring->layout));
 	if (unlikely(ret))
@@ -218,7 +218,7 @@ void ring_rx_setup(struct ring *ring, int sock, size_t size, int ifindex,
 		   struct pollfd *poll, bool v3, bool jumbo_support,
 		   bool verbose, uint32_t fanout_group, uint32_t fanout_type)
 {
-	fmemset(ring, 0, sizeof(*ring));
+	memset(ring, 0, sizeof(*ring));
 	setup_rx_ring_layout(sock, ring, size, jumbo_support, v3);
 	create_rx_ring(sock, ring, verbose);
 	mmap_ring_generic(sock, ring);

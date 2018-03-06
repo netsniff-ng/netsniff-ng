@@ -79,8 +79,8 @@ void curve25519_proto_init(struct curve25519_proto *proto,
 	unsigned char secretkey_own[crypto_box_sec_key_size];
 	unsigned char publickey_own[crypto_box_pub_key_size];
 
-	fmemset(secretkey_own, 0, sizeof(secretkey_own));
-	fmemset(publickey_own, 0, sizeof(publickey_own));
+	memset(secretkey_own, 0, sizeof(secretkey_own));
+	memset(publickey_own, 0, sizeof(publickey_own));
 
 	if (unlikely(!pubkey_remote || len != sizeof(publickey_own)))
 		panic("Invalid argument on curve25519_proto_init!\n");
@@ -96,8 +96,8 @@ void curve25519_proto_init(struct curve25519_proto *proto,
 
 	crypto_box_beforenm(proto->key, pubkey_remote, secretkey_own);
 
-	fmemset(proto->enonce, 0, sizeof(proto->enonce));
-	fmemset(proto->dnonce, 0, sizeof(proto->dnonce));
+	memset(proto->enonce, 0, sizeof(proto->enonce));
+	memset(proto->dnonce, 0, sizeof(proto->dnonce));
 
 	xmemset(secretkey_own, 0, sizeof(secretkey_own));
 	xmemset(publickey_own, 0, sizeof(publickey_own));
@@ -121,7 +121,7 @@ ssize_t curve25519_encode(struct curve25519_struct *curve,
 	taia_now(&packet_taia);
 	taia_pack(NONCE_EDN_OFFSET(proto->enonce), &packet_taia);
 
-	fmemset(curve->enc, 0, curve->enc_size);
+	memset(curve->enc, 0, curve->enc_size);
 	ret = crypto_box_afternm(curve->enc, plaintext, size,
 				 proto->enonce, proto->key);
 	if (unlikely(ret)) {
@@ -129,7 +129,7 @@ ssize_t curve25519_encode(struct curve25519_struct *curve,
 		goto out;
 	}
 
-	fmemcpy(NONCE_PKT_OFFSET(curve->enc),
+	memcpy(NONCE_PKT_OFFSET(curve->enc),
 		NONCE_EDN_OFFSET(proto->enonce), NONCE_LENGTH);
 	for (i = 0; i < NONCE_RND_LENGTH; ++i)
 		curve->enc[i] = (uint8_t) secrand();
@@ -167,9 +167,9 @@ ssize_t curve25519_decode(struct curve25519_struct *curve,
 		goto out;
 	}
 
-	fmemcpy(NONCE_EDN_OFFSET(proto->dnonce),
+	memcpy(NONCE_EDN_OFFSET(proto->dnonce),
 		NONCE_PKT_OFFSET(ciphertext), NONCE_LENGTH);
-	fmemset(curve->dec, 0, curve->dec_size);
+	memset(curve->dec, 0, curve->dec_size);
 
 	ret = crypto_box_open_afternm(curve->dec, ciphertext, size,
 				      proto->dnonce, proto->key);

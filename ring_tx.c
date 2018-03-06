@@ -37,7 +37,7 @@ void destroy_tx_ring(int sock, struct ring *ring)
 	munmap(ring->mm_space, ring->mm_len);
 	ring->mm_len = 0;
 
-	fmemset(&ring->layout, 0, sizeof(ring->layout));
+	memset(&ring->layout, 0, sizeof(ring->layout));
 	ret = setsockopt(sock, SOL_PACKET, PACKET_TX_RING, &ring->layout,
 			 sizeof(ring->layout));
 	if (unlikely(ret))
@@ -89,7 +89,7 @@ static void alloc_tx_ring_frames(int sock __maybe_unused, struct ring *ring)
 void ring_tx_setup(struct ring *ring, int sock, size_t size, int ifindex,
 		   bool jumbo_support, bool verbose)
 {
-	fmemset(ring, 0, sizeof(*ring));
+	memset(ring, 0, sizeof(*ring));
 	set_packet_loss_discard(sock);
 	setup_tx_ring_layout(sock, ring, size, jumbo_support);
 	create_tx_ring(sock, ring, verbose);

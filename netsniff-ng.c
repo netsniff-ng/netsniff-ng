@@ -515,7 +515,7 @@ static void receive_to_xmit(struct ctx *ctx)
 			}
 
 			tpacket_hdr_clone(&hdr_out->tp_h, &hdr_in->tp_h);
-			fmemcpy(out, in, hdr_in->tp_h.tp_len);
+			memcpy(out, in, hdr_in->tp_h.tp_len);
 
 			kernel_may_pull_from_tx(&hdr_out->tp_h);
 			if (ctx->randomize)
@@ -660,7 +660,7 @@ static void read_pcap(struct ctx *ctx)
 			panic("Error prepare reading pcap!\n");
 	}
 
-	fmemset(&fm, 0, sizeof(fm));
+	memset(&fm, 0, sizeof(fm));
 
 	bpf_parse_rules(ctx->filter, &bpf_ops, ctx->link_type);
 	if (ctx->dump_bpf)
@@ -786,7 +786,7 @@ static void finish_multi_pcap_file(struct ctx *ctx, int fd)
 
 	close(fd);
 
-	fmemset(&itimer, 0, sizeof(itimer));
+	memset(&itimer, 0, sizeof(itimer));
 	setitimer(ITIMER_REAL, &itimer, NULL);
 }
 

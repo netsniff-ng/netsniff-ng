@@ -56,9 +56,9 @@ static ssize_t pcap_mm_write(int fd, pcap_pkthdr_t *phdr, enum pcap_type type,
 	if ((off_t) (ptr_va_curr - ptr_va_start) + hdrsize + len > map_size)
 		__pcap_mmap_write_need_remap(fd);
 
-	fmemcpy(ptr_va_curr, &phdr->raw, hdrsize);
+	memcpy(ptr_va_curr, &phdr->raw, hdrsize);
 	ptr_va_curr += hdrsize;
-	fmemcpy(ptr_va_curr, packet, len);
+	memcpy(ptr_va_curr, packet, len);
 	ptr_va_curr += len;
 
 	return hdrsize + len;
@@ -72,7 +72,7 @@ static ssize_t pcap_mm_read(int fd __maybe_unused, pcap_pkthdr_t *phdr,
 	if (unlikely((off_t) (ptr_va_curr + hdrsize - ptr_va_start) > (off_t) map_size))
 		return -EIO;
 
-	fmemcpy(&phdr->raw, ptr_va_curr, hdrsize);
+	memcpy(&phdr->raw, ptr_va_curr, hdrsize);
 	ptr_va_curr += hdrsize;
 	hdrlen = pcap_get_length(phdr, type);
 
@@ -81,7 +81,7 @@ static ssize_t pcap_mm_read(int fd __maybe_unused, pcap_pkthdr_t *phdr,
 	if (unlikely(hdrlen == 0 || hdrlen > len))
 		return -EINVAL;
 
-	fmemcpy(packet, ptr_va_curr, hdrlen);
+	memcpy(packet, ptr_va_curr, hdrlen);
 	ptr_va_curr += hdrlen;
 
 	return hdrsize + hdrlen;
