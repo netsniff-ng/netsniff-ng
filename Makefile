@@ -172,7 +172,7 @@ mrproper: distclean
 
 install: install_all
 install_all: $(foreach tool,$(TOOLS),$(tool)_install)
-	$(Q)$(call INSTD,$(DATDIR))
+	$(Q)$(call INSTD,$(DESTDIR)$(DATDIR))
 install_allbutcurvetun: $(foreach tool,$(filter-out curvetun,$(TOOLS)),$(tool)_install)
 install_allbutmausezahn: $(foreach tool,$(filter-out mausezahn,$(TOOLS)),$(tool)_install)
 uninstall: $(foreach tool,$(TOOLS),$(tool)_uninstall)
