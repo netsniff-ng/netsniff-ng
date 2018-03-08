@@ -229,7 +229,7 @@ int get_dev_params (char *name)
 	// 2. find network, gateway, and mask
 	
 	fd = fopen("/proc/net/route", "r");
-	if (fd==NULL) {
+	if (fd == NULL) {
 		perror("fopen");
 		return 1;
 	}
@@ -315,7 +315,7 @@ int get_dev_params (char *name)
 		psock.sll_hatype   = 0;           // unsigned short - Header type //ARPHRD_ETHER
 		psock.sll_pkttype  = 0;           // unsigned char - Packet type 
 		psock.sll_halen    = 6;           // unsigned char - Length of address
-		if (bind(ps, (const struct sockaddr *) &psock, sizeof(psock))==-1) { // <= !!!
+		if (bind(ps, (const struct sockaddr *) &psock, sizeof(psock)) == -1) {
 			perror("bind");
 			close(ps);
 			return 1;
