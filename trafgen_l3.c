@@ -212,6 +212,20 @@ static void ipv6_set_next_proto(struct proto_hdr *hdr, enum proto_id pid)
 	proto_hdr_field_set_default_u8(hdr, IP6_NEXT_HDR, ip_proto);
 }
 
+static enum proto_id ipv6_get_next_proto(struct proto_hdr *hdr)
+{
+	switch (proto_hdr_field_get_u8(hdr, IP6_NEXT_HDR)) {
+	case IPPROTO_ICMPV6:
+		return PROTO_IP4;
+	case IPPROTO_UDP:
+		return PROTO_UDP;
+	case IPPROTO_TCP:
+		return PROTO_TCP;
+	default:
+		return __PROTO_MAX;
+	}
+}
+
 static const struct proto_ops ipv6_proto_ops = {
 	.id             = PROTO_IP6,
 	.layer          = PROTO_L3,
@@ -219,6 +233,7 @@ static const struct proto_ops ipv6_proto_ops = {
 	.field_changed  = ipv6_field_changed,
 	.packet_finish  = ipv6_packet_finish,
 	.set_next_proto = ipv6_set_next_proto,
+	.get_next_proto = ipv6_get_next_proto,
 };
 
 void protos_l3_init(void)

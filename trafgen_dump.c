@@ -138,6 +138,33 @@ static int proto_dump_ip4(struct dump_ctx *ctx, struct proto_hdr *hdr)
 	return 0;
 }
 
+static int proto_dump_ip6(struct dump_ctx *ctx, struct proto_hdr *hdr)
+{
+	char ip_sa_str[INET6_ADDRSTRLEN];
+	char ip_da_str[INET6_ADDRSTRLEN];
+	uint8_t *ip;
+
+	ip = proto_hdr_field_get_bytes(hdr, IP6_SADDR);
+	inet_ntop(AF_INET6, ip, ip_sa_str, sizeof(ip_sa_str));
+
+	ip = proto_hdr_field_get_bytes(hdr, IP6_DADDR);
+	inet_ntop(AF_INET6, ip, ip_da_str, sizeof(ip_da_str));
+
+	HDR_START("ip6");
+
+	FIELD_START("ver=0x%x", proto_hdr_field_get_u32(hdr, IP6_VER));
+	FIELD("tc=0x%x", proto_hdr_field_get_u32(hdr, IP6_CLASS));
+	FIELD("fl=0x%x", proto_hdr_field_get_u32(hdr, IP6_FLOW_LBL));
+	FIELD("len=%d", proto_hdr_field_get_u16(hdr, IP6_LEN));
+	FIELD("nh=0x%x", proto_hdr_field_get_u8(hdr, IP6_NEXT_HDR));
+	FIELD("hl=%d", proto_hdr_field_get_u8(hdr, IP6_HOP_LIMIT));
+	FIELD("sa=%s", ip_sa_str);
+	FIELD_END("da=%s", ip_da_str);
+
+	HDR_END();
+	return 0;
+}
+
 static int proto_dump_udp(struct dump_ctx *ctx, struct proto_hdr *hdr)
 {
 	HDR_START("udp");
@@ -195,6 +222,8 @@ static int proto_dump_hdr(struct dump_ctx *ctx, struct proto_hdr *hdr)
 		return proto_dump_arp(ctx, hdr);
 	case PROTO_IP4:
 		return proto_dump_ip4(ctx, hdr);
+	case PROTO_IP6:
+		return proto_dump_ip6(ctx, hdr);
 	case PROTO_UDP:
 		return proto_dump_udp(ctx, hdr);
 	case PROTO_TCP:
