@@ -396,6 +396,8 @@ int getopts (int argc, char *argv[])
 	FILE *afp;
 	char hexpld[MAX_PAYLOAD_SIZE*2];
 	int hexpld_specified=0;
+	long delay;
+	char unit;
 
 	opterr = 1; // let getopt print error message if necessary
 
@@ -458,13 +460,25 @@ int getopts (int argc, char *argv[])
 			break;
 		 case 'd': 
 			errno=0;
-			// determine whether seconds or msecs are used
-			// default is usec!!!
-			time_factor=1;
-			if (exists(optarg,"s") || exists(optarg,"sec")) time_factor=1000000;
-			if (exists(optarg,"m") || exists(optarg,"msec")) time_factor=1000;
-			dum = strtok(optarg,"ms");
-			tx.delay = strtol(dum, (char **)NULL, 10) * time_factor;
+			time_factor=0;
+			delay=0;
+			unit='u'; // default is usecs
+			if (sscanf(optarg, "%ld%c", &delay, &unit) == EOF) {
+				perror("sscanf");
+				return (-1);
+			}
+			if (delay < 0) {
+				fprintf(stderr, " Incorrect delay format\n");
+				return(-1);
+			}
+			if (unit == 's') time_factor=1000000;      // seconds
+			else if (unit == 'm') time_factor=1000;    // msecs
+			else if (unit == 'u') time_factor=1;       // usecs
+			else {
+				fprintf(stderr, " Incorrect delay format\n");
+				return(-1);
+			}
+			tx.delay = delay * time_factor;
 			if ((errno == ERANGE && (tx.delay == LONG_MAX || tx.delay == LONG_MIN))
 			    || (errno != 0 && tx.delay == 0)) {
 				perror("strtol");
