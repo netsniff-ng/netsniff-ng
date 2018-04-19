@@ -23,6 +23,7 @@
 #include <pthread.h>
 #include <fcntl.h>
 #include <inttypes.h>
+#include <limits.h>
 
 #include "ring_rx.h"
 #include "ring_tx.h"
@@ -793,7 +794,7 @@ static void finish_multi_pcap_file(struct ctx *ctx, int fd)
 static int next_multi_pcap_file(struct ctx *ctx, int fd)
 {
 	int ret;
-	char fname[512];
+	char fname[PATH_MAX];
 	time_t ftime;
 
 	__pcap_io->fsync_pcap(fd);
@@ -843,7 +844,7 @@ static void reset_interval(struct ctx *ctx)
 static int begin_multi_pcap_file(struct ctx *ctx)
 {
 	int fd, ret;
-	char fname[256];
+	char fname[PATH_MAX];
 
 	bug_on(!__pcap_io);
 
@@ -887,6 +888,9 @@ static void finish_single_pcap_file(struct ctx *ctx, int fd)
 static int begin_single_pcap_file(struct ctx *ctx)
 {
 	int fd, ret;
+	struct tm *ltm;
+	time_t t;
+	char fname[PATH_MAX];
 
 	bug_on(!__pcap_io);
 
@@ -896,7 +900,13 @@ static int begin_single_pcap_file(struct ctx *ctx)
 		if (ctx->pcap == PCAP_OPS_MM)
 			ctx->pcap = PCAP_OPS_SG;
 	} else {
-		fd = open_or_die_m(ctx->device_out,
+		if ((t = time(NULL)) == -1)
+			panic("begin_single_pcap_file: time() failure\n");
+		if ((ltm = localtime(&t)) == NULL)
+			panic("begin_single_pcap_file: localtime() failure\n");
+		strftime(fname, sizeof(fname), ctx->device_out, ltm);
+
+		fd = open_or_die_m(fname,
 				   O_RDWR | O_CREAT | O_TRUNC |
 				   O_LARGEFILE, DEFFILEMODE);
 	}
