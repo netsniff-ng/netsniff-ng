@@ -888,8 +888,6 @@ static void finish_single_pcap_file(struct ctx *ctx, int fd)
 static int begin_single_pcap_file(struct ctx *ctx)
 {
 	int fd, ret;
-	struct tm *ltm;
-	time_t t;
 	char fname[PATH_MAX];
 
 	bug_on(!__pcap_io);
@@ -900,10 +898,17 @@ static int begin_single_pcap_file(struct ctx *ctx)
 		if (ctx->pcap == PCAP_OPS_MM)
 			ctx->pcap = PCAP_OPS_SG;
 	} else {
-		if ((t = time(NULL)) == -1)
-			panic("begin_single_pcap_file: time() failure\n");
-		if ((ltm = localtime(&t)) == NULL)
-			panic("begin_single_pcap_file: localtime() failure\n");
+		time_t t;
+		struct tm *ltm;
+
+		t = time(NULL);
+		if (t == -1)
+			panic("time() failed\n");
+
+		ltm = localtime(&t);
+		if (ltm == NULL)
+			panic("localtime() failed\n");
+
 		strftime(fname, sizeof(fname), ctx->device_out, ltm);
 
 		fd = open_or_die_m(fname,
