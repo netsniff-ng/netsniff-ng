@@ -233,8 +233,8 @@ int in6_addr_cmp(struct libnet_in6_addr addr1,
 	       *p2 = addr2.__u6_addr.__u6_addr32;
 	int i, val = 0;
 
-	for (i = 0; i < 4; i++) {
-		val = CMP_INT(ntohl(*p1++), ntohl(*p2++));
+	for (i = 0; i < 4; i++, p1++, p2++) {
+		val = CMP_INT(ntohl(*p1), ntohl(*p2));
 		if (val) {
 			break;
 		}
