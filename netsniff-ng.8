@@ -67,7 +67,7 @@ netsniff-ng can also be used to debug netlink traffic.
 .PP
 .SS -i <dev|pcap|->, -d <dev|pcap|->, --in <dev|pcap|->, --dev <dev|pcap|->
 Defines an input device. This can either be a networking device, a pcap file
-or stdin (\[lq]\-\[rq]). In case of a pcap file, the pcap type (\[lq]\-D\[rq]
+or stdin (\[lq]\-\[rq]). In case of a pcap file, the pcap type (\fB\-D\fP
 option) is determined automatically by the pcap file magic. In case of stdin,
 it is assumed that the input stream is a pcap file. If the pcap link type is
 Netlink and pcap type is default format (usec or nsec), then each packet will
@@ -75,21 +75,25 @@ be wrapped with pcap cooked header [2].
 .PP
 .SS -o <dev|pcap|dir|cfg|->, --out <dev|pcap|dir|cfg|->
 Defines the output device. This can either be a networking device, a pcap file,
-a folder, a trafgen(8) configuration file or stdout (\[lq]-\[rq]). In the case of a
-pcap file that should not have the default pcap type (0xa1b2c3d4), the additional
-option \[lq]\-T\[rq] must be provided. If a directory is given, then, instead of a
-single pcap file, multiple pcap files are generated with rotation based on
-maximum file size or a given interval (\[lq]\-F\[rq] option). Optionally,
-sending the SIGHUP signal to the netsniff-ng process causes a premature rotation
-of the file. A trafgen configuration file can currently only be specified if the
-input device is a pcap file. To specify a  pcap file as the output device, the
-file name must have \[lq].pcap\[rq] as its extension. If stdout is given as a
-device, then a trafgen configuration will be written to stdout if the input
-device is a pcap file, or a pcap file if the input device is a networking
-device. In case if the input device is a Netlink monitor device and pcap type
-is default (usec or nsec) then each packet will be wrapped with pcap cooked
-header [2] to keep Netlink family number (Kuznetzov's and netsniff-ng pcap types
-already contain family number in protocol number field).
+a folder, a trafgen(8) configuration file or stdout (\[lq]-\[rq]). If the output
+device is a pcap or trafgen(8) configuration file, it may include a time format
+as defined by
+.BR strfime (3).
+If used in conjunction with the \fB-F\fP option, each rotated file will have a
+unique time stamp. In the case of a pcap file that should not have the default
+pcap type (0xa1b2c3d4), the additional option \fB\-T\fP must be provided. If a
+directory is given, then, instead of a single pcap file, multiple pcap files are
+generated with rotation based on maximum file size or a given interval
+(\fB\-F\fP option). Optionally, sending the SIGHUP signal to the netsniff-ng
+process causes a premature rotation of the file. A trafgen configuration file
+can currently only be specified if the input device is a pcap file. To specify a
+pcap file as the output device, the file name must have \[lq].pcap\[rq] as its
+extension. If stdout is given as a device, then a trafgen configuration will be
+written to stdout if the input device is a pcap file, or a pcap file if the
+input device is a networking device. If the input device is a Netlink monitor
+device and pcap type is default (usec or nsec) then each packet will be wrapped
+with pcap cooked header [2] to keep Netlink family number (Kuznetzov's and
+netsniff-ng pcap types already contain family number in protocol number field).
 .PP
 .SS -C <id>, --fanout-group <id>
 If multiple netsniff-ng instances are being started that all have the same packet
