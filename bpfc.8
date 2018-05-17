@@ -7,7 +7,7 @@ bpfc \- a Berkeley Packet Filter assembler and compiler
 .PP
 .SH SYNOPSIS
 .PP
-\fBbpfc\fR { [\fIoptions\fR] | [\fIsource-file\fR] }
+\fBbpfc\fP { [\fIoptions\fP] | [\fIsource-file\fP] }
 .PP
 .SH DESCRIPTION
 .PP
@@ -15,8 +15,9 @@ bpfc is a small Berkeley Packet Filter assembler and compiler which is able to
 translate BPF assembler-like mnemonics into a numerical or C-like format,
 that can be read by tools such as netsniff-ng, iptables (xt_bpf) and many
 others. BPF is the one and only upstream filtering construct that is used
-in combination with packet(7) sockets, but also seccomp-BPF for system call
-sandboxing.
+in combination with
+.BR packet (7)
+sockets, but also seccomp-BPF for system call sandboxing.
 .PP
 The Linux kernel and also BSD kernels implement "virtual machine" like
 constructs and JIT compilers that mimic a small register-based machine in
@@ -29,22 +30,27 @@ application in other areas such as in the communication between user and
 kernel space like system call sand-boxing.
 .PP
 At the time of writing this man page, the only other available BPF compiler
-is part of the pcap(3) library and accessible through a high-level filter
-language that might be familiar to many people as tcpdump-like filters.
+is part of the
+.BR pcap (3)
+library and accessible through a high-level filter language that might be
+familiar to many people as tcpdump-like filters.
 .PP
 However, it is quite often useful to bypass that compiler and write
-optimized code that cannot be produced by the pcap(3) compiler, or is
-wrongly optimized, or is defective on purpose in order to debug test kernel
-code. Also, a reason to use bpfc could be to try out some new BPF extensions
-that are not supported by other compilers. Furthermore, bpfc can be useful
-to verify JIT compiler behavior or to find possible bugs that need
-to be fixed.
+optimized code that cannot be produced by the
+.BR pcap (3)
+compiler, or is wrongly optimized, or is defective on purpose in order to debug
+test kernel code. Also, a reason to use bpfc could be to try out some new BPF
+extensions that are not supported by other compilers. Furthermore, bpfc can be
+useful to verify JIT compiler behavior or to find possible bugs that need to be
+fixed.
 .PP
-bpfc is implemented with the help of flex(1) and bison(1), tokenizes the
-source file in the first stage and parses its content into an AST. In two
-code generation stages it emits target opcodes. bpfc furthermore supports
-Linux kernel BPF extensions. More about that can be found in the syntax
-section.
+bpfc is implemented with the help of
+.BR flex (1)
+and
+.BR bison (1),
+tokenizes the source file in the first stage and parses its content into an AST.
+In two code generation stages it emits target opcodes. bpfc furthermore supports
+Linux kernel BPF extensions. More about that can be found in the syntax section.
 .PP
 The Linux kernel BPF JIT compiler is automatically turned on if detected
 by netsniff-ng. However, it can also be manually turned on through the
@@ -56,38 +62,38 @@ source tree under ''tools/net/bpf_jit_disasm.c'' or within the netsniff-ng
 Git repository.
 .PP
 .SH OPTIONS
-.PP
-.SS -i <source-file/->, --input <source-file/->
+.TP
+.B -i <source-file/->, --input <source-file/->
 Read BPF assembly instruction from an input file or from stdin.
-.PP
-.SS -p, --cpp
+.TP
+.B -p, --cpp
 Pass the bpf program through the C preprocessor before reading it in
 bpfc. This allows #define and #include directives (e.g. to include
 definitions from system headers) to be used in the bpf program.
-.PP
-.SS -D <name>=<definition>, --define <name>=<definition>
+.TP
+.B -D <name>=<definition>, --define <name>=<definition>
 Add macro definition for the C preprocessor to use it within bpf file. This
-option is used in combination with the -p,--cpp option.
-.PP
-.SS -f <format>, --format <format>
+option is used in combination with the \fB-p\fP/\fB--cpp\fP option.
+.TP
+.B -f <format>, --format <format>
 Specify a different output format than the default that is netsniff-ng
 compatible. The <format> specifier can be: C, netsniff-ng, xt_bpf, tcpdump.
-.PP
-.SS -b, --bypass
+.TP
+.B -b, --bypass
 Bypass basic filter validation when emitting opcodes. This can be useful
 for explicitly creating malformed BPF expressions for injecting
 into the kernel, for example, for bug testing.
-.PP
-.SS -V, --verbose
+.TP
+.B -V, --verbose
 Be more verbose and display some bpfc debugging information.
-.PP
-.SS -d, --dump
+.TP
+.B -d, --dump
 Dump all supported instructions to stdout.
-.PP
-.SS -v, --version
+.TP
+.B -v, --version
 Show version information and exit.
-.PP
-.SS -h, --help
+.TP
+.B -h, --help
 Show user help and exit.
 .PP
 .SH SYNTAX
@@ -230,20 +236,20 @@ Used Abbreviations:
 .PP
 In this section, we give a couple of examples of bpfc source files, in other
 words, some small example filter programs:
-.PP
-.SS Only return packet headers (truncate packets):
+.TP
+.B Only return packet headers (truncate packets):
 .PP
   ld poff
   ret a
-.PP
-.SS Only allow ARP packets:
+.TP
+.B Only allow ARP packets:
 .PP
   ldh [12]
   jne #0x806, drop
   ret #-1
   drop: ret #0
-.PP
-.SS Only allow IPv4 TCP packets:
+.TP
+.B Only allow IPv4 TCP packets:
 .PP
   ldh [12]
   jne #0x800, drop
@@ -251,8 +257,8 @@ words, some small example filter programs:
   jneq #6, drop
   ret #-1
   drop: ret #0
-.PP
-.SS Only allow IPv4 TCP SSH traffic:
+.TP
+.B Only allow IPv4 TCP SSH traffic:
 .PP
   ldh [12]
   jne #0x800, drop
@@ -267,8 +273,8 @@ words, some small example filter programs:
   jne #0x16, drop
   pass: ret #-1
   drop: ret #0
-.PP
-.SS A loadable x86_64 seccomp-BPF filter to allow a given set of syscalls:
+.TP
+.B A loadable x86_64 seccomp-BPF filter to allow a given set of syscalls:
 .PP
   ld [4]                  /* offsetof(struct seccomp_data, arch) */
   jne #0xc000003e, bad    /* AUDIT_ARCH_X86_64 */
@@ -285,22 +291,22 @@ words, some small example filter programs:
   jeq #35, good           /* __NR_nanosleep */
   bad: ret #0             /* SECCOMP_RET_KILL */
   good: ret #0x7fff0000   /* SECCOMP_RET_ALLOW */
-.PP
-.SS Allow any (hardware accelerated) VLAN:
+.TP
+.B Allow any (hardware accelerated) VLAN:
 .PP
   ld vlanp
   jeq #0, drop
   ret #-1
   drop: ret #0
-.PP
-.SS Only allow traffic for (hardware accelerated) VLAN 10:
+.TP
+.B Only allow traffic for (hardware accelerated) VLAN 10:
 .PP
   ld vlant
   jneq #10, drop
   ret #-1
   drop: ret #0
-.PP
-.SS More pedantic check for the above VLAN example:
+.TP
+.B More pedantic check for the above VLAN example:
 .PP
   ld vlanp
   jeq #0, drop
@@ -308,8 +314,8 @@ words, some small example filter programs:
   jneq #10, drop
   ret #-1
   drop: ret #0
-.PP
-.SS Filter rtnetlink messages
+.TP
+.B Filter rtnetlink messages:
 .PP
   ldh #proto       /* A = skb->protocol */
 
@@ -334,25 +340,27 @@ words, some small example filter programs:
   skip: ret #0
 .PP
 .SH USAGE EXAMPLE
-.PP
-.SS bpfc fubar
+.TP
+.B bpfc fubar
 Compile the source file ''fubar'' into BPF opcodes. Opcodes will be
 directed to stdout.
-.PP
-.SS bpfc -f xt_bpf -b -p -i fubar, resp. iptables -A INPUT -m bpf --bytecode "`bpfc -f xt_bpf -i fubar`" -j LOG
+.TP
+.B bpfc -f xt_bpf -b -p -i fubar, resp. iptables -A INPUT -m bpf --bytecode "`bpfc -f xt_bpf -i fubar`" -j LOG
 Compile the source file ''fubar'' into BPF opcodes, bypass basic filter
 validation and emit opcodes in netfilter's xt_bpf readable format. Note
 that the source file ''fubar'' is first passed to the C preprocessor for
 textual replacements before handing over to the bpfc compiler.
-.PP
-.SS bpfc -
+.TP
+.B cat fubar | bpfc -
 Read bpfc instruction from stdin and emit opcodes to stdout.
-.PP
-.SS bpfc foo > bar, resp. netsniff-ng -f bar ...
+.TP
+.B bpfc foo > bar && netsniff-ng -f bar ...
 Compile filter instructions from file foo and redirect bpfc's output into
-the file bar, that can then be read by netsniff-ng(8) through option \-f.
-.PP
-.SS bpfc -f tcpdump -i fubar
+the file bar, that can then be read by
+.BR netsniff-ng (8)
+through option \fB-f\fP.
+.TP
+.B bpfc -f tcpdump -i fubar
 Output opcodes from source file fubar in the same behavior as ''tcpdump \-ddd''.
 .PP
 .SH LEGAL

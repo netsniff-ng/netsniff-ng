@@ -22,83 +22,90 @@ an Intel 82566DC-2 Gigabit Ethernet NIC are used for performance evaluation.
 One machine generates 64 byte network packets by using the kernel space
 packet generator pktgen with a maximum possible packet rate. The other
 machine displays statistics about incoming network packets by using i)
-iptraf(8) and ii) ifpps.
+.BR iptraf (8)
+and ii) ifpps.
 .PP
-iptraf which incorporates pcap(3) shows an average packet rate of
-246,000 pps while on the other hand ifpps shows an average packet rate
-of 1,378,000 pps. Hence, due to packet copies and deferring statistics
-creation into user space, a measurement error of approximately 460 percent
-occurs. Tools like iptraf might display much more information such as
-TCP per flow statistics (hence the use of the pcap library). This is not
-possible with ifpps, because overall networking statistics are its focus;
-statistics, which are also fairly reliable under high packet load.
+iptraf which incorporates
+.BR pcap (3)
+shows an average packet rate of 246,000 pps while on the other hand ifpps shows
+an average packet rate of 1,378,000 pps. Hence, due to packet copies and
+deferring statistics creation into user space, a measurement error of
+approximately 460 percent occurs. Tools like iptraf might display much more
+information such as TCP per flow statistics (hence the use of the pcap library).
+This is not possible with ifpps, because overall networking statistics are its
+focus; statistics, which are also fairly reliable under high packet load.
 .PP
 ifpps also periodically displays CPU load, interrupt, software interrupt
 data per sample interval as well as total interrupts, all per CPU. In case
 the number of CPUs exceeds 5 or the number specified by the user with the
-\[lq]\-n\[rq] command line option, ifpps will only display this number top
+\fB-n\fP command line option, ifpps will only display this number top
 heavy hitters. The topmost heavy hitter CPU will be marked with \[lq]+\[rq].
 The least heavy hitter will always be displayed and is marked with
 \[lq]-\[rq]. In addition, the average for all the above per-CPU data is
-shown. Optionally the median values can be displayed using the \[lq]\-m\[rq]
+shown. Optionally the median values can be displayed using the \fB-m\fP
 command line option.
 .PP
-ifpps also supports directly the gnuplot(1) data sample format. This
-facilitates creation of gnuplot figures from ifpps time series.
+ifpps also supports directly the
+.BR gnuplot (1)
+data sample format. This facilitates creation of gnuplot figures from ifpps time
+series.
 .PP
 .SH OPTIONS
-.PP
-.SS -d <netdev>, --dev <netdev>
+.TP
+.B -d <netdev>, --dev <netdev>
 Networking device to fetch statistics from, for example eth0, wlan0.
-.PP
-.SS -n, --num-cpus
+.TP
+.B -n, --num-cpus
 Set maximum number of top hitter CPUs (in terms of time spent in system/user
 mode) to display in ncurses mode, default is 10.
-.PP
-.SS -t <time>, --interval <time>
+.TP
+.B -t <time>, --interval <time>
 Statistics refresh interval in milliseconds, default is 1000ms.
-.PP
-.SS -c, --csv
-Output (once) the ncurses data to the terminal as gnuplot(1)-ready data.
-.PP
-.SS -l, --loop
+.TP
+.B -c, --csv
+Output (once) the ncurses data to the terminal as
+.BR gnuplot (1)-ready
+data.
+.TP
+.B -l, --loop
 Continuously output the terminal data after a refresh interval. This option
-is only available if option \[lq]\-c\[rq] is given. For \[lq]\-l\[rq] it is
+is only available if option \fB-c\fP is given. For \fB-l\fP it is
 usually recommended to redirect the output into a file that is to be processed
-later with gnuplot(1).
-.PP
-.SS -m, --median
+later with
+.BR gnuplot (1).
+.TP
+.B -m, --median
 Show median values across all CPUs for CPU load, interrupts (per interval and
 absolute) and software interrupts.
-.PP
-.SS -o, --omit-header
-Omit printing the CSV header. This option is only available if \[lq]\-c\[rq] is given.
-.PP
-.SS -p, --promisc
+.TP
+.B -o, --omit-header
+Omit printing the CSV header. This option is only available if \fB-c\fP is given.
+.TP
+.B -p, --promisc
 Turn on promiscuous mode for the given networking device.
-.PP
-.SS -P, --percentage
+.TP
+.B -P, --percentage
 Show percentage of current throughput in relation to theoretical line rate.
-.PP
-.SS -W, --no-warn
+.TP
+.B -W, --no-warn
 Suppress possible warnings in the ncurses output, e.g. about a too low sampling
 interval that could cause performance regression.
-.PP
-.SS -v, --version
+.TP
+.B -v, --version
 Show version information.
-.PP
-.SS -h, --help
+.TP
+.B -h, --help
 Show user help.
 .PP
 .SH USAGE EXAMPLE
-.PP
-.SS ifpps eth0
+.TP
+.B ifpps eth0
 Default ncurses output for the eth0 device.
-.PP
-.SS ifpps -pd eth0
+.TP
+.B ifpps -pd eth0
 Ncurses output for the eth0 device in promiscuous mode.
-.PP
-.SS ifpps -lpcd wlan0 > plot.dat
+.TP
+.B ifpps -lpcd wlan0 > plot.dat
 Continuous terminal output for the wlan0 device in promiscuous mode.
 .PP
 .SH NOTE

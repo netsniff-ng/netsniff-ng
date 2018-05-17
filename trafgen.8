@@ -7,12 +7,13 @@ trafgen \- a fast, multithreaded network packet generator
 .PP
 .SH SYNOPSIS
 .PP
-\fBtrafgen\fR [\fIoptions\fR] [\fIpacket\fR]
+\fBtrafgen\fP [\fIoptions\fP] [\fIpacket\fP]
 .PP
 .SH DESCRIPTION
 .PP
 trafgen is a fast, zero-copy network traffic generator for debugging,
-performance evaluation, and fuzz-testing. trafgen utilizes the packet(7)
+performance evaluation, and fuzz-testing. trafgen utilizes the
+.BR packet (7)
 socket interface of Linux which postpones complete control over packet data
 and packet headers into the user space. It has a powerful packet configuration
 language, which is rather low-level and not limited to particular protocols.
@@ -22,10 +23,14 @@ various kinds of load testing in order to analyze and subsequently improve
 systems behaviour under DoS attack scenarios, for instance.
 .PP
 trafgen is Linux specific, meaning there is no support for other operating
-systems, same as netsniff-ng(8), thus we can keep the code footprint quite
-minimal and to the point. trafgen makes use of packet(7) socket's TX_RING
-interface of the Linux kernel, which is a mmap(2)'ed ring buffer shared between
-user and kernel space.
+systems, same as
+.BR netsniff-ng (8),
+thus we can keep the code footprint quite minimal and to the point. trafgen
+makes use of
+.BR packet (7)
+socket's TX_RING interface of the Linux kernel, which is a
+.BR mmap (2)'ed
+ring buffer shared between user and kernel space.
 .PP
 By default, trafgen starts as many processes as available CPUs, pins each
 of them to their respective CPU and sets up the ring buffer each in their own
@@ -60,48 +65,49 @@ where arithmetic (basic operations, bit operations, bit shifting, ...) on consta
 expressions is being reduced to a single constant on compile time. Other features
 are ''fill'' macros, where a packet can be filled with n bytes by a constant, a
 compile-time random number or run-time random number (as mentioned with fuzz
-testing). Also, netsniff-ng(8) is able to convert a pcap file into a trafgen
-configuration file, thus such a configuration can then be further tweaked for a
-given scenario.
+testing). Also,
+.BR netsniff-ng (8)
+is able to convert a pcap file into a trafgen configuration file, thus such a
+configuration can be further tweaked for a given scenario.
 .PP
 .SH OPTIONS
-.PP
-.SS -i <cfg|pcap|->, -c <cfg|->, --in <cfg|pcap|->, --conf <cfg|->
+.TP
+.B -i <cfg|pcap|->, -c <cfg|->, --in <cfg|pcap|->, --conf <cfg|->
 Defines the input configuration file that can either be passed as a normal plain
 text file or via stdin (''-''). Note that currently, if a configuration is
 passed through stdin, only 1 CPU will be used.
-It is also possible to specify PCAP file with .pcap extension via -i,--in option,
-by default packets will be sent at rate considering timestamp from PCAP file which
-might be reset via -b/-t options.
-.PP
-.SS -o <dev|.pcap|.cfg>, -d <dev|.pcap|.cfg>, --out <dev|.pcap|.cfg>, --dev <dev|.pcap|.cfg>
+It is also possible to specify PCAP file with .pcap extension via
+\fB-i\fP/\fB--in\fP option, by default packets will be sent at rate considering
+timestamp from PCAP file which might be reset via the \fB-b\fP or \fB-t\fP option.
+.TP
+.B -o <dev|.pcap|.cfg>, -d <dev|.pcap|.cfg>, --out <dev|.pcap|.cfg>, --dev <dev|.pcap|.cfg>
 Defines the outgoing networking device such as eth0, wlan0 and others or
 a *.pcap or *.cfg file. Pcap and configuration files are identified by extension.
-.PP
-.SS -p, --cpp
+.TP
+.B -p, --cpp
 Pass the packet configuration to the C preprocessor before reading it into
 trafgen. This allows #define and #include directives (e.g. to include
 definitions from system headers) to be used in the trafgen configuration file.
-.PP
-.SS -D <name>=<definition>, --define <name>=<definition>
+.TP
+.B -D <name>=<definition>, --define <name>=<definition>
 Add macro definition for the C preprocessor to use it within trafgen file. This
-option is used in combination with the -p,--cpp option.
-.PP
-.SS -J, --jumbo-support
+option is used in combination with the \fB-p\fP/\fB--cpp\fP option.
+.TP
+.B -J, --jumbo-support
 By default trafgen's ring buffer frames are of a fixed size of 2048 bytes.
 This means that if you're expecting jumbo frames or even super jumbo frames to
 pass your line, then you will need to enable support for that with the help of
 this option. However, this has the disadvantage of a performance regression and
 a bigger memory footprint for the ring buffer.
-.PP
-.SS -R, --rfraw
+.TP
+.B -R, --rfraw
 In case the output networking device is a wireless device, it is possible with
 trafgen to turn this into monitor mode and create a mon<X> device that trafgen
 will be transmitting on instead of wlan<X>, for instance. This enables trafgen
 to inject raw 802.11 frames. In case if the output is a pcap file the link type
 is set to 127 (ieee80211 radio tap).
-.PP
-.SS -s <ipv4>, --smoke-test <ipv4>
+.TP
+.B -s <ipv4>, --smoke-test <ipv4>
 In case this option is enabled, trafgen will perform a smoke test. In other
 words, it will probe the remote end, specified by an <ipv4> address, that is
 being ''attacked'' with trafgen network traffic, if it is still alive and
@@ -113,91 +119,99 @@ packet configuration and the random seed that has been used in order to
 reproduce a possible bug. This might be useful when testing proprietary embedded
 devices. It is recommended to have a direct link between the host running
 trafgen and the host being attacked by trafgen.
-.PP
-.SS -n <0|uint>, --num <0|uint>
+.TP
+.B -n <0|uint>, --num <0|uint>
 Process a number of packets and then exit. If the number of packets is 0, then
 this is equivalent to infinite packets resp. processing until interrupted.
 Otherwise, a number given as an unsigned integer will limit processing.
-.PP
-.SS -r, --rand
+.TP
+.B -r, --rand
 Randomize the packet selection of the configuration file. By default, if more
 than one packet is defined in a packet configuration, packets are scheduled for
 transmission in a round robin fashion. With this option, they are selected
 randomly instread.
-.PP
-.SS -P <uint>, --cpus <uint>
-Specify the number of processes trafgen shall fork(2) off. By default trafgen
-will start as many processes as CPUs that are online and pin them to each,
-respectively. Allowed value must be within interval [1,CPUs].
-.PP
-.SS -t <time>, --gap <time>
+.TP
+.B -P <uint>, --cpus <uint>
+Specify the number of processes trafgen shall
+.Br fork (2)
+off. By default trafgen will start as many processes as CPUs that are online and
+pin them to each, respectively. Allowed value must be within interval [1,CPUs].
+.TP
+.B -t <time>, --gap <time>
 Specify a static inter-packet timegap in seconds, milliseconds, microseconds,
 or nanoseconds: ''<num>s/ms/us/ns''. If no postfix is given default to
-microseconds. If this option is given, then instead of packet(7)'s TX_RING
-interface, trafgen will use sendto(2) I/O for network packets, even if the
-<time> argument is 0. This option is useful for a couple of reasons: i)
-comparison between sendto(2) and TX_RING performance, ii) low-traffic packet
-probing for a given interval, iii) ping-like debugging with specific payload
-patterns. Furthermore, the TX_RING interface does not cope with interpacket
-gaps.
-.PP
-.SS -b <rate>, --rate <rate>
+microseconds. If this option is given, then instead of
+.BR packet (7)'s
+TX_RING interface, trafgen will use
+.BR sendto (2)
+I/O for network packets, even if the <time> argument is 0. This option is useful
+for a couple of reasons:
+
+  1) comparison between
+.BR sendto (2)
+and TX_RING performance,
+  2) low-traffic packet probing for a given interval,
+  3) ping-like debugging with specific payload patterns.
+
+Furthermore, the TX_RING interface does not cope with interpacket gaps.
+.TP
+.B -b <rate>, --rate <rate>
 Specify the packet send rate <num>pps/B/kB/MB/GB/kbit/Mbit/Gbit/KiB/MiB/GiB units.
-Like with the -t,--gap option, the packets are sent in slow mode.
-.PP
-.SS -S <size>, --ring-size <size>
-Manually define the TX_RING resp. TX_RING size in ''<num>KiB/MiB/GiB''. On
+Like with the \fB-t\fP/\fB--gap\fP option, the packets are sent in slow mode.
+.TP
+.B -S <size>, --ring-size <size>
+Manually define the TX_RING resp. TX_RING size in ''<num>KiB/MiB/GiB''. By
 default the size is being determined based on the network connectivity rate.
-.PP
-.SS -E <uint>, --seed <uint>
+.TP
+.B -E <uint>, --seed <uint>
 Manually set the seed for pseudo random number generator (PRNG) in trafgen. By
 default, a random seed from /dev/urandom is used to feed glibc's PRNG. If that
 fails, it falls back to the unix timestamp. It can be useful to set the seed
 manually in order to be able to reproduce a trafgen session, e.g. after fuzz
 testing.
-.PP
-.SS -u <uid>, --user <uid> resp. -g <gid>, --group <gid>
+.TP
+.B -u <uid>, --user <uid> resp. -g <gid>, --group <gid>
 After ring setup, drop privileges to a non-root user/group combination.
-.PP
-.SS -H, --prio-high
+.TP
+.B -H, --prio-high
 Set this process as a high priority process in order to achieve a higher
 scheduling rate resp. CPU time. This is however not the default setting, since
 it could lead to starvation of other processes, for example low priority kernel
 threads.
-.PP
-.SS -A, --no-sock-mem
+.TP
+.B -A, --no-sock-mem
 Do not change systems default socket memory setting during testrun.
 Default is to boost socket buffer memory during the test to:
-.PP
-   /proc/sys/net/core/rmem_default:4194304
-   /proc/sys/net/core/wmem_default:4194304
-   /proc/sys/net/core/rmem_max:104857600
-   /proc/sys/net/core/wmem_max:104857600
-.PP
-.SS -Q, --notouch-irq
+
+  /proc/sys/net/core/rmem_default:4194304
+  /proc/sys/net/core/wmem_default:4194304
+  /proc/sys/net/core/rmem_max:104857600
+  /proc/sys/net/core/wmem_max:104857600
+.TP
+.B -Q, --notouch-irq
 Do not reassign the NIC's IRQ CPU affinity settings.
-.PP
-.SS -q, --qdisc-path
+.TP
+.B -q, --qdisc-path
 Since Linux 3.14, the kernel supports a socket option PACKET_QDISC_BYPASS,
-which trafgen enables by default.  This options disables the qdisc bypass,
+which trafgen enables by default. This options disables the qdisc bypass,
 and uses the normal send path through the kernel's qdisc (traffic control)
 layer, which can be usefully for testing the qdisc path.
-.PP
-.SS -V, --verbose
+.TP
+.B -V, --verbose
 Let trafgen be more talkative and let it print the parsed configuration and
 some ring buffer statistics.
-.PP
-.SS -e, --example
+.TP
+.B -e, --example
 Show a built-in packet configuration example. This might be a good starting
 point for an initial packet configuration scenario.
-.PP
-.SS -C, --no-cpu-stats
+.TP
+.B -C, --no-cpu-stats
 Do not print CPU time statistics on exit.
-.PP
-.SS -v, --version
+.TP
+.B -v, --version
 Show version information and exit.
-.PP
-.SS -h, --help
+.TP
+.B -h, --help
 Show user help and exit.
 .PP
 .SH SYNTAX
@@ -803,7 +817,7 @@ Furthermore, there are two types of comments in trafgen configuration files:
   2. Single-line Shell-style comments:   #  put comment here
 .PP
 Next to all of this, a configuration can be passed through the C preprocessor
-before the trafgen compiler gets to see it with option \-\-cpp. To give you a
+before the trafgen compiler gets to see it with option \fB--cpp\fP. To give you a
 taste of a more advanced example, run ''trafgen \-e'', fields are commented:
 .PP
    /* Note: dynamic elements make trafgen slower! */
@@ -906,48 +920,48 @@ The above example rewritten using the header generation functions:
    }
 .PP
 .SH USAGE EXAMPLE
-.PP
-.SS trafgen --dev eth0 --conf trafgen.cfg
+.TP
+.B trafgen --dev eth0 --conf trafgen.cfg
 This is the most simple and, probably, the most common use of trafgen. It
 will generate traffic defined in the configuration file ''trafgen.cfg'' and
 transmit this via the ''eth0'' networking device. All online CPUs are used.
-.PP
-.SS trafgen -e | trafgen -i - -o lo --cpp -n 1
+.TP
+.B trafgen -e | trafgen -i - -o lo --cpp -n 1
 This is an example where we send one packet of the built-in example through
 the loopback device. The example configuration is passed via stdin and also
 through the C preprocessor before trafgen's packet compiler will see it.
-.PP
-.SS trafgen --dev eth0 --conf fuzzing.cfg --smoke-test 10.0.0.1
+.TP
+.B trafgen --dev eth0 --conf fuzzing.cfg --smoke-test 10.0.0.1
 Read the ''fuzzing.cfg'' packet configuration file (which contains drnd()
 calls) and send out the generated packets to the ''eth0'' device. After each
 sent packet, ping probe the attacked host with address 10.0.0.1 to check if
 it's still alive. This also means, that we utilize 1 CPU only, and do not
 use the TX_RING, but sendto(2) packet I/O due to ''slow mode''.
-.PP
-.SS trafgen --dev wlan0 --rfraw --conf beacon-test.txf -V --cpus 2
+.TP
+.B trafgen --dev wlan0 --rfraw --conf beacon-test.txf -V --cpus 2
 As an output device ''wlan0'' is used and put into monitoring mode, thus we
 are going to transmit raw 802.11 frames through the air. Use the
- ''beacon-test.txf'' configuration file, set trafgen into verbose mode and
+''beacon-test.txf'' configuration file, set trafgen into verbose mode and
 use only 2 CPUs.
-.PP
-.SS trafgen --dev em1 --conf frag_dos.cfg --rand --gap 1000us
+.TP
+.B trafgen --dev em1 --conf frag_dos.cfg --rand --gap 1000us
 Use trafgen in sendto(2) mode instead of TX_RING mode and sleep after each
 sent packet a static timegap for 1000us. Generate packets from ''frag_dos.cfg''
 and select next packets to send randomly instead of a round-robin fashion.
 The output device for packets is ''em1''.
-.PP
-.SS trafgen --dev eth0 --conf icmp.cfg --rand --num 1400000 -k1000
+.TP
+.B trafgen --dev eth0 --conf icmp.cfg --rand --num 1400000 -k1000
 Send only 1400000 packets using the ''icmp.cfg'' configuration file and then
 exit trafgen. Select packets randomly from that file for transmission and
 send them out via ''eth0''. Also, trigger the kernel every 1000us for batching
 the ring frames from user space (default is 10us).
-.PP
-.SS trafgen --dev eth0 --conf tcp_syn.cfg -u `id -u bob` -g `id -g bob`
+.TP
+.B trafgen --dev eth0 --conf tcp_syn.cfg -u `id -u bob` -g `id -g bob`
 Send out packets generated from the configuration file ''tcp_syn.cfg'' via
 the ''eth0'' networking device. After setting up the ring for transmission,
 drop credentials to the non-root user/group bob/bob.
-.PP
-.SS trafgen --dev eth0 '{ fill(0xff, 6), 0x00, 0x02, 0xb3, rnd(3), c16(0x0800), fill(0xca, 64) }' -n 1
+.TP
+.B trafgen --dev eth0 '{ fill(0xff, 6), 0x00, 0x02, 0xb3, rnd(3), c16(0x0800), fill(0xca, 64) }' -n 1
 Send out 1 invaid IPv4 packet built from command line to all hosts.
 .PP
 .SH NOTE
@@ -955,18 +969,23 @@ Send out 1 invaid IPv4 packet built from command line to all hosts.
 trafgen can saturate a Gigabit Ethernet link without problems. As always,
 of course, this depends on your hardware as well. Not everywhere where it
 says Gigabit Ethernet on the box, will you reach almost physical line rate!
-Please also read the netsniff-ng(8) man page, section NOTE for further
-details about tuning your system e.g. with tuned(8).
+Please also read the
+.BR netsniff-ng (8)
+man page, section NOTE for further details about tuning your system e.g. with
+.BR tuned (8).
 .PP
 If you intend to use trafgen on a 10-Gbit/s Ethernet NIC, make sure you
-are using a multiqueue tc(8) discipline, and make sure that the packets
-you generate with trafgen will have a good distribution among tx_hashes
-so that you'll actually make use of multiqueues.
+are using a multiqueue
+.BR tc(8)
+discipline, and make sure that the packets you generate with trafgen will have a
+good distribution among tx_hashes so that you'll actually make use of
+multiqueues.
 .PP
 For introducing bit errors, delays with random variation and more, there
 is no built-in option in trafgen. Rather, one should reuse existing methods
-for that which integrate nicely with trafgen, such as tc(8) with its
-different disciplines, i.e. netem.
+for that which integrate nicely with trafgen, such as
+.BR tc (8)
+with its different disciplines, i.e. \fBnetem\fP.
 .PP
 For more complex packet configurations, it is recommended to use high-level
 scripting for generating trafgen packet configurations in a more automated

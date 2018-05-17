@@ -7,12 +7,14 @@ curvetun \- a lightweight curve25519 ip4/6 tunnel
 .PP
 .SH SYNOPSIS
 .PP
-\fBcurvetun\fR [\fIoptions\fR]
+\fBcurvetun\fP [\fIoptions\fP]
 .PP
 .SH DESCRIPTION
 curvetun is a lightweight, high-speed ECDH multiuser IP tunnel for Linux
-that is based on epoll(2). curvetun uses the Linux TUN/TAP interface and
-supports {IPv4, IPv6} over {IPv4, IPv6} with UDP or TCP as carrier protocols.
+that is based on
+.BR epoll (2).
+curvetun uses the Linux TUN/TAP interface and supports {IPv4, IPv6} over {IPv4,
+IPv6} with UDP or TCP as carrier protocols.
 .PP
 It has an integrated packet forwarding tree, thus multiple users with
 different IPs can be handled via a single tunnel device on the server side,
@@ -48,83 +50,83 @@ Telex, anti-censorship in the network infrastructure
 .RE
 .PP
 .SH OPTIONS
-.PP
-.SS -d <tundev>, --dev <tundev>
+.TP
+.B -d <tundev>, --dev <tundev>
 Defines the name of the tunnel device that is being created. If this option
 is not set, then the default names, curves{0,1,2,..} for a curvetun server,
 and curvec{0,1,2,...} for a curvetun client are used.
-.PP
-.SS -p <num>, --port <num>
+.TP
+.B -p <num>, --port <num>
 Defines the port the curvetun server should listen on. There is no default port
 for curvetun, so setting this option for server bootstrap is mandatory. This
 option is for servers only.
-.PP
-.SS -t <server>, --stun <server>
+.TP
+.B -t <server>, --stun <server>
 If needed, this options enables an STUN lookup in order to show public IP to port
 mapping and to punch a hole into the firewall. In case you are unsure what STUN
 server to use, simply use ''\-\-stun stunserver.org''.
-.PP
-.SS -c[=alias], --client[=alias]
+.TP
+.B -c[=alias], --client[=alias]
 Starts curvetun in client mode and connects to the given connection alias that is
 defined in the configuration file.
-.PP
-.SS -k, --keygen
+.TP
+.B -k, --keygen
 Generate private and public keypair. This must be done initially.
-.PP
-.SS -x, --export
+.TP
+.B -x, --export
 Export user and key combination to stdout as a one-liner.
-.PP
-.SS -C, --dumpc
+.TP
+.B -C, --dumpc
 Dump all known clients that may connect to the local curvetun server and exit.
-.PP
-.SS -S, --dumps
+.TP
+.B -S, --dumps
 Dump all known servers curvetun as a client can connect to, and exit.
-.PP
-.SS -D, --nofork
+.TP
+.B -D, --nofork
 Do not fork off as a client or server on startup.
-.PP
-.SS -s, --server
+.TP
+.B -s, --server
 Start curvetun in server mode. Additional parameters are needed, at least
 the definition of the port that clients can connect to is required.
-.PP
-.SS -N, --no-logging
+.TP
+.B -N, --no-logging
 Disable all curvetun logging of user information. This option can be used to
 enable curvetun users to connect more anonymously. This option is for servers
 only.
-.PP
-.SS -u, --udp
+.TP
+.B -u, --udp
 Use UDP as a carrier protocol instead of TCP. By default, TCP is the
 carrier protocol. This option is for servers only.
-.PP
-.SS -4, --ipv4
+.TP
+.B -4, --ipv4
 Defines IPv4 as the underlying network protocol to be used on the tunnel
 device. IPv4 is the default. This option is for servers only.
-.PP
-.SS -6, --ipv6
+.TP
+.B -6, --ipv6
 Defines IPv6 as the underlying network protocol to be used on the tunnel
 device. This option is for servers only.
-.PP
-.SS -v, --version
+.TP
+.B -v, --version
 Show version information and exit.
-.PP
-.SS -h, --help
+.TP
+.B -h, --help
 Show user help and exit.
 .PP
 .SH USAGE EXAMPLE
-.PP
-.SS curvetun --server -4 -u -N --port 6666 --stun stunserver.org
+.TP
+.B curvetun --server -4 -u -N --port 6666 --stun stunserver.org
 Starts curvetun in server mode with IPv4 as network protocol and UDP as a transport
 carrier protocol. The curvetun server listens for incoming connections on port 6666
 and performs an STUN lookup on startup to stunserver.org.
-.PP
-.SS curvetun --client=ethz
+.TP
+.B curvetun --client=ethz
 Starts curvetun in client mode and connects to the defined connection alias ''ethz''
 that is defined in the curvetun ~/.curvetun/servers configuration file.
-.PP
-.SS curvetun --keygen
+.TP
+.B curvetun --keygen
 Generates initial keypairs and stores them in the ~/.curvetun/ directory.
-.PP
-.SS curvetun --export
+.TP
+.B curvetun --export
 Export user data to stdout for configuration of a curvetun server.
 .PP
 .SH CRYPTOGRAPHY

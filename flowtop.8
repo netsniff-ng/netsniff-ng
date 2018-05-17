@@ -7,7 +7,7 @@ flowtop \- top-like netfilter TCP/UDP/SCTP/DCCP/ICMP(v6) flow tracking
 .PP
 .SH SYNOPSIS
 .PP
-\fBflowtop\fR { [\fIoptions\fR] }
+\fBflowtop\fP { [\fIoptions\fP] }
 .PP
 .SH DESCRIPTION
 .PP
@@ -43,7 +43,8 @@ The following information will be presented in flowtop's output:
 .PP
 In order for flowtop to work, netfilter must be active and running
 on your machine, thus kernel-side connection tracking is active. If netfilter
-is not running, you can activate it with iptables(8):
+is not running, you can activate it with
+.BR iptables (8):
 .in +4
 .sp
 iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT
@@ -59,8 +60,9 @@ modprobe nf_conntrack_ipv4
 modprobe nf_conntrack_ipv6
 .in -4
 .PP
-To dump byte/packet counters flowtop enables the sysctl(8) parameter
-\[lq]net.netfilter.nf_conntrack_acct\[rq] via:
+To dump byte/packet counters flowtop enables the
+.BR sysctl (8)
+parameter \fBnet.netfilter.nf_conntrack_acct\fP via:
 .in +4
 .sp
 echo 1 > /proc/sys/net/netfilter/nf_conntrack_acct
@@ -69,11 +71,15 @@ echo 1 > /proc/sys/net/netfilter/nf_conntrack_acct
 and resets it to the previously set value on exit. These counters will only be
 active on connections which were created after accounting was enabled. Thus, to
 have these counters be active all the time the parameter should be enabled after
-the system is up. To automatically enable it, sysctl.conf(8) or sysctl.d(8)
+the system is up. To automatically enable it,
+.BR sysctl.conf (8)
+or
+.BR sysctl.d (8)
 might be used.
 .PP
-To calculate the connection duration flowtop enables the sysctl(8) parameter
-\[lq]net.netfilter.nf_conntrack_timestamp\[rq] via:
+To calculate the connection duration flowtop enables the
+.BR sysctl (8)
+parameter \fBnet.netfilter.nf_conntrack_timestamp\fP via:
 .in +4
 .sp
 echo 1 > /proc/sys/net/netfilter/nf_conntrack_timestamp
@@ -82,72 +88,73 @@ echo 1 > /proc/sys/net/netfilter/nf_conntrack_timestamp
 and resets it to the previously set value on exit.
 .PP
 flowtop's intention is just to get a quick look over your active connections.
-If you want logging support, have a look at netfilter's conntrack(8) tools
-instead.
+If you want logging support, have a look at netfilter's
+.BR conntrack (8)
+tools instead.
 .PP
 .SH OPTIONS
-.PP
-.SS -4, --ipv4
+.TP
+.B -4, --ipv4
 Display IPv4 flows. That is the default when flowtop is started without
 any arguments.
-.PP
-.SS -6, --ipv6
+.TP
+.B -6, --ipv6
 Display IPv6 flows. That is the default when flowtop is started without
 any arguments.
-.PP
-.SS -T, --tcp
+.TP
+.B -T, --tcp
 Display TCP flows. That is the default when flowtop is started without
 any arguments.
-.PP
-.SS -U, --udp
+.TP
+.B -U, --udp
 Display UDP and UDP-lite flows.
-.PP
-.SS -D, --dccp
+.TP
+.B -D, --dccp
 Display DCCP flows.
-.PP
-.SS -I, --icmp
+.TP
+.B -I, --icmp
 Display ICMP version 4 and version 6 flows.
-.PP
-.SS -S, --sctp
+.TP
+.B -S, --sctp
 Display SCTP flows.
-.PP
-.SS -n, --no-dns
+.TP
+.B -n, --no-dns
 Don't perform hostname lookup. Only numeric addresses will be shown for flow
 endpoints.
-.PP
-.SS -G, --no-geoip
+.TP
+.B -G, --no-geoip
 Don't perform GeoIP lookup. No geographical information will be shown for flow
 endpoints.
-.PP
-.SS -s, --show-src
+.TP
+.B -s, --show-src
 Also show source information of the flow, not only destination information.
-.PP
-.SS -b, --bits
+.TP
+.B -b, --bits
 Show flow rates in bits per second instead of bytes per second.
-.PP
-.SS -u, --update
+.TP
+.B -u, --update
 The built-in database update mechanism will be invoked to get Maxmind's
 latest database. To configure search locations for databases, the file
 /etc/netsniff-ng/geoip.conf contains possible addresses. Thus, to save
 bandwidth or for mirroring Maxmind's databases (to bypass their traffic
 limit policy), different hosts or IP addresses can be placed into geoip.conf,
 separated by a newline.
-.PP
-.SS -t <time>, --interval <time>
+.TP
+.B -t <time>, --interval <time>
 Flow info refresh interval in seconds, default is 1s.
-.PP
-.SS -v, --version
+.TP
+.B -v, --version
 Show version information and exit.
-.PP
-.SS -h, --help
+.TP
+.B -h, --help
 Show user help and exit.
 .PP
 .SH USAGE EXAMPLE
-.PP
-.SS flowtop
+.TP
+.B flowtop
 Default ncurses output for flowtop that tracks IPv4, IPv6 flows for TCP.
-.PP
-.SS flowtop -46UTDISs
+.TP
+.B flowtop -46UTDISs
 This example enables the maximum display options for flowtop.
 .PP
 .SH CONFIG FILES

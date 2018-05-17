@@ -7,7 +7,7 @@ astraceroute \- autonomous system trace route utility
 .PP
 .SH SYNOPSIS
 .PP
-\fBastraceroute\fR [\fIoptions\fR]
+\fBastraceroute\fP [\fIoptions\fP]
 .PP
 .SH DESCRIPTION
 astraceroute is a small utility to retrieve path information in a traceroute
@@ -29,133 +29,133 @@ keywords. This tool might be a good start for further in-depth analysis of such
 systems.
 .PP
 .SH OPTIONS
-.PP
-.SS -H <host>, --host <host>
+.TP
+.B -H <host>, --host <host>
 Hostname or IPv4 or IPv6 address of the remote host where the AS route should
-be traced to. In the case of an IPv6 address or host, option ''\-6'' must be
+be traced to. In the case of an IPv6 address or host, option \fB-6\fP must be
 used. IPv4 is the default.
-.PP
-.SS -p <port>, --port <port>
+.TP
+.B -p <port>, --port <port>
 TCP port for the remote host to use. If not specified, the default
 port used is 80.
-.PP
-.SS -i <device>, -d <device>, --dev <device>
+.TP
+.B -i <device>, -d <device>, --dev <device>
 Networking device to start the trace route from, e.g. eth0, wlan0.
-.PP
-.SS -b <IP>, --bind <IP>
+.TP
+.B -b <IP>, --bind <IP>
 IP address to bind to other than the network device's address. You must specify
-\-6 for an IPv6 address.
-.PP
-.SS -f <ttl>, --init-ttl <ttl>
+\fB-6\fP for an IPv6 address.
+.TP
+.B -f <ttl>, --init-ttl <ttl>
 Initial TTL value to be used. This option might be useful if you are not
 interested in the first n hops, but only the following ones. The default
 initial TTL value is 1.
-.PP
-.SS -m <ttl>, --max-ttl <ttl>
+.TP
+.B -m <ttl>, --max-ttl <ttl>
 Maximum TTL value to be used. If not otherwise specified, the maximum
 TTL value is 30. Thus, after this has been reached astraceroute exits.
-.PP
-.SS -q <num>, --num-probes <num>
+.TP
+.B -q <num>, --num-probes <num>
 Specifies the number of queries to be done on a particular hop. The
 default is 2 query requests.
-.PP
-.SS -x <sec>, --timeout <sec>
+.TP
+.B -x <sec>, --timeout <sec>
 Tells astraceroute the probe response timeout in seconds, in other words
 the maximum time astraceroute must wait for an ICMP response from the current
 hop. The default is 3 seconds.
-.PP
-.SS -X <string>, --payload <string>
+.TP
+.B -X <string>, --payload <string>
 Places an ASCII cleartext string into the packet payload. Cleartext that
 contains whitespace must be put into quotes (e.g.: "censor me").
-.PP
-.SS -l <len>, --totlen <len>
+.TP
+.B -l <len>, --totlen <len>
 Specifies the total length of the packet. Payload that does not have a
 cleartext string in it is padded with random garbage.
-.PP
-.SS -4, --ipv4
+.TP
+.B -4, --ipv4
 Use IPv4 only requests. This is the default.
-.PP
-.SS -6, --ipv6
+.TP
+.B -6, --ipv6
 Use IPv6 only requests. This must be used when passing an IPv6 host as an
 argument.
-.PP
-.SS -n, --numeric
+.TP
+.B -n, --numeric
 Tells astraceroute to not perform reverse DNS lookup for hop replies. The
-reverse option is ''\-N''.
-.PP
-.SS -u, --update
+reverse option is \fB-N\fP.
+.TP
+.B -u, --update
 The built-in geo-database update mechanism will be invoked to get Maxmind's
 latest version. To configure search locations for databases, the file
 /etc/netsniff-ng/geoip.conf contains possible addresses. Thus, to save bandwidth
 or for mirroring Maxmind's databases (to bypass their traffic limit policy),
 different hosts or IP addresses can be placed into geoip.conf, separated by
 a newline.
-.PP
-.SS -L, --latitude
+.TP
+.B -L, --latitude
 Also show latitude and longitude of hops.
-.PP
-.SS -N, --dns
+.TP
+.B -N, --dns
 Tells astraceroute to perform reverse DNS lookup for hop replies. The
-reverse option is ''\-n''.
-.PP
-.SS -S, --syn
+reverse option is \fB-n\fP.
+.TP
+.B -S, --syn
 Use TCP's SYN flag for the request.
-.PP
-.SS -A, --ack
+.TP
+.B -A, --ack
 Use TCP's ACK flag for the request.
-.PP
-.SS -F, --fin
+.TP
+.B -F, --fin
 Use TCP's FIN flag for the request.
-.PP
-.SS -P, --psh
+.TP
+.B -P, --psh
 Use TCP's PSH flag for the request.
-.PP
-.SS -U, --urg
+.TP
+.B -U, --urg
 Use TCP's URG flag for the request.
-.PP
-.SS -R, --rst
+.TP
+.B -R, --rst
 Use TCP's RST flag for the request.
-.PP
-.SS -E, --ecn-syn
+.TP
+.B -E, --ecn-syn
 Use TCP's ECN flag for the request.
-.PP
-.SS -t <tos>, --tos <tos>
+.TP
+.B -t <tos>, --tos <tos>
 Explicitly specify IP's TOS.
-.PP
-.SS -G, --nofrag
+.TP
+.B -G, --nofrag
 Set IP's no fragmentation flag.
-.PP
-.SS -Z, --show-packet
+.TP
+.B -Z, --show-packet
 Show and dissect the returned packet.
-.PP
-.SS -v, --version
+.TP
+.B -v, --version
 Show version information and exit.
-.PP
-.SS -h, --help
+.TP
+.B -h, --help
 Show user help and exit.
 .PP
 .SH USAGE EXAMPLE
-.PP
-.SS astraceroute -i eth0 -N -S -H netsniff-ng.org
+.TP
+.B astraceroute -i eth0 -N -S -H netsniff-ng.org
 This sends out a TCP SYN probe via the ''eth0'' networking device to the
 remote IPv4 host netsniff-ng.org. This request is most likely to pass. Also,
 tell astraceroute to perform reverse DNS lookups for each hop.
-.PP
-.SS astraceroute -6 -i eth0 -S -E -N -H www.6bone.net
+.TP
+.B astraceroute -6 -i eth0 -S -E -N -H www.6bone.net
 In this example, a TCP SYN/ECN probe for the IPv6 host www.6bone.net is being
 performed. Also in this case, the ''eth0'' device is being used as well as a
 reverse DNS lookup for each hop.
-.PP
-.SS astraceroute -i eth0 -N -F -H netsniff-ng.org
+.TP
+.B astraceroute -i eth0 -N -F -H netsniff-ng.org
 Here, we send out a TCP FIN probe to the remote host netsniff-ng.org. Again,
 on each hop a reverse DNS lookup is being done and the queries are transmitted
 from ''eth0''. IPv4 is used.
-.PP
-.SS astraceroute -i eth0 -N -FPU -H netsniff-ng.org
+.TP
+.B astraceroute -i eth0 -N -FPU -H netsniff-ng.org
 As in most other examples, we perform a trace route to IPv4 host netsniff-ng.org
 and do a TCP Xmas probe this time.
-.PP
-.SS astraceroute -i eth0 -N -H netsniff-ng.org -X "censor-me" -Z
+.TP
+.B astraceroute -i eth0 -N -H netsniff-ng.org -X "censor-me" -Z
 In this example, we have a Null probe to the remote host netsniff-ng.org, port
 80 (default) and this time, we append the cleartext string "censor-me" into the
 packet payload to test if a firewall or DPI will let this string pass. Such a trace
@@ -173,8 +173,8 @@ http://bgp.he.net/AS<number>.
 .SH BUGS
 The geographical locations are estimated with the help of Maxmind's GeoIP
 database and can differ from the real physical location. To decrease the
-possible errors, update the database regularly using astraceroute's \-\-update
-option.
+possible errors, update the database regularly using astraceroute's
+\fB--update\fP option.
 .PP
 At some point in time, we need a similar approach to gather more reliable path
 information such as in the paris-traceroute tool.
