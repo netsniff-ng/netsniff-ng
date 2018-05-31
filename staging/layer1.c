@@ -105,7 +105,11 @@ int send_eth(void)
      {
 	bytestring_s = str2hex (argval, bytestring, MAX_PAYLOAD_SIZE);
      }
-   
+   else
+     {
+        bytestring_s = str2hex (tx.arg_string, bytestring, MAX_PAYLOAD_SIZE);
+     }
+
    // Set the flags to shorten subsequent decisions:
    src = strlen(tx.eth_src_txt);
    dst = strlen(tx.eth_dst_txt);
