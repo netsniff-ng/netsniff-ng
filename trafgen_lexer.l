@@ -143,6 +143,7 @@ ip6_addr	({v680}|{v67}|{v66}|{v65}|{v64}|{v63}|{v62}|{v61}|{v60})
 "csumtcp"	{ return K_CSUMTCP; }
 "csumudp6"	{ return K_CSUMUDP6; }
 "csumtcp6"	{ return K_CSUMTCP6; }
+"csumicmp6"	{ return K_CSUMICMP6; }
 "drnd"		{ return K_DRND; }
 "dinc"		{ return K_DINC; }
 "ddec"		{ return K_DDEC; }
