@@ -276,6 +276,7 @@ static inline bool is_dynamic_csum(enum csum which)
 	case CSUM_TCP:
 	case CSUM_UDP6:
 	case CSUM_TCP6:
+	case CSUM_ICMP6:
 		return true;
 	default:
 		return false;
@@ -515,7 +516,7 @@ static void proto_pop_sub_hdr(void)
 }
 
 %token K_COMMENT K_FILL K_RND K_SEQINC K_SEQDEC K_DRND K_DINC K_DDEC K_WHITE
-%token K_CPU K_CSUMIP K_CSUMUDP K_CSUMTCP K_CSUMUDP6 K_CSUMTCP6 K_CONST8 K_CONST16 K_CONST32 K_CONST64
+%token K_CPU K_CSUMIP K_CSUMUDP K_CSUMTCP K_CSUMUDP6 K_CSUMTCP6 K_CSUMICMP6 K_CONST8 K_CONST16 K_CONST32 K_CONST64
 
 %token K_DADDR K_SADDR K_ETYPE K_TYPE
 %token K_TIME K_PRIO
@@ -721,6 +722,8 @@ csum
 		{ set_csum16($3, $5, CSUM_TCP6); }
 	| K_CSUMUDP6 '(' number delimiter number ')'
 		{ set_csum16($3, $5, CSUM_UDP6); }
+	| K_CSUMICMP6 '(' number delimiter number ')'
+		{ set_csum16($3, $5, CSUM_ICMP6); }
 	;
 
 seqinc

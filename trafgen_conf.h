@@ -19,6 +19,7 @@ enum csum {
 	CSUM_TCP,
 	CSUM_UDP6,
 	CSUM_TCP6,
+	CSUM_ICMP6,
 };
 
 struct counter {
