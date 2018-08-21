@@ -339,6 +339,7 @@ int reset(void)
    // Initialize random generator
    time(&t);
    srand((unsigned int)t);
+   srand48(t);
 
    // Reset device_list
    for (i=0; i<MZ_MAX_DEVICES; i++) {

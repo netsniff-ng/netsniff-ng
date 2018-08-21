@@ -105,18 +105,16 @@ higher layer packets the number of additional padding bytes are specified.
 .PP
 .SS -a <src-mac|keyword>
 Use specified source MAC address with hexadecimal notation such as 00:00:aa:bb:cc:dd.
-By default the interface MAC address will be used. The keywords ''rand'' and
- ''own'' refer to a random MAC address (only unicast addresses are created)
+By default the interface MAC address will be used. The keywords ''rand'' and ''own''
+refer to a random MAC address (only unicast addresses are created)
 and the own address, respectively. You can also use the keywords mentioned
 below although broadcast-type source addresses are officially invalid.
 .PP
 .SS -b <dst-mac|keyword>
 Use specified destination MAC address. By default, a broadcast is sent in raw
 layer 2 mode or to the destination hosts or gateway interface MAC address in normal
-(IP) mode. You can use the same keywords as mentioned above, as well as
- ''bc'' or ''bcast'', ''cisco'', and ''stp''. Please note that for the destination
-MAC address the ''rand'' keyword is supported but creates a random address only
-once, even when you send multiple packets.
+(IP) mode. You can use the same keywords as mentioned above, as well as ''bc''
+or ''bcast'', ''cisco'', and ''stp''.
 .PP
 .SS -A <src-ip|range|rand>
 Use specified source IP address, default is own interface address. Optionally, the
