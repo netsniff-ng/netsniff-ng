@@ -726,10 +726,10 @@ int get_mpls_params(char *params);
 int exists(char* str, char* ch);
 
 
-// Applies another random Ethernet source address to a given Ethernet-PTAG.
-// (The calling function should check 'tx.eth_src_rand' whether the SA 
+// Applies another random address to a given buffer.
+// (The calling function should check 'tx.eth_(dst|src)_rand' whether the address
 // should be randomized.)
-int update_Eth_SA(libnet_t *l, libnet_ptag_t t);
+void rand_addr(u_int8_t *addr);
 
 
 // Update timestamp and sequence number in the RTP header.

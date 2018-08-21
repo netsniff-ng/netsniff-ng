@@ -24,7 +24,7 @@
 //    This sections contains functions to manipulate headers of 
 //    Eth, MPLS, 802.1Q, IP, UDP, and TCP:
 //    
-//      int update_Eth_SA       (libnet_t *l, libnet_ptag_t t)
+//      int rand_addr           (u_int8_t *addr)
 //      int update_IP_SA        (libnet_t *l, libnet_ptag_t t)
 //      int update_IP_DA        (libnet_t *l, libnet_ptag_t t)
 //      int update_IP6_SA       (libnet_t *l, libnet_ptag_t t)
@@ -42,36 +42,19 @@
 #include "mz.h"
 #include "mops.h"
 
-///////////////////////////////////////////////////////////////////////////
-// Applies another random Ethernet source address to a given Ethernet-PTAG.
-// (The calling function should check 'tx.eth_src_rand' whether the SA 
+// Applies another random address to a given buffer.
+// (The calling function should check 'tx.eth_(dst|src)_rand' whether the address
 // should be randomized.)
-// 
-int update_Eth_SA(libnet_t *l, libnet_ptag_t t)
+void rand_addr(u_int8_t *addr)
 {
-   tx.eth_src[0] = (u_int8_t) ( ((float) rand()/RAND_MAX)*256) & 0xFE; // keeps bcast-bit zero
-   tx.eth_src[1] = (u_int8_t) ( ((float) rand()/RAND_MAX)*256);
-   tx.eth_src[2] = (u_int8_t) ( ((float) rand()/RAND_MAX)*256);
-   tx.eth_src[3] = (u_int8_t) ( ((float) rand()/RAND_MAX)*256);
-   tx.eth_src[4] = (u_int8_t) ( ((float) rand()/RAND_MAX)*256);
-   tx.eth_src[5] = (u_int8_t) ( ((float) rand()/RAND_MAX)*256);
- 
-   t = libnet_build_ethernet (tx.eth_dst, 
-			      tx.eth_src, 
-			      tx.eth_type, 
-			      NULL,              // the payload
-			      0, 
-			      l, 
-			      t);
+   nrand48((unsigned short *)addr);
+   nrand48((unsigned short *)(addr + 3));
 
-   if (t == -1)
-     {
-	fprintf(stderr, " mz/update_Eth_SA: Can't build Ethernet header: %s\n",
-		libnet_geterror(l));
-	exit(EXIT_FAILURE);
-     }
-   
-   return 0;
+   // Get rid of multicast addresses
+   addr[0] &= 0xfe;
+
+   // Set the locally administered bit
+   addr[0] |= 2;
 }
 
 

@@ -55,7 +55,7 @@ libnet_ptag_t  create_eth_frame (libnet_t *l, libnet_ptag_t  t3, libnet_ptag_t  
    u_int16_t dot1Q_eth_type=0x8100;
    int bytecnt=0;
 
-   int  isdot1Q, tcp_seq_delta, dp_isrange, sp_isrange, ip_dst_isrange, ip_src_isrange, eth_src_rand, rtp_mode=0;
+   int  isdot1Q, tcp_seq_delta, dp_isrange, sp_isrange, ip_dst_isrange, ip_src_isrange, eth_src_rand, eth_dst_rand, rtp_mode=0;
    unsigned int delay;
 
    
@@ -341,6 +341,7 @@ libnet_ptag_t  create_eth_frame (libnet_t *l, libnet_ptag_t  t3, libnet_ptag_t  
    count = tx.count;
    delay = tx.delay;
    eth_src_rand = tx.eth_src_rand;
+   eth_dst_rand = tx.eth_dst_rand;
    tcp_seq_delta = tx.tcp_seq_delta;
    dp_isrange = tx.dp_isrange;
    sp_isrange = tx.sp_isrange;
@@ -374,7 +375,8 @@ libnet_ptag_t  create_eth_frame (libnet_t *l, libnet_ptag_t  t3, libnet_ptag_t  
 	     // to libnet_adv_free_packet() should be made to free the memory packet occupies:
 	     libnet_adv_free_packet(l, packet); 
 	     
-	     if (eth_src_rand) update_Eth_SA(L, t);
+	     if (eth_dst_rand) rand_addr(tx.eth_dst);
+	     if (eth_src_rand) rand_addr(tx.eth_src);
 	     
 	     t = libnet_build_ethernet (tx.eth_dst, 
 					tx.eth_src, 
@@ -394,7 +396,15 @@ libnet_ptag_t  create_eth_frame (libnet_t *l, libnet_ptag_t  t3, libnet_ptag_t  
 	  }
 	else // No QinQ and/or MPLS modifications => use normal 'l' context:
 	  {
-	     if (eth_src_rand) update_Eth_SA(l, t);
+	     if (eth_dst_rand) rand_addr(tx.eth_dst);
+	     if (eth_src_rand) rand_addr(tx.eth_src);
+	     t = libnet_build_ethernet (tx.eth_dst,
+					tx.eth_src,
+					tx.eth_type,
+					NULL,
+					0,
+					l,
+					t);
 	     if (verbose) (void) print_frame_details();
 	     libnet_write(l);
 	  }
