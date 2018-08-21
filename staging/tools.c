@@ -687,15 +687,9 @@ int check_eth_mac_txt(int src_or_dst)
    // Okay, lets check the commandline argument:
    // 
    // Do you want a random MAC?
-   // TODO: Consider enforcement of unicast addresses
    if (strncmp(eth_mac_txt, "rand", 4)==0)
      {
-	eth_mac[0] = (u_int8_t) ( ((float) rand()/RAND_MAX)*256);
-	eth_mac[1] = (u_int8_t) ( ((float) rand()/RAND_MAX)*256);
-	eth_mac[2] = (u_int8_t) ( ((float) rand()/RAND_MAX)*256);
-	eth_mac[3] = (u_int8_t) ( ((float) rand()/RAND_MAX)*256);
-	eth_mac[4] = (u_int8_t) ( ((float) rand()/RAND_MAX)*256);
-	eth_mac[5] = (u_int8_t) ( ((float) rand()/RAND_MAX)*256);
+	rand_addr(eth_mac);
 	*eth_rand = 1;
      }
    // Do you want your own interface MAC?
