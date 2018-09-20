@@ -15,7 +15,7 @@ endif
 
 VERSION = 0
 PATCHLEVEL = 6
-SUBLEVEL = 4
+SUBLEVEL = 5
 EXTRAVERSION =
 NAME = Spiral Staircase
 
