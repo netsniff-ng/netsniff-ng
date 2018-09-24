@@ -699,17 +699,45 @@ int getopts (int argc, char *argv[])
 				(!ipv6_mode && get_ip_range_src(tx.ip_src_txt))
 				)
 			{
-				// name2addr4 accepts a DOTTED DECIMAL ADDRESS or a FQDN:
-				if (ipv6_mode)
+				// name2addr{4,6} accept a valid IP address or a FQDN:
+				if (ipv6_mode) {
 					tx.ip6_src = libnet_name2addr6 (l, tx.ip_src_txt, LIBNET_RESOLVE);
-				else
-					tx.ip_src = libnet_name2addr4 (l, tx.ip_src_txt, LIBNET_RESOLVE);
+					if (libnet_in6_is_error(tx.ip6_src)) {
+						/* libnet_in6_is_error returns 1 for the valid IPv6 address
+						* ffff:ffff:ffff:ffff:ffff:ffff. Use an additional inet_pton()
+						* check to cover cases where this address is specified
+						* as source
+						*/
+						struct in6_addr src_check;
+						if (inet_pton(AF_INET6, tx.ip_src_txt, &src_check) != 1) {
+							fprintf(stderr, "Failed to set source"
+							" IPv6 address. Please check if"
+							" source is set to a valid IPv6 address.\n");
+							return 1;
+						}
+					}
+				} else {
+					tx.ip_src = libnet_name2addr4(l, tx.ip_src_txt, LIBNET_RESOLVE);
+					if (tx.ip_src == -1) {
+						/* libnet_name2addr4() returns -1 for the valid address 255.255.255.255.
+						* Use an additional inet_pton() check to cover case where this address
+						* is specified as source
+						*/
+						struct in_addr src_check;
+						if (inet_pton(AF_INET, tx.ip_src_txt, &src_check) != 1) {
+							fprintf(stderr, "Failed to set source"
+								" IPv4 address. Please check if"
+								" source is set to a valid IPv4 address.\n");
+							return 1;
+						}
+					}
+				}
 			}
-		}
-		else { // no source IP specified: by default use own IP address
+		} else {
+			// no source IP specified: by default use own IP address
 			if (ipv6_mode) {
 				tx.ip6_src = libnet_get_ipaddr6(l);
-				if (strncmp((char*)&tx.ip6_src,(char*)&in6addr_error,sizeof(in6addr_error))==0)
+				if (strncmp((char*)&tx.ip6_src,(char*)&in6addr_error, sizeof(in6addr_error))==0)
 					printf("Failed to set source IPv6 address: %s", l->err_buf);
 			}
 			else
@@ -733,11 +761,40 @@ int getopts (int argc, char *argv[])
 				(ipv6_mode && get_ip6_range_dst(tx.ip_dst_txt, l)) || // returns 1 when no range has been specified
 				(!ipv6_mode && get_ip_range_dst(tx.ip_dst_txt)))
 			{
-				// name2addr4 accepts a DOTTED DECIMAL ADDRESS or a FQDN:
-				if (ipv6_mode)
+				// name2addr{4, 6} accept a valid IP address or a FQDN:
+				if (ipv6_mode) {
 					tx.ip6_dst = libnet_name2addr6 (l, tx.ip_dst_txt, LIBNET_RESOLVE);
-				else
-					tx.ip_dst = libnet_name2addr4 (l, tx.ip_dst_txt, LIBNET_RESOLVE);
+					if (libnet_in6_is_error(tx.ip6_dst)) {
+						/* libnet_in6_is_error returns 1 for the valid IPv6 address
+						* ffff:ffff:ffff:ffff:ffff:ffff. Use an additional inet_pton()
+						* check to cover cases where this address is specified
+						* as destination
+						*/
+						struct in6_addr dst_check;
+						if (inet_pton(AF_INET6, tx.ip_dst_txt, &dst_check) != 1) {
+							fprintf(stderr, "Failed to set destination"
+							" IPv6 address. Please check if"
+							" source is set to a valid IPv6 address.\n");
+							return 1;
+						}
+					}
+				} else {
+					tx.ip_dst = libnet_name2addr4(l, tx.ip_dst_txt, LIBNET_RESOLVE);
+					if (tx.ip_dst == -1) {
+						/* libnet_name2addr4() returns -1 for the valid address 255.255.255.255.
+						* Use an additional inet_pton() check to cover case where this address
+						* is specified as destination
+						*/
+						struct in_addr dst_check;
+						if (inet_pton(AF_INET, tx.ip_dst_txt, &dst_check) != 1) {
+							fprintf(stderr, "Failed to set destination"
+								" IPv4 address. Please check if"
+								" destination is set to a valid IPv4 address.\n");
+								return 1;
+						}
+					}
+				}
+
 			}
 		}
 		else { // no destination IP specified: by default use broadcast
