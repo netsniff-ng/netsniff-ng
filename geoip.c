@@ -630,8 +630,8 @@ static void init_mirrors(void)
 	memset(buff, 0, sizeof(buff));
 	while (fgets(buff, sizeof(buff), fp) != NULL &&
 	       i < array_size(servers)) {
-		buff[sizeof(buff) - 1] = 0;
-		buff[strlen(buff) - 1] = 0;
+		buff[strcspn(buff, "\r\n")] = 0;
+		buff[strcspn(buff, "\r\n")] = 0;
 
 		if (buff[0] == '#') {
 			memset(buff, 0, sizeof(buff));
