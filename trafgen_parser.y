@@ -1513,7 +1513,7 @@ void compile_packets(char *file, bool verbose, unsigned int cpu,
 	char tmp_file[128];
 	int ret = -1;
 
-	if (access(file, R_OK)) {
+	if (strncmp("-", file, strlen("-")) && access(file, R_OK)) {
 		fprintf(stderr, "Cannot access %s: %s!\n", file, strerror(errno));
 		die();
 	}
