@@ -175,6 +175,12 @@ Process a number of packets and then exit. If the number of packets is 0, then
 this is equivalent to infinite packets resp. processing until interrupted.
 Otherwise, a number given as an unsigned integer will limit processing.
 .TP
+.B -O <N>, --overwrite <N>
+A number from 0 to N-1 will be used in the file name instead of a Unix
+timestamp. Previous file will be overwritten when number wraps around. The
+maximum value is 2^32 - 1. Intended for rotating capture files when used
+with options \fB\-F\fP and \fB\-P\fP.
+.TP
 .B -P <name>, --prefix <name>
 When dumping pcap files into a folder, a file name prefix can be defined with
 this option. If not otherwise specified, the default prefix is \[lq]dump\-\[rq]
