@@ -68,6 +68,7 @@ struct ctx {
 	uint32_t fanout_group, fanout_type;
 	uint64_t pkts_seen, pkts_recvd, pkts_drops;
 	uint64_t pkts_recvd_last, pkts_drops_last, pkts_skipd_last;
+	unsigned long overwrite_interval, file_number;
 };
 
 static volatile sig_atomic_t sigint = 0, sighup = 0;
@@ -75,7 +76,7 @@ static volatile bool next_dump = false;
 static volatile sig_atomic_t sighup_time = 0;
 
 static const char *short_options =
-	"d:i:o:rf:MNJt:S:k:n:b:HQmcsqXlvhF:RGAP:Vu:g:T:DBUC:K:L:w";
+	"d:i:o:rf:MNJt:S:k:n:b:HQmcsqXlvhF:RGAO:P:Vu:g:T:DBUC:K:L:w";
 static const struct option long_options[] = {
 	{"dev",			required_argument,	NULL, 'd'},
 	{"in",			required_argument,	NULL, 'i'},
@@ -87,6 +88,7 @@ static const struct option long_options[] = {
 	{"ring-size",		required_argument,	NULL, 'S'},
 	{"kernel-pull",		required_argument,	NULL, 'k'},
 	{"bind-cpu",		required_argument,	NULL, 'b'},
+	{"overwrite",		required_argument,	NULL, 'O'},
 	{"prefix",		required_argument,	NULL, 'P'},
 	{"user",		required_argument,	NULL, 'u'},
 	{"group",		required_argument,	NULL, 'g'},
@@ -778,6 +780,24 @@ out:
 	}
 }
 
+static inline void generate_multi_pcap_filename(struct ctx *ctx, char *fname, size_t size, time_t ftime)
+{
+	if (ctx->overwrite_interval > 0) {
+		slprintf(fname, size, "%s/%s%010lu.pcap", ctx->device_out,
+				 ctx->prefix ? : "dump-", ctx->file_number);
+
+		ctx->file_number++;
+
+		if (ctx->file_number >= ctx->overwrite_interval) {
+			ctx->file_number = 0;
+		}
+	}
+	else {
+		slprintf(fname, size, "%s/%s%lu.pcap", ctx->device_out,
+				 ctx->prefix ? : "dump-", ftime);
+	}
+}
+
 static void finish_multi_pcap_file(struct ctx *ctx, int fd)
 {
 	__pcap_io->fsync_pcap(fd);
@@ -794,7 +814,7 @@ static void finish_multi_pcap_file(struct ctx *ctx, int fd)
 static int next_multi_pcap_file(struct ctx *ctx, int fd)
 {
 	int ret;
-	char fname[PATH_MAX];
+	char fname[PATH_MAX] = {0};
 	time_t ftime;
 
 	__pcap_io->fsync_pcap(fd);
@@ -810,8 +830,7 @@ static int next_multi_pcap_file(struct ctx *ctx, int fd)
 	} else
 		ftime = time(NULL);
 
-	slprintf(fname, sizeof(fname), "%s/%s%lu.pcap", ctx->device_out,
-		 ctx->prefix ? : "dump-", ftime);
+	generate_multi_pcap_filename(ctx, fname, sizeof(fname), ftime);
 
 	fd = open_or_die_m(fname, O_RDWR | O_CREAT | O_TRUNC |
 			   O_LARGEFILE, DEFFILEMODE);
@@ -844,15 +863,14 @@ static void reset_interval(struct ctx *ctx)
 static int begin_multi_pcap_file(struct ctx *ctx)
 {
 	int fd, ret;
-	char fname[PATH_MAX];
+	char fname[PATH_MAX] = {0};
 
 	bug_on(!__pcap_io);
 
 	if (ctx->device_out[strlen(ctx->device_out) - 1] == '/')
 		ctx->device_out[strlen(ctx->device_out) - 1] = 0;
 
-	slprintf(fname, sizeof(fname), "%s/%s%lu.pcap", ctx->device_out,
-		 ctx->prefix ? : "dump-", time(NULL));
+	generate_multi_pcap_filename(ctx, fname, sizeof(fname), time(NULL));
 
 	fd = open_or_die_m(fname, O_RDWR | O_CREAT | O_TRUNC |
 			   O_LARGEFILE, DEFFILEMODE);
@@ -1239,6 +1257,7 @@ static void __noreturn help(void)
 	     "  -R|--rfraw                     Capture or inject raw 802.11 frames\n"
 	     "  -n|--num <0|uint>              Number of packets until exit (def: 0)\n"
 	     "  -P|--prefix <name>             Prefix for pcaps stored in directory\n"
+	     "  -O|--overwrite <N>             Limit the number of pcaps to N (file names use numbers 0 to N-1)\n"
 	     "  -T|--magic <pcap-magic>        Pcap magic number/pcap format to store, see -D\n"
 	     "  -w|--cooked                    Use Linux \"cooked\" header instead of link header\n"
 	     "  -D|--dump-pcap-types           Dump pcap types and magic numbers and quit\n"
@@ -1316,6 +1335,9 @@ int main(int argc, char **argv)
 			break;
 		case 'P':
 			ctx.prefix = xstrdup(optarg);
+			break;
+		case 'O':
+			ctx.overwrite_interval = strtoul(optarg, NULL, 0);
 			break;
 		case 'R':
 			ctx.rfraw = 1;
@@ -1526,6 +1548,7 @@ int main(int argc, char **argv)
 			case 'f':
 			case 't':
 			case 'P':
+			case 'O':
 			case 'F':
 			case 'n':
 			case 'S':
