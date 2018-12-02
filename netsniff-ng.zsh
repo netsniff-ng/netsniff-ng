@@ -59,6 +59,7 @@ _arguments -s -S \
     "(-S --ring-size)"{-S,--ring-size}"[Specify ring size to: <num>KiB/MiB/GiB]:ringsize:" \
     "(-k --kernel-pull)"{-k,--kernel-pull}"[Kernel pull from user interval in us (def: 10us)]:kernelpull:_gnu_generic" \
     "(-b --bind-cpu)"{-b,--bind-cpu}"[Bind to specific CPU]:cpunum:_cpu" \
+    "(-O --overwrite"{-O,--overwrite}"[Limit the number of pcaps]:filecount:" \
     "(-u --user)"{-u,--user}"[Drop privileges and change to userid]:user:_user_info" \
     "(-g --group)"{-g,--group}"[Drop privileges and change to groupid]:group:_group_info" \
     "(-H --prio-high)"{-H,--prio-high}"[Make this high priority process]" \
