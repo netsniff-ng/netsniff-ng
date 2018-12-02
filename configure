@@ -190,7 +190,7 @@ check_bison()
 
 check_nacl()
 {
-	echo -n "[*] Checking nacl ... "
+	echo -n "[*] Checking nacl/sodium ... "
 
 	cat > $TMPDIR/nacltest.c << EOF
 #include "crypto_hash_sha512.h"
@@ -204,7 +204,13 @@ int main(void) { }
 EOF
 
 	if [ -z $NACL_INC_DIR ] ; then
-		NACL_INC_DIR="$SYSROOT/usr/include/nacl"
+		NACL_INC_DIR=$(pkg-config --variable=includedir libsodium)
+		if [ -z $NACL_INC_DIR ] ; then
+			NACL_INC_DIR="$SYSROOT/usr/include/nacl"
+		else
+			NACL_INC_DIR="$NACL_INC_DIR/sodium"
+			NACL_LIB="sodium"
+		fi
 	fi
 
 	if [ -z $NACL_LIB_DIR ] ; then
