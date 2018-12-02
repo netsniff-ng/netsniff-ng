@@ -784,7 +784,7 @@ static void generate_multi_pcap_filename(struct ctx *ctx, char *fname, size_t si
 {
 	if (ctx->overwrite_interval > 0) {
 		slprintf(fname, size, "%s/%s%010lu.pcap", ctx->device_out,
-			 ctx->prefix ? : "dump-", ctx->file_number);
+			 ctx->prefix, ctx->file_number);
 
 		ctx->file_number++;
 
@@ -792,7 +792,7 @@ static void generate_multi_pcap_filename(struct ctx *ctx, char *fname, size_t si
 			ctx->file_number = 0;
 	} else {
 		slprintf(fname, size, "%s/%s%lu.pcap", ctx->device_out,
-			 ctx->prefix ? : "dump-", ftime);
+			 ctx->prefix, ftime);
 	}
 }
 
@@ -1576,6 +1576,9 @@ int main(int argc, char **argv)
 
 	if (!strcmp(ctx.device_in, "any") || !strcmp(ctx.device_in, "lo"))
 		ctx.lo_ifindex = device_ifindex("lo");
+
+	if (!ctx.prefix)
+		ctx.prefix = xstrdup("dump-");
 
 	register_signal(SIGINT, signal_handler);
 	register_signal(SIGQUIT, signal_handler);
