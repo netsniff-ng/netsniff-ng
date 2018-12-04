@@ -1,0 +1,179 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+
+<head>
+<title>netsniff-ng toolkit</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="Robots" content="noarchive">
+<link rel="Shortcut Icon" href="http://netsniff-ng.org/img/tiny-logo.png" type="image/png">
+<link type="text/css" rel="stylesheet" media="screen" href="style.css" />
+</head>
+
+<body>
+<h1>netsniff-ng toolkit</h1>
+<h2>Summary</h2>
+<p>
+netsniff-ng is a free Linux networking toolkit, a Swiss army knife for your daily Linux network plumbing if you will.
+</p>
+<p>
+Its gain of performance is reached by zero-copy mechanisms, so that on packet reception <i>and</i> transmission the kernel does not need to copy packets from kernel space to user space and vice versa.
+</p><p>
+Our toolkit can be used for network development and analysis, debugging, auditing or network reconnaissance.
+</p><p>
+The netsniff-ng toolkit consists of the following utilities:
+<ul>
+  <li><b>netsniff-ng</b>, a fast zero-copy analyzer, pcap capturing and replaying tool</li>
+  <li><b>trafgen</b>, a multithreaded low-level zero-copy network packet generator</li>
+  <li><b>mausezahn</b>, high-level packet generator for HW/SW appliances with Cisco-CLI*</li>
+  <li><b>bpfc</b>, a Berkeley Packet Filter compiler, Linux BPF JIT disassembler</li>
+  <li><b>ifpps</b>, a top-like kernel networking statistics tool</li>
+  <li><b>flowtop</b>, a top-like netfilter connection tracking tool</li>
+  <li><b>curvetun</b>, a lightweight curve25519-based IP tunnel</li>
+  <li><b>astraceroute</b>, an autonomous system (AS) trace route utility</li>
+</ul>
+<b>Get it via Git:</b>&nbsp;&nbsp; <code>git clone git://<a href="https://github.com/netsniff-ng/netsniff-ng">github.com/netsniff-ng/netsniff-ng</a>.git</code><br><br>
+Note (*): We took over further maintenance and development of <a href="http://www.perihel.at/sec/mz/">mausezahn</a>.
+<h2>Download and Release Notes</h2>
+<p>
+In general, the latest Git development version from our repository can be used as it is considered as quite stable and includes new features.
+</p>
+<p>
+From time to time we also do stable snapshots from our Git tree and announce it on our <a href="http://news.gmane.org/gmane.linux.network.netsniff-ng">mailing list</a>. The current stable release is <a href="http://pub.netsniff-ng.org/netsniff-ng/netsniff-ng-0.6.5.tar.gz">netsniff-ng 0.6.5</a>.
+</p>
+<p>
+It can be downloaded from our <a href="http://pub.netsniff-ng.org/netsniff-ng/">public directory</a>, from the <a href="http://mirror.distanz.ch/netsniff-ng">mirror at distanz.ch</a>, or via Git:<p>
+<pre>
+  git clone git://github.com/netsniff-ng/netsniff-ng.git
+  cd netsniff-ng
+  git checkout v0.6.5
+</pre></p>
+Older releases can also be found in our <a href="http://pub.netsniff-ng.org/netsniff-ng/">public directory</a> (<a href="http://mirror.distanz.ch/netsniff-ng/">mirror</a>) and we also have a source code cross referencer for <a href="http://lingrok.org/xref/netsniff-ng/">netsniff-ng</a>'s Git tree.
+</p>
+<p>
+netsniff-ng is open source and released under the GPL version 2.0.
+</p>
+</p>
+<h3>Release Notes</h3>
+<p>
+<a href="https://github.com/netsniff-ng/netsniff-ng/releases">All release notes</a> can be found on Github.
+</p>
+
+<h2>Tools</h2>
+<p>
+<b>netsniff-ng</b> is a fast network analyzer based on packet mmap(2) mechanisms. It can record pcap files to disc, replay them and also do an offline and online analysis. Capturing, analysis or replay of raw 802.11 frames are supported as well. pcap files are also compatible with tcpdump or Wireshark traces. netsniff-ng processes those pcap traces either in scatter-gather I/O or by mmap(2) I/O.
+<p>
+<b>trafgen</b> is a multi-threaded network traffic generator based on packet mmap(2) mechanisms. It has its own flexible, macro-based low-level packet configuration language. Injection of raw 802.11 frames are supported as well. trafgen has a significantly higher speed than mausezahn and comes very close to pktgen, but runs from user space. pcap traces can also be converted into a trafgen packet configuration.
+<p>
+<b>mausezahn</b> is a high-level packet generator that can run on a hardware-software appliance and comes with a Cisco-like CLI. It can craft nearly every possible or impossible packet. Thus, it can be used, for example, to test network behaviour under strange circumstances (stress test, malformed packets) or to test hardware-software appliances for several kind of attacks.
+<p>
+<b>bpfc</b> is a Berkeley Packet Filter (BPF) compiler that understands the original BPF language developed by McCanne and Jacobson. It accepts BPF mnemonics and converts them into kernel/netsniff-ng readable BPF ``opcodes''. It also supports undocumented Linux filter extensions. This can especially be useful for more complicated filters, that high-level filters fail to support.
+<p>
+<b>ifpps</b> is a tool which periodically provides top-like networking and system statistics from the Linux kernel. It gathers statistical data directly from procfs files and does not apply any user space traffic monitoring that would falsify statistics on high packet rates. For wireless, data about link connectivity is provided as well.
+<p>
+<b>flowtop</b> is a top-like connection tracking tool that can run on an end host or router. It is able to present TCP or UDP flows that have been collected by the kernel's netfilter framework. GeoIP and TCP state machine information is displayed. Also, on end hosts flowtop can show PIDs and application names that flows relate to. No user space traffic monitoring is done, thus all data is gathered by the kernel.
+<p>
+<b>curvetun</b> is a lightweight, high-speed ECDH multiuser tunnel for Linux. curvetun uses the Linux TUN/TAP interface and supports {IPv4,IPv6} over {IPv4,IPv6} with UDP or TCP as carrier protocols. Packets are encrypted end-to-end by a symmetric stream cipher (Salsa20) and authenticated by a MAC (Poly1305), where keys have previously been computed with the ECDH key agreement protocol (Curve25519).
+<p>
+<b>astraceroute</b> is an autonomous system (AS) trace route utility. Unlike traceroute or tcptraceroute, it not only display hops, but also their AS information they belong to as well as GeoIP information and other interesting things. On default, it uses a TCP probe packet and falls back to ICMP probes in case no ICMP answer has been received.
+<p>
+Concluding, the toolkit is split into small, useful utilities that are or are not necessarily related to each other. Each program for itself fills a gap as a helper in your daily network debugging, development or audit.
+
+<h2>Mailing List</h2>
+<p>
+Please post questions and patches to the netsniff-ng mailing list <a href="mailto:netsniff-ng@googlegroups.com">netsniff-ng@googlegroups.com</a> (<a href="https://groups.google.com/forum/#!forum/netsniff-ng">list on Google Groups</a>, <a href="https://www.mail-archive.com/netsniff-ng%40googlegroups.com/">archive</a>)
+</p>
+
+<h2>Documentation</h2>
+<p>
+The best way to get a good overview of what it is all about and how the tools work is to look into the individual man pages of the toolkit, found in the source code repository. This covers everything you need to know.
+<p>
+If you start each tool with ``--help'', minimal usage examples are provided, too. We also have a <a href="faq.html">frequently asked question</a> page. Moreover, see the Wikipedia <a href="http://en.wikipedia.org/wiki/Netsniff-ng">article</a> people wrote about netsniff-ng. If all of this is not enough, you can write your question to <a href="mailto:netsniff-ng@googlegroups.com">netsniff-ng@googlegroups.com</a>, or google for it on third party sites or blogs.
+<p>
+Various conference slides from netsniff-ng talks can be found <a href="http://pub.netsniff-ng.org/paper/">here</a>:<p>
+<b>2013:</b>
+ <ul>
+  <li>A look at the netsniff-ng toolkit [<a href="http://jonschipp.com/talks/derbycon2013.pdf">pdf</a>] (Jon Schipp, Derbycon 2013, Louisville)</li>
+  <li><a href="http://www.mosscon.org/sessions/look-netsniff-ng-toolkit">A look at the netsniff-ng toolkit</a> [<a href="http://jonschipp.com/talks/mosscon2013.pdf">pdf</a>] (Jon Schipp, Midwest Open Source Software Conference, Louisville)</li>
+  <li><a href="http://workshop.netfilter.org/2013/wiki/index.php/List_of_presentations#17:00_2">netsniff-ng toolkit: Swiss army knife for network development and debugging</a> [<a href="http://pub.netsniff-ng.org/paper/nfws3_2013.pdf">pdf</a>] (Daniel Borkmann, Netfilter Workshop, Copenhagen)</li>
+  <li><a href="http://workshop.netfilter.org/2013/wiki/index.php/List_of_presentations#15:00">top-like connection tracking with flowtop</a> [<a href="http://pub.netsniff-ng.org/paper/nfws1_2013.pdf">pdf</a>] (Daniel Borkmann, Netfilter Workshop, Copenhagen)</li>
+  <li><a href="http://opensourcedays.org/2013/content/linuxs-packet-mmap2-bpf-and-netsniff-ng-toolkit">Packet sockets, BPF, and the netsniff-ng toolkit (short version of Brno)</a> [<a href="http://pub.netsniff-ng.org/paper/osd_2013.pdf">pdf</a>, <a href="http://video.dkuug.dk/media/linuxs-packet-mmap2-bpf-and-the-netsniff-ng-toolki">video</a>] (Daniel Borkmann, Open Source Days, Copenhagen)</li>
+  <li><a href="http://developerconference2013.sched.org/event/25eb9c38dd79722af77c3c8740ff7ece#.UVP-vIrZI1K">Linux' packet mmap(), BPF, and the netsniff-ng toolkit</a> [<a href="http://pub.netsniff-ng.org/paper/devconf_2013.pdf">pdf</a>, <a href="http://www.youtube.com/watch?v=rS_Ik_FHlUI">video</a>] (Daniel Borkmann, Red Hat Developer Conference, Brno)</li>
+ </ul>
+<b>2012:</b>
+ <ul>
+  <li><a href="http://gtalug.org/wiki/Meetings:2012-10">Network Debugging Toolkit: netsniff-ng</a> [<a href="http://pub.netsniff-ng.org/paper/gtalug_2012.pdf">pdf</a>] (Daniel Borkmann, Greater Toronto Area Linux User Group, Toronto)</li>
+ </ul>
+netsniff-ng toolkit partially covered in books:<p>
+<ul>
+  <li><a href="http://www.appliednsm.com/about-the-book/">Applied Network Security Monitoring</a> (Chris Sanders, will appear in Q3 2013)</li>
+  <li><a href="http://nostarch.com/nsm">Practice Of Network Security Monitoring</a> (Richard Bejtlich, July 2013)</li>
+</ul>
+
+To dig into the inner workings of the Berkeley Packet Filter architecture, have a look at <a href="ftp://ftp.ee.lbl.gov/papers/bpf-usenix93.ps.Z">this</a>. Documentation about the ``packet_mmap'' architecture with ``pf_packet'' sockets for the Linux kernel can be downloaded from <a href="http://www.kernel.org/">kernel.org</a> under <a href="http://lxr.linux.no/linux+v3.2.9/Documentation/networking/packet_mmap.txt">packet_mmap.txt</a>.
+
+<h2>Development</h2>
+<p>
+<b>Source control</b>
+<p>
+There's a public Git repository at <a href="https://github.com/netsniff-ng/netsniff-ng">Github</a> where you can check out the entire code base. For tamper resistant downloading, clone the Git repository and checkout the corresponding version tag. It can be verified with <a href="http://www.gnupg.org/">GPG</a>.
+<p>
+<b>Maintenance:</b>
+<p>
+The Git repository of the toolkit is maintained by <a href="http://distanz.ch/">Tobias Klauser</a> and <a href="http://borkmann.ch/">Daniel Borkmann</a>.
+</p>
+<b>Testing:</b>
+<p>
+Especially for testing netsniff-ng's protocol dissectors, we have a <a href="http://pub.netsniff-ng.org/pcaps/">public archive</a> maintained by <a href="https://github.com/markusa">Markus Amend</a> with a lot of example pcap files for raw 802.11 frames, VLAN, ICMP, IPv6, MPLS and many other protocols. There's also a dissector fuzzing script in the source repository to test broken or half-broken pcap files. Some usage examples for testing can also be found <a href="http://pub.netsniff-ng.org/examples/">here</a>.
+</p>
+<p>
+<b>Documents</b>
+<p>
+There is a netsniff-ng <a href="faq.html">frequently asked question</a> site and for participating in development have a look at the documentation and man-page files within the source code. <a href="http://www.gnu.org/licenses/old-licenses/gpl-2.0-faq.html">Here</a> is also a FAQ about the GNU GPL version 2, under which netsniff-ng is licensed. For reporting bugs please use our <a href="http://bugs.netsniff-ng.org/">bug tracking system</a> or preferably write an e-mail to our mailing list.
+<p>
+<b>Contribute</b>
+<p>
+Currently, netsniff-ng is only available for Linux platforms. If you have a port for *BSD, let us know for merging your port into the main source tree. However, please do not port netsniff-ng to Windows or other proprietary junk software! Here is a nice explanation why; we share Felix von Leitner's <a href="http://www.fefe.de/nowindows/">point of view</a>.
+<p>
+If you think this software is great, then please consider to contribute in one of the following ways:
+<ul>
+  <li>Review and contribute to the source code</li>
+  <li>Add or improve documentation, man-pages</li>
+  <li>Mention us in your talks at conferences</li>
+  <li>Maintain distribution specific packages</li>
+  <li>Test netsniff-ng on your specific platform</li>
+</ul>
+
+<h2>Support</h2>
+<p>
+A mailing list for netsniff-ng moderated, spam free user discussions is open to the <a href="http://groups.google.com/group/netsniff-ng">public</a>. Simply mail to <a href="mailto:netsniff-ng@googlegroups.com">netsniff-ng@googlegroups.com</a>.
+</p>
+<p>
+There's also an archive at <a href="http://dir.gmane.org/gmane.linux.network.netsniff-ng">gmane</a> and a <a href="http://www.mail-archive.com/netsniff-ng%40googlegroups.com/">searchable archive</a>. We usually track (and then fix) bugs through our mailing list. But we also accept bug reports through our <a href="https://github.com/netsniff-ng/netsniff-ng/issues">bug tracker</a>.
+<p>
+Before posting questions, have a look at our <a href="faq.html">FAQ</a>.
+
+<h2>Git Tree</h2>
+<p>The netsniff-ng project is always looking for community members interested in contributing. For versioning control, the natural choice is <a href="http://git-scm.com/">Git</a>.
+</p>
+<p>
+The patch submission process is similar to the one of the Linux kernel. So please respect the kernel's coding guidelines and patch submission procedure.
+</p>
+<p>
+Send your patches e.g. via git-send-email(1) to <a href="mailto:netsniff-ng@googlegroups.com">netsniff-ng@googlegroups.com</a> with ``[PATCH]'' as a subject prefix for further review and inclusion.</p>
+<dl>
+  <dt>git://</dt>
+  <dd>
+  <pre>git://github.com/netsniff-ng/netsniff-ng.git</pre>
+  </dd>
+  <dt>http://</dt>
+  <dd><a href="https://github.com/netsniff-ng/netsniff-ng">https://github.com/netsniff-ng/netsniff-ng</a></dd>
+  <dt>mirror</dt>
+  <dd><a href="http://git.distanz.ch/cgit.cgi/netsniff-ng.git/">http://git.distanz.ch/cgit.cgi/netsniff-ng.git/</a></dd>
+</dl>
+
+<div style="float: right;"><a href="http://netsniff-ng.org"><img src="http://netsniff-ng.org/img/logo_small.png" border="0" alt="netsniff-ng"></a></div>
+<h2>Thanks</h2>
+<p>
+netsniff-ng is free software and provided in the hope that it is found useful for your daily network plumbing. Suggestions for new features or patch contributions are very welcome and appreciated, drop us a short mail.<br><br>
+</body>
+</html>
