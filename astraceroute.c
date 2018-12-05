@@ -69,6 +69,8 @@ struct proto_ops {
 			int latitude);
 };
 
+
+
 static sig_atomic_t sigint = 0;
 
 static int assemble_ipv4(uint8_t *packet, size_t len, int ttl, int proto,
@@ -266,56 +268,130 @@ static void __assemble_data(uint8_t *packet, size_t len, const char *payload)
 	}
 }
 
-static void __assemble_icmp4(uint8_t *packet, size_t len)
+static void __assemble_icmp4_payload(uint8_t *packet, size_t len,
+		const struct ctx *ctx)
 {
 	struct icmphdr *icmph = (struct icmphdr *) packet;
-
-	bug_on(len < sizeof(struct icmphdr));
-
+	bug_on(len < sizeof(*icmph));
+	
+	/* XXX: maybe the _id_ and _sequence_ fields
+	        of the ICMP header should be utilized
+	        and not just left as zero?
+	*/
 	icmph->type = ICMP_ECHO;
 	icmph->code = 0;
 	icmph->checksum = 0;
+	
+	uint8_t *data   = packet + sizeof(*icmph);
+	size_t data_len = len - sizeof(*icmph); 
+
+	__assemble_data(data, data_len, ctx->payload);
+	
+	
+	icmph->checksum = csum((unsigned short *)packet, len / 2);
 }
 
-static void __assemble_icmp6(uint8_t *packet, size_t len)
+static void __assemble_icmp6_payload(uint8_t *packet, size_t len,
+		const struct ctx *ctx,
+		const struct sockaddr *dst, const struct sockaddr *src)
 {
 	struct icmp6hdr *icmp6h = (struct icmp6hdr *) packet;
-
-	bug_on(len < sizeof(struct icmp6hdr));
+	bug_on(len < sizeof(*icmp6h));
 
 	icmp6h->icmp6_type = ICMPV6_ECHO_REQUEST;
 	icmp6h->icmp6_code = 0;
 	icmp6h->icmp6_cksum = 0;
+	
+	uint8_t *data   = packet + sizeof(*icmp6h);
+	size_t data_len = len - sizeof(*icmp6h); 
+
+	__assemble_data(data, data_len, ctx->payload);
+	
+	struct ip6_hdr ip6hdr;
+	
+	memcpy(&ip6hdr.ip6_src, &((const struct sockaddr_in6 *) src)->sin6_addr,
+		sizeof(ip6hdr.ip6_src));
+	memcpy(&ip6hdr.ip6_dst, &((const struct sockaddr_in6 *) dst)->sin6_addr,
+		sizeof(ip6hdr.ip6_dst));
+
+	icmp6h->icmp6_cksum
+		= p6_csum(&ip6hdr, packet, sizeof(*icmp6h) + data_len, IPPROTO_ICMPV6);
 }
 
-static void __assemble_tcp(uint8_t *packet, size_t len, int syn, int ack,
-			   int urg, int fin, int rst, int psh, int ecn,
-			   int dport)
+static size_t __assemble_tcp_header(struct tcphdr *tcph,
+		const struct ctx *ctx)
 {
-	struct tcphdr *tcph = (struct tcphdr *) packet;
-
-	bug_on(len < sizeof(struct tcphdr));
-
 	tcph->source = htons((uint16_t) rand());
-	tcph->dest = htons((uint16_t) dport);
+	tcph->dest = htons((uint16_t) ctx->dport);
 
 	tcph->seq = htonl(rand());
-	tcph->ack_seq = (!!ack ? htonl(rand()) : 0);
+	tcph->ack_seq = (!!ctx->ack ? htonl(rand()) : 0);
 
 	tcph->doff = 5;
 
-	tcph->syn = !!syn;
-	tcph->ack = !!ack;
-	tcph->urg = !!urg;
-	tcph->fin = !!fin;
-	tcph->rst = !!rst;
-	tcph->psh = !!psh;
-	tcph->ece = !!ecn;
-	tcph->cwr = !!ecn;
+	tcph->syn = !!ctx->syn;
+	tcph->ack = !!ctx->ack;
+	tcph->urg = !!ctx->urg;
+	tcph->fin = !!ctx->fin;
+	tcph->rst = !!ctx->rst;
+	tcph->psh = !!ctx->psh;
+	tcph->ece = !!ctx->ecn;
+	tcph->cwr = !!ctx->ecn;
 
 	tcph->window = htons((uint16_t) (100 + (rand() % 65435)));
-	tcph->urg_ptr = (!!urg ? htons((uint16_t) rand()) :  0);
 	tcph->check = 0;
+	tcph->urg_ptr = (!!ctx->urg ? htons((uint16_t) rand()) :  0);
+	
+	return tcph->doff * 4;
+}
+
+static void __assemble_tcp_payload(uint8_t *packet, size_t len,
+		const struct ctx *ctx,
+		const struct sockaddr *dst, const struct sockaddr *src)
+{
+	
+	struct tcphdr *tcph = (struct tcphdr *) packet;
+	bug_on(len < sizeof(*tcph));
+	
+	size_t tcp_len = __assemble_tcp_header(tcph, ctx);
+	
+	uint8_t *data   = packet + tcp_len;
+	size_t data_len = len - tcp_len; 
+	
+	__assemble_data(data, data_len, ctx->payload);
+
+	tcph->check = p4_csum(
+		&(struct ip){
+			.ip_src = { ((const struct sockaddr_in *) src)->sin_addr.s_addr },
+			.ip_dst = { ((const struct sockaddr_in *) dst)->sin_addr.s_addr }
+		},
+		packet,
+		tcp_len + data_len,
+		IPPROTO_TCP
+	);
+}
+
+static void __assemble_tcp6_payload(uint8_t *packet, size_t len,
+		const struct ctx *ctx,
+		const struct sockaddr *dst, const struct sockaddr *src)
+{
+	struct tcphdr *tcph = (struct tcphdr *) packet;
+	bug_on(len < sizeof(*tcph));
+	
+	size_t tcp_len = __assemble_tcp_header(tcph, ctx);
+	
+	uint8_t *data   = packet + tcp_len;
+	size_t data_len = len - tcp_len; 
+	
+	__assemble_data(data, data_len, ctx->payload);
+
+	struct ip6_hdr ip6hdr;
+	memcpy(&ip6hdr.ip6_src, &((const struct sockaddr_in6 *) src)->sin6_addr,
+		sizeof(ip6hdr.ip6_src));
+	memcpy(&ip6hdr.ip6_dst, &((const struct sockaddr_in6 *) dst)->sin6_addr,
+		sizeof(ip6hdr.ip6_dst));
+
+	tcph->check = p6_csum(&ip6hdr, packet, tcp_len + data_len, IPPROTO_TCP);
 }
 
 static int assemble_ipv4(uint8_t *packet, size_t len, int ttl, int proto,
@@ -323,7 +399,7 @@ static int assemble_ipv4(uint8_t *packet, size_t len, int ttl, int proto,
 			 const struct sockaddr *src)
 {
 	uint8_t *data;
-	size_t data_len, off_next = 0;
+	size_t data_len;
 	struct iphdr *iph = (struct iphdr *) packet;
 
 	bug_on(!src || !dst);
@@ -345,28 +421,24 @@ static int assemble_ipv4(uint8_t *packet, size_t len, int ttl, int proto,
 	iph->daddr = ((const struct sockaddr_in *) dst)->sin_addr.s_addr;
 
 	iph->protocol = (uint8_t) proto;
+	iph->check = 0;
 
 	data = packet + sizeof(*iph);
 	data_len = len - sizeof(*iph);
 
 	switch (proto) {
 	case IPPROTO_TCP:
-		__assemble_tcp(data, data_len, ctx->syn, ctx->ack, ctx->urg,
-			       ctx->fin, ctx->rst, ctx->psh, ctx->ecn, ctx->dport);
-		off_next = sizeof(struct tcphdr);
+		__assemble_tcp_payload(data, data_len, ctx, dst, src);
 		break;
+		
 	case IPPROTO_ICMP:
-		__assemble_icmp4(data, data_len);
-		off_next = sizeof(struct icmphdr);
+		__assemble_icmp4_payload(data, data_len, ctx);
 		break;
+		
 	default:
 		bug();
 	}
 
-	data = packet + sizeof(*iph) + off_next;
-	data_len = len - sizeof(*iph) - off_next;
-
-	__assemble_data(data, data_len, ctx->payload);
 
 	iph->check = csum((unsigned short *) packet, ntohs(iph->tot_len) >> 1);
 
@@ -378,7 +450,7 @@ static int assemble_ipv6(uint8_t *packet, size_t len, int ttl, int proto,
 			 const struct sockaddr *src)
 {
 	uint8_t *data;
-	size_t data_len, off_next = 0;
+	size_t data_len;
 	struct ip6_hdr *ip6h = (struct ip6_hdr *) packet;
 
 	bug_on(!src || !dst);
@@ -403,24 +475,18 @@ static int assemble_ipv6(uint8_t *packet, size_t len, int ttl, int proto,
 
 	switch (proto) {
 	case IPPROTO_TCP:
-		__assemble_tcp(data, data_len, ctx->syn, ctx->ack, ctx->urg,
-			       ctx->fin, ctx->rst, ctx->psh, ctx->ecn, ctx->dport);
-		off_next = sizeof(struct tcphdr);
+		__assemble_tcp6_payload(data, data_len, ctx, dst, src);
 		break;
+		
 	case IPPROTO_ICMP:
 	case IPPROTO_ICMPV6:
-		__assemble_icmp6(data, data_len);
-		off_next = sizeof(struct icmp6hdr);
+		__assemble_icmp6_payload(data, data_len, ctx, dst, src);
 		break;
+		
 	default:
 		bug();
 	}
-
-	data = packet + sizeof(*ip6h) + off_next;
-	data_len = len - sizeof(*ip6h) - off_next;
-
-	__assemble_data(data, data_len, ctx->payload);
-
+	
 	return ntohl(ip6h->ip6_flow) & 0x000fffff;
 }
 
@@ -501,7 +567,7 @@ static int check_ipv6(uint8_t *packet, size_t len, int ttl __maybe_unused,
 	struct ip6_hdr *ip6h_inner;
 	struct icmp6hdr *icmp6h;
 
-	if (ip6h->ip6_nxt != 0x3a)
+	if (ip6h->ip6_nxt != IPPROTO_ICMPV6)
 		return -EINVAL;
 	if (memcmp(&ip6h->ip6_dst, &(((const struct sockaddr_in6 *)
 		   ss)->sin6_addr), sizeof(ip6h->ip6_dst)))
@@ -703,13 +769,13 @@ static int __process_node(struct ctx *ctx, int fd, int fd_cap, int ttl,
 	if (ret < 0)
 		panic("sendto failed: %s\n", strerror(errno));
 
-	bug_on(gettimeofday(&start, NULL));
+	bug_on(gettimeofday(&start, NULL)); // XXX: shouldn't clock_gettime(CLOCK_MONOTONIC) be used?
 
 	timeout = (ctx->timeout > 0 ? ctx->timeout : 2) * 1000;
 
 	ret = poll(&pfd, 1, timeout);
 	if (ret > 0 && pfd.revents & POLLIN && sigint == 0) {
-		bug_on(gettimeofday(&end, NULL));
+		bug_on(gettimeofday(&end, NULL)); // XXX: shouldn't clock_gettime(CLOCK_MONOTONIC) be used?
 		if (diff)
 			timersub(&end, &start, diff);
 
@@ -909,6 +975,15 @@ static int main_trace(struct ctx *ctx)
 	fd_cap = pf_socket();
 
 	inject_filter(ctx, fd_cap);
+	/* XXX: these filters
+	        (and the check_ipv4 and check_ipv6 functions)
+	        filter out everything
+	        that is not ICMP TTL exceeded,
+	        therefore we won't know
+	        if the traceroute reached the destination
+	        since ICMP PING reply and TCP(SYN+ACK)
+	        packets will be dropped, too
+	*/
 
 	ifindex = device_ifindex(ctx->dev);
 	bind_ring_generic(fd_cap, &dummy_ring, ifindex, false);

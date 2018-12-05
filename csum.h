@@ -20,7 +20,7 @@ static inline unsigned short csum(unsigned short *buf, int nwords)
 
 	return ~sum;
 }
-
+// XXX: what if len is odd?
 static inline uint16_t calc_csum(void *addr, size_t len)
 {
 	return csum(addr, len >> 1);
