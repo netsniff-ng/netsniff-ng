@@ -14,14 +14,14 @@ import sys
 import re
 import getopt
 try:
-    from urllib2 import urlopen             # Python 2.x
-except ImportError:
-    from urllib.request import urlopen      # Python 3.x
+    from urllib.request import urlopen
+except ImportError as e:
+    raise Exception("Please run this script with Python 3")
 
 DEFAULT_OUPUT_FILE = "oui.conf"
 DEFAULT_OUI_URL = "http://standards.ieee.org/develop/regauth/oui/oui.txt"
 
-OUI_PATTERN = re.compile(b"^\s*([a-fA-F0-9]{2})-([a-fA-F0-9]{2})-([a-fA-F0-9]{2})\s+\(hex\)\s+(.*)$")
+OUI_PATTERN = re.compile("^\s*([a-fA-F0-9]{6})\s+\(base 16\)\s+(.*)$")
 
 def usage():
     print("""usage: {0} [OPTION...]
@@ -63,13 +63,16 @@ def main():
     print("Updating OUI information in {} from {}... ".format(output_file, oui_url))
 
     fh_url = urlopen(oui_url)
+    encoding = fh_url.headers.get_content_charset()
+    if not encoding:
+        encoding = "utf-8"
 
     ouis = []
     for line in fh_url:
-        m = OUI_PATTERN.match(line)
+        m = OUI_PATTERN.match(line.decode(encoding))
         if m:
-            oui = "0x{}{}{}".format(m.group(1), m.group(2), m.group(3))
-            vendor = m.group(4).rstrip()
+            oui = "0x{}".format(m.group(1))
+            vendor = m.group(2).rstrip()
             ouis.append((oui, vendor))
 
     fh_file = open(output_file, 'w')
