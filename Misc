@@ -17,6 +17,13 @@ people:
 log:
 	$(GIT_LOG)
 
+authors:
+	$(Q)echo "The following people, in alphabetical order, have authored" > AUTHORS
+	$(Q)echo "commits in the netsniff-ng repository:" >> AUTHORS
+	$(Q)echo "" >> AUTHORS
+	$(Q)contrib/extract-authors.sh >> AUTHORS
+	$(Q)cat .authors.aux >> AUTHORS
+
 announcement:
 	$(Q)echo -e "   *** BLURB HERE (general bits, optional) ***\n\n---\n" > .MAIL_MSG
 	$(Q)echo -e "netsniff-ng $(VERSION_SHORT) ($(NAME)) has been released to the public.\n" >> .MAIL_MSG

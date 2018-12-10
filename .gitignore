@@ -5,9 +5,6 @@
 .\#*
 .*.sw[a-z]
 *.un~
-
-# Hidden files, general things
-.*
 *~
 
 # Compiled object files

@@ -1,41 +1,26 @@
-Maintainers:
+The following people, in alphabetical order, have authored
+commits in the netsniff-ng repository:
 
- * Tobias Klauser <tklauser@distanz.ch>
- * Daniel Borkmann <daniel@iogearbox.net>
-
-Former maintainer:
-
- * Emmanuel Roullit <emmanuel.roullit@gmail.com>
-
-Contributors:
-
- * Arch3y <arch3y@archstrike.org>
+ * arch3y <arch3y@archstrike.org>
  * Baruch Siach <baruch@tkos.co.il>
  * Christian Wiese <chris@opensde.org>
- * Christoph Jaeger <email@christophjaeger.info>
- * Dan Horák <dan@danny.cz>
  * Daniel Borkmann <daniel@iogearbox.net>
  * Daniel Roberson <daniel@planethacker.net>
- * Dennis Gilmore <dennis@ausil.us>
- * Doug Burks <doug.burks@gmail.com>
- * Emmanuel Roullit <emmanuel.roullit@gmail.com>
  * Eric Dumazet <edumazet@google.com>
  * Erik Bengtsson <e.bengtsson@gmail.com>
- * Herbert Haas <herbert@perihel.at>*
  * Hideo Hattori <hhatto.jp@gmail.com>
  * Hisao Tanabe <xtanabe@gmail.com>
  * James McCoy <vega.james@gmail.com>
  * Jaroslav Škarvada <jskarvad@redhat.com>
  * Jesper Dangaard Brouer <brouer@redhat.com>
- * Jim Binder <jbinder6342@gmail.com>
- * Jon Schipp <jonschipp@gmail.com>
- * Kartik Mistry <kartik@debian.org>
- * Ken Wu <abawwu@gmail.com>
+ * Jia Zhouyang <jiazhouyang@nudt.edu.cn>
+ * Jonn Schipp <jonschipp@gmail.com>
+ * Kartik Mistry <kartik.mistry@gmail.com>
  * Ken-ichirou MATSUZAWA <chamaken@gmail.com>
+ * Ken Wu <abawwu@gmail.com>
  * Mandar Gokhale <mandarg@mandarg.com>
  * Mark Latimer <mark.latimer@gmail.com>
- * Markus Amend <markus@netsniff-ng.org>
- * Markus Kötter <nepenthesdev@gmail.com>
+ * Markus Amend <markus.amend@telekom.de>
  * Martin Hauke <mardnh@gmx.de>
  * Matteo Croce <mcroce@redhat.com>
  * Michał Purzyński <michalpurzynski1@gmail.com>
@@ -46,22 +31,33 @@ Contributors:
  * Petr Machata <petrm@mellanox.com>
  * Radoslav Bodo <bodik@cesnet.cz>
  * Reiner Herrmann <reiner@reiner-h.de>
- * Ronald W. Henderson <rwhalb@nycap.rr.com>
- * Scott Moeller <electronjoe@gmail.com>
- * Sibir Chakraborty <sibir.chakraborty@gmail.com>
- * Stefan Seering <sseerin@imn.htwk-leipzig.de>
  * Stephen Wadeley <swadeley@redhat.com>
  * Teguh <info@egeektronic.com>
+ * Thomas Fleischmann <thomas.fleischmann.08@googlemail.com>
  * Tillmann Karras <tilkax@gmail.com>
  * Tobias Geerinckx-Rice <tobias.geerinckx.rice@gmail.com>
  * Tobias Klauser <tklauser@distanz.ch>
  * Tommy Beadle <tbeadle@gmail.com>
- * Ulrich Weber <uweber@astaro.com>
  * Vadim Kochan <vadim4j@gmail.com>
  * Whang Choi <wch0x01@gmail.com>
  * wilson <wilson.wen.chn@gmail.com>
  * Yousong Zhou <yszhou4tech@gmail.com>
- * Zhouyang Jia <jiazhouyang09@gmail.com>
+The following people have provided helpful bug reports, suggestions or have
+otherwise provided valuable contributions to the project:
+
+ * Christoph Jaeger <email@christophjaeger.info>
+ * Dan Horák <dan@danny.cz>
+ * Dennis Gilmore <dennis@ausil.us>
+ * Doug Burks <doug.burks@gmail.com>
+ * Emmanuel Roullit <emmanuel.roullit@gmail.com>
+ * Herbert Haas <herbert@perihel.at>
+ * Jim Binder <jbinder6342@gmail.com>
+ * Markus Kötter <nepenthesdev@gmail.com>
+ * Ronald W. Henderson <rwhalb@nycap.rr.com>
+ * Scott Moeller <electronjoe@gmail.com>
+ * Sibir Chakraborty <sibir.chakraborty@gmail.com>
+ * Stefan Seering <sseerin@imn.htwk-leipzig.de>
+ * Ulrich Weber <uweber@astaro.com>
 
 Special thanks to some of our sponsors:
 
