@@ -1,4 +1,4 @@
-Maintainer:
+Maintainers:
 
  * Tobias Klauser <tklauser@distanz.ch>
  * Daniel Borkmann <daniel@iogearbox.net>
@@ -7,39 +7,34 @@ Former maintainer:
 
  * Emmanuel Roullit <emmanuel.roullit@gmail.com>
 
-Major contributors (> 30 commits):
-
- * Daniel Borkmann <daniel@iogearbox.net>
- * Tobias Klauser <tklauser@distanz.ch>
- * Emmanuel Roullit <emmanuel.roullit@gmail.com>
- * Markus Amend <markus@netsniff-ng.org>
- * Christoph Jaeger <email@christophjaeger.info>
- * Herbert Haas <herbert@perihel.at>*
- * Vadim Kochan <vadim4j@gmail.com>
- * Jon Schipp <jonschipp@gmail.com>
-
-Minor contributors (<= 30 commits, sorted alphabetically):
+Contributors:
 
  * Arch3y <arch3y@archstrike.org>
  * Baruch Siach <baruch@tkos.co.il>
  * Christian Wiese <chris@opensde.org>
+ * Christoph Jaeger <email@christophjaeger.info>
  * Dan Horák <dan@danny.cz>
+ * Daniel Borkmann <daniel@iogearbox.net>
  * Daniel Roberson <daniel@planethacker.net>
  * Dennis Gilmore <dennis@ausil.us>
  * Doug Burks <doug.burks@gmail.com>
+ * Emmanuel Roullit <emmanuel.roullit@gmail.com>
  * Eric Dumazet <edumazet@google.com>
  * Erik Bengtsson <e.bengtsson@gmail.com>
+ * Herbert Haas <herbert@perihel.at>*
  * Hideo Hattori <hhatto.jp@gmail.com>
  * Hisao Tanabe <xtanabe@gmail.com>
  * James McCoy <vega.james@gmail.com>
  * Jaroslav Škarvada <jskarvad@redhat.com>
  * Jesper Dangaard Brouer <brouer@redhat.com>
  * Jim Binder <jbinder6342@gmail.com>
+ * Jon Schipp <jonschipp@gmail.com>
  * Kartik Mistry <kartik@debian.org>
  * Ken Wu <abawwu@gmail.com>
  * Ken-ichirou MATSUZAWA <chamaken@gmail.com>
  * Mandar Gokhale <mandarg@mandarg.com>
  * Mark Latimer <mark.latimer@gmail.com>
+ * Markus Amend <markus@netsniff-ng.org>
  * Markus Kötter <nepenthesdev@gmail.com>
  * Martin Hauke <mardnh@gmx.de>
  * Matteo Croce <mcroce@redhat.com>
@@ -59,8 +54,10 @@ Minor contributors (<= 30 commits, sorted alphabetically):
  * Teguh <info@egeektronic.com>
  * Tillmann Karras <tilkax@gmail.com>
  * Tobias Geerinckx-Rice <tobias.geerinckx.rice@gmail.com>
+ * Tobias Klauser <tklauser@distanz.ch>
  * Tommy Beadle <tbeadle@gmail.com>
  * Ulrich Weber <uweber@astaro.com>
+ * Vadim Kochan <vadim4j@gmail.com>
  * Whang Choi <wch0x01@gmail.com>
  * wilson <wilson.wen.chn@gmail.com>
  * Yousong Zhou <yszhou4tech@gmail.com>
@@ -74,13 +71,6 @@ Special thanks to some of our sponsors:
  * Team Cymru
 
 Notes:
-
-The order of authors with > 30 commits listed here is sorted by contributions
-from high to low through ``git log --no-merges $@ | grep Author: | \
-cut -d: -f2 | cut -d\< -f1 | sort | uniq -c | sort -n -r''. The list of minor
-contributors is currently unsorted and contains people who have contributed
-code ``in some way'' (e.g. on the upstream or maintenance repositories), either
-through Git or email.
 
 Note that we have taken over the maintenance and further development of Herbert
 Haas' mausezahn [ˈmauzəˌtsa:n] utility after he passed away in 2011. There were
