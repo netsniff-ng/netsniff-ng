@@ -9,7 +9,7 @@ define TOOL_templ
 	$(Q)$$(call RM,$(1)/*.o $(1)/$(1) $(1)/*.gz)
   $(1)_do_install:
 	$(Q)$$(call INSTX,$(1)/$(1),$$(DESTDIR)$$(SBINDIR))
-	$(Q)$(GZIP) $(1).8 > $(1)/$(1).8.gz
+	$(Q)eval GZIP= gzip $(GZIP_ENV) $(1).8 > $(1)/$(1).8.gz
 	$(Q)$$(call INST,$(1)/$(1).8.gz,$$(DESTDIR)$$(MAN8DIR))
 	$(Q)$$(foreach file,$$($(1)-confs),$$(call INST,$$(file),$$(DESTDIR)$$(ETCDIRE));)
   $(1)_install: $(1)_do_install $(1)_post_install
