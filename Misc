@@ -22,6 +22,7 @@ authors:
 	$(Q)echo "commits in the netsniff-ng repository:" >> AUTHORS
 	$(Q)echo "" >> AUTHORS
 	$(Q)contrib/extract-authors.sh >> AUTHORS
+	$(Q)echo >> AUTHORS
 	$(Q)cat .authors.aux >> AUTHORS
 
 announcement:

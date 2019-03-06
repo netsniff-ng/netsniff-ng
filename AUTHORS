@@ -6,6 +6,7 @@ commits in the netsniff-ng repository:
  * Christian Wiese <chris@opensde.org>
  * Daniel Borkmann <daniel@iogearbox.net>
  * Daniel Roberson <daniel@planethacker.net>
+ * Daniel Roggow <daniel.roggow@rockwellcollins.com>
  * Eric Dumazet <edumazet@google.com>
  * Erik Bengtsson <e.bengtsson@gmail.com>
  * Hideo Hattori <hhatto.jp@gmail.com>
@@ -43,6 +44,7 @@ commits in the netsniff-ng repository:
  * Whang Choi <wch0x01@gmail.com>
  * wilson <wilson.wen.chn@gmail.com>
  * Yousong Zhou <yszhou4tech@gmail.com>
+
 The following people have provided helpful bug reports, suggestions or have
 otherwise provided valuable contributions to the project:
 
