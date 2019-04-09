@@ -567,11 +567,6 @@ static void shaper_init(struct shaper *sh)
 
 static void shaper_set_delay(struct shaper *sh, time_t sec, long int ns)
 {
-	if (!(sec | ns)) {
-		sh->type = SHAPER_NONE;
-		return;
-	}
-
 	sh->type = SHAPER_DELAY;
 	sh->delay.tv_sec = sec;
 	sh->delay.tv_nsec = ns;
