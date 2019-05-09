@@ -15,9 +15,9 @@ endif
 
 VERSION = 0
 PATCHLEVEL = 6
-SUBLEVEL = 5
+SUBLEVEL = 6
 EXTRAVERSION =
-NAME = Spiral Staircase
+NAME = Syro
 
 TOOLS ?= $(CONFIG_TOOLS)
 
