@@ -74,17 +74,17 @@ static sig_atomic_t sigint = 0;
 static int assemble_ipv4(uint8_t *packet, size_t len, int ttl, int proto,
 			 const struct ctx *ctx, const struct sockaddr *dst,
 			 const struct sockaddr *src);
-static int assemble_ipv6(uint8_t *packet, size_t len, int ttl, int proto,
-			 const struct ctx *ctx, const struct sockaddr *dst,
-			 const struct sockaddr *src);
 static int check_ipv4(uint8_t *packet, size_t len, int ttl, int id,
                       const struct sockaddr *ss);
 static void handle_ipv4(uint8_t *packet, size_t len, int dns_resolv,
 		        int latitude);
+static int assemble_ipv6(uint8_t *packet, size_t len, int ttl, int proto,
+			 const struct ctx *ctx, const struct sockaddr *dst,
+			 const struct sockaddr *src);
 static int check_ipv6(uint8_t *packet, size_t len, int ttl, int id,
                       const struct sockaddr *ss);
 static void handle_ipv6(uint8_t *packet, size_t len, int dns_resolv,
-		        int latitude);
+			int latitude);
 
 static const char *short_options = "H:p:nNf:m:b:i:d:q:x:SAEFPURt:Gl:hv46X:ZuL";
 static const struct option long_options[] = {
