@@ -143,6 +143,7 @@ int str2mac(const char *str, uint8_t *mac, size_t len)
 	if (len < 6)
 		return -ENOSPC;
 
+	errno = 0;
 	count = sscanf(str, "%02X:%02X:%02X:%02X:%02X:%02X",
 			&tmp[0], &tmp[1], &tmp[2], &tmp[3], &tmp[4], &tmp[5]);
 
