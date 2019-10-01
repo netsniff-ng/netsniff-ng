@@ -34,7 +34,7 @@
 
 int verbose_level = 0;
 
-static const char *short_options = "46hqvVSxra:A:b:B:c:d:E:f:F:l:p:P:t:T:M:Q:X:";
+static const char *short_options = "46hqvVSxra:A:b:B:c:d:E:f:F:l:p:P:R:t:T:M:Q:X:";
 
 static void signal_handler(int number)
 {
@@ -113,6 +113,7 @@ static void help(void)
 	     "  -l <ip>               Listen address to bind to when in interactive mode, default: 0.0.0.0\n"
 	     "  -4                    IPv4 mode (default)\n"
 	     "  -6                    IPv6 mode\n"
+	     "  -R <PRIO>             Set socket priority\n"
 	     "  -c <count>            Send packet count times, default:1, infinite:0\n"
 	     "  -d <delay>            Apply delay between transmissions. The delay value can be\n"
 	     "                        specified in usec (default, no additional unit needed), or in\n"
@@ -224,6 +225,7 @@ int reset(void)
    tx.packet_mode = 1;     // assume we don't care about L2
    tx.count = 1;  
    tx.delay = DEFAULT_DELAY;      
+   tx.prio = 0;
    tx.arg_string[0] = '\0';
    
    // Reset Ethernet parameters of TX:
@@ -398,6 +400,7 @@ int getopts (int argc, char *argv[])
 	char hexpld[MAX_PAYLOAD_SIZE*2];
 	int hexpld_specified=0;
 	long delay;
+	long prio;
 	char unit;
 
 	opterr = 1; // let getopt print error message if necessary
@@ -412,6 +415,19 @@ int getopts (int argc, char *argv[])
 		 case '6':
 			tx.eth_type = 0x86dd;
 			ipv6_mode=1;
+			break;
+		 case 'R':
+			errno = 0;
+			prio = strtol(optarg, NULL, 0);
+			if (errno) {
+				perror("Couldn't parse priority");
+				return -1;
+			}
+			if (prio < 0 || prio > 0xffffffff) {
+				perror("Invalid priority value");
+				return -1;
+			}
+			tx.prio = (int)prio;
 			break;
 		 case 'h':
 			help();

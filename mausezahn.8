@@ -79,6 +79,12 @@ Specify IPv6 mode (IPv4 is the default).
 .SS -l <IP>
 Specify the IP address mausezahn should bind to when in interactive mode, default: 0.0.0.0.
 .PP
+.SS -R <PRIO>
+Set priority of sent packets. This configures SO_PRIORITY at the socket through
+which the packets are sent. Usual priority numbers are 0..15, but the value can
+also be a class ID for purposes of Qdisc classification. In that case, a class
+ID such is 1234:5678 would be specified as 0x12345678.
+.PP
 .SS -v
 Verbose mode. Capital \-V is even more verbose.
 .PP

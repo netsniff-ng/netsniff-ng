@@ -133,6 +133,15 @@ libnet_t* get_link_context(void)
 	fprintf(stderr, "%s", errbuf);
 	exit(EXIT_FAILURE);
      }
+
+   if (tx.prio != 0 &&
+       setsockopt (libnet_getfd (l), SOL_SOCKET, SO_PRIORITY, &tx.prio,
+		   sizeof tx.prio) < 0)
+     {
+       perror("setsockopt SO_PRIORITY");
+       exit(EXIT_FAILURE);
+     }
+
    return l;
 }
 

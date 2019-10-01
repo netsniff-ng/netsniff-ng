@@ -340,6 +340,7 @@ struct tx_struct
    int  packet_mode;          // 0 means use LIBNET_LINK_ADV, 1 means LIBNET_RAW4
    unsigned int count;        // 0 means infinite, 1 is default
    unsigned int delay;        // Delay in microseconds, 0 means no delay (default)
+   unsigned int prio;         // Socket priority, 0 is default
    char arg_string[MAX_PAYLOAD_SIZE];  // Argument-string when -t is used
    
    // Ethernet and 802.3 parameters
