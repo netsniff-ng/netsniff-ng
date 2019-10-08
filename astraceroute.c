@@ -651,43 +651,71 @@ static void show_trace_info(struct ctx *ctx, const struct sockaddr_storage *ss,
 		printf("With payload: \'%s\'\n", ctx->payload);
 }
 
+static int __address_family_for_proto(const int proto)
+{
+	switch (proto) {
+	case IPPROTO_IP:
+		return AF_INET;
+	case IPPROTO_IPV6:
+		return AF_INET6;
+	default:
+		bug();
+	}
+}
+
+static int __ip_version_for_proto(const int proto)
+{
+	switch (proto) {
+	case IPPROTO_IP:
+		return 4;
+	case IPPROTO_IPV6:
+		return 6;
+	default:
+		bug();
+	}
+}
+
 static int get_remote_fd(struct ctx *ctx, struct sockaddr_storage *ss,
 			 struct sockaddr_storage *sd)
 {
-	int fd = -1, ret, one = 1, af = AF_INET;
+	int fd = -1, ret, one = 1, af = __address_family_for_proto(ctx->proto);
 	struct addrinfo hints, *ahead, *ai;
 	unsigned char bind_ip[sizeof(struct in6_addr)];
-
+	int last_errno = 0;
+	
+	ctx->dport = strtoul(ctx->port, NULL, 10);
+	if (ctx->dport < 0 || ctx->dport > 65535)
+		panic("destination port not in valid range: %s\n", ctx->port);
+	
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = PF_UNSPEC;
+	hints.ai_family = af;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
 	hints.ai_flags = AI_NUMERICSERV;
 
 	ret = getaddrinfo(ctx->host, ctx->port, &hints, &ahead);
 	if (ret < 0)
-		panic("Cannot get address info!\n");
+		panic("could not get address of %s: [%d] %s\n"
+		      "does the target support IPv%d?\n",
+		      ctx->host, ret, gai_strerror(ret),
+		      __ip_version_for_proto(ctx->proto));
 
 	for (ai = ahead; ai != NULL && fd < 0; ai = ai->ai_next) {
-		if (!((ai->ai_family == PF_INET6 && ctx->proto == IPPROTO_IPV6) ||
-		      (ai->ai_family == PF_INET  && ctx->proto == IPPROTO_IP)))
-			continue;
-
+	
 		fd = socket(ai->ai_family, SOCK_RAW, IPPROTO_RAW);
-		if (fd < 0)
+		if (fd < 0) {
+			last_errno = errno;
 			continue;
-
+		}
+		
 		memset(ss, 0, sizeof(*ss));
 		ret = device_address(ctx->dev, ai->ai_family, ss);
 		if (ret < 0 && !ctx->bind_addr)
-			panic("Cannot get own device address!\n");
+			panic("could not get address of device %s\n", ctx->dev);
 
 		if (ctx->bind_addr) {
-			if (ctx->proto == IPPROTO_IPV6)
-				af = AF_INET6;
-
 			if (inet_pton(af, ctx->bind_addr, &bind_ip) != 1)
-				panic("Address is invalid!\n");
+				panic("bind address (%s) is invalid\n", ctx->bind_addr);
 
 			if (af == AF_INET6) {
 				struct sockaddr_in6 *ss6 = (struct sockaddr_in6 *) ss;
@@ -700,21 +728,19 @@ static int get_remote_fd(struct ctx *ctx, struct sockaddr_storage *ss,
 
 		ret = bind(fd, (struct sockaddr *) ss, sizeof(*ss));
 		if (ret < 0)
-			panic("Cannot bind socket!\n");
+			panic("could not bind socket to address: [%d] %s\n", errno, strerror(errno));
 
 		memset(sd, 0, sizeof(*sd));
 		memcpy(sd, ai->ai_addr, ai->ai_addrlen);
 
 		ctx->sd_len = ai->ai_addrlen;
-		ctx->dport = strtoul(ctx->port, NULL, 10);
 
 		ret = setsockopt(fd, ctx->proto, IP_HDRINCL, &one, sizeof(one));
 		if (ret < 0)
-			panic("Kernel does not support IP_HDRINCL!\n");
+			panic("could not set socket option IP_HDRINCL: [%d] %s\n", errno, strerror(errno));
 
-		if (ai->ai_family == PF_INET6) {
+		if (ai->ai_family == AF_INET6) {
 			struct sockaddr_in6 *sd6 = (struct sockaddr_in6 *) sd;
-
 			sd6->sin6_port = 0;
 		}
 
@@ -723,11 +749,13 @@ static int get_remote_fd(struct ctx *ctx, struct sockaddr_storage *ss,
 
 	freeaddrinfo(ahead);
 
-	if (fd < 0)
-		panic("Cannot create socket! Does remote "
-		      "support IPv%d?!\n",
-		      ctx->proto == IPPROTO_IP ? 4 : 6);
-
+	if (fd < 0) {
+		if (last_errno)
+			panic("could not create socket: [%d] %s\n", last_errno, strerror(last_errno));
+		else
+			bug();
+	}
+	
 	return fd;
 }
 
