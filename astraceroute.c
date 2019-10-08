@@ -127,29 +127,77 @@ static const char *copyright =
 	"This is free software: you are free to change and redistribute it.\n"
 	"There is NO WARRANTY, to the extent permitted by law.";
 
-static const struct sock_filter ipv4_icmp_type_11[] = {
-	{ 0x28, 0, 0, 0x0000000c },	/* ldh [12]		*/
-	{ 0x15, 0, 8, 0x00000800 },	/* jneq #0x800, drop	*/
-	{ 0x30, 0, 0, 0x00000017 },	/* ldb [23]		*/
-	{ 0x15, 0, 6, 0x00000001 },	/* jneq #0x1, drop	*/
-	{ 0x28, 0, 0, 0x00000014 },	/* ldh [20]		*/
-	{ 0x45, 4, 0, 0x00001fff },	/* jset #0x1fff, drop	*/
-	{ 0xb1, 0, 0, 0x0000000e },	/* ldxb 4*([14]&0xf)	*/
-	{ 0x50, 0, 0, 0x0000000e },	/* ldb [x + 14]		*/
-	{ 0x15, 0, 1, 0x0000000b },	/* jneq #0xb, drop	*/
-	{ 0x06, 0, 0, 0xffffffff },	/* ret #-1		*/
-	{ 0x06, 0, 0, 0x00000000 },	/* drop: ret #0		*/
+/*
+ * generated with tcpdump;
+ *
+ * ip and ( ( icmp[icmptype] == 0 ) or ( icmp[icmptype] == 3 ) or ( icmp[icmptype] == 11 ) or ( ((tcp[13:1] & 4) == 4) or ((tcp[13:1] & 18) == 18) ))
+ *
+ * allows
+ *   ICMP echo reply
+ *   OR
+ *   ICMP destination unreachable
+ *   OR
+ *   ICMP time exceeded
+ *   OR
+ *   TCP with RST OR SYN+ACK flags set
+ */
+static const struct sock_filter ipv4_filter[] = {
+	{ 0x28,  0,  0, 0x0000000c },
+	{ 0x15,  0, 20, 0x00000800 },
+	{ 0x30,  0,  0, 0x00000017 },
+	{ 0x15,  0,  7, 0x00000001 },
+	{ 0x28,  0,  0, 0x00000014 },
+	{ 0x45, 16,  0, 0x00001fff },
+	{ 0xb1,  0,  0, 0x0000000e },
+	{ 0x50,  0,  0, 0x0000000e },
+	{ 0x15, 12,  0, 0x00000000 },
+	{ 0x15, 11,  0, 0x00000003 },
+	{ 0x15, 10, 11, 0x0000000b },
+	{ 0x15,  0, 10, 0x00000006 },
+	{ 0x28,  0,  0, 0x00000014 },
+	{ 0x45,  8,  0, 0x00001fff },
+	{ 0xb1,  0,  0, 0x0000000e },
+	{ 0x50,  0,  0, 0x0000001b },
+	{ 0x54,  0,  0, 0x00000004 },
+	{ 0x15,  3,  0, 0x00000004 },
+	{ 0x50,  0,  0, 0x0000001b },
+	{ 0x54,  0,  0, 0x00000012 },
+	{ 0x15,  0,  1, 0x00000012 },
+	{ 0x06,  0,  0, 0x00040000 },
+	{ 0x06,  0,  0, 0x00000000 },
 };
 
-static const struct sock_filter ipv6_icmp6_type_3[] = {
-	{ 0x28, 0, 0, 0x0000000c },	/* ldh [12]		*/
-	{ 0x15, 0, 5, 0x000086dd },	/* jneq #0x86dd, drop	*/
-	{ 0x30, 0, 0, 0x00000014 },	/* ldb [20]		*/
-	{ 0x15, 0, 3, 0x0000003a },	/* jneq #0x3a, drop	*/
-	{ 0x30, 0, 0, 0x00000036 },	/* ldb [54]		*/
-	{ 0x15, 0, 1, 0x00000003 },	/* jneq #0x3, drop	*/
-	{ 0x06, 0, 0, 0xffffffff },	/* ret #-1		*/
-	{ 0x06, 0, 0, 0x00000000 },	/* drop: ret #0		*/
+/*
+ * generated with tcpdump;
+ *
+ * ip6 and (((ip6[6] == 58) and (( ip6[40] == 129 ) or ( ip6[40] == 3 ) or ( ip6[40] == 3 ))) or ((ip6[6] == 6) and ( ((ip6[40+13] & 4) == 4) or ((ip6[40+13] & 18) == 18) )))
+ *
+ * allows
+ *   ICMPv6 echo reply
+ *   OR
+ *   ICMPv6 destination unreachable
+ *   OR
+ *   ICMPv6 time exceeded
+ *   OR
+ *   TCP with RST OR SYN+ACK flags set
+ */
+static const struct sock_filter ipv6_filter[] = {
+	{ 0x28,  0,  0, 0x0000000c },
+	{ 0x15,  0, 13, 0x000086dd },
+	{ 0x30,  0,  0, 0x00000014 },
+	{ 0x15,  0,  3, 0x0000003a },
+	{ 0x30,  0,  0, 0x00000036 },
+	{ 0x15,  8,  0, 0x00000081 },
+	{ 0x15,  7,  8, 0x00000003 },
+	{ 0x15,  0,  7, 0x00000006 },
+	{ 0x30,  0,  0, 0x00000043 },
+	{ 0x54,  0,  0, 0x00000004 },
+	{ 0x15,  3,  0, 0x00000004 },
+	{ 0x30,  0,  0, 0x00000043 },
+	{ 0x54,  0,  0, 0x00000012 },
+	{ 0x15,  0,  1, 0x00000012 },
+	{ 0x06,  0,  0, 0x00040000 },
+	{ 0x06,  0,  0, 0x00000000 },
 };
 
 static const struct proto_ops af_ops[] = {
@@ -157,8 +205,8 @@ static const struct proto_ops af_ops[] = {
 			.assembler	=	assemble_ipv4,
 			.handler	=	handle_ipv4,
 			.check		=	check_ipv4,
-			.filter		=	ipv4_icmp_type_11,
-			.flen		=	array_size(ipv4_icmp_type_11),
+			.filter		=	ipv4_filter,
+			.flen		=	array_size(ipv4_filter),
 			.min_len_tcp	=	sizeof(struct iphdr) + sizeof(struct tcphdr),
 			.min_len_icmp	=	sizeof(struct iphdr) + sizeof(struct icmphdr),
 		},
@@ -166,8 +214,8 @@ static const struct proto_ops af_ops[] = {
 			.assembler	=	assemble_ipv6,
 			.handler	=	handle_ipv6,
 			.check		=	check_ipv6,
-			.filter		=	ipv6_icmp6_type_3,
-			.flen		=	array_size(ipv6_icmp6_type_3),
+			.filter		=	ipv6_filter,
+			.flen		=	array_size(ipv6_filter),
 			.min_len_tcp	=	sizeof(struct ip6_hdr) + sizeof(struct tcphdr),
 			.min_len_icmp	=	sizeof(struct ip6_hdr) + sizeof(struct icmp6hdr),
 		},
