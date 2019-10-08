@@ -47,6 +47,23 @@
 #include "ring.h"
 #include "built_in.h"
 
+/* ======== macros ======== */
+#define CTX_DEFAULT_DEV "eth0"
+#define CTX_DEFAULT_PORTSTR "80"
+#define CTX_DEFAULT_INIT_TTL 1
+#define CTX_DEFAULT_MAX_TTL 30
+#define CTX_DEFAULT_DO_DNS_RESOLUTION false
+#define CTX_DEFAULT_NUM_PROBES 2
+#define CTX_DEFAULT_NUM_PACKETS 3
+#define CTX_DEFAULT_TIMEOUT 2
+#define CTX_DEFAULT_IPV4_TOS 0
+#define CTX_DEFAULT_PROTO IPPROTO_IP
+#define CTX_DEFAULT_DO_GEO_LOOKUP false
+#define CTX_DEFAULT_DO_SHOW_PACKET false
+
+#define QUOTE(X) #X
+#define STRINGIFY(X) QUOTE(X)
+
 
 /* ======== type definitions ======== */
 typedef enum {
@@ -286,19 +303,20 @@ static void __noreturn help(void)
 	puts("http://www.netsniff-ng.org\n\n"
 	     "Usage: astraceroute [options]\n"
 	     "Options:\n"
-	     " -H|--host <host>        Host/IPv4/IPv6 to lookup AS route to\n"
-	     " -p|--port <port>        Hosts port to lookup AS route to\n"
-	     " -i|-d|--dev <device>    Networking device, e.g. eth0\n"
+	     " -H|--host <host>        Host/IPv4/IPv6 to lookup AS route to (required)\n"
+	     " -p|--port <port>        Destination port used in the TCP packet (default: " CTX_DEFAULT_PORTSTR ")\n"
+	     " -i|-d|--dev <device>    Networking device, e.g. eth0 (default: " CTX_DEFAULT_DEV ")\n"
 	     " -b|--bind <IP>          IP address to bind to, Must specify -6 for an IPv6 address\n"
-	     " -f|--init-ttl <ttl>     Set initial TTL\n"
-	     " -m|--max-ttl <ttl>      Set maximum TTL (def: 30)\n"
-	     " -q|--num-probes <num>   Number of max probes for each hop (def: 2)\n"
-	     " -x|--timeout <sec>      Probe response timeout in sec (def: 3)\n"
+	     " -f|--init-ttl <ttl>     Set initial TTL (default: " STRINGIFY(CTX_DEFAULT_INIT_TTL) ")\n"
+	     " -m|--max-ttl <ttl>      Set maximum TTL (default: " STRINGIFY(CTX_DEFAULT_MAX_TTL) ")\n"
+	     " -q|--num-probes <num>   Number of max probes for each hop (default: " STRINGIFY(CTX_DEFAULT_NUM_PROBES) ")\n"
+	     " -s|--num-packets <num>  Number of packets to be sent in each probe (default: " STRINGIFY(CTX_DEFAULT_NUM_PACKETS) ")\n"
+	     " -x|--timeout <sec>      Packet response timeout in sec (default: " STRINGIFY(CTX_DEFAULT_TIMEOUT) ")\n"
 	     " -X|--payload <string>   Specify a payload string to test DPIs\n"
 	     " -l|--totlen <len>       Specify total packet len\n"
 	     " -4|--ipv4               Use IPv4-only requests\n"
 	     " -6|--ipv6               Use IPv6-only requests\n"
-	     " -n|--numeric            Do not do reverse DNS lookup for hops\n"
+	     " -n|--numeric            Do not do reverse DNS lookup for hops (default)\n"
 	     " -u|--update             Update GeoIP databases\n"
 	     " -L|--latitude           Show latitude and longitude\n"
 	     " -N|--dns                Do a reverse DNS lookup for hops\n"
@@ -309,8 +327,8 @@ static void __noreturn help(void)
 	     " -U|--urg                Set TCP URG flag\n"
 	     " -R|--rst                Set TCP RST flag\n"
 	     " -E|--ecn-syn            Send ECN SYN packets (RFC3168)\n"
-	     " -t|--tos <tos>          Set the IP TOS field\n"
-	     " -G|--nofrag             Set do not fragment bit\n"
+	     " -t|--tos <tos>          Set the IP TOS field (IPv4 only, default: " STRINGIFY(CTX_DEFAULT_IPV4_TOS) ")\n"
+	     " -G|--nofrag             Set do not fragment bit (IPv4 only)\n"
 	     " -Z|--show-packet        Show returned packet on each hop\n"
 	     " -v|--version            Print version and exit\n"
 	     " -h|--help               Print this help and exit\n\n"
@@ -1409,16 +1427,20 @@ int main(int argc, char **argv)
 	srand(time(NULL));
 
 	memset(&ctx, 0, sizeof(ctx));
-	ctx.init_ttl = 1;
-	ctx.max_ttl = 30;
-	ctx.num_probes = 2;
-	ctx.num_packets = 3;
-	ctx.timeout = 2;
-	ctx.proto = IPPROTO_IP;
+	ctx.init_ttl = CTX_DEFAULT_INIT_TTL;
+	ctx.max_ttl = CTX_DEFAULT_MAX_TTL;
+	ctx.num_probes = CTX_DEFAULT_NUM_PROBES;
+	ctx.num_packets = CTX_DEFAULT_NUM_PACKETS;
+	ctx.timeout = CTX_DEFAULT_TIMEOUT;
+	ctx.proto = CTX_DEFAULT_PROTO;
 	ctx.payload = NULL;
-	ctx.dev = xstrdup("eth0");
-	ctx.port = xstrdup("80");
+	ctx.dev = xstrdup(CTX_DEFAULT_DEV);
+	ctx.port = xstrdup(CTX_DEFAULT_PORTSTR);
 	ctx.bind_addr = NULL;
+	ctx.tos = CTX_DEFAULT_IPV4_TOS;
+	ctx.do_dns_resolution = CTX_DEFAULT_DO_DNS_RESOLUTION;
+	ctx.do_geo_lookup = CTX_DEFAULT_DO_GEO_LOOKUP;
+	ctx.do_show_packet = CTX_DEFAULT_DO_SHOW_PACKET;
 
 	while ((c = getopt_long(argc, argv, short_options, long_options,
 				NULL)) != EOF) {
