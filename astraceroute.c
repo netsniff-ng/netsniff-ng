@@ -47,45 +47,92 @@
 #include "ring.h"
 #include "built_in.h"
 
+
+/* ======== type definitions ======== */
+typedef enum {
+	TRACEROUTE_NO_REPLY,
+	TRACEROUTE_OK_REPLY,
+	TRACEROUTE_DST_REACHED,
+} traceroute_result;
+
+struct tcp_pkt_id {
+	uint32_t seq;
+	uint16_t src_port, dst_port;
+};
+
+struct icmp_pkt_id {
+	uint16_t id;
+	uint16_t seq;
+};
+
+struct pkt_id {
+	uint32_t ip_id;
+	int inner_proto;
+	
+	union {
+		struct tcp_pkt_id tcp;
+		struct icmp_pkt_id icmp; 
+	} inner;
+};
+
 struct ctx {
 	char *host, *port, *dev, *payload, *bind_addr;
 	size_t totlen, rcvlen;
 	socklen_t sd_len;
-	int init_ttl, max_ttl, dport, queries, timeout;
+	int init_ttl, max_ttl, dport, num_probes, num_packets, timeout;
 	int syn, ack, ecn, fin, psh, rst, urg, tos, nofrag, proto;
 	bool do_geo_lookup, do_dns_resolution, do_show_packet;
 };
 
 struct proto_ops {
-	int (*assembler)(uint8_t *packet, size_t len, int ttl, int proto,
-			 const struct ctx *ctx, const struct sockaddr *dst,
-			 const struct sockaddr *src);
+	void (*assembler)(uint8_t *packet, size_t len, int ttl, int proto,
+			          const struct ctx *ctx,
+			          const struct sockaddr *dst, const struct sockaddr *src,
+			          struct pkt_id *id);
 	const struct sock_filter *filter;
 	unsigned int flen;
 	size_t min_len_tcp, min_len_icmp;
-	int (*check)(uint8_t *packet, size_t len, int ttl, int id,
-		     const struct sockaddr *src);
-	void (*handler)(uint8_t *packet, size_t len, bool do_dns_resolution,
-			bool do_geo_lookup);
+	traceroute_result (*check)(uint8_t *packet, size_t len, int ttl,
+	                           const struct pkt_id *id,
+		                       const struct sockaddr *ss, const struct sockaddr *sd);
+	void (*handler)(uint8_t *packet, size_t len,
+	                bool do_dns_resolution, bool do_geo_lookup);
 };
 
+
+
+
+
+/* ======== protocol handler functions ======== */
+/* IPv4 */
+static void assemble_ipv4(uint8_t *packet, size_t len, int ttl, int proto,
+			              const struct ctx *ctx,
+			              const struct sockaddr *dst, const struct sockaddr *src,
+			              struct pkt_id *pkt_id);
+
+static traceroute_result check_ipv4(uint8_t *packet, size_t len, int ttl,
+                                    const struct pkt_id *pkt_id,
+                                    const struct sockaddr *ss, const struct sockaddr *sd);
+
+static void handle_ipv4(uint8_t *packet, size_t len, bool do_dns_resolution, bool do_geo_lookup);
+
+
+/* IPv6 */	 
+static void assemble_ipv6(uint8_t *packet, size_t len, int ttl, int proto,
+			              const struct ctx *ctx,
+			              const struct sockaddr *dst, const struct sockaddr *src,
+			              struct pkt_id *pkt_id);
+			         
+static traceroute_result check_ipv6(uint8_t *packet, size_t len, int ttl,
+                                    const struct pkt_id *pkt_id,
+                                    const struct sockaddr *ss, const struct sockaddr *sd);
+
+static void handle_ipv6(uint8_t *packet, size_t len, bool do_dns_resolution, bool do_geo_lookup);
+
+
+
+/* ======== static variables ======== */
 static sig_atomic_t sigint = 0;
-
-static int assemble_ipv4(uint8_t *packet, size_t len, int ttl, int proto,
-			 const struct ctx *ctx, const struct sockaddr *dst,
-			 const struct sockaddr *src);
-static int check_ipv4(uint8_t *packet, size_t len, int ttl, int id,
-                      const struct sockaddr *ss);
-static void handle_ipv4(uint8_t *packet, size_t len, bool do_dns_resolution,
-		        bool do_geo_lookup);
-static int assemble_ipv6(uint8_t *packet, size_t len, int ttl, int proto,
-			 const struct ctx *ctx, const struct sockaddr *dst,
-			 const struct sockaddr *src);
-static int check_ipv6(uint8_t *packet, size_t len, int ttl, int id,
-                      const struct sockaddr *ss);
-static void handle_ipv6(uint8_t *packet, size_t len, bool do_dns_resolution,
-			bool do_geo_lookup);
-
 static const char *short_options = "H:p:nNf:m:b:i:d:q:x:SAEFPURt:Gl:hv46X:ZuL";
 static const struct option long_options[] = {
 	{"host",	required_argument,	NULL, 'H'},
@@ -315,7 +362,8 @@ static void __assemble_data(uint8_t *packet, size_t len, const char *payload)
 	}
 }
 
-static void __assemble_icmp4(uint8_t *packet, size_t len, const struct ctx *ctx)
+static void __assemble_icmp4(uint8_t *packet, size_t len, const struct ctx *ctx,
+			                 struct pkt_id *pkt_id)
 {
 	uint8_t *data;
 	size_t data_len;
@@ -326,6 +374,12 @@ static void __assemble_icmp4(uint8_t *packet, size_t len, const struct ctx *ctx)
 	icmph->type = ICMP_ECHO;
 	icmph->code = 0;
 	icmph->checksum = 0;
+	
+	pkt_id->inner.icmp.id = (uint16_t)rand();
+	pkt_id->inner.icmp.seq = (uint16_t)rand();
+	
+	icmph->un.echo.id = htons(pkt_id->inner.icmp.id);
+	icmph->un.echo.sequence = htons(pkt_id->inner.icmp.seq);
 
 	data = packet + sizeof(*icmph);
 	data_len = len - sizeof(*icmph);
@@ -336,7 +390,8 @@ static void __assemble_icmp4(uint8_t *packet, size_t len, const struct ctx *ctx)
 }
 
 static void __assemble_icmp6(uint8_t *packet, size_t len, const struct ctx *ctx,
-			     const struct sockaddr *dst, const struct sockaddr *src)
+			                 const struct sockaddr *dst, const struct sockaddr *src,
+			                 struct pkt_id *pkt_id)
 {
 	uint8_t *data;
 	size_t data_len;
@@ -348,6 +403,12 @@ static void __assemble_icmp6(uint8_t *packet, size_t len, const struct ctx *ctx,
 	icmp6h->icmp6_type = ICMPV6_ECHO_REQUEST;
 	icmp6h->icmp6_code = 0;
 	icmp6h->icmp6_cksum = 0;
+	
+	pkt_id->inner.icmp.id = (uint16_t)rand();
+	pkt_id->inner.icmp.seq = (uint16_t)rand();
+	
+	icmp6h->icmp6_identifier = htons(pkt_id->inner.icmp.id);
+	icmp6h->icmp6_sequence = htons(pkt_id->inner.icmp.seq);
 
 	data = packet + sizeof(*icmp6h);
 	data_len = len - sizeof(*icmp6h);
@@ -355,19 +416,28 @@ static void __assemble_icmp6(uint8_t *packet, size_t len, const struct ctx *ctx,
 	__assemble_data(data, data_len, ctx->payload);
 
 	memcpy(&ip6hdr.ip6_src, &((const struct sockaddr_in6 *) src)->sin6_addr,
-		sizeof(ip6hdr.ip6_src));
+	       sizeof(ip6hdr.ip6_src));
+	       
 	memcpy(&ip6hdr.ip6_dst, &((const struct sockaddr_in6 *) dst)->sin6_addr,
-		sizeof(ip6hdr.ip6_dst));
+	       sizeof(ip6hdr.ip6_dst));
 
-	icmp6h->icmp6_cksum = p6_csum(&ip6hdr, packet, sizeof(*icmp6h) + data_len, IPPROTO_ICMPV6);
+
+	icmp6h->icmp6_cksum =
+		p6_csum(&ip6hdr, packet, sizeof(*icmp6h) + data_len, IPPROTO_ICMPV6);
 }
 
-static size_t __assemble_tcp_header(struct tcphdr *tcph, const struct ctx *ctx)
+static size_t __assemble_tcp_header(struct tcphdr *tcph, const struct ctx *ctx,
+				                    struct pkt_id *pkt_id)
 {
-	tcph->source = htons((uint16_t) rand());
+
+	pkt_id->inner.tcp.seq = (uint32_t) rand();
+	pkt_id->inner.tcp.src_port = (uint16_t) rand();
+	pkt_id->inner.tcp.dst_port = ctx->dport;
+
+	tcph->source = htons(pkt_id->inner.tcp.src_port);
 	tcph->dest = htons((uint16_t) ctx->dport);
 
-	tcph->seq = htonl(rand());
+	tcph->seq = htonl(pkt_id->inner.tcp.seq);
 	tcph->ack_seq = (!!ctx->ack ? htonl(rand()) : 0);
 
 	tcph->doff = 5;
@@ -389,9 +459,9 @@ static size_t __assemble_tcp_header(struct tcphdr *tcph, const struct ctx *ctx)
 }
 
 static void __assemble_tcp(uint8_t *packet, size_t len, const struct ctx *ctx,
-			   const struct sockaddr *dst, const struct sockaddr *src)
+			               const struct sockaddr *dst, const struct sockaddr *src,
+			               struct pkt_id *pkt_id)
 {
-
 	uint8_t *data;
 	size_t tcp_len, data_len;
 	struct ip iphdr;
@@ -399,7 +469,7 @@ static void __assemble_tcp(uint8_t *packet, size_t len, const struct ctx *ctx,
 
 	bug_on(len < sizeof(*tcph));
 
-	tcp_len = __assemble_tcp_header(tcph, ctx);
+	tcp_len = __assemble_tcp_header(tcph, ctx, pkt_id);
 
 	data = packet + tcp_len;
 	data_len = len - tcp_len;
@@ -407,15 +477,16 @@ static void __assemble_tcp(uint8_t *packet, size_t len, const struct ctx *ctx,
 	__assemble_data(data, data_len, ctx->payload);
 
 	memcpy(&iphdr.ip_src, &((const struct sockaddr_in *) src)->sin_addr.s_addr,
-		sizeof(iphdr.ip_src));
+	       sizeof(iphdr.ip_src));
 	memcpy(&iphdr.ip_dst, &((const struct sockaddr_in *) dst)->sin_addr.s_addr,
-		sizeof(iphdr.ip_dst));
+	       sizeof(iphdr.ip_dst));
 
 	tcph->check = p4_csum(&iphdr, packet, tcp_len + data_len, IPPROTO_TCP);
 }
 
 static void __assemble_tcp6(uint8_t *packet, size_t len, const struct ctx *ctx,
-			    const struct sockaddr *dst, const struct sockaddr *src)
+			                const struct sockaddr *dst, const struct sockaddr *src,
+			                struct pkt_id *pkt_id)
 {
 	uint8_t *data;
 	size_t tcp_len, data_len;
@@ -424,40 +495,47 @@ static void __assemble_tcp6(uint8_t *packet, size_t len, const struct ctx *ctx,
 
 	bug_on(len < sizeof(*tcph));
 
-	tcp_len = __assemble_tcp_header(tcph, ctx);
+	tcp_len = __assemble_tcp_header(tcph, ctx, pkt_id);
 
 	data = packet + tcp_len;
 	data_len = len - tcp_len;
 
 	__assemble_data(data, data_len, ctx->payload);
 
-	memcpy(&ip6hdr.ip6_src, &((const struct sockaddr_in6 *) src)->sin6_addr,
-		sizeof(ip6hdr.ip6_src));
-	memcpy(&ip6hdr.ip6_dst, &((const struct sockaddr_in6 *) dst)->sin6_addr,
-		sizeof(ip6hdr.ip6_dst));
 
-	tcph->check = p6_csum(&ip6hdr, packet, tcp_len + data_len, IPPROTO_TCP);
+	memcpy(&ip6hdr.ip6_src, &((const struct sockaddr_in6 *) src)->sin6_addr,
+	       sizeof(ip6hdr.ip6_src));
+	       
+	memcpy(&ip6hdr.ip6_dst, &((const struct sockaddr_in6 *) dst)->sin6_addr,
+	       sizeof(ip6hdr.ip6_dst));
+
+
+	tcph->check =
+		p6_csum(&ip6hdr, packet, tcp_len + data_len, IPPROTO_TCP);
 }
 
-static int assemble_ipv4(uint8_t *packet, size_t len, int ttl, int proto,
-			 const struct ctx *ctx, const struct sockaddr *dst,
-			 const struct sockaddr *src)
+static void assemble_ipv4(uint8_t *packet, size_t len, int ttl, int proto,
+			              const struct ctx *ctx,
+			              const struct sockaddr *dst, const struct sockaddr *src,
+			              struct pkt_id *pkt_id)
 {
 	uint8_t *data;
 	size_t data_len;
 	struct iphdr *iph = (struct iphdr *) packet;
 
 	bug_on(!src || !dst);
-	bug_on(src->sa_family != PF_INET || dst->sa_family != PF_INET);
+	bug_on(src->sa_family != AF_INET || dst->sa_family != AF_INET);
 	bug_on(len < sizeof(*iph) + min(sizeof(struct tcphdr),
 					sizeof(struct icmphdr)));
+
+	pkt_id->ip_id = (uint16_t) rand();
 
 	iph->ihl = 5;
 	iph->version = 4;
 	iph->tos = (uint8_t) ctx->tos;
 
 	iph->tot_len = htons((uint16_t) len);
-	iph->id = htons((uint16_t) rand());
+	iph->id = htons(pkt_id->ip_id);
 
 	iph->frag_off = ctx->nofrag ? IP_DF : 0;
 	iph->ttl = (uint8_t) ttl;
@@ -470,40 +548,40 @@ static int assemble_ipv4(uint8_t *packet, size_t len, int ttl, int proto,
 
 	data = packet + sizeof(*iph);
 	data_len = len - sizeof(*iph);
-
+	
+	pkt_id->inner_proto = proto;
+	
 	switch (proto) {
 	case IPPROTO_TCP:
-		__assemble_tcp(data, data_len, ctx, dst, src);
+		__assemble_tcp(data, data_len, ctx, dst, src, pkt_id);
 		break;
-
 	case IPPROTO_ICMP:
-		__assemble_icmp4(data, data_len, ctx);
+		__assemble_icmp4(data, data_len, ctx, pkt_id);
 		break;
-
 	default:
 		bug();
 	}
 
-
-	iph->check = csum((unsigned short *) packet, ntohs(iph->tot_len) >> 1);
-
-	return ntohs(iph->id);
+	iph->check = csum((unsigned short *) packet, len / 2);
 }
 
-static int assemble_ipv6(uint8_t *packet, size_t len, int ttl, int proto,
-			 const struct ctx *ctx, const struct sockaddr *dst,
-			 const struct sockaddr *src)
+static void assemble_ipv6(uint8_t *packet, size_t len, int ttl, int proto,
+			              const struct ctx *ctx,
+			              const struct sockaddr *dst, const struct sockaddr *src,
+			              struct pkt_id *pkt_id)
 {
 	uint8_t *data;
 	size_t data_len;
 	struct ip6_hdr *ip6h = (struct ip6_hdr *) packet;
 
 	bug_on(!src || !dst);
-	bug_on(src->sa_family != PF_INET6 || dst->sa_family != PF_INET6);
+	bug_on(src->sa_family != AF_INET6 || dst->sa_family != AF_INET6);
 	bug_on(len < sizeof(*ip6h) + min(sizeof(struct tcphdr),
 					 sizeof(struct icmp6hdr)));
-
-	ip6h->ip6_flow = htonl(rand() & 0x000fffff);
+	
+	pkt_id->ip_id = rand() & 0x000fffff;
+	
+	ip6h->ip6_flow = htonl(pkt_id->ip_id);
 	ip6h->ip6_vfc = 0x60;
 
 	ip6h->ip6_plen = htons((uint16_t) len - sizeof(*ip6h));
@@ -517,63 +595,165 @@ static int assemble_ipv6(uint8_t *packet, size_t len, int ttl, int proto,
 
 	data = packet + sizeof(*ip6h);
 	data_len = len - sizeof(*ip6h);
+	
+	pkt_id->inner_proto = proto;
 
 	switch (proto) {
 	case IPPROTO_TCP:
-		__assemble_tcp6(data, data_len, ctx, dst, src);
+		__assemble_tcp6(data, data_len, ctx, dst, src, pkt_id);
 		break;
-
-	case IPPROTO_ICMP:
 	case IPPROTO_ICMPV6:
-		__assemble_icmp6(data, data_len, ctx, dst, src);
+		__assemble_icmp6(data, data_len, ctx, dst, src, pkt_id);
 		break;
-
 	default:
 		bug();
 	}
-
-	return ntohl(ip6h->ip6_flow) & 0x000fffff;
 }
 
-static int check_ipv4(uint8_t *packet, size_t len, int ttl __maybe_unused,
-		      int id, const struct sockaddr *ss)
+static bool __tcp_header_is_ours(const struct tcphdr *tcph, const struct pkt_id *pkt_id)
 {
+	if (ntohs(tcph->source) != pkt_id->inner.tcp.src_port)
+		return false;
+			
+	if (ntohs(tcph->dest) != pkt_id->inner.tcp.dst_port)
+		return false;
+		
+	if (ntohl(tcph->seq) != pkt_id->inner.tcp.seq)
+		return false;
+			
+	return true;
+}
+
+static bool __tcp_reply_is_ok(const struct tcphdr *tcph, const struct pkt_id *pkt_id)
+{
+	
+	if (ntohs(tcph->source) != pkt_id->inner.tcp.dst_port)
+		return false;
+			
+	if (ntohs(tcph->dest) != pkt_id->inner.tcp.src_port)
+		return false;
+		
+	if (ntohl(tcph->ack_seq) != pkt_id->inner.tcp.seq+1)
+		return false;
+		
+	if (!(tcph->rst) && !(tcph->syn && tcph->ack))
+		return false;
+	
+	return true;
+}
+
+static traceroute_result check_ipv4(uint8_t *packet, size_t len, int ttl __maybe_unused,
+		                            const struct pkt_id *pkt_id,
+		                            const struct sockaddr *ss, const struct sockaddr *sd)
+{	
+	
 	struct iphdr *iph = (struct iphdr *) packet;
-	struct iphdr *iph_inner;
-	struct icmphdr *icmph;
 
-	if (iph->protocol != IPPROTO_ICMP)
-		return -EINVAL;
+	if (len < sizeof(*iph))
+		return TRACEROUTE_NO_REPLY;
+
 	if (iph->daddr != ((const struct sockaddr_in *) ss)->sin_addr.s_addr)
-		return -EINVAL;
+		return TRACEROUTE_NO_REPLY;	
+	
+	if (iph->protocol == IPPROTO_ICMP) {
+	
+		struct icmphdr *icmph = (struct icmphdr *) (packet + sizeof(*iph));
+		struct iphdr *iph_inner = (struct iphdr *) (packet + sizeof(*iph) + sizeof(*icmph));
+		
+		if (len < sizeof(*iph) + sizeof(*icmph) + sizeof(*iph_inner))
+			return TRACEROUTE_NO_REPLY;
+		
+		if (icmph->type == ICMP_TIME_EXCEEDED) {
+			
+			if (icmph->code != ICMP_EXC_TTL)
+				return TRACEROUTE_NO_REPLY;
 
-	icmph = (struct icmphdr *) (packet + sizeof(struct iphdr));
-	if (icmph->type != ICMP_TIME_EXCEEDED)
-		return -EINVAL;
-	if (icmph->code != ICMP_EXC_TTL)
-		return -EINVAL;
+			if (ntohs(iph_inner->id) != pkt_id->ip_id)
+				return TRACEROUTE_NO_REPLY;
+				
+			if (iph_inner->protocol != pkt_id->inner_proto)
+				return TRACEROUTE_NO_REPLY;
+				
+			return TRACEROUTE_OK_REPLY;
+							
+		} else if (icmph->type == ICMP_ECHOREPLY) {
+			
+			if (pkt_id->inner_proto != IPPROTO_ICMP) 
+				return TRACEROUTE_NO_REPLY;
+		
+			if (iph->saddr != ((const struct sockaddr_in *) sd)->sin_addr.s_addr)
+				return TRACEROUTE_NO_REPLY;
 
-	iph_inner = (struct iphdr *) (packet + sizeof(struct iphdr) +
-				      sizeof(struct icmphdr));
-	if (ntohs(iph_inner->id) != id)
-		return -EINVAL;
+			if (ntohs(icmph->un.echo.id) != pkt_id->inner.icmp.id
+			    || ntohs(icmph->un.echo.sequence) != pkt_id->inner.icmp.seq)
+				return TRACEROUTE_NO_REPLY;
+			
+			return TRACEROUTE_DST_REACHED;
+			
+		} else if (icmph->type == ICMP_DEST_UNREACH) {
+			
+			if (icmph->code == ICMP_PORT_UNREACH) {
+				
+				if (pkt_id->inner_proto != IPPROTO_TCP)
+					return TRACEROUTE_NO_REPLY;
+				
+				if (iph->saddr != ((const struct sockaddr_in *) sd)->sin_addr.s_addr)
+					return TRACEROUTE_NO_REPLY;
+					
+				if (iph_inner->protocol != pkt_id->inner_proto)
+					return TRACEROUTE_NO_REPLY;
+				
+				/*
+				 * RFC1122 requires at least 8 bytes after the IP header (section 3.2.2)
+				 * to be sent back with ICMP errors, so it should be fine
+				 * only source port, destination port, and sequence number are checked;
+				 * which is exactly the first 8 bytes of the TCP header;
+				 * this check should not even be here, but who knows?
+				 */
+				if (len < sizeof(*iph) + sizeof(*icmph) + sizeof(*iph_inner) + 8)
+					return TRACEROUTE_NO_REPLY; 
+				 
+				struct tcphdr *tcph
+					= (struct tcphdr *) (packet + sizeof(*iph) + sizeof(*icmph) + sizeof(*iph_inner));
+				
+				if (__tcp_header_is_ours(tcph, pkt_id))
+					return TRACEROUTE_DST_REACHED;
+					
+			}
+		}
 
-	return len;
+	} else if (iph->protocol == IPPROTO_TCP) {
+	
+		if (pkt_id->inner_proto != IPPROTO_TCP)
+			return TRACEROUTE_NO_REPLY;
+		
+		if (iph->saddr != ((const struct sockaddr_in *) sd)->sin_addr.s_addr)
+			return TRACEROUTE_NO_REPLY;
+		
+		struct tcphdr *tcph = (struct tcphdr *) (packet + sizeof(*iph));
+		if (len < sizeof(*iph) + sizeof(*tcph))
+			return TRACEROUTE_NO_REPLY;
+
+		if (__tcp_reply_is_ok(tcph, pkt_id))
+			return TRACEROUTE_DST_REACHED;
+	}
+	
+	
+	return TRACEROUTE_NO_REPLY;
 }
 
 static void handle_ipv4(uint8_t *packet, size_t len __maybe_unused,
-			bool do_dns_resolution, bool do_geo_lookup)
+			            bool do_dns_resolution, bool do_geo_lookup)
 {
 	char hbuff[NI_MAXHOST];
 	struct iphdr *iph = (struct iphdr *) packet;
 	struct sockaddr_in sd;
-	struct hostent *hent;
-	const char *as, *country;
-	char *city;
+	const char *as = NULL, *country = NULL;
+	char *city = NULL;
 
 	memset(hbuff, 0, sizeof(hbuff));
 	memset(&sd, 0, sizeof(sd));
-	sd.sin_family = PF_INET;
+	sd.sin_family = AF_INET;
 	sd.sin_addr.s_addr = iph->saddr;
 
 	getnameinfo((struct sockaddr *) &sd, sizeof(sd),
@@ -584,66 +764,146 @@ static void handle_ipv4(uint8_t *packet, size_t len __maybe_unused,
 	city = geoip4_city_name(&sd);
 
 	if (do_dns_resolution) {
-		hent = gethostbyaddr(&sd.sin_addr, sizeof(sd.sin_addr), PF_INET);
+		struct hostent *hent = gethostbyaddr(&sd.sin_addr, sizeof(sd.sin_addr), AF_INET);
+		
 		if (hent)
 			printf(" %s (%s)", hent->h_name, hbuff);
 		else
 			printf(" %s", hbuff);
+			
 	} else {
 		printf(" %s", hbuff);
 	}
+	
 	if (as)
 		printf(" in %s", as);
+		
 	if (country) {
 		printf(" in %s", country);
+		
 		if (city)
 			printf(", %s", city);
 	}
+	
 	if (do_geo_lookup)
 		printf(" (%f/%f)", geoip4_latitude(&sd), geoip4_longitude(&sd));
 
 	free(city);
 }
 
-static int check_ipv6(uint8_t *packet, size_t len, int ttl __maybe_unused,
-		      int id, const struct sockaddr *ss)
+static traceroute_result check_ipv6(uint8_t *packet, size_t len, int ttl __maybe_unused,
+				                    const struct pkt_id *pkt_id,
+				                    const struct sockaddr *ss, const struct sockaddr *sd)
 {
 	struct ip6_hdr *ip6h = (struct ip6_hdr *) packet;
-	struct ip6_hdr *ip6h_inner;
-	struct icmp6hdr *icmp6h;
+	
+	if (len < sizeof(*ip6h))
+		return TRACEROUTE_NO_REPLY;
 
-	if (ip6h->ip6_nxt != IPPROTO_ICMPV6)
-		return -EINVAL;
-	if (memcmp(&ip6h->ip6_dst, &(((const struct sockaddr_in6 *)
-		   ss)->sin6_addr), sizeof(ip6h->ip6_dst)))
-		return -EINVAL;
+	if (memcmp(&ip6h->ip6_dst, &(((const struct sockaddr_in6 *)ss)->sin6_addr), sizeof(ip6h->ip6_dst)))
+		return TRACEROUTE_NO_REPLY;
+		
+	
+	if (ip6h->ip6_nxt == IPPROTO_ICMPV6) {
+	
+		struct icmp6hdr *icmp6h = (struct icmp6hdr *) (packet + sizeof(*ip6h));
+		struct ip6_hdr *ip6h_inner = (struct ip6_hdr *) (packet + sizeof(*ip6h) + sizeof(*icmp6h));
+		
+		if (len < sizeof(*ip6h) + sizeof(*icmp6h) + sizeof(*ip6h_inner))
+			return TRACEROUTE_NO_REPLY;
+		
+		if (icmp6h->icmp6_type == ICMPV6_TIME_EXCEED) {
+			
+			if (icmp6h->icmp6_code != ICMPV6_EXC_HOPLIMIT)
+				return TRACEROUTE_NO_REPLY;
+		
+			if ((ntohl(ip6h_inner->ip6_flow) & 0x000fffff) != pkt_id->ip_id)
+				return TRACEROUTE_NO_REPLY;
+				
+			if (ip6h_inner->ip6_nxt != pkt_id->inner_proto)
+				return TRACEROUTE_NO_REPLY;
+				
+			return TRACEROUTE_OK_REPLY;
+				
+		} else if (icmp6h->icmp6_type == ICMPV6_ECHO_REPLY) {
+				
+			if (pkt_id->inner_proto != IPPROTO_ICMPV6)
+				return TRACEROUTE_NO_REPLY;
+		
+			if (memcmp(&ip6h->ip6_src, &(((const struct sockaddr_in6 *)sd)->sin6_addr), sizeof(ip6h->ip6_src)))
+				return TRACEROUTE_NO_REPLY;
 
-	icmp6h = (struct icmp6hdr *) (packet + sizeof(*ip6h));
-	if (icmp6h->icmp6_type != ICMPV6_TIME_EXCEED)
-		return -EINVAL;
-	if (icmp6h->icmp6_code != ICMPV6_EXC_HOPLIMIT)
-		return -EINVAL;
+			if (ntohs(icmp6h->icmp6_identifier) != pkt_id->inner.icmp.id
+			    || ntohs(icmp6h->icmp6_sequence) != pkt_id->inner.icmp.seq)
+				return TRACEROUTE_NO_REPLY;
+			
+			return TRACEROUTE_DST_REACHED;
+			
+		} else if (icmp6h->icmp6_type == ICMPV6_DEST_UNREACH) {
+			
+			if (icmp6h->icmp6_code == ICMPV6_PORT_UNREACH) {
+				
+				if (pkt_id->inner_proto != IPPROTO_TCP)
+					return TRACEROUTE_NO_REPLY;
+				
+				if (memcmp(&ip6h->ip6_src, &(((const struct sockaddr_in6 *)sd)->sin6_addr), sizeof(ip6h->ip6_src)))
+					return TRACEROUTE_NO_REPLY;
+					
+				if (ip6h->ip6_nxt != pkt_id->inner_proto)
+					return TRACEROUTE_NO_REPLY;
+				
+				 /*
+				 * RFC4443 (Internet Control Message Protocol (ICMPv6))
+				 * states (section 3.1) that ICMP error message should include
+				 * 	"as much of invoking packet as possible
+				 	without the ICMPv6 packet exceeding the minimum IPv6 MTU"
+				 * only source port, destination port, and sequence number are checked;
+				 * which is exactly the first 8 bytes of the TCP header;
+				 * this check should not even be here, but who knows?
+				 */
+				 if (len < sizeof(*ip6h) + sizeof(*icmp6h) + sizeof(*ip6h_inner) + 8)
+					return TRACEROUTE_NO_REPLY;
+				 
+				struct tcphdr *tcph
+					= (struct tcphdr *) (packet + sizeof(*ip6h) + sizeof(*icmp6h) + sizeof(*ip6h_inner));
+				
+				if (__tcp_header_is_ours(tcph, pkt_id))
+					return TRACEROUTE_DST_REACHED;	
+			}
+		}
+		
+	}
+	else if (ip6h->ip6_nxt == IPPROTO_TCP) {
+		
+		if (pkt_id->inner_proto != IPPROTO_TCP)
+			return TRACEROUTE_NO_REPLY;
+		
+		if (memcmp(&ip6h->ip6_src, &(((const struct sockaddr_in6 *)sd)->sin6_addr), sizeof(ip6h->ip6_src)))
+			return TRACEROUTE_NO_REPLY;
+		
+		struct tcphdr *tcph = (struct tcphdr *) (packet + sizeof(*ip6h));
+		if (len < sizeof(*ip6h) + sizeof(*tcph))
+			return TRACEROUTE_NO_REPLY;
+		
+		if (__tcp_reply_is_ok(tcph, pkt_id))
+			return TRACEROUTE_DST_REACHED;
+	}
 
-	ip6h_inner = (struct ip6_hdr *) (packet + sizeof(*ip6h) + sizeof(*icmp6h));
-	if ((ntohl(ip6h_inner->ip6_flow) & 0x000fffff) != (uint32_t) id)
-		return -EINVAL;
-
-	return len;
+	return TRACEROUTE_NO_REPLY;
 }
 
 static void handle_ipv6(uint8_t *packet, size_t len __maybe_unused,
-			bool do_dns_resolution, bool do_geo_lookup)
+			            bool do_dns_resolution, bool do_geo_lookup)
 {
 	char hbuff[NI_MAXHOST];
 	struct ip6_hdr *ip6h = (struct ip6_hdr *) packet;
 	struct sockaddr_in6 sd;
-	struct hostent *hent;
-	const char *as, *country;
-	char *city;
+	const char *as = NULL, *country = NULL;
+	char *city = NULL;
 
 	memset(hbuff, 0, sizeof(hbuff));
 	memset(&sd, 0, sizeof(sd));
-	sd.sin6_family = PF_INET6;
+	sd.sin6_family = AF_INET6;
 	memcpy(&sd.sin6_addr, &ip6h->ip6_src, sizeof(ip6h->ip6_src));
 
 	getnameinfo((struct sockaddr *) &sd, sizeof(sd),
@@ -654,21 +914,27 @@ static void handle_ipv6(uint8_t *packet, size_t len __maybe_unused,
 	city = geoip6_city_name(&sd);
 
 	if (do_dns_resolution) {
-		hent = gethostbyaddr(&sd.sin6_addr, sizeof(sd.sin6_addr), PF_INET6);
+		struct hostent *hent = gethostbyaddr(&sd.sin6_addr, sizeof(sd.sin6_addr), AF_INET6);
+		
 		if (hent)
 			printf(" %s (%s)", hent->h_name, hbuff);
 		else
 			printf(" %s", hbuff);
+			
 	} else {
 		printf(" %s", hbuff);
 	}
+	
 	if (as)
 		printf(" in %s", as);
+		
 	if (country) {
 		printf(" in %s", country);
+		
 		if (city)
 			printf(", %s", city);
 	}
+	
 	if (do_geo_lookup)
 		printf(" (%f/%f)", geoip6_latitude(&sd), geoip6_longitude(&sd));
 
@@ -676,7 +942,7 @@ static void handle_ipv6(uint8_t *packet, size_t len __maybe_unused,
 }
 
 static void show_trace_info(struct ctx *ctx, const struct sockaddr_storage *ss,
-			    const struct sockaddr_storage *sd)
+			                const struct sockaddr_storage *sd)
 {
 	char hbuffs[256], hbuffd[256];
 
@@ -697,6 +963,38 @@ static void show_trace_info(struct ctx *ctx, const struct sockaddr_storage *ss,
 
 	if (ctx->payload)
 		printf("With payload: \'%s\'\n", ctx->payload);
+}
+
+static void timerdiv(const unsigned long divisor, const struct timeval *tv,
+		     struct timeval *result)
+{
+	uint64_t x = ((uint64_t) tv->tv_sec * 1000 * 1000 + tv->tv_usec) / divisor;
+
+	result->tv_sec = x / 1000 / 1000;
+	result->tv_usec = x % (1000 * 1000);
+}
+
+static int timevalcmp(const void *t1, const void *t2)
+{
+	if (timercmp((struct timeval *) t1, (struct timeval *) t2, <))
+		return -1;
+	if (timercmp((struct timeval *) t1, (struct timeval *) t2, >))
+		return  1;
+
+	return 0;
+}
+
+static const char *proto_short(int proto)
+{
+	switch (proto) {
+	case IPPROTO_TCP:
+		return "t";
+	case IPPROTO_ICMP:
+	case IPPROTO_ICMPV6:
+		return "i";
+	default:
+		return "?";
+	}
 }
 
 static int __address_family_for_proto(const int proto)
@@ -723,8 +1021,20 @@ static int __ip_version_for_proto(const int proto)
 	}
 }
 
+static int __icmp_proto_for_ip_proto(const int ip_proto)
+{
+	switch (ip_proto) {
+	case IPPROTO_IP:
+		return IPPROTO_ICMP;	
+	case IPPROTO_IPV6:
+		return IPPROTO_ICMPV6;	
+	default:
+		bug();
+	}
+}
+
 static int get_remote_fd(struct ctx *ctx, struct sockaddr_storage *ss,
-			 struct sockaddr_storage *sd)
+			             struct sockaddr_storage *sd)
 {
 	int fd = -1, ret, one = 1, af = __address_family_for_proto(ctx->proto);
 	struct addrinfo hints, *ahead, *ai;
@@ -820,179 +1130,183 @@ static void inject_filter(struct ctx *ctx, int fd)
 	bpf_attach_to_sock(fd, &bpf_ops);
 }
 
-static int __process_node(struct ctx *ctx, int fd, int fd_cap, int ttl,
-			  int inner_proto, uint8_t *pkt_snd, uint8_t *pkt_rcv,
+static traceroute_result __process_node(struct ctx *ctx, int fd, int fd_cap, int ttl,
+			  int inner_proto, uint8_t *pkt_snd, uint8_t *pkt_rcv, size_t *pkt_rcv_size,
 			  const struct sockaddr_storage *ss,
 			  const struct sockaddr_storage *sd, struct timeval *diff)
 {
-	int pkt_id, ret, timeout;
 	struct pollfd pfd;
 	struct timeval start, end;
+	struct pkt_id pkt_id;
 
 	prepare_polling(fd_cap, &pfd);
 
+	if (pkt_rcv_size)
+		*pkt_rcv_size = 0;
+		
 	memset(pkt_snd, 0, ctx->totlen);
-	pkt_id = af_ops[ctx->proto].assembler(pkt_snd, ctx->totlen, ttl,
-					      inner_proto, ctx,
-					      (const struct sockaddr *) sd,
-					      (const struct sockaddr *) ss);
+	memset(pkt_rcv, 0, ctx->rcvlen);
+	
+	af_ops[ctx->proto].assembler(
+		pkt_snd, ctx->totlen, ttl,
+		inner_proto, ctx,
+		(const struct sockaddr *) sd, (const struct sockaddr *) ss,
+		&pkt_id
+	);
 
-	ret = sendto(fd, pkt_snd, ctx->totlen, 0, (struct sockaddr *) sd,
-		     ctx->sd_len);
-	if (ret < 0)
-		panic("sendto failed: %s\n", strerror(errno));
+	bug_on(ctx->timeout <= 0);
+	int timeout = ctx->timeout * 1000;
 
+	
 	bug_on(gettimeofday(&start, NULL));
+	ssize_t syscall_ret = sendto(fd, pkt_snd, ctx->totlen, 0, (const struct sockaddr*) sd, ctx->sd_len);
+	
+	if (syscall_ret < 0)
+		panic("could not send packet: [%d] %s\n", errno, strerror(errno));
+	
+	while (timeout > 0) {
 
-	timeout = (ctx->timeout > 0 ? ctx->timeout : 2) * 1000;
-
-	ret = poll(&pfd, 1, timeout);
-	if (ret > 0 && pfd.revents & POLLIN && sigint == 0) {
+		syscall_ret = poll(&pfd, 1, timeout);
 		bug_on(gettimeofday(&end, NULL));
-		if (diff)
-			timersub(&end, &start, diff);
+		
+		if (syscall_ret < 0 || !(pfd.revents & POLLIN) || sigint)
+			return TRACEROUTE_NO_REPLY;
+			
+		syscall_ret = recvfrom(fd_cap, pkt_rcv, ctx->rcvlen, 0, NULL, NULL);
+		
+		if (syscall_ret < 0)
+			return TRACEROUTE_NO_REPLY;
 
-		ret = recvfrom(fd_cap, pkt_rcv, ctx->rcvlen, 0, NULL, NULL);
-		if (ret < (int) (sizeof(struct ethhdr) + af_ops[ctx->proto].min_len_icmp))
-			return -EIO;
-
-		return af_ops[ctx->proto].check(pkt_rcv + sizeof(struct ethhdr),
-						ret - sizeof(struct ethhdr), ttl,
-						pkt_id, (const struct sockaddr *) ss);
-	} else {
-		return -EIO;
+		if (syscall_ret >= (ssize_t) (sizeof(struct ethhdr) + af_ops[ctx->proto].min_len_icmp)) {
+		
+			traceroute_result ret = af_ops[ctx->proto].check(
+				pkt_rcv + sizeof(struct ethhdr),
+				syscall_ret - sizeof(struct ethhdr),
+				ttl,
+				&pkt_id,
+				(const struct sockaddr *) ss,
+				(const struct sockaddr *) sd
+			);
+		
+			if (ret != TRACEROUTE_NO_REPLY) {
+				
+				if (pkt_rcv_size)
+					*pkt_rcv_size = (size_t)syscall_ret;
+				
+				if (diff)
+					timersub(&end, &start, diff);
+					
+				return ret;
+			}
+		}
+		
+		int timeout_decrease =
+			(end.tv_sec * 1000 + end.tv_usec / 1000) - (start.tv_sec * 1000 + start.tv_usec / 1000);
+			
+		if (timeout_decrease <= 0)
+			timeout_decrease = 10;
+			
+		timeout -= timeout_decrease;
 	}
-
-	return 0;
+	
+	return TRACEROUTE_NO_REPLY;
 }
 
-static void timerdiv(const unsigned long divisor, const struct timeval *tv,
-		     struct timeval *result)
+static traceroute_result __process_time(struct ctx *ctx, int fd, int fd_cap, int ttl,
+			  int inner_proto, uint8_t *pkt_snd, uint8_t *pkt_rcv, size_t *pkt_rcv_size,
+			  const struct sockaddr_storage *ss, const struct sockaddr_storage *sd)
 {
-	uint64_t x = ((uint64_t) tv->tv_sec * 1000 * 1000 + tv->tv_usec) / divisor;
-
-	result->tv_sec = x / 1000 / 1000;
-	result->tv_usec = x % (1000 * 1000);
-}
-
-static int timevalcmp(const void *t1, const void *t2)
-{
-	if (timercmp((struct timeval *) t1, (struct timeval *) t2, <))
-		return -1;
-	if (timercmp((struct timeval *) t1, (struct timeval *) t2, >))
-		return  1;
-
-	return 0;
-}
-
-static const char *proto_short(int proto)
-{
-	switch (proto) {
-	case IPPROTO_TCP:
-		return "t";
-	case IPPROTO_ICMP:
-	case IPPROTO_ICMPV6:
-		return "i";
-	default:
-		return "?";
-	}
-}
-
-static int __process_time(struct ctx *ctx, int fd, int fd_cap, int ttl,
-			  int inner_proto, uint8_t *pkt_snd, uint8_t *pkt_rcv,
-			  const struct sockaddr_storage *ss,
-			  const struct sockaddr_storage *sd)
-{
+	traceroute_result ret = TRACEROUTE_NO_REPLY, ret_good = TRACEROUTE_NO_REPLY;
 	size_t i, j = 0;
-	int good = 0, ret = -EIO, idx, ret_good = -EIO;
-	struct timeval probes[9], *tmp, sum, res;
+	int good = 0, half_idx;
 	uint8_t *trash = xmalloc(ctx->rcvlen);
 	char *cwait[] = { "-", "\\", "|", "/" };
-
-	memset(probes, 0, sizeof(probes));
-	for (i = 0; i < array_size(probes) && sigint == 0; ++i) {
-		ret = __process_node(ctx, fd, fd_cap, ttl, inner_proto,
-				     pkt_snd, good == 0 ? pkt_rcv : trash,
-				     ss, sd, &probes[i]);
-		if (ret > 0) {
+	struct timeval sum, res;
+	struct timeval *pkt_rtt = xcalloc(ctx->num_packets, sizeof(*pkt_rtt));
+	
+	
+	for (i = 0; i < ctx->num_packets && sigint == 0; ++i) {
+		ret = __process_node(ctx, fd, fd_cap, ttl, inner_proto, pkt_snd,
+				     good == 0 ? pkt_rcv : trash,
+				     good == 0 ? pkt_rcv_size : NULL,
+				     ss, sd, &pkt_rtt[good]);
+				     
+		if (ret != TRACEROUTE_NO_REPLY) {
 			if (good == 0)
 				ret_good = ret;
 			good++;
 		}
 
-		if (good == 0 && ctx->queries == (int) i)
-			break;
-
 		usleep(50000);
 
 		printf("\r%2d: %s", ttl, cwait[j++]);
 		fflush(stdout);
+		
 		if (j >= array_size(cwait))
 			j = 0;
 	}
 
 	if (good == 0) {
+		xfree(pkt_rtt);
 		xfree(trash);
-		return -EIO;
+		return TRACEROUTE_NO_REPLY;
 	}
 
-	tmp = xcalloc(good, sizeof(struct timeval));
-	for (i = j = 0; i < array_size(probes); ++i) {
-		if (probes[i].tv_sec == 0 && probes[i].tv_usec == 0)
-			continue;
-		tmp[j].tv_sec = probes[i].tv_sec;
-		tmp[j].tv_usec = probes[i].tv_usec;
-		j++;
-	}
 
-	qsort(tmp, j, sizeof(struct timeval), timevalcmp);
+	qsort(pkt_rtt, good, sizeof(*pkt_rtt), timevalcmp);
 
-	printf("\r%2d: %s[", ttl, proto_short(inner_proto));
-	idx = j / 2;
-	switch (j % 2) {
+	printf("\r%2d: %s[ ", ttl, proto_short(inner_proto));
+	half_idx = good / 2;
+	switch (good % 2) {
 	case 0:
-		timeradd(&tmp[idx], &tmp[idx - 1], &sum);
+		timeradd(&pkt_rtt[half_idx], &pkt_rtt[half_idx - 1], &sum);
 		timerdiv(2, &sum, &res);
-		if (res.tv_sec > 0)
-			printf("%lu sec ", res.tv_sec);
-		printf("%7lu us", res.tv_usec);
 		break;
 	case 1:
-		if (tmp[idx].tv_sec > 0)
-			printf("%lu sec ", tmp[idx].tv_sec);
-		printf("%7lu us", tmp[idx].tv_usec);
+		res = pkt_rtt[half_idx];
 		break;
 	}
-	printf("]");
+	
+	if (res.tv_sec > 0)
+		printf("%lu sec ", res.tv_sec);
+	
+	printf("%7lu us ]", res.tv_usec);
 
-	xfree(tmp);
+
+	xfree(pkt_rtt);
 	xfree(trash);
 
 	return ret_good;
 }
 
-static int __probe_remote(struct ctx *ctx, int fd, int fd_cap, int ttl,
-			  uint8_t *pkt_snd, uint8_t *pkt_rcv,
-			  const struct sockaddr_storage *ss,
-			  const struct sockaddr_storage *sd,
-			  int inner_proto)
+static traceroute_result __probe_remote(struct ctx *ctx, int fd, int fd_cap, int ttl,
+					  uint8_t *pkt_snd, uint8_t *pkt_rcv,
+					  const struct sockaddr_storage *ss,
+					  const struct sockaddr_storage *sd,
+					  int inner_proto)
 {
-	int ret = -EIO, tries = ctx->queries;
 
+	traceroute_result ret = TRACEROUTE_NO_REPLY;
+	int tries = ctx->num_probes;
+	size_t pkt_rcv_size;
+	
 	while (tries-- > 0 && sigint == 0) {
+	
 		ret = __process_time(ctx, fd, fd_cap, ttl, inner_proto,
-				     pkt_snd, pkt_rcv, ss, sd);
-		if (ret < 0)
+				     pkt_snd, pkt_rcv, &pkt_rcv_size, ss, sd);
+				     
+		if (ret == TRACEROUTE_NO_REPLY)
 			continue;
 
 		af_ops[ctx->proto].handler(pkt_rcv + sizeof(struct ethhdr),
-					   ret - sizeof(struct ethhdr),
+					   pkt_rcv_size - sizeof(struct ethhdr),
 					   ctx->do_dns_resolution, ctx->do_geo_lookup);
+					   
 		if (ctx->do_show_packet) {
 			struct pkt_buff *pkt;
 
 			printf("\n");
-			pkt = pkt_alloc(pkt_rcv, ret);
+			pkt = pkt_alloc(pkt_rcv, pkt_rcv_size);
 			hex_ascii(pkt);
 			tprintf_flush();
 			pkt_free(pkt);
@@ -1004,37 +1318,41 @@ static int __probe_remote(struct ctx *ctx, int fd, int fd_cap, int ttl,
 	return ret;
 }
 
-static int __process_ttl(struct ctx *ctx, int fd, int fd_cap, int ttl,
-			 uint8_t *pkt_snd, uint8_t *pkt_rcv,
-			 const struct sockaddr_storage *ss,
-			 const struct sockaddr_storage *sd)
+static traceroute_result __process_ttl(struct ctx *ctx, int fd, int fd_cap, int ttl,
+			 		 uint8_t *pkt_snd, uint8_t *pkt_rcv,
+			 		 const struct sockaddr_storage *ss,
+			 		 const struct sockaddr_storage *sd)
 {
-	int ret = -EIO;
+	traceroute_result ret = TRACEROUTE_NO_REPLY;
 	size_t i;
 	const int inner_protos[] = {
 		IPPROTO_TCP,
-		IPPROTO_ICMP,
+		__icmp_proto_for_ip_proto(ctx->proto),
 	};
 
 	printf("%2d: ", ttl);
 	fflush(stdout);
 
 	for (i = 0; i < array_size(inner_protos) && sigint == 0; ++i) {
-		ret = __probe_remote(ctx, fd, fd_cap, ttl, pkt_snd, pkt_rcv, ss, sd,
-				     inner_protos[i]);
-		if (ret > 0)
+
+		ret = __probe_remote(ctx, fd, fd_cap, ttl, pkt_snd,
+				     pkt_rcv, ss, sd, inner_protos[i]);
+		
+		if (ret != TRACEROUTE_NO_REPLY)
 			break;
 	}
 
-	if (ret <= 0)
-		printf("\r%2d: ?[ no answer]", ttl);
+	if (ret == TRACEROUTE_NO_REPLY)
+		printf("\r%2d: ?[ no answer ]", ttl);
+		
 	if (!ctx->do_show_packet)
 		printf("\n");
-	if (ctx->do_show_packet && ret <= 0)
+		
+	if (ctx->do_show_packet && ret == TRACEROUTE_NO_REPLY)
 		printf("\n\n");
 
 	fflush(stdout);
-	return 0;
+	return ret;
 }
 
 static int main_trace(struct ctx *ctx)
@@ -1068,8 +1386,8 @@ static int main_trace(struct ctx *ctx)
 	show_trace_info(ctx, &ss, &sd);
 
 	for (ttl = ctx->init_ttl; ttl <= ctx->max_ttl && sigint == 0; ++ttl)
-		__process_ttl(ctx, fd, fd_cap, ttl, pkt_snd, pkt_rcv,
-			      &ss, &sd);
+		if (__process_ttl(ctx, fd, fd_cap, ttl, pkt_snd, pkt_rcv, &ss, &sd) == TRACEROUTE_DST_REACHED)
+			break;
 
 	xfree(pkt_snd);
 	xfree(pkt_rcv);
@@ -1093,7 +1411,8 @@ int main(int argc, char **argv)
 	memset(&ctx, 0, sizeof(ctx));
 	ctx.init_ttl = 1;
 	ctx.max_ttl = 30;
-	ctx.queries = 2;
+	ctx.num_probes = 2;
+	ctx.num_packets = 3;
 	ctx.timeout = 2;
 	ctx.proto = IPPROTO_IP;
 	ctx.payload = NULL;
@@ -1156,8 +1475,13 @@ int main(int argc, char **argv)
 			ctx.dev = xstrdup(optarg);
 			break;
 		case 'q':
-			ctx.queries = atoi(optarg);
-			if (ctx.queries <= 0)
+			ctx.num_probes = atoi(optarg);
+			if (ctx.num_probes <= 0)
+				help();
+			break;
+		case 's':
+			ctx.num_packets = atoi(optarg);
+			if (ctx.num_packets <= 0)
 				help();
 			break;
 		case 'x':
