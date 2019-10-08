@@ -984,7 +984,7 @@ static int main_trace(struct ctx *ctx)
 
 	ctx->rcvlen = device_mtu(ctx->dev) - sizeof(struct ethhdr);
 	if (ctx->totlen >= ctx->rcvlen)
-		panic("Packet len exceeds device MTU!\n");
+		panic("packet length (%zu) exceeds device MTU (%zu)\n", ctx->totlen, ctx->rcvlen);
 
 	pkt_snd = xmalloc(ctx->totlen);
 	pkt_rcv = xmalloc(ctx->rcvlen);
@@ -1143,11 +1143,11 @@ int main(int argc, char **argv)
 			case 'X':
 			case 't':
 			case 'l':
-				panic("Option -%c requires an argument!\n",
+				panic("option -%c requires an argument!\n",
 				      optopt);
 			default:
 				if (isprint(optopt))
-					printf("Unknown option character `0x%X\'!\n", optopt);
+					printf("unknown option character '0x%X'!\n", optopt);
 				die();
 		}
 		default:
@@ -1160,9 +1160,9 @@ int main(int argc, char **argv)
 		help();
 
 	if (!device_up_and_running(ctx.dev))
-		panic("Networking device not up and running!\n");
+		panic("networking device %s is not up and running\n", ctx.dev);
 	if (device_mtu(ctx.dev) <= ctx.totlen)
-		panic("Packet larger than device MTU!\n");
+		panic("packet length (%zu) exceeds device MTU (%zu)\n", ctx.totlen, device_mtu(ctx.dev));
 
 	register_signal(SIGHUP, signal_handler);
 	register_signal(SIGINT, signal_handler);
