@@ -51,9 +51,9 @@ struct ctx {
 	char *host, *port, *dev, *payload, *bind_addr;
 	size_t totlen, rcvlen;
 	socklen_t sd_len;
-	int init_ttl, max_ttl, dns_resolv, queries, timeout;
-	int syn, ack, ecn, fin, psh, rst, urg, tos, nofrag, proto, show;
-	int dport, latitude;
+	int init_ttl, max_ttl, dport, queries, timeout;
+	int syn, ack, ecn, fin, psh, rst, urg, tos, nofrag, proto;
+	bool do_geo_lookup, do_dns_resolution, do_show_packet;
 };
 
 struct proto_ops {
@@ -65,8 +65,8 @@ struct proto_ops {
 	size_t min_len_tcp, min_len_icmp;
 	int (*check)(uint8_t *packet, size_t len, int ttl, int id,
 		     const struct sockaddr *src);
-	void (*handler)(uint8_t *packet, size_t len, int dns_resolv,
-			int latitude);
+	void (*handler)(uint8_t *packet, size_t len, bool do_dns_resolution,
+			bool do_geo_lookup);
 };
 
 static sig_atomic_t sigint = 0;
@@ -76,15 +76,15 @@ static int assemble_ipv4(uint8_t *packet, size_t len, int ttl, int proto,
 			 const struct sockaddr *src);
 static int check_ipv4(uint8_t *packet, size_t len, int ttl, int id,
                       const struct sockaddr *ss);
-static void handle_ipv4(uint8_t *packet, size_t len, int dns_resolv,
-		        int latitude);
+static void handle_ipv4(uint8_t *packet, size_t len, bool do_dns_resolution,
+		        bool do_geo_lookup);
 static int assemble_ipv6(uint8_t *packet, size_t len, int ttl, int proto,
 			 const struct ctx *ctx, const struct sockaddr *dst,
 			 const struct sockaddr *src);
 static int check_ipv6(uint8_t *packet, size_t len, int ttl, int id,
                       const struct sockaddr *ss);
-static void handle_ipv6(uint8_t *packet, size_t len, int dns_resolv,
-			int latitude);
+static void handle_ipv6(uint8_t *packet, size_t len, bool do_dns_resolution,
+			bool do_geo_lookup);
 
 static const char *short_options = "H:p:nNf:m:b:i:d:q:x:SAEFPURt:Gl:hv46X:ZuL";
 static const struct option long_options[] = {
@@ -514,7 +514,7 @@ static int check_ipv4(uint8_t *packet, size_t len, int ttl __maybe_unused,
 }
 
 static void handle_ipv4(uint8_t *packet, size_t len __maybe_unused,
-			int dns_resolv, int latitude)
+			bool do_dns_resolution, bool do_geo_lookup)
 {
 	char hbuff[NI_MAXHOST];
 	struct iphdr *iph = (struct iphdr *) packet;
@@ -535,7 +535,7 @@ static void handle_ipv4(uint8_t *packet, size_t len __maybe_unused,
 	country = geoip4_country_name(&sd);
 	city = geoip4_city_name(&sd);
 
-	if (dns_resolv) {
+	if (do_dns_resolution) {
 		hent = gethostbyaddr(&sd.sin_addr, sizeof(sd.sin_addr), PF_INET);
 		if (hent)
 			printf(" %s (%s)", hent->h_name, hbuff);
@@ -551,7 +551,7 @@ static void handle_ipv4(uint8_t *packet, size_t len __maybe_unused,
 		if (city)
 			printf(", %s", city);
 	}
-	if (latitude)
+	if (do_geo_lookup)
 		printf(" (%f/%f)", geoip4_latitude(&sd), geoip4_longitude(&sd));
 
 	free(city);
@@ -584,7 +584,7 @@ static int check_ipv6(uint8_t *packet, size_t len, int ttl __maybe_unused,
 }
 
 static void handle_ipv6(uint8_t *packet, size_t len __maybe_unused,
-			int dns_resolv, int latitude)
+			bool do_dns_resolution, bool do_geo_lookup)
 {
 	char hbuff[NI_MAXHOST];
 	struct ip6_hdr *ip6h = (struct ip6_hdr *) packet;
@@ -605,7 +605,7 @@ static void handle_ipv6(uint8_t *packet, size_t len __maybe_unused,
 	country = geoip6_country_name(&sd);
 	city = geoip6_city_name(&sd);
 
-	if (dns_resolv) {
+	if (do_dns_resolution) {
 		hent = gethostbyaddr(&sd.sin6_addr, sizeof(sd.sin6_addr), PF_INET6);
 		if (hent)
 			printf(" %s (%s)", hent->h_name, hbuff);
@@ -621,7 +621,7 @@ static void handle_ipv6(uint8_t *packet, size_t len __maybe_unused,
 		if (city)
 			printf(", %s", city);
 	}
-	if (latitude)
+	if (do_geo_lookup)
 		printf(" (%f/%f)", geoip6_latitude(&sd), geoip6_longitude(&sd));
 
 	free(city);
@@ -911,8 +911,8 @@ static int __probe_remote(struct ctx *ctx, int fd, int fd_cap, int ttl,
 
 		af_ops[ctx->proto].handler(pkt_rcv + sizeof(struct ethhdr),
 					   ret - sizeof(struct ethhdr),
-					   ctx->dns_resolv, ctx->latitude);
-		if (ctx->show) {
+					   ctx->do_dns_resolution, ctx->do_geo_lookup);
+		if (ctx->do_show_packet) {
 			struct pkt_buff *pkt;
 
 			printf("\n");
@@ -952,9 +952,9 @@ static int __process_ttl(struct ctx *ctx, int fd, int fd_cap, int ttl,
 
 	if (ret <= 0)
 		printf("\r%2d: ?[ no answer]", ttl);
-	if (ctx->show == 0)
+	if (!ctx->do_show_packet)
 		printf("\n");
-	if (ctx->show && ret <= 0)
+	if (ctx->do_show_packet && ret <= 0)
 		printf("\n\n");
 
 	fflush(stdout);
@@ -1047,7 +1047,7 @@ int main(int argc, char **argv)
 			ctx.port = xstrdup(optarg);
 			break;
 		case 'n':
-			ctx.dns_resolv = 0;
+			ctx.do_dns_resolution = false;
 			break;
 		case '4':
 			ctx.proto = IPPROTO_IP;
@@ -1056,10 +1056,10 @@ int main(int argc, char **argv)
 			ctx.proto = IPPROTO_IPV6;
 			break;
 		case 'Z':
-			ctx.show = 1;
+			ctx.do_show_packet = true;
 			break;
 		case 'N':
-			ctx.dns_resolv = 1;
+			ctx.do_dns_resolution = true;
 			break;
 		case 'f':
 			ctx.init_ttl = atoi(optarg);
@@ -1090,7 +1090,7 @@ int main(int argc, char **argv)
 				help();
 			break;
 		case 'L':
-			ctx.latitude = 1;
+			ctx.do_geo_lookup = true;
 			break;
 		case 'S':
 			ctx.syn = 1;
