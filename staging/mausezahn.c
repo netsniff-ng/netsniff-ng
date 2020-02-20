@@ -590,8 +590,8 @@ int getopts (int argc, char *argv[])
 			}
 			break;
 		 case '?':
-			if ((optopt == 'a') || (optopt == 'b') || (optopt = 'c') ||
-			    (optopt == 'd') || (optopt == 'f') || (optopt = 'p') ||
+			if ((optopt == 'a') || (optopt == 'b') || (optopt == 'c') ||
+			    (optopt == 'd') || (optopt == 'f') || (optopt == 'p') ||
 			    (optopt == 't') || (optopt == 'm'))
 				fprintf (stderr, " mz/getopts: Option -%c requires an argument.\n", optopt);
 			else if (isprint (optopt))
