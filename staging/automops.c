@@ -26,7 +26,7 @@
 struct automops * automops_init(void)
 {
 	// Create initial automops element:
-	struct automops *new_automops = (struct automops*) malloc(sizeof(struct automops));
+	struct automops *new_automops = (struct automops*) calloc(1, sizeof(struct automops));
 	new_automops->next = new_automops;
 	new_automops->prev = new_automops;
 	automops_set_defaults (new_automops);
