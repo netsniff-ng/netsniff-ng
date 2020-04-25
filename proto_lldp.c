@@ -88,7 +88,7 @@
 static int lldp_print_net_addr(const uint8_t *addr, size_t addrlen)
 {
 	uint8_t af;
-	char buf[64];
+	char buf[64] = {0};
 
 	if (addrlen < 1)
 		return -EINVAL;
@@ -99,13 +99,21 @@ static int lldp_print_net_addr(const uint8_t *addr, size_t addrlen)
 	case IANA_AF_IPV4:
 		if (addrlen < 4)
 			return -EINVAL;
-		inet_ntop(AF_INET, addr, buf, sizeof(buf));
+		if (NULL == inet_ntop(AF_INET, addr, buf, sizeof(buf))) {
+			tprintf("[MALFORMED ADDR]");
+			break;
+		}
+
 		tprintf("%s", buf);
 		break;
 	case IANA_AF_IPV6:
 		if (addrlen < 16)
 			return -EINVAL;
-		inet_ntop(AF_INET6, addr, buf, sizeof(buf));
+		if (NULL == inet_ntop(AF_INET6, addr, buf, sizeof(buf))) {
+			tprintf("[MALFORMED ADDR]");
+			break;
+		} 
+
 		tprintf("%s", buf);
 		break;
 	case IANA_AF_802:
@@ -348,7 +356,7 @@ static void lldp(struct pkt_buff *pkt)
 				goto out_invalid;
 
 			sys_cap = EXTRACT_16BIT(tlv_info_str);
-			tlv_info_str += sizeof(uint32_t);
+			tlv_info_str += sizeof(uint16_t);
 			en_cap = EXTRACT_16BIT(tlv_info_str);
 
 			tprintf(" (");
@@ -391,11 +399,15 @@ static void lldp(struct pkt_buff *pkt)
 			}
 
 			tlv_info_str++;
+
+			if (tlv_len - mgmt_alen < sizeof(uint32_t))
+				goto out_invalid;
 			tprintf(", Iface Number %u", EXTRACT_32BIT(tlv_info_str));
 
 			tlv_info_str += 4;
 			mgmt_oidlen = *tlv_info_str;
-			if (tlv_len - mgmt_alen - sizeof(uint32_t) - 3 < mgmt_oidlen)
+			if (tlv_len - mgmt_alen - sizeof(uint32_t) < 3 || 
+				tlv_len - mgmt_alen - sizeof(uint32_t) - 3 < mgmt_oidlen)
 				goto out_invalid;
 			if (mgmt_oidlen > 0) {
 				tprintf(", OID ");
