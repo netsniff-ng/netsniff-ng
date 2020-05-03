@@ -399,11 +399,15 @@ static void lldp(struct pkt_buff *pkt)
 			}
 
 			tlv_info_str++;
+
+			if (tlv_len - mgmt_alen < sizeof(uint32_t))
+				goto out_invalid;
 			tprintf(", Iface Number %u", EXTRACT_32BIT(tlv_info_str));
 
 			tlv_info_str += 4;
 			mgmt_oidlen = *tlv_info_str;
-			if (tlv_len - mgmt_alen - sizeof(uint32_t) - 3 < mgmt_oidlen)
+			if (tlv_len - mgmt_alen - sizeof(uint32_t) < 3 || 
+				tlv_len - mgmt_alen - sizeof(uint32_t) - 3 < mgmt_oidlen)
 				goto out_invalid;
 			if (mgmt_oidlen > 0) {
 				tprintf(", OID ");
