@@ -88,7 +88,7 @@
 static int lldp_print_net_addr(const uint8_t *addr, size_t addrlen)
 {
 	uint8_t af;
-	char buf[64];
+	char buf[64] = {0};
 
 	if (addrlen < 1)
 		return -EINVAL;
@@ -99,13 +99,21 @@ static int lldp_print_net_addr(const uint8_t *addr, size_t addrlen)
 	case IANA_AF_IPV4:
 		if (addrlen < 4)
 			return -EINVAL;
-		inet_ntop(AF_INET, addr, buf, sizeof(buf));
+		if (inet_ntop(AF_INET, addr, buf, sizeof(buf)) == NULL) {
+			tprintf("[MALFORMED ADDR]");
+			break;
+		}
+
 		tprintf("%s", buf);
 		break;
 	case IANA_AF_IPV6:
 		if (addrlen < 16)
 			return -EINVAL;
-		inet_ntop(AF_INET6, addr, buf, sizeof(buf));
+		if (inet_ntop(AF_INET6, addr, buf, sizeof(buf)) == NULL) {
+			tprintf("[MALFORMED ADDR]");
+			break;
+		} 
+
 		tprintf("%s", buf);
 		break;
 	case IANA_AF_802:
