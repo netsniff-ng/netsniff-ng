@@ -154,7 +154,7 @@ static void ipv4(struct pkt_buff *pkt)
 			 *       check and handle that
 			 */
 			opt_len = *(++opt);
-			if (opt_len > opts_len) {
+			if (opt_len < 2 || opt_len > opts_len) {
 				tprintf(", Len (%zd, invalid) ]\n", opt_len);
 				goto out;
 			} else
