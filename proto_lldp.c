@@ -356,7 +356,7 @@ static void lldp(struct pkt_buff *pkt)
 				goto out_invalid;
 
 			sys_cap = EXTRACT_16BIT(tlv_info_str);
-			tlv_info_str += sizeof(uint32_t);
+			tlv_info_str += sizeof(uint16_t);
 			en_cap = EXTRACT_16BIT(tlv_info_str);
 
 			tprintf(" (");
