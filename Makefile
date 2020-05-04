@@ -15,9 +15,9 @@ endif
 
 VERSION = 0
 PATCHLEVEL = 6
-SUBLEVEL = 6
+SUBLEVEL = 7
 EXTRAVERSION =
-NAME = Syro
+NAME = Polygon Window
 
 TOOLS ?= $(CONFIG_TOOLS)
 
