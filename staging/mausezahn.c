@@ -192,9 +192,6 @@ int reset(void)
    int i;
    time_t t;
 
-   // Determine platform type sizes:
-   MZ_SIZE_LONG_INT = sizeof(long int);	     
-
    mz_default_config_path[0] = 0x00;
    mz_default_log_path[0] = 0x00;
 

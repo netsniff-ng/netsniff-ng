@@ -108,8 +108,6 @@ static inline void verbose_l2(const char *format, ...)
 #define IPADDRSIZE 46
 
 
-int MZ_SIZE_LONG_INT;
-
 char mz_default_config_path[256];
 char mz_default_log_path[256];
 
