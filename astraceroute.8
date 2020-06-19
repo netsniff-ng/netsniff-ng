@@ -24,9 +24,9 @@ ISP name. astraceroute also displays timing information and reverse DNS data.
 Due to astraceroute's configurability, it is also possible to gather some more
 useful information about the hop regarding what it does and does not allow to pass
 through. This is done by using clear text strings for probing DPIs or
-``great firewalls'' to determine if they will filter out blacklisted critical
-keywords. This tool might be a good start for further in-depth analysis of such
-systems.
+``great firewalls'' to determine if they will filter out blocked critical
+keywords. This tool might be a good start for further in-depth analysis
+of such systems.
 .PP
 .SH OPTIONS
 .TP
@@ -159,7 +159,7 @@ and do a TCP Xmas probe this time.
 In this example, we have a Null probe to the remote host netsniff-ng.org, port
 80 (default) and this time, we append the cleartext string "censor-me" into the
 packet payload to test if a firewall or DPI will let this string pass. Such a trace
-could be done once without, and once with, a blacklisted string to gather possible
+could be done once without and once with a blocked string to gather possible
 information about censorship.
 .PP
 .SH NOTE
