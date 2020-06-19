@@ -928,9 +928,7 @@ static void xmit_packet_precheck(struct ctx *ctx, unsigned int cpu)
 
 static void pcap_load_packets(struct dev_io *dev)
 {
-	struct packet *pkt;
-
-	while ((pkt = dev_io_read(dev)) != 0)
+	while (dev_io_read(dev))
 		/* nothing to do */;
 }
 
