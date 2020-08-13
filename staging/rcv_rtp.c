@@ -39,6 +39,25 @@
 #include "mz.h"
 #include "mops.h"
 
+static enum rtp_display_mode {
+	BAR, NCURSES, TEXT
+} rtp_dm;
+
+static int32_t
+  time0,
+  jitter_rfc;
+
+static struct mz_timestamp
+  timeTX[TIME_COUNT_MAX],
+  timeRX[TIME_COUNT_MAX];
+
+static u_int32_t
+  drop,    // packet drop count
+  dis,     // packet disorder count
+  gtotal;    // counts number of file write cycles (see "got_rtp_packet()")
+
+static char rtp_filter_str[64];
+
 // Initialize the rcv_rtp process: Read user parameters and initialize globals
 int rcv_rtp_init(void)
 {

@@ -285,11 +285,6 @@ FILE *fp, *fp2;             // global multipurpose file pointer
 long double total_d;
 clock_t mz_start, mz_stop;
 
-enum rtp_display_mode {
-	BAR, NCURSES, TEXT
-} rtp_dm;
-	
-
 int mz_rand;
 int bwidth;
 
@@ -298,14 +293,7 @@ struct mz_timestamp {
 	u_int32_t nsec;
 };
 
-struct mz_timestamp 
-	tv, 
-	timeTX[TIME_COUNT_MAX],  
-	timeRX[TIME_COUNT_MAX];
-
 int32_t
-  time0,
-  jitter_rfc,
   jitter[TIME_COUNT_MAX];   
 
 int 
@@ -322,14 +310,8 @@ u_int16_t
   sqnr_next;
 
 u_int32_t
-  drop,    // packet drop count
-  dis,     // packet disorder count
   gind,      // a global index to run through deltaRX, deltaTX, and jitter
-  gind_max,  // the amount of entries used in the (ugly oversized) arrays; per default set to TIME_COUNT
-  gtotal;    // counts number of file write cycles (see "got_rtp_packet()") 
-
-
-char rtp_filter_str[64];
+  gind_max;  // the amount of entries used in the (ugly oversized) arrays; per default set to TIME_COUNT
 
 struct tx_struct
 {
@@ -495,14 +477,6 @@ struct tx_struct
      rtp_stmp;
    
 } tx;  // NOTE: tx elements are considered as default values for MOPS
-
-
-
-
-
-u_int8_t  gbuf[MAX_PAYLOAD_SIZE];  // This is only a generic global buffer to handover data more easily
-u_int32_t gbuf_s;                  //
-
 
 // ************************************
 // 
