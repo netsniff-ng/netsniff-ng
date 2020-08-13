@@ -56,7 +56,6 @@
 		"|\n"
 
 
-
 int create_rtp_packet(void)
 {
 	u_int8_t byte1,	byte2;

@@ -89,6 +89,8 @@
 		"|   arcount (or arc) ........... Number of RRs in additional records section  0  / 0\n" \
 		"\n"
 
+static u_int8_t  gbuf[MAX_PAYLOAD_SIZE];  // This is only a generic global buffer to handover data more easily
+static u_int32_t gbuf_s;
 
 int dns_get_query (char* argval);
 int dns_get_answer (char* argval);
