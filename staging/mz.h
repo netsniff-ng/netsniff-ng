@@ -108,8 +108,8 @@ static inline void verbose_l2(const char *format, ...)
 #define IPADDRSIZE 46
 
 
-char mz_default_config_path[256];
-char mz_default_log_path[256];
+extern char mz_default_config_path[256];
+extern char mz_default_log_path[256];
 
 
 struct arp_table_struct {
@@ -159,9 +159,11 @@ struct device_struct
    	struct pcap     *p_arp;                  // pcap handle
 	struct arp_table_struct *arp_table; // dedicated ARP table
 	int        ps;                    // packet socket
-} device_list[MZ_MAX_DEVICES];
+};
 
-int device_list_entries;
+extern struct device_struct device_list[MZ_MAX_DEVICES];
+
+extern int device_list_entries;
                
 
 #pragma pack(1)
@@ -270,46 +272,47 @@ enum operating_modes
 	SYSLOG,
 	LLDP,
 	IGMP
-} mode;
+};
 
+extern enum operating_modes mode;
 
-int ipv6_mode;
-int quiet;           // don't even print 'important standard short messages'
-int verbose;         // report character
-int simulate;        // if 1 then don't really send frames
+extern int ipv6_mode;
+extern int quiet;           // don't even print 'important standard short messages'
+extern int verbose;         // report character
+extern int simulate;        // if 1 then don't really send frames
 
-char path[256];
-char filename[256];
-FILE *fp, *fp2;             // global multipurpose file pointer
+extern char path[256];
+extern char filename[256];
+extern FILE *fp, *fp2;             // global multipurpose file pointer
 
-long double total_d;
-clock_t mz_start, mz_stop;
+extern long double total_d;
+extern clock_t mz_start, mz_stop;
 
-int mz_rand;
-int bwidth;
+extern int mz_rand;
+extern int bwidth;
 
 struct mz_timestamp {
 	u_int32_t sec; 
 	u_int32_t nsec;
 };
 
-int32_t
-  jitter[TIME_COUNT_MAX];   
+extern int32_t
+  jitter[TIME_COUNT_MAX];
 
-int 
+extern int
   rtp_log,
   time0_flag,        // If set then time0 has valid data
   sqnr0_flag;  
 
-u_int8_t
+extern u_int8_t
   mz_ssrc[4];     // holds RTP stream identifier for rcv_rtp()
 
-u_int16_t 
+extern u_int16_t
   sqnr_cur,
   sqnr_last, 
   sqnr_next;
 
-u_int32_t
+extern u_int32_t
   gind,      // a global index to run through deltaRX, deltaTX, and jitter
   gind_max;  // the amount of entries used in the (ugly oversized) arrays; per default set to TIME_COUNT
 
@@ -476,7 +479,9 @@ struct tx_struct
      rtp_sqnr,
      rtp_stmp;
    
-} tx;  // NOTE: tx elements are considered as default values for MOPS
+};
+
+extern struct tx_struct tx;  // NOTE: tx elements are considered as default values for MOPS
 
 // ************************************
 // 
