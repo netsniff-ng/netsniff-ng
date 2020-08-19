@@ -32,7 +32,53 @@
 #include "die.h"
 #include "dev.h"
 
+enum operating_modes mode;
+
+int ipv6_mode;
+int quiet;           // don't even print 'important standard short messages'
+int verbose;         // report character
+int simulate;        // if 1 then don't really send frames
+
+char path[256];
+char filename[256];
+FILE *fp, *fp2;             // global multipurpose file pointer
+
+long double total_d;
+clock_t mz_start, mz_stop;
+
+int mz_rand;
+int bwidth;
+
+int32_t
+  jitter[TIME_COUNT_MAX];
+
+int
+  rtp_log,
+  time0_flag,        // If set then time0 has valid data
+  sqnr0_flag;
+
+u_int8_t
+  mz_ssrc[4];     // holds RTP stream identifier for rcv_rtp()
+
+u_int16_t
+  sqnr_cur,
+  sqnr_last,
+  sqnr_next;
+
+u_int32_t
+  gind,      // a global index to run through deltaRX, deltaTX, and jitter
+  gind_max;  // the amount of entries used in the (ugly oversized) arrays; per default set to TIME_COUNT
+
+struct tx_struct tx;  // NOTE: tx elements are considered as default values for MOPS
+
+struct device_struct device_list[MZ_MAX_DEVICES];
+
+int device_list_entries;
+
 int verbose_level = 0;
+
+char mz_default_config_path[256];
+char mz_default_log_path[256];
 
 static const char *short_options = "46hqvVSxra:A:b:B:c:d:E:f:F:l:p:P:R:t:T:M:Q:X:";
 
