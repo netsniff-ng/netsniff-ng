@@ -49,8 +49,8 @@ struct mz_ll {
 	void *data; // points to your data
 };
 
-struct mz_ll *packet_sequences;
-struct mz_ll *cli_seq; // currently edited packet sequence used by CLI
+extern struct mz_ll *packet_sequences;
+extern struct mz_ll *cli_seq; // currently edited packet sequence used by CLI
 
 // prototypes
 struct mz_ll * mz_ll_create_new_element(struct mz_ll *list);

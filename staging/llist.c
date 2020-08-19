@@ -40,6 +40,8 @@
  * 
  */ 
 
+struct mz_ll *packet_sequences;
+struct mz_ll *cli_seq; // currently edited packet sequence used by CLI
 
 // Create new list element - may be the first one (list==NULL)
 //
