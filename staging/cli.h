@@ -54,19 +54,19 @@
 #define MZ_DEFAULT_ENABLE_PASSWORD "mops"
 #define MZ_DEFAULT_PORT     25542     // Towel day and 42
 
-struct cli_def *gcli;
+extern struct cli_def *gcli;
 
-char mz_username[32];
-char mz_password[32];
-char mz_enable[32];
-char mz_listen_addr[16];
-int mz_port;
-struct mops *clipkt; // actual packet used by CLI thread
+extern char mz_username[32];
+extern char mz_password[32];
+extern char mz_enable[32];
+extern char mz_listen_addr[16];
+extern int mz_port;
+extern struct mops *clipkt; // actual packet used by CLI thread
 	
-int clidev;
+extern int clidev;
 
 // =================================================================
-int cli_debug;
+extern int cli_debug;
 
 // Flags from 0x0000 to 0xFFFF
 // cli_debug & 8000  => Developer specific debugs
