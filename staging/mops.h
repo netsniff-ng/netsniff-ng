@@ -114,8 +114,8 @@
 // These are initialized with the definitions MIN_MOPS_FRAME_SIZE and 
 // MAX_MOPS_FRAME_SIZE above but can be overridden by the user (without
 // extending these limits)
-unsigned int min_frame_s;
-unsigned int max_frame_s;
+extern unsigned int min_frame_s;
+extern unsigned int max_frame_s;
 
 struct mops_counter
 {
@@ -246,7 +246,7 @@ struct automops {
 };
 
 
-struct automops * amp_head;
+extern struct automops * amp_head;
 
 
 struct mops
@@ -688,7 +688,7 @@ struct mops_ext_syslog //TODO
    
 /////////////////////////////////////////////////////////////////
 
-struct mops *mp_head; // This global will point to the head of the mops list
+extern struct mops *mp_head; // This global will point to the head of the mops list
 
 /////////////////////////////////////////////////////////////////
 // MOPS Prototypes:

@@ -46,8 +46,11 @@
 #include "mz.h"
 #include "mops.h"
 
+unsigned int min_frame_s;
+unsigned int max_frame_s;
 
-
+struct automops * amp_head;
+struct mops *mp_head; // This global will point to the head of the mops list
 
 // Creates first element, aka "head" element
 // This element can also be used! See mops_alloc_packet!
