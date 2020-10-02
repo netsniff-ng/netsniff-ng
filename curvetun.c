@@ -74,7 +74,7 @@ static const struct option long_options[] = {
 };
 
 static const char *copyright =
-	"Please report bugs to <netsniff-ng@googlegroups.com>\n"
+	"Please report bugs at https://github.com/netsniff-ng/netsniff-ng/issues\n"
 	"Copyright (C) 2011-2013 Daniel Borkmann <dborkma@tik.ee.ethz.ch>,\n"
 	"Swiss federal institute of technology (ETH Zurich)\n"
 	"License: GNU GPL version 2.0\n"
