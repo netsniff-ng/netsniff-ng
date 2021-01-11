@@ -15,9 +15,9 @@ endif
 
 VERSION = 0
 PATCHLEVEL = 6
-SUBLEVEL = 7
+SUBLEVEL = 8
 EXTRAVERSION =
-NAME = Polygon Window
+NAME = Flutternozzle
 
 TOOLS ?= $(CONFIG_TOOLS)
 
