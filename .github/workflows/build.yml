@@ -1,0 +1,53 @@
+name: Build
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        CC: [gcc, clang]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Install dependencies
+      run: |
+        sudo apt-get install -y --no-install-recommends libnl-3-dev libnl-genl-3-dev libnl-route-3-dev libnetfilter-conntrack-dev libgeoip-dev liburcu-dev libpcap-dev libnet1-dev libcli-dev clang
+
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Build (with all features)
+      run: |
+        CC=${{ matrix.CC }} ./configure
+        make CC=${{ matrix.CC }}
+
+    - name: Build (without GeoIP)
+      run: |
+        make clean
+        CC=${{ matrix.CC }} ./configure --disable-geoip
+        make CC=${{ matrix.CC }}
+
+    - name: Build (without zlib)
+      run: |
+        make clean
+        CC=${{ matrix.CC }} ./configure --disable-zlib
+        make CC=${{ matrix.CC }}
+
+    - name: Build (without GeoIP and zlib)
+      run: |
+        make clean
+        CC=${{ matrix.CC }} ./configure --disable-geoip --disable-zlib
+        make CC=${{ matrix.CC }}
+
+    - name: Build (without libnl)
+      run: |
+        make clean
+        CC=${{ matrix.CC }} ./configure --disable-libnl
+        make CC=${{ matrix.CC }}
