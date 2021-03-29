@@ -1,8 +1,3 @@
-A Travis CI instance for continuous integration testing of netsniff-ng
-can be found here:
-
-  https://travis-ci.org/netsniff-ng/netsniff-ng
-
 An analysis by the Coverity Scanner is run occasionally against the source of
 netsniff-ng. The corresponding scan reports can be found here:
 
@@ -12,6 +7,4 @@ If you are a project admin, use the command
 
   `make COV_EMAIL=<email> COV_PASSWD=<passwd> coverity'
 
-to trigger a new scan yourself. Alternatively, the Coverity integration of
-Travis CI can be used by pushing to the branch 'coverity_scan' to trigger a new
-analysis.
+to trigger a new scan yourself.

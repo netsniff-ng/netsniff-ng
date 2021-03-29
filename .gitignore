@@ -61,4 +61,3 @@ config.log
 # Excluded from ignorance
 !.gitattributes
 !.gitignore
-!.travis.yml
