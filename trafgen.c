@@ -197,7 +197,7 @@ static void __noreturn help(void)
 	     "  -r|--rand                             Randomize packet selection (def: round robin)\n"
 	     "  -P|--cpus <uint>                      Specify number of forks(<= CPUs) (def: #CPUs)\n"
 	     "  -t|--gap <time>                       Set approx. interpacket gap (s/ms/us/ns, def: us)\n"
-	     "  -b|--rate <rate>                      Send traffic at specified rate (pps/B/kB/MB/GB/kbit/Mbit/Gbit/KiB/MiB/GiB)\n"
+	     "  -b|--rate <rate>                      Send traffic at specified rate (pps/kpps/Mpps/B/kB/MB/GB/kbit/Mbit/Gbit/KiB/MiB/GiB)\n"
 	     "  -S|--ring-size <size>                 Manually set mmap size (KiB/MiB/GiB)\n"
 	     "  -E|--seed <uint>                      Manually set srand(3) seed\n"
 	     "  -u|--user <userid>                    Drop privileges and change to userid\n"
@@ -1153,6 +1153,12 @@ int main(int argc, char **argv)
 
 			if (strncmp(ptr, "pps", strlen("pps")) == 0) {
 				shape_type = SHAPER_PKTS;
+			} else if (strncmp(ptr, "kpps", strlen("kpps")) == 0) {
+				shape_type = SHAPER_PKTS;
+				rate *= 1000;
+			} else if (strncmp(ptr, "Mpps", strlen("Mpps")) == 0) {
+				shape_type = SHAPER_PKTS;
+				rate *= 1000 * 1000;
 			} else if (strncmp(ptr, "B", strlen("B")) == 0) {
 				shape_type = SHAPER_BYTES;
 			} else if (strncmp(ptr, "kB", strlen("kB")) == 0) {
