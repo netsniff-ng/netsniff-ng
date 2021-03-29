@@ -82,7 +82,8 @@ struct ctx {
 	struct dev_io *dev_out;
 	struct dev_io *dev_in;
 	unsigned long num;
-	unsigned int cpus;
+	unsigned int cpu_start;
+	unsigned int cpu_num;
 	uid_t uid; gid_t gid;
 	char *device, *rhost;
 	struct sockaddr_in dest;
@@ -195,7 +196,7 @@ static void __noreturn help(void)
 	     "  -s|--smoke-test <ipv4>                Probe if machine survived fuzz-tested packet\n"
 	     "  -n|--num <uint>                       Number of packets until exit (def: 0)\n"
 	     "  -r|--rand                             Randomize packet selection (def: round robin)\n"
-	     "  -P|--cpus <uint>                      Specify number of forks(<= CPUs) (def: #CPUs)\n"
+	     "  -P|--cpus <uint>[-<uint>]             Specify number of forks(<= CPUs) (def: #CPUs)\n"
 	     "  -t|--gap <time>                       Set approx. interpacket gap (s/ms/us/ns, def: us)\n"
 	     "  -b|--rate <rate>                      Send traffic at specified rate (pps/kpps/Mpps/B/kB/MB/GB/kbit/Mbit/Gbit/KiB/MiB/GiB)\n"
 	     "  -S|--ring-size <size>                 Manually set mmap size (KiB/MiB/GiB)\n"
@@ -213,6 +214,7 @@ static void __noreturn help(void)
 	     "  -h|--help                             Guess what?!\n\n"
 	     "Examples:\n"
 	     "  trafgen --dev eth0 --conf trafgen.cfg\n"
+	     "  trafgen --dev eth0 --conf trafgen.cfg --cpus 2-4\n"
 	     "  trafgen -e | trafgen -i - -o eth0 --cpp -n 1\n"
 	     "  trafgen --dev eth0 --conf fuzzing.cfg --smoke-test 10.0.0.1\n"
 	     "  trafgen --dev wlan0 --rfraw --conf beacon-test.txf -V --cpus 2\n"
@@ -830,7 +832,7 @@ static unsigned long __wait_and_sum_others(struct ctx *ctx, unsigned int cpu)
 	unsigned int i;
 	unsigned long total;
 
-	for (i = 0, total = plen; i < ctx->cpus; i++) {
+	for (i = 0, total = plen; i < ctx->cpu_num; i++) {
 		if (i == cpu)
 			continue;
 
@@ -853,7 +855,7 @@ static void __correct_global_delta(struct ctx *ctx, unsigned int cpu, unsigned l
 	int cpu_sel;
 	long long delta_correction = 0;
 
-	for (i = 0, total = ctx->num; i < ctx->cpus; i++) {
+	for (i = 0, total = ctx->num; i < ctx->cpu_num; i++) {
 		if (i == cpu)
 			continue;
 
@@ -871,7 +873,7 @@ static void __correct_global_delta(struct ctx *ctx, unsigned int cpu, unsigned l
 	if (total < orig)
 		delta_correction = +1 * ((long long) orig - total);
 
-	for (cpu_sel = -1, i = 0; i < ctx->cpus; i++) {
+	for (cpu_sel = -1, i = 0; i < ctx->cpu_num; i++) {
 		if (stats[i].cd_packets > 0) {
 			if ((long long) stats[i].cd_packets +
 			    delta_correction >= 0) {
@@ -956,7 +958,7 @@ static void main_loop(struct ctx *ctx, char *confname, bool slow,
 		unsigned int i;
 		size_t total_len = 0, total_pkts = 0;
 
-		for (i = 0; i < ctx->cpus; ++i) {
+		for (i = 0; i < ctx->cpu_num; ++i) {
 			total_len  += stats[i].cf_bytes;
 			total_pkts += stats[i].cf_packets;
 		}
@@ -1011,7 +1013,7 @@ int main(int argc, char **argv)
 	uint64_t gap = 0;
 	unsigned int i;
 	char *confname = NULL, *ptr;
-	unsigned long cpus_tmp, orig_num = 0;
+	unsigned long cpu_n, orig_num = 0;
 	unsigned long long tx_packets, tx_bytes;
 	struct ctx ctx;
 	int min_opts = 5;
@@ -1022,7 +1024,7 @@ int main(int argc, char **argv)
 	struct timespec delay;
 
 	memset(&ctx, 0, sizeof(ctx));
-	ctx.cpus = get_number_cpus_online();
+	ctx.cpu_num = get_number_cpus_online();
 	ctx.uid = getuid();
 	ctx.gid = getgid();
 	ctx.qdisc_path = false;
@@ -1056,9 +1058,20 @@ int main(int argc, char **argv)
 			ctx.verbose = true;
 			break;
 		case 'P':
-			cpus_tmp = strtoul(optarg, NULL, 0);
-			if (cpus_tmp > 0 && cpus_tmp < ctx.cpus)
-				ctx.cpus = cpus_tmp;
+			if (slow)
+				break;
+			cpu_n = strtoul(optarg, &ptr, 0);
+			if (ptr && *ptr == '-') {
+				if (cpu_n < 0 || cpu_n >= ctx.cpu_num)
+					break;
+				ctx.cpu_start = cpu_n;
+				cpu_n = strtoul(ptr + 1, NULL, 0);
+				if (cpu_n < ctx.cpu_start || cpu_n >= ctx.cpu_num)
+					ctx.cpu_num -= ctx.cpu_start;
+				else
+					ctx.cpu_num = cpu_n - ctx.cpu_start + 1;
+			} else if (cpu_n > 0 && cpu_n <= ctx.cpu_num)
+				ctx.cpu_num = cpu_n;
 			break;
 		case 'd':
 		case 'o':
@@ -1081,7 +1094,8 @@ int main(int argc, char **argv)
 			break;
 		case 's':
 			slow = true;
-			ctx.cpus = 1;
+			ctx.cpu_start = 0;
+			ctx.cpu_num = 1;
 			ctx.smoke_test = true;
 			ctx.rhost = xstrdup(optarg);
 			break;
@@ -1097,8 +1111,10 @@ int main(int argc, char **argv)
 			if (c == 'i' && strstr(confname, ".pcap")) {
 				ctx.sh.type = SHAPER_TSTAMP;
 				ctx.pcap_in = confname;
-			} else if (!strncmp("-", confname, strlen("-")))
-				ctx.cpus = 1;
+			} else if (!strncmp("-", confname, strlen("-"))) {
+				ctx.cpu_start = 0;
+				ctx.cpu_num = 1;
+			}
 			break;
 		case 'u':
 			ctx.uid = strtoul(optarg, NULL, 0);
@@ -1291,7 +1307,8 @@ int main(int argc, char **argv)
 		/* Fall back to single core to not mess up correct timing.
 		 * We are slow anyway!
 		 */
-		ctx.cpus = 1;
+		ctx.cpu_start = 0;
+		ctx.cpu_num = 1;
 		slow = true;
 	}
 
@@ -1301,16 +1318,21 @@ int main(int argc, char **argv)
 	 * packets than intended or none at all.
 	 */
 	if (ctx.num)
-		ctx.cpus = min_t(unsigned int, ctx.num, ctx.cpus);
+		ctx.cpu_num = min_t(unsigned int, ctx.num, ctx.cpu_num);
 
 	if (set_irq_aff && dev_io_is_netdev(ctx.dev_out)) {
 		irq = device_irq_number(ctx.device);
-		device_set_irq_affinity_list(irq, 0, ctx.cpus - 1);
+		device_set_irq_affinity_list(irq, ctx.cpu_start,
+		                             ctx.cpu_start + ctx.cpu_num - 1);
 	}
 
-	stats = setup_shared_var(ctx.cpus);
+	stats = setup_shared_var(ctx.cpu_num);
 
-	for (i = 0; i < ctx.cpus; i++) {
+
+	if (ctx.verbose)
+		printf("Start %u worker processes on cpus [%u-%u].\n",
+		       ctx.cpu_num, ctx.cpu_start, ctx.cpu_start + ctx.cpu_num - 1);
+	for (i = 0; i < ctx.cpu_num; i++) {
 		pid_t pid = fork();
 
 		switch (pid) {
@@ -1319,7 +1341,7 @@ int main(int argc, char **argv)
 				seed = generate_srand_seed();
 			srand(seed);
 
-			cpu_affinity(i);
+			cpu_affinity(ctx.cpu_start + i);
 			main_loop(&ctx, confname, slow, i, invoke_cpp,
 				  cpp_argv, orig_num);
 
@@ -1329,7 +1351,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	for (i = 0; i < ctx.cpus; i++) {
+	for (i = 0; i < ctx.cpu_num; i++) {
 		int status;
 
 		wait(&status);
@@ -1340,7 +1362,7 @@ int main(int argc, char **argv)
 	if (set_sock_mem)
 		reset_system_socket_memory(vals, array_size(vals));
 
-	for (i = 0, tx_packets = tx_bytes = 0; i < ctx.cpus; i++) {
+	for (i = 0, tx_packets = tx_bytes = 0; i < ctx.cpu_num; i++) {
 		while ((__get_state(i) & CPU_STATS_STATE_RES) == 0)
 			sched_yield();
 
@@ -1352,7 +1374,7 @@ int main(int argc, char **argv)
 	printf("\n");
 	printf("\r%12llu packets outgoing\n", tx_packets);
 	printf("\r%12llu bytes outgoing\n", tx_bytes);
-	for (i = 0; cpustats && i < ctx.cpus; i++) {
+	for (i = 0; cpustats && i < ctx.cpu_num; i++) {
 		printf("\r%12lu sec, %lu usec on CPU%d (%llu packets)\n",
 		       stats[i].tv_sec, stats[i].tv_usec, i,
 		       stats[i].tx_packets);
@@ -1360,7 +1382,7 @@ int main(int argc, char **argv)
 
 thread_out:
 	xunlockme();
-	destroy_shared_var(stats, ctx.cpus);
+	destroy_shared_var(stats, ctx.cpu_num);
 	if (dev_io_is_netdev(ctx.dev_out) && set_irq_aff)
 		device_restore_irq_affinity_list();
 

@@ -131,11 +131,15 @@ than one packet is defined in a packet configuration, packets are scheduled for
 transmission in a round robin fashion. With this option, they are selected
 randomly instread.
 .TP
-.B -P <uint>, --cpus <uint>
+.B -P <uint>[-<uint>], --cpus <uint>[-<uint>]
 Specify the number of processes trafgen shall
 .BR fork (2)
-off. By default trafgen will start as many processes as CPUs that are online and
-pin them to each, respectively. Allowed value must be within interval [1,CPUs].
+off or list exact CPUs to use. By default trafgen will start as many processes
+as CPUs that are online and pin them to each, respectively. A single integer
+within interval [1,CPUs] overrides number of processes, which will be spawned
+starting from the first CPU. A pair of integers within interval [0,CPUs-1], and
+separated using  ''-'' represents an interval of CPUs, which will be used to
+spawn worker processes.
 .TP
 .B -t <time>, --gap <time>
 Specify a static inter-packet timegap in seconds, milliseconds, microseconds,
@@ -926,6 +930,9 @@ This is the most simple and, probably, the most common use of trafgen. It
 will generate traffic defined in the configuration file ''trafgen.cfg'' and
 transmit this via the ''eth0'' networking device. All online CPUs are used.
 .TP
+.B trafgen --dev eth0 --conf trafgen.cfg --cpus 2-4
+Instead of using all online CPUs, transmit traffic from CPUs 2, 3, and 4.
+.TP
 .B trafgen -e | trafgen -i - -o lo --cpp -n 1
 This is an example where we send one packet of the built-in example through
 the loopback device. The example configuration is passed via stdin and also
@@ -941,7 +948,8 @@ use the TX_RING, but sendto(2) packet I/O due to ''slow mode''.
 .B trafgen --dev wlan0 --rfraw --conf beacon-test.txf -V --cpus 2
 As an output device ''wlan0'' is used and put into monitoring mode, thus we
 are going to transmit raw 802.11 frames through the air. Use the ''beacon-test.txf''
-configuration file, set trafgen into verbose mode and use only 2 CPUs.
+configuration file, set trafgen into verbose mode and use only 2 CPUs starting
+from CPU 0.
 .TP
 .B trafgen --dev em1 --conf frag_dos.cfg --rand --gap 1000us
 Use trafgen in sendto(2) mode instead of TX_RING mode and sleep after each
