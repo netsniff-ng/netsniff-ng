@@ -914,7 +914,7 @@ The above example rewritten using the header generation functions:
 .PP
    {
      # --- ethernet header ---
-     eth(da=00:1b:21:3c:9d:f8, da=90:e2:ba:0a:56:b4)
+     eth(da=00:1b:21:3c:9d:f8, sa=90:e2:ba:0a:56:b4)
      # --- ip header ---
      ipv4(id=drnd(), mf, ttl=64, sa=192.168.51.1, da=192.168.51.2)
      # --- udp header ---
