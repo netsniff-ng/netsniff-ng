@@ -588,7 +588,9 @@ int main(void)
 }
 EOF
 
-	$CC -o $TMPDIR/pcaptest $TMPDIR/pcaptest.c -lpcap >> config.log 2>&1
+	$CC -o $TMPDIR/pcaptest $TMPDIR/pcaptest.c \
+		$($PKG_CONFIG --libs libpcap 2>> config.log) \
+		>> config.log 2>&1
 	if [ ! -x $TMPDIR/pcaptest ] ; then
 		echo "[NO]"
 		echo "CONFIG_LIBPCAP=0" >> Config

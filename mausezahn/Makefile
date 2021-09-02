@@ -1,6 +1,6 @@
 mausezahn-libs =	-lcli \
 			-lnet \
-			-lpcap \
+			$(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) $(PKG_CONFIG) --libs libpcap 2> /dev/null ) \
 			-lrt \
 			-lpthread \
 			-lm
