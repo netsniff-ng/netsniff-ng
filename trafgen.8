@@ -271,8 +271,8 @@ to write configurations:
    byte fill function:      fill(<content>, <times>): fill(0xca, 128)
    compile-time random:     rnd(<times>): rnd(128), rnd()
    runtime random numbers:  drnd(<times>): drnd(128), drnd()
-   compile-time counter:    seqinc(<start-val>, <increment>, <times>)
-                            seqdec(<start-val>, <decrement>, <times>)
+   compile-time counter:    seqinc(<start-val>, <times>, <increment>)
+                            seqdec(<start-val>, <times>, <decrement>)
    runtime counter (1byte): dinc(<min-val>, <max-val>, <increment>)
                             ddec(<min-val>, <max-val>, <decrement>)
 .PP
