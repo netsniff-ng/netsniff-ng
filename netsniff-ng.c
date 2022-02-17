@@ -238,16 +238,21 @@ static void dump_rx_stats(struct ctx *ctx, int sock, bool is_v3)
 	if (update_rx_stats(ctx, sock, is_v3))
 		return;
 
-	printf("\r%12"PRIu64"  packets incoming (%"PRIu64" unread on exit)\n",
+	FILE *fd = stdout;
+	// In case the out device is stdout redirect to stderr
+	if (ctx->device_out && !strncmp("-", ctx->device_out, strlen("-")))
+		fd = stderr;
+
+	fprintf(fd, "\r%12"PRIu64"  packets incoming (%"PRIu64" unread on exit)\n",
 	       is_v3 ? ctx->pkts_seen : ctx->pkts_recvd,
 	       is_v3 ? ctx->pkts_recvd - ctx->pkts_seen : 0);
-	printf("\r%12"PRIu64"  packets passed filter\n",
+	fprintf(fd, "\r%12"PRIu64"  packets passed filter\n",
 	       ctx->pkts_recvd - ctx->pkts_drops);
-	printf("\r%12"PRIu64"  packets failed filter (out of space)\n",
+	fprintf(fd, "\r%12"PRIu64"  packets failed filter (out of space)\n",
 	       ctx->pkts_drops);
 
 	if (ctx->pkts_recvd  > 0)
-		printf("\r%12.4lf%% packet droprate\n",
+		fprintf(fd, "\r%12.4lf%% packet droprate\n",
 		       (1.0 * ctx->pkts_drops / ctx->pkts_recvd) * 100.0);
 }
 
