@@ -82,6 +82,8 @@ static int __device_address6(const char *ifname, struct sockaddr_storage *ss)
 		panic("Cannot get device addresses for IPv6!\n");
 
 	for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+		if (ifa->ifa_addr == NULL)
+			continue;
 		family = ifa->ifa_addr->sa_family;
 		if (family != AF_INET6)
 			continue;
