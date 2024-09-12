@@ -538,7 +538,12 @@ int cli(void)
    
    // Create a socket
    s = socket(AF_INET, SOCK_STREAM, 0);
-   setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+   if (s == -1) {
+	   return -1;
+   }
+   if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) == -1) {
+	   return -1;
+   }
 
    // Should we bind the CLI session to a specific interface?
    // TODO: This does nothing !?
@@ -554,14 +559,18 @@ int cli(void)
    servaddr.sin_family = AF_INET;
    inet_aton(mz_listen_addr, &servaddr.sin_addr);
    servaddr.sin_port = htons(mz_port); 
-   bind(s, (struct sockaddr *)&servaddr, sizeof(servaddr));
+   if (bind(s, (struct sockaddr *)&servaddr, sizeof(servaddr)) == -1) {
+	   return -1;
+   }
 
    if (!quiet) {
                        fprintf(stderr, "Mausezahn accepts incoming Telnet connections on %s:%i.\n",  mz_listen_addr, mz_port);
                }
 
    // Wait for a connection
-   listen(s, 50);
+   if (listen(s, 50) == -1) {
+	   return -1;
+   }
 
    while ((x = accept(s, NULL, 0)))
      {
