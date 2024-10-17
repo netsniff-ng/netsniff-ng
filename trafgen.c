@@ -416,7 +416,7 @@ static struct cpu_stats *setup_shared_var(unsigned int cpus)
 	char *zbuff, file[256];
 	struct cpu_stats *buff;
 
-	slprintf(file, sizeof(file), ".tmp_mmap.XXXXXX");
+	slprintf(file, sizeof(file), "/tmp/.tmp_mmap.XXXXXX");
 	fd = mkostemp_or_die(file, O_RDWR | O_CREAT | O_TRUNC);
 	zbuff = xzmalloc(len);
 	write_or_die(fd, zbuff, len);
