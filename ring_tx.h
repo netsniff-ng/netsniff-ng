@@ -30,12 +30,24 @@ static inline void kernel_may_pull_from_tx(struct tpacket2_hdr *hdr)
 
 static inline int pull_and_flush_tx_ring(int sock)
 {
-	return sendto(sock, NULL, 0, MSG_DONTWAIT, NULL, 0);
+	int ret;
+
+	do {
+		ret = sendto(sock, NULL, 0, MSG_DONTWAIT, NULL, 0);
+	} while (ret == -1 && errno == EINTR);
+
+	return ret;
 }
 
 static inline int pull_and_flush_tx_ring_wait(int sock)
 {
-	return sendto(sock, NULL, 0, 0, NULL, 0);
+	int ret;
+
+	do {
+		ret = sendto(sock, NULL, 0, 0, NULL, 0);
+	} while (ret == -1 && errno == EINTR);
+
+	return ret;
 }
 
 #endif /* TX_RING_H */
