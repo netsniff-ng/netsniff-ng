@@ -15,9 +15,9 @@ endif
 
 VERSION = 0
 PATCHLEVEL = 6
-SUBLEVEL = 8
+SUBLEVEL = 9
 EXTRAVERSION =
-NAME = Flutternozzle
+NAME = Analogue Bubblebath
 
 TOOLS ?= $(CONFIG_TOOLS)
 
