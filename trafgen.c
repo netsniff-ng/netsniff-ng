@@ -119,7 +119,6 @@ static const struct option long_options[] = {
 	{"rate",		required_argument,	NULL, 'b'},
 	{"cpus",		required_argument,	NULL, 'P'},
 	{"ring-size",		required_argument,	NULL, 'S'},
-	{"kernel-pull",		required_argument,	NULL, 'k'},
 	{"smoke-test",		required_argument,	NULL, 's'},
 	{"seed",		required_argument,	NULL, 'E'},
 	{"user",		required_argument,	NULL, 'u'},
@@ -1123,10 +1122,6 @@ int main(int argc, char **argv)
 		case 'g':
 			ctx.gid = strtoul(optarg, NULL, 0);
 			ctx.enforce = true;
-			break;
-		case 'k':
-			printf("Option -k/--kernel-pull is no longer used and "
-			       "will be removed in a future release!\n");
 			break;
 		case 'E':
 			seed = strtoul(optarg, NULL, 0);
