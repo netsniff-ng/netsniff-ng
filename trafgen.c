@@ -1233,7 +1233,6 @@ int main(int argc, char **argv)
 			case 'o':
 			case 'E':
 			case 'i':
-			case 'k':
 			case 'u':
 			case 'g':
 			case 't':
