@@ -583,8 +583,13 @@ check_libpcap()
 
 int main(void)
 {
+	int ret;
 	struct bpf_program bpf;
-	int ret = pcap_compile_nopcap(65535, 1, &bpf, "foo.bpf", 1, 0xffffffff);
+	pcap_t *pcap_handle = pcap_open_dead(1, 65535);
+	if (pcap_handle) {
+		pcap_compile(pcap_handle, &bpf, "foo.bpf", 1, PCAP_NETMASK_UNKNOWN);
+		pcap_close(pcap_handle);
+	}
 }
 EOF
 
