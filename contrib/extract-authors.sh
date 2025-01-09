@@ -8,8 +8,7 @@ function extract_authors() {
 	IFS=$'\n'
 	for i in $authors; do
 		name=$(git log --use-mailmap --author="$i" --format="%aN" | head -1)
-		mail=$(git log --use-mailmap --author="$i" --format="%aE" | head -1)
-		printf ' * %s <%s>\n' "$name" "$mail"
+		printf ' * %s\n' "$name"
 	done
 }
 

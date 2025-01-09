@@ -1,72 +1,80 @@
 The following people, in alphabetical order, have authored
 commits in the netsniff-ng repository:
 
- * arch3y <arch3y@archstrike.org>
- * Baruch Siach <baruch@tkos.co.il>
- * Benoît Ganne <benoit.ganne@gmail.com>
- * Christian Wiese <chris@opensde.org>
- * Daniel Borkmann <daniel@iogearbox.net>
- * Daniel Roberson <daniel@planethacker.net>
- * Daniel Roggow <daniel.roggow@rockwellcollins.com>
- * Eric Dumazet <edumazet@google.com>
- * Erik Bengtsson <e.bengtsson@gmail.com>
- * Hideo Hattori <hhatto.jp@gmail.com>
- * Hisao Tanabe <xtanabe@gmail.com>
- * James McCoy <vega.james@gmail.com>
- * Jaroslav Škarvada <jskarvad@redhat.com>
- * Jesper Dangaard Brouer <brouer@redhat.com>
- * Jia Zhouyang <jiazhouyang@nudt.edu.cn>
- * Joachim Nilsson <troglobit@gmail.com>
- * Jon Schipp <jonschipp@gmail.com>
- * Kartik Mistry <kartik.mistry@gmail.com>
- * Ken-ichirou MATSUZAWA <chamaken@gmail.com>
- * Ken Wu <abawwu@gmail.com>
- * Mandar Gokhale <mandarg@mandarg.com>
- * Mark Latimer <mark.latimer@gmail.com>
- * Markus Amend <markus.amend@telekom.de>
- * Martin Hauke <mardnh@gmx.de>
- * Matteo Croce <mcroce@redhat.com>
- * Michael R Torres <mic.ric.tor@gmail.com>
- * Michał Purzyński <michalpurzynski1@gmail.com>
- * Nathaniel Ferguson <nathaniel@leapfrog.foundation>
- * Nick Grauel <nicolas.grauel@plexxi.com>
- * Oliver Smith <oliver@zerolag.com>
- * Paolo Abeni <pabeni@redhat.com>
- * Peter Stuge <peter@stuge.se>
- * Petr Machata <petrm@mellanox.com>
- * Quentin Chateau <quentin.chateau@gmail.com>
- * Radoslav Bodo <bodik@cesnet.cz>
- * Reiner Herrmann <reiner@reiner-h.de>
- * Rosen Penev <rosenp@gmail.com>
- * Stephen Wadeley <swadeley@redhat.com>
- * Teguh <info@egeektronic.com>
- * Thomas Fleischmann <thomas.fleischmann.08@googlemail.com>
- * Tillmann Karras <tilkax@gmail.com>
- * Tobias Geerinckx-Rice <tobias.geerinckx.rice@gmail.com>
- * Tobias Klauser <tklauser@distanz.ch>
- * Tommy Beadle <tbeadle@gmail.com>
- * uno20001 <regisztralo111@gmail.com>
- * Vadim Kochan <vadim4j@gmail.com>
- * Whang Choi <wch0x01@gmail.com>
- * wilson <wilson.wen.chn@gmail.com>
- * Yousong Zhou <yszhou4tech@gmail.com>
+ * arch3y
+ * Baruch Siach
+ * Benoît Ganne
+ * Christian Wiese
+ * Clément Péron
+ * Daniel Borkmann
+ * Daniel Roberson
+ * Daniel Roggow
+ * Eric Dumazet
+ * Erik Bengtsson
+ * Federico Pellegrin
+ * Hideo Hattori
+ * Hisao Tanabe
+ * Ivan Koveshnikov
+ * James McCoy
+ * Jaroslav Škarvada
+ * Jesper Dangaard Brouer
+ * Jia Zhouyang
+ * Joachim Nilsson
+ * Jon Schipp
+ * Kartik Mistry
+ * Ken-ichirou MATSUZAWA
+ * Ken Wu
+ * Mandar Gokhale
+ * Mark Latimer
+ * Markus Amend
+ * Martin Hauke
+ * MatPerin
+ * Matteo Croce
+ * Michael R Torres
+ * Michał Purzyński
+ * Nathaniel Ferguson
+ * Nick Grauel
+ * Nick Owens
+ * Oliver Smith
+ * Paolo Abeni
+ * Peter Stuge
+ * Petr Machata
+ * Quentin Chateau
+ * Radoslav Bodo
+ * Reiner Herrmann
+ * Rosen Penev
+ * Sean Anderson
+ * Stephen Wadeley
+ * Teguh
+ * Thomas Fleischmann
+ * Tillmann Karras
+ * Tobias Geerinckx-Rice
+ * Tobias Klauser
+ * Tommy Beadle
+ * uno20001
+ * Vadim Kochan
+ * Whang Choi
+ * wilson
+ * Yousong Zhou
+ * Zahari Doychev
 
 The following people have provided helpful bug reports, suggestions or have
 otherwise provided valuable contributions to the project:
 
- * Christoph Jaeger <email@christophjaeger.info>
- * Dan Horák <dan@danny.cz>
- * Dennis Gilmore <dennis@ausil.us>
- * Doug Burks <doug.burks@gmail.com>
- * Emmanuel Roullit <emmanuel.roullit@gmail.com>
- * Herbert Haas <herbert@perihel.at>
- * Jim Binder <jbinder6342@gmail.com>
- * Markus Kötter <nepenthesdev@gmail.com>
- * Ronald W. Henderson <rwhalb@nycap.rr.com>
- * Scott Moeller <electronjoe@gmail.com>
- * Sibir Chakraborty <sibir.chakraborty@gmail.com>
- * Stefan Seering <sseerin@imn.htwk-leipzig.de>
- * Ulrich Weber <uweber@astaro.com>
+ * Christoph Jaeger
+ * Dan Horák
+ * Dennis Gilmore
+ * Doug Burks
+ * Emmanuel Roullit
+ * Herbert Haas
+ * Jim Binder
+ * Markus Kötter
+ * Michael Prokop
+ * Ronald W. Henderson
+ * Scott Moeller
+ * Sibir Chakraborty
+ * Stefan Seering
+ * Ulrich Weber
 
 Special thanks to some of our sponsors:
 
