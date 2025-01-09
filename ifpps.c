@@ -738,7 +738,7 @@ static void screen_net_dev_rel(WINDOW *screen, const struct ifstat *rel,
 	attron(A_REVERSE);
 
 	mvwprintw(screen, (*voff)++, 0,
-		  "  rx: %16.3llf MiB/t "
+		  "  rx: %16.3Lf MiB/t "
 		        "%10llu pkts/t "
 			"%10llu drops/t "
 			"%10llu errors/t  ",
@@ -746,7 +746,7 @@ static void screen_net_dev_rel(WINDOW *screen, const struct ifstat *rel,
 		  rel->rx_packets, rel->rx_drops, rel->rx_errors);
 
 	mvwprintw(screen, (*voff)++, 0,
-		  "  tx: %16.3llf MiB/t "
+		  "  tx: %16.3Lf MiB/t "
 			"%10llu pkts/t "
 			"%10llu drops/t "
 			"%10llu errors/t  ",
@@ -760,12 +760,12 @@ static void screen_net_dev_percentage(WINDOW *screen, const struct ifstat *rel,
 				      int *voff, uint32_t rate)
 {
 	mvwprintw(screen, (*voff)++, 0,
-		  "  rx: %15.2llf%% of line rate  "
+		  "  rx: %15.2Lf%% of line rate  "
 		  "                                                  ",
 		  rate ? ((((long double) rel->rx_bytes) / 125000) / rate) * 100.0 : 0.0);
 
 	mvwprintw(screen, (*voff)++, 0,
-		  "  tx: %15.2llf%% of line rate  "
+		  "  tx: %15.2Lf%% of line rate  "
 		  "                                                  ",
 		  rate ? ((((long double) rel->tx_bytes) / 125000) / rate) * 100.0 : 0.0);
 }
@@ -774,7 +774,7 @@ static void screen_net_dev_abs(WINDOW *screen, const struct ifstat *abs,
 			       int *voff)
 {
 	mvwprintw(screen, (*voff)++, 2,
-		  "rx: %16.3llf MiB   "
+		  "rx: %16.3Lf MiB   "
 		      "%10llu pkts   "
 		      "%10llu drops   "
 		      "%10llu errors",
@@ -782,7 +782,7 @@ static void screen_net_dev_abs(WINDOW *screen, const struct ifstat *abs,
 		  abs->rx_packets, abs->rx_drops, abs->rx_errors);
 
 	mvwprintw(screen, (*voff)++, 2,
-		  "tx: %16.3llf MiB   "
+		  "tx: %16.3Lf MiB   "
 		      "%10llu pkts   "
 		      "%10llu drops   "
 		      "%10llu errors",
@@ -815,8 +815,8 @@ static void screen_mem_swap(WINDOW *screen, const struct ifstat *abs, int *voff)
 
 	mvwprintw(screen, (*voff)++, 2,
 		  "swap:  %12"PRIu64"M total "
-			  "%9uM used "
-			 "%11uM cached",
+			 "%9"PRIu64"M used "
+			 "%11"PRIu64"M cached",
 		  abs->swap_total / 1024,
 		  (abs->swap_total - abs->swap_free) / 1024,
 		  abs->swap_cached / 1024);
