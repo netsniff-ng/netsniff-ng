@@ -15,11 +15,17 @@
 void bpf_try_compile(const char *rulefile, struct sock_fprog *bpf, uint32_t link_type)
 {
 	int i, ret;
-	const struct bpf_insn *ins;
+	pcap_t *pcap_handle;
 	struct sock_filter *out;
 	struct bpf_program _bpf;
+	const struct bpf_insn *ins;
 
-	ret = pcap_compile_nopcap(65535, link_type, &_bpf, rulefile, 1, 0xffffffff);
+	pcap_handle = pcap_open_dead(link_type, 65535);
+	if (!pcap_handle)
+		panic("Cannot open fake pcap_t for compiling BPF code");
+
+	ret = pcap_compile(pcap_handle, &_bpf, rulefile, 1, PCAP_NETMASK_UNKNOWN);
+	pcap_close(pcap_handle);
 	if (ret < 0)
 		panic("Cannot compile filter: %s\n", rulefile);
 
