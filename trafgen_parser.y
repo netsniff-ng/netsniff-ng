@@ -1498,7 +1498,7 @@ void cleanup_packets(void)
 		free(packet_dyn[i].cnt);
 		free(packet_dyn[i].rnd);
 
-		for (j = 0; j < packet_dyn[j].flen; j++)
+		for (j = 0; j < packet_dyn[i].flen; j++)
 			xfree(packet_dyn[i].fields[j]);
 
 		free(packet_dyn[i].fields);
