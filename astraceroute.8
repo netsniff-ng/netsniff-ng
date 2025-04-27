@@ -17,9 +17,20 @@ increasing the IP's TTL field, starting from 1, in the hope that each intermedia
 node will send an ICMP TIME_EXCEEDED notification back to the local host when the
 TTL value is decremented to 0.
 .PP
-astraceroute supports IPv4 and IPv6 queries and will display country and city
+astraceroute supports both IPv4 and IPv6 queries and will display country and city
 information, if available, the AS number the hop belongs to, and its
-ISP name. astraceroute also displays timing information and reverse DNS data.
+ISP name. astraceroute also displays the median packet round-trip time
+and reverse DNS data.
+.PP
+astraceroute functions the following way: every hop is probed at most
+the configured number of probes times (\fB-q\fP, \fB--num-probes\fP options) until
+the first successful probe. Each such probe consists of sending packets,
+the number of which is given by the \fB-s\fP or \fB--num-packets\fP options.
+The response timeout for each packet is 2 seconds by default. Thus it takes
+2 (protocols) x 2 (probes) x 3 (packets) x 2s (timeout) = 24 seconds
+to skip a hop that does not send any response. The timing information displayed
+for a given hop is the median round-trip time of the packets in the
+first successful probe.
 .PP
 Due to astraceroute's configurability, it is also possible to gather some more
 useful information about the hop regarding what it does and does not allow to pass
@@ -33,14 +44,15 @@ of such systems.
 .B -H <host>, --host <host>
 Hostname or IPv4 or IPv6 address of the remote host where the AS route should
 be traced to. In the case of an IPv6 address or host, option \fB-6\fP must be
-used. IPv4 is the default.
+used. IPv4 is the default. Required.
 .TP
 .B -p <port>, --port <port>
 TCP port for the remote host to use. If not specified, the default
 port used is 80.
 .TP
 .B -i <device>, -d <device>, --dev <device>
-Networking device to start the trace route from, e.g. eth0, wlan0.
+Networking device to start the trace route from, e.g. eth0, wlan0. The
+default is eth0.
 .TP
 .B -b <IP>, --bind <IP>
 IP address to bind to other than the network device's address. You must specify
@@ -56,13 +68,17 @@ Maximum TTL value to be used. If not otherwise specified, the maximum
 TTL value is 30. Thus, after this has been reached astraceroute exits.
 .TP
 .B -q <num>, --num-probes <num>
-Specifies the number of queries to be done on a particular hop. The
-default is 2 query requests.
+Specifies the number of probes to be done on a particular hop. The
+default value is 2 probes for a single hop.
+.TP
+.B -s <num>, --num-packets <num>
+Specifies the number of packets to be sent for a single probe. The
+default value is 3.
 .TP
 .B -x <sec>, --timeout <sec>
 Tells astraceroute the probe response timeout in seconds, in other words
 the maximum time astraceroute must wait for an ICMP response from the current
-hop. The default is 3 seconds.
+hop. The default is 2 seconds.
 .TP
 .B -X <string>, --payload <string>
 Places an ASCII cleartext string into the packet payload. Cleartext that
@@ -81,9 +97,10 @@ argument.
 .TP
 .B -n, --numeric
 Tells astraceroute to not perform reverse DNS lookup for hop replies. The
-reverse option is \fB-N\fP.
+reverse option is \fB-N\fP. This is the default.
 .TP
 .B -u, --update
+\fBCurrently not working out of the box. SEE BUGS.\fP
 The built-in geo-database update mechanism will be invoked to get Maxmind's
 latest version. To configure search locations for databases, the file
 /etc/netsniff-ng/geoip.conf contains possible addresses. Thus, to save bandwidth
@@ -120,7 +137,8 @@ Use TCP's RST flag for the request.
 Use TCP's ECN flag for the request.
 .TP
 .B -t <tos>, --tos <tos>
-Explicitly specify IP's TOS.
+Explicitly specify the ToS value for IPv4. The default
+value is 0.
 .TP
 .B -G, --nofrag
 Set IP's no fragmentation flag.
@@ -167,10 +185,19 @@ If a TCP-based probe fails after a number of retries, astraceroute will
 automatically fall back to ICMP-based probes to pass through firewalls
 and routers used in load balancing for example.
 .PP
+Be aware that ICMP packets might be routed differently from TCP packets,
+and that routing choices of routers usually change over time,
+thus the output of astraceroute cannot be guaranteed to be representative
+of the actual network layout.
+.PP
 To gather more information about astraceroute's displayed AS numbers, see e.g.:
 http://bgp.he.net/AS<number>.
 .PP
 .SH BUGS
+Maxmind discontinued support for GeoLite databases in favor of the newer
+GeoLite2 databases on January 2, 2019. Support for GeoLite2 is \fBnot\fP implemented yet.
+This means that using \fB--update\fP will fail unless you set a working mirror
+in geoip.conf.
 The geographical locations are estimated with the help of Maxmind's GeoIP
 database and can differ from the real physical location. To decrease the
 possible errors, update the database regularly using astraceroute's
@@ -182,8 +209,6 @@ information such as in the paris-traceroute tool.
 Due to the generic nature of astraceroute, it currently has a built-in mechanism
 to stop the trace after a fixed number of hops, since the configurable TCP flags
 can have anything included. It is possible to decrease this number of course.
-In the future, if a SYN probe is sent out, there should be a listener so that we can
-stop the trace if we detect a handshake in progress.
 .PP
 .SH LEGAL
 astraceroute is licensed under the GNU GPL version 2.0.
