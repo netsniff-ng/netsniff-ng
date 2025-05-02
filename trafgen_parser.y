@@ -396,6 +396,11 @@ static void proto_add(enum proto_id pid)
 	hdr = proto_header_push(pid);
 }
 
+static void proto_field_update(uint32_t fid)
+{
+	field_expr.field = proto_hdr_field_by_id(hdr, fid);
+}
+
 static void proto_field_set(uint32_t fid)
 {
 	memset(&field_expr, 0, sizeof(field_expr));
@@ -1034,10 +1039,10 @@ arp_expr
 	| arp_field skip_white '=' skip_white field_value_expr
 		{ proto_field_expr_eval(); }
 	| K_OPER field_expr skip_white '=' skip_white field_value_expr
-		{ proto_field_set(ARP_OPER);
+		{ proto_field_update(ARP_OPER);
 		  proto_field_expr_eval(); }
 	| K_OPER skip_white '=' skip_white field_value_expr
-		{ proto_field_set(ARP_OPER);
+		{ proto_field_update(ARP_OPER);
 		  proto_field_expr_eval(); }
 	| K_OPER skip_white '=' skip_white K_REQUEST
 		{ proto_hdr_field_set_be16(hdr, ARP_OPER, ARPOP_REQUEST); }
@@ -1187,10 +1192,10 @@ icmp6_expr
 	| icmp6_field skip_white '=' skip_white field_value_expr
 		{ proto_field_expr_eval(); }
 	| K_TYPE field_expr skip_white '=' skip_white field_value_expr
-		{ proto_field_set(ICMPV6_TYPE);
+		{ proto_field_update(ICMPV6_TYPE);
 		  proto_field_expr_eval(); }
 	| K_TYPE skip_white '=' skip_white field_value_expr
-		{ proto_field_set(ICMPV6_TYPE);
+		{ proto_field_update(ICMPV6_TYPE);
 		  proto_field_expr_eval(); }
 	| K_TYPE skip_white '=' K_ECHO_REQUEST
 		{ proto_hdr_field_set_u8(hdr, ICMPV6_TYPE, ICMPV6_ECHO_REQUEST); }
