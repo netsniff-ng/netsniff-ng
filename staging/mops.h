@@ -940,9 +940,9 @@ int mops_direct(char* dev, int mops_type, char* argstring);
 
 
 struct automops * automops_init(void);
-struct automops * automops_alloc_protocol();
-struct automops * automops_delete_protocol();
-struct automops * automops_search_protocol();
+struct automops * automops_alloc_protocol(struct automops *cur);
+struct automops * automops_delete_protocol(struct automops *cur);
+struct automops * automops_search_protocol(struct automops *list, char *name);
 int               automops_dump_all (struct automops* list);
 void              automops_set_defaults(struct automops * cur);
 struct fields *   automops_add_field (struct automops *amp);
