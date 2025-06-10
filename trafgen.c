@@ -35,6 +35,7 @@
 #include <netdb.h>
 #include <math.h>
 #include <unistd.h>
+#include <sched.h>
 
 #include "xmalloc.h"
 #include "die.h"
@@ -90,6 +91,10 @@ struct ctx {
 	struct shaper sh;
 	char *packet_str;
 	char *pcap_in;
+	/* total number of CPUs on the system */
+	unsigned int total_cpu_num;
+	/* relative CPU number to real CPU mapping */
+	unsigned int *real_cpus;
 };
 
 struct cpu_stats {
@@ -166,6 +171,8 @@ struct icmp_filter {
 #define SMOKE_N_PROBES	100
 
 #define PKT_MIN_LEN 14
+
+#define MAX_CPU_LIST_STR_LEN 4096
 
 static void signal_handler(int number)
 {
@@ -828,43 +835,47 @@ static inline sig_atomic_t __get_state(unsigned int cpu)
 
 static unsigned long __wait_and_sum_others(struct ctx *ctx, unsigned int cpu)
 {
-	unsigned int i;
+	unsigned int relative_cpu;
 	unsigned long total;
 
-	for (i = 0, total = plen; i < ctx->cpu_num; i++) {
-		if (i == cpu)
+	for (relative_cpu = 0, total = plen;
+			relative_cpu < ctx->cpu_num; relative_cpu++) {
+		unsigned int curr_real_cpu = ctx->real_cpus[relative_cpu];
+		if (curr_real_cpu == cpu)
 			continue;
 
-		while ((__get_state(i) &
+		while ((__get_state(curr_real_cpu) &
 		       (CPU_STATS_STATE_CFG |
 			CPU_STATS_STATE_RES)) == 0 &&
 		       sigint == 0)
 			sched_yield();
 
-		total += stats[i].cf_packets;
+		total += stats[curr_real_cpu].cf_packets;
 	}
 
 	return total;
 }
 
-static void __correct_global_delta(struct ctx *ctx, unsigned int cpu, unsigned long orig)
+static void __correct_global_delta(struct ctx *ctx, unsigned int real_cpu, unsigned long orig)
 {
-	unsigned int i;
+	unsigned int relative_cpu;
 	unsigned long total;
 	int cpu_sel;
 	long long delta_correction = 0;
 
-	for (i = 0, total = ctx->num; i < ctx->cpu_num; i++) {
-		if (i == cpu)
+	for (relative_cpu = 0, total = ctx->num;
+			relative_cpu < ctx->cpu_num; relative_cpu++) {
+		unsigned int curr_real_cpu = ctx->real_cpus[relative_cpu];
+		if (real_cpu == curr_real_cpu)
 			continue;
 
-		while ((__get_state(i) &
+		while ((__get_state(curr_real_cpu) &
 		       (CPU_STATS_STATE_CHK |
 			CPU_STATS_STATE_RES)) == 0 &&
 		       sigint == 0)
 			sched_yield();
 
-		total += stats[i].cd_packets;
+		total += stats[curr_real_cpu].cd_packets;
 	}
 
 	if (total > orig)
@@ -872,17 +883,18 @@ static void __correct_global_delta(struct ctx *ctx, unsigned int cpu, unsigned l
 	if (total < orig)
 		delta_correction = +1 * ((long long) orig - total);
 
-	for (cpu_sel = -1, i = 0; i < ctx->cpu_num; i++) {
-		if (stats[i].cd_packets > 0) {
-			if ((long long) stats[i].cd_packets +
+	for (cpu_sel = -1, relative_cpu = 0; relative_cpu < ctx->cpu_num; relative_cpu++) {
+		unsigned int curr_real_cpu = ctx->real_cpus[relative_cpu];
+		if (stats[curr_real_cpu].cd_packets > 0) {
+			if ((long long) stats[curr_real_cpu].cd_packets +
 			    delta_correction >= 0) {
-				cpu_sel = i;
+				cpu_sel = curr_real_cpu;
 				break;
 			}
 		}
 	}
 
-	if ((int) cpu == cpu_sel)
+	if ((int) real_cpu == cpu_sel)
 		ctx->num += delta_correction;
 }
 
@@ -934,32 +946,168 @@ static void pcap_load_packets(struct dev_io *dev)
 		/* nothing to do */;
 }
 
+/*
+* Generate a string representation of the CPUs
+* provided in the array, for example:
+*  "0-72" - cpu_list from 0 to 72
+*  "4-7,9,11-13" - cpu_list [4, 5, 6, 7, 9, 11, 12, 13]
+*/
+char* create_cpu_list(char *cpu_list_str, size_t len,
+		unsigned int cpu_list[], unsigned int num_of_cpus)
+{
+	char *ptr = cpu_list_str;
+	unsigned int last_added_cpu = 0;
+	size_t current_len, added_len;
+
+	if (len == 0)
+		panic("Invalid cpu list string length of 0\n");
+
+	if (len > MAX_CPU_LIST_STR_LEN)
+		panic("Invalid cpu list string length of %zu, max allowed is %u\n",
+			len, MAX_CPU_LIST_STR_LEN);
+
+	if (num_of_cpus == 0)
+		panic("Invalid number of CPUs of 0\n");
+	
+
+	current_len = snprintf(
+		cpu_list_str, len, "%u", cpu_list[0]);
+	if (current_len >= len)
+		panic("CPU list exceeded allowed length of %zu", len);
+	last_added_cpu = cpu_list[0];
+	ptr += current_len;
+
+	for (unsigned int cpu_num_idx=1, previous_cpu_num = cpu_list[0];
+		cpu_num_idx < num_of_cpus;
+		previous_cpu_num=cpu_list[cpu_num_idx], cpu_num_idx++) {
+		unsigned int current_cpu_num = cpu_list[cpu_num_idx];
+		if (current_cpu_num - previous_cpu_num > 1) {
+			/* there is a gap in numbers */
+			if (last_added_cpu == previous_cpu_num) {
+				/* previous number was already added to the list,
+				*  we need to add a comma only */
+				added_len = snprintf(ptr, len - current_len,
+					",%u", current_cpu_num);
+			} else {
+				/* previous number was not added to the list,
+				*  so we need to add it with a dash and comma */
+				added_len = snprintf(ptr, len - current_len,
+					"-%u,%u", previous_cpu_num, current_cpu_num);
+			}
+			if (added_len >= len - current_len)
+				break; /* the error will be reported below */
+			last_added_cpu = current_cpu_num;
+			current_len += added_len;
+			ptr += added_len;
+		}
+	}
+	if (last_added_cpu != cpu_list[num_of_cpus-1]) {
+		size_t added_len = snprintf(ptr, len - current_len, "-%u",
+			cpu_list[num_of_cpus-1]);
+		if (added_len >= len - current_len)
+			printf("Error: CPU list exceeded allowed length of %zu. "
+				"The list is truncated\n", len);
+	}
+	return cpu_list_str;
+}
+
+static void init_real_cpu_map(struct ctx *ctx)
+{
+	char all_cpus[MAX_CPU_LIST_STR_LEN];
+	char mapped_cpus[MAX_CPU_LIST_STR_LEN];
+	int relative_cpu_number, real_cpu_number;
+
+	ctx->total_cpu_num = get_number_cpus();
+	unsigned int allocated_cpus = get_number_cpus_online();
+	/* relative CPU number to real CPU map */
+	ctx->real_cpus = xmalloc(allocated_cpus*sizeof(unsigned int));
+	cpu_set_t cpu_bitmask;
+	CPU_ZERO(&cpu_bitmask);
+
+	if (ctx->cpu_start + ctx->cpu_num > ctx->total_cpu_num)
+		panic("Invalid relative CPU range: cpu_start: %u, cpu_num %u, "
+			"total number of cores available: %u\n",
+			ctx->cpu_start, ctx->cpu_num, ctx->total_cpu_num);
+
+	if (sched_getaffinity(getpid(), sizeof(cpu_bitmask), &cpu_bitmask) < 0)
+		panic("Failed to get CPU affinity\n");
+
+	for (relative_cpu_number = 0, real_cpu_number = 0;
+		relative_cpu_number < allocated_cpus &&
+			real_cpu_number < ctx->total_cpu_num;
+		real_cpu_number++) {
+		if (CPU_ISSET(real_cpu_number, &cpu_bitmask)) {
+			ctx->real_cpus[relative_cpu_number] = real_cpu_number;
+			relative_cpu_number++;
+		}
+	}
+
+	/* cap number of CPUs to number of cores available */
+	ctx->cpu_num = min(ctx->cpu_num, relative_cpu_number);
+
+	if (ctx->cpu_start + ctx->cpu_num > relative_cpu_number)
+		panic("Invalid relative CPU range: cpu_start: %u, cpu_num %u, "
+			"total number of cores available: %u\n",
+			ctx->cpu_start, ctx->cpu_num, relative_cpu_number);
+
+	/* save original CPU list*/
+	create_cpu_list(all_cpus, sizeof(all_cpus), ctx->real_cpus, relative_cpu_number);
+
+	/* when start_cpu offset is gived, we just shift the map  */
+	if (ctx->cpu_start > 0) {
+		for (unsigned int i=0; i < ctx->cpu_num; i++) {
+			ctx->real_cpus[i] = ctx->real_cpus[i + ctx->cpu_start];
+		}
+	}
+	if (ctx->verbose)
+		printf(
+			"Number of CPUs allocated: %u [%s], "
+			"number of CPUs on the system: %u, "
+			"working CPUs: [%u-%u], physical CPUs used: [%s]\n",
+			allocated_cpus,
+			all_cpus,
+			ctx->total_cpu_num,
+			ctx->cpu_start,
+			ctx->cpu_start + ctx->cpu_num - 1,
+			create_cpu_list(mapped_cpus, sizeof(mapped_cpus),
+				ctx->real_cpus, ctx->cpu_num)
+		);
+
+	return;
+}
+
 static void main_loop(struct ctx *ctx, char *confname, bool slow,
-		      unsigned int cpu, bool invoke_cpp, char **cpp_argv,
+		      unsigned int relative_cpu, bool invoke_cpp, char **cpp_argv,
 		      unsigned long orig_num)
 {
+	unsigned int real_cpu = ctx->real_cpus[relative_cpu];
+
 	if (ctx->dev_in && dev_io_is_pcap(ctx->dev_in)) {
 		pcap_load_packets(ctx->dev_in);
 		shaper_set_tstamp(&ctx->sh, &packets[0].tstamp);
 		ctx->num = plen;
 	} else {
 		if (ctx->packet_str)
-			compile_packets_str(ctx->packet_str, ctx->verbose, cpu);
+			compile_packets_str(ctx->packet_str, ctx->verbose, relative_cpu);
 		else
-			compile_packets(confname, ctx->verbose, cpu, invoke_cpp, cpp_argv);
+			compile_packets(confname, ctx->verbose, relative_cpu, invoke_cpp, cpp_argv);
 
 		preprocess_packets();
 	}
 
-	xmit_packet_precheck(ctx, cpu);
+	if (relative_cpu == 0 && ctx->verbose)
+		printf("Starting precheck on relative_cpu: %u, real_cpu: %u...\n",
+			relative_cpu, real_cpu);
 
-	if (cpu == 0) {
+	xmit_packet_precheck(ctx, real_cpu);
+
+	if (relative_cpu == 0) {
 		unsigned int i;
 		size_t total_len = 0, total_pkts = 0;
 
 		for (i = 0; i < ctx->cpu_num; ++i) {
-			total_len  += stats[i].cf_bytes;
-			total_pkts += stats[i].cf_packets;
+			total_len  += stats[ctx->real_cpus[i]].cf_bytes;
+			total_pkts += stats[ctx->real_cpus[i]].cf_packets;
 		}
 
 		printf("%6zu packets to schedule\n", total_pkts);
@@ -973,9 +1121,9 @@ static void main_loop(struct ctx *ctx, char *confname, bool slow,
 		set_sock_qdisc_bypass(dev_io_fd_get(ctx->dev_out), ctx->verbose);
 
 	if (slow)
-		xmit_slowpath_or_die(ctx, cpu, orig_num);
+		xmit_slowpath_or_die(ctx, real_cpu, orig_num);
 	else
-		xmit_fastpath_or_die(ctx, cpu, orig_num);
+		xmit_fastpath_or_die(ctx, real_cpu, orig_num);
 
 	dev_io_close(ctx->dev_out);
 	if (ctx->dev_in)
@@ -1021,6 +1169,7 @@ int main(int argc, char **argv)
 	unsigned long long rate;
 	enum shaper_type shape_type;
 	struct timespec delay;
+	char cpu_list_str[MAX_CPU_LIST_STR_LEN];
 
 	memset(&ctx, 0, sizeof(ctx));
 	ctx.cpu_num = get_number_cpus_online();
@@ -1314,18 +1463,25 @@ int main(int argc, char **argv)
 	if (ctx.num)
 		ctx.cpu_num = min_t(unsigned int, ctx.num, ctx.cpu_num);
 
+	init_real_cpu_map(&ctx);
+	char *scheduled_cpus = create_cpu_list(
+		cpu_list_str, sizeof(cpu_list_str), ctx.real_cpus, ctx.cpu_num);
+
 	if (set_irq_aff && dev_io_is_netdev(ctx.dev_out)) {
 		irq = device_irq_number(ctx.device);
-		device_set_irq_affinity_list(irq, ctx.cpu_start,
-		                             ctx.cpu_start + ctx.cpu_num - 1);
+
+		device_set_irq_affinity_list(irq, scheduled_cpus);
 	}
 
-	stats = setup_shared_var(ctx.cpu_num);
+	/* Allocate shared memory for all CPUs,
+	   some of them might be unused.
+	*/
+	stats = setup_shared_var(ctx.total_cpu_num);
 
 
 	if (ctx.verbose)
-		printf("Start %u worker processes on cpus [%u-%u].\n",
-		       ctx.cpu_num, ctx.cpu_start, ctx.cpu_start + ctx.cpu_num - 1);
+		printf("Start %u worker processes on cpus [%u-%u], real cpus: [%s].\n",
+		       ctx.cpu_num, ctx.cpu_start, ctx.cpu_start + ctx.cpu_num - 1, scheduled_cpus);
 	for (i = 0; i < ctx.cpu_num; i++) {
 		pid_t pid = fork();
 
@@ -1335,7 +1491,10 @@ int main(int argc, char **argv)
 				seed = generate_srand_seed();
 			srand(seed);
 
-			cpu_affinity(ctx.cpu_start + i);
+			/* using real CPU number to set cpu affinity */
+			cpu_affinity(ctx.real_cpus[i]);
+			/* and pass relative number to the main loop,
+			   because it is used in the config parser */
 			main_loop(&ctx, confname, slow, i, invoke_cpp,
 				  cpp_argv, orig_num);
 
@@ -1357,11 +1516,11 @@ int main(int argc, char **argv)
 		reset_system_socket_memory(vals, array_size(vals));
 
 	for (i = 0, tx_packets = tx_bytes = 0; i < ctx.cpu_num; i++) {
-		while ((__get_state(i) & CPU_STATS_STATE_RES) == 0)
+		while ((__get_state(ctx.real_cpus[i]) & CPU_STATS_STATE_RES) == 0)
 			sched_yield();
 
-		tx_packets += stats[i].tx_packets;
-		tx_bytes   += stats[i].tx_bytes;
+		tx_packets += stats[ctx.real_cpus[i]].tx_packets;
+		tx_bytes   += stats[ctx.real_cpus[i]].tx_bytes;
 	}
 
 	fflush(stdout);
@@ -1370,13 +1529,15 @@ int main(int argc, char **argv)
 	printf("\r%12llu bytes outgoing\n", tx_bytes);
 	for (i = 0; cpustats && i < ctx.cpu_num; i++) {
 		printf("\r%12lu sec, %lu usec on CPU%d (%llu packets)\n",
-		       stats[i].tv_sec, stats[i].tv_usec, i,
-		       stats[i].tx_packets);
+		       stats[ctx.real_cpus[i]].tv_sec,
+			   stats[ctx.real_cpus[i]].tv_usec,
+			   ctx.real_cpus[i],
+		       stats[ctx.real_cpus[i]].tx_packets);
 	}
 
 thread_out:
 	xunlockme();
-	destroy_shared_var(stats, ctx.cpu_num);
+	destroy_shared_var(stats, ctx.total_cpu_num);
 	if (dev_io_is_netdev(ctx.dev_out) && set_irq_aff)
 		device_restore_irq_affinity_list();
 
@@ -1385,6 +1546,7 @@ thread_out:
 	free(ctx.rhost);
 	free(confname);
 	free(ctx.packet_str);
+	free(ctx.real_cpus);
 
 	return 0;
 }
