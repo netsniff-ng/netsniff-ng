@@ -94,10 +94,10 @@ void device_restore_irq_affinity_list(void)
 	close(fd);
 }
 
-int device_set_irq_affinity_list(int irq, unsigned long from, unsigned long to)
+int device_set_irq_affinity_list(int irq, char* list)
 {
 	int ret, fd;
-	char file[128], list[64];
+	char file[128];
 
 	if (unlikely(irq == 0))
 		return 0;
@@ -107,7 +107,6 @@ int device_set_irq_affinity_list(int irq, unsigned long from, unsigned long to)
 	}
 
 	slprintf(file, sizeof(file), "/proc/irq/%d/smp_affinity_list", irq);
-	slprintf(list, sizeof(list), "%lu-%lu\n", from, to);
 
 	fd = open(file, O_WRONLY);
 	if (fd < 0)
@@ -119,7 +118,18 @@ int device_set_irq_affinity_list(int irq, unsigned long from, unsigned long to)
 	return ret;
 }
 
+int device_set_irq_affinity_range(int irq, unsigned long from, unsigned long to)
+{
+	char list[64];
+
+	slprintf(list, sizeof(list), "%lu-%lu\n", from, to);
+	return device_set_irq_affinity_list(irq, list);
+}
+
 int device_set_irq_affinity(int irq, unsigned long cpu)
 {
-	return device_set_irq_affinity_list(irq, cpu, cpu);
+	char list[64];
+
+	slprintf(list, sizeof(list), "%lu\n", cpu);
+	return device_set_irq_affinity_list(irq, list);
 }
