@@ -38,7 +38,8 @@ static void ipv4_header_init(struct proto_hdr *hdr)
 	struct dev_io *dev = proto_dev_get();
 
 	/* In case of tun interface we do not need to create Ethernet header */
-	if (!dev_io_is_netdev(dev) || device_type(dev_io_name_get(dev)) != ARPHRD_NONE)
+	if (dev_io_is_pcap(dev) ||
+			(!dev_io_is_netdev(dev) || device_type(dev_io_name_get(dev)) != ARPHRD_NONE))
 		proto_lower_default_add(hdr, PROTO_ETH);
 
 	proto_header_fields_add(hdr, ipv4_fields, array_size(ipv4_fields));
@@ -162,7 +163,8 @@ static void ipv6_header_init(struct proto_hdr *hdr)
 	struct dev_io *dev = proto_dev_get();
 
 	/* In case of tun interface we do not need to create Ethernet header */
-	if (dev_io_is_netdev(dev) && device_type(dev_io_name_get(dev)) != ARPHRD_NONE)
+	if (dev_io_is_pcap(dev) ||
+			(dev_io_is_netdev(dev) && device_type(dev_io_name_get(dev)) != ARPHRD_NONE))
 		proto_lower_default_add(hdr, PROTO_ETH);
 
 	proto_header_fields_add(hdr, ipv6_fields, array_size(ipv6_fields));
