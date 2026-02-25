@@ -297,11 +297,11 @@ int show_packets(struct cli_def *cli, const char *command, char *argv[], int arg
 
 	  switch (mp->interval_used) {
 	   case 1: // interval only configured, not started
-		  strncat(ps, "-i", 2);
+		  strncat(ps, "-i", 3);
 		  break;
 		  
 	   case 2:
-		  strncat(ps, "+I", 2);
+		  strncat(ps, "+I", 3);
 		  break;
 	   default:
 		  break;

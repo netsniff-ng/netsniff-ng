@@ -131,7 +131,7 @@ int mops_dump_sequence (char* str)
 		snprintf(t, 15, "%i", pkt->id);
 		if (strnlen(tmp,256)>249) break;
 		strncat(tmp, t, 6);
-		if (i<c-1) strncat(tmp,", ", 2);
+		if (i<c-1) strncat(tmp,", ", 3);
 	}
 
 	snprintf(str, 512, "%s {%s}", cur->name, tmp);

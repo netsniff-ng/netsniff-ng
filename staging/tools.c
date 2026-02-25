@@ -1204,7 +1204,7 @@ int getfullpath_cfg (char *filename)
 	
 	if (lenp) {
 		if (strncmp(mz_default_config_path+lenp-1, "/",1))
-			strncat(mz_default_config_path, "/",1);
+			strncat(mz_default_config_path, "/",2);
 		snprintf(filename, 255, "%s%s",mz_default_config_path,tmp);
 	}
 	else {
@@ -1241,8 +1241,8 @@ int getfullpath_log (char *filename)
 	// Prefer user-defined path if provided:
 	lenp = strnlen(mz_default_log_path,255);
 	if (lenp) {
-		if (strncmp(mz_default_log_path+lenp-1, "/",1)) 
-			strncat(mz_default_log_path, "/",1);
+		if (strncmp(mz_default_log_path+lenp-1, "/",1))
+			strncat(mz_default_log_path, "/",2);
 		snprintf(filename, 255, "%s%s",mz_default_log_path,tmp);
 	}
 	else {

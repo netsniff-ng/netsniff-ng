@@ -197,7 +197,7 @@ int rcv_rtp_init(void)
 			exit (-1);
 		}
 		if (argval[len-1]!='/') {
-			strncat(argval, "/",1); // ensure that all paths end with "/"
+			strncat(argval, "/",2); // ensure that all paths end with "/"
 		}
 		strncpy(path, argval, 128);
 	}
