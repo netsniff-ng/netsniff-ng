@@ -3,14 +3,15 @@
 
 #include <stdint.h>
 #include <sys/socket.h>
-#include <linux/ethtool.h>
-#include <linux/wireless.h>
+#include "ethtool_stub.h"
+#include "wireless_stub.h"
 
 #ifndef SPEED_UNKNOWN
 #define SPEED_UNKNOWN           -1
 #endif
 
 #include "built_in.h"
+#include "linux_compat.h"
 
 extern int wireless_sigqual(const char *ifname, struct iw_statistics *stats);
 extern int wireless_rangemax_sigqual(const char *ifname);
