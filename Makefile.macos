@@ -1,0 +1,68 @@
+# Makefile.macos — netsniff-ng macOS BPF port
+# Build with: make -f Makefile.macos
+# Test with:  make -f Makefile.macos test
+
+CC      ?= clang
+ARCH    ?= arm64
+CFLAGS  ?= -O2 -Wno-unused-parameter
+DEFINES := -DHAVE_TCPDUMP_LIKE_FILTER=1 -DNEED_TCPDUMP_LIKE_FILTER=1
+INCLUDES := -I. -I/opt/homebrew/opt/libpcap/include
+LDFLAGS  := -L/opt/homebrew/opt/libpcap/lib
+LIBS     := -lpcap -lpthread -lncurses
+
+CFLAGS_FULL := -arch $(ARCH) $(CFLAGS) $(DEFINES) $(INCLUDES)
+LDFLAGS_FULL := -arch $(ARCH) $(LDFLAGS)
+
+# Object files in link order
+OBJS := \
+	ring.o ring_rx.o ring_tx.o epoll2.o dev.o die.o \
+	dissector.o dissector_eth.o dissector_sll.o dissector_netlink.o dissector_80211.o \
+	hash.o str.o xmalloc.o timer.o tprintf.o screen.o sig.o \
+	rnd.o ioexact.o ioops.o iosched.o irq.o privs.o taia.o \
+	patricia.o proc.o cpusched.o link.o sock.o corking.o lookup.o \
+	stun.o sysctl.o trie.o \
+	proto_ethernet.o proto_arp.o proto_ipv4.o proto_ipv6.o \
+	proto_tcp.o proto_udp.o proto_icmpv4.o proto_icmpv6.o \
+	proto_igmp.o proto_vlan.o proto_mpls_unicast.o proto_none.o \
+	proto_nlmsg.o proto_dccp.o proto_lldp.o proto_80211_mac_hdr.o \
+	proto_vlan_q_in_q.o proto_ipv6_dest_opts.o proto_ipv6_fragm.o \
+	proto_ipv6_hop_by_hop.o proto_ipv6_in_ipv4.o \
+	proto_ipv6_mobility_hdr.o proto_ipv6_no_nxt_hdr.o \
+	proto_ipv6_routing.o proto_ip_authentication_hdr.o proto_ip_esp.o \
+	pcap_rw.o pcap_sg.o pcap_mm.o bpf.o bpf_comp.o geoip.o netsniff-ng.o
+
+TARGET := netsniff-ng-macos
+
+.PHONY: all clean test deps check-deps
+
+all: $(TARGET)
+
+deps: check-deps
+
+check-deps:
+	@echo "Checking dependencies..."
+	@command -v clang >/dev/null 2>&1 || (echo "ERROR: clang not found. Install Xcode Command Line Tools: xcode-select --install" && exit 1)
+	@test -d /opt/homebrew/opt/libpcap/include || (echo "ERROR: libpcap not found. Install with: brew install libpcap" && exit 1)
+	@echo "All dependencies present."
+
+%.o: %.c
+	$(CC) $(CFLAGS_FULL) -c $< -o $@
+
+$(TARGET): $(OBJS)
+	$(CC) $(LDFLAGS_FULL) $(OBJS) $(LIBS) -o $@
+	@echo ""
+	@echo "Built $(TARGET) ($$(file -b $(TARGET)))"
+	@echo "Size: $$(ls -lh $(TARGET) | awk '{print $$5}')"
+
+test: $(TARGET)
+	@echo "Running smoke tests..."
+	@./$(TARGET) --version | head -3
+	@./$(TARGET) --help > /dev/null && echo "✓ --help works"
+	@echo ""
+	@echo "Live capture tests require sudo. Run manually:"
+	@echo "  sudo ./$(TARGET) -i en0 -A -q -n 3                    # default capture"
+	@echo "  sudo ./$(TARGET) -i en0 -A -q -n 4 -f 'icmp'           # filter test"
+	@echo "  ping -c 3 \$$(ipconfig getoption en0 router)            # generate ICMP"
+
+clean:
+	rm -f $(OBJS) $(TARGET)
