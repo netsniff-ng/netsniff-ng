@@ -1,220 +1,204 @@
 /*
- * netsniff-ng - the packet sniffing beast
- * Copyright 2009, 2010 Daniel Borkmann.
- * Copyright 2014, 2015 Tobias Klauser.
- * Subject to the GPL, version 2.
+ * ring.h - macOS BPF replacement for Linux AF_PACKET ring
+ * Stubs tpacket types so upper layers compile unchanged
  */
 
 #ifndef RING_H
 #define RING_H
 
-/*
- * "I love the smell of 10GbE in the morning. Smells like ... victory."
- *     - W. Richard Stevens, "Secret Teachings of the UNIX Environment"
- */
-
 #include <stdio.h>
 #include <stdint.h>
-#include <linux/if_packet.h>
-#include <linux/socket.h>
-#include <linux/sockios.h>
-#include <sys/ioctl.h>
+#include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
+#include <unistd.h>
 #include <poll.h>
+#include <net/bpf.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 
+#include "linux_compat.h"
 #include "built_in.h"
 #include "die.h"
 #include "dev.h"
 #include "config.h"
 
-#ifndef POLLRDNORM
-# define POLLRDNORM	0x0040
+/* ------------------------------------------------------------------ */
+/* Stub Linux tpacket types — referenced throughout the codebase       */
+/* ------------------------------------------------------------------ */
+
+#ifndef TP_STATUS_USER
+# define TP_STATUS_USER         (1 << 0)
+#endif
+#ifndef TP_STATUS_KERNEL
+# define TP_STATUS_KERNEL       0
+#endif
+#ifndef TP_STATUS_SEND_REQUEST
+# define TP_STATUS_SEND_REQUEST (1 << 0)
+#endif
+#ifndef TP_STATUS_SENDING
+# define TP_STATUS_SENDING      (1 << 1)
+#endif
+#ifndef TP_STATUS_VLAN_VALID
+# define TP_STATUS_VLAN_VALID   (1 << 4)
+#endif
+#ifndef TP_STATUS_VLAN_TPID_VALID
+# define TP_STATUS_VLAN_TPID_VALID (1 << 6)
 #endif
 
-union tpacket_uhdr {
-	struct tpacket_hdr  *h1;
-	struct tpacket2_hdr *h2;
-#ifdef HAVE_TPACKET3
-	struct tpacket3_hdr *h3;
+#ifndef POLLRDNORM
+# define POLLRDNORM 0x0040
 #endif
-	void *raw;
+
+/* tpacket2_hdr defined in linux_compat.h */
+
+/* Minimal tpacket_req stub */
+struct tpacket_req {
+    unsigned int tp_block_size;
+    unsigned int tp_block_nr;
+    unsigned int tp_frame_size;
+    unsigned int tp_frame_nr;
 };
 
-#ifdef HAVE_TPACKET3
-#define tpacket_uhdr(hdr, member, v3)	\
-	((v3) ? ((hdr).h3)->member : ((hdr).h2)->member)
-#else
-#define tpacket_uhdr(hdr, member, v3)	\
-	(((hdr).h2)->member)
-#endif /* HAVE_TPACKET3 */
+/* sockaddr_ll defined in linux_compat.h */
 
-static inline uint16_t tpacket_uhdr_vlan_tci(union tpacket_uhdr *hdr __maybe_unused,
-					     bool v3 __maybe_unused)
+/* tpacket_uhdr union — stub using our tpacket2_hdr */
+union tpacket_uhdr {
+    struct tpacket2_hdr *h2;
+    void *raw;
+};
+
+#define tpacket_uhdr(hdr, member, v3) (((hdr).h2)->member)
+
+static inline uint16_t tpacket_uhdr_vlan_tci(union tpacket_uhdr *hdr,
+                                              bool v3 __attribute__((unused)))
 {
-#ifdef HAVE_TPACKET3
-	if (v3)
-		return hdr->h3->hv1.tp_vlan_tci;
-#endif
-	return 0;
+    return hdr->h2->tp_vlan_tci;
 }
 
-static inline uint16_t tpacket_uhdr_vlan_proto(union tpacket_uhdr *hdr __maybe_unused,
-					       bool v3 __maybe_unused)
+static inline uint16_t tpacket_uhdr_vlan_proto(union tpacket_uhdr *hdr,
+                                                bool v3 __attribute__((unused)))
 {
-#if defined(HAVE_TPACKET3) && defined(TP_STATUS_VLAN_TPID_VALID)
-	if (v3)
-		return hdr->h3->hv1.tp_vlan_tpid;
-#endif
-	return 0;
+    return hdr->h2->tp_vlan_tpid;
 }
 
 static inline bool tpacket_has_vlan_info(union tpacket_uhdr *hdr)
 {
-	uint32_t valid = 0;
-
-#ifdef TP_STATUS_VLAN_VALID
-	valid |= TP_STATUS_VLAN_VALID;
-#endif
-
-#ifdef TP_STATUS_VLAN_TPID_VALID
-	valid |= TP_STATUS_VLAN_TPID_VALID;
-#endif
-
-	return tpacket_uhdr(*hdr, tp_status, true) & valid;
+    return hdr->h2->tp_status &
+           (TP_STATUS_VLAN_VALID | TP_STATUS_VLAN_TPID_VALID);
 }
 
+/* frame_map — used by rx/tx walk loops */
 struct frame_map {
-	struct tpacket2_hdr tp_h __aligned_tpacket;
-	struct sockaddr_ll s_ll __align_tpacket(sizeof(struct tpacket2_hdr));
+    struct tpacket2_hdr tp_h;
+    struct sockaddr_ll  s_ll;
 };
 
-#ifdef HAVE_TPACKET3
-struct block_desc {
-	uint32_t version;
-	uint32_t offset_to_priv;
-	struct tpacket_hdr_v1 h1;
-};
-#endif
+/* ------------------------------------------------------------------ */
+/* ring struct — mm_space is our BPF read buffer                       */
+/* ------------------------------------------------------------------ */
 
 struct ring {
-	struct iovec *frames;
-	uint8_t *mm_space;
-	size_t mm_len;
-	struct sockaddr_ll s_ll;
-	union {
-		struct tpacket_req layout;
-#ifdef HAVE_TPACKET3
-		struct tpacket_req3 layout3;
-#endif
-		uint8_t raw;
-	};
+    struct iovec       *frames;
+    uint8_t            *mm_space;
+    size_t              mm_len;
+    struct sockaddr_ll  s_ll;
+    union {
+        struct tpacket_req layout;
+        uint8_t            raw;
+    };
 };
+
+/* ------------------------------------------------------------------ */
+/* SOL_PACKET / PACKET_VERSION stubs — referenced in set_sockopt calls */
+/* ------------------------------------------------------------------ */
+
+#ifndef SOL_PACKET
+# define SOL_PACKET          263
+#endif
+#ifndef PACKET_VERSION
+# define PACKET_VERSION      10
+#endif
+#ifndef TPACKET_V2
+# define TPACKET_V2          1
+#endif
+
+static inline void __set_sockopt_tpacket(int sock __attribute__((unused)),
+                                         int val  __attribute__((unused))) {}
+static inline void set_sockopt_tpacket_v2(int sock __attribute__((unused))) {}
+static inline void set_sockopt_tpacket_v3(int sock __attribute__((unused))) {}
+static inline int  get_sockopt_tpacket(int sock __attribute__((unused)))
+{ return TPACKET_V2; }
+
+/* ------------------------------------------------------------------ */
+/* Inline helpers                                                       */
+/* ------------------------------------------------------------------ */
 
 static inline void next_rnd_slot(unsigned int *it, struct ring *ring)
 {
-	*it = rand() % ring->layout.tp_frame_nr;
+    *it = rand() % ring->layout.tp_frame_nr;
 }
 
 static inline size_t ring_size(const char *ifname, size_t size)
 {
-	if (size > 0)
-		return size;
-
-	/*
-	 * Device bitrate in bytes times two as ring size.
-	 *    Fallback => ~    64,00 MB
-	 *     10 MBit => ~     2,38 MB
-	 *     54 MBit => ~    12,88 MB
-	 *    100 MBit => ~    23,84 MB
-	 *    300 MBit => ~    71,52 MB
-	 *  1.000 MBit => ~   238,42 MB
-	 * 10.000 MBit => ~ 2.384.18 MB
-	 */
-	size = device_bitrate(ifname);
-	size = (size * 1000000) / 8;
-	size = size * 2;
-	if (size == 0)
-		size = 1 << 26;
-
-	return round_up_cacheline(size);
+    if (size > 0) return size;
+    size = device_bitrate(ifname);
+    size = (size * 1000000) / 8 * 2;
+    if (size == 0) size = 1 << 26;
+    return size;
 }
 
 static inline unsigned int ring_frame_size(struct ring *ring)
 {
-	return ring->layout.tp_frame_size;
+    return ring->layout.tp_frame_size;
 }
 
-static inline void ring_verify_layout(struct ring *ring)
-{
-	bug_on(ring->layout.tp_block_size  < ring->layout.tp_frame_size);
-	bug_on((ring->layout.tp_block_size % ring->layout.tp_frame_size) != 0);
-	bug_on((ring->layout.tp_block_size % RUNTIME_PAGE_SIZE) != 0);
-}
+static inline void ring_verify_layout(struct ring *ring __attribute__((unused))) {}
 
 static inline void shrink_ring_layout_generic(struct ring *ring)
 {
-	ring->layout.tp_block_nr >>= 1;
-	ring->layout.tp_frame_nr = ring->layout.tp_block_size /
-				   ring->layout.tp_frame_size *
-				   ring->layout.tp_block_nr;
+    ring->layout.tp_block_nr >>= 1;
+    ring->layout.tp_frame_nr  = ring->layout.tp_block_size
+                               / ring->layout.tp_frame_size
+                               * ring->layout.tp_block_nr;
 }
 
-static inline void tpacket_hdr_clone(struct tpacket2_hdr *thdrd,
-				     struct tpacket2_hdr *thdrs)
+static inline void tpacket_hdr_clone(struct tpacket2_hdr *dst,
+                                     struct tpacket2_hdr *src)
 {
-        thdrd->tp_sec = thdrs->tp_sec;
-        thdrd->tp_nsec = thdrs->tp_nsec;
-        thdrd->tp_snaplen = thdrs->tp_snaplen;
-        thdrd->tp_len = thdrs->tp_len;
+    dst->tp_sec     = src->tp_sec;
+    dst->tp_nsec    = src->tp_nsec;
+    dst->tp_snaplen = src->tp_snaplen;
+    dst->tp_len     = src->tp_len;
 }
 
 static inline void prepare_polling(int sock, struct pollfd *pfd)
 {
-	memset(pfd, 0, sizeof(*pfd));
-	pfd->fd = sock;
-	pfd->revents = 0;
-	pfd->events = POLLIN | POLLRDNORM | POLLERR;
+    memset(pfd, 0, sizeof(*pfd));
+    pfd->fd      = sock;
+    pfd->revents = 0;
+    pfd->events  = POLLIN | POLLRDNORM | POLLERR;
 }
 
-static inline void __set_sockopt_tpacket(int sock, int val)
-{
-	int ret = setsockopt(sock, SOL_PACKET, PACKET_VERSION, &val, sizeof(val));
-	if (ret)
-		panic("Cannot set tpacketv2!\n");
-}
+/* ------------------------------------------------------------------ */
+/* Extern declarations                                                  */
+/* ------------------------------------------------------------------ */
 
-static inline void set_sockopt_tpacket_v2(int sock)
-{
-	__set_sockopt_tpacket(sock, TPACKET_V2);
-}
-
-#ifdef HAVE_TPACKET3
-static inline void set_sockopt_tpacket_v3(int sock)
-{
-	__set_sockopt_tpacket(sock, TPACKET_V3);
-}
-#else
-static inline void set_sockopt_tpacket_v3(int sock __maybe_unused)
-{
-}
-#endif
-
-static inline int get_sockopt_tpacket(int sock)
-{
-	int val, ret;
-	socklen_t len = sizeof(val);
-
-	ret = getsockopt(sock, SOL_PACKET, PACKET_VERSION, &val, &len);
-	if (ret)
-		panic("Cannot get tpacket version!\n");
-
-	return val;
-}
-
+extern int  af_socket(int type);
+extern int  pf_socket(void);
+extern void bind_ring_generic(int sock, struct ring *ring, int ifindex,
+                              bool tx_only);
+extern void setup_rx_ring(int sock, struct ring *ring);
+extern void setup_tx_ring(int sock, struct ring *ring);
+extern void mmap_ring(int sock, struct ring *ring);
+extern void alloc_ring_frames(struct ring *ring, int num, size_t size);
+extern void unmap_ring(int sock, struct ring *ring);
 extern void setup_ring_layout_generic(struct ring *ring, size_t size,
-				      bool jumbo_support);
+                                      bool jumbo_support);
 extern void mmap_ring_generic(int sock, struct ring *ring);
-extern void alloc_ring_frames_generic(struct ring *ring, size_t num, size_t size);
-extern void bind_ring_generic(int sock, struct ring *ring, int ifindex, bool tx_only);
+extern void alloc_ring_frames_generic(struct ring *ring, size_t num,
+                                      size_t size);
 
 #endif /* RING_H */
