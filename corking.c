@@ -1,8 +1,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <linux/udp.h>
+#include <netinet/udp.h>
 #include <linux/tcp.h>
-#include <linux/in.h>
+#include <netinet/in.h>
 
 #include "corking.h"
 #include "die.h"

@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include <search.h>
+#include "linux_compat.h"
 #include <limits.h>
 #include <errno.h>
 #include <string.h>
