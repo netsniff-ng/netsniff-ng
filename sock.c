@@ -2,7 +2,7 @@
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <arpa/inet.h>
-#include <linux/if_ether.h>
+#include "linux_compat.h"
 #include <linux/tcp.h>
 
 #include "sock.h"
@@ -28,16 +28,22 @@ int af_socket(int af)
 
 int pf_socket(void)
 {
-	int sock = socket(PF_PACKET, SOCK_RAW, 0);
-	if (unlikely(sock < 0))
-		panic("Creation of PF socket failed: %s\n", strerror(errno));
-
-	return sock;
+	/* macOS: open /dev/bpf instead of AF_PACKET socket */
+	char dev[16];
+	int fd = -1;
+	for (int i = 0; i < 256; i++) {
+		snprintf(dev, sizeof(dev), "/dev/bpf%d", i);
+		fd = open(dev, O_RDWR);
+		if (fd >= 0) return fd;
+		if (errno != EBUSY) break;
+	}
+	panic("Cannot open /dev/bpf: %s\n", strerror(errno));
+	return -1;
 }
 
 static int pf_socket_dgram(void)
 {
-	int sock = socket(PF_PACKET, SOCK_DGRAM, 0);
+	int sock = pf_socket(); /* macOS: same /dev/bpf */
 	if (unlikely(sock < 0))
 		panic("Creation of PF dgram socket failed: %s\n",
 		      strerror(errno));

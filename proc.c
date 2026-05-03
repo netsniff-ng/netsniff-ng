@@ -2,6 +2,7 @@
 # define _GNU_SOURCE
 #endif
 #include <sched.h>
+#include "linux_compat.h"
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/types.h>

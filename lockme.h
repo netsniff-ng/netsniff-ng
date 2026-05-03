@@ -8,7 +8,7 @@
 static inline void xlockme(void)
 {
 	if (mlockall(MCL_CURRENT | MCL_FUTURE) != 0)
-		panic("Cannot lock pages!\n");
+		fprintf(stderr, "Warning: cannot lock pages on macOS\n");
 }
 
 static inline void xunlockme(void)
