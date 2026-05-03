@@ -142,7 +142,7 @@ static void pcap_sg_fsync(int fd)
 		panic("Writev I/O error: %s!\n", strerror(errno));
 
 	iov_slot = 0;
-	fdatasync(fd);
+	fsync(fd);
 }
 
 static void pcap_sg_init_once(bool enforce_prio)

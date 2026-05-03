@@ -561,7 +561,7 @@ next:
 				goto out;
 		}
 
-		ret = poll(&rx_poll, 1, -1);
+		ret = poll(&rx_poll, 1, 100); /* macOS: short timeout for responsiveness */
 		if (unlikely(ret < 0)) {
 			if (errno != EINTR)
 				panic("Poll failed!\n");
@@ -1049,7 +1049,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 	struct pollfd rx_poll;
 	struct sock_fprog bpf_ops;
 	struct timeval start, end, diff;
-	bool is_v3 = is_defined(HAVE_TPACKET3);
+	bool is_v3 = false;  /* macOS BPF — not Linux tpacket3 */
 
 	sock = pf_socket_type(ctx->link_type);
 
@@ -1061,7 +1061,6 @@ static void recv_only_or_dump(struct ctx *ctx)
 	bpf_parse_rules(ctx->filter, &bpf_ops, ctx->link_type);
 	if (ctx->dump_bpf)
 		bpf_dump_all(&bpf_ops);
-	bpf_attach_to_sock(sock, &bpf_ops);
 
 	if (ctx->hwtimestamp) {
 		ret = set_sockopt_hwtimestamp(sock, ctx->device_in);
@@ -1071,6 +1070,7 @@ static void recv_only_or_dump(struct ctx *ctx)
 
 	ring_rx_setup(&rx_ring, sock, size, ifindex, &rx_poll, is_v3, true,
 		      ctx->verbose, ctx->fanout_group, ctx->fanout_type);
+	bpf_attach_to_sock(sock, &bpf_ops);
 
 	dissector_init_all(ctx->print_mode);
 
@@ -1125,56 +1125,71 @@ static void recv_only_or_dump(struct ctx *ctx)
 				break;
 		}
 #else
-		while (user_may_pull_from_rx(rx_ring.frames[it].iov_base)) {
-			struct frame_map *hdr = rx_ring.frames[it].iov_base;
-			uint8_t *packet = ((uint8_t *) hdr) + hdr->tp_h.tp_mac;
-			pcap_pkthdr_t phdr;
+		/* macOS BPF: read returns a buffer of bpf_hdr-prefixed packets */
+		{
+			ssize_t bytes;
+			do {
+				bytes = read(sock, rx_ring.mm_space, rx_ring.mm_len);
+						} while (bytes < 0 && errno == EINTR && sigint == 0);
+			if (bytes <= 0) goto poll_again;
 
-			if (skip_packet(ctx, &hdr->s_ll))
-				goto next;
+			uint8_t *p = rx_ring.mm_space;
+			uint8_t *end_p = p + bytes;
 
-			ctx->pkts_seen++;
+			while (p < end_p) {
+				struct bpf_hdr *bh = (struct bpf_hdr *)p;
+				uint8_t *packet = p + bh->bh_hdrlen;
+				struct sockaddr_ll fake_sll = {0};
+				pcap_pkthdr_t phdr;
 
-			if (unlikely(ring_frame_size(&rx_ring) < hdr->tp_h.tp_snaplen)) {
-				/* XXX: silently ignore for now. We used to
-				 * report them with dump_rx_stats()  */
-				goto next;
-			}
+				fake_sll.sll_family = AF_INET;
+				fake_sll.sll_protocol = htons(0x0800);
 
-			if (dump_to_pcap(ctx)) {
-				tpacket_hdr_to_pcap_pkthdr(&hdr->tp_h, &hdr->s_ll, &phdr, ctx->magic);
+				if (bh->bh_caplen >= 6) {
+					uint8_t *dst = packet;
+					if (dst[0] == 0xff && dst[1] == 0xff && dst[2] == 0xff &&
+					    dst[3] == 0xff && dst[4] == 0xff && dst[5] == 0xff)
+						fake_sll.sll_pkttype = PACKET_BROADCAST;
+					else if (dst[0] & 0x01)
+						fake_sll.sll_pkttype = PACKET_MULTICAST;
+					else
+						fake_sll.sll_pkttype = PACKET_HOST;
+				} else {
+					fake_sll.sll_pkttype = PACKET_HOST;
+				}
 
-				ret = __pcap_io->write_pcap(fd, &phdr, ctx->magic, packet,
-							    pcap_get_length(&phdr, ctx->magic));
-				if (unlikely(ret != (int) pcap_get_total_length(&phdr, ctx->magic)))
-					panic("Write error to pcap!\n");
-			}
+				if (skip_packet(ctx, &fake_sll))
+					goto bpf_next;
 
-			show_frame_hdr(packet, hdr->tp_h.tp_snaplen,
-				       ctx->link_type, hdr, ctx->print_mode,
-				       ctx->pkts_seen);
+				ctx->pkts_seen++;
 
-			dissector_entry_point(packet, hdr->tp_h.tp_snaplen,
-					      ctx->link_type, ctx->print_mode,
-					      &hdr->s_ll);
+				if (dump_to_pcap(ctx)) {
+					struct tpacket2_hdr fake_th = {0};
+					fake_th.tp_sec = bh->bh_tstamp.tv_sec;
+					fake_th.tp_nsec = bh->bh_tstamp.tv_usec * 1000;
+					fake_th.tp_snaplen = bh->bh_caplen;
+					fake_th.tp_len = bh->bh_datalen;
+					tpacket_hdr_to_pcap_pkthdr(&fake_th, &fake_sll, &phdr, ctx->magic);
+					ret = __pcap_io->write_pcap(fd, &phdr, ctx->magic, packet,
+						pcap_get_length(&phdr, ctx->magic));
+					if (unlikely(ret != (int) pcap_get_total_length(&phdr, ctx->magic)))
+						panic("Write error to pcap!\n");
+				}
 
-			if (frame_count_max != 0) {
-				if (unlikely(ctx->pkts_seen >= frame_count_max)) {
+				dissector_entry_point(packet, bh->bh_caplen,
+					ctx->link_type, ctx->print_mode, &fake_sll);
+
+				if (frame_count_max != 0 && ctx->pkts_seen >= frame_count_max) {
 					sigint = 1;
 					break;
 				}
+
+bpf_next:
+				update_pcap_next_dump(ctx, bh->bh_caplen, &fd, sock, false);
+				p += BPF_WORDALIGN(bh->bh_hdrlen + bh->bh_caplen);
 			}
-
-next:
-			kernel_may_pull_from_rx(&hdr->tp_h);
-			it = (it + 1) % rx_ring.layout.tp_frame_nr;
-
-			if (unlikely(sigint == 1))
-				break;
-
-			update_pcap_next_dump(ctx, hdr->tp_h.tp_snaplen, &fd,
-					      sock, is_v3);
 		}
+poll_again: ;
 #endif /* HAVE_TPACKET3 */
 
 		ret = poll(&rx_poll, 1, -1);
@@ -1303,7 +1318,7 @@ static void __noreturn help(void)
 	     "  For introducing bit errors, delays with random variation and more\n"
 	     "  while replaying pcaps, make use of tc(8) with its disciplines (e.g. netem).\n");
 	puts(copyright);
-	die();
+	exit(0);
 }
 
 static void __noreturn version(void)
@@ -1312,7 +1327,7 @@ static void __noreturn version(void)
 	puts("the packet sniffing beast\n"
 	     "http://www.netsniff-ng.org\n");
 	puts(copyright);
-	die();
+	exit(0);
 }
 
 int main(int argc, char **argv)
@@ -1529,11 +1544,11 @@ int main(int argc, char **argv)
 			break;
 		case 'D':
 			pcap_dump_type_features();
-			die();
+			exit(0);
 			break;
 		case 'U':
-			update_geoip();
-			die();
+			fprintf(stderr, "GeoIP update not supported in macOS BPF port\n");
+			exit(2);
 			break;
 		case 'w':
 			ctx.link_type = LINKTYPE_LINUX_SLL;
@@ -1626,18 +1641,18 @@ int main(int argc, char **argv)
 			ctx.dump = 0;
 			main_loop = recv_only_or_dump;
 		} else if (device_mtu(ctx.device_out)) {
-			register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO);
+			register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO | SA_RESTART);
 			main_loop = receive_to_xmit;
 		} else {
 			ctx.dump = 1;
-			register_signal_f(SIGALRM, timer_next_dump, SA_SIGINFO);
+			register_signal_f(SIGALRM, timer_next_dump, SA_SIGINFO | SA_RESTART);
 			main_loop = recv_only_or_dump;
 			if (!ops_touched)
 				ctx.pcap = PCAP_OPS_SG;
 		}
 	} else {
 		if (ctx.device_out && device_mtu(ctx.device_out)) {
-			register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO);
+			register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO | SA_RESTART);
 			main_loop = pcap_to_xmit;
 			if (!ops_touched)
 				ctx.pcap = PCAP_OPS_MM;

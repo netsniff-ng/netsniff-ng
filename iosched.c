@@ -34,12 +34,12 @@ static const char *const to_prio[] = {
 
 static inline int ioprio_set(int which, int who, int ioprio)
 {
-	return syscall(SYS_ioprio_set, which, who, ioprio);
+	(void)which; (void)who; (void)ioprio; return 0;
 }
 
 static inline int ioprio_get(int which, int who)
 {
-	return syscall(SYS_ioprio_get, which, who);
+	(void)which; (void)who; return 0;
 }
 
 static void ioprio_setpid(pid_t pid, int ioprio, int ioclass)

@@ -5,7 +5,9 @@
 
 #include "built_in.h"
 
+#ifndef __APPLE__
 extern size_t strlcpy(char *dest, const char *src, size_t size);
+#endif
 extern int slprintf(char *dst, size_t size, const char *fmt, ...)  __check_format_printf(3, 4);
 extern int slprintf_nocheck(char *dst, size_t size, const char *fmt, ...);
 extern char *strtrim_right(char *p, char c);

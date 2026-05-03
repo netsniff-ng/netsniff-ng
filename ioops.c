@@ -8,7 +8,7 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <fcntl.h>
-#include <linux/if.h>
+#include <net/if.h>
 #include <linux/if_tun.h>
 
 #include "die.h"
@@ -65,7 +65,7 @@ int mkostemp_or_die(char *templ, int flags)
 
 void pipe_or_die(int pipefd[2], int flags)
 {
-	int ret = pipe2(pipefd, flags);
+	int ret = pipe(pipefd); if (ret == 0 && flags) { fcntl(pipefd[0], F_SETFL, flags); fcntl(pipefd[1], F_SETFL, flags); }
 	if (unlikely(ret < 0))
 		panic("Cannot create pipe2 event fd! %s.\n", strerror(errno));
 }
@@ -141,7 +141,7 @@ int write_blob_or_die(const char *file, const void *blob, size_t count)
 
 	fd = open_or_die_m(file, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 	ret = write_or_die(fd, blob, count);
-	fdatasync(fd);
+	fsync(fd);
 	close(fd);
 
 	return ret;

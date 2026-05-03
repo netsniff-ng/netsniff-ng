@@ -30,3 +30,6 @@ void register_signal_f(int signal, void (*handler)(int), int flags)
 
 	sigaction(signal, &saction, NULL);
 }
+
+/* Global signal flag used by ioexact and others */
+volatile sig_atomic_t sigint = 0;

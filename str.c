@@ -13,6 +13,7 @@
 #include "die.h"
 #include "xmalloc.h"
 
+#ifndef __APPLE__
 size_t strlcpy(char *dest, const char *src, size_t size)
 {
 	size_t ret = strlen(src);
@@ -26,6 +27,7 @@ size_t strlcpy(char *dest, const char *src, size_t size)
 
 	return ret;
 }
+#endif /* __APPLE__ */
 
 static inline int vslprintf(char *dst, size_t size, const char *fmt, va_list ap)
 {

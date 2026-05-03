@@ -1,0 +1,3 @@
+#ifndef NETLINK_ROUTE_LINK_H
+#define NETLINK_ROUTE_LINK_H
+#endif

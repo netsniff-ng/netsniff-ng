@@ -59,6 +59,32 @@ One-liner installation for *all* dependencies on Fedora:
   userspace-rcu-devel nacl-devel libpcap-devel zlib-devel \
   libcli-devel libnet-devel
 
+Building on macOS (BPF backend, experimental):
+
+The netsniff-ng macOS port replaces Linux AF_PACKET with BSD /dev/bpf and
+ships an alternate Makefile (Makefile.macos). Tested on Apple Silicon
+(arm64) running macOS 14+ with clang and Homebrew libpcap.
+
+Prerequisites:
+
+  $ xcode-select --install
+  $ brew install libpcap
+
+Build:
+
+  $ make -f Makefile.macos
+  $ sudo ./netsniff-ng-macos -i en0 -A -q -n 5
+
+The macOS build is documented in MACOS_TEST_RESULTS.md (per-flag test
+matrix) and MACOS_PLANNED.md (Linux-only feature status, including
+explicitly-stubbed paths such as --update / GeoIP, fanout, hardware
+timestamping, IRQ affinity, and Linux SCHED_FIFO scheduling).
+
+Note for users behind a VPN: traffic from your machine may route through
+a utun* tunnel interface rather than en0. Use `route get <destination>`
+to find the actual capture interface. Local-LAN traffic on en0 (e.g.
+ARP, gateway pings) works as expected.
+
 After downloading the netsniff-ng toolkit, you should change to the
 repository root directory:
 

@@ -15,8 +15,8 @@
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <net/if_arp.h>
-#include <linux/if.h>
-#include <linux/if_packet.h>
+#include <net/if.h>
+#include "linux_compat.h"
 
 #include "built_in.h"
 #include "die.h"

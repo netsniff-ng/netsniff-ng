@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 
 #include "dev.h"
+#include "linux_compat.h"
 #include "str.h"
 #include "sock.h"
 #include "die.h"
@@ -27,11 +28,9 @@ int __device_ifindex(const char *ifname)
 	memset(&ifr, 0, sizeof(ifr));
 	strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
 
-	ret = ioctl(sock, SIOCGIFINDEX, &ifr);
-	if (ret)
-		index = -1;
-	else
-		index = ifr.ifr_ifindex;
+	/* macOS: use if_nametoindex instead of SIOCGIFINDEX */
+	index = (int)if_nametoindex(ifname);
+	ret = (index == 0) ? -1 : 0;
 
 	close(sock);
 
@@ -61,12 +60,31 @@ int device_type(const char *ifname)
 	memset(&ifr, 0, sizeof(ifr));
 	strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
 
-	ret = ioctl(sock, SIOCGIFHWADDR, &ifr);
-	if (unlikely(ret))
-		panic("Cannot get iftype from device!\n");
-
-	/* dev->type */
-	type = ifr.ifr_hwaddr.sa_family;
+	/* macOS: get hw type via getifaddrs AF_LINK */
+	{
+		struct ifaddrs *ifa, *i;
+		type = ARPHRD_ETHER;
+		if (getifaddrs(&ifa) == 0) {
+			for (i = ifa; i; i = i->ifa_next) {
+				if (i->ifa_addr &&
+				    i->ifa_addr->sa_family == AF_LINK &&
+				    strcmp(i->ifa_name, ifname) == 0) {
+					struct sockaddr_dl *sdl =
+						(struct sockaddr_dl *)i->ifa_addr;
+					/* macOS BSD IFT_* → Linux ARPHRD_* mapping */
+					switch (sdl->sdl_type) {
+					case 0x6:  type = ARPHRD_ETHER; break;        /* IFT_ETHER */
+					case 0x18: type = ARPHRD_LOOPBACK; break;     /* IFT_LOOP */
+					case 0x47: type = ARPHRD_IEEE80211; break;    /* IFT_IEEE80211 */
+					case 0x37: type = ARPHRD_PPP; break;          /* IFT_PPP */
+					default:   type = ARPHRD_ETHER; break;
+					}
+					break;
+				}
+			}
+			freeifaddrs(ifa);
+		}
+	}
 	close(sock);
 
 	return type;
@@ -101,7 +119,7 @@ static int __device_address6(const char *ifname, struct sockaddr_storage *ss)
 
 int device_address(const char *ifname, int af, struct sockaddr_storage *ss)
 {
-	int ret, sock;
+	int ret = -1, sock;
 	struct ifreq ifr;
 
 	if (unlikely(!ss))
@@ -143,9 +161,22 @@ int device_hw_address(const char *ifname, uint8_t *addr, size_t len)
 	memset(&ifr, 0, sizeof(ifr));
 	strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
 
-	ret = ioctl(sock, SIOCGIFHWADDR, &ifr);
-	if (!ret)
-		memcpy(addr, &ifr.ifr_hwaddr.sa_data[0], IFHWADDRLEN);
+	/* macOS: get MAC via getifaddrs */
+	{
+		struct ifaddrs *ifa, *i;
+		if (getifaddrs(&ifa) == 0) {
+			for (i = ifa; i; i = i->ifa_next) {
+				if (i->ifa_addr && i->ifa_addr->sa_family == AF_LINK
+					&& strcmp(i->ifa_name, ifname) == 0) {
+					struct sockaddr_dl *sdl = (struct sockaddr_dl *)i->ifa_addr;
+					memcpy(addr, LLADDR(sdl), IFHWADDRLEN);
+					ret = 0;
+					break;
+				}
+			}
+			freeifaddrs(ifa);
+		}
+	}
 
 	close(sock);
 	return ret;

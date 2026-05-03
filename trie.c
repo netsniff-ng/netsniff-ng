@@ -5,6 +5,7 @@
  */
 
 #include <stdint.h>
+#include "linux_compat.h"
 #include <string.h>
 #include <netinet/in.h>
 

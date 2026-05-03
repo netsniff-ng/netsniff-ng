@@ -5,11 +5,22 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <linux/if_packet.h>
+#include <net/if_dl.h>
+#include <net/if_types.h>
 #include <assert.h>
-#include <endian.h>
-#include <byteswap.h>
-#include <asm/byteorder.h>
+#include <machine/endian.h>
+#include <libkern/OSByteOrder.h>
+/* asm/byteorder.h stubbed for macOS */
+/* macOS bswap shims */
+#ifndef bswap_16
+# define bswap_16(x) OSSwapInt16(x)
+#endif
+#ifndef bswap_32
+# define bswap_32(x) OSSwapInt32(x)
+#endif
+#ifndef bswap_64
+# define bswap_64(x) OSSwapInt64(x)
+#endif
 
 typedef uint64_t	u64;
 typedef uint32_t	u32;
@@ -183,25 +194,33 @@ typedef uint8_t		u8;
 #define PAGE_ALIGN(addr)	(((addr) + RUNTIME_PAGE_SIZE - 1) & PAGE_MASK)
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
+#ifndef htonll
 static inline uint64_t htonll(uint64_t x)
 {
 	return bswap_64(x);
 }
+#endif
 
+#ifndef ntohll
 static inline uint64_t ntohll(uint64_t x)
 {
 	return bswap_64(x);
 }
+#endif
 #elif __BYTE_ORDER == __BIG_ENDIAN
+#ifndef htonll
 static inline uint64_t htonll(uint64_t x)
 {
 	return x;
 }
+#endif
 
+#ifndef ntohll
 static inline uint64_t ntohll(uint64_t x)
 {
 	return x;
 }
+#endif
 #else
 # error __BYTE_ORDER is neither __LITTLE_ENDIAN nor __BIG_ENDIAN
 #endif

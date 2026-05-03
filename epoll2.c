@@ -1,30 +1,31 @@
-#include <sys/epoll.h>
-#include <string.h>
-
+/*
+ * epoll2.c - kqueue implementation of epoll2 API
+ */
+#include <sys/event.h>
+#include <sys/time.h>
+#include <stdio.h>
 #include "epoll2.h"
 #include "die.h"
 
 void set_epoll_descriptor(int fd_epoll, int action, int fd_toadd, int events)
 {
-	int ret;
-	struct epoll_event ev;
+    struct kevent ev;
+    int filter = (events == EVFILT_WRITE) ? EVFILT_WRITE : EVFILT_READ;
+    int flags  = (action == EV_DELETE) ? EV_DELETE : (EV_ADD | EV_ENABLE);
 
-	memset(&ev, 0, sizeof(ev));
-	ev.events = events;
-	ev.data.fd = fd_toadd;
+    EV_SET(&ev, fd_toadd, filter, flags, 0, 0, NULL);
 
-	ret = epoll_ctl(fd_epoll, action, fd_toadd, &ev);
-	if (ret < 0)
-		panic("Cannot add socket for epoll!\n");
+    if (kevent(fd_epoll, &ev, 1, NULL, 0, NULL) < 0)
+        panic("Cannot add descriptor to kqueue!\n");
 }
 
 int set_epoll_descriptor2(int fd_epoll, int action, int fd_toadd, int events)
 {
-	struct epoll_event ev;
+    struct kevent ev;
+    int filter = (events == EVFILT_WRITE) ? EVFILT_WRITE : EVFILT_READ;
+    int flags  = (action == EV_DELETE) ? EV_DELETE : (EV_ADD | EV_ENABLE);
 
-	memset(&ev, 0, sizeof(ev));
-	ev.events = events;
-	ev.data.fd = fd_toadd;
+    EV_SET(&ev, fd_toadd, filter, flags, 0, 0, NULL);
 
-	return epoll_ctl(fd_epoll, action, fd_toadd, &ev);
+    return kevent(fd_epoll, &ev, 1, NULL, 0, NULL);
 }

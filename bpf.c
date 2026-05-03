@@ -1,3 +1,5 @@
+#include <sys/ioctl.h>
+#include <net/bpf.h>
 /*
  * netsniff-ng - the packet sniffing beast
  * Copyright 2009 - 2012 Daniel Borkmann.
@@ -8,6 +10,7 @@
  */
 
 #include <stdint.h>
+#include "linux_compat.h"
 #include <stdio.h>
 #include <string.h>
 #include <arpa/inet.h>
@@ -364,20 +367,46 @@ void bpf_attach_to_sock(int sock, struct sock_fprog *bpf)
 	    bpf->filter[0].k == 0xFFFFFFFF)
 		return;
 
+#ifdef __APPLE__
+	/* macOS BPF: convert Linux sock_filter array to native bpf_insn */
+	struct bpf_insn *macos_insns = xmalloc(bpf->len * sizeof(struct bpf_insn));
+	for (uint32_t i = 0; i < bpf->len; i++) {
+		macos_insns[i].code = bpf->filter[i].code;
+		macos_insns[i].jt   = bpf->filter[i].jt;
+		macos_insns[i].jf   = bpf->filter[i].jf;
+		macos_insns[i].k    = bpf->filter[i].k;
+	}
+	struct bpf_program prog;
+	prog.bf_len = bpf->len;
+	prog.bf_insns = macos_insns;
+	ret = ioctl(sock, BIOCSETF, &prog);
+	if (unlikely(ret < 0))
+		panic("Cannot attach filter to BPF: %s\n", strerror(errno));
+	{
+		u_int _enable = 1;
+		ioctl(sock, BIOCIMMEDIATE, &_enable);
+	}
+#else
 	ret = setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER,
 			 bpf, sizeof(*bpf));
 	if (unlikely(ret < 0))
 		panic("Cannot attach filter to socket!\n");
+#endif
 }
 
 void bpf_detach_from_sock(int sock)
 {
+#ifdef __APPLE__
+	/* macOS BPF: detach by setting empty program */
+	struct bpf_program prog = { 0, NULL };
+	ioctl(sock, BIOCSETF, &prog);
+#else
 	int ret, empty = 0;
-
 	ret = setsockopt(sock, SOL_SOCKET, SO_DETACH_FILTER,
 			 &empty, sizeof(empty));
 	if (unlikely(ret < 0))
 		panic("Cannot detach filter from socket!\n");
+#endif
 }
 
 int enable_kernel_bpf_jit_compiler(void)

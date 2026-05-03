@@ -10,9 +10,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <sys/socket.h>
-#include <linux/if.h>
-#include <linux/netlink.h>
-#include <linux/if_packet.h>
+#include <net/if.h>
+#include "linux_compat.h"
 
 #include "ring.h"
 #include "tprintf.h"
