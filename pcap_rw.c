@@ -65,7 +65,7 @@ static void pcap_rw_init_once(bool enforce_prio)
 
 static void pcap_rw_fsync(int fd)
 {
-	fdatasync(fd);
+	fsync(fd);
 }
 
 const struct pcap_file_ops pcap_rw_ops = {

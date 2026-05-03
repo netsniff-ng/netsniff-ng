@@ -37,7 +37,9 @@ static void __pcap_mmap_write_need_remap(int fd)
 	if (ret != 1)
 		panic("Cannot write file!\n");
 
-	ptr_va_start = mremap(ptr_va_start, map_size_old, map_size, MREMAP_MAYMOVE);
+	/* macOS: no mremap — unmap and remmap */
+	munmap(ptr_va_start, map_size_old);
+	ptr_va_start = mmap(NULL, map_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	if (ptr_va_start == MAP_FAILED)
 		panic("mmap of file failed!");
 
@@ -138,7 +140,7 @@ static void __pcap_mm_prepare_access_rd(int fd)
 		panic("pcap dump file is not a regular file!\n");
 
 	map_size = sb.st_size;
-	ptr_va_start = mmap(NULL, map_size, PROT_READ, MAP_SHARED | MAP_LOCKED, fd, 0);
+	ptr_va_start = mmap(NULL, map_size, PROT_READ, MAP_SHARED, fd, 0);
 	if (ptr_va_start == MAP_FAILED)
 		panic("mmap of file failed!");
 	ret = madvise(ptr_va_start, map_size, MADV_SEQUENTIAL);
